@@ -96,7 +96,7 @@ func TestMergeProwPlugin(t *testing.T) {
 	o.EnvironmentNamespace = "jx-staging"
 
 	pluginConfig := &plugins.Configuration{}
-	pluginConfig.Welcome = plugins.Welcome{MessageTemplate: "okey dokey"}
+	pluginConfig.Welcome = []plugins.Welcome{{MessageTemplate: "okey dokey"}}
 
 	c, err := yaml.Marshal(pluginConfig)
 	assert.NoError(t, err)
@@ -121,7 +121,7 @@ func TestMergeProwPlugin(t *testing.T) {
 	assert.NoError(t, err)
 
 	yaml.Unmarshal([]byte(cm.Data[prow.ProwPluginsFilename]), &pluginConfig)
-	assert.Equal(t, "okey dokey", pluginConfig.Welcome.MessageTemplate)
+	assert.Equal(t, "okey dokey", pluginConfig.Welcome[0].MessageTemplate)
 	assert.Equal(t, "test/repo", pluginConfig.Approve[0].Repos[0])
 
 }

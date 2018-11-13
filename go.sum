@@ -387,3 +387,5 @@ k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b h1:LcRDe4wxlsysUmLVy0Oi1YOOMwM
 k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b/go.mod h1:a25VAbm3QT3xiVl1jtoF1ueAKQM149UdZ+L93ePfV3M=
 k8s.io/test-infra v0.0.0-20181016234544-2c26f647f17a h1:1F0vgEle+QfBbsxdY/EtFpBMBS4xWAPYctJyvygJS5Y=
 k8s.io/test-infra v0.0.0-20181016234544-2c26f647f17a/go.mod h1:2NzXB13Ji0nqpyublHeiPC4FZwU0TknfvyaaNfl/BTA=
+k8s.io/test-infra v0.0.0-20181113004108-9b11013021d9 h1:i9GhZIzg49MWDv2GBMsLF0YkA4gQwx0oYbSyB8L0C3k=
+k8s.io/test-infra v0.0.0-20181113004108-9b11013021d9/go.mod h1:2NzXB13Ji0nqpyublHeiPC4FZwU0TknfvyaaNfl/BTA=
