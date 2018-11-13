@@ -28,24 +28,25 @@ type StepPostInstallOptions struct {
 	Results StepPostInstallResults
 }
 
+// StepPostInstallResults contains the command outputs mostly for testing purposes
 type StepPostInstallResults struct {
 	GitProviders map[string]gits.GitProvider
 }
 
 var (
-	StepPostInstallLong = templates.LongDesc(`
+	stepPostInstallLong = templates.LongDesc(`
 		This pipeline step ensures that all the necessary jobs are imported and the webooks setup - e.g. for the current Environments.
 
 		Its designed to work with GitOps based development environments where the permanent Environments like Staging and Production are defined in a git repository.
 		This step is used to ensure that all the 'Environment' resources have their associated CI+CD jobs setup in Jenkins or Prow with the necessary webhooks in place.
 `)
 
-	StepPostInstallExample = templates.Examples(`
+	stepPostInstallExample = templates.Examples(`
 		jx step post install
 `)
 )
 
-// NewCmdStep Steps a command object for the "step" command
+// NewCmdStepPostInstall creates the command object
 func NewCmdStepPostInstall(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepPostInstallOptions{
 		StepOptions: StepOptions{
@@ -61,8 +62,8 @@ func NewCmdStepPostInstall(f Factory, in terminal.FileReader, out terminal.FileW
 	cmd := &cobra.Command{
 		Use:     "install",
 		Short:   "Runs any post install actions",
-		Long:    StepPostInstallLong,
-		Example: StepPostInstallExample,
+		Long:    stepPostInstallLong,
+		Example: stepPostInstallExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

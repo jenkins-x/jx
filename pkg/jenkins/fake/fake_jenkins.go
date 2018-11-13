@@ -25,10 +25,12 @@ func NewFakeJenkins() *FakeJenkins {
 	}
 }
 
+// GetJobs returns the jobs
 func (j *FakeJenkins) GetJobs() ([]gojenkins.Job, error) {
 	return j.Jobs, nil
 }
 
+// GetJob gets a job by name
 func (j *FakeJenkins) GetJob(name string) (gojenkins.Job, error) {
 	for _, job := range j.Jobs {
 		if job.Name == name {
@@ -38,6 +40,7 @@ func (j *FakeJenkins) GetJob(name string) (gojenkins.Job, error) {
 	return gojenkins.Job{}, j.notFoundf("job: %s", name)
 }
 
+// CreateJobWithXML create a job from XML
 func (j *FakeJenkins) CreateJobWithXML(jobXml string, folder string) error {
 	folderJob := j.getOrCreateFolderJob(folder)
 	if folderJob != nil {
@@ -46,6 +49,7 @@ func (j *FakeJenkins) CreateJobWithXML(jobXml string, folder string) error {
 	return j.notFoundf("job: %s", folder)
 }
 
+// CreateFolderJobWithXML creates a folder based job from XML
 func (j *FakeJenkins) CreateFolderJobWithXML(jobXml string, folder string, jobName string) error {
 	folderJob := j.getOrCreateFolderJob(folder)
 
@@ -79,42 +83,52 @@ func (j *FakeJenkins) getOrCreateFolderJob(folder string) *gojenkins.Job {
 	return folderJob
 }
 
+// GetJobURLPath gets the job URL patjh
 func (j *FakeJenkins) GetJobURLPath(name string) string {
 	return gojenkins.FullPath(name)
 }
 
+// IsErrNotFound returns true if the error is not found
 func (j *FakeJenkins) IsErrNotFound(err error) bool {
 	te, ok := err.(gojenkins.APIError)
 	return ok && te.StatusCode == 404
 }
 
+// BaseURL returns the server base URL
 func (j *FakeJenkins) BaseURL() string {
 	return j.baseURL
 }
 
+// SetHTTPClient sets the http client
 func (j *FakeJenkins) SetHTTPClient(*http.Client) {
 }
 
+// Post posts an object
 func (j *FakeJenkins) Post(string, url.Values, interface{}) (err error) {
 	return nil
 }
 
+// GetJobConfig gets the job config for the given name
 func (j *FakeJenkins) GetJobConfig(name string) (gojenkins.JobItem, error) {
 	return gojenkins.JobItem{}, fmt.Errorf("Not implemented!")
 }
 
+// GetBuild gets the build for a specific job and build number
 func (j *FakeJenkins) GetBuild(gojenkins.Job, int) (gojenkins.Build, error) {
 	return gojenkins.Build{}, fmt.Errorf("Not implemented!")
 }
 
+// GetLastBuild returns the last build of the job
 func (j *FakeJenkins) GetLastBuild(gojenkins.Job) (gojenkins.Build, error) {
 	return gojenkins.Build{}, fmt.Errorf("Not implemented!")
 }
 
+// StopBuild stops the build
 func (j *FakeJenkins) StopBuild(gojenkins.Job, int) error {
 	return nil
 }
 
+// GetMultiBranchJob gets a multi branch job of the given name
 func (j *FakeJenkins) GetMultiBranchJob(string, string, string) (gojenkins.Job, error) {
 	return gojenkins.Job{}, fmt.Errorf("Not implemented!")
 }
@@ -141,106 +155,132 @@ func (j *FakeJenkins) GetJobByPath(names ...string) (gojenkins.Job, error) {
 	return gojenkins.Job{}, j.notFoundf("job for path %s", strings.Join(names, "/"))
 }
 
+// GetOrganizationScanResult returns the organisation scan result
 func (j *FakeJenkins) GetOrganizationScanResult(int, gojenkins.Job) (string, error) {
 	return "", fmt.Errorf("Not implemented!")
 }
 
+// CreateJob creates a job
 func (j *FakeJenkins) CreateJob(gojenkins.JobItem, string) error {
 	return nil
 }
 
+// Reload reloads the fake server
 func (j *FakeJenkins) Reload() error {
 	return nil
 }
 
+// Restart restarts the fake server
 func (j *FakeJenkins) Restart() error {
 	return nil
 }
 
+// SafeRestart safely restarts the fake server
 func (j *FakeJenkins) SafeRestart() error {
 	return nil
 }
 
+// QuietDown quiets down
 func (j *FakeJenkins) QuietDown() error {
 	return nil
 }
 
+// GetCredential get the credential of the given name
 func (j *FakeJenkins) GetCredential(string) (*gojenkins.Credentials, error) {
 	return nil, fmt.Errorf("Not implemented!")
 }
 
+// CreateCredential creates a credential
 func (j *FakeJenkins) CreateCredential(string, string, string) error {
 	return nil
 }
 
+// DeleteJob deletes a job
 func (j *FakeJenkins) DeleteJob(gojenkins.Job) error {
 	return nil
 }
 
+// UpdateJob updates a job
 func (j *FakeJenkins) UpdateJob(gojenkins.JobItem, string) error {
 	return nil
 }
 
+// RemoveJob removes a job
 func (j *FakeJenkins) RemoveJob(string) error {
 	return nil
 }
 
+// AddJobToView adds a job to the view
 func (j *FakeJenkins) AddJobToView(string, gojenkins.Job) error {
 	return nil
 }
 
+// CreateView creates a view
 func (j *FakeJenkins) CreateView(gojenkins.ListView) error {
 	return nil
 }
 
+// Build triggers a build
 func (j *FakeJenkins) Build(gojenkins.Job, url.Values) error {
 	return nil
 }
 
+// GetBuildConsoleOutput get the console output
 func (j *FakeJenkins) GetBuildConsoleOutput(gojenkins.Build) ([]byte, error) {
 	return nil, fmt.Errorf("Not implemented!")
 }
 
+// GetQueue gets the build queue
 func (j *FakeJenkins) GetQueue() (gojenkins.Queue, error) {
 	return gojenkins.Queue{}, fmt.Errorf("Not implemented!")
 }
 
+// GetArtifact gets an artifact
 func (j *FakeJenkins) GetArtifact(gojenkins.Build, gojenkins.Artifact) ([]byte, error) {
 	return nil, fmt.Errorf("Not implemented!")
 }
 
+// SetBuildDescription sets the build description
 func (j *FakeJenkins) SetBuildDescription(gojenkins.Build, string) error {
 	return nil
 }
 
+// GetComputerObject gets the computer
 func (j *FakeJenkins) GetComputerObject() (gojenkins.ComputerObject, error) {
 	return gojenkins.ComputerObject{}, fmt.Errorf("Not implemented!")
 }
 
+// GetComputers gets the computers
 func (j *FakeJenkins) GetComputers() ([]gojenkins.Computer, error) {
 	return nil, fmt.Errorf("Not implemented!")
 }
 
+// GetComputer gets the computer
 func (j *FakeJenkins) GetComputer(string) (gojenkins.Computer, error) {
 	return gojenkins.Computer{}, fmt.Errorf("Not implemented!")
 }
 
+// GetBuildURL gets the build URL
 func (j *FakeJenkins) GetBuildURL(gojenkins.Job, int) string {
 	return ""
 }
 
+// GetLogFromURL gets the log from a URL
 func (j *FakeJenkins) GetLogFromURL(string, int64, *gojenkins.LogData) error {
 	return nil
 }
 
+// TailLog tails the log
 func (j *FakeJenkins) TailLog(string, io.Writer, time.Duration, time.Duration) error {
 	return nil
 }
 
+// TailLogFunc tails the log function
 func (j *FakeJenkins) TailLogFunc(string, io.Writer) gojenkins.ConditionFunc {
 	return nil
 }
 
+// NewLogPoller creates a new log poller
 func (j *FakeJenkins) NewLogPoller(string, io.Writer) *gojenkins.LogPoller {
 	return nil
 }
