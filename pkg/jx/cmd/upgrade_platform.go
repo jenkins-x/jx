@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/kube"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -88,6 +89,14 @@ func NewCmdUpgradePlatform(f Factory, in terminal.FileReader, out terminal.FileW
 func (o *UpgradePlatformOptions) Run() error {
 	targetVersion := o.Version
 	err := o.Helm().UpdateRepo()
+	if err != nil {
+		return err
+	}
+	apisClient, err := o.CreateApiExtensionsClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the API extensions client")
+	}
+	kube.RegisterAllCRDs(apisClient)
 	if err != nil {
 		return err
 	}
