@@ -76,13 +76,13 @@ func (o *EditBuildpackOptions) Run() error {
 			return err
 		}
 		if buildPackURL == "" {
-			buildPackURL, err = util.PickValue("Build pack git clone URL:", teamSettings.BuildPackURL, true, o.In, o.Out, o.Err)
+			buildPackURL, err = util.PickValue("Build pack git clone URL:", teamSettings.BuildPackURL, true, "", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
 		}
 		if BuildPackRef == "" {
-			BuildPackRef, err = util.PickValue("Build pack git ref:", teamSettings.BuildPackRef, true, o.In, o.Out, o.Err)
+			BuildPackRef, err = util.PickValue("Build pack git ref:", teamSettings.BuildPackRef, true, "", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

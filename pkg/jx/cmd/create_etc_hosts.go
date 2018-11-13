@@ -2,13 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 	"io/ioutil"
 	"net/url"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -91,7 +91,7 @@ func (o *CreateEtcHostsOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	urls, err := kube.FindServiceURLs(client, ns)
+	urls, err := services.FindServiceURLs(client, ns)
 	if err != nil {
 		return err
 	}
@@ -124,7 +124,7 @@ func (o *CreateEtcHostsOptions) Run() error {
 	return nil
 }
 
-func (o *CreateEtcHostsOptions) addUrl(serviceUrl kube.ServiceURL, ipLine string) string {
+func (o *CreateEtcHostsOptions) addUrl(serviceUrl services.ServiceURL, ipLine string) string {
 	text := serviceUrl.URL
 	u, err := url.Parse(text)
 	if err != nil {
@@ -153,7 +153,7 @@ func (o *CreateEtcHostsOptions) findIPLine(lines *[]string) (int, string) {
 	}
 
 	idx := len(*lines) + 2
-	*lines = append(*lines, "", "# jx added service entries", prefix)
+	*lines = append(*lines, "", "# jx added services entries", prefix)
 	return idx, prefix
 
 }

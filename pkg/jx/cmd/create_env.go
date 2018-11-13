@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"io"
 
 	"github.com/spf13/cobra"
@@ -214,7 +215,7 @@ func (o *CreateEnvOptions) Run() error {
 		imagePullSecrets := o.GetImagePullSecrets()
 		saName := "default"
 		//log.Infof("Patching the secrets %s for the service account %s\n", imagePullSecrets, saName)
-		err = kube.PatchImagePullSecrets(kubeClient, env.Spec.Namespace, saName, imagePullSecrets)
+		err = serviceaccount.PatchImagePullSecrets(kubeClient, env.Spec.Namespace, saName, imagePullSecrets)
 		if err != nil {
 			return fmt.Errorf("Failed to add pull secrets %s to service account %s in namespace %s: %v", imagePullSecrets, saName, env.Spec.Namespace, err)
 		} else {

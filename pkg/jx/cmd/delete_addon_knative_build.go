@@ -72,7 +72,7 @@ func (o *DeleteKnativeBuildOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	knativeCRDs := []string{"images.caching.internal.knative.dev", "buildtemplates.build.knative.dev", "builds.build.knative.dev"}
+	knativeCRDs := []string{"clusterbuildtemplates.build.knative.dev", "images.caching.internal.knative.dev", "buildtemplates.build.knative.dev", "builds.build.knative.dev"}
 
 	for _, crd := range knativeCRDs {
 		err = apisClient.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(crd, &metav1.DeleteOptions{})
