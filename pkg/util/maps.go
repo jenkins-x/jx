@@ -35,3 +35,24 @@ func MergeMaps(maps ...map[string]string) map[string]string {
 	}
 	return answer
 }
+
+
+// CombineMapTrees recursively copies all the values from the input map into the destination map preserving any missing entries in the destination
+func CombineMapTrees(destination map[string]interface{}, input map[string]interface{}) {
+	for k, v := range input {
+		old, exists := destination[k]
+		if exists {
+			vm, ok := v.(map[string]interface{})
+			if ok {
+				oldm, ok := old.(map[string]interface{})
+				if ok {
+					// if both entries are maps lets combine them
+					// otherwise we assume that the input entry is correct
+					CombineMapTrees(oldm, vm)
+					continue
+				}
+			}
+		}
+		destination[k] = v
+	}
+}

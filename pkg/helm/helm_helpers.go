@@ -282,7 +282,7 @@ func CombineValueFilesToFile(outFile string, inputFiles []string, chartName stri
 			return errors.Wrapf(err, "Failed to read helm values YAML file %s", input)
 		}
 		sourceMap := answer.AsMap()
-		CombineMapTrees(sourceMap, values.AsMap())
+		util.CombineMapTrees(sourceMap, values.AsMap())
 		answer = chartutil.Values(sourceMap)
 	}
 	m := answer.AsMap()
@@ -299,25 +299,4 @@ func CombineValueFilesToFile(outFile string, inputFiles []string, chartName stri
 		return errors.Wrapf(err, "Failed to save combined helm values YAML file %s", outFile)
 	}
 	return nil
-}
-
-// CombineMapTrees recursively copies all the values from the input map into the destination map preserving any missing entries in the destination
-func CombineMapTrees(destination map[string]interface{}, input map[string]interface{}) {
-	for k, v := range input {
-		old, exists := destination[k]
-		if exists {
-			vm, ok := v.(map[string]interface{})
-			if ok {
-				oldm, ok := old.(map[string]interface{})
-				if ok {
-					// if both entries are maps lets combine them
-					// otherwise we assume that the input entry is correct
-					CombineMapTrees(oldm, vm)
-					continue
-				}
-			}
-		}
-		destination[k] = v
-	}
-
 }
