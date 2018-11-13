@@ -94,7 +94,7 @@ type SpringBootForm struct {
 	Type            string
 }
 
-type ErrorResponse struct {
+type errorResponse struct {
 	Timestamp string `json:"timestamp,omitempty"`
 	Status int `json:"status,omitempty"`
 	Error string `json:"error,omitempty"`
@@ -355,7 +355,7 @@ func (data *SpringBootForm) CreateProject(workDir string) (string, error) {
 			return answer, err
 		}
 
-		errorResponse := ErrorResponse{}
+		errorResponse := errorResponse{}
 		json.Unmarshal(errorBody, &errorResponse)
 
 		log.Infof("%s\n", util.ColorError(errorResponse.Message))
