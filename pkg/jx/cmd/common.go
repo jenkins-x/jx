@@ -2,14 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/services"
+	"github.com/pkg/errors"
 	"io"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/pkg/errors"
 
 	"github.com/sirupsen/logrus"
 
@@ -20,6 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
+	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
 	core_v1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -80,6 +81,7 @@ type CommonOptions struct {
 	currentNamespace    string
 	devNamespace        string
 	jxClient            versioned.Interface
+	knbClient           buildclient.Interface
 	jenkinsClient       gojenkins.JenkinsClient
 	GitClient           gits.Gitter
 	helm                helm.Helmer
@@ -118,6 +120,7 @@ func NewCommonOptions(devNamespace string, factory Factory) CommonOptions {
 func (c *CommonOptions) SetDevNamespace(ns string) {
 	c.devNamespace = ns
 	c.currentNamespace = ns
+	c.KubeClientCached = nil
 }
 
 // Debugf outputs the given text to the console if verbose mode is enabled
@@ -193,6 +196,23 @@ func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
 	return o.jxClient, o.currentNamespace, nil
 }
 
+func (o *CommonOptions) KnativeBuildClient() (buildclient.Interface, string, error) {
+	if o.Factory == nil {
+		return nil, "", errors.New("command factory is not initialized")
+	}
+	if o.knbClient == nil {
+		knbClient, ns, err := o.Factory.CreateKnativeBuildClient()
+		if err != nil {
+			return nil, ns, err
+		}
+		o.knbClient = knbClient
+		if o.currentNamespace == "" {
+			o.currentNamespace = ns
+		}
+	}
+	return o.knbClient, o.currentNamespace, nil
+}
+
 func (o *CommonOptions) JXClientAndAdminNamespace() (versioned.Interface, string, error) {
 	kubeClient, _, err := o.KubeClient()
 	if err != nil {
@@ -266,29 +286,8 @@ func (o *CommonOptions) Git() gits.Gitter {
 
 func (o *CommonOptions) Helm() helm.Helmer {
 	if o.helm == nil {
-		helmBinary, noTiller, helmTemplate, err := o.TeamHelmBin()
-		if err != nil {
-			helmBinary = defaultHelmBin
-		}
-		featureFlag := "none"
-		if helmTemplate {
-			featureFlag = "template-mode"
-		} else if noTiller {
-			featureFlag = "no-tiller-server"
-		}
-		log.Infof("Using helmBinary %s with feature flag: %s\n", util.ColorInfo(helmBinary), util.ColorInfo(featureFlag))
-		helmCLI := helm.NewHelmCLI(helmBinary, helm.V2, "", o.Verbose)
-		o.helm = helmCLI
-		if helmTemplate {
-			kubeClient, ns, _ := o.KubeClient()
-			o.helm = helm.NewHelmTemplate(helmCLI, "", kubeClient, ns)
-		} else {
-			o.helm = helmCLI
-		}
-		if noTiller {
-			o.helm.SetHost(o.tillerAddress())
-			o.startLocalTillerIfNotRunning()
-		}
+		helmBinary, noTiller, helmTemplate, _ := o.TeamHelmBin()
+		o.helm = o.Factory.GetHelm(o.Verbose, helmBinary, noTiller, helmTemplate)
 	}
 	return o.helm
 }
@@ -384,7 +383,7 @@ func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerF
 				defaultServerName = s.Name
 			}
 		}
-		name, err := util.PickNameWithDefault(config.GetServerNames(), "Pick server to use: ", defaultServerName, o.In, o.Out, o.Err)
+		name, err := util.PickNameWithDefault(config.GetServerNames(), "Pick server to use: ", defaultServerName, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return nil, err
 		}
@@ -408,26 +407,26 @@ func (o *CommonOptions) findService(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	url, err := kube.FindServiceURL(client, ns, name)
+	url, err := services.FindServiceURL(client, ns, name)
 	if url == "" {
-		url, err = kube.FindServiceURL(client, devNs, name)
+		url, err = services.FindServiceURL(client, devNs, name)
 	}
 	if url == "" {
-		names, err := kube.GetServiceNames(client, ns, name)
+		names, err := services.GetServiceNames(client, ns, name)
 		if err != nil {
 			return "", err
 		}
 		if len(names) > 1 {
-			name, err = util.PickName(names, "Pick service to open: ", o.In, o.Out, o.Err)
+			name, err = util.PickName(names, "Pick service to open: ", "", o.In, o.Out, o.Err)
 			if err != nil {
 				return "", err
 			}
 			if name != "" {
-				url, err = kube.FindServiceURL(client, ns, name)
+				url, err = services.FindServiceURL(client, ns, name)
 			}
 		} else if len(names) == 1 {
 			// must have been a filter
-			url, err = kube.FindServiceURL(client, ns, names[0])
+			url, err = services.FindServiceURL(client, ns, names[0])
 		}
 		if url == "" {
 			return "", fmt.Errorf("Could not find URL for service %s in namespace %s", name, ns)
@@ -474,23 +473,23 @@ func (o *CommonOptions) findServiceInNamespace(name string, ns string) (string, 
 	if ns == "" {
 		ns = curNs
 	}
-	url, err := kube.FindServiceURL(client, ns, name)
+	url, err := services.FindServiceURL(client, ns, name)
 	if url == "" {
-		names, err := kube.GetServiceNames(client, ns, name)
+		names, err := services.GetServiceNames(client, ns, name)
 		if err != nil {
 			return "", err
 		}
 		if len(names) > 1 {
-			name, err = util.PickName(names, "Pick service to open: ", o.In, o.Out, o.Err)
+			name, err = util.PickName(names, "Pick service to open: ", "", o.In, o.Out, o.Err)
 			if err != nil {
 				return "", err
 			}
 			if name != "" {
-				url, err = kube.FindServiceURL(client, ns, name)
+				url, err = services.FindServiceURL(client, ns, name)
 			}
 		} else if len(names) == 1 {
 			// must have been a filter
-			url, err = kube.FindServiceURL(client, ns, names[0])
+			url, err = services.FindServiceURL(client, ns, names[0])
 		}
 		if url == "" {
 			return "", fmt.Errorf("Could not find URL for service %s in namespace %s", name, ns)
@@ -724,7 +723,7 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) e
 		return fmt.Errorf("cannot get existing team exposecontroller config from namespace %s: %v", devNamespace, err)
 	}
 
-	err = kube.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, targetNamespace, ic.Issuer)
+	err = services.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, targetNamespace, ic.Issuer)
 	if err != nil {
 		return err
 	}
@@ -743,7 +742,7 @@ func (o *CommonOptions) exposeService(service, devNamespace, targetNamespace str
 	if err != nil {
 		return fmt.Errorf("cannot get existing team exposecontroller config from namespace %s: %v", devNamespace, err)
 	}
-	err = kube.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, targetNamespace, ic.Issuer, service)
+	err = services.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, targetNamespace, ic.Issuer, service)
 	if err != nil {
 		return err
 	}
@@ -831,12 +830,12 @@ func (o *CommonOptions) getDefaultAdminPassword(devNamespace string) (string, er
 }
 
 func (o *CommonOptions) ensureAddonServiceAvailable(serviceName string) (string, error) {
-	present, err := kube.IsServicePresent(o.KubeClientCached, serviceName, o.currentNamespace)
+	present, err := services.IsServicePresent(o.KubeClientCached, serviceName, o.currentNamespace)
 	if err != nil {
 		return "", fmt.Errorf("no %s provider service found, are you in your teams dev environment?  Type `jx ns` to switch.", serviceName)
 	}
 	if present {
-		url, err := kube.GetServiceURLFromName(o.KubeClientCached, serviceName, o.currentNamespace)
+		url, err := services.GetServiceURLFromName(o.KubeClientCached, serviceName, o.currentNamespace)
 		if err != nil {
 			return "", fmt.Errorf("no %s provider service found, are you in your teams dev environment?  Type `jx ns` to switch.", serviceName)
 		}
@@ -928,14 +927,14 @@ func (o *CommonOptions) GetWebHookEndpoint() (string, error) {
 	var webHookUrl string
 
 	if isProwEnabled {
-		baseURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "hook", ns)
+		baseURL, err := services.GetServiceURLFromName(o.KubeClientCached, "hook", ns)
 		if err != nil {
 			return "", err
 		}
 
 		webHookUrl = util.UrlJoin(baseURL, "hook")
 	} else {
-		baseURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "jenkins", ns)
+		baseURL, err := services.GetServiceURLFromName(o.KubeClientCached, "jenkins", ns)
 		if err != nil {
 			return "", err
 		}
@@ -944,4 +943,16 @@ func (o *CommonOptions) GetWebHookEndpoint() (string, error) {
 	}
 
 	return webHookUrl, nil
+}
+
+func (o *CommonOptions) GetIn() terminal.FileReader {
+	return o.In
+}
+
+func (o *CommonOptions) GetOut() terminal.FileWriter {
+	return o.Out
+}
+
+func (o *CommonOptions) GetErr() io.Writer {
+	return o.Err
 }

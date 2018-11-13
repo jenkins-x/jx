@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -30,7 +31,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
-	"github.com/shirou/gopsutil/process"
 	logger "github.com/sirupsen/logrus"
 	"gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -514,7 +514,6 @@ func (o *CommonOptions) getLatestVersionFromKubernetesReleaseUrl() (sem semver.V
 		return semver.Version{}, fmt.Errorf("download of %s failed with return code %d", stableKubeCtlVersionURL, response.StatusCode)
 	}
 
-
 	bytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return semver.Version{}, fmt.Errorf("Cannot get url body")
@@ -726,101 +725,11 @@ func (o *CommonOptions) installTiller() error {
 	if err != nil {
 		return err
 	}
-	err = o.startLocalTillerIfNotRunning()
+	err = startLocalTillerIfNotRunning()
 	if err != nil {
 		return err
 	}
 	return o.installHelmSecretsPlugin(helmFullPath, true)
-}
-
-func (o *CommonOptions) startLocalTillerIfNotRunning() error {
-	return o.startLocalTiller(true)
-}
-
-func (o *CommonOptions) restartLocalTiller() error {
-	log.Info("checking if we need to kill a local tiller process\n")
-	o.killProcesses("tiller")
-	return o.startLocalTiller(false)
-}
-
-func (o *CommonOptions) startLocalTiller(lazy bool) error {
-	tillerAddress := o.tillerAddress()
-	tillerArgs := os.Getenv("TILLER_ARGS")
-	args := []string{"-listen", tillerAddress, "-alsologtostderr"}
-	if tillerArgs != "" {
-		args = append(args, tillerArgs)
-	}
-	logsDir, err := util.LogsDir()
-	if err != nil {
-		return err
-	}
-	logFile := filepath.Join(logsDir, "tiller.log")
-	f, err := os.Create(logFile)
-	if err != nil {
-		return errors.Wrapf(err, "Failed to create tiller log file %s: %s", logFile, err)
-	}
-	err = o.runCommandBackground("tiller", f, !lazy, args...)
-	if err == nil {
-		log.Infof("running tiller locally and logging to file: %s\n", util.ColorInfo(logFile))
-	} else if lazy {
-		// lets assume its because the process is already running so lets ignore
-		return nil
-	}
-	return err
-}
-
-func (o *CommonOptions) killProcesses(binary string) error {
-	processes, err := process.Processes()
-	if err != nil {
-		return err
-	}
-	m := map[int32]bool{}
-	_, err = o.killProcessesTree(binary, processes, m)
-	return err
-}
-
-func (o *CommonOptions) killProcessesTree(binary string, processes []*process.Process, m map[int32]bool) (bool, error) {
-	var answer error
-	done := false
-	for _, p := range processes {
-		pid := p.Pid
-		if pid > 0 && !m[pid] {
-			m[pid] = true
-			exe, err := p.Name()
-			if err == nil && exe != "" {
-				_, name := filepath.Split(exe)
-				// if windows lets remove .exe
-				name = strings.TrimSuffix(name, ".exe")
-				if name == binary {
-					log.Infof("killing %s process with pid %d\n", binary, int(pid))
-					err = p.Terminate()
-					if err != nil {
-						log.Warnf("Failed to terminate process with pid %d: %s", int(pid), err)
-					} else {
-						log.Infof("killed %s process with pid %d\n", binary, int(pid))
-					}
-					return true, err
-				}
-			}
-			children, err := p.Children()
-			if err == nil {
-				done, err = o.killProcessesTree(binary, children, m)
-				if done {
-					return done, err
-				}
-			}
-		}
-	}
-	return done, answer
-}
-
-// tillerAddress returns the address that tiller is listening on
-func (o *CommonOptions) tillerAddress() string {
-	tillerAddress := os.Getenv("TILLER_ADDR")
-	if tillerAddress == "" {
-		tillerAddress = ":44134"
-	}
-	return tillerAddress
 }
 
 func (o *CommonOptions) installHelm3() error {
@@ -1151,7 +1060,6 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 		return err
 	}
 
-
 	if runtime.GOOS != "windows" {
 		err = util.UnTargz(tmpArchiveFile, jxHome, []string{binary, fileName})
 		if err != nil {
@@ -1161,16 +1069,16 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 		if err != nil {
 			return err
 		}
-		err = os.Remove(filepath.Join(binDir,"jx"))
+		err = os.Remove(filepath.Join(binDir, "jx"))
 		if err != nil && o.Verbose {
 			log.Infof("Skipping removal of old jx binary: %s\n", err)
 		}
 		// Copy over the new binary
-		err = os.Rename(filepath.Join(jxHome,"jx"), filepath.Join(binDir, "jx"))
+		err = os.Rename(filepath.Join(jxHome, "jx"), filepath.Join(binDir, "jx"))
 		if err != nil {
 			return err
 		}
-	} else {  // windows
+	} else { // windows
 		windowsBinaryFromArchive := "jx-windows-amd64.exe"
 		err = util.UnzipSpecificFiles(tmpArchiveFile, jxHome, windowsBinaryFromArchive)
 		if err != nil {
@@ -1184,8 +1092,8 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 		// the trick is to rename to a tempfile :-o
 		// this will leave old files around but well at least it updates.
 		// we could schedule the file for cleanup at next boot but....
-		// HKLM\System\CurrentControlSet\Control\Session Manager\PendingFileRenameOperations 
-		err = os.Rename(filepath.Join(binDir,"jx.exe"), filepath.Join(binDir, "jx.exe.deleteme"))
+		// HKLM\System\CurrentControlSet\Control\Session Manager\PendingFileRenameOperations
+		err = os.Rename(filepath.Join(binDir, "jx.exe"), filepath.Join(binDir, "jx.exe.deleteme"))
 		// if we can not rename it this i pretty fatal as we won;t be able to overwrite either
 		if err != nil {
 			return err
@@ -1510,7 +1418,7 @@ func (o *CommonOptions) updateJenkinsURL(namespaces []string) error {
 
 	// loop over each namespace and update the Jenkins URL if a Jenkins service is found
 	for _, n := range namespaces {
-		externalURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "jenkins", n)
+		externalURL, err := services.GetServiceURLFromName(o.KubeClientCached, "jenkins", n)
 		if err != nil {
 			// skip namespace if no Jenkins service found
 			continue
@@ -1640,8 +1548,11 @@ func (o *CommonOptions) installProw() error {
 
 	log.Infof("Installing knative into namespace %s\n", util.ColorInfo(devNamespace))
 
+	kvalues := []string{"build.auth.git.username=" + o.Username, "build.auth.git.password=" + o.OAUTHToken}
+	kvalues = append(kvalues, setValues...)
+
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true, values, nil)
+		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true, kvalues, nil)
 		return nil
 	})
 
@@ -1672,7 +1583,7 @@ func (o *CommonOptions) createWebhookProw(gitURL string, gitProvider gits.GitPro
 	if err != nil {
 		return err
 	}
-	baseURL, err := kube.GetServiceURLFromName(o.KubeClientCached, "hook", ns)
+	baseURL, err := services.GetServiceURLFromName(o.KubeClientCached, "hook", ns)
 	if err != nil {
 		return err
 	}

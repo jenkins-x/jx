@@ -32,6 +32,11 @@ fi
 if [ -f ~/.bashrc ]; then
     source ~/.bashrc
 fi
+if type -t dh_bash-completion >/dev/null; then
+    if type -t __start_jx >/dev/null; then true; else
+        source <(jx completion bash)
+    fi
+fi
 `
 
 	zshRcFile = `

@@ -50,6 +50,7 @@ require (
 	github.com/gogo/protobuf v1.1.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/protobuf v1.1.0
+	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
 	github.com/google/btree v0.0.0-20180124185431-e89373fe6b4a
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135
@@ -63,9 +64,15 @@ require (
 	github.com/gorilla/sessions v1.1.1
 	github.com/gorilla/websocket v1.2.0
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7
+	github.com/hashicorp/go-cleanhttp v0.5.0 // indirect
+	github.com/hashicorp/go-multierror v1.0.0 // indirect
+	github.com/hashicorp/go-retryablehttp v0.0.0-20180718195005-e651d75abec6 // indirect
+	github.com/hashicorp/go-rootcerts v0.0.0-20160503143440-6bb64b370b90 // indirect
+	github.com/hashicorp/go-sockaddr v0.0.0-20180320115054-6d291a969b86 // indirect
 	github.com/hashicorp/go-version v0.0.0-20180716215031-270f2f71b1ee
 	github.com/hashicorp/golang-lru v0.0.0-20180201235237-0fb14efe8c47
 	github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce
+	github.com/hashicorp/vault v0.11.4
 	github.com/heptio/sonobuoy v0.12.0
 	github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c
 	github.com/hpcloud/tail v1.0.0
@@ -104,6 +111,7 @@ require (
 	github.com/petar/GoLLRB v0.0.0-20130427215148-53be0d36a84c
 	github.com/peterbourgon/diskv v2.0.1+incompatible
 	github.com/petergtz/pegomock v0.0.0-20181008215750-9750219ad78b
+	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
 	github.com/pkg/browser v0.0.0-20170505125900-c90ca0c84f15
 	github.com/pkg/errors v0.8.0
 	github.com/pmezard/go-difflib v1.0.0
@@ -114,6 +122,7 @@ require (
 	github.com/rifflock/lfshook v0.0.0-20180227222202-bf539943797a
 	github.com/rodaine/hclencoder v0.0.0-20180926060551-0680c4321930
 	github.com/russross/blackfriday v1.5.1
+	github.com/ryanuber/go-glob v0.0.0-20170128012129-256dc444b735 // indirect
 	github.com/satori/go.uuid v1.2.0
 	github.com/sergi/go-diff v1.0.0
 	github.com/shirou/gopsutil v0.0.0-20180901134234-eb1f1ab16f2e

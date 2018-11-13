@@ -25,6 +25,7 @@ type GitRepositoryOptions struct {
 	Username  string
 	ApiToken  string
 	Owner     string
+	RepoName  string
 	Private   bool
 }
 
@@ -41,7 +42,6 @@ func (d *CreateRepoData) CreateRepository() (*GitRepository, error) {
 func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.AuthConfigService, defaultRepoName string,
 	repoOptions *GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth, git Gitter, allowExistingRepo bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*CreateRepoData, error) {
 	config := authConfigSvc.Config()
-	surveyOpts := survey.WithStdio(in, out, errOut)
 
 	var err error
 	if server == nil {
@@ -137,19 +137,34 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.AuthConfi
 	}
 	owner := repoOptions.Owner
 	if owner == "" {
-		if batchMode {
-			owner = gitUsername
-		} else {
-			org, err := PickOrganisation(provider, gitUsername, in, out, errOut)
-			if err != nil {
-				return nil, err
-			}
-			owner = org
-			if org == "" {
-				owner = gitUsername
-			}
+		owner, err = GetOwner(batchMode, provider, gitUsername, in, out, errOut)
+		if err != nil {
+			return nil, err
 		}
 	}
+	repoName := repoOptions.RepoName
+	if repoName == "" {
+		repoName, err = GetRepoName(batchMode, allowExistingRepo, provider, defaultRepoName, owner, in, out, errOut)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	fullName := git.RepoName(owner, repoName)
+	fmt.Fprintf(out, "\n\nCreating repository %s\n", util.ColorInfo(fullName))
+
+	return &CreateRepoData{
+		Organisation: owner,
+		RepoName:     repoName,
+		FullName:     fullName,
+		PrivateRepo:  repoOptions.Private,
+		User:         userAuth,
+		GitProvider:  provider,
+	}, err
+}
+
+func GetRepoName(batchMode, allowExistingRepo bool, provider GitProvider, defaultRepoName, owner string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
+	surveyOpts := survey.WithStdio(in, out, errOut)
 	repoName := ""
 	if batchMode {
 		repoName = defaultRepoName
@@ -174,25 +189,32 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.AuthConfi
 			}
 			return provider.ValidateRepositoryName(owner, str)
 		}
-		err = survey.AskOne(prompt, &repoName, validator, surveyOpts)
+		err := survey.AskOne(prompt, &repoName, validator, surveyOpts)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 		if repoName == "" {
-			return nil, fmt.Errorf("No repository name specified")
+			return "", fmt.Errorf("No repository name specified")
 		}
 	}
-	fullName := git.RepoName(owner, repoName)
-	fmt.Fprintf(out, "\n\nCreating repository %s\n", util.ColorInfo(fullName))
+	return repoName, nil
+}
 
-	return &CreateRepoData{
-		Organisation: owner,
-		RepoName:     repoName,
-		FullName:     fullName,
-		PrivateRepo:  repoOptions.Private,
-		User:         userAuth,
-		GitProvider:  provider,
-	}, err
+func GetOwner(batchMode bool, provider GitProvider, gitUsername string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (string, error) {
+	owner := ""
+	if batchMode {
+		owner = gitUsername
+	} else {
+		org, err := PickOrganisation(provider, gitUsername, in, out, errOut)
+		if err != nil {
+			return "", err
+		}
+		owner = org
+		if org == "" {
+			owner = gitUsername
+		}
+	}
+	return owner, nil
 }
 
 func PickNewGitRepository(batchMode bool, authConfigSvc auth.AuthConfigService, defaultRepoName string,

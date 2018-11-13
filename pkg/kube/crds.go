@@ -92,10 +92,10 @@ func RegisterEnvironmentCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".spec.kind",
 		},
 		{
-			Name:        "Promotion Strategy",
+			Name:        "Promotion",
 			Type:        "string",
 			Description: "The strategy used for promoting to this environment",
-			JSONPath:    ".spec.oromotionStrategy",
+			JSONPath:    ".spec.promotionStrategy",
 		},
 		{
 			Name:        "Order",
@@ -116,7 +116,8 @@ func RegisterEnvironmentCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".spec.source.ref",
 		},
 	}
-	return registerCRD(apiClient, name, names, columns)
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation)
 }
 
 // RegisterEnvironmentRoleBindingCRD ensures that the CRD is registered for Environments
@@ -130,7 +131,8 @@ func RegisterEnvironmentRoleBindingCRD(apiClient apiextensionsclientset.Interfac
 		ShortNames: []string{"envrolebindings", "envrolebinding", "envrb"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
-	return registerCRD(apiClient, name, names, columns)
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation)
 }
 
 // RegisterGitServiceCRD ensures that the CRD is registered for GitServices
@@ -144,7 +146,8 @@ func RegisterGitServiceCRD(apiClient apiextensionsclientset.Interface) error {
 		ShortNames: []string{"gits"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
-	return registerCRD(apiClient, name, names, columns)
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation)
 }
 
 // RegisterPipelineActivityCRD ensures that the CRD is registered for PipelineActivity
@@ -171,7 +174,8 @@ func RegisterPipelineActivityCRD(apiClient apiextensionsclientset.Interface) err
 			JSONPath:    ".spec.status",
 		},
 	}
-	return registerCRD(apiClient, name, names, columns)
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation)
 }
 
 // RegisterExtensionCRD ensures that the CRD is registered for Extension
@@ -198,7 +202,8 @@ func RegisterExtensionCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".spec.description",
 		},
 	}
-	return registerCRD(apiClient, name, names, columns)
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation)
 }
 
 // RegisterCommitStatusCRD ensures that the CRD is registered for Extension
@@ -212,7 +217,8 @@ func RegisterCommitStatusCRD(apiClient apiextensionsclientset.Interface) error {
 		ShortNames: []string{"commitstatus"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
-	return registerCRD(apiClient, name, names, columns)
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation)
 }
 
 // RegisterReleaseCRD ensures that the CRD is registered for Release
@@ -245,7 +251,8 @@ func RegisterReleaseCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".spec.gitHttpUrl",
 		},
 	}
-	return registerCRD(apiClient, name, names, columns)
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation)
 }
 
 // RegisterUserCRD ensures that the CRD is registered for User
@@ -272,7 +279,8 @@ func RegisterUserCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".spec.email",
 		},
 	}
-	return registerCRD(apiClient, name, names, columns)
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation)
 }
 
 // RegisterTeamCRD ensures that the CRD is registered for Team
@@ -299,7 +307,8 @@ func RegisterTeamCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".status.provisionStatus",
 		},
 	}
-	return registerCRD(apiClient, name, names, columns)
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation)
 }
 
 // RegisterWorkflowCRD ensures that the CRD is registered for Environments
@@ -313,10 +322,16 @@ func RegisterWorkflowCRD(apiClient apiextensionsclientset.Interface) error {
 		ShortNames: []string{"flow"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
-	return registerCRD(apiClient, name, names, columns)
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation)
 }
 
-func registerCRD(apiClient apiextensionsclientset.Interface, name string, names *v1beta1.CustomResourceDefinitionNames, columns []v1beta1.CustomResourceColumnDefinition) error {
+// RegisterCRD allows new custom resources to be registered using apiClient under a particular name.
+// Various forms of the name are provided using names. In Kubernetes 1.11
+// and later a custom display format for kubectl is used, which is specified using columns.
+func RegisterCRD(apiClient apiextensionsclientset.Interface, name string,
+	names *v1beta1.CustomResourceDefinitionNames, columns []v1beta1.CustomResourceColumnDefinition,
+	validation *v1beta1.CustomResourceValidation) error {
 	crd := &v1beta1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
@@ -327,6 +342,7 @@ func registerCRD(apiClient apiextensionsclientset.Interface, name string, names 
 			Scope:                    v1beta1.NamespaceScoped,
 			Names:                    *names,
 			AdditionalPrinterColumns: columns,
+			Validation:               validation,
 		},
 	}
 
