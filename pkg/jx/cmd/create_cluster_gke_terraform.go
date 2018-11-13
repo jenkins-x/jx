@@ -70,7 +70,6 @@ var (
 		jx create cluster gke terraform
 
 `)
-
 )
 
 // NewCmdCreateClusterGKETerraform creates a command object for the generic "init" action, which
