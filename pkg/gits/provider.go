@@ -173,7 +173,7 @@ func CreateProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (G
 	} else if server.Kind == KindGitlab {
 		return NewGitlabProvider(server, user, git)
 	} else if server.Kind == KindGitFake {
-		return NewFakeGit(server, user, git)
+		return NewFakeGitProvider(server, user, git)
 	} else {
 		return NewGitHubProvider(server, user, git)
 	}
