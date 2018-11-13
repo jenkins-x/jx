@@ -2,7 +2,7 @@ package helm_test
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/magiconair/properties/assert"
 	"testing"
 )
@@ -61,7 +61,7 @@ func assertCombineMapTrees(t *testing.T, expected map[string]interface{}, destin
 		actual[k] = v
 	}
 
-	helm.CombineMapTrees(actual, input)
+	util.CombineMapTrees(actual, input)
 
 	assert.Equal(t, actual, expected, "when combine map trees", mapToString(destination), mapToString(input))
 }
