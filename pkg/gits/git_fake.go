@@ -179,7 +179,7 @@ func (g *GitFake) MergePullRequest(pr *GitPullRequest, message string) error {
 }
 
 func (g *GitFake) CreateWebHook(data *GitWebHookArguments) error {
-	log.Infof("Created fake WebHook for %#v\n", data)
+	log.Infof("Created fake WebHook at %s with repo %#v\n", data.URL, data.Repo)
 	g.WebHooks = append(g.WebHooks, data)
 	return nil
 }
@@ -189,9 +189,12 @@ func (g *GitFake) ListWebHooks(org string, repo string) ([]*GitWebHookArguments,
 }
 
 func (g *GitFake) UpdateWebHook(data *GitWebHookArguments) error {
-	for idx, wh := range g.WebHooks {
-		if wh.URL == data.URL || wh.ID == data.ID {
-			g.WebHooks[idx] = data
+	repo := data.Repo
+	if repo != nil {
+		for idx, wh := range g.WebHooks {
+			if wh.Repo != nil && wh.Repo.Organisation == repo.Organisation && wh.Repo.Name == repo.Name {
+				g.WebHooks[idx] = data
+			}
 		}
 	}
 	return nil

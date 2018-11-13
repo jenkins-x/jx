@@ -24,9 +24,13 @@ type StepPostInstallOptions struct {
 	StepOptions
 
 	EnvJobCredentials string
+
+	Results StepPostInstallResults
 }
 
-var ()
+type StepPostInstallResults struct {
+	GitProviders map[string]gits.GitProvider
+}
 
 var (
 	StepPostInstallLong = templates.LongDesc(`
@@ -129,6 +133,10 @@ func (o *StepPostInstallOptions) Run() (err error) {
 			errs = append(errs, errors.Wrapf(err, "failed to create git provider for Environment %s with git URL %s", name, gitURL))
 			continue
 		}
+		if o.Results.GitProviders == nil {
+			o.Results.GitProviders = map[string]gits.GitProvider{}
+		}
+		o.Results.GitProviders[name] = gitProvider
 
 		if prow {
 			config := authConfigSvc.Config()

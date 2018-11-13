@@ -25,7 +25,8 @@ func TestStepPostInstall(t *testing.T) {
 	dev := kube.CreateDefaultDevEnvironment("jx")
 	testOrg := "mytestorg"
 	testRepo := "mytestrepo"
-	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://fake.git/"+testOrg+"/"+testRepo+".git")
+	stagingGitURL := "https://fake.git/" + testOrg + "/" + testRepo + ".git"
+	staging := kube.NewPermanentEnvironmentWithGit("staging", stagingGitURL)
 
 	o := cmd.StepPostInstallOptions{
 		StepOptions: cmd.StepOptions{
@@ -62,12 +63,30 @@ func TestStepPostInstall(t *testing.T) {
 
 	err := o.Run()
 	require.NoError(t, err, "failed to run jx step post install")
-	
+
 	// assert we have a jenkins job for the staging env repo
 	AssertJenkinsJobExists(t, jenkinsClient, testOrg, testRepo)
 
-	// TODO assert we have a webhook for the staging env repo
+	// assert we have a webhook for the staging env repo
+	gitProvider := o.Results.GitProviders["staging"]
+	require.NotNil(t, gitProvider, "no GitProvider is registered for staging")
 
+	webhooks, err := gitProvider.ListWebHooks(testOrg, testRepo)
+	require.NoError(t, err, "failed to list webhooks for staging git repository %s", stagingGitURL)
+
+	t.Logf("found %d webhooks\n", len(webhooks))
+
+	assert.True(t, len(webhooks) > 0, "should have at least 1 WebHook for staging git repository %s", stagingGitURL)
+
+	found := false
+	for _, webhook := range webhooks {
+		repo := webhook.Repo
+		if repo != nil && repo.Organisation == testOrg && repo.Name == testRepo {
+			t.Logf("found WebHook for staging git repository %s: %#v", stagingGitURL, webhook)
+			found = true
+		}
+	}
+	assert.True(t, found, "did not find WebHook for staging git repository %s", stagingGitURL)
 }
 
 // AssertJenkinsJobExists asserts that the job exists for the given organisation and repo
