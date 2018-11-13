@@ -89,7 +89,7 @@ func (g *GKECluster) SetProvider(provider string) string {
 
 // Context Get the context
 func (g GKECluster) Context() string {
-	return fmt.Sprintf("%s_%s_%s_%s", g.provider, g.ProjectID, g.Zone, g.ClusterName())
+	return fmt.Sprintf("%s_%s_%s_%s", "gke", g.ProjectID, g.Zone, g.ClusterName())
 }
 
 // Region Get the region
@@ -234,7 +234,7 @@ type CreateTerraformOptions struct {
 }
 
 var (
-	validTerraformClusterProviders = []string{"gke"}
+	validTerraformClusterProviders = []string{"gke", "jx-infra"}
 
 	createTerraformExample = templates.Examples(`
 		jx create terraform
@@ -344,6 +344,11 @@ func (options *CreateTerraformOptions) Run() error {
 
 	options.InstallOptions.Flags.Prow = true
 	err = options.installRequirements(GKE, "terraform", options.InstallOptions.InitOptions.HelmBinary())
+	if err != nil {
+		return err
+	}
+
+	err = terraform.CheckVersion()
 	if err != nil {
 		return err
 	}
@@ -639,7 +644,7 @@ func (options *CreateTerraformOptions) CreateOrganisationFolderStructure(dir str
 			os.MkdirAll(path, DefaultWritePermissions)
 
 			switch c.Provider() {
-			case "gke":
+			case "gke", "jx-infra":
 				options.Git().Clone(TerraformTemplatesGKE, path)
 				g := c.(*GKECluster)
 				//g := &GKECluster{}
@@ -666,7 +671,7 @@ func (options *CreateTerraformOptions) CreateOrganisationFolderStructure(dir str
 			options.Debugf("cluster %s already exists, loading...", c.Name())
 
 			switch c.Provider() {
-			case "gke":
+			case "gke", "jx-infra":
 				//g := &GKECluster{}
 				g := c.(*GKECluster)
 				terraformVars := filepath.Join(path, "terraform.tfvars")

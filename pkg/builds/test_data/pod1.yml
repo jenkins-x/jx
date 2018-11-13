@@ -1,0 +1,257 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    sidecar.istio.io/inject: "false"
+  creationTimestamp: 2018-11-01T08:58:47Z
+  generateName: 57be1dc2-ddb4-11e8-8ea8-0a580a300275-
+  labels:
+    build-name: 57be1dc2-ddb4-11e8-8ea8-0a580a300275
+  name: 57be1dc2-ddb4-11e8-8ea8-0a580a300275-h59fj
+  namespace: jx
+  ownerReferences:
+  - apiVersion: build.knative.dev/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: Build
+    name: 57be1dc2-ddb4-11e8-8ea8-0a580a300275
+    uid: 57c0960f-ddb4-11e8-8332-42010a840008
+  resourceVersion: "1167356"
+  selfLink: /api/v1/namespaces/jx/pods/57be1dc2-ddb4-11e8-8ea8-0a580a300275-h59fj
+  uid: 57c4170a-ddb4-11e8-8332-42010a840008
+spec:
+  containers:
+  - args:
+    - Nothing to push
+    command:
+    - /bin/echo
+    image: busybox
+    imagePullPolicy: Always
+    name: nop
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: jenkins-token-gws9t
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  initContainers:
+  - env:
+    - name: HOME
+      value: /builder/home
+    image: gcr.io/build-crd/github.com/knative/build/cmd/creds-init@sha256:cfcc14889abe29b54d17ff6cf414918d9d92ff02bb112525742ec2e30117899f
+    imagePullPolicy: IfNotPresent
+    name: build-step-credential-initializer
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /workspace
+      name: workspace
+    - mountPath: /builder/home
+      name: home
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: jenkins-token-gws9t
+      readOnly: true
+    workingDir: /workspace
+  - args:
+    - -url
+    - https://github.com/jenkins-x/jenkins-x-serverless.git
+    - -revision
+    - b662eb177fdd4252220399aa8da809411d87b8ed
+    env:
+    - name: HOME
+      value: /builder/home
+    image: gcr.io/build-crd/github.com/knative/build/cmd/git-init@sha256:d52c29a4a1d83712b048bd32dbb5f97b7d2791af9b892f68fe94e162932ac66e
+    imagePullPolicy: IfNotPresent
+    name: build-step-git-source
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /workspace
+      name: workspace
+    - mountPath: /builder/home
+      name: home
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: jenkins-token-gws9t
+      readOnly: true
+    workingDir: /workspace
+  - env:
+    - name: HOME
+      value: /builder/home
+    - name: GIT_COMMITTER_EMAIL
+      value: jenkins-x@googlegroups.com
+    - name: GIT_AUTHOR_EMAIL
+      value: jenkins-x@googlegroups.com
+    - name: GIT_AUTHOR_NAME
+      value: jenkins-x-bot
+    - name: GIT_COMMITTER_NAME
+      value: jenkins-x-bot
+    - name: XDG_CONFIG_HOME
+      value: /home/jenkins
+    - name: DOCKER_CONFIG
+      value: /home/jenkins/.docker/
+    - name: DOCKER_REGISTRY
+      valueFrom:
+        configMapKeyRef:
+          key: docker.registry
+          name: jenkins-x-docker-registry
+    - name: REPO_OWNER
+      value: jenkins-x
+    - name: PULL_BASE_REF
+      value: master
+    - name: PULL_PULL_SHA
+      value: b662eb177fdd4252220399aa8da809411d87b8ed
+    - name: BUILD_ID
+      value: "1"
+    - name: BRANCH_NAME
+      value: PR-52
+    - name: PULL_REFS
+      value: master:0c5bd46c849b88a376a90715235a05fbd92dd899,52:b662eb177fdd4252220399aa8da809411d87b8ed
+    - name: PULL_NUMBER
+      value: "52"
+    - name: JX_BUILD_NUMBER
+      value: "6"
+    - name: JOB_NAME
+      value: serverless-jenkins
+    - name: JOB_TYPE
+      value: presubmit
+    - name: SOURCE_URL
+      value: https://github.com/jenkins-x/jenkins-x-serverless.git
+    - name: REPO_NAME
+      value: jenkins-x-serverless
+    - name: PULL_BASE_SHA
+      value: 0c5bd46c849b88a376a90715235a05fbd92dd899
+    - name: CLONE_URI
+    image: jenkinsxio/jenkins-cwp:0.1.33
+    imagePullPolicy: IfNotPresent
+    name: build-step-jenkins
+    resources:
+      limits:
+        cpu: "3"
+        memory: 4Gi
+      requests:
+        cpu: "1"
+        memory: 1Gi
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /home/jenkins/.docker
+      name: jenkins-docker-cfg
+    - mountPath: /var/run/docker.sock
+      name: docker-sock-volume
+    - mountPath: /workspace
+      name: workspace
+    - mountPath: /builder/home
+      name: home
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: jenkins-token-gws9t
+      readOnly: true
+    workingDir: /workspace
+  nodeName: gke-jenkins-x-infra-prod-default-pool-3ed69cc8-3m24
+  restartPolicy: Never
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: jenkins
+  serviceAccountName: jenkins
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: jenkins-docker-cfg
+    secret:
+      defaultMode: 420
+      secretName: jenkins-docker-cfg
+  - hostPath:
+      path: /var/run/docker.sock
+      type: ""
+    name: docker-sock-volume
+  - emptyDir: {}
+    name: workspace
+  - emptyDir: {}
+    name: home
+  - name: jenkins-token-gws9t
+    secret:
+      defaultMode: 420
+      secretName: jenkins-token-gws9t
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: 2018-11-01T08:58:47Z
+    message: 'containers with incomplete status: [build-step-jenkins]'
+    reason: ContainersNotInitialized
+    status: "False"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: 2018-11-01T08:58:47Z
+    message: 'containers with unready status: [nop]'
+    reason: ContainersNotReady
+    status: "False"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: 2018-11-01T08:58:47Z
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - image: busybox
+    imageID: ""
+    lastState: {}
+    name: nop
+    ready: false
+    restartCount: 0
+    state:
+      waiting:
+        reason: PodInitializing
+  hostIP: 10.132.0.8
+  initContainerStatuses:
+  - containerID: docker://eae4614a1cc49d1faf2c3e236fd38742dfd67552d237ac02c46286306da4c415
+    image: gcr.io/build-crd/github.com/knative/build/cmd/creds-init@sha256:cfcc14889abe29b54d17ff6cf414918d9d92ff02bb112525742ec2e30117899f
+    imageID: docker-pullable://gcr.io/build-crd/github.com/knative/build/cmd/creds-init@sha256:cfcc14889abe29b54d17ff6cf414918d9d92ff02bb112525742ec2e30117899f
+    lastState: {}
+    name: build-step-credential-initializer
+    ready: true
+    restartCount: 0
+    state:
+      terminated:
+        containerID: docker://eae4614a1cc49d1faf2c3e236fd38742dfd67552d237ac02c46286306da4c415
+        exitCode: 0
+        finishedAt: 2018-11-01T08:58:49Z
+        reason: Completed
+        startedAt: 2018-11-01T08:58:49Z
+  - containerID: docker://d561df9f7b80df33998b063eb783c21c0eeccc973b3c8e6385948a47d057370a
+    image: gcr.io/build-crd/github.com/knative/build/cmd/git-init@sha256:d52c29a4a1d83712b048bd32dbb5f97b7d2791af9b892f68fe94e162932ac66e
+    imageID: docker-pullable://gcr.io/build-crd/github.com/knative/build/cmd/git-init@sha256:d52c29a4a1d83712b048bd32dbb5f97b7d2791af9b892f68fe94e162932ac66e
+    lastState: {}
+    name: build-step-git-source
+    ready: true
+    restartCount: 0
+    state:
+      terminated:
+        containerID: docker://d561df9f7b80df33998b063eb783c21c0eeccc973b3c8e6385948a47d057370a
+        exitCode: 0
+        finishedAt: 2018-11-01T08:58:50Z
+        reason: Completed
+        startedAt: 2018-11-01T08:58:49Z
+  - containerID: docker://a6b867c1bdf00612d3b0508da194f6330c16f972ce1b35394ac73662157f1753
+    image: jenkinsxio/jenkins-cwp:0.1.33
+    imageID: docker-pullable://jenkinsxio/jenkins-cwp@sha256:74f0398c69ef90f8c794713a6a2fde6003ec349da29d214f90e00a01c5d704c9
+    lastState: {}
+    name: build-step-jenkins
+    ready: false
+    restartCount: 0
+    state:
+      running:
+        startedAt: 2018-11-01T08:59:41Z
+  phase: Pending
+  podIP: 10.48.2.132
+  qosClass: BestEffort
+  startTime: 2018-11-01T08:58:47Z

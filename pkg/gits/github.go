@@ -336,6 +336,90 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 	return err
 }
 
+func (p *GitHubProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
+	webHooks := []*GitWebHookArguments{}
+
+	if owner == "" {
+		owner = p.Username
+	}
+	if repo == "" {
+		return webHooks, fmt.Errorf("Missing property Repo")
+	}
+
+	hooks, _, err := p.Client.Repositories.ListHooks(p.Context, owner, repo, nil)
+	if err != nil {
+		log.Errorf("Error querying webhooks on %s/%s: %s\n", owner, repo, err)
+	}
+
+	for _, hook := range hooks {
+		c := hook.Config["url"]
+		s, ok := c.(string)
+		if ok {
+			webHook := &GitWebHookArguments{
+				ID:    hook.GetID(),
+				Owner: owner,
+				Repo:  nil,
+				URL:   s,
+			}
+			webHooks = append(webHooks, webHook)
+		}
+	}
+
+	return webHooks, nil
+}
+
+func (p *GitHubProvider) UpdateWebHook(data *GitWebHookArguments) error {
+	owner := data.Owner
+	if owner == "" {
+		owner = p.Username
+	}
+	repo := data.Repo.Name
+	if repo == "" {
+		return fmt.Errorf("Missing property Repo")
+	}
+	webhookUrl := data.URL
+	if repo == "" {
+		return fmt.Errorf("Missing property URL")
+	}
+	hooks, _, err := p.Client.Repositories.ListHooks(p.Context, owner, repo, nil)
+	if err != nil {
+		log.Errorf("Error querying webhooks on %s/%s: %s\n", owner, repo, err)
+	}
+
+	dataId := data.ID
+	if dataId == 0 {
+		for _, hook := range hooks {
+			c := hook.Config["url"]
+			s, ok := c.(string)
+			if ok && s == webhookUrl {
+				log.Warnf("Found existing webhook for url %s\n", webhookUrl)
+				dataId = hook.GetID()
+			}
+		}
+	}
+
+	if dataId != 0 {
+		config := map[string]interface{}{
+			"url":          webhookUrl,
+			"content_type": "json",
+		}
+
+		if data.Secret != "" {
+			config["secret"] = data.Secret
+		}
+
+		hook := &github.Hook{
+			Name:   github.String("web"),
+			Config: config,
+			Events: []string{"*"},
+		}
+
+		log.Infof("Updating GitHub webhook for %s/%s for url %s\n", util.ColorInfo(owner), util.ColorInfo(repo), util.ColorInfo(webhookUrl))
+		_, _, err = p.Client.Repositories.EditHook(p.Context, owner, repo, dataId, hook)
+	}
+	return err
+}
+
 func (p *GitHubProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
 	owner := data.GitRepositoryInfo.Organisation
 	repo := data.GitRepositoryInfo.Name
@@ -625,7 +709,38 @@ func (p *GitHubProvider) UpdateCommitStatus(org string, repo string, sha string,
 	}, nil
 }
 
+func (p *GitHubProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
+	fileContent, _, _, err := p.Client.Repositories.GetContents(p.Context, org, name, path, &github.RepositoryContentGetOptions{Ref: ref})
+	if err != nil {
+		return nil, err
+	}
+	if fileContent != nil {
+		return &GitFileContent{
+			Name:        notNullString(fileContent.Name),
+			Url:         notNullString(fileContent.URL),
+			Path:        notNullString(fileContent.Path),
+			Type:        notNullString(fileContent.Type),
+			Content:     notNullString(fileContent.Content),
+			DownloadUrl: notNullString(fileContent.DownloadURL),
+			Encoding:    notNullString(fileContent.Encoding),
+			GitUrl:      notNullString(fileContent.GitURL),
+			HtmlUrl:     notNullString(fileContent.HTMLURL),
+			Sha:         notNullString(fileContent.SHA),
+			Size:        notNullInt(fileContent.Size),
+		}, nil
+	} else {
+		return nil, fmt.Errorf("Directory Content not yet supported")
+	}
+}
+
 func notNullInt64(n *int64) int64 {
+	if n != nil {
+		return *n
+	}
+	return 0
+}
+
+func notNullInt(n *int) int {
 	if n != nil {
 		return *n
 	}

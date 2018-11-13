@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 	"io/ioutil"
 	"os"
@@ -16,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/vault"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -45,9 +48,10 @@ type CreateVaultOptions struct {
 	CreateOptions
 	UpgradeIngressOptions UpgradeIngressOptions
 
-	GKEProjectID string
-	GKEZone      string
-	Namespace    string
+	GKEProjectID      string
+	GKEZone           string
+	Namespace         string
+	SecretsPathPrefix string
 }
 
 // NewCmdCreateVault  creates a command object for the "create" command
@@ -85,6 +89,7 @@ func NewCmdCreateVault(f Factory, in terminal.FileReader, out terminal.FileWrite
 	cmd.Flags().StringVarP(&options.GKEProjectID, "gke-project-id", "", "", "Google Project ID to use for Vault backend")
 	cmd.Flags().StringVarP(&options.GKEZone, "gke-zone", "", "", "The zone (e.g. us-central1-a) where Vault will store the encrypted data")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Namespace where the Vault is created")
+	cmd.Flags().StringVarP(&options.SecretsPathPrefix, "secrets-path-prefix", "p", vault.DefaultSecretsPathPrefix, "Path prefix for secrets used for access control config")
 
 	options.addCommonFlags(cmd)
 	options.UpgradeIngressOptions.addFlags(cmd)
@@ -110,7 +115,7 @@ func (o *CreateVaultOptions) Run() error {
 }
 
 func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
-	_, team, err := o.KubeClient()
+	client, team, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "creating kubernetes client")
 	}
@@ -119,13 +124,18 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 		o.Namespace = team
 	}
 
+	err = kube.EnsureNamespaceCreated(client, o.Namespace, nil, nil)
+	if err != nil {
+		return errors.Wrapf(err, "failed to ensure that provided namespace '%s' is created", o.Namespace)
+	}
+
 	vaultOperatorClient, err := o.VaultOperatorClient()
 	if err != nil {
 		return errors.Wrap(err, "creating vault operator client")
 	}
 
 	// Checks if the vault alrady exists
-	found := kube.FindVault(vaultOperatorClient, vaultName, o.Namespace)
+	found := vault.FindVault(vaultOperatorClient, vaultName, o.Namespace)
 	if found {
 		return fmt.Errorf("Vault with name '%s' already exists in namespace '%s'", vaultName, o.Namespace)
 	}
@@ -183,15 +193,15 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 	log.Infof("Created service account %s for Vault authentication\n", util.ColorInfo(vaultAuthServiceAccount))
 
 	log.Infof("Creating Vault...\n")
-	gcpConfig := &kube.GCPConfig{
+	gcpConfig := &vault.GCPConfig{
 		ProjectId:   o.GKEProjectID,
 		KmsKeyring:  kmsConfig.keyring,
 		KmsKey:      kmsConfig.key,
 		KmsLocation: kmsConfig.location,
 		GcsBucket:   vaultBucket,
 	}
-	err = kube.CreateVault(vaultOperatorClient, vaultName, o.Namespace, gcpServiceAccountSecretName,
-		gcpConfig, vaultAuthServiceAccount, o.Namespace)
+	err = vault.CreateVault(vaultOperatorClient, vaultName, o.Namespace, gcpServiceAccountSecretName,
+		gcpConfig, vaultAuthServiceAccount, o.Namespace, o.SecretsPathPrefix)
 	if err != nil {
 		return errors.Wrap(err, "creating vault")
 	}
@@ -240,7 +250,7 @@ func (o *CreateVaultOptions) storeGCPServiceAccountIntoSecret(serviceAccountPath
 		return "", errors.Wrapf(err, "reading the service account from file '%s'", serviceAccountPath)
 	}
 
-	secretName := kube.VaultGcpServiceAccountSecretName(vaultName)
+	secretName := vault.VaultGcpServiceAccountSecretName(vaultName)
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: secretName,
@@ -315,7 +325,7 @@ func (o *CreateVaultOptions) createVaultAuthServiceAccount(vaultName string) (st
 	}
 
 	serviceAccountName := fmt.Sprintf("%s-auth-sa", vaultName)
-	_, err = kube.CreateServiceAccount(client, o.Namespace, serviceAccountName)
+	_, err = serviceaccount.CreateServiceAccount(client, o.Namespace, serviceAccountName)
 	if err != nil {
 		return "", errors.Wrap(err, "creating vault auth service account")
 	}
@@ -323,7 +333,7 @@ func (o *CreateVaultOptions) createVaultAuthServiceAccount(vaultName string) (st
 }
 
 func (o *CreateVaultOptions) exposeVault(vaultService string) error {
-	err := kube.WaitForService(o.KubeClientCached, vaultService, o.Namespace, 1*time.Minute)
+	err := services.WaitForService(o.KubeClientCached, vaultService, o.Namespace, 1*time.Minute)
 	if err != nil {
 		return errors.Wrap(err, "waiting for vault service")
 	}

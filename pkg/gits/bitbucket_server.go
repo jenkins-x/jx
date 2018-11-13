@@ -630,8 +630,8 @@ func (b *BitbucketServerProvider) UpdateCommitStatus(org string, repo string, sh
 
 func convertBitBucketBuildStatusToGitStatus(buildStatus *bitbucket.BuildStatus) *GitRepoStatus {
 	return &GitRepoStatus{
-		ID:          buildStatus.Key,
-		URL:         buildStatus.Url,
+		ID:  buildStatus.Key,
+		URL: buildStatus.Url,
 		// var from BitBucketCloudProvider
 		State:       stateMap[buildStatus.State],
 		TargetURL:   buildStatus.Url,
@@ -693,6 +693,15 @@ func (b *BitbucketServerProvider) CreateWebHook(data *GitWebHookArguments) error
 	_, err = b.Client.DefaultApi.CreateWebhook(projectKey, repo, requestBody, []string{"application/json"})
 
 	return err
+}
+
+func (p *BitbucketServerProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
+	webHooks := []*GitWebHookArguments{}
+	return webHooks, fmt.Errorf("not implemented!")
+}
+
+func (p *BitbucketServerProvider) UpdateWebHook(data *GitWebHookArguments) error {
+	return fmt.Errorf("not implemented!")
 }
 
 func (b *BitbucketServerProvider) SearchIssues(org string, name string, query string) ([]*GitIssue, error) {
@@ -841,6 +850,10 @@ func (b *BitbucketServerProvider) ListInvitations() ([]*github.RepositoryInvitat
 func (b *BitbucketServerProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket.\n")
 	return &github.Response{}, nil
+}
+
+func (b *BitbucketServerProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
+	return nil, fmt.Errorf("Getting content not supported on bitbucket")
 }
 
 func BitBucketServerAccessTokenURL(url string) string {

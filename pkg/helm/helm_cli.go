@@ -257,6 +257,28 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 	return h.runHelm(args...)
 }
 
+// Fetch a Helm Chart
+func (h *HelmCLI) FetchChart(chart string, version *string, untar bool, untardir string) error {
+	args := []string{}
+	args = append(args, "fetch", chart)
+	if untardir != "" {
+		args = append(args, "--untardir", untardir)
+	}
+	if untar {
+		args = append(args, "--untar")
+	}
+
+	if version != nil {
+		args = append(args, "--version", *version)
+	}
+
+	if h.Debug {
+		log.Infof("Fetching Chart '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+	}
+
+	return h.runHelm(args...)
+}
+
 // Template generates the YAML from the chart template to the given directory
 func (h *HelmCLI) Template(chart string, releaseName string, ns string, outDir string, upgrade bool,
 	values []string, valueFiles []string) error {
@@ -439,4 +461,8 @@ func (h *HelmCLI) VersionWithArgs(tls bool, extraArgs ...string) (string, error)
 // PackageChart packages the chart from the current working directory
 func (h *HelmCLI) PackageChart() error {
 	return h.runHelm("package", h.CWD)
+}
+
+func (h *HelmCLI) DecryptSecrets(location string) error {
+	return h.runHelm("secrets", "dec", location)
 }

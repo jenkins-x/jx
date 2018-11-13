@@ -83,13 +83,14 @@ const (
 	// Want to use your own provider file? Change this line to point to your fork
 	DEFAULT_CLOUD_ENVIRONMENTS_URL = "https://github.com/jenkins-x/cloud-environments"
 
-	GitSecretsFile        = "gitSecrets.yaml"
-	AdminSecretsFile      = "adminSecrets.yaml"
-	ExtraValuesFile       = "extraValues.yaml"
-	JXInstallConfig       = "jx-install-config"
-	CloudEnvValuesFile    = "myvalues.yaml"
-	CloudEnvSecretsFile   = "secrets.yaml"
-	defaultInstallTimeout = "6000"
+	GitSecretsFile         = "gitSecrets.yaml"
+	AdminSecretsFile       = "adminSecrets.yaml"
+	ExtraValuesFile        = "extraValues.yaml"
+	JXInstallConfig        = "jx-install-config"
+	CloudEnvValuesFile     = "myvalues.yaml"
+	CloudEnvSecretsFile    = "secrets.yaml"
+	CloudEnvSopsConfigFile = ".sops.yaml"
+	defaultInstallTimeout  = "6000"
 
 	ServerlessJenkins   = "Serverless Jenkins"
 	StaticMasterJenkins = "Static Master Jenkins"
@@ -267,13 +268,13 @@ func (options *InstallOptions) Run() error {
 	initOpts := &options.InitOptions
 	helmBinary := initOpts.HelmBinary()
 
-	// configure the helm binary
+	// configure the Helm binary
 	options.Helm().SetHelmBinary(helmBinary)
 	if initOpts.Flags.NoTiller {
 		helmer := options.Helm()
 		helmCli, ok := helmer.(*helm.HelmCLI)
 		if ok && helmCli != nil {
-			options.helm = helm.NewHelmTemplate(helmCli, helmCli.CWD, client)
+			options.helm = helm.NewHelmTemplate(helmCli, helmCli.CWD, client, originalNs)
 		} else {
 			helmTemplate, ok := helmer.(*helm.HelmTemplate)
 			if ok {
@@ -285,7 +286,7 @@ func (options *InstallOptions) Run() error {
 	}
 
 	dependencies := []string{}
-	if !initOpts.Flags.RemoteTiller {
+	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
 		binDir, err := util.JXBinLocation()
 		if err != nil {
 			return errors.Wrap(err, "reading jx bin location")
@@ -293,7 +294,7 @@ func (options *InstallOptions) Run() error {
 		_, install, err := shouldInstallBinary("tiller")
 		if !install && err == nil {
 			confirm := &survey.Confirm{
-				Message: "Uninstalling  existing tiller binary:",
+				Message: "Uninstalling existing tiller binary:",
 				Default: true,
 			}
 			flag := true
@@ -311,7 +312,7 @@ func (options *InstallOptions) Run() error {
 		_, install, err = shouldInstallBinary(helmBinary)
 		if !install && err == nil {
 			confirm := &survey.Confirm{
-				Message: "Uninstalling  existing helm binary:",
+				Message: "Uninstalling existing helm binary:",
 				Default: true,
 			}
 			flag := true
@@ -327,7 +328,7 @@ func (options *InstallOptions) Run() error {
 		}
 
 		dependencies = append(dependencies, "tiller")
-		options.Helm().SetHost(options.tillerAddress())
+		options.Helm().SetHost(tillerAddress())
 	}
 	dependencies = append(dependencies, helmBinary)
 	err = options.installRequirements(options.Flags.Provider, dependencies...)
@@ -407,11 +408,13 @@ func (options *InstallOptions) Run() error {
 		if options.Flags.Provider == "" {
 			options.Flags.Provider = MINIKUBE
 		}
-		ip, err := options.getCommandOutput("", "minikube", "ip")
-		if err != nil {
-			return errors.Wrap(err, "failed to get the IP from Minikube")
+		if options.Flags.Domain == "" {
+			ip, err := options.getCommandOutput("", "minikube", "ip")
+			if err != nil {
+				return errors.Wrap(err, "failed to get the IP from Minikube")
+			}
+			options.Flags.Domain = ip + ".nip.io"
 		}
-		options.Flags.Domain = ip + ".nip.io"
 	}
 
 	if initOpts.Flags.Domain == "" && options.Flags.Domain != "" {
@@ -445,6 +448,14 @@ func (options *InstallOptions) Run() error {
 		}
 		return nil
 	}
+	apisClient, err := options.CreateApiExtensionsClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the API extensions client")
+	}
+	kube.RegisterAllCRDs(apisClient)
+	if err != nil {
+		return err
+	}
 	err = options.ModifyDevEnvironment(callback)
 	if err != nil {
 		return err
@@ -462,8 +473,8 @@ func (options *InstallOptions) Run() error {
 		initOpts.helm = nil
 	}
 
-	if !initOpts.Flags.RemoteTiller {
-		err = options.restartLocalTiller()
+	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
+		err = restartLocalTiller()
 		if err != nil {
 			return err
 		}
@@ -515,16 +526,6 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to read the git secrets from configuration")
 	}
 
-	err = options.AdminSecretsService.NewAdminSecretsConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to create the admin secret config service")
-	}
-
-	adminSecrets, err := options.AdminSecretsService.Secrets.String()
-	if err != nil {
-		return errors.Wrap(err, "failed to read the admin secrets")
-	}
-
 	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
 	if helmConfig.ExposeController.Config.Domain == "" {
 		helmConfig.ExposeController.Config.Domain = options.InitOptions.Flags.Domain
@@ -557,6 +558,15 @@ func (options *InstallOptions) Run() error {
 		}
 		helmConfig.Jenkins.Servers.Global.EnvVars["TILLER_NAMESPACE"] = initOpts.Flags.TillerNamespace
 		os.Setenv("TILLER_NAMESPACE", initOpts.Flags.TillerNamespace)
+	}
+	isProw, err := options.isProw()
+	if err != nil {
+		return fmt.Errorf("cannot work out if this is a prow based install: %v", err)
+	}
+
+	if isProw {
+		enableJenkins := false
+		helmConfig.Jenkins.Enabled = &enableJenkins
 	}
 
 	// lets add any GitHub Enterprise servers
@@ -614,6 +624,55 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to create a temporary config dir for Git credentials")
 	}
 
+	cloudEnvironmentValuesLocation := filepath.Join(makefileDir, CloudEnvValuesFile)
+	cloudEnvironmentSecretsLocation := filepath.Join(makefileDir, CloudEnvSecretsFile)
+	cloudEnvironmentSopsLocation := filepath.Join(makefileDir, CloudEnvSopsConfigFile)
+
+	sopsFileExists, err := util.FileExists(cloudEnvironmentSopsLocation)
+	if err != nil {
+		return errors.Wrap(err, "failed to look for "+cloudEnvironmentSopsLocation)
+	}
+
+	adminSecretsServiceInit := false
+
+	if sopsFileExists {
+		log.Infof("Attempting to decrypt secrets file %s\n", util.ColorInfo(cloudEnvironmentSecretsLocation))
+		// need to decrypt secrets now
+		err = options.Helm().DecryptSecrets(cloudEnvironmentSecretsLocation)
+		if err != nil {
+			return errors.Wrap(err, "failed to decrypt "+cloudEnvironmentSecretsLocation)
+		}
+
+		cloudEnvironmentSecretsDecryptedLocation := filepath.Join(makefileDir, CloudEnvSecretsFile+".dec")
+		decryptedSecretsFile, err := util.FileExists(cloudEnvironmentSecretsDecryptedLocation)
+		if err != nil {
+			return errors.Wrap(err, "failed to look for "+cloudEnvironmentSecretsDecryptedLocation)
+		}
+
+		if decryptedSecretsFile {
+			log.Infof("Successfully decrypted %s\n", util.ColorInfo(cloudEnvironmentSecretsDecryptedLocation))
+			cloudEnvironmentSecretsLocation = cloudEnvironmentSecretsDecryptedLocation
+
+			err = options.AdminSecretsService.NewAdminSecretsConfigFromSecret(cloudEnvironmentSecretsDecryptedLocation)
+			if err != nil {
+				return errors.Wrap(err, "failed to create the admin secret config service from the decrypted secrets file")
+			}
+			adminSecretsServiceInit = true
+		}
+	}
+
+	if !adminSecretsServiceInit {
+		err = options.AdminSecretsService.NewAdminSecretsConfig()
+		if err != nil {
+			return errors.Wrap(err, "failed to create the admin secret config service")
+		}
+	}
+
+	adminSecrets, err := options.AdminSecretsService.Secrets.String()
+	if err != nil {
+		return errors.Wrap(err, "failed to read the admin secrets")
+	}
+
 	secretsFileName := filepath.Join(dir, GitSecretsFile)
 	err = ioutil.WriteFile(secretsFileName, []byte(secrets), 0644)
 	if err != nil {
@@ -646,12 +705,14 @@ func (options *InstallOptions) Run() error {
 	secretResources := options.KubeClientCached.CoreV1().Secrets(ns)
 	oldSecret, err := secretResources.Get(JXInstallConfig, metav1.GetOptions{})
 	if oldSecret == nil || err != nil {
+		log.Infof("Creating secret %s in namespace %s\n", util.ColorInfo(JXInstallConfig), util.ColorInfo(ns))
 		_, err = secretResources.Create(jxSecrets)
 		if err != nil {
 			return errors.Wrap(err, "failed to create the jx secret resource")
 		}
 	} else {
 		oldSecret.Data = jxSecrets.Data
+		log.Infof("Updating secret %s in namespace %s\n", util.ColorInfo(JXInstallConfig), util.ColorInfo(ns))
 		_, err = secretResources.Update(oldSecret)
 		if err != nil {
 			return errors.Wrap(err, "failed to update the jx secret resource")
@@ -670,8 +731,7 @@ func (options *InstallOptions) Run() error {
 			ServerlessJenkins,
 			StaticMasterJenkins,
 		}
-		jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins installation type:", StaticMasterJenkins,
-			options.In, options.Out, options.Err)
+		jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins installation type:", StaticMasterJenkins, "", options.In, options.Out, options.Err)
 		if err != nil {
 			return errors.Wrap(err, "picking Jenkins installation type")
 		}
@@ -701,9 +761,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to update the helm repo")
 	}
 
-	cloudEnvironmentValuesLocation := filepath.Join(makefileDir, CloudEnvValuesFile)
-	cloudEnvironmentSecretsLocation := filepath.Join(makefileDir, CloudEnvSecretsFile)
-	valueFiles := []string{cloudEnvironmentValuesLocation, cloudEnvironmentSecretsLocation, secretsFileName, adminSecretsFileName, configFileName}
+	valueFiles := []string{cloudEnvironmentValuesLocation, secretsFileName, adminSecretsFileName, configFileName, cloudEnvironmentSecretsLocation}
 	valueFiles, err = helm.AppendMyValues(valueFiles)
 	if err != nil {
 		return errors.Wrap(err, "failed to append the myvalues.yaml file")
@@ -752,6 +810,10 @@ func (options *InstallOptions) Run() error {
 		} else {
 			log.Infoln("tiller pod running")
 		}
+	}
+
+	for _, v := range valueFiles {
+		options.Debugf("Adding values file %s\n", util.ColorInfo(v))
 	}
 
 	if !options.Flags.InstallOnly {
@@ -839,6 +901,7 @@ func (options *InstallOptions) Run() error {
 			return err
 		}
 	}
+
 	if !initOpts.Flags.RemoteTiller {
 		callback := func(env *v1.Environment) error {
 			env.Spec.TeamSettings.NoTiller = true
@@ -850,6 +913,7 @@ func (options *InstallOptions) Run() error {
 			return err
 		}
 	}
+
 	if helmBinary != "helm" {
 		// default apps to use helm3 too
 		helmOptions := EditHelmBinOptions{}
@@ -904,9 +968,11 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to create the jx client")
 	}
 
-	err = options.updateJenkinsURL([]string{ns})
-	if err != nil {
-		log.Warnf("failed to update the Jenkins external URL")
+	if !options.Flags.Prow {
+		err = options.updateJenkinsURL([]string{ns})
+		if err != nil {
+			log.Warnf("failed to update the Jenkins external URL")
+		}
 	}
 
 	if !options.Flags.NoDefaultEnvironments {
@@ -1077,9 +1143,11 @@ func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 		return "", fmt.Errorf("error determining config dir %v", err)
 	}
 	wrkDir := filepath.Join(configDir, "cloud-environments")
-	log.Infof("Current configuration dir: %s\n", configDir)
-	log.Infof("options.Flags.CloudEnvRepository: %s\n", options.Flags.CloudEnvRepository)
-	log.Infof("options.Flags.LocalCloudEnvironment: %t\n", options.Flags.LocalCloudEnvironment)
+
+	options.Debugf("Current configuration dir: %s\n", configDir)
+	options.Debugf("options.Flags.CloudEnvRepository: %s\n", options.Flags.CloudEnvRepository)
+	options.Debugf("options.Flags.LocalCloudEnvironment: %t\n", options.Flags.LocalCloudEnvironment)
+
 	if options.Flags.LocalCloudEnvironment {
 		currentDir, err := os.Getwd()
 		if err != nil {
@@ -1199,7 +1267,7 @@ func (options *InstallOptions) waitForInstallToBeReady(ns string) error {
 		return err
 	}
 
-	log.Warnf("waiting for install to be ready, if this is the first time then it will take a while to download images")
+	log.Warnf("waiting for install to be ready, if this is the first time then it will take a while to download images\n")
 
 	return kube.WaitForAllDeploymentsToBeReady(client, ns, 30*time.Minute)
 

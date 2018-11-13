@@ -696,6 +696,15 @@ func (b *BitbucketCloudProvider) CreateWebHook(data *GitWebHookArguments) error 
 	return nil
 }
 
+func (p *BitbucketCloudProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
+	webHooks := []*GitWebHookArguments{}
+	return webHooks, fmt.Errorf("not implemented!")
+}
+
+func (p *BitbucketCloudProvider) UpdateWebHook(data *GitWebHookArguments) error {
+	return fmt.Errorf("not implemented!")
+}
+
 func BitbucketIssueToGitIssue(bIssue bitbucket.Issue) *GitIssue {
 	id := int(bIssue.Id)
 	ownerAndRepo := strings.Split(bIssue.Repository.FullName, "/")
@@ -815,6 +824,14 @@ func (b *BitbucketCloudProvider) CreateIssue(owner string, repo string, issue *G
 		b.GitIssueToBitbucketIssue(*issue),
 	)
 
+	// We need to make a second round trip to get the issue's HTML URL.
+	bIssue, _, err = b.Client.IssueTrackerApi.RepositoriesUsernameRepoSlugIssuesIssueIdGet(
+		b.Context,
+		owner,
+		strconv.FormatInt(int64(bIssue.Id), 10),
+		repo,
+	)
+
 	if err != nil {
 		return nil, err
 	}
@@ -923,6 +940,10 @@ func (b *BitbucketCloudProvider) ListInvitations() ([]*github.RepositoryInvitati
 func (b *BitbucketCloudProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket.\n")
 	return &github.Response{}, nil
+}
+
+func (b *BitbucketCloudProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
+	return nil, fmt.Errorf("Getting content not supported on bitbucket")
 }
 
 func BitBucketCloudAccessTokenURL(url string, username string) string {

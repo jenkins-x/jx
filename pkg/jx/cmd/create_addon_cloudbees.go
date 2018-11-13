@@ -99,7 +99,7 @@ func (o *CreateAddonCloudBeesOptions) Run() error {
 		return err
 	}
 
-	// check if helm repo is missing, the repo is authenticated and includes username/password so check with dummy values
+	// check if Helm repo is missing, the repo is authenticated and includes username/password so check with dummy values
 	// first as we wont need to prompt for username password if the host part of the URL matches an existing repo
 	missing, err := o.isHelmRepoMissing(fmt.Sprintf(coreRepoUrl, "dummy", "dummy"))
 	if err != nil {
@@ -143,12 +143,12 @@ To register to get your username/password to to: %s
 		if err != nil {
 			return errors.Wrap(err, "retrieving existing ingress configuration")
 		}
-		domain, err := util.PickValue("Domain:", ingressConfig.Domain, true, o.In, o.Out, o.Err)
+		domain, err := util.PickValue("Domain:", ingressConfig.Domain, true, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return errors.Wrap(err, "reading domain")
 		}
 
-		dexURL, err := util.PickValue("Dex URL:", fmt.Sprintf("https://dex.sso.%s", ingressConfig.Domain), true, o.In, o.Out, o.Err)
+		dexURL, err := util.PickValue("Dex URL:", fmt.Sprintf("https://dex.sso.%s", ingressConfig.Domain), true, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return errors.Wrap(err, "reading dex URL")
 		}

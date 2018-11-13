@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/services"
+	"github.com/pkg/errors"
 	"io"
 	"net/url"
 	"os"
@@ -19,6 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
+	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
 	core_v1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,7 +42,15 @@ import (
 const (
 	optionServerName        = "name"
 	optionServerURL         = "url"
-	exposecontrollerVersion = "2.3.79"
+	optionBatchMode         = "batch-mode"
+	optionVerbose           = "verbose"
+	optionLogLevel          = "log-level"
+	optionHeadless          = "headless"
+	optionNoBrew            = "no-brew"
+	optionInstallDeps       = "install-dependencies"
+	optionSkipAuthSecMerge  = "skip-auth-secrets-merge"
+	optionPullSecrets       = "pull-secrets"
+	exposecontrollerVersion = "2.3.82"
 	exposecontroller        = "exposecontroller"
 	exposecontrollerChart   = "jenkins-x/exposecontroller"
 )
@@ -71,6 +81,7 @@ type CommonOptions struct {
 	currentNamespace    string
 	devNamespace        string
 	jxClient            versioned.Interface
+	knbClient           buildclient.Interface
 	jenkinsClient       gojenkins.JenkinsClient
 	GitClient           gits.Gitter
 	helm                helm.Helmer
@@ -109,6 +120,7 @@ func NewCommonOptions(devNamespace string, factory Factory) CommonOptions {
 func (c *CommonOptions) SetDevNamespace(ns string) {
 	c.devNamespace = ns
 	c.currentNamespace = ns
+	c.KubeClientCached = nil
 }
 
 // Debugf outputs the given text to the console if verbose mode is enabled
@@ -119,14 +131,14 @@ func (c *CommonOptions) Debugf(format string, a ...interface{}) {
 }
 
 func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "In batch mode the command never prompts for user input")
-	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
-	cmd.Flags().StringVarP(&options.LogLevel, "log-level", "", logrus.InfoLevel.String(), "Logging level. Possible values - panic, fatal, error, warning, info, debug.")
-	cmd.Flags().BoolVarP(&options.Headless, "headless", "", false, "Enable headless operation if using browser automation")
-	cmd.Flags().BoolVarP(&options.NoBrew, "no-brew", "", false, "Disables the use of brew on macOS to install or upgrade command line dependencies")
-	cmd.Flags().BoolVarP(&options.InstallDependencies, "install-dependencies", "", false, "Should any required dependencies be installed automatically")
-	cmd.Flags().BoolVarP(&options.SkipAuthSecretsMerge, "skip-auth-secrets-merge", "", false, "Skips merging a local git auth yaml file with any pipeline secrets that are found")
-	cmd.Flags().StringVarP(&options.PullSecrets, "pull-secrets", "", "", "The pull secrets the service account created should have (useful when deploying to your own private registry): provide multiple pull secrets by providing them in a singular block of quotes e.g. --pull-secrets \"foo, bar, baz\"")
+	cmd.Flags().BoolVarP(&options.BatchMode, optionBatchMode, "b", false, "In batch mode the command never prompts for user input")
+	cmd.Flags().BoolVarP(&options.Verbose, optionVerbose, "", false, "Enable verbose logging")
+	cmd.Flags().StringVarP(&options.LogLevel, optionLogLevel, "", logrus.InfoLevel.String(), "Logging level. Possible values - panic, fatal, error, warning, info, debug.")
+	cmd.Flags().BoolVarP(&options.Headless, optionHeadless, "", false, "Enable headless operation if using browser automation")
+	cmd.Flags().BoolVarP(&options.NoBrew, optionNoBrew, "", false, "Disables the use of brew on macOS to install or upgrade command line dependencies")
+	cmd.Flags().BoolVarP(&options.InstallDependencies, optionInstallDeps, "", false, "Should any required dependencies be installed automatically")
+	cmd.Flags().BoolVarP(&options.SkipAuthSecretsMerge, optionSkipAuthSecMerge, "", false, "Skips merging a local git auth yaml file with any pipeline secrets that are found")
+	cmd.Flags().StringVarP(&options.PullSecrets, optionPullSecrets, "", "", "The pull secrets the service account created should have (useful when deploying to your own private registry): provide multiple pull secrets by providing them in a singular block of quotes e.g. --pull-secrets \"foo, bar, baz\"")
 
 	options.Cmd = cmd
 }
@@ -182,6 +194,23 @@ func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
 		}
 	}
 	return o.jxClient, o.currentNamespace, nil
+}
+
+func (o *CommonOptions) KnativeBuildClient() (buildclient.Interface, string, error) {
+	if o.Factory == nil {
+		return nil, "", errors.New("command factory is not initialized")
+	}
+	if o.knbClient == nil {
+		knbClient, ns, err := o.Factory.CreateKnativeBuildClient()
+		if err != nil {
+			return nil, ns, err
+		}
+		o.knbClient = knbClient
+		if o.currentNamespace == "" {
+			o.currentNamespace = ns
+		}
+	}
+	return o.knbClient, o.currentNamespace, nil
 }
 
 func (o *CommonOptions) JXClientAndAdminNamespace() (versioned.Interface, string, error) {
@@ -257,29 +286,8 @@ func (o *CommonOptions) Git() gits.Gitter {
 
 func (o *CommonOptions) Helm() helm.Helmer {
 	if o.helm == nil {
-		helmBinary, noTiller, helmTemplate, err := o.TeamHelmBin()
-		if err != nil {
-			helmBinary = defaultHelmBin
-		}
-		featureFlag := "none"
-		if helmTemplate {
-			featureFlag = "template-mode"
-		} else if noTiller {
-			featureFlag = "no-tiller-server"
-		}
-		log.Infof("Using helmBinary %s with feature flag: %s\n", util.ColorInfo(helmBinary), util.ColorInfo(featureFlag))
-		helmCLI := helm.NewHelmCLI(helmBinary, helm.V2, "", o.Verbose)
-		o.helm = helmCLI
-		if helmTemplate {
-			kubeClient, _, _ := o.KubeClient()
-			o.helm = helm.NewHelmTemplate(helmCLI, "", kubeClient)
-		} else {
-			o.helm = helmCLI
-		}
-		if noTiller {
-			o.helm.SetHost(o.tillerAddress())
-			o.startLocalTillerIfNotRunning()
-		}
+		helmBinary, noTiller, helmTemplate, _ := o.TeamHelmBin()
+		o.helm = o.Factory.GetHelm(o.Verbose, helmBinary, noTiller, helmTemplate)
 	}
 	return o.helm
 }
@@ -375,7 +383,7 @@ func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerF
 				defaultServerName = s.Name
 			}
 		}
-		name, err := util.PickNameWithDefault(config.GetServerNames(), "Pick server to use: ", defaultServerName, o.In, o.Out, o.Err)
+		name, err := util.PickNameWithDefault(config.GetServerNames(), "Pick server to use: ", defaultServerName, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return nil, err
 		}
@@ -399,26 +407,26 @@ func (o *CommonOptions) findService(name string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	url, err := kube.FindServiceURL(client, ns, name)
+	url, err := services.FindServiceURL(client, ns, name)
 	if url == "" {
-		url, err = kube.FindServiceURL(client, devNs, name)
+		url, err = services.FindServiceURL(client, devNs, name)
 	}
 	if url == "" {
-		names, err := kube.GetServiceNames(client, ns, name)
+		names, err := services.GetServiceNames(client, ns, name)
 		if err != nil {
 			return "", err
 		}
 		if len(names) > 1 {
-			name, err = util.PickName(names, "Pick service to open: ", o.In, o.Out, o.Err)
+			name, err = util.PickName(names, "Pick service to open: ", "", o.In, o.Out, o.Err)
 			if err != nil {
 				return "", err
 			}
 			if name != "" {
-				url, err = kube.FindServiceURL(client, ns, name)
+				url, err = services.FindServiceURL(client, ns, name)
 			}
 		} else if len(names) == 1 {
 			// must have been a filter
-			url, err = kube.FindServiceURL(client, ns, names[0])
+			url, err = services.FindServiceURL(client, ns, names[0])
 		}
 		if url == "" {
 			return "", fmt.Errorf("Could not find URL for service %s in namespace %s", name, ns)
@@ -465,23 +473,23 @@ func (o *CommonOptions) findServiceInNamespace(name string, ns string) (string, 
 	if ns == "" {
 		ns = curNs
 	}
-	url, err := kube.FindServiceURL(client, ns, name)
+	url, err := services.FindServiceURL(client, ns, name)
 	if url == "" {
-		names, err := kube.GetServiceNames(client, ns, name)
+		names, err := services.GetServiceNames(client, ns, name)
 		if err != nil {
 			return "", err
 		}
 		if len(names) > 1 {
-			name, err = util.PickName(names, "Pick service to open: ", o.In, o.Out, o.Err)
+			name, err = util.PickName(names, "Pick service to open: ", "", o.In, o.Out, o.Err)
 			if err != nil {
 				return "", err
 			}
 			if name != "" {
-				url, err = kube.FindServiceURL(client, ns, name)
+				url, err = services.FindServiceURL(client, ns, name)
 			}
 		} else if len(names) == 1 {
 			// must have been a filter
-			url, err = kube.FindServiceURL(client, ns, names[0])
+			url, err = services.FindServiceURL(client, ns, names[0])
 		}
 		if url == "" {
 			return "", fmt.Errorf("Could not find URL for service %s in namespace %s", name, ns)
@@ -715,7 +723,7 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) e
 		return fmt.Errorf("cannot get existing team exposecontroller config from namespace %s: %v", devNamespace, err)
 	}
 
-	err = kube.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, targetNamespace, ic.Issuer)
+	err = services.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, targetNamespace, ic.Issuer)
 	if err != nil {
 		return err
 	}
@@ -734,7 +742,7 @@ func (o *CommonOptions) exposeService(service, devNamespace, targetNamespace str
 	if err != nil {
 		return fmt.Errorf("cannot get existing team exposecontroller config from namespace %s: %v", devNamespace, err)
 	}
-	err = kube.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, targetNamespace, ic.Issuer, service)
+	err = services.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, targetNamespace, ic.Issuer, service)
 	if err != nil {
 		return err
 	}
@@ -822,12 +830,12 @@ func (o *CommonOptions) getDefaultAdminPassword(devNamespace string) (string, er
 }
 
 func (o *CommonOptions) ensureAddonServiceAvailable(serviceName string) (string, error) {
-	present, err := kube.IsServicePresent(o.KubeClientCached, serviceName, o.currentNamespace)
+	present, err := services.IsServicePresent(o.KubeClientCached, serviceName, o.currentNamespace)
 	if err != nil {
 		return "", fmt.Errorf("no %s provider service found, are you in your teams dev environment?  Type `jx ns` to switch.", serviceName)
 	}
 	if present {
-		url, err := kube.GetServiceURLFromName(o.KubeClientCached, serviceName, o.currentNamespace)
+		url, err := services.GetServiceURLFromName(o.KubeClientCached, serviceName, o.currentNamespace)
 		if err != nil {
 			return "", fmt.Errorf("no %s provider service found, are you in your teams dev environment?  Type `jx ns` to switch.", serviceName)
 		}
@@ -893,4 +901,58 @@ func (o *CommonOptions) VaultOperatorClient() (vaultoperatorclient.Interface, er
 		o.vaultOperatorClient = vaultOperatorClient
 	}
 	return o.vaultOperatorClient, nil
+}
+
+func (o *CommonOptions) GetWebHookEndpoint() (string, error) {
+	_, _, err := o.JXClient()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get jxclient")
+	}
+
+	_, _, err = o.KubeClient()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get kube client")
+	}
+
+	isProwEnabled, err := o.isProw()
+	if err != nil {
+		return "", err
+	}
+
+	ns, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	if err != nil {
+		return "", err
+	}
+
+	var webHookUrl string
+
+	if isProwEnabled {
+		baseURL, err := services.GetServiceURLFromName(o.KubeClientCached, "hook", ns)
+		if err != nil {
+			return "", err
+		}
+
+		webHookUrl = util.UrlJoin(baseURL, "hook")
+	} else {
+		baseURL, err := services.GetServiceURLFromName(o.KubeClientCached, "jenkins", ns)
+		if err != nil {
+			return "", err
+		}
+
+		webHookUrl = util.UrlJoin(baseURL, "github-webhook/")
+	}
+
+	return webHookUrl, nil
+}
+
+func (o *CommonOptions) GetIn() terminal.FileReader {
+	return o.In
+}
+
+func (o *CommonOptions) GetOut() terminal.FileWriter {
+	return o.Out
+}
+
+func (o *CommonOptions) GetErr() io.Writer {
+	return o.Err
 }

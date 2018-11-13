@@ -136,7 +136,7 @@ func (model *QuickstartModel) CreateSurvey(filter *QuickstartFilter, batchMode b
 			name = q.Name
 		}
 		var err error
-		name, err = util.PickValue("Project name", name, true, in, out, errOut)
+		name, err = util.PickValue("Project name", name, true, "", in, out, errOut)
 		if err != nil {
 			return nil, err
 		}

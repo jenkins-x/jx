@@ -223,7 +223,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 	}
 	if kubeDir != "" {
 
-		// now lets copy any Kubernetes YAML into helm charts in the apps
+		// now lets copy any Kubernetes YAML into Helm charts in the apps
 		matches, err = filepath.Glob(filepath.Join(dir, kubeDir, "*"))
 		if err != nil {
 			return err
@@ -317,7 +317,7 @@ func (o *CommonOptions) createGitProviderForURL(gitKind string, gitUrl string) (
 	if err != nil {
 		return nil, err
 	}
-	return gits.CreateProviderForURL(authConfigSvc, gitKind, gitUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	return gits.CreateProviderForURL(o.Factory.IsInCluster(), authConfigSvc, gitKind, gitUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 }
 
 func (o *CommonOptions) createGitProviderForURLWithoutKind(gitUrl string) (gits.GitProvider, *gits.GitRepositoryInfo, error) {
@@ -333,7 +333,7 @@ func (o *CommonOptions) createGitProviderForURLWithoutKind(gitUrl string) (gits.
 	if err != nil {
 		return nil, gitInfo, err
 	}
-	gitProvider, err := gits.CreateProviderForURL(authConfigSvc, gitKind, gitInfo.HostURL(), o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	gitProvider, err := gits.CreateProviderForURL(o.Factory.IsInCluster(), authConfigSvc, gitKind, gitInfo.HostURL(), o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 	return gitProvider, gitInfo, err
 }
 

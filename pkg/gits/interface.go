@@ -10,19 +10,19 @@ import (
 )
 
 // OrganisationLister returns a slice of GitOrganisation
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits OrganisationLister -o mocks/organisation_lister.go
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits OrganisationLister -o mocks/organisation_lister.go --generate-matchers
 type OrganisationLister interface {
 	ListOrganisations() ([]GitOrganisation, error)
 }
 
 // OrganisationChecker verifies if an user is member of an organization
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits OrganisationChecker -o mocks/organisation_checker.go
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits OrganisationChecker -o mocks/organisation_checker.go --generate-matchers
 type OrganisationChecker interface {
 	IsUserInOrganisation(user string, organisation string) (bool, error)
 }
 
 // GitProvider is the interface for abstracting use of different git provider APIs
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits GitProvider -o mocks/git_provider.go
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits GitProvider -o mocks/git_provider.go --generate-matchers
 type GitProvider interface {
 	OrganisationLister
 
@@ -58,6 +58,10 @@ type GitProvider interface {
 
 	CreateWebHook(data *GitWebHookArguments) error
 
+	ListWebHooks(org string, repo string) ([]*GitWebHookArguments, error)
+
+	UpdateWebHook(data *GitWebHookArguments) error
+
 	IsGitHub() bool
 
 	IsGitea() bool
@@ -89,6 +93,8 @@ type GitProvider interface {
 	UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error
 
 	ListReleases(org string, name string) ([]*GitRelease, error)
+
+	GetContent(org string, name string, path string, ref string) (*GitFileContent, error)
 
 	// returns the path relative to the Jenkins URL to trigger webhooks on this kind of repository
 	//
@@ -138,7 +144,7 @@ type GitProvider interface {
 }
 
 // Gitter defines common git actions used by Jenkins X via git cli
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits Gitter -o mocks/gitter.go
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits Gitter -o mocks/gitter.go --generate-matchers
 type Gitter interface {
 	FindGitConfigDir(dir string) (string, string, error)
 	ToGitLabels(names []string) []GitLabel

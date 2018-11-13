@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"io"
 	"sort"
-	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -21,28 +21,39 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // GetBuildLogsOptions the command line options
 type GetBuildLogsOptions struct {
 	GetOptions
 
-	Tail    bool
-	Filter  string
-	Build   int
-	Pending bool
+	Tail        bool
+	Wait        bool
+	BuildFilter builds.BuildPodInfoFilter
 }
 
 var (
 	get_build_log_long = templates.LongDesc(`
-		Display the Git server URLs.
+		Display a build log
 
 `)
 
 	get_build_log_example = templates.Examples(`
-		# List all registered Git server URLs
-		jx get git
+		# Display a build log - with the user choosing which repo + build to view
+		jx get build log
+
+		# Pick a build to view the log based on the repo cheese
+		jx get build log --repo cheese
+
+		# Pick a pending knative build to view the log based 
+		jx get build log -p
+
+		# Pick a pending knative build to view the log based on the repo cheese
+		jx get build log --repo cheese -p
+
+		# Pick a knative build for the 1234 Pull Request on the repo cheese
+		jx get build log --repo cheese --branch PR-1234
+
 	`)
 )
 
@@ -74,9 +85,13 @@ func NewCmdGetBuildLogs(f Factory, in terminal.FileReader, out terminal.FileWrit
 		},
 	}
 	cmd.Flags().BoolVarP(&options.Tail, "tail", "t", true, "Tails the build log to the current terminal")
-	cmd.Flags().BoolVarP(&options.Pending, "pending", "p", false, "Only display logs which are currently pending to choose from if no build name is supplied")
-	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filters all the available jobs by those that contain the given text")
-	cmd.Flags().IntVarP(&options.Build, "build", "b", 0, "The build number to view")
+	cmd.Flags().BoolVarP(&options.Wait, "wait", "w", false, "Waits for the build to start before failing")
+	cmd.Flags().BoolVarP(&options.BuildFilter.Pending, "pending", "p", false, "Only display logs which are currently pending to choose from if no build name is supplied")
+	cmd.Flags().StringVarP(&options.BuildFilter.Filter, "filter", "f", "", "Filters all the available jobs by those that contain the given text")
+	cmd.Flags().StringVarP(&options.BuildFilter.Owner, "owner", "o", "", "Filters the owner (person/organisation) of the repository")
+	cmd.Flags().StringVarP(&options.BuildFilter.Repository, "repo", "r", "", "Filters the build repository")
+	cmd.Flags().StringVarP(&options.BuildFilter.Branch, "branch", "", "", "Filters the branch")
+	cmd.Flags().StringVarP(&options.BuildFilter.Build, "build", "b", "", "The build number to view")
 
 	return cmd
 }
@@ -97,26 +112,23 @@ func (o *GetBuildLogsOptions) Run() error {
 	if webhookEngine == v1.WebHookEngineProw {
 		return o.getProwBuildLog(kubeClient, jxClient, ns)
 	}
-	jobMap, err := o.getJobMap(o.Filter)
-	if err != nil {
-		return err
-	}
-	jenkinsClient, err := o.JenkinsClient()
-	if err != nil {
-		return err
-	}
 
 	args := o.Args
-	names := []string{}
-	for k, _ := range jobMap {
-		names = append(names, k)
-	}
-	sort.Strings(names)
-	if len(names) == 0 {
-		return fmt.Errorf("No pipelines have been built!")
-	}
 
-	if len(args) == 0 {
+	if !o.BatchMode && len(args) == 0 {
+		jobMap, err := o.getJobMap(o.BuildFilter.Filter)
+		if err != nil {
+			return err
+		}
+		names := []string{}
+		for k, _ := range jobMap {
+			names = append(names, k)
+		}
+		sort.Strings(names)
+		if len(names) == 0 {
+			return fmt.Errorf("No pipelines have been built!")
+		}
+
 		defaultName := ""
 		for _, n := range names {
 			if strings.HasSuffix(n, "/master") {
@@ -124,7 +136,7 @@ func (o *GetBuildLogsOptions) Run() error {
 				break
 			}
 		}
-		name, err := util.PickNameWithDefault(names, "Which pipeline do you want to view the logs of?: ", defaultName, o.In, o.Out, o.Err)
+		name, err := util.PickNameWithDefault(names, "Which pipeline do you want to view the logs of?: ", defaultName, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -134,70 +146,103 @@ func (o *GetBuildLogsOptions) Run() error {
 		return fmt.Errorf("No pipeline chosen")
 	}
 	name := args[0]
-	job := jobMap[name]
-	var last gojenkins.Build
-	if o.Build > 0 {
-		last, err = jenkinsClient.GetBuild(job, o.Build)
-	} else {
-		last, err = jenkinsClient.GetLastBuild(job)
-	}
+	buildNumber := o.BuildFilter.BuildNumber()
+
+	last, err := o.getLastJenkinsBuild(name, buildNumber)
 	if err != nil {
 		return err
 	}
+
 	log.Infof("%s %s\n", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
 	return o.tailBuild(name, &last)
 }
 
-func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, jxClient versioned.Interface, ns string) error {
-	activities := jxClient.JenkinsV1().PipelineActivities(ns)
-	pipelineList, err := activities.List(metav1.ListOptions{})
+func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) (gojenkins.Build, error) {
+	var last gojenkins.Build
+
+	jenkinsClient, err := o.JenkinsClient()
 	if err != nil {
+		return last, err
+	}
+
+	f := func() error {
+		var err error
+
+		jobMap, err := o.getJobMap(o.BuildFilter.Filter)
+		if err != nil {
+			return err
+		}
+		job := jobMap[name]
+		if job.Url == "" {
+			return fmt.Errorf("No Job exists yet called %s", name)
+		}
+
+		if buildNumber > 0 {
+			last, err = jenkinsClient.GetBuild(job, buildNumber)
+		} else {
+			last, err = jenkinsClient.GetLastBuild(job)
+		}
+		if err != nil {
+			return err
+		}
+		if last.Url == "" {
+			if buildNumber > 0 {
+				return fmt.Errorf("No build found for name %s number %d", name, buildNumber)
+			} else {
+				return fmt.Errorf("No build found for name %s", name)
+			}
+		}
 		return err
+	}
+
+	if o.Wait {
+		err := o.retry(60, time.Second*2, f)
+		return last, err
+	} else {
+		err := f()
+		return last, err
+	}
+}
+
+func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, jxClient versioned.Interface, ns string) error {
+	pods, err := builds.GetBuildPods(kubeClient, ns)
+	if err != nil {
+		log.Warnf("Failed to query pods %s\n", err)
+		return err
+	}
+
+	buildInfos := []*builds.BuildPodInfo{}
+	for _, pod := range pods {
+		initContainers := pod.Spec.InitContainers
+		if len(initContainers) > 0 {
+			buildInfo := builds.CreateBuildPodInfo(pod)
+			if o.BuildFilter.BuildMatches(buildInfo) {
+				buildInfos = append(buildInfos, buildInfo)
+			}
+		}
+	}
+	builds.SortBuildPodInfos(buildInfos)
+	if len(buildInfos) == 0 {
+		return fmt.Errorf("No knative builds have been triggered which match the current filter!")
 	}
 
 	args := o.Args
 	names := []string{}
-	pipelineMap := map[string]map[int]*v1.PipelineActivity{}
+	buildMap := map[string]*builds.BuildPodInfo{}
 
 	defaultName := ""
-	for _, activity := range pipelineList.Items {
-		pipeline := activity.Spec.Pipeline
-		build := activity.Spec.Build
-		if defaultName == "" && strings.HasSuffix(pipeline, "/master") {
-			defaultName = pipeline
-		}
-		if pipeline == "" || build == "" || (o.Filter != "" && strings.Index(pipeline, o.Filter) < 0) {
-			continue
-		}
-		if o.Pending {
-			status := activity.Spec.Status
-			if status != v1.ActivityStatusTypePending && status != v1.ActivityStatusTypeRunning && status != v1.ActivityStatusTypeWaitingForApproval {
-				continue
-			}
-		}
-		buildNumber, err := strconv.Atoi(build)
-		if err != nil {
-			continue
-		}
-		if util.StringArrayIndex(names, pipeline) < 0 {
-			names = append(names, pipeline)
-		}
-		copy := activity
-		buildMap := pipelineMap[pipeline]
-		if buildMap == nil {
-			buildMap = map[int]*v1.PipelineActivity{}
-		}
-		buildMap[buildNumber] = &copy
-		pipelineMap[pipeline] = buildMap
-	}
+	for _, build := range buildInfos {
+		name := build.Pipeline + " #" + build.Build
+		names = append(names, name)
+		buildMap[name] = build
 
-	sort.Strings(names)
-	if len(names) == 0 {
-		return fmt.Errorf("No pipelines have been triggered!")
+		if build.Branch == "master" {
+			defaultName = name
+		}
 	}
 
 	if len(args) == 0 {
-		name, err := util.PickNameWithDefault(names, "Which pipeline do you want to view the logs of?: ", defaultName, o.In, o.Out, o.Err)
+		name, err := util.PickNameWithDefault(names, "Which build do you want to view the logs of?: ", defaultName, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -207,97 +252,25 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 		return fmt.Errorf("No pipeline chosen")
 	}
 	name := args[0]
-	buildMap := pipelineMap[name]
-	if buildMap == nil {
+	build := buildMap[name]
+	if build == nil {
 		return fmt.Errorf("No Pipeline found for name %s", name)
 	}
-	var build *v1.PipelineActivity
 
-	buildNumber := o.Build
-	if buildNumber > 0 {
-		build = buildMap[buildNumber]
-		if build == nil {
-			return fmt.Errorf("No Pipeline found for %s and build #%d", name, buildNumber)
-		}
-	} else {
-		for k, v := range buildMap {
-			if k > buildNumber {
-				buildNumber = k
-				build = v
-			}
-		}
+	pod := build.Pod
+	if pod == nil {
+		return fmt.Errorf("No Pod found for name %s", name)
 	}
-	if build == nil {
-		return fmt.Errorf("No Pipeline builds found for %s", name)
-	}
-	if err != nil {
-		return err
-	}
-	log.Infof("Getting the log of pipeline %s build %s\n", util.ColorInfo(name), util.ColorInfo("#"+strconv.Itoa(buildNumber)))
-
-	pods, err := builds.GetBuildPods(kubeClient, ns)
-	if err != nil {
-		return err
+	initContainers := pod.Spec.InitContainers
+	if len(initContainers) <= 0 {
+		return fmt.Errorf("No InitContainers for Pod %s for build: %s", pod.Name, name)
 	}
 
-	for _, pod := range pods {
-		log.Infof("found pod %s\n", pod.Name)
-		initContainers := pod.Spec.InitContainers
-		if len(initContainers) > 0 {
-			lastInitC := initContainers[len(initContainers)-1]
-			params := BuildParams{}
-			params.DefaultValuesFromEnvVars(lastInitC.Env)
-
-			if params.MatchesPipeline(build) {
-				return o.getPodLog(ns, pod, lastInitC)
-			}
-		}
-	}
-	log.Warnf("No pod is available for pipeline %s build %s\n", util.ColorInfo(name), util.ColorInfo("#"+strconv.Itoa(buildNumber)))
-	return nil
+	lastInitC := initContainers[len(initContainers)-1]
+	return o.getPodLog(ns, pod, lastInitC)
 }
 
 func (o *GetBuildLogsOptions) getPodLog(ns string, pod *corev1.Pod, container corev1.Container) error {
 	log.Infof("Getting the pod log for pod %s and init container %s\n", pod.Name, container.Name)
 	return o.tailLogs(ns, pod.Name, container.Name)
-}
-
-type BuildParams struct {
-	GitOwner      string
-	GitRepository string
-	BranchName    string
-	BuildNumber   string
-}
-
-// DefaultValuesFromEnvVars defaults values from the environment variables
-func (p *BuildParams) DefaultValuesFromEnvVars(envVars []corev1.EnvVar) {
-	for _, buildNumberKey := range []string{"JX_BUILD_NUMBER", "BUILD_NUMBER", "BUILD_ID"} {
-		for _, env := range envVars {
-			value := env.Value
-			switch env.Name {
-			case "BRANCH_NAME":
-				p.BranchName = value
-			case "REPO_NAME":
-				p.GitRepository = value
-			case "REPO_OWNER":
-				p.GitOwner = value
-			case buildNumberKey:
-				if p.BuildNumber == "" {
-					p.BuildNumber = value
-				}
-			}
-		}
-	}
-}
-
-// MatchesPipeline returns true if the given pipeline matches the build parameters
-func (p *BuildParams) MatchesPipeline(activity *v1.PipelineActivity) bool {
-	if p.GitOwner == "" || p.GitRepository == "" || p.BranchName == "" || p.BuildNumber == "" {
-		return false
-	}
-	d := kube.CreatePipelineDetails(activity)
-	if d == nil {
-		return false
-	}
-	return d.GitOwner == p.GitOwner && d.GitRepository == p.GitRepository && d.Build == p.BuildNumber && d.BranchName == p.BranchName
 }

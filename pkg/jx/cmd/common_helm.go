@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -30,7 +31,7 @@ func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to create the kube client")
 	}
-	u, err := kube.FindServiceURL(client, ns, kube.ServiceChartMuseum)
+	u, err := services.FindServiceURL(client, ns, kube.ServiceChartMuseum)
 	if err != nil {
 		return errors.Wrapf(err, "failed to find the service URL of the ChartMuseum")
 	}
@@ -238,10 +239,6 @@ func (o *CommonOptions) getInstalledChartRepos(helmBinary string) (map[string]st
 
 func (o *CommonOptions) helmInit(dir string) error {
 	o.Helm().SetCWD(dir)
-	_, err := o.Helm().Version(false)
-	if err != nil {
-		return errors.Wrap(err, "failed to read the Helm version")
-	}
 	if o.Helm().HelmBinary() == "helm" {
 		// need to check the tiller settings at this point
 		_, noTiller, helmTemplate, err := o.TeamHelmBin()
@@ -265,12 +262,6 @@ func (o *CommonOptions) helmInitDependency(dir string, chartRepos map[string]str
 	if err != nil {
 		return o.Helm().HelmBinary(),
 			errors.Wrapf(err, "failed to remove requirements.lock file from chat '%s'", dir)
-	}
-
-	_, err = o.Helm().Version(false)
-	if err != nil {
-		return o.Helm().HelmBinary(),
-			errors.Wrap(err, "failed to read the Helm version")
 	}
 
 	if o.Helm().HelmBinary() == "helm" {
@@ -426,7 +417,7 @@ func (o *CommonOptions) ensureHelm() error {
 	}
 	err = o.installHelm()
 	if err != nil {
-		return errors.Wrap(err, "failed to install helm")
+		return errors.Wrap(err, "failed to install Helm")
 	}
 	initOpts := InitOptions{
 		CommonOptions: *o,

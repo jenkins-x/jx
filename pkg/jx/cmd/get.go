@@ -30,7 +30,7 @@ var (
 `)
 
 	get_example = templates.Examples(`
-		# List all pipeines
+		# List all pipelines
 		jx get pipeline
 
 		# List all URLs for services in the current namespace
@@ -95,6 +95,8 @@ func NewCmdGet(f Factory, in terminal.FileReader, out terminal.FileWriter, errOu
 	cmd.AddCommand(NewCmdGetUser(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetWorkflow(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetVault(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetSecret(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetVaultConfig(f, in, out, errOut))
 	return cmd
 }
 

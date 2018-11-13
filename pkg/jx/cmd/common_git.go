@@ -57,7 +57,7 @@ func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepositoryInfo, 
 		return gitInfo, nil, nil, err
 	}
 	gitKind, err := o.GitServerKind(gitInfo)
-	gitProvider, err := gitInfo.CreateProvider(authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	gitProvider, err := gitInfo.CreateProvider(o.Factory.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
 		return gitInfo, gitProvider, nil, err
 	}
@@ -108,8 +108,8 @@ func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServ
 			Data: map[string][]byte{},
 		}
 	} else {
-		secret.Annotations = kube.MergeMaps(secret.Annotations, annotations)
-		secret.Labels = kube.MergeMaps(secret.Labels, labels)
+		secret.Annotations = util.MergeMaps(secret.Annotations, annotations)
+		secret.Labels = util.MergeMaps(secret.Labels, labels)
 	}
 	if userAuth.Username != "" {
 		secret.Data["username"] = []byte(userAuth.Username)
@@ -176,8 +176,16 @@ func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServ
 
 func (o *CommonOptions) ensureGitServiceCRD(server *auth.AuthServer) error {
 	kind := server.Kind
-	if kind == "" || kind == "github" || server.URL == "" {
+	if kind == "github" && server.URL == gits.GitHubURL {
 		return nil
+	}
+	if kind == "" {
+		log.Warnf("Kind of git server %s with URL %s is empty\n", server.Name, server.URL)
+		return nil
+	}
+	// lets lazily populate the name if its empty
+	if server.Name == "" {
+		server.Name = kind
 	}
 	apisClient, err := o.Factory.CreateApiExtensionsClient()
 	if err != nil {
@@ -192,7 +200,12 @@ func (o *CommonOptions) ensureGitServiceCRD(server *auth.AuthServer) error {
 	if err != nil {
 		return err
 	}
-	return kube.EnsureGitServiceExistsForHost(jxClient, devNs, kind, server.Name, server.URL, o.Out)
+	err = kube.EnsureGitServiceExistsForHost(jxClient, devNs, kind, server.Name, server.URL, o.Out)
+	if err != nil {
+		return err
+	}
+	log.Infof("Ensured we have a GitService called %s for URL %s in namespace %s\n", server.Name, server.URL, devNs)
+	return nil
 }
 
 func (o *CommonOptions) discoverGitURL(gitConf string) (string, error) {
@@ -248,15 +261,6 @@ func (o *CommonOptions) GitServerHostURLKind(hostURL string) (string, error) {
 		return "", err
 	}
 
-	apisClient, err := o.CreateApiExtensionsClient()
-	if err != nil {
-		return "", err
-	}
-	err = kube.RegisterGitServiceCRD(apisClient)
-	if err != nil {
-		return "", err
-	}
-
 	kind, err := kube.GetGitServiceKind(jxClient, kubeClient, devNs, hostURL)
 	if err != nil {
 		return kind, err
@@ -265,7 +269,7 @@ func (o *CommonOptions) GitServerHostURLKind(hostURL string) (string, error) {
 		if o.BatchMode {
 			return "", fmt.Errorf("No Git server kind could be found for URL %s\nPlease try specify it via: jx create git server someKind %s", hostURL, hostURL)
 		}
-		kind, err = util.PickName(gits.KindGits, fmt.Sprintf("Pick what kind of Git server is: %s", hostURL), o.In, o.Out, o.Err)
+		kind, err = util.PickName(gits.KindGits, fmt.Sprintf("Pick what kind of Git server is: %s", hostURL), "", o.In, o.Out, o.Err)
 		if err != nil {
 			return "", err
 		}
@@ -299,5 +303,5 @@ func (o *CommonOptions) gitProviderForGitServerURL(gitServiceUrl string, gitKind
 	if err != nil {
 		return nil, err
 	}
-	return gits.CreateProviderForURL(authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	return gits.CreateProviderForURL(o.Factory.IsInCluster(), authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 }

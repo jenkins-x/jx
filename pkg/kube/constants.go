@@ -33,7 +33,7 @@ const (
 	ChartBuildTemplates = "jenkins-x/jx-build-templates"
 
 	DefaultProwReleaseName           = "jx-prow"
-	DefaultKnativeBuildReleaseName   = "jx-knative-build"
+	DefaultKnativeBuildReleaseName   = "knative-build"
 	DefaultBuildTemplatesReleaseName = "jx-build-templates"
 
 	// Charts Single Sign-On addon
@@ -69,6 +69,9 @@ const (
 
 	// SecretJenkinsReleaseGPG the GPG secrets for doing releases
 	SecretJenkinsReleaseGPG = "jenkins-release-gpg"
+
+	// SecretJenkinsPipelinePrefix prefix for a jenkins pipeline secret name
+	SecretJenkinsPipelinePrefix = "jx-pipeline-"
 
 	// SecretJenkinsPipelineAddonCredentials the chat credentials secret
 	SecretJenkinsPipelineAddonCredentials = "jx-pipeline-addon-"

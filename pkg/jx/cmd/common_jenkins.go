@@ -1,6 +1,8 @@
 package cmd
 
-import "github.com/jenkins-x/golang-jenkins"
+import (
+	"github.com/jenkins-x/golang-jenkins"
+)
 
 // getAllPipelineJobNames returns all the pipeline job names
 func (o *CommonOptions) getAllPipelineJobNames(jenkinsClient gojenkins.JenkinsClient, jobNames *[]string, jobName string) error {

@@ -23,11 +23,11 @@ type StepHelmVersionOptions struct {
 
 var (
 	StepHelmVersionLong = templates.LongDesc(`
-		Updates version of the helm Chart.yaml in the given directory 
+		Updates version of the Helm Chart.yaml in the given directory 
 `)
 
 	StepHelmVersionExample = templates.Examples(`
-		# updates the current helm Chart.yaml to the latest build number version
+		# updates the current Helm Chart.yaml to the latest build number version
 		jx step helm version
 
 `)

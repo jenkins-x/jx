@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 	"io/ioutil"
 	"net"
@@ -73,7 +74,7 @@ const (
 	// INGRESS_SERVICE_NAME service name for ingress controller
 	INGRESS_SERVICE_NAME = "jxing-nginx-ingress-controller"
 	// DEFAULT_CHARTMUSEUM_URL default URL for Jenkins X ChartMuseum
-	DEFAULT_CHARTMUSEUM_URL = "https://chartmuseum.build.cd.jenkins-x.io"
+	DEFAULT_CHARTMUSEUM_URL = "http://chartmuseum.jenkins-x.io"
 )
 
 var (
@@ -138,7 +139,7 @@ func (o *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.Flags.RemoteTiller, "remote-tiller", "", true, "If enabled and we are using tiller for helm then run tiller remotely in the kubernetes cluster. Otherwise we run the tiller process locally.")
 	cmd.Flags().BoolVarP(&o.Flags.NoTiller, "no-tiller", "", false, "Whether to disable the use of tiller with helm. If disabled we use 'helm template' to generate the YAML from helm charts then we use 'kubectl apply' to install it to avoid using tiller completely.")
 	cmd.Flags().BoolVarP(&o.Flags.SkipIngress, "skip-ingress", "", false, "Don't install an ingress controller")
-	cmd.Flags().BoolVarP(&o.Flags.SkipTiller, "skip-tiller", "", false, "Don't install a Helm Tiller service")
+	cmd.Flags().BoolVarP(&o.Flags.SkipTiller, "skip-setup-tiller", "", false, "Don't setup the Helm Tiller service - lets use whatever tiller is already setup for us.")
 	cmd.Flags().BoolVarP(&o.Flags.Helm3, "helm3", "", false, "Use helm3 to install Jenkins X which does not use Tiller")
 	cmd.Flags().BoolVarP(&o.Flags.OnPremise, "on-premise", "", false, "If installing on an on premise cluster then lets default the 'external-ip' to be the Kubernetes master IP address")
 }
@@ -722,7 +723,7 @@ controller:
 		}
 
 		if externalIP == "" {
-			err = kube.WaitForExternalIP(client, o.Flags.IngressService, ingressNamespace, 10*time.Minute)
+			err = services.WaitForExternalIP(client, o.Flags.IngressService, ingressNamespace, 10*time.Minute)
 			if err != nil {
 				return err
 			}
@@ -758,7 +759,7 @@ func (o *InitOptions) validateGit() error {
 	var err error
 	if userName == "" {
 		if !o.BatchMode {
-			userName, err = util.PickValue("Please enter the name you wish to use with git: ", "", true, o.In, o.Out, o.Err)
+			userName, err = util.PickValue("Please enter the name you wish to use with git: ", "", true, "", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
@@ -773,7 +774,7 @@ func (o *InitOptions) validateGit() error {
 	}
 	if userEmail == "" {
 		if !o.BatchMode {
-			userEmail, err = util.PickValue("Please enter the email address you wish to use with git: ", "", true, o.In, o.Out, o.Err)
+			userEmail, err = util.PickValue("Please enter the email address you wish to use with git: ", "", true, "", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

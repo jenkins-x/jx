@@ -1,10 +1,10 @@
-package kube
+package vault
 
 import (
 	"fmt"
-
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,18 +18,16 @@ const (
 	gcpServiceAccountEnv  = "GOOGLE_APPLICATION_CREDENTIALS"
 	gcpServiceAccountPath = "/etc/gcp/service-account.json"
 
-	vaultPoliciesName    = "policies"
-	vaultRuleSecretsName = "allow_secrets"
-	vaultRuleSecrets     = "path \"secret/*\" { capabilities = [\"create\", \"read\", \"update\", \"delete\", \"list\"] }"
-	vaultAuthName        = "auth"
-	vaultAuthType        = "kubernetes"
-	vaultAuthTTL         = "1h"
-	vaultAuthSaSuffix    = "auth-sa"
+	vaultAuthName     = "auth"
+	vaultAuthType     = "kubernetes"
+	vaultAuthTTL      = "1h"
+	vaultAuthSaSuffix = "auth-sa"
 )
 
 // Vault stores some details of a Vault resource
 type Vault struct {
 	Name                   string
+	Namespace              string
 	URL                    string
 	AuthServiceAccountName string
 }
@@ -66,8 +64,8 @@ type VaultRole struct {
 type VaultPolicies []VaultPolicy
 
 type VaultPolicy struct {
-	Name  string
-	Rules string
+	Name  string `json:"name"`
+	Rules string `json:"rules"`
 }
 
 type Tcp struct {
@@ -95,7 +93,22 @@ func VaultGcpServiceAccountSecretName(vaultName string) string {
 // CreateVault creates a new vault backed by GCP KMS and storage
 func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string,
 	gcpServiceAccountSecretName string, gcpConfig *GCPConfig, authServiceAccount string,
-	authServiceAccountNamespace string) error {
+	authServiceAccountNamespace string, secretsPathPrefix string) error {
+
+	if secretsPathPrefix == "" {
+		secretsPathPrefix = DefaultSecretsPathPrefix
+	}
+	pathRule := &PathRule{
+		Path: []PathPolicy{{
+			Prefix:       secretsPathPrefix,
+			Capabilities: DefaultSecretsCapabiltities,
+		}},
+	}
+	vaultRule, err := pathRule.String()
+	if err != nil {
+		return errors.Wrap(err, "encoding the polcies for secret path")
+	}
+
 	vault := &v1alpha1.Vault{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Vault",
@@ -139,17 +152,17 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 								BoundServiceAccountNames:      authServiceAccount,
 								BoundServiceAccountNamespaces: authServiceAccountNamespace,
 								Name:                          authServiceAccount,
-								Policies:                      vaultRuleSecretsName,
+								Policies:                      PathRulesName,
 								TTL:                           vaultAuthTTL,
 							},
 						},
 						Type: vaultAuthType,
 					},
 				},
-				vaultPoliciesName: []VaultPolicy{
+				PoliciesName: []VaultPolicy{
 					{
-						Name:  vaultRuleSecretsName,
-						Rules: vaultRuleSecrets,
+						Name:  PathRulesName,
+						Rules: vaultRule,
 					},
 				},
 			},
@@ -170,7 +183,7 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 		},
 	}
 
-	_, err := vaultOperatorClient.Vault().Vaults(ns).Create(vault)
+	_, err = vaultOperatorClient.Vault().Vaults(ns).Create(vault)
 	return err
 }
 
@@ -189,26 +202,27 @@ func VaultAuthServiceAccountName(vaultName string) string {
 }
 
 // GetVaults returns all vaults available in a given namespaces
-func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interface, ns string) ([]Vault, error) {
+func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interface, ns string) ([]*Vault, error) {
 	vaultList, err := vaultOperatorClient.Vault().Vaults(ns).List(metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "listing vaults in namespace '%s'", ns)
 	}
 
-	vaults := []Vault{}
+	vaults := []*Vault{}
 	for _, v := range vaultList.Items {
 		vaultName := v.Name
 		vaultAuthSaName := VaultAuthServiceAccountName(vaultName)
-		vaultURL, err := FindServiceURL(client, ns, vaultName)
+		vaultURL, err := services.FindServiceURL(client, ns, vaultName)
 		if err != nil {
 			vaultURL = ""
 		}
 		vault := Vault{
 			Name:                   vaultName,
+			Namespace:              ns,
 			URL:                    vaultURL,
 			AuthServiceAccountName: vaultAuthSaName,
 		}
-		vaults = append(vaults, vault)
+		vaults = append(vaults, &vault)
 	}
 	return vaults, nil
 }

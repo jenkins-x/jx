@@ -2,14 +2,15 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
 	"os/user"
 	"reflect"
 	"strconv"
+
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -316,10 +317,7 @@ func (o *CommonOptions) getUsername(userName string) (string, error) {
 }
 
 func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, options *EditOptions) error {
-	teamSettings, err := options.TeamSettings()
-	if err != nil {
-		return err
-	}
+	teamSettings := &v1.TeamSettings{}
 	value := reflect.ValueOf(teamSettings).Elem()
 	t := value.Type()
 	for i := 0; i < value.NumField(); i++ {
@@ -340,6 +338,7 @@ func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, in terminal.FileRea
 			Short: commandUsage,
 			Run: func(cmd *cobra.Command, args []string) {
 				var value interface{}
+				var err error
 				if len(args) > 0 {
 					if structField.Type.String() == "string" {
 						value = args[0]
@@ -350,7 +349,7 @@ func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, in terminal.FileRea
 				} else if !options.BatchMode {
 					var err error
 					if structField.Type.String() == "string" {
-						value, err = util.PickValue(commandUsage+":", field.String(), true, in, out, errOut)
+						value, err = util.PickValue(commandUsage+":", field.String(), true, "", in, out, errOut)
 					} else if structField.Type.String() == "bool" {
 						value = util.Confirm(commandUsage+":", field.Bool(), "", in, out, errOut)
 					}

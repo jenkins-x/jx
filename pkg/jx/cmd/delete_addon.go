@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 
 	"github.com/spf13/cobra"
@@ -47,6 +48,7 @@ func NewCmdDeleteAddon(f Factory, in terminal.FileReader, out terminal.FileWrite
 	cmd.AddCommand(NewCmdDeleteAddonCloudBees(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeleteAddonGitea(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeleteAddonSSO(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteAddonKnativeBuild(f, in, out, errOut))
 	options.addFlags(cmd)
 	return cmd
 }
@@ -92,7 +94,7 @@ func (o *DeleteAddonOptions) cleanupServiceLink(addonName string) error {
 		return err
 	}
 
-	svc, err := kube.FindService(client, serviceName)
+	svc, err := services.FindService(client, serviceName)
 	if err != nil {
 		return err
 	}

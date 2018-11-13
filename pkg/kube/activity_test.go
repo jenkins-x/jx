@@ -87,7 +87,7 @@ func (m *MockPipelineActivityInterface) Patch(name string, pt types.PatchType, d
 }
 
 func TestGenerateBuildNumber(t *testing.T) {
-	options := &cmd.CommonOptions{}
+	options := &cmd.CommonOptions{Factory: cmd.NewFactory()}
 	cmd.ConfigureTestOptions(options, options.Git(), options.Helm())
 
 	jxClient, ns, err := options.JXClientAndDevNamespace()

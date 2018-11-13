@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/kube/services"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -105,6 +107,10 @@ func NewCmdPreview(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
+			//Default to batch-mode when running inside the pipeline (but user override wins).
+			if !cmd.Flag(optionBatchMode).Changed {
+				options.BatchMode = options.Factory.IsInCDPipeline()
+			}
 			err := options.Run()
 			CheckErr(err)
 		},
@@ -219,13 +225,13 @@ func (o *PreviewOptions) Run() error {
 			return err
 		}
 
-		gitProvider, err := o.GitInfo.CreateProvider(authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+		gitProvider, err := o.Factory.CreateGitProvider(o.GitInfo.URL, "message", authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
 		if err != nil {
 			return fmt.Errorf("cannot create Git provider %v", err)
 		}
 
 		if prNum > 0 {
-			pullRequest, err := gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo, prNum)
+			pullRequest, err = gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo, prNum)
 			if err != nil {
 				log.Warnf("issue getting pull request %s, %s, %v: %v\n", o.GitInfo.Organisation, o.GitInfo.Name, prNum, err)
 			}
@@ -364,8 +370,7 @@ func (o *PreviewOptions) Run() error {
 				return fmt.Errorf("Failed to update Environment %s due to %s", o.Name, err)
 			}
 		}
-	}
-	if err != nil {
+	} else {
 		// lets create a new preview environment
 		previewGitSpec := v1.PreviewGitSpec{
 			ApplicationName: o.Application,
@@ -413,7 +418,15 @@ func (o *PreviewOptions) Run() error {
 	}
 
 	if o.ReleaseName == "" {
-		o.ReleaseName = o.Namespace
+		_, noTiller, helmTemplate, err := o.TeamHelmBin()
+		if err != nil {
+			return err
+		}
+		if noTiller || helmTemplate {
+			o.ReleaseName = "preview"
+		} else {
+			o.ReleaseName = o.Namespace
+		}
 	}
 
 	domain, err := kube.GetCurrentDomain(kubeClient, ns)
@@ -470,7 +483,7 @@ func (o *PreviewOptions) Run() error {
 	url := ""
 	appNames := []string{o.Application, o.ReleaseName, o.Namespace + "-preview", o.ReleaseName + "-" + o.Application}
 	for _, n := range appNames {
-		url, err = kube.FindServiceURL(kubeClient, o.Namespace, n)
+		url, err = services.FindServiceURL(kubeClient, o.Namespace, n)
 		if url != "" {
 			writePreviewURL(o, url)
 			break
@@ -685,30 +698,34 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 	if o.SourceURL == "" {
 		o.SourceURL = os.Getenv("SOURCE_URL")
 		if o.SourceURL == "" {
-			// lets discover the git dir
-			if o.Dir == "" {
-				dir, err := os.Getwd()
-				if err != nil {
-					return err
-				}
-				o.Dir = dir
-			}
-			root, gitConf, err := o.Git().FindGitConfigDir(o.Dir)
-			if err != nil {
-				log.Warnf("Could not find a .git directory: %s\n", err)
-			} else {
-				if root != "" {
-					o.Dir = root
-					o.SourceURL, err = o.discoverGitURL(gitConf)
+			// Relevant in a Jenkins pipeline triggered by a PR
+			o.SourceURL = os.Getenv("CHANGE_URL")
+			if o.SourceURL == "" {
+				// lets discover the git dir
+				if o.Dir == "" {
+					dir, err := os.Getwd()
 					if err != nil {
-						log.Warnf("Could not find the remote git source URL:  %s\n", err)
-					} else {
-						if o.SourceRef == "" {
-							o.SourceRef, err = o.Git().Branch(root)
-							if err != nil {
-								log.Warnf("Could not find the remote git source ref:  %s\n", err)
-							}
+						return err
+					}
+					o.Dir = dir
+				}
+				root, gitConf, err := o.Git().FindGitConfigDir(o.Dir)
+				if err != nil {
+					log.Warnf("Could not find a .git directory: %s\n", err)
+				} else {
+					if root != "" {
+						o.Dir = root
+						o.SourceURL, err = o.discoverGitURL(gitConf)
+						if err != nil {
+							log.Warnf("Could not find the remote git source URL:  %s\n", err)
+						} else {
+							if o.SourceRef == "" {
+								o.SourceRef, err = o.Git().Branch(root)
+								if err != nil {
+									log.Warnf("Could not find the remote git source ref:  %s\n", err)
+								}
 
+							}
 						}
 					}
 				}
@@ -754,7 +771,22 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 		return fmt.Errorf("No name could be defaulted for the Preview Environment. Please supply one!")
 	}
 	if o.Namespace == "" {
-		o.Namespace = ns + "-" + o.Name
+		prefix := ns + "-"
+		if len(prefix) > 63 {
+			return fmt.Errorf("Team namespace prefix is too long to create previews %s is too long. Must be no more than 60 character", prefix)
+		}
+
+		o.Namespace = prefix + o.Name
+		if len(o.Namespace) > 63 {
+			max := 62 - len(prefix)
+			size := len(o.Name)
+
+			o.Namespace = prefix + o.Name[size-max:]
+			log.Warnf("Due the name of the organsation and repository being too long (%s) we are going to trim it to make the preview namespace: %s", o.Name, o.Namespace)
+		}
+	}
+	if len(o.Namespace) > 63 {
+		return fmt.Errorf("Preview namespace %s is too long. Must be no more than 63 character", o.Namespace)
 	}
 	o.Namespace = kube.ToValidName(o.Namespace)
 	if o.Label == "" {
@@ -817,11 +849,9 @@ func getImageName() (string, error) {
 }
 
 func getImageTag() (string, error) {
-
 	tag := os.Getenv(PREVIEW_VERSION)
 	if tag == "" {
 		return "", fmt.Errorf("no %s environment variable found", PREVIEW_VERSION)
 	}
-
 	return tag, nil
 }
