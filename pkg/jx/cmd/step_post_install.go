@@ -121,7 +121,7 @@ func (o *StepPostInstallOptions) Run() (err error) {
 	errs := []error{}
 	for _, name := range names {
 		env := envMap[name]
-		if env == nil || env.Spec.Kind != v1.EnvironmentKindTypePermanent {
+		if env == nil || (env.Spec.Kind != v1.EnvironmentKindTypePermanent && env.Spec.Kind != v1.EnvironmentKindTypeDevelopment) {
 			continue
 		}
 		//gitRef := env.Spec.Source.Ref
