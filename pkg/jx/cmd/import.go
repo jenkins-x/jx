@@ -229,15 +229,6 @@ func (options *ImportOptions) Run() error {
 			return err
 		}
 
-		apisClient, err := options.CreateApiExtensionsClient()
-		if err != nil {
-			return err
-		}
-		err = kube.RegisterEnvironmentCRD(apisClient)
-		if err != nil {
-			return err
-		}
-
 		isProw, err = options.isProw()
 		if err != nil {
 			return err
@@ -1232,18 +1223,22 @@ func (options *ImportOptions) addAppNameToGeneratedFile(filename, field, value s
 
 func (options *ImportOptions) checkChartmuseumCredentialExists() error {
 	name := jenkins.DefaultJenkinsCredentialsPrefix + jenkins.Chartmuseum
-	_, err := options.Jenkins.GetCredential(name)
-
+	secret, err := options.KubeClientCached.CoreV1().Secrets(options.currentNamespace).Get(name, metav1.GetOptions{})
 	if err != nil {
-		secret, err := options.KubeClientCached.CoreV1().Secrets(options.currentNamespace).Get(name, metav1.GetOptions{})
-		if err != nil {
-			return fmt.Errorf("error getting %s secret %v", name, err)
-		}
+		return fmt.Errorf("error getting %s secret %v", name, err)
+	}
 
-		data := secret.Data
-		username := string(data["BASIC_AUTH_USER"])
-		password := string(data["BASIC_AUTH_PASS"])
+	data := secret.Data
+	username := string(data["BASIC_AUTH_USER"])
+	password := string(data["BASIC_AUTH_PASS"])
 
+	if secret.Labels != nil && secret.Labels[kube.LabelCredentialsType] == kube.ValueCredentialTypeUsernamePassword {
+		// no need to create a credential as this will be done via the kubernetes credential provider plugin
+		return nil
+	}
+
+	_, err = options.Jenkins.GetCredential(name)
+	if err != nil {
 		err = options.retry(3, 10*time.Second, func() (err error) {
 			return options.Jenkins.CreateCredential(name, username, password)
 		})

@@ -41,6 +41,7 @@ func NewCmdStepPost(f Factory, in terminal.FileReader, out terminal.FileWriter, 
 	}
 
 	cmd.AddCommand(NewCmdStepPostBuild(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStepPostInstall(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepPostRun(f, in, out, errOut))
 
 	return cmd

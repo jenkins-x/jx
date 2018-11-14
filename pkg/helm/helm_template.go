@@ -769,7 +769,7 @@ func (h *HelmTemplate) getChartNameAndVersion(chartDir string, version *string) 
 	if version != nil && *version != "" {
 		versionText = *version
 	}
-	file := filepath.Join(chartDir, "Chart.yaml")
+	file := filepath.Join(chartDir, ChartFileName)
 	if !filepath.IsAbs(chartDir) {
 		file = filepath.Join(h.Runner.CurrentDir(), file)
 	}
@@ -790,7 +790,7 @@ func (h *HelmTemplate) getChart(chartDir string, version *string) (*chart.Metada
 	if version != nil && *version != "" {
 		versionText = *version
 	}
-	file := filepath.Join(chartDir, "Chart.yaml")
+	file := filepath.Join(chartDir, ChartFileName)
 	if !filepath.IsAbs(chartDir) {
 		file = filepath.Join(h.Runner.CurrentDir(), file)
 	}

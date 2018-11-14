@@ -32,7 +32,6 @@ var useForkForEnvGitRepo = false
 func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment,
 	config *v1.Environment, forkEnvGitURL string, ns string, jxClient versioned.Interface, kubeClient kubernetes.Interface, envDir string,
 	gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gits.GitProvider, error) {
-	var gitProvider gits.GitProvider
 	surveyOpts := survey.WithStdio(in, out, errOut)
 	name := data.Name
 	createMode := name == ""
@@ -234,6 +233,15 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.AuthConfigServic
 			data.Spec.Order = i
 		}
 	}
+	_, gitProvider, err := CreateEnvGitRepository(batchMode, authConfigSvc, devEnv, data, config, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git, in, out, errOut)
+	return gitProvider, err
+}
+
+// CreateEnvGitRepository creates the git repository for the given Environment
+func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, envDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*gits.GitRepository, gits.GitProvider, error) {
+	var gitProvider gits.GitProvider
+	var repo *gits.GitRepository
+	surveyOpts := survey.WithStdio(in, out, errOut)
 	createRepo := false
 	if config.Spec.Source.URL != "" {
 		data.Spec.Source.URL = config.Spec.Source.URL
@@ -247,7 +255,7 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.AuthConfigServic
 				}
 				err := survey.AskOne(confirm, &showUrlEdit, nil, surveyOpts)
 				if err != nil {
-					return nil, err
+					return repo, nil, err
 				}
 			} else {
 				showUrlEdit = true
@@ -264,15 +272,18 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.AuthConfigServic
 					}
 					err := survey.AskOne(confirm, &createRepo, nil, surveyOpts)
 					if err != nil {
-						return nil, err
+						return repo, nil, err
 					}
 				}
 
 				if createRepo {
 					showUrlEdit = false
-					url, p, err := createEnvironmentGitRepo(batchMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git, in, out, errOut)
+					r, p, err := createEnvironmentGitRepo(batchMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git, in, out, errOut)
+					repo = r
+					url := r.CloneURL
+
 					if err != nil {
-						return nil, err
+						return repo, nil, err
 					}
 					gitProvider = p
 					data.Spec.Source.URL = url
@@ -288,7 +299,7 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.AuthConfigServic
 				}
 				err := survey.AskOne(q, &data.Spec.Source.URL, survey.Required, surveyOpts)
 				if err != nil {
-					return nil, err
+					return repo, nil, err
 				}
 			}
 		}
@@ -311,20 +322,20 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.AuthConfigServic
 				}
 				err := survey.AskOne(q, &data.Spec.Source.Ref, nil, surveyOpts)
 				if err != nil {
-					return nil, err
+					return repo, nil, err
 				}
 			}
 		}
 	}
-	return gitProvider, nil
+	return repo, gitProvider, nil
 }
 
 func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string,
-	environmentsDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, gits.GitProvider, error) {
+	environmentsDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (*gits.GitRepository, gits.GitProvider, error) {
 	defaultRepoName := fmt.Sprintf("environment-%s-%s", prefix, env.Name)
 	details, err := gits.PickNewGitRepository(batchMode, authConfigSvc, defaultRepoName, gitRepoOptions, nil, nil, git, in, out, outErr)
 	if err != nil {
-		return "", nil, err
+		return nil, nil, err
 	}
 	org := details.Organisation
 	repoName := details.RepoName
@@ -334,33 +345,34 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.AuthConfigServi
 	}
 	envDir := filepath.Join(environmentsDir, owner)
 	provider := details.GitProvider
+
 	repo, err := provider.GetRepository(owner, repoName)
 	if err == nil {
 		fmt.Fprintf(out, "Git repository %s/%s already exists\n", util.ColorInfo(owner), util.ColorInfo(repoName))
 		// if the repo already exists then lets just modify it if required
 		dir, err := util.CreateUniqueDirectory(envDir, details.RepoName, util.MaximumNewDirectoryAttempts)
 		if err != nil {
-			return "", nil, err
+			return nil, nil, err
 		}
 		pushGitURL, err := git.CreatePushURL(repo.CloneURL, details.User)
 		if err != nil {
-			return "", nil, err
+			return nil, nil, err
 		}
 		err = git.Clone(pushGitURL, dir)
 		if err != nil {
-			return "", nil, err
+			return nil, nil, err
 		}
 		err = ModifyNamespace(out, dir, env, git)
 		if err != nil {
-			return "", nil, err
+			return nil, nil, err
 		}
 		err = addValues(out, dir, helmValues, git)
 		if err != nil {
-			return "", nil, err
+			return nil, nil, err
 		}
 		err = git.PushMaster(dir)
 		if err != nil {
-			return "", nil, err
+			return nil, nil, err
 		}
 		fmt.Fprintf(out, "Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 	} else {
@@ -369,7 +381,7 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.AuthConfigServi
 		if forkEnvGitURL != "" {
 			gitInfo, err := gits.ParseGitURL(forkEnvGitURL)
 			if err != nil {
-				return "", nil, err
+				return nil, nil, err
 			}
 			originalOrg := gitInfo.Organisation
 			originalRepo := gitInfo.Name
@@ -377,92 +389,92 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.AuthConfigServi
 				// lets try fork the repository and rename it
 				repo, err := provider.ForkRepository(originalOrg, originalRepo, org)
 				if err != nil {
-					return "", nil, fmt.Errorf("Failed to fork GitHub repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, org, err)
+					return nil, nil, fmt.Errorf("Failed to fork GitHub repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, org, err)
 				}
 				if repoName != originalRepo {
 					repo, err = provider.RenameRepository(owner, originalRepo, repoName)
 					if err != nil {
-						return "", nil, fmt.Errorf("Failed to rename GitHub repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, repoName, err)
+						return nil, nil, fmt.Errorf("Failed to rename GitHub repo %s/%s to organisation %s due to %s", originalOrg, originalRepo, repoName, err)
 					}
 				}
 				fmt.Fprintf(out, "Forked Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 
 				dir, err := util.CreateUniqueDirectory(envDir, repoName, util.MaximumNewDirectoryAttempts)
 				if err != nil {
-					return "", nil, err
+					return nil, nil, err
 				}
 				err = git.Clone(repo.CloneURL, dir)
 				if err != nil {
-					return "", nil, err
+					return nil, nil, err
 				}
 				err = git.SetRemoteURL(dir, "upstream", forkEnvGitURL)
 				if err != nil {
-					return "", nil, err
+					return nil, nil, err
 				}
 				err = git.PullUpstream(dir)
 				if err != nil {
-					return "", nil, err
+					return nil, nil, err
 				}
 				err = ModifyNamespace(out, dir, env, git)
 				if err != nil {
-					return "", nil, err
+					return nil, nil, err
 				}
 				err = addValues(out, dir, helmValues, git)
 				if err != nil {
-					return "", nil, err
+					return nil, nil, err
 				}
 				err = git.Push(dir)
 				if err != nil {
-					return "", nil, err
+					return nil, nil, err
 				}
-				return repo.CloneURL, provider, nil
+				return repo, provider, nil
 			}
 		}
 
 		// default to forking the URL if possible...
 		repo, err = details.CreateRepository()
 		if err != nil {
-			return "", nil, err
+			return nil, nil, err
 		}
 
 		if forkEnvGitURL != "" {
 			// now lets clone the fork and push it...
 			dir, err := util.CreateUniqueDirectory(envDir, details.RepoName, util.MaximumNewDirectoryAttempts)
 			if err != nil {
-				return "", nil, err
+				return nil, nil, err
 			}
 			err = git.Clone(forkEnvGitURL, dir)
 			if err != nil {
-				return "", nil, err
+				return nil, nil, err
 			}
 			pushGitURL, err := git.CreatePushURL(repo.CloneURL, details.User)
 			if err != nil {
-				return "", nil, err
+				return nil, nil, err
 			}
 			err = git.AddRemote(dir, "upstream", forkEnvGitURL)
 			if err != nil {
-				return "", nil, err
+				return nil, nil, err
 			}
 			err = git.UpdateRemote(dir, pushGitURL)
 			if err != nil {
-				return "", nil, err
+				return nil, nil, err
 			}
 			err = ModifyNamespace(out, dir, env, git)
 			if err != nil {
-				return "", nil, err
+				return nil, nil, err
 			}
 			err = addValues(out, dir, helmValues, git)
 			if err != nil {
-				return "", nil, err
+				return nil, nil, err
 			}
 			err = git.PushMaster(dir)
 			if err != nil {
-				return "", nil, err
+				return nil, nil, err
 			}
 			fmt.Fprintf(out, "Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 		}
 	}
-	return repo.CloneURL, provider, nil
+	return repo, provider, nil
 }
 
 // ModifyNamespace modifies the namespace

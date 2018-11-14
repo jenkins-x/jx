@@ -504,7 +504,7 @@ func (o *CommonOptions) installOc() error {
 
 // get the latest version from kubernetes, parse it and return it
 func (o *CommonOptions) getLatestVersionFromKubernetesReleaseUrl() (sem semver.Version, err error) {
-	response, err := http.Get(stableKubeCtlVersionURL)
+	response, err := util.GetClient().Get(stableKubeCtlVersionURL)
 
 	if err != nil {
 		return semver.Version{}, fmt.Errorf("Cannot get url " + stableKubeCtlVersionURL)
@@ -1518,6 +1518,12 @@ func (o *CommonOptions) installProw() error {
 		}
 	}
 
+	if o.KubeClientCached == nil {
+		_, _, err = o.KubeClient()
+		if err != nil {
+			return err
+		}
+	}
 	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)

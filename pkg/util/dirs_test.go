@@ -17,7 +17,7 @@ func TestJXBinaryLocationSuccess(t *testing.T) {
 	require.NoError(t, err, "[TEST SETUP] failed to create temp directory for test")
 	defer os.RemoveAll(tempDir)
 	// on OS-X tmp is /tmp but a link to /private/tmp which causes the test to fail!
-	tempDir, err = filepath.EvalSymlinks(tempDir);
+	tempDir, err = filepath.EvalSymlinks(tempDir)
 	require.NoError(t, err, "[TEST SETUP] could not resolve symlinks")
 
 	jxpath := filepath.Join(tempDir, "jx")

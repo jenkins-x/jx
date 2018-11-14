@@ -280,15 +280,14 @@ func TestSearchChartVersions(t *testing.T) {
 }
 
 func TestFindChart(t *testing.T) {
-	chartFile := "Chart.yaml"
 	dir, err := ioutil.TempDir("/tmp", "charttest")
 	assert.NoError(t, err, "should be able to create a temporary dir")
 	defer os.RemoveAll(dir)
-	path := filepath.Join(dir, chartFile)
+	path := filepath.Join(dir, helm.ChartFileName)
 	ioutil.WriteFile(path, []byte("test"), 0644)
 	helm, _ := createHelmWithCwd(t, dir, nil, "")
 
-	chartFile, err = helm.FindChart()
+	chartFile, err := helm.FindChart()
 
 	assert.NoError(t, err, "should find the chart file")
 	assert.Equal(t, path, chartFile, "should find chart file '%s'", path)

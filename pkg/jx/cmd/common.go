@@ -26,6 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/Pallinder/go-randomdata"
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/table"
@@ -55,6 +56,12 @@ const (
 	exposecontrollerChart   = "jenkins-x/exposecontroller"
 )
 
+// ModifyDevEnvironmentFn a callback to create/update the development Environment
+type ModifyDevEnvironmentFn func(callback func(env *jenkinsv1.Environment) error) error
+
+// ModifyEnvironmentFn a callback to create/update an Environment
+type ModifyEnvironmentFn func(name string, callback func(env *jenkinsv1.Environment) error) error
+
 // CommonOptions contains common options and helper methods
 type CommonOptions struct {
 	Factory                Factory
@@ -76,17 +83,19 @@ type CommonOptions struct {
 	PullSecrets            string
 
 	// common cached clients
-	KubeClientCached    kubernetes.Interface
-	apiExtensionsClient apiextensionsclientset.Interface
-	currentNamespace    string
-	devNamespace        string
-	jxClient            versioned.Interface
-	knbClient           buildclient.Interface
-	jenkinsClient       gojenkins.JenkinsClient
-	GitClient           gits.Gitter
-	helm                helm.Helmer
-	Kuber               kube.Kuber
-	vaultOperatorClient vaultoperatorclient.Interface
+	KubeClientCached       kubernetes.Interface
+	apiExtensionsClient    apiextensionsclientset.Interface
+	currentNamespace       string
+	devNamespace           string
+	jxClient               versioned.Interface
+	knbClient              buildclient.Interface
+	jenkinsClient          gojenkins.JenkinsClient
+	GitClient              gits.Gitter
+	helm                   helm.Helmer
+	Kuber                  kube.Kuber
+	vaultOperatorClient    vaultoperatorclient.Interface
+	modifyDevEnvironmentFn ModifyDevEnvironmentFn
+	modifyEnvironmentFn    ModifyEnvironmentFn
 
 	Prow
 }
@@ -96,12 +105,14 @@ type ServerFlags struct {
 	ServerURL  string
 }
 
+// IsEmpty returns true if the server flags and server URL are tempry
 func (f *ServerFlags) IsEmpty() bool {
 	return f.ServerName == "" && f.ServerURL == ""
 }
 
-func (c *CommonOptions) CreateTable() table.Table {
-	return c.Factory.CreateTable(c.Out)
+// CreateTable creates a new Table
+func (o *CommonOptions) CreateTable() table.Table {
+	return o.Factory.CreateTable(o.Out)
 }
 
 // NewCommonOptions a helper method to create a new CommonOptions instance
@@ -117,15 +128,15 @@ func NewCommonOptions(devNamespace string, factory Factory) CommonOptions {
 }
 
 // SetDevNamespace configures the current dev namespace
-func (c *CommonOptions) SetDevNamespace(ns string) {
-	c.devNamespace = ns
-	c.currentNamespace = ns
-	c.KubeClientCached = nil
+func (o *CommonOptions) SetDevNamespace(ns string) {
+	o.devNamespace = ns
+	o.currentNamespace = ns
+	o.KubeClientCached = nil
 }
 
 // Debugf outputs the given text to the console if verbose mode is enabled
-func (c *CommonOptions) Debugf(format string, a ...interface{}) {
-	if c.Verbose {
+func (o *CommonOptions) Debugf(format string, a ...interface{}) {
+	if o.Verbose {
 		log.Infof(format, a...)
 	}
 }
@@ -252,6 +263,11 @@ func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, 
 	return o.jxClient, o.devNamespace, nil
 }
 
+// SetJenkinsClient sets the JenkinsClient - usually used in testing
+func (o *CommonOptions) SetJenkinsClient(jenkinsClient gojenkins.JenkinsClient) {
+	o.jenkinsClient = jenkinsClient
+}
+
 func (o *CommonOptions) JenkinsClient() (gojenkins.JenkinsClient, error) {
 	if o.jenkinsClient == nil {
 		kubeClient, ns, err := o.KubeClientAndDevNamespace()
@@ -290,6 +306,11 @@ func (o *CommonOptions) Helm() helm.Helmer {
 		o.helm = o.Factory.GetHelm(o.Verbose, helmBinary, noTiller, helmTemplate)
 	}
 	return o.helm
+}
+
+// SetHelm sets the helmer used for this object
+func (o *CommonOptions) SetHelm(helmer helm.Helmer) {
+	o.helm = helmer
 }
 
 func (o *CommonOptions) Kube() kube.Kuber {

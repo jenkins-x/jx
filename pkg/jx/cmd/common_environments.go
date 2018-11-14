@@ -2,9 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
-
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -14,6 +11,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/uuid"
+	"os"
+	"path/filepath"
 )
 
 // ModifyRequirementsFn callback for modifying requirements
@@ -197,7 +196,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 }
 
 func (o *CommonOptions) registerEnvironmentCRD() error {
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
 		return err
 	}
