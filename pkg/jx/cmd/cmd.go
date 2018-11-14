@@ -149,6 +149,7 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 			Commands: []*cobra.Command{
 				NewCmdController(f, in, out, err),
 				NewCmdGC(f, in, out, err),
+				NewCmdServeBuildNumbers(f, in, out, err),
 			},
 		},
 	}

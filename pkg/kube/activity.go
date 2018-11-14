@@ -3,6 +3,7 @@ package kube
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -51,6 +52,31 @@ type PipelineDetails struct {
 	Build         string
 }
 
+var disallowedNameChars = regexp.MustCompile("[^a-z0-9-]")
+
+func NewPipelineIDFromString(id string) PipelineID {
+	pID := PipelineID{
+		ID:   id,
+		Name: disallowedNameChars.ReplaceAllString(id, "-"),
+	}
+	return pID
+}
+
+func NewPipelineID(owner string, repository string, branch string) PipelineID {
+	return NewPipelineIDFromString(fmt.Sprintf("%s/%s/%s", owner, repository, branch))
+}
+
+// An identifier for a Pipeline.
+type PipelineID struct {
+	ID   string
+	Name string
+}
+
+// Generate the Name of an activity within this pipeline.
+func (p *PipelineID) GetActivityName(activity string) string {
+	return fmt.Sprintf("%s-%s", p.Name, activity)
+}
+
 // CreatePipelineDetails creates a PipelineDetails object populated from the activity
 func CreatePipelineDetails(activity *v1.PipelineActivity) *PipelineDetails {
 	spec := &activity.Spec
@@ -87,58 +113,50 @@ func CreatePipelineDetails(activity *v1.PipelineActivity) *PipelineDetails {
 }
 
 // GenerateBuildNumber generates a new build number for the given pipeline
-func GenerateBuildNumber(activities typev1.PipelineActivityInterface, owner string, repository string, branch string) (string, *v1.PipelineActivity, error) {
-	pipelineName := owner + "/" + repository + "/" + branch
-	namePrefix := owner + "-" + repository + "-" + branch
+func GenerateBuildNumber(activities typev1.PipelineActivityInterface, pn PipelineID) (string, *v1.PipelineActivity, error) {
+	buildCounter := 0
+	pipelines, err := activities.List(metav1.ListOptions{})
 
-	attempts := 100
-	for i := 0; i < attempts; i++ {
-		buildCounter := 0
-		pipelines, err := activities.List(metav1.ListOptions{})
+	if err != nil {
+		return "", nil, err
+	}
 
-		if err != nil {
-			return "", nil, err
-		}
-
-		for _, pipeline := range pipelines.Items {
-			if strings.EqualFold(pipeline.Spec.Pipeline, pipelineName) {
-				b := pipeline.Spec.Build
-				if b != "" {
-					bi, err := strconv.Atoi(b)
-					if err == nil {
-						if bi > buildCounter {
-							buildCounter = bi
-						}
+	for _, pipeline := range pipelines.Items {
+		if strings.EqualFold(pipeline.Spec.Pipeline, pn.ID) {
+			b := pipeline.Spec.Build
+			if b != "" {
+				bi, err := strconv.Atoi(b)
+				if err == nil {
+					if bi > buildCounter {
+						buildCounter = bi
 					}
 				}
 			}
 		}
-		buildCounter++
-		build := strconv.Itoa(buildCounter)
-		name := namePrefix + "-" + build
-
-		k := &PipelineActivityKey{
-			Name:     name,
-			Pipeline: pipelineName,
-			Build:    build,
-		}
-		a := &v1.PipelineActivity{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: name,
-			},
-			Spec: v1.PipelineActivitySpec{},
-		}
-		spec := &a.Spec
-		updateActivitySpec(k, spec)
-
-		answer, err := activities.Create(a)
-		if err == nil {
-			return build, answer, nil
-		}
-		time.Sleep(time.Second)
 	}
-	return "", nil, fmt.Errorf("Failed after %d attempts to create a new build number for pipeline %s", attempts, pipelineName)
+	buildCounter++
+	build := strconv.Itoa(buildCounter)
+	name := pn.GetActivityName(build)
 
+	k := &PipelineActivityKey{
+		Name:     name,
+		Pipeline: pn.ID,
+		Build:    build,
+	}
+	a := &v1.PipelineActivity{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Spec: v1.PipelineActivitySpec{},
+	}
+	spec := &a.Spec
+	updateActivitySpec(k, spec)
+
+	answer, err := activities.Create(a)
+	if err != nil {
+		return "", nil, err
+	}
+	return build, answer, nil
 }
 
 // GetOrCreate gets or creates the pipeline activity

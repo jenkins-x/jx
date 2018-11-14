@@ -1,14 +1,23 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
+	"time"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/build_num"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+)
+
+const (
+	optionBranch  = "branch"
+	optionService = "service"
 )
 
 // StepNextBuildNumberOptions contains the command line flags
@@ -22,7 +31,7 @@ type StepNextBuildNumberOptions struct {
 
 var (
 	StepNextBuildNumberLong = templates.LongDesc(`
-		TGenerates the next build unique number for a pipeline
+		Generates the next build unique number for a pipeline
 `)
 
 	StepNextBuildNumberExample = templates.Examples(`
@@ -56,31 +65,38 @@ func NewCmdStepNextBuildNumber(f Factory, in terminal.FileReader, out terminal.F
 	}
 	cmd.Flags().StringVarP(&options.Owner, optionOwner, "o", "", "The Git repository owner")
 	cmd.Flags().StringVarP(&options.Repository, optionRepo, "r", "", "The Git repository name")
-	cmd.Flags().StringVarP(&options.Branch, "branch", "b", "master", "The Git branch")
+	cmd.Flags().StringVarP(&options.Branch, optionBranch, "b", "master", "The Git branch")
 	return cmd
 }
 
 func (o *StepNextBuildNumberOptions) Run() error {
-	jxClient, ns, err := o.JXClientAndDevNamespace()
+	if o.Owner == "" {
+		return util.MissingOption(optionOwner)
+	}
+	if o.Repository == "" {
+		return util.MissingOption(optionRepo)
+	}
+
+	jxClient, ns, err := o.Factory.CreateJXClient()
 	if err != nil {
 		return err
 	}
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
+	buildNumGen := build_num.NewCRDBuildNumGen(activities)
 
-	owner := o.Owner
-	repository := o.Repository
-	branch := o.Branch
+	pID := kube.NewPipelineID(o.Owner, o.Repository, o.Branch)
 
-	if owner == "" {
-		return util.MissingOption(optionOwner)
+	attempts := 100
+	for i := 0; i < attempts; i++ {
+		buildNum, err := buildNumGen.NextBuildNumber(pID)
+		if err == nil {
+			log.Infof("%s\n", buildNum)
+			return nil
+		}
+
+		time.Sleep(time.Second)
 	}
-	if repository == "" {
-		return util.MissingOption(optionRepo)
-	}
-	build, _, err := kube.GenerateBuildNumber(activities, owner, repository, branch)
-	if err != nil {
-		return err
-	}
-	log.Infof("%s\n", build)
-	return nil
+
+	return fmt.Errorf("Failed after %d attempts to create a new build number for pipeline %s. "+
+		"The last error was: %", attempts, pID.ID, err)
 }
