@@ -281,7 +281,8 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 		extension = "zip"
 	}
 	clientUrlBuffer := bytes.NewBufferString("")
-	urlTemplate.Execute(clientUrlBuffer, map[string]string{"version": options.Version, "os": runtime.GOOS, "arch": runtime.GOARCH, "extension": extension})
+	variables := map[string]string{"version": options.Version, "os": runtime.GOOS, "osTitle": strings.Title(runtime.GOOS), "arch": runtime.GOARCH, "extension": extension}
+	urlTemplate.Execute(clientUrlBuffer, variables)
 	fullPath := filepath.Join(binDir, fileName)
 	tarFile := fullPath
 	if options.Archived {
@@ -1219,7 +1220,7 @@ func (o *CommonOptions) installEksCtlWithVersion(version string, skipPathScan bo
 	return o.installOrUpdateBinary(InstallOrUpdateBinaryOptions{
 		Binary:              "eksctl",
 		GitHubOrganization:  "weaveworks",
-		DownloadUrlTemplate: "https://github.com/weaveworks/eksctl/releases/download/{{.version}}/eksctl_{{.os}}_{{.arch}}.{{.extension}}",
+		DownloadUrlTemplate: "https://github.com/weaveworks/eksctl/releases/download/{{.version}}/eksctl_{{.osTitle}}_{{.arch}}.{{.extension}}",
 		Version:             version,
 		SkipPathScan:        skipPathScan,
 		VersionExtractor:    nil,
