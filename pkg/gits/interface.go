@@ -206,6 +206,7 @@ type Gitter interface {
 	HasChanges(dir string) (bool, error)
 	Diff(dir string) (string, error)
 
+	GetLatestCommitMessage(dir string) (string, error)
 	GetPreviousGitTagSHA(dir string) (string, error)
 	GetCurrentGitTagSHA(dir string) (string, error)
 	FetchTags(dir string) error
