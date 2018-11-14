@@ -80,6 +80,14 @@ func NewCmdStepPostInstall(f Factory, in terminal.FileReader, out terminal.FileW
 
 // Run implements this command
 func (o *StepPostInstallOptions) Run() (err error) {
+	apisClient, err := o.CreateApiExtensionsClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the API extensions client")
+	}
+	kube.RegisterAllCRDs(apisClient)
+	if err != nil {
+		return err
+	}
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return errors.Wrap(err, "cannot create the JX client")
