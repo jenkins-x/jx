@@ -153,21 +153,25 @@ func (o *UninstallOptions) cleanupNamespaces(namespace string, envNames []string
 	}
 	if !o.KeepEnvironments {
 		for _, env := range envNames {
+			envNamespaces := []string{namespace + "-" + env}
+
 			envResource := envMap[env]
 			envNamespace := ""
 			if envResource != nil {
 				envNamespace = envResource.Spec.Namespace
 			}
-			if envNamespace == "" {
-				continue
+			if envNamespace != "" && envNamespaces[0] != envNamespace {
+				envNamespaces = append(envNamespaces, envNamespace)
 			}
-			_, err := client.CoreV1().Namespaces().Get(envNamespace, meta_v1.GetOptions{})
-			if err != nil {
-				continue
-			}
-			err = o.deleteNamespace(envNamespace)
-			if err != nil {
-				return errors.Wrap(err, "failed to delete environment namespace")
+			for _, envNamespace := range envNamespaces {
+				_, err := client.CoreV1().Namespaces().Get(envNamespace, meta_v1.GetOptions{})
+				if err != nil {
+					continue
+				}
+				err = o.deleteNamespace(envNamespace)
+				if err != nil {
+					return errors.Wrap(err, "failed to delete environment namespace")
+				}
 			}
 		}
 	}
@@ -179,6 +183,7 @@ func (o *UninstallOptions) deleteNamespace(namespace string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get the kube client")
 	}
+	log.Infof("deleting namespace %s\n", util.ColorInfo(namespace))
 	err = client.CoreV1().Namespaces().Delete(namespace, &meta_v1.DeleteOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "failed to delete the namespace '%s'", namespace)
