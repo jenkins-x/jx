@@ -380,7 +380,7 @@ func (h *HelmCLI) SearchChartVersions(chart string) ([]string, error) {
 // FindChart find a chart in the current working directory, if no chart file is found an error is returned
 func (h *HelmCLI) FindChart() (string, error) {
 	dir := h.CWD
-	chartFile := filepath.Join(dir, "Chart.yaml")
+	chartFile := filepath.Join(dir, ChartFileName)
 	exists, err := util.FileExists(chartFile)
 	if err != nil {
 		return "", errors.Wrapf(err, "no Chart.yaml file found in directory '%s'", dir)

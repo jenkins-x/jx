@@ -135,5 +135,5 @@ func (o *DeleteQuickstartLocationOptions) Run() error {
 		}
 		return fmt.Errorf("No quickstart location found for git URL: %s and owner: %s", o.GitUrl, o.Owner)
 	}
-	return o.modifyDevEnvironment(jxClient, ns, callback)
+	return o.ModifyDevEnvironment(callback)
 }

@@ -1518,6 +1518,12 @@ func (o *CommonOptions) installProw() error {
 		}
 	}
 
+	if o.KubeClientCached == nil {
+		_, _, err = o.KubeClient()
+		if err != nil {
+			return err
+		}
+	}
 	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)

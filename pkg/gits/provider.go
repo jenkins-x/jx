@@ -164,7 +164,10 @@ func (pr *GitPullRequest) NumberString() string {
 }
 
 func CreateProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
-	if (server.Kind == KindBitBucketCloud) || (server.Kind == "" && strings.HasPrefix(server.URL, "https://bitbucket.org")) {
+	if server.Kind == "" {
+		server.Kind = SaasGitKind(server.URL)
+	}
+	if server.Kind == KindBitBucketCloud {
 		return NewBitbucketCloudProvider(server, user, git)
 	} else if server.Kind == KindBitBucketServer {
 		return NewBitbucketServerProvider(server, user, git)
@@ -172,6 +175,8 @@ func CreateProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (G
 		return NewGiteaProvider(server, user, git)
 	} else if server.Kind == KindGitlab {
 		return NewGitlabProvider(server, user, git)
+	} else if server.Kind == KindGitFake {
+		return NewFakeGitProvider(server, user, git)
 	} else {
 		return NewGitHubProvider(server, user, git)
 	}

@@ -62,6 +62,7 @@ type InitFlags struct {
 	SkipTiller                 bool
 	OnPremise                  bool
 	Http                       bool
+	NoGitValidate              bool
 }
 
 const (
@@ -157,9 +158,11 @@ func (o *InitOptions) Run() error {
 		return err
 	}
 
-	err = o.validateGit()
-	if err != nil {
-		return err
+	if !o.Flags.NoGitValidate {
+		err = o.validateGit()
+		if err != nil {
+			return err
+		}
 	}
 
 	err = o.enableClusterAdminRole()
@@ -629,7 +632,7 @@ func (o *InitOptions) initIngress() error {
 			return nil
 		}
 
-		values := []string{"rbac.create=true" /*,"rbac.serviceAccountName="+ingressServiceAccount*/}
+		values := []string{"rbac.create=true" /*,"rbac.serviceAccountName="+ingressServiceAccount*/ }
 		valuesFiles := []string{}
 		valuesFiles, err = helm.AppendMyValues(valuesFiles)
 		if err != nil {

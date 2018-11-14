@@ -395,17 +395,25 @@ func (o *CommonOptions) helmInitRecursiveDependencyBuild(dir string, chartRepos 
 }
 
 func (o *CommonOptions) defaultReleaseCharts() map[string]string {
-	return map[string]string{
-		"releases":  o.releaseChartMuseumUrl(),
+	releasesURL := o.releaseChartMuseumUrl()
+	answer := map[string]string{
 		"jenkins-x": DEFAULT_CHARTMUSEUM_URL,
 	}
+	if releasesURL != "" {
+		answer["releases"] = releasesURL
+	}
+	return answer
 }
 
 func (o *CommonOptions) releaseChartMuseumUrl() string {
 	chartRepo := os.Getenv("CHART_REPOSITORY")
 	if chartRepo == "" {
-		chartRepo = defaultChartRepo
-		log.Warnf("No $CHART_REPOSITORY defined so using the default value of: %s\n", defaultChartRepo)
+		if o.Factory.IsInCDPipeline() {
+			chartRepo = defaultChartRepo
+			log.Warnf("No $CHART_REPOSITORY defined so using the default value of: %s\n", defaultChartRepo)
+		} else {
+			return ""
+		}
 	}
 	return chartRepo
 }
