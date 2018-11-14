@@ -229,15 +229,6 @@ func (options *ImportOptions) Run() error {
 			return err
 		}
 
-		apisClient, err := options.CreateApiExtensionsClient()
-		if err != nil {
-			return err
-		}
-		err = kube.RegisterEnvironmentCRD(apisClient)
-		if err != nil {
-			return err
-		}
-
 		isProw, err = options.isProw()
 		if err != nil {
 			return err

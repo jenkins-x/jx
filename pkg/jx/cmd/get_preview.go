@@ -90,14 +90,6 @@ func (o *GetPreviewOptions) CurrentPreviewUrl() error {
 	if err != nil {
 		return err
 	}
-	apisClient, err := o.CreateApiExtensionsClient()
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterEnvironmentCRD(apisClient)
-	if err != nil {
-		return err
-	}
 
 	envList, err := client.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
 	if err != nil {

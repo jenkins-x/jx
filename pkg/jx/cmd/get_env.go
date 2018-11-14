@@ -80,14 +80,6 @@ func (o *GetEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	apisClient, err := o.CreateApiExtensionsClient()
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterEnvironmentCRD(apisClient)
-	if err != nil {
-		return err
-	}
 
 	args := o.Args
 	if len(args) > 0 {

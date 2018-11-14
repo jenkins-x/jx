@@ -67,10 +67,6 @@ func NewCmdGetWorkflow(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 // Run implements this command
 func (o *GetWorkflowOptions) Run() error {
-	err := o.registerWorkflowCRD()
-	if err != nil {
-		return err
-	}
 	jxClient, ns, err := o.JXClientAndAdminNamespace()
 	if err != nil {
 		return err
