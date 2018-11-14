@@ -3,6 +3,7 @@ package cmd
 import (
 	"io"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -139,17 +140,23 @@ func (o *CreatePullRequestOptions) Run() error {
 
 func (o *CreatePullRequestOptions) PopulatePullRequest(pullRequest *gits.GitPullRequestArguments, gitInfo *gits.GitRepositoryInfo) error {
 	title := o.Title
-	body := o.Body
-	var err error
 	if title == "" {
 		if o.BatchMode {
 			return util.MissingOption(optionTitle)
 		}
-		title, err = util.PickValue("PullRequest title:", "", true, "", o.In, o.Out, o.Err)
+		defaultValue, body, err := o.findLastCommitTitle()
+		if err != nil {
+			log.Warnf("Failed to find last git commit title: %s\n", err)
+		}
+		if o.Body == "" {
+			o.Body = body
+		}
+		title, err = util.PickValue("PullRequest title:", defaultValue, true, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
 	}
+	body := o.Body
 	pullRequest.Title = title
 	pullRequest.Body = body
 	pullRequest.GitRepositoryInfo = gitInfo
@@ -158,4 +165,27 @@ func (o *CreatePullRequestOptions) PopulatePullRequest(pullRequest *gits.GitPull
 		return fmt.Errorf("No title specified!")
 	}
 	return nil
+}
+
+func (o *CreatePullRequestOptions) findLastCommitTitle() (string, string, error) {
+	title := ""
+	body := ""
+	dir := o.Dir
+	gitDir, gitConfDir, err := o.Git().FindGitConfigDir(dir)
+	if err != nil {
+		return title, body, err
+	}
+	if gitDir == "" || gitConfDir == "" {
+		log.Warnf("No git directory could be found from dir %s\n", dir)
+		return title, body, err
+	}
+	message, err := o.Git().GetLatestCommitMessage(dir)
+	if err != nil {
+		return title, body, err
+	}
+	lines := strings.SplitN(message, "\n", 2)
+	if len(lines) < 2 {
+		return message, "", nil
+	}
+	return lines[0], lines[1], nil
 }

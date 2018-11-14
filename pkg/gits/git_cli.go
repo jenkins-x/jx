@@ -507,6 +507,11 @@ func (g *GitCLI) GetCurrentGitTagSHA(dir string) (string, error) {
 	return g.gitCmdWithOutput(dir, "rev-list", "--tags", "--max-count=1")
 }
 
+// GetLatestCommitMessage returns the latest git commit message
+func (g *GitCLI) GetLatestCommitMessage(dir string) (string, error) {
+	return g.gitCmdWithOutput(dir, "log", "-1", "--pretty=%B")
+}
+
 // FetchTags fetches all the tags
 func (g *GitCLI) FetchTags(dir string) error {
 	return g.gitCmd("", "fetch", "--tags", "-v")
