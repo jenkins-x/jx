@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"io"
 
 	"github.com/pkg/errors"
@@ -102,7 +103,7 @@ func (o *UninstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	envNames, err := kube.GetEnvironmentNames(jxClient, namespace)
+	envMap, envNames, err := kube.GetEnvironments(jxClient, namespace)
 	if err != nil {
 		log.Warnf("Failed to find Environments. Probably not installed yet?. Error: %s\n", err)
 	}
@@ -122,7 +123,7 @@ func (o *UninstallOptions) Run() error {
 	o.Helm().DeleteRelease(namespace, "jx-prow", true)
 	err = o.Helm().DeleteRelease(namespace, "jenkins-x", true)
 	if err != nil {
-		errc := o.cleanupNamespaces(namespace, envNames)
+		errc := o.cleanupNamespaces(namespace, envNames, envMap)
 		if errc != nil {
 			errc = errors.Wrap(errc, "failed to cleanup the jenkins-x platform")
 			return errc
@@ -133,7 +134,7 @@ func (o *UninstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	err = o.cleanupNamespaces(namespace, envNames)
+	err = o.cleanupNamespaces(namespace, envNames, envMap)
 	if err != nil {
 		return err
 	}
@@ -141,7 +142,7 @@ func (o *UninstallOptions) Run() error {
 	return nil
 }
 
-func (o *UninstallOptions) cleanupNamespaces(namespace string, envNames []string) error {
+func (o *UninstallOptions) cleanupNamespaces(namespace string, envNames []string, envMap map[string]*v1.Environment) error {
 	client, _, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to get the kube client")
@@ -152,7 +153,14 @@ func (o *UninstallOptions) cleanupNamespaces(namespace string, envNames []string
 	}
 	if !o.KeepEnvironments {
 		for _, env := range envNames {
-			envNamespace := namespace + "-" + env
+			envResource := envMap[env]
+			envNamespace := ""
+			if envResource != nil {
+				envNamespace = envResource.Spec.Namespace
+			}
+			if envNamespace == "" {
+				continue
+			}
 			_, err := client.CoreV1().Namespaces().Get(envNamespace, meta_v1.GetOptions{})
 			if err != nil {
 				continue
