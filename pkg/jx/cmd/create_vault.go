@@ -98,10 +98,17 @@ func NewCmdCreateVault(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 // Run implements the command
 func (o *CreateVaultOptions) Run() error {
-	if len(o.Args) != 1 {
+	var vaultName string
+	if len(o.Args) == 1 {
+		vaultName = o.Args[0]
+	} else if o.BatchMode {
 		return fmt.Errorf("Missing vault name")
+	} else {
+		// Prompt the user for the vault name
+		vaultName, _ = util.PickValue(
+			"Vault name:", "", true,
+			"The name of the vault that will be created", o.GetIn(), o.GetOut(), o.GetErr())
 	}
-	vaultName := o.Args[0]
 	teamSettings, err := o.TeamSettings()
 	if err != nil {
 		return errors.Wrap(err, "retrieving the team settings")
