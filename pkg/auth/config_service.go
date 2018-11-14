@@ -8,19 +8,19 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func (s *AuthConfigService) Config() *AuthConfig {
+func (s *FileBasedAuthConfigService) Config() *AuthConfig {
 	if s.config == nil {
 		s.config = &AuthConfig{}
 	}
 	return s.config
 }
 
-func (s *AuthConfigService) SetConfig(c *AuthConfig) {
+func (s *FileBasedAuthConfigService) SetConfig(c *AuthConfig) {
 	s.config = c
 }
 
 // LoadConfig loads the configuration from the users JX config directory
-func (s *AuthConfigService) LoadConfig() (*AuthConfig, error) {
+func (s *FileBasedAuthConfigService) LoadConfig() (*AuthConfig, error) {
 	config := s.Config()
 	fileName := s.FileName
 	if fileName != "" {
@@ -43,7 +43,7 @@ func (s *AuthConfigService) LoadConfig() (*AuthConfig, error) {
 }
 
 // HasConfigFile returns true if we have a config file
-func (s *AuthConfigService) HasConfigFile() (bool, error) {
+func (s *FileBasedAuthConfigService) HasConfigFile() (bool, error) {
 	fileName := s.FileName
 	if fileName != "" {
 		exists, err := util.FileExists(fileName)
@@ -56,7 +56,7 @@ func (s *AuthConfigService) HasConfigFile() (bool, error) {
 }
 
 // SaveConfig saves the configuration to disk
-func (s *AuthConfigService) SaveConfig() error {
+func (s *FileBasedAuthConfigService) SaveConfig() error {
 	fileName := s.FileName
 	if fileName == "" {
 		return fmt.Errorf("No filename defined!")
@@ -69,7 +69,7 @@ func (s *AuthConfigService) SaveConfig() error {
 }
 
 // SaveUserAuth saves the given user auth for the server url
-func (s *AuthConfigService) SaveUserAuth(url string, userAuth *UserAuth) error {
+func (s *FileBasedAuthConfigService) SaveUserAuth(url string, userAuth *UserAuth) error {
 	config := s.config
 	config.SetUserAuth(url, userAuth)
 	user := userAuth.Username
@@ -88,7 +88,7 @@ func (s *AuthConfigService) SaveUserAuth(url string, userAuth *UserAuth) error {
 }
 
 // DeleteServer removes the given server from the configuration
-func (s *AuthConfigService) DeleteServer(url string) error {
+func (s *FileBasedAuthConfigService) DeleteServer(url string) error {
 	s.config.DeleteServer(url)
 	return s.SaveConfig()
 }

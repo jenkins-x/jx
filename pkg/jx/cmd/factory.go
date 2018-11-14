@@ -98,7 +98,7 @@ func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string
 	if err != nil {
 		return nil, fmt.Errorf("%s. Try switching to the Development Tools environment via: jx env dev", err)
 	}
-	return jenkins.GetJenkinsClient(url, f.Batch, &svc, in, out, errOut)
+	return jenkins.GetJenkinsClient(url, f.Batch, svc, in, out, errOut)
 }
 
 func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (string, error) {
@@ -279,7 +279,7 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 }
 
 func (f *factory) CreateAuthConfigService(fileName string) (auth.AuthConfigService, error) {
-	svc := auth.AuthConfigService{}
+	svc := &auth.FileBasedAuthConfigService{}
 	dir, err := util.ConfigDir()
 	if err != nil {
 		return svc, err

@@ -52,7 +52,7 @@ func TestShouldDisableMaven() bool {
 
 // CreateAuthConfigService creates and returns a fixture AuthConfigService
 func CreateAuthConfigService() auth.AuthConfigService {
-	authConfigSvc := auth.AuthConfigService{
+	authConfigSvc := auth.FileBasedAuthConfigService{
 		FileName: "test-auth-config-service",
 	}
 	userAuth := auth.UserAuth{
@@ -74,7 +74,7 @@ func CreateAuthConfigService() auth.AuthConfigService {
 		CurrentServer:   authServer.URL,
 	}
 	authConfigSvc.SetConfig(&authConfig)
-	return authConfigSvc
+	return &authConfigSvc
 }
 
 //newTerminal Returns a fake terminal to test input and output.

@@ -29,8 +29,8 @@ type AuthConfig struct {
 	PipeLineServer   string
 }
 
-// AuthConfigService is a service for handing the config of auth tokens
-type AuthConfigService struct {
+// FileBasedAuthConfigService is a service for handing the config of auth tokens
+type FileBasedAuthConfigService struct {
 	FileName string
 	config   *AuthConfig
 }
