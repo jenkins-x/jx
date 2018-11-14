@@ -35,9 +35,9 @@ type StepPostInstallResults struct {
 
 var (
 	stepPostInstallLong = templates.LongDesc(`
-		This pipeline step ensures that all the necessary jobs are imported and the webooks setup - e.g. for the current Environments.
+		This pipeline step ensures that all the necessary jobs are imported and the webhooks set up - e.g. for the current Environments.
 
-		Its designed to work with GitOps based development environments where the permanent Environments like Staging and Production are defined in a git repository.
+		It is designed to work with GitOps based development environments where the permanent Environments like Staging and Production are defined in a git repository.
 		This step is used to ensure that all the 'Environment' resources have their associated CI+CD jobs setup in Jenkins or Prow with the necessary webhooks in place.
 `)
 
