@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -117,6 +118,15 @@ func (o *StepHelmApplyOptions) Run() error {
 		return fmt.Errorf("No --namespace option specified or $DEPLOY_NAMESPACE environment variable available")
 	}
 
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+	  return err
+	}
+	err = kube.EnsureNamespaceCreated(kubeClient, ns, nil, nil)
+	if err != nil {
+	  return err
+	}
+	
 	releaseName := o.ReleaseName
 	if releaseName == "" {
 		releaseName = ns
