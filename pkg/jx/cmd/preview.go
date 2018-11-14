@@ -202,6 +202,14 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
+	if o.GitInfo == nil {
+		log.Warnf("No GitInfo found\n")
+	} else if o.GitInfo.Organisation == "" {
+		log.Warnf("No GitInfo.Organisation found\n")
+	} else if o.GitInfo.Name == "" {
+		log.Warnf("No GitInfo.Name found\n")
+	}
+
 	// we need pull request info to include
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
@@ -562,16 +570,14 @@ func (o *PreviewOptions) Run() error {
 		},
 		StepPROptions: StepPROptions{
 			StepOptions: StepOptions{
-				CommonOptions: CommonOptions{
-					BatchMode: true,
-					Factory:   o.Factory,
-				},
+				CommonOptions: o.CommonOptions,
 			},
 		},
 	}
+	stepPRCommentOptions.BatchMode = true
 	err = stepPRCommentOptions.Run()
 	if err != nil {
-		log.Warnf("Failed to comment on the Pull Request: %s\n", err)
+		log.Warnf("Failed to comment on the Pull Request with owner %s repo %s: %s\n", o.GitInfo.Organisation, o.GitInfo.Name, err)
 	}
 	return o.RunPostPreviewSteps(kubeClient, o.Namespace, url, pipeline, build)
 }
