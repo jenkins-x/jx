@@ -36,3 +36,7 @@ myvalues.yml
 
 vendor/**
 hack/code-generator/**
+
+# if you run `jx install --gitops` locally
+jenkins-x-dev-environment
+
