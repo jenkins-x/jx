@@ -151,6 +151,10 @@ func parsePath(path string, info *GitRepositoryInfo) (*GitRepositoryInfo, error)
 	// This is necessary for Bitbucket Server in some cases.
 	trimPath := strings.TrimPrefix(path, "/scm")
 
+	// This is necessary for Bitbucket Server in other cases
+	trimPath = strings.Replace(trimPath, "/projects", "", 1)
+	trimPath = strings.Replace(trimPath, "/repos", "", 1)
+
 	// Remove leading and trailing slashes so that splitting on "/" won't result
 	// in empty strings at the beginning & end of the array.
 	trimPath = strings.TrimPrefix(trimPath, "/")

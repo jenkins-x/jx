@@ -448,6 +448,14 @@ func (options *InstallOptions) Run() error {
 		}
 		return nil
 	}
+	apisClient, err := options.CreateApiExtensionsClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the API extensions client")
+	}
+	kube.RegisterAllCRDs(apisClient)
+	if err != nil {
+		return err
+	}
 	err = options.ModifyDevEnvironment(callback)
 	if err != nil {
 		return err

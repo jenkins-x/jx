@@ -156,7 +156,7 @@ func CheckVersion() error {
 func extractVersionFromTerraformOutput(output string) (string, error) {
 
 	lines := strings.Split(output, "\n")
-	for _,line := range lines {
+	for _, line := range lines {
 		if strings.HasPrefix(line, "Terraform") {
 			versionTokens := strings.Split(line, " ")
 			return strings.TrimPrefix(versionTokens[1], "v"), nil
