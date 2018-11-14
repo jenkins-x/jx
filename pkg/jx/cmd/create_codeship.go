@@ -432,6 +432,10 @@ func (o *CreateCodeshipOptions) CreateAdditionalArgs() []string {
 		args = append(args, "--helm3")
 	}
 
+	if o.CreateTerraformOptions.InstallOptions.GitOpsMode {
+		args = append(args, "--helm3")
+	}
+
 	return args
 }
 
