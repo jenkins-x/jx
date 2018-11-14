@@ -84,6 +84,7 @@ type InstallFlags struct {
 	Dir                      string
 	NoGitOpsEnvApply         bool
 	NoGitOpsEnvRepo          bool
+	Vault                    bool
 }
 
 // Secrets struct for secrets
@@ -334,6 +335,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.GitOpsMode, "gitops", "", false, "Sets up the local file system for GitOps so that the current installation can be configured or upgraded at any time via GitOps")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvApply, "no-gitops-env-apply", "", false, "When using GitOps to create the source code for the development environment and installation, don't run 'jx step env apply' to perform the install")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvRepo, "no-gitops-env-repo", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a git repository for the source code")
+	cmd.Flags().BoolVarP(&flags.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during installation")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
@@ -669,6 +671,14 @@ func (options *InstallOptions) Run() error {
 		options.Flags.Domain = initOpts.Flags.Domain
 	}
 
+	if options.Flags.GitOpsMode || options.Flags.Vault {
+		// Install Vault into the new env
+		err = InstallVaultOperator(&options.CommonOptions, "")
+		if err != nil {
+			return err
+		}
+	}
+
 	// get secrets to use in helm install
 	secrets, err := options.getGitSecrets()
 	if err != nil {
@@ -912,7 +922,6 @@ func (options *InstallOptions) Run() error {
 			return fmt.Errorf("failed to install Prow: %v", err)
 		}
 	}
-
 	timeoutInt, err := strconv.Atoi(timeout)
 	if err != nil {
 		return errors.Wrap(err, "failed to convert the helm install timeout value")
@@ -1297,7 +1306,7 @@ func (options *InstallOptions) Run() error {
 				return nil
 			})
 			if err != nil {
-			  return err
+				return err
 			}
 
 			err = git.Add(dir, ".gitignore")
