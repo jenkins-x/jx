@@ -108,7 +108,8 @@ func TestInstallGitOps(t *testing.T) {
 
 	t.Logf("Completed install to dir %s", tempDir)
 
-	envDir := filepath.Join(tempDir, "jenkins-x-dev-environment", "env")
+	outDir := filepath.Join(tempDir, "jenkins-x-dev-environment")
+	envDir := filepath.Join(outDir, "env")
 	chartFile := filepath.Join(envDir, helm.ChartFileName)
 	reqFile := filepath.Join(envDir, helm.RequirementsFileName)
 	secretsFile := filepath.Join(envDir, helm.SecretsFileName)
@@ -120,6 +121,9 @@ func TestInstallGitOps(t *testing.T) {
 	assert.FileExists(t, valuesFile)
 	for _, name := range []string{"dev-env.yaml", "ingress-config-configmap.yaml", "jx-install-config-secret.yaml"} {
 		assert.FileExists(t, filepath.Join(envDir, "templates", name))
+	}
+	for _, name := range []string{".gitignore", "Jenkinsfile", "README.md"} {
+		assert.FileExists(t, filepath.Join(outDir, name))
 	}
 	if !o.Flags.DisableSetKubeContext {
 		for _, name := range []string{ "jx-install-config-configmap.yaml"} {

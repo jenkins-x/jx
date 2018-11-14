@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	"io"
 	"io/ioutil"
@@ -12,7 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Pallinder/go-randomdata"
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/addon"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -122,6 +122,78 @@ description: GitOps Environment for this Environment
 maintainers:
   - name: Team
 icon: https://www.cloudbees.com/sites/default/files/Jenkins_8.png
+`
+
+	devGitOpsGitIgnore = `
+# lets not accidentally check in Secret YAMLs!
+secrets.yaml
+mysecrets.yaml
+`
+
+	devGitOpsReadMe = `
+## Jenkins X Development Environment
+
+This repository contains the source code for the Jenkins X Development Environment so that it can be managed via GitOps.
+`
+
+	devGitOpsJenkinsfile = `pipeline {
+  agent {
+    label "jenkins-jx-base"
+  }
+  environment {
+    DEPLOY_NAMESPACE = "%s"
+  }
+  stages {
+    stage('Validate Environment') {
+      steps {
+        container('jx-base') {
+          dir('env') {
+            sh 'jx step helm build'
+          }
+        }
+      }
+    }
+    stage('Update Environment') {
+      when {
+        branch 'master'
+      }
+      steps {
+        container('jx-base') {
+          dir('env') {
+            sh 'jx step env apply'
+          }
+        }
+      }
+    }
+  }
+}
+`
+
+	devGitOpsJenkinsfileProw = `pipeline {
+  agent amy
+  environment {
+    DEPLOY_NAMESPACE = "%s"
+  }
+  stages {
+    stage('Validate Environment') {
+      steps {
+        dir('env') {
+          sh 'jx step helm build'
+        }
+      }
+    }
+    stage('Update Environment') {
+      when {
+        branch 'master'
+      }
+      steps {
+        dir('env') {
+          sh 'jx step env apply'
+        }
+      }
+    }
+  }
+}
 `
 )
 
@@ -941,7 +1013,7 @@ func (options *InstallOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "Failed to save GitOps helm requirements file %s", requirementsFile)
 		}
-		
+
 		err = ioutil.WriteFile(chartFile, []byte(GitOpsChartYAML), util.DefaultWritePermissions)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to save file %s", chartFile)
@@ -968,8 +1040,28 @@ func (options *InstallOptions) Run() error {
 			return errors.Wrapf(err, "Failed to generate %s by combining helm value YAML files %s", valuesFile, strings.Join(onlyValueFiles, ", "))
 		}
 
-		// TODO add secrets.yaml to .gitignore
+		gitIgnore := filepath.Join(gitOpsDir, ".gitignore")
+		err = ioutil.WriteFile(gitIgnore, []byte(devGitOpsGitIgnore), util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to write %s", gitIgnore)
+		}
 
+		readme := filepath.Join(gitOpsDir, "README.md")
+		err = ioutil.WriteFile(readme, []byte(devGitOpsReadMe), util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to write %s", readme)
+		}
+
+		jenkinsFile := filepath.Join(gitOpsDir, "Jenkinsfile")
+		jftTmp := devGitOpsJenkinsfile
+		if isProw {
+			jftTmp = devGitOpsJenkinsfileProw
+		}
+		text := fmt.Sprintf(jftTmp, ns)
+		err = ioutil.WriteFile(jenkinsFile, []byte(text), util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to write %s", jenkinsFile)
+		}
 	} else {
 		for _, v := range valueFiles {
 			options.Debugf("Adding values file %s\n", util.ColorInfo(v))
@@ -1091,6 +1183,10 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
+	if options.Flags.DefaultEnvironmentPrefix == "" {
+		options.Flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
+	}
+
 	if !options.Flags.NoDefaultEnvironments {
 		createEnvironments := true
 		if options.Flags.GitOpsMode {
@@ -1116,10 +1212,6 @@ func (options *InstallOptions) Run() error {
 
 		}
 		if createEnvironments {
-			if options.Flags.DefaultEnvironmentPrefix == "" {
-				options.Flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
-			}
-
 			log.Info("Creating default staging and production environments\n")
 			// Common CreateEnv Options
 			options.CreateEnvOptions.GitRepositoryOptions = options.GitRepositoryOptions
@@ -1185,7 +1277,7 @@ func (options *InstallOptions) Run() error {
 				return err
 			}
 			forkEnvGitURL := ""
-			prefix := "jenkins-x"
+			prefix := options.Flags.DefaultEnvironmentPrefix
 
 			git := options.Git()
 			repo, gitProvider, err := kube.CreateEnvGitRepository(options.BatchMode, authConfigSvc, devEnv, devEnv, config, forkEnvGitURL, envDir, &options.GitRepositoryOptions, options.CreateEnvOptions.HelmValuesConfig, prefix, git, options.In, options.Out, options.Err)
@@ -1195,11 +1287,24 @@ func (options *InstallOptions) Run() error {
 			dir := gitOpsDir
 			err = git.Init(dir)
 			if err != nil {
+				return err
+			}
+			err = options.ModifyDevEnvironment(func(env *v1.Environment) error {
+				env.Spec.Source.URL = repo.CloneURL
+				env.Spec.Source.Ref = "master"
+				return nil
+			})
+			if err != nil {
 			  return err
+			}
+
+			err = git.Add(dir, ".gitignore")
+			if err != nil {
+				return err
 			}
 			err = git.Add(dir, "*")
 			if err != nil {
-			  return err
+				return err
 			}
 			err = options.Git().CommitIfChanges(dir, "Initial import of Dev Environment source")
 			if err != nil {
