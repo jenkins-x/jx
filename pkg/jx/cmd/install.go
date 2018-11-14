@@ -170,7 +170,7 @@ This repository contains the source code for the Jenkins X Development Environme
 `
 
 	devGitOpsJenkinsfileProw = `pipeline {
-  agent amy
+  agent any
   environment {
     DEPLOY_NAMESPACE = "%s"
   }
