@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"net/http"
 )
 
@@ -22,7 +23,7 @@ type mocker func(http.ResponseWriter, *http.Request)
 
 // @param dataDir Location of test data json file
 // @param router  Should map a URL path to a map that maps a method to a JSON response file name. Conceptually: (url, method) -> file
-// See pkg/gits/bitbucket_test.go for an example.
+// See pkg/gits/bitbucket_cloud_test.go for an example.
 func GetMockAPIResponseFromFile(dataDir string, route MethodMap) mocker {
 
 	return func(response http.ResponseWriter, request *http.Request) {
@@ -31,7 +32,7 @@ func GetMockAPIResponseFromFile(dataDir string, route MethodMap) mocker {
 		obj, err := LoadBytes(dataDir, fileName)
 
 		if err != nil {
-			handleErr(request, response, err)
+			handleErr(request, response, fmt.Errorf("request method: %s", request.Method))
 		}
 
 		handleOk(response, obj)
