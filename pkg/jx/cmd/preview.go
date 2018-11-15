@@ -195,7 +195,7 @@ func (o *PreviewOptions) Run() error {
 			return err
 		}
 	}
-	o.devNamespace = ns
+	o.DevNamespace = ns
 
 	err = o.defaultValues(ns, true)
 	if err != nil {
