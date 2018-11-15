@@ -28,23 +28,21 @@ func TestVendGET(t *testing.T) {
 	assert.Equal(t, expectedBuildNum, body)
 }
 
-func TestVendGETMissingActivity(t *testing.T) {
+func TestVendGETMissingPipeline(t *testing.T) {
 	mockIssuer := build_num_test.NewMockBuildNumberIssuer()
 	pID := kube.NewPipelineIDFromString("")
 	expectedBuildNum := "543"
 	When(mockIssuer.NextBuildNumber(matchers.EqKubePipelineID(pID))).ThenReturn(expectedBuildNum, nil)
 
 	respRecord := makeVendRequest(t, http.MethodGet, "/vend/", mockIssuer)
-	assert.Equal(t, http.StatusOK, respRecord.Code,
-		"Expected OK status code for valid /vend GET request.")
-	body := respRecord.Body.String()
-	assert.Equal(t, expectedBuildNum, body)
+	assert.Equal(t, http.StatusBadRequest, respRecord.Code,
+		"Expected Bad Request for /vend GET request with missing pipeline.")
 }
 
 func TestVendUnsupportedMethod(t *testing.T) {
 	mockIssuer := build_num_test.NewMockBuildNumberIssuer()
 
-	respRecord := makeVendRequest(t, http.MethodDelete, "/vend/", mockIssuer)
+	respRecord := makeVendRequest(t, http.MethodDelete, "/vend/a/b/c", mockIssuer)
 	assert.Equal(t, http.StatusMethodNotAllowed, respRecord.Code,
 		"Expected Method Not Allowed status code for valid /vend DELETE request.")
 }

@@ -54,7 +54,7 @@ func (s *HTTPBuildNumberServer) vend(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		logrus.Info("POST Todo...")
 	default:
-		logrus.Errorf("Unexpected method %s for %s", r.Method, s.path)
+		logrus.Errorf("Unsupported method %s for %s", r.Method, s.path)
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
 }

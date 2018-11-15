@@ -98,5 +98,5 @@ func (o *StepNextBuildNumberOptions) Run() error {
 	}
 
 	return fmt.Errorf("Failed after %d attempts to create a new build number for pipeline %s. "+
-		"The last error was: %", attempts, pID.ID, err)
+		"The last error was: %s", attempts, pID.ID, err)
 }
