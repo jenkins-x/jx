@@ -411,8 +411,8 @@ func (g *GitFake) CommitDir(dir string, message string) error {
 	return g.CommitIfChanges(dir, message)
 }
 
-// AddCommmit add a commit
-func (g *GitFake) AddCommmit(dir string, msg string) error {
+// AddCommit add a commit
+func (g *GitFake) AddCommit(dir string, msg string) error {
 	return g.CommitIfChanges(dir, msg)
 }
 
