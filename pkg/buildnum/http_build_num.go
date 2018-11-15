@@ -1,5 +1,5 @@
 // Stuff to do with generating build numbers.
-package build_num
+package buildnum
 
 import (
 	"fmt"
@@ -13,19 +13,19 @@ import (
 
 // A type that runs an HTTP server to serve build numbers, similar to Prow's tot
 // (https://github.com/kubernetes/test-infra/tree/master/prow/cmd/tot)
-type HttpBuildNumberServer struct {
+type HTTPBuildNumberServer struct {
 	bindAddress string
 	port        int
 	path        string
 	issuer      BuildNumberIssuer
 }
 
-// NewHttpBuildNumberServer creates a new, initialised HttpBuildNumberServer.
+// NewHTTPBuildNumberServer creates a new, initialised HTTPBuildNumberServer.
 // Use 'bindAddress' to control the address/interface the HTTP service will listen on; to listen on all interfaces
 // (i.e. 0.0.0.0 or ::) provide a blank string.
 // Build numbers will be generated using the specifed BuildNumberIssuer.
-func NewHttpBuildNumberServer(bindAddress string, port int, issuer BuildNumberIssuer) *HttpBuildNumberServer {
-	return &HttpBuildNumberServer{
+func NewHTTPBuildNumberServer(bindAddress string, port int, issuer BuildNumberIssuer) *HTTPBuildNumberServer {
+	return &HTTPBuildNumberServer{
 		bindAddress: bindAddress,
 		port:        port,
 		path:        "/vend/",
@@ -35,7 +35,7 @@ func NewHttpBuildNumberServer(bindAddress string, port int, issuer BuildNumberIs
 
 // Start the HTTP server.
 // This call will block until the server exits.
-func (s *HttpBuildNumberServer) Start() error {
+func (s *HTTPBuildNumberServer) Start() error {
 	mux := http.NewServeMux()
 	mux.Handle(s.path, http.HandlerFunc(s.vend))
 
@@ -45,7 +45,7 @@ func (s *HttpBuildNumberServer) Start() error {
 
 // Serve an incoming request to the server's base URL (default: /vend). The generated build number (or other
 // output) will be written to the provided ResponseWriter.
-func (s *HttpBuildNumberServer) vend(w http.ResponseWriter, r *http.Request) {
+func (s *HTTPBuildNumberServer) vend(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		s.generateBuildNumber(w, r)
@@ -61,7 +61,7 @@ func (s *HttpBuildNumberServer) vend(w http.ResponseWriter, r *http.Request) {
 
 // Generate a build number, reading the pipeline ID from the Request and writing the build number (or error details)
 // to the specified ResponseWriter.
-func (s *HttpBuildNumberServer) generateBuildNumber(w http.ResponseWriter, r *http.Request) {
+func (s *HTTPBuildNumberServer) generateBuildNumber(w http.ResponseWriter, r *http.Request) {
 	//Check for a pipeline identifier following the base path.
 	if !(len(r.URL.Path) > len(s.path)) {
 		msg := fmt.Sprintf("Missing pipeline identifier in URL path %s", r.URL.Path)

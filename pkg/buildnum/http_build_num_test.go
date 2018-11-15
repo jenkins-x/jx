@@ -1,4 +1,4 @@
-package build_num
+package buildnum
 
 import (
 	"errors"
@@ -6,11 +6,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/build_num/mocks/matchers"
+	"github.com/jenkins-x/jx/pkg/buildnum/mocks/matchers"
 	"github.com/jenkins-x/jx/pkg/kube"
 	. "github.com/petergtz/pegomock"
 
-	"github.com/jenkins-x/jx/pkg/build_num/mocks"
+	"github.com/jenkins-x/jx/pkg/buildnum/mocks"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -60,7 +60,7 @@ func TestVendError(t *testing.T) {
 }
 
 func makeVendRequest(t *testing.T, method string, path string, mockIssuer BuildNumberIssuer) *httptest.ResponseRecorder {
-	server := NewHttpBuildNumberServer("", 1234, mockIssuer)
+	server := NewHTTPBuildNumberServer("", 1234, mockIssuer)
 
 	req, err := http.NewRequest(method, path, nil)
 	if err != nil {

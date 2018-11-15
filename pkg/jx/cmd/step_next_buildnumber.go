@@ -5,7 +5,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/build_num"
+	"github.com/jenkins-x/jx/pkg/buildnum"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -82,7 +82,7 @@ func (o *StepNextBuildNumberOptions) Run() error {
 		return err
 	}
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
-	buildNumGen := build_num.NewCRDBuildNumGen(activities)
+	buildNumGen := buildnum.NewCRDBuildNumGen(activities)
 
 	pID := kube.NewPipelineID(o.Owner, o.Repository, o.Branch)
 

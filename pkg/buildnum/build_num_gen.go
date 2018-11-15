@@ -1,4 +1,4 @@
-package build_num
+package buildnum
 
 import (
 	"sync"
@@ -7,7 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 )
 
-//A type for generating build numbers backed by PipelineActivity K8S CRDs.
+// PipelineActivityBuildNumGen generates build numbers backed by PipelineActivity K8S CRDs.
 type PipelineActivityBuildNumGen struct {
 	//Protect access to pipelineMutexes map.
 	mutex *sync.Mutex
@@ -16,6 +16,8 @@ type PipelineActivityBuildNumGen struct {
 	activitiesGetter v1.PipelineActivityInterface
 }
 
+// NewCRDBuildNumGen initialises a new PipelineActivityBuildNumGen that will use the supplied
+// PipelineActivityInterface to query CRDs.
 func NewCRDBuildNumGen(activitiesGetter v1.PipelineActivityInterface) *PipelineActivityBuildNumGen {
 	return &PipelineActivityBuildNumGen{
 		mutex:            &sync.Mutex{},
@@ -24,6 +26,8 @@ func NewCRDBuildNumGen(activitiesGetter v1.PipelineActivityInterface) *PipelineA
 	}
 }
 
+// NextBuildNumber returns the next build number for the specified pipeline ID, storing the sequence in K8S.
+// Returns the build number, or an error if there is a problem with K8S resources.
 func (g *PipelineActivityBuildNumGen) NextBuildNumber(pipeline kube.PipelineID) (string, error) {
 	g.mutex.Lock()
 
