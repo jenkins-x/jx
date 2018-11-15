@@ -33,6 +33,8 @@ github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f h1:tbgFqBK8
 github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f/go.mod h1:CgnQgUtFrFz9mxFNtED3jI5tLDjKlOM+oUF/sTk6ps0=
 github.com/andygrunwald/go-gerrit v0.0.0-20171029143327-95b11af228a1 h1:2Qp3BQZ7r1z+oMUnFhD6FQ86Hh1PO+59yoUNNJ5Dn0M=
 github.com/andygrunwald/go-gerrit v0.0.0-20171029143327-95b11af228a1/go.mod h1:0iuRQp6WJ44ts+iihy5E/WlPqfg5RNeQxOmzRkxCdtk=
+github.com/andygrunwald/go-gerrit v0.0.0-20181026193842-43cfd7a94eb4 h1:Nu1m/Uyela0+Z41Ajo78sa1mf18CzLztk8JdNyeL5uk=
+github.com/andygrunwald/go-gerrit v0.0.0-20181026193842-43cfd7a94eb4/go.mod h1:0iuRQp6WJ44ts+iihy5E/WlPqfg5RNeQxOmzRkxCdtk=
 github.com/andygrunwald/go-jira v1.5.0 h1:/1CyYLNdwus7TvB/DHyD3udb52K12aYL9m7WaGAO9m4=
 github.com/andygrunwald/go-jira v1.5.0/go.mod h1:yNYQrX3nGSrVdcVsM2mWz2pm7tTeDtYfRyVEkc3VUiY=
 github.com/aws/aws-sdk-go v1.15.50 h1:3QZIQeiRXEMTs+w+BQ2c/3Fi9/Qz9KnipT/M7YI1ub4=
