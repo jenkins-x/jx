@@ -123,7 +123,7 @@ func ReadValueFromFile(path string, key string) (string, error) {
 
 // CheckVersion checks the installed version of terraform to sure it is greater than 0.11.0
 func CheckVersion() error {
-	fmt.Println("Applying Terraform")
+	fmt.Println("Checking Terraform Version...")
 	cmd := util.Command{
 		Name: "terraform",
 		Args: []string{"-version"},
