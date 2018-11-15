@@ -54,6 +54,17 @@ type PipelineDetails struct {
 
 var disallowedNameChars = regexp.MustCompile("[^a-z0-9-]")
 
+// PipelineID is an identifier for a Pipeline.
+// A pipeline is typically identified by its owner, repository, and branch with the ID field taking the form
+// `<owner>/>repository>/<branch>`
+type PipelineID struct {
+	ID   string
+	Name string
+}
+
+// NewPipelineIDFromString creates a new PipelineID, given a pre-built string identifier.
+// The string identifier is expected to follow the format `<owner>/>repository>/<branch>`, though this isn't actually
+// validated/mandated here.
 func NewPipelineIDFromString(id string) PipelineID {
 	pID := PipelineID{
 		ID:   id,
@@ -62,17 +73,12 @@ func NewPipelineIDFromString(id string) PipelineID {
 	return pID
 }
 
+// NewPipelineID creates a new PipelineID for a given owner, repository, and branch.
 func NewPipelineID(owner string, repository string, branch string) PipelineID {
 	return NewPipelineIDFromString(fmt.Sprintf("%s/%s/%s", owner, repository, branch))
 }
 
-// An identifier for a Pipeline.
-type PipelineID struct {
-	ID   string
-	Name string
-}
-
-// Generate the Name of an activity within this pipeline.
+// GetActivityName Builds a Kubernetes-friendly (i.e. a-z,-,. only) name for a specific activity, within a pipeline.
 func (p *PipelineID) GetActivityName(activity string) string {
 	return fmt.Sprintf("%s-%s", p.Name, activity)
 }
