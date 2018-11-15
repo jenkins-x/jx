@@ -246,7 +246,7 @@ func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.AuthConfigService
 	if config.Spec.Source.URL != "" {
 		data.Spec.Source.URL = config.Spec.Source.URL
 	} else {
-		showUrlEdit := devEnv.Spec.TeamSettings.UseGitOPs
+		showUrlEdit := devEnv.Spec.TeamSettings.UseGitOps
 		if data.Spec.Source.URL == "" {
 			if devEnv.Spec.TeamSettings.AskOnCreate {
 				confirm := &survey.Confirm{

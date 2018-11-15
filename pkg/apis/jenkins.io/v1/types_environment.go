@@ -132,7 +132,7 @@ type EnvironmentRepository struct {
 
 // TeamSettings the default settings for a team
 type TeamSettings struct {
-	UseGitOPs           bool                 `json:"useGitOps,omitempty" protobuf:"bytes,1,opt,name=useGitOps"`
+	UseGitOps           bool                 `json:"useGitOps,omitempty" protobuf:"bytes,1,opt,name=useGitOps"`
 	AskOnCreate         bool                 `json:"askOnCreate,omitempty" protobuf:"bytes,2,opt,name=askOnCreate"`
 	BranchPatterns      string               `json:"branchPatterns,omitempty" protobuf:"bytes,3,opt,name=branchPatterns"`
 	ForkBranchPatterns  string               `json:"forkBranchPatterns,omitempty" protobuf:"bytes,4,opt,name=forkBranchPatterns"`
