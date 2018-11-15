@@ -1,4 +1,4 @@
-// Stuff to do with generating build numbers.
+// Package buildnum contains stuff to do with generating build numbers.
 package buildnum
 
 import (
@@ -11,7 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// A type that runs an HTTP server to serve build numbers, similar to Prow's tot
+// HTTPBuildNumberServer runs an HTTP server to serve build numbers, similar to Prow's tot
 // (https://github.com/kubernetes/test-infra/tree/master/prow/cmd/tot)
 type HTTPBuildNumberServer struct {
 	bindAddress string

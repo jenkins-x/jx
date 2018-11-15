@@ -24,9 +24,9 @@ type ServeBuildNumbersOptions struct {
 }
 
 var (
-	ServeBuildNumbersLong = templates.LongDesc("Generates the next build unique number for a pipeline")
+	serveBuildNumbersLong = templates.LongDesc("Generates the next build unique number for a pipeline")
 
-	ServeBuildNumbersExample = templates.Examples("jx " + command)
+	serveBuildNumbersExample = templates.Examples("jx " + command)
 )
 
 // NewCmdServeBuildNumbers builds a new command to serving build numbers over an HTTP interface.
@@ -42,8 +42,8 @@ func NewCmdServeBuildNumbers(f Factory, in terminal.FileReader, out terminal.Fil
 	cmd := &cobra.Command{
 		Use:     command,
 		Short:   "Runs the service to generate build numbers.",
-		Long:    ServeBuildNumbersLong,
-		Example: ServeBuildNumbersExample,
+		Long:    serveBuildNumbersLong,
+		Example: serveBuildNumbersExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

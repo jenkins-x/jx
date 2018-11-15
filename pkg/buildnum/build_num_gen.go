@@ -1,3 +1,4 @@
+// Package buildnum contains stuff to do with generating build numbers.
 package buildnum
 
 import (

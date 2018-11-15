@@ -51,7 +51,7 @@ func TestVendUnsupportedMethod(t *testing.T) {
 
 func TestVendError(t *testing.T) {
 	mockIssuer := build_num_test.NewMockBuildNumberIssuer()
-	err := errors.New("Something bad getting a build number.")
+	err := errors.New("something bad getting a build number")
 	When(mockIssuer.NextBuildNumber(matchers.AnyKubePipelineID())).ThenReturn("", err)
 
 	respRecord := makeVendRequest(t, http.MethodGet, "/vend/owner1/repo1/branch1", mockIssuer)
