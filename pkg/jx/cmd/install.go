@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	"github.com/jenkins-x/jx/pkg/vault"
 	"io"
 	"io/ioutil"
 	"os"
@@ -679,14 +680,40 @@ func (options *InstallOptions) Run() error {
 		}
 
 		// Create a new System vault
-		// TODO
+		cvo := &CreateVaultOptions{
+			CreateOptions: CreateOptions{
+				CommonOptions: options.CommonOptions,
+			},
+			UpgradeIngressOptions: UpgradeIngressOptions{
+				CreateOptions: CreateOptions{
+					CommonOptions: options.CommonOptions,
+				},
+			},
+			Namespace: ns,
+		}
+		vaultOperatorClient, err := cvo.Factory.CreateVaultOperatorClient()
+		if err != nil {
+			return err
+		}
+
+		if vault.FindVault(vaultOperatorClient, vault.SystemVaultName, ns) {
+			log.Infof("System vault named %s in namespace %s already exists\n",
+				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(ns))
+		} else {
+			log.Info("Creating new system vault\n")
+			err = cvo.DoCreateVault(vaultOperatorClient, vault.SystemVaultName)
+			if err != nil {
+				return err
+			}
+			log.Infof("System vault created named %s in namespace %s.\n",
+				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(ns))
+		}
 		options.Factory.UseVault(true)
 	}
 
 	// get secrets to use in helm install
 	secrets, err := options.getGitSecrets()
 	if err != nil {
-
 		return errors.Wrap(err, "failed to read the git secrets from configuration")
 	}
 

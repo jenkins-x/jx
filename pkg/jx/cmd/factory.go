@@ -510,7 +510,7 @@ func (f *factory) CreateComplianceClient() (*client.SonobuoyClient, error) {
 	return client.NewSonobuoyClient(config, skc)
 }
 
-// CreateVaultOpeatorClient creates a new vault operator client
+// CreateVaultOperatorClient creates a new vault operator client
 func (f *factory) CreateVaultOperatorClient() (vaultoperatorclient.Interface, error) {
 	config, err := f.CreateKubeConfig()
 	if err != nil {

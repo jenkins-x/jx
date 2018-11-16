@@ -818,7 +818,8 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 					ApiToken: tc.apiToken,
 				}
 				server = createAuthServer(tc.hostURL, tc.Name, tc.providerKind, currUser, users...)
-				*authSvc, err = auth.NewFileBasedAuthConfigService(configFile.Name())
+				s, err := auth.NewFileBasedAuthConfigService(configFile.Name())
+				authSvc = &s
 				assert.NoError(t, err)
 			}
 
