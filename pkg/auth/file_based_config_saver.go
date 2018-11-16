@@ -62,7 +62,7 @@ func (s *FileBasedAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
 func (s *FileBasedAuthConfigSaver) SaveConfig(config *AuthConfig) error {
 	fileName := s.FileName
 	if fileName == "" {
-		return fmt.Errorf("no filename defined!")
+		return fmt.Errorf("no filename defined")
 	}
 	data, err := yaml.Marshal(config)
 	if err != nil {
