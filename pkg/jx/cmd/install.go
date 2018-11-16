@@ -672,11 +672,15 @@ func (options *InstallOptions) Run() error {
 	}
 
 	if options.Flags.GitOpsMode || options.Flags.Vault {
-		// Install Vault into the new env
+		// Install Vault Operator into the new env
 		err = InstallVaultOperator(&options.CommonOptions, "")
 		if err != nil {
 			return err
 		}
+
+		// Create a new System vault
+		// TODO
+		options.Factory.UseVault(true)
 	}
 
 	// get secrets to use in helm install

@@ -27,7 +27,7 @@ func setupMocks(t *testing.T, term *terminal.Stdio) (*fake.Clientset, vault.Vaul
 	cmd.ConfigureTestOptions(&options, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 	vaultOperatorClient := fake.NewSimpleClientset()
 	When(options.Factory.CreateVaultOperatorClient()).ThenReturn(vaultOperatorClient, nil)
-	f, err := vault.NewVaultClientFactory(&options)
+	f, err := vault.NewInteractiveVaultClientFactory(&options)
 	kubeClient, _, err := options.KubeClient()
 	assert.NoError(t, err)
 	return vaultOperatorClient, f, err, kubeClient

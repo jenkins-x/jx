@@ -14,7 +14,7 @@ func newJxVaulter(client *api.Client) Vaulter {
 }
 
 func NewVaulter(o VaultOptions) (Vaulter, error) {
-	clientFactory, err := NewVaultClientFactory(o)
+	clientFactory, err := NewInteractiveVaultClientFactory(o)
 	client, err := clientFactory.NewVaultClient(o.VaultName(), o.VaultNamespace())
 	return newJxVaulter(client), err
 }

@@ -19,7 +19,9 @@ func (v *VaultBasedAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
 	}
 	config := AuthConfig{}
 
-	err = util.ToStructFromMapStringInterface(data.Data, &config)
+	if data != nil {
+		err = util.ToStructFromMapStringInterface(data.Data, &config)
+	}
 	return &config, err
 }
 
@@ -33,8 +35,17 @@ func (v *VaultBasedAuthConfigSaver) SaveConfig(config *AuthConfig) error {
 	return err
 }
 
-// NewVaultBasedAuthConfigSaver creates a ConfigSaver that saves the Configs under a specified secretname in a vault
-func NewVaultBasedAuthConfigSaver(secretName string, vaultClient *api.Client) VaultBasedAuthConfigSaver {
+// NewVaultBasedAuthConfigService creates a new ConfigService that saves it config to a Vault
+func NewVaultBasedAuthConfigService(secretName string, vaultClient *api.Client) ConfigService {
+	saver := newVaultBasedAuthConfigSaver(secretName, vaultClient)
+	service := GenericAuthConfigService{
+		saver: &saver,
+	}
+	return &service
+}
+
+// newVaultBasedAuthConfigSaver creates a ConfigSaver that saves the Configs under a specified secretname in a vault
+func newVaultBasedAuthConfigSaver(secretName string, vaultClient *api.Client) VaultBasedAuthConfigSaver {
 	return VaultBasedAuthConfigSaver{
 		secretName:  secretName,
 		vaultClient: vaultClient,

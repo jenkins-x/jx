@@ -82,4 +82,7 @@ type Factory interface {
 	CreateVaultOperatorClient() (vaultoperatorclient.Interface, error)
 
 	GetHelm(verbose bool, helmBinary string, noTiller bool, helmTemplate bool) helm.Helmer
+
+	// UseVault tells the factory to use Vault to store secrets rather than the filesystem
+	UseVault(use bool)
 }

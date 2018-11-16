@@ -310,6 +310,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		if err = InstallVaultOperator(&o.CommonOptions, ""); err != nil {
 			return err
 		}
+		o.Factory.UseVault(true)
 	}
 
 	return nil

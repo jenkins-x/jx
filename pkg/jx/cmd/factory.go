@@ -3,6 +3,8 @@ package cmd
 import (
 	"flag"
 	"fmt"
+	"github.com/hashicorp/vault/api"
+	"github.com/jenkins-x/jx/pkg/vault"
 	"io"
 	"net/url"
 	"os"
@@ -58,6 +60,7 @@ type factory struct {
 	kubeConfig      kube.Kuber
 	impersonateUser string
 	bearerToken     string
+	useVault        bool
 }
 
 // NewFactory creates a factory with the default Kubernetes resources defined
@@ -278,8 +281,36 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 	return nil
 }
 
-func (f *factory) CreateAuthConfigService(fileName string) (auth.ConfigService, error) {
-	return auth.NewFileBasedAuthConfigService(fileName)
+// CreateAuthConfigService creates a new service saving auth config under the provided name. Depending on the factory,
+// It will either save the config to the local file-system, or a Vault
+func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService, error) {
+	if f.useVault {
+		vault, err := f.GetSystemVault()
+		v := auth.NewVaultBasedAuthConfigService(configName, vault)
+		return v, err
+	} else {
+		return auth.NewFileBasedAuthConfigService(configName)
+	}
+}
+
+// GetSystemVault gets the system vault for storing secrets.
+func (f *factory) GetSystemVault() (*api.Client, error) {
+	vopClient, err := f.CreateVaultOperatorClient()
+	kubeClient, ns, err := f.CreateClient()
+	if err != nil {
+		return nil, err
+	}
+
+	if !vault.FindVault(vopClient, vault.SystemVaultName, ns) {
+		return nil, errors.New("no system vault found")
+	}
+
+	clientFactory, err := vault.NewSystemVaultClientFactory(kubeClient, vopClient, ns)
+	if err != nil {
+		return nil, err
+	}
+
+	return clientFactory.NewVaultClient(vault.SystemVaultName, ns)
 }
 
 func (f *factory) CreateJXClient() (versioned.Interface, string, error) {
@@ -516,6 +547,10 @@ func (f *factory) GetHelm(verbose bool,
 		startLocalTillerIfNotRunning()
 	}
 	return h
+}
+
+func (f *factory) UseVault(use bool) {
+	f.useVault = use
 }
 
 // tillerAddress returns the address that tiller is listening on

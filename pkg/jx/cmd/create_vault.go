@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
@@ -141,13 +142,19 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 		return errors.Wrap(err, "creating vault operator client")
 	}
 
-	// Checks if the vault alrady exists
+	return o.DoCreateVault(vaultOperatorClient, vaultName)
+}
+
+// DoCreateVault creates a vault in the existing namespace.
+// If the vault already exists, it will error
+func (o *CreateVaultOptions) DoCreateVault(vaultOperatorClient versioned.Interface, vaultName string) error {
+	// Checks if the vault already exists
 	found := vault.FindVault(vaultOperatorClient, vaultName, o.Namespace)
 	if found {
 		return fmt.Errorf("Vault with name '%s' already exists in namespace '%s'", vaultName, o.Namespace)
 	}
 
-	err = gke.Login("", true)
+	err := gke.Login("", true)
 	if err != nil {
 		return errors.Wrap(err, "login into GCP")
 	}
@@ -222,6 +229,7 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 	}
 	log.Infof("Vault %s exposed\n", util.ColorInfo(vaultName))
 	return nil
+
 }
 
 func (o *CreateVaultOptions) createVaultGCPServiceAccount(vaultName string) (string, error) {
