@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"gopkg.in/AlecAivazis/survey.v1"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -108,6 +110,37 @@ func (o *UpgradePlatformOptions) Run() error {
 		}
 	}
 
+	settings, err := o.TeamSettings()
+	if err != nil {
+		return err
+	}
+
+	if "" == settings.KubeProvider {
+		log.Warnf("Unable to determine provider from team settings")
+
+		surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
+
+		provider := ""
+
+		prompt := &survey.Select{
+			Message: "Select the kube provider:",
+			Options: KUBERNETES_PROVIDERS,
+			Default: "",
+		}
+		survey.AskOne(prompt, &provider, nil, surveyOpts)
+
+		err = o.ModifyDevEnvironment(func(env *v1.Environment) error {
+			settings = &env.Spec.TeamSettings
+			settings.KubeProvider = provider
+			return nil
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to create the API extensions client")
+		}
+	}
+
+	log.Infof("Using provider '%s' from team settings\n", util.ColorInfo(settings.KubeProvider))
+
 	wrkDir := ""
 
 	if targetVersion == "" {
@@ -146,12 +179,6 @@ func (o *UpgradePlatformOptions) Run() error {
 	if currentVersion == "" {
 		return errors.New("Jenkins X platform helm chart is not installed.")
 	}
-
-	settings, err := o.TeamSettings()
-	if err != nil {
-		return err
-	}
-	log.Infof("Using provider %s from team settings\n", util.ColorInfo(settings.KubeProvider))
 
 	helmConfig := &o.CreateEnvOptions.HelmValuesConfig
 	exposeController := helmConfig.ExposeController

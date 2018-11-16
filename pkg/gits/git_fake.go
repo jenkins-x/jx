@@ -43,7 +43,6 @@ type GitFake struct {
 	serverURL      string
 }
 
-
 // NewGitFake creates a new fake Gitter
 func NewGitFake() Gitter {
 	return &GitFake{}
@@ -438,7 +437,6 @@ func (g *GitFake) GetCurrentGitTagSHA(dir string) (string, error) {
 	}
 	return g.Commits[len-1].SHA, nil
 }
-
 
 // GetLatestCommitMessage returns the last commit message
 func (g *GitFake) GetLatestCommitMessage(dir string) (string, error) {
