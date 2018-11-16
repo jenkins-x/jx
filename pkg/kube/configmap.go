@@ -111,8 +111,8 @@ func DefaultModifyConfigMap(kubeClient kubernetes.Interface, ns string, name str
 		create = true
 		initialConfigMap := v1.ConfigMap{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   name,
-				Labels: map[string]string{},
+				Name:        name,
+				Labels:      map[string]string{},
 				Annotations: map[string]string{},
 			},
 			Data: map[string]string{},
@@ -124,7 +124,7 @@ func DefaultModifyConfigMap(kubeClient kubernetes.Interface, ns string, name str
 	}
 	err = fn(configMap)
 	if err != nil {
-	  return configMap, err
+		return configMap, err
 	}
 	if create {
 		_, err = configMapInterface.Create(configMap)

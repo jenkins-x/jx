@@ -17,13 +17,13 @@ import (
 
 const (
 	// ChartFileName file name for a chart
-	ChartFileName        = "Chart.yaml"
+	ChartFileName = "Chart.yaml"
 	// RequirementsFileName the file name for helm requirements
 	RequirementsFileName = "requirements.yaml"
 	// SecretsFileName the file name for secrets
-	SecretsFileName      = "secrets.yaml"
+	SecretsFileName = "secrets.yaml"
 	// ValuesFileName the file name for values
-	ValuesFileName       = "values.yaml"
+	ValuesFileName = "values.yaml"
 
 	// DefaultHelmRepositoryURL is the default cluster local helm repo
 	DefaultHelmRepositoryURL = "http://jenkins-x-chartmuseum:8080"

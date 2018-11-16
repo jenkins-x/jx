@@ -25,12 +25,12 @@ var jxDefaultTransport http.RoundTripper = &http.Transport{
 var defaultClient = http.Client{Transport: jxDefaultTransport, Timeout: time.Duration(getIntFromEnv("DEFAULT_HTTP_REQUEST_TIMEOUT", 30)) * time.Second}
 
 // GetClient returns a Client reference with our default configuration
-func GetClient() (*http.Client) {
+func GetClient() *http.Client {
 	return &defaultClient
 }
 
 // GetClientWithTimeout returns a client with JX default transport and user specified timeout (in seconds)
-func GetClientWithTimeout(timeout int) (*http.Client) {
+func GetClientWithTimeout(timeout int) *http.Client {
 	client := http.Client{}
 	client.Transport = jxDefaultTransport
 	client.Timeout = time.Duration(timeout) * time.Second
@@ -38,11 +38,11 @@ func GetClientWithTimeout(timeout int) (*http.Client) {
 }
 
 // GetCustomClient returns a client with user specified transport and timeout (in seconds)
-func GetCustomClient(transport http.RoundTripper, timeout int) (*http.Client) {
+func GetCustomClient(transport http.RoundTripper, timeout int) *http.Client {
 	return &(http.Client{Transport: transport, Timeout: time.Duration(timeout) * time.Second})
 }
 
-func getIntFromEnv(key string, fallback int) (int) {
+func getIntFromEnv(key string, fallback int) int {
 	if value, ok := os.LookupEnv(key); ok {
 		intValue, err := strconv.Atoi(value)
 		if err == nil {

@@ -31,7 +31,7 @@ func GetSecrets(kubeClient kubernetes.Interface, ns string) (map[string]*v1.Secr
 	return m, names, nil
 }
 
-// DefaultModifySecret default implementation of a function to modify 
+// DefaultModifySecret default implementation of a function to modify
 func DefaultModifySecret(kubeClient kubernetes.Interface, ns string, name string, fn func(env *v1.Secret) error, defaultSecret *v1.Secret) (*v1.Secret, error) {
 	secretInterface := kubeClient.CoreV1().Secrets(ns)
 
@@ -41,8 +41,8 @@ func DefaultModifySecret(kubeClient kubernetes.Interface, ns string, name string
 		create = true
 		initialSecret := v1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:   name,
-				Labels: map[string]string{},
+				Name:        name,
+				Labels:      map[string]string{},
 				Annotations: map[string]string{},
 			},
 			Data: map[string][]byte{},
@@ -54,7 +54,7 @@ func DefaultModifySecret(kubeClient kubernetes.Interface, ns string, name string
 	}
 	err = fn(secret)
 	if err != nil {
-	  return secret, err
+		return secret, err
 	}
 	if create {
 		log.Infof("Creating Secret %s in namespace %s\n", util.ColorInfo(name), util.ColorInfo(ns))

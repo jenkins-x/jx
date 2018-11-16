@@ -141,7 +141,6 @@ func (o *UpgradePlatformOptions) Run() error {
 
 	log.Infof("Using provider '%s' from team settings\n", util.ColorInfo(settings.KubeProvider))
 
-
 	wrkDir := ""
 
 	if targetVersion == "" {

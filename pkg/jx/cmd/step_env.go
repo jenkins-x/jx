@@ -42,4 +42,3 @@ func NewCmdStepEnv(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 func (o *StepEnvOptions) Run() error {
 	return o.Cmd.Help()
 }
-

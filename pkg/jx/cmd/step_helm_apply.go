@@ -38,7 +38,7 @@ var (
 
 `)
 
-	defaultValueFileNames = []string{ "values.yaml", "myvalues.yaml", "secrets.yaml"}
+	defaultValueFileNames = []string{"values.yaml", "myvalues.yaml", "secrets.yaml"}
 )
 
 func NewCmdStepHelmApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
@@ -120,13 +120,13 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	kubeClient, _, err := o.KubeClient()
 	if err != nil {
-	  return err
+		return err
 	}
 	err = kube.EnsureNamespaceCreated(kubeClient, ns, nil, nil)
 	if err != nil {
-	  return err
+		return err
 	}
-	
+
 	releaseName := o.ReleaseName
 	if releaseName == "" {
 		releaseName = ns
@@ -151,7 +151,7 @@ func (o *StepHelmApplyOptions) Run() error {
 	}
 
 	log.Infof("Using values files: %s\n", strings.Join(valueFiles, ", "))
-	
+
 	if o.Wait {
 		timeout := 600
 		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, &timeout, o.Force, true, nil, valueFiles)
