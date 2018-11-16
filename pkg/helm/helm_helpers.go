@@ -274,7 +274,7 @@ func AppendMyValues(valueFiles []string) ([]string, error) {
 
 // CombineValueFilesToFile iterates through the input files and combines them into a single Values object and then
 // write it to the output file nested inside the chartName
-func CombineValueFilesToFile(outFile string, inputFiles []string, chartName string) error {
+func CombineValueFilesToFile(outFile string, inputFiles []string, chartName string, extraValues map[string]interface{}) error {
 	answer := chartutil.Values{}
 	for _, input := range inputFiles {
 		values, err := chartutil.ReadValuesFile(input)
@@ -286,6 +286,9 @@ func CombineValueFilesToFile(outFile string, inputFiles []string, chartName stri
 		answer = chartutil.Values(sourceMap)
 	}
 	m := answer.AsMap()
+	for k, v := range extraValues {
+		m[k] = v
+	}
 	answerMap := map[string]interface{}{
 		chartName: m,
 	}

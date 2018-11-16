@@ -1042,11 +1042,14 @@ func (options *InstallOptions) Run() error {
 		}
 
 		// lets combine the various values and secretes files
-		err = helm.CombineValueFilesToFile(secretsFile, secretFiles, JenkinsXPlatformChartName)
+		err = helm.CombineValueFilesToFile(secretsFile, secretFiles, JenkinsXPlatformChartName, nil)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to generate %s by combining helm Secret YAML files %s", secretsFile, strings.Join(secretFiles, ", "))
 		}
-		err = helm.CombineValueFilesToFile(valuesFile, onlyValueFiles, JenkinsXPlatformChartName)
+		extraValues := map[string]interface{}{
+			"postinstalljob": map[string]interface{}{"enabled": "true"},
+		}
+		err = helm.CombineValueFilesToFile(valuesFile, onlyValueFiles, JenkinsXPlatformChartName, extraValues)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to generate %s by combining helm value YAML files %s", valuesFile, strings.Join(onlyValueFiles, ", "))
 		}
@@ -1266,18 +1269,26 @@ func (options *InstallOptions) Run() error {
 	}
 
 	if options.Flags.GitOpsMode {
-		log.Infof("Generated the source code for the GitOps development environment at %s\n", util.ColorInfo(gitOpsDir))
-		log.Infof("You can apply this to the kubernetes cluster at any time in this directory via: %s\n", util.ColorInfo("jx step env apply"))
+		log.Infof("\n\nGenerated the source code for the GitOps development environment at %s\n", util.ColorInfo(gitOpsDir))
+		log.Infof("You can apply this to the kubernetes cluster at any time in this directory via: %s\n\n", util.ColorInfo("jx step env apply"))
 
 		if !options.Flags.NoGitOpsEnvRepo {
 			authConfigSvc, err := options.CreateGitAuthConfigService()
 			if err != nil {
 				return err
 			}
-			config := &v1.Environment{}
+			config := &v1.Environment{
+				Spec: v1.EnvironmentSpec{
+					Label: "Development",
+					PromotionStrategy: v1.PromotionStrategyTypeNever,
+					Kind: v1.EnvironmentKindTypeDevelopment,
+				},
+			}
+			config.Name = kube.LabelValueDevEnvironment
 			var devEnv *v1.Environment
 			err = options.ModifyDevEnvironment(func(env *v1.Environment) error {
 				devEnv = env
+				devEnv.Spec.TeamSettings.UseGitOps = true
 				return nil
 			})
 			if err != nil {

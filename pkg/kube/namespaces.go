@@ -75,7 +75,7 @@ func CreateDefaultDevEnvironment(ns string) *v1.Environment {
 			PromotionStrategy: v1.PromotionStrategyTypeNever,
 			Kind:              v1.EnvironmentKindTypeDevelopment,
 			TeamSettings: v1.TeamSettings{
-				UseGitOPs:           true,
+				UseGitOps:           true,
 				AskOnCreate:         false,
 				QuickstartLocations: DefaultQuickstartLocations,
 				PromotionEngine:     v1.PromotionEngineJenkins,

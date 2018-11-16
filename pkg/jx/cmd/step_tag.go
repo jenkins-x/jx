@@ -126,7 +126,7 @@ func (o *StepTagOptions) Run() error {
 
 	tag := "v" + o.Flags.Version
 
-	err := o.Git().AddCommmit("", fmt.Sprintf("release %s", o.Flags.Version))
+	err := o.Git().AddCommit("", fmt.Sprintf("release %s", o.Flags.Version))
 	if err != nil {
 		return err
 	}
