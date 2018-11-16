@@ -36,7 +36,7 @@ func NewCmdController(f Factory, in terminal.FileReader, out terminal.FileWriter
 	}
 
 	cmd := &cobra.Command{
-		Use:     "controller [flags]",
+		Use:     "controller <command> [flags]",
 		Short:   "Runs a controller",
 		Long:    controllerLong,
 		Example: controllerExample,
@@ -54,6 +54,7 @@ func NewCmdController(f Factory, in terminal.FileReader, out terminal.FileWriter
 	cmd.AddCommand(NewCmdControllerTeam(f, in, out, errOut))
 	cmd.AddCommand(NewCmdControllerWorkflow(f, in, out, errOut))
 	cmd.AddCommand(NewCmdControllerCommitStatus(f, in, out, errOut))
+	cmd.AddCommand(NewCmdSControllerBuildNumbers(f, in, out, errOut))
 	return cmd
 }
 
