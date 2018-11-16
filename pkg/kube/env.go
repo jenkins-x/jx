@@ -783,7 +783,7 @@ func GetTeams(kubeClient kubernetes.Interface) ([]*corev1.Namespace, []string, e
 	names := []string{}
 	answer := []*corev1.Namespace{}
 	namespaceList, err := kubeClient.CoreV1().Namespaces().List(metav1.ListOptions{})
-	if err != err {
+	if err != nil {
 		return answer, names, err
 	}
 	for idx, namespace := range namespaceList.Items {

@@ -222,7 +222,7 @@ func (o *InitOptions) enableClusterAdminRole() error {
 
 	if o.Username == "" {
 		o.Username, err = o.GetClusterUserName()
-		if err != err {
+		if err != nil {
 			return err
 		}
 	}
