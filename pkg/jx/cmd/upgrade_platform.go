@@ -164,6 +164,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		log.Warnf("Failed to find helm installs: %s\n", err)
 		return err
 	} else {
+		o.Debugf("Installed helm charts\n%s\n", output)
 		for _, line := range strings.Split(output, "\n") {
 			fields := strings.Split(line, "\t")
 			if len(fields) > 4 && strings.TrimSpace(fields[0]) == "jenkins-x" {
@@ -176,6 +177,7 @@ func (o *UpgradePlatformOptions) Run() error {
 			}
 		}
 	}
+	
 	if currentVersion == "" {
 		return errors.New("Jenkins X platform helm chart is not installed.")
 	}
