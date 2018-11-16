@@ -43,6 +43,34 @@ func NewGerritProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter)
 	return &provider, nil
 }
 
+// We have to do this because url.Escape is not idempotent, so we unescape the URL
+// to ensure it's not encoded, then we re-encode it.
+func buildEncodedProjectName(org, name string) string {
+	var fullName string
+
+	if org != "" {
+		fullName = fmt.Sprintf("%s/%s", org, name)
+	} else {
+		fullName = fmt.Sprintf("%s", name)
+	}
+
+	fullNamePathUnescaped, err := url.PathUnescape(fullName)
+	if err != nil {
+		return ""
+	}
+	fullNamePathEscaped := url.PathEscape(fullNamePathUnescaped)
+
+	return fullNamePathEscaped
+}
+
+func (p *GerritProvider) projectInfoToGitRepository(project *gerrit.ProjectInfo) *GitRepository {
+	return &GitRepository{
+		Name:     project.Name,
+		CloneURL: fmt.Sprintf("%s/%s", p.Server.URL, project.Name),
+		SSHURL:   fmt.Sprintf("%s:%s", p.Server.URL, project.Name),
+	}
+}
+
 func (p *GerritProvider) ListRepositories(org string) ([]*GitRepository, error) {
 	options := &gerrit.ProjectOptions{
 		Description: true,
@@ -54,52 +82,43 @@ func (p *GerritProvider) ListRepositories(org string) ([]*GitRepository, error) 
 		return nil, err
 	}
 
-	projects := []*GitRepository{}
+	repos := []*GitRepository{}
 
 	for name, project := range *gerritProjects {
-		p := &GitRepository{
-			Name:     name,
-			CloneURL: fmt.Sprintf("%s/%s%s", p.Server.URL, org, project.Name),
-			SSHURL:   fmt.Sprintf("%s:%s%s", p.Server.URL, org, project.Name),
-		}
+		project.Name = name
+		repo := p.projectInfoToGitRepository(&project)
 
-		projects = append(projects, p)
+		repos = append(repos, repo)
 	}
 
-	return projects, nil
+	return repos, nil
 }
 
 func (p *GerritProvider) CreateRepository(org string, name string, private bool) (*GitRepository, error) {
-	fullName := fmt.Sprintf("%s/%s", org, name)
-
-	// We have to do this because url.Escape is not idempotent, so we unescape the URL
-	// to ensure it's not encoded, then we re-encode it.
-	fullNamePathUnescaped, err := url.PathUnescape(fullName)
-	if err != nil {
-		return nil, err
-	}
-	fullNamePathEscaped := url.PathEscape(fullNamePathUnescaped)
 	input := &gerrit.ProjectInput{
 		SubmitType:      "INHERIT",
 		Description:     "Created automatically by Jenkins X.",
 		PermissionsOnly: private,
 	}
 
-	projectInfo, _, err := p.Client.Projects.CreateProject(fullNamePathEscaped, input)
+	fullNamePathEscaped := buildEncodedProjectName(org, name)
+	project, _, err := p.Client.Projects.CreateProject(fullNamePathEscaped, input)
 	if err != nil {
 		return nil, err
 	}
 
-	genericRepo := &GitRepository{
-		Name:     projectInfo.Name,
-		CloneURL: fmt.Sprintf("%s/%s", p.Server.URL, projectInfo.Name),
-		SSHURL:   fmt.Sprintf("%s:%s", p.Server.URL, projectInfo.Name),
-	}
-	return genericRepo, nil
+	repo := p.projectInfoToGitRepository(project)
+	return repo, nil
 }
 
 func (p *GerritProvider) GetRepository(org string, name string) (*GitRepository, error) {
-	return nil, nil
+	fullName := buildEncodedProjectName(org, name)
+
+	project, _, err := p.Client.Projects.GetProject(fullName)
+	if err != nil {
+		return nil, err
+	}
+	return p.projectInfoToGitRepository(project), nil
 }
 
 func (p *GerritProvider) DeleteRepository(org string, name string) error {
