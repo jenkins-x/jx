@@ -305,6 +305,13 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	if err != nil {
 		return err
 	}
+
+	if o.CreateClusterOptions.InstallOptions.GitOpsMode || o.CreateClusterOptions.InstallOptions.Vault {
+		if err = InstallVaultOperator(&o.CommonOptions, ""); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
