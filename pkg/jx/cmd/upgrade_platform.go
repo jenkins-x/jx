@@ -167,6 +167,10 @@ func (o *UpgradePlatformOptions) Run() error {
 		}
 	}
 
+	if "" == settings.KubeProvider {
+		return fmt.Errorf("kubeProvider is not set in teamSettings")
+	}
+
 	makefileDir := filepath.Join(wrkDir, fmt.Sprintf("env-%s", strings.ToLower(settings.KubeProvider)))
 	if _, err := os.Stat(wrkDir); os.IsNotExist(err) {
 		return fmt.Errorf("cloud environment dir %s not found", makefileDir)
