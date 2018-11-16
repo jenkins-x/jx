@@ -247,7 +247,7 @@ func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.AuthConfigService
 		data.Spec.Source.URL = config.Spec.Source.URL
 	} else {
 		showUrlEdit := devEnv.Spec.TeamSettings.UseGitOps
-		if data.Spec.Source.URL == "" {
+		if data.Spec.Source.URL == "" && !showUrlEdit {
 			if devEnv.Spec.TeamSettings.AskOnCreate {
 				confirm := &survey.Confirm{
 					Message: "Would you like to use GitOps to manage this environment? :",
