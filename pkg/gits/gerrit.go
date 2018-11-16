@@ -161,6 +161,7 @@ func (p *GerritProvider) ListCommitStatus(org string, repo string, sha string) (
 	return nil, nil
 }
 
+// UpdateCommitStatus updates the status of a specified commit in a specified repo.
 func (p *GerritProvider) UpdateCommitStatus(org, repo, sha string, status *GitRepoStatus) (*GitRepoStatus, error) {
 	return nil, nil
 }
@@ -173,14 +174,17 @@ func (p *GerritProvider) CreateWebHook(data *GitWebHookArguments) error {
 	return nil
 }
 
+// UpdateWebHook update a webhook with the data specified.
 func (p *GerritProvider) UpdateWebHook(data *GitWebHookArguments) error {
 	return nil
 }
 
+// ListWebHooks lists all webhooks for the specified repo.
 func (p *GerritProvider) ListWebHooks(org, repo string) ([]*GitWebHookArguments, error) {
 	return nil, nil
 }
 
+// ListOrganisations lists all organizations the configured user has access to.
 func (p *GerritProvider) ListOrganisations() ([]GitOrganisation, error) {
 	return nil, nil
 }
