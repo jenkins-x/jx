@@ -246,22 +246,22 @@ func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.AuthConfigService
 	if config.Spec.Source.URL != "" {
 		data.Spec.Source.URL = config.Spec.Source.URL
 	} else {
-		showUrlEdit := devEnv.Spec.TeamSettings.UseGitOps
-		if data.Spec.Source.URL == "" && !showUrlEdit {
+		showURLEdit := devEnv.Spec.TeamSettings.UseGitOps
+		if data.Spec.Source.URL == "" && !showURLEdit {
 			if devEnv.Spec.TeamSettings.AskOnCreate {
 				confirm := &survey.Confirm{
 					Message: "Would you like to use GitOps to manage this environment? :",
 					Default: false,
 				}
-				err := survey.AskOne(confirm, &showUrlEdit, nil, surveyOpts)
+				err := survey.AskOne(confirm, &showURLEdit, nil, surveyOpts)
 				if err != nil {
 					return repo, nil, err
 				}
 			} else {
-				showUrlEdit = true
+				showURLEdit = true
 			}
 		}
-		if showUrlEdit {
+		if showURLEdit {
 			if data.Spec.Source.URL == "" {
 				if batchMode {
 					createRepo = true
@@ -277,7 +277,7 @@ func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.AuthConfigService
 				}
 
 				if createRepo {
-					showUrlEdit = false
+					showURLEdit = false
 					r, p, err := createEnvironmentGitRepo(batchMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git, in, out, errOut)
 					repo = r
 					url := r.CloneURL
@@ -289,9 +289,9 @@ func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.AuthConfigService
 					data.Spec.Source.URL = url
 				}
 			} else {
-				showUrlEdit = true
+				showURLEdit = true
 			}
-			if showUrlEdit {
+			if showURLEdit {
 				q := &survey.Input{
 					Message: "Git URL for the Environment source code:",
 					Default: data.Spec.Source.URL,
