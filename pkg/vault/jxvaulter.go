@@ -42,6 +42,7 @@ func (v *JxVaulter) Secrets() ([]string, error) {
 	return out, nil
 }
 
+// GetVaultClient gets the underlying vault client
 func (v *JxVaulter) GetVaultClient() *api.Client {
 	return v.client
 }

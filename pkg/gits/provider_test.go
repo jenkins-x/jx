@@ -56,7 +56,7 @@ func Test_getOrganizations(t *testing.T) {
 	}
 }
 
-func createAuthConfigSvc(authConfig *auth.AuthConfig, fileName string) *auth.AuthConfigService {
+func createAuthConfigSvc(authConfig *auth.AuthConfig, fileName string) *auth.ConfigService {
 	authConfigSvc, _ := auth.NewFileBasedAuthConfigService(fileName)
 	authConfigSvc.SetConfig(authConfig)
 	return &authConfigSvc
@@ -791,7 +791,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			var currUser *auth.UserAuth
 			var pipelineUser *auth.UserAuth
 			var server *auth.AuthServer
-			var authSvc *auth.AuthConfigService
+			var authSvc *auth.ConfigService
 			configFile, err := ioutil.TempFile("", "test-config")
 			defer os.Remove(configFile.Name())
 			if tc.numUsers > 0 {

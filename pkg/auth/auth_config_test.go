@@ -88,7 +88,7 @@ func TestAuthConfig(t *testing.T) {
 
 type ConfigTest struct {
 	t   *testing.T
-	svc auth.AuthConfigService
+	svc auth.ConfigService
 }
 
 func (c *ConfigTest) Load() *auth.AuthConfig {

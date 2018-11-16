@@ -1,7 +1,7 @@
 package auth
 
-// AuthConfigService is a service for handing the config of auth tokens
-type AuthConfigService interface {
+// ConfigService is a service for handing the config of auth tokens
+type ConfigService interface {
 	Config() *AuthConfig
 	SetConfig(c *AuthConfig)
 	// LoadConfig loads the configuration from the users JX config directory
@@ -15,7 +15,8 @@ type AuthConfigService interface {
 	DeleteServer(url string) error
 }
 
-type AuthConfigSaver interface {
+// ConfigSaver is an interface that saves an AuthConfig
+type ConfigSaver interface {
 	// LoadConfig loads the configuration from the users JX config directory
 	LoadConfig() (*AuthConfig, error)
 	//HasConfigFile() (bool, error)

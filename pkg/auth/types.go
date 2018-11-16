@@ -31,17 +31,18 @@ type AuthConfig struct {
 	PipeLineServer   string
 }
 
-// GenericAuthConfigService implements the generic features of the AuthConfigService because we don't have superclasses
+// GenericAuthConfigService implements the generic features of the ConfigService because we don't have superclasses
 type GenericAuthConfigService struct {
 	config *AuthConfig
-	saver  AuthConfigSaver
+	saver  ConfigSaver
 }
 
+// FileBasedAuthConfigSaver is a ConfigSaver that saves its config to the local filesystem
 type FileBasedAuthConfigSaver struct {
 	FileName string
 }
 
-// VaultBasedAuthConfigService is an AuthConfigService that stores its secret data in a Vault
+// VaultBasedAuthConfigService is an ConfigService that stores its secret data in a Vault
 type VaultBasedAuthConfigService struct {
 	vaulter vault.Vaulter
 }

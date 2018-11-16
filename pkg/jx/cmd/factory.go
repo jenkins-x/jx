@@ -128,7 +128,7 @@ func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (str
 	return url, err
 }
 
-func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns string) (auth.AuthConfigService, error) {
+func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns string) (auth.ConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(JenkinsAuthConfigFile)
 
 	if err != nil {
@@ -175,7 +175,7 @@ func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns stri
 	return authConfigSvc, err
 }
 
-func (f *factory) CreateChartmuseumAuthConfigService() (auth.AuthConfigService, error) {
+func (f *factory) CreateChartmuseumAuthConfigService() (auth.ConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(ChartmuseumAuthConfigFile)
 	if err != nil {
 		return authConfigSvc, err
@@ -187,7 +187,7 @@ func (f *factory) CreateChartmuseumAuthConfigService() (auth.AuthConfigService, 
 	return authConfigSvc, err
 }
 
-func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error) {
+func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(IssuesAuthConfigFile)
 	if err != nil {
 		return authConfigSvc, err
@@ -202,7 +202,7 @@ func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList
 	return authConfigSvc, err
 }
 
-func (f *factory) CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error) {
+func (f *factory) CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(ChatAuthConfigFile)
 	if err != nil {
 		return authConfigSvc, err
@@ -217,7 +217,7 @@ func (f *factory) CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.
 	return authConfigSvc, err
 }
 
-func (f *factory) CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error) {
+func (f *factory) CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(AddonAuthConfigFile)
 	if err != nil {
 		return authConfigSvc, err
@@ -278,7 +278,7 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 	return nil
 }
 
-func (f *factory) CreateAuthConfigService(fileName string) (auth.AuthConfigService, error) {
+func (f *factory) CreateAuthConfigService(fileName string) (auth.ConfigService, error) {
 	return auth.NewFileBasedAuthConfigService(fileName)
 }
 
@@ -371,7 +371,7 @@ func (f *factory) CreateClient() (kubernetes.Interface, string, error) {
 	return client, ns, nil
 }
 
-func (f *factory) CreateGitProvider(gitURL string, message string, authConfigSvc auth.AuthConfigService, gitKind string, batchMode bool, gitter gits.Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gits.GitProvider, error) {
+func (f *factory) CreateGitProvider(gitURL string, message string, authConfigSvc auth.ConfigService, gitKind string, batchMode bool, gitter gits.Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gits.GitProvider, error) {
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return nil, err

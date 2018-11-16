@@ -1,5 +1,6 @@
 package auth
 
+// Config gets the AuthConfig from the service
 func (s *GenericAuthConfigService) Config() *AuthConfig {
 	if s.config == nil {
 		s.config = &AuthConfig{}
@@ -7,6 +8,7 @@ func (s *GenericAuthConfigService) Config() *AuthConfig {
 	return s.config
 }
 
+// SetConfig sets the AuthConfig object
 func (s *GenericAuthConfigService) SetConfig(c *AuthConfig) {
 	s.config = c
 }

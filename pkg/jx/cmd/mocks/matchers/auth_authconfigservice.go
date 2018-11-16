@@ -2,19 +2,19 @@
 package matchers
 
 import (
-	"reflect"
-	"github.com/petergtz/pegomock"
 	auth "github.com/jenkins-x/jx/pkg/auth"
+	"github.com/petergtz/pegomock"
+	"reflect"
 )
 
-func AnyAuthAuthConfigService() auth.AuthConfigService {
-	pegomock.RegisterMatcher(pegomock.NewAnyMatcher(reflect.TypeOf((*(auth.AuthConfigService))(nil)).Elem()))
-	var nullValue auth.AuthConfigService
+func AnyAuthAuthConfigService() auth.ConfigService {
+	pegomock.RegisterMatcher(pegomock.NewAnyMatcher(reflect.TypeOf((*(auth.ConfigService))(nil)).Elem()))
+	var nullValue auth.ConfigService
 	return nullValue
 }
 
-func EqAuthAuthConfigService(value auth.AuthConfigService) auth.AuthConfigService {
+func EqAuthAuthConfigService(value auth.ConfigService) auth.ConfigService {
 	pegomock.RegisterMatcher(&pegomock.EqMatcher{Value: value})
-	var nullValue auth.AuthConfigService
+	var nullValue auth.ConfigService
 	return nullValue
 }

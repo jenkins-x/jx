@@ -5,6 +5,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
+// VaultBasedAuthConfigSaver is a ConfigSaver that saves configs to Vault
 type VaultBasedAuthConfigSaver struct {
 	vaultClient *api.Client
 	secretName  string
@@ -32,7 +33,7 @@ func (v *VaultBasedAuthConfigSaver) SaveConfig(config *AuthConfig) error {
 	return err
 }
 
-// NewVaultBasedAuthConfigSaver creates a AuthConfigSaver that saves the Configs under a specified secretname in a vault
+// NewVaultBasedAuthConfigSaver creates a ConfigSaver that saves the Configs under a specified secretname in a vault
 func NewVaultBasedAuthConfigSaver(secretName string, vaultClient *api.Client) VaultBasedAuthConfigSaver {
 	return VaultBasedAuthConfigSaver{
 		secretName:  secretName,

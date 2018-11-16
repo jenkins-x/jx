@@ -1893,7 +1893,7 @@ func (options *InstallOptions) installAddon(name string) error {
 	return opts.CreateAddon(name)
 }
 
-func (options *InstallOptions) addGitServersToJenkinsConfig(helmConfig *config.HelmValuesConfig, gitAuthCfg auth.AuthConfigService) error {
+func (options *InstallOptions) addGitServersToJenkinsConfig(helmConfig *config.HelmValuesConfig, gitAuthCfg auth.ConfigService) error {
 	cfg := gitAuthCfg.Config()
 	for _, server := range cfg.Servers {
 		if server.Kind == "github" {

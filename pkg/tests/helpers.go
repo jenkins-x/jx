@@ -50,8 +50,8 @@ func TestShouldDisableMaven() bool {
 	return err != nil
 }
 
-// CreateAuthConfigService creates and returns a fixture AuthConfigService
-func CreateAuthConfigService() auth.AuthConfigService {
+// CreateAuthConfigService creates and returns a fixture ConfigService
+func CreateAuthConfigService() auth.ConfigService {
 	authConfigSvc, _ := auth.NewFileBasedAuthConfigService("test-auth-config-service")
 	userAuth := auth.UserAuth{
 		Username:    "jx-testing-user",

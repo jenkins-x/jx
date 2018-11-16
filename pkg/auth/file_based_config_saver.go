@@ -9,7 +9,7 @@ import (
 )
 
 // NewFileBasedAuthConfigService
-func NewFileBasedAuthConfigService(filename string) (AuthConfigService, error) {
+func NewFileBasedAuthConfigService(filename string) (ConfigService, error) {
 	saver, err := newFileBasedAuthSaver(filename)
 	service := GenericAuthConfigService{
 		saver: saver,
@@ -18,7 +18,9 @@ func NewFileBasedAuthConfigService(filename string) (AuthConfigService, error) {
 }
 
 // newFileBasedAuthConfigSaver creates a new FileBasedAuthConfigService that stores its data under the given filename
-func newFileBasedAuthSaver(fileName string) (AuthConfigSaver, error) {
+// If the fileName is an absolute path, it will be used. If it is a simple filename, it will be stored in the default
+// Config directory
+func newFileBasedAuthSaver(fileName string) (ConfigSaver, error) {
 	svc := &FileBasedAuthConfigSaver{}
 	// If the fileName is an absolute path, use that. Otherwise treat it as a config filename to be used in
 	if fileName == filepath.Base(fileName) {
@@ -60,7 +62,7 @@ func (s *FileBasedAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
 func (s *FileBasedAuthConfigSaver) SaveConfig(config *AuthConfig) error {
 	fileName := s.FileName
 	if fileName == "" {
-		return fmt.Errorf("No filename defined!")
+		return fmt.Errorf("no filename defined!")
 	}
 	data, err := yaml.Marshal(config)
 	if err != nil {
