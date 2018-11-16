@@ -30,8 +30,8 @@ func TestGetClient(t *testing.T) {
 	assert.Equal(t, time.Duration(getIntFromEnv("DEFAULT_HTTP_REQUEST_TIMEOUT", 30))*time.Second, myClient.Timeout)
 
 	// verify that it times out properly
-	timeoutClient := GetClientWithTimeout(3)
-	assert.Equal(t, time.Duration(3)*time.Second, timeoutClient.Timeout)
+	timeoutClient := GetClientWithTimeout(time.Duration(3 * time.Second))
+	assert.Equal(t, time.Duration(3 * time.Second), timeoutClient.Timeout)
 
 	handlerFunc := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(10 * time.Second)
