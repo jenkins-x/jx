@@ -8,7 +8,7 @@ metadata:
     chart: {{ template "jx.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
-{- if .Values.job.annotations }}
+{{- if .Values.job.annotations }}
   annotations:
 {{ toYaml .Values.job.annotations | indent 4 }}
 {{- end }}
