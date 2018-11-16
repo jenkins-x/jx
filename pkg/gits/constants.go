@@ -2,19 +2,19 @@ package gits
 
 const (
 	// KindBitBucketCloud git kind for BitBucket Cloud
-	KindBitBucketCloud  = "bitbucketcloud"
+	KindBitBucketCloud = "bitbucketcloud"
 	// KindBitBucketServer git kind for BitBucket Server
 	KindBitBucketServer = "bitbucketserver"
 	// KindGitea git kind for gitea
-	KindGitea           = "gitea"
+	KindGitea = "gitea"
 	// KindGitlab git kind for gitlab
-	KindGitlab          = "gitlab"
+	KindGitlab = "gitlab"
 	// KindGitHub git kind for github
-	KindGitHub          = "github"
+	KindGitHub = "github"
 	// KindGitFake git kind for fake git
-	KindGitFake         = "fakegit"
+	KindGitFake = "fakegit"
 	// KindUnknown git kind for unknown git
-	KindUnknown         = "unknown"
+	KindUnknown = "unknown"
 
 	// BitbucketCloudURL the default URL for BitBucket Cloud
 	BitbucketCloudURL = "https://bitbucket.org"

@@ -1279,9 +1279,9 @@ func (options *InstallOptions) Run() error {
 			}
 			config := &v1.Environment{
 				Spec: v1.EnvironmentSpec{
-					Label: "Development",
+					Label:             "Development",
 					PromotionStrategy: v1.PromotionStrategyTypeNever,
-					Kind: v1.EnvironmentKindTypeDevelopment,
+					Kind:              v1.EnvironmentKindTypeDevelopment,
 				},
 			}
 			config.Name = kube.LabelValueDevEnvironment

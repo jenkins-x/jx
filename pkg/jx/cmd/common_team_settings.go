@@ -91,7 +91,6 @@ func (o *CommonOptions) ModifyDevEnvironment(callback func(env *v1.Environment) 
 	return o.modifyDevEnvironmentFn(callback)
 }
 
-
 // ModifyDevEnvironment modifies the development environment settings
 func (o *CommonOptions) ModifyEnvironment(name string, callback func(env *v1.Environment) error) error {
 	if o.modifyEnvironmentFn == nil {

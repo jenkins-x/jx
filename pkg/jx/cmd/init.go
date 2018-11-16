@@ -222,7 +222,7 @@ func (o *InitOptions) enableClusterAdminRole() error {
 
 	if o.Username == "" {
 		o.Username, err = o.GetClusterUserName()
-		if err != err {
+		if err != nil {
 			return err
 		}
 	}
@@ -632,7 +632,7 @@ func (o *InitOptions) initIngress() error {
 			return nil
 		}
 
-		values := []string{"rbac.create=true" /*,"rbac.serviceAccountName="+ingressServiceAccount*/ }
+		values := []string{"rbac.create=true" /*,"rbac.serviceAccountName="+ingressServiceAccount*/}
 		valuesFiles := []string{}
 		valuesFiles, err = helm.AppendMyValues(valuesFiles)
 		if err != nil {
