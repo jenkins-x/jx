@@ -279,13 +279,7 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 }
 
 func (f *factory) CreateAuthConfigService(fileName string) (auth.AuthConfigService, error) {
-	svc := &auth.FileBasedAuthConfigService{}
-	dir, err := util.ConfigDir()
-	if err != nil {
-		return svc, err
-	}
-	svc.FileName = filepath.Join(dir, fileName)
-	return svc, nil
+	return auth.NewFileBasedAuthConfigService(fileName)
 }
 
 func (f *factory) CreateJXClient() (versioned.Interface, string, error) {

@@ -1,5 +1,7 @@
 package auth
 
+import "github.com/jenkins-x/jx/pkg/vault"
+
 const (
 	DefaultWritePermissions = 0760
 )
@@ -29,8 +31,17 @@ type AuthConfig struct {
 	PipeLineServer   string
 }
 
-// FileBasedAuthConfigService is a service for handing the config of auth tokens
-type FileBasedAuthConfigService struct {
+// GenericAuthConfigService implements the generic features of the AuthConfigService because we don't have superclasses
+type GenericAuthConfigService struct {
+	config *AuthConfig
+	saver  AuthConfigSaver
+}
+
+type FileBasedAuthConfigSaver struct {
 	FileName string
-	config   *AuthConfig
+}
+
+// VaultBasedAuthConfigService is an AuthConfigService that stores its secret data in a Vault
+type VaultBasedAuthConfigService struct {
+	vaulter vault.Vaulter
 }

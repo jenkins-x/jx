@@ -1,6 +1,7 @@
 package util
 
 import (
+	"gopkg.in/yaml.v2"
 	"strconv"
 
 	"github.com/fatih/structs"
@@ -43,4 +44,24 @@ func ToStringMapStringFromStruct(obj interface{}) map[string]string {
 		}
 	}
 	return config
+}
+
+// ToMapStringInterfaceFromStruct marshals a struct to a generic map[string]interface{} by marshalling it to yaml and back
+func ToMapStringInterfaceFromStruct(obj interface{}) (map[string]interface{}, error) {
+	y, err := yaml.Marshal(&obj)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]interface{})
+	err = yaml.Unmarshal(y, &out)
+	return out, err
+}
+
+// ToStructFromMapStringInterface marshals a generic map[string]interface{} to a struct by marshalling to yaml and back
+func ToStructFromMapStringInterface(m map[string]interface{}, str interface{}) error {
+	j, err := yaml.Marshal(m)
+	if err != nil {
+		return err
+	}
+	return yaml.Unmarshal(j, str)
 }

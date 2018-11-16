@@ -14,3 +14,11 @@ type AuthConfigService interface {
 	// DeleteServer removes the given server from the configuration
 	DeleteServer(url string) error
 }
+
+type AuthConfigSaver interface {
+	// LoadConfig loads the configuration from the users JX config directory
+	LoadConfig() (*AuthConfig, error)
+	//HasConfigFile() (bool, error)
+	// SaveConfig saves the configuration
+	SaveConfig(config *AuthConfig) error
+}

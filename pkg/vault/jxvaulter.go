@@ -41,3 +41,7 @@ func (v *JxVaulter) Secrets() ([]string, error) {
 
 	return out, nil
 }
+
+func (v *JxVaulter) GetVaultClient() *api.Client {
+	return v.client
+}
