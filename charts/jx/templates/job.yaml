@@ -35,6 +35,7 @@ spec:
             - name: http
               containerPort: {{ .Values.internalPort }}
               protocol: TCP
+{{- if .Values.probe.path }}
           livenessProbe:
             httpGet:
               path: {{ .Values.probe.path }}
@@ -43,6 +44,7 @@ spec:
             httpGet:
               path: {{ .Values.probe.path }}
               port: http
+{{- end }}
 {{- if .Values.env }}
           env:
 {{- range $pkey, $pval := .Values.env }}
