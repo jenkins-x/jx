@@ -1,6 +1,7 @@
 package gits_test
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"sort"
@@ -89,6 +90,8 @@ func (suite *GerritProviderTestSuite) TestCreateRepository() {
 	suite.Require().NotNil(repo)
 	suite.Require().Nil(err)
 	suite.Require().Equal("test-org/test-repo", repo.Name)
+	suite.Require().Equal(fmt.Sprintf("%s/test-org/test-repo", suite.server.URL), repo.CloneURL)
+	suite.Require().Equal(fmt.Sprintf("%s:test-org/test-repo", suite.server.URL), repo.SSHURL)
 }
 
 func TestGerritProviderTestSuite(t *testing.T) {

@@ -85,15 +85,15 @@ func (p *GerritProvider) CreateRepository(org string, name string, private bool)
 		PermissionsOnly: private,
 	}
 
-	projectInfo, response, err := p.Client.Projects.CreateProject(fullNamePathEscaped, input)
+	projectInfo, _, err := p.Client.Projects.CreateProject(fullNamePathEscaped, input)
 	if err != nil {
 		return nil, err
 	}
 
 	genericRepo := &GitRepository{
 		Name:     projectInfo.Name,
-		CloneURL: fmt.Sprintf("%s/%s%s", p.Server.URL, org, projectInfo.Name),
-		SSHURL:   fmt.Sprintf("%s:%s%s", p.Server.URL, org, projectInfo.Name),
+		CloneURL: fmt.Sprintf("%s/%s", p.Server.URL, projectInfo.Name),
+		SSHURL:   fmt.Sprintf("%s:%s", p.Server.URL, projectInfo.Name),
 	}
 	return genericRepo, nil
 }
