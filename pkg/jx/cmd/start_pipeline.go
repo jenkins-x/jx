@@ -95,16 +95,16 @@ func NewCmdStartPipeline(f Factory, in terminal.FileReader, out terminal.FileWri
 // Run implements this command
 func (o *StartPipelineOptions) Run() error {
 	_, _, err := o.KubeClient()
-	if err != err {
+	if err != nil {
 		return err
 	}
 	_, _, err = o.JXClient()
-	if err != err {
+	if err != nil {
 		return err
 	}
 
 	isProw, err := o.isProw()
-	if err != err {
+	if err != nil {
 		return err
 	}
 	args := o.Args

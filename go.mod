@@ -16,7 +16,7 @@ require (
 	github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc // indirect
 	github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf // indirect
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f
-	github.com/andygrunwald/go-gerrit v0.0.0-20171029143327-95b11af228a1
+	github.com/andygrunwald/go-gerrit v0.0.0-20181026193842-43cfd7a94eb4
 	github.com/andygrunwald/go-jira v1.5.0
 	github.com/aws/aws-sdk-go v1.15.50
 	github.com/banzaicloud/bank-vaults v0.0.0-20181015112421-ca15a6960a3a

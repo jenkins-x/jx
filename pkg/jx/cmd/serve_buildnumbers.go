@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	command    = "serve-buildnumbers"
+	command    = "buildnumbers"
 	optionPort = "port"
 	optionBind = "bind"
 )
@@ -24,13 +24,14 @@ type ServeBuildNumbersOptions struct {
 }
 
 var (
-	serveBuildNumbersLong = templates.LongDesc("Generates the next build unique number for a pipeline")
+	serveBuildNumbersLong = templates.LongDesc(`Runs the build number controller that serves sequential build 
+		numbers over an HTTP interface.`)
 
 	serveBuildNumbersExample = templates.Examples("jx " + command)
 )
 
-// NewCmdServeBuildNumbers builds a new command to serving build numbers over an HTTP interface.
-func NewCmdServeBuildNumbers(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+// NewCmdSControllerBuildNumbers builds a new command to serving build numbers over an HTTP interface.
+func NewCmdSControllerBuildNumbers(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := ServeBuildNumbersOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,

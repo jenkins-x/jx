@@ -1,0 +1,18 @@
+{
+  "All-Projects": {
+    "id": "All-Projects",
+    "state": "ACTIVE"
+  },
+  "All-Users": {
+    "id": "All-Users",
+    "state": "ACTIVE"
+  },
+  "RecipeBook": {
+    "id": "RecipeBook",
+    "state": "ACTIVE"
+  },
+  "testing": {
+    "id": "testing",
+    "state": "ACTIVE"
+  }
+}
