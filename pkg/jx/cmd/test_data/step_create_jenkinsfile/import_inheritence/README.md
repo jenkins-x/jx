@@ -7,5 +7,6 @@ We can then resolve the named module using different strategies via `jenkinsfile
 
 ## How the test case works
 
-* the [pipeline.yaml](pipeline.yaml) and [base-pipeline.yaml](base-pipeline.yaml) are used with the [Jenkinsfile.tmpl](Jenkinsfile.tmpl) (which can be reused across languages) to generate a `Jenkinfile`
+* the [pipeline.yaml](pipeline.yaml) inherits its base pipeline [import_dir/classic/maven/pipeline.yaml](import_dir/classic/maven/pipeline.yaml) via the [extends import directive](pipeline.yaml#L1-L3)
+* the resulting pipeline is combined with the [Jenkinsfile.tmpl](Jenkinsfile.tmpl) (which can be reused across languages) to generate a `Jenkinfile`
 * the resulting file is asserted to match the expected [Jenkinsfile](Jenkinsfile) 
