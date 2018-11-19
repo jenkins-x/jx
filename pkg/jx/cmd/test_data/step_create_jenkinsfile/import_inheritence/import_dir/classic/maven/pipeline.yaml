@@ -1,0 +1,25 @@
+agent:
+  label: jenkins-maven
+  container: maven
+pipelines:
+  pullRequest:
+    build:
+      steps:
+      - sh: mvn versions:set -DnewVersion=$PREVIEW_VERSION
+      - sh: mvn install
+  release:
+    setup:
+      steps:
+      - sh: git checkout master
+        comment: ensure we're not on a detached head
+      - sh: git config --global credential.helper store
+      - sh: jx step git credentials
+    setVersion:
+      steps:
+      - sh: echo \$(jx-release-version) > VERSION
+        comment: so we can retrieve the version in later steps
+      - sh: mvn versions:set -DnewVersion=\$(cat VERSION)
+      - sh: jx step tag --version \$(cat VERSION)
+    build:
+      steps:
+      - sh: mvn clean deploy

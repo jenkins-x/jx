@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -36,6 +37,8 @@ type StepCreateJenkinsfileOptions struct {
 
 	Dir       string
 	OutputDir string
+
+	ImportFileResolver jenkinsfile.ImportFileResolver
 }
 
 // NewCmdCreateJenkinsfile Creates a new Command object
@@ -75,13 +78,18 @@ func (o *StepCreateJenkinsfileOptions) Run() error {
 	return nil
 }
 
+
 // GenerateJenkinsfile generates the jenkinsfile 
 func (o *StepCreateJenkinsfileOptions) GenerateJenkinsfile(arguments *jenkinsfile.CreateJenkinsfileArguments) error {
 	err := arguments.Validate()
 	if err != nil {
 		return err
 	}
-	config, err := jenkinsfile.LoadPipelineConfig(arguments.ConfigFile)
+	resolver := o.ImportFileResolver
+	if resolver == nil {
+		resolver = o.resolveImportFile
+	}
+	config, err := jenkinsfile.LoadPipelineConfig(arguments.ConfigFile, resolver)
 	if err != nil {
 		return err
 	}
@@ -114,4 +122,9 @@ func (o *StepCreateJenkinsfileOptions) GenerateJenkinsfile(arguments *jenkinsfil
 		return errors.Wrapf(err, "failed to write file %s", outFile)
 	}
 	return nil
+}
+
+// resolveImportFile resolve an import name and file 
+func (o *StepCreateJenkinsfileOptions) resolveImportFile(importFile *jenkinsfile.ImportFile) (string, error) {
+	return importFile.File, fmt.Errorf("not implemented")
 }

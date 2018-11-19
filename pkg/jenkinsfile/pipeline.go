@@ -20,6 +20,16 @@ const (
 	PipelineTemplateFileName = "Jenkinsfile.tmpl"
 )
 
+
+// ImportFile represents an import of a file from a module (usually a version of a git repo)
+type ImportFile struct {
+	Import string
+	File string
+}
+
+// ImportFileResolver resolves a build pack file resolver strategy
+type ImportFileResolver func(importFile *ImportFile) (string, error)
+
 // PipelineAgent contains the agent definition metadata
 type PipelineAgent struct {
 	Label     string `yaml:"label,omitempty"`
@@ -69,7 +79,16 @@ type PipelineLifecycleArray []*PipelineLifecycle
 
 // PipelineExtends defines the extension (e.g. parent pipeline which is overloaded
 type PipelineExtends struct {
-	File string `yaml:"file,omitempty"`
+	Import string `yaml:"import,omitempty"`
+	File   string `yaml:"file,omitempty"`
+}
+
+// ImportFile returns an ImportFile for the given extension
+func (x *PipelineExtends) ImportFile() *ImportFile {
+	return &ImportFile{
+		Import: x.Import,
+		File: x.File,
+	}
 }
 
 // PipelineConfig defines the pipeline configuration
@@ -294,7 +313,7 @@ func (s *PipelineStep) ToJenkinsfileStatements() []*JenkinsfileStatement {
 }
 
 // LoadPipelineConfig returns the pipeline configuration
-func LoadPipelineConfig(fileName string) (*PipelineConfig, error) {
+func LoadPipelineConfig(fileName string, resolver ImportFileResolver) (*PipelineConfig, error) {
 	config := PipelineConfig{}
 	exists, err := util.FileExists(fileName)
 	if err != nil || !exists {
@@ -313,7 +332,14 @@ func LoadPipelineConfig(fileName string) (*PipelineConfig, error) {
 		return &config, nil
 	}
 	file := config.Extends.File
-	if !filepath.IsAbs(file) {
+	importModule := config.Extends.Import
+	if importModule != "" {
+		file, err = resolver(config.Extends.ImportFile())
+		if err != nil {
+		  return &config, err
+		}
+
+	} else if !filepath.IsAbs(file) {
 		dir, _ := filepath.Split(fileName)
 		if dir != "" {
 			file = filepath.Join(dir, file)
@@ -326,7 +352,7 @@ func LoadPipelineConfig(fileName string) (*PipelineConfig, error) {
 	if !exists {
 		return &config, fmt.Errorf("base pipeline file does not exist %s", file)
 	}
-	basePipeline, err := LoadPipelineConfig(file)
+	basePipeline, err := LoadPipelineConfig(file, resolver)
 	if err != nil {
 		return &config, fmt.Errorf("failed to load base pipeline file %s", file)
 	}

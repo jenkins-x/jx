@@ -9,6 +9,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -47,7 +48,14 @@ func testStepCreateJenkinsfile(t *testing.T, outDir string, testcase string, src
 	assert.FileExists(t, templateFile)
 	assert.FileExists(t, expectedFile)
 
-	o := &cmd.StepCreateJenkinsfileOptions{}
+	o := &cmd.StepCreateJenkinsfileOptions{
+		ImportFileResolver: func (importFile *jenkinsfile.ImportFile) (string, error) {
+			dirPath := []string{srcDir, "import_dir", importFile.Import}
+			// lets handle cross platform paths in `importFile.File`
+			path := append(dirPath, strings.Split(importFile.File, "/")...)
+			return filepath.Join(path...), nil
+		},
+	}
 
 	err := o.GenerateJenkinsfile(&jenkinsfile.CreateJenkinsfileArguments{
 		ConfigFile:   configFile,
@@ -113,7 +121,7 @@ func TestParsePipelineConfig(t *testing.T) {
 	pipelineFile := path.Join("test_data", "step_create_jenkinsfile", jenkinsfile.PipelineConfigFileName)
 	assert.FileExists(t, pipelineFile)
 
-	config, err := jenkinsfile.LoadPipelineConfig(pipelineFile)
+	config, err := jenkinsfile.LoadPipelineConfig(pipelineFile, dummyImportFileResolver)
 	require.NoError(t, err, "failed to load pipeline config %s", pipelineFile)
 
 	assert.Equal(t, "jenkins-maven", config.Agent.Label, "Agent.Label")
@@ -124,10 +132,16 @@ func TestParseLongerPipelineConfig(t *testing.T) {
 	pipelineFile := path.Join("test_data", "step_create_jenkinsfile", "simple", jenkinsfile.PipelineConfigFileName)
 	assert.FileExists(t, pipelineFile)
 
-	config, err := jenkinsfile.LoadPipelineConfig(pipelineFile)
+	config, err := jenkinsfile.LoadPipelineConfig(pipelineFile, dummyImportFileResolver)
 	require.NoError(t, err, "failed to load pipeline config %s", pipelineFile)
 
 	assert.Equal(t, "jenkins-maven", config.Agent.Label, "Agent.Label")
 	assert.NotNil(t, config.Pipelines.PullRequest, "Pipelines.PullRequest")
 	assert.NotNil(t, config.Pipelines.Release, "Pipelines.Release")
+}
+
+
+func dummyImportFileResolver(importFile *jenkinsfile.ImportFile) (string, error) {
+	return importFile.File, nil
+	
 }
