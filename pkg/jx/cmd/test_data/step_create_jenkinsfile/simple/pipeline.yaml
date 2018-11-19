@@ -11,12 +11,14 @@ pipelines:
         - cmd: export VERSION=$PREVIEW_VERSION && skaffold build -f skaffold.yaml
     postBuild:
       steps:
-      - cmd: jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$PREVIEW_VERSION
-    promote:
-      steps:
       - container: maven
         steps:
-        - groovy: dir ('./charts/preview')
+        - cmd: jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$PREVIEW_VERSION
+    promote:
+      steps:
+      - dir: ./charts/preview
+        steps:
+        - container: maven
           steps:
           - cmd: make preview
           - cmd: jx preview --app $APP_NAME --dir ../..
@@ -37,9 +39,11 @@ pipelines:
         - cmd: echo \$(jx-release-version) > VERSION
           comment: so we can retrieve the version in later steps
         - cmd: mvn versions:set -DnewVersion=\$(cat VERSION)
-        - groovy: dir ('./charts/REPLACE_ME_APP_NAME')
+      - dir: ./charts/REPLACE_ME_APP_NAME
+        steps:
+        - container: maven
           steps:
-          - cmd: sh "make tag"
+          - cmd: make tag
 
     build:
       steps:
@@ -50,13 +54,13 @@ pipelines:
         - cmd: jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:\$(cat VERSION)
     promote:
       steps:
-      - container: maven
+      - dir: ./charts/REPLACE_ME_APP_NAME
         steps:
-        - groovy: dir ('./charts/REPLACE_ME_APP_NAME')
+        - container: maven
           steps:
           - cmd: jx step changelog --version v\$(cat ../../VERSION)
           - comment: release the helm chart
-            cmd: jx step helm releas
+            cmd: jx step helm release
           - comment: promote through all 'Auto' promotion Environments
             cmd: jx promote -b --all-auto --timeout 1h --version \$(cat ../../VERSION)
 

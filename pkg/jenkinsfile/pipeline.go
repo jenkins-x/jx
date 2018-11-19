@@ -16,8 +16,6 @@ const (
 
 	// PipelineTemplateFileName defines the jenkisnfile template used to generate the pipeline
 	PipelineTemplateFileName = "Jenkinsfile.tmpl"
-
-	indent = "          "
 )
 
 // PipelineAgent contains the agent definition metadata
@@ -36,6 +34,7 @@ type Pipelines struct {
 type PipelineStep struct {
 	Comment   string          `yaml:"comment,omitempty"`
 	Container string          `yaml:"container,omitempty"`
+	Dir       string          `yaml:"dir,omitempty"`
 	Command   string          `yaml:"cmd,omitempty"`
 	Groovy    string          `yaml:"groovy,omitempty"`
 	Steps     []*PipelineStep `yaml:"steps,omitempty"`
@@ -55,6 +54,9 @@ type PipelineLifecycles struct {
 type PipelineLifecycle struct {
 	Steps []*PipelineStep `yaml:"steps,omitempty"`
 }
+
+// PipelineLifecycleArray an array of lifecycle pointers
+type PipelineLifecycleArray []*PipelineLifecycle
 
 // PipelineConfig defines the pipeline configuration
 type PipelineConfig struct {
@@ -88,9 +90,8 @@ func (a *CreateJenkinsfileArguments) Validate() error {
 func (a *PipelineAgent) Groovy() string {
 	if a.Label != "" {
 		return fmt.Sprintf(`{
-      label "%s"
-    }
-`, a.Label)
+    label "%s"
+  }`, a.Label)
 	}
 	// lets use any for Prow
 	return "any"
@@ -98,55 +99,76 @@ func (a *PipelineAgent) Groovy() string {
 
 // Groovy returns the groovy expression for all of the lifecycles
 func (a *PipelineLifecycles) Groovy() string {
-	var buffer bytes.Buffer
-	for _, l := range []*PipelineLifecycle{a.Setup, a.SetVersion, a.PreBuild, a.Build, a.PostBuild} {
+	lifecycles := PipelineLifecycleArray([]*PipelineLifecycle{a.Setup, a.SetVersion, a.PreBuild, a.Build, a.PostBuild, a.Promote})
+	return lifecycles.Groovy()
+}
+
+// AllButPromote returns all lifecycles but promote
+func (a *PipelineLifecycles) AllButPromote() PipelineLifecycleArray {
+	return []*PipelineLifecycle{a.Setup, a.SetVersion, a.PreBuild, a.Build, a.PostBuild}
+}
+
+// Groovy returns the groovy string for the lifecycles
+func (s PipelineLifecycleArray) Groovy() string {
+	statements := []JenkinsfileStatement{}
+	for _, l := range s {
 		if l != nil {
-			text := l.Groovy()
-			buffer.WriteString(text)
+			statements = append(statements, l.ToJenkinsfileStatements()...)
 		}
 	}
-	return buffer.String()
+	text := WriteJenkinsfileStatements(4, statements)
+	// lets remove the very last newline so its easier to compose in templates
+	text = strings.TrimSuffix(text, "\n")
+	return text
 }
 
 // Groovy returns the groovy expression for this lifecycle
 func (a *PipelineLifecycle) Groovy() string {
-	var buffer bytes.Buffer
-	for _, s := range a.Steps {
-		buffer.WriteString(s.GroovyBlock(indent))
+	lifecycles := PipelineLifecycleArray([]*PipelineLifecycle{a})
+	return lifecycles.Groovy()
+}
+
+// ToJenkinsfileStatements converts the lifecycle to one or more jenkinsfile statements
+func (l *PipelineLifecycle) ToJenkinsfileStatements() []JenkinsfileStatement {
+	statements := []JenkinsfileStatement{}
+	for _, step := range l.Steps {
+		statements = append(statements, step.ToJenkinsfileStatements()...)
 	}
-	return buffer.String()
+	return statements
 }
 
 // Groovy returns the groovy expression for this step
 func (s *PipelineStep) GroovyBlock(parentIndent string) string {
 	var buffer bytes.Buffer
 	indent := parentIndent
-	groovyBlock := false
-	if s.Container != "" {
-		buffer.WriteString(indent)
-		buffer.WriteString("container(\"")
-		buffer.WriteString(s.Container)
-		buffer.WriteString("\") {\n")
-	}
 	if s.Comment != "" {
 		buffer.WriteString(indent)
 		buffer.WriteString("// ")
 		buffer.WriteString(s.Comment)
 		buffer.WriteString("\n")
 	}
-	if s.Command != "" {
+	if s.Container != "" {
+		buffer.WriteString(indent)
+		buffer.WriteString("container('")
+		buffer.WriteString(s.Container)
+		buffer.WriteString("') {\n")
+	} else if s.Dir != "" {
+		buffer.WriteString(indent)
+		buffer.WriteString("dir('")
+		buffer.WriteString(s.Dir)
+		buffer.WriteString("') {\n")
+	} else if s.Command != "" {
 		buffer.WriteString(indent)
 		buffer.WriteString("sh \"")
 		buffer.WriteString(s.Command)
 		buffer.WriteString("\"\n")
 	} else if s.Groovy != "" {
 		lines := strings.Split(s.Groovy, "\n")
-		lastIdx := len(lines) -1
+		lastIdx := len(lines) - 1
 		for i, line := range lines {
 			buffer.WriteString(indent)
 			buffer.WriteString(line)
 			if i >= lastIdx && len(s.Steps) > 0 {
-				groovyBlock = true
 				buffer.WriteString(" {")
 			}
 			buffer.WriteString("\n")
@@ -156,11 +178,48 @@ func (s *PipelineStep) GroovyBlock(parentIndent string) string {
 	for _, child := range s.Steps {
 		buffer.WriteString(child.GroovyBlock(childIndent))
 	}
-	if s.Container != "" || groovyBlock {
-		buffer.WriteString(parentIndent)
-		buffer.WriteString("}\n")
-	}
 	return buffer.String()
+}
+
+// ToJenkinsfileStatements converts the step to one or more jenkinsfile statements
+func (s *PipelineStep) ToJenkinsfileStatements() []JenkinsfileStatement {
+	statements := []JenkinsfileStatement{}
+	if s.Comment != "" {
+		statements = append(statements, JenkinsfileStatement{
+			Statement: "",
+		}, JenkinsfileStatement{
+			Statement: "// " + s.Comment,
+		})
+	}
+	if s.Container != "" {
+		statements = append(statements, JenkinsfileStatement{
+			Function:  "container",
+			Arguments: []string{s.Container},
+		})
+	} else if s.Dir != "" {
+		statements = append(statements, JenkinsfileStatement{
+			Function:  "dir",
+			Arguments: []string{s.Dir},
+		})
+	} else if s.Command != "" {
+		statements = append(statements, JenkinsfileStatement{
+			Statement: "sh \"" + s.Command + "\"",
+		})
+	} else if s.Groovy != "" {
+		lines := strings.Split(s.Groovy, "\n")
+		for _, line := range lines {
+			statements = append(statements, JenkinsfileStatement{
+				Statement: line,
+			})
+		}
+	}
+	if len(statements) > 0 {
+		last := &statements[len(statements)-1]
+		for _, c := range s.Steps {
+			last.Children = append(last.Children, c.ToJenkinsfileStatements()...)
+		}
+	}
+	return statements
 }
 
 // LoadPipelineConfig returns the pipeline configuration
