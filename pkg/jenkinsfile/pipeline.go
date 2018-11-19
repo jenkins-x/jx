@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"path/filepath"
 	"reflect"
 	"strings"
 )
@@ -53,16 +55,28 @@ type PipelineLifecycles struct {
 // PipelineLifecycle defines the steps of a lifecycle section
 type PipelineLifecycle struct {
 	Steps []*PipelineStep `yaml:"steps,omitempty"`
+
+	// InitSteps if using inheritence then invoke these steps before the base steps
+	InitSteps []*PipelineStep `yaml:"initSteps,omitempty"`
+
+	// Replace if using inheritence then replace steps from the base pipeline
+	Replace bool `yaml:"replace,omitempty"`
 }
 
 // PipelineLifecycleArray an array of lifecycle pointers
 type PipelineLifecycleArray []*PipelineLifecycle
 
+// PipelineExtends defines the extension (e.g. parent pipeline which is overloaded
+type PipelineExtends struct {
+	File string `yaml:"file,omitempty"`
+}
+
 // PipelineConfig defines the pipeline configuration
 type PipelineConfig struct {
-	Agent       PipelineAgent `yaml:"agent,omitempty"`
-	Environment string        `yaml:"environment,omitempty"`
-	Pipelines   Pipelines     `yaml:"pipelines,omitempty"`
+	Extends     *PipelineExtends `yaml:"extends,omitempty"`
+	Agent       PipelineAgent    `yaml:"agent,omitempty"`
+	Environment string           `yaml:"environment,omitempty"`
+	Pipelines   Pipelines        `yaml:"pipelines,omitempty"`
 }
 
 // CreateJenkinsfileArguments contains the arguents to generate a Jenkinsfiles dynamically
@@ -110,7 +124,7 @@ func (a *PipelineLifecycles) AllButPromote() PipelineLifecycleArray {
 
 // Groovy returns the groovy string for the lifecycles
 func (s PipelineLifecycleArray) Groovy() string {
-	statements := []JenkinsfileStatement{}
+	statements := []*JenkinsfileStatement{}
 	for _, l := range s {
 		if l != nil {
 			statements = append(statements, l.ToJenkinsfileStatements()...)
@@ -129,13 +143,23 @@ func (a *PipelineLifecycle) Groovy() string {
 }
 
 // ToJenkinsfileStatements converts the lifecycle to one or more jenkinsfile statements
-func (l *PipelineLifecycle) ToJenkinsfileStatements() []JenkinsfileStatement {
-	statements := []JenkinsfileStatement{}
+func (l *PipelineLifecycle) ToJenkinsfileStatements() []*JenkinsfileStatement {
+	statements := []*JenkinsfileStatement{}
 	for _, step := range l.Steps {
 		statements = append(statements, step.ToJenkinsfileStatements()...)
 	}
 	return statements
 }
+
+
+// Extend extends these pipelines with the base pipeline
+func (p *Pipelines) Extend(base *Pipelines) error {
+	p.PullRequest = ExtendPipelines(p.PullRequest, base.PullRequest)
+	p.Release = ExtendPipelines(p.Release, base.Release)
+	p.Feature = ExtendPipelines(p.Feature, base.Feature)
+	return nil
+}
+
 
 // Groovy returns the groovy expression for this step
 func (s *PipelineStep) GroovyBlock(parentIndent string) string {
@@ -182,39 +206,39 @@ func (s *PipelineStep) GroovyBlock(parentIndent string) string {
 }
 
 // ToJenkinsfileStatements converts the step to one or more jenkinsfile statements
-func (s *PipelineStep) ToJenkinsfileStatements() []JenkinsfileStatement {
-	statements := []JenkinsfileStatement{}
+func (s *PipelineStep) ToJenkinsfileStatements() []*JenkinsfileStatement {
+	statements := []*JenkinsfileStatement{}
 	if s.Comment != "" {
-		statements = append(statements, JenkinsfileStatement{
+		statements = append(statements, &JenkinsfileStatement{
 			Statement: "",
-		}, JenkinsfileStatement{
+		}, &JenkinsfileStatement{
 			Statement: "// " + s.Comment,
 		})
 	}
 	if s.Container != "" {
-		statements = append(statements, JenkinsfileStatement{
+		statements = append(statements, &JenkinsfileStatement{
 			Function:  "container",
 			Arguments: []string{s.Container},
 		})
 	} else if s.Dir != "" {
-		statements = append(statements, JenkinsfileStatement{
+		statements = append(statements, &JenkinsfileStatement{
 			Function:  "dir",
 			Arguments: []string{s.Dir},
 		})
 	} else if s.Command != "" {
-		statements = append(statements, JenkinsfileStatement{
+		statements = append(statements, &JenkinsfileStatement{
 			Statement: "sh \"" + s.Command + "\"",
 		})
 	} else if s.Groovy != "" {
 		lines := strings.Split(s.Groovy, "\n")
 		for _, line := range lines {
-			statements = append(statements, JenkinsfileStatement{
+			statements = append(statements, &JenkinsfileStatement{
 				Statement: line,
 			})
 		}
 	}
 	if len(statements) > 0 {
-		last := &statements[len(statements)-1]
+		last := statements[len(statements)-1]
 		for _, c := range s.Steps {
 			last.Children = append(last.Children, c.ToJenkinsfileStatements()...)
 		}
@@ -237,6 +261,30 @@ func LoadPipelineConfig(fileName string) (*PipelineConfig, error) {
 	if err != nil {
 		return &config, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
 	}
+	if config.Extends != nil {
+		file := config.Extends.File
+		if file != "" {
+			if !filepath.IsAbs(file) {
+				dir, _ := filepath.Split(fileName)
+				if dir != "" {
+					file = filepath.Join(dir, file)
+				}
+			}
+			exists, err = util.FileExists(file)
+			if err != nil {
+				return &config, errors.Wrapf(err, "base pipeline file does not exist %s", file)
+			}
+			if !exists {
+				return &config, fmt.Errorf("base pipeline file does not exist %s", file)
+			}
+			basePipeline, err := LoadPipelineConfig(file)
+			if err != nil {
+				return &config, fmt.Errorf("failed to load base pipeline file %s", file)
+			}
+			err = config.ExtendPipeline(basePipeline)
+			return &config, err
+		}
+	}
 	return &config, nil
 
 }
@@ -254,4 +302,51 @@ func (c *PipelineConfig) SaveConfig(fileName string) error {
 		return err
 	}
 	return ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+}
+
+// ExtendPipeline inherits this pipeline from the given base pipeline
+func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig) error {
+	if c.Agent.Label == "" {
+		c.Agent.Label = base.Agent.Label
+	}
+	c.Pipelines.Extend(&base.Pipelines)
+	return nil
+}
+
+// ExtendPipelines extends the parent lifecycle with the base
+func ExtendPipelines(parent *PipelineLifecycles, base *PipelineLifecycles) *PipelineLifecycles {
+	if parent == nil {
+		return base
+	}
+	if base == nil {
+		return parent
+	}
+	return &PipelineLifecycles{
+		Setup: ExtendLifecycle(parent.Setup, base.Setup),
+		SetVersion: ExtendLifecycle(parent.SetVersion, base.SetVersion),
+		PreBuild: ExtendLifecycle(parent.PreBuild, base.PreBuild),
+		Build: ExtendLifecycle(parent.Build, base.Build),
+		PostBuild: ExtendLifecycle(parent.PostBuild, base.PostBuild),
+		Promote: ExtendLifecycle(parent.Promote, base.Promote),
+	}
+}
+
+// ExtendLifecycle extends the lifecycle with the inherited base lifecycle
+func ExtendLifecycle(parent *PipelineLifecycle, base *PipelineLifecycle) *PipelineLifecycle {
+	if parent == nil {
+		return base
+	}
+	if base == nil {
+		return parent
+	}
+	if parent.Replace {
+		return parent
+	}
+	steps := []*PipelineStep{}
+	steps = append(steps, parent.InitSteps...)
+	steps = append(steps, base.Steps...)
+	steps = append(steps, parent.Steps...)
+	return &PipelineLifecycle{
+		Steps: steps,
+	}
 }
