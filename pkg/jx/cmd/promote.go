@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -83,13 +84,7 @@ type ReleaseInfo struct {
 	ReleaseName     string
 	FullAppName     string
 	Version         string
-	PullRequestInfo *ReleasePullRequestInfo
-}
-
-type ReleasePullRequestInfo struct {
-	GitProvider          gits.GitProvider
-	PullRequest          *gits.GitPullRequest
-	PullRequestArguments *gits.GitPullRequestArguments
+	PullRequestInfo *gits.PullRequestInfo
 }
 
 var (
@@ -420,7 +415,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	}
 	promoteKey.OnPromoteUpdate(o.Activities, startPromote)
 
-	err = o.Helm().UpgradeChart(fullAppName, releaseName, targetNS, &version, true, nil, false, true, nil, nil)
+	err = o.Helm().UpgradeChart(fullAppName, releaseName, targetNS, &version, true, nil, false, true, nil, nil, "")
 	if err == nil {
 		err = o.commentOnIssues(targetNS, env, promoteKey)
 		if err != nil {

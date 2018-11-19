@@ -3,8 +3,6 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/Pallinder/go-randomdata"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	"io"
 	"io/ioutil"
 	"os"
@@ -12,6 +10,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Pallinder/go-randomdata"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/addon"
@@ -656,7 +657,8 @@ func (options *InstallOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "failed to update the helm repo")
 		}
-		err = options.Helm().UpgradeChart("ibm/ibmcloud-block-storage-plugin", "ibmcloud-block-storage-plugin", "default", nil, true, nil, false, false, nil, nil)
+		err = options.Helm().UpgradeChart("ibm/ibmcloud-block-storage-plugin", "ibmcloud-block-storage-plugin",
+			"default", nil, true, nil, false, false, nil, nil, "")
 		if err != nil {
 			return errors.Wrap(err, "failed to install/upgrade the IBM Cloud Block Storage drivers")
 		}
@@ -1082,9 +1084,10 @@ func (options *InstallOptions) Run() error {
 		}
 
 		if !options.Flags.InstallOnly {
-			err = options.Helm().UpgradeChart(jxChart, jxRelName, ns, &version, true, &timeoutInt, false, false, nil, valueFiles)
+			err = options.Helm().UpgradeChart(jxChart, jxRelName, ns, &version, true, &timeoutInt, false, false, nil,
+				valueFiles, "")
 		} else {
-			err = options.Helm().InstallChart(jxChart, jxRelName, ns, &version, &timeoutInt, nil, valueFiles)
+			err = options.Helm().InstallChart(jxChart, jxRelName, ns, &version, &timeoutInt, nil, valueFiles, "")
 		}
 		if err != nil {
 			return errors.Wrap(err, "failed to install/upgrade the jenkins-x platform chart")
