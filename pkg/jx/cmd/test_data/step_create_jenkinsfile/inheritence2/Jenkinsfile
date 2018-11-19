@@ -1,0 +1,34 @@
+pipeline {
+  agent {
+    label "jenkins-maven"
+  }
+  environment {
+    ORG = 'REPLACE_ME_ORG'
+    APP_NAME = 'REPLACE_ME_APP_NAME'
+    CHARTMUSEUM_CREDS = credentials('jenkins-x-chartmuseum')
+  }
+  stages {
+    stage('Build Release') {
+      when {
+        branch 'master'
+      }
+      steps {
+        container('maven') {
+          sh "echo BEFORE BASE SETUP"
+
+          // ensure we're not on a detached head
+          sh "git checkout master"
+          sh "git config --global credential.helper store"
+          sh "jx step git credentials"
+          sh "echo AFTER BASE SETUP"
+
+          // so we can retrieve the version in later steps
+          sh "echo \$(jx-release-version) > VERSION"
+          sh "mvn versions:set -DnewVersion=\$(cat VERSION)"
+          sh "jx step tag --version \$(cat VERSION)"
+          sh "mvn clean deploy -Pmyprofile"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,19 @@
+extends:
+  file: base-pipeline.yaml
+pipelines:
+  release:
+    setup:
+      initSteps:
+      - container: maven
+        steps:
+        - sh: echo BEFORE BASE SETUP
+      steps:
+      - container: maven
+        steps:
+        - sh: echo AFTER BASE SETUP
+    build:
+      replace: true
+      steps:
+      - container: maven
+        steps:
+        - sh: mvn clean deploy -Pmyprofile
