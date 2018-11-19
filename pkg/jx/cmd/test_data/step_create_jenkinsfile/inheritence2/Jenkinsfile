@@ -26,6 +26,8 @@ pipeline {
           sh "echo \$(jx-release-version) > VERSION"
           sh "mvn versions:set -DnewVersion=\$(cat VERSION)"
           sh "jx step tag --version \$(cat VERSION)"
+
+          // this command is overridden from the base pipeline
           sh "mvn clean deploy -Pmyprofile"
         }
       }

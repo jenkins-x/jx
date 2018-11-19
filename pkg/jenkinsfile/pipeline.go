@@ -56,8 +56,8 @@ type PipelineLifecycles struct {
 type PipelineLifecycle struct {
 	Steps []*PipelineStep `yaml:"steps,omitempty"`
 
-	// InitSteps if using inheritence then invoke these steps before the base steps
-	InitSteps []*PipelineStep `yaml:"initSteps,omitempty"`
+	// PreSteps if using inheritance then invoke these steps before the base steps 
+	PreSteps []*PipelineStep `yaml:"preSteps,omitempty"`
 
 	// Replace if using inheritence then replace steps from the base pipeline
 	Replace bool `yaml:"replace,omitempty"`
@@ -343,7 +343,7 @@ func ExtendLifecycle(parent *PipelineLifecycle, base *PipelineLifecycle) *Pipeli
 		return parent
 	}
 	steps := []*PipelineStep{}
-	steps = append(steps, parent.InitSteps...)
+	steps = append(steps, parent.PreSteps...)
 	steps = append(steps, base.Steps...)
 	steps = append(steps, parent.Steps...)
 	return &PipelineLifecycle{

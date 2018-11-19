@@ -3,7 +3,7 @@ extends:
 pipelines:
   release:
     setup:
-      initSteps:
+      preSteps:
       - container: maven
         steps:
         - sh: echo BEFORE BASE SETUP
@@ -17,3 +17,4 @@ pipelines:
       - container: maven
         steps:
         - sh: mvn clean deploy -Pmyprofile
+          comment: this command is overridden from the base pipeline
