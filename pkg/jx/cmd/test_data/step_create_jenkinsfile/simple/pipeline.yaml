@@ -6,63 +6,63 @@ pipelines:
       steps:
       - container: maven
         steps:
-        - cmd: mvn versions:set -DnewVersion=$PREVIEW_VERSION
-        - cmd: mvn install
-        - cmd: export VERSION=$PREVIEW_VERSION && skaffold build -f skaffold.yaml
+        - sh: mvn versions:set -DnewVersion=$PREVIEW_VERSION
+        - sh: mvn install
+        - sh: export VERSION=$PREVIEW_VERSION && skaffold build -f skaffold.yaml
     postBuild:
       steps:
       - container: maven
         steps:
-        - cmd: jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$PREVIEW_VERSION
+        - sh: jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:$PREVIEW_VERSION
     promote:
       steps:
       - dir: ./charts/preview
         steps:
         - container: maven
           steps:
-          - cmd: make preview
-          - cmd: jx preview --app $APP_NAME --dir ../..
+          - sh: make preview
+          - sh: jx preview --app $APP_NAME --dir ../..
 
   release:
     setup:
       steps:
       - container: maven
         steps:
-        - cmd: git checkout master
+        - sh: git checkout master
           comment: ensure we're not on a detached head
-        - cmd: git config --global credential.helper store
-        - cmd: jx step git credentials
+        - sh: git config --global credential.helper store
+        - sh: jx step git credentials
     setVersion:
       steps:
       - container: maven
         steps:
-        - cmd: echo \$(jx-release-version) > VERSION
+        - sh: echo \$(jx-release-version) > VERSION
           comment: so we can retrieve the version in later steps
-        - cmd: mvn versions:set -DnewVersion=\$(cat VERSION)
+        - sh: mvn versions:set -DnewVersion=\$(cat VERSION)
       - dir: ./charts/REPLACE_ME_APP_NAME
         steps:
         - container: maven
           steps:
-          - cmd: make tag
+          - sh: make tag
 
     build:
       steps:
       - container: maven
         steps:
-        - cmd: mvn clean deploy
-        - cmd: export VERSION=`cat VERSION` && skaffold build -f skaffold.yaml
-        - cmd: jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:\$(cat VERSION)
+        - sh: mvn clean deploy
+        - sh: export VERSION=`cat VERSION` && skaffold build -f skaffold.yaml
+        - sh: jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:\$(cat VERSION)
     promote:
       steps:
       - dir: ./charts/REPLACE_ME_APP_NAME
         steps:
         - container: maven
           steps:
-          - cmd: jx step changelog --version v\$(cat ../../VERSION)
+          - sh: jx step changelog --version v\$(cat ../../VERSION)
           - comment: release the helm chart
-            cmd: jx step helm release
+            sh: jx step helm release
           - comment: promote through all 'Auto' promotion Environments
-            cmd: jx promote -b --all-auto --timeout 1h --version \$(cat ../../VERSION)
+            sh: jx promote -b --all-auto --timeout 1h --version \$(cat ../../VERSION)
 
 
 

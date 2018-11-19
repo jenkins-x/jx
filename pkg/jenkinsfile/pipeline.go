@@ -35,7 +35,7 @@ type PipelineStep struct {
 	Comment   string          `yaml:"comment,omitempty"`
 	Container string          `yaml:"container,omitempty"`
 	Dir       string          `yaml:"dir,omitempty"`
-	Command   string          `yaml:"cmd,omitempty"`
+	Command   string          `yaml:"sh,omitempty"`
 	Groovy    string          `yaml:"groovy,omitempty"`
 	Steps     []*PipelineStep `yaml:"steps,omitempty"`
 }
