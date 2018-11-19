@@ -22,7 +22,8 @@ const (
 
 // PipelineAgent contains the agent definition metadata
 type PipelineAgent struct {
-	Label string `yaml:"label,omitempty"`
+	Label     string `yaml:"label,omitempty"`
+	Container string `yaml:"container,omitempty"`
 }
 
 // Pipelines contains all the different kinds of pipeline for diferent branches
@@ -113,8 +114,12 @@ func (a *PipelineAgent) Groovy() string {
 
 // Groovy returns the groovy expression for all of the lifecycles
 func (a *PipelineLifecycles) Groovy() string {
-	lifecycles := PipelineLifecycleArray([]*PipelineLifecycle{a.Setup, a.SetVersion, a.PreBuild, a.Build, a.PostBuild, a.Promote})
-	return lifecycles.Groovy()
+	return a.All().Groovy()
+}
+
+// All returns all lifecycles in order
+func (a *PipelineLifecycles) All() PipelineLifecycleArray {
+	return []*PipelineLifecycle{a.Setup, a.SetVersion, a.PreBuild, a.Build, a.PostBuild, a.Promote}
 }
 
 // AllButPromote returns all lifecycles but promote
@@ -151,7 +156,6 @@ func (l *PipelineLifecycle) ToJenkinsfileStatements() []*JenkinsfileStatement {
 	return statements
 }
 
-
 // Extend extends these pipelines with the base pipeline
 func (p *Pipelines) Extend(base *Pipelines) error {
 	p.PullRequest = ExtendPipelines(p.PullRequest, base.PullRequest)
@@ -160,6 +164,49 @@ func (p *Pipelines) Extend(base *Pipelines) error {
 	return nil
 }
 
+// defaultContainer defaults the container if none is being used
+func (p *Pipelines) defaultContainer(container string) {
+	defaultContainer(container, p.PullRequest, p.Release, p.Feature)
+}
+
+func defaultContainer(container string, lifecycles ...*PipelineLifecycles) {
+	for _, l := range lifecycles {
+		if l != nil {
+			defaultLifecycleContainer(container, l.All())
+		}
+	}
+}
+
+func defaultLifecycleContainer(container string, lifecycles PipelineLifecycleArray) {
+	if container == "" {
+		return
+	}
+	for _, l := range lifecycles {
+		if l != nil {
+			l.PreSteps = defaultContainerAroundSteps(container, l.PreSteps)
+			l.Steps = defaultContainerAroundSteps(container, l.Steps)
+		}
+	}
+}
+
+func defaultContainerAroundSteps(container string, steps []*PipelineStep) []*PipelineStep {
+	var containerStep *PipelineStep
+	result := []*PipelineStep{}
+	for _, step := range steps {
+		if step.Container != "" {
+			result = append(result, step)
+		} else {
+			if containerStep == nil {
+				containerStep = &PipelineStep{
+					Container: container,
+				}
+				result = append(result, containerStep)
+			}
+			containerStep.Steps = append(containerStep.Steps, step)
+		}
+	}
+	return result
+}
 
 // Groovy returns the groovy expression for this step
 func (s *PipelineStep) GroovyBlock(parentIndent string) string {
@@ -261,32 +308,30 @@ func LoadPipelineConfig(fileName string) (*PipelineConfig, error) {
 	if err != nil {
 		return &config, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
 	}
-	if config.Extends != nil {
-		file := config.Extends.File
-		if file != "" {
-			if !filepath.IsAbs(file) {
-				dir, _ := filepath.Split(fileName)
-				if dir != "" {
-					file = filepath.Join(dir, file)
-				}
-			}
-			exists, err = util.FileExists(file)
-			if err != nil {
-				return &config, errors.Wrapf(err, "base pipeline file does not exist %s", file)
-			}
-			if !exists {
-				return &config, fmt.Errorf("base pipeline file does not exist %s", file)
-			}
-			basePipeline, err := LoadPipelineConfig(file)
-			if err != nil {
-				return &config, fmt.Errorf("failed to load base pipeline file %s", file)
-			}
-			err = config.ExtendPipeline(basePipeline)
-			return &config, err
+	if config.Extends == nil || config.Extends.File == "" {
+		config.defaultContainer()
+		return &config, nil
+	}
+	file := config.Extends.File
+	if !filepath.IsAbs(file) {
+		dir, _ := filepath.Split(fileName)
+		if dir != "" {
+			file = filepath.Join(dir, file)
 		}
 	}
-	return &config, nil
-
+	exists, err = util.FileExists(file)
+	if err != nil {
+		return &config, errors.Wrapf(err, "base pipeline file does not exist %s", file)
+	}
+	if !exists {
+		return &config, fmt.Errorf("base pipeline file does not exist %s", file)
+	}
+	basePipeline, err := LoadPipelineConfig(file)
+	if err != nil {
+		return &config, fmt.Errorf("failed to load base pipeline file %s", file)
+	}
+	err = config.ExtendPipeline(basePipeline)
+	return &config, err
 }
 
 // IsEmpty returns true if this configuration is empty
@@ -309,8 +354,19 @@ func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig) error {
 	if c.Agent.Label == "" {
 		c.Agent.Label = base.Agent.Label
 	}
+	if c.Agent.Container == "" {
+		c.Agent.Container = base.Agent.Container
+	}
+	c.defaultContainer()
 	c.Pipelines.Extend(&base.Pipelines)
 	return nil
+}
+
+func (c *PipelineConfig) defaultContainer() {
+	container := c.Agent.Container
+	if container != "" {
+		c.Pipelines.defaultContainer(container)
+	}
 }
 
 // ExtendPipelines extends the parent lifecycle with the base
@@ -322,12 +378,12 @@ func ExtendPipelines(parent *PipelineLifecycles, base *PipelineLifecycles) *Pipe
 		return parent
 	}
 	return &PipelineLifecycles{
-		Setup: ExtendLifecycle(parent.Setup, base.Setup),
+		Setup:      ExtendLifecycle(parent.Setup, base.Setup),
 		SetVersion: ExtendLifecycle(parent.SetVersion, base.SetVersion),
-		PreBuild: ExtendLifecycle(parent.PreBuild, base.PreBuild),
-		Build: ExtendLifecycle(parent.Build, base.Build),
-		PostBuild: ExtendLifecycle(parent.PostBuild, base.PostBuild),
-		Promote: ExtendLifecycle(parent.Promote, base.Promote),
+		PreBuild:   ExtendLifecycle(parent.PreBuild, base.PreBuild),
+		Build:      ExtendLifecycle(parent.Build, base.Build),
+		PostBuild:  ExtendLifecycle(parent.PostBuild, base.PostBuild),
+		Promote:    ExtendLifecycle(parent.Promote, base.Promote),
 	}
 }
 

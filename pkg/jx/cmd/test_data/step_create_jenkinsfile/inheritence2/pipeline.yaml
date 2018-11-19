@@ -4,17 +4,11 @@ pipelines:
   release:
     setup:
       preSteps:
-      - container: maven
-        steps:
-        - sh: echo BEFORE BASE SETUP
+      - sh: echo BEFORE BASE SETUP
       steps:
-      - container: maven
-        steps:
-        - sh: echo AFTER BASE SETUP
+      - sh: echo AFTER BASE SETUP
     build:
       replace: true
       steps:
-      - container: maven
-        steps:
-        - sh: mvn clean deploy -Pmyprofile
-          comment: this command is overridden from the base pipeline
+      - sh: mvn clean deploy -Pmyprofile
+        comment: this command is overridden from the base pipeline

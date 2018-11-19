@@ -1,25 +1,20 @@
 agent:
   label: jenkins-maven
+  container: maven
 pipelines:
   release:
     setup:
       steps:
-      - container: maven
-        steps:
-        - sh: git checkout master
-          comment: ensure we're not on a detached head
-        - sh: git config --global credential.helper store
-        - sh: jx step git credentials
+      - sh: git checkout master
+        comment: ensure we're not on a detached head
+      - sh: git config --global credential.helper store
+      - sh: jx step git credentials
     setVersion:
       steps:
-      - container: maven
-        steps:
-        - sh: echo \$(jx-release-version) > VERSION
-          comment: so we can retrieve the version in later steps
-        - sh: mvn versions:set -DnewVersion=\$(cat VERSION)
-        - sh: jx step tag --version \$(cat VERSION)
+      - sh: echo \$(jx-release-version) > VERSION
+        comment: so we can retrieve the version in later steps
+      - sh: mvn versions:set -DnewVersion=\$(cat VERSION)
+      - sh: jx step tag --version \$(cat VERSION)
     build:
       steps:
-      - container: maven
-        steps:
-        - sh: mvn clean deploy
+      - sh: mvn clean deploy
