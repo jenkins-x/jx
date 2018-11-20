@@ -2,6 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -11,8 +14,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/uuid"
-	"os"
-	"path/filepath"
 )
 
 // ModifyRequirementsFn callback for modifying requirements
@@ -21,10 +22,10 @@ type ModifyRequirementsFn func(requirements *helm.Requirements) error
 // ConfigureGitFolderFn callback to optionally configure git before its used for creating commits and PRs
 type ConfigureGitFolderFn func(dir string, gitInfo *gits.GitRepositoryInfo, gitAdapter gits.Gitter) error
 
-type CreateEnvPullRequestFn func(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo) (*ReleasePullRequestInfo, error)
+type CreateEnvPullRequestFn func(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *gits.PullRequestInfo) (*gits.PullRequestInfo, error)
 
-func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo, configGitFn ConfigureGitFolderFn) (*ReleasePullRequestInfo, error) {
-	var answer *ReleasePullRequestInfo
+func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *gits.PullRequestInfo, configGitFn ConfigureGitFolderFn) (*gits.PullRequestInfo, error) {
+	var answer *gits.PullRequestInfo
 	source := &env.Spec.Source
 	gitURL := source.URL
 	if gitURL == "" {
@@ -188,7 +189,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		return answer, err
 	}
 	log.Infof("Created Pull Request: %s\n\n", util.ColorInfo(pr.URL))
-	return &ReleasePullRequestInfo{
+	return &gits.PullRequestInfo{
 		GitProvider:          provider,
 		PullRequest:          pr,
 		PullRequestArguments: gha,

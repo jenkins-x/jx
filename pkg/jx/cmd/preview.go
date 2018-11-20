@@ -483,7 +483,8 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	err = o.Helm().UpgradeChart(".", o.ReleaseName, o.Namespace, nil, true, nil, true, true, nil, []string{configFileName})
+	err = o.Helm().UpgradeChart(".", o.ReleaseName, o.Namespace, nil, true, nil, true, true, nil,
+		[]string{configFileName}, "")
 	if err != nil {
 		return err
 	}

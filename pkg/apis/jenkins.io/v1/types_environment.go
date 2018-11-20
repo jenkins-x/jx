@@ -150,6 +150,7 @@ type TeamSettings struct {
 	DockerRegistryOrg   string               `json:"dockerRegistryOrg,omitempty" protobuf:"bytes,16,opt,name=dockerRegistryOrg" command:"dockerregistryorg" commandUsage:"Docker registry organisation used for new projects in Jenkins X."`
 	GitPrivate          bool                 `json:"gitPrivate,omitempty" protobuf:"bytes,17,opt,name=gitPrivate" command:"gitprivate" commandUsage:"Are new repositories private by default"`
 	KubeProvider        string               `json:"kubeProvider,omitempty" protobuf:"bytes,18,opt,name=kubeProvider"`
+	AppsRepository      string               `json:"appsRepository,omitempty" protobuf:"bytes,19,opt,name=appsRepository"`
 }
 
 // QuickStartLocation
