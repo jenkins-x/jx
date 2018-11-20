@@ -210,6 +210,8 @@ func (o *VersionOptions) UpgradeCli() error {
 	return options.Run()
 }
 
+// returns a human friendly string of the current OS
+// in the case of an error this still returns a valid string for the details that can be found.
 func (o *VersionOptions) GetOsVersion() (string, error) {
 	return system.GetOsVersion()
 }
