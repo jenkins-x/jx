@@ -93,7 +93,9 @@ func (o *StepCreateJenkinsfileOptions) Run() error {
 		jenkinsfile = o.Jenkinsfile
 		withRename = true
 	}
-	jenkinsfile = filepath.Join(dir, jenkinsfile)
+	if !filepath.IsAbs(jenkinsfile) {
+		jenkinsfile = filepath.Join(dir, jenkinsfile)
+	}
 
 	args := &InvokeDraftPack{
 		Dir:                     dir,
