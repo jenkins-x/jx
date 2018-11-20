@@ -8,6 +8,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/util/system"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -151,6 +152,14 @@ func (o *VersionOptions) Run() error {
 		table.AddRow("git", info(version))
 	}
 
+	// os version
+	version, err = o.GetOsVersion()
+	if err != nil {
+		log.Warnf("Failed to get OS version: %s\n", err)
+	} else {
+		table.AddRow("Operating System", info(version))
+	}
+
 	table.Render()
 
 	if !o.NoVersionCheck {
@@ -199,6 +208,10 @@ func (o *VersionOptions) UpgradeCli() error {
 		},
 	}
 	return options.Run()
+}
+
+func (o *VersionOptions) GetOsVersion() (string, error) {
+	return system.GetOsVersion()
 }
 
 func extractSemVer(text string) string {
