@@ -113,20 +113,28 @@ func (o *StepTagOptions) Run() error {
 		return errors.New("No version flag")
 	}
 	chartsDir := o.Flags.ChartsDir
-	if chartsDir != "" {
-		err := o.updateChart(o.Flags.Version, chartsDir)
-		if err != nil {
-			return err
+	if chartsDir == "" {
+		exists, err := util.FileExists(filepath.Join(chartsDir, "Chart.yaml"))
+		if !exists && err == nil {
+			// lets try find the charts/foo dir ignoring the charts/preview dir
+			chartsDir, err = o.findChartsDir()
+			if err != nil {
+				return err
+			}
 		}
-		err = o.updateChartValues(o.Flags.Version, chartsDir)
-		if err != nil {
-			return err
-		}
+	}
+	err := o.updateChart(o.Flags.Version, chartsDir)
+	if err != nil {
+		return err
+	}
+	err = o.updateChartValues(o.Flags.Version, chartsDir)
+	if err != nil {
+		return err
 	}
 
 	tag := "v" + o.Flags.Version
 
-	err := o.Git().AddCommit("", fmt.Sprintf("release %s", o.Flags.Version))
+	err = o.Git().AddCommit("", fmt.Sprintf("release %s", o.Flags.Version))
 	if err != nil {
 		return err
 	}
@@ -216,4 +224,22 @@ func (o *StepTagOptions) defaultChartValueRepository() string {
 		return dockerRegistry + "/" + dockerRegistryOrg + "/" + appName
 	}
 	return ""
+}
+
+// lets try find the charts dir
+func (o *StepTagOptions) findChartsDir() (string, error) {
+	files, err := filepath.Glob("*/*/Chart.yaml")
+	if err != nil {
+		return "", fmt.Errorf("failed to find Chart.yaml file: %s", err)
+	}
+	if len(files) > 0 {
+		for _, file := range files {
+			paths := strings.Split(file, string(os.PathSeparator))
+			if len(paths) > 2 && paths[len(paths)-2] != "preview" {
+				dir, _ := filepath.Split(file)
+				return dir, nil
+			}
+		}
+	}
+	return "", nil
 }
