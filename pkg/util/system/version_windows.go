@@ -31,9 +31,8 @@ func GetOsVersion() (string,  error) {
 		pn, err = getMajorMinorVersion(&regkey)
 		if err != nil {
 			return retVal, err
-		} else {
-			pn = fmt.Sprintf("Windows %s", pn)
 		}
+		pn = fmt.Sprintf("Windows %s", pn)
 	}
 
 	rel, _, err := regkey.GetStringValue("ReleaseId")
