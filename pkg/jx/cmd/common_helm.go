@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube/services"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -94,13 +95,17 @@ func (o *CommonOptions) addHelmBinaryRepoIfMissing(helmUrl string, repoName stri
 }
 
 // installChart installs the given chart
-func (o *CommonOptions) installChart(releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string, valueFiles []string) error {
-	return o.installChartOptions(InstallChartOptions{ReleaseName: releaseName, Chart: chart, Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles})
+func (o *CommonOptions) installChart(releaseName string, chart string, version string, ns string, helmUpdate bool,
+	setValues []string, valueFiles []string, repo string) error {
+	return o.installChartOptions(InstallChartOptions{ReleaseName: releaseName, Chart: chart, Version: version,
+		Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles, Repository: repo})
 }
 
 // installChartAt installs the given chart
-func (o *CommonOptions) installChartAt(dir string, releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string, valueFiles []string) error {
-	return o.installChartOptions(InstallChartOptions{Dir: dir, ReleaseName: releaseName, Chart: chart, Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles})
+func (o *CommonOptions) installChartAt(dir string, releaseName string, chart string, version string, ns string,
+	helmUpdate bool, setValues []string, valueFiles []string, repo string) error {
+	return o.installChartOptions(InstallChartOptions{Dir: dir, ReleaseName: releaseName, Chart: chart,
+		Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles, Repository: repo})
 }
 
 type InstallChartOptions struct {
@@ -112,6 +117,7 @@ type InstallChartOptions struct {
 	HelmUpdate  bool
 	SetValues   []string
 	ValueFiles  []string
+	Repository  string
 }
 
 func (o *CommonOptions) installChartOptions(options InstallChartOptions) error {
@@ -137,7 +143,7 @@ func (o *CommonOptions) installChartOptions(options InstallChartOptions) error {
 	}
 	o.Helm().SetCWD(options.Dir)
 	return o.Helm().UpgradeChart(options.Chart, options.ReleaseName, options.Ns, &options.Version, true,
-		&timeout, true, false, options.SetValues, options.ValueFiles)
+		&timeout, true, false, options.SetValues, options.ValueFiles, options.Repository)
 }
 
 // deleteChart deletes the given chart

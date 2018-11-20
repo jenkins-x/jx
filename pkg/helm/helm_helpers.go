@@ -303,3 +303,23 @@ func CombineValueFilesToFile(outFile string, inputFiles []string, chartName stri
 	}
 	return nil
 }
+
+// GetLatestVersion get's the latest version of a chart in a repo using helmer
+func GetLatestVersion(chart string, repo string, helmer Helmer) (latest string, err error) {
+	dir, err := ioutil.TempDir("", "jx-helm-latest-version")
+	defer func() {
+		err1 := os.RemoveAll(dir)
+		if err1 != nil {
+			err = err1
+		}
+	}()
+	// We should add the latest version, which we can do by fetching a chart with no version specified
+	err = helmer.FetchChart(chart, nil, true, dir, repo)
+	if err != nil {
+		return "", err
+	}
+	chartFile := filepath.Join(dir, chart, "Chart.yaml")
+	_, latest, err = LoadChartNameAndVersion(chartFile)
+	return latest, err
+
+}
