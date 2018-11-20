@@ -239,7 +239,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		return errors.Wrapf(err, "unable to determine if %s exist", secretsFileName)
 	}
 	if !secretsFileNameExists {
-		log.Infof("Creating %s from %s", util.ColorInfo(secretsFileName), util.ColorInfo(JXInstallConfig))
+		log.Infof("Creating %s from %s\n", util.ColorInfo(secretsFileName), util.ColorInfo(JXInstallConfig))
 		err = ioutil.WriteFile(secretsFileName, oldSecret.Data[GitSecretsFile], 0644)
 		if err != nil {
 			return errors.Wrapf(err, "failed to write the config file %s", secretsFileName)
@@ -251,7 +251,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		return errors.Wrapf(err, "unable to determine if %s exist", adminSecretsFileName)
 	}
 	if !adminSecretsFileNameExists {
-		log.Infof("Creating %s from %s", util.ColorInfo(adminSecretsFileName), util.ColorInfo(JXInstallConfig))
+		log.Infof("Creating %s from %s\n", util.ColorInfo(adminSecretsFileName), util.ColorInfo(JXInstallConfig))
 		err = ioutil.WriteFile(adminSecretsFileName, oldSecret.Data[AdminSecretsFile], 0644)
 		if err != nil {
 			return errors.Wrapf(err, "failed to write the config file %s", adminSecretsFileName)
@@ -263,7 +263,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		return errors.Wrapf(err, "unable to determine if %s exist", configFileName)
 	}
 	if !configFileNameExists {
-		log.Infof("Creating %s from %s", util.ColorInfo(configFileName), util.ColorInfo(JXInstallConfig))
+		log.Infof("Creating %s from %s\n", util.ColorInfo(configFileName), util.ColorInfo(JXInstallConfig))
 		err = ioutil.WriteFile(configFileName, oldSecret.Data[ExtraValuesFile], 0644)
 		if err != nil {
 			return errors.Wrapf(err, "failed to write the config file %s", configFileName)
