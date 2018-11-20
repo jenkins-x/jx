@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// returns a human friendly string of the current OS
+// GetOsVersion returns a human friendly string of the current OS
 // in the case of an error this still returns a valid string for the details that can be found.
 func GetOsVersion() (string,  error) {
 	// generic LSB compliant Linux
@@ -46,7 +46,7 @@ func runCommand(command string, args ...string) (string, error) {
 	text := string(data)
 	text = strings.TrimSpace(text)
 	if err != nil {
-		return "", fmt.Errorf("Command failed '%s %s': %s %s\n", command, strings.Join(args, " "), text, err)
+		return "", fmt.Errorf("command failed '%s %s': %s %s\n", command, strings.Join(args, " "), text, err)
 	}
 	return text, err
 }

@@ -8,7 +8,7 @@ import (
 	"golang.org/x/sys/windows/registry"
 )
 
-// returns a human friendly string of the current OS
+// GetOsVersion returns a human friendly string of the current OS
 // in the case of an error this still returns a valid string for the details that can be found.
 func GetOsVersion() (string,  error) {
 	// we can not use GetVersion as that returns a version that the app sees (from its manifest) and not the current version
@@ -31,6 +31,8 @@ func GetOsVersion() (string,  error) {
 		pn, err = getMajorMinorVersion(&regkey)
 		if err != nil {
 			return retVal, err
+		} else {
+			pn = fmt.Sprintf("Windows %s", pn)
 		}
 	}
 
@@ -47,13 +49,6 @@ func GetOsVersion() (string,  error) {
 	} else {
 		retVal = fmt.Sprintf("%s build %s", retVal, build)
 	}
-
-/*
-	ver, _, err := regkey.GetStringValue("CurrentVersion")
-	if err != nil {
-		log.Fatal(err)
-	}
-*/
 	return retVal, nil
 }
 
@@ -61,7 +56,9 @@ func GetOsVersion() (string,  error) {
 func getMajorMinorVersion(regkey *registry.Key) (string, error) {
 	major, _, err := regkey.GetIntegerValue("CurrentMajorVersionNumber")
 	if err != nil {
-		return "", err
+		// try currentVersion which will only be up to 8.1
+		ver, _, err := regkey.GetStringValue("CurrentVersion")
+		return ver, err
 	}
 	minor, _, err := regkey.GetIntegerValue("CurrentMinorVersionNumber")
 	if err != nil {
