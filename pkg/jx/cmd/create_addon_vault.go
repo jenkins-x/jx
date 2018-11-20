@@ -104,7 +104,7 @@ func InstallVaultOperator(o *CommonOptions, namespace string) error {
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	err = o.installChart(releaseName, kube.ChartVaultOperator, o.Version, namespace, true, values, nil)
+	err = o.installChart(releaseName, kube.ChartVaultOperator, o.Version, namespace, true, values, nil, "")
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("installing %s chart", releaseName))
 	}

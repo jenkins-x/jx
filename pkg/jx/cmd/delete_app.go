@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/gits"
+
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -241,7 +243,7 @@ func (o *DeleteAppOptions) deleteAppFromEnvironment(env *v1.Environment, appName
 	return o.waitForGitOpsPullRequest(env, info, end, duration)
 }
 
-func (o *DeleteAppOptions) waitForGitOpsPullRequest(env *v1.Environment, pullRequestInfo *ReleasePullRequestInfo, end time.Time, duration time.Duration) error {
+func (o *DeleteAppOptions) waitForGitOpsPullRequest(env *v1.Environment, pullRequestInfo *gits.PullRequestInfo, end time.Time, duration time.Duration) error {
 	if pullRequestInfo != nil {
 		logMergeFailure := false
 		pr := pullRequestInfo.PullRequest

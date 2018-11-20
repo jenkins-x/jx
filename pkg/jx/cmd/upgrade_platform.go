@@ -2,11 +2,14 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"gopkg.in/AlecAivazis/survey.v1"
+
 	"io"
 	"io/ioutil"
 	"strings"
+
+	"gopkg.in/AlecAivazis/survey.v1"
+
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	"fmt"
 	"os"
@@ -177,7 +180,7 @@ func (o *UpgradePlatformOptions) Run() error {
 			}
 		}
 	}
-	
+
 	if currentVersion == "" {
 		return errors.New("Jenkins X platform helm chart is not installed.")
 	}
@@ -310,7 +313,8 @@ func (o *UpgradePlatformOptions) Run() error {
 		o.Debugf("Adding values file %s\n", util.ColorInfo(v))
 	}
 
-	err = o.Helm().UpgradeChart(o.Chart, o.ReleaseName, ns, &targetVersion, false, nil, false, false, values, valueFiles)
+	err = o.Helm().UpgradeChart(o.Chart, o.ReleaseName, ns, &targetVersion, false, nil, false, false, values,
+		valueFiles, "")
 	if err != nil {
 		return errors.Wrap(err, "unable to upgrade helm chart")
 	}
