@@ -174,26 +174,32 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 		o.GKEZone = zone
 	}
 
+	clusterName, err := o.clusterName()
+	if err != nil {
+		return err
+	}
+	log.Infof("Current Cluster: %s\n", util.ColorInfo(clusterName))
+
 	log.Infof("Creating GCP service account for Vault backend\n")
-	gcpServiceAccountSecretName, err := o.createVaultGCPServiceAccount(vaultName)
+	gcpServiceAccountSecretName, err := o.createVaultGCPServiceAccount(vaultName, clusterName)
 	if err != nil {
 		return errors.Wrap(err, "creating GCP service account")
 	}
 	log.Infof("%s service account created\n", util.ColorInfo(gcpServiceAccountSecretName))
 
 	log.Infof("Setting up GCP KMS configuration\n")
-	kmsConfig, err := o.createKmsConfig(vaultName)
+	kmsConfig, err := o.createKmsConfig(vaultName, clusterName)
 	if err != nil {
 		return errors.Wrap(err, "creating KMS configuration")
 	}
 	log.Infof("KMS Key %s created in keying %s\n", util.ColorInfo(kmsConfig.key), util.ColorInfo(kmsConfig.keyring))
 
-	vaultBucket, err := o.createVaultBucket(vaultName)
+	vaultBucket, err := o.createVaultBucket(vaultName, clusterName)
 	if err != nil {
 		return errors.Wrap(err, "creating Vault GCS data bucket")
 	}
 	log.Infof("GCS bucket %s was created for Vault backend\n", util.ColorInfo(vaultBucket))
-	vaultAuthServiceAccount, err := o.createVaultAuthServiceAccount(vaultName)
+	vaultAuthServiceAccount, err := o.createVaultAuthServiceAccount(vaultName, clusterName)
 	if err != nil {
 		return errors.Wrap(err, "creating Vault authentication service account")
 	}
@@ -213,7 +219,7 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 		return errors.Wrap(err, "creating vault")
 	}
 
-	log.Infof("Vault %s created\n", util.ColorInfo(vaultName))
+	log.Infof("Vault %s created in cluster %s\n", util.ColorInfo(vaultName), util.ColorInfo(clusterName))
 
 	log.Infof("Exposing Vault...\n")
 	err = o.exposeVault(vaultName)
@@ -224,14 +230,14 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 	return nil
 }
 
-func (o *CreateVaultOptions) createVaultGCPServiceAccount(vaultName string) (string, error) {
+func (o *CreateVaultOptions) createVaultGCPServiceAccount(vaultName string, clusterName string) (string, error) {
 	serviceAccountDir, err := ioutil.TempDir("/tmp", gkeKubeProvider)
 	if err != nil {
 		return "", errors.Wrap(err, "creating a temporary folder where the service account will be stored")
 	}
 	defer os.RemoveAll(serviceAccountDir)
 
-	serviceAccountName := gke.VaultServiceAccountName(vaultName)
+	serviceAccountName := gke.VaultServiceAccountName(vaultName, clusterName)
 	if err != nil {
 		return "", err
 	}
@@ -240,14 +246,14 @@ func (o *CreateVaultOptions) createVaultGCPServiceAccount(vaultName string) (str
 		return "", errors.Wrap(err, "creating the service account")
 	}
 
-	secretName, err := o.storeGCPServiceAccountIntoSecret(serviceAccountPath, vaultName)
+	secretName, err := o.storeGCPServiceAccountIntoSecret(serviceAccountPath, vaultName, clusterName)
 	if err != nil {
 		return "", errors.Wrap(err, "storing the service account into a secret")
 	}
 	return secretName, nil
 }
 
-func (o *CreateVaultOptions) storeGCPServiceAccountIntoSecret(serviceAccountPath string, vaultName string) (string, error) {
+func (o *CreateVaultOptions) storeGCPServiceAccountIntoSecret(serviceAccountPath string, vaultName string, clusterName string) (string, error) {
 	client, _, err := o.KubeClient()
 	if err != nil {
 		return "", errors.Wrap(err, "creating kubernetes client")
@@ -257,7 +263,7 @@ func (o *CreateVaultOptions) storeGCPServiceAccountIntoSecret(serviceAccountPath
 		return "", errors.Wrapf(err, "reading the service account from file '%s'", serviceAccountPath)
 	}
 
-	secretName := vault.VaultGcpServiceAccountSecretName(vaultName)
+	secretName := vault.VaultGcpServiceAccountSecretName(vaultName, clusterName)
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: secretName,
@@ -284,10 +290,10 @@ type kmsConfig struct {
 	project  string
 }
 
-func (o *CreateVaultOptions) createKmsConfig(vaultName string) (*kmsConfig, error) {
+func (o *CreateVaultOptions) createKmsConfig(vaultName string, clusterName string) (*kmsConfig, error) {
 	config := &kmsConfig{
-		keyring:  fmt.Sprintf("%s-keyring", vaultName),
-		key:      fmt.Sprintf("%s-key", vaultName),
+		keyring:  gke.VaultKeyringName(vaultName, clusterName),
+		key:      gke.VaultKeyName(vaultName, clusterName),
 		location: gke.KmsLocation,
 		project:  o.GKEProjectID,
 	}
@@ -304,8 +310,8 @@ func (o *CreateVaultOptions) createKmsConfig(vaultName string) (*kmsConfig, erro
 	return config, nil
 }
 
-func (o *CreateVaultOptions) createVaultBucket(vaultName string) (string, error) {
-	bucketName := gke.VaultBucketName(vaultName)
+func (o *CreateVaultOptions) createVaultBucket(vaultName string, clusterName string) (string, error) {
+	bucketName := gke.VaultBucketName(vaultName, clusterName)
 	exists, err := gke.BucketExists(o.GKEProjectID, bucketName)
 	if err != nil {
 		return "", errors.Wrap(err, "checking if Vault GCS bucket exists")
@@ -325,13 +331,13 @@ func (o *CreateVaultOptions) createVaultBucket(vaultName string) (string, error)
 	return bucketName, nil
 }
 
-func (o *CreateVaultOptions) createVaultAuthServiceAccount(vaultName string) (string, error) {
+func (o *CreateVaultOptions) createVaultAuthServiceAccount(vaultName string, clusterName string) (string, error) {
 	client, _, err := o.KubeClient()
 	if err != nil {
 		return "", errors.Wrap(err, "creating kubernetes client")
 	}
 
-	serviceAccountName := fmt.Sprintf("%s-auth-sa", vaultName)
+	serviceAccountName := gke.VaultAuthServiceAccountName(vaultName, clusterName)
 	_, err = serviceaccount.CreateServiceAccount(client, o.Namespace, serviceAccountName)
 	if err != nil {
 		return "", errors.Wrap(err, "creating vault auth service account")
@@ -363,4 +369,8 @@ func (o *CreateVaultOptions) exposeVault(vaultService string) error {
 	options.Namespaces = []string{o.Namespace}
 	options.Services = []string{vaultService}
 	return options.Run()
+}
+
+func (o *CreateVaultOptions) clusterName() (string, error) {
+	return gke.ShortClusterName(o.Kube())
 }
