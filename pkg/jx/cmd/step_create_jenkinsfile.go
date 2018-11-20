@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -35,8 +36,10 @@ var (
 type StepCreateJenkinsfileOptions struct {
 	StepOptions
 
-	Dir       string
-	OutputDir string
+	Dir                     string
+	Jenkinsfile             string
+	DraftPack               string
+	DisableJenkinsfileCheck bool
 
 	ImportFileResolver jenkinsfile.ImportFileResolver
 }
@@ -69,17 +72,46 @@ func NewCmdCreateJenkinsfile(f Factory, in terminal.FileReader, out terminal.Fil
 	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to query to find the projects .git directory")
-	cmd.Flags().StringVarP(&options.OutputDir, "output-dir", "o", "", "The directory where the generated jenkinsfile yaml files will be output to")
+	cmd.Flags().StringVarP(&options.Jenkinsfile, "jenkinsfile", "", "", "The name of the Jenkinsfile to use. If not specified then 'Jenkinsfile' will be used")
+	cmd.Flags().StringVarP(&options.DraftPack, "pack", "", "", "The name of the pack to use")
+	cmd.Flags().BoolVarP(&options.DisableJenkinsfileCheck, "no-jenkinsfile", "", false, "Disable defaulting a Jenkinsfile if its missing")
 	return cmd
 }
 
 // Run implements this command
 func (o *StepCreateJenkinsfileOptions) Run() error {
+	dir := o.Dir
+
+	if o.ImportFileResolver == nil {
+		o.ImportFileResolver = o.resolveImportFile
+	}
+
+	defaultJenkinsfile := filepath.Join(dir, jenkins.DefaultJenkinsfile)
+	jenkinsfile := jenkins.DefaultJenkinsfile
+	withRename := false
+	if o.Jenkinsfile != "" {
+		jenkinsfile = o.Jenkinsfile
+		withRename = true
+	}
+	jenkinsfile = filepath.Join(dir, jenkinsfile)
+
+	args := &InvokeDraftPack{
+		Dir:                     dir,
+		CustomDraftPack:         o.DraftPack,
+		Jenkinsfile:             jenkinsfile,
+		DefaultJenkinsfile:      defaultJenkinsfile,
+		WithRename:              withRename,
+		InitialisedGit:          true,
+		DisableJenkinsfileCheck: o.DisableJenkinsfileCheck,
+	}
+	_, err := o.invokeDraftPack(args)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-
-// GenerateJenkinsfile generates the jenkinsfile 
+// GenerateJenkinsfile generates the jenkinsfile
 func (o *StepCreateJenkinsfileOptions) GenerateJenkinsfile(arguments *jenkinsfile.CreateJenkinsfileArguments) error {
 	err := arguments.Validate()
 	if err != nil {

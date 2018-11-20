@@ -2,7 +2,6 @@ package cmd_test
 
 import (
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
@@ -15,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestStepCreateJenkinsfile(t *testing.T) {
+func TestCreateJenkinsfile(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	t.Parallel()
 	tempDir, err := ioutil.TempDir("", "test-step-create-jenkinsfile")
@@ -48,20 +47,20 @@ func testStepCreateJenkinsfile(t *testing.T, outDir string, testcase string, src
 	assert.FileExists(t, templateFile)
 	assert.FileExists(t, expectedFile)
 
-	o := &cmd.StepCreateJenkinsfileOptions{
-		ImportFileResolver: func (importFile *jenkinsfile.ImportFile) (string, error) {
-			dirPath := []string{srcDir, "import_dir", importFile.Import}
-			// lets handle cross platform paths in `importFile.File`
-			path := append(dirPath, strings.Split(importFile.File, "/")...)
-			return filepath.Join(path...), nil
-		},
+	resolver := func(importFile *jenkinsfile.ImportFile) (string, error) {
+		dirPath := []string{srcDir, "import_dir", importFile.Import}
+		// lets handle cross platform paths in `importFile.File`
+		path := append(dirPath, strings.Split(importFile.File, "/")...)
+		return filepath.Join(path...), nil
 	}
 
-	err := o.GenerateJenkinsfile(&jenkinsfile.CreateJenkinsfileArguments{
+	arguments := &jenkinsfile.CreateJenkinsfileArguments{
 		ConfigFile:   configFile,
 		TemplateFile: templateFile,
 		OutputFile:   actualFile,
-	})
+	}
+
+	err := arguments.GenerateJenkinsfile(resolver)
 	assert.NoError(t, err, "Failed with %s", err)
 	assert.FileExists(t, expectedFile)
 	if err == nil {
@@ -140,8 +139,7 @@ func TestParseLongerPipelineConfig(t *testing.T) {
 	assert.NotNil(t, config.Pipelines.Release, "Pipelines.Release")
 }
 
-
 func dummyImportFileResolver(importFile *jenkinsfile.ImportFile) (string, error) {
 	return importFile.File, nil
-	
+
 }

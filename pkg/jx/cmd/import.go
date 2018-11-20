@@ -12,12 +12,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/pkg/errors"
 
-	"github.com/Azure/draft/pkg/draft/draftpath"
-	"github.com/jenkins-x/draft-repo/pkg/draft/pack"
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/config"
-	jxdraft "github.com/jenkins-x/jx/pkg/draft"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -445,179 +441,31 @@ func (options *ImportOptions) ImportProjectsFromGitHub() error {
 
 // DraftCreate creates a draft
 func (options *ImportOptions) DraftCreate() error {
-	draftDir, err := util.DraftDir()
-	if err != nil {
-		return err
-	}
-	draftHome := draftpath.Home(draftDir)
-
-	// lets make sure we have the latest draft packs
-	initOpts := InitOptions{
-		CommonOptions: options.CommonOptions,
-	}
-	packsDir, err := initOpts.initBuildPacks()
-	if err != nil {
-		return err
-	}
-
 	// TODO this is a workaround of this draft issue:
 	// https://github.com/Azure/draft/issues/476
 	dir := options.Dir
+	var err error
 
-	defaultJenkinsfile := filepath.Join(dir, jenkins.DefaultJenkinsfile)
-	jenkinsfile := defaultJenkinsfile
+	jenkinsfile := jenkins.DefaultJenkinsfile
 	withRename := false
 	if options.Jenkinsfile != "" {
-		jenkinsfile = filepath.Join(dir, options.Jenkinsfile)
+		jenkinsfile = options.Jenkinsfile
 		withRename = true
 	}
-	pomName := filepath.Join(dir, "pom.xml")
-	gradleName := filepath.Join(dir, "build.gradle")
-	jenkinsPluginsName := filepath.Join(dir, "plugins.txt")
-	packagerConfigName := filepath.Join(dir, "packager-config.yml")
-	lpack := ""
-	customDraftPack := options.DraftPack
-	if len(customDraftPack) == 0 {
-		projectConfig, _, err := config.LoadProjectConfig(dir)
-		if err != nil {
-			return err
-		}
-		customDraftPack = projectConfig.BuildPack
+	defaultJenkinsfile := filepath.Join(dir, jenkins.DefaultJenkinsfile)
+	jenkinsfile = filepath.Join(dir, jenkinsfile)
+	args := &InvokeDraftPack{
+		Dir:                     dir,
+		CustomDraftPack:         options.DraftPack,
+		Jenkinsfile:             jenkinsfile,
+		DefaultJenkinsfile:      defaultJenkinsfile,
+		WithRename:              withRename,
+		InitialisedGit:          options.InitialisedGit,
+		DisableJenkinsfileCheck: options.DisableJenkinsfileCheck,
 	}
-
-	if len(customDraftPack) > 0 {
-		log.Info("trying to use draft pack: " + customDraftPack + "\n")
-		lpack = filepath.Join(packsDir, customDraftPack)
-		f, err := util.FileExists(lpack)
-		if err != nil {
-			log.Error(err.Error())
-			return err
-		}
-		if f == false {
-			log.Error("Could not find pack: " + customDraftPack + " going to try detect which pack to use")
-			lpack = ""
-		}
-
-	}
-
-	if len(lpack) == 0 {
-		if exists, err := util.FileExists(pomName); err == nil && exists {
-			pack, err := util.PomFlavour(pomName)
-			if err != nil {
-				return err
-			}
-			if len(pack) > 0 {
-				if pack == util.LIBERTY {
-					lpack = filepath.Join(packsDir, "liberty")
-				} else if pack == util.APPSERVER {
-					lpack = filepath.Join(packsDir, "appserver")
-				} else if pack == util.DROPWIZARD {
-					lpack = filepath.Join(packsDir, "dropwizard")
-				} else {
-					log.Warn("Do not know how to handle pack: " + pack)
-				}
-			} else {
-				lpack = filepath.Join(packsDir, "maven")
-			}
-
-			exists, _ = util.FileExists(lpack)
-			if !exists {
-				log.Warn("defaulting to maven pack")
-				lpack = filepath.Join(packsDir, "maven")
-			}
-		} else if exists, err := util.FileExists(gradleName); err == nil && exists {
-			lpack = filepath.Join(packsDir, "gradle")
-		} else if exists, err := util.FileExists(jenkinsPluginsName); err == nil && exists {
-			lpack = filepath.Join(packsDir, "jenkins")
-		} else if exists, err := util.FileExists(packagerConfigName); err == nil && exists {
-			lpack = filepath.Join(packsDir, "cwp")
-		} else {
-			// pack detection time
-			lpack, err = jxdraft.DoPackDetection(draftHome, options.Out, dir)
-
-			if err != nil {
-				return err
-			}
-		}
-	}
-	log.Success("selected pack: " + lpack + "\n")
-	options.DraftPack = filepath.Base(lpack)
-
-	chartsDir := filepath.Join(dir, "charts")
-	jenkinsfileExists, err := util.FileExists(jenkinsfile)
-	exists, err := util.FileExists(chartsDir)
-	if exists && err == nil {
-		exists, err = util.FileExists(filepath.Join(dir, "Dockerfile"))
-		if exists && err == nil {
-			if jenkinsfileExists || options.DisableJenkinsfileCheck {
-				log.Warn("existing Dockerfile, Jenkinsfile and charts folder found so skipping 'draft create' step\n")
-				return nil
-			}
-		}
-	}
-	jenkinsfileBackup := ""
-	if jenkinsfileExists && options.InitialisedGit && !options.DisableJenkinsfileCheck {
-		// lets copy the old Jenkinsfile in case we overwrite it
-		jenkinsfileBackup = jenkinsfile + JenkinsfileBackupSuffix
-		err = util.RenameFile(jenkinsfile, jenkinsfileBackup)
-		if err != nil {
-			return fmt.Errorf("Failed to rename old Jenkinsfile: %s", err)
-		}
-	} else if withRename {
-		defaultJenkinsfileExists, err := util.FileExists(defaultJenkinsfile)
-		if defaultJenkinsfileExists && options.InitialisedGit && !options.DisableJenkinsfileCheck {
-			jenkinsfileBackup = defaultJenkinsfile + JenkinsfileBackupSuffix
-			err = util.RenameFile(defaultJenkinsfile, jenkinsfileBackup)
-			if err != nil {
-				return fmt.Errorf("Failed to rename old Jenkinsfile: %s", err)
-			}
-
-		}
-	}
-
-	err = pack.CreateFrom(dir, lpack)
+	options.DraftPack, err = options.invokeDraftPack(args)
 	if err != nil {
-		// lets ignore draft errors as sometimes it can't find a pack - e.g. for environments
-		log.Warnf("Failed to run draft create in %s due to %s", dir, err)
-	}
-
-	unpackedDefaultJenkinsfile := defaultJenkinsfile
-	if unpackedDefaultJenkinsfile != jenkinsfile {
-		unpackedDefaultJenkinsfileExists := false
-		unpackedDefaultJenkinsfileExists, err = util.FileExists(unpackedDefaultJenkinsfile)
-		if unpackedDefaultJenkinsfileExists {
-			err = util.RenameFile(unpackedDefaultJenkinsfile, jenkinsfile)
-			if err != nil {
-				return fmt.Errorf("Failed to rename Jenkinsfile file from '%s' to '%s': %s", unpackedDefaultJenkinsfile, jenkinsfile, err)
-			}
-			if jenkinsfileBackup != "" {
-				err = util.RenameFile(jenkinsfileBackup, defaultJenkinsfile)
-				if err != nil {
-					return fmt.Errorf("Failed to rename Jenkinsfile backup file: %s", err)
-				}
-			}
-		}
-	} else if jenkinsfileBackup != "" {
-		// if there's no Jenkinsfile created then rename it back again!
-		jenkinsfileExists, err = util.FileExists(jenkinsfile)
-		if err != nil {
-			log.Warnf("Failed to check for Jenkinsfile %s", err)
-		} else {
-			if jenkinsfileExists {
-				if !options.InitialisedGit {
-					err = os.Remove(jenkinsfileBackup)
-					if err != nil {
-						log.Warnf("Failed to remove Jenkinsfile backup %s", err)
-					}
-				}
-			} else {
-				// lets put the old one back again
-				err = util.RenameFile(jenkinsfileBackup, jenkinsfile)
-				if err != nil {
-					return fmt.Errorf("Failed to rename Jenkinsfile backup file: %s", err)
-				}
-			}
-		}
+		return err
 	}
 
 	// lets rename the chart to be the same as our app name

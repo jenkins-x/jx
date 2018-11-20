@@ -7,9 +7,11 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
+	"text/template"
 )
 
 const (
@@ -19,16 +21,6 @@ const (
 	// PipelineTemplateFileName defines the jenkisnfile template used to generate the pipeline
 	PipelineTemplateFileName = "Jenkinsfile.tmpl"
 )
-
-
-// ImportFile represents an import of a file from a module (usually a version of a git repo)
-type ImportFile struct {
-	Import string
-	File string
-}
-
-// ImportFileResolver resolves a build pack file resolver strategy
-type ImportFileResolver func(importFile *ImportFile) (string, error)
 
 // PipelineAgent contains the agent definition metadata
 type PipelineAgent struct {
@@ -431,4 +423,46 @@ func ExtendLifecycle(parent *PipelineLifecycle, base *PipelineLifecycle) *Pipeli
 	return &PipelineLifecycle{
 		Steps: steps,
 	}
+}
+
+
+// GenerateJenkinsfile generates the jenkinsfile
+func (arguments *CreateJenkinsfileArguments) GenerateJenkinsfile(resolver ImportFileResolver) error {
+	err := arguments.Validate()
+	if err != nil {
+		return err
+	}
+	config, err := LoadPipelineConfig(arguments.ConfigFile, resolver)
+	if err != nil {
+		return err
+	}
+
+	templateFile := arguments.TemplateFile
+
+	data, err := ioutil.ReadFile(templateFile)
+	if err != nil {
+		return errors.Wrapf(err, "failed to load template %s", templateFile)
+	}
+
+	t, err := template.New("myJenkinsfile").Parse(string(data))
+	if err != nil {
+		return errors.Wrapf(err, "failed to parse template %s", templateFile)
+	}
+	outFile := arguments.OutputFile
+	outDir, _ := filepath.Split(outFile)
+	err = os.MkdirAll(outDir, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to make directory %s", outDir)
+	}
+	file, err := os.Create(outFile)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create file %s", outFile)
+	}
+	defer file.Close()
+
+	err = t.Execute(file, config)
+	if err != nil {
+		return errors.Wrapf(err, "failed to write file %s", outFile)
+	}
+	return nil
 }
