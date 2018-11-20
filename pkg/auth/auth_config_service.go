@@ -40,7 +40,9 @@ func (s *GenericAuthConfigService) DeleteServer(url string) error {
 
 // LoadConfig loads the configuration from the users JX config directory
 func (s *GenericAuthConfigService) LoadConfig() (*AuthConfig, error) {
-	return s.saver.LoadConfig()
+	var err error
+	s.config, err = s.saver.LoadConfig()
+	return s.config, err
 }
 
 // SaveConfig saves the configuration to disk
