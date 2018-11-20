@@ -104,7 +104,7 @@ func (o *CreateAddonGiteaOptions) Run() error {
 		return errors.Wrap(err, "failed to ensure that helm is present")
 	}
 	setValues := strings.Split(o.SetValues, ",")
-	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, setValues, nil)
+	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, setValues, nil, "")
 	if err != nil {
 		return err
 	}
