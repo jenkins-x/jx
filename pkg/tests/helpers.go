@@ -3,6 +3,8 @@ package tests
 import (
 	"bytes"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/auth/mocks"
+	. "github.com/petergtz/pegomock"
 	"io"
 	"os"
 	"runtime"
@@ -11,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	expect "github.com/Netflix/go-expect"
+	"github.com/Netflix/go-expect"
 	"github.com/hinshun/vt10x"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -52,7 +54,6 @@ func TestShouldDisableMaven() bool {
 
 // CreateAuthConfigService creates and returns a fixture ConfigService
 func CreateAuthConfigService() auth.ConfigService {
-	authConfigSvc, _ := auth.NewFileBasedAuthConfigService("test-auth-config-service")
 	userAuth := auth.UserAuth{
 		Username:    "jx-testing-user",
 		ApiToken:    "someapitoken",
@@ -71,6 +72,9 @@ func CreateAuthConfigService() auth.ConfigService {
 		DefaultUsername: userAuth.Username,
 		CurrentServer:   authServer.URL,
 	}
+	saver := auth_test.NewMockConfigSaver()
+	When(saver.LoadConfig()).ThenReturn(&authConfig, nil)
+	authConfigSvc := auth.NewAuthConfigService(saver)
 	authConfigSvc.SetConfig(&authConfig)
 	return authConfigSvc
 }

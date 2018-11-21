@@ -49,3 +49,8 @@ func (s *GenericAuthConfigService) LoadConfig() (*AuthConfig, error) {
 func (s *GenericAuthConfigService) SaveConfig() error {
 	return s.saver.SaveConfig(s.Config())
 }
+
+// NewAuthConfigService generates a GenericAuthConfigService with a custom saver. This should not be used directly
+func NewAuthConfigService(saver ConfigSaver) *GenericAuthConfigService {
+	return &GenericAuthConfigService{saver: saver}
+}

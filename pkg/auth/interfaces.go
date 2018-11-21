@@ -16,6 +16,7 @@ type ConfigService interface {
 }
 
 // ConfigSaver is an interface that saves an AuthConfig
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/auth ConfigSaver -o mocks/auth_interface.go
 type ConfigSaver interface {
 	// LoadConfig loads the configuration from the users JX config directory
 	LoadConfig() (*AuthConfig, error)
