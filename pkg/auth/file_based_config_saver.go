@@ -11,10 +11,7 @@ import (
 // NewFileBasedAuthConfigService
 func NewFileBasedAuthConfigService(filename string) (ConfigService, error) {
 	saver, err := newFileBasedAuthSaver(filename)
-	service := GenericAuthConfigService{
-		saver: saver,
-	}
-	return &service, err
+	return NewAuthConfigService(saver), err
 }
 
 // newFileBasedAuthConfigSaver creates a new FileBasedAuthConfigService that stores its data under the given filename
