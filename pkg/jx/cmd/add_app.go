@@ -76,32 +76,10 @@ func NewCmdAddApp(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 
 func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string, defaultOptionRelease string, defaultVersion string) {
 
-	// We're going to need to know whether the team is using GitOps for the dev env or not,
-	// and also access the team settings, so load those
-	jxClient, ns, err := o.JXClientAndDevNamespace()
-	if err != nil {
-		if o.Verbose {
-			log.Errorf("Error loading team settings. %v\n", err)
-		}
-		o.GitOps = false
-		o.DevEnv = &v1.Environment{}
-	} else {
-		devEnv, err := kube.GetDevEnvironment(jxClient, ns)
-		if err != nil {
-			log.Errorf("Error loading team settings. %v\n", err)
-			o.GitOps = false
-			o.DevEnv = &v1.Environment{}
-		} else {
-			o.DevEnv = devEnv
-			if o.DevEnv.Spec.Source.URL != "" {
-				o.GitOps = true
-			}
-		}
-	}
+	o.GitOps, o.DevEnv = o.GetDevEnv()
 
 	// Common flags
-	cmd.Flags().StringVarP(&o.SetValues, "set", "s", "",
-		"The chart set values (can specify multiple or separate values with commas: key1=val1,key2=val2)")
+
 	cmd.Flags().StringVarP(&o.Version, "version", "v", defaultVersion,
 		"The chart version to install")
 	cmd.Flags().StringVarP(&o.Repo, "repository", "", o.DevEnv.Spec.TeamSettings.AppsRepository,
@@ -121,6 +99,8 @@ func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string, de
 		cmd.Flags().BoolVarP(&o.HelmUpdate, "helm-update", "", true, "Should we run helm update first to ensure we use the latest version")
 		cmd.Flags().StringVarP(&o.Namespace, "namespace", "n", defaultNamespace, "The Namespace to install into")
 		cmd.Flags().StringArrayVarP(&o.ValueFiles, "values", "f", []string{}, "List of locations for values files, can be local files or URLs")
+		cmd.Flags().StringVarP(&o.SetValues, "set", "s", "",
+			"The chart set values (can specify multiple or separate values with commas: key1=val1,key2=val2)")
 	}
 
 }
@@ -167,7 +147,7 @@ func (o *AddAppOptions) createPR(app string) error {
 		// See if the app already exists in requirements
 		found := false
 		for _, d := range requirements.Dependencies {
-			if d.Name == app && d.Repository == o.Repo && d.Alias == o.Alias {
+			if d.Name == app && d.Alias == o.Alias {
 				// App found
 				log.Infof("App %s already installed.\n", util.ColorWarning(app))
 				if version != d.Version {
@@ -203,8 +183,8 @@ func (o *AddAppOptions) createPR(app string) error {
 		}
 	} else {
 		var err error
-		pullRequestInfo, err = o.createEnvironmentPullRequest(o.DevEnv, modifyRequirementsFn, branchNameText, title,
-			message,
+		pullRequestInfo, err = o.createEnvironmentPullRequest(o.DevEnv, modifyRequirementsFn, &branchNameText, &title,
+			&message,
 			nil, o.ConfigureGitCallback)
 		if err != nil {
 			return err
