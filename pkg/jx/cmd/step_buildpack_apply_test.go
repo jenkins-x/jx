@@ -17,10 +17,10 @@ import (
 func TestCreateJenkinsfile(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	t.Parallel()
-	tempDir, err := ioutil.TempDir("", "test-step-create-jenkinsfile")
+	tempDir, err := ioutil.TempDir("", "test-step-buildpack-apply")
 	assert.NoError(t, err)
 
-	testData := path.Join("test_data", "step_create_jenkinsfile")
+	testData := path.Join("test_data", "step_buildpack_apply")
 	_, err = os.Stat(testData)
 	assert.NoError(t, err)
 
@@ -32,12 +32,12 @@ func TestCreateJenkinsfile(t *testing.T) {
 			name := f.Name()
 			srcDir := filepath.Join(testData, name)
 			outDir := filepath.Join(tempDir, name)
-			testStepCreateJenkinsfile(t, outDir, name, srcDir)
+			testCreateJenkinsfile(t, outDir, name, srcDir)
 		}
 	}
 }
 
-func testStepCreateJenkinsfile(t *testing.T, outDir string, testcase string, srcDir string) error {
+func testCreateJenkinsfile(t *testing.T, outDir string, testcase string, srcDir string) error {
 	configFile := path.Join(srcDir, jenkinsfile.PipelineConfigFileName)
 	templateFile := path.Join(srcDir, jenkinsfile.PipelineTemplateFileName)
 	expectedFile := path.Join(srcDir, "Jenkinsfile")
@@ -120,7 +120,7 @@ func TestSavePipelineConfig(t *testing.T) {
 }
 
 func TestParsePipelineConfig(t *testing.T) {
-	pipelineFile := path.Join("test_data", "step_create_jenkinsfile", jenkinsfile.PipelineConfigFileName)
+	pipelineFile := path.Join("test_data", "step_buildpack apply", jenkinsfile.PipelineConfigFileName)
 	assert.FileExists(t, pipelineFile)
 
 	config, err := jenkinsfile.LoadPipelineConfig(pipelineFile, dummyImportFileResolver, false)
@@ -131,7 +131,7 @@ func TestParsePipelineConfig(t *testing.T) {
 }
 
 func TestParseLongerPipelineConfig(t *testing.T) {
-	pipelineFile := path.Join("test_data", "step_create_jenkinsfile", "simple", jenkinsfile.PipelineConfigFileName)
+	pipelineFile := path.Join("test_data", "step_buildpack apply", "simple", jenkinsfile.PipelineConfigFileName)
 	assert.FileExists(t, pipelineFile)
 
 	config, err := jenkinsfile.LoadPipelineConfig(pipelineFile, dummyImportFileResolver, false)

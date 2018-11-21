@@ -13,21 +13,21 @@ import (
 
 var (
 	createJenkinsfileLong = templates.LongDesc(`
-		Creates a Knative jenkinsfile resource for a project
+		Applies the build pack for a project to add any missing files like a Jenkinsfile
 `)
 
 	createJenkinsfileExample = templates.Examples(`
-		# create a Knative jenkinsfile and render to the console
-		jx step create jenkinsfile
+		# applies the current build pack for the current team adding any missing files like Jenkinsfile
+		jx step buildpack apply
 
-		# create a Knative jenkinsfile
-		jx step create jenkinsfile -o myjenkinsfile.yaml
+		# applies the 'maven' build pack to the current project
+		jx step buildpack apply --pack maven
 
 			`)
 )
 
-// StepCreateJenkinsfileOptions contains the command line flags
-type StepCreateJenkinsfileOptions struct {
+// StepBuildPackApplyOptions contains the command line flags
+type StepBuildPackApplyOptions struct {
 	StepOptions
 
 	Dir                     string
@@ -38,9 +38,9 @@ type StepCreateJenkinsfileOptions struct {
 	ImportFileResolver jenkinsfile.ImportFileResolver
 }
 
-// NewCmdCreateJenkinsfile Creates a new Command object
-func NewCmdCreateJenkinsfile(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := &StepCreateJenkinsfileOptions{
+// NewCmdBuildPackApply Creates a new Command object
+func NewCmdBuildPackApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+	options := &StepBuildPackApplyOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
@@ -52,8 +52,8 @@ func NewCmdCreateJenkinsfile(f Factory, in terminal.FileReader, out terminal.Fil
 	}
 
 	cmd := &cobra.Command{
-		Use:     "create jenkinsfile",
-		Short:   "Creates a Jenkinsfile for a project using build packs and templates",
+		Use:     "buildpack apply",
+		Short:   "Applies the current teams build pack to the project to add any missing resources like a Jenkinsfile",
 		Long:    createJenkinsfileLong,
 		Example: createJenkinsfileExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -73,7 +73,7 @@ func NewCmdCreateJenkinsfile(f Factory, in terminal.FileReader, out terminal.Fil
 }
 
 // Run implements this command
-func (o *StepCreateJenkinsfileOptions) Run() error {
+func (o *StepBuildPackApplyOptions) Run() error {
 	dir := o.Dir
 
 	if o.ImportFileResolver == nil {
@@ -108,6 +108,6 @@ func (o *StepCreateJenkinsfileOptions) Run() error {
 }
 
 // resolveImportFile resolve an import name and file 
-func (o *StepCreateJenkinsfileOptions) resolveImportFile(importFile *jenkinsfile.ImportFile) (string, error) {
+func (o *StepBuildPackApplyOptions) resolveImportFile(importFile *jenkinsfile.ImportFile) (string, error) {
 	return importFile.File, fmt.Errorf("not implemented")
 }

@@ -19,14 +19,14 @@ import (
 	"testing"
 )
 
-func TestStepCreateJenkinsfileUsingBuildPacks(t *testing.T) {
+func TestStepBuildPackApply(t *testing.T) {
 	const buildPackURL = "https://github.com/jenkins-x-buildpacks/jenkins-x-kubernetes.git"
 	const buildPackRef = "master"
 
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	t.Parallel()
 
-	tempDir, err := ioutil.TempDir("", "test-step-create-jenkinsfile-buildpacks")
+	tempDir, err := ioutil.TempDir("", "test-step-buildpack-apply")
 	require.NoError(t, err)
 
 	testData := path.Join("test_data", "import_projects", "maven_camel")
@@ -36,7 +36,7 @@ func TestStepCreateJenkinsfileUsingBuildPacks(t *testing.T) {
 	err = util.CopyDir(testData, tempDir, true)
 	require.NoError(t, err)
 
-	o := &cmd.StepCreateJenkinsfileOptions{
+	o := &cmd.StepBuildPackApplyOptions{
 		StepOptions: cmd.StepOptions{
 			CommonOptions: cmd.CommonOptions{
 				In:  os.Stdin,
