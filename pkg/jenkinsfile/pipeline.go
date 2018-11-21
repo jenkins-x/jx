@@ -79,7 +79,7 @@ type PipelineExtends struct {
 func (x *PipelineExtends) ImportFile() *ImportFile {
 	return &ImportFile{
 		Import: x.Import,
-		File: x.File,
+		File:   x.File,
 	}
 }
 
@@ -93,9 +93,10 @@ type PipelineConfig struct {
 
 // CreateJenkinsfileArguments contains the arguents to generate a Jenkinsfiles dynamically
 type CreateJenkinsfileArguments struct {
-	ConfigFile   string
-	TemplateFile string
-	OutputFile   string
+	ConfigFile        string
+	TemplateFile      string
+	OutputFile        string
+	JenkinsfileRunner bool
 }
 
 // Validate validates all the arguments are set correctly
@@ -305,7 +306,7 @@ func (s *PipelineStep) ToJenkinsfileStatements() []*Statement {
 }
 
 // LoadPipelineConfig returns the pipeline configuration
-func LoadPipelineConfig(fileName string, resolver ImportFileResolver) (*PipelineConfig, error) {
+func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfileRunner bool) (*PipelineConfig, error) {
 	config := PipelineConfig{}
 	exists, err := util.FileExists(fileName)
 	if err != nil || !exists {
@@ -319,8 +320,14 @@ func LoadPipelineConfig(fileName string, resolver ImportFileResolver) (*Pipeline
 	if err != nil {
 		return &config, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
 	}
+	if jenkinsfileRunner {
+		// lets force any agent for prow / jenkinsfile runner
+		config.Agent.Label = ""
+	}
 	if config.Extends == nil || config.Extends.File == "" {
-		config.defaultContainer()
+		if !jenkinsfileRunner {
+			config.defaultContainer()
+		}
 		return &config, nil
 	}
 	file := config.Extends.File
@@ -328,7 +335,7 @@ func LoadPipelineConfig(fileName string, resolver ImportFileResolver) (*Pipeline
 	if importModule != "" {
 		file, err = resolver(config.Extends.ImportFile())
 		if err != nil {
-		  return &config, err
+			return &config, err
 		}
 
 	} else if !filepath.IsAbs(file) {
@@ -344,11 +351,11 @@ func LoadPipelineConfig(fileName string, resolver ImportFileResolver) (*Pipeline
 	if !exists {
 		return &config, fmt.Errorf("base pipeline file does not exist %s", file)
 	}
-	basePipeline, err := LoadPipelineConfig(file, resolver)
+	basePipeline, err := LoadPipelineConfig(file, resolver, jenkinsfileRunner)
 	if err != nil {
 		return &config, fmt.Errorf("failed to load base pipeline file %s", file)
 	}
-	err = config.ExtendPipeline(basePipeline)
+	err = config.ExtendPipeline(basePipeline, jenkinsfileRunner)
 	return &config, err
 }
 
@@ -368,14 +375,16 @@ func (c *PipelineConfig) SaveConfig(fileName string) error {
 }
 
 // ExtendPipeline inherits this pipeline from the given base pipeline
-func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig) error {
+func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, jenkinsfileRunner bool) error {
 	if c.Agent.Label == "" {
 		c.Agent.Label = base.Agent.Label
 	}
 	if c.Agent.Container == "" {
 		c.Agent.Container = base.Agent.Container
 	}
-	c.defaultContainer()
+	if !jenkinsfileRunner {
+		c.defaultContainer()
+	}
 	c.Pipelines.Extend(&base.Pipelines)
 	return nil
 }
@@ -425,14 +434,13 @@ func ExtendLifecycle(parent *PipelineLifecycle, base *PipelineLifecycle) *Pipeli
 	}
 }
 
-
 // GenerateJenkinsfile generates the jenkinsfile
 func (a *CreateJenkinsfileArguments) GenerateJenkinsfile(resolver ImportFileResolver) error {
 	err := a.Validate()
 	if err != nil {
 		return err
 	}
-	config, err := LoadPipelineConfig(a.ConfigFile, resolver)
+	config, err := LoadPipelineConfig(a.ConfigFile, resolver, a.JenkinsfileRunner)
 	if err != nil {
 		return err
 	}

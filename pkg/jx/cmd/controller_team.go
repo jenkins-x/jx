@@ -67,7 +67,14 @@ func NewCmdControllerTeam(f Factory, in terminal.FileReader, out terminal.FileWr
 // Run implements this command
 func (o *ControllerTeamOptions) Run() error {
 	co := &o.ControllerOptions
-	err := co.registerTeamCRD()
+	
+	// lets ensure helm is initialised
+	err := co.Helm().Init(true, "", "", false)
+	if err != nil {
+	  return errors.Wrapf(err, "failed to initialise helm")
+	}
+
+	err = co.registerTeamCRD()
 	if err != nil {
 		return err
 	}

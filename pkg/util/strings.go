@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -159,4 +160,12 @@ func DiffSlices(oldSlice []string, newSlice []string) ([]string, []string) {
 		}
 	}
 	return toDelete, toInsert
+}
+
+// ParseBool parses the boolean string. Returns false if the string is empty
+func ParseBool(text string) (bool, error) {
+	if text == "" {
+		return false, nil
+	}
+	return strconv.ParseBool(text)
 }
