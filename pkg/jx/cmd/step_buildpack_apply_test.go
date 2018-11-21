@@ -120,7 +120,7 @@ func TestSavePipelineConfig(t *testing.T) {
 }
 
 func TestParsePipelineConfig(t *testing.T) {
-	pipelineFile := path.Join("test_data", "step_buildpack apply", jenkinsfile.PipelineConfigFileName)
+	pipelineFile := path.Join("test_data", "step_buildpack_apply", jenkinsfile.PipelineConfigFileName)
 	assert.FileExists(t, pipelineFile)
 
 	config, err := jenkinsfile.LoadPipelineConfig(pipelineFile, dummyImportFileResolver, false)
@@ -131,7 +131,7 @@ func TestParsePipelineConfig(t *testing.T) {
 }
 
 func TestParseLongerPipelineConfig(t *testing.T) {
-	pipelineFile := path.Join("test_data", "step_buildpack apply", "simple", jenkinsfile.PipelineConfigFileName)
+	pipelineFile := path.Join("test_data", "step_buildpack_apply", "simple", jenkinsfile.PipelineConfigFileName)
 	assert.FileExists(t, pipelineFile)
 
 	config, err := jenkinsfile.LoadPipelineConfig(pipelineFile, dummyImportFileResolver, false)
