@@ -13,16 +13,16 @@ var (
 	}
 )
 
-// JenkinsfileStatement represents a statement
-type JenkinsfileStatement struct {
+// Statement represents a statement in a Jenkinsfile
+type Statement struct {
 	Function  string
 	Arguments []string
 	Statement string
-	Children  []*JenkinsfileStatement
+	Children  []*Statement
 }
 
 // Text returns the text line of the current function or statement
-func (s *JenkinsfileStatement) Text() string {
+func (s *Statement) Text() string {
 	if s.Function != "" {
 		text := s.Function
 		expressions := []string{}
@@ -36,7 +36,7 @@ func (s *JenkinsfileStatement) Text() string {
 
 // ContextEquals returns true if this statement is a context statement and it equals
 // the same context as that statement
-func (s *JenkinsfileStatement) ContextEquals(that *JenkinsfileStatement) bool {
+func (s *Statement) ContextEquals(that *Statement) bool {
 	if s.Function == that.Function && contextFunctions[s.Function] {
 		return util.StringArraysEqual(s.Arguments, that.Arguments)
 	}
@@ -47,8 +47,8 @@ func asArgumentExpression(arg string) string {
 	return "'" + arg + "'"
 }
 
-// JenkinsfileWriter implements the struct for Jenkinsfilewriter
-type JenkinsfileWriter struct {
+// Writer implements the struct for Jenkinsfilewriter
+type Writer struct {
 	InitialIndent string
 	IndentText    string
 	Buffer        bytes.Buffer
@@ -56,26 +56,26 @@ type JenkinsfileWriter struct {
 }
 
 // WriteJenkinsfileStatements writes the given Jenkinsfile statements as a string
-func WriteJenkinsfileStatements(indentCount int, statements []*JenkinsfileStatement) string {
-	writer := NewJenkinsfileWriter(indentCount)
+func WriteJenkinsfileStatements(indentCount int, statements []*Statement) string {
+	writer := NewWriter(indentCount)
 	writer.Write(statements)
 	return writer.String()
 }
 
-// NewJenkinsfileWriter creates a Jenkinsfile writer
-func NewJenkinsfileWriter(indentCount int) *JenkinsfileWriter {
-	return &JenkinsfileWriter{
+// NewWriter creates a Jenkinsfile writer
+func NewWriter(indentCount int) *Writer {
+	return &Writer{
 		IndentText:  "  ",
 		IndentCount: indentCount,
 	}
 }
 
-func (w *JenkinsfileWriter) Write(inputStatements []*JenkinsfileStatement) {
+func (w *Writer) Write(inputStatements []*Statement) {
 	statements := w.combineSimilarContexts(inputStatements)
 	w.writeStatement(nil, statements)
 }
 
-func (w *JenkinsfileWriter) writeStatement(parent *JenkinsfileStatement, statements []*JenkinsfileStatement) {
+func (w *Writer) writeStatement(parent *Statement, statements []*Statement) {
 	for _, s := range statements {
 		text := s.Text()
 		hasChildren := len(s.Children) > 0
@@ -94,7 +94,7 @@ func (w *JenkinsfileWriter) writeStatement(parent *JenkinsfileStatement, stateme
 	}
 }
 
-func (w *JenkinsfileWriter) println(text string) {
+func (w *Writer) println(text string) {
 	if text != "" {
 		for i := 0; i < w.IndentCount; i++ {
 			w.Buffer.WriteString(w.IndentText)
@@ -105,12 +105,12 @@ func (w *JenkinsfileWriter) println(text string) {
 }
 
 // String returns the string value of this writer
-func (w *JenkinsfileWriter) String() string {
+func (w *Writer) String() string {
 	return w.Buffer.String()
 }
 
-func (w *JenkinsfileWriter) combineSimilarContexts(statements []*JenkinsfileStatement) []*JenkinsfileStatement {
-	answer := append([]*JenkinsfileStatement{}, statements...)
+func (w *Writer) combineSimilarContexts(statements []*Statement) []*Statement {
+	answer := append([]*Statement{}, statements...)
 	for i := 0; i < len(answer)-1; {
 		s1 := answer[i]
 		s2 := answer[i+1]

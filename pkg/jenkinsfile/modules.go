@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	// ModuleFileName the name of the module imports file name
 	ModuleFileName = "imports.yaml"
 )
 

@@ -35,7 +35,7 @@ type Pipelines struct {
 	Feature     *PipelineLifecycles `yaml:"feature,omitempty"`
 }
 
-// PipelineLifecycle defines an individual step in a pipeline, either a command (sh) or groovy block
+// PipelineStep defines an individual step in a pipeline, either a command (sh) or groovy block
 type PipelineStep struct {
 	Comment   string          `yaml:"comment,omitempty"`
 	Container string          `yaml:"container,omitempty"`
@@ -140,7 +140,7 @@ func (a *PipelineLifecycles) AllButPromote() PipelineLifecycleArray {
 
 // Groovy returns the groovy string for the lifecycles
 func (s PipelineLifecycleArray) Groovy() string {
-	statements := []*JenkinsfileStatement{}
+	statements := []*Statement{}
 	for _, l := range s {
 		if l != nil {
 			statements = append(statements, l.ToJenkinsfileStatements()...)
@@ -153,14 +153,14 @@ func (s PipelineLifecycleArray) Groovy() string {
 }
 
 // Groovy returns the groovy expression for this lifecycle
-func (a *PipelineLifecycle) Groovy() string {
-	lifecycles := PipelineLifecycleArray([]*PipelineLifecycle{a})
+func (l *PipelineLifecycle) Groovy() string {
+	lifecycles := PipelineLifecycleArray([]*PipelineLifecycle{l})
 	return lifecycles.Groovy()
 }
 
 // ToJenkinsfileStatements converts the lifecycle to one or more jenkinsfile statements
-func (l *PipelineLifecycle) ToJenkinsfileStatements() []*JenkinsfileStatement {
-	statements := []*JenkinsfileStatement{}
+func (l *PipelineLifecycle) ToJenkinsfileStatements() []*Statement {
+	statements := []*Statement{}
 	for _, step := range l.Steps {
 		statements = append(statements, step.ToJenkinsfileStatements()...)
 	}
@@ -219,7 +219,7 @@ func defaultContainerAroundSteps(container string, steps []*PipelineStep) []*Pip
 	return result
 }
 
-// Groovy returns the groovy expression for this step
+// GroovyBlock returns the groovy expression for this step
 func (s *PipelineStep) GroovyBlock(parentIndent string) string {
 	var buffer bytes.Buffer
 	indent := parentIndent
@@ -264,33 +264,33 @@ func (s *PipelineStep) GroovyBlock(parentIndent string) string {
 }
 
 // ToJenkinsfileStatements converts the step to one or more jenkinsfile statements
-func (s *PipelineStep) ToJenkinsfileStatements() []*JenkinsfileStatement {
-	statements := []*JenkinsfileStatement{}
+func (s *PipelineStep) ToJenkinsfileStatements() []*Statement {
+	statements := []*Statement{}
 	if s.Comment != "" {
-		statements = append(statements, &JenkinsfileStatement{
+		statements = append(statements, &Statement{
 			Statement: "",
-		}, &JenkinsfileStatement{
+		}, &Statement{
 			Statement: "// " + s.Comment,
 		})
 	}
 	if s.Container != "" {
-		statements = append(statements, &JenkinsfileStatement{
+		statements = append(statements, &Statement{
 			Function:  "container",
 			Arguments: []string{s.Container},
 		})
 	} else if s.Dir != "" {
-		statements = append(statements, &JenkinsfileStatement{
+		statements = append(statements, &Statement{
 			Function:  "dir",
 			Arguments: []string{s.Dir},
 		})
 	} else if s.Command != "" {
-		statements = append(statements, &JenkinsfileStatement{
+		statements = append(statements, &Statement{
 			Statement: "sh \"" + s.Command + "\"",
 		})
 	} else if s.Groovy != "" {
 		lines := strings.Split(s.Groovy, "\n")
 		for _, line := range lines {
-			statements = append(statements, &JenkinsfileStatement{
+			statements = append(statements, &Statement{
 				Statement: line,
 			})
 		}
@@ -427,17 +427,17 @@ func ExtendLifecycle(parent *PipelineLifecycle, base *PipelineLifecycle) *Pipeli
 
 
 // GenerateJenkinsfile generates the jenkinsfile
-func (arguments *CreateJenkinsfileArguments) GenerateJenkinsfile(resolver ImportFileResolver) error {
-	err := arguments.Validate()
+func (a *CreateJenkinsfileArguments) GenerateJenkinsfile(resolver ImportFileResolver) error {
+	err := a.Validate()
 	if err != nil {
 		return err
 	}
-	config, err := LoadPipelineConfig(arguments.ConfigFile, resolver)
+	config, err := LoadPipelineConfig(a.ConfigFile, resolver)
 	if err != nil {
 		return err
 	}
 
-	templateFile := arguments.TemplateFile
+	templateFile := a.TemplateFile
 
 	data, err := ioutil.ReadFile(templateFile)
 	if err != nil {
@@ -448,7 +448,7 @@ func (arguments *CreateJenkinsfileArguments) GenerateJenkinsfile(resolver Import
 	if err != nil {
 		return errors.Wrapf(err, "failed to parse template %s", templateFile)
 	}
-	outFile := arguments.OutputFile
+	outFile := a.OutputFile
 	outDir, _ := filepath.Split(outFile)
 	err = os.MkdirAll(outDir, util.DefaultWritePermissions)
 	if err != nil {

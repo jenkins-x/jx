@@ -14,17 +14,17 @@ func TestJenkinsfileWriter(t *testing.T) {
   }
 }
 `
-	writer := jenkinsfile.NewJenkinsfileWriter(0)
+	writer := jenkinsfile.NewWriter(0)
 
-	statements := []*jenkinsfile.JenkinsfileStatement{
+	statements := []*jenkinsfile.Statement{
 		{
 			Function: "container",
 			Arguments: []string{"maven"},
-			Children: []*jenkinsfile.JenkinsfileStatement{
+			Children: []*jenkinsfile.Statement{
 				{
 					Function: "dir",
 					Arguments: []string{"/foo/bar"},
-					Children: []*jenkinsfile.JenkinsfileStatement{
+					Children: []*jenkinsfile.Statement{
 						{
 							Statement: "sh \"ls -al\"",
 						},
@@ -36,11 +36,11 @@ func TestJenkinsfileWriter(t *testing.T) {
 		{
 			Function: "container",
 			Arguments: []string{"maven"},
-			Children: []*jenkinsfile.JenkinsfileStatement{
+			Children: []*jenkinsfile.Statement{
 				{
 					Function: "dir",
 					Arguments: []string{"/foo/bar"},
-					Children: []*jenkinsfile.JenkinsfileStatement{
+					Children: []*jenkinsfile.Statement{
 						{
 							Statement: "sh \"mvn deploy\"",
 						},

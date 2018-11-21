@@ -35,14 +35,14 @@ func (o *CommonOptions) initBuildPacks() (string, error) {
 }
 
 // invokeDraftPack invokes a draft pack copying in a Jenkinsfile if required
-func (options *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
+func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 	draftDir, err := util.DraftDir()
 	if err != nil {
 		return "", err
 	}
 	draftHome := draftpath.Home(draftDir)
 
-	packsDir, err := options.initBuildPacks()
+	packsDir, err := o.initBuildPacks()
 	if err != nil {
 		return "", err
 	}
@@ -118,7 +118,7 @@ func (options *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error
 			lpack = filepath.Join(packsDir, "cwp")
 		} else {
 			// pack detection time
-			lpack, err = jxdraft.DoPackDetection(draftHome, options.Out, dir)
+			lpack, err = jxdraft.DoPackDetection(draftHome, o.Out, dir)
 
 			if err != nil {
 				return "", err
@@ -219,7 +219,7 @@ func (options *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error
 			tmplFileName := jenkinsfile.PipelineTemplateFileName
 			templateFileNames := []string{filepath.Join(lpack, tmplFileName), filepath.Join(packsDir, tmplFileName)}
 
-			moduleResolver, err := modules.Resolve(options.Git())
+			moduleResolver, err := modules.Resolve(o.Git())
 			if err != nil {
 				return draftPack, err
 			}
