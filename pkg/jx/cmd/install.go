@@ -960,7 +960,7 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	tls, err := strconv.ParseBool(exposeController.Config.TLSAcme)
+	tls, err := util.ParseBool(exposeController.Config.TLSAcme)
 	if err != nil {
 		return fmt.Errorf("failed to parse TLS exposecontroller boolean %v", err)
 	}
