@@ -27,7 +27,7 @@ func TestEnsureDevEnvironmentSetup(t *testing.T) {
 			PromotionStrategy: jenkinsio_v1.PromotionStrategyTypeNever,
 			Kind:              jenkinsio_v1.EnvironmentKindTypeDevelopment,
 			TeamSettings: jenkinsio_v1.TeamSettings{
-				UseGitOPs:           true,
+				UseGitOps:           true,
 				AskOnCreate:         false,
 				QuickstartLocations: kube.DefaultQuickstartLocations,
 				PromotionEngine:     jenkinsio_v1.PromotionEngineJenkins,
@@ -43,7 +43,7 @@ func TestEnsureDevEnvironmentSetup(t *testing.T) {
 	assert.Equal(t, envFixture.Spec.Label, env.Spec.Label)
 	assert.Equal(t, jenkinsio_v1.PromotionStrategyType("Never"), env.Spec.PromotionStrategy)
 	assert.Equal(t, jenkinsio_v1.EnvironmentKindType("Development"), env.Spec.Kind)
-	assert.Equal(t, true, env.Spec.TeamSettings.UseGitOPs)
+	assert.Equal(t, true, env.Spec.TeamSettings.UseGitOps)
 	assert.Equal(t, false, env.Spec.TeamSettings.AskOnCreate)
 	assert.Equal(t, []jenkinsio_v1.QuickStartLocation([]jenkinsio_v1.QuickStartLocation{jenkinsio_v1.QuickStartLocation{GitURL: "https://github.com", GitKind: "github", Owner: "jenkins-x-quickstarts", Includes: []string{"*"}, Excludes: []string{"WIP-*"}}}), env.Spec.TeamSettings.QuickstartLocations)
 	assert.Equal(t, jenkinsio_v1.PromotionEngineType("Jenkins"), env.Spec.TeamSettings.PromotionEngine)

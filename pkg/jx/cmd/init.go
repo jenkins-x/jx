@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 	"io/ioutil"
 	"net"
@@ -11,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/cloud/iks"
@@ -222,7 +223,7 @@ func (o *InitOptions) enableClusterAdminRole() error {
 
 	if o.Username == "" {
 		o.Username, err = o.GetClusterUserName()
-		if err != err {
+		if err != nil {
 			return err
 		}
 	}
@@ -632,7 +633,7 @@ func (o *InitOptions) initIngress() error {
 			return nil
 		}
 
-		values := []string{"rbac.create=true" /*,"rbac.serviceAccountName="+ingressServiceAccount*/ }
+		values := []string{"rbac.create=true" /*,"rbac.serviceAccountName="+ingressServiceAccount*/}
 		valuesFiles := []string{}
 		valuesFiles, err = helm.AppendMyValues(valuesFiles)
 		if err != nil {
@@ -674,7 +675,8 @@ controller:
 		i := 0
 		for {
 			log.Infof("Installing using helm binary: %s\n", util.ColorInfo(o.Helm().HelmBinary()))
-			err = o.Helm().InstallChart("stable/nginx-ingress", "jxing", ingressNamespace, nil, nil, values, valuesFiles)
+			err = o.Helm().InstallChart("stable/nginx-ingress", "jxing", ingressNamespace, nil, nil, values,
+				valuesFiles, "")
 			if err != nil {
 				if i >= 3 {
 					log.Errorf("Failed to install ingress chart: %s", err)

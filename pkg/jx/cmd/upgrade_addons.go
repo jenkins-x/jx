@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"fmt"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/addon"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -149,7 +150,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 				// lets backup any Prow config as we should never replace this, eventually we'll move config to a git repo so this is temporary
 				config, plugins = o.backupConfigs()
 			}
-			err = o.Helm().UpgradeChart(chart, k, ns, nil, false, nil, false, false, values, valueFiles)
+			err = o.Helm().UpgradeChart(chart, k, ns, nil, false, nil, false, false, values, valueFiles, "")
 			if err != nil {
 				log.Warnf("Failed to upgrade %s chart %s: %v\n", name, chart, err)
 			}

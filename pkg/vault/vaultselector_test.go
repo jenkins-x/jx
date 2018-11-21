@@ -67,8 +67,8 @@ func Test_GetVault_PromptsUserIfMoreThanOneVaultInNamespace(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 
 	// mock terminal
-	console, state, term := tests.NewTerminal(t)
-	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, term)
+	console := tests.NewTerminal(t)
+	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, &console.Stdio)
 	createMockedVault("vault1", "myVaultNamespace", "one.ah.ah.ah", "Count", vaultOperatorClient, kubeClient)
 	createMockedVault("vault2", "myVaultNamespace", "two.ah.ah.ah", "Von-Count", vaultOperatorClient, kubeClient)
 
@@ -85,11 +85,11 @@ func Test_GetVault_PromptsUserIfMoreThanOneVaultInNamespace(t *testing.T) {
 
 	vault, err := selector.GetVault("", "myVaultNamespace")
 
-	console.Tty().Close()
+	console.Close()
 	<-donec
 
 	// Dump the terminal's screen.
-	t.Logf(expect.StripTrailingEmptyLines(state.String()))
+	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
 
 	assert.Equal(t, "vault2", vault.Name)
 	assert.Equal(t, "myVaultNamespace", vault.Namespace)

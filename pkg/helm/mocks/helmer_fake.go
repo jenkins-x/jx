@@ -2,6 +2,7 @@ package helm_test
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/helm"
 )
 
@@ -40,7 +41,7 @@ func (FakeHelmer) Env() map[string]string {
 }
 
 // FetchChart fake
-func (FakeHelmer) FetchChart(chart string, version *string, untar bool, untardir string) error {
+func (FakeHelmer) FetchChart(chart string, version *string, untar bool, untardir string, repo string) error {
 	return nil
 }
 
@@ -61,7 +62,7 @@ func (FakeHelmer) Init(clientOnly bool, serviceAccount string, tillerNamespace s
 
 // InstallChart fake
 func (FakeHelmer) InstallChart(chart string, releaseName string, ns string, version *string, timeout *int,
-	values []string, valueFiles []string) error {
+	values []string, valueFiles []string, repo string) error {
 	return nil
 }
 
@@ -139,7 +140,7 @@ func (FakeHelmer) UpdateRepo() error {
 
 // UpgradeChart fake
 func (FakeHelmer) UpgradeChart(chart string, releaseName string, ns string, version *string, install bool,
-	timeout *int, force bool, wait bool, values []string, valueFiles []string) error {
+	timeout *int, force bool, wait bool, values []string, valueFiles []string, repo string) error {
 	return nil
 }
 

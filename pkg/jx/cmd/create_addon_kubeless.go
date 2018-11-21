@@ -91,7 +91,7 @@ func (o *CreateAddonKubelessOptions) Run() error {
 	values := []string{"rbac.create=true"}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil)
+	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
 	if err != nil {
 		return err
 	}

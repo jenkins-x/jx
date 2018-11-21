@@ -83,7 +83,7 @@ func (o *UninstallOptions) Run() error {
 			targetContext = o.Context
 		} else {
 			targetContext, err = util.PickValue(fmt.Sprintf("Enter the current context name to confirm "+
-				"uninstalllation of the Jenkins X platform from the %s namespace:", util.ColorInfo(namespace)),
+				"uninstallation of the Jenkins X platform from the %s namespace:", util.ColorInfo(namespace)),
 				"", true,
 				"To prevent accidental uninstallation from the wrong cluster, you must enter the current "+
 					"kubernetes context. This can be found with `kubectl config current-context`",
@@ -120,23 +120,22 @@ func (o *UninstallOptions) Run() error {
 			}
 		}
 	}
+	errs := []error{}
 	o.Helm().DeleteRelease(namespace, "jx-prow", true)
 	err = o.Helm().DeleteRelease(namespace, "jenkins-x", true)
 	if err != nil {
-		errc := o.cleanupNamespaces(namespace, envNames, envMap)
-		if errc != nil {
-			errc = errors.Wrap(errc, "failed to cleanup the jenkins-x platform")
-			return errc
-		}
-		return errors.Wrap(err, "failed to purge the jenkins-x chart")
+		errs = append(errs, fmt.Errorf("failed to uninstall the jenkins-x helm chart in namespace %s: %s", namespace, err))
 	}
 	err = jxClient.JenkinsV1().Environments(namespace).DeleteCollection(&meta_v1.DeleteOptions{}, meta_v1.ListOptions{})
 	if err != nil {
-		return err
+		errs = append(errs, fmt.Errorf("failed to delete the environments in namespace %s: %s", namespace, err))
 	}
 	err = o.cleanupNamespaces(namespace, envNames, envMap)
 	if err != nil {
-		return err
+		errs = append(errs, fmt.Errorf("failed to cleanup namespaces in namespace %s: %s", namespace, err))
+	}
+	if len(errs) > 0 {
+		return util.CombineErrors(errs...)
 	}
 	log.Successf("Jenkins X has been successfully uninstalled from team namespace %s", namespace)
 	return nil
@@ -147,9 +146,10 @@ func (o *UninstallOptions) cleanupNamespaces(namespace string, envNames []string
 	if err != nil {
 		return errors.Wrap(err, "failed to get the kube client")
 	}
+	errs := []error{}
 	err = o.deleteNamespace(namespace)
 	if err != nil {
-		return errors.Wrap(err, "failed to delete team namespace namespace")
+		errs = append(errs, fmt.Errorf("failed to delete namespace %s: %s", namespace, err))
 	}
 	if !o.KeepEnvironments {
 		for _, env := range envNames {
@@ -170,12 +170,12 @@ func (o *UninstallOptions) cleanupNamespaces(namespace string, envNames []string
 				}
 				err = o.deleteNamespace(envNamespace)
 				if err != nil {
-					return errors.Wrap(err, "failed to delete environment namespace")
+					errs = append(errs, fmt.Errorf("failed to delete namespace %s: %s", envNamespace, err))
 				}
 			}
 		}
 	}
-	return nil
+	return util.CombineErrors(errs...)
 }
 
 func (o *UninstallOptions) deleteNamespace(namespace string) error {

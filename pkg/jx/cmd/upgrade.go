@@ -62,6 +62,7 @@ func NewCmdUpgrade(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 	cmd.AddCommand(NewCmdUpgradeIngress(f, in, out, errOut))
 	cmd.AddCommand(NewCmdUpgradePlatform(f, in, out, errOut))
 	cmd.AddCommand(NewCmdUpgradeExtensions(f, in, out, errOut))
+	cmd.AddCommand(NewCmdUpgradeApps(f, in, out, errOut))
 	return cmd
 }
 

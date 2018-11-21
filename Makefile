@@ -120,8 +120,14 @@ test1:
 testbin:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -c github.com/jenkins-x/jx/pkg/jx/cmd -o build/jx-test
 
+testbin-gits:
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -c github.com/jenkins-x/jx/pkg/gits -o build/jx-test-gits
+
 debugtest1: testbin
 	cd pkg/jx/cmd && dlv --listen=:2345 --headless=true --api-version=2 exec ../../../build/jx-test -- -test.run $(TEST)
+
+debugtest1gits: testbin-gits
+	cd pkg/gits && dlv --log --listen=:2345 --headless=true --api-version=2 exec ../../build/jx-test-gits -- -test.run $(TEST)
 
 inttestbin:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -tags=integration -c github.com/jenkins-x/jx/pkg/jx/cmd -o build/jx-inttest
@@ -186,10 +192,6 @@ release: check
 		git commit --allow-empty -a -m "updated jx commands from $(VERSION)"; \
 		git push origin
 		
-	##### overlayfs2 issue on gke: https://stackoverflow.com/questions/48673513/google-kubernetes-engine-errimagepull-too-many-links ######
-	## NOTE: -a flag seems to intermittently break releases. It only prunes inactive containers so this could point to another issue. 
-	docker system prune -f
-	#####
 
 clean:
 	rm -rf build release cover.out cover.html

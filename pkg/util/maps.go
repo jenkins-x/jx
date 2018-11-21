@@ -36,7 +36,6 @@ func MergeMaps(maps ...map[string]string) map[string]string {
 	return answer
 }
 
-
 // CombineMapTrees recursively copies all the values from the input map into the destination map preserving any missing entries in the destination
 func CombineMapTrees(destination map[string]interface{}, input map[string]interface{}) {
 	for k, v := range input {

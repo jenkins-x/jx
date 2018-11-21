@@ -105,7 +105,7 @@ func (o *CreateAddonOptions) CreateAddon(addon string) error {
 	}
 	setValues := strings.Split(o.SetValues, ",")
 
-	err = o.installChart(addon, chart, o.Version, o.Namespace, o.HelmUpdate, setValues, o.ValueFiles)
+	err = o.installChart(addon, chart, o.Version, o.Namespace, o.HelmUpdate, setValues, o.ValueFiles, "")
 	if err != nil {
 		return fmt.Errorf("Failed to install chart %s: %s", chart, err)
 	}
