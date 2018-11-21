@@ -2,6 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
@@ -18,10 +23,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/client-go/kubernetes/fake"
-	"strconv"
-	"strings"
-	"testing"
-	"time"
 
 	"github.com/ghodss/yaml"
 )
@@ -97,7 +98,7 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 }
 
 func NewCreateEnvPullRequestFn(provider *gits.FakeProvider) CreateEnvPullRequestFn {
-	fakePrFn := func(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo) (*ReleasePullRequestInfo, error) {
+	fakePrFn := func(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *gits.PullRequestInfo) (*gits.PullRequestInfo, error) {
 		envURL := env.Spec.Source.URL
 		values := []string{}
 		for _, repos := range provider.Repositories {
@@ -134,9 +135,9 @@ func CreateTestPipelineActivity(jxClient versioned.Interface, ns string, folder 
 	return a, err
 }
 
-func createFakePullRequest(repository *gits.FakeRepository, env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo, provider *gits.FakeProvider) (*ReleasePullRequestInfo, error) {
+func createFakePullRequest(repository *gits.FakeRepository, env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *gits.PullRequestInfo, provider *gits.FakeProvider) (*gits.PullRequestInfo, error) {
 	if pullRequestInfo == nil {
-		pullRequestInfo = &ReleasePullRequestInfo{}
+		pullRequestInfo = &gits.PullRequestInfo{}
 	}
 
 	if pullRequestInfo.GitProvider == nil {

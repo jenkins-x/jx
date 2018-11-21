@@ -119,7 +119,7 @@ func expectNoTimeoutError(t *testing.T) expect.ConsoleOpt {
 			if err != nil {
 				if e, ok := err.(*os.PathError); ok {
 					if e.Timeout() {
-						panic("Test: " + t.Name() + " Timout waiting for Terminal output: " + fmt.Sprintf("%q", buf))
+						panic("Test: " + t.Name() + " Timeout waiting for Terminal output: " + fmt.Sprintf("%q", buf))
 					}
 				}
 			}

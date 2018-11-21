@@ -267,6 +267,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 	}
 
 	lastInitC := initContainers[len(initContainers)-1]
+	log.Infof("Build logs for %s\n", util.ColorInfo(name))
 	return o.getPodLog(ns, pod, lastInitC)
 }
 
