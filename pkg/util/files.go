@@ -28,6 +28,21 @@ func FileExists(path string) (bool, error) {
 	return true, err
 }
 
+// FirstFileExists returns the first file which exists or an error if we can't detect if a file that exists
+func FirstFileExists(paths ...string) (string, error) {
+	for _, path := range paths {
+		exists, err := FileExists(path)
+		if err != nil {
+		  return "", err
+		}
+		if exists {
+			return path, nil
+		}
+	}
+	return "", nil
+}
+
+
 func IsEmpty(name string) (bool, error) {
 	f, err := os.Open(name)
 	if err != nil {

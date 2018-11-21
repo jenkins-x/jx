@@ -50,6 +50,19 @@ func StringArrayIndex(array []string, value string) int {
 	return -1
 }
 
+// StringArraysEqual returns true if the two string slices are equal
+func StringArraysEqual(a1 []string, a2 []string) bool {
+	if len(a1) != len(a2) {
+		return false
+	}
+	for i := 0; i < len(a1); i++ {
+		if a1[i] != a2[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // FirstNotEmptyString returns the first non empty string or the empty string if none can be found
 func FirstNotEmptyString(values ...string) string {
 	if values != nil {

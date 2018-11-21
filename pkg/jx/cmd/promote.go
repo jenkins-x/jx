@@ -457,7 +457,8 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 		releaseInfo.PullRequestInfo = info
 		return err
 	} else {
-		info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, branchNameText, title, message, releaseInfo.PullRequestInfo, o.ConfigureGitCallback)
+		info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, &branchNameText, &title, &message,
+			releaseInfo.PullRequestInfo, o.ConfigureGitCallback)
 		releaseInfo.PullRequestInfo = info
 		return err
 	}
