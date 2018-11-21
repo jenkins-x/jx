@@ -248,6 +248,7 @@ github.com/petergtz/pegomock v0.0.0-20180725144810-278dd9bee025 h1:HdQ49I8p0I6RB
 github.com/petergtz/pegomock v0.0.0-20180725144810-278dd9bee025/go.mod h1:nuBLWZpVyv/fLo56qTwt/AUau7jgouO1h7bEvZCq82o=
 github.com/petergtz/pegomock v0.0.0-20181008215750-9750219ad78b h1:I8j4qkrGYPb/10v1BsEnV5WZUCJ0UwWGL1FNlLKZ1Bg=
 github.com/petergtz/pegomock v0.0.0-20181008215750-9750219ad78b/go.mod h1:nuBLWZpVyv/fLo56qTwt/AUau7jgouO1h7bEvZCq82o=
+github.com/petergtz/pegomock v0.0.0-20181113220348-aabf5ac7e317 h1:GXNImmbdl7iBoQ+GvUrqzUUZiiPnJKpgKTzHGTZ5gqY=
 github.com/pierrec/lz4 v2.0.5+incompatible h1:2xWsjqPFWcplujydGg4WmhC/6fZqK42wMM8aXeqhl0I=
 github.com/pierrec/lz4 v2.0.5+incompatible/go.mod h1:pdkljMzZIN41W+lC3N2tnIh5sFi+IEE17M5jbnwPHcY=
 github.com/pkg/browser v0.0.0-20170505125900-c90ca0c84f15 h1:mrI+6Ae64Wjt+uahGe5we/sPS1sXjvfT3YjtawAVgps=

@@ -2,14 +2,13 @@ package auth
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/util"
+	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
 	"net/url"
 	"sort"
 	"strings"
-
-	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 func (c *AuthConfig) FindUserAuths(serverURL string) []*UserAuth {
@@ -238,6 +237,13 @@ func (c *AuthConfig) PickServer(message string, batchMode bool, in terminal.File
 	return nil, fmt.Errorf("Could not find server for URL %s", url)
 }
 
+func Reverse(s string) (result string) {
+	for _, v := range s {
+		result = string(v) + result
+	}
+	return
+}
+
 // PickServerAuth Pick the servers auth
 func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string, batchMode bool, org string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*UserAuth, error) {
 	url := server.URL
@@ -250,7 +256,7 @@ func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string, batc
 			return auth, nil
 		}
 		confirm := &survey.Confirm{
-			Message: fmt.Sprintf("Do you wish to use STEVE%sSTEVE as the %s", auth.Username, message),
+			Message: fmt.Sprintf("Do you wish to use %s as the %s", Reverse(auth.Username), message),
 			Default: true,
 		}
 		flag := false
