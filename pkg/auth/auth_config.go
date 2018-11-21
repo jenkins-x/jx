@@ -250,7 +250,7 @@ func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string, batc
 			return auth, nil
 		}
 		confirm := &survey.Confirm{
-			Message: fmt.Sprintf("Do you wish to use %s as the %s", auth.Username, message),
+			Message: fmt.Sprintf("Do you wish to use STEVE%sSTEVE as the %s", auth.Username, message),
 			Default: true,
 		}
 		flag := false
