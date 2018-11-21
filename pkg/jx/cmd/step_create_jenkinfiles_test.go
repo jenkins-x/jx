@@ -59,6 +59,9 @@ func testStepCreateJenkinsfile(t *testing.T, outDir string, testcase string, src
 		TemplateFile: templateFile,
 		OutputFile:   actualFile,
 	}
+	if testcase == "prow" {
+		arguments.JenkinsfileRunner = true
+	}
 
 	err := arguments.GenerateJenkinsfile(resolver)
 	assert.NoError(t, err, "Failed with %s", err)
@@ -120,7 +123,7 @@ func TestParsePipelineConfig(t *testing.T) {
 	pipelineFile := path.Join("test_data", "step_create_jenkinsfile", jenkinsfile.PipelineConfigFileName)
 	assert.FileExists(t, pipelineFile)
 
-	config, err := jenkinsfile.LoadPipelineConfig(pipelineFile, dummyImportFileResolver)
+	config, err := jenkinsfile.LoadPipelineConfig(pipelineFile, dummyImportFileResolver, false)
 	require.NoError(t, err, "failed to load pipeline config %s", pipelineFile)
 
 	assert.Equal(t, "jenkins-maven", config.Agent.Label, "Agent.Label")
@@ -131,7 +134,7 @@ func TestParseLongerPipelineConfig(t *testing.T) {
 	pipelineFile := path.Join("test_data", "step_create_jenkinsfile", "simple", jenkinsfile.PipelineConfigFileName)
 	assert.FileExists(t, pipelineFile)
 
-	config, err := jenkinsfile.LoadPipelineConfig(pipelineFile, dummyImportFileResolver)
+	config, err := jenkinsfile.LoadPipelineConfig(pipelineFile, dummyImportFileResolver, false)
 	require.NoError(t, err, "failed to load pipeline config %s", pipelineFile)
 
 	assert.Equal(t, "jenkins-maven", config.Agent.Label, "Agent.Label")

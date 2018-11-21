@@ -4,17 +4,11 @@ import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/pkg/errors"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"text/template"
-
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"io"
+	"path/filepath"
 )
 
 var (
@@ -109,51 +103,6 @@ func (o *StepCreateJenkinsfileOptions) Run() error {
 	_, err := o.invokeDraftPack(args)
 	if err != nil {
 		return err
-	}
-	return nil
-}
-
-// GenerateJenkinsfile generates the jenkinsfile
-func (o *StepCreateJenkinsfileOptions) GenerateJenkinsfile(arguments *jenkinsfile.CreateJenkinsfileArguments) error {
-	err := arguments.Validate()
-	if err != nil {
-		return err
-	}
-	resolver := o.ImportFileResolver
-	if resolver == nil {
-		resolver = o.resolveImportFile
-	}
-	config, err := jenkinsfile.LoadPipelineConfig(arguments.ConfigFile, resolver)
-	if err != nil {
-		return err
-	}
-
-	templateFile := arguments.TemplateFile
-
-	data, err := ioutil.ReadFile(templateFile)
-	if err != nil {
-		return errors.Wrapf(err, "failed to load template %s", templateFile)
-	}
-
-	t, err := template.New("myJenkinsfile").Parse(string(data))
-	if err != nil {
-		return errors.Wrapf(err, "failed to parse template %s", templateFile)
-	}
-	outFile := arguments.OutputFile
-	outDir, _ := filepath.Split(outFile)
-	err = os.MkdirAll(outDir, util.DefaultWritePermissions)
-	if err != nil {
-		return errors.Wrapf(err, "failed to make directory %s", outDir)
-	}
-	file, err := os.Create(outFile)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create file %s", outFile)
-	}
-	defer file.Close()
-
-	err = t.Execute(file, config)
-	if err != nil {
-		return errors.Wrapf(err, "failed to write file %s", outFile)
 	}
 	return nil
 }
