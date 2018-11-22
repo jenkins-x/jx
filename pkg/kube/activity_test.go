@@ -234,6 +234,8 @@ func TestCreatePipelineDetails(t *testing.T) {
 }
 
 func TestPipelineID(t *testing.T) {
+	t.Parallel()
+
 	// A simple ID.
 	pID := kube.NewPipelineID("o1", "r1", "b1")
 	validatePipelineID(t, pID, "o1/r1/b1", "o1-r1-b1")
