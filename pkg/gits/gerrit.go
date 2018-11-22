@@ -3,9 +3,10 @@ package gits
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"time"
 
-	gerrit "github.com/andygrunwald/go-gerrit"
+	"github.com/andygrunwald/go-gerrit"
 	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -22,19 +23,102 @@ type GerritProvider struct {
 }
 
 func NewGerritProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
-	return nil, nil
+	ctx := context.Background()
+
+	provider := GerritProvider{
+		Server:   *server,
+		User:     *user,
+		Context:  ctx,
+		Username: user.Username,
+		Git:      git,
+	}
+
+	client, err := gerrit.NewClient(server.URL, nil)
+	if err != nil {
+		return nil, err
+	}
+	client.Authentication.SetBasicAuth(user.Username, user.ApiToken)
+	provider.Client = client
+
+	return &provider, nil
+}
+
+// We have to do this because url.Escape is not idempotent, so we unescape the URL
+// to ensure it's not encoded, then we re-encode it.
+func buildEncodedProjectName(org, name string) string {
+	var fullName string
+
+	if org != "" {
+		fullName = fmt.Sprintf("%s/%s", org, name)
+	} else {
+		fullName = fmt.Sprintf("%s", name)
+	}
+
+	fullNamePathUnescaped, err := url.PathUnescape(fullName)
+	if err != nil {
+		return ""
+	}
+	fullNamePathEscaped := url.PathEscape(fullNamePathUnescaped)
+
+	return fullNamePathEscaped
+}
+
+func (p *GerritProvider) projectInfoToGitRepository(project *gerrit.ProjectInfo) *GitRepository {
+	return &GitRepository{
+		Name:     project.Name,
+		CloneURL: fmt.Sprintf("%s/%s", p.Server.URL, project.Name),
+		SSHURL:   fmt.Sprintf("%s:%s", p.Server.URL, project.Name),
+	}
 }
 
 func (p *GerritProvider) ListRepositories(org string) ([]*GitRepository, error) {
-	return nil, nil
+	options := &gerrit.ProjectOptions{
+		Description: true,
+		Prefix:      url.PathEscape(org),
+	}
+
+	gerritProjects, _, err := p.Client.Projects.ListProjects(options)
+	if err != nil {
+		return nil, err
+	}
+
+	repos := []*GitRepository{}
+
+	for name, project := range *gerritProjects {
+		project.Name = name
+		repo := p.projectInfoToGitRepository(&project)
+
+		repos = append(repos, repo)
+	}
+
+	return repos, nil
 }
 
 func (p *GerritProvider) CreateRepository(org string, name string, private bool) (*GitRepository, error) {
-	return nil, nil
+	input := &gerrit.ProjectInput{
+		SubmitType:      "INHERIT",
+		Description:     "Created automatically by Jenkins X.",
+		PermissionsOnly: private,
+	}
+
+	fullNamePathEscaped := buildEncodedProjectName(org, name)
+	project, _, err := p.Client.Projects.CreateProject(fullNamePathEscaped, input)
+	if err != nil {
+		return nil, err
+	}
+
+	repo := p.projectInfoToGitRepository(project)
+	return repo, nil
 }
 
 func (p *GerritProvider) GetRepository(org string, name string) (*GitRepository, error) {
-	return nil, nil
+	fullName := buildEncodedProjectName(org, name)
+
+	project, _, err := p.Client.Projects.GetProject(fullName)
+	if err != nil {
+		return nil, err
+	}
+	return p.projectInfoToGitRepository(project), nil
 }
 
 func (p *GerritProvider) DeleteRepository(org string, name string) error {
@@ -77,12 +161,32 @@ func (p *GerritProvider) ListCommitStatus(org string, repo string, sha string) (
 	return nil, nil
 }
 
+// UpdateCommitStatus updates the status of a specified commit in a specified repo.
+func (p *GerritProvider) UpdateCommitStatus(org, repo, sha string, status *GitRepoStatus) (*GitRepoStatus, error) {
+	return nil, nil
+}
+
 func (p *GerritProvider) MergePullRequest(pr *GitPullRequest, message string) error {
 	return nil
 }
 
 func (p *GerritProvider) CreateWebHook(data *GitWebHookArguments) error {
 	return nil
+}
+
+// UpdateWebHook update a webhook with the data specified.
+func (p *GerritProvider) UpdateWebHook(data *GitWebHookArguments) error {
+	return nil
+}
+
+// ListWebHooks lists all webhooks for the specified repo.
+func (p *GerritProvider) ListWebHooks(org, repo string) ([]*GitWebHookArguments, error) {
+	return nil, nil
+}
+
+// ListOrganisations lists all organizations the configured user has access to.
+func (p *GerritProvider) ListOrganisations() ([]GitOrganisation, error) {
+	return nil, nil
 }
 
 func (p *GerritProvider) IsGitHub() bool {
@@ -110,26 +214,32 @@ func (p *GerritProvider) Kind() string {
 }
 
 func (p *GerritProvider) GetIssue(org string, name string, number int) (*GitIssue, error) {
+	log.Warn("Gerrit does not support issue tracking")
 	return nil, nil
 }
 
 func (p *GerritProvider) IssueURL(org string, name string, number int, isPull bool) string {
+	log.Warn("Gerrit does not support issue tracking")
 	return ""
 }
 
 func (p *GerritProvider) SearchIssues(org string, name string, query string) ([]*GitIssue, error) {
+	log.Warn("Gerrit does not support issue tracking")
 	return nil, nil
 }
 
 func (p *GerritProvider) SearchIssuesClosedSince(org string, name string, t time.Time) ([]*GitIssue, error) {
+	log.Warn("Gerrit does not support issue tracking")
 	return nil, nil
 }
 
 func (p *GerritProvider) CreateIssue(owner string, repo string, issue *GitIssue) (*GitIssue, error) {
+	log.Warn("Gerrit does not support issue tracking")
 	return nil, nil
 }
 
 func (p *GerritProvider) HasIssues() bool {
+	log.Warn("Gerrit does not support issue tracking")
 	return false
 }
 
@@ -138,6 +248,7 @@ func (p *GerritProvider) AddPRComment(pr *GitPullRequest, comment string) error 
 }
 
 func (p *GerritProvider) CreateIssueComment(owner string, repo string, number int, comment string) error {
+	log.Warn("Gerrit does not support issue tracking")
 	return nil
 }
 

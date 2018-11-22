@@ -149,6 +149,13 @@ type GitFileContent struct {
 	DownloadUrl string
 }
 
+// PullRequestInfo describes a pull request that has been created
+type PullRequestInfo struct {
+	GitProvider          GitProvider
+	PullRequest          *GitPullRequest
+	PullRequestArguments *GitPullRequestArguments
+}
+
 // IsClosed returns true if the PullRequest has been closed
 func (pr *GitPullRequest) IsClosed() bool {
 	return pr.ClosedAt != nil

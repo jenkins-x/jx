@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	"reflect"
-	"github.com/petergtz/pegomock"
 	client "github.com/heptio/sonobuoy/pkg/client"
+	"github.com/petergtz/pegomock"
+	"reflect"
 )
 
 func AnyPtrToClientSonobuoyClient() *client.SonobuoyClient {

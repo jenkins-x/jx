@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	"reflect"
 	"github.com/petergtz/pegomock"
 	io "io"
+	"reflect"
 )
 
 func AnyIoWriter() io.Writer {

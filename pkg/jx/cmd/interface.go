@@ -57,6 +57,8 @@ type Factory interface {
 
 	CreateKubeConfig() (*rest.Config, error)
 
+	//Create a JXclient for interacting with JX resources.
+	//Returns: JXClient, current namespace, error.
 	CreateJXClient() (versioned.Interface, string, error)
 
 	CreateApiExtensionsClient() (apiextensionsclientset.Interface, error)

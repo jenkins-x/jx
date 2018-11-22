@@ -2,15 +2,17 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // StepHelmApplyOptions contains the command line flags
@@ -37,7 +39,7 @@ var (
 
 `)
 
-	defaultValueFileNames = []string{ "values.yaml", "myvalues.yaml", "secrets.yaml"}
+	defaultValueFileNames = []string{"values.yaml", "myvalues.yaml", "secrets.yaml"}
 )
 
 func NewCmdStepHelmApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
@@ -117,6 +119,15 @@ func (o *StepHelmApplyOptions) Run() error {
 		return fmt.Errorf("No --namespace option specified or $DEPLOY_NAMESPACE environment variable available")
 	}
 
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	err = kube.EnsureNamespaceCreated(kubeClient, ns, nil, nil)
+	if err != nil {
+		return err
+	}
+
 	releaseName := o.ReleaseName
 	if releaseName == "" {
 		releaseName = ns
@@ -141,12 +152,12 @@ func (o *StepHelmApplyOptions) Run() error {
 	}
 
 	log.Infof("Using values files: %s\n", strings.Join(valueFiles, ", "))
-	
+
 	if o.Wait {
 		timeout := 600
-		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, &timeout, o.Force, true, nil, valueFiles)
+		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, &timeout, o.Force, true, nil, valueFiles, "")
 	} else {
-		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, nil, o.Force, false, nil, valueFiles)
+		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, nil, o.Force, false, nil, valueFiles, "")
 	}
 	if err != nil {
 		return err

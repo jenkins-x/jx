@@ -533,7 +533,9 @@ func (f *factory) GetHelm(verbose bool,
 	} else if noTiller {
 		featureFlag = "no-tiller-server"
 	}
-	log.Infof("Using helmBinary %s with feature flag: %s\n", util.ColorInfo(helmBinary), util.ColorInfo(featureFlag))
+	if verbose {
+		log.Infof("Using helmBinary %s with feature flag: %s\n", util.ColorInfo(helmBinary), util.ColorInfo(featureFlag))
+	}
 	helmCLI := helm.NewHelmCLI(helmBinary, helm.V2, "", verbose)
 	var h helm.Helmer = helmCLI
 	if helmTemplate {

@@ -31,7 +31,7 @@ type StepEnvApplyOptions struct {
 }
 
 var (
-	
+
 	// stepEnvApplyLong long description
 	stepEnvApplyLong = templates.LongDesc(`
 		Applies the GitOps source code (by default in the current directory) to the Environment.

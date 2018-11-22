@@ -143,6 +143,7 @@ func TestInstallGitOps(t *testing.T) {
 	values, err := chartutil.ReadValuesFile(valuesFile)
 	require.NoError(t, err, "Failed to load values file", valuesFile)
 	assertValuesHasPathValue(t, "values.yaml", values, "jenkins-x-platform.expose")
+	assertValuesHasPathValue(t, "values.yaml", values, "jenkins-x-platform.postinstalljob.enabled")
 
 	secrets, err := chartutil.ReadValuesFile(secretsFile)
 	require.NoError(t, err, "Failed to load secrets file", secretsFile)

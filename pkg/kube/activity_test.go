@@ -83,7 +83,8 @@ func TestGenerateBuildNumber(t *testing.T) {
 	expected := []string{}
 	for i := 1; i < 4; i++ {
 		buildNumberText := strconv.Itoa(i)
-		build, activity, err := kube.GenerateBuildNumber(activities, org, repo, branch)
+		pID := kube.NewPipelineID(repo, org, branch)
+		build, activity, err := kube.GenerateBuildNumber(activities, pID)
 		if assert.NoError(t, err, "GenerateBuildNumber %d", i) {
 			if assert.NotNil(t, activity, "No PipelineActivity returned!") {
 				results = append(results, build)
