@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
+	"os"
 	"path/filepath"
 )
 
@@ -74,7 +75,14 @@ func NewCmdBuildPackApply(f Factory, in terminal.FileReader, out terminal.FileWr
 
 // Run implements this command
 func (o *StepBuildPackApplyOptions) Run() error {
+	var err error
 	dir := o.Dir
+	if dir == "" {
+		dir, err = os.Getwd()
+		if err != nil {
+		  return err
+		}
+	}
 
 	if o.ImportFileResolver == nil {
 		o.ImportFileResolver = o.resolveImportFile
@@ -100,7 +108,7 @@ func (o *StepBuildPackApplyOptions) Run() error {
 		InitialisedGit:          true,
 		DisableJenkinsfileCheck: o.DisableJenkinsfileCheck,
 	}
-	_, err := o.invokeDraftPack(args)
+	_, err = o.invokeDraftPack(args)
 	if err != nil {
 		return err
 	}
