@@ -111,6 +111,9 @@ func (o *EditBuildPackOptions) Run() error {
 		BuildPackRef = buildPack.Spec.GitRef
 	}
 	if o.BatchMode {
+		if buildPackURL == "" && BuildPackRef == "" {
+			return nil
+		}
 		if buildPackURL == "" {
 			return util.MissingOption("url")
 		}
