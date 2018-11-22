@@ -2,20 +2,22 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
+	"path"
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"gopkg.in/yaml.v2"
-	"io"
-	"io/ioutil"
 	core_v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"path"
-	"strings"
 )
 
 type CreateAddonPrometheusOptions struct {
@@ -120,7 +122,7 @@ func (o *CreateAddonPrometheusOptions) Run() error {
 	}
 
 	setValues := strings.Split(o.SetValues, ",")
-	err = o.installChartOptions(InstallChartOptions{
+	err = o.installChartOptions(helm.InstallChartOptions{
 		ReleaseName: o.ReleaseName,
 		Chart:       "stable/prometheus",
 		Version:     o.Version,
