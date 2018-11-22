@@ -921,6 +921,7 @@ func (options *InstallOptions) Run() error {
 	options.currentNamespace = ns
 	if options.Flags.Prow {
 		// install Prow into the new env
+		options.OAUTHToken = options.GitRepositoryOptions.ApiToken
 		err = options.installProw()
 		if err != nil {
 			return fmt.Errorf("failed to install Prow: %v", err)
@@ -1849,7 +1850,7 @@ func (options *InstallOptions) getGitUser(message string) (*auth.UserAuth, error
 	}
 	url := server.URL
 	if message == "" {
-		message = fmt.Sprintf("%s username for CI/CD pipelines:", server.Label())
+		message = fmt.Sprintf("%s bot user for CI/CD pipelines (not your personal Git user):", server.Label())
 	}
 	userAuth, err = config.PickServerUserAuth(server, message, options.BatchMode, "", options.In, options.Out, options.Err)
 	if err != nil {
@@ -1893,6 +1894,7 @@ func (options *InstallOptions) getGitUser(message string) (*auth.UserAuth, error
 	// TODO This API should be refactored/rethought as mixing OO and functional styles is error prone. If choosing an OO style, mutations should be carried out on the object data and then that data should be introspected as the source of truth in the operation. Alternatively, remove object state and pass values in a functional style.
 	options.GitRepositoryOptions.Username = userAuth.Username
 	options.GitRepositoryOptions.ApiToken = userAuth.ApiToken
+	//	options.P ApiToken = userAuth.ApiToken
 	return userAuth, nil
 }
 
