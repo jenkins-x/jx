@@ -240,11 +240,11 @@ func TestPipelineID(t *testing.T) {
 
 	// Upper case allowed in our ID, but not in the K8S 'name'.
 	pID = kube.NewPipelineID("OwNeR1", "rEpO1", "BrAnCh1")
-	validatePipelineID(t, pID, "OwNeR1/rEpO1/BrAnCh1", "owner1-repo1-branch1")
+	validatePipelineID(t, pID, "OwNeR1/rEpO1/BrAnCh1", ".ow.ne.r1-r.ep.o1-.br.an.ch1")
 
 	//Punctuation other than '-' and '.' not allowed in K8S 'name'.
 	pID = kube.NewPipelineID("O/N!R@1", "therepo", "thebranch")
-	validatePipelineID(t, pID, "O/N!R@1/therepo/thebranch", "o-n%21r%401-therepo-thebranch")
+	validatePipelineID(t, pID, "O/N!R@1/therepo/thebranch", ".o-.n.21.r.401-therepo-thebranch")
 }
 
 func validatePipelineID(t *testing.T, pID kube.PipelineID, expectedID string, expectedName string) {
