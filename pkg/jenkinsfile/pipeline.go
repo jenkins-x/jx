@@ -429,6 +429,9 @@ func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, jenkinsfileRunner 
 	}
 	if c.Agent.Container == "" {
 		c.Agent.Container = base.Agent.Container
+	} else if base.Agent.Container == "" && c.Agent.Container != "" {
+		base.Agent.Container = c.Agent.Container
+		base.defaultContainer()
 	}
 	if !jenkinsfileRunner {
 		c.defaultContainer()
