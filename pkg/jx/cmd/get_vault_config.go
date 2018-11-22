@@ -78,6 +78,9 @@ func (o *GetVaultConfigOptions) Run() error {
 		return err
 	}
 
+	// Install the vault CLI for the user
+	o.installVaultCli()
+
 	url, token, err := client.Config()
 	// Echo the client config out to the command line to be piped into bash
 	if o.terminal == "" {
