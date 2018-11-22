@@ -1,0 +1,14 @@
+extends:
+  file: base-pipeline.yaml
+pipelines:
+  release:
+    setup:
+      preSteps:
+      - sh: echo BEFORE BASE SETUP
+      steps:
+      - sh: echo AFTER BASE SETUP
+    build:
+      replace: true
+      steps:
+      - sh: mvn clean deploy -Pmyprofile
+        comment: this command is overridden from the base pipeline

@@ -12,20 +12,44 @@ import (
 	bitbucket "github.com/wbrefvem/go-bitbucket"
 )
 
-const (
-	username = "test-user"
-	orgName  = "test-org"
-)
+type UserProfile struct {
+	name     string
+	url      string
+	username string
+}
 
 type BitbucketCloudProviderTestSuite struct {
 	suite.Suite
-	mux      *http.ServeMux
-	server   *httptest.Server
-	provider *gits.BitbucketCloudProvider
+	mux       *http.ServeMux
+	server    *httptest.Server
+	provider  gits.BitbucketCloudProvider
+	providers map[string]gits.BitbucketCloudProvider
+}
+
+const (
+	username           = "test-user"
+	orgName            = "test-org"
+	underscoreUsername = "test_user"
+)
+
+var profiles = []UserProfile{
+	UserProfile{
+		url:      "https://auth.example.com",
+		name:     "Test Auth Server",
+		username: "test-user",
+	},
+	UserProfile{
+		url:      "https://auth.example.com",
+		name:     "Test Auth Server with Underscore user",
+		username: "test_user",
+	},
 }
 
 var bitbucketRouter = util.Router{
 	"/repositories/test-user": util.MethodMap{
+		"GET": "repos.json",
+	},
+	"/repositories/test_user": util.MethodMap{
 		"GET": "repos.json",
 	},
 	"/repositories/test-user/test-repo": util.MethodMap{
@@ -84,6 +108,24 @@ var bitbucketRouter = util.Router{
 	},
 }
 
+func setupGitProvider(url, name, user string) (gits.GitProvider, error) {
+	as := auth.AuthServer{
+		URL:         url,
+		Name:        "Test Auth Server",
+		Kind:        "Oauth2",
+		CurrentUser: user,
+	}
+	ua := auth.UserAuth{
+		Username: user,
+		ApiToken: "0123456789abdef",
+	}
+
+	git := gits.NewGitCLI()
+	bp, err := gits.NewBitbucketCloudProvider(&as, &ua, git)
+
+	return bp, err
+}
+
 func (suite *BitbucketCloudProviderTestSuite) SetupSuite() {
 	suite.mux = http.NewServeMux()
 
@@ -91,48 +133,47 @@ func (suite *BitbucketCloudProviderTestSuite) SetupSuite() {
 		suite.mux.HandleFunc(path, util.GetMockAPIResponseFromFile("test_data/bitbucket_cloud", methodMap))
 	}
 
-	as := auth.AuthServer{
-		URL:         "https://auth.example.com",
-		Name:        "Test Auth Server",
-		Kind:        "Oauth2",
-		CurrentUser: "test-user",
-	}
-	ua := auth.UserAuth{
-		Username: "test-user",
-		ApiToken: "0123456789abdef",
-	}
-
-	git := gits.NewGitCLI()
-	bp, err := gits.NewBitbucketCloudProvider(&as, &ua, git)
-
-	suite.Require().NotNil(bp)
-	suite.Require().Nil(err)
-
-	var ok bool
-	suite.provider, ok = bp.(*gits.BitbucketCloudProvider)
-	suite.Require().True(ok)
-	suite.Require().NotNil(suite.provider)
-
 	suite.server = httptest.NewServer(suite.mux)
 	suite.Require().NotNil(suite.server)
 
 	cfg := bitbucket.NewConfiguration()
 	cfg.BasePath = suite.server.URL
 
-	suite.provider.Client = bitbucket.NewAPIClient(cfg)
+	clientSingleton := bitbucket.NewAPIClient(cfg)
+	suite.providers = map[string]gits.BitbucketCloudProvider{}
+
+	for _, profile := range profiles {
+		gp, err := setupGitProvider(profile.url, profile.name, profile.username)
+
+		suite.Require().NotNil(gp)
+		suite.Require().Nil(err)
+
+		var ok bool
+		bp, ok := gp.(*gits.BitbucketCloudProvider)
+
+		suite.Require().NotNil(bp)
+		suite.Require().True(ok)
+		bp.Client = clientSingleton
+
+		suite.providers[profile.username] = *bp
+	}
+
+	suite.provider = suite.providers["test-user"]
+
 }
 
 func (suite *BitbucketCloudProviderTestSuite) TestListRepositories() {
 
-	repos, err := suite.provider.ListRepositories("test-user")
+	for username, provider := range suite.providers {
+		repos, err := provider.ListRepositories(username)
+		suite.Require().Nil(err)
+		suite.Require().NotNil(repos)
 
-	suite.Require().Nil(err)
-	suite.Require().NotNil(repos)
+		suite.Require().Equal(len(repos), 2)
 
-	suite.Require().Equal(len(repos), 2)
-
-	for _, repo := range repos {
-		suite.Require().NotNil(repo)
+		for _, repo := range repos {
+			suite.Require().NotNil(repo)
+		}
 	}
 }
 

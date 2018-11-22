@@ -31,7 +31,7 @@ type StepEnvApplyOptions struct {
 }
 
 var (
-	
+
 	// stepEnvApplyLong long description
 	stepEnvApplyLong = templates.LongDesc(`
 		Applies the GitOps source code (by default in the current directory) to the Environment.
@@ -109,6 +109,15 @@ func (o *StepEnvApplyOptions) Run() error {
 		return errors.Wrapf(err, "Could not connect to the kubernetes cluster!")
 	}
 
+	apisClient, err := o.CreateApiExtensionsClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the API extensions client")
+	}
+	kube.RegisterAllCRDs(apisClient)
+	if err != nil {
+		return err
+	}
+
 	// now lets find the dev environment to know what kind of helmer to use
 	chartFile := filepath.Join(dir, helm.ChartFileName)
 	exists, err := util.FileExists(chartFile)
@@ -159,10 +168,6 @@ func (o *StepEnvApplyOptions) Run() error {
 
 		if o.ReleaseName == "" {
 			o.ReleaseName = "jenkins-x"
-		}
-		err = o.registerEnvironmentCRD()
-		if err != nil {
-		  return err
 		}
 	} else {
 		// ensure there's a development namespace setup

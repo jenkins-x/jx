@@ -117,7 +117,7 @@ func RegisterEnvironmentCRD(apiClient apiextensionsclientset.Interface) error {
 		},
 	}
 	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation)
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
 // RegisterEnvironmentRoleBindingCRD ensures that the CRD is registered for Environments
@@ -132,7 +132,7 @@ func RegisterEnvironmentRoleBindingCRD(apiClient apiextensionsclientset.Interfac
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
 	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation)
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
 // RegisterGitServiceCRD ensures that the CRD is registered for GitServices
@@ -147,7 +147,7 @@ func RegisterGitServiceCRD(apiClient apiextensionsclientset.Interface) error {
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
 	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation)
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
 // RegisterPipelineActivityCRD ensures that the CRD is registered for PipelineActivity
@@ -175,7 +175,7 @@ func RegisterPipelineActivityCRD(apiClient apiextensionsclientset.Interface) err
 		},
 	}
 	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation)
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
 // RegisterExtensionCRD ensures that the CRD is registered for Extension
@@ -203,7 +203,7 @@ func RegisterExtensionCRD(apiClient apiextensionsclientset.Interface) error {
 		},
 	}
 	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation)
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
 // RegisterCommitStatusCRD ensures that the CRD is registered for Extension
@@ -218,7 +218,7 @@ func RegisterCommitStatusCRD(apiClient apiextensionsclientset.Interface) error {
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
 	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation)
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
 // RegisterReleaseCRD ensures that the CRD is registered for Release
@@ -252,7 +252,7 @@ func RegisterReleaseCRD(apiClient apiextensionsclientset.Interface) error {
 		},
 	}
 	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation)
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
 // RegisterUserCRD ensures that the CRD is registered for User
@@ -280,7 +280,7 @@ func RegisterUserCRD(apiClient apiextensionsclientset.Interface) error {
 		},
 	}
 	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation)
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
 // RegisterTeamCRD ensures that the CRD is registered for Team
@@ -308,7 +308,7 @@ func RegisterTeamCRD(apiClient apiextensionsclientset.Interface) error {
 		},
 	}
 	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation)
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
 // RegisterWorkflowCRD ensures that the CRD is registered for Environments
@@ -323,7 +323,7 @@ func RegisterWorkflowCRD(apiClient apiextensionsclientset.Interface) error {
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
 	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation)
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
 // RegisterCRD allows new custom resources to be registered using apiClient under a particular name.
@@ -331,13 +331,13 @@ func RegisterWorkflowCRD(apiClient apiextensionsclientset.Interface) error {
 // and later a custom display format for kubectl is used, which is specified using columns.
 func RegisterCRD(apiClient apiextensionsclientset.Interface, name string,
 	names *v1beta1.CustomResourceDefinitionNames, columns []v1beta1.CustomResourceColumnDefinition,
-	validation *v1beta1.CustomResourceValidation) error {
+	validation *v1beta1.CustomResourceValidation, groupName string) error {
 	crd := &v1beta1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
 		Spec: v1beta1.CustomResourceDefinitionSpec{
-			Group:                    jenkinsio.GroupName,
+			Group:                    groupName,
 			Version:                  jenkinsio.Version,
 			Scope:                    v1beta1.NamespaceScoped,
 			Names:                    *names,

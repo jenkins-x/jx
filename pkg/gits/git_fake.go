@@ -43,7 +43,6 @@ type GitFake struct {
 	serverURL      string
 }
 
-
 // NewGitFake creates a new fake Gitter
 func NewGitFake() Gitter {
 	return &GitFake{}
@@ -411,8 +410,8 @@ func (g *GitFake) CommitDir(dir string, message string) error {
 	return g.CommitIfChanges(dir, message)
 }
 
-// AddCommmit add a commit
-func (g *GitFake) AddCommmit(dir string, msg string) error {
+// AddCommit add a commit
+func (g *GitFake) AddCommit(dir string, msg string) error {
 	return g.CommitIfChanges(dir, msg)
 }
 
@@ -434,9 +433,18 @@ func (g *GitFake) GetPreviousGitTagSHA(dir string) (string, error) {
 func (g *GitFake) GetCurrentGitTagSHA(dir string) (string, error) {
 	len := len(g.Commits)
 	if len < 1 {
-		return "", errors.New("no previous commit found")
+		return "", errors.New("no current commit found")
 	}
 	return g.Commits[len-1].SHA, nil
+}
+
+// GetLatestCommitMessage returns the last commit message
+func (g *GitFake) GetLatestCommitMessage(dir string) (string, error) {
+	len := len(g.Commits)
+	if len < 1 {
+		return "", errors.New("no current commit found")
+	}
+	return g.Commits[len-1].Message, nil
 }
 
 // FetchTags fetches tags

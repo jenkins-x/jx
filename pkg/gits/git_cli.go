@@ -252,7 +252,7 @@ func (g *GitCLI) CommitDir(dir string, message string) error {
 }
 
 // AddCommit perform an add and commit of the changes from the repository at the given directory with the given messages
-func (g *GitCLI) AddCommmit(dir string, msg string) error {
+func (g *GitCLI) AddCommit(dir string, msg string) error {
 	return g.gitCmd(dir, "commit", "-a", "-m", msg, "--allow-empty")
 }
 
@@ -505,6 +505,11 @@ func (g *GitCLI) GetRevisionBeforeDateText(dir string, dateText string) (string,
 // GetCurrentGitTagSHA return the SHA of the current git tag from the repository at the given directory
 func (g *GitCLI) GetCurrentGitTagSHA(dir string) (string, error) {
 	return g.gitCmdWithOutput(dir, "rev-list", "--tags", "--max-count=1")
+}
+
+// GetLatestCommitMessage returns the latest git commit message
+func (g *GitCLI) GetLatestCommitMessage(dir string) (string, error) {
+	return g.gitCmdWithOutput(dir, "log", "-1", "--pretty=%B")
 }
 
 // FetchTags fetches all the tags

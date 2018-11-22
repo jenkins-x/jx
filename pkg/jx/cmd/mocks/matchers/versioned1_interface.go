@@ -2,7 +2,7 @@
 package matchers
 
 import (
-	versioned1 "github.com/knative/build/pkg/client/clientset/versioned"
+	versioned1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/petergtz/pegomock"
 	"reflect"
 )

@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -14,6 +13,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/jenkins-x/jx/pkg/binaries"
 
@@ -281,7 +282,8 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 		extension = "zip"
 	}
 	clientUrlBuffer := bytes.NewBufferString("")
-	urlTemplate.Execute(clientUrlBuffer, map[string]string{"version": options.Version, "os": runtime.GOOS, "arch": runtime.GOARCH, "extension": extension})
+	variables := map[string]string{"version": options.Version, "os": runtime.GOOS, "osTitle": strings.Title(runtime.GOOS), "arch": runtime.GOARCH, "extension": extension}
+	urlTemplate.Execute(clientUrlBuffer, variables)
 	fullPath := filepath.Join(binDir, fileName)
 	tarFile := fullPath
 	if options.Archived {
@@ -1219,7 +1221,7 @@ func (o *CommonOptions) installEksCtlWithVersion(version string, skipPathScan bo
 	return o.installOrUpdateBinary(InstallOrUpdateBinaryOptions{
 		Binary:              "eksctl",
 		GitHubOrganization:  "weaveworks",
-		DownloadUrlTemplate: "https://github.com/weaveworks/eksctl/releases/download/{{.version}}/eksctl_{{.os}}_{{.arch}}.{{.extension}}",
+		DownloadUrlTemplate: "https://github.com/weaveworks/eksctl/releases/download/{{.version}}/eksctl_{{.osTitle}}_{{.arch}}.{{.extension}}",
 		Version:             version,
 		SkipPathScan:        skipPathScan,
 		VersionExtractor:    nil,
@@ -1544,7 +1546,7 @@ func (o *CommonOptions) installProw() error {
 
 	log.Infof("Installing Prow into namespace %s\n", util.ColorInfo(devNamespace))
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values, nil)
+		err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values, nil, "")
 		return nil
 	})
 
@@ -1558,7 +1560,8 @@ func (o *CommonOptions) installProw() error {
 	kvalues = append(kvalues, setValues...)
 
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true, kvalues, nil)
+		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true,
+			kvalues, nil, "")
 		return nil
 	})
 
@@ -1569,7 +1572,8 @@ func (o *CommonOptions) installProw() error {
 	log.Infof("Installing BuildTemplates into namespace %s\n", util.ColorInfo(devNamespace))
 
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(kube.DefaultBuildTemplatesReleaseName, kube.ChartBuildTemplates, "", devNamespace, true, values, nil)
+		err = o.installChart(kube.DefaultBuildTemplatesReleaseName, kube.ChartBuildTemplates, "", devNamespace, true,
+			values, nil, "")
 		return nil
 	})
 
