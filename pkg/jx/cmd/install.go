@@ -86,6 +86,7 @@ type InstallFlags struct {
 	NoGitOpsEnvApply         bool
 	NoGitOpsEnvRepo          bool
 	Vault                    bool
+	BuildPackName            string
 }
 
 // Secrets struct for secrets
@@ -337,6 +338,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvApply, "no-gitops-env-apply", "", false, "When using GitOps to create the source code for the development environment and installation, don't run 'jx step env apply' to perform the install")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvRepo, "no-gitops-env-repo", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a git repository for the source code")
 	cmd.Flags().BoolVarP(&flags.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during installation")
+	cmd.Flags().StringVarP(&flags.BuildPackName, "buildpack", "", "", "The name of the build pack to use for the Team")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
@@ -1003,6 +1005,17 @@ func (options *InstallOptions) Run() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	// lets prompt the user which kind of workload to default to (they can change this at any time later)
+	ebp := &EditBuildPackOptions{
+		BuildPackName: options.Flags.BuildPackName,
+	}
+	ebp.CommonOptions = options.CommonOptions
+
+	err = ebp.Run()
+	if err != nil {
+		return err
 	}
 
 	if options.Flags.GitOpsMode {

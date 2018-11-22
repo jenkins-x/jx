@@ -35,8 +35,8 @@ var (
 	`)
 )
 
-// EditBuildpackOptions the options for the create spring command
-type EditBuildpackOptions struct {
+// EditBuildPackOptions the options for the create spring command
+type EditBuildPackOptions struct {
 	EditOptions
 
 	BuildPackName string
@@ -46,7 +46,7 @@ type EditBuildpackOptions struct {
 
 // NewCmdEditBuildpack creates a command object for the "create" command
 func NewCmdEditBuildpack(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := &EditBuildpackOptions{
+	options := &EditBuildPackOptions{
 		EditOptions: EditOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
@@ -78,7 +78,7 @@ func NewCmdEditBuildpack(f Factory, in terminal.FileReader, out terminal.FileWri
 }
 
 // Run implements the command
-func (o *EditBuildpackOptions) Run() error {
+func (o *EditBuildPackOptions) Run() error {
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
