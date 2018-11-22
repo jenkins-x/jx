@@ -59,8 +59,7 @@ func TestInstallGitOps(t *testing.T) {
 			clusterAdminRole,
 			testkube.CreateFakeGitSecret(),
 		},
-		[]runtime.Object{
-		},
+		[]runtime.Object{},
 		gitter,
 		helmer,
 	)
@@ -84,6 +83,7 @@ func TestInstallGitOps(t *testing.T) {
 	o.Flags.Dir = tempDir
 	o.Flags.GitOpsMode = true
 	o.Flags.NoGitOpsEnvApply = true
+	o.Flags.NoGitOpsVault = true
 	o.Flags.NoDefaultEnvironments = true
 	o.Flags.DisableSetKubeContext = true
 	o.InitOptions.Flags.SkipTiller = true
@@ -126,7 +126,7 @@ func TestInstallGitOps(t *testing.T) {
 		assert.FileExists(t, filepath.Join(outDir, name))
 	}
 	if !o.Flags.DisableSetKubeContext {
-		for _, name := range []string{ "jx-install-config-configmap.yaml"} {
+		for _, name := range []string{"jx-install-config-configmap.yaml"} {
 			assert.FileExists(t, filepath.Join(envDir, "templates", name))
 		}
 	}
@@ -148,7 +148,6 @@ func TestInstallGitOps(t *testing.T) {
 	require.NoError(t, err, "Failed to load secrets file", secretsFile)
 	assertValuesHasPathValue(t, "secrets.yaml", secrets, "jenkins-x-platform.PipelineSecrets")
 
-
 	// lets verify that we don't have any created resources in the cluster - as everything should be created in the file system
 	assertNoEnvironments(t, jxClient, ns)
 
@@ -164,7 +163,7 @@ func assertNoEnvironments(t *testing.T, jxClient versioned.Interface, ns string)
 	assert.Empty(t, envNames, "Expected no Environment names in namespace %s", ns)
 }
 
-// assertValuesHasPathValue asserts that the Values object has the given 
+// assertValuesHasPathValue asserts that the Values object has the given
 func assertValuesHasPathValue(t *testing.T, message string, values chartutil.Values, key string) (interface{}, error) {
 	keys := strings.Split(key, ".")
 	lastIdx := len(keys) - 1
