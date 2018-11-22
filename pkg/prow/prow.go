@@ -146,7 +146,6 @@ func (o *Options) createPostSubmitApplication() config.Postsubmit {
 	ps.Agent = KnativeBuildAgent
 
 	templateName := fmt.Sprintf("jenkins-%s", o.DraftPack)
-	log.Infof("generating Prow config, using Knative BuildTemplate %s\n", templateName)
 
 	spec := &build.BuildSpec{
 		ServiceAccountName: serviceAccountBuild,
@@ -171,7 +170,6 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 	ps.Agent = KnativeBuildAgent
 
 	templateName := fmt.Sprintf("jenkins-%s", o.DraftPack)
-	log.Infof("generating Prow config, using Knative BuildTemplate %s\n", templateName)
 
 	spec := &build.BuildSpec{
 		ServiceAccountName: serviceAccountBuild,
@@ -496,6 +494,11 @@ func (o *Options) AddProwPlugins() error {
 	if err != nil {
 		pluginConfig.Plugins = make(map[string][]string)
 		pluginConfig.Approve = []plugins.Approve{}
+		pluginConfig.Welcome = []plugins.Welcome{
+			{
+				MessageTemplate: "Welcome",
+			},
+		}
 
 		pluginConfig.ConfigUpdater.Maps = make(map[string]plugins.ConfigMapSpec)
 		pluginConfig.ConfigUpdater.Maps["prow/config.yaml"] = plugins.ConfigMapSpec{Name: ProwConfigMapName}
