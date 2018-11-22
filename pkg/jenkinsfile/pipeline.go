@@ -43,6 +43,7 @@ type PipelineStep struct {
 	Command   string          `yaml:"sh,omitempty"`
 	Groovy    string          `yaml:"groovy,omitempty"`
 	Steps     []*PipelineStep `yaml:"steps,omitempty"`
+	When      string          `yaml:"when,omitempty"`
 }
 
 // PipelineLifecycles defines the steps of a lifecycle section
@@ -139,6 +140,15 @@ func (a *PipelineLifecycles) AllButPromote() PipelineLifecycleArray {
 	return []*PipelineLifecycle{a.Setup, a.SetVersion, a.PreBuild, a.Build, a.PostBuild}
 }
 
+// RemoveWhenStatements removes any when conditions
+func (a *PipelineLifecycles) RemoveWhenStatements(prow bool) {
+	for _, v := range a.All() {
+		if v != nil {
+			v.RemoveWhenStatements(prow)
+		}
+	}
+}
+
 // Groovy returns the groovy string for the lifecycles
 func (s PipelineLifecycleArray) Groovy() string {
 	statements := []*Statement{}
@@ -168,6 +178,28 @@ func (l *PipelineLifecycle) ToJenkinsfileStatements() []*Statement {
 	return statements
 }
 
+// RemoveWhenStatements removes any when conditions
+func (l *PipelineLifecycle) RemoveWhenStatements(prow bool) {
+	l.PreSteps = removeWhenSteps(prow, l.PreSteps)
+	l.Steps = removeWhenSteps(prow, l.Steps)
+}
+
+func removeWhenSteps(prow bool, steps []*PipelineStep) []*PipelineStep {
+	answer := []*PipelineStep{}
+	for _, step := range steps {
+		when := strings.TrimSpace(step.When)
+		if (prow && when == "!prow") {
+			continue
+		}
+		if (!prow && when == "prow") {
+			continue
+		}
+		step.Steps = removeWhenSteps(prow, step.Steps)
+		answer = append(answer, step)
+	}
+	return answer
+}
+
 // Extend extends these pipelines with the base pipeline
 func (p *Pipelines) Extend(base *Pipelines) error {
 	p.PullRequest = ExtendPipelines(p.PullRequest, base.PullRequest)
@@ -176,9 +208,23 @@ func (p *Pipelines) Extend(base *Pipelines) error {
 	return nil
 }
 
+// Extend extends these pipelines with the base pipeline
+func (p *Pipelines) All() []*PipelineLifecycles {
+	return []*PipelineLifecycles{p.PullRequest, p.Feature, p.Release}
+}
+
 // defaultContainer defaults the container if none is being used
 func (p *Pipelines) defaultContainer(container string) {
 	defaultContainer(container, p.PullRequest, p.Release, p.Feature)
+}
+
+// RemoveWhenStatements removes any prow or !prow statements
+func (p *Pipelines) RemoveWhenStatements(prow bool) {
+	for _, l := range p.All() {
+		if l != nil {
+			l.RemoveWhenStatements(prow)
+		}
+	}
 }
 
 func defaultContainer(container string, lifecycles ...*PipelineLifecycles) {
@@ -320,6 +366,8 @@ func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfil
 	if err != nil {
 		return &config, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
 	}
+	pipelines := &config.Pipelines
+	pipelines.RemoveWhenStatements(jenkinsfileRunner)
 	if jenkinsfileRunner {
 		// lets force any agent for prow / jenkinsfile runner
 		config.Agent.Label = ""
