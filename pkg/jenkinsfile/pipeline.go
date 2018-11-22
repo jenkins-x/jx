@@ -208,7 +208,7 @@ func (p *Pipelines) Extend(base *Pipelines) error {
 	return nil
 }
 
-// Extend extends these pipelines with the base pipeline
+// All returns all the lifecycles in this pipeline, some may be null
 func (p *Pipelines) All() []*PipelineLifecycles {
 	return []*PipelineLifecycles{p.PullRequest, p.Feature, p.Release}
 }

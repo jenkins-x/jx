@@ -134,7 +134,7 @@ func (o *EditBuildPackOptions) Run() error {
 				}
 			}
 			if defaultValue == "" {
-				for k, _ := range m {
+				for k := range m {
 					if strings.Contains(k, "Kubernetes") {
 						defaultValue = k
 						break
