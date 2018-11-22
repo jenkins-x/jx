@@ -231,8 +231,6 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 				return draftPack, err
 			}
 			if templateFile != "" {
-				log.Infof("Found pipeline YAML %s and template file %s\n", pipelineFile, templateFile)
-
 				arguments := &jenkinsfile.CreateJenkinsfileArguments{
 					ConfigFile:   pipelineFile,
 					TemplateFile: templateFile,
@@ -242,7 +240,6 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 				if err != nil {
 					return draftPack, err
 				}
-				log.Infof("Generated Jenkinsfile %s\n", jenkinsfilePath)
 			}
 		}
 	}
