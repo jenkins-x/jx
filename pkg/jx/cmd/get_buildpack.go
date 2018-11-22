@@ -72,8 +72,8 @@ func (o *GetBuildPackOptions) Run() error {
 		return err
 	}
 	table := o.CreateTable()
-	table.AddRow("BUILD PACK GIT URL", "GIT REF")
-	table.AddRow(settings.BuildPackURL, settings.BuildPackRef)
+	table.AddRow("BUILD PACK", "GIT URL", "GIT REF")
+	table.AddRow(settings.BuildPackName, settings.BuildPackURL, settings.BuildPackRef)
 	table.Render()
 	return nil
 }
