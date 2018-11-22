@@ -1117,10 +1117,6 @@ func (options *InstallOptions) Run() error {
 			env.Spec.WebHookEngine = v1.WebHookEngineProw
 			settings := &env.Spec.TeamSettings
 			settings.PromotionEngine = v1.PromotionEngineProw
-			if settings.BuildPackURL == "" {
-				settings.BuildPackURL = JenkinsBuildPackURL
-			}
-			settings.BuildPackRef = defaultProwBuildPackRef
 			log.Info("Configuring the TeamSettings for Prow\n")
 			return nil
 		}

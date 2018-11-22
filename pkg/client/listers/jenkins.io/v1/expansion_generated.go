@@ -2,6 +2,14 @@
 
 package v1
 
+// BuildPackListerExpansion allows custom methods to be added to
+// BuildPackLister.
+type BuildPackListerExpansion interface{}
+
+// BuildPackNamespaceListerExpansion allows custom methods to be added to
+// BuildPackNamespaceLister.
+type BuildPackNamespaceListerExpansion interface{}
+
 // CommitStatusListerExpansion allows custom methods to be added to
 // CommitStatusLister.
 type CommitStatusListerExpansion interface{}

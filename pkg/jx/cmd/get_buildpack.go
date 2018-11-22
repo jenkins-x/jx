@@ -19,7 +19,7 @@ const (
 
 var (
 	buildPacksAliases = []string{
-		"build pack", "pack",
+		"build pack", "pack", "bp",
 	}
 
 	getBuildPackLong = templates.LongDesc(`
