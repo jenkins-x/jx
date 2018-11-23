@@ -82,7 +82,7 @@ test-integration:
 	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration -coverprofile=cover.out -short ./...
 
 test-integration1:
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration -coverprofile=cover.out -short ./... -run $(TEST)
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration -coverprofile=cover.out -short ./... -test.v -run $(TEST)
 
 test-integration-report: get-test-deps test-integration
 	@gocov convert cover.out | gocov report
@@ -120,8 +120,14 @@ test1:
 testbin:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -c github.com/jenkins-x/jx/pkg/jx/cmd -o build/jx-test
 
+testbin-gits:
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -c github.com/jenkins-x/jx/pkg/gits -o build/jx-test-gits
+
 debugtest1: testbin
 	cd pkg/jx/cmd && dlv --listen=:2345 --headless=true --api-version=2 exec ../../../build/jx-test -- -test.run $(TEST)
+
+debugtest1gits: testbin-gits
+	cd pkg/gits && dlv --log --listen=:2345 --headless=true --api-version=2 exec ../../build/jx-test-gits -- -test.run $(TEST)
 
 inttestbin:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -tags=integration -c github.com/jenkins-x/jx/pkg/jx/cmd -o build/jx-inttest
@@ -143,6 +149,9 @@ arm: version
 
 win: version
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME).exe cmd/jx/jx.go
+
+darwin: version
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=darwin GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/darwin/jx cmd/jx/jx.go
 
 bootstrap: vendoring
 
@@ -172,10 +181,12 @@ release: check
 
 	jx step changelog  --header-file docs/dev/changelog-header.md --version $(VERSION)
 
+	# Update other repo's dependencies on jx to use the new version - updates repos as specified at .updatebot.yml
 	updatebot push-version --kind brew jx $(VERSION)
 	updatebot push-version --kind docker JX_VERSION $(VERSION)
 	updatebot push-regex -r "\s*release = \"(.*)\"" -v $(VERSION) config.toml
 	updatebot push-regex -r "JX_VERSION=(.*)" -v $(VERSION) install-jx.sh
+	updatebot push-regex -r "\sjxTag:(.*)" -v $(VERSION) prow/values.yaml
 
 	echo "Updating the JX CLI reference docs"
 	git clone https://github.com/jenkins-x/jx-docs.git
@@ -186,10 +197,6 @@ release: check
 		git commit --allow-empty -a -m "updated jx commands from $(VERSION)"; \
 		git push origin
 		
-	##### overlayfs2 issue on gke: https://stackoverflow.com/questions/48673513/google-kubernetes-engine-errimagepull-too-many-links ######
-	## NOTE: -a flag seems to intermittently break releases. It only prunes inactive containers so this could point to another issue. 
-	docker system prune -f
-	#####
 
 clean:
 	rm -rf build release cover.out cover.html

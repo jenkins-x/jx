@@ -2,15 +2,20 @@ package cmd
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
-	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
+	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	apifake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
@@ -18,10 +23,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/client-go/kubernetes/fake"
-	"strconv"
-	"strings"
-	"testing"
-	"time"
 
 	"github.com/ghodss/yaml"
 )
@@ -38,7 +39,9 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 	jxObjects []runtime.Object, git gits.Gitter, helm helm.Helmer) {
 	//o.Out = tests.Output()
 	o.BatchMode = true
-	o.Factory = NewFactory()
+	if o.Factory == nil {
+		o.Factory = NewFactory()
+	}
 	o.currentNamespace = "jx"
 
 	namespacesRequired := []string{o.currentNamespace}
@@ -95,7 +98,7 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 }
 
 func NewCreateEnvPullRequestFn(provider *gits.FakeProvider) CreateEnvPullRequestFn {
-	fakePrFn := func(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo) (*ReleasePullRequestInfo, error) {
+	fakePrFn := func(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *gits.PullRequestInfo) (*gits.PullRequestInfo, error) {
 		envURL := env.Spec.Source.URL
 		values := []string{}
 		for _, repos := range provider.Repositories {
@@ -132,9 +135,9 @@ func CreateTestPipelineActivity(jxClient versioned.Interface, ns string, folder 
 	return a, err
 }
 
-func createFakePullRequest(repository *gits.FakeRepository, env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo, provider *gits.FakeProvider) (*ReleasePullRequestInfo, error) {
+func createFakePullRequest(repository *gits.FakeRepository, env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *gits.PullRequestInfo, provider *gits.FakeProvider) (*gits.PullRequestInfo, error) {
 	if pullRequestInfo == nil {
-		pullRequestInfo = &ReleasePullRequestInfo{}
+		pullRequestInfo = &gits.PullRequestInfo{}
 	}
 
 	if pullRequestInfo.GitProvider == nil {
@@ -228,7 +231,7 @@ func WaitForPullRequestForEnv(t *testing.T, activities typev1.PipelineActivityIn
 		assert.NoError(t, err, "Could not find PipelineActivity %s", name)
 		return
 	}
-	waitTime,_ := time.ParseDuration("20s")
+	waitTime, _ := time.ParseDuration("20s")
 	end := time.Now().Add(waitTime)
 	for {
 		for _, step := range activity.Spec.Steps {
@@ -260,7 +263,7 @@ func WaitForPullRequestForEnv(t *testing.T, activities typev1.PipelineActivityIn
 			return
 		}
 		log.Infof("Waiting 1s for PullRequest in Enviroment %s\n", envName)
-		v,_ := time.ParseDuration("2s")
+		v, _ := time.ParseDuration("2s")
 		time.Sleep(v)
 		activity, _ = activities.Get(name, metav1.GetOptions{})
 	}
@@ -404,7 +407,6 @@ func SetPullRequestClosed(pr *gits.FakePullRequest) {
 
 	log.Infof("PR %s is now closed\n", pr.PullRequest.URL)
 }
-
 
 func AssertSetPullRequestMerged(t *testing.T, provider *gits.FakeProvider, repository *gits.FakeRepository, prNumber int) bool {
 	fakePR := repository.PullRequests[prNumber]

@@ -87,7 +87,8 @@ func NewCmdEditExtensionsRepository(f Factory, in terminal.FileReader, out termi
 	cmd.Flags().StringVarP(&options.ExtensionsRepositoryHelmUsername, optionExtensionsRepositoryHelmUsername, "", "", "The extensions repository Helm Chart Username to use")
 	cmd.Flags().StringVarP(&options.ExtensionsRepositoryHelmPassword, optionExtensionsRepositoryHelmPassword, "", "", "The extensions repository Helm Chart Password to use")
 
-	options.addCommonFlags(cmd)
+	// TODO enable this
+	// options.addCommonFlags(cmd)
 	return cmd
 }
 
@@ -150,7 +151,7 @@ func (o *EditExtensionsRepositoryOptions) Run() error {
 
 		}
 		asks = append(asks, other)
-		r, err := util.PickName(asks, "Pick the repository to use", o.In, o.Out, o.Err)
+		r, err := util.PickName(asks, "Pick the repository to use", "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -159,7 +160,7 @@ func (o *EditExtensionsRepositoryOptions) Run() error {
 				"URL", "Helm", "GitHub",
 			}
 			current = jenkinsv1.ExtensionRepositoryReference{}
-			t, err := util.PickName(types, "What type of repository?", o.In, o.Out, o.Err)
+			t, err := util.PickName(types, "What type of repository?", "", o.In, o.Out, o.Err)
 			if t == "URL" {
 				prompt := &survey.Input{
 					Message: "Extensions Repository URL",

@@ -145,21 +145,21 @@ func (o *CreateArchetypeOptions) CreateArchetype() error {
 		newline := false
 		if form.GroupId == "" {
 			newline = true
-			form.GroupId, err = util.PickValue("Group ID of the new application: ", "org.acme.demo", true, o.In, o.Out, o.Err)
+			form.GroupId, err = util.PickValue("Group ID of the new application: ", "org.acme.demo", true, "", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
 		}
 		if form.ArtifactId == "" {
 			newline = true
-			form.ArtifactId, err = util.PickValue("Artifact ID of the new application: ", "mydemo", true, o.In, o.Out, o.Err)
+			form.ArtifactId, err = util.PickValue("Artifact ID of the new application: ", "mydemo", true, "", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
 		}
 		if form.Version == "" {
 			newline = true
-			form.Version, err = util.PickValue("Snapshot Version of the new application: ", "1.0-SNAPSHOT", true, o.In, o.Out, o.Err)
+			form.Version, err = util.PickValue("Snapshot Version of the new application: ", "1.0-SNAPSHOT", true, "", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

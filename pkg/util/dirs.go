@@ -1,9 +1,9 @@
 package util
 
 import (
+	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 func HomeDir() string {
@@ -124,18 +124,35 @@ func JXBinLocation() (string, error) {
 }
 
 // JXBinaryLocation Returns the path to the currently installed JX binary.
-func JXBinaryLocation(commandInterface Commander) (string, error) {
-	jxBinaryFromEnv, found := os.LookupEnv("JX_BINARY")
-	if found {
-		return strings.TrimSuffix(jxBinaryFromEnv, "/jx"), nil
-	}
-	commandInterface.SetName("which")
-	commandInterface.SetArgs([]string{"jx"})
-	out, err := commandInterface.RunWithoutRetry()
+func JXBinaryLocation() (string, error) {
+	return jXBinaryLocation(os.Executable)
+}
+
+func jXBinaryLocation(osExecutable func() (string, error)) (string, error) {
+	jxProcessBinary, err := osExecutable()
 	if err != nil {
-		return out, err
+		logrus.Debugf("jxProcessBinary error %s", err)
+		return jxProcessBinary, err
 	}
-	path := strings.TrimSuffix(out, "/jx")
+	logrus.Debugf("jxProcessBinary %s", jxProcessBinary)
+	// make it absolute
+	jxProcessBinary, err = filepath.Abs(jxProcessBinary)
+	if err != nil {
+		logrus.Debugf("jxProcessBinary error %s", err)
+		return jxProcessBinary, err
+	}
+	logrus.Debugf("jxProcessBinary %s", jxProcessBinary)
+
+	// if the process was started form a symlink go and get the absolute location.
+	jxProcessBinary, err = filepath.EvalSymlinks(jxProcessBinary)
+	if err != nil {
+		logrus.Debugf("jxProcessBinary error %s", err)
+		return jxProcessBinary, err
+	}
+
+	logrus.Debugf("jxProcessBinary %s", jxProcessBinary)
+	path := filepath.Dir(jxProcessBinary)
+	logrus.Debugf("dir from '%s' is '%s'", jxProcessBinary, path)
 	return path, nil
 }
 

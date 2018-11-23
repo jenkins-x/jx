@@ -95,7 +95,7 @@ func (o *DeleteTeamOptions) Run() error {
 		if o.BatchMode {
 			return fmt.Errorf("Missing team name argument")
 		}
-		names, err = util.SelectNamesWithFilter(teamNames, "Which teams do you want to delete: ", o.SelectAll, o.SelectFilter, o.In, o.Out, o.Err)
+		names, err = util.SelectNamesWithFilter(teamNames, "Which teams do you want to delete: ", o.SelectAll, o.SelectFilter, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -106,7 +106,7 @@ func (o *DeleteTeamOptions) Run() error {
 			return fmt.Errorf("In batch mode you must specify the '-y' flag to confirm")
 		}
 	} else {
-		log.Warnf("You are about to delete the following teams '%s' on the Git provider. This operation CANNOT be undone!",
+		log.Warnf("You are about to delete the following teams '%s'. This operation CANNOT be undone!",
 			strings.Join(names, ","))
 
 		flag := false

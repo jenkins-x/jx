@@ -67,6 +67,8 @@ const (
 	ExtensionWhenPost ExtensionWhen = "post"
 	// Executed when an extension installs
 	ExtensionWhenInstall ExtensionWhen = "onInstall"
+	// Executed when an extension uninstalls
+	ExtensionWhenUninstall ExtensionWhen = "onUninstall"
 	// Executed when an extension upgrades
 	ExtensionWhenUpgrade ExtensionWhen = "onUpgrade"
 )
@@ -343,11 +345,15 @@ func (extensionsConfig *ExtensionConfigList) LoadFromConfigMap(configMapName str
 }
 
 func (e *ExtensionSpec) IsPost() bool {
-	return e.Contains(e.When, ExtensionWhenPost) || len(e.When) == 0
+	return e.Contains(ExtensionWhenPost) || len(e.When) == 0
 }
 
-func (e *ExtensionSpec) Contains(whens []ExtensionWhen, when ExtensionWhen) bool {
-	for _, w := range whens {
+func (e *ExtensionSpec) IsOnUninstall() bool {
+	return e.Contains(ExtensionWhenUninstall)
+}
+
+func (e *ExtensionSpec) Contains(when ExtensionWhen) bool {
+	for _, w := range e.When {
 		if when == w {
 			return true
 		}

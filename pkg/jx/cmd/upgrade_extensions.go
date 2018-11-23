@@ -98,6 +98,13 @@ func (o *UpgradeExtensionsOptions) Run() error {
 		return err
 	}
 
+	// Let's register the release CRD as charts built using Jenkins X use it, and it's very likely that people installing
+	// apps are using Helm
+	err = kube.RegisterReleaseCRD(apisClient)
+	if err != nil {
+		return err
+	}
+
 	kubeClient, curNs, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -165,7 +172,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 			}
 			chart := fmt.Sprintf("%s/%s", current.Chart.RepoName, current.Chart.Name)
 			log.Infof("Updating extensions from Helm Chart %s repo %s \n", util.ColorInfo(chart), util.ColorInfo(current.Chart.Repo))
-			err = o.Helm().FetchChart(chart, nil, true, unpackDir)
+			err = o.Helm().FetchChart(chart, nil, true, unpackDir, "")
 			if err != nil {
 				return err
 			}
@@ -246,6 +253,11 @@ func (o *UpgradeExtensionsOptions) Run() error {
 				break
 			}
 		}
+	}
+	// Before we start upstalling let's do a helm update, as extensions are likely to want it
+	err = o.Helm().UpdateRepo()
+	if err != nil {
+		return err
 	}
 	for _, n := range needsUpstalling {
 		envVars := ""

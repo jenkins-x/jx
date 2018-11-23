@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
+	"github.com/jenkins-x/jx/pkg/vault"
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
@@ -85,12 +87,12 @@ func (o *DeleteVaultOptions) Run() error {
 		return errors.Wrap(err, "creating vault operator client")
 	}
 
-	found := kube.FindVault(vaultOperatorClient, vaultName, o.Namespace)
+	found := vault.FindVault(vaultOperatorClient, vaultName, o.Namespace)
 	if !found {
 		return fmt.Errorf("vault '%s' not found in namespace '%s'", vaultName, o.Namespace)
 	}
 
-	err = kube.DeleteVault(vaultOperatorClient, vaultName, o.Namespace)
+	err = vault.DeleteVault(vaultOperatorClient, vaultName, o.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "deleting the vault resource")
 	}
@@ -100,13 +102,13 @@ func (o *DeleteVaultOptions) Run() error {
 		return errors.Wrapf(err, "deleting the vault ingress '%s'", vaultName)
 	}
 
-	authServiceAccountName := kube.VaultAuthServiceAccountName(vaultName)
-	err = kube.DeleteServiceAccount(client, o.Namespace, authServiceAccountName)
+	authServiceAccountName := vault.VaultAuthServiceAccountName(vaultName)
+	err = serviceaccount.DeleteServiceAccount(client, o.Namespace, authServiceAccountName)
 	if err != nil {
 		return errors.Wrapf(err, "deleting the vault auth service account '%s'", authServiceAccountName)
 	}
 
-	gcpServiceAccountSecretName := kube.VaultGcpServiceAccountSecretName(vaultName)
+	gcpServiceAccountSecretName := vault.VaultGcpServiceAccountSecretName(vaultName)
 	err = client.CoreV1().Secrets(o.Namespace).Delete(gcpServiceAccountSecretName, &metav1.DeleteOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "deleting secret '%s' where GCP service account is stored", gcpServiceAccountSecretName)

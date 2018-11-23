@@ -140,7 +140,7 @@ For instructions please see: %s
 		if o.BatchMode {
 			return util.MissingOption(optionOutputDir)
 		}
-		dir, err = util.PickValue("Pick a fully qualified name for the new project:", "github.com/myuser/myapp", true, o.In, o.Out, o.Err)
+		dir, err = util.PickValue("Pick a fully qualified name for the new project:", "github.com/myuser/myapp", true, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

@@ -109,7 +109,7 @@ func (o *EditUserRoleOptions) Run() error {
 		if o.BatchMode {
 			return util.MissingOption(optionLogin)
 		}
-		name, err = util.PickName(names, "Pick the user to edit", o.In, o.Out, o.Err)
+		name, err = util.PickName(names, "Pick the user to edit", "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -135,7 +135,7 @@ func (o *EditUserRoleOptions) Run() error {
 
 	userRoles := o.Roles
 	if !o.BatchMode && len(userRoles) == 0 {
-		userRoles, err = util.PickNames(roleNames, "Roles for user: "+name, o.In, o.Out, o.Err)
+		userRoles, err = util.PickNames(roleNames, "Roles for user: "+name, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

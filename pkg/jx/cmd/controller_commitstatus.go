@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -156,14 +157,35 @@ func (o *ControllerCommitStatusOptions) onCommitStatusObj(obj interface{}, jxCli
 }
 
 func (o *ControllerCommitStatusOptions) onCommitStatus(check *jenkinsv1.CommitStatus, jxClient jenkinsv1client.Interface, ns string) error {
+	groupedBySha := make(map[string][]jenkinsv1.CommitStatusDetails, 0)
 	for _, v := range check.Spec.Items {
-		err := o.update(&v, jxClient, ns)
+		if _, ok := groupedBySha[v.Commit.SHA]; !ok {
+			groupedBySha[v.Commit.SHA] = make([]jenkinsv1.CommitStatusDetails, 0)
+		}
+		groupedBySha[v.Commit.SHA] = append(groupedBySha[v.Commit.SHA], v)
+	}
+	for _, vs := range groupedBySha {
+		var last jenkinsv1.CommitStatusDetails
+		for _, v := range vs {
+			lastBuildNumber, err := strconv.Atoi(getBuildNumber(last.PipelineActivity.Name))
+			if err != nil {
+				return err
+			}
+			buildNumber, err := strconv.Atoi(getBuildNumber(v.PipelineActivity.Name))
+			if err != nil {
+				return err
+			}
+			if lastBuildNumber < buildNumber {
+				last = v
+			}
+		}
+		err := o.update(&last, jxClient, ns)
 		if err != nil {
-			gitProvider, gitRepoInfo, err1 := o.getGitProvider(v.Commit.GitURL)
+			gitProvider, gitRepoInfo, err1 := o.getGitProvider(last.Commit.GitURL)
 			if err1 != nil {
 				return err1
 			}
-			_, err1 = extensions.NotifyCommitStatus(v.Commit, "error", "", "Internal Error performing commit status updates", "", v.Context, gitProvider, gitRepoInfo)
+			_, err1 = extensions.NotifyCommitStatus(last.Commit, "error", "", "Internal Error performing commit status updates", "", last.Context, gitProvider, gitRepoInfo)
 			if err1 != nil {
 				return err
 			}
@@ -297,7 +319,6 @@ func (o *ControllerCommitStatusOptions) UpsertCommitStatusCheck(name string, pip
 
 		status, err := jxClient.JenkinsV1().CommitStatuses(ns).Get(name, metav1.GetOptions{})
 		create := false
-		reset := false
 		insert := false
 		actRef := jenkinsv1.ResourceReference{}
 		if err != nil {
@@ -316,7 +337,7 @@ func (o *ControllerCommitStatusOptions) UpsertCommitStatusCheck(name string, pip
 
 		possibleStatusDetails := make([]int, 0)
 		for i, v := range status.Spec.Items {
-			if v.Commit.SHA == sha {
+			if v.Commit.SHA == sha && v.PipelineActivity.Name == pipelineActName {
 				possibleStatusDetails = append(possibleStatusDetails, i)
 			}
 		}
@@ -325,10 +346,8 @@ func (o *ControllerCommitStatusOptions) UpsertCommitStatusCheck(name string, pip
 			log.Infof("pod watcher: Discovered possible status details %v\n", possibleStatusDetails)
 		}
 		if len(possibleStatusDetails) == 1 {
-			statusDetails = status.Spec.Items[possibleStatusDetails[0]]
-			if statusDetails.PipelineActivity.UID != actRef.UID && phase != corev1.PodSucceeded && phase != corev1.PodFailed && phase != corev1.PodUnknown {
-				// Reset occurs when a build for a commit is rerun
-				reset = true
+			if o.Verbose {
+				log.Infof("CommitStatus %s for pipeline %s already exists\n", name, pipelineActName)
 			}
 		} else if len(possibleStatusDetails) == 0 {
 			insert = true
@@ -336,7 +355,7 @@ func (o *ControllerCommitStatusOptions) UpsertCommitStatusCheck(name string, pip
 			return fmt.Errorf("More than %d status detail for sha %s, should 1 or 0, found %v", len(possibleStatusDetails), sha, possibleStatusDetails)
 		}
 
-		if create || reset || insert {
+		if create || insert {
 			// This is not the same pipeline activity the status was created for,
 			// or there is no existing status, so we make a new one
 			statusDetails = jenkinsv1.CommitStatusDetails{
@@ -370,13 +389,6 @@ func (o *ControllerCommitStatusOptions) UpsertCommitStatusCheck(name string, pip
 				return err
 			}
 
-		} else if reset {
-			status.Spec.Items[possibleStatusDetails[0]] = statusDetails
-			log.Infof("pod watcher: Resetting commit status for pipeline activity %s\n", pipelineActName)
-			_, err := jxClient.JenkinsV1().CommitStatuses(ns).Update(status)
-			if err != nil {
-				return err
-			}
 		} else if insert {
 			status.Spec.Items = append(status.Spec.Items, statusDetails)
 			log.Infof("pod watcher: Adding commit status for pipeline activity %s\n", pipelineActName)
@@ -471,4 +483,17 @@ func (o *ControllerCommitStatusOptions) getGitProvider(url string) (gits.GitProv
 		}
 	}
 	return o.createGitProviderForURLWithoutKind(url)
+}
+
+func getBuildNumber(pipelineActName string) string {
+	if pipelineActName == "" {
+		return "-1"
+	}
+	pipelineParts := strings.Split(pipelineActName, "-")
+	if len(pipelineParts) > 3 {
+		return pipelineParts[len(pipelineParts)-1]
+	} else {
+		return ""
+	}
+
 }

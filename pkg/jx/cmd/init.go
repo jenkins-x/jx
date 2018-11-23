@@ -5,11 +5,10 @@ import (
 	"io"
 	"io/ioutil"
 	"net"
-	"net/url"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/cloud/iks"
@@ -61,6 +60,7 @@ type InitFlags struct {
 	SkipTiller                 bool
 	OnPremise                  bool
 	Http                       bool
+	NoGitValidate              bool
 }
 
 const (
@@ -156,9 +156,11 @@ func (o *InitOptions) Run() error {
 		return err
 	}
 
-	err = o.validateGit()
-	if err != nil {
-		return err
+	if !o.Flags.NoGitValidate {
+		err = o.validateGit()
+		if err != nil {
+			return err
+		}
 	}
 
 	err = o.enableClusterAdminRole()
@@ -218,7 +220,7 @@ func (o *InitOptions) enableClusterAdminRole() error {
 
 	if o.Username == "" {
 		o.Username, err = o.GetClusterUserName()
-		if err != err {
+		if err != nil {
 			return err
 		}
 	}
@@ -425,40 +427,6 @@ func (o *InitOptions) initHelm() error {
 	return nil
 }
 
-// initBuildPacks initalise the build packs
-func (o *InitOptions) initBuildPacks() (string, error) {
-	settings, err := o.TeamSettings()
-
-	if err != nil {
-		return "", err
-	}
-
-	packURL := settings.BuildPackURL
-	packRef := settings.BuildPackRef
-
-	u, err := url.Parse(strings.TrimSuffix(packURL, ".git"))
-	if err != nil {
-		return "", fmt.Errorf("Failed to parse build pack URL: %s: %s", packURL, err)
-	}
-
-	draftDir, err := util.DraftDir()
-	if err != nil {
-		return "", err
-	}
-	dir := filepath.Join(draftDir, "packs", u.Host, u.Path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return "", fmt.Errorf("Could not create %s: %s", dir, err)
-	}
-
-	err = o.Git().CloneOrPull(packURL, dir)
-	if err != nil {
-		return "", err
-	}
-	if packRef != "master" {
-		err = o.Git().CheckoutRemoteBranch(dir, packRef)
-	}
-	return filepath.Join(dir, "packs"), err
-}
 
 func (o *InitOptions) configureForICP() {
 	icpDefaultTillerNS := "default"
@@ -670,7 +638,8 @@ controller:
 		i := 0
 		for {
 			log.Infof("Installing using helm binary: %s\n", util.ColorInfo(o.Helm().HelmBinary()))
-			err = o.Helm().InstallChart("stable/nginx-ingress", "jxing", ingressNamespace, nil, nil, values, valuesFiles)
+			err = o.Helm().InstallChart("stable/nginx-ingress", "jxing", ingressNamespace, nil, nil, values,
+				valuesFiles, "")
 			if err != nil {
 				if i >= 3 {
 					log.Errorf("Failed to install ingress chart: %s", err)
@@ -722,7 +691,7 @@ controller:
 		}
 
 		if externalIP == "" {
-			err = kube.WaitForExternalIP(client, o.Flags.IngressService, ingressNamespace, 10*time.Minute)
+			err = services.WaitForExternalIP(client, o.Flags.IngressService, ingressNamespace, 10*time.Minute)
 			if err != nil {
 				return err
 			}
@@ -758,7 +727,7 @@ func (o *InitOptions) validateGit() error {
 	var err error
 	if userName == "" {
 		if !o.BatchMode {
-			userName, err = util.PickValue("Please enter the name you wish to use with git: ", "", true, o.In, o.Out, o.Err)
+			userName, err = util.PickValue("Please enter the name you wish to use with git: ", "", true, "", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
@@ -773,7 +742,7 @@ func (o *InitOptions) validateGit() error {
 	}
 	if userEmail == "" {
 		if !o.BatchMode {
-			userEmail, err = util.PickValue("Please enter the email address you wish to use with git: ", "", true, o.In, o.Out, o.Err)
+			userEmail, err = util.PickValue("Please enter the email address you wish to use with git: ", "", true, "", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

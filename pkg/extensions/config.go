@@ -16,11 +16,13 @@ func GetOrCreateExtensionsConfig(kubeClient kubernetes.Interface, ns string) (*c
 			ObjectMeta: metav1.ObjectMeta{
 				Name: ExtensionsConfigDefaultConfigMap,
 			},
-			Data: make(map[string]string),
 		})
 		if err != nil {
 			return nil, err
 		}
+	}
+	if extensionsConfig.Data == nil {
+		extensionsConfig.Data = make(map[string]string)
 	}
 	return extensionsConfig, nil
 }

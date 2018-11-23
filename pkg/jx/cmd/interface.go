@@ -19,6 +19,7 @@ import (
 	"k8s.io/client-go/rest"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metricsclient "k8s.io/metrics/pkg/client/clientset_generated/clientset"
 
@@ -56,6 +57,8 @@ type Factory interface {
 
 	CreateKubeConfig() (*rest.Config, error)
 
+	//Create a JXclient for interacting with JX resources.
+	//Returns: JXClient, current namespace, error.
 	CreateJXClient() (versioned.Interface, string, error)
 
 	CreateApiExtensionsClient() (apiextensionsclientset.Interface, error)
@@ -66,13 +69,15 @@ type Factory interface {
 
 	CreateComplianceClient() (*client.SonobuoyClient, error)
 
+	CreateKnativeBuildClient() (buildclient.Interface, string, error)
+
 	CreateTable(out io.Writer) table.Table
 
 	SetBatch(batch bool)
 
 	IsInCluster() bool
 
-	IsInCDPIpeline() bool
+	IsInCDPipeline() bool
 
 	AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string, isCDPipeline bool) error
 

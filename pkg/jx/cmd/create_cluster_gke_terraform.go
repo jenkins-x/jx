@@ -8,7 +8,7 @@ import (
 
 	"errors"
 
-	os_user "os/user"
+	osUser "os/user"
 
 	"io/ioutil"
 	"os"
@@ -70,15 +70,9 @@ var (
 		jx create cluster gke terraform
 
 `)
-
-	requiredServiceAccountRoles = []string{"roles/compute.instanceAdmin.v1",
-		"roles/iam.serviceAccountActor",
-		"roles/container.clusterAdmin",
-		"roles/container.admin",
-		"roles/container.developer"}
 )
 
-// NewCmdGet creates a command object for the generic "init" action, which
+// NewCmdCreateClusterGKETerraform creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
 func NewCmdCreateClusterGKETerraform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterGKETerraformOptions{
@@ -271,7 +265,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 		})
 	}
 
-	user, err := os_user.Current()
+	user, err := osUser.Current()
 	if err != nil {
 		return err
 	}
@@ -366,7 +360,9 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 	log.Info(output)
 
 	log.Info("Initialising cluster ...\n")
-	o.InstallOptions.Flags.DefaultEnvironmentPrefix = o.Flags.ClusterName
+	if o.InstallOptions.Flags.DefaultEnvironmentPrefix == "" {
+		o.InstallOptions.Flags.DefaultEnvironmentPrefix = o.Flags.ClusterName
+	}
 	err = o.initAndInstall(GKE)
 	if err != nil {
 		return err

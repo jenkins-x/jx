@@ -22,10 +22,12 @@ type ModifyRequirementsFn func(requirements *helm.Requirements) error
 // ConfigureGitFolderFn callback to optionally configure git before its used for creating commits and PRs
 type ConfigureGitFolderFn func(dir string, gitInfo *gits.GitRepositoryInfo, gitAdapter gits.Gitter) error
 
-type CreateEnvPullRequestFn func(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo) (*ReleasePullRequestInfo, error)
+type CreateEnvPullRequestFn func(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *gits.PullRequestInfo) (*gits.PullRequestInfo, error)
 
-func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *ReleasePullRequestInfo, configGitFn ConfigureGitFolderFn) (*ReleasePullRequestInfo, error) {
-	var answer *ReleasePullRequestInfo
+func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn,
+	branchNameText *string, title *string, message *string, pullRequestInfo *gits.PullRequestInfo,
+	configGitFn ConfigureGitFolderFn) (*gits.PullRequestInfo, error) {
+	var answer *gits.PullRequestInfo
 	source := &env.Spec.Source
 	gitURL := source.URL
 	if gitURL == "" {
@@ -48,7 +50,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		return answer, err
 	}
 
-	branchName := o.Git().ConvertToValidBranchName(branchNameText)
+	branchName := o.Git().ConvertToValidBranchName(asText(branchNameText))
 	base := source.Ref
 	if base == "" {
 		base = "master"
@@ -145,7 +147,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		log.Warnf("%s\n", "No changes made to the GitOps Environment source code. Code must be up to date!")
 		return answer, nil
 	}
-	err = o.Git().CommitDir(dir, message)
+	err = o.Git().CommitDir(dir, asText(message))
 	if err != nil {
 		return answer, err
 	}
@@ -178,8 +180,8 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 
 	gha := &gits.GitPullRequestArguments{
 		GitRepositoryInfo: gitInfo,
-		Title:             title,
-		Body:              message,
+		Title:             asText(title),
+		Body:              asText(message),
 		Base:              base,
 		Head:              branchName,
 	}
@@ -189,7 +191,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		return answer, err
 	}
 	log.Infof("Created Pull Request: %s\n\n", util.ColorInfo(pr.URL))
-	return &ReleasePullRequestInfo{
+	return &gits.PullRequestInfo{
 		GitProvider:          provider,
 		PullRequest:          pr,
 		PullRequestArguments: gha,
@@ -197,7 +199,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 }
 
 func (o *CommonOptions) registerEnvironmentCRD() error {
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -224,4 +226,11 @@ func (o *CommonOptions) modifyDevEnvironment(jxClient versioned.Interface, ns st
 	}
 	log.Infof("Updated the team settings in namespace %s\n", ns)
 	return nil
+}
+
+func asText(text *string) string {
+	if text != nil {
+		return *text
+	}
+	return ""
 }

@@ -2,6 +2,7 @@ package terraform
 
 import (
 	"fmt"
+	"github.com/blang/semver"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
@@ -118,4 +119,50 @@ func ReadValueFromFile(path string, key string) (string, error) {
 
 	}
 	return "", nil
+}
+
+// CheckVersion checks the installed version of terraform to sure it is greater than 0.11.0
+func CheckVersion() error {
+	fmt.Println("Checking Terraform Version...")
+	cmd := util.Command{
+		Name: "terraform",
+		Args: []string{"-version"},
+	}
+	output, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return err
+	}
+
+	version, err := extractVersionFromTerraformOutput(output)
+
+	fmt.Printf("Determined terraform version as %s\n", util.ColorInfo(version))
+
+	if err != nil {
+		return err
+	}
+
+	v, err := semver.Make(version)
+
+	r, err := semver.ParseRange(">= 0.11.0")
+	if !r(v) {
+		return errors.New("terraform version appears to be too old, please install a newer version '>= 0.11.0'")
+	}
+
+	fmt.Printf("Terraform version appears to be valid\n")
+
+	return nil
+}
+
+func extractVersionFromTerraformOutput(output string) (string, error) {
+
+	lines := strings.Split(output, "\n")
+	for _, line := range lines {
+		if strings.HasPrefix(line, "Terraform") {
+			versionTokens := strings.Split(line, " ")
+			return strings.TrimPrefix(versionTokens[1], "v"), nil
+		}
+	}
+
+	return "", errors.Errorf("unable to extract version from output '%s'", output)
+
 }

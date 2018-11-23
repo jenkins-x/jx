@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/kube/services"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -107,7 +109,7 @@ func NewCmdPreview(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 			options.Args = args
 			//Default to batch-mode when running inside the pipeline (but user override wins).
 			if !cmd.Flag(optionBatchMode).Changed {
-				options.BatchMode = options.Factory.IsInCDPIpeline()
+				options.BatchMode = options.Factory.IsInCDPipeline()
 			}
 			err := options.Run()
 			CheckErr(err)
@@ -198,6 +200,14 @@ func (o *PreviewOptions) Run() error {
 	err = o.defaultValues(ns, true)
 	if err != nil {
 		return err
+	}
+
+	if o.GitInfo == nil {
+		log.Warnf("No GitInfo found\n")
+	} else if o.GitInfo.Organisation == "" {
+		log.Warnf("No GitInfo.Organisation found\n")
+	} else if o.GitInfo.Name == "" {
+		log.Warnf("No GitInfo.Name found\n")
 	}
 
 	// we need pull request info to include
@@ -416,7 +426,15 @@ func (o *PreviewOptions) Run() error {
 	}
 
 	if o.ReleaseName == "" {
-		o.ReleaseName = o.Namespace
+		_, noTiller, helmTemplate, err := o.TeamHelmBin()
+		if err != nil {
+			return err
+		}
+		if noTiller || helmTemplate {
+			o.ReleaseName = "preview"
+		} else {
+			o.ReleaseName = o.Namespace
+		}
 	}
 
 	domain, err := kube.GetCurrentDomain(kubeClient, ns)
@@ -424,28 +442,9 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	repository, err := getImageName()
+	values, err := o.GetPreviewValuesConfig(domain)
 	if err != nil {
 		return err
-	}
-
-	tag, err := getImageTag()
-	if err != nil {
-		return err
-	}
-
-	values := config.PreviewValuesConfig{
-		ExposeController: &config.ExposeController{
-			Config: config.ExposeControllerConfig{
-				Domain: domain,
-			},
-		},
-		Preview: &config.Preview{
-			Image: &config.Image{
-				Repository: repository,
-				Tag:        tag,
-			},
-		},
 	}
 
 	config, err := values.String()
@@ -465,7 +464,8 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	err = o.Helm().UpgradeChart(".", o.ReleaseName, o.Namespace, nil, true, nil, true, true, nil, []string{configFileName})
+	err = o.Helm().UpgradeChart(".", o.ReleaseName, o.Namespace, nil, true, nil, true, true, nil,
+		[]string{configFileName}, "")
 	if err != nil {
 		return err
 	}
@@ -473,7 +473,7 @@ func (o *PreviewOptions) Run() error {
 	url := ""
 	appNames := []string{o.Application, o.ReleaseName, o.Namespace + "-preview", o.ReleaseName + "-" + o.Application}
 	for _, n := range appNames {
-		url, err = kube.FindServiceURL(kubeClient, o.Namespace, n)
+		url, err = services.FindServiceURL(kubeClient, o.Namespace, n)
 		if url != "" {
 			writePreviewURL(o, url)
 			break
@@ -552,16 +552,14 @@ func (o *PreviewOptions) Run() error {
 		},
 		StepPROptions: StepPROptions{
 			StepOptions: StepOptions{
-				CommonOptions: CommonOptions{
-					BatchMode: true,
-					Factory:   o.Factory,
-				},
+				CommonOptions: o.CommonOptions,
 			},
 		},
 	}
+	stepPRCommentOptions.BatchMode = true
 	err = stepPRCommentOptions.Run()
 	if err != nil {
-		log.Warnf("Failed to comment on the Pull Request: %s\n", err)
+		log.Warnf("Failed to comment on the Pull Request with owner %s repo %s: %s\n", o.GitInfo.Organisation, o.GitInfo.Name, err)
 	}
 	return o.RunPostPreviewSteps(kubeClient, o.Namespace, url, pipeline, build)
 }
@@ -761,7 +759,22 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 		return fmt.Errorf("No name could be defaulted for the Preview Environment. Please supply one!")
 	}
 	if o.Namespace == "" {
-		o.Namespace = ns + "-" + o.Name
+		prefix := ns + "-"
+		if len(prefix) > 63 {
+			return fmt.Errorf("Team namespace prefix is too long to create previews %s is too long. Must be no more than 60 character", prefix)
+		}
+
+		o.Namespace = prefix + o.Name
+		if len(o.Namespace) > 63 {
+			max := 62 - len(prefix)
+			size := len(o.Name)
+
+			o.Namespace = prefix + o.Name[size-max:]
+			log.Warnf("Due the name of the organsation and repository being too long (%s) we are going to trim it to make the preview namespace: %s", o.Name, o.Namespace)
+		}
+	}
+	if len(o.Namespace) > 63 {
+		return fmt.Errorf("Preview namespace %s is too long. Must be no more than 63 character", o.Namespace)
 	}
 	o.Namespace = kube.ToValidName(o.Namespace)
 	if o.Label == "" {
@@ -771,6 +784,35 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 		log.Warnf("No GitInfo could be found!")
 	}
 	return nil
+}
+
+// GetPreviewValuesConfig returns the PreviewValuesConfig to use as extraValues for helm
+func (o *PreviewOptions) GetPreviewValuesConfig(domain string) (*config.PreviewValuesConfig, error) {
+	repository, err := getImageName()
+	if err != nil {
+		return nil, err
+	}
+
+	tag, err := getImageTag()
+	if err != nil {
+		return nil, err
+	}
+
+	if o.HelmValuesConfig.ExposeController == nil {
+		o.HelmValuesConfig.ExposeController = &config.ExposeController{}
+	}
+	o.HelmValuesConfig.ExposeController.Config.Domain = domain
+
+	values := config.PreviewValuesConfig{
+		ExposeController: o.HelmValuesConfig.ExposeController,
+		Preview: &config.Preview{
+			Image: &config.Image{
+				Repository: repository,
+				Tag:        tag,
+			},
+		},
+	}
+	return &values, nil
 }
 
 func writePreviewURL(o *PreviewOptions, url string) {

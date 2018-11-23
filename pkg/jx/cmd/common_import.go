@@ -165,7 +165,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 			if failIfExists {
 				return fmt.Errorf("Job already exists in Jenkins at %s", job.Url)
 			} else {
-				log.Warnf("Job already exists in Jenkins at %s\n", job.Url)
+				log.Infof("Job already exists in Jenkins at %s\n", job.Url)
 			}
 		} else {
 			err = jenk.CreateFolderJobWithXML(projectXml, org, jobName)

@@ -118,7 +118,7 @@ func (o *CreateIssueOptions) PopulateIssue(issue *gits.GitIssue) error {
 		if o.BatchMode {
 			return util.MissingOption(optionTitle)
 		}
-		title, err = util.PickValue("Issue title:", "", true, o.In, o.Out, o.Err)
+		title, err = util.PickValue("Issue title:", "", true, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

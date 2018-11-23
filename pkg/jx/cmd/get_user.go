@@ -62,14 +62,6 @@ func NewCmdGetUser(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 
 // Run implements this command
 func (o *GetUserOptions) Run() error {
-	err := o.registerUserCRD()
-	if err != nil {
-		return err
-	}
-	err = o.registerEnvironmentRoleBindingCRD()
-	if err != nil {
-		return err
-	}
 	jxClient, ns, err := o.JXClientAndAdminNamespace()
 	if err != nil {
 		return err

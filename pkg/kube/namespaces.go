@@ -2,7 +2,6 @@ package kube
 
 import (
 	"fmt"
-
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -27,19 +26,24 @@ func EnsureEnvironmentNamespaceSetup(kubeClient kubernetes.Interface, jxClient v
 		}
 	}
 
+	err := EnsureDevNamespaceCreatedWithoutEnvironment(kubeClient, ns)
+	if err != nil {
+		return err
+	}
+	_, err = EnsureDevEnvironmentSetup(jxClient, ns)
+	return err
+}
+
+// EnsureDevNamespaceCreatedWithoutEnvironment ensures that there is a development namespace created
+func EnsureDevNamespaceCreatedWithoutEnvironment(kubeClient kubernetes.Interface, ns string) error {
 	// lets annotate the team namespace as being the developer environment
 	labels := map[string]string{
 		LabelTeam:        ns,
 		LabelEnvironment: LabelValueDevEnvironment,
 	}
 	annotations := map[string]string{}
-
 	// lets check that the current namespace is marked as the dev environment
 	err := EnsureNamespaceCreated(kubeClient, ns, labels, annotations)
-	if err != nil {
-		return err
-	}
-	_, err = EnsureDevEnvironmentSetup(jxClient, ns)
 	return err
 }
 
@@ -49,29 +53,35 @@ func EnsureDevEnvironmentSetup(jxClient versioned.Interface, ns string) (*v1.Env
 	env, err := jxClient.JenkinsV1().Environments(ns).Get(LabelValueDevEnvironment, metav1.GetOptions{})
 	if err != nil {
 		// lets create a dev environment
-		env = &v1.Environment{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: LabelValueDevEnvironment,
-			},
-			Spec: v1.EnvironmentSpec{
-				Namespace:         ns,
-				Label:             "Development",
-				PromotionStrategy: v1.PromotionStrategyTypeNever,
-				Kind:              v1.EnvironmentKindTypeDevelopment,
-				TeamSettings: v1.TeamSettings{
-					UseGitOPs:           true,
-					AskOnCreate:         false,
-					QuickstartLocations: DefaultQuickstartLocations,
-					PromotionEngine:     v1.PromotionEngineJenkins,
-				},
-			},
-		}
+		env = CreateDefaultDevEnvironment(ns)
 		env, err = jxClient.JenkinsV1().Environments(ns).Create(env)
 		if err != nil {
 			return nil, err
 		}
 	}
 	return env, nil
+}
+
+// CreateDefaultDevEnvironment creates a default development environment
+func CreateDefaultDevEnvironment(ns string) *v1.Environment {
+	return &v1.Environment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   LabelValueDevEnvironment,
+			Labels: map[string]string{LabelTeam: ns, LabelEnvironment: LabelValueDevEnvironment},
+		},
+		Spec: v1.EnvironmentSpec{
+			Namespace:         ns,
+			Label:             "Development",
+			PromotionStrategy: v1.PromotionStrategyTypeNever,
+			Kind:              v1.EnvironmentKindTypeDevelopment,
+			TeamSettings: v1.TeamSettings{
+				UseGitOps:           true,
+				AskOnCreate:         false,
+				QuickstartLocations: DefaultQuickstartLocations,
+				PromotionEngine:     v1.PromotionEngineJenkins,
+			},
+		},
+	}
 }
 
 // GetEnrichedDevEnvironment lazily creates the dev namespace if it does not already exist and

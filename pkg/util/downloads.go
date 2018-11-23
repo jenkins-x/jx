@@ -11,6 +11,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/blang/semver"
 	"github.com/google/go-github/github"
@@ -29,11 +30,16 @@ func DownloadFile(filepath string, url string) (err error) {
 	defer out.Close()
 
 	// Get the data
-	resp, err := http.Get(url)
+	resp, err := GetClientWithTimeout(time.Duration(time.Hour * 2)).Get(url)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		err := fmt.Errorf("download of %s failed with return code %d", url, resp.StatusCode)
+		return err
+	}
 
 	// Writer the body to file
 	_, err = io.Copy(out, resp.Body)

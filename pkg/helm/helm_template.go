@@ -246,7 +246,7 @@ func (h *HelmTemplate) Version(tls bool) (string, error) {
 
 // InstallChart installs a helm chart according with the given flags
 func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string, version *string, timeout *int,
-	values []string, valueFiles []string) error {
+	values []string, valueFiles []string, repo string) error {
 
 	err := h.clearOutputDir(releaseName)
 	if err != nil {
@@ -254,7 +254,7 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 	}
 	outputDir, _, chartsDir, err := h.getDirectories(releaseName)
 
-	chartDir, err := h.chartNameToFolder(chart, chartsDir)
+	chartDir, err := h.fetchChart(chart, asText(version), chartsDir, repo)
 	if err != nil {
 		return err
 	}
@@ -301,13 +301,14 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 }
 
 // Fetch a Helm Chart
-func (h *HelmTemplate) FetchChart(chart string, version *string, untar bool, untardir string) error {
-	return fmt.Errorf("Not yet implemented")
+func (h *HelmTemplate) FetchChart(chart string, version *string, untar bool, untardir string, repo string) error {
+	_, err := h.fetchChart(chart, asText(version), untardir, repo)
+	return err
 }
 
 // UpgradeChart upgrades a helm chart according with given helm flags
 func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string, version *string, install bool,
-	timeout *int, force bool, wait bool, values []string, valueFiles []string) error {
+	timeout *int, force bool, wait bool, values []string, valueFiles []string, repo string) error {
 
 	err := h.clearOutputDir(releaseName)
 	if err != nil {
@@ -315,7 +316,7 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 	}
 	outputDir, _, chartsDir, err := h.getDirectories(releaseName)
 
-	chartDir, err := h.chartNameToFolder(chart, chartsDir)
+	chartDir, err := h.fetchChart(chart, asText(version), chartsDir, repo)
 	if err != nil {
 		return err
 	}
@@ -360,6 +361,10 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 	err2 := h.deleteOldResources(ns, releaseName, versionText, wait)
 
 	return util.CombineErrors(err, err2)
+}
+
+func (h *HelmTemplate) DecryptSecrets(location string) error {
+	return h.Client.DecryptSecrets(location)
 }
 
 func (h *HelmTemplate) kubectlApply(ns string, chart string, releaseName string, wait bool, create bool, dir string) error {
@@ -507,7 +512,7 @@ func (h *HelmTemplate) clearOutputDir(releaseName string) error {
 	return util.RecreateDirs(dir, helmDir, chartsDir)
 }
 
-func (h *HelmTemplate) chartNameToFolder(chart string, dir string) (string, error) {
+func (h *HelmTemplate) fetchChart(chart string, version string, dir string, repo string) (string, error) {
 	exists, err := util.FileExists(chart)
 	if err != nil {
 		return "", err
@@ -515,7 +520,19 @@ func (h *HelmTemplate) chartNameToFolder(chart string, dir string) (string, erro
 	if exists {
 		return chart, nil
 	}
-	err = h.Client.runHelm("fetch", "-d", dir, "--untar", chart)
+	if dir == "" {
+		return "", fmt.Errorf("must specify dir for chart %s", chart)
+	}
+	args := []string{
+		"fetch", "-d", dir, "--untar", chart,
+	}
+	if repo != "" {
+		args = append(args, "--repo", repo)
+	}
+	if version != "" {
+		args = append(args, "--version", version)
+	}
+	err = h.Client.runHelm(args...)
 	if err != nil {
 		return "", err
 	}
@@ -765,7 +782,7 @@ func (h *HelmTemplate) getChartNameAndVersion(chartDir string, version *string) 
 	if version != nil && *version != "" {
 		versionText = *version
 	}
-	file := filepath.Join(chartDir, "Chart.yaml")
+	file := filepath.Join(chartDir, ChartFileName)
 	if !filepath.IsAbs(chartDir) {
 		file = filepath.Join(h.Runner.CurrentDir(), file)
 	}
@@ -786,7 +803,7 @@ func (h *HelmTemplate) getChart(chartDir string, version *string) (*chart.Metada
 	if version != nil && *version != "" {
 		versionText = *version
 	}
-	file := filepath.Join(chartDir, "Chart.yaml")
+	file := filepath.Join(chartDir, ChartFileName)
 	if !filepath.IsAbs(chartDir) {
 		file = filepath.Join(h.Runner.CurrentDir(), file)
 	}
@@ -859,4 +876,11 @@ func MatchingHooks(hooks []*HelmHook, hook string, hookDeletePolicy string) []*H
 		}
 	}
 	return answer
+}
+
+func asText(text *string) string {
+	if text != nil {
+		return *text
+	}
+	return ""
 }

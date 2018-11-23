@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 
 	"github.com/spf13/cobra"
@@ -75,13 +76,13 @@ func (o *CloudBeesOptions) GetBaseURL() (url string, err error) {
 	if err != nil {
 		return "", err
 	}
-	url, err = kube.GetServiceURLFromName(client, kube.ServiceCloudBees, defaultCloudBeesNamespace)
+	url, err = services.GetServiceURLFromName(client, kube.ServiceCloudBees, defaultCloudBeesNamespace)
 	if err != nil {
 		return "", fmt.Errorf("%s\n\nDid you install the CloudBees addon via: %s\n\nFor more information see: %s", err, util.ColorInfo("jx create addon cloudbees"), util.ColorInfo("https://www.cloudbees.com/blog/want-help-build-cloudbees-kubernetes-jenkins-x"))
 	}
 
 	if url == "" {
-		url, err = kube.GetServiceURLFromName(client, fmt.Sprintf("sso-%s", kube.ServiceCloudBees), defaultCloudBeesNamespace)
+		url, err = services.GetServiceURLFromName(client, fmt.Sprintf("sso-%s", kube.ServiceCloudBees), defaultCloudBeesNamespace)
 		if err != nil {
 			return "", fmt.Errorf("%s\n\nDid you install the CloudBees addon via: %s\n\nFor more information see: %s", err, util.ColorInfo("jx create addon cloudbees"), util.ColorInfo("https://www.cloudbees.com/blog/want-help-build-cloudbees-kubernetes-jenkins-x"))
 		}

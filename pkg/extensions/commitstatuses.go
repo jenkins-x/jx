@@ -47,7 +47,7 @@ func NotifyCommitStatus(commitRef jenkinsv1.CommitStatusCommitReference, state s
 		log.Infof("commit status is overridden for pull request %s (%s) on %s so not updating\n", commitRef.PullRequest, commitRef.SHA, commitRef.GitURL)
 		return oldStatus, nil
 	}
-	if oldStatus.Description != status.Description || oldStatus.State != status.State {
+	if oldStatus.Description != status.Description && oldStatus.State != status.State {
 
 		log.Infof("Status %s for commit status for pull request %s (%s) on %s\n", state, commitRef.PullRequest, commitRef.SHA, commitRef.GitURL)
 		_, err = gitProvider.UpdateCommitStatus(gitRepoInfo.Organisation, gitRepoInfo.Name, commitRef.SHA, status)

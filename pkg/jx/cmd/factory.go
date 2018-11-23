@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/heptio/sonobuoy/pkg/client"
@@ -30,6 +31,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	build "github.com/knative/build/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	metricsclient "k8s.io/metrics/pkg/client/clientset_generated/clientset"
@@ -105,7 +107,7 @@ func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (str
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create the kube client")
 	}
-	url, err := kube.FindServiceURL(client, ns, kube.ServiceJenkins)
+	url, err := services.FindServiceURL(client, ns, kube.ServiceJenkins)
 	if err != nil {
 		// lets try the real environment
 		realNS, _, err := kube.GetDevNamespace(client, ns)
@@ -113,7 +115,7 @@ func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (str
 			return "", errors.Wrapf(err, "failed to get the dev namespace from '%s' namespace", ns)
 		}
 		if realNS != ns {
-			url, err = kube.FindServiceURL(client, realNS, kube.ServiceJenkins)
+			url, err = services.FindServiceURL(client, realNS, kube.ServiceJenkins)
 			if err != nil {
 				return "", fmt.Errorf("%s in namespaces %s and %s", err, realNS, ns)
 			}
@@ -151,7 +153,7 @@ func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns stri
 		if err != nil {
 			return authConfigSvc, err
 		}
-		svcURL := kube.GetServiceURL(svc)
+		svcURL := services.GetServiceURL(svc)
 		if svcURL == "" {
 			return authConfigSvc, fmt.Errorf("unable to find external URL annotation on service %s in namespace %s", svc.Name, ns)
 		}
@@ -195,7 +197,7 @@ func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList
 		if err != nil {
 			return authConfigSvc, err
 		}
-		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindIssue, f.IsInCDPIpeline())
+		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindIssue, f.IsInCDPipeline())
 	}
 	return authConfigSvc, err
 }
@@ -210,7 +212,7 @@ func (f *factory) CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.
 		if err != nil {
 			return authConfigSvc, err
 		}
-		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindChat, f.IsInCDPIpeline())
+		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindChat, f.IsInCDPipeline())
 	}
 	return authConfigSvc, err
 }
@@ -225,7 +227,7 @@ func (f *factory) CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth
 		if err != nil {
 			return authConfigSvc, err
 		}
-		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindAddon, f.IsInCDPIpeline())
+		f.AuthMergePipelineSecrets(config, secrets, kube.ValueKindAddon, f.IsInCDPipeline())
 	}
 	return authConfigSvc, err
 }
@@ -256,12 +258,17 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 						username := data[kube.SecretDataUsername]
 						pwd := data[kube.SecretDataPassword]
 						if len(username) > 0 && isCDPipeline {
-							userAuth := config.GetOrCreateUserAuth(u, string(username))
-							if userAuth != nil {
-								if len(pwd) > 0 {
-									userAuth.ApiToken = string(pwd)
+							userAuth := config.FindUserAuth(u, string(username))
+							if userAuth == nil {
+								userAuth = &auth.UserAuth{
+									Username: string(username),
+									ApiToken: string(pwd),
 								}
+							} else if len(pwd) > 0 {
+								userAuth.ApiToken = string(pwd)
 							}
+							config.SetUserAuth(u, userAuth)
+							config.UpdatePipelineServer(server, userAuth)
 						}
 					}
 				}
@@ -292,6 +299,23 @@ func (f *factory) CreateJXClient() (versioned.Interface, string, error) {
 	}
 	ns := kube.CurrentNamespace(kubeConfig)
 	client, err := versioned.NewForConfig(config)
+	if err != nil {
+		return nil, ns, err
+	}
+	return client, ns, err
+}
+
+func (f *factory) CreateKnativeBuildClient() (build.Interface, string, error) {
+	config, err := f.CreateKubeConfig()
+	if err != nil {
+		return nil, "", err
+	}
+	kubeConfig, _, err := f.kubeConfig.LoadConfig()
+	if err != nil {
+		return nil, "", err
+	}
+	ns := kube.CurrentNamespace(kubeConfig)
+	client, err := build.NewForConfig(config)
 	if err != nil {
 		return nil, ns, err
 	}
@@ -358,7 +382,7 @@ func (f *factory) CreateGitProvider(gitURL string, message string, authConfigSvc
 	if err != nil {
 		return nil, err
 	}
-	return gitInfo.PickOrCreateProvider(authConfigSvc, message, batchMode, gitKind, gitter, in, out, errOut)
+	return gitInfo.CreateProvider(f.IsInCluster(), authConfigSvc, gitKind, gitter, batchMode, in, out, errOut)
 }
 
 var kubeConfigCache *string
@@ -431,9 +455,9 @@ func (f *factory) CreateTable(out io.Writer) table.Table {
 	return table.CreateTable(out)
 }
 
-// IsInCDPIpeline we should only load the git / issue tracker API tokens if the current pod
+// IsInCDPipeline we should only load the git / issue tracker API tokens if the current pod
 // is in a pipeline and running as the Jenkins service account
-func (f *factory) IsInCDPIpeline() bool {
+func (f *factory) IsInCDPipeline() bool {
 	// TODO should we let RBAC decide if we can see the Secrets in the dev namespace?
 	// or we should test if we are in the cluster and get the current ServiceAccount name?
 	return os.Getenv("BUILD_NUMBER") != "" || os.Getenv("JX_BUILD_NUMBER") != ""
@@ -463,7 +487,6 @@ func (f *factory) CreateComplianceClient() (*client.SonobuoyClient, error) {
 
 // CreateVaultOpeatorClient creates a new vault operator client
 func (f *factory) CreateVaultOperatorClient() (vaultoperatorclient.Interface, error) {
-
 	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, err
@@ -476,13 +499,18 @@ func (f *factory) GetHelm(verbose bool,
 	noTiller bool,
 	helmTemplate bool) helm.Helmer {
 
+	if helmBinary == "" {
+		helmBinary = "helm"
+	}
 	featureFlag := "none"
 	if helmTemplate {
 		featureFlag = "template-mode"
 	} else if noTiller {
 		featureFlag = "no-tiller-server"
 	}
-	log.Infof("Using helmBinary %s with feature flag: %s\n", util.ColorInfo(helmBinary), util.ColorInfo(featureFlag))
+	if verbose {
+		log.Infof("Using helmBinary %s with feature flag: %s\n", util.ColorInfo(helmBinary), util.ColorInfo(featureFlag))
+	}
 	helmCLI := helm.NewHelmCLI(helmBinary, helm.V2, "", verbose)
 	var h helm.Helmer = helmCLI
 	if helmTemplate {
@@ -491,11 +519,10 @@ func (f *factory) GetHelm(verbose bool,
 	} else {
 		h = helmCLI
 	}
-	if noTiller {
+	if noTiller && !helmTemplate {
 		h.SetHost(tillerAddress())
 		startLocalTillerIfNotRunning()
 	}
-
 	return h
 }
 

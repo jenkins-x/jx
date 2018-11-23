@@ -31,31 +31,18 @@ const (
 
 // TeamSettings returns the team settings
 func (o *CommonOptions) TeamSettings() (*v1.TeamSettings, error) {
-	jxClient, ns, err := o.JXClientAndDevNamespace()
-	if err != nil {
-		return nil, err
-	}
-	err = o.registerEnvironmentCRD()
-	if err != nil {
-		return nil, fmt.Errorf("Failed to register Environment CRD: %s", err)
-	}
-
-	env, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to setup dev Environment in namespace %s: %s", ns, err)
-	}
-	if env == nil {
-		return nil, fmt.Errorf("No Development environment found for namespace %s", ns)
-	}
-
-	teamSettings := &env.Spec.TeamSettings
-	if teamSettings.BuildPackURL == "" {
-		teamSettings.BuildPackURL = JenkinsBuildPackURL
-	}
-	if teamSettings.BuildPackRef == "" {
-		teamSettings.BuildPackRef = defaultBuildPackRef
-	}
-	return teamSettings, nil
+	var teamSettings *v1.TeamSettings
+	err := o.ModifyDevEnvironment(func(env *v1.Environment) error {
+		teamSettings = &env.Spec.TeamSettings
+		if teamSettings.BuildPackURL == "" {
+			teamSettings.BuildPackURL = JenkinsBuildPackURL
+		}
+		if teamSettings.BuildPackRef == "" {
+			teamSettings.BuildPackRef = defaultBuildPackRef
+		}
+		return nil
+	})
+	return teamSettings, err
 }
 
 // TeamBranchPatterns returns the team branch patterns used to enable CI/CD on branches when creating/importing projects
@@ -98,19 +85,35 @@ func (o *CommonOptions) TeamHelmBin() (string, bool, bool, error) {
 
 // ModifyDevEnvironment modifies the development environment settings
 func (o *CommonOptions) ModifyDevEnvironment(callback func(env *v1.Environment) error) error {
-	apisClient, err := o.CreateApiExtensionsClient()
-	if err != nil {
-		return errors.Wrap(err, "failed to create the API extensions client")
+	if o.modifyDevEnvironmentFn == nil {
+		o.modifyDevEnvironmentFn = o.defaultModifyDevEnvironment
 	}
-	kube.RegisterEnvironmentCRD(apisClient)
+	return o.modifyDevEnvironmentFn(callback)
+}
 
+// ModifyDevEnvironment modifies the development environment settings
+func (o *CommonOptions) ModifyEnvironment(name string, callback func(env *v1.Environment) error) error {
+	if o.modifyEnvironmentFn == nil {
+		o.modifyEnvironmentFn = o.defaultModifyEnvironment
+	}
+	return o.modifyEnvironmentFn(name, callback)
+}
+
+// defaultModifyDevEnvironment default implementation of modifying the Development environment settings
+func (o *CommonOptions) defaultModifyDevEnvironment(callback func(env *v1.Environment) error) error {
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the jx client")
 	}
-	err = o.registerEnvironmentCRD()
+
+	kubeClient, _, err := o.KubeClient()
 	if err != nil {
-		return errors.Wrap(err, "failed to register the environment CRD")
+		return errors.Wrap(err, "failed to create the kube client")
+	}
+
+	err = kube.EnsureDevNamespaceCreatedWithoutEnvironment(kubeClient, ns)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create the %s Dev namespace", ns)
 	}
 
 	env, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
@@ -121,6 +124,41 @@ func (o *CommonOptions) ModifyDevEnvironment(callback func(env *v1.Environment) 
 		return fmt.Errorf("No Development environment found for namespace %s", ns)
 	}
 	return o.modifyDevEnvironment(jxClient, ns, callback)
+}
+
+// defaultModifyEnvironment default implementation of modifying an environment
+func (o *CommonOptions) defaultModifyEnvironment(name string, callback func(env *v1.Environment) error) error {
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the jx client")
+	}
+
+	environmentInterface := jxClient.JenkinsV1().Environments(ns)
+	env, err := environmentInterface.Get(name, metav1.GetOptions{})
+	create := false
+	if err != nil || env == nil {
+		create = true
+		env = &v1.Environment{}
+	}
+	env.Name = name
+	err = callback(env)
+	if err != nil {
+		return errors.Wrapf(err, "failed to call the callback function when modifying Environment %s", name)
+	}
+	if create {
+		log.Infof("Creating %s Environment in namespace %s\n", env.Name, ns)
+		_, err = environmentInterface.Create(env)
+		if err != nil {
+			return errors.Wrapf(err, "failed to update Environment %s in namespace %s", name, ns)
+		}
+	} else {
+		log.Infof("Updating %s Environment in namespace %s\n", env.Name, ns)
+		_, err = environmentInterface.Update(env)
+		if err != nil {
+			return errors.Wrapf(err, "failed to update Environment %s in namespace %s", name, ns)
+		}
+	}
+	return nil
 }
 
 func (o *CommonOptions) registerReleaseCRD() error {
@@ -317,10 +355,7 @@ func (o *CommonOptions) getUsername(userName string) (string, error) {
 }
 
 func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, options *EditOptions) error {
-	teamSettings, err := options.TeamSettings()
-	if err != nil {
-		return err
-	}
+	teamSettings := &v1.TeamSettings{}
 	value := reflect.ValueOf(teamSettings).Elem()
 	t := value.Type()
 	for i := 0; i < value.NumField(); i++ {
@@ -341,6 +376,7 @@ func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, in terminal.FileRea
 			Short: commandUsage,
 			Run: func(cmd *cobra.Command, args []string) {
 				var value interface{}
+				var err error
 				if len(args) > 0 {
 					if structField.Type.String() == "string" {
 						value = args[0]
@@ -351,7 +387,7 @@ func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, in terminal.FileRea
 				} else if !options.BatchMode {
 					var err error
 					if structField.Type.String() == "string" {
-						value, err = util.PickValue(commandUsage+":", field.String(), true, in, out, errOut)
+						value, err = util.PickValue(commandUsage+":", field.String(), true, "", in, out, errOut)
 					} else if structField.Type.String() == "bool" {
 						value = util.Confirm(commandUsage+":", field.Bool(), "", in, out, errOut)
 					}

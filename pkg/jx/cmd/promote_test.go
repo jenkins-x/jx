@@ -24,32 +24,31 @@ func TestPromoteToProductionRun(t *testing.T) {
 	version := "1.2.0"
 
 	promoteOptions := &cmd.PromoteOptions{
-		Environment:        "production", // --env production
-		Application:        "my-app", // --app my-app
-		Pipeline:           testEnv.Activity.Spec.Pipeline, // needed for the test to pass on CI, otherwise it takes the actual CI build value
-		Build:              testEnv.Activity.Spec.Build, // needed for the test to pass on CI, otherwise it takes the actual CI build value
-		Version:            version, // --version 1.2.0
-		ReleaseName:        "",
-		LocalHelmRepoName:  "",
-		HelmRepositoryURL:  "",
-		NoHelmUpdate:       true, // --no-helm-update
-		AllAutomatic:       false,
-		NoMergePullRequest: false,
-		NoPoll:             true, // --no-poll
-		NoWaitAfterMerge:   false,
-		IgnoreLocalFiles:   true,
-		Timeout:            "1h",
-		PullRequestPollTime:"20s",
-		Filter:             "",
-		Alias:              "",
-		FakePullRequests:	testEnv.FakePullRequests,
+		Environment:         "production",                   // --env production
+		Application:         "my-app",                       // --app my-app
+		Pipeline:            testEnv.Activity.Spec.Pipeline, // needed for the test to pass on CI, otherwise it takes the actual CI build value
+		Build:               testEnv.Activity.Spec.Build,    // needed for the test to pass on CI, otherwise it takes the actual CI build value
+		Version:             version,                        // --version 1.2.0
+		ReleaseName:         "",
+		LocalHelmRepoName:   "",
+		HelmRepositoryURL:   "",
+		NoHelmUpdate:        true, // --no-helm-update
+		AllAutomatic:        false,
+		NoMergePullRequest:  false,
+		NoPoll:              true, // --no-poll
+		NoWaitAfterMerge:    false,
+		IgnoreLocalFiles:    true,
+		Timeout:             "1h",
+		PullRequestPollTime: "20s",
+		Filter:              "",
+		Alias:               "",
+		FakePullRequests:    testEnv.FakePullRequests,
 
 		// test settings
 		UseFakeHelm: true,
 	}
 	promoteOptions.CommonOptions = *testEnv.CommonOptions // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
-	promoteOptions.BatchMode = true // --batch-mode
-
+	promoteOptions.BatchMode = true                       // --batch-mode
 
 	// Check there is no PR for production env yet
 	jxClient, ns, err := promoteOptions.JXClientAndDevNamespace()
@@ -83,32 +82,32 @@ func TestPromoteToProductionNoMergeRun(t *testing.T) {
 	// jx promote --batch-mode --app my-app --env production --no-merge --no-helm-update
 
 	promoteOptions := &cmd.PromoteOptions{
-		Environment:        "production", // --env production
-		Application:        "my-app", // --app my-app
-		Pipeline:           testEnv.Activity.Spec.Pipeline, // needed for the test to pass on CI, otherwise it takes the actual CI build value
-		Build:              testEnv.Activity.Spec.Build, // needed for the test to pass on CI, otherwise it takes the actual CI build value
-		Version:            "",
-		ReleaseName:        "",
-		LocalHelmRepoName:  "",
-		HelmRepositoryURL:  "",
-		NoHelmUpdate:       true, // --no-helm-update
-		AllAutomatic:       false,
-		NoMergePullRequest: true, // --no-merge
-		NoPoll:             false, // note polling enabled
-		NoWaitAfterMerge:   false,
-		IgnoreLocalFiles:   true,
-		Timeout:            "1h",
-		PullRequestPollTime:"20s",
-		Filter:             "",
-		Alias:              "",
-		FakePullRequests:	testEnv.FakePullRequests,
+		Environment:         "production",                   // --env production
+		Application:         "my-app",                       // --app my-app
+		Pipeline:            testEnv.Activity.Spec.Pipeline, // needed for the test to pass on CI, otherwise it takes the actual CI build value
+		Build:               testEnv.Activity.Spec.Build,    // needed for the test to pass on CI, otherwise it takes the actual CI build value
+		Version:             "",
+		ReleaseName:         "",
+		LocalHelmRepoName:   "",
+		HelmRepositoryURL:   "",
+		NoHelmUpdate:        true, // --no-helm-update
+		AllAutomatic:        false,
+		NoMergePullRequest:  true,  // --no-merge
+		NoPoll:              false, // note polling enabled
+		NoWaitAfterMerge:    false,
+		IgnoreLocalFiles:    true,
+		Timeout:             "1h",
+		PullRequestPollTime: "20s",
+		Filter:              "",
+		Alias:               "",
+		FakePullRequests:    testEnv.FakePullRequests,
 
 		// test settings
 		UseFakeHelm: true,
 	}
 
 	promoteOptions.CommonOptions = *testEnv.CommonOptions // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
-	promoteOptions.BatchMode = true // --batch-mode
+	promoteOptions.BatchMode = true                       // --batch-mode
 
 	jxClient, ns, err := promoteOptions.JXClientAndDevNamespace()
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
@@ -123,7 +122,6 @@ func TestPromoteToProductionNoMergeRun(t *testing.T) {
 		assert.NoError(t, err)
 		close(ch)
 	}()
-
 
 	// wait for the PR the be created by the promote command
 	cmd.WaitForPullRequestForEnv(t, activities, testEnv.Activity.Name, "production")
@@ -156,32 +154,32 @@ func TestPromoteToProductionPRPollingRun(t *testing.T) {
 	// jx promote --batch-mode --app my-app --env production --no-helm-update
 
 	promoteOptions := &cmd.PromoteOptions{
-		Environment:        "production", // --env production
-		Application:        "my-app", // --app my-app
-		Pipeline:           testEnv.Activity.Spec.Pipeline, // needed for the test to pass on CI, otherwise it takes the actual CI build value
-		Build:              testEnv.Activity.Spec.Build, // needed for the test to pass on CI, otherwise it takes the actual CI build value
-		Version:            "",
-		ReleaseName:        "",
-		LocalHelmRepoName:  "",
-		HelmRepositoryURL:  "",
-		NoHelmUpdate:       true, // --no-helm-update
-		AllAutomatic:       false,
-		NoMergePullRequest: false, // note auto-merge enabled
-		NoPoll:             false, // note polling enabled
-		NoWaitAfterMerge:   false,
-		IgnoreLocalFiles:   true,
-		Timeout:            "1h",
-		PullRequestPollTime:"20s",
-		Filter:             "",
-		Alias:              "",
-		FakePullRequests:	testEnv.FakePullRequests,
+		Environment:         "production",                   // --env production
+		Application:         "my-app",                       // --app my-app
+		Pipeline:            testEnv.Activity.Spec.Pipeline, // needed for the test to pass on CI, otherwise it takes the actual CI build value
+		Build:               testEnv.Activity.Spec.Build,    // needed for the test to pass on CI, otherwise it takes the actual CI build value
+		Version:             "",
+		ReleaseName:         "",
+		LocalHelmRepoName:   "",
+		HelmRepositoryURL:   "",
+		NoHelmUpdate:        true, // --no-helm-update
+		AllAutomatic:        false,
+		NoMergePullRequest:  false, // note auto-merge enabled
+		NoPoll:              false, // note polling enabled
+		NoWaitAfterMerge:    false,
+		IgnoreLocalFiles:    true,
+		Timeout:             "1h",
+		PullRequestPollTime: "20s",
+		Filter:              "",
+		Alias:               "",
+		FakePullRequests:    testEnv.FakePullRequests,
 
 		// test settings
 		UseFakeHelm: true,
 	}
 
 	promoteOptions.CommonOptions = *testEnv.CommonOptions // Factory and other mocks initialized by cmd.ConfigureTestOptionsWithResources
-	promoteOptions.BatchMode = true // --batch-mode
+	promoteOptions.BatchMode = true                       // --batch-mode
 
 	jxClient, ns, err := promoteOptions.JXClientAndDevNamespace()
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
@@ -196,7 +194,6 @@ func TestPromoteToProductionPRPollingRun(t *testing.T) {
 		assert.NoError(t, err)
 		close(ch)
 	}()
-
 
 	// wait for the PR the be created by the promote command
 	cmd.WaitForPullRequestForEnv(t, activities, testEnv.Activity.Name, "production")
@@ -221,14 +218,14 @@ func TestPromoteToProductionPRPollingRun(t *testing.T) {
 
 // Contains all useful data from the test environment initialized by `prepareInitialPromotionEnv`
 type TestEnv struct {
-	Activity *v1.PipelineActivity
+	Activity         *v1.PipelineActivity
 	FakePullRequests cmd.CreateEnvPullRequestFn
-	WorkflowOptions *cmd.ControllerWorkflowOptions
-	CommonOptions *cmd.CommonOptions
-	FakeGitProvider *gits.FakeProvider
-	DevRepo *gits.FakeRepository
-	StagingRepo *gits.FakeRepository
-	ProdRepo *gits.FakeRepository
+	WorkflowOptions  *cmd.ControllerWorkflowOptions
+	CommonOptions    *cmd.CommonOptions
+	FakeGitProvider  *gits.FakeProvider
+	DevRepo          *gits.FakeRepository
+	StagingRepo      *gits.FakeRepository
+	ProdRepo         *gits.FakeRepository
 }
 
 // Prepares an initial configuration with a typical environment setup.
@@ -318,13 +315,13 @@ func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*
 	cmd.AssertAllPromoteStepsSuccessful(t, activities, a.Name)
 
 	return &TestEnv{
-		Activity: a,
+		Activity:         a,
 		FakePullRequests: o.FakePullRequests,
-		CommonOptions: &o.CommonOptions,
-		WorkflowOptions: o,
-		FakeGitProvider: fakeGitProvider,
-		DevRepo: fakeRepo,
-		StagingRepo: stagingRepo,
-		ProdRepo: prodRepo,
+		CommonOptions:    &o.CommonOptions,
+		WorkflowOptions:  o,
+		FakeGitProvider:  fakeGitProvider,
+		DevRepo:          fakeRepo,
+		StagingRepo:      stagingRepo,
+		ProdRepo:         prodRepo,
 	}, nil
 }

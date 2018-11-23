@@ -202,10 +202,11 @@ type Gitter interface {
 
 	CommitIfChanges(dir string, message string) error
 	CommitDir(dir string, message string) error
-	AddCommmit(dir string, msg string) error
+	AddCommit(dir string, msg string) error
 	HasChanges(dir string) (bool, error)
 	Diff(dir string) (string, error)
 
+	GetLatestCommitMessage(dir string) (string, error)
 	GetPreviousGitTagSHA(dir string) (string, error)
 	GetCurrentGitTagSHA(dir string) (string, error)
 	FetchTags(dir string) error

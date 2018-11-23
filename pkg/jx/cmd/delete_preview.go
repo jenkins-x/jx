@@ -71,7 +71,7 @@ func (o *DeletePreviewOptions) Run() error {
 			if err != nil {
 				return err
 			}
-			selected, err := util.PickNames(names, "Pick preview environments to delete: ", o.In, o.Out, o.Err)
+			selected, err := util.PickNames(names, "Pick preview environments to delete: ", "", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

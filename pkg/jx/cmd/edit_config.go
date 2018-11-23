@@ -98,7 +98,7 @@ func (o *EditConfigOptions) Run() error {
 
 	kind := o.Kind
 	if kind == "" && !o.BatchMode {
-		kind, err = util.PickRequiredNameWithDefault(configKinds, "Which configuration do you want to edit", issueKind, o.In, o.Out, o.Err)
+		kind, err = util.PickRequiredNameWithDefault(configKinds, "Which configuration do you want to edit", issueKind, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -156,7 +156,7 @@ func (o *EditConfigOptions) EditIssueTracker(pc *config.ProjectConfig) (bool, er
 	}
 	answer = true
 
-	it.Project, err = util.PickValue("Issue tracker project name: ", it.Project, true, o.In, o.Out, o.Err)
+	it.Project, err = util.PickValue("Issue tracker project name: ", it.Project, true, "", o.In, o.Out, o.Err)
 	if err != nil {
 		return answer, err
 	}
@@ -188,11 +188,11 @@ func (o *EditConfigOptions) EditChat(pc *config.ProjectConfig) (bool, error) {
 	}
 	answer = true
 
-	it.DeveloperChannel, err = util.PickValue("Developer channel: ", it.DeveloperChannel, false, o.In, o.Out, o.Err)
+	it.DeveloperChannel, err = util.PickValue("Developer channel: ", it.DeveloperChannel, false, "", o.In, o.Out, o.Err)
 	if err != nil {
 		return answer, err
 	}
-	it.UserChannel, err = util.PickValue("User channel: ", it.UserChannel, false, o.In, o.Out, o.Err)
+	it.UserChannel, err = util.PickValue("User channel: ", it.UserChannel, false, "", o.In, o.Out, o.Err)
 	if err != nil {
 		return answer, err
 	}

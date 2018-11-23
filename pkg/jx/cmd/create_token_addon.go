@@ -190,8 +190,8 @@ func (o *CreateTokenAddonOptions) updateAddonCredentialsSecret(server *auth.Auth
 			Data: map[string][]byte{},
 		}
 	} else {
-		secret.Annotations = kube.MergeMaps(secret.Annotations, annotations)
-		secret.Labels = kube.MergeMaps(secret.Labels, labels)
+		secret.Annotations = util.MergeMaps(secret.Annotations, annotations)
+		secret.Labels = util.MergeMaps(secret.Labels, labels)
 	}
 	if userAuth.Username != "" {
 		secret.Data["username"] = []byte(userAuth.Username)

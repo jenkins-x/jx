@@ -3,6 +3,8 @@ package spring
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -90,6 +92,14 @@ type SpringBootForm struct {
 	Dependencies    []string
 	DependencyKinds []string
 	Type            string
+}
+
+type errorResponse struct {
+	Timestamp string `json:"timestamp,omitempty"`
+	Status    int    `json:"status,omitempty"`
+	Error     string `json:"error,omitempty"`
+	Message   string `json:"message,omitempty"`
+	Path      string `json:"path,omitempty"`
 }
 
 func LoadSpringBoot(cacheDir string) (*SpringBootModel, error) {
@@ -338,6 +348,20 @@ func (data *SpringBootForm) CreateProject(workDir string) (string, error) {
 	if err != nil {
 		return answer, err
 	}
+
+	if res.StatusCode == 400 {
+		errorBody, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return answer, err
+		}
+
+		errorResponse := errorResponse{}
+		json.Unmarshal(errorBody, &errorResponse)
+
+		log.Infof("%s\n", util.ColorError(errorResponse.Message))
+		return answer, errors.New("unable to create spring quickstart")
+	}
+
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		return answer, err

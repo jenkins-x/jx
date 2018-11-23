@@ -3,6 +3,7 @@ package cmd
 import (
 	"io"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -22,11 +23,11 @@ var (
 
 	createPullRequestExample = templates.Examples(`
 		# Create a Pull Request in the current project
-		jx create pullRequest -t "my PR title"
+		jx create pullrequest -t "my PR title"
 
 
 		# Create a Pull Request with a title and a body
-		jx create pullRequest -t "my PR title" --body "	
+		jx create pullrequest -t "my PR title" --body "	
 		some more
 		text
 		goes
@@ -84,10 +85,10 @@ func NewCmdCreatePullRequest(f Factory, in terminal.FileReader, out terminal.Fil
 	}
 
 	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The source directory used to detect the Git repository. Defaults to the current directory")
-	cmd.Flags().StringVarP(&options.Title, optionTitle, "t", "", "The title of the pullRequest to create")
-	cmd.Flags().StringVarP(&options.Body, "body", "", "", "The body of the pullRequest")
+	cmd.Flags().StringVarP(&options.Title, optionTitle, "t", "", "The title of the pullrequest to create")
+	cmd.Flags().StringVarP(&options.Body, "body", "", "", "The body of the pullrequest")
 	cmd.Flags().StringVarP(&options.Base, "base", "", "master", "The base branch to create the pull request into")
-	cmd.Flags().StringArrayVarP(&options.Labels, "label", "l", []string{}, "The labels to add to the pullRequest")
+	cmd.Flags().StringArrayVarP(&options.Labels, "label", "l", []string{}, "The labels to add to the pullrequest")
 
 	options.addCommonFlags(cmd)
 	return cmd
@@ -139,17 +140,23 @@ func (o *CreatePullRequestOptions) Run() error {
 
 func (o *CreatePullRequestOptions) PopulatePullRequest(pullRequest *gits.GitPullRequestArguments, gitInfo *gits.GitRepositoryInfo) error {
 	title := o.Title
-	body := o.Body
-	var err error
 	if title == "" {
 		if o.BatchMode {
 			return util.MissingOption(optionTitle)
 		}
-		title, err = util.PickValue("PullRequest title:", "", true, o.In, o.Out, o.Err)
+		defaultValue, body, err := o.findLastCommitTitle()
+		if err != nil {
+			log.Warnf("Failed to find last git commit title: %s\n", err)
+		}
+		if o.Body == "" {
+			o.Body = body
+		}
+		title, err = util.PickValue("PullRequest title:", defaultValue, true, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
 	}
+	body := o.Body
 	pullRequest.Title = title
 	pullRequest.Body = body
 	pullRequest.GitRepositoryInfo = gitInfo
@@ -158,4 +165,27 @@ func (o *CreatePullRequestOptions) PopulatePullRequest(pullRequest *gits.GitPull
 		return fmt.Errorf("No title specified!")
 	}
 	return nil
+}
+
+func (o *CreatePullRequestOptions) findLastCommitTitle() (string, string, error) {
+	title := ""
+	body := ""
+	dir := o.Dir
+	gitDir, gitConfDir, err := o.Git().FindGitConfigDir(dir)
+	if err != nil {
+		return title, body, err
+	}
+	if gitDir == "" || gitConfDir == "" {
+		log.Warnf("No git directory could be found from dir %s\n", dir)
+		return title, body, err
+	}
+	message, err := o.Git().GetLatestCommitMessage(dir)
+	if err != nil {
+		return title, body, err
+	}
+	lines := strings.SplitN(message, "\n", 2)
+	if len(lines) < 2 {
+		return message, "", nil
+	}
+	return lines[0], lines[1], nil
 }

@@ -5,6 +5,7 @@ import (
 	"io"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -27,6 +28,7 @@ type GetBuildLogsOptions struct {
 	GetOptions
 
 	Tail        bool
+	Wait        bool
 	BuildFilter builds.BuildPodInfoFilter
 }
 
@@ -83,6 +85,7 @@ func NewCmdGetBuildLogs(f Factory, in terminal.FileReader, out terminal.FileWrit
 		},
 	}
 	cmd.Flags().BoolVarP(&options.Tail, "tail", "t", true, "Tails the build log to the current terminal")
+	cmd.Flags().BoolVarP(&options.Wait, "wait", "w", false, "Waits for the build to start before failing")
 	cmd.Flags().BoolVarP(&options.BuildFilter.Pending, "pending", "p", false, "Only display logs which are currently pending to choose from if no build name is supplied")
 	cmd.Flags().StringVarP(&options.BuildFilter.Filter, "filter", "f", "", "Filters all the available jobs by those that contain the given text")
 	cmd.Flags().StringVarP(&options.BuildFilter.Owner, "owner", "o", "", "Filters the owner (person/organisation) of the repository")
@@ -109,26 +112,23 @@ func (o *GetBuildLogsOptions) Run() error {
 	if webhookEngine == v1.WebHookEngineProw {
 		return o.getProwBuildLog(kubeClient, jxClient, ns)
 	}
-	jobMap, err := o.getJobMap(o.BuildFilter.Filter)
-	if err != nil {
-		return err
-	}
-	jenkinsClient, err := o.JenkinsClient()
-	if err != nil {
-		return err
-	}
 
 	args := o.Args
-	names := []string{}
-	for k, _ := range jobMap {
-		names = append(names, k)
-	}
-	sort.Strings(names)
-	if len(names) == 0 {
-		return fmt.Errorf("No pipelines have been built!")
-	}
 
-	if len(args) == 0 {
+	if !o.BatchMode && len(args) == 0 {
+		jobMap, err := o.getJobMap(o.BuildFilter.Filter)
+		if err != nil {
+			return err
+		}
+		names := []string{}
+		for k, _ := range jobMap {
+			names = append(names, k)
+		}
+		sort.Strings(names)
+		if len(names) == 0 {
+			return fmt.Errorf("No pipelines have been built!")
+		}
+
 		defaultName := ""
 		for _, n := range names {
 			if strings.HasSuffix(n, "/master") {
@@ -136,7 +136,7 @@ func (o *GetBuildLogsOptions) Run() error {
 				break
 			}
 		}
-		name, err := util.PickNameWithDefault(names, "Which pipeline do you want to view the logs of?: ", defaultName, o.In, o.Out, o.Err)
+		name, err := util.PickNameWithDefault(names, "Which pipeline do you want to view the logs of?: ", defaultName, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -146,19 +146,62 @@ func (o *GetBuildLogsOptions) Run() error {
 		return fmt.Errorf("No pipeline chosen")
 	}
 	name := args[0]
-	job := jobMap[name]
-	var last gojenkins.Build
 	buildNumber := o.BuildFilter.BuildNumber()
-	if buildNumber > 0 {
-		last, err = jenkinsClient.GetBuild(job, buildNumber)
-	} else {
-		last, err = jenkinsClient.GetLastBuild(job)
-	}
+
+	last, err := o.getLastJenkinsBuild(name, buildNumber)
 	if err != nil {
 		return err
 	}
+
 	log.Infof("%s %s\n", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
 	return o.tailBuild(name, &last)
+}
+
+func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) (gojenkins.Build, error) {
+	var last gojenkins.Build
+
+	jenkinsClient, err := o.JenkinsClient()
+	if err != nil {
+		return last, err
+	}
+
+	f := func() error {
+		var err error
+
+		jobMap, err := o.getJobMap(o.BuildFilter.Filter)
+		if err != nil {
+			return err
+		}
+		job := jobMap[name]
+		if job.Url == "" {
+			return fmt.Errorf("No Job exists yet called %s", name)
+		}
+
+		if buildNumber > 0 {
+			last, err = jenkinsClient.GetBuild(job, buildNumber)
+		} else {
+			last, err = jenkinsClient.GetLastBuild(job)
+		}
+		if err != nil {
+			return err
+		}
+		if last.Url == "" {
+			if buildNumber > 0 {
+				return fmt.Errorf("No build found for name %s number %d", name, buildNumber)
+			} else {
+				return fmt.Errorf("No build found for name %s", name)
+			}
+		}
+		return err
+	}
+
+	if o.Wait {
+		err := o.retry(60, time.Second*2, f)
+		return last, err
+	} else {
+		err := f()
+		return last, err
+	}
 }
 
 func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, jxClient versioned.Interface, ns string) error {
@@ -199,7 +242,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 	}
 
 	if len(args) == 0 {
-		name, err := util.PickNameWithDefault(names, "Which build do you want to view the logs of?: ", defaultName, o.In, o.Out, o.Err)
+		name, err := util.PickNameWithDefault(names, "Which build do you want to view the logs of?: ", defaultName, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -224,6 +267,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 	}
 
 	lastInitC := initContainers[len(initContainers)-1]
+	log.Infof("Build logs for %s\n", util.ColorInfo(name))
 	return o.getPodLog(ns, pod, lastInitC)
 }
 

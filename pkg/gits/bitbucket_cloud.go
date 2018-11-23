@@ -824,6 +824,14 @@ func (b *BitbucketCloudProvider) CreateIssue(owner string, repo string, issue *G
 		b.GitIssueToBitbucketIssue(*issue),
 	)
 
+	// We need to make a second round trip to get the issue's HTML URL.
+	bIssue, _, err = b.Client.IssueTrackerApi.RepositoriesUsernameRepoSlugIssuesIssueIdGet(
+		b.Context,
+		owner,
+		strconv.FormatInt(int64(bIssue.Id), 10),
+		repo,
+	)
+
 	if err != nil {
 		return nil, err
 	}

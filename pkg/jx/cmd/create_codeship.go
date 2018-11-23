@@ -418,6 +418,8 @@ func (o *CreateCodeshipOptions) CreateAdditionalArgs() []string {
 	args := []string{}
 
 	// prow
+	args = append(args, "--skip-login")
+
 	if o.CreateTerraformOptions.InstallOptions.Flags.Prow {
 		args = append(args, "--prow")
 	}
@@ -428,6 +430,10 @@ func (o *CreateCodeshipOptions) CreateAdditionalArgs() []string {
 
 	if o.CreateTerraformOptions.InstallOptions.InitOptions.Flags.Helm3 {
 		args = append(args, "--helm3")
+	}
+
+	if o.CreateTerraformOptions.InstallOptions.GitOpsMode {
+		args = append(args, "--gitops")
 	}
 
 	return args
