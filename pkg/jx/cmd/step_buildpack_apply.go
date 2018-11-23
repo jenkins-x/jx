@@ -36,8 +36,8 @@ type StepBuildPackApplyOptions struct {
 	DisableJenkinsfileCheck bool
 }
 
-// NewCmdBuildPackApply Creates a new Command object
-func NewCmdBuildPackApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+// NewCmdStepBuildPackApply Creates a new Command object
+func NewCmdStepBuildPackApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepBuildPackApplyOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
@@ -50,7 +50,7 @@ func NewCmdBuildPackApply(f Factory, in terminal.FileReader, out terminal.FileWr
 	}
 
 	cmd := &cobra.Command{
-		Use:     "buildpack apply",
+		Use:     "apply",
 		Short:   "Applies the current teams build pack to the project to add any missing resources like a Jenkinsfile",
 		Long:    createJenkinsfileLong,
 		Example: createJenkinsfileExample,
