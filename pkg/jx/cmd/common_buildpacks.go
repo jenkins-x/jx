@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/Azure/draft/pkg/draft/draftpath"
 	"github.com/jenkins-x/draft-repo/pkg/draft/pack"
 	"github.com/jenkins-x/jx/pkg/config"
 	jxdraft "github.com/jenkins-x/jx/pkg/draft"
@@ -36,12 +35,6 @@ func (o *CommonOptions) initBuildPacks() (string, error) {
 
 // invokeDraftPack invokes a draft pack copying in a Jenkinsfile if required
 func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
-	draftDir, err := util.DraftDir()
-	if err != nil {
-		return "", err
-	}
-	draftHome := draftpath.Home(draftDir)
-
 	packsDir, err := o.initBuildPacks()
 	if err != nil {
 		return "", err
@@ -118,7 +111,7 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 			lpack = filepath.Join(packsDir, "cwp")
 		} else {
 			// pack detection time
-			lpack, err = jxdraft.DoPackDetection(draftHome, o.Out, dir)
+			lpack, err = jxdraft.DoPackDetectionForBuildPack(o.Out, dir, packsDir)
 
 			if err != nil {
 				return "", err
