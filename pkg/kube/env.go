@@ -875,3 +875,26 @@ func NewPreviewEnvironment(name string) *v1.Environment {
 		},
 	}
 }
+
+// GetDevEnvironment returns the current development environment using the jxClient for the given ns
+func GetDevEnvironment(jxClient versioned.Interface, ns string) (*v1.Environment, error) {
+	//Find the settings for the team
+	environmentInterface := jxClient.JenkinsV1().Environments(ns)
+	name := LabelValueDevEnvironment
+	answer, err := environmentInterface.Get(name, metav1.GetOptions{})
+	if err == nil {
+		return answer, nil
+	}
+	selector := "env=dev"
+	envList, err := environmentInterface.List(metav1.ListOptions{
+		LabelSelector: selector,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(envList.Items) == 1 {
+		return &envList.Items[0], nil
+	}
+	return nil, fmt.Errorf("Unable to locate dev environment resource definition in namespace %s, No Environment called: %s or with selector: %s found %d entries: %v",
+		ns, name, selector, len(envList.Items), envList.Items)
+}

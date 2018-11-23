@@ -2,15 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 	"io/ioutil"
 	"net"
-	"net/url"
-	"os"
-	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/cloud/iks"
@@ -429,40 +427,6 @@ func (o *InitOptions) initHelm() error {
 	return nil
 }
 
-// initBuildPacks initalise the build packs
-func (o *InitOptions) initBuildPacks() (string, error) {
-	settings, err := o.TeamSettings()
-
-	if err != nil {
-		return "", err
-	}
-
-	packURL := settings.BuildPackURL
-	packRef := settings.BuildPackRef
-
-	u, err := url.Parse(strings.TrimSuffix(packURL, ".git"))
-	if err != nil {
-		return "", fmt.Errorf("Failed to parse build pack URL: %s: %s", packURL, err)
-	}
-
-	draftDir, err := util.DraftDir()
-	if err != nil {
-		return "", err
-	}
-	dir := filepath.Join(draftDir, "packs", u.Host, u.Path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return "", fmt.Errorf("Could not create %s: %s", dir, err)
-	}
-
-	err = o.Git().CloneOrPull(packURL, dir)
-	if err != nil {
-		return "", err
-	}
-	if packRef != "master" {
-		err = o.Git().CheckoutRemoteBranch(dir, packRef)
-	}
-	return filepath.Join(dir, "packs"), err
-}
 
 func (o *InitOptions) configureForICP() {
 	icpDefaultTillerNS := "default"
@@ -674,7 +638,8 @@ controller:
 		i := 0
 		for {
 			log.Infof("Installing using helm binary: %s\n", util.ColorInfo(o.Helm().HelmBinary()))
-			err = o.Helm().InstallChart("stable/nginx-ingress", "jxing", ingressNamespace, nil, nil, values, valuesFiles)
+			err = o.Helm().InstallChart("stable/nginx-ingress", "jxing", ingressNamespace, nil, nil, values,
+				valuesFiles, "")
 			if err != nil {
 				if i >= 3 {
 					log.Errorf("Failed to install ingress chart: %s", err)
