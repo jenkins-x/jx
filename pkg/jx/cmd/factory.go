@@ -3,14 +3,14 @@ package cmd
 import (
 	"flag"
 	"fmt"
-	"github.com/hashicorp/vault/api"
-	"github.com/jenkins-x/jx/pkg/io/secrets"
-	"github.com/jenkins-x/jx/pkg/vault"
-	"github.com/sirupsen/logrus"
 	"io"
 	"net/url"
 	"os"
 	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/io/secrets"
+	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/sirupsen/logrus"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube/services"
@@ -309,7 +309,7 @@ func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService
 }
 
 // GetSystemVault gets the system vault for storing secrets.
-func (f *factory) GetSystemVault() (*api.Client, error) {
+func (f *factory) GetSystemVault() (vault.VaultClient, error) {
 	vopClient, err := f.CreateVaultOperatorClient()
 	kubeClient, ns, err := f.CreateClient()
 	if err != nil {
@@ -325,7 +325,8 @@ func (f *factory) GetSystemVault() (*api.Client, error) {
 		return nil, err
 	}
 
-	return clientFactory.NewVaultClient(vault.SystemVaultName, ns)
+	vaultClient, err := clientFactory.NewVaultClient(vault.SystemVaultName, ns)
+	return vault.NewVaultClient(vaultClient), err
 }
 
 func (f *factory) CreateJXClient() (versioned.Interface, string, error) {
