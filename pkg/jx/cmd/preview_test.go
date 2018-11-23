@@ -4,6 +4,9 @@ import (
 	"reflect"
 	"strconv"
 
+	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/kube/services"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -32,6 +35,7 @@ import (
 	kube_mocks "k8s.io/client-go/kubernetes/fake"
 )
 
+// Constants for some test data to be used.
 const (
 	application    = "test-app"
 	name           = "test-app-name"
@@ -126,8 +130,13 @@ preview:
 	}
 }
 
+// Check a basic happy-path execution through PreviewOptions.Run().
+// There are more Run() testcases that can be added for the many, many permutations depending on what git & K8S data
+// shows at various points.
+// Just like the code, this test is a bit of a monolith with too much setup & validation (pulled out into separate
+// functions).
+// TODO: Refactor the implementation & test so the various stages of creating a preview env. can be tested individually.
 func TestRun_CreateNewPreviewEnv(t *testing.T) {
-	//todo: validate sourceurl/sourceref in environmentspec.source
 	t.Parallel()
 
 	RegisterMockTestingT(t)
@@ -141,11 +150,6 @@ func TestRun_CreateNewPreviewEnv(t *testing.T) {
 
 	validatePreviewEnvironment(t, cs)
 	validateUser(t, cs)
-
-	//TODO: assert CRD registrations?
-
-	//TODO: check PR comment.
-
 }
 
 func setupEnvironment() {
@@ -200,7 +204,7 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 	service := &k8s_v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        "my-app",
-			Annotations: map[string]string{kube.ExposeURLAnnotation: "http://the-service-url/with/a/path"},
+			Annotations: map[string]string{services.ExposeURLAnnotation: "http://the-service-url/with/a/path"},
 		},
 	}
 	mockKubeClient.CoreV1().Services("jx").Create(service)
@@ -235,7 +239,7 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 
 	mockAuthConfigService := auth.AuthConfigService{}
 	When(factory.CreateAuthConfigService(cmd.GitAuthConfigFile)).ThenReturn(mockAuthConfigService, nil)
-	When(factory.IsInCDPIpeline()).ThenReturn(true)
+	When(factory.IsInCDPipeline()).ThenReturn(true)
 
 	cs := cs_fake.NewSimpleClientset()
 
@@ -243,16 +247,22 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 
 	mockHelmer := helm_test.NewMockHelmer()
 	When(factory.GetHelm(AnyBool(), AnyString(), AnyBool(), AnyBool())).ThenReturn(mockHelmer)
-	When(mockHelmer.UpgradeChart(AnyString(),
-		AnyString(),
-		AnyString(),
-		anyPtrToString(),
-		AnyBool(),
-		anyPtrToInt(),
-		AnyBool(),
-		AnyBool(),
-		AnyStringSlice(),
-		AnyStringSlice())).ThenReturn(nil) //err=nil
+
+	//UpgradeChart(chart string, releaseName string, ns string, version *string, install bool,
+	//	timeout *int, force bool, wait bool, values []string, valueFiles []string, repo string)
+
+	When(mockHelmer.UpgradeChart(AnyString(), //chart
+		AnyString(),      //releaseName
+		AnyString(),      // ns
+		anyPtrToString(), // version
+		AnyBool(),        // install
+		anyPtrToInt(),    // timeout
+		AnyBool(),        // force
+		AnyBool(),        // wait
+		AnyStringSlice(), // values
+		AnyStringSlice(), // valueFiles
+		AnyString(),      // repo
+	)).ThenReturn(nil) //err=nil
 
 	return previewOpts, cs
 }
