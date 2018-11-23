@@ -95,13 +95,13 @@ func (o *GetBuildPackOptions) Run() error {
 			bp := m[name]
 			if bp != nil {
 				label := bp.Spec.Label
-				gitUrl := bp.Spec.GitURL
+				gitURL := bp.Spec.GitURL
 				gitRef := bp.Spec.GitRef
 				defaultPack := ""
-				if gitUrl == settings.BuildPackURL {
+				if gitURL == settings.BuildPackURL {
 					defaultPack = "  " + util.CheckMark()
 				}
-				table.AddRow(label, gitUrl, gitRef, defaultPack)
+				table.AddRow(label, gitURL, gitRef, defaultPack)
 			}
 		}
 	} else {
