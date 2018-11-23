@@ -1,10 +1,9 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/jenkins-x/jx/pkg/jenkins"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
@@ -35,8 +34,6 @@ type StepBuildPackApplyOptions struct {
 	Jenkinsfile             string
 	DraftPack               string
 	DisableJenkinsfileCheck bool
-
-	ImportFileResolver jenkinsfile.ImportFileResolver
 }
 
 // NewCmdBuildPackApply Creates a new Command object
@@ -84,9 +81,11 @@ func (o *StepBuildPackApplyOptions) Run() error {
 		}
 	}
 
-	if o.ImportFileResolver == nil {
-		o.ImportFileResolver = o.resolveImportFile
+	settings, err := o.CommonOptions.TeamSettings()
+	if err != nil {
+	  return err
 	}
+	log.Infof("build pack is %s\n", settings.BuildPackURL)
 
 	defaultJenkinsfile := filepath.Join(dir, jenkins.DefaultJenkinsfile)
 	jenkinsfile := jenkins.DefaultJenkinsfile
@@ -113,9 +112,4 @@ func (o *StepBuildPackApplyOptions) Run() error {
 		return err
 	}
 	return nil
-}
-
-// resolveImportFile resolve an import name and file 
-func (o *StepBuildPackApplyOptions) resolveImportFile(importFile *jenkinsfile.ImportFile) (string, error) {
-	return importFile.File, fmt.Errorf("not implemented")
 }
