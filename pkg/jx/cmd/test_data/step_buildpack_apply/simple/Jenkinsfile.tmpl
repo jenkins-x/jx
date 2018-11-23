@@ -28,6 +28,7 @@ pipeline {
 {{.Pipelines.Release.AllButPromote.Groovy}}
       }
     }
+{{- if .Pipelines.Release.Promote.Groovy }}
     stage('Promote to Environments') {
       when {
         branch 'master'
@@ -36,6 +37,7 @@ pipeline {
 {{.Pipelines.Release.Promote.Groovy}}
       }
     }
+{{- end }}
   }
   post {
     always {

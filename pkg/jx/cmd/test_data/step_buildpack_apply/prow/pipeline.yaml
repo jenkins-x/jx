@@ -24,7 +24,9 @@ pipelines:
       - sh: git checkout master
         comment: ensure we're not on a detached head
       - sh: git config --global credential.helper store
+        when: "!prow"
       - sh: jx step git credentials
+        when: "!prow"
     setVersion:
       steps:
       - sh: echo \$(jx-release-version) > VERSION

@@ -51,3 +51,33 @@ func DoPackDetection(home draftpath.Home, out io.Writer, dir string) (string, er
 	}
 	return "", fmt.Errorf("there was an error detecting the language using packs from %s", home.Packs())
 }
+
+// DoPackDetectionForBuildPack performs detection of the language based on a sepcific build pack
+func DoPackDetectionForBuildPack(out io.Writer, dir string, packDir string) (string, error) {
+	log.Infof("performing pack detection in folder %s\n", dir)
+	langs, err := linguist.ProcessDir(dir)
+	if err != nil {
+		return "", fmt.Errorf("there was an error detecting the language: %s", err)
+	}
+	if len(langs) == 0 {
+		return "", fmt.Errorf("there was an error detecting the language")
+	}
+	for _, lang := range langs {
+		detectedLang := linguist.Alias(lang)
+		fmt.Fprintf(out, "--> Draft detected %s (%f%%)\n", detectedLang.Language, detectedLang.Percent)
+		packs, err := ioutil.ReadDir(packDir)
+		if err != nil {
+			return "", fmt.Errorf("there was an error reading %s: %v", packDir, err)
+		}
+		for _, file := range packs {
+			if file.IsDir() {
+				if strings.Compare(strings.ToLower(detectedLang.Language), strings.ToLower(file.Name())) == 0 {
+					packPath := filepath.Join(packDir, file.Name())
+					return packPath, nil
+				}
+			}
+		}
+		fmt.Fprintf(out, "--> Could not find a pack for %s. Trying to find the next likely language match...\n", detectedLang.Language)
+	}
+	return "", fmt.Errorf("there was an error detecting the language using packs from %s", packDir)
+}
