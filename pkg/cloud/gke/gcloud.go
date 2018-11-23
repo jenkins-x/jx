@@ -24,11 +24,6 @@ var (
 		"roles/container.developer",
 		"roles/storage.objectAdmin",
 		"roles/editor"}
-
-	VaultServiceAccountRoles = []string{"roles/storage.objectAdmin",
-		"roles/cloudkms.admin",
-		"roles/cloudkms.cryptoKeyEncrypterDecrypter",
-	}
 )
 
 // ClusterName gets the cluster name from the current context
@@ -62,35 +57,6 @@ func ShortClusterName(kuber kube.Kuber) (string, error) {
 func GetSimplifiedClusterName(complexClusterName string) string {
 	split := strings.Split(complexClusterName, "_")
 	return split[len(split)-1]
-}
-
-// VaultBucketName creates a Bucket name for a given vault name and cluster name
-func VaultBucketName(vaultName string, clusterName string) string {
-	return generatePrefix(vaultName, clusterName) + "bucket"
-}
-
-// VaultServiceAccountName creates a service account name for a given vault and cluster name
-func VaultServiceAccountName(vaultName string, clusterName string) string {
-	return generatePrefix(vaultName, clusterName) + "sa"
-}
-
-// VaultAuthServiceAccountName creates a service account name for a given vault and cluster name
-func VaultAuthServiceAccountName(vaultName string, clusterName string) string {
-	return generatePrefix(vaultName, clusterName) + "auth-sa"
-}
-
-// VaultKeyringName creates a keyring name for a given vault and cluster name
-func VaultKeyringName(vaultName string, clusterName string) string {
-	return generatePrefix(vaultName, clusterName) + "keyring"
-}
-
-// VaultKeyName creates a key name for a given vault and cluster name
-func VaultKeyName(vaultName string, clusterName string) string {
-	return generatePrefix(vaultName, clusterName) + "key"
-}
-
-func generatePrefix(vaultName string, clusterName string) string {
-	return fmt.Sprintf("%s-%s-", clusterName, vaultName)
 }
 
 func BucketExists(projectId string, bucketName string) (bool, error) {

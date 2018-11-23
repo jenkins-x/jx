@@ -2,18 +2,18 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
-	"github.com/jenkins-x/jx/pkg/vault"
-	"io"
-
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	gkevault "github.com/jenkins-x/jx/pkg/cloud/gke/vault"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/vault"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -171,14 +171,14 @@ func (o *DeleteVaultOptions) removeGCPResources(vaultName string) error {
 		return err
 	}
 
-	sa := gke.VaultServiceAccountName(vaultName, clusterName)
-	err = gke.DeleteServiceAccount(sa, o.GKEProjectID, gke.VaultServiceAccountRoles)
+	sa := gkevault.ServiceAccountName(vaultName, clusterName)
+	err = gke.DeleteServiceAccount(sa, o.GKEProjectID, gkevault.ServiceAccountRoles)
 	if err != nil {
 		return errors.Wrapf(err, "deleting the GCP service account '%s'", sa)
 	}
 	log.Infof("GCP service account %s deleted\n", util.ColorInfo(sa))
 
-	bucket := gke.VaultBucketName(vaultName, clusterName)
+	bucket := gkevault.BucketName(vaultName, clusterName)
 	err = gke.DeleteAllObjectsInBucket(bucket)
 	if err != nil {
 		return errors.Wrapf(err, "deleting all objects in GCS bucket '%s'", bucket)
