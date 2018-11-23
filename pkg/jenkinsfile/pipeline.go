@@ -26,6 +26,7 @@ const (
 type PipelineAgent struct {
 	Label     string `yaml:"label,omitempty"`
 	Container string `yaml:"container,omitempty"`
+	Dir       string `yaml:"dir,omitempty"`
 }
 
 // Pipelines contains all the different kinds of pipeline for diferent branches
@@ -213,9 +214,9 @@ func (p *Pipelines) All() []*PipelineLifecycles {
 	return []*PipelineLifecycles{p.PullRequest, p.Feature, p.Release}
 }
 
-// defaultContainer defaults the container if none is being used
-func (p *Pipelines) defaultContainer(container string) {
-	defaultContainer(container, p.PullRequest, p.Release, p.Feature)
+// defaultContainerAndDir defaults the container if none is being used
+func (p *Pipelines) defaultContainerAndDir(container string, dir string) {
+	defaultContainerAndDir(container, dir, p.PullRequest, p.Release, p.Feature)
 }
 
 // RemoveWhenStatements removes any prow or !prow statements
@@ -227,27 +228,36 @@ func (p *Pipelines) RemoveWhenStatements(prow bool) {
 	}
 }
 
-func defaultContainer(container string, lifecycles ...*PipelineLifecycles) {
+func defaultContainerAndDir(container string, dir string, lifecycles ...*PipelineLifecycles) {
 	for _, l := range lifecycles {
 		if l != nil {
-			defaultLifecycleContainer(container, l.All())
+			defaultLifecycleContainerAndDir(container, dir, l.All())
 		}
 	}
 }
 
-func defaultLifecycleContainer(container string, lifecycles PipelineLifecycleArray) {
-	if container == "" {
+func defaultLifecycleContainerAndDir(container string, dir string, lifecycles PipelineLifecycleArray) {
+	if container == "" && dir == "" {
 		return
 	}
 	for _, l := range lifecycles {
 		if l != nil {
-			l.PreSteps = defaultContainerAroundSteps(container, l.PreSteps)
-			l.Steps = defaultContainerAroundSteps(container, l.Steps)
+			if dir != "" {
+				l.PreSteps = defaultDirAroundSteps(dir, l.PreSteps)
+				l.Steps = defaultDirAroundSteps(dir, l.Steps)
+			}
+			if container != "" {
+				l.PreSteps = defaultContainerAroundSteps(container, l.PreSteps)
+				l.Steps = defaultContainerAroundSteps(container, l.Steps)
+			}
 		}
 	}
 }
 
 func defaultContainerAroundSteps(container string, steps []*PipelineStep) []*PipelineStep {
+	if container == "" {
+		return steps
+	}
 	var containerStep *PipelineStep
 	result := []*PipelineStep{}
 	for _, step := range steps {
@@ -261,6 +271,28 @@ func defaultContainerAroundSteps(container string, steps []*PipelineStep) []*Pip
 				result = append(result, containerStep)
 			}
 			containerStep.Steps = append(containerStep.Steps, step)
+		}
+	}
+	return result
+}
+
+func defaultDirAroundSteps(dir string, steps []*PipelineStep) []*PipelineStep {
+	if dir == "" {
+		return steps
+	}
+	var dirStep *PipelineStep
+	result := []*PipelineStep{}
+	for _, step := range steps {
+		if step.Dir != "" {
+			result = append(result, step)
+		} else {
+			if dirStep == nil {
+				dirStep = &PipelineStep{
+					Dir: dir,
+				}
+				result = append(result, dirStep)
+			}
+			dirStep.Steps = append(dirStep.Steps, step)
 		}
 	}
 	return result
@@ -360,11 +392,11 @@ func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfil
 	}
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
-		return &config, fmt.Errorf("Failed to load file %s due to %s", fileName, err)
+		return &config, errors.Wrapf(err, "Failed to load file %s", fileName)
 	}
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
-		return &config, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
+		return &config, errors.Wrapf(err, "Failed to unmarshal file %s", fileName)
 	}
 	pipelines := &config.Pipelines
 	pipelines.RemoveWhenStatements(jenkinsfileRunner)
@@ -374,7 +406,7 @@ func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfil
 	}
 	if config.Extends == nil || config.Extends.File == "" {
 		if !jenkinsfileRunner {
-			config.defaultContainer()
+			config.defaultContainerAndDir()
 		}
 		return &config, nil
 	}
@@ -383,7 +415,7 @@ func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfil
 	if importModule != "" {
 		file, err = resolver(config.Extends.ImportFile())
 		if err != nil {
-			return &config, err
+			return &config, errors.Wrapf(err, "Failed to resolve imports for file %s", fileName)
 		}
 
 	} else if !filepath.IsAbs(file) {
@@ -401,7 +433,7 @@ func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfil
 	}
 	basePipeline, err := LoadPipelineConfig(file, resolver, jenkinsfileRunner)
 	if err != nil {
-		return &config, fmt.Errorf("failed to load base pipeline file %s", file)
+		return &config, errors.Wrapf(err, "Failed to base pipeline file %s", file)
 	}
 	err = config.ExtendPipeline(basePipeline, jenkinsfileRunner)
 	return &config, err
@@ -427,24 +459,31 @@ func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, jenkinsfileRunner 
 	if c.Agent.Label == "" {
 		c.Agent.Label = base.Agent.Label
 	}
+	defaultBase := false
 	if c.Agent.Container == "" {
 		c.Agent.Container = base.Agent.Container
 	} else if base.Agent.Container == "" && c.Agent.Container != "" {
 		base.Agent.Container = c.Agent.Container
-		base.defaultContainer()
+		defaultBase = true
+	}
+	if c.Agent.Dir == "" {
+		c.Agent.Dir = base.Agent.Dir
+	} else if base.Agent.Dir == "" && c.Agent.Dir != "" {
+		base.Agent.Dir = c.Agent.Dir
+		defaultBase = true
+	}
+	if defaultBase {
+		base.defaultContainerAndDir()
 	}
 	if !jenkinsfileRunner {
-		c.defaultContainer()
+		c.defaultContainerAndDir()
 	}
 	c.Pipelines.Extend(&base.Pipelines)
 	return nil
 }
 
-func (c *PipelineConfig) defaultContainer() {
-	container := c.Agent.Container
-	if container != "" {
-		c.Pipelines.defaultContainer(container)
-	}
+func (c *PipelineConfig) defaultContainerAndDir() {
+	c.Pipelines.defaultContainerAndDir(c.Agent.Container, c.Agent.Dir)
 }
 
 // ExtendPipelines extends the parent lifecycle with the base
