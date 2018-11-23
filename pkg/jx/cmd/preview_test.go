@@ -46,7 +46,7 @@ const (
 	prAuthor       = "the-pr-author"
 	prOwner        = "the-pr-owner"
 	prEmail        = "the-pr-owner@organisation.com"
-	userK8sId      = "the-pr-owner.organisation.com"
+	userK8sID      = "the-pr-owner.organisation.com"
 )
 
 func TestGetPreviewValuesConfig(t *testing.T) {
@@ -299,7 +299,7 @@ func validatePreviewEnvironment(t *testing.T, cs *cs_fake.Clientset) {
 func validateUser(t *testing.T, cs *cs_fake.Clientset) {
 	//Validate UserDetailsService updates:
 	users := cs.JenkinsV1().Users(namespace)
-	user, err := users.Get(userK8sId, metav1.GetOptions{})
+	user, err := users.Get(userK8sID, metav1.GetOptions{})
 	assert.NoError(t, err, "User should have been created.")
 	assert.NotNil(t, user)
 	//TODO: should this be used Spec instead of User (deprecated).
