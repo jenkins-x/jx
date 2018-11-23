@@ -1,10 +1,21 @@
 package vault
 
-import "github.com/hashicorp/vault/api"
+import (
+	"github.com/hashicorp/vault/api"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
+)
 
 type VaultClient interface {
 	// Write writes a named secret to the vault
 	Write(secretName string, data map[string]interface{}) (map[string]interface{}, error)
+
+	// WriteObject writes a generic named object to the vault. The secret _must_ be serializable to JSON
+	WriteObject(secretName string, secret interface{}) (map[string]interface{}, error)
+
+	// WriteYaml writes a yaml object to a named secret
+	WriteYaml(secretName string, yamlstring string) (map[string]interface{}, error)
 
 	// Read reads a named secret from the vault
 	Read(secretName string) (map[string]interface{}, error)
@@ -28,6 +39,32 @@ func (v *VaultClientImpl) Write(secretName string, data map[string]interface{}) 
 		return secret.Data, err
 	}
 	return nil, err
+}
+
+// WriteObject writes a generic named object to the vault. The secret _must_ be serializable to JSON
+func (v *VaultClientImpl) WriteObject(secretName string, secret interface{}) (map[string]interface{}, error) {
+	// Convert the secret into a saveable map[string]interface{} format
+	m, err := util.ToMapStringInterfaceFromStruct(&secret)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Could not serialize secret '%s' object for saving to vault", secretName)
+	}
+	return v.Write(secretName, m)
+}
+
+// WriteYaml writes a yaml object to a named secret
+func (v *VaultClientImpl) WriteYaml(secretName string, y string) (map[string]interface{}, error) {
+	// Unmarshal to a generic map
+	m := make(map[string]interface{})
+	err := yaml.Unmarshal([]byte(y), &m)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Could not unmarshal YAML %v", y)
+	}
+
+	// We can't just call v.client.save on this. Although it is a map[string]interface{}, a sub-item in the may _may_
+	// be a map[interface{}]interface rather than map[string]interface{}. This will cause the vault Write action to fail
+	// Instead we need to marshall to a struct and back
+	out := util.ConvertAllMapKeysToString(m)
+	return v.Write(secretName, out.(map[string]interface{}))
 }
 
 // Read reads a named secret to the vault
