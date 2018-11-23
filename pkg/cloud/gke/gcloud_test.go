@@ -19,12 +19,14 @@ func TestGetRegionFromZone(t *testing.T) {
 }
 
 func TestGetSimplifiedClusterName(t *testing.T) {
+	t.Parallel()
 	simpleName := GetSimplifiedClusterName("gke_jenkinsx-dev_europe-west1-b_my-cluster-name")
 
 	assert.Equal(t, "my-cluster-name", simpleName)
 }
 
 func TestShortClusterName(t *testing.T) {
+	t.Parallel()
 	kuber := kube_test.NewMockKuber()
 
 	config := api.Config{
@@ -42,6 +44,7 @@ func TestShortClusterName(t *testing.T) {
 }
 
 func TestClusterName(t *testing.T) {
+	t.Parallel()
 	kuber := kube_test.NewMockKuber()
 
 	config := api.Config{
