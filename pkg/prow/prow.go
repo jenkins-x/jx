@@ -172,7 +172,7 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 	templateName := fmt.Sprintf("jenkins-%s", o.DraftPack)
 
 	spec := &build.BuildSpec{
-		ServiceAccountName: serviceAccountBuild,
+		ServiceAccountName: serviceAccountApply,
 		Template: &build.TemplateInstantiationSpec{
 			Name: templateName,
 		},
