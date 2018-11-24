@@ -165,7 +165,7 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 	ps.Name = ServerlessJenkins
 	ps.RerunCommand = "/test this"
 	ps.Trigger = "(?m)^/test( all| this),?(\\s+|$)"
-	ps.AlwaysRun = false
+	ps.AlwaysRun = true
 	ps.SkipReport = false
 	ps.Agent = KnativeBuildAgent
 
@@ -524,6 +524,12 @@ func (o *Options) AddProwPlugins() error {
 		}
 		pluginConfig.Approve = append(pluginConfig.Approve, a)
 
+		parts := strings.Split(r, "/")
+		t := plugins.Trigger{
+			Repos:      []string{r},
+			TrustedOrg: parts[0],
+		}
+		pluginConfig.Triggers = append(pluginConfig.Triggers, t)
 	}
 
 	pluginYAML, err := yaml.Marshal(pluginConfig)
