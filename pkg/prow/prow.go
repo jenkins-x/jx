@@ -3,6 +3,7 @@ package prow
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -307,6 +308,9 @@ func (o *Options) createTide() config.Tide {
 
 	myTrue := true
 	myFalse := false
+
+	t.SyncPeriod = time.Duration(30)
+	t.StatusUpdatePeriod = time.Duration(30)
 	t.ContextOptions = config.TideContextPolicyOptions{
 		TideContextPolicy: config.TideContextPolicy{
 			FromBranchProtection: &myTrue,
