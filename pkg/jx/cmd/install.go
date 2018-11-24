@@ -921,6 +921,7 @@ func (options *InstallOptions) Run() error {
 	options.currentNamespace = ns
 	if options.Flags.Prow {
 		// install Prow into the new env
+		options.OAUTHToken = options.GitRepositoryOptions.ApiToken
 		err = options.installProw()
 		if err != nil {
 			return fmt.Errorf("failed to install Prow: %v", err)
@@ -1849,7 +1850,7 @@ func (options *InstallOptions) getGitUser(message string) (*auth.UserAuth, error
 	}
 	url := server.URL
 	if message == "" {
-		message = fmt.Sprintf("%s username for CI/CD pipelines:", server.Label())
+		message = fmt.Sprintf("%s bot user for CI/CD pipelines (not your personal Git user):", server.Label())
 	}
 	userAuth, err = config.PickServerUserAuth(server, message, options.BatchMode, "", options.In, options.Out, options.Err)
 	if err != nil {
