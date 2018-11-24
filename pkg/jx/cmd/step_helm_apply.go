@@ -90,14 +90,6 @@ func (o *StepHelmApplyOptions) Run() error {
 		}
 	}
 
-	// if we're in a Prow job we need to clone and change dir to find the Helm Chart.yaml
-	if os.Getenv(PROW_JOB_ID) != "" {
-		dir, err = o.cloneProwPullRequest(dir, o.GitProvider)
-		if err != nil {
-			return fmt.Errorf("failed to clone pull request: %v", err)
-		}
-	}
-
 	if !o.DisableHelmVersion {
 		(&StepHelmVersionOptions{}).Run()
 	}
