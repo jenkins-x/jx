@@ -460,11 +460,13 @@ func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, jenkinsfileRunner 
 		c.Agent.Label = base.Agent.Label
 	}
 	defaultBase := false
-	if c.Agent.Container == "" {
-		c.Agent.Container = base.Agent.Container
-	} else if base.Agent.Container == "" && c.Agent.Container != "" {
-		base.Agent.Container = c.Agent.Container
-		defaultBase = true
+	if !jenkinsfileRunner {
+		if c.Agent.Container == "" {
+			c.Agent.Container = base.Agent.Container
+		} else if base.Agent.Container == "" && c.Agent.Container != "" {
+			base.Agent.Container = c.Agent.Container
+			defaultBase = true
+		}
 	}
 	if c.Agent.Dir == "" {
 		c.Agent.Dir = base.Agent.Dir
