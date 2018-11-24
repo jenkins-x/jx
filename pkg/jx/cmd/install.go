@@ -1894,7 +1894,6 @@ func (options *InstallOptions) getGitUser(message string) (*auth.UserAuth, error
 	// TODO This API should be refactored/rethought as mixing OO and functional styles is error prone. If choosing an OO style, mutations should be carried out on the object data and then that data should be introspected as the source of truth in the operation. Alternatively, remove object state and pass values in a functional style.
 	options.GitRepositoryOptions.Username = userAuth.Username
 	options.GitRepositoryOptions.ApiToken = userAuth.ApiToken
-	//	options.P ApiToken = userAuth.ApiToken
 	return userAuth, nil
 }
 
