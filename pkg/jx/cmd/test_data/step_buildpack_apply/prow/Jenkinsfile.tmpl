@@ -37,9 +37,9 @@ pipeline {
       }
     }
   }
+{{- if .Pipelines.Post.Groovy }}
   post {
-    always {
-      cleanWs()
-    }
+{{.Pipelines.Post.Groovy}}
   }
+{{- end }}
 }

@@ -34,6 +34,7 @@ type Pipelines struct {
 	PullRequest *PipelineLifecycles `yaml:"pullRequest,omitempty"`
 	Release     *PipelineLifecycles `yaml:"release,omitempty"`
 	Feature     *PipelineLifecycles `yaml:"feature,omitempty"`
+	Post        *PipelineLifecycle `yaml:"post,omitempty"`
 }
 
 // PipelineStep defines an individual step in a pipeline, either a command (sh) or groovy block
@@ -206,6 +207,7 @@ func (p *Pipelines) Extend(base *Pipelines) error {
 	p.PullRequest = ExtendPipelines(p.PullRequest, base.PullRequest)
 	p.Release = ExtendPipelines(p.Release, base.Release)
 	p.Feature = ExtendPipelines(p.Feature, base.Feature)
+	p.Post = ExtendLifecycle(p.Post, base.Post)
 	return nil
 }
 
@@ -216,7 +218,7 @@ func (p *Pipelines) All() []*PipelineLifecycles {
 
 // defaultContainerAndDir defaults the container if none is being used
 func (p *Pipelines) defaultContainerAndDir(container string, dir string) {
-	defaultContainerAndDir(container, dir, p.PullRequest, p.Release, p.Feature)
+	defaultContainerAndDir(container, dir, p.All()...)
 }
 
 // RemoveWhenStatements removes any prow or !prow statements
@@ -225,6 +227,9 @@ func (p *Pipelines) RemoveWhenStatements(prow bool) {
 		if l != nil {
 			l.RemoveWhenStatements(prow)
 		}
+	}
+	if p.Post != nil {
+		p.Post.RemoveWhenStatements(prow)
 	}
 }
 
