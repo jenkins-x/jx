@@ -34,7 +34,7 @@ type Pipelines struct {
 	PullRequest *PipelineLifecycles `yaml:"pullRequest,omitempty"`
 	Release     *PipelineLifecycles `yaml:"release,omitempty"`
 	Feature     *PipelineLifecycles `yaml:"feature,omitempty"`
-	Post        *PipelineLifecycle `yaml:"post,omitempty"`
+	Post        *PipelineLifecycle  `yaml:"post,omitempty"`
 }
 
 // PipelineStep defines an individual step in a pipeline, either a command (sh) or groovy block
@@ -288,7 +288,10 @@ func defaultDirAroundSteps(dir string, steps []*PipelineStep) []*PipelineStep {
 	var dirStep *PipelineStep
 	result := []*PipelineStep{}
 	for _, step := range steps {
-		if step.Dir != "" {
+		if step.Container != "" {
+			step.Steps = defaultDirAroundSteps(dir, step.Steps)
+			result = append(result, step)
+		} else if step.Dir != "" {
 			result = append(result, step)
 		} else {
 			if dirStep == nil {
@@ -408,11 +411,10 @@ func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfil
 	if jenkinsfileRunner {
 		// lets force any agent for prow / jenkinsfile runner
 		config.Agent.Label = ""
+		config.Agent.Container = ""
 	}
 	if config.Extends == nil || config.Extends.File == "" {
-		if !jenkinsfileRunner {
-			config.defaultContainerAndDir()
-		}
+		config.defaultContainerAndDir()
 		return &config, nil
 	}
 	file := config.Extends.File
@@ -461,30 +463,30 @@ func (c *PipelineConfig) SaveConfig(fileName string) error {
 
 // ExtendPipeline inherits this pipeline from the given base pipeline
 func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, jenkinsfileRunner bool) error {
-	if c.Agent.Label == "" {
-		c.Agent.Label = base.Agent.Label
-	}
-	defaultBase := false
-	if !jenkinsfileRunner {
+	if jenkinsfileRunner {
+		c.Agent.Container = ""
+		c.Agent.Label = ""
+		base.Agent.Container = ""
+		base.Agent.Label = ""
+	} else {
+		if c.Agent.Label == "" {
+			c.Agent.Label = base.Agent.Label
+		} else if base.Agent.Label == "" && c.Agent.Label != "" {
+			base.Agent.Label = c.Agent.Label
+		}
 		if c.Agent.Container == "" {
 			c.Agent.Container = base.Agent.Container
 		} else if base.Agent.Container == "" && c.Agent.Container != "" {
 			base.Agent.Container = c.Agent.Container
-			defaultBase = true
 		}
 	}
 	if c.Agent.Dir == "" {
 		c.Agent.Dir = base.Agent.Dir
 	} else if base.Agent.Dir == "" && c.Agent.Dir != "" {
 		base.Agent.Dir = c.Agent.Dir
-		defaultBase = true
 	}
-	if defaultBase {
-		base.defaultContainerAndDir()
-	}
-	if !jenkinsfileRunner {
-		c.defaultContainerAndDir()
-	}
+	base.defaultContainerAndDir()
+	c.defaultContainerAndDir()
 	c.Pipelines.Extend(&base.Pipelines)
 	return nil
 }
