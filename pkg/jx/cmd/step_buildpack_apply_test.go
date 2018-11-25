@@ -59,7 +59,7 @@ func testCreateJenkinsfile(t *testing.T, outDir string, testcase string, srcDir 
 		TemplateFile: templateFile,
 		OutputFile:   actualFile,
 	}
-	if testcase == "prow" {
+	if testcase == "prow"|| strings.HasPrefix(testcase, "prow_") {
 		arguments.JenkinsfileRunner = true
 	}
 
