@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -48,6 +49,19 @@ func StringArrayIndex(array []string, value string) int {
 		}
 	}
 	return -1
+}
+
+// StringArraysEqual returns true if the two string slices are equal
+func StringArraysEqual(a1 []string, a2 []string) bool {
+	if len(a1) != len(a2) {
+		return false
+	}
+	for i := 0; i < len(a1); i++ {
+		if a1[i] != a2[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // FirstNotEmptyString returns the first non empty string or the empty string if none can be found
@@ -146,4 +160,18 @@ func DiffSlices(oldSlice []string, newSlice []string) ([]string, []string) {
 		}
 	}
 	return toDelete, toInsert
+}
+
+// ParseBool parses the boolean string. Returns false if the string is empty
+func ParseBool(text string) (bool, error) {
+	if text == "" {
+		return false, nil
+	}
+	return strconv.ParseBool(text)
+}
+
+// CheckMark returns the check mark unicode character.
+// We could configure this to use no color or avoid unicode using platform,  env vars or config?
+func CheckMark() string {
+	return "\u2705"
 }

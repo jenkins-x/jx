@@ -86,6 +86,7 @@ type InstallFlags struct {
 	NoGitOpsEnvApply         bool
 	NoGitOpsEnvRepo          bool
 	Vault                    bool
+	BuildPackName            string
 }
 
 // Secrets struct for secrets
@@ -337,6 +338,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvApply, "no-gitops-env-apply", "", false, "When using GitOps to create the source code for the development environment and installation, don't run 'jx step env apply' to perform the install")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvRepo, "no-gitops-env-repo", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a git repository for the source code")
 	cmd.Flags().BoolVarP(&flags.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during installation")
+	cmd.Flags().StringVarP(&flags.BuildPackName, "buildpack", "", "", "The name of the build pack to use for the Team")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
@@ -919,6 +921,7 @@ func (options *InstallOptions) Run() error {
 	options.currentNamespace = ns
 	if options.Flags.Prow {
 		// install Prow into the new env
+		options.OAUTHToken = options.GitRepositoryOptions.ApiToken
 		err = options.installProw()
 		if err != nil {
 			return fmt.Errorf("failed to install Prow: %v", err)
@@ -960,7 +963,7 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	tls, err := strconv.ParseBool(exposeController.Config.TLSAcme)
+	tls, err := util.ParseBool(exposeController.Config.TLSAcme)
 	if err != nil {
 		return fmt.Errorf("failed to parse TLS exposecontroller boolean %v", err)
 	}
@@ -1003,6 +1006,17 @@ func (options *InstallOptions) Run() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	// lets prompt the user which kind of workload to default to (they can change this at any time later)
+	ebp := &EditBuildPackOptions{
+		BuildPackName: options.Flags.BuildPackName,
+	}
+	ebp.CommonOptions = options.CommonOptions
+
+	err = ebp.Run()
+	if err != nil {
+		return err
 	}
 
 	if options.Flags.GitOpsMode {
@@ -1117,10 +1131,6 @@ func (options *InstallOptions) Run() error {
 			env.Spec.WebHookEngine = v1.WebHookEngineProw
 			settings := &env.Spec.TeamSettings
 			settings.PromotionEngine = v1.PromotionEngineProw
-			if settings.BuildPackURL == "" {
-				settings.BuildPackURL = JenkinsBuildPackURL
-			}
-			settings.BuildPackRef = defaultProwBuildPackRef
 			log.Info("Configuring the TeamSettings for Prow\n")
 			return nil
 		}
@@ -1840,7 +1850,7 @@ func (options *InstallOptions) getGitUser(message string) (*auth.UserAuth, error
 	}
 	url := server.URL
 	if message == "" {
-		message = fmt.Sprintf("%s username for CI/CD pipelines:", server.Label())
+		message = fmt.Sprintf("%s bot user for CI/CD pipelines (not your personal Git user):", server.Label())
 	}
 	userAuth, err = config.PickServerUserAuth(server, message, options.BatchMode, "", options.In, options.Out, options.Err)
 	if err != nil {

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"io"
 	"strings"
@@ -26,7 +27,7 @@ var (
 type CreateAddonKnativeBuildOptions struct {
 	CreateAddonOptions
 	username string
-	password string
+	token    string
 }
 
 func NewCmdCreateAddonKnativeBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
@@ -54,15 +55,21 @@ func NewCmdCreateAddonKnativeBuild(f Factory, in terminal.FileReader, out termin
 		},
 	}
 	cmd.Flags().StringVarP(&options.username, "username", "u", "", "The pipeline bot username")
-	cmd.Flags().StringVarP(&options.password, "password", "p", "", "The pipeline bot password")
+	cmd.Flags().StringVarP(&options.token, "token", "t", "", "The pipeline bot token")
 	return cmd
 }
 
 // Create the addon
 func (o *CreateAddonKnativeBuildOptions) Run() error {
+	if o.username == "" {
+		return fmt.Errorf("no pipeline git username provided")
+	}
+	if o.token == "" {
+		return fmt.Errorf("no pipeline git token provided")
+	}
 	log.Infof("Installing %s addon\n\n", kube.DefaultKnativeBuildReleaseName)
 
-	o.SetValues = strings.Join([]string{"build.auth.git.username=" + o.username, "build.auth.git.password=" + o.password}, ",")
+	o.SetValues = strings.Join([]string{"build.auth.git.username=" + o.username, "build.auth.git.password=" + o.token}, ",")
 
 	err := o.CreateAddon(kube.DefaultKnativeBuildReleaseName)
 	if err != nil {

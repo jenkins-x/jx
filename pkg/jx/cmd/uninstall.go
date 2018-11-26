@@ -83,7 +83,7 @@ func (o *UninstallOptions) Run() error {
 			targetContext = o.Context
 		} else {
 			targetContext, err = util.PickValue(fmt.Sprintf("Enter the current context name to confirm "+
-				"uninstalllation of the Jenkins X platform from the %s namespace:", util.ColorInfo(namespace)),
+				"uninstallation of the Jenkins X platform from the %s namespace:", util.ColorInfo(namespace)),
 				"", true,
 				"To prevent accidental uninstallation from the wrong cluster, you must enter the current "+
 					"kubernetes context. This can be found with `kubectl config current-context`",
@@ -124,7 +124,7 @@ func (o *UninstallOptions) Run() error {
 	o.Helm().DeleteRelease(namespace, "jx-prow", true)
 	err = o.Helm().DeleteRelease(namespace, "jenkins-x", true)
 	if err != nil {
-		errs = append(errs, fmt.Errorf("failed to uninstall the jenkins-x helm chart in namespace %s: %s", namespace ,err))
+		errs = append(errs, fmt.Errorf("failed to uninstall the jenkins-x helm chart in namespace %s: %s", namespace, err))
 	}
 	err = jxClient.JenkinsV1().Environments(namespace).DeleteCollection(&meta_v1.DeleteOptions{}, meta_v1.ListOptions{})
 	if err != nil {

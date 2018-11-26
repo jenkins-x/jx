@@ -150,6 +150,9 @@ arm: version
 win: version
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME).exe cmd/jx/jx.go
 
+darwin: version
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=darwin GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/darwin/jx cmd/jx/jx.go
+
 bootstrap: vendoring
 
 release: check
@@ -178,10 +181,12 @@ release: check
 
 	jx step changelog  --header-file docs/dev/changelog-header.md --version $(VERSION)
 
+	# Update other repo's dependencies on jx to use the new version - updates repos as specified at .updatebot.yml
 	updatebot push-version --kind brew jx $(VERSION)
 	updatebot push-version --kind docker JX_VERSION $(VERSION)
 	updatebot push-regex -r "\s*release = \"(.*)\"" -v $(VERSION) config.toml
 	updatebot push-regex -r "JX_VERSION=(.*)" -v $(VERSION) install-jx.sh
+	updatebot push-regex -r "\sjxTag:(.*)" -v $(VERSION) prow/values.yaml
 
 	echo "Updating the JX CLI reference docs"
 	git clone https://github.com/jenkins-x/jx-docs.git
