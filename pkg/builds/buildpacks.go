@@ -50,7 +50,7 @@ func createDefaultBuildBacks() []v1.BuildPack {
 				Name: "kubernetes-workloads",
 			},
 			Spec: v1.BuildPackSpec{
-				Label:  "Kubernetes Workloads",
+				Label:  "Kubernetes Workloads: Automated CI+CD with GitOps Promotion",
 				GitURL: KubernetesWorkloadBuildPackURL,
 				GitRef: KubernetesWorkloadBuildPackRef,
 			},
@@ -60,7 +60,7 @@ func createDefaultBuildBacks() []v1.BuildPack {
 				Name: "classic-workloads",
 			},
 			Spec: v1.BuildPackSpec{
-				Label:  "Classic Workloads",
+				Label:  "Library Workloads: CI+Release but no CD",
 				GitURL: ClassicWorkloadBuildPackURL,
 				GitRef: ClassicWorkloadBuildPackRef,
 			},
