@@ -902,7 +902,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 		}
 		log.Successf("You can now configure a wildcard DNS pointing to the new loadbalancer address %s", address)
 		log.Info("\nIf you do not have a custom domain setup yet, Ingress rules will be set for magic dns nip.io.")
-		log.Infof("\nOnce you have a customer domain ready, you can update with the command %s", util.ColorInfo("jx upgrade ingress --cluster"))
+		log.Infof("\nOnce you have a custom domain ready, you can update with the command %s", util.ColorInfo("jx upgrade ingress --cluster"))
 
 		log.Infof("\nIf you don't have a wildcard DNS setup then setup a new CNAME and point it at: %s then use the DNS domain in the next input...\n", defaultDomain)
 
