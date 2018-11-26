@@ -926,7 +926,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 	return domain, nil
 }
 
-// MinLength requires that the string is longer or equal in length to the specified value
+//NoWhiteSpaceValidator is an input validator for the survey package that disallows any whitespace in the input
 func NoWhiteSpaceValidator() survey.Validator {
 	// return a validator that checks the length of the string
 	return func(val interface{}) error {

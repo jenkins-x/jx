@@ -34,7 +34,6 @@ func testInputValidation(t *testing.T, s string) interface{} {
 	err := valid(s)
 	if err != nil {
 		return err.Error()
-	} else {
-		return ""
 	}
+	return ""
 }
