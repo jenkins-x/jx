@@ -18,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/cloud/iks"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -424,6 +425,19 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
+	if options.Flags.Provider == AKS {
+		var deps []string
+		d := binaryShouldBeInstalled("az")
+		if d != "" {
+			deps = append(deps, d)
+		}
+		err := options.installMissingDependencies(deps)
+		if err != nil {
+			log.Errorf("%v\nPlease fix the error or install manually then try again", err)
+			os.Exit(-1)
+		}
+	}
+
 	initOpts := &options.InitOptions
 	helmBinary := initOpts.HelmBinary()
 
@@ -688,6 +702,29 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get the docker registry value")
 	}
+
+	kubeConfig, _, err := options.Kube().LoadConfig()
+	if err != nil {
+		return err
+	}
+	if options.Flags.Provider == AKS {
+		/**
+		 * Assign ACR role to AKS
+		 */
+		server := kube.CurrentServer(kubeConfig)
+		resourceGroup, name, cluster, err := aks.GetClusterClient(server)
+		 if err != nil {
+		  	return errors.Wrap(err, "failed to get cluster from Azure")
+		}
+		registryId := ""
+		helmConfig.PipelineSecrets.DockerConfig, dockerRegistry, registryId, err = aks.GetRegistry(resourceGroup, name, dockerRegistry)
+		if err != nil {
+			return errors.Wrap(err, "failed to get registry from Azure")
+		}
+		aks.AssignRole(cluster, registryId)
+		log.Infof("Assign AKS %s a reader role for ACR %s", util.ColorInfo(server), util.ColorInfo(dockerRegistry))
+	}
+
 	if options.Flags.Provider == IKS {
 		dockerRegistry = iks.GetClusterRegistry(client)
 		helmConfig.PipelineSecrets.DockerConfig, err = iks.GetRegistryConfigJSON(dockerRegistry)
@@ -966,11 +1003,6 @@ func (options *InstallOptions) Run() error {
 
 	// save cluster config CA and server url to a configmap
 	if !options.Flags.DisableSetKubeContext {
-		kubeConfig, _, err := options.Kube().LoadConfig()
-		if err != nil {
-			return err
-		}
-
 		var jxInstallConfig *kube.JXInstallConfig
 		if kubeConfig != nil {
 			kubeConfigContext := kube.CurrentContext(kubeConfig)
