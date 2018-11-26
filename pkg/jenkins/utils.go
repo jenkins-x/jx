@@ -78,10 +78,14 @@ func GetJenkinsClient(url string, batch bool, configService *jenkauth.AuthConfig
 	}
 	jenkins := gojenkins.NewJenkins(jauth, url)
 
+	proxyStr := os.Getenv("HTTP_PROXY")
+	proxyURL, err := neturl.Parse(proxyStr)
+
 	// handle insecure TLS for minishift
 	httpClient := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			Proxy: http.ProxyURL(proxyURL),
 		},
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
