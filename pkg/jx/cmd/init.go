@@ -912,7 +912,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 				Default: defaultDomain,
 				Help:    "Enter your custom domain that is used to generate Ingress rules, defaults to the magic dns nip.io",
 			}
-			survey.AskOne(prompt, &domain, survey.Required, surveyOpts)
+			survey.AskOne(prompt, &domain, survey.ComposeValidators(survey.Required, NoWhiteSpaceValidator()), surveyOpts)
 		}
 		if domain == "" {
 			domain = defaultDomain
@@ -924,4 +924,20 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 	}
 
 	return domain, nil
+}
+
+// MinLength requires that the string is longer or equal in length to the specified value
+func NoWhiteSpaceValidator() survey.Validator {
+	// return a validator that checks the length of the string
+	return func(val interface{}) error {
+		if str, ok := val.(string); ok {
+			// if the string is shorter than the given value
+			if strings.ContainsAny(str, " ") {
+				// yell loudly
+				return fmt.Errorf("Domain name value \"%v\" must not contain any whitespace", str)
+			}
+		}
+		// the input is fine
+		return nil
+	}
 }
