@@ -2,6 +2,7 @@ package cmd_test
 
 import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jenkins"
@@ -20,7 +21,7 @@ import (
 )
 
 func TestStepBuildPackApply(t *testing.T) {
-	const buildPackURL = "https://github.com/jenkins-x-buildpacks/jenkins-x-kubernetes.git"
+	const buildPackURL = builds.KubernetesWorkloadBuildPackURL
 	const buildPackRef = "master"
 
 	tests.SkipForWindows(t, "go-expect does not work on windows")

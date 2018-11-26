@@ -109,12 +109,12 @@ func (o *StartPipelineOptions) Run() error {
 	}
 	args := o.Args
 	names := []string{}
+	o.ProwOptions = prow.Options{
+		KubeClient: o.KubeClientCached,
+		NS:         o.currentNamespace,
+	}
 	if len(args) == 0 {
 		if isProw {
-			o.ProwOptions = prow.Options{
-				KubeClient: o.KubeClientCached,
-				NS:         o.currentNamespace,
-			}
 			names, err = o.ProwOptions.GetReleaseJobs()
 			if err != nil {
 				return err

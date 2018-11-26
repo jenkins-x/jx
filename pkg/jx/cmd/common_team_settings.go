@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/builds"
 	"io"
 	"os/user"
 	"reflect"
@@ -24,8 +25,6 @@ type BranchPatterns struct {
 }
 
 const (
-	defaultBuildPackRef     = "2.1"
-	defaultProwBuildPackRef = "prow"
 	defaultHelmBin          = "helm"
 )
 
@@ -35,10 +34,10 @@ func (o *CommonOptions) TeamSettings() (*v1.TeamSettings, error) {
 	err := o.ModifyDevEnvironment(func(env *v1.Environment) error {
 		teamSettings = &env.Spec.TeamSettings
 		if teamSettings.BuildPackURL == "" {
-			teamSettings.BuildPackURL = JenkinsBuildPackURL
+			teamSettings.BuildPackURL = builds.KubernetesWorkloadBuildPackURL
 		}
 		if teamSettings.BuildPackRef == "" {
-			teamSettings.BuildPackRef = defaultBuildPackRef
+			teamSettings.BuildPackRef = builds.KubernetesWorkloadBuildPackRef
 		}
 		return nil
 	})
