@@ -78,11 +78,6 @@ func (o *EnvironmentOptions) Run() error {
 		return err
 	}
 
-	apisClient, err := o.CreateApiExtensionsClient()
-	if err != nil {
-		return err
-	}
-	kube.RegisterEnvironmentCRD(apisClient)
 	devNs, currentEnv, err := kube.GetDevNamespace(kubeClient, currentNs)
 	if err != nil {
 		return err
