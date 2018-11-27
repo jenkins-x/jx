@@ -149,8 +149,9 @@ func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns stri
 		}
 
 		userAuth := auth.UserAuth{
-			Username: "admin",
-			ApiToken: string(s.Data[kube.JenkinsAdminApiToken]),
+			Username:    string(s.Data[kube.JenkinsAdminUserField]),
+			ApiToken:    string(s.Data[kube.JenkinsAdminApiToken]),
+			BearerToken: string(s.Data[kube.JenkinsBearTokenField]),
 		}
 		svc, err := c.CoreV1().Services(ns).Get(kube.ServiceJenkins, metav1.GetOptions{})
 		if err != nil {

@@ -3,6 +3,7 @@ package prow
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -145,7 +146,6 @@ func (o *Options) createPostSubmitApplication() config.Postsubmit {
 	ps.Agent = KnativeBuildAgent
 
 	templateName := fmt.Sprintf("jenkins-%s", o.DraftPack)
-	log.Infof("generating Prow config, using Knative BuildTemplate %s\n", templateName)
 
 	spec := &build.BuildSpec{
 		ServiceAccountName: serviceAccountBuild,
@@ -165,15 +165,14 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 	ps.Name = ServerlessJenkins
 	ps.RerunCommand = "/test this"
 	ps.Trigger = "(?m)^/test( all| this),?(\\s+|$)"
-	ps.AlwaysRun = false
+	ps.AlwaysRun = true
 	ps.SkipReport = false
 	ps.Agent = KnativeBuildAgent
 
 	templateName := fmt.Sprintf("jenkins-%s", o.DraftPack)
-	log.Infof("generating Prow config, using Knative BuildTemplate %s\n", templateName)
 
 	spec := &build.BuildSpec{
-		ServiceAccountName: serviceAccountBuild,
+		ServiceAccountName: serviceAccountApply,
 		Template: &build.TemplateInstantiationSpec{
 			Name: templateName,
 		},
@@ -307,6 +306,9 @@ func (o *Options) createTide() config.Tide {
 
 	myTrue := true
 	myFalse := false
+
+	t.SyncPeriod = time.Duration(30)
+	t.StatusUpdatePeriod = time.Duration(30)
 	t.ContextOptions = config.TideContextPolicyOptions{
 		TideContextPolicy: config.TideContextPolicy{
 			FromBranchProtection: &myTrue,
@@ -492,6 +494,11 @@ func (o *Options) AddProwPlugins() error {
 	if err != nil {
 		pluginConfig.Plugins = make(map[string][]string)
 		pluginConfig.Approve = []plugins.Approve{}
+		pluginConfig.Welcome = []plugins.Welcome{
+			{
+				MessageTemplate: "Welcome",
+			},
+		}
 
 		pluginConfig.ConfigUpdater.Maps = make(map[string]plugins.ConfigMapSpec)
 		pluginConfig.ConfigUpdater.Maps["prow/config.yaml"] = plugins.ConfigMapSpec{Name: ProwConfigMapName}
@@ -524,6 +531,12 @@ func (o *Options) AddProwPlugins() error {
 		}
 		pluginConfig.Approve = append(pluginConfig.Approve, a)
 
+		parts := strings.Split(r, "/")
+		t := plugins.Trigger{
+			Repos:      []string{r},
+			TrustedOrg: parts[0],
+		}
+		pluginConfig.Triggers = append(pluginConfig.Triggers, t)
 	}
 
 	pluginYAML, err := yaml.Marshal(pluginConfig)

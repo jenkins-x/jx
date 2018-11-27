@@ -36,10 +36,17 @@ func setupMocks(t *testing.T, term *terminal.Stdio) (*fake.Clientset, vault.Vaul
 func createMockedVault(vaultName string, namespace string, vaultUrl string, jwt string,
 	vaultOperatorClient *fake.Clientset, kubeClient kubernetes.Interface) v1alpha1.Vault {
 
+	role := map[string]interface{}{"name": vaultName + "-auth-sa"}
+	auth := map[string]interface{}{"roles": []interface{}{role}}
 	v := v1alpha1.Vault{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      vaultName,
 			Namespace: namespace,
+		},
+		Spec: v1alpha1.VaultSpec{
+			ExternalConfig: map[string]interface{}{
+				"auth": []interface{}{auth},
+			},
 		},
 	}
 	secretName := vaultName + "-secret"

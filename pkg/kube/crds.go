@@ -25,7 +25,11 @@ const (
 
 // RegisterAllCRDs ensures that all Jenkins-X CRDs are registered
 func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
-	err := RegisterCommitStatusCRD(apiClient)
+	err := RegisterBuildPackCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Build Pack CRD")
+	}
+	err = RegisterCommitStatusCRD(apiClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Commit Status CRD")
 	}
@@ -206,7 +210,41 @@ func RegisterExtensionCRD(apiClient apiextensionsclientset.Interface) error {
 	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
-// RegisterCommitStatusCRD ensures that the CRD is registered for Extension
+// RegisterBuildPackCRD ensures that the CRD is registered for BuildPack
+func RegisterBuildPackCRD(apiClient apiextensionsclientset.Interface) error {
+	name := "buildpacks." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "BuildPack",
+		ListKind:   "BuildPackList",
+		Plural:     "buildpacks",
+		Singular:   "buildpack",
+		ShortNames: []string{"bp"},
+	}
+	columns := []v1beta1.CustomResourceColumnDefinition{
+		{
+			Name:        "LABEL",
+			Type:        "string",
+			Description: "The label of the BuildPack",
+			JSONPath:    ".spec.Label",
+		},
+		{
+			Name:        "GIT URL",
+			Type:        "string",
+			Description: "The Git URL of the BuildPack",
+			JSONPath:    ".spec.gitUrl",
+		},
+		{
+			Name:        "Git Ref",
+			Type:        "string",
+			Description: "The Git REf of the BuildPack",
+			JSONPath:    ".spec.gitRef",
+		},
+	}
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
+}
+
+// RegisterCommitStatusCRD ensures that the CRD is registered for CommitStatus
 func RegisterCommitStatusCRD(apiClient apiextensionsclientset.Interface) error {
 	name := "commitstatuses." + jenkinsio.GroupName
 	names := &v1beta1.CustomResourceDefinitionNames{

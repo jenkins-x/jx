@@ -13,6 +13,7 @@ require (
 	github.com/Netflix/go-expect v0.0.0-20180814212900-124a37274874
 	github.com/Pallinder/go-randomdata v0.0.0-20180616180521-15df0648130a
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6
+	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc // indirect
 	github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf // indirect
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f
@@ -125,6 +126,7 @@ require (
 	github.com/ryanuber/go-glob v0.0.0-20170128012129-256dc444b735 // indirect
 	github.com/satori/go.uuid v1.2.0
 	github.com/sergi/go-diff v1.0.0
+	github.com/sethvargo/go-password v0.1.2
 	github.com/shirou/gopsutil v0.0.0-20180901134234-eb1f1ab16f2e
 	github.com/shirou/w32 v0.0.0-20160930032740-bb4de0191aa4
 	github.com/shurcooL/githubv4 v0.0.0-20180509030948-19298c78142b
@@ -178,7 +180,6 @@ require (
 	k8s.io/helm v2.7.2+incompatible
 	k8s.io/kube-openapi v0.0.0-20180719232738-d8ea2fe547a4
 	k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b
-	k8s.io/test-infra v0.0.0-20181016234544-2c26f647f17a
-)
+	k8s.io/test-infra v0.0.0-20181113004108-9b11013021d9
 
-replace k8s.io/test-infra v0.0.0-20181016234544-2c26f647f17a => github.com/jenkins-x/test-infra v0.0.0-20181017095642-0e6fed3d4d4d
+)

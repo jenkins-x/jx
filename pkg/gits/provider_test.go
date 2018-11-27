@@ -8,14 +8,12 @@ import (
 	"strings"
 	"testing"
 
-	expect "github.com/Netflix/go-expect"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	mocks "github.com/jenkins-x/jx/pkg/gits/mocks"
 	utiltests "github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 type FakeOrgLister struct {
@@ -151,8 +149,8 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 
 	tests := []struct {
 		description  string
-		setup        func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{})
-		cleanup      func(t *testing.T, c *expect.Console, donech chan struct{})
+		setup        func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{})
+		cleanup      func(c *utiltests.ConsoleWrapper, donech chan struct{})
 		Name         string
 		providerKind string
 		hostURL      string
@@ -215,20 +213,20 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			false,
 		},
 		{"create GitHub provider for user from environment",
-			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
+			func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{}) {
 				err := setUserAuthInEnv(gits.KindGitHub, "test", "test")
 				assert.NoError(t, err, "should configure the user auth in environment")
-				c, _, term := utiltests.NewTerminal(t)
+				console := utiltests.NewTerminal(t)
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
 				}()
-				return c, term, donech
+				return console, donech
 			},
-			func(t *testing.T, c *expect.Console, donech chan struct{}) {
+			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
 				err := unsetUserAuthInEnv(gits.KindGitHub)
 				assert.NoError(t, err, "should reset the user auth in environment")
-				err = c.Tty().Close()
+				err = c.Close()
 				assert.NoError(t, err, "should close the tty")
 				<-donech
 			},
@@ -262,28 +260,23 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			true,
 		},
 		{"create GitHub provider in interactive mode",
-			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
-				c, _, term := utiltests.NewTerminal(t)
+			func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{}) {
+				c := utiltests.NewTerminal(t)
 				assert.NotNil(t, c, "console should not be nil")
-				assert.NotNil(t, term, "term should not be nil")
+				assert.NotNil(t, c.Stdio, "term should not be nil")
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
-					_, err := c.ExpectString("github.com user name:")
-					assert.NoError(t, err, "expect user name")
-					_, err = c.SendLine("test")
-					assert.NoError(t, err, "send user name")
-					_, err = c.ExpectString("API Token:")
-					assert.NoError(t, err, "expect API token")
-					_, err = c.SendLine("test")
-					assert.NoError(t, err, "send API token")
-					_, err = c.ExpectEOF()
-					assert.NoError(t, err, "expect EOF")
+					c.ExpectString("github.com user name:")
+					c.SendLine("test")
+					c.ExpectString("API Token:")
+					c.SendLine("test")
+					c.ExpectEOF()
 				}()
-				return c, term, donech
+				return c, donech
 			},
-			func(t *testing.T, c *expect.Console, donech chan struct{}) {
-				err := c.Tty().Close()
+			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
+				err := c.Close()
 				assert.NoError(t, err, "should close the tty")
 				<-donech
 			},
@@ -333,20 +326,20 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			false,
 		},
 		{"create Gitlab provider for user from environment",
-			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
+			func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{}) {
 				err := setUserAuthInEnv(gits.KindGitlab, "test", "test")
 				assert.NoError(t, err, "should configure the user auth in environment")
-				c, _, term := utiltests.NewTerminal(t)
+				c := utiltests.NewTerminal(t)
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
 				}()
-				return c, term, donech
+				return c, donech
 			},
-			func(t *testing.T, c *expect.Console, donech chan struct{}) {
+			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
 				err := unsetUserAuthInEnv(gits.KindGitlab)
 				assert.NoError(t, err, "should reset the user auth in environment")
-				err = c.Tty().Close()
+				err = c.Close()
 				assert.NoError(t, err, "should close the tty")
 				<-donech
 			},
@@ -380,28 +373,23 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			true,
 		},
 		{"create Gitlab provider in interactive mode",
-			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
-				c, _, term := utiltests.NewTerminal(t)
+			func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{}) {
+				c := utiltests.NewTerminal(t)
 				assert.NotNil(t, c, "console should not be nil")
-				assert.NotNil(t, term, "term should not be nil")
+				assert.NotNil(t, c.Stdio, "term should not be nil")
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
-					_, err := c.ExpectString("gitlab.com user name:")
-					assert.NoError(t, err, "expect user name")
-					_, err = c.SendLine("test")
-					assert.NoError(t, err, "send user name")
-					_, err = c.ExpectString("API Token:")
-					assert.NoError(t, err, "expect API token")
-					_, err = c.SendLine("test")
-					assert.NoError(t, err, "send API token")
-					_, err = c.ExpectEOF()
-					assert.NoError(t, err, "expect EOF")
+					c.ExpectString("gitlab.com user name:")
+					c.SendLine("test")
+					c.ExpectString("API Token:")
+					c.SendLine("test")
+					c.ExpectEOF()
 				}()
-				return c, term, donech
+				return c, donech
 			},
-			func(t *testing.T, c *expect.Console, donech chan struct{}) {
-				err := c.Tty().Close()
+			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
+				err := c.Close()
 				assert.NoError(t, err, "should close the tty")
 				<-donech
 			},
@@ -451,20 +439,20 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			false,
 		},
 		{"create Gitea provider for user from environment",
-			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
+			func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{}) {
 				err := setUserAuthInEnv(gits.KindGitea, "test", "test")
 				assert.NoError(t, err, "should configure the user auth in environment")
-				c, _, term := utiltests.NewTerminal(t)
+				c := utiltests.NewTerminal(t)
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
 				}()
-				return c, term, donech
+				return c, donech
 			},
-			func(t *testing.T, c *expect.Console, donech chan struct{}) {
+			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
 				err := unsetUserAuthInEnv(gits.KindGitea)
 				assert.NoError(t, err, "should reset the user auth in environment")
-				err = c.Tty().Close()
+				err = c.Close()
 				assert.NoError(t, err, "should close the tty")
 				<-donech
 			},
@@ -498,28 +486,23 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			true,
 		},
 		{"create Gitea provider in interactive mode",
-			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
-				c, _, term := utiltests.NewTerminal(t)
+			func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{}) {
+				c := utiltests.NewTerminal(t)
 				assert.NotNil(t, c, "console should not be nil")
-				assert.NotNil(t, term, "term should not be nil")
+				assert.NotNil(t, c.Stdio, "term should not be nil")
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
-					_, err := c.ExpectString("gitea.com user name:")
-					assert.NoError(t, err, "expect user name")
-					_, err = c.SendLine("test")
-					assert.NoError(t, err, "send user name")
-					_, err = c.ExpectString("API Token:")
-					assert.NoError(t, err, "expect API token")
-					_, err = c.SendLine("test")
-					assert.NoError(t, err, "send API token")
-					_, err = c.ExpectEOF()
-					assert.NoError(t, err, "expect EOF")
+					c.ExpectString("gitea.com user name:")
+					c.SendLine("test")
+					c.ExpectString("API Token:")
+					c.SendLine("test")
+					c.ExpectEOF()
 				}()
-				return c, term, donech
+				return c, donech
 			},
-			func(t *testing.T, c *expect.Console, donech chan struct{}) {
-				err := c.Tty().Close()
+			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
+				err := c.Close()
 				assert.NoError(t, err, "should close the tty")
 				<-donech
 			},
@@ -569,20 +552,20 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			false,
 		},
 		{"create BitbucketServer provider for user from environment",
-			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
+			func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{}) {
 				err := setUserAuthInEnv(gits.KindBitBucketServer, "test", "test")
 				assert.NoError(t, err, "should configure the user auth in environment")
-				c, _, term := utiltests.NewTerminal(t)
+				c := utiltests.NewTerminal(t)
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
 				}()
-				return c, term, donech
+				return c, donech
 			},
-			func(t *testing.T, c *expect.Console, donech chan struct{}) {
+			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
 				err := unsetUserAuthInEnv(gits.KindBitBucketServer)
 				assert.NoError(t, err, "should reset the user auth in environment")
-				err = c.Tty().Close()
+				err = c.Close()
 				assert.NoError(t, err, "should close the tty")
 				<-donech
 			},
@@ -616,28 +599,23 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			true,
 		},
 		{"create BitbucketServer provider in interactive mode",
-			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
-				c, _, term := utiltests.NewTerminal(t)
+			func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{}) {
+				c := utiltests.NewTerminal(t)
 				assert.NotNil(t, c, "console should not be nil")
-				assert.NotNil(t, term, "term should not be nil")
+				assert.NotNil(t, c.Stdio, "term should not be nil")
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
-					_, err := c.ExpectString("bitbucket-server.com user name:")
-					assert.NoError(t, err, "expect user name")
-					_, err = c.SendLine("test")
-					assert.NoError(t, err, "send user name")
-					_, err = c.ExpectString("API Token:")
-					assert.NoError(t, err, "expect API token")
-					_, err = c.SendLine("test")
-					assert.NoError(t, err, "send API token")
-					_, err = c.ExpectEOF()
-					assert.NoError(t, err, "expect EOF")
+					c.ExpectString("bitbucket-server.com user name:")
+					c.SendLine("test")
+					c.ExpectString("API Token:")
+					c.SendLine("test")
+					c.ExpectEOF()
 				}()
-				return c, term, donech
+				return c, donech
 			},
-			func(t *testing.T, c *expect.Console, donech chan struct{}) {
-				err := c.Tty().Close()
+			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
+				err := c.Close()
 				assert.NoError(t, err, "should close the tty")
 				<-donech
 			},
@@ -687,20 +665,20 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			false,
 		},
 		{"create BitbucketCloud provider for user from environment",
-			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
+			func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{}) {
 				err := setUserAuthInEnv(gits.KindBitBucketCloud, "test", "test")
 				assert.NoError(t, err, "should configure the user auth in environment")
-				c, _, term := utiltests.NewTerminal(t)
+				c := utiltests.NewTerminal(t)
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
 				}()
-				return c, term, donech
+				return c, donech
 			},
-			func(t *testing.T, c *expect.Console, donech chan struct{}) {
+			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
 				err := unsetUserAuthInEnv(gits.KindBitBucketCloud)
 				assert.NoError(t, err, "should reset the user auth in environment")
-				err = c.Tty().Close()
+				err = c.Close()
 				assert.NoError(t, err, "should close the tty")
 				<-donech
 			},
@@ -734,28 +712,23 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			true,
 		},
 		{"create BitbucketCloud provider in interactive mode",
-			func(t *testing.T) (*expect.Console, *terminal.Stdio, chan struct{}) {
-				c, _, term := utiltests.NewTerminal(t)
+			func(t *testing.T) (*utiltests.ConsoleWrapper, chan struct{}) {
+				c := utiltests.NewTerminal(t)
 				assert.NotNil(t, c, "console should not be nil")
-				assert.NotNil(t, term, "term should not be nil")
+				assert.NotNil(t, c.Stdio, "term should not be nil")
 				donech := make(chan struct{})
 				go func() {
 					defer close(donech)
-					_, err := c.ExpectString("bitbucket.org user name:")
-					assert.NoError(t, err, "expect user name")
-					_, err = c.SendLine("test")
-					assert.NoError(t, err, "send user name")
-					_, err = c.ExpectString("API Token:")
-					assert.NoError(t, err, "expect API token")
-					_, err = c.SendLine("test")
-					assert.NoError(t, err, "send API token")
-					_, err = c.ExpectEOF()
-					assert.NoError(t, err, "expect EOF")
+					c.ExpectString("bitbucket.org user name:")
+					c.SendLine("test")
+					c.ExpectString("API Token:")
+					c.SendLine("test")
+					c.ExpectEOF()
 				}()
-				return c, term, donech
+				return c, donech
 			},
-			func(t *testing.T, c *expect.Console, donech chan struct{}) {
-				err := c.Tty().Close()
+			func(c *utiltests.ConsoleWrapper, donech chan struct{}) {
+				err := c.Close()
 				assert.NoError(t, err, "should close the tty")
 				<-donech
 			},
@@ -780,14 +753,13 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			assert.NoError(t, err, "should clean the env variables")
 			defer restoreEnviron(t, environ)
 
-			var console *expect.Console
-			var term *terminal.Stdio
+			var console *utiltests.ConsoleWrapper
 			var donech chan struct{}
 			if tc.setup != nil {
-				console, term, donech = tc.setup(t)
+				console, donech = tc.setup(t)
 			}
 
-			users := []*auth.UserAuth{}
+			var users []*auth.UserAuth
 			var currUser *auth.UserAuth
 			var pipelineUser *auth.UserAuth
 			var server *auth.AuthServer
@@ -824,8 +796,8 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			}
 
 			var result gits.GitProvider
-			if term != nil {
-				result, err = gits.CreateProviderForURL(tc.inCluster, *authSvc, tc.providerKind, tc.hostURL, tc.git, tc.batchMode, term.In, term.Out, term.Err)
+			if console != nil {
+				result, err = gits.CreateProviderForURL(tc.inCluster, *authSvc, tc.providerKind, tc.hostURL, tc.git, tc.batchMode, console.In, console.Out, console.Err)
 			} else {
 				result, err = gits.CreateProviderForURL(tc.inCluster, *authSvc, tc.providerKind, tc.hostURL, tc.git, tc.batchMode, nil, nil, nil)
 			}
@@ -847,7 +819,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			}
 
 			if tc.cleanup != nil {
-				tc.cleanup(t, console, donech)
+				tc.cleanup(console, donech)
 			}
 		})
 	}

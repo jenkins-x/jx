@@ -334,7 +334,11 @@ func stringInValidProviders(a string) bool {
 
 // Run implements this command
 func (options *CreateTerraformOptions) Run() error {
-	var err error
+	err := options.installRequirements(GKE, "terraform", options.InstallOptions.InitOptions.HelmBinary())
+	if err != nil {
+		return err
+	}
+
 	if !options.Flags.SkipLogin {
 		err = options.runCommandVerbose("gcloud", "auth", "login", "--brief")
 		if err != nil {
@@ -343,10 +347,6 @@ func (options *CreateTerraformOptions) Run() error {
 	}
 
 	options.InstallOptions.Flags.Prow = true
-	err = options.installRequirements(GKE, "terraform", options.InstallOptions.InitOptions.HelmBinary())
-	if err != nil {
-		return err
-	}
 
 	err = terraform.CheckVersion()
 	if err != nil {
