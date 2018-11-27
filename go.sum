@@ -276,6 +276,8 @@ github.com/satori/go.uuid v1.2.0 h1:0uYX9dsZ2yD7q2RtLRtPSdGDWzjeM3TbMJP9utgA0ww=
 github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
 github.com/sergi/go-diff v1.0.0 h1:Kpca3qRNrduNnOQeazBd0ysaKrUJiIuISHxogkT9RPQ=
 github.com/sergi/go-diff v1.0.0/go.mod h1:0CfEIISq7TuYL3j771MWULgwwjU+GofnZX9QAmXWZgo=
+github.com/sethvargo/go-password v0.1.2 h1:fhBF4thiPVKEZ7R6+CX46GWJiPyCyXshbeqZ7lqEeYo=
+github.com/sethvargo/go-password v0.1.2/go.mod h1:qKHfdSjT26DpHQWHWWR5+X4BI45jT31dg6j4RI2TEb0=
 github.com/shirou/gopsutil v0.0.0-20180901134234-eb1f1ab16f2e h1:kZkpfwaQGxB3UdlIFUYvsg169nzr+Tc+HpUlybXzu68=
 github.com/shirou/gopsutil v0.0.0-20180901134234-eb1f1ab16f2e/go.mod h1:5b4v6he4MtMOwMlS0TUMTu2PcXUg8+E1lC7eC3UO/RA=
 github.com/shirou/w32 v0.0.0-20160930032740-bb4de0191aa4 h1:udFKJ0aHUL60LboW/A+DfgoHVedieIzIXE8uylPue0U=
@@ -387,3 +389,5 @@ k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b h1:LcRDe4wxlsysUmLVy0Oi1YOOMwM
 k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b/go.mod h1:a25VAbm3QT3xiVl1jtoF1ueAKQM149UdZ+L93ePfV3M=
 k8s.io/test-infra v0.0.0-20181016234544-2c26f647f17a h1:1F0vgEle+QfBbsxdY/EtFpBMBS4xWAPYctJyvygJS5Y=
 k8s.io/test-infra v0.0.0-20181016234544-2c26f647f17a/go.mod h1:2NzXB13Ji0nqpyublHeiPC4FZwU0TknfvyaaNfl/BTA=
+k8s.io/test-infra v0.0.0-20181113004108-9b11013021d9 h1:i9GhZIzg49MWDv2GBMsLF0YkA4gQwx0oYbSyB8L0C3k=
+k8s.io/test-infra v0.0.0-20181113004108-9b11013021d9/go.mod h1:2NzXB13Ji0nqpyublHeiPC4FZwU0TknfvyaaNfl/BTA=

@@ -169,3 +169,9 @@ func ParseBool(text string) (bool, error) {
 	}
 	return strconv.ParseBool(text)
 }
+
+// CheckMark returns the check mark unicode character.
+// We could configure this to use no color or avoid unicode using platform,  env vars or config?
+func CheckMark() string {
+	return "\u2705"
+}

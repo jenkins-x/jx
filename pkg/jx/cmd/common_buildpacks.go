@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/Azure/draft/pkg/draft/draftpath"
 	"github.com/jenkins-x/draft-repo/pkg/draft/pack"
 	"github.com/jenkins-x/jx/pkg/config"
 	jxdraft "github.com/jenkins-x/jx/pkg/draft"
@@ -36,12 +35,6 @@ func (o *CommonOptions) initBuildPacks() (string, error) {
 
 // invokeDraftPack invokes a draft pack copying in a Jenkinsfile if required
 func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
-	draftDir, err := util.DraftDir()
-	if err != nil {
-		return "", err
-	}
-	draftHome := draftpath.Home(draftDir)
-
 	packsDir, err := o.initBuildPacks()
 	if err != nil {
 		return "", err
@@ -118,7 +111,7 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 			lpack = filepath.Join(packsDir, "cwp")
 		} else {
 			// pack detection time
-			lpack, err = jxdraft.DoPackDetection(draftHome, o.Out, dir)
+			lpack, err = jxdraft.DoPackDetectionForBuildPack(o.Out, dir, packsDir)
 
 			if err != nil {
 				return "", err
@@ -140,6 +133,8 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 			}
 		}
 	}
+
+	generateJenkinsPath := jenkinsfilePath
 	jenkinsfileBackup := ""
 	if jenkinsfileExists && initialisedGit && !disableJenkinsfileCheck {
 		// lets copy the old Jenkinsfile in case we overwrite it
@@ -156,12 +151,61 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 			if err != nil {
 				return "", fmt.Errorf("Failed to rename old Jenkinsfile: %s", err)
 			}
+			generateJenkinsPath = defaultJenkinsfile
 		}
 	}
 
 	err = CopyBuildPack(dir, lpack)
 	if err != nil {
 		log.Warnf("Failed to apply the build pack in %s due to %s", dir, err)
+	}
+
+	if !jenkinsfileExists || jenkinsfileBackup != "" {
+		// lets check if we have a pipeline.yaml in the build pack so we can generate one dynamically
+		pipelineFile := filepath.Join(lpack, jenkinsfile.PipelineConfigFileName)
+		exists, err := util.FileExists(pipelineFile)
+		if err != nil {
+			return draftPack, err
+		}
+		if exists {
+			modules, err := jenkinsfile.LoadModules(packsDir)
+			if err != nil {
+				return draftPack, err
+			}
+
+			// lets find the Jenkinsfile template
+			tmplFileName := jenkinsfile.PipelineTemplateFileName
+			templateFileNames := []string{filepath.Join(lpack, tmplFileName), filepath.Join(packsDir, tmplFileName)}
+
+			moduleResolver, err := modules.Resolve(o.Git())
+			if err != nil {
+				return draftPack, err
+			}
+			for _, mr := range moduleResolver.Modules {
+				templateFileNames = append(templateFileNames, filepath.Join(mr.PacksDir, draftPack, tmplFileName), filepath.Join(mr.PacksDir, tmplFileName))
+			}
+			templateFile, err := util.FirstFileExists(templateFileNames...)
+			if err != nil {
+				return draftPack, err
+			}
+			prow, err := o.isProw()
+			if err != nil {
+				return draftPack, err
+			}
+
+			if templateFile != "" {
+				arguments := &jenkinsfile.CreateJenkinsfileArguments{
+					ConfigFile:   pipelineFile,
+					TemplateFile: templateFile,
+					OutputFile:   generateJenkinsPath,
+					JenkinsfileRunner: prow,
+				}
+				err = arguments.GenerateJenkinsfile(moduleResolver.AsImportResolver())
+				if err != nil {
+					return draftPack, err
+				}
+			}
+		}
 	}
 
 	unpackedDefaultJenkinsfile := defaultJenkinsfile
@@ -202,50 +246,7 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 			}
 		}
 	}
-	if !jenkinsfileExists {
-		// lets check if we have a pipeline.yaml in the build pack so we can generate one dynamically
-		pipelineFile := filepath.Join(lpack, jenkinsfile.PipelineConfigFileName)
-		exists, err := util.FileExists(pipelineFile)
-		if err != nil {
-			return draftPack, err
-		}
-		if exists {
-			modules, err := jenkinsfile.LoadModules(packsDir)
-			if err != nil {
-				return draftPack, err
-			}
 
-			// lets find the Jenkinsfile template
-			tmplFileName := jenkinsfile.PipelineTemplateFileName
-			templateFileNames := []string{filepath.Join(lpack, tmplFileName), filepath.Join(packsDir, tmplFileName)}
-
-			moduleResolver, err := modules.Resolve(o.Git())
-			if err != nil {
-				return draftPack, err
-			}
-			for _, mr := range moduleResolver.Modules {
-				templateFileNames = append(templateFileNames, filepath.Join(mr.PacksDir, draftPack, tmplFileName), filepath.Join(mr.PacksDir, tmplFileName))
-			}
-			templateFile, err := util.FirstFileExists(templateFileNames...)
-			if err != nil {
-				return draftPack, err
-			}
-			if templateFile != "" {
-				log.Infof("Found pipeline YAML %s and template file %s\n", pipelineFile, templateFile)
-
-				arguments := &jenkinsfile.CreateJenkinsfileArguments{
-					ConfigFile:   pipelineFile,
-					TemplateFile: templateFile,
-					OutputFile:   jenkinsfilePath,
-				}
-				err = arguments.GenerateJenkinsfile(moduleResolver.AsImportResolver())
-				if err != nil {
-					return draftPack, err
-				}
-				log.Infof("Generated Jenkinsfile %s\n", jenkinsfilePath)
-			}
-		}
-	}
 	return draftPack, nil
 }
 

@@ -336,6 +336,9 @@ func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.AuthConfigSe
 	if err != nil {
 		return nil, err
 	}
+	if userAuth.IsInvalid() {
+		userAuth, err = createUserForServer(batchMode, userAuth, authConfigSvc, server, git, in, out, errOut)
+	}
 	return i.CreateProviderForUser(server, userAuth, gitKind, git)
 }
 
@@ -369,27 +372,23 @@ func CreateProviderForURL(inCluster bool, authConfigSvc auth.AuthConfigService, 
 	}
 
 	kind := server.Kind
-	if kind != "" {
-		userAuth := auth.CreateAuthUserFromEnvironment(strings.ToUpper(kind))
-		if !userAuth.IsInvalid() {
-			return CreateProvider(server, &userAuth, git)
-		}
-	} else {
-		userAuth := auth.CreateAuthUserFromEnvironment("GIT")
-		if !userAuth.IsInvalid() {
-			return CreateProvider(server, &userAuth, git)
-		}
+	if kind == "" {
+		kind = "GIT"
 	}
-	userAuth, err := createUserForServer(batchMode, authConfigSvc, server, git, in, out, errOut)
+	userAuthVar := auth.CreateAuthUserFromEnvironment(strings.ToUpper(kind))
+	if !userAuthVar.IsInvalid() {
+		return CreateProvider(server, &userAuthVar, git)
+	}
+	userAuth, err := createUserForServer(batchMode, &userAuthVar, authConfigSvc, server, git, in, out, errOut)
 	if err != nil {
 		return nil, err
 	}
 	return CreateProvider(server, userAuth, git)
 }
 
-func createUserForServer(batchMode bool, authConfigSvc auth.AuthConfigService, server *auth.AuthServer,
+func createUserForServer(batchMode bool, userAuth *auth.UserAuth, authConfigSvc auth.AuthConfigService, server *auth.AuthServer,
 	git Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*auth.UserAuth, error) {
-	userAuth := &auth.UserAuth{}
+
 
 	f := func(username string) error {
 		git.PrintCreateRepositoryGenerateAccessToken(server, username, out)

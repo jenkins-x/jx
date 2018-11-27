@@ -1506,7 +1506,8 @@ func (o *CommonOptions) installProw() error {
 		config := authConfigSvc.Config()
 		// lets assume github.com for now so ignore config.CurrentServer
 		server := config.GetOrCreateServer("https://github.com")
-		userAuth, err := config.PickServerUserAuth(server, "Git account to be used to send webhook events", o.BatchMode, "", o.In, o.Out, o.Err)
+		message := fmt.Sprintf("%s bot user for CI/CD pipelines (not your personal Git user):", server.Label())
+		userAuth, err := config.PickServerUserAuth(server, message, o.BatchMode, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

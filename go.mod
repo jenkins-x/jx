@@ -126,6 +126,7 @@ require (
 	github.com/ryanuber/go-glob v0.0.0-20170128012129-256dc444b735 // indirect
 	github.com/satori/go.uuid v1.2.0
 	github.com/sergi/go-diff v1.0.0
+	github.com/sethvargo/go-password v0.1.2
 	github.com/shirou/gopsutil v0.0.0-20180901134234-eb1f1ab16f2e
 	github.com/shirou/w32 v0.0.0-20160930032740-bb4de0191aa4
 	github.com/shurcooL/githubv4 v0.0.0-20180509030948-19298c78142b
@@ -179,7 +180,6 @@ require (
 	k8s.io/helm v2.7.2+incompatible
 	k8s.io/kube-openapi v0.0.0-20180719232738-d8ea2fe547a4
 	k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b
-	k8s.io/test-infra v0.0.0-20181016234544-2c26f647f17a
-)
+	k8s.io/test-infra v0.0.0-20181113004108-9b11013021d9
 
-replace k8s.io/test-infra v0.0.0-20181016234544-2c26f647f17a => github.com/jenkins-x/test-infra v0.0.0-20181017095642-0e6fed3d4d4d
+)
