@@ -66,7 +66,7 @@ func GetClusterClient(server string) (string, string, string, error) {
 }
 
 
- // GetRegistery Return the docker registry config, registry uri and resource id, error
+ // GetRegistry Return the docker registry config, registry uri and resource id, error
 func GetRegistry(resourceGroup string, name string, registry string) (string, string, string, error) {
 	registryID := ""
 
