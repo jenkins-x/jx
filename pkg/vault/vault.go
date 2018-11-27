@@ -86,8 +86,8 @@ type Storage struct {
 }
 
 // VaultGcpServiceAccountSecretName builds the secret name where the GCP service account is stored
-func VaultGcpServiceAccountSecretName(vaultName string) string {
-	return fmt.Sprintf("%s-gcp-sa", vaultName)
+func VaultGcpServiceAccountSecretName(vaultName string, clusterName string) string {
+	return fmt.Sprintf("%s-%s-gcp-sa", clusterName, vaultName)
 }
 
 // CreateVault creates a new vault backed by GCP KMS and storage
@@ -106,7 +106,7 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 	}
 	vaultRule, err := pathRule.String()
 	if err != nil {
-		return errors.Wrap(err, "encoding the polcies for secret path")
+		return errors.Wrap(err, "encoding the policies for secret path")
 	}
 
 	vault := &v1alpha1.Vault{
@@ -189,16 +189,16 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 
 // FindVault  checks if a vault is available
 func FindVault(vaultOperatorClient versioned.Interface, name string, ns string) bool {
-	_, err := vaultOperatorClient.Vault().Vaults(ns).Get(name, metav1.GetOptions{})
+	_, err := GetVault(vaultOperatorClient, name, ns)
 	if err != nil {
 		return false
 	}
 	return true
 }
 
-// VaultAuthServiceAccountName returns the vault service account name
-func VaultAuthServiceAccountName(vaultName string) string {
-	return fmt.Sprintf("%s-%s", vaultName, vaultAuthSaSuffix)
+// GetVault gets a specific vault
+func GetVault(vaultOperatorClient versioned.Interface, name string, ns string) (*v1alpha1.Vault, error) {
+	return vaultOperatorClient.Vault().Vaults(ns).Get(name, metav1.GetOptions{})
 }
 
 // GetVaults returns all vaults available in a given namespaces
@@ -211,7 +211,7 @@ func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interf
 	vaults := []*Vault{}
 	for _, v := range vaultList.Items {
 		vaultName := v.Name
-		vaultAuthSaName := VaultAuthServiceAccountName(vaultName)
+		vaultAuthSaName := GetAuthSaName(v)
 		vaultURL, err := services.FindServiceURL(client, ns, vaultName)
 		if err != nil {
 			vaultURL = ""
@@ -230,4 +230,16 @@ func GetVaults(client kubernetes.Interface, vaultOperatorClient versioned.Interf
 // DeleteVault delete a Vault resource
 func DeleteVault(vaultOperatorClient versioned.Interface, name string, ns string) error {
 	return vaultOperatorClient.Vault().Vaults(ns).Delete(name, &metav1.DeleteOptions{})
+}
+
+// GetAuthSaName gets the Auth Service Account name for the vault
+func GetAuthSaName(vault v1alpha1.Vault) string {
+	// This is nasty, but the ExternalConfig member of VaultSpec is just defined as a map[string]interface{} :-(
+	authArray := vault.Spec.ExternalConfig["auth"]
+	authObject := authArray.([]interface{})[0]
+	roleArray := authObject.(map[string]interface{})["roles"]
+	roleObject := roleArray.([]interface{})[0]
+	name := roleObject.(map[string]interface{})["name"]
+
+	return name.(string)
 }

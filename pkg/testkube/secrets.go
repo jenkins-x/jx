@@ -11,7 +11,7 @@ import (
 func CreateTestPipelineGitSecret(gitServiceKind string, name string, gitUrl string, username string, password string) corev1.Secret {
 	return corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: kube.ToValidName(name),
+			Name:      kube.ToValidName(name),
 			Namespace: "jx",
 			Annotations: map[string]string{
 				kube.AnnotationURL:  gitUrl,

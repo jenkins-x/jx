@@ -124,7 +124,7 @@ func (o *StepPostInstallOptions) Run() (err error) {
 		if env == nil || (env.Spec.Kind != v1.EnvironmentKindTypePermanent && env.Spec.Kind != v1.EnvironmentKindTypeDevelopment) {
 			continue
 		}
-		//gitRef := env.Spec.Source.Ref
+		//gitRef := env.Spec.Source.GitRef
 		gitURL := env.Spec.Source.URL
 		if gitURL == "" {
 			continue

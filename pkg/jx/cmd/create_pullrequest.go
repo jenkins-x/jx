@@ -23,11 +23,11 @@ var (
 
 	createPullRequestExample = templates.Examples(`
 		# Create a Pull Request in the current project
-		jx create pullRequest -t "my PR title"
+		jx create pullrequest -t "my PR title"
 
 
 		# Create a Pull Request with a title and a body
-		jx create pullRequest -t "my PR title" --body "	
+		jx create pullrequest -t "my PR title" --body "	
 		some more
 		text
 		goes
@@ -85,10 +85,10 @@ func NewCmdCreatePullRequest(f Factory, in terminal.FileReader, out terminal.Fil
 	}
 
 	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The source directory used to detect the Git repository. Defaults to the current directory")
-	cmd.Flags().StringVarP(&options.Title, optionTitle, "t", "", "The title of the pullRequest to create")
-	cmd.Flags().StringVarP(&options.Body, "body", "", "", "The body of the pullRequest")
+	cmd.Flags().StringVarP(&options.Title, optionTitle, "t", "", "The title of the pullrequest to create")
+	cmd.Flags().StringVarP(&options.Body, "body", "", "", "The body of the pullrequest")
 	cmd.Flags().StringVarP(&options.Base, "base", "", "master", "The base branch to create the pull request into")
-	cmd.Flags().StringArrayVarP(&options.Labels, "label", "l", []string{}, "The labels to add to the pullRequest")
+	cmd.Flags().StringArrayVarP(&options.Labels, "label", "l", []string{}, "The labels to add to the pullrequest")
 
 	options.addCommonFlags(cmd)
 	return cmd

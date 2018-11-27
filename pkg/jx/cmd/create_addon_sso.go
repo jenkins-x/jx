@@ -236,7 +236,7 @@ func (o *CreateAddonSSOOptions) installDex(domain string, clientID string, clien
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 	releaseName := o.ReleaseName + "-" + dexServiceName
-	return o.installChart(releaseName, kube.ChartSsoDex, o.DexVersion, o.Namespace, true, values, nil)
+	return o.installChart(releaseName, kube.ChartSsoDex, o.DexVersion, o.Namespace, true, values, nil, "")
 }
 
 func (o *CreateAddonSSOOptions) installSSOOperator(dexGrpcService string) error {
@@ -246,7 +246,7 @@ func (o *CreateAddonSSOOptions) installSSOOperator(dexGrpcService string) error 
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 	releaseName := o.ReleaseName + "-" + operatorServiceName
-	return o.installChart(releaseName, kube.ChartSsoOperator, o.Version, o.Namespace, true, values, nil)
+	return o.installChart(releaseName, kube.ChartSsoOperator, o.Version, o.Namespace, true, values, nil, "")
 }
 
 func (o *CreateAddonSSOOptions) exposeSSO() error {

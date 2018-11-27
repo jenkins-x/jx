@@ -8,6 +8,10 @@ metadata:
     chart: {{ template "jx.chart" . }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
+{{- if .Values.job.annotations }}
+  annotations:
+{{ toYaml .Values.job.annotations | indent 4 }}
+{{- end }}
 spec:
   backoffLimit: {{ .Values.backoffLimit }}
   activeDeadlineSeconds: {{ .Values.activeDeadlineSeconds }}
@@ -35,6 +39,7 @@ spec:
             - name: http
               containerPort: {{ .Values.internalPort }}
               protocol: TCP
+{{- if .Values.probe.path }}
           livenessProbe:
             httpGet:
               path: {{ .Values.probe.path }}
@@ -43,6 +48,7 @@ spec:
             httpGet:
               path: {{ .Values.probe.path }}
               port: http
+{{- end }}
 {{- if .Values.env }}
           env:
 {{- range $pkey, $pval := .Values.env }}
