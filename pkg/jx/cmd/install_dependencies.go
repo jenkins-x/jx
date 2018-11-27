@@ -2,13 +2,10 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
-	"strings"
 )
 
 // InstallDependenciesFlags flags for the install command
@@ -122,7 +119,6 @@ func (options *InstallDependenciesOptions) Run() error {
 	}
 
 	if len(install) > 0 {
-		log.Infof("Installing %s\n", util.ColorInfo(strings.Join(install, " ")))
 		return options.doInstallMissingDependencies(install)
 	}
 
