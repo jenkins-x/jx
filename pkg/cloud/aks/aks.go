@@ -2,13 +2,16 @@ package aks
 
 import (
 	b64 "encoding/base64"
-	"os/exec"
 	"encoding/json"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	"os/exec"
+	"strings"
 )
 
 type AKS struct {
-	ID  string `json:"id"`
-	URI string `json:"uri"`
+	ID    string `json:"id"`
+	URI   string `json:"uri"`
 	Group string `json:"group"`
 	Name  string `json:"name"`
 }
@@ -27,7 +30,7 @@ type password struct {
 
 type credential struct {
 	Passwords []password `json:"passwords"`
-	Username  string `json:"username"`
+	Username  string     `json:"username"`
 }
 
 type Auth struct {
@@ -39,13 +42,13 @@ type Config struct {
 }
 
 func GetClusterClient(server string) (string, string, string, error) {
-	clusterstr, err := exec.Command("az", "aks", "list", "--query", "\"[].{uri:fqdn, id:servicePrincipalProfile.clientId, group:resourceGroup}\"").Output()
+	clusterstr, err := exec.Command("az", "aks", "list", "--query", "[].{uri:fqdn,id:servicePrincipalProfile.clientId,group:resourceGroup,name:name}").Output()
 	if err != nil {
 		return "", "", "", err
 	}
 
 	clusters := []AKS{}
-	json.Unmarshal([]byte(clusterstr), &clusters)
+	json.Unmarshal(clusterstr, &clusters)
 
 	clientId := ""
 	group := ""
@@ -54,11 +57,12 @@ func GetClusterClient(server string) (string, string, string, error) {
 		if "https://"+v.URI+":443" == server {
 			clientId = v.ID
 			name = v.Name
+			group = v.Group
 			break
 		}
 	}
 
-	return group, clientId, name, nil
+	return group, name, clientId, nil
 }
 
 /**
@@ -67,14 +71,21 @@ func GetClusterClient(server string) (string, string, string, error) {
 func GetRegistry(resourceGroup string, name string, registry string) (string, string, string, error) {
 	registryId := ""
 
-	if registry != "" {
-		registriesstr, err := exec.Command("az", "acr", "list", "--query", "\"[].{uri:loginServer, id:id, name:name, group: resourceGroup}\"").Output()
-		if err != nil {
-			return "", "", "", err
-		}
+	if registry == "" {
+		registry = name + ".azurecr.io"
+	}
+
+	if !strings.HasSuffix(registry, "azurecr.io") {
+		return "", "", "", nil
+	}
+
+	registriesstr, err := exec.Command("az", "acr", "list", "--query", "[].{uri:loginServer,id:id,name:name,group:resourceGroup}").Output()
+	if err != nil {
+		log.Infof("Registry %s not found, create a new one %s in resource group %s\n", util.ColorInfo(registry), util.ColorInfo(name), util.ColorInfo(resourceGroup))
+	} else {
 		registries := []ACR{}
-		json.Unmarshal([]byte(registriesstr), &registries)
-	
+		json.Unmarshal(registriesstr, &registries)
+
 		for _, v := range registries {
 			if v.URI == registry {
 				registryId = v.ID
@@ -90,6 +101,7 @@ func GetRegistry(resourceGroup string, name string, registry string) (string, st
 		registryIdStr, err := exec.Command("az", "acr", "create", "-g", resourceGroup, "-n", name, "--sku", "Standard", "--admin-enabled", "--query", "id").Output()
 		registryId = string(registryIdStr)
 		if err != nil {
+			log.Infof("Failed to create ACR %s in resource group %s\n", util.ColorInfo(name), util.ColorInfo(resourceGroup))
 			return "", "", "", err
 		}
 		registry = name + ".azurecr.io"
@@ -97,7 +109,7 @@ func GetRegistry(resourceGroup string, name string, registry string) (string, st
 
 	credstr, err := exec.Command("az", "acr", "credential", "show", "-g", resourceGroup, "-n", name).Output()
 	cred := credential{}
-	json.Unmarshal([]byte(credstr), &cred)
+	json.Unmarshal(credstr, &cred)
 
 	newSecret := &Auth{}
 	dockerConfig := &Config{}
@@ -110,6 +122,7 @@ func GetRegistry(resourceGroup string, name string, registry string) (string, st
 	dockerConfigStr, err := json.Marshal(dockerConfig)
 
 	if err != nil {
+		log.Infof("Failed to get credentials for ACR %s in resource group %s\n", util.ColorInfo(name), util.ColorInfo(resourceGroup))
 		return "", "", "", err
 	}
 
@@ -117,5 +130,8 @@ func GetRegistry(resourceGroup string, name string, registry string) (string, st
 }
 
 func AssignRole(client string, registry string) {
-	exec.Command("az", "role", "assignment", "create", "--assignee", client, "--role", "Reader", "--scope", registry)
+	if client == "" || registry == "" {
+		return
+	}
+	exec.Command("az", "role", "assignment", "create", "--assignee", client, "--role", "Reader", "--scope", registry).Output()
 }

@@ -722,7 +722,7 @@ func (options *InstallOptions) Run() error {
 			return errors.Wrap(err, "failed to get registry from Azure")
 		}
 		aks.AssignRole(cluster, registryId)
-		log.Infof("Assign AKS %s a reader role for ACR %s", util.ColorInfo(server), util.ColorInfo(dockerRegistry))
+		log.Infof("Assign AKS %s a reader role for ACR %s\n", util.ColorInfo(server), util.ColorInfo(dockerRegistry))
 	}
 
 	if options.Flags.Provider == IKS {
