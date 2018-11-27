@@ -16,7 +16,7 @@ type InstallDependenciesFlags struct {
 // InstallDependenciesOptions options for install dependencies
 type InstallDependenciesOptions struct {
 	CommonOptions
-	Flags       InstallDependenciesFlags
+	Flags InstallDependenciesFlags
 }
 
 var (
@@ -31,7 +31,7 @@ var (
 		jx install dependencies -d gcloud
 `)
 
-	availableDependencies = []string {
+	availableDependencies = []string{
 		"az",
 		"kubectl",
 		"gcloud",
@@ -57,7 +57,6 @@ var (
 		"heptio-authenticator-aws",
 		"kustomize",
 	}
-
 )
 
 // NewCmdInstallDependencies creates a command object to install any required dependencies
@@ -99,7 +98,6 @@ func CreateInstallDependenciesOptions(f Factory, in terminal.FileReader, out ter
 	return options
 }
 
-
 // Run implements this command
 func (options *InstallDependenciesOptions) Run() error {
 	install := []string{}
@@ -125,4 +123,3 @@ func (options *InstallDependenciesOptions) Run() error {
 	options.Debugf("No dependencies selected to install\n")
 	return nil
 }
-
