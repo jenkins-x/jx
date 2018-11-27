@@ -39,12 +39,12 @@ func (mock *MockGitter) Add(_param0 string, _param1 ...string) error {
 	return ret0
 }
 
-func (mock *MockGitter) AddCommmit(_param0 string, _param1 string) error {
+func (mock *MockGitter) AddCommit(_param0 string, _param1 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitter().")
 	}
 	params := []pegomock.Param{_param0, _param1}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("AddCommmit", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
+	result := pegomock.GetGenericMockFrom(mock).Invoke("AddCommit", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 error
 	if len(result) != 0 {
 		if result[0] != nil {
@@ -1066,23 +1066,23 @@ func (c *Gitter_Add_OngoingVerification) GetAllCapturedArguments() (_param0 []st
 	return
 }
 
-func (verifier *VerifierGitter) AddCommmit(_param0 string, _param1 string) *Gitter_AddCommmit_OngoingVerification {
+func (verifier *VerifierGitter) AddCommit(_param0 string, _param1 string) *Gitter_AddCommit_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "AddCommmit", params)
-	return &Gitter_AddCommmit_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "AddCommit", params)
+	return &Gitter_AddCommit_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Gitter_AddCommmit_OngoingVerification struct {
+type Gitter_AddCommit_OngoingVerification struct {
 	mock              *MockGitter
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Gitter_AddCommmit_OngoingVerification) GetCapturedArguments() (string, string) {
+func (c *Gitter_AddCommit_OngoingVerification) GetCapturedArguments() (string, string) {
 	_param0, _param1 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *Gitter_AddCommmit_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
+func (c *Gitter_AddCommit_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))

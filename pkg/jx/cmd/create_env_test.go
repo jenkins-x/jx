@@ -91,33 +91,34 @@ func TestCreateEnvRun(t *testing.T) {
 	When(jenkinsClientInterface.GetJob(AnyString())).ThenReturn(jenkinsJob, nil)
 
 	// Mock terminal
-	c, state, term := tests.NewTerminal(t)
+	console := tests.NewTerminal(t)
 
 	// Test interactive IO
 	donec := make(chan struct{})
+	//noinspection GoUnhandledErrorResult
 	go func() {
 		defer close(donec)
-		c.ExpectString("Name:")
-		c.SendLine("testing")
-		c.ExpectString("Label:")
-		c.SendLine("Testing")
-		c.ExpectString("Namespace:")
-		c.SendLine("jx-testing")
-		c.ExpectString("Cluster URL:")
-		c.SendLine("http://good.looking.com")
-		c.ExpectString("Promotion Strategy:")
-		c.SendLine("A")
-		c.ExpectString("Order:")
-		c.SendLine("1")
-		c.ExpectString("We will now create a Git repository to store your testing environment, ok? :")
-		c.SendLine("N")
-		c.ExpectString("Git URL for the Environment source code:")
-		c.SendLine("https://github.com/jx-testing-user/testing-env")
-		c.ExpectString("Git branch for the Environment source code:")
-		c.SendLine("master")
-		c.ExpectString("Do you wish to use jx-testing-user as the user name for the Jenkins Pipeline")
-		c.SendLine("Y")
-		c.ExpectEOF()
+		console.ExpectString("Name:")
+		console.SendLine("testing")
+		console.ExpectString("Label:")
+		console.SendLine("Testing")
+		console.ExpectString("Namespace:")
+		console.SendLine("jx-testing")
+		console.ExpectString("Cluster URL:")
+		console.SendLine("http://good.looking.com")
+		console.ExpectString("Promotion Strategy:")
+		console.SendLine("A")
+		console.ExpectString("Order:")
+		console.SendLine("1")
+		console.ExpectString("We will now create a Git repository to store your testing environment, ok? :")
+		console.SendLine("N")
+		console.ExpectString("Git URL for the Environment source code:")
+		console.SendLine("https://github.com/jx-testing-user/testing-env")
+		console.ExpectString("Git branch for the Environment source code:")
+		console.SendLine("master")
+		console.ExpectString("Do you wish to use jx-testing-user as the user name for the Jenkins Pipeline")
+		console.SendLine("Y")
+		console.ExpectEOF()
 	}()
 
 	a := make(map[string]string)
@@ -137,9 +138,9 @@ func TestCreateEnvRun(t *testing.T) {
 		CreateOptions: cmd.CreateOptions{
 			CommonOptions: cmd.CommonOptions{
 				Factory: factory,
-				In:      term.In,
-				Out:     term.Out,
-				Err:     term.Err,
+				In:      console.In,
+				Out:     console.Out,
+				Err:     console.Err,
 			},
 		},
 	}
@@ -147,11 +148,11 @@ func TestCreateEnvRun(t *testing.T) {
 	err := options.Run()
 
 	// Close the slave end of the pty, and read the remaining bytes from the master end.
-	c.Tty().Close()
+	console.Close()
 	<-donec
 
 	assert.NoError(t, err, "Should not error")
 
 	// Dump the terminal's screen.
-	t.Logf(expect.StripTrailingEmptyLines(state.String()))
+	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
 }

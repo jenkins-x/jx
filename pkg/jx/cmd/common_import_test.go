@@ -46,15 +46,15 @@ func TestImportProject(t *testing.T) {
 	factory := cmd_mocks.NewMockFactory()
 
 	// mock terminal
-	c, state, term := tests.NewTerminal(t)
+	console := tests.NewTerminal(t)
 
 	// Test interactive IO
 	donec := make(chan struct{})
 	go func() {
 		defer close(donec)
-		c.ExpectString("Do you wish to use jx-testing-user as the user name for the Jenkins Pipeline")
-		c.SendLine("Y")
-		c.ExpectEOF()
+		console.ExpectString("Do you wish to use jx-testing-user as the user name for the Jenkins Pipeline")
+		console.SendLine("Y")
+		console.ExpectEOF()
 	}()
 
 	// mock Kubernetes interface
@@ -83,9 +83,9 @@ func TestImportProject(t *testing.T) {
 	o := &cmd.ImportOptions{
 		CommonOptions: cmd.CommonOptions{
 			Factory: factory,
-			In:      term.In,
-			Out:     term.Out,
-			Err:     term.Err,
+			In:      console.In,
+			Out:     console.Out,
+			Err:     console.Err,
 		},
 	}
 
@@ -114,11 +114,11 @@ func TestImportProject(t *testing.T) {
 	)
 
 	// Close the slave end of the pty, and read the remaining bytes from the master end.
-	c.Tty().Close()
+	console.Close()
 	<-donec
 
 	assert.NoError(t, err, "Should not error")
 
 	// Dump the terminal's screen.
-	t.Logf(expect.StripTrailingEmptyLines(state.String()))
+	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
 }

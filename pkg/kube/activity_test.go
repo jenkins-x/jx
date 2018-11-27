@@ -83,7 +83,8 @@ func TestGenerateBuildNumber(t *testing.T) {
 	expected := []string{}
 	for i := 1; i < 4; i++ {
 		buildNumberText := strconv.Itoa(i)
-		build, activity, err := kube.GenerateBuildNumber(activities, org, repo, branch)
+		pID := kube.NewPipelineID(repo, org, branch)
+		build, activity, err := kube.GenerateBuildNumber(activities, pID)
 		if assert.NoError(t, err, "GenerateBuildNumber %d", i) {
 			if assert.NotNil(t, activity, "No PipelineActivity returned!") {
 				results = append(results, build)
@@ -230,4 +231,25 @@ func TestCreatePipelineDetails(t *testing.T) {
 			assert.Equal(t, expectedBuild, d1.Build, "%s Build", name)
 		}
 	}
+}
+
+func TestPipelineID(t *testing.T) {
+	t.Parallel()
+
+	// A simple ID.
+	pID := kube.NewPipelineID("o1", "r1", "b1")
+	validatePipelineID(t, pID, "o1/r1/b1", "o1-r1-b1")
+
+	// Upper case allowed in our ID, but not in the K8S 'name'.
+	pID = kube.NewPipelineID("OwNeR1", "rEpO1", "BrAnCh1")
+	validatePipelineID(t, pID, "OwNeR1/rEpO1/BrAnCh1", ".ow.ne.r1-r.ep.o1-.br.an.ch1")
+
+	//Punctuation other than '-' and '.' not allowed in K8S 'name'.
+	pID = kube.NewPipelineID("O/N!R@1", "therepo", "thebranch")
+	validatePipelineID(t, pID, "O/N!R@1/therepo/thebranch", ".o-.n.21.r.401-therepo-thebranch")
+}
+
+func validatePipelineID(t *testing.T, pID kube.PipelineID, expectedID string, expectedName string) {
+	assert.Equal(t, expectedID, pID.ID)
+	assert.Equal(t, expectedName, pID.Name)
 }

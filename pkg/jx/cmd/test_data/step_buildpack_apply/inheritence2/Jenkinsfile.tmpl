@@ -1,0 +1,19 @@
+pipeline {
+  agent {{.Agent.Groovy}}
+  environment {
+    ORG = 'REPLACE_ME_ORG'
+    APP_NAME = 'REPLACE_ME_APP_NAME'
+    CHARTMUSEUM_CREDS = credentials('jenkins-x-chartmuseum')
+{{- .Environment}}
+  }
+  stages {
+    stage('Build Release') {
+      when {
+        branch 'master'
+      }
+      steps {
+{{.Pipelines.Release.AllButPromote.Groovy}}
+      }
+    }
+  }
+}

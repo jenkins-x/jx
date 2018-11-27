@@ -2,16 +2,17 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 // StepHelmApplyOptions contains the command line flags
@@ -38,7 +39,7 @@ var (
 
 `)
 
-	defaultValueFileNames = []string{ "values.yaml", "myvalues.yaml", "secrets.yaml"}
+	defaultValueFileNames = []string{"values.yaml", "myvalues.yaml", "secrets.yaml"}
 )
 
 func NewCmdStepHelmApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
@@ -89,14 +90,6 @@ func (o *StepHelmApplyOptions) Run() error {
 		}
 	}
 
-	// if we're in a Prow job we need to clone and change dir to find the Helm Chart.yaml
-	if os.Getenv(PROW_JOB_ID) != "" {
-		dir, err = o.cloneProwPullRequest(dir, o.GitProvider)
-		if err != nil {
-			return fmt.Errorf("failed to clone pull request: %v", err)
-		}
-	}
-
 	if !o.DisableHelmVersion {
 		(&StepHelmVersionOptions{}).Run()
 	}
@@ -120,13 +113,13 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	kubeClient, _, err := o.KubeClient()
 	if err != nil {
-	  return err
+		return err
 	}
 	err = kube.EnsureNamespaceCreated(kubeClient, ns, nil, nil)
 	if err != nil {
-	  return err
+		return err
 	}
-	
+
 	releaseName := o.ReleaseName
 	if releaseName == "" {
 		releaseName = ns
@@ -151,12 +144,12 @@ func (o *StepHelmApplyOptions) Run() error {
 	}
 
 	log.Infof("Using values files: %s\n", strings.Join(valueFiles, ", "))
-	
+
 	if o.Wait {
 		timeout := 600
-		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, &timeout, o.Force, true, nil, valueFiles)
+		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, &timeout, o.Force, true, nil, valueFiles, "")
 	} else {
-		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, nil, o.Force, false, nil, valueFiles)
+		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, nil, o.Force, false, nil, valueFiles, "")
 	}
 	if err != nil {
 		return err

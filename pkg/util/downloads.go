@@ -30,7 +30,7 @@ func DownloadFile(filepath string, url string) (err error) {
 	defer out.Close()
 
 	// Get the data
-	resp, err := GetClientWithTimeout(int(time.Hour) * 2).Get(url)
+	resp, err := GetClientWithTimeout(time.Duration(time.Hour * 2)).Get(url)
 	if err != nil {
 		return err
 	}

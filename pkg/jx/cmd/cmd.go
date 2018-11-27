@@ -34,6 +34,7 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 		*/
 	}
 
+	addCommands := NewCmdAdd(f, in, out, err)
 	createCommands := NewCmdCreate(f, in, out, err)
 	deleteCommands := NewCmdDelete(f, in, out, err)
 	getCommands := NewCmdGet(f, in, out, err)
@@ -66,6 +67,7 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 
 	addonCommands := []*cobra.Command{}
 	addonCommands = append(addonCommands, findCommands("addon", createCommands, deleteCommands)...)
+	addonCommands = append(addonCommands, findCommands("app", createCommands, deleteCommands, addCommands)...)
 
 	environmentsCommands := []*cobra.Command{
 		NewCmdPreview(f, in, out, err),
@@ -83,7 +85,7 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 			Commands: addProjectCommands,
 		},
 		{
-			Message:  "Addons:",
+			Message:  "Apps:",
 			Commands: addonCommands,
 		},
 		{
@@ -134,6 +136,7 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 				createCommands,
 				updateCommands,
 				deleteCommands,
+				addCommands,
 				NewCmdStart(f, in, out, err),
 				NewCmdStop(f, in, out, err),
 			},

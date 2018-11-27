@@ -252,7 +252,7 @@ func (g *GitCLI) CommitDir(dir string, message string) error {
 }
 
 // AddCommit perform an add and commit of the changes from the repository at the given directory with the given messages
-func (g *GitCLI) AddCommmit(dir string, msg string) error {
+func (g *GitCLI) AddCommit(dir string, msg string) error {
 	return g.gitCmd(dir, "commit", "-a", "-m", msg, "--allow-empty")
 }
 

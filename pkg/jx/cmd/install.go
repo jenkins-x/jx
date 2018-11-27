@@ -3,8 +3,6 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/Pallinder/go-randomdata"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	"io"
 	"io/ioutil"
 	"os"
@@ -12,6 +10,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Pallinder/go-randomdata"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/addon"
@@ -85,6 +86,8 @@ type InstallFlags struct {
 	Dir                      string
 	NoGitOpsEnvApply         bool
 	NoGitOpsEnvRepo          bool
+	Vault                    bool
+	BuildPackName            string
 }
 
 // Secrets struct for secrets
@@ -335,6 +338,8 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.GitOpsMode, "gitops", "", false, "Sets up the local file system for GitOps so that the current installation can be configured or upgraded at any time via GitOps")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvApply, "no-gitops-env-apply", "", false, "When using GitOps to create the source code for the development environment and installation, don't run 'jx step env apply' to perform the install")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvRepo, "no-gitops-env-repo", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a git repository for the source code")
+	cmd.Flags().BoolVarP(&flags.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during installation")
+	cmd.Flags().StringVarP(&flags.BuildPackName, "buildpack", "", "", "The name of the build pack to use for the Team")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
@@ -668,7 +673,8 @@ func (options *InstallOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "failed to update the helm repo")
 		}
-		err = options.Helm().UpgradeChart("ibm/ibmcloud-block-storage-plugin", "ibmcloud-block-storage-plugin", "default", nil, true, nil, false, false, nil, nil)
+		err = options.Helm().UpgradeChart("ibm/ibmcloud-block-storage-plugin", "ibmcloud-block-storage-plugin",
+			"default", nil, true, nil, false, false, nil, nil, "")
 		if err != nil {
 			return errors.Wrap(err, "failed to install/upgrade the IBM Cloud Block Storage drivers")
 		}
@@ -681,6 +687,14 @@ func (options *InstallOptions) Run() error {
 	// share the init domain option with the install options
 	if initOpts.Flags.Domain != "" && options.Flags.Domain == "" {
 		options.Flags.Domain = initOpts.Flags.Domain
+	}
+
+	if options.Flags.GitOpsMode || options.Flags.Vault {
+		// Install Vault into the new env
+		err = InstallVaultOperator(&options.CommonOptions, "")
+		if err != nil {
+			return err
+		}
 	}
 
 	// get secrets to use in helm install
@@ -944,12 +958,12 @@ func (options *InstallOptions) Run() error {
 	options.currentNamespace = ns
 	if options.Flags.Prow {
 		// install Prow into the new env
+		options.OAUTHToken = options.GitRepositoryOptions.ApiToken
 		err = options.installProw()
 		if err != nil {
 			return fmt.Errorf("failed to install Prow: %v", err)
 		}
 	}
-
 	timeoutInt, err := strconv.Atoi(timeout)
 	if err != nil {
 		return errors.Wrap(err, "failed to convert the helm install timeout value")
@@ -986,7 +1000,7 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	tls, err := strconv.ParseBool(exposeController.Config.TLSAcme)
+	tls, err := util.ParseBool(exposeController.Config.TLSAcme)
 	if err != nil {
 		return fmt.Errorf("failed to parse TLS exposecontroller boolean %v", err)
 	}
@@ -1024,6 +1038,17 @@ func (options *InstallOptions) Run() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	// lets prompt the user which kind of workload to default to (they can change this at any time later)
+	ebp := &EditBuildPackOptions{
+		BuildPackName: options.Flags.BuildPackName,
+	}
+	ebp.CommonOptions = options.CommonOptions
+
+	err = ebp.Run()
+	if err != nil {
+		return err
 	}
 
 	if options.Flags.GitOpsMode {
@@ -1065,11 +1090,14 @@ func (options *InstallOptions) Run() error {
 		}
 
 		// lets combine the various values and secretes files
-		err = helm.CombineValueFilesToFile(secretsFile, secretFiles, JenkinsXPlatformChartName)
+		err = helm.CombineValueFilesToFile(secretsFile, secretFiles, JenkinsXPlatformChartName, nil)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to generate %s by combining helm Secret YAML files %s", secretsFile, strings.Join(secretFiles, ", "))
 		}
-		err = helm.CombineValueFilesToFile(valuesFile, onlyValueFiles, JenkinsXPlatformChartName)
+		extraValues := map[string]interface{}{
+			"postinstalljob": map[string]interface{}{"enabled": "true"},
+		}
+		err = helm.CombineValueFilesToFile(valuesFile, onlyValueFiles, JenkinsXPlatformChartName, extraValues)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to generate %s by combining helm value YAML files %s", valuesFile, strings.Join(onlyValueFiles, ", "))
 		}
@@ -1102,9 +1130,10 @@ func (options *InstallOptions) Run() error {
 		}
 
 		if !options.Flags.InstallOnly {
-			err = options.Helm().UpgradeChart(jxChart, jxRelName, ns, &version, true, &timeoutInt, false, false, nil, valueFiles)
+			err = options.Helm().UpgradeChart(jxChart, jxRelName, ns, &version, true, &timeoutInt, false, false, nil,
+				valueFiles, "")
 		} else {
-			err = options.Helm().InstallChart(jxChart, jxRelName, ns, &version, &timeoutInt, nil, valueFiles)
+			err = options.Helm().InstallChart(jxChart, jxRelName, ns, &version, &timeoutInt, nil, valueFiles, "")
 		}
 		if err != nil {
 			return errors.Wrap(err, "failed to install/upgrade the jenkins-x platform chart")
@@ -1134,10 +1163,6 @@ func (options *InstallOptions) Run() error {
 			env.Spec.WebHookEngine = v1.WebHookEngineProw
 			settings := &env.Spec.TeamSettings
 			settings.PromotionEngine = v1.PromotionEngineProw
-			if settings.BuildPackURL == "" {
-				settings.BuildPackURL = JenkinsBuildPackURL
-			}
-			settings.BuildPackRef = defaultProwBuildPackRef
 			log.Info("Configuring the TeamSettings for Prow\n")
 			return nil
 		}
@@ -1289,18 +1314,26 @@ func (options *InstallOptions) Run() error {
 	}
 
 	if options.Flags.GitOpsMode {
-		log.Infof("Generated the source code for the GitOps development environment at %s\n", util.ColorInfo(gitOpsDir))
-		log.Infof("You can apply this to the kubernetes cluster at any time in this directory via: %s\n", util.ColorInfo("jx step env apply"))
+		log.Infof("\n\nGenerated the source code for the GitOps development environment at %s\n", util.ColorInfo(gitOpsDir))
+		log.Infof("You can apply this to the kubernetes cluster at any time in this directory via: %s\n\n", util.ColorInfo("jx step env apply"))
 
 		if !options.Flags.NoGitOpsEnvRepo {
 			authConfigSvc, err := options.CreateGitAuthConfigService()
 			if err != nil {
 				return err
 			}
-			config := &v1.Environment{}
+			config := &v1.Environment{
+				Spec: v1.EnvironmentSpec{
+					Label:             "Development",
+					PromotionStrategy: v1.PromotionStrategyTypeNever,
+					Kind:              v1.EnvironmentKindTypeDevelopment,
+				},
+			}
+			config.Name = kube.LabelValueDevEnvironment
 			var devEnv *v1.Environment
 			err = options.ModifyDevEnvironment(func(env *v1.Environment) error {
 				devEnv = env
+				devEnv.Spec.TeamSettings.UseGitOps = true
 				return nil
 			})
 			if err != nil {
@@ -1329,7 +1362,7 @@ func (options *InstallOptions) Run() error {
 				return nil
 			})
 			if err != nil {
-			  return err
+				return err
 			}
 
 			err = git.Add(dir, ".gitignore")
@@ -1849,7 +1882,7 @@ func (options *InstallOptions) getGitUser(message string) (*auth.UserAuth, error
 	}
 	url := server.URL
 	if message == "" {
-		message = fmt.Sprintf("%s username for CI/CD pipelines:", server.Label())
+		message = fmt.Sprintf("%s bot user for CI/CD pipelines (not your personal Git user):", server.Label())
 	}
 	userAuth, err = config.PickServerUserAuth(server, message, options.BatchMode, "", options.In, options.Out, options.Err)
 	if err != nil {

@@ -442,28 +442,9 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	repository, err := getImageName()
+	values, err := o.GetPreviewValuesConfig(domain)
 	if err != nil {
 		return err
-	}
-
-	tag, err := getImageTag()
-	if err != nil {
-		return err
-	}
-
-	values := config.PreviewValuesConfig{
-		ExposeController: &config.ExposeController{
-			Config: config.ExposeControllerConfig{
-				Domain: domain,
-			},
-		},
-		Preview: &config.Preview{
-			Image: &config.Image{
-				Repository: repository,
-				Tag:        tag,
-			},
-		},
 	}
 
 	config, err := values.String()
@@ -483,7 +464,8 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	err = o.Helm().UpgradeChart(".", o.ReleaseName, o.Namespace, nil, true, nil, true, true, nil, []string{configFileName})
+	err = o.Helm().UpgradeChart(".", o.ReleaseName, o.Namespace, nil, true, nil, true, true, nil,
+		[]string{configFileName}, "")
 	if err != nil {
 		return err
 	}
@@ -802,6 +784,35 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 		log.Warnf("No GitInfo could be found!")
 	}
 	return nil
+}
+
+// GetPreviewValuesConfig returns the PreviewValuesConfig to use as extraValues for helm
+func (o *PreviewOptions) GetPreviewValuesConfig(domain string) (*config.PreviewValuesConfig, error) {
+	repository, err := getImageName()
+	if err != nil {
+		return nil, err
+	}
+
+	tag, err := getImageTag()
+	if err != nil {
+		return nil, err
+	}
+
+	if o.HelmValuesConfig.ExposeController == nil {
+		o.HelmValuesConfig.ExposeController = &config.ExposeController{}
+	}
+	o.HelmValuesConfig.ExposeController.Config.Domain = domain
+
+	values := config.PreviewValuesConfig{
+		ExposeController: o.HelmValuesConfig.ExposeController,
+		Preview: &config.Preview{
+			Image: &config.Image{
+				Repository: repository,
+				Tag:        tag,
+			},
+		},
+	}
+	return &values, nil
 }
 
 func writePreviewURL(o *PreviewOptions, url string) {

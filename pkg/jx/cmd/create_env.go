@@ -57,6 +57,7 @@ type CreateEnvOptions struct {
 	GitRepositoryOptions   gits.GitRepositoryOptions
 	Prefix                 string
 	BranchPattern          string
+	Vault                  bool
 }
 
 // NewCmdCreateEnv creates a command object for the "create" command
@@ -107,6 +108,7 @@ func NewCmdCreateEnv(f Factory, in terminal.FileReader, out terminal.FileWriter,
 
 	cmd.Flags().BoolVarP(&options.NoGitOps, "no-gitops", "x", false, "Disables the use of GitOps on the environment so that promotion is implemented by directly modifying the resources via helm instead of using a Git repository")
 	cmd.Flags().BoolVarP(&options.Prow, "prow", "", false, "Install and use Prow for environment promotion")
+	cmd.Flags().BoolVarP(&options.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during the cluster creation")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, false)
