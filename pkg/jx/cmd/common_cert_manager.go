@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -17,7 +18,7 @@ func (o *CommonOptions) ensureCertmanager() error {
 		if ok {
 
 			values := []string{"rbac.create=true", "ingressShim.extraArgs='{--default-issuer-name=letsencrypt-staging,--default-issuer-kind=Issuer}'"}
-			err = o.installChartOptions(InstallChartOptions{
+			err = o.installChartOptions(helm.InstallChartOptions{
 				ReleaseName: "cert-manager",
 				Chart:       "stable/cert-manager",
 				Version:     "",
