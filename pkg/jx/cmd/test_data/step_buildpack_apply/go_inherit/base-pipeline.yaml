@@ -1,0 +1,34 @@
+agent:
+  label: jenkins-go
+  container: go
+  dir: /home/jenkins/go/src/REPLACE_ME_GIT_PROVIDER/REPLACE_ME_ORG/REPLACE_ME_APP_NAME
+pipelines:
+  pullRequest:
+    setup:
+      steps:
+      - groovy: checkout scm
+    build:
+      steps:
+      - sh: make linux
+  release:
+    setup:
+      steps:
+      - groovy: git 'https://REPLACE_ME_GIT_PROVIDER/REPLACE_ME_ORG/REPLACE_ME_APP_NAME.git'
+        when: "prow"
+      - groovy: checkout scm
+        when: "!prow"
+      - sh: git checkout master
+        comment: ensure we're not on a detached head
+        when: "!prow"
+      - sh: git config --global credential.helper store
+        when: "!prow"
+      - sh: jx step git credentials
+        when: "!prow"
+    setVersion:
+      steps:
+      - sh: echo \$(jx-release-version) > VERSION
+        comment: so we can retrieve the version in later steps
+      - sh: jx step tag --version \$(cat VERSION)
+    build:
+      steps:
+      - sh: make build

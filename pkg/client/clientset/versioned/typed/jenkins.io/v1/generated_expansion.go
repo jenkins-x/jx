@@ -2,6 +2,8 @@
 
 package v1
 
+type BuildPackExpansion interface{}
+
 type CommitStatusExpansion interface{}
 
 type EnvironmentExpansion interface{}

@@ -1,13 +1,13 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/jenkins-x/jx/pkg/jenkins"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
+	"os"
 	"path/filepath"
 )
 
@@ -34,12 +34,10 @@ type StepBuildPackApplyOptions struct {
 	Jenkinsfile             string
 	DraftPack               string
 	DisableJenkinsfileCheck bool
-
-	ImportFileResolver jenkinsfile.ImportFileResolver
 }
 
-// NewCmdBuildPackApply Creates a new Command object
-func NewCmdBuildPackApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+// NewCmdStepBuildPackApply Creates a new Command object
+func NewCmdStepBuildPackApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepBuildPackApplyOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
@@ -52,7 +50,7 @@ func NewCmdBuildPackApply(f Factory, in terminal.FileReader, out terminal.FileWr
 	}
 
 	cmd := &cobra.Command{
-		Use:     "buildpack apply",
+		Use:     "apply",
 		Short:   "Applies the current teams build pack to the project to add any missing resources like a Jenkinsfile",
 		Long:    createJenkinsfileLong,
 		Example: createJenkinsfileExample,
@@ -74,11 +72,20 @@ func NewCmdBuildPackApply(f Factory, in terminal.FileReader, out terminal.FileWr
 
 // Run implements this command
 func (o *StepBuildPackApplyOptions) Run() error {
+	var err error
 	dir := o.Dir
-
-	if o.ImportFileResolver == nil {
-		o.ImportFileResolver = o.resolveImportFile
+	if dir == "" {
+		dir, err = os.Getwd()
+		if err != nil {
+		  return err
+		}
 	}
+
+	settings, err := o.CommonOptions.TeamSettings()
+	if err != nil {
+	  return err
+	}
+	log.Infof("build pack is %s\n", settings.BuildPackURL)
 
 	defaultJenkinsfile := filepath.Join(dir, jenkins.DefaultJenkinsfile)
 	jenkinsfile := jenkins.DefaultJenkinsfile
@@ -100,14 +107,9 @@ func (o *StepBuildPackApplyOptions) Run() error {
 		InitialisedGit:          true,
 		DisableJenkinsfileCheck: o.DisableJenkinsfileCheck,
 	}
-	_, err := o.invokeDraftPack(args)
+	_, err = o.invokeDraftPack(args)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-// resolveImportFile resolve an import name and file 
-func (o *StepBuildPackApplyOptions) resolveImportFile(importFile *jenkinsfile.ImportFile) (string, error) {
-	return importFile.File, fmt.Errorf("not implemented")
 }

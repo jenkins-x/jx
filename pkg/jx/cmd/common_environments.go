@@ -224,7 +224,6 @@ func (o *CommonOptions) modifyDevEnvironment(jxClient versioned.Interface, ns st
 	if err != nil {
 		return fmt.Errorf("Failed to update Development environment in namespace %s: %s", ns, err)
 	}
-	log.Infof("Updated the team settings in namespace %s\n", ns)
 	return nil
 }
 

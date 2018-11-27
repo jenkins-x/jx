@@ -3,10 +3,11 @@ package kube
 import (
 	"fmt"
 	"reflect"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -52,8 +53,6 @@ type PipelineDetails struct {
 	Build         string
 }
 
-var disallowedNameChars = regexp.MustCompile("[^a-z0-9-]")
-
 // PipelineID is an identifier for a Pipeline.
 // A pipeline is typically identified by its owner, repository, and branch with the ID field taking the form
 // `<owner>/>repository>/<branch>`
@@ -68,7 +67,7 @@ type PipelineID struct {
 func NewPipelineIDFromString(id string) PipelineID {
 	pID := PipelineID{
 		ID:   id,
-		Name: disallowedNameChars.ReplaceAllString(id, "-"),
+		Name: util.EncodeKubernetesName(strings.Replace(id, "/", "-", -1)),
 	}
 	return pID
 }

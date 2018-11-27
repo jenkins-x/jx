@@ -51,6 +51,7 @@ const (
 
 	minimumMavenDeployVersion = "2.8.2"
 
+	masterBranch         = "master"
 	defaultGitIgnoreFile = `
 .project
 .classpath
@@ -898,8 +899,19 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 		return err
 	}
 
-	// todo lets create a Knative build to auto optionally auto trigger initial release
-
+	startBuildOptions := StartPipelineOptions{
+		GetOptions: GetOptions{
+			CommonOptions: CommonOptions{
+				Factory:          options.Factory,
+				KubeClientCached: options.KubeClientCached,
+			},
+		},
+	}
+	startBuildOptions.Args = []string{fmt.Sprintf("%s/%s/%s", gitInfo.Organisation, gitInfo.Name, masterBranch)}
+	err = startBuildOptions.Run()
+	if err != nil {
+		return fmt.Errorf("failed to start pipeline build")
+	}
 	options.logImportedProject(false, gitInfo)
 
 	return nil
