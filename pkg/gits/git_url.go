@@ -147,14 +147,27 @@ func ParseGitURL(text string) (*GitRepositoryInfo, error) {
 }
 
 func parsePath(path string, info *GitRepositoryInfo) (*GitRepositoryInfo, error) {
-	trimPath := strings.TrimSuffix(path, "/")
+
+	// This is necessary for Bitbucket Server in some cases.
+	trimPath := strings.TrimPrefix(path, "/scm")
+
+	// This is necessary for Bitbucket Server in other cases
+	trimPath = strings.Replace(trimPath, "/projects", "", 1)
+	trimPath = strings.Replace(trimPath, "/repos", "", 1)
+
+	// Remove leading and trailing slashes so that splitting on "/" won't result
+	// in empty strings at the beginning & end of the array.
+	trimPath = strings.TrimPrefix(trimPath, "/")
+	trimPath = strings.TrimSuffix(trimPath, "/")
+
 	trimPath = strings.TrimSuffix(trimPath, ".git")
+
 	arr := strings.Split(trimPath, "/")
-	arrayLength := len(arr)
-	if arrayLength >= 2 {
-		info.Organisation = arr[arrayLength-2]
-		info.Project = arr[arrayLength-2]
-		info.Name = arr[arrayLength-1]
+	if len(arr) >= 2 {
+		// We're assuming the beginning of the path is of the form /<org>/<repo>
+		info.Organisation = arr[0]
+		info.Project = arr[0]
+		info.Name = arr[1]
 
 		return info, nil
 	}
@@ -164,6 +177,7 @@ func parsePath(path string, info *GitRepositoryInfo) (*GitRepositoryInfo, error)
 
 // SaasGitKind returns the kind for SaaS Git providers or "" if the URL could not be deduced
 func SaasGitKind(gitServiceUrl string) string {
+	gitServiceUrl = strings.TrimSuffix(gitServiceUrl, "/")
 	switch gitServiceUrl {
 	case "http://github.com":
 		return KindGitHub
@@ -175,6 +189,8 @@ func SaasGitKind(gitServiceUrl string) string {
 		return KindBitBucketCloud
 	case BitbucketCloudURL:
 		return KindBitBucketCloud
+	case "http://fake.git", FakeGitURL:
+		return KindGitFake
 	default:
 		return ""
 	}

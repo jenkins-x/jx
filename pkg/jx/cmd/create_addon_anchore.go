@@ -4,6 +4,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/kube/services"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -118,7 +120,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 	values := []string{"globalConfig.users.admin.password=" + o.Password, "globalConfig.configDir=/anchore_service_dir"}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil)
+	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
 	if err != nil {
 		return fmt.Errorf("anchore deployment failed: %v", err)
 	}
@@ -140,8 +142,8 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 		return err
 	}
 
-	// get the external anchore service URL
-	ing, err := kube.GetServiceURLFromName(o.KubeClientCached, anchoreServiceName, o.Namespace)
+	// get the external anchore services URL
+	ing, err := services.GetServiceURLFromName(o.KubeClientCached, anchoreServiceName, o.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get external URL for service %s: %v", anchoreServiceName, err)
 	}
@@ -167,7 +169,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 	_, err = o.KubeClientCached.CoreV1().Services(o.currentNamespace).Get(anchoreServiceName, meta_v1.GetOptions{})
 	if err != nil {
 		// create a service link
-		err = kube.CreateServiceLink(o.KubeClientCached, o.currentNamespace, o.Namespace, anchoreServiceName, ing)
+		err = services.CreateServiceLink(o.KubeClientCached, o.currentNamespace, o.Namespace, anchoreServiceName, ing)
 		if err != nil {
 			return fmt.Errorf("failed creating a service link for %s in target namespace %s", anchoreServiceName, o.Namespace)
 		}

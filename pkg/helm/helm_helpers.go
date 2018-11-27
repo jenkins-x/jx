@@ -16,8 +16,16 @@ import (
 )
 
 const (
+	// ChartFileName file name for a chart
+	ChartFileName = "Chart.yaml"
+	// RequirementsFileName the file name for helm requirements
 	RequirementsFileName = "requirements.yaml"
+	// SecretsFileName the file name for secrets
+	SecretsFileName = "secrets.yaml"
+	// ValuesFileName the file name for values
+	ValuesFileName = "values.yaml"
 
+	// DefaultHelmRepositoryURL is the default cluster local helm repo
 	DefaultHelmRepositoryURL = "http://jenkins-x-chartmuseum:8080"
 
 	defaultEnvironmentChartDir = "env"
@@ -262,4 +270,56 @@ func AppendMyValues(valueFiles []string) ([]string, error) {
 		}
 	}
 	return valueFiles, nil
+}
+
+// CombineValueFilesToFile iterates through the input files and combines them into a single Values object and then
+// write it to the output file nested inside the chartName
+func CombineValueFilesToFile(outFile string, inputFiles []string, chartName string, extraValues map[string]interface{}) error {
+	answer := chartutil.Values{}
+	for _, input := range inputFiles {
+		values, err := chartutil.ReadValuesFile(input)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to read helm values YAML file %s", input)
+		}
+		sourceMap := answer.AsMap()
+		util.CombineMapTrees(sourceMap, values.AsMap())
+		answer = chartutil.Values(sourceMap)
+	}
+	m := answer.AsMap()
+	for k, v := range extraValues {
+		m[k] = v
+	}
+	answerMap := map[string]interface{}{
+		chartName: m,
+	}
+	answer = chartutil.Values(answerMap)
+	text, err := answer.YAML()
+	if err != nil {
+		return errors.Wrap(err, "Failed to marshal the combined values YAML files back to YAML")
+	}
+	err = ioutil.WriteFile(outFile, []byte(text), util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to save combined helm values YAML file %s", outFile)
+	}
+	return nil
+}
+
+// GetLatestVersion get's the latest version of a chart in a repo using helmer
+func GetLatestVersion(chart string, repo string, helmer Helmer) (latest string, err error) {
+	dir, err := ioutil.TempDir("", "jx-helm-latest-version")
+	defer func() {
+		err1 := os.RemoveAll(dir)
+		if err1 != nil {
+			err = err1
+		}
+	}()
+	// We should add the latest version, which we can do by fetching a chart with no version specified
+	err = helmer.FetchChart(chart, nil, true, dir, repo)
+	if err != nil {
+		return "", err
+	}
+	chartFile := filepath.Join(dir, chart, "Chart.yaml")
+	_, latest, err = LoadChartNameAndVersion(chartFile)
+	return latest, err
+
 }

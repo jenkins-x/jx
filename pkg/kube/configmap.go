@@ -2,18 +2,19 @@ package kube
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
 // GetConfigmapData gets config map data
 func GetConfigmapData(client kubernetes.Interface, name, ns string) (map[string]string, error) {
-	cm, err := client.CoreV1().ConfigMaps(ns).Get(name, meta_v1.GetOptions{})
+	cm, err := client.CoreV1().ConfigMaps(ns).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get configmap %s in namespace %s, %v", name, ns, err)
 	}
@@ -54,12 +55,12 @@ func ExtractDomainValue(data map[string]string) (string, error) {
 func SaveAsConfigMap(c kubernetes.Interface, configMapName string, ns string, obj interface{}) (*v1.ConfigMap, error) {
 	config := util.ToStringMapStringFromStruct(obj)
 
-	cm, err := c.CoreV1().ConfigMaps(ns).Get(configMapName, meta_v1.GetOptions{})
+	cm, err := c.CoreV1().ConfigMaps(ns).Get(configMapName, metav1.GetOptions{})
 
 	if err != nil {
 		cm := &v1.ConfigMap{
 			Data: config,
-			ObjectMeta: meta_v1.ObjectMeta{
+			ObjectMeta: metav1.ObjectMeta{
 				Name: configMapName,
 			},
 		}
@@ -77,4 +78,64 @@ func SaveAsConfigMap(c kubernetes.Interface, configMapName string, ns string, ob
 		return &v1.ConfigMap{}, err
 	}
 	return cm, nil
+}
+
+// GetConfigMaps returns a map of the ConfigMaps along with a sorted list of names
+func GetConfigMaps(kubeClient kubernetes.Interface, ns string) (map[string]*v1.ConfigMap, []string, error) {
+	m := map[string]*v1.ConfigMap{}
+
+	names := []string{}
+	resourceList, err := kubeClient.CoreV1().ConfigMaps(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return m, names, err
+	}
+	for _, resource := range resourceList.Items {
+		n := resource.Name
+		copy := resource
+		m[n] = &copy
+		if n != "" {
+			names = append(names, n)
+		}
+	}
+	sort.Strings(names)
+	return m, names, nil
+}
+
+// DefaultModifyConfigMap default implementation of a function to modify
+func DefaultModifyConfigMap(kubeClient kubernetes.Interface, ns string, name string, fn func(env *v1.ConfigMap) error, defaultConfigMap *v1.ConfigMap) (*v1.ConfigMap, error) {
+	configMapInterface := kubeClient.CoreV1().ConfigMaps(ns)
+
+	create := false
+	configMap, err := configMapInterface.Get(name, metav1.GetOptions{})
+	if err != nil {
+		create = true
+		initialConfigMap := v1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        name,
+				Labels:      map[string]string{},
+				Annotations: map[string]string{},
+			},
+			Data: map[string]string{},
+		}
+		if defaultConfigMap != nil {
+			initialConfigMap = *defaultConfigMap
+		}
+		configMap = &initialConfigMap
+	}
+	err = fn(configMap)
+	if err != nil {
+		return configMap, err
+	}
+	if create {
+		_, err = configMapInterface.Create(configMap)
+		if err != nil {
+			return configMap, errors.Wrapf(err, "Failed to create ConfigMap %s in namespace %s", name, ns)
+		}
+		return configMap, err
+	}
+	_, err = configMapInterface.Update(configMap)
+	if err != nil {
+		return configMap, errors.Wrapf(err, "Failed to update ConfigMap %s in namespace %s", name, ns)
+	}
+	return configMap, nil
 }

@@ -205,7 +205,36 @@ func (f *FakeProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPul
 }
 
 func (f *FakeProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
-	return nil
+	owner := pr.Owner
+	repos, ok := f.Repositories[owner]
+	if !ok {
+		return fmt.Errorf("no repositories for owner '%s'", owner)
+	}
+	repoName := pr.Repo
+	number := *pr.Number
+	for _, r := range repos {
+		if r.GitRepo.Name == repoName {
+			prFound, ok := r.PullRequests[number]
+			merged := true
+			if !ok {
+				// PR not found, assume it was already merged
+				sha := r.Commits[0].Commit.SHA // let's pretend the last commit in the repo is the merge commit sha
+				pr.MergeCommitSHA = &sha
+				pr.Merged = &merged
+				return nil
+			}
+			// PR found, check if it's merged but does not have a merge commit, then set it
+			if prFound.PullRequest.Merged != nil && *prFound.PullRequest.Merged &&
+				(prFound.PullRequest.MergeCommitSHA == nil || len(*prFound.PullRequest.MergeCommitSHA) == 0) {
+				pr.MergeCommitSHA = &prFound.PullRequest.LastCommitSha
+				return nil
+			}
+
+			// PR is there, and it's not merged, no action required
+			return nil
+		}
+	}
+	return fmt.Errorf("no repository '%s' found for owner '%s'", repoName, owner)
 }
 
 func (f *FakeProvider) GetPullRequest(owner string, repo *GitRepositoryInfo, number int) (*GitPullRequest, error) {
@@ -334,9 +363,17 @@ func (f *FakeProvider) MergePullRequest(pr *GitPullRequest, message string) erro
 	number := *pr.Number
 	for _, r := range repos {
 		if r.GitRepo.Name == repoName {
-			_, ok := r.PullRequests[number]
+			fakePR, ok := r.PullRequests[number]
 			if !ok {
 				return fmt.Errorf("pull request with id '%d' not found", number)
+			}
+			// make sure the commit goes to the repo
+			l := len(fakePR.Commits)
+			lastCommit := fakePR.Commits[l-1]
+			if len(r.Commits) == 0 {
+				r.Commits = append(r.Commits, lastCommit)
+			} else {
+				r.Commits[len(r.Commits)-1] = lastCommit
 			}
 			delete(r.PullRequests, number)
 			return nil

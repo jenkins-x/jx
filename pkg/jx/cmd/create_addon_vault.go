@@ -77,11 +77,12 @@ func NewCmdCreateAddonVault(f Factory, in terminal.FileReader, out terminal.File
 
 // Run implements the command
 func (o *CreateAddonVaultOptions) Run() error {
-	_, _, err := o.KubeClient()
-	if err != nil {
-		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
-	}
-	err = o.ensureHelm()
+	return InstallVaultOperator(&o.CommonOptions, o.Namespace)
+}
+
+// InstallVaultOperator installs a vault operator in the namespace provided
+func InstallVaultOperator(o *CommonOptions, namespace string) error {
+	err := o.ensureHelm()
 	if err != nil {
 		return errors.Wrap(err, "checking if helm is installed")
 	}
@@ -91,7 +92,11 @@ func (o *CreateAddonVaultOptions) Run() error {
 		return errors.Wrapf(err, "adding '%s' helm charts repository", jxRepoURL)
 	}
 
-	log.Infof("Installing %s...\n", util.ColorInfo(o.ReleaseName))
+	releaseName := o.ReleaseName
+	if releaseName == "" {
+		releaseName = kube.DefaultVaultOperatorReleaseName
+	}
+	log.Infof("Installing %s...\n", util.ColorInfo(releaseName))
 
 	values := []string{
 		"image.repository=" + vaultOperatorImageRepository,
@@ -99,11 +104,11 @@ func (o *CreateAddonVaultOptions) Run() error {
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	err = o.installChart(o.ReleaseName, kube.ChartVaultOperator, o.Version, o.Namespace, true, values, nil)
+	err = o.installChart(releaseName, kube.ChartVaultOperator, o.Version, namespace, true, values, nil, "")
 	if err != nil {
-		return errors.Wrap(err, "installing vault-operator chart")
+		return errors.Wrap(err, fmt.Sprintf("installing %s chart", releaseName))
 	}
 
-	log.Infof("%s addon succesfully installed.\n", util.ColorInfo(o.ReleaseName))
+	log.Infof("%s addon succesfully installed.\n", util.ColorInfo(releaseName))
 	return nil
 }

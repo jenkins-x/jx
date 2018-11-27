@@ -3,9 +3,12 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/binaries"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -119,6 +122,11 @@ func (o *CreateAddonIstioOptions) Run() error {
 		return err
 	}
 
+	err = o.generateSecrets()
+	if err != nil {
+		return err
+	}
+
 	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
@@ -132,23 +140,87 @@ func (o *CreateAddonIstioOptions) Run() error {
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	err = o.installChartAt(o.Dir, o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil)
+	err = o.installChartAt(o.Dir, o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
 	if err != nil {
 		return fmt.Errorf("istio deployment failed: %v", err)
 	}
 	return nil
 }
 
+// getIstioChartsFromGitHub lets download the latest release of istio
 func (o *CreateAddonIstioOptions) getIstioChartsFromGitHub() (string, error) {
-	answer, err := ioutil.TempDir("", "istio")
+	answer := ""
+	latestVersion, err := util.GetLatestVersionFromGitHub("istio", "istio")
+	if err != nil {
+		return answer, fmt.Errorf("unable to get latest version for github.com/%s/%s %v", "istio", "istio", err)
+	}
+
+	binDir, err := util.JXBinLocation()
 	if err != nil {
 		return answer, err
 	}
-	gitRepo := "https://github.com/istio/istio.git"
-	log.Infof("Cloning %s to %s\n", util.ColorInfo(gitRepo), util.ColorInfo(answer))
-	err = o.Git().Clone(gitRepo, answer)
+
+	binaryFile := "istioctl"
+	extension := ""
+	switch runtime.GOOS {
+	case "windows":
+		extension = "win.zip"
+		binaryFile += ".exe"
+	case "darwin":
+		extension = "osx.tar.gz"
+	default:
+		extension = "linux.tar.gz"
+	}
+
+	clientURL := fmt.Sprintf("https://github.com/istio/istio/releases/download/%s/istio-%s-%s", latestVersion, latestVersion, extension)
+
+	outputDir := filepath.Join(binDir, "istio-"+latestVersion.String())
+	os.RemoveAll(outputDir)
+
+	answer = outputDir
+
+	err = os.MkdirAll(outputDir, util.DefaultWritePermissions)
 	if err != nil {
 		return answer, err
+	}
+
+	tarPath := filepath.Join(binDir, "istio-"+extension)
+	os.Remove(tarPath)
+	err = binaries.DownloadFile(clientURL, tarPath)
+	if err != nil {
+		return answer, err
+	}
+
+	defer os.Remove(tarPath)
+
+	if strings.HasSuffix(extension, ".zip") {
+		err = util.Unzip(tarPath, outputDir)
+		if err != nil {
+			return answer, err
+		}
+	} else {
+		err = util.UnTargzAll(tarPath, binDir)
+		if err != nil {
+			return answer, err
+		}
+	}
+	f := filepath.Join(outputDir, "bin", binaryFile)
+	exists, err := util.FileExists(f)
+	if err != nil {
+		return answer, err
+	}
+	if exists {
+		binaryDest := filepath.Join(binDir, binaryFile)
+		os.Remove(binaryDest)
+		err = os.Rename(f, binaryDest)
+		if err != nil {
+			return answer, err
+		}
 	}
 	return answer, nil
+}
+
+func (o *CreateAddonIstioOptions) generateSecrets() error {
+	// generate secret for kiali && grafana
+	return nil
 }

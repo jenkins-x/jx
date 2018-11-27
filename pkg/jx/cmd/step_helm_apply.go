@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -35,6 +38,8 @@ var (
 		jx step helm apply --dir env --namespace jx-staging
 
 `)
+
+	defaultValueFileNames = []string{"values.yaml", "myvalues.yaml", "secrets.yaml"}
 )
 
 func NewCmdStepHelmApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
@@ -69,7 +74,7 @@ func NewCmdStepHelmApply(f Factory, in terminal.FileReader, out terminal.FileWri
 	cmd.Flags().StringVarP(&options.ReleaseName, "name", "", "", "The name of the release")
 	cmd.Flags().BoolVarP(&options.Wait, "wait", "", true, "Wait for Kubernetes readiness probe to confirm deployment")
 	cmd.Flags().BoolVarP(&options.Force, "force", "f", true, "Whether to to pass '--force' to helm to help deal with upgrading if a previous promote failed")
-	cmd.Flags().BoolVar(&options.DisableHelmVersion, "no-helm-version",false, "Don't set Chart version before applying")
+	cmd.Flags().BoolVar(&options.DisableHelmVersion, "no-helm-version", false, "Don't set Chart version before applying")
 
 	return cmd
 }
@@ -85,15 +90,7 @@ func (o *StepHelmApplyOptions) Run() error {
 		}
 	}
 
-	// if we're in a Prow job we need to clone and change dir to find the Helm Chart.yaml
-	if os.Getenv(PROW_JOB_ID) != "" {
-		dir, err = o.cloneProwPullRequest(dir, o.GitProvider)
-		if err != nil {
-			return fmt.Errorf("failed to clone pull request: %v", err)
-		}
-	}
-
-	if ! o.DisableHelmVersion {
+	if !o.DisableHelmVersion {
 		(&StepHelmVersionOptions{}).Run()
 	}
 	_, err = o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
@@ -114,6 +111,15 @@ func (o *StepHelmApplyOptions) Run() error {
 		return fmt.Errorf("No --namespace option specified or $DEPLOY_NAMESPACE environment variable available")
 	}
 
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	err = kube.EnsureNamespaceCreated(kubeClient, ns, nil, nil)
+	if err != nil {
+		return err
+	}
+
 	releaseName := o.ReleaseName
 	if releaseName == "" {
 		releaseName = ns
@@ -127,11 +133,23 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	o.Helm().SetCWD(dir)
 
+	// lets discover any local value files
+	valueFiles := []string{}
+	for _, name := range defaultValueFileNames {
+		file := filepath.Join(dir, name)
+		exists, err := util.FileExists(file)
+		if exists && err == nil {
+			valueFiles = append(valueFiles, file)
+		}
+	}
+
+	log.Infof("Using values files: %s\n", strings.Join(valueFiles, ", "))
+
 	if o.Wait {
 		timeout := 600
-		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, &timeout, o.Force, true, nil, nil)
+		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, &timeout, o.Force, true, nil, valueFiles, "")
 	} else {
-		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, nil, o.Force, false, nil, nil)
+		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, nil, o.Force, false, nil, valueFiles, "")
 	}
 	if err != nil {
 		return err

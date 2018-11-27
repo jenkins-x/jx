@@ -2,6 +2,7 @@ package kube
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"reflect"
 	"time"
 
@@ -21,6 +22,55 @@ const (
 	CertmanagerIssuerProd         = "letsencrypt-prod"
 	CertmanagerIssuerStaging      = "letsencrypt-staging"
 )
+
+// RegisterAllCRDs ensures that all Jenkins-X CRDs are registered
+func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
+	err := RegisterBuildPackCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Build Pack CRD")
+	}
+	err = RegisterCommitStatusCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Commit Status CRD")
+	}
+	err = RegisterEnvironmentCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Environment CRD")
+	}
+	err = RegisterExtensionCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Extension CRD")
+	}
+	err = RegisterEnvironmentRoleBindingCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Environment Role Binding CRD")
+	}
+	err = RegisterGitServiceCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Git Service CRD")
+	}
+	err = RegisterPipelineActivityCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Pipeline Activity CRD")
+	}
+	err = RegisterReleaseCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Release CRD")
+	}
+	err = RegisterTeamCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Team CRD")
+	}
+	err = RegisterUserCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the User CRD")
+	}
+	err = RegisterWorkflowCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Workflow CRD")
+	}
+	return nil
+}
 
 // RegisterEnvironmentCRD ensures that the CRD is registered for Environments
 func RegisterEnvironmentCRD(apiClient apiextensionsclientset.Interface) error {
@@ -46,10 +96,10 @@ func RegisterEnvironmentCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".spec.kind",
 		},
 		{
-			Name:        "Promotion Strategy",
+			Name:        "Promotion",
 			Type:        "string",
 			Description: "The strategy used for promoting to this environment",
-			JSONPath:    ".spec.oromotionStrategy",
+			JSONPath:    ".spec.promotionStrategy",
 		},
 		{
 			Name:        "Order",
@@ -70,7 +120,8 @@ func RegisterEnvironmentCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".spec.source.ref",
 		},
 	}
-	return registerCRD(apiClient, name, names, columns)
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
 // RegisterEnvironmentRoleBindingCRD ensures that the CRD is registered for Environments
@@ -84,7 +135,8 @@ func RegisterEnvironmentRoleBindingCRD(apiClient apiextensionsclientset.Interfac
 		ShortNames: []string{"envrolebindings", "envrolebinding", "envrb"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
-	return registerCRD(apiClient, name, names, columns)
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
 // RegisterGitServiceCRD ensures that the CRD is registered for GitServices
@@ -98,7 +150,8 @@ func RegisterGitServiceCRD(apiClient apiextensionsclientset.Interface) error {
 		ShortNames: []string{"gits"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
-	return registerCRD(apiClient, name, names, columns)
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
 // RegisterPipelineActivityCRD ensures that the CRD is registered for PipelineActivity
@@ -125,7 +178,8 @@ func RegisterPipelineActivityCRD(apiClient apiextensionsclientset.Interface) err
 			JSONPath:    ".spec.status",
 		},
 	}
-	return registerCRD(apiClient, name, names, columns)
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
 // RegisterExtensionCRD ensures that the CRD is registered for Extension
@@ -152,10 +206,45 @@ func RegisterExtensionCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".spec.description",
 		},
 	}
-	return registerCRD(apiClient, name, names, columns)
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
-// RegisterCommitStatusCRD ensures that the CRD is registered for Extension
+// RegisterBuildPackCRD ensures that the CRD is registered for BuildPack
+func RegisterBuildPackCRD(apiClient apiextensionsclientset.Interface) error {
+	name := "buildpacks." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "BuildPack",
+		ListKind:   "BuildPackList",
+		Plural:     "buildpacks",
+		Singular:   "buildpack",
+		ShortNames: []string{"bp"},
+	}
+	columns := []v1beta1.CustomResourceColumnDefinition{
+		{
+			Name:        "LABEL",
+			Type:        "string",
+			Description: "The label of the BuildPack",
+			JSONPath:    ".spec.Label",
+		},
+		{
+			Name:        "GIT URL",
+			Type:        "string",
+			Description: "The Git URL of the BuildPack",
+			JSONPath:    ".spec.gitUrl",
+		},
+		{
+			Name:        "Git Ref",
+			Type:        "string",
+			Description: "The Git REf of the BuildPack",
+			JSONPath:    ".spec.gitRef",
+		},
+	}
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
+}
+
+// RegisterCommitStatusCRD ensures that the CRD is registered for CommitStatus
 func RegisterCommitStatusCRD(apiClient apiextensionsclientset.Interface) error {
 	name := "commitstatuses." + jenkinsio.GroupName
 	names := &v1beta1.CustomResourceDefinitionNames{
@@ -166,7 +255,8 @@ func RegisterCommitStatusCRD(apiClient apiextensionsclientset.Interface) error {
 		ShortNames: []string{"commitstatus"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
-	return registerCRD(apiClient, name, names, columns)
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
 // RegisterReleaseCRD ensures that the CRD is registered for Release
@@ -199,7 +289,8 @@ func RegisterReleaseCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".spec.gitHttpUrl",
 		},
 	}
-	return registerCRD(apiClient, name, names, columns)
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
 // RegisterUserCRD ensures that the CRD is registered for User
@@ -226,7 +317,8 @@ func RegisterUserCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".spec.email",
 		},
 	}
-	return registerCRD(apiClient, name, names, columns)
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
 // RegisterTeamCRD ensures that the CRD is registered for Team
@@ -253,7 +345,8 @@ func RegisterTeamCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".status.provisionStatus",
 		},
 	}
-	return registerCRD(apiClient, name, names, columns)
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
 // RegisterWorkflowCRD ensures that the CRD is registered for Environments
@@ -267,20 +360,27 @@ func RegisterWorkflowCRD(apiClient apiextensionsclientset.Interface) error {
 		ShortNames: []string{"flow"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
-	return registerCRD(apiClient, name, names, columns)
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
-func registerCRD(apiClient apiextensionsclientset.Interface, name string, names *v1beta1.CustomResourceDefinitionNames, columns []v1beta1.CustomResourceColumnDefinition) error {
+// RegisterCRD allows new custom resources to be registered using apiClient under a particular name.
+// Various forms of the name are provided using names. In Kubernetes 1.11
+// and later a custom display format for kubectl is used, which is specified using columns.
+func RegisterCRD(apiClient apiextensionsclientset.Interface, name string,
+	names *v1beta1.CustomResourceDefinitionNames, columns []v1beta1.CustomResourceColumnDefinition,
+	validation *v1beta1.CustomResourceValidation, groupName string) error {
 	crd := &v1beta1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
 		Spec: v1beta1.CustomResourceDefinitionSpec{
-			Group:                    jenkinsio.GroupName,
+			Group:                    groupName,
 			Version:                  jenkinsio.Version,
 			Scope:                    v1beta1.NamespaceScoped,
 			Names:                    *names,
 			AdditionalPrinterColumns: columns,
+			Validation:               validation,
 		},
 	}
 

@@ -2,7 +2,8 @@ package tests
 
 import (
 	"bytes"
-	"fmt"
+	"github.com/acarl005/stripansi"
+	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
 	"runtime"
@@ -11,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	expect "github.com/Netflix/go-expect"
+	"github.com/Netflix/go-expect"
 	"github.com/hinshun/vt10x"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -87,11 +88,10 @@ func newTerminal(c *expect.Console) *terminal.Stdio {
 }
 
 // NewTerminal mock terminal to control stdin and stdout
-func NewTerminal(t *testing.T) (*expect.Console, *vt10x.State, *terminal.Stdio) {
+func NewTerminal(t *testing.T) *ConsoleWrapper {
 	buf := new(bytes.Buffer)
 	timeout := time.Second * 1
 	opts := []expect.ConsoleOpt{
-		expectNoTimeoutError(t),
 		sendNoError(t),
 		expect.WithStdout(buf),
 		expect.WithDefaultTimeout(timeout),
@@ -101,8 +101,12 @@ func NewTerminal(t *testing.T) (*expect.Console, *vt10x.State, *terminal.Stdio) 
 	if err != nil {
 		panic(err)
 	}
-	term := newTerminal(c)
-	return c, state, term
+	return &ConsoleWrapper{
+		tester:  t,
+		console: c,
+		state:   state,
+		Stdio:   *newTerminal(c),
+	}
 }
 
 // TestCloser closes io
@@ -111,20 +115,6 @@ func TestCloser(t *testing.T, closer io.Closer) {
 		t.Errorf("Close failed: %s", err)
 		debug.PrintStack()
 	}
-}
-
-func expectNoTimeoutError(t *testing.T) expect.ConsoleOpt {
-	return expect.WithExpectObserver(
-		func(matcher expect.Matcher, buf string, err error) {
-			if err != nil {
-				if e, ok := err.(*os.PathError); ok {
-					if e.Timeout() {
-						panic("Test: " + t.Name() + " Timout waiting for Terminal output: " + fmt.Sprintf("%q", buf))
-					}
-				}
-			}
-		},
-	)
 }
 
 func sendNoError(t *testing.T) expect.ConsoleOpt {
@@ -146,4 +136,10 @@ func SkipForWindows(t *testing.T, reason string) {
 	if runtime.GOOS == "windows" {
 		t.Skipf("Test skipped on windows. Reason: %s", reason)
 	}
+}
+
+// ExpectString does the same as the go-expect console.ExpectString method, but also reports failures to the testing object in a sensible format
+func ExpectString(t *testing.T, console *expect.Console, s string) {
+	out, err := console.ExpectString(s)
+	assert.NoError(t, err, "Expected string: %q\nActual string: %q", s, stripansi.Strip(out))
 }

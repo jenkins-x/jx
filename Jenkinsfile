@@ -38,6 +38,7 @@ pipeline {
                     sh "echo building Pull Request for preview ${TEAM}"
 
                     sh "make linux"
+                    sh 'test `git status --short | tee /dev/stderr | wc --bytes` -eq 0'
                     sh "make test-slow-integration"
                     sh "./build/linux/jx --help"
 
@@ -63,24 +64,8 @@ pipeline {
 
                     sh "cp ./build/linux/jx /usr/bin"
 
-                    sh "jx install --namespace ${TEAM} --no-tiller --provider=gke -b --headless --default-admin-password $JENKINS_CREDS_PSW --skip-auth-secrets-merge --no-default-environments"
-
-                    // lets test we have the jenkins token setup
-                    sh "jx get pipeline"
-
-                    sh "echo now running the BDD tests"
-
-                    dir ('/home/jenkins/go/src/github.com/jenkins-x/godog-jx'){
-                        git "https://github.com/jenkins-x/godog-jx"
-                        sh "make configure-ghe"
-
-                        sh "jx create env -n staging -l Staging -b  --git-provider-url=https://github.beescloud.com -p Auto --prefix ${TEAM}"
-
-                        sh "make bdd-tests"
-                    }
-
-                    sh "echo now tearing down the team ${TEAM}"
-                    sh "jx uninstall -b --context `kubectl config current-context` --namespace ${TEAM}"
+                    // lets trigger the BDD tests in a new team and git provider
+                    sh "./build/linux/jx step bdd -b  --provider=gke --git-provider=ghe --git-provider-url=https://github.beescloud.com --git-username dev1 --git-api-token $GHE_CREDS_PSW --default-admin-password $JENKINS_CREDS_PSW --no-delete-app --no-delete-repo --tests install --tests test-create-spring"
                 }
             }
         }

@@ -4,7 +4,7 @@ import (
 	"io"
 	"strings"
 
-	os_user "os/user"
+	osUser "os/user"
 
 	"regexp"
 
@@ -44,7 +44,7 @@ type CreateClusterGKEFlags struct {
 	Labels          string
 }
 
-const CLUSTER_LIST_HEADER = "PROJECT_ID"
+const clusterListHeader = "PROJECT_ID"
 
 var (
 	createClusterGKELong = templates.LongDesc(`
@@ -70,7 +70,7 @@ var (
 	disallowedLabelCharacters = regexp.MustCompile("[^a-z0-9-]")
 )
 
-// NewCmdGet creates a command object for the generic "init" action, which
+// NewCmdCreateClusterGKE creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
 func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterGKEOptions{
@@ -248,7 +248,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	labels := o.Flags.Labels
-	user, err := os_user.Current()
+	user, err := osUser.Current()
 	if err == nil && user != nil {
 		username := sanitizeLabel(user.Username)
 		if username != "" {
@@ -270,7 +270,9 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	log.Info("Initialising cluster ...\n")
-	o.InstallOptions.Flags.DefaultEnvironmentPrefix = o.Flags.ClusterName
+	if o.InstallOptions.Flags.DefaultEnvironmentPrefix == "" {
+		o.InstallOptions.Flags.DefaultEnvironmentPrefix = o.Flags.ClusterName
+	}
 	err = o.initAndInstall(GKE)
 	if err != nil {
 		return err
@@ -303,6 +305,13 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	if err != nil {
 		return err
 	}
+
+	if o.CreateClusterOptions.InstallOptions.GitOpsMode || o.CreateClusterOptions.InstallOptions.Vault {
+		if err = InstallVaultOperator(&o.CommonOptions, ""); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

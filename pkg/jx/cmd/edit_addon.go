@@ -84,7 +84,7 @@ func (o *EditAddonOptions) Run() error {
 	charts := kube.AddonCharts
 	names := util.SortedMapKeys(charts)
 	if o.Name == "" {
-		o.Name, err = util.PickName(names, "Pick the addon to configure", o.In, o.Out, o.Err)
+		o.Name, err = util.PickName(names, "Pick the addon to configure", "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

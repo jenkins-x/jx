@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"io"
-
+	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"io"
 
 	"fmt"
 
@@ -49,12 +49,15 @@ type CreateEnvOptions struct {
 	HelmValuesConfig       config.HelmValuesConfig
 	PromotionStrategy      string
 	NoGitOps               bool
+	NoDevNamespaceInit     bool
 	Prow                   bool
+	GitOpsMode             bool
 	ForkEnvironmentGitRepo string
 	EnvJobCredentials      string
 	GitRepositoryOptions   gits.GitRepositoryOptions
 	Prefix                 string
 	BranchPattern          string
+	Vault                  bool
 }
 
 // NewCmdCreateEnv creates a command object for the "create" command
@@ -105,6 +108,7 @@ func NewCmdCreateEnv(f Factory, in terminal.FileReader, out terminal.FileWriter,
 
 	cmd.Flags().BoolVarP(&options.NoGitOps, "no-gitops", "x", false, "Disables the use of GitOps on the environment so that promotion is implemented by directly modifying the resources via helm instead of using a Git repository")
 	cmd.Flags().BoolVarP(&options.Prow, "prow", "", false, "Install and use Prow for environment promotion")
+	cmd.Flags().BoolVarP(&options.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during the cluster creation")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, false)
@@ -120,8 +124,7 @@ func (o *CreateEnvOptions) Run() error {
 	if len(args) > 0 && o.Options.Name == "" {
 		o.Options.Name = args[0]
 	}
-	//_, currentNs, err := o.JXClientAndDevNamespace()
-	jxClient, currentNs, err := o.JXClientAndDevNamespace()
+	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
@@ -129,43 +132,48 @@ func (o *CreateEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	apisClient, err := o.CreateApiExtensionsClient()
-	if err != nil {
-		return err
-	}
-	kube.RegisterEnvironmentCRD(apisClient)
 
-	//_, _, err = kube.GetDevNamespace(kubeClient, currentNs)
-	ns, _, err := kube.GetDevNamespace(kubeClient, currentNs)
-	if err != nil {
-		return err
-	}
-	_, err = util.EnvironmentsDir()
 	envDir, err := util.EnvironmentsDir()
 	if err != nil {
 		return err
 	}
-	//_, err = o.CreateGitAuthConfigService()
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
 	}
-	devEnv, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
-	//_, err = kube.EnsureDevEnvironmentSetup(jxClient, ns)
-	if err != nil {
-		return err
+
+	prowFlag := o.Prow
+	var devEnv *v1.Environment
+	if o.GitOpsMode {
+		err = o.ModifyDevEnvironment(func(env *v1.Environment) error {
+			devEnv = env
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	} else {
+		o.registerEnvironmentCRD()
+		devEnv, err = kube.EnsureDevEnvironmentSetup(jxClient, ns)
+		if err != nil {
+			return err
+		}
+
+		prowFlag, err = o.isProw()
+		if err != nil {
+			return err
+		}
+		if prowFlag && !o.Prow {
+			o.Prow = true
+		}
 	}
 
-	prowFlag, err := o.isProw()
-	if err != nil {
-		return err
-	}
-	if prowFlag && !o.Prow {
-		o.Prow = true
-	}
 	if o.Prow {
-		devEnv.Spec.TeamSettings.PromotionEngine = v1.PromotionEngineProw
-		devEnv, err = jxClient.JenkinsV1().Environments(ns).Update(devEnv)
+		// lets make sure we have the prow enabled
+		err = o.ModifyDevEnvironment(func(env *v1.Environment) error {
+			env.Spec.TeamSettings.PromotionEngine = v1.PromotionEngineProw
+			return nil
+		})
 		if err != nil {
 			return err
 		}
@@ -178,16 +186,33 @@ func (o *CreateEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	_, err = jxClient.JenkinsV1().Environments(ns).Create(&env)
-	if err != nil {
-		return err
-	}
 
+	err = o.ModifyEnvironment(env.Name, func(env2 *v1.Environment) error {
+		env2.Name = env.Name
+		env2.Spec = env.Spec
+
+		// lets copy across any labels or annotations
+		if env2.Annotations == nil {
+			env2.Annotations = map[string]string{}
+		}
+		if env2.Labels == nil {
+			env2.Labels = map[string]string{}
+		}
+		for k, v := range env.Annotations {
+			env2.Annotations[k] = v
+		}
+		for k, v := range env.Labels {
+			env2.Labels[k] = v
+		}
+		return nil
+	})
 	log.Infof("Created environment %s\n", util.ColorInfo(env.Name))
 
-	err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, &env, ns)
-	if err != nil {
-		return err
+	if !o.GitOpsMode {
+		err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, &env, ns)
+		if err != nil {
+			return err
+		}
 	}
 	gitURL := env.Spec.Source.URL
 	gitInfo, err := gits.ParseGitURL(gitURL)
@@ -205,16 +230,18 @@ func (o *CreateEnvOptions) Run() error {
 
 	if o.PullSecrets != "" {
 		// We need the namespace to be created first - do the check
-		err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, &env, env.Spec.Namespace)
-		if err != nil {
-			// This can happen if, for whatever reason, the namespace takes a while to create. That shouldn't stop the entire process though
-			log.Warnf("Namespace %s does not exist for jx to patch the service account for, you should patch the service account manually with your pull secret(s) \n", env.Spec.Namespace)
+		if !o.GitOpsMode {
+			err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, &env, env.Spec.Namespace)
+			if err != nil {
+				// This can happen if, for whatever reason, the namespace takes a while to create. That shouldn't stop the entire process though
+				log.Warnf("Namespace %s does not exist for jx to patch the service account for, you should patch the service account manually with your pull secret(s) \n", env.Spec.Namespace)
+			}
 		}
 		// It's a common option, see addCommonFlags in common.go
 		imagePullSecrets := o.GetImagePullSecrets()
 		saName := "default"
 		//log.Infof("Patching the secrets %s for the service account %s\n", imagePullSecrets, saName)
-		err = kube.PatchImagePullSecrets(kubeClient, env.Spec.Namespace, saName, imagePullSecrets)
+		err = serviceaccount.PatchImagePullSecrets(kubeClient, env.Spec.Namespace, saName, imagePullSecrets)
 		if err != nil {
 			return fmt.Errorf("Failed to add pull secrets %s to service account %s in namespace %s: %v", imagePullSecrets, saName, env.Spec.Namespace, err)
 		} else {
@@ -224,6 +251,9 @@ func (o *CreateEnvOptions) Run() error {
 	}
 
 	if gitURL != "" {
+		if o.GitOpsMode {
+			return nil
+		}
 		if gitProvider == nil {
 			authConfigSvc, err := o.CreateGitAuthConfigService()
 			if err != nil {

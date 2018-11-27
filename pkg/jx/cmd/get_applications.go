@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 	"os/user"
 	"sort"
@@ -27,6 +28,30 @@ type GetApplicationsOptions struct {
 	HideUrl     bool
 	HidePod     bool
 	Previews    bool
+
+	Results GetApplicationsResults
+}
+
+// GetApplicationsResults contains the data result from invoking this command
+type GetApplicationsResults struct {
+	EnvApps  []EnvApps
+	EnvNames []string
+
+	Applications map[string]*ApplicationEnvironmentInfo
+}
+
+// EnvApps contains data about app deployments in an environment
+type EnvApps struct {
+	Environment v1.Environment
+	Apps        map[string]v1beta1.Deployment
+}
+
+// ApplicationEnvironmentInfo contains the results of an app for an environment
+type ApplicationEnvironmentInfo struct {
+	Deployment  *v1beta1.Deployment
+	Environment *v1.Environment
+	Version string
+	URL     string
 }
 
 var (
@@ -84,11 +109,6 @@ func NewCmdGetApplications(f Factory, in terminal.FileReader, out terminal.FileW
 	cmd.Flags().StringVarP(&options.Environment, "env", "e", "", "Filter applications in the given environment")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Filter applications in the given namespace")
 	return cmd
-}
-
-type EnvApps struct {
-	Environment v1.Environment
-	Apps        map[string]v1beta1.Deployment
 }
 
 // Run implements this command
@@ -166,6 +186,9 @@ func (o *GetApplicationsOptions) Run() error {
 	}
 	sort.Strings(apps)
 
+	o.Results.EnvApps = envApps
+	o.Results.EnvNames = envNames
+
 	table := o.CreateTable()
 	title := "APPLICATION"
 	if o.Previews {
@@ -189,12 +212,20 @@ func (o *GetApplicationsOptions) Run() error {
 	}
 	table.AddRow(titles...)
 
+	appMap := map[string]*ApplicationEnvironmentInfo{}
+
 	for _, appName := range apps {
 		row := []string{appName}
 		for _, ea := range envApps {
 			version := ""
 			d := ea.Apps[appName]
 			version = kube.GetVersion(&d.ObjectMeta)
+			appEnvInfo := &ApplicationEnvironmentInfo{
+				Deployment: &d,
+				Environment: &ea.Environment,
+				Version:    version,
+			}
+			appMap[appName] = appEnvInfo
 			if ea.Environment.Spec.Kind != v1.EnvironmentKindTypePreview {
 				row = append(row, version)
 			}
@@ -209,9 +240,9 @@ func (o *GetApplicationsOptions) Run() error {
 				row = append(row, pods)
 			}
 			if !o.HideUrl {
-				url, _ := kube.FindServiceURL(kubeClient, d.Namespace, appName)
+				url, _ := services.FindServiceURL(kubeClient, d.Namespace, appName)
 				if url == "" {
-					url, _ = kube.FindServiceURL(kubeClient, d.Namespace, d.Name)
+					url, _ = services.FindServiceURL(kubeClient, d.Namespace, d.Name)
 				}
 				if url == "" {
 					// handle helm3
@@ -221,16 +252,19 @@ func (o *GetApplicationsOptions) Run() error {
 						if idx > 0 {
 							svcName := chart[0:idx]
 							if svcName != appName && svcName != d.Name {
-								url, _ = kube.FindServiceURL(kubeClient, d.Namespace, svcName)
+								url, _ = services.FindServiceURL(kubeClient, d.Namespace, svcName)
 							}
 						}
 					}
 				}
 				row = append(row, url)
+				appEnvInfo.URL = url
 			}
 		}
 		table.AddRow(row...)
 	}
+	o.Results.Applications = appMap
+
 	table.Render()
 	return nil
 }

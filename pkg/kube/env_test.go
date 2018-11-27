@@ -168,31 +168,31 @@ func TestCreateEnvironmentSurvey(t *testing.T) {
 	// Override CreateApiExtensionsClient to return mock apiextensions interface
 	When(factory.CreateApiExtensionsClient()).ThenReturn(apiextensionsInterface, nil)
 
-	c, state, term := tests.NewTerminal(t)
-	defer c.Close()
+	console := tests.NewTerminal(t)
+	defer console.Close()
 
 	donec := make(chan struct{})
 	go func() {
 		defer close(donec)
-		c.ExpectString("Name:")
-		c.SendLine("staging")
-		c.ExpectString("Label:")
-		c.SendLine("Staging")
-		c.ExpectString("Namespace:")
-		c.SendLine("jx-testing")
-		c.ExpectString("Cluster URL:")
-		c.SendLine("http://good.looking.com")
-		c.ExpectString("Promotion Strategy:")
-		c.SendLine("A")
-		c.ExpectString("Order:")
-		c.SendLine("1")
-		c.ExpectString("We will now create a Git repository to store your staging environment, ok? :")
-		c.SendLine("N")
-		c.ExpectString("Git URL for the Environment source code:")
-		c.SendLine("https://github.com/derekzoolanderreallyreallygoodlooking/staging-env")
-		c.ExpectString("Git branch for the Environment source code:")
-		c.SendLine("master")
-		c.ExpectEOF()
+		console.ExpectString("Name:")
+		console.SendLine("staging")
+		console.ExpectString("Label:")
+		console.SendLine("Staging")
+		console.ExpectString("Namespace:")
+		console.SendLine("jx-testing")
+		console.ExpectString("Cluster URL:")
+		console.SendLine("http://good.looking.com")
+		console.ExpectString("Promotion Strategy:")
+		console.SendLine("A")
+		console.ExpectString("Order:")
+		console.SendLine("1")
+		console.ExpectString("We will now create a Git repository to store your staging environment, ok? :")
+		console.SendLine("N")
+		console.ExpectString("Git URL for the Environment source code:")
+		console.SendLine("https://github.com/derekzoolanderreallyreallygoodlooking/staging-env")
+		console.ExpectString("Git branch for the Environment source code:")
+		console.SendLine("master")
+		console.ExpectEOF()
 	}()
 
 	batchMode := false
@@ -229,17 +229,17 @@ func TestCreateEnvironmentSurvey(t *testing.T) {
 		helmValues,
 		prefix,
 		gitter,
-		term.In,
-		term.Out,
-		term.Err,
+		console.In,
+		console.Out,
+		console.Err,
 	)
 
 	// Close the slave end of the pty, and read the remaining bytes from the master end.
-	c.Tty().Close()
+	console.Close()
 	<-donec
 
 	assert.NoError(t, err, "Should not error")
 
 	// Dump the terminal's screen.
-	t.Log(expect.StripTrailingEmptyLines(state.String()))
+	t.Log(expect.StripTrailingEmptyLines(console.CurrentState()))
 }

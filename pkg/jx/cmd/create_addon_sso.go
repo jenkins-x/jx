@@ -113,7 +113,7 @@ func (o *CreateAddonSSOOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "retrieving existing ingress configuration")
 	}
-	domain, err := util.PickValue("Domain:", ingressConfig.Domain, true, o.In, o.Out, o.Err)
+	domain, err := util.PickValue("Domain:", ingressConfig.Domain, true, "", o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
@@ -125,11 +125,11 @@ func (o *CreateAddonSSOOptions) Run() error {
 	log.Infof("Copy the %s and the %s and paste them into the form below:\n",
 		util.ColorInfo("Client ID"), util.ColorInfo("Client Secret"))
 
-	clientID, err := util.PickValue("Client ID:", "", true, o.In, o.Out, o.Err)
+	clientID, err := util.PickValue("Client ID:", "", true, "", o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
-	clientSecret, err := util.PickPassword("Client Secret:", o.In, o.Out, o.Err)
+	clientSecret, err := util.PickPassword("Client Secret:", "", o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}
@@ -236,7 +236,7 @@ func (o *CreateAddonSSOOptions) installDex(domain string, clientID string, clien
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 	releaseName := o.ReleaseName + "-" + dexServiceName
-	return o.installChart(releaseName, kube.ChartSsoDex, o.DexVersion, o.Namespace, true, values, nil)
+	return o.installChart(releaseName, kube.ChartSsoDex, o.DexVersion, o.Namespace, true, values, nil, "")
 }
 
 func (o *CreateAddonSSOOptions) installSSOOperator(dexGrpcService string) error {
@@ -246,7 +246,7 @@ func (o *CreateAddonSSOOptions) installSSOOperator(dexGrpcService string) error 
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 	releaseName := o.ReleaseName + "-" + operatorServiceName
-	return o.installChart(releaseName, kube.ChartSsoOperator, o.Version, o.Namespace, true, values, nil)
+	return o.installChart(releaseName, kube.ChartSsoOperator, o.Version, o.Namespace, true, values, nil, "")
 }
 
 func (o *CreateAddonSSOOptions) exposeSSO() error {

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -52,18 +51,6 @@ func (o *CommonOptions) runCommandVerbose(name string, args ...string) error {
 	err := e.Run()
 	if err != nil {
 		log.Errorf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
-	}
-	return err
-}
-
-func (o *CommonOptions) runCommandBackground(name string, output io.Writer, verbose bool, args ...string) error {
-	e := exec.Command(name, args...)
-	e.Stdout = output
-	e.Stderr = output
-	os.Setenv("PATH", util.PathWithBinary())
-	err := e.Start()
-	if err != nil && verbose {
-		log.Errorf("Error: Command failed to start  %s %s\n", name, strings.Join(args, " "))
 	}
 	return err
 }

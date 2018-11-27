@@ -2,29 +2,30 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
+	"github.com/jenkins-x/jx/pkg/kube/services"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
 	"io/ioutil"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/client-go/kubernetes"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -77,6 +78,7 @@ type CreateDevPodOptions struct {
 	Username        string
 	DockerRegistry  string
 	TillerNamespace string
+	ServiceAccount  string
 
 	GitCredentials StepGitCredentialsOptions
 
@@ -135,6 +137,7 @@ func NewCmdCreateDevPod(f Factory, in terminal.FileReader, out terminal.FileWrit
 	cmd.Flags().StringVarP(&options.Username, "username", "", "", "The username to create the DevPod. If not specified defaults to the current operating system user or $USER'")
 	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker registry to use within the DevPod. If not specified, default to the built-in registry or $DOCKER_REGISTRY")
 	cmd.Flags().StringVarP(&options.TillerNamespace, "tiller-namespace", "", "", "The optional tiller namespace to use within the DevPod.")
+	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "jenkins", "The ServiceAccount name used for the DevPod")
 
 	options.addCommonFlags(cmd)
 	return cmd
@@ -187,7 +190,7 @@ func (o *CreateDevPodOptions) Run() error {
 		label = o.guessDevPodLabel(dir, labels)
 	}
 	if label == "" {
-		label, err = util.PickName(labels, "Pick which kind of DevPod you wish to create: ", o.In, o.Out, o.Err)
+		label, err = util.PickName(labels, "Pick which kind of DevPod you wish to create: ", "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -205,7 +208,7 @@ func (o *CreateDevPodOptions) Run() error {
 	// If the user passed in Image Pull Secrets, patch them in to the edit env's default service account
 	if o.PullSecrets != "" {
 		imagePullSecrets := o.GetImagePullSecrets()
-		err = kube.PatchImagePullSecrets(client, editEnv.Spec.Namespace, "default", imagePullSecrets)
+		err = serviceaccount.PatchImagePullSecrets(client, editEnv.Spec.Namespace, "default", imagePullSecrets)
 		if err != nil {
 			return fmt.Errorf("Failed to add pull secrets %s to service account default in namespace %s: %v", imagePullSecrets, editEnv.Spec.Namespace, err)
 		}
@@ -290,6 +293,10 @@ func (o *CreateDevPodOptions) Run() error {
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		}
+	}
+
+	if pod.Spec.ServiceAccountName == "" {
+		pod.Spec.ServiceAccountName = o.ServiceAccount
 	}
 
 	if !o.Sync {
@@ -488,8 +495,13 @@ func (o *CreateDevPodOptions) Run() error {
 
 		log.Infof("Created pod %s - waiting for it to be ready...\n", util.ColorInfo(name))
 
+		err = kube.WaitForPodNameToBeReady(client, ns, name, time.Hour)
+		if err != nil {
+			return err
+		}
+
 		// Get the pod UID
-		pod, err = client.CoreV1().Pods(curNs).Get(name, metav1.GetOptions{})
+		pod, err = client.CoreV1().Pods(ns).Get(name, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -601,10 +613,6 @@ func (o *CreateDevPodOptions) Run() error {
 			}
 		}
 
-		err = kube.WaitForPodNameToBeReady(client, ns, name, time.Hour)
-		if err != nil {
-			return err
-		}
 
 	}
 
@@ -612,7 +620,7 @@ func (o *CreateDevPodOptions) Run() error {
 	log.Infof("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx create devpod"))
 
 	if !o.Sync {
-		theiaServiceURL, err := kube.FindServiceURL(client, curNs, theiaServiceName)
+		theiaServiceURL, err := services.FindServiceURL(client, curNs, theiaServiceName)
 		if err != nil {
 			return err
 		}
@@ -630,13 +638,13 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 
-	exposePortServices, err := kube.GetServiceNames(client, curNs, fmt.Sprintf("%s-port-", pod.Name))
+	exposePortServices, err := services.GetServiceNames(client, curNs, fmt.Sprintf("%s-port-", pod.Name))
 	if err != nil {
 		return err
 	}
 	var exposePortURLs []string
 	for _, svcName := range exposePortServices {
-		u, err := kube.GetServiceURLFromName(client, svcName, curNs)
+		u, err := services.GetServiceURLFromName(client, svcName, curNs)
 		if err != nil {
 			return err
 		}
@@ -760,14 +768,6 @@ func (o *CreateDevPodOptions) Run() error {
 
 func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, error) {
 	var env *v1.Environment
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
-	if err != nil {
-		return env, err
-	}
-	err = kube.RegisterEnvironmentCRD(apisClient)
-	if err != nil {
-		return env, err
-	}
 
 	kubeClient, _, err := o.KubeClient()
 	if err != nil {

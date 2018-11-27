@@ -111,7 +111,7 @@ func (o *DeleteQuickstartLocationOptions) Run() error {
 				names = append(names, key)
 			}
 
-			name, err := util.PickName(names, "Pick the quickstart git owner to remove from the team settings: ", o.In, o.Out, o.Err)
+			name, err := util.PickName(names, "Pick the quickstart git owner to remove from the team settings: ", "", o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
@@ -135,5 +135,5 @@ func (o *DeleteQuickstartLocationOptions) Run() error {
 		}
 		return fmt.Errorf("No quickstart location found for git URL: %s and owner: %s", o.GitUrl, o.Owner)
 	}
-	return o.modifyDevEnvironment(jxClient, ns, callback)
+	return o.ModifyDevEnvironment(callback)
 }

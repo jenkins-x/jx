@@ -26,8 +26,9 @@ func TestReplacePlaceholders(t *testing.T) {
 	//o.Out = tests.Output()
 	o.Dir = f
 	o.AppName = "bar"
+	o.Organisation = "foo"
 
-	o.ReplacePlaceholders("github.com", "foo", "registry-org")
+	o.ReplacePlaceholders("github.com", "registry-org")
 
 	// root file
 	testFile, err := util.LoadBytes(f, "file.txt")

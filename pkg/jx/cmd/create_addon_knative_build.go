@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"io"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -23,8 +26,8 @@ var (
 
 type CreateAddonKnativeBuildOptions struct {
 	CreateAddonOptions
-	BackoffLimit int32
-	Image        string
+	username string
+	token    string
 }
 
 func NewCmdCreateAddonKnativeBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
@@ -43,8 +46,7 @@ func NewCmdCreateAddonKnativeBuild(f Factory, in terminal.FileReader, out termin
 
 	cmd := &cobra.Command{
 		Use:     "knative-build",
-		Short:   "Create the Knative build addon",
-		Aliases: []string{"env"},
+		Short:   "Create the knative build addon",
 		Long:    createAddonKnativeBuildLong,
 		Example: createAddonKnativeBuildExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -52,23 +54,29 @@ func NewCmdCreateAddonKnativeBuild(f Factory, in terminal.FileReader, out termin
 			CheckErr(err)
 		},
 	}
-
-	cmd.Flags().Int32VarP(&options.BackoffLimit, "backoff-limit", "l", int32(2), "The backoff limit: how many times to retry the job before considering it failed) to run in the Job")
-	cmd.Flags().StringVarP(&options.Image, "image", "i", "KnativeBuild/zap2docker-live:latest", "The KnativeBuild image to use to run the ZA Proxy baseline scan")
-
+	cmd.Flags().StringVarP(&options.username, "username", "u", "", "The pipeline bot username")
+	cmd.Flags().StringVarP(&options.token, "token", "t", "", "The pipeline bot token")
 	return cmd
 }
 
 // Create the addon
 func (o *CreateAddonKnativeBuildOptions) Run() error {
-	log.Info("Installing Knative build addon\n\n")
-	err := o.runCommandVerbose("kubectl", "apply", "-f", "https://storage.googleapis.com/knative-releases/build/latest/release.yaml")
+	if o.username == "" {
+		return fmt.Errorf("no pipeline git username provided")
+	}
+	if o.token == "" {
+		return fmt.Errorf("no pipeline git token provided")
+	}
+	log.Infof("Installing %s addon\n\n", kube.DefaultKnativeBuildReleaseName)
 
+	o.SetValues = strings.Join([]string{"build.auth.git.username=" + o.username, "build.auth.git.password=" + o.token}, ",")
+
+	err := o.CreateAddon(kube.DefaultKnativeBuildReleaseName)
 	if err != nil {
 		return err
 	}
 
-	log.Infof("\nKnative Build installed\n")
+	log.Infof("\n%s installed\n", kube.DefaultKnativeBuildReleaseName)
 	log.Infof("To watch a build running use: %s\n", util.ColorInfo("jx logs -k"))
 	return nil
 }

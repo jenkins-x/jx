@@ -93,7 +93,7 @@ func (o *StopPipelineOptions) Run() error {
 				break
 			}
 		}
-		name, err := util.PickNameWithDefault(names, "Which pipelines do you want to stop: ", defaultName, o.In, o.Out, o.Err)
+		name, err := util.PickNameWithDefault(names, "Which pipelines do you want to stop: ", defaultName, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

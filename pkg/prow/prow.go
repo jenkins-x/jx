@@ -3,6 +3,7 @@ package prow
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -16,8 +17,7 @@ import (
 )
 
 const (
-	Hook             = "hook"
-	BuilderBaseImage = "jenkinsxio/builder-base:0.0.604"
+	Hook = "hook"
 
 	Application Kind = "APPLICATION"
 	Environment Kind = "ENVIRONMENT"
@@ -30,13 +30,21 @@ const (
 	KnativeBuildAgent = "knative-build"
 	KubernetesAgent   = "kubernetes"
 
-	// TODO latest is the wrong thing to do here
-	JXImage = "jenkinsxio/jx"
+	applyTemplate = "environment-apply"
+	buildTemplate = "environment-build"
+
+	serviceAccountApply = "helm"
+	serviceAccountBuild = "knative-build-bot"
 )
 
 type Kind string
 
-const ProwConfigMapName = "config"
+const (
+	ProwConfigMapName        = "config"
+	ProwPluginsConfigMapName = "plugins"
+	ProwConfigFilename       = "config.yaml"
+	ProwPluginsFilename      = "plugins.yaml"
+)
 
 // Options for Prow
 type Options struct {
@@ -96,26 +104,13 @@ func (o *Options) createPreSubmitEnvironment() config.Presubmit {
 	ps.AlwaysRun = true
 	ps.SkipReport = false
 	ps.Context = PromotionBuild
-	ps.Agent = "knative-build"
+	ps.Agent = KnativeBuildAgent
 
 	spec := &build.BuildSpec{
-		Steps: []corev1.Container{
-			{
-				Image:      BuilderBaseImage,
-				Args:       []string{"jx", "step", "helm", "build"},
-				WorkingDir: "/workspace/env",
-				Env: []corev1.EnvVar{
-					{Name: "DEPLOY_NAMESPACE", Value: o.EnvironmentNamespace},
-					{Name: "CHART_REPOSITORY", Value: "http://jenkins-x-chartmuseum:8080"},
-					{Name: "XDG_CONFIG_HOME", Value: "/home/jenkins"},
-					{Name: "GIT_COMMITTER_EMAIL", Value: "jenkins-x@googlegroups.com"},
-					{Name: "GIT_AUTHOR_EMAIL", Value: "jenkins-x@googlegroups.com"},
-					{Name: "GIT_AUTHOR_NAME", Value: "jenkins-x-bot"},
-					{Name: "GIT_COMMITTER_NAME", Value: "jenkins-x-bot"},
-				},
-			},
+		ServiceAccountName: serviceAccountBuild,
+		Template: &build.TemplateInstantiationSpec{
+			Name: buildTemplate,
 		},
-		ServiceAccountName: "jenkins",
 	}
 
 	ps.BuildSpec = spec
@@ -128,27 +123,17 @@ func (o *Options) createPreSubmitEnvironment() config.Presubmit {
 func (o *Options) createPostSubmitEnvironment() config.Postsubmit {
 	ps := config.Postsubmit{}
 	ps.Name = "promotion"
-	ps.Agent = "knative-build"
+	ps.Agent = KnativeBuildAgent
 	ps.Branches = []string{"master"}
 
 	spec := &build.BuildSpec{
-		Steps: []corev1.Container{
-			{
-				Image:      BuilderBaseImage,
-				Args:       []string{"jx", "step", "helm", "apply"},
-				WorkingDir: "/workspace/env",
-				Env: []corev1.EnvVar{
-					{Name: "DEPLOY_NAMESPACE", Value: o.EnvironmentNamespace},
-					{Name: "CHART_REPOSITORY", Value: "http://jenkins-x-chartmuseum:8080"},
-					{Name: "XDG_CONFIG_HOME", Value: "/home/jenkins"},
-					{Name: "GIT_COMMITTER_EMAIL", Value: "jenkins-x@googlegroups.com"},
-					{Name: "GIT_AUTHOR_EMAIL", Value: "jenkins-x@googlegroups.com"},
-					{Name: "GIT_AUTHOR_NAME", Value: "jenkins-x-bot"},
-					{Name: "GIT_COMMITTER_NAME", Value: "jenkins-x-bot"},
-				},
+		ServiceAccountName: serviceAccountApply,
+		Template: &build.TemplateInstantiationSpec{
+			Name: applyTemplate,
+			Env: []corev1.EnvVar{
+				{Name: "DEPLOY_NAMESPACE", Value: o.EnvironmentNamespace},
 			},
 		},
-		ServiceAccountName: "jenkins",
 	}
 	ps.BuildSpec = spec
 	return ps
@@ -158,13 +143,12 @@ func (o *Options) createPostSubmitApplication() config.Postsubmit {
 	ps := config.Postsubmit{}
 	ps.Branches = []string{"master"}
 	ps.Name = "release"
-	ps.Agent = "knative-build"
+	ps.Agent = KnativeBuildAgent
 
 	templateName := fmt.Sprintf("jenkins-%s", o.DraftPack)
-	log.Infof("generating Prow config, using Knative BuildTemplate %s\n", templateName)
 
 	spec := &build.BuildSpec{
-		ServiceAccountName: "jenkins",
+		ServiceAccountName: serviceAccountBuild,
 		Template: &build.TemplateInstantiationSpec{
 			Name: templateName,
 		},
@@ -181,15 +165,14 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 	ps.Name = ServerlessJenkins
 	ps.RerunCommand = "/test this"
 	ps.Trigger = "(?m)^/test( all| this),?(\\s+|$)"
-	ps.AlwaysRun = false
+	ps.AlwaysRun = true
 	ps.SkipReport = false
 	ps.Agent = KnativeBuildAgent
 
 	templateName := fmt.Sprintf("jenkins-%s", o.DraftPack)
-	log.Infof("generating Prow config, using Knative BuildTemplate %s\n", templateName)
 
 	spec := &build.BuildSpec{
-		ServiceAccountName: "jenkins",
+		ServiceAccountName: serviceAccountApply,
 		Template: &build.TemplateInstantiationSpec{
 			Name: templateName,
 		},
@@ -323,6 +306,9 @@ func (o *Options) createTide() config.Tide {
 
 	myTrue := true
 	myFalse := false
+
+	t.SyncPeriod = time.Duration(30)
+	t.StatusUpdatePeriod = time.Duration(30)
 	t.ContextOptions = config.TideContextPolicyOptions{
 		TideContextPolicy: config.TideContextPolicy{
 			FromBranchProtection: &myTrue,
@@ -412,7 +398,7 @@ func (o *Options) AddProwConfig() error {
 	}
 
 	data := make(map[string]string)
-	data["config.yaml"] = string(configYAML)
+	data[ProwConfigFilename] = string(configYAML)
 	cm := &corev1.ConfigMap{
 		Data: data,
 		ObjectMeta: metav1.ObjectMeta{
@@ -428,7 +414,6 @@ func (o *Options) AddProwConfig() error {
 	}
 
 	return err
-
 }
 
 func (o *Options) GetProwConfig() (*config.Config, bool, error) {
@@ -444,7 +429,7 @@ func (o *Options) GetProwConfig() (*config.Config, bool, error) {
 	} else {
 		// config exists, updating
 		create = false
-		err = yaml.Unmarshal([]byte(cm.Data["config.yaml"]), &prowConfig)
+		err = yaml.Unmarshal([]byte(cm.Data[ProwConfigFilename]), &prowConfig)
 		if err != nil {
 			return prowConfig, create, err
 		}
@@ -503,20 +488,25 @@ func (o *Options) AddProwPlugins() error {
 
 	pluginsList := []string{"config-updater", "approve", "assign", "blunderbuss", "help", "hold", "lgtm", "lifecycle", "size", "trigger", "wip", "heart", "cat", "override"}
 
-	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get("plugins", metav1.GetOptions{})
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwPluginsConfigMapName, metav1.GetOptions{})
 	create := true
 	pluginConfig := &plugins.Configuration{}
 	if err != nil {
 		pluginConfig.Plugins = make(map[string][]string)
 		pluginConfig.Approve = []plugins.Approve{}
+		pluginConfig.Welcome = []plugins.Welcome{
+			{
+				MessageTemplate: "Welcome",
+			},
+		}
 
 		pluginConfig.ConfigUpdater.Maps = make(map[string]plugins.ConfigMapSpec)
 		pluginConfig.ConfigUpdater.Maps["prow/config.yaml"] = plugins.ConfigMapSpec{Name: ProwConfigMapName}
-		pluginConfig.ConfigUpdater.Maps["prow/plugins.yaml"] = plugins.ConfigMapSpec{Name: "plugins"}
+		pluginConfig.ConfigUpdater.Maps["prow/plugins.yaml"] = plugins.ConfigMapSpec{Name: ProwPluginsConfigMapName}
 
 	} else {
 		create = false
-		err = yaml.Unmarshal([]byte(cm.Data["plugins.yaml"]), &pluginConfig)
+		err = yaml.Unmarshal([]byte(cm.Data[ProwPluginsFilename]), &pluginConfig)
 		if err != nil {
 			return err
 		}
@@ -541,6 +531,12 @@ func (o *Options) AddProwPlugins() error {
 		}
 		pluginConfig.Approve = append(pluginConfig.Approve, a)
 
+		parts := strings.Split(r, "/")
+		t := plugins.Trigger{
+			Repos:      []string{r},
+			TrustedOrg: parts[0],
+		}
+		pluginConfig.Triggers = append(pluginConfig.Triggers, t)
 	}
 
 	pluginYAML, err := yaml.Marshal(pluginConfig)
@@ -549,11 +545,11 @@ func (o *Options) AddProwPlugins() error {
 	}
 
 	data := make(map[string]string)
-	data["plugins.yaml"] = string(pluginYAML)
+	data[ProwPluginsFilename] = string(pluginYAML)
 	cm = &corev1.ConfigMap{
 		Data: data,
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "plugins",
+			Name: ProwPluginsConfigMapName,
 		},
 	}
 	if create {
@@ -563,4 +559,54 @@ func (o *Options) AddProwPlugins() error {
 	}
 
 	return err
+}
+
+func (o *Options) GetReleaseJobs() ([]string, error) {
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwConfigMapName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	prowConfig := &config.Config{}
+	err = yaml.Unmarshal([]byte(cm.Data[ProwConfigFilename]), &prowConfig)
+	if err != nil {
+		return nil, err
+	}
+	var jobs []string
+
+	for repo, p := range prowConfig.Postsubmits {
+		for _, q := range p {
+			for _, b := range q.Branches {
+				repo = strings.Replace(repo, ":", "", -1)
+				jobName := fmt.Sprintf("%s/%s", repo, b)
+				jobs = append(jobs, jobName)
+			}
+		}
+	}
+	return jobs, nil
+}
+
+func (o *Options) GetBuildSpec(org, repo, branch string) (*build.BuildSpec, error) {
+
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwConfigMapName, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	prowConfig := &config.Config{}
+	err = yaml.Unmarshal([]byte(cm.Data[ProwConfigFilename]), &prowConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	key := fmt.Sprintf("%s/%s", org, repo)
+	for _, p := range prowConfig.Postsubmits[key] {
+
+		for _, a := range p.Branches {
+			if a == branch {
+				return p.BuildSpec, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("no prow config build spec found for %s/%s/%s", org, repo, branch)
 }

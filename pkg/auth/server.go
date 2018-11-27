@@ -50,3 +50,30 @@ func (s *AuthServer) GetUsernames() []string {
 	sort.Strings(answer)
 	return answer
 }
+
+//HasUserAuths checks if a server has any user auth configured
+func (s *AuthServer) HasUserAuths() bool {
+	return len(s.Users) > 0
+}
+
+// CurrentAuth returns the current user auth, otherwise the first one
+func (s *AuthServer) CurrentAuth() *UserAuth {
+	for _, user := range s.Users {
+		if user.Username == s.CurrentUser {
+			return user
+		}
+	}
+	if len(s.Users) > 0 {
+		return s.Users[0]
+	}
+	return nil
+}
+
+func (s *AuthServer) GetUserAuth(username string) *UserAuth {
+	for _, user := range s.Users {
+		if username == user.Username {
+			return user
+		}
+	}
+	return nil
+}

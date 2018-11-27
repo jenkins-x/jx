@@ -42,7 +42,7 @@ func (o *CommonOptions) CreateGitAuthConfigService() (auth.AuthConfigService, er
 	}
 
 	fileName := GitAuthConfigFile
-	return o.CreateGitAuthConfigServiceFromSecrets(fileName, secrets, o.Factory.IsInCDPIpeline())
+	return o.CreateGitAuthConfigServiceFromSecrets(fileName, secrets, o.Factory.IsInCDPipeline())
 }
 
 // CreateGitAuthConfigServiceFromSecrets Creates a git auth config service from secrets

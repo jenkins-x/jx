@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/kube/services"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -109,7 +111,7 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 	log.Infof("found dev namespace %s\n", devNamespace)
 
 	setValues := strings.Split(o.SetValues, ",")
-	err = o.installChart(o.ReleaseName, kube.ChartPipelineEvent, o.Version, o.Namespace, true, setValues, nil)
+	err = o.installChart(o.ReleaseName, kube.ChartPipelineEvent, o.Version, o.Namespace, true, setValues, nil, "")
 	if err != nil {
 		return fmt.Errorf("elasticsearch deployment failed: %v", err)
 	}
@@ -151,14 +153,14 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 		return err
 	}
 
-	// get the external service URL
-	kIng, err := kube.GetServiceURLFromName(o.KubeClientCached, kibanaServiceName, o.Namespace)
+	// get the external services URL
+	kIng, err := services.GetServiceURLFromName(o.KubeClientCached, kibanaServiceName, o.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get external URL for service %s: %v", kibanaServiceName, err)
 	}
 
-	// get the external service URL
-	esIng, err := kube.GetServiceURLFromName(o.KubeClientCached, esServiceName, o.Namespace)
+	// get the external services URL
+	esIng, err := services.GetServiceURLFromName(o.KubeClientCached, esServiceName, o.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get external URL for service %s: %v", kibanaServiceName, err)
 	}
@@ -183,8 +185,8 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 
 	_, err = o.KubeClientCached.CoreV1().Services(o.currentNamespace).Get(esServiceName, meta_v1.GetOptions{})
 	if err != nil {
-		// create a service link
-		err = kube.CreateServiceLink(o.KubeClientCached, o.currentNamespace, o.Namespace, esServiceName, esIng)
+		// create a services link
+		err = services.CreateServiceLink(o.KubeClientCached, o.currentNamespace, o.Namespace, esServiceName, esIng)
 		if err != nil {
 			return fmt.Errorf("failed creating a service link for %s in target namespace %s", esServiceName, o.Namespace)
 		}

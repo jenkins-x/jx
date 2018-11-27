@@ -148,5 +148,5 @@ func (o *CreateQuickstartLocationOptions) Run() error {
 		log.Infof("Adding the quickstart git owner %s\n", util.ColorInfo(util.UrlJoin(o.GitUrl, o.Owner)))
 		return nil
 	}
-	return o.modifyDevEnvironment(jxClient, ns, callback)
+	return o.ModifyDevEnvironment(callback)
 }

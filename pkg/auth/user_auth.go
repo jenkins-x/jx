@@ -2,23 +2,57 @@ package auth
 
 import (
 	"os"
+	"strings"
 )
+
+const (
+	usernameSuffix    = "_USERNAME"
+	apiTokenSuffix    = "_API_TOKEN"
+	bearerTokenSuffix = "_BEARER_TOKEN"
+	DefaultUsername   = "dummy"
+)
+
+// UsernameEnv builds the username environment variable name
+func UsernameEnv(prefix string) string {
+	prefix = strings.ToUpper(prefix)
+	return prefix + usernameSuffix
+}
+
+// ApiTokenEnv builds the api token environment variable name
+func ApiTokenEnv(prefix string) string {
+	prefix = strings.ToUpper(prefix)
+	return prefix + apiTokenSuffix
+}
+
+// BearerTokenEnv builds the bearer token environment variable name
+func BearerTokenEnv(prefix string) string {
+	prefix = strings.ToUpper(prefix)
+	return prefix + bearerTokenSuffix
+}
 
 // CreateAuthUserFromEnvironment creates a user auth from environment variables
 func CreateAuthUserFromEnvironment(prefix string) UserAuth {
-	answer := UserAuth{
-		Username:    os.Getenv(prefix + "_USERNAME"),
-		ApiToken:    os.Getenv(prefix + "_API_TOKEN"),
-		BearerToken: os.Getenv(prefix + "_BEARER_TOKEN"),
+	user := UserAuth{}
+	username, set := os.LookupEnv(UsernameEnv(prefix))
+	if set {
+		user.Username = username
+	}
+	apiToken, set := os.LookupEnv(ApiTokenEnv(prefix))
+	if set {
+		user.ApiToken = apiToken
+	}
+	bearerToken, set := os.LookupEnv(BearerTokenEnv(prefix))
+	if set {
+		user.BearerToken = bearerToken
 	}
 
-	// lets add a dummy user name if there is an API token defined
-	if answer.ApiToken != "" || answer.Password != "" {
-		if answer.Username == "" {
-			answer.Username = "dummy"
+	if user.ApiToken != "" || user.Password != "" {
+		if user.Username == "" {
+			user.Username = DefaultUsername
 		}
 	}
-	return answer
+
+	return user
 }
 
 // IsInvalid returns true if the user auth has a valid token

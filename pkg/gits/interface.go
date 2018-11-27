@@ -10,19 +10,19 @@ import (
 )
 
 // OrganisationLister returns a slice of GitOrganisation
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits OrganisationLister -o mocks/organisation_lister.go
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits OrganisationLister -o mocks/organisation_lister.go --generate-matchers
 type OrganisationLister interface {
 	ListOrganisations() ([]GitOrganisation, error)
 }
 
 // OrganisationChecker verifies if an user is member of an organization
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits OrganisationChecker -o mocks/organisation_checker.go
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits OrganisationChecker -o mocks/organisation_checker.go --generate-matchers
 type OrganisationChecker interface {
 	IsUserInOrganisation(user string, organisation string) (bool, error)
 }
 
 // GitProvider is the interface for abstracting use of different git provider APIs
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits GitProvider -o mocks/git_provider.go
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits GitProvider -o mocks/git_provider.go --generate-matchers
 type GitProvider interface {
 	OrganisationLister
 
@@ -144,7 +144,7 @@ type GitProvider interface {
 }
 
 // Gitter defines common git actions used by Jenkins X via git cli
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits Gitter -o mocks/gitter.go
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits Gitter -o mocks/gitter.go --generate-matchers
 type Gitter interface {
 	FindGitConfigDir(dir string) (string, string, error)
 	ToGitLabels(names []string) []GitLabel
@@ -202,10 +202,11 @@ type Gitter interface {
 
 	CommitIfChanges(dir string, message string) error
 	CommitDir(dir string, message string) error
-	AddCommmit(dir string, msg string) error
+	AddCommit(dir string, msg string) error
 	HasChanges(dir string) (bool, error)
 	Diff(dir string) (string, error)
 
+	GetLatestCommitMessage(dir string) (string, error)
 	GetPreviousGitTagSHA(dir string) (string, error)
 	GetCurrentGitTagSHA(dir string) (string, error)
 	FetchTags(dir string) error

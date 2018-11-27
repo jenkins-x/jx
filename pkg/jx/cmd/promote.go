@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/kube/services"
+
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
@@ -66,6 +68,7 @@ type PromoteOptions struct {
 
 	// for testing
 	FakePullRequests CreateEnvPullRequestFn
+	UseFakeHelm      bool
 
 	// calculated fields
 	TimeoutDuration         *time.Duration
@@ -81,13 +84,7 @@ type ReleaseInfo struct {
 	ReleaseName     string
 	FullAppName     string
 	Version         string
-	PullRequestInfo *ReleasePullRequestInfo
-}
-
-type ReleasePullRequestInfo struct {
-	GitProvider          gits.GitProvider
-	PullRequest          *gits.GitPullRequest
-	PullRequestArguments *gits.GitPullRequestArguments
+	PullRequestInfo *gits.PullRequestInfo
 }
 
 var (
@@ -231,26 +228,6 @@ func (o *PromoteOptions) Run() error {
 	}
 
 	targetNS, env, err := o.GetTargetNamespace(o.Namespace, o.Environment)
-	if err != nil {
-		return err
-	}
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterEnvironmentCRD(apisClient)
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterPipelineActivityCRD(apisClient)
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterGitServiceCRD(apisClient)
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterUserCRD(apisClient)
 	if err != nil {
 		return err
 	}
@@ -411,9 +388,13 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 			return releaseInfo, err
 		}
 	}
-	err := o.verifyHelmConfigured()
-	if err != nil {
-		return releaseInfo, err
+
+	var err error
+	if !o.UseFakeHelm {
+		err := o.verifyHelmConfigured()
+		if err != nil {
+			return releaseInfo, err
+		}
 	}
 
 	// lets do a helm update to ensure we can find the latest version
@@ -434,7 +415,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	}
 	promoteKey.OnPromoteUpdate(o.Activities, startPromote)
 
-	err = o.Helm().UpgradeChart(fullAppName, releaseName, targetNS, &version, true, nil, false, true, nil, nil)
+	err = o.Helm().UpgradeChart(fullAppName, releaseName, targetNS, &version, true, nil, false, true, nil, nil, "")
 	if err == nil {
 		err = o.commentOnIssues(targetNS, env, promoteKey)
 		if err != nil {
@@ -476,7 +457,8 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 		releaseInfo.PullRequestInfo = info
 		return err
 	} else {
-		info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, branchNameText, title, message, releaseInfo.PullRequestInfo, o.ConfigureGitCallback)
+		info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, &branchNameText, &title, &message,
+			releaseInfo.PullRequestInfo, o.ConfigureGitCallback)
 		releaseInfo.PullRequestInfo = info
 		return err
 	}
@@ -1034,7 +1016,7 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 	appNames := []string{app, o.ReleaseName, ens + "-" + app}
 	url := ""
 	for _, n := range appNames {
-		url, err = kube.FindServiceURL(kubeClient, ens, n)
+		url, err = services.FindServiceURL(kubeClient, ens, n)
 		if url != "" {
 			break
 		}
@@ -1124,7 +1106,7 @@ func (o *PromoteOptions) SearchForChart(filter string) (string, error) {
 		names = append(names, text)
 		m[text] = &charts[i]
 	}
-	name, err := util.PickName(names, "Pick chart to promote: ", o.In, o.Out, o.Err)
+	name, err := util.PickName(names, "Pick chart to promote: ", "", o.In, o.Out, o.Err)
 	if err != nil {
 		return answer, err
 	}

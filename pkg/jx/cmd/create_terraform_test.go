@@ -30,6 +30,15 @@ func TestValidateClusterDetails(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestValidateClusterDetailsForJxInfra(t *testing.T) {
+	t.Parallel()
+	o := cmd.CreateTerraformOptions{
+		Flags: cmd.Flags{Cluster: []string{"foo=jx-infra"}},
+	}
+	err := o.ValidateClusterDetails()
+	assert.NoError(t, err)
+}
+
 func TestValidateClusterDetailsFail(t *testing.T) {
 	t.Parallel()
 	o := cmd.CreateTerraformOptions{

@@ -62,6 +62,7 @@ func NewCmdDelete(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	cmd.AddCommand(NewCmdDeleteEnv(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeleteGit(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeleteJenkins(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteNamespace(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeletePostPreviewJob(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeletePreview(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeleteQuickstartLocation(f, in, out, errOut))
@@ -72,6 +73,7 @@ func NewCmdDelete(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	cmd.AddCommand(NewCmdDeleteUser(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeleteAws(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeleteVault(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteExtension(f, in, out, errOut))
 	return cmd
 }
 

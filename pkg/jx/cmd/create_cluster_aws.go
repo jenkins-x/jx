@@ -44,6 +44,7 @@ type CreateClusterAWSFlags struct {
 	NodeSize               string
 	MasterSize             string
 	State                  string
+	Tags                   string
 }
 
 var (
@@ -103,6 +104,7 @@ func NewCmdCreateClusterAWS(f Factory, in terminal.FileReader, out terminal.File
 	cmd.Flags().StringVarP(&options.Flags.NodeSize, "node-size", "", "", "The size of a node in the kops created cluster.")
 	cmd.Flags().StringVarP(&options.Flags.MasterSize, "master-size", "", "", "The size of a master in the kops created cluster.")
 	cmd.Flags().StringVarP(&options.Flags.State, "state", "", "", "The S3 bucket used to store the state of the cluster.")
+	cmd.Flags().StringVarP(&options.Flags.Tags, "tags", "", "", "A list of KV pairs used to tag all instance groups in AWS (eg \"Owner=John Doe,Team=Some Team\").")
 	return cmd
 }
 
@@ -153,7 +155,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 			}
 			c := len(availabilityZones)
 			if c > 0 {
-				zones, err = util.PickNameWithDefault(availabilityZones, "Pick Availability Zone: ", availabilityZones[c-1], o.In, o.Out, o.Err)
+				zones, err = util.PickNameWithDefault(availabilityZones, "Pick Availability Zone: ", availabilityZones[c-1], "", o.In, o.Out, o.Err)
 				if err != nil {
 					return err
 				}
@@ -234,6 +236,9 @@ func (o *CreateClusterAWSOptions) Run() error {
 	}
 	if flags.MasterSize != "" {
 		args = append(args, "--master-size", flags.MasterSize)
+	}
+	if flags.Tags != "" {
+		args = append(args, "--cloud-labels", flags.Tags)
 	}
 
 	auth := "RBAC"

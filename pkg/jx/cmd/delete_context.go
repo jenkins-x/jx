@@ -107,7 +107,7 @@ func (o *DeleteContextOptions) Run() error {
 		return util.InvalidArg(args[1], allNames)
 	}
 
-	selected, err := util.SelectNamesWithFilter(names, "Select the Kubernetes Contexts to delete: ", o.SelectAll, o.SelectFilter, o.In, o.Out, o.Err)
+	selected, err := util.SelectNamesWithFilter(names, "Select the Kubernetes Contexts to delete: ", o.SelectAll, o.SelectFilter, "", o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}

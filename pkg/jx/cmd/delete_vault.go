@@ -2,16 +2,18 @@ package cmd
 
 import (
 	"fmt"
-	"io"
-
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	gkevault "github.com/jenkins-x/jx/pkg/cloud/gke/vault"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/vault"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -80,17 +82,21 @@ func (o *DeleteVaultOptions) Run() error {
 		o.Namespace = ns
 	}
 
+	clusterName, err := gke.ShortClusterName(o.Kube())
+	if err != nil {
+		return err
+	}
 	vaultOperatorClient, err := o.VaultOperatorClient()
 	if err != nil {
 		return errors.Wrap(err, "creating vault operator client")
 	}
 
-	found := kube.FindVault(vaultOperatorClient, vaultName, o.Namespace)
-	if !found {
+	v, err := vault.GetVault(vaultOperatorClient, vaultName, o.Namespace)
+	if err != nil {
 		return fmt.Errorf("vault '%s' not found in namespace '%s'", vaultName, o.Namespace)
 	}
 
-	err = kube.DeleteVault(vaultOperatorClient, vaultName, o.Namespace)
+	err = vault.DeleteVault(vaultOperatorClient, vaultName, o.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "deleting the vault resource")
 	}
@@ -100,13 +106,13 @@ func (o *DeleteVaultOptions) Run() error {
 		return errors.Wrapf(err, "deleting the vault ingress '%s'", vaultName)
 	}
 
-	authServiceAccountName := kube.VaultAuthServiceAccountName(vaultName)
-	err = kube.DeleteServiceAccount(client, o.Namespace, authServiceAccountName)
+	authServiceAccountName := vault.GetAuthSaName(*v)
+	err = serviceaccount.DeleteServiceAccount(client, o.Namespace, authServiceAccountName)
 	if err != nil {
 		return errors.Wrapf(err, "deleting the vault auth service account '%s'", authServiceAccountName)
 	}
 
-	gcpServiceAccountSecretName := kube.VaultGcpServiceAccountSecretName(vaultName)
+	gcpServiceAccountSecretName := vault.VaultGcpServiceAccountSecretName(vaultName, clusterName)
 	err = client.CoreV1().Secrets(o.Namespace).Delete(gcpServiceAccountSecretName, &metav1.DeleteOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "deleting secret '%s' where GCP service account is stored", gcpServiceAccountSecretName)
@@ -160,14 +166,19 @@ func (o *DeleteVaultOptions) removeGCPResources(vaultName string) error {
 		o.GKEZone = zone
 	}
 
-	sa := gke.VaultServiceAccountName(vaultName)
-	err = gke.DeleteServiceAccount(sa, o.GKEProjectID, gke.VaultServiceAccountRoles)
+	clusterName, err := gke.ShortClusterName(o.Kube())
+	if err != nil {
+		return err
+	}
+
+	sa := gkevault.ServiceAccountName(vaultName, clusterName)
+	err = gke.DeleteServiceAccount(sa, o.GKEProjectID, gkevault.ServiceAccountRoles)
 	if err != nil {
 		return errors.Wrapf(err, "deleting the GCP service account '%s'", sa)
 	}
 	log.Infof("GCP service account %s deleted\n", util.ColorInfo(sa))
 
-	bucket := gke.VaultBucketName(vaultName)
+	bucket := gkevault.BucketName(vaultName, clusterName)
 	err = gke.DeleteAllObjectsInBucket(bucket)
 	if err != nil {
 		return errors.Wrapf(err, "deleting all objects in GCS bucket '%s'", bucket)

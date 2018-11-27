@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/kube/services"
+
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -30,7 +32,7 @@ func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to create the kube client")
 	}
-	u, err := kube.FindServiceURL(client, ns, kube.ServiceChartMuseum)
+	u, err := services.FindServiceURL(client, ns, kube.ServiceChartMuseum)
 	if err != nil {
 		return errors.Wrapf(err, "failed to find the service URL of the ChartMuseum")
 	}
@@ -93,13 +95,17 @@ func (o *CommonOptions) addHelmBinaryRepoIfMissing(helmUrl string, repoName stri
 }
 
 // installChart installs the given chart
-func (o *CommonOptions) installChart(releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string, valueFiles []string) error {
-	return o.installChartOptions(InstallChartOptions{ReleaseName: releaseName, Chart: chart, Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles})
+func (o *CommonOptions) installChart(releaseName string, chart string, version string, ns string, helmUpdate bool,
+	setValues []string, valueFiles []string, repo string) error {
+	return o.installChartOptions(InstallChartOptions{ReleaseName: releaseName, Chart: chart, Version: version,
+		Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles, Repository: repo})
 }
 
 // installChartAt installs the given chart
-func (o *CommonOptions) installChartAt(dir string, releaseName string, chart string, version string, ns string, helmUpdate bool, setValues []string, valueFiles []string) error {
-	return o.installChartOptions(InstallChartOptions{Dir: dir, ReleaseName: releaseName, Chart: chart, Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles})
+func (o *CommonOptions) installChartAt(dir string, releaseName string, chart string, version string, ns string,
+	helmUpdate bool, setValues []string, valueFiles []string, repo string) error {
+	return o.installChartOptions(InstallChartOptions{Dir: dir, ReleaseName: releaseName, Chart: chart,
+		Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles, Repository: repo})
 }
 
 type InstallChartOptions struct {
@@ -111,6 +117,7 @@ type InstallChartOptions struct {
 	HelmUpdate  bool
 	SetValues   []string
 	ValueFiles  []string
+	Repository  string
 }
 
 func (o *CommonOptions) installChartOptions(options InstallChartOptions) error {
@@ -136,7 +143,7 @@ func (o *CommonOptions) installChartOptions(options InstallChartOptions) error {
 	}
 	o.Helm().SetCWD(options.Dir)
 	return o.Helm().UpgradeChart(options.Chart, options.ReleaseName, options.Ns, &options.Version, true,
-		&timeout, true, false, options.SetValues, options.ValueFiles)
+		&timeout, true, false, options.SetValues, options.ValueFiles, options.Repository)
 }
 
 // deleteChart deletes the given chart
@@ -238,10 +245,6 @@ func (o *CommonOptions) getInstalledChartRepos(helmBinary string) (map[string]st
 
 func (o *CommonOptions) helmInit(dir string) error {
 	o.Helm().SetCWD(dir)
-	_, err := o.Helm().Version(false)
-	if err != nil {
-		return errors.Wrap(err, "failed to read the Helm version")
-	}
 	if o.Helm().HelmBinary() == "helm" {
 		// need to check the tiller settings at this point
 		_, noTiller, helmTemplate, err := o.TeamHelmBin()
@@ -265,12 +268,6 @@ func (o *CommonOptions) helmInitDependency(dir string, chartRepos map[string]str
 	if err != nil {
 		return o.Helm().HelmBinary(),
 			errors.Wrapf(err, "failed to remove requirements.lock file from chat '%s'", dir)
-	}
-
-	_, err = o.Helm().Version(false)
-	if err != nil {
-		return o.Helm().HelmBinary(),
-			errors.Wrap(err, "failed to read the Helm version")
 	}
 
 	if o.Helm().HelmBinary() == "helm" {
@@ -404,17 +401,25 @@ func (o *CommonOptions) helmInitRecursiveDependencyBuild(dir string, chartRepos 
 }
 
 func (o *CommonOptions) defaultReleaseCharts() map[string]string {
-	return map[string]string{
-		"releases":  o.releaseChartMuseumUrl(),
+	releasesURL := o.releaseChartMuseumUrl()
+	answer := map[string]string{
 		"jenkins-x": DEFAULT_CHARTMUSEUM_URL,
 	}
+	if releasesURL != "" {
+		answer["releases"] = releasesURL
+	}
+	return answer
 }
 
 func (o *CommonOptions) releaseChartMuseumUrl() string {
 	chartRepo := os.Getenv("CHART_REPOSITORY")
 	if chartRepo == "" {
-		chartRepo = defaultChartRepo
-		log.Warnf("No $CHART_REPOSITORY defined so using the default value of: %s\n", defaultChartRepo)
+		if o.Factory.IsInCDPipeline() {
+			chartRepo = defaultChartRepo
+			log.Warnf("No $CHART_REPOSITORY defined so using the default value of: %s\n", defaultChartRepo)
+		} else {
+			return ""
+		}
 	}
 	return chartRepo
 }

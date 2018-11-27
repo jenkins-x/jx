@@ -12,12 +12,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/pkg/errors"
 
-	"github.com/Azure/draft/pkg/draft/draftpath"
-	"github.com/jenkins-x/draft-repo/pkg/draft/pack"
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/config"
-	jxdraft "github.com/jenkins-x/jx/pkg/draft"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -55,6 +51,7 @@ const (
 
 	minimumMavenDeployVersion = "2.8.2"
 
+	masterBranch         = "master"
 	defaultGitIgnoreFile = `
 .project
 .classpath
@@ -225,15 +222,6 @@ func (options *ImportOptions) Run() error {
 		}
 
 		_, _, err = options.JXClient()
-		if err != nil {
-			return err
-		}
-
-		apisClient, err := options.CreateApiExtensionsClient()
-		if err != nil {
-			return err
-		}
-		err = kube.RegisterEnvironmentCRD(apisClient)
 		if err != nil {
 			return err
 		}
@@ -454,179 +442,33 @@ func (options *ImportOptions) ImportProjectsFromGitHub() error {
 
 // DraftCreate creates a draft
 func (options *ImportOptions) DraftCreate() error {
-	draftDir, err := util.DraftDir()
-	if err != nil {
-		return err
-	}
-	draftHome := draftpath.Home(draftDir)
-
-	// lets make sure we have the latest draft packs
-	initOpts := InitOptions{
-		CommonOptions: options.CommonOptions,
-	}
-	packsDir, err := initOpts.initBuildPacks()
-	if err != nil {
-		return err
-	}
-
 	// TODO this is a workaround of this draft issue:
 	// https://github.com/Azure/draft/issues/476
 	dir := options.Dir
+	var err error
 
-	defaultJenkinsfile := filepath.Join(dir, jenkins.DefaultJenkinsfile)
-	jenkinsfile := defaultJenkinsfile
+	jenkinsfile := jenkins.DefaultJenkinsfile
 	withRename := false
 	if options.Jenkinsfile != "" {
-		jenkinsfile = filepath.Join(dir, options.Jenkinsfile)
+		jenkinsfile = options.Jenkinsfile
 		withRename = true
 	}
-	pomName := filepath.Join(dir, "pom.xml")
-	gradleName := filepath.Join(dir, "build.gradle")
-	jenkinsPluginsName := filepath.Join(dir, "plugins.txt")
-	packagerConfigName := filepath.Join(dir, "packager-config.yml")
-	lpack := ""
-	customDraftPack := options.DraftPack
-	if len(customDraftPack) == 0 {
-		projectConfig, _, err := config.LoadProjectConfig(dir)
-		if err != nil {
-			return err
-		}
-		customDraftPack = projectConfig.BuildPack
+	defaultJenkinsfile := filepath.Join(dir, jenkins.DefaultJenkinsfile)
+	if !filepath.IsAbs(jenkinsfile) {
+		jenkinsfile = filepath.Join(dir, jenkinsfile)
 	}
-
-	if len(customDraftPack) > 0 {
-		log.Info("trying to use draft pack: " + customDraftPack + "\n")
-		lpack = filepath.Join(packsDir, customDraftPack)
-		f, err := util.FileExists(lpack)
-		if err != nil {
-			log.Error(err.Error())
-			return err
-		}
-		if f == false {
-			log.Error("Could not find pack: " + customDraftPack + " going to try detect which pack to use")
-			lpack = ""
-		}
-
+	args := &InvokeDraftPack{
+		Dir:                     dir,
+		CustomDraftPack:         options.DraftPack,
+		Jenkinsfile:             jenkinsfile,
+		DefaultJenkinsfile:      defaultJenkinsfile,
+		WithRename:              withRename,
+		InitialisedGit:          options.InitialisedGit,
+		DisableJenkinsfileCheck: options.DisableJenkinsfileCheck,
 	}
-
-	if len(lpack) == 0 {
-		if exists, err := util.FileExists(pomName); err == nil && exists {
-			pack, err := util.PomFlavour(pomName)
-			if err != nil {
-				return err
-			}
-			if len(pack) > 0 {
-				if pack == util.LIBERTY {
-					lpack = filepath.Join(packsDir, "liberty")
-				} else if pack == util.APPSERVER {
-					lpack = filepath.Join(packsDir, "appserver")
-				} else if pack == util.DROPWIZARD {
-					lpack = filepath.Join(packsDir, "dropwizard")
-				} else {
-					log.Warn("Do not know how to handle pack: " + pack)
-				}
-			} else {
-				lpack = filepath.Join(packsDir, "maven")
-			}
-
-			exists, _ = util.FileExists(lpack)
-			if !exists {
-				log.Warn("defaulting to maven pack")
-				lpack = filepath.Join(packsDir, "maven")
-			}
-		} else if exists, err := util.FileExists(gradleName); err == nil && exists {
-			lpack = filepath.Join(packsDir, "gradle")
-		} else if exists, err := util.FileExists(jenkinsPluginsName); err == nil && exists {
-			lpack = filepath.Join(packsDir, "jenkins")
-		} else if exists, err := util.FileExists(packagerConfigName); err == nil && exists {
-			lpack = filepath.Join(packsDir, "cwp")
-		} else {
-			// pack detection time
-			lpack, err = jxdraft.DoPackDetection(draftHome, options.Out, dir)
-
-			if err != nil {
-				return err
-			}
-		}
-	}
-	log.Success("selected pack: " + lpack + "\n")
-	options.DraftPack = filepath.Base(lpack)
-
-	chartsDir := filepath.Join(dir, "charts")
-	jenkinsfileExists, err := util.FileExists(jenkinsfile)
-	exists, err := util.FileExists(chartsDir)
-	if exists && err == nil {
-		exists, err = util.FileExists(filepath.Join(dir, "Dockerfile"))
-		if exists && err == nil {
-			if jenkinsfileExists || options.DisableJenkinsfileCheck {
-				log.Warn("existing Dockerfile, Jenkinsfile and charts folder found so skipping 'draft create' step\n")
-				return nil
-			}
-		}
-	}
-	jenkinsfileBackup := ""
-	if jenkinsfileExists && options.InitialisedGit && !options.DisableJenkinsfileCheck {
-		// lets copy the old Jenkinsfile in case we overwrite it
-		jenkinsfileBackup = jenkinsfile + JenkinsfileBackupSuffix
-		err = util.RenameFile(jenkinsfile, jenkinsfileBackup)
-		if err != nil {
-			return fmt.Errorf("Failed to rename old Jenkinsfile: %s", err)
-		}
-	} else if withRename {
-		defaultJenkinsfileExists, err := util.FileExists(defaultJenkinsfile)
-		if defaultJenkinsfileExists && options.InitialisedGit && !options.DisableJenkinsfileCheck {
-			jenkinsfileBackup = defaultJenkinsfile + JenkinsfileBackupSuffix
-			err = util.RenameFile(defaultJenkinsfile, jenkinsfileBackup)
-			if err != nil {
-				return fmt.Errorf("Failed to rename old Jenkinsfile: %s", err)
-			}
-
-		}
-	}
-
-	err = pack.CreateFrom(dir, lpack)
+	options.DraftPack, err = options.invokeDraftPack(args)
 	if err != nil {
-		// lets ignore draft errors as sometimes it can't find a pack - e.g. for environments
-		log.Warnf("Failed to run draft create in %s due to %s", dir, err)
-	}
-
-	unpackedDefaultJenkinsfile := defaultJenkinsfile
-	if unpackedDefaultJenkinsfile != jenkinsfile {
-		unpackedDefaultJenkinsfileExists := false
-		unpackedDefaultJenkinsfileExists, err = util.FileExists(unpackedDefaultJenkinsfile)
-		if unpackedDefaultJenkinsfileExists {
-			err = util.RenameFile(unpackedDefaultJenkinsfile, jenkinsfile)
-			if err != nil {
-				return fmt.Errorf("Failed to rename Jenkinsfile file from '%s' to '%s': %s", unpackedDefaultJenkinsfile, jenkinsfile, err)
-			}
-			if jenkinsfileBackup != "" {
-				err = util.RenameFile(jenkinsfileBackup, defaultJenkinsfile)
-				if err != nil {
-					return fmt.Errorf("Failed to rename Jenkinsfile backup file: %s", err)
-				}
-			}
-		}
-	} else if jenkinsfileBackup != "" {
-		// if there's no Jenkinsfile created then rename it back again!
-		jenkinsfileExists, err = util.FileExists(jenkinsfile)
-		if err != nil {
-			log.Warnf("Failed to check for Jenkinsfile %s", err)
-		} else {
-			if jenkinsfileExists {
-				if !options.InitialisedGit {
-					err = os.Remove(jenkinsfileBackup)
-					if err != nil {
-						log.Warnf("Failed to remove Jenkinsfile backup %s", err)
-					}
-				}
-			} else {
-				// lets put the old one back again
-				err = util.RenameFile(jenkinsfileBackup, jenkinsfile)
-				if err != nil {
-					return fmt.Errorf("Failed to rename Jenkinsfile backup file: %s", err)
-				}
-			}
-		}
+		return err
 	}
 
 	// lets rename the chart to be the same as our app name
@@ -647,9 +489,31 @@ func (options *ImportOptions) DraftCreate() error {
 		return err
 	}
 
-	org := options.getOrganisationOrCurrentUser()
+	provider, err := gits.CreateProvider(options.GitServer, options.GitUserAuth, options.Git())
+	if err != nil {
+		return err
+	}
+
+	if options.Organisation == "" {
+		gitUsername := options.GitUserAuth.Username
+		options.Organisation, err = gits.GetOwner(options.BatchMode, provider, gitUsername, options.In, options.Out, options.Err)
+		if err != nil {
+			return err
+		}
+	}
+
+	if options.AppName == "" {
+		dir := options.Dir
+		_, defaultRepoName := filepath.Split(dir)
+
+		options.AppName, err = gits.GetRepoName(options.BatchMode, false, provider, defaultRepoName, options.Organisation, options.In, options.Out, options.Err)
+		if err != nil {
+			return err
+		}
+	}
+
 	dockerRegistryOrg := options.getDockerRegistryOrg()
-	err = options.ReplacePlaceholders(gitServerName, org, dockerRegistryOrg)
+	err = options.ReplacePlaceholders(gitServerName, dockerRegistryOrg)
 	if err != nil {
 		return err
 	}
@@ -1035,8 +899,19 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 		return err
 	}
 
-	// todo lets create a Knative build to auto optionally auto trigger initial release
-
+	startBuildOptions := StartPipelineOptions{
+		GetOptions: GetOptions{
+			CommonOptions: CommonOptions{
+				Factory:          options.Factory,
+				KubeClientCached: options.KubeClientCached,
+			},
+		},
+	}
+	startBuildOptions.Args = []string{fmt.Sprintf("%s/%s/%s", gitInfo.Organisation, gitInfo.Name, masterBranch)}
+	err = startBuildOptions.Run()
+	if err != nil {
+		return fmt.Errorf("failed to start pipeline build")
+	}
 	options.logImportedProject(false, gitInfo)
 
 	return nil
@@ -1079,10 +954,10 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 }
 
 // ReplacePlaceholders replaces app name, git server name, git org, and docker registry org placeholders
-func (options *ImportOptions) ReplacePlaceholders(gitServerName, gitOrg, dockerRegistryOrg string) error {
-	gitOrg = kube.ToValidName(strings.ToLower(gitOrg))
+func (options *ImportOptions) ReplacePlaceholders(gitServerName, dockerRegistryOrg string) error {
+	options.Organisation = kube.ToValidName(strings.ToLower(options.Organisation))
 	log.Infof("replacing placeholders in directory %s\n", options.Dir)
-	log.Infof("app name: %s, git server: %s, org: %s, Docker registry org: %s\n", options.AppName, gitServerName, gitOrg, dockerRegistryOrg)
+	log.Infof("app name: %s, git server: %s, org: %s, Docker registry org: %s\n", options.AppName, gitServerName, options.Organisation, dockerRegistryOrg)
 
 	ignore, err := gitignore.NewRepository(options.Dir)
 	if err != nil {
@@ -1092,7 +967,7 @@ func (options *ImportOptions) ReplacePlaceholders(gitServerName, gitOrg, dockerR
 	replacer := strings.NewReplacer(
 		PlaceHolderAppName, strings.ToLower(options.AppName),
 		PlaceHolderGitProvider, strings.ToLower(gitServerName),
-		PlaceHolderOrg, strings.ToLower(gitOrg),
+		PlaceHolderOrg, strings.ToLower(options.Organisation),
 		PlaceHolderDockerRegistryOrg, strings.ToLower(dockerRegistryOrg))
 
 	pathsToRename := []string{} // Renaming must be done post-Walk
@@ -1210,18 +1085,22 @@ func (options *ImportOptions) addAppNameToGeneratedFile(filename, field, value s
 
 func (options *ImportOptions) checkChartmuseumCredentialExists() error {
 	name := jenkins.DefaultJenkinsCredentialsPrefix + jenkins.Chartmuseum
-	_, err := options.Jenkins.GetCredential(name)
-
+	secret, err := options.KubeClientCached.CoreV1().Secrets(options.currentNamespace).Get(name, metav1.GetOptions{})
 	if err != nil {
-		secret, err := options.KubeClientCached.CoreV1().Secrets(options.currentNamespace).Get(name, metav1.GetOptions{})
-		if err != nil {
-			return fmt.Errorf("error getting %s secret %v", name, err)
-		}
+		return fmt.Errorf("error getting %s secret %v", name, err)
+	}
 
-		data := secret.Data
-		username := string(data["BASIC_AUTH_USER"])
-		password := string(data["BASIC_AUTH_PASS"])
+	data := secret.Data
+	username := string(data["BASIC_AUTH_USER"])
+	password := string(data["BASIC_AUTH_PASS"])
 
+	if secret.Labels != nil && secret.Labels[kube.LabelCredentialsType] == kube.ValueCredentialTypeUsernamePassword {
+		// no need to create a credential as this will be done via the kubernetes credential provider plugin
+		return nil
+	}
+
+	_, err = options.Jenkins.GetCredential(name)
+	if err != nil {
 		err = options.retry(3, 10*time.Second, func() (err error) {
 			return options.Jenkins.CreateCredential(name, username, password)
 		})
@@ -1378,14 +1257,18 @@ func (options *ImportOptions) fixMaven() error {
 		// lets ensure the mvn plugins are ok
 		out, err := options.getCommandOutput(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:plugin", "-Dartifact=maven-deploy-plugin", "-Dversion="+minimumMavenDeployVersion)
 		if err != nil {
-			return fmt.Errorf("Failed to update maven plugin: %s output: %s", err, out)
+			return fmt.Errorf("Failed to update maven deploy plugin: %s output: %s", err, out)
+		}
+		out, err = options.getCommandOutput(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:plugin", "-Dartifact=maven-surefire-plugin", "-Dversion=3.0.0-M1")
+		if err != nil {
+			return fmt.Errorf("Failed to update maven surefire plugin: %s output: %s", err, out)
 		}
 		if !options.DryRun {
 			err = options.Git().Add(dir, "pom.xml")
 			if err != nil {
 				return err
 			}
-			err = options.Git().CommitIfChanges(dir, "fix:(plugins) use a better version of maven deploy plugin")
+			err = options.Git().CommitIfChanges(dir, "fix:(plugins) use a better version of maven plugins")
 			if err != nil {
 				return err
 			}

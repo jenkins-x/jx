@@ -26,7 +26,7 @@ const listRepoOutput = `
 NAME            URL
 stable          https://kubernetes-charts.storage.googleapis.com
 local           http://127.0.0.1:8879/charts
-jenkins-x       https://chartmuseum.build.cd.jenkins-x.io
+jenkins-x       http://chartmuseum.jenkins-x.io
 	`
 const searchVersionOutput = `
 NAME                            		CHART VERSION	APP VERSION		DESCRIPTION
@@ -112,7 +112,7 @@ func TestListRepos(t *testing.T) {
 	expectedRepos := map[string]string{
 		"stable":    "https://kubernetes-charts.storage.googleapis.com",
 		"local":     "http://127.0.0.1:8879/charts",
-		"jenkins-x": "https://chartmuseum.build.cd.jenkins-x.io",
+		"jenkins-x": "http://chartmuseum.jenkins-x.io",
 	}
 	assert.Equal(t, len(expectedRepos), len(repos), "should list the same number of repos")
 	for k, v := range repos {
@@ -124,7 +124,7 @@ func TestIsRepoMissing(t *testing.T) {
 	expectedArgs := []string{"repo", "list"}
 	helm, runner := createHelm(t, nil, listRepoOutput)
 
-	url := "https://chartmuseum.build.cd.jenkins-x.io"
+	url := "http://chartmuseum.jenkins-x.io"
 	missing, err := helm.IsRepoMissing(url)
 
 	assert.NoError(t, err, "should search missing repos without any error")
@@ -177,7 +177,7 @@ func TestInstallChart(t *testing.T) {
 		chart, "--set", value[0], "--values", valueFile[0]}
 	helm, runner := createHelm(t, nil, "")
 
-	err := helm.InstallChart(chart, releaseName, namespace, nil, nil, value, valueFile)
+	err := helm.InstallChart(chart, releaseName, namespace, nil, nil, value, valueFile, "")
 	assert.NoError(t, err, "should install the chart without any error")
 	verifyArgs(t, helm, runner, expectedArgs...)
 }
@@ -191,7 +191,7 @@ func TestUpgradeChart(t *testing.T) {
 		"--timeout", fmt.Sprintf("%d", timeout), "--version", version, "--set", value[0], "--values", valueFile[0], releaseName, chart}
 	helm, runner := createHelm(t, nil, "")
 
-	err := helm.UpgradeChart(chart, releaseName, namespace, &version, true, &timeout, true, true, value, valueFile)
+	err := helm.UpgradeChart(chart, releaseName, namespace, &version, true, &timeout, true, true, value, valueFile, "")
 
 	assert.NoError(t, err, "should upgrade the chart without any error")
 	verifyArgs(t, helm, runner, expectedArgs...)
@@ -280,15 +280,14 @@ func TestSearchChartVersions(t *testing.T) {
 }
 
 func TestFindChart(t *testing.T) {
-	chartFile := "Chart.yaml"
 	dir, err := ioutil.TempDir("/tmp", "charttest")
 	assert.NoError(t, err, "should be able to create a temporary dir")
 	defer os.RemoveAll(dir)
-	path := filepath.Join(dir, chartFile)
+	path := filepath.Join(dir, helm.ChartFileName)
 	ioutil.WriteFile(path, []byte("test"), 0644)
 	helm, _ := createHelmWithCwd(t, dir, nil, "")
 
-	chartFile, err = helm.FindChart()
+	chartFile, err := helm.FindChart()
 
 	assert.NoError(t, err, "should find the chart file")
 	assert.Equal(t, path, chartFile, "should find chart file '%s'", path)

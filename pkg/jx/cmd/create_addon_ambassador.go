@@ -96,7 +96,7 @@ func (o *CreateAddonAmbassadorOptions) Run() error {
 	}
 
 	values := strings.Split(o.SetValues, ",")
-	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil)
+	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
 	if err != nil {
 		return err
 	}

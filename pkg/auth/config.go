@@ -1,400 +1,132 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
-	"io"
-	"net/url"
-	"sort"
-	"strings"
-
-	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-func (c *AuthConfig) FindUserAuths(serverURL string) []*UserAuth {
-	for _, server := range c.Servers {
-		if urlsEqual(server.URL, serverURL) {
-			return server.Users
-		}
-	}
-	return []*UserAuth{}
+//UserKind define for user kind
+type UserKind string
+
+const (
+	// UserKindLocal indicates a user of type local
+	UserKindLocal UserKind = "local"
+	// UserKindPipeline indicates a user of type pipeline (e.g. used by the build within the pipeline
+	UserKindPipeline UserKind = "pipeline"
+)
+
+//User store the auth infomation for a user
+type User struct {
+	Username    string   `yaml:"username"`
+	ApiToken    string   `yaml:"apitoken"`
+	BearerToken string   `yaml:"bearertoken"`
+	Password    string   `yaml:"password,omitempty" json:"password"`
+	Kind        UserKind `yaml:"kind"`
 }
 
-func (c *AuthConfig) GetOrCreateUserAuth(url string, username string) *UserAuth {
-	user := c.FindUserAuth(url, username)
-	if user != nil {
-		return user
-	}
-	server := c.GetOrCreateServer(url)
-	if server.Users == nil {
-		server.Users = []*UserAuth{}
-	}
-	user = &UserAuth{
-		Username: username,
-	}
-	server.Users = append(server.Users, user)
-	for _, user := range server.Users {
-		if user.Username == username {
-			return user
-		}
-	}
-	return nil
+//ServerKind type of the server
+type ServerKind string
+
+const (
+	// ServerKindGit idicates a server configuration for git
+	ServerKindGit ServerKind = "git"
+	// ServerKindIssue indicates a server configuration for issue
+	ServerKindIssue ServerKind = "issue"
+	// ServerKindChat idicates a server configuration for chat
+	ServerKindChat ServerKind = "chat"
+)
+
+//ServiceKind type for service used by the server
+type ServiceKind string
+
+const (
+	// ServiceKindGithub indicates that the git server is using as service GitHub
+	ServiceKindGithub ServiceKind = "github"
+	// ServiceKindGitlab indicates that the git server is using as service Gitlab
+	ServiceKindGitlab ServiceKind = "gitlab"
+	// ServiceKindGitea indicates that the git server is using as service Gitea
+	ServiceKindGitea ServiceKind = "gitea"
+	// ServiceKindBitbucketCloud indicates that the git server is using as service Bitbucket Cloud
+	ServiceKindBitbucketCloud ServiceKind = "bitbucketcloud"
+	// ServiceKindBitbucketServer indicates that the git server is using as service Bitbuckst Server
+	ServiceKindBitbucketServer ServiceKind = "bitbucketserver"
+)
+
+//Server stores the server configuration for a server
+type Server struct {
+	URL         string      `yaml:"url"`
+	Name        string      `yaml:"name"`
+	Kind        ServerKind  `yaml:"kind"`
+	ServiceKind ServiceKind `yaml:"servicekind"`
+	Users       []*User     `yaml:"users"`
 }
 
-// FindUserAuth finds the auth for the given user name
-// if no username is specified and there is only one auth then return that else nil
-func (c *AuthConfig) FindUserAuth(serverURL string, username string) *UserAuth {
-	auths := c.FindUserAuths(serverURL)
-	if username == "" {
-		if len(auths) == 1 {
-			return auths[0]
-		} else {
-			return nil
-		}
-	}
-	for _, auth := range auths {
-		if auth.Username == username {
-			return auth
-		}
-	}
-	return nil
+// Config stores the entire auth configuration for a number of sservers
+type Config struct {
+	Servers []*Server `yaml:"servers"`
 }
 
-func (config *AuthConfig) IndexOfServerName(name string) int {
-	for i, server := range config.Servers {
-		if server.Name == name {
-			return i
-		}
-	}
-	return -1
+// Checker verifies if the configuration is valid
+type Checker interface {
+	Valid() error
 }
 
-func (c *AuthConfig) SetUserAuth(url string, auth *UserAuth) {
-	username := auth.Username
-	for i, server := range c.Servers {
-		if urlsEqual(server.URL, url) {
-			for j, a := range server.Users {
-				if a.Username == auth.Username {
-					c.Servers[i].Users[j] = auth
-					c.Servers[i].CurrentUser = username
-					return
-				}
-			}
-			c.Servers[i].Users = append(c.Servers[i].Users, auth)
-			c.Servers[i].CurrentUser = username
-			return
-		}
-	}
-	c.Servers = append(c.Servers, &AuthServer{
-		URL:         url,
-		Users:       []*UserAuth{auth},
-		CurrentUser: username,
-	})
-}
-
-func urlsEqual(url1, url2 string) bool {
-	return url1 == url2 || strings.TrimSuffix(url1, "/") == strings.TrimSuffix(url2, "/")
-}
-
-// GetServerByName returns the server for the given URL or null if its not found
-func (c *AuthConfig) GetServer(url string) *AuthServer {
-	for _, s := range c.Servers {
-		if urlsEqual(s.URL, url) {
-			return s
-		}
-	}
-	return nil
-}
-
-// GetServerByName returns the server for the given name or null if its not found
-func (c *AuthConfig) GetServerByName(name string) *AuthServer {
-	for _, s := range c.Servers {
-		if s.Name == name {
-			return s
-		}
-	}
-	return nil
-}
-
-// GetServerByKind returns the server for the given kind or null if its not found
-func (c *AuthConfig) GetServerByKind(kind string) *AuthServer {
-	for _, s := range c.Servers {
-		if s.Kind == kind && s.URL == c.CurrentServer {
-			return s
-		}
-	}
-	return nil
-}
-
-//DeleteServer deletes the server for the given URL and updates the current server
-//if is the same with the deleted server
-func (c *AuthConfig) DeleteServer(url string) {
-	for i, s := range c.Servers {
-		if urlsEqual(s.URL, url) {
-			c.Servers = append(c.Servers[:i], c.Servers[i+1:]...)
-		}
-	}
-	if urlsEqual(c.CurrentServer, url) && len(c.Servers) > 0 {
-		c.CurrentServer = c.Servers[0].URL
-	} else {
-		c.CurrentServer = ""
-	}
-}
-
-func (c *AuthConfig) GetOrCreateServer(url string) *AuthServer {
-	name := ""
-	kind := ""
-	return c.GetOrCreateServerName(url, name, kind)
-}
-
-func (c *AuthConfig) GetOrCreateServerName(url string, name string, kind string) *AuthServer {
-	s := c.GetServer(url)
-	if s == nil {
-		if name == "" {
-			// lets default the name to the server URL
-			name = urlHostName(url)
-		}
-		if c.Servers == nil {
-			c.Servers = []*AuthServer{}
-		}
-		s = &AuthServer{
-			URL:   url,
-			Users: []*UserAuth{},
-			Name:  name,
-			Kind:  kind,
-		}
-		c.Servers = append(c.Servers, s)
-	}
-	return s
-}
-
-func urlHostName(rawUrl string) string {
-	u, err := url.Parse(rawUrl)
-	if err == nil {
-		return u.Host
-	}
-	idx := strings.Index(rawUrl, "://")
-	if idx > 0 {
-		rawUrl = rawUrl[idx+3:]
-	}
-	return strings.TrimSuffix(rawUrl, "/")
-}
-
-func (c *AuthConfig) PickServer(message string, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (*AuthServer, error) {
-	if c.Servers == nil || len(c.Servers) == 0 {
-		return nil, fmt.Errorf("No servers available!")
-	}
-	if len(c.Servers) == 1 {
-		return c.Servers[0], nil
-	}
-	urls := []string{}
-	for _, s := range c.Servers {
-		urls = append(urls, s.URL)
-	}
-	url := ""
-	if len(urls) > 1 {
-		if batchMode {
-			url = c.CurrentServer
-		} else {
-			prompt := &survey.Select{
-				Message: message,
-				Options: urls,
-			}
-			surveyOpts := survey.WithStdio(in, out, outErr)
-			err := survey.AskOne(prompt, &url, survey.Required, surveyOpts)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	for _, s := range c.Servers {
-		if urlsEqual(s.URL, url) {
-			return s, nil
-		}
-	}
-	return nil, fmt.Errorf("Could not find server for URL %s", url)
-}
-
-// PickServerAuth Pick the servers auth
-func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string, batchMode bool, org string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*UserAuth, error) {
-	url := server.URL
-	userAuths := c.FindUserAuths(url)
-	surveyOpts := survey.WithStdio(in, out, errOut)
-	if len(userAuths) == 1 {
-
-		auth := userAuths[0]
-		if batchMode {
-			return auth, nil
-		}
-		confirm := &survey.Confirm{
-			Message: fmt.Sprintf("Do you wish to use %s as the %s", auth.Username, message),
-			Default: true,
-		}
-		flag := false
-		err := survey.AskOne(confirm, &flag, nil, surveyOpts)
-		if err != nil {
-			return auth, err
-		}
-		if flag {
-			return auth, nil
-		}
-
-		// lets create a new user name
-		prompt := &survey.Input{
-			Message: message,
-		}
-		username := ""
-		err = survey.AskOne(prompt, &username, nil, surveyOpts)
-		if err != nil {
-			return auth, err
-		}
-		return c.GetOrCreateUserAuth(url, username), nil
-	}
-	if len(userAuths) > 1 {
-
-		// If in batchmode select the user auth based on the org passed, or default to the first auth.
-		if batchMode {
-			for i, x := range userAuths {
-				if x.Username == org {
-					return userAuths[i], nil
-				}
-			}
-			return userAuths[0], nil
-		}
-
-		usernames := []string{}
-		m := map[string]*UserAuth{}
-		for _, ua := range userAuths {
-			name := ua.Username
-			usernames = append(usernames, name)
-			m[name] = ua
-		}
-		username := ""
-		prompt := &survey.Select{
-			Message: message,
-			Options: usernames,
-		}
-		err := survey.AskOne(prompt, &username, survey.Required, surveyOpts)
-		if err != nil {
-			return &UserAuth{}, err
-		}
-		answer := m[username]
-		if answer == nil {
-			return nil, fmt.Errorf("No username chosen!")
-		}
-		return answer, nil
-	}
-	return &UserAuth{}, nil
-}
-
-type PrintUserFn func(username string) error
-
-// EditUserAuth Lets the user input/edit the user auth
-func (config *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defaultUserName string, editUser, batchMode bool, fn PrintUserFn, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) error {
-	// default the user name if its empty
-	defaultUsername := config.DefaultUsername
-	if defaultUsername == "" {
-		defaultUsername = defaultUserName
-	}
-	if auth.Username == "" {
-		auth.Username = defaultUsername
-	}
-
-	if batchMode {
-		if auth.Username == "" {
-			return fmt.Errorf("Running in batch mode and no default Git username found")
-		}
-		if auth.ApiToken == "" {
-			return fmt.Errorf("Running in batch mode and no default API token found")
-		}
+// Valid checks if the user config is valid
+func (u *User) Valid() error {
+	if u.BearerToken != "" {
 		return nil
 	}
-	var err error
+	if u.Username == "" {
+		return errors.New("Empty username")
+	}
+	if u.ApiToken == "" && u.Password == "" {
+		return errors.New("Empty API token and password")
+	}
+	return nil
 
-	if editUser || auth.Username == "" {
-		auth.Username, err = util.PickValue(serverLabel+" user name:", auth.Username, true, in, out, outErr)
+}
+
+// Valid checks if a server config is valid
+func (s *Server) Valid() error {
+	if len(s.Users) == 0 {
+		return fmt.Errorf("%s server has no users", s.Name)
+	}
+	if s.URL == "" {
+		return fmt.Errorf("%s server has an empty URL", s.Name)
+	}
+	for _, u := range s.Users {
+		err := u.Valid()
 		if err != nil {
 			return err
 		}
 	}
-	if fn != nil {
-		err := fn(auth.Username)
+	return nil
+}
+
+// PipelineUser returns the pipeline user, if there is not pipeline user available
+// returns the first user
+func (s *Server) PipelineUser() User {
+	for _, user := range s.Users {
+		if user.Kind == UserKindPipeline {
+			return *user
+		}
+	}
+	if len(s.Users) > 0 {
+		return *s.Users[0]
+	}
+	return User{}
+}
+
+// Valid checks if the config is valid
+func (c *Config) Valid() error {
+	if len(c.Servers) == 0 {
+		return fmt.Errorf("No servers in config")
+	}
+	for _, s := range c.Servers {
+		err := s.Valid()
 		if err != nil {
 			return err
 		}
 	}
-	auth.ApiToken, err = util.PickPassword("API Token:", in, out, outErr)
-	return err
-}
-
-func (config *AuthConfig) GetServerNames() []string {
-	answer := []string{}
-	for _, server := range config.Servers {
-		name := server.Name
-		if name != "" {
-			answer = append(answer, name)
-		}
-	}
-	sort.Strings(answer)
-	return answer
-}
-
-func (config *AuthConfig) GetServerURLs() []string {
-	answer := []string{}
-	for _, server := range config.Servers {
-		u := server.URL
-		if u != "" {
-			answer = append(answer, u)
-		}
-	}
-	sort.Strings(answer)
-	return answer
-}
-
-// PickOrCreateServer picks the server to use defaulting to the current server
-func (config *AuthConfig) PickOrCreateServer(fallbackServerURL string, serverURL string, message string, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (*AuthServer, error) {
-	servers := config.Servers
-	if len(servers) == 0 {
-		if serverURL != "" {
-			return config.GetOrCreateServer(serverURL), nil
-		}
-		return config.GetOrCreateServer(fallbackServerURL), nil
-	}
-	// lets let the user pick which server to use defaulting to the current server
-	names := []string{}
-	teamServerMissing := true
-	for _, s := range servers {
-		u := s.URL
-		if u != "" {
-			names = append(names, u)
-		}
-		if u == serverURL {
-			teamServerMissing = false
-		}
-	}
-	if teamServerMissing && serverURL != "" {
-		names = append(names, serverURL)
-	}
-	if len(names) == 1 {
-		return config.GetOrCreateServer(names[0]), nil
-	}
-	defaultValue := serverURL
-	if defaultValue == "" {
-		defaultValue = config.CurrentServer
-	}
-	if defaultValue == "" {
-		defaultValue = names[0]
-	}
-	if batchMode {
-		return config.GetOrCreateServer(defaultValue), nil
-	}
-	name, err := util.PickRequiredNameWithDefault(names, message, defaultValue, in, out, outErr)
-	if err != nil {
-		return nil, err
-	}
-	if name == "" {
-		return nil, fmt.Errorf("No server URL chosen!")
-	}
-	return config.GetOrCreateServer(name), nil
+	return nil
 }

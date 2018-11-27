@@ -1,13 +1,13 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 )
 
 // GetURLOptions the command line options
@@ -80,7 +80,7 @@ func (o *GetURLOptions) Run() error {
 			return err
 		}
 	}
-	urls, err := kube.FindServiceURLs(client, ns)
+	urls, err := services.FindServiceURLs(client, ns)
 	if err != nil {
 		return err
 	}

@@ -252,7 +252,7 @@ func (g *GitCLI) CommitDir(dir string, message string) error {
 }
 
 // AddCommit perform an add and commit of the changes from the repository at the given directory with the given messages
-func (g *GitCLI) AddCommmit(dir string, msg string) error {
+func (g *GitCLI) AddCommit(dir string, msg string) error {
 	return g.gitCmd(dir, "commit", "-a", "-m", msg, "--allow-empty")
 }
 
@@ -313,7 +313,11 @@ func (g *GitCLI) Info(dir string) (*GitRepositoryInfo, error) {
 	if err != nil && strings.Contains(text, "Not a git repository") {
 		rUrl = os.Getenv("SOURCE_URL")
 		if rUrl == "" {
-			return nil, fmt.Errorf("you are not in a Git repository - promotion command should be executed from an application directory")
+			// Relevant in a Jenkins pipeline triggered by a PR
+			rUrl = os.Getenv("CHANGE_URL")
+			if rUrl == "" {
+				return nil, fmt.Errorf("you are not in a Git repository - promotion command should be executed from an application directory")
+			}
 		}
 	} else {
 		text, err = g.gitCmdWithOutput(dir, "config", "--get", "remote.origin.url")
@@ -501,6 +505,11 @@ func (g *GitCLI) GetRevisionBeforeDateText(dir string, dateText string) (string,
 // GetCurrentGitTagSHA return the SHA of the current git tag from the repository at the given directory
 func (g *GitCLI) GetCurrentGitTagSHA(dir string) (string, error) {
 	return g.gitCmdWithOutput(dir, "rev-list", "--tags", "--max-count=1")
+}
+
+// GetLatestCommitMessage returns the latest git commit message
+func (g *GitCLI) GetLatestCommitMessage(dir string) (string, error) {
+	return g.gitCmdWithOutput(dir, "log", "-1", "--pretty=%B")
 }
 
 // FetchTags fetches all the tags
