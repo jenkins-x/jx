@@ -1,7 +1,7 @@
-package cmd_test
+package util_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"testing"
@@ -15,9 +15,9 @@ func TestNoWhitespaceValidator(t *testing.T) {
 		domainName  string
 		want		string
 	}{
-		{"leading whitespace"," fake.com", "Domain name value \" fake.com\" must not contain any whitespace"},
-		{"trailing whitespace","fake.com ", "Domain name value \"fake.com \" must not contain any whitespace"},
-		{"embedded whitespace","fake .com", "Domain name value \"fake .com\" must not contain any whitespace"},
+		{"leading whitespace"," fake.com", "supplied value \" fake.com\" must not contain any whitespace"},
+		{"trailing whitespace","fake.com ", "supplied value \"fake.com \" must not contain any whitespace"},
+		{"embedded whitespace","fake .com", "supplied value \"fake .com\" must not contain any whitespace"},
 	}
 
 	for _, tt := range tests {
@@ -29,7 +29,7 @@ func TestNoWhitespaceValidator(t *testing.T) {
 
 func testInputValidation(t *testing.T, s string) interface{} {
 	valid := survey.ComposeValidators(
-		cmd.NoWhiteSpaceValidator(),
+		util.NoWhiteSpaceValidator(),
 	)
 	err := valid(s)
 	if err != nil {
@@ -37,3 +37,4 @@ func testInputValidation(t *testing.T, s string) interface{} {
 	}
 	return ""
 }
+
