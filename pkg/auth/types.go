@@ -1,6 +1,8 @@
 package auth
 
-import "github.com/jenkins-x/jx/pkg/vault"
+import (
+	"github.com/hashicorp/vault/api"
+)
 
 const (
 	DefaultWritePermissions = 0760
@@ -42,7 +44,8 @@ type FileAuthConfigSaver struct {
 	FileName string
 }
 
-// VaultAuthConfigService is an ConfigService that stores its secret data in a Vault
-type VaultAuthConfigService struct {
-	vaulter vault.Vaulter
+// VaultAuthConfigSaver is a ConfigSaver that saves configs to Vault
+type VaultAuthConfigSaver struct {
+	vaultClient *api.Client
+	secretName  string
 }

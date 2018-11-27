@@ -5,12 +5,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
-// VaultAuthConfigSaver is a ConfigSaver that saves configs to Vault
-type VaultAuthConfigSaver struct {
-	vaultClient *api.Client
-	secretName  string
-}
-
 // LoadConfig loads the config from the vault
 func (v *VaultAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
 	data, err := v.vaultClient.Logical().Read(secretPath(v.secretName))
