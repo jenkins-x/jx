@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 )
 
+// SecretStore provides an interface for storing secrets
 type SecretStore interface {
 	// Write saves some secret data to the store
 	Write(secretName string, bytes []byte) error

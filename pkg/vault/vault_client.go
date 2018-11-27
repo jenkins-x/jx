@@ -17,6 +17,9 @@ type VaultClient interface {
 	// WriteYaml writes a yaml object to a named secret
 	WriteYaml(secretName string, yamlstring string) (map[string]interface{}, error)
 
+	// List lists the secrets under the specified path
+	List(path string) ([]string, error)
+
 	// Read reads a named secret from the vault
 	Read(secretName string) (map[string]interface{}, error)
 }
@@ -65,6 +68,22 @@ func (v *VaultClientImpl) WriteYaml(secretName string, y string) (map[string]int
 	// Instead we need to marshall to a struct and back
 	out := util.ConvertAllMapKeysToString(m)
 	return v.Write(secretName, out.(map[string]interface{}))
+}
+
+func (v *VaultClientImpl) List(path string) ([]string, error) {
+	secrets, err := v.client.Logical().List(secretPath(path))
+	if err != nil {
+		return nil, err
+	}
+
+	secretNames := make([]string, 0)
+	for _, s := range secrets.Data["keys"].([]interface{}) {
+		if orig, ok := s.(string); ok {
+			secretNames = append(secretNames, orig)
+		}
+	}
+
+	return secretNames, nil
 }
 
 // Read reads a named secret to the vault

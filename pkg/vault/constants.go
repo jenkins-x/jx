@@ -1,5 +1,6 @@
 package vault
 
 const (
-	SystemVaultName = "jx-vault"
+	SystemVaultName      = "jx-vault"
+	InstallSecretsPrefix = "install-secrets/"
 )

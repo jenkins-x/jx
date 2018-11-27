@@ -1494,7 +1494,7 @@ func (options *InstallOptions) Run() error {
 
 func saveSecretsToVault(client vault.VaultClient, secretsToSave map[string]interface{}) error {
 	var err error
-	rootPath := "install-secrets/"
+	rootPath := vault.InstallSecretsPrefix
 	for secretName, secret := range secretsToSave {
 		switch secret.(type) {
 		case []byte:
