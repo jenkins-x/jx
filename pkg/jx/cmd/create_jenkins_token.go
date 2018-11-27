@@ -62,6 +62,7 @@ type CreateJenkinsUserOptions struct {
 	Username    string
 	Password    string
 	ApiToken    string
+	BearerToken string
 	Timeout     string
 	UseBrowser  bool
 }
@@ -147,6 +148,10 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		userAuth.ApiToken = o.ApiToken
 	}
 
+	if o.BearerToken != "" {
+		userAuth.BearerToken = o.BearerToken
+	}
+
 	if o.Password != "" {
 		userAuth.Password = o.Password
 	}
@@ -203,7 +208,8 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		return err
 	}
 	s.Data[kube.JenkinsAdminApiToken] = []byte(userAuth.ApiToken)
-
+	s.Data[kube.JenkinsBearTokenField] = []byte(userAuth.BearerToken)
+	s.Data[kube.JenkinsAdminUserField] = []byte(userAuth.Username)
 	_, err = o.KubeClientCached.CoreV1().Secrets(o.currentNamespace).Update(s)
 	if err != nil {
 		return err
