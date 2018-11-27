@@ -320,7 +320,7 @@ func (o *UpgradePlatformOptions) Run() error {
 	}
 
 	if o.Flags.CleanupTempFiles {
-		err = os.Remove(secretsFileName)
+		err = util.DestroyFile(secretsFileName)
 		if err != nil {
 			return errors.Wrap(err, "failed to cleanup the secrets file")
 		}
