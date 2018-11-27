@@ -31,7 +31,7 @@ func TestAuthConfig(t *testing.T) {
 	configTest := ConfigTest{
 		t: t,
 	}
-	configTest.svc, err = auth.NewFileBasedAuthConfigService(fileName)
+	configTest.svc, err = auth.NewFileAuthConfigService(fileName)
 
 	config := configTest.Load()
 

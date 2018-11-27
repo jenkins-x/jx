@@ -57,7 +57,7 @@ func Test_getOrganizations(t *testing.T) {
 }
 
 func createAuthConfigSvc(authConfig *auth.AuthConfig, fileName string) *auth.ConfigService {
-	authConfigSvc, _ := auth.NewFileBasedAuthConfigService(fileName)
+	authConfigSvc, _ := auth.NewFileAuthConfigService(fileName)
 	authConfigSvc.SetConfig(authConfig)
 	return &authConfigSvc
 }
@@ -818,7 +818,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 					ApiToken: tc.apiToken,
 				}
 				server = createAuthServer(tc.hostURL, tc.Name, tc.providerKind, currUser, users...)
-				s, err := auth.NewFileBasedAuthConfigService(configFile.Name())
+				s, err := auth.NewFileAuthConfigService(configFile.Name())
 				authSvc = &s
 				assert.NoError(t, err)
 			}

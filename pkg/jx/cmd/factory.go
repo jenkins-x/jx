@@ -286,10 +286,10 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService, error) {
 	if f.useVault {
 		vault, err := f.GetSystemVault()
-		v := auth.NewVaultBasedAuthConfigService(configName, vault)
+		v := auth.NewVaultAuthConfigService(configName, vault)
 		return v, err
 	} else {
-		return auth.NewFileBasedAuthConfigService(configName)
+		return auth.NewFileAuthConfigService(configName)
 	}
 }
 

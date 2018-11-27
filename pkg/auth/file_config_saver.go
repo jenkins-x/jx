@@ -8,17 +8,17 @@ import (
 	"path/filepath"
 )
 
-// NewFileBasedAuthConfigService
-func NewFileBasedAuthConfigService(filename string) (ConfigService, error) {
-	saver, err := newFileBasedAuthSaver(filename)
+// NewFileAuthConfigService
+func NewFileAuthConfigService(filename string) (ConfigService, error) {
+	saver, err := newFileAuthSaver(filename)
 	return NewAuthConfigService(saver), err
 }
 
 // newFileBasedAuthConfigSaver creates a new FileBasedAuthConfigService that stores its data under the given filename
 // If the fileName is an absolute path, it will be used. If it is a simple filename, it will be stored in the default
 // Config directory
-func newFileBasedAuthSaver(fileName string) (ConfigSaver, error) {
-	svc := &FileBasedAuthConfigSaver{}
+func newFileAuthSaver(fileName string) (ConfigSaver, error) {
+	svc := &FileAuthConfigSaver{}
 	// If the fileName is an absolute path, use that. Otherwise treat it as a config filename to be used in
 	if fileName == filepath.Base(fileName) {
 		dir, err := util.ConfigDir()
@@ -33,7 +33,7 @@ func newFileBasedAuthSaver(fileName string) (ConfigSaver, error) {
 }
 
 // LoadConfig loads the configuration from the users JX config directory
-func (s *FileBasedAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
+func (s *FileAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
 	config := &AuthConfig{}
 	fileName := s.FileName
 	if fileName != "" {
@@ -56,7 +56,7 @@ func (s *FileBasedAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
 }
 
 // SaveConfig saves the configuration to disk
-func (s *FileBasedAuthConfigSaver) SaveConfig(config *AuthConfig) error {
+func (s *FileAuthConfigSaver) SaveConfig(config *AuthConfig) error {
 	fileName := s.FileName
 	if fileName == "" {
 		return fmt.Errorf("no filename defined")

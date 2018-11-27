@@ -5,14 +5,14 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
-// VaultBasedAuthConfigSaver is a ConfigSaver that saves configs to Vault
-type VaultBasedAuthConfigSaver struct {
+// VaultAuthConfigSaver is a ConfigSaver that saves configs to Vault
+type VaultAuthConfigSaver struct {
 	vaultClient *api.Client
 	secretName  string
 }
 
 // LoadConfig loads the config from the vault
-func (v *VaultBasedAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
+func (v *VaultAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
 	data, err := v.vaultClient.Logical().Read(secretPath(v.secretName))
 	if err != nil {
 		return nil, err
@@ -26,7 +26,7 @@ func (v *VaultBasedAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
 }
 
 // SaveConfig saves the config to the vault
-func (v *VaultBasedAuthConfigSaver) SaveConfig(config *AuthConfig) error {
+func (v *VaultAuthConfigSaver) SaveConfig(config *AuthConfig) error {
 	// Marshall the AuthConfig to a generic map to save in vault (as that's what vault takes)
 	m, err := util.ToMapStringInterfaceFromStruct(&config)
 	if err == nil {
@@ -35,15 +35,15 @@ func (v *VaultBasedAuthConfigSaver) SaveConfig(config *AuthConfig) error {
 	return err
 }
 
-// NewVaultBasedAuthConfigService creates a new ConfigService that saves it config to a Vault
-func NewVaultBasedAuthConfigService(secretName string, vaultClient *api.Client) ConfigService {
-	saver := newVaultBasedAuthConfigSaver(secretName, vaultClient)
+// NewVaultAuthConfigService creates a new ConfigService that saves it config to a Vault
+func NewVaultAuthConfigService(secretName string, vaultClient *api.Client) ConfigService {
+	saver := newVaultAuthConfigSaver(secretName, vaultClient)
 	return NewAuthConfigService(&saver)
 }
 
-// newVaultBasedAuthConfigSaver creates a ConfigSaver that saves the Configs under a specified secretname in a vault
-func newVaultBasedAuthConfigSaver(secretName string, vaultClient *api.Client) VaultBasedAuthConfigSaver {
-	return VaultBasedAuthConfigSaver{
+// newVaultAuthConfigSaver creates a ConfigSaver that saves the Configs under a specified secretname in a vault
+func newVaultAuthConfigSaver(secretName string, vaultClient *api.Client) VaultAuthConfigSaver {
+	return VaultAuthConfigSaver{
 		secretName:  secretName,
 		vaultClient: vaultClient,
 	}
