@@ -75,12 +75,14 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 	// install package managers first
 	for _, i := range install {
 		if i == "brew" {
+			log.Infof("Installing %s\n", util.ColorInfo(i))
 			o.installBrew()
 			break
 		}
 	}
 
 	for _, i := range install {
+		log.Infof("Installing %s\n", util.ColorInfo(i))
 		var err error
 		switch i {
 		case "az":
