@@ -41,6 +41,7 @@ type config struct {
 	Auths map[string]*auth `json:"auths,omitempty"`
 }
 
+// GetClusterClient return AKS resource group, name and client ID.
 func GetClusterClient(server string) (string, string, string, error) {
 	clusterstr, err := exec.Command("az", "aks", "list", "--query", "[].{uri:fqdn,id:servicePrincipalProfile.clientId,group:resourceGroup,name:name}").Output()
 	if err != nil {
@@ -50,19 +51,19 @@ func GetClusterClient(server string) (string, string, string, error) {
 	clusters := []aks{}
 	json.Unmarshal(clusterstr, &clusters)
 
-	clientId := ""
+	clientID := ""
 	group := ""
 	name := ""
 	for _, v := range clusters {
 		if "https://"+v.URI+":443" == server {
-			clientId = v.ID
+			clientID = v.ID
 			name = v.Name
 			group = v.Group
 			break
 		}
 	}
 
-	return group, name, clientId, nil
+	return group, name, clientID, nil
 }
 
 
