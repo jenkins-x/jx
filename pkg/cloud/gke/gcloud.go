@@ -2,6 +2,7 @@ package gke
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,19 +24,39 @@ var (
 		"roles/container.developer",
 		"roles/storage.objectAdmin",
 		"roles/editor"}
-
-	VaultServiceAccountRoles = []string{"roles/storage.objectAdmin",
-		"roles/cloudkms.admin",
-		"roles/cloudkms.cryptoKeyEncrypterDecrypter",
-	}
 )
 
-func VaultBucketName(vaultName string) string {
-	return fmt.Sprintf("%s-bucket", vaultName)
+// ClusterName gets the cluster name from the current context
+// Note that this just reads the ClusterName from the local kube config, which can be renamed (but is unlikely to happen)
+func ClusterName(kuber kube.Kuber) (string, error) {
+	config, _, err := kuber.LoadConfig()
+	if err != nil {
+		return "", err
+	}
+
+	context := kube.CurrentContext(config)
+	if context == nil {
+		return "", errors.New("kube context was nil")
+	}
+	// context.Cluster will likely be in the form gke_<accountName>_<region>_<clustername>
+	// Trim off the crud from the beginning context.Cluster
+	return GetSimplifiedClusterName(context.Cluster), nil
 }
 
-func VaultServiceAccountName(vaultName string) string {
-	return fmt.Sprintf("%s-sa", vaultName)
+// ShortClusterName returns a short clusters name. Eg, if ClusterName would return tweetypie-jenkinsx-dev, ShortClusterName
+// would return tweetypie. This is needed because GCP has character limits on things like service accounts (6-30 chars)
+// and combining a long cluster name and a long vault name exceeds this limit
+func ShortClusterName(kuber kube.Kuber) (string, error) {
+	clusterName, err := ClusterName(kuber)
+	return strings.Split(clusterName, "-")[0], err
+}
+
+// GetSimplifiedClusterName get the simplified cluster name from the long-winded context cluster name that gets generated
+// GKE cluster names as defined in the kube config are of the form gke_<projectname>_<region>_<clustername>
+// This method will return <clustername> in the above
+func GetSimplifiedClusterName(complexClusterName string) string {
+	split := strings.Split(complexClusterName, "_")
+	return split[len(split)-1]
 }
 
 func BucketExists(projectId string, bucketName string) (bool, error) {
