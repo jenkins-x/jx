@@ -134,7 +134,7 @@ func (options *UpdateWebhooksOptions) Run() error {
 	return nil
 }
 
-func (options *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, repoName string, webhookUrl string, isProwEnabled bool, hmacToken *corev1.Secret) error {
+func (options *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, repoName string, webhookURL string, isProwEnabled bool, hmacToken *corev1.Secret) error {
 	webhooks, err := git.ListWebHooks(options.Org, repoName)
 	if err != nil {
 		return errors.Wrap(err, "unable to list webhooks")
@@ -145,7 +145,7 @@ func (options *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, repoN
 	if len(webhooks) > 0 {
 		// find matching hook
 		for _, webHook := range webhooks {
-			if options.matches(webhookUrl, webHook) {
+			if options.matches(webhookURL, webHook) {
 				log.Infof("Found matching hook for url %s\n", util.ColorInfo(webHook.URL))
 
 				// update
@@ -154,7 +154,7 @@ func (options *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, repoN
 					Repo: &gits.GitRepositoryInfo{
 						Name: repoName,
 					},
-					URL: webhookUrl,
+					URL: webhookURL,
 				}
 
 				if isProwEnabled {
@@ -172,13 +172,13 @@ func (options *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, repoN
 	return nil
 }
 
-func (options *UpdateWebhooksOptions) matches(webhookUrl string, webHookArgs *gits.GitWebHookArguments) bool {
+func (options *UpdateWebhooksOptions) matches(webhookURL string, webHookArgs *gits.GitWebHookArguments) bool {
 	if "" != options.PreviousHookUrl {
 		return options.PreviousHookUrl == webHookArgs.URL
 	}
 
 	if options.ExactHookMatch {
-		return webhookUrl == webHookArgs.URL
+		return webhookURL == webHookArgs.URL
 	} else {
 		return strings.Contains(webHookArgs.URL, "hook.jx")
 	}
