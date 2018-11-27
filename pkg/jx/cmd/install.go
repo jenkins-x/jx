@@ -716,12 +716,12 @@ func (options *InstallOptions) Run() error {
 		 if err != nil {
 		  	return errors.Wrap(err, "failed to get cluster from Azure")
 		}
-		registryId := ""
-		helmConfig.PipelineSecrets.DockerConfig, dockerRegistry, registryId, err = aks.GetRegistry(resourceGroup, name, dockerRegistry)
+		registryID := ""
+		helmConfig.PipelineSecrets.DockerConfig, dockerRegistry, registryID, err = aks.GetRegistry(resourceGroup, name, dockerRegistry)
 		if err != nil {
 			return errors.Wrap(err, "failed to get registry from Azure")
 		}
-		aks.AssignRole(cluster, registryId)
+		aks.AssignRole(cluster, registryID)
 		log.Infof("Assign AKS %s a reader role for ACR %s\n", util.ColorInfo(server), util.ColorInfo(dockerRegistry))
 	}
 
