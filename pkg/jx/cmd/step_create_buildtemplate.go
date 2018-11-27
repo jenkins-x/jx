@@ -159,7 +159,7 @@ func (o *StepCreateBuildTemplateOptions) Run() error {
 			}
 		}
 	}
-	for k, _ := range o.MissingPodTemplates {
+	for k := range o.MissingPodTemplates {
 		log.Warnf("Missing pod template for container %s\n", k)
 	}
 	log.Infof("generated build packs at %s\n", util.ColorInfo(o.OutputDir))
