@@ -13,7 +13,7 @@ type InstallDependenciesFlags struct {
 	Dependencies []string
 }
 
-// InstallDependenciesOptions
+// InstallDependenciesOptions options for install dependencies
 type InstallDependenciesOptions struct {
 	CommonOptions
 	Flags       InstallDependenciesFlags
@@ -31,7 +31,7 @@ var (
 		jx install dependencies -d gcloud
 `)
 
-	AvailableDependencies = []string {
+	availableDependencies = []string {
 		"az",
 		"kubectl",
 		"gcloud",
@@ -108,7 +108,7 @@ func (options *InstallDependenciesOptions) Run() error {
 
 		prompt := &survey.MultiSelect{
 			Message: "What dependencies would you like to install:",
-			Options: AvailableDependencies,
+			Options: availableDependencies,
 		}
 
 		surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
