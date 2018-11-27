@@ -175,15 +175,6 @@ func (o *DeleteAppOptions) Run() error {
 }
 
 func (o *DeleteAppOptions) deleteApp(jenkinsClient gojenkins.JenkinsClient, name string, job *gojenkins.Job) error {
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterEnvironmentCRD(apisClient)
-	if err != nil {
-		return err
-	}
-
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
