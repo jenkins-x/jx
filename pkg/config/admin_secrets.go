@@ -1,15 +1,13 @@
 package config
 
 import (
-	"fmt"
-	"github.com/Pallinder/go-randomdata"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/pkg/errors"
-	"io/ioutil"
-	"strings"
-
 	"crypto/sha1"
 	"encoding/base64"
+	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/pkg/errors"
+	"github.com/sethvargo/go-password/password"
+	"io/ioutil"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -142,7 +140,7 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 
 	if s.Flags.DefaultAdminPassword == "" {
 		log.Infof("No default password set, generating a random one\n")
-		s.Flags.DefaultAdminPassword = strings.ToLower(randomdata.SillyName())
+		s.Flags.DefaultAdminPassword, _ = password.Generate(20, 4, 2, false, true)
 	}
 
 	s.Secrets.Jenkins.JenkinsSecret.Password = s.Flags.DefaultAdminPassword
