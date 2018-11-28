@@ -25,15 +25,17 @@ import (
 )
 
 const (
+	// PluginCommandLabel is the label applied to plugins to allow them to be found
 	PluginCommandLabel = "jenkins.io/pluginCommand"
 )
 
-// pathVerifier receives a path and determines if it is valid or not
+// PathVerifier receives a path and determines if it is valid or not
 type PathVerifier interface {
 	// Verify determines if a given path is valid
 	Verify(path string) []error
 }
 
+// CommandOverrideVerifier verifies a set of plugins
 type CommandOverrideVerifier struct {
 	Root        *cobra.Command
 	SeenPlugins map[string]string
@@ -59,7 +61,7 @@ func (v *CommandOverrideVerifier) Verify(path string) []error {
 
 	errors := []error{}
 
-	if isExec, err := IsExecutable(path); err == nil && !isExec {
+	if isExec, err := isExecutable(path); err == nil && !isExec {
 		errors = append(errors, fmt.Errorf("warning: %s identified as a jx plugin, but it is not executable", path))
 	} else if err != nil {
 		errors = append(errors, fmt.Errorf("error: unable to identify %s as an executable file: %v", path, err))
@@ -78,7 +80,7 @@ func (v *CommandOverrideVerifier) Verify(path string) []error {
 	return errors
 }
 
-func IsExecutable(fullPath string) (bool, error) {
+func isExecutable(fullPath string) (bool, error) {
 	info, err := os.Stat(fullPath)
 	if err != nil {
 		return false, err
@@ -98,12 +100,13 @@ func IsExecutable(fullPath string) (bool, error) {
 	return false, nil
 }
 
+// FindPluginUrl finds the download URL for the current platform for a plugin
 func FindPluginUrl(plugin jenkinsv1.PluginSpec) (string, error) {
 	u := ""
 	for _, binary := range plugin.Binaries {
 		if strings.ToLower(runtime.GOOS) == strings.ToLower(binary.Goos) && strings.ToLower(runtime.
 			GOARCH) == strings.ToLower(binary.Goarch) {
-			u = binary.Url
+			u = binary.URL
 		}
 	}
 	if u == "" {
@@ -113,6 +116,8 @@ func FindPluginUrl(plugin jenkinsv1.PluginSpec) (string, error) {
 	return u, nil
 }
 
+// EnsurePluginInstalled ensures that the correct version of a plugin is installed locally.
+// It will clean up old versions.
 func EnsurePluginInstalled(plugin jenkinsv1.Plugin) (string, error) {
 	pluginBinDir, err := util.PluginBinDir(plugin.ObjectMeta.Namespace)
 	if err != nil {
@@ -151,11 +156,11 @@ func EnsurePluginInstalled(plugin jenkinsv1.Plugin) (string, error) {
 			Timeout: time.Second * 10,
 		}
 		// Get the file
-		pluginUrl, err := url.Parse(u)
+		pluginURL, err := url.Parse(u)
 		if err != nil {
 			return "", err
 		}
-		filename := filepath.Base(pluginUrl.Path)
+		filename := filepath.Base(pluginURL.Path)
 		tmpDir, err := ioutil.TempDir("", plugin.Spec.Name)
 		defer func() {
 			err := os.RemoveAll(tmpDir)
@@ -204,7 +209,7 @@ func EnsurePluginInstalled(plugin jenkinsv1.Plugin) (string, error) {
 			oldPath = filepath.Join(tmpDir, plugin.Spec.Name)
 		}
 
-		err = os.Rename(oldPath, path)
+		err = util.CopyFile(oldPath, path)
 		if err != nil {
 			return "", err
 		}
@@ -217,7 +222,9 @@ func EnsurePluginInstalled(plugin jenkinsv1.Plugin) (string, error) {
 	return path, nil
 }
 
+// ValidatePlugins tells the user about any problems with plugins installed
 func ValidatePlugins(jxClient jenkinsv1client.Interface, ns string) error {
+	// TODO needs a test
 	// Validate installed plugins
 	plugins, err := jxClient.JenkinsV1().Plugins(ns).List(metav1.ListOptions{})
 	if err != nil {

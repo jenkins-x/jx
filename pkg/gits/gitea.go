@@ -101,7 +101,7 @@ func toGiteaRelease(org string, name string, release *gitea.Release) *GitRelease
 		totalDownloadCount = totalDownloadCount + int(asset.DownloadCount)
 		assets = append(assets, GitReleaseAsset{
 			Name:               asset.Name,
-			BrowserDownloadUrl: asset.DownloadURL,
+			BrowserDownloadURL: asset.DownloadURL,
 		})
 	}
 	return &GitRelease{

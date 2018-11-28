@@ -314,10 +314,8 @@ func (h *extensionPluginHandler) Lookup(filename string) (string, error) {
 
 		}
 		return extensions.EnsurePluginInstalled(found)
-	} else {
-		return h.localPluginHandler.Lookup(filename)
 	}
-	return "", nil
+	return h.localPluginHandler.Lookup(filename)
 }
 
 // Execute implements PluginHandler

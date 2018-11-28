@@ -1,9 +1,10 @@
 package util
 
 import (
-	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
+
+	"github.com/sirupsen/logrus"
 )
 
 func HomeDir() string {
@@ -44,6 +45,7 @@ func ConfigDir() (string, error) {
 	return path, nil
 }
 
+// PluginBinDir returns the plugin bin directory for the given ns
 func PluginBinDir(ns string) (string, error) {
 	configDir, err := ConfigDir()
 	if err != nil {

@@ -98,8 +98,9 @@ type GitRelease struct {
 	Assets        *[]GitReleaseAsset
 }
 
+// GitReleaseAsset represents a release stored in Git
 type GitReleaseAsset struct {
-	BrowserDownloadUrl string
+	BrowserDownloadURL string
 	Name               string
 	ContentType        string
 }

@@ -42,6 +42,7 @@ func Error(msg string) {
 	color.Red(msg)
 }
 
+// Prints an error msg with a new line at the end
 func Errorln(msg string) {
 	Errorf("%v\n", msg)
 }

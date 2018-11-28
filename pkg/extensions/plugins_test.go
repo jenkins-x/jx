@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/log"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/jenkins-x/jx/pkg/extensions"
@@ -21,7 +23,6 @@ import (
 const (
 	binDirNs   = "jx-test"
 	port       = "0"
-	host       = "localhost"
 	name       = "jx-test.test-plugin"
 	version    = "0.0.1"
 	testString = "Testing123"
@@ -49,17 +50,17 @@ func TestEnsurePluginInstalled(t *testing.T) {
 			Description: "Test Plugin",
 			Binaries: []jenkinsv1.Binary{
 				jenkinsv1.Binary{
-					Url:    fmt.Sprintf("http://%s:%d/jx-test", host, port),
+					URL:    fmt.Sprintf("http://%s:%d/jx-test", "localhost", port),
 					Goarch: "amd64",
 					Goos:   "Windows",
 				},
 				jenkinsv1.Binary{
-					Url:    fmt.Sprintf("http://%s:%d/jx-test", host, port),
+					URL:    fmt.Sprintf("http://%s:%d/jx-test", "localhost", port),
 					Goarch: "amd64",
 					Goos:   "Darwin",
 				},
 				jenkinsv1.Binary{
-					Url:    fmt.Sprintf("http://%s:%d/jx-test", host, port),
+					URL:    fmt.Sprintf("http://%s:%d/jx-test", "localhost", port),
 					Goarch: "amd64",
 					Goos:   "Linux",
 				},
@@ -78,12 +79,12 @@ func TestEnsurePluginInstalled(t *testing.T) {
 	}
 	res, err := cmd.RunWithoutRetry()
 	assert.NoError(t, err, "Error running plugin")
-	assert.EqualValues(t, res, testString)
+	assert.EqualValues(t, testString, res)
 }
 
 func serveTestScript(t *testing.T) (*http.Server, int) {
 
-	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%s", host, port))
+	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%s", "0.0.0.0", port))
 	if err != nil {
 		panic(err)
 	}
@@ -94,7 +95,8 @@ func serveTestScript(t *testing.T) (*http.Server, int) {
 		fmt.Fprintf(w, "#!/bin/sh\necho %s\n", testString)
 	})
 	go func() {
-		if err := srv.Serve(listener); err != nil {
+		if err := srv.Serve(listener); err != nil && err.Error() != "http: Server closed" {
+			log.Errorf("Error starting HTTP server \n%v", err)
 			assert.NoError(t, err, "Error starting HTTP server to serve test plugin script")
 		}
 	}()

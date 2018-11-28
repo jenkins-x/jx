@@ -193,7 +193,7 @@ func toGitHubRelease(org string, name string, release *github.RepositoryRelease)
 		}
 		assets = append(assets, GitReleaseAsset{
 			Name:               asText(asset.Name),
-			BrowserDownloadUrl: asText(asset.BrowserDownloadURL),
+			BrowserDownloadURL: asText(asset.BrowserDownloadURL),
 			ContentType:        asText(asset.ContentType),
 		})
 	}

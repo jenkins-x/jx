@@ -91,11 +91,12 @@ func (o *GetPluginsOptions) Complete() error {
 	return nil
 }
 
+// Run implements the get plugins command
 func (o *GetPluginsOptions) Run() error {
-	return o.PrintExtensionPlugins()
+	return o.printExtensionPlugins()
 }
 
-func (o *GetPluginsOptions) PrintExtensionPlugins() error {
+func (o *GetPluginsOptions) printExtensionPlugins() error {
 	pcgs, err := o.getPluginCommandGroups(o.Verifier)
 	if err != nil {
 		return err
@@ -133,5 +134,16 @@ func (o *GetPluginsOptions) PrintExtensionPlugins() error {
 		// Add a trailing line to make the output more readable
 		log.Infoln("")
 	}
+
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+
+	err = extensions.ValidatePlugins(jxClient, ns)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

@@ -6,16 +6,19 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// PluginCommandGroup is a group of plugins providing some Commands. The Message is used for describing the group
 type PluginCommandGroup struct {
 	Message  string
 	Commands []*PluginCommand
 }
 
+// PluginCommand is a reference to a particular Command provided by a Plugin
 type PluginCommand struct {
 	jenkinsv1.PluginSpec
 	Errors []error
 }
 
+// PluginCommandGroups is a slice of PluginCommandGroup
 type PluginCommandGroups []PluginCommandGroup
 
 type CommandGroup struct {
