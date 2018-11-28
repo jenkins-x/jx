@@ -12,6 +12,10 @@ type FakeJenkinsV1 struct {
 	*testing.Fake
 }
 
+func (c *FakeJenkinsV1) Apps(namespace string) v1.AppInterface {
+	return &FakeApps{c, namespace}
+}
+
 func (c *FakeJenkinsV1) BuildPacks(namespace string) v1.BuildPackInterface {
 	return &FakeBuildPacks{c, namespace}
 }

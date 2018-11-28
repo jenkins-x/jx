@@ -2,6 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/extensions"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -12,10 +19,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-	"io/ioutil"
-	"os"
-	"path/filepath"
 )
 
 // StepEnvApplyOptions contains the command line flags
@@ -203,5 +206,14 @@ func (o *StepEnvApplyOptions) Run() error {
 		return errors.Wrapf(err, "Failed to apply helm chart in dir %s", dir)
 	}
 	log.Infof("Environment applied in namespace %s\n", util.ColorInfo(ns))
+	// Now run any post install actions
+	jxClient, _, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+	err = extensions.OnApply(jxClient, kubeClient, o.devNamespace, o.Helm(), defaultInstallTimeout)
+	if err != nil {
+		return err
+	}
 	return nil
 }
