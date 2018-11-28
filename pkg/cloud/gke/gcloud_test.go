@@ -1,10 +1,11 @@
 package gke
 
 import (
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/kube/mocks"
 	. "github.com/petergtz/pegomock"
 	"k8s.io/client-go/tools/clientcmd/api"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -26,7 +27,6 @@ func TestGetSimplifiedClusterName(t *testing.T) {
 }
 
 func TestShortClusterName(t *testing.T) {
-	t.Parallel()
 	kuber := kube_test.NewMockKuber()
 
 	config := api.Config{
@@ -44,7 +44,6 @@ func TestShortClusterName(t *testing.T) {
 }
 
 func TestClusterName(t *testing.T) {
-	t.Parallel()
 	kuber := kube_test.NewMockKuber()
 
 	config := api.Config{
