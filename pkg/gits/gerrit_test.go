@@ -66,7 +66,6 @@ func (suite *GerritProviderTestSuite) SetupSuite() {
 func (suite *GerritProviderTestSuite) TestListRepositories() {
 	repos, err := suite.provider.ListRepositories("")
 
-	suite.T().Log(err)
 	suite.Require().NotNil(repos)
 	suite.Require().Nil(err)
 	suite.Require().Equal(4, len(repos))
@@ -77,7 +76,6 @@ func (suite *GerritProviderTestSuite) TestListRepositories() {
 	}
 	sort.Strings(repoNames)
 
-	suite.T().Log(repos)
 	suite.Require().Equal("All-Projects", repoNames[0])
 	suite.Require().Equal("All-Users", repoNames[1])
 	suite.Require().Equal("RecipeBook", repoNames[2])
