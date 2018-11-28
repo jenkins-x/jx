@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"errors"
+	"github.com/jenkins-x/jx/pkg/prow"
 	"io"
+	"sort"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -18,6 +21,8 @@ import (
 // referencing the cmd.Flags()
 type GetPipelineOptions struct {
 	GetOptions
+
+	ProwOptions prow.Options
 }
 
 var (
@@ -65,34 +70,89 @@ func NewCmdGetPipeline(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 // Run implements this command
 func (o *GetPipelineOptions) Run() error {
-	jenkins, err := o.JenkinsClient()
+
+	_, _, err := o.JXClient()
 	if err != nil {
 		return err
 	}
-	jobs, err := jenkins.GetJobs()
+
+	_, _, err = o.KubeClient()
 	if err != nil {
 		return err
 	}
-	if len(jobs) == 0 {
-		return outputEmptyListWarning(o.Out)
+
+	isProw, err := o.isProw()
+	if err != nil {
+		return err
 	}
 
-	if o.Output != "" {
-		return o.renderResult(jobs, o.Output)
-	}
-
-	table := o.CreateTable()
-	table.AddRow("Name", "URL", "LAST_BUILD", "STATUS", "DURATION")
-
-	for _, j := range jobs {
-		job, err := jenkins.GetJob(j.Name)
+	if isProw {
+		o.ProwOptions = prow.Options{
+			KubeClient: o.KubeClientCached,
+			NS:         o.currentNamespace,
+		}
+		names, err := o.ProwOptions.GetReleaseJobs()
 		if err != nil {
 			return err
 		}
-		o.dump(jenkins, job.Name, &table)
+		if len(names) == 0 {
+			return errors.New("no pipelines found")
+		}
+		sort.Strings(names)
+
+		if len(names) == 0 {
+			return outputEmptyListWarning(o.Out)
+		}
+
+		if o.Output != "" {
+			return o.renderResult(names, o.Output)
+		}
+
+		table := createTable(o)
+
+		for _, j := range names {
+			if err != nil {
+				return err
+			}
+			table.AddRow(j, "N/A", "N/A", "N/A", "N/A")
+		}
+		table.Render()
+
+	} else {
+		jenkins, err := o.JenkinsClient()
+		if err != nil {
+			return err
+		}
+		jobs, err := jenkins.GetJobs()
+		if err != nil {
+			return err
+		}
+		if len(jobs) == 0 {
+			return outputEmptyListWarning(o.Out)
+		}
+
+		if o.Output != "" {
+			return o.renderResult(jobs, o.Output)
+		}
+
+		table := createTable(o)
+
+		for _, j := range jobs {
+			job, err := jenkins.GetJob(j.Name)
+			if err != nil {
+				return err
+			}
+			o.dump(jenkins, job.Name, &table)
+		}
+		table.Render()
 	}
-	table.Render()
 	return nil
+}
+
+func createTable(o *GetPipelineOptions) table.Table {
+	table := o.CreateTable()
+	table.AddRow("Name", "URL", "LAST_BUILD", "STATUS", "DURATION")
+	return table
 }
 
 func (o *GetPipelineOptions) dump(jenkins gojenkins.JenkinsClient, name string, table *table.Table) error {

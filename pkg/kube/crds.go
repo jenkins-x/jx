@@ -2,9 +2,10 @@ package kube
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"reflect"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/cenkalti/backoff"
 	"github.com/ghodss/yaml"
@@ -40,6 +41,10 @@ func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
 	err = RegisterExtensionCRD(apiClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Extension CRD")
+	}
+	err = RegisterAppCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the App CRD")
 	}
 	err = RegisterEnvironmentRoleBindingCRD(apiClient)
 	if err != nil {
@@ -240,6 +245,21 @@ func RegisterBuildPackCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".spec.gitRef",
 		},
 	}
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
+}
+
+// RegisterAppCRD ensures that the CRD is registered for App
+func RegisterAppCRD(apiClient apiextensionsclientset.Interface) error {
+	name := "apps." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "App",
+		ListKind:   "AppList",
+		Plural:     "apps",
+		Singular:   "app",
+		ShortNames: []string{"app"},
+	}
+	columns := []v1beta1.CustomResourceColumnDefinition{}
 	validation := v1beta1.CustomResourceValidation{}
 	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }

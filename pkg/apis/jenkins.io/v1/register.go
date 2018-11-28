@@ -42,6 +42,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
 		&BuildPack{},
 		&BuildPackList{},
+		&App{},
+		&AppList{},
 		&CommitStatus{},
 		&CommitStatusList{},
 		&Environment{},
