@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"os/exec"
 	"strings"
 )
 
@@ -43,17 +42,21 @@ type config struct {
 
 // GetClusterClient return AKS resource group, name and client ID.
 func GetClusterClient(server string) (string, string, string, error) {
-	clusterstr, err := exec.Command("az", "aks", "list", "--query", "[].{uri:fqdn,id:servicePrincipalProfile.clientId,group:resourceGroup,name:name}").Output()
-	if err != nil {
-		return "", "", "", err
-	}
-
-	clusters := []aks{}
-	json.Unmarshal(clusterstr, &clusters)
-
 	clientID := ""
 	group := ""
 	name := ""
+
+	clusterstr, err := azureCLI("aks", "list", "--query", "[].{uri:fqdn,id:servicePrincipalProfile.clientId,group:resourceGroup,name:name}")
+	if err != nil {
+		return group, name, clientID, err
+	}
+
+	clusters := []aks{}
+	err = json.Unmarshal([]byte(clusterstr), &clusters)
+	if err != nil {
+		return group, name, clientID, err
+	}
+
 	for _, v := range clusters {
 		if "https://"+v.URI+":443" == server {
 			clientID = v.ID
@@ -63,70 +66,39 @@ func GetClusterClient(server string) (string, string, string, error) {
 		}
 	}
 
-	return group, name, clientID, nil
+	return group, name, clientID, err
 }
 
 
- // GetRegistry Return the docker registry config, registry uri and resource id, error
+ // GetRegistry Return the docker registry config, registry login server and resource id, error
 func GetRegistry(resourceGroup string, name string, registry string) (string, string, string, error) {
 	registryID := ""
+	loginServer := registry
+	dockerConfig := ""
 
 	if registry == "" {
-		registry = name + ".azurecr.io"
+		loginServer = name + ".azurecr.io"
 	}
 
-	if !strings.HasSuffix(registry, "azurecr.io") {
-		return "", "", "", nil
+	if !strings.HasSuffix(loginServer, "azurecr.io") {
+		return dockerConfig, loginServer, registryID, nil
 	}
 
-	registriesstr, err := exec.Command("az", "acr", "list", "--query", "[].{uri:loginServer,id:id,name:name,group:resourceGroup}").Output()
+	acrRG, acrName, registryID, err := getRegistryID(loginServer)
 	if err != nil {
-		log.Infof("Registry %s not found, create a new one %s in resource group %s\n", util.ColorInfo(registry), util.ColorInfo(name), util.ColorInfo(resourceGroup))
-	} else {
-		registries := []acr{}
-		json.Unmarshal(registriesstr, &registries)
-
-		for _, v := range registries {
-			if v.URI == registry {
-				registryID = v.ID
-				resourceGroup = v.Group
-				name = v.Name
-				break
-			}
-		}
+		return dockerConfig, loginServer, registryID, err
 	}
-
 	// not exist and create a new one in resourceGroup
 	if registryID == "" {
-		registryIDStr, err := exec.Command("az", "acr", "create", "-g", resourceGroup, "-n", name, "--sku", "Standard", "--admin-enabled", "--query", "id").Output()
-		registryID = string(registryIDStr)
+		acrRG = resourceGroup
+		acrName = name
+		registryID, loginServer, err = createRegistry(acrRG, acrName)
 		if err != nil {
-			log.Infof("Failed to create ACR %s in resource group %s\n", util.ColorInfo(name), util.ColorInfo(resourceGroup))
-			return "", "", "", err
+			return dockerConfig, loginServer, registryID, err
 		}
-		registry = name + ".azurecr.io"
 	}
-
-	credstr, err := exec.Command("az", "acr", "credential", "show", "-g", resourceGroup, "-n", name).Output()
-	cred := credential{}
-	json.Unmarshal(credstr, &cred)
-
-	newSecret := &auth{}
-	dockerConfig := &config{}
-	newSecret.Auth = b64.StdEncoding.EncodeToString([]byte(cred.Username + ":" + cred.Passwords[0].Value))
-	if dockerConfig.Auths == nil {
-		dockerConfig.Auths = map[string]*auth{}
-	}
-	dockerConfig.Auths[registry] = newSecret
-
-	dockerConfigStr, err := json.Marshal(dockerConfig)
-
-	if err != nil {
-		log.Infof("Failed to get credentials for ACR %s in resource group %s\n", util.ColorInfo(name), util.ColorInfo(resourceGroup))
-		return "", "", "", err
-	}
-
-	return string(dockerConfigStr), registry, registryID, nil
+	dockerConfig, err = getACRCredential(acrRG, acrName)
+	return dockerConfig, loginServer, registryID, err
 }
 
 // AssignRole Assign the client a reader role for registry.
@@ -134,5 +106,77 @@ func AssignRole(client string, registry string) {
 	if client == "" || registry == "" {
 		return
 	}
-	exec.Command("az", "role", "assignment", "create", "--assignee", client, "--role", "Reader", "--scope", registry).Output()
+	azureCLI("role", "assignment", "create", "--assignee", client, "--role", "Reader", "--scope", registry)
+}
+
+// getRegistryID returns acrRG, acrName, acrID, error
+func getRegistryID(loginServer string) (string, string, string, error) {
+	acrRG := ""
+	acrName := ""
+	acrID := ""
+
+	acrList, err := azureCLI("acr", "list", "--query", "[].{uri:loginServer,id:id,name:name,group:resourceGroup}")
+	if err != nil {
+		log.Infof("Registry %s is not exist\n", util.ColorInfo(loginServer))
+	} else {
+		registries := []acr{}
+		err = json.Unmarshal([]byte(acrList), &registries)
+		if err != nil {
+			return "", "", "", err
+		}
+		for _, v := range registries {
+			if v.URI == loginServer {
+				acrID = v.ID
+				acrRG = v.Group
+				acrName = v.Name
+				break
+			}
+		}
+	}
+	return acrRG, acrName, acrID, nil
+}
+
+// createRegistry return resource ID, login server and error
+func createRegistry(resourceGroup string, name string) (string, string, error) {
+	registryID, err := azureCLI("acr", "create", "-g", resourceGroup, "-n", name, "--sku", "Standard", "--admin-enabled", "--query", "id")
+	if err != nil {
+		log.Infof("Failed to create ACR %s in resource group %s\n", util.ColorInfo(name), util.ColorInfo(resourceGroup))
+		return "", "", err	
+	}
+	return string(registryID), formatLoginServer(name), nil
+}
+
+// getACRCredential return .dockerconfig value for the ACR
+func getACRCredential(resourceGroup string, name string) (string, error) {
+	credstr, err := azureCLI("acr", "credential", "show", "-g", resourceGroup, "-n", name)
+	if err != nil {
+		log.Infof("Failed to get credential for ACR %s in resource group %s\n", util.ColorInfo(name), util.ColorInfo(resourceGroup))
+		return "", err	
+	}
+	cred := credential{}
+	err = json.Unmarshal([]byte(credstr), &cred)
+	if err != nil {
+		return "", err	
+	}
+	newSecret := &auth{}
+	dockerConfig := &config{}
+	newSecret.Auth = b64.StdEncoding.EncodeToString([]byte(cred.Username + ":" + cred.Passwords[0].Value))
+	if dockerConfig.Auths == nil {
+		dockerConfig.Auths = map[string]*auth{}
+	}
+	dockerConfig.Auths[formatLoginServer(name)] = newSecret
+	dockerConfigStr, err := json.Marshal(dockerConfig)
+	return string(dockerConfigStr), err
+}
+
+func formatLoginServer(name string) string {
+	return name + ".azurecr.io"
+}
+
+func azureCLI(args ...string) (string, error) {
+	cmd := util.Command{
+		Name: "az",
+		Args: args,
+	}
+	return cmd.RunWithoutRetry()
 }
