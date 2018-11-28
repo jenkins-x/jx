@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/pkg/errors"
-	"io"
-	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -101,24 +102,24 @@ func (o *UpgradeIngressOptions) Run() error {
 
 	o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting the dev namesapce")
 	}
 
 	previousWebHookEndpoint, err := o.GetWebHookEndpoint()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting the webhook endpoint")
 	}
 
 	// if existing ingress exist in the namespaces ask do you want to delete them?
 	ingressToDelete, err := o.getExistingIngressRules()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting the existing ingress rules")
 	}
 
 	// wizard to ask for config values
 	err = o.confirmExposecontrollerConfig()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "configure exposecontroller")
 	}
 
 	// confirm values
@@ -132,25 +133,25 @@ func (o *UpgradeIngressOptions) Run() error {
 	// save details to a configmap
 	_, err = kube.SaveAsConfigMap(o.KubeClientCached, kube.ConfigMapIngressConfig, o.devNamespace, o.IngressConfig)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "saving ingress config into a configmap")
 	}
 
 	err = o.CleanServiceAnnotations(o.Services...)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "cleaning service annotations")
 	}
 
 	// if tls create CRDs
 	if o.IngressConfig.TLS {
 		err = o.ensureCertmanagerSetup()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "ensure cert-manager setup")
 		}
 	}
 	// annotate any service that has expose=true with correct certmanager staging / prod annotation
 	err = o.AnnotateExposedServicesWithCertManager(o.Services...)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "annotating the exposed service with cert-manager")
 	}
 
 	// delete ingress
@@ -164,7 +165,7 @@ func (o *UpgradeIngressOptions) Run() error {
 
 	err = o.recreateIngressRules()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "recreating the ingress rules")
 	}
 
 	_, _, err = o.JXClient()
@@ -174,13 +175,13 @@ func (o *UpgradeIngressOptions) Run() error {
 
 	isProwEnabled, err := o.isProw()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "checking if is prow")
 	}
 
 	if !isProwEnabled {
 		err = o.updateJenkinsURL(o.TargetNamespaces)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "upgrade jenkins URL")
 		}
 	}
 	// todo wait for certs secrets to update ingress rules?
@@ -197,12 +198,11 @@ func (o *UpgradeIngressOptions) Run() error {
 
 	updatedWebHookEndpoint, err := o.GetWebHookEndpoint()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "retrieving the webhook endpoint")
 	}
 
 	log.Infof("Previous webhook endpoint %s\n", previousWebHookEndpoint)
 	log.Infof("Updated webhook endpoint %s\n", updatedWebHookEndpoint)
-
 	updateWebHooks := true
 	if !o.BatchMode {
 		if !util.Confirm("Do you want to update all existing webhooks?", true, "", o.In, o.Out, o.Err) {
@@ -213,7 +213,6 @@ func (o *UpgradeIngressOptions) Run() error {
 	if updateWebHooks {
 		o.updateWebHooks(previousWebHookEndpoint, updatedWebHookEndpoint)
 	}
-
 	return nil
 }
 
