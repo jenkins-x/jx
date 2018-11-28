@@ -41,12 +41,13 @@ const (
 type UpgradeIngressOptions struct {
 	CreateOptions
 
-	SkipCertManager  bool
-	Cluster          bool
-	Namespaces       []string
-	Version          string
-	TargetNamespaces []string
-	Services         []string
+	SkipCertManager       bool
+	Cluster               bool
+	Namespaces            []string
+	Version               string
+	TargetNamespaces      []string
+	Services              []string
+	SkipJxResourcesUpdate bool
 
 	IngressConfig kube.IngressConfig
 }
@@ -90,11 +91,11 @@ func (o *UpgradeIngressOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVarP(&o.Namespaces, "namespaces", "", []string{}, "Namespaces to upgrade")
 	cmd.Flags().BoolVarP(&o.SkipCertManager, "skip-certmanager", "", false, "Skips certmanager installation")
 	cmd.Flags().StringArrayVarP(&o.Services, "services", "", []string{}, "Services to upgrdde")
+	cmd.Flags().BoolVarP(&o.SkipJxResourcesUpdate, "skip-jx-resources-update", "", false, "Skips the update of jx related resources such as webhook or Jenkins URL")
 }
 
 // Run implements the command
 func (o *UpgradeIngressOptions) Run() error {
-
 	_, _, err := o.KubeClient()
 	if err != nil {
 		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
@@ -104,10 +105,12 @@ func (o *UpgradeIngressOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "getting the dev namesapce")
 	}
-
-	previousWebHookEndpoint, err := o.GetWebHookEndpoint()
-	if err != nil {
-		return errors.Wrap(err, "getting the webhook endpoint")
+	previousWebHookEndpoint := ""
+	if !o.SkipJxResourcesUpdate {
+		previousWebHookEndpoint, err = o.GetWebHookEndpoint()
+		if err != nil {
+			return errors.Wrap(err, "getting the webhook endpoint")
+		}
 	}
 
 	// if existing ingress exist in the namespaces ask do you want to delete them?
@@ -168,7 +171,26 @@ func (o *UpgradeIngressOptions) Run() error {
 		return errors.Wrap(err, "recreating the ingress rules")
 	}
 
-	_, _, err = o.JXClient()
+	if !o.SkipJxResourcesUpdate {
+		o.updateJxResources(previousWebHookEndpoint)
+	}
+
+	log.Success("Ingress rules recreated\n")
+
+	// todo wait for certs secrets to update ingress rules?
+	if o.IngressConfig.TLS {
+		log.Warn("It can take around 5 minutes for Cert Manager to get certificates from Lets Encrypt and update Ingress rules\n")
+		log.Info("Use the following commands to diagnose any issues:\n")
+		log.Infof("jx logs %s -n %s\n", CertManagerDeployment, CertManagerNamespace)
+		log.Info("kubectl describe certificates\n")
+		log.Info("kubectl describe issuers\n\n")
+	}
+
+	return nil
+}
+
+func (o *UpgradeIngressOptions) updateJxResources(previousWebHookEndpoint string) error {
+	_, _, err := o.JXClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to get jxclient")
 	}
@@ -183,17 +205,6 @@ func (o *UpgradeIngressOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "upgrade jenkins URL")
 		}
-	}
-	// todo wait for certs secrets to update ingress rules?
-
-	log.Success("Ingress rules recreated\n")
-
-	if o.IngressConfig.TLS {
-		log.Warn("It can take around 5 minutes for Cert Manager to get certificates from Lets Encrypt and update Ingress rules\n")
-		log.Info("Use the following commands to diagnose any issues:\n")
-		log.Infof("jx logs %s -n %s\n", CertManagerDeployment, CertManagerNamespace)
-		log.Info("kubectl describe certificates\n")
-		log.Info("kubectl describe issuers\n\n")
 	}
 
 	updatedWebHookEndpoint, err := o.GetWebHookEndpoint()
