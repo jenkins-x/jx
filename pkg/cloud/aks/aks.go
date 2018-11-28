@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+var runner util.Commander
+
 type aks struct {
 	ID    string `json:"id"`
 	URI   string `json:"uri"`
@@ -169,14 +171,20 @@ func getACRCredential(resourceGroup string, name string) (string, error) {
 	return string(dockerConfigStr), err
 }
 
+// WithCommander set the commander
+func WithCommander(commander util.Commander) {
+	runner = commander
+}
+
 func formatLoginServer(name string) string {
 	return name + ".azurecr.io"
 }
 
 func azureCLI(args ...string) (string, error) {
-	cmd := util.Command{
-		Name: "az",
-		Args: args,
+	if runner == nil {
+		runner = &util.Command{}
 	}
-	return cmd.RunWithoutRetry()
+	runner.SetName("az")
+	runner.SetArgs(args)
+	return runner.RunWithoutRetry()
 }
