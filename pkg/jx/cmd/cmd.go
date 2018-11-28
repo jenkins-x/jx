@@ -21,14 +21,18 @@ const (
     `
 )
 
+var _factory Factory
+
 // NewJXCommand creates the `jx` command and its nested children.
 func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, err io.Writer) *cobra.Command {
+	_factory = f
 	cmds := &cobra.Command{
 		Use:   "jx",
 		Short: "jx is a command line tool for working with Jenkins X",
 		Long: `
  `,
-		Run: runHelp,
+		Run:              runHelp,
+		PersistentPreRun: preRun,
 		/*
 			BashCompletionFunction: bash_completion_func,
 		*/
@@ -203,4 +207,11 @@ func fullPath(command *cobra.Command) string {
 
 func runHelp(cmd *cobra.Command, args []string) {
 	cmd.Help()
+}
+
+func preRun(cmd *cobra.Command, args []string) {
+	useVault, err := cmd.Flags().GetBool("vault")
+	if err != nil {
+		_factory.UseVault(useVault)
+	}
 }

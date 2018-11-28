@@ -87,7 +87,6 @@ type InstallFlags struct {
 	NoGitOpsEnvApply         bool
 	NoGitOpsEnvRepo          bool
 	NoGitOpsVault            bool
-	Vault                    bool
 	BuildPackName            string
 }
 
@@ -343,7 +342,6 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvApply, "no-gitops-env-apply", "", false, "When using GitOps to create the source code for the development environment and installation, don't run 'jx step env apply' to perform the install")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvRepo, "no-gitops-env-repo", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a git repository for the source code")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsVault, "no-gitops-vault", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a vault")
-	cmd.Flags().BoolVarP(&flags.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during installation")
 	cmd.Flags().StringVarP(&flags.BuildPackName, "buildpack", "", "", "The name of the build pack to use for the Team")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
@@ -682,8 +680,8 @@ func (options *InstallOptions) Run() error {
 	}
 
 	// TODO - we want to enable storing secrets in Vault for gitops. Reenable this once the feature is finished
-	//if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
-	if options.Flags.Vault {
+	//if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Vault {
+	if options.Vault {
 		// Install Vault Operator into the new env
 		err = InstallVaultOperator(&options.CommonOptions, "")
 		if err != nil {

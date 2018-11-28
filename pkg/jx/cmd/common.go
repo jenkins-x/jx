@@ -79,6 +79,7 @@ type CommonOptions struct {
 	Username               string
 	ExternalJenkinsBaseURL string
 	PullSecrets            string
+	Vault                  bool
 
 	// common cached clients
 	KubeClientCached       kubernetes.Interface
@@ -148,6 +149,7 @@ func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&options.InstallDependencies, optionInstallDeps, "", false, "Should any required dependencies be installed automatically")
 	cmd.Flags().BoolVarP(&options.SkipAuthSecretsMerge, optionSkipAuthSecMerge, "", false, "Skips merging a local git auth yaml file with any pipeline secrets that are found")
 	cmd.Flags().StringVarP(&options.PullSecrets, optionPullSecrets, "", "", "The pull secrets the service account created should have (useful when deploying to your own private registry): provide multiple pull secrets by providing them in a singular block of quotes e.g. --pull-secrets \"foo, bar, baz\"")
+	cmd.Flags().BoolVarP(&options.Vault, "vault", "", false, "Uses a Hashicorp Vault for storing secrets")
 
 	options.Cmd = cmd
 }

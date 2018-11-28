@@ -307,8 +307,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	// TODO - Reenable vault for GitOpsMode
-	//o.CreateClusterOptions.InstallOptions.GitOpsMode || o.CreateClusterOptions.InstallOptions.Vault {
-	if o.CreateClusterOptions.InstallOptions.Vault {
+	//o.CreateClusterOptions.InstallOptions.GitOpsMode || o.Vault {
+	if o.Vault {
 		if err = InstallVaultOperator(&o.CommonOptions, ""); err != nil {
 			return err
 		}
