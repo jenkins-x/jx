@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 	"time"
 
+	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -260,5 +260,6 @@ func (o *CreateVaultOptions) exposeVault(vaultService string) error {
 	options := &o.UpgradeIngressOptions
 	options.Namespaces = []string{o.Namespace}
 	options.Services = []string{vaultService}
+	options.SkipJxResourcesUpdate = true
 	return options.Run()
 }
