@@ -220,8 +220,7 @@ func (options *ImportOptions) Run() error {
 		if err != nil {
 			return err
 		}
-
-		_, _, err = options.JXClient()
+		_, _, err = options.JXClientAndDevNamespace()
 		if err != nil {
 			return err
 		}
@@ -1085,7 +1084,7 @@ func (options *ImportOptions) addAppNameToGeneratedFile(filename, field, value s
 
 func (options *ImportOptions) checkChartmuseumCredentialExists() error {
 	name := jenkins.DefaultJenkinsCredentialsPrefix + jenkins.Chartmuseum
-	secret, err := options.KubeClientCached.CoreV1().Secrets(options.currentNamespace).Get(name, metav1.GetOptions{})
+	secret, err := options.KubeClientCached.CoreV1().Secrets(options.devNamespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("error getting %s secret %v", name, err)
 	}
