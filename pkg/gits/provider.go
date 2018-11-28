@@ -325,7 +325,7 @@ func (s *GitRepoStatus) IsFailed() bool {
 	return s.State == "error" || s.State == "failure"
 }
 
-func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.AuthConfigService, message string, batchMode bool, gitKind string, git Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
+func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.ConfigService, message string, batchMode bool, gitKind string, git Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
 	config := authConfigSvc.Config()
 	hostUrl := i.HostURLWithoutUser()
 	server := config.GetOrCreateServer(hostUrl)
@@ -352,13 +352,13 @@ func (i *GitRepositoryInfo) CreateProviderForUser(server *auth.AuthServer, user 
 	return CreateProvider(server, user, git)
 }
 
-func (i *GitRepositoryInfo) CreateProvider(inCluster bool, authConfigSvc auth.AuthConfigService, gitKind string, git Gitter, batchMode bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
+func (i *GitRepositoryInfo) CreateProvider(inCluster bool, authConfigSvc auth.ConfigService, gitKind string, git Gitter, batchMode bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
 	hostUrl := i.HostURLWithoutUser()
 	return CreateProviderForURL(inCluster, authConfigSvc, gitKind, hostUrl, git, batchMode, in, out, errOut)
 }
 
 // CreateProviderForURL creates the Git provider for the given git kind and host URL
-func CreateProviderForURL(inCluster bool, authConfigSvc auth.AuthConfigService, gitKind string, hostUrl string, git Gitter, batchMode bool,
+func CreateProviderForURL(inCluster bool, authConfigSvc auth.ConfigService, gitKind string, hostUrl string, git Gitter, batchMode bool,
 	in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
 	config := authConfigSvc.Config()
 	server := config.GetOrCreateServer(hostUrl)
@@ -386,9 +386,8 @@ func CreateProviderForURL(inCluster bool, authConfigSvc auth.AuthConfigService, 
 	return CreateProvider(server, userAuth, git)
 }
 
-func createUserForServer(batchMode bool, userAuth *auth.UserAuth, authConfigSvc auth.AuthConfigService, server *auth.AuthServer,
+func createUserForServer(batchMode bool, userAuth *auth.UserAuth, authConfigSvc auth.ConfigService, server *auth.AuthServer,
 	git Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*auth.UserAuth, error) {
-
 
 	f := func(username string) error {
 		git.PrintCreateRepositoryGenerateAccessToken(server, username, out)

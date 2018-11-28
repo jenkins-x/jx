@@ -39,21 +39,21 @@ type Factory interface {
 
 	GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (string, error)
 
-	CreateAuthConfigService(fileName string) (auth.AuthConfigService, error)
+	CreateAuthConfigService(fileName string) (auth.ConfigService, error)
 
-	CreateJenkinsAuthConfigService(kubernetes.Interface, string) (auth.AuthConfigService, error)
+	CreateJenkinsAuthConfigService(kubernetes.Interface, string) (auth.ConfigService, error)
 
-	CreateChartmuseumAuthConfigService() (auth.AuthConfigService, error)
+	CreateChartmuseumAuthConfigService() (auth.ConfigService, error)
 
-	CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error)
+	CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error)
 
-	CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error)
+	CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error)
 
-	CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error)
+	CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error)
 
 	CreateClient() (kubernetes.Interface, string, error)
 
-	CreateGitProvider(string, string, auth.AuthConfigService, string, bool, gits.Gitter, terminal.FileReader, terminal.FileWriter, io.Writer) (gits.GitProvider, error)
+	CreateGitProvider(string, string, auth.ConfigService, string, bool, gits.Gitter, terminal.FileReader, terminal.FileWriter, io.Writer) (gits.GitProvider, error)
 
 	CreateKubeConfig() (*rest.Config, error)
 
@@ -84,4 +84,7 @@ type Factory interface {
 	CreateVaultOperatorClient() (vaultoperatorclient.Interface, error)
 
 	GetHelm(verbose bool, helmBinary string, noTiller bool, helmTemplate bool) helm.Helmer
+
+	// UseVault tells the factory to use Vault to store secrets rather than the filesystem
+	UseVault(use bool)
 }

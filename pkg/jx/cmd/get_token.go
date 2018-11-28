@@ -54,7 +54,7 @@ func (o *GetTokenOptions) Run() error {
 	return o.Cmd.Help()
 }
 
-func (o *GetTokenOptions) displayUsersWithTokens(authConfigSvc auth.AuthConfigService) error {
+func (o *GetTokenOptions) displayUsersWithTokens(authConfigSvc auth.ConfigService) error {
 	config := authConfigSvc.Config()
 
 	filterKind := o.Kind

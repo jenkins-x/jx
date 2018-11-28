@@ -6,6 +6,10 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
+
+	"github.com/jenkins-x/jx/pkg/kube"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -322,4 +326,41 @@ func GetLatestVersion(chart string, repo string, helmer Helmer) (latest string, 
 	_, latest, err = LoadChartNameAndVersion(chartFile)
 	return latest, err
 
+}
+
+type InstallChartOptions struct {
+	Dir         string
+	ReleaseName string
+	Chart       string
+	Version     string
+	Ns          string
+	HelmUpdate  bool
+	SetValues   []string
+	ValueFiles  []string
+	Repository  string
+}
+
+// InstallFromChartOptions uses the helmer and kubeClient interfaces to install the chart from the options,
+// respeciting the installTimeout
+func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeClient kubernetes.Interface,
+	installTimeout string) error {
+	if options.HelmUpdate {
+		log.Infoln("Updating Helm repository...")
+		err := helmer.UpdateRepo()
+		if err != nil {
+			return errors.Wrap(err, "failed to update repository")
+		}
+		log.Infoln("Helm repository update done.")
+	}
+	if options.Ns != "" {
+		annotations := map[string]string{"jenkins-x.io/created-by": "Jenkins X"}
+		kube.EnsureNamespaceCreated(kubeClient, options.Ns, nil, annotations)
+	}
+	timeout, err := strconv.Atoi(installTimeout)
+	if err != nil {
+		return errors.Wrap(err, "failed to convert the timeout to an int")
+	}
+	helmer.SetCWD(options.Dir)
+	return helmer.UpgradeChart(options.Chart, options.ReleaseName, options.Ns, &options.Version, true,
+		&timeout, true, false, options.SetValues, options.ValueFiles, options.Repository)
 }

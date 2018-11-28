@@ -131,3 +131,33 @@ func TestToStringMapStringFromStructWithTags(t *testing.T) {
 	assert.Equal(t, "30", m["Age"])
 	assert.Equal(t, "true", m["awesomeness_is_maxed"])
 }
+
+func TestToGenericMapAndBack(t *testing.T) {
+	t.Parallel()
+
+	s := TestStruct{
+		C: "Sea",
+		InnerStruct: struct {
+			A string
+			B string
+		}{
+			A: "Aye",
+			B: "Bee",
+		},
+	}
+
+	marshalled, err := util.ToMapStringInterfaceFromStruct(s)
+	unmarshalled := TestStruct{}
+	util.ToStructFromMapStringInterface(marshalled, &unmarshalled)
+
+	assert.NoError(t, err)
+	assert.Equal(t, s, unmarshalled)
+}
+
+type TestStruct struct {
+	C           string
+	InnerStruct struct {
+		A string
+		B string
+	}
+}

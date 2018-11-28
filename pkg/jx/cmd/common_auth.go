@@ -12,7 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 )
 
-func (o *CommonOptions) CreateGitAuthConfigServiceDryRun(dryRun bool) (auth.AuthConfigService, error) {
+func (o *CommonOptions) CreateGitAuthConfigServiceDryRun(dryRun bool) (auth.ConfigService, error) {
 	if dryRun {
 		fileName := GitAuthConfigFile
 		return o.CreateGitAuthConfigServiceFromSecrets(fileName, nil, false)
@@ -20,7 +20,7 @@ func (o *CommonOptions) CreateGitAuthConfigServiceDryRun(dryRun bool) (auth.Auth
 	return o.CreateGitAuthConfigService()
 }
 
-func (o *CommonOptions) CreateGitAuthConfigService() (auth.AuthConfigService, error) {
+func (o *CommonOptions) CreateGitAuthConfigService() (auth.ConfigService, error) {
 	var secrets *corev1.SecretList
 	var err error
 	if !o.SkipAuthSecretsMerge {
@@ -46,7 +46,7 @@ func (o *CommonOptions) CreateGitAuthConfigService() (auth.AuthConfigService, er
 }
 
 // CreateGitAuthConfigServiceFromSecrets Creates a git auth config service from secrets
-func (o *CommonOptions) CreateGitAuthConfigServiceFromSecrets(fileName string, secrets *corev1.SecretList, isCDPipeline bool) (auth.AuthConfigService, error) {
+func (o *CommonOptions) CreateGitAuthConfigServiceFromSecrets(fileName string, secrets *corev1.SecretList, isCDPipeline bool) (auth.ConfigService, error) {
 	authConfigSvc, err := o.Factory.CreateAuthConfigService(fileName)
 	if err != nil {
 		return authConfigSvc, err

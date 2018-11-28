@@ -3,6 +3,8 @@ package cmd
 import (
 	"flag"
 	"fmt"
+	"github.com/hashicorp/vault/api"
+	"github.com/jenkins-x/jx/pkg/vault"
 	"io"
 	"net/url"
 	"os"
@@ -58,6 +60,7 @@ type factory struct {
 	kubeConfig      kube.Kuber
 	impersonateUser string
 	bearerToken     string
+	useVault        bool
 }
 
 // NewFactory creates a factory with the default Kubernetes resources defined
@@ -98,7 +101,7 @@ func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string
 	if err != nil {
 		return nil, fmt.Errorf("%s. Try switching to the Development Tools environment via: jx env dev", err)
 	}
-	return jenkins.GetJenkinsClient(url, f.Batch, &svc, in, out, errOut)
+	return jenkins.GetJenkinsClient(url, f.Batch, svc, in, out, errOut)
 }
 
 func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (string, error) {
@@ -128,7 +131,7 @@ func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (str
 	return url, err
 }
 
-func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns string) (auth.AuthConfigService, error) {
+func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns string) (auth.ConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(JenkinsAuthConfigFile)
 
 	if err != nil {
@@ -176,7 +179,7 @@ func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns stri
 	return authConfigSvc, err
 }
 
-func (f *factory) CreateChartmuseumAuthConfigService() (auth.AuthConfigService, error) {
+func (f *factory) CreateChartmuseumAuthConfigService() (auth.ConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(ChartmuseumAuthConfigFile)
 	if err != nil {
 		return authConfigSvc, err
@@ -188,7 +191,7 @@ func (f *factory) CreateChartmuseumAuthConfigService() (auth.AuthConfigService, 
 	return authConfigSvc, err
 }
 
-func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error) {
+func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(IssuesAuthConfigFile)
 	if err != nil {
 		return authConfigSvc, err
@@ -203,7 +206,7 @@ func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList
 	return authConfigSvc, err
 }
 
-func (f *factory) CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error) {
+func (f *factory) CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(ChatAuthConfigFile)
 	if err != nil {
 		return authConfigSvc, err
@@ -218,7 +221,7 @@ func (f *factory) CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.
 	return authConfigSvc, err
 }
 
-func (f *factory) CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.AuthConfigService, error) {
+func (f *factory) CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(AddonAuthConfigFile)
 	if err != nil {
 		return authConfigSvc, err
@@ -279,14 +282,36 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 	return nil
 }
 
-func (f *factory) CreateAuthConfigService(fileName string) (auth.AuthConfigService, error) {
-	svc := auth.AuthConfigService{}
-	dir, err := util.ConfigDir()
-	if err != nil {
-		return svc, err
+// CreateAuthConfigService creates a new service saving auth config under the provided name. Depending on the factory,
+// It will either save the config to the local file-system, or a Vault
+func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService, error) {
+	if f.useVault {
+		vault, err := f.GetSystemVault()
+		v := auth.NewVaultAuthConfigService(configName, vault)
+		return v, err
+	} else {
+		return auth.NewFileAuthConfigService(configName)
 	}
-	svc.FileName = filepath.Join(dir, fileName)
-	return svc, nil
+}
+
+// GetSystemVault gets the system vault for storing secrets.
+func (f *factory) GetSystemVault() (*api.Client, error) {
+	vopClient, err := f.CreateVaultOperatorClient()
+	kubeClient, ns, err := f.CreateClient()
+	if err != nil {
+		return nil, err
+	}
+
+	if !vault.FindVault(vopClient, vault.SystemVaultName, ns) {
+		return nil, errors.New("no system vault found")
+	}
+
+	clientFactory, err := vault.NewSystemVaultClientFactory(kubeClient, vopClient, ns)
+	if err != nil {
+		return nil, err
+	}
+
+	return clientFactory.NewVaultClient(vault.SystemVaultName, ns)
 }
 
 func (f *factory) CreateJXClient() (versioned.Interface, string, error) {
@@ -378,7 +403,7 @@ func (f *factory) CreateClient() (kubernetes.Interface, string, error) {
 	return client, ns, nil
 }
 
-func (f *factory) CreateGitProvider(gitURL string, message string, authConfigSvc auth.AuthConfigService, gitKind string, batchMode bool, gitter gits.Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gits.GitProvider, error) {
+func (f *factory) CreateGitProvider(gitURL string, message string, authConfigSvc auth.ConfigService, gitKind string, batchMode bool, gitter gits.Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gits.GitProvider, error) {
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return nil, err
@@ -486,7 +511,7 @@ func (f *factory) CreateComplianceClient() (*client.SonobuoyClient, error) {
 	return client.NewSonobuoyClient(config, skc)
 }
 
-// CreateVaultOpeatorClient creates a new vault operator client
+// CreateVaultOperatorClient creates a new vault operator client
 func (f *factory) CreateVaultOperatorClient() (vaultoperatorclient.Interface, error) {
 	config, err := f.CreateKubeConfig()
 	if err != nil {
@@ -525,6 +550,10 @@ func (f *factory) GetHelm(verbose bool,
 		startLocalTillerIfNotRunning()
 	}
 	return h
+}
+
+func (f *factory) UseVault(use bool) {
+	f.useVault = use
 }
 
 // tillerAddress returns the address that tiller is listening on

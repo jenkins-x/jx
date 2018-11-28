@@ -40,7 +40,7 @@ type EditAddonOptions struct {
 	Name    string
 	Enabled string
 
-	IssuesAuthConfigSvc auth.AuthConfigService
+	IssuesAuthConfigSvc auth.ConfigService
 }
 
 // NewCmdEditAddon creates a command object for the "create" command

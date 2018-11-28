@@ -47,7 +47,7 @@ func (o *CommonOptions) getAddonAuthByKind(kind, serverURL string) (*auth.AuthSe
 	return server, userAuth, err
 }
 
-func (o *CommonOptions) CreateAddonAuthConfigService() (auth.AuthConfigService, error) {
+func (o *CommonOptions) CreateAddonAuthConfigService() (auth.ConfigService, error) {
 	secrets, err := o.LoadPipelineSecrets(kube.ValueKindAddon, "")
 	if err != nil {
 		log.Warnf("The current user cannot query pipeline addon secrets: %s", err)

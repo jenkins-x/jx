@@ -11,7 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 )
 
-func (o *CommonOptions) CreateIssueTrackerAuthConfigService() (auth.AuthConfigService, error) {
+func (o *CommonOptions) CreateIssueTrackerAuthConfigService() (auth.ConfigService, error) {
 	secrets, err := o.LoadPipelineSecrets(kube.ValueKindIssue, "")
 	if err != nil {
 		log.Infof("The current user cannot query pipeline issue tracker secrets: %s", err)
@@ -19,7 +19,7 @@ func (o *CommonOptions) CreateIssueTrackerAuthConfigService() (auth.AuthConfigSe
 	return o.Factory.CreateIssueTrackerAuthConfigService(secrets)
 }
 
-func (o *CommonOptions) errorCreateIssueTrackerAuthConfigService(parentError error) (auth.AuthConfigService, error) {
+func (o *CommonOptions) errorCreateIssueTrackerAuthConfigService(parentError error) (auth.ConfigService, error) {
 	answer, err := o.Factory.CreateIssueTrackerAuthConfigService(nil)
 	if err == nil {
 		return answer, parentError
