@@ -235,6 +235,10 @@ const (
 
 	JenkinsAdminApiToken = "jenkins-admin-api-token"
 
+	JenkinsAdminUserField = "jenkins-admin-user"
+
+	JenkinsBearTokenField = "jenkins-bearer-token"
+
 	AUTH = "auth"
 )
 

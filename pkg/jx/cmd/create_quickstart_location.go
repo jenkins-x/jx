@@ -96,10 +96,6 @@ func (o *CreateQuickstartLocationOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	err = o.registerEnvironmentCRD()
-	if err != nil {
-		return err
-	}
 
 	if o.GitUrl == "" {
 		return util.MissingOption(optionGitUrl)

@@ -817,7 +817,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			return domain, err
 		}
 		log.Infof("\nOn AWS we recommend using a custom DNS name to access services in your Kubernetes cluster to ensure you can use all of your Availability Zones\n")
-		log.Infof("If you do not have a custom DNS name you can use yet you can register a new one here: %s\n\n", util.ColorInfo("https://console.aws.amazon.com/route53/home?#DomainRegistration:"))
+		log.Infof("If you do not have a custom DNS name you can use yet, then you can register a new one here: %s\n\n", util.ColorInfo("https://console.aws.amazon.com/route53/home?#DomainRegistration:"))
 
 		for {
 			if util.Confirm("Would you like to register a wildcard DNS ALIAS to point at this ELB address? ", true,
@@ -902,7 +902,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 		}
 		log.Successf("You can now configure a wildcard DNS pointing to the new loadbalancer address %s", address)
 		log.Info("\nIf you do not have a custom domain setup yet, Ingress rules will be set for magic dns nip.io.")
-		log.Infof("\nOnce you have a customer domain ready, you can update with the command %s", util.ColorInfo("jx upgrade ingress --cluster"))
+		log.Infof("\nOnce you have a custom domain ready, you can update with the command %s", util.ColorInfo("jx upgrade ingress --cluster"))
 
 		log.Infof("\nIf you don't have a wildcard DNS setup then setup a new CNAME and point it at: %s then use the DNS domain in the next input...\n", defaultDomain)
 
@@ -912,7 +912,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 				Default: defaultDomain,
 				Help:    "Enter your custom domain that is used to generate Ingress rules, defaults to the magic dns nip.io",
 			}
-			survey.AskOne(prompt, &domain, survey.Required, surveyOpts)
+			survey.AskOne(prompt, &domain, survey.ComposeValidators(survey.Required, util.NoWhiteSpaceValidator()), surveyOpts)
 		}
 		if domain == "" {
 			domain = defaultDomain
@@ -925,3 +925,4 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 
 	return domain, nil
 }
+

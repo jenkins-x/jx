@@ -80,10 +80,6 @@ func (o *GetQuickstartLocationOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	err = o.registerEnvironmentCRD()
-	if err != nil {
-		return err
-	}
 
 	locations, err := kube.GetQuickstartLocations(jxClient, ns)
 	if err != nil {
