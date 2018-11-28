@@ -9,7 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/util"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
 	"github.com/jenkins-x/jx/pkg/log"
 
@@ -17,7 +17,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // AddAppOptions the options for the create spring command
@@ -25,7 +24,7 @@ type AddAppOptions struct {
 	AddOptions
 
 	GitOps bool
-	DevEnv *v1.Environment
+	DevEnv *jenkinsv1.Environment
 
 	Repo     string
 	Username string
@@ -107,6 +106,16 @@ func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string, de
 
 // Run implements this command
 func (o *AddAppOptions) Run() error {
+	// Regiser the App CRD
+	apiClient, err := o.CreateApiExtensionsClient()
+	if err != nil {
+		return err
+	}
+	err = kube.RegisterAppCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the App CRD")
+	}
+
 	args := o.Args
 	if len(args) == 0 {
 		return o.Cmd.Help()
@@ -115,13 +124,24 @@ func (o *AddAppOptions) Run() error {
 		return o.Cmd.Help()
 	}
 	for _, arg := range args {
+		version := o.Version
+		if version == "" {
+			var err error
+			version, err = helm.GetLatestVersion(arg, o.Repo, o.Helm())
+			if err != nil {
+				return err
+			}
+			if o.Verbose {
+				log.Infof("No version specified so using latest version which is %s\n", util.ColorInfo(version))
+			}
+		}
 		if o.GitOps {
-			err := o.createPR(arg)
+			err := o.createPR(arg, version)
 			if err != nil {
 				return err
 			}
 		} else {
-			err := o.installApp(arg)
+			err := o.installApp(arg, version)
 			if err != nil {
 				return err
 			}
@@ -131,18 +151,8 @@ func (o *AddAppOptions) Run() error {
 	return nil
 }
 
-func (o *AddAppOptions) createPR(app string) error {
-	version := o.Version
-	if version == "" {
-		var err error
-		version, err = helm.GetLatestVersion(app, o.Repo, o.Helm())
-		if err != nil {
-			return err
-		}
-		if o.Verbose {
-			log.Infof("No version specified so using latest version which is %s\n", util.ColorInfo(version))
-		}
-	}
+func (o *AddAppOptions) createPR(app string, version string) error {
+
 	modifyRequirementsFn := func(requirements *helm.Requirements) error {
 		// See if the app already exists in requirements
 		found := false
@@ -194,44 +204,16 @@ func (o *AddAppOptions) createPR(app string) error {
 	return nil
 }
 
-func (o *AddAppOptions) installApp(app string) error {
+func (o *AddAppOptions) installApp(app string, version string) error {
 	err := o.ensureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that helm is present")
 	}
 	setValues := strings.Split(o.SetValues, ",")
 
-	err = o.installChart(app, app, o.Version, o.Namespace, o.HelmUpdate, setValues, o.ValueFiles, o.Repo)
+	err = o.installChart(app, app, version, o.Namespace, o.HelmUpdate, setValues, o.ValueFiles, o.Repo)
 	if err != nil {
 		return fmt.Errorf("failed to install app %s: %v", app, err)
 	}
-	return o.exposeApp(app)
-}
-
-// TODO Patch this up to use app CRD
-func (o *AddAppOptions) exposeApp(addon string) error {
-	service, ok := kube.AddonServices[addon]
-	if !ok {
-		return nil
-	}
-	svc, err := o.KubeClientCached.CoreV1().Services(o.Namespace).Get(service, meta_v1.GetOptions{})
-	if err != nil {
-		return errors.Wrapf(err, "getting the addon service: %s", service)
-	}
-
-	if svc.Annotations == nil {
-		svc.Annotations = map[string]string{}
-	}
-	if svc.Annotations[kube.AnnotationExpose] == "" {
-		svc.Annotations[kube.AnnotationExpose] = "true"
-		svc, err = o.KubeClientCached.CoreV1().Services(o.Namespace).Update(svc)
-		if err != nil {
-			return errors.Wrap(err, "updating the service annotations")
-		}
-	}
-	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
-	if err != nil {
-		return errors.Wrap(err, "retrieving the dev namespace")
-	}
-	return o.expose(devNamespace, o.Namespace, "")
+	return o.OnAppInstall(app, version)
 }
