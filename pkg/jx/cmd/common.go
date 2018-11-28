@@ -2,14 +2,18 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube/services"
-	"github.com/pkg/errors"
 	"io"
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/expose"
+
+	"github.com/jenkins-x/jx/pkg/certmanager"
+
+	"github.com/jenkins-x/jx/pkg/kube/services"
+	"github.com/pkg/errors"
 
 	"github.com/sirupsen/logrus"
 
@@ -21,11 +25,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
 	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
-	core_v1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/Pallinder/go-randomdata"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -41,19 +42,16 @@ import (
 )
 
 const (
-	optionServerName        = "name"
-	optionServerURL         = "url"
-	optionBatchMode         = "batch-mode"
-	optionVerbose           = "verbose"
-	optionLogLevel          = "log-level"
-	optionHeadless          = "headless"
-	optionNoBrew            = "no-brew"
-	optionInstallDeps       = "install-dependencies"
-	optionSkipAuthSecMerge  = "skip-auth-secrets-merge"
-	optionPullSecrets       = "pull-secrets"
-	exposecontrollerVersion = "2.3.82"
-	exposecontroller        = "exposecontroller"
-	exposecontrollerChart   = "jenkins-x/exposecontroller"
+	optionServerName       = "name"
+	optionServerURL        = "url"
+	optionBatchMode        = "batch-mode"
+	optionVerbose          = "verbose"
+	optionLogLevel         = "log-level"
+	optionHeadless         = "headless"
+	optionNoBrew           = "no-brew"
+	optionInstallDeps      = "install-dependencies"
+	optionSkipAuthSecMerge = "skip-auth-secrets-merge"
+	optionPullSecrets      = "pull-secrets"
 )
 
 // ModifyDevEnvironmentFn a callback to create/update the development Environment
@@ -708,131 +706,20 @@ func (o *CommonOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
 	return url, nil
 }
 
-// todo switch to using exposecontroller as a jx plugin
-// get existing config from the devNamespace and run exposecontroller in the target environment
+// todo switch to using expose as a jx plugin
+// get existing config from the devNamespace and run expose in the target environment
 func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) error {
-
-	_, err := o.KubeClientCached.CoreV1().Secrets(targetNamespace).Get(kube.SecretBasicAuth, v1.GetOptions{})
-	if err != nil {
-		data := make(map[string][]byte)
-
-		if password != "" {
-			hash := config.HashSha(password)
-			data[kube.AUTH] = []byte(fmt.Sprintf("admin:{SHA}%s", hash))
-		} else {
-			basicAuth, err := o.KubeClientCached.CoreV1().Secrets(devNamespace).Get(kube.SecretBasicAuth, v1.GetOptions{})
-			if err != nil {
-				return fmt.Errorf("cannot find secret %s in namespace %s: %v", kube.SecretBasicAuth, devNamespace, err)
-			}
-			data = basicAuth.Data
-		}
-
-		sec := &core_v1.Secret{
-			Data: data,
-			ObjectMeta: v1.ObjectMeta{
-				Name: kube.SecretBasicAuth,
-			},
-		}
-		_, err := o.KubeClientCached.CoreV1().Secrets(targetNamespace).Create(sec)
-		if err != nil {
-			return fmt.Errorf("cannot create secret %s in target namespace %s: %v", kube.SecretBasicAuth, targetNamespace, err)
-		}
-	}
-
-	ic, err := kube.GetIngressConfig(o.KubeClientCached, devNamespace)
-	if err != nil {
-		return fmt.Errorf("cannot get existing team exposecontroller config from namespace %s: %v", devNamespace, err)
-	}
-
-	err = services.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, targetNamespace, ic.Issuer)
-	if err != nil {
-		return err
-	}
-
-	// if targetnamespace is different than dev check if there's any certmanager CRDs, if not check dev and copy any found across
-	err = o.copyCertmanagerResources(targetNamespace, ic)
-	if err != nil {
-		return fmt.Errorf("failed to copy certmanager resources from %s to %s namespace: %v", devNamespace, targetNamespace, err)
-	}
-
-	return o.runExposecontroller(devNamespace, targetNamespace, ic)
-}
-
-func (o *CommonOptions) exposeService(service, devNamespace, targetNamespace string) error {
-	ic, err := kube.GetIngressConfig(o.KubeClientCached, devNamespace)
-	if err != nil {
-		return fmt.Errorf("cannot get existing team exposecontroller config from namespace %s: %v", devNamespace, err)
-	}
-	err = services.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, targetNamespace, ic.Issuer, service)
-	if err != nil {
-		return err
-	}
-
-	err = o.copyCertmanagerResources(targetNamespace, ic)
-	if err != nil {
-		return fmt.Errorf("failed to copy certmanager resources from %s to %s namespace: %v", devNamespace, targetNamespace, err)
-	}
-
-	return o.runExposecontroller(devNamespace, targetNamespace, ic, service)
+	return expose.Expose(devNamespace, targetNamespace, password, o.KubeClientCached, o.Helm(), defaultInstallTimeout)
 }
 
 func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig, services ...string) error {
-
-	o.CleanExposecontrollerReources(targetNamespace)
-
-	exValues := []string{
-		"config.exposer=" + ic.Exposer,
-		"config.domain=" + ic.Domain,
-		"config.tlsacme=" + strconv.FormatBool(ic.TLS),
-	}
-
-	if !ic.TLS && ic.Issuer != "" {
-		exValues = append(exValues, "config.http=true")
-	}
-
-	if len(services) > 0 {
-		serviceCfg := "config.extravalues.services={"
-		for i, service := range services {
-			if i > 0 {
-				serviceCfg += ","
-			}
-			serviceCfg += service
-		}
-		serviceCfg += "}"
-		exValues = append(exValues, serviceCfg)
-	}
-
-	helmRelease := "expose-" + strings.ToLower(randomdata.SillyName())
-	err := o.installChartOptions(InstallChartOptions{
-		ReleaseName: helmRelease,
-		Chart:       exposecontrollerChart,
-		Version:     exposecontrollerVersion,
-		Ns:          targetNamespace,
-		HelmUpdate:  true,
-		SetValues:   exValues,
-	})
-	if err != nil {
-		return fmt.Errorf("exposecontroller deployment failed: %v", err)
-	}
-	err = kube.WaitForJobToSucceeded(o.KubeClientCached, targetNamespace, exposecontroller, 5*time.Minute)
-	if err != nil {
-		return fmt.Errorf("failed waiting for exposecontroller job to succeed: %v", err)
-	}
-	return o.helm.DeleteRelease(targetNamespace, helmRelease, true)
-
+	return expose.RunExposecontroller(devNamespace, targetNamespace, ic, o.KubeClientCached, o.Helm(),
+		defaultInstallTimeout)
 }
 
 // CleanExposecontrollerReources cleans expose controller resources
 func (o *CommonOptions) CleanExposecontrollerReources(ns string) {
-
-	// let's not error if nothing to cleanup
-	o.KubeClientCached.RbacV1().Roles(ns).Delete(exposecontroller, &metav1.DeleteOptions{})
-	o.KubeClientCached.RbacV1().RoleBindings(ns).Delete(exposecontroller, &metav1.DeleteOptions{})
-	o.KubeClientCached.RbacV1().ClusterRoleBindings().Delete(exposecontroller, &metav1.DeleteOptions{})
-	o.KubeClientCached.CoreV1().ConfigMaps(ns).Delete(exposecontroller, &metav1.DeleteOptions{})
-	o.KubeClientCached.CoreV1().ServiceAccounts(ns).Delete(exposecontroller, &metav1.DeleteOptions{})
-	o.KubeClientCached.BatchV1().Jobs(ns).Delete(exposecontroller, &metav1.DeleteOptions{})
-
+	expose.CleanExposecontrollerReources(o.KubeClientCached, ns)
 }
 
 func (o *CommonOptions) getDefaultAdminPassword(devNamespace string) (string, error) {
@@ -868,14 +755,7 @@ func (o *CommonOptions) ensureAddonServiceAvailable(serviceName string) (string,
 }
 
 func (o *CommonOptions) copyCertmanagerResources(targetNamespace string, ic kube.IngressConfig) error {
-	if ic.TLS {
-		err := kube.CleanCertmanagerResources(o.KubeClientCached, targetNamespace, ic)
-		if err != nil {
-			return fmt.Errorf("failed to create certmanager resources in target namespace %s: %v", targetNamespace, err)
-		}
-	}
-
-	return nil
+	return certmanager.CopyCertmanagerResources(targetNamespace, ic, o.KubeClientCached)
 }
 
 func (o *CommonOptions) getJobName() string {

@@ -97,53 +97,19 @@ func (o *CommonOptions) addHelmBinaryRepoIfMissing(helmUrl string, repoName stri
 // installChart installs the given chart
 func (o *CommonOptions) installChart(releaseName string, chart string, version string, ns string, helmUpdate bool,
 	setValues []string, valueFiles []string, repo string) error {
-	return o.installChartOptions(InstallChartOptions{ReleaseName: releaseName, Chart: chart, Version: version,
+	return o.installChartOptions(helm.InstallChartOptions{ReleaseName: releaseName, Chart: chart, Version: version,
 		Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles, Repository: repo})
 }
 
 // installChartAt installs the given chart
 func (o *CommonOptions) installChartAt(dir string, releaseName string, chart string, version string, ns string,
 	helmUpdate bool, setValues []string, valueFiles []string, repo string) error {
-	return o.installChartOptions(InstallChartOptions{Dir: dir, ReleaseName: releaseName, Chart: chart,
+	return o.installChartOptions(helm.InstallChartOptions{Dir: dir, ReleaseName: releaseName, Chart: chart,
 		Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles, Repository: repo})
 }
 
-type InstallChartOptions struct {
-	Dir         string
-	ReleaseName string
-	Chart       string
-	Version     string
-	Ns          string
-	HelmUpdate  bool
-	SetValues   []string
-	ValueFiles  []string
-	Repository  string
-}
-
-func (o *CommonOptions) installChartOptions(options InstallChartOptions) error {
-	if options.HelmUpdate {
-		log.Infoln("Updating Helm repository...")
-		err := o.Helm().UpdateRepo()
-		if err != nil {
-			return errors.Wrap(err, "failed to update repository")
-		}
-		log.Infoln("Helm repository update done.")
-	}
-	if options.Ns != "" {
-		kubeClient, _, err := o.KubeClient()
-		if err != nil {
-			return errors.Wrap(err, "failed to create the kube client")
-		}
-		annotations := map[string]string{"jenkins-x.io/created-by": "Jenkins X"}
-		kube.EnsureNamespaceCreated(kubeClient, options.Ns, nil, annotations)
-	}
-	timeout, err := strconv.Atoi(defaultInstallTimeout)
-	if err != nil {
-		return errors.Wrap(err, "failed to convert the timeout to an int")
-	}
-	o.Helm().SetCWD(options.Dir)
-	return o.Helm().UpgradeChart(options.Chart, options.ReleaseName, options.Ns, &options.Version, true,
-		&timeout, true, false, options.SetValues, options.ValueFiles, options.Repository)
+func (o *CommonOptions) installChartOptions(options helm.InstallChartOptions) error {
+	return helm.InstallFromChartOptions(options, o.Helm(), o.KubeClientCached, defaultInstallTimeout)
 }
 
 // deleteChart deletes the given chart

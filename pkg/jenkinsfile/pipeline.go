@@ -3,6 +3,7 @@ package jenkinsfile
 import (
 	"bytes"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -444,6 +445,19 @@ func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfil
 	}
 	err = config.ExtendPipeline(basePipeline, jenkinsfileRunner)
 	return &config, err
+}
+
+// CreateResolver creates a new module resolver
+func CreateResolver(packsDir string, gitter gits.Gitter) (ImportFileResolver, error) {
+	modules, err := LoadModules(packsDir)
+	if err != nil {
+		return nil, err
+	}
+	moduleResolver, err := modules.Resolve(gitter)
+	if err != nil {
+		return nil, err
+	}
+	return moduleResolver.AsImportResolver(), nil
 }
 
 // IsEmpty returns true if this configuration is empty
