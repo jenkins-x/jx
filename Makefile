@@ -50,6 +50,10 @@ BUILDFLAGS := -ldflags \
 		-X $(ROOT_PACKAGE)/pkg/version.BuildDate='$(BUILD_DATE)'\
 		-X $(ROOT_PACKAGE)/pkg/version.GoVersion='$(GO_VERSION)'"
 
+ifdef DEBUG
+BUILDFLAGS := -gcflags "all=-N -l" $(BUILDFLAGS)
+endif
+
 print-version: version
 	@echo $(VERSION)
 
