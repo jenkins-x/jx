@@ -19,6 +19,7 @@ spec:
     resources: {}
 status:
   completionTime: null
+  creationTime: null
   startTime: null
   stepStates: null
   stepsCompleted: null

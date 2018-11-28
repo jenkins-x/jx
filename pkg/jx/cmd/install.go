@@ -255,6 +255,9 @@ func NewCmdInstall(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 	options.addInstallFlags(cmd, false)
 
 	cmd.Flags().StringVarP(&options.Flags.Provider, "provider", "", "", "Cloud service providing the Kubernetes cluster.  Supported providers: "+KubernetesProviderOptions())
+
+	cmd.AddCommand(NewCmdInstallDependencies(f, in, out, errOut))
+
 	return cmd
 }
 

@@ -11,6 +11,7 @@ import (
 
 type JenkinsV1Interface interface {
 	RESTClient() rest.Interface
+	AppsGetter
 	BuildPacksGetter
 	CommitStatusesGetter
 	EnvironmentsGetter
@@ -27,6 +28,10 @@ type JenkinsV1Interface interface {
 // JenkinsV1Client is used to interact with features provided by the jenkins.io group.
 type JenkinsV1Client struct {
 	restClient rest.Interface
+}
+
+func (c *JenkinsV1Client) Apps(namespace string) AppInterface {
+	return newApps(c, namespace)
 }
 
 func (c *JenkinsV1Client) BuildPacks(namespace string) BuildPackInterface {
