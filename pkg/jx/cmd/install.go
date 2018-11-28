@@ -681,7 +681,9 @@ func (options *InstallOptions) Run() error {
 		options.Flags.Domain = initOpts.Flags.Domain
 	}
 
-	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
+	// TODO - we want to enable storing secrets in Vault for gitops. Reenable this once the feature is finished
+	//if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
+	if options.Flags.Vault {
 		// Install Vault Operator into the new env
 		err = InstallVaultOperator(&options.CommonOptions, "")
 		if err != nil {
