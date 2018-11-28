@@ -98,9 +98,16 @@ func NewCmdLogin(f Factory, in terminal.FileReader, out terminal.FileWriter, err
 }
 
 func (o *LoginOptions) Run() error {
+
+	// ensure base set of binaries are installed which are required by jx
+	err := o.installRequirements("")
+	if err != nil {
+		return errors.Wrap(err, "installing required binaries")
+	}
+
 	userLoginInfo, err := o.Login()
 	if err != nil {
-		return errors.Wrap(err, "loging into the CloudBees application")
+		return errors.Wrap(err, "logging into the CloudBees application")
 	}
 
 	err = o.Kube().UpdateConfig(defaultNamespace, userLoginInfo.Server, userLoginInfo.Ca, userLoginInfo.Login, userLoginInfo.Token)
