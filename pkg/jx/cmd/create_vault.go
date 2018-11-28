@@ -260,6 +260,6 @@ func (o *CreateVaultOptions) exposeVault(vaultService string) error {
 	options := &o.UpgradeIngressOptions
 	options.Namespaces = []string{o.Namespace}
 	options.Services = []string{vaultService}
-	options.SkipJxResourcesUpdate = true
+	options.SkipResourcesUpdate = true
 	return options.Run()
 }

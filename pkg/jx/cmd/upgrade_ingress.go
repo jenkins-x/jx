@@ -41,13 +41,13 @@ const (
 type UpgradeIngressOptions struct {
 	CreateOptions
 
-	SkipCertManager       bool
-	Cluster               bool
-	Namespaces            []string
-	Version               string
-	TargetNamespaces      []string
-	Services              []string
-	SkipJxResourcesUpdate bool
+	SkipCertManager     bool
+	Cluster             bool
+	Namespaces          []string
+	Version             string
+	TargetNamespaces    []string
+	Services            []string
+	SkipResourcesUpdate bool
 
 	IngressConfig kube.IngressConfig
 }
@@ -91,7 +91,7 @@ func (o *UpgradeIngressOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVarP(&o.Namespaces, "namespaces", "", []string{}, "Namespaces to upgrade")
 	cmd.Flags().BoolVarP(&o.SkipCertManager, "skip-certmanager", "", false, "Skips certmanager installation")
 	cmd.Flags().StringArrayVarP(&o.Services, "services", "", []string{}, "Services to upgrdde")
-	cmd.Flags().BoolVarP(&o.SkipJxResourcesUpdate, "skip-jx-resources-update", "", false, "Skips the update of jx related resources such as webhook or Jenkins URL")
+	cmd.Flags().BoolVarP(&o.SkipResourcesUpdate, "skip-resources-update", "", false, "Skips the update of jx related resources such as webhook or Jenkins URL")
 }
 
 // Run implements the command
@@ -106,7 +106,7 @@ func (o *UpgradeIngressOptions) Run() error {
 		return errors.Wrap(err, "getting the dev namesapce")
 	}
 	previousWebHookEndpoint := ""
-	if !o.SkipJxResourcesUpdate {
+	if !o.SkipResourcesUpdate {
 		previousWebHookEndpoint, err = o.GetWebHookEndpoint()
 		if err != nil {
 			return errors.Wrap(err, "getting the webhook endpoint")
@@ -171,8 +171,8 @@ func (o *UpgradeIngressOptions) Run() error {
 		return errors.Wrap(err, "recreating the ingress rules")
 	}
 
-	if !o.SkipJxResourcesUpdate {
-		o.updateJxResources(previousWebHookEndpoint)
+	if !o.SkipResourcesUpdate {
+		o.updateResources(previousWebHookEndpoint)
 	}
 
 	log.Success("Ingress rules recreated\n")
@@ -189,7 +189,7 @@ func (o *UpgradeIngressOptions) Run() error {
 	return nil
 }
 
-func (o *UpgradeIngressOptions) updateJxResources(previousWebHookEndpoint string) error {
+func (o *UpgradeIngressOptions) updateResources(previousWebHookEndpoint string) error {
 	_, _, err := o.JXClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to get jxclient")
