@@ -3,6 +3,8 @@ package tests
 import (
 	"bytes"
 	"github.com/acarl005/stripansi"
+	"github.com/jenkins-x/jx/pkg/auth/mocks"
+	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
@@ -51,11 +53,8 @@ func TestShouldDisableMaven() bool {
 	return err != nil
 }
 
-// CreateAuthConfigService creates and returns a fixture AuthConfigService
-func CreateAuthConfigService() auth.AuthConfigService {
-	authConfigSvc := auth.AuthConfigService{
-		FileName: "test-auth-config-service",
-	}
+// CreateAuthConfigService creates and returns a fixture ConfigService
+func CreateAuthConfigService() auth.ConfigService {
 	userAuth := auth.UserAuth{
 		Username:    "jx-testing-user",
 		ApiToken:    "someapitoken",
@@ -74,6 +73,9 @@ func CreateAuthConfigService() auth.AuthConfigService {
 		DefaultUsername: userAuth.Username,
 		CurrentServer:   authServer.URL,
 	}
+	saver := auth_test.NewMockConfigSaver()
+	When(saver.LoadConfig()).ThenReturn(&authConfig, nil)
+	authConfigSvc := auth.NewAuthConfigService(saver)
 	authConfigSvc.SetConfig(&authConfig)
 	return authConfigSvc
 }

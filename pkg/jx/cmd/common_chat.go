@@ -27,7 +27,7 @@ func (o *CommonOptions) createChatProvider(chatConfig *config.ChatConfig) (chats
 	return chats.CreateChatProvider(server.Kind, server, userAuth, o.BatchMode)
 }
 
-func (o *CommonOptions) CreateChatAuthConfigService() (auth.AuthConfigService, error) {
+func (o *CommonOptions) CreateChatAuthConfigService() (auth.ConfigService, error) {
 	secrets, err := o.LoadPipelineSecrets(kube.ValueKindChat, "")
 	if err != nil {
 		log.Warnf("The current user cannot query pipeline chat secrets: %s", err)

@@ -29,7 +29,7 @@ var useForkForEnvGitRepo = false
 
 // CreateEnvironmentSurvey creates a Survey on the given environment using the default options
 // from the CLI
-func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment,
+func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, devEnv *v1.Environment, data *v1.Environment,
 	config *v1.Environment, forkEnvGitURL string, ns string, jxClient versioned.Interface, kubeClient kubernetes.Interface, envDir string,
 	gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gits.GitProvider, error) {
 	surveyOpts := survey.WithStdio(in, out, errOut)
@@ -238,7 +238,7 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.AuthConfigServic
 }
 
 // CreateEnvGitRepository creates the git repository for the given Environment
-func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.AuthConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, envDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*gits.GitRepository, gits.GitProvider, error) {
+func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.ConfigService, devEnv *v1.Environment, data *v1.Environment, config *v1.Environment, forkEnvGitURL string, envDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*gits.GitRepository, gits.GitProvider, error) {
 	var gitProvider gits.GitProvider
 	var repo *gits.GitRepository
 	surveyOpts := survey.WithStdio(in, out, errOut)
@@ -330,7 +330,7 @@ func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.AuthConfigService
 	return repo, gitProvider, nil
 }
 
-func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.AuthConfigService, env *v1.Environment, forkEnvGitURL string,
+func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService, env *v1.Environment, forkEnvGitURL string,
 	environmentsDir string, gitRepoOptions *gits.GitRepositoryOptions, helmValues config.HelmValuesConfig, prefix string, git gits.Gitter, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (*gits.GitRepository, gits.GitProvider, error) {
 	defaultRepoName := fmt.Sprintf("environment-%s-%s", prefix, env.Name)
 	details, err := gits.PickNewGitRepository(batchMode, authConfigSvc, defaultRepoName, gitRepoOptions, nil, nil, git, in, out, outErr)

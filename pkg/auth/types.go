@@ -1,5 +1,9 @@
 package auth
 
+import (
+	"github.com/hashicorp/vault/api"
+)
+
 const (
 	DefaultWritePermissions = 0760
 )
@@ -29,8 +33,19 @@ type AuthConfig struct {
 	PipeLineServer   string
 }
 
-// AuthConfigService is a service for handing the config of auth tokens
+// AuthConfigService implements the generic features of the ConfigService because we don't have superclasses
 type AuthConfigService struct {
+	config *AuthConfig
+	saver  ConfigSaver
+}
+
+// FileAuthConfigSaver is a ConfigSaver that saves its config to the local filesystem
+type FileAuthConfigSaver struct {
 	FileName string
-	config   *AuthConfig
+}
+
+// VaultAuthConfigSaver is a ConfigSaver that saves configs to Vault
+type VaultAuthConfigSaver struct {
+	vaultClient *api.Client
+	secretName  string
 }

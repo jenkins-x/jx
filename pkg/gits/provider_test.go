@@ -54,12 +54,10 @@ func Test_getOrganizations(t *testing.T) {
 	}
 }
 
-func createAuthConfigSvc(authConfig *auth.AuthConfig, fileName string) *auth.AuthConfigService {
-	authConfigSvc := &auth.AuthConfigService{
-		FileName: fileName,
-	}
+func createAuthConfigSvc(authConfig *auth.AuthConfig, fileName string) *auth.ConfigService {
+	authConfigSvc, _ := auth.NewFileAuthConfigService(fileName)
 	authConfigSvc.SetConfig(authConfig)
-	return authConfigSvc
+	return &authConfigSvc
 }
 
 func createAuthConfig(currentServer *auth.AuthServer, piplineServer, pipelineUser string, servers ...*auth.AuthServer) *auth.AuthConfig {
@@ -765,7 +763,7 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 			var currUser *auth.UserAuth
 			var pipelineUser *auth.UserAuth
 			var server *auth.AuthServer
-			var authSvc *auth.AuthConfigService
+			var authSvc *auth.ConfigService
 			configFile, err := ioutil.TempFile("", "test-config")
 			defer os.Remove(configFile.Name())
 			if tc.numUsers > 0 {
@@ -792,9 +790,9 @@ func TestCreateGitProviderFromURL(t *testing.T) {
 					ApiToken: tc.apiToken,
 				}
 				server = createAuthServer(tc.hostURL, tc.Name, tc.providerKind, currUser, users...)
-				authSvc = &auth.AuthConfigService{
-					FileName: configFile.Name(),
-				}
+				s, err := auth.NewFileAuthConfigService(configFile.Name())
+				authSvc = &s
+				assert.NoError(t, err)
 			}
 
 			var result gits.GitProvider

@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/vault"
 	"io"
 	"io/ioutil"
 	"os"
@@ -85,6 +86,7 @@ type InstallFlags struct {
 	Dir                      string
 	NoGitOpsEnvApply         bool
 	NoGitOpsEnvRepo          bool
+	NoGitOpsVault            bool
 	Vault                    bool
 	BuildPackName            string
 }
@@ -340,6 +342,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.GitOpsMode, "gitops", "", false, "Sets up the local file system for GitOps so that the current installation can be configured or upgraded at any time via GitOps")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvApply, "no-gitops-env-apply", "", false, "When using GitOps to create the source code for the development environment and installation, don't run 'jx step env apply' to perform the install")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvRepo, "no-gitops-env-repo", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a git repository for the source code")
+	cmd.Flags().BoolVarP(&flags.NoGitOpsVault, "no-gitops-vault", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a vault")
 	cmd.Flags().BoolVarP(&flags.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during installation")
 	cmd.Flags().StringVarP(&flags.BuildPackName, "buildpack", "", "", "The name of the build pack to use for the Team")
 
@@ -678,18 +681,50 @@ func (options *InstallOptions) Run() error {
 		options.Flags.Domain = initOpts.Flags.Domain
 	}
 
-	if options.Flags.GitOpsMode || options.Flags.Vault {
-		// Install Vault into the new env
+	// TODO - we want to enable storing secrets in Vault for gitops. Reenable this once the feature is finished
+	//if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
+	if options.Flags.Vault {
+		// Install Vault Operator into the new env
 		err = InstallVaultOperator(&options.CommonOptions, "")
 		if err != nil {
 			return err
 		}
+
+		// Create a new System vault
+		cvo := &CreateVaultOptions{
+			CreateOptions: CreateOptions{
+				CommonOptions: options.CommonOptions,
+			},
+			UpgradeIngressOptions: UpgradeIngressOptions{
+				CreateOptions: CreateOptions{
+					CommonOptions: options.CommonOptions,
+				},
+			},
+			Namespace: ns,
+		}
+		vaultOperatorClient, err := cvo.Factory.CreateVaultOperatorClient()
+		if err != nil {
+			return err
+		}
+
+		if vault.FindVault(vaultOperatorClient, vault.SystemVaultName, ns) {
+			log.Infof("System vault named %s in namespace %s already exists\n",
+				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(ns))
+		} else {
+			log.Info("Creating new system vault\n")
+			err = cvo.DoCreateVault(vaultOperatorClient, vault.SystemVaultName)
+			if err != nil {
+				return err
+			}
+			log.Infof("System vault created named %s in namespace %s.\n",
+				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(ns))
+		}
+		options.Factory.UseVault(true)
 	}
 
 	// get secrets to use in helm install
 	secrets, err := options.getGitSecrets()
 	if err != nil {
-
 		return errors.Wrap(err, "failed to read the git secrets from configuration")
 	}
 
@@ -1932,7 +1967,7 @@ func (options *InstallOptions) installAddon(name string) error {
 	return opts.CreateAddon(name)
 }
 
-func (options *InstallOptions) addGitServersToJenkinsConfig(helmConfig *config.HelmValuesConfig, gitAuthCfg auth.AuthConfigService) error {
+func (options *InstallOptions) addGitServersToJenkinsConfig(helmConfig *config.HelmValuesConfig, gitAuthCfg auth.ConfigService) error {
 	cfg := gitAuthCfg.Config()
 	for _, server := range cfg.Servers {
 		if server.Kind == "github" {

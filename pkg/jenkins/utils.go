@@ -15,7 +15,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-func GetJenkinsClient(url string, batch bool, configService *jenkauth.AuthConfigService, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (gojenkins.JenkinsClient, error) {
+func GetJenkinsClient(url string, batch bool, configService jenkauth.ConfigService, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (gojenkins.JenkinsClient, error) {
 	if url == "" {
 		return nil, errors.New("no external Jenkins URL found in the development namespace!\nAre you sure you installed Jenkins X? Try: https://jenkins-x.io/getting-started/")
 	}
@@ -107,7 +107,7 @@ func JenkinsApiURL(url string) string {
 	return util.UrlJoin(url, "/api")
 }
 
-func EditUserAuth(url string, configService *jenkauth.AuthConfigService, config *jenkauth.AuthConfig, auth *jenkauth.UserAuth, tokenUrl string, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (jenkauth.UserAuth, error) {
+func EditUserAuth(url string, configService jenkauth.ConfigService, config *jenkauth.AuthConfig, auth *jenkauth.UserAuth, tokenUrl string, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (jenkauth.UserAuth, error) {
 
 	log.Infof("\nTo be able to connect to the Jenkins server we need a username and API Token\n\n")
 

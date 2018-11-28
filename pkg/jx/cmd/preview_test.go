@@ -1,6 +1,7 @@
 package cmd_test
 
 import (
+	"github.com/jenkins-x/jx/pkg/auth/mocks"
 	"reflect"
 	"strconv"
 
@@ -237,8 +238,9 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 		AnyInt(), // number
 	)).ThenReturn(mockGitPR, nil)
 
-	mockAuthConfigService := auth.AuthConfigService{}
-	When(factory.CreateAuthConfigService(cmd.GitAuthConfigFile)).ThenReturn(mockAuthConfigService, nil)
+	mockConfigSaver := auth_test.NewMockConfigSaver()
+	When(mockConfigSaver.LoadConfig()).ThenReturn(&auth.AuthConfig{}, nil)
+	When(factory.CreateAuthConfigService(cmd.GitAuthConfigFile)).ThenReturn(auth.NewAuthConfigService(mockConfigSaver), nil)
 	When(factory.IsInCDPipeline()).ThenReturn(true)
 
 	cs := cs_fake.NewSimpleClientset()

@@ -83,6 +83,7 @@ func TestInstallGitOps(t *testing.T) {
 	o.Flags.Dir = tempDir
 	o.Flags.GitOpsMode = true
 	o.Flags.NoGitOpsEnvApply = true
+	o.Flags.NoGitOpsVault = true
 	o.Flags.NoDefaultEnvironments = true
 	o.Flags.DisableSetKubeContext = true
 	o.InitOptions.Flags.SkipTiller = true
