@@ -95,7 +95,7 @@ func showResult(runner *mocks.MockCommander) string {
 				"uri": "azure.azurecr.io"
 			}
 		]`
-	} else if reflect.DeepEqual(args, []string{"acr", "create", "-g", "newrg", "-n", "newacr", "--sku", "Standard", "--admin-enabled", "--query", "id"}) {
+	} else if reflect.DeepEqual(args, []string{"acr", "create", "-g", "newrg", "-n", "newacr", "--sku", "Standard", "--admin-enabled", "--query", "id", "-o", "tsv"}) {
 		return `fakeidxxx`
 	} else {
 		return `{
