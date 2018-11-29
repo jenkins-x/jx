@@ -11,16 +11,15 @@ import (
 	. "github.com/petergtz/pegomock"
 )
 
-func aksWithRunner(t *testing.T, expectedError error, expectedOutput string) *mocks.MockCommander {
+func aksWithRunner(t *testing.T, expectedError error, expectedOutput string) *aks.AzureRunner {
 	RegisterMockTestingT(t)
 	runner := mocks.NewMockCommander()
 	When(runner.RunWithoutRetry()).ThenReturn(expectedOutput, expectedError)		
-	aks.WithCommander(runner)
-	return runner
+	return aks.NewAzureRunnerWithCommander(runner)
 }
 
 func TestGetClusterClient(t *testing.T) {
-	aksWithRunner(t, nil, `[{
+	azureCLI := aksWithRunner(t, nil, `[{
 			"group": "musekeen",
 			"id": "01234567-89ab-cdef-0123-456789abcdef",
 			"name": "scalefrost",
@@ -33,7 +32,7 @@ func TestGetClusterClient(t *testing.T) {
 			"uri": "aks.hcp.eatus.azmk8s.io"
 		}
 	]`)
-	rg, name, client, err := aks.GetClusterClient("https://aks.hcp.eatus.azmk8s.io:443")
+	rg, name, client, err := azureCLI.GetClusterClient("https://aks.hcp.eatus.azmk8s.io:443")
 	assert.Equal(t, client, "abcd")
 	assert.Equal(t, rg, "resource_group")
 	assert.Equal(t, name, "name")
@@ -41,7 +40,8 @@ func TestGetClusterClient(t *testing.T) {
 }
 
 func TestNotACR(t *testing.T) {
-	config, registry, id, err := aks.GetRegistry("rg", "name", "azure.docker.io")
+	azureCLI := aks.NewAzureRunner()
+	config, registry, id, err := azureCLI.GetRegistry("rg", "name", "azure.docker.io")
 	assert.Equal(t, "", config)
 	assert.Equal(t, "azure.docker.io", registry)
 	assert.Equal(t, "", id)
@@ -54,9 +54,9 @@ func TestNoRegistrySet(t *testing.T) {
 	When(runner.RunWithoutRetry()).Then(func(params []Param) ReturnValues { 
 		return []ReturnValue{showResult(runner), nil}
 	})		
-	aks.WithCommander(runner)
+	azureCLI := aks.NewAzureRunnerWithCommander(runner)
 	
-	config, registry, id, err := aks.GetRegistry("rg", "azure", "")
+	config, registry, id, err := azureCLI.GetRegistry("rg", "azure", "")
 	assert.Equal(t, `{"auths":{"azure.azurecr.io":{"auth":"YXp1cmU6cGFzc3dvcmQxMjM="}}}`, config)
 	assert.Equal(t, "azure.azurecr.io", registry)
 	assert.Equal(t, "fakeid", id)
@@ -69,9 +69,9 @@ func TestRegistry404(t *testing.T) {
 	When(runner.RunWithoutRetry()).Then(func(params []Param) ReturnValues { 
 		return []ReturnValue{showResult(runner), nil}
 	})		
-	aks.WithCommander(runner)
+	azureCLI := aks.NewAzureRunnerWithCommander(runner)
 	
-	config, registry, id, err := aks.GetRegistry("newrg", "newacr", "notfound.azurecr.io")
+	config, registry, id, err := azureCLI.GetRegistry("newrg", "newacr", "notfound.azurecr.io")
 	assert.Equal(t, `{"auths":{"newacr.azurecr.io":{"auth":"YXp1cmU6cGFzc3dvcmQxMjM="}}}`, config)
 	assert.Equal(t, "newacr.azurecr.io", registry)
 	assert.Equal(t, "fakeidxxx", id)

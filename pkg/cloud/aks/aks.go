@@ -8,7 +8,9 @@ import (
 	"strings"
 )
 
-var runner util.Commander
+type AzureRunner struct {
+	Runner util.Commander
+}
 
 type aks struct {
 	ID    string `json:"id"`
@@ -42,13 +44,24 @@ type config struct {
 	Auths map[string]*auth `json:"auths,omitempty"`
 }
 
+func NewAzureRunnerWithCommander(runner util.Commander) *AzureRunner {
+	return &AzureRunner{
+		Runner: runner,
+	}
+}
+
+func NewAzureRunner() *AzureRunner {
+	runner := &util.Command{}
+	return NewAzureRunnerWithCommander(runner)
+}
+
 // GetClusterClient return AKS resource group, name and client ID.
-func GetClusterClient(server string) (string, string, string, error) {
+func (az *AzureRunner) GetClusterClient(server string) (string, string, string, error) {
 	clientID := ""
 	group := ""
 	name := ""
 
-	clusterstr, err := azureCLI("aks", "list", "--query", "[].{uri:fqdn,id:servicePrincipalProfile.clientId,group:resourceGroup,name:name}")
+	clusterstr, err := az.azureCLI("aks", "list", "--query", "[].{uri:fqdn,id:servicePrincipalProfile.clientId,group:resourceGroup,name:name}")
 	if err != nil {
 		return group, name, clientID, err
 	}
@@ -73,7 +86,7 @@ func GetClusterClient(server string) (string, string, string, error) {
 
 
  // GetRegistry Return the docker registry config, registry login server and resource id, error
-func GetRegistry(resourceGroup string, name string, registry string) (string, string, string, error) {
+func (az *AzureRunner) GetRegistry(resourceGroup string, name string, registry string) (string, string, string, error) {
 	registryID := ""
 	loginServer := registry
 	dockerConfig := ""
@@ -86,7 +99,7 @@ func GetRegistry(resourceGroup string, name string, registry string) (string, st
 		return dockerConfig, loginServer, registryID, nil
 	}
 
-	acrRG, acrName, registryID, err := getRegistryID(loginServer)
+	acrRG, acrName, registryID, err := az.getRegistryID(loginServer)
 	if err != nil {
 		return dockerConfig, loginServer, registryID, err
 	}
@@ -94,30 +107,30 @@ func GetRegistry(resourceGroup string, name string, registry string) (string, st
 	if registryID == "" {
 		acrRG = resourceGroup
 		acrName = name
-		registryID, loginServer, err = createRegistry(acrRG, acrName)
+		registryID, loginServer, err = az.createRegistry(acrRG, acrName)
 		if err != nil {
 			return dockerConfig, loginServer, registryID, err
 		}
 	}
-	dockerConfig, err = getACRCredential(acrRG, acrName)
+	dockerConfig, err = az.getACRCredential(acrRG, acrName)
 	return dockerConfig, loginServer, registryID, err
 }
 
 // AssignRole Assign the client a reader role for registry.
-func AssignRole(client string, registry string) {
+func (az *AzureRunner) AssignRole(client string, registry string) {
 	if client == "" || registry == "" {
 		return
 	}
-	azureCLI("role", "assignment", "create", "--assignee", client, "--role", "Reader", "--scope", registry)
+	az.azureCLI("role", "assignment", "create", "--assignee", client, "--role", "Reader", "--scope", registry)
 }
 
 // getRegistryID returns acrRG, acrName, acrID, error
-func getRegistryID(loginServer string) (string, string, string, error) {
+func (az *AzureRunner) getRegistryID(loginServer string) (string, string, string, error) {
 	acrRG := ""
 	acrName := ""
 	acrID := ""
 
-	acrList, err := azureCLI("acr", "list", "--query", "[].{uri:loginServer,id:id,name:name,group:resourceGroup}")
+	acrList, err := az.azureCLI("acr", "list", "--query", "[].{uri:loginServer,id:id,name:name,group:resourceGroup}")
 	if err != nil {
 		log.Infof("Registry %s is not exist\n", util.ColorInfo(loginServer))
 	} else {
@@ -139,8 +152,8 @@ func getRegistryID(loginServer string) (string, string, string, error) {
 }
 
 // createRegistry return resource ID, login server and error
-func createRegistry(resourceGroup string, name string) (string, string, error) {
-	registryID, err := azureCLI("acr", "create", "-g", resourceGroup, "-n", name, "--sku", "Standard", "--admin-enabled", "--query", "id")
+func (az *AzureRunner) createRegistry(resourceGroup string, name string) (string, string, error) {
+	registryID, err := az.azureCLI("acr", "create", "-g", resourceGroup, "-n", name, "--sku", "Standard", "--admin-enabled", "--query", "id")
 	if err != nil {
 		log.Infof("Failed to create ACR %s in resource group %s\n", util.ColorInfo(name), util.ColorInfo(resourceGroup))
 		return "", "", err	
@@ -149,8 +162,8 @@ func createRegistry(resourceGroup string, name string) (string, string, error) {
 }
 
 // getACRCredential return .dockerconfig value for the ACR
-func getACRCredential(resourceGroup string, name string) (string, error) {
-	credstr, err := azureCLI("acr", "credential", "show", "-g", resourceGroup, "-n", name)
+func (az *AzureRunner) getACRCredential(resourceGroup string, name string) (string, error) {
+	credstr, err := az.azureCLI("acr", "credential", "show", "-g", resourceGroup, "-n", name)
 	if err != nil {
 		log.Infof("Failed to get credential for ACR %s in resource group %s\n", util.ColorInfo(name), util.ColorInfo(resourceGroup))
 		return "", err	
@@ -171,20 +184,12 @@ func getACRCredential(resourceGroup string, name string) (string, error) {
 	return string(dockerConfigStr), err
 }
 
-// WithCommander set the commander
-func WithCommander(commander util.Commander) {
-	runner = commander
-}
-
 func formatLoginServer(name string) string {
 	return name + ".azurecr.io"
 }
 
-func azureCLI(args ...string) (string, error) {
-	if runner == nil {
-		runner = &util.Command{}
-	}
-	runner.SetName("az")
-	runner.SetArgs(args)
-	return runner.RunWithoutRetry()
+func  (az *AzureRunner) azureCLI(args ...string) (string, error) {
+	az.Runner.SetName("az")
+	az.Runner.SetArgs(args)
+	return az.Runner.RunWithoutRetry()
 }

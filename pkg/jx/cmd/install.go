@@ -729,16 +729,17 @@ func (options *InstallOptions) Run() error {
 		 * Assign ACR role to AKS
 		 */
 		server := kube.CurrentServer(kubeConfig)
-		resourceGroup, name, cluster, err := aks.GetClusterClient(server)
+		azureCLI := aks.NewAzureRunner()
+		resourceGroup, name, cluster, err := azureCLI.GetClusterClient(server)
 		 if err != nil {
 		  	return errors.Wrap(err, "failed to get cluster from Azure")
 		}
 		registryID := ""
-		helmConfig.PipelineSecrets.DockerConfig, dockerRegistry, registryID, err = aks.GetRegistry(resourceGroup, name, dockerRegistry)
+		helmConfig.PipelineSecrets.DockerConfig, dockerRegistry, registryID, err = azureCLI.GetRegistry(resourceGroup, name, dockerRegistry)
 		if err != nil {
 			return errors.Wrap(err, "failed to get registry from Azure")
 		}
-		aks.AssignRole(cluster, registryID)
+		azureCLI.AssignRole(cluster, registryID)
 		log.Infof("Assign AKS %s a reader role for ACR %s\n", util.ColorInfo(server), util.ColorInfo(dockerRegistry))
 	}
 
