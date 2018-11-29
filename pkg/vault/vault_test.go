@@ -1,16 +1,20 @@
-package kube_test
+package vault_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/vault"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/vault"
 
 	fakevaultclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned/fake"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sfake "k8s.io/client-go/kubernetes/fake"
 )
 
 func TestCreateVault(t *testing.T) {
-	client := fakevaultclient.NewSimpleClientset()
+
+	client := k8sfake.NewSimpleClientset()
+	vaultclient := fakevaultclient.NewSimpleClientset()
 
 	tests := map[string]struct {
 		name               string
@@ -40,7 +44,7 @@ func TestCreateVault(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			err := vault.CreateVault(client, tc.name, tc.namespace, tc.gcpSecretName,
+			err := vault.CreateVault(client, vaultclient, tc.name, tc.namespace, tc.gcpSecretName,
 				tc.gcpConfig, tc.authServiceAccount, tc.namespace, tc.secretsPathPrefix)
 			if tc.err {
 				assert.Error(t, err, "should create vault with an error")
@@ -48,7 +52,7 @@ func TestCreateVault(t *testing.T) {
 				assert.NoError(t, err, "should create vault without an error")
 			}
 
-			vault, err := client.Vault().Vaults(tc.namespace).Get(tc.name, metav1.GetOptions{})
+			vault, err := vaultclient.Vault().Vaults(tc.namespace).Get(tc.name, metav1.GetOptions{})
 			assert.NoError(t, err, "should retrive created vault without an error")
 			assert.NotNil(t, vault, "created vault should not be nil")
 		})

@@ -2,8 +2,10 @@ package vault
 
 import (
 	"fmt"
+
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
@@ -91,9 +93,14 @@ func VaultGcpServiceAccountSecretName(vaultName string, clusterName string) stri
 }
 
 // CreateVault creates a new vault backed by GCP KMS and storage
-func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string,
+func CreateVault(kubeClient kubernetes.Interface, vaultOperatorClient versioned.Interface, name string, ns string,
 	gcpServiceAccountSecretName string, gcpConfig *GCPConfig, authServiceAccount string,
 	authServiceAccountNamespace string, secretsPathPrefix string) error {
+
+	err := createVaultServiceAccount(kubeClient, ns, name)
+	if err != nil {
+		return err
+	}
 
 	if secretsPathPrefix == "" {
 		secretsPathPrefix = DefaultSecretsPathPrefix
@@ -123,6 +130,7 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 			Image:           vaultImage,
 			BankVaultsImage: bankVaultsImage,
 			ServiceType:     string(v1.ServiceTypeClusterIP),
+			ServiceAccount:  name,
 			Config: map[string]interface{}{
 				"api_addr":           fmt.Sprintf("http://%s.%s:8200", name, ns),
 				"disable_clustering": true,
@@ -185,6 +193,14 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 
 	_, err = vaultOperatorClient.Vault().Vaults(ns).Create(vault)
 	return err
+}
+
+func createVaultServiceAccount(client kubernetes.Interface, namespace string, name string) error {
+	_, err := serviceaccount.CreateServiceAccount(client, namespace, name)
+	if err != nil {
+		return errors.Wrap(err, "creating vault service account")
+	}
+	return nil
 }
 
 // FindVault  checks if a vault is available

@@ -220,7 +220,7 @@ func (o *CreateVaultOptions) createVault(vaultOperatorClient versioned.Interface
 		KmsLocation: kmsConfig.Location,
 		GcsBucket:   vaultBucket,
 	}
-	err = vault.CreateVault(vaultOperatorClient, vaultName, o.Namespace, gcpServiceAccountSecretName,
+	err = vault.CreateVault(kubeClient, vaultOperatorClient, vaultName, o.Namespace, gcpServiceAccountSecretName,
 		gcpConfig, vaultAuthServiceAccount, o.Namespace, o.SecretsPathPrefix)
 	if err != nil {
 		return errors.Wrap(err, "creating vault")
