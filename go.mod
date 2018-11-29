@@ -42,7 +42,7 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.0.0
 	github.com/fsnotify/fsnotify v1.4.7
-	github.com/gfleury/go-bitbucket-v1 v0.0.0-20180608194953-66450bf15655
+	github.com/gfleury/go-bitbucket-v1 v0.0.0-20181102191809-4910839b609e
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ini/ini v1.38.1
 	github.com/go-ole/go-ole v1.2.1

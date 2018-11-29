@@ -1,5 +1,7 @@
 # JX 
 
+[![Reviewed by Hound](https://img.shields.io/badge/Reviewed_by-Hound-8E64B0.svg)](https://houndci.com)
+
 JX is a command line tool for installing and using [Jenkins X](http://jenkins-x.io/)
 
 <a href="http://jenkins-x.io/">
