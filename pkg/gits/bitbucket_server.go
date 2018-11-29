@@ -515,6 +515,7 @@ func (b *BitbucketServerProvider) GetPullRequest(owner string, repo *GitReposito
 		Number: &bPR.ID,
 		State:  &bPR.State,
 		Author: author,
+		LastCommitSha: bPR.FromRef.LatestCommit,
 	}, nil
 }
 
@@ -747,8 +748,17 @@ func (b *BitbucketServerProvider) CreateIssue(owner string, repo string, issue *
 }
 
 func (b *BitbucketServerProvider) AddPRComment(pr *GitPullRequest, comment string) error {
-	log.Warn("Bitbucket Server doesn't support adding PR comments via the REST API")
-	return nil
+
+	if pr.Number == nil {
+		return fmt.Errorf("Missing Number for GitPullRequest %#v", pr)
+	}
+	n := *pr.Number
+
+	prComment := `{
+		"text": "` + comment + `"
+	}`
+	_, err := b.Client.DefaultApi.CreateComment_1(pr.Owner, pr.Repo, n, prComment, []string{"application/json"})
+	return err
 }
 
 func (b *BitbucketServerProvider) CreateIssueComment(owner string, repo string, number int, comment string) error {

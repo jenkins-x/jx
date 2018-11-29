@@ -55,6 +55,9 @@ var bitbucketServerRouter = util.Router{
 	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/pull-requests/1/merge": util.MethodMap{
 		"POST": "pr-merge-success.json",
 	},
+	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/pull-requests/1/comments": util.MethodMap{
+		"POST": "pr-comment.json",
+	},
 	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/webhooks": util.MethodMap{
 		"POST": "webhook.json",
 	},
@@ -318,6 +321,19 @@ func (suite *BitbucketServerProviderTestSuite) TestListInvitations() {
 func (suite *BitbucketServerProviderTestSuite) TestAcceptInvitations() {
 	res, err := suite.provider.AcceptInvitation(1)
 	suite.Require().NotNil(res)
+	suite.Require().Nil(err)
+}
+
+func (suite *BitbucketServerProviderTestSuite) TestAddPRComment() {
+
+	id := 1
+	pr := &gits.GitPullRequest{
+		Owner:  "TEST-ORG",
+		Repo:   "test-repo",
+		Number: &id,
+	}
+	err := suite.provider.AddPRComment(pr, "This is a new comment.")
+
 	suite.Require().Nil(err)
 }
 
