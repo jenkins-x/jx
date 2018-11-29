@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// AzureRunner an Azure CLI runner to interact with Azure
 type AzureRunner struct {
 	Runner util.Commander
 }
@@ -44,12 +45,14 @@ type config struct {
 	Auths map[string]*auth `json:"auths,omitempty"`
 }
 
+// NewAzureRunnerWithCommander specific the command runner for Azure CLI.
 func NewAzureRunnerWithCommander(runner util.Commander) *AzureRunner {
 	return &AzureRunner{
 		Runner: runner,
 	}
 }
 
+// NewAzureRunner return a new AzureRunner
 func NewAzureRunner() *AzureRunner {
 	runner := &util.Command{}
 	return NewAzureRunnerWithCommander(runner)
