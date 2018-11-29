@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -188,41 +189,44 @@ func userRolesFor(userKind string, userName string, envRoles map[string]*v1.Envi
 	return answer
 }
 
-// CreateClusterRoleBinding creates or extends a cluster role binding in a given namespace for a service account
+// IsClusterRoleBinding checks if the cluster role binding exists
+func IsClusterRoleBinding(kubeClient kubernetes.Interface, name string) bool {
+	_, err := kubeClient.RbacV1().ClusterRoleBindings().Get(name, metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return false
+	}
+	return true
+}
+
+// CreateClusterRoleBinding creates acluster role binding in a given namespace for a service account
 func CreateClusterRoleBinding(kubeClient kubernetes.Interface, namespace string, name string,
 	serviceAccountName string, clusterRoleName string) error {
-	_, err := kubeClient.RbacV1().ClusterRoleBindings().Get(name, metav1.GetOptions{})
-	// Create a new role binding if does not exists
-	if err != nil {
-		rb := &rbacv1.ClusterRoleBinding{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       clusterRoleBindingKind,
-				APIVersion: "v1",
+	rb := &rbacv1.ClusterRoleBinding{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       clusterRoleBindingKind,
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Subjects: []rbacv1.Subject{
+			rbacv1.Subject{
+				Kind:      subjectKind,
+				Name:      serviceAccountName,
+				Namespace: namespace,
 			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: name,
-			},
-			Subjects: []rbacv1.Subject{
-				rbacv1.Subject{
-					Kind:      subjectKind,
-					Name:      serviceAccountName,
-					Namespace: namespace,
-				},
-			},
-			RoleRef: rbacv1.RoleRef{
-				APIGroup: apiGroup,
-				Kind:     clusterRoleKind,
-				Name:     clusterRoleName,
-			},
-		}
-
-		_, err := kubeClient.RbacV1().ClusterRoleBindings().Create(rb)
-		if err != nil {
-			return errors.Wrap(err, "creating cluster role binding")
-		}
-		return nil
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: apiGroup,
+			Kind:     clusterRoleKind,
+			Name:     clusterRoleName,
+		},
 	}
 
+	_, err := kubeClient.RbacV1().ClusterRoleBindings().Create(rb)
+	if err != nil {
+		return errors.Wrap(err, "creating cluster role binding")
+	}
 	return nil
 }
 

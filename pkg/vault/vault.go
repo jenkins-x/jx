@@ -220,6 +220,11 @@ func ensureVaultRoleBinding(client kubernetes.Interface, namespace string, roleN
 		return errors.Wrapf(err, "creating the cluster role '%s' for vault", roleName)
 	}
 
+	found := kube.IsClusterRoleBinding(client, roleBindingName)
+	if found {
+		kube.DeleteClusterRoleBinding(client, roleBindingName)
+	}
+
 	err = kube.CreateClusterRoleBinding(client, namespace, roleBindingName, serviceAccount, roleName)
 	if err != nil {
 		return errors.Wrapf(err, "creating the cluster role binding '%s' for vault", roleBindingName)
