@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	gkevault "github.com/jenkins-x/jx/pkg/cloud/gke/vault"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -13,7 +15,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -116,6 +117,11 @@ func (o *DeleteVaultOptions) Run() error {
 	err = client.CoreV1().Secrets(o.Namespace).Delete(gcpServiceAccountSecretName, &metav1.DeleteOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "deleting secret '%s' where GCP service account is stored", gcpServiceAccountSecretName)
+	}
+
+	err = kube.DeleteClusterRoleBinding(client, vaultName)
+	if err != nil {
+		return errors.Wrapf(err, "deleteing the cluster role binding '%s' for vault", vaultName)
 	}
 
 	log.Infof("Vault %s deleted\n", util.ColorInfo(vaultName))
