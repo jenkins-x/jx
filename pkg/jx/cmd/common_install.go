@@ -798,7 +798,7 @@ func (o *CommonOptions) installHelm3() error {
 func (o *CommonOptions) installHelmSecretsPlugin(helmBinary string, clientOnly bool) error {
 	err := o.Helm().Init(clientOnly, "", "", false)
 	if err != nil {
-		errors.Wrap(err, "failed to initialize helm")
+		return errors.Wrap(err, "failed to initialize helm")
 	}
 	// remove the plugin just in case is already installed
 	cmd := util.Command{
@@ -807,7 +807,7 @@ func (o *CommonOptions) installHelmSecretsPlugin(helmBinary string, clientOnly b
 	}
 	_, err = cmd.RunWithoutRetry()
 	if err != nil {
-		errors.Wrap(err, "failed to remove helm secrets")
+		return errors.Wrap(err, "failed to remove helm secrets")
 	}
 	cmd = util.Command{
 		Name: helmBinary,
