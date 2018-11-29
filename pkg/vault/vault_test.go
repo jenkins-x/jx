@@ -55,6 +55,9 @@ func TestCreateVault(t *testing.T) {
 			vault, err := vaultclient.Vault().Vaults(tc.namespace).Get(tc.name, metav1.GetOptions{})
 			assert.NoError(t, err, "should retrive created vault without an error")
 			assert.NotNil(t, vault, "created vault should not be nil")
+			sa, err := client.CoreV1().ServiceAccounts(tc.namespace).Get(tc.name, metav1.GetOptions{})
+			assert.NoError(t, err, "should retrive vault service account without error")
+			assert.NotNil(t, sa, "created vault service account should not be nil")
 		})
 	}
 }
