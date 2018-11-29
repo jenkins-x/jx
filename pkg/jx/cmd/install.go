@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/vault"
 	"io"
 	"io/ioutil"
@@ -720,6 +721,7 @@ func (options *InstallOptions) Run() error {
 				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(ns))
 		}
 		options.Factory.UseVault(true)
+		secrets.UseVaultForSecrets(client, ns, options.Flags.Vault)
 	}
 
 	// get secrets to use in helm install
