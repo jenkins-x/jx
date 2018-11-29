@@ -156,7 +156,7 @@ func (az *AzureRunner) getRegistryID(loginServer string) (string, string, string
 
 // createRegistry return resource ID, login server and error
 func (az *AzureRunner) createRegistry(resourceGroup string, name string) (string, string, error) {
-	registryID, err := az.azureCLI("acr", "create", "-g", resourceGroup, "-n", name, "--sku", "Standard", "--admin-enabled", "--query", "id")
+	registryID, err := az.azureCLI("acr", "create", "-g", resourceGroup, "-n", name, "--sku", "Standard", "--admin-enabled", "--query", "id", "-o", "tsv")
 	if err != nil {
 		log.Infof("Failed to create ACR %s in resource group %s\n", util.ColorInfo(name), util.ColorInfo(resourceGroup))
 		return "", "", err	
