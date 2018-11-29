@@ -904,7 +904,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 		log.Info("\nIf you do not have a custom domain setup yet, Ingress rules will be set for magic dns nip.io.")
 		log.Infof("\nOnce you have a custom domain ready, you can update with the command %s", util.ColorInfo("jx upgrade ingress --cluster"))
 
-		log.Infof("\nIf you don't have a wildcard DNS setup then setup a new CNAME and point it at: %s then use the DNS domain in the next input...\n", defaultDomain)
+		log.Infof("\nIf you don't have a wildcard DNS setup then setup a DNS (A) record and point it at: %s then use the DNS domain in the next input...\n", address)
 
 		if domain == "" {
 			prompt := &survey.Input{

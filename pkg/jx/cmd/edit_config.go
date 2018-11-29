@@ -45,8 +45,8 @@ type EditConfigOptions struct {
 	Dir  string
 	Kind string
 
-	IssuesAuthConfigSvc auth.AuthConfigService
-	ChatAuthConfigSvc   auth.AuthConfigService
+	IssuesAuthConfigSvc auth.ConfigService
+	ChatAuthConfigSvc   auth.ConfigService
 }
 
 // NewCmdEditConfig creates a command object for the "create" command

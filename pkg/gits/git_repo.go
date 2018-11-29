@@ -39,7 +39,7 @@ func (d *CreateRepoData) CreateRepository() (*GitRepository, error) {
 	return d.GitProvider.CreateRepository(d.Organisation, d.RepoName, d.PrivateRepo)
 }
 
-func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.AuthConfigService, defaultRepoName string,
+func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigService, defaultRepoName string,
 	repoOptions *GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth, git Gitter, allowExistingRepo bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*CreateRepoData, error) {
 	config := authConfigSvc.Config()
 
@@ -217,7 +217,7 @@ func GetOwner(batchMode bool, provider GitProvider, gitUsername string, in termi
 	return owner, nil
 }
 
-func PickNewGitRepository(batchMode bool, authConfigSvc auth.AuthConfigService, defaultRepoName string,
+func PickNewGitRepository(batchMode bool, authConfigSvc auth.ConfigService, defaultRepoName string,
 	repoOptions *GitRepositoryOptions, server *auth.AuthServer, userAuth *auth.UserAuth, git Gitter, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (*CreateRepoData, error) {
 	return PickNewOrExistingGitRepository(batchMode, authConfigSvc, defaultRepoName, repoOptions, server, userAuth, git, false, in, out, outErr)
 }

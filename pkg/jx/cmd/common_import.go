@@ -15,7 +15,7 @@ import (
 )
 
 // ImportProject imports a MultiBranchProject into Jenkins for the given git URL
-func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile string, branchPattern, credentials string, failIfExists bool, gitProvider gits.GitProvider, authConfigSvc auth.AuthConfigService, isEnvironment bool, batchMode bool) error {
+func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile string, branchPattern, credentials string, failIfExists bool, gitProvider gits.GitProvider, authConfigSvc auth.ConfigService, isEnvironment bool, batchMode bool) error {
 	jenk, err := o.JenkinsClient()
 	if err != nil {
 		return err

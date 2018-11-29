@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 	"time"
@@ -118,7 +119,7 @@ func (o *CreateVaultOptions) Run() error {
 }
 
 func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
-	client, team, err := o.KubeClient()
+	kubeClient, team, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "creating kubernetes client")
 	}
@@ -127,7 +128,7 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 		o.Namespace = team
 	}
 
-	err = kube.EnsureNamespaceCreated(client, o.Namespace, nil, nil)
+	err = kube.EnsureNamespaceCreated(kubeClient, o.Namespace, nil, nil)
 	if err != nil {
 		return errors.Wrapf(err, "failed to ensure that provided namespace '%s' is created", o.Namespace)
 	}
@@ -137,7 +138,17 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 		return errors.Wrap(err, "creating vault operator client")
 	}
 
-	// Checks if the vault alrady exists
+	return o.DoCreateVault(vaultOperatorClient, vaultName)
+}
+
+// DoCreateVault creates a vault in the existing namespace.
+// If the vault already exists, it will error
+func (o *CreateVaultOptions) DoCreateVault(vaultOperatorClient versioned.Interface, vaultName string) error {
+	kubeClient, _, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	// Checks if the vault already exists
 	found := vault.FindVault(vaultOperatorClient, vaultName, o.Namespace)
 	if found {
 		return fmt.Errorf("Vault with name '%s' already exists in namespace '%s'", vaultName, o.Namespace)
@@ -177,7 +188,7 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 	log.Infof("Current Cluster: %s\n", util.ColorInfo(clusterName))
 
 	log.Infof("Creating GCP service account for Vault backend\n")
-	gcpServiceAccountSecretName, err := gkevault.CreateGCPServiceAccount(client, vaultName, o.Namespace, clusterName, o.GKEProjectID)
+	gcpServiceAccountSecretName, err := gkevault.CreateGCPServiceAccount(kubeClient, vaultName, o.Namespace, clusterName, o.GKEProjectID)
 	if err != nil {
 		return errors.Wrap(err, "creating GCP service account")
 	}
@@ -195,7 +206,7 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 		return errors.Wrap(err, "creating Vault GCS data bucket")
 	}
 	log.Infof("GCS bucket %s was created for Vault backend\n", util.ColorInfo(vaultBucket))
-	vaultAuthServiceAccount, err := gkevault.CreateAuthServiceAccount(client, vaultName, o.Namespace, clusterName)
+	vaultAuthServiceAccount, err := gkevault.CreateAuthServiceAccount(kubeClient, vaultName, o.Namespace, clusterName)
 	if err != nil {
 		return errors.Wrap(err, "creating Vault authentication service account")
 	}

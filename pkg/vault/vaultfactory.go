@@ -1,6 +1,7 @@
 package vault
 
 import (
+	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/hashicorp/vault/api"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/common"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
@@ -16,7 +17,8 @@ type VaultClientFactory struct {
 	defaultNamespace string
 }
 
-func NewVaultClientFactory(options common.OptionsInterface) (VaultClientFactory, error) {
+// NewInteractiveVaultClientFactory creates a VaultClientFactory that allows the user to pick vaults if necessary
+func NewInteractiveVaultClientFactory(options common.OptionsInterface) (VaultClientFactory, error) {
 	factory := VaultClientFactory{
 		Options: options,
 	}
@@ -30,6 +32,19 @@ func NewVaultClientFactory(options common.OptionsInterface) (VaultClientFactory,
 		return factory, err
 	}
 	return factory, nil
+}
+
+// NewSystemVaultClientFactory Creates a new VaultClientFactory with different options to the above. It doesnt' have CLI support so
+// will fail if it needs interactive input (unlikely)
+func NewSystemVaultClientFactory(kubeClient kubernetes.Interface, vaultOperatorClient versioned.Interface, defaultNamespace string) (VaultClientFactory, error) {
+	return VaultClientFactory{
+		kubeClient:       kubeClient,
+		defaultNamespace: defaultNamespace,
+		Selector: vaultSelectorImpl{
+			kubeClient:          kubeClient,
+			vaultOperatorClient: vaultOperatorClient,
+		},
+	}, nil
 }
 
 // NewVaultClient creates a new api.Client

@@ -13,17 +13,17 @@ import (
 type GetVaultConfigOptions struct {
 	GetOptions
 
-	namespace string
-	name      string
+	Namespace string
+	Name      string
 	terminal  string
 }
 
 func (o *GetVaultConfigOptions) VaultName() string {
-	return o.name
+	return o.Name
 }
 
 func (o *GetVaultConfigOptions) VaultNamespace() string {
-	return o.namespace
+	return o.Namespace
 }
 
 var (
@@ -65,8 +65,8 @@ func NewCmdGetVaultConfig(f Factory, in terminal.FileReader, out terminal.FileWr
 
 	options.addGetFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.namespace, "namespace", "n", "", "Namespace from where to get the vault config")
-	cmd.Flags().StringVarP(&options.name, "name", "m", "", "Name of the vault to get the config for")
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Namespace from where to get the vault config")
+	cmd.Flags().StringVarP(&options.Name, "name", "m", "", "Name of the vault to get the config for")
 	cmd.Flags().StringVarP(&options.terminal, "terminal", "t", "", "terminal type output override. Values: ['sh', 'cmd'].")
 	return cmd
 }

@@ -21,7 +21,7 @@ const (
 
 func TestAuthConfig(t *testing.T) {
 	t.Parallel()
-	dir, err := ioutil.TempDir("/tmp", "jx-test-jenkins-config-")
+	dir, err := ioutil.TempDir("", "jx-test-jenkins-config-")
 	assertNoError(t, err)
 
 	fileName := filepath.Join(dir, "jenkins.yaml")
@@ -31,7 +31,7 @@ func TestAuthConfig(t *testing.T) {
 	configTest := ConfigTest{
 		t: t,
 	}
-	configTest.svc.FileName = fileName
+	configTest.svc, err = auth.NewFileAuthConfigService(fileName)
 
 	config := configTest.Load()
 
@@ -87,23 +87,21 @@ func TestAuthConfig(t *testing.T) {
 }
 
 type ConfigTest struct {
-	t      *testing.T
-	svc    auth.AuthConfigService
-	config *auth.AuthConfig
+	t   *testing.T
+	svc auth.ConfigService
 }
 
 func (c *ConfigTest) Load() *auth.AuthConfig {
 	config, err := c.svc.LoadConfig()
-	c.config = config
 	c.AssertNoError(err)
-	return c.config
+	return config
 }
 
 func (c *ConfigTest) SetUserAuth(url string, auth auth.UserAuth) *auth.AuthConfig {
 	copy := auth
-	c.config.SetUserAuth(url, &copy)
+	c.svc.Config().SetUserAuth(url, &copy)
 	c.SaveAndReload()
-	return c.config
+	return c.svc.Config()
 }
 
 func (c *ConfigTest) SaveAndReload() *auth.AuthConfig {
