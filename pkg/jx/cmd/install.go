@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/vault"
 	"io"
 	"io/ioutil"
 	"os"
@@ -11,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/vault"
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
@@ -712,7 +713,7 @@ func (options *InstallOptions) Run() error {
 				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(ns))
 		} else {
 			log.Info("Creating new system vault\n")
-			err = cvo.DoCreateVault(vaultOperatorClient, vault.SystemVaultName)
+			err = cvo.createVault(vaultOperatorClient, vault.SystemVaultName)
 			if err != nil {
 				return err
 			}

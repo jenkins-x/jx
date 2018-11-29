@@ -138,12 +138,12 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 		return errors.Wrap(err, "creating vault operator client")
 	}
 
-	return o.DoCreateVault(vaultOperatorClient, vaultName)
+	return o.createVault(vaultOperatorClient, vaultName)
 }
 
 // DoCreateVault creates a vault in the existing namespace.
 // If the vault already exists, it will error
-func (o *CreateVaultOptions) DoCreateVault(vaultOperatorClient versioned.Interface, vaultName string) error {
+func (o *CreateVaultOptions) createVault(vaultOperatorClient versioned.Interface, vaultName string) error {
 	kubeClient, _, err := o.KubeClient()
 	if err != nil {
 		return err
