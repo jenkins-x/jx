@@ -101,7 +101,7 @@ func CreateVault(kubeClient kubernetes.Interface, vaultOperatorClient versioned.
 
 	err := createVaultServiceAccount(kubeClient, ns, name)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "creating the vault service account '%s'", name)
 	}
 
 	err = ensureVaultRoleBinding(kubeClient, ns, vaultRoleName, name, name)
