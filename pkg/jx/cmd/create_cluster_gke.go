@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"io"
 	"strings"
 
@@ -288,12 +289,12 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	ns := o.InstallOptions.Flags.Namespace
-	if ns == "" {
-		_, ns, _ = o.KubeClient()
-		if err != nil {
-			return err
-		}
+	kubeClient, ns, _ := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	if o.InstallOptions.Flags.Namespace != "" {
+		ns = o.InstallOptions.Flags.Namespace
 	}
 
 	err = o.RunCommand("kubectl", "config", "set-context", context, "--namespace", ns)
@@ -312,7 +313,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		if err = InstallVaultOperator(&o.CommonOptions, ""); err != nil {
 			return err
 		}
-		o.Factory.UseVault(true)
+		secrets.UseVaultForSecrets(kubeClient, ns, true)
 	}
 
 	return nil

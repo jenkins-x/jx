@@ -720,7 +720,6 @@ func (options *InstallOptions) Run() error {
 			log.Infof("System vault created named %s in namespace %s.\n",
 				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(ns))
 		}
-		options.Factory.UseVault(true)
 		secrets.UseVaultForSecrets(client, ns, options.Flags.Vault)
 	}
 
