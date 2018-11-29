@@ -14,6 +14,13 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+const (
+	clusterRoleBindingKind = "ClusterRoleBinding"
+	clusterRoleKind        = "ClusterRole"
+	apiGroup               = "rbac.authorization.k8s.io"
+	subjectKind            = "ServiceAccount"
+)
+
 // GetTeamRoles returns the roles for the given team dev namespace
 func GetTeamRoles(kubeClient kubernetes.Interface, ns string) (map[string]*rbacv1.Role, []string, error) {
 	m := map[string]*rbacv1.Role{}
@@ -179,4 +186,80 @@ func userRolesFor(userKind string, userName string, envRoles map[string]*v1.Envi
 		}
 	}
 	return answer
+}
+
+// CreateClusterRoleBinding creates or extends a cluster role binding in a given namespace for a service account
+func CreateClusterRoleBinding(kubeClient kubernetes.Interface, namespace string, name string,
+	serviceAccountName string, clusterRoleName string) error {
+	_, err := kubeClient.RbacV1().ClusterRoleBindings().Get(name, metav1.GetOptions{})
+	// Create a new role binding if does not exists
+	if err != nil {
+		rb := &rbacv1.ClusterRoleBinding{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       clusterRoleBindingKind,
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+			Subjects: []rbacv1.Subject{
+				rbacv1.Subject{
+					Kind:      subjectKind,
+					Name:      serviceAccountName,
+					Namespace: namespace,
+				},
+			},
+			RoleRef: rbacv1.RoleRef{
+				APIGroup: apiGroup,
+				Kind:     clusterRoleKind,
+				Name:     clusterRoleName,
+			},
+		}
+
+		_, err := kubeClient.RbacV1().ClusterRoleBindings().Create(rb)
+		if err != nil {
+			return errors.Wrap(err, "creating cluster role binding")
+		}
+		return nil
+	}
+
+	return nil
+}
+
+// DeleteClusterRoleBinding deltes a cluster role binding
+func DeleteClusterRoleBinding(kubeClient kubernetes.Interface, name string) error {
+	_, err := kubeClient.RbacV1().ClusterRoleBindings().Get(name, metav1.GetOptions{})
+	if err == nil {
+		return kubeClient.RbacV1().ClusterRoleBindings().Delete(name, &metav1.DeleteOptions{})
+	}
+	return nil
+}
+
+// CreateClusterRole creates a new cluster role
+func CreateClusterRole(kubeClient kubernetes.Interface, namesapce string, name string,
+	apiGroups []string, resources []string, verbs []string) error {
+	_, err := kubeClient.RbacV1().ClusterRoles().Get(name, metav1.GetOptions{})
+	if err != nil {
+		role := &rbacv1.ClusterRole{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       clusterRoleKind,
+				APIVersion: "v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name: name,
+			},
+			Rules: []rbacv1.PolicyRule{
+				rbacv1.PolicyRule{
+					APIGroups: apiGroups,
+					Resources: resources,
+					Verbs:     verbs,
+				},
+			},
+		}
+		_, err := kubeClient.RbacV1().ClusterRoles().Create(role)
+		if err != nil {
+			return errors.Wrap(err, "creating custer role")
+		}
+	}
+	return nil
 }

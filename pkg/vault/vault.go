@@ -5,6 +5,7 @@ import (
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/pkg/errors"
@@ -24,6 +25,7 @@ const (
 	vaultAuthType     = "kubernetes"
 	vaultAuthTTL      = "1h"
 	vaultAuthSaSuffix = "auth-sa"
+	vaultRoleName     = "vault-auth"
 )
 
 // Vault stores some details of a Vault resource
@@ -100,6 +102,11 @@ func CreateVault(kubeClient kubernetes.Interface, vaultOperatorClient versioned.
 	err := createVaultServiceAccount(kubeClient, ns, name)
 	if err != nil {
 		return err
+	}
+
+	err = ensureVaultRoleBinding(kubeClient, ns, vaultRoleName, name, name)
+	if err != nil {
+		return errors.Wrapf(err, "ensuring vault cluster role binding '%s' is created", name)
 	}
 
 	if secretsPathPrefix == "" {
@@ -203,7 +210,24 @@ func createVaultServiceAccount(client kubernetes.Interface, namespace string, na
 	return nil
 }
 
-// FindVault  checks if a vault is available
+func ensureVaultRoleBinding(client kubernetes.Interface, namespace string, roleName string,
+	roleBindingName string, serviceAccount string) error {
+	apiGroups := []string{"authentication.k8s.io"}
+	resources := []string{"tokenreviews"}
+	verbs := []string{"*"}
+	err := kube.CreateClusterRole(client, namespace, roleName, apiGroups, resources, verbs)
+	if err != nil {
+		return errors.Wrapf(err, "creating the cluster role '%s' for vault", roleName)
+	}
+
+	err = kube.CreateClusterRoleBinding(client, namespace, roleBindingName, serviceAccount, roleName)
+	if err != nil {
+		return errors.Wrapf(err, "creating the cluster role binding '%s' for vault", roleBindingName)
+	}
+	return nil
+}
+
+// FindVault checks if a vault is available
 func FindVault(vaultOperatorClient versioned.Interface, name string, ns string) bool {
 	_, err := GetVault(vaultOperatorClient, name, ns)
 	if err != nil {
