@@ -278,15 +278,12 @@ func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.ConfigService, de
 
 				if createRepo {
 					showURLEdit = false
-					r, p, err := createEnvironmentGitRepo(batchMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git, in, out, errOut)
-					repo = r
-					url := r.CloneURL
-
+					var err error
+					repo, gitProvider, err = createEnvironmentGitRepo(batchMode, authConfigSvc, data, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git, in, out, errOut)
 					if err != nil {
-						return repo, nil, err
+						return repo, gitProvider, err
 					}
-					gitProvider = p
-					data.Spec.Source.URL = url
+					data.Spec.Source.URL = repo.CloneURL
 				}
 			} else {
 				showURLEdit = true
