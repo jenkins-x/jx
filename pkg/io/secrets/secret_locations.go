@@ -9,6 +9,8 @@ import (
 
 const vaultSecretsMarker = "useVaultForSecrets"
 
+var usingVault *bool // use a tri-state boolean. nil means uninitialised (so need to lookup from cluster)
+
 // UseVaultForSecrets configures the cluster's installation config map to denote that secrets should be stored in vault
 func UseVaultForSecrets(kubeClient kubernetes.Interface, namespace string, useVault bool) {
 	_, err := kube.DefaultModifyConfigMap(kubeClient, namespace, kube.ConfigMapNameJXInstallConfig, func(configMap *v1.ConfigMap) error {
@@ -17,6 +19,7 @@ func UseVaultForSecrets(kubeClient kubernetes.Interface, namespace string, useVa
 		} else {
 			delete(configMap.Data, vaultSecretsMarker)
 		}
+		usingVault = newBool(useVault)
 		return nil
 	}, nil)
 	if err != nil {
@@ -26,8 +29,11 @@ func UseVaultForSecrets(kubeClient kubernetes.Interface, namespace string, useVa
 
 // UsingVaultForSecrets returns true if the cluster has been configured to store secrets in vault
 func UsingVaultForSecrets(kubeClient kubernetes.Interface, namespace string) bool {
-	configMap := getInstallConfigMap(kubeClient, namespace)
-	return configMap[vaultSecretsMarker] != ""
+	if usingVault == nil {
+		configMap := getInstallConfigMap(kubeClient, namespace)
+		usingVault = newBool(configMap[vaultSecretsMarker] != "")
+	}
+	return *usingVault
 }
 
 func getInstallConfigMap(kubeClient kubernetes.Interface, namespace string) map[string]string {
@@ -36,4 +42,9 @@ func getInstallConfigMap(kubeClient kubernetes.Interface, namespace string) map[
 		logrus.Errorf("Error getting configmap %s: %v", kube.ConfigMapNameJXInstallConfig, err)
 	}
 	return configMap
+}
+
+// Helper method to create a *bool value
+func newBool(b bool) *bool {
+	return &b
 }
