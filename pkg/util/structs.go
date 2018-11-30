@@ -70,33 +70,6 @@ func ToStructFromMapStringInterface(m map[string]interface{}, str interface{}) e
 	return json.Unmarshal(j, str)
 }
 
-// MarshalAllKeysInMapToString will traverse a generic map. It will ensure that all keys in the map (and all keys of any
-// sub-maps) are converted to a string. This is required for any persistence engine that requires keys to be strings
-// rather than a more generic datatype - eg vault.
-func MarshalAllKeysInMapToString(m map[string]interface{}) (map[string]interface{}, error) {
-	//out := make(map[string]interface{})
-	//for k, v := range m {
-	//	if kstr, isString := k.(string); !isString {
-	//		keyAsString := fmt.Sprintf("%s", k)
-	//		if keyAsString == "" {
-	//			return out, errors.New("Error marshalling map keys to string. Could not convert '%v' to string")
-	//		}
-	//		out[keyAsString] = v
-	//	} else {
-	//		out[kstr] = v
-	//	}
-	//	if subMap, isMap := v.(map[interface{}]interface{}); isMap {
-	//		marshalledSubmap, err := MarshalAllKeysInMapToString(subMap)
-	//		if err != nil {
-	//			return out, err
-	//		}
-	//	}
-	//}
-	//return out, nil
-
-	return nil, nil
-}
-
 // ConvertAllMapKeysToString will recursively go through an object and convert all keys of a map (and any submaps) to
 // Strings. This is necessary for json handlers (eg vault) where an item of a submap must be map[string]interface{}
 // rather than the more lenient map[interface{}]interface{} that you get from yaml unmarshalling
