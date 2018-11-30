@@ -215,14 +215,24 @@ func ensureVaultRoleBinding(client kubernetes.Interface, namespace string, roleN
 	apiGroups := []string{"authentication.k8s.io"}
 	resources := []string{"tokenreviews"}
 	verbs := []string{"*"}
+	found := kube.IsClusterRole(client, roleName)
+	if found {
+		err := kube.DeleteClusterRole(client, roleName)
+		if err != nil {
+			return errors.Wrapf(err, "deleting the existing cluster role '%s'", roleName)
+		}
+	}
 	err := kube.CreateClusterRole(client, namespace, roleName, apiGroups, resources, verbs)
 	if err != nil {
 		return errors.Wrapf(err, "creating the cluster role '%s' for vault", roleName)
 	}
 
-	found := kube.IsClusterRoleBinding(client, roleBindingName)
+	found = kube.IsClusterRoleBinding(client, roleBindingName)
 	if found {
-		kube.DeleteClusterRoleBinding(client, roleBindingName)
+		err := kube.DeleteClusterRoleBinding(client, roleBindingName)
+		if err != nil {
+			return errors.Wrapf(err, "deleting the existing cluster role binding '%s'", roleBindingName)
+		}
 	}
 
 	err = kube.CreateClusterRoleBinding(client, namespace, roleBindingName, serviceAccount, roleName)

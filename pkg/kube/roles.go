@@ -239,31 +239,45 @@ func DeleteClusterRoleBinding(kubeClient kubernetes.Interface, name string) erro
 	return nil
 }
 
+// IsClusterRole checks if a cluster role exists
+func IsClusterRole(kubeClient kubernetes.Interface, name string) bool {
+	_, err := kubeClient.RbacV1().ClusterRoles().Get(name, metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		return false
+	}
+	return true
+}
+
 // CreateClusterRole creates a new cluster role
 func CreateClusterRole(kubeClient kubernetes.Interface, namesapce string, name string,
 	apiGroups []string, resources []string, verbs []string) error {
-	_, err := kubeClient.RbacV1().ClusterRoles().Get(name, metav1.GetOptions{})
+	role := &rbacv1.ClusterRole{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       clusterRoleKind,
+			APIVersion: "v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Rules: []rbacv1.PolicyRule{
+			rbacv1.PolicyRule{
+				APIGroups: apiGroups,
+				Resources: resources,
+				Verbs:     verbs,
+			},
+		},
+	}
+	_, err := kubeClient.RbacV1().ClusterRoles().Create(role)
 	if err != nil {
-		role := &rbacv1.ClusterRole{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       clusterRoleKind,
-				APIVersion: "v1",
-			},
-			ObjectMeta: metav1.ObjectMeta{
-				Name: name,
-			},
-			Rules: []rbacv1.PolicyRule{
-				rbacv1.PolicyRule{
-					APIGroups: apiGroups,
-					Resources: resources,
-					Verbs:     verbs,
-				},
-			},
-		}
-		_, err := kubeClient.RbacV1().ClusterRoles().Create(role)
-		if err != nil {
-			return errors.Wrap(err, "creating custer role")
-		}
+		return errors.Wrap(err, "creating custer role")
+	}
+	return nil
+}
+
+// DeleteClusterRole deletes a cluster role if exists
+func DeleteClusterRole(kubeClient kubernetes.Interface, name string) error {
+	if IsClusterRole(kubeClient, name) {
+		return kubeClient.RbacV1().ClusterRoles().Delete(name, &metav1.DeleteOptions{})
 	}
 	return nil
 }
