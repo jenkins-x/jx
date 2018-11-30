@@ -37,7 +37,8 @@ type GetApplicationsResults struct {
 	EnvApps  []EnvApps
 	EnvNames []string
 
-	Applications map[string]*ApplicationEnvironmentInfo
+	// Applications is a map indexed by the application name then the environment name
+	Applications map[string]map[string]*ApplicationEnvironmentInfo
 }
 
 // EnvApps contains data about app deployments in an environment
@@ -212,20 +213,25 @@ func (o *GetApplicationsOptions) Run() error {
 	}
 	table.AddRow(titles...)
 
-	appMap := map[string]*ApplicationEnvironmentInfo{}
+	appEnvMap := map[string]map[string]*ApplicationEnvironmentInfo{}
 
 	for _, appName := range apps {
 		row := []string{appName}
 		for _, ea := range envApps {
 			version := ""
 			d := ea.Apps[appName]
+			appMap := appEnvMap[appName]
+			if appMap == nil {
+				appMap = map[string]*ApplicationEnvironmentInfo{}
+				appEnvMap[appName] = appMap
+			}
 			version = kube.GetVersion(&d.ObjectMeta)
 			appEnvInfo := &ApplicationEnvironmentInfo{
 				Deployment: &d,
 				Environment: &ea.Environment,
 				Version:    version,
 			}
-			appMap[appName] = appEnvInfo
+			appMap[ea.Environment.Name] = appEnvInfo
 			if ea.Environment.Spec.Kind != v1.EnvironmentKindTypePreview {
 				row = append(row, version)
 			}
@@ -263,7 +269,7 @@ func (o *GetApplicationsOptions) Run() error {
 		}
 		table.AddRow(row...)
 	}
-	o.Results.Applications = appMap
+	o.Results.Applications = appEnvMap
 
 	table.Render()
 	return nil
