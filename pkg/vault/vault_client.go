@@ -7,7 +7,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type VaultClient interface {
+// Client is an interface for interacting with Vault
+type Client interface {
 	// Write writes a named secret to the vault
 	Write(secretName string, data map[string]interface{}) (map[string]interface{}, error)
 
@@ -24,19 +25,19 @@ type VaultClient interface {
 	Read(secretName string) (map[string]interface{}, error)
 }
 
-// VaultClient is a hand wrapper around the official Vault API to save shit in the way we want
-type VaultClientImpl struct {
+// ClientImpl is a hand wrapper around the official Vault API to save shit in the way we want
+type ClientImpl struct {
 	client *api.Client
 }
 
 // NewVaultClient creates a new Vault Client wrapping the api.client
-func NewVaultClient(client *api.Client) VaultClient {
-	return &VaultClientImpl{client: client}
+func NewVaultClient(client *api.Client) Client {
+	return &ClientImpl{client: client}
 }
 
 // Write writes a named secret to the vault with the data provided. Data can be a generic map of stuff, but at all points
 // in the map, keys _must_ be strings (not bool, int or even interface{}) otherwise you'll get an error
-func (v *VaultClientImpl) Write(secretName string, data map[string]interface{}) (map[string]interface{}, error) {
+func (v *ClientImpl) Write(secretName string, data map[string]interface{}) (map[string]interface{}, error) {
 	secret, err := v.client.Logical().Write(secretPath(secretName), data)
 	if secret != nil {
 		return secret.Data, err
@@ -45,7 +46,7 @@ func (v *VaultClientImpl) Write(secretName string, data map[string]interface{}) 
 }
 
 // WriteObject writes a generic named object to the vault. The secret _must_ be serializable to JSON
-func (v *VaultClientImpl) WriteObject(secretName string, secret interface{}) (map[string]interface{}, error) {
+func (v *ClientImpl) WriteObject(secretName string, secret interface{}) (map[string]interface{}, error) {
 	// Convert the secret into a saveable map[string]interface{} format
 	m, err := util.ToMapStringInterfaceFromStruct(&secret)
 	if err != nil {
@@ -55,7 +56,7 @@ func (v *VaultClientImpl) WriteObject(secretName string, secret interface{}) (ma
 }
 
 // WriteYaml writes a yaml object to a named secret
-func (v *VaultClientImpl) WriteYaml(secretName string, y string) (map[string]interface{}, error) {
+func (v *ClientImpl) WriteYaml(secretName string, y string) (map[string]interface{}, error) {
 	// Unmarshal to a generic map
 	m := make(map[string]interface{})
 	err := yaml.Unmarshal([]byte(y), &m)
@@ -70,7 +71,8 @@ func (v *VaultClientImpl) WriteYaml(secretName string, y string) (map[string]int
 	return v.Write(secretName, out.(map[string]interface{}))
 }
 
-func (v *VaultClientImpl) List(path string) ([]string, error) {
+// List lists the secrets under a given path
+func (v *ClientImpl) List(path string) ([]string, error) {
 	secrets, err := v.client.Logical().List(secretPath(path))
 	if err != nil {
 		return nil, err
@@ -87,7 +89,7 @@ func (v *VaultClientImpl) List(path string) ([]string, error) {
 }
 
 // Read reads a named secret to the vault
-func (v *VaultClientImpl) Read(secretName string) (map[string]interface{}, error) {
+func (v *ClientImpl) Read(secretName string) (map[string]interface{}, error) {
 	secret, err := v.client.Logical().Read(secretPath(secretName))
 	if secret != nil {
 		return secret.Data, err

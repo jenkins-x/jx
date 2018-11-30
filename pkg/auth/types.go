@@ -46,6 +46,6 @@ type FileAuthConfigSaver struct {
 
 // VaultAuthConfigSaver is a ConfigSaver that saves configs to Vault
 type VaultAuthConfigSaver struct {
-	vaultClient vault.VaultClient
+	vaultClient vault.Client
 	secretName  string
 }

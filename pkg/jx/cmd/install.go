@@ -1492,7 +1492,7 @@ func (options *InstallOptions) Run() error {
 	return nil
 }
 
-func saveSecretsToVault(client vault.VaultClient, secretsToSave map[string]interface{}) error {
+func saveSecretsToVault(client vault.Client, secretsToSave map[string]interface{}) error {
 	var err error
 	rootPath := vault.InstallSecretsPrefix
 	for secretName, secret := range secretsToSave {
@@ -1514,7 +1514,7 @@ func saveSecretsToVault(client vault.VaultClient, secretsToSave map[string]inter
 	return nil
 }
 
-func (o *InstallOptions) modifySecrets(helmConfig *config.HelmValuesConfig, adminSecrets *config.AdminSecretsConfig, gitSecrets string) error {
+func (options *InstallOptions) modifySecrets(helmConfig *config.HelmValuesConfig, adminSecrets *config.AdminSecretsConfig, gitSecrets string) error {
 	// FIXME - this data
 	var err error
 	data := make(map[string][]byte)
@@ -1527,7 +1527,7 @@ func (o *InstallOptions) modifySecrets(helmConfig *config.HelmValuesConfig, admi
 		return err
 	}
 	data[GitSecretsFile] = []byte(gitSecrets)
-	_, err = o.ModifySecret(JXInstallConfig, func(secret *core_v1.Secret) error {
+	_, err = options.ModifySecret(JXInstallConfig, func(secret *core_v1.Secret) error {
 		secret.Data = data
 		return nil
 	})
@@ -1535,31 +1535,31 @@ func (o *InstallOptions) modifySecrets(helmConfig *config.HelmValuesConfig, admi
 }
 
 // ModifySecret modifies the Secret either live or via the file system if generating the GitOps source
-func (o *InstallOptions) ModifySecret(name string, callback func(*core_v1.Secret) error) (*core_v1.Secret, error) {
-	if o.modifySecretCallback == nil {
-		o.modifySecretCallback = func(name string, callback func(*core_v1.Secret) error) (*core_v1.Secret, error) {
-			kubeClient, ns, err := o.KubeClientAndDevNamespace()
+func (options *InstallOptions) ModifySecret(name string, callback func(*core_v1.Secret) error) (*core_v1.Secret, error) {
+	if options.modifySecretCallback == nil {
+		options.modifySecretCallback = func(name string, callback func(*core_v1.Secret) error) (*core_v1.Secret, error) {
+			kubeClient, ns, err := options.KubeClientAndDevNamespace()
 			if err != nil {
 				return nil, err
 			}
 			return kube.DefaultModifySecret(kubeClient, ns, name, callback, nil)
 		}
 	}
-	return o.modifySecretCallback(name, callback)
+	return options.modifySecretCallback(name, callback)
 }
 
 // ModifyConfigMap modifies the ConfigMap either live or via the file system if generating the GitOps source
-func (o *InstallOptions) ModifyConfigMap(name string, callback func(*core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
-	if o.modifyConfigMapCallback == nil {
-		o.modifyConfigMapCallback = func(name string, callback func(*core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
-			kubeClient, ns, err := o.KubeClientAndDevNamespace()
+func (options *InstallOptions) ModifyConfigMap(name string, callback func(*core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
+	if options.modifyConfigMapCallback == nil {
+		options.modifyConfigMapCallback = func(name string, callback func(*core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
+			kubeClient, ns, err := options.KubeClientAndDevNamespace()
 			if err != nil {
 				return nil, err
 			}
 			return kube.DefaultModifyConfigMap(kubeClient, ns, name, callback, nil)
 		}
 	}
-	return o.modifyConfigMapCallback(name, callback)
+	return options.modifyConfigMapCallback(name, callback)
 }
 
 // gitOpsModifyConfigMap provides a helper function to lazily create, modify and save the YAML file in the given directory

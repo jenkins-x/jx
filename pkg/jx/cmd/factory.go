@@ -309,7 +309,7 @@ func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService
 }
 
 // GetSystemVault gets the system vault for storing secrets.
-func (f *factory) GetSystemVault() (vault.VaultClient, error) {
+func (f *factory) GetSystemVault() (vault.Client, error) {
 	vopClient, err := f.CreateVaultOperatorClient()
 	kubeClient, ns, err := f.CreateClient()
 	if err != nil {

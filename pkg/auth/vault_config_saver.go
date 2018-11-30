@@ -30,13 +30,13 @@ func (v *VaultAuthConfigSaver) SaveConfig(config *AuthConfig) error {
 }
 
 // NewVaultAuthConfigService creates a new ConfigService that saves it config to a Vault
-func NewVaultAuthConfigService(secretName string, vaultClient vault.VaultClient) ConfigService {
+func NewVaultAuthConfigService(secretName string, vaultClient vault.Client) ConfigService {
 	saver := newVaultAuthConfigSaver(secretName, vaultClient)
 	return NewAuthConfigService(&saver)
 }
 
 // newVaultAuthConfigSaver creates a ConfigSaver that saves the Configs under a specified secretname in a vault
-func newVaultAuthConfigSaver(secretName string, vaultClient vault.VaultClient) VaultAuthConfigSaver {
+func newVaultAuthConfigSaver(secretName string, vaultClient vault.Client) VaultAuthConfigSaver {
 	return VaultAuthConfigSaver{
 		secretName:  secretName,
 		vaultClient: vaultClient,

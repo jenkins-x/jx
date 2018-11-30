@@ -78,6 +78,7 @@ func GetLatestVersionStringFromGitHub(githubOwner, githubRepo string) (string, e
 	return "", fmt.Errorf("Unable to find the latest version for github.com/%s/%s", githubOwner, githubRepo)
 }
 
+// GetLatestReleaseFromGitHub gets the latest Release from a specific github repo
 func GetLatestReleaseFromGitHub(githubOwner, githubRepo string) (string, error) {
 	client, release, resp, err := preamble()
 	release, resp, err = client.Repositories.GetLatestRelease(context.Background(), githubOwner, githubRepo)
@@ -92,6 +93,8 @@ func GetLatestReleaseFromGitHub(githubOwner, githubRepo string) (string, error) 
 	return "", fmt.Errorf("Unable to find the latest version for github.com/%s/%s", githubOwner, githubRepo)
 }
 
+// GetLatestFullTagFromGithub gets the latest 'full' tag from a specific github repo. This (at present) ignores releases
+// with a hyphen in it, usually used with -SNAPSHOT, or -RC1 or -beta
 func GetLatestFullTagFromGithub(githubOwner, githubRepo string) (string, error) {
 	tags, err := GetTagsFromGithub(githubOwner, githubRepo)
 	if err == nil {
@@ -107,6 +110,7 @@ func GetLatestFullTagFromGithub(githubOwner, githubRepo string) (string, error) 
 	return "", err
 }
 
+// GetLatestTagFromGithub gets the latest (in github order) tag from a specific github repo
 func GetLatestTagFromGithub(githubOwner, githubRepo string) (string, error) {
 	tags, err := GetTagsFromGithub(githubOwner, githubRepo)
 	if err == nil {
@@ -115,6 +119,7 @@ func GetLatestTagFromGithub(githubOwner, githubRepo string) (string, error) {
 	return "", err
 }
 
+// GetTagsFromGithub gets the list of tags on a specific github repo
 func GetTagsFromGithub(githubOwner, githubRepo string) ([]*github.RepositoryTag, error) {
 	client, _, resp, err := preamble()
 
