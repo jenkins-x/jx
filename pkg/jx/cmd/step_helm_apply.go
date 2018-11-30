@@ -209,7 +209,7 @@ func (o *StepHelmApplyOptions) ensureHelmSecrets(filename string) (bool, error) 
 		}
 
 		// Now save the map as yaml to filename
-		s := storage.NewFileSecretStore()
+		s := storage.NewFileStore()
 		err = s.WriteObject(filename, allSecrets)
 		if err != nil {
 			return exists, errors.Wrapf(err, "Unable to save helm secrets to %s", filename)

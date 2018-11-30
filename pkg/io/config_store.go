@@ -1,4 +1,4 @@
-package storage
+package io
 
 import (
 	"github.com/jenkins-x/jx/pkg/util"
@@ -7,8 +7,8 @@ import (
 	"io/ioutil"
 )
 
-// SecretStore provides an interface for storing secrets
-type SecretStore interface {
+// ConfigStore provides an interface for storing configs
+type ConfigStore interface {
 	// Write saves some secret data to the store
 	Write(secretName string, bytes []byte) error
 
@@ -22,22 +22,21 @@ type SecretStore interface {
 	ReadObject(s string, secret interface{}) error
 }
 
-//
-type fileSecretStore struct {
+type fileStore struct {
 }
 
-// NewFileSecretStore creates a SecretStore that stores its data to the filesystem in YAML
-func NewFileSecretStore() SecretStore {
-	return &fileSecretStore{}
+// NewFileStore creates a ConfigStore that stores its data to the filesystem in YAML
+func NewFileStore() ConfigStore {
+	return &fileStore{}
 }
 
 // Write writes a secret to the filesystem in YAML format
-func (f *fileSecretStore) Write(fileName string, bytes []byte) error {
+func (f *fileStore) Write(fileName string, bytes []byte) error {
 	return ioutil.WriteFile(fileName, bytes, util.DefaultWritePermissions)
 }
 
 // WriteObject writes a secret to the filesystem in YAML format
-func (f *fileSecretStore) WriteObject(fileName string, obj interface{}) error {
+func (f *fileStore) WriteObject(fileName string, obj interface{}) error {
 	y, err := yaml.Marshal(obj)
 	if err != nil {
 		return errors.Wrapf(err, "Unable to marshal object to yaml: %v", obj)
@@ -45,12 +44,12 @@ func (f *fileSecretStore) WriteObject(fileName string, obj interface{}) error {
 	return f.Write(fileName, y)
 }
 
-func (f *fileSecretStore) Read(fileName string) ([]byte, error) {
+func (f *fileStore) Read(fileName string) ([]byte, error) {
 	return ioutil.ReadFile(fileName)
 }
 
 // ReadObject reads an object from the filesystem as yaml
-func (f *fileSecretStore) ReadObject(fileName string, secret interface{}) error {
+func (f *fileStore) ReadObject(fileName string, secret interface{}) error {
 	data, err := f.Read(fileName)
 	if err != nil {
 		return errors.Wrapf(err, "Unable to read %s", fileName)

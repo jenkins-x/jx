@@ -363,7 +363,7 @@ func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 
 // Run implements this command
 func (options *InstallOptions) Run() error {
-	secretStore := storage.NewFileSecretStore()
+	secretStore := storage.NewFileStore()
 	originalGitUsername := options.GitRepositoryOptions.Username
 	originalGitServer := options.GitRepositoryOptions.ServerURL
 	originalGitToken := options.GitRepositoryOptions.ApiToken
@@ -1541,7 +1541,7 @@ func (options *InstallOptions) ModifyConfigMap(name string, callback func(*core_
 }
 
 // gitOpsModifyConfigMap provides a helper function to lazily create, modify and save the YAML file in the given directory
-func gitOpsModifyConfigMap(dir string, name string, defaultResource *core_v1.ConfigMap, secretStore storage.SecretStore, callback func(configMap *core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
+func gitOpsModifyConfigMap(dir string, name string, defaultResource *core_v1.ConfigMap, secretStore storage.ConfigStore, callback func(configMap *core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
 	answer := core_v1.ConfigMap{}
 	fileName := filepath.Join(dir, name+"-configmap.yaml")
 	exists, err := util.FileExists(fileName)
@@ -1576,7 +1576,7 @@ func gitOpsModifyConfigMap(dir string, name string, defaultResource *core_v1.Con
 }
 
 // gitOpsModifySecret provides a helper function to lazily create, modify and save the YAML file in the given directory
-func gitOpsModifySecret(dir string, name string, defaultResource *core_v1.Secret, secretStore storage.SecretStore, callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
+func gitOpsModifySecret(dir string, name string, defaultResource *core_v1.Secret, secretStore storage.ConfigStore, callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
 	answer := core_v1.Secret{}
 	fileName := filepath.Join(dir, name+"-secret.yaml")
 	exists, err := util.FileExists(fileName)
@@ -1612,7 +1612,7 @@ func gitOpsModifySecret(dir string, name string, defaultResource *core_v1.Secret
 }
 
 // gitOpsModifyEnvironment provides a helper function to lazily create, modify and save the YAML file in the given directory
-func gitOpsModifyEnvironment(dir string, name string, defaultEnvironment *v1.Environment, secretStore storage.SecretStore, callback func(*v1.Environment) error) (*v1.Environment, error) {
+func gitOpsModifyEnvironment(dir string, name string, defaultEnvironment *v1.Environment, secretStore storage.ConfigStore, callback func(*v1.Environment) error) (*v1.Environment, error) {
 	answer := v1.Environment{}
 	fileName := filepath.Join(dir, name+"-env.yaml")
 	exists, err := util.FileExists(fileName)
@@ -1721,7 +1721,7 @@ func LoadVersionFromCloudEnvironmentsDir(wrkDir string) (string, error) {
 		return version, fmt.Errorf("File does not exist %s", path)
 	}
 	// FIXME - don't create a store here - inject it from the caller.
-	secretStore := storage.NewFileSecretStore()
+	secretStore := storage.NewFileStore()
 	data, err := secretStore.Read(path)
 	if err != nil {
 		return version, err
