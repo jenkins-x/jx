@@ -11,9 +11,12 @@ import (
 const ns = "Galaxy"
 
 func TestUseVaultForSecrets(t *testing.T) {
-	kubeClient := createMockCluster()
+	t.Parallel()
 
-	UseVaultForSecrets(kubeClient, ns, true)
+	kubeClient := createMockCluster()
+	secretLocation := NewSecretLocation(kubeClient, ns)
+
+	secretLocation.SetInVault(true)
 
 	// Test we have actually added the item to the configmap
 	configMap, err := kubeClient.Core().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
@@ -21,16 +24,16 @@ func TestUseVaultForSecrets(t *testing.T) {
 	assert.Equal(t, "true", configMap.Data["useVaultForSecrets"])
 	// Test we haven't overwritten the configmap
 	assert.Equal(t, "two", configMap.Data["one"])
-	assert.True(t, UsingVaultForSecrets(kubeClient, ns))
+	assert.True(t, secretLocation.InVault())
 
-	UseVaultForSecrets(kubeClient, ns, false)
+	secretLocation.SetInVault(false)
 
 	configMap, err = kubeClient.Core().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, "", configMap.Data["useVaultForSecrets"])
 	// Test we haven't overwritten the configmap
 	assert.Equal(t, "two", configMap.Data["one"])
-	assert.False(t, UsingVaultForSecrets(kubeClient, ns))
+	assert.False(t, secretLocation.InVault())
 }
 
 func createMockCluster() *fake.Clientset {

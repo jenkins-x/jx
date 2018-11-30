@@ -62,6 +62,7 @@ type factory struct {
 	kubeConfig      kube.Kuber
 	impersonateUser string
 	bearerToken     string
+	secretLocation  secrets.SecretLocation
 }
 
 // NewFactory creates a factory with the default Kubernetes resources defined
@@ -286,13 +287,16 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 // CreateAuthConfigService creates a new service saving auth config under the provided name. Depending on the factory,
 // It will either save the config to the local file-system, or a Vault
 func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService, error) {
-
 	client, namespace, err := f.CreateClient()
+	if f.secretLocation == nil {
+		f.secretLocation = secrets.NewSecretLocation(client, namespace)
+	}
+
 	useVault := false
 	if err != nil {
 		logrus.Errorf("Could not create kube client. Saving configs to local filesystem")
 	} else {
-		useVault = secrets.UsingVaultForSecrets(client, namespace)
+		useVault = f.secretLocation.InVault()
 	}
 
 	if useVault {

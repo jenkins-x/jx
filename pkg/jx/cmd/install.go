@@ -736,7 +736,7 @@ func (options *InstallOptions) Run() error {
 			log.Infof("System vault created named %s in namespace %s.\n",
 				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(ns))
 		}
-		secrets.UseVaultForSecrets(client, ns, options.Flags.Vault)
+		secrets.NewSecretLocation(client, ns).SetInVault(options.Flags.Vault)
 	}
 
 	// get secrets to use in helm install

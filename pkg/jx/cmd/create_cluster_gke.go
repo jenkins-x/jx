@@ -313,7 +313,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		if err = InstallVaultOperator(&o.CommonOptions, ""); err != nil {
 			return err
 		}
-		secrets.UseVaultForSecrets(kubeClient, ns, true)
+		secrets.NewSecretLocation(kubeClient, ns).SetInVault(true)
 	}
 
 	return nil
