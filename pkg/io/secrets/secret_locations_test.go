@@ -36,6 +36,28 @@ func TestUseVaultForSecrets(t *testing.T) {
 	assert.False(t, secretLocation.InVault())
 }
 
+func TestUseVaultForSecrets_NoJxInstallConfigMap(t *testing.T) {
+	t.Parallel()
+
+	kubeClient := fake.NewSimpleClientset()
+	secretLocation := NewSecretLocation(kubeClient, ns)
+
+	secretLocation.SetInVault(true)
+
+	// Test we have actually added the item to the configmap
+	configMap, err := kubeClient.Core().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
+	assert.NoError(t, err)
+	assert.Equal(t, "true", configMap.Data["useVaultForSecrets"])
+	assert.True(t, secretLocation.InVault())
+
+	secretLocation.SetInVault(false)
+
+	configMap, err = kubeClient.Core().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
+	assert.NoError(t, err)
+	assert.Equal(t, "", configMap.Data["useVaultForSecrets"])
+	assert.False(t, secretLocation.InVault())
+}
+
 func createMockCluster() *fake.Clientset {
 	namespace := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
