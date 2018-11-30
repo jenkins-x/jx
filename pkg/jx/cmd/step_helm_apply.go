@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/storage"
+	configio "github.com/jenkins-x/jx/pkg/io"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -209,7 +209,7 @@ func (o *StepHelmApplyOptions) ensureHelmSecrets(filename string) (bool, error) 
 		}
 
 		// Now save the map as yaml to filename
-		s := storage.NewFileStore()
+		s := configio.NewFileStore()
 		err = s.WriteObject(filename, allSecrets)
 		if err != nil {
 			return exists, errors.Wrapf(err, "Unable to save helm secrets to %s", filename)

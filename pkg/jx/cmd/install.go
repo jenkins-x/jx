@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/storage"
 	"github.com/jenkins-x/jx/pkg/vault"
 	"gopkg.in/yaml.v2"
 
@@ -28,6 +27,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	configio "github.com/jenkins-x/jx/pkg/io"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -363,7 +363,7 @@ func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 
 // Run implements this command
 func (options *InstallOptions) Run() error {
-	secretStore := storage.NewFileStore()
+	configStore := configio.NewFileStore()
 	originalGitUsername := options.GitRepositoryOptions.Username
 	originalGitServer := options.GitRepositoryOptions.ServerURL
 	originalGitToken := options.GitRepositoryOptions.ApiToken
@@ -405,21 +405,21 @@ func (options *InstallOptions) Run() error {
 
 		options.modifyDevEnvironmentFn = func(callback func(env *v1.Environment) error) error {
 			defaultEnv := kube.CreateDefaultDevEnvironment(ns)
-			_, err := gitOpsModifyEnvironment(templatesDir, kube.LabelValueDevEnvironment, defaultEnv, secretStore, callback)
+			_, err := gitOpsModifyEnvironment(templatesDir, kube.LabelValueDevEnvironment, defaultEnv, configStore, callback)
 			return err
 		}
 		options.modifyEnvironmentFn = func(name string, callback func(env *v1.Environment) error) error {
 			defaultEnv := &v1.Environment{}
 			defaultEnv.Labels = map[string]string{}
-			_, err := gitOpsModifyEnvironment(templatesDir, name, defaultEnv, secretStore, callback)
+			_, err := gitOpsModifyEnvironment(templatesDir, name, defaultEnv, configStore, callback)
 			return err
 		}
 		options.InitOptions.modifyDevEnvironmentFn = options.modifyDevEnvironmentFn
 		options.modifyConfigMapCallback = func(name string, callback func(configMap *core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
-			return gitOpsModifyConfigMap(templatesDir, name, nil, secretStore, callback)
+			return gitOpsModifyConfigMap(templatesDir, name, nil, configStore, callback)
 		}
 		options.modifySecretCallback = func(name string, callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
-			return gitOpsModifySecret(templatesDir, name, nil, secretStore, callback)
+			return gitOpsModifySecret(templatesDir, name, nil, configStore, callback)
 		}
 	}
 
@@ -916,19 +916,19 @@ func (options *InstallOptions) Run() error {
 	}
 
 	secretsFileName := filepath.Join(dir, GitSecretsFile)
-	err = secretStore.Write(secretsFileName, []byte(gitSecrets))
+	err = configStore.Write(secretsFileName, []byte(gitSecrets))
 	if err != nil {
 		return errors.Wrap(err, "failed to write the git secrets in the secrets file")
 	}
 
 	adminSecretsFileName := filepath.Join(dir, AdminSecretsFile)
-	err = secretStore.WriteObject(adminSecretsFileName, adminSecrets)
+	err = configStore.WriteObject(adminSecretsFileName, adminSecrets)
 	if err != nil {
 		return errors.Wrap(err, "failed to write the admin config file")
 	}
 
 	configFileName := filepath.Join(dir, ExtraValuesFile)
-	err = secretStore.WriteObject(configFileName, helmConfig)
+	err = configStore.WriteObject(configFileName, helmConfig)
 	if err != nil {
 		return errors.Wrap(err, "failed to write the helm config file")
 	}
@@ -1103,7 +1103,7 @@ func (options *InstallOptions) Run() error {
 			return errors.Wrapf(err, "Failed to save GitOps helm requirements file %s", requirementsFile)
 		}
 
-		err = secretStore.Write(chartFile, []byte(GitOpsChartYAML))
+		err = configStore.Write(chartFile, []byte(GitOpsChartYAML))
 		if err != nil {
 			return errors.Wrapf(err, "Failed to save file %s", chartFile)
 		}
@@ -1150,13 +1150,13 @@ func (options *InstallOptions) Run() error {
 		}
 
 		gitIgnore := filepath.Join(gitOpsDir, ".gitignore")
-		err = secretStore.Write(gitIgnore, []byte(devGitOpsGitIgnore))
+		err = configStore.Write(gitIgnore, []byte(devGitOpsGitIgnore))
 		if err != nil {
 			return errors.Wrapf(err, "failed to write %s", gitIgnore)
 		}
 
 		readme := filepath.Join(gitOpsDir, "README.md")
-		err = secretStore.Write(readme, []byte(devGitOpsReadMe))
+		err = configStore.Write(readme, []byte(devGitOpsReadMe))
 		if err != nil {
 			return errors.Wrapf(err, "failed to write %s", readme)
 		}
@@ -1167,7 +1167,7 @@ func (options *InstallOptions) Run() error {
 			jftTmp = devGitOpsJenkinsfileProw
 		}
 		text := fmt.Sprintf(jftTmp, ns)
-		err = secretStore.Write(jenkinsFile, []byte(text))
+		err = configStore.Write(jenkinsFile, []byte(text))
 		if err != nil {
 			return errors.Wrapf(err, "failed to write %s", jenkinsFile)
 		}
@@ -1541,7 +1541,7 @@ func (options *InstallOptions) ModifyConfigMap(name string, callback func(*core_
 }
 
 // gitOpsModifyConfigMap provides a helper function to lazily create, modify and save the YAML file in the given directory
-func gitOpsModifyConfigMap(dir string, name string, defaultResource *core_v1.ConfigMap, secretStore storage.ConfigStore, callback func(configMap *core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
+func gitOpsModifyConfigMap(dir string, name string, defaultResource *core_v1.ConfigMap, configStore configio.ConfigStore, callback func(configMap *core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
 	answer := core_v1.ConfigMap{}
 	fileName := filepath.Join(dir, name+"-configmap.yaml")
 	exists, err := util.FileExists(fileName)
@@ -1549,7 +1549,7 @@ func gitOpsModifyConfigMap(dir string, name string, defaultResource *core_v1.Con
 		return &answer, errors.Wrapf(err, "Could not check if file exists %s", fileName)
 	}
 	if exists {
-		err = secretStore.ReadObject(fileName, &answer)
+		err = configStore.ReadObject(fileName, &answer)
 		if err != nil {
 			return &answer, errors.Wrapf(err, "Failed to unmarshall YAML file %s", fileName)
 		}
@@ -1568,7 +1568,7 @@ func gitOpsModifyConfigMap(dir string, name string, defaultResource *core_v1.Con
 	if answer.Kind == "" {
 		answer.Kind = "ConfigMap"
 	}
-	err = secretStore.WriteObject(fileName, &answer)
+	err = configStore.WriteObject(fileName, &answer)
 	if err != nil {
 		return &answer, errors.Wrapf(err, "Could not save file %s", fileName)
 	}
@@ -1576,7 +1576,7 @@ func gitOpsModifyConfigMap(dir string, name string, defaultResource *core_v1.Con
 }
 
 // gitOpsModifySecret provides a helper function to lazily create, modify and save the YAML file in the given directory
-func gitOpsModifySecret(dir string, name string, defaultResource *core_v1.Secret, secretStore storage.ConfigStore, callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
+func gitOpsModifySecret(dir string, name string, defaultResource *core_v1.Secret, configStore configio.ConfigStore, callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
 	answer := core_v1.Secret{}
 	fileName := filepath.Join(dir, name+"-secret.yaml")
 	exists, err := util.FileExists(fileName)
@@ -1585,7 +1585,7 @@ func gitOpsModifySecret(dir string, name string, defaultResource *core_v1.Secret
 	}
 	if exists {
 		// lets unmarshall the data
-		err = secretStore.ReadObject(fileName, &answer)
+		err = configStore.ReadObject(fileName, &answer)
 		if err != nil {
 			return &answer, err
 		}
@@ -1604,7 +1604,7 @@ func gitOpsModifySecret(dir string, name string, defaultResource *core_v1.Secret
 	if answer.Kind == "" {
 		answer.Kind = "Secret"
 	}
-	err = secretStore.WriteObject(fileName, &answer)
+	err = configStore.WriteObject(fileName, &answer)
 	if err != nil {
 		return &answer, errors.Wrapf(err, "Could not save file %s", fileName)
 	}
@@ -1612,7 +1612,7 @@ func gitOpsModifySecret(dir string, name string, defaultResource *core_v1.Secret
 }
 
 // gitOpsModifyEnvironment provides a helper function to lazily create, modify and save the YAML file in the given directory
-func gitOpsModifyEnvironment(dir string, name string, defaultEnvironment *v1.Environment, secretStore storage.ConfigStore, callback func(*v1.Environment) error) (*v1.Environment, error) {
+func gitOpsModifyEnvironment(dir string, name string, defaultEnvironment *v1.Environment, configStore configio.ConfigStore, callback func(*v1.Environment) error) (*v1.Environment, error) {
 	answer := v1.Environment{}
 	fileName := filepath.Join(dir, name+"-env.yaml")
 	exists, err := util.FileExists(fileName)
@@ -1620,8 +1620,8 @@ func gitOpsModifyEnvironment(dir string, name string, defaultEnvironment *v1.Env
 		return &answer, errors.Wrapf(err, "Could not check if file exists %s", fileName)
 	}
 	if exists {
-		// lets unmarshall the data
-		err := secretStore.ReadObject(fileName, &answer)
+		// lets unmarshal the data
+		err := configStore.ReadObject(fileName, &answer)
 		if err != nil {
 			return &answer, err
 		}
@@ -1639,7 +1639,7 @@ func gitOpsModifyEnvironment(dir string, name string, defaultEnvironment *v1.Env
 	if answer.Kind == "" {
 		answer.Kind = "Environment"
 	}
-	err = secretStore.WriteObject(fileName, &answer)
+	err = configStore.WriteObject(fileName, &answer)
 	if err != nil {
 		return &answer, errors.Wrapf(err, "Could not save file %s", fileName)
 	}
@@ -1721,8 +1721,8 @@ func LoadVersionFromCloudEnvironmentsDir(wrkDir string) (string, error) {
 		return version, fmt.Errorf("File does not exist %s", path)
 	}
 	// FIXME - don't create a store here - inject it from the caller.
-	secretStore := storage.NewFileStore()
-	data, err := secretStore.Read(path)
+	configStore := configio.NewFileStore()
+	data, err := configStore.Read(path)
 	if err != nil {
 		return version, err
 	}
