@@ -46,6 +46,8 @@ github.com/banzaicloud/bank-vaults v0.0.0-20181011153359-b267885f420d h1:yDythYf
 github.com/banzaicloud/bank-vaults v0.0.0-20181011153359-b267885f420d/go.mod h1:DCXyt+jITEQ5JUfxOWiYUKUE6ILZ5P4IU0MKgGcnmuc=
 github.com/banzaicloud/bank-vaults v0.0.0-20181015112421-ca15a6960a3a h1:v8iLXUUy8UR3m2fdcZgkPZxIF4IzAI5nXIjNYM0YARo=
 github.com/banzaicloud/bank-vaults v0.0.0-20181015112421-ca15a6960a3a/go.mod h1:DCXyt+jITEQ5JUfxOWiYUKUE6ILZ5P4IU0MKgGcnmuc=
+github.com/banzaicloud/bank-vaults v0.0.0-20181129101211-e31657d7c4fe h1:20rYK7/kelCwMs3lTlKfR/RQ2T99VpaqntPG7Vt3+cg=
+github.com/banzaicloud/bank-vaults v0.0.0-20181129101211-e31657d7c4fe/go.mod h1:DCXyt+jITEQ5JUfxOWiYUKUE6ILZ5P4IU0MKgGcnmuc=
 github.com/beevik/etree v1.0.1 h1:lWzdj5v/Pj1X360EV7bUudox5SRipy4qZLjY0rhb0ck=
 github.com/beevik/etree v1.0.1/go.mod h1:r8Aw8JqVegEf0w2fDnATrX9VpkMcyFeM0FhwO62wh+A=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 h1:xJ4a3vCFaGF/jqvzLMYoU8P317H5OQ+Via4RmuPwCS0=
