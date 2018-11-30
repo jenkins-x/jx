@@ -17,8 +17,6 @@ import (
 )
 
 func TestStatusRun(t *testing.T) {
-	t.Parallel()
-
 	// Create a fake node
 	node := &v1.Node{
 		ObjectMeta: meta_v1.ObjectMeta{
