@@ -66,6 +66,14 @@ type PipelineActivityListerExpansion interface{}
 // PipelineActivityNamespaceLister.
 type PipelineActivityNamespaceListerExpansion interface{}
 
+// PluginListerExpansion allows custom methods to be added to
+// PluginLister.
+type PluginListerExpansion interface{}
+
+// PluginNamespaceListerExpansion allows custom methods to be added to
+// PluginNamespaceLister.
+type PluginNamespaceListerExpansion interface{}
+
 // ReleaseListerExpansion allows custom methods to be added to
 // ReleaseLister.
 type ReleaseListerExpansion interface{}

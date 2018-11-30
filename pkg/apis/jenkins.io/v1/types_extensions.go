@@ -443,3 +443,46 @@ type AppSpec struct {
 	// A list of services that this App exposes
 	ExposedServices []string `json:"exposedServices,omitempty" protobuf:"bytes,1,opt,name=exposedServices"`
 }
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// PluginList is a list of Plugins available for a team
+type PluginList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []Plugin `json:"items"`
+}
+
+// +genclient
+// +genclient:noStatus
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+
+// Plugin represents a binary plugin installed into this Jenkins X team
+type Plugin struct {
+	metav1.TypeMeta `json:",inline"`
+	// Standard object's metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+
+	Spec PluginSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
+}
+
+// PluginSpec provides details of a binary plugin available for a team
+type PluginSpec struct {
+	SubCommand  string   `json:"subCommand,omitempty"  protobuf:"bytes,3,opt,name=subCommand"`
+	Group       string   `json:"group,omitempty"  protobuf:"bytes,4,opt,name=group"`
+	Binaries    []Binary `json:"binaries,omitempty" protobuf:"bytes,7opt,name=binaries"`
+	Description string   `json:"description,omitempty"  protobuf:"bytes,2,opt,name=description"`
+	Name        string   `json:"name,omitempty"  protobuf:"bytes,5,opt,name=name"`
+	Version     string   `json:"version,omitempty"  protobuf:"bytes,6,opt,name=version"`
+}
+
+// Binary provies the details of a downloadable binary
+type Binary struct {
+	Goarch string `json:"goarch,omitempty"  protobuf:"bytes,1,opt,name=goarch"`
+	Goos   string `json:"goos,omitempty"  protobuf:"bytes,2,opt,name=goos"`
+	URL    string `json:"url,omitempty"  protobuf:"bytes,3,opt,name=url"`
+}

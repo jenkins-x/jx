@@ -24,6 +24,8 @@ type Interface interface {
 	GitServices() GitServiceInformer
 	// PipelineActivities returns a PipelineActivityInformer.
 	PipelineActivities() PipelineActivityInformer
+	// Plugins returns a PluginInformer.
+	Plugins() PluginInformer
 	// Releases returns a ReleaseInformer.
 	Releases() ReleaseInformer
 	// Teams returns a TeamInformer.
@@ -83,6 +85,11 @@ func (v *version) GitServices() GitServiceInformer {
 // PipelineActivities returns a PipelineActivityInformer.
 func (v *version) PipelineActivities() PipelineActivityInformer {
 	return &pipelineActivityInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// Plugins returns a PluginInformer.
+func (v *version) Plugins() PluginInformer {
+	return &pluginInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Releases returns a ReleaseInformer.

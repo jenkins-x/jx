@@ -1,8 +1,37 @@
+/*
+Copyright 2018 The Kubernetes Authors & The Jenkins X Authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package cmd
 
 import (
+	"fmt"
 	"io"
+	"os"
+	"os/exec"
+	"runtime"
 	"strings"
+	"syscall"
+
+	"github.com/jenkins-x/jx/pkg/kube"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/jenkins-x/jx/pkg/extensions"
+
+	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/version"
@@ -26,8 +55,7 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	cmds := &cobra.Command{
 		Use:   "jx",
 		Short: "jx is a command line tool for working with Jenkins X",
-		Long: `
- `,
+		//Long: ``,
 		Run: runHelp,
 		/*
 			BashCompletionFunction: bash_completion_func,
@@ -159,13 +187,46 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	groups.Add(cmds)
 
 	filters := []string{"options"}
-	templates.ActsAsRootCommand(cmds, filters, groups...)
+
+	commonOptions := CommonOptions{
+		Factory: f,
+		In:      in,
+		Out:     out,
+		Err:     err,
+	}
+	verifier := &extensions.CommandOverrideVerifier{
+		Root:        cmds,
+		SeenPlugins: make(map[string]string, 0),
+	}
+	pluginCommandGroups, err1 := commonOptions.getPluginCommandGroups(verifier)
+	if err1 != nil {
+		log.Errorf("%v\n", err1)
+	}
+	templates.ActsAsRootCommand(cmds, filters, pluginCommandGroups, groups...)
 	cmds.AddCommand(NewCmdDocs(f, in, out, err))
 	cmds.AddCommand(NewCmdVersion(f, in, out, err))
 	cmds.Version = version.GetVersion()
 	cmds.SetVersionTemplate("{{printf .Version}}\n")
 	cmds.AddCommand(NewCmdOptions(out))
 	cmds.AddCommand(NewCmdDiagnose(f, in, out, err))
+
+	pluginHandler := &extensionPluginHandler{
+		CommonOptions: commonOptions,
+	}
+	args := os.Args
+
+	if len(args) > 1 {
+		cmdPathPieces := args[1:]
+
+		// only look for suitable extension executables if
+		// the specified command does not already exist
+		if _, _, err := cmds.Find(cmdPathPieces); err != nil {
+			if err := handleEndpointExtensions(pluginHandler, cmdPathPieces); err != nil {
+				log.Errorf("%v\n", err)
+				os.Exit(1)
+			}
+		}
+	}
 
 	return cmds
 }
@@ -203,4 +264,120 @@ func fullPath(command *cobra.Command) string {
 
 func runHelp(cmd *cobra.Command, args []string) {
 	cmd.Help()
+}
+
+// PluginHandler is capable of parsing command line arguments
+// and performing executable filename lookups to search
+// for valid plugin files, and execute found plugins.
+type PluginHandler interface {
+	// Lookup receives a potential filename and returns
+	// a full or relative path to an executable, if one
+	// exists at the given filename, or an error.
+	Lookup(filename string) (string, error)
+	// Execute receives an executable's filepath, a slice
+	// of arguments, and a slice of environment variables
+	// to relay to the executable.
+	Execute(executablePath string, cmdArgs, environment []string) error
+}
+
+type extensionPluginHandler struct {
+	CommonOptions
+	localPluginHandler
+}
+
+// Lookup implements PluginHandler
+func (h *extensionPluginHandler) Lookup(filename string) (string, error) {
+	jxClient, ns, err := h.JXClientAndDevNamespace()
+	if err != nil {
+		return "", err
+	}
+	apisClient, err := h.CreateApiExtensionsClient()
+	if err != nil {
+		return "", err
+	}
+	err = kube.RegisterPluginCRD(apisClient)
+	if err != nil {
+		return "", err
+	}
+
+	possibles, err := jxClient.JenkinsV1().Plugins(ns).List(metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("%s=%s", extensions.PluginCommandLabel, filename),
+	})
+	if err != nil {
+		return "", err
+	}
+	if len(possibles.Items) > 0 {
+		found := possibles.Items[0]
+		if len(possibles.Items) > 1 {
+			// There is a warning about this when you install extensions as well
+			log.Warnf("More than one plugin installed for %s by extensions. Selecting the one installed by %s at random.\n", filename, found.Name)
+
+		}
+		return extensions.EnsurePluginInstalled(found)
+	}
+	return h.localPluginHandler.Lookup(filename)
+}
+
+// Execute implements PluginHandler
+func (h *extensionPluginHandler) Execute(executablePath string, cmdArgs, environment []string) error {
+	return h.localPluginHandler.Execute(executablePath, cmdArgs, environment)
+}
+
+type localPluginHandler struct{}
+
+// Lookup implements PluginHandler
+func (h *localPluginHandler) Lookup(filename string) (string, error) {
+	// if on Windows, append the "exe" extension
+	// to the filename that we are looking up.
+	if runtime.GOOS == "windows" {
+		filename = filename + ".exe"
+	}
+
+	return exec.LookPath(filename)
+}
+
+// Execute implements PluginHandler
+func (h *localPluginHandler) Execute(executablePath string, cmdArgs, environment []string) error {
+	return syscall.Exec(executablePath, cmdArgs, environment)
+}
+
+func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string) error {
+	remainingArgs := []string{} // all "non-flag" arguments
+
+	for idx := range cmdArgs {
+		if strings.HasPrefix(cmdArgs[idx], "-") {
+			break
+		}
+		remainingArgs = append(remainingArgs, strings.Replace(cmdArgs[idx], "-", "_", -1))
+	}
+
+	foundBinaryPath := ""
+
+	// attempt to find binary, starting at longest possible name with given cmdArgs
+	for len(remainingArgs) > 0 {
+		path, err := pluginHandler.Lookup(fmt.Sprintf("jx-%s", strings.Join(remainingArgs, "-")))
+		if err != nil || len(path) == 0 {
+			if err != nil {
+				log.Errorf("Error installing plugin for command %s. %v\n", remainingArgs, err)
+			}
+			remainingArgs = remainingArgs[:len(remainingArgs)-1]
+			continue
+		}
+
+		foundBinaryPath = path
+		break
+	}
+
+	if len(foundBinaryPath) == 0 {
+		return nil
+	}
+
+	// invoke cmd binary relaying the current environment and args given
+	// remainingArgs will always have at least one element.
+	// execve will make remainingArgs[0] the "binary name".
+	if err := pluginHandler.Execute(foundBinaryPath, append([]string{foundBinaryPath}, cmdArgs[len(remainingArgs):]...), os.Environ()); err != nil {
+		return err
+	}
+
+	return nil
 }

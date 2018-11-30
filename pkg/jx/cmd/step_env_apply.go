@@ -7,10 +7,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jenkins-x/jx/pkg/extensions"
-
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/extensions"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -89,6 +88,7 @@ func NewCmdStepEnvApply(f Factory, in terminal.FileReader, out terminal.FileWrit
 
 // Run performs the comamand
 func (o *StepEnvApplyOptions) Run() error {
+
 	var err error
 	dir := o.Dir
 	if dir == "" {
