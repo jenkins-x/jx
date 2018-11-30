@@ -121,7 +121,7 @@ func (o *DeleteVaultOptions) Run() error {
 
 	err = kube.DeleteClusterRoleBinding(client, vaultName)
 	if err != nil {
-		return errors.Wrapf(err, "deleteing the cluster role binding '%s' for vault", vaultName)
+		return errors.Wrapf(err, "deleting the cluster role binding '%s' for vault", vaultName)
 	}
 
 	log.Infof("Vault %s deleted\n", util.ColorInfo(vaultName))
