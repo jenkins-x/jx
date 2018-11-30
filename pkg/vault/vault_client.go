@@ -15,6 +15,9 @@ type Client interface {
 	// WriteObject writes a generic named object to the vault. The secret _must_ be serializable to JSON
 	WriteObject(secretName string, secret interface{}) (map[string]interface{}, error)
 
+	// WriteSecrets writes a generic Map of secrets to vault under a specific path
+	WriteSecrets(path string, secretsToSave map[string]interface{}) error
+
 	// WriteYaml writes a yaml object to a named secret
 	WriteYaml(secretName string, yamlstring string) (map[string]interface{}, error)
 
@@ -53,6 +56,29 @@ func (v *ClientImpl) WriteObject(secretName string, secret interface{}) (map[str
 		return nil, errors.Wrapf(err, "Could not serialize secret '%s' object for saving to vault", secretName)
 	}
 	return v.Write(secretName, m)
+}
+
+// WriteSecrets writes a generic Map of secrets to vault under a specific path
+func (v *ClientImpl) WriteSecrets(path string, secretsToSave map[string]interface{}) error {
+	var err error
+	for secretName, secret := range secretsToSave {
+		secretName = secretName + path
+		switch secret.(type) {
+		case []byte:
+			// secret is a plain byte array. We shouldn't be doing this. Legacy. We should be saving properly typed objects
+			_, err = v.WriteYaml(secretName, string(secret.([]byte)[:]))
+		case string:
+			// secret is a string. We shouldn't be doing this. Legacy. We should be saving properly typed objects
+			_, err = v.WriteYaml(secretName, secret.(string))
+		default:
+			// secret is an interface. This is what we should be doing
+			_, err = v.WriteObject(secretName, secret)
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // WriteYaml writes a yaml object to a named secret

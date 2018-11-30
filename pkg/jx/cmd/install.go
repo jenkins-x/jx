@@ -1125,11 +1125,11 @@ func (options *InstallOptions) Run() error {
 				AdminSecretsFile: adminSecrets,
 			}
 
-			vault, err := options.Factory.GetSystemVault()
+			vaultClient, err := options.Factory.GetSystemVault()
 			if err != nil {
 				log.Errorf("Could not get System vault: %v", err)
 			}
-			err = saveSecretsToVault(vault, secretsToSave)
+			err = vaultClient.WriteSecrets(vault.InstallSecretsPrefix, secretsToSave)
 			if err != nil {
 				return errors.Wrapf(err, "Error saving secrets to vault\n")
 			}
@@ -1489,28 +1489,6 @@ func (options *InstallOptions) Run() error {
 	log.Infof("To import existing projects into Jenkins:       %s\n", util.ColorInfo("jx import"))
 	log.Infof("To create a new Spring Boot microservice:       %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
 	log.Infof("To create a new microservice from a quickstart: %s\n", util.ColorInfo("jx create quickstart"))
-	return nil
-}
-
-func saveSecretsToVault(client vault.Client, secretsToSave map[string]interface{}) error {
-	var err error
-	rootPath := vault.InstallSecretsPrefix
-	for secretName, secret := range secretsToSave {
-		switch secret.(type) {
-		case []byte:
-			// secret is a plain byte array. We shouldn't be doing this. Legacy. We should be saving properly typed objects
-			_, err = client.WriteYaml(rootPath+secretName, string(secret.([]byte)[:]))
-		case string:
-			// secret is a string. We shouldn't be doing this. Legacy. We should be saving properly typed objects
-			_, err = client.WriteYaml(rootPath+secretName, secret.(string))
-		default:
-			// secret is an interface. This is what we should be doing
-			_, err = client.WriteObject(rootPath+secretName, secret)
-		}
-		if err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
