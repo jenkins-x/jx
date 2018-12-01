@@ -160,7 +160,9 @@ func (o *CommonOptions) installBrew() error {
 	if runtime.GOOS != "darwin" {
 		return nil
 	}
-	return o.RunCommand("/usr/bin/ruby", "-e", "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)")
+	log.Infof("Please enter your root password when prompted by the %s installation\n", util.ColorInfo("brew"))
+	//Make sure to run command through sh in order to get $() expanded.
+	return o.RunCommand("sh", "-c", "/usr/bin/ruby -e \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\"")
 }
 
 func shouldInstallBinary(name string) (fileName string, download bool, err error) {
