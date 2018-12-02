@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+
 	"io"
 	"io/ioutil"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/vault"
 
 	"github.com/Pallinder/go-randomdata"
@@ -20,8 +22,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/addon"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/cloud/iks"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -734,7 +736,7 @@ func (options *InstallOptions) Run() error {
 			log.Infof("System vault created named %s in namespace %s.\n",
 				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(ns))
 		}
-		options.Factory.UseVault(true)
+		secrets.NewSecretLocation(client, ns).SetInVault(options.Flags.Vault)
 	}
 
 	// get secrets to use in helm install
@@ -767,8 +769,8 @@ func (options *InstallOptions) Run() error {
 		server := kube.CurrentServer(kubeConfig)
 		azureCLI := aks.NewAzureRunner()
 		resourceGroup, name, cluster, err := azureCLI.GetClusterClient(server)
-		 if err != nil {
-		  	return errors.Wrap(err, "failed to get cluster from Azure")
+		if err != nil {
+			return errors.Wrap(err, "failed to get cluster from Azure")
 		}
 		registryID := ""
 		helmConfig.PipelineSecrets.DockerConfig, dockerRegistry, registryID, err = azureCLI.GetRegistry(resourceGroup, name, dockerRegistry)

@@ -4,7 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"github.com/hashicorp/vault/api"
+	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/sirupsen/logrus"
 	"io"
 	"net/url"
 	"os"
@@ -60,7 +62,7 @@ type factory struct {
 	kubeConfig      kube.Kuber
 	impersonateUser string
 	bearerToken     string
-	useVault        bool
+	secretLocation  secrets.SecretLocation
 }
 
 // NewFactory creates a factory with the default Kubernetes resources defined
@@ -285,7 +287,19 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 // CreateAuthConfigService creates a new service saving auth config under the provided name. Depending on the factory,
 // It will either save the config to the local file-system, or a Vault
 func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService, error) {
-	if f.useVault {
+	client, namespace, err := f.CreateClient()
+	if f.secretLocation == nil {
+		f.secretLocation = secrets.NewSecretLocation(client, namespace)
+	}
+
+	useVault := false
+	if err != nil {
+		logrus.Errorf("Could not create kube client. Saving configs to local filesystem")
+	} else {
+		useVault = f.secretLocation.InVault()
+	}
+
+	if useVault {
 		vault, err := f.GetSystemVault()
 		v := auth.NewVaultAuthConfigService(configName, vault)
 		return v, err
@@ -550,10 +564,6 @@ func (f *factory) GetHelm(verbose bool,
 		startLocalTillerIfNotRunning()
 	}
 	return h
-}
-
-func (f *factory) UseVault(use bool) {
-	f.useVault = use
 }
 
 // tillerAddress returns the address that tiller is listening on
