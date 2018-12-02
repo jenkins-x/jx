@@ -9,6 +9,7 @@ import (
 
 const vaultSecretsMarker = "useVaultForSecrets"
 
+// SecretLocation interfaces to identify where is the secrets location
 type SecretLocation interface {
 	// InVault returns whether secrets are stored in Vault
 	InVault() bool
