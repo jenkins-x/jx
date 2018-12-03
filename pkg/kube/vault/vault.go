@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/jenkins-x/jx/pkg/kube/services"
+	"github.com/jenkins-x/jx/pkg/vault"
 	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -45,18 +46,22 @@ type GCPConfig struct {
 	GcsBucket   string
 }
 
+// GCSConfig Google Cloud Storage config for Vault backend
 type GCSConfig struct {
 	Bucket    string `json:"bucket"`
 	HaEnabled string `json:"ha_enabled"`
 }
 
+// VaultAuths list of vault authentications
 type VaultAuths []VaultAuth
 
+// VaultAuth vault auth configuration
 type VaultAuth struct {
 	Roles []VaultRole `json:"roles"`
 	Type  string      `json:"type"`
 }
 
+// VaultRole role configuration for VaultAuth
 type VaultRole struct {
 	BoundServiceAccountNames      string `json:"bound_service_account_names"`
 	BoundServiceAccountNamespaces string `json:"bound_service_account_namespaces"`
@@ -65,33 +70,34 @@ type VaultRole struct {
 	TTL                           string `json:"ttl"`
 }
 
+// VaultPolicies list of vault policies
 type VaultPolicies []VaultPolicy
 
+// VaultPolicy vault policy
 type VaultPolicy struct {
 	Name  string `json:"name"`
 	Rules string `json:"rules"`
 }
 
+// Tcp address for vault server
 type Tcp struct {
 	Address    string `json:"address"`
 	TlsDisable bool   `json:"tls_disable"`
 }
 
+// Listener vault server listener
 type Listener struct {
 	Tcp Tcp `json:"tcp"`
 }
 
+// Telemetry address for telemetry server
 type Telemetry struct {
 	StatsdAddress string `json:"statsd_address"`
 }
 
+// Storage configuration for Vault storage
 type Storage struct {
 	GCS GCSConfig `json:"gcs"`
-}
-
-// VaultGcpServiceAccountSecretName builds the secret name where the GCP service account is stored
-func VaultGcpServiceAccountSecretName(vaultName string, clusterName string) string {
-	return fmt.Sprintf("%s-%s-gcp-sa", clusterName, vaultName)
 }
 
 // CreateVault creates a new vault backed by GCP KMS and storage
@@ -110,12 +116,12 @@ func CreateVault(kubeClient kubernetes.Interface, vaultOperatorClient versioned.
 	}
 
 	if secretsPathPrefix == "" {
-		secretsPathPrefix = DefaultSecretsPathPrefix
+		secretsPathPrefix = vault.DefaultSecretsPathPrefix
 	}
-	pathRule := &PathRule{
-		Path: []PathPolicy{{
+	pathRule := &vault.PathRule{
+		Path: []vault.PathPolicy{{
 			Prefix:       secretsPathPrefix,
-			Capabilities: DefaultSecretsCapabiltities,
+			Capabilities: vault.DefaultSecretsCapabiltities,
 		}},
 	}
 	vaultRule, err := pathRule.String()
@@ -167,16 +173,16 @@ func CreateVault(kubeClient kubernetes.Interface, vaultOperatorClient versioned.
 								BoundServiceAccountNames:      authServiceAccount,
 								BoundServiceAccountNamespaces: authServiceAccountNamespace,
 								Name:                          authServiceAccount,
-								Policies:                      PathRulesName,
+								Policies:                      vault.PathRulesName,
 								TTL:                           vaultAuthTTL,
 							},
 						},
 						Type: vaultAuthType,
 					},
 				},
-				PoliciesName: []VaultPolicy{
+				vault.PoliciesName: []VaultPolicy{
 					{
-						Name:  PathRulesName,
+						Name:  vault.PathRulesName,
 						Rules: vaultRule,
 					},
 				},

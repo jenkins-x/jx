@@ -35,13 +35,13 @@ func NewInteractiveVaultClientFactory(options common.OptionsInterface) (VaultCli
 	return factory, nil
 }
 
-// NewSystemVaultClientFactory Creates a new VaultClientFactory with different options to the above. It doesnt' have CLI support so
+// NewVaultClientFactory Creates a new VaultClientFactory with different options to the above. It doesnt' have CLI support so
 // will fail if it needs interactive input (unlikely)
-func NewSystemVaultClientFactory(kubeClient kubernetes.Interface, vaultOperatorClient versioned.Interface, defaultNamespace string) (VaultClientFactory, error) {
+func NewVaultClientFactory(kubeClient kubernetes.Interface, vaultOperatorClient versioned.Interface, defaultNamespace string) (VaultClientFactory, error) {
 	return VaultClientFactory{
 		kubeClient:       kubeClient,
 		defaultNamespace: defaultNamespace,
-		Selector: vaultSelectorImpl{
+		Selector: vaultSelector{
 			kubeClient:          kubeClient,
 			vaultOperatorClient: vaultOperatorClient,
 		},

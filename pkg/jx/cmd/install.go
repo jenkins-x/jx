@@ -10,10 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/vault"
 	"gopkg.in/yaml.v2"
 
 	"github.com/jenkins-x/jx/pkg/io/secrets"
+	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
+	"github.com/jenkins-x/jx/pkg/vault"
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
@@ -725,7 +726,7 @@ func (options *InstallOptions) Run() error {
 			return err
 		}
 
-		if vault.FindVault(vaultOperatorClient, vault.SystemVaultName, ns) {
+		if kubevault.FindVault(vaultOperatorClient, vault.SystemVaultName, ns) {
 			log.Infof("System vault named %s in namespace %s already exists\n",
 				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(ns))
 		} else {
@@ -1125,7 +1126,7 @@ func (options *InstallOptions) Run() error {
 				AdminSecretsFile: adminSecrets,
 			}
 
-			vaultClient, err := options.Factory.GetSystemVault()
+			vaultClient, err := options.Factory.GetSystemVaultClient()
 			if err != nil {
 				log.Errorf("Could not get System vault: %v", err)
 			}

@@ -2,6 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
+
 	"github.com/jenkins-x/jx/pkg/helm"
 	configio "github.com/jenkins-x/jx/pkg/io"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -12,11 +18,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-	"os"
-	"path/filepath"
-	"strings"
-	"sync"
 )
 
 // StepHelmApplyOptions contains the command line flags
@@ -175,7 +176,7 @@ func (o *StepHelmApplyOptions) ensureHelmSecrets(filename string) (bool, error) 
 	exists, _ := util.FileExists(filename)
 	if !exists {
 		// The secrets file does not exist. Populate its values from the system vault
-		client, err := o.Factory.GetSystemVault()
+		client, err := o.Factory.GetSystemVaultClient()
 		if err != nil {
 			return exists, errors.Wrapf(err,
 				"Unable to populate helm secrets. No %s file found nor system vault", filename)

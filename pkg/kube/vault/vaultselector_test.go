@@ -1,18 +1,19 @@
 package vault_test
 
 import (
-	"github.com/Netflix/go-expect"
-	"github.com/jenkins-x/jx/pkg/tests"
-	"github.com/jenkins-x/jx/pkg/vault"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/Netflix/go-expect"
+	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
+	"github.com/jenkins-x/jx/pkg/tests"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_GetVault_DoesNotPromptUserIfOnlyOneVaultInNamespace(t *testing.T) {
 	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, nil)
 	createMockedVault("myVault", "myVaultNamespace", "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
 
-	selector, err := vault.NewVaultSelector(factory.Options)
+	selector, err := kubevault.NewVaultSelector(factory.Options)
 
 	vault, err := selector.GetVault("", "myVaultNamespace")
 
@@ -27,7 +28,7 @@ func Test_GetVault_ErrorsIfNoVaultsInNamespace(t *testing.T) {
 	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, nil)
 	createMockedVault("myVault", "myVaultNamespace", "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
 
-	selector, err := vault.NewVaultSelector(factory.Options)
+	selector, err := kubevault.NewVaultSelector(factory.Options)
 
 	vault, err := selector.GetVault("", "Nothing Here Jim")
 
@@ -39,7 +40,7 @@ func Test_GetVault_ErrorsIfRequestedVaultDoesNotExist(t *testing.T) {
 	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, nil)
 	createMockedVault("myVault", "myVaultNamespace", "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
 
-	selector, err := vault.NewVaultSelector(factory.Options)
+	selector, err := kubevault.NewVaultSelector(factory.Options)
 
 	vault, err := selector.GetVault("NoVaultHere", "myVaultNamespace")
 
@@ -52,7 +53,7 @@ func Test_GetVault_GetExplicitVaultSucceedsWhenTwoVaultsAreDefined(t *testing.T)
 	createMockedVault("vault1", "myVaultNamespace", "one.ah.ah.ah", "Count", vaultOperatorClient, kubeClient)
 	createMockedVault("vault2", "myVaultNamespace", "two.ah.ah.ah", "Von-Count", vaultOperatorClient, kubeClient)
 
-	selector, err := vault.NewVaultSelector(factory.Options)
+	selector, err := kubevault.NewVaultSelector(factory.Options)
 
 	vault, err := selector.GetVault("vault2", "myVaultNamespace")
 
@@ -72,7 +73,7 @@ func Test_GetVault_PromptsUserIfMoreThanOneVaultInNamespace(t *testing.T) {
 	createMockedVault("vault1", "myVaultNamespace", "one.ah.ah.ah", "Count", vaultOperatorClient, kubeClient)
 	createMockedVault("vault2", "myVaultNamespace", "two.ah.ah.ah", "Von-Count", vaultOperatorClient, kubeClient)
 
-	selector, err := vault.NewVaultSelector(factory.Options)
+	selector, err := kubevault.NewVaultSelector(factory.Options)
 
 	//Test interactive IO
 	donec := make(chan struct{})

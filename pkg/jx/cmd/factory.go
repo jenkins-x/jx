@@ -14,6 +14,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube/services"
+	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/heptio/sonobuoy/pkg/client"
@@ -63,6 +64,7 @@ type factory struct {
 	impersonateUser string
 	bearerToken     string
 	secretLocation  secrets.SecretLocation
+	useVault        bool
 }
 
 // NewFactory creates a factory with the default Kubernetes resources defined
@@ -300,7 +302,7 @@ func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService
 	}
 
 	if useVault {
-		vault, err := f.GetSystemVault()
+		vault, err := f.GetSystemVaultClient()
 		v := auth.NewVaultAuthConfigService(configName, vault)
 		return v, err
 	} else {
@@ -308,24 +310,32 @@ func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService
 	}
 }
 
-// GetSystemVault gets the system vault for storing secrets.
-func (f *factory) GetSystemVault() (vault.Client, error) {
+// GetSystemVaultClient gets the system vault client for managing the secrets
+func (f *factory) GetSystemVaultClient() (vault.Client, error) {
+	_, ns, err := f.CreateClient()
+	if err != nil {
+		return nil, err
+	}
+	return f.GetVaultClient(vault.SystemVaultName, ns)
+}
+
+// GetVaultClient returns the given vault client for managing secrets
+func (f *factory) GetVaultClient(name string, namespace string) (vault.Client, error) {
 	vopClient, err := f.CreateVaultOperatorClient()
-	kubeClient, ns, err := f.CreateClient()
+	kubeClient, _, err := f.CreateClient()
 	if err != nil {
 		return nil, err
 	}
 
-	if !vault.FindVault(vopClient, vault.SystemVaultName, ns) {
-		return nil, errors.New("no system vault found")
+	if !kubevault.FindVault(vopClient, name, namespace) {
+		return nil, fmt.Errorf("no '%s' vault found", name)
 	}
 
-	clientFactory, err := vault.NewSystemVaultClientFactory(kubeClient, vopClient, ns)
+	clientFactory, err := kubevault.NewVaultClientFactory(kubeClient, vopClient, namespace)
 	if err != nil {
 		return nil, err
 	}
-
-	vaultClient, err := clientFactory.NewVaultClient(vault.SystemVaultName, ns)
+	vaultClient, err := clientFactory.NewVaultClient(name, namespace)
 	return vault.NewVaultClient(vaultClient), err
 }
 
@@ -565,6 +575,11 @@ func (f *factory) GetHelm(verbose bool,
 		startLocalTillerIfNotRunning()
 	}
 	return h
+}
+
+// UseVault indicates if the vault is being used
+func (f *factory) UseVault(use bool) {
+	f.useVault = use
 }
 
 // tillerAddress returns the address that tiller is listening on

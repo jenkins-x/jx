@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/vault"
-	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
 	"runtime"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 type GetVaultConfigOptions struct {
@@ -73,7 +73,7 @@ func NewCmdGetVaultConfig(f Factory, in terminal.FileReader, out terminal.FileWr
 
 // Run implements the command
 func (o *GetVaultConfigOptions) Run() error {
-	client, err := vault.NewVaulter(o)
+	client, err := o.Factory.GetVaultClient(o.Name, o.Namespace)
 	if err != nil {
 		return err
 	}

@@ -87,8 +87,11 @@ type Factory interface {
 
 	GetHelm(verbose bool, helmBinary string, noTiller bool, helmTemplate bool) helm.Helmer
 
-	// GetSystemVault gets the system vault for storing secrets.
-	GetSystemVault() (vault.Client, error)
+	// GetSystemVaultClient gets the system vault client for managing the secreets
+	GetSystemVaultClient() (vault.Client, error)
+
+	// GetVaultClient returns the vault client for given vault
+	GetVaultClient(name string, namespace string) (vault.Client, error)
 
 	// UseVault tells the factory to use Vault to store secrets rather than the filesystem
 	UseVault(use bool)

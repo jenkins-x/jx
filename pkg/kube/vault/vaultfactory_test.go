@@ -1,10 +1,11 @@
 package vault_test
 
 import (
-	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
-	"github.com/jenkins-x/jx/pkg/vault"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
+	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetConfigData(t *testing.T) {
@@ -78,8 +79,8 @@ type PredefinedVaultSelector struct {
 	url           string
 }
 
-func (p PredefinedVaultSelector) GetVault(name string, namespaces string) (*vault.Vault, error) {
-	return &vault.Vault{
+func (p PredefinedVaultSelector) GetVault(name string, namespaces string) (*kubevault.Vault, error) {
+	return &kubevault.Vault{
 		Name:                   p.vaultToReturn.Name,
 		Namespace:              p.vaultToReturn.Namespace,
 		AuthServiceAccountName: p.vaultToReturn.Name + "-auth-sa",

@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	versioned0 "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	"github.com/petergtz/pegomock"
 	"reflect"
+	"github.com/petergtz/pegomock"
+	versioned0 "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 )
 
 func AnyVersioned0Interface() versioned0.Interface {

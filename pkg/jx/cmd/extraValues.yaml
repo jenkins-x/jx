@@ -3,5 +3,5 @@ expose:
     domain: test-domain
 preview:
   image:
-    repository: MyOrganisation:5000/MyOrganisation/MyApp
+    repository: my.registry/MyOrganisation/MyApp
     tag: v0.1.2

@@ -3,9 +3,8 @@ package vault_test
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/vault"
-
 	fakevaultclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned/fake"
+	"github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sfake "k8s.io/client-go/kubernetes/fake"

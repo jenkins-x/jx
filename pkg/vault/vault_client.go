@@ -1,6 +1,8 @@
 package vault
 
 import (
+	"net/url"
+
 	"github.com/hashicorp/vault/api"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -26,21 +28,24 @@ type Client interface {
 
 	// Read reads a named secret from the vault
 	Read(secretName string) (map[string]interface{}, error)
+
+	// Config gets the config required for configuring the official Vault CLI
+	Config() (vaultUrl url.URL, vaultToken string, err error)
 }
 
 // clientImpl is a hand wrapper around the official Vault API to save shit in the way we want
-type clientImpl struct {
+type client struct {
 	client *api.Client
 }
 
 // NewVaultClient creates a new Vault Client wrapping the api.client
-func NewVaultClient(client *api.Client) Client {
-	return &clientImpl{client: client}
+func NewVaultClient(apiclient *api.Client) Client {
+	return &client{client: apiclient}
 }
 
 // Write writes a named secret to the vault with the data provided. Data can be a generic map of stuff, but at all points
 // in the map, keys _must_ be strings (not bool, int or even interface{}) otherwise you'll get an error
-func (v *clientImpl) Write(secretName string, data map[string]interface{}) (map[string]interface{}, error) {
+func (v *client) Write(secretName string, data map[string]interface{}) (map[string]interface{}, error) {
 	secret, err := v.client.Logical().Write(secretPath(secretName), data)
 	if secret != nil {
 		return secret.Data, err
@@ -49,7 +54,7 @@ func (v *clientImpl) Write(secretName string, data map[string]interface{}) (map[
 }
 
 // WriteObject writes a generic named object to the vault. The secret _must_ be serializable to JSON
-func (v *clientImpl) WriteObject(secretName string, secret interface{}) (map[string]interface{}, error) {
+func (v *client) WriteObject(secretName string, secret interface{}) (map[string]interface{}, error) {
 	// Convert the secret into a saveable map[string]interface{} format
 	m, err := util.ToMapStringInterfaceFromStruct(&secret)
 	if err != nil {
@@ -59,7 +64,7 @@ func (v *clientImpl) WriteObject(secretName string, secret interface{}) (map[str
 }
 
 // WriteSecrets writes a generic Map of secrets to vault under a specific path
-func (v *clientImpl) WriteSecrets(path string, secretsToSave map[string]interface{}) error {
+func (v *client) WriteSecrets(path string, secretsToSave map[string]interface{}) error {
 	var err error
 	for secretName, secret := range secretsToSave {
 		secretName = secretName + path
@@ -82,7 +87,7 @@ func (v *clientImpl) WriteSecrets(path string, secretsToSave map[string]interfac
 }
 
 // WriteYaml writes a yaml object to a named secret
-func (v *clientImpl) WriteYaml(secretName string, y string) (map[string]interface{}, error) {
+func (v *client) WriteYaml(secretName string, y string) (map[string]interface{}, error) {
 	// Unmarshal to a generic map
 	m := make(map[string]interface{})
 	err := yaml.Unmarshal([]byte(y), &m)
@@ -98,7 +103,7 @@ func (v *clientImpl) WriteYaml(secretName string, y string) (map[string]interfac
 }
 
 // List lists the secrets under a given path
-func (v *clientImpl) List(path string) ([]string, error) {
+func (v *client) List(path string) ([]string, error) {
 	secrets, err := v.client.Logical().List(secretPath(path))
 	if err != nil {
 		return nil, err
@@ -115,12 +120,18 @@ func (v *clientImpl) List(path string) ([]string, error) {
 }
 
 // Read reads a named secret to the vault
-func (v *clientImpl) Read(secretName string) (map[string]interface{}, error) {
+func (v *client) Read(secretName string) (map[string]interface{}, error) {
 	secret, err := v.client.Logical().Read(secretPath(secretName))
 	if secret != nil {
 		return secret.Data, err
 	}
 	return nil, err
+}
+
+// Config retruns the current vault address and api token
+func (v *client) Config() (vaultUrl url.URL, vaultToken string, err error) {
+	parsed, err := url.Parse(v.client.Address())
+	return *parsed, v.client.Token(), err
 }
 
 // secretPath generates a secret path from the secret name for storing in vault
