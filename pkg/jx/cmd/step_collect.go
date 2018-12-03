@@ -120,14 +120,14 @@ func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err
 	// Can't assume we are in a git repo due to shallow clones etc.
 
 	sourceURL := os.Getenv(envVarSourceUrl)
-	sourceUrlParts := regexp.MustCompile(gitHubRepoPattern).FindStringSubmatch(sourceURL)
+	sourceURLParts := regexp.MustCompile(gitHubRepoPattern).FindStringSubmatch(sourceURL)
 
-	if len(sourceUrlParts) != 3 {
+	if len(sourceURLParts) != 3 {
 		return errors.New(fmt.Sprintf("Git repo must be GitHub to use GitHub Pages but it is %s", sourceURL))
 	}
 
-	org := sourceUrlParts[1]
-	repoName := sourceUrlParts[2]
+	org := sourceURLParts[1]
+	repoName := sourceURLParts[2]
 
 	gitClient := options.Git()
 
