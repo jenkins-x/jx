@@ -121,10 +121,18 @@ func (o *UninstallOptions) Run() error {
 		}
 	}
 	errs := []error{}
-	o.Helm().DeleteRelease(namespace, "jx-prow", true)
-	err = o.Helm().DeleteRelease(namespace, "jenkins-x", true)
-	if err != nil {
-		errs = append(errs, fmt.Errorf("failed to uninstall the jenkins-x helm chart in namespace %s: %s", namespace, err))
+
+	if err = o.helm.StatusRelease(namespace,"jx-prow"); err == nil{
+		err = o.Helm().DeleteRelease(namespace, "jx-prow", true)
+		if err != nil{
+			errs = append(errs, fmt.Errorf("failed to uninstall the jenkins-prow helm chart in namespace %s: %s", namespace, err))
+		}
+	}
+	if err = o.helm.StatusRelease(namespace, "jenkins-x"); err == nil{
+		err = o.Helm().DeleteRelease(namespace, "jenkins-x", true)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to uninstall the jenkins-x helm chart in namespace %s: %s", namespace, err))
+		}
 	}
 	err = jxClient.JenkinsV1().Environments(namespace).DeleteCollection(&meta_v1.DeleteOptions{}, meta_v1.ListOptions{})
 	if err != nil {
