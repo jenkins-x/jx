@@ -302,9 +302,9 @@ func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService
 	}
 
 	if useVault {
-		vault, err := f.GetSystemVaultClient()
-		v := auth.NewVaultAuthConfigService(configName, vault)
-		return v, err
+		vaultClient, err := f.GetSystemVaultClient()
+		authService := auth.NewVaultAuthConfigService(configName, vaultClient)
+		return authService, err
 	} else {
 		return auth.NewFileAuthConfigService(configName)
 	}
