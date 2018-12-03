@@ -6,16 +6,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 
 	"github.com/jenkins-x/jx/pkg/helm"
-	configio "github.com/jenkins-x/jx/pkg/io"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/vault"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -138,12 +134,6 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	o.Helm().SetCWD(dir)
 
-	secretsAlreadyExisted, err := o.ensureHelmSecrets(helm.SecretsFileName)
-	if !secretsAlreadyExisted {
-		// Make sure we destroy any temporary files created that contain sensitive information.
-		defer util.DestroyFile(helm.SecretsFileName)
-	}
-
 	// lets discover any local value files
 	valueFiles := []string{}
 	for _, name := range defaultValueFileNames {
@@ -166,56 +156,4 @@ func (o *StepHelmApplyOptions) Run() error {
 		return err
 	}
 	return nil
-}
-
-// ensureHelmSecrets ensures that the provided filename exists. If it does not, it will automatically create it and
-// populate it with secrets from the system vault. If the file exists, it naively assumes it is populated and won't
-// do any checks.
-// Returns true if the file already existed.
-func (o *StepHelmApplyOptions) ensureHelmSecrets(filename string) (bool, error) {
-	exists, _ := util.FileExists(filename)
-	if !exists {
-		// The secrets file does not exist. Populate its values from the system vault
-		client, err := o.Factory.GetSystemVaultClient()
-		if err != nil {
-			return exists, errors.Wrapf(err,
-				"Unable to populate helm secrets. No %s file found nor system vault", filename)
-		}
-
-		secretNames, err := client.List(vault.InstallSecretsPrefix)
-		allSecrets := make(map[string]interface{})
-
-		var wg sync.WaitGroup
-		secretsChannel := make(chan map[string]interface{})
-		wg.Add(len(secretNames))
-		for _, secretName := range secretNames {
-			go func(filename string) {
-				defer wg.Done()
-				secret, err := client.Read(vault.InstallSecretsPrefix + filename)
-				if err != nil {
-					log.Errorf("Error retrieving secret %s from vault: %v", filename, err)
-				}
-				secretsChannel <- secret
-			}(secretName)
-		}
-		go func() {
-			// Wait for the the waitgroup, then close the channel
-			wg.Wait()
-			close(secretsChannel)
-		}()
-
-		// Merge the secrets together
-		for secret := range secretsChannel {
-			util.CombineMapTrees(allSecrets, secret)
-		}
-
-		// Now save the map as yaml to filename
-		s := configio.NewFileStore()
-		err = s.WriteObject(filename, allSecrets)
-		if err != nil {
-			return exists, errors.Wrapf(err, "Unable to save helm secrets to %s", filename)
-		}
-
-	}
-	return exists, nil
 }
