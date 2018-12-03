@@ -12,9 +12,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// VaultSelector is an interface for selecting a vault from the installed ones on the platform
+// Selector is an interface for selecting a vault from the installed ones on the platform
 // It should pick the most logical one, or give the user a way of picking a vault if there are multiple installed
-type VaultSelector interface {
+type Selector interface {
 	GetVault(name string, namespace string) (*Vault, error)
 }
 
@@ -27,7 +27,7 @@ type vaultSelector struct {
 }
 
 // NewVaultSelector creates a new vault selector
-func NewVaultSelector(o common.OptionsInterface) (VaultSelector, error) {
+func NewVaultSelector(o common.OptionsInterface) (Selector, error) {
 	operator, err := o.VaultOperatorClient()
 	if err != nil {
 		return nil, err

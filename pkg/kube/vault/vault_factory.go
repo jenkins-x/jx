@@ -14,7 +14,7 @@ import (
 // VaultClientFactory keeps the configuration required to build a new VaultClientFactory
 type VaultClientFactory struct {
 	Options          common.OptionsInterface
-	Selector         VaultSelector
+	Selector         Selector
 	kubeClient       kubernetes.Interface
 	defaultNamespace string
 }

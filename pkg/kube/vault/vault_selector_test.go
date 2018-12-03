@@ -10,7 +10,7 @@ import (
 )
 
 func Test_GetVault_DoesNotPromptUserIfOnlyOneVaultInNamespace(t *testing.T) {
-	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, nil)
+	vaultOperatorClient, factory, kubeClient, err := setupMocks(t, nil)
 	createMockedVault("myVault", "myVaultNamespace", "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
 
 	selector, err := kubevault.NewVaultSelector(factory.Options)
@@ -25,7 +25,7 @@ func Test_GetVault_DoesNotPromptUserIfOnlyOneVaultInNamespace(t *testing.T) {
 }
 
 func Test_GetVault_ErrorsIfNoVaultsInNamespace(t *testing.T) {
-	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, nil)
+	vaultOperatorClient, factory, kubeClient, err := setupMocks(t, nil)
 	createMockedVault("myVault", "myVaultNamespace", "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
 
 	selector, err := kubevault.NewVaultSelector(factory.Options)
@@ -37,7 +37,7 @@ func Test_GetVault_ErrorsIfNoVaultsInNamespace(t *testing.T) {
 }
 
 func Test_GetVault_ErrorsIfRequestedVaultDoesNotExist(t *testing.T) {
-	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, nil)
+	vaultOperatorClient, factory, kubeClient, err := setupMocks(t, nil)
 	createMockedVault("myVault", "myVaultNamespace", "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
 
 	selector, err := kubevault.NewVaultSelector(factory.Options)
@@ -49,7 +49,7 @@ func Test_GetVault_ErrorsIfRequestedVaultDoesNotExist(t *testing.T) {
 }
 
 func Test_GetVault_GetExplicitVaultSucceedsWhenTwoVaultsAreDefined(t *testing.T) {
-	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, nil)
+	vaultOperatorClient, factory, kubeClient, err := setupMocks(t, nil)
 	createMockedVault("vault1", "myVaultNamespace", "one.ah.ah.ah", "Count", vaultOperatorClient, kubeClient)
 	createMockedVault("vault2", "myVaultNamespace", "two.ah.ah.ah", "Von-Count", vaultOperatorClient, kubeClient)
 
@@ -69,7 +69,7 @@ func Test_GetVault_PromptsUserIfMoreThanOneVaultInNamespace(t *testing.T) {
 
 	// mock terminal
 	console := tests.NewTerminal(t)
-	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, &console.Stdio)
+	vaultOperatorClient, factory, kubeClient, err := setupMocks(t, &console.Stdio)
 	createMockedVault("vault1", "myVaultNamespace", "one.ah.ah.ah", "Count", vaultOperatorClient, kubeClient)
 	createMockedVault("vault2", "myVaultNamespace", "two.ah.ah.ah", "Von-Count", vaultOperatorClient, kubeClient)
 

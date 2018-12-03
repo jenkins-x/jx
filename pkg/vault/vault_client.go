@@ -30,7 +30,7 @@ type Client interface {
 	Read(secretName string) (map[string]interface{}, error)
 
 	// Config gets the config required for configuring the official Vault CLI
-	Config() (vaultUrl url.URL, vaultToken string, err error)
+	Config() (vaultURL url.URL, vaultToken string, err error)
 }
 
 // client is a hand wrapper around the official Vault API
@@ -129,7 +129,7 @@ func (v *client) Read(secretName string) (map[string]interface{}, error) {
 }
 
 // Config retruns the current vault address and api token
-func (v *client) Config() (vaultUrl url.URL, vaultToken string, err error) {
+func (v *client) Config() (vaultURL url.URL, vaultToken string, err error) {
 	parsed, err := url.Parse(v.client.Address())
 	return *parsed, v.client.Token(), err
 }

@@ -20,7 +20,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-func setupMocks(t *testing.T, term *terminal.Stdio) (*fake.Clientset, *kubevault.VaultClientFactory, error, kubernetes.Interface) {
+func setupMocks(t *testing.T, term *terminal.Stdio) (*fake.Clientset, *kubevault.VaultClientFactory, kubernetes.Interface, error) {
 	options := cmd.NewCommonOptions("", cmdMocks.NewMockFactory())
 	if term != nil {
 		options.In, options.Out, options.Err = term.In, term.Out, term.Err
@@ -31,7 +31,7 @@ func setupMocks(t *testing.T, term *terminal.Stdio) (*fake.Clientset, *kubevault
 	f, err := kubevault.NewInteractiveVaultClientFactory(&options)
 	kubeClient, _, err := options.KubeClient()
 	assert.NoError(t, err)
-	return vaultOperatorClient, f, err, kubeClient
+	return vaultOperatorClient, f, kubeClient, err
 }
 
 func createMockedVault(vaultName string, namespace string, vaultUrl string, jwt string,

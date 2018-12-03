@@ -112,8 +112,8 @@ func CreateAuthServiceAccount(client kubernetes.Interface, vaultName, namespace,
 	return serviceAccountName, nil
 }
 
-// VaultGcpServiceAccountSecretName builds the secret name where the GCP service account is stored
-func VaultGcpServiceAccountSecretName(vaultName string, clusterName string) string {
+// GcpServiceAccountSecretName builds the secret name where the GCP service account is stored
+func GcpServiceAccountSecretName(vaultName string, clusterName string) string {
 	return fmt.Sprintf("%s-%s-gcp-sa", clusterName, vaultName)
 }
 
@@ -123,7 +123,7 @@ func storeGCPServiceAccountIntoSecret(client kubernetes.Interface, serviceAccoun
 		return "", errors.Wrapf(err, "reading the service account from file '%s'", serviceAccountPath)
 	}
 
-	secretName := VaultGcpServiceAccountSecretName(vaultName, clusterName)
+	secretName := GcpServiceAccountSecretName(vaultName, clusterName)
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: secretName,

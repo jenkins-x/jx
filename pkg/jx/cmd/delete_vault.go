@@ -116,7 +116,7 @@ func (o *DeleteVaultOptions) Run() error {
 		return errors.Wrapf(err, "deleting the vault auth service account '%s'", authServiceAccountName)
 	}
 
-	gcpServiceAccountSecretName := gkevault.VaultGcpServiceAccountSecretName(vaultName, clusterName)
+	gcpServiceAccountSecretName := gkevault.GcpServiceAccountSecretName(vaultName, clusterName)
 	err = client.CoreV1().Secrets(o.Namespace).Delete(gcpServiceAccountSecretName, &metav1.DeleteOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "deleting secret '%s' where GCP service account is stored", gcpServiceAccountSecretName)
