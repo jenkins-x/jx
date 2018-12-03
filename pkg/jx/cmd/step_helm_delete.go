@@ -73,7 +73,7 @@ func (o *StepHelmDeleteOptions) Run() error {
 	releaseName := args[0]
 	h := o.Helm()
 	if h == nil {
-		return fmt.Errorf("no Helmer created!")
+		return fmt.Errorf("no Helmer created")
 	}
 	ns := o.Namespace
 	var err error
