@@ -1,25 +1,26 @@
 package io
 
 import (
+	"io/ioutil"
+
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
 )
 
 // ConfigStore provides an interface for storing configs
 type ConfigStore interface {
 	// Write saves some secret data to the store
-	Write(secretName string, bytes []byte) error
+	Write(fileName string, bytes []byte) error
 
 	// WriteObject writes a named object to the store
-	WriteObject(secretName string, obj interface{}) error
+	WriteObject(fileName string, obj interface{}) error
 
 	// Read reads some secret data from the store
-	Read(secretName string) ([]byte, error)
+	Read(fileName string) ([]byte, error)
 
 	// ReadObject reads an object from the store
-	ReadObject(s string, secret interface{}) error
+	ReadObject(fileName string, object interface{}) error
 }
 
 type fileStore struct {
@@ -49,10 +50,10 @@ func (f *fileStore) Read(fileName string) ([]byte, error) {
 }
 
 // ReadObject reads an object from the filesystem as yaml
-func (f *fileStore) ReadObject(fileName string, secret interface{}) error {
+func (f *fileStore) ReadObject(fileName string, object interface{}) error {
 	data, err := f.Read(fileName)
 	if err != nil {
 		return errors.Wrapf(err, "Unable to read %s", fileName)
 	}
-	return yaml.Unmarshal(data, secret)
+	return yaml.Unmarshal(data, object)
 }
