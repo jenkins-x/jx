@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"io"
 	"io/ioutil"
 	"os"
@@ -118,46 +119,23 @@ func (o *StepCollectOptions) Run() error {
 func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err error) {
 	// Can't assume we are in a git repo due to shallow clones etc.
 
-	sourceUrl := os.Getenv(envVarSourceUrl)
-	sourceUrlParts := regexp.MustCompile(gitHubRepoPattern).FindStringSubmatch(sourceUrl)
+	sourceURL := os.Getenv(envVarSourceUrl)
+	sourceUrlParts := regexp.MustCompile(gitHubRepoPattern).FindStringSubmatch(sourceURL)
 
 	if len(sourceUrlParts) != 3 {
-		return errors.New(fmt.Sprintf("Git repo must be GitHub to use GitHub Pages but it is %s", sourceUrl))
+		return errors.New(fmt.Sprintf("Git repo must be GitHub to use GitHub Pages but it is %s", sourceURL))
 	}
 
 	org := sourceUrlParts[1]
 	repoName := sourceUrlParts[2]
 
-	// First clone the git repo
-	ghPagesDir, err := ioutil.TempDir("", "jenkins-x-collect")
-	if err != nil {
-		return err
-	}
 	gitClient := options.Git()
 
-	err = gitClient.ShallowCloneBranch(sourceUrl, ghPagesBranchName, ghPagesDir)
+	ghPagesDir, err := cloneGitHubPagesBranchToTempDir(sourceURL, gitClient)
 	if err != nil {
-		log.Infof("error doing shallow clone of gh-pages %v", err)
-		// swallow the error
-		log.Infof("No existing %s branch\n", ghPagesBranchName)
-		// branch doesn't exist, so we create it following the process on https://help.github.com/articles/creating-project-pages-using-the-command-line/
-		err = gitClient.Clone(sourceUrl, ghPagesDir)
-		if err != nil {
-			return err
-		}
-		err = gitClient.CheckoutOrphan(ghPagesDir, ghPagesBranchName)
-		if err != nil {
-			return err
-		}
-		err = gitClient.RemoveForce(ghPagesDir, ".")
-		if err != nil {
-			return err
-		}
-		err = os.Remove(filepath.Join(ghPagesDir, ".gitignore"))
-		if err != nil {
-			// Swallow the error, doesn't matter
-		}
+	  return err
 	}
+	
 	buildNo := options.getBuildNumber()
 	if options.Classifier == "" {
 		return errors.New("You must pass --classfier")
@@ -263,6 +241,40 @@ func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err
 		}
 	}
 	return nil
+}
+
+// cloneGitHubPagesBranchToTempDir clones the github pages branch to a temp dir
+func cloneGitHubPagesBranchToTempDir(sourceURL string, gitClient gits.Gitter) (string, error) {
+	// First clone the git repo
+	ghPagesDir, err := ioutil.TempDir("", "jenkins-x-collect")
+	if err != nil {
+		return ghPagesDir, err
+	}
+
+	err = gitClient.ShallowCloneBranch(sourceURL, ghPagesBranchName, ghPagesDir)
+	if err != nil {
+		log.Infof("error doing shallow clone of gh-pages %v", err)
+		// swallow the error
+		log.Infof("No existing %s branch\n", ghPagesBranchName)
+		// branch doesn't exist, so we create it following the process on https://help.github.com/articles/creating-project-pages-using-the-command-line/
+		err = gitClient.Clone(sourceURL, ghPagesDir)
+		if err != nil {
+			return ghPagesDir, err
+		}
+		err = gitClient.CheckoutOrphan(ghPagesDir, ghPagesBranchName)
+		if err != nil {
+			return ghPagesDir, err
+		}
+		err = gitClient.RemoveForce(ghPagesDir, ".")
+		if err != nil {
+			return ghPagesDir,  err
+		}
+		err = os.Remove(filepath.Join(ghPagesDir, ".gitignore"))
+		if err != nil {
+			// Swallow the error, doesn't matter
+		}
+	}
+	return ghPagesDir, nil
 }
 
 func (o *GitHubPagesStepCollectOptions) contains(strings []string, str string) bool {
