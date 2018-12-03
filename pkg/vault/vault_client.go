@@ -33,7 +33,7 @@ type Client interface {
 	Config() (vaultUrl url.URL, vaultToken string, err error)
 }
 
-// clientImpl is a hand wrapper around the official Vault API to save shit in the way we want
+// client is a hand wrapper around the official Vault API
 type client struct {
 	client *api.Client
 }

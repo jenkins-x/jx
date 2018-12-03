@@ -18,6 +18,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// DeleteVaultOptions keeps the options of delete vault command
 type DeleteVaultOptions struct {
 	CommonOptions
 
@@ -38,6 +39,7 @@ var (
 	`)
 )
 
+// NewCmdDeleteVault builds a new delete vault command
 func NewCmdDeleteVault(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteVaultOptions{
 		CommonOptions: CommonOptions{
@@ -68,6 +70,7 @@ func NewCmdDeleteVault(f Factory, in terminal.FileReader, out terminal.FileWrite
 	return cmd
 }
 
+// Run implements the delete vault command
 func (o *DeleteVaultOptions) Run() error {
 	if len(o.Args) != 1 {
 		return fmt.Errorf("Missing vault name")

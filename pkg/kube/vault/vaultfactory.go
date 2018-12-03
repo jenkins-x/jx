@@ -11,6 +11,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// VaultClientFactory keeps the configuration required to build a new VaultClientFactory
 type VaultClientFactory struct {
 	Options          common.OptionsInterface
 	Selector         VaultSelector
@@ -19,8 +20,8 @@ type VaultClientFactory struct {
 }
 
 // NewInteractiveVaultClientFactory creates a VaultClientFactory that allows the user to pick vaults if necessary
-func NewInteractiveVaultClientFactory(options common.OptionsInterface) (VaultClientFactory, error) {
-	factory := VaultClientFactory{
+func NewInteractiveVaultClientFactory(options common.OptionsInterface) (*VaultClientFactory, error) {
+	factory := &VaultClientFactory{
 		Options: options,
 	}
 	var err error
@@ -37,11 +38,11 @@ func NewInteractiveVaultClientFactory(options common.OptionsInterface) (VaultCli
 
 // NewVaultClientFactory Creates a new VaultClientFactory with different options to the above. It doesnt' have CLI support so
 // will fail if it needs interactive input (unlikely)
-func NewVaultClientFactory(kubeClient kubernetes.Interface, vaultOperatorClient versioned.Interface, defaultNamespace string) (VaultClientFactory, error) {
-	return VaultClientFactory{
+func NewVaultClientFactory(kubeClient kubernetes.Interface, vaultOperatorClient versioned.Interface, defaultNamespace string) (*VaultClientFactory, error) {
+	return &VaultClientFactory{
 		kubeClient:       kubeClient,
 		defaultNamespace: defaultNamespace,
-		Selector: vaultSelector{
+		Selector: &vaultSelector{
 			kubeClient:          kubeClient,
 			vaultOperatorClient: vaultOperatorClient,
 		},
@@ -52,7 +53,7 @@ func NewVaultClientFactory(kubeClient kubernetes.Interface, vaultOperatorClient 
 // if namespace is nil, then the default namespace of the factory will be used
 // if the name is nil, and only one vault is found, then that vault will be used. Otherwise the user will be prompted to
 // select a vault for the client.
-func (v VaultClientFactory) NewVaultClient(name string, namespace string) (*api.Client, error) {
+func (v *VaultClientFactory) NewVaultClient(name string, namespace string) (*api.Client, error) {
 	config, jwt, role, err := v.GetConfigData(name, namespace)
 	if err != nil {
 		return nil, err

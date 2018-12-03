@@ -26,6 +26,7 @@ type vaultSelector struct {
 	Err                 io.Writer
 }
 
+// NewVaultSelector creates a new vault selector
 func NewVaultSelector(o common.OptionsInterface) (VaultSelector, error) {
 	operator, err := o.VaultOperatorClient()
 	if err != nil {
@@ -35,7 +36,7 @@ func NewVaultSelector(o common.OptionsInterface) (VaultSelector, error) {
 	if err != nil {
 		return nil, err
 	}
-	v := vaultSelector{
+	v := &vaultSelector{
 		vaultOperatorClient: operator,
 		kubeClient:          kubeclient,
 	}
@@ -43,7 +44,8 @@ func NewVaultSelector(o common.OptionsInterface) (VaultSelector, error) {
 	return v, nil
 }
 
-func (v vaultSelector) GetVault(name string, namespace string) (*Vault, error) {
+// GetVault retrieve the given vault by name
+func (v *vaultSelector) GetVault(name string, namespace string) (*Vault, error) {
 	vaults, err := GetVaults(v.kubeClient, v.vaultOperatorClient, namespace)
 	if err != nil {
 		return nil, err
@@ -69,7 +71,7 @@ func (v vaultSelector) GetVault(name string, namespace string) (*Vault, error) {
 	return vaults[0], nil
 }
 
-func (v vaultSelector) selectVault(vaults []*Vault) (*Vault, error) {
+func (v *vaultSelector) selectVault(vaults []*Vault) (*Vault, error) {
 	vaultMap, vaultNames := make(map[string]*Vault, len(vaults)), make([]string, len(vaults))
 	for i, vault := range vaults {
 		vaultMap[vault.Name] = vault

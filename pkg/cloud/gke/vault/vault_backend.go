@@ -24,6 +24,7 @@ var (
 	}
 )
 
+// KmsConfig keeps the configuration for Google KMS service
 type KmsConfig struct {
 	Keyring  string
 	Key      string
