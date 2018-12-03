@@ -1091,13 +1091,9 @@ func (options *InstallOptions) Run() error {
 				AdminSecretsFile: adminSecrets,
 			}
 
-			vaultClient, err := options.Factory.GetSystemVaultClient()
+			err = options.storeSecretsInVault(secretsToSave)
 			if err != nil {
-				log.Errorf("Could not get System vault: %v", err)
-			}
-			err = vaultClient.WriteSecrets(vault.InstallSecretsPrefix, secretsToSave)
-			if err != nil {
-				return errors.Wrapf(err, "Error saving secrets to vault\n")
+				return errors.Wrap(err, "storing the install secrets into vault")
 			}
 		} else {
 			// lets combine the various values and secrets files
@@ -1494,6 +1490,18 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			util.ColorInfo(vault.SystemVaultName), util.ColorInfo(namespace))
 	}
 	secrets.NewSecretLocation(client, namespace).SetInVault(options.Flags.Vault)
+	return nil
+}
+
+func (options *InstallOptions) storeSecretsInVault(secrets map[string]interface{}) error {
+	vaultClient, err := options.Factory.GetSystemVaultClient()
+	if err != nil {
+		log.Errorf("Could not get System vault: %v", err)
+	}
+	err = vaultClient.WriteSecrets(vault.InstallSecretsPrefix, secrets)
+	if err != nil {
+		return errors.Wrapf(err, "Error saving secrets to vault\n")
+	}
 	return nil
 }
 
