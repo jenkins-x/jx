@@ -6,6 +6,7 @@ import (
 	"runtime"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/vault"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -73,7 +74,13 @@ func NewCmdGetVaultConfig(f Factory, in terminal.FileReader, out terminal.FileWr
 
 // Run implements the command
 func (o *GetVaultConfigOptions) Run() error {
-	client, err := o.Factory.GetVaultClient(o.Name, o.Namespace)
+	var vaultClient vault.Client
+	var err error
+	if o.Name != "" && o.Namespace != "" {
+		vaultClient, err = o.Factory.GetVaultClient(o.Name, o.Namespace)
+	} else {
+		vaultClient, err = o.Factory.GetSystemVaultClient()
+	}
 	if err != nil {
 		return err
 	}
@@ -81,7 +88,7 @@ func (o *GetVaultConfigOptions) Run() error {
 	// Install the vault CLI for the user
 	o.installVaultCli()
 
-	url, token, err := client.Config()
+	url, token, err := vaultClient.Config()
 	// Echo the client config out to the command line to be piped into bash
 	if o.terminal == "" {
 		if runtime.GOOS == "windows" {
