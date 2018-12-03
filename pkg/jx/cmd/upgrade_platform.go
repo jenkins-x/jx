@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	configio "github.com/jenkins-x/jx/pkg/io"
 
 	"io"
 	"io/ioutil"
@@ -92,6 +93,7 @@ func NewCmdUpgradePlatform(f Factory, in terminal.FileReader, out terminal.FileW
 
 // Run implements the command
 func (o *UpgradePlatformOptions) Run() error {
+	configStore := configio.NewFileStore()
 	targetVersion := o.Version
 	err := o.Helm().UpdateRepo()
 	if err != nil {
@@ -154,7 +156,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		targetVersion, err = LoadVersionFromCloudEnvironmentsDir(wrkDir)
+		targetVersion, err = LoadVersionFromCloudEnvironmentsDir(wrkDir, configStore)
 		if err != nil {
 			return err
 		}

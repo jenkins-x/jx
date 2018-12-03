@@ -934,7 +934,7 @@ func (options *InstallOptions) Run() error {
 
 	version := options.Flags.Version
 	if version == "" {
-		version, err = LoadVersionFromCloudEnvironmentsDir(wrkDir)
+		version, err = LoadVersionFromCloudEnvironmentsDir(wrkDir, configStore)
 		if err != nil {
 			return errors.Wrap(err, "failed to load version from cloud environments dir")
 		}
@@ -1723,7 +1723,7 @@ func (options *InstallOptions) logAdminPassword() {
 }
 
 // LoadVersionFromCloudEnvironmentsDir loads a version from the cloud environments directory
-func LoadVersionFromCloudEnvironmentsDir(wrkDir string) (string, error) {
+func LoadVersionFromCloudEnvironmentsDir(wrkDir string, configStore configio.ConfigStore) (string, error) {
 	version := ""
 	path := filepath.Join(wrkDir, "Makefile")
 	exists, err := util.FileExists(path)
@@ -1733,8 +1733,6 @@ func LoadVersionFromCloudEnvironmentsDir(wrkDir string) (string, error) {
 	if !exists {
 		return version, fmt.Errorf("File does not exist %s", path)
 	}
-	// FIXME - don't create a store here - inject it from the caller.
-	configStore := configio.NewFileStore()
 	data, err := configStore.Read(path)
 	if err != nil {
 		return version, err
