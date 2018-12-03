@@ -19,17 +19,18 @@ type StepHelmDeleteOptions struct {
 }
 
 var (
-	StepHelmDeleteLong = templates.LongDesc(`
+	stepHelmDeleteLong = templates.LongDesc(`
 		Deletes a helm release
 `)
 
-	StepHelmDeleteExample = templates.Examples(`
+	stepHelmDeleteExample = templates.Examples(`
 		# list all the helm releases in the current namespace
 		jx step helm list
 
 `)
 )
 
+// NewCmdStepHelmDelete creates the command object
 func NewCmdStepHelmDelete(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepHelmDeleteOptions{
 		StepHelmOptions: StepHelmOptions{
@@ -47,8 +48,8 @@ func NewCmdStepHelmDelete(f Factory, in terminal.FileReader, out terminal.FileWr
 		Use:     "delete [releaseName]",
 		Short:   "Deletes the given helm release",
 		Aliases: []string{""},
-		Long:    StepHelmDeleteLong,
-		Example: StepHelmDeleteExample,
+		Long:    stepHelmDeleteLong,
+		Example: stepHelmDeleteExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -63,6 +64,7 @@ func NewCmdStepHelmDelete(f Factory, in terminal.FileReader, out terminal.FileWr
 	return cmd
 }
 
+// Run performs the CLI command
 func (o *StepHelmDeleteOptions) Run() error {
 	args := o.Args
 	if len(args) == 0 {
@@ -71,7 +73,7 @@ func (o *StepHelmDeleteOptions) Run() error {
 	releaseName := args[0]
 	h := o.Helm()
 	if h == nil {
-		return fmt.Errorf("No Helmer created!")
+		return fmt.Errorf("no Helmer created!")
 	}
 	ns := o.Namespace
 	var err error
