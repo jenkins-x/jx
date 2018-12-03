@@ -577,11 +577,6 @@ func (f *factory) GetHelm(verbose bool,
 	return h
 }
 
-// UseVault indicates if the vault is being used
-func (f *factory) UseVault(use bool) {
-	f.useVault = use
-}
-
 // tillerAddress returns the address that tiller is listening on
 func tillerAddress() string {
 	tillerAddress := os.Getenv("TILLER_ADDR")

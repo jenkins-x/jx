@@ -92,7 +92,4 @@ type Factory interface {
 
 	// GetVaultClient returns the vault client for given vault
 	GetVaultClient(name string, namespace string) (vault.Client, error)
-
-	// UseVault tells the factory to use Vault to store secrets rather than the filesystem
-	UseVault(use bool)
 }

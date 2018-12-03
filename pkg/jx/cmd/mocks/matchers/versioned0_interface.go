@@ -4,7 +4,7 @@ package matchers
 import (
 	"reflect"
 	"github.com/petergtz/pegomock"
-	versioned0 "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	versioned0 "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 )
 
 func AnyVersioned0Interface() versioned0.Interface {
