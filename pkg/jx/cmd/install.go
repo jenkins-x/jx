@@ -703,42 +703,7 @@ func (options *InstallOptions) Run() error {
 	// TODO - we want to enable storing secrets in Vault for gitops. Reenable this once the feature is finished
 	//if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
 	if options.Flags.Vault {
-		// Install Vault Operator into the new env
-		err = InstallVaultOperator(&options.CommonOptions, "")
-		if err != nil {
-			return err
-		}
-
-		// Create a new System vault
-		cvo := &CreateVaultOptions{
-			CreateOptions: CreateOptions{
-				CommonOptions: options.CommonOptions,
-			},
-			UpgradeIngressOptions: UpgradeIngressOptions{
-				CreateOptions: CreateOptions{
-					CommonOptions: options.CommonOptions,
-				},
-			},
-			Namespace: ns,
-		}
-		vaultOperatorClient, err := cvo.Factory.CreateVaultOperatorClient()
-		if err != nil {
-			return err
-		}
-
-		if kubevault.FindVault(vaultOperatorClient, vault.SystemVaultName, ns) {
-			log.Infof("System vault named %s in namespace %s already exists\n",
-				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(ns))
-		} else {
-			log.Info("Creating new system vault\n")
-			err = cvo.createVault(vaultOperatorClient, vault.SystemVaultName)
-			if err != nil {
-				return err
-			}
-			log.Infof("System vault created named %s in namespace %s.\n",
-				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(ns))
-		}
-		secrets.NewSecretLocation(client, ns).SetInVault(options.Flags.Vault)
+		err = options.createSystemVault(client, ns)
 	}
 
 	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
@@ -1490,6 +1455,45 @@ func (options *InstallOptions) Run() error {
 	log.Infof("To import existing projects into Jenkins:       %s\n", util.ColorInfo("jx import"))
 	log.Infof("To create a new Spring Boot microservice:       %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
 	log.Infof("To create a new microservice from a quickstart: %s\n", util.ColorInfo("jx create quickstart"))
+	return nil
+}
+
+func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string) error {
+	err := InstallVaultOperator(&options.CommonOptions, "")
+	if err != nil {
+		return err
+	}
+
+	// Create a new System vault
+	cvo := &CreateVaultOptions{
+		CreateOptions: CreateOptions{
+			CommonOptions: options.CommonOptions,
+		},
+		UpgradeIngressOptions: UpgradeIngressOptions{
+			CreateOptions: CreateOptions{
+				CommonOptions: options.CommonOptions,
+			},
+		},
+		Namespace: namespace,
+	}
+	vaultOperatorClient, err := cvo.Factory.CreateVaultOperatorClient()
+	if err != nil {
+		return err
+	}
+
+	if kubevault.FindVault(vaultOperatorClient, vault.SystemVaultName, namespace) {
+		log.Infof("System vault named %s in namespace %s already exists\n",
+			util.ColorInfo(vault.SystemVaultName), util.ColorInfo(namespace))
+	} else {
+		log.Info("Creating new system vault\n")
+		err = cvo.createVault(vaultOperatorClient, vault.SystemVaultName)
+		if err != nil {
+			return err
+		}
+		log.Infof("System vault created named %s in namespace %s.\n",
+			util.ColorInfo(vault.SystemVaultName), util.ColorInfo(namespace))
+	}
+	secrets.NewSecretLocation(client, namespace).SetInVault(options.Flags.Vault)
 	return nil
 }
 
