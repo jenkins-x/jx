@@ -421,22 +421,21 @@ func (h *HelmTemplate) deleteOldResources(ns string, releaseName string, version
 }
 
 func (h *HelmTemplate) deleteResourcesBySelector(ns string, selector string, wait bool) error {
-	args := []string{"delete", "all", "--ignore-not-found", "--namespace", ns, "-l", selector}
-	if wait {
-		args = append(args, "--wait")
+	kinds := []string{"all", "pvc", "configmap", "release"}
+	for _, kind := range kinds {
+		args := []string{"delete", kind, "--ignore-not-found", "--namespace", ns, "-l", selector}
+		if wait {
+			args = append(args, "--wait")
+		}
+		output, err := h.runKubectlWithOutput(args...)
+		if err != nil {
+			return err
+		}
+		output = strings.TrimSpace(output)
+		if output != "No resources found" {
+			log.Info(output + "\n")
+		}
 	}
-	err := h.runKubectl(args...)
-	if err != nil {
-		return err
-	}
-
-	// now lets delete resource CRDs
-	args = []string{"delete", "release", "--ignore-not-found", "--namespace", ns, "-l", selector}
-	if wait {
-		args = append(args, "--wait")
-	}
-	// lets ignore failures - probably due to CRD not yet existing
-	h.runKubectl(args...)
 	return nil
 }
 
@@ -765,7 +764,8 @@ func (h *HelmTemplate) runKubectl(args ...string) error {
 	h.Runner.SetDir(h.CWD)
 	h.Runner.SetName(h.Binary)
 	h.Runner.SetArgs(args)
-	_, err := h.Runner.RunWithoutRetry()
+	output, err := h.Runner.RunWithoutRetry()
+	log.Info(output + "\n")
 	return err
 }
 
