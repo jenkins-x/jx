@@ -70,7 +70,7 @@ func NewCmdStepHelmApply(f Factory, in terminal.FileReader, out terminal.FileWri
 	options.addStepHelmFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The Kubernetes namespace to apply the helm chart to")
-	cmd.Flags().StringVarP(&options.ReleaseName, "name", "", "", "The name of the release")
+	cmd.Flags().StringVarP(&options.ReleaseName, "name", "n", "", "The name of the release")
 	cmd.Flags().BoolVarP(&options.Wait, "wait", "", true, "Wait for Kubernetes readiness probe to confirm deployment")
 	cmd.Flags().BoolVarP(&options.Force, "force", "f", true, "Whether to to pass '--force' to helm to help deal with upgrading if a previous promote failed")
 	cmd.Flags().BoolVar(&options.DisableHelmVersion, "no-helm-version", false, "Don't set Chart version before applying")
