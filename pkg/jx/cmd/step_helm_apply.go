@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -107,14 +106,15 @@ func (o *StepHelmApplyOptions) Run() error {
 	if ns == "" {
 		ns = os.Getenv("DEPLOY_NAMESPACE")
 	}
-	if ns == "" {
-		return fmt.Errorf("No --namespace option specified or $DEPLOY_NAMESPACE environment variable available")
-	}
-
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, curNs, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
+	if ns == "" {
+		ns = curNs
+		log.Infof("No --namespace option specified or $DEPLOY_NAMESPACE environment variable available so defaulting to using namespace %s\n", ns)
+	}
+
 	err = kube.EnsureNamespaceCreated(kubeClient, ns, nil, nil)
 	if err != nil {
 		return err
