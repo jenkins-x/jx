@@ -95,6 +95,14 @@ type GitRelease struct {
 	URL           string
 	HTMLURL       string
 	DownloadCount int
+	Assets        *[]GitReleaseAsset
+}
+
+// GitReleaseAsset represents a release stored in Git
+type GitReleaseAsset struct {
+	BrowserDownloadURL string
+	Name               string
+	ContentType        string
 }
 
 type GitLabel struct {

@@ -97,6 +97,7 @@ func NewCmdGet(f Factory, in terminal.FileReader, out terminal.FileWriter, errOu
 	cmd.AddCommand(NewCmdGetVault(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetSecret(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetVaultConfig(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetPlugins(f, in, out, errOut))
 	return cmd
 }
 

@@ -20,13 +20,14 @@ require (
 	github.com/andygrunwald/go-gerrit v0.0.0-20181026193842-43cfd7a94eb4
 	github.com/andygrunwald/go-jira v1.5.0
 	github.com/aws/aws-sdk-go v1.15.50
-	github.com/banzaicloud/bank-vaults v0.0.0-20181015112421-ca15a6960a3a
+	github.com/banzaicloud/bank-vaults v0.0.0-20181129101211-e31657d7c4fe
 	github.com/beevik/etree v1.0.1
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/bouk/monkey v1.0.0
 	github.com/c2h5oh/datasize v0.0.0-20171227191756-4eba002a5eae
 	github.com/cenkalti/backoff v2.0.0+incompatible
+	github.com/chai2010/gettext-go v0.0.0-20170215093142-bf70f2a70fb1 // indirect
 	github.com/chromedp/cdproto v0.0.0-20180720050708-57cf4773008d
 	github.com/chromedp/chromedp v0.1.1
 	github.com/codeship/codeship-go v0.0.0-20180717142545-7793ca823354
@@ -39,6 +40,7 @@ require (
 	github.com/docker/spdystream v0.0.0-20170912183627-bc6354cbbc29
 	github.com/emicklei/go-restful v2.8.0+incompatible // indirect
 	github.com/emirpasic/gods v1.9.0
+	github.com/evanphx/json-patch v4.1.0+incompatible // indirect
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.0.0
 	github.com/fsnotify/fsnotify v1.4.7
@@ -174,11 +176,13 @@ require (
 	k8s.io/api v0.0.0-20180628040859-072894a440bd
 	k8s.io/apiextensions-apiserver v0.0.0-20180621085152-bbc52469f98b
 	k8s.io/apimachinery v0.0.0-20180621070125-103fd098999d
+	k8s.io/cli-runtime v0.0.0-20181026155151-1ee5ba10d7e3 // indirect
 	k8s.io/client-go v8.0.0+incompatible
 	k8s.io/code-generator v0.0.0-20181017053441-8c97d6ab64da
 	k8s.io/gengo v0.0.0-20180718083919-906d99f89cd6
 	k8s.io/helm v2.7.2+incompatible
 	k8s.io/kube-openapi v0.0.0-20180719232738-d8ea2fe547a4
+	k8s.io/kubernetes v1.11.3 // indirect
 	k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b
 	k8s.io/test-infra v0.0.0-20181113004108-9b11013021d9
 

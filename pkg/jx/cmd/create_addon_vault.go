@@ -19,7 +19,7 @@ const (
 	jxRepoName                   = "jenkinsxio"
 	jxRepoURL                    = "https://chartmuseum.jx.cd.jenkins-x.io"
 	vaultOperatorImageRepository = "banzaicloud/vault-operator"
-	vaultOperatorImageTag        = "0.3.6"
+	vaultOperatorImageTag        = "0.3.17"
 	defaultVaultOperatorVersion  = ""
 )
 

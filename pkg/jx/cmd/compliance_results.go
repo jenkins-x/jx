@@ -149,9 +149,9 @@ func (o *ComplianceResultsOptions) printResults(junitResults []reporters.JUnitTe
 	table := o.CreateTable()
 	table.SetColumnAlign(1, util.ALIGN_LEFT)
 	table.SetColumnAlign(2, util.ALIGN_LEFT)
-	table.AddRow("STATUS", "TEST")
+	table.AddRow("STATUS", "TEST", "TEST-CLASS")
 	for _, t := range junitResults {
-		table.AddRow(status(t), t.Name)
+		table.AddRow(status(t), t.Name, t.ClassName)
 	}
 	table.Render()
 }

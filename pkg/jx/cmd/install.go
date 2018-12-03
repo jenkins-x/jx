@@ -3,7 +3,7 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/vault"
+
 	"io"
 	"io/ioutil"
 	"os"
@@ -12,6 +12,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/io/secrets"
+	"github.com/jenkins-x/jx/pkg/vault"
+
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
@@ -19,6 +22,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/addon"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/cloud/iks"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -435,6 +439,19 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
+	if options.Flags.Provider == AKS {
+		var deps []string
+		d := binaryShouldBeInstalled("az")
+		if d != "" {
+			deps = append(deps, d)
+		}
+		err := options.installMissingDependencies(deps)
+		if err != nil {
+			log.Errorf("%v\nPlease fix the error or install manually then try again", err)
+			os.Exit(-1)
+		}
+	}
+
 	initOpts := &options.InitOptions
 	helmBinary := initOpts.HelmBinary()
 
@@ -712,14 +729,14 @@ func (options *InstallOptions) Run() error {
 				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(ns))
 		} else {
 			log.Info("Creating new system vault\n")
-			err = cvo.DoCreateVault(vaultOperatorClient, vault.SystemVaultName)
+			err = cvo.createVault(vaultOperatorClient, vault.SystemVaultName)
 			if err != nil {
 				return err
 			}
 			log.Infof("System vault created named %s in namespace %s.\n",
 				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(ns))
 		}
-		options.Factory.UseVault(true)
+		secrets.NewSecretLocation(client, ns).SetInVault(options.Flags.Vault)
 	}
 
 	// get secrets to use in helm install
@@ -740,6 +757,30 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to get the docker registry value")
 	}
+
+	kubeConfig, _, err := options.Kube().LoadConfig()
+	if err != nil {
+		return err
+	}
+	if options.Flags.Provider == AKS {
+		/**
+		 * Assign ACR role to AKS
+		 */
+		server := kube.CurrentServer(kubeConfig)
+		azureCLI := aks.NewAzureRunner()
+		resourceGroup, name, cluster, err := azureCLI.GetClusterClient(server)
+		if err != nil {
+			return errors.Wrap(err, "failed to get cluster from Azure")
+		}
+		registryID := ""
+		helmConfig.PipelineSecrets.DockerConfig, dockerRegistry, registryID, err = azureCLI.GetRegistry(resourceGroup, name, dockerRegistry)
+		if err != nil {
+			return errors.Wrap(err, "failed to get registry from Azure")
+		}
+		azureCLI.AssignRole(cluster, registryID)
+		log.Infof("Assign AKS %s a reader role for ACR %s\n", util.ColorInfo(server), util.ColorInfo(dockerRegistry))
+	}
+
 	if options.Flags.Provider == IKS {
 		dockerRegistry = iks.GetClusterRegistry(client)
 		helmConfig.PipelineSecrets.DockerConfig, err = iks.GetRegistryConfigJSON(dockerRegistry)
@@ -1018,11 +1059,6 @@ func (options *InstallOptions) Run() error {
 
 	// save cluster config CA and server url to a configmap
 	if !options.Flags.DisableSetKubeContext {
-		kubeConfig, _, err := options.Kube().LoadConfig()
-		if err != nil {
-			return err
-		}
-
 		var jxInstallConfig *kube.JXInstallConfig
 		if kubeConfig != nil {
 			kubeConfigContext := kube.CurrentContext(kubeConfig)

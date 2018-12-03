@@ -2,8 +2,11 @@ package vault
 
 import (
 	"fmt"
+
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
@@ -22,6 +25,7 @@ const (
 	vaultAuthType     = "kubernetes"
 	vaultAuthTTL      = "1h"
 	vaultAuthSaSuffix = "auth-sa"
+	vaultRoleName     = "vault-auth"
 )
 
 // Vault stores some details of a Vault resource
@@ -91,9 +95,19 @@ func VaultGcpServiceAccountSecretName(vaultName string, clusterName string) stri
 }
 
 // CreateVault creates a new vault backed by GCP KMS and storage
-func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string,
+func CreateVault(kubeClient kubernetes.Interface, vaultOperatorClient versioned.Interface, name string, ns string,
 	gcpServiceAccountSecretName string, gcpConfig *GCPConfig, authServiceAccount string,
 	authServiceAccountNamespace string, secretsPathPrefix string) error {
+
+	err := createVaultServiceAccount(kubeClient, ns, name)
+	if err != nil {
+		return errors.Wrapf(err, "creating the vault service account '%s'", name)
+	}
+
+	err = ensureVaultRoleBinding(kubeClient, ns, vaultRoleName, name, name)
+	if err != nil {
+		return errors.Wrapf(err, "ensuring vault cluster role binding '%s' is created", name)
+	}
 
 	if secretsPathPrefix == "" {
 		secretsPathPrefix = DefaultSecretsPathPrefix
@@ -123,6 +137,7 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 			Image:           vaultImage,
 			BankVaultsImage: bankVaultsImage,
 			ServiceType:     string(v1.ServiceTypeClusterIP),
+			ServiceAccount:  name,
 			Config: map[string]interface{}{
 				"api_addr":           fmt.Sprintf("http://%s.%s:8200", name, ns),
 				"disable_clustering": true,
@@ -187,7 +202,47 @@ func CreateVault(vaultOperatorClient versioned.Interface, name string, ns string
 	return err
 }
 
-// FindVault  checks if a vault is available
+func createVaultServiceAccount(client kubernetes.Interface, namespace string, name string) error {
+	_, err := serviceaccount.CreateServiceAccount(client, namespace, name)
+	if err != nil {
+		return errors.Wrap(err, "creating vault service account")
+	}
+	return nil
+}
+
+func ensureVaultRoleBinding(client kubernetes.Interface, namespace string, roleName string,
+	roleBindingName string, serviceAccount string) error {
+	apiGroups := []string{"authentication.k8s.io"}
+	resources := []string{"tokenreviews"}
+	verbs := []string{"*"}
+	found := kube.IsClusterRole(client, roleName)
+	if found {
+		err := kube.DeleteClusterRole(client, roleName)
+		if err != nil {
+			return errors.Wrapf(err, "deleting the existing cluster role '%s'", roleName)
+		}
+	}
+	err := kube.CreateClusterRole(client, namespace, roleName, apiGroups, resources, verbs)
+	if err != nil {
+		return errors.Wrapf(err, "creating the cluster role '%s' for vault", roleName)
+	}
+
+	found = kube.IsClusterRoleBinding(client, roleBindingName)
+	if found {
+		err := kube.DeleteClusterRoleBinding(client, roleBindingName)
+		if err != nil {
+			return errors.Wrapf(err, "deleting the existing cluster role binding '%s'", roleBindingName)
+		}
+	}
+
+	err = kube.CreateClusterRoleBinding(client, namespace, roleBindingName, serviceAccount, roleName)
+	if err != nil {
+		return errors.Wrapf(err, "creating the cluster role binding '%s' for vault", roleBindingName)
+	}
+	return nil
+}
+
+// FindVault checks if a vault is available
 func FindVault(vaultOperatorClient versioned.Interface, name string, ns string) bool {
 	_, err := GetVault(vaultOperatorClient, name, ns)
 	if err != nil {
