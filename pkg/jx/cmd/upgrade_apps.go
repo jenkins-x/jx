@@ -41,8 +41,11 @@ type UpgradeAppsOptions struct {
 	GitOps bool
 	DevEnv *jenkinsv1.Environment
 
-	Repo    string
-	Alias   string
+	Repo     string
+	Alias    string
+	Username string
+	Password string
+
 	Version string
 	All     bool
 
@@ -89,11 +92,15 @@ func NewCmdUpgradeApps(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 	cmd.Flags().BoolVarP(&o.BatchMode, optionBatchMode, "b", false, "In batch mode the command never prompts for user input")
 	cmd.Flags().BoolVarP(&o.Verbose, optionVerbose, "", false, "Enable verbose logging")
+	cmd.Flags().StringVarP(&o.Version, "username", "", "",
+		"The username for the repository")
+	cmd.Flags().StringVarP(&o.Version, "password", "", "",
+		"The password for the repository")
+	cmd.Flags().StringVarP(&o.Repo, "repository", "", o.DevEnv.Spec.TeamSettings.AppsRepository,
+		"The repository from which the app should be installed")
 	if o.GitOps {
 		// GitOps flags go here
 		cmd.Flags().StringVarP(&o.Alias, "alias", "", "", "An alias to use for the app")
-		cmd.Flags().StringVarP(&o.Repo, "repository", "", o.DevEnv.Spec.TeamSettings.AppsRepository,
-			"The repository from which the chart should be installed")
 		cmd.Flags().StringVarP(&o.Version, "version", "v", "",
 			"The chart version to install")
 	} else {
@@ -154,7 +161,7 @@ func (o *UpgradeAppsOptions) createPRs() error {
 				version := o.Version
 				if o.All || version == "" {
 					var err error
-					version, err = helm.GetLatestVersion(d.Name, o.Repo, o.Helm())
+					version, err = helm.GetLatestVersion(d.Name, o.Repo, o.Username, o.Password, o.Helm())
 					if err != nil {
 						return err
 					}
@@ -218,14 +225,14 @@ func (o *UpgradeAppsOptions) upgradeApps() error {
 		return err
 	}
 
-	addonConfig, err := addon.LoadAddonsConfig()
+	appConfig, err := addon.LoadAddonsConfig()
 	if err != nil {
 		return err
 	}
-	addonEnabled := map[string]bool{}
-	for _, addon := range addonConfig.Addons {
-		if addon.Enabled {
-			addonEnabled[addon.Name] = true
+	appEnabled := map[string]bool{}
+	for _, app := range appConfig.Addons {
+		if app.Enabled {
+			appEnabled[app.Name] = true
 		}
 	}
 	statusMap, err := o.Helm().StatusReleases(ns)
@@ -239,7 +246,7 @@ func (o *UpgradeAppsOptions) upgradeApps() error {
 		for _, k := range o.Args {
 			chart := charts[k]
 			if chart == "" {
-				return errors.Wrapf(err, "failed to match addon %s", k)
+				return errors.Wrapf(err, "failed to match app %s", k)
 			}
 			keys = append(keys, k)
 		}
@@ -248,14 +255,14 @@ func (o *UpgradeAppsOptions) upgradeApps() error {
 	}
 
 	for _, k := range keys {
-		chart := charts[k]
+		app := charts[k]
 		status := statusMap[k]
 		name := k
 		if name == k {
 			name = "kube-cd"
 		}
 		if status != "" {
-			log.Infof("Upgrading %s chart %s...\n", util.ColorInfo(name), util.ColorInfo(chart))
+			log.Infof("Upgrading %s app %s...\n", util.ColorInfo(name), util.ColorInfo(app))
 
 			valueFiles := []string{}
 			valueFiles, err = helm.AppendMyValues(valueFiles)
@@ -274,9 +281,10 @@ func (o *UpgradeAppsOptions) upgradeApps() error {
 				// lets backup any Prow config as we should never replace this, eventually we'll move config to a git repo so this is temporary
 				config, plugins = o.backupConfigs()
 			}
-			err = o.Helm().UpgradeChart(chart, k, ns, nil, false, nil, false, false, values, valueFiles, "")
+			err = o.Helm().UpgradeChart(app, k, ns, nil, false, nil, false, false, values, valueFiles, "",
+				o.Username, o.Password)
 			if err != nil {
-				log.Warnf("Failed to upgrade %s chart %s: %v\n", name, chart, err)
+				log.Warnf("Failed to upgrade %s app %s: %v\n", name, app, err)
 			}
 
 			if k == kube.DefaultProwReleaseName {
@@ -286,7 +294,7 @@ func (o *UpgradeAppsOptions) upgradeApps() error {
 				}
 			}
 
-			log.Infof("Upgraded %s chart %s\n", util.ColorInfo(name), util.ColorInfo(chart))
+			log.Infof("Upgraded %s app %s\n", util.ColorInfo(name), util.ColorInfo(app))
 		}
 	}
 	return nil

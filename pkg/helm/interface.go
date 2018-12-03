@@ -15,10 +15,12 @@ type Helmer interface {
 	RemoveRequirementsLock() error
 	BuildDependency() error
 	InstallChart(chart string, releaseName string, ns string, version *string, timeout *int,
-		values []string, valueFiles []string, repo string) error
-	FetchChart(chart string, version *string, untar bool, untardir string, repo string) error
+		values []string, valueFiles []string, repo string, username string, password string) error
+	FetchChart(chart string, version *string, untar bool, untardir string, repo string, username string,
+		password string) error
 	UpgradeChart(chart string, releaseName string, ns string, version *string, install bool,
-		timeout *int, force bool, wait bool, values []string, valueFiles []string, repo string) error
+		timeout *int, force bool, wait bool, values []string, valueFiles []string, repo string, username string,
+		password string) error
 	DeleteRelease(ns string, releaseName string, purge bool) error
 	ListCharts() (string, error)
 	SearchChartVersions(chart string) ([]string, error)

@@ -234,7 +234,7 @@ func (h *HelmCLI) BuildDependency() error {
 
 // InstallChart installs a helm chart according with the given flags
 func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, version *string, timeout *int,
-	values []string, valueFiles []string, repo string) error {
+	values []string, valueFiles []string, repo string, username string, password string) error {
 	args := []string{}
 	args = append(args, "install", "--wait", "--name", releaseName, "--namespace", ns, chart)
 	if timeout != nil {
@@ -252,6 +252,12 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 	if repo != "" {
 		args = append(args, "--repo", repo)
 	}
+	if username != "" {
+		args = append(args, "--username", username)
+	}
+	if password != "" {
+		args = append(args, "--password", password)
+	}
 	if h.Debug {
 		log.Infof("Installing Chart '%s'\n", util.ColorInfo(strings.Join(args, " ")))
 	}
@@ -260,7 +266,8 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 }
 
 // Fetch a Helm Chart
-func (h *HelmCLI) FetchChart(chart string, version *string, untar bool, untardir string, repo string) error {
+func (h *HelmCLI) FetchChart(chart string, version *string, untar bool, untardir string, repo string,
+	username string, password string) error {
 	args := []string{}
 	args = append(args, "fetch", chart)
 	if untardir != "" {
@@ -268,6 +275,13 @@ func (h *HelmCLI) FetchChart(chart string, version *string, untar bool, untardir
 	}
 	if untar {
 		args = append(args, "--untar")
+	}
+
+	if username != "" {
+		args = append(args, "--username", username)
+	}
+	if password != "" {
+		args = append(args, "--password", password)
 	}
 
 	if version != nil {
@@ -307,7 +321,8 @@ func (h *HelmCLI) Template(chart string, releaseName string, ns string, outDir s
 
 // UpgradeChart upgrades a helm chart according with given helm flags
 func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, version *string, install bool,
-	timeout *int, force bool, wait bool, values []string, valueFiles []string, repo string) error {
+	timeout *int, force bool, wait bool, values []string, valueFiles []string, repo string, username string,
+	password string) error {
 	args := []string{}
 	args = append(args, "upgrade")
 	args = append(args, "--namespace", ns)
@@ -334,6 +349,12 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 	}
 	if repo != "" {
 		args = append(args, "--repo", repo)
+	}
+	if username != "" {
+		args = append(args, "--username", username)
+	}
+	if password != "" {
+		args = append(args, "--password", password)
 	}
 	args = append(args, releaseName, chart)
 
