@@ -429,53 +429,12 @@ func (options *InstallOptions) Run() error {
 	initOpts := &options.InitOptions
 	helmBinary := initOpts.HelmBinary()
 	options.configureHelm(client, originalNs)
+	err = options.installHelmBinaries()
+	if err != nil {
+		return errors.Wrap(err, "installing helm binaries")
+	}
 
 	dependencies := []string{}
-	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
-		binDir, err := util.JXBinLocation()
-		if err != nil {
-			return errors.Wrap(err, "reading jx bin location")
-		}
-		_, install, err := shouldInstallBinary("tiller")
-		if !install && err == nil {
-			confirm := &survey.Confirm{
-				Message: "Uninstalling existing tiller binary:",
-				Default: true,
-			}
-			flag := true
-			err = survey.AskOne(confirm, &flag, nil)
-			if err != nil || flag == false {
-				return errors.New("Existing tiller must be uninstalled first in order to use the jx in tiller less mode")
-			}
-			// Uninstall helm and tiller first to avoid using some older version
-			err = options.UninstallBinary(binDir, "tiller")
-			if err != nil {
-				return errors.Wrap(err, "uninstalling existing tiller binary")
-			}
-		}
-
-		_, install, err = shouldInstallBinary(helmBinary)
-		if !install && err == nil {
-			confirm := &survey.Confirm{
-				Message: "Uninstalling existing helm binary:",
-				Default: true,
-			}
-			flag := true
-			err = survey.AskOne(confirm, &flag, nil)
-			if err != nil || flag == false {
-				return errors.New("Existing helm must be uninstalled first in order to use the jx in tiller less mode")
-			}
-			// Uninstall helm and tiller first to avoid using some older version
-			err = options.UninstallBinary(binDir, helmBinary)
-			if err != nil {
-				return errors.Wrap(err, "uninstalling existing helm binary")
-			}
-		}
-
-		dependencies = append(dependencies, "tiller")
-		options.Helm().SetHost(tillerAddress())
-	}
-	dependencies = append(dependencies, helmBinary)
 	err = options.installRequirements(options.Flags.Provider, dependencies...)
 	if err != nil {
 		return errors.Wrap(err, "failed to install the platform requirements")
@@ -1435,6 +1394,57 @@ func (options *InstallOptions) configureHelm(client kubernetes.Interface, namesp
 			}
 		}
 	}
+}
+
+func (options *InstallOptions) installHelmBinaries() error {
+	initOpts := &options.InitOptions
+	helmBinary := initOpts.HelmBinary()
+	dependencies := []string{}
+	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
+		binDir, err := util.JXBinLocation()
+		if err != nil {
+			return errors.Wrap(err, "reading jx bin location")
+		}
+		_, install, err := shouldInstallBinary("tiller")
+		if !install && err == nil {
+			confirm := &survey.Confirm{
+				Message: "Uninstalling existing tiller binary:",
+				Default: true,
+			}
+			flag := true
+			err = survey.AskOne(confirm, &flag, nil)
+			if err != nil || flag == false {
+				return errors.New("Existing tiller must be uninstalled first in order to use the jx in tiller less mode")
+			}
+			// Uninstall helm and tiller first to avoid using some older version
+			err = options.UninstallBinary(binDir, "tiller")
+			if err != nil {
+				return errors.Wrap(err, "uninstalling existing tiller binary")
+			}
+		}
+
+		_, install, err = shouldInstallBinary(helmBinary)
+		if !install && err == nil {
+			confirm := &survey.Confirm{
+				Message: "Uninstalling existing helm binary:",
+				Default: true,
+			}
+			flag := true
+			err = survey.AskOne(confirm, &flag, nil)
+			if err != nil || flag == false {
+				return errors.New("Existing helm must be uninstalled first in order to use the jx in tiller less mode")
+			}
+			// Uninstall helm and tiller first to avoid using some older version
+			err = options.UninstallBinary(binDir, helmBinary)
+			if err != nil {
+				return errors.Wrap(err, "uninstalling existing helm binary")
+			}
+		}
+		dependencies = append(dependencies, "tiller")
+		options.Helm().SetHost(tillerAddress())
+	}
+	dependencies = append(dependencies, helmBinary)
+	return options.installMissingDependencies(dependencies)
 }
 
 func (options *InstallOptions) installCloudProviderDependencies() {
