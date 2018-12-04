@@ -341,8 +341,11 @@ func generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activ
 // createStepDescription uses the spec of the init container to return a description
 func createStepDescription(initContainerName string, pod *corev1.Pod) string {
 	for _, c := range pod.Spec.InitContainers {
-		if c.Name == initContainerName {
-			return strings.Join(c.Args, " ")
+		args := c.Args
+		if c.Name == initContainerName && len(args) > 0 {
+			if args[0] == "-url" && len(args) > 1 {
+				return args[1]
+			}
 		}
 	}
 	return ""
