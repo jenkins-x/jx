@@ -6,7 +6,6 @@ import (
 	"runtime"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/vault"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -74,13 +73,7 @@ func NewCmdGetVaultConfig(f Factory, in terminal.FileReader, out terminal.FileWr
 
 // Run implements the command
 func (o *GetVaultConfigOptions) Run() error {
-	var vaultClient vault.Client
-	var err error
-	if o.Name != "" && o.Namespace != "" {
-		vaultClient, err = o.Factory.GetVaultClient(o.Name, o.Namespace)
-	} else {
-		vaultClient, err = o.Factory.GetSystemVaultClient()
-	}
+	vaultClient, err := o.Factory.GetVaultClient(o.Name, o.Namespace) // Will use defaults if empty strings specified
 	if err != nil {
 		return err
 	}

@@ -312,23 +312,27 @@ func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService
 
 // GetSystemVaultClient gets the system vault client for managing the secrets
 func (f *factory) GetSystemVaultClient() (vault.Client, error) {
-	_, ns, err := f.CreateClient()
-	if err != nil {
-		return nil, err
-	}
-	return f.GetVaultClient(vault.SystemVaultName, ns)
+	return f.GetVaultClient("", "") // GetVaultClient will use defaults if empty strings specified
 }
 
 // GetVaultClient returns the given vault client for managing secrets
+// Will use default values for name and namespace if nil values are applied
 func (f *factory) GetVaultClient(name string, namespace string) (vault.Client, error) {
 	vopClient, err := f.CreateVaultOperatorClient()
-	kubeClient, _, err := f.CreateClient()
+	kubeClient, defaultNamespace, err := f.CreateClient()
 	if err != nil {
 		return nil, err
 	}
+	// Use defaults if nothing is specified by the user
+	if namespace == "" {
+		namespace = defaultNamespace
+	}
+	if name == "" {
+		name = vault.SystemVaultName
+	}
 
 	if !kubevault.FindVault(vopClient, name, namespace) {
-		return nil, fmt.Errorf("no '%s' vault found", name)
+		return nil, fmt.Errorf("no '%s' vault found in namespace '%s'", name, namespace)
 	}
 
 	clientFactory, err := kubevault.NewVaultClientFactory(kubeClient, vopClient, namespace)
