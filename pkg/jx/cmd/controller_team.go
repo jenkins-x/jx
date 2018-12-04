@@ -79,12 +79,12 @@ func (o *ControllerTeamOptions) Run() error {
 		return err
 	}
 
-	jxClient, devNs, err := co.JXClientAndDevNamespace()
+	jxClient, adminNs, err := co.JXClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
 
-	log.Infof("Using the admin namespace %s\n", devNs)
+	log.Infof("Using the admin namespace %s\n", adminNs)
 
 	client, _, err := co.KubeClient()
 	if err != nil {
@@ -134,20 +134,20 @@ func (o *ControllerTeamOptions) Run() error {
 	_, teamController := cache.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func(lo metav1.ListOptions) (runtime.Object, error) {
-				return jxClient.JenkinsV1().Teams("").List(lo)
+				return jxClient.JenkinsV1().Teams(adminNs).List(lo)
 			},
 			WatchFunc: func(lo metav1.ListOptions) (watch.Interface, error) {
-				return jxClient.JenkinsV1().Teams("").Watch(lo)
+				return jxClient.JenkinsV1().Teams(adminNs).Watch(lo)
 			},
 		},
 		&v1.Team{},
 		time.Minute*30,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				o.onTeamChange(obj, client, jxClient, devNs)
+				o.onTeamChange(obj, client, jxClient, adminNs)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
-				o.onTeamChange(newObj, client, jxClient, devNs)
+				o.onTeamChange(newObj, client, jxClient, adminNs)
 			},
 			DeleteFunc: func(obj interface{}) {
 				// do nothing, already handled by 'jx delete team'

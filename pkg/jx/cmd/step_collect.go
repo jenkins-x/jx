@@ -97,7 +97,7 @@ func NewCmdStepCollect(f Factory, in terminal.FileReader, out terminal.FileWrite
 	cmd.Flags().StringVarP(&options.Provider, "provider", "", "", fmt.Sprintf("Specify the storage provider to use. Supported options are: %s", CollectProvidersKinds))
 	cmd.Flags().StringArrayVarP(&options.Pattern, "pattern", "", make([]string, 0), fmt.Sprintf("Specify the pattern to use to look for files"))
 	cmd.Flags().StringVarP(&options.HttpStepCollectOptions.Destination, "destination", "", "", fmt.Sprintf("Specify the HTTP endpoint to send each file to"))
-	cmd.Flags().StringVarP(&options.Classifier, "classifier", "", "", "A name which classifies this type of file e.g. test-reports, coverage")
+	cmd.Flags().StringVarP(&options.Classifier, "classifier", "", "", "A name which classifies this type of file. Example values: " + kube.ClassificationValues)
 	return cmd
 }
 
