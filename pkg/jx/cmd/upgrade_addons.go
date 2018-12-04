@@ -89,7 +89,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 		}
 	}
 
-	o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, ns)
+	o.devNamespace, _, err = kube.GetDevNamespace(o.kubeClientCached, ns)
 	if err != nil {
 		return err
 	}
@@ -172,9 +172,9 @@ func (o *UpgradeAddonsOptions) restoreConfigs(config *v1.ConfigMap, plugins *v1.
 	var err error
 	var err1 error
 	if config != nil {
-		_, err = o.KubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Get("config", metav1.GetOptions{})
+		_, err = o.kubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Get("config", metav1.GetOptions{})
 		if err != nil {
-			_, err = o.KubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Create(config)
+			_, err = o.kubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Create(config)
 			if err != nil {
 				b, _ := yaml.Marshal(config)
 				err1 = fmt.Errorf("error restoring config %s\n", string(b))
@@ -182,9 +182,9 @@ func (o *UpgradeAddonsOptions) restoreConfigs(config *v1.ConfigMap, plugins *v1.
 		}
 	}
 	if plugins != nil {
-		_, err = o.KubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Get("plugins", metav1.GetOptions{})
+		_, err = o.kubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Get("plugins", metav1.GetOptions{})
 		if err != nil {
-			_, err = o.KubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Create(plugins)
+			_, err = o.kubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Create(plugins)
 			if err != nil {
 				b, _ := yaml.Marshal(plugins)
 				err = fmt.Errorf("%v/nerror restoring plugins %s\n", err1, string(b))
@@ -195,8 +195,8 @@ func (o *UpgradeAddonsOptions) restoreConfigs(config *v1.ConfigMap, plugins *v1.
 }
 
 func (o *UpgradeAddonsOptions) backupConfigs() (*v1.ConfigMap, *v1.ConfigMap) {
-	config, _ := o.KubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Get("config", metav1.GetOptions{})
-	plugins, _ := o.KubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Get("plugins", metav1.GetOptions{})
+	config, _ := o.kubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Get("config", metav1.GetOptions{})
+	plugins, _ := o.kubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Get("plugins", metav1.GetOptions{})
 	config = config.DeepCopy()
 	config.ResourceVersion = ""
 	plugins = plugins.DeepCopy()

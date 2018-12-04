@@ -110,7 +110,7 @@ func (o *StartPipelineOptions) Run() error {
 	args := o.Args
 	names := []string{}
 	o.ProwOptions = prow.Options{
-		KubeClient: o.KubeClientCached,
+		KubeClient: o.kubeClientCached,
 		NS:         o.currentNamespace,
 	}
 	if len(args) == 0 {

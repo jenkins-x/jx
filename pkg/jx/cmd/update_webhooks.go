@@ -89,7 +89,7 @@ func (options *UpdateWebhooksOptions) Run() error {
 		return errors.Wrap(err, "failed to get kube client")
 	}
 
-	ns, _, err := kube.GetDevNamespace(options.KubeClientCached, options.currentNamespace)
+	ns, _, err := kube.GetDevNamespace(options.kubeClientCached, options.currentNamespace)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (options *UpdateWebhooksOptions) Run() error {
 		return err
 	}
 
-	hmacToken, err := options.KubeClientCached.CoreV1().Secrets(ns).Get("hmac-token", metav1.GetOptions{})
+	hmacToken, err := options.kubeClientCached.CoreV1().Secrets(ns).Get("hmac-token", metav1.GetOptions{})
 	if err != nil {
 		return err
 	}

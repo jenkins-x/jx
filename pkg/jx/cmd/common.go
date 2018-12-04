@@ -81,7 +81,7 @@ type CommonOptions struct {
 	PullSecrets            string
 
 	// common cached clients
-	KubeClientCached       kubernetes.Interface
+	kubeClientCached       kubernetes.Interface
 	apiExtensionsClient    apiextensionsclientset.Interface
 	currentNamespace       string
 	devNamespace           string
@@ -129,7 +129,7 @@ func NewCommonOptions(devNamespace string, factory Factory) CommonOptions {
 func (o *CommonOptions) SetDevNamespace(ns string) {
 	o.devNamespace = ns
 	o.currentNamespace = ns
-	o.KubeClientCached = nil
+	o.kubeClientCached = nil
 }
 
 // Debugf outputs the given text to the console if verbose mode is enabled
@@ -164,16 +164,16 @@ func (o *CommonOptions) CreateApiExtensionsClient() (apiextensionsclientset.Inte
 }
 
 func (o *CommonOptions) KubeClient() (kubernetes.Interface, string, error) {
-	if o.KubeClientCached == nil {
+	if o.kubeClientCached == nil {
 		kubeClient, currentNs, err := o.Factory.CreateClient()
 		if err != nil {
 			return nil, "", err
 		}
-		o.KubeClientCached = kubeClient
+		o.kubeClientCached = kubeClient
 		o.currentNamespace = currentNs
 
 	}
-	return o.KubeClientCached, o.currentNamespace, nil
+	return o.kubeClientCached, o.currentNamespace, nil
 }
 
 // KubeClientAndDevNamespace returns a kube client and the development namespace
@@ -709,17 +709,17 @@ func (o *CommonOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
 // todo switch to using expose as a jx plugin
 // get existing config from the devNamespace and run expose in the target environment
 func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) error {
-	return expose.Expose(devNamespace, targetNamespace, password, o.KubeClientCached, o.Helm(), defaultInstallTimeout)
+	return expose.Expose(devNamespace, targetNamespace, password, o.kubeClientCached, o.Helm(), defaultInstallTimeout)
 }
 
 func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig, services ...string) error {
-	return expose.RunExposecontroller(devNamespace, targetNamespace, ic, o.KubeClientCached, o.Helm(),
+	return expose.RunExposecontroller(devNamespace, targetNamespace, ic, o.kubeClientCached, o.Helm(),
 		defaultInstallTimeout)
 }
 
 // CleanExposecontrollerReources cleans expose controller resources
 func (o *CommonOptions) CleanExposecontrollerReources(ns string) {
-	expose.CleanExposecontrollerReources(o.KubeClientCached, ns)
+	expose.CleanExposecontrollerReources(o.kubeClientCached, ns)
 }
 
 func (o *CommonOptions) getDefaultAdminPassword(devNamespace string) (string, error) {
@@ -742,12 +742,12 @@ func (o *CommonOptions) getDefaultAdminPassword(devNamespace string) (string, er
 }
 
 func (o *CommonOptions) ensureAddonServiceAvailable(serviceName string) (string, error) {
-	present, err := services.IsServicePresent(o.KubeClientCached, serviceName, o.currentNamespace)
+	present, err := services.IsServicePresent(o.kubeClientCached, serviceName, o.currentNamespace)
 	if err != nil {
 		return "", fmt.Errorf("no %s provider service found, are you in your teams dev environment?  Type `jx ns` to switch.", serviceName)
 	}
 	if present {
-		url, err := services.GetServiceURLFromName(o.KubeClientCached, serviceName, o.currentNamespace)
+		url, err := services.GetServiceURLFromName(o.kubeClientCached, serviceName, o.currentNamespace)
 		if err != nil {
 			return "", fmt.Errorf("no %s provider service found, are you in your teams dev environment?  Type `jx ns` to switch.", serviceName)
 		}
@@ -759,7 +759,7 @@ func (o *CommonOptions) ensureAddonServiceAvailable(serviceName string) (string,
 }
 
 func (o *CommonOptions) copyCertmanagerResources(targetNamespace string, ic kube.IngressConfig) error {
-	return certmanager.CopyCertmanagerResources(targetNamespace, ic, o.KubeClientCached)
+	return certmanager.CopyCertmanagerResources(targetNamespace, ic, o.kubeClientCached)
 }
 
 func (o *CommonOptions) getJobName() string {
@@ -824,7 +824,7 @@ func (o *CommonOptions) GetWebHookEndpoint() (string, error) {
 		return "", err
 	}
 
-	ns, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	ns, _, err := kube.GetDevNamespace(o.kubeClientCached, o.currentNamespace)
 	if err != nil {
 		return "", err
 	}
@@ -832,14 +832,14 @@ func (o *CommonOptions) GetWebHookEndpoint() (string, error) {
 	var webHookUrl string
 
 	if isProwEnabled {
-		baseURL, err := services.GetServiceURLFromName(o.KubeClientCached, "hook", ns)
+		baseURL, err := services.GetServiceURLFromName(o.kubeClientCached, "hook", ns)
 		if err != nil {
 			return "", err
 		}
 
 		webHookUrl = util.UrlJoin(baseURL, "hook")
 	} else {
-		baseURL, err := services.GetServiceURLFromName(o.KubeClientCached, "jenkins", ns)
+		baseURL, err := services.GetServiceURLFromName(o.kubeClientCached, "jenkins", ns)
 		if err != nil {
 			return "", err
 		}

@@ -88,7 +88,7 @@ func (o *GetPipelineOptions) Run() error {
 
 	if isProw {
 		o.ProwOptions = prow.Options{
-			KubeClient: o.KubeClientCached,
+			KubeClient: o.kubeClientCached,
 			NS:         o.currentNamespace,
 		}
 		names, err := o.ProwOptions.GetReleaseJobs()

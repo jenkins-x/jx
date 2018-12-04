@@ -117,7 +117,7 @@ func (o *CreateAddonOptions) ExposeAddon(addon string) error {
 	if !ok {
 		return nil
 	}
-	svc, err := o.KubeClientCached.CoreV1().Services(o.Namespace).Get(service, meta_v1.GetOptions{})
+	svc, err := o.kubeClientCached.CoreV1().Services(o.Namespace).Get(service, meta_v1.GetOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "getting the addon service: %s", service)
 	}
@@ -127,12 +127,12 @@ func (o *CreateAddonOptions) ExposeAddon(addon string) error {
 	}
 	if svc.Annotations[kube.AnnotationExpose] == "" {
 		svc.Annotations[kube.AnnotationExpose] = "true"
-		svc, err = o.KubeClientCached.CoreV1().Services(o.Namespace).Update(svc)
+		svc, err = o.kubeClientCached.CoreV1().Services(o.Namespace).Update(svc)
 		if err != nil {
 			return errors.Wrap(err, "updating the service annotations")
 		}
 	}
-	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	devNamespace, _, err := kube.GetDevNamespace(o.kubeClientCached, o.currentNamespace)
 	if err != nil {
 		return errors.Wrap(err, "retrieving the dev namespace")
 	}

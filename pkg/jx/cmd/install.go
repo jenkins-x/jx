@@ -373,7 +373,7 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to create the kube client")
 	}
-	options.KubeClientCached = client
+	options.kubeClientCached = client
 
 	ns := options.Flags.Namespace
 	if ns == "" {

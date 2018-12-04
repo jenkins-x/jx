@@ -893,7 +893,7 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 		return err
 	}
 	repo := gitInfo.Organisation + "/" + gitInfo.Name
-	err = prow.AddApplication(options.KubeClientCached, []string{repo}, options.currentNamespace, options.DraftPack)
+	err = prow.AddApplication(options.kubeClientCached, []string{repo}, options.currentNamespace, options.DraftPack)
 	if err != nil {
 		return err
 	}
@@ -902,7 +902,7 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
 				Factory:          options.Factory,
-				KubeClientCached: options.KubeClientCached,
+				kubeClientCached: options.kubeClientCached,
 			},
 		},
 	}
@@ -1084,7 +1084,7 @@ func (options *ImportOptions) addAppNameToGeneratedFile(filename, field, value s
 
 func (options *ImportOptions) checkChartmuseumCredentialExists() error {
 	name := jenkins.DefaultJenkinsCredentialsPrefix + jenkins.Chartmuseum
-	secret, err := options.KubeClientCached.CoreV1().Secrets(options.devNamespace).Get(name, metav1.GetOptions{})
+	secret, err := options.kubeClientCached.CoreV1().Secrets(options.devNamespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("error getting %s secret %v", name, err)
 	}

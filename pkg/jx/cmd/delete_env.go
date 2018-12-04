@@ -129,7 +129,7 @@ func (o *DeleteEnvOptions) deleteEnviroment(jxClient versioned.Interface, ns str
 	}
 	kind := env.Spec.Kind
 	if o.DeleteNamespace || !kind.IsPermanent() {
-		return o.KubeClientCached.CoreV1().Namespaces().Delete(envNs, &metav1.DeleteOptions{})
+		return o.kubeClientCached.CoreV1().Namespaces().Delete(envNs, &metav1.DeleteOptions{})
 	}
 	log.Infof("To delete the associated namespace %s for environment %s then please run this command\n", name, envNs)
 	log.Infof(util.ColorInfo("  kubectl delete namespace %s\n"), envNs)

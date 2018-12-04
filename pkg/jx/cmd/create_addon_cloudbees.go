@@ -135,11 +135,11 @@ To register to get your username/password to to: %s
 
 	if o.Sso {
 		log.Infof("Configuring %s...\n", util.ColorInfo("single sign-on"))
-		o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+		o.devNamespace, _, err = kube.GetDevNamespace(o.kubeClientCached, o.currentNamespace)
 		if err != nil {
 			return errors.Wrap(err, "retrieving the development namespace")
 		}
-		ingressConfig, err := kube.GetIngressConfig(o.KubeClientCached, o.devNamespace)
+		ingressConfig, err := kube.GetIngressConfig(o.kubeClientCached, o.devNamespace)
 		if err != nil {
 			return errors.Wrap(err, "retrieving existing ingress configuration")
 		}
@@ -163,7 +163,7 @@ To register to get your username/password to to: %s
 
 		ingressConfig.TLS = true
 		ingressConfig.Issuer = kube.CertmanagerIssuerProd
-		err = kube.CleanCertmanagerResources(o.KubeClientCached, o.Namespace, ingressConfig)
+		err = kube.CleanCertmanagerResources(o.kubeClientCached, o.Namespace, ingressConfig)
 		if err != nil {
 			return errors.Wrap(err, "creating cert-manager issuer")
 		}
@@ -190,7 +190,7 @@ To register to get your username/password to to: %s
 	}
 
 	if o.Basic {
-		devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+		devNamespace, _, err := kube.GetDevNamespace(o.kubeClientCached, o.currentNamespace)
 		if err != nil {
 			return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 		}
@@ -216,7 +216,7 @@ To register to get your username/password to to: %s
 			annotationsUpdated = true
 		}
 		if annotationsUpdated {
-			svc, err = o.KubeClientCached.CoreV1().Services(o.Namespace).Update(svc)
+			svc, err = o.kubeClientCached.CoreV1().Services(o.Namespace).Update(svc)
 			if err != nil {
 				return fmt.Errorf("failed to update service %s/%s", o.Namespace, cbServiceName)
 			}

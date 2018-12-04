@@ -134,7 +134,7 @@ func (o *GetCVEOptions) Run() error {
 		query.TargetNamespace = targetNamespace
 	}
 
-	err = p.GetImageVulnerabilityTable(jxClient, o.KubeClientCached, &table, query)
+	err = p.GetImageVulnerabilityTable(jxClient, o.kubeClientCached, &table, query)
 	if err != nil {
 		return fmt.Errorf("error getting vulnerability table for image %s: %v", query.ImageID, err)
 	}

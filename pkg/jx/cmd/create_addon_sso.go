@@ -97,7 +97,7 @@ func (o *CreateAddonSSOOptions) Run() error {
 	if err != nil {
 		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
 	}
-	o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	o.devNamespace, _, err = kube.GetDevNamespace(o.kubeClientCached, o.currentNamespace)
 	if err != nil {
 		return errors.Wrap(err, "retrieving the development namespace")
 	}
@@ -109,7 +109,7 @@ func (o *CreateAddonSSOOptions) Run() error {
 
 	log.Infof("Installing %s...\n", util.ColorInfo("dex identity provider"))
 
-	ingressConfig, err := kube.GetIngressConfig(o.KubeClientCached, o.devNamespace)
+	ingressConfig, err := kube.GetIngressConfig(o.kubeClientCached, o.devNamespace)
 	if err != nil {
 		return errors.Wrap(err, "retrieving existing ingress configuration")
 	}

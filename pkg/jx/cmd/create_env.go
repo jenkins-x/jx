@@ -221,7 +221,7 @@ func (o *CreateEnvOptions) Run() error {
 	}
 	if o.Prow {
 		repo := fmt.Sprintf("%s/environment-%s-%s", gitInfo.Organisation, o.Prefix, o.Options.Name)
-		err = prow.AddEnvironment(o.KubeClientCached, []string{repo}, devEnv.Spec.Namespace, env.Spec.Namespace)
+		err = prow.AddEnvironment(o.kubeClientCached, []string{repo}, devEnv.Spec.Namespace, env.Spec.Namespace)
 		if err != nil {
 			return fmt.Errorf("failed to add repo %s to Prow config in namespace %s: %v", repo, env.Spec.Namespace, err)
 		}

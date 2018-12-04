@@ -239,11 +239,11 @@ func (o *CreateVaultOptions) createVault(vaultOperatorClient versioned.Interface
 }
 
 func (o *CreateVaultOptions) exposeVault(vaultService string) error {
-	err := services.WaitForService(o.KubeClientCached, vaultService, o.Namespace, 1*time.Minute)
+	err := services.WaitForService(o.kubeClientCached, vaultService, o.Namespace, 1*time.Minute)
 	if err != nil {
 		return errors.Wrap(err, "waiting for vault service")
 	}
-	svc, err := o.KubeClientCached.CoreV1().Services(o.Namespace).Get(vaultService, metav1.GetOptions{})
+	svc, err := o.kubeClientCached.CoreV1().Services(o.Namespace).Get(vaultService, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "getting the vault service: %s", vaultService)
 	}
@@ -253,7 +253,7 @@ func (o *CreateVaultOptions) exposeVault(vaultService string) error {
 	if svc.Annotations[kube.AnnotationExpose] == "" {
 		svc.Annotations[kube.AnnotationExpose] = "true"
 		svc.Annotations[kube.AnnotationExposePort] = exposedVaultPort
-		svc, err = o.KubeClientCached.CoreV1().Services(o.Namespace).Update(svc)
+		svc, err = o.kubeClientCached.CoreV1().Services(o.Namespace).Update(svc)
 		if err != nil {
 			return errors.Wrapf(err, "updating %s service annotations", vaultService)
 		}

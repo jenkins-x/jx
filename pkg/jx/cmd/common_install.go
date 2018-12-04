@@ -1460,7 +1460,7 @@ func (o *CommonOptions) updateJenkinsURL(namespaces []string) error {
 
 	// loop over each namespace and update the Jenkins URL if a Jenkins service is found
 	for _, n := range namespaces {
-		externalURL, err := services.GetServiceURLFromName(o.KubeClientCached, "jenkins", n)
+		externalURL, err := services.GetServiceURLFromName(o.kubeClientCached, "jenkins", n)
 		if err != nil {
 			// skip namespace if no Jenkins service found
 			continue
@@ -1468,7 +1468,7 @@ func (o *CommonOptions) updateJenkinsURL(namespaces []string) error {
 
 		log.Infof("Updating Jenkins with new external URL details %s\n", externalURL)
 
-		jenkins, err := o.Factory.CreateJenkinsClient(o.KubeClientCached, n, o.In, o.Out, o.Err)
+		jenkins, err := o.Factory.CreateJenkinsClient(o.kubeClientCached, n, o.In, o.Out, o.Err)
 
 		if err != nil {
 			return err
@@ -1561,13 +1561,13 @@ func (o *CommonOptions) installProw() error {
 		}
 	}
 
-	if o.KubeClientCached == nil {
+	if o.kubeClientCached == nil {
 		_, _, err = o.KubeClient()
 		if err != nil {
 			return err
 		}
 	}
-	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	devNamespace, _, err := kube.GetDevNamespace(o.kubeClientCached, o.currentNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
@@ -1577,9 +1577,9 @@ func (o *CommonOptions) installProw() error {
 	values = append(values, setValues...)
 
 	// create initial configmaps if they don't already exist, use a dummy repo so tide doesn't start scanning all github
-	_, err = o.KubeClientCached.CoreV1().ConfigMaps(devNamespace).Get("config", metav1.GetOptions{})
+	_, err = o.kubeClientCached.CoreV1().ConfigMaps(devNamespace).Get("config", metav1.GetOptions{})
 	if err != nil {
-		err = prow.AddApplication(o.KubeClientCached, []string{"jenkins-x/dummy"}, devNamespace, "base")
+		err = prow.AddApplication(o.kubeClientCached, []string{"jenkins-x/dummy"}, devNamespace, "base")
 		if err != nil {
 			return err
 		}
@@ -1626,7 +1626,7 @@ func (o *CommonOptions) installProw() error {
 }
 
 func (o *CommonOptions) createWebhookProw(gitURL string, gitProvider gits.GitProvider) error {
-	ns, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	ns, _, err := kube.GetDevNamespace(o.kubeClientCached, o.currentNamespace)
 	if err != nil {
 		return err
 	}
@@ -1634,13 +1634,13 @@ func (o *CommonOptions) createWebhookProw(gitURL string, gitProvider gits.GitPro
 	if err != nil {
 		return err
 	}
-	baseURL, err := services.GetServiceURLFromName(o.KubeClientCached, "hook", ns)
+	baseURL, err := services.GetServiceURLFromName(o.kubeClientCached, "hook", ns)
 	if err != nil {
 		return err
 	}
 	webhookUrl := util.UrlJoin(baseURL, "hook")
 
-	hmacToken, err := o.KubeClientCached.CoreV1().Secrets(ns).Get("hmac-token", metav1.GetOptions{})
+	hmacToken, err := o.kubeClientCached.CoreV1().Secrets(ns).Get("hmac-token", metav1.GetOptions{})
 	if err != nil {
 		return err
 	}

@@ -61,7 +61,7 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_PassWhenContextNamesMatch
 	assert.NoError(t, err)
 
 	// Assert that the namespace has been deleted
-	_, err = o.KubeClientCached.CoreV1().Namespaces().Get("ns", metav1.GetOptions{})
+	_, err = o.kubeClientCached.CoreV1().Namespaces().Get("ns", metav1.GetOptions{})
 	assert.Error(t, err)
 }
 
@@ -85,7 +85,7 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_PassWhenForced(t *testing
 	assert.NoError(t, err)
 
 	// Assert that the namespace has been deleted
-	_, err = o.KubeClientCached.CoreV1().Namespaces().Get("ns", metav1.GetOptions{})
+	_, err = o.kubeClientCached.CoreV1().Namespaces().Get("ns", metav1.GetOptions{})
 	assert.Error(t, err)
 }
 
@@ -164,7 +164,7 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t
 	assert.NoError(t, err)
 
 	// Assert that the namespace has been deleted
-	_, err = o.KubeClientCached.CoreV1().Namespaces().Get("ns", metav1.GetOptions{})
+	_, err = o.kubeClientCached.CoreV1().Namespaces().Get("ns", metav1.GetOptions{})
 	assert.Error(t, err)
 
 	assert.NoError(t, console.Close())
@@ -175,7 +175,7 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t
 }
 
 func createNamespace(o *cmd.UninstallOptions, ns string) error {
-	_, err := o.KubeClientCached.CoreV1().Namespaces().Create(&v1.Namespace{
+	_, err := o.kubeClientCached.CoreV1().Namespaces().Create(&v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: ns,
 		},

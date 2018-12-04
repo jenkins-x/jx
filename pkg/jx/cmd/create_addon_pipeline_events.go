@@ -103,7 +103,7 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 		return err
 	}
 
-	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	devNamespace, _, err := kube.GetDevNamespace(o.kubeClientCached, o.currentNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
@@ -118,13 +118,13 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 
 	log.Info("waiting for elasticsearch deployment to be ready, this can take a few minutes\n")
 
-	err = kube.WaitForDeploymentToBeReady(o.KubeClientCached, esDeploymentName, o.Namespace, 10*time.Minute)
+	err = kube.WaitForDeploymentToBeReady(o.kubeClientCached, esDeploymentName, o.Namespace, 10*time.Minute)
 	if err != nil {
 		return err
 	}
 	log.Info("waiting for kibana deployment to be ready, this can take a few minutes\n")
 
-	err = kube.WaitForDeploymentToBeReady(o.KubeClientCached, kibanaDeploymentName, o.Namespace, 10*time.Minute)
+	err = kube.WaitForDeploymentToBeReady(o.kubeClientCached, kibanaDeploymentName, o.Namespace, 10*time.Minute)
 	if err != nil {
 		return err
 	}
@@ -154,13 +154,13 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 	}
 
 	// get the external services URL
-	kIng, err := services.GetServiceURLFromName(o.KubeClientCached, kibanaServiceName, o.Namespace)
+	kIng, err := services.GetServiceURLFromName(o.kubeClientCached, kibanaServiceName, o.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get external URL for service %s: %v", kibanaServiceName, err)
 	}
 
 	// get the external services URL
-	esIng, err := services.GetServiceURLFromName(o.KubeClientCached, esServiceName, o.Namespace)
+	esIng, err := services.GetServiceURLFromName(o.kubeClientCached, esServiceName, o.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get external URL for service %s: %v", kibanaServiceName, err)
 	}
@@ -183,10 +183,10 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 		return fmt.Errorf("failed to create addonAuth.yaml error: %v", err)
 	}
 
-	_, err = o.KubeClientCached.CoreV1().Services(o.currentNamespace).Get(esServiceName, meta_v1.GetOptions{})
+	_, err = o.kubeClientCached.CoreV1().Services(o.currentNamespace).Get(esServiceName, meta_v1.GetOptions{})
 	if err != nil {
 		// create a services link
-		err = services.CreateServiceLink(o.KubeClientCached, o.currentNamespace, o.Namespace, esServiceName, esIng)
+		err = services.CreateServiceLink(o.kubeClientCached, o.currentNamespace, o.Namespace, esServiceName, esIng)
 		if err != nil {
 			return fmt.Errorf("failed creating a service link for %s in target namespace %s", esServiceName, o.Namespace)
 		}
@@ -197,7 +197,7 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 }
 func (o *CreateAddonPipelineEventsOptions) addExposecontrollerAnnotations(serviceName string) error {
 
-	svc, err := o.KubeClientCached.CoreV1().Services(o.Namespace).Get(serviceName, meta_v1.GetOptions{})
+	svc, err := o.kubeClientCached.CoreV1().Services(o.Namespace).Get(serviceName, meta_v1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("failed to get Service %s: %v", serviceName, err)
 	}
@@ -215,7 +215,7 @@ func (o *CreateAddonPipelineEventsOptions) addExposecontrollerAnnotations(servic
 		annotationsUpdated = true
 	}
 	if annotationsUpdated {
-		svc, err = o.KubeClientCached.CoreV1().Services(o.Namespace).Update(svc)
+		svc, err = o.kubeClientCached.CoreV1().Services(o.Namespace).Update(svc)
 		if err != nil {
 			return fmt.Errorf("failed to update service %s/%s", o.Namespace, serviceName)
 		}
