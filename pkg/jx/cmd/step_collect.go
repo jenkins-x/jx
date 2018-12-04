@@ -146,7 +146,7 @@ func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err
 		return fmt.Errorf("Environment variable %s is empty", envVarBranchName)
 	}
 
-	repoPath := filepath.Join("jenkins-x", branchName, buildNo, options.Classifier)
+	repoPath := filepath.Join("jenkins-x", options.Classifier, org, repoName, branchName, buildNo)
 	repoDir := filepath.Join(ghPagesDir, repoPath)
 	err = os.MkdirAll(repoDir, 0755)
 	if err != nil {
