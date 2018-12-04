@@ -514,7 +514,6 @@ func (options *InstallOptions) Run() error {
 		helmConfig.Jenkins.Enabled = &enableJenkins
 	}
 
-	// lets add any GitHub Enterprise servers
 	gitAuthCfg, err := options.CreateGitAuthConfigService()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the git auth config service")
@@ -542,80 +541,32 @@ func (options *InstallOptions) Run() error {
 			util.ColorInfo(originalGitServer), util.ColorInfo(username))
 	}
 
-	// clone the environments repo
-	wrkDir, err := options.cloneJXCloudEnvironmentsRepo()
+	cloudEnvDir, err := options.cloneJXCloudEnvironmentsRepo()
 	if err != nil {
 		return errors.Wrap(err, "failed to clone the jx cloud environments repo")
 	}
 
-	// run  helm install setting the token and domain values
 	if options.Flags.Provider == "" {
 		return fmt.Errorf("no Kubernetes provider found to match cloud-environment with")
 	}
+	providerEnvDir := filepath.Join(cloudEnvDir, fmt.Sprintf("env-%s", strings.ToLower(options.Flags.Provider)))
+	cloudEnvironmentValuesLocation := filepath.Join(providerEnvDir, CloudEnvValuesFile)
+	cloudEnvironmentSecretsLocation := filepath.Join(providerEnvDir, CloudEnvSecretsFile)
 
-	makefileDir := filepath.Join(wrkDir, fmt.Sprintf("env-%s", strings.ToLower(options.Flags.Provider)))
-	if _, err := os.Stat(wrkDir); os.IsNotExist(err) {
-		return fmt.Errorf("cloud environment dir %s not found", makefileDir)
-	}
-
-	// create a temporary file that's used to pass current git creds to helm in order to create a secret for pipelines to tag releases
-	dir, err := util.ConfigDir()
+	adminSecrets, err := options.getAdminSecrets(providerEnvDir, cloudEnvironmentSecretsLocation)
 	if err != nil {
-		return errors.Wrap(err, "failed to create a temporary config dir for Git credentials")
+		return errors.Wrap(err, "creating the admin secrets")
 	}
 
-	cloudEnvironmentValuesLocation := filepath.Join(makefileDir, CloudEnvValuesFile)
-	cloudEnvironmentSecretsLocation := filepath.Join(makefileDir, CloudEnvSecretsFile)
-	cloudEnvironmentSopsLocation := filepath.Join(makefileDir, CloudEnvSopsConfigFile)
-
-	sopsFileExists, err := util.FileExists(cloudEnvironmentSopsLocation)
-	if err != nil {
-		return errors.Wrap(err, "failed to look for "+cloudEnvironmentSopsLocation)
-	}
-
-	adminSecretsServiceInit := false
-
-	if sopsFileExists {
-		log.Infof("Attempting to decrypt secrets file %s\n", util.ColorInfo(cloudEnvironmentSecretsLocation))
-		// need to decrypt secrets now
-		err = options.Helm().DecryptSecrets(cloudEnvironmentSecretsLocation)
-		if err != nil {
-			return errors.Wrap(err, "failed to decrypt "+cloudEnvironmentSecretsLocation)
-		}
-
-		cloudEnvironmentSecretsDecryptedLocation := filepath.Join(makefileDir, CloudEnvSecretsFile+".dec")
-		decryptedSecretsFile, err := util.FileExists(cloudEnvironmentSecretsDecryptedLocation)
-		if err != nil {
-			return errors.Wrap(err, "failed to look for "+cloudEnvironmentSecretsDecryptedLocation)
-		}
-
-		if decryptedSecretsFile {
-			log.Infof("Successfully decrypted %s\n", util.ColorInfo(cloudEnvironmentSecretsDecryptedLocation))
-			cloudEnvironmentSecretsLocation = cloudEnvironmentSecretsDecryptedLocation
-
-			err = options.AdminSecretsService.NewAdminSecretsConfigFromSecret(cloudEnvironmentSecretsDecryptedLocation)
-			if err != nil {
-				return errors.Wrap(err, "failed to create the admin secret config service from the decrypted secrets file")
-			}
-			adminSecretsServiceInit = true
-		}
-	}
-
-	if !adminSecretsServiceInit {
-		err = options.AdminSecretsService.NewAdminSecretsConfig()
-		if err != nil {
-			return errors.Wrap(err, "failed to create the admin secret config service")
-		}
-	}
-
-	adminSecrets := &options.AdminSecretsService.Secrets
-
-	// get secrets to use in helm install
 	gitSecrets, err := options.getGitSecrets()
 	if err != nil {
 		return errors.Wrap(err, "failed to read the git secrets from configuration")
 	}
 
+	dir, err := util.ConfigDir()
+	if err != nil {
+		return errors.Wrap(err, "failed to create a temporary config dir for Git credentials")
+	}
 	secretsFileName := filepath.Join(dir, GitSecretsFile)
 	err = configStore.Write(secretsFileName, []byte(gitSecrets))
 	if err != nil {
@@ -659,7 +610,7 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	log.Infof("Installing Jenkins X platform helm chart from: %s\n", makefileDir)
+	log.Infof("Installing Jenkins X platform helm chart from: %s\n", providerEnvDir)
 
 	options.Verbose = true
 	err = options.addHelmBinaryRepoIfMissing(DEFAULT_CHARTMUSEUM_URL, "jenkins-x")
@@ -669,7 +620,7 @@ func (options *InstallOptions) Run() error {
 
 	version := options.Flags.Version
 	if version == "" {
-		version, err = LoadVersionFromCloudEnvironmentsDir(wrkDir, configStore)
+		version, err = LoadVersionFromCloudEnvironmentsDir(cloudEnvDir, configStore)
 		if err != nil {
 			return errors.Wrap(err, "failed to load version from cloud environments dir")
 		}
@@ -699,7 +650,7 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to convert the helm install timeout value")
 	}
-	options.Helm().SetCWD(makefileDir)
+	options.Helm().SetCWD(providerEnvDir)
 	jxChart := JenkinsXPlatformChart
 	jxRelName := "jenkins-x"
 
@@ -1538,6 +1489,54 @@ func (options *InstallOptions) installCloudProviderDependencies() error {
 	return nil
 }
 
+func (options *InstallOptions) getAdminSecrets(providerEnvDir string, cloudEnvironmentSecretsLocation string) (*config.AdminSecretsConfig, error) {
+	cloudEnvironmentSopsLocation := filepath.Join(providerEnvDir, CloudEnvSopsConfigFile)
+	if _, err := os.Stat(providerEnvDir); os.IsNotExist(err) {
+		return nil, fmt.Errorf("cloud environment dir %s not found", providerEnvDir)
+	}
+	sopsFileExists, err := util.FileExists(cloudEnvironmentSopsLocation)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to look for "+cloudEnvironmentSopsLocation)
+	}
+
+	adminSecretsServiceInit := false
+
+	if sopsFileExists {
+		log.Infof("Attempting to decrypt secrets file %s\n", util.ColorInfo(cloudEnvironmentSecretsLocation))
+		// need to decrypt secrets now
+		err = options.Helm().DecryptSecrets(cloudEnvironmentSecretsLocation)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decrypt "+cloudEnvironmentSecretsLocation)
+		}
+
+		cloudEnvironmentSecretsDecryptedLocation := filepath.Join(providerEnvDir, CloudEnvSecretsFile+".dec")
+		decryptedSecretsFile, err := util.FileExists(cloudEnvironmentSecretsDecryptedLocation)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to look for "+cloudEnvironmentSecretsDecryptedLocation)
+		}
+
+		if decryptedSecretsFile {
+			log.Infof("Successfully decrypted %s\n", util.ColorInfo(cloudEnvironmentSecretsDecryptedLocation))
+			cloudEnvironmentSecretsLocation = cloudEnvironmentSecretsDecryptedLocation
+
+			err = options.AdminSecretsService.NewAdminSecretsConfigFromSecret(cloudEnvironmentSecretsDecryptedLocation)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to create the admin secret config service from the decrypted secrets file")
+			}
+			adminSecretsServiceInit = true
+		}
+	}
+
+	if !adminSecretsServiceInit {
+		err = options.AdminSecretsService.NewAdminSecretsConfig()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create the admin secret config service")
+		}
+	}
+
+	return &options.AdminSecretsService.Secrets, nil
+}
+
 func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string) error {
 	err := InstallVaultOperator(&options.CommonOptions, "")
 	if err != nil {
@@ -1590,7 +1589,6 @@ func (options *InstallOptions) storeSecretsInVault(secrets map[string]interface{
 }
 
 func (options *InstallOptions) modifySecrets(helmConfig *config.HelmValuesConfig, adminSecrets *config.AdminSecretsConfig, gitSecrets string) error {
-	// FIXME - this data
 	var err error
 	data := make(map[string][]byte)
 	data[ExtraValuesFile], err = yaml.Marshal(helmConfig)
