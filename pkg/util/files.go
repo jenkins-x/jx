@@ -1,6 +1,7 @@
 package util
 
 import (
+	"crypto/rand"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -33,7 +34,7 @@ func FirstFileExists(paths ...string) (string, error) {
 	for _, path := range paths {
 		exists, err := FileExists(path)
 		if err != nil {
-		  return "", err
+			return "", err
 		}
 		if exists {
 			return path, nil
@@ -41,7 +42,6 @@ func FirstFileExists(paths ...string) (string, error) {
 	}
 	return "", nil
 }
-
 
 func IsEmpty(name string) (bool, error) {
 	f, err := os.Open(name)
@@ -270,6 +270,8 @@ func LoadBytes(dir, name string) ([]byte, error) {
 	return bytes, nil
 }
 
+// DeleteFile deletes a file from the operating system. This should NOT be used to delete any sensitive information
+// because it can easily be recovered. Use DestroyFile to delete sensitive information
 func DeleteFile(fileName string) (err error) {
 	if fileName != "" {
 		exists, err := FileExists(fileName)
@@ -287,6 +289,24 @@ func DeleteFile(fileName string) (err error) {
 		return fmt.Errorf("Filename is not valid")
 	}
 	return nil
+}
+
+// DestroyFile will securely delete a file by first overwriting it with random bytes, then deleting it. This should
+// always be used for deleting sensitive information
+func DestroyFile(filename string) error {
+	fileInfo, err := os.Stat(filename)
+	if err != nil {
+		return errors.Wrapf(err, "Could not Destroy %s", filename)
+	}
+	size := fileInfo.Size()
+	// Overwrite the file with random data. Doing this multiple times is probably more secure
+	randomBytes := make([]byte, size)
+	_, _ = rand.Read(randomBytes)
+	err = ioutil.WriteFile(filename, randomBytes, DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "Unable to overwrite %s with random data", filename)
+	}
+	return DeleteFile(filename)
 }
 
 // DeleteDirContents removes all the contents of the given directory

@@ -7,6 +7,7 @@ import (
 
 	"fmt"
 
+	configio "github.com/jenkins-x/jx/pkg/io"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/util"
 
@@ -20,7 +21,8 @@ func TestInstall(t *testing.T) {
 	_, err := os.Stat(testDir)
 	assert.NoError(t, err)
 
-	version, err := cmd.LoadVersionFromCloudEnvironmentsDir(testDir)
+	configStore := configio.NewFileStore()
+	version, err := cmd.LoadVersionFromCloudEnvironmentsDir(testDir, configStore)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "0.0.1436", version, "For Makefile in dir %s", testDir)

@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"net/http"
 	"os"
@@ -67,7 +68,7 @@ func GetLatestVersionFromGitHub(githubOwner, githubRepo string) (semver.Version,
 }
 
 func GetLatestVersionStringFromGitHub(githubOwner, githubRepo string) (string, error) {
-	latestVersionString, err := GetLatestTagFromGitHub(githubOwner, githubRepo)
+	latestVersionString, err := GetLatestReleaseFromGitHub(githubOwner, githubRepo)
 	if err != nil {
 		return "", err
 	}
@@ -77,7 +78,61 @@ func GetLatestVersionStringFromGitHub(githubOwner, githubRepo string) (string, e
 	return "", fmt.Errorf("Unable to find the latest version for github.com/%s/%s", githubOwner, githubRepo)
 }
 
-func GetLatestTagFromGitHub(githubOwner, githubRepo string) (string, error) {
+// GetLatestReleaseFromGitHub gets the latest Release from a specific github repo
+func GetLatestReleaseFromGitHub(githubOwner, githubRepo string) (string, error) {
+	client, release, resp, err := preamble()
+	release, resp, err = client.Repositories.GetLatestRelease(context.Background(), githubOwner, githubRepo)
+	if err != nil {
+		return "", fmt.Errorf("Unable to get latest version for github.com/%s/%s %v", githubOwner, githubRepo, err)
+	}
+	defer resp.Body.Close()
+	latestVersionString := release.TagName
+	if latestVersionString != nil {
+		return *latestVersionString, nil
+	}
+	return "", fmt.Errorf("Unable to find the latest version for github.com/%s/%s", githubOwner, githubRepo)
+}
+
+// GetLatestFullTagFromGithub gets the latest 'full' tag from a specific github repo. This (at present) ignores releases
+// with a hyphen in it, usually used with -SNAPSHOT, or -RC1 or -beta
+func GetLatestFullTagFromGithub(githubOwner, githubRepo string) (string, error) {
+	tags, err := GetTagsFromGithub(githubOwner, githubRepo)
+	if err == nil {
+		// Iterate over the tags to find the first that doesn't contain any hyphens in it (so is just x.y.z)
+		for _, tag := range tags {
+			name := *tag.Name
+			if !strings.ContainsRune(name, '-') {
+				return name, nil
+			}
+		}
+		return "", errors.Errorf("No Full releases found for %s/%s", githubOwner, githubRepo)
+	}
+	return "", err
+}
+
+// GetLatestTagFromGithub gets the latest (in github order) tag from a specific github repo
+func GetLatestTagFromGithub(githubOwner, githubRepo string) (string, error) {
+	tags, err := GetTagsFromGithub(githubOwner, githubRepo)
+	if err == nil {
+		return *tags[0].Name, nil
+	}
+	return "", err
+}
+
+// GetTagsFromGithub gets the list of tags on a specific github repo
+func GetTagsFromGithub(githubOwner, githubRepo string) ([]*github.RepositoryTag, error) {
+	client, _, resp, err := preamble()
+
+	tags, resp, err := client.Repositories.ListTags(context.Background(), githubOwner, githubRepo, nil)
+	defer resp.Body.Close()
+	if err != nil {
+		return []*github.RepositoryTag{}, fmt.Errorf("Unable to get tags for github.com/%s/%s %v", githubOwner, githubRepo, err)
+	}
+
+	return tags, nil
+}
+
+func preamble() (*github.Client, *github.RepositoryRelease, *github.Response, error) {
 	if githubClient == nil {
 		token := os.Getenv("GH_TOKEN")
 		var tc *http.Client
@@ -95,16 +150,7 @@ func GetLatestTagFromGitHub(githubOwner, githubRepo string) (string, error) {
 		resp    *github.Response
 		err     error
 	)
-	release, resp, err = client.Repositories.GetLatestRelease(context.Background(), githubOwner, githubRepo)
-	if err != nil {
-		return "", fmt.Errorf("Unable to get latest version for github.com/%s/%s %v", githubOwner, githubRepo, err)
-	}
-	defer resp.Body.Close()
-	latestVersionString := release.TagName
-	if latestVersionString != nil {
-		return *latestVersionString, nil
-	}
-	return "", fmt.Errorf("Unable to find the latest version for github.com/%s/%s", githubOwner, githubRepo)
+	return client, release, resp, err
 }
 
 // untargz a tarball to a target, from

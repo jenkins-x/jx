@@ -3,15 +3,22 @@ package vault
 import (
 	"errors"
 	"fmt"
+	"io"
+
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/common"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
 	"k8s.io/client-go/kubernetes"
 )
 
-type vaultSelectorImpl struct {
+// Selector is an interface for selecting a vault from the installed ones on the platform
+// It should pick the most logical one, or give the user a way of picking a vault if there are multiple installed
+type Selector interface {
+	GetVault(name string, namespace string) (*Vault, error)
+}
+
+type vaultSelector struct {
 	vaultOperatorClient versioned.Interface
 	kubeClient          kubernetes.Interface
 	In                  terminal.FileReader
@@ -19,7 +26,8 @@ type vaultSelectorImpl struct {
 	Err                 io.Writer
 }
 
-func NewVaultSelector(o common.OptionsInterface) (VaultSelector, error) {
+// NewVaultSelector creates a new vault selector
+func NewVaultSelector(o common.OptionsInterface) (Selector, error) {
 	operator, err := o.VaultOperatorClient()
 	if err != nil {
 		return nil, err
@@ -28,7 +36,7 @@ func NewVaultSelector(o common.OptionsInterface) (VaultSelector, error) {
 	if err != nil {
 		return nil, err
 	}
-	v := vaultSelectorImpl{
+	v := &vaultSelector{
 		vaultOperatorClient: operator,
 		kubeClient:          kubeclient,
 	}
@@ -36,7 +44,8 @@ func NewVaultSelector(o common.OptionsInterface) (VaultSelector, error) {
 	return v, nil
 }
 
-func (v vaultSelectorImpl) GetVault(name string, namespace string) (*Vault, error) {
+// GetVault retrieve the given vault by name
+func (v *vaultSelector) GetVault(name string, namespace string) (*Vault, error) {
 	vaults, err := GetVaults(v.kubeClient, v.vaultOperatorClient, namespace)
 	if err != nil {
 		return nil, err
@@ -62,7 +71,7 @@ func (v vaultSelectorImpl) GetVault(name string, namespace string) (*Vault, erro
 	return vaults[0], nil
 }
 
-func (v vaultSelectorImpl) selectVault(vaults []*Vault) (*Vault, error) {
+func (v *vaultSelector) selectVault(vaults []*Vault) (*Vault, error) {
 	vaultMap, vaultNames := make(map[string]*Vault, len(vaults)), make([]string, len(vaults))
 	for i, vault := range vaults {
 		vaultMap[vault.Name] = vault

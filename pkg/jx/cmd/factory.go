@@ -3,17 +3,18 @@ package cmd
 import (
 	"flag"
 	"fmt"
-	"github.com/hashicorp/vault/api"
-	"github.com/jenkins-x/jx/pkg/io/secrets"
-	"github.com/jenkins-x/jx/pkg/vault"
-	"github.com/sirupsen/logrus"
 	"io"
 	"net/url"
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/io/secrets"
+	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/sirupsen/logrus"
+
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube/services"
+	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/heptio/sonobuoy/pkg/client"
@@ -63,6 +64,7 @@ type factory struct {
 	impersonateUser string
 	bearerToken     string
 	secretLocation  secrets.SecretLocation
+	useVault        bool
 }
 
 // NewFactory creates a factory with the default Kubernetes resources defined
@@ -300,32 +302,45 @@ func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService
 	}
 
 	if useVault {
-		vault, err := f.GetSystemVault()
-		v := auth.NewVaultAuthConfigService(configName, vault)
-		return v, err
+		vaultClient, err := f.GetSystemVaultClient()
+		authService := auth.NewVaultAuthConfigService(configName, vaultClient)
+		return authService, err
 	} else {
 		return auth.NewFileAuthConfigService(configName)
 	}
 }
 
-// GetSystemVault gets the system vault for storing secrets.
-func (f *factory) GetSystemVault() (*api.Client, error) {
+// GetSystemVaultClient gets the system vault client for managing the secrets
+func (f *factory) GetSystemVaultClient() (vault.Client, error) {
+	return f.GetVaultClient("", "") // GetVaultClient will use defaults if empty strings specified
+}
+
+// GetVaultClient returns the given vault client for managing secrets
+// Will use default values for name and namespace if nil values are applied
+func (f *factory) GetVaultClient(name string, namespace string) (vault.Client, error) {
 	vopClient, err := f.CreateVaultOperatorClient()
-	kubeClient, ns, err := f.CreateClient()
+	kubeClient, defaultNamespace, err := f.CreateClient()
 	if err != nil {
 		return nil, err
 	}
-
-	if !vault.FindVault(vopClient, vault.SystemVaultName, ns) {
-		return nil, errors.New("no system vault found")
+	// Use defaults if nothing is specified by the user
+	if namespace == "" {
+		namespace = defaultNamespace
+	}
+	if name == "" {
+		name = vault.SystemVaultName
 	}
 
-	clientFactory, err := vault.NewSystemVaultClientFactory(kubeClient, vopClient, ns)
+	if !kubevault.FindVault(vopClient, name, namespace) {
+		return nil, fmt.Errorf("no '%s' vault found in namespace '%s'", name, namespace)
+	}
+
+	clientFactory, err := kubevault.NewVaultClientFactory(kubeClient, vopClient, namespace)
 	if err != nil {
 		return nil, err
 	}
-
-	return clientFactory.NewVaultClient(vault.SystemVaultName, ns)
+	vaultClient, err := clientFactory.NewVaultClient(name, namespace)
+	return vault.NewVaultClient(vaultClient), err
 }
 
 func (f *factory) CreateJXClient() (versioned.Interface, string, error) {

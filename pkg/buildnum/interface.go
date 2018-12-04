@@ -4,7 +4,7 @@ package buildnum
 import "github.com/jenkins-x/jx/pkg/kube"
 
 // BuildNumberIssuer generates build numbers for activities.
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/buildnum BuildNumberIssuer -o mocks/buildnum.go --generate-matchers
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/buildnum BuildNumberIssuer -o mocks/build_num.go --generate-matchers
 type BuildNumberIssuer interface {
 
 	//Generate the next build number for the supplied pipeline.

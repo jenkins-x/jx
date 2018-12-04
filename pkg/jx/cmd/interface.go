@@ -3,6 +3,8 @@ package cmd
 import (
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/vault"
+
 	"github.com/heptio/sonobuoy/pkg/dynamic"
 	"github.com/jenkins-x/jx/pkg/helm"
 
@@ -84,4 +86,10 @@ type Factory interface {
 	CreateVaultOperatorClient() (vaultoperatorclient.Interface, error)
 
 	GetHelm(verbose bool, helmBinary string, noTiller bool, helmTemplate bool) helm.Helmer
+
+	// GetSystemVaultClient gets the system vault client for managing the secreets
+	GetSystemVaultClient() (vault.Client, error)
+
+	// GetVaultClient returns the vault client for given vault
+	GetVaultClient(name string, namespace string) (vault.Client, error)
 }

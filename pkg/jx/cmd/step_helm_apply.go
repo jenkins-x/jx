@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -38,7 +39,7 @@ var (
 
 `)
 
-	defaultValueFileNames = []string{"values.yaml", "myvalues.yaml", "secrets.yaml"}
+	defaultValueFileNames = []string{"values.yaml", "myvalues.yaml", helm.SecretsFileName}
 )
 
 func NewCmdStepHelmApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {

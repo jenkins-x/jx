@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"github.com/hashicorp/vault/api"
+	"github.com/jenkins-x/jx/pkg/vault"
 )
 
 const (
@@ -46,6 +46,6 @@ type FileAuthConfigSaver struct {
 
 // VaultAuthConfigSaver is a ConfigSaver that saves configs to Vault
 type VaultAuthConfigSaver struct {
-	vaultClient *api.Client
+	vaultClient vault.Client
 	secretName  string
 }
