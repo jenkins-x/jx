@@ -692,15 +692,9 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "saving the cluster configuration in a ConfigMap")
 	}
 
-	// lets prompt the user which kind of workload to default to (they can change this at any time later)
-	ebp := &EditBuildPackOptions{
-		BuildPackName: options.Flags.BuildPackName,
-	}
-	ebp.CommonOptions = options.CommonOptions
-
-	err = ebp.Run()
+	err = options.configureBuildPackMode()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "configuring the build pack mode")
 	}
 
 	if options.Flags.GitOpsMode {
@@ -1551,6 +1545,15 @@ func (options *InstallOptions) storeSecretsInVault(secrets map[string]interface{
 		return errors.Wrapf(err, "Error saving secrets to vault\n")
 	}
 	return nil
+}
+
+func (options *InstallOptions) configureBuildPackMode() error {
+	ebp := &EditBuildPackOptions{
+		BuildPackName: options.Flags.BuildPackName,
+	}
+	ebp.CommonOptions = options.CommonOptions
+
+	return ebp.Run()
 }
 
 func (options *InstallOptions) saveIngressConfig(domain string) error {
