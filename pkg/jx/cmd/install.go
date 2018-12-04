@@ -451,14 +451,11 @@ func (options *InstallOptions) Run() error {
 		helmConfig.Jenkins.Servers.GetOrCreateFirstGitea().Url = "http://gitea-gitea." + ns + "." + domain
 	}
 
-	initOpts := &options.InitOptions
-	if initOpts.Flags.TillerNamespace != "" {
-		if helmConfig.Jenkins.Servers.Global.EnvVars == nil {
-			helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
-		}
-		helmConfig.Jenkins.Servers.Global.EnvVars["TILLER_NAMESPACE"] = initOpts.Flags.TillerNamespace
-		os.Setenv("TILLER_NAMESPACE", initOpts.Flags.TillerNamespace)
+	err = options.configureTillerNamespace()
+	if err != nil {
+		return errors.Wrap(err, "configuring the tiller namespace")
 	}
+
 	isProw := false
 	if options.Flags.GitOpsMode {
 		isProw = options.Flags.Prow
@@ -980,6 +977,19 @@ func (options *InstallOptions) selectJenkinsInstallation() error {
 		if jenkinsInstallOption == ServerlessJenkins {
 			options.Flags.Prow = true
 		}
+	}
+	return nil
+}
+
+func (options *InstallOptions) configureTillerNamespace() error {
+	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
+	initOpts := &options.InitOptions
+	if initOpts.Flags.TillerNamespace != "" {
+		if helmConfig.Jenkins.Servers.Global.EnvVars == nil {
+			helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
+		}
+		helmConfig.Jenkins.Servers.Global.EnvVars["TILLER_NAMESPACE"] = initOpts.Flags.TillerNamespace
+		os.Setenv("TILLER_NAMESPACE", initOpts.Flags.TillerNamespace)
 	}
 	return nil
 }
