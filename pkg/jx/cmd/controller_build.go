@@ -137,20 +137,27 @@ func (o *ControllerBuildOptions) onPod(obj interface{}, kubeClient kubernetes.In
 				activities := jxClient.JenkinsV1().PipelineActivities(ns)
 				key := o.createPromoteStepActivityKey(buildName, pod)
 				if key != nil {
-					a, created, err := key.GetOrCreate(activities)
-					if err != nil {
-						operation := "update"
-						if created {
-							operation = "create"
-						}
-						log.Warnf("Failed to %s PipelineActivities for build %s: %s\n", operation, buildName, err)
-					}
-
-					if o.updatePipelineActivity(kubeClient, ns, a, buildName, pod) {
-						_, err := activities.Update(a)
+					name := ""
+					err := util.Retry(time.Second * 20, func() error {
+						a, created, err := key.GetOrCreate(activities)
 						if err != nil {
-							log.Warnf("Failed to update PipelineActivities%s: %s\n", a.Name, err)
+							operation := "update"
+							if created {
+								operation = "create"
+							}
+							log.Warnf("Failed to %s PipelineActivities for build %s: %s\n", operation, buildName, err)
 						}
+						if o.updatePipelineActivity(kubeClient, ns, a, buildName, pod) {
+							_, err := activities.Update(a)
+							if err != nil {
+								name = a.Name
+								return err
+							}
+						}
+						return nil
+					})
+					if err != nil {
+						log.Warnf("Failed to update PipelineActivities%s: %s\n", name, err)
 					}
 				}
 			}
@@ -302,7 +309,16 @@ func generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activ
 		log.Warnf("Failed to git clone gh-pages branch for %s: %s\n", sourceURL, err)
 		return ""
 	}
-	pathDir := filepath.Join("jenkins-x-logs", ns)
+
+	owner := activity.Spec.GitOwner
+	repository := activity.RepositoryName()
+	branch := activity.BranchName()
+	buildNumber := activity.Spec.Build
+	if buildNumber == "" {
+		buildNumber = "1"
+	}
+
+	pathDir := filepath.Join("jenkins-x", "logs", owner, repository, branch)
 	outDir := filepath.Join(ghPagesDir, pathDir)
 	err = os.MkdirAll(outDir, util.DefaultWritePermissions)
 	if err != nil {
@@ -310,7 +326,7 @@ func generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activ
 		return ""
 	}
 
-	fileName := filepath.Join(pathDir, pod.Name+".log")
+	fileName := filepath.Join(pathDir, buildNumber+".log")
 	outFile := filepath.Join(ghPagesDir, fileName)
 	err = ioutil.WriteFile(outFile, data, util.DefaultWritePermissions)
 	if err != nil {
@@ -323,7 +339,7 @@ func generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activ
 		log.Warnf("Failed to add to gh-pages repo dir %s: %s\n", pathDir, err)
 		return ""
 	}
-	err = gitClient.CommitDir(ghPagesDir, fmt.Sprintf("Publishing log for Pipeline %s", activity.Name))
+	err = gitClient.CommitIfChanges(ghPagesDir, fmt.Sprintf("Publishing log for Pipeline %s", activity.Name))
 	if err != nil {
 		log.Warnf("Failed to commit gh-pages repo dir %s: %s\n", ghPagesDir, err)
 		return ""
@@ -335,7 +351,7 @@ func generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activ
 	}
 
 	// TODO only github supported for now! Lets switch to Provider
-	return fmt.Sprintf("https://%s.github.io/%s/%s", activity.Spec.GitOwner, activity.Spec.GitRepository, fileName)
+	return fmt.Sprintf("https://%s.github.io/%s/%s", owner, repository, fileName)
 }
 
 // createStepDescription uses the spec of the init container to return a description
