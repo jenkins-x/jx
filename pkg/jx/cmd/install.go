@@ -612,31 +612,10 @@ func (options *InstallOptions) Run() error {
 	jxRelName := "jenkins-x"
 
 	log.Infof("Installing jx into namespace %s\n", util.ColorInfo(ns))
-	if !initOpts.Flags.NoTiller {
-		// Need to check the tiller pod is ready before proceeding
-		serviceAccountName := "tiller"
-		tillerNamespace := options.InitOptions.Flags.TillerNamespace
 
-		log.Infof("Waiting for %s pod to be ready, service account name is %s, namespace is %s, tiller namespace is %s\n",
-			util.ColorInfo("tiller"), util.ColorInfo(serviceAccountName), util.ColorInfo(ns), util.ColorInfo(tillerNamespace))
-
-		clusterRoleBindingName := serviceAccountName + "-role-binding"
-		role := options.InitOptions.Flags.TillerClusterRole
-
-		log.Infof("Waiting for cluster role binding to be defined, named %s in namespace %s\n ", util.ColorInfo(clusterRoleBindingName), util.ColorInfo(ns))
-		err = options.ensureClusterRoleBinding(clusterRoleBindingName, role, ns, serviceAccountName)
-		if err != nil {
-			return errors.Wrap(err, "tiller cluster role not defined")
-		} else {
-			log.Infof("tiller cluster role defined: %s in namespace %s\n", util.ColorInfo(role), util.ColorInfo(ns))
-		}
-		err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
-		if err != nil {
-			msg := fmt.Sprintf("tiller pod (tiller-deploy in namespace %s) is not running after 10 minutes", tillerNamespace)
-			return errors.Wrap(err, msg)
-		} else {
-			log.Infoln("tiller pod running")
-		}
+	err = options.verifyTiller(client, ns)
+	if err != nil {
+		return errors.Wrap(err, "verifying if Tiller is running")
 	}
 
 	err = options.saveIngressConfig(domain)
@@ -987,6 +966,36 @@ func (options *InstallOptions) configureHelm(client kubernetes.Interface, namesp
 			}
 		}
 	}
+}
+
+func (options *InstallOptions) verifyTiller(client kubernetes.Interface, namespace string) error {
+	initOpts := &options.InitOptions
+	if !initOpts.Flags.NoTiller {
+		serviceAccountName := "tiller"
+		tillerNamespace := options.InitOptions.Flags.TillerNamespace
+
+		log.Infof("Waiting for %s pod to be ready, service account name is %s, namespace is %s, tiller namespace is %s\n",
+			util.ColorInfo("tiller"), util.ColorInfo(serviceAccountName), util.ColorInfo(namespace), util.ColorInfo(tillerNamespace))
+
+		clusterRoleBindingName := serviceAccountName + "-role-binding"
+		role := options.InitOptions.Flags.TillerClusterRole
+
+		log.Infof("Waiting for cluster role binding to be defined, named %s in namespace %s\n ", util.ColorInfo(clusterRoleBindingName), util.ColorInfo(namespace))
+		err := options.ensureClusterRoleBinding(clusterRoleBindingName, role, namespace, serviceAccountName)
+		if err != nil {
+			return errors.Wrap(err, "tiller cluster role not defined")
+		} else {
+			log.Infof("tiller cluster role defined: %s in namespace %s\n", util.ColorInfo(role), util.ColorInfo(namespace))
+		}
+		err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
+		if err != nil {
+			msg := fmt.Sprintf("tiller pod (tiller-deploy in namespace %s) is not running after 10 minutes", tillerNamespace)
+			return errors.Wrap(err, msg)
+		} else {
+			log.Infoln("tiller pod running")
+		}
+	}
+	return nil
 }
 
 func (options *InstallOptions) configureTillerInDevEnvironment() error {
