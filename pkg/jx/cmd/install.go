@@ -128,7 +128,7 @@ const (
 
 	GitOpsChartYAML = `name: env
 version: 0.0.1
-description: GitOps Environment for this Environment 
+description: GitOps Environment for this Environment
 maintainers:
   - name: Team
 icon: https://www.cloudbees.com/sites/default/files/Jenkins_8.png
@@ -476,6 +476,11 @@ func (options *InstallOptions) Run() error {
 		err = options.createSystemVault(client, ns)
 	}
 
+	err = options.configureDockerRegistry(client, ns)
+	if err != nil {
+		return errors.Wrap(err, "configuring the docker registry")
+	}
+
 	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
 	if helmConfig.ExposeController.Config.Domain == "" {
 		helmConfig.ExposeController.Config.Domain = options.InitOptions.Flags.Domain
@@ -483,54 +488,6 @@ func (options *InstallOptions) Run() error {
 	domain := helmConfig.ExposeController.Config.Domain
 	if domain != "" && addon.IsAddonEnabled("gitea") {
 		helmConfig.Jenkins.Servers.GetOrCreateFirstGitea().Url = "http://gitea-gitea." + ns + "." + domain
-	}
-	if options.Flags.Prow {
-		t := true
-		f := false
-		helmConfig.ControllerBuild.Enabled = &t
-		helmConfig.Jenkins.Enabled = &f
-	}
-
-	dockerRegistry, err := options.dockerRegistryValue()
-	if err != nil {
-		return errors.Wrap(err, "failed to get the docker registry value")
-	}
-
-	kubeConfig, _, err := options.Kube().LoadConfig()
-	if err != nil {
-		return err
-	}
-	if options.Flags.Provider == AKS {
-		/**
-		 * Assign ACR role to AKS
-		 */
-		server := kube.CurrentServer(kubeConfig)
-		azureCLI := aks.NewAzureRunner()
-		resourceGroup, name, cluster, err := azureCLI.GetClusterClient(server)
-		if err != nil {
-			return errors.Wrap(err, "failed to get cluster from Azure")
-		}
-		registryID := ""
-		helmConfig.PipelineSecrets.DockerConfig, dockerRegistry, registryID, err = azureCLI.GetRegistry(resourceGroup, name, dockerRegistry)
-		if err != nil {
-			return errors.Wrap(err, "failed to get registry from Azure")
-		}
-		azureCLI.AssignRole(cluster, registryID)
-		log.Infof("Assign AKS %s a reader role for ACR %s\n", util.ColorInfo(server), util.ColorInfo(dockerRegistry))
-	}
-
-	if options.Flags.Provider == IKS {
-		dockerRegistry = iks.GetClusterRegistry(client)
-		helmConfig.PipelineSecrets.DockerConfig, err = iks.GetRegistryConfigJSON(dockerRegistry)
-	}
-	if dockerRegistry != "" {
-		if helmConfig.Jenkins.Servers.Global.EnvVars == nil {
-			helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
-		}
-		helmConfig.Jenkins.Servers.Global.EnvVars["DOCKER_REGISTRY"] = dockerRegistry
-		if isOpenShiftProvider(options.Flags.Provider) && dockerRegistry == "docker-registry.default.svc:5000" {
-			options.enableOpenShiftRegistryPermissions(ns, helmConfig, dockerRegistry)
-		}
 	}
 
 	initOpts := &options.InitOptions
@@ -793,6 +750,10 @@ func (options *InstallOptions) Run() error {
 	// save cluster config CA and server url to a configmap
 	if !options.Flags.DisableSetKubeContext {
 		var jxInstallConfig *kube.JXInstallConfig
+		kubeConfig, _, err := options.Kube().LoadConfig()
+		if err != nil {
+			return errors.Wrap(err, "retrieving the current kube config")
+		}
 		if kubeConfig != nil {
 			kubeConfigContext := kube.CurrentContext(kubeConfig)
 			if kubeConfigContext != nil {
@@ -1471,6 +1432,72 @@ func (options *InstallOptions) configureCloudProivderPostInit(client kubernetes.
 	return nil
 }
 
+func (options *InstallOptions) configureDockerRegistry(client kubernetes.Interface, namespace string) error {
+	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
+	dockerRegistryConfig, dockerRegistry, err := options.configureCloudProviderRegistry(client, namespace)
+	if err != nil {
+		return errors.Wrap(err, "configure cloud provider docker registry")
+	}
+	if dockerRegistryConfig != "" {
+		helmConfig.PipelineSecrets.DockerConfig = dockerRegistryConfig
+	}
+	if dockerRegistry != "" {
+		if helmConfig.Jenkins.Servers.Global.EnvVars == nil {
+			helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
+		}
+		helmConfig.Jenkins.Servers.Global.EnvVars["DOCKER_REGISTRY"] = dockerRegistry
+	}
+	return nil
+}
+
+func (options *InstallOptions) configureCloudProviderRegistry(client kubernetes.Interface, namespace string) (string, string, error) {
+	dockerRegistry, err := options.dockerRegistryValue()
+	if err != nil {
+		return "", "", err
+	}
+	kubeConfig, _, err := options.Kube().LoadConfig()
+	if err != nil {
+		return "", "", err
+	}
+	switch options.Flags.Provider {
+	case AKS:
+		server := kube.CurrentServer(kubeConfig)
+		azureCLI := aks.NewAzureRunner()
+		resourceGroup, name, cluster, err := azureCLI.GetClusterClient(server)
+		if err != nil {
+			return "", "", errors.Wrap(err, "getting cluster from Azure")
+		}
+		registryID := ""
+		config, dockerRegistry, registryID, err := azureCLI.GetRegistry(resourceGroup, name, dockerRegistry)
+		if err != nil {
+			return "", "", errors.Wrap(err, "getting registry configuration from Azure")
+		}
+		azureCLI.AssignRole(cluster, registryID)
+		log.Infof("Assign AKS %s a reader role for ACR %s\n", util.ColorInfo(server), util.ColorInfo(dockerRegistry))
+		return config, dockerRegistry, nil
+	case IKS:
+		dockerRegistry = iks.GetClusterRegistry(client)
+		config, err := iks.GetRegistryConfigJSON(dockerRegistry)
+		if err != nil {
+			return "", "", errors.Wrap(err, "getting IKS registry configuration")
+		}
+		return config, dockerRegistry, nil
+	case MINISHIFT:
+		fallthrough
+	case OPENSHIFT:
+		if dockerRegistry == "docker-registry.default.svc:5000" {
+			config, err := options.enableOpenShiftRegistryPermissions(namespace, dockerRegistry)
+			if err != nil {
+				return "", "", errors.Wrap(err, "enabling OpenShift registry permissions")
+			}
+			return config, dockerRegistry, nil
+		}
+	}
+
+	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
+	return helmConfig.PipelineSecrets.DockerConfig, dockerRegistry, nil
+}
+
 func (options *InstallOptions) setMinikubeFromContext() error {
 	currentContext := ""
 	var err error
@@ -1743,38 +1770,37 @@ func (options *InstallOptions) enableOpenShiftSCC(ns string) error {
 	return options.RunCommand("oc", "adm", "policy", "add-scc-to-user", "anyuid", "system:serviceaccount:"+ns+":default")
 }
 
-func (options *InstallOptions) enableOpenShiftRegistryPermissions(ns string, helmConfig *config.HelmValuesConfig, dockerRegistry string) error {
+func (options *InstallOptions) enableOpenShiftRegistryPermissions(ns string, dockerRegistry string) (string, error) {
 	log.Infof("Enabling permissions for OpenShift registry in namespace %s\n", ns)
 	// Open the registry so any authenticated user can pull images from the jx namespace
 	err := options.RunCommand("oc", "adm", "policy", "add-role-to-group", "system:image-puller", "system:authenticated", "-n", ns)
 	if err != nil {
-		return err
+		return "", err
 	}
 	err = options.ensureServiceAccount(ns, "jenkins-x-registry")
 	if err != nil {
-		return err
+		return "", err
 	}
 	err = options.RunCommand("oc", "adm", "policy", "add-cluster-role-to-user", "registry-admin", "system:serviceaccount:"+ns+":jenkins-x-registry")
 	if err != nil {
-		return err
+		return "", err
 	}
 	registryToken, err := options.getCommandOutput("", "oc", "serviceaccounts", "get-token", "jenkins-x-registry", "-n", ns)
 	if err != nil {
-		return err
+		return "", err
 	}
-	helmConfig.PipelineSecrets.DockerConfig = `{"auths": {"` + dockerRegistry + `": {"auth": "` + base64.StdEncoding.EncodeToString([]byte("serviceaccount:"+registryToken)) + `"}}}`
-	return nil
+	return `{"auths": {"` + dockerRegistry + `": {"auth": "` + base64.StdEncoding.EncodeToString([]byte("serviceaccount:"+registryToken)) + `"}}}`, nil
 }
 
 func (options *InstallOptions) logAdminPassword() {
 	astrix := `
-	
+
 	********************************************************
-	
+
 	     NOTE: %s
-	
+
 	********************************************************
-	
+
 	`
 	log.Infof(astrix+"\n", fmt.Sprintf("Your admin password is: %s", util.ColorInfo(options.AdminSecretsService.Flags.DefaultAdminPassword)))
 }
