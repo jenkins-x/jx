@@ -154,7 +154,7 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 	}
 
 	// get the external services URL
-	kIng, err := services.GetServiceURLFromName(o.kubeClientCached, kibanaServiceName, o.Namespace)
+	kibanaIng, err := services.GetServiceURLFromName(o.kubeClientCached, kibanaServiceName, o.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get external URL for service %s: %v", kibanaServiceName, err)
 	}
@@ -192,7 +192,7 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 		}
 	}
 
-	log.Successf("kibana is available and running %s\n", kIng)
+	log.Successf("kibana is available and running %s\n", kibanaIng)
 	return nil
 }
 func (o *CreateAddonPipelineEventsOptions) addExposecontrollerAnnotations(serviceName string) error {
