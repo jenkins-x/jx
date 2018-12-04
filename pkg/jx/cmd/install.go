@@ -428,23 +428,7 @@ func (options *InstallOptions) Run() error {
 
 	initOpts := &options.InitOptions
 	helmBinary := initOpts.HelmBinary()
-
-	// configure the Helm binary
-	options.Helm().SetHelmBinary(helmBinary)
-	if initOpts.Flags.NoTiller {
-		helmer := options.Helm()
-		helmCli, ok := helmer.(*helm.HelmCLI)
-		if ok && helmCli != nil {
-			options.helm = helm.NewHelmTemplate(helmCli, helmCli.CWD, client, originalNs)
-		} else {
-			helmTemplate, ok := helmer.(*helm.HelmTemplate)
-			if ok {
-				options.helm = helmTemplate
-			} else {
-				log.Warnf("Helm facade is not a *helm.HelmCLI or *helm.HelmTemplate: %#v\n", helmer)
-			}
-		}
-	}
+	options.configureHelm(client, originalNs)
 
 	dependencies := []string{}
 	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
@@ -1431,6 +1415,26 @@ func (options *InstallOptions) Run() error {
 	log.Infof("To create a new Spring Boot microservice:       %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
 	log.Infof("To create a new microservice from a quickstart: %s\n", util.ColorInfo("jx create quickstart"))
 	return nil
+}
+
+func (options *InstallOptions) configureHelm(client kubernetes.Interface, namespace string) {
+	initOpts := &options.InitOptions
+	helmBinary := initOpts.HelmBinary()
+	options.Helm().SetHelmBinary(helmBinary)
+	if initOpts.Flags.NoTiller {
+		helmer := options.Helm()
+		helmCli, ok := helmer.(*helm.HelmCLI)
+		if ok && helmCli != nil {
+			options.helm = helm.NewHelmTemplate(helmCli, helmCli.CWD, client, namespace)
+		} else {
+			helmTemplate, ok := helmer.(*helm.HelmTemplate)
+			if ok {
+				options.helm = helmTemplate
+			} else {
+				log.Warnf("Helm facade is not a *helm.HelmCLI or *helm.HelmTemplate: %#v\n", helmer)
+			}
+		}
+	}
 }
 
 func (options *InstallOptions) installCloudProviderDependencies() {
