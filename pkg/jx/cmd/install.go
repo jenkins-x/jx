@@ -682,49 +682,14 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
-	tls, err := util.ParseBool(exposeController.Config.TLSAcme)
+	err = options.saveIngressConfig(domain)
 	if err != nil {
-		return fmt.Errorf("failed to parse TLS exposecontroller boolean %v", err)
-	}
-	ic := kube.IngressConfig{
-		Domain:  domain,
-		TLS:     tls,
-		Exposer: exposeController.Config.Exposer,
-	}
-	// save ingress config details to a configmap
-	_, err = options.saveAsConfigMap(kube.IngressConfigConfigmap, ic)
-	if err != nil {
-		return err
+		return errors.Wrap(err, "saving the ingress configuration in a ConfigMap")
 	}
 
-	// save cluster config CA and server url to a configmap
-	if !options.Flags.DisableSetKubeContext {
-		var jxInstallConfig *kube.JXInstallConfig
-		kubeConfig, _, err := options.Kube().LoadConfig()
-		if err != nil {
-			return errors.Wrap(err, "retrieving the current kube config")
-		}
-		if kubeConfig != nil {
-			kubeConfigContext := kube.CurrentContext(kubeConfig)
-			if kubeConfigContext != nil {
-				server := kube.Server(kubeConfig, kubeConfigContext)
-				certificateAuthorityData := kube.CertificateAuthorityData(kubeConfig, kubeConfigContext)
-				jxInstallConfig = &kube.JXInstallConfig{
-					Server: server,
-					CA:     certificateAuthorityData,
-				}
-			}
-		}
-
-		_, err = options.ModifyConfigMap(kube.ConfigMapNameJXInstallConfig, func(cm *core_v1.ConfigMap) error {
-			data := util.ToStringMapStringFromStruct(jxInstallConfig)
-			cm.Data = data
-			return nil
-		})
-		if err != nil {
-			return err
-		}
+	err = options.saveClusterConfig()
+	if err != nil {
+		return errors.Wrap(err, "saving the cluster configuration in a ConfigMap")
 	}
 
 	// lets prompt the user which kind of workload to default to (they can change this at any time later)
@@ -1584,6 +1549,56 @@ func (options *InstallOptions) storeSecretsInVault(secrets map[string]interface{
 	err = vaultClient.WriteSecrets(vault.InstallSecretsPrefix, secrets)
 	if err != nil {
 		return errors.Wrapf(err, "Error saving secrets to vault\n")
+	}
+	return nil
+}
+
+func (options *InstallOptions) saveIngressConfig(domain string) error {
+	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
+	tls, err := util.ParseBool(exposeController.Config.TLSAcme)
+	if err != nil {
+		return fmt.Errorf("failed to parse TLS exposecontroller boolean %v", err)
+	}
+	ic := kube.IngressConfig{
+		Domain:  domain,
+		TLS:     tls,
+		Exposer: exposeController.Config.Exposer,
+	}
+	// save ingress config details to a configmap
+	_, err = options.saveAsConfigMap(kube.IngressConfigConfigmap, ic)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (options *InstallOptions) saveClusterConfig() error {
+	if !options.Flags.DisableSetKubeContext {
+		var jxInstallConfig *kube.JXInstallConfig
+		kubeConfig, _, err := options.Kube().LoadConfig()
+		if err != nil {
+			return errors.Wrap(err, "retrieving the current kube config")
+		}
+		if kubeConfig != nil {
+			kubeConfigContext := kube.CurrentContext(kubeConfig)
+			if kubeConfigContext != nil {
+				server := kube.Server(kubeConfig, kubeConfigContext)
+				certificateAuthorityData := kube.CertificateAuthorityData(kubeConfig, kubeConfigContext)
+				jxInstallConfig = &kube.JXInstallConfig{
+					Server: server,
+					CA:     certificateAuthorityData,
+				}
+			}
+		}
+
+		_, err = options.ModifyConfigMap(kube.ConfigMapNameJXInstallConfig, func(cm *core_v1.ConfigMap) error {
+			data := util.ToStringMapStringFromStruct(jxInstallConfig)
+			cm.Data = data
+			return nil
+		})
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
