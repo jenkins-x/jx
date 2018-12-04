@@ -132,7 +132,7 @@ func (o *ControllerBuildOptions) onPod(obj interface{}, kubeClient kubernetes.In
 				buildName = labels[builds.LabelOldBuildName]
 			}
 			if buildName != "" {
-				log.Infof("Found build pod %s\n", pod.Name)
+				//log.Infof("Found build pod %s\n", pod.Name)
 
 				activities := jxClient.JenkinsV1().PipelineActivities(ns)
 				key := o.createPromoteStepActivityKey(buildName, pod)
@@ -180,7 +180,6 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 
 func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.Interface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod) bool {
 	copy := *activity
-	// TODO update the steps based on the Knative build pod's init containers
 	for _, c := range pod.Status.InitContainerStatuses {
 		name := strings.Replace(strings.TrimPrefix(c.Name, "build-step-"), "-", " ", -1)
 		title := strings.Title(name)
@@ -285,11 +284,12 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 func generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod) string {
 	data, err := builds.GetBuildLogsForPod(podInterface, pod)
 	if err != nil {
-		log.Warnf("Failed to get build log for pod %s in namespace %s: %s\n", pod.Name, ns, err)
+		// probably due to not being available yet
+		//log.Warnf("Failed to get build log for pod %s in namespace %s: %s\n", pod.Name, ns, err)
 		return ""
 	}
 
-	log.Infof("got build log for pod: %s PipelineActivity: %s with bytes: %d\n", pod.Name, activity.Name, len(data))
+	//log.Infof("got build log for pod: %s PipelineActivity: %s with bytes: %d\n", pod.Name, activity.Name, len(data))
 
 	sourceURL := activity.Spec.GitURL
 	if sourceURL == "" {
