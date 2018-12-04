@@ -842,29 +842,9 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "generating the GitOps development environment config")
 	}
 
-	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsEnvApply {
-		applyEnv := true
-		if !options.BatchMode {
-			if !util.Confirm("Would you like to setup the Development Environment from the source code now?", true, "Do you want to apply the development environment helm charts now?", options.In, options.Out, options.Err) {
-				applyEnv = false
-			}
-		}
-
-		if applyEnv {
-			envApplyOptions := &StepEnvApplyOptions{
-				StepEnvOptions: StepEnvOptions{
-					StepOptions: StepOptions{
-						CommonOptions: options.CommonOptions,
-					},
-				},
-				Dir:       gitOpsEnvDir,
-				Namespace: ns,
-			}
-			err = envApplyOptions.Run()
-			if err != nil {
-				return err
-			}
-		}
+	err = options.applyGitOpsDevEnvironmentConfig(gitOpsEnvDir, ns)
+	if err != nil {
+		return errors.Wrap(err, "applying the GitOps development environment config")
 	}
 
 	log.Success("\nJenkins X installation completed successfully\n")
@@ -1145,6 +1125,35 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 	}
 
 	return nil
+}
+
+func (options *InstallOptions) applyGitOpsDevEnvironmentConfig(gitOpsEnvDir string, namespace string) error {
+	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsEnvApply {
+		applyEnv := true
+		if !options.BatchMode {
+			if !util.Confirm("Would you like to setup the Development Environment from the source code now?", true, "Do you want to apply the development environment helm charts now?", options.In, options.Out, options.Err) {
+				applyEnv = false
+			}
+		}
+
+		if applyEnv {
+			envApplyOptions := &StepEnvApplyOptions{
+				StepEnvOptions: StepEnvOptions{
+					StepOptions: StepOptions{
+						CommonOptions: options.CommonOptions,
+					},
+				},
+				Dir:       gitOpsEnvDir,
+				Namespace: namespace,
+			}
+			err := envApplyOptions.Run()
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+
 }
 
 func (options *InstallOptions) installHelmBinaries() error {
