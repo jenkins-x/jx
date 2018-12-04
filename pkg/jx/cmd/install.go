@@ -870,63 +870,9 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring Jenkins")
 	}
 
-	if options.Flags.DefaultEnvironmentPrefix == "" {
-		options.Flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
-	}
-
-	if !options.Flags.NoDefaultEnvironments {
-		createEnvironments := true
-		if options.Flags.GitOpsMode {
-			// reuse the helm setup
-			options.SetDevNamespace(ns)
-			options.CreateEnvOptions.CommonOptions = options.CommonOptions
-			options.CreateEnvOptions.GitOpsMode = true
-			options.CreateEnvOptions.modifyDevEnvironmentFn = options.modifyDevEnvironmentFn
-			options.CreateEnvOptions.modifyEnvironmentFn = options.modifyEnvironmentFn
-		} else {
-			createEnvironments = false
-
-			jxClient, _, err := options.JXClient()
-			if err != nil {
-				return errors.Wrap(err, "failed to create the jx client")
-			}
-
-			// lets only recreate the environments if its the first time we run this
-			_, envNames, err := kube.GetEnvironments(jxClient, ns)
-			if err != nil || len(envNames) <= 1 {
-				createEnvironments = true
-			}
-
-		}
-		if createEnvironments {
-			log.Info("Creating default staging and production environments\n")
-			// Common CreateEnv Options
-			options.CreateEnvOptions.GitRepositoryOptions = options.GitRepositoryOptions
-			options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
-			options.CreateEnvOptions.Prefix = options.Flags.DefaultEnvironmentPrefix
-			options.CreateEnvOptions.Prow = options.Flags.Prow
-			if options.BatchMode {
-				options.CreateEnvOptions.BatchMode = options.BatchMode
-			}
-
-			options.CreateEnvOptions.Options.Name = "staging"
-			options.CreateEnvOptions.Options.Spec.Label = "Staging"
-			options.CreateEnvOptions.Options.Spec.Order = 100
-			err = options.CreateEnvOptions.Run()
-			if err != nil {
-				return errors.Wrapf(err, "failed to create staging environment in namespace %s", options.devNamespace)
-			}
-			options.CreateEnvOptions.Options.Name = "production"
-			options.CreateEnvOptions.Options.Spec.Label = "Production"
-			options.CreateEnvOptions.Options.Spec.Order = 200
-			options.CreateEnvOptions.Options.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
-			options.CreateEnvOptions.PromotionStrategy = string(v1.PromotionStrategyTypeManual)
-
-			err = options.CreateEnvOptions.Run()
-			if err != nil {
-				return errors.Wrapf(err, "failed to create the production environment in namespace %s", options.devNamespace)
-			}
-		}
+	err = options.createEnvironments(ns)
+	if err != nil {
+		return errors.Wrap(err, "creating the environments")
 	}
 
 	err = options.saveChartmuseumAuthConfig()
@@ -1608,6 +1554,68 @@ func (options *InstallOptions) configureJenkins(namespace string) error {
 			err := options.updateJenkinsURL([]string{namespace})
 			if err != nil {
 				log.Warnf("failed to update the Jenkins external URL")
+			}
+		}
+	}
+	return nil
+}
+
+func (options *InstallOptions) createEnvironments(namespace string) error {
+	if options.Flags.DefaultEnvironmentPrefix == "" {
+		options.Flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
+	}
+
+	if !options.Flags.NoDefaultEnvironments {
+		createEnvironments := true
+		if options.Flags.GitOpsMode {
+			// reuse the helm setup
+			options.SetDevNamespace(namespace)
+			options.CreateEnvOptions.CommonOptions = options.CommonOptions
+			options.CreateEnvOptions.GitOpsMode = true
+			options.CreateEnvOptions.modifyDevEnvironmentFn = options.modifyDevEnvironmentFn
+			options.CreateEnvOptions.modifyEnvironmentFn = options.modifyEnvironmentFn
+		} else {
+			createEnvironments = false
+
+			jxClient, _, err := options.JXClient()
+			if err != nil {
+				return errors.Wrap(err, "failed to create the jx client")
+			}
+
+			// lets only recreate the environments if its the first time we run this
+			_, envNames, err := kube.GetEnvironments(jxClient, namespace)
+			if err != nil || len(envNames) <= 1 {
+				createEnvironments = true
+			}
+
+		}
+		if createEnvironments {
+			log.Info("Creating default staging and production environments\n")
+			// Common CreateEnv Options
+			options.CreateEnvOptions.GitRepositoryOptions = options.GitRepositoryOptions
+			options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
+			options.CreateEnvOptions.Prefix = options.Flags.DefaultEnvironmentPrefix
+			options.CreateEnvOptions.Prow = options.Flags.Prow
+			if options.BatchMode {
+				options.CreateEnvOptions.BatchMode = options.BatchMode
+			}
+
+			options.CreateEnvOptions.Options.Name = "staging"
+			options.CreateEnvOptions.Options.Spec.Label = "Staging"
+			options.CreateEnvOptions.Options.Spec.Order = 100
+			err := options.CreateEnvOptions.Run()
+			if err != nil {
+				return errors.Wrapf(err, "failed to create staging environment in namespace %s", options.devNamespace)
+			}
+			options.CreateEnvOptions.Options.Name = "production"
+			options.CreateEnvOptions.Options.Spec.Label = "Production"
+			options.CreateEnvOptions.Options.Spec.Order = 200
+			options.CreateEnvOptions.Options.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
+			options.CreateEnvOptions.PromotionStrategy = string(v1.PromotionStrategyTypeManual)
+
+			err = options.CreateEnvOptions.Run()
+			if err != nil {
+				return errors.Wrapf(err, "failed to create the production environment in namespace %s", options.devNamespace)
 			}
 		}
 	}
