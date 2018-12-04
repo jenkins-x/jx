@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/surveyutils"
+
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -911,7 +913,8 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 				Default: defaultDomain,
 				Help:    "Enter your custom domain that is used to generate Ingress rules, defaults to the magic dns nip.io",
 			}
-			survey.AskOne(prompt, &domain, survey.ComposeValidators(survey.Required, util.NoWhiteSpaceValidator()), surveyOpts)
+			survey.AskOne(prompt, &domain,
+				survey.ComposeValidators(survey.Required, surveyutils.NoWhiteSpaceValidator()), surveyOpts)
 		}
 		if domain == "" {
 			domain = defaultDomain

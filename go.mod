@@ -75,6 +75,7 @@ require (
 	github.com/heptio/sonobuoy v0.12.0
 	github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c
 	github.com/hpcloud/tail v1.0.0
+	github.com/iancoleman/orderedmap v0.0.0-20181121102841-22c6ecc9fe13
 	github.com/imdario/mergo v0.3.5 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
