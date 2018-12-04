@@ -574,44 +574,16 @@ func (options *InstallOptions) Run() error {
 	log.Infof("Installing Jenkins X platform helm chart from: %s\n", providerEnvDir)
 
 	options.Verbose = true
-	err = options.addHelmBinaryRepoIfMissing(DEFAULT_CHARTMUSEUM_URL, "jenkins-x")
-	if err != nil {
-		return errors.Wrap(err, "failed to add the jenkinx-x helm repo")
-	}
 
-	version := options.Flags.Version
-	if version == "" {
-		version, err = LoadVersionFromCloudEnvironmentsDir(cloudEnvDir, configStore)
-		if err != nil {
-			return errors.Wrap(err, "failed to load version from cloud environments dir")
-		}
-	}
-
-	err = options.Helm().UpdateRepo()
+	err = options.configureHelmRepo()
 	if err != nil {
-		return errors.Wrap(err, "failed to update the helm repo")
+		return errors.Wrap(err, "configuring the Jenkins X helm repository")
 	}
 
 	err = options.configureAndInstallProw(ns)
 	if err != nil {
-		return errors.Wrap(err, "configureing and installing Prow")
+		return errors.Wrap(err, "configuring and installing Prow")
 	}
-
-	valueFiles := []string{cloudEnvironmentValuesLocation, secretsFileName, adminSecretsFileName, configFileName, cloudEnvironmentSecretsLocation}
-	valueFiles, err = helm.AppendMyValues(valueFiles)
-	if err != nil {
-		return errors.Wrap(err, "failed to append the myvalues.yaml file")
-	}
-
-	timeoutInt, err := strconv.Atoi(timeout)
-	if err != nil {
-		return errors.Wrap(err, "failed to convert the helm install timeout value")
-	}
-	options.Helm().SetCWD(providerEnvDir)
-	jxChart := JenkinsXPlatformChart
-	jxRelName := "jenkins-x"
-
-	log.Infof("Installing jx into namespace %s\n", util.ColorInfo(ns))
 
 	err = options.verifyTiller(client, ns)
 	if err != nil {
@@ -631,6 +603,30 @@ func (options *InstallOptions) Run() error {
 	err = options.configureBuildPackMode()
 	if err != nil {
 		return errors.Wrap(err, "configuring the build pack mode")
+	}
+
+	log.Infof("Installing jx into namespace %s\n", util.ColorInfo(ns))
+
+	valueFiles := []string{cloudEnvironmentValuesLocation, secretsFileName, adminSecretsFileName, configFileName, cloudEnvironmentSecretsLocation}
+	valueFiles, err = helm.AppendMyValues(valueFiles)
+	if err != nil {
+		return errors.Wrap(err, "failed to append the myvalues.yaml file")
+	}
+
+	timeoutInt, err := strconv.Atoi(timeout)
+	if err != nil {
+		return errors.Wrap(err, "failed to convert the helm install timeout value")
+	}
+	options.Helm().SetCWD(providerEnvDir)
+	jxChart := JenkinsXPlatformChart
+	jxRelName := "jenkins-x"
+
+	version := options.Flags.Version
+	if version == "" {
+		version, err = LoadVersionFromCloudEnvironmentsDir(cloudEnvDir, configStore)
+		if err != nil {
+			return errors.Wrap(err, "failed to load version from cloud environments dir")
+		}
 	}
 
 	if options.Flags.GitOpsMode {
@@ -966,6 +962,19 @@ func (options *InstallOptions) configureHelm(client kubernetes.Interface, namesp
 			}
 		}
 	}
+}
+
+func (options *InstallOptions) configureHelmRepo() error {
+	err := options.addHelmBinaryRepoIfMissing(DEFAULT_CHARTMUSEUM_URL, "jenkins-x")
+	if err != nil {
+		return errors.Wrap(err, "failed to add the jenkinx-x helm repo")
+	}
+
+	err = options.Helm().UpdateRepo()
+	if err != nil {
+		return errors.Wrap(err, "failed to update the helm repo")
+	}
+	return nil
 }
 
 func (options *InstallOptions) verifyTiller(client kubernetes.Interface, namespace string) error {
