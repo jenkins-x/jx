@@ -837,85 +837,9 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	if options.Flags.GitOpsMode {
-		log.Infof("\n\nGenerated the source code for the GitOps development environment at %s\n", util.ColorInfo(gitOpsDir))
-		log.Infof("You can apply this to the kubernetes cluster at any time in this directory via: %s\n\n", util.ColorInfo("jx step env apply"))
-
-		if !options.Flags.NoGitOpsEnvRepo {
-			authConfigSvc, err := options.CreateGitAuthConfigService()
-			if err != nil {
-				return err
-			}
-			config := &v1.Environment{
-				Spec: v1.EnvironmentSpec{
-					Label:             "Development",
-					PromotionStrategy: v1.PromotionStrategyTypeNever,
-					Kind:              v1.EnvironmentKindTypeDevelopment,
-				},
-			}
-			config.Name = kube.LabelValueDevEnvironment
-			var devEnv *v1.Environment
-			err = options.ModifyDevEnvironment(func(env *v1.Environment) error {
-				devEnv = env
-				devEnv.Spec.TeamSettings.UseGitOps = true
-				return nil
-			})
-			if err != nil {
-				return err
-			}
-			envDir, err := util.EnvironmentsDir()
-			if err != nil {
-				return err
-			}
-			forkEnvGitURL := ""
-			prefix := options.Flags.DefaultEnvironmentPrefix
-
-			git := options.Git()
-			repo, gitProvider, err := kube.CreateEnvGitRepository(options.BatchMode, authConfigSvc, devEnv, devEnv, config, forkEnvGitURL, envDir, &options.GitRepositoryOptions, options.CreateEnvOptions.HelmValuesConfig, prefix, git, options.In, options.Out, options.Err)
-			if err != nil {
-				return errors.Wrapf(err, "failed to create git repository for the dev Environment source")
-			}
-			dir := gitOpsDir
-			err = git.Init(dir)
-			if err != nil {
-				return err
-			}
-			err = options.ModifyDevEnvironment(func(env *v1.Environment) error {
-				env.Spec.Source.URL = repo.CloneURL
-				env.Spec.Source.Ref = "master"
-				return nil
-			})
-			if err != nil {
-				return err
-			}
-
-			err = git.Add(dir, ".gitignore")
-			if err != nil {
-				return err
-			}
-			err = git.Add(dir, "*")
-			if err != nil {
-				return err
-			}
-			err = options.Git().CommitIfChanges(dir, "Initial import of Dev Environment source")
-			if err != nil {
-				return err
-			}
-			userAuth := gitProvider.UserAuth()
-			pushGitURL, err := git.CreatePushURL(repo.CloneURL, &userAuth)
-			if err != nil {
-				return err
-			}
-			err = git.SetRemoteURL(dir, "origin", pushGitURL)
-			if err != nil {
-				return err
-			}
-			err = git.PushMaster(dir)
-			if err != nil {
-				return err
-			}
-			log.Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
-		}
+	err = options.generateGitOpsDevEnvironmentConfig(gitOpsDir)
+	if err != nil {
+		return errors.Wrap(err, "generating the GitOps development environment config")
 	}
 
 	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsEnvApply {
@@ -1136,6 +1060,91 @@ func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigSt
 	}
 
 	return gitOpsDir, gitOpsEnvDir, nil
+}
+
+func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir string) error {
+	if options.Flags.GitOpsMode {
+		log.Infof("\n\nGenerated the source code for the GitOps development environment at %s\n", util.ColorInfo(gitOpsDir))
+		log.Infof("You can apply this to the kubernetes cluster at any time in this directory via: %s\n\n", util.ColorInfo("jx step env apply"))
+
+		if !options.Flags.NoGitOpsEnvRepo {
+			authConfigSvc, err := options.CreateGitAuthConfigService()
+			if err != nil {
+				return err
+			}
+			config := &v1.Environment{
+				Spec: v1.EnvironmentSpec{
+					Label:             "Development",
+					PromotionStrategy: v1.PromotionStrategyTypeNever,
+					Kind:              v1.EnvironmentKindTypeDevelopment,
+				},
+			}
+			config.Name = kube.LabelValueDevEnvironment
+			var devEnv *v1.Environment
+			err = options.ModifyDevEnvironment(func(env *v1.Environment) error {
+				devEnv = env
+				devEnv.Spec.TeamSettings.UseGitOps = true
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+			envDir, err := util.EnvironmentsDir()
+			if err != nil {
+				return err
+			}
+			forkEnvGitURL := ""
+			prefix := options.Flags.DefaultEnvironmentPrefix
+
+			git := options.Git()
+			repo, gitProvider, err := kube.CreateEnvGitRepository(options.BatchMode, authConfigSvc, devEnv, devEnv, config, forkEnvGitURL, envDir, &options.GitRepositoryOptions, options.CreateEnvOptions.HelmValuesConfig, prefix, git, options.In, options.Out, options.Err)
+			if err != nil {
+				return errors.Wrapf(err, "failed to create git repository for the dev Environment source")
+			}
+			dir := gitOpsDir
+			err = git.Init(dir)
+			if err != nil {
+				return err
+			}
+			err = options.ModifyDevEnvironment(func(env *v1.Environment) error {
+				env.Spec.Source.URL = repo.CloneURL
+				env.Spec.Source.Ref = "master"
+				return nil
+			})
+			if err != nil {
+				return err
+			}
+
+			err = git.Add(dir, ".gitignore")
+			if err != nil {
+				return err
+			}
+			err = git.Add(dir, "*")
+			if err != nil {
+				return err
+			}
+			err = options.Git().CommitIfChanges(dir, "Initial import of Dev Environment source")
+			if err != nil {
+				return err
+			}
+			userAuth := gitProvider.UserAuth()
+			pushGitURL, err := git.CreatePushURL(repo.CloneURL, &userAuth)
+			if err != nil {
+				return err
+			}
+			err = git.SetRemoteURL(dir, "origin", pushGitURL)
+			if err != nil {
+				return err
+			}
+			err = git.PushMaster(dir)
+			if err != nil {
+				return err
+			}
+			log.Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+		}
+	}
+
+	return nil
 }
 
 func (options *InstallOptions) installHelmBinaries() error {
