@@ -152,6 +152,14 @@ type TeamSettings struct {
 	KubeProvider        string               `json:"kubeProvider,omitempty" protobuf:"bytes,18,opt,name=kubeProvider"`
 	AppsRepository      string               `json:"appsRepository,omitempty" protobuf:"bytes,19,opt,name=appsRepository"`
 	BuildPackName       string               `json:"buildPackName,omitempty" protobuf:"bytes,20,opt,name=buildPackName"`
+	StorageLocations    []StorageLocation    `json:"storageLocations,omitempty" protobuf:"bytes,21,opt,name=storageLocations"`
+}
+
+// StorageLocation
+type StorageLocation struct {
+	Classifier string `json:"classifier,omitempty" protobuf:"bytes,1,opt,name=classifier"`
+	GitURL     string `json:"gitUrl,omitempty" protobuf:"bytes,2,opt,name=gitUrl"`
+	HttpUrl    string `json:"httpUrl,omitempty" protobuf:"bytes,3,opt,name=httpUrl"`
 }
 
 // QuickStartLocation
@@ -237,4 +245,33 @@ type EnvironmentRoleBindingList struct {
 	metav1.ListMeta `json:"metadata"`
 
 	Items []EnvironmentRoleBinding `json:"items"`
+}
+
+// StorageLocation returns the storage location, lazily creating one if one does not already exist
+func (t *TeamSettings) StorageLocation(classifier string) *StorageLocation {
+	for idx, sl := range t.StorageLocations {
+		if sl.Classifier == classifier {
+			return &t.StorageLocations[idx]
+		}
+	}
+	t.StorageLocations = append(t.StorageLocations, StorageLocation{
+		Classifier: classifier,
+	})
+	return &t.StorageLocations[len(t.StorageLocations) -1]
+}
+
+// IsEmpty returns true if the storage location is empty
+func (s *StorageLocation) IsEmpty() bool {
+	return s.GitURL == "" || s.HttpUrl == ""
+}
+
+// Description returns the textual description of the storage location
+func (s *StorageLocation) Description() string {
+	if s.GitURL !=  "" {
+		return "git: " + s.GitURL
+	}
+	if s.HttpUrl != "" {
+		return s.HttpUrl
+	}
+	return "current git repo"
 }
