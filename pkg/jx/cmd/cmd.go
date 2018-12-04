@@ -196,10 +196,12 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 		Root:        cmds,
 		SeenPlugins: make(map[string]string, 0),
 	}
-	pluginCommandGroups, managedPluginsEnabled, err1 := commonOptions.getPluginCommandGroups(verifier)
+	/*pluginCommandGroups, managedPluginsEnabled, err1 := commonOptions.getPluginCommandGroups(verifier)
 	if err1 != nil {
 		log.Errorf("%v\n", err1)
-	}
+	}*/
+	pluginCommandGroups := templates.PluginCommandGroups{}
+	managedPluginsEnabled := false
 	templates.ActsAsRootCommand(cmds, filters, pluginCommandGroups, groups...)
 	cmds.AddCommand(NewCmdDocs(f, in, out, err))
 	cmds.AddCommand(NewCmdVersion(f, in, out, err))

@@ -447,6 +447,7 @@ func (f *factory) CreateGitProvider(gitURL string, message string, authConfigSvc
 var kubeConfigCache *string
 
 func createKubeConfig() *string {
+	panic("TODO should not be run during jx prompt")
 	var kubeconfig *string
 	if kubeConfigCache != nil {
 		return kubeConfigCache
