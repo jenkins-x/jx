@@ -274,6 +274,10 @@ func (h *HelmCLI) FetchChart(chart string, version *string, untar bool, untardir
 		args = append(args, "--version", *version)
 	}
 
+	if repo != "" {
+		args = append(args, "--repo", repo)
+	}
+
 	if h.Debug {
 		log.Infof("Fetching Chart '%s'\n", util.ColorInfo(strings.Join(args, " ")))
 	}
