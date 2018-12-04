@@ -847,20 +847,9 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configureing helm3")
 	}
 
-	if !options.Flags.GitOpsMode {
-		addonConfig, err := addon.LoadAddonsConfig()
-		if err != nil {
-			return errors.Wrap(err, "failed to load the addons configuration")
-		}
-
-		for _, ac := range addonConfig.Addons {
-			if ac.Enabled {
-				err = options.installAddon(ac.Name)
-				if err != nil {
-					return fmt.Errorf("failed to install addon %s: %s", ac.Name, err)
-				}
-			}
-		}
+	err = options.installAddons()
+	if err != nil {
+		return errors.Wrap(err, "installing the addons")
 	}
 
 	options.logAdminPassword()
@@ -1554,6 +1543,25 @@ func (options *InstallOptions) configureJenkins(namespace string) error {
 			err := options.updateJenkinsURL([]string{namespace})
 			if err != nil {
 				log.Warnf("failed to update the Jenkins external URL")
+			}
+		}
+	}
+	return nil
+}
+
+func (options *InstallOptions) installAddons() error {
+	if !options.Flags.GitOpsMode {
+		addonConfig, err := addon.LoadAddonsConfig()
+		if err != nil {
+			return errors.Wrap(err, "failed to load the addons configuration")
+		}
+
+		for _, ac := range addonConfig.Addons {
+			if ac.Enabled {
+				err = options.installAddon(ac.Name)
+				if err != nil {
+					return fmt.Errorf("failed to install addon %s: %s", ac.Name, err)
+				}
 			}
 		}
 	}
