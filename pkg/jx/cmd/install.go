@@ -424,8 +424,6 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	initOpts := &options.InitOptions
-	helmBinary := initOpts.HelmBinary()
 	options.configureHelm(client, originalNs)
 	err = options.installHelmBinaries()
 	if err != nil {
@@ -437,19 +435,9 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "installing cloud provider dependencies")
 	}
 
-	context := ""
-	if !options.Flags.DisableSetKubeContext {
-		context, err = options.getCommandOutput("", "kubectl", "config", "current-context")
-		if err != nil {
-			return errors.Wrap(err, "failed to retrieve the current context from kube configuration")
-		}
-	}
-
-	if !options.Flags.DisableSetKubeContext {
-		err = options.RunCommand("kubectl", "config", "set-context", context, "--namespace", ns)
-		if err != nil {
-			return errors.Wrapf(err, "failed to set the context '%s' in kube configuration", context)
-		}
+	err = options.configureKubectl(ns)
+	if err != nil {
+		return errors.Wrap(err, "configureing the kubectl")
 	}
 
 	options.Flags.Provider, err = options.GetCloudProvider(options.Flags.Provider)
@@ -457,6 +445,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrapf(err, "failed to get the cloud provider '%s'", options.Flags.Provider)
 	}
 
+	initOpts := &options.InitOptions
 	initOpts.Flags.Provider = options.Flags.Provider
 	initOpts.Flags.Namespace = options.Flags.Namespace
 	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
@@ -467,9 +456,6 @@ func (options *InstallOptions) Run() error {
 	initOpts.BatchMode = options.BatchMode
 
 	if options.Flags.Provider == AKS {
-		/**
-		 * create a cluster admin role
-		 */
 		err = options.createClusterAdmin()
 		if err != nil {
 			return errors.Wrap(err, "failed to create the cluster admin")
@@ -1110,18 +1096,10 @@ func (options *InstallOptions) Run() error {
 			return err
 		}
 	}
-	if helmBinary != "helm" {
-		// default apps to use helm3 too
-		helmOptions := EditHelmBinOptions{}
-		helmOptions.CommonOptions = options.CommonOptions
-		helmOptions.CommonOptions.BatchMode = true
-		helmOptions.CommonOptions.Args = []string{helmBinary}
-		helmOptions.currentNamespace = ns
-		helmOptions.devNamespace = ns
-		err = helmOptions.Run()
-		if err != nil {
-			return errors.Wrap(err, "failed to edit the helm options")
-		}
+
+	err = options.configureHelm3(ns)
+	if err != nil {
+		return errors.Wrap(err, "configureing helm3")
 	}
 
 	if !options.Flags.GitOpsMode {
@@ -1370,6 +1348,43 @@ func (options *InstallOptions) Run() error {
 	log.Infof("To import existing projects into Jenkins:       %s\n", util.ColorInfo("jx import"))
 	log.Infof("To create a new Spring Boot microservice:       %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
 	log.Infof("To create a new microservice from a quickstart: %s\n", util.ColorInfo("jx create quickstart"))
+	return nil
+}
+
+func (options *InstallOptions) configureKubectl(namespace string) error {
+	context := ""
+	var err error
+	if !options.Flags.DisableSetKubeContext {
+		context, err = options.getCommandOutput("", "kubectl", "config", "current-context")
+		if err != nil {
+			return errors.Wrap(err, "failed to retrieve the current context from kube configuration")
+		}
+	}
+
+	if !options.Flags.DisableSetKubeContext {
+		err = options.RunCommand("kubectl", "config", "set-context", context, "--namespace", namespace)
+		if err != nil {
+			return errors.Wrapf(err, "failed to set the context '%s' in kube configuration", context)
+		}
+	}
+	return nil
+}
+
+func (options *InstallOptions) configureHelm3(namespace string) error {
+	initOpts := &options.InitOptions
+	helmBinary := initOpts.HelmBinary()
+	if helmBinary != "helm" {
+		helmOptions := EditHelmBinOptions{}
+		helmOptions.CommonOptions = options.CommonOptions
+		helmOptions.CommonOptions.BatchMode = true
+		helmOptions.CommonOptions.Args = []string{helmBinary}
+		helmOptions.currentNamespace = namespace
+		helmOptions.devNamespace = namespace
+		err := helmOptions.Run()
+		if err != nil {
+			return errors.Wrap(err, "failed to edit the helm options")
+		}
+	}
 	return nil
 }
 
