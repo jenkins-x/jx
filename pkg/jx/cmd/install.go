@@ -592,21 +592,17 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to update the helm repo")
 	}
 
+	err = options.configureAndInstallProw(ns)
+	if err != nil {
+		return errors.Wrap(err, "configureing and installing Prow")
+	}
+
 	valueFiles := []string{cloudEnvironmentValuesLocation, secretsFileName, adminSecretsFileName, configFileName, cloudEnvironmentSecretsLocation}
 	valueFiles, err = helm.AppendMyValues(valueFiles)
 	if err != nil {
 		return errors.Wrap(err, "failed to append the myvalues.yaml file")
 	}
 
-	options.currentNamespace = ns
-	if options.Flags.Prow {
-		// install Prow into the new env
-		options.OAUTHToken = options.GitRepositoryOptions.ApiToken
-		err = options.installProw()
-		if err != nil {
-			return fmt.Errorf("failed to install Prow: %v", err)
-		}
-	}
 	timeoutInt, err := strconv.Atoi(timeout)
 	if err != nil {
 		return errors.Wrap(err, "failed to convert the helm install timeout value")
@@ -940,6 +936,18 @@ func (options *InstallOptions) init() error {
 		options.Flags.Domain = initOpts.Flags.Domain
 	}
 
+	return nil
+}
+
+func (options *InstallOptions) configureAndInstallProw(namespace string) error {
+	options.currentNamespace = namespace
+	if options.Flags.Prow {
+		options.OAUTHToken = options.GitRepositoryOptions.ApiToken
+		err := options.installProw()
+		if err != nil {
+			return fmt.Errorf("failed to install Prow: %v", err)
+		}
+	}
 	return nil
 }
 
