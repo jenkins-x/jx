@@ -778,29 +778,14 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	if options.Flags.Prow {
-		callback := func(env *v1.Environment) error {
-			env.Spec.WebHookEngine = v1.WebHookEngineProw
-			settings := &env.Spec.TeamSettings
-			settings.PromotionEngine = v1.PromotionEngineProw
-			log.Info("Configuring the TeamSettings for Prow\n")
-			return nil
-		}
-		err = options.ModifyDevEnvironment(callback)
-		if err != nil {
-			return err
-		}
+	err = options.configureProwInTeamSettings()
+	if err != nil {
+		return errors.Wrap(err, "configuring Prow in team settings")
 	}
-	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
-		callback := func(env *v1.Environment) error {
-			env.Spec.TeamSettings.NoTiller = true
-			log.Info("Disabling the server side use of tiller in the TeamSettings\n")
-			return nil
-		}
-		err = options.ModifyDevEnvironment(callback)
-		if err != nil {
-			return err
-		}
+
+	err = options.configureTillerInDevEnvironment()
+	if err != nil {
+		return errors.Wrap(err, "configure tiller in the dev environment")
 	}
 
 	err = options.configureHelm3(ns)
@@ -994,6 +979,39 @@ func (options *InstallOptions) configureHelm(client kubernetes.Interface, namesp
 			}
 		}
 	}
+}
+
+func (options *InstallOptions) configureTillerInDevEnvironment() error {
+	initOpts := &options.InitOptions
+	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
+		callback := func(env *v1.Environment) error {
+			env.Spec.TeamSettings.NoTiller = true
+			log.Info("Disabling the server side use of tiller in the TeamSettings\n")
+			return nil
+		}
+		err := options.ModifyDevEnvironment(callback)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (options *InstallOptions) configureProwInTeamSettings() error {
+	if options.Flags.Prow {
+		callback := func(env *v1.Environment) error {
+			env.Spec.WebHookEngine = v1.WebHookEngineProw
+			settings := &env.Spec.TeamSettings
+			settings.PromotionEngine = v1.PromotionEngineProw
+			log.Info("Configuring the TeamSettings for Prow\n")
+			return nil
+		}
+		err := options.ModifyDevEnvironment(callback)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigStore, namespace string) (string, string, error) {
