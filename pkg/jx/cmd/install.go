@@ -552,25 +552,6 @@ func (options *InstallOptions) Run() error {
 	}
 	log.Infof("Generated helm values %s\n", util.ColorInfo(configFileName))
 
-	timeout := options.Flags.Timeout
-	if timeout == "" {
-		timeout = defaultInstallTimeout
-	}
-
-	if !options.BatchMode && !options.Flags.Prow {
-		jenkinsInstallOptions := []string{
-			ServerlessJenkins,
-			StaticMasterJenkins,
-		}
-		jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins installation type:", StaticMasterJenkins, "", options.In, options.Out, options.Err)
-		if err != nil {
-			return errors.Wrap(err, "picking Jenkins installation type")
-		}
-		if jenkinsInstallOption == ServerlessJenkins {
-			options.Flags.Prow = true
-		}
-	}
-
 	log.Infof("Installing Jenkins X platform helm chart from: %s\n", providerEnvDir)
 
 	options.Verbose = true
@@ -578,6 +559,11 @@ func (options *InstallOptions) Run() error {
 	err = options.configureHelmRepo()
 	if err != nil {
 		return errors.Wrap(err, "configuring the Jenkins X helm repository")
+	}
+
+	err = options.selectJenkinsInstallation()
+	if err != nil {
+		return errors.Wrap(err, "selecting the Jenkins installation type")
 	}
 
 	err = options.configureAndInstallProw(ns)
@@ -613,6 +599,10 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to append the myvalues.yaml file")
 	}
 
+	timeout := options.Flags.Timeout
+	if timeout == "" {
+		timeout = defaultInstallTimeout
+	}
 	timeoutInt, err := strconv.Atoi(timeout)
 	if err != nil {
 		return errors.Wrap(err, "failed to convert the helm install timeout value")
@@ -973,6 +963,23 @@ func (options *InstallOptions) configureHelmRepo() error {
 	err = options.Helm().UpdateRepo()
 	if err != nil {
 		return errors.Wrap(err, "failed to update the helm repo")
+	}
+	return nil
+}
+
+func (options *InstallOptions) selectJenkinsInstallation() error {
+	if !options.BatchMode && !options.Flags.Prow {
+		jenkinsInstallOptions := []string{
+			ServerlessJenkins,
+			StaticMasterJenkins,
+		}
+		jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins installation type:", StaticMasterJenkins, "", options.In, options.Out, options.Err)
+		if err != nil {
+			return errors.Wrap(err, "picking Jenkins installation type")
+		}
+		if jenkinsInstallOption == ServerlessJenkins {
+			options.Flags.Prow = true
+		}
 	}
 	return nil
 }
