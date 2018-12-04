@@ -11,16 +11,16 @@ import (
 // ConfigStore provides an interface for storing configs
 type ConfigStore interface {
 	// Write saves some secret data to the store
-	Write(fileName string, bytes []byte) error
+	Write(name string, bytes []byte) error
 
 	// WriteObject writes a named object to the store
-	WriteObject(fileName string, obj interface{}) error
+	WriteObject(name string, obj interface{}) error
 
 	// Read reads some secret data from the store
-	Read(fileName string) ([]byte, error)
+	Read(name string) ([]byte, error)
 
 	// ReadObject reads an object from the store
-	ReadObject(fileName string, object interface{}) error
+	ReadObject(name string, object interface{}) error
 }
 
 type fileStore struct {
