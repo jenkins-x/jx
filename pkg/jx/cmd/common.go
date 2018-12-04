@@ -723,7 +723,11 @@ func (o *CommonOptions) CleanExposecontrollerReources(ns string) {
 }
 
 func (o *CommonOptions) getDefaultAdminPassword(devNamespace string) (string, error) {
-	basicAuth, err := o.KubeClientCached.CoreV1().Secrets(devNamespace).Get(JXInstallConfig, v1.GetOptions{})
+	client, _, err := o.KubeClient() // cache may not have been created yet...
+	if err != nil {
+		return "", fmt.Errorf("cannot obtain k8s client %v", err)
+	}
+	basicAuth, err := client.CoreV1().Secrets(devNamespace).Get(JXInstallConfig, v1.GetOptions{})
 	if err != nil {
 		return "", fmt.Errorf("cannot find secret %s in namespace %s: %v", kube.SecretBasicAuth, devNamespace, err)
 	}
