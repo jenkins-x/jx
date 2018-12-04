@@ -445,6 +445,16 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrapf(err, "failed to get the cloud provider '%s'", options.Flags.Provider)
 	}
 
+	err = options.setMinikubeFromContext()
+	if err != nil {
+		return errors.Wrap(err, "configureing minikube from kubectl context")
+	}
+
+	err = options.configureCloudProivderPreInit(client)
+	if err != nil {
+		return errors.Wrap(err, "configureing the cloud provider")
+	}
+
 	initOpts := &options.InitOptions
 	initOpts.Flags.Provider = options.Flags.Provider
 	initOpts.Flags.Namespace = options.Flags.Namespace
@@ -454,44 +464,6 @@ func (options *InstallOptions) Run() error {
 		initOpts.Flags.Http = exposeController.Config.HTTP == "true"
 	}
 	initOpts.BatchMode = options.BatchMode
-
-	if options.Flags.Provider == AKS {
-		err = options.createClusterAdmin()
-		if err != nil {
-			return errors.Wrap(err, "failed to create the cluster admin")
-		}
-		log.Success("created role cluster-admin")
-	}
-
-	// lets ignore errors getting the current context in case we are running inside a pod
-	currentContext := ""
-	if !options.Flags.DisableSetKubeContext {
-		currentContext, err = options.getCommandOutput("", "kubectl", "config", "current-context")
-		if err != nil {
-			return errors.Wrap(err, "failed to get the current context")
-		}
-	}
-	isAwsProvider := options.Flags.Provider == AWS || options.Flags.Provider == EKS
-	if isAwsProvider {
-		err = options.ensureDefaultStorageClass(client, "gp2", "kubernetes.io/aws-ebs", "gp2")
-		if err != nil {
-			return err
-		}
-	}
-
-	if currentContext == "minikube" {
-		if options.Flags.Provider == "" {
-			options.Flags.Provider = MINIKUBE
-		}
-		if options.Flags.Domain == "" {
-			ip, err := options.getCommandOutput("", "minikube", "ip")
-			if err != nil {
-				return errors.Wrap(err, "failed to get the IP from Minikube")
-			}
-			options.Flags.Domain = ip + ".nip.io"
-		}
-	}
-
 	if initOpts.Flags.Domain == "" && options.Flags.Domain != "" {
 		initOpts.Flags.Domain = options.Flags.Domain
 	}
@@ -516,13 +488,6 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	callback := func(env *v1.Environment) error {
-		if env.Spec.TeamSettings.KubeProvider == "" {
-			env.Spec.TeamSettings.KubeProvider = options.Flags.Provider
-			log.Infof("Storing the kubernetes provider %s in the TeamSettings\n", env.Spec.TeamSettings.KubeProvider)
-		}
-		return nil
-	}
 	if !options.GitOpsMode {
 		apisClient, err := options.CreateApiExtensionsClient()
 		if err != nil {
@@ -532,6 +497,14 @@ func (options *InstallOptions) Run() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	callback := func(env *v1.Environment) error {
+		if env.Spec.TeamSettings.KubeProvider == "" {
+			env.Spec.TeamSettings.KubeProvider = options.Flags.Provider
+			log.Infof("Storing the kubernetes provider %s in the TeamSettings\n", env.Spec.TeamSettings.KubeProvider)
+		}
+		return nil
 	}
 	err = options.ModifyDevEnvironment(callback)
 	if err != nil {
@@ -563,40 +536,12 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to initialize the jx")
 	}
 
-	if isOpenShiftProvider(options.Flags.Provider) {
-		err = options.enableOpenShiftSCC(ns)
-		if err != nil {
-			return errors.Wrap(err, "failed to enable the OpenShiftSCC")
-		}
-	}
-
-	if options.Flags.Provider == IKS {
-		/**
-		* Add the IBM chart repo for the Block Storage Driver
-		 */
-		err = options.addHelmBinaryRepoIfMissing(DEFAULT_IBMREPO_URL, "ibm")
-		if err != nil {
-			return errors.Wrap(err, "failed to add the IBM helm repo")
-		}
-		err = options.Helm().UpdateRepo()
-		if err != nil {
-			return errors.Wrap(err, "failed to update the helm repo")
-		}
-		err = options.Helm().UpgradeChart("ibm/ibmcloud-block-storage-plugin", "ibmcloud-block-storage-plugin",
-			"default", nil, true, nil, false, false, nil, nil, "")
-		if err != nil {
-			return errors.Wrap(err, "failed to install/upgrade the IBM Cloud Block Storage drivers")
-		}
-		err = options.changeDefaultStorageClass(client, "ibmc-block-bronze")
-		if err != nil {
-			return err
-		}
-	}
-
 	// share the init domain option with the install options
 	if initOpts.Flags.Domain != "" && options.Flags.Domain == "" {
 		options.Flags.Domain = initOpts.Flags.Domain
 	}
+
+	err = options.configureCloudProivderPostInit(client, ns)
 
 	// TODO - we want to enable storing secrets in Vault for gitops. Reenable this once the feature is finished
 	//if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
@@ -1457,6 +1402,83 @@ func (options *InstallOptions) installHelmBinaries() error {
 	}
 	dependencies = append(dependencies, helmBinary)
 	return options.installMissingDependencies(dependencies)
+}
+
+func (options *InstallOptions) configureCloudProivderPreInit(client kubernetes.Interface) error {
+	switch options.Flags.Provider {
+	case AKS:
+		err := options.createClusterAdmin()
+		if err != nil {
+			return errors.Wrap(err, "creating cluster admin for AKS cloud provider")
+		}
+		log.Success("created role cluster-admin")
+	case AWS:
+		fallthrough
+	case EKS:
+		err := options.ensureDefaultStorageClass(client, "gp2", "kubernetes.io/aws-ebs", "gp2")
+		if err != nil {
+			return errors.Wrap(err, "ensureing default storage for EKS/AWS cloud provider")
+		}
+	case MINIKUBE:
+		if options.Flags.Domain == "" {
+			ip, err := options.getCommandOutput("", "minikube", "ip")
+			if err != nil {
+				return errors.Wrap(err, "failed to get the IP from Minikube")
+			}
+			options.Flags.Domain = ip + ".nip.io"
+		}
+	default:
+		return nil
+	}
+	return nil
+}
+
+func (options *InstallOptions) configureCloudProivderPostInit(client kubernetes.Interface, namespace string) error {
+	switch options.Flags.Provider {
+	case MINISHIFT:
+		fallthrough
+	case OPENSHIFT:
+		err := options.enableOpenShiftSCC(namespace)
+		if err != nil {
+			return errors.Wrap(err, "failed to enable the OpenShiftSCC")
+		}
+	case IKS:
+		err := options.addHelmBinaryRepoIfMissing(DEFAULT_IBMREPO_URL, "ibm")
+		if err != nil {
+			return errors.Wrap(err, "failed to add the IBM helm repo")
+		}
+		err = options.Helm().UpdateRepo()
+		if err != nil {
+			return errors.Wrap(err, "failed to update the helm repo")
+		}
+		err = options.Helm().UpgradeChart("ibm/ibmcloud-block-storage-plugin", "ibmcloud-block-storage-plugin",
+			"default", nil, true, nil, false, false, nil, nil, "")
+		if err != nil {
+			return errors.Wrap(err, "failed to install/upgrade the IBM Cloud Block Storage drivers")
+		}
+		return options.changeDefaultStorageClass(client, "ibmc-block-bronze")
+	default:
+		return nil
+	}
+
+	return nil
+}
+
+func (options *InstallOptions) setMinikubeFromContext() error {
+	currentContext := ""
+	var err error
+	if !options.Flags.DisableSetKubeContext {
+		currentContext, err = options.getCommandOutput("", "kubectl", "config", "current-context")
+		if err != nil {
+			return errors.Wrap(err, "failed to get the current context")
+		}
+	}
+	if currentContext == "minikube" {
+		if options.Flags.Provider == "" {
+			options.Flags.Provider = MINIKUBE
+		}
+	}
+	return nil
 }
 
 func (options *InstallOptions) installCloudProviderDependencies() error {
