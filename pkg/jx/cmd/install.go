@@ -424,8 +424,6 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	options.installCloudProviderDependencies()
-
 	initOpts := &options.InitOptions
 	helmBinary := initOpts.HelmBinary()
 	options.configureHelm(client, originalNs)
@@ -434,10 +432,9 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "installing helm binaries")
 	}
 
-	dependencies := []string{}
-	err = options.installRequirements(options.Flags.Provider, dependencies...)
+	err = options.installCloudProviderDependencies()
 	if err != nil {
-		return errors.Wrap(err, "failed to install the platform requirements")
+		return errors.Wrap(err, "installing cloud provider dependencies")
 	}
 
 	context := ""
@@ -1447,36 +1444,13 @@ func (options *InstallOptions) installHelmBinaries() error {
 	return options.installMissingDependencies(dependencies)
 }
 
-func (options *InstallOptions) installCloudProviderDependencies() {
-	if options.Flags.Provider == EKS {
-		var deps []string
-		d := binaryShouldBeInstalled("eksctl")
-		if d != "" {
-			deps = append(deps, d)
-		}
-		d = binaryShouldBeInstalled("heptio-authenticator-aws")
-		if d != "" {
-			deps = append(deps, d)
-		}
-		err := options.installMissingDependencies(deps)
-		if err != nil {
-			log.Errorf("%v\nPlease fix the error or install manually then try again", err)
-			os.Exit(-1)
-		}
+func (options *InstallOptions) installCloudProviderDependencies() error {
+	dependencies := []string{}
+	err := options.installRequirements(options.Flags.Provider, dependencies...)
+	if err != nil {
+		return errors.Wrap(err, "installing cloud provider dependencies")
 	}
-
-	if options.Flags.Provider == AKS {
-		var deps []string
-		d := binaryShouldBeInstalled("az")
-		if d != "" {
-			deps = append(deps, d)
-		}
-		err := options.installMissingDependencies(deps)
-		if err != nil {
-			log.Errorf("%v\nPlease fix the error or install manually then try again", err)
-			os.Exit(-1)
-		}
-	}
+	return nil
 }
 
 func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string) error {

@@ -1372,6 +1372,9 @@ func (o *CommonOptions) installRequirements(cloudProvider string, extraDependenc
 		deps = o.addRequiredBinary("ibmcloud", deps)
 	case AWS:
 		deps = o.addRequiredBinary("kops", deps)
+	case EKS:
+		deps = o.addRequiredBinary("eksctl", deps)
+		deps = o.addRequiredBinary("heptio-authenticator-aws", deps)
 	case AKS:
 		deps = o.addRequiredBinary("az", deps)
 	case GKE:
