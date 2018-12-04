@@ -386,47 +386,9 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "registering all CRDs")
 	}
 
-	// lets avoid changing the environments in k8s if GitOps mode...
-	gitOpsDir := ""
-	gitOpsEnvDir := ""
-	if options.Flags.GitOpsMode {
-		// lets disable loading of Secrets from the jx namespace
-		options.SkipAuthSecretsMerge = true
-		options.Flags.DisableSetKubeContext = true
-
-		var err error
-		if options.Flags.Dir == "" {
-			options.Flags.Dir, err = os.Getwd()
-			if err != nil {
-				return err
-			}
-		}
-		gitOpsDir = filepath.Join(options.Flags.Dir, "jenkins-x-dev-environment")
-		gitOpsEnvDir = filepath.Join(gitOpsDir, "env")
-		templatesDir := filepath.Join(gitOpsEnvDir, "templates")
-		err = os.MkdirAll(templatesDir, util.DefaultWritePermissions)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to make GitOps templates directory %s", templatesDir)
-		}
-
-		options.modifyDevEnvironmentFn = func(callback func(env *v1.Environment) error) error {
-			defaultEnv := kube.CreateDefaultDevEnvironment(ns)
-			_, err := gitOpsModifyEnvironment(templatesDir, kube.LabelValueDevEnvironment, defaultEnv, configStore, callback)
-			return err
-		}
-		options.modifyEnvironmentFn = func(name string, callback func(env *v1.Environment) error) error {
-			defaultEnv := &v1.Environment{}
-			defaultEnv.Labels = map[string]string{}
-			_, err := gitOpsModifyEnvironment(templatesDir, name, defaultEnv, configStore, callback)
-			return err
-		}
-		options.InitOptions.modifyDevEnvironmentFn = options.modifyDevEnvironmentFn
-		options.modifyConfigMapCallback = func(name string, callback func(configMap *core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
-			return gitOpsModifyConfigMap(templatesDir, name, nil, configStore, callback)
-		}
-		options.modifySecretCallback = func(name string, callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
-			return gitOpsModifySecret(templatesDir, name, nil, configStore, callback)
-		}
+	gitOpsDir, gitOpsEnvDir, err := options.configureGitOpsMode(configStore, ns)
+	if err != nil {
+		return errors.Wrap(err, "configuring the GitOps mode")
 	}
 
 	options.configureHelm(client, originalNs)
@@ -1129,6 +1091,52 @@ func (options *InstallOptions) configureHelm(client kubernetes.Interface, namesp
 			}
 		}
 	}
+}
+
+func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigStore, namespace string) (string, string, error) {
+	gitOpsDir := ""
+	gitOpsEnvDir := ""
+	if options.Flags.GitOpsMode {
+		// lets disable loading of Secrets from the jx namespace
+		options.SkipAuthSecretsMerge = true
+		options.Flags.DisableSetKubeContext = true
+
+		var err error
+		if options.Flags.Dir == "" {
+			options.Flags.Dir, err = os.Getwd()
+			if err != nil {
+				return "", "", err
+			}
+		}
+		gitOpsDir = filepath.Join(options.Flags.Dir, "jenkins-x-dev-environment")
+		gitOpsEnvDir = filepath.Join(gitOpsDir, "env")
+		templatesDir := filepath.Join(gitOpsEnvDir, "templates")
+		err = os.MkdirAll(templatesDir, util.DefaultWritePermissions)
+		if err != nil {
+			return "", "", errors.Wrapf(err, "Failed to make GitOps templates directory %s", templatesDir)
+		}
+
+		options.modifyDevEnvironmentFn = func(callback func(env *v1.Environment) error) error {
+			defaultEnv := kube.CreateDefaultDevEnvironment(namespace)
+			_, err := gitOpsModifyEnvironment(templatesDir, kube.LabelValueDevEnvironment, defaultEnv, configStore, callback)
+			return err
+		}
+		options.modifyEnvironmentFn = func(name string, callback func(env *v1.Environment) error) error {
+			defaultEnv := &v1.Environment{}
+			defaultEnv.Labels = map[string]string{}
+			_, err := gitOpsModifyEnvironment(templatesDir, name, defaultEnv, configStore, callback)
+			return err
+		}
+		options.InitOptions.modifyDevEnvironmentFn = options.modifyDevEnvironmentFn
+		options.modifyConfigMapCallback = func(name string, callback func(configMap *core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
+			return gitOpsModifyConfigMap(templatesDir, name, nil, configStore, callback)
+		}
+		options.modifySecretCallback = func(name string, callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
+			return gitOpsModifySecret(templatesDir, name, nil, configStore, callback)
+		}
+	}
+
+	return gitOpsDir, gitOpsEnvDir, nil
 }
 
 func (options *InstallOptions) installHelmBinaries() error {
