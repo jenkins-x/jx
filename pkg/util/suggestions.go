@@ -19,8 +19,14 @@ func InvalidOptionf(option string, value string, message string, a ...interface{
 	return fmt.Errorf("Invalid option: --%s %s\n%s", option, value, text)
 }
 
+// MissingOption reports a missing command line option using the full name expression
 func MissingOption(name string) error {
 	return fmt.Errorf("Missing option: --%s", name)
+}
+
+// MissingArgument reports a missing command line argument name
+func MissingArgument(name string) error {
+	return fmt.Errorf("Missing argument: %s", name)
 }
 
 func InvalidOption(name string, value string, values []string) error {

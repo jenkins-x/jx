@@ -166,7 +166,7 @@ func GenerateBuildNumber(activities typev1.PipelineActivityInterface, pn Pipelin
 
 // GetOrCreate gets or creates the pipeline activity
 func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, bool, error) {
-	name := k.Name
+	name := ToValidName(k.Name)
 	create := false
 	defaultActivity := &v1.PipelineActivity{
 		ObjectMeta: metav1.ObjectMeta{
