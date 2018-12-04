@@ -381,6 +381,11 @@ func (options *InstallOptions) Run() error {
 	}
 	options.SetDevNamespace(ns)
 
+	err = options.registerAllCRDs()
+	if err != nil {
+		return errors.Wrap(err, "registering all CRDs")
+	}
+
 	// lets avoid changing the environments in k8s if GitOps mode...
 	gitOpsDir := ""
 	gitOpsEnvDir := ""
@@ -437,7 +442,7 @@ func (options *InstallOptions) Run() error {
 
 	err = options.configureKubectl(ns)
 	if err != nil {
-		return errors.Wrap(err, "configureing the kubectl")
+		return errors.Wrap(err, "configure the kubectl")
 	}
 
 	options.Flags.Provider, err = options.GetCloudProvider(options.Flags.Provider)
@@ -447,101 +452,23 @@ func (options *InstallOptions) Run() error {
 
 	err = options.setMinikubeFromContext()
 	if err != nil {
-		return errors.Wrap(err, "configureing minikube from kubectl context")
+		return errors.Wrap(err, "configuring minikube from kubectl context")
 	}
 
 	err = options.configureCloudProivderPreInit(client)
 	if err != nil {
-		return errors.Wrap(err, "configureing the cloud provider")
+		return errors.Wrap(err, "configuring the cloud provider before initializing the platform")
 	}
 
-	initOpts := &options.InitOptions
-	initOpts.Flags.Provider = options.Flags.Provider
-	initOpts.Flags.Namespace = options.Flags.Namespace
-	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
-	initOpts.Flags.Http = true
-	if exposeController != nil {
-		initOpts.Flags.Http = exposeController.Config.HTTP == "true"
-	}
-	initOpts.BatchMode = options.BatchMode
-	if initOpts.Flags.Domain == "" && options.Flags.Domain != "" {
-		initOpts.Flags.Domain = options.Flags.Domain
-	}
-
-	// lets default the helm domain
-	if exposeController != nil {
-		ecConfig := &exposeController.Config
-		if ecConfig.Domain == "" && options.Flags.Domain != "" {
-			ecConfig.Domain = options.Flags.Domain
-			log.Success("set exposeController Config Domain " + ecConfig.Domain + "\n")
-		}
-		if ecConfig.PathMode == "" && options.Flags.ExposeControllerPathMode != "" {
-			ecConfig.PathMode = options.Flags.ExposeControllerPathMode
-			log.Success("set exposeController Config PathMode " + ecConfig.PathMode + "\n")
-		}
-		if ecConfig.Domain == "" && options.Flags.Domain != "" {
-			ecConfig.Domain = options.Flags.Domain
-			log.Success("set exposeController Config Domain " + ecConfig.Domain + "\n")
-		}
-		if isOpenShiftProvider(options.Flags.Provider) {
-			ecConfig.Exposer = "Route"
-		}
-	}
-
-	if !options.GitOpsMode {
-		apisClient, err := options.CreateApiExtensionsClient()
-		if err != nil {
-			return errors.Wrap(err, "failed to create the API extensions client")
-		}
-		kube.RegisterAllCRDs(apisClient)
-		if err != nil {
-			return err
-		}
-	}
-
-	callback := func(env *v1.Environment) error {
-		if env.Spec.TeamSettings.KubeProvider == "" {
-			env.Spec.TeamSettings.KubeProvider = options.Flags.Provider
-			log.Infof("Storing the kubernetes provider %s in the TeamSettings\n", env.Spec.TeamSettings.KubeProvider)
-		}
-		return nil
-	}
-	err = options.ModifyDevEnvironment(callback)
+	err = options.init()
 	if err != nil {
-		return err
-	}
-	if initOpts.Flags.NoTiller {
-		callback := func(env *v1.Environment) error {
-			env.Spec.TeamSettings.HelmTemplate = true
-			log.Info("Enabling helm template mode in the TeamSettings\n")
-			return nil
-		}
-		err = options.ModifyDevEnvironment(callback)
-		if err != nil {
-			return err
-		}
-		initOpts.helm = nil
-	}
-
-	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
-		err = restartLocalTiller()
-		if err != nil {
-			return err
-		}
-		initOpts.helm = options.helm
-	}
-
-	err = initOpts.Run()
-	if err != nil {
-		return errors.Wrap(err, "failed to initialize the jx")
-	}
-
-	// share the init domain option with the install options
-	if initOpts.Flags.Domain != "" && options.Flags.Domain == "" {
-		options.Flags.Domain = initOpts.Flags.Domain
+		return errors.Wrap(err, "initializing the platform")
 	}
 
 	err = options.configureCloudProivderPostInit(client, ns)
+	if err != nil {
+		return errors.Wrap(err, "configuring the cloud provider after initializing the platform")
+	}
 
 	// TODO - we want to enable storing secrets in Vault for gitops. Reenable this once the feature is finished
 	//if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
@@ -606,6 +533,7 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
+	initOpts := &options.InitOptions
 	if initOpts.Flags.TillerNamespace != "" {
 		if helmConfig.Jenkins.Servers.Global.EnvVars == nil {
 			helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
@@ -846,6 +774,7 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
+	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
 	tls, err := util.ParseBool(exposeController.Config.TLSAcme)
 	if err != nil {
 		return fmt.Errorf("failed to parse TLS exposecontroller boolean %v", err)
@@ -1315,6 +1244,84 @@ func (options *InstallOptions) configureKubectl(namespace string) error {
 	return nil
 }
 
+func (options *InstallOptions) init() error {
+	initOpts := &options.InitOptions
+	initOpts.Flags.Provider = options.Flags.Provider
+	initOpts.Flags.Namespace = options.Flags.Namespace
+	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
+	initOpts.Flags.Http = true
+	if exposeController != nil {
+		initOpts.Flags.Http = exposeController.Config.HTTP == "true"
+	}
+	initOpts.BatchMode = options.BatchMode
+	if initOpts.Flags.Domain == "" && options.Flags.Domain != "" {
+		initOpts.Flags.Domain = options.Flags.Domain
+	}
+
+	// lets default the helm domain
+	if exposeController != nil {
+		ecConfig := &exposeController.Config
+		if ecConfig.Domain == "" && options.Flags.Domain != "" {
+			ecConfig.Domain = options.Flags.Domain
+			log.Success("set exposeController Config Domain " + ecConfig.Domain + "\n")
+		}
+		if ecConfig.PathMode == "" && options.Flags.ExposeControllerPathMode != "" {
+			ecConfig.PathMode = options.Flags.ExposeControllerPathMode
+			log.Success("set exposeController Config PathMode " + ecConfig.PathMode + "\n")
+		}
+		if ecConfig.Domain == "" && options.Flags.Domain != "" {
+			ecConfig.Domain = options.Flags.Domain
+			log.Success("set exposeController Config Domain " + ecConfig.Domain + "\n")
+		}
+		if isOpenShiftProvider(options.Flags.Provider) {
+			ecConfig.Exposer = "Route"
+		}
+	}
+
+	callback := func(env *v1.Environment) error {
+		if env.Spec.TeamSettings.KubeProvider == "" {
+			env.Spec.TeamSettings.KubeProvider = options.Flags.Provider
+			log.Infof("Storing the kubernetes provider %s in the TeamSettings\n", env.Spec.TeamSettings.KubeProvider)
+		}
+		return nil
+	}
+	err := options.ModifyDevEnvironment(callback)
+	if err != nil {
+		return err
+	}
+	if initOpts.Flags.NoTiller {
+		callback := func(env *v1.Environment) error {
+			env.Spec.TeamSettings.HelmTemplate = true
+			log.Info("Enabling helm template mode in the TeamSettings\n")
+			return nil
+		}
+		err = options.ModifyDevEnvironment(callback)
+		if err != nil {
+			return err
+		}
+		initOpts.helm = nil
+	}
+
+	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
+		err = restartLocalTiller()
+		if err != nil {
+			return err
+		}
+		initOpts.helm = options.helm
+	}
+
+	err = initOpts.Run()
+	if err != nil {
+		return errors.Wrap(err, "failed to initialize the jx")
+	}
+
+	if initOpts.Flags.Domain != "" && options.Flags.Domain == "" {
+		options.Flags.Domain = initOpts.Flags.Domain
+	}
+
+	return nil
+}
+
 func (options *InstallOptions) configureHelm3(namespace string) error {
 	initOpts := &options.InitOptions
 	helmBinary := initOpts.HelmBinary()
@@ -1476,6 +1483,20 @@ func (options *InstallOptions) setMinikubeFromContext() error {
 	if currentContext == "minikube" {
 		if options.Flags.Provider == "" {
 			options.Flags.Provider = MINIKUBE
+		}
+	}
+	return nil
+}
+
+func (options *InstallOptions) registerAllCRDs() error {
+	if !options.GitOpsMode {
+		apisClient, err := options.CreateApiExtensionsClient()
+		if err != nil {
+			return errors.Wrap(err, "failed to create the API extensions client")
+		}
+		kube.RegisterAllCRDs(apisClient)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
