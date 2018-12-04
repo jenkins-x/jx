@@ -12,11 +12,11 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	randomdata "github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
 
-	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/jenkins-x/jx/pkg/addon"
@@ -35,9 +35,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"gopkg.in/src-d/go-git.v4"
+	git "gopkg.in/src-d/go-git.v4"
 	core_v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -424,35 +424,7 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
-	if options.Flags.Provider == EKS {
-		var deps []string
-		d := binaryShouldBeInstalled("eksctl")
-		if d != "" {
-			deps = append(deps, d)
-		}
-		d = binaryShouldBeInstalled("heptio-authenticator-aws")
-		if d != "" {
-			deps = append(deps, d)
-		}
-		err := options.installMissingDependencies(deps)
-		if err != nil {
-			log.Errorf("%v\nPlease fix the error or install manually then try again", err)
-			os.Exit(-1)
-		}
-	}
-
-	if options.Flags.Provider == AKS {
-		var deps []string
-		d := binaryShouldBeInstalled("az")
-		if d != "" {
-			deps = append(deps, d)
-		}
-		err := options.installMissingDependencies(deps)
-		if err != nil {
-			log.Errorf("%v\nPlease fix the error or install manually then try again", err)
-			os.Exit(-1)
-		}
-	}
+	options.installCloudProviderDependencies()
 
 	initOpts := &options.InitOptions
 	helmBinary := initOpts.HelmBinary()
@@ -1459,6 +1431,38 @@ func (options *InstallOptions) Run() error {
 	log.Infof("To create a new Spring Boot microservice:       %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
 	log.Infof("To create a new microservice from a quickstart: %s\n", util.ColorInfo("jx create quickstart"))
 	return nil
+}
+
+func (options *InstallOptions) installCloudProviderDependencies() {
+	if options.Flags.Provider == EKS {
+		var deps []string
+		d := binaryShouldBeInstalled("eksctl")
+		if d != "" {
+			deps = append(deps, d)
+		}
+		d = binaryShouldBeInstalled("heptio-authenticator-aws")
+		if d != "" {
+			deps = append(deps, d)
+		}
+		err := options.installMissingDependencies(deps)
+		if err != nil {
+			log.Errorf("%v\nPlease fix the error or install manually then try again", err)
+			os.Exit(-1)
+		}
+	}
+
+	if options.Flags.Provider == AKS {
+		var deps []string
+		d := binaryShouldBeInstalled("az")
+		if d != "" {
+			deps = append(deps, d)
+		}
+		err := options.installMissingDependencies(deps)
+		if err != nil {
+			log.Errorf("%v\nPlease fix the error or install manually then try again", err)
+			os.Exit(-1)
+		}
+	}
 }
 
 func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string) error {
