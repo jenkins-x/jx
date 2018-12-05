@@ -1,16 +1,20 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"
+	configio "github.com/jenkins-x/jx/pkg/io"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -144,7 +148,15 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	o.Helm().SetCWD(dir)
 
-	// lets discover any local value files
+	secretsFileExists, err := o.ensureHelmSecrets(dir, helm.SecretsFileName)
+	if err != nil {
+		return errors.Wrap(err, "ensuring helm secrets file")
+	}
+	if !secretsFileExists {
+		// Destroy the secrets temporary file that contain sensitive information
+		defer util.DestroyFile(filepath.Join(dir, helm.SecretsFileName))
+	}
+
 	valueFiles := []string{}
 	for _, name := range defaultValueFileNames {
 		file := filepath.Join(dir, name)
@@ -163,7 +175,50 @@ func (o *StepHelmApplyOptions) Run() error {
 		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, nil, o.Force, false, nil, valueFiles, "")
 	}
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "upgrading helm chart '%s'", chartName)
 	}
 	return nil
+}
+
+// ensureHelmSecrets ensures that the provided filename exists. If it does not, it will automatically create it and
+// populate it with secrets from the system vault. If the file exists, it naively assumes it is populated and won't
+// do any checks.
+// Returns true if the file already existed.
+func (o *StepHelmApplyOptions) ensureHelmSecrets(dir string, filename string) (bool, error) {
+	exists, err := util.FileExists(filename)
+	if err != nil {
+		return false, errors.Wrapf(err, "checking file '%s' exits", filename)
+	}
+	// The secrets file does not exist. Populate its values from the system vault
+	if !exists {
+		if !o.Factory.UseVault() {
+			return exists, fmt.Errorf("no Vault found and no file '%s' exists in directory '%s'", filename, dir)
+		}
+		client, err := o.Factory.GetSystemVaultClient()
+		if err != nil {
+			return exists, errors.Wrap(err, "retrieving the system Vault")
+		}
+		secretNames, err := client.List(vault.InstallSecretsPrefix)
+		if err != nil {
+			return exists, errors.Wrap(err, "listing the install secrets in Vault")
+		}
+
+		for _, secretName := range secretNames {
+			if secretName == filename {
+				secretPath := vault.InstallSecretsPrefix + filename
+				secret, err := client.Read(secretPath)
+				if err != nil {
+					return exists, errors.Wrapf(err, "retrieving the secret '%s' from Vault", secretPath)
+				}
+				storage := configio.NewFileStore()
+				secretsFile := filepath.Join(dir, filename)
+				err = storage.WriteObject(secretsFile, secret)
+				if err != nil {
+					return exists, errors.Wrapf(err, "saving the helm secrets in file '%s'", secretsFile)
+				}
+				break
+			}
+		}
+	}
+	return exists, nil
 }

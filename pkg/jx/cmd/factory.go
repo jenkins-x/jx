@@ -10,7 +10,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/vault"
-	"github.com/sirupsen/logrus"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube/services"
@@ -26,7 +25,6 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
-	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -289,25 +287,25 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 // CreateAuthConfigService creates a new service saving auth config under the provided name. Depending on the factory,
 // It will either save the config to the local file-system, or a Vault
 func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService, error) {
-	client, namespace, err := f.CreateKubeClient()
-	if f.secretLocation == nil {
-		f.secretLocation = secrets.NewSecretLocation(client, namespace)
-	}
-
-	useVault := false
-	if err != nil {
-		logrus.Errorf("Could not create kube client. Saving configs to local filesystem")
-	} else {
-		useVault = f.secretLocation.InVault()
-	}
-
-	if useVault {
+	if f.UseVault() {
 		vaultClient, err := f.GetSystemVaultClient()
 		authService := auth.NewVaultAuthConfigService(configName, vaultClient)
 		return authService, err
 	} else {
 		return auth.NewFileAuthConfigService(configName)
 	}
+}
+
+// UseVault idicates if the platform is using a Vault to manage the secrets
+func (f *factory) UseVault() bool {
+	client, namespace, err := f.CreateClient()
+	if err != nil {
+		return false
+	}
+	if f.secretLocation == nil {
+		f.secretLocation = secrets.NewSecretLocation(client, namespace)
+	}
+	return f.secretLocation.InVault()
 }
 
 // GetSystemVaultClient gets the system vault client for managing the secrets
