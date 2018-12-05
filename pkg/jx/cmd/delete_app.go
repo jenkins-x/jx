@@ -24,7 +24,7 @@ import (
 
 var (
 	deleteAppLong = templates.LongDesc(`
-		Deletes one or more Applications from Jenkins
+		Deletes one or more Applications
 
 		Note that this command does not remove the underlying Git Repositories. 
 
