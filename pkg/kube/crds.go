@@ -46,6 +46,10 @@ func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to register the App CRD")
 	}
+	err = RegisterPluginCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Plugin CRD")
+	}
 	err = RegisterEnvironmentRoleBindingCRD(apiClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Environment Role Binding CRD")
