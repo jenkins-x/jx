@@ -1598,7 +1598,10 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			log.Infof("System vault created named %s in namespace %s.\n",
 				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(namespace))
 		}
-		secrets.NewSecretLocation(client, namespace).SetInVault(options.Flags.Vault)
+		err = secrets.NewSecretLocation(client, namespace).SetInVault(options.Flags.Vault)
+		if err != nil {
+			return errors.Wrap(err, "configuring secrets location")
+		}
 	}
 	return nil
 }
