@@ -33,7 +33,8 @@ import (
 type ControllerBuildOptions struct {
 	ControllerOptions
 
-	Namespace string
+	Namespace          string
+	InitGitCredentials bool
 
 	EnvironmentCache *kube.EnvironmentNamespaceCache
 }
@@ -65,6 +66,7 @@ func NewCmdControllerBuild(f Factory, in terminal.FileReader, out terminal.FileW
 	}
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to watch or defaults to the current namespace")
+	cmd.Flags().BoolVarP(&options.InitGitCredentials, "git-credentials", "", false, "If enable then lets run the 'jx step git credentials' step to initialise git credentials")
 	return cmd
 }
 
@@ -95,6 +97,19 @@ func (o *ControllerBuildOptions) Run() error {
 	}
 
 	o.EnvironmentCache = kube.CreateEnvironmentCache(jxClient, ns)
+
+
+	if o.InitGitCredentials {
+		gc := &StepGitCredentialsOptions{}
+		gc.CommonOptions = o.CommonOptions
+		gc.BatchMode = true
+		log.Info("running: jx step git credentials\n")
+		err = gc.Run()
+		if err != nil {
+		  return err
+		}
+	}
+
 
 	pod := &corev1.Pod{}
 	log.Infof("Watching for Knative build pods in namespace %s\n", util.ColorInfo(ns))
@@ -283,7 +298,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 
 			envName := kube.LabelValueDevEnvironment
 			devEnv := o.EnvironmentCache.Item(envName)
-			var location  *v1.StorageLocation
+			var location *v1.StorageLocation
 			if devEnv == nil {
 				log.Warnf("No Environment %s found\n", envName)
 			} else {
@@ -320,7 +335,7 @@ func generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activ
 	}
 
 	//log.Infof("got build log for pod: %s PipelineActivity: %s with bytes: %d\n", pod.Name, activity.Name, len(data))
-	
+
 	sourceURL := location.GitURL
 	if sourceURL == "" {
 		// TODO handle http URLs too

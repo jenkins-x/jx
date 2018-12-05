@@ -124,6 +124,15 @@ func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServ
 		return name, fmt.Errorf("Failed to %s secret %s due to %s", operation, secret.Name, err)
 	}
 
+	prow, err := o.isProw()
+	if err != nil {
+		return name, err
+	}
+	if prow {
+		return name, nil
+	}
+
+	// update the Jenkins config
 	cm, err := client.CoreV1().ConfigMaps(ns).Get(kube.ConfigMapJenkinsX, metav1.GetOptions{})
 	if err != nil {
 		return name, fmt.Errorf("Could not load Jenkins ConfigMap: %s", err)

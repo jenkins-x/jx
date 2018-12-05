@@ -714,6 +714,13 @@ func (options *InstallOptions) Run() error {
 	if domain != "" && addon.IsAddonEnabled("gitea") {
 		helmConfig.Jenkins.Servers.GetOrCreateFirstGitea().Url = "http://gitea-gitea." + ns + "." + domain
 	}
+	if options.Flags.Prow {
+		t := true
+		f := false
+		helmConfig.ControllerBuild.Enabled = &t
+		helmConfig.Jenkins.Enabled = &f
+	}
+
 	dockerRegistry, err := options.dockerRegistryValue()
 	if err != nil {
 		return errors.Wrap(err, "failed to get the docker registry value")

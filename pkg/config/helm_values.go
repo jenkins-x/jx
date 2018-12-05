@@ -55,11 +55,17 @@ type JenkinsPipelineSecretsValuesConfig struct {
 	DockerConfig string `yaml:"DockerConfig,flow,omitempty"`
 }
 
+// ControllerBuildConfig to configure the build controller
+type ControllerBuildConfig struct {
+	Enabled *bool `yaml:"enabled,omitempty"`
+}
+
 type HelmValuesConfig struct {
 	ExposeController *ExposeController                  `yaml:"expose,omitempty"`
 	Jenkins          JenkinsValuesConfig                `yaml:"jenkins,omitempty"`
 	Prow             ProwValuesConfig                   `yaml:"prow,omitempty"`
 	PipelineSecrets  JenkinsPipelineSecretsValuesConfig `yaml:"PipelineSecrets,omitempty"`
+	ControllerBuild  ControllerBuildConfig              `yaml:"controllerbuild,omitempty"`
 }
 
 type HelmValuesConfigService struct {
