@@ -794,7 +794,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 
 		err = util.DestroyFile(secretsFile)
 		if err != nil {
-			return errors.Wrapf(err, "destrying the secrets file '%s' after storing it in Vault", secretsFile)
+			return errors.Wrapf(err, "destroying the secrets file '%s' after storing it in Vault", secretsFile)
 		}
 	}
 
@@ -1010,7 +1010,7 @@ func (options *InstallOptions) getHelmValuesFiles(configStore configio.ConfigSto
 
 	err = options.modifySecrets(helmConfig, adminSecrets, gitSecrets)
 	if err != nil {
-		return valuesFiles, temporaryFiles, secretsFiles, err
+		return valuesFiles, temporaryFiles, secretsFiles, errors.Wrap(err, "updating the secrets data in Kubernetes cluster")
 	}
 
 	valuesFiles = append(valuesFiles, cloudEnvironmentValuesLocation)
