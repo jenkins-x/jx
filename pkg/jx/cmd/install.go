@@ -978,33 +978,33 @@ func (options *InstallOptions) getHelmValuesFiles(configStore configio.ConfigSto
 	gitSecrets, err := options.getGitSecrets()
 	if err != nil {
 		return valuesFiles, secretsFiles, temporaryFiles,
-			errors.Wrap(err, "failed to read the git secrets from configuration")
+			errors.Wrap(err, "reading the git secrets from configuration")
 	}
 
 	dir, err := util.ConfigDir()
 	if err != nil {
 		return valuesFiles, secretsFiles, temporaryFiles,
-			errors.Wrap(err, "failed to create a temporary config dir for Git credentials")
+			errors.Wrap(err, "creating a temporary config dir for Git credentials")
 	}
 	gitSecretsFileName := filepath.Join(dir, GitSecretsFile)
 	err = configStore.Write(gitSecretsFileName, []byte(gitSecrets))
 	if err != nil {
 		return valuesFiles, secretsFiles, temporaryFiles,
-			errors.Wrap(err, "failed to write the git secrets in the secrets file")
+			errors.Wrapf(err, "writing the git secrets in the secrets file '%s'", gitSecretsFileName)
 	}
 
 	adminSecretsFileName := filepath.Join(dir, AdminSecretsFile)
 	err = configStore.WriteObject(adminSecretsFileName, adminSecrets)
 	if err != nil {
 		return valuesFiles, secretsFiles, temporaryFiles,
-			errors.Wrap(err, "failed to write the admin config file")
+			errors.Wrapf(err, "writing the admin secrets in the secrets file '%s'", adminSecretsFileName)
 	}
 
 	extraValuesFileName := filepath.Join(dir, ExtraValuesFile)
 	err = configStore.WriteObject(extraValuesFileName, helmConfig)
 	if err != nil {
 		return valuesFiles, secretsFiles, temporaryFiles,
-			errors.Wrap(err, "failed to write the helm config file")
+			errors.Wrapf(err, "writing the helm config in the file '%s'", extraValuesFileName)
 	}
 	log.Infof("Generated helm values %s\n", util.ColorInfo(extraValuesFileName))
 
