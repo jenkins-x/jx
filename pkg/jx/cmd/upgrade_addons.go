@@ -125,7 +125,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 
 	for _, k := range keys {
 		chart := charts[k]
-		status := statusMap[k]
+		status := statusMap[k].Status
 		name := k
 		if name == k {
 			name = "kube-cd"

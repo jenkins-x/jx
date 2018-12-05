@@ -25,11 +25,18 @@ type Helmer interface {
 	FindChart() (string, error)
 	PackageChart() error
 	StatusRelease(ns string, releaseName string) error
-	StatusReleases(ns string) (map[string]string, error)
+	StatusReleases(ns string) (map[string]Release, error)
 	Lint() (string, error)
 	Version(tls bool) (string, error)
 	SearchCharts(filter string) ([]ChartSummary, error)
 	SetHost(host string)
 	Env() map[string]string
 	DecryptSecrets(location string) error
+}
+
+// Release defines a struct to store details about a helm release
+type Release struct {
+	Release string
+	Status  string
+	Version string
 }

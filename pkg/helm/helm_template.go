@@ -455,8 +455,8 @@ func (h *HelmTemplate) StatusRelease(ns string, releaseName string) error {
 }
 
 // StatusReleases returns the status of all installed releases
-func (h *HelmTemplate) StatusReleases(ns string) (map[string]string, error) {
-	statusMap := map[string]string{}
+func (h *HelmTemplate) StatusReleases(ns string) (map[string]Release, error) {
+	statusMap := map[string]Release{}
 	if h.KubeClient == nil {
 		return statusMap, fmt.Errorf("No KubeClient configured!")
 	}
@@ -467,9 +467,15 @@ func (h *HelmTemplate) StatusReleases(ns string) (map[string]string, error) {
 	for _, deploy := range deployList.Items {
 		labels := deploy.Labels
 		if labels != nil {
-			release := labels[LabelReleaseName]
-			if release != "" {
-				statusMap[release] = "DEPLOYED"
+			releaseName := labels[LabelReleaseName]
+			release := Release{
+				Release: releaseName,
+				Status: "DEPLOYED",
+				Version: "",
+			}
+
+			if releaseName != "" {
+				statusMap[releaseName] = release
 			}
 		}
 	}

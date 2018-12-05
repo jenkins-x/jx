@@ -424,19 +424,29 @@ func (h *HelmCLI) StatusRelease(ns string, releaseName string) error {
 }
 
 // StatusReleases returns the status of all installed releases
-func (h *HelmCLI) StatusReleases(ns string) (map[string]string, error) {
+func (h *HelmCLI) StatusReleases(ns string) (map[string]Release, error) {
 	output, err := h.ListCharts()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list the installed chart releases")
 	}
 	lines := strings.Split(output, "\n")
-	statusMap := map[string]string{}
+	statusMap := map[string]Release{}
 	for _, line := range lines[1:] {
 		fields := strings.Split(line, "\t")
 		if len(fields) > 3 {
 			release := strings.TrimSpace(fields[0])
-			status := strings.TrimSpace(fields[3])
-			statusMap[release] = status
+
+			versionRaw := strings.TrimSpace(fields[4])
+			versionRawSplit := strings.Split(versionRaw, "-")
+			version := versionRawSplit[len(versionRawSplit)-1]
+
+			helmRelease := Release{
+				Release: strings.TrimSpace(fields[0]),
+				Status:  strings.TrimSpace(fields[3]),
+				Version: version,
+			}
+
+			statusMap[release] = helmRelease
 		}
 	}
 	return statusMap, nil
