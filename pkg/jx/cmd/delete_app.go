@@ -122,7 +122,19 @@ func (o *DeleteAppOptions) Run() error {
 }
 
 func (o *DeleteAppOptions) deleteProwApp() (string, error) {
+	envMap, _, err := kube.GetOrderedEnvironments(o.jxClient, "")
+	currentUser, err := user.Current()
+	if err != nil {
+		return "", errors.Wrap(err, "getting current user")
+	}
+	for _, appName := range o.Args {
 
+		for n, env := range envMap {
+			fmt.Println("n is " + n)
+			err = o.deleteAppFromEnvironment(env, appName, currentUser.Username)
+			fmt.Println(err)
+		}
+	}
 	return "foo", nil
 }
 
