@@ -1,14 +1,15 @@
 package vault_test
 
 import (
-	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
-	"github.com/jenkins-x/jx/pkg/vault"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
+	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetConfigData(t *testing.T) {
-	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, nil)
+	vaultOperatorClient, factory, kubeClient, err := setupMocks(t, nil)
 
 	vaultName, namespace := "myVault", "myVaultNamespace"
 	createMockedVault(vaultName, namespace, "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
@@ -23,7 +24,7 @@ func TestGetConfigData(t *testing.T) {
 }
 
 func TestGetConfigData_DefaultNamespacesUsed(t *testing.T) {
-	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, nil)
+	vaultOperatorClient, factory, kubeClient, err := setupMocks(t, nil)
 
 	vaultName, namespace := "myVault", "jx" // "jx" is the default namespace used by the kubeClient
 	createMockedVault(vaultName, namespace, "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
@@ -38,7 +39,7 @@ func TestGetConfigData_DefaultNamespacesUsed(t *testing.T) {
 }
 
 func TestGetConfigData_ErrorsWhenNoVaultsInNamespace(t *testing.T) {
-	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, nil)
+	vaultOperatorClient, factory, kubeClient, err := setupMocks(t, nil)
 
 	vaultName, namespace := "myVault", "myVaultNamespace"
 	createMockedVault(vaultName, namespace, "foo.bar", "myJWT", vaultOperatorClient, kubeClient)
@@ -54,7 +55,7 @@ func TestGetConfigData_ErrorsWhenNoVaultsInNamespace(t *testing.T) {
 
 func TestGetConfigData_ConfigUsedFromVaultSelector(t *testing.T) {
 	// Two vaults are configured in the same namespace, the user specifies one with the -m flag
-	vaultOperatorClient, factory, err, kubeClient := setupMocks(t, nil)
+	vaultOperatorClient, factory, kubeClient, err := setupMocks(t, nil)
 
 	namespace := "myVaultNamespace"
 	_ = createMockedVault("vault1", namespace, "one.ah.ah.ah", "count", vaultOperatorClient, kubeClient)
@@ -78,8 +79,8 @@ type PredefinedVaultSelector struct {
 	url           string
 }
 
-func (p PredefinedVaultSelector) GetVault(name string, namespaces string) (*vault.Vault, error) {
-	return &vault.Vault{
+func (p PredefinedVaultSelector) GetVault(name string, namespaces string) (*kubevault.Vault, error) {
+	return &kubevault.Vault{
 		Name:                   p.vaultToReturn.Name,
 		Namespace:              p.vaultToReturn.Namespace,
 		AuthServiceAccountName: p.vaultToReturn.Name + "-auth-sa",

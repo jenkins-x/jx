@@ -1,11 +1,13 @@
 package cmd
 
 import (
+	"io"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
 )
 
 type GetSecretOptions struct {
@@ -69,13 +71,19 @@ func NewCmdGetSecret(f Factory, in terminal.FileReader, out terminal.FileWriter,
 
 // Run implements the command
 func (o *GetSecretOptions) Run() error {
-	v, err := vault.NewVaulter(o)
-	if err != nil {
-		return err
+	var vaultClient vault.Client
+	var err error
+	if o.Name != "" && o.Namespace != "" {
+		vaultClient, err = o.Factory.GetVaultClient(o.Name, o.Namespace)
+	} else {
+		vaultClient, err = o.Factory.GetSystemVaultClient()
 	}
-	secrets, err := v.Secrets()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "retrieving the vault client")
+	}
+	secrets, err := vaultClient.List("")
+	if err != nil {
+		return errors.Wrap(err, "listing all secrets in vault")
 	}
 
 	table := o.CreateTable()

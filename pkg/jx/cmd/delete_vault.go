@@ -9,15 +9,16 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
+	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/vault"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// DeleteVaultOptions keeps the options of delete vault command
 type DeleteVaultOptions struct {
 	CommonOptions
 
@@ -38,6 +39,7 @@ var (
 	`)
 )
 
+// NewCmdDeleteVault builds a new delete vault command
 func NewCmdDeleteVault(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteVaultOptions{
 		CommonOptions: CommonOptions{
@@ -68,6 +70,7 @@ func NewCmdDeleteVault(f Factory, in terminal.FileReader, out terminal.FileWrite
 	return cmd
 }
 
+// Run implements the delete vault command
 func (o *DeleteVaultOptions) Run() error {
 	if len(o.Args) != 1 {
 		return fmt.Errorf("Missing vault name")
@@ -92,12 +95,12 @@ func (o *DeleteVaultOptions) Run() error {
 		return errors.Wrap(err, "creating vault operator client")
 	}
 
-	v, err := vault.GetVault(vaultOperatorClient, vaultName, o.Namespace)
+	v, err := kubevault.GetVault(vaultOperatorClient, vaultName, o.Namespace)
 	if err != nil {
 		return fmt.Errorf("vault '%s' not found in namespace '%s'", vaultName, o.Namespace)
 	}
 
-	err = vault.DeleteVault(vaultOperatorClient, vaultName, o.Namespace)
+	err = kubevault.DeleteVault(vaultOperatorClient, vaultName, o.Namespace)
 	if err != nil {
 		return errors.Wrap(err, "deleting the vault resource")
 	}
@@ -107,13 +110,13 @@ func (o *DeleteVaultOptions) Run() error {
 		return errors.Wrapf(err, "deleting the vault ingress '%s'", vaultName)
 	}
 
-	authServiceAccountName := vault.GetAuthSaName(*v)
+	authServiceAccountName := kubevault.GetAuthSaName(*v)
 	err = serviceaccount.DeleteServiceAccount(client, o.Namespace, authServiceAccountName)
 	if err != nil {
 		return errors.Wrapf(err, "deleting the vault auth service account '%s'", authServiceAccountName)
 	}
 
-	gcpServiceAccountSecretName := vault.VaultGcpServiceAccountSecretName(vaultName, clusterName)
+	gcpServiceAccountSecretName := gkevault.GcpServiceAccountSecretName(vaultName, clusterName)
 	err = client.CoreV1().Secrets(o.Namespace).Delete(gcpServiceAccountSecretName, &metav1.DeleteOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "deleting secret '%s' where GCP service account is stored", gcpServiceAccountSecretName)

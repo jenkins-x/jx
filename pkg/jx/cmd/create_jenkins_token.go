@@ -8,7 +8,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -354,7 +353,7 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, n
 	if err != nil {
 		return errors.Wrap(err, "creating the chrome user data dir")
 	}
-	defer os.RemoveAll(userDataDir)
+	defer util.DestroyFile(userDataDir)
 	netLogFile := filepath.Join(userDataDir, "net-logs.json")
 
 	c, err := o.createChromeClientWithNetLog(ctx, userDataDir, netLogFile)

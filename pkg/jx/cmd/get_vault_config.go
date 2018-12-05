@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/vault"
-	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
 	"runtime"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 type GetVaultConfigOptions struct {
@@ -73,12 +73,15 @@ func NewCmdGetVaultConfig(f Factory, in terminal.FileReader, out terminal.FileWr
 
 // Run implements the command
 func (o *GetVaultConfigOptions) Run() error {
-	client, err := vault.NewVaulter(o)
+	vaultClient, err := o.Factory.GetVaultClient(o.Name, o.Namespace) // Will use defaults if empty strings specified
 	if err != nil {
 		return err
 	}
 
-	url, token, err := client.Config()
+	// Install the vault CLI for the user
+	o.installVaultCli()
+
+	url, token, err := vaultClient.Config()
 	// Echo the client config out to the command line to be piped into bash
 	if o.terminal == "" {
 		if runtime.GOOS == "windows" {

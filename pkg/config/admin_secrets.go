@@ -121,14 +121,6 @@ func (s *AdminSecretsService) AddAdminSecretsValues(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&s.Flags.DefaultAdminPassword, "default-admin-password", "", "", "the default admin password to access Jenkins, Kubernetes Dashboard, Chartmuseum and Nexus")
 }
 
-func (c AdminSecretsConfig) String() (string, error) {
-	b, err := yaml.Marshal(c)
-	if err != nil {
-		return "", fmt.Errorf("failed to marshall helm values %v", err)
-	}
-	return string(b), nil
-}
-
 func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 	s.Secrets = AdminSecretsConfig{
 		ChartMuseum:     &ChartMuseum{},

@@ -1,15 +1,16 @@
 package vault
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
+
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
-	"github.com/jenkins-x/jx/pkg/vault"
 	"github.com/pkg/errors"
-	"io/ioutil"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"os"
 )
 
 const (
@@ -23,6 +24,7 @@ var (
 	}
 )
 
+// KmsConfig keeps the configuration for Google KMS service
 type KmsConfig struct {
 	Keyring  string
 	Key      string
@@ -110,13 +112,18 @@ func CreateAuthServiceAccount(client kubernetes.Interface, vaultName, namespace,
 	return serviceAccountName, nil
 }
 
+// GcpServiceAccountSecretName builds the secret name where the GCP service account is stored
+func GcpServiceAccountSecretName(vaultName string, clusterName string) string {
+	return fmt.Sprintf("%s-%s-gcp-sa", clusterName, vaultName)
+}
+
 func storeGCPServiceAccountIntoSecret(client kubernetes.Interface, serviceAccountPath, vaultName, namespace, clusterName string) (string, error) {
 	serviceAccount, err := ioutil.ReadFile(serviceAccountPath)
 	if err != nil {
 		return "", errors.Wrapf(err, "reading the service account from file '%s'", serviceAccountPath)
 	}
 
-	secretName := vault.VaultGcpServiceAccountSecretName(vaultName, clusterName)
+	secretName := GcpServiceAccountSecretName(vaultName, clusterName)
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: secretName,

@@ -57,6 +57,7 @@ func NewCmdEdit(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 	cmd.AddCommand(NewCmdEditConfig(f, in, out, errOut))
 	cmd.AddCommand(NewCmdEditEnv(f, in, out, errOut))
 	cmd.AddCommand(NewCmdEditHelmBin(f, in, out, errOut))
+	cmd.AddCommand(NewCmdEditStorage(f, in, out, errOut))
 	cmd.AddCommand(NewCmdEditUserRole(f, in, out, errOut))
 	cmd.AddCommand(NewCmdEditExtensionsRepository(f, in, out, errOut))
 	addTeamSettingsCommandsFromTags(cmd, in, out, errOut, options)

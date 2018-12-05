@@ -194,7 +194,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 				if err != nil {
 					return err
 				}
-				resolvedTag, err := util.GetLatestTagFromGitHub(repoInfo.Organisation, repoInfo.Name)
+				resolvedTag, err := util.GetLatestReleaseFromGitHub(repoInfo.Organisation, repoInfo.Name)
 				if err != nil {
 					return err
 				}

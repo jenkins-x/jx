@@ -15,6 +15,7 @@ import (
 	gkevault "github.com/jenkins-x/jx/pkg/cloud/gke/vault"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/vault"
@@ -149,7 +150,7 @@ func (o *CreateVaultOptions) createVault(vaultOperatorClient versioned.Interface
 		return err
 	}
 	// Checks if the vault already exists
-	found := vault.FindVault(vaultOperatorClient, vaultName, o.Namespace)
+	found := kubevault.FindVault(vaultOperatorClient, vaultName, o.Namespace)
 	if found {
 		return fmt.Errorf("Vault with name '%s' already exists in namespace '%s'", vaultName, o.Namespace)
 	}
@@ -213,14 +214,14 @@ func (o *CreateVaultOptions) createVault(vaultOperatorClient versioned.Interface
 	log.Infof("Created service account %s for Vault authentication\n", util.ColorInfo(vaultAuthServiceAccount))
 
 	log.Infof("Creating Vault...\n")
-	gcpConfig := &vault.GCPConfig{
+	gcpConfig := &kubevault.GCPConfig{
 		ProjectId:   o.GKEProjectID,
 		KmsKeyring:  kmsConfig.Keyring,
 		KmsKey:      kmsConfig.Key,
 		KmsLocation: kmsConfig.Location,
 		GcsBucket:   vaultBucket,
 	}
-	err = vault.CreateVault(kubeClient, vaultOperatorClient, vaultName, o.Namespace, gcpServiceAccountSecretName,
+	err = kubevault.CreateVault(kubeClient, vaultOperatorClient, vaultName, o.Namespace, gcpServiceAccountSecretName,
 		gcpConfig, vaultAuthServiceAccount, o.Namespace, o.SecretsPathPrefix)
 	if err != nil {
 		return errors.Wrap(err, "creating vault")
