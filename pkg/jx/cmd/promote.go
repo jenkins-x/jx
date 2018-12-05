@@ -259,6 +259,17 @@ func (o *PromoteOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
+	prow, err := o.isProw()
+	if err != nil {
+		return err
+	}
+	if prow {
+		log.Warn("prow based install so skip waiting for promotion as currently there is an issue with getting" +
+			"statuses from the PR, see https://github.com/jenkins-x/jx/issues/2410")
+		o.NoPoll = true
+	}
+
 	o.ReleaseInfo = releaseInfo
 	if !o.NoPoll {
 		err = o.WaitForPromotion(targetNS, env, releaseInfo)
