@@ -956,6 +956,8 @@ func (options *InstallOptions) configureHelmValues(namespace string) error {
 	if isProw {
 		enableJenkins := false
 		helmConfig.Jenkins.Enabled = &enableJenkins
+		enableControllerBuild := true
+		helmConfig.ControllerBuild.Enabled = &enableControllerBuild
 	}
 
 	return nil
