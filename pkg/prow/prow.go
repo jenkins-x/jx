@@ -241,9 +241,12 @@ func (o *Options) addRepoToBranchProtection(bp *config.BranchProtection, repoSpe
 	requiredOrg := s[0]
 	requiredRepo := s[1]
 	if _, ok := bp.Orgs[requiredOrg]; !ok {
-		bp.Orgs[requiredOrg] = config.Org{
-			Repos: make(map[string]config.Repo, 0),
-		}
+		bp.Orgs[requiredOrg] = config.Org{}
+	}
+	if bp.Orgs[requiredOrg].Repos == nil {
+		org := bp.Orgs[requiredOrg]
+		org.Repos = make(map[string]config.Repo, 0)
+		bp.Orgs[requiredOrg] = org
 	}
 	if _, ok := bp.Orgs[requiredOrg].Repos[requiredRepo]; !ok {
 		bp.Orgs[requiredOrg].Repos[requiredRepo] = config.Repo{
