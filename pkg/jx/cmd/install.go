@@ -773,17 +773,17 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 	valuesFile := filepath.Join(gitOpsEnvDir, helm.ValuesFileName)
 	err := helm.SaveRequirementsFile(requirementsFile, requirements)
 	if err != nil {
-		return errors.Wrapf(err, "Failed to save GitOps helm requirements file %s", requirementsFile)
+		return errors.Wrapf(err, "failed to save GitOps helm requirements file %s", requirementsFile)
 	}
 
 	err = configStore.Write(chartFile, []byte(GitOpsChartYAML))
 	if err != nil {
-		return errors.Wrapf(err, "Failed to save file %s", chartFile)
+		return errors.Wrapf(err, "failed to save file %s", chartFile)
 	}
 
 	err = helm.CombineValueFilesToFile(secretsFile, secretsFiles, JenkinsXPlatformChartName, nil)
 	if err != nil {
-		return errors.Wrapf(err, "Failed to generate %s by combining helm Secret YAML files %s", secretsFile, strings.Join(secretsFiles, ", "))
+		return errors.Wrapf(err, "failed to generate %s by combining helm Secret YAML files %s", secretsFile, strings.Join(secretsFiles, ", "))
 	}
 
 	if options.Flags.Vault {
@@ -803,7 +803,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 	}
 	err = helm.CombineValueFilesToFile(valuesFile, valuesFiles, JenkinsXPlatformChartName, extraValues)
 	if err != nil {
-		return errors.Wrapf(err, "Failed to generate %s by combining helm value YAML files %s", valuesFile, strings.Join(valuesFiles, ", "))
+		return errors.Wrapf(err, "failed to generate %s by combining helm value YAML files %s", valuesFile, strings.Join(valuesFiles, ", "))
 	}
 
 	gitIgnore := filepath.Join(gitOpsDir, ".gitignore")
