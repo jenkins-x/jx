@@ -109,6 +109,14 @@ func (o *ControllerBuildOptions) Run() error {
 		if err != nil {
 			return err
 		}
+
+		err := o.runCommandVerbose("git", "config", "--global", "credential.helper", "store")
+		if err != nil {
+			return err
+		}
+		if os.Getenv("XDG_CONFIG_HOME") == "" {
+			log.Warnf("Note that the environment variable $XDG_CONFIG_HOME is not defined so we may not be able to push to git!\n")
+		}
 	}
 
 	pod := &corev1.Pod{}
