@@ -184,14 +184,18 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		if settings == nil {
 			log.Errorf("No TeamSettings found!\n")
 		}
+
+		// lets default to no tiller as we can only support > 1 dev teams with no-tiller or helm3 today
+		// due to the globally unique naming of release in helm with a global tiller
+		o.InstallOptions.InitOptions.Flags.NoTiller = true
 		if err == nil && settings != nil {
-			if settings.HelmTemplate {
-				o.InstallOptions.InitOptions.Flags.NoTiller = true
-			} else if settings.NoTiller {
-				o.InstallOptions.InitOptions.Flags.RemoteTiller = false
-			} else if settings.HelmBinary == "helm3" {
+			if settings.HelmBinary == "helm3" {
 				o.InstallOptions.InitOptions.Flags.Helm3 = true
+				o.InstallOptions.InitOptions.Flags.NoTiller = false
 			}
+			if settings.NoTiller {
+				o.InstallOptions.InitOptions.Flags.RemoteTiller = false
+			} else
 			if settings.PromotionEngine == v1.PromotionEngineProw {
 				o.InstallOptions.Flags.Prow = true
 			}
