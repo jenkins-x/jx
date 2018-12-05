@@ -83,6 +83,17 @@ func (o *StepHelmApplyOptions) Run() error {
 	var err error
 	chartName := o.Dir
 	dir := o.Dir
+	releaseName := o.ReleaseName
+
+	// let allow arguments to be passed in like for `helm install releaseName dir`
+	args := o.Args
+	if releaseName == "" && len(args) > 0 {
+		releaseName = args[0]
+	}
+	if dir == "" && len(args) > 1 {
+		dir = args[1]
+	}
+
 	if dir == "" {
 		dir, err = os.Getwd()
 		if err != nil {
@@ -121,7 +132,6 @@ func (o *StepHelmApplyOptions) Run() error {
 		return err
 	}
 
-	releaseName := o.ReleaseName
 	if releaseName == "" {
 		releaseName = ns
 		if helmBinary != "helm" || noTiller || helmTemplate {
