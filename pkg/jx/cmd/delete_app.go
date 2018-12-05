@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"os/user"
 	"strings"
@@ -97,16 +98,45 @@ func NewCmdDeleteApp(f Factory, in terminal.FileReader, out terminal.FileWriter,
 
 // Run implements this command
 func (o *DeleteAppOptions) Run() error {
+	var err error
+	o.jxClient, _, err = o.Factory.CreateJXClient()
+	if err != nil {
+		return errors.Wrap(err, "getting jx client")
+	}
+	isProw, err := o.isProw()
+	if err != nil {
+		return err
+	}
+	var deletedApplications string
+	if isProw {
+		deletedApplications, err = o.deleteProwApp()
+	} else {
+		deletedApplications, err = o.deleteJenkinsApp()
+	}
+
+	if err != nil {
+		return errors.Wrapf(err, "deleting application")
+	}
+	log.Infof("Deleted Application(s): %s\n", util.ColorInfo(deletedApplications))
+	return nil
+}
+
+func (o *DeleteAppOptions) deleteProwApp() (string, error) {
+
+	return "foo", nil
+}
+
+func (o *DeleteAppOptions) deleteJenkinsApp() (string, error) {
 	args := o.Args
 
 	jenk, err := o.JenkinsClient()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	jobs, err := jenkins.LoadAllJenkinsJobs(jenk)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	names := []string{}
@@ -123,34 +153,34 @@ func (o *DeleteAppOptions) Run() error {
 	if o.PullRequestPollTime != "" {
 		duration, err := time.ParseDuration(o.PullRequestPollTime)
 		if err != nil {
-			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.PullRequestPollTime, optionPullRequestPollTime, err)
+			return "", fmt.Errorf("Invalid duration format %s for option --%s: %s", o.PullRequestPollTime, optionPullRequestPollTime, err)
 		}
 		o.PullRequestPollDuration = &duration
 	}
 	if o.Timeout != "" {
 		duration, err := time.ParseDuration(o.Timeout)
 		if err != nil {
-			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, optionTimeout, err)
+			return "", fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, optionTimeout, err)
 		}
 		o.TimeoutDuration = &duration
 	}
 
 	if len(names) == 0 {
-		return fmt.Errorf("There are no Apps in Jenkins")
+		return "", fmt.Errorf("There are no Apps in Jenkins")
 	}
 
 	if len(args) == 0 {
 		args, err = util.SelectNamesWithFilter(names, "Pick Applications to remove from Jenkins:", o.SelectAll, o.SelectFilter, "", o.In, o.Out, o.Err)
 		if err != nil {
-			return err
+			return "", err
 		}
 		if len(args) == 0 {
-			return fmt.Errorf("No application was picked to be removed from Jenkins")
+			return "", fmt.Errorf("No application was picked to be removed from Jenkins")
 		}
 	} else {
 		for _, arg := range args {
 			if util.StringArrayIndex(names, arg) < 0 {
-				return util.InvalidArg(arg, names)
+				return "", util.InvalidArg(arg, names)
 			}
 		}
 	}
@@ -158,7 +188,7 @@ func (o *DeleteAppOptions) Run() error {
 
 	if !o.BatchMode {
 		if !util.Confirm("You are about to delete these Applications from Jenkins: "+deleteMessage, false, "The list of Applications names to be deleted from Jenkins", o.In, o.Out, o.Err) {
-			return nil
+			return "", nil
 		}
 	}
 	for _, name := range args {
@@ -166,12 +196,11 @@ func (o *DeleteAppOptions) Run() error {
 		if job != nil {
 			err = o.deleteApp(jenk, name, job)
 			if err != nil {
-				return err
+				return "", err
 			}
 		}
 	}
-	log.Infof("Deleted Applications %s\n", util.ColorInfo(deleteMessage))
-	return nil
+	return deleteMessage, nil
 }
 
 func (o *DeleteAppOptions) deleteApp(jenkinsClient gojenkins.JenkinsClient, name string, job *gojenkins.Job) error {
