@@ -371,6 +371,9 @@ func (options *InstallOptions) Run() error {
 	originalGitServer := options.GitRepositoryOptions.ServerURL
 	originalGitToken := options.GitRepositoryOptions.ApiToken
 
+	// Default to verbose mode to get more information during the install
+	options.Verbose = true
+
 	client, originalNs, err := options.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "creating the kube client")
@@ -469,8 +472,6 @@ func (options *InstallOptions) Run() error {
 	}
 
 	log.Infof("Installing Jenkins X platform helm chart from: %s\n", providerEnvDir)
-
-	options.Verbose = true
 
 	err = options.configureHelmRepo()
 	if err != nil {
