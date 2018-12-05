@@ -132,8 +132,14 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 	}
 
 	err = modifyRequirementsFn(requirements)
+	if err != nil {
+		return answer, err
+	}
 
 	err = helm.SaveRequirementsFile(requirementsFile, requirements)
+	if err != nil {
+		return answer, err
+	}
 
 	err = o.Git().Add(dir, "*", "*/*")
 	if err != nil {
