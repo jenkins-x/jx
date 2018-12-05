@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/kube/services"
+	"github.com/jenkins-x/jx/pkg/table"
 	"io"
+	"k8s.io/client-go/kubernetes"
 	"os/user"
 	"sort"
 	"strings"
@@ -51,8 +53,8 @@ type EnvApps struct {
 type ApplicationEnvironmentInfo struct {
 	Deployment  *v1beta1.Deployment
 	Environment *v1.Environment
-	Version string
-	URL     string
+	Version     string
+	URL         string
 }
 
 var (
@@ -114,72 +116,16 @@ func NewCmdGetApplications(f Factory, in terminal.FileReader, out terminal.FileW
 
 // Run implements this command
 func (o *GetApplicationsOptions) Run() error {
-	f := o.Factory
-	client, currentNs, err := f.CreateJXClient()
-	if err != nil {
-		return err
-	}
 	kubeClient, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
-	u, err := user.Current()
-	if err != nil {
-		return err
-	}
-	ns, _, err := kube.GetDevNamespace(kubeClient, currentNs)
-	if err != nil {
-		return err
-	}
-	envList, err := client.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	kube.SortEnvironments(envList.Items)
 
-	namespaces := []string{}
-	envApps := []EnvApps{}
-	envNames := []string{}
-	apps := []string{}
-	for _, env := range envList.Items {
-		isPreview := env.Spec.Kind == v1.EnvironmentKindTypePreview
-		shouldShow := isPreview
-		if !o.Previews {
-			shouldShow = !shouldShow
-		}
-		if shouldShow &&
-			(o.Environment == "" || o.Environment == env.Name) &&
-			(o.Namespace == "" || o.Namespace == env.Spec.Namespace) {
-			ens := env.Spec.Namespace
-			namespaces = append(namespaces, ens)
-			if ens != "" && env.Name != kube.LabelValueDevEnvironment {
-				envNames = append(envNames, env.Name)
-				m, err := kube.GetDeployments(kubeClient, ens)
-				if err == nil {
-					envApp := EnvApps{
-						Environment: env,
-						Apps:        map[string]v1beta1.Deployment{},
-					}
-					envApps = append(envApps, envApp)
-					for k, d := range m {
-						appName := kube.GetAppName(k, ens)
-						if env.Spec.Kind == v1.EnvironmentKindTypeEdit {
-							if appName == kube.DeploymentExposecontrollerService || env.Spec.PreviewGitSpec.User.Username != u.Username {
-								continue
-							}
-							appName = kube.GetEditAppName(appName)
-						} else if env.Spec.Kind == v1.EnvironmentKindTypePreview {
-							appName = env.Spec.PullRequestURL
-						}
-						envApp.Apps[appName] = d
-						if util.StringArrayIndex(apps, appName) < 0 {
-							apps = append(apps, appName)
-						}
-					}
-				}
-			}
-		}
+	namespaces, envApps, envNames, apps, err := o.getAppData(kubeClient)
+	if err != nil {
+		return err
 	}
+
 	util.ReverseStrings(namespaces)
 	if len(apps) == 0 {
 		log.Infof("No applications found in environments %s\n", strings.Join(envNames, ", "))
@@ -190,31 +136,16 @@ func (o *GetApplicationsOptions) Run() error {
 	o.Results.EnvApps = envApps
 	o.Results.EnvNames = envNames
 
-	table := o.CreateTable()
-	title := "APPLICATION"
-	if o.Previews {
-		title = "PULL REQUESTS"
-	}
-	titles := []string{title}
-	for _, ea := range envApps {
-		envName := ea.Environment.Name
-		if ea.Environment.Spec.Kind == v1.EnvironmentKindTypeEdit {
-			envName = "Edit"
-		}
-		if ea.Environment.Spec.Kind != v1.EnvironmentKindTypePreview {
-			titles = append(titles, strings.ToUpper(envName))
-		}
-		if !o.HidePod {
-			titles = append(titles, "PODS")
-		}
-		if !o.HideUrl {
-			titles = append(titles, "URL")
-		}
-	}
-	table.AddRow(titles...)
+	table := o.generateTable(apps, envApps, kubeClient)
+
+	table.Render()
+	return nil
+}
+
+func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps, kubeClient kubernetes.Interface) table.Table {
+	table := o.generateTableHeaders(envApps)
 
 	appEnvMap := map[string]map[string]*ApplicationEnvironmentInfo{}
-
 	for _, appName := range apps {
 		row := []string{appName}
 		for _, ea := range envApps {
@@ -227,9 +158,9 @@ func (o *GetApplicationsOptions) Run() error {
 			}
 			version = kube.GetVersion(&d.ObjectMeta)
 			appEnvInfo := &ApplicationEnvironmentInfo{
-				Deployment: &d,
+				Deployment:  &d,
 				Environment: &ea.Environment,
-				Version:    version,
+				Version:     version,
 			}
 			appMap[ea.Environment.Name] = appEnvInfo
 			if ea.Environment.Spec.Kind != v1.EnvironmentKindTypePreview {
@@ -270,7 +201,95 @@ func (o *GetApplicationsOptions) Run() error {
 		table.AddRow(row...)
 	}
 	o.Results.Applications = appEnvMap
+	return table
+}
 
-	table.Render()
-	return nil
+func (o *GetApplicationsOptions) getAppData(kubeClient kubernetes.Interface) (namespaces []string, envApps []EnvApps, envNames, apps []string, err error) {
+	f := o.Factory
+	client, currentNs, err := f.CreateJXClient()
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	u, err := user.Current()
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	ns, _, err := kube.GetDevNamespace(kubeClient, currentNs)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	envList, err := client.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	kube.SortEnvironments(envList.Items)
+
+	namespaces, envNames, apps = []string{}, []string{}, []string{}
+	envApps = []EnvApps{}
+	for _, env := range envList.Items {
+		isPreview := env.Spec.Kind == v1.EnvironmentKindTypePreview
+		shouldShow := isPreview
+		if !o.Previews {
+			shouldShow = !shouldShow
+		}
+		if shouldShow &&
+			(o.Environment == "" || o.Environment == env.Name) &&
+			(o.Namespace == "" || o.Namespace == env.Spec.Namespace) {
+			ens := env.Spec.Namespace
+			namespaces = append(namespaces, ens)
+			if ens != "" && env.Name != kube.LabelValueDevEnvironment {
+				envNames = append(envNames, env.Name)
+				m, err := kube.GetDeployments(kubeClient, ens)
+				if err == nil {
+					envApp := EnvApps{
+						Environment: env,
+						Apps:        map[string]v1beta1.Deployment{},
+					}
+					envApps = append(envApps, envApp)
+					for k, d := range m {
+						appName := kube.GetAppName(k, ens)
+						if env.Spec.Kind == v1.EnvironmentKindTypeEdit {
+							if appName == kube.DeploymentExposecontrollerService || env.Spec.PreviewGitSpec.User.Username != u.Username {
+								continue
+							}
+							appName = kube.GetEditAppName(appName)
+						} else if env.Spec.Kind == v1.EnvironmentKindTypePreview {
+							appName = env.Spec.PullRequestURL
+						}
+						envApp.Apps[appName] = d
+						if util.StringArrayIndex(apps, appName) < 0 {
+							apps = append(apps, appName)
+						}
+					}
+				}
+			}
+		}
+	}
+	return
+}
+
+func (o *GetApplicationsOptions) generateTableHeaders(envApps []EnvApps) table.Table {
+	t := o.CreateTable()
+	title := "APPLICATION"
+	if o.Previews {
+		title = "PULL REQUESTS"
+	}
+	titles := []string{title}
+	for _, ea := range envApps {
+		envName := ea.Environment.Name
+		if ea.Environment.Spec.Kind == v1.EnvironmentKindTypeEdit {
+			envName = "Edit"
+		}
+		if ea.Environment.Spec.Kind != v1.EnvironmentKindTypePreview {
+			titles = append(titles, strings.ToUpper(envName))
+		}
+		if !o.HidePod {
+			titles = append(titles, "PODS")
+		}
+		if !o.HideUrl {
+			titles = append(titles, "URL")
+		}
+	}
+	t.AddRow(titles...)
+	return t
 }
