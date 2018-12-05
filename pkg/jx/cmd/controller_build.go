@@ -65,6 +65,8 @@ func NewCmdControllerBuild(f Factory, in terminal.FileReader, out terminal.FileW
 		Aliases: []string{"builds"},
 	}
 
+	options.addCommonFlags(cmd)
+
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to watch or defaults to the current namespace")
 	cmd.Flags().BoolVarP(&options.InitGitCredentials, "git-credentials", "", false, "If enable then lets run the 'jx step git credentials' step to initialise git credentials")
 	return cmd
@@ -98,7 +100,6 @@ func (o *ControllerBuildOptions) Run() error {
 
 	o.EnvironmentCache = kube.CreateEnvironmentCache(jxClient, ns)
 
-
 	if o.InitGitCredentials {
 		gc := &StepGitCredentialsOptions{}
 		gc.CommonOptions = o.CommonOptions
@@ -106,10 +107,17 @@ func (o *ControllerBuildOptions) Run() error {
 		log.Info("running: jx step git credentials\n")
 		err = gc.Run()
 		if err != nil {
-		  return err
+			return err
+		}
+
+		err := o.runCommandVerbose("git", "config", "--global", "credential.helper", "store")
+		if err != nil {
+			return err
+		}
+		if os.Getenv("XDG_CONFIG_HOME") == "" {
+			log.Warnf("Note that the environment variable $XDG_CONFIG_HOME is not defined so we may not be able to push to git!\n")
 		}
 	}
-
 
 	pod := &corev1.Pod{}
 	log.Infof("Watching for Knative build pods in namespace %s\n", util.ColorInfo(ns))
@@ -152,7 +160,9 @@ func (o *ControllerBuildOptions) onPod(obj interface{}, kubeClient kubernetes.In
 				buildName = labels[builds.LabelOldBuildName]
 			}
 			if buildName != "" {
-				//log.Infof("Found build pod %s\n", pod.Name)
+				if o.Verbose {
+					log.Infof("Found build pod %s\n", pod.Name)
+				}
 
 				activities := jxClient.JenkinsV1().PipelineActivities(ns)
 				key := o.createPromoteStepActivityKey(buildName, pod)
@@ -313,7 +323,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 					log.Warnf("No GitURL on PipelineActivity %s\n", activity.Name)
 				}
 			}
-			spec.BuildLogsURL = generateBuildLogURL(podInterface, ns, activity, buildName, pod, location)
+			spec.BuildLogsURL = o.generateBuildLogURL(podInterface, ns, activity, buildName, pod, location)
 		}
 	} else {
 		if running {
@@ -326,15 +336,19 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 }
 
 // generates the build log URL and returns the URL
-func generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation) string {
+func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation) string {
 	data, err := builds.GetBuildLogsForPod(podInterface, pod)
 	if err != nil {
 		// probably due to not being available yet
-		//log.Warnf("Failed to get build log for pod %s in namespace %s: %s\n", pod.Name, ns, err)
+		if o.Verbose {
+			log.Warnf("Failed to get build log for pod %s in namespace %s: %s\n", pod.Name, ns, err)
+		}
 		return ""
 	}
 
-	//log.Infof("got build log for pod: %s PipelineActivity: %s with bytes: %d\n", pod.Name, activity.Name, len(data))
+	if o.Verbose {
+		log.Infof("got build log for pod: %s PipelineActivity: %s with bytes: %d\n", pod.Name, activity.Name, len(data))
+	}
 
 	sourceURL := location.GitURL
 	if sourceURL == "" {
