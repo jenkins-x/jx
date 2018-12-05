@@ -589,12 +589,12 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "applying the GitOps development environment config")
 	}
 
-	log.Success("\nJenkins X installation completed successfully\n")
+	log.Successf("\nJenkins X installation completed successfully")
 
 	options.logAdminPassword()
 
 	log.Infof("\nYour Kubernetes context is now set to the namespace: %s \n", util.ColorInfo(ns))
-	log.Infof("To switch back to your original namespace use: %s\n", util.ColorInfo("jx ns "+originalNs))
+	log.Infof("To switch back to your original namespace use: %s\n", util.ColorInfo("jx namespace "+originalNs))
 	log.Infof("For help on switching contexts see: %s\n\n", util.ColorInfo("https://jenkins-x.io/developing/kube-context/"))
 
 	log.Infof("To import existing projects into Jenkins:       %s\n", util.ColorInfo("jx import"))
