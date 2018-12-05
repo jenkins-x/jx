@@ -72,6 +72,7 @@ func NewCmdControllerBuild(f Factory, in terminal.FileReader, out terminal.FileW
 
 // Run implements this command
 func (o *ControllerBuildOptions) Run() error {
+	o.BatchMode = true
 	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
 		return err
