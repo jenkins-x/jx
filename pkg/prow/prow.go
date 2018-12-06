@@ -81,7 +81,7 @@ func remove(kubeClient kubernetes.Interface, repos []string, ns string, kind pro
 		Kind:       kind,
 	}
 
-	return o.DeleteProwConfig()
+	return o.RemoveProwConfig()
 }
 
 func AddEnvironment(kubeClient kubernetes.Interface, repos []string, ns, environmentNamespace string) error {
@@ -269,8 +269,8 @@ func (o *Options) AddProwConfig() error {
 	return o.saveProwConfig(prowConfig, create)
 }
 
-// DeleteProwConfig deletes a config (normally a repository integration) from Prow
-func (o *Options) DeleteProwConfig() error {
+// RemoveProwConfig deletes a config (normally a repository integration) from Prow
+func (o *Options) RemoveProwConfig() error {
 	prowConfig, created, err := o.GetProwConfig()
 	if created {
 		return errors.New("no existing prow config. Nothing to remove")

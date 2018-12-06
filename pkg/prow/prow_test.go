@@ -163,20 +163,35 @@ func TestAddProwConfig(t *testing.T) {
 	err := o.AddProwConfig()
 	assert.NoError(t, err)
 
-	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwConfigMapName, metav1.GetOptions{})
+	prowConfig, err := getProwConfig(t, o)
 	assert.NoError(t, err)
 
-	prowConfig := &config.Config{}
-
-	yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig)
-
 	for _, repo := range []string{"test/repo", "test/repo2"} {
-		assert.NotEmpty(t, prowConfig.Presubmits[repo])
-		assert.NotEmpty(t, prowConfig.Postsubmits[repo])
-		org, r, _ := util.GetRemoteAndRepo(repo)
-		assert.NotEmpty(t, prowConfig.BranchProtection.Orgs[org].Repos[r])
-		assert.Contains(t, prowConfig.Tide.Queries[1].Repos, repo)
+		assertInPluginConfig(t, prowConfig, repo, true)
 	}
+}
+
+func TestRemoveProwConfig(t *testing.T) {
+	t.Parallel()
+	o := TestOptions{}
+	o.Setup()
+	o.Kind = prowconfig.Environment
+	o.EnvironmentNamespace = "jx-staging"
+	o.Repos = append(o.Repos, "test/repo2")
+	err := o.AddProwConfig()
+	assert.NoError(t, err)
+
+	// Remove test/repo (created in o.Setup())
+	o.Repos = []string{"test/repo"}
+	err = o.RemoveProwConfig()
+	assert.NoError(t, err, "errored removing prow config")
+
+	prowConfig, err := getProwConfig(t, o)
+	assert.NoError(t, err)
+
+	// test/repo should NOT be in the plugin config, but test/repo2 should
+	assertInPluginConfig(t, prowConfig, "test/repo", false)
+	assertInPluginConfig(t, prowConfig, "test/repo2", true)
 }
 
 // make sure that rerunning addProwConfig replaces any modified changes in the configmap
@@ -310,4 +325,27 @@ func TestGetBuildSpec(t *testing.T) {
 
 	assert.NotEmpty(t, buildSpec, err)
 
+}
+
+func getProwConfig(t *testing.T, o TestOptions) (*config.Config, error) {
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwConfigMapName, metav1.GetOptions{})
+	assert.NoError(t, err)
+	prowConfig := &config.Config{}
+	yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig)
+	return prowConfig, err
+}
+
+func assertInPluginConfig(t *testing.T, prowConfig *config.Config, repo string, shouldBeInConfig bool) {
+	org, r, _ := util.GetRemoteAndRepo(repo)
+	if shouldBeInConfig {
+		assert.NotEmpty(t, prowConfig.Presubmits[repo])
+		assert.NotEmpty(t, prowConfig.Postsubmits[repo])
+		assert.NotEmpty(t, prowConfig.BranchProtection.Orgs[org].Repos[r])
+		assert.Contains(t, prowConfig.Tide.Queries[1].Repos, repo)
+	} else {
+		assert.Empty(t, prowConfig.Presubmits[repo])
+		assert.Empty(t, prowConfig.Postsubmits[repo])
+		assert.Empty(t, prowConfig.BranchProtection.Orgs[org].Repos[r])
+		assert.NotContains(t, prowConfig.Tide.Queries[1].Repos, repo)
+	}
 }
