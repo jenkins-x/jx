@@ -67,7 +67,7 @@ func (v *client) WriteObject(secretName string, secret interface{}) (map[string]
 func (v *client) WriteSecrets(path string, secretsToSave map[string]interface{}) error {
 	var err error
 	for secretName, secret := range secretsToSave {
-		secretName = secretName + path
+		secretName = path + secretName
 		switch secret.(type) {
 		case []byte:
 			// secret is a plain byte array. We shouldn't be doing this. Legacy. We should be saving properly typed objects

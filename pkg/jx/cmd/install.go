@@ -1024,7 +1024,17 @@ func (options *InstallOptions) getHelmValuesFiles(configStore configio.ConfigSto
 	}
 	secretsFiles = append(secretsFiles,
 		[]string{gitSecretsFileName, adminSecretsFileName, extraValuesFileName, cloudEnvironmentSecretsLocation}...)
-	temporaryFiles = append(temporaryFiles, gitSecretsFileName, extraValuesFileName, cloudEnvironmentSecretsLocation)
+
+	if options.Flags.Vault {
+		temporaryFiles = append(temporaryFiles, adminSecretsFileName, gitSecretsFileName, extraValuesFileName, cloudEnvironmentSecretsLocation)
+		err := options.storeSecretsFilesInVault([]string{adminSecretsFileName})
+		if err != nil {
+			return valuesFiles, secretsFiles, temporaryFiles,
+				errors.Wrapf(err, "storing in Vault the secrets files: %s", adminSecretsFileName)
+		}
+	} else {
+		temporaryFiles = append(temporaryFiles, gitSecretsFileName, extraValuesFileName, cloudEnvironmentSecretsLocation)
+	}
 
 	return valuesFiles, secretsFiles, temporaryFiles, nil
 }
@@ -1065,7 +1075,7 @@ func (options *InstallOptions) cleanupTempFiles(temporaryFiles []string) error {
 	for _, tempFile := range temporaryFiles {
 		exists, err := util.FileExists(tempFile)
 		if exists && err == nil {
-			err := os.Remove(tempFile)
+			err := util.DestroyFile(tempFile)
 			if err != nil {
 				return errors.Wrapf(err, "removing temporary file '%s'", tempFile)
 			}
@@ -1614,7 +1624,7 @@ func (options *InstallOptions) storeSecretsFilesInVault(secretsFiles []string) e
 	for _, file := range secretsFiles {
 		exists, err := util.FileExists(file)
 		if exists && err == nil {
-			empty, err := util.IsEmpty(file)
+			empty, err := util.FileIsEmpty(file)
 			if !empty && err == nil {
 				content, err := ioutil.ReadFile(file)
 				if err != nil {
@@ -1641,7 +1651,7 @@ func (options *InstallOptions) storeSecretsInVault(secrets map[string]interface{
 	if err != nil {
 		log.Errorf("Could not get System vault: %v", err)
 	}
-	err = vaultClient.WriteSecrets(vault.InstallSecretsPrefix, secrets)
+	err = vaultClient.WriteSecrets(vault.InstallSecretsPath, secrets)
 	if err != nil {
 		return errors.Wrapf(err, "Error saving secrets to vault\n")
 	}

@@ -43,6 +43,15 @@ func FirstFileExists(paths ...string) (string, error) {
 	return "", nil
 }
 
+// FileIsEmpty checks if a file is empty
+func FileIsEmpty(path string) (bool, error) {
+	fi, err := os.Stat(path)
+	if err != nil {
+		return true, errors.Wrapf(err, "getting details of file '%s'", path)
+	}
+	return (fi.Size() == 0), nil
+}
+
 func IsEmpty(name string) (bool, error) {
 	f, err := os.Open(name)
 	if err != nil {
