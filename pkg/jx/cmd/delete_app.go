@@ -110,7 +110,7 @@ func (o *DeleteAppOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	var deletedApplications string
+	var deletedApplications []string
 	if isProw {
 		deletedApplications, err = o.deleteProwApp()
 	} else {
@@ -120,20 +120,20 @@ func (o *DeleteAppOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "deleting application")
 	}
-	log.Infof("Deleted Application(s): %s\n", util.ColorInfo(deletedApplications))
+	log.Infof("Deleted Application(s): %s\n", util.ColorInfo(strings.Join(deletedApplications, ",")))
 	return nil
 }
 
-func (o *DeleteAppOptions) deleteProwApp() (string, error) {
+func (o *DeleteAppOptions) deleteProwApp() (deletedApplications []string, err error) {
 	envMap, _, err := kube.GetOrderedEnvironments(o.jxClient, "")
 	currentUser, err := user.Current()
 	if err != nil {
-		return "", errors.Wrap(err, "getting current user")
+		return deletedApplications, errors.Wrap(err, "getting current user")
 	}
 
 	kubeClient, ns, err := o.Factory.CreateClient()
 	if err != nil {
-		return "", errors.Wrap(err, "getting kube client")
+		return deletedApplications, errors.Wrap(err, "getting kube client")
 	}
 
 	repos := make([]string, len(o.Args))
@@ -142,29 +142,33 @@ func (o *DeleteAppOptions) deleteProwApp() (string, error) {
 		repos[i] = "cb-kubecd/" + repo
 	}
 
-	prow.DeleteApplication(kubeClient, repos, ns)
-
 	for _, appName := range o.Args {
-		for n, env := range envMap {
-			fmt.Println("n is " + n)
+		for _, env := range envMap {
 			err = o.deleteAppFromEnvironment(env, appName, currentUser.Username)
-			fmt.Println(err)
+			if err != nil {
+				return deletedApplications, errors.Wrapf(err, "deleting application %s from environment %s", appName, env)
+			}
 		}
+		err = prow.DeleteApplication(kubeClient, repos, ns)
+		if err != nil {
+			return deletedApplications, errors.Wrapf(err, "deleting prow config for %s", appName)
+		}
+		deletedApplications = append(deletedApplications, appName)
 	}
-	return "foo", nil
+	return
 }
 
-func (o *DeleteAppOptions) deleteJenkinsApp() (string, error) {
+func (o *DeleteAppOptions) deleteJenkinsApp() (deletedApplications []string, err error) {
 	args := o.Args
 
 	jenk, err := o.JenkinsClient()
 	if err != nil {
-		return "", err
+		return
 	}
 
 	jobs, err := jenkins.LoadAllJenkinsJobs(jenk)
 	if err != nil {
-		return "", err
+		return
 	}
 
 	names := []string{}
@@ -181,34 +185,34 @@ func (o *DeleteAppOptions) deleteJenkinsApp() (string, error) {
 	if o.PullRequestPollTime != "" {
 		duration, err := time.ParseDuration(o.PullRequestPollTime)
 		if err != nil {
-			return "", fmt.Errorf("Invalid duration format %s for option --%s: %s", o.PullRequestPollTime, optionPullRequestPollTime, err)
+			return deletedApplications, fmt.Errorf("Invalid duration format %s for option --%s: %s", o.PullRequestPollTime, optionPullRequestPollTime, err)
 		}
 		o.PullRequestPollDuration = &duration
 	}
 	if o.Timeout != "" {
 		duration, err := time.ParseDuration(o.Timeout)
 		if err != nil {
-			return "", fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, optionTimeout, err)
+			return deletedApplications, fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, optionTimeout, err)
 		}
 		o.TimeoutDuration = &duration
 	}
 
 	if len(names) == 0 {
-		return "", fmt.Errorf("There are no Apps in Jenkins")
+		return deletedApplications, fmt.Errorf("There are no Apps in Jenkins")
 	}
 
 	if len(args) == 0 {
 		args, err = util.SelectNamesWithFilter(names, "Pick Applications to remove from Jenkins:", o.SelectAll, o.SelectFilter, "", o.In, o.Out, o.Err)
 		if err != nil {
-			return "", err
+			return
 		}
 		if len(args) == 0 {
-			return "", fmt.Errorf("No application was picked to be removed from Jenkins")
+			return deletedApplications, fmt.Errorf("No application was picked to be removed from Jenkins")
 		}
 	} else {
 		for _, arg := range args {
 			if util.StringArrayIndex(names, arg) < 0 {
-				return "", util.InvalidArg(arg, names)
+				return deletedApplications, util.InvalidArg(arg, names)
 			}
 		}
 	}
@@ -216,7 +220,7 @@ func (o *DeleteAppOptions) deleteJenkinsApp() (string, error) {
 
 	if !o.BatchMode {
 		if !util.Confirm("You are about to delete these Applications from Jenkins: "+deleteMessage, false, "The list of Applications names to be deleted from Jenkins", o.In, o.Out, o.Err) {
-			return "", nil
+			return
 		}
 	}
 	for _, name := range args {
@@ -224,11 +228,12 @@ func (o *DeleteAppOptions) deleteJenkinsApp() (string, error) {
 		if job != nil {
 			err = o.deleteApp(jenk, name, job)
 			if err != nil {
-				return "", err
+				return
 			}
+			deletedApplications = append(deletedApplications, name)
 		}
 	}
-	return deleteMessage, nil
+	return
 }
 
 func (o *DeleteAppOptions) deleteApp(jenkinsClient gojenkins.JenkinsClient, name string, job *gojenkins.Job) error {
