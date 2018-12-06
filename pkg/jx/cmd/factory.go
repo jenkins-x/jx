@@ -289,7 +289,7 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 // CreateAuthConfigService creates a new service saving auth config under the provided name. Depending on the factory,
 // It will either save the config to the local file-system, or a Vault
 func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService, error) {
-	client, namespace, err := f.CreateClient()
+	client, namespace, err := f.CreateKubeClient()
 	if f.secretLocation == nil {
 		f.secretLocation = secrets.NewSecretLocation(client, namespace)
 	}
@@ -319,7 +319,7 @@ func (f *factory) GetSystemVaultClient() (vault.Client, error) {
 // Will use default values for name and namespace if nil values are applied
 func (f *factory) GetVaultClient(name string, namespace string) (vault.Client, error) {
 	vopClient, err := f.CreateVaultOperatorClient()
-	kubeClient, defaultNamespace, err := f.CreateClient()
+	kubeClient, defaultNamespace, err := f.CreateKubeClient()
 	if err != nil {
 		return nil, err
 	}

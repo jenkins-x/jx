@@ -211,8 +211,8 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 	mockKubeClient.CoreV1().Services("jx").Create(service)
 
 	var apiClient k8s_cs.Interface = &k8s_cs_fake.Clientset{}
-	// Override CreateClient to return mock Kubernetes interface
-	When(factory.CreateClient()).ThenReturn(mockKubeClient, "jx-testing", nil)
+	// Override CreateKubeClient to return mock Kubernetes interface
+	When(factory.CreateKubeClient()).ThenReturn(mockKubeClient, "jx-testing", nil)
 	When(factory.CreateApiExtensionsClient()).ThenReturn(apiClient, nil)
 
 	//Setup Git mocks:

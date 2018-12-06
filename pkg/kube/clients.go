@@ -6,7 +6,7 @@ import (
 )
 
 // CreateKubeClient creates a new Kubernetes client
-func CreateClient(kubeconfig *string) (kubernetes.Interface, error) {
+func CreateKubeClient(kubeconfig *string) (kubernetes.Interface, error) {
 	// use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
