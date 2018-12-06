@@ -1563,9 +1563,7 @@ func (options *InstallOptions) getAdminSecrets(providerEnvDir string, cloudEnvir
 }
 
 func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string) error {
-	// TODO - we want to enable storing secrets in Vault for gitops. Reenable this once the feature is finished
-	//if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
-	if options.Flags.Vault {
+	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
 		err := InstallVaultOperator(&options.CommonOptions, "")
 		if err != nil {
 			return err
