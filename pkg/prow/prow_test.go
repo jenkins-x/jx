@@ -3,6 +3,7 @@ package prow_test
 import (
 	"github.com/jenkins-x/jx/pkg/prow"
 	prowconfig "github.com/jenkins-x/jx/pkg/prow/config"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 
 	"k8s.io/api/core/v1"
@@ -169,8 +170,13 @@ func TestAddProwConfig(t *testing.T) {
 
 	yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig)
 
-	assert.NotEmpty(t, prowConfig.Presubmits["test/repo"])
-	assert.NotEmpty(t, prowConfig.Presubmits["test/repo2"])
+	for _, repo := range []string{"test/repo", "test/repo2"} {
+		assert.NotEmpty(t, prowConfig.Presubmits[repo])
+		assert.NotEmpty(t, prowConfig.Postsubmits[repo])
+		org, r, _ := util.GetRemoteAndRepo(repo)
+		assert.NotEmpty(t, prowConfig.BranchProtection.Orgs[org].Repos[r])
+		assert.Contains(t, prowConfig.Tide.Queries[1].Repos, repo)
+	}
 }
 
 // make sure that rerunning addProwConfig replaces any modified changes in the configmap
