@@ -145,7 +145,7 @@ func (mock *MockFactory) CreateChatAuthConfigService(_param0 *v1.SecretList) (au
 	return ret0, ret1
 }
 
-func (mock *MockFactory) CreateClient() (kubernetes.Interface, string, error) {
+func (mock *MockFactory) CreateKubeClient() (kubernetes.Interface, string, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
