@@ -1,6 +1,7 @@
 package prow
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -13,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/test-infra/prow/config"
+	prow "k8s.io/test-infra/prow/kube"
 	"k8s.io/test-infra/prow/plugins"
 )
 
@@ -586,17 +588,18 @@ func (o *Options) GetReleaseJobs() ([]string, error) {
 	return jobs, nil
 }
 
-func (o *Options) GetBuildSpec(org, repo, branch string) (*build.BuildSpec, error) {
+func (o *Options) GetPostSubmitJob(org, repo, branch string) (config.Postsubmit, error) {
 
+	p := config.Postsubmit{}
 	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwConfigMapName, metav1.GetOptions{})
 	if err != nil {
-		return nil, err
+		return p, err
 	}
 
 	prowConfig := &config.Config{}
 	err = yaml.Unmarshal([]byte(cm.Data[ProwConfigFilename]), &prowConfig)
 	if err != nil {
-		return nil, err
+		return p, err
 	}
 
 	key := fmt.Sprintf("%s/%s", org, repo)
@@ -604,9 +607,22 @@ func (o *Options) GetBuildSpec(org, repo, branch string) (*build.BuildSpec, erro
 
 		for _, a := range p.Branches {
 			if a == branch {
-				return p.BuildSpec, nil
+				return p, nil
 			}
 		}
 	}
-	return nil, fmt.Errorf("no prow config build spec found for %s/%s/%s", org, repo, branch)
+	return p, fmt.Errorf("no prow config build spec found for %s/%s/%s", org, repo, branch)
+}
+
+func CreateProwJob(client kubernetes.Interface, ns string, j prow.ProwJob) (prow.ProwJob, error) {
+	retJob := prow.ProwJob{}
+	body, err := json.Marshal(j)
+	if err != nil {
+		return retJob, err
+	}
+	resp, err := client.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/prow.k8s.io/v1/namespaces/%s/prowjobs", ns)).Body(body).DoRaw()
+	if err != nil {
+		return retJob, fmt.Errorf("failed to create prowjob %v: %s", err, string(resp))
+	}
+	return retJob, err
 }

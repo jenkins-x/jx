@@ -218,6 +218,9 @@ docker-go: linux Dockerfile.builder-go
 docker-maven: linux Dockerfile.builder-maven
 	docker build --no-cache -t builder-maven -f Dockerfile.builder-maven .
 
+jenkins-maven: linux Dockerfile.jenkins-maven
+	docker build --no-cache -t jenkins-maven -f Dockerfile.jenkins-maven .
+
 docker-base: linux
 	docker build -t rawlingsj/builder-base:dev16 . -f Dockerfile.builder-base
 

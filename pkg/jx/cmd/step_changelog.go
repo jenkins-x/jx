@@ -235,6 +235,10 @@ func (o *StepChangelogOptions) Run() error {
 		if err != nil {
 			return err
 		}
+		if previousRev == "" {
+			log.Info("no previous commit version found so change diff unavailable")
+			return nil
+		}
 	}
 	currentRev := o.CurrentRevision
 	if currentRev == "" {
