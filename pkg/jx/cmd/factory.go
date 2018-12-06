@@ -110,7 +110,7 @@ func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string
 
 func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (string, error) {
 	// lets find the Kubernetes service
-	client, ns, err := f.CreateClient()
+	client, ns, err := f.CreateKubeClient()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to create the kube client")
 	}
@@ -410,7 +410,7 @@ func (f *factory) CreateMetricsClient() (*metricsclient.Clientset, error) {
 	return metricsclient.NewForConfig(config)
 }
 
-func (f *factory) CreateClient() (kubernetes.Interface, string, error) {
+func (f *factory) CreateKubeClient() (kubernetes.Interface, string, error) {
 	cfg, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, "", err
@@ -569,7 +569,7 @@ func (f *factory) GetHelm(verbose bool,
 	helmCLI := helm.NewHelmCLI(helmBinary, helm.V2, "", verbose)
 	var h helm.Helmer = helmCLI
 	if helmTemplate {
-		kubeClient, ns, _ := f.CreateClient()
+		kubeClient, ns, _ := f.CreateKubeClient()
 		h = helm.NewHelmTemplate(helmCLI, "", kubeClient, ns)
 	} else {
 		h = helmCLI

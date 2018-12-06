@@ -155,7 +155,7 @@ func TestCreateEnvironmentSurvey(t *testing.T) {
 
 	// mock Kubernetes interface
 	kubernetesInterface := kube_mocks.NewSimpleClientset(namespace)
-	// Override CreateClient to return mock Kubernetes interface
+	// Override CreateKubeClient to return mock Kubernetes interface
 	When(factory.CreateClient()).ThenReturn(kubernetesInterface, "jx-testing", nil)
 
 	// mock versiond interface

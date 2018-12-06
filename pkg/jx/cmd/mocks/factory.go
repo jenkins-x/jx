@@ -150,7 +150,7 @@ func (mock *MockFactory) CreateClient() (kubernetes.Interface, string, error) {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
 	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateClient", params, []reflect.Type{reflect.TypeOf((*kubernetes.Interface)(nil)).Elem(), reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateKubeClient", params, []reflect.Type{reflect.TypeOf((*kubernetes.Interface)(nil)).Elem(), reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 kubernetes.Interface
 	var ret1 string
 	var ret2 error
@@ -718,7 +718,7 @@ func (c *Factory_CreateChatAuthConfigService_OngoingVerification) GetAllCaptured
 
 func (verifier *VerifierFactory) CreateClient() *Factory_CreateClient_OngoingVerification {
 	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateClient", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateKubeClient", params)
 	return &Factory_CreateClient_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
