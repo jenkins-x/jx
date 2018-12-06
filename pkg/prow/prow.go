@@ -3,6 +3,7 @@ package prow
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -70,7 +71,7 @@ func add(kubeClient kubernetes.Interface, repos []string, ns string, kind prowco
 	return o.AddProwPlugins()
 }
 
-func delete(kubeClient kubernetes.Interface, repos []string, ns string, kind prowconfig.Kind) error {
+func remove(kubeClient kubernetes.Interface, repos []string, ns string, kind prowconfig.Kind) error {
 	if len(repos) == 0 {
 		return fmt.Errorf("no repo defined")
 	}
@@ -94,7 +95,7 @@ func AddApplication(kubeClient kubernetes.Interface, repos []string, ns, draftPa
 
 // DeleteApplication will delete the Prow configuration for a given set of repositories
 func DeleteApplication(kubeClient kubernetes.Interface, repos []string, ns string) error {
-	return delete(kubeClient, repos, ns, prowconfig.Application)
+	return remove(kubeClient, repos, ns, prowconfig.Application)
 }
 
 func AddProtection(kubeClient kubernetes.Interface, repos []string, context string, ns string) error {
@@ -266,6 +267,37 @@ func (o *Options) AddProwConfig() error {
 		}
 	}
 
+	return o.saveProwConfig(prowConfig, create)
+}
+
+// DeleteProwConfig deletes a config (normally a repository integration) from Prow
+func (o *Options) DeleteProwConfig() error {
+	prowConfig, created, err := o.GetProwConfig()
+	if created {
+		return errors.New("no existing prow config. Nothing to remove")
+	}
+	if err != nil {
+		return errors.Wrap(err, "getting existing prow config")
+	}
+
+	for _, repo := range o.Repos {
+		err = prowconfig.RemoveRepoFromTideConfig(&prowConfig.Tide, repo, o.Kind)
+		if err != nil {
+			return err
+		}
+		err = prowconfig.RemoveRepoFromBranchProtection(&prowConfig.BranchProtection, repo)
+		if err != nil {
+			return err
+		}
+
+		delete(prowConfig.Presubmits, repo)
+		delete(prowConfig.Postsubmits, repo)
+	}
+
+	return o.saveProwConfig(prowConfig, created)
+}
+
+func (o *Options) saveProwConfig(prowConfig *config.Config, create bool) error {
 	configYAML, err := yaml.Marshal(prowConfig)
 	if err != nil {
 		return err
@@ -286,16 +318,6 @@ func (o *Options) AddProwConfig() error {
 	} else {
 		_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Update(cm)
 	}
-
-	return err
-}
-
-// DeleteProwConfig deletes a config (normally a repository integration) from Prow
-func (o *Options) DeleteProwConfig() error {
-	foo, b, err := o.GetProwConfig()
-
-	fmt.Println(foo)
-	fmt.Println(b)
 	return err
 }
 

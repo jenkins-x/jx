@@ -2,6 +2,7 @@ package prow_test
 
 import (
 	"github.com/jenkins-x/jx/pkg/prow"
+	prowconfig "github.com/jenkins-x/jx/pkg/prow/config"
 	"github.com/stretchr/testify/assert"
 
 	"k8s.io/api/core/v1"
@@ -32,7 +33,7 @@ func TestProwConfigEnvironment(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
-	o.Kind = prow.Environment
+	o.Kind = prowconfig.Environment
 	o.EnvironmentNamespace = "jx-staging"
 
 	err := o.AddProwConfig()
@@ -43,7 +44,7 @@ func TestProwPlugins(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
-	o.Kind = prow.Environment
+	o.Kind = prowconfig.Environment
 	o.EnvironmentNamespace = "jx-staging"
 
 	err := o.AddProwPlugins()
@@ -54,7 +55,7 @@ func TestMergeProwConfigEnvironment(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
-	o.Kind = prow.Environment
+	o.Kind = prowconfig.Environment
 	o.EnvironmentNamespace = "jx-staging"
 
 	prowConfig := &config.Config{}
@@ -92,7 +93,7 @@ func TestMergeProwPlugin(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
-	o.Kind = prow.Environment
+	o.Kind = prowconfig.Environment
 	o.EnvironmentNamespace = "jx-staging"
 
 	pluginConfig := &plugins.Configuration{}
@@ -130,7 +131,7 @@ func TestAddProwPlugin(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
-	o.Kind = prow.Environment
+	o.Kind = prowconfig.Environment
 	o.EnvironmentNamespace = "jx-staging"
 
 	o.Repos = append(o.Repos, "test/repo2")
@@ -153,7 +154,7 @@ func TestAddProwConfig(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
-	o.Kind = prow.Environment
+	o.Kind = prowconfig.Environment
 	o.EnvironmentNamespace = "jx-staging"
 
 	o.Repos = append(o.Repos, "test/repo2")
@@ -177,7 +178,7 @@ func TestReplaceProwConfig(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
-	o.Kind = prow.Environment
+	o.Kind = prowconfig.Environment
 	o.EnvironmentNamespace = "jx-staging"
 
 	err := o.AddProwConfig()
@@ -239,7 +240,7 @@ func TestReplaceProwConfig(t *testing.T) {
 
 	// add test/repo2
 	o.Options.Repos = []string{"test/repo2"}
-	o.Kind = prow.Application
+	o.Kind = prowconfig.Application
 
 	err = o.AddProwConfig()
 	assert.NoError(t, err)
@@ -255,7 +256,7 @@ func TestReplaceProwConfig(t *testing.T) {
 
 	// add test/repo3
 	o.Options.Repos = []string{"test/repo3"}
-	o.Kind = prow.Application
+	o.Kind = prowconfig.Application
 
 	err = o.AddProwConfig()
 	assert.NoError(t, err)
@@ -275,7 +276,7 @@ func TestGetReleaseJobs(t *testing.T) {
 	o := TestOptions{}
 	o.Setup()
 	o.Options.Repos = []string{"test/repo"}
-	o.Kind = prow.Application
+	o.Kind = prowconfig.Application
 
 	err := o.AddProwConfig()
 	assert.NoError(t, err)
@@ -293,7 +294,7 @@ func TestGetPostSubmitJob(t *testing.T) {
 	o := TestOptions{}
 	o.Setup()
 	o.Options.Repos = []string{"test/repo"}
-	o.Kind = prow.Application
+	o.Kind = prowconfig.Application
 
 	err := o.AddProwConfig()
 	assert.NoError(t, err)

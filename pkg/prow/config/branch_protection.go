@@ -3,8 +3,8 @@ package config
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"k8s.io/test-infra/prow/config"
-	"strings"
 )
 
 // AddRepoToBranchProtection adds a repository to the Branch Protection section of a prow config
@@ -13,12 +13,10 @@ func AddRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, con
 	if bp.Orgs == nil {
 		bp.Orgs = make(map[string]config.Org, 0)
 	}
-	s := strings.Split(repoSpec, "/")
-	if len(s) != 2 {
-		return fmt.Errorf("%s is not of the format org/repo", repoSpec)
+	requiredOrg, requiredRepo, err := util.GetRemoteAndRepo(repoSpec)
+	if err != nil {
+		return err
 	}
-	requiredOrg := s[0]
-	requiredRepo := s[1]
 	if _, ok := bp.Orgs[requiredOrg]; !ok {
 		bp.Orgs[requiredOrg] = config.Org{
 			Repos: make(map[string]config.Repo, 0),
@@ -53,6 +51,24 @@ func AddRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, con
 		return fmt.Errorf("unknown Prow config kind %s", kind)
 	}
 	bp.Orgs[requiredOrg].Repos[requiredRepo].Policy.RequiredStatusChecks.Contexts = contexts
+	return nil
+}
+
+// RemoveRepoFromBranchProtection adds a repository to the Branch Protection section of a prow config
+func RemoveRepoFromBranchProtection(bp *config.BranchProtection, repoSpec string) error {
+	if bp.Orgs == nil {
+		return errors.New("no orgs in BranchProtection object")
+	}
+	requiredOrg, requiredRepo, err := util.GetRemoteAndRepo(repoSpec)
+
+	if err != nil {
+		return err
+	}
+	repos := bp.Orgs[requiredOrg].Repos
+	if repos == nil {
+		return errors.New("no repos found for org " + requiredOrg)
+	}
+	delete(repos, requiredRepo)
 	return nil
 }
 
