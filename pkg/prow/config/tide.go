@@ -81,6 +81,41 @@ func AddRepoToTideConfig(t *config.Tide, repo string, kind Kind) error {
 	return nil
 }
 
+// RemoveRepoFromTideConfig adds a code repository to the Tide section of the Prow Config
+func RemoveRepoFromTideConfig(t *config.Tide, repo string, kind Kind) error {
+	switch kind {
+	case Application:
+		found := false
+		for index, q := range t.Queries {
+			if util.Contains(q.Labels, "approved") {
+				found = true
+				t.Queries[index].Repos = util.RemoveStringFromSlice(t.Queries[index].Repos, repo)
+			}
+		}
+
+		if !found {
+			log.Infof("Failed to find 'application' tide config, adding...\n")
+		}
+	case Environment:
+		found := false
+		for index, q := range t.Queries {
+			if !util.Contains(q.Labels, "approved") {
+				found = true
+				t.Queries[index].Repos = util.RemoveStringFromSlice(t.Queries[index].Repos, repo)
+			}
+		}
+
+		if !found {
+			log.Infof("Failed to find 'environment' tide config, adding...\n")
+		}
+	case Protection:
+		// No Tide config needed for Protection
+	default:
+		return fmt.Errorf("unknown Prow config kind %s", kind)
+	}
+	return nil
+}
+
 func createApplicationTideQuery() config.TideQuery {
 	return config.TideQuery{
 		Repos:         []string{"jenkins-x/dummy"},

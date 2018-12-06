@@ -100,7 +100,9 @@ func NewCmdDeleteApp(f Factory, in terminal.FileReader, out terminal.FileWriter,
 // Run implements this command
 func (o *DeleteAppOptions) Run() error {
 	var err error
-	o.jxClient, _, err = o.Factory.CreateJXClient()
+	var ns string
+	o.jxClient, ns, err = o.Factory.CreateJXClient()
+	o.currentNamespace = ns
 	if err != nil {
 		return errors.Wrap(err, "getting jx client")
 	}
@@ -133,7 +135,14 @@ func (o *DeleteAppOptions) deleteProwApp() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "getting kube client")
 	}
-	prow.DeleteApplication(kubeClient, o.Args, ns)
+
+	repos := make([]string, len(o.Args))
+	for i, repo := range o.Args {
+		// FIXME - get the repo name (ie, org/repo rather than just repo)
+		repos[i] = "cb-kubecd/" + repo
+	}
+
+	prow.DeleteApplication(kubeClient, repos, ns)
 
 	for _, appName := range o.Args {
 		for n, env := range envMap {
