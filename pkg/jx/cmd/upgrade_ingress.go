@@ -490,3 +490,8 @@ func (o *UpgradeIngressOptions) updateWebHooks(oldHookEndpoint string, newHookEn
 
 	return updateWebHook.Run()
 }
+
+// InitForTests should not be used, it is here for testing only as opposed to a bigger refactoring of upgrade ingress tests
+func (o *UpgradeIngressOptions) InitForTests() {
+	o.kubeClientCached, _, _ = o.KubeClient()
+}

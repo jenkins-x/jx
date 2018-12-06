@@ -19,10 +19,16 @@ import (
 type TestOptions struct {
 	cmd.UpgradeIngressOptions
 	Service *v1.Service
+	// for testing so we can return the same client
+	cacheKubeClient kubernetes.Interface
+
 }
 
 func (o *TestOptions) KubeClient() (kubernetes.Interface, string, error) {
-	return testclient.NewSimpleClientset(), "test", nil
+	if o.cacheKubeClient == nil {
+		o.cacheKubeClient = testclient.NewSimpleClientset()
+	}
+	return o.cacheKubeClient, "test", nil
 }
 
 func (o *TestOptions) Setup() {
@@ -44,6 +50,7 @@ func (o *TestOptions) Setup() {
 
 	o.Service.Annotations = map[string]string{}
 	o.Service.Annotations[services.ExposeAnnotation] = "true"
+	o.InitForTests()
 }
 
 func TestAnnotateNoExisting(t *testing.T) {
