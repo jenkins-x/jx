@@ -288,7 +288,7 @@ func TestGetReleaseJobs(t *testing.T) {
 
 }
 
-func TestGetBuildSpec(t *testing.T) {
+func TestGetPostSubmitJob(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
@@ -299,8 +299,8 @@ func TestGetBuildSpec(t *testing.T) {
 	assert.NoError(t, err)
 
 	// now lets get the release job
-	buildSpec, err := o.GetBuildSpec("test", "repo", "master")
+	job, err := o.GetPostSubmitJob("test", "repo", "master")
 
-	assert.NotEmpty(t, buildSpec, err)
-
+	assert.NotEmpty(t, job.Name, "job name is empty")
+	assert.Equal(t, "release", job.Name)
 }
