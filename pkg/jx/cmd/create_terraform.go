@@ -353,6 +353,11 @@ func (options *CreateTerraformOptions) Run() error {
 		return err
 	}
 
+	err = options.InstallOptions.InitOptions.validateGit()
+	if err != nil {
+		return err
+	}
+
 	if len(options.Flags.Cluster) >= 1 {
 		err := options.ValidateClusterDetails()
 		if err != nil {
