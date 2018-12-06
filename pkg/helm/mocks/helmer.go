@@ -369,17 +369,17 @@ func (mock *MockHelmer) StatusRelease(_param0 string, _param1 string) error {
 	return ret0
 }
 
-func (mock *MockHelmer) StatusReleases(_param0 string) (map[string]string, error) {
+func (mock *MockHelmer) StatusReleases(_param0 string) (map[string]helm.Release, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockHelmer().")
 	}
 	params := []pegomock.Param{_param0}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("StatusReleases", params, []reflect.Type{reflect.TypeOf((*map[string]string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 map[string]string
+	result := pegomock.GetGenericMockFrom(mock).Invoke("StatusReleases", params, []reflect.Type{reflect.TypeOf((*map[string]helm.Release)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 map[string]helm.Release
 	var ret1 error
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].(map[string]string)
+			ret0 = result[0].(map[string]helm.Release)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(error)

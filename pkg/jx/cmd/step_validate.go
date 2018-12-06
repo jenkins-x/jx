@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"io"
 
 	"github.com/blang/semver"
@@ -142,7 +143,7 @@ func (o *StepValidateOptions) verifyAddons() []error {
 	return errs
 }
 
-func (o *StepValidateOptions) verifyAddon(addonConfig *config.AddonConfig, fileName string, statusMap map[string]string) error {
+func (o *StepValidateOptions) verifyAddon(addonConfig *config.AddonConfig, fileName string, statusMap map[string]helm.Release) error {
 	name := addonConfig.Name
 	if name == "" {
 		log.Warnf("Ignoring addon with no name inside the projects configuration file %s", fileName)
@@ -152,7 +153,7 @@ func (o *StepValidateOptions) verifyAddon(addonConfig *config.AddonConfig, fileN
 	if ch == "" {
 		return fmt.Errorf("No such addon name %s in %s: %s", name, fileName, util.InvalidArg(name, util.SortedMapKeys(kube.AddonCharts)))
 	}
-	status := statusMap[name]
+	status := statusMap[name].Status
 	if status == "DEPLOYED" {
 		return nil
 	}

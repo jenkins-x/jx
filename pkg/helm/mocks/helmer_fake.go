@@ -129,8 +129,8 @@ func (FakeHelmer) StatusRelease(ns string, releaseName string) error {
 }
 
 // StatusReleases fake
-func (FakeHelmer) StatusReleases(ns string) (map[string]string, error) {
-	return map[string]string{}, nil
+func (FakeHelmer) StatusReleases(ns string) (map[string]helm.Release, error) {
+	return map[string]helm.Release{}, nil
 }
 
 // UpdateRepo fake
