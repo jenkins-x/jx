@@ -131,7 +131,7 @@ func (o *DeleteAppOptions) deleteProwApp() (string, error) {
 		return "", errors.Wrap(err, "getting current user")
 	}
 
-	kubeClient, ns, err := o.Factory.CreateClient()
+	kubeClient, ns, err := o.Factory.CreateKubeClient()
 	if err != nil {
 		return "", errors.Wrap(err, "getting kube client")
 	}
