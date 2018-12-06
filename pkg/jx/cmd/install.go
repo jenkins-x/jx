@@ -437,6 +437,21 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring the cloud provider after initializing the platform")
 	}
 
+	err = options.configureHelmValues(ns)
+	if err != nil {
+		return errors.Wrap(err, "configuring helm values")
+	}
+
+	err = options.saveIngressConfig()
+	if err != nil {
+		return errors.Wrap(err, "saving the ingress configuration in a ConfigMap")
+	}
+
+	err = options.saveClusterConfig()
+	if err != nil {
+		return errors.Wrap(err, "saving the cluster configuration in a ConfigMap")
+	}
+
 	err = options.createSystemVault(client, ns)
 	if err != nil {
 		return errors.Wrap(err, "creating the system vault")
@@ -445,11 +460,6 @@ func (options *InstallOptions) Run() error {
 	err = options.configureDockerRegistry(client, ns)
 	if err != nil {
 		return errors.Wrap(err, "configuring the docker registry")
-	}
-
-	err = options.configureHelmValues(ns)
-	if err != nil {
-		return errors.Wrap(err, "configuring helm values")
 	}
 
 	err = options.configureGitAuth(originalGitUsername, originalGitServer, originalGitToken)
@@ -491,16 +501,6 @@ func (options *InstallOptions) Run() error {
 	err = options.verifyTiller(client, ns)
 	if err != nil {
 		return errors.Wrap(err, "verifying Tiller is running")
-	}
-
-	err = options.saveIngressConfig()
-	if err != nil {
-		return errors.Wrap(err, "saving the ingress configuration in a ConfigMap")
-	}
-
-	err = options.saveClusterConfig()
-	if err != nil {
-		return errors.Wrap(err, "saving the cluster configuration in a ConfigMap")
 	}
 
 	err = options.configureBuildPackMode()
