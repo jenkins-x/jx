@@ -56,6 +56,8 @@ const defaultMavenSettings = `<settings>
   </settings>
 `
 
+const allowedSymbols = "~!@#$%^*()_+`-={}|[]\\:\"?,./"
+
 type IngressBasicAuth struct {
 	JXBasicAuth string `yaml:"JXBasicAuth"`
 }
@@ -132,7 +134,17 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 
 	if s.Flags.DefaultAdminPassword == "" {
 		log.Infof("No default password set, generating a random one\n")
-		s.Flags.DefaultAdminPassword, _ = password.Generate(20, 4, 2, false, true)
+
+		input := password.GeneratorInput{
+			Symbols: allowedSymbols,
+		}
+
+		generator, err := password.NewGenerator(&input)
+		if err != nil {
+			return errors.Wrap(err, "unable to create password generator")
+		}
+
+		s.Flags.DefaultAdminPassword, _ = generator.Generate(20, 4, 2, false, true)
 	}
 
 	s.Secrets.Jenkins.JenkinsSecret.Password = s.Flags.DefaultAdminPassword
