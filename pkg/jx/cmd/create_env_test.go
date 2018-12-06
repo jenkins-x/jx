@@ -70,8 +70,8 @@ func TestCreateEnvRun(t *testing.T) {
 
 	// mock Kubernetes interface
 	kubernetesInterface := kube_mocks.NewSimpleClientset(namespace, exposeControllerConfigMap, jenkinsConfigMap)
-	// Override CreateClient to return mock Kubernetes interface
-	When(factory.CreateClient()).ThenReturn(kubernetesInterface, "jx-testing", nil)
+	// Override CreateKubeClient to return mock Kubernetes interface
+	When(factory.CreateKubeClient()).ThenReturn(kubernetesInterface, "jx-testing", nil)
 	//When(kubernetesInterface.CoreV1().Namespaces().Update(namespace)).ThenReturn(namespace, nil)
 
 	// mock versiond interface

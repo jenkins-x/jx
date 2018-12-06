@@ -165,7 +165,7 @@ func (o *CommonOptions) CreateApiExtensionsClient() (apiextensionsclientset.Inte
 
 func (o *CommonOptions) KubeClient() (kubernetes.Interface, string, error) {
 	if o.KubeClientCached == nil {
-		kubeClient, currentNs, err := o.Factory.CreateClient()
+		kubeClient, currentNs, err := o.Factory.CreateKubeClient()
 		if err != nil {
 			return nil, "", err
 		}

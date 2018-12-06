@@ -49,8 +49,8 @@ func TestJXClientAndDevNameSpace(t *testing.T) {
 	factory := cmd_mocks.NewMockFactory()
 	// mock Kubernetes interface
 	kubernetesInterface := kube_mocks.NewSimpleClientset(namespace)
-	// Override CreateClient to return mock Kubernetes interface
-	When(factory.CreateClient()).ThenReturn(kubernetesInterface, "jx-testing", nil)
+	// Override CreateKubeClient to return mock Kubernetes interface
+	When(factory.CreateKubeClient()).ThenReturn(kubernetesInterface, "jx-testing", nil)
 	// mock versiond interface
 	versiondInterface := versiond_mocks.NewSimpleClientset()
 	// Override CreateJXClient to return mock versiond interface

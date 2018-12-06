@@ -53,7 +53,7 @@ type Factory interface {
 
 	CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error)
 
-	CreateClient() (kubernetes.Interface, string, error)
+	CreateKubeClient() (kubernetes.Interface, string, error)
 
 	CreateGitProvider(string, string, auth.ConfigService, string, bool, gits.Gitter, terminal.FileReader, terminal.FileWriter, io.Writer) (gits.GitProvider, error)
 
