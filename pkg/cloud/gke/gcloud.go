@@ -1,11 +1,13 @@
 package gke
 
 import (
+	"bufio"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	"time"
 
@@ -253,29 +255,122 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 
 	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
 		log.Info("Downloading service account key\n")
-		args := []string{"iam",
-			"service-accounts",
-			"keys",
-			"create",
-			keyPath,
-			"--iam-account",
-			fmt.Sprintf("%s@%s.iam.gserviceaccount.com", serviceAccount, projectId),
-			"--project",
-			projectId}
-
-		cmd := util.Command{
-			Name: "gcloud",
-			Args: args,
-		}
-		_, err := cmd.RunWithoutRetry()
+		err := CreateServiceAccountKey(serviceAccount, projectId, keyPath)
+		// Try to clean up the keys when the max key limits is reached
 		if err != nil {
-			return "", err
+			err := CleanupServiceAccountKeys(serviceAccount, projectId)
+			if err != nil {
+				return "", errors.Wrap(err, "cleaning up the service account keys")
+			}
+			err = CreateServiceAccountKey(serviceAccount, projectId, keyPath)
+			if err != nil {
+				return "", errors.Wrap(err, "creating service account key")
+			}
 		}
 	} else {
 		log.Info("Key already exists")
 	}
 
 	return keyPath, nil
+}
+
+// CreateServiceAccountKey creates a new service account key and downloads into the given file
+func CreateServiceAccountKey(serviceAccount string, projectId string, keyPath string) error {
+	args := []string{"iam",
+		"service-accounts",
+		"keys",
+		"create",
+		keyPath,
+		"--iam-account",
+		fmt.Sprintf("%s@%s.iam.gserviceaccount.com", serviceAccount, projectId),
+		"--project",
+		projectId}
+
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+	_, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return errors.Wrap(err, "creating a new service account key")
+	}
+	return nil
+}
+
+// GetServiceAccountKeys returns all keys of a service account
+func GetServiceAccountKeys(serviceAccount string, projectId string) ([]string, error) {
+	keys := []string{}
+	account := fmt.Sprintf("%s@%s.iam.gserviceaccount.com", serviceAccount, projectId)
+	args := []string{"iam",
+		"service-accounts",
+		"keys",
+		"list",
+		"--iam-account",
+		account,
+		"--project",
+		projectId}
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+	output, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return keys, errors.Wrapf(err, "listing the keys of the service account '%s'", account)
+	}
+
+	scanner := bufio.NewScanner(strings.NewReader(output))
+	// Skip the first line with the header information
+	scanner.Scan()
+	for scanner.Scan() {
+		keyFields := strings.Fields(scanner.Text())
+		if len(keyFields) > 0 {
+			keys = append(keys, keyFields[0])
+		}
+	}
+	return keys, nil
+}
+
+// DeleteServiceAccountKey deletes a service account key
+func DeleteServiceAccountKey(serviceAccount string, projectId string, key string) error {
+	account := fmt.Sprintf("%s@%s.iam.gserviceaccount.com", serviceAccount, projectId)
+	args := []string{"iam",
+		"service-accounts",
+		"keys",
+		"delete",
+		key,
+		"--iam-account",
+		account,
+		"--project",
+		projectId,
+		"--quite"}
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+	_, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return errors.Wrapf(err, "deleting the key '%s'from service account '%s'", key, account)
+	}
+	return nil
+}
+
+// CleanupServiceAccountKeys remove all keys from given service account
+func CleanupServiceAccountKeys(serviceAccount string, projectId string) error {
+	keys, err := GetServiceAccountKeys(serviceAccount, projectId)
+	if err != nil {
+		return errors.Wrap(err, "retrieving the service account keys")
+	}
+
+	for _, key := range keys {
+		err := DeleteServiceAccountKey(serviceAccount, projectId, key)
+		if err != nil {
+			log.Warnf("Cannot delete the key %s from service account %s\n",
+				util.ColorWarning(key), util.ColorInfo(serviceAccount))
+		}
+		log.Infof("Key %s was removed form service account %s\n",
+			util.ColorInfo(key), util.ColorInfo(serviceAccount))
+	}
+	return nil
 }
 
 func DeleteServiceAccount(serviceAccount string, projectId string, roles []string) error {
