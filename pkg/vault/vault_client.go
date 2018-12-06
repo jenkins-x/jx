@@ -110,6 +110,9 @@ func (v *client) List(path string) ([]string, error) {
 	}
 
 	secretNames := make([]string, 0)
+	if secrets == nil {
+		return secretNames, nil
+	}
 	for _, s := range secrets.Data["keys"].([]interface{}) {
 		if orig, ok := s.(string); ok {
 			secretNames = append(secretNames, orig)
@@ -129,7 +132,7 @@ func (v *client) Read(secretName string) (map[string]interface{}, error) {
 }
 
 // Config retruns the current vault address and api token
-func (v *client) Config() (vaultURL url.URL, vaultToken string, err error) {
+func (v *client) Config() (vaultUrl url.URL, vaultToken string, err error) {
 	parsed, err := url.Parse(v.client.Address())
 	return *parsed, v.client.Token(), err
 }
