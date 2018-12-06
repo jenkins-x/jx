@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/pkg/errors"
 	"io"
 	"os/user"
@@ -127,8 +128,14 @@ func (o *DeleteAppOptions) deleteProwApp() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "getting current user")
 	}
-	for _, appName := range o.Args {
 
+	kubeClient, ns, err := o.Factory.CreateClient()
+	if err != nil {
+		return "", errors.Wrap(err, "getting kube client")
+	}
+	prow.DeleteApplication(kubeClient, o.Args, ns)
+
+	for _, appName := range o.Args {
 		for n, env := range envMap {
 			fmt.Println("n is " + n)
 			err = o.deleteAppFromEnvironment(env, appName, currentUser.Username)

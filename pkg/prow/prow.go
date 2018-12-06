@@ -80,12 +80,31 @@ func add(kubeClient kubernetes.Interface, repos []string, ns string, kind Kind, 
 	return o.AddProwPlugins()
 }
 
+func delete(kubeClient kubernetes.Interface, repos []string, ns string, kind Kind) error {
+	if len(repos) == 0 {
+		return fmt.Errorf("no repo defined")
+	}
+	o := Options{
+		KubeClient: kubeClient,
+		Repos:      repos,
+		NS:         ns,
+		Kind:       kind,
+	}
+
+	return o.DeleteProwConfig()
+}
+
 func AddEnvironment(kubeClient kubernetes.Interface, repos []string, ns, environmentNamespace string) error {
 	return add(kubeClient, repos, ns, Environment, "", environmentNamespace, "")
 }
 
 func AddApplication(kubeClient kubernetes.Interface, repos []string, ns, draftPack string) error {
 	return add(kubeClient, repos, ns, Application, draftPack, "", "")
+}
+
+// DeleteApplication will delete the Prow configuration for a given set of repositories
+func DeleteApplication(kubeClient kubernetes.Interface, repos []string, ns string) error {
+	return delete(kubeClient, repos, ns, Application)
 }
 
 func AddProtection(kubeClient kubernetes.Interface, repos []string, context string, ns string) error {
@@ -413,6 +432,15 @@ func (o *Options) AddProwConfig() error {
 		_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Update(cm)
 	}
 
+	return err
+}
+
+// DeleteProwConfig deletes a config (normally a repository integration) from Prow
+func (o *Options) DeleteProwConfig() error {
+	foo, b, err := o.GetProwConfig()
+
+	fmt.Println(foo)
+	fmt.Println(b)
 	return err
 }
 
