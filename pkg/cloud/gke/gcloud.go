@@ -256,8 +256,9 @@ func GetOrCreateServiceAccount(serviceAccount string, projectId string, clusterC
 	if _, err := os.Stat(keyPath); os.IsNotExist(err) {
 		log.Info("Downloading service account key\n")
 		err := CreateServiceAccountKey(serviceAccount, projectId, keyPath)
-		// Try to clean up the keys when the max key limits is reached
 		if err != nil {
+			log.Infof("Exceeds the maximum number of keys on service account %s\n",
+				util.ColorInfo(serviceAccount))
 			err := CleanupServiceAccountKeys(serviceAccount, projectId)
 			if err != nil {
 				return "", errors.Wrap(err, "cleaning up the service account keys")
@@ -342,7 +343,7 @@ func DeleteServiceAccountKey(serviceAccount string, projectId string, key string
 		account,
 		"--project",
 		projectId,
-		"--quite"}
+		"--quiet"}
 	cmd := util.Command{
 		Name: "gcloud",
 		Args: args,
@@ -361,14 +362,17 @@ func CleanupServiceAccountKeys(serviceAccount string, projectId string) error {
 		return errors.Wrap(err, "retrieving the service account keys")
 	}
 
+	log.Infof("Cleaning up the keys of the service account %s\n", util.ColorInfo(serviceAccount))
+
 	for _, key := range keys {
 		err := DeleteServiceAccountKey(serviceAccount, projectId, key)
 		if err != nil {
-			log.Warnf("Cannot delete the key %s from service account %s\n",
-				util.ColorWarning(key), util.ColorInfo(serviceAccount))
+			log.Infof("Cannot delete the key %s from service account %s: %v\n",
+				util.ColorWarning(key), util.ColorInfo(serviceAccount), err)
+		} else {
+			log.Infof("Key %s was removed form service account %s\n",
+				util.ColorInfo(key), util.ColorInfo(serviceAccount))
 		}
-		log.Infof("Key %s was removed form service account %s\n",
-			util.ColorInfo(key), util.ColorInfo(serviceAccount))
 	}
 	return nil
 }
