@@ -150,12 +150,12 @@ require (
 	github.com/xanzy/go-gitlab v0.0.0-20180814191223-f3bc634ab936
 	github.com/xanzy/ssh-agent v0.2.0
 	go.opencensus.io v0.14.0
-	golang.org/x/crypto v0.0.0-20180723164146-c126467f60eb
+	golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9
 	golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81
 	golang.org/x/net v0.0.0-20181005035420-146acd28ed58
 	golang.org/x/oauth2 v0.0.0-20180620175406-ef147856a6dd
 	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f
-	golang.org/x/sys v0.0.0-20180715085529-ac767d655b30
+	golang.org/x/sys v0.0.0-20181206074257-70b957f3b65e
 	golang.org/x/text v0.3.0
 	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2
 	golang.org/x/tools v0.0.0-20180723204246-ded554d0681e

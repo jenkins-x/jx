@@ -3,25 +3,21 @@ package prow
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/log"
+	prowconfig "github.com/jenkins-x/jx/pkg/prow/config"
 	"github.com/jenkins-x/jx/pkg/util"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/test-infra/prow/config"
+
 	"k8s.io/test-infra/prow/plugins"
 )
 
 const (
 	Hook = "hook"
-
-	Application Kind = "APPLICATION"
-	Environment Kind = "ENVIRONMENT"
-	Protection  Kind = "PROTECTION"
 
 	ServerlessJenkins = "serverless-jenkins"
 	ComplianceCheck   = "compliance-check"
@@ -37,8 +33,6 @@ const (
 	serviceAccountBuild = "knative-build-bot"
 )
 
-type Kind string
-
 const (
 	ProwConfigMapName        = "config"
 	ProwPluginsConfigMapName = "plugins"
@@ -51,13 +45,13 @@ type Options struct {
 	KubeClient           kubernetes.Interface
 	Repos                []string
 	NS                   string
-	Kind                 Kind
+	Kind                 prowconfig.Kind
 	DraftPack            string
 	EnvironmentNamespace string
 	Context              string
 }
 
-func add(kubeClient kubernetes.Interface, repos []string, ns string, kind Kind, draftPack, environmentNamespace string, context string) error {
+func add(kubeClient kubernetes.Interface, repos []string, ns string, kind prowconfig.Kind, draftPack, environmentNamespace string, context string) error {
 
 	if len(repos) == 0 {
 		return fmt.Errorf("no repo defined")
@@ -80,7 +74,7 @@ func add(kubeClient kubernetes.Interface, repos []string, ns string, kind Kind, 
 	return o.AddProwPlugins()
 }
 
-func delete(kubeClient kubernetes.Interface, repos []string, ns string, kind Kind) error {
+func delete(kubeClient kubernetes.Interface, repos []string, ns string, kind prowconfig.Kind) error {
 	if len(repos) == 0 {
 		return fmt.Errorf("no repo defined")
 	}
@@ -95,20 +89,20 @@ func delete(kubeClient kubernetes.Interface, repos []string, ns string, kind Kin
 }
 
 func AddEnvironment(kubeClient kubernetes.Interface, repos []string, ns, environmentNamespace string) error {
-	return add(kubeClient, repos, ns, Environment, "", environmentNamespace, "")
+	return add(kubeClient, repos, ns, prowconfig.Environment, "", environmentNamespace, "")
 }
 
 func AddApplication(kubeClient kubernetes.Interface, repos []string, ns, draftPack string) error {
-	return add(kubeClient, repos, ns, Application, draftPack, "", "")
+	return add(kubeClient, repos, ns, prowconfig.Application, draftPack, "", "")
 }
 
 // DeleteApplication will delete the Prow configuration for a given set of repositories
 func DeleteApplication(kubeClient kubernetes.Interface, repos []string, ns string) error {
-	return delete(kubeClient, repos, ns, Application)
+	return delete(kubeClient, repos, ns, prowconfig.Application)
 }
 
 func AddProtection(kubeClient kubernetes.Interface, repos []string, context string, ns string) error {
-	return add(kubeClient, repos, ns, Protection, "", "", context)
+	return add(kubeClient, repos, ns, prowconfig.Protection, "", "", context)
 }
 
 // create Git repo?
@@ -204,51 +198,7 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 	return ps
 }
 
-func (o *Options) addRepoToTideConfig(t *config.Tide, repo string, kind Kind) error {
-	switch o.Kind {
-	case Application:
-		found := false
-		for index, q := range t.Queries {
-			if util.Contains(q.Labels, "approved") {
-				found = true
-				repos := t.Queries[index].Repos
-				if !util.Contains(repos, repo) {
-					repos = append(repos, repo)
-					t.Queries[index].Repos = repos
-				}
-			}
-		}
-
-		if !found {
-			log.Infof("Failed to find 'application' tide config, adding...\n")
-			t.Queries = append(t.Queries, o.createApplicationTideQuery())
-		}
-	case Environment:
-		found := false
-		for index, q := range t.Queries {
-			if !util.Contains(q.Labels, "approved") {
-				found = true
-				repos := t.Queries[index].Repos
-				if !util.Contains(repos, repo) {
-					repos = append(repos, repo)
-					t.Queries[index].Repos = repos
-				}
-			}
-		}
-
-		if !found {
-			log.Infof("Failed to find 'environment' tide config, adding...\n")
-			t.Queries = append(t.Queries, o.createEnvironmentTideQuery())
-		}
-	case Protection:
-		// No Tide config needed for Protection
-	default:
-		return fmt.Errorf("unknown Prow config kind %s", o.Kind)
-	}
-	return nil
-}
-
-func (o *Options) addRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, context string, kind Kind) error {
+func (o *Options) addRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, context string, kind prowconfig.Kind) error {
 	bp.ProtectTested = true
 	if bp.Orgs == nil {
 		bp.Orgs = make(map[string]config.Org, 0)
@@ -277,15 +227,15 @@ func (o *Options) addRepoToBranchProtection(bp *config.BranchProtection, repoSpe
 	}
 	contexts := bp.Orgs[requiredOrg].Repos[requiredRepo].Policy.RequiredStatusChecks.Contexts
 	switch o.Kind {
-	case Application:
+	case prowconfig.Application:
 		if !util.Contains(contexts, ServerlessJenkins) {
 			contexts = append(contexts, ServerlessJenkins)
 		}
-	case Environment:
+	case prowconfig.Environment:
 		if !util.Contains(contexts, PromotionBuild) {
 			contexts = append(contexts, PromotionBuild)
 		}
-	case Protection:
+	case prowconfig.Protection:
 		if !util.Contains(contexts, ComplianceCheck) {
 			contexts = append(contexts, context)
 		}
@@ -296,62 +246,19 @@ func (o *Options) addRepoToBranchProtection(bp *config.BranchProtection, repoSpe
 	return nil
 }
 
-func (o *Options) createApplicationTideQuery() config.TideQuery {
-	return config.TideQuery{
-		Repos:         []string{"jenkins-x/dummy"},
-		Labels:        []string{"approved"},
-		MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},
-	}
-}
-
-func (o *Options) createEnvironmentTideQuery() config.TideQuery {
-	return config.TideQuery{
-		Repos:         []string{"jenkins-x/dummy-environment"},
-		Labels:        []string{},
-		MissingLabels: []string{"do-not-merge", "do-not-merge/hold", "do-not-merge/work-in-progress", "needs-ok-to-test", "needs-rebase"},
-	}
-}
-
-func (o *Options) createTide() config.Tide {
-	// todo get the real URL, though we need to handle the multi cluster use case where dev namespace may be another cluster, so pass it in as an arg?
-	t := config.Tide{
-		TargetURL: "https://tide.foo.bar",
-	}
-
-	var qs []config.TideQuery
-	qs = append(qs, o.createApplicationTideQuery())
-	qs = append(qs, o.createEnvironmentTideQuery())
-	t.Queries = qs
-
-	myTrue := true
-	myFalse := false
-
-	t.SyncPeriod = time.Duration(30)
-	t.StatusUpdatePeriod = time.Duration(30)
-	t.ContextOptions = config.TideContextPolicyOptions{
-		TideContextPolicy: config.TideContextPolicy{
-			FromBranchProtection: &myTrue,
-			SkipUnknownContexts:  &myFalse,
-		},
-		//Orgs: orgPolicies,
-	}
-
-	return t
-}
-
 // AddProwConfig adds config to Prow
 func (o *Options) AddProwConfig() error {
 	var preSubmit config.Presubmit
 	var postSubmit config.Postsubmit
 
 	switch o.Kind {
-	case Application:
+	case prowconfig.Application:
 		preSubmit = o.createPreSubmitApplication()
 		postSubmit = o.createPostSubmitApplication()
-	case Environment:
+	case prowconfig.Environment:
 		preSubmit = o.createPreSubmitEnvironment()
 		postSubmit = o.createPostSubmitEnvironment()
-	case Protection:
+	case prowconfig.Protection:
 		// Nothing needed
 	default:
 		return fmt.Errorf("unknown Prow config kind %s", o.Kind)
@@ -366,7 +273,7 @@ func (o *Options) AddProwConfig() error {
 	prowConfig.ProwJobNamespace = o.NS
 
 	for _, r := range o.Repos {
-		err = o.addRepoToTideConfig(&prowConfig.Tide, r, o.Kind)
+		err = prowconfig.AddRepoToTideConfig(&prowConfig.Tide, r, o.Kind)
 		if err != nil {
 			return err
 		}
@@ -453,7 +360,7 @@ func (o *Options) GetProwConfig() (*config.Config, bool, error) {
 		prowConfig.Presubmits = make(map[string][]config.Presubmit)
 		prowConfig.Postsubmits = make(map[string][]config.Postsubmit)
 		prowConfig.BranchProtection = config.BranchProtection{}
-		prowConfig.Tide = o.createTide()
+		prowConfig.Tide = prowconfig.CreateTide()
 	} else {
 		// config exists, updating
 		create = false
