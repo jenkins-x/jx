@@ -56,7 +56,7 @@ const defaultMavenSettings = `<settings>
   </settings>
 `
 
-const allowedSymbols = "~!@#$%^*()_+`-={}|[]\\:\"?,./"
+const allowedSymbols = "~!#%^*_+-=?,."
 
 type IngressBasicAuth struct {
 	JXBasicAuth string `yaml:"JXBasicAuth"`
