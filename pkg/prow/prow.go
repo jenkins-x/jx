@@ -7,7 +7,6 @@ import (
 
 	"github.com/ghodss/yaml"
 	prowconfig "github.com/jenkins-x/jx/pkg/prow/config"
-	"github.com/jenkins-x/jx/pkg/util"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,10 +18,6 @@ import (
 
 const (
 	Hook = "hook"
-
-	ServerlessJenkins = "serverless-jenkins"
-	ComplianceCheck   = "compliance-check"
-	PromotionBuild    = "promotion-build"
 
 	KnativeBuildAgent = "knative-build"
 	KubernetesAgent   = "kubernetes"
@@ -114,10 +109,10 @@ func AddProtection(kubeClient kubernetes.Interface, repos []string, context stri
 func (o *Options) createPreSubmitEnvironment() config.Presubmit {
 	ps := config.Presubmit{}
 
-	ps.Name = PromotionBuild
+	ps.Name = prowconfig.PromotionBuild
 	ps.AlwaysRun = true
 	ps.SkipReport = false
-	ps.Context = PromotionBuild
+	ps.Context = prowconfig.PromotionBuild
 	ps.Agent = KnativeBuildAgent
 
 	spec := &build.BuildSpec{
@@ -175,8 +170,8 @@ func (o *Options) createPostSubmitApplication() config.Postsubmit {
 func (o *Options) createPreSubmitApplication() config.Presubmit {
 	ps := config.Presubmit{}
 
-	ps.Context = ServerlessJenkins
-	ps.Name = ServerlessJenkins
+	ps.Context = prowconfig.ServerlessJenkins
+	ps.Name = prowconfig.ServerlessJenkins
 	ps.RerunCommand = "/test this"
 	ps.Trigger = "(?m)^/test( all| this),?(\\s+|$)"
 	ps.AlwaysRun = true
@@ -197,54 +192,6 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 	ps.Trigger = "(?m)^/test( all| this),?(\\s+|$)"
 
 	return ps
-}
-
-func (o *Options) addRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, context string, kind prowconfig.Kind) error {
-	bp.ProtectTested = true
-	if bp.Orgs == nil {
-		bp.Orgs = make(map[string]config.Org, 0)
-	}
-	s := strings.Split(repoSpec, "/")
-	if len(s) != 2 {
-		return fmt.Errorf("%s is not of the format org/repo", repoSpec)
-	}
-	requiredOrg := s[0]
-	requiredRepo := s[1]
-	if _, ok := bp.Orgs[requiredOrg]; !ok {
-		bp.Orgs[requiredOrg] = config.Org{
-			Repos: make(map[string]config.Repo, 0),
-		}
-	}
-	if _, ok := bp.Orgs[requiredOrg].Repos[requiredRepo]; !ok {
-		bp.Orgs[requiredOrg].Repos[requiredRepo] = config.Repo{
-			Policy: config.Policy{
-				RequiredStatusChecks: &config.ContextPolicy{},
-			},
-		}
-
-	}
-	if bp.Orgs[requiredOrg].Repos[requiredRepo].Policy.RequiredStatusChecks.Contexts == nil {
-		bp.Orgs[requiredOrg].Repos[requiredRepo].Policy.RequiredStatusChecks.Contexts = make([]string, 0)
-	}
-	contexts := bp.Orgs[requiredOrg].Repos[requiredRepo].Policy.RequiredStatusChecks.Contexts
-	switch o.Kind {
-	case prowconfig.Application:
-		if !util.Contains(contexts, ServerlessJenkins) {
-			contexts = append(contexts, ServerlessJenkins)
-		}
-	case prowconfig.Environment:
-		if !util.Contains(contexts, PromotionBuild) {
-			contexts = append(contexts, PromotionBuild)
-		}
-	case prowconfig.Protection:
-		if !util.Contains(contexts, ComplianceCheck) {
-			contexts = append(contexts, context)
-		}
-	default:
-		return fmt.Errorf("unknown Prow config kind %s", o.Kind)
-	}
-	bp.Orgs[requiredOrg].Repos[requiredRepo].Policy.RequiredStatusChecks.Contexts = contexts
-	return nil
 }
 
 // AddProwConfig adds config to Prow
@@ -278,7 +225,7 @@ func (o *Options) AddProwConfig() error {
 		if err != nil {
 			return err
 		}
-		err = o.addRepoToBranchProtection(&prowConfig.BranchProtection, r, o.Context, o.Kind)
+		err = prowconfig.AddRepoToBranchProtection(&prowConfig.BranchProtection, r, o.Context, o.Kind)
 		if err != nil {
 			return err
 		}
@@ -380,43 +327,6 @@ func (o *Options) GetProwConfig() (*config.Config, bool, error) {
 		}
 	}
 	return prowConfig, create, nil
-}
-
-func (o *Options) GetAllBranchProtectionContexts(org string, repo string) ([]string, error) {
-	result := make([]string, 0)
-	prowConfig, _, err := o.GetProwConfig()
-	if err != nil {
-		return result, err
-	}
-	prowOrg, ok := prowConfig.BranchProtection.Orgs[org]
-	if !ok {
-		prowOrg = config.Org{}
-	}
-	if prowOrg.Repos == nil {
-		prowOrg.Repos = make(map[string]config.Repo, 0)
-	}
-	prowRepo, ok := prowOrg.Repos[repo]
-	if !ok {
-		prowRepo = config.Repo{}
-	}
-	if prowRepo.RequiredStatusChecks == nil {
-		prowRepo.RequiredStatusChecks = &config.ContextPolicy{}
-	}
-	return prowRepo.RequiredStatusChecks.Contexts, nil
-}
-
-func (o *Options) GetBranchProtectionContexts(org string, repo string) ([]string, error) {
-	result := make([]string, 0)
-	contexts, err := o.GetAllBranchProtectionContexts(org, repo)
-	if err != nil {
-		return result, err
-	}
-	for _, c := range contexts {
-		if c != ServerlessJenkins && c != PromotionBuild {
-			result = append(result, c)
-		}
-	}
-	return result, nil
 }
 
 // AddProwPlugins adds plugins to prow

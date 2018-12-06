@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/prow/config"
 	"io"
 	"os"
 	"strconv"
@@ -265,7 +266,11 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 							KubeClient: kubeClient,
 							NS:         ns,
 						}
-						contexts, err := prow.GetBranchProtectionContexts(org, repo)
+						prowConfig, _, err := prow.GetProwConfig()
+						if err != nil {
+							return err
+						}
+						contexts, err := config.GetBranchProtectionContexts(org, repo, prowConfig)
 						if err != nil {
 							return err
 						}
