@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/table"
+	"github.com/pkg/errors"
 	"io"
 	"k8s.io/client-go/kubernetes"
 	"os/user"
@@ -150,52 +151,54 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 		row := []string{appName}
 		for _, ea := range envApps {
 			version := ""
-			d := ea.Apps[appName]
-			appMap := appEnvMap[appName]
-			if appMap == nil {
-				appMap = map[string]*ApplicationEnvironmentInfo{}
-				appEnvMap[appName] = appMap
-			}
-			version = kube.GetVersion(&d.ObjectMeta)
-			appEnvInfo := &ApplicationEnvironmentInfo{
-				Deployment:  &d,
-				Environment: &ea.Environment,
-				Version:     version,
-			}
-			appMap[ea.Environment.Name] = appEnvInfo
-			if ea.Environment.Spec.Kind != v1.EnvironmentKindTypePreview {
-				row = append(row, version)
-			}
-			if !o.HidePod {
-				pods := ""
-				replicas := ""
-				ready := d.Status.ReadyReplicas
-				if d.Spec.Replicas != nil && ready > 0 {
-					replicas = formatInt32(*d.Spec.Replicas)
-					pods = formatInt32(ready) + "/" + replicas
+			d, ok := ea.Apps[appName]
+			if ok {
+				appMap := appEnvMap[appName]
+				if appMap == nil {
+					appMap = map[string]*ApplicationEnvironmentInfo{}
+					appEnvMap[appName] = appMap
 				}
-				row = append(row, pods)
-			}
-			if !o.HideUrl {
-				url, _ := services.FindServiceURL(kubeClient, d.Namespace, appName)
-				if url == "" {
-					url, _ = services.FindServiceURL(kubeClient, d.Namespace, d.Name)
+				version = kube.GetVersion(&d.ObjectMeta)
+				appEnvInfo := &ApplicationEnvironmentInfo{
+					Deployment:  &d,
+					Environment: &ea.Environment,
+					Version:     version,
 				}
-				if url == "" {
-					// handle helm3
-					chart := d.Labels["chart"]
-					if chart != "" {
-						idx := strings.LastIndex(chart, "-")
-						if idx > 0 {
-							svcName := chart[0:idx]
-							if svcName != appName && svcName != d.Name {
-								url, _ = services.FindServiceURL(kubeClient, d.Namespace, svcName)
+				appMap[ea.Environment.Name] = appEnvInfo
+				if ea.Environment.Spec.Kind != v1.EnvironmentKindTypePreview {
+					row = append(row, version)
+				}
+				if !o.HidePod {
+					pods := ""
+					replicas := ""
+					ready := d.Status.ReadyReplicas
+					if d.Spec.Replicas != nil && ready > 0 {
+						replicas = formatInt32(*d.Spec.Replicas)
+						pods = formatInt32(ready) + "/" + replicas
+					}
+					row = append(row, pods)
+				}
+				if !o.HideUrl {
+					url, _ := services.FindServiceURL(kubeClient, d.Namespace, appName)
+					if url == "" {
+						url, _ = services.FindServiceURL(kubeClient, d.Namespace, d.Name)
+					}
+					if url == "" {
+						// handle helm3
+						chart, ok := d.Labels["chart"]
+						if ok {
+							idx := strings.LastIndex(chart, "-")
+							if idx > 0 {
+								svcName := chart[0:idx]
+								if svcName != appName && svcName != d.Name {
+									url, _ = services.FindServiceURL(kubeClient, d.Namespace, svcName)
+								}
 							}
 						}
 					}
+					row = append(row, url)
+					appEnvInfo.URL = url
 				}
-				row = append(row, url)
-				appEnvInfo.URL = url
 			}
 		}
 		table.AddRow(row...)
@@ -208,19 +211,19 @@ func (o *GetApplicationsOptions) getAppData(kubeClient kubernetes.Interface) (na
 	f := o.Factory
 	client, currentNs, err := f.CreateJXClient()
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, errors.Wrap(err, "getting jx client")
 	}
 	u, err := user.Current()
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, errors.Wrap(err, "getting current user")
 	}
 	ns, _, err := kube.GetDevNamespace(kubeClient, currentNs)
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, errors.Wrap(err, "getting current dev namespace")
 	}
 	envList, err := client.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return nil, nil, nil, nil, err
+		return nil, nil, nil, nil, errors.Wrap(err, "listing environments")
 	}
 	kube.SortEnvironments(envList.Items)
 

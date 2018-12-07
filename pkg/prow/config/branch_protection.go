@@ -68,6 +68,9 @@ func RemoveRepoFromBranchProtection(bp *config.BranchProtection, repoSpec string
 	if repos == nil {
 		return errors.New("no repos found for org " + requiredOrg)
 	}
+	if _, ok := repos[requiredRepo]; !ok {
+		return errors.New(fmt.Sprintf("repo %s not found in org %s", requiredRepo, requiredOrg))
+	}
 	delete(repos, requiredRepo)
 	return nil
 }
@@ -95,7 +98,7 @@ func GetBranchProtectionContexts(org string, repo string, prowConfig *config.Con
 	result := make([]string, 0)
 	contexts, err := GetAllBranchProtectionContexts(org, repo, prowConfig)
 	if err != nil {
-		return result, err
+		return result, errors.Wrap(err, "getting branch protection contexts")
 	}
 	for _, c := range contexts {
 		if c != ServerlessJenkins && c != PromotionBuild {

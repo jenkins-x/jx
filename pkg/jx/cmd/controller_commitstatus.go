@@ -268,7 +268,7 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 						}
 						prowConfig, _, err := prow.GetProwConfig()
 						if err != nil {
-							return err
+							return errors.Wrap(err, "getting prow config")
 						}
 						contexts, err := config.GetBranchProtectionContexts(org, repo, prowConfig)
 						if err != nil {

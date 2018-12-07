@@ -30,7 +30,6 @@ func CreateTide() config.Tide {
 			FromBranchProtection: &myTrue,
 			SkipUnknownContexts:  &myFalse,
 		},
-		//Orgs: orgPolicies,
 	}
 
 	return t
