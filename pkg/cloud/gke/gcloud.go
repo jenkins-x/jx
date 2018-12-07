@@ -466,7 +466,7 @@ func GetEnabledApis(projectID string) ([]string, error) {
 	return apis, nil
 }
 
-// EnableApis enables APIs for the given services
+// EnableAPIs enables APIs for the given services
 func EnableAPIs(projectID string, apis ...string) error {
 	enabledApis, err := GetEnabledApis(projectID)
 	if err != nil {
