@@ -163,12 +163,12 @@ func (o *DeleteApplicationOptions) deleteJenkinsApplication() (deletedApplicatio
 
 	jenk, err := o.JenkinsClient()
 	if err != nil {
-		return
+		return deletedApplications, err
 	}
 
 	jobs, err := jenkins.LoadAllJenkinsJobs(jenk)
 	if err != nil {
-		return
+		return deletedApplications, err
 	}
 
 	names := []string{}
@@ -189,7 +189,7 @@ func (o *DeleteApplicationOptions) deleteJenkinsApplication() (deletedApplicatio
 	if len(args) == 0 {
 		args, err = util.SelectNamesWithFilter(names, "Pick Applications to remove from Jenkins:", o.SelectAll, o.SelectFilter, "", o.In, o.Out, o.Err)
 		if err != nil {
-			return
+			return deletedApplications, err
 		}
 		if len(args) == 0 {
 			return deletedApplications, fmt.Errorf("No application was picked to be removed from Jenkins")
@@ -205,7 +205,7 @@ func (o *DeleteApplicationOptions) deleteJenkinsApplication() (deletedApplicatio
 
 	if !o.BatchMode {
 		if !util.Confirm("You are about to delete these Applications from Jenkins: "+deleteMessage, false, "The list of Applications names to be deleted from Jenkins", o.In, o.Out, o.Err) {
-			return
+			return deletedApplications, err
 		}
 	}
 	for _, name := range args {
@@ -213,12 +213,12 @@ func (o *DeleteApplicationOptions) deleteJenkinsApplication() (deletedApplicatio
 		if job != nil {
 			err = o.deleteApplication(jenk, name, job)
 			if err != nil {
-				return
+				return deletedApplications, err
 			}
 			deletedApplications = append(deletedApplications, name)
 		}
 	}
-	return
+	return deletedApplications, err
 }
 
 func (o *DeleteApplicationOptions) deleteApplication(jenkinsClient gojenkins.JenkinsClient, name string, job *gojenkins.Job) error {
