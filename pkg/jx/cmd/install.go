@@ -1039,7 +1039,7 @@ func (options *InstallOptions) getHelmValuesFiles(configStore configio.ConfigSto
 	return valuesFiles, secretsFiles, temporaryFiles, nil
 }
 
-func (options *InstallOptions) configureGitAuth(gitUserName string, gitServer string, gitApiToken string) error {
+func (options *InstallOptions) configureGitAuth(gitUserName string, gitServer string, gitAPIToken string) error {
 	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
 	gitAuthCfg, err := options.CreateGitAuthConfigService()
 	if err != nil {
@@ -1056,9 +1056,9 @@ func (options *InstallOptions) configureGitAuth(gitUserName string, gitServer st
 			username = os.Getenv(JX_GIT_USER)
 		}
 	}
-	if username != "" && gitApiToken != "" && gitServer != "" {
+	if username != "" && gitAPIToken != "" && gitServer != "" {
 		err = gitAuthCfg.SaveUserAuth(gitServer, &auth.UserAuth{
-			ApiToken: gitApiToken,
+			ApiToken: gitAPIToken,
 			Username: username,
 		})
 		if err != nil {
@@ -1100,16 +1100,15 @@ func (options *InstallOptions) verifyTiller(client kubernetes.Interface, namespa
 		err := options.ensureClusterRoleBinding(clusterRoleBindingName, role, namespace, serviceAccountName)
 		if err != nil {
 			return errors.Wrap(err, "tiller cluster role not defined")
-		} else {
-			log.Infof("tiller cluster role defined: %s in namespace %s\n", util.ColorInfo(role), util.ColorInfo(namespace))
 		}
+		log.Infof("tiller cluster role defined: %s in namespace %s\n", util.ColorInfo(role), util.ColorInfo(namespace))
+
 		err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
 		if err != nil {
 			msg := fmt.Sprintf("tiller pod (tiller-deploy in namespace %s) is not running after 10 minutes", tillerNamespace)
 			return errors.Wrap(err, msg)
-		} else {
-			log.Infoln("tiller pod running")
 		}
+		log.Infoln("tiller pod running")
 	}
 	return nil
 }

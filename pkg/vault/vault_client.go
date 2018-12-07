@@ -132,7 +132,7 @@ func (v *client) Read(secretName string) (map[string]interface{}, error) {
 }
 
 // Config retruns the current vault address and api token
-func (v *client) Config() (vaultUrl url.URL, vaultToken string, err error) {
+func (v *client) Config() (vaultURL url.URL, vaultToken string, err error) {
 	parsed, err := url.Parse(v.client.Address())
 	return *parsed, v.client.Token(), err
 }
