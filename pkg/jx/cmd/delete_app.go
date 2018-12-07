@@ -53,6 +53,7 @@ type DeleteAppOptions struct {
 	NoMergePullRequest  bool
 	Timeout             string
 	PullRequestPollTime string
+	Org                 string
 
 	// calculated fields
 	TimeoutDuration         *time.Duration
@@ -92,6 +93,8 @@ func NewCmdDeleteApp(f Factory, in terminal.FileReader, out terminal.FileWriter,
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Filter the list of apps to those containing this text")
 	cmd.Flags().StringVarP(&options.Timeout, optionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
 	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
+	// TODO - Create an Application CRD that gets populated with the org when an application is created/imported to store this.
+	cmd.Flags().StringVarP(&options.Org, "org", "o", "", "github organisation/project name that source code resides in. Temporary workaround until the platform can determine this automatically")
 	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "Run without being prompted. WARNING! You will not be asked to confirm deletions if you use this flag.")
 
 	return cmd
@@ -99,17 +102,16 @@ func NewCmdDeleteApp(f Factory, in terminal.FileReader, out terminal.FileWriter,
 
 // Run implements this command
 func (o *DeleteAppOptions) Run() error {
-	var err error
-	var ns string
-	o.jxClient, ns, err = o.Factory.CreateJXClient()
-	o.currentNamespace = ns
+	err := o.init()
 	if err != nil {
-		return errors.Wrap(err, "getting jx client")
+		return err
 	}
+
 	isProw, err := o.isProw()
 	if err != nil {
 		return err
 	}
+
 	var deletedApplications []string
 	if isProw {
 		deletedApplications, err = o.deleteProwApp()
@@ -125,6 +127,9 @@ func (o *DeleteAppOptions) Run() error {
 }
 
 func (o *DeleteAppOptions) deleteProwApp() (deletedApplications []string, err error) {
+	if o.Org == "" {
+		return deletedApplications, errors.New("--org must be supplied")
+	}
 	envMap, _, err := kube.GetOrderedEnvironments(o.jxClient, "")
 	currentUser, err := user.Current()
 	if err != nil {
@@ -136,20 +141,15 @@ func (o *DeleteAppOptions) deleteProwApp() (deletedApplications []string, err er
 		return deletedApplications, errors.Wrap(err, "getting kube client")
 	}
 
-	repos := make([]string, len(o.Args))
-	for i, repo := range o.Args {
-		// FIXME - get the repo name (ie, org/repo rather than just repo)
-		repos[i] = "cb-kubecd/" + repo
-	}
-
 	for _, appName := range o.Args {
 		for _, env := range envMap {
 			err = o.deleteAppFromEnvironment(env, appName, currentUser.Username)
 			if err != nil {
-				return deletedApplications, errors.Wrapf(err, "deleting application %s from environment %s", appName, env)
+				return deletedApplications, errors.Wrapf(err, "deleting application %s from environment %s", appName, env.Name)
 			}
 		}
-		err = prow.DeleteApplication(kubeClient, repos, ns)
+		repo := []string{o.Org + "/" + appName}
+		err = prow.DeleteApplication(kubeClient, repo, ns)
 		if err != nil {
 			return deletedApplications, errors.Wrapf(err, "deleting prow config for %s", appName)
 		}
@@ -180,21 +180,6 @@ func (o *DeleteAppOptions) deleteJenkinsApp() (deletedApplications []string, err
 			names = append(names, name)
 			m[name] = j
 		}
-	}
-
-	if o.PullRequestPollTime != "" {
-		duration, err := time.ParseDuration(o.PullRequestPollTime)
-		if err != nil {
-			return deletedApplications, fmt.Errorf("Invalid duration format %s for option --%s: %s", o.PullRequestPollTime, optionPullRequestPollTime, err)
-		}
-		o.PullRequestPollDuration = &duration
-	}
-	if o.Timeout != "" {
-		duration, err := time.ParseDuration(o.Timeout)
-		if err != nil {
-			return deletedApplications, fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, optionTimeout, err)
-		}
-		o.TimeoutDuration = &duration
 	}
 
 	if len(names) == 0 {
@@ -344,6 +329,30 @@ func (o *DeleteAppOptions) waitForGitOpsPullRequest(env *v1.Environment, pullReq
 			}
 			time.Sleep(*o.PullRequestPollDuration)
 		}
+	}
+	return nil
+}
+
+func (o *DeleteAppOptions) init() error {
+	var err error
+	o.jxClient, o.currentNamespace, err = o.Factory.CreateJXClient()
+	if err != nil {
+		return errors.Wrap(err, "getting jx client")
+	}
+
+	if o.PullRequestPollTime != "" {
+		duration, err := time.ParseDuration(o.PullRequestPollTime)
+		if err != nil {
+			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.PullRequestPollTime, optionPullRequestPollTime, err)
+		}
+		o.PullRequestPollDuration = &duration
+	}
+	if o.Timeout != "" {
+		duration, err := time.ParseDuration(o.Timeout)
+		if err != nil {
+			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, optionTimeout, err)
+		}
+		o.TimeoutDuration = &duration
 	}
 	return nil
 }
