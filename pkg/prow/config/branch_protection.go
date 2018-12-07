@@ -68,6 +68,9 @@ func RemoveRepoFromBranchProtection(bp *config.BranchProtection, repoSpec string
 	if repos == nil {
 		return errors.New("no repos found for org " + requiredOrg)
 	}
+	if _, ok := repos[requiredRepo]; !ok {
+		return errors.New(fmt.Sprintf("repo %s not found in org %s", requiredRepo, requiredOrg))
+	}
 	delete(repos, requiredRepo)
 	return nil
 }
