@@ -18,6 +18,7 @@ import (
 
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/heptio/sonobuoy/pkg/dynamic"
+	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -94,7 +95,6 @@ func (f *factory) WithBearerToken(token string) Factory {
 
 // CreateJenkinsClient creates a new Jenkins client
 func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
-
 	svc, err := f.CreateJenkinsAuthConfigService(kubeClient, ns)
 	if err != nil {
 		return nil, err
@@ -298,7 +298,7 @@ func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService
 
 // UseVault idicates if the platform is using a Vault to manage the secrets
 func (f *factory) UseVault() bool {
-	client, namespace, err := f.CreateClient()
+	client, namespace, err := f.CreateKubeClient()
 	if err != nil {
 		return false
 	}
