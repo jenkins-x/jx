@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -26,23 +25,10 @@ import (
 // StepCollect contains the command line flags
 type StepCollectOptions struct {
 	StepOptions
-	Provider string
-	GitHubPagesStepCollectOptions
-	HttpStepCollectOptions
-	Pattern    []string
-	Classifier string
+	Pattern         []string
+	Dir             string
+	StorageLocation jenkinsv1.StorageLocation
 }
-
-type GitHubPagesStepCollectOptions struct {
-}
-
-type HttpStepCollectOptions struct {
-	Destination string
-}
-
-type CollectProviderKind string
-
-const gitHubRepoPattern = `^https?:\/\/github.com\/([a-zA-Z1-9-]*)\/([a-zA-Z1-9-]*)\.git$`
 
 const (
 	envVarBranchName = "BRANCH_NAME"
@@ -51,23 +37,21 @@ const (
 
 const ghPagesBranchName = "gh-pages"
 
-const (
-	GitHubPagesCollectProviderKind CollectProviderKind = "GitHub"
-	HttpCollectProviderKind        CollectProviderKind = "Http"
-)
-
-var CollectProvidersKinds = []string{
-	string(GitHubPagesCollectProviderKind),
-	string(HttpCollectProviderKind),
-}
-
 var (
 	StepCollectLong = templates.LongDesc(`
-		This pipeline step collects the specified files that need storing from the build 
+		This pipeline step collects the specified files that need storing from the build into some stable storage location 
 `)
 
 	StepCollectExample = templates.Examples(`
-		jx step collect TODO
+		# lets collect some files to the team's default storage location (which if not specified using the current git repository's gh-pages branch)
+		jx step collect -c tests -p "target/test-reports/*"
+
+		# lets collect some files to a specific Git URL
+		jx step collect -c tests -p "target/test-reports/*" --git-url https://github.com/myuser/myrepo.git
+
+		# lets collect some files to a specific HTTP URL
+		jx step collect -c coverage -p "build/coverage/*" --http-url https://myserver.cheese/
+
 `)
 )
 
@@ -94,66 +78,100 @@ func NewCmdStepCollect(f Factory, in terminal.FileReader, out terminal.FileWrite
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.Provider, "provider", "", "", fmt.Sprintf("Specify the storage provider to use. Supported options are: %s", CollectProvidersKinds))
-	cmd.Flags().StringArrayVarP(&options.Pattern, "pattern", "", make([]string, 0), fmt.Sprintf("Specify the pattern to use to look for files"))
-	cmd.Flags().StringVarP(&options.HttpStepCollectOptions.Destination, "destination", "", "", fmt.Sprintf("Specify the HTTP endpoint to send each file to"))
-	cmd.Flags().StringVarP(&options.Classifier, "classifier", "", "", "A name which classifies this type of file. Example values: " + kube.ClassificationValues)
+	cmd.Flags().StringArrayVarP(&options.Pattern, "pattern", "p", make([]string, 0), "Specify the pattern to use to look for files")
+	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The source directory to try detect the current git repository or branch. Defaults to using the current directory")
+	cmd.Flags().StringVarP(&options.StorageLocation.HttpUrl, "http-url", "", "", "Specify the HTTP endpoint to send each file to")
+	cmd.Flags().StringVarP(&options.StorageLocation.GitURL, "git-url", "", "", "Specify the Git URL to populate files in a gh-pages branch")
+	cmd.Flags().StringVarP(&options.StorageLocation.Classifier, "classifier", "c", "", "A name which classifies this type of file. Example values: "+kube.ClassificationValues)
 	return cmd
 }
 
 func (o *StepCollectOptions) Run() error {
-	if o.Provider == "" {
-		return errors.New("Must specify a provider using --provider")
+	classifier := o.StorageLocation.Classifier
+	if classifier == "" {
+		return util.MissingOption("classifier")
 	}
-	if strings.ToLower(o.Provider) == strings.ToLower(string(GitHubPagesCollectProviderKind)) {
-		err := o.GitHubPagesStepCollectOptions.collect(*o)
-		return err
-	} else if strings.ToLower(o.Provider) == strings.ToLower(string(HttpCollectProviderKind)) {
-		return o.HttpStepCollectOptions.collect()
-	} else {
-		return errors.New(fmt.Sprintf("Unrecognized provider %s", o.Provider))
+	var err error
+	if o.Dir == "" {
+		o.Dir, err = os.Getwd()
+		if err != nil {
+			return err
+		}
 	}
-	return nil
+	if o.StorageLocation.IsEmpty() {
+		// lets try get the location from the team settings
+		settings, err := o.TeamSettings()
+		if err != nil {
+			return err
+		}
+		o.StorageLocation = *settings.StorageLocation(classifier)
+
+		if o.StorageLocation.IsEmpty() {
+			// we have no team settings so lets try detect the git repository using an env var or local file system
+			sourceURL := os.Getenv(envVarSourceUrl)
+			if sourceURL == "" {
+				_, gitConf, err := o.Git().FindGitConfigDir(o.Dir)
+				if err != nil {
+					log.Warnf("Could not find a .git directory: %s\n", err)
+				} else {
+					sourceURL, err = o.discoverGitURL(gitConf)
+				}
+			}
+			if sourceURL == "" {
+				return fmt.Errorf("Missing option --git-url and we could not detect the current git repository URL")
+			}
+			o.StorageLocation.GitURL = sourceURL
+		}
+	}
+
+	gitURL := o.StorageLocation.GitURL
+	if gitURL != "" {
+		return o.collectGitURL(gitURL)
+	}
+	httpURL := o.StorageLocation.HttpUrl
+	if httpURL != "" {
+		return o.collectHttpURL(httpURL)
+	}
+	return fmt.Errorf("Missing option --git-url and we could not detect the current git repository URL")
 }
 
-func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err error) {
-	// Can't assume we are in a git repo due to shallow clones etc.
-
-	sourceURL := os.Getenv(envVarSourceUrl)
-	sourceURLParts := regexp.MustCompile(gitHubRepoPattern).FindStringSubmatch(sourceURL)
-
-	if len(sourceURLParts) != 3 {
-		return errors.New(fmt.Sprintf("Git repo must be GitHub to use GitHub Pages but it is %s", sourceURL))
+func (o *StepCollectOptions) collectGitURL(sourceURL string) (err error) {
+	gitInfo, err := gits.ParseGitURL(sourceURL)
+	if err != nil {
+		return err
 	}
+	org := gitInfo.Organisation
+	repoName := gitInfo.Name
 
-	org := sourceURLParts[1]
-	repoName := sourceURLParts[2]
-
-	gitClient := options.Git()
+	gitClient := o.Git()
 
 	ghPagesDir, err := cloneGitHubPagesBranchToTempDir(sourceURL, gitClient)
 	if err != nil {
-	  return err
-	}
-	
-	buildNo := options.getBuildNumber()
-	if options.Classifier == "" {
-		return errors.New("You must pass --classfier")
+		return err
 	}
 
+	buildNo := o.getBuildNumber()
 	branchName := os.Getenv(envVarBranchName)
+	if branchName == "" {
+		// lets try find the branch name via git
+		branchName, err = o.Git().Branch(o.Dir)
+		if err != nil {
+			return err
+		}
+	}
 	if branchName == "" {
 		return fmt.Errorf("Environment variable %s is empty", envVarBranchName)
 	}
 
-	repoPath := filepath.Join("jenkins-x", options.Classifier, org, repoName, branchName, buildNo)
+	classifier := o.StorageLocation.Classifier
+	repoPath := filepath.Join("jenkins-x", classifier, org, repoName, branchName, buildNo)
 	repoDir := filepath.Join(ghPagesDir, repoPath)
 	err = os.MkdirAll(repoDir, 0755)
 	if err != nil {
 		return err
 	}
 
-	for _, p := range options.Pattern {
+	for _, p := range o.Pattern {
 		_, err = exec.Command("cp", "-r", p, repoDir).Output()
 		if err != nil {
 			return err
@@ -195,13 +213,13 @@ func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err
 		return err
 	}
 
-	f := options.Factory
+	f := o.Factory
 	client, ns, err := f.CreateJXClient()
 	if err != nil {
 		return errors.Wrap(err, "cannot create the JX client")
 	}
 
-	apisClient, err := options.CreateApiExtensionsClient()
+	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -214,7 +232,7 @@ func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err
 	if err != nil {
 		return err
 	}
-	build := options.getBuildNumber()
+	build := o.getBuildNumber()
 	// TODO this pipeline name construction needs moving to a shared lib, and other things refactoring to use it
 	pipeline := fmt.Sprintf("%s-%s-%s-%s", org, repoName, branchName, build)
 
@@ -232,7 +250,7 @@ func (o *GitHubPagesStepCollectOptions) collect(options StepCollectOptions) (err
 			return err
 		}
 		a.Spec.Attachments = append(a.Spec.Attachments, jenkinsv1.Attachment{
-			Name: options.Classifier,
+			Name: classifier,
 			URLs: urls,
 		})
 		_, err = client.JenkinsV1().PipelineActivities(ns).Update(a)
@@ -267,7 +285,7 @@ func cloneGitHubPagesBranchToTempDir(sourceURL string, gitClient gits.Gitter) (s
 		}
 		err = gitClient.RemoveForce(ghPagesDir, ".")
 		if err != nil {
-			return ghPagesDir,  err
+			return ghPagesDir, err
 		}
 		err = os.Remove(filepath.Join(ghPagesDir, ".gitignore"))
 		if err != nil {
@@ -277,15 +295,6 @@ func cloneGitHubPagesBranchToTempDir(sourceURL string, gitClient gits.Gitter) (s
 	return ghPagesDir, nil
 }
 
-func (o *GitHubPagesStepCollectOptions) contains(strings []string, str string) bool {
-	for _, s := range strings {
-		if str == s {
-			return true
-		}
-	}
-	return false
-}
-
-func (o *HttpStepCollectOptions) collect() error {
-	return nil
+func (o *StepCollectOptions) collectHttpURL(httpURL string) error {
+	return fmt.Errorf("TODO! Not implemented yet! Cannot post to %s\n", httpURL)
 }
