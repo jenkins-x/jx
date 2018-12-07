@@ -101,6 +101,12 @@ func (o *ControllerBuildOptions) Run() error {
 	o.EnvironmentCache = kube.CreateEnvironmentCache(jxClient, ns)
 
 	if o.InitGitCredentials {
+		// lets validate we have git configured
+		_, _, err = gits.EnsureUserAndEmailSetup(o.Git())
+		if err != nil {
+		  return err
+		}
+
 		gc := &StepGitCredentialsOptions{}
 		gc.CommonOptions = o.CommonOptions
 		gc.BatchMode = true
