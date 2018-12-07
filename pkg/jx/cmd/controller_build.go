@@ -318,7 +318,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 			if devEnv == nil {
 				log.Warnf("No Environment %s found\n", envName)
 			} else {
-				location = devEnv.Spec.TeamSettings.StorageLocation(kube.ClassificationLogs)
+				location = devEnv.Spec.TeamSettings.StorageLocationOrDefault(kube.ClassificationLogs)
 			}
 			if location == nil {
 				location = &v1.StorageLocation{}

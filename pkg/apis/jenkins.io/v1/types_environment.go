@@ -247,6 +247,16 @@ type EnvironmentRoleBindingList struct {
 	Items []EnvironmentRoleBinding `json:"items"`
 }
 
+// StorageLocationOrDefault returns the storage location if there is one or returns the default storage configuration
+func (t *TeamSettings) StorageLocationOrDefault(classifier string) *StorageLocation {
+	for idx, sl := range t.StorageLocations {
+		if sl.Classifier == classifier {
+			return &t.StorageLocations[idx]
+		}
+	}
+	return t.StorageLocation("default")
+}
+
 // StorageLocation returns the storage location, lazily creating one if one does not already exist
 func (t *TeamSettings) StorageLocation(classifier string) *StorageLocation {
 	for idx, sl := range t.StorageLocations {

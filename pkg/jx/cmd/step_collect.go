@@ -104,7 +104,7 @@ func (o *StepCollectOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		o.StorageLocation = *settings.StorageLocation(classifier)
+		o.StorageLocation = *settings.StorageLocationOrDefault(classifier)
 
 		if o.StorageLocation.IsEmpty() {
 			// we have no team settings so lets try detect the git repository using an env var or local file system
