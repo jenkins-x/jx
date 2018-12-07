@@ -109,8 +109,8 @@ func (r *Requirements) SetAppVersion(app string, version string, repository stri
 	sort.Sort(DepSorter(r.Dependencies))
 }
 
-// RemoveApp removes the given app name. Returns true if a dependency was removed
-func (r *Requirements) RemoveApp(app string) bool {
+// RemoveApplication removes the given app name. Returns true if a dependency was removed
+func (r *Requirements) RemoveApplication(app string) bool {
 	for i, dep := range r.Dependencies {
 		if dep != nil && dep.Name == app {
 			r.Dependencies = append(r.Dependencies[:i], r.Dependencies[i+1:]...)
