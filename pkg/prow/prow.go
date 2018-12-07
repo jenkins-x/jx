@@ -283,11 +283,11 @@ func (o *Options) RemoveProwConfig() error {
 	for _, repo := range o.Repos {
 		err = prowconfig.RemoveRepoFromTideConfig(&prowConfig.Tide, repo, o.Kind)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "removing repo %s from tide config", repo)
 		}
 		err = prowconfig.RemoveRepoFromBranchProtection(&prowConfig.BranchProtection, repo)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "removing repo %s from branch protection", repo)
 		}
 
 		delete(prowConfig.Presubmits, repo)

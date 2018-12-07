@@ -84,7 +84,7 @@ func TestMergeProwConfigEnvironment(t *testing.T) {
 	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwConfigMapName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
-	yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig)
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig))
 	assert.Equal(t, "debug", prowConfig.LogLevel)
 	assert.NotEmpty(t, prowConfig.Presubmits["test/repo"])
 
@@ -122,7 +122,7 @@ func TestMergeProwPlugin(t *testing.T) {
 	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwPluginsConfigMapName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
-	yaml.Unmarshal([]byte(cm.Data[prow.ProwPluginsFilename]), &pluginConfig)
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwPluginsFilename]), &pluginConfig))
 	assert.Equal(t, "okey dokey", pluginConfig.Welcome[0].MessageTemplate)
 	assert.Equal(t, "test/repo", pluginConfig.Approve[0].Repos[0])
 
@@ -144,7 +144,7 @@ func TestAddProwPlugin(t *testing.T) {
 	assert.NoError(t, err)
 
 	pluginConfig := &plugins.Configuration{}
-	yaml.Unmarshal([]byte(cm.Data[prow.ProwPluginsFilename]), &pluginConfig)
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwPluginsFilename]), &pluginConfig))
 
 	assert.Equal(t, "test/repo", pluginConfig.Approve[0].Repos[0])
 	assert.Equal(t, "test/repo2", pluginConfig.Approve[1].Repos[0])
@@ -210,7 +210,7 @@ func TestReplaceProwConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	prowConfig := &config.Config{}
-	yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig)
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig))
 
 	assert.Equal(t, 1, len(prowConfig.Tide.Queries[0].Repos))
 	assert.Equal(t, 2, len(prowConfig.Tide.Queries[1].Repos))
@@ -237,7 +237,7 @@ func TestReplaceProwConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	prowConfig = &config.Config{}
-	yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig)
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig))
 
 	p = prowConfig.Presubmits["test/repo"]
 	assert.Equal(t, "foo", p[0].Agent)
@@ -251,7 +251,7 @@ func TestReplaceProwConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	prowConfig = &config.Config{}
-	yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig)
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig))
 
 	assert.Equal(t, 1, len(prowConfig.Tide.Queries[0].Repos))
 	assert.Equal(t, 2, len(prowConfig.Tide.Queries[1].Repos))
@@ -270,7 +270,7 @@ func TestReplaceProwConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	prowConfig = &config.Config{}
-	yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig)
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig))
 
 	assert.Equal(t, 2, len(prowConfig.Tide.Queries[0].Repos))
 	assert.Equal(t, 2, len(prowConfig.Tide.Queries[1].Repos))
@@ -286,7 +286,7 @@ func TestReplaceProwConfig(t *testing.T) {
 	assert.NoError(t, err)
 
 	prowConfig = &config.Config{}
-	yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig)
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig))
 
 	assert.Equal(t, 3, len(prowConfig.Tide.Queries[0].Repos))
 	assert.Equal(t, 2, len(prowConfig.Tide.Queries[1].Repos))
@@ -331,12 +331,13 @@ func getProwConfig(t *testing.T, o TestOptions) (*config.Config, error) {
 	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwConfigMapName, metav1.GetOptions{})
 	assert.NoError(t, err)
 	prowConfig := &config.Config{}
-	yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig)
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig))
 	return prowConfig, err
 }
 
 func assertInPluginConfig(t *testing.T, prowConfig *config.Config, repo string, shouldBeInConfig bool) {
-	org, r, _ := util.GetRemoteAndRepo(repo)
+	org, r, err := util.GetRemoteAndRepo(repo)
+	assert.NoError(t, err)
 	if shouldBeInConfig {
 		assert.NotEmpty(t, prowConfig.Presubmits[repo])
 		assert.NotEmpty(t, prowConfig.Postsubmits[repo])

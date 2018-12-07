@@ -98,7 +98,7 @@ func GetBranchProtectionContexts(org string, repo string, prowConfig *config.Con
 	result := make([]string, 0)
 	contexts, err := GetAllBranchProtectionContexts(org, repo, prowConfig)
 	if err != nil {
-		return result, err
+		return result, errors.Wrap(err, "getting branch protection contexts")
 	}
 	for _, c := range contexts {
 		if c != ServerlessJenkins && c != PromotionBuild {
