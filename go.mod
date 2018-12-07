@@ -174,7 +174,7 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
 	gopkg.in/warnings.v0 v0.1.2
 	gopkg.in/yaml.v2 v2.2.1
-	k8s.io/api v0.0.0-20180628040859-072894a440bd
+	k8s.io/api v0.0.0-20181130031204-d04500c8c3dd
 	k8s.io/apiextensions-apiserver v0.0.0-20180621085152-bbc52469f98b
 	k8s.io/apimachinery v0.0.0-20180621070125-103fd098999d
 	k8s.io/cli-runtime v0.0.0-20181026155151-1ee5ba10d7e3 // indirect
