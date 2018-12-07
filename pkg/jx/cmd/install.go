@@ -1740,7 +1740,7 @@ func (options *InstallOptions) configureJenkins(namespace string) error {
 					if options.BatchMode {
 						options.CreateJenkinsUserOptions.BatchMode = true
 						options.CreateJenkinsUserOptions.Headless = true
-						log.Info("Attempting to find the Jenkins API Token with the browser in headless mode...")
+						log.Info("Attempting to find the Jenkins API Token with the browser in headless mode...\n")
 					}
 					err = options.CreateJenkinsUserOptions.Run()
 					return
