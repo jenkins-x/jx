@@ -104,12 +104,12 @@ func NewCmdDeleteApplication(f Factory, in terminal.FileReader, out terminal.Fil
 func (o *DeleteApplicationOptions) Run() error {
 	err := o.init()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "setting up context")
 	}
 
 	isProw, err := o.isProw()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "getting prow config")
 	}
 
 	var deletedApplications []string
