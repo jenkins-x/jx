@@ -105,7 +105,7 @@ func (o *EditStorageOptions) Run() error {
 	callback := func(env *v1.Environment) error {
 		location := env.Spec.TeamSettings.StorageLocation(o.Classifier)
 		location.GitURL = o.GitURL
-		location.HttpUrl = o.HttpURL
+		location.HttpURL = o.HttpURL
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)

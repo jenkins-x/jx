@@ -159,7 +159,7 @@ type TeamSettings struct {
 type StorageLocation struct {
 	Classifier string `json:"classifier,omitempty" protobuf:"bytes,1,opt,name=classifier"`
 	GitURL     string `json:"gitUrl,omitempty" protobuf:"bytes,2,opt,name=gitUrl"`
-	HttpUrl    string `json:"httpUrl,omitempty" protobuf:"bytes,3,opt,name=httpUrl"`
+	HttpURL    string `json:"httpUrl,omitempty" protobuf:"bytes,3,opt,name=httpUrl"`
 }
 
 // QuickStartLocation
@@ -272,7 +272,7 @@ func (t *TeamSettings) StorageLocation(classifier string) *StorageLocation {
 
 // IsEmpty returns true if the storage location is empty
 func (s *StorageLocation) IsEmpty() bool {
-	return s.GitURL == "" && s.HttpUrl == ""
+	return s.GitURL == "" && s.HttpURL == ""
 }
 
 // Description returns the textual description of the storage location
@@ -280,8 +280,8 @@ func (s *StorageLocation) Description() string {
 	if s.GitURL !=  "" {
 		return "git: " + s.GitURL
 	}
-	if s.HttpUrl != "" {
-		return s.HttpUrl
+	if s.HttpURL != "" {
+		return s.HttpURL
 	}
 	return "current git repo"
 }

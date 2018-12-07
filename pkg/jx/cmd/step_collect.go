@@ -80,7 +80,7 @@ func NewCmdStepCollect(f Factory, in terminal.FileReader, out terminal.FileWrite
 	}
 	cmd.Flags().StringArrayVarP(&options.Pattern, "pattern", "p", make([]string, 0), "Specify the pattern to use to look for files")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The source directory to try detect the current git repository or branch. Defaults to using the current directory")
-	cmd.Flags().StringVarP(&options.StorageLocation.HttpUrl, "http-url", "", "", "Specify the HTTP endpoint to send each file to")
+	cmd.Flags().StringVarP(&options.StorageLocation.HttpURL, "http-url", "", "", "Specify the HTTP endpoint to send each file to")
 	cmd.Flags().StringVarP(&options.StorageLocation.GitURL, "git-url", "", "", "Specify the Git URL to populate files in a gh-pages branch")
 	cmd.Flags().StringVarP(&options.StorageLocation.Classifier, "classifier", "c", "", "A name which classifies this type of file. Example values: "+kube.ClassificationValues)
 	return cmd
@@ -128,7 +128,7 @@ func (o *StepCollectOptions) Run() error {
 	if gitURL != "" {
 		return o.collectGitURL(gitURL)
 	}
-	httpURL := o.StorageLocation.HttpUrl
+	httpURL := o.StorageLocation.HttpURL
 	if httpURL != "" {
 		return o.collectHttpURL(httpURL)
 	}
