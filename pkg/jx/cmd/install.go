@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -12,11 +13,11 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	randomdata "github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
 
-	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/jenkins-x/jx/pkg/addon"
@@ -35,9 +36,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"gopkg.in/src-d/go-git.v4"
+	git "gopkg.in/src-d/go-git.v4"
 	core_v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -112,7 +113,8 @@ const (
 	JenkinsXPlatformChartName = "jenkins-x-platform"
 
 	// JenkinsXPlatformChart the default full chart name with the default repository prefix
-	JenkinsXPlatformChart = "jenkins-x/" + JenkinsXPlatformChartName
+	JenkinsXPlatformChart   = "jenkins-x/" + JenkinsXPlatformChartName
+	JenkinsXPlatformRelease = "jenkins-x"
 
 	GitSecretsFile         = "gitSecrets.yaml"
 	AdminSecretsFile       = "adminSecrets.yaml"
@@ -128,7 +130,7 @@ const (
 
 	GitOpsChartYAML = `name: env
 version: 0.0.1
-description: GitOps Environment for this Environment 
+description: GitOps Environment for this Environment
 maintainers:
   - name: Team
 icon: https://www.cloudbees.com/sites/default/files/Jenkins_8.png
@@ -369,9 +371,12 @@ func (options *InstallOptions) Run() error {
 	originalGitServer := options.GitRepositoryOptions.ServerURL
 	originalGitToken := options.GitRepositoryOptions.ApiToken
 
+	// Default to verbose mode to get more information during the install
+	options.Verbose = true
+
 	client, originalNs, err := options.KubeClient()
 	if err != nil {
-		return errors.Wrap(err, "failed to create the kube client")
+		return errors.Wrap(err, "creating the kube client")
 	}
 	options.KubeClientCached = client
 
@@ -381,151 +386,227 @@ func (options *InstallOptions) Run() error {
 	}
 	options.SetDevNamespace(ns)
 
-	// lets avoid changing the environments in k8s if GitOps mode...
-	gitOpsDir := ""
-	gitOpsEnvDir := ""
-	if options.Flags.GitOpsMode {
-		// lets disable loading of Secrets from the jx namespace
-		options.SkipAuthSecretsMerge = true
-		options.Flags.DisableSetKubeContext = true
-
-		var err error
-		if options.Flags.Dir == "" {
-			options.Flags.Dir, err = os.Getwd()
-			if err != nil {
-				return err
-			}
-		}
-		gitOpsDir = filepath.Join(options.Flags.Dir, "jenkins-x-dev-environment")
-		gitOpsEnvDir = filepath.Join(gitOpsDir, "env")
-		templatesDir := filepath.Join(gitOpsEnvDir, "templates")
-		err = os.MkdirAll(templatesDir, util.DefaultWritePermissions)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to make GitOps templates directory %s", templatesDir)
-		}
-
-		options.modifyDevEnvironmentFn = func(callback func(env *v1.Environment) error) error {
-			defaultEnv := kube.CreateDefaultDevEnvironment(ns)
-			_, err := gitOpsModifyEnvironment(templatesDir, kube.LabelValueDevEnvironment, defaultEnv, configStore, callback)
-			return err
-		}
-		options.modifyEnvironmentFn = func(name string, callback func(env *v1.Environment) error) error {
-			defaultEnv := &v1.Environment{}
-			defaultEnv.Labels = map[string]string{}
-			_, err := gitOpsModifyEnvironment(templatesDir, name, defaultEnv, configStore, callback)
-			return err
-		}
-		options.InitOptions.modifyDevEnvironmentFn = options.modifyDevEnvironmentFn
-		options.modifyConfigMapCallback = func(name string, callback func(configMap *core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
-			return gitOpsModifyConfigMap(templatesDir, name, nil, configStore, callback)
-		}
-		options.modifySecretCallback = func(name string, callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
-			return gitOpsModifySecret(templatesDir, name, nil, configStore, callback)
-		}
-	}
-
-	if options.Flags.Provider == EKS {
-		var deps []string
-		d := binaryShouldBeInstalled("eksctl")
-		if d != "" {
-			deps = append(deps, d)
-		}
-		d = binaryShouldBeInstalled("heptio-authenticator-aws")
-		if d != "" {
-			deps = append(deps, d)
-		}
-		err := options.installMissingDependencies(deps)
-		if err != nil {
-			log.Errorf("%v\nPlease fix the error or install manually then try again", err)
-			os.Exit(-1)
-		}
-	}
-
-	if options.Flags.Provider == AKS {
-		var deps []string
-		d := binaryShouldBeInstalled("az")
-		if d != "" {
-			deps = append(deps, d)
-		}
-		err := options.installMissingDependencies(deps)
-		if err != nil {
-			log.Errorf("%v\nPlease fix the error or install manually then try again", err)
-			os.Exit(-1)
-		}
-	}
-
-	initOpts := &options.InitOptions
-	helmBinary := initOpts.HelmBinary()
-
-	// configure the Helm binary
-	options.Helm().SetHelmBinary(helmBinary)
-	if initOpts.Flags.NoTiller {
-		helmer := options.Helm()
-		helmCli, ok := helmer.(*helm.HelmCLI)
-		if ok && helmCli != nil {
-			options.helm = helm.NewHelmTemplate(helmCli, helmCli.CWD, client, originalNs)
-		} else {
-			helmTemplate, ok := helmer.(*helm.HelmTemplate)
-			if ok {
-				options.helm = helmTemplate
-			} else {
-				log.Warnf("Helm facade is not a *helm.HelmCLI or *helm.HelmTemplate: %#v\n", helmer)
-			}
-		}
-	}
-
-	dependencies := []string{}
-	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
-		binDir, err := util.JXBinLocation()
-		if err != nil {
-			return errors.Wrap(err, "reading jx bin location")
-		}
-		_, install, err := shouldInstallBinary("tiller")
-		if !install && err == nil {
-			confirm := &survey.Confirm{
-				Message: "Uninstalling existing tiller binary:",
-				Default: true,
-			}
-			flag := true
-			err = survey.AskOne(confirm, &flag, nil)
-			if err != nil || flag == false {
-				return errors.New("Existing tiller must be uninstalled first in order to use the jx in tiller less mode")
-			}
-			// Uninstall helm and tiller first to avoid using some older version
-			err = options.UninstallBinary(binDir, "tiller")
-			if err != nil {
-				return errors.Wrap(err, "uninstalling existing tiller binary")
-			}
-		}
-
-		_, install, err = shouldInstallBinary(helmBinary)
-		if !install && err == nil {
-			confirm := &survey.Confirm{
-				Message: "Uninstalling existing helm binary:",
-				Default: true,
-			}
-			flag := true
-			err = survey.AskOne(confirm, &flag, nil)
-			if err != nil || flag == false {
-				return errors.New("Existing helm must be uninstalled first in order to use the jx in tiller less mode")
-			}
-			// Uninstall helm and tiller first to avoid using some older version
-			err = options.UninstallBinary(binDir, helmBinary)
-			if err != nil {
-				return errors.Wrap(err, "uninstalling existing helm binary")
-			}
-		}
-
-		dependencies = append(dependencies, "tiller")
-		options.Helm().SetHost(tillerAddress())
-	}
-	dependencies = append(dependencies, helmBinary)
-	err = options.installRequirements(options.Flags.Provider, dependencies...)
+	err = options.registerAllCRDs()
 	if err != nil {
-		return errors.Wrap(err, "failed to install the platform requirements")
+		return errors.Wrap(err, "registering all CRDs")
 	}
 
+	gitOpsDir, gitOpsEnvDir, err := options.configureGitOpsMode(configStore, ns)
+	if err != nil {
+		return errors.Wrap(err, "configuring the GitOps mode")
+	}
+
+	options.configureHelm(client, originalNs)
+	err = options.installHelmBinaries()
+	if err != nil {
+		return errors.Wrap(err, "installing helm binaries")
+	}
+
+	err = options.installCloudProviderDependencies()
+	if err != nil {
+		return errors.Wrap(err, "installing cloud provider dependencies")
+	}
+
+	err = options.configureKubectl(ns)
+	if err != nil {
+		return errors.Wrap(err, "configure the kubectl")
+	}
+
+	options.Flags.Provider, err = options.GetCloudProvider(options.Flags.Provider)
+	if err != nil {
+		return errors.Wrapf(err, "retrieving cloud provider '%s'", options.Flags.Provider)
+	}
+
+	err = options.setMinikubeFromContext()
+	if err != nil {
+		return errors.Wrap(err, "configuring minikube from kubectl context")
+	}
+
+	err = options.configureCloudProivderPreInit(client)
+	if err != nil {
+		return errors.Wrap(err, "configuring the cloud provider before initializing the platform")
+	}
+
+	err = options.init()
+	if err != nil {
+		return errors.Wrap(err, "initializing the Jenkins X platform")
+	}
+
+	err = options.configureCloudProivderPostInit(client, ns)
+	if err != nil {
+		return errors.Wrap(err, "configuring the cloud provider after initializing the platform")
+	}
+
+	err = options.configureHelmValues(ns)
+	if err != nil {
+		return errors.Wrap(err, "configuring helm values")
+	}
+
+	err = options.saveIngressConfig()
+	if err != nil {
+		return errors.Wrap(err, "saving the ingress configuration in a ConfigMap")
+	}
+
+	err = options.saveClusterConfig()
+	if err != nil {
+		return errors.Wrap(err, "saving the cluster configuration in a ConfigMap")
+	}
+
+	err = options.createSystemVault(client, ns)
+	if err != nil {
+		return errors.Wrap(err, "creating the system vault")
+	}
+
+	err = options.configureDockerRegistry(client, ns)
+	if err != nil {
+		return errors.Wrap(err, "configuring the docker registry")
+	}
+
+	err = options.configureGitAuth(originalGitUsername, originalGitServer, originalGitToken)
+	if err != nil {
+		return errors.Wrap(err, "configuring the git auth")
+	}
+
+	cloudEnvDir, err := options.cloneJXCloudEnvironmentsRepo()
+	if err != nil {
+		return errors.Wrap(err, "cloning the jx cloud environments repo")
+	}
+
+	if options.Flags.Provider == "" {
+		return fmt.Errorf("no Kubernetes provider found to match cloud-environment with")
+	}
+	providerEnvDir := filepath.Join(cloudEnvDir, fmt.Sprintf("env-%s", strings.ToLower(options.Flags.Provider)))
+	valuesFiles, secretsFiles, temporaryFiles, err := options.getHelmValuesFiles(configStore, providerEnvDir)
+	if err != nil {
+		return errors.Wrap(err, "getting the helm value files")
+	}
+
+	log.Infof("Installing Jenkins X platform helm chart from: %s\n", providerEnvDir)
+
+	err = options.configureHelmRepo()
+	if err != nil {
+		return errors.Wrap(err, "configuring the Jenkins X helm repository")
+	}
+
+	err = options.selectJenkinsInstallation()
+	if err != nil {
+		return errors.Wrap(err, "selecting the Jenkins installation type")
+	}
+
+	err = options.configureAndInstallProw(ns)
+	if err != nil {
+		return errors.Wrap(err, "configuring and installing Prow")
+	}
+
+	err = options.verifyTiller(client, ns)
+	if err != nil {
+		return errors.Wrap(err, "verifying Tiller is running")
+	}
+
+	err = options.configureBuildPackMode()
+	if err != nil {
+		return errors.Wrap(err, "configuring the build pack mode")
+	}
+
+	log.Infof("Installing jx into namespace %s\n", util.ColorInfo(ns))
+
+	version, err := options.getPlatformVersion(cloudEnvDir, configStore)
+	if err != nil {
+		return errors.Wrap(err, "getting the platform version")
+	}
+
+	if options.Flags.GitOpsMode {
+		err := options.installPlatformGitOpsMode(gitOpsEnvDir, gitOpsDir, configStore, DEFAULT_CHARTMUSEUM_URL,
+			JenkinsXPlatformChartName, ns, version, valuesFiles, secretsFiles)
+		if err != nil {
+			return errors.Wrap(err, "installing the Jenkins X platform in GitOps mode")
+		}
+	} else {
+		err := options.installPlatform(providerEnvDir, JenkinsXPlatformChart, JenkinsXPlatformRelease,
+			ns, version, valuesFiles, secretsFiles)
+		if err != nil {
+			return errors.Wrap(err, "installing the Jenkins X platform")
+		}
+	}
+
+	if options.Flags.CleanupTempFiles {
+		err := options.cleanupTempFiles(temporaryFiles)
+		if err != nil {
+			return errors.Wrap(err, "cleaning up the temporary files")
+		}
+	}
+
+	err = options.configureProwInTeamSettings()
+	if err != nil {
+		return errors.Wrap(err, "configuring Prow in team settings")
+	}
+
+	err = options.configureTillerInDevEnvironment()
+	if err != nil {
+		return errors.Wrap(err, "configuring Tiller in the dev environment")
+	}
+
+	err = options.configureHelm3(ns)
+	if err != nil {
+		return errors.Wrap(err, "configuring helm3")
+	}
+
+	err = options.installAddons()
+	if err != nil {
+		return errors.Wrap(err, "installing the Jenkins X Addons")
+	}
+
+	options.logAdminPassword()
+
+	err = options.configureJenkins(ns)
+	if err != nil {
+		return errors.Wrap(err, "configuring Jenkins")
+	}
+
+	err = options.createEnvironments(ns)
+	if err != nil {
+		return errors.Wrap(err, "creating the environments")
+	}
+
+	err = options.saveChartmuseumAuthConfig()
+	if err != nil {
+		return errors.Wrap(err, "saving the Chartmuseum auth configuration")
+	}
+
+	if options.Flags.RegisterLocalHelmRepo {
+		err = options.registerLocalHelmRepo(options.Flags.LocalHelmRepoName, ns)
+		if err != nil {
+			return errors.Wrapf(err, "registering the local helm repo '%s'", options.Flags.LocalHelmRepoName)
+		}
+	}
+
+	err = options.generateGitOpsDevEnvironmentConfig(gitOpsDir)
+	if err != nil {
+		return errors.Wrap(err, "generating the GitOps development environment config")
+	}
+
+	err = options.applyGitOpsDevEnvironmentConfig(gitOpsEnvDir, ns)
+	if err != nil {
+		return errors.Wrap(err, "applying the GitOps development environment config")
+	}
+
+	log.Successf("\nJenkins X installation completed successfully")
+
+	options.logAdminPassword()
+
+	log.Infof("\nYour Kubernetes context is now set to the namespace: %s \n", util.ColorInfo(ns))
+	log.Infof("To switch back to your original namespace use: %s\n", util.ColorInfo("jx namespace "+originalNs))
+	log.Infof("For help on switching contexts see: %s\n\n", util.ColorInfo("https://jenkins-x.io/developing/kube-context/"))
+
+	log.Infof("To import existing projects into Jenkins:       %s\n", util.ColorInfo("jx import"))
+	log.Infof("To create a new Spring Boot microservice:       %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
+	log.Infof("To create a new microservice from a quickstart: %s\n", util.ColorInfo("jx create quickstart"))
+	return nil
+}
+
+func (options *InstallOptions) configureKubectl(namespace string) error {
 	context := ""
+	var err error
 	if !options.Flags.DisableSetKubeContext {
 		context, err = options.getCommandOutput("", "kubectl", "config", "current-context")
 		if err != nil {
@@ -534,17 +615,16 @@ func (options *InstallOptions) Run() error {
 	}
 
 	if !options.Flags.DisableSetKubeContext {
-		err = options.RunCommand("kubectl", "config", "set-context", context, "--namespace", ns)
+		err = options.RunCommand("kubectl", "config", "set-context", context, "--namespace", namespace)
 		if err != nil {
 			return errors.Wrapf(err, "failed to set the context '%s' in kube configuration", context)
 		}
 	}
+	return nil
+}
 
-	options.Flags.Provider, err = options.GetCloudProvider(options.Flags.Provider)
-	if err != nil {
-		return errors.Wrapf(err, "failed to get the cloud provider '%s'", options.Flags.Provider)
-	}
-
+func (options *InstallOptions) init() error {
+	initOpts := &options.InitOptions
 	initOpts.Flags.Provider = options.Flags.Provider
 	initOpts.Flags.Namespace = options.Flags.Namespace
 	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
@@ -553,47 +633,6 @@ func (options *InstallOptions) Run() error {
 		initOpts.Flags.Http = exposeController.Config.HTTP == "true"
 	}
 	initOpts.BatchMode = options.BatchMode
-
-	if options.Flags.Provider == AKS {
-		/**
-		 * create a cluster admin role
-		 */
-		err = options.createClusterAdmin()
-		if err != nil {
-			return errors.Wrap(err, "failed to create the cluster admin")
-		}
-		log.Success("created role cluster-admin")
-	}
-
-	// lets ignore errors getting the current context in case we are running inside a pod
-	currentContext := ""
-	if !options.Flags.DisableSetKubeContext {
-		currentContext, err = options.getCommandOutput("", "kubectl", "config", "current-context")
-		if err != nil {
-			return errors.Wrap(err, "failed to get the current context")
-		}
-	}
-	isAwsProvider := options.Flags.Provider == AWS || options.Flags.Provider == EKS
-	if isAwsProvider {
-		err = options.ensureDefaultStorageClass(client, "gp2", "kubernetes.io/aws-ebs", "gp2")
-		if err != nil {
-			return err
-		}
-	}
-
-	if currentContext == "minikube" {
-		if options.Flags.Provider == "" {
-			options.Flags.Provider = MINIKUBE
-		}
-		if options.Flags.Domain == "" {
-			ip, err := options.getCommandOutput("", "minikube", "ip")
-			if err != nil {
-				return errors.Wrap(err, "failed to get the IP from Minikube")
-			}
-			options.Flags.Domain = ip + ".nip.io"
-		}
-	}
-
 	if initOpts.Flags.Domain == "" && options.Flags.Domain != "" {
 		initOpts.Flags.Domain = options.Flags.Domain
 	}
@@ -625,17 +664,7 @@ func (options *InstallOptions) Run() error {
 		}
 		return nil
 	}
-	if !options.GitOpsMode {
-		apisClient, err := options.CreateApiExtensionsClient()
-		if err != nil {
-			return errors.Wrap(err, "failed to create the API extensions client")
-		}
-		kube.RegisterAllCRDs(apisClient)
-		if err != nil {
-			return err
-		}
-	}
-	err = options.ModifyDevEnvironment(callback)
+	err := options.ModifyDevEnvironment(callback)
 	if err != nil {
 		return err
 	}
@@ -665,258 +694,209 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "failed to initialize the jx")
 	}
 
-	if isOpenShiftProvider(options.Flags.Provider) {
-		err = options.enableOpenShiftSCC(ns)
-		if err != nil {
-			return errors.Wrap(err, "failed to enable the OpenShiftSCC")
-		}
-	}
-
-	if options.Flags.Provider == IKS {
-		/**
-		* Add the IBM chart repo for the Block Storage Driver
-		 */
-		err = options.addHelmBinaryRepoIfMissing(DEFAULT_IBMREPO_URL, "ibm")
-		if err != nil {
-			return errors.Wrap(err, "failed to add the IBM helm repo")
-		}
-		err = options.Helm().UpdateRepo()
-		if err != nil {
-			return errors.Wrap(err, "failed to update the helm repo")
-		}
-		err = options.Helm().UpgradeChart("ibm/ibmcloud-block-storage-plugin", "ibmcloud-block-storage-plugin",
-			"default", nil, true, nil, false, false, nil, nil, "")
-		if err != nil {
-			return errors.Wrap(err, "failed to install/upgrade the IBM Cloud Block Storage drivers")
-		}
-		err = options.changeDefaultStorageClass(client, "ibmc-block-bronze")
-		if err != nil {
-			return err
-		}
-	}
-
-	// share the init domain option with the install options
 	if initOpts.Flags.Domain != "" && options.Flags.Domain == "" {
 		options.Flags.Domain = initOpts.Flags.Domain
 	}
 
-	// TODO - we want to enable storing secrets in Vault for gitops. Reenable this once the feature is finished
-	//if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
-	if options.Flags.Vault {
-		err = options.createSystemVault(client, ns)
-	}
+	return nil
+}
 
-	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
-	if helmConfig.ExposeController.Config.Domain == "" {
-		helmConfig.ExposeController.Config.Domain = options.InitOptions.Flags.Domain
-	}
-	domain := helmConfig.ExposeController.Config.Domain
-	if domain != "" && addon.IsAddonEnabled("gitea") {
-		helmConfig.Jenkins.Servers.GetOrCreateFirstGitea().Url = "http://gitea-gitea." + ns + "." + domain
-	}
-	if options.Flags.Prow {
-		t := true
-		f := false
-		helmConfig.ControllerBuild.Enabled = &t
-		helmConfig.Jenkins.Enabled = &f
-	}
-
-	dockerRegistry, err := options.dockerRegistryValue()
-	if err != nil {
-		return errors.Wrap(err, "failed to get the docker registry value")
-	}
-
-	kubeConfig, _, err := options.Kube().LoadConfig()
-	if err != nil {
-		return err
-	}
-	if options.Flags.Provider == AKS {
-		/**
-		 * Assign ACR role to AKS
-		 */
-		server := kube.CurrentServer(kubeConfig)
-		azureCLI := aks.NewAzureRunner()
-		resourceGroup, name, cluster, err := azureCLI.GetClusterClient(server)
+func (options *InstallOptions) getPlatformVersion(cloudEnvDir string,
+	configStore configio.ConfigStore) (string, error) {
+	version := options.Flags.Version
+	var err error
+	if version == "" {
+		version, err = LoadVersionFromCloudEnvironmentsDir(cloudEnvDir, configStore)
 		if err != nil {
-			return errors.Wrap(err, "failed to get cluster from Azure")
-		}
-		registryID := ""
-		helmConfig.PipelineSecrets.DockerConfig, dockerRegistry, registryID, err = azureCLI.GetRegistry(resourceGroup, name, dockerRegistry)
-		if err != nil {
-			return errors.Wrap(err, "failed to get registry from Azure")
-		}
-		azureCLI.AssignRole(cluster, registryID)
-		log.Infof("Assign AKS %s a reader role for ACR %s\n", util.ColorInfo(server), util.ColorInfo(dockerRegistry))
-	}
-
-	if options.Flags.Provider == IKS {
-		dockerRegistry = iks.GetClusterRegistry(client)
-		helmConfig.PipelineSecrets.DockerConfig, err = iks.GetRegistryConfigJSON(dockerRegistry)
-	}
-	if dockerRegistry != "" {
-		if helmConfig.Jenkins.Servers.Global.EnvVars == nil {
-			helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
-		}
-		helmConfig.Jenkins.Servers.Global.EnvVars["DOCKER_REGISTRY"] = dockerRegistry
-		if isOpenShiftProvider(options.Flags.Provider) && dockerRegistry == "docker-registry.default.svc:5000" {
-			options.enableOpenShiftRegistryPermissions(ns, helmConfig, dockerRegistry)
+			return "", errors.Wrap(err, "failed to load version from cloud environments dir")
 		}
 	}
+	return version, nil
+}
 
-	if initOpts.Flags.TillerNamespace != "" {
-		if helmConfig.Jenkins.Servers.Global.EnvVars == nil {
-			helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
-		}
-		helmConfig.Jenkins.Servers.Global.EnvVars["TILLER_NAMESPACE"] = initOpts.Flags.TillerNamespace
-		os.Setenv("TILLER_NAMESPACE", initOpts.Flags.TillerNamespace)
-	}
-	isProw := false
-	if options.Flags.GitOpsMode {
-		isProw = options.Flags.Prow
-	} else {
-		options.SetDevNamespace(ns)
-		isProw, err = options.isProw()
-		if err != nil {
-			return errors.Wrapf(err, "cannot work out if this is a prow based install in namespace %s", options.currentNamespace)
-		}
-	}
+func (options *InstallOptions) installPlatform(providerEnvDir string, jxChart string, jxRelName string,
+	namespace string, version string, valuesFiles []string, secretsFiles []string) error {
 
-	if isProw {
-		enableJenkins := false
-		helmConfig.Jenkins.Enabled = &enableJenkins
-	}
-
-	// lets add any GitHub Enterprise servers
-	gitAuthCfg, err := options.CreateGitAuthConfigService()
-	if err != nil {
-		return errors.Wrap(err, "failed to create the git auth config service")
-	}
-	err = options.addGitServersToJenkinsConfig(helmConfig, gitAuthCfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to add the Git servers to Jenkins config")
-	}
-
-	username := originalGitUsername
-	if username == "" {
-		if os.Getenv(JX_GIT_USER) != "" {
-			username = os.Getenv(JX_GIT_USER)
-		}
-	}
-	if username != "" && originalGitToken != "" && originalGitServer != "" {
-		err = gitAuthCfg.SaveUserAuth(originalGitServer, &auth.UserAuth{
-			ApiToken: originalGitToken,
-			Username: username,
-		})
-		if err != nil {
-			return err
-		}
-		log.Infof("Saving Git token configuration for server %s and user name %s.\n",
-			util.ColorInfo(originalGitServer), util.ColorInfo(username))
-	}
-
-	// clone the environments repo
-	wrkDir, err := options.cloneJXCloudEnvironmentsRepo()
-	if err != nil {
-		return errors.Wrap(err, "failed to clone the jx cloud environments repo")
-	}
-
-	// run  helm install setting the token and domain values
-	if options.Flags.Provider == "" {
-		return fmt.Errorf("no Kubernetes provider found to match cloud-environment with")
-	}
-
-	makefileDir := filepath.Join(wrkDir, fmt.Sprintf("env-%s", strings.ToLower(options.Flags.Provider)))
-	if _, err := os.Stat(wrkDir); os.IsNotExist(err) {
-		return fmt.Errorf("cloud environment dir %s not found", makefileDir)
-	}
-
-	// create a temporary file that's used to pass current git creds to helm in order to create a secret for pipelines to tag releases
-	dir, err := util.ConfigDir()
-	if err != nil {
-		return errors.Wrap(err, "failed to create a temporary config dir for Git credentials")
-	}
-
-	cloudEnvironmentValuesLocation := filepath.Join(makefileDir, CloudEnvValuesFile)
-	cloudEnvironmentSecretsLocation := filepath.Join(makefileDir, CloudEnvSecretsFile)
-	cloudEnvironmentSopsLocation := filepath.Join(makefileDir, CloudEnvSopsConfigFile)
-
-	sopsFileExists, err := util.FileExists(cloudEnvironmentSopsLocation)
-	if err != nil {
-		return errors.Wrap(err, "failed to look for "+cloudEnvironmentSopsLocation)
-	}
-
-	adminSecretsServiceInit := false
-
-	if sopsFileExists {
-		log.Infof("Attempting to decrypt secrets file %s\n", util.ColorInfo(cloudEnvironmentSecretsLocation))
-		// need to decrypt secrets now
-		err = options.Helm().DecryptSecrets(cloudEnvironmentSecretsLocation)
-		if err != nil {
-			return errors.Wrap(err, "failed to decrypt "+cloudEnvironmentSecretsLocation)
-		}
-
-		cloudEnvironmentSecretsDecryptedLocation := filepath.Join(makefileDir, CloudEnvSecretsFile+".dec")
-		decryptedSecretsFile, err := util.FileExists(cloudEnvironmentSecretsDecryptedLocation)
-		if err != nil {
-			return errors.Wrap(err, "failed to look for "+cloudEnvironmentSecretsDecryptedLocation)
-		}
-
-		if decryptedSecretsFile {
-			log.Infof("Successfully decrypted %s\n", util.ColorInfo(cloudEnvironmentSecretsDecryptedLocation))
-			cloudEnvironmentSecretsLocation = cloudEnvironmentSecretsDecryptedLocation
-
-			err = options.AdminSecretsService.NewAdminSecretsConfigFromSecret(cloudEnvironmentSecretsDecryptedLocation)
-			if err != nil {
-				return errors.Wrap(err, "failed to create the admin secret config service from the decrypted secrets file")
-			}
-			adminSecretsServiceInit = true
-		}
-	}
-
-	if !adminSecretsServiceInit {
-		err = options.AdminSecretsService.NewAdminSecretsConfig()
-		if err != nil {
-			return errors.Wrap(err, "failed to create the admin secret config service")
-		}
-	}
-
-	adminSecrets := &options.AdminSecretsService.Secrets
-
-	// get secrets to use in helm install
-	gitSecrets, err := options.getGitSecrets()
-	if err != nil {
-		return errors.Wrap(err, "failed to read the git secrets from configuration")
-	}
-
-	secretsFileName := filepath.Join(dir, GitSecretsFile)
-	err = configStore.Write(secretsFileName, []byte(gitSecrets))
-	if err != nil {
-		return errors.Wrap(err, "failed to write the git secrets in the secrets file")
-	}
-
-	adminSecretsFileName := filepath.Join(dir, AdminSecretsFile)
-	err = configStore.WriteObject(adminSecretsFileName, adminSecrets)
-	if err != nil {
-		return errors.Wrap(err, "failed to write the admin config file")
-	}
-
-	configFileName := filepath.Join(dir, ExtraValuesFile)
-	err = configStore.WriteObject(configFileName, helmConfig)
-	if err != nil {
-		return errors.Wrap(err, "failed to write the helm config file")
-	}
-
-	err = options.modifySecrets(helmConfig, adminSecrets, gitSecrets)
-	if err != nil {
-		return err
-	}
-	log.Infof("Generated helm values %s\n", util.ColorInfo(configFileName))
+	options.Helm().SetCWD(providerEnvDir)
 
 	timeout := options.Flags.Timeout
 	if timeout == "" {
 		timeout = defaultInstallTimeout
 	}
+	timeoutInt, err := strconv.Atoi(timeout)
+	if err != nil {
+		return errors.Wrap(err, "failed to convert the helm install timeout value")
+	}
 
+	allValuesFiles := []string{}
+	allValuesFiles = append(allValuesFiles, valuesFiles...)
+	allValuesFiles = append(allValuesFiles, secretsFiles...)
+	for _, f := range allValuesFiles {
+		options.Debugf("Adding values file %s\n", util.ColorInfo(f))
+	}
+
+	if !options.Flags.InstallOnly {
+		err = options.Helm().UpgradeChart(jxChart, jxRelName, namespace, &version, true,
+			&timeoutInt, false, false, nil, allValuesFiles, "")
+	} else {
+		err = options.Helm().InstallChart(jxChart, jxRelName, namespace, &version, &timeoutInt,
+			nil, allValuesFiles, "")
+	}
+	if err != nil {
+		return errors.Wrap(err, "failed to install/upgrade the jenkins-x platform chart")
+	}
+
+	err = options.waitForInstallToBeReady(namespace)
+	if err != nil {
+		return errors.Wrap(err, "failed to wait for jenkinx-x chart installation to be ready")
+	}
+	log.Infof("Jenkins X deployments ready in namespace %s\n", namespace)
+	return nil
+}
+
+func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gitOpsDir string, configStore configio.ConfigStore,
+	chartRepository string, chartName string, namespace string, version string, valuesFiles []string, secretsFiles []string) error {
+	options.CreateEnvOptions.NoDevNamespaceInit = true
+	deps := []*helm.Dependency{
+		{
+			Name:       JenkinsXPlatformChartName,
+			Version:    version,
+			Repository: DEFAULT_CHARTMUSEUM_URL,
+		},
+	}
+	requirements := &helm.Requirements{
+		Dependencies: deps,
+	}
+
+	chartFile := filepath.Join(gitOpsEnvDir, helm.ChartFileName)
+	requirementsFile := filepath.Join(gitOpsEnvDir, helm.RequirementsFileName)
+	secretsFile := filepath.Join(gitOpsEnvDir, helm.SecretsFileName)
+	valuesFile := filepath.Join(gitOpsEnvDir, helm.ValuesFileName)
+	err := helm.SaveRequirementsFile(requirementsFile, requirements)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save GitOps helm requirements file %s", requirementsFile)
+	}
+
+	err = configStore.Write(chartFile, []byte(GitOpsChartYAML))
+	if err != nil {
+		return errors.Wrapf(err, "failed to save file %s", chartFile)
+	}
+
+	err = helm.CombineValueFilesToFile(secretsFile, secretsFiles, JenkinsXPlatformChartName, nil)
+	if err != nil {
+		return errors.Wrapf(err, "failed to generate %s by combining helm Secret YAML files %s", secretsFile, strings.Join(secretsFiles, ", "))
+	}
+
+	if options.Flags.Vault {
+		err := options.storeSecretsFilesInVault([]string{secretsFile})
+		if err != nil {
+			return errors.Wrapf(err, "storing in Vault the secrets files: %s", secretsFile)
+		}
+
+		err = util.DestroyFile(secretsFile)
+		if err != nil {
+			return errors.Wrapf(err, "destroying the secrets file '%s' after storing it in Vault", secretsFile)
+		}
+	}
+
+	extraValues := map[string]interface{}{
+		"postinstalljob": map[string]interface{}{"enabled": "true"},
+	}
+	err = helm.CombineValueFilesToFile(valuesFile, valuesFiles, JenkinsXPlatformChartName, extraValues)
+	if err != nil {
+		return errors.Wrapf(err, "failed to generate %s by combining helm value YAML files %s", valuesFile, strings.Join(valuesFiles, ", "))
+	}
+
+	gitIgnore := filepath.Join(gitOpsDir, ".gitignore")
+	err = configStore.Write(gitIgnore, []byte(devGitOpsGitIgnore))
+	if err != nil {
+		return errors.Wrapf(err, "failed to write %s", gitIgnore)
+	}
+
+	readme := filepath.Join(gitOpsDir, "README.md")
+	err = configStore.Write(readme, []byte(devGitOpsReadMe))
+	if err != nil {
+		return errors.Wrapf(err, "failed to write %s", readme)
+	}
+
+	jenkinsFile := filepath.Join(gitOpsDir, "Jenkinsfile")
+	jftTmp := devGitOpsJenkinsfile
+	isProw := options.Flags.Prow
+	if isProw {
+		jftTmp = devGitOpsJenkinsfileProw
+	}
+	text := fmt.Sprintf(jftTmp, namespace)
+	err = configStore.Write(jenkinsFile, []byte(text))
+	if err != nil {
+		return errors.Wrapf(err, "failed to write %s", jenkinsFile)
+	}
+	return nil
+}
+
+func (options *InstallOptions) configureAndInstallProw(namespace string) error {
+	options.currentNamespace = namespace
+	if options.Flags.Prow {
+		options.OAUTHToken = options.GitRepositoryOptions.ApiToken
+		err := options.installProw()
+		if err != nil {
+			return fmt.Errorf("failed to install Prow: %v", err)
+		}
+	}
+	return nil
+}
+
+func (options *InstallOptions) configureHelm3(namespace string) error {
+	initOpts := &options.InitOptions
+	helmBinary := initOpts.HelmBinary()
+	if helmBinary != "helm" {
+		helmOptions := EditHelmBinOptions{}
+		helmOptions.CommonOptions = options.CommonOptions
+		helmOptions.CommonOptions.BatchMode = true
+		helmOptions.CommonOptions.Args = []string{helmBinary}
+		helmOptions.currentNamespace = namespace
+		helmOptions.devNamespace = namespace
+		err := helmOptions.Run()
+		if err != nil {
+			return errors.Wrap(err, "failed to edit the helm options")
+		}
+	}
+	return nil
+}
+
+func (options *InstallOptions) configureHelm(client kubernetes.Interface, namespace string) {
+	initOpts := &options.InitOptions
+	helmBinary := initOpts.HelmBinary()
+	options.Helm().SetHelmBinary(helmBinary)
+	if initOpts.Flags.NoTiller {
+		helmer := options.Helm()
+		helmCli, ok := helmer.(*helm.HelmCLI)
+		if ok && helmCli != nil {
+			options.helm = helm.NewHelmTemplate(helmCli, helmCli.CWD, client, namespace)
+		} else {
+			helmTemplate, ok := helmer.(*helm.HelmTemplate)
+			if ok {
+				options.helm = helmTemplate
+			} else {
+				log.Warnf("Helm facade is not a *helm.HelmCLI or *helm.HelmTemplate: %#v\n", helmer)
+			}
+		}
+	}
+}
+
+func (options *InstallOptions) configureHelmRepo() error {
+	err := options.addHelmBinaryRepoIfMissing(DEFAULT_CHARTMUSEUM_URL, "jenkins-x")
+	if err != nil {
+		return errors.Wrap(err, "failed to add the jenkinx-x helm repo")
+	}
+
+	err = options.Helm().UpdateRepo()
+	if err != nil {
+		return errors.Wrap(err, "failed to update the helm repo")
+	}
+	return nil
+}
+
+func (options *InstallOptions) selectJenkinsInstallation() error {
 	if !options.BatchMode && !options.Flags.Prow {
 		jenkinsInstallOptions := []string{
 			ServerlessJenkins,
@@ -930,250 +910,226 @@ func (options *InstallOptions) Run() error {
 			options.Flags.Prow = true
 		}
 	}
+	return nil
+}
 
-	log.Infof("Installing Jenkins X platform helm chart from: %s\n", makefileDir)
+func (options *InstallOptions) configureTillerNamespace() error {
+	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
+	initOpts := &options.InitOptions
+	if initOpts.Flags.TillerNamespace != "" {
+		if helmConfig.Jenkins.Servers.Global.EnvVars == nil {
+			helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
+		}
+		helmConfig.Jenkins.Servers.Global.EnvVars["TILLER_NAMESPACE"] = initOpts.Flags.TillerNamespace
+		os.Setenv("TILLER_NAMESPACE", initOpts.Flags.TillerNamespace)
+	}
+	return nil
+}
 
-	options.Verbose = true
-	err = options.addHelmBinaryRepoIfMissing(DEFAULT_CHARTMUSEUM_URL, "jenkins-x")
-	if err != nil {
-		return errors.Wrap(err, "failed to add the jenkinx-x helm repo")
+func (options *InstallOptions) configureHelmValues(namespace string) error {
+	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
+	if helmConfig.ExposeController.Config.Domain == "" {
+		helmConfig.ExposeController.Config.Domain = options.InitOptions.Flags.Domain
 	}
 
-	version := options.Flags.Version
-	if version == "" {
-		version, err = LoadVersionFromCloudEnvironmentsDir(wrkDir, configStore)
+	domain := helmConfig.ExposeController.Config.Domain
+	if domain != "" && addon.IsAddonEnabled("gitea") {
+		helmConfig.Jenkins.Servers.GetOrCreateFirstGitea().Url = "http://gitea-gitea." + namespace + "." + domain
+	}
+
+	err := options.configureTillerNamespace()
+	if err != nil {
+		return errors.Wrap(err, "configuring the tiller namespace")
+	}
+
+	isProw := false
+	if options.Flags.GitOpsMode {
+		isProw = options.Flags.Prow
+	} else {
+		options.SetDevNamespace(namespace)
+		isProw, err = options.isProw()
 		if err != nil {
-			return errors.Wrap(err, "failed to load version from cloud environments dir")
+			return errors.Wrapf(err, "cannot work out if this is a prow based install in namespace %s", options.currentNamespace)
 		}
 	}
 
-	err = options.Helm().UpdateRepo()
-	if err != nil {
-		return errors.Wrap(err, "failed to update the helm repo")
+	if isProw {
+		enableJenkins := false
+		helmConfig.Jenkins.Enabled = &enableJenkins
+		enableControllerBuild := true
+		helmConfig.ControllerBuild.Enabled = &enableControllerBuild
 	}
 
-	valueFiles := []string{cloudEnvironmentValuesLocation, secretsFileName, adminSecretsFileName, configFileName, cloudEnvironmentSecretsLocation}
-	valueFiles, err = helm.AppendMyValues(valueFiles)
+	return nil
+}
+
+func (options *InstallOptions) getHelmValuesFiles(configStore configio.ConfigStore, providerEnvDir string) ([]string, []string, []string, error) {
+	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
+	cloudEnvironmentValuesLocation := filepath.Join(providerEnvDir, CloudEnvValuesFile)
+	cloudEnvironmentSecretsLocation := filepath.Join(providerEnvDir, CloudEnvSecretsFile)
+
+	valuesFiles := []string{}
+	secretsFiles := []string{}
+	temporaryFiles := []string{}
+
+	adminSecrets, err := options.getAdminSecrets(providerEnvDir, cloudEnvironmentSecretsLocation)
 	if err != nil {
-		return errors.Wrap(err, "failed to append the myvalues.yaml file")
+		return valuesFiles, secretsFiles, temporaryFiles,
+			errors.Wrap(err, "creating the admin secrets")
 	}
 
-	options.currentNamespace = ns
-	if options.Flags.Prow {
-		// install Prow into the new env
-		options.OAUTHToken = options.GitRepositoryOptions.ApiToken
-		err = options.installProw()
+	gitSecrets, err := options.getGitSecrets()
+	if err != nil {
+		return valuesFiles, secretsFiles, temporaryFiles,
+			errors.Wrap(err, "reading the git secrets from configuration")
+	}
+
+	dir, err := util.ConfigDir()
+	if err != nil {
+		return valuesFiles, secretsFiles, temporaryFiles,
+			errors.Wrap(err, "creating a temporary config dir for Git credentials")
+	}
+	gitSecretsFileName := filepath.Join(dir, GitSecretsFile)
+	err = configStore.Write(gitSecretsFileName, []byte(gitSecrets))
+	if err != nil {
+		return valuesFiles, secretsFiles, temporaryFiles,
+			errors.Wrapf(err, "writing the git secrets in the secrets file '%s'", gitSecretsFileName)
+	}
+
+	adminSecretsFileName := filepath.Join(dir, AdminSecretsFile)
+	err = configStore.WriteObject(adminSecretsFileName, adminSecrets)
+	if err != nil {
+		return valuesFiles, secretsFiles, temporaryFiles,
+			errors.Wrapf(err, "writing the admin secrets in the secrets file '%s'", adminSecretsFileName)
+	}
+
+	extraValuesFileName := filepath.Join(dir, ExtraValuesFile)
+	err = configStore.WriteObject(extraValuesFileName, helmConfig)
+	if err != nil {
+		return valuesFiles, secretsFiles, temporaryFiles,
+			errors.Wrapf(err, "writing the helm config in the file '%s'", extraValuesFileName)
+	}
+	log.Infof("Generated helm values %s\n", util.ColorInfo(extraValuesFileName))
+
+	err = options.modifySecrets(helmConfig, adminSecrets, gitSecrets)
+	if err != nil {
+		return valuesFiles, temporaryFiles, secretsFiles, errors.Wrap(err, "updating the secrets data in Kubernetes cluster")
+	}
+
+	valuesFiles = append(valuesFiles, cloudEnvironmentValuesLocation)
+	valuesFiles, err = helm.AppendMyValues(valuesFiles)
+	if err != nil {
+		return valuesFiles, secretsFiles, temporaryFiles,
+			errors.Wrap(err, "failed to append the myvalues.yaml file")
+	}
+	secretsFiles = append(secretsFiles,
+		[]string{gitSecretsFileName, adminSecretsFileName, extraValuesFileName, cloudEnvironmentSecretsLocation}...)
+
+	if options.Flags.Vault {
+		temporaryFiles = append(temporaryFiles, adminSecretsFileName, gitSecretsFileName, extraValuesFileName, cloudEnvironmentSecretsLocation)
+		err := options.storeSecretsFilesInVault([]string{adminSecretsFileName})
 		if err != nil {
-			return fmt.Errorf("failed to install Prow: %v", err)
+			return valuesFiles, secretsFiles, temporaryFiles,
+				errors.Wrapf(err, "storing in Vault the secrets files: %s", adminSecretsFileName)
 		}
+	} else {
+		temporaryFiles = append(temporaryFiles, gitSecretsFileName, extraValuesFileName, cloudEnvironmentSecretsLocation)
 	}
-	timeoutInt, err := strconv.Atoi(timeout)
+
+	return valuesFiles, secretsFiles, temporaryFiles, nil
+}
+
+func (options *InstallOptions) configureGitAuth(gitUserName string, gitServer string, gitAPIToken string) error {
+	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
+	gitAuthCfg, err := options.CreateGitAuthConfigService()
 	if err != nil {
-		return errors.Wrap(err, "failed to convert the helm install timeout value")
+		return errors.Wrap(err, "failed to create the git auth config service")
 	}
-	options.Helm().SetCWD(makefileDir)
-	jxChart := JenkinsXPlatformChart
-	jxRelName := "jenkins-x"
-
-	log.Infof("Installing jx into namespace %s\n", util.ColorInfo(ns))
-	if !initOpts.Flags.NoTiller {
-		// Need to check the tiller pod is ready before proceeding
-		serviceAccountName := "tiller"
-		tillerNamespace := options.InitOptions.Flags.TillerNamespace
-
-		log.Infof("Waiting for %s pod to be ready, service account name is %s, namespace is %s, tiller namespace is %s\n",
-			util.ColorInfo("tiller"), util.ColorInfo(serviceAccountName), util.ColorInfo(ns), util.ColorInfo(tillerNamespace))
-
-		clusterRoleBindingName := serviceAccountName + "-role-binding"
-		role := options.InitOptions.Flags.TillerClusterRole
-
-		log.Infof("Waiting for cluster role binding to be defined, named %s in namespace %s\n ", util.ColorInfo(clusterRoleBindingName), util.ColorInfo(ns))
-		err = options.ensureClusterRoleBinding(clusterRoleBindingName, role, ns, serviceAccountName)
-		if err != nil {
-			return errors.Wrap(err, "tiller cluster role not defined")
-		} else {
-			log.Infof("tiller cluster role defined: %s in namespace %s\n", util.ColorInfo(role), util.ColorInfo(ns))
-		}
-		err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
-		if err != nil {
-			msg := fmt.Sprintf("tiller pod (tiller-deploy in namespace %s) is not running after 10 minutes", tillerNamespace)
-			return errors.Wrap(err, msg)
-		} else {
-			log.Infoln("tiller pod running")
-		}
-	}
-
-	tls, err := util.ParseBool(exposeController.Config.TLSAcme)
+	err = options.addGitServersToJenkinsConfig(helmConfig, gitAuthCfg)
 	if err != nil {
-		return fmt.Errorf("failed to parse TLS exposecontroller boolean %v", err)
-	}
-	ic := kube.IngressConfig{
-		Domain:  domain,
-		TLS:     tls,
-		Exposer: exposeController.Config.Exposer,
-	}
-	// save ingress config details to a configmap
-	_, err = options.saveAsConfigMap(kube.IngressConfigConfigmap, ic)
-	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to add the Git servers to Jenkins config")
 	}
 
-	// save cluster config CA and server url to a configmap
-	if !options.Flags.DisableSetKubeContext {
-		var jxInstallConfig *kube.JXInstallConfig
-		if kubeConfig != nil {
-			kubeConfigContext := kube.CurrentContext(kubeConfig)
-			if kubeConfigContext != nil {
-				server := kube.Server(kubeConfig, kubeConfigContext)
-				certificateAuthorityData := kube.CertificateAuthorityData(kubeConfig, kubeConfigContext)
-				jxInstallConfig = &kube.JXInstallConfig{
-					Server: server,
-					CA:     certificateAuthorityData,
-				}
-			}
+	username := gitUserName
+	if username == "" {
+		if os.Getenv(JX_GIT_USER) != "" {
+			username = os.Getenv(JX_GIT_USER)
 		}
-
-		_, err = options.ModifyConfigMap(kube.ConfigMapNameJXInstallConfig, func(cm *core_v1.ConfigMap) error {
-			data := util.ToStringMapStringFromStruct(jxInstallConfig)
-			cm.Data = data
-			return nil
+	}
+	if username != "" && gitAPIToken != "" && gitServer != "" {
+		err = gitAuthCfg.SaveUserAuth(gitServer, &auth.UserAuth{
+			ApiToken: gitAPIToken,
+			Username: username,
 		})
 		if err != nil {
 			return err
 		}
+		log.Infof("Saving Git token configuration for server %s and user name %s.\n",
+			util.ColorInfo(gitServer), util.ColorInfo(username))
 	}
 
-	// lets prompt the user which kind of workload to default to (they can change this at any time later)
-	ebp := &EditBuildPackOptions{
-		BuildPackName: options.Flags.BuildPackName,
-	}
-	ebp.CommonOptions = options.CommonOptions
+	return nil
+}
 
-	err = ebp.Run()
-	if err != nil {
-		return err
-	}
-
-	if options.Flags.GitOpsMode {
-		options.CreateEnvOptions.NoDevNamespaceInit = true
-		deps := []*helm.Dependency{
-			{
-				Name:       JenkinsXPlatformChartName,
-				Version:    version,
-				Repository: DEFAULT_CHARTMUSEUM_URL,
-			},
-		}
-		requirements := &helm.Requirements{
-			Dependencies: deps,
-		}
-
-		chartFile := filepath.Join(gitOpsEnvDir, helm.ChartFileName)
-		requirementsFile := filepath.Join(gitOpsEnvDir, helm.RequirementsFileName)
-		secretsFile := filepath.Join(gitOpsEnvDir, helm.SecretsFileName)
-		valuesFile := filepath.Join(gitOpsEnvDir, helm.ValuesFileName)
-		err = helm.SaveRequirementsFile(requirementsFile, requirements)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to save GitOps helm requirements file %s", requirementsFile)
-		}
-
-		err = configStore.Write(chartFile, []byte(GitOpsChartYAML))
-		if err != nil {
-			return errors.Wrapf(err, "Failed to save file %s", chartFile)
-		}
-
-		secretFiles := []string{}
-		onlyValueFiles := []string{}
-
-		for _, vf := range valueFiles {
-			if strings.HasSuffix(strings.ToLower(vf), "secrets.yaml") {
-				secretFiles = append(secretFiles, vf)
-			} else {
-				onlyValueFiles = append(onlyValueFiles, vf)
-			}
-		}
-
-		if options.Flags.Vault {
-			secretsToSave := map[string]interface{}{
-				GitSecretsFile:   gitSecrets,
-				AdminSecretsFile: adminSecrets,
-			}
-
-			err = options.storeSecretsInVault(secretsToSave)
+func (options *InstallOptions) cleanupTempFiles(temporaryFiles []string) error {
+	for _, tempFile := range temporaryFiles {
+		exists, err := util.FileExists(tempFile)
+		if exists && err == nil {
+			err := util.DestroyFile(tempFile)
 			if err != nil {
-				return errors.Wrap(err, "storing the install secrets into vault")
-			}
-		} else {
-			// lets combine the various values and secrets files
-			err = helm.CombineValueFilesToFile(secretsFile, secretFiles, JenkinsXPlatformChartName, nil)
-			if err != nil {
-				return errors.Wrapf(err, "Failed to generate %s by combining helm Secret YAML files %s", secretsFile, strings.Join(secretFiles, ", "))
+				return errors.Wrapf(err, "removing temporary file '%s'", tempFile)
 			}
 		}
-
-		extraValues := map[string]interface{}{
-			"postinstalljob": map[string]interface{}{"enabled": "true"},
-		}
-		err = helm.CombineValueFilesToFile(valuesFile, onlyValueFiles, JenkinsXPlatformChartName, extraValues)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to generate %s by combining helm value YAML files %s", valuesFile, strings.Join(onlyValueFiles, ", "))
-		}
-
-		gitIgnore := filepath.Join(gitOpsDir, ".gitignore")
-		err = configStore.Write(gitIgnore, []byte(devGitOpsGitIgnore))
-		if err != nil {
-			return errors.Wrapf(err, "failed to write %s", gitIgnore)
-		}
-
-		readme := filepath.Join(gitOpsDir, "README.md")
-		err = configStore.Write(readme, []byte(devGitOpsReadMe))
-		if err != nil {
-			return errors.Wrapf(err, "failed to write %s", readme)
-		}
-
-		jenkinsFile := filepath.Join(gitOpsDir, "Jenkinsfile")
-		jftTmp := devGitOpsJenkinsfile
-		if isProw {
-			jftTmp = devGitOpsJenkinsfileProw
-		}
-		text := fmt.Sprintf(jftTmp, ns)
-		err = configStore.Write(jenkinsFile, []byte(text))
-		if err != nil {
-			return errors.Wrapf(err, "failed to write %s", jenkinsFile)
-		}
-	} else {
-		for _, v := range valueFiles {
-			options.Debugf("Adding values file %s\n", util.ColorInfo(v))
-		}
-
-		if !options.Flags.InstallOnly {
-			err = options.Helm().UpgradeChart(jxChart, jxRelName, ns, &version, true, &timeoutInt, false, false, nil,
-				valueFiles, "")
-		} else {
-			err = options.Helm().InstallChart(jxChart, jxRelName, ns, &version, &timeoutInt, nil, valueFiles, "")
-		}
-		if err != nil {
-			return errors.Wrap(err, "failed to install/upgrade the jenkins-x platform chart")
-		}
-
-		err = options.waitForInstallToBeReady(ns)
-		if err != nil {
-			return errors.Wrap(err, "failed to wait for jenkinx-x chart installation to be ready")
-		}
-		log.Infof("Jenkins X deployments ready in namespace %s\n", ns)
 	}
+	return nil
+}
 
-	if options.Flags.CleanupTempFiles {
-		err = os.Remove(secretsFileName)
+func (options *InstallOptions) verifyTiller(client kubernetes.Interface, namespace string) error {
+	initOpts := &options.InitOptions
+	if !initOpts.Flags.NoTiller {
+		serviceAccountName := "tiller"
+		tillerNamespace := options.InitOptions.Flags.TillerNamespace
+
+		log.Infof("Waiting for %s pod to be ready, service account name is %s, namespace is %s, tiller namespace is %s\n",
+			util.ColorInfo("tiller"), util.ColorInfo(serviceAccountName), util.ColorInfo(namespace), util.ColorInfo(tillerNamespace))
+
+		clusterRoleBindingName := serviceAccountName + "-role-binding"
+		role := options.InitOptions.Flags.TillerClusterRole
+
+		log.Infof("Waiting for cluster role binding to be defined, named %s in namespace %s\n ", util.ColorInfo(clusterRoleBindingName), util.ColorInfo(namespace))
+		err := options.ensureClusterRoleBinding(clusterRoleBindingName, role, namespace, serviceAccountName)
 		if err != nil {
-			return errors.Wrap(err, "failed to cleanup the secrets file")
+			return errors.Wrap(err, "tiller cluster role not defined")
 		}
+		log.Infof("tiller cluster role defined: %s in namespace %s\n", util.ColorInfo(role), util.ColorInfo(namespace))
 
-		err = os.Remove(configFileName)
+		err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
 		if err != nil {
-			return errors.Wrap(err, "failed to cleanup the config file")
+			msg := fmt.Sprintf("tiller pod (tiller-deploy in namespace %s) is not running after 10 minutes", tillerNamespace)
+			return errors.Wrap(err, msg)
+		}
+		log.Infoln("tiller pod running")
+	}
+	return nil
+}
+
+func (options *InstallOptions) configureTillerInDevEnvironment() error {
+	initOpts := &options.InitOptions
+	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
+		callback := func(env *v1.Environment) error {
+			env.Spec.TeamSettings.NoTiller = true
+			log.Info("Disabling the server side use of tiller in the TeamSettings\n")
+			return nil
+		}
+		err := options.ModifyDevEnvironment(callback)
+		if err != nil {
+			return err
 		}
 	}
+	return nil
+}
 
+func (options *InstallOptions) configureProwInTeamSettings() error {
 	if options.Flags.Prow {
 		callback := func(env *v1.Environment) error {
 			env.Spec.WebHookEngine = v1.WebHookEngineProw
@@ -1182,165 +1138,61 @@ func (options *InstallOptions) Run() error {
 			log.Info("Configuring the TeamSettings for Prow\n")
 			return nil
 		}
-		err = options.ModifyDevEnvironment(callback)
+		err := options.ModifyDevEnvironment(callback)
 		if err != nil {
 			return err
 		}
 	}
-	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
-		callback := func(env *v1.Environment) error {
-			env.Spec.TeamSettings.NoTiller = true
-			log.Info("Disabling the server side use of tiller in the TeamSettings\n")
-			return nil
+	return nil
+}
+
+func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigStore, namespace string) (string, string, error) {
+	gitOpsDir := ""
+	gitOpsEnvDir := ""
+	if options.Flags.GitOpsMode {
+		// lets disable loading of Secrets from the jx namespace
+		options.SkipAuthSecretsMerge = true
+		options.Flags.DisableSetKubeContext = true
+
+		var err error
+		if options.Flags.Dir == "" {
+			options.Flags.Dir, err = os.Getwd()
+			if err != nil {
+				return "", "", err
+			}
 		}
-		err = options.ModifyDevEnvironment(callback)
+		gitOpsDir = filepath.Join(options.Flags.Dir, "jenkins-x-dev-environment")
+		gitOpsEnvDir = filepath.Join(gitOpsDir, "env")
+		templatesDir := filepath.Join(gitOpsEnvDir, "templates")
+		err = os.MkdirAll(templatesDir, util.DefaultWritePermissions)
 		if err != nil {
+			return "", "", errors.Wrapf(err, "Failed to make GitOps templates directory %s", templatesDir)
+		}
+
+		options.modifyDevEnvironmentFn = func(callback func(env *v1.Environment) error) error {
+			defaultEnv := kube.CreateDefaultDevEnvironment(namespace)
+			_, err := gitOpsModifyEnvironment(templatesDir, kube.LabelValueDevEnvironment, defaultEnv, configStore, callback)
 			return err
 		}
-	}
-	if helmBinary != "helm" {
-		// default apps to use helm3 too
-		helmOptions := EditHelmBinOptions{}
-		helmOptions.CommonOptions = options.CommonOptions
-		helmOptions.CommonOptions.BatchMode = true
-		helmOptions.CommonOptions.Args = []string{helmBinary}
-		helmOptions.currentNamespace = ns
-		helmOptions.devNamespace = ns
-		err = helmOptions.Run()
-		if err != nil {
-			return errors.Wrap(err, "failed to edit the helm options")
+		options.modifyEnvironmentFn = func(name string, callback func(env *v1.Environment) error) error {
+			defaultEnv := &v1.Environment{}
+			defaultEnv.Labels = map[string]string{}
+			_, err := gitOpsModifyEnvironment(templatesDir, name, defaultEnv, configStore, callback)
+			return err
+		}
+		options.InitOptions.modifyDevEnvironmentFn = options.modifyDevEnvironmentFn
+		options.modifyConfigMapCallback = func(name string, callback func(configMap *core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
+			return gitOpsModifyConfigMap(templatesDir, name, nil, configStore, callback)
+		}
+		options.modifySecretCallback = func(name string, callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
+			return gitOpsModifySecret(templatesDir, name, nil, configStore, callback)
 		}
 	}
 
-	if !options.Flags.GitOpsMode {
-		addonConfig, err := addon.LoadAddonsConfig()
-		if err != nil {
-			return errors.Wrap(err, "failed to load the addons configuration")
-		}
+	return gitOpsDir, gitOpsEnvDir, nil
+}
 
-		for _, ac := range addonConfig.Addons {
-			if ac.Enabled {
-				err = options.installAddon(ac.Name)
-				if err != nil {
-					return fmt.Errorf("failed to install addon %s: %s", ac.Name, err)
-				}
-			}
-		}
-	}
-
-	options.logAdminPassword()
-
-	if !options.Flags.GitOpsMode {
-		if !options.Flags.Prow {
-			log.Info("Getting Jenkins API Token\n")
-			if isOpenShiftProvider(options.Flags.Provider) {
-				options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
-				options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
-				options.CreateJenkinsUserOptions.Username = "jenkins-admin"
-				jenkinsSaToken, err := options.getCommandOutput("", "oc", "serviceaccounts", "get-token", "jenkins", "-n", ns)
-				if err != nil {
-					return err
-				}
-				options.CreateJenkinsUserOptions.BearerToken = jenkinsSaToken
-				options.CreateJenkinsUserOptions.Run()
-			} else {
-				err = options.retry(3, 2*time.Second, func() (err error) {
-					options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
-					options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
-					options.CreateJenkinsUserOptions.UseBrowser = true
-					if options.BatchMode {
-						options.CreateJenkinsUserOptions.BatchMode = true
-						options.CreateJenkinsUserOptions.Headless = true
-						log.Info("Attempting to find the Jenkins API Token with the browser in headless mode...")
-					}
-					err = options.CreateJenkinsUserOptions.Run()
-					return
-				})
-				if err != nil {
-					return errors.Wrap(err, "failed to get the Jenkins API token")
-				}
-			}
-		}
-
-		if !options.Flags.Prow {
-			err = options.updateJenkinsURL([]string{ns})
-			if err != nil {
-				log.Warnf("failed to update the Jenkins external URL")
-			}
-		}
-	}
-
-	if options.Flags.DefaultEnvironmentPrefix == "" {
-		options.Flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
-	}
-
-	if !options.Flags.NoDefaultEnvironments {
-		createEnvironments := true
-		if options.Flags.GitOpsMode {
-			// reuse the helm setup
-			options.SetDevNamespace(ns)
-			options.CreateEnvOptions.CommonOptions = options.CommonOptions
-			options.CreateEnvOptions.GitOpsMode = true
-			options.CreateEnvOptions.modifyDevEnvironmentFn = options.modifyDevEnvironmentFn
-			options.CreateEnvOptions.modifyEnvironmentFn = options.modifyEnvironmentFn
-		} else {
-			createEnvironments = false
-
-			jxClient, _, err := options.JXClient()
-			if err != nil {
-				return errors.Wrap(err, "failed to create the jx client")
-			}
-
-			// lets only recreate the environments if its the first time we run this
-			_, envNames, err := kube.GetEnvironments(jxClient, ns)
-			if err != nil || len(envNames) <= 1 {
-				createEnvironments = true
-			}
-
-		}
-		if createEnvironments {
-			log.Info("Creating default staging and production environments\n")
-			// Common CreateEnv Options
-			options.CreateEnvOptions.GitRepositoryOptions = options.GitRepositoryOptions
-			options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
-			options.CreateEnvOptions.Prefix = options.Flags.DefaultEnvironmentPrefix
-			options.CreateEnvOptions.Prow = options.Flags.Prow
-			if options.BatchMode {
-				options.CreateEnvOptions.BatchMode = options.BatchMode
-			}
-
-			options.CreateEnvOptions.Options.Name = "staging"
-			options.CreateEnvOptions.Options.Spec.Label = "Staging"
-			options.CreateEnvOptions.Options.Spec.Order = 100
-			err = options.CreateEnvOptions.Run()
-			if err != nil {
-				return errors.Wrapf(err, "failed to create staging environment in namespace %s", options.devNamespace)
-			}
-			options.CreateEnvOptions.Options.Name = "production"
-			options.CreateEnvOptions.Options.Spec.Label = "Production"
-			options.CreateEnvOptions.Options.Spec.Order = 200
-			options.CreateEnvOptions.Options.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
-			options.CreateEnvOptions.PromotionStrategy = string(v1.PromotionStrategyTypeManual)
-
-			err = options.CreateEnvOptions.Run()
-			if err != nil {
-				return errors.Wrapf(err, "failed to create the production environment in namespace %s", options.devNamespace)
-			}
-		}
-	}
-
-	err = options.saveChartmuseumAuthConfig()
-	if err != nil {
-		return errors.Wrap(err, "failed to save the auth config for Chartmuseum")
-	}
-
-	if options.Flags.RegisterLocalHelmRepo {
-		err = options.registerLocalHelmRepo(options.Flags.LocalHelmRepoName, ns)
-		if err != nil {
-			return errors.Wrapf(err, "failed to register the local helm repo '%s'", options.Flags.LocalHelmRepoName)
-		}
-	}
-
+func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir string) error {
 	if options.Flags.GitOpsMode {
 		log.Infof("\n\nGenerated the source code for the GitOps development environment at %s\n", util.ColorInfo(gitOpsDir))
 		log.Infof("You can apply this to the kubernetes cluster at any time in this directory via: %s\n\n", util.ColorInfo("jx step env apply"))
@@ -1422,6 +1274,10 @@ func (options *InstallOptions) Run() error {
 		}
 	}
 
+	return nil
+}
+
+func (options *InstallOptions) applyGitOpsDevEnvironmentConfig(gitOpsEnvDir string, namespace string) error {
 	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsEnvApply {
 		applyEnv := true
 		if !options.BatchMode {
@@ -1438,65 +1294,354 @@ func (options *InstallOptions) Run() error {
 					},
 				},
 				Dir:       gitOpsEnvDir,
-				Namespace: ns,
+				Namespace: namespace,
 			}
-			err = envApplyOptions.Run()
+			err := envApplyOptions.Run()
 			if err != nil {
 				return err
 			}
 		}
 	}
+	return nil
 
-	log.Success("\nJenkins X installation completed successfully\n")
+}
 
-	options.logAdminPassword()
+func (options *InstallOptions) installHelmBinaries() error {
+	initOpts := &options.InitOptions
+	helmBinary := initOpts.HelmBinary()
+	dependencies := []string{}
+	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
+		binDir, err := util.JXBinLocation()
+		if err != nil {
+			return errors.Wrap(err, "reading jx bin location")
+		}
+		_, install, err := shouldInstallBinary("tiller")
+		if !install && err == nil {
+			confirm := &survey.Confirm{
+				Message: "Uninstalling existing tiller binary:",
+				Default: true,
+			}
+			flag := true
+			err = survey.AskOne(confirm, &flag, nil)
+			if err != nil || flag == false {
+				return errors.New("Existing tiller must be uninstalled first in order to use the jx in tiller less mode")
+			}
+			// Uninstall helm and tiller first to avoid using some older version
+			err = options.UninstallBinary(binDir, "tiller")
+			if err != nil {
+				return errors.Wrap(err, "uninstalling existing tiller binary")
+			}
+		}
 
-	log.Infof("\nYour Kubernetes context is now set to the namespace: %s \n", util.ColorInfo(ns))
-	log.Infof("To switch back to your original namespace use: %s\n", util.ColorInfo("jx ns "+originalNs))
-	log.Infof("For help on switching contexts see: %s\n\n", util.ColorInfo("https://jenkins-x.io/developing/kube-context/"))
+		_, install, err = shouldInstallBinary(helmBinary)
+		if !install && err == nil {
+			confirm := &survey.Confirm{
+				Message: "Uninstalling existing helm binary:",
+				Default: true,
+			}
+			flag := true
+			err = survey.AskOne(confirm, &flag, nil)
+			if err != nil || flag == false {
+				return errors.New("Existing helm must be uninstalled first in order to use the jx in tiller less mode")
+			}
+			// Uninstall helm and tiller first to avoid using some older version
+			err = options.UninstallBinary(binDir, helmBinary)
+			if err != nil {
+				return errors.Wrap(err, "uninstalling existing helm binary")
+			}
+		}
+		dependencies = append(dependencies, "tiller")
+		options.Helm().SetHost(tillerAddress())
+	}
+	dependencies = append(dependencies, helmBinary)
+	return options.installMissingDependencies(dependencies)
+}
 
-	log.Infof("To import existing projects into Jenkins:       %s\n", util.ColorInfo("jx import"))
-	log.Infof("To create a new Spring Boot microservice:       %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
-	log.Infof("To create a new microservice from a quickstart: %s\n", util.ColorInfo("jx create quickstart"))
+func (options *InstallOptions) configureCloudProivderPreInit(client kubernetes.Interface) error {
+	switch options.Flags.Provider {
+	case AKS:
+		err := options.createClusterAdmin()
+		if err != nil {
+			return errors.Wrap(err, "creating cluster admin for AKS cloud provider")
+		}
+		log.Success("created role cluster-admin")
+	case AWS:
+		fallthrough
+	case EKS:
+		err := options.ensureDefaultStorageClass(client, "gp2", "kubernetes.io/aws-ebs", "gp2")
+		if err != nil {
+			return errors.Wrap(err, "ensureing default storage for EKS/AWS cloud provider")
+		}
+	case MINIKUBE:
+		if options.Flags.Domain == "" {
+			ip, err := options.getCommandOutput("", "minikube", "ip")
+			if err != nil {
+				return errors.Wrap(err, "failed to get the IP from Minikube")
+			}
+			options.Flags.Domain = ip + ".nip.io"
+		}
+	default:
+		return nil
+	}
 	return nil
 }
 
-func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string) error {
-	err := InstallVaultOperator(&options.CommonOptions, "")
-	if err != nil {
-		return err
+func (options *InstallOptions) configureCloudProivderPostInit(client kubernetes.Interface, namespace string) error {
+	switch options.Flags.Provider {
+	case MINISHIFT:
+		fallthrough
+	case OPENSHIFT:
+		err := options.enableOpenShiftSCC(namespace)
+		if err != nil {
+			return errors.Wrap(err, "failed to enable the OpenShiftSCC")
+		}
+	case IKS:
+		err := options.addHelmBinaryRepoIfMissing(DEFAULT_IBMREPO_URL, "ibm")
+		if err != nil {
+			return errors.Wrap(err, "failed to add the IBM helm repo")
+		}
+		err = options.Helm().UpdateRepo()
+		if err != nil {
+			return errors.Wrap(err, "failed to update the helm repo")
+		}
+		err = options.Helm().UpgradeChart("ibm/ibmcloud-block-storage-plugin", "ibmcloud-block-storage-plugin",
+			"default", nil, true, nil, false, false, nil, nil, "")
+		if err != nil {
+			return errors.Wrap(err, "failed to install/upgrade the IBM Cloud Block Storage drivers")
+		}
+		return options.changeDefaultStorageClass(client, "ibmc-block-bronze")
+	default:
+		return nil
 	}
 
-	// Create a new System vault
-	cvo := &CreateVaultOptions{
-		CreateOptions: CreateOptions{
-			CommonOptions: options.CommonOptions,
-		},
-		UpgradeIngressOptions: UpgradeIngressOptions{
-			CreateOptions: CreateOptions{
-				CommonOptions: options.CommonOptions,
-			},
-		},
-		Namespace: namespace,
-	}
-	vaultOperatorClient, err := cvo.Factory.CreateVaultOperatorClient()
+	return nil
+}
+
+func (options *InstallOptions) configureDockerRegistry(client kubernetes.Interface, namespace string) error {
+	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
+	dockerRegistryConfig, dockerRegistry, err := options.configureCloudProviderRegistry(client, namespace)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "configure cloud provider docker registry")
+	}
+	if dockerRegistryConfig != "" {
+		helmConfig.PipelineSecrets.DockerConfig = dockerRegistryConfig
+	}
+	if dockerRegistry != "" {
+		if helmConfig.Jenkins.Servers.Global.EnvVars == nil {
+			helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
+		}
+		helmConfig.Jenkins.Servers.Global.EnvVars["DOCKER_REGISTRY"] = dockerRegistry
+	}
+	return nil
+}
+
+func (options *InstallOptions) configureCloudProviderRegistry(client kubernetes.Interface, namespace string) (string, string, error) {
+	dockerRegistry, err := options.dockerRegistryValue()
+	if err != nil {
+		return "", "", err
+	}
+	kubeConfig, _, err := options.Kube().LoadConfig()
+	if err != nil {
+		return "", "", err
+	}
+	switch options.Flags.Provider {
+	case AKS:
+		server := kube.CurrentServer(kubeConfig)
+		azureCLI := aks.NewAzureRunner()
+		resourceGroup, name, cluster, err := azureCLI.GetClusterClient(server)
+		if err != nil {
+			return "", "", errors.Wrap(err, "getting cluster from Azure")
+		}
+		registryID := ""
+		config, dockerRegistry, registryID, err := azureCLI.GetRegistry(resourceGroup, name, dockerRegistry)
+		if err != nil {
+			return "", "", errors.Wrap(err, "getting registry configuration from Azure")
+		}
+		azureCLI.AssignRole(cluster, registryID)
+		log.Infof("Assign AKS %s a reader role for ACR %s\n", util.ColorInfo(server), util.ColorInfo(dockerRegistry))
+		return config, dockerRegistry, nil
+	case IKS:
+		dockerRegistry = iks.GetClusterRegistry(client)
+		config, err := iks.GetRegistryConfigJSON(dockerRegistry)
+		if err != nil {
+			return "", "", errors.Wrap(err, "getting IKS registry configuration")
+		}
+		return config, dockerRegistry, nil
+	case MINISHIFT:
+		fallthrough
+	case OPENSHIFT:
+		if dockerRegistry == "docker-registry.default.svc:5000" {
+			config, err := options.enableOpenShiftRegistryPermissions(namespace, dockerRegistry)
+			if err != nil {
+				return "", "", errors.Wrap(err, "enabling OpenShift registry permissions")
+			}
+			return config, dockerRegistry, nil
+		}
 	}
 
-	if kubevault.FindVault(vaultOperatorClient, vault.SystemVaultName, namespace) {
-		log.Infof("System vault named %s in namespace %s already exists\n",
-			util.ColorInfo(vault.SystemVaultName), util.ColorInfo(namespace))
-	} else {
-		log.Info("Creating new system vault\n")
-		err = cvo.createVault(vaultOperatorClient, vault.SystemVaultName)
+	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
+	return helmConfig.PipelineSecrets.DockerConfig, dockerRegistry, nil
+}
+
+func (options *InstallOptions) setMinikubeFromContext() error {
+	currentContext := ""
+	var err error
+	if !options.Flags.DisableSetKubeContext {
+		currentContext, err = options.getCommandOutput("", "kubectl", "config", "current-context")
+		if err != nil {
+			return errors.Wrap(err, "failed to get the current context")
+		}
+	}
+	if currentContext == "minikube" {
+		if options.Flags.Provider == "" {
+			options.Flags.Provider = MINIKUBE
+		}
+	}
+	return nil
+}
+
+func (options *InstallOptions) registerAllCRDs() error {
+	if !options.GitOpsMode {
+		apisClient, err := options.CreateApiExtensionsClient()
+		if err != nil {
+			return errors.Wrap(err, "failed to create the API extensions client")
+		}
+		kube.RegisterAllCRDs(apisClient)
 		if err != nil {
 			return err
 		}
-		log.Infof("System vault created named %s in namespace %s.\n",
-			util.ColorInfo(vault.SystemVaultName), util.ColorInfo(namespace))
 	}
-	secrets.NewSecretLocation(client, namespace).SetInVault(options.Flags.Vault)
+	return nil
+}
+
+func (options *InstallOptions) installCloudProviderDependencies() error {
+	dependencies := []string{}
+	err := options.installRequirements(options.Flags.Provider, dependencies...)
+	if err != nil {
+		return errors.Wrap(err, "installing cloud provider dependencies")
+	}
+	return nil
+}
+
+func (options *InstallOptions) getAdminSecrets(providerEnvDir string, cloudEnvironmentSecretsLocation string) (*config.AdminSecretsConfig, error) {
+	cloudEnvironmentSopsLocation := filepath.Join(providerEnvDir, CloudEnvSopsConfigFile)
+	if _, err := os.Stat(providerEnvDir); os.IsNotExist(err) {
+		return nil, fmt.Errorf("cloud environment dir %s not found", providerEnvDir)
+	}
+	sopsFileExists, err := util.FileExists(cloudEnvironmentSopsLocation)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to look for "+cloudEnvironmentSopsLocation)
+	}
+
+	adminSecretsServiceInit := false
+
+	if sopsFileExists {
+		log.Infof("Attempting to decrypt secrets file %s\n", util.ColorInfo(cloudEnvironmentSecretsLocation))
+		// need to decrypt secrets now
+		err = options.Helm().DecryptSecrets(cloudEnvironmentSecretsLocation)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to decrypt "+cloudEnvironmentSecretsLocation)
+		}
+
+		cloudEnvironmentSecretsDecryptedLocation := filepath.Join(providerEnvDir, CloudEnvSecretsFile+".dec")
+		decryptedSecretsFile, err := util.FileExists(cloudEnvironmentSecretsDecryptedLocation)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to look for "+cloudEnvironmentSecretsDecryptedLocation)
+		}
+
+		if decryptedSecretsFile {
+			log.Infof("Successfully decrypted %s\n", util.ColorInfo(cloudEnvironmentSecretsDecryptedLocation))
+			cloudEnvironmentSecretsLocation = cloudEnvironmentSecretsDecryptedLocation
+
+			err = options.AdminSecretsService.NewAdminSecretsConfigFromSecret(cloudEnvironmentSecretsDecryptedLocation)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to create the admin secret config service from the decrypted secrets file")
+			}
+			adminSecretsServiceInit = true
+		}
+	}
+
+	if !adminSecretsServiceInit {
+		err = options.AdminSecretsService.NewAdminSecretsConfig()
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to create the admin secret config service")
+		}
+	}
+
+	return &options.AdminSecretsService.Secrets, nil
+}
+
+func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string) error {
+	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
+		err := InstallVaultOperator(&options.CommonOptions, "")
+		if err != nil {
+			return err
+		}
+
+		// Create a new System vault
+		cvo := &CreateVaultOptions{
+			CreateOptions: CreateOptions{
+				CommonOptions: options.CommonOptions,
+			},
+			UpgradeIngressOptions: UpgradeIngressOptions{
+				CreateOptions: CreateOptions{
+					CommonOptions: options.CommonOptions,
+				},
+			},
+			Namespace: namespace,
+		}
+		vaultOperatorClient, err := cvo.Factory.CreateVaultOperatorClient()
+		if err != nil {
+			return err
+		}
+
+		if kubevault.FindVault(vaultOperatorClient, vault.SystemVaultName, namespace) {
+			log.Infof("System vault named %s in namespace %s already exists\n",
+				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(namespace))
+		} else {
+			log.Info("Creating new system vault\n")
+			err = cvo.createVault(vaultOperatorClient, vault.SystemVaultName)
+			if err != nil {
+				return err
+			}
+			log.Infof("System vault created named %s in namespace %s.\n",
+				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(namespace))
+		}
+		err = secrets.NewSecretLocation(client, namespace).SetInVault(options.Flags.Vault)
+		if err != nil {
+			return errors.Wrap(err, "configuring secrets location")
+		}
+
+		log.Infof("Wait for vault to be initialized...\n")
+		time.Sleep(30 * time.Second)
+	}
+	return nil
+}
+
+func (options *InstallOptions) storeSecretsFilesInVault(secretsFiles []string) error {
+	secrets := map[string]interface{}{}
+	for _, file := range secretsFiles {
+		exists, err := util.FileExists(file)
+		if exists && err == nil {
+			empty, err := util.FileIsEmpty(file)
+			if !empty && err == nil {
+				content, err := ioutil.ReadFile(file)
+				if err != nil {
+					return errors.Wrapf(err, "reading secrets file '%s'", file)
+				}
+				key := filepath.Base(file)
+				secrets[key] = string(content)
+			}
+		}
+	}
+
+	if len(secrets) > 0 {
+		err := options.storeSecretsInVault(secrets)
+		if err != nil {
+			return errors.Wrap(err, "storing the secrets into vault")
+		}
+	}
+
 	return nil
 }
 
@@ -1505,15 +1650,199 @@ func (options *InstallOptions) storeSecretsInVault(secrets map[string]interface{
 	if err != nil {
 		log.Errorf("Could not get System vault: %v", err)
 	}
-	err = vaultClient.WriteSecrets(vault.InstallSecretsPrefix, secrets)
+	err = vaultClient.WriteSecrets(vault.InstallSecretsPath, secrets)
 	if err != nil {
 		return errors.Wrapf(err, "Error saving secrets to vault\n")
 	}
 	return nil
 }
 
+func (options *InstallOptions) configureBuildPackMode() error {
+	ebp := &EditBuildPackOptions{
+		BuildPackName: options.Flags.BuildPackName,
+	}
+	ebp.CommonOptions = options.CommonOptions
+
+	return ebp.Run()
+}
+
+func (options *InstallOptions) saveIngressConfig() error {
+	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
+	domain := helmConfig.ExposeController.Config.Domain
+	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
+	tls, err := util.ParseBool(exposeController.Config.TLSAcme)
+	if err != nil {
+		return fmt.Errorf("failed to parse TLS exposecontroller boolean %v", err)
+	}
+	ic := kube.IngressConfig{
+		Domain:  domain,
+		TLS:     tls,
+		Exposer: exposeController.Config.Exposer,
+	}
+	// save ingress config details to a configmap
+	_, err = options.saveAsConfigMap(kube.IngressConfigConfigmap, ic)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (options *InstallOptions) saveClusterConfig() error {
+	if !options.Flags.DisableSetKubeContext {
+		var jxInstallConfig *kube.JXInstallConfig
+		kubeConfig, _, err := options.Kube().LoadConfig()
+		if err != nil {
+			return errors.Wrap(err, "retrieving the current kube config")
+		}
+		if kubeConfig != nil {
+			kubeConfigContext := kube.CurrentContext(kubeConfig)
+			if kubeConfigContext != nil {
+				server := kube.Server(kubeConfig, kubeConfigContext)
+				certificateAuthorityData := kube.CertificateAuthorityData(kubeConfig, kubeConfigContext)
+				jxInstallConfig = &kube.JXInstallConfig{
+					Server: server,
+					CA:     certificateAuthorityData,
+				}
+			}
+		}
+
+		_, err = options.ModifyConfigMap(kube.ConfigMapNameJXInstallConfig, func(cm *core_v1.ConfigMap) error {
+			data := util.ToStringMapStringFromStruct(jxInstallConfig)
+			cm.Data = data
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (options *InstallOptions) configureJenkins(namespace string) error {
+	if !options.Flags.GitOpsMode {
+		if !options.Flags.Prow {
+			log.Info("Getting Jenkins API Token\n")
+			if isOpenShiftProvider(options.Flags.Provider) {
+				options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
+				options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
+				options.CreateJenkinsUserOptions.Username = "jenkins-admin"
+				jenkinsSaToken, err := options.getCommandOutput("", "oc", "serviceaccounts", "get-token", "jenkins", "-n", namespace)
+				if err != nil {
+					return err
+				}
+				options.CreateJenkinsUserOptions.BearerToken = jenkinsSaToken
+				options.CreateJenkinsUserOptions.Run()
+			} else {
+				err := options.retry(3, 2*time.Second, func() (err error) {
+					options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
+					options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
+					options.CreateJenkinsUserOptions.UseBrowser = true
+					if options.BatchMode {
+						options.CreateJenkinsUserOptions.BatchMode = true
+						options.CreateJenkinsUserOptions.Headless = true
+						log.Info("Attempting to find the Jenkins API Token with the browser in headless mode...")
+					}
+					err = options.CreateJenkinsUserOptions.Run()
+					return
+				})
+				if err != nil {
+					return errors.Wrap(err, "failed to get the Jenkins API token")
+				}
+			}
+		}
+
+		if !options.Flags.Prow {
+			err := options.updateJenkinsURL([]string{namespace})
+			if err != nil {
+				log.Warnf("failed to update the Jenkins external URL")
+			}
+		}
+	}
+	return nil
+}
+
+func (options *InstallOptions) installAddons() error {
+	if !options.Flags.GitOpsMode {
+		addonConfig, err := addon.LoadAddonsConfig()
+		if err != nil {
+			return errors.Wrap(err, "failed to load the addons configuration")
+		}
+
+		for _, ac := range addonConfig.Addons {
+			if ac.Enabled {
+				err = options.installAddon(ac.Name)
+				if err != nil {
+					return fmt.Errorf("failed to install addon %s: %s", ac.Name, err)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (options *InstallOptions) createEnvironments(namespace string) error {
+	if options.Flags.DefaultEnvironmentPrefix == "" {
+		options.Flags.DefaultEnvironmentPrefix = strings.ToLower(randomdata.SillyName())
+	}
+
+	if !options.Flags.NoDefaultEnvironments {
+		createEnvironments := true
+		if options.Flags.GitOpsMode {
+			// reuse the helm setup
+			options.SetDevNamespace(namespace)
+			options.CreateEnvOptions.CommonOptions = options.CommonOptions
+			options.CreateEnvOptions.GitOpsMode = true
+			options.CreateEnvOptions.modifyDevEnvironmentFn = options.modifyDevEnvironmentFn
+			options.CreateEnvOptions.modifyEnvironmentFn = options.modifyEnvironmentFn
+		} else {
+			createEnvironments = false
+
+			jxClient, _, err := options.JXClient()
+			if err != nil {
+				return errors.Wrap(err, "failed to create the jx client")
+			}
+
+			// lets only recreate the environments if its the first time we run this
+			_, envNames, err := kube.GetEnvironments(jxClient, namespace)
+			if err != nil || len(envNames) <= 1 {
+				createEnvironments = true
+			}
+
+		}
+		if createEnvironments {
+			log.Info("Creating default staging and production environments\n")
+			// Common CreateEnv Options
+			options.CreateEnvOptions.GitRepositoryOptions = options.GitRepositoryOptions
+			options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
+			options.CreateEnvOptions.Prefix = options.Flags.DefaultEnvironmentPrefix
+			options.CreateEnvOptions.Prow = options.Flags.Prow
+			if options.BatchMode {
+				options.CreateEnvOptions.BatchMode = options.BatchMode
+			}
+
+			options.CreateEnvOptions.Options.Name = "staging"
+			options.CreateEnvOptions.Options.Spec.Label = "Staging"
+			options.CreateEnvOptions.Options.Spec.Order = 100
+			err := options.CreateEnvOptions.Run()
+			if err != nil {
+				return errors.Wrapf(err, "failed to create staging environment in namespace %s", options.devNamespace)
+			}
+			options.CreateEnvOptions.Options.Name = "production"
+			options.CreateEnvOptions.Options.Spec.Label = "Production"
+			options.CreateEnvOptions.Options.Spec.Order = 200
+			options.CreateEnvOptions.Options.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
+			options.CreateEnvOptions.PromotionStrategy = string(v1.PromotionStrategyTypeManual)
+
+			err = options.CreateEnvOptions.Run()
+			if err != nil {
+				return errors.Wrapf(err, "failed to create the production environment in namespace %s", options.devNamespace)
+			}
+		}
+	}
+	return nil
+}
+
 func (options *InstallOptions) modifySecrets(helmConfig *config.HelmValuesConfig, adminSecrets *config.AdminSecretsConfig, gitSecrets string) error {
-	// FIXME - this data
 	var err error
 	data := make(map[string][]byte)
 	data[ExtraValuesFile], err = yaml.Marshal(helmConfig)
@@ -1693,38 +2022,37 @@ func (options *InstallOptions) enableOpenShiftSCC(ns string) error {
 	return options.RunCommand("oc", "adm", "policy", "add-scc-to-user", "anyuid", "system:serviceaccount:"+ns+":default")
 }
 
-func (options *InstallOptions) enableOpenShiftRegistryPermissions(ns string, helmConfig *config.HelmValuesConfig, dockerRegistry string) error {
+func (options *InstallOptions) enableOpenShiftRegistryPermissions(ns string, dockerRegistry string) (string, error) {
 	log.Infof("Enabling permissions for OpenShift registry in namespace %s\n", ns)
 	// Open the registry so any authenticated user can pull images from the jx namespace
 	err := options.RunCommand("oc", "adm", "policy", "add-role-to-group", "system:image-puller", "system:authenticated", "-n", ns)
 	if err != nil {
-		return err
+		return "", err
 	}
 	err = options.ensureServiceAccount(ns, "jenkins-x-registry")
 	if err != nil {
-		return err
+		return "", err
 	}
 	err = options.RunCommand("oc", "adm", "policy", "add-cluster-role-to-user", "registry-admin", "system:serviceaccount:"+ns+":jenkins-x-registry")
 	if err != nil {
-		return err
+		return "", err
 	}
 	registryToken, err := options.getCommandOutput("", "oc", "serviceaccounts", "get-token", "jenkins-x-registry", "-n", ns)
 	if err != nil {
-		return err
+		return "", err
 	}
-	helmConfig.PipelineSecrets.DockerConfig = `{"auths": {"` + dockerRegistry + `": {"auth": "` + base64.StdEncoding.EncodeToString([]byte("serviceaccount:"+registryToken)) + `"}}}`
-	return nil
+	return `{"auths": {"` + dockerRegistry + `": {"auth": "` + base64.StdEncoding.EncodeToString([]byte("serviceaccount:"+registryToken)) + `"}}}`, nil
 }
 
 func (options *InstallOptions) logAdminPassword() {
 	astrix := `
-	
+
 	********************************************************
-	
+
 	     NOTE: %s
-	
+
 	********************************************************
-	
+
 	`
 	log.Infof(astrix+"\n", fmt.Sprintf("Your admin password is: %s", util.ColorInfo(options.AdminSecretsService.Flags.DefaultAdminPassword)))
 }

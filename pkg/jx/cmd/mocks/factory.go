@@ -529,6 +529,21 @@ func (mock *MockFactory) SetBatch(_param0 bool) {
 	pegomock.GetGenericMockFrom(mock).Invoke("SetBatch", params, []reflect.Type{})
 }
 
+func (mock *MockFactory) UseVault() bool {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockFactory().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("UseVault", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
+	var ret0 bool
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(bool)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockFactory) WithBearerToken(_param0 string) cmd.Factory {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
@@ -1243,6 +1258,23 @@ func (c *Factory_SetBatch_OngoingVerification) GetAllCapturedArguments() (_param
 		}
 	}
 	return
+}
+
+func (verifier *VerifierFactory) UseVault() *Factory_UseVault_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "UseVault", params)
+	return &Factory_UseVault_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Factory_UseVault_OngoingVerification struct {
+	mock              *MockFactory
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Factory_UseVault_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *Factory_UseVault_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierFactory) WithBearerToken(_param0 string) *Factory_WithBearerToken_OngoingVerification {
