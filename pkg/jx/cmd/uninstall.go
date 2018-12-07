@@ -210,10 +210,7 @@ func (o *UninstallOptions) deleteNamespace(namespace string) error {
 
 func (o *UninstallOptions) cleanupConfig() error {
 	authConfigSvc, err := o.Factory.CreateAuthConfigService(JenkinsAuthConfigFile)
-	if err != nil {
-		return nil
-	}
-	if authConfigSvc == nil {
+	if err != nil || authConfigSvc == nil {
 		return nil
 	}
 	server := authConfigSvc.Config().CurrentServer
