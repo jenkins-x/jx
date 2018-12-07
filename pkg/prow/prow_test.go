@@ -2,6 +2,8 @@ package prow_test
 
 import (
 	"github.com/jenkins-x/jx/pkg/prow"
+	prowconfig "github.com/jenkins-x/jx/pkg/prow/config"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 
 	"k8s.io/api/core/v1"
@@ -32,7 +34,7 @@ func TestProwConfigEnvironment(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
-	o.Kind = prow.Environment
+	o.Kind = prowconfig.Environment
 	o.EnvironmentNamespace = "jx-staging"
 
 	err := o.AddProwConfig()
@@ -43,7 +45,7 @@ func TestProwPlugins(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
-	o.Kind = prow.Environment
+	o.Kind = prowconfig.Environment
 	o.EnvironmentNamespace = "jx-staging"
 
 	err := o.AddProwPlugins()
@@ -54,7 +56,7 @@ func TestMergeProwConfigEnvironment(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
-	o.Kind = prow.Environment
+	o.Kind = prowconfig.Environment
 	o.EnvironmentNamespace = "jx-staging"
 
 	prowConfig := &config.Config{}
@@ -92,7 +94,7 @@ func TestMergeProwPlugin(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
-	o.Kind = prow.Environment
+	o.Kind = prowconfig.Environment
 	o.EnvironmentNamespace = "jx-staging"
 
 	pluginConfig := &plugins.Configuration{}
@@ -130,7 +132,7 @@ func TestAddProwPlugin(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
-	o.Kind = prow.Environment
+	o.Kind = prowconfig.Environment
 	o.EnvironmentNamespace = "jx-staging"
 
 	o.Repos = append(o.Repos, "test/repo2")
@@ -153,7 +155,7 @@ func TestAddProwConfig(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
-	o.Kind = prow.Environment
+	o.Kind = prowconfig.Environment
 	o.EnvironmentNamespace = "jx-staging"
 
 	o.Repos = append(o.Repos, "test/repo2")
@@ -161,15 +163,35 @@ func TestAddProwConfig(t *testing.T) {
 	err := o.AddProwConfig()
 	assert.NoError(t, err)
 
-	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwConfigMapName, metav1.GetOptions{})
+	prowConfig, err := getProwConfig(t, o)
 	assert.NoError(t, err)
 
-	prowConfig := &config.Config{}
+	for _, repo := range []string{"test/repo", "test/repo2"} {
+		assertInPluginConfig(t, prowConfig, repo, true)
+	}
+}
 
-	yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig)
+func TestRemoveProwConfig(t *testing.T) {
+	t.Parallel()
+	o := TestOptions{}
+	o.Setup()
+	o.Kind = prowconfig.Environment
+	o.EnvironmentNamespace = "jx-staging"
+	o.Repos = append(o.Repos, "test/repo2")
+	err := o.AddProwConfig()
+	assert.NoError(t, err)
 
-	assert.NotEmpty(t, prowConfig.Presubmits["test/repo"])
-	assert.NotEmpty(t, prowConfig.Presubmits["test/repo2"])
+	// Remove test/repo (created in o.Setup())
+	o.Repos = []string{"test/repo"}
+	err = o.RemoveProwConfig()
+	assert.NoError(t, err, "errored removing prow config")
+
+	prowConfig, err := getProwConfig(t, o)
+	assert.NoError(t, err)
+
+	// test/repo should NOT be in the plugin config, but test/repo2 should
+	assertInPluginConfig(t, prowConfig, "test/repo", false)
+	assertInPluginConfig(t, prowConfig, "test/repo2", true)
 }
 
 // make sure that rerunning addProwConfig replaces any modified changes in the configmap
@@ -177,7 +199,7 @@ func TestReplaceProwConfig(t *testing.T) {
 	t.Parallel()
 	o := TestOptions{}
 	o.Setup()
-	o.Kind = prow.Environment
+	o.Kind = prowconfig.Environment
 	o.EnvironmentNamespace = "jx-staging"
 
 	err := o.AddProwConfig()
@@ -239,7 +261,7 @@ func TestReplaceProwConfig(t *testing.T) {
 
 	// add test/repo2
 	o.Options.Repos = []string{"test/repo2"}
-	o.Kind = prow.Application
+	o.Kind = prowconfig.Application
 
 	err = o.AddProwConfig()
 	assert.NoError(t, err)
@@ -255,7 +277,7 @@ func TestReplaceProwConfig(t *testing.T) {
 
 	// add test/repo3
 	o.Options.Repos = []string{"test/repo3"}
-	o.Kind = prow.Application
+	o.Kind = prowconfig.Application
 
 	err = o.AddProwConfig()
 	assert.NoError(t, err)
@@ -275,7 +297,7 @@ func TestGetReleaseJobs(t *testing.T) {
 	o := TestOptions{}
 	o.Setup()
 	o.Options.Repos = []string{"test/repo"}
-	o.Kind = prow.Application
+	o.Kind = prowconfig.Application
 
 	err := o.AddProwConfig()
 	assert.NoError(t, err)
@@ -293,7 +315,7 @@ func TestGetPostSubmitJob(t *testing.T) {
 	o := TestOptions{}
 	o.Setup()
 	o.Options.Repos = []string{"test/repo"}
-	o.Kind = prow.Application
+	o.Kind = prowconfig.Application
 
 	err := o.AddProwConfig()
 	assert.NoError(t, err)
@@ -303,4 +325,27 @@ func TestGetPostSubmitJob(t *testing.T) {
 
 	assert.NotEmpty(t, job.Name, "job name is empty")
 	assert.Equal(t, "release", job.Name)
+}
+
+func getProwConfig(t *testing.T, o TestOptions) (*config.Config, error) {
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwConfigMapName, metav1.GetOptions{})
+	assert.NoError(t, err)
+	prowConfig := &config.Config{}
+	yaml.Unmarshal([]byte(cm.Data[prow.ProwConfigFilename]), &prowConfig)
+	return prowConfig, err
+}
+
+func assertInPluginConfig(t *testing.T, prowConfig *config.Config, repo string, shouldBeInConfig bool) {
+	org, r, _ := util.GetRemoteAndRepo(repo)
+	if shouldBeInConfig {
+		assert.NotEmpty(t, prowConfig.Presubmits[repo])
+		assert.NotEmpty(t, prowConfig.Postsubmits[repo])
+		assert.NotEmpty(t, prowConfig.BranchProtection.Orgs[org].Repos[r])
+		assert.Contains(t, prowConfig.Tide.Queries[1].Repos, repo)
+	} else {
+		assert.Empty(t, prowConfig.Presubmits[repo])
+		assert.Empty(t, prowConfig.Postsubmits[repo])
+		assert.Empty(t, prowConfig.BranchProtection.Orgs[org].Repos[r])
+		assert.NotContains(t, prowConfig.Tide.Queries[1].Repos, repo)
+	}
 }

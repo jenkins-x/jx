@@ -34,6 +34,21 @@ func TestStringIndices(t *testing.T) {
 	assertStringIndices(t, "/foo/bar", "/", []int{0, 4})
 }
 
+func TestRemoveStringFromSlice(t *testing.T) {
+	beatles := []string{"paul", "john", "ringo", "george"}
+	betterBeatles := util.RemoveStringFromSlice(beatles, "ringo")
+
+	assert.NotContains(t, betterBeatles, "ringo", "Ringo shouldn't be in the beatles")
+	assert.Equal(t, 3, len(betterBeatles))
+}
+
+func TestRemoveStringFromSlice_NotAMember(t *testing.T) {
+	beatles := []string{"paul", "john", "ringo", "george"}
+	betterBeatles := util.RemoveStringFromSlice(beatles, "Freddy")
+
+	assert.Equal(t, betterBeatles, beatles)
+}
+
 func assertStringIndices(t *testing.T, text string, sep string, expected []int) {
 	actual := util.StringIndexes(text, sep)
 	assert.Equal(t, expected, actual, "Failed to evaluate StringIndices(%s, %s)", text, sep)

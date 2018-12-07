@@ -175,3 +175,13 @@ func ParseBool(text string) (bool, error) {
 func CheckMark() string {
 	return "\u2705"
 }
+
+// RemoveStringFromSlice removes the first occurence of the specified string from a slice, if it exists and returns the result
+func RemoveStringFromSlice(strings []string, toRemove string) []string {
+	for i, str := range strings {
+		if str == toRemove {
+			return append(strings[:i], strings[i+1:]...)
+		}
+	}
+	return strings
+}

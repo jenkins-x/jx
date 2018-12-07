@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/prow"
+	"github.com/pkg/errors"
 	"io"
 	"os/user"
 	"strings"
@@ -24,7 +26,7 @@ import (
 
 var (
 	deleteAppLong = templates.LongDesc(`
-		Deletes one or more Applications from Jenkins
+		Deletes one or more Applications
 
 		Note that this command does not remove the underlying Git Repositories. 
 
@@ -51,6 +53,7 @@ type DeleteAppOptions struct {
 	NoMergePullRequest  bool
 	Timeout             string
 	PullRequestPollTime string
+	Org                 string
 
 	// calculated fields
 	TimeoutDuration         *time.Duration
@@ -90,6 +93,8 @@ func NewCmdDeleteApp(f Factory, in terminal.FileReader, out terminal.FileWriter,
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Filter the list of apps to those containing this text")
 	cmd.Flags().StringVarP(&options.Timeout, optionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
 	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
+	// TODO - Create an Application CRD that gets populated with the org when an application is created/imported to store this.
+	cmd.Flags().StringVarP(&options.Org, "org", "o", "", "github organisation/project name that source code resides in. Temporary workaround until the platform can determine this automatically")
 	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "Run without being prompted. WARNING! You will not be asked to confirm deletions if you use this flag.")
 
 	return cmd
@@ -97,16 +102,73 @@ func NewCmdDeleteApp(f Factory, in terminal.FileReader, out terminal.FileWriter,
 
 // Run implements this command
 func (o *DeleteAppOptions) Run() error {
-	args := o.Args
-
-	jenk, err := o.JenkinsClient()
+	err := o.init()
 	if err != nil {
 		return err
 	}
 
-	jobs, err := jenkins.LoadAllJenkinsJobs(jenk)
+	isProw, err := o.isProw()
 	if err != nil {
 		return err
+	}
+
+	var deletedApplications []string
+	if isProw {
+		deletedApplications, err = o.deleteProwApp()
+	} else {
+		deletedApplications, err = o.deleteJenkinsApp()
+	}
+
+	if err != nil {
+		return errors.Wrapf(err, "deleting application")
+	}
+	log.Infof("Deleted Application(s): %s\n", util.ColorInfo(strings.Join(deletedApplications, ",")))
+	return nil
+}
+
+func (o *DeleteAppOptions) deleteProwApp() (deletedApplications []string, err error) {
+	if o.Org == "" {
+		return deletedApplications, errors.New("--org must be supplied")
+	}
+	envMap, _, err := kube.GetOrderedEnvironments(o.jxClient, "")
+	currentUser, err := user.Current()
+	if err != nil {
+		return deletedApplications, errors.Wrap(err, "getting current user")
+	}
+
+	kubeClient, ns, err := o.Factory.CreateKubeClient()
+	if err != nil {
+		return deletedApplications, errors.Wrap(err, "getting kube client")
+	}
+
+	for _, appName := range o.Args {
+		for _, env := range envMap {
+			err = o.deleteAppFromEnvironment(env, appName, currentUser.Username)
+			if err != nil {
+				return deletedApplications, errors.Wrapf(err, "deleting application %s from environment %s", appName, env.Name)
+			}
+		}
+		repo := []string{o.Org + "/" + appName}
+		err = prow.DeleteApplication(kubeClient, repo, ns)
+		if err != nil {
+			return deletedApplications, errors.Wrapf(err, "deleting prow config for %s", appName)
+		}
+		deletedApplications = append(deletedApplications, appName)
+	}
+	return
+}
+
+func (o *DeleteAppOptions) deleteJenkinsApp() (deletedApplications []string, err error) {
+	args := o.Args
+
+	jenk, err := o.JenkinsClient()
+	if err != nil {
+		return
+	}
+
+	jobs, err := jenkins.LoadAllJenkinsJobs(jenk)
+	if err != nil {
+		return
 	}
 
 	names := []string{}
@@ -120,37 +182,22 @@ func (o *DeleteAppOptions) Run() error {
 		}
 	}
 
-	if o.PullRequestPollTime != "" {
-		duration, err := time.ParseDuration(o.PullRequestPollTime)
-		if err != nil {
-			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.PullRequestPollTime, optionPullRequestPollTime, err)
-		}
-		o.PullRequestPollDuration = &duration
-	}
-	if o.Timeout != "" {
-		duration, err := time.ParseDuration(o.Timeout)
-		if err != nil {
-			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, optionTimeout, err)
-		}
-		o.TimeoutDuration = &duration
-	}
-
 	if len(names) == 0 {
-		return fmt.Errorf("There are no Apps in Jenkins")
+		return deletedApplications, fmt.Errorf("There are no Apps in Jenkins")
 	}
 
 	if len(args) == 0 {
 		args, err = util.SelectNamesWithFilter(names, "Pick Applications to remove from Jenkins:", o.SelectAll, o.SelectFilter, "", o.In, o.Out, o.Err)
 		if err != nil {
-			return err
+			return
 		}
 		if len(args) == 0 {
-			return fmt.Errorf("No application was picked to be removed from Jenkins")
+			return deletedApplications, fmt.Errorf("No application was picked to be removed from Jenkins")
 		}
 	} else {
 		for _, arg := range args {
 			if util.StringArrayIndex(names, arg) < 0 {
-				return util.InvalidArg(arg, names)
+				return deletedApplications, util.InvalidArg(arg, names)
 			}
 		}
 	}
@@ -158,7 +205,7 @@ func (o *DeleteAppOptions) Run() error {
 
 	if !o.BatchMode {
 		if !util.Confirm("You are about to delete these Applications from Jenkins: "+deleteMessage, false, "The list of Applications names to be deleted from Jenkins", o.In, o.Out, o.Err) {
-			return nil
+			return
 		}
 	}
 	for _, name := range args {
@@ -166,12 +213,12 @@ func (o *DeleteAppOptions) Run() error {
 		if job != nil {
 			err = o.deleteApp(jenk, name, job)
 			if err != nil {
-				return err
+				return
 			}
+			deletedApplications = append(deletedApplications, name)
 		}
 	}
-	log.Infof("Deleted Applications %s\n", util.ColorInfo(deleteMessage))
-	return nil
+	return
 }
 
 func (o *DeleteAppOptions) deleteApp(jenkinsClient gojenkins.JenkinsClient, name string, job *gojenkins.Job) error {
@@ -282,6 +329,30 @@ func (o *DeleteAppOptions) waitForGitOpsPullRequest(env *v1.Environment, pullReq
 			}
 			time.Sleep(*o.PullRequestPollDuration)
 		}
+	}
+	return nil
+}
+
+func (o *DeleteAppOptions) init() error {
+	var err error
+	o.jxClient, o.currentNamespace, err = o.Factory.CreateJXClient()
+	if err != nil {
+		return errors.Wrap(err, "getting jx client")
+	}
+
+	if o.PullRequestPollTime != "" {
+		duration, err := time.ParseDuration(o.PullRequestPollTime)
+		if err != nil {
+			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.PullRequestPollTime, optionPullRequestPollTime, err)
+		}
+		o.PullRequestPollDuration = &duration
+	}
+	if o.Timeout != "" {
+		duration, err := time.ParseDuration(o.Timeout)
+		if err != nil {
+			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, optionTimeout, err)
+		}
+		o.TimeoutDuration = &duration
 	}
 	return nil
 }
