@@ -482,9 +482,16 @@ func (g *GitCLI) RemoteBranchNames(dir string, prefix string) ([]string, error) 
 
 // GetPreviousGitTagSHA returns the previous git tag from the repository at the given directory
 func (g *GitCLI) GetPreviousGitTagSHA(dir string) (string, error) {
-	// when in a release branch we need to skip 2 rather that 1 to find the revision of the previous tag
-	// no idea why! :)
-	return g.gitCmdWithOutput(dir, "rev-list", "--tags", "--skip=2", "--max-count=1")
+	latestTag, err := g.gitCmdWithOutput(dir, "describe","--abbrev=0", "--tags")
+	if err != nil {
+		return "", fmt.Errorf("failed to find latest tag for project in %s : %s", dir, err)
+	}
+
+	previousTag, err := g.gitCmdWithOutput(dir, "describe", "--abbrev=0", "--tags", "--always",  latestTag + "^")
+	if err != nil {
+		return "", fmt.Errorf("failed to find previous tag for project in %s : %s", dir, err)
+	}
+	return previousTag, err
 }
 
 // GetRevisionBeforeDate returns the revision before the given date
