@@ -3,6 +3,7 @@ package gits
 import (
 	"bytes"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"net/url"
@@ -198,24 +199,30 @@ func (g *GitCLI) Branch(dir string) (string, error) {
 	return g.gitCmdWithOutput(dir, "rev-parse", "--abbrev-ref", "HEAD")
 }
 
+// WriteOperation performs a generic write operation, with nicer error handling
+func (g *GitCLI) WriteOperation(dir string, args ...string) error {
+	return errors.Wrap(g.gitCmd(dir, args...),
+		"Have you set up a git credential helper? See https://help.github.com/articles/caching-your-github-password-in-git/\n")
+}
+
 // Push pushes the changes from the repository at the given directory
 func (g *GitCLI) Push(dir string) error {
-	return g.gitCmd(dir, "push", "origin", "HEAD")
+	return g.WriteOperation(dir, "push", "origin", "HEAD")
 }
 
 // ForcePushBranch does a force push of the local branch into the remote branch of the repository at the given directory
 func (g *GitCLI) ForcePushBranch(dir string, localBranch string, remoteBranch string) error {
-	return g.gitCmd(dir, "push", "-f", "origin", localBranch+":"+remoteBranch)
+	return g.WriteOperation(dir, "push", "-f", "origin", localBranch+":"+remoteBranch)
 }
 
 // PushMaster pushes the master branch into the origin
 func (g *GitCLI) PushMaster(dir string) error {
-	return g.gitCmd(dir, "push", "-u", "origin", "master")
+	return g.WriteOperation(dir, "push", "-u", "origin", "master")
 }
 
 // Pushtag pushes the given tag into the origin
 func (g *GitCLI) PushTag(dir string, tag string) error {
-	return g.gitCmd(dir, "push", "origin", tag)
+	return g.WriteOperation(dir, "push", "origin", tag)
 }
 
 // Add does a git add for all the given arguments
