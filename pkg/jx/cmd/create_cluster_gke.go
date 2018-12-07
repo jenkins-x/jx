@@ -1,9 +1,11 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"io"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/io/secrets"
+	"github.com/pkg/errors"
 
 	osUser "os/user"
 
@@ -313,7 +315,10 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		if err = InstallVaultOperator(&o.CommonOptions, ""); err != nil {
 			return err
 		}
-		secrets.NewSecretLocation(kubeClient, ns).SetInVault(true)
+		err = secrets.NewSecretLocation(kubeClient, ns).SetInVault(true)
+		if err != nil {
+			return errors.Wrap(err, "configring secrets location")
+		}
 	}
 
 	return nil

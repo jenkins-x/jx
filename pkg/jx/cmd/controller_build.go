@@ -101,6 +101,12 @@ func (o *ControllerBuildOptions) Run() error {
 	o.EnvironmentCache = kube.CreateEnvironmentCache(jxClient, ns)
 
 	if o.InitGitCredentials {
+		// lets validate we have git configured
+		_, _, err = gits.EnsureUserAndEmailSetup(o.Git())
+		if err != nil {
+		  return err
+		}
+
 		gc := &StepGitCredentialsOptions{}
 		gc.CommonOptions = o.CommonOptions
 		gc.BatchMode = true
@@ -355,6 +361,11 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 		// TODO handle http URLs too
 		return ""
 	}
+	gitInfo, err := gits.ParseGitURL(sourceURL)
+	if err != nil {
+		log.Infof("Failed to parse git URL %s: %s\n", sourceURL, err)
+		return ""
+	}
 	gitClient := gits.NewGitCLI()
 	ghPagesDir, err := cloneGitHubPagesBranchToTempDir(sourceURL, gitClient)
 	if err != err {
@@ -402,8 +413,8 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 		return ""
 	}
 
-	// TODO only github supported for now! Lets switch to Provider
-	return fmt.Sprintf("https://%s.github.io/%s/%s", owner, repository, fileName)
+	// TODO only github supported for now! Lets switch to GitProvider
+	return fmt.Sprintf("https://%s.github.io/%s/%s", gitInfo.Organisation, gitInfo.Name, fileName)
 }
 
 // createStepDescription uses the spec of the init container to return a description

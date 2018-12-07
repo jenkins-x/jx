@@ -3,7 +3,6 @@ package cmd
 import (
 	"io"
 	"io/ioutil"
-	"os"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -92,28 +91,9 @@ func (o *ControllerTeamOptions) Run() error {
 	}
 
 	// lets validate we have git configured
-	gitter := co.Git()
-	userName, _ := gitter.Username("")
-	userEmail, _ := gitter.Email("")
-	if userName == "" {
-		userName = os.Getenv("GIT_AUTHOR_NAME")
-		if userName == "" {
-			userName = "jenkins-x-bot"
-		}
-		err = gitter.SetUsername("", userName)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to set the git username to %s", userName)
-		}
-	}
-	if userEmail == "" {
-		userEmail = os.Getenv("GIT_AUTHOR_EMAIL")
-		if userEmail == "" {
-			userEmail = "jenkins-x@googlegroups.com"
-		}
-		err = gitter.SetEmail("", userEmail)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to set the git email to %s", userEmail)
-		}
+	_, _, err = gits.EnsureUserAndEmailSetup(co.Git())
+	if err != nil {
+	  return err
 	}
 
 	// now lets setup the git secrets
