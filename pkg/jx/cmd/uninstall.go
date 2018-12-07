@@ -213,6 +213,9 @@ func (o *UninstallOptions) cleanupConfig() error {
 	if err != nil {
 		return nil
 	}
+	if authConfigSvc == nil {
+		return nil
+	}
 	server := authConfigSvc.Config().CurrentServer
 	err = authConfigSvc.DeleteServer(server)
 	if err != nil {
