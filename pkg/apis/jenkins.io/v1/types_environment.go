@@ -262,7 +262,7 @@ func (t *TeamSettings) StorageLocation(classifier string) *StorageLocation {
 
 // IsEmpty returns true if the storage location is empty
 func (s *StorageLocation) IsEmpty() bool {
-	return s.GitURL == "" || s.HttpUrl == ""
+	return s.GitURL == "" && s.HttpUrl == ""
 }
 
 // Description returns the textual description of the storage location
