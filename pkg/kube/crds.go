@@ -46,6 +46,10 @@ func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to register the App CRD")
 	}
+	err = RegisterApplicationCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Application CRD")
+	}
 	err = RegisterPluginCRD(apiClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Plugin CRD")
@@ -277,6 +281,46 @@ func RegisterAppCRD(apiClient apiextensionsclientset.Interface) error {
 		ShortNames: []string{"app"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
+}
+
+// RegisterApplicationCRD ensures that the CRD is registered for Applications
+func RegisterApplicationCRD(apiClient apiextensionsclientset.Interface) error {
+	name := "applications." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "Application",
+		ListKind:   "ApplicationList",
+		Plural:     "applications",
+		Singular:   "application",
+		ShortNames: []string{"application"},
+	}
+	columns := []v1beta1.CustomResourceColumnDefinition{
+		{
+			Name:        "Name",
+			Type:        "string",
+			Description: "The name of the application",
+			JSONPath:    ".spec.name",
+		},
+		{
+			Name:        "Description",
+			Type:        "string",
+			Description: "A description of the plugin",
+			JSONPath:    ".spec.description",
+		},
+		{
+			Name:        "Org",
+			Type:        "string",
+			Description: "The git organisation that the application belongs to",
+			JSONPath:    ".spec.org",
+		},
+		{
+			Name:        "Repo",
+			Type:        "string",
+			Description: "The name of the repository",
+			JSONPath:    ".spec.repo",
+		},
+	}
 	validation := v1beta1.CustomResourceValidation{}
 	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }

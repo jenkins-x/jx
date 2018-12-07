@@ -211,9 +211,17 @@ func (options *ImportOptions) Run() error {
 		return nil
 	}
 
-	options.SetBatch(options.BatchMode)
+	options.Factory.SetBatch(options.BatchMode)
+	apiClient, err := options.CreateApiExtensionsClient()
+	if err != nil {
+		log.Error("Unable to get CRD extension client. Application import may go wonky")
+	} else {
+		err = kube.RegisterApplicationCRD(apiClient)
+		if err != nil {
+			log.Errorf("Unable to Register CRD. Application import may go wonky: %v", err)
+		}
+	}
 
-	var err error
 	isProw := false
 	if !options.DryRun {
 		_, err = options.KubeClient()
