@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -192,7 +191,8 @@ func (o *StepHelmApplyOptions) ensureHelmSecrets(dir string, filename string) (b
 	// The secrets file does not exist. Populate its values from the system vault
 	if !exists {
 		if !o.Factory.UseVault() {
-			return exists, fmt.Errorf("no Vault found and no file '%s' exists in directory '%s'", filename, dir)
+			log.Warnf("no Vault found and no file '%s' exists in directory '%s'\n", filename, dir)
+			return false, nil
 		}
 		client, err := o.Factory.GetSystemVaultClient()
 		if err != nil {
