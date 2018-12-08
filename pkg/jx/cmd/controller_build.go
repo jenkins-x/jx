@@ -107,15 +107,6 @@ func (o *ControllerBuildOptions) Run() error {
 		  return err
 		}
 
-		gc := &StepGitCredentialsOptions{}
-		gc.CommonOptions = o.CommonOptions
-		gc.BatchMode = true
-		log.Info("running: jx step git credentials\n")
-		err = gc.Run()
-		if err != nil {
-			return err
-		}
-
 		err := o.runCommandVerbose("git", "config", "--global", "credential.helper", "store")
 		if err != nil {
 			return err
@@ -329,7 +320,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 					log.Warnf("No GitURL on PipelineActivity %s\n", activity.Name)
 				}
 			}
-			spec.BuildLogsURL = o.generateBuildLogURL(podInterface, ns, activity, buildName, pod, location)
+			spec.BuildLogsURL = o.generateBuildLogURL(podInterface, ns, activity, buildName, pod, location, o.InitGitCredentials)
 		}
 	} else {
 		if running {
@@ -342,7 +333,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 }
 
 // generates the build log URL and returns the URL
-func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation) string {
+func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation, initGitCredentials bool) string {
 	data, err := builds.GetBuildLogsForPod(podInterface, pod)
 	if err != nil {
 		// probably due to not being available yet
@@ -366,6 +357,19 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 		log.Infof("Failed to parse git URL %s: %s\n", sourceURL, err)
 		return ""
 	}
+
+	if initGitCredentials {
+		gc := &StepGitCredentialsOptions{}
+		gc.CommonOptions = *o
+		gc.BatchMode = true
+		log.Info("running: jx step git credentials\n")
+		err = gc.Run()
+		if err != nil {
+			log.Infof("Failed to setup git credentials: %s\n", err)
+			return ""
+		}
+	}
+
 	gitClient := gits.NewGitCLI()
 	ghPagesDir, err := cloneGitHubPagesBranchToTempDir(sourceURL, gitClient)
 	if err != err {
