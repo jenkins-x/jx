@@ -30,13 +30,13 @@ type UpdateWebhooksOptions struct {
 var (
 	updateWebhooksLong = templates.LongDesc(`
 		
-		Not currently implemented.
+		Updates the webhook for one repository, or all repositories in an organization.
 
 `)
 
 	updateWebhooksExample = templates.Examples(`
 
-		jx update webhooks
+		jx update webhooks --org=mycorp
 
 `)
 )
