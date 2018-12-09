@@ -17,7 +17,7 @@ var (
 
 		Per team you can specify a Git repository URL to store artifacts inside per classification or you can use a HTTP URL.
 
-		If you don't specify any specific storage it will default to the git repository for a project.'
+		If you don't specify any specific storage for a classifier it will try the classifier 'default'.If there is still no configuration then it will default to the git repository for a project.'
 `)
 
 	editStorageExample = templates.Examples(`
@@ -29,6 +29,9 @@ var (
 
 		# Configure the git URL of where to store logs
 		jx edit storage -c logs --git-url https://github.com/myorg/mylogs.git'
+
+		# Configure the git URL of where all storage goes to by default unless a specific classifier has a config
+		jx edit storage -c default --git-url https://github.com/myorg/mylogs.git'
 
 	`)
 )
@@ -105,7 +108,7 @@ func (o *EditStorageOptions) Run() error {
 	callback := func(env *v1.Environment) error {
 		location := env.Spec.TeamSettings.StorageLocation(o.Classifier)
 		location.GitURL = o.GitURL
-		location.HttpUrl = o.HttpURL
+		location.HttpURL = o.HttpURL
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)

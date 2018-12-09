@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -99,8 +100,13 @@ func NewCmdLogin(f Factory, in terminal.FileReader, out terminal.FileWriter, err
 
 func (o *LoginOptions) Run() error {
 
+	_, err := url.ParseRequestURI(o.URL)
+	if err != nil {
+		return errors.Wrap(err, "validation failed for URL, ensure URL is well formed including scheme, i.e. https://foo.com")
+	}
+
 	// ensure base set of binaries are installed which are required by jx
-	err := o.installRequirements("")
+	err = o.installRequirements("")
 	if err != nil {
 		return errors.Wrap(err, "installing required binaries")
 	}

@@ -942,15 +942,9 @@ func (options *InstallOptions) configureHelmValues(namespace string) error {
 		return errors.Wrap(err, "configuring the tiller namespace")
 	}
 
-	isProw := false
-	if options.Flags.GitOpsMode {
-		isProw = options.Flags.Prow
-	} else {
+	isProw := options.Flags.Prow
+	if !options.Flags.GitOpsMode {
 		options.SetDevNamespace(namespace)
-		isProw, err = options.isProw()
-		if err != nil {
-			return errors.Wrapf(err, "cannot work out if this is a prow based install in namespace %s", options.currentNamespace)
-		}
 	}
 
 	if isProw {
@@ -959,7 +953,6 @@ func (options *InstallOptions) configureHelmValues(namespace string) error {
 		enableControllerBuild := true
 		helmConfig.ControllerBuild.Enabled = &enableControllerBuild
 	}
-
 	return nil
 }
 
@@ -1036,7 +1029,7 @@ func (options *InstallOptions) getHelmValuesFiles(configStore configio.ConfigSto
 		temporaryFiles = append(temporaryFiles, gitSecretsFileName, extraValuesFileName, cloudEnvironmentSecretsLocation)
 	}
 
-	return valuesFiles, secretsFiles, temporaryFiles, nil
+	return util.FilterFileExists(valuesFiles), util.FilterFileExists(secretsFiles), util.FilterFileExists(temporaryFiles), nil
 }
 
 func (options *InstallOptions) configureGitAuth(gitUserName string, gitServer string, gitAPIToken string) error {
