@@ -133,11 +133,12 @@ func (o *UninstallOptions) Run() error {
 	}
 	err = o.Helm().StatusRelease(namespace, "jenkins-x")
 	if err == nil {
+		err = o.Helm().DeleteRelease(namespace, "jenkins-x", true)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("failed to uninstall the jenkins-x helm chart in namespace %s: %s", namespace, err))
 		}
 	}
-	err = o.Helm().DeleteRelease(namespace, "jenkins-x", true)
+
 	err = jxClient.JenkinsV1().Environments(namespace).DeleteCollection(&meta_v1.DeleteOptions{}, meta_v1.ListOptions{})
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to delete the environments in namespace %s: %s", namespace, err))
