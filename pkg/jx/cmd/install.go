@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -1186,6 +1187,48 @@ func (options *InstallOptions) configureGitAuth() error {
 	return nil
 }
 
+func (options *InstallOptions) buildGitRepositoryOptionsForEnvironments() (*gits.GitRepositoryOptions, error) {
+	authConfigSvc, err := options.CreateGitAuthConfigService()
+	if err != nil {
+		return nil, errors.Wrap(err, "creating Git authentication config service")
+	}
+	config := authConfigSvc.Config()
+	server := config.CurrentAuthServer()
+	user := config.CurrentUser(server, false)
+
+	org := options.Flags.EnvironmentGitOwner
+	if org == "" {
+
+		provider, err := gits.CreateProvider(server, user, options.Git())
+		if err != nil {
+			return nil, errors.Wrap(err, "creating the Git provider")
+		}
+
+		orgs := gits.GetOrganizations(provider, user.Username)
+		if len(orgs) == 0 {
+			return nil, fmt.Errorf("user '%s' has no organizations", user.Username)
+		}
+
+		surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
+		sort.Strings(orgs)
+		promt := &survey.MultiSelect{
+			Message: "Select theorganization where you want to create the environment repository:",
+			Options: orgs,
+		}
+		err = survey.AskOne(promt, &org, nil, surveyOpts)
+		if err != nil {
+			return nil, errors.Wrap(err, "selecting the organiztion for environment repository")
+		}
+	}
+	return &gits.GitRepositoryOptions{
+		ServerURL: server.URL,
+		Username:  user.Username,
+		ApiToken:  user.ApiToken,
+		Owner:     org,
+		Private:   options.GitRepositoryOptions.Private,
+	}, nil
+}
+
 func (options *InstallOptions) cleanupTempFiles(temporaryFiles []string) error {
 	for _, tempFile := range temporaryFiles {
 		exists, err := util.FileExists(tempFile)
@@ -1342,7 +1385,12 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 			prefix := options.Flags.DefaultEnvironmentPrefix
 
 			git := options.Git()
-			repo, gitProvider, err := kube.CreateEnvGitRepository(options.BatchMode, authConfigSvc, devEnv, devEnv, config, forkEnvGitURL, envDir, &options.GitRepositoryOptions, options.CreateEnvOptions.HelmValuesConfig, prefix, git, options.In, options.Out, options.Err)
+			gitRepoOptions, err := options.buildGitRepositoryOptionsForEnvironments()
+			if err != nil || gitRepoOptions == nil {
+				return errors.Wrap(err, "building the git repository options for environment")
+			}
+			repo, gitProvider, err := kube.CreateEnvGitRepository(options.BatchMode, authConfigSvc, devEnv, devEnv, config, forkEnvGitURL, envDir,
+				gitRepoOptions, options.CreateEnvOptions.HelmValuesConfig, prefix, git, options.In, options.Out, options.Err)
 			if err != nil {
 				return errors.Wrapf(err, "failed to create git repository for the dev Environment source")
 			}
@@ -1908,7 +1956,6 @@ func (options *InstallOptions) createEnvironments(namespace string) error {
 	if !options.Flags.NoDefaultEnvironments {
 		createEnvironments := true
 		if options.Flags.GitOpsMode {
-			// reuse the helm setup
 			options.SetDevNamespace(namespace)
 			options.CreateEnvOptions.CommonOptions = options.CommonOptions
 			options.CreateEnvOptions.GitOpsMode = true
@@ -1931,9 +1978,12 @@ func (options *InstallOptions) createEnvironments(namespace string) error {
 		}
 		if createEnvironments {
 			log.Info("Creating default staging and production environments\n")
-			// Common CreateEnv Options
-			options.CreateEnvOptions.GitRepositoryOptions = options.GitRepositoryOptions
-			options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
+			gitRepoOptions, err := options.buildGitRepositoryOptionsForEnvironments()
+			if err != nil || gitRepoOptions == nil {
+				errors.Wrap(err, "building the Git repository options for environments")
+			}
+			options.CreateEnvOptions.GitRepositoryOptions = *gitRepoOptions
+
 			options.CreateEnvOptions.Prefix = options.Flags.DefaultEnvironmentPrefix
 			options.CreateEnvOptions.Prow = options.Flags.Prow
 			if options.BatchMode {
@@ -1943,7 +1993,7 @@ func (options *InstallOptions) createEnvironments(namespace string) error {
 			options.CreateEnvOptions.Options.Name = "staging"
 			options.CreateEnvOptions.Options.Spec.Label = "Staging"
 			options.CreateEnvOptions.Options.Spec.Order = 100
-			err := options.CreateEnvOptions.Run()
+			err = options.CreateEnvOptions.Run()
 			if err != nil {
 				return errors.Wrapf(err, "failed to create staging environment in namespace %s", options.devNamespace)
 			}

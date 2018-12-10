@@ -149,6 +149,11 @@ func (c *AuthConfig) CurrentUser(server *AuthServer, inCluster bool) *UserAuth {
 	return server.CurrentAuth()
 }
 
+// CurrentAuthServer returns the current AuthServer configured in the configuration
+func (c *AuthConfig) CurrentAuthServer() *AuthServer {
+	return c.GetServer(c.CurrentServer)
+}
+
 func (c *AuthConfig) GetOrCreateServer(url string) *AuthServer {
 	name := ""
 	kind := ""
