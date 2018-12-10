@@ -2201,7 +2201,7 @@ func (options *InstallOptions) getGitToken() (string, string, error) {
 		}
 	}
 	log.Infof("Lets set up a Git username and API token to be able to perform CI/CD\n\n")
-	userAuth, err := options.getGitUser("")
+	userAuth, err := options.getGitUserAuth("")
 	if err != nil {
 		return "", "", err
 	}
@@ -2255,7 +2255,7 @@ func (options *InstallOptions) saveChartmuseumAuthConfig() error {
 	return authConfigSvc.SaveConfig()
 }
 
-func (options *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
+func (options *InstallOptions) getGitUserAuth(message string) (*auth.UserAuth, error) {
 	var userAuth *auth.UserAuth
 	authConfigSvc, err := options.CreateGitAuthConfigService()
 	if err != nil {
