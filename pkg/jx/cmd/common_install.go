@@ -687,15 +687,21 @@ func (o *CommonOptions) installVaultCli() error {
 }
 
 func (o *CommonOptions) installHelm() error {
+	binary := "helm"
+
 	if runtime.GOOS == "darwin" && !o.NoBrew {
-		return o.RunCommand("brew", "install", "kubernetes-helm")
+		err := o.RunCommand("brew", "install", "kubernetes-helm")
+		if err != nil {
+			return err
+		}
+		return o.installHelmSecretsPlugin(binary, false)
 	}
 
 	binDir, err := util.JXBinLocation()
 	if err != nil {
 		return err
 	}
-	binary := "helm"
+
 	fileName, flag, err := shouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
@@ -831,6 +837,7 @@ func (o *CommonOptions) installHelm3() error {
 }
 
 func (o *CommonOptions) installHelmSecretsPlugin(helmBinary string, clientOnly bool) error {
+	log.Infof("Installing %s\n", util.ColorInfo("helm secrets plugin"))
 	err := o.Helm().Init(clientOnly, "", "", false)
 	if err != nil {
 		return errors.Wrap(err, "failed to initialize helm")
@@ -841,7 +848,7 @@ func (o *CommonOptions) installHelmSecretsPlugin(helmBinary string, clientOnly b
 		Args: []string{"plugin", "remove", "secrets"},
 	}
 	_, err = cmd.RunWithoutRetry()
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(),"secrets not found") {
 		return errors.Wrap(err, "failed to remove helm secrets")
 	}
 	cmd = util.Command{
