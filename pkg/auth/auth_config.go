@@ -303,7 +303,7 @@ func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string, batc
 		}
 		answer := m[username]
 		if answer == nil {
-			return nil, fmt.Errorf("no username chosen")
+			return &UserAuth{}, fmt.Errorf("no username chosen")
 		}
 		return answer, nil
 	}
@@ -428,4 +428,11 @@ func (c *AuthConfig) PickOrCreateServer(fallbackServerURL string, serverURL stri
 func (c *AuthConfig) UpdatePipelineServer(server *AuthServer, user *UserAuth) {
 	c.PipeLineServer = server.URL
 	c.PipeLineUsername = user.Username
+}
+
+// GetPipelineAuth returns the current pipline server and user authentication
+func (c *AuthConfig) GetPipelineAuth() (*AuthServer, *UserAuth) {
+	server := c.GetServer(c.PipeLineServer)
+	user := server.GetUserAuth(c.PipeLineUsername)
+	return server, user
 }
