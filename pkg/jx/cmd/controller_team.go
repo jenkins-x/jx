@@ -66,11 +66,11 @@ func NewCmdControllerTeam(f Factory, in terminal.FileReader, out terminal.FileWr
 // Run implements this command
 func (o *ControllerTeamOptions) Run() error {
 	co := &o.ControllerOptions
-	
+
 	// lets ensure helm is initialised
 	err := co.Helm().Init(true, "", "", false)
 	if err != nil {
-	  return errors.Wrapf(err, "failed to initialise helm")
+		return errors.Wrapf(err, "failed to initialise helm")
 	}
 
 	err = co.registerTeamCRD()
@@ -175,13 +175,12 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			}
 			if settings.NoTiller {
 				o.InstallOptions.InitOptions.Flags.RemoteTiller = false
-			} else
-			if settings.PromotionEngine == v1.PromotionEngineProw {
+			} else if settings.PromotionEngine == v1.PromotionEngineProw {
 				o.InstallOptions.Flags.Prow = true
 			}
 		}
 
-		err = oc.ModifyTeam(teamNs, func(team *v1.Team) error {
+		err = oc.ModifyTeam(adminNs, team.Name, func(team *v1.Team) error {
 			team.Status.ProvisionStatus = v1.TeamProvisionStatusPending
 			team.Status.Message = "Installing resources"
 			return nil
@@ -239,7 +238,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			provider = adminTeamSettings.KubeProvider
 		}
 		if provider == "" {
-			log.Warnf("No kube provider specified on admin team settings %s\n", adminNs)
+			log.Warnf("No kube provider specified on admin team settings %s\n. Defaulting to gke", adminNs)
 			provider = "gke"
 		}
 		io.Flags.Provider = provider
@@ -283,7 +282,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		err = io.Run()
 		if err != nil {
 			log.Errorf("Unable to install jx for team %s: %s", util.ColorInfo(teamNs), err)
-			err = oc.ModifyTeam(teamNs, func(team *v1.Team) error {
+			err = oc.ModifyTeam(adminNs, team.Name, func(team *v1.Team) error {
 				team.Status.ProvisionStatus = v1.TeamProvisionStatusError
 				team.Status.Message = err.Error()
 				return nil
@@ -307,7 +306,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			}
 		}
 
-		err = oc.ModifyTeam(teamNs, func(team *v1.Team) error {
+		err = oc.ModifyTeam(adminNs, team.Name, func(team *v1.Team) error {
 			team.Status.ProvisionStatus = v1.TeamProvisionStatusComplete
 			team.Status.Message = "Installation complete"
 			return nil
