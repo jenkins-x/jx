@@ -687,12 +687,9 @@ func (o *CommonOptions) installVaultCli() error {
 }
 
 func (o *CommonOptions) installHelm() error {
-	// TODO temporary hack while we are on the 2.10-rc version:
-	/*
-		if runtime.GOOS == "darwin" && !o.NoBrew {
-			return o.runCommand("brew", "install", "kubernetes-helm")
-		}
-	*/
+	if runtime.GOOS == "darwin" && !o.NoBrew {
+		return o.RunCommand("brew", "install", "kubernetes-helm")
+	}
 
 	binDir, err := util.JXBinLocation()
 	if err != nil {
