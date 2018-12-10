@@ -161,7 +161,8 @@ func (o *DeleteTeamOptions) deleteTeam(name string) error {
 	}
 	o.changeNamespace(name)
 
-	err = o.ModifyTeam(name, func(team *v1.Team) error {
+	//TODO: will be wrong admin ns here.
+	err = o.ModifyTeam(ns, name, func(team *v1.Team) error {
 		team.Status.ProvisionStatus = v1.TeamProvisionStatusDeleting
 		team.Status.Message = "Deleting resources"
 		return nil
@@ -171,7 +172,8 @@ func (o *DeleteTeamOptions) deleteTeam(name string) error {
 	}
 	err = uninstall.Run()
 	if err != nil {
-		o.ModifyTeam(name, func(team *v1.Team) error {
+		//TODO: will be wrong admin namespace here.
+		o.ModifyTeam(ns, name, func(team *v1.Team) error {
 			team.Status.ProvisionStatus = v1.TeamProvisionStatusError
 			team.Status.Message = fmt.Sprintf("Failed to delete team resources: %s", err)
 			return nil
