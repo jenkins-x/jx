@@ -214,6 +214,7 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 
 func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.Interface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod) bool {
 	copy := *activity
+	initContainersTerminated := len(pod.Status.InitContainerStatuses) > 0
 	for _, c := range pod.Status.InitContainerStatuses {
 		name := strings.Replace(strings.TrimPrefix(c.Name, "build-step-"), "-", " ", -1)
 		title := strings.Title(name)
@@ -251,6 +252,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 			} else {
 				stage.Status = v1.ActivityStatusTypePending
 			}
+			initContainersTerminated = false
 		}
 	}
 	spec := &activity.Spec
@@ -289,6 +291,9 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 				allCompleted = false
 			}
 		}
+	}
+	if !allCompleted && initContainersTerminated {
+		allCompleted = true
 	}
 	if allCompleted {
 		if failed {
