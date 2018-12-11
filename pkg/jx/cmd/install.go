@@ -1090,6 +1090,7 @@ func (options *InstallOptions) configureGitAuth() error {
 	}
 
 	if userAuth.IsInvalid() {
+		log.Infof("Creating a local Git user for %s server\n", authServer.Label())
 		f := func(username string) error {
 			options.Git().PrintCreateRepositoryGenerateAccessToken(authServer, username, options.Out)
 			return nil
@@ -1103,6 +1104,7 @@ func (options *InstallOptions) configureGitAuth() error {
 		if userAuth.IsInvalid() {
 			return fmt.Errorf("invalid user authentication for git server %s", authServer.Label())
 		}
+		authConfig.SetUserAuth(gitServer, userAuth)
 	}
 
 	log.Infof("Select the CI/CD pipelines Git server and user\n")
@@ -1143,6 +1145,7 @@ func (options *InstallOptions) configureGitAuth() error {
 		return errors.Wrapf(err, "selecting the pipeline user for git server %s", authServer.Label())
 	}
 	if pipelineUserAuth.IsInvalid() {
+		log.Infof("Creating a pipelines Git user for %s server\n", authServer.Label())
 		f := func(username string) error {
 			options.Git().PrintCreateRepositoryGenerateAccessToken(pipelineAuthServer, username, options.Out)
 			return nil
@@ -1156,6 +1159,7 @@ func (options *InstallOptions) configureGitAuth() error {
 		if userAuth.IsInvalid() {
 			return fmt.Errorf("invalid pipeline user authentication for git server %s", authServer.Label())
 		}
+		authConfig.SetUserAuth(pipelineAuthServer.URL, pipelineUserAuth)
 	}
 
 	pipelineAuthServerURL := pipelineAuthServer.URL
