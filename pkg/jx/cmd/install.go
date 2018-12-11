@@ -1077,13 +1077,13 @@ func (options *InstallOptions) configureGitAuth() error {
 		kind := gits.SaasGitKind(gitServer)
 		authServer = authConfig.GetOrCreateServerName(gitServer, "", kind)
 	} else {
-		authServer, err = authConfig.PickServer("Which Git provider?", options.BatchMode, options.In, options.Out, options.Err)
+		authServer, err = authConfig.PickServer("Which Git provider:", options.BatchMode, options.In, options.Out, options.Err)
 		if err != nil {
 			return errors.Wrap(err, "getting the git provider from user")
 		}
 	}
 
-	message := fmt.Sprintf("local Git user for %s server", authServer.Label())
+	message := fmt.Sprintf("local Git user for %s server:", authServer.Label())
 	userAuth, err = authConfig.PickServerUserAuth(authServer, message, options.BatchMode, "", options.In, options.Out, options.Err)
 	if err != nil {
 		return errors.Wrapf(err, "selecting the local user for git server %s", authServer.Label())
@@ -1114,7 +1114,7 @@ func (options *InstallOptions) configureGitAuth() error {
 	} else {
 		surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
 		confirm := &survey.Confirm{
-			Message: fmt.Sprintf("Do you wish to use %s as the pipelines Git server", authServer.Label()),
+			Message: fmt.Sprintf("Do you wish to use %s as the pipelines Git server:", authServer.Label()),
 			Default: true,
 		}
 		yes := false
@@ -1131,7 +1131,7 @@ func (options *InstallOptions) configureGitAuth() error {
 				return errors.Wrap(err, "reading the pipelines Git service URL")
 			}
 			pipelineAuthServer, err = authConfig.PickOrCreateServer(gits.GitHubURL, pipelineAuthServerURL,
-				"Which Git Service do you wish to use",
+				"Which Git Service do you wish to use:",
 				options.BatchMode, options.In, options.Out, options.Err)
 			if err != nil {
 				return errors.Wrap(err, "selecting the pipelines Git Service")
@@ -1139,7 +1139,7 @@ func (options *InstallOptions) configureGitAuth() error {
 		}
 	}
 
-	message = fmt.Sprintf("pipelines Git user for %s server", pipelineAuthServer.Label())
+	message = fmt.Sprintf("pipelines Git user for %s server:", pipelineAuthServer.Label())
 	pipelineUserAuth, err := authConfig.PickServerUserAuth(authServer, message, options.BatchMode, "", options.In, options.Out, options.Err)
 	if err != nil {
 		return errors.Wrapf(err, "selecting the pipeline user for git server %s", authServer.Label())
