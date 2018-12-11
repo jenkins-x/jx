@@ -1222,11 +1222,11 @@ func (options *InstallOptions) buildGitRepositoryOptionsForEnvironments() (*gits
 
 		surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
 		sort.Strings(orgs)
-		promt := &survey.MultiSelect{
-			Message: "Select theorganization where you want to create the environment repository:",
+		promt := &survey.Select{
+			Message: "Select the organization where you want to create the environment repository:",
 			Options: orgs,
 		}
-		err = survey.AskOne(promt, &org, nil, surveyOpts)
+		err = survey.AskOne(promt, &org, survey.Required, surveyOpts)
 		if err != nil {
 			return nil, errors.Wrap(err, "selecting the organiztion for environment repository")
 		}
