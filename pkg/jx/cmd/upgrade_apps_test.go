@@ -45,6 +45,6 @@ type UpgradeAppsTestEnv struct {
 	DevRepo          *gits.FakeRepository
 	DevEnvRepo       *gits.FakeRepository
 	OrgName          string
-	DevEnvRepoInfo   *gits.GitRepositoryInfo
+	DevEnvRepoInfo   *gits.GitRepository
 	DevEnv           *v1.Environment
 }

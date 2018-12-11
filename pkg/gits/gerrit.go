@@ -145,11 +145,11 @@ func (p *GerritProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	return nil
 }
 
-func (p *GerritProvider) GetPullRequest(owner string, repo *GitRepositoryInfo, number int) (*GitPullRequest, error) {
+func (p *GerritProvider) GetPullRequest(owner string, repo *GitRepository, number int) (*GitPullRequest, error) {
 	return nil, nil
 }
 
-func (p *GerritProvider) GetPullRequestCommits(owner string, repo *GitRepositoryInfo, number int) ([]*GitCommit, error) {
+func (p *GerritProvider) GetPullRequestCommits(owner string, repo *GitRepository, number int) ([]*GitCommit, error) {
 	return nil, nil
 }
 

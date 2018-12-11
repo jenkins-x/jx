@@ -141,12 +141,12 @@ func (g *GitFakeProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 }
 
 // GetPullRequest get a PR
-func (g *GitFakeProvider) GetPullRequest(owner string, repo *GitRepositoryInfo, number int) (*GitPullRequest, error) {
+func (g *GitFakeProvider) GetPullRequest(owner string, repo *GitRepository, number int) (*GitPullRequest, error) {
 	panic("implement me")
 }
 
 // GetPullRequestCommits get the commits for a PR
-func (g *GitFakeProvider) GetPullRequestCommits(owner string, repo *GitRepositoryInfo, number int) ([]*GitCommit, error) {
+func (g *GitFakeProvider) GetPullRequestCommits(owner string, repo *GitRepository, number int) ([]*GitCommit, error) {
 	panic("implement me")
 }
 

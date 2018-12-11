@@ -17,7 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (o *CommonOptions) FindGitInfo(dir string) (*gits.GitRepositoryInfo, error) {
+func (o *CommonOptions) FindGitInfo(dir string) (*gits.GitRepository, error) {
 	_, gitConf, err := o.Git().FindGitConfigDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("Could not find a .git directory: %s\n", err)
@@ -34,7 +34,7 @@ func (o *CommonOptions) FindGitInfo(dir string) (*gits.GitRepositoryInfo, error)
 }
 
 // createGitProvider creates a git from the given directory
-func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepositoryInfo, gits.GitProvider, issues.IssueProvider, error) {
+func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepository, gits.GitProvider, issues.IssueProvider, error) {
 	gitDir, gitConfDir, err := o.Git().FindGitConfigDir(dir)
 	if err != nil {
 		return nil, nil, nil, err
@@ -255,7 +255,7 @@ func addGitRepoOptionsArguments(cmd *cobra.Command, repositoryOptions *gits.GitR
 	cmd.Flags().BoolVarP(&repositoryOptions.Private, "git-private", "", false, "Create new Git repositories as private")
 }
 
-func (o *CommonOptions) GitServerKind(gitInfo *gits.GitRepositoryInfo) (string, error) {
+func (o *CommonOptions) GitServerKind(gitInfo *gits.GitRepository) (string, error) {
 	return o.GitServerHostURLKind(gitInfo.HostURL())
 }
 

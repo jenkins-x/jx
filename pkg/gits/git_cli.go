@@ -314,7 +314,7 @@ func (g *GitCLI) Server(dir string) (string, error) {
 }
 
 // Info returns the git info of the repository at the given directory
-func (g *GitCLI) Info(dir string) (*GitRepositoryInfo, error) {
+func (g *GitCLI) Info(dir string) (*GitRepository, error) {
 	text, err := g.gitCmdWithOutput(dir, "status")
 	var rUrl string
 	if err != nil && strings.Contains(text, "Not a git repository") {
@@ -557,7 +557,7 @@ func (g *GitCLI) PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServe
 }
 
 // IsFork indicates if the repository at the given directory is a fork
-func (g *GitCLI) IsFork(gitProvider GitProvider, gitInfo *GitRepositoryInfo, dir string) (bool, error) {
+func (g *GitCLI) IsFork(gitProvider GitProvider, gitInfo *GitRepository, dir string) (bool, error) {
 	// lets ignore errors as that just means there's no config
 	originUrl, _ := g.gitCmdWithOutput(dir, "config", "--get", "remote.origin.url")
 	upstreamUrl, _ := g.gitCmdWithOutput(dir, "config", "--get", "remote.upstream.url")

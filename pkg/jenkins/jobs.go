@@ -45,7 +45,7 @@ func CreateFolderXml(folderUrl string, name string) string {
 `
 }
 
-func createBranchSource(info *gits.GitRepositoryInfo, gitProvider gits.GitProvider, credentials string, branches string) string {
+func createBranchSource(info *gits.GitRepository, gitProvider gits.GitProvider, credentials string, branches string) string {
 	idXml := `<id>` + string(uuid.NewUUID()) + `</id>`
 	credXml := ""
 	if credentials != "" {
@@ -152,7 +152,7 @@ func createBranchSource(info *gits.GitRepositoryInfo, gitProvider gits.GitProvid
 `
 }
 
-func CreateMultiBranchProjectXml(info *gits.GitRepositoryInfo, gitProvider gits.GitProvider, credentials string, branches string, jenkinsfile string) string {
+func CreateMultiBranchProjectXml(info *gits.GitRepository, gitProvider gits.GitProvider, credentials string, branches string, jenkinsfile string) string {
 	triggerXml := `
 	  <triggers>
 	    <com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger plugin="cloudbees-folder@6.3">

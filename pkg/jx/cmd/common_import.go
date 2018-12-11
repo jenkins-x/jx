@@ -206,7 +206,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 	return gitProvider.CreateWebHook(webhook)
 }
 
-func (o *CommonOptions) logImportedProject(isEnvironment bool, gitInfo *gits.GitRepositoryInfo) {
+func (o *CommonOptions) logImportedProject(isEnvironment bool, gitInfo *gits.GitRepository) {
 	log.Blank()
 	if !isEnvironment {
 		log.Infof("Watch pipeline activity via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get activity -f %s -w", gitInfo.Name)))

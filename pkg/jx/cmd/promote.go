@@ -75,7 +75,7 @@ type PromoteOptions struct {
 	TimeoutDuration         *time.Duration
 	PullRequestPollDuration *time.Duration
 	Activities              typev1.PipelineActivityInterface
-	GitInfo                 *gits.GitRepositoryInfo
+	GitInfo                 *gits.GitRepository
 	jenkinsURL              string
 	releaseResource         *v1.Release
 	ReleaseInfo             *ReleaseInfo
@@ -891,7 +891,7 @@ func (o *CommonOptions) getLatestPipelineBuildByCRD(pipeline string) (string, er
 	return "1", nil
 }
 
-func (o *CommonOptions) getPipelineName(gitInfo *gits.GitRepositoryInfo, pipeline string, build string, appName string) (string, string) {
+func (o *CommonOptions) getPipelineName(gitInfo *gits.GitRepository, pipeline string, build string, appName string) (string, string) {
 	if pipeline == "" {
 		pipeline = o.getJobName()
 	}

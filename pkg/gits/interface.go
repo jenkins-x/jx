@@ -44,9 +44,9 @@ type GitProvider interface {
 
 	UpdatePullRequestStatus(pr *GitPullRequest) error
 
-	GetPullRequest(owner string, repo *GitRepositoryInfo, number int) (*GitPullRequest, error)
+	GetPullRequest(owner string, repo *GitRepository, number int) (*GitPullRequest, error)
 
-	GetPullRequestCommits(owner string, repo *GitRepositoryInfo, number int) ([]*GitCommit, error)
+	GetPullRequestCommits(owner string, repo *GitRepository, number int) ([]*GitCommit, error)
 
 	PullRequestLastCommitStatus(pr *GitPullRequest) (string, error)
 
@@ -152,8 +152,8 @@ type Gitter interface {
 
 	Status(dir string) error
 	Server(dir string) (string, error)
-	Info(dir string) (*GitRepositoryInfo, error)
-	IsFork(gitProvider GitProvider, gitInfo *GitRepositoryInfo, dir string) (bool, error)
+	Info(dir string) (*GitRepository, error)
+	IsFork(gitProvider GitProvider, gitInfo *GitRepository, dir string) (bool, error)
 	Version() (string, error)
 	RepoName(org, repoName string) string
 

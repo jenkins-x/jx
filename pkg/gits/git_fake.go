@@ -32,7 +32,7 @@ type GitFake struct {
 	BranchesRemote []string
 	CurrentBranch  string
 	AccessTokenURL string
-	RepoInfo       GitRepositoryInfo
+	RepoInfo       GitRepository
 	Fork           bool
 	GitVersion     string
 	GitUser        GitUser
@@ -78,12 +78,12 @@ func (g *GitFake) Server(dir string) (string, error) {
 }
 
 // Info returns the git repo info
-func (g *GitFake) Info(dir string) (*GitRepositoryInfo, error) {
+func (g *GitFake) Info(dir string) (*GitRepository, error) {
 	return &g.RepoInfo, nil
 }
 
 // IsFork returns trie if this repo is a fork
-func (g *GitFake) IsFork(gitProvider GitProvider, gitInfo *GitRepositoryInfo, dir string) (bool, error) {
+func (g *GitFake) IsFork(gitProvider GitProvider, gitInfo *GitRepository, dir string) (bool, error) {
 	return g.Fork, nil
 }
 

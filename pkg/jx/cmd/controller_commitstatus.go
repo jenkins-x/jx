@@ -457,7 +457,7 @@ func (o *ControllerCommitStatusOptions) update(statusDetails *jenkinsv1.CommitSt
 	return nil
 }
 
-func (o *ControllerCommitStatusOptions) getGitProvider(url string) (gits.GitProvider, *gits.GitRepositoryInfo, error) {
+func (o *ControllerCommitStatusOptions) getGitProvider(url string) (gits.GitProvider, *gits.GitRepository, error) {
 	// TODO This is an epic hack to get the git stuff working
 	gitInfo, err := gits.ParseGitURL(url)
 	if err != nil {

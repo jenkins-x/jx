@@ -10,7 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 )
 
-func NotifyCommitStatus(commitRef jenkinsv1.CommitStatusCommitReference, state string, targetUrl string, description string, comment string, context string, gitProvider gits.GitProvider, gitRepoInfo *gits.GitRepositoryInfo) (status *gits.GitRepoStatus, err error) {
+func NotifyCommitStatus(commitRef jenkinsv1.CommitStatusCommitReference, state string, targetUrl string, description string, comment string, context string, gitProvider gits.GitProvider, gitRepoInfo *gits.GitRepository) (status *gits.GitRepoStatus, err error) {
 
 	if commitRef.SHA == "" {
 		return &gits.GitRepoStatus{}, fmt.Errorf("SHA cannot be empty on %v", commitRef)
