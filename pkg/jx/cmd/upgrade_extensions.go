@@ -182,7 +182,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 				log.Infof("Extensions Repository Lock located at %s\n", util.ColorInfo(path))
 			}
 			if err != nil {
-				return errors.New(fmt.Sprintf("Unable to fetch Extensions Repository Helm Chart %s/%s becasue %v", current.Chart.RepoName, current.Chart.Name, err))
+				return fmt.Errorf("Unable to fetch Extensions Repository Helm Chart %s/%s because %v", current.Chart.RepoName, current.Chart.Name, err)
 			}
 		} else {
 			extensionsRepositoryUrl := current.Url
@@ -190,7 +190,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 				extensionsRepositoryUrl = upstreamExtensionsRepositoryGitHub
 			}
 			if current.GitHub != "" {
-				_, repoInfo, err := o.createGitProviderForURLWithoutKind(fmt.Sprintf("github.com/%s", current.GitHub))
+				_, repoInfo, err := o.createGitProviderForURLWithoutKind(current.GitHub)
 				if err != nil {
 					return err
 				}
