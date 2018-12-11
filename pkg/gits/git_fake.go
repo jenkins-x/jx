@@ -83,7 +83,7 @@ func (g *GitFake) Info(dir string) (*GitRepository, error) {
 }
 
 // IsFork returns trie if this repo is a fork
-func (g *GitFake) IsFork(gitProvider GitProvider, gitInfo *GitRepository, dir string) (bool, error) {
+func (g *GitFake) IsFork(dir string) (bool, error) {
 	return g.Fork, nil
 }
 

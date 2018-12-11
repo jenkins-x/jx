@@ -3,7 +3,6 @@ package gits
 import (
 	"bytes"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"net/url"
@@ -11,6 +10,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -489,12 +490,12 @@ func (g *GitCLI) RemoteBranchNames(dir string, prefix string) ([]string, error) 
 
 // GetPreviousGitTagSHA returns the previous git tag from the repository at the given directory
 func (g *GitCLI) GetPreviousGitTagSHA(dir string) (string, error) {
-	latestTag, err := g.gitCmdWithOutput(dir, "describe","--abbrev=0", "--tags")
+	latestTag, err := g.gitCmdWithOutput(dir, "describe", "--abbrev=0", "--tags")
 	if err != nil {
 		return "", fmt.Errorf("failed to find latest tag for project in %s : %s", dir, err)
 	}
 
-	previousTag, err := g.gitCmdWithOutput(dir, "describe", "--abbrev=0", "--tags", "--always",  latestTag + "^")
+	previousTag, err := g.gitCmdWithOutput(dir, "describe", "--abbrev=0", "--tags", "--always", latestTag+"^")
 	if err != nil {
 		return "", fmt.Errorf("failed to find previous tag for project in %s : %s", dir, err)
 	}
@@ -557,7 +558,7 @@ func (g *GitCLI) PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServe
 }
 
 // IsFork indicates if the repository at the given directory is a fork
-func (g *GitCLI) IsFork(gitProvider GitProvider, gitInfo *GitRepository, dir string) (bool, error) {
+func (g *GitCLI) IsFork(dir string) (bool, error) {
 	// lets ignore errors as that just means there's no config
 	originUrl, _ := g.gitCmdWithOutput(dir, "config", "--get", "remote.origin.url")
 	upstreamUrl, _ := g.gitCmdWithOutput(dir, "config", "--get", "remote.upstream.url")
@@ -565,12 +566,7 @@ func (g *GitCLI) IsFork(gitProvider GitProvider, gitInfo *GitRepository, dir str
 	if originUrl != upstreamUrl && originUrl != "" && upstreamUrl != "" {
 		return true, nil
 	}
-
-	repo, err := gitProvider.GetRepository(gitInfo.Organisation, gitInfo.Name)
-	if err != nil {
-		return false, err
-	}
-	return repo.Fork, nil
+	return false, fmt.Errorf("could not confirm the repo is a fork")
 }
 
 // ToGitLabels converts the list of label names into an array of GitLabels

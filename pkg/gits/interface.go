@@ -153,7 +153,7 @@ type Gitter interface {
 	Status(dir string) error
 	Server(dir string) (string, error)
 	Info(dir string) (*GitRepository, error)
-	IsFork(gitProvider GitProvider, gitInfo *GitRepository, dir string) (bool, error)
+	IsFork(dir string) (bool, error)
 	Version() (string, error)
 	RepoName(org, repoName string) string
 
