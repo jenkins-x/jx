@@ -1035,7 +1035,7 @@ func (p *GitHubProvider) ServerURL() string {
 }
 
 func (p *GitHubProvider) BranchArchiveURL(org string, name string, branch string) string {
-	return util.UrlJoin(p.ServerURL(), org, name, "archive", branch+".zip")
+	return util.UrlJoin("https://codeload.github.com", org, name, "zip", branch)
 }
 
 func (p *GitHubProvider) CurrentUsername() string {
