@@ -1211,7 +1211,7 @@ func (options *InstallOptions) buildGitRepositoryOptionsForEnvironments() (*gits
 	if org == "" {
 		if options.BatchMode {
 			org = user.Username
-			log.Inforf("Using %s environment git owner in batch mode.\n", util.ColorInfo(org))
+			log.Infof("Using %s environment git owner in batch mode.\n", util.ColorInfo(org))
 		} else {
 			provider, err := gits.CreateProvider(server, user, options.Git())
 			if err != nil {
