@@ -78,11 +78,15 @@ func (c *AuthConfig) SetUserAuth(url string, auth *UserAuth) {
 				if a.Username == auth.Username {
 					c.Servers[i].Users[j] = auth
 					c.Servers[i].CurrentUser = username
+					c.DefaultUsername = username
+					c.CurrentServer = url
 					return
 				}
 			}
 			c.Servers[i].Users = append(c.Servers[i].Users, auth)
 			c.Servers[i].CurrentUser = username
+			c.DefaultUsername = username
+			c.CurrentServer = url
 			return
 		}
 	}
@@ -91,9 +95,9 @@ func (c *AuthConfig) SetUserAuth(url string, auth *UserAuth) {
 		Users:       []*UserAuth{auth},
 		CurrentUser: username,
 	})
-
-	c.DefaultUsername = auth.Username
+	c.DefaultUsername = username
 	c.CurrentServer = url
+
 }
 
 func urlsEqual(url1, url2 string) bool {
