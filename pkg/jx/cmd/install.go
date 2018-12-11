@@ -1398,6 +1398,9 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 			git := options.Git()
 			gitRepoOptions, err := options.buildGitRepositoryOptionsForEnvironments()
 			if err != nil || gitRepoOptions == nil {
+				if gitRepoOptions == nil {
+					err = errors.New("empty git repository options")
+				}
 				return errors.Wrap(err, "building the git repository options for environment")
 			}
 			repo, gitProvider, err := kube.CreateEnvGitRepository(options.BatchMode, authConfigSvc, devEnv, devEnv, config, forkEnvGitURL, envDir,
@@ -1912,7 +1915,7 @@ func (options *InstallOptions) configureJenkins(namespace string) error {
 				options.CreateJenkinsUserOptions.BearerToken = jenkinsSaToken
 				options.CreateJenkinsUserOptions.Run()
 			} else {
-				// Wait for Jenkins service to be ready after installation
+				// Wait for Jenkins service to be ready after installation before trying to generate the token
 				time.Sleep(2 * time.Second)
 				err := options.retry(3, 2*time.Second, func() (err error) {
 					options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
@@ -1993,7 +1996,7 @@ func (options *InstallOptions) createEnvironments(namespace string) error {
 			log.Info("Creating default staging and production environments\n")
 			gitRepoOptions, err := options.buildGitRepositoryOptionsForEnvironments()
 			if err != nil || gitRepoOptions == nil {
-				errors.Wrap(err, "building the Git repository options for environments")
+				return errors.Wrap(err, "building the Git repository options for environments")
 			}
 			options.CreateEnvOptions.GitRepositoryOptions = *gitRepoOptions
 
