@@ -1209,26 +1209,30 @@ func (options *InstallOptions) buildGitRepositoryOptionsForEnvironments() (*gits
 
 	org := options.Flags.EnvironmentGitOwner
 	if org == "" {
+		if options.BatchMode {
+			org = user.Username
+			log.Inforf("Using %s environment git owner in batch mode.\n", util.ColorInfo(org))
+		} else {
+			provider, err := gits.CreateProvider(server, user, options.Git())
+			if err != nil {
+				return nil, errors.Wrap(err, "creating the Git provider")
+			}
 
-		provider, err := gits.CreateProvider(server, user, options.Git())
-		if err != nil {
-			return nil, errors.Wrap(err, "creating the Git provider")
-		}
+			orgs := gits.GetOrganizations(provider, user.Username)
+			if len(orgs) == 0 {
+				return nil, fmt.Errorf("user '%s' has no organizations", user.Username)
+			}
 
-		orgs := gits.GetOrganizations(provider, user.Username)
-		if len(orgs) == 0 {
-			return nil, fmt.Errorf("user '%s' has no organizations", user.Username)
-		}
-
-		surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
-		sort.Strings(orgs)
-		promt := &survey.Select{
-			Message: "Select the organization where you want to create the environment repository:",
-			Options: orgs,
-		}
-		err = survey.AskOne(promt, &org, survey.Required, surveyOpts)
-		if err != nil {
-			return nil, errors.Wrap(err, "selecting the organiztion for environment repository")
+			surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
+			sort.Strings(orgs)
+			promt := &survey.Select{
+				Message: "Select the organization where you want to create the environment repository:",
+				Options: orgs,
+			}
+			err = survey.AskOne(promt, &org, survey.Required, surveyOpts)
+			if err != nil {
+				return nil, errors.Wrap(err, "selecting the organiztion for environment repository")
+			}
 		}
 	}
 	return &gits.GitRepositoryOptions{
