@@ -941,21 +941,6 @@ func (mock *MockGitter) Tags(_param0 string) ([]string, error) {
 	return ret0, ret1
 }
 
-func (mock *MockGitter) ToGitLabels(_param0 []string) []gits.GitLabel {
-	if mock == nil {
-		panic("mock must not be nil. Use myMock := NewMockGitter().")
-	}
-	params := []pegomock.Param{_param0}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("ToGitLabels", params, []reflect.Type{reflect.TypeOf((*[]gits.GitLabel)(nil)).Elem()})
-	var ret0 []gits.GitLabel
-	if len(result) != 0 {
-		if result[0] != nil {
-			ret0 = result[0].([]gits.GitLabel)
-		}
-	}
-	return ret0
-}
-
 func (mock *MockGitter) UpdateRemote(_param0 string, _param1 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitter().")
@@ -2698,33 +2683,6 @@ func (c *Gitter_Tags_OngoingVerification) GetAllCapturedArguments() (_param0 []s
 		_param0 = make([]string, len(params[0]))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
-		}
-	}
-	return
-}
-
-func (verifier *VerifierGitter) ToGitLabels(_param0 []string) *Gitter_ToGitLabels_OngoingVerification {
-	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ToGitLabels", params)
-	return &Gitter_ToGitLabels_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
-}
-
-type Gitter_ToGitLabels_OngoingVerification struct {
-	mock              *MockGitter
-	methodInvocations []pegomock.MethodInvocation
-}
-
-func (c *Gitter_ToGitLabels_OngoingVerification) GetCapturedArguments() []string {
-	_param0 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1]
-}
-
-func (c *Gitter_ToGitLabels_OngoingVerification) GetAllCapturedArguments() (_param0 [][]string) {
-	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
-	if len(params) > 0 {
-		_param0 = make([][]string, len(params[0]))
-		for u, param := range params[0] {
-			_param0[u] = param.([]string)
 		}
 	}
 	return
