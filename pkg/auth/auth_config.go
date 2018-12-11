@@ -91,6 +91,9 @@ func (c *AuthConfig) SetUserAuth(url string, auth *UserAuth) {
 		Users:       []*UserAuth{auth},
 		CurrentUser: username,
 	})
+
+	c.DefaultUsername = auth.Username
+	c.CurrentServer = url
 }
 
 func urlsEqual(url1, url2 string) bool {
@@ -143,6 +146,9 @@ func (c *AuthConfig) DeleteServer(url string) {
 }
 
 func (c *AuthConfig) CurrentUser(server *AuthServer, inCluster bool) *UserAuth {
+	if server == nil {
+		return nil
+	}
 	if urlsEqual(c.PipeLineServer, server.URL) && inCluster {
 		return server.GetUserAuth(c.PipeLineUsername)
 	}

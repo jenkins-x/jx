@@ -1197,8 +1197,15 @@ func (options *InstallOptions) buildGitRepositoryOptionsForEnvironments() (*gits
 		return nil, errors.Wrap(err, "creating Git authentication config service")
 	}
 	config := authConfigSvc.Config()
+
 	server := config.CurrentAuthServer()
+	if server == nil {
+		return nil, fmt.Errorf("no current git server set in the configuration")
+	}
 	user := config.CurrentUser(server, false)
+	if user == nil {
+		return nil, fmt.Errorf("no current git user set in configuration for server '%s'", server.Label())
+	}
 
 	org := options.Flags.EnvironmentGitOwner
 	if org == "" {
