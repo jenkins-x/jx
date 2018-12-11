@@ -314,3 +314,20 @@ func (o *CommonOptions) gitProviderForGitServerURL(gitServiceUrl string, gitKind
 	}
 	return gits.CreateProviderForURL(o.Factory.IsInCluster(), authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 }
+
+func (o *CommonOptions) createGitProviderForURLWithoutKind(gitURL string) (gits.GitProvider, *gits.GitRepositoryInfo, error) {
+	gitInfo, err := gits.ParseGitURL(gitURL)
+	if err != nil {
+		return nil, gitInfo, err
+	}
+	gitKind, err := o.GitServerKind(gitInfo)
+	if err != nil {
+		return nil, gitInfo, err
+	}
+	authConfigSvc, err := o.CreateGitAuthConfigService()
+	if err != nil {
+		return nil, gitInfo, err
+	}
+	gitProvider, err := gits.CreateProviderForURL(o.Factory.IsInCluster(), authConfigSvc, gitKind, gitInfo.HostURL(), o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	return gitProvider, gitInfo, err
+}
