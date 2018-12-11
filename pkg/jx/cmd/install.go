@@ -1912,6 +1912,8 @@ func (options *InstallOptions) configureJenkins(namespace string) error {
 				options.CreateJenkinsUserOptions.BearerToken = jenkinsSaToken
 				options.CreateJenkinsUserOptions.Run()
 			} else {
+				// Wait for Jenkins service to be ready after installation
+				time.Sleep(2 * time.Second)
 				err := options.retry(3, 2*time.Second, func() (err error) {
 					options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
 					options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
