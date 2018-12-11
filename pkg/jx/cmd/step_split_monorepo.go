@@ -114,7 +114,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 	}
 	var gitProvider gits.GitProvider
 	if !o.NoGit {
-		gitProvider, err = o.createGitProviderForURL(gits.KindGitHub, gits.GitHubURL)
+		gitProvider, err = o.gitProviderForGitServerURL(gits.GitHubURL, gits.KindGitHub)
 		if err != nil {
 			return err
 		}
@@ -310,31 +310,6 @@ version: 0.0.1-SNAPSHOT
 		}
 	}
 	return nil
-}
-
-func (o *CommonOptions) createGitProviderForURL(gitKind string, gitUrl string) (gits.GitProvider, error) {
-	authConfigSvc, err := o.CreateGitAuthConfigService()
-	if err != nil {
-		return nil, err
-	}
-	return gits.CreateProviderForURL(o.Factory.IsInCluster(), authConfigSvc, gitKind, gitUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
-}
-
-func (o *CommonOptions) createGitProviderForURLWithoutKind(gitUrl string) (gits.GitProvider, *gits.GitRepositoryInfo, error) {
-	gitInfo, err := gits.ParseGitURL(gitUrl)
-	if err != nil {
-		return nil, gitInfo, err
-	}
-	gitKind, err := o.GitServerKind(gitInfo)
-	if err != nil {
-		return nil, gitInfo, err
-	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
-	if err != nil {
-		return nil, gitInfo, err
-	}
-	gitProvider, err := gits.CreateProviderForURL(o.Factory.IsInCluster(), authConfigSvc, gitKind, gitInfo.HostURL(), o.Git(), o.BatchMode, o.In, o.Out, o.Err)
-	return gitProvider, gitInfo, err
 }
 
 // generateFileIfMissing generates the given file from the source code if the file does not already exist
