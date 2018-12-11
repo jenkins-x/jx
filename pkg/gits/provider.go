@@ -133,10 +133,10 @@ type GitRepoStatus struct {
 }
 
 type GitPullRequestArguments struct {
-	Title             string
-	Body              string
-	Head              string
-	Base              string
+	Title         string
+	Body          string
+	Head          string
+	Base          string
 	GitRepository *GitRepository
 }
 
@@ -423,4 +423,13 @@ func createUserForServer(batchMode bool, userAuth *auth.UserAuth, authConfigSvc 
 		return userAuth, fmt.Errorf("you did not properly define the user authentication")
 	}
 	return userAuth, nil
+}
+
+// ToGitLabels converts the list of label names into an array of GitLabels
+func ToGitLabels(names []string) []GitLabel {
+	answer := []GitLabel{}
+	for _, n := range names {
+		answer = append(answer, GitLabel{Name: n})
+	}
+	return answer
 }

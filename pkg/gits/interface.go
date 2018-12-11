@@ -147,7 +147,6 @@ type GitProvider interface {
 //go:generate pegomock generate github.com/jenkins-x/jx/pkg/gits Gitter -o mocks/gitter.go --generate-matchers
 type Gitter interface {
 	FindGitConfigDir(dir string) (string, string, error)
-	ToGitLabels(names []string) []GitLabel
 	PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, username string, o io.Writer)
 
 	Status(dir string) error

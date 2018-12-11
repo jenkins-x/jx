@@ -569,15 +569,6 @@ func (g *GitCLI) IsFork(dir string) (bool, error) {
 	return false, fmt.Errorf("could not confirm the repo is a fork")
 }
 
-// ToGitLabels converts the list of label names into an array of GitLabels
-func (g *GitCLI) ToGitLabels(names []string) []GitLabel {
-	answer := []GitLabel{}
-	for _, n := range names {
-		answer = append(answer, GitLabel{Name: n})
-	}
-	return answer
-}
-
 // Version returns the git version
 func (g *GitCLI) Version() (string, error) {
 	return g.gitCmdWithOutput("", "version")

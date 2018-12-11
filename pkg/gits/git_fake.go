@@ -53,15 +53,6 @@ func (g *GitFake) FindGitConfigDir(dir string) (string, string, error) {
 	return dir, dir, nil
 }
 
-// ToGitLabels converts the labels to git labels
-func (g *GitFake) ToGitLabels(names []string) []GitLabel {
-	labels := []GitLabel{}
-	for _, n := range names {
-		labels = append(labels, GitLabel{Name: n})
-	}
-	return labels
-}
-
 // PrintCreateRepositoryGenerateAccessToken prints the generate access token URL
 func (g *GitFake) PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, username string, o io.Writer) {
 	fmt.Fprintf(o, "Access token URL: %s\n\n", g.AccessTokenURL)
