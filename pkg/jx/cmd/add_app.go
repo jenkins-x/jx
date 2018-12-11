@@ -123,6 +123,11 @@ func (o *AddAppOptions) Run() error {
 	if len(args) > 1 {
 		return o.Cmd.Help()
 	}
+
+	if o.Repo == "" {
+		return fmt.Errorf("must specify a repository")
+	}
+
 	for _, arg := range args {
 		version := o.Version
 		if version == "" {
