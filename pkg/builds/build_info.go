@@ -28,7 +28,7 @@ type BuildPodInfo struct {
 	GitURL            string
 	FirstStepImage    string
 	CreatedTime       time.Time
-	GitInfo           *gits.GitRepositoryInfo
+	GitInfo           *gits.GitRepository
 	Pod               *corev1.Pod
 }
 

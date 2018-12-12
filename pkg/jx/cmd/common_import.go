@@ -44,7 +44,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 	}
 	if branchPattern == "" {
 		log.Infof("Querying if the repo is a fork at %s with kind %s\n", gitProvider.ServerURL(), gitProvider.Kind())
-		fork, err := o.Git().IsFork(gitProvider, gitInfo, dir)
+		fork, err := o.Git().IsFork(dir)
 		if err != nil {
 			return fmt.Errorf("No branch pattern specified and could not determine if the Git repository is a fork: %s", err)
 		}
@@ -206,7 +206,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 	return gitProvider.CreateWebHook(webhook)
 }
 
-func (o *CommonOptions) logImportedProject(isEnvironment bool, gitInfo *gits.GitRepositoryInfo) {
+func (o *CommonOptions) logImportedProject(isEnvironment bool, gitInfo *gits.GitRepository) {
 	log.Blank()
 	if !isEnvironment {
 		log.Infof("Watch pipeline activity via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get activity -f %s -w", gitInfo.Name)))

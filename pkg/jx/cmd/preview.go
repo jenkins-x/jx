@@ -74,7 +74,7 @@ type PreviewOptions struct {
 	PullRequestName string
 	GitConfDir      string
 	GitProvider     gits.GitProvider
-	GitInfo         *gits.GitRepositoryInfo
+	GitInfo         *gits.GitRepository
 
 	// calculated fields
 	PostPreviewJobTimeoutDuration time.Duration
@@ -465,7 +465,7 @@ func (o *PreviewOptions) Run() error {
 	}
 
 	err = o.Helm().UpgradeChart(".", o.ReleaseName, o.Namespace, nil, true, nil, true, true, nil,
-		[]string{configFileName}, "")
+		[]string{configFileName}, "", "", "")
 	if err != nil {
 		return err
 	}

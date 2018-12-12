@@ -51,7 +51,7 @@ type CreatePullRequestOptions struct {
 }
 
 type CreatePullRequestResults struct {
-	GitInfo     *gits.GitRepositoryInfo
+	GitInfo     *gits.GitRepository
 	GitProvider gits.GitProvider
 	PullRequest *gits.GitPullRequest
 }
@@ -138,7 +138,7 @@ func (o *CreatePullRequestOptions) Run() error {
 	return nil
 }
 
-func (o *CreatePullRequestOptions) PopulatePullRequest(pullRequest *gits.GitPullRequestArguments, gitInfo *gits.GitRepositoryInfo) error {
+func (o *CreatePullRequestOptions) PopulatePullRequest(pullRequest *gits.GitPullRequestArguments, gitInfo *gits.GitRepository) error {
 	title := o.Title
 	if title == "" {
 		if o.BatchMode {
@@ -159,7 +159,7 @@ func (o *CreatePullRequestOptions) PopulatePullRequest(pullRequest *gits.GitPull
 	body := o.Body
 	pullRequest.Title = title
 	pullRequest.Body = body
-	pullRequest.GitRepositoryInfo = gitInfo
+	pullRequest.GitRepository = gitInfo
 
 	if title == "" {
 		return fmt.Errorf("No title specified!")

@@ -75,7 +75,7 @@ type PromoteOptions struct {
 	TimeoutDuration         *time.Duration
 	PullRequestPollDuration *time.Duration
 	Activities              typev1.PipelineActivityInterface
-	GitInfo                 *gits.GitRepositoryInfo
+	GitInfo                 *gits.GitRepository
 	jenkinsURL              string
 	releaseResource         *v1.Release
 	ReleaseInfo             *ReleaseInfo
@@ -429,7 +429,8 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	}
 	promoteKey.OnPromoteUpdate(o.Activities, startPromote)
 
-	err = o.Helm().UpgradeChart(fullAppName, releaseName, targetNS, &version, true, nil, false, true, nil, nil, "")
+	err = o.Helm().UpgradeChart(fullAppName, releaseName, targetNS, &version, true, nil, false, true, nil, nil, "",
+		"", "")
 	if err == nil {
 		err = o.commentOnIssues(targetNS, env, promoteKey)
 		if err != nil {
@@ -890,7 +891,7 @@ func (o *CommonOptions) getLatestPipelineBuildByCRD(pipeline string) (string, er
 	return "1", nil
 }
 
-func (o *CommonOptions) getPipelineName(gitInfo *gits.GitRepositoryInfo, pipeline string, build string, appName string) (string, string) {
+func (o *CommonOptions) getPipelineName(gitInfo *gits.GitRepository, pipeline string, build string, appName string) (string, string) {
 	if pipeline == "" {
 		pipeline = o.getJobName()
 	}

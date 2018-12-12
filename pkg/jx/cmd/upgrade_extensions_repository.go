@@ -207,7 +207,7 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 func (o *UpgradeExtensionsRepositoryOptions) walkRemote(remote string, tag string, oldLockNameMap map[string]jenkinsv1.ExtensionSpec, oldLookupByUUID map[string]jenkinsv1.ExtensionSpec) (result []jenkinsv1.ExtensionSpec, err error) {
 	result = make([]jenkinsv1.ExtensionSpec, 0)
 	if strings.HasPrefix(remote, "github.com") {
-		gitProvider, repoInfo, err := o.createGitProviderForURLWithoutKind(remote)
+		gitProvider, repoInfo, err := o.createGitProviderForURLWithoutKind(strings.TrimPrefix(remote, "github.com/"))
 		if err != nil {
 			return result, err
 		}
@@ -224,7 +224,6 @@ func (o *UpgradeExtensionsRepositoryOptions) walkRemote(remote string, tag strin
 			}
 			resolvedTag = fmt.Sprintf("v%s", resolvedTag)
 		}
-
 		content, err := gitProvider.GetContent(org, repo, extensions.ExtensionsDefinitionFile, resolvedTag)
 		if err != nil {
 			return result, err

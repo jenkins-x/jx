@@ -47,7 +47,7 @@ type AddAppTestEnv struct {
 	DevRepo          *gits.FakeRepository
 	DevEnvRepo       *gits.FakeRepository
 	OrgName          string
-	DevEnvRepoInfo   *gits.GitRepositoryInfo
+	DevEnvRepoInfo   *gits.GitRepository
 	DevEnv           *v1.Environment
 }
 
@@ -87,7 +87,7 @@ func prepareDevEnv(t *testing.T, gitOps bool) (*AddAppTestEnv, error) {
 		DevEnvRepo:       devEnvRepo,
 		OrgName:          testOrgName,
 		DevEnv:           devEnv,
-		DevEnvRepoInfo: &gits.GitRepositoryInfo{
+		DevEnvRepoInfo: &gits.GitRepository{
 			Name: devEnvRepoName,
 		},
 	}, nil

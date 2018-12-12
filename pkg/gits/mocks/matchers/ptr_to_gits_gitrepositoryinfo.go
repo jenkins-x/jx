@@ -7,14 +7,14 @@ import (
 	gits "github.com/jenkins-x/jx/pkg/gits"
 )
 
-func AnyPtrToGitsGitRepositoryInfo() *gits.GitRepositoryInfo {
-	pegomock.RegisterMatcher(pegomock.NewAnyMatcher(reflect.TypeOf((*(*gits.GitRepositoryInfo))(nil)).Elem()))
-	var nullValue *gits.GitRepositoryInfo
+func AnyPtrToGitsGitRepositoryInfo() *gits.GitRepository {
+	pegomock.RegisterMatcher(pegomock.NewAnyMatcher(reflect.TypeOf((*(*gits.GitRepository))(nil)).Elem()))
+	var nullValue *gits.GitRepository
 	return nullValue
 }
 
-func EqPtrToGitsGitRepositoryInfo(value *gits.GitRepositoryInfo) *gits.GitRepositoryInfo {
+func EqPtrToGitsGitRepositoryInfo(value *gits.GitRepository) *gits.GitRepository {
 	pegomock.RegisterMatcher(&pegomock.EqMatcher{Value: value})
-	var nullValue *gits.GitRepositoryInfo
+	var nullValue *gits.GitRepository
 	return nullValue
 }

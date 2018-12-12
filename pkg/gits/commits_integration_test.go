@@ -31,7 +31,7 @@ func TestChangelogMarkdown(t *testing.T) {
 			},
 		},
 	}
-	gitInfo := &gits.GitRepositoryInfo{
+	gitInfo := &gits.GitRepository{
 		Host:         "github.com",
 		Organisation: "jstrachan",
 		Name:         "foo",
@@ -85,7 +85,7 @@ func TestChangelogMarkdownWithConventionalCommits(t *testing.T) {
 			},
 		},
 	}
-	gitInfo := &gits.GitRepositoryInfo{
+	gitInfo := &gits.GitRepository{
 		Host:         "github.com",
 		Organisation: "jstrachan",
 		Name:         "foo",

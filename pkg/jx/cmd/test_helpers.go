@@ -304,7 +304,7 @@ func AssertSetPullRequestComplete(t *testing.T, provider *gits.FakeProvider, rep
 	// validate the fake Git provider concurs
 	repoOwner := repository.Owner
 	repoName := repository.Name()
-	testGitInfo := &gits.GitRepositoryInfo{
+	testGitInfo := &gits.GitRepository{
 		Organisation: repoOwner,
 		Name:         repoName,
 	}
@@ -429,7 +429,7 @@ func AssertSetPullRequestMerged(t *testing.T, provider *gits.FakeProvider, repos
 	log.Infof("PR %s is now merged\n", fakePR.PullRequest.URL)
 
 	// validate the fake Git provider concurs
-	testGitInfo := &gits.GitRepositoryInfo{
+	testGitInfo := &gits.GitRepository{
 		Organisation: repository.Owner,
 		Name:         repository.Name(),
 	}

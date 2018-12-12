@@ -2,6 +2,7 @@ package kube
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -9,6 +10,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
+
+const DEFAULT_APPS_REPOSITORY = "http://chartmuseum.jenkins-x.io"
 
 func EnsureEnvironmentNamespaceSetup(kubeClient kubernetes.Interface, jxClient versioned.Interface, env *v1.Environment, ns string) error {
 	// lets create the namespace if we are on the same cluster
@@ -79,6 +82,7 @@ func CreateDefaultDevEnvironment(ns string) *v1.Environment {
 				AskOnCreate:         false,
 				QuickstartLocations: DefaultQuickstartLocations,
 				PromotionEngine:     v1.PromotionEngineJenkins,
+				AppsRepository:      DEFAULT_APPS_REPOSITORY,
 			},
 		},
 	}

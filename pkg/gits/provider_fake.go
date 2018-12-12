@@ -154,8 +154,8 @@ func (f *FakeProvider) ValidateRepositoryName(org string, name string) error {
 }
 
 func (f *FakeProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
-	org := data.GitRepositoryInfo.Organisation
-	repoName := data.GitRepositoryInfo.Name
+	org := data.GitRepository.Organisation
+	repoName := data.GitRepository.Name
 	repos, ok := f.Repositories[org]
 	if !ok {
 		return nil, fmt.Errorf("organization '%s' not found", org)
@@ -237,7 +237,7 @@ func (f *FakeProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	return fmt.Errorf("no repository '%s' found for owner '%s'", repoName, owner)
 }
 
-func (f *FakeProvider) GetPullRequest(owner string, repo *GitRepositoryInfo, number int) (*GitPullRequest, error) {
+func (f *FakeProvider) GetPullRequest(owner string, repo *GitRepository, number int) (*GitPullRequest, error) {
 	repos, ok := f.Repositories[owner]
 	if !ok {
 		return nil, fmt.Errorf("no repositories found for '%s'", owner)
@@ -256,7 +256,7 @@ func (f *FakeProvider) GetPullRequest(owner string, repo *GitRepositoryInfo, num
 	return nil, fmt.Errorf("repository with name '%s' not found", repoName)
 }
 
-func (f *FakeProvider) GetPullRequestCommits(owner string, repo *GitRepositoryInfo, number int) ([]*GitCommit, error) {
+func (f *FakeProvider) GetPullRequestCommits(owner string, repo *GitRepository, number int) ([]*GitCommit, error) {
 	repos, ok := f.Repositories[owner]
 	if !ok {
 		return nil, fmt.Errorf("no repositories found for '%s'", owner)
