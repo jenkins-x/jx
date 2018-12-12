@@ -194,7 +194,7 @@ func (o *CreateAddonIstioOptions) getIstioChartsFromGitHub() (string, error) {
 	defer os.Remove(tarPath)
 
 	if strings.HasSuffix(extension, ".zip") {
-		err = util.Unzip(tarPath, outputDir)
+		err = util.Unzip(tarPath, binDir)
 		if err != nil {
 			return answer, err
 		}
