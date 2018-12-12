@@ -1,9 +1,10 @@
 package cmd_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/auth/mocks"
 	"reflect"
 	"strconv"
+
+	"github.com/jenkins-x/jx/pkg/auth/mocks"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube/services"
@@ -264,6 +265,8 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 		AnyStringSlice(), // values
 		AnyStringSlice(), // valueFiles
 		AnyString(),      // repo
+		AnyString(),      // username
+		AnyString(),      // password
 	)).ThenReturn(nil) //err=nil
 
 	return previewOpts, cs

@@ -82,11 +82,11 @@ func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string, de
 	cmd.Flags().StringVarP(&o.Version, "version", "v", defaultVersion,
 		"The chart version to install")
 	cmd.Flags().StringVarP(&o.Repo, "repository", "", o.DevEnv.Spec.TeamSettings.AppsRepository,
-		"The repository from which the chart should be installed")
-	cmd.Flags().StringVarP(&o.Version, "username", "", "",
-		"The username for the chart repository")
-	cmd.Flags().StringVarP(&o.Version, "password", "", "",
-		"The password for the chart repository")
+		"The repository from which the app should be installed")
+	cmd.Flags().StringVarP(&o.Username, "username", "", "",
+		"The username for the repository")
+	cmd.Flags().StringVarP(&o.Password, "password", "", "",
+		"The password for the repository")
 	cmd.Flags().BoolVarP(&o.BatchMode, optionBatchMode, "b", false, "In batch mode the command never prompts for user input")
 	cmd.Flags().BoolVarP(&o.Verbose, optionVerbose, "", false, "Enable verbose logging")
 	if o.GitOps {
@@ -123,11 +123,16 @@ func (o *AddAppOptions) Run() error {
 	if len(args) > 1 {
 		return o.Cmd.Help()
 	}
+
+	if o.Repo == "" {
+		return fmt.Errorf("must specify a repository")
+	}
+
 	for _, arg := range args {
 		version := o.Version
 		if version == "" {
 			var err error
-			version, err = helm.GetLatestVersion(arg, o.Repo, o.Helm())
+			version, err = helm.GetLatestVersion(arg, o.Repo, o.Username, o.Password, o.Helm())
 			if err != nil {
 				return err
 			}
@@ -211,7 +216,20 @@ func (o *AddAppOptions) installApp(app string, version string) error {
 	}
 	setValues := strings.Split(o.SetValues, ",")
 
-	err = o.installChart(app, app, version, o.Namespace, o.HelmUpdate, setValues, o.ValueFiles, o.Repo)
+	chart := helm.InstallChartOptions{
+		ReleaseName: app,
+		Chart:       app,
+		Version:     version,
+		Ns:          o.Namespace,
+		HelmUpdate:  o.HelmUpdate,
+		SetValues:   setValues,
+		ValueFiles:  o.ValueFiles,
+		Repository:  o.Repo,
+		Username:    o.Username,
+		Password:    o.Password,
+	}
+
+	err = o.installChartOptions(chart)
 	if err != nil {
 		return fmt.Errorf("failed to install app %s: %v", app, err)
 	}

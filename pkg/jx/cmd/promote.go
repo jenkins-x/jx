@@ -429,7 +429,8 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	}
 	promoteKey.OnPromoteUpdate(o.Activities, startPromote)
 
-	err = o.Helm().UpgradeChart(fullAppName, releaseName, targetNS, &version, true, nil, false, true, nil, nil, "")
+	err = o.Helm().UpgradeChart(fullAppName, releaseName, targetNS, &version, true, nil, false, true, nil, nil, "",
+		"", "")
 	if err == nil {
 		err = o.commentOnIssues(targetNS, env, promoteKey)
 		if err != nil {

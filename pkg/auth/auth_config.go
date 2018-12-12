@@ -78,11 +78,15 @@ func (c *AuthConfig) SetUserAuth(url string, auth *UserAuth) {
 				if a.Username == auth.Username {
 					c.Servers[i].Users[j] = auth
 					c.Servers[i].CurrentUser = username
+					c.DefaultUsername = username
+					c.CurrentServer = url
 					return
 				}
 			}
 			c.Servers[i].Users = append(c.Servers[i].Users, auth)
 			c.Servers[i].CurrentUser = username
+			c.DefaultUsername = username
+			c.CurrentServer = url
 			return
 		}
 	}
@@ -91,6 +95,9 @@ func (c *AuthConfig) SetUserAuth(url string, auth *UserAuth) {
 		Users:       []*UserAuth{auth},
 		CurrentUser: username,
 	})
+	c.DefaultUsername = username
+	c.CurrentServer = url
+
 }
 
 func urlsEqual(url1, url2 string) bool {
@@ -143,10 +150,18 @@ func (c *AuthConfig) DeleteServer(url string) {
 }
 
 func (c *AuthConfig) CurrentUser(server *AuthServer, inCluster bool) *UserAuth {
+	if server == nil {
+		return nil
+	}
 	if urlsEqual(c.PipeLineServer, server.URL) && inCluster {
 		return server.GetUserAuth(c.PipeLineUsername)
 	}
 	return server.CurrentAuth()
+}
+
+// CurrentAuthServer returns the current AuthServer configured in the configuration
+func (c *AuthConfig) CurrentAuthServer() *AuthServer {
+	return c.GetServer(c.CurrentServer)
 }
 
 func (c *AuthConfig) GetOrCreateServer(url string) *AuthServer {
@@ -303,7 +318,7 @@ func (c *AuthConfig) PickServerUserAuth(server *AuthServer, message string, batc
 		}
 		answer := m[username]
 		if answer == nil {
-			return nil, fmt.Errorf("no username chosen")
+			return &UserAuth{}, fmt.Errorf("no username chosen")
 		}
 		return answer, nil
 	}
@@ -428,4 +443,11 @@ func (c *AuthConfig) PickOrCreateServer(fallbackServerURL string, serverURL stri
 func (c *AuthConfig) UpdatePipelineServer(server *AuthServer, user *UserAuth) {
 	c.PipeLineServer = server.URL
 	c.PipeLineUsername = user.Username
+}
+
+// GetPipelineAuth returns the current pipline server and user authentication
+func (c *AuthConfig) GetPipelineAuth() (*AuthServer, *UserAuth) {
+	server := c.GetServer(c.PipeLineServer)
+	user := server.GetUserAuth(c.PipeLineUsername)
+	return server, user
 }

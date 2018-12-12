@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -367,9 +368,6 @@ func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 // Run implements this command
 func (options *InstallOptions) Run() error {
 	configStore := configio.NewFileStore()
-	originalGitUsername := options.GitRepositoryOptions.Username
-	originalGitServer := options.GitRepositoryOptions.ServerURL
-	originalGitToken := options.GitRepositoryOptions.ApiToken
 
 	// Default to verbose mode to get more information during the install
 	options.Verbose = true
@@ -437,11 +435,6 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring the cloud provider after initializing the platform")
 	}
 
-	err = options.configureHelmValues(ns)
-	if err != nil {
-		return errors.Wrap(err, "configuring helm values")
-	}
-
 	err = options.saveIngressConfig()
 	if err != nil {
 		return errors.Wrap(err, "saving the ingress configuration in a ConfigMap")
@@ -457,19 +450,24 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "creating the system vault")
 	}
 
+	err = options.configureGitAuth()
+	if err != nil {
+		return errors.Wrap(err, "configuring the git auth")
+	}
+
 	err = options.configureDockerRegistry(client, ns)
 	if err != nil {
 		return errors.Wrap(err, "configuring the docker registry")
 	}
 
-	err = options.configureGitAuth(originalGitUsername, originalGitServer, originalGitToken)
-	if err != nil {
-		return errors.Wrap(err, "configuring the git auth")
-	}
-
 	cloudEnvDir, err := options.cloneJXCloudEnvironmentsRepo()
 	if err != nil {
 		return errors.Wrap(err, "cloning the jx cloud environments repo")
+	}
+
+	err = options.configureHelmValues(ns)
+	if err != nil {
+		return errors.Wrap(err, "configuring helm values")
 	}
 
 	if options.Flags.Provider == "" {
@@ -737,10 +735,10 @@ func (options *InstallOptions) installPlatform(providerEnvDir string, jxChart st
 
 	if !options.Flags.InstallOnly {
 		err = options.Helm().UpgradeChart(jxChart, jxRelName, namespace, &version, true,
-			&timeoutInt, false, false, nil, allValuesFiles, "")
+			&timeoutInt, false, false, nil, allValuesFiles, "", "", "")
 	} else {
 		err = options.Helm().InstallChart(jxChart, jxRelName, namespace, &version, &timeoutInt,
-			nil, allValuesFiles, "")
+			nil, allValuesFiles, "", "", "")
 	}
 	if err != nil {
 		return errors.Wrap(err, "failed to install/upgrade the jenkins-x platform chart")
@@ -836,10 +834,14 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 func (options *InstallOptions) configureAndInstallProw(namespace string) error {
 	options.currentNamespace = namespace
 	if options.Flags.Prow {
-		options.OAUTHToken = options.GitRepositoryOptions.ApiToken
-		err := options.installProw()
+		_, pipelineUser, err := options.getPipelineGitAuth()
 		if err != nil {
-			return fmt.Errorf("failed to install Prow: %v", err)
+			return errors.Wrap(err, "retrieving the pipeline Git Auth")
+		}
+		options.OAUTHToken = pipelineUser.ApiToken
+		err = options.installProw()
+		if err != nil {
+			errors.Wrap(err, "installing Prow")
 		}
 	}
 	return nil
@@ -928,25 +930,27 @@ func (options *InstallOptions) configureTillerNamespace() error {
 
 func (options *InstallOptions) configureHelmValues(namespace string) error {
 	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
-	if helmConfig.ExposeController.Config.Domain == "" {
-		helmConfig.ExposeController.Config.Domain = options.InitOptions.Flags.Domain
-	}
 
 	domain := helmConfig.ExposeController.Config.Domain
 	if domain != "" && addon.IsAddonEnabled("gitea") {
 		helmConfig.Jenkins.Servers.GetOrCreateFirstGitea().Url = "http://gitea-gitea." + namespace + "." + domain
 	}
 
-	err := options.configureTillerNamespace()
+	err := options.addGitServersToJenkinsConfig(helmConfig)
+	if err != nil {
+		return errors.Wrap(err, "configuring the Git Servers into Jenkins configuration")
+	}
+
+	err = options.configureTillerNamespace()
 	if err != nil {
 		return errors.Wrap(err, "configuring the tiller namespace")
 	}
 
-	isProw := options.Flags.Prow
 	if !options.Flags.GitOpsMode {
 		options.SetDevNamespace(namespace)
 	}
 
+	isProw := options.Flags.Prow
 	if isProw {
 		enableJenkins := false
 		helmConfig.Jenkins.Enabled = &enableJenkins
@@ -1032,36 +1036,212 @@ func (options *InstallOptions) getHelmValuesFiles(configStore configio.ConfigSto
 	return util.FilterFileExists(valuesFiles), util.FilterFileExists(secretsFiles), util.FilterFileExists(temporaryFiles), nil
 }
 
-func (options *InstallOptions) configureGitAuth(gitUserName string, gitServer string, gitAPIToken string) error {
-	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
-	gitAuthCfg, err := options.CreateGitAuthConfigService()
+func (options *InstallOptions) configureGitAuth() error {
+	log.Infof("Lets set up a Git user name and API token to be able to perform CI/CD\n\n")
+
+	gitUsername := options.GitRepositoryOptions.Username
+	gitServer := options.GitRepositoryOptions.ServerURL
+	gitAPIToken := options.GitRepositoryOptions.ApiToken
+
+	if gitUsername == "" {
+		gitUsernameEnv := os.Getenv(JX_GIT_USER)
+		if gitUsernameEnv != "" {
+			gitUsername = gitUsernameEnv
+		}
+	}
+
+	if gitAPIToken == "" {
+		gitAPITokenEnv := os.Getenv(JX_GIT_TOKEN)
+		if gitAPITokenEnv != "" {
+			gitAPIToken = gitAPITokenEnv
+		}
+	}
+
+	authConfigSvc, err := options.CreateGitAuthConfigService()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the git auth config service")
 	}
-	err = options.addGitServersToJenkinsConfig(helmConfig, gitAuthCfg)
-	if err != nil {
-		return errors.Wrap(err, "failed to add the Git servers to Jenkins config")
+
+	authConfig := authConfigSvc.Config()
+	var userAuth *auth.UserAuth
+	if gitUsername != "" && gitAPIToken != "" && gitServer != "" {
+		userAuth = &auth.UserAuth{
+			ApiToken: gitAPIToken,
+			Username: gitUsername,
+		}
+		authConfig.SetUserAuth(gitServer, userAuth)
 	}
 
-	username := gitUserName
-	if username == "" {
-		if os.Getenv(JX_GIT_USER) != "" {
-			username = os.Getenv(JX_GIT_USER)
+	var authServer *auth.AuthServer
+	if gitServer != "" {
+		kind := gits.SaasGitKind(gitServer)
+		authServer = authConfig.GetOrCreateServerName(gitServer, "", kind)
+	} else {
+		authServer, err = authConfig.PickServer("Which Git provider:", options.BatchMode, options.In, options.Out, options.Err)
+		if err != nil {
+			return errors.Wrap(err, "getting the git provider from user")
 		}
 	}
-	if username != "" && gitAPIToken != "" && gitServer != "" {
-		err = gitAuthCfg.SaveUserAuth(gitServer, &auth.UserAuth{
-			ApiToken: gitAPIToken,
-			Username: username,
-		})
-		if err != nil {
-			return err
+
+	message := fmt.Sprintf("local Git user for %s server:", authServer.Label())
+	userAuth, err = authConfig.PickServerUserAuth(authServer, message, options.BatchMode, "", options.In, options.Out, options.Err)
+	if err != nil {
+		return errors.Wrapf(err, "selecting the local user for git server %s", authServer.Label())
+	}
+
+	if userAuth.IsInvalid() {
+		log.Infof("Creating a local Git user for %s server\n", authServer.Label())
+		f := func(username string) error {
+			options.Git().PrintCreateRepositoryGenerateAccessToken(authServer, username, options.Out)
+			return nil
 		}
-		log.Infof("Saving Git token configuration for server %s and user name %s.\n",
-			util.ColorInfo(gitServer), util.ColorInfo(username))
+		defaultUserName := ""
+		err = authConfig.EditUserAuth(authServer.Label(), userAuth, defaultUserName, false, options.BatchMode, f,
+			options.In, options.Out, options.Err)
+		if err != nil {
+			return errors.Wrapf(err, "creating a user authentication for git server %s", authServer.Label())
+		}
+		if userAuth.IsInvalid() {
+			return fmt.Errorf("invalid user authentication for git server %s", authServer.Label())
+		}
+		authConfig.SetUserAuth(gitServer, userAuth)
+	}
+
+	log.Infof("Select the CI/CD pipelines Git server and user\n")
+	var pipelineAuthServer *auth.AuthServer
+	if options.BatchMode {
+		pipelineAuthServer = authServer
+	} else {
+		surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
+		confirm := &survey.Confirm{
+			Message: fmt.Sprintf("Do you wish to use %s as the pipelines Git server:", authServer.Label()),
+			Default: true,
+		}
+		yes := false
+		err = survey.AskOne(confirm, &yes, nil, surveyOpts)
+		if err != nil {
+			return errors.Wrap(err, "selecting pipelines Git server")
+		}
+		if yes {
+			pipelineAuthServer = authServer
+		} else {
+			pipelineAuthServerURL, err := util.PickValue("Git Service URL:", gits.GitHubURL, true, "",
+				options.In, options.Out, options.Err)
+			if err != nil {
+				return errors.Wrap(err, "reading the pipelines Git service URL")
+			}
+			pipelineAuthServer, err = authConfig.PickOrCreateServer(gits.GitHubURL, pipelineAuthServerURL,
+				"Which Git Service do you wish to use:",
+				options.BatchMode, options.In, options.Out, options.Err)
+			if err != nil {
+				return errors.Wrap(err, "selecting the pipelines Git Service")
+			}
+		}
+	}
+
+	message = fmt.Sprintf("pipelines Git user for %s server:", pipelineAuthServer.Label())
+	pipelineUserAuth, err := authConfig.PickServerUserAuth(authServer, message, options.BatchMode, "", options.In, options.Out, options.Err)
+	if err != nil {
+		return errors.Wrapf(err, "selecting the pipeline user for git server %s", authServer.Label())
+	}
+	if pipelineUserAuth.IsInvalid() {
+		log.Infof("Creating a pipelines Git user for %s server\n", authServer.Label())
+		f := func(username string) error {
+			options.Git().PrintCreateRepositoryGenerateAccessToken(pipelineAuthServer, username, options.Out)
+			return nil
+		}
+		defaultUserName := ""
+		err = authConfig.EditUserAuth(pipelineAuthServer.Label(), pipelineUserAuth, defaultUserName, false, options.BatchMode,
+			f, options.In, options.Out, options.Err)
+		if err != nil {
+			return errors.Wrapf(err, "creating a pipeline user authentication for git server %s", authServer.Label())
+		}
+		if userAuth.IsInvalid() {
+			return fmt.Errorf("invalid pipeline user authentication for git server %s", authServer.Label())
+		}
+		authConfig.SetUserAuth(pipelineAuthServer.URL, pipelineUserAuth)
+	}
+
+	pipelineAuthServerURL := pipelineAuthServer.URL
+	pipelineAuthUnsername := pipelineUserAuth.Username
+
+	log.Infof("Setting the pipelines Git server %s and user name %s.\n",
+		util.ColorInfo(pipelineAuthServerURL), util.ColorInfo(pipelineAuthUnsername))
+	authConfig.UpdatePipelineServer(pipelineAuthServer, pipelineUserAuth)
+
+	log.Infof("Saving the Git authentication configuration")
+	err = authConfigSvc.SaveConfig()
+	if err != nil {
+		return errors.Wrap(err, "saving the Git authentication configuration")
+	}
+
+	editTeamSettingsCallback := func(env *v1.Environment) error {
+		teamSettings := &env.Spec.TeamSettings
+		teamSettings.GitServer = pipelineAuthServerURL
+		teamSettings.PipelineUsername = pipelineAuthUnsername
+		teamSettings.Organisation = options.Owner
+		teamSettings.GitPrivate = options.GitRepositoryOptions.Private
+		return nil
+	}
+	err = options.ModifyDevEnvironment(editTeamSettingsCallback)
+	if err != nil {
+		return errors.Wrap(err, "updating the team settings into the environment configuration")
 	}
 
 	return nil
+}
+
+func (options *InstallOptions) buildGitRepositoryOptionsForEnvironments() (*gits.GitRepositoryOptions, error) {
+	authConfigSvc, err := options.CreateGitAuthConfigService()
+	if err != nil {
+		return nil, errors.Wrap(err, "creating Git authentication config service")
+	}
+	config := authConfigSvc.Config()
+
+	server := config.CurrentAuthServer()
+	if server == nil {
+		return nil, fmt.Errorf("no current git server set in the configuration")
+	}
+	user := config.CurrentUser(server, false)
+	if user == nil {
+		return nil, fmt.Errorf("no current git user set in configuration for server '%s'", server.Label())
+	}
+
+	org := options.Flags.EnvironmentGitOwner
+	if org == "" {
+		if options.BatchMode {
+			org = user.Username
+			log.Infof("Using %s environment git owner in batch mode.\n", util.ColorInfo(org))
+		} else {
+			provider, err := gits.CreateProvider(server, user, options.Git())
+			if err != nil {
+				return nil, errors.Wrap(err, "creating the Git provider")
+			}
+
+			orgs := gits.GetOrganizations(provider, user.Username)
+			if len(orgs) == 0 {
+				return nil, fmt.Errorf("user '%s' has no organizations", user.Username)
+			}
+
+			surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
+			sort.Strings(orgs)
+			promt := &survey.Select{
+				Message: "Select the organization where you want to create the environment repository:",
+				Options: orgs,
+			}
+			err = survey.AskOne(promt, &org, survey.Required, surveyOpts)
+			if err != nil {
+				return nil, errors.Wrap(err, "selecting the organiztion for environment repository")
+			}
+		}
+	}
+	return &gits.GitRepositoryOptions{
+		ServerURL: server.URL,
+		Username:  user.Username,
+		ApiToken:  user.ApiToken,
+		Owner:     org,
+		Private:   options.GitRepositoryOptions.Private,
+	}, nil
 }
 
 func (options *InstallOptions) cleanupTempFiles(temporaryFiles []string) error {
@@ -1220,7 +1400,15 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 			prefix := options.Flags.DefaultEnvironmentPrefix
 
 			git := options.Git()
-			repo, gitProvider, err := kube.CreateEnvGitRepository(options.BatchMode, authConfigSvc, devEnv, devEnv, config, forkEnvGitURL, envDir, &options.GitRepositoryOptions, options.CreateEnvOptions.HelmValuesConfig, prefix, git, options.In, options.Out, options.Err)
+			gitRepoOptions, err := options.buildGitRepositoryOptionsForEnvironments()
+			if err != nil || gitRepoOptions == nil {
+				if gitRepoOptions == nil {
+					err = errors.New("empty git repository options")
+				}
+				return errors.Wrap(err, "building the git repository options for environment")
+			}
+			repo, gitProvider, err := kube.CreateEnvGitRepository(options.BatchMode, authConfigSvc, devEnv, devEnv, config, forkEnvGitURL, envDir,
+				gitRepoOptions, options.CreateEnvOptions.HelmValuesConfig, prefix, git, options.In, options.Out, options.Err)
 			if err != nil {
 				return errors.Wrapf(err, "failed to create git repository for the dev Environment source")
 			}
@@ -1398,7 +1586,7 @@ func (options *InstallOptions) configureCloudProivderPostInit(client kubernetes.
 			return errors.Wrap(err, "failed to update the helm repo")
 		}
 		err = options.Helm().UpgradeChart("ibm/ibmcloud-block-storage-plugin", "ibmcloud-block-storage-plugin",
-			"default", nil, true, nil, false, false, nil, nil, "")
+			"default", nil, true, nil, false, false, nil, nil, "", "", "")
 		if err != nil {
 			return errors.Wrap(err, "failed to install/upgrade the IBM Cloud Block Storage drivers")
 		}
@@ -1662,6 +1850,11 @@ func (options *InstallOptions) configureBuildPackMode() error {
 func (options *InstallOptions) saveIngressConfig() error {
 	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
 	domain := helmConfig.ExposeController.Config.Domain
+	if domain == "" {
+		domain = options.InitOptions.Flags.Domain
+		helmConfig.ExposeController.Config.Domain = domain
+	}
+
 	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
 	tls, err := util.ParseBool(exposeController.Config.TLSAcme)
 	if err != nil {
@@ -1726,6 +1919,8 @@ func (options *InstallOptions) configureJenkins(namespace string) error {
 				options.CreateJenkinsUserOptions.BearerToken = jenkinsSaToken
 				options.CreateJenkinsUserOptions.Run()
 			} else {
+				// Wait for Jenkins service to be ready after installation before trying to generate the token
+				time.Sleep(2 * time.Second)
 				err := options.retry(3, 2*time.Second, func() (err error) {
 					options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
 					options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
@@ -1781,7 +1976,6 @@ func (options *InstallOptions) createEnvironments(namespace string) error {
 	if !options.Flags.NoDefaultEnvironments {
 		createEnvironments := true
 		if options.Flags.GitOpsMode {
-			// reuse the helm setup
 			options.SetDevNamespace(namespace)
 			options.CreateEnvOptions.CommonOptions = options.CommonOptions
 			options.CreateEnvOptions.GitOpsMode = true
@@ -1804,9 +1998,12 @@ func (options *InstallOptions) createEnvironments(namespace string) error {
 		}
 		if createEnvironments {
 			log.Info("Creating default staging and production environments\n")
-			// Common CreateEnv Options
-			options.CreateEnvOptions.GitRepositoryOptions = options.GitRepositoryOptions
-			options.CreateEnvOptions.GitRepositoryOptions.Owner = options.Flags.EnvironmentGitOwner
+			gitRepoOptions, err := options.buildGitRepositoryOptionsForEnvironments()
+			if err != nil || gitRepoOptions == nil {
+				return errors.Wrap(err, "building the Git repository options for environments")
+			}
+			options.CreateEnvOptions.GitRepositoryOptions = *gitRepoOptions
+
 			options.CreateEnvOptions.Prefix = options.Flags.DefaultEnvironmentPrefix
 			options.CreateEnvOptions.Prow = options.Flags.Prow
 			if options.BatchMode {
@@ -1816,7 +2013,7 @@ func (options *InstallOptions) createEnvironments(namespace string) error {
 			options.CreateEnvOptions.Options.Name = "staging"
 			options.CreateEnvOptions.Options.Spec.Label = "Staging"
 			options.CreateEnvOptions.Options.Spec.Order = 100
-			err := options.CreateEnvOptions.Run()
+			err = options.CreateEnvOptions.Run()
 			if err != nil {
 				return errors.Wrapf(err, "failed to create staging environment in namespace %s", options.devNamespace)
 			}
@@ -2146,32 +2343,23 @@ func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 
 // returns secrets that are used as values during the helm install
 func (options *InstallOptions) getGitSecrets() (string, error) {
-
-	// TODO JR convert to a struct and add the equivelent of the below to the secrets to enable Prow
-	//helmConfig.Prow.User = initOpts.Flags.Username
-	//helmConfig.Prow.HMACtoken, err = util.RandStringBytesMaskImprSrc(41)
-	//if err != nil {
-	//	return fmt.Errorf("cannot create a random hmac token for Prow")
-	//}
-	//userAuth, err := options.getGitUser("Git user to send webhook events as")
-	//helmConfig.Prow.OAUTHtoken = userAuth.ApiToken
-	//if err != nil {
-	//	return fmt.Errorf("cannot get git token used for Prow")
-	//}
-
-	username, token, err := options.getGitToken()
+	pipelineServer, pipelineUser, err := options.getPipelineGitAuth()
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "retrieving the pipeline Git Auth")
+	}
+	if pipelineServer == nil {
+		return "", errors.New("no pipeline Git server found")
 	}
 
-	server := options.GitRepositoryOptions.ServerURL
-	if server == "" {
-		return "", fmt.Errorf("No Git Server found")
+	if pipelineUser == nil {
+		return "", errors.New("no pipeline Git user found")
 	}
-	server = strings.TrimPrefix(server, "https://")
+
+	serverURL := pipelineServer.URL
+	server := strings.TrimPrefix(serverURL, "https://")
 	server = strings.TrimPrefix(server, "http://")
 
-	url := fmt.Sprintf("%s:%s@%s", username, token, server)
+	url := fmt.Sprintf("%s:%s@%s", pipelineUser.Username, pipelineUser.ApiToken, server)
 
 	pipelineSecrets := `
 PipelineSecrets:
@@ -2181,31 +2369,17 @@ PipelineSecrets:
 	return fmt.Sprintf(pipelineSecrets, url, url), nil
 }
 
-// returns the Git Token that should be used by Jenkins X to setup credentials to clone repos and creates a secret for pipelines to tag a release
-func (options *InstallOptions) getGitToken() (string, string, error) {
-	username := options.GitRepositoryOptions.Username
-	if username == "" {
-		if os.Getenv(JX_GIT_USER) != "" {
-			username = os.Getenv(JX_GIT_USER)
-		}
-	}
-	if username != "" {
-		// first check git-token flag
-		if options.GitRepositoryOptions.ApiToken != "" {
-			return username, options.GitRepositoryOptions.ApiToken, nil
-		}
-
-		// second check for an environment variable
-		if os.Getenv(JX_GIT_TOKEN) != "" {
-			return username, os.Getenv(JX_GIT_TOKEN), nil
-		}
-	}
-	log.Infof("Lets set up a Git username and API token to be able to perform CI/CD\n\n")
-	userAuth, err := options.getGitUser("")
+func (options *InstallOptions) getPipelineGitAuth() (*auth.AuthServer, *auth.UserAuth, error) {
+	authConfigSvc, err := options.CreateGitAuthConfigService()
 	if err != nil {
-		return "", "", err
+		return nil, nil, errors.Wrap(err, "failed to create the git auth config service")
 	}
-	return userAuth.Username, userAuth.ApiToken, nil
+	authConfig := authConfigSvc.Config()
+	if authConfig == nil {
+		return nil, nil, errors.New("empty Git config")
+	}
+	server, user := authConfig.GetPipelineAuth()
+	return server, user, nil
 }
 
 func (options *InstallOptions) waitForInstallToBeReady(ns string) error {
@@ -2255,75 +2429,6 @@ func (options *InstallOptions) saveChartmuseumAuthConfig() error {
 	return authConfigSvc.SaveConfig()
 }
 
-func (options *InstallOptions) getGitUser(message string) (*auth.UserAuth, error) {
-	var userAuth *auth.UserAuth
-	authConfigSvc, err := options.CreateGitAuthConfigService()
-	if err != nil {
-		return userAuth, err
-	}
-	config := authConfigSvc.Config()
-
-	var server *auth.AuthServer
-	gitProvider := options.GitRepositoryOptions.ServerURL
-	if gitProvider != "" {
-		kind := gits.SaasGitKind(gitProvider)
-		server = config.GetOrCreateServerName(gitProvider, "", kind)
-	} else {
-		server, err = config.PickServer("Which Git provider?", options.BatchMode, options.In, options.Out, options.Err)
-		if err != nil {
-			return userAuth, err
-		}
-		options.GitRepositoryOptions.ServerURL = server.URL
-	}
-	url := server.URL
-	if message == "" {
-		message = fmt.Sprintf("%s bot user for CI/CD pipelines (not your personal Git user):", server.Label())
-	}
-	userAuth, err = config.PickServerUserAuth(server, message, options.BatchMode, "", options.In, options.Out, options.Err)
-	if err != nil {
-		return userAuth, err
-	}
-	if userAuth.IsInvalid() {
-		f := func(username string) error {
-			options.Git().PrintCreateRepositoryGenerateAccessToken(server, username, options.Out)
-			return nil
-		}
-
-		// TODO could we guess this based on the users ~/.git for github?
-		defaultUserName := ""
-		err = config.EditUserAuth(server.Label(), userAuth, defaultUserName, false, options.BatchMode, f, options.In, options.Out, options.Err)
-		if err != nil {
-			return userAuth, err
-		}
-
-		// TODO lets verify the auth works
-
-		err = authConfigSvc.SaveUserAuth(url, userAuth)
-		if err != nil {
-			return userAuth, fmt.Errorf("failed to store git auth configuration %s", err)
-		}
-		if userAuth.IsInvalid() {
-			return userAuth, fmt.Errorf("you did not properly define the user authentication")
-		}
-		callback := func(env *v1.Environment) error {
-			teamSettings := &env.Spec.TeamSettings
-			teamSettings.GitServer = url
-			teamSettings.PipelineUsername = userAuth.Username
-			teamSettings.Organisation = options.Owner
-			teamSettings.GitPrivate = options.GitRepositoryOptions.Private
-			return nil
-		}
-		err = options.ModifyDevEnvironment(callback)
-		if err != nil {
-			return userAuth, fmt.Errorf("failed to save team settings %s", err)
-		}
-	}
-	// TODO This API should be refactored/rethought as mixing OO and functional styles is error prone. If choosing an OO style, mutations should be carried out on the object data and then that data should be introspected as the source of truth in the operation. Alternatively, remove object state and pass values in a functional style.
-	options.GitRepositoryOptions.Username = userAuth.Username
-	options.GitRepositoryOptions.ApiToken = userAuth.ApiToken
-	return userAuth, nil
-}
-
 func (options *InstallOptions) installAddon(name string) error {
 	log.Infof("Installing addon %s\n", util.ColorInfo(name))
 
@@ -2344,7 +2449,11 @@ func (options *InstallOptions) installAddon(name string) error {
 	return opts.CreateAddon(name)
 }
 
-func (options *InstallOptions) addGitServersToJenkinsConfig(helmConfig *config.HelmValuesConfig, gitAuthCfg auth.ConfigService) error {
+func (options *InstallOptions) addGitServersToJenkinsConfig(helmConfig *config.HelmValuesConfig) error {
+	gitAuthCfg, err := options.CreateGitAuthConfigService()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the git auth config service")
+	}
 	cfg := gitAuthCfg.Config()
 	for _, server := range cfg.Servers {
 		if server.Kind == "github" {
