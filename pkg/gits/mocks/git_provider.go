@@ -258,7 +258,7 @@ func (mock *MockGitProvider) GetIssue(_param0 string, _param1 string, _param2 in
 	return ret0, ret1
 }
 
-func (mock *MockGitProvider) GetPullRequest(_param0 string, _param1 *gits.GitRepositoryInfo, _param2 int) (*gits.GitPullRequest, error) {
+func (mock *MockGitProvider) GetPullRequest(_param0 string, _param1 *gits.GitRepository, _param2 int) (*gits.GitPullRequest, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
 	}
@@ -277,7 +277,7 @@ func (mock *MockGitProvider) GetPullRequest(_param0 string, _param1 *gits.GitRep
 	return ret0, ret1
 }
 
-func (mock *MockGitProvider) GetPullRequestCommits(_param0 string, _param1 *gits.GitRepositoryInfo, _param2 int) ([]*gits.GitCommit, error) {
+func (mock *MockGitProvider) GetPullRequestCommits(_param0 string, _param1 *gits.GitRepository, _param2 int) ([]*gits.GitCommit, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
 	}
@@ -1264,7 +1264,7 @@ func (c *GitProvider_GetIssue_OngoingVerification) GetAllCapturedArguments() (_p
 	return
 }
 
-func (verifier *VerifierGitProvider) GetPullRequest(_param0 string, _param1 *gits.GitRepositoryInfo, _param2 int) *GitProvider_GetPullRequest_OngoingVerification {
+func (verifier *VerifierGitProvider) GetPullRequest(_param0 string, _param1 *gits.GitRepository, _param2 int) *GitProvider_GetPullRequest_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetPullRequest", params)
 	return &GitProvider_GetPullRequest_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
@@ -1275,21 +1275,21 @@ type GitProvider_GetPullRequest_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_GetPullRequest_OngoingVerification) GetCapturedArguments() (string, *gits.GitRepositoryInfo, int) {
+func (c *GitProvider_GetPullRequest_OngoingVerification) GetCapturedArguments() (string, *gits.GitRepository, int) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *GitProvider_GetPullRequest_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []*gits.GitRepositoryInfo, _param2 []int) {
+func (c *GitProvider_GetPullRequest_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []*gits.GitRepository, _param2 []int) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]*gits.GitRepositoryInfo, len(params[1]))
+		_param1 = make([]*gits.GitRepository, len(params[1]))
 		for u, param := range params[1] {
-			_param1[u] = param.(*gits.GitRepositoryInfo)
+			_param1[u] = param.(*gits.GitRepository)
 		}
 		_param2 = make([]int, len(params[2]))
 		for u, param := range params[2] {
@@ -1299,7 +1299,7 @@ func (c *GitProvider_GetPullRequest_OngoingVerification) GetAllCapturedArguments
 	return
 }
 
-func (verifier *VerifierGitProvider) GetPullRequestCommits(_param0 string, _param1 *gits.GitRepositoryInfo, _param2 int) *GitProvider_GetPullRequestCommits_OngoingVerification {
+func (verifier *VerifierGitProvider) GetPullRequestCommits(_param0 string, _param1 *gits.GitRepository, _param2 int) *GitProvider_GetPullRequestCommits_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetPullRequestCommits", params)
 	return &GitProvider_GetPullRequestCommits_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
@@ -1310,21 +1310,21 @@ type GitProvider_GetPullRequestCommits_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_GetPullRequestCommits_OngoingVerification) GetCapturedArguments() (string, *gits.GitRepositoryInfo, int) {
+func (c *GitProvider_GetPullRequestCommits_OngoingVerification) GetCapturedArguments() (string, *gits.GitRepository, int) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *GitProvider_GetPullRequestCommits_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []*gits.GitRepositoryInfo, _param2 []int) {
+func (c *GitProvider_GetPullRequestCommits_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []*gits.GitRepository, _param2 []int) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]*gits.GitRepositoryInfo, len(params[1]))
+		_param1 = make([]*gits.GitRepository, len(params[1]))
 		for u, param := range params[1] {
-			_param1[u] = param.(*gits.GitRepositoryInfo)
+			_param1[u] = param.(*gits.GitRepository)
 		}
 		_param2 = make([]int, len(params[2]))
 		for u, param := range params[2] {

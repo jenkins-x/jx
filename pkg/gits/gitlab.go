@@ -209,8 +209,8 @@ func (g *GitlabProvider) ValidateRepositoryName(org, name string) error {
 }
 
 func (g *GitlabProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
-	owner := data.GitRepositoryInfo.Organisation
-	repo := data.GitRepositoryInfo.Name
+	owner := data.GitRepository.Organisation
+	repo := data.GitRepository.Name
 	title := data.Title
 	body := data.Body
 	head := data.Head
@@ -276,7 +276,7 @@ func (g *GitlabProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	return nil
 }
 
-func (p *GitlabProvider) GetPullRequest(owner string, repo *GitRepositoryInfo, number int) (*GitPullRequest, error) {
+func (p *GitlabProvider) GetPullRequest(owner string, repo *GitRepository, number int) (*GitPullRequest, error) {
 	pr := &GitPullRequest{
 		Owner:  owner,
 		Repo:   repo.Name,
@@ -292,7 +292,7 @@ func (p *GitlabProvider) GetPullRequest(owner string, repo *GitRepositoryInfo, n
 	return pr, err
 }
 
-func (p *GitlabProvider) GetPullRequestCommits(owner string, repository *GitRepositoryInfo, number int) ([]*GitCommit, error) {
+func (p *GitlabProvider) GetPullRequestCommits(owner string, repository *GitRepository, number int) ([]*GitCommit, error) {
 	repo := repository.Name
 	pid, err := p.projectId(owner, p.Username, repo)
 	if err != nil {

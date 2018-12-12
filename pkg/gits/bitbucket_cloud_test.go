@@ -237,7 +237,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestRenameRepository() {
 
 func (suite *BitbucketCloudProviderTestSuite) TestCreatePullRequest() {
 	args := gits.GitPullRequestArguments{
-		GitRepositoryInfo: &gits.GitRepositoryInfo{Name: "test-repo", Organisation: "test-user"},
+		GitRepository: &gits.GitRepository{Name: "test-repo", Organisation: "test-user"},
 		Head:              "83777f6",
 		Base:              "77d0a923f297",
 		Title:             "Test Pull Request",
@@ -256,7 +256,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestCreatePullRequest() {
 
 func (suite *BitbucketCloudProviderTestSuite) TestCreateOrgPullRequest() {
 	args := gits.GitPullRequestArguments{
-		GitRepositoryInfo: &gits.GitRepositoryInfo{Name: "test-repo", Organisation: "test-org"},
+		GitRepository: &gits.GitRepository{Name: "test-repo", Organisation: "test-org"},
 		Head:              "83777f6",
 		Base:              "77d0a923f297",
 		Title:             "Test Pull Request",
@@ -321,7 +321,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestGetPullRequest() {
 
 	pr, err := suite.provider.GetPullRequest(
 		"test-user",
-		&gits.GitRepositoryInfo{Name: "test-repo"},
+		&gits.GitRepository{Name: "test-repo"},
 		3,
 	)
 
@@ -330,7 +330,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestGetPullRequest() {
 }
 
 func (suite *BitbucketCloudProviderTestSuite) TestPullRequestCommits() {
-	commits, err := suite.provider.GetPullRequestCommits("test-user", &gits.GitRepositoryInfo{Name: "test-repo"}, 1)
+	commits, err := suite.provider.GetPullRequestCommits("test-user", &gits.GitRepository{Name: "test-repo"}, 1)
 
 	suite.Require().Nil(err)
 	suite.Require().Equal(len(commits), 2)
@@ -391,7 +391,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestMergePullRequest() {
 func (suite *BitbucketCloudProviderTestSuite) TestCreateWebHook() {
 
 	data := &gits.GitWebHookArguments{
-		Repo: &gits.GitRepositoryInfo{Name: "test-repo", Organisation: "test-user"},
+		Repo: &gits.GitRepository{Name: "test-repo", Organisation: "test-user"},
 		URL:  "https://my-jenkins.example.com/bitbucket-webhook/",
 	}
 	err := suite.provider.CreateWebHook(data)
