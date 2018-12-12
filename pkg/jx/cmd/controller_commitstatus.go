@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/prow/config"
 	"io"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/prow/config"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 
@@ -247,15 +248,39 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 						}
 					}
 				}
+
+				sha := pullBaseSha
+				if pullRequest == "PR-" {
+					pullRequest = ""
+				} else {
+					sha = pullPullSha
+					branch = pullRequest
+				}
+				pipelineActName := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, buildNumber))
+
+				// PLM TODO This is a bit of hack, we need a working build controller
+				// Try to add the lastCommitSha and gitUrl to the PipelineActivity
+				act, err := jxClient.JenkinsV1().PipelineActivities(ns).Get(pipelineActName, metav1.GetOptions{})
+				if err != nil {
+					// An error just means the activity doesn't exist yet
+					if o.Verbose {
+						log.Infof("pod watcher: Unable to find PipelineActivity for %s\n", pipelineActName)
+					}
+				} else {
+					act.Spec.LastCommitSHA = sha
+					act.Spec.GitURL = sourceUrl
+					act.Spec.GitOwner = org
+					if o.Verbose {
+						log.Infof("pod watcher: Adding lastCommitSha: %s and gitUrl: %s to %s\n", act.Spec.LastCommitSHA, act.Spec.GitURL, pipelineActName)
+					}
+					_, err := jxClient.JenkinsV1().PipelineActivities(ns).Update(act)
+					if err != nil {
+						// We can safely return this error as it will just get logged
+						return err
+					}
+				}
 				if org != "" && repo != "" && buildNumber != "" && (pullBaseSha != "" || pullPullSha != "") {
 
-					sha := pullBaseSha
-					if pullRequest == "PR-" {
-						pullRequest = ""
-					} else {
-						sha = pullPullSha
-						branch = pullRequest
-					}
 					if o.Verbose {
 						log.Infof("pod watcher: build pod: %s, org: %s, repo: %s, buildNumber: %s, pullBaseSha: %s, pullPullSha: %s, pullRequest: %s, sourceUrl: %s\n", pod.Name, org, repo, buildNumber, pullBaseSha, pullPullSha, pullRequest, sourceUrl)
 					}
@@ -277,7 +302,6 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 						if o.Verbose {
 							log.Infof("pod watcher: Using contexts %v\n", contexts)
 						}
-						pipelineActName := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, buildNumber))
 						for _, ctx := range contexts {
 							if pullRequest != "" {
 								name := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, ctx))
@@ -288,27 +312,6 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 								}
 							}
 						}
-						// PLM TODO This is a bit of hack, we need a working build controller
-						// Try to add the lastCommitSha and gitUrl to the PipelineActivity
-						act, err := jxClient.JenkinsV1().PipelineActivities(ns).Get(pipelineActName, metav1.GetOptions{})
-						if err != nil {
-							// An error just means the activity doesn't exist yet
-							if o.Verbose {
-								log.Infof("pod watcher: Unable to find PipelineActivity for %s\n", pipelineActName)
-							}
-						} else {
-							act.Spec.LastCommitSHA = sha
-							act.Spec.GitURL = sourceUrl
-							if o.Verbose {
-								log.Infof("pod watcher: Adding lastCommitSha: %s and gitUrl: %s to %s\n", act.Spec.LastCommitSHA, act.Spec.GitURL, pipelineActName)
-							}
-							_, err := jxClient.JenkinsV1().PipelineActivities(ns).Update(act)
-							if err != nil {
-								// We can safely return this error as it will just get logged
-								return err
-							}
-						}
-
 					}
 				}
 			}
