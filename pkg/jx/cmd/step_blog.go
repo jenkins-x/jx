@@ -59,7 +59,7 @@ type StepBlogOptions struct {
 }
 
 type StepBlogState struct {
-	GitInfo                  *gits.GitRepositoryInfo
+	GitInfo                  *gits.GitRepository
 	GitProvider              gits.GitProvider
 	Tracker                  issues.IssueProvider
 	Release                  *v1.Release

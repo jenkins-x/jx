@@ -57,7 +57,7 @@ type StepChangelogOptions struct {
 }
 
 type StepChangelogState struct {
-	GitInfo         *gits.GitRepositoryInfo
+	GitInfo         *gits.GitRepository
 	GitProvider     gits.GitProvider
 	Tracker         issues.IssueProvider
 	FoundIssueNames map[string]bool

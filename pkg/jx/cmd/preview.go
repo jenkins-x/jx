@@ -74,7 +74,7 @@ type PreviewOptions struct {
 	PullRequestName string
 	GitConfDir      string
 	GitProvider     gits.GitProvider
-	GitInfo         *gits.GitRepositoryInfo
+	GitInfo         *gits.GitRepository
 
 	// calculated fields
 	PostPreviewJobTimeoutDuration time.Duration

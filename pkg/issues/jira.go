@@ -124,7 +124,7 @@ func (i *JiraService) jiraToGitIssue(issue *jira.Issue) *gits.GitIssue {
 	if fields != nil {
 		answer.Title = fields.Summary
 		answer.Body = fields.Description
-		answer.Labels = i.Git.ToGitLabels(fields.Labels)
+		answer.Labels = gits.ToGitLabels(fields.Labels)
 		answer.ClosedAt = jiraTimeToTimeP(fields.Resolutiondate)
 		answer.User = jiraUserToGitUser(fields.Reporter)
 		assignee := jiraUserToGitUser(fields.Assignee)
