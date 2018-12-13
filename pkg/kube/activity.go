@@ -4,15 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"reflect"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/util"
 
-	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -410,14 +407,6 @@ func (k *PromoteStepActivityKey) GetOrCreatePromoteUpdate(activities typev1.Pipe
 	return a, s, p, p.Update, created, err
 }
 
-
-// PatchRow is a json patch structure
-type PatchRow struct {
-	Op    string `json:"op"`
-	Path  string `json:"path"`
-	Value interface{} `json:"value"`
-}
-
 // Almost making a full Update, but using Patch to work around problem with sometimes getting http status 409 back
 func patchSpec(activities typev1.PipelineActivityInterface, activity *v1.PipelineActivity) (err error) {
 	things := make([]PatchRow, 1)
@@ -427,6 +416,7 @@ func patchSpec(activities typev1.PipelineActivityInterface, activity *v1.Pipelin
 
 	patchBytes, err := json.Marshal(things)
 	if err != nil {
+		err = fmt.Errorf("Unable to marshall patch to JSON: %s", err)
 		return
 	}
 	_, err = activities.Patch(activity.Name, types.JSONPatchType, patchBytes)
