@@ -35,24 +35,26 @@ type GitRepository struct {
 }
 
 type GitPullRequest struct {
-	URL            string
-	Author         *GitUser
-	Owner          string
-	Repo           string
-	Number         *int
-	Mergeable      *bool
-	Merged         *bool
-	HeadRef        *string
-	State          *string
-	StatusesURL    *string
-	IssueURL       *string
-	DiffURL        *string
-	MergeCommitSHA *string
-	ClosedAt       *time.Time
-	MergedAt       *time.Time
-	LastCommitSha  string
-	Title          string
-	Body           string
+	URL                string
+	Author             *GitUser
+	Owner              string
+	Repo               string
+	Number             *int
+	Mergeable          *bool
+	Merged             *bool
+	HeadRef            *string
+	State              *string
+	StatusesURL        *string
+	IssueURL           *string
+	DiffURL            *string
+	MergeCommitSHA     *string
+	ClosedAt           *time.Time
+	MergedAt           *time.Time
+	LastCommitSha      string
+	Title              string
+	Body               string
+	Assignees          []*GitUser
+	RequestedReviewers []*GitUser
 }
 
 type GitCommit struct {

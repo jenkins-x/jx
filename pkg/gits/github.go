@@ -479,6 +479,22 @@ func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 			Login: *result.User.Login,
 		}
 	}
+	pr.Assignees = make([]*GitUser, 0)
+	for _, u := range result.Assignees {
+		if u != nil {
+			pr.Assignees = append(pr.Assignees, &GitUser{
+				Login: *u.Login,
+			})
+		}
+	}
+	pr.RequestedReviewers = make([]*GitUser, 0)
+	for _, u := range result.RequestedReviewers {
+		if u != nil {
+			pr.RequestedReviewers = append(pr.RequestedReviewers, &GitUser{
+				Login: *u.Login,
+			})
+		}
+	}
 	if result.Mergeable != nil {
 		pr.Mergeable = result.Mergeable
 	}
@@ -513,6 +529,9 @@ func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	if result.Body != nil {
 		pr.Body = *result.Body
 	}
+	if result.HTMLURL != nil {
+		pr.URL = *result.HTMLURL
+	}
 	return nil
 }
 
@@ -526,12 +545,25 @@ func (p *GitHubProvider) GetPullRequest(owner string, repo *GitRepository, numbe
 
 	if pr.Author != nil {
 		if pr.Author.Email == "" {
-			existing := p.UserInfo(pr.Author.Login)
-
-			if existing != nil {
-				if existing.Email != "" {
-					pr.Author = existing
-				}
+			user := p.UserInfo(pr.Author.Login)
+			if user != nil {
+				pr.Author = user
+			}
+		}
+	}
+	for i, u := range pr.Assignees {
+		if u != nil {
+			user := p.UserInfo(u.Login)
+			if user != nil {
+				pr.Assignees[i] = user
+			}
+		}
+	}
+	for i, u := range pr.RequestedReviewers {
+		if u != nil {
+			user := p.UserInfo(u.Login)
+			if user != nil {
+				pr.RequestedReviewers[i] = user
 			}
 		}
 	}
