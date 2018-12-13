@@ -224,6 +224,8 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 				pullPullSha := ""
 				pullBaseSha := ""
 				buildNumber := ""
+				jxBuildNumber := ""
+				buildId := ""
 				sourceUrl := ""
 				branch := ""
 				for _, initContainer := range pod.Spec.InitContainers {
@@ -240,7 +242,11 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 						case "PULL_BASE_SHA":
 							pullBaseSha = e.Value
 						case "JX_BUILD_NUMBER":
+							jxBuildNumber = e.Value
+						case "BUILD_NUMBER":
 							buildNumber = e.Value
+						case "BUILD_ID":
+							buildId = e.Value
 						case "SOURCE_URL":
 							sourceUrl = e.Value
 						case "PULL_BASE_REF":
@@ -256,6 +262,15 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 					sha = pullPullSha
 					branch = pullRequest
 				}
+
+				// if BUILD_ID is set, use it, otherwise if JX_BUILD_NUMBER is set, use it, otherwise use BUILD_NUMBER
+				if jxBuildNumber != "" {
+					buildNumber = jxBuildNumber
+				}
+				if buildId != "" {
+					buildNumber = buildId
+				}
+
 				pipelineActName := kube.ToValidName(fmt.Sprintf("%s-%s-%s-%s", org, repo, branch, buildNumber))
 
 				// PLM TODO This is a bit of hack, we need a working build controller
