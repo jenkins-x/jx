@@ -153,7 +153,7 @@ func (o *DeleteTeamOptions) deleteTeam(name string) error {
 		return kube.DeleteTeam(jxClient, ns, name)
 	}
 	origNamespace := o.currentNamespace
-	o.changeNamespace(name)
+	o.ChangeNamespace(name)
 
 	uninstall := &UninstallOptions{
 		CommonOptions: o.CommonOptions,
@@ -180,25 +180,6 @@ func (o *DeleteTeamOptions) deleteTeam(name string) error {
 	} else {
 		err = kube.DeleteTeam(jxClient, ns, name)
 	}
-	o.changeNamespace(origNamespace)
+	o.ChangeNamespace(origNamespace)
 	return err
-}
-
-func (o *DeleteTeamOptions) changeNamespace(ns string) {
-	nsOptions := &NamespaceOptions{
-		CommonOptions: o.CommonOptions,
-	}
-	nsOptions.BatchMode = true
-	nsOptions.Args = []string{ns}
-	err := nsOptions.Run()
-	if err != nil {
-		log.Warnf("Failed to set context to namespace %s: %s", ns, err)
-	}
-
-	//Reset all the cached clients & namespace values when switching so that they can be properly recalculated for
-	//the new namespace.
-	o.CommonOptions.KubeClientCached = nil
-	o.CommonOptions.jxClient = nil
-	o.CommonOptions.currentNamespace = ""
-	o.CommonOptions.devNamespace = ""
 }
