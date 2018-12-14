@@ -676,8 +676,8 @@ func (o *CreateDevPodOptions) Run() error {
 		log.Infof("Attempting to install Bash Completion into DevPod\n")
 
 		rshExec = append(rshExec,
-			"if which yum 1> /dev/null; then yum install -q -y bash-completion bash-completion-extra; fi",
-			"if which apt-get 1> /dev/null; then apt-get install -qq bash-completion; fi",
+			"if which yum &> /dev/null; then yum install -q -y bash-completion bash-completion-extra; fi",
+			"if which apt-get &> /dev/null; then apt-get install -qq bash-completion; fi",
 			"mkdir -p ~/.jx", "jx completion bash > ~/.jx/bash", "echo \"source ~/.jx/bash\" >> ~/.bashrc",
 		)
 
