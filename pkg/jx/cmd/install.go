@@ -2262,7 +2262,11 @@ func (options *InstallOptions) logAdminPassword() {
 	********************************************************
 
 	`
-	log.Infof(astrix+"\n", fmt.Sprintf("Your admin password is: %s", util.ColorInfo(options.AdminSecretsService.Flags.DefaultAdminPassword)))
+	if options.Flags.Vault {
+		log.Infof(astrix+"\n", fmt.Sprintf("Your admin password is in vault: %s", util.ColorInfo("eval `jx get vault-config` && vault kv get secret/admin/jenkins")))
+	} else {
+		log.Infof(astrix+"\n", fmt.Sprintf("Your admin password is: %s", util.ColorInfo(options.AdminSecretsService.Flags.DefaultAdminPassword)))
+	}
 }
 
 // LoadVersionFromCloudEnvironmentsDir loads a version from the cloud environments directory
