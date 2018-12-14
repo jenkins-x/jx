@@ -136,9 +136,3 @@ func (v *client) Config() (vaultURL url.URL, vaultToken string, err error) {
 	parsed, err := url.Parse(v.client.Address())
 	return *parsed, v.client.Token(), err
 }
-
-// secretPath generates a secret path from the secret name for storing in vault
-// this just makes sure it gets stored under /secret
-func secretPath(secretName string) string {
-	return "secret/" + secretName
-}

@@ -4,10 +4,11 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
+
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/sethvargo/go-password/password"
-	"io/ioutil"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -59,7 +60,8 @@ const defaultMavenSettings = `<settings>
 const allowedSymbols = "~!#%^*_+-=?,."
 
 type IngressBasicAuth struct {
-	JXBasicAuth string `yaml:"JXBasicAuth"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
 }
 
 type ChartMuseum struct {
