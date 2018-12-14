@@ -110,7 +110,7 @@ func (o *SyncOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	_, err = o.installKSync()
+	version, err := o.installKSync()
 	if err != nil {
 		return err
 	}
@@ -119,7 +119,9 @@ func (o *SyncOptions) Run() error {
 		flag, err := kube.IsDaemonSetExists(client, "ksync", "kube-system")
 		if !flag || err != nil {
 			log.Infof("Initialising ksync\n")
-			err = o.runCommandInteractive(true, "ksync", "init", "--upgrade")
+			// Deal with https://github.com/vapor-ware/ksync/issues/218
+			err = o.runCommandInteractive(true, "ksync", "init", "--upgrade", "--image",
+				fmt.Sprintf("vaporio/ksync:%s", version))
 			if err != nil {
 				return err
 			}

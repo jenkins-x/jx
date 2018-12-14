@@ -848,7 +848,7 @@ func (o *CommonOptions) installHelmSecretsPlugin(helmBinary string, clientOnly b
 		Args: []string{"plugin", "remove", "secrets"},
 	}
 	_, err = cmd.RunWithoutRetry()
-	if err != nil && !strings.Contains(err.Error(),"secrets not found") {
+	if err != nil && !strings.Contains(err.Error(), "secrets not found") {
 		return errors.Wrap(err, "failed to remove helm secrets")
 	}
 	cmd = util.Command{
@@ -1020,19 +1020,36 @@ func (o *CommonOptions) installKops() error {
 	return os.Chmod(fullPath, 0755)
 }
 
-func (o *CommonOptions) installKSync() (bool, error) {
+func (o *CommonOptions) installKSync() (string, error) {
 	binDir, err := util.JXBinLocation()
 	if err != nil {
-		return false, err
+		return "", err
 	}
 	binary := "ksync"
 	fileName, flag, err := shouldInstallBinary(binary)
 	if err != nil || !flag {
-		return false, err
+		// Exec `ksync` to find the version
+		ksyncCmd := util.Command{
+			Name: fileName,
+			Args: []string{
+				"version",
+			},
+		}
+		// Explicitly ignore any errors from ksync version, as we just need the output!
+		res, _ := ksyncCmd.RunWithoutRetry()
+		lines := strings.Split(res, "\n")
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if strings.HasPrefix(line, "Git Tag:") {
+				return strings.TrimSpace(strings.TrimPrefix(line, "Git Tag:")), nil
+			}
+		}
+
+		return "", fmt.Errorf("unable to find version of ksync")
 	}
 	latestVersion, err := util.GetLatestVersionFromGitHub("vapor-ware", "ksync")
 	if err != nil {
-		return false, err
+		return "", err
 	}
 	clientURL := fmt.Sprintf("https://github.com/vapor-ware/ksync/releases/download/%s/ksync_%s_%s", latestVersion, runtime.GOOS, runtime.GOARCH)
 	if runtime.GOOS == "windows" {
@@ -1042,13 +1059,13 @@ func (o *CommonOptions) installKSync() (bool, error) {
 	tmpFile := fullPath + ".tmp"
 	err = binaries.DownloadFile(clientURL, tmpFile)
 	if err != nil {
-		return false, err
+		return "", err
 	}
 	err = util.RenameFile(tmpFile, fullPath)
 	if err != nil {
-		return false, err
+		return "", err
 	}
-	return true, os.Chmod(fullPath, 0755)
+	return latestVersion.String(), os.Chmod(fullPath, 0755)
 }
 
 func (o *CommonOptions) installJx(upgrade bool, version string) error {
