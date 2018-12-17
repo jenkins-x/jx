@@ -850,6 +850,8 @@ func (o *CommonOptions) GetWebHookEndpoint() (string, error) {
 	return webHookUrl, nil
 }
 
+//ChangeNamespace switches the current jx/K8S namespace to the one specified.
+//This is analogous to running `jx namespace cheese`.
 func (o *CommonOptions) ChangeNamespace(ns string) {
 	nsOptions := &NamespaceOptions{
 		CommonOptions: *o,
