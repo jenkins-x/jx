@@ -3,12 +3,13 @@ pipeline {
     environment {
         CHARTMUSEUM_CREDS   = credentials('jenkins-x-chartmuseum')
         JENKINS_CREDS       = credentials('test-jenkins-user')
-        GH_CREDS            = credentials('jenkins-x-github')
-        GHE_CREDS           = credentials('ghe-test-user')
+        GH_CREDS            = credentials('jx-pipeline-git-github-github')
+        GHE_CREDS           = credentials('jx-pipeline-git-github-ghe')
         GKE_SA              = credentials('gke-sa')
         BUILD_NUMBER        = "${JX_BUILD_NUMBER ?: '1'}"
-        GIT_USERNAME        = "$GH_CREDS_USR"
-        GIT_API_TOKEN       = "$GH_CREDS_PSW"
+
+        GIT_USERNAME        = "$GH_CREDS_USR"	
+        GIT_API_TOKEN       = "$GH_CREDS_PSW"	
         GITHUB_ACCESS_TOKEN = "$GH_CREDS_PSW"
 
         JOB_NAME            = "$JOB_NAME"
@@ -34,6 +35,8 @@ pipeline {
             steps {
                 dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
                     checkout scm
+                    sh "git config --global credential.helper store"
+                    sh "jx step git credentials"
 
                     sh "echo building Pull Request for preview ${TEAM}"
 
@@ -43,8 +46,6 @@ pipeline {
                     sh "./build/linux/jx --help"
 
                     sh "docker build -t docker.io/$ORG/$APP_NAME:$PREVIEW_VERSION ."
-
-                    sh "jx step git credentials"
 
                     sh "make preview"
 
