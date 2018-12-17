@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/url"
-	"strings"
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
@@ -13,13 +11,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/nodes"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
@@ -155,11 +151,6 @@ func (o *CreateGitTokenOptions) Run() error {
 		return err
 	}
 
-	err = o.updateGitCredentialsSecret(server, userAuth)
-	if err != nil {
-		log.Warnf("Failed to update Jenkins Git credentials secret: %v\n", err)
-	}
-
 	_, err = o.updatePipelineGitCredentialsSecret(server, userAuth)
 	if err != nil {
 		log.Warnf("Failed to update Jenkins X pipeline Git credentials secret: %v\n", err)
@@ -262,57 +253,6 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 	err = c.Shutdown(ctxt)
 	if err != nil {
 		return err
-	}
-	return nil
-}
-
-func (o *CreateGitTokenOptions) updateGitCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) error {
-	client, ns, err := o.KubeClient()
-	if err != nil {
-		return err
-	}
-	options := metav1.GetOptions{}
-	secret, err := client.CoreV1().Secrets(ns).Get(kube.SecretJenkinsGitCredentials, options)
-	if err != nil {
-		// lets try the real dev namespace if we are in a different environment
-		devNs, _, err := kube.GetDevNamespace(client, ns)
-		if err != nil {
-			return err
-		}
-		secret, err = client.CoreV1().Secrets(devNs).Get(kube.SecretJenkinsGitCredentials, options)
-		if err != nil {
-			return err
-		}
-	}
-	text := ""
-	data := secret.Data[jenkinsGitCredentialsSecretKey]
-	if data != nil {
-		text = string(data)
-	}
-	lines := strings.Split(text, "\n")
-	u, err := url.Parse(server.URL)
-	if err != nil {
-		return fmt.Errorf("Failed to parse server URL %s due to: %s", server.URL, err)
-	}
-
-	found := false
-	prefix := u.Scheme + "://"
-	host := u.Host
-	for _, line := range lines {
-		if strings.HasPrefix(line, prefix) && strings.HasSuffix(line, host) {
-			found = true
-		}
-	}
-	if !found {
-		if !strings.HasSuffix(text, "\n") {
-			text += "\n"
-		}
-		text += prefix + userAuth.Username + ":" + userAuth.ApiToken + "@" + host
-		secret.Data[jenkinsGitCredentialsSecretKey] = []byte(text)
-		_, err = client.CoreV1().Secrets(ns).Update(secret)
-		if err != nil {
-			return fmt.Errorf("Failed to update secret %s due to %s", secret.Name, err)
-		}
 	}
 	return nil
 }
