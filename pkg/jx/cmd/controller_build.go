@@ -325,7 +325,10 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 					log.Warnf("No GitURL on PipelineActivity %s\n", activity.Name)
 				}
 			}
-			spec.BuildLogsURL = o.generateBuildLogURL(podInterface, ns, activity, buildName, pod, location, o.InitGitCredentials)
+			logURL := o.generateBuildLogURL(podInterface, ns, activity, buildName, pod, location, o.InitGitCredentials)
+			if logURL != "" {
+				spec.BuildLogsURL = logURL
+			}
 		}
 	} else {
 		if running {
