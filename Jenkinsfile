@@ -3,9 +3,14 @@ pipeline {
     environment {
         CHARTMUSEUM_CREDS   = credentials('jenkins-x-chartmuseum')
         JENKINS_CREDS       = credentials('test-jenkins-user')
-        GHE_CREDS           = credentials('ghe-test-user')
+        GH_CREDS            = credentials('jx-pipeline-git-github-github')
+        GHE_CREDS           = credentials('jx-pipeline-git-github-ghe')
         GKE_SA              = credentials('gke-sa')
         BUILD_NUMBER        = "${JX_BUILD_NUMBER ?: '1'}"
+
+        GIT_USERNAME        = "$GH_CREDS_USR"	
+        GIT_API_TOKEN       = "$GH_CREDS_PSW"	
+        GITHUB_ACCESS_TOKEN = "$GH_CREDS_PSW"
 
         JOB_NAME            = "$JOB_NAME"
         BRANCH_NAME         = "$BRANCH_NAME"
@@ -37,7 +42,7 @@ pipeline {
 
                     sh "make linux"
                     sh 'test `git status --short | tee /dev/stderr | wc --bytes` -eq 0'
-                    sh "eval $(./build/linux/jx step git envs) && make test-slow-integration"
+                    sh "make test-slow-integration"
                     sh "./build/linux/jx --help"
 
                     sh "docker build -t docker.io/$ORG/$APP_NAME:$PREVIEW_VERSION ."
