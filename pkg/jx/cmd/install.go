@@ -117,7 +117,6 @@ const (
 	JenkinsXPlatformChart   = "jenkins-x/" + JenkinsXPlatformChartName
 	JenkinsXPlatformRelease = "jenkins-x"
 
-	GitSecretsFile         = "gitSecrets.yaml"
 	AdminSecretsFile       = "adminSecrets.yaml"
 	ExtraValuesFile        = "extraValues.yaml"
 	JXInstallConfig        = "jx-install-config"
@@ -975,22 +974,10 @@ func (options *InstallOptions) getHelmValuesFiles(configStore configio.ConfigSto
 			errors.Wrap(err, "creating the admin secrets")
 	}
 
-	gitSecrets, err := options.getGitSecrets()
-	if err != nil {
-		return valuesFiles, secretsFiles, temporaryFiles,
-			errors.Wrap(err, "reading the git secrets from configuration")
-	}
-
 	dir, err := util.ConfigDir()
 	if err != nil {
 		return valuesFiles, secretsFiles, temporaryFiles,
 			errors.Wrap(err, "creating a temporary config dir for Git credentials")
-	}
-	gitSecretsFileName := filepath.Join(dir, GitSecretsFile)
-	err = configStore.Write(gitSecretsFileName, []byte(gitSecrets))
-	if err != nil {
-		return valuesFiles, secretsFiles, temporaryFiles,
-			errors.Wrapf(err, "writing the git secrets in the secrets file '%s'", gitSecretsFileName)
 	}
 
 	adminSecretsFileName := filepath.Join(dir, AdminSecretsFile)
@@ -1008,7 +995,7 @@ func (options *InstallOptions) getHelmValuesFiles(configStore configio.ConfigSto
 	}
 	log.Infof("Generated helm values %s\n", util.ColorInfo(extraValuesFileName))
 
-	err = options.modifySecrets(helmConfig, adminSecrets, gitSecrets)
+	err = options.modifySecrets(helmConfig, adminSecrets)
 	if err != nil {
 		return valuesFiles, temporaryFiles, secretsFiles, errors.Wrap(err, "updating the secrets data in Kubernetes cluster")
 	}
@@ -1020,17 +1007,17 @@ func (options *InstallOptions) getHelmValuesFiles(configStore configio.ConfigSto
 			errors.Wrap(err, "failed to append the myvalues.yaml file")
 	}
 	secretsFiles = append(secretsFiles,
-		[]string{gitSecretsFileName, adminSecretsFileName, extraValuesFileName, cloudEnvironmentSecretsLocation}...)
+		[]string{adminSecretsFileName, extraValuesFileName, cloudEnvironmentSecretsLocation}...)
 
 	if options.Flags.Vault {
-		temporaryFiles = append(temporaryFiles, adminSecretsFileName, gitSecretsFileName, extraValuesFileName, cloudEnvironmentSecretsLocation)
+		temporaryFiles = append(temporaryFiles, adminSecretsFileName, extraValuesFileName, cloudEnvironmentSecretsLocation)
 		err := options.storeSecretsFilesInVault([]string{adminSecretsFileName})
 		if err != nil {
 			return valuesFiles, secretsFiles, temporaryFiles,
 				errors.Wrapf(err, "storing in Vault the secrets files: %s", adminSecretsFileName)
 		}
 	} else {
-		temporaryFiles = append(temporaryFiles, gitSecretsFileName, extraValuesFileName, cloudEnvironmentSecretsLocation)
+		temporaryFiles = append(temporaryFiles, extraValuesFileName, cloudEnvironmentSecretsLocation)
 	}
 
 	return util.FilterFileExists(valuesFiles), util.FilterFileExists(secretsFiles), util.FilterFileExists(temporaryFiles), nil
@@ -2032,7 +2019,7 @@ func (options *InstallOptions) createEnvironments(namespace string) error {
 	return nil
 }
 
-func (options *InstallOptions) modifySecrets(helmConfig *config.HelmValuesConfig, adminSecrets *config.AdminSecretsConfig, gitSecrets string) error {
+func (options *InstallOptions) modifySecrets(helmConfig *config.HelmValuesConfig, adminSecrets *config.AdminSecretsConfig) error {
 	var err error
 	data := make(map[string][]byte)
 	data[ExtraValuesFile], err = yaml.Marshal(helmConfig)
@@ -2043,7 +2030,6 @@ func (options *InstallOptions) modifySecrets(helmConfig *config.HelmValuesConfig
 	if err != nil {
 		return err
 	}
-	data[GitSecretsFile] = []byte(gitSecrets)
 	_, err = options.ModifySecret(JXInstallConfig, func(secret *core_v1.Secret) error {
 		secret.Data = data
 		return nil
@@ -2339,34 +2325,6 @@ func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 		}
 	}
 	return wrkDir, nil
-}
-
-// returns secrets that are used as values during the helm install
-func (options *InstallOptions) getGitSecrets() (string, error) {
-	pipelineServer, pipelineUser, err := options.getPipelineGitAuth()
-	if err != nil {
-		return "", errors.Wrap(err, "retrieving the pipeline Git Auth")
-	}
-	if pipelineServer == nil {
-		return "", errors.New("no pipeline Git server found")
-	}
-
-	if pipelineUser == nil {
-		return "", errors.New("no pipeline Git user found")
-	}
-
-	serverURL := pipelineServer.URL
-	server := strings.TrimPrefix(serverURL, "https://")
-	server = strings.TrimPrefix(server, "http://")
-
-	url := fmt.Sprintf("%s:%s@%s", pipelineUser.Username, pipelineUser.ApiToken, server)
-
-	pipelineSecrets := `
-PipelineSecrets:
-  GitCreds: |-
-    https://%s
-    http://%s`
-	return fmt.Sprintf(pipelineSecrets, url, url), nil
 }
 
 func (options *InstallOptions) getPipelineGitAuth() (*auth.AuthServer, *auth.UserAuth, error) {
