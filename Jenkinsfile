@@ -30,6 +30,7 @@ pipeline {
             steps {
                 dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
                     checkout scm
+                    sh "jx step git credentials"
 
                     sh "echo building Pull Request for preview ${TEAM}"
 
@@ -39,8 +40,6 @@ pipeline {
                     sh "./build/linux/jx --help"
 
                     sh "docker build -t docker.io/$ORG/$APP_NAME:$PREVIEW_VERSION ."
-
-                    sh "jx step git credentials"
 
                     sh "make preview"
 
