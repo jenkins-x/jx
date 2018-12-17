@@ -30,12 +30,14 @@ pipeline {
             steps {
                 dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
                     checkout scm
+                    sh "git config --global credential.helper store"
                     sh "jx step git credentials"
 
                     sh "echo building Pull Request for preview ${TEAM}"
 
                     sh "make linux"
                     sh 'test `git status --short | tee /dev/stderr | wc --bytes` -eq 0'
+                    sh 'eval `jx step git envs`'
                     sh "make test-slow-integration"
                     sh "./build/linux/jx --help"
 
