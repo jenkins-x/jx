@@ -37,7 +37,7 @@ pipeline {
 
                     sh "make linux"
                     sh 'test `git status --short | tee /dev/stderr | wc --bytes` -eq 0'
-                    sh 'eval `jx step git envs`'
+                    sh 'eval `./build/jx step git envs`'
                     sh "make test-slow-integration"
                     sh "./build/linux/jx --help"
 
