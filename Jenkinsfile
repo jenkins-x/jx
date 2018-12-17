@@ -3,13 +3,9 @@ pipeline {
     environment {
         CHARTMUSEUM_CREDS   = credentials('jenkins-x-chartmuseum')
         JENKINS_CREDS       = credentials('test-jenkins-user')
-        GH_CREDS            = credentials('jenkins-x-github')
         GHE_CREDS           = credentials('ghe-test-user')
         GKE_SA              = credentials('gke-sa')
         BUILD_NUMBER        = "${JX_BUILD_NUMBER ?: '1'}"
-        GIT_USERNAME        = "$GH_CREDS_USR"
-        GIT_API_TOKEN       = "$GH_CREDS_PSW"
-        GITHUB_ACCESS_TOKEN = "$GH_CREDS_PSW"
 
         JOB_NAME            = "$JOB_NAME"
         BRANCH_NAME         = "$BRANCH_NAME"
