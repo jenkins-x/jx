@@ -37,8 +37,7 @@ pipeline {
 
                     sh "make linux"
                     sh 'test `git status --short | tee /dev/stderr | wc --bytes` -eq 0'
-                    sh 'eval $(./build/linux/jx step git envs)'
-                    sh "make test-slow-integration"
+                    sh "eval $(./build/linux/jx step git envs) && make test-slow-integration"
                     sh "./build/linux/jx --help"
 
                     sh "docker build -t docker.io/$ORG/$APP_NAME:$PREVIEW_VERSION ."
