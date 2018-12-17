@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"github.com/blang/semver"
+	"github.com/jenkins-x/jx/pkg/log"
 )
 
 // Build information. Populated at build-time.
@@ -74,6 +75,6 @@ func VersionStringDefault(defaultValue string) string {
 	if err == nil {
 		return v.String()
 	}
-	//log.Warnf("Warning failed to load version: %s\n", err)
+	log.Warnf("Warning failed to load version: %s\n", err)
 	return defaultValue
 }
