@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -785,7 +784,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 	}
 
 	if options.Flags.Vault {
-		err := options.storeSecretsFilesInVault([]string{secretsFile})
+		err := options.storeSecretYamlFilesInVault(vault.InstallSecretsPath, secretsFile)
 		if err != nil {
 			return errors.Wrapf(err, "storing in Vault the secrets files: %s", secretsFile)
 		}
@@ -1738,9 +1737,9 @@ func (options *InstallOptions) getAdminSecrets(configStore configio.ConfigStore,
 	}
 
 	if options.Flags.Vault {
-		err := options.storeAdminSecretsInVault(adminSecrets, adminSecretsFileName)
+		err := options.storeAdminCredentialsInVault(&options.AdminSecretsService)
 		if err != nil {
-			return "", nil, errors.Wrapf(err, "storing the install secrets in vault")
+			return "", nil, errors.Wrapf(err, "storing the admin credentials in vault")
 		}
 	}
 
@@ -1794,66 +1793,39 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 	return nil
 }
 
-func (options *InstallOptions) storeSecretsFilesInVault(secretsFiles []string) error {
-	secrets := map[string]interface{}{}
-	for _, file := range secretsFiles {
-		exists, err := util.FileExists(file)
-		if exists && err == nil {
-			empty, err := util.FileIsEmpty(file)
-			if !empty && err == nil {
-				content, err := ioutil.ReadFile(file)
-				if err != nil {
-					return errors.Wrapf(err, "reading secrets file '%s'", file)
-				}
-				key := filepath.Base(file)
-				secrets[key] = string(content)
-			}
-		}
-	}
-
-	if len(secrets) > 0 {
-		err := options.storeSecretsInVault(vault.InstallSecretsPath, secrets)
-		if err != nil {
-			return errors.Wrap(err, "storing the secrets into vault")
-		}
-	}
-
-	return nil
-}
-
-func (options *InstallOptions) storeSecretsInVault(path string, secrets map[string]interface{}) error {
+func (options *InstallOptions) storeSecretYamlFilesInVault(path string, files ...string) error {
 	vaultClient, err := options.Factory.GetSystemVaultClient()
 	if err != nil {
-		log.Errorf("Could not get System vault: %v", err)
+		return errors.Wrap(err, "retrieving the system vault client")
 	}
-	err = vaultClient.WriteSecrets(path, secrets)
+
+	err = vault.WriteYamlFiles(vaultClient, path, files...)
 	if err != nil {
-		return errors.Wrapf(err, "Error saving secrets to vault\n")
+		return errors.Wrapf(err, "storing in vault the secret YAML files: %s", strings.Join(files, ","))
 	}
+
 	return nil
 }
 
-func (options *InstallOptions) storeAdminConfigInVault(config *config.AdminSecretsConfig) error {
-	secrets := map[string]interface{}{
-		vault.JenkinsAdminSecret:     config.Jenkins,
-		vault.NexusAdminSecret:       config.Nexus,
-		vault.ChartmuseumAdminSecret: config.ChartMuseum,
-		vault.GrafanaAdminSecret:     config.Grafana,
-	}
-	return options.storeSecretsInVault(vault.AdminSecretsPath, secrets)
-}
-
-func (options *InstallOptions) storeAdminSecretsInVault(config *config.AdminSecretsConfig, adminSecretsFile string) error {
-	err := options.storeAdminConfigInVault(config)
+func (options *InstallOptions) storeAdminCredentialsInVault(svc *config.AdminSecretsService) error {
+	vaultClient, err := options.Factory.GetSystemVaultClient()
 	if err != nil {
-		return errors.Wrap(err, "storing admin secrets in vault")
+		return errors.Wrap(err, "retrieving the system vault client")
 	}
-
-	err = options.storeSecretsFilesInVault([]string{adminSecretsFile})
-	if err != nil {
-		return errors.Wrap(err, "storing secrets files in vault")
+	secrets := map[vault.AdminSecret]config.BasicAuth{
+		vault.JenkinsAdminSecret:     svc.JenkinsAuth(),
+		vault.IngressAdminSecret:     svc.IngressAuth(),
+		vault.ChartmuseumAdminSecret: svc.ChartMuseumAuth(),
+		vault.GrafanaAdminSecret:     svc.GrafanaAuth(),
+		vault.NexusAdminSecret:       svc.NexusAuth(),
 	}
-
+	for secretName, secret := range secrets {
+		path := vault.AdminSecretPath(secretName)
+		err := vault.WriteBasicAuth(vaultClient, path, secret)
+		if err != nil {
+			return errors.Wrapf(err, "storing in vault the basic auth credentials for %s", secretName)
+		}
+	}
 	return nil
 }
 
