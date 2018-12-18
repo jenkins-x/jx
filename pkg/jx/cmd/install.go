@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -785,7 +784,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 	}
 
 	if options.Flags.Vault {
-		err := options.storeSecretsFilesInVault([]string{secretsFile})
+		err := options.storeSecretYamlFilesInVault(vault.InstallSecretsPath, secretsFile)
 		if err != nil {
 			return errors.Wrapf(err, "storing in Vault the secrets files: %s", secretsFile)
 		}
@@ -968,7 +967,8 @@ func (options *InstallOptions) getHelmValuesFiles(configStore configio.ConfigSto
 	secretsFiles := []string{}
 	temporaryFiles := []string{}
 
-	adminSecrets, err := options.getAdminSecrets(providerEnvDir, cloudEnvironmentSecretsLocation)
+	adminSecretsFileName, adminSecrets, err := options.getAdminSecrets(configStore,
+		providerEnvDir, cloudEnvironmentSecretsLocation)
 	if err != nil {
 		return valuesFiles, secretsFiles, temporaryFiles,
 			errors.Wrap(err, "creating the admin secrets")
@@ -978,13 +978,6 @@ func (options *InstallOptions) getHelmValuesFiles(configStore configio.ConfigSto
 	if err != nil {
 		return valuesFiles, secretsFiles, temporaryFiles,
 			errors.Wrap(err, "creating a temporary config dir for Git credentials")
-	}
-
-	adminSecretsFileName := filepath.Join(dir, AdminSecretsFile)
-	err = configStore.WriteObject(adminSecretsFileName, adminSecrets)
-	if err != nil {
-		return valuesFiles, secretsFiles, temporaryFiles,
-			errors.Wrapf(err, "writing the admin secrets in the secrets file '%s'", adminSecretsFileName)
 	}
 
 	extraValuesFileName := filepath.Join(dir, ExtraValuesFile)
@@ -1011,11 +1004,6 @@ func (options *InstallOptions) getHelmValuesFiles(configStore configio.ConfigSto
 
 	if options.Flags.Vault {
 		temporaryFiles = append(temporaryFiles, adminSecretsFileName, extraValuesFileName, cloudEnvironmentSecretsLocation)
-		err := options.storeSecretsFilesInVault([]string{adminSecretsFileName})
-		if err != nil {
-			return valuesFiles, secretsFiles, temporaryFiles,
-				errors.Wrapf(err, "storing in Vault the secrets files: %s", adminSecretsFileName)
-		}
 	} else {
 		temporaryFiles = append(temporaryFiles, extraValuesFileName, cloudEnvironmentSecretsLocation)
 	}
@@ -1691,14 +1679,14 @@ func (options *InstallOptions) installCloudProviderDependencies() error {
 	return nil
 }
 
-func (options *InstallOptions) getAdminSecrets(providerEnvDir string, cloudEnvironmentSecretsLocation string) (*config.AdminSecretsConfig, error) {
+func (options *InstallOptions) getAdminSecrets(configStore configio.ConfigStore, providerEnvDir string, cloudEnvironmentSecretsLocation string) (string, *config.AdminSecretsConfig, error) {
 	cloudEnvironmentSopsLocation := filepath.Join(providerEnvDir, CloudEnvSopsConfigFile)
 	if _, err := os.Stat(providerEnvDir); os.IsNotExist(err) {
-		return nil, fmt.Errorf("cloud environment dir %s not found", providerEnvDir)
+		return "", nil, fmt.Errorf("cloud environment dir %s not found", providerEnvDir)
 	}
 	sopsFileExists, err := util.FileExists(cloudEnvironmentSopsLocation)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to look for "+cloudEnvironmentSopsLocation)
+		return "", nil, errors.Wrap(err, "failed to look for "+cloudEnvironmentSopsLocation)
 	}
 
 	adminSecretsServiceInit := false
@@ -1708,13 +1696,13 @@ func (options *InstallOptions) getAdminSecrets(providerEnvDir string, cloudEnvir
 		// need to decrypt secrets now
 		err = options.Helm().DecryptSecrets(cloudEnvironmentSecretsLocation)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to decrypt "+cloudEnvironmentSecretsLocation)
+			return "", nil, errors.Wrap(err, "failed to decrypt "+cloudEnvironmentSecretsLocation)
 		}
 
 		cloudEnvironmentSecretsDecryptedLocation := filepath.Join(providerEnvDir, CloudEnvSecretsFile+".dec")
 		decryptedSecretsFile, err := util.FileExists(cloudEnvironmentSecretsDecryptedLocation)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to look for "+cloudEnvironmentSecretsDecryptedLocation)
+			return "", nil, errors.Wrap(err, "failed to look for "+cloudEnvironmentSecretsDecryptedLocation)
 		}
 
 		if decryptedSecretsFile {
@@ -1723,7 +1711,7 @@ func (options *InstallOptions) getAdminSecrets(providerEnvDir string, cloudEnvir
 
 			err = options.AdminSecretsService.NewAdminSecretsConfigFromSecret(cloudEnvironmentSecretsDecryptedLocation)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to create the admin secret config service from the decrypted secrets file")
+				return "", nil, errors.Wrap(err, "failed to create the admin secret config service from the decrypted secrets file")
 			}
 			adminSecretsServiceInit = true
 		}
@@ -1732,11 +1720,30 @@ func (options *InstallOptions) getAdminSecrets(providerEnvDir string, cloudEnvir
 	if !adminSecretsServiceInit {
 		err = options.AdminSecretsService.NewAdminSecretsConfig()
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to create the admin secret config service")
+			return "", nil, errors.Wrap(err, "failed to create the admin secret config service")
 		}
 	}
 
-	return &options.AdminSecretsService.Secrets, nil
+	dir, err := util.ConfigDir()
+	if err != nil {
+		return "", nil, errors.Wrap(err, "creating a temporary config dir for Git credentials")
+	}
+
+	adminSecrets := &options.AdminSecretsService.Secrets
+	adminSecretsFileName := filepath.Join(dir, AdminSecretsFile)
+	err = configStore.WriteObject(adminSecretsFileName, adminSecrets)
+	if err != nil {
+		return "", nil, errors.Wrapf(err, "writing the admin secrets in the secrets file '%s'", adminSecretsFileName)
+	}
+
+	if options.Flags.Vault {
+		err := options.storeAdminCredentialsInVault(&options.AdminSecretsService)
+		if err != nil {
+			return "", nil, errors.Wrapf(err, "storing the admin credentials in vault")
+		}
+	}
+
+	return adminSecretsFileName, adminSecrets, nil
 }
 
 func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string) error {
@@ -1786,41 +1793,38 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 	return nil
 }
 
-func (options *InstallOptions) storeSecretsFilesInVault(secretsFiles []string) error {
-	secrets := map[string]interface{}{}
-	for _, file := range secretsFiles {
-		exists, err := util.FileExists(file)
-		if exists && err == nil {
-			empty, err := util.FileIsEmpty(file)
-			if !empty && err == nil {
-				content, err := ioutil.ReadFile(file)
-				if err != nil {
-					return errors.Wrapf(err, "reading secrets file '%s'", file)
-				}
-				key := filepath.Base(file)
-				secrets[key] = string(content)
-			}
-		}
+func (options *InstallOptions) storeSecretYamlFilesInVault(path string, files ...string) error {
+	vaultClient, err := options.Factory.GetSystemVaultClient()
+	if err != nil {
+		return errors.Wrap(err, "retrieving the system vault client")
 	}
 
-	if len(secrets) > 0 {
-		err := options.storeSecretsInVault(secrets)
-		if err != nil {
-			return errors.Wrap(err, "storing the secrets into vault")
-		}
+	err = vault.WriteYamlFiles(vaultClient, path, files...)
+	if err != nil {
+		return errors.Wrapf(err, "storing in vault the secret YAML files: %s", strings.Join(files, ","))
 	}
 
 	return nil
 }
 
-func (options *InstallOptions) storeSecretsInVault(secrets map[string]interface{}) error {
+func (options *InstallOptions) storeAdminCredentialsInVault(svc *config.AdminSecretsService) error {
 	vaultClient, err := options.Factory.GetSystemVaultClient()
 	if err != nil {
-		log.Errorf("Could not get System vault: %v", err)
+		return errors.Wrap(err, "retrieving the system vault client")
 	}
-	err = vaultClient.WriteSecrets(vault.InstallSecretsPath, secrets)
-	if err != nil {
-		return errors.Wrapf(err, "Error saving secrets to vault\n")
+	secrets := map[vault.AdminSecret]config.BasicAuth{
+		vault.JenkinsAdminSecret:     svc.JenkinsAuth(),
+		vault.IngressAdminSecret:     svc.IngressAuth(),
+		vault.ChartmuseumAdminSecret: svc.ChartMuseumAuth(),
+		vault.GrafanaAdminSecret:     svc.GrafanaAuth(),
+		vault.NexusAdminSecret:       svc.NexusAuth(),
+	}
+	for secretName, secret := range secrets {
+		path := vault.AdminSecretPath(secretName)
+		err := vault.WriteBasicAuth(vaultClient, path, secret)
+		if err != nil {
+			return errors.Wrapf(err, "storing in vault the basic auth credentials for %s", secretName)
+		}
 	}
 	return nil
 }
@@ -2230,7 +2234,11 @@ func (options *InstallOptions) logAdminPassword() {
 	********************************************************
 
 	`
-	log.Infof(astrix+"\n", fmt.Sprintf("Your admin password is: %s", util.ColorInfo(options.AdminSecretsService.Flags.DefaultAdminPassword)))
+	if options.Flags.Vault {
+		log.Infof(astrix+"\n", fmt.Sprintf("Your admin password is in vault: %s", util.ColorInfo("eval `jx get vault-config` && vault kv get secret/admin/jenkins")))
+	} else {
+		log.Infof(astrix+"\n", fmt.Sprintf("Your admin password is: %s", util.ColorInfo(options.AdminSecretsService.Flags.DefaultAdminPassword)))
+	}
 }
 
 // LoadVersionFromCloudEnvironmentsDir loads a version from the cloud environments directory

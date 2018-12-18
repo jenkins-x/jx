@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/certmanager"
 
@@ -14,7 +15,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/Pallinder/go-randomdata"
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,7 +34,7 @@ func Expose(devNamespace, targetNamespace, password string, kubeClient kubernete
 		data := make(map[string][]byte)
 
 		if password != "" {
-			hash := config.HashSha(password)
+			hash := util.HashPassword(password)
 			data[kube.AUTH] = []byte(fmt.Sprintf("admin:{SHA}%s", hash))
 		} else {
 			basicAuth, err := kubeClient.CoreV1().Secrets(devNamespace).Get(kube.SecretBasicAuth, metav1.GetOptions{})
