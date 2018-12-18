@@ -1,6 +1,7 @@
 package kube
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -47,6 +48,10 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, d
 			}
 			data.Name = config.Name
 		} else {
+			if batchMode {
+				return nil, errors.New("Environment name cannot be empty. Use --name option.")
+			}
+
 			validator := func(val interface{}) error {
 				err := ValidateName(val)
 				if err != nil {
