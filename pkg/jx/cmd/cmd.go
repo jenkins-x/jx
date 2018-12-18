@@ -25,8 +25,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/jenkins-x/jx/pkg/kube"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/jenkins-x/jx/pkg/extensions"
@@ -198,7 +196,7 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 		Root:        cmds,
 		SeenPlugins: make(map[string]string, 0),
 	}
-	pluginCommandGroups, err1 := commonOptions.getPluginCommandGroups(verifier)
+	pluginCommandGroups, managedPluginsEnabled, err1 := commonOptions.getPluginCommandGroups(verifier)
 	if err1 != nil {
 		log.Errorf("%v\n", err1)
 	}
@@ -210,21 +208,30 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	cmds.AddCommand(NewCmdOptions(out))
 	cmds.AddCommand(NewCmdDiagnose(f, in, out, err))
 
-	pluginHandler := &extensionPluginHandler{
+	managedPlugins := &managedPluginHandler{
 		CommonOptions: commonOptions,
 	}
+	localPlugins := &localPluginHandler{}
 	args := os.Args
 
 	if len(args) > 1 {
 		cmdPathPieces := args[1:]
 
-		// only look for suitable extension executables if
+		// only look for suitable executables if
 		// the specified command does not already exist
 		if _, _, err := cmds.Find(cmdPathPieces); err != nil {
-			if err := handleEndpointExtensions(pluginHandler, cmdPathPieces); err != nil {
-				log.Errorf("%v\n", err)
-				os.Exit(1)
+			if managedPluginsEnabled {
+				if err := handleEndpointExtensions(managedPlugins, cmdPathPieces); err != nil {
+					log.Errorf("%v\n", err)
+					os.Exit(1)
+				}
+			} else {
+				if err := handleEndpointExtensions(localPlugins, cmdPathPieces); err != nil {
+					log.Errorf("%v\n", err)
+					os.Exit(1)
+				}
 			}
+
 		}
 	}
 
@@ -280,22 +287,14 @@ type PluginHandler interface {
 	Execute(executablePath string, cmdArgs, environment []string) error
 }
 
-type extensionPluginHandler struct {
+type managedPluginHandler struct {
 	CommonOptions
 	localPluginHandler
 }
 
 // Lookup implements PluginHandler
-func (h *extensionPluginHandler) Lookup(filename string) (string, error) {
+func (h *managedPluginHandler) Lookup(filename string) (string, error) {
 	jxClient, ns, err := h.JXClientAndDevNamespace()
-	if err != nil {
-		return "", err
-	}
-	apisClient, err := h.CreateApiExtensionsClient()
-	if err != nil {
-		return "", err
-	}
-	err = kube.RegisterPluginCRD(apisClient)
 	if err != nil {
 		return "", err
 	}
@@ -310,7 +309,8 @@ func (h *extensionPluginHandler) Lookup(filename string) (string, error) {
 		found := possibles.Items[0]
 		if len(possibles.Items) > 1 {
 			// There is a warning about this when you install extensions as well
-			log.Warnf("More than one plugin installed for %s by extensions. Selecting the one installed by %s at random.\n", filename, found.Name)
+			log.Warnf("More than one plugin installed for %s by apps. Selecting the one installed by %s at random.\n",
+				filename, found.Name)
 
 		}
 		return extensions.EnsurePluginInstalled(found)
@@ -319,7 +319,7 @@ func (h *extensionPluginHandler) Lookup(filename string) (string, error) {
 }
 
 // Execute implements PluginHandler
-func (h *extensionPluginHandler) Execute(executablePath string, cmdArgs, environment []string) error {
+func (h *managedPluginHandler) Execute(executablePath string, cmdArgs, environment []string) error {
 	return h.localPluginHandler.Execute(executablePath, cmdArgs, environment)
 }
 

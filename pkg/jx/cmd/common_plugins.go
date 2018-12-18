@@ -8,91 +8,81 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	"github.com/jenkins-x/jx/pkg/log"
+
 	"github.com/jenkins-x/jx/pkg/extensions"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 )
 
-func (o *CommonOptions) GetCommands() ([]templates.CommandGroup, error) {
-	result := make([]templates.CommandGroup, 0)
-	jxClient, ns, err := o.JXClientAndDevNamespace()
-	if err != nil {
-		return result, err
-	}
+func (o *CommonOptions) isManagedPluginsEnabled() bool {
 	apisClient, err := o.CreateApiExtensionsClient()
 	if err != nil {
-		return result, err
-	}
-	err = kube.RegisterPluginCRD(apisClient)
-	if err != nil {
-		return result, err
-	}
-
-	plugins, err := jxClient.JenkinsV1().Plugins(ns).List(metav1.ListOptions{})
-	if err != nil {
-		return result, err
-	}
-	groups := make(map[string][]jenkinsv1.Plugin, 0)
-	for _, p := range plugins.Items {
-		if _, ok := groups[p.Spec.Group]; !ok {
-			groups[p.Spec.Group] = make([]jenkinsv1.Plugin, 0)
+		if o.Verbose {
+			log.Warnf("Unable to load managed plugins because %v\n", err)
 		}
-		groups[p.Spec.Group] = append(groups[p.Spec.Group], p)
+		return false
 	}
-	return result, nil
+	_, err = apisClient.ApiextensionsV1beta1().CustomResourceDefinitions().Get("plugins."+jenkinsio.GroupName,
+		metav1.GetOptions{})
+	if err != nil {
+		if o.Verbose {
+			log.Warnf("Unable to load managed plugins because %v\n", err)
+		}
+		return false
+	}
+	return true
 }
 
-func (o *CommonOptions) getPluginCommandGroups(verifier extensions.PathVerifier) (templates.PluginCommandGroups, error) {
-	apisClient, err := o.CreateApiExtensionsClient()
-	if err != nil {
-		return nil, err
-	}
+func (o *CommonOptions) getPluginCommandGroups(verifier extensions.PathVerifier) (templates.PluginCommandGroups, bool,
+	error) {
 
-	err = kube.RegisterPluginCRD(apisClient)
-	if err != nil {
-		return nil, err
-	}
-
-	jxClient, ns, err := o.Factory.CreateJXClient()
-	if err != nil {
-		return nil, err
-	}
-	plugs := jxClient.JenkinsV1().Plugins(ns)
-
-	plugins, err := plugs.List(metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	groups := make(map[string]templates.PluginCommandGroup, 0)
 	otherCommands := templates.PluginCommandGroup{
 		Message: "Other Commands",
 	}
-	pathCommands := templates.PluginCommandGroup{
-		Message: "Locally Available Commands:",
-	}
-	for _, plugin := range plugins.Items {
-		pluginCommand := &templates.PluginCommand{
-			PluginSpec: plugin.Spec,
+	groups := make(map[string]templates.PluginCommandGroup, 0)
+
+	// Managed plugins
+	managedPluginsEnabled := o.isManagedPluginsEnabled()
+	if managedPluginsEnabled {
+		jxClient, ns, err := o.Factory.CreateJXClient()
+		if err != nil {
+			return nil, false, err
 		}
-		if plugin.Spec.Group == "" {
-			otherCommands.Commands = append(otherCommands.Commands, pluginCommand)
-		} else {
-			if g, ok := groups[plugin.Spec.Group]; !ok {
-				groups[plugin.Spec.Group] = templates.PluginCommandGroup{
-					Message: fmt.Sprintf("%s:", plugin.Spec.Group),
-					Commands: []*templates.PluginCommand{
-						pluginCommand,
-					},
-				}
+		plugs := jxClient.JenkinsV1().Plugins(ns)
+
+		pluginList, err := plugs.List(metav1.ListOptions{})
+		if err != nil {
+			return nil, false, err
+		}
+		for _, plugin := range pluginList.Items {
+			pluginCommand := &templates.PluginCommand{
+				PluginSpec: plugin.Spec,
+			}
+			if plugin.Spec.Group == "" {
+				otherCommands.Commands = append(otherCommands.Commands, pluginCommand)
 			} else {
-				g.Commands = append(g.Commands, pluginCommand)
+				if g, ok := groups[plugin.Spec.Group]; !ok {
+					groups[plugin.Spec.Group] = templates.PluginCommandGroup{
+						Message: fmt.Sprintf("%s:", plugin.Spec.Group),
+						Commands: []*templates.PluginCommand{
+							pluginCommand,
+						},
+					}
+				} else {
+					g.Commands = append(g.Commands, pluginCommand)
+				}
 			}
 		}
+	}
+
+	pathCommands := templates.PluginCommandGroup{
+		Message: "Locally Available Commands:",
 	}
 
 	path := "PATH"
@@ -143,5 +133,5 @@ func (o *CommonOptions) getPluginCommandGroups(verifier extensions.PathVerifier)
 	if len(pathCommands.Commands) > 0 {
 		pcgs = append(pcgs, pathCommands)
 	}
-	return pcgs, nil
+	return pcgs, managedPluginsEnabled, nil
 }
