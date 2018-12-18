@@ -147,6 +147,14 @@ func (o *DeleteTeamOptions) deleteTeam(name string) error {
 		return err
 	}
 
+	_, err = kubeClient.CoreV1().Namespaces().Get(name, metav1.GetOptions{})
+	if err != nil {
+		// we don't have the namespace so the team cannot have been provisioned yet
+		return kube.DeleteTeam(jxClient, ns, name)
+	}
+	origNamespace := o.currentNamespace
+	o.ChangeNamespace(name)
+
 	uninstall := &UninstallOptions{
 		CommonOptions: o.CommonOptions,
 		Namespace:     name,
@@ -154,14 +162,6 @@ func (o *DeleteTeamOptions) deleteTeam(name string) error {
 	}
 	uninstall.BatchMode = true
 
-	_, err = kubeClient.CoreV1().Namespaces().Get(name, metav1.GetOptions{})
-	if err != nil {
-		// we don't have the namespace so the team cannot have been provisioned yet
-		return kube.DeleteTeam(jxClient, ns, name)
-	}
-	o.changeNamespace(name)
-
-	//TODO: will be wrong admin ns here.
 	err = o.ModifyTeam(ns, name, func(team *v1.Team) error {
 		team.Status.ProvisionStatus = v1.TeamProvisionStatusDeleting
 		team.Status.Message = "Deleting resources"
@@ -172,7 +172,6 @@ func (o *DeleteTeamOptions) deleteTeam(name string) error {
 	}
 	err = uninstall.Run()
 	if err != nil {
-		//TODO: will be wrong admin namespace here.
 		o.ModifyTeam(ns, name, func(team *v1.Team) error {
 			team.Status.ProvisionStatus = v1.TeamProvisionStatusError
 			team.Status.Message = fmt.Sprintf("Failed to delete team resources: %s", err)
@@ -181,18 +180,6 @@ func (o *DeleteTeamOptions) deleteTeam(name string) error {
 	} else {
 		err = kube.DeleteTeam(jxClient, ns, name)
 	}
-	o.changeNamespace("default")
+	o.ChangeNamespace(origNamespace)
 	return err
-}
-
-func (o *DeleteTeamOptions) changeNamespace(ns string) {
-	nsOptions := &NamespaceOptions{
-		CommonOptions: o.CommonOptions,
-	}
-	nsOptions.BatchMode = true
-	nsOptions.Args = []string{ns}
-	err := nsOptions.Run()
-	if err != nil {
-		log.Warnf("Failed to set context to namespace %s: %s", ns, err)
-	}
 }
