@@ -140,7 +140,7 @@ func (o *CommonOptions) Debugf(format string, a ...interface{}) {
 }
 
 func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().BoolVarP(&options.BatchMode, optionBatchMode, "", false, "In batch mode the command never prompts for user input")
+	cmd.PersistentFlags().BoolVarP(&options.BatchMode, optionBatchMode, "b", false, "In batch mode the command never prompts for user input")
 	cmd.PersistentFlags().BoolVarP(&options.Verbose, optionVerbose, "", false, "Enable verbose logging")
 	cmd.PersistentFlags().StringVarP(&options.LogLevel, optionLogLevel, "", logrus.InfoLevel.String(), "Logging level. Possible values - panic, fatal, error, warning, info, debug.")
 	cmd.PersistentFlags().BoolVarP(&options.Headless, optionHeadless, "", false, "Enable headless operation if using browser automation")

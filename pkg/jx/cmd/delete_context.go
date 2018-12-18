@@ -65,7 +65,6 @@ func NewCmdDeleteContext(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Filter the list of contexts to those containing this text")
 	cmd.Flags().BoolVarP(&options.DeleteAuthInfo, "delete-user", "", false, "Also delete the user config associated to the context")
 	cmd.Flags().BoolVarP(&options.DeleteCluster, "delete-cluster", "", false, "Also delete the cluster config associated to the context")
-	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
 	return cmd
 }
 

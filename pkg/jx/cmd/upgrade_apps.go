@@ -82,8 +82,6 @@ func NewCmdUpgradeApps(commonOpts *CommonOptions) *cobra.Command {
 
 	o.GitOps, o.DevEnv = o.GetDevEnv()
 
-	cmd.Flags().BoolVarP(&o.BatchMode, optionBatchMode, "b", false, "In batch mode the command never prompts for user input")
-	cmd.Flags().BoolVarP(&o.Verbose, optionVerbose, "", false, "Enable verbose logging")
 	cmd.Flags().StringVarP(&o.Version, "username", "", "",
 		"The username for the repository")
 	cmd.Flags().StringVarP(&o.Version, "password", "", "",

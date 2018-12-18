@@ -56,7 +56,6 @@ func NewCmdStepPostRun(commonOpts *CommonOptions) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enables verbose logging")
 	return cmd
 }
 

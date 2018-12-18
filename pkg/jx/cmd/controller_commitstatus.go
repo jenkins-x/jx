@@ -61,7 +61,6 @@ func NewCmdControllerCommitStatus(commonOpts *CommonOptions) *cobra.Command {
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "v", false, "Enable verbose logging")
 	return cmd
 }
 

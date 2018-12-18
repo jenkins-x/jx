@@ -75,7 +75,6 @@ func NewCmdUpgradeExtensions(commonOpts *CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.AddCommand(NewCmdUpgradeExtensionsRepository(commonOpts))
-	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
 	cmd.Flags().StringVarP(&options.ExtensionsRepositoryFile, "extensions-repository-file", "", "", "Specify the extensions repository yaml file to read from")
 	return cmd
 }

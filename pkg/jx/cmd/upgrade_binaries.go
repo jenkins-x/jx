@@ -42,7 +42,6 @@ func NewCmdUpgradeBinaries(commonOpts *CommonOptions) *cobra.Command {
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
 	return cmd
 }
 

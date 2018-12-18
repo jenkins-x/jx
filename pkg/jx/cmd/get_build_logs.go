@@ -83,7 +83,7 @@ func NewCmdGetBuildLogs(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.BuildFilter.Owner, "owner", "o", "", "Filters the owner (person/organisation) of the repository")
 	cmd.Flags().StringVarP(&options.BuildFilter.Repository, "repo", "r", "", "Filters the build repository")
 	cmd.Flags().StringVarP(&options.BuildFilter.Branch, "branch", "", "", "Filters the branch")
-	cmd.Flags().StringVarP(&options.BuildFilter.Build, "build", "b", "", "The build number to view")
+	cmd.Flags().StringVarP(&options.BuildFilter.Build, "build", "", "", "The build number to view")
 
 	return cmd
 }

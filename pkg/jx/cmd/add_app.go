@@ -80,8 +80,6 @@ func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string, de
 		"The username for the repository")
 	cmd.Flags().StringVarP(&o.Password, "password", "", "",
 		"The password for the repository")
-	cmd.Flags().BoolVarP(&o.BatchMode, optionBatchMode, "b", false, "In batch mode the command never prompts for user input")
-	cmd.Flags().BoolVarP(&o.Verbose, optionVerbose, "", false, "Enable verbose logging")
 	if o.GitOps {
 		// GitOps specific flags go here
 		cmd.Flags().StringVarP(&o.Alias, "alias", "", "", "An alias to use for the app")
