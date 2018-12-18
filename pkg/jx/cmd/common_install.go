@@ -694,7 +694,7 @@ func (o *CommonOptions) installHelm() error {
 		if err != nil {
 			return err
 		}
-		return o.installHelmSecretsPlugin(binary, false)
+		return o.installHelmSecretsPlugin(binary, true)
 	}
 
 	binDir, err := util.JXBinLocation()

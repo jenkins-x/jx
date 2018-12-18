@@ -85,6 +85,7 @@ func NewCmdCreate(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	cmd.AddCommand(NewCmdCreateLile(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateMicro(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreatePostPreviewJob(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateProject(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreatePullRequest(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateQuickstart(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateQuickstartLocation(f, in, out, errOut))
