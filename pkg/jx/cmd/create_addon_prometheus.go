@@ -7,9 +7,9 @@ import (
 	"path"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -79,7 +79,7 @@ func (o *CreateAddonPrometheusOptions) Run() error {
 	}
 
 	data := make(map[string][]byte)
-	hash := config.HashSha(o.Password)
+	hash := util.HashPassword(o.Password)
 	data[kube.AUTH] = []byte(fmt.Sprintf("admin:{SHA}%s", hash))
 	sec := &core_v1.Secret{
 		Data: data,

@@ -7,10 +7,13 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"
+	configio "github.com/jenkins-x/jx/pkg/io"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -83,6 +86,17 @@ func (o *StepHelmApplyOptions) Run() error {
 	var err error
 	chartName := o.Dir
 	dir := o.Dir
+	releaseName := o.ReleaseName
+
+	// let allow arguments to be passed in like for `helm install releaseName dir`
+	args := o.Args
+	if releaseName == "" && len(args) > 0 {
+		releaseName = args[0]
+	}
+	if dir == "" && len(args) > 1 {
+		dir = args[1]
+	}
+
 	if dir == "" {
 		dir, err = os.Getwd()
 		if err != nil {
@@ -121,7 +135,6 @@ func (o *StepHelmApplyOptions) Run() error {
 		return err
 	}
 
-	releaseName := o.ReleaseName
 	if releaseName == "" {
 		releaseName = ns
 		if helmBinary != "helm" || noTiller || helmTemplate {
@@ -134,7 +147,15 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	o.Helm().SetCWD(dir)
 
-	// lets discover any local value files
+	secretsFileExists, err := o.ensureHelmSecrets(dir, helm.SecretsFileName)
+	if err != nil {
+		return errors.Wrap(err, "ensuring helm secrets file")
+	}
+	if !secretsFileExists {
+		// Destroy the secrets temporary file that contain sensitive information
+		defer util.DestroyFile(filepath.Join(dir, helm.SecretsFileName))
+	}
+
 	valueFiles := []string{}
 	for _, name := range defaultValueFileNames {
 		file := filepath.Join(dir, name)
@@ -148,12 +169,58 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	if o.Wait {
 		timeout := 600
-		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, &timeout, o.Force, true, nil, valueFiles, "")
+		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, &timeout, o.Force, true, nil, valueFiles,
+			"", "", "")
 	} else {
-		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, nil, o.Force, false, nil, valueFiles, "")
+		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, nil, o.Force, false, nil, valueFiles, "",
+			"", "")
 	}
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "upgrading helm chart '%s'", chartName)
 	}
 	return nil
+}
+
+// ensureHelmSecrets ensures that the provided filename exists. If it does not, it will automatically create it and
+// populate it with secrets from the system vault. If the file exists, it naively assumes it is populated and won't
+// do any checks.
+// Returns true if the file already existed.
+func (o *StepHelmApplyOptions) ensureHelmSecrets(dir string, filename string) (bool, error) {
+	exists, err := util.FileExists(filename)
+	if err != nil {
+		return false, errors.Wrapf(err, "checking file '%s' exits", filename)
+	}
+	// The secrets file does not exist. Populate its values from the system vault
+	if !exists {
+		if !o.Factory.UseVault() {
+			log.Warnf("no Vault found and no file '%s' exists in directory '%s'\n", filename, dir)
+			return false, nil
+		}
+		client, err := o.Factory.GetSystemVaultClient()
+		if err != nil {
+			return exists, errors.Wrap(err, "retrieving the system Vault")
+		}
+		secretNames, err := client.List(vault.InstallSecretsPath)
+		if err != nil {
+			return exists, errors.Wrap(err, "listing the install secrets in Vault")
+		}
+
+		for _, secretName := range secretNames {
+			if secretName == filename {
+				secretPath := vault.InstallSecretPath(filename)
+				secret, err := client.Read(secretPath)
+				if err != nil {
+					return exists, errors.Wrapf(err, "retrieving the secret '%s' from Vault", secretPath)
+				}
+				storage := configio.NewFileStore()
+				secretsFile := filepath.Join(dir, filename)
+				err = storage.WriteObject(secretsFile, secret)
+				if err != nil {
+					return exists, errors.Wrapf(err, "saving the helm secrets in file '%s'", secretsFile)
+				}
+				break
+			}
+		}
+	}
+	return exists, nil
 }

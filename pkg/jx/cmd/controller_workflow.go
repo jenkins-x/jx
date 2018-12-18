@@ -381,7 +381,7 @@ func (o *ControllerWorkflowOptions) createPromoteOptionsFromActivity(pipeline *v
 	return o.createPromoteOptions(repoName, envName, pipelineName, build, version)
 }
 
-func (o *ControllerWorkflowOptions) createGitProviderForPR(prURL string) (gits.GitProvider, *gits.GitRepositoryInfo, error) {
+func (o *ControllerWorkflowOptions) createGitProviderForPR(prURL string) (gits.GitProvider, *gits.GitRepository, error) {
 	// lets remove the id
 	idx := strings.LastIndex(prURL, "/")
 	if idx <= 0 {
@@ -407,7 +407,7 @@ func (o *ControllerWorkflowOptions) createGitProviderForPR(prURL string) (gits.G
 	return answer, gitInfo, nil
 }
 
-func (o *ControllerWorkflowOptions) createGitProvider(activity *v1.PipelineActivity) (gits.GitProvider, *gits.GitRepositoryInfo, error) {
+func (o *ControllerWorkflowOptions) createGitProvider(activity *v1.PipelineActivity) (gits.GitProvider, *gits.GitRepository, error) {
 	gitUrl := activity.Spec.GitURL
 	if gitUrl == "" {
 		return nil, nil, fmt.Errorf("No GitURL for PipelineActivity %s", activity.Name)

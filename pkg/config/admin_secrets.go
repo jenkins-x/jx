@@ -1,13 +1,14 @@
 package config
 
 import (
-	"crypto/sha1"
-	"encoding/base64"
 	"fmt"
+	"io/ioutil"
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/sethvargo/go-password/password"
-	"io/ioutil"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
@@ -56,9 +57,7 @@ const defaultMavenSettings = `<settings>
   </settings>
 `
 
-type IngressBasicAuth struct {
-	JXBasicAuth string `yaml:"JXBasicAuth"`
-}
+const allowedSymbols = "~!#%^*_+-=?,."
 
 type ChartMuseum struct {
 	ChartMuseumEnv ChartMuseumEnv `yaml:"env"`
@@ -108,9 +107,10 @@ type Nexus struct {
 }
 
 type AdminSecretsService struct {
-	FileName string
-	Secrets  AdminSecretsConfig
-	Flags    AdminSecretsFlags
+	FileName    string
+	Secrets     AdminSecretsConfig
+	Flags       AdminSecretsFlags
+	ingressAuth BasicAuth
 }
 
 type AdminSecretsFlags struct {
@@ -132,7 +132,17 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 
 	if s.Flags.DefaultAdminPassword == "" {
 		log.Infof("No default password set, generating a random one\n")
-		s.Flags.DefaultAdminPassword, _ = password.Generate(20, 4, 2, false, true)
+
+		input := password.GeneratorInput{
+			Symbols: allowedSymbols,
+		}
+
+		generator, err := password.NewGenerator(&input)
+		if err != nil {
+			return errors.Wrap(err, "unable to create password generator")
+		}
+
+		s.Flags.DefaultAdminPassword, _ = generator.Generate(20, 4, 2, false, true)
 	}
 
 	s.Secrets.Jenkins.JenkinsSecret.Password = s.Flags.DefaultAdminPassword
@@ -142,9 +152,9 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 	s.Secrets.Grafana.GrafanaSecret.Password = s.Flags.DefaultAdminPassword
 	s.Secrets.Nexus.DefaultAdminPassword = s.Flags.DefaultAdminPassword
 	s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(defaultMavenSettings, s.Flags.DefaultAdminPassword)
-	hash := HashSha(s.Flags.DefaultAdminPassword)
 
-	s.Secrets.IngressBasicAuth = fmt.Sprintf("admin:{SHA}%s", hash)
+	s.newIngressBasicAuth()
+
 	return nil
 }
 
@@ -163,12 +173,64 @@ func (s *AdminSecretsService) NewAdminSecretsConfigFromSecret(decryptedSecrets s
 
 	s.Secrets = a
 	s.Flags.DefaultAdminPassword = s.Secrets.Jenkins.JenkinsSecret.Password
+	s.updateIngressBasicAuth()
 	return nil
 }
 
-func HashSha(password string) string {
-	s := sha1.New()
-	s.Write([]byte(password))
-	passwordSum := s.Sum(nil)
-	return base64.StdEncoding.EncodeToString(passwordSum)
+func (s *AdminSecretsService) newIngressBasicAuth() {
+	password := s.Flags.DefaultAdminPassword
+	username := "admin"
+	s.ingressAuth = BasicAuth{
+		Username: "admin",
+		Password: password,
+	}
+	hash := util.HashPassword(password)
+	s.Secrets.IngressBasicAuth = fmt.Sprintf("%s:{SHA}%s", username, hash)
+}
+
+func (s *AdminSecretsService) updateIngressBasicAuth() {
+	password := s.Flags.DefaultAdminPassword
+	parts := strings.Split(s.Secrets.IngressBasicAuth, ":")
+	username := parts[0]
+	s.ingressAuth = BasicAuth{
+		Username: username,
+		Password: password,
+	}
+}
+
+// JenkinsAuth returns the current basic auth credentials for Jenkins
+func (s *AdminSecretsService) JenkinsAuth() BasicAuth {
+	return BasicAuth{
+		Username: "admin",
+		Password: s.Secrets.Jenkins.JenkinsSecret.Password,
+	}
+}
+
+// IngressAuth returns the current basic auth credentials for Ingress
+func (s *AdminSecretsService) IngressAuth() BasicAuth {
+	return s.ingressAuth
+}
+
+// ChartMuseumAuth returns the current credentials for ChartMuseum
+func (s *AdminSecretsService) ChartMuseumAuth() BasicAuth {
+	return BasicAuth{
+		Username: s.Secrets.ChartMuseum.ChartMuseumEnv.ChartMuseumSecret.User,
+		Password: s.Secrets.ChartMuseum.ChartMuseumEnv.ChartMuseumSecret.Password,
+	}
+}
+
+// GrafanaAuth returns the current credentials for Grafana
+func (s *AdminSecretsService) GrafanaAuth() BasicAuth {
+	return BasicAuth{
+		Username: s.Secrets.Grafana.GrafanaSecret.User,
+		Password: s.Secrets.Grafana.GrafanaSecret.Password,
+	}
+}
+
+// NexusAuth returns the current credentials for Nexus
+func (s *AdminSecretsService) NexusAuth() BasicAuth {
+	return BasicAuth{
+		Username: "admin",
+		Password: s.Secrets.Nexus.DefaultAdminPassword,
+	}
 }

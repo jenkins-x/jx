@@ -30,13 +30,13 @@ type UpdateWebhooksOptions struct {
 var (
 	updateWebhooksLong = templates.LongDesc(`
 		
-		Not currently implemented.
+		Updates the webhook for one repository, or all repositories in an organization.
 
 `)
 
 	updateWebhooksExample = templates.Examples(`
 
-		jx update webhooks
+		jx update webhooks --org=mycorp
 
 `)
 )
@@ -151,7 +151,7 @@ func (options *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, repoN
 				// update
 				webHookArgs := &gits.GitWebHookArguments{
 					Owner: options.Org,
-					Repo: &gits.GitRepositoryInfo{
+					Repo: &gits.GitRepository{
 						Name: repoName,
 					},
 					URL: webhookURL,

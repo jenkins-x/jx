@@ -27,6 +27,11 @@ type GitRepository struct {
 	Language         string
 	Fork             bool
 	Stars            int
+	URL              string
+	Scheme           string
+	Host             string
+	Organisation     string
+	Project          string
 }
 
 type GitPullRequest struct {
@@ -128,17 +133,17 @@ type GitRepoStatus struct {
 }
 
 type GitPullRequestArguments struct {
-	Title             string
-	Body              string
-	Head              string
-	Base              string
-	GitRepositoryInfo *GitRepositoryInfo
+	Title         string
+	Body          string
+	Head          string
+	Base          string
+	GitRepository *GitRepository
 }
 
 type GitWebHookArguments struct {
 	ID     int64
 	Owner  string
-	Repo   *GitRepositoryInfo
+	Repo   *GitRepository
 	URL    string
 	Secret string
 }
@@ -333,7 +338,7 @@ func (s *GitRepoStatus) IsFailed() bool {
 	return s.State == "error" || s.State == "failure"
 }
 
-func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.ConfigService, message string, batchMode bool, gitKind string, git Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
+func (i *GitRepository) PickOrCreateProvider(authConfigSvc auth.ConfigService, message string, batchMode bool, gitKind string, git Gitter, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
 	config := authConfigSvc.Config()
 	hostUrl := i.HostURLWithoutUser()
 	server := config.GetOrCreateServer(hostUrl)
@@ -350,7 +355,7 @@ func (i *GitRepositoryInfo) PickOrCreateProvider(authConfigSvc auth.ConfigServic
 	return i.CreateProviderForUser(server, userAuth, gitKind, git)
 }
 
-func (i *GitRepositoryInfo) CreateProviderForUser(server *auth.AuthServer, user *auth.UserAuth, gitKind string, git Gitter) (GitProvider, error) {
+func (i *GitRepository) CreateProviderForUser(server *auth.AuthServer, user *auth.UserAuth, gitKind string, git Gitter) (GitProvider, error) {
 	if i.Host == GitHubHost {
 		return NewGitHubProvider(server, user, git)
 	}
@@ -360,7 +365,7 @@ func (i *GitRepositoryInfo) CreateProviderForUser(server *auth.AuthServer, user 
 	return CreateProvider(server, user, git)
 }
 
-func (i *GitRepositoryInfo) CreateProvider(inCluster bool, authConfigSvc auth.ConfigService, gitKind string, git Gitter, batchMode bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
+func (i *GitRepository) CreateProvider(inCluster bool, authConfigSvc auth.ConfigService, gitKind string, git Gitter, batchMode bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
 	hostUrl := i.HostURLWithoutUser()
 	return CreateProviderForURL(inCluster, authConfigSvc, gitKind, hostUrl, git, batchMode, in, out, errOut)
 }
@@ -418,4 +423,13 @@ func createUserForServer(batchMode bool, userAuth *auth.UserAuth, authConfigSvc 
 		return userAuth, fmt.Errorf("you did not properly define the user authentication")
 	}
 	return userAuth, nil
+}
+
+// ToGitLabels converts the list of label names into an array of GitLabels
+func ToGitLabels(names []string) []GitLabel {
+	answer := []GitLabel{}
+	for _, n := range names {
+		answer = append(answer, GitLabel{Name: n})
+	}
+	return answer
 }

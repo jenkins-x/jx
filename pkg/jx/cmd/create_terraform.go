@@ -353,6 +353,11 @@ func (options *CreateTerraformOptions) Run() error {
 		return err
 	}
 
+	err = options.InstallOptions.InitOptions.validateGit()
+	if err != nil {
+		return err
+	}
+
 	if len(options.Flags.Cluster) >= 1 {
 		err := options.ValidateClusterDetails()
 		if err != nil {
@@ -790,7 +795,7 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 	if !options.Flags.GKESkipEnableApis {
 		options.Debugf("enabling apis for %s", g.Name())
 
-		err := gke.EnableApis(g.ProjectID, "iam", "compute", "container")
+		err := gke.EnableAPIs(g.ProjectID, "iam", "compute", "container")
 		if err != nil {
 			return err
 		}
@@ -912,7 +917,7 @@ func (options *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path str
 			}
 
 			options.Debugf("attempting to enable apis")
-			err = gke.EnableApis(g.ProjectID, "iam", "compute", "container")
+			err = gke.EnableAPIs(g.ProjectID, "iam", "compute", "container")
 			if err != nil {
 				return err
 			}

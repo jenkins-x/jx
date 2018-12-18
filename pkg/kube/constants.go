@@ -61,9 +61,6 @@ const (
 	// ServiceKubernetesDashboard the Kubernetes dashboard
 	ServiceKubernetesDashboard = "jenkins-x-kubernetes-dashboard"
 
-	// SecretJenkinsGitCredentials the git credentials secret
-	SecretJenkinsGitCredentials = "jenkins-git-credentials"
-
 	// SecretJenkinsChartMuseum the chart museum secret
 	SecretJenkinsChartMuseum = "jenkins-x-chartmuseum"
 

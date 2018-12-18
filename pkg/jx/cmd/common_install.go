@@ -687,18 +687,21 @@ func (o *CommonOptions) installVaultCli() error {
 }
 
 func (o *CommonOptions) installHelm() error {
-	// TODO temporary hack while we are on the 2.10-rc version:
-	/*
-		if runtime.GOOS == "darwin" && !o.NoBrew {
-			return o.runCommand("brew", "install", "kubernetes-helm")
+	binary := "helm"
+
+	if runtime.GOOS == "darwin" && !o.NoBrew {
+		err := o.RunCommand("brew", "install", "kubernetes-helm")
+		if err != nil {
+			return err
 		}
-	*/
+		return o.installHelmSecretsPlugin(binary, true)
+	}
 
 	binDir, err := util.JXBinLocation()
 	if err != nil {
 		return err
 	}
-	binary := "helm"
+
 	fileName, flag, err := shouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
@@ -834,6 +837,7 @@ func (o *CommonOptions) installHelm3() error {
 }
 
 func (o *CommonOptions) installHelmSecretsPlugin(helmBinary string, clientOnly bool) error {
+	log.Infof("Installing %s\n", util.ColorInfo("helm secrets plugin"))
 	err := o.Helm().Init(clientOnly, "", "", false)
 	if err != nil {
 		return errors.Wrap(err, "failed to initialize helm")
@@ -844,7 +848,7 @@ func (o *CommonOptions) installHelmSecretsPlugin(helmBinary string, clientOnly b
 		Args: []string{"plugin", "remove", "secrets"},
 	}
 	_, err = cmd.RunWithoutRetry()
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "secrets not found") {
 		return errors.Wrap(err, "failed to remove helm secrets")
 	}
 	cmd = util.Command{
@@ -1016,19 +1020,36 @@ func (o *CommonOptions) installKops() error {
 	return os.Chmod(fullPath, 0755)
 }
 
-func (o *CommonOptions) installKSync() (bool, error) {
+func (o *CommonOptions) installKSync() (string, error) {
 	binDir, err := util.JXBinLocation()
 	if err != nil {
-		return false, err
+		return "", err
 	}
 	binary := "ksync"
 	fileName, flag, err := shouldInstallBinary(binary)
 	if err != nil || !flag {
-		return false, err
+		// Exec `ksync` to find the version
+		ksyncCmd := util.Command{
+			Name: fileName,
+			Args: []string{
+				"version",
+			},
+		}
+		// Explicitly ignore any errors from ksync version, as we just need the output!
+		res, _ := ksyncCmd.RunWithoutRetry()
+		lines := strings.Split(res, "\n")
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if strings.HasPrefix(line, "Git Tag:") {
+				return strings.TrimSpace(strings.TrimPrefix(line, "Git Tag:")), nil
+			}
+		}
+
+		return "", fmt.Errorf("unable to find version of ksync")
 	}
 	latestVersion, err := util.GetLatestVersionFromGitHub("vapor-ware", "ksync")
 	if err != nil {
-		return false, err
+		return "", err
 	}
 	clientURL := fmt.Sprintf("https://github.com/vapor-ware/ksync/releases/download/%s/ksync_%s_%s", latestVersion, runtime.GOOS, runtime.GOARCH)
 	if runtime.GOOS == "windows" {
@@ -1038,13 +1059,13 @@ func (o *CommonOptions) installKSync() (bool, error) {
 	tmpFile := fullPath + ".tmp"
 	err = binaries.DownloadFile(clientURL, tmpFile)
 	if err != nil {
-		return false, err
+		return "", err
 	}
 	err = util.RenameFile(tmpFile, fullPath)
 	if err != nil {
-		return false, err
+		return "", err
 	}
-	return true, os.Chmod(fullPath, 0755)
+	return latestVersion.String(), os.Chmod(fullPath, 0755)
 }
 
 func (o *CommonOptions) installJx(upgrade bool, version string) error {
@@ -1312,7 +1333,8 @@ func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
 	return p, nil
 }
 
-func (o *CommonOptions) getClusterDependencies(deps []string) []string {
+func (o *CommonOptions) getClusterDependencies(depsToInstall []string) []string {
+	deps := o.filterInstalledDependencies(depsToInstall)
 	d := binaryShouldBeInstalled("kubectl")
 	if d != "" && util.StringArrayIndex(deps, d) < 0 {
 		deps = append(deps, d)
@@ -1335,11 +1357,19 @@ func (o *CommonOptions) getClusterDependencies(deps []string) []string {
 	return deps
 }
 
-func (o *CommonOptions) installMissingDependencies(providerSpecificDeps []string) error {
-	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
-	// get base list of required dependencies and add provider specific ones
-	deps := o.getClusterDependencies(providerSpecificDeps)
+func (o *CommonOptions) filterInstalledDependencies(deps []string) []string {
+	depsToInstall := []string{}
+	for _, d := range deps {
+		binary := binaryShouldBeInstalled(d)
+		if binary != "" {
+			depsToInstall = append(depsToInstall, binary)
+		}
+	}
+	return depsToInstall
+}
 
+func (o *CommonOptions) installMissingDependencies(providerSpecificDeps []string) error {
+	deps := o.getClusterDependencies(providerSpecificDeps)
 	if len(deps) == 0 {
 		return nil
 	}
@@ -1349,6 +1379,7 @@ func (o *CommonOptions) installMissingDependencies(providerSpecificDeps []string
 	if o.InstallDependencies {
 		install = append(install, deps...)
 	} else {
+		surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 		if o.BatchMode {
 			return errors.New(fmt.Sprintf("run without batch mode or manually install missing dependencies %v\n", deps))
 		}
@@ -1372,6 +1403,9 @@ func (o *CommonOptions) installRequirements(cloudProvider string, extraDependenc
 		deps = o.addRequiredBinary("ibmcloud", deps)
 	case AWS:
 		deps = o.addRequiredBinary("kops", deps)
+	case EKS:
+		deps = o.addRequiredBinary("eksctl", deps)
+		deps = o.addRequiredBinary("heptio-authenticator-aws", deps)
 	case AKS:
 		deps = o.addRequiredBinary("az", deps)
 	case GKE:

@@ -109,8 +109,8 @@ func (r *Requirements) SetAppVersion(app string, version string, repository stri
 	sort.Sort(DepSorter(r.Dependencies))
 }
 
-// RemoveApp removes the given app name. Returns true if a dependency was removed
-func (r *Requirements) RemoveApp(app string) bool {
+// RemoveApplication removes the given app name. Returns true if a dependency was removed
+func (r *Requirements) RemoveApplication(app string) bool {
 	for i, dep := range r.Dependencies {
 		if dep != nil && dep.Name == app {
 			r.Dependencies = append(r.Dependencies[:i], r.Dependencies[i+1:]...)
@@ -309,7 +309,8 @@ func CombineValueFilesToFile(outFile string, inputFiles []string, chartName stri
 }
 
 // GetLatestVersion get's the latest version of a chart in a repo using helmer
-func GetLatestVersion(chart string, repo string, helmer Helmer) (latest string, err error) {
+func GetLatestVersion(chart string, repo string, username string, password string, helmer Helmer) (latest string,
+	err error) {
 	dir, err := ioutil.TempDir("", "jx-helm-latest-version")
 	defer func() {
 		err1 := os.RemoveAll(dir)
@@ -318,7 +319,7 @@ func GetLatestVersion(chart string, repo string, helmer Helmer) (latest string, 
 		}
 	}()
 	// We should add the latest version, which we can do by fetching a chart with no version specified
-	err = helmer.FetchChart(chart, nil, true, dir, repo)
+	err = helmer.FetchChart(chart, nil, true, dir, repo, username, password)
 	if err != nil {
 		return "", err
 	}
@@ -338,6 +339,8 @@ type InstallChartOptions struct {
 	SetValues   []string
 	ValueFiles  []string
 	Repository  string
+	Username    string
+	Password    string
 }
 
 // InstallFromChartOptions uses the helmer and kubeClient interfaces to install the chart from the options,
@@ -362,5 +365,6 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 	}
 	helmer.SetCWD(options.Dir)
 	return helmer.UpgradeChart(options.Chart, options.ReleaseName, options.Ns, &options.Version, true,
-		&timeout, true, false, options.SetValues, options.ValueFiles, options.Repository)
+		&timeout, true, false, options.SetValues, options.ValueFiles, options.Repository, options.Username,
+		options.Password)
 }

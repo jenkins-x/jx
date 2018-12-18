@@ -20,7 +20,7 @@ import (
 type ModifyRequirementsFn func(requirements *helm.Requirements) error
 
 // ConfigureGitFolderFn callback to optionally configure git before its used for creating commits and PRs
-type ConfigureGitFolderFn func(dir string, gitInfo *gits.GitRepositoryInfo, gitAdapter gits.Gitter) error
+type ConfigureGitFolderFn func(dir string, gitInfo *gits.GitRepository, gitAdapter gits.Gitter) error
 
 type CreateEnvPullRequestFn func(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *gits.PullRequestInfo) (*gits.PullRequestInfo, error)
 
@@ -132,8 +132,14 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 	}
 
 	err = modifyRequirementsFn(requirements)
+	if err != nil {
+		return answer, err
+	}
 
 	err = helm.SaveRequirementsFile(requirementsFile, requirements)
+	if err != nil {
+		return answer, err
+	}
 
 	err = o.Git().Add(dir, "*", "*/*")
 	if err != nil {
@@ -179,7 +185,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 	}
 
 	gha := &gits.GitPullRequestArguments{
-		GitRepositoryInfo: gitInfo,
+		GitRepository: gitInfo,
 		Title:             asText(title),
 		Body:              asText(message),
 		Base:              base,

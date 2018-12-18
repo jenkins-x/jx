@@ -11,6 +11,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
 
@@ -198,24 +200,30 @@ func (g *GitCLI) Branch(dir string) (string, error) {
 	return g.gitCmdWithOutput(dir, "rev-parse", "--abbrev-ref", "HEAD")
 }
 
+// WriteOperation performs a generic write operation, with nicer error handling
+func (g *GitCLI) WriteOperation(dir string, args ...string) error {
+	return errors.Wrap(g.gitCmd(dir, args...),
+		"Have you set up a git credential helper? See https://help.github.com/articles/caching-your-github-password-in-git/\n")
+}
+
 // Push pushes the changes from the repository at the given directory
 func (g *GitCLI) Push(dir string) error {
-	return g.gitCmd(dir, "push", "origin", "HEAD")
+	return g.WriteOperation(dir, "push", "origin", "HEAD")
 }
 
 // ForcePushBranch does a force push of the local branch into the remote branch of the repository at the given directory
 func (g *GitCLI) ForcePushBranch(dir string, localBranch string, remoteBranch string) error {
-	return g.gitCmd(dir, "push", "-f", "origin", localBranch+":"+remoteBranch)
+	return g.WriteOperation(dir, "push", "-f", "origin", localBranch+":"+remoteBranch)
 }
 
 // PushMaster pushes the master branch into the origin
 func (g *GitCLI) PushMaster(dir string) error {
-	return g.gitCmd(dir, "push", "-u", "origin", "master")
+	return g.WriteOperation(dir, "push", "-u", "origin", "master")
 }
 
 // Pushtag pushes the given tag into the origin
 func (g *GitCLI) PushTag(dir string, tag string) error {
-	return g.gitCmd(dir, "push", "origin", tag)
+	return g.WriteOperation(dir, "push", "origin", tag)
 }
 
 // Add does a git add for all the given arguments
@@ -307,7 +315,7 @@ func (g *GitCLI) Server(dir string) (string, error) {
 }
 
 // Info returns the git info of the repository at the given directory
-func (g *GitCLI) Info(dir string) (*GitRepositoryInfo, error) {
+func (g *GitCLI) Info(dir string) (*GitRepository, error) {
 	text, err := g.gitCmdWithOutput(dir, "status")
 	var rUrl string
 	if err != nil && strings.Contains(text, "Not a git repository") {
@@ -482,9 +490,16 @@ func (g *GitCLI) RemoteBranchNames(dir string, prefix string) ([]string, error) 
 
 // GetPreviousGitTagSHA returns the previous git tag from the repository at the given directory
 func (g *GitCLI) GetPreviousGitTagSHA(dir string) (string, error) {
-	// when in a release branch we need to skip 2 rather that 1 to find the revision of the previous tag
-	// no idea why! :)
-	return g.gitCmdWithOutput(dir, "rev-list", "--tags", "--skip=2", "--max-count=1")
+	latestTag, err := g.gitCmdWithOutput(dir, "describe", "--abbrev=0", "--tags")
+	if err != nil {
+		return "", fmt.Errorf("failed to find latest tag for project in %s : %s", dir, err)
+	}
+
+	previousTag, err := g.gitCmdWithOutput(dir, "describe", "--abbrev=0", "--tags", "--always", latestTag+"^")
+	if err != nil {
+		return "", fmt.Errorf("failed to find previous tag for project in %s : %s", dir, err)
+	}
+	return previousTag, err
 }
 
 // GetRevisionBeforeDate returns the revision before the given date
@@ -543,7 +558,7 @@ func (g *GitCLI) PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServe
 }
 
 // IsFork indicates if the repository at the given directory is a fork
-func (g *GitCLI) IsFork(gitProvider GitProvider, gitInfo *GitRepositoryInfo, dir string) (bool, error) {
+func (g *GitCLI) IsFork(dir string) (bool, error) {
 	// lets ignore errors as that just means there's no config
 	originUrl, _ := g.gitCmdWithOutput(dir, "config", "--get", "remote.origin.url")
 	upstreamUrl, _ := g.gitCmdWithOutput(dir, "config", "--get", "remote.upstream.url")
@@ -551,21 +566,7 @@ func (g *GitCLI) IsFork(gitProvider GitProvider, gitInfo *GitRepositoryInfo, dir
 	if originUrl != upstreamUrl && originUrl != "" && upstreamUrl != "" {
 		return true, nil
 	}
-
-	repo, err := gitProvider.GetRepository(gitInfo.Organisation, gitInfo.Name)
-	if err != nil {
-		return false, err
-	}
-	return repo.Fork, nil
-}
-
-// ToGitLabels converts the list of label names into an array of GitLabels
-func (g *GitCLI) ToGitLabels(names []string) []GitLabel {
-	answer := []GitLabel{}
-	for _, n := range names {
-		answer = append(answer, GitLabel{Name: n})
-	}
-	return answer
+	return false, fmt.Errorf("could not confirm the repo is a fork")
 }
 
 // Version returns the git version

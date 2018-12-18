@@ -246,7 +246,7 @@ func (h *HelmTemplate) Version(tls bool) (string, error) {
 
 // InstallChart installs a helm chart according with the given flags
 func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string, version *string, timeout *int,
-	values []string, valueFiles []string, repo string) error {
+	values []string, valueFiles []string, repo string, username string, password string) error {
 
 	err := h.clearOutputDir(releaseName)
 	if err != nil {
@@ -254,7 +254,7 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 	}
 	outputDir, _, chartsDir, err := h.getDirectories(releaseName)
 
-	chartDir, err := h.fetchChart(chart, asText(version), chartsDir, repo)
+	chartDir, err := h.fetchChart(chart, asText(version), chartsDir, repo, username, password)
 	if err != nil {
 		return err
 	}
@@ -301,14 +301,16 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 }
 
 // Fetch a Helm Chart
-func (h *HelmTemplate) FetchChart(chart string, version *string, untar bool, untardir string, repo string) error {
-	_, err := h.fetchChart(chart, asText(version), untardir, repo)
+func (h *HelmTemplate) FetchChart(chart string, version *string, untar bool, untardir string, repo string,
+	username string, password string) error {
+	_, err := h.fetchChart(chart, asText(version), untardir, repo, username, password)
 	return err
 }
 
 // UpgradeChart upgrades a helm chart according with given helm flags
 func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string, version *string, install bool,
-	timeout *int, force bool, wait bool, values []string, valueFiles []string, repo string) error {
+	timeout *int, force bool, wait bool, values []string, valueFiles []string, repo string, username string,
+	password string) error {
 
 	err := h.clearOutputDir(releaseName)
 	if err != nil {
@@ -316,7 +318,7 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 	}
 	outputDir, _, chartsDir, err := h.getDirectories(releaseName)
 
-	chartDir, err := h.fetchChart(chart, asText(version), chartsDir, repo)
+	chartDir, err := h.fetchChart(chart, asText(version), chartsDir, repo, username, password)
 	if err != nil {
 		return err
 	}
@@ -455,8 +457,8 @@ func (h *HelmTemplate) StatusRelease(ns string, releaseName string) error {
 }
 
 // StatusReleases returns the status of all installed releases
-func (h *HelmTemplate) StatusReleases(ns string) (map[string]string, error) {
-	statusMap := map[string]string{}
+func (h *HelmTemplate) StatusReleases(ns string) (map[string]Release, error) {
+	statusMap := map[string]Release{}
 	if h.KubeClient == nil {
 		return statusMap, fmt.Errorf("No KubeClient configured!")
 	}
@@ -467,9 +469,15 @@ func (h *HelmTemplate) StatusReleases(ns string) (map[string]string, error) {
 	for _, deploy := range deployList.Items {
 		labels := deploy.Labels
 		if labels != nil {
-			release := labels[LabelReleaseName]
-			if release != "" {
-				statusMap[release] = "DEPLOYED"
+			releaseName := labels[LabelReleaseName]
+			release := Release{
+				Release: releaseName,
+				Status: "DEPLOYED",
+				Version: "",
+			}
+
+			if releaseName != "" {
+				statusMap[releaseName] = release
 			}
 		}
 	}
@@ -511,7 +519,8 @@ func (h *HelmTemplate) clearOutputDir(releaseName string) error {
 	return util.RecreateDirs(dir, helmDir, chartsDir)
 }
 
-func (h *HelmTemplate) fetchChart(chart string, version string, dir string, repo string) (string, error) {
+func (h *HelmTemplate) fetchChart(chart string, version string, dir string, repo string, username string,
+	password string) (string, error) {
 	exists, err := util.FileExists(chart)
 	if err != nil {
 		return "", err
@@ -530,6 +539,12 @@ func (h *HelmTemplate) fetchChart(chart string, version string, dir string, repo
 	}
 	if version != "" {
 		args = append(args, "--version", version)
+	}
+	if username != "" {
+		args = append(args, "--username", username)
+	}
+	if password != "" {
+		args = append(args, "--password", password)
 	}
 	err = h.Client.runHelm(args...)
 	if err != nil {

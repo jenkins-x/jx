@@ -250,8 +250,8 @@ func (p *GiteaProvider) UpdateWebHook(data *GitWebHookArguments) error {
 }
 
 func (p *GiteaProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
-	owner := data.GitRepositoryInfo.Organisation
-	repo := data.GitRepositoryInfo.Name
+	owner := data.GitRepository.Organisation
+	repo := data.GitRepository.Name
 	title := data.Title
 	body := data.Body
 	head := data.Head
@@ -277,8 +277,8 @@ func (p *GiteaProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPu
 	answer := &GitPullRequest{
 		URL:    pr.HTMLURL,
 		Number: &id,
-		Owner:  data.GitRepositoryInfo.Organisation,
-		Repo:   data.GitRepositoryInfo.Name,
+		Owner:  data.GitRepository.Organisation,
+		Repo:   data.GitRepository.Name,
 	}
 	if pr.Head != nil {
 		answer.LastCommitSha = pr.Head.Sha
@@ -324,7 +324,7 @@ func (p *GiteaProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	return nil
 }
 
-func (p *GiteaProvider) GetPullRequest(owner string, repo *GitRepositoryInfo, number int) (*GitPullRequest, error) {
+func (p *GiteaProvider) GetPullRequest(owner string, repo *GitRepository, number int) (*GitPullRequest, error) {
 	pr := &GitPullRequest{
 		Owner:  owner,
 		Repo:   repo.Name,
@@ -340,7 +340,7 @@ func (p *GiteaProvider) GetPullRequest(owner string, repo *GitRepositoryInfo, nu
 	return pr, err
 }
 
-func (p *GiteaProvider) GetPullRequestCommits(owner string, repository *GitRepositoryInfo, number int) ([]*GitCommit, error) {
+func (p *GiteaProvider) GetPullRequestCommits(owner string, repository *GitRepository, number int) ([]*GitCommit, error) {
 	answer := []*GitCommit{}
 
 	// TODO there does not seem to be any way to get a diff of commits

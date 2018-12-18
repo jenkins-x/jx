@@ -3,6 +3,8 @@ package kube_test
 import (
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
+
 	jenkinsio_v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	versiond_mocks "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -31,6 +33,7 @@ func TestEnsureDevEnvironmentSetup(t *testing.T) {
 				AskOnCreate:         false,
 				QuickstartLocations: kube.DefaultQuickstartLocations,
 				PromotionEngine:     jenkinsio_v1.PromotionEngineJenkins,
+				AppsRepository:      cmd.DEFAULT_CHARTMUSEUM_URL,
 			},
 		},
 	}
@@ -47,4 +50,5 @@ func TestEnsureDevEnvironmentSetup(t *testing.T) {
 	assert.Equal(t, false, env.Spec.TeamSettings.AskOnCreate)
 	assert.Equal(t, []jenkinsio_v1.QuickStartLocation([]jenkinsio_v1.QuickStartLocation{jenkinsio_v1.QuickStartLocation{GitURL: "https://github.com", GitKind: "github", Owner: "jenkins-x-quickstarts", Includes: []string{"*"}, Excludes: []string{"WIP-*"}}}), env.Spec.TeamSettings.QuickstartLocations)
 	assert.Equal(t, jenkinsio_v1.PromotionEngineType("Jenkins"), env.Spec.TeamSettings.PromotionEngine)
+	assert.Equal(t, envFixture.Spec.TeamSettings.AppsRepository, env.Spec.TeamSettings.AppsRepository)
 }

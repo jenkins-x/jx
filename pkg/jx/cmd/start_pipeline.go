@@ -6,6 +6,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/prow"
 	"io"
 	"k8s.io/api/core/v1"
+	"k8s.io/test-infra/prow/kube"
+	"k8s.io/test-infra/prow/pjutil"
 	"net/url"
 	"sort"
 	"strings"
@@ -19,7 +21,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	prowjobv1 "k8s.io/test-infra/prow/apis/prowjobs/v1"
 )
 
 const (
@@ -150,7 +152,7 @@ func (o *StartPipelineOptions) Run() error {
 	}
 	for _, a := range args {
 		if isProw {
-			err = o.createKnativeBuild(a)
+			err = o.createProwJob(a)
 			if err != nil {
 				return err
 			}
@@ -164,23 +166,22 @@ func (o *StartPipelineOptions) Run() error {
 	return nil
 }
 
-func (o *StartPipelineOptions) createKnativeBuild(job string) error {
-	c, _, err := o.Factory.CreateKnativeBuildClient()
-	if err != nil {
-		return err
-	}
-
-	parts := strings.Split(job, "/")
+func (o *StartPipelineOptions) createProwJob(jobname string) error {
+	parts := strings.Split(jobname, "/")
 	if len(parts) != 3 {
-		return fmt.Errorf("job name [%s] does not match org/repo/branch format", job)
+		return fmt.Errorf("job name [%s] does not match org/repo/branch format", jobname)
 	}
 	org := parts[0]
 	repo := parts[1]
 	branch := parts[2]
 
-	buildSpec, err := o.ProwOptions.GetBuildSpec(org, repo, branch)
+	postSubmitJob, err := o.ProwOptions.GetPostSubmitJob(org, repo, branch)
 	if err != nil {
 		return err
+	}
+	jobSpec := kube.ProwJobSpec{
+		BuildSpec: postSubmitJob.BuildSpec,
+		Agent:     prowjobv1.KnativeBuildAgent,
 	}
 
 	//todo needs to change when we add support for multiple git providers with Prow
@@ -191,16 +192,16 @@ func (o *StartPipelineOptions) createKnativeBuild(job string) error {
 			Revision: branch,
 		},
 	}
-	buildSpec.Source = sourceSpec
+	jobSpec.BuildSpec.Source = sourceSpec
 	env := map[string]string{}
 
 	// enrich with jenkins multi branch plugin env vars
 	env[jmbrBranchName] = branch
-	env[jmbrSourceURL] = buildSpec.Source.Git.Url
+	env[jmbrSourceURL] = jobSpec.BuildSpec.Source.Git.Url
 	env[repoOwnerEnv] = org
 	env[repoNameEnv] = repo
 
-	for i, step := range buildSpec.Steps {
+	for i, step := range jobSpec.BuildSpec.Steps {
 		if len(step.Env) == 0 {
 
 			step.Env = []v1.EnvVar{}
@@ -210,29 +211,34 @@ func (o *StartPipelineOptions) createKnativeBuild(job string) error {
 				Name:  k,
 				Value: v,
 			}
-			buildSpec.Steps[i].Env = append(buildSpec.Steps[i].Env, e)
+			jobSpec.BuildSpec.Steps[i].Env = append(jobSpec.BuildSpec.Steps[i].Env, e)
 		}
 	}
-	if buildSpec.Template != nil {
-		if len(buildSpec.Template.Env) == 0 {
+	if jobSpec.BuildSpec.Template != nil {
+		if len(jobSpec.BuildSpec.Template.Env) == 0 {
 
-			buildSpec.Template.Env = []v1.EnvVar{}
+			jobSpec.BuildSpec.Template.Env = []v1.EnvVar{}
 		}
 		for k, v := range env {
 			e := v1.EnvVar{
 				Name:  k,
 				Value: v,
 			}
-			buildSpec.Template.Env = append(buildSpec.Template.Env, e)
+			jobSpec.BuildSpec.Template.Env = append(jobSpec.BuildSpec.Template.Env, e)
 		}
 	}
-	build := build.Build{
-		Spec: *buildSpec,
-		ObjectMeta: metav1.ObjectMeta{
-			GenerateName: "jx",
-		},
+
+	p := pjutil.NewProwJob(jobSpec, nil)
+	p.Status = kube.ProwJobStatus{
+		State: kube.PendingState,
 	}
-	_, err = c.BuildV1alpha1().Builds(o.currentNamespace).Create(&build)
+	p.Spec.Refs = &kube.Refs{
+		BaseRef: branch,
+		Org:     org,
+		Repo:    repo,
+	}
+
+	_, err = prow.CreateProwJob(o.KubeClientCached, o.currentNamespace, p)
 	return err
 }
 

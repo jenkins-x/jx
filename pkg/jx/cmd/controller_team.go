@@ -3,7 +3,6 @@ package cmd
 import (
 	"io"
 	"io/ioutil"
-	"os"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -67,11 +66,11 @@ func NewCmdControllerTeam(f Factory, in terminal.FileReader, out terminal.FileWr
 // Run implements this command
 func (o *ControllerTeamOptions) Run() error {
 	co := &o.ControllerOptions
-	
+
 	// lets ensure helm is initialised
 	err := co.Helm().Init(true, "", "", false)
 	if err != nil {
-	  return errors.Wrapf(err, "failed to initialise helm")
+		return errors.Wrapf(err, "failed to initialise helm")
 	}
 
 	err = co.registerTeamCRD()
@@ -92,28 +91,9 @@ func (o *ControllerTeamOptions) Run() error {
 	}
 
 	// lets validate we have git configured
-	gitter := co.Git()
-	userName, _ := gitter.Username("")
-	userEmail, _ := gitter.Email("")
-	if userName == "" {
-		userName = os.Getenv("GIT_AUTHOR_NAME")
-		if userName == "" {
-			userName = "jenkins-x-bot"
-		}
-		err = gitter.SetUsername("", userName)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to set the git username to %s", userName)
-		}
-	}
-	if userEmail == "" {
-		userEmail = os.Getenv("GIT_AUTHOR_EMAIL")
-		if userEmail == "" {
-			userEmail = "jenkins-x@googlegroups.com"
-		}
-		err = gitter.SetEmail("", userEmail)
-		if err != nil {
-			return errors.Wrapf(err, "Failed to set the git email to %s", userEmail)
-		}
+	_, _, err = gits.EnsureUserAndEmailSetup(co.Git())
+	if err != nil {
+	  return err
 	}
 
 	// now lets setup the git secrets
@@ -184,20 +164,23 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		if settings == nil {
 			log.Errorf("No TeamSettings found!\n")
 		}
+
+		// lets default to no tiller as we can only support > 1 dev teams with no-tiller or helm3 today
+		// due to the globally unique naming of release in helm with a global tiller
+		o.InstallOptions.InitOptions.Flags.NoTiller = true
 		if err == nil && settings != nil {
-			if settings.HelmTemplate {
-				o.InstallOptions.InitOptions.Flags.NoTiller = true
-			} else if settings.NoTiller {
-				o.InstallOptions.InitOptions.Flags.RemoteTiller = false
-			} else if settings.HelmBinary == "helm3" {
+			if settings.HelmBinary == "helm3" {
 				o.InstallOptions.InitOptions.Flags.Helm3 = true
+				o.InstallOptions.InitOptions.Flags.NoTiller = false
 			}
-			if settings.PromotionEngine == v1.PromotionEngineProw {
+			if settings.NoTiller {
+				o.InstallOptions.InitOptions.Flags.RemoteTiller = false
+			} else if settings.PromotionEngine == v1.PromotionEngineProw {
 				o.InstallOptions.Flags.Prow = true
 			}
 		}
 
-		err = oc.ModifyTeam(teamNs, func(team *v1.Team) error {
+		err = oc.ModifyTeam(adminNs, team.Name, func(team *v1.Team) error {
 			team.Status.ProvisionStatus = v1.TeamProvisionStatusPending
 			team.Status.Message = "Installing resources"
 			return nil
@@ -255,7 +238,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			provider = adminTeamSettings.KubeProvider
 		}
 		if provider == "" {
-			log.Warnf("No kube provider specified on admin team settings %s\n", adminNs)
+			log.Warnf("No kube provider specified on admin team settings %s\n. Defaulting to gke", adminNs)
 			provider = "gke"
 		}
 		io.Flags.Provider = provider
@@ -299,7 +282,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		err = io.Run()
 		if err != nil {
 			log.Errorf("Unable to install jx for team %s: %s", util.ColorInfo(teamNs), err)
-			err = oc.ModifyTeam(teamNs, func(team *v1.Team) error {
+			err = oc.ModifyTeam(adminNs, team.Name, func(team *v1.Team) error {
 				team.Status.ProvisionStatus = v1.TeamProvisionStatusError
 				team.Status.Message = err.Error()
 				return nil
@@ -323,7 +306,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			}
 		}
 
-		err = oc.ModifyTeam(teamNs, func(team *v1.Team) error {
+		err = oc.ModifyTeam(adminNs, team.Name, func(team *v1.Team) error {
 			team.Status.ProvisionStatus = v1.TeamProvisionStatusComplete
 			team.Status.Message = "Installation complete"
 			return nil

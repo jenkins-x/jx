@@ -41,7 +41,8 @@ func (FakeHelmer) Env() map[string]string {
 }
 
 // FetchChart fake
-func (FakeHelmer) FetchChart(chart string, version *string, untar bool, untardir string, repo string) error {
+func (FakeHelmer) FetchChart(chart string, version *string, untar bool, untardir string, repo string,
+	username string, password string) error {
 	return nil
 }
 
@@ -62,7 +63,7 @@ func (FakeHelmer) Init(clientOnly bool, serviceAccount string, tillerNamespace s
 
 // InstallChart fake
 func (FakeHelmer) InstallChart(chart string, releaseName string, ns string, version *string, timeout *int,
-	values []string, valueFiles []string, repo string) error {
+	values []string, valueFiles []string, repo string, username string, password string) error {
 	return nil
 }
 
@@ -129,8 +130,8 @@ func (FakeHelmer) StatusRelease(ns string, releaseName string) error {
 }
 
 // StatusReleases fake
-func (FakeHelmer) StatusReleases(ns string) (map[string]string, error) {
-	return map[string]string{}, nil
+func (FakeHelmer) StatusReleases(ns string) (map[string]helm.Release, error) {
+	return map[string]helm.Release{}, nil
 }
 
 // UpdateRepo fake
@@ -140,7 +141,8 @@ func (FakeHelmer) UpdateRepo() error {
 
 // UpgradeChart fake
 func (FakeHelmer) UpgradeChart(chart string, releaseName string, ns string, version *string, install bool,
-	timeout *int, force bool, wait bool, values []string, valueFiles []string, repo string) error {
+	timeout *int, force bool, wait bool, values []string, valueFiles []string, repo string, username string,
+	password string) error {
 	return nil
 }
 

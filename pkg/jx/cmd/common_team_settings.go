@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/builds"
 	"io"
 	"os/user"
 	"reflect"
 	"strconv"
+
+	"github.com/jenkins-x/jx/pkg/builds"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -25,7 +26,7 @@ type BranchPatterns struct {
 }
 
 const (
-	defaultHelmBin          = "helm"
+	defaultHelmBin = "helm"
 )
 
 // TeamSettings returns the team settings
@@ -232,8 +233,9 @@ func (o *CommonOptions) registerWorkflowCRD() error {
 	return nil
 }
 
-// ModifyTeam lazily creates the team if it does not exist or updates it if it requires a change
-func (o *CommonOptions) ModifyTeam(teamName string, callback func(env *v1.Team) error) error {
+// ModifyTeam lazily creates the Team CRD if it does not exist or updates it if it requires a change.
+// The Team CRD will be modified in the specified admin namespace.
+func (o *CommonOptions) ModifyTeam(adminNs string, teamName string, callback func(env *v1.Team) error) error {
 	err := o.registerTeamCRD()
 	if err != nil {
 		return err
@@ -242,11 +244,12 @@ func (o *CommonOptions) ModifyTeam(teamName string, callback func(env *v1.Team) 
 	if err != nil {
 		return err
 	}
-	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	//Ignore admin NS returned here and use the one provided; JXClientAndAdminNamespace is returning the dev NS atm.
+	jxClient, _, err := o.JXClientAndAdminNamespace()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the jx client")
 	}
-	ns, err := kube.GetAdminNamespace(kubeClient, devNs)
+	ns, err := kube.GetAdminNamespace(kubeClient, adminNs)
 	if err != nil {
 		return err
 	}

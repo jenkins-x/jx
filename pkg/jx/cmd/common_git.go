@@ -17,7 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (o *CommonOptions) FindGitInfo(dir string) (*gits.GitRepositoryInfo, error) {
+func (o *CommonOptions) FindGitInfo(dir string) (*gits.GitRepository, error) {
 	_, gitConf, err := o.Git().FindGitConfigDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("Could not find a .git directory: %s\n", err)
@@ -34,7 +34,7 @@ func (o *CommonOptions) FindGitInfo(dir string) (*gits.GitRepositoryInfo, error)
 }
 
 // createGitProvider creates a git from the given directory
-func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepositoryInfo, gits.GitProvider, issues.IssueProvider, error) {
+func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepository, gits.GitProvider, issues.IssueProvider, error) {
 	gitDir, gitConfDir, err := o.Git().FindGitConfigDir(dir)
 	if err != nil {
 		return nil, nil, nil, err
@@ -124,6 +124,15 @@ func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServ
 		return name, fmt.Errorf("Failed to %s secret %s due to %s", operation, secret.Name, err)
 	}
 
+	prow, err := o.isProw()
+	if err != nil {
+		return name, err
+	}
+	if prow {
+		return name, nil
+	}
+
+	// update the Jenkins config
 	cm, err := client.CoreV1().ConfigMaps(ns).Get(kube.ConfigMapJenkinsX, metav1.GetOptions{})
 	if err != nil {
 		return name, fmt.Errorf("Could not load Jenkins ConfigMap: %s", err)
@@ -246,7 +255,7 @@ func addGitRepoOptionsArguments(cmd *cobra.Command, repositoryOptions *gits.GitR
 	cmd.Flags().BoolVarP(&repositoryOptions.Private, "git-private", "", false, "Create new Git repositories as private")
 }
 
-func (o *CommonOptions) GitServerKind(gitInfo *gits.GitRepositoryInfo) (string, error) {
+func (o *CommonOptions) GitServerKind(gitInfo *gits.GitRepository) (string, error) {
 	return o.GitServerHostURLKind(gitInfo.HostURL())
 }
 
@@ -304,4 +313,21 @@ func (o *CommonOptions) gitProviderForGitServerURL(gitServiceUrl string, gitKind
 		return nil, err
 	}
 	return gits.CreateProviderForURL(o.Factory.IsInCluster(), authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+}
+
+func (o *CommonOptions) createGitProviderForURLWithoutKind(gitURL string) (gits.GitProvider, *gits.GitRepository, error) {
+	gitInfo, err := gits.ParseGitURL(gitURL)
+	if err != nil {
+		return nil, gitInfo, err
+	}
+	gitKind, err := o.GitServerKind(gitInfo)
+	if err != nil {
+		return nil, gitInfo, err
+	}
+	authConfigSvc, err := o.CreateGitAuthConfigService()
+	if err != nil {
+		return nil, gitInfo, err
+	}
+	gitProvider, err := gits.CreateProviderForURL(o.Factory.IsInCluster(), authConfigSvc, gitKind, gitInfo.HostURL(), o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	return gitProvider, gitInfo, err
 }

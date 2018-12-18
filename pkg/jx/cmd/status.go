@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/util"
 	"io"
 	"time"
 
@@ -111,7 +112,7 @@ func (o *StatusOptions) Run() error {
 		return err
 	}
 	if resourceStr != "" {
-		log.Warnf("Jenkins X installed for %s. Jenkins is running at %s. Need more %s\n", clusterStatus.Info(), jenkinsURL, resourceStr)
+		log.Warnf("Jenkins X installed for %s. Jenkins is running at %s. %s\n", clusterStatus.Info(), jenkinsURL, util.ColorWarning(resourceStr))
 	} else {
 		log.Successf("Jenkins X checks passed for %s. Jenkins is running at %s\n", clusterStatus.Info(), jenkinsURL)
 	}

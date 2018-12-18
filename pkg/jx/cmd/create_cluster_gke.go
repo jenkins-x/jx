@@ -1,9 +1,12 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/io/secrets"
+	"fmt"
 	"io"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/io/secrets"
+	"github.com/pkg/errors"
 
 	osUser "os/user"
 
@@ -43,6 +46,8 @@ type CreateClusterGKEFlags struct {
 	Zone            string
 	Namespace       string
 	Labels          string
+	Scopes          []string
+	Preemptible 	bool
 }
 
 const clusterListHeader = "PROJECT_ID"
@@ -107,6 +112,8 @@ func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.File
 	cmd.Flags().StringVarP(&options.Flags.Zone, "zone", "z", "", "The compute zone (e.g. us-central1-a) for the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
 	cmd.Flags().StringVarP(&options.Flags.Labels, "labels", "", "", "The labels to add to the cluster being created such as 'foo=bar,whatnot=123'. Label names must begin with a lowercase character ([a-z]), end with a lowercase alphanumeric ([a-z0-9]) with dashes (-), and lowercase alphanumeric ([a-z0-9]) between.")
+	cmd.Flags().StringArrayVarP(&options.Flags.Scopes, "scope", "", []string{}, "The OAuth scopes to be added to the cluster")
+	cmd.Flags().BoolVarP(&options.Flags.Preemptible, "preemptible", "", false, "Use preemptible VMs in the node-pool")
 
 	cmd.AddCommand(NewCmdCreateClusterGKETerraform(f, in, out, errOut))
 
@@ -248,6 +255,14 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		args = append(args, "--subnetwork", o.Flags.SubNetwork)
 	}
 
+	if len(o.Flags.Scopes) > 0 {
+		args = append(args, fmt.Sprintf("--scopes=%s", strings.Join(o.Flags.Scopes, ",")))
+	}
+
+	if o.Flags.Preemptible {
+		args = append(args, "--preemptible")
+	}
+
 	labels := o.Flags.Labels
 	user, err := osUser.Current()
 	if err == nil && user != nil {
@@ -313,7 +328,10 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		if err = InstallVaultOperator(&o.CommonOptions, ""); err != nil {
 			return err
 		}
-		secrets.NewSecretLocation(kubeClient, ns).SetInVault(true)
+		err = secrets.NewSecretLocation(kubeClient, ns).SetInVault(true)
+		if err != nil {
+			return errors.Wrap(err, "configring secrets location")
+		}
 	}
 
 	return nil

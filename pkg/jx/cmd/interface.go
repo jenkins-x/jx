@@ -53,14 +53,13 @@ type Factory interface {
 
 	CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error)
 
-	CreateClient() (kubernetes.Interface, string, error)
+	CreateKubeClient() (kubernetes.Interface, string, error)
 
 	CreateGitProvider(string, string, auth.ConfigService, string, bool, gits.Gitter, terminal.FileReader, terminal.FileWriter, io.Writer) (gits.GitProvider, error)
 
 	CreateKubeConfig() (*rest.Config, error)
 
-	//Create a JXclient for interacting with JX resources.
-	//Returns: JXClient, current namespace, error.
+	// CreateJXClienta creates a JXclient for interacting with JX resources.
 	CreateJXClient() (versioned.Interface, string, error)
 
 	CreateApiExtensionsClient() (apiextensionsclientset.Interface, error)
@@ -86,6 +85,9 @@ type Factory interface {
 	CreateVaultOperatorClient() (vaultoperatorclient.Interface, error)
 
 	GetHelm(verbose bool, helmBinary string, noTiller bool, helmTemplate bool) helm.Helmer
+
+	// UseVault indicates if the platform is using a Vault to manage the secrets
+	UseVault() bool
 
 	// GetSystemVaultClient gets the system vault client for managing the secreets
 	GetSystemVaultClient() (vault.Client, error)

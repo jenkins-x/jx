@@ -1,6 +1,8 @@
 package cmd_test
 
 import (
+	"testing"
+
 	"github.com/Netflix/go-expect"
 	"github.com/jenkins-x/jx/pkg/gits/mocks"
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
@@ -12,7 +14,6 @@ import (
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd/api"
-	"testing"
 
 	. "github.com/petergtz/pegomock"
 )
@@ -145,10 +146,11 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t
 
 	o := &cmd.UninstallOptions{
 		CommonOptions: cmd.CommonOptions{
-			Kuber: kubeMock,
-			In:    console.In,
-			Out:   console.Out,
-			Err:   console.Err,
+			Factory: cmd_test.NewMockFactory(),
+			Kuber:   kubeMock,
+			In:      console.In,
+			Out:     console.Out,
+			Err:     console.Err,
 		},
 		Namespace: "ns",
 	}

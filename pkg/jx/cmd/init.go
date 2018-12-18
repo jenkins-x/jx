@@ -427,7 +427,6 @@ func (o *InitOptions) initHelm() error {
 	return nil
 }
 
-
 func (o *InitOptions) configureForICP() {
 	icpDefaultTillerNS := "default"
 	icpDefaultNS := "jx"
@@ -639,7 +638,7 @@ controller:
 		for {
 			log.Infof("Installing using helm binary: %s\n", util.ColorInfo(o.Helm().HelmBinary()))
 			err = o.Helm().InstallChart("stable/nginx-ingress", "jxing", ingressNamespace, nil, nil, values,
-				valuesFiles, "")
+				valuesFiles, "", "", "")
 			if err != nil {
 				if i >= 3 {
 					log.Errorf("Failed to install ingress chart: %s", err)
@@ -925,4 +924,3 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 
 	return domain, nil
 }
-

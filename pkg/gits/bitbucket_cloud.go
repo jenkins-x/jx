@@ -306,7 +306,7 @@ func (b *BitbucketCloudProvider) CreatePullRequest(
 ) (*GitPullRequest, error) {
 
 	head := bitbucket.PullrequestEndpointBranch{Name: data.Head}
-	sourceFullName := fmt.Sprintf("%s/%s", data.GitRepositoryInfo.Organisation, data.GitRepositoryInfo.Name)
+	sourceFullName := fmt.Sprintf("%s/%s", data.GitRepository.Organisation, data.GitRepository.Name)
 	sourceRepo := bitbucket.Repository{FullName: sourceFullName}
 	source := bitbucket.PullrequestEndpoint{
 		Repository: &sourceRepo,
@@ -330,8 +330,8 @@ func (b *BitbucketCloudProvider) CreatePullRequest(
 
 	pr, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPost(
 		b.Context,
-		data.GitRepositoryInfo.Organisation,
-		data.GitRepositoryInfo.Name,
+		data.GitRepository.Organisation,
+		data.GitRepository.Name,
 		options,
 	)
 
@@ -341,8 +341,8 @@ func (b *BitbucketCloudProvider) CreatePullRequest(
 
 	_, _, err = b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdGet(
 		b.Context,
-		data.GitRepositoryInfo.Organisation,
-		data.GitRepositoryInfo.Name,
+		data.GitRepository.Organisation,
+		data.GitRepository.Name,
 		pr.Id,
 	)
 
@@ -351,8 +351,8 @@ func (b *BitbucketCloudProvider) CreatePullRequest(
 		for i := 0; i < 30; i++ {
 			_, _, err = b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdGet(
 				b.Context,
-				data.GitRepositoryInfo.Organisation,
-				data.GitRepositoryInfo.Name,
+				data.GitRepository.Organisation,
+				data.GitRepository.Name,
 				pr.Id,
 			)
 
@@ -427,7 +427,7 @@ func (b *BitbucketCloudProvider) UpdatePullRequestStatus(pr *GitPullRequest) err
 	return nil
 }
 
-func (p *BitbucketCloudProvider) GetPullRequest(owner string, repoInfo *GitRepositoryInfo, number int) (*GitPullRequest, error) {
+func (p *BitbucketCloudProvider) GetPullRequest(owner string, repoInfo *GitRepository, number int) (*GitPullRequest, error) {
 	repo := repoInfo.Name
 	pr, _, err := p.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdGet(
 		p.Context,
@@ -472,7 +472,7 @@ func (p *BitbucketCloudProvider) GetPullRequest(owner string, repoInfo *GitRepos
 	}, nil
 }
 
-func (b *BitbucketCloudProvider) GetPullRequestCommits(owner string, repository *GitRepositoryInfo, number int) ([]*GitCommit, error) {
+func (b *BitbucketCloudProvider) GetPullRequestCommits(owner string, repository *GitRepository, number int) ([]*GitCommit, error) {
 	repo := repository.Name
 	answer := []*GitCommit{}
 

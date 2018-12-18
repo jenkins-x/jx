@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"io"
+
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
 	"github.com/pkg/errors"
 
@@ -120,12 +121,24 @@ func (o *UninstallOptions) Run() error {
 			}
 		}
 	}
+
 	errs := []error{}
-	o.Helm().DeleteRelease(namespace, "jx-prow", true)
-	err = o.Helm().DeleteRelease(namespace, "jenkins-x", true)
-	if err != nil {
-		errs = append(errs, fmt.Errorf("failed to uninstall the jenkins-x helm chart in namespace %s: %s", namespace, err))
+
+	err = o.Helm().StatusRelease(namespace, "jx-prow")
+	if err == nil {
+		err := o.Helm().DeleteRelease(namespace, "jx-prow", true)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to uninstall the prow helm chart in namespace %s: %s", namespace, err))
+		}
 	}
+	err = o.Helm().StatusRelease(namespace, "jenkins-x")
+	if err == nil {
+		err = o.Helm().DeleteRelease(namespace, "jenkins-x", true)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to uninstall the jenkins-x helm chart in namespace %s: %s", namespace, err))
+		}
+	}
+
 	err = jxClient.JenkinsV1().Environments(namespace).DeleteCollection(&meta_v1.DeleteOptions{}, meta_v1.ListOptions{})
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to delete the environments in namespace %s: %s", namespace, err))
@@ -144,12 +157,12 @@ func (o *UninstallOptions) Run() error {
 func (o *UninstallOptions) cleanupNamespaces(namespace string, envNames []string, envMap map[string]*v1.Environment) error {
 	client, _, err := o.KubeClient()
 	if err != nil {
-		return errors.Wrap(err, "failed to get the kube client")
+		return errors.Wrap(err, "getting the kube client")
 	}
 	errs := []error{}
 	err = o.deleteNamespace(namespace)
 	if err != nil {
-		errs = append(errs, fmt.Errorf("failed to delete namespace %s: %s", namespace, err))
+		errs = append(errs, fmt.Errorf("deleting namespace %s: %s", namespace, err))
 	}
 	if !o.KeepEnvironments {
 		for _, env := range envNames {
@@ -160,7 +173,7 @@ func (o *UninstallOptions) cleanupNamespaces(namespace string, envNames []string
 			if envResource != nil {
 				envNamespace = envResource.Spec.Namespace
 			}
-			if envNamespace != "" && envNamespaces[0] != envNamespace {
+			if envNamespace != "" && envNamespaces[0] != envNamespace && envNamespace != namespace {
 				envNamespaces = append(envNamespaces, envNamespace)
 			}
 			for _, envNamespace := range envNamespaces {
@@ -170,7 +183,7 @@ func (o *UninstallOptions) cleanupNamespaces(namespace string, envNames []string
 				}
 				err = o.deleteNamespace(envNamespace)
 				if err != nil {
-					errs = append(errs, fmt.Errorf("failed to delete namespace %s: %s", envNamespace, err))
+					errs = append(errs, fmt.Errorf("deleting environment namespace %s: %s", envNamespace, err))
 				}
 			}
 		}
@@ -181,19 +194,24 @@ func (o *UninstallOptions) cleanupNamespaces(namespace string, envNames []string
 func (o *UninstallOptions) deleteNamespace(namespace string) error {
 	client, _, err := o.KubeClient()
 	if err != nil {
-		return errors.Wrap(err, "failed to get the kube client")
+		return errors.Wrap(err, "getting the kube client")
+	}
+	_, err = client.CoreV1().Namespaces().Get(namespace, meta_v1.GetOptions{})
+	if err != nil {
+		// There is nothing to delete if the namespace cannot be retrieved
+		return nil
 	}
 	log.Infof("deleting namespace %s\n", util.ColorInfo(namespace))
 	err = client.CoreV1().Namespaces().Delete(namespace, &meta_v1.DeleteOptions{})
 	if err != nil {
-		return errors.Wrapf(err, "failed to delete the namespace '%s'", namespace)
+		return errors.Wrapf(err, "deleting the namespace '%s' from Kubernetes cluster", namespace)
 	}
 	return nil
 }
 
 func (o *UninstallOptions) cleanupConfig() error {
 	authConfigSvc, err := o.Factory.CreateAuthConfigService(JenkinsAuthConfigFile)
-	if err != nil {
+	if err != nil || authConfigSvc == nil {
 		return nil
 	}
 	server := authConfigSvc.Config().CurrentServer

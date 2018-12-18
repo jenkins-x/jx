@@ -234,9 +234,14 @@ func (h *HelmCLI) BuildDependency() error {
 
 // InstallChart installs a helm chart according with the given flags
 func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, version *string, timeout *int,
-	values []string, valueFiles []string, repo string) error {
+	values []string, valueFiles []string, repo string, username string, password string) error {
 	args := []string{}
 	args = append(args, "install", "--wait", "--name", releaseName, "--namespace", ns, chart)
+	repo, err := addUsernamePasswordToURL(repo, username, password)
+	if err != nil {
+		return err
+	}
+
 	if timeout != nil {
 		args = append(args, "--timeout", strconv.Itoa(*timeout))
 	}
@@ -252,6 +257,12 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 	if repo != "" {
 		args = append(args, "--repo", repo)
 	}
+	if username != "" {
+		args = append(args, "--username", username)
+	}
+	if password != "" {
+		args = append(args, "--password", password)
+	}
 	if h.Debug {
 		log.Infof("Installing Chart '%s'\n", util.ColorInfo(strings.Join(args, " ")))
 	}
@@ -260,14 +271,27 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 }
 
 // Fetch a Helm Chart
-func (h *HelmCLI) FetchChart(chart string, version *string, untar bool, untardir string, repo string) error {
+func (h *HelmCLI) FetchChart(chart string, version *string, untar bool, untardir string, repo string,
+	username string, password string) error {
 	args := []string{}
 	args = append(args, "fetch", chart)
+	repo, err := addUsernamePasswordToURL(repo, username, password)
+	if err != nil {
+		return err
+	}
+
 	if untardir != "" {
 		args = append(args, "--untardir", untardir)
 	}
 	if untar {
 		args = append(args, "--untar")
+	}
+
+	if username != "" {
+		args = append(args, "--username", username)
+	}
+	if password != "" {
+		args = append(args, "--password", password)
 	}
 
 	if version != nil {
@@ -311,10 +335,16 @@ func (h *HelmCLI) Template(chart string, releaseName string, ns string, outDir s
 
 // UpgradeChart upgrades a helm chart according with given helm flags
 func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, version *string, install bool,
-	timeout *int, force bool, wait bool, values []string, valueFiles []string, repo string) error {
+	timeout *int, force bool, wait bool, values []string, valueFiles []string, repo string, username string,
+	password string) error {
 	args := []string{}
 	args = append(args, "upgrade")
 	args = append(args, "--namespace", ns)
+	repo, err := addUsernamePasswordToURL(repo, username, password)
+	if err != nil {
+		return err
+	}
+
 	if install {
 		args = append(args, "--install")
 	}
@@ -338,6 +368,12 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 	}
 	if repo != "" {
 		args = append(args, "--repo", repo)
+	}
+	if username != "" {
+		args = append(args, "--username", username)
+	}
+	if password != "" {
+		args = append(args, "--password", password)
 	}
 	args = append(args, releaseName, chart)
 
@@ -424,19 +460,29 @@ func (h *HelmCLI) StatusRelease(ns string, releaseName string) error {
 }
 
 // StatusReleases returns the status of all installed releases
-func (h *HelmCLI) StatusReleases(ns string) (map[string]string, error) {
+func (h *HelmCLI) StatusReleases(ns string) (map[string]Release, error) {
 	output, err := h.ListCharts()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list the installed chart releases")
 	}
 	lines := strings.Split(output, "\n")
-	statusMap := map[string]string{}
+	statusMap := map[string]Release{}
 	for _, line := range lines[1:] {
 		fields := strings.Split(line, "\t")
 		if len(fields) > 3 {
 			release := strings.TrimSpace(fields[0])
-			status := strings.TrimSpace(fields[3])
-			statusMap[release] = status
+
+			versionRaw := strings.TrimSpace(fields[4])
+			versionRawSplit := strings.Split(versionRaw, "-")
+			version := versionRawSplit[len(versionRawSplit)-1]
+
+			helmRelease := Release{
+				Release: strings.TrimSpace(fields[0]),
+				Status:  strings.TrimSpace(fields[3]),
+				Version: version,
+			}
+
+			statusMap[release] = helmRelease
 		}
 	}
 	return statusMap, nil
@@ -474,4 +520,18 @@ func (h *HelmCLI) PackageChart() error {
 
 func (h *HelmCLI) DecryptSecrets(location string) error {
 	return h.runHelm("secrets", "dec", location)
+}
+
+// Helm really prefers to have the username and password embedded in the URL (ugh) so this
+// function makes that happen
+func addUsernamePasswordToURL(urlStr string, username string, password string) (string, error) {
+	if urlStr != "" && username != "" && password != "" {
+		u, err := url.Parse(urlStr)
+		if err != nil {
+			return "", err
+		}
+		u.User = url.UserPassword(username, password)
+		return u.String(), nil
+	}
+	return urlStr, nil
 }

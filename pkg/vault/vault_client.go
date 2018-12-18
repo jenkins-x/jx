@@ -17,9 +17,6 @@ type Client interface {
 	// WriteObject writes a generic named object to the vault. The secret _must_ be serializable to JSON
 	WriteObject(secretName string, secret interface{}) (map[string]interface{}, error)
 
-	// WriteSecrets writes a generic Map of secrets to vault under a specific path
-	WriteSecrets(path string, secretsToSave map[string]interface{}) error
-
 	// WriteYaml writes a yaml object to a named secret
 	WriteYaml(secretName string, yamlstring string) (map[string]interface{}, error)
 
@@ -63,29 +60,6 @@ func (v *client) WriteObject(secretName string, secret interface{}) (map[string]
 	return v.Write(secretName, m)
 }
 
-// WriteSecrets writes a generic Map of secrets to vault under a specific path
-func (v *client) WriteSecrets(path string, secretsToSave map[string]interface{}) error {
-	var err error
-	for secretName, secret := range secretsToSave {
-		secretName = secretName + path
-		switch secret.(type) {
-		case []byte:
-			// secret is a plain byte array. We shouldn't be doing this. Legacy. We should be saving properly typed objects
-			_, err = v.WriteYaml(secretName, string(secret.([]byte)[:]))
-		case string:
-			// secret is a string. We shouldn't be doing this. Legacy. We should be saving properly typed objects
-			_, err = v.WriteYaml(secretName, secret.(string))
-		default:
-			// secret is an interface. This is what we should be doing
-			_, err = v.WriteObject(secretName, secret)
-		}
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // WriteYaml writes a yaml object to a named secret
 func (v *client) WriteYaml(secretName string, y string) (map[string]interface{}, error) {
 	// Unmarshal to a generic map
@@ -110,6 +84,9 @@ func (v *client) List(path string) ([]string, error) {
 	}
 
 	secretNames := make([]string, 0)
+	if secrets == nil {
+		return secretNames, nil
+	}
 	for _, s := range secrets.Data["keys"].([]interface{}) {
 		if orig, ok := s.(string); ok {
 			secretNames = append(secretNames, orig)
@@ -132,10 +109,4 @@ func (v *client) Read(secretName string) (map[string]interface{}, error) {
 func (v *client) Config() (vaultURL url.URL, vaultToken string, err error) {
 	parsed, err := url.Parse(v.client.Address())
 	return *parsed, v.client.Token(), err
-}
-
-// secretPath generates a secret path from the secret name for storing in vault
-// this just makes sure it gets stored under /secret
-func secretPath(secretName string) string {
-	return "secret/" + secretName
 }

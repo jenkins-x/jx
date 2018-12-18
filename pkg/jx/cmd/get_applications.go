@@ -2,7 +2,10 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/kube/services"
+	"github.com/jenkins-x/jx/pkg/table"
+	"github.com/pkg/errors"
 	"io"
+	"k8s.io/client-go/kubernetes"
 	"os/user"
 	"sort"
 	"strings"
@@ -51,8 +54,8 @@ type EnvApps struct {
 type ApplicationEnvironmentInfo struct {
 	Deployment  *v1beta1.Deployment
 	Environment *v1.Environment
-	Version string
-	URL     string
+	Version     string
+	URL         string
 }
 
 var (
@@ -114,33 +117,118 @@ func NewCmdGetApplications(f Factory, in terminal.FileReader, out terminal.FileW
 
 // Run implements this command
 func (o *GetApplicationsOptions) Run() error {
-	f := o.Factory
-	client, currentNs, err := f.CreateJXClient()
-	if err != nil {
-		return err
-	}
 	kubeClient, _, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
-	u, err := user.Current()
+
+	namespaces, envApps, envNames, apps, err := o.getAppData(kubeClient)
 	if err != nil {
 		return err
+	}
+
+	util.ReverseStrings(namespaces)
+	if len(apps) == 0 {
+		log.Infof("No applications found in environments %s\n", strings.Join(envNames, ", "))
+		return nil
+	}
+	sort.Strings(apps)
+
+	o.Results.EnvApps = envApps
+	o.Results.EnvNames = envNames
+
+	table := o.generateTable(apps, envApps, kubeClient)
+
+	table.Render()
+	return nil
+}
+
+func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps, kubeClient kubernetes.Interface) table.Table {
+	table := o.generateTableHeaders(envApps)
+
+	appEnvMap := map[string]map[string]*ApplicationEnvironmentInfo{}
+	for _, appName := range apps {
+		row := []string{appName}
+		for _, ea := range envApps {
+			version := ""
+			d, ok := ea.Apps[appName]
+			if ok {
+				appMap := appEnvMap[appName]
+				if appMap == nil {
+					appMap = map[string]*ApplicationEnvironmentInfo{}
+					appEnvMap[appName] = appMap
+				}
+				version = kube.GetVersion(&d.ObjectMeta)
+				appEnvInfo := &ApplicationEnvironmentInfo{
+					Deployment:  &d,
+					Environment: &ea.Environment,
+					Version:     version,
+				}
+				appMap[ea.Environment.Name] = appEnvInfo
+				if ea.Environment.Spec.Kind != v1.EnvironmentKindTypePreview {
+					row = append(row, version)
+				}
+				if !o.HidePod {
+					pods := ""
+					replicas := ""
+					ready := d.Status.ReadyReplicas
+					if d.Spec.Replicas != nil && ready > 0 {
+						replicas = formatInt32(*d.Spec.Replicas)
+						pods = formatInt32(ready) + "/" + replicas
+					}
+					row = append(row, pods)
+				}
+				if !o.HideUrl {
+					url, _ := services.FindServiceURL(kubeClient, d.Namespace, appName)
+					if url == "" {
+						url, _ = services.FindServiceURL(kubeClient, d.Namespace, d.Name)
+					}
+					if url == "" {
+						// handle helm3
+						chart, ok := d.Labels["chart"]
+						if ok {
+							idx := strings.LastIndex(chart, "-")
+							if idx > 0 {
+								svcName := chart[0:idx]
+								if svcName != appName && svcName != d.Name {
+									url, _ = services.FindServiceURL(kubeClient, d.Namespace, svcName)
+								}
+							}
+						}
+					}
+					row = append(row, url)
+					appEnvInfo.URL = url
+				}
+			}
+		}
+		table.AddRow(row...)
+	}
+	o.Results.Applications = appEnvMap
+	return table
+}
+
+func (o *GetApplicationsOptions) getAppData(kubeClient kubernetes.Interface) (namespaces []string, envApps []EnvApps, envNames, apps []string, err error) {
+	f := o.Factory
+	client, currentNs, err := f.CreateJXClient()
+	if err != nil {
+		return nil, nil, nil, nil, errors.Wrap(err, "getting jx client")
+	}
+	u, err := user.Current()
+	if err != nil {
+		return nil, nil, nil, nil, errors.Wrap(err, "getting current user")
 	}
 	ns, _, err := kube.GetDevNamespace(kubeClient, currentNs)
 	if err != nil {
-		return err
+		return nil, nil, nil, nil, errors.Wrap(err, "getting current dev namespace")
 	}
 	envList, err := client.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return err
+		return nil, nil, nil, nil, errors.Wrap(err, "listing environments")
 	}
 	kube.SortEnvironments(envList.Items)
 
-	namespaces := []string{}
-	envApps := []EnvApps{}
-	envNames := []string{}
-	apps := []string{}
+	namespaces, envNames, apps = []string{}, []string{}, []string{}
+	envApps = []EnvApps{}
 	for _, env := range envList.Items {
 		isPreview := env.Spec.Kind == v1.EnvironmentKindTypePreview
 		shouldShow := isPreview
@@ -180,17 +268,11 @@ func (o *GetApplicationsOptions) Run() error {
 			}
 		}
 	}
-	util.ReverseStrings(namespaces)
-	if len(apps) == 0 {
-		log.Infof("No applications found in environments %s\n", strings.Join(envNames, ", "))
-		return nil
-	}
-	sort.Strings(apps)
+	return
+}
 
-	o.Results.EnvApps = envApps
-	o.Results.EnvNames = envNames
-
-	table := o.CreateTable()
+func (o *GetApplicationsOptions) generateTableHeaders(envApps []EnvApps) table.Table {
+	t := o.CreateTable()
 	title := "APPLICATION"
 	if o.Previews {
 		title = "PULL REQUESTS"
@@ -211,66 +293,6 @@ func (o *GetApplicationsOptions) Run() error {
 			titles = append(titles, "URL")
 		}
 	}
-	table.AddRow(titles...)
-
-	appEnvMap := map[string]map[string]*ApplicationEnvironmentInfo{}
-
-	for _, appName := range apps {
-		row := []string{appName}
-		for _, ea := range envApps {
-			version := ""
-			d := ea.Apps[appName]
-			appMap := appEnvMap[appName]
-			if appMap == nil {
-				appMap = map[string]*ApplicationEnvironmentInfo{}
-				appEnvMap[appName] = appMap
-			}
-			version = kube.GetVersion(&d.ObjectMeta)
-			appEnvInfo := &ApplicationEnvironmentInfo{
-				Deployment: &d,
-				Environment: &ea.Environment,
-				Version:    version,
-			}
-			appMap[ea.Environment.Name] = appEnvInfo
-			if ea.Environment.Spec.Kind != v1.EnvironmentKindTypePreview {
-				row = append(row, version)
-			}
-			if !o.HidePod {
-				pods := ""
-				replicas := ""
-				ready := d.Status.ReadyReplicas
-				if d.Spec.Replicas != nil && ready > 0 {
-					replicas = formatInt32(*d.Spec.Replicas)
-					pods = formatInt32(ready) + "/" + replicas
-				}
-				row = append(row, pods)
-			}
-			if !o.HideUrl {
-				url, _ := services.FindServiceURL(kubeClient, d.Namespace, appName)
-				if url == "" {
-					url, _ = services.FindServiceURL(kubeClient, d.Namespace, d.Name)
-				}
-				if url == "" {
-					// handle helm3
-					chart := d.Labels["chart"]
-					if chart != "" {
-						idx := strings.LastIndex(chart, "-")
-						if idx > 0 {
-							svcName := chart[0:idx]
-							if svcName != appName && svcName != d.Name {
-								url, _ = services.FindServiceURL(kubeClient, d.Namespace, svcName)
-							}
-						}
-					}
-				}
-				row = append(row, url)
-				appEnvInfo.URL = url
-			}
-		}
-		table.AddRow(row...)
-	}
-	o.Results.Applications = appEnvMap
-
-	table.Render()
-	return nil
+	t.AddRow(titles...)
+	return t
 }

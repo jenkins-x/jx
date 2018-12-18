@@ -43,25 +43,26 @@ var (
 type PromoteOptions struct {
 	CommonOptions
 
-	Namespace           string
-	Environment         string
-	Application         string
-	Pipeline            string
-	Build               string
-	Version             string
-	ReleaseName         string
-	LocalHelmRepoName   string
-	HelmRepositoryURL   string
-	NoHelmUpdate        bool
-	AllAutomatic        bool
-	NoMergePullRequest  bool
-	NoPoll              bool
-	NoWaitAfterMerge    bool
-	IgnoreLocalFiles    bool
-	Timeout             string
-	PullRequestPollTime string
-	Filter              string
-	Alias               string
+	Namespace               string
+	Environment             string
+	Application             string
+	Pipeline                string
+	Build                   string
+	Version                 string
+	ReleaseName             string
+	LocalHelmRepoName       string
+	HelmRepositoryURL       string
+	NoHelmUpdate            bool
+	AllAutomatic            bool
+	NoMergePullRequest      bool
+	NoPoll                  bool
+	NoWaitAfterMerge        bool
+	IgnoreLocalFiles        bool
+	NoWaitForUpdatePipeline bool
+	Timeout                 string
+	PullRequestPollTime     string
+	Filter                  string
+	Alias                   string
 
 	// allow git to be configured externally before a PR is created
 	ConfigureGitCallback ConfigureGitFolderFn
@@ -74,7 +75,7 @@ type PromoteOptions struct {
 	TimeoutDuration         *time.Duration
 	PullRequestPollDuration *time.Duration
 	Activities              typev1.PipelineActivityInterface
-	GitInfo                 *gits.GitRepositoryInfo
+	GitInfo                 *gits.GitRepository
 	jenkinsURL              string
 	releaseResource         *v1.Release
 	ReleaseInfo             *ReleaseInfo
@@ -194,6 +195,16 @@ func (o *PromoteOptions) Run() error {
 		return err
 	}
 
+	prow, err := o.isProw()
+	if err != nil {
+		return err
+	}
+	if prow {
+		log.Warn("prow based install so skip waiting for the merge of Pull Requests to go green as currently there is an issue with getting" +
+			"statuses from the PR, see https://github.com/jenkins-x/jx/issues/2410")
+		o.NoWaitForUpdatePipeline = true
+	}
+
 	if o.Environment == "" && !o.BatchMode {
 		names := []string{}
 		m, allEnvNames, err := kube.GetOrderedEnvironments(jxClient, ns)
@@ -259,6 +270,7 @@ func (o *PromoteOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
 	o.ReleaseInfo = releaseInfo
 	if !o.NoPoll {
 		err = o.WaitForPromotion(targetNS, env, releaseInfo)
@@ -306,9 +318,11 @@ func (o *PromoteOptions) PromoteAllAutomatic() error {
 				return err
 			}
 			o.ReleaseInfo = releaseInfo
-			err = o.WaitForPromotion(ns, &env, releaseInfo)
-			if err != nil {
-				return err
+			if !o.NoPoll {
+				err = o.WaitForPromotion(ns, &env, releaseInfo)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -415,7 +429,8 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	}
 	promoteKey.OnPromoteUpdate(o.Activities, startPromote)
 
-	err = o.Helm().UpgradeChart(fullAppName, releaseName, targetNS, &version, true, nil, false, true, nil, nil, "")
+	err = o.Helm().UpgradeChart(fullAppName, releaseName, targetNS, &version, true, nil, false, true, nil, nil, "",
+		"", "")
 	if err == nil {
 		err = o.commentOnIssues(targetNS, env, promoteKey)
 		if err != nil {
@@ -582,6 +597,15 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 						}
 
 						promoteKey.OnPromoteUpdate(o.Activities, kube.StartPromotionUpdate)
+
+						if o.NoWaitForUpdatePipeline {
+							log.Infoln("Pull Request merged but we are not waiting for the update pipeline to complete!")
+							err = o.commentOnIssues(ns, env, promoteKey)
+							if err == nil {
+								err = promoteKey.OnPromoteUpdate(o.Activities, kube.CompletePromotionUpdate)
+							}
+							return err
+						}
 
 						statuses, err := gitProvider.ListCommitStatus(pr.Owner, pr.Repo, mergeSha)
 						if err != nil {
@@ -867,7 +891,7 @@ func (o *CommonOptions) getLatestPipelineBuildByCRD(pipeline string) (string, er
 	return "1", nil
 }
 
-func (o *CommonOptions) getPipelineName(gitInfo *gits.GitRepositoryInfo, pipeline string, build string, appName string) (string, string) {
+func (o *CommonOptions) getPipelineName(gitInfo *gits.GitRepository, pipeline string, build string, appName string) (string, string) {
 	if pipeline == "" {
 		pipeline = o.getJobName()
 	}

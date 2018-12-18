@@ -98,7 +98,7 @@ func (o *GetIssueOptions) Run() error {
 		return errors.Wrap(err, "cannot list the environments")
 	}
 
-	kubeClient, _, err := f.CreateClient()
+	kubeClient, _, err := f.CreateKubeClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the Kubernetes client")
 	}

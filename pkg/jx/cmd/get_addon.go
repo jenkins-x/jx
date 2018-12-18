@@ -85,17 +85,18 @@ func (o *GetAddonOptions) Run() error {
 	charts := kube.AddonCharts
 
 	table := o.CreateTable()
-	table.AddRow("NAME", "CHART", "ENABLED", "STATUS")
+	table.AddRow("NAME", "CHART", "ENABLED", "STATUS", "VERSION")
 
 	keys := util.SortedMapKeys(charts)
 	for _, k := range keys {
 		chart := charts[k]
-		status := statusMap[k]
+		status := statusMap[k].Status
+		version := statusMap[k].Version
 		enableText := ""
 		if addonEnabled[k] {
 			enableText = "yes"
 		}
-		table.AddRow(k, chart, enableText, status)
+		table.AddRow(k, chart, enableText, status, version)
 	}
 
 	table.Render()

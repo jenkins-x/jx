@@ -57,7 +57,7 @@ type StepChangelogOptions struct {
 }
 
 type StepChangelogState struct {
-	GitInfo         *gits.GitRepositoryInfo
+	GitInfo         *gits.GitRepository
 	GitProvider     gits.GitProvider
 	Tracker         issues.IssueProvider
 	FoundIssueNames map[string]bool
@@ -234,6 +234,10 @@ func (o *StepChangelogOptions) Run() error {
 		previousRev, err = o.Git().GetPreviousGitTagSHA(dir)
 		if err != nil {
 			return err
+		}
+		if previousRev == "" {
+			log.Info("no previous commit version found so change diff unavailable")
+			return nil
 		}
 	}
 	currentRev := o.CurrentRevision

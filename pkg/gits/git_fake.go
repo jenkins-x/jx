@@ -32,7 +32,7 @@ type GitFake struct {
 	BranchesRemote []string
 	CurrentBranch  string
 	AccessTokenURL string
-	RepoInfo       GitRepositoryInfo
+	RepoInfo       GitRepository
 	Fork           bool
 	GitVersion     string
 	GitUser        GitUser
@@ -53,15 +53,6 @@ func (g *GitFake) FindGitConfigDir(dir string) (string, string, error) {
 	return dir, dir, nil
 }
 
-// ToGitLabels converts the labels to git labels
-func (g *GitFake) ToGitLabels(names []string) []GitLabel {
-	labels := []GitLabel{}
-	for _, n := range names {
-		labels = append(labels, GitLabel{Name: n})
-	}
-	return labels
-}
-
 // PrintCreateRepositoryGenerateAccessToken prints the generate access token URL
 func (g *GitFake) PrintCreateRepositoryGenerateAccessToken(server *auth.AuthServer, username string, o io.Writer) {
 	fmt.Fprintf(o, "Access token URL: %s\n\n", g.AccessTokenURL)
@@ -78,12 +69,12 @@ func (g *GitFake) Server(dir string) (string, error) {
 }
 
 // Info returns the git repo info
-func (g *GitFake) Info(dir string) (*GitRepositoryInfo, error) {
+func (g *GitFake) Info(dir string) (*GitRepository, error) {
 	return &g.RepoInfo, nil
 }
 
 // IsFork returns trie if this repo is a fork
-func (g *GitFake) IsFork(gitProvider GitProvider, gitInfo *GitRepositoryInfo, dir string) (bool, error) {
+func (g *GitFake) IsFork(dir string) (bool, error) {
 	return g.Fork, nil
 }
 

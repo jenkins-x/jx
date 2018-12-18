@@ -2,7 +2,7 @@ package secrets
 
 import (
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/sirupsen/logrus"
+	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -14,7 +14,7 @@ type SecretLocation interface {
 	// InVault returns whether secrets are stored in Vault
 	InVault() bool
 	// SetInVault sets whether secrets are stored in Vault or not
-	SetInVault(useVault bool)
+	SetInVault(useVault bool) error
 }
 
 type secretLocation struct {
@@ -34,15 +34,18 @@ func NewSecretLocation(kubeClient kubernetes.Interface, namespace string) Secret
 // UsingVaultForSecrets returns true if the cluster has been configured to store secrets in vault
 func (s *secretLocation) InVault() bool {
 	if s.usingVault == nil {
-		configMap := getInstallConfigMap(s.kubeClient, s.namespace)
-		b := configMap[vaultSecretsMarker] != ""
+		configMap, err := getInstallConfigMap(s.kubeClient, s.namespace)
+		b := false
+		if err == nil {
+			b = configMap[vaultSecretsMarker] != ""
+		}
 		s.usingVault = &b
 	}
 	return *s.usingVault
 }
 
 // UseVaultForSecrets configures the cluster's installation config map to denote that secrets should be stored in vault
-func (s *secretLocation) SetInVault(useVault bool) {
+func (s *secretLocation) SetInVault(useVault bool) error {
 	_, err := kube.DefaultModifyConfigMap(s.kubeClient, s.namespace, kube.ConfigMapNameJXInstallConfig, func(configMap *v1.ConfigMap) error {
 		if useVault {
 			configMap.Data[vaultSecretsMarker] = "true"
@@ -53,14 +56,15 @@ func (s *secretLocation) SetInVault(useVault bool) {
 		return nil
 	}, nil)
 	if err != nil {
-		logrus.Errorf("Error saving configmap %s: %v", kube.ConfigMapNameJXInstallConfig, err)
+		return errors.Wrapf(err, "saving vault flag in configmap %s", kube.ConfigMapNameJXInstallConfig)
 	}
+	return nil
 }
 
-func getInstallConfigMap(kubeClient kubernetes.Interface, namespace string) map[string]string {
+func getInstallConfigMap(kubeClient kubernetes.Interface, namespace string) (map[string]string, error) {
 	configMap, err := kube.GetConfigMapData(kubeClient, kube.ConfigMapNameJXInstallConfig, namespace)
 	if err != nil {
-		logrus.Errorf("Error getting configmap %s: %v", kube.ConfigMapNameJXInstallConfig, err)
+		return nil, errors.Wrapf(err, "getting configmap %s", kube.ConfigMapNameJXInstallConfig)
 	}
-	return configMap
+	return configMap, nil
 }

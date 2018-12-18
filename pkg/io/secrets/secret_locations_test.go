@@ -1,11 +1,12 @@
 package secrets
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
-	"testing"
 )
 
 const ns = "Galaxy"
@@ -16,7 +17,8 @@ func TestUseVaultForSecrets(t *testing.T) {
 	kubeClient := createMockCluster()
 	secretLocation := NewSecretLocation(kubeClient, ns)
 
-	secretLocation.SetInVault(true)
+	err := secretLocation.SetInVault(true)
+	assert.NoError(t, err)
 
 	// Test we have actually added the item to the configmap
 	configMap, err := kubeClient.Core().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
@@ -26,7 +28,8 @@ func TestUseVaultForSecrets(t *testing.T) {
 	assert.Equal(t, "two", configMap.Data["one"])
 	assert.True(t, secretLocation.InVault())
 
-	secretLocation.SetInVault(false)
+	err = secretLocation.SetInVault(false)
+	assert.NoError(t, err)
 
 	configMap, err = kubeClient.Core().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
 	assert.NoError(t, err)
@@ -42,7 +45,8 @@ func TestUseVaultForSecrets_NoJxInstallConfigMap(t *testing.T) {
 	kubeClient := fake.NewSimpleClientset()
 	secretLocation := NewSecretLocation(kubeClient, ns)
 
-	secretLocation.SetInVault(true)
+	err := secretLocation.SetInVault(true)
+	assert.NoError(t, err)
 
 	// Test we have actually added the item to the configmap
 	configMap, err := kubeClient.Core().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
@@ -50,7 +54,8 @@ func TestUseVaultForSecrets_NoJxInstallConfigMap(t *testing.T) {
 	assert.Equal(t, "true", configMap.Data["useVaultForSecrets"])
 	assert.True(t, secretLocation.InVault())
 
-	secretLocation.SetInVault(false)
+	err = secretLocation.SetInVault(false)
+	assert.NoError(t, err)
 
 	configMap, err = kubeClient.Core().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
 	assert.NoError(t, err)

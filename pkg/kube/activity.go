@@ -28,7 +28,7 @@ type PipelineActivityKey struct {
 	LastCommitSHA     string
 	LastCommitMessage string
 	LastCommitURL     string
-	GitInfo           *gits.GitRepositoryInfo
+	GitInfo           *gits.GitRepository
 }
 
 func (k *PipelineActivityKey) IsValid() bool {

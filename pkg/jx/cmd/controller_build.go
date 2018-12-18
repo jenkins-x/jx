@@ -33,7 +33,8 @@ import (
 type ControllerBuildOptions struct {
 	ControllerOptions
 
-	Namespace string
+	Namespace          string
+	InitGitCredentials bool
 
 	EnvironmentCache *kube.EnvironmentNamespaceCache
 }
@@ -64,7 +65,10 @@ func NewCmdControllerBuild(f Factory, in terminal.FileReader, out terminal.FileW
 		Aliases: []string{"builds"},
 	}
 
+	options.addCommonFlags(cmd)
+
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to watch or defaults to the current namespace")
+	cmd.Flags().BoolVarP(&options.InitGitCredentials, "git-credentials", "", false, "If enable then lets run the 'jx step git credentials' step to initialise git credentials")
 	return cmd
 }
 
@@ -95,6 +99,22 @@ func (o *ControllerBuildOptions) Run() error {
 	}
 
 	o.EnvironmentCache = kube.CreateEnvironmentCache(jxClient, ns)
+
+	if o.InitGitCredentials {
+		// lets validate we have git configured
+		_, _, err = gits.EnsureUserAndEmailSetup(o.Git())
+		if err != nil {
+		  return err
+		}
+
+		err := o.runCommandVerbose("git", "config", "--global", "credential.helper", "store")
+		if err != nil {
+			return err
+		}
+		if os.Getenv("XDG_CONFIG_HOME") == "" {
+			log.Warnf("Note that the environment variable $XDG_CONFIG_HOME is not defined so we may not be able to push to git!\n")
+		}
+	}
 
 	pod := &corev1.Pod{}
 	log.Infof("Watching for Knative build pods in namespace %s\n", util.ColorInfo(ns))
@@ -137,7 +157,9 @@ func (o *ControllerBuildOptions) onPod(obj interface{}, kubeClient kubernetes.In
 				buildName = labels[builds.LabelOldBuildName]
 			}
 			if buildName != "" {
-				//log.Infof("Found build pod %s\n", pod.Name)
+				if o.Verbose {
+					log.Infof("Found build pod %s\n", pod.Name)
+				}
 
 				activities := jxClient.JenkinsV1().PipelineActivities(ns)
 				key := o.createPromoteStepActivityKey(buildName, pod)
@@ -192,6 +214,7 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 
 func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.Interface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod) bool {
 	copy := *activity
+	initContainersTerminated := len(pod.Status.InitContainerStatuses) > 0
 	for _, c := range pod.Status.InitContainerStatuses {
 		name := strings.Replace(strings.TrimPrefix(c.Name, "build-step-"), "-", " ", -1)
 		title := strings.Title(name)
@@ -229,6 +252,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 			} else {
 				stage.Status = v1.ActivityStatusTypePending
 			}
+			initContainersTerminated = false
 		}
 	}
 	spec := &activity.Spec
@@ -268,6 +292,9 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 			}
 		}
 	}
+	if !allCompleted && initContainersTerminated {
+		allCompleted = true
+	}
 	if allCompleted {
 		if failed {
 			spec.Status = v1.ActivityStatusTypeFailed
@@ -283,11 +310,11 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 
 			envName := kube.LabelValueDevEnvironment
 			devEnv := o.EnvironmentCache.Item(envName)
-			var location  *v1.StorageLocation
+			var location *v1.StorageLocation
 			if devEnv == nil {
 				log.Warnf("No Environment %s found\n", envName)
 			} else {
-				location = devEnv.Spec.TeamSettings.StorageLocation(kube.ClassificationLogs)
+				location = devEnv.Spec.TeamSettings.StorageLocationOrDefault(kube.ClassificationLogs)
 			}
 			if location == nil {
 				location = &v1.StorageLocation{}
@@ -298,7 +325,10 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 					log.Warnf("No GitURL on PipelineActivity %s\n", activity.Name)
 				}
 			}
-			spec.BuildLogsURL = generateBuildLogURL(podInterface, ns, activity, buildName, pod, location)
+			logURL := o.generateBuildLogURL(podInterface, ns, activity, buildName, pod, location, o.InitGitCredentials)
+			if logURL != "" {
+				spec.BuildLogsURL = logURL
+			}
 		}
 	} else {
 		if running {
@@ -311,21 +341,43 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 }
 
 // generates the build log URL and returns the URL
-func generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation) string {
+func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation, initGitCredentials bool) string {
 	data, err := builds.GetBuildLogsForPod(podInterface, pod)
 	if err != nil {
 		// probably due to not being available yet
-		//log.Warnf("Failed to get build log for pod %s in namespace %s: %s\n", pod.Name, ns, err)
+		if o.Verbose {
+			log.Warnf("Failed to get build log for pod %s in namespace %s: %s\n", pod.Name, ns, err)
+		}
 		return ""
 	}
 
-	//log.Infof("got build log for pod: %s PipelineActivity: %s with bytes: %d\n", pod.Name, activity.Name, len(data))
-	
+	if o.Verbose {
+		log.Infof("got build log for pod: %s PipelineActivity: %s with bytes: %d\n", pod.Name, activity.Name, len(data))
+	}
+
 	sourceURL := location.GitURL
 	if sourceURL == "" {
 		// TODO handle http URLs too
 		return ""
 	}
+	gitInfo, err := gits.ParseGitURL(sourceURL)
+	if err != nil {
+		log.Infof("Failed to parse git URL %s: %s\n", sourceURL, err)
+		return ""
+	}
+
+	if initGitCredentials {
+		gc := &StepGitCredentialsOptions{}
+		gc.CommonOptions = *o
+		gc.BatchMode = true
+		log.Info("running: jx step git credentials\n")
+		err = gc.Run()
+		if err != nil {
+			log.Infof("Failed to setup git credentials: %s\n", err)
+			return ""
+		}
+	}
+
 	gitClient := gits.NewGitCLI()
 	ghPagesDir, err := cloneGitHubPagesBranchToTempDir(sourceURL, gitClient)
 	if err != err {
@@ -373,8 +425,8 @@ func generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activ
 		return ""
 	}
 
-	// TODO only github supported for now! Lets switch to Provider
-	return fmt.Sprintf("https://%s.github.io/%s/%s", owner, repository, fileName)
+	// TODO only github supported for now! Lets switch to GitProvider
+	return fmt.Sprintf("https://%s.github.io/%s/%s", gitInfo.Organisation, gitInfo.Name, fileName)
 }
 
 // createStepDescription uses the spec of the init container to return a description

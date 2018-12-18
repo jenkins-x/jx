@@ -159,7 +159,7 @@ type TeamSettings struct {
 type StorageLocation struct {
 	Classifier string `json:"classifier,omitempty" protobuf:"bytes,1,opt,name=classifier"`
 	GitURL     string `json:"gitUrl,omitempty" protobuf:"bytes,2,opt,name=gitUrl"`
-	HttpUrl    string `json:"httpUrl,omitempty" protobuf:"bytes,3,opt,name=httpUrl"`
+	HttpURL    string `json:"httpUrl,omitempty" protobuf:"bytes,3,opt,name=httpUrl"`
 }
 
 // QuickStartLocation
@@ -247,6 +247,16 @@ type EnvironmentRoleBindingList struct {
 	Items []EnvironmentRoleBinding `json:"items"`
 }
 
+// StorageLocationOrDefault returns the storage location if there is one or returns the default storage configuration
+func (t *TeamSettings) StorageLocationOrDefault(classifier string) *StorageLocation {
+	for idx, sl := range t.StorageLocations {
+		if sl.Classifier == classifier {
+			return &t.StorageLocations[idx]
+		}
+	}
+	return t.StorageLocation("default")
+}
+
 // StorageLocation returns the storage location, lazily creating one if one does not already exist
 func (t *TeamSettings) StorageLocation(classifier string) *StorageLocation {
 	for idx, sl := range t.StorageLocations {
@@ -262,7 +272,7 @@ func (t *TeamSettings) StorageLocation(classifier string) *StorageLocation {
 
 // IsEmpty returns true if the storage location is empty
 func (s *StorageLocation) IsEmpty() bool {
-	return s.GitURL == "" || s.HttpUrl == ""
+	return s.GitURL == "" && s.HttpURL == ""
 }
 
 // Description returns the textual description of the storage location
@@ -270,8 +280,8 @@ func (s *StorageLocation) Description() string {
 	if s.GitURL !=  "" {
 		return "git: " + s.GitURL
 	}
-	if s.HttpUrl != "" {
-		return s.HttpUrl
+	if s.HttpURL != "" {
+		return s.HttpURL
 	}
 	return "current git repo"
 }

@@ -212,7 +212,6 @@ func (o *UpgradePlatformOptions) Run() error {
 		return errors.Wrap(err, "failed to create a temporary config dir for Git credentials")
 	}
 
-	secretsFileName := filepath.Join(dir, GitSecretsFile)
 	adminSecretsFileName := filepath.Join(dir, AdminSecretsFile)
 	configFileName := filepath.Join(dir, ExtraValuesFile)
 
@@ -238,18 +237,6 @@ func (o *UpgradePlatformOptions) Run() error {
 	cloudEnvironmentValuesLocation := filepath.Join(makefileDir, CloudEnvValuesFile)
 	cloudEnvironmentSecretsLocation := filepath.Join(makefileDir, CloudEnvSecretsFile)
 	cloudEnvironmentSopsLocation := filepath.Join(makefileDir, CloudEnvSopsConfigFile)
-
-	secretsFileNameExists, err := util.FileExists(secretsFileName)
-	if err != nil {
-		return errors.Wrapf(err, "unable to determine if %s exist", secretsFileName)
-	}
-	if !secretsFileNameExists {
-		log.Infof("Creating %s from %s\n", util.ColorInfo(secretsFileName), util.ColorInfo(JXInstallConfig))
-		err = ioutil.WriteFile(secretsFileName, oldSecret.Data[GitSecretsFile], 0644)
-		if err != nil {
-			return errors.Wrapf(err, "failed to write the config file %s", secretsFileName)
-		}
-	}
 
 	adminSecretsFileNameExists, err := util.FileExists(adminSecretsFileName)
 	if err != nil {
@@ -300,7 +287,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		}
 	}
 
-	valueFiles := []string{cloudEnvironmentValuesLocation, secretsFileName, adminSecretsFileName, configFileName, cloudEnvironmentSecretsLocation}
+	valueFiles := []string{cloudEnvironmentValuesLocation, adminSecretsFileName, configFileName, cloudEnvironmentSecretsLocation}
 	valueFiles, err = helm.AppendMyValues(valueFiles)
 	if err != nil {
 		return errors.Wrap(err, "failed to append the myvalues.yaml file")
@@ -316,17 +303,12 @@ func (o *UpgradePlatformOptions) Run() error {
 	}
 
 	err = o.Helm().UpgradeChart(o.Chart, o.ReleaseName, ns, &targetVersion, false, nil, false, false, values,
-		valueFiles, "")
+		valueFiles, "", "", "")
 	if err != nil {
 		return errors.Wrap(err, "unable to upgrade helm chart")
 	}
 
 	if o.Flags.CleanupTempFiles {
-		err = util.DestroyFile(secretsFileName)
-		if err != nil {
-			return errors.Wrap(err, "failed to cleanup the secrets file")
-		}
-
 		if !configFileNameExists {
 			err = os.Remove(configFileName)
 			if err != nil {

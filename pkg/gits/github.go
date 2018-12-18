@@ -428,8 +428,8 @@ func (p *GitHubProvider) UpdateWebHook(data *GitWebHookArguments) error {
 }
 
 func (p *GitHubProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPullRequest, error) {
-	owner := data.GitRepositoryInfo.Organisation
-	repo := data.GitRepositoryInfo.Name
+	owner := data.GitRepository.Organisation
+	repo := data.GitRepository.Name
 	title := data.Title
 	body := data.Body
 	head := data.Head
@@ -516,7 +516,7 @@ func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	return nil
 }
 
-func (p *GitHubProvider) GetPullRequest(owner string, repo *GitRepositoryInfo, number int) (*GitPullRequest, error) {
+func (p *GitHubProvider) GetPullRequest(owner string, repo *GitRepository, number int) (*GitPullRequest, error) {
 	pr := &GitPullRequest{
 		Owner:  owner,
 		Repo:   repo.Name,
@@ -539,7 +539,7 @@ func (p *GitHubProvider) GetPullRequest(owner string, repo *GitRepositoryInfo, n
 	return pr, err
 }
 
-func (p *GitHubProvider) GetPullRequestCommits(owner string, repository *GitRepositoryInfo, number int) ([]*GitCommit, error) {
+func (p *GitHubProvider) GetPullRequestCommits(owner string, repository *GitRepository, number int) ([]*GitCommit, error) {
 	repo := repository.Name
 	commits, _, err := p.Client.PullRequests.ListCommits(p.Context, owner, repo, number, nil)
 
@@ -1035,7 +1035,7 @@ func (p *GitHubProvider) ServerURL() string {
 }
 
 func (p *GitHubProvider) BranchArchiveURL(org string, name string, branch string) string {
-	return util.UrlJoin(p.ServerURL(), org, name, "archive", branch+".zip")
+	return util.UrlJoin("https://codeload.github.com", org, name, "zip", branch)
 }
 
 func (p *GitHubProvider) CurrentUsername() string {

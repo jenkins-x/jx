@@ -43,6 +43,7 @@ type UserDetails struct {
 	AvatarURL         string       `json:"avatarUrl,omitempty"  protobuf:"bytes,6,opt,name=avatarUrl"`
 	ServiceAccount    string       `json:"serviceAccount,omitempty"  protobuf:"bytes,7,opt,name=serviceAccount"`
 	SlackUser         string       `json:"slackUser,omitempty"  protobuf:"bytes,8,opt,name=slackUser"`
+	GitProviderUser   string       `json:"gitProviderUser,omitempty"  protobuf:"bytes,9,opt,name=gitProviderUser"`
 }
 
 // UserKind returns the subject kind of user - either "User" or "ServiceAccount"

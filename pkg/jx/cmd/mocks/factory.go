@@ -4,7 +4,7 @@
 package cmd_test
 
 import (
-	versioned "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	versioned1 "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	client "github.com/heptio/sonobuoy/pkg/client"
 	dynamic "github.com/heptio/sonobuoy/pkg/dynamic"
 	golang_jenkins "github.com/jenkins-x/golang-jenkins"
@@ -15,15 +15,15 @@ import (
 	cmd "github.com/jenkins-x/jx/pkg/jx/cmd"
 	table "github.com/jenkins-x/jx/pkg/table"
 	vault "github.com/jenkins-x/jx/pkg/vault"
-	versioned1 "github.com/knative/build/pkg/client/clientset/versioned"
+	versioned "github.com/knative/build/pkg/client/clientset/versioned"
 	pegomock "github.com/petergtz/pegomock"
 	terminal "gopkg.in/AlecAivazis/survey.v1/terminal"
 	io "io"
 	v1 "k8s.io/api/core/v1"
-	clientset0 "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
+	clientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	kubernetes "k8s.io/client-go/kubernetes"
 	rest "k8s.io/client-go/rest"
-	clientset "k8s.io/metrics/pkg/client/clientset_generated/clientset"
+	clientset0 "k8s.io/metrics/pkg/client/clientset_generated/clientset"
 	"reflect"
 )
 
@@ -69,17 +69,17 @@ func (mock *MockFactory) CreateAddonAuthConfigService(_param0 *v1.SecretList) (a
 	return ret0, ret1
 }
 
-func (mock *MockFactory) CreateApiExtensionsClient() (clientset0.Interface, error) {
+func (mock *MockFactory) CreateApiExtensionsClient() (clientset.Interface, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
 	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateApiExtensionsClient", params, []reflect.Type{reflect.TypeOf((*clientset0.Interface)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 clientset0.Interface
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateApiExtensionsClient", params, []reflect.Type{reflect.TypeOf((*clientset.Interface)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 clientset.Interface
 	var ret1 error
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].(clientset0.Interface)
+			ret0 = result[0].(clientset.Interface)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(error)
@@ -143,29 +143,6 @@ func (mock *MockFactory) CreateChatAuthConfigService(_param0 *v1.SecretList) (au
 		}
 	}
 	return ret0, ret1
-}
-
-func (mock *MockFactory) CreateClient() (kubernetes.Interface, string, error) {
-	if mock == nil {
-		panic("mock must not be nil. Use myMock := NewMockFactory().")
-	}
-	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateClient", params, []reflect.Type{reflect.TypeOf((*kubernetes.Interface)(nil)).Elem(), reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 kubernetes.Interface
-	var ret1 string
-	var ret2 error
-	if len(result) != 0 {
-		if result[0] != nil {
-			ret0 = result[0].(kubernetes.Interface)
-		}
-		if result[1] != nil {
-			ret1 = result[1].(string)
-		}
-		if result[2] != nil {
-			ret2 = result[2].(error)
-		}
-	}
-	return ret0, ret1, ret2
 }
 
 func (mock *MockFactory) CreateComplianceClient() (*client.SonobuoyClient, error) {
@@ -309,18 +286,41 @@ func (mock *MockFactory) CreateJenkinsClient(_param0 kubernetes.Interface, _para
 	return ret0, ret1
 }
 
-func (mock *MockFactory) CreateKnativeBuildClient() (versioned1.Interface, string, error) {
+func (mock *MockFactory) CreateKnativeBuildClient() (versioned.Interface, string, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
 	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateKnativeBuildClient", params, []reflect.Type{reflect.TypeOf((*versioned1.Interface)(nil)).Elem(), reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 versioned1.Interface
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateKnativeBuildClient", params, []reflect.Type{reflect.TypeOf((*versioned.Interface)(nil)).Elem(), reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 versioned.Interface
 	var ret1 string
 	var ret2 error
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].(versioned1.Interface)
+			ret0 = result[0].(versioned.Interface)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(string)
+		}
+		if result[2] != nil {
+			ret2 = result[2].(error)
+		}
+	}
+	return ret0, ret1, ret2
+}
+
+func (mock *MockFactory) CreateKubeClient() (kubernetes.Interface, string, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockFactory().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateKubeClient", params, []reflect.Type{reflect.TypeOf((*kubernetes.Interface)(nil)).Elem(), reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 kubernetes.Interface
+	var ret1 string
+	var ret2 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(kubernetes.Interface)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(string)
@@ -351,17 +351,17 @@ func (mock *MockFactory) CreateKubeConfig() (*rest.Config, error) {
 	return ret0, ret1
 }
 
-func (mock *MockFactory) CreateMetricsClient() (*clientset.Clientset, error) {
+func (mock *MockFactory) CreateMetricsClient() (*clientset0.Clientset, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
 	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateMetricsClient", params, []reflect.Type{reflect.TypeOf((**clientset.Clientset)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 *clientset.Clientset
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateMetricsClient", params, []reflect.Type{reflect.TypeOf((**clientset0.Clientset)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 *clientset0.Clientset
 	var ret1 error
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].(*clientset.Clientset)
+			ret0 = result[0].(*clientset0.Clientset)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(error)
@@ -385,17 +385,17 @@ func (mock *MockFactory) CreateTable(_param0 io.Writer) table.Table {
 	return ret0
 }
 
-func (mock *MockFactory) CreateVaultOperatorClient() (versioned.Interface, error) {
+func (mock *MockFactory) CreateVaultOperatorClient() (versioned1.Interface, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
 	}
 	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateVaultOperatorClient", params, []reflect.Type{reflect.TypeOf((*versioned.Interface)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 versioned.Interface
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CreateVaultOperatorClient", params, []reflect.Type{reflect.TypeOf((*versioned1.Interface)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 versioned1.Interface
 	var ret1 error
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].(versioned.Interface)
+			ret0 = result[0].(versioned1.Interface)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(error)
@@ -527,6 +527,21 @@ func (mock *MockFactory) SetBatch(_param0 bool) {
 	}
 	params := []pegomock.Param{_param0}
 	pegomock.GetGenericMockFrom(mock).Invoke("SetBatch", params, []reflect.Type{})
+}
+
+func (mock *MockFactory) UseVault() bool {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockFactory().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("UseVault", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
+	var ret0 bool
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(bool)
+		}
+	}
+	return ret0
 }
 
 func (mock *MockFactory) WithBearerToken(_param0 string) cmd.Factory {
@@ -714,23 +729,6 @@ func (c *Factory_CreateChatAuthConfigService_OngoingVerification) GetAllCaptured
 		}
 	}
 	return
-}
-
-func (verifier *VerifierFactory) CreateClient() *Factory_CreateClient_OngoingVerification {
-	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateClient", params)
-	return &Factory_CreateClient_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
-}
-
-type Factory_CreateClient_OngoingVerification struct {
-	mock              *MockFactory
-	methodInvocations []pegomock.MethodInvocation
-}
-
-func (c *Factory_CreateClient_OngoingVerification) GetCapturedArguments() {
-}
-
-func (c *Factory_CreateClient_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierFactory) CreateComplianceClient() *Factory_CreateComplianceClient_OngoingVerification {
@@ -959,6 +957,23 @@ func (c *Factory_CreateKnativeBuildClient_OngoingVerification) GetCapturedArgume
 }
 
 func (c *Factory_CreateKnativeBuildClient_OngoingVerification) GetAllCapturedArguments() {
+}
+
+func (verifier *VerifierFactory) CreateKubeClient() *Factory_CreateKubeClient_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateKubeClient", params)
+	return &Factory_CreateKubeClient_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Factory_CreateKubeClient_OngoingVerification struct {
+	mock              *MockFactory
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Factory_CreateKubeClient_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *Factory_CreateKubeClient_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierFactory) CreateKubeConfig() *Factory_CreateKubeConfig_OngoingVerification {
@@ -1243,6 +1258,23 @@ func (c *Factory_SetBatch_OngoingVerification) GetAllCapturedArguments() (_param
 		}
 	}
 	return
+}
+
+func (verifier *VerifierFactory) UseVault() *Factory_UseVault_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "UseVault", params)
+	return &Factory_UseVault_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Factory_UseVault_OngoingVerification struct {
+	mock              *MockFactory
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Factory_UseVault_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *Factory_UseVault_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierFactory) WithBearerToken(_param0 string) *Factory_WithBearerToken_OngoingVerification {
