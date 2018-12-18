@@ -850,6 +850,27 @@ func (o *CommonOptions) GetWebHookEndpoint() (string, error) {
 	return webHookUrl, nil
 }
 
+//ChangeNamespace switches the current jx/K8S namespace to the one specified.
+//This is analogous to running `jx namespace cheese`.
+func (o *CommonOptions) ChangeNamespace(ns string) {
+	nsOptions := &NamespaceOptions{
+		CommonOptions: *o,
+	}
+	nsOptions.BatchMode = true
+	nsOptions.Args = []string{ns}
+	err := nsOptions.Run()
+	if err != nil {
+		log.Warnf("Failed to set context to namespace %s: %s", ns, err)
+	}
+
+	//Reset all the cached clients & namespace values when switching so that they can be properly recalculated for
+	//the new namespace.
+	o.KubeClientCached = nil
+	o.jxClient = nil
+	o.currentNamespace = ""
+	o.devNamespace = ""
+}
+
 func (o *CommonOptions) GetIn() terminal.FileReader {
 	return o.In
 }
