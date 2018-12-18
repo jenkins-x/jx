@@ -97,9 +97,12 @@ func (o *GetPluginsOptions) Run() error {
 }
 
 func (o *GetPluginsOptions) printExtensionPlugins() error {
-	pcgs, err := o.getPluginCommandGroups(o.Verifier)
+	pcgs, managedPluginsEnabled, err := o.getPluginCommandGroups(o.Verifier)
 	if err != nil {
 		return err
+	}
+	if !managedPluginsEnabled {
+		log.Warnf("Managed Plugins not available\n")
 	}
 	maxLength := 0
 	for _, pcg := range pcgs {
