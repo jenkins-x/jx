@@ -63,6 +63,7 @@ func NewCmdGetEks(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 			CheckErr(err)
 		},
 	}
+	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging.")
 	cmd.Flags().StringVarP(&options.Profile, "profile", "", "", "AWS profile to use.")
 	cmd.Flags().StringVarP(&options.Region, "region", "", "", "AWS region to use. Default: "+amazon.DefaultRegion)
 
