@@ -59,8 +59,6 @@ func NewCmdControllerBuild(commonOpts *CommonOptions) *cobra.Command {
 		Aliases: []string{"builds"},
 	}
 
-	options.addCommonFlags(cmd)
-
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to watch or defaults to the current namespace")
 	cmd.Flags().BoolVarP(&options.InitGitCredentials, "git-credentials", "", false, "If enable then lets run the 'jx step git credentials' step to initialise git credentials")
 	return cmd

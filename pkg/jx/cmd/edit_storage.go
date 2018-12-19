@@ -64,8 +64,6 @@ func NewCmdEditStorage(commonOpts *CommonOptions) *cobra.Command {
 		},
 	}
 
-	options.addCommonFlags(cmd)
-
 	cmd.Flags().StringVarP(&options.Classifier, "classifier", "c", "", "A name which classifies this type of file. Example values: "+kube.ClassificationValues)
 	cmd.Flags().StringVarP(&options.HttpURL, "http-url", "", "", "Specify the HTTP endpoint to send each file to")
 	cmd.Flags().StringVarP(&options.GitURL, "git-url", "", "", "Specify the Git URL to populate in a gh-pages branch")

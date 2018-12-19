@@ -73,7 +73,6 @@ func NewCmdStepCreateBuildTemplate(commonOpts *CommonOptions) *cobra.Command {
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to query to find the projects .git directory")
 	cmd.Flags().StringVarP(&options.OutputDir, "output-dir", "o", "jx-build-templates", "The directory where the generated build yaml files will be output to")

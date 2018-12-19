@@ -64,7 +64,6 @@ func NewCmdCreateProject(commonOpts *CommonOptions) *cobra.Command {
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	return cmd
 }
 

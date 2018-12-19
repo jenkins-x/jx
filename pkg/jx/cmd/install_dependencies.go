@@ -76,7 +76,6 @@ func NewCmdInstallDependencies(commonOpts *CommonOptions) *cobra.Command {
 		SuggestFor: []string{"dependency"},
 	}
 
-	options.addCommonFlags(cmd)
 	cmd.Flags().StringArrayVarP(&options.Flags.Dependencies, "dependencies", "d", []string{}, "The dependencies to install")
 
 	return cmd

@@ -66,7 +66,6 @@ func NewCmdEditBuildpack(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.BuildPackURL, "url", "u", "", "The URL for the build pack Git repository")
 	cmd.Flags().StringVarP(&options.BuildPackRef, "ref", "r", "", "The Git reference (branch,tag,sha) in the Git repository to use")
 	cmd.Flags().StringVarP(&options.BuildPackName, "name", "n", "", "The name of the BuildPack resource to use")
-	options.addCommonFlags(cmd)
 	return cmd
 }
 
