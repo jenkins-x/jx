@@ -1,7 +1,0 @@
-expose:
-  config:
-    domain: test-domain
-preview:
-  image:
-    repository: my.registry/my-org/my-app
-    tag: 1.0.0
