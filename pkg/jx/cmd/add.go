@@ -52,6 +52,9 @@ func NewCmdAdd(f Factory, in terminal.FileReader, out terminal.FileWriter, errOu
 			CheckErr(err)
 		},
 	}
+	/* TODO fails TestNewJXCommand
+	cmd.AddCommand(NewCmdAddApp(f, in, out, errOut))
+	*/
 	return cmd
 }
 

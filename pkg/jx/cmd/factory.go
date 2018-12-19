@@ -64,6 +64,7 @@ type factory struct {
 	bearerToken     string
 	secretLocation  secrets.SecretLocation
 	useVault        bool
+	offline         bool
 }
 
 // NewFactory creates a factory with the default Kubernetes resources defined
@@ -77,6 +78,10 @@ func NewFactory() Factory {
 
 func (f *factory) SetBatch(batch bool) {
 	f.Batch = batch
+}
+
+func (f *factory) SetOffline(offline bool) {
+	f.offline = offline
 }
 
 // ImpersonateUser returns a new factory impersonating the given user
@@ -446,8 +451,10 @@ func (f *factory) CreateGitProvider(gitURL string, message string, authConfigSvc
 
 var kubeConfigCache *string
 
-func createKubeConfig() *string {
-	panic("TODO should not be run during jx prompt")
+func createKubeConfig(offline bool) *string {
+	if offline {
+		panic("not supposed to be making a network connection")
+	}
 	var kubeconfig *string
 	if kubeConfigCache != nil {
 		return kubeConfigCache
@@ -470,7 +477,7 @@ func (f *factory) CreateKubeConfig() (*rest.Config, error) {
 			&clientcmd.ClientConfigLoadingRules{Precedence: pathList},
 			&clientcmd.ConfigOverrides{ClusterInfo: clientcmdapi.Cluster{Server: masterURL}}).ClientConfig()
 	}
-	kubeconfig := createKubeConfig()
+	kubeconfig := createKubeConfig(f.offline)
 	var config *rest.Config
 	var err error
 	if kubeconfig != nil {
