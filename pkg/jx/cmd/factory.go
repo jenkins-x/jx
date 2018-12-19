@@ -176,6 +176,12 @@ func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns stri
 					Users: []*auth.UserAuth{&userAuth},
 				},
 			}
+
+			// lets save the file so that if we call LoadConfig() again we still have this defaulted user auth
+			err = authConfigSvc.SaveConfig()
+			if err != nil {
+				return authConfigSvc, err
+			}
 		}
 	}
 	return authConfigSvc, err

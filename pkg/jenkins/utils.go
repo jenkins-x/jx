@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/jenkins-x/golang-jenkins"
 	jenkauth "github.com/jenkins-x/jx/pkg/auth"
@@ -34,25 +35,37 @@ func GetJenkinsClient(url string, batch bool, configService jenkauth.ConfigServi
 			return nil, err
 		}
 		auths := config.FindUserAuths(url)
-		if len(auths) > 1 {
-			// TODO choose an auth
-		}
-		showForm = true
-		a := config.FindUserAuth(url, username)
-		if a != nil {
-			if a.IsInvalid() {
-				auth, err = EditUserAuth(url, configService, config, a, tokenUrl, batch, in, out, outErr)
+		if batch {
+			if len(auths) > 0 {
+				auth = *auths[0]
+			} else {
+				urls := []string{}
+				for _, svr := range config.Servers {
+					urls = append(urls, svr.URL)
+				}
+				return nil, fmt.Errorf("Could not find any user auths for jenkins server %s has server URLs %s", url, strings.Join(urls, ", "))
+			}
+		} else {
+			if len(auths) > 1 {
+				// TODO choose an auth
+			}
+			showForm = true
+			a := config.FindUserAuth(url, username)
+			if a != nil {
+				if a.IsInvalid() {
+					auth, err = EditUserAuth(url, configService, config, a, tokenUrl, batch, in, out, outErr)
+					if err != nil {
+						return nil, err
+					}
+				} else {
+					auth = *a
+				}
+			} else {
+				// lets create a new Auth
+				auth, err = EditUserAuth(url, configService, config, &auth, tokenUrl, batch, in, out, outErr)
 				if err != nil {
 					return nil, err
 				}
-			} else {
-				auth = *a
-			}
-		} else {
-			// lets create a new Auth
-			auth, err = EditUserAuth(url, configService, config, &auth, tokenUrl, batch, in, out, outErr)
-			if err != nil {
-				return nil, err
 			}
 		}
 	}

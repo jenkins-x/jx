@@ -273,6 +273,7 @@ func (o *CommonOptions) JenkinsClient() (gojenkins.JenkinsClient, error) {
 			return nil, err
 		}
 
+		o.Factory.SetBatch(o.BatchMode)
 		jenkins, err := o.Factory.CreateJenkinsClient(kubeClient, ns, o.In, o.Out, o.Err)
 
 		if err != nil {
