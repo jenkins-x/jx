@@ -22,7 +22,7 @@ type DeleteEksOptions struct {
 
 var (
 	DeleteEksLong = templates.LongDesc(`
-		Delete EKS cluster resource
+		Deletes EKS cluster resource
 `)
 
 	DeleteEksExample = templates.Examples(`
@@ -44,7 +44,7 @@ func NewCmdDeleteEks(f Factory, in terminal.FileReader, out terminal.FileWriter,
 	}
 	cmd := &cobra.Command{
 		Use:     "eks",
-		Short:   "Delete EKS cluster.",
+		Short:   "Deletes EKS cluster.",
 		Long:    DeleteEksLong,
 		Example: DeleteEksExample,
 		Run: func(cmd *cobra.Command, args []string) {
