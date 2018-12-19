@@ -68,15 +68,6 @@ func NewCmdGCActivities(f Factory, in terminal.FileReader, out terminal.FileWrit
 
 // Run implements this command
 func (o *GCActivitiesOptions) Run() error {
-	apisClient, err := o.CreateApiExtensionsClient()
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterPipelineActivityCRD(apisClient)
-	if err != nil {
-		return err
-	}
-
 	kubeClient, _, err := o.KubeClient()
 	if err != nil {
 		return err
