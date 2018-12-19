@@ -122,6 +122,31 @@ func (o *CreateClusterEKSOptions) Run() error {
 	args := []string{"create", "cluster", "--full-ecr-access"}
 	if flags.ClusterName != "" {
 		args = append(args, "--name", flags.ClusterName)
+
+		clusterExists, err := amazon.EksClusterExists(flags.ClusterName, flags.Profile, flags.Region)
+		if err != nil {
+			return err
+		}
+		if clusterExists {
+			logger.Infof("EKS cluster %s already exists.", util.ColorInfo(flags.ClusterName))
+			return nil
+		} else {
+			stackExists, err := amazon.EksClusterObsoleteStackExists(flags.ClusterName, flags.Profile, flags.Region)
+			if err != nil {
+				return err
+			}
+			if stackExists {
+				logger.Infof(
+					`Cloud formation stack named %s exists in rollbacked state. At the same 
+time there is no EKS cluster associated with it. This usually happens when there was an error during 
+cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
+					util.ColorInfo(amazon.EksctlStackName(flags.ClusterName)), util.ColorInfo(amazon.EksctlStackName(flags.ClusterName)))
+				err = amazon.CleanUpObsoleteEksClusterStack(flags.ClusterName, flags.Profile, flags.Region)
+				if err != nil {
+					return err
+				}
+			}
+		}
 	}
 
 	region, err := amazon.ResolveRegion("", flags.Region)
