@@ -3,6 +3,7 @@ package serviceaccount
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
@@ -57,6 +58,10 @@ const (
 
 // CreateServiceAccount creates a new services account in the given namespace and returns the service account name
 func CreateServiceAccount(kubeClient kubernetes.Interface, namespace string, name string) (*v1.ServiceAccount, error) {
+	err := kube.EnsureNamespaceCreated(kubeClient, namespace, nil, nil)
+	if err != nil {
+	  return nil, err
+	}
 	sa, err := kubeClient.CoreV1().ServiceAccounts(namespace).Get(name, metav1.GetOptions{})
 	// If a services account already exists just re-use it
 	if err == nil {
