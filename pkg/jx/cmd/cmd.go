@@ -192,6 +192,16 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 		Out:     out,
 		Err:     err,
 	}
+	/* TODO fails TestNewJXCommand
+	verifier := &extensions.CommandOverrideVerifier{
+		Root:        cmds,
+		SeenPlugins: make(map[string]string, 0),
+	}
+	pluginCommandGroups, managedPluginsEnabled, err1 := commonOptions.getPluginCommandGroups(verifier)
+	if err1 != nil {
+		log.Errorf("%v\n", err1)
+	}
+	*/
 	pluginCommandGroups := templates.PluginCommandGroups{}
 	managedPluginsEnabled := false
 	templates.ActsAsRootCommand(cmds, filters, pluginCommandGroups, groups...)
