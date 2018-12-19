@@ -37,6 +37,7 @@ var (
 `)
 )
 
+// NewCmdStepNextBuildNumber creates a new 'step next-buildnumber' Command.
 func NewCmdStepNextBuildNumber(commonOpts *CommonOptions) *cobra.Command {
 	options := StepNextBuildNumberOptions{
 		StepOptions: StepOptions{

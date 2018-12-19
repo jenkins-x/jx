@@ -34,6 +34,7 @@ var (
 `)
 )
 
+// NewCmdStepReportActivities creates a new 'step report activities' Command.
 func NewCmdStepReportActivities(commonOpts *CommonOptions) *cobra.Command {
 	options := StepReportActivitiesOptions{
 		StepReportOptions: StepReportOptions{

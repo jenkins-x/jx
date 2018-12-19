@@ -24,6 +24,7 @@ var (
 `)
 )
 
+// NewCmdStepNexusDrop creates a new 'step nexus drop' Command.
 func NewCmdStepNexusDrop(commonOpts *CommonOptions) *cobra.Command {
 	options := StepNexusDropOptions{
 		StepNexusOptions: StepNexusOptions{

@@ -57,6 +57,7 @@ var (
 `)
 )
 
+// NewCmdStepNextVersion creates a new 'step next-version' Command.
 func NewCmdStepNextVersion(commonOpts *CommonOptions) *cobra.Command {
 	options := StepNextVersionOptions{
 		StepOptions: StepOptions{

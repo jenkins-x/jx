@@ -24,6 +24,7 @@ var (
 `)
 )
 
+// NewCmdUpdateClusterGKE creates a new 'update cluster gke' Command
 func NewCmdUpdateClusterGKE(commonOpts *CommonOptions) *cobra.Command {
 	options := createUpdateClusterGKEOptions(commonOpts, GKE)
 

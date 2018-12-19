@@ -38,6 +38,7 @@ var (
 
 const extensionsConfigDefaultFile = "jenkins-x-extensions.yaml"
 
+// NewCmdStepPreExtend creates a new 'step pre extend' Command.
 func NewCmdStepPreExtend(commonOpts *CommonOptions) *cobra.Command {
 	options := StepPreExtendOptions{
 		StepOptions: StepOptions{

@@ -54,6 +54,7 @@ var (
 `)
 )
 
+// NewCmdStepCollect creates a new 'step collect' Command.
 func NewCmdStepCollect(commonOpts *CommonOptions) *cobra.Command {
 	options := StepCollectOptions{
 		StepOptions: StepOptions{

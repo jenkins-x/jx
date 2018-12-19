@@ -58,6 +58,7 @@ var (
 `)
 )
 
+// NewCmdStepTag creates a new 'step tag' Command.
 func NewCmdStepTag(commonOpts *CommonOptions) *cobra.Command {
 	options := StepTagOptions{
 		StepOptions: StepOptions{

@@ -39,6 +39,7 @@ var (
 `)
 )
 
+// NewCmdUpdateWebhooks creates a new 'update webhooks' command.
 func NewCmdUpdateWebhooks(commonOpts *CommonOptions) *cobra.Command {
 	options := UpdateWebhooksOptions{
 		CommonOptions: commonOpts,

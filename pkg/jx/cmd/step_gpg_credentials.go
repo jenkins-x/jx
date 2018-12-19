@@ -38,6 +38,7 @@ var (
 `)
 )
 
+// NewCmdStepGpgCredentials creates a new 'step gpg credentials' Command.
 func NewCmdStepGpgCredentials(commonOpts *CommonOptions) *cobra.Command {
 	options := StepGpgCredentialsOptions{
 		StepOptions: StepOptions{

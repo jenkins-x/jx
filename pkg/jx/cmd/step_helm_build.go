@@ -28,6 +28,7 @@ var (
 `)
 )
 
+// NewCmdStepHelmBuild creates a new 'step helm build' Command.
 func NewCmdStepHelmBuild(commonOpts *CommonOptions) *cobra.Command {
 	options := StepHelmBuildOptions{
 		StepHelmOptions: StepHelmOptions{

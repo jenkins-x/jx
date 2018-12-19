@@ -43,6 +43,7 @@ var (
 `)
 )
 
+// NewCmdStepGitCredentials creates a new 'step git credentials' Command.
 func NewCmdStepGitCredentials(commonOpts *CommonOptions) *cobra.Command {
 	options := StepGitCredentialsOptions{
 		StepOptions: StepOptions{

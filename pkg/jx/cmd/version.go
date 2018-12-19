@@ -25,6 +25,7 @@ type VersionOptions struct {
 	NoVersionCheck bool
 }
 
+// NewCmdVersion creates a new 'version' Command.
 func NewCmdVersion(commonOpts *CommonOptions) *cobra.Command {
 	options := &VersionOptions{
 		CommonOptions: commonOpts,

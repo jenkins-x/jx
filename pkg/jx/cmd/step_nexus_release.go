@@ -27,6 +27,7 @@ var (
 `)
 )
 
+// NewCmdStepNexusRelease creates a new 'step nexus release' Command.
 func NewCmdStepNexusRelease(commonOpts *CommonOptions) *cobra.Command {
 	options := StepNexusReleaseOptions{
 		StepNexusOptions: StepNexusOptions{

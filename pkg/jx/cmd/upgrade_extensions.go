@@ -55,6 +55,7 @@ type UpgradeExtensionsOptions struct {
 	ExtensionsRepositoryFile string
 }
 
+// NewCmdUpgradeExtensions creates a new 'upgrade extensions' Command
 func NewCmdUpgradeExtensions(commonOpts *CommonOptions) *cobra.Command {
 	options := &UpgradeExtensionsOptions{
 		CreateOptions: CreateOptions{

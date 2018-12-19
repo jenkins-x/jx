@@ -23,6 +23,7 @@ type UpgradeBinariesOptions struct {
 	CreateOptions
 }
 
+// NewCmdUpgradeBinaries creates a new 'upgrade binaries' command.
 func NewCmdUpgradeBinaries(commonOpts *CommonOptions) *cobra.Command {
 	options := &UpgradeBinariesOptions{
 		CreateOptions: CreateOptions{

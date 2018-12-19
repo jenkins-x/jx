@@ -43,6 +43,7 @@ var (
 	defaultValueFileNames = []string{"values.yaml", "myvalues.yaml", helm.SecretsFileName}
 )
 
+// NewCmdStepHelmApply creates a new 'step helm apply' Command.
 func NewCmdStepHelmApply(commonOpts *CommonOptions) *cobra.Command {
 	options := StepHelmApplyOptions{
 		StepHelmOptions: StepHelmOptions{

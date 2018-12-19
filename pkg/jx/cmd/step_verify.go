@@ -35,6 +35,7 @@ var (
 	`)
 )
 
+// NewCmdStepVerify creates a new 'step verify' Command.
 func NewCmdStepVerify(commonOpts *CommonOptions) *cobra.Command {
 	options := StepVerifyOptions{
 		StepOptions: StepOptions{

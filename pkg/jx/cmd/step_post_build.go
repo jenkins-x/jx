@@ -49,6 +49,7 @@ podAnnotations:
   jenkins-x.io/cve-image-id: %s
 `
 
+// NewCmdStepPostBuild creates a new 'step post build' Command.
 func NewCmdStepPostBuild(commonOpts *CommonOptions) *cobra.Command {
 	options := StepPostBuildOptions{
 		StepOptions: StepOptions{
