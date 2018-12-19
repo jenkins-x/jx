@@ -207,7 +207,7 @@ func (o *StepHelmApplyOptions) ensureHelmSecrets(dir string, filename string) (b
 
 		for _, secretName := range secretNames {
 			if secretName == filename {
-				secretPath := vault.InstallSecretsPath + filename
+				secretPath := vault.InstallSecretPath(filename)
 				secret, err := client.Read(secretPath)
 				if err != nil {
 					return exists, errors.Wrapf(err, "retrieving the secret '%s' from Vault", secretPath)
