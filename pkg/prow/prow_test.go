@@ -148,7 +148,42 @@ func TestAddProwPlugin(t *testing.T) {
 
 	assert.Equal(t, "test/repo", pluginConfig.Approve[0].Repos[0])
 	assert.Equal(t, "test/repo2", pluginConfig.Approve[1].Repos[0])
+	assert.Contains(t, pluginConfig.Plugins, "test/repo2")
+	assert.NotEmpty(t, pluginConfig.Plugins["test/repo2"])
+}
 
+func TestAddProwExternalPlugin(t *testing.T) {
+	t.Parallel()
+	o := TestOptions{}
+	o.Setup()
+	o.Kind = prowconfig.Environment
+	o.EnvironmentNamespace = "jx-staging"
+
+	externalPlugin := plugins.ExternalPlugin{
+		Name:     "test-plugin",
+		Endpoint: "http://localhost:8080",
+	}
+
+	o.Repos = append(o.Repos, "test/repo4")
+	err := o.AddProwPlugins()
+	assert.NoError(t, err)
+
+	err = prow.AddExternalPlugins(o.KubeClient, nil, o.NS, externalPlugin)
+	assert.NoError(t, err)
+
+	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwPluginsConfigMapName, metav1.GetOptions{})
+	assert.NoError(t, err)
+
+	pluginConfig := &plugins.Configuration{}
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwPluginsFilename]), &pluginConfig))
+
+	externalPlugins := &prow.ExternalPlugins{}
+	assert.NoError(t, yaml.Unmarshal([]byte(cm.Data[prow.ProwExternalPluginsFilename]), &externalPlugins))
+
+	assert.Contains(t, externalPlugins.Items, externalPlugin)
+
+	assert.Contains(t, pluginConfig.ExternalPlugins, "test/repo4")
+	assert.Contains(t, pluginConfig.ExternalPlugins["test/repo4"], externalPlugin)
 }
 
 func TestAddProwConfig(t *testing.T) {
