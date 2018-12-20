@@ -98,6 +98,7 @@ func NewCmdCreateClusterAKS(f Factory, in terminal.FileReader, out terminal.File
 	}
 
 	options.addCreateClusterFlags(cmd)
+	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.UserName, "user-name", "u", "", "Azure user name")
 	cmd.Flags().StringVarP(&options.Flags.Password, "password", "p", "", "Azure password")
