@@ -3,8 +3,9 @@ package prow
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/ghodss/yaml"
 	prowconfig "github.com/jenkins-x/jx/pkg/prow/config"
@@ -31,10 +32,11 @@ const (
 )
 
 const (
-	ProwConfigMapName        = "config"
-	ProwPluginsConfigMapName = "plugins"
-	ProwConfigFilename       = "config.yaml"
-	ProwPluginsFilename      = "plugins.yaml"
+	ProwConfigMapName           = "config"
+	ProwPluginsConfigMapName    = "plugins"
+	ProwExternalPluginsFilename = "external-plugins.yaml"
+	ProwConfigFilename          = "config.yaml"
+	ProwPluginsFilename         = "plugins.yaml"
 )
 
 // Options for Prow
@@ -46,6 +48,10 @@ type Options struct {
 	DraftPack            string
 	EnvironmentNamespace string
 	Context              string
+}
+
+type ExternalPlugins struct {
+	Items []plugins.ExternalPlugin
 }
 
 func add(kubeClient kubernetes.Interface, repos []string, ns string, kind prowconfig.Kind, draftPack, environmentNamespace string, context string) error {
@@ -100,6 +106,21 @@ func DeleteApplication(kubeClient kubernetes.Interface, repos []string, ns strin
 
 func AddProtection(kubeClient kubernetes.Interface, repos []string, context string, ns string) error {
 	return add(kubeClient, repos, ns, prowconfig.Protection, "", "", context)
+}
+
+// AddExternalPlugins adds one or more external plugins to the specified repos. If repos is nil,
+// then the external plugins will be added to all repos that have plugins
+func AddExternalPlugins(kubeClient kubernetes.Interface, repos []string, ns string,
+	add ...plugins.ExternalPlugin) error {
+	o := Options{
+		KubeClient: kubeClient,
+		NS:         ns,
+	}
+	err := o.AddExternalProwPlugins(add)
+	if err != nil {
+		return err
+	}
+	return o.AddProwPlugins()
 }
 
 // create Git repo?
@@ -351,60 +372,51 @@ func (o *Options) GetProwConfig() (*config.Config, bool, error) {
 	return prowConfig, create, nil
 }
 
-// AddProwPlugins adds plugins to prow
-func (o *Options) AddProwPlugins() error {
-
-	pluginsList := []string{"config-updater", "approve", "assign", "blunderbuss", "help", "hold", "lgtm", "lifecycle", "size", "trigger", "wip", "heart", "cat", "override"}
-
+func (o *Options) upsertPluginConfig(closure func(pluginConfig *plugins.Configuration,
+	externalPlugins *ExternalPlugins) error) error {
 	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwPluginsConfigMapName, metav1.GetOptions{})
 	create := true
 	pluginConfig := &plugins.Configuration{}
-	if err != nil {
+	externalPlugins := &ExternalPlugins{}
+	if err == nil {
+		create = false
+		err = yaml.Unmarshal([]byte(cm.Data[ProwPluginsFilename]), pluginConfig)
+		if err != nil {
+			return err
+		}
+		err = yaml.Unmarshal([]byte(cm.Data[ProwExternalPluginsFilename]), externalPlugins)
+		if err != nil {
+			return err
+		}
+	}
+
+	if pluginConfig == nil {
+		pluginConfig = &plugins.Configuration{}
+		pluginConfig.ConfigUpdater.Maps = make(map[string]plugins.ConfigMapSpec)
+		pluginConfig.ConfigUpdater.Maps["prow/config.yaml"] = plugins.ConfigMapSpec{Name: ProwConfigMapName}
+		pluginConfig.ConfigUpdater.Maps["prow/plugins.yaml"] = plugins.ConfigMapSpec{Name: ProwPluginsConfigMapName}
+
+	}
+	if len(pluginConfig.Plugins) == 0 {
 		pluginConfig.Plugins = make(map[string][]string)
+	}
+	if len(pluginConfig.ExternalPlugins) == 0 {
+		pluginConfig.ExternalPlugins = make(map[string][]plugins.ExternalPlugin)
+	}
+	if len(pluginConfig.Approve) == 0 {
 		pluginConfig.Approve = []plugins.Approve{}
+	}
+	if len(pluginConfig.Welcome) == 0 {
 		pluginConfig.Welcome = []plugins.Welcome{
 			{
 				MessageTemplate: "Welcome",
 			},
 		}
-
-		pluginConfig.ConfigUpdater.Maps = make(map[string]plugins.ConfigMapSpec)
-		pluginConfig.ConfigUpdater.Maps["prow/config.yaml"] = plugins.ConfigMapSpec{Name: ProwConfigMapName}
-		pluginConfig.ConfigUpdater.Maps["prow/plugins.yaml"] = plugins.ConfigMapSpec{Name: ProwPluginsConfigMapName}
-
-	} else {
-		create = false
-		err = yaml.Unmarshal([]byte(cm.Data[ProwPluginsFilename]), &pluginConfig)
-		if err != nil {
-			return err
-		}
-		if pluginConfig == nil {
-			pluginConfig = &plugins.Configuration{}
-		}
-		if len(pluginConfig.Plugins) == 0 {
-			pluginConfig.Plugins = make(map[string][]string)
-		}
-		if len(pluginConfig.Approve) == 0 {
-			pluginConfig.Approve = []plugins.Approve{}
-		}
 	}
 
-	for _, r := range o.Repos {
-		pluginConfig.Plugins[r] = pluginsList
-
-		a := plugins.Approve{
-			Repos:               []string{r},
-			ReviewActsAsApprove: true,
-			LgtmActsAsApprove:   true,
-		}
-		pluginConfig.Approve = append(pluginConfig.Approve, a)
-
-		parts := strings.Split(r, "/")
-		t := plugins.Trigger{
-			Repos:      []string{r},
-			TrustedOrg: parts[0],
-		}
-		pluginConfig.Triggers = append(pluginConfig.Triggers, t)
+	err = closure(pluginConfig, externalPlugins)
+	if err != nil {
+		return err
 	}
 
 	pluginYAML, err := yaml.Marshal(pluginConfig)
@@ -412,8 +424,14 @@ func (o *Options) AddProwPlugins() error {
 		return err
 	}
 
+	externalPluginsYAML, err := yaml.Marshal(externalPlugins)
+	if err != nil {
+		return err
+	}
+
 	data := make(map[string]string)
 	data[ProwPluginsFilename] = string(pluginYAML)
+	data[ProwExternalPluginsFilename] = string(externalPluginsYAML)
 	cm = &corev1.ConfigMap{
 		Data: data,
 		ObjectMeta: metav1.ObjectMeta{
@@ -425,8 +443,65 @@ func (o *Options) AddProwPlugins() error {
 	} else {
 		_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Update(cm)
 	}
-
 	return err
+}
+
+// AddProwPlugins adds plugins and external plugins to prow for any repos defined in o.Repos,
+// or for all repos which have plugins if o.Repos is nil
+func (o *Options) AddProwPlugins() error {
+	pluginsList := []string{"config-updater", "approve", "assign", "blunderbuss", "help", "hold", "lgtm", "lifecycle", "size", "trigger", "wip", "heart", "cat", "override"}
+	closure := func(pluginConfig *plugins.Configuration, externalPlugins *ExternalPlugins) error {
+		if o.Repos == nil {
+			// Then we need react for all repos defined in the plugins list
+			o.Repos = make([]string, 0)
+			for r, _ := range pluginConfig.Plugins {
+				o.Repos = append(o.Repos, r)
+			}
+		}
+		for _, r := range o.Repos {
+			pluginConfig.Plugins[r] = pluginsList
+
+			a := plugins.Approve{
+				Repos:               []string{r},
+				ReviewActsAsApprove: true,
+				LgtmActsAsApprove:   true,
+			}
+			pluginConfig.Approve = append(pluginConfig.Approve, a)
+
+			parts := strings.Split(r, "/")
+			t := plugins.Trigger{
+				Repos:      []string{r},
+				TrustedOrg: parts[0],
+			}
+			pluginConfig.Triggers = append(pluginConfig.Triggers, t)
+
+			// External Plugins
+			pluginConfig.ExternalPlugins[r] = externalPlugins.Items
+		}
+		return nil
+	}
+	return o.upsertPluginConfig(closure)
+}
+
+func (o *Options) AddExternalProwPlugins(adds []plugins.ExternalPlugin) error {
+	closure := func(pluginConfig *plugins.Configuration, externalPlugins *ExternalPlugins) error {
+		for _, add := range adds {
+			foundIndex := -1
+			for i, p := range externalPlugins.Items {
+				if p.Name == add.Name {
+					foundIndex = i
+					break
+				}
+			}
+			if foundIndex < 0 {
+				externalPlugins.Items = append(externalPlugins.Items, add)
+			} else {
+				externalPlugins.Items[foundIndex] = add
+			}
+		}
+		return nil
+	}
+	return o.upsertPluginConfig(closure)
 }
 
 func (o *Options) GetReleaseJobs() ([]string, error) {
