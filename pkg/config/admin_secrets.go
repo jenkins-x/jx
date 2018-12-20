@@ -60,50 +60,50 @@ const defaultMavenSettings = `<settings>
 const allowedSymbols = "~!#%^*_+-=?,."
 
 type ChartMuseum struct {
-	ChartMuseumEnv ChartMuseumEnv `yaml:"env"`
+	ChartMuseumEnv ChartMuseumEnv `json:"env"`
 }
 
 type ChartMuseumEnv struct {
-	ChartMuseumSecret ChartMuseumSecret `yaml:"secret"`
+	ChartMuseumSecret ChartMuseumSecret `json:"secret"`
 }
 
 type ChartMuseumSecret struct {
-	User     string `yaml:"BASIC_AUTH_USER"`
-	Password string `yaml:"BASIC_AUTH_PASS"`
+	User     string `json:"BASIC_AUTH_USER"`
+	Password string `json:"BASIC_AUTH_PASS"`
 }
 
 type Grafana struct {
-	GrafanaSecret GrafanaSecret `yaml:"server"`
+	GrafanaSecret GrafanaSecret `json:"server"`
 }
 
 type GrafanaSecret struct {
-	User     string `yaml:"adminUser"`
-	Password string `yaml:"adminPassword"`
+	User     string `json:"adminUser"`
+	Password string `json:"adminPassword"`
 }
 
 type Jenkins struct {
-	JenkinsSecret JenkinsAdminSecret `yaml:"Master"`
+	JenkinsSecret JenkinsAdminSecret `json:"Master"`
 }
 
 type JenkinsAdminSecret struct {
-	Password string `yaml:"AdminPassword"`
+	Password string `json:"AdminPassword"`
 }
 
 type PipelineSecrets struct {
-	MavenSettingsXML string `yaml:"MavenSettingsXML,omitempty"`
+	MavenSettingsXML string `json:"MavenSettingsXML,omitempty"`
 }
 
 type AdminSecretsConfig struct {
-	IngressBasicAuth string           `yaml:"JXBasicAuth,omitempty"`
-	ChartMuseum      *ChartMuseum     `yaml:"chartmuseum,omitempty"`
-	Grafana          *Grafana         `yaml:"grafana,omitempty"`
-	Jenkins          *Jenkins         `yaml:"jenkins,omitempty"`
-	Nexus            *Nexus           `yaml:"nexus,omitempty"`
-	PipelineSecrets  *PipelineSecrets `yaml:"PipelineSecrets,omitempty"`
+	IngressBasicAuth string           `json:"JXBasicAuth,omitempty"`
+	ChartMuseum      *ChartMuseum     `json:"chartmuseum,omitempty"`
+	Grafana          *Grafana         `json:"grafana,omitempty"`
+	Jenkins          *Jenkins         `json:"jenkins,omitempty"`
+	Nexus            *Nexus           `json:"nexus,omitempty"`
+	PipelineSecrets  *PipelineSecrets `json:"PipelineSecrets,omitempty"`
 }
 
 type Nexus struct {
-	DefaultAdminPassword string `yaml:"defaultAdminPassword,omitempty"`
+	DefaultAdminPassword string `json:"defaultAdminPassword,omitempty"`
 }
 
 type AdminSecretsService struct {
