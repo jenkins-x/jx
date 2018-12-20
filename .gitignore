@@ -23,6 +23,7 @@ debug
 
 .vscode/
 
+#Various temporary created while building/running jx.
 /build/
 release/
 scanning/
@@ -30,9 +31,13 @@ scanning/
 .terraform/
 myvalues.yaml
 myvalues.yml
+**/extraValues.yaml
 
 # vim swap files
 *.swp
+
+#OSX system files.
+**/.DS_Store
 
 vendor/**
 hack/code-generator/**
