@@ -158,7 +158,20 @@ func RegisterGitServiceCRD(apiClient apiextensionsclientset.Interface) error {
 		Singular:   "gitservice",
 		ShortNames: []string{"gits"},
 	}
-	columns := []v1beta1.CustomResourceColumnDefinition{}
+	columns := []v1beta1.CustomResourceColumnDefinition{
+		{
+			Name:        "Git URL",
+			Type:        "string",
+			Description: "The URL of the Git repository",
+			JSONPath:    ".spec.url",
+		},
+		{
+			Name:        "Kind",
+			Type:        "string",
+			Description: "The kind of the Git provider",
+			JSONPath:    ".spec.gitKind",
+		},
+	}
 	validation := v1beta1.CustomResourceValidation{}
 	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
