@@ -1,7 +1,7 @@
 package config_test
 
 import (
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 	"io/ioutil"
 	"testing"
 
