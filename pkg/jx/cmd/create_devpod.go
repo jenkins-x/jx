@@ -302,7 +302,7 @@ func (o *CreateDevPodOptions) Run() error {
 		if sa == "" {
 			prow, err := o.isProw()
 			if err != nil {
-			  return err
+				return err
 			}
 
 			sa = "jenkins"
@@ -553,14 +553,16 @@ func (o *CreateDevPodOptions) Run() error {
 		// Create a service for every port we expose
 
 		if len(exposeServicePorts) > 0 {
-			var servicePorts []corev1.ServicePort
 			for _, port := range exposeServicePorts {
 				portName := fmt.Sprintf("%s-%d", pod.Name, port)
-				servicePorts = append(servicePorts, corev1.ServicePort{
-					Name:       portName,
-					Port:       int32(port),
-					TargetPort: intstr.FromInt(port),
-				})
+				servicePorts := []corev1.ServicePort{
+					{
+						Name:
+						portName,
+						Port:       int32(80),
+						TargetPort: intstr.FromInt(port),
+					},
+				}
 				service := corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
 						Annotations: map[string]string{
