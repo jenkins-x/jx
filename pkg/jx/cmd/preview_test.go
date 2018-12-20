@@ -71,7 +71,8 @@ func TestGetPreviewValuesConfig(t *testing.T) {
 				cmd.APP_NAME:        "my-app",
 				cmd.PREVIEW_VERSION: "1.0.0",
 			},
-			expectedYAMLConfig: `expose: {}
+			expectedYAMLConfig: `expose:
+  config: {}
 preview:
   image:
     repository: my.registry/my-org/my-app
