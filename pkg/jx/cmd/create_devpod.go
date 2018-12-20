@@ -646,7 +646,7 @@ func (o *CreateDevPodOptions) Run() error {
 			if err != nil {
 				return err
 			}
-			log.Infof("You can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
+			log.Infof("\nYou can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
 			o.Results.TheaServiceURL = theiaServiceURL
 		} else {
 			log.Infof("Could not find service with name %s in namespace %s\n", theiaServiceName, curNs)
@@ -666,7 +666,12 @@ func (o *CreateDevPodOptions) Run() error {
 		exposePortURLs = append(exposePortURLs, u)
 	}
 	if len(exposePortURLs) > 0 {
-		log.Infof("Port 80 is open on %s and forwarded to the devpod\n", util.ColorInfo(exposePortURLs))
+		log.Infof("\nYou can access the DevPod from your browser via the following URLs:\n")
+		for _, u := range exposePortURLs {
+			log.Infof("* %s\n", util.ColorInfo(u))
+		}
+		log.Info("\n")
+
 		o.Results.ExposePortURLs = exposePortURLs
 	}
 
