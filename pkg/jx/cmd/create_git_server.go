@@ -18,10 +18,10 @@ var (
 
 	create_git_server_example = templates.Examples(`
 		# Add a new Git server
-		jx create git server -kind bitbucket --url http://bitbucket.org
+		jx create git server --kind bitbucketserver --url http://bitbucket.acme.org
 
 		# Add a new Git server with a name
-		jx create git server -k bitbucket -u http://bitbucket.org -n MyBitBucket 
+		jx create git server -k bitbucketcloud -u http://bitbucket.org -n MyBitBucket 
 
 		For more documentation see: [https://jenkins-x.io/developing/git/](https://jenkins-x.io/developing/git/)
 
@@ -56,9 +56,9 @@ func NewCmdCreateGitServer(f Factory, in terminal.FileReader, out terminal.FileW
 	}
 
 	cmd := &cobra.Command{
-		Use:     "server kind [url]",
-		Short:   "Creates a new Git server URL",
-		Aliases: []string{"provider"},
+		Use:     "server",
+		Short:   "Creates a new Git server from a URL and kind",
+		Aliases: []string{"provider", "service"},
 		Long:    create_git_server_long,
 		Example: create_git_server_example,
 		Run: func(cmd *cobra.Command, args []string) {
