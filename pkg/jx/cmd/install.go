@@ -1049,7 +1049,12 @@ func (options *InstallOptions) configureGitAuth() error {
 
 	var authServer *auth.AuthServer
 	if gitServer != "" {
-		kind := gits.SaasGitKind(gitServer)
+		kind := ""
+		if options.GitRepositoryOptions.ServerKind == "" {
+			kind = gits.SaasGitKind(gitServer)
+		} else {
+			kind = options.GitRepositoryOptions.ServerKind
+		}
 		authServer = authConfig.GetOrCreateServerName(gitServer, "", kind)
 	} else {
 		authServer, err = authConfig.PickServer("Which Git provider:", options.BatchMode, options.In, options.Out, options.Err)
