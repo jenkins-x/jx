@@ -47,6 +47,8 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 	lastCommitSha := ""
 	lastCommitMessage := ""
 	lastCommitURL := ""
+	owner := ""
+	repo := ""
 	build := ""
 	shaRegexp, err := regexp.Compile("\b[a-z0-9]{40}\b")
 	if err != nil {
@@ -80,6 +82,12 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 			}
 			if v.Name == "BRANCH_NAME" {
 				branch = v.Value
+			}
+			if v.Name == "REPO_OWNER" {
+				owner = v.Value
+			}
+			if v.Name == "REPO_NAME" {
+				repo = v.Value
 			}
 			if v.Name == "JX_BUILD_NUMBER" {
 				build = v.Value
@@ -138,14 +146,18 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 			log.Warnf("Failed to parse Git URL %s: %s", gitURL, err)
 			return nil
 		}
-		org := gitInfo.Organisation
-		repo := gitInfo.Name
+		if owner == "" {
+			owner = gitInfo.Organisation
+		}
+		if repo == "" {
+			repo = gitInfo.Name
+		}
 		answer.GitInfo = gitInfo
-		answer.Organisation = org
-		answer.Repository = repo
-		answer.Pipeline = org + "/" + repo + "/" + branch
-		answer.Name = org + "-" + repo + "-" + branch + "-" + build
+		answer.Pipeline = owner + "/" + repo + "/" + branch
+		answer.Name = owner + "-" + repo + "-" + branch + "-" + build
 	}
+	answer.Organisation = owner
+	answer.Repository = repo
 	return answer
 }
 
