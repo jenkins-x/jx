@@ -53,6 +53,7 @@ type StepChangelogOptions struct {
 	GenerateReleaseYaml bool
 	UpdateRelease       bool
 	NoReleaseInDev      bool
+	IncludeMergeCommits bool
 	State               StepChangelogState
 }
 
@@ -176,6 +177,8 @@ func NewCmdStepChangelog(f Factory, in terminal.FileReader, out terminal.FileWri
 	cmd.Flags().BoolVarP(&options.GenerateReleaseYaml, "generate-yaml", "y", true, "Generate the Release YAML in the local helm chart")
 	cmd.Flags().BoolVarP(&options.UpdateRelease, "update-release", "", true, "Should we update the release on the Git repository with the changelog")
 	cmd.Flags().BoolVarP(&options.NoReleaseInDev, "no-dev-release", "", false, "Disables the generation of Release CRDs in the development namespace to track releases being performed")
+	cmd.Flags().BoolVarP(&options.IncludeMergeCommits, "include-merge-commits", "", false,
+		"Include merge commits when generating the changelog")
 
 	cmd.Flags().StringVarP(&options.Header, "header", "", "", "The changelog header in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")
 	cmd.Flags().StringVarP(&options.HeaderFile, "header-file", "", "", "The file name of the changelog header in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")
@@ -345,7 +348,10 @@ func (o *StepChangelogOptions) Run() error {
 
 	if commits != nil {
 		for _, commit := range *commits {
-			o.addCommit(&release.Spec, &commit)
+
+			if o.IncludeMergeCommits || len(commit.ParentHashes) <= 1 {
+				o.addCommit(&release.Spec, &commit)
+			}
 		}
 	}
 
