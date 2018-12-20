@@ -92,6 +92,9 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 			if v.Name == "JX_BUILD_NUMBER" {
 				build = v.Value
 			}
+			if v.Name == "SOURCE_URL" && gitURL == "" {
+				gitURL = v.Value
+			}
 		}
 		if branch == "" {
 			for _, v := range initContainer.Env {
