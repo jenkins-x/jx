@@ -495,6 +495,19 @@ func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 			})
 		}
 	}
+	pr.Labels = make([]*Label, 0)
+	for _, l := range result.Labels {
+		if l != nil {
+			pr.Labels = append(pr.Labels, &Label{
+				Name:        l.Name,
+				URL:         l.URL,
+				ID:          l.ID,
+				Color:       l.Color,
+				Default:     l.Default,
+				Description: l.Description,
+			})
+		}
+	}
 	if result.Mergeable != nil {
 		pr.Mergeable = result.Mergeable
 	}
