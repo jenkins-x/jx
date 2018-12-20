@@ -21,12 +21,13 @@ type CreateRepoData struct {
 }
 
 type GitRepositoryOptions struct {
-	ServerURL string
-	Username  string
-	ApiToken  string
-	Owner     string
-	RepoName  string
-	Private   bool
+	ServerURL  string
+	ServerKind string
+	Username   string
+	ApiToken   string
+	Owner      string
+	RepoName   string
+	Private    bool
 }
 
 // GetRepository returns the repository if it already exists
@@ -131,6 +132,9 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigSer
 	gitUsername := userAuth.Username
 	fmt.Fprintf(out, "\n\nAbout to create repository %s on server %s with user %s\n", util.ColorInfo(defaultRepoName), util.ColorInfo(url), util.ColorInfo(gitUsername))
 
+	if repoOptions.ServerKind != "" {
+		server.Kind = repoOptions.ServerKind
+	}
 	provider, err := CreateProvider(server, userAuth, git)
 	if err != nil {
 		return nil, err
