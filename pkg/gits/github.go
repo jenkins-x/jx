@@ -545,6 +545,9 @@ func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	if result.HTMLURL != nil {
 		pr.URL = *result.HTMLURL
 	}
+	if result.UpdatedAt != nil {
+		pr.UpdatedAt = result.UpdatedAt
+	}
 	return nil
 }
 

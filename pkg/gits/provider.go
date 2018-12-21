@@ -56,6 +56,7 @@ type GitPullRequest struct {
 	Assignees          []*GitUser
 	RequestedReviewers []*GitUser
 	Labels             []*Label
+	UpdatedAt          *time.Time
 }
 
 // Label represents a label on an Issue
