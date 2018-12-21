@@ -109,7 +109,11 @@ func (o *CommonOptions) installChartAt(dir string, releaseName string, chart str
 }
 
 func (o *CommonOptions) installChartOptions(options helm.InstallChartOptions) error {
-	return helm.InstallFromChartOptions(options, o.Helm(), o.KubeClientCached, defaultInstallTimeout)
+	client, _, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	return helm.InstallFromChartOptions(options, o.Helm(), client, defaultInstallTimeout)
 }
 
 // deleteChart deletes the given chart
