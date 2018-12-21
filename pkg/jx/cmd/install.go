@@ -1752,7 +1752,7 @@ func (options *InstallOptions) getAdminSecrets(configStore configio.ConfigStore,
 
 func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string) error {
 	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
-		err := InstallVaultOperator(&options.CommonOptions, "")
+		err := InstallVaultOperator(&options.CommonOptions, namespace)
 		if err != nil {
 			return err
 		}
