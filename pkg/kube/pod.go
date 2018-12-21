@@ -92,6 +92,19 @@ func waitForPodSelectorToBeReady(client kubernetes.Interface, namespace string, 
 	return nil
 }
 
+// HasInitContainerStarted returns true if one of the init containers has started running
+func HasInitContainerStarted(pod *v1.Pod) bool {
+	if pod == nil {
+		return false
+	}
+	for _, ic := range pod.Status.InitContainerStatuses {
+		if ic.State.Running != nil || ic.State.Terminated != nil {
+			return true
+		}
+	}
+	return false
+}
+
 // waits for the pod to become ready using the pod name
 func WaitForPodNameToBeReady(client kubernetes.Interface, namespace string, name string, timeout time.Duration) error {
 	options := meta_v1.ListOptions{
