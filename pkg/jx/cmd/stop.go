@@ -47,7 +47,6 @@ func NewCmdStop(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 			err := options.Run()
 			CheckErr(err)
 		},
-		SuggestFor: []string{"list", "ps"},
 	}
 
 	cmd.AddCommand(NewCmdStopPipeline(f, in, out, errOut))

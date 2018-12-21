@@ -48,7 +48,7 @@ func NewCmdStart(f Factory, in terminal.FileReader, out terminal.FileWriter, err
 			err := options.Run()
 			CheckErr(err)
 		},
-		SuggestFor: []string{"list", "ps"},
+		SuggestFor: []string{"begin"},
 	}
 
 	cmd.AddCommand(NewCmdStartPipeline(f, in, out, errOut))
