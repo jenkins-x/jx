@@ -55,6 +55,17 @@ type GitPullRequest struct {
 	Body               string
 	Assignees          []*GitUser
 	RequestedReviewers []*GitUser
+	Labels             []*Label
+}
+
+// Label represents a label on an Issue
+type Label struct {
+	ID          *int64
+	URL         *string
+	Name        *string
+	Color       *string
+	Description *string
+	Default     *bool
 }
 
 type GitCommit struct {
