@@ -21,12 +21,13 @@ type CreateRepoData struct {
 }
 
 type GitRepositoryOptions struct {
-	ServerURL string
-	Username  string
-	ApiToken  string
-	Owner     string
-	RepoName  string
-	Private   bool
+	ServerURL  string
+	ServerKind string
+	Username   string
+	ApiToken   string
+	Owner      string
+	RepoName   string
+	Private    bool
 }
 
 // GetRepository returns the repository if it already exists
