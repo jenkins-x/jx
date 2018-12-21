@@ -139,7 +139,7 @@ func NewCmdCreateDevPod(f Factory, in terminal.FileReader, out terminal.FileWrit
 	cmd.Flags().StringVarP(&options.Username, "username", "", "", "The username to create the DevPod. If not specified defaults to the current operating system user or $USER'")
 	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker registry to use within the DevPod. If not specified, default to the built-in registry or $DOCKER_REGISTRY")
 	cmd.Flags().StringVarP(&options.TillerNamespace, "tiller-namespace", "", "", "The optional tiller namespace to use within the DevPod.")
-	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "jenkins", "The ServiceAccount name used for the DevPod")
+	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "", "The ServiceAccount name used for the DevPod")
 
 	options.addCommonFlags(cmd)
 	return cmd
@@ -298,7 +298,19 @@ func (o *CreateDevPodOptions) Run() error {
 	}
 
 	if pod.Spec.ServiceAccountName == "" {
-		pod.Spec.ServiceAccountName = o.ServiceAccount
+		sa := o.ServiceAccount
+		if sa == "" {
+			prow, err := o.isProw()
+			if err != nil {
+				return err
+			}
+
+			sa = "jenkins"
+			if prow {
+				sa = "knative-build-bot"
+			}
+		}
+		pod.Spec.ServiceAccountName = sa
 	}
 
 	if !o.Sync {
@@ -541,14 +553,16 @@ func (o *CreateDevPodOptions) Run() error {
 		// Create a service for every port we expose
 
 		if len(exposeServicePorts) > 0 {
-			var servicePorts []corev1.ServicePort
 			for _, port := range exposeServicePorts {
 				portName := fmt.Sprintf("%s-%d", pod.Name, port)
-				servicePorts = append(servicePorts, corev1.ServicePort{
-					Name:       portName,
-					Port:       int32(port),
-					TargetPort: intstr.FromInt(port),
-				})
+				servicePorts := []corev1.ServicePort{
+					{
+						Name:
+						portName,
+						Port:       int32(80),
+						TargetPort: intstr.FromInt(port),
+					},
+				}
 				service := corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
 						Annotations: map[string]string{
@@ -632,7 +646,7 @@ func (o *CreateDevPodOptions) Run() error {
 			if err != nil {
 				return err
 			}
-			log.Infof("You can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
+			log.Infof("\nYou can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
 			o.Results.TheaServiceURL = theiaServiceURL
 		} else {
 			log.Infof("Could not find service with name %s in namespace %s\n", theiaServiceName, curNs)
@@ -652,7 +666,12 @@ func (o *CreateDevPodOptions) Run() error {
 		exposePortURLs = append(exposePortURLs, u)
 	}
 	if len(exposePortURLs) > 0 {
-		log.Infof("Port 80 is open on %s and forwarded to the devpod\n", util.ColorInfo(exposePortURLs))
+		log.Infof("\nYou can access the DevPod from your browser via the following URLs:\n")
+		for _, u := range exposePortURLs {
+			log.Infof("* %s\n", util.ColorInfo(u))
+		}
+		log.Info("\n")
+
 		o.Results.ExposePortURLs = exposePortURLs
 	}
 
