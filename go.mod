@@ -49,7 +49,7 @@ require (
 	github.com/go-ole/go-ole v1.2.1 // indirect
 	github.com/go-openapi/spec v0.17.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
-	github.com/gogo/protobuf v1.1.1 // indirect
+	github.com/gogo/protobuf v1.1.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/protobuf v1.1.0 // indirect
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
@@ -163,15 +163,15 @@ require (
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.2.1
-	k8s.io/api v0.0.0-20180628040859-072894a440bd
+	k8s.io/api v0.0.0-20180628040859-072894a440bd+incompatible
 	k8s.io/apiextensions-apiserver v0.0.0-20180621085152-bbc52469f98b
 	k8s.io/apimachinery v0.0.0-20180621070125-103fd098999d
 	k8s.io/cli-runtime v0.0.0-20181026155151-1ee5ba10d7e3 // indirect
 	k8s.io/client-go v8.0.0+incompatible
-	k8s.io/code-generator v0.0.0-20181017053441-8c97d6ab64da // indirect
-	k8s.io/gengo v0.0.0-20180718083919-906d99f89cd6 // indirect
+	k8s.io/code-generator v0.0.0-20181017053441-8c97d6ab64da
+	k8s.io/gengo v0.0.0-20180718083919-906d99f89cd6
 	k8s.io/helm v2.7.2+incompatible
-	k8s.io/kube-openapi v0.0.0-20180719232738-d8ea2fe547a4 // indirect
+	k8s.io/kube-openapi v0.0.0-20180719232738-d8ea2fe547a4
 	k8s.io/kubernetes v1.11.3 // indirect
 	k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b
 	k8s.io/test-infra v0.0.0-20181113004108-9b11013021d9
