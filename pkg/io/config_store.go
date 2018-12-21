@@ -5,7 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 )
 
 // ConfigStore provides an interface for storing configs
