@@ -78,7 +78,7 @@ const (
 
 var (
 	initLong = templates.LongDesc(`
-		This command installs the Jenkins X platform on a connected Kubernetes cluster
+		This command initializes the connected Kubernetes cluster for Jenkins X platform installation
 `)
 
 	initExample = templates.Examples(`

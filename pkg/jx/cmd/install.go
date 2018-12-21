@@ -254,7 +254,6 @@ func NewCmdInstall(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 			err := options.Run()
 			CheckErr(err)
 		},
-		SuggestFor: []string{"list", "ps"},
 	}
 
 	options.addCommonFlags(cmd)
