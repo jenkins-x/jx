@@ -783,7 +783,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 	}
 
 	if options.Flags.Vault {
-		err := options.storeSecretYamlFilesInVault(vault.InstallSecretsPath, secretsFile)
+		err := options.storeSecretYamlFilesInVault(vault.GitOpsSecretsPath, secretsFile)
 		if err != nil {
 			return errors.Wrapf(err, "storing in Vault the secrets files: %s", secretsFile)
 		}

@@ -200,14 +200,14 @@ func (o *StepHelmApplyOptions) ensureHelmSecrets(dir string, filename string) (b
 		if err != nil {
 			return exists, errors.Wrap(err, "retrieving the system Vault")
 		}
-		secretNames, err := client.List(vault.InstallSecretsPath)
+		secretNames, err := client.List(vault.GitOpsSecretsPath)
 		if err != nil {
 			return exists, errors.Wrap(err, "listing the install secrets in Vault")
 		}
 
 		for _, secretName := range secretNames {
 			if secretName == filename {
-				secretPath := vault.InstallSecretPath(filename)
+				secretPath := vault.GitOpsSecretPath(filename)
 				secret, err := client.Read(secretPath)
 				if err != nil {
 					return exists, errors.Wrapf(err, "retrieving the secret '%s' from Vault", secretPath)
