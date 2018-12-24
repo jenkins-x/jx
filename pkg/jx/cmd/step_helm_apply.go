@@ -147,13 +147,21 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	o.Helm().SetCWD(dir)
 
-	secretsFileExists, err := o.ensureHelmSecrets(dir, helm.SecretsFileName)
-	if err != nil {
-		return errors.Wrap(err, "ensuring helm secrets file")
-	}
-	if !secretsFileExists {
-		// Destroy the secrets temporary file that contain sensitive information
-		defer util.DestroyFile(filepath.Join(dir, helm.SecretsFileName))
+	if o.Factory.UseVault() {
+		store := configio.NewFileStore()
+		secretsFiles, err := o.fetchSecretFilesFromVault(dir, store)
+		if err != nil {
+			return errors.Wrap(err, "fetching secrets files from vault")
+		}
+		defer func() {
+			for _, secretsFile := range secretsFiles {
+				err := util.DestroyFile(secretsFile)
+				if err != nil {
+					log.Warnf("Failed to cleanup the secrets files (%s): %v",
+						strings.Join(secretsFiles, ", "), err)
+				}
+			}
+		}()
 	}
 
 	valueFiles := []string{}
@@ -181,46 +189,44 @@ func (o *StepHelmApplyOptions) Run() error {
 	return nil
 }
 
-// ensureHelmSecrets ensures that the provided filename exists. If it does not, it will automatically create it and
-// populate it with secrets from the system vault. If the file exists, it naively assumes it is populated and won't
-// do any checks.
-// Returns true if the file already existed.
-func (o *StepHelmApplyOptions) ensureHelmSecrets(dir string, filename string) (bool, error) {
-	exists, err := util.FileExists(filename)
+func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store configio.ConfigStore) ([]string, error) {
+	files := []string{}
+	client, err := o.Factory.GetSystemVaultClient()
 	if err != nil {
-		return false, errors.Wrapf(err, "checking file '%s' exits", filename)
+		return files, errors.Wrap(err, "retrieving the system Vault")
 	}
-	// The secrets file does not exist. Populate its values from the system vault
-	if !exists {
-		if !o.Factory.UseVault() {
-			log.Warnf("no Vault found and no file '%s' exists in directory '%s'\n", filename, dir)
-			return false, nil
-		}
-		client, err := o.Factory.GetSystemVaultClient()
-		if err != nil {
-			return exists, errors.Wrap(err, "retrieving the system Vault")
-		}
-		secretNames, err := client.List(vault.GitOpsSecretsPath)
-		if err != nil {
-			return exists, errors.Wrap(err, "listing the install secrets in Vault")
-		}
-
-		for _, secretName := range secretNames {
-			if secretName == filename {
-				secretPath := vault.GitOpsSecretPath(filename)
-				secret, err := client.Read(secretPath)
-				if err != nil {
-					return exists, errors.Wrapf(err, "retrieving the secret '%s' from Vault", secretPath)
+	secretNames, err := client.List(vault.GitOpsSecretsPath)
+	if err != nil {
+		return files, errors.Wrap(err, "listing the GitOps secrets in Vault")
+	}
+	secretPaths := []string{}
+	for _, secretName := range secretNames {
+		if secretName == vault.GitOpsTemplatesPath {
+			templatesPath := vault.GitOpsSecretPath(vault.GitOpsTemplatesPath)
+			templatesSecretNames, err := client.List(templatesPath)
+			if err == nil {
+				for _, templatesSecretName := range templatesSecretNames {
+					templateSecretPath := vault.GitOpsTemplatesPath + templatesSecretName
+					secretPaths = append(secretPaths, templateSecretPath)
 				}
-				storage := configio.NewFileStore()
-				secretsFile := filepath.Join(dir, filename)
-				err = storage.WriteObject(secretsFile, secret)
-				if err != nil {
-					return exists, errors.Wrapf(err, "saving the helm secrets in file '%s'", secretsFile)
-				}
-				break
 			}
+		} else {
+			secretPaths = append(secretPaths, secretName)
 		}
 	}
-	return exists, nil
+
+	for _, secretPath := range secretPaths {
+		gitopsSecretPath := vault.GitOpsSecretPath(secretPath)
+		secret, err := client.Read(gitopsSecretPath)
+		if err != nil {
+			return files, errors.Wrapf(err, "retrieving the secret '%s' from Vault", secretPath)
+		}
+		secretFile := filepath.Join(dir, secretPath)
+		err = store.WriteObject(secretFile, secret)
+		if err != nil {
+			return files, errors.Wrapf(err, "saving the secret file '%s'", secretFile)
+		}
+		files = append(files, secretFile)
+	}
+	return files, nil
 }

@@ -15,3 +15,8 @@ func AdminSecretPath(secret AdminSecret) string {
 func GitOpsSecretPath(secret string) string {
 	return GitOpsSecretsPath + secret
 }
+
+// AuthSecretPath returns the path of an auth secret
+func AuthSecretPath(secret string) string {
+	return AuthSecretsPath + secret
+}

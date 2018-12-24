@@ -1337,6 +1337,14 @@ func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigSt
 			return gitOpsModifyConfigMap(templatesDir, name, nil, configStore, callback)
 		}
 		options.modifySecretCallback = func(name string, callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
+			if options.Flags.Vault {
+				vaultClient, err := options.Factory.GetSystemVaultClient()
+				if err != nil {
+					return nil, errors.Wrap(err, "retrieving the system vault client")
+				}
+				vaultConfigStore := configio.NewVaultStore(vaultClient, vault.GitOpsSecretsPath)
+				return gitOpsModifySecret(vault.GitOpsTemplatesPath, name, nil, vaultConfigStore, callback)
+			}
 			return gitOpsModifySecret(templatesDir, name, nil, configStore, callback)
 		}
 	}
@@ -2074,7 +2082,8 @@ func (options *InstallOptions) ModifyConfigMap(name string, callback func(*core_
 }
 
 // gitOpsModifyConfigMap provides a helper function to lazily create, modify and save the YAML file in the given directory
-func gitOpsModifyConfigMap(dir string, name string, defaultResource *core_v1.ConfigMap, configStore configio.ConfigStore, callback func(configMap *core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
+func gitOpsModifyConfigMap(dir string, name string, defaultResource *core_v1.ConfigMap, configStore configio.ConfigStore,
+	callback func(configMap *core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
 	answer := core_v1.ConfigMap{}
 	fileName := filepath.Join(dir, name+"-configmap.yaml")
 	exists, err := util.FileExists(fileName)
@@ -2109,7 +2118,8 @@ func gitOpsModifyConfigMap(dir string, name string, defaultResource *core_v1.Con
 }
 
 // gitOpsModifySecret provides a helper function to lazily create, modify and save the YAML file in the given directory
-func gitOpsModifySecret(dir string, name string, defaultResource *core_v1.Secret, configStore configio.ConfigStore, callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
+func gitOpsModifySecret(dir string, name string, defaultResource *core_v1.Secret, configStore configio.ConfigStore,
+	callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
 	answer := core_v1.Secret{}
 	fileName := filepath.Join(dir, name+"-secret.yaml")
 	exists, err := util.FileExists(fileName)
@@ -2145,7 +2155,8 @@ func gitOpsModifySecret(dir string, name string, defaultResource *core_v1.Secret
 }
 
 // gitOpsModifyEnvironment provides a helper function to lazily create, modify and save the YAML file in the given directory
-func gitOpsModifyEnvironment(dir string, name string, defaultEnvironment *v1.Environment, configStore configio.ConfigStore, callback func(*v1.Environment) error) (*v1.Environment, error) {
+func gitOpsModifyEnvironment(dir string, name string, defaultEnvironment *v1.Environment, configStore configio.ConfigStore,
+	callback func(*v1.Environment) error) (*v1.Environment, error) {
 	answer := v1.Environment{}
 	fileName := filepath.Join(dir, name+"-env.yaml")
 	exists, err := util.FileExists(fileName)

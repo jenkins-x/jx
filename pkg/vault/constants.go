@@ -5,8 +5,12 @@ const (
 	SystemVaultName = "jx-vault"
 	// GitOpsSecretsPath the path of secrets generated for GitOps
 	GitOpsSecretsPath = "gitops/"
+	// GitOpsTemplatesPath the path of gitops templates secrets
+	GitOpsTemplatesPath = "templates/"
 	// AdminSecretsPath the path of admin secrets
 	AdminSecretsPath = "admin/"
+	// AuthSecretsPath the path of auth secrets
+	AuthSecretsPath = "auth/"
 )
 
 // AdminSecret type for a vault admin secret

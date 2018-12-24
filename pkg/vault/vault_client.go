@@ -14,7 +14,8 @@ type Client interface {
 	// Write writes a named secret to the vault
 	Write(secretName string, data map[string]interface{}) (map[string]interface{}, error)
 
-	// WriteObject writes a generic named object to the vault. The secret _must_ be serializable to JSON
+	// WriteObject writes a generic named object to the vault.
+	// The secret _must_ be serializable to JSON.
 	WriteObject(secretName string, secret interface{}) (map[string]interface{}, error)
 
 	// WriteYaml writes a yaml object to a named secret
@@ -25,6 +26,10 @@ type Client interface {
 
 	// Read reads a named secret from the vault
 	Read(secretName string) (map[string]interface{}, error)
+
+	// ReadObject reads a generic named objec from vault.
+	// The secret _must_ be serializable to JSON.
+	ReadObject(secretName string, secret interface{}) error
 
 	// Config gets the config required for configuring the official Vault CLI
 	Config() (vaultURL url.URL, vaultToken string, err error)
@@ -50,14 +55,36 @@ func (v *client) Write(secretName string, data map[string]interface{}) (map[stri
 	return nil, err
 }
 
+// Read reads a named secret to the vault
+func (v *client) Read(secretName string) (map[string]interface{}, error) {
+	secret, err := v.client.Logical().Read(secretPath(secretName))
+	if secret != nil {
+		return secret.Data, err
+	}
+	return nil, err
+}
+
 // WriteObject writes a generic named object to the vault. The secret _must_ be serializable to JSON
 func (v *client) WriteObject(secretName string, secret interface{}) (map[string]interface{}, error) {
 	// Convert the secret into a saveable map[string]interface{} format
 	m, err := util.ToMapStringInterfaceFromStruct(&secret)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Could not serialize secret '%s' object for saving to vault", secretName)
+		return nil, errors.Wrapf(err, "could not serialize secret '%s' object for saving to vault", secretName)
 	}
 	return v.Write(secretName, m)
+}
+
+// ReadObject reads a generic named object from the vault.
+func (v *client) ReadObject(secretName string, secret interface{}) error {
+	m, err := v.Read(secretName)
+	if err != nil {
+		return errors.Wrapf(err, "could not read the secret '%s' from vault", secretName)
+	}
+	err = util.ToStructFromMapStringInterface(m, &secret)
+	if err != nil {
+		return errors.Wrapf(err, "could not deserialize the secret '%s' from vault", secretName)
+	}
+	return nil
 }
 
 // WriteYaml writes a yaml object to a named secret
@@ -94,15 +121,6 @@ func (v *client) List(path string) ([]string, error) {
 	}
 
 	return secretNames, nil
-}
-
-// Read reads a named secret to the vault
-func (v *client) Read(secretName string) (map[string]interface{}, error) {
-	secret, err := v.client.Logical().Read(secretPath(secretName))
-	if secret != nil {
-		return secret.Data, err
-	}
-	return nil, err
 }
 
 // Config retruns the current vault address and api token
