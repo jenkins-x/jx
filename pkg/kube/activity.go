@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/util"
-
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
@@ -66,8 +64,11 @@ type PipelineID struct {
 // validated/mandated here.
 func NewPipelineIDFromString(id string) PipelineID {
 	pID := PipelineID{
-		ID:   id,
-		Name: util.EncodeKubernetesName(strings.Replace(id, "/", "-", -1)),
+		ID: id,
+		//TODO: disabling the encoding of the name, as it doesn't work for some upper case values. Upshot is conflicts on org/repo/branch that differ only in case.
+		//See https://github.com/jenkins-x/jx/issues/2551
+		//Name: util.EncodeKubernetesName(strings.Replace(id, "/", "-", -1)),
+		Name: strings.Replace(strings.ToLower(id), "/", "-", -1),
 	}
 	return pID
 }
