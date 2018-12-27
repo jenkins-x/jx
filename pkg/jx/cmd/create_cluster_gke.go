@@ -240,7 +240,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	if o.Flags.AutoUpgrade {
-		args = append(args, "--enable-autoupgrade", "true")
+		args = append(args, "--enable-autoupgrade")
 	}
 
 	if o.Flags.ImageType != "" {

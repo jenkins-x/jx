@@ -52,7 +52,7 @@ func NewCmdUpgrade(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 			err := options.Run()
 			CheckErr(err)
 		},
-		SuggestFor: []string{"remove", "rm"},
+		SuggestFor: []string{"update"},
 	}
 
 	cmd.AddCommand(NewCmdUpgradeAddons(f, in, out, errOut))

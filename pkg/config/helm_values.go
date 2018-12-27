@@ -8,64 +8,64 @@ import (
 )
 
 type ExposeControllerConfig struct {
-	Domain   string `yaml:"domain,omitempty"`
-	Exposer  string `yaml:"exposer,omitempty"`
-	HTTP     string `yaml:"http,omitempty"`
-	TLSAcme  string `yaml:"tlsacme,omitempty"`
-	PathMode string `yaml:"pathMode,omitempty"`
+	Domain   string `json:"domain,omitempty"`
+	Exposer  string `json:"exposer,omitempty"`
+	HTTP     string `json:"http,omitempty"`
+	TLSAcme  string `json:"tlsacme,omitempty"`
+	PathMode string `json:"pathMode,omitempty"`
 }
 type ExposeController struct {
-	Config      ExposeControllerConfig `yaml:"config,omitempty"`
-	Annotations map[string]string      `yaml:"Annotations,omitempty"`
+	Config      ExposeControllerConfig `json:"config,omitempty"`
+	Annotations map[string]string      `json:"Annotations,omitempty"`
 }
 
 type JenkinsValuesConfig struct {
-	Servers JenkinsServersValuesConfig `yaml:"Servers,omitempty"`
-	Enabled *bool                      `yaml:"enabled,omitempty"`
+	Servers JenkinsServersValuesConfig `json:"Servers,omitempty"`
+	Enabled *bool                      `json:"enabled,omitempty"`
 }
 
 type ProwValuesConfig struct {
-	User       string `yaml:"user,omitempty"`
-	HMACtoken  string `yaml:"hmacToken,omitempty"`
-	OAUTHtoken string `yaml:"oauthToken,omitempty"`
+	User       string `json:"user,omitempty"`
+	HMACtoken  string `json:"hmacToken,omitempty"`
+	OAUTHtoken string `json:"oauthToken,omitempty"`
 }
 
 type JenkinsServersValuesConfig struct {
-	Gitea  []JenkinsGiteaServersValuesConfig  `yaml:"Gitea,omitempty"`
-	GHE    []JenkinsGithubServersValuesConfig `yaml:"GHE,omitempty"`
-	Global JenkinsServersGlobalConfig         `yaml:"Global,omitempty"`
+	Gitea  []JenkinsGiteaServersValuesConfig  `json:"Gitea,omitempty"`
+	GHE    []JenkinsGithubServersValuesConfig `json:"GHE,omitempty"`
+	Global JenkinsServersGlobalConfig         `json:"Global,omitempty"`
 }
 
 type JenkinsServersGlobalConfig struct {
-	EnvVars map[string]string `yaml:"EnvVars,omitempty"`
+	EnvVars map[string]string `json:"EnvVars,omitempty"`
 }
 
 type JenkinsGiteaServersValuesConfig struct {
-	Name       string `yaml:"Name,omitempty"`
-	Url        string `yaml:"Url,omitempty"`
-	Credential string `yaml:"Credential,omitempty"`
+	Name       string `json:"Name,omitempty"`
+	Url        string `json:"Url,omitempty"`
+	Credential string `json:"Credential,omitempty"`
 }
 
 type JenkinsGithubServersValuesConfig struct {
-	Name string `yaml:"Name,omitempty"`
-	Url  string `yaml:"Url,omitempty"`
+	Name string `json:"Name,omitempty"`
+	Url  string `json:"Url,omitempty"`
 }
 
 type JenkinsPipelineSecretsValuesConfig struct {
-	DockerConfig string `yaml:"DockerConfig,flow,omitempty"`
+	DockerConfig string `json:"DockerConfig,flow,omitempty"`
 }
 
 // ControllerBuildConfig to configure the build controller
 type ControllerBuildConfig struct {
-	Enabled *bool `yaml:"enabled,omitempty"`
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 type HelmValuesConfig struct {
-	ExposeController *ExposeController                  `yaml:"expose,omitempty"`
-	Jenkins          JenkinsValuesConfig                `yaml:"jenkins,omitempty"`
-	Prow             ProwValuesConfig                   `yaml:"prow,omitempty"`
-	PipelineSecrets  JenkinsPipelineSecretsValuesConfig `yaml:"PipelineSecrets,omitempty"`
-	ControllerBuild  ControllerBuildConfig              `yaml:"controllerbuild,omitempty"`
+	ExposeController *ExposeController                  `json:"expose,omitempty"`
+	Jenkins          JenkinsValuesConfig                `json:"jenkins,omitempty"`
+	Prow             ProwValuesConfig                   `json:"prow,omitempty"`
+	PipelineSecrets  JenkinsPipelineSecretsValuesConfig `json:"PipelineSecrets,omitempty"`
+	ControllerBuild  ControllerBuildConfig              `json:"controllerbuild,omitempty"`
 }
 
 type HelmValuesConfigService struct {

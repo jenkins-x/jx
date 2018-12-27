@@ -425,8 +425,9 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 		return ""
 	}
 
+	
 	// TODO only github supported for now! Lets switch to GitProvider
-	return fmt.Sprintf("https://%s.github.io/%s/%s", gitInfo.Organisation, gitInfo.Name, fileName)
+	return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/gh-pages/%s", gitInfo.Organisation, gitInfo.Name, fileName)
 }
 
 // createStepDescription uses the spec of the init container to return a description
