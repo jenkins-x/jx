@@ -192,20 +192,18 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 		Out:     out,
 		Err:     err,
 	}
-	/* TODO fails TestNewJXCommand
-	>>>>>>> Reproduced problem in a test.
+	getPluginCommandGroups := func() (templates.PluginCommandGroups, bool) {
 		verifier := &extensions.CommandOverrideVerifier{
 			Root:        cmds,
 			SeenPlugins: make(map[string]string, 0),
 		}
-	<<<<<<< HEAD
-		/*pluginCommandGroups, managedPluginsEnabled, err1 := commonOptions.getPluginCommandGroups(verifier)
-		if err1 != nil {
-			log.Errorf("%v\n", err1)
-		}*/
-	pluginCommandGroups := templates.PluginCommandGroups{}
-	managedPluginsEnabled := false
-	templates.ActsAsRootCommand(cmds, filters, pluginCommandGroups, groups...)
+		pluginCommandGroups, managedPluginsEnabled, err := commonOptions.getPluginCommandGroups(verifier)
+		if err != nil {
+			log.Errorf("%v\n", err)
+		}
+		return pluginCommandGroups, managedPluginsEnabled
+	}
+	templates.ActsAsRootCommand(cmds, filters, getPluginCommandGroups, groups...)
 	cmds.AddCommand(NewCmdDocs(f, in, out, err))
 	cmds.AddCommand(NewCmdVersion(f, in, out, err))
 	cmds.Version = version.GetVersion()
@@ -225,7 +223,7 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 		// only look for suitable executables if
 		// the specified command does not already exist
 		if _, _, err := cmds.Find(cmdPathPieces); err != nil {
-			if managedPluginsEnabled {
+			if _, managedPluginsEnabled := getPluginCommandGroups(); managedPluginsEnabled {
 				if err := handleEndpointExtensions(managedPlugins, cmdPathPieces); err != nil {
 					log.Errorf("%v\n", err)
 					os.Exit(1)
@@ -362,9 +360,11 @@ func handleEndpointExtensions(pluginHandler PluginHandler, cmdArgs []string) err
 	for len(remainingArgs) > 0 {
 		path, err := pluginHandler.Lookup(fmt.Sprintf("jx-%s", strings.Join(remainingArgs, "-")))
 		if err != nil || len(path) == 0 {
+			/* Usually "executable file not found in $PATH", spams output of jx help subcommand:
 			if err != nil {
 				log.Errorf("Error installing plugin for command %s. %v\n", remainingArgs, err)
 			}
+			*/
 			remainingArgs = remainingArgs[:len(remainingArgs)-1]
 			continue
 		}
