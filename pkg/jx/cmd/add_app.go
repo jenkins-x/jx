@@ -75,13 +75,11 @@ func NewCmdAddApp(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 
 func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string, defaultOptionRelease string, defaultVersion string) {
 
-	o.GitOps, o.DevEnv = o.GetDevEnv()
-
 	// Common flags
 
 	cmd.Flags().StringVarP(&o.Version, "version", "v", defaultVersion,
 		"The chart version to install")
-	cmd.Flags().StringVarP(&o.Repo, "repository", "", o.DevEnv.Spec.TeamSettings.AppsRepository,
+	cmd.Flags().StringVarP(&o.Repo, "repository", "", "",
 		"The repository from which the app should be installed")
 	cmd.Flags().StringVarP(&o.Username, "username", "", "",
 		"The username for the repository")
@@ -89,23 +87,23 @@ func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string, de
 		"The password for the repository")
 	cmd.Flags().BoolVarP(&o.BatchMode, optionBatchMode, "b", false, "In batch mode the command never prompts for user input")
 	cmd.Flags().BoolVarP(&o.Verbose, optionVerbose, "", false, "Enable verbose logging")
-	if o.GitOps {
-		// GitOps specific flags go here
-		cmd.Flags().StringVarP(&o.Alias, "alias", "", "", "An alias to use for the app")
-	} else {
-		// Non GitOps specific flags go here
-		cmd.Flags().StringVarP(&o.ReleaseName, optionRelease, "r", defaultOptionRelease, "The chart release name")
-		cmd.Flags().BoolVarP(&o.HelmUpdate, "helm-update", "", true, "Should we run helm update first to ensure we use the latest version")
-		cmd.Flags().StringVarP(&o.Namespace, "namespace", "n", defaultNamespace, "The Namespace to install into")
-		cmd.Flags().StringArrayVarP(&o.ValueFiles, "values", "f", []string{}, "List of locations for values files, can be local files or URLs")
-		cmd.Flags().StringVarP(&o.SetValues, "set", "s", "",
-			"The chart set values (can specify multiple or separate values with commas: key1=val1,key2=val2)")
-	}
+	cmd.Flags().StringVarP(&o.Alias, "alias", "", "", "An alias to use for the app [--gitops]")
+	cmd.Flags().StringVarP(&o.ReleaseName, optionRelease, "r", defaultOptionRelease, "The chart release name [--no-gitops]")
+	cmd.Flags().BoolVarP(&o.HelmUpdate, "helm-update", "", true, "Should we run helm update first to ensure we use the latest version [--no-gitops]")
+	cmd.Flags().StringVarP(&o.Namespace, "namespace", "n", defaultNamespace, "The Namespace to install into [--no-gitops]")
+	cmd.Flags().StringArrayVarP(&o.ValueFiles, "values", "f", []string{}, "List of locations for values files, can be local files or URLs [--no-gitops]")
+	cmd.Flags().StringVarP(&o.SetValues, "set", "s", "",
+		"The chart set values (can specify multiple or separate values with commas: key1=val1,key2=val2) [--no-gitops]")
 
 }
 
 // Run implements this command
 func (o *AddAppOptions) Run() error {
+	o.GitOps, o.DevEnv = o.GetDevEnv()
+	if o.Repo == "" {
+		o.Repo = o.DevEnv.Spec.TeamSettings.AppsRepository		
+	}
+
 	// Regiser the App CRD
 	apiClient, err := o.ApiExtensionsClient()
 	if err != nil {
