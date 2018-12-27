@@ -88,32 +88,30 @@ func NewCmdUpgradeApps(f Factory, in terminal.FileReader, out terminal.FileWrite
 		},
 	}
 
-	o.GitOps, o.DevEnv = o.GetDevEnv()
-
 	cmd.Flags().BoolVarP(&o.BatchMode, optionBatchMode, "b", false, "In batch mode the command never prompts for user input")
 	cmd.Flags().BoolVarP(&o.Verbose, optionVerbose, "", false, "Enable verbose logging")
 	cmd.Flags().StringVarP(&o.Version, "username", "", "",
 		"The username for the repository")
 	cmd.Flags().StringVarP(&o.Version, "password", "", "",
 		"The password for the repository")
-	cmd.Flags().StringVarP(&o.Repo, "repository", "", o.DevEnv.Spec.TeamSettings.AppsRepository,
+	cmd.Flags().StringVarP(&o.Repo, "repository", "", "",
 		"The repository from which the app should be installed")
-	if o.GitOps {
-		// GitOps flags go here
-		cmd.Flags().StringVarP(&o.Alias, "alias", "", "", "An alias to use for the app")
-		cmd.Flags().StringVarP(&o.Version, "version", "v", "",
-			"The chart version to install")
-	} else {
-		// Non-GitOps flags go here
-		cmd.Flags().StringVarP(&o.Namespace, "namespace", "", "", "The Namespace to promote to")
-		cmd.Flags().StringVarP(&o.Set, "set", "s", "", "The Helm parameters to pass in while upgrading")
-	}
+	cmd.Flags().StringVarP(&o.Alias, "alias", "", "", "An alias to use for the app [--gitops]")
+	cmd.Flags().StringVarP(&o.Version, "version", "v", "",
+		"The chart version to install [--gitops]")
+	cmd.Flags().StringVarP(&o.Namespace, "namespace", "", "", "The Namespace to promote to [--no-gitops]")
+	cmd.Flags().StringVarP(&o.Set, "set", "s", "", "The Helm parameters to pass in while upgrading [--no-gitops]")
 
 	return cmd
 }
 
 // Run implements the command
 func (o *UpgradeAppsOptions) Run() error {
+	o.GitOps, o.DevEnv = o.GetDevEnv()
+	if o.Repo == "" {
+		o.Repo = o.DevEnv.Spec.TeamSettings.AppsRepository
+	}
+
 	if o.GitOps {
 		err := o.createPRs()
 		if err != nil {
