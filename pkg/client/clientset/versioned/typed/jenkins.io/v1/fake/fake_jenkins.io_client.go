@@ -16,6 +16,10 @@ func (c *FakeJenkinsV1) Apps(namespace string) v1.AppInterface {
 	return &FakeApps{c, namespace}
 }
 
+func (c *FakeJenkinsV1) Applications(namespace string) v1.ApplicationInterface {
+	return &FakeApplications{c, namespace}
+}
+
 func (c *FakeJenkinsV1) BuildPacks(namespace string) v1.BuildPackInterface {
 	return &FakeBuildPacks{c, namespace}
 }

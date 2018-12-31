@@ -12,6 +12,7 @@ import (
 type JenkinsV1Interface interface {
 	RESTClient() rest.Interface
 	AppsGetter
+	ApplicationsGetter
 	BuildPacksGetter
 	CommitStatusesGetter
 	EnvironmentsGetter
@@ -33,6 +34,10 @@ type JenkinsV1Client struct {
 
 func (c *JenkinsV1Client) Apps(namespace string) AppInterface {
 	return newApps(c, namespace)
+}
+
+func (c *JenkinsV1Client) Applications(namespace string) ApplicationInterface {
+	return newApplications(c, namespace)
 }
 
 func (c *JenkinsV1Client) BuildPacks(namespace string) BuildPackInterface {

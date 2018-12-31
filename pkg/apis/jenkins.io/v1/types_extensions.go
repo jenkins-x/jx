@@ -438,6 +438,42 @@ type AppList struct {
 	Items []App `json:"items"`
 }
 
+// +genclient
+// +genclient:noStatus
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+
+// Application is the metadata for an Application
+type Application struct {
+	metav1.TypeMeta `json:",inline"`
+	// Standard object's metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+
+	Spec ApplictionSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
+}
+
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// ApplicationList is a structure used by k8s to store lists of apps
+type ApplicationList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []Application `json:"items"`
+}
+
+
+// ApplictionSpec provides details of the metadata for an App
+type ApplictionSpec struct {
+	Name        string
+	Description string
+	Org         string
+	Repo        string
+}
+
 // AppSpec provides details of the metadata for an App
 type AppSpec struct {
 	// A list of services that this App exposes
