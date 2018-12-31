@@ -4,6 +4,8 @@ package v1
 
 type AppExpansion interface{}
 
+type ApplicationExpansion interface{}
+
 type BuildPackExpansion interface{}
 
 type CommitStatusExpansion interface{}
