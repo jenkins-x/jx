@@ -117,7 +117,8 @@ func (o *ComplianceResultsOptions) Run() error {
 
 	err = eg.Wait()
 	if err != nil {
-		return errors.Wrap(err, "failed to retrieve the results")
+		log.Infof("No compliance status found. Use %s command to start the compliance tests.\n", util.ColorInfo("jx compliance run"))
+		log.Infof("You can watch the logs with %s command.\n", util.ColorInfo("jx compliance logs -f"))
 	}
 	return nil
 }
