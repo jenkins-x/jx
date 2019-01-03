@@ -40,7 +40,7 @@ pipeline {
                     sh "echo building Pull Request for preview ${TEAM}"
 
                     sh "make linux"
-                    sh 'test `git status --short | tee /dev/stderr | wc --bytes` -eq 0'
+                    sh 'git add . && git diff --exit-code HEAD'
                     sh "make test-slow-integration"
                     sh "./build/linux/jx --help"
 
