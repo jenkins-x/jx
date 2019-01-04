@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"sort"
 	"strings"
@@ -21,6 +22,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // GetBuildLogsOptions the command line options
@@ -266,9 +268,36 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 		return fmt.Errorf("No InitContainers for Pod %s for build: %s", pod.Name, name)
 	}
 
-	lastInitC := initContainers[len(initContainers)-1]
 	log.Infof("Build logs for %s\n", util.ColorInfo(name))
-	return o.getPodLog(ns, pod, lastInitC)
+	err = waitForInitContainerToStart(kubeClient, ns, pod)
+	if err != nil {
+		return err
+	}
+	for _, ic := range initContainers {
+		err = o.getPodLog(ns, pod, ic)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func waitForInitContainerToStart(kubeClient kubernetes.Interface, ns string, pod *corev1.Pod) error {
+	if kube.HasInitContainerStarted(pod) {
+		return nil
+	}
+	log.Infof("waiting for pod %s to start...\n", pod.Name)
+	for {
+		time.Sleep(time.Second)
+
+		p, err := kubeClient.CoreV1().Pods(ns).Get(pod.Name, metav1.GetOptions{})
+		if err != nil {
+			return errors.Wrapf(err, "failed to load pod %s", pod.Name)
+		}
+		if kube.HasInitContainerStarted(p) {
+			return nil
+		}
+	}
 }
 
 func (o *GetBuildLogsOptions) getPodLog(ns string, pod *corev1.Pod, container corev1.Container) error {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 )
 
 type ExposeControllerConfig struct {
