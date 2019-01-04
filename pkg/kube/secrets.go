@@ -1,13 +1,14 @@
 package kube
 
 import (
+	"sort"
+
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"sort"
 )
 
 // GetSecrets returns a map of the Secrets along with a sorted list of names

@@ -7,7 +7,7 @@ import (
 
 // LoadConfig loads the config from the vault
 func (v *VaultAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
-	data, err := v.vaultClient.Read(v.secretName)
+	data, err := v.vaultClient.Read(vault.AuthSecretPath(v.secretName))
 	if err != nil {
 		return nil, err
 	}
@@ -24,7 +24,7 @@ func (v *VaultAuthConfigSaver) SaveConfig(config *AuthConfig) error {
 	// Marshall the AuthConfig to a generic map to save in vault (as that's what vault takes)
 	m, err := util.ToMapStringInterfaceFromStruct(&config)
 	if err == nil {
-		_, err = v.vaultClient.Write(v.secretName, m)
+		_, err = v.vaultClient.Write(vault.AuthSecretPath(v.secretName), m)
 	}
 	return err
 }

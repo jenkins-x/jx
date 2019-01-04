@@ -8,7 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
 // asks to chose from existing projects or optionally creates one if none exist
@@ -57,6 +57,10 @@ func (o *CommonOptions) getGoogleProjectId() (string, error) {
 			Help:    "Select a Google Project to create the cluster in",
 		}
 
+		if currentProject, err := gke.GetCurrentProject(); err == nil && currentProject != "" {
+			prompts.Default = currentProject
+		}
+
 		err := survey.AskOne(prompts, &projectId, nil, surveyOpts)
 		if err != nil {
 			return "", err
@@ -71,6 +75,10 @@ func (o *CommonOptions) getGoogleProjectId() (string, error) {
 }
 
 func (o *CommonOptions) getGoogleZone(projectId string) (string, error) {
+	return o.getGoogleZoneWithDefault(projectId, "")
+}
+
+func (o *CommonOptions) getGoogleZoneWithDefault(projectId string, defaultZone string) (string, error) {
 	availableZones, err := gke.GetGoogleZones(projectId)
 	if err != nil {
 		return "", err
@@ -80,6 +88,7 @@ func (o *CommonOptions) getGoogleZone(projectId string) (string, error) {
 		Options:  availableZones,
 		PageSize: 10,
 		Help:     "The compute zone (e.g. us-central1-a) for the cluster",
+		Default:  defaultZone,
 	}
 	zone := ""
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)

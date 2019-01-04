@@ -11,7 +11,12 @@ func AdminSecretPath(secret AdminSecret) string {
 	return AdminSecretsPath + string(secret)
 }
 
-// InstallSecretPath returns the path of an install secret
-func InstallSecretPath(secret string) string {
-	return InstallSecretsPath + secret
+// GitOpsSecretsPath returns the path of an install secret
+func GitOpsSecretPath(secret string) string {
+	return GitOpsSecretsPath + secret
+}
+
+// AuthSecretPath returns the path of an auth secret
+func AuthSecretPath(secret string) string {
+	return AuthSecretsPath + secret
 }

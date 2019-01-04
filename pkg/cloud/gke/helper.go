@@ -64,6 +64,18 @@ func GetGoogleProjects() ([]string, error) {
 	return existingProjects, nil
 }
 
+func GetCurrentProject() (string, error) {
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: []string{"config", "get-value", "project"},
+	}
+	out, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return "", err
+	}
+	return out, nil
+}
+
 func GetGoogleMachineTypes() []string {
 
 	return []string{

@@ -11,17 +11,17 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 
 	randomdata "github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/jenkins-x/jx/pkg/addon"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -432,7 +432,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring the cloud provider after initializing the platform")
 	}
 
-	err = options.saveIngressConfig()
+	ic, err := options.saveIngressConfig()
 	if err != nil {
 		return errors.Wrap(err, "saving the ingress configuration in a ConfigMap")
 	}
@@ -442,7 +442,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "saving the cluster configuration in a ConfigMap")
 	}
 
-	err = options.createSystemVault(client, ns)
+	err = options.createSystemVault(client, ns, ic)
 	if err != nil {
 		return errors.Wrap(err, "creating the system vault")
 	}
@@ -783,7 +783,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 	}
 
 	if options.Flags.Vault {
-		err := options.storeSecretYamlFilesInVault(vault.InstallSecretsPath, secretsFile)
+		err := options.storeSecretYamlFilesInVault(vault.GitOpsSecretsPath, secretsFile)
 		if err != nil {
 			return errors.Wrapf(err, "storing in Vault the secrets files: %s", secretsFile)
 		}
@@ -1337,6 +1337,14 @@ func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigSt
 			return gitOpsModifyConfigMap(templatesDir, name, nil, configStore, callback)
 		}
 		options.modifySecretCallback = func(name string, callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
+			if options.Flags.Vault {
+				vaultClient, err := options.Factory.GetSystemVaultClient()
+				if err != nil {
+					return nil, errors.Wrap(err, "retrieving the system vault client")
+				}
+				vaultConfigStore := configio.NewVaultStore(vaultClient, vault.GitOpsSecretsPath)
+				return gitOpsModifySecret(vault.GitOpsTemplatesPath, name, nil, vaultConfigStore, callback)
+			}
 			return gitOpsModifySecret(templatesDir, name, nil, configStore, callback)
 		}
 	}
@@ -1750,9 +1758,9 @@ func (options *InstallOptions) getAdminSecrets(configStore configio.ConfigStore,
 	return adminSecretsFileName, adminSecrets, nil
 }
 
-func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string) error {
+func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string, ic *kube.IngressConfig) error {
 	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
-		err := InstallVaultOperator(&options.CommonOptions, "")
+		err := InstallVaultOperator(&options.CommonOptions, namespace)
 		if err != nil {
 			return err
 		}
@@ -1766,6 +1774,7 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 				CreateOptions: CreateOptions{
 					CommonOptions: options.CommonOptions,
 				},
+				IngressConfig: *ic,
 			},
 			Namespace: namespace,
 		}
@@ -1842,7 +1851,7 @@ func (options *InstallOptions) configureBuildPackMode() error {
 	return ebp.Run()
 }
 
-func (options *InstallOptions) saveIngressConfig() error {
+func (options *InstallOptions) saveIngressConfig() (*kube.IngressConfig, error) {
 	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
 	domain := helmConfig.ExposeController.Config.Domain
 	if domain == "" {
@@ -1853,7 +1862,7 @@ func (options *InstallOptions) saveIngressConfig() error {
 	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
 	tls, err := util.ParseBool(exposeController.Config.TLSAcme)
 	if err != nil {
-		return fmt.Errorf("failed to parse TLS exposecontroller boolean %v", err)
+		return nil, fmt.Errorf("failed to parse TLS exposecontroller boolean %v", err)
 	}
 	ic := kube.IngressConfig{
 		Domain:  domain,
@@ -1863,9 +1872,9 @@ func (options *InstallOptions) saveIngressConfig() error {
 	// save ingress config details to a configmap
 	_, err = options.saveAsConfigMap(kube.IngressConfigConfigmap, ic)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return &ic, nil
 }
 
 func (options *InstallOptions) saveClusterConfig() error {
@@ -2074,7 +2083,8 @@ func (options *InstallOptions) ModifyConfigMap(name string, callback func(*core_
 }
 
 // gitOpsModifyConfigMap provides a helper function to lazily create, modify and save the YAML file in the given directory
-func gitOpsModifyConfigMap(dir string, name string, defaultResource *core_v1.ConfigMap, configStore configio.ConfigStore, callback func(configMap *core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
+func gitOpsModifyConfigMap(dir string, name string, defaultResource *core_v1.ConfigMap, configStore configio.ConfigStore,
+	callback func(configMap *core_v1.ConfigMap) error) (*core_v1.ConfigMap, error) {
 	answer := core_v1.ConfigMap{}
 	fileName := filepath.Join(dir, name+"-configmap.yaml")
 	exists, err := util.FileExists(fileName)
@@ -2109,7 +2119,8 @@ func gitOpsModifyConfigMap(dir string, name string, defaultResource *core_v1.Con
 }
 
 // gitOpsModifySecret provides a helper function to lazily create, modify and save the YAML file in the given directory
-func gitOpsModifySecret(dir string, name string, defaultResource *core_v1.Secret, configStore configio.ConfigStore, callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
+func gitOpsModifySecret(dir string, name string, defaultResource *core_v1.Secret, configStore configio.ConfigStore,
+	callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
 	answer := core_v1.Secret{}
 	fileName := filepath.Join(dir, name+"-secret.yaml")
 	exists, err := util.FileExists(fileName)
@@ -2145,7 +2156,8 @@ func gitOpsModifySecret(dir string, name string, defaultResource *core_v1.Secret
 }
 
 // gitOpsModifyEnvironment provides a helper function to lazily create, modify and save the YAML file in the given directory
-func gitOpsModifyEnvironment(dir string, name string, defaultEnvironment *v1.Environment, configStore configio.ConfigStore, callback func(*v1.Environment) error) (*v1.Environment, error) {
+func gitOpsModifyEnvironment(dir string, name string, defaultEnvironment *v1.Environment, configStore configio.ConfigStore,
+	callback func(*v1.Environment) error) (*v1.Environment, error) {
 	answer := v1.Environment{}
 	fileName := filepath.Join(dir, name+"-env.yaml")
 	exists, err := util.FileExists(fileName)

@@ -175,7 +175,14 @@ func (o *CreateVaultOptions) createVault(vaultOperatorClient versioned.Interface
 	}
 
 	if o.GKEZone == "" {
-		zone, err := o.getGoogleZone(o.GKEProjectID)
+		defaultZone := ""
+		if cluster, err := gke.ClusterName(o.Kube()); err == nil && cluster != "" {
+			if clusterZone, err := gke.ClusterZone(cluster); err == nil {
+				defaultZone = clusterZone
+			}
+		}
+
+		zone, err := o.getGoogleZoneWithDefault(o.GKEProjectID, defaultZone)
 		if err != nil {
 			return err
 		}
