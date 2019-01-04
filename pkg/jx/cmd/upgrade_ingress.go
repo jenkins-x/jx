@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/kube/pki"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/pkg/errors"
 
@@ -411,7 +412,7 @@ func (o *UpgradeIngressOptions) recreateIngressRules() error {
 	for _, n := range o.TargetNamespaces {
 		o.CleanExposecontrollerReources(n)
 
-		err := o.cleanTLSSecrets(n)
+		err := pki.CleanCertSecrets(o.KubeClientCached, n)
 		if err != nil {
 			return err
 		}
@@ -464,26 +465,6 @@ func (o *UpgradeIngressOptions) CleanServiceAnnotations(svcs ...string) error {
 		}
 	}
 
-	return nil
-}
-func (o *UpgradeIngressOptions) cleanTLSSecrets(ns string) error {
-	client, err := o.KubeClient()
-	if err != nil {
-		return err
-	}
-	// delete the tls related secrets so we dont reuse old ones when switching from http to https
-	secrets, err := client.CoreV1().Secrets(ns).List(metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-	for _, s := range secrets.Items {
-		if strings.HasPrefix(s.Name, "tls-") {
-			err := client.CoreV1().Secrets(ns).Delete(s.Name, &metav1.DeleteOptions{})
-			if err != nil {
-				return fmt.Errorf("failed to delete tls secret %s: %v", s.Name, err)
-			}
-		}
-	}
 	return nil
 }
 
