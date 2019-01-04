@@ -238,6 +238,19 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, d
 			data.Spec.Order = i
 		}
 	}
+	if batchMode && gitRepoOptions.Owner == "" {
+		fmt.Printf("Setting owner for batch mode.")
+		err, devEnvGitOwner := GetDevEnvGitOwner(jxClient)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to get default Git owner for repos: %s", err)
+		}
+		if devEnvGitOwner != "" {
+			gitRepoOptions.Owner = devEnvGitOwner
+		} else {
+			gitRepoOptions.Owner = gitRepoOptions.Username
+		}
+		log.Infof("Using %s environment git owner in batch mode.\n", util.ColorInfo(gitRepoOptions.Owner))
+	}
 	_, gitProvider, err := CreateEnvGitRepository(batchMode, authConfigSvc, devEnv, data, config, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git, in, out, errOut)
 	return gitProvider, err
 }
@@ -340,6 +353,7 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService, 
 		return nil, nil, err
 	}
 	org := details.Organisation
+
 	repoName := details.RepoName
 	owner := org
 	if owner == "" {
@@ -477,6 +491,20 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService, 
 		}
 	}
 	return repo, provider, nil
+}
+
+// GetDevEnvGitOwner gets the default GitHub owner/organisation to use for Environment repos. This takes the setting
+// from the 'jx' Dev Env to get the one that was selected at installation time.
+func GetDevEnvGitOwner(jxClient versioned.Interface) (error, string) {
+	adminDevEnv, err := GetDevEnvironment(jxClient, "jx")
+	if err != nil {
+		log.Errorf("Error loading team settings. %v\n", err)
+		return err, ""
+	}
+	if adminDevEnv != nil {
+		return nil, adminDevEnv.Spec.TeamSettings.EnvOrganisation
+	}
+	return errors.New("Unable to find development environment in 'jx' to take git owner from"), ""
 }
 
 // ModifyNamespace modifies the namespace
@@ -894,7 +922,9 @@ func NewPreviewEnvironment(name string) *v1.Environment {
 	}
 }
 
-// GetDevEnvironment returns the current development environment using the jxClient for the given ns
+// GetDevEnvironment returns the current development environment using the jxClient for the given ns.
+// If the Dev Environment cannot be found, returns nil Environment (rather than an error). A non-nil error is only
+// returned if there is an error fetching the Dev Environment.
 func GetDevEnvironment(jxClient versioned.Interface, ns string) (*v1.Environment, error) {
 	//Find the settings for the team
 	environmentInterface := jxClient.JenkinsV1().Environments(ns)
@@ -913,6 +943,9 @@ func GetDevEnvironment(jxClient versioned.Interface, ns string) (*v1.Environment
 	if len(envList.Items) == 1 {
 		return &envList.Items[0], nil
 	}
-	return nil, fmt.Errorf("Unable to locate dev environment resource definition in namespace %s, No Environment called: %s or with selector: %s found %d entries: %v",
+	if len(envList.Items) == 0 {
+		return nil, nil
+	}
+	return nil, fmt.Errorf("Error fetching dev environment resource definition in namespace %s, No Environment called: %s or with selector: %s found %d entries: %v",
 		ns, name, selector, len(envList.Items), envList.Items)
 }

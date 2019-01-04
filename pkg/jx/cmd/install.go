@@ -1011,7 +1011,6 @@ func (options *InstallOptions) getHelmValuesFiles(configStore configio.ConfigSto
 
 func (options *InstallOptions) configureGitAuth() error {
 	log.Infof("Lets set up a Git user name and API token to be able to perform CI/CD\n\n")
-
 	gitUsername := options.GitRepositoryOptions.Username
 	gitServer := options.GitRepositoryOptions.ServerURL
 	gitAPIToken := options.GitRepositoryOptions.ApiToken
@@ -1141,10 +1140,10 @@ func (options *InstallOptions) configureGitAuth() error {
 	}
 
 	pipelineAuthServerURL := pipelineAuthServer.URL
-	pipelineAuthUnsername := pipelineUserAuth.Username
+	pipelineAuthUsername := pipelineUserAuth.Username
 
 	log.Infof("Setting the pipelines Git server %s and user name %s.\n",
-		util.ColorInfo(pipelineAuthServerURL), util.ColorInfo(pipelineAuthUnsername))
+		util.ColorInfo(pipelineAuthServerURL), util.ColorInfo(pipelineAuthUsername))
 	authConfig.UpdatePipelineServer(pipelineAuthServer, pipelineUserAuth)
 
 	log.Infof("Saving the Git authentication configuration")
@@ -1156,7 +1155,7 @@ func (options *InstallOptions) configureGitAuth() error {
 	editTeamSettingsCallback := func(env *v1.Environment) error {
 		teamSettings := &env.Spec.TeamSettings
 		teamSettings.GitServer = pipelineAuthServerURL
-		teamSettings.PipelineUsername = pipelineAuthUnsername
+		teamSettings.PipelineUsername = pipelineAuthUsername
 		teamSettings.Organisation = options.Owner
 		teamSettings.GitPrivate = options.GitRepositoryOptions.Private
 		return nil
@@ -1188,7 +1187,18 @@ func (options *InstallOptions) buildGitRepositoryOptionsForEnvironments() (*gits
 	org := options.Flags.EnvironmentGitOwner
 	if org == "" {
 		if options.BatchMode {
-			org = user.Username
+			jxClient, _, err := options.JXClientAndDevNamespace()
+			if err != nil {
+				return nil, errors.Wrap(err, "determining the git owner for environments")
+			}
+			err, org = kube.GetDevEnvGitOwner(jxClient)
+			if err != nil {
+				return nil, errors.Wrap(err, "determining the git owner for environments")
+			}
+			if org == "" {
+				org = user.Username
+			}
+
 			log.Infof("Using %s environment git owner in batch mode.\n", util.ColorInfo(org))
 		} else {
 			provider, err := gits.CreateProvider(server, user, options.Git())
@@ -1203,16 +1213,27 @@ func (options *InstallOptions) buildGitRepositoryOptionsForEnvironments() (*gits
 
 			surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
 			sort.Strings(orgs)
-			promt := &survey.Select{
+			prompt := &survey.Select{
 				Message: "Select the organization where you want to create the environment repository:",
 				Options: orgs,
 			}
-			err = survey.AskOne(promt, &org, survey.Required, surveyOpts)
+			err = survey.AskOne(prompt, &org, survey.Required, surveyOpts)
 			if err != nil {
-				return nil, errors.Wrap(err, "selecting the organiztion for environment repository")
+				return nil, errors.Wrap(err, "selecting the organization for environment repository")
 			}
 		}
 	}
+
+	//Save selected organisation for Environment repos.
+	err = options.ModifyDevEnvironment(func(env *v1.Environment) error {
+		fmt.Printf("Saving EnvOrganisation=%s", org)
+		env.Spec.TeamSettings.EnvOrganisation = org
+		return nil
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "updating the TeamSettings with Environments organisation")
+	}
+
 	return &gits.GitRepositoryOptions{
 		ServerURL: server.URL,
 		Username:  user.Username,
@@ -1537,7 +1558,7 @@ func (options *InstallOptions) configureCloudProivderPreInit(client kubernetes.I
 	case EKS:
 		err := options.ensureDefaultStorageClass(client, "gp2", "kubernetes.io/aws-ebs", "gp2")
 		if err != nil {
-			return errors.Wrap(err, "ensureing default storage for EKS/AWS cloud provider")
+			return errors.Wrap(err, "ensuring default storage for EKS/AWS cloud provider")
 		}
 	case MINIKUBE:
 		if options.Flags.Domain == "" {
