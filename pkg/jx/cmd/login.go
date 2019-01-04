@@ -144,7 +144,7 @@ func (o *LoginOptions) Login() (*UserLoginInfo, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	userDataDir, err := ioutil.TempDir("/tmp", "jx-login-chrome-userdata-dir")
+	userDataDir, err := ioutil.TempDir("", "jx-login-chrome-userdata-dir")
 	if err != nil {
 		return nil, errors.Wrap(err, "creating the chrome user data dir")
 	}
