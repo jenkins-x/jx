@@ -8,7 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
 // asks to chose from existing projects or optionally creates one if none exist
@@ -55,6 +55,10 @@ func (o *CommonOptions) getGoogleProjectId() (string, error) {
 			Message: "Google Cloud Project:",
 			Options: existingProjects,
 			Help:    "Select a Google Project to create the cluster in",
+		}
+
+		if currentProject, err := gke.GetCurrentProject(); err == nil && currentProject != "" {
+			prompts.Default = currentProject
 		}
 
 		err := survey.AskOne(prompts, &projectId, nil, surveyOpts)
