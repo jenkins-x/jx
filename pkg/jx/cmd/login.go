@@ -139,7 +139,7 @@ func (o *LoginOptions) Run() error {
 func (o *LoginOptions) Login() (*UserLoginInfo, error) {
 	url := o.URL
 	if url == "" {
-		return nil, errors.New("please povide the URL of the CloudBees application in '--url' option")
+		return nil, errors.New("please provide the URL of the CloudBees application in '--url' option")
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -172,6 +172,7 @@ func (o *LoginOptions) Login() (*UserLoginInfo, error) {
 
 	t, err := tail.TailFile(netLogFile, tail.Config{
 		Follow: true,
+		Poll: true,  // ionotify does not work on all platforms and the cost for this is not significantly high
 		Logger: log.New(ioutil.Discard, "", log.LstdFlags)})
 	if err != nil {
 		return nil, errors.Wrap(err, "reading the netlog file")
