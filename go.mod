@@ -83,6 +83,7 @@ require (
 	github.com/jenkins-x/chyle v0.0.0-20180226080600-68f7a93a63ec
 	github.com/jenkins-x/draft-repo v0.0.0-20180417100212-2f66cc518135
 	github.com/jenkins-x/golang-jenkins v0.0.0-20180919102630-65b83ad42314
+	github.com/jetstack/cert-manager v0.5.2
 	github.com/json-iterator/go v0.0.0-20180701071628-ab8a2e0c74be // indirect
 	github.com/kballard/go-shellquote v0.0.0-20180428030007-95032a82bc51 // indirect
 	github.com/kevinburke/ssh_config v0.0.0-20180317175531-9fc7bb800b55 // indirect
