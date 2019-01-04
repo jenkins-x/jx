@@ -11,17 +11,17 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 
 	randomdata "github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/jenkins-x/jx/pkg/addon"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -432,7 +432,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring the cloud provider after initializing the platform")
 	}
 
-	err = options.saveIngressConfig()
+	ic, err := options.saveIngressConfig()
 	if err != nil {
 		return errors.Wrap(err, "saving the ingress configuration in a ConfigMap")
 	}
@@ -442,7 +442,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "saving the cluster configuration in a ConfigMap")
 	}
 
-	err = options.createSystemVault(client, ns)
+	err = options.createSystemVault(client, ns, ic)
 	if err != nil {
 		return errors.Wrap(err, "creating the system vault")
 	}
@@ -1758,7 +1758,7 @@ func (options *InstallOptions) getAdminSecrets(configStore configio.ConfigStore,
 	return adminSecretsFileName, adminSecrets, nil
 }
 
-func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string) error {
+func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string, ic *kube.IngressConfig) error {
 	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
 		err := InstallVaultOperator(&options.CommonOptions, namespace)
 		if err != nil {
@@ -1774,6 +1774,7 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 				CreateOptions: CreateOptions{
 					CommonOptions: options.CommonOptions,
 				},
+				IngressConfig: *ic,
 			},
 			Namespace: namespace,
 		}
@@ -1850,7 +1851,7 @@ func (options *InstallOptions) configureBuildPackMode() error {
 	return ebp.Run()
 }
 
-func (options *InstallOptions) saveIngressConfig() error {
+func (options *InstallOptions) saveIngressConfig() (*kube.IngressConfig, error) {
 	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
 	domain := helmConfig.ExposeController.Config.Domain
 	if domain == "" {
@@ -1861,7 +1862,7 @@ func (options *InstallOptions) saveIngressConfig() error {
 	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
 	tls, err := util.ParseBool(exposeController.Config.TLSAcme)
 	if err != nil {
-		return fmt.Errorf("failed to parse TLS exposecontroller boolean %v", err)
+		return nil, fmt.Errorf("failed to parse TLS exposecontroller boolean %v", err)
 	}
 	ic := kube.IngressConfig{
 		Domain:  domain,
@@ -1871,9 +1872,9 @@ func (options *InstallOptions) saveIngressConfig() error {
 	// save ingress config details to a configmap
 	_, err = options.saveAsConfigMap(kube.IngressConfigConfigmap, ic)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return &ic, nil
 }
 
 func (options *InstallOptions) saveClusterConfig() error {

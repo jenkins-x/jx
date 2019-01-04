@@ -14,7 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -331,16 +331,16 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 }
 
 func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
-
 	// get current ingress config to use as existing defaults
 	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
 
-	o.IngressConfig, err = kube.GetIngressConfig(o.KubeClientCached, devNamespace)
-	if err != nil {
-		// carry on as it just means we dont have any defaults
+	// Overwrites the ingress config with the values from config map only if this config map exists
+	ic, err := kube.GetIngressConfig(o.KubeClientCached, devNamespace)
+	if err == nil {
+		o.IngressConfig = ic
 	}
 
 	o.IngressConfig.Exposer, err = util.PickNameWithDefault([]string{"Ingress", "Route"}, "Expose type", o.IngressConfig.Exposer, "", o.In, o.Out, o.Err)
