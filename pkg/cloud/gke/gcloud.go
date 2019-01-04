@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/kube"
+	yaml "gopkg.in/yaml.v2"
 
 	"time"
 
@@ -60,6 +61,41 @@ func ShortClusterName(kuber kube.Kuber) (string, error) {
 func GetSimplifiedClusterName(complexClusterName string) string {
 	split := strings.Split(complexClusterName, "_")
 	return split[len(split)-1]
+}
+
+// ClusterZone retrives the zone of GKE cluster description
+func ClusterZone(cluster string) (string, error) {
+	args := []string{"container",
+		"clusters",
+		"describe",
+		cluster}
+
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+	output, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return "", err
+	}
+
+	zone, err := parseClusterZone(output)
+	if err != nil {
+		return "", err
+	}
+	return zone, nil
+}
+
+func parseClusterZone(clusterInfo string) (string, error) {
+	ci := struct {
+		Zone string `yaml:"zone"`
+	}{}
+
+	err := yaml.Unmarshal([]byte(clusterInfo), &ci)
+	if err != nil {
+		return "", errors.Wrap(err, "extracting cluster zone from cluster info")
+	}
+	return ci.Zone, nil
 }
 
 // BucketExists checks if a Google Storage bucket exists

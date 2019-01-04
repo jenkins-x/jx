@@ -75,6 +75,10 @@ func (o *CommonOptions) getGoogleProjectId() (string, error) {
 }
 
 func (o *CommonOptions) getGoogleZone(projectId string) (string, error) {
+	return o.getGoogleZoneWithDefault(projectId, "")
+}
+
+func (o *CommonOptions) getGoogleZoneWithDefault(projectId string, defaultZone string) (string, error) {
 	availableZones, err := gke.GetGoogleZones(projectId)
 	if err != nil {
 		return "", err
@@ -84,6 +88,7 @@ func (o *CommonOptions) getGoogleZone(projectId string) (string, error) {
 		Options:  availableZones,
 		PageSize: 10,
 		Help:     "The compute zone (e.g. us-central1-a) for the cluster",
+		Default:  defaultZone,
 	}
 	zone := ""
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
