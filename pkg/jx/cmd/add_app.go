@@ -40,10 +40,17 @@ type AddAppOptions struct {
 	Namespace   string
 	Version     string
 	ReleaseName string
-	SetValues   string
+	SetValues   []string
 	ValueFiles  []string
 	HelmUpdate  bool
 }
+
+const (
+	optionHelmUpdate = "helm-update"
+	optionValues     = "value"
+	optionSet        = "set"
+	optionAlias      = "alias"
+)
 
 // NewCmdAddApp creates a command object for the "create" command
 func NewCmdAddApp(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
@@ -80,20 +87,24 @@ func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string, de
 	cmd.Flags().StringVarP(&o.Version, "version", "v", defaultVersion,
 		"The chart version to install")
 	cmd.Flags().StringVarP(&o.Repo, "repository", "", "",
-		"The repository from which the app should be installed")
+		"The repository from which the app should be installed (default specified in your dev environment)")
 	cmd.Flags().StringVarP(&o.Username, "username", "", "",
 		"The username for the repository")
 	cmd.Flags().StringVarP(&o.Password, "password", "", "",
 		"The password for the repository")
 	cmd.Flags().BoolVarP(&o.BatchMode, optionBatchMode, "b", false, "In batch mode the command never prompts for user input")
 	cmd.Flags().BoolVarP(&o.Verbose, optionVerbose, "", false, "Enable verbose logging")
-	cmd.Flags().StringVarP(&o.Alias, "alias", "", "", "An alias to use for the app [--gitops]")
-	cmd.Flags().StringVarP(&o.ReleaseName, optionRelease, "r", defaultOptionRelease, "The chart release name [--no-gitops]")
-	cmd.Flags().BoolVarP(&o.HelmUpdate, "helm-update", "", true, "Should we run helm update first to ensure we use the latest version [--no-gitops]")
-	cmd.Flags().StringVarP(&o.Namespace, "namespace", "n", defaultNamespace, "The Namespace to install into [--no-gitops]")
-	cmd.Flags().StringArrayVarP(&o.ValueFiles, "values", "f", []string{}, "List of locations for values files, can be local files or URLs [--no-gitops]")
-	cmd.Flags().StringVarP(&o.SetValues, "set", "s", "",
-		"The chart set values (can specify multiple or separate values with commas: key1=val1,key2=val2) [--no-gitops]")
+	cmd.Flags().StringVarP(&o.Alias, optionAlias, "", "",
+		"An alias to use for the app (available when using GitOps for your dev environment)")
+	cmd.Flags().StringVarP(&o.ReleaseName, optionRelease, "r", defaultOptionRelease,
+		"The chart release name (available when NOT using GitOps for your dev environment)")
+	cmd.Flags().BoolVarP(&o.HelmUpdate, optionHelmUpdate, "", true,
+		"Should we run helm update first to ensure we use the latest version (available when NOT using GitOps for your dev environment)")
+	cmd.Flags().StringVarP(&o.Namespace, optionNamespace, "n", defaultNamespace, "The Namespace to install into (available when NOT using GitOps for your dev environment)")
+	cmd.Flags().StringArrayVarP(&o.ValueFiles, optionValues, "f", []string{}, "List of locations for values files, "+
+		"can be local files or URLs (available when NOT using GitOps for your dev environment)")
+	cmd.Flags().StringArrayVarP(&o.SetValues, optionSet, "s", []string{},
+		"The chart set values (can specify multiple or separate values with commas: key1=val1,key2=val2) (available when NOT using GitOps for your dev environment)")
 
 }
 
@@ -101,17 +112,32 @@ func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string, de
 func (o *AddAppOptions) Run() error {
 	o.GitOps, o.DevEnv = o.GetDevEnv()
 	if o.Repo == "" {
-		o.Repo = o.DevEnv.Spec.TeamSettings.AppsRepository		
+		o.Repo = o.DevEnv.Spec.TeamSettings.AppsRepository
 	}
 
-	// Regiser the App CRD
-	apiClient, err := o.ApiExtensionsClient()
-	if err != nil {
-		return err
+	if o.GitOps {
+		msg := "Unable to specify --%s when using GitOps for your dev environment"
+		if o.ReleaseName != "" {
+			return util.InvalidOptionf(optionRelease, o.ReleaseName, msg, optionRelease)
+		}
+		if !o.HelmUpdate {
+			return util.InvalidOptionf(optionHelmUpdate, o.ReleaseName, msg, optionHelmUpdate)
+		}
+		if o.Namespace != "" {
+			return util.InvalidOptionf(optionNamespace, o.ReleaseName, msg, optionNamespace)
+		}
+		if len(o.ValueFiles) > 0 {
+			return util.InvalidOptionf(optionValues, o.ReleaseName, msg, optionValues)
+		}
+		if len(o.SetValues) > 0 {
+			return util.InvalidOptionf(optionSet, o.ReleaseName, msg, optionSet)
+		}
 	}
-	err = kube.RegisterAppCRD(apiClient)
-	if err != nil {
-		return errors.Wrap(err, "failed to register the App CRD")
+	if !o.GitOps {
+		if o.Alias != "" {
+			return util.InvalidOptionf(optionAlias, o.ReleaseName,
+				"Unable to specify --%s when NOT using GitOps for your dev environment", optionAlias)
+		}
 	}
 
 	args := o.Args
@@ -212,7 +238,10 @@ func (o *AddAppOptions) installApp(app string, version string) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that helm is present")
 	}
-	setValues := strings.Split(o.SetValues, ",")
+	setValues := make([]string, 0)
+	for _, vs := range o.SetValues {
+		setValues = append(setValues, strings.Split(vs, ",")...)
+	}
 
 	chart := helm.InstallChartOptions{
 		ReleaseName: app,

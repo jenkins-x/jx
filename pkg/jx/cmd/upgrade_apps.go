@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"io"
+	"strings"
 
 	"fmt"
 
@@ -50,7 +51,7 @@ type UpgradeAppsOptions struct {
 	All     bool
 
 	Namespace string
-	Set       string
+	Set       []string
 
 	// for testing
 	FakePullRequests CreateEnvPullRequestFn
@@ -100,7 +101,8 @@ func NewCmdUpgradeApps(f Factory, in terminal.FileReader, out terminal.FileWrite
 	cmd.Flags().StringVarP(&o.Version, "version", "v", "",
 		"The chart version to install [--gitops]")
 	cmd.Flags().StringVarP(&o.Namespace, "namespace", "", "", "The Namespace to promote to [--no-gitops]")
-	cmd.Flags().StringVarP(&o.Set, "set", "s", "", "The Helm parameters to pass in while upgrading [--no-gitops]")
+	cmd.Flags().StringArrayVarP(&o.Set, "set", "s", []string{},
+		"The Helm parameters to pass in while upgrading [--no-gitops]")
 
 	return cmd
 }
@@ -110,6 +112,25 @@ func (o *UpgradeAppsOptions) Run() error {
 	o.GitOps, o.DevEnv = o.GetDevEnv()
 	if o.Repo == "" {
 		o.Repo = o.DevEnv.Spec.TeamSettings.AppsRepository
+	}
+
+	if o.GitOps {
+		msg := "Unable to specify --%s when using GitOps for your dev environment"
+		if o.Namespace != "" {
+			return util.InvalidOptionf(optionNamespace, o.ReleaseName, msg, optionNamespace)
+		}
+		if len(o.Set) > 0 {
+			return util.InvalidOptionf(optionSet, o.ReleaseName, msg, optionSet)
+		}
+	}
+	if !o.GitOps {
+		msg := "Unable to specify --%s when NOT using GitOps for your dev environment"
+		if o.Alias != "" {
+			return util.InvalidOptionf(optionAlias, o.ReleaseName, msg, optionAlias)
+		}
+		if o.Version != "" {
+			return util.InvalidOptionf(optionVersion, o.ReleaseName, msg, optionVersion)
+		}
 	}
 
 	if o.GitOps {
@@ -273,8 +294,8 @@ func (o *UpgradeAppsOptions) upgradeApps() error {
 			}
 
 			values := []string{}
-			if o.Set != "" {
-				values = append(values, o.Set)
+			for _, vs := range o.Set {
+				values = append(values, strings.Split(vs, ",")...)
 			}
 
 			config := &v1.ConfigMap{}

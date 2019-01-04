@@ -49,7 +49,9 @@ const (
 )
 
 // NewJXCommand creates the `jx` command and its nested children.
-func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, err io.Writer) *cobra.Command {
+// args used to determine binary plugin to run can be overridden (does not affect compiled in commands).
+func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter,
+	err io.Writer, args []string) *cobra.Command {
 	cmds := &cobra.Command{
 		Use:   "jx",
 		Short: "jx is a command line tool for working with Jenkins X",
@@ -215,8 +217,10 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 		CommonOptions: commonOptions,
 	}
 	localPlugins := &localPluginHandler{}
-	args := os.Args
 
+	if len(args) == 0 {
+		args = os.Args
+	}
 	if len(args) > 1 {
 		cmdPathPieces := args[1:]
 

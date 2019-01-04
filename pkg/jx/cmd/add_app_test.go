@@ -30,9 +30,11 @@ func TestAddAppForGitOps(t *testing.T) {
 		Repo:             "http://chartmuseum.jenkins-x.io",
 		GitOps:           true,
 		DevEnv:           testEnv.DevEnv,
+		HelmUpdate:       true, // Flag default when run on CLI
 	}
 	o.Args = []string{"example-app"}
-
+	// Set by flag defaults
+	o.HelmUpdate = true
 	err = o.Run()
 	assert.NoError(t, err)
 	_, err = testEnv.FakeGitProvider.GetPullRequest(testEnv.OrgName, testEnv.DevEnvRepoInfo, 1)
