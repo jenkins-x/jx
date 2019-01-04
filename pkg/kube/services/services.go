@@ -8,7 +8,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -293,7 +293,7 @@ func ServiceAppName(c kubernetes.Interface, name, ns string) (string, error) {
 	return app, nil
 }
 
-func AnnotateNamespaceServicesWithCertManager(c kubernetes.Interface, ns, issuer string, services ...string) error {
+func AnnotateServicesWithCertManagerIssuer(c kubernetes.Interface, ns, issuer string, services ...string) error {
 	svcList, err := GetServices(c, ns)
 	if err != nil {
 		return err

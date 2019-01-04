@@ -14,7 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/Pallinder/go-randomdata"
+	randomdata "github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -61,9 +61,12 @@ func Expose(devNamespace, targetNamespace, password string, kubeClient kubernete
 		return fmt.Errorf("cannot get existing team exposecontroller config from namespace %s: %v", devNamespace, err)
 	}
 
-	err = services.AnnotateNamespaceServicesWithCertManager(kubeClient, targetNamespace, ic.Issuer)
-	if err != nil {
-		return err
+	// annotate the service with cert-manager issuer only if the TLS is enabled and issuer is not empty
+	if ic.TLS && ic.Issuer != "" {
+		err = services.AnnotateServicesWithCertManagerIssuer(kubeClient, targetNamespace, ic.Issuer)
+		if err != nil {
+			return err
+		}
 	}
 
 	// if targetnamespace is different than dev check if there's any certmanager CRDs, if not check dev and copy any found across

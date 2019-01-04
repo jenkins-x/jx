@@ -148,17 +148,17 @@ func (o *UpgradeIngressOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "ensure cert-manager setup")
 		}
+
+		// annotate any service that has expose=true with correct certmanager staging / prod annotation
+		err = o.AnnotateExposedServicesWithCertManager(o.Services...)
+		if err != nil {
+			return errors.Wrap(err, "annotating the exposed service with cert-manager")
+		}
 	}
 
 	err = o.CleanServiceAnnotations(o.Services...)
 	if err != nil {
 		return errors.Wrap(err, "cleaning service annotations")
-	}
-
-	// annotate any service that has expose=true with correct certmanager staging / prod annotation
-	err = o.AnnotateExposedServicesWithCertManager(o.Services...)
-	if err != nil {
-		return errors.Wrap(err, "annotating the exposed service with cert-manager")
 	}
 
 	// delete ingress
@@ -444,7 +444,11 @@ func (o *UpgradeIngressOptions) AnnotateExposedServicesWithCertManager(svcs ...s
 		return err
 	}
 	for _, n := range o.TargetNamespaces {
-		err := services.AnnotateNamespaceServicesWithCertManager(client, n, o.IngressConfig.Issuer, svcs...)
+		issuer := o.IngressConfig.Issuer
+		if issuer == "" {
+			return fmt.Errorf("no issuer was configured for cert manager")
+		}
+		err := services.AnnotateNamespaceServicesWithCertManager(client, n, issuer, svcs...)
 		if err != nil {
 			return err
 		}
