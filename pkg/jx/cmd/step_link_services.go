@@ -1,13 +1,14 @@
 package cmd
 
 import (
-	"io"
-
+	"fmt"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"io"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -80,7 +81,8 @@ func NewCmdStepLinkServices(f Factory, in terminal.FileReader, out terminal.File
 
 // Run implements this command
 func (o *StepLinkServicesOptions) Run() error {
-	if o.FromNamespace == "" {
+	fromNs := o.FromNamespace
+	if fromNs == "" {
 		return util.MissingOption(fromNamespace)
 	}
 	kubeClient, currentNs, err := o.KubeClient()
@@ -96,34 +98,40 @@ func (o *StepLinkServicesOptions) Run() error {
 		//We don't want to continue if we still can't derive to-namespace
 		return util.MissingOption(toNamespace)
 	} else {
-		serviceList, err := kubeClient.CoreV1().Services(o.FromNamespace).List(metav1.ListOptions{})
+		serviceList, err := kubeClient.CoreV1().Services(fromNs).List(metav1.ListOptions{})
 		if err != nil {
 			return err
 		} else {
 			for _, service := range serviceList.Items {
-				if util.StringMatchesAny(service.Name, o.Includes, o.Excludes) {
-					targetService, err := kubeClient.CoreV1().Services(targetNamespace).Get(service.GetName(), metav1.GetOptions{})
-					if targetService == nil {
-						copy := service
+				name := service.GetName()
+				if util.StringMatchesAny(name, o.Includes, o.Excludes) {
+					targetService, err := kubeClient.CoreV1().Services(targetNamespace).Get(name, metav1.GetOptions{})
+					create := false
+					if err != nil {
+						copy := corev1.Service{}
 						targetService = &copy
+						create = true
 					}
+					targetService.Name = name
 					targetService.Namespace = targetNamespace
-					// Reset the cluster IP, because this is dynamically allocated
-					targetService.Spec.ClusterIP = ""
-					targetService.ResourceVersion = ""
-					//Change the namespace in the service to target namespace
-					// We would create a new service if it doesn't already exist OR update if it already exists
-					if err == nil {
-						_, err := kubeClient.CoreV1().Services(targetNamespace).Update(targetService)
-						if err != nil {
-							log.Warnf("Failed to update the service '%s' in target namespace '%s'. Error: %s",
-								service.GetName(), targetNamespace, err)
-						}
-					} else {
+					targetService.Annotations = service.Annotations
+					targetService.Labels = service.Labels
+					targetService.Spec = corev1.ServiceSpec{
+						Type:         corev1.ServiceTypeExternalName,
+						ExternalName: fmt.Sprintf("%s.%s.svc.cluster.local", name, fromNs),
+					}
+
+					if create {
 						_, err := kubeClient.CoreV1().Services(targetNamespace).Create(targetService)
 						if err != nil {
 							log.Warnf("Failed to create the service '%s' in target namespace '%s'. Error: %s",
-								service.GetName(), targetNamespace, err)
+								name, targetNamespace, err)
+						}
+					} else {
+						_, err := kubeClient.CoreV1().Services(targetNamespace).Update(targetService)
+						if err != nil {
+							log.Warnf("Failed to update the service '%s' in target namespace '%s'. Error: %s",
+								name, targetNamespace, err)
 						}
 					}
 				}
