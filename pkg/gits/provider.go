@@ -155,11 +155,12 @@ type GitPullRequestArguments struct {
 }
 
 type GitWebHookArguments struct {
-	ID     int64
-	Owner  string
-	Repo   *GitRepository
-	URL    string
-	Secret string
+	ID          int64
+	Owner       string
+	Repo        *GitRepository
+	URL         string
+	ExistingURL string
+	Secret      string
 }
 
 type GitFileContent struct {
