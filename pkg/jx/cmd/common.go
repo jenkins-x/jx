@@ -90,7 +90,7 @@ type CommonOptions struct {
 	jxClient               versioned.Interface
 	knbClient              buildclient.Interface
 	jenkinsClient          gojenkins.JenkinsClient
-	GitClient              gits.Gitter
+	git                    gits.Gitter
 	helm                   helm.Helmer
 	Kuber                  kube.Kuber
 	vaultOperatorClient    vaultoperatorclient.Interface
@@ -293,10 +293,14 @@ func (o *CommonOptions) getJenkinsURL() (string, error) {
 }
 
 func (o *CommonOptions) Git() gits.Gitter {
-	if o.GitClient == nil {
-		o.GitClient = gits.NewGitCLI()
+	if o.git == nil {
+		o.git = gits.NewGitCLI()
 	}
-	return o.GitClient
+	return o.git
+}
+
+func (o *CommonOptions) SetGit(git gits.Gitter) {
+	o.git = git
 }
 
 func (o *CommonOptions) Helm() helm.Helmer {

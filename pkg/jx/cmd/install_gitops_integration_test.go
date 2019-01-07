@@ -64,7 +64,7 @@ func TestInstallGitOps(t *testing.T) {
 		gitter,
 		helmer,
 	)
-	o.CommonOptions.GitClient = gitter
+	o.CommonOptions.SetGit(gitter)
 	o.CommonOptions.InstallDependencies = true
 	o.CommonOptions.SetHelm(helmer)
 
