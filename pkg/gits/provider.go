@@ -270,8 +270,11 @@ func PickOrganisation(orgLister OrganisationLister, userName string, in terminal
 
 // GetOrganizations gets the organisation
 func GetOrganizations(orgLister OrganisationLister, userName string) []string {
+	var orgNames []string
 	// Always include the username as a pseudo organization
-	orgNames := []string{userName}
+	if userName != "" {
+		orgNames = append(orgNames, userName)
+	}
 
 	orgs, _ := orgLister.ListOrganisations()
 	for _, o := range orgs {
