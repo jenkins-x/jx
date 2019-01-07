@@ -92,7 +92,7 @@ func (o *StepVerifyOptions) Run() error {
 		return errors.Wrap(err, "failed to get the jx client")
 	}
 
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to get the Kube client")
 	}

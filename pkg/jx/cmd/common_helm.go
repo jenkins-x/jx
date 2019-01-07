@@ -28,7 +28,7 @@ func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
 	password := "admin"
 
 	// lets check if we have a local helm repository
-	client, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the kube client")
 	}
@@ -109,7 +109,7 @@ func (o *CommonOptions) installChartAt(dir string, releaseName string, chart str
 }
 
 func (o *CommonOptions) installChartOptions(options helm.InstallChartOptions) error {
-	client, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -118,7 +118,7 @@ func (o *CommonOptions) installChartOptions(options helm.InstallChartOptions) er
 
 // deleteChart deletes the given chart
 func (o *CommonOptions) deleteChart(releaseName string, purge bool) error {
-	_, ns, err := o.KubeClient()
+	_, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

@@ -85,7 +85,7 @@ func (o *VersionOptions) Run() error {
 	}
 
 	// Kubernetes version
-	client, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		log.Warnf("Failed to connect to Kubernetes: %s\n", err)
 	} else {

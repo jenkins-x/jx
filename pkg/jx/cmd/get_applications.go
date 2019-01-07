@@ -118,7 +118,7 @@ func NewCmdGetApplications(f Factory, in terminal.FileReader, out terminal.FileW
 
 // Run implements this command
 func (o *GetApplicationsOptions) Run() error {
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

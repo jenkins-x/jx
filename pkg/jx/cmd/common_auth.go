@@ -102,7 +102,7 @@ func (o *CommonOptions) CreateGitAuthConfigServiceFromSecrets(fileName string, s
 
 func (o *CommonOptions) LoadPipelineSecrets(kind, serviceKind string) (*corev1.SecretList, error) {
 	// TODO return empty list if not inside a pipeline?
-	kubeClient, curNs, err := o.KubeClient()
+	kubeClient, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create a Kubernetes client %s", err)
 	}

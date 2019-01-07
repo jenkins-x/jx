@@ -8,11 +8,16 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 )
 
 func (o *CommonOptions) ensureCertmanager() error {
 	log.Infof("Looking for %s deployment in namespace %s...\n", CertManagerDeployment, CertManagerNamespace)
-	_, err := kube.GetDeploymentPods(o.KubeClientCached, CertManagerDeployment, CertManagerNamespace)
+	client, err := o.KubeClient()
+	if err != nil {
+		return errors.Wrap(err, "creating kube client")
+	}
+	_, err = kube.GetDeploymentPods(client, CertManagerDeployment, CertManagerNamespace)
 	if err != nil {
 		ok := util.Confirm("CertManager deployment not found, shall we install it now?", true, "CertManager automatically configures Ingress rules with TLS using signed certificates from LetsEncrypt", o.In, o.Out, o.Err)
 		if ok {
@@ -32,7 +37,7 @@ func (o *CommonOptions) ensureCertmanager() error {
 
 			log.Info("waiting for CertManager deployment to be ready, this can take a few minutes\n")
 
-			err = kube.WaitForDeploymentToBeReady(o.KubeClientCached, CertManagerDeployment, CertManagerNamespace, 10*time.Minute)
+			err = kube.WaitForDeploymentToBeReady(client, CertManagerDeployment, CertManagerNamespace, 10*time.Minute)
 			if err != nil {
 				return err
 			}

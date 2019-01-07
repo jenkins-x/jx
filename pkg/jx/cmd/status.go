@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/util"
 	"io"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -61,7 +62,7 @@ func NewCmdStatus(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 
 func (o *StatusOptions) Run() error {
 
-	client, namespace, err := o.KubeClient()
+	client, namespace, err := o.KubeClientAndNamespace()
 	if err != nil {
 
 		log.Warn("Unable to connect to Kubernetes cluster -  is one running ?")

@@ -121,7 +121,7 @@ func (o *StepHelmApplyOptions) Run() error {
 	if ns == "" {
 		ns = os.Getenv("DEPLOY_NAMESPACE")
 	}
-	kubeClient, curNs, err := o.KubeClient()
+	kubeClient, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

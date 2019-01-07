@@ -85,7 +85,7 @@ func (o *ControllerTeamOptions) Run() error {
 
 	log.Infof("Using the admin namespace %s\n", adminNs)
 
-	client, _, err := co.KubeClient()
+	client, err := co.KubeClient()
 	if err != nil {
 		return err
 	}

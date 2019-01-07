@@ -69,7 +69,7 @@ func NewCmdCreateTeam(f Factory, in terminal.FileReader, out terminal.FileWriter
 
 // Run implements the command
 func (o *CreateTeamOptions) Run() error {
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

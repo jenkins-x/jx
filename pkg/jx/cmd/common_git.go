@@ -69,7 +69,7 @@ func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepository, gits
 }
 
 func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) (string, error) {
-	client, curNs, err := o.KubeClient()
+	client, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return "", err
 	}
@@ -267,7 +267,7 @@ func (o *CommonOptions) GitServerHostURLKind(hostURL string) (string, error) {
 		return "", err
 	}
 
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return "", err
 	}

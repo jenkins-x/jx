@@ -369,11 +369,10 @@ func (options *InstallOptions) Run() error {
 	// Default to verbose mode to get more information during the install
 	options.Verbose = true
 
-	client, originalNs, err := options.KubeClient()
+	client, originalNs, err := options.KubeClientAndNamespace()
 	if err != nil {
 		return errors.Wrap(err, "creating the kube client")
 	}
-	options.KubeClientCached = client
 
 	ns := options.Flags.Namespace
 	if ns == "" {
@@ -2365,7 +2364,7 @@ func (options *InstallOptions) getPipelineGitAuth() (*auth.AuthServer, *auth.Use
 }
 
 func (options *InstallOptions) waitForInstallToBeReady(ns string) error {
-	client, _, err := options.KubeClient()
+	client, err := options.KubeClient()
 	if err != nil {
 		return err
 	}

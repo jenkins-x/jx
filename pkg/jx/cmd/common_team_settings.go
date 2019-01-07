@@ -106,7 +106,7 @@ func (o *CommonOptions) defaultModifyDevEnvironment(callback func(env *v1.Enviro
 		return errors.Wrap(err, "failed to create the jx client")
 	}
 
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the kube client")
 	}
@@ -240,7 +240,7 @@ func (o *CommonOptions) ModifyTeam(adminNs string, teamName string, callback fun
 	if err != nil {
 		return err
 	}
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -296,7 +296,7 @@ func (o *CommonOptions) ModifyUser(userName string, callback func(env *v1.User) 
 	if err != nil {
 		return err
 	}
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

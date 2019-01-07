@@ -215,7 +215,11 @@ func (o *UpgradePlatformOptions) Run() error {
 	adminSecretsFileName := filepath.Join(dir, AdminSecretsFile)
 	configFileName := filepath.Join(dir, ExtraValuesFile)
 
-	secretResources := o.KubeClientCached.CoreV1().Secrets(ns)
+	client, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	secretResources := client.CoreV1().Secrets(ns)
 	oldSecret, err := secretResources.Get(JXInstallConfig, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to get the jx secret resource")

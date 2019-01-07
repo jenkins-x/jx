@@ -49,7 +49,7 @@ func NewCmdDeletePreview(f Factory, in terminal.FileReader, out terminal.FileWri
 
 // Run implements this command
 func (o *DeletePreviewOptions) Run() error {
-	kubeClient, currentNs, err := o.KubeClient()
+	kubeClient, currentNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

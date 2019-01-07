@@ -216,7 +216,7 @@ func (options *ImportOptions) Run() error {
 	var err error
 	isProw := false
 	if !options.DryRun {
-		_, _, err = options.KubeClient()
+		_, err = options.KubeClient()
 		if err != nil {
 			return err
 		}
@@ -893,7 +893,11 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 		return err
 	}
 	repo := gitInfo.Organisation + "/" + gitInfo.Name
-	err = prow.AddApplication(options.KubeClientCached, []string{repo}, options.currentNamespace, options.DraftPack)
+	client, err := options.KubeClient()
+	if err != nil {
+		return err
+	}
+	err = prow.AddApplication(client, []string{repo}, options.currentNamespace, options.DraftPack)
 	if err != nil {
 		return err
 	}
@@ -901,8 +905,7 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 	startBuildOptions := StartPipelineOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
-				Factory:          options.Factory,
-				KubeClientCached: options.KubeClientCached,
+				Factory: options.Factory,
 			},
 		},
 	}
@@ -928,7 +931,7 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 		log.Warnf("Missing application name!\n")
 		return nil
 	}
-	kubeClient, curNs, err := options.KubeClient()
+	kubeClient, curNs, err := options.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}
@@ -1083,8 +1086,12 @@ func (options *ImportOptions) addAppNameToGeneratedFile(filename, field, value s
 }
 
 func (options *ImportOptions) checkChartmuseumCredentialExists() error {
+	client, err := options.KubeClient()
+	if err != nil {
+		return err
+	}
 	name := jenkins.DefaultJenkinsCredentialsPrefix + jenkins.Chartmuseum
-	secret, err := options.KubeClientCached.CoreV1().Secrets(options.devNamespace).Get(name, metav1.GetOptions{})
+	secret, err := client.CoreV1().Secrets(options.devNamespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("error getting %s secret %v", name, err)
 	}

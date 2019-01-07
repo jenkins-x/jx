@@ -29,7 +29,7 @@ func setupMocks(t *testing.T, term *terminal.Stdio) (*fake.Clientset, *kubevault
 	vaultOperatorClient := fake.NewSimpleClientset()
 	When(options.CreateVaultOperatorClient()).ThenReturn(vaultOperatorClient, nil)
 	f, err := kubevault.NewInteractiveVaultClientFactory(&options)
-	kubeClient, _, err := options.KubeClient()
+	kubeClient, err := options.KubeClient()
 	assert.NoError(t, err)
 	return vaultOperatorClient, f, kubeClient, err
 }

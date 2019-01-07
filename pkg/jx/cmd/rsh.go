@@ -98,7 +98,7 @@ func NewCmdRsh(f Factory, in terminal.FileReader, out terminal.FileWriter, errOu
 func (o *RshOptions) Run() error {
 	args := o.Args
 
-	client, curNs, err := o.KubeClient()
+	client, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

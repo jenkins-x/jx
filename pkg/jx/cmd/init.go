@@ -213,7 +213,7 @@ func (o *InitOptions) Run() error {
 }
 
 func (o *InitOptions) enableClusterAdminRole() error {
-	client, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -278,7 +278,7 @@ func (o *InitOptions) initHelm() error {
 
 	if !o.Flags.SkipTiller {
 		log.Infof("Configuring %s\n", util.ColorInfo("tiller"))
-		client, curNs, err := o.KubeClient()
+		client, curNs, err := o.KubeClientAndNamespace()
 		if err != nil {
 			return err
 		}
@@ -497,7 +497,7 @@ func (o *InitOptions) configureForICP() {
 
 func (o *InitOptions) initIKSIngress() error {
 	log.Infoln("Wait for Ingress controller to be injected into IBM Kubernetes Service Cluster")
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -519,7 +519,7 @@ func (o *InitOptions) initIKSIngress() error {
 
 func (o *InitOptions) initIngress() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
-	client, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

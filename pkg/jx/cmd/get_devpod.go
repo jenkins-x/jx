@@ -64,7 +64,7 @@ func NewCmdGetDevPod(f Factory, in terminal.FileReader, out terminal.FileWriter,
 // Run implements this command
 func (o *GetDevPodOptions) Run() error {
 
-	client, curNs, err := o.KubeClient()
+	client, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

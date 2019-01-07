@@ -111,7 +111,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	kubeClient, ns, err := o.KubeClient()
+	kubeClient, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return fmt.Errorf("error connecting to Kubernetes cluster: %v", err)
 	}
@@ -191,14 +191,14 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	}
 
 	// now lets create a secret for it so we can perform incluster interactions with Jenkins
-	s, err := o.KubeClientCached.CoreV1().Secrets(o.currentNamespace).Get(kube.SecretJenkins, metav1.GetOptions{})
+	s, err := kubeClient.CoreV1().Secrets(o.currentNamespace).Get(kube.SecretJenkins, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	s.Data[kube.JenkinsAdminApiToken] = []byte(userAuth.ApiToken)
 	s.Data[kube.JenkinsBearTokenField] = []byte(userAuth.BearerToken)
 	s.Data[kube.JenkinsAdminUserField] = []byte(userAuth.Username)
-	_, err = o.KubeClientCached.CoreV1().Secrets(o.currentNamespace).Update(s)
+	_, err = kubeClient.CoreV1().Secrets(o.currentNamespace).Update(s)
 	if err != nil {
 		return err
 	}

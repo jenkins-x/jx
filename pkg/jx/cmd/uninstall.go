@@ -155,7 +155,7 @@ func (o *UninstallOptions) Run() error {
 }
 
 func (o *UninstallOptions) cleanupNamespaces(namespace string, envNames []string, envMap map[string]*v1.Environment) error {
-	client, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "getting the kube client")
 	}
@@ -192,7 +192,7 @@ func (o *UninstallOptions) cleanupNamespaces(namespace string, envNames []string
 }
 
 func (o *UninstallOptions) deleteNamespace(namespace string) error {
-	client, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "getting the kube client")
 	}

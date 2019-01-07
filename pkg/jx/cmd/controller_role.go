@@ -112,7 +112,7 @@ func (o *ControllerRoleOptions) Run() error {
 	}
 
 	o.TeamNs = ns
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -408,7 +408,7 @@ func (o *ControllerRoleOptions) UpsertEnvironmentRoleBinding(newEnv *v1.Environm
 	}
 
 	ns := o.TeamNs
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -465,7 +465,7 @@ func (o *ControllerRoleOptions) UpsertRole(newRole *rbacv1.Role) error {
 	}
 
 	ns := o.TeamNs
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

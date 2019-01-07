@@ -105,7 +105,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 		return err
 	}
 
-	kubeClient, curNs, err := o.KubeClient()
+	kubeClient, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -104,7 +105,7 @@ func (o *GetBuildLogsOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

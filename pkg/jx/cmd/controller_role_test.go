@@ -2,10 +2,11 @@ package cmd_test
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/kubernetes"
-	"testing"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -108,7 +109,7 @@ func TestEnvironmentRoleBinding(t *testing.T) {
 
 	nsNames := []string{teamNs, teamNs + "-staging", teamNs + "-production", teamNs + "-preview-jx-jstrachan-demo96-pr-1", teamNs + "-preview-jx-jstrachan-another-pr-3"}
 
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	require.NoError(t, err)
 	jxClient, _, err := o.JXClient()
 	require.NoError(t, err)

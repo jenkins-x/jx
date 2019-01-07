@@ -106,7 +106,7 @@ func (o *CreateDockerAuthOptions) Run() error {
 		}
 		survey.AskOne(prompt, &email, nil, surveyOpts)
 	}
-	kubeClient, currentNs, err := o.KubeClient()
+	kubeClient, currentNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

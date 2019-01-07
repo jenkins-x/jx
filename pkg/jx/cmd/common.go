@@ -82,8 +82,7 @@ type CommonOptions struct {
 	ExternalJenkinsBaseURL string
 	PullSecrets            string
 
-	// common cached clients
-	KubeClientCached       kubernetes.Interface
+	kubeClient             kubernetes.Interface
 	apiExtensionsClient    apiextensionsclientset.Interface
 	currentNamespace       string
 	devNamespace           string
@@ -129,7 +128,7 @@ func NewCommonOptions(devNamespace string, factory Factory) CommonOptions {
 func (o *CommonOptions) SetDevNamespace(ns string) {
 	o.devNamespace = ns
 	o.currentNamespace = ns
-	o.KubeClientCached = nil
+	o.kubeClient = nil
 }
 
 // Debugf outputs the given text to the console if verbose mode is enabled
@@ -163,22 +162,31 @@ func (o *CommonOptions) ApiExtensionsClient() (apiextensionsclientset.Interface,
 	return o.apiExtensionsClient, nil
 }
 
-func (o *CommonOptions) KubeClient() (kubernetes.Interface, string, error) {
-	if o.KubeClientCached == nil {
+func (o *CommonOptions) KubeClient() (kubernetes.Interface, error) {
+	if o.kubeClient == nil {
 		kubeClient, currentNs, err := o.CreateKubeClient()
 		if err != nil {
-			return nil, "", err
+			return nil, err
 		}
-		o.KubeClientCached = kubeClient
+		o.kubeClient = kubeClient
 		o.currentNamespace = currentNs
 
 	}
-	return o.KubeClientCached, o.currentNamespace, nil
+	return o.kubeClient, nil
+}
+
+func (o *CommonOptions) KubeClientAndNamespace() (kubernetes.Interface, string, error) {
+	client, err := o.KubeClient()
+	return client, o.currentNamespace, err
+}
+
+func (o *CommonOptions) SetKubeClient(kubeClient kubernetes.Interface) {
+	o.kubeClient = kubeClient
 }
 
 // KubeClientAndDevNamespace returns a kube client and the development namespace
 func (o *CommonOptions) KubeClientAndDevNamespace() (kubernetes.Interface, string, error) {
-	kubeClient, curNs, err := o.KubeClient()
+	kubeClient, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return nil, "", err
 	}
@@ -223,7 +231,7 @@ func (o *CommonOptions) KnativeBuildClient() (buildclient.Interface, string, err
 }
 
 func (o *CommonOptions) JXClientAndAdminNamespace() (versioned.Interface, string, error) {
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, _, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return nil, "", err
 	}
@@ -248,7 +256,7 @@ func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, 
 		}
 	}
 	if o.devNamespace == "" {
-		client, ns, err := o.KubeClient()
+		client, ns, err := o.KubeClientAndNamespace()
 		if err != nil {
 			return nil, "", err
 		}
@@ -284,7 +292,7 @@ func (o *CommonOptions) JenkinsClient() (gojenkins.JenkinsClient, error) {
 	return o.jenkinsClient, nil
 }
 func (o *CommonOptions) getJenkinsURL() (string, error) {
-	kubeClient, ns, err := o.KubeClient()
+	kubeClient, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return "", err
 	}
@@ -328,7 +336,7 @@ func (o *CommonOptions) SetKube(kuber kube.Kuber) {
 }
 
 func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
-	kubeClient, currentNs, err := o.KubeClient()
+	kubeClient, currentNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return "", "", err
 	}
@@ -427,7 +435,7 @@ func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerF
 }
 
 func (o *CommonOptions) findService(name string) (string, error) {
-	client, ns, err := o.KubeClient()
+	client, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return "", err
 	}
@@ -464,7 +472,7 @@ func (o *CommonOptions) findService(name string) (string, error) {
 }
 
 func (o *CommonOptions) findEnvironmentNamespace(envName string) (string, error) {
-	client, ns, err := o.KubeClient()
+	client, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return "", err
 	}
@@ -494,7 +502,7 @@ func (o *CommonOptions) findEnvironmentNamespace(envName string) (string, error)
 }
 
 func (o *CommonOptions) findServiceInNamespace(name string, ns string) (string, error) {
-	client, curNs, err := o.KubeClient()
+	client, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return "", err
 	}
@@ -718,21 +726,21 @@ func (o *CommonOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
 // todo switch to using expose as a jx plugin
 // get existing config from the devNamespace and run expose in the target environment
 func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) error {
-	return expose.Expose(devNamespace, targetNamespace, password, o.KubeClientCached, o.Helm(), defaultInstallTimeout)
+	return expose.Expose(devNamespace, targetNamespace, password, o.kubeClient, o.Helm(), defaultInstallTimeout)
 }
 
 func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig, services ...string) error {
-	return expose.RunExposecontroller(devNamespace, targetNamespace, ic, o.KubeClientCached, o.Helm(),
+	return expose.RunExposecontroller(devNamespace, targetNamespace, ic, o.kubeClient, o.Helm(),
 		defaultInstallTimeout)
 }
 
 // CleanExposecontrollerReources cleans expose controller resources
 func (o *CommonOptions) CleanExposecontrollerReources(ns string) {
-	expose.CleanExposecontrollerReources(o.KubeClientCached, ns)
+	expose.CleanExposecontrollerReources(o.kubeClient, ns)
 }
 
 func (o *CommonOptions) getDefaultAdminPassword(devNamespace string) (string, error) {
-	client, _, err := o.KubeClient() // cache may not have been created yet...
+	client, err := o.KubeClient() // cache may not have been created yet...
 	if err != nil {
 		return "", fmt.Errorf("cannot obtain k8s client %v", err)
 	}
@@ -751,12 +759,12 @@ func (o *CommonOptions) getDefaultAdminPassword(devNamespace string) (string, er
 }
 
 func (o *CommonOptions) ensureAddonServiceAvailable(serviceName string) (string, error) {
-	present, err := services.IsServicePresent(o.KubeClientCached, serviceName, o.currentNamespace)
+	present, err := services.IsServicePresent(o.kubeClient, serviceName, o.currentNamespace)
 	if err != nil {
 		return "", fmt.Errorf("no %s provider service found, are you in your teams dev environment?  Type `jx ns` to switch.", serviceName)
 	}
 	if present {
-		url, err := services.GetServiceURLFromName(o.KubeClientCached, serviceName, o.currentNamespace)
+		url, err := services.GetServiceURLFromName(o.kubeClient, serviceName, o.currentNamespace)
 		if err != nil {
 			return "", fmt.Errorf("no %s provider service found, are you in your teams dev environment?  Type `jx ns` to switch.", serviceName)
 		}
@@ -768,7 +776,7 @@ func (o *CommonOptions) ensureAddonServiceAvailable(serviceName string) (string,
 }
 
 func (o *CommonOptions) copyCertmanagerResources(targetNamespace string, ic kube.IngressConfig) error {
-	return certmanager.CopyCertmanagerResources(targetNamespace, ic, o.KubeClientCached)
+	return certmanager.CopyCertmanagerResources(targetNamespace, ic, o.kubeClient)
 }
 
 func (o *CommonOptions) getJobName() string {
@@ -823,7 +831,7 @@ func (o *CommonOptions) GetWebHookEndpoint() (string, error) {
 		return "", errors.Wrap(err, "failed to get jxclient")
 	}
 
-	_, _, err = o.KubeClient()
+	_, err = o.KubeClient()
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get kube client")
 	}
@@ -833,7 +841,7 @@ func (o *CommonOptions) GetWebHookEndpoint() (string, error) {
 		return "", err
 	}
 
-	ns, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	ns, _, err := kube.GetDevNamespace(o.kubeClient, o.currentNamespace)
 	if err != nil {
 		return "", err
 	}
@@ -841,14 +849,14 @@ func (o *CommonOptions) GetWebHookEndpoint() (string, error) {
 	var webHookUrl string
 
 	if isProwEnabled {
-		baseURL, err := services.GetServiceURLFromName(o.KubeClientCached, "hook", ns)
+		baseURL, err := services.GetServiceURLFromName(o.kubeClient, "hook", ns)
 		if err != nil {
 			return "", err
 		}
 
 		webHookUrl = util.UrlJoin(baseURL, "hook")
 	} else {
-		baseURL, err := services.GetServiceURLFromName(o.KubeClientCached, "jenkins", ns)
+		baseURL, err := services.GetServiceURLFromName(o.kubeClient, "jenkins", ns)
 		if err != nil {
 			return "", err
 		}
@@ -874,7 +882,7 @@ func (o *CommonOptions) ChangeNamespace(ns string) {
 
 	//Reset all the cached clients & namespace values when switching so that they can be properly recalculated for
 	//the new namespace.
-	o.KubeClientCached = nil
+	o.kubeClient = nil
 	o.jxClient = nil
 	o.currentNamespace = ""
 	o.devNamespace = ""

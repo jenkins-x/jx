@@ -73,7 +73,7 @@ func (o *GetAddonOptions) Run() error {
 			addonEnabled[addon.Name] = true
 		}
 	}
-	_, ns, err := o.KubeClient()
+	_, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

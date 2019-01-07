@@ -71,7 +71,7 @@ func NewCmdDeleteDevPod(f Factory, in terminal.FileReader, out terminal.FileWrit
 func (o *DeleteDevPodOptions) Run() error {
 	args := o.Args
 
-	client, curNs, err := o.KubeClient()
+	client, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

@@ -84,12 +84,12 @@ func (options *UpdateWebhooksOptions) Run() error {
 		return errors.Wrap(err, "failed to create git auth service")
 	}
 
-	_, _, err = options.KubeClient()
+	client, err := options.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to get kube client")
 	}
 
-	ns, _, err := kube.GetDevNamespace(options.KubeClientCached, options.currentNamespace)
+	ns, _, err := kube.GetDevNamespace(client, options.currentNamespace)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (options *UpdateWebhooksOptions) Run() error {
 		return err
 	}
 
-	hmacToken, err := options.KubeClientCached.CoreV1().Secrets(ns).Get("hmac-token", metav1.GetOptions{})
+	hmacToken, err := client.CoreV1().Secrets(ns).Get("hmac-token", metav1.GetOptions{})
 	if err != nil {
 		return err
 	}

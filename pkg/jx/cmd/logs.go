@@ -89,7 +89,7 @@ func NewCmdLogs(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 func (o *LogsOptions) Run() error {
 	args := o.Args
 
-	client, curNs, err := o.KubeClient()
+	client, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

@@ -96,12 +96,12 @@ func (o *UpgradeIngressOptions) addFlags(cmd *cobra.Command) {
 
 // Run implements the command
 func (o *UpgradeIngressOptions) Run() error {
-	_, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
 	}
 
-	o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	o.devNamespace, _, err = kube.GetDevNamespace(client, o.currentNamespace)
 	if err != nil {
 		return errors.Wrap(err, "getting the dev namesapce")
 	}
@@ -134,7 +134,7 @@ func (o *UpgradeIngressOptions) Run() error {
 	}
 
 	// save details to a configmap
-	_, err = kube.SaveAsConfigMap(o.KubeClientCached, kube.ConfigMapIngressConfig, o.devNamespace, o.IngressConfig)
+	_, err = kube.SaveAsConfigMap(client, kube.ConfigMapIngressConfig, o.devNamespace, o.IngressConfig)
 	if err != nil {
 		return errors.Wrap(err, "saving ingress config into a configmap")
 	}
@@ -160,7 +160,7 @@ func (o *UpgradeIngressOptions) Run() error {
 	// delete ingress
 	for name, namespace := range ingressToDelete {
 		log.Infof("Deleting ingress %s/%s\n", namespace, name)
-		err := o.KubeClientCached.ExtensionsV1beta1().Ingresses(namespace).Delete(name, &metav1.DeleteOptions{})
+		err := client.ExtensionsV1beta1().Ingresses(namespace).Delete(name, &metav1.DeleteOptions{})
 		if err != nil {
 			return fmt.Errorf("cannot delete ingress rule %s in namespace %s: %v", name, namespace, err)
 		}
@@ -253,11 +253,15 @@ func (o *UpgradeIngressOptions) isIngressForServices(ingress *v1beta1.Ingress) b
 func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, error) {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	existingIngressNames := map[string]string{}
+	client, err := o.KubeClient()
+	if err != nil {
+		return existingIngressNames, err
+	}
 	var confirmMessage string
 	if o.Cluster {
 		confirmMessage = "Existing ingress rules found in the cluster.  Confirm to delete all and recreate them"
 
-		ings, err := o.KubeClientCached.ExtensionsV1beta1().Ingresses("").List(metav1.ListOptions{})
+		ings, err := client.ExtensionsV1beta1().Ingresses("").List(metav1.ListOptions{})
 		if err != nil {
 			return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 		}
@@ -269,7 +273,7 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 			}
 		}
 
-		nsList, err := o.KubeClientCached.CoreV1().Namespaces().List(metav1.ListOptions{})
+		nsList, err := client.CoreV1().Namespaces().List(metav1.ListOptions{})
 		for _, n := range nsList.Items {
 			o.TargetNamespaces = append(o.TargetNamespaces, n.Name)
 		}
@@ -278,7 +282,7 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 		confirmMessage = fmt.Sprintf("Existing ingress rules found in namespaces %v namespace.  Confirm to delete and recreate them", o.Namespaces)
 		// loop round each
 		for _, n := range o.Namespaces {
-			ings, err := o.KubeClientCached.ExtensionsV1beta1().Ingresses(n).List(metav1.ListOptions{})
+			ings, err := client.ExtensionsV1beta1().Ingresses(n).List(metav1.ListOptions{})
 			if err != nil {
 				return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 			}
@@ -296,7 +300,7 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 		// fall back to current ns only
 		log.Infof("looking for existing ingress rules in current namespace %s\n", o.currentNamespace)
 
-		ings, err := o.KubeClientCached.ExtensionsV1beta1().Ingresses(o.currentNamespace).List(metav1.ListOptions{})
+		ings, err := client.ExtensionsV1beta1().Ingresses(o.currentNamespace).List(metav1.ListOptions{})
 		if err != nil {
 			return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 		}
@@ -319,7 +323,7 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 		Default: true,
 	}
 	flag := true
-	err := survey.AskOne(confirm, &flag, nil, surveyOpts)
+	err = survey.AskOne(confirm, &flag, nil, surveyOpts)
 	if err != nil {
 		return existingIngressNames, err
 	}
@@ -332,13 +336,17 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 
 func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 	// get current ingress config to use as existing defaults
-	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	client, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
 
 	// Overwrites the ingress config with the values from config map only if this config map exists
-	ic, err := kube.GetIngressConfig(o.KubeClientCached, devNamespace)
+	ic, err := kube.GetIngressConfig(client, devNamespace)
 	if err == nil {
 		o.IngressConfig = ic
 	}
@@ -389,7 +397,11 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 
 }
 func (o *UpgradeIngressOptions) recreateIngressRules() error {
-	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	client, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
@@ -401,7 +413,7 @@ func (o *UpgradeIngressOptions) recreateIngressRules() error {
 			return err
 		}
 
-		err = kube.CleanCertmanagerResources(o.KubeClientCached, n, o.IngressConfig)
+		err = kube.CleanCertmanagerResources(client, n, o.IngressConfig)
 		if err != nil {
 			return err
 		}
@@ -423,8 +435,12 @@ func (o *UpgradeIngressOptions) ensureCertmanagerSetup() error {
 
 // AnnotateExposedServicesWithCertManager annotates exposed services with cert manager
 func (o *UpgradeIngressOptions) AnnotateExposedServicesWithCertManager(svcs ...string) error {
+	client, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
 	for _, n := range o.TargetNamespaces {
-		err := services.AnnotateNamespaceServicesWithCertManager(o.KubeClientCached, n, o.IngressConfig.Issuer, svcs...)
+		err := services.AnnotateNamespaceServicesWithCertManager(client, n, o.IngressConfig.Issuer, svcs...)
 		if err != nil {
 			return err
 		}
@@ -434,8 +450,12 @@ func (o *UpgradeIngressOptions) AnnotateExposedServicesWithCertManager(svcs ...s
 
 // CleanServiceAnnotations cleans service annotations
 func (o *UpgradeIngressOptions) CleanServiceAnnotations(svcs ...string) error {
+	client, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
 	for _, n := range o.TargetNamespaces {
-		err := services.CleanServiceAnnotations(o.KubeClientCached, n, svcs...)
+		err := services.CleanServiceAnnotations(client, n, svcs...)
 		if err != nil {
 			return err
 		}
@@ -444,14 +464,18 @@ func (o *UpgradeIngressOptions) CleanServiceAnnotations(svcs ...string) error {
 	return nil
 }
 func (o *UpgradeIngressOptions) cleanTLSSecrets(ns string) error {
+	client, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
 	// delete the tls related secrets so we dont reuse old ones when switching from http to https
-	secrets, err := o.KubeClientCached.CoreV1().Secrets(ns).List(metav1.ListOptions{})
+	secrets, err := client.CoreV1().Secrets(ns).List(metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 	for _, s := range secrets.Items {
 		if strings.HasPrefix(s.Name, "tls-") {
-			err := o.KubeClientCached.CoreV1().Secrets(ns).Delete(s.Name, &metav1.DeleteOptions{})
+			err := client.CoreV1().Secrets(ns).Delete(s.Name, &metav1.DeleteOptions{})
 			if err != nil {
 				return fmt.Errorf("failed to delete tls secret %s: %v", s.Name, err)
 			}

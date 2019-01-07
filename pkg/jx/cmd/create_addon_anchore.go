@@ -105,12 +105,12 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 	if o.Chart == "" {
 		return util.MissingOption(optionChart)
 	}
-	_, _, err = o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
 
-	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
@@ -127,7 +127,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 
 	log.Info("waiting for anchore deployment to be ready, this can take a few minutes\n")
 
-	err = kube.WaitForDeploymentToBeReady(o.KubeClientCached, anchoreDeploymentName, o.Namespace, 10*time.Minute)
+	err = kube.WaitForDeploymentToBeReady(client, anchoreDeploymentName, o.Namespace, 10*time.Minute)
 	if err != nil {
 		return err
 	}
@@ -143,7 +143,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 	}
 
 	// get the external anchore services URL
-	ing, err := services.GetServiceURLFromName(o.KubeClientCached, anchoreServiceName, o.Namespace)
+	ing, err := services.GetServiceURLFromName(client, anchoreServiceName, o.Namespace)
 	if err != nil {
 		return fmt.Errorf("failed to get external URL for service %s: %v", anchoreServiceName, err)
 	}
@@ -166,10 +166,10 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 		return fmt.Errorf("failed to create addonAuth.yaml error: %v", err)
 	}
 
-	_, err = o.KubeClientCached.CoreV1().Services(o.currentNamespace).Get(anchoreServiceName, meta_v1.GetOptions{})
+	_, err = client.CoreV1().Services(o.currentNamespace).Get(anchoreServiceName, meta_v1.GetOptions{})
 	if err != nil {
 		// create a service link
-		err = services.CreateServiceLink(o.KubeClientCached, o.currentNamespace, o.Namespace, anchoreServiceName, ing)
+		err = services.CreateServiceLink(client, o.currentNamespace, o.Namespace, anchoreServiceName, ing)
 		if err != nil {
 			return fmt.Errorf("failed creating a service link for %s in target namespace %s", anchoreServiceName, o.Namespace)
 		}

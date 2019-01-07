@@ -69,7 +69,7 @@ func (o *GetURLOptions) addGetUrlFlags(cmd *cobra.Command) {
 
 // Run implements this command
 func (o *GetURLOptions) Run() error {
-	client, ns, err := o.KubeClient()
+	client, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

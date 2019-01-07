@@ -76,7 +76,7 @@ func (o *GetEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

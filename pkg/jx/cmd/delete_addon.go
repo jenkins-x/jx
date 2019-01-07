@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
+
+	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -89,7 +90,7 @@ func (o *DeleteAddonOptions) cleanupServiceLink(addonName string) error {
 		// No cleanup is required if no service link is associated with the Addon
 		return nil
 	}
-	client, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

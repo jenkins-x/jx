@@ -77,7 +77,7 @@ func (o *GetPipelineOptions) Run() error {
 		return err
 	}
 
-	_, _, err = o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func (o *GetPipelineOptions) Run() error {
 
 	if isProw {
 		o.ProwOptions = prow.Options{
-			KubeClient: o.KubeClientCached,
+			KubeClient: client,
 			NS:         o.currentNamespace,
 		}
 		names, err := o.ProwOptions.GetReleaseJobs()

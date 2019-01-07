@@ -282,7 +282,7 @@ func (o *PromoteOptions) Run() error {
 }
 
 func (o *PromoteOptions) PromoteAllAutomatic() error {
-	kubeClient, currentNs, err := o.KubeClient()
+	kubeClient, currentNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}
@@ -480,7 +480,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 }
 
 func (o *PromoteOptions) GetTargetNamespace(ns string, env string) (string, *v1.Environment, error) {
-	kubeClient, currentNs, err := o.KubeClient()
+	kubeClient, currentNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return "", nil, err
 	}
@@ -767,7 +767,7 @@ func (o *PromoteOptions) verifyHelmConfigured() error {
 		}
 	}
 
-	_, ns, _ := o.KubeClient()
+	_, ns, _ := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}
@@ -952,7 +952,7 @@ func (o *CommonOptions) getLatestPipelineBuild(pipeline string) (string, string,
 	if err != nil {
 		return pipeline, build, err
 	}
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return pipeline, build, err
 	}
@@ -1030,7 +1030,7 @@ func (o *PromoteOptions) commentOnIssues(targetNS string, environment *v1.Enviro
 	if err != nil {
 		return err
 	}
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

@@ -142,7 +142,7 @@ func (o *CreateChatTokenOptions) Run() error {
 }
 
 func (o *CreateChatTokenOptions) updateChatCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) error {
-	client, curNs, err := o.KubeClient()
+	client, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

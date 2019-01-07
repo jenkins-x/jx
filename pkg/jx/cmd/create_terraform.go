@@ -1082,7 +1082,7 @@ func (options *CreateTerraformOptions) installJx(c Cluster, clusters []Cluster) 
 
 		ns := options.InstallOptions.Flags.Namespace
 		if ns == "" {
-			_, ns, _ = options.KubeClient()
+			_, ns, _ = options.KubeClientAndNamespace()
 			if err != nil {
 				return err
 			}

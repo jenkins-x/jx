@@ -92,7 +92,7 @@ func NewCmdScanCluster(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 // Run executes the "scan cluster" command
 func (o *ScanClusterOptions) Run() error {
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "creating kube client")
 	}
@@ -191,7 +191,7 @@ func (o *ScanClusterOptions) createScanJob(name string, namespace string, contai
 }
 
 func (o *ScanClusterOptions) retriveScanResult(namespace string) (string, error) {
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return "", errors.Wrap(err, "creating kube client")
 	}

@@ -107,7 +107,7 @@ func (o *StepEnvApplyOptions) Run() error {
 	}
 
 	o.SetDevNamespace(ns)
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrapf(err, "Could not connect to the kubernetes cluster!")
 	}

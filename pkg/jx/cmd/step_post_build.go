@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
+
+	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"os"
 
@@ -80,7 +81,7 @@ func NewCmdStepPostBuild(f Factory, in terminal.FileReader, out terminal.FileWri
 }
 
 func (o *StepPostBuildOptions) Run() error {
-	_, _, err := o.KubeClient()
+	_, err := o.KubeClient()
 	if err != nil {
 		return fmt.Errorf("error connecting to Kubernetes cluster: %v", err)
 	}
@@ -98,7 +99,11 @@ func (o *StepPostBuildOptions) addImageCVEProvider() error {
 		return util.MissingOption("image")
 	}
 
-	present, err := services.IsServicePresent(o.KubeClientCached, kube.AddonServices[defaultAnchoreName], o.currentNamespace)
+	client, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	present, err := services.IsServicePresent(client, kube.AddonServices[defaultAnchoreName], o.currentNamespace)
 	if err != nil || !present {
 		log.Infof("no CVE provider running in the current %s namespace so skip adding image to be analysed", o.currentNamespace)
 		return nil

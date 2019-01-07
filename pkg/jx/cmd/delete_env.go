@@ -69,7 +69,7 @@ func (o *DeleteEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -127,9 +127,13 @@ func (o *DeleteEnvOptions) deleteEnviroment(jxClient versioned.Interface, ns str
 	if envNs == "" {
 		return fmt.Errorf("No namespace for environment %s", name)
 	}
+	client, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
 	kind := env.Spec.Kind
 	if o.DeleteNamespace || !kind.IsPermanent() {
-		return o.KubeClientCached.CoreV1().Namespaces().Delete(envNs, &metav1.DeleteOptions{})
+		return client.CoreV1().Namespaces().Delete(envNs, &metav1.DeleteOptions{})
 	}
 	log.Infof("To delete the associated namespace %s for environment %s then please run this command\n", name, envNs)
 	log.Infof(util.ColorInfo("  kubectl delete namespace %s\n"), envNs)

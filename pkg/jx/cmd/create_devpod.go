@@ -158,7 +158,7 @@ func (o *CreateDevPodOptions) Run() error {
 		return errors.New("Cannot specify --import-url && --sync")
 	}
 
-	client, curNs, err := o.KubeClient()
+	client, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}
@@ -557,8 +557,7 @@ func (o *CreateDevPodOptions) Run() error {
 				portName := fmt.Sprintf("%s-%d", pod.Name, port)
 				servicePorts := []corev1.ServicePort{
 					{
-						Name:
-						portName,
+						Name:       portName,
 						Port:       int32(80),
 						TargetPort: intstr.FromInt(port),
 					},
@@ -794,7 +793,7 @@ func (o *CreateDevPodOptions) Run() error {
 func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, error) {
 	var env *v1.Environment
 
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return env, err
 	}

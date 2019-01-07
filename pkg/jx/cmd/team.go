@@ -66,7 +66,7 @@ func NewCmdTeam(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 }
 
 func (o *TeamOptions) Run() error {
-	kubeClient, currentTeam, err := o.KubeClient()
+	kubeClient, currentTeam, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

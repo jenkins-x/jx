@@ -1,16 +1,17 @@
 package cmd
 
 import (
+	"io"
+	"strings"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"strings"
-	"time"
 )
 
 // GCPodsOptions containers the CLI options
@@ -70,7 +71,7 @@ func NewCmdGCPods(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 
 // Run implements this command
 func (o *GCPodsOptions) Run() error {
-	kubeClient, ns, err := o.KubeClient()
+	kubeClient, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

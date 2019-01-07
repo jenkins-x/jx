@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
+
+	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -72,7 +73,7 @@ func (o *CloudBeesOptions) Run() error {
 }
 
 func (o *CloudBeesOptions) GetBaseURL() (url string, err error) {
-	client, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return "", err
 	}

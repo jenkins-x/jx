@@ -69,7 +69,7 @@ func NewCmdEnvironment(f Factory, in terminal.FileReader, out terminal.FileWrite
 }
 
 func (o *EnvironmentOptions) Run() error {
-	kubeClient, currentNs, err := o.KubeClient()
+	kubeClient, currentNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

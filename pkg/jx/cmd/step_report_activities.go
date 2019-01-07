@@ -73,7 +73,7 @@ func (o *StepReportActivitiesOptions) Run() error {
 	// look up services that we want to send events to using a label?
 
 	// watch activities and send an event for each backend i.e elasticsearch
-	_, _, err := o.KubeClient()
+	_, err := o.KubeClient()
 	if err != nil {
 		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
 	}
