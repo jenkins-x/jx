@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 	"io"
 	"net/http"
@@ -80,17 +81,76 @@ func GetLatestVersionStringFromGitHub(githubOwner, githubRepo string) (string, e
 
 // GetLatestReleaseFromGitHub gets the latest Release from a specific github repo
 func GetLatestReleaseFromGitHub(githubOwner, githubRepo string) (string, error) {
+	// Github has low (60/hour) unauthenticated limits from a single IP address. Try to get the latest release via HTTP
+	// first to avoid hitting this limit (eg, small company behind one IP address)
+	version := ""
+	var err error
+	version, err = getLatestReleaseFromGithubUsingHttpRedirect(githubOwner, githubRepo)
+
+	if version == "" || err != nil {
+		log.Warnf("getting latest release using HTTP redirect (%v) - using API instead", err)
+		version, err = getLatestReleaseFromGithubUsingApi(githubOwner, githubRepo)
+	}
+
+	return version, err
+}
+
+func getLatestReleaseFromGithubUsingApi(githubOwner, githubRepo string) (string, error) {
 	client, release, resp, err := preamble()
 	release, resp, err = client.Repositories.GetLatestRelease(context.Background(), githubOwner, githubRepo)
 	if err != nil {
-		return "", fmt.Errorf("Unable to get latest version for github.com/%s/%s %v", githubOwner, githubRepo, err)
+		return "", errors.Wrapf(err, "getting latest version for github.com/%s/%s", githubOwner, githubRepo)
 	}
 	defer resp.Body.Close()
 	latestVersionString := release.TagName
 	if latestVersionString != nil {
 		return *latestVersionString, nil
 	}
-	return "", fmt.Errorf("Unable to find the latest version for github.com/%s/%s", githubOwner, githubRepo)
+	return "", fmt.Errorf("unable to find the latest version for github.com/%s/%s", githubOwner, githubRepo)
+}
+
+func getLatestReleaseFromGithubUsingHttpRedirect(githubOwner, githubRepo string) (string, error) {
+	return getLatestReleaseFromHostUsingHttpRedirect("https://github.com", githubOwner, githubRepo)
+}
+
+func getLatestReleaseFromHostUsingHttpRedirect(host, githubOwner, githubRepo string) (string, error) {
+	// Github will redirect "https://github.com/organisation/repo/releases/latest" to the latest release, eg
+	// https://github.com/jenkins-x/jx/releases/tag/v1.3.696
+	// We can use this to get the latest release without affecting any API limits.
+	url := fmt.Sprintf("%s/%s/%s/releases/latest", host, githubOwner, githubRepo)
+
+	client := &http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error { // Don't follow redirects
+			// We want to follow 301 permanent redirects (eg, repo renames like kubernetes/helm --> helm/helm)
+			// but not temporary 302 temporary redirects (as these point to the latest tag)
+			if req.Response.StatusCode == 302 {
+				return http.ErrUseLastResponse
+			} else {
+				return nil
+			}
+		},
+	}
+
+	response, err := client.Get(url)
+	if err != nil {
+		return "", errors.Wrapf(err, "getting %s", url)
+	}
+	defer response.Body.Close()
+	if response.StatusCode >= 300 && response.StatusCode <= 399 {
+		location := response.Header.Get("Location")
+		if location == "" {
+			return "", fmt.Errorf("no location header in repsponse")
+		}
+
+		arr := strings.Split(location, "releases/tag/")
+		if len(arr) == 2 {
+			return arr[1], nil
+		} else {
+			return "", fmt.Errorf("unexpected location header: %s", location)
+		}
+	} else {
+		return "", fmt.Errorf("could not determine redirect for %s. Got a %v response", url, response.StatusCode)
+	}
 }
 
 // GetLatestFullTagFromGithub gets the latest 'full' tag from a specific github repo. This (at present) ignores releases
