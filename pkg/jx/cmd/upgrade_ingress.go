@@ -412,7 +412,7 @@ func (o *UpgradeIngressOptions) recreateIngressRules() error {
 	for _, n := range o.TargetNamespaces {
 		o.CleanExposecontrollerReources(n)
 
-		err := pki.CleanCertSecrets(o.KubeClientCached, n)
+		err := pki.CleanCertSecrets(client, n)
 		if err != nil {
 			return err
 		}
@@ -448,7 +448,7 @@ func (o *UpgradeIngressOptions) AnnotateExposedServicesWithCertManager(svcs ...s
 		if issuer == "" {
 			return fmt.Errorf("no issuer was configured for cert manager")
 		}
-		err := services.AnnotateNamespaceServicesWithCertManager(client, n, issuer, svcs...)
+		err := services.AnnotateServicesWithCertManagerIssuer(client, n, issuer, svcs...)
 		if err != nil {
 			return err
 		}
