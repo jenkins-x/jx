@@ -43,6 +43,7 @@ type UpgradeIngressOptions struct {
 
 	SkipCertManager     bool
 	Cluster             bool
+	Force               bool
 	Namespaces          []string
 	Version             string
 	TargetNamespaces    []string
@@ -92,6 +93,7 @@ func (o *UpgradeIngressOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.SkipCertManager, "skip-certmanager", "", false, "Skips certmanager installation")
 	cmd.Flags().StringArrayVarP(&o.Services, "services", "", []string{}, "Services to upgrdde")
 	cmd.Flags().BoolVarP(&o.SkipResourcesUpdate, "skip-resources-update", "", false, "Skips the update of jx related resources such as webhook or Jenkins URL")
+	cmd.Flags().BoolVarP(&o.Force, "force", "", false, "Forces upgrades of all webooks even if ingress URL has not changed")
 }
 
 // Run implements the command
@@ -461,6 +463,11 @@ func (o *UpgradeIngressOptions) cleanTLSSecrets(ns string) error {
 }
 
 func (o *UpgradeIngressOptions) updateWebHooks(oldHookEndpoint string, newHookEndpoint string) error {
+	if oldHookEndpoint == newHookEndpoint && !o.Force {
+		log.Infof("Webhook URL unchanged. Use %s to force updating", util.ColorInfo("--force"))
+		return nil
+	}
+
 	log.Infof("Updating all webHooks from %s to %s\n", util.ColorInfo(oldHookEndpoint), util.ColorInfo(newHookEndpoint))
 
 	updateWebHook := UpdateWebhooksOptions{
