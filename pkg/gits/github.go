@@ -398,8 +398,8 @@ func (p *GitHubProvider) UpdateWebHook(data *GitWebHookArguments) error {
 		for _, hook := range hooks {
 			c := hook.Config["url"]
 			s, ok := c.(string)
-			if ok && s == webhookUrl {
-				log.Warnf("Found existing webhook for url %s\n", webhookUrl)
+			if ok && s == data.ExistingURL {
+				log.Warnf("Found existing webhook for url %s\n", data.ExistingURL)
 				dataId = hook.GetID()
 			}
 		}
@@ -423,6 +423,8 @@ func (p *GitHubProvider) UpdateWebHook(data *GitWebHookArguments) error {
 
 		log.Infof("Updating GitHub webhook for %s/%s for url %s\n", util.ColorInfo(owner), util.ColorInfo(repo), util.ColorInfo(webhookUrl))
 		_, _, err = p.Client.Repositories.EditHook(p.Context, owner, repo, dataId, hook)
+	} else {
+		log.Warn("No webhooks found to update")
 	}
 	return err
 }
