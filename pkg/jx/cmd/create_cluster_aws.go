@@ -44,6 +44,7 @@ type CreateClusterAWSFlags struct {
 	NodeSize               string
 	MasterSize             string
 	State                  string
+	SshPublicKey           string
 	Tags                   string
 }
 
@@ -104,6 +105,7 @@ func NewCmdCreateClusterAWS(f Factory, in terminal.FileReader, out terminal.File
 	cmd.Flags().StringVarP(&options.Flags.NodeSize, "node-size", "", "", "The size of a node in the kops created cluster.")
 	cmd.Flags().StringVarP(&options.Flags.MasterSize, "master-size", "", "", "The size of a master in the kops created cluster.")
 	cmd.Flags().StringVarP(&options.Flags.State, "state", "", "", "The S3 bucket used to store the state of the cluster.")
+	cmd.Flags().StringVarP(&options.Flags.SshPublicKey, "ssh-public-key", "", "", "SSH public key to use for nodes (default \"~/.ssh/id_rsa.pub\")")
 	cmd.Flags().StringVarP(&options.Flags.Tags, "tags", "", "", "A list of KV pairs used to tag all instance groups in AWS (eg \"Owner=John Doe,Team=Some Team\").")
 	return cmd
 }
@@ -236,6 +238,9 @@ func (o *CreateClusterAWSOptions) Run() error {
 	}
 	if flags.MasterSize != "" {
 		args = append(args, "--master-size", flags.MasterSize)
+	}
+	if flags.SshPublicKey != "" {
+		args = append(args, "--ssh-public-key", flags.SshPublicKey)
 	}
 	if flags.Tags != "" {
 		args = append(args, "--cloud-labels", flags.Tags)
