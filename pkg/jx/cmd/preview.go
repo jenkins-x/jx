@@ -109,7 +109,7 @@ func NewCmdPreview(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 			options.Args = args
 			//Default to batch-mode when running inside the pipeline (but user override wins).
 			if !cmd.Flag(optionBatchMode).Changed {
-				options.BatchMode = options.Factory.IsInCDPipeline()
+				options.BatchMode = options.IsInCDPipeline()
 			}
 			err := options.Run()
 			CheckErr(err)
@@ -171,7 +171,7 @@ func (o *PreviewOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	apisClient, err := o.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -233,7 +233,7 @@ func (o *PreviewOptions) Run() error {
 			return err
 		}
 
-		gitProvider, err := o.Factory.CreateGitProvider(o.GitInfo.URL, "message", authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
+		gitProvider, err := o.CreateGitProvider(o.GitInfo.URL, "message", authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
 		if err != nil {
 			return fmt.Errorf("cannot create Git provider %v", err)
 		}

@@ -73,7 +73,7 @@ func (o *DeleteEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	apisClient, err := o.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}

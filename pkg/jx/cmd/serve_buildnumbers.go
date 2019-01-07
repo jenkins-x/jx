@@ -60,7 +60,7 @@ func NewCmdSControllerBuildNumbers(f Factory, in terminal.FileReader, out termin
 
 // Run will execute this command, starting the HTTP build number generation service with the specified options.
 func (o *ServeBuildNumbersOptions) Run() error {
-	jxClient, ns, err := o.Factory.CreateJXClient()
+	jxClient, ns, err := o.CreateJXClient()
 	if err != nil {
 		return err
 	}

@@ -99,7 +99,7 @@ func (o *UpgradePlatformOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	apisClient, err := o.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the API extensions client")
 	}

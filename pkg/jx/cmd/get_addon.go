@@ -84,7 +84,7 @@ func (o *GetAddonOptions) Run() error {
 
 	charts := kube.AddonCharts
 
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("NAME", "CHART", "ENABLED", "STATUS", "VERSION")
 
 	keys := util.SortedMapKeys(charts)

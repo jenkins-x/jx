@@ -73,8 +73,6 @@ func (o *StepReportActivitiesOptions) Run() error {
 	// look up services that we want to send events to using a label?
 
 	// watch activities and send an event for each backend i.e elasticsearch
-	f := o.Factory
-
 	_, _, err := o.KubeClient()
 	if err != nil {
 		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
@@ -85,7 +83,7 @@ func (o *StepReportActivitiesOptions) Run() error {
 		return fmt.Errorf("cannot create jx client: %v", err)
 	}
 
-	apisClient, err := f.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}

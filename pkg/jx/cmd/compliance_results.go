@@ -68,7 +68,7 @@ func NewCmdComplianceResults(f Factory, in terminal.FileReader, out terminal.Fil
 
 // Run implements the "compliance results" command
 func (o *ComplianceResultsOptions) Run() error {
-	cc, err := o.Factory.CreateComplianceClient()
+	cc, err := o.CreateComplianceClient()
 	if err != nil {
 		return errors.Wrap(err, "could not create the compliance client")
 	}
@@ -147,7 +147,7 @@ func (s StatusSortedTestCases) Less(i, j int) bool {
 func (s StatusSortedTestCases) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 func (o *ComplianceResultsOptions) printResults(junitResults []reporters.JUnitTestCase) {
-	table := o.CreateTable()
+	table := o.createTable()
 	table.SetColumnAlign(1, util.ALIGN_LEFT)
 	table.SetColumnAlign(2, util.ALIGN_LEFT)
 	table.AddRow("STATUS", "TEST", "TEST-CLASS")

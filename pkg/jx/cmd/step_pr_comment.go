@@ -93,7 +93,7 @@ func (o *StepPRCommentOptions) Run() error {
 		return err
 	}
 
-	provider, err := o.Factory.CreateGitProvider(gitInfo.URL, "user name to submit comment as", authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
+	provider, err := o.CreateGitProvider(gitInfo.URL, "user name to submit comment as", authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
 	if err != nil {
 		return err
 	}

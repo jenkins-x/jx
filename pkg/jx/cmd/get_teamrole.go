@@ -73,7 +73,7 @@ There are no Team roles defined so far!
 		return nil
 	}
 
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("NAME", "TITLE", "DESCRIPTION")
 	for _, name := range names {
 		title := ""

@@ -77,7 +77,7 @@ func (o *GetConfigOptions) Run() error {
 		log.Infof("To edit the configuration use: %s\n", util.ColorInfo("jx edit config"))
 		return nil
 	}
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("SERVICE", "KIND", "URL", "NAME")
 
 	t := pc.IssueTracker

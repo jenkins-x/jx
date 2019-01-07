@@ -62,7 +62,9 @@ type ModifyEnvironmentFn func(name string, callback func(env *jenkinsv1.Environm
 
 // CommonOptions contains common options and helper methods
 type CommonOptions struct {
-	Factory                Factory
+	Factory
+	Prow
+
 	In                     terminal.FileReader
 	Out                    terminal.FileWriter
 	Err                    io.Writer
@@ -94,8 +96,6 @@ type CommonOptions struct {
 	vaultOperatorClient    vaultoperatorclient.Interface
 	modifyDevEnvironmentFn ModifyDevEnvironmentFn
 	modifyEnvironmentFn    ModifyEnvironmentFn
-
-	Prow
 }
 
 type ServerFlags struct {
@@ -109,8 +109,8 @@ func (f *ServerFlags) IsEmpty() bool {
 }
 
 // CreateTable creates a new Table
-func (o *CommonOptions) CreateTable() table.Table {
-	return o.Factory.CreateTable(o.Out)
+func (o *CommonOptions) createTable() table.Table {
+	return o.CreateTable(o.Out)
 }
 
 // NewCommonOptions a helper method to create a new CommonOptions instance
@@ -152,10 +152,10 @@ func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	options.Cmd = cmd
 }
 
-func (o *CommonOptions) CreateApiExtensionsClient() (apiextensionsclientset.Interface, error) {
+func (o *CommonOptions) ApiExtensionsClient() (apiextensionsclientset.Interface, error) {
 	var err error
 	if o.apiExtensionsClient == nil {
-		o.apiExtensionsClient, err = o.Factory.CreateApiExtensionsClient()
+		o.apiExtensionsClient, err = o.CreateApiExtensionsClient()
 		if err != nil {
 			return nil, err
 		}
@@ -165,7 +165,7 @@ func (o *CommonOptions) CreateApiExtensionsClient() (apiextensionsclientset.Inte
 
 func (o *CommonOptions) KubeClient() (kubernetes.Interface, string, error) {
 	if o.KubeClientCached == nil {
-		kubeClient, currentNs, err := o.Factory.CreateKubeClient()
+		kubeClient, currentNs, err := o.CreateKubeClient()
 		if err != nil {
 			return nil, "", err
 		}
@@ -193,7 +193,7 @@ func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
 		return nil, "", errors.New("command factory is not initialized")
 	}
 	if o.jxClient == nil {
-		jxClient, ns, err := o.Factory.CreateJXClient()
+		jxClient, ns, err := o.CreateJXClient()
 		if err != nil {
 			return nil, ns, err
 		}
@@ -210,7 +210,7 @@ func (o *CommonOptions) KnativeBuildClient() (buildclient.Interface, string, err
 		return nil, "", errors.New("command factory is not initialized")
 	}
 	if o.knbClient == nil {
-		knbClient, ns, err := o.Factory.CreateKnativeBuildClient()
+		knbClient, ns, err := o.CreateKnativeBuildClient()
 		if err != nil {
 			return nil, ns, err
 		}
@@ -273,8 +273,8 @@ func (o *CommonOptions) JenkinsClient() (gojenkins.JenkinsClient, error) {
 			return nil, err
 		}
 
-		o.Factory.SetBatch(o.BatchMode)
-		jenkins, err := o.Factory.CreateJenkinsClient(kubeClient, ns, o.In, o.Out, o.Err)
+		o.SetBatch(o.BatchMode)
+		jenkins, err := o.CreateJenkinsClient(kubeClient, ns, o.In, o.Out, o.Err)
 
 		if err != nil {
 			return nil, err
@@ -283,13 +283,13 @@ func (o *CommonOptions) JenkinsClient() (gojenkins.JenkinsClient, error) {
 	}
 	return o.jenkinsClient, nil
 }
-func (o *CommonOptions) GetJenkinsURL() (string, error) {
+func (o *CommonOptions) getJenkinsURL() (string, error) {
 	kubeClient, ns, err := o.KubeClient()
 	if err != nil {
 		return "", err
 	}
 
-	return o.Factory.GetJenkinsURL(kubeClient, ns)
+	return o.GetJenkinsURL(kubeClient, ns)
 }
 
 func (o *CommonOptions) Git() gits.Gitter {
@@ -302,7 +302,7 @@ func (o *CommonOptions) Git() gits.Gitter {
 func (o *CommonOptions) Helm() helm.Helmer {
 	if o.helm == nil {
 		helmBinary, noTiller, helmTemplate, _ := o.TeamHelmBin()
-		o.helm = o.Factory.GetHelm(o.Verbose, helmBinary, noTiller, helmTemplate)
+		o.helm = o.GetHelm(o.Verbose, helmBinary, noTiller, helmTemplate)
 	}
 	return o.helm
 }
@@ -800,7 +800,7 @@ func (o *CommonOptions) VaultOperatorClient() (vaultoperatorclient.Interface, er
 		return nil, errors.New("command factory is not initialized")
 	}
 	if o.vaultOperatorClient == nil {
-		vaultOperatorClient, err := o.Factory.CreateVaultOperatorClient()
+		vaultOperatorClient, err := o.CreateVaultOperatorClient()
 		if err != nil {
 			return nil, err
 		}

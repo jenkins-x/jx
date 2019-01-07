@@ -73,7 +73,7 @@ func (o *DeleteJenkinsUserOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	authConfigSvc, err := o.Factory.CreateJenkinsAuthConfigService(kubeClient, ns)
+	authConfigSvc, err := o.CreateJenkinsAuthConfigService(kubeClient, ns)
 	if err != nil {
 		return err
 	}

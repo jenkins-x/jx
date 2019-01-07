@@ -61,7 +61,7 @@ func NewCmdVersion(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 
 func (o *VersionOptions) Run() error {
 	info := util.ColorInfo
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("NAME", "VERSION")
 	table.AddRow("jx", info(version.GetVersion()))
 

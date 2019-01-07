@@ -186,10 +186,10 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 
 	gha := &gits.GitPullRequestArguments{
 		GitRepository: gitInfo,
-		Title:             asText(title),
-		Body:              asText(message),
-		Base:              base,
-		Head:              branchName,
+		Title:         asText(title),
+		Body:          asText(message),
+		Base:          base,
+		Head:          branchName,
 	}
 
 	pr, err := provider.CreatePullRequest(gha)
@@ -205,7 +205,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 }
 
 func (o *CommonOptions) registerEnvironmentCRD() error {
-	apisClient, err := o.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}

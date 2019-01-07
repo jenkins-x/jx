@@ -107,7 +107,7 @@ func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string, de
 // Run implements this command
 func (o *AddAppOptions) Run() error {
 	// Regiser the App CRD
-	apiClient, err := o.CreateApiExtensionsClient()
+	apiClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}

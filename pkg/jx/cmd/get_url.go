@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
+
+	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -84,7 +85,7 @@ func (o *GetURLOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("Name", "URL")
 
 	for _, url := range urls {

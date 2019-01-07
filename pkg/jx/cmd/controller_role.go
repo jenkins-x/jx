@@ -93,7 +93,7 @@ func NewCmdControllerRole(f Factory, in terminal.FileReader, out terminal.FileWr
 }
 
 func (o *ControllerRoleOptions) Run() error {
-	apiClient, err := o.CreateApiExtensionsClient()
+	apiClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}

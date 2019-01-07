@@ -80,7 +80,7 @@ func (o *GetDevPodOptions) Run() error {
 
 	names, m, err := kube.GetDevPodNames(client, ns, u.Username)
 
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("NAME", "POD TEMPLATE", "AGE", "STATUS")
 
 	for _, k := range names {

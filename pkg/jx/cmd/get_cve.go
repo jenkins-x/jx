@@ -116,7 +116,7 @@ func (o *GetCVEOptions) Run() error {
 	if err != nil {
 		return fmt.Errorf("error creating anchore provider, %v", err)
 	}
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("Image", util.ColorInfo("Severity"), "Vulnerability", "URL", "Package", "Fix")
 
 	query := cve.CVEQuery{

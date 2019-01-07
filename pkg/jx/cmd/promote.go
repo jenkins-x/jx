@@ -820,7 +820,7 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 	if build != "" {
 		name += "-" + build
 		if buildURL == "" || buildLogsURL == "" {
-			jenkinsURL := o.getJenkinsURL()
+			jenkinsURL := o.getAndUpdateJenkinsURL()
 			if jenkinsURL != "" {
 				path := pipeline
 				if !strings.HasPrefix(path, "job/") && !strings.HasPrefix(path, "/job/") {
@@ -975,14 +975,11 @@ func (o *CommonOptions) getLatestPipelineBuild(pipeline string) (string, string,
 	return pipeline, build, nil
 }
 
-func (o *PromoteOptions) getJenkinsURL() string {
+func (o *PromoteOptions) getAndUpdateJenkinsURL() string {
 	if o.jenkinsURL == "" {
 		o.jenkinsURL = os.Getenv("JENKINS_URL")
 	}
-	if o.jenkinsURL == "" {
-		o.jenkinsURL = os.Getenv("JENKINS_URL")
-	}
-	url, err := o.GetJenkinsURL()
+	url, err := o.getJenkinsURL()
 	if err != nil {
 		log.Warnf("Could not find Jenkins URL: %s", err)
 	} else {

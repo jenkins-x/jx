@@ -86,7 +86,7 @@ func (o *GetQuickstartLocationOptions) Run() error {
 		return err
 	}
 
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("GIT SERVER", "KIND", "OWNER", "INCLUDES", "EXCLUDES")
 
 	for _, location := range locations {

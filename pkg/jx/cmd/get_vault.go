@@ -80,7 +80,7 @@ func (o *GetVaultOptions) Run() error {
 		return err
 	}
 
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("NAME", "URL", "AUTH-SERVICE-ACCOUNT")
 	for _, vault := range vaults {
 		table.AddRow(vault.Name, vault.URL, vault.AuthServiceAccountName)

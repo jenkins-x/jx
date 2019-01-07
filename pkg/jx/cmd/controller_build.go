@@ -2,16 +2,17 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/gits"
 	"io"
 	"io/ioutil"
-	"k8s.io/client-go/kubernetes"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/jenkins-x/jx/pkg/gits"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
@@ -74,7 +75,7 @@ func NewCmdControllerBuild(f Factory, in terminal.FileReader, out terminal.FileW
 
 // Run implements this command
 func (o *ControllerBuildOptions) Run() error {
-	apisClient, err := o.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -104,7 +105,7 @@ func (o *ControllerBuildOptions) Run() error {
 		// lets validate we have git configured
 		_, _, err = gits.EnsureUserAndEmailSetup(o.Git())
 		if err != nil {
-		  return err
+			return err
 		}
 
 		err := o.runCommandVerbose("git", "config", "--global", "credential.helper", "store")
@@ -425,7 +426,6 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 		return ""
 	}
 
-	
 	// TODO only github supported for now! Lets switch to GitProvider
 	return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/gh-pages/%s", gitInfo.Organisation, gitInfo.Name, fileName)
 }

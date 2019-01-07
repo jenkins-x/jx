@@ -13,7 +13,7 @@ func (o *CommonOptions) getAddonAuth(serviceURL string) (*auth.AuthServer, *auth
 	if serviceURL == "" {
 		return nil, nil, nil
 	}
-	authConfigSvc, err := o.CreateAddonAuthConfigService()
+	authConfigSvc, err := o.createAddonAuthConfigService()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -26,7 +26,7 @@ func (o *CommonOptions) getAddonAuth(serviceURL string) (*auth.AuthServer, *auth
 
 // getAddonAuth returns the server and user auth for the given addon service URL. Returns null values if there is no server
 func (o *CommonOptions) getAddonAuthByKind(kind, serverURL string) (*auth.AuthServer, *auth.UserAuth, error) {
-	authConfigSvc, err := o.CreateAddonAuthConfigService()
+	authConfigSvc, err := o.createAddonAuthConfigService()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -47,10 +47,10 @@ func (o *CommonOptions) getAddonAuthByKind(kind, serverURL string) (*auth.AuthSe
 	return server, userAuth, err
 }
 
-func (o *CommonOptions) CreateAddonAuthConfigService() (auth.ConfigService, error) {
+func (o *CommonOptions) createAddonAuthConfigService() (auth.ConfigService, error) {
 	secrets, err := o.LoadPipelineSecrets(kube.ValueKindAddon, "")
 	if err != nil {
 		log.Warnf("The current user cannot query pipeline addon secrets: %s", err)
 	}
-	return o.Factory.CreateAddonAuthConfigService(secrets)
+	return o.CreateAddonAuthConfigService(secrets)
 }

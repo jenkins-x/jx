@@ -1,10 +1,11 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"io"
 	"sort"
+
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
@@ -77,7 +78,7 @@ func (o *GetStorageOptions) Run() error {
 		names = append(names, k)
 	}
 	sort.Strings(names)
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("CLASSIFICATION", "LOCATION")
 	for _, n := range names {
 		ls := m[n]

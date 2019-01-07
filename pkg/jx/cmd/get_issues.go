@@ -75,7 +75,7 @@ func (o *GetIssuesOptions) Run() error {
 		return err
 	}
 
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("ISSUE", "TITLE")
 	for _, i := range issues {
 		table.AddRow(i.URL, i.Title)

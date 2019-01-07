@@ -210,7 +210,7 @@ func (o *UninstallOptions) deleteNamespace(namespace string) error {
 }
 
 func (o *UninstallOptions) cleanupConfig() error {
-	authConfigSvc, err := o.Factory.CreateAuthConfigService(JenkinsAuthConfigFile)
+	authConfigSvc, err := o.CreateAuthConfigService(JenkinsAuthConfigFile)
 	if err != nil || authConfigSvc == nil {
 		return nil
 	}
@@ -220,7 +220,7 @@ func (o *UninstallOptions) cleanupConfig() error {
 		return err
 	}
 
-	chartConfigSvc, err := o.Factory.CreateChartmuseumAuthConfigService()
+	chartConfigSvc, err := o.CreateChartmuseumAuthConfigService()
 	if err != nil {
 		return err
 	}

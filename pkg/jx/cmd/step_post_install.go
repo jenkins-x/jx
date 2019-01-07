@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -80,7 +81,7 @@ func NewCmdStepPostInstall(f Factory, in terminal.FileReader, out terminal.FileW
 
 // Run implements this command
 func (o *StepPostInstallOptions) Run() (err error) {
-	apisClient, err := o.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the API extensions client")
 	}

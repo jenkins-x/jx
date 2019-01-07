@@ -77,7 +77,7 @@ func (o *StepNextBuildNumberOptions) Run() error {
 		return util.MissingOption(optionRepo)
 	}
 
-	jxClient, ns, err := o.Factory.CreateJXClient()
+	jxClient, ns, err := o.CreateJXClient()
 	if err != nil {
 		return err
 	}

@@ -384,7 +384,7 @@ func (o *CommonOptions) defaultReleaseCharts() map[string]string {
 func (o *CommonOptions) releaseChartMuseumUrl() string {
 	chartRepo := os.Getenv("CHART_REPOSITORY")
 	if chartRepo == "" {
-		if o.Factory.IsInCDPipeline() {
+		if o.IsInCDPipeline() {
 			chartRepo = defaultChartRepo
 			log.Warnf("No $CHART_REPOSITORY defined so using the default value of: %s\n", defaultChartRepo)
 		} else {

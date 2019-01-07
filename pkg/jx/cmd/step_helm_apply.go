@@ -147,7 +147,7 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	o.Helm().SetCWD(dir)
 
-	if o.Factory.UseVault() {
+	if o.UseVault() {
 		store := configio.NewFileStore()
 		secretsFiles, err := o.fetchSecretFilesFromVault(dir, store)
 		if err != nil {
@@ -191,7 +191,7 @@ func (o *StepHelmApplyOptions) Run() error {
 
 func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store configio.ConfigStore) ([]string, error) {
 	files := []string{}
-	client, err := o.Factory.GetSystemVaultClient()
+	client, err := o.GetSystemVaultClient()
 	if err != nil {
 		return files, errors.Wrap(err, "retrieving the system Vault")
 	}

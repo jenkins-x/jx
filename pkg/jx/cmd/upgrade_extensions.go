@@ -89,7 +89,7 @@ func NewCmdUpgradeExtensions(f Factory, in terminal.FileReader, out terminal.Fil
 
 func (o *UpgradeExtensionsOptions) Run() error {
 
-	apisClient, err := o.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -220,7 +220,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 		return err
 	}
 	log.Infof("Upgrading to Extension Repository version %s\n", util.ColorInfo(extensionsRepository.Version))
-	client, ns, err := o.Factory.CreateJXClient()
+	client, ns, err := o.CreateJXClient()
 	if err != nil {
 		return err
 	}

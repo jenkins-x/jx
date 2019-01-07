@@ -93,11 +93,11 @@ func (o *ControllerTeamOptions) Run() error {
 	// lets validate we have git configured
 	_, _, err = gits.EnsureUserAndEmailSetup(co.Git())
 	if err != nil {
-	  return err
+		return err
 	}
 
 	// now lets setup the git secrets
-	if co.Factory.IsInCluster() {
+	if co.IsInCluster() {
 		sgc := &StepGitCredentialsOptions{}
 		sgc.CommonOptions = co.CommonOptions
 		log.Info("Setting up git credentials\n")

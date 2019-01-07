@@ -112,7 +112,7 @@ func (o *StepEnvApplyOptions) Run() error {
 		return errors.Wrapf(err, "Could not connect to the kubernetes cluster!")
 	}
 
-	apisClient, err := o.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the API extensions client")
 	}
@@ -161,7 +161,7 @@ func (o *StepEnvApplyOptions) Run() error {
 			return nil
 		}
 
-		o.helm = o.Factory.GetHelm(false, teamSettings.HelmBinary, teamSettings.NoTiller, teamSettings.HelmTemplate)
+		o.helm = o.GetHelm(false, teamSettings.HelmBinary, teamSettings.NoTiller, teamSettings.HelmTemplate)
 
 		// ensure there's a development namespace setup
 		err = kube.EnsureDevNamespaceCreatedWithoutEnvironment(kubeClient, ns)

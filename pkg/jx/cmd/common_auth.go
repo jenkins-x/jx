@@ -42,12 +42,12 @@ func (o *CommonOptions) CreateGitAuthConfigService() (auth.ConfigService, error)
 	}
 
 	fileName := GitAuthConfigFile
-	return o.CreateGitAuthConfigServiceFromSecrets(fileName, secrets, o.Factory.IsInCDPipeline())
+	return o.CreateGitAuthConfigServiceFromSecrets(fileName, secrets, o.IsInCDPipeline())
 }
 
 // CreateGitAuthConfigServiceFromSecrets Creates a git auth config service from secrets
 func (o *CommonOptions) CreateGitAuthConfigServiceFromSecrets(fileName string, secrets *corev1.SecretList, isCDPipeline bool) (auth.ConfigService, error) {
-	authConfigSvc, err := o.Factory.CreateAuthConfigService(fileName)
+	authConfigSvc, err := o.CreateAuthConfigService(fileName)
 	if err != nil {
 		return authConfigSvc, err
 	}
@@ -58,7 +58,7 @@ func (o *CommonOptions) CreateGitAuthConfigServiceFromSecrets(fileName string, s
 	}
 
 	if secrets != nil {
-		err = o.Factory.AuthMergePipelineSecrets(config, secrets, kube.ValueKindGit, isCDPipeline || o.Factory.IsInCluster())
+		err = o.AuthMergePipelineSecrets(config, secrets, kube.ValueKindGit, isCDPipeline || o.IsInCluster())
 		if err != nil {
 			return authConfigSvc, err
 		}

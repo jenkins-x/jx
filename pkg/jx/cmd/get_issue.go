@@ -84,11 +84,10 @@ func (o *GetIssueOptions) Run() error {
 		return errors.Wrap(err, "issue not found")
 	}
 
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("ISSUE", "STATUS", "APPLICATION", "ENVIRONMENT")
 
-	f := o.Factory
-	client, ns, err := f.CreateJXClient()
+	client, ns, err := o.CreateJXClient()
 	if err != nil {
 		return errors.Wrap(err, "cannot create the JX client")
 	}
@@ -98,7 +97,7 @@ func (o *GetIssueOptions) Run() error {
 		return errors.Wrap(err, "cannot list the environments")
 	}
 
-	kubeClient, _, err := f.CreateKubeClient()
+	kubeClient, _, err := o.CreateKubeClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the Kubernetes client")
 	}

@@ -96,7 +96,7 @@ func (o *GetEnvOptions) Run() error {
 		// lets output one environment
 		spec := &env.Spec
 
-		table := o.CreateTable()
+		table := o.createTable()
 		table.AddRow("NAME", "LABEL", "KIND", "NAMESPACE", "SOURCE", "REF", "PR")
 		table.AddRow(e, spec.Label, spec.Namespace, kindString(spec), spec.Source.URL, spec.Source.Ref, spec.PullRequestURL)
 		table.Render()
@@ -108,7 +108,7 @@ func (o *GetEnvOptions) Run() error {
 			if err != nil {
 				return fmt.Errorf("Could not find deployments in namespace %s: %s", ens, err)
 			}
-			table = o.CreateTable()
+			table = o.createTable()
 			table.AddRow("APP", "VERSION", "DESIRED", "CURRENT", "UP-TO-DATE", "AVAILABLE", "AGE")
 			for _, d := range deps.Items {
 				replicas := ""
@@ -137,7 +137,7 @@ func (o *GetEnvOptions) Run() error {
 			envs.Items = environments
 			return o.renderResult(envs, o.Output)
 		}
-		table := o.CreateTable()
+		table := o.createTable()
 		if o.PreviewOnly {
 			table.AddRow("PULL REQUEST", "NAMESPACE", "APPLICATION")
 		} else {

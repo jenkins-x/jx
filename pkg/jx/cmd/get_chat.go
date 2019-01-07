@@ -65,7 +65,7 @@ func NewCmdGetChat(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 
 // Run implements this command
 func (o *GetChatOptions) Run() error {
-	authConfigSvc, err := o.CreateChatAuthConfigService()
+	authConfigSvc, err := o.createChatAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func (o *GetChatOptions) Run() error {
 	}
 	filterKind := o.Kind
 
-	table := o.CreateTable()
+	table := o.createTable()
 	if filterKind == "" {
 		table.AddRow("Name", "Kind", "URL")
 	} else {

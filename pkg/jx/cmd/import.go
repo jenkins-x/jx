@@ -211,7 +211,7 @@ func (options *ImportOptions) Run() error {
 		return nil
 	}
 
-	options.Factory.SetBatch(options.BatchMode)
+	options.SetBatch(options.BatchMode)
 
 	var err error
 	isProw := false

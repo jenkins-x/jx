@@ -1,14 +1,15 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/kube/services"
-	"github.com/jenkins-x/jx/pkg/table"
-	"github.com/pkg/errors"
 	"io"
-	"k8s.io/client-go/kubernetes"
 	"os/user"
 	"sort"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/kube/services"
+	"github.com/jenkins-x/jx/pkg/table"
+	"github.com/pkg/errors"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -208,8 +209,7 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 }
 
 func (o *GetApplicationsOptions) getAppData(kubeClient kubernetes.Interface) (namespaces []string, envApps []EnvApps, envNames, apps []string, err error) {
-	f := o.Factory
-	client, currentNs, err := f.CreateJXClient()
+	client, currentNs, err := o.CreateJXClient()
 	if err != nil {
 		return nil, nil, nil, nil, errors.Wrap(err, "getting jx client")
 	}
@@ -272,7 +272,7 @@ func (o *GetApplicationsOptions) getAppData(kubeClient kubernetes.Interface) (na
 }
 
 func (o *GetApplicationsOptions) generateTableHeaders(envApps []EnvApps) table.Table {
-	t := o.CreateTable()
+	t := o.createTable()
 	title := "APPLICATION"
 	if o.Previews {
 		title = "PULL REQUESTS"

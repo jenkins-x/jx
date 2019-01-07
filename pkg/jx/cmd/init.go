@@ -674,7 +674,7 @@ controller:
 		externalIP := o.Flags.ExternalIP
 		if externalIP == "" && o.Flags.OnPremise {
 			// lets find the Kubernetes master IP
-			config, err := o.Factory.CreateKubeConfig()
+			config, err := o.CreateKubeConfig()
 			if err != nil {
 				return err
 			}

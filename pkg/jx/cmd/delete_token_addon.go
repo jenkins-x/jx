@@ -67,7 +67,7 @@ func (o *DeleteTokenAddonOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing addon user name")
 	}
-	authConfigSvc, err := o.CreateAddonAuthConfigService()
+	authConfigSvc, err := o.createAddonAuthConfigService()
 	if err != nil {
 		return err
 	}

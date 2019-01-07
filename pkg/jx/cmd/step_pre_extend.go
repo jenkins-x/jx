@@ -73,7 +73,7 @@ func (o *StepPreExtendOptions) Run() error {
 		return err
 	}
 
-	apisClient, err := o.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -100,7 +100,7 @@ func (o *StepPreExtendOptions) Run() error {
 
 	if len(repoExtensions.Extensions) > 0 {
 
-		apisClient, err := o.CreateApiExtensionsClient()
+		apisClient, err := o.ApiExtensionsClient()
 		if err != nil {
 			return err
 		}

@@ -81,8 +81,7 @@ func NewCmdGetActivity(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 // Run implements this command
 func (o *GetActivityOptions) Run() error {
-	f := o.Factory
-	client, currentNs, err := f.CreateJXClient()
+	client, currentNs, err := o.CreateJXClient()
 	if err != nil {
 		return err
 	}
@@ -100,7 +99,7 @@ func (o *GetActivityOptions) Run() error {
 	}
 	kube.SortEnvironments(envList.Items)
 
-	table := o.CreateTable()
+	table := o.createTable()
 	table.SetColumnAlign(1, util.ALIGN_RIGHT)
 	table.SetColumnAlign(2, util.ALIGN_RIGHT)
 	table.AddRow("STEP", "STARTED AGO", "DURATION", "STATUS")

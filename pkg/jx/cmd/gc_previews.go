@@ -69,8 +69,7 @@ func NewCmdGCPreviews(f Factory, in terminal.FileReader, out terminal.FileWriter
 
 // Run implements this command
 func (o *GCPreviewsOptions) Run() error {
-	f := o.Factory
-	client, currentNs, err := f.CreateJXClient()
+	client, currentNs, err := o.CreateJXClient()
 	if err != nil {
 		return err
 	}
@@ -107,7 +106,7 @@ func (o *GCPreviewsOptions) Run() error {
 				return err
 			}
 
-			gitProvider, err := gitInfo.CreateProvider(o.Factory.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+			gitProvider, err := gitInfo.CreateProvider(o.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

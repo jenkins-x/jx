@@ -1,9 +1,10 @@
 package cmd
 
 import (
+	"io"
+
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/util"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
@@ -80,7 +81,7 @@ func (o *GetBuildPackOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	table := o.CreateTable()
+	table := o.createTable()
 	if o.All {
 		jxClient, ns, err := o.JXClientAndDevNamespace()
 		if err != nil {

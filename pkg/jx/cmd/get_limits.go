@@ -8,12 +8,14 @@ import (
 
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"net/http"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+
 	"strconv"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/log"
 )
 
 type RateLimits struct {
@@ -87,7 +89,7 @@ func (o *GetLimitsOptions) Run() error {
 	}
 	config := authConfigSvc.Config()
 
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("Name", "URL", "Username", "Limit", "Remaining", "Reset")
 
 	for _, s := range config.Servers {

@@ -73,7 +73,7 @@ func (o *StepVerifyOptions) Run() error {
 	// Wait for the given time to exceed before starting the verification
 	time.Sleep(time.Duration(o.After) * time.Second)
 
-	apisClient, err := o.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the API extensions client")
 	}
@@ -219,7 +219,7 @@ func (o *StepVerifyOptions) determineAppAndNamespace(kubeClient kubernetes.Inter
 }
 
 func (o *StepVerifyOptions) updatePipelineActivity(activity *v1.PipelineActivity, status v1.ActivityStatusType) error {
-	apisClient, err := o.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the API extensions client")
 	}

@@ -1,10 +1,11 @@
 package cmd
 
 import (
+	"io"
+
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -68,7 +69,7 @@ func (o *DeleteKnativeBuildOptions) Run() error {
 		return util.MissingOption(optionRelease)
 	}
 
-	apisClient, err := o.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}

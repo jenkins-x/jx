@@ -1338,7 +1338,7 @@ func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigSt
 		}
 		options.modifySecretCallback = func(name string, callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
 			if options.Flags.Vault {
-				vaultClient, err := options.Factory.GetSystemVaultClient()
+				vaultClient, err := options.GetSystemVaultClient()
 				if err != nil {
 					return nil, errors.Wrap(err, "retrieving the system vault client")
 				}
@@ -1670,7 +1670,7 @@ func (options *InstallOptions) setMinikubeFromContext() error {
 
 func (options *InstallOptions) registerAllCRDs() error {
 	if !options.GitOpsMode {
-		apisClient, err := options.CreateApiExtensionsClient()
+		apisClient, err := options.ApiExtensionsClient()
 		if err != nil {
 			return errors.Wrap(err, "failed to create the API extensions client")
 		}
@@ -1778,7 +1778,7 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			},
 			Namespace: namespace,
 		}
-		vaultOperatorClient, err := cvo.Factory.CreateVaultOperatorClient()
+		vaultOperatorClient, err := cvo.CreateVaultOperatorClient()
 		if err != nil {
 			return err
 		}
@@ -1807,7 +1807,7 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 }
 
 func (options *InstallOptions) storeSecretYamlFilesInVault(path string, files ...string) error {
-	vaultClient, err := options.Factory.GetSystemVaultClient()
+	vaultClient, err := options.GetSystemVaultClient()
 	if err != nil {
 		return errors.Wrap(err, "retrieving the system vault client")
 	}
@@ -1821,7 +1821,7 @@ func (options *InstallOptions) storeSecretYamlFilesInVault(path string, files ..
 }
 
 func (options *InstallOptions) storeAdminCredentialsInVault(svc *config.AdminSecretsService) error {
-	vaultClient, err := options.Factory.GetSystemVaultClient()
+	vaultClient, err := options.GetSystemVaultClient()
 	if err != nil {
 		return errors.Wrap(err, "retrieving the system vault client")
 	}
@@ -2378,7 +2378,7 @@ func (options *InstallOptions) waitForInstallToBeReady(ns string) error {
 
 func (options *InstallOptions) saveChartmuseumAuthConfig() error {
 
-	authConfigSvc, err := options.Factory.CreateChartmuseumAuthConfigService()
+	authConfigSvc, err := options.CreateChartmuseumAuthConfigService()
 	if err != nil {
 		return err
 	}

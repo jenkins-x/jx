@@ -90,7 +90,7 @@ func (o *GetReleaseOptions) Run() error {
 		log.Infof("To create a release try merging code to a master branch to trigger a pipeline or try: %s\n", util.ColorInfo("jx start build"))
 		return nil
 	}
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("NAME", "VERSION")
 	for _, release := range releases {
 		table.AddRow(release.Spec.Name, release.Spec.Version)

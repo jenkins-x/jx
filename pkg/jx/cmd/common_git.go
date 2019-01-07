@@ -57,7 +57,7 @@ func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepository, gits
 		return gitInfo, nil, nil, err
 	}
 	gitKind, err := o.GitServerKind(gitInfo)
-	gitProvider, err := gitInfo.CreateProvider(o.Factory.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	gitProvider, err := gitInfo.CreateProvider(o.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
 		return gitInfo, gitProvider, nil, err
 	}
@@ -196,7 +196,7 @@ func (o *CommonOptions) ensureGitServiceCRD(server *auth.AuthServer) error {
 	if server.Name == "" {
 		server.Name = kind
 	}
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -314,7 +314,7 @@ func (o *CommonOptions) gitProviderForGitServerURL(gitServiceUrl string, gitKind
 	if err != nil {
 		return nil, err
 	}
-	return gits.CreateProviderForURL(o.Factory.IsInCluster(), authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	return gits.CreateProviderForURL(o.IsInCluster(), authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 }
 
 func (o *CommonOptions) createGitProviderForURLWithoutKind(gitURL string) (gits.GitProvider, *gits.GitRepository, error) {
@@ -330,6 +330,6 @@ func (o *CommonOptions) createGitProviderForURLWithoutKind(gitURL string) (gits.
 	if err != nil {
 		return nil, gitInfo, err
 	}
-	gitProvider, err := gits.CreateProviderForURL(o.Factory.IsInCluster(), authConfigSvc, gitKind, gitInfo.HostURL(), o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	gitProvider, err := gits.CreateProviderForURL(o.IsInCluster(), authConfigSvc, gitKind, gitInfo.HostURL(), o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 	return gitProvider, gitInfo, err
 }

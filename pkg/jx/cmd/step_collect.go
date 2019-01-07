@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/gits"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/gits"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -213,13 +214,12 @@ func (o *StepCollectOptions) collectGitURL(sourceURL string) (err error) {
 		return err
 	}
 
-	f := o.Factory
-	client, ns, err := f.CreateJXClient()
+	client, ns, err := o.CreateJXClient()
 	if err != nil {
 		return errors.Wrap(err, "cannot create the JX client")
 	}
 
-	apisClient, err := o.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}

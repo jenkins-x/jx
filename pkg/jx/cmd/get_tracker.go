@@ -65,7 +65,7 @@ func NewCmdGetTracker(f Factory, in terminal.FileReader, out terminal.FileWriter
 
 // Run implements this command
 func (o *GetTrackerOptions) Run() error {
-	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.createIssueTrackerAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func (o *GetTrackerOptions) Run() error {
 
 	filterKind := o.Kind
 
-	table := o.CreateTable()
+	table := o.createTable()
 	if filterKind == "" {
 		table.AddRow("Name", "Kind", "URL")
 	} else {

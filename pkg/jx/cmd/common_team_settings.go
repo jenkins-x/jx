@@ -162,7 +162,7 @@ func (o *CommonOptions) defaultModifyEnvironment(name string, callback func(env 
 }
 
 func (o *CommonOptions) registerReleaseCRD() error {
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -174,7 +174,7 @@ func (o *CommonOptions) registerReleaseCRD() error {
 }
 
 func (o *CommonOptions) registerTeamCRD() error {
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -186,7 +186,7 @@ func (o *CommonOptions) registerTeamCRD() error {
 }
 
 func (o *CommonOptions) registerUserCRD() error {
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -198,7 +198,7 @@ func (o *CommonOptions) registerUserCRD() error {
 }
 
 func (o *CommonOptions) registerEnvironmentRoleBindingCRD() error {
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -210,7 +210,7 @@ func (o *CommonOptions) registerEnvironmentRoleBindingCRD() error {
 }
 
 func (o *CommonOptions) registerPipelineActivityCRD() error {
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -222,7 +222,7 @@ func (o *CommonOptions) registerPipelineActivityCRD() error {
 }
 
 func (o *CommonOptions) registerWorkflowCRD() error {
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}

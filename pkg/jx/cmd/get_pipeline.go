@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"errors"
-	"github.com/jenkins-x/jx/pkg/prow"
 	"io"
 	"sort"
+
+	"github.com/jenkins-x/jx/pkg/prow"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -150,7 +151,7 @@ func (o *GetPipelineOptions) Run() error {
 }
 
 func createTable(o *GetPipelineOptions) table.Table {
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("Name", "URL", "LAST_BUILD", "STATUS", "DURATION")
 	return table
 }

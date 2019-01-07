@@ -1,14 +1,15 @@
 package cmd
 
 import (
+	"io"
+	"strings"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-	"strings"
-	"time"
 )
 
 // GetBuildPodsOptions the command line options
@@ -95,7 +96,7 @@ func (o *GetBuildPodsOptions) Run() error {
 		return err
 	}
 
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("OWNER", "REPOSITORY", "BRANCH", "BUILD", "AGE", "STATUS", "STEP 1 IMAGE", "POD", "GIT URL")
 
 	buildInfos := []*builds.BuildPodInfo{}

@@ -84,7 +84,7 @@ func (o *CreateTrackerTokenOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.createIssueTrackerAuthConfigService()
 	if err != nil {
 		return err
 	}

@@ -74,7 +74,7 @@ func (o *GetBranchPatternOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("BRANCH PATTERNS")
 	table.AddRow(patterns.DefaultBranchPattern)
 	table.Render()

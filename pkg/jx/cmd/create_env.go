@@ -1,10 +1,11 @@
 package cmd
 
 import (
+	"io"
+
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
 
 	"fmt"
 
@@ -265,7 +266,7 @@ func (o *CreateEnvOptions) Run() error {
 				return err
 			}
 			message := "user name to create the Git repository"
-			p, err := o.CreateOptions.CommonOptions.Factory.CreateGitProvider(gitURL, message, authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
+			p, err := o.CreateOptions.CommonOptions.CreateGitProvider(gitURL, message, authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

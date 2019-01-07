@@ -59,7 +59,7 @@ func NewCmdComplianceRun(f Factory, in terminal.FileReader, out terminal.FileWri
 
 // Run implements the "compliance run" command
 func (o *ComplianceRunOptions) Run() error {
-	cc, err := o.Factory.CreateComplianceClient()
+	cc, err := o.CreateComplianceClient()
 	if err != nil {
 		return errors.Wrap(err, "could not create the compliance client")
 	}

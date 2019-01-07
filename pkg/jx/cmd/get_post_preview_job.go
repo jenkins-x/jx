@@ -65,7 +65,7 @@ func (o *GetPostPreviewJobOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("NAME", "IMAGE", "BACKOFF_LIMIT", "COMMAND")
 
 	for _, job := range settings.PostPreviewJobs {
