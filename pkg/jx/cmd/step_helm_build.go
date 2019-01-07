@@ -66,7 +66,7 @@ func NewCmdStepHelmBuild(f Factory, in terminal.FileReader, out terminal.FileWri
 }
 
 func (o *StepHelmBuildOptions) Run() error {
-	_, _, err := o.KubeClient()
+	_, _, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

@@ -40,7 +40,7 @@ func TestStepTagCharts(t *testing.T) {
 	o.Flags.ChartsDir = chartsDir
 	o.Flags.Version = expectedVersion
 	o.Flags.ChartValueRepository = expectedImageName
-	o.GitClient = &gits.GitFake{}
+	o.SetGit(&gits.GitFake{})
 	err = o.Run()
 	assert.NoError(t, err)
 

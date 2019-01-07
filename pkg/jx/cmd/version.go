@@ -61,7 +61,7 @@ func NewCmdVersion(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 
 func (o *VersionOptions) Run() error {
 	info := util.ColorInfo
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("NAME", "VERSION")
 	table.AddRow("jx", info(version.GetVersion()))
 
@@ -85,7 +85,7 @@ func (o *VersionOptions) Run() error {
 	}
 
 	// Kubernetes version
-	client, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		log.Warnf("Failed to connect to Kubernetes: %s\n", err)
 	} else {

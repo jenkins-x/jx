@@ -66,7 +66,7 @@ func NewCmdComplianceLogs(f Factory, in terminal.FileReader, out terminal.FileWr
 
 // Run implements the "compliance logs" command
 func (o *ComplianceLogsOptions) Run() error {
-	cc, err := o.Factory.CreateComplianceClient()
+	cc, err := o.CreateComplianceClient()
 	if err != nil {
 		return errors.Wrap(err, "could not create the compliance client")
 	}

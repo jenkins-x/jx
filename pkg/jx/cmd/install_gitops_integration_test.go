@@ -64,7 +64,7 @@ func TestInstallGitOps(t *testing.T) {
 		gitter,
 		helmer,
 	)
-	o.CommonOptions.GitClient = gitter
+	o.CommonOptions.SetGit(gitter)
 	o.CommonOptions.InstallDependencies = true
 	o.CommonOptions.SetHelm(helmer)
 
@@ -73,7 +73,7 @@ func TestInstallGitOps(t *testing.T) {
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	require.NoError(t, err, "failed to create JXClient")
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	require.NoError(t, err, "failed to create KubeClient")
 
 	// lets remove the default generated Environment so we can assert that we don't create any environments

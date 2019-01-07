@@ -25,7 +25,7 @@ func NewInteractiveVaultClientFactory(options common.OptionsInterface) (*VaultCl
 		Options: options,
 	}
 	var err error
-	factory.kubeClient, factory.defaultNamespace, err = options.KubeClient()
+	factory.kubeClient, factory.defaultNamespace, err = options.KubeClientAndNamespace()
 	if err != nil {
 		return factory, err
 	}

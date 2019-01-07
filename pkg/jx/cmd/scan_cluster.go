@@ -92,7 +92,7 @@ func NewCmdScanCluster(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 // Run executes the "scan cluster" command
 func (o *ScanClusterOptions) Run() error {
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "creating kube client")
 	}
@@ -191,7 +191,7 @@ func (o *ScanClusterOptions) createScanJob(name string, namespace string, contai
 }
 
 func (o *ScanClusterOptions) retriveScanResult(namespace string) (string, error) {
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return "", errors.Wrap(err, "creating kube client")
 	}
@@ -254,7 +254,7 @@ func (o *ScanClusterOptions) printResult(result *scanResult) error {
 		}
 		log.Info(string(output))
 	} else {
-		nodeTable := o.CreateTable()
+		nodeTable := o.createTable()
 		nodeTable.SetColumnAlign(1, util.ALIGN_LEFT)
 		nodeTable.SetColumnAlign(2, util.ALIGN_LEFT)
 		nodeTable.AddRow("NODE", "LOCATION")
@@ -264,7 +264,7 @@ func (o *ScanClusterOptions) printResult(result *scanResult) error {
 		nodeTable.Render()
 		log.Blank()
 
-		serviceTable := o.CreateTable()
+		serviceTable := o.createTable()
 		serviceTable.SetColumnAlign(1, util.ALIGN_LEFT)
 		serviceTable.SetColumnAlign(2, util.ALIGN_LEFT)
 		serviceTable.SetColumnAlign(3, util.ALIGN_LEFT)
@@ -275,7 +275,7 @@ func (o *ScanClusterOptions) printResult(result *scanResult) error {
 		serviceTable.Render()
 		log.Blank()
 
-		vulnTable := o.CreateTable()
+		vulnTable := o.createTable()
 		vulnTable.SetColumnAlign(1, util.ALIGN_LEFT)
 		vulnTable.SetColumnAlign(2, util.ALIGN_LEFT)
 		vulnTable.SetColumnAlign(3, util.ALIGN_LEFT)

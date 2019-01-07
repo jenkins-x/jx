@@ -87,12 +87,16 @@ func (o *CreateAddonPrometheusOptions) Run() error {
 			Name: "prometheus-ingress",
 		},
 	}
-	_, err = o.KubeClientCached.CoreV1().Secrets(o.Namespace).Create(sec)
+	client, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	_, err = client.CoreV1().Secrets(o.Namespace).Create(sec)
 	if err != nil {
 		return fmt.Errorf("cannot create secret %s in target namespace %s: %v", "prometheus-ingress", o.Namespace, err)
 	}
 
-	ingressConfig, err := o.KubeClientCached.CoreV1().ConfigMaps(o.Namespace).Get("ingress-config", meta_v1.GetOptions{})
+	ingressConfig, err := client.CoreV1().ConfigMaps(o.Namespace).Get("ingress-config", meta_v1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "Cannot get ingress config map.")
 	}

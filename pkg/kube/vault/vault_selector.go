@@ -32,7 +32,7 @@ func NewVaultSelector(o common.OptionsInterface) (Selector, error) {
 	if err != nil {
 		return nil, err
 	}
-	kubeclient, _, err := o.KubeClient()
+	kubeclient, _, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return nil, err
 	}

@@ -62,7 +62,7 @@ func NewCmdGetVault(f Factory, in terminal.FileReader, out terminal.FileWriter, 
 
 // Run implements the command
 func (o *GetVaultOptions) Run() error {
-	client, ns, err := o.KubeClient()
+	client, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return errors.Wrap(err, "creating kubernetes client")
 	}
@@ -80,7 +80,7 @@ func (o *GetVaultOptions) Run() error {
 		return err
 	}
 
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("NAME", "URL", "AUTH-SERVICE-ACCOUNT")
 	for _, vault := range vaults {
 		table.AddRow(vault.Name, vault.URL, vault.AuthServiceAccountName)

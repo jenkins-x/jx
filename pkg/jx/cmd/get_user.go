@@ -78,7 +78,7 @@ There are no Users yet. Try create one via: jx create user
 		return nil
 	}
 
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("LOGIN", "NAME", "EMAIL", "URL", "ROLES")
 	for _, name := range names {
 		user := users[name]

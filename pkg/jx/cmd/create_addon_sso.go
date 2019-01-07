@@ -93,11 +93,11 @@ func NewCmdCreateAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWr
 
 // Run implements the command
 func (o *CreateAddonSSOOptions) Run() error {
-	_, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
 	}
-	o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	o.devNamespace, _, err = kube.GetDevNamespace(client, o.currentNamespace)
 	if err != nil {
 		return errors.Wrap(err, "retrieving the development namespace")
 	}
@@ -109,7 +109,7 @@ func (o *CreateAddonSSOOptions) Run() error {
 
 	log.Infof("Installing %s...\n", util.ColorInfo("dex identity provider"))
 
-	ingressConfig, err := kube.GetIngressConfig(o.KubeClientCached, o.devNamespace)
+	ingressConfig, err := kube.GetIngressConfig(client, o.devNamespace)
 	if err != nil {
 		return errors.Wrap(err, "retrieving existing ingress configuration")
 	}

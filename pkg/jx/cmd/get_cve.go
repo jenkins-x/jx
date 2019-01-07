@@ -86,7 +86,7 @@ func (o *GetCVEOptions) addGetCVEFlags(cmd *cobra.Command) {
 // Run implements this command
 func (o *GetCVEOptions) Run() error {
 
-	_, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
 	}
@@ -116,7 +116,7 @@ func (o *GetCVEOptions) Run() error {
 	if err != nil {
 		return fmt.Errorf("error creating anchore provider, %v", err)
 	}
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("Image", util.ColorInfo("Severity"), "Vulnerability", "URL", "Package", "Fix")
 
 	query := cve.CVEQuery{
@@ -134,7 +134,7 @@ func (o *GetCVEOptions) Run() error {
 		query.TargetNamespace = targetNamespace
 	}
 
-	err = p.GetImageVulnerabilityTable(jxClient, o.KubeClientCached, &table, query)
+	err = p.GetImageVulnerabilityTable(jxClient, client, &table, query)
 	if err != nil {
 		return fmt.Errorf("error getting vulnerability table for image %s: %v", query.ImageID, err)
 	}

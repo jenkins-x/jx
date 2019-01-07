@@ -94,7 +94,7 @@ func (o *CreateAddonCloudBeesOptions) Run() error {
 	}
 
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
-	c, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -135,11 +135,11 @@ To register to get your username/password to to: %s
 
 	if o.Sso {
 		log.Infof("Configuring %s...\n", util.ColorInfo("single sign-on"))
-		o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+		o.devNamespace, _, err = kube.GetDevNamespace(client, o.currentNamespace)
 		if err != nil {
 			return errors.Wrap(err, "retrieving the development namespace")
 		}
-		ingressConfig, err := kube.GetIngressConfig(o.KubeClientCached, o.devNamespace)
+		ingressConfig, err := kube.GetIngressConfig(client, o.devNamespace)
 		if err != nil {
 			return errors.Wrap(err, "retrieving existing ingress configuration")
 		}
@@ -163,7 +163,7 @@ To register to get your username/password to to: %s
 
 		ingressConfig.TLS = true
 		ingressConfig.Issuer = kube.CertmanagerIssuerProd
-		err = kube.CleanCertmanagerResources(o.KubeClientCached, o.Namespace, ingressConfig)
+		err = kube.CleanCertmanagerResources(client, o.Namespace, ingressConfig)
 		if err != nil {
 			return errors.Wrap(err, "creating cert-manager issuer")
 		}
@@ -190,7 +190,7 @@ To register to get your username/password to to: %s
 	}
 
 	if o.Basic {
-		devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+		devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
 		if err != nil {
 			return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 		}
@@ -202,7 +202,7 @@ To register to get your username/password to to: %s
 			}
 		}
 
-		svc, err := c.CoreV1().Services(o.currentNamespace).Get(cbServiceName, metav1.GetOptions{})
+		svc, err := client.CoreV1().Services(o.currentNamespace).Get(cbServiceName, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -216,14 +216,10 @@ To register to get your username/password to to: %s
 			annotationsUpdated = true
 		}
 		if annotationsUpdated {
-			svc, err = o.KubeClientCached.CoreV1().Services(o.Namespace).Update(svc)
+			svc, err = client.CoreV1().Services(o.Namespace).Update(svc)
 			if err != nil {
 				return fmt.Errorf("failed to update service %s/%s", o.Namespace, cbServiceName)
 			}
-		}
-		_, _, err = o.KubeClient()
-		if err != nil {
-			return err
 		}
 
 		log.Infof("using exposecontroller config from dev namespace %s\n", devNamespace)

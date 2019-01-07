@@ -106,7 +106,7 @@ func (o *SyncOptions) Run() error {
 	// ksync is installed to the jx/bin dir, so we can add it for the user
 	os.Setenv("PATH", util.PathWithBinary())
 
-	client, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

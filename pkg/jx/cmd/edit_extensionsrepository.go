@@ -94,7 +94,7 @@ func NewCmdEditExtensionsRepository(f Factory, in terminal.FileReader, out termi
 
 // Run implements the command
 func (o *EditExtensionsRepositoryOptions) Run() error {
-	kubeClient, ns, err := o.KubeClient()
+	kubeClient, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

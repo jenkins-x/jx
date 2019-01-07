@@ -88,7 +88,7 @@ func (o *GetWorkflowOptions) Run() error {
 		return err
 	}
 
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("WORKFLOW")
 	for _, workflow := range workflows.Items {
 		table.AddRow(workflow.Name)

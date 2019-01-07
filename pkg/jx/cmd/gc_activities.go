@@ -68,7 +68,7 @@ func NewCmdGCActivities(f Factory, in terminal.FileReader, out terminal.FileWrit
 
 // Run implements this command
 func (o *GCActivitiesOptions) Run() error {
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

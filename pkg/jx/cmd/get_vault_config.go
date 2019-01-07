@@ -73,7 +73,7 @@ func NewCmdGetVaultConfig(f Factory, in terminal.FileReader, out terminal.FileWr
 
 // Run implements the command
 func (o *GetVaultConfigOptions) Run() error {
-	vaultClient, err := o.Factory.GetVaultClient(o.Name, o.Namespace) // Will use defaults if empty strings specified
+	vaultClient, err := o.GetVaultClient(o.Name, o.Namespace) // Will use defaults if empty strings specified
 	if err != nil {
 		return err
 	}

@@ -30,12 +30,11 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_FailsWhenContextNamesDoNo
 	kubeMock := setupUninstall("current-context")
 
 	o := &cmd.UninstallOptions{
-		CommonOptions: cmd.CommonOptions{
-			Kuber: kubeMock,
-		},
-		Namespace: "ns",
-		Context:   "target-context",
+		CommonOptions: cmd.CommonOptions{},
+		Namespace:     "ns",
+		Context:       "target-context",
 	}
+	o.SetKube(kubeMock)
 	cmd.ConfigureTestOptions(&o.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 
 	err := o.Run()
@@ -46,12 +45,11 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_PassWhenContextNamesMatch
 	kubeMock := setupUninstall("correct-context-to-delete")
 
 	o := &cmd.UninstallOptions{
-		CommonOptions: cmd.CommonOptions{
-			Kuber: kubeMock,
-		},
-		Namespace: "ns",
-		Context:   "correct-context-to-delete",
+		CommonOptions: cmd.CommonOptions{},
+		Namespace:     "ns",
+		Context:       "correct-context-to-delete",
 	}
+	o.SetKube(kubeMock)
 	cmd.ConfigureTestOptions(&o.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 
 	// Create fake namespace (that we will uninstall from)
@@ -62,7 +60,9 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_PassWhenContextNamesMatch
 	assert.NoError(t, err)
 
 	// Assert that the namespace has been deleted
-	_, err = o.KubeClientCached.CoreV1().Namespaces().Get("ns", metav1.GetOptions{})
+	client, err := o.KubeClient()
+	assert.NoError(t, err)
+	_, err = client.CoreV1().Namespaces().Get("ns", metav1.GetOptions{})
 	assert.Error(t, err)
 }
 
@@ -70,12 +70,11 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_PassWhenForced(t *testing
 	kubeMock := setupUninstall("correct-context-to-delete")
 
 	o := &cmd.UninstallOptions{
-		CommonOptions: cmd.CommonOptions{
-			Kuber: kubeMock,
-		},
-		Namespace: "ns",
-		Force:     true,
+		CommonOptions: cmd.CommonOptions{},
+		Namespace:     "ns",
+		Force:         true,
 	}
+	o.SetKube(kubeMock)
 	cmd.ConfigureTestOptions(&o.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 
 	// Create fake namespace (that we will uninstall from)
@@ -86,7 +85,9 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_PassWhenForced(t *testing
 	assert.NoError(t, err)
 
 	// Assert that the namespace has been deleted
-	_, err = o.KubeClientCached.CoreV1().Namespaces().Get("ns", metav1.GetOptions{})
+	client, err := o.KubeClient()
+	assert.NoError(t, err)
+	_, err = client.CoreV1().Namespaces().Get("ns", metav1.GetOptions{})
 	assert.Error(t, err)
 }
 
@@ -109,13 +110,14 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_FailsWhenContextNamesDoNotM
 	o := &cmd.UninstallOptions{
 		CommonOptions: cmd.CommonOptions{
 			Factory: cmd_test.NewMockFactory(),
-			Kuber:   kubeMock,
 			In:      console.In,
 			Out:     console.Out,
 			Err:     console.Err,
 		},
 		Namespace: "ns",
 	}
+
+	o.SetKube(kubeMock)
 
 	err := o.Run()
 	assert.EqualError(t, err, "The context 'target-context' must match the current context to uninstall")
@@ -147,7 +149,6 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t
 	o := &cmd.UninstallOptions{
 		CommonOptions: cmd.CommonOptions{
 			Factory: cmd_test.NewMockFactory(),
-			Kuber:   kubeMock,
 			In:      console.In,
 			Out:     console.Out,
 			Err:     console.Err,
@@ -155,6 +156,7 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t
 		Namespace: "ns",
 	}
 
+	o.SetKube(kubeMock)
 	cmd.ConfigureTestOptions(&o.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 	o.BatchMode = false // The above line sets batch mode to true. Set it back here :-(
 
@@ -166,7 +168,9 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t
 	assert.NoError(t, err)
 
 	// Assert that the namespace has been deleted
-	_, err = o.KubeClientCached.CoreV1().Namespaces().Get("ns", metav1.GetOptions{})
+	client, err := o.KubeClient()
+	assert.NoError(t, err)
+	_, err = client.CoreV1().Namespaces().Get("ns", metav1.GetOptions{})
 	assert.Error(t, err)
 
 	assert.NoError(t, console.Close())
@@ -177,7 +181,11 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t
 }
 
 func createNamespace(o *cmd.UninstallOptions, ns string) error {
-	_, err := o.KubeClientCached.CoreV1().Namespaces().Create(&v1.Namespace{
+	client, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	_, err = client.CoreV1().Namespaces().Create(&v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: ns,
 		},

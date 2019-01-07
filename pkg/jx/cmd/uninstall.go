@@ -155,7 +155,7 @@ func (o *UninstallOptions) Run() error {
 }
 
 func (o *UninstallOptions) cleanupNamespaces(namespace string, envNames []string, envMap map[string]*v1.Environment) error {
-	client, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "getting the kube client")
 	}
@@ -192,7 +192,7 @@ func (o *UninstallOptions) cleanupNamespaces(namespace string, envNames []string
 }
 
 func (o *UninstallOptions) deleteNamespace(namespace string) error {
-	client, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "getting the kube client")
 	}
@@ -210,7 +210,7 @@ func (o *UninstallOptions) deleteNamespace(namespace string) error {
 }
 
 func (o *UninstallOptions) cleanupConfig() error {
-	authConfigSvc, err := o.Factory.CreateAuthConfigService(JenkinsAuthConfigFile)
+	authConfigSvc, err := o.CreateAuthConfigService(JenkinsAuthConfigFile)
 	if err != nil || authConfigSvc == nil {
 		return nil
 	}
@@ -220,7 +220,7 @@ func (o *UninstallOptions) cleanupConfig() error {
 		return err
 	}
 
-	chartConfigSvc, err := o.Factory.CreateChartmuseumAuthConfigService()
+	chartConfigSvc, err := o.CreateChartmuseumAuthConfigService()
 	if err != nil {
 		return err
 	}

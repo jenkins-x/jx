@@ -66,7 +66,7 @@ func NewCmdGetTeam(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 
 // Run implements this command
 func (o *GetTeamOptions) Run() error {
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -86,7 +86,7 @@ See https://jenkins-x.io/getting-started/\n for more detail
 		return nil
 	}
 
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("NAME")
 	for _, team := range teams {
 		table.AddRow(team.Name)
@@ -118,7 +118,7 @@ There are no pending Teams yet. Try create one via: jx create team --pending
 		return nil
 	}
 
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("NAME", "STATUS", "KIND", "MEMBERS")
 	for _, team := range teams {
 		spec := &team.Spec

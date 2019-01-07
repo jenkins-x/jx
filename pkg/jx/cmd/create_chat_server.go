@@ -79,7 +79,7 @@ func (o *CreateChatServerOptions) Run() error {
 	if gitUrl == "" {
 		return missingChatArguments()
 	}
-	authConfigSvc, err := o.CreateChatAuthConfigService()
+	authConfigSvc, err := o.createChatAuthConfigService()
 	if err != nil {
 		return err
 	}

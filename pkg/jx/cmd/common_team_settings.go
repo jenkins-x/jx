@@ -106,7 +106,7 @@ func (o *CommonOptions) defaultModifyDevEnvironment(callback func(env *v1.Enviro
 		return errors.Wrap(err, "failed to create the jx client")
 	}
 
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the kube client")
 	}
@@ -162,7 +162,7 @@ func (o *CommonOptions) defaultModifyEnvironment(name string, callback func(env 
 }
 
 func (o *CommonOptions) registerReleaseCRD() error {
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -174,7 +174,7 @@ func (o *CommonOptions) registerReleaseCRD() error {
 }
 
 func (o *CommonOptions) registerTeamCRD() error {
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -186,7 +186,7 @@ func (o *CommonOptions) registerTeamCRD() error {
 }
 
 func (o *CommonOptions) registerUserCRD() error {
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -198,7 +198,7 @@ func (o *CommonOptions) registerUserCRD() error {
 }
 
 func (o *CommonOptions) registerEnvironmentRoleBindingCRD() error {
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -210,7 +210,7 @@ func (o *CommonOptions) registerEnvironmentRoleBindingCRD() error {
 }
 
 func (o *CommonOptions) registerPipelineActivityCRD() error {
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -222,7 +222,7 @@ func (o *CommonOptions) registerPipelineActivityCRD() error {
 }
 
 func (o *CommonOptions) registerWorkflowCRD() error {
-	apisClient, err := o.Factory.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -240,7 +240,7 @@ func (o *CommonOptions) ModifyTeam(adminNs string, teamName string, callback fun
 	if err != nil {
 		return err
 	}
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -296,7 +296,7 @@ func (o *CommonOptions) ModifyUser(userName string, callback func(env *v1.User) 
 	if err != nil {
 		return err
 	}
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

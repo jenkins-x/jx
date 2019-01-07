@@ -111,7 +111,7 @@ func (o *StepHelmReleaseOptions) Run() error {
 	password := os.Getenv("CHARTMUSEUM_CREDS_PSW")
 	if userName == "" || password == "" {
 		// lets try load them from the secret directly
-		client, ns, err := o.KubeClient()
+		client, ns, err := o.KubeClientAndNamespace()
 		if err != nil {
 			return errors.Wrap(err, "failed to create the kube client")
 		}

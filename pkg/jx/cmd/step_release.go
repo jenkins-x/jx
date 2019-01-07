@@ -265,7 +265,7 @@ func (o *StepReleaseOptions) buildSource() error {
 }
 
 func (o *StepReleaseOptions) loadDockerRegistry() (string, error) {
-	kubeClient, curNs, err := o.KubeClient()
+	kubeClient, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return "", err
 	}

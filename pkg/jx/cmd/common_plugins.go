@@ -21,7 +21,7 @@ import (
 )
 
 func (o *CommonOptions) isManagedPluginsEnabled() bool {
-	apisClient, err := o.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		if o.Verbose {
 			log.Warnf("Unable to load managed plugins because %v\n", err)
@@ -50,7 +50,7 @@ func (o *CommonOptions) getPluginCommandGroups(verifier extensions.PathVerifier)
 	// Managed plugins
 	managedPluginsEnabled := o.isManagedPluginsEnabled()
 	if managedPluginsEnabled {
-		jxClient, ns, err := o.Factory.CreateJXClient()
+		jxClient, ns, err := o.CreateJXClient()
 		if err != nil {
 			return nil, false, err
 		}

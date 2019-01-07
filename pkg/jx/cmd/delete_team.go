@@ -76,11 +76,11 @@ func NewCmdDeleteTeam(f Factory, in terminal.FileReader, out terminal.FileWriter
 // Run implements this command
 func (o *DeleteTeamOptions) Run() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
-	apisClient, err := o.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -142,7 +142,7 @@ func (o *DeleteTeamOptions) deleteTeam(name string) error {
 	if err != nil {
 		return err
 	}
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

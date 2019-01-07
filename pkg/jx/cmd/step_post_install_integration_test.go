@@ -3,6 +3,9 @@
 package cmd_test
 
 import (
+	"os"
+	"testing"
+
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -15,8 +18,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"os"
-	"testing"
 )
 
 func TestStepPostInstall(t *testing.T) {
@@ -59,7 +60,7 @@ func TestStepPostInstall(t *testing.T) {
 	o.BatchMode = true
 	jenkinsClient := fake.NewFakeJenkins()
 	o.SetJenkinsClient(jenkinsClient)
-	o.GitClient = &gits.GitFake{}
+	o.SetGit(&gits.GitFake{})
 
 	err := o.Run()
 	require.NoError(t, err, "failed to run jx step post install")

@@ -74,9 +74,9 @@ func (o *GetSecretOptions) Run() error {
 	var vaultClient vault.Client
 	var err error
 	if o.Name != "" && o.Namespace != "" {
-		vaultClient, err = o.Factory.GetVaultClient(o.Name, o.Namespace)
+		vaultClient, err = o.GetVaultClient(o.Name, o.Namespace)
 	} else {
-		vaultClient, err = o.Factory.GetSystemVaultClient()
+		vaultClient, err = o.GetSystemVaultClient()
 	}
 	if err != nil {
 		return errors.Wrap(err, "retrieving the vault client")
@@ -86,7 +86,7 @@ func (o *GetSecretOptions) Run() error {
 		return errors.Wrap(err, "listing all secrets in vault")
 	}
 
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("KEY")
 	for _, secret := range secrets {
 		table.AddRow(secret)

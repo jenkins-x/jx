@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"io"
+
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	"github.com/spf13/cobra"
 
@@ -77,7 +78,7 @@ func (o *NamespaceOptions) Run() error {
 	if len(args) > 0 {
 		ns = args[0]
 	}
-	client, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

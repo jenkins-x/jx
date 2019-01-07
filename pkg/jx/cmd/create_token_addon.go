@@ -87,7 +87,7 @@ func (o *CreateTokenAddonOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.CreateAddonAuthConfigService()
+	authConfigSvc, err := o.createAddonAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -152,7 +152,7 @@ func (o *CreateTokenAddonOptions) Run() error {
 }
 
 func (o *CreateTokenAddonOptions) updateAddonCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) error {
-	client, curNs, err := o.KubeClient()
+	client, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

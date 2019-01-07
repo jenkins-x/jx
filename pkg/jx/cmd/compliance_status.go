@@ -59,7 +59,7 @@ func NewCmdComplianceStatus(f Factory, in terminal.FileReader, out terminal.File
 
 // Run implements the "compliance status" command
 func (o *ComplianceStatusOptions) Run() error {
-	cc, err := o.Factory.CreateComplianceClient()
+	cc, err := o.CreateComplianceClient()
 	if err != nil {
 		return errors.Wrap(err, "could not create the compliance client")
 	}

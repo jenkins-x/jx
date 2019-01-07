@@ -57,7 +57,7 @@ func NewCmdComplianceDelete(f Factory, in terminal.FileReader, out terminal.File
 
 // Run implements the "compliance delete" command
 func (o *ComplianceDeleteOptions) Run() error {
-	cc, err := o.Factory.CreateComplianceClient()
+	cc, err := o.CreateComplianceClient()
 	if err != nil {
 		return errors.Wrap(err, "could not create the compliance client")
 	}

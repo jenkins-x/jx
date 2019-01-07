@@ -11,7 +11,7 @@ import (
 )
 
 func (o *CommonOptions) ensureServiceAccount(ns string, serviceAccountName string) error {
-	client, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -39,7 +39,7 @@ func (o *CommonOptions) ensureServiceAccount(ns string, serviceAccountName strin
 func (o *CommonOptions) ensureClusterRoleExists(roleName string, namespace string) error {
 	log.Infof("Ensuring cluster role exists, role name: %s, namespace: %s\n", roleName, namespace)
 
-	client, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (o *CommonOptions) ensureClusterRoleExists(roleName string, namespace strin
 }
 
 func (o *CommonOptions) ensureClusterRoleBinding(clusterRoleBindingName string, role string, serviceAccountNamespace string, serviceAccountName string) error {
-	client, _, err := o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

@@ -75,14 +75,14 @@ func NewCmdDeleteNamespace(f Factory, in terminal.FileReader, out terminal.FileW
 // Run implements this command
 func (o *DeleteNamespaceOptions) Run() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
 	namespaceInterface := kubeClient.CoreV1().Namespaces()
 	nsList, err := namespaceInterface.List(metav1.ListOptions{})
 	if err != nil {
-	  return err
+		return err
 	}
 	namespaceNames := []string{}
 	for _, namespace := range nsList.Items {

@@ -77,7 +77,7 @@ func (o *DeleteVaultOptions) Run() error {
 	}
 	vaultName := o.Args[0]
 
-	client, ns, err := o.KubeClient()
+	client, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return errors.Wrap(err, "creating kubernetes client")
 	}

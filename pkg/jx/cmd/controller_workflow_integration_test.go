@@ -3,6 +3,8 @@
 package cmd_test
 
 import (
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -12,7 +14,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/workflow"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
-	"testing"
 )
 
 func TestSequentialWorkflow(t *testing.T) {
@@ -58,7 +59,7 @@ func TestSequentialWorkflow(t *testing.T) {
 		gits.NewGitCLI(),
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 	)
-	o.GitClient = &gits.GitFake{}
+	o.SetGit(&gits.GitFake{})
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	assert.NoError(t, err)
@@ -170,7 +171,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 		gits.NewGitCLI(),
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 	)
-	o.GitClient = &gits.GitFake{}
+	o.SetGit(&gits.GitFake{})
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	assert.NoError(t, err)
@@ -329,7 +330,7 @@ func TestParallelWorkflow(t *testing.T) {
 		gits.NewGitCLI(),
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 	)
-	o.GitClient = &gits.GitFake{}
+	o.SetGit(&gits.GitFake{})
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	assert.NoError(t, err)
@@ -472,7 +473,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 		gits.NewGitCLI(),
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 	)
-	o.GitClient = &gits.GitFake{}
+	o.SetGit(&gits.GitFake{})
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	assert.NoError(t, err)

@@ -60,7 +60,7 @@ func (o *GetTokenOptions) displayUsersWithTokens(authConfigSvc auth.ConfigServic
 	filterKind := o.Kind
 	filterName := o.Name
 
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("KIND", "NAME", "URL", "USERNAME", "TOKEN?")
 
 	for _, s := range config.Servers {

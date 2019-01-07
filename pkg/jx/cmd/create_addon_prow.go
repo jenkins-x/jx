@@ -86,7 +86,7 @@ func (o *CreateAddonProwOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that Helm is present")
 	}
-	_, _, err = o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func (o *CreateAddonProwOptions) Run() error {
 		return fmt.Errorf("failed to install Prow: %v", err)
 	}
 
-	devNamespace, _, err := kube.GetDevNamespace(o.KubeClientCached, o.currentNamespace)
+	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}

@@ -84,7 +84,7 @@ func (o *StepHelmInstallOptions) Run() error {
 	releaseName := o.Name
 	ns := o.Namespace
 	if ns == "" {
-		_, ns, err = o.KubeClient()
+		_, ns, err = o.KubeClientAndNamespace()
 		if err != nil {
 			return err
 		}

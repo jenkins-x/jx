@@ -73,7 +73,7 @@ func NewCmdMetrics(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 func (o *MetricsOptions) Run() error {
 	args := o.Args
 
-	client, curNs, err := o.KubeClient()
+	client, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

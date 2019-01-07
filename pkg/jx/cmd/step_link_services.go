@@ -85,7 +85,7 @@ func (o *StepLinkServicesOptions) Run() error {
 	if fromNs == "" {
 		return util.MissingOption(fromNamespace)
 	}
-	kubeClient, currentNs, err := o.KubeClient()
+	kubeClient, currentNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

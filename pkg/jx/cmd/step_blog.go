@@ -243,7 +243,7 @@ func (o *StepBlogOptions) createBarReport(name string, legends ...string) report
 `)
 		return reports.NewBlogBarReport(name, state.Writer, jsFileName, jsLinkURI)
 	}
-	return reports.NewTableBarReport(o.CreateTable(), legends...)
+	return reports.NewTableBarReport(o.createTable(), legends...)
 }
 
 func (options *StepBlogOptions) combineMinorReleases(releases []*gits.GitRelease) []*gits.GitRelease {

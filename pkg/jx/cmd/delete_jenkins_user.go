@@ -69,11 +69,11 @@ func (o *DeleteJenkinsUserOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing Jenkins user name")
 	}
-	kubeClient, ns, err := o.KubeClient()
+	kubeClient, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}
-	authConfigSvc, err := o.Factory.CreateJenkinsAuthConfigService(kubeClient, ns)
+	authConfigSvc, err := o.CreateJenkinsAuthConfigService(kubeClient, ns)
 	if err != nil {
 		return err
 	}

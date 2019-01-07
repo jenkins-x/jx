@@ -64,7 +64,7 @@ func (o *GetGitOptions) Run() error {
 	}
 	config := authConfigSvc.Config()
 
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("Name", "Kind", "URL")
 
 	for _, s := range config.Servers {

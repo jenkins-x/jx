@@ -84,7 +84,7 @@ func (o *CreateTrackerTokenOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.createIssueTrackerAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -141,7 +141,7 @@ func (o *CreateTrackerTokenOptions) Run() error {
 }
 
 func (o *CreateTrackerTokenOptions) updateIssueTrackerCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) error {
-	client, curNs, err := o.KubeClient()
+	client, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"errors"
-	"github.com/jenkins-x/jx/pkg/prow"
 	"io"
 	"sort"
+
+	"github.com/jenkins-x/jx/pkg/prow"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -76,7 +77,7 @@ func (o *GetPipelineOptions) Run() error {
 		return err
 	}
 
-	_, _, err = o.KubeClient()
+	client, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -88,7 +89,7 @@ func (o *GetPipelineOptions) Run() error {
 
 	if isProw {
 		o.ProwOptions = prow.Options{
-			KubeClient: o.KubeClientCached,
+			KubeClient: client,
 			NS:         o.currentNamespace,
 		}
 		names, err := o.ProwOptions.GetReleaseJobs()
@@ -150,7 +151,7 @@ func (o *GetPipelineOptions) Run() error {
 }
 
 func createTable(o *GetPipelineOptions) table.Table {
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("Name", "URL", "LAST_BUILD", "STATUS", "DURATION")
 	return table
 }

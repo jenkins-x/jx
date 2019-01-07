@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/helm"
 	"io"
+
+	"github.com/jenkins-x/jx/pkg/helm"
 
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -121,7 +122,7 @@ func (o *StepValidateOptions) verifyAddons() []error {
 	if len(config.Addons) == 0 {
 		return errs
 	}
-	_, ns, err := o.KubeClient()
+	_, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		errs = append(errs, err)
 		return errs

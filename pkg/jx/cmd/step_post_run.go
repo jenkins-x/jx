@@ -70,13 +70,12 @@ func NewCmdStepPostRun(f Factory, in terminal.FileReader, out terminal.FileWrite
 // Run implements this command
 func (o *StepPostRunOptions) Run() (err error) {
 	// TODO Support for conditions other than Always
-	f := o.Factory
-	client, ns, err := f.CreateJXClient()
+	client, ns, err := o.CreateJXClient()
 	if err != nil {
 		return errors.Wrap(err, "cannot create the JX client")
 	}
 
-	apisClient, err := o.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}

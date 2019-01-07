@@ -89,7 +89,12 @@ func (o *UpgradeAddonsOptions) Run() error {
 		}
 	}
 
-	o.devNamespace, _, err = kube.GetDevNamespace(o.KubeClientCached, ns)
+	client, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+
+	o.devNamespace, _, err = kube.GetDevNamespace(client, ns)
 	if err != nil {
 		return err
 	}
@@ -148,7 +153,10 @@ func (o *UpgradeAddonsOptions) Run() error {
 			plugins := &v1.ConfigMap{}
 			if k == kube.DefaultProwReleaseName {
 				// lets backup any Prow config as we should never replace this, eventually we'll move config to a git repo so this is temporary
-				config, plugins = o.backupConfigs()
+				config, plugins, err = o.backupConfigs()
+				if err != nil {
+					return errors.Wrap(err, "backing up the prow config")
+				}
 			}
 			err = o.Helm().UpgradeChart(chart, k, ns, nil, false, nil, false, false, values, valueFiles, "", "", "")
 			if err != nil {
@@ -169,12 +177,15 @@ func (o *UpgradeAddonsOptions) Run() error {
 }
 
 func (o *UpgradeAddonsOptions) restoreConfigs(config *v1.ConfigMap, plugins *v1.ConfigMap) error {
-	var err error
+	client, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
 	var err1 error
 	if config != nil {
-		_, err = o.KubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Get("config", metav1.GetOptions{})
+		_, err = client.CoreV1().ConfigMaps(o.devNamespace).Get("config", metav1.GetOptions{})
 		if err != nil {
-			_, err = o.KubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Create(config)
+			_, err = client.CoreV1().ConfigMaps(o.devNamespace).Create(config)
 			if err != nil {
 				b, _ := yaml.Marshal(config)
 				err1 = fmt.Errorf("error restoring config %s\n", string(b))
@@ -182,9 +193,9 @@ func (o *UpgradeAddonsOptions) restoreConfigs(config *v1.ConfigMap, plugins *v1.
 		}
 	}
 	if plugins != nil {
-		_, err = o.KubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Get("plugins", metav1.GetOptions{})
+		_, err = client.CoreV1().ConfigMaps(o.devNamespace).Get("plugins", metav1.GetOptions{})
 		if err != nil {
-			_, err = o.KubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Create(plugins)
+			_, err = client.CoreV1().ConfigMaps(o.devNamespace).Create(plugins)
 			if err != nil {
 				b, _ := yaml.Marshal(plugins)
 				err = fmt.Errorf("%v/nerror restoring plugins %s\n", err1, string(b))
@@ -194,12 +205,16 @@ func (o *UpgradeAddonsOptions) restoreConfigs(config *v1.ConfigMap, plugins *v1.
 	return err
 }
 
-func (o *UpgradeAddonsOptions) backupConfigs() (*v1.ConfigMap, *v1.ConfigMap) {
-	config, _ := o.KubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Get("config", metav1.GetOptions{})
-	plugins, _ := o.KubeClientCached.CoreV1().ConfigMaps(o.devNamespace).Get("plugins", metav1.GetOptions{})
+func (o *UpgradeAddonsOptions) backupConfigs() (*v1.ConfigMap, *v1.ConfigMap, error) {
+	client, err := o.KubeClient()
+	if err != nil {
+		return nil, nil, err
+	}
+	config, _ := client.CoreV1().ConfigMaps(o.devNamespace).Get("config", metav1.GetOptions{})
+	plugins, _ := client.CoreV1().ConfigMaps(o.devNamespace).Get("plugins", metav1.GetOptions{})
 	config = config.DeepCopy()
 	config.ResourceVersion = ""
 	plugins = plugins.DeepCopy()
 	plugins.ResourceVersion = ""
-	return config, plugins
+	return config, plugins, nil
 }

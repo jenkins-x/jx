@@ -87,7 +87,7 @@ func (o *DeleteExtensionOptions) Run() error {
 		return o.Cmd.Help()
 	}
 
-	apisClient, err := o.CreateApiExtensionsClient()
+	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
 	}
@@ -103,11 +103,11 @@ func (o *DeleteExtensionOptions) Run() error {
 		return err
 	}
 
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
-	jxClient, ns, err := o.Factory.CreateJXClient()
+	jxClient, ns, err := o.CreateJXClient()
 	if err != nil {
 		return err
 	}

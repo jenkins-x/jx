@@ -47,7 +47,7 @@ type CreateClusterGKEFlags struct {
 	Namespace       string
 	Labels          string
 	Scopes          []string
-	Preemptible 	bool
+	Preemptible     bool
 }
 
 const clusterListHeader = "PROJECT_ID"
@@ -304,7 +304,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	kubeClient, ns, err := o.KubeClient()
+	kubeClient, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

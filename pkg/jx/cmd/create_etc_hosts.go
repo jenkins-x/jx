@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube/services"
 	"io"
 	"io/ioutil"
 	"net/url"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -87,7 +88,7 @@ func (o *CreateEtcHostsOptions) Run() error {
 	if o.IP == "" {
 		return fmt.Errorf("Could not discover a node IP address")
 	}
-	client, ns, err := o.KubeClient()
+	client, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

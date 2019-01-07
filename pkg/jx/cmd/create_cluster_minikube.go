@@ -272,7 +272,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 
 	ns := o.Flags.Namespace
 	if ns == "" {
-		_, ns, _ = o.KubeClient()
+		_, ns, _ = o.KubeClientAndNamespace()
 		if err != nil {
 			return err
 		}

@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/prow"
-	"github.com/pkg/errors"
 	"io"
 	"os/user"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/prow"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 
@@ -136,7 +137,7 @@ func (o *DeleteApplicationOptions) deleteProwApplication() (deletedApplications 
 		return deletedApplications, errors.Wrap(err, "getting current user")
 	}
 
-	kubeClient, ns, err := o.Factory.CreateKubeClient()
+	kubeClient, ns, err := o.CreateKubeClient()
 	if err != nil {
 		return deletedApplications, errors.Wrap(err, "getting kube client")
 	}
@@ -334,7 +335,7 @@ func (o *DeleteApplicationOptions) waitForGitOpsPullRequest(env *v1.Environment,
 
 func (o *DeleteApplicationOptions) init() error {
 	var err error
-	o.jxClient, o.currentNamespace, err = o.Factory.CreateJXClient()
+	o.jxClient, o.currentNamespace, err = o.CreateJXClient()
 	if err != nil {
 		return errors.Wrap(err, "getting jx client")
 	}

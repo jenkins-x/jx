@@ -120,7 +120,7 @@ func (o *CreateVaultOptions) Run() error {
 }
 
 func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
-	kubeClient, team, err := o.KubeClient()
+	kubeClient, team, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return errors.Wrap(err, "creating kubernetes client")
 	}
@@ -145,7 +145,7 @@ func (o *CreateVaultOptions) createVaultGKE(vaultName string) error {
 // DoCreateVault creates a vault in the existing namespace.
 // If the vault already exists, it will error
 func (o *CreateVaultOptions) createVault(vaultOperatorClient versioned.Interface, vaultName string) error {
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, _, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}
@@ -246,11 +246,15 @@ func (o *CreateVaultOptions) createVault(vaultOperatorClient versioned.Interface
 }
 
 func (o *CreateVaultOptions) exposeVault(vaultService string) error {
-	err := services.WaitForService(o.KubeClientCached, vaultService, o.Namespace, 1*time.Minute)
+	client, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	err = services.WaitForService(client, vaultService, o.Namespace, 1*time.Minute)
 	if err != nil {
 		return errors.Wrap(err, "waiting for vault service")
 	}
-	svc, err := o.KubeClientCached.CoreV1().Services(o.Namespace).Get(vaultService, metav1.GetOptions{})
+	svc, err := client.CoreV1().Services(o.Namespace).Get(vaultService, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "getting the vault service: %s", vaultService)
 	}
@@ -260,7 +264,7 @@ func (o *CreateVaultOptions) exposeVault(vaultService string) error {
 	if svc.Annotations[kube.AnnotationExpose] == "" {
 		svc.Annotations[kube.AnnotationExpose] = "true"
 		svc.Annotations[kube.AnnotationExposePort] = exposedVaultPort
-		svc, err = o.KubeClientCached.CoreV1().Services(o.Namespace).Update(svc)
+		svc, err = client.CoreV1().Services(o.Namespace).Update(svc)
 		if err != nil {
 			return errors.Wrapf(err, "updating %s service annotations", vaultService)
 		}

@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
 )
 
 // StepHelmDeleteOptions contains the command line flags
@@ -15,7 +16,7 @@ type StepHelmDeleteOptions struct {
 	StepHelmOptions
 
 	Namespace string
-	Purge bool
+	Purge     bool
 }
 
 var (
@@ -78,9 +79,9 @@ func (o *StepHelmDeleteOptions) Run() error {
 	ns := o.Namespace
 	var err error
 	if ns == "" {
-		_, ns, err = o.KubeClient()
+		_, ns, err = o.KubeClientAndNamespace()
 		if err != nil {
-		  return err
+			return err
 		}
 	}
 	err = h.DeleteRelease(ns, releaseName, o.Purge)

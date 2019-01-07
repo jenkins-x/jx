@@ -73,7 +73,7 @@ func (o *GetAddonOptions) Run() error {
 			addonEnabled[addon.Name] = true
 		}
 	}
-	_, ns, err := o.KubeClient()
+	_, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func (o *GetAddonOptions) Run() error {
 
 	charts := kube.AddonCharts
 
-	table := o.CreateTable()
+	table := o.createTable()
 	table.AddRow("NAME", "CHART", "ENABLED", "STATUS", "VERSION")
 
 	keys := util.SortedMapKeys(charts)

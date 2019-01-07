@@ -68,7 +68,7 @@ func NewCmdStepGpgCredentials(f Factory, in terminal.FileReader, out terminal.Fi
 }
 
 func (o *StepGpgCredentialsOptions) Run() error {
-	kubeClient, curNs, err := o.KubeClient()
+	kubeClient, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}

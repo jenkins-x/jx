@@ -1,10 +1,11 @@
 package cmd
 
 import (
+	"io"
+
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
 
 	"fmt"
 
@@ -129,7 +130,7 @@ func (o *CreateEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -222,7 +223,7 @@ func (o *CreateEnvOptions) Run() error {
 	}
 	if o.Prow {
 		repo := fmt.Sprintf("%s/environment-%s-%s", gitInfo.Organisation, o.Prefix, env.Name)
-		err = prow.AddEnvironment(o.KubeClientCached, []string{repo}, devEnv.Spec.Namespace, env.Spec.Namespace)
+		err = prow.AddEnvironment(kubeClient, []string{repo}, devEnv.Spec.Namespace, env.Spec.Namespace)
 		if err != nil {
 			return fmt.Errorf("failed to add repo %s to Prow config in namespace %s: %v", repo, env.Spec.Namespace, err)
 		}
@@ -265,7 +266,7 @@ func (o *CreateEnvOptions) Run() error {
 				return err
 			}
 			message := "user name to create the Git repository"
-			p, err := o.CreateOptions.CommonOptions.Factory.CreateGitProvider(gitURL, message, authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
+			p, err := o.CreateOptions.CommonOptions.CreateGitProvider(gitURL, message, authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

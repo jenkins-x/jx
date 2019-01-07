@@ -77,7 +77,7 @@ func NewCmdGCHelm(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 }
 
 func (o *GCHelmOptions) Run() error {
-	kubeClient, _, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}

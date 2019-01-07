@@ -62,7 +62,7 @@ func NewCmdGetTokenAddon(f Factory, in terminal.FileReader, out terminal.FileWri
 
 // Run implements this command
 func (o *GetTokenAddonOptions) Run() error {
-	authConfigSvc, err := o.CreateAddonAuthConfigService()
+	authConfigSvc, err := o.createAddonAuthConfigService()
 	if err != nil {
 		return err
 	}

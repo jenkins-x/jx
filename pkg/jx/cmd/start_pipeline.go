@@ -3,15 +3,16 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/prow"
 	"io"
-	"k8s.io/api/core/v1"
-	"k8s.io/test-infra/prow/kube"
-	"k8s.io/test-infra/prow/pjutil"
 	"net/url"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/prow"
+	"k8s.io/api/core/v1"
+	"k8s.io/test-infra/prow/kube"
+	"k8s.io/test-infra/prow/pjutil"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -96,7 +97,7 @@ func NewCmdStartPipeline(f Factory, in terminal.FileReader, out terminal.FileWri
 
 // Run implements this command
 func (o *StartPipelineOptions) Run() error {
-	_, _, err := o.KubeClient()
+	_, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -112,8 +113,7 @@ func (o *StartPipelineOptions) Run() error {
 	args := o.Args
 	names := []string{}
 	o.ProwOptions = prow.Options{
-		KubeClient: o.KubeClientCached,
-		NS:         o.currentNamespace,
+		NS: o.currentNamespace,
 	}
 	if len(args) == 0 {
 		if isProw {
@@ -238,7 +238,11 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 		Repo:    repo,
 	}
 
-	_, err = prow.CreateProwJob(o.KubeClientCached, o.currentNamespace, p)
+	client, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	_, err = prow.CreateProwJob(client, o.currentNamespace, p)
 	return err
 }
 

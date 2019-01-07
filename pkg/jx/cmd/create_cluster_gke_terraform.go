@@ -376,7 +376,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 
 	ns := o.InstallOptions.Flags.Namespace
 	if ns == "" {
-		_, ns, _ = o.KubeClient()
+		_, ns, _ = o.KubeClientAndNamespace()
 		if err != nil {
 			return err
 		}

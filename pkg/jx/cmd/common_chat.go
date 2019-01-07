@@ -13,7 +13,7 @@ func (o *CommonOptions) createChatProvider(chatConfig *config.ChatConfig) (chats
 	if u == "" {
 		return nil, nil
 	}
-	authConfigSvc, err := o.CreateChatAuthConfigService()
+	authConfigSvc, err := o.createChatAuthConfigService()
 	if err != nil {
 		return nil, err
 	}
@@ -27,10 +27,10 @@ func (o *CommonOptions) createChatProvider(chatConfig *config.ChatConfig) (chats
 	return chats.CreateChatProvider(server.Kind, server, userAuth, o.BatchMode)
 }
 
-func (o *CommonOptions) CreateChatAuthConfigService() (auth.ConfigService, error) {
+func (o *CommonOptions) createChatAuthConfigService() (auth.ConfigService, error) {
 	secrets, err := o.LoadPipelineSecrets(kube.ValueKindChat, "")
 	if err != nil {
 		log.Warnf("The current user cannot query pipeline chat secrets: %s", err)
 	}
-	return o.Factory.CreateChatAuthConfigService(secrets)
+	return o.CreateChatAuthConfigService(secrets)
 }
