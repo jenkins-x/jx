@@ -488,7 +488,7 @@ func (o *UpgradeIngressOptions) cleanTLSSecrets(ns string) error {
 
 func (o *UpgradeIngressOptions) updateWebHooks(oldHookEndpoint string, newHookEndpoint string) error {
 	if oldHookEndpoint == newHookEndpoint && !o.Force {
-		log.Infof("Webhook URL unchanged. Use %s to force updating", util.ColorInfo("--force"))
+		log.Infof("Webhook URL unchanged. Use %s to force updating\n", util.ColorInfo("--force"))
 		return nil
 	}
 
