@@ -190,7 +190,7 @@ release: check
 	updatebot push-version --kind docker JX_VERSION $(VERSION)
 	updatebot push-regex -r "\s*release = \"(.*)\"" -v $(VERSION) config.toml
 	updatebot push-regex -r "JX_VERSION=(.*)" -v $(VERSION) install-jx.sh
-	updatebot push-regex -r "\sjxTag:(.*)" -v $(VERSION) prow/values.yaml
+	updatebot push-regex -r "\s*jxTag:\s*(.*)" -v $(VERSION) prow/values.yaml
 
 	echo "Updating the JX CLI reference docs"
 	git clone https://github.com/jenkins-x/jx-docs.git
