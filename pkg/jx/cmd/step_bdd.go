@@ -39,6 +39,7 @@ type StepBDDFlags struct {
 	DeleteTeam          bool
 	DisableDeleteApp    bool
 	DisableDeleteRepo   bool
+	IgnoreTestFailure   bool
 	TestRepoGitCloneUrl string
 	TestCases           []string
 }
@@ -95,6 +96,7 @@ func NewCmdStepBDD(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 	cmd.Flags().BoolVarP(&options.Flags.DisableDeleteApp, "no-delete-app", "", false, "Disables deleting the created app after the test")
 	cmd.Flags().BoolVarP(&options.Flags.DisableDeleteRepo, "no-delete-repo", "", false, "Disables deleting the created repository after the test")
 	cmd.Flags().BoolVarP(&options.Flags.UseCurrentTeam, "use-current-team", "", false, "If enabled lets use the current Team to run the tests")
+	cmd.Flags().BoolVarP(&options.Flags.IgnoreTestFailure, "ignore-fail", "i", false, "Ignores test failures so that a BDD test run can capture the output and report on the test passes/failures")
 
 	cmd.Flags().StringVarP(&installOptions.Flags.Provider, "provider", "", "", "Cloud service providing the Kubernetes cluster.  Supported providers: "+KubernetesProviderOptions())
 
@@ -342,5 +344,9 @@ func (o *StepBDDOptions) runTests(gopath string) error {
 		Err:  os.Stderr,
 	}
 	_, err = c.RunWithoutRetry()
+	if o.Flags.IgnoreTestFailure && err != nil {
+		log.Infof("Ignoring test failure %s\n", err)
+		return nil
+	}
 	return err
 }
