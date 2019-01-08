@@ -2,19 +2,17 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/services"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
-
-	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/pkg/errors"
 )
 
 func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
@@ -79,16 +77,11 @@ func (o *CommonOptions) addHelmBinaryRepoIfMissing(helmUrl, repoName, username, 
 	}
 	if missing {
 		log.Infof("Adding missing Helm repo: %s %s\n", util.ColorInfo(repoName), util.ColorInfo(helmUrl))
-		err = o.retry(6, 10*time.Second, func() (err error) {
-			err = o.Helm().AddRepo(repoName, helmUrl, username, password)
-			if err == nil {
-				log.Infof("Successfully added Helm repository %s.\n", repoName)
-			}
-			return errors.Wrapf(err, "failed to add the repository '%s' with URL '%s'", repoName, helmUrl)
-		})
-		if err != nil {
-			return err
+		err = o.Helm().AddRepo(repoName, helmUrl, username, password)
+		if err == nil {
+			log.Infof("Successfully added Helm repository %s.\n", repoName)
 		}
+		return errors.Wrapf(err, "failed to add the repository '%s' with URL '%s'", repoName, helmUrl)
 	}
 	return nil
 }
