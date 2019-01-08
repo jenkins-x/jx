@@ -2,14 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -65,15 +64,15 @@ func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
 			return errors.Wrapf(err, "failed to remove the repository '%s'", repoName)
 		}
 	}
-	return o.Helm().AddRepo(repoName, helmUrl)
+	return o.Helm().AddRepo(repoName, helmUrl, "", "")
 }
 
 // addHelmRepoIfMissing adds the given helm repo if its not already added
-func (o *CommonOptions) addHelmRepoIfMissing(helmUrl string, repoName string) error {
-	return o.addHelmBinaryRepoIfMissing(helmUrl, repoName)
+func (o *CommonOptions) addHelmRepoIfMissing(helmUrl, repoName, username, password string) error {
+	return o.addHelmBinaryRepoIfMissing(helmUrl, repoName, username, password)
 }
 
-func (o *CommonOptions) addHelmBinaryRepoIfMissing(helmUrl string, repoName string) error {
+func (o *CommonOptions) addHelmBinaryRepoIfMissing(helmUrl, repoName, username, password string) error {
 	missing, err := o.Helm().IsRepoMissing(helmUrl)
 	if err != nil {
 		return errors.Wrapf(err, "failed to check if the repository with URL '%s' is missing", helmUrl)
@@ -81,7 +80,7 @@ func (o *CommonOptions) addHelmBinaryRepoIfMissing(helmUrl string, repoName stri
 	if missing {
 		log.Infof("Adding missing Helm repo: %s %s\n", util.ColorInfo(repoName), util.ColorInfo(helmUrl))
 		err = o.retry(6, 10*time.Second, func() (err error) {
-			err = o.Helm().AddRepo(repoName, helmUrl)
+			err = o.Helm().AddRepo(repoName, helmUrl, username, password)
 			if err == nil {
 				log.Infof("Successfully added Helm repository %s.\n", repoName)
 			}
@@ -174,7 +173,7 @@ func (o *CommonOptions) addChartRepos(dir string, helmBinary string, chartRepos 
 		for name, url := range chartRepos {
 			if !util.StringMapHasValue(installedChartRepos, url) {
 				repoCounter++
-				err = o.addHelmBinaryRepoIfMissing(url, name)
+				err = o.addHelmBinaryRepoIfMissing(url, name, "", "")
 				if err != nil {
 					return errors.Wrapf(err, "failed to add the Helm repository with name '%s' and URL '%s'", name, url)
 				}
@@ -198,7 +197,7 @@ func (o *CommonOptions) addChartRepos(dir string, helmBinary string, chartRepos 
 				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) && repo != defaultChartRepo && !strings.HasPrefix(repo, "file:") && !strings.HasPrefix(repo, "alias:") {
 					repoCounter++
 					// TODO we could provide some mechanism to customise the names of repos somehow?
-					err = o.addHelmBinaryRepoIfMissing(repo, "repo"+strconv.Itoa(repoCounter))
+					err = o.addHelmBinaryRepoIfMissing(repo, "repo"+strconv.Itoa(repoCounter), "", "")
 					if err != nil {
 						return errors.Wrapf(err, "failed to add Helm repository '%s'", repo)
 					}

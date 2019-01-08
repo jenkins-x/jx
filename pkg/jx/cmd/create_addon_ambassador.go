@@ -85,7 +85,7 @@ func (o *CreateAddonAmbassadorOptions) Run() error {
 	if o.Chart == "" {
 		return util.MissingOption(optionChart)
 	}
-	err := o.addHelmRepoIfMissing(ambassadorRepoUrl, ambassadorRepoName)
+	err := o.addHelmRepoIfMissing(ambassadorRepoUrl, ambassadorRepoName, "", "")
 	if err != nil {
 		return err
 	}

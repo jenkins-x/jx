@@ -882,7 +882,7 @@ func (options *InstallOptions) configureHelm(client kubernetes.Interface, namesp
 }
 
 func (options *InstallOptions) configureHelmRepo() error {
-	err := options.addHelmBinaryRepoIfMissing(DEFAULT_CHARTMUSEUM_URL, "jenkins-x")
+	err := options.addHelmBinaryRepoIfMissing(DEFAULT_CHARTMUSEUM_URL, "jenkins-x", "", "")
 	if err != nil {
 		return errors.Wrap(err, "failed to add the jenkinx-x helm repo")
 	}
@@ -1563,7 +1563,7 @@ func (options *InstallOptions) configureCloudProivderPostInit(client kubernetes.
 			return errors.Wrap(err, "failed to enable the OpenShiftSCC")
 		}
 	case IKS:
-		err := options.addHelmBinaryRepoIfMissing(DEFAULT_IBMREPO_URL, "ibm")
+		err := options.addHelmBinaryRepoIfMissing(DEFAULT_IBMREPO_URL, "ibm", "", "")
 		if err != nil {
 			return errors.Wrap(err, "failed to add the IBM helm repo")
 		}

@@ -1,6 +1,7 @@
 package util
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -8,7 +9,6 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff"
-	"github.com/pkg/errors"
 )
 
 // Command is a struct containing the details of an external command to be executed
@@ -23,6 +23,29 @@ type Command struct {
 	Out                io.Writer
 	Err                io.Writer
 	Env                map[string]string
+}
+
+// CommandError is the error object encapsulating an error from a Command
+type CommandError struct {
+	Command Command
+	Output  string
+	cause   error
+}
+
+func (c CommandError) Error() string {
+	// sanitise any password arguments before printing the error string. The actual sensitive argument is still present
+	// in the Command object
+	sanitisedArgs := make([]string, len(c.Command.Args))
+	copy(sanitisedArgs, c.Command.Args)
+	for i, arg := range sanitisedArgs {
+		if strings.Contains(strings.ToLower(arg), "password") && i <= len(sanitisedArgs)-1 {
+			// sanitise the subsequent argument to any 'password' fields
+			sanitisedArgs[i+1] = "*****"
+		}
+	}
+
+	return fmt.Sprintf("failed to run '%s %s' command in directory '%s', output: '%s'",
+		c.Command.Name, strings.Join(sanitisedArgs, " "), c.Command.Dir, c.Output)
 }
 
 // SetName Setter method for Name to enable use of interface instead of Command struct
@@ -193,16 +216,21 @@ func (c *Command) run() (string, error) {
 	if c.Out != nil {
 		err := e.Run()
 		if err != nil {
-			return text, errors.Wrapf(err, "failed to run '%s %s' command in directory '%s', output: '%s'",
-				c.Name, strings.Join(c.Args, " "), c.Dir, text)
+			return text, CommandError{
+				Command: *c,
+				cause:   err,
+			}
 		}
 	} else {
 		data, err := e.CombinedOutput()
 		output := string(data)
 		text = strings.TrimSpace(output)
 		if err != nil {
-			return text, errors.Wrapf(err, "failed to run '%s %s' command in directory '%s', output: '%s'",
-				c.Name, strings.Join(c.Args, " "), c.Dir, text)
+			return text, CommandError{
+				Command: *c,
+				Output:  text,
+				cause:   err,
+			}
 		}
 	}
 
