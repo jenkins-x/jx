@@ -3,7 +3,6 @@ package cmd
 import (
 	"github.com/hashicorp/go-version"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/sirupsen/logrus"
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -27,6 +26,8 @@ var (
 // UpgradeAddonProwOptions the options for the create spring command
 type UpgradeAddonProwOptions struct {
 	UpgradeAddonsOptions
+
+	newKnativeBuildVersion string
 }
 
 // NewCmdUpgradeAddonProw defines the command
@@ -61,7 +62,7 @@ func NewCmdUpgradeAddonProw(f Factory, in terminal.FileReader, out terminal.File
 	options.addCommonFlags(cmd)
 	options.UpgradeAddonsOptions.addFlags(cmd)
 	options.InstallFlags.addCloudEnvOptions(cmd)
-
+	cmd.Flags().StringVarP(&options.newKnativeBuildVersion, "new-knative-build-version", "", "0.1.1", "The new kanative build verion that prow needs to work with")
 	return cmd
 }
 
@@ -94,13 +95,26 @@ func (o *UpgradeAddonProwOptions) Run() error {
 		return err
 	}
 
-	newKnativeBuildVersion, err := version.NewVersion("0.1.0")
+	newKnativeBuildVersion, err := version.NewVersion(o.newKnativeBuildVersion)
 	if err != nil {
 		return err
 	}
 
+	// first lets get the existing hmac and oauth tokens so we can use them when reinstalling
+	oauthSecret, err := kubeClient.CoreV1().Secrets(ns).Get("oauth-token", metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	oauthToken := string(oauthSecret.Data["oauth"])
+
+	hmacSecret, err := kubeClient.CoreV1().Secrets(ns).Get("hmac-token", metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	hmacToken := string(hmacSecret.Data["hmac"])
+
 	for _, release := range releases {
-		if release.Release == "knative-build" && release.Status == "DEPLOYED" {
+		if release.Release == "knative-build" && (release.Status == "DEPLOYED" || release.Status == "FAILED") {
 			currentVersion, err := version.NewVersion(release.Version)
 			if err != nil {
 				return err
@@ -116,19 +130,6 @@ func (o *UpgradeAddonProwOptions) Run() error {
 					return nil
 				}
 
-				// first lets get the existing hmac and oauth tokens so we can use them when reinstalling
-				oauthSecret, err := kubeClient.CoreV1().Secrets(ns).Get("oauth-token", metav1.GetOptions{})
-				if err != nil {
-					return err
-				}
-				oauthToken := string(oauthSecret.Data["oauth"])
-
-				hmacSecret, err := kubeClient.CoreV1().Secrets(ns).Get("hmac-token", metav1.GetOptions{})
-				if err != nil {
-					return err
-				}
-				hmacToken := string(hmacSecret.Data["hmac"])
-
 				// delete knative build
 				deleteKnativeBuildOpts := &DeleteKnativeBuildOptions{
 					DeleteAddonOptions: DeleteAddonOptions{
@@ -142,33 +143,16 @@ func (o *UpgradeAddonProwOptions) Run() error {
 					return err
 				}
 
-				// now let's reinstall prow
-				err = o.deleteChart("jx-prow", true)
-				if err != nil {
-					return err
-				}
-
-				o.OAUTHToken = oauthToken
-				o.HMACToken = hmacToken
-				err = o.installProw()
-				if err != nil {
-					return err
-				}
-			} else {
-				logrus.Info("upgrading existing prow installation")
-				upgradeAddonOpts := UpgradeAddonsOptions{
-					CreateOptions: CreateOptions{
-						CommonOptions: o.CommonOptions,
-					},
-				}
-				upgradeAddonOpts.Args = []string{"jx-prow"}
-				err = upgradeAddonOpts.Run()
-				if err != nil {
-					return err
-				}
 			}
 		}
-
 	}
-	return nil
+	// now let's reinstall prow
+	err = o.deleteChart("jx-prow", true)
+	if err != nil {
+		return err
+	}
+
+	o.OAUTHToken = oauthToken
+	o.HMACToken = hmacToken
+	return o.installProw()
 }
