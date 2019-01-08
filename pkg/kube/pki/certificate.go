@@ -1,6 +1,7 @@
 package pki
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -55,4 +57,50 @@ func CleanCertSecrets(client kubernetes.Interface, ns string) error {
 		}
 	}
 	return nil
+}
+
+// CertIssuedReady keeps the information of a ready certificate
+type CertIssuedReady struct {
+	// Name certificate name
+	Name string
+	//Namespace certificate namespace
+	Namespace string
+}
+
+// WatchCertificatesIssuedReady starts watching for ready certificate in the given namespace.
+// If the namespace is empty, it will watch the entire cluster. The caller can stop watching by cancelling the context.
+func WatchCertificatesIssuedReady(ctx context.Context, client certclient.Interface, ns string) (<-chan CertIssuedReady, error) {
+	watcher, err := client.Certmanager().Certificates(ns).Watch(metav1.ListOptions{})
+	if err != nil {
+		return nil, errors.Wrapf(err, "watching certificates in namespace %q", ns)
+	}
+	results := make(chan CertIssuedReady)
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				watcher.Stop()
+				return
+			case e := <-watcher.ResultChan():
+				if e.Type == watch.Added || e.Type == watch.Modified {
+					cert, ok := e.Object.(*certmng.Certificate)
+					if ok {
+						isReady := cert.HasCondition(certmng.CertificateCondition{
+							Type:   certmng.CertificateConditionReady,
+							Status: certmng.ConditionTrue,
+						})
+						if isReady {
+							result := CertIssuedReady{
+								Name:      cert.GetName(),
+								Namespace: cert.GetNamespace(),
+							}
+							results <- result
+						}
+					}
+				}
+			}
+		}
+	}()
+
+	return results, nil
 }
