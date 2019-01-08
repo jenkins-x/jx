@@ -178,6 +178,7 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 		installOptions.InitOptions.Flags.SkipTiller = true
 		installOptions.Flags.Namespace = team
 		installOptions.Flags.NoDefaultEnvironments = true
+		installOptions.Flags.DefaultEnvironmentPrefix = team
 		installOptions.AdminSecretsService.Flags.DefaultAdminPassword = defaultAdminPassword
 
 		err = installOptions.Run()
