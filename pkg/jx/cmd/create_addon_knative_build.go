@@ -68,6 +68,14 @@ func (o *CreateAddonKnativeBuildOptions) Run() error {
 
 	o.SetValues = strings.Join([]string{"build.auth.git.username=" + o.username, "build.auth.git.password=" + o.token}, ",")
 
+	if o.Namespace == "" {
+		_, err := o.KubeClient()
+		if err != nil {
+			return err
+		}
+		o.Namespace = o.currentNamespace
+	}
+
 	err := o.CreateAddon(kube.DefaultKnativeBuildReleaseName)
 	if err != nil {
 		return err
