@@ -240,7 +240,7 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, d
 	}
 	if batchMode && gitRepoOptions.Owner == "" {
 		fmt.Printf("Setting owner for batch mode.")
-		err, devEnvGitOwner := GetDevEnvGitOwner(jxClient)
+		devEnvGitOwner, err := GetDevEnvGitOwner(jxClient)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get default Git owner for repos: %s", err)
 		}
@@ -495,16 +495,16 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService, 
 
 // GetDevEnvGitOwner gets the default GitHub owner/organisation to use for Environment repos. This takes the setting
 // from the 'jx' Dev Env to get the one that was selected at installation time.
-func GetDevEnvGitOwner(jxClient versioned.Interface) (error, string) {
+func GetDevEnvGitOwner(jxClient versioned.Interface) (string, error) {
 	adminDevEnv, err := GetDevEnvironment(jxClient, "jx")
 	if err != nil {
 		log.Errorf("Error loading team settings. %v\n", err)
-		return err, ""
+		return "", err
 	}
 	if adminDevEnv != nil {
-		return nil, adminDevEnv.Spec.TeamSettings.EnvOrganisation
+		return adminDevEnv.Spec.TeamSettings.EnvOrganisation, nil
 	}
-	return errors.New("Unable to find development environment in 'jx' to take git owner from"), ""
+	return "", errors.New("Unable to find development environment in 'jx' to take git owner from")
 }
 
 // ModifyNamespace modifies the namespace
