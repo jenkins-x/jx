@@ -153,52 +153,64 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 		for _, ea := range envApps {
 			version := ""
 			d, ok := ea.Apps[appName]
-			if ok {
-				appMap := appEnvMap[appName]
-				if appMap == nil {
-					appMap = map[string]*ApplicationEnvironmentInfo{}
-					appEnvMap[appName] = appMap
-				}
-				version = kube.GetVersion(&d.ObjectMeta)
-				appEnvInfo := &ApplicationEnvironmentInfo{
-					Deployment:  &d,
-					Environment: &ea.Environment,
-					Version:     version,
-				}
-				appMap[ea.Environment.Name] = appEnvInfo
-				if ea.Environment.Spec.Kind != v1.EnvironmentKindTypePreview {
-					row = append(row, version)
-				}
-				if !o.HidePod {
-					pods := ""
-					replicas := ""
-					ready := d.Status.ReadyReplicas
-					if d.Spec.Replicas != nil && ready > 0 {
-						replicas = formatInt32(*d.Spec.Replicas)
-						pods = formatInt32(ready) + "/" + replicas
+			if len(ea.Apps) > 0 {
+				if ok {
+					appMap := appEnvMap[appName]
+					if appMap == nil {
+						appMap = map[string]*ApplicationEnvironmentInfo{}
+						appEnvMap[appName] = appMap
 					}
-					row = append(row, pods)
-				}
-				if !o.HideUrl {
-					url, _ := services.FindServiceURL(kubeClient, d.Namespace, appName)
-					if url == "" {
-						url, _ = services.FindServiceURL(kubeClient, d.Namespace, d.Name)
+					version = kube.GetVersion(&d.ObjectMeta)
+					appEnvInfo := &ApplicationEnvironmentInfo{
+						Deployment:  &d,
+						Environment: &ea.Environment,
+						Version:     version,
 					}
-					if url == "" {
-						// handle helm3
-						chart, ok := d.Labels["chart"]
-						if ok {
-							idx := strings.LastIndex(chart, "-")
-							if idx > 0 {
-								svcName := chart[0:idx]
-								if svcName != appName && svcName != d.Name {
-									url, _ = services.FindServiceURL(kubeClient, d.Namespace, svcName)
+					appMap[ea.Environment.Name] = appEnvInfo
+					if ea.Environment.Spec.Kind != v1.EnvironmentKindTypePreview {
+						row = append(row, version)
+					}
+					if !o.HidePod {
+						pods := ""
+						replicas := ""
+						ready := d.Status.ReadyReplicas
+						if d.Spec.Replicas != nil && ready > 0 {
+							replicas = formatInt32(*d.Spec.Replicas)
+							pods = formatInt32(ready) + "/" + replicas
+						}
+						row = append(row, pods)
+					}
+					if !o.HideUrl {
+						url, _ := services.FindServiceURL(kubeClient, d.Namespace, appName)
+						if url == "" {
+							url, _ = services.FindServiceURL(kubeClient, d.Namespace, d.Name)
+						}
+						if url == "" {
+							// handle helm3
+							chart, ok := d.Labels["chart"]
+							if ok {
+								idx := strings.LastIndex(chart, "-")
+								if idx > 0 {
+									svcName := chart[0:idx]
+									if svcName != appName && svcName != d.Name {
+										url, _ = services.FindServiceURL(kubeClient, d.Namespace, svcName)
+									}
 								}
 							}
 						}
+						row = append(row, url)
+						appEnvInfo.URL = url
 					}
-					row = append(row, url)
-					appEnvInfo.URL = url
+				} else {
+					if ea.Environment.Spec.Kind != v1.EnvironmentKindTypePreview {
+						row = append(row, "", )
+					}
+					if !o.HidePod {
+						row = append(row, "", )
+					}
+					if !o.HideUrl {
+						row = append(row, "", )
+					}
 				}
 			}
 		}
@@ -280,17 +292,19 @@ func (o *GetApplicationsOptions) generateTableHeaders(envApps []EnvApps) table.T
 	titles := []string{title}
 	for _, ea := range envApps {
 		envName := ea.Environment.Name
-		if ea.Environment.Spec.Kind == v1.EnvironmentKindTypeEdit {
-			envName = "Edit"
-		}
-		if ea.Environment.Spec.Kind != v1.EnvironmentKindTypePreview {
-			titles = append(titles, strings.ToUpper(envName))
-		}
-		if !o.HidePod {
-			titles = append(titles, "PODS")
-		}
-		if !o.HideUrl {
-			titles = append(titles, "URL")
+		if len(ea.Apps) > 0 {
+			if ea.Environment.Spec.Kind == v1.EnvironmentKindTypeEdit {
+				envName = "Edit"
+			}
+			if ea.Environment.Spec.Kind != v1.EnvironmentKindTypePreview {
+				titles = append(titles, strings.ToUpper(envName))
+			}
+			if !o.HidePod {
+				titles = append(titles, "PODS")
+			}
+			if !o.HideUrl {
+				titles = append(titles, "URL")
+			}
 		}
 	}
 	t.AddRow(titles...)
