@@ -23,16 +23,13 @@ type StepCredentialOptions struct {
 
 var (
 	stepCredentialLong = templates.LongDesc(`
-		This pipeline step lets you run the BDD tests in the current team in a current cluster or create a new cluster/team run tests there then tear things down again.
+		Returns a secret entry for easy scripting in pipeline steps.
 
 `)
 
 	stepCredentialExample = templates.Examples(`
-		# run the BDD tests in the current team
-		jx step bdd --use-current-team --git-provider-url=https://my.git.server.com
-
-        # create a new team for the tests, run the tests then tear everything down again 
-		jx step bdd -b --provider=gke --git-provider=ghe --git-provider-url=https://my.git.server.com --default-admin-password=myadminpwd --git-username myuser --git-api-token mygittoken
+		# get the password of a secret 'foo' as an environment variable
+		export MY_PWD="$(jx step credential -s foo -k passwordj)"
 `)
 )
 
@@ -105,8 +102,8 @@ func (o *StepCredentialOptions) Run() error {
 		return util.MissingOptionWithOptions("key", keys)
 	}
 
-	value := secret.Data[key]
-	if value == nil {
+	value, ok := secret.Data[key]
+	if !ok {
 		log.Warnf("Secret %s in namespace %s does not have key %s\n", name, ns, key)
 		return util.InvalidOption("key", key, keys)
 	}
