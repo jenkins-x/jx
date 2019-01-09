@@ -76,6 +76,9 @@ type Factory interface {
 
 	SetBatch(batch bool)
 
+	// For tests only, assert that no actual network connections are being made.
+	SetOffline(offline bool)
+
 	IsInCluster() bool
 
 	IsInCDPipeline() bool
