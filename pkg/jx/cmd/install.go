@@ -1759,6 +1759,9 @@ func (options *InstallOptions) getAdminSecrets(configStore configio.ConfigStore,
 
 func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string, ic *kube.IngressConfig) error {
 	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
+		// Configure the vault flag if only GitOps mode is on
+		options.Flags.Vault = true
+
 		err := InstallVaultOperator(&options.CommonOptions, namespace)
 		if err != nil {
 			return err
