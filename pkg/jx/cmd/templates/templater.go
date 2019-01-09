@@ -30,17 +30,17 @@ type FlagExposer interface {
 	ExposeFlags(cmd *cobra.Command, flags ...string) FlagExposer
 }
 
-func ActsAsRootCommand(cmd *cobra.Command, filters []string, pluginCommandGroups PluginCommandGroups, groups ...CommandGroup) FlagExposer {
+func ActsAsRootCommand(cmd *cobra.Command, filters []string, getPluginCommandGroups func() (PluginCommandGroups, bool), groups ...CommandGroup) FlagExposer {
 	if cmd == nil {
 		panic("nil root command")
 	}
 	templater := &templater{
-		RootCmd:             cmd,
-		UsageTemplate:       MainUsageTemplate(),
-		HelpTemplate:        MainHelpTemplate(),
-		CommandGroups:       groups,
-		PluginCommandGroups: pluginCommandGroups,
-		Filtered:            filters,
+		RootCmd:                cmd,
+		UsageTemplate:          MainUsageTemplate(),
+		HelpTemplate:           MainHelpTemplate(),
+		CommandGroups:          groups,
+		GetPluginCommandGroups: getPluginCommandGroups,
+		Filtered:               filters,
 	}
 	cmd.SetUsageFunc(templater.UsageFunc())
 	cmd.SetHelpFunc(templater.HelpFunc())
@@ -57,10 +57,10 @@ func UseOptionsTemplates(cmd *cobra.Command) {
 }
 
 type templater struct {
-	UsageTemplate       string
-	HelpTemplate        string
-	PluginCommandGroups PluginCommandGroups
-	RootCmd             *cobra.Command
+	UsageTemplate          string
+	HelpTemplate           string
+	GetPluginCommandGroups func() (PluginCommandGroups, bool)
+	RootCmd                *cobra.Command
 	CommandGroups
 	Filtered []string
 }
@@ -170,7 +170,8 @@ func (t *templater) cmdGroupsString(c *cobra.Command) string {
 			}
 		}
 	}
-	for _, cmdGroup := range t.PluginCommandGroups {
+	pluginCommandGroups, _ := t.GetPluginCommandGroups()
+	for _, cmdGroup := range pluginCommandGroups {
 		for _, cmd := range cmdGroup.Commands {
 			l := len(cmd.SubCommand)
 			if l > maxLen {
@@ -189,7 +190,7 @@ func (t *templater) cmdGroupsString(c *cobra.Command) string {
 		}
 		groups = append(groups, strings.Join(cmds, "\n"))
 	}
-	for _, cmdGroup := range t.PluginCommandGroups {
+	for _, cmdGroup := range pluginCommandGroups {
 		cmds := []string{cmdGroup.Message}
 		for _, cmd := range cmdGroup.Commands {
 			//cmds = append(cmds, "  "+rpad(path, maxLen - len(path))+" "+cmd.Short)

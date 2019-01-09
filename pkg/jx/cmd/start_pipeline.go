@@ -97,7 +97,7 @@ func NewCmdStartPipeline(f Factory, in terminal.FileReader, out terminal.FileWri
 
 // Run implements this command
 func (o *StartPipelineOptions) Run() error {
-	_, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -113,6 +113,7 @@ func (o *StartPipelineOptions) Run() error {
 	args := o.Args
 	names := []string{}
 	o.ProwOptions = prow.Options{
+		KubeClient: kubeClient,
 		NS: o.currentNamespace,
 	}
 	if len(args) == 0 {
