@@ -239,7 +239,6 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, d
 		}
 	}
 	if batchMode && gitRepoOptions.Owner == "" {
-		fmt.Printf("Setting owner for batch mode.")
 		devEnvGitOwner, err := GetDevEnvGitOwner(jxClient)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to get default Git owner for repos: %s", err)

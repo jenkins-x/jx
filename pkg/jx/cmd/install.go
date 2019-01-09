@@ -1226,7 +1226,6 @@ func (options *InstallOptions) buildGitRepositoryOptionsForEnvironments() (*gits
 
 	//Save selected organisation for Environment repos.
 	err = options.ModifyDevEnvironment(func(env *v1.Environment) error {
-		fmt.Printf("Saving EnvOrganisation=%s", org)
 		env.Spec.TeamSettings.EnvOrganisation = org
 		return nil
 	})
