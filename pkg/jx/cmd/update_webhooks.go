@@ -154,14 +154,13 @@ func (options *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, repoN
 					Repo: &gits.GitRepository{
 						Name: repoName,
 					},
-					URL: webhookURL,
+					URL:         webhookURL,
+					ExistingURL: options.PreviousHookUrl,
 				}
 
 				if isProwEnabled {
 					webHookArgs.Secret = string(hmacToken.Data["hmac"])
 				}
-
-				log.Infof("Updating WebHook with new args\n")
 
 				if !options.DryRun {
 					git.UpdateWebHook(webHookArgs)

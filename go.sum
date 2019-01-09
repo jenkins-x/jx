@@ -16,14 +16,12 @@ github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e h1:eb0Pzkt15Bm
 github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e/go.mod h1:64YHyfSL2R96J44Nlwm39UHepQbyR5q10x7iYa1ks2E=
 github.com/Masterminds/semver v1.4.2 h1:WBLTQ37jOCzSLtXNdoo8bNM8876KhNqOKvrlGITgsTc=
 github.com/Masterminds/semver v1.4.2/go.mod h1:MB6lktGJrhw8PrUyiEoblNEGEQ+RzHPF078ddwwvV3Y=
-github.com/Netflix/go-expect v0.0.0-20180814212900-124a37274874 h1:zf1NtpDPbDTPyUVhli10/7A0N+JGsg253wwkSfGOyR4=
 github.com/Netflix/go-expect v0.0.0-20180814212900-124a37274874/go.mod h1:oX5x61PbNXchhh0oikYAH+4Pcfw5LKv21+Jnpr6r6Pc=
 github.com/Pallinder/go-randomdata v0.0.0-20180616180521-15df0648130a h1:0OnS8GR4uI3nau+f/juCZlAq+zCrsHXRJlENrUQ4eU8=
 github.com/Pallinder/go-randomdata v0.0.0-20180616180521-15df0648130a/go.mod h1:yHmJgulpD2Nfrm0cR9tI/+oAgRqCQQixsA8HyRZfV9Y=
 github.com/PuerkitoBio/purell v1.1.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
 github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
 github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6/go.mod h1:3eOhrUMpNV+6aFIbp5/iudMxNCF27Vw2OZgy4xEx0Fg=
-github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d h1:licZJFw2RwpHMqeKTCYkitsPqHNxTmd4SNR5r94FGM8=
 github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d/go.mod h1:asat636LX7Bqt5lYEZ27JNDcqxfjdBQuJ/MM4CN/Lzo=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
@@ -152,7 +150,6 @@ github.com/hashicorp/vault v0.11.4 h1:lzU7dpyUoWojz4TZuztd7FXPlKIMU/tMax+Qepqy42
 github.com/hashicorp/vault v0.11.4/go.mod h1:KfSyffbKxoVyspOdlaGVjIuwLobi07qD1bAbosPMpP0=
 github.com/heptio/sonobuoy v0.12.0 h1:DeM6CWM3qVuQk90hbo4hkXlyazEQnlkDDHFnaeV0xYw=
 github.com/heptio/sonobuoy v0.12.0/go.mod h1:DPj7YJRqCVgPYfQMMNBmTna+oI3vHs2oo3vbqWcl1ck=
-github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c h1:kp3AxgXgDOmIJFR7bIwqFhwJ2qWar8tEQSE5XXhCfVk=
 github.com/hinshun/vt10x v0.0.0-20180809195222-d55458df857c/go.mod h1:DqJ97dSdRW1W22yXSB90986pcOyQ7r45iio1KN2ez1A=
 github.com/hpcloud/tail v1.0.0 h1:nfCOvKYfkgYP8hkirhJocXT2+zOD8yUNjXaWfTlyFKI=
 github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpOxQnU=
@@ -182,7 +179,6 @@ github.com/knative/build v0.0.0-20180906201914-846036c8b91d/go.mod h1:/sU74ZQkwl
 github.com/knq/snaker v0.0.0-20180306023312-d9ad1e7f342a/go.mod h1:f0Dmq8fkddh8nOsVabYmtOHHdxlq2q4X+LQ1xWQEdUU=
 github.com/knq/sysutil v0.0.0-20180306023629-0218e141a794 h1:hgWKTlyruPI7k8W+0FmTMLf+8d2KPxyzTxsfDDQhNp8=
 github.com/knq/sysutil v0.0.0-20180306023629-0218e141a794/go.mod h1:BjPj+aVjl9FW/cCGiF3nGh5v+9Gd3VCgBQbod/GlMaQ=
-github.com/kr/pty v1.1.2 h1:Q7kfkJVHag8Gix8Z5+eTo09NFHV8MXL9K66sv9qDaVI=
 github.com/kr/pty v1.1.2/go.mod h1:pFQYn66WHrOpPYNljwOMqo10TkYh1fy3cYio2l3bCsQ=
 github.com/magiconair/properties v1.8.0 h1:LLgXmsheXeRoUOBOjtwPQCWIYqM/LU1ayDtDePerRcY=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
@@ -209,7 +205,6 @@ github.com/nlopes/slack v0.0.0-20180721202243-347a74b1ea30 h1:VFJCzi0gMjfS+UmnSo
 github.com/nlopes/slack v0.0.0-20180721202243-347a74b1ea30/go.mod h1:jVI4BBK3lSktibKahxBF74txcK2vyvkza1z/+rRnVAM=
 github.com/onsi/ginkgo v1.6.0 h1:Ix8l273rp3QzYgXSR+c8d1fTG7UPgYkOSELPhiY/YGw=
 github.com/onsi/ginkgo v1.6.0/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
-github.com/onsi/gomega v1.4.1 h1:PZSj/UFNaVp3KxrzHOcS7oyuWA7LoOY/77yCTEFu21U=
 github.com/onsi/gomega v1.4.1/go.mod h1:C1qb7wdrVGGVU+Z6iS04AVkA3Q65CEZX59MT0QO5uiA=
 github.com/operator-framework/operator-sdk v0.0.0-20181011175812-913cbf711929 h1:dubM1FRb8pY/Ssgd7rPOcGW2pgKFt89Pg/aOl2MKeQg=
 github.com/operator-framework/operator-sdk v0.0.0-20181011175812-913cbf711929/go.mod h1:iVyukRkam5JZa8AnjYf+/G3rk7JI1+M6GsU0sq0B9NA=
@@ -222,7 +217,6 @@ github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/9
 github.com/petar/GoLLRB v0.0.0-20130427215148-53be0d36a84c/go.mod h1:HUpKUBZnpzkdx0kD/+Yfuft+uD3zHGtXF/XJB14TUr4=
 github.com/peterbourgon/diskv v2.0.1+incompatible h1:UBdAOUP5p4RWqPBg048CAvpKN+vxiaj6gdUUzhl4XmI=
 github.com/peterbourgon/diskv v2.0.1+incompatible/go.mod h1:uqqh8zWWbv1HBMNONnaR/tNboyR3/BZd58JJSHlUSCU=
-github.com/petergtz/pegomock v0.0.0-20181008215750-9750219ad78b h1:I8j4qkrGYPb/10v1BsEnV5WZUCJ0UwWGL1FNlLKZ1Bg=
 github.com/petergtz/pegomock v0.0.0-20181008215750-9750219ad78b/go.mod h1:nuBLWZpVyv/fLo56qTwt/AUau7jgouO1h7bEvZCq82o=
 github.com/pierrec/lz4 v2.0.5+incompatible h1:2xWsjqPFWcplujydGg4WmhC/6fZqK42wMM8aXeqhl0I=
 github.com/pierrec/lz4 v2.0.5+incompatible/go.mod h1:pdkljMzZIN41W+lC3N2tnIh5sFi+IEE17M5jbnwPHcY=
@@ -358,5 +352,7 @@ k8s.io/kube-openapi v0.0.0-20180719232738-d8ea2fe547a4/go.mod h1:BXM9ceUBTj2QnfH
 k8s.io/kubernetes v1.11.3/go.mod h1:ocZa8+6APFNC2tX1DZASIbocyYT5jHzqFVsY5aoB7Jk=
 k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b h1:LcRDe4wxlsysUmLVy0Oi1YOOMwMRfu1gRV7DO30FxWk=
 k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b/go.mod h1:a25VAbm3QT3xiVl1jtoF1ueAKQM149UdZ+L93ePfV3M=
-k8s.io/test-infra v0.0.0-20181113004108-9b11013021d9 h1:jeFclMDiavM27AviZ5OYZhoerVnTiF3Lt35uFLed7A4=
-k8s.io/test-infra v0.0.0-20181113004108-9b11013021d9/go.mod h1:2NzXB13Ji0nqpyublHeiPC4FZwU0TknfvyaaNfl/BTA=
+k8s.io/test-infra v0.0.0-20190107185424-8f27afa1a239 h1:JusewqBI93NBcNboGrBtdlgQ299qg/65b0AbCPfKvHo=
+k8s.io/test-infra v0.0.0-20190107185424-8f27afa1a239/go.mod h1:2NzXB13Ji0nqpyublHeiPC4FZwU0TknfvyaaNfl/BTA=
+sigs.k8s.io/yaml v1.1.0 h1:4A07+ZFc2wgJwo8YNlQpr1rVlgUDlxXHhPJciaPY5gs=
+sigs.k8s.io/yaml v1.1.0/go.mod h1:UJmg0vDUVViEyp3mgSv9WPwZCDxu4rQW1olrI1uml+o=

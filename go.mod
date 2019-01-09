@@ -174,6 +174,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20180719232738-d8ea2fe547a4
 	k8s.io/kubernetes v1.11.3 // indirect
 	k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b
-	k8s.io/test-infra v0.0.0-20181113004108-9b11013021d9
+	k8s.io/test-infra v0.0.0-20190107185424-8f27afa1a239
+	sigs.k8s.io/yaml v1.1.0 // indirect
 
 )

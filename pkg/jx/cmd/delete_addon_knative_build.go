@@ -16,12 +16,12 @@ import (
 
 var (
 	deleteAddonKnativeBuildLong = templates.LongDesc(`
-		Deletes the KnativeBuild addon
+		Deletes the Knative Build addon
 `)
 
 	deleteAddonKnativeBuildExample = templates.Examples(`
-		# Deletes the KnativeBuild addon
-		jx delete addon KnativeBuild
+		# Deletes the Knative Build addon
+		jx delete addon knative-build
 	`)
 )
 
@@ -47,8 +47,7 @@ func NewCmdDeleteAddonKnativeBuild(f Factory, in terminal.FileReader, out termin
 
 	cmd := &cobra.Command{
 		Use:     "knative-build",
-		Short:   "Deletes the KnativeBuild app for Kubernetes addon",
-		Aliases: []string{"cloudbee", "cb", "core"},
+		Short:   "Deletes the Knative Build app for Kubernetes addon",
 		Long:    deleteAddonKnativeBuildLong,
 		Example: deleteAddonKnativeBuildExample,
 		Run: func(cmd *cobra.Command, args []string) {
