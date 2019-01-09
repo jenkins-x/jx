@@ -26,7 +26,7 @@ var (
 
 	upgradeAddonsExample = templates.Examples(`
 		# Upgrades the Jenkins X platform 
-		jx upgrade platform
+		jx upgrade addons
 	`)
 )
 
@@ -72,7 +72,15 @@ func NewCmdUpgradeAddons(f Factory, in terminal.FileReader, out terminal.FileWri
 	options.addCommonFlags(cmd)
 	options.InstallFlags.addCloudEnvOptions(cmd)
 
+	cmd.AddCommand(NewCmdUpgradeAddonProw(f, in, out, errOut))
+
 	return cmd
+}
+
+func (options *UpgradeAddonsOptions) addFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The Namespace to upgrade")
+	cmd.Flags().StringVarP(&options.Set, "set", "s", "", "The Helm parameters to pass in while upgrading")
+
 }
 
 // Run implements the command

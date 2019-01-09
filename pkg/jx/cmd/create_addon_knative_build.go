@@ -61,9 +61,6 @@ func NewCmdCreateAddonKnativeBuild(f Factory, in terminal.FileReader, out termin
 
 // Create the addon
 func (o *CreateAddonKnativeBuildOptions) Run() error {
-	if o.username == "" {
-		return fmt.Errorf("no pipeline git username provided")
-	}
 	if o.token == "" {
 		return fmt.Errorf("no pipeline git token provided")
 	}

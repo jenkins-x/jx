@@ -529,6 +529,14 @@ func (mock *MockFactory) SetBatch(_param0 bool) {
 	pegomock.GetGenericMockFrom(mock).Invoke("SetBatch", params, []reflect.Type{})
 }
 
+func (mock *MockFactory) SetOffline(_param0 bool) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockFactory().")
+	}
+	params := []pegomock.Param{_param0}
+	pegomock.GetGenericMockFrom(mock).Invoke("SetOffline", params, []reflect.Type{})
+}
+
 func (mock *MockFactory) UseVault() bool {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockFactory().")
@@ -1250,6 +1258,33 @@ func (c *Factory_SetBatch_OngoingVerification) GetCapturedArguments() bool {
 }
 
 func (c *Factory_SetBatch_OngoingVerification) GetAllCapturedArguments() (_param0 []bool) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]bool, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(bool)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierFactory) SetOffline(_param0 bool) *Factory_SetOffline_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetOffline", params)
+	return &Factory_SetOffline_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Factory_SetOffline_OngoingVerification struct {
+	mock              *MockFactory
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Factory_SetOffline_OngoingVerification) GetCapturedArguments() bool {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *Factory_SetOffline_OngoingVerification) GetAllCapturedArguments() (_param0 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]bool, len(params[0]))
