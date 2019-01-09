@@ -13,6 +13,6 @@ func Run() error {
 		defer logs.FlushLogs()
 	*/
 
-	cmd := cmd.NewJXCommand(cmd.NewFactory(), os.Stdin, os.Stdout, os.Stderr)
+	cmd := cmd.NewJXCommand(cmd.NewFactory(), os.Stdin, os.Stdout, os.Stderr, nil)
 	return cmd.Execute()
 }
