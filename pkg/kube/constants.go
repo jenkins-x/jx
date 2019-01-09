@@ -55,7 +55,7 @@ const (
 	// ServiceCloudBees the service name of the CloudBees app for Kubernetes
 	ServiceCloudBees = "cb-core"
 
-	// ServiceChartMuseum the service name of the Helm Chart Museum service
+	// ServiceChartMuseum the service name of the Helm ChartMuseum service
 	ServiceChartMuseum = "jenkins-x-chartmuseum"
 
 	// ServiceKubernetesDashboard the Kubernetes dashboard
