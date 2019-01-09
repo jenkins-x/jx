@@ -564,7 +564,7 @@ func (options *InstallOptions) Run() error {
 
 	err = options.saveChartmuseumAuthConfig()
 	if err != nil {
-		return errors.Wrap(err, "saving the Chartmuseum auth configuration")
+		return errors.Wrap(err, "saving the ChartMuseum auth configuration")
 	}
 
 	if options.Flags.RegisterLocalHelmRepo {
