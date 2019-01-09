@@ -36,6 +36,7 @@ var (
 `)
 )
 
+// NewCmdStepCredential creates the command
 func NewCmdStepCredential(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepCredentialOptions{
 		StepOptions: StepOptions{
@@ -69,6 +70,7 @@ func NewCmdStepCredential(f Factory, in terminal.FileReader, out terminal.FileWr
 	return cmd
 }
 
+// Run runs the command
 func (o *StepCredentialOptions) Run() error {
 	kubeClient, devNs, err := o.KubeClientAndDevNamespace()
 	if err != nil {

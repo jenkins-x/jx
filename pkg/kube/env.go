@@ -49,7 +49,7 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, d
 			data.Name = config.Name
 		} else {
 			if batchMode {
-				return nil, fmt.Errorf("Environment name cannot be empty. Use --name option.")
+				return nil, fmt.Errorf("environment name cannot be empty. Use --name option.")
 			}
 
 			validator := func(val interface{}) error {
