@@ -14,6 +14,8 @@ import (
 )
 
 func TestWaitCertificateIssuedReady(t *testing.T) {
+	t.Parallel()
+
 	client := fake.NewSimpleClientset()
 
 	const name = "test"
@@ -54,6 +56,8 @@ func newCert(name string, condition certmng.CertificateCondition) *certmng.Certi
 }
 
 func TestWatchCertificatesIssuedReady(t *testing.T) {
+	t.Parallel()
+
 	tests := map[string]struct {
 		certs map[string][]string
 	}{
