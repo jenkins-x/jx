@@ -348,7 +348,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvApply, "no-gitops-env-apply", "", false, "When using GitOps to create the source code for the development environment and installation, don't run 'jx step env apply' to perform the install")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvRepo, "no-gitops-env-repo", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a git repository for the source code")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsVault, "no-gitops-vault", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a vault")
-	cmd.Flags().BoolVarP(&flags.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during installation")
+	cmd.Flags().BoolVarP(&flags.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during installation (supported only for GKE)")
 	cmd.Flags().StringVarP(&flags.BuildPackName, "buildpack", "", "", "The name of the build pack to use for the Team")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
@@ -1759,6 +1759,10 @@ func (options *InstallOptions) getAdminSecrets(configStore configio.ConfigStore,
 
 func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string, ic *kube.IngressConfig) error {
 	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
+		if options.Flags.Provider != GKE {
+			return fmt.Errorf("system vault is not supported for %s provider", options.Flags.Provider)
+		}
+
 		// Configure the vault flag if only GitOps mode is on
 		options.Flags.Vault = true
 
