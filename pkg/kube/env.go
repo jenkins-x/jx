@@ -1,11 +1,11 @@
 package kube
 
 import (
-	"errors"
 	"fmt"
+	"github.com/ghodss/yaml"
+	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
-	"os"
 	"os/user"
 	"path/filepath"
 	"regexp"
@@ -49,7 +49,7 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, d
 			data.Name = config.Name
 		} else {
 			if batchMode {
-				return nil, errors.New("Environment name cannot be empty. Use --name option.")
+				return nil, fmt.Errorf("Environment name cannot be empty. Use --name option.")
 			}
 
 			validator := func(val interface{}) error {
@@ -551,7 +551,6 @@ func ModifyNamespace(out io.Writer, dir string, env *v1.Environment, git gits.Gi
 }
 
 func addValues(out io.Writer, dir string, values config.HelmValuesConfig, git gits.Gitter) error {
-
 	file := filepath.Join(dir, "env", "values.yaml")
 	exists, err := util.FileExists(file)
 	if err != nil {
@@ -561,7 +560,7 @@ func addValues(out io.Writer, dir string, values config.HelmValuesConfig, git gi
 		return fmt.Errorf("could not find a values.yaml in %s", dir)
 	}
 
-	f, err := os.OpenFile(file, os.O_APPEND|os.O_WRONLY, 0644)
+	oldText, err := ioutil.ReadFile(file)
 	if err != nil {
 		return err
 	}
@@ -570,12 +569,29 @@ func addValues(out io.Writer, dir string, values config.HelmValuesConfig, git gi
 	if err != nil {
 		return err
 	}
-	_, err = f.WriteString(text)
+
+	sourceMap := map[string]interface{}{}
+	overrideMap := map[string]interface{}{}
+	err = yaml.Unmarshal(oldText, &sourceMap)
 	if err != nil {
-		return err
+	  return errors.Wrapf(err, "failed to parse YAML for file %s", file)
+	}
+	err = yaml.Unmarshal([]byte(text), &overrideMap)
+	if err != nil {
+	  return errors.Wrapf(err, "failed to parse YAML for file %s", file)
 	}
 
-	f.Close()
+	// now lets merge together the 2 blobs of YAML
+	util.CombineMapTrees(sourceMap, overrideMap)
+
+	output, err := yaml.Marshal(sourceMap)
+	if err != nil {
+		return errors.Wrap(err, "Failed to marshal the combined values YAML files back to YAML")
+	}
+	err = ioutil.WriteFile(file, output, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to save YAML file %s", file)
+	}
 
 	err = git.Add(dir, "*")
 	if err != nil {
