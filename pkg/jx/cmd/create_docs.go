@@ -78,7 +78,7 @@ func NewCmdCreateDocs(f Factory, in terminal.FileReader, out terminal.FileWriter
 
 // Run implements the command
 func (o *CreateDocsOptions) Run() error {
-	jxcommand := NewJXCommand(o.Factory, o.In, o.Out, o.Err)
+	jxcommand := NewJXCommand(o.Factory, o.In, o.Out, o.Err, nil)
 	dir := o.Dir
 
 	exists, _ := util.FileExists(dir)
