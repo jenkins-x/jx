@@ -16,26 +16,31 @@ func InvalidOptionError(option string, value string, err error) error {
 
 func InvalidOptionf(option string, value string, message string, a ...interface{}) error {
 	text := fmt.Sprintf(message, a...)
-	return fmt.Errorf("Invalid option: --%s %s\n%s", option, value, text)
+	return fmt.Errorf("Invalid option: --%s %s\n%s", option, ColorInfo(value), text)
 }
 
 // MissingOption reports a missing command line option using the full name expression
 func MissingOption(name string) error {
-	return fmt.Errorf("Missing option: --%s", name)
+	return fmt.Errorf("Missing option: --%s", ColorInfo(name))
+}
+
+// MissingOptionWithOptions reports a missing command line option using the full name expression along with a list of available values
+func MissingOptionWithOptions(name string, options []string) error {
+	return fmt.Errorf("Missing option: --%s\nOption values: %s", ColorInfo(name), ColorInfo(strings.Join(options, ", ")))
 }
 
 // MissingArgument reports a missing command line argument name
 func MissingArgument(name string) error {
-	return fmt.Errorf("Missing argument: %s", name)
+	return fmt.Errorf("Missing argument: %s", ColorInfo(name))
 }
 
 func InvalidOption(name string, value string, values []string) error {
 	suggestions := SuggestionsFor(value, values, DefaultSuggestionsMinimumDistance)
 	if len(suggestions) > 0 {
 		if len(suggestions) == 1 {
-			return InvalidOptionf(name, value, "Did you mean:  --%s %s", name, suggestions[0])
+			return InvalidOptionf(name, value, "Did you mean:  --%s %s", name, ColorInfo(suggestions[0]))
 		}
-		return InvalidOptionf(name, value, "Did you mean one of: %s", strings.Join(suggestions, ", "))
+		return InvalidOptionf(name, value, "Did you mean one of: %s", ColorInfo(strings.Join(suggestions, ", ")))
 	}
 	sort.Strings(values)
 	return InvalidOptionf(name, value, "Possible values: %s", strings.Join(values, ", "))
@@ -59,7 +64,7 @@ func InvalidArgError(value string, err error) error {
 
 func InvalidArgf(value string, message string, a ...interface{}) error {
 	text := fmt.Sprintf(message, a...)
-	return fmt.Errorf("Invalid argument: %s\n%s", value, text)
+	return fmt.Errorf("Invalid argument: %s\n%s", ColorInfo(value), text)
 }
 
 func SuggestionsFor(typedName string, values []string, suggestionsMinimumDistance int, explicitSuggestions ...string) []string {
