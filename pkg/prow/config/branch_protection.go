@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"k8s.io/test-infra/prow/config"
@@ -13,10 +14,11 @@ func AddRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, con
 	if bp.Orgs == nil {
 		bp.Orgs = make(map[string]config.Org, 0)
 	}
-	requiredOrg, requiredRepo, err := util.GetRemoteAndRepo(repoSpec)
+	url, err := gits.ParseGitURL(repoSpec)
 	if err != nil {
 		return err
 	}
+	requiredOrg, requiredRepo := url.Organisation, url.Name
 	if _, ok := bp.Orgs[requiredOrg]; !ok {
 		bp.Orgs[requiredOrg] = config.Org{
 			Repos: make(map[string]config.Repo, 0),
@@ -59,11 +61,12 @@ func RemoveRepoFromBranchProtection(bp *config.BranchProtection, repoSpec string
 	if bp.Orgs == nil {
 		return errors.New("no orgs in BranchProtection object")
 	}
-	requiredOrg, requiredRepo, err := util.GetRemoteAndRepo(repoSpec)
-
+	url, err := gits.ParseGitURL(repoSpec)
 	if err != nil {
 		return err
 	}
+	requiredOrg, requiredRepo := url.Organisation, url.Name
+
 	repos := bp.Orgs[requiredOrg].Repos
 	if repos == nil {
 		return errors.New("no repos found for org " + requiredOrg)
