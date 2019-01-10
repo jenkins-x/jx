@@ -16,7 +16,7 @@ type PipelineActivityBuildNumGen struct {
 	//pipelineID->Mutex to serialise build number generation for a given pipeline ID.
 	pipelineMutexes  map[string]*sync.Mutex
 	activitiesGetter v1.PipelineActivityInterface
-	pipelineCache  *kube.PipelineNamespaceCache
+	pipelineCache    *kube.PipelineNamespaceCache
 }
 
 // NewCRDBuildNumGen initialises a new PipelineActivityBuildNumGen that will use the supplied
@@ -25,7 +25,7 @@ func NewCRDBuildNumGen(jxClient versioned.Interface, ns string) *PipelineActivit
 	return &PipelineActivityBuildNumGen{
 		mutex:            &sync.Mutex{},
 		pipelineMutexes:  make(map[string]*sync.Mutex),
-		pipelineCache: kube.NewPipelineCache(jxClient, ns),
+		pipelineCache:    kube.NewPipelineCache(jxClient, ns),
 		activitiesGetter: jxClient.JenkinsV1().PipelineActivities(ns),
 	}
 }
