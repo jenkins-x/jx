@@ -299,6 +299,8 @@ func ServiceAppName(service *v1.Service) string {
 	return app
 }
 
+// AnnotateServicesWithCertManagerIssuer adds the cert-manager annotation to the services from the given namespace. If a list of
+// services is provided, it will apply the annotation only to that specific services.
 func AnnotateServicesWithCertManagerIssuer(c kubernetes.Interface, ns, issuer string, services ...string) ([]*v1.Service, error) {
 	result := make([]*v1.Service, 0)
 	svcList, err := GetServices(c, ns)
