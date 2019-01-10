@@ -451,9 +451,8 @@ type Application struct {
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
 
-	Spec ApplictionSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
+	Spec ApplicationSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
 }
-
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -465,9 +464,8 @@ type ApplicationList struct {
 	Items []Application `json:"items"`
 }
 
-
-// ApplictionSpec provides details of the metadata for an App
-type ApplictionSpec struct {
+// ApplicationSpec provides details of the metadata for an App
+type ApplicationSpec struct {
 	Name        string
 	Description string
 	Org         string

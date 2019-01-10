@@ -45,10 +45,6 @@ func AddRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, con
 		if !util.Contains(contexts, PromotionBuild) {
 			contexts = append(contexts, PromotionBuild)
 		}
-	case Protection:
-		if !util.Contains(contexts, ComplianceCheck) {
-			contexts = append(contexts, context)
-		}
 	default:
 		return fmt.Errorf("unknown Prow config kind %s", kind)
 	}
@@ -56,7 +52,7 @@ func AddRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, con
 	return nil
 }
 
-// RemoveRepoFromBranchProtection adds a repository to the Branch Protection section of a prow config
+// RemoveRepoFromBranchProtection removes a repository to the Branch Protection section of a prow config
 func RemoveRepoFromBranchProtection(bp *config.BranchProtection, repoSpec string) error {
 	if bp.Orgs == nil {
 		return errors.New("no orgs in BranchProtection object")
@@ -97,6 +93,7 @@ func GetAllBranchProtectionContexts(org string, repo string, prowConfig *config.
 	return prowRepo.RequiredStatusChecks.Contexts, nil
 }
 
+// GetBranchProtectionContexts gets the branch protection contexts for a repo
 func GetBranchProtectionContexts(org string, repo string, prowConfig *config.Config) ([]string, error) {
 	result := make([]string, 0)
 	contexts, err := GetAllBranchProtectionContexts(org, repo, prowConfig)

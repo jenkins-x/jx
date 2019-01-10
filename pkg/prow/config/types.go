@@ -8,6 +8,5 @@ const (
 	Protection  Kind = "PROTECTION"
 
 	ServerlessJenkins = "serverless-jenkins"
-	ComplianceCheck   = "compliance-check"
 	PromotionBuild    = "promotion-build"
 )

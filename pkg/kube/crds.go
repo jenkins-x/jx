@@ -297,12 +297,6 @@ func RegisterApplicationCRD(apiClient apiextensionsclientset.Interface) error {
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{
 		{
-			Name:        "Name",
-			Type:        "string",
-			Description: "The name of the application",
-			JSONPath:    ".spec.name",
-		},
-		{
 			Name:        "Description",
 			Type:        "string",
 			Description: "A description of the plugin",
