@@ -1,9 +1,10 @@
 package gits
 
 import (
-	"github.com/pkg/errors"
 	"os"
 	"os/user"
+
+	"github.com/pkg/errors"
 )
 
 // EnsureUserAndEmailSetup returns the user name and email for the gitter
