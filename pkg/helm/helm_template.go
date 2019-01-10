@@ -20,7 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -272,10 +272,16 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 	if err != nil {
 		return err
 	}
+	helmCrdPhase := "crd-install"
 	helmPrePhase := "pre-install"
 	helmPostPhase := "post-install"
 	wait := true
 	create := true
+
+	err = h.runHooks(helmHooks, helmCrdPhase, ns, chart, releaseName, wait, create)
+	if err != nil {
+		return err
+	}
 
 	err = h.runHooks(helmHooks, helmPrePhase, ns, chart, releaseName, wait, create)
 	if err != nil {
@@ -337,9 +343,15 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 		return err
 	}
 
+	helmCrdPhase := "crd-install"
 	helmPrePhase := "pre-upgrade"
 	helmPostPhase := "post-upgrade"
 	create := false
+
+	err = h.runHooks(helmHooks, helmCrdPhase, ns, chart, releaseName, wait, create)
+	if err != nil {
+		return err
+	}
 
 	err = h.runHooks(helmHooks, helmPrePhase, ns, chart, releaseName, wait, create)
 	if err != nil {
