@@ -2,6 +2,7 @@
 package buildnum
 
 import (
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"sync"
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
@@ -15,15 +16,17 @@ type PipelineActivityBuildNumGen struct {
 	//pipelineID->Mutex to serialise build number generation for a given pipeline ID.
 	pipelineMutexes  map[string]*sync.Mutex
 	activitiesGetter v1.PipelineActivityInterface
+	pipelineCache  *kube.PipelineNamespaceCache
 }
 
 // NewCRDBuildNumGen initialises a new PipelineActivityBuildNumGen that will use the supplied
 // PipelineActivityInterface to query CRDs.
-func NewCRDBuildNumGen(activitiesGetter v1.PipelineActivityInterface) *PipelineActivityBuildNumGen {
+func NewCRDBuildNumGen(jxClient versioned.Interface, ns string) *PipelineActivityBuildNumGen {
 	return &PipelineActivityBuildNumGen{
 		mutex:            &sync.Mutex{},
 		pipelineMutexes:  make(map[string]*sync.Mutex),
-		activitiesGetter: activitiesGetter,
+		pipelineCache: kube.NewPipelineCache(jxClient, ns),
+		activitiesGetter: jxClient.JenkinsV1().PipelineActivities(ns),
 	}
 }
 
@@ -48,7 +51,8 @@ func (g *PipelineActivityBuildNumGen) NextBuildNumber(pipeline kube.PipelineID) 
 		g.mutex.Unlock()
 	}()
 
-	buildNum, _, err := kube.GenerateBuildNumber(g.activitiesGetter, pipeline)
+	pipelines := g.pipelineCache.Pipelines()
+	buildNum, _, err := kube.GenerateBuildNumber(g.activitiesGetter, pipelines, pipeline)
 
 	if err != nil {
 		return "", err
