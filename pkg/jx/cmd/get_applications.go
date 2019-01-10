@@ -123,12 +123,11 @@ func (o *GetApplicationsOptions) Run() error {
 		return err
 	}
 
-	namespaces, envApps, envNames, apps, err := o.getAppData(kubeClient)
+	_, envApps, envNames, apps, err := o.getAppData(kubeClient)
 	if err != nil {
 		return err
 	}
 
-	util.ReverseStrings(namespaces)
 	if len(apps) == 0 {
 		log.Infof("No applications found in environments %s\n", strings.Join(envNames, ", "))
 		return nil
