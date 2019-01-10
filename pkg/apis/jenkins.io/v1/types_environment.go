@@ -146,6 +146,7 @@ type TeamSettings struct {
 	HelmTemplate        bool                 `json:"helmTemplate,omitempty" protobuf:"bytes,12,opt,name=helmTemplate"`
 	GitServer           string               `json:"gitServer,omitempty" protobuf:"bytes,13,opt,name=gitServer" command:"gitserver" commandUsage:"Default git server for new repositories"`
 	Organisation        string               `json:"organisation,omitempty" protobuf:"bytes,14,opt,name=organisation" command:"organisation" commandUsage:"Default git organisation for new repositories"`
+	EnvOrganisation     string               `json:"envOrganisation,omitempty" protobuf:"bytes,14,opt,name=envOrganisation" command:"envOrganisation" commandUsage:"Default git organisation for new environment repositories"`
 	PipelineUsername    string               `json:"pipelineUsername,omitempty" protobuf:"bytes,15,opt,name=pipelineUsername" command:"pipelineusername" commandUsage:"User used by pipeline. Is given write permission on new repositories."`
 	DockerRegistryOrg   string               `json:"dockerRegistryOrg,omitempty" protobuf:"bytes,16,opt,name=dockerRegistryOrg" command:"dockerregistryorg" commandUsage:"Docker registry organisation used for new projects in Jenkins X."`
 	GitPrivate          bool                 `json:"gitPrivate,omitempty" protobuf:"bytes,17,opt,name=gitPrivate" command:"gitprivate" commandUsage:"Are new repositories private by default"`
@@ -267,7 +268,7 @@ func (t *TeamSettings) StorageLocation(classifier string) *StorageLocation {
 	t.StorageLocations = append(t.StorageLocations, StorageLocation{
 		Classifier: classifier,
 	})
-	return &t.StorageLocations[len(t.StorageLocations) -1]
+	return &t.StorageLocations[len(t.StorageLocations)-1]
 }
 
 // IsEmpty returns true if the storage location is empty
@@ -277,7 +278,7 @@ func (s *StorageLocation) IsEmpty() bool {
 
 // Description returns the textual description of the storage location
 func (s *StorageLocation) Description() string {
-	if s.GitURL !=  "" {
+	if s.GitURL != "" {
 		return "git: " + s.GitURL
 	}
 	if s.HttpURL != "" {
