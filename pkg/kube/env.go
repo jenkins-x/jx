@@ -949,3 +949,12 @@ func GetDevEnvironment(jxClient versioned.Interface, ns string) (*v1.Environment
 	return nil, fmt.Errorf("Error fetching dev environment resource definition in namespace %s, No Environment called: %s or with selector: %s found %d entries: %v",
 		ns, name, selector, len(envList.Items), envList.Items)
 }
+
+// GetPreviewEnvironmentReleaseName returns the (helm) release name for the given (preview) environment
+// or the empty string is the environment is not a preview environment, or has no release name associated with it
+func GetPreviewEnvironmentReleaseName(env *v1.Environment) string {
+	if !IsPreviewEnvironment(env) {
+		return ""
+	}
+	return env.Annotations[AnnotationReleaseName]
+}
