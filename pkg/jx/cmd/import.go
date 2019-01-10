@@ -488,14 +488,14 @@ func (options *ImportOptions) DraftCreate() error {
 		return err
 	}
 
-	provider, err := gits.CreateProvider(options.GitServer, options.GitUserAuth, options.Git())
-	if err != nil {
-		return err
+	if options.GitUserAuth == nil {
+		userAuth := options.GitProvider.UserAuth()
+		options.GitUserAuth = &userAuth
 	}
-
+	
 	if options.Organisation == "" {
 		gitUsername := options.GitUserAuth.Username
-		options.Organisation, err = gits.GetOwner(options.BatchMode, provider, gitUsername, options.In, options.Out, options.Err)
+		options.Organisation, err = gits.GetOwner(options.BatchMode, options.GitProvider, gitUsername, options.In, options.Out, options.Err)
 		if err != nil {
 			return err
 		}
@@ -505,7 +505,7 @@ func (options *ImportOptions) DraftCreate() error {
 		dir := options.Dir
 		_, defaultRepoName := filepath.Split(dir)
 
-		options.AppName, err = gits.GetRepoName(options.BatchMode, false, provider, defaultRepoName, options.Organisation, options.In, options.Out, options.Err)
+		options.AppName, err = gits.GetRepoName(options.BatchMode, false, options.GitProvider, defaultRepoName, options.Organisation, options.In, options.Out, options.Err)
 		if err != nil {
 			return err
 		}
