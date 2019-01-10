@@ -280,23 +280,30 @@ func IsServicePresent(c kubernetes.Interface, name, ns string) (bool, error) {
 	return true, nil
 }
 
-// ServiceAppName retrieves the application name from the service labels
-func ServiceAppName(c kubernetes.Interface, name, ns string) (string, error) {
+// GetServiceAppName retrieves the application name from the service labels
+func GetServiceAppName(c kubernetes.Interface, name, ns string) (string, error) {
 	svc, err := c.CoreV1().Services(ns).Get(name, meta_v1.GetOptions{})
 	if err != nil || svc == nil {
 		return "", errors.Wrapf(err, "retrieving service %q", name)
 	}
-	app, ok := svc.Labels[ServiceAppLabel]
-	if !ok {
-		return "", errors.Wrapf(err, "retrieving app name from service %q", name)
-	}
-	return app, nil
+	return ServiceAppName(svc), nil
 }
 
-func AnnotateServicesWithCertManagerIssuer(c kubernetes.Interface, ns, issuer string, services ...string) error {
+// ServiceAppName retrives the application name from service labels. If no app lable exists,
+// it returns the service name
+func ServiceAppName(service *v1.Service) string {
+	app, ok := service.Labels[ServiceAppLabel]
+	if !ok {
+		app = service.GetName()
+	}
+	return app
+}
+
+func AnnotateServicesWithCertManagerIssuer(c kubernetes.Interface, ns, issuer string, services ...string) ([]*v1.Service, error) {
+	result := make([]*v1.Service, 0)
 	svcList, err := GetServices(c, ns)
 	if err != nil {
-		return err
+		return result, err
 	}
 
 	for _, s := range svcList {
@@ -315,13 +322,14 @@ func AnnotateServicesWithCertManagerIssuer(c kubernetes.Interface, ns, issuer st
 			} else {
 				s.Annotations[ExposeIngressAnnotation] = CertManagerAnnotation + ": " + issuer
 			}
-			_, err = c.CoreV1().Services(ns).Update(s)
+			s, err = c.CoreV1().Services(ns).Update(s)
 			if err != nil {
-				return fmt.Errorf("failed to annotate and update service %s in namespace %s: %v", s.Name, ns, err)
+				return result, fmt.Errorf("failed to annotate and update service %s in namespace %s: %v", s.Name, ns, err)
 			}
+			result = append(result, s)
 		}
 	}
-	return nil
+	return result, nil
 }
 
 func CleanServiceAnnotations(c kubernetes.Interface, ns string, services ...string) error {

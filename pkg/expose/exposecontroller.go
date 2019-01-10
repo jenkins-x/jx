@@ -63,7 +63,7 @@ func Expose(devNamespace, targetNamespace, password string, kubeClient kubernete
 
 	// annotate the service with cert-manager issuer only if the TLS is enabled and issuer is not empty
 	if ic.TLS && ic.Issuer != "" {
-		err = services.AnnotateServicesWithCertManagerIssuer(kubeClient, targetNamespace, ic.Issuer)
+		_, err = services.AnnotateServicesWithCertManagerIssuer(kubeClient, targetNamespace, ic.Issuer)
 		if err != nil {
 			return err
 		}

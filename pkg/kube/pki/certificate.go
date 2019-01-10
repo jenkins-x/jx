@@ -6,10 +6,12 @@ import (
 	"strings"
 	"time"
 
+	kubeservices "github.com/jenkins-x/jx/pkg/kube/services"
 	certmng "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 	certclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
@@ -59,22 +61,27 @@ func CleanCertSecrets(client kubernetes.Interface, ns string) error {
 	return nil
 }
 
-// CertIssuedReady keeps the information of a ready certificate
-type CertIssuedReady struct {
+// Certificate keeps some information related to a certificate issued by cert-manager
+type Certificate struct {
 	// Name certificate name
 	Name string
 	//Namespace certificate namespace
 	Namespace string
 }
 
+// String returns the certificate information in a string format
+func (c Certificate) String() string {
+	return fmt.Sprintf("%s/%s", c.Namespace, c.Name)
+}
+
 // WatchCertificatesIssuedReady starts watching for ready certificate in the given namespace.
 // If the namespace is empty, it will watch the entire cluster. The caller can stop watching by cancelling the context.
-func WatchCertificatesIssuedReady(ctx context.Context, client certclient.Interface, ns string) (<-chan CertIssuedReady, error) {
+func WatchCertificatesIssuedReady(ctx context.Context, client certclient.Interface, ns string) (<-chan Certificate, error) {
 	watcher, err := client.Certmanager().Certificates(ns).Watch(metav1.ListOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, "watching certificates in namespace %q", ns)
 	}
-	results := make(chan CertIssuedReady)
+	results := make(chan Certificate)
 	go func() {
 		for {
 			select {
@@ -90,7 +97,7 @@ func WatchCertificatesIssuedReady(ctx context.Context, client certclient.Interfa
 							Status: certmng.ConditionTrue,
 						})
 						if isReady {
-							result := CertIssuedReady{
+							result := Certificate{
 								Name:      cert.GetName(),
 								Namespace: cert.GetNamespace(),
 							}
@@ -103,4 +110,20 @@ func WatchCertificatesIssuedReady(ctx context.Context, client certclient.Interfa
 	}()
 
 	return results, nil
+}
+
+// ToCertificates converts a list of services into a list of certificates. The certificate name is built from
+// the application label of the service.
+func ToCertificates(services []*v1.Service) []Certificate {
+	result := make([]Certificate, 0)
+	for _, svc := range services {
+		app := kubeservices.ServiceAppName(svc)
+		cert := certSecretPrefix + app
+		ns := svc.GetNamespace()
+		result = append(result, Certificate{
+			Name:      cert,
+			Namespace: ns,
+		})
+	}
+	return result
 }

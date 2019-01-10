@@ -57,7 +57,7 @@ func TestAnnotateNoExisting(t *testing.T) {
 	err = o.CleanServiceAnnotations()
 	assert.NoError(t, err)
 
-	err = o.AnnotateExposedServicesWithCertManager()
+	_, err = o.AnnotateExposedServicesWithCertManager()
 	assert.NoError(t, err)
 
 	rs, err := client.CoreV1().Services("test").Get("foo", metav1.GetOptions{})
@@ -83,7 +83,7 @@ func TestAnnotateWithExistingAnnotations(t *testing.T) {
 	err = o.CleanServiceAnnotations()
 	assert.NoError(t, err)
 
-	err = o.AnnotateExposedServicesWithCertManager()
+	_, err = o.AnnotateExposedServicesWithCertManager()
 	assert.NoError(t, err)
 
 	rs, err := client.CoreV1().Services("test").Get("foo", metav1.GetOptions{})
@@ -109,7 +109,7 @@ func TestAnnotateWithExistingCertManagerAnnotation(t *testing.T) {
 	err = o.CleanServiceAnnotations()
 	assert.NoError(t, err)
 
-	err = o.AnnotateExposedServicesWithCertManager()
+	_, err = o.AnnotateExposedServicesWithCertManager()
 	assert.NoError(t, err)
 
 	rs, err := client.CoreV1().Services("test").Get("foo", metav1.GetOptions{})
@@ -186,7 +186,7 @@ func TestRealJenkinsService(t *testing.T) {
 	err = o.CleanServiceAnnotations()
 	assert.NoError(t, err)
 
-	err = o.AnnotateExposedServicesWithCertManager()
+	_, err = o.AnnotateExposedServicesWithCertManager()
 	assert.NoError(t, err)
 
 	rs, err := client.CoreV1().Services("test").Get("jenkins", metav1.GetOptions{})

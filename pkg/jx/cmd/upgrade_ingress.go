@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube/pki"
@@ -17,6 +19,7 @@ import (
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -36,6 +39,8 @@ const (
 	CertManagerDeployment = "cert-manager"
 	CertManagerNamespace  = "cert-manager"
 	Exposecontroller      = "exposecontroller"
+
+	certsIssuedReadyTimeout = 5 * time.Minute
 )
 
 // UpgradeIngressOptions the options for the create spring command
@@ -50,6 +55,7 @@ type UpgradeIngressOptions struct {
 	TargetNamespaces    []string
 	Services            []string
 	SkipResourcesUpdate bool
+	WaitForCerts        bool
 
 	IngressConfig kube.IngressConfig
 }
@@ -91,10 +97,11 @@ func NewCmdUpgradeIngress(f Factory, in terminal.FileReader, out terminal.FileWr
 func (o *UpgradeIngressOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.Cluster, "cluster", "", false, "Enable cluster wide Ingress upgrade")
 	cmd.Flags().StringArrayVarP(&o.Namespaces, "namespaces", "", []string{}, "Namespaces to upgrade")
-	cmd.Flags().BoolVarP(&o.SkipCertManager, "skip-certmanager", "", false, "Skips certmanager installation")
-	cmd.Flags().StringArrayVarP(&o.Services, "services", "", []string{}, "Services to upgrdde")
+	cmd.Flags().BoolVarP(&o.SkipCertManager, "skip-certmanager", "", false, "Skips cert-manager installation")
+	cmd.Flags().StringArrayVarP(&o.Services, "services", "", []string{}, "Services to upgrade")
 	cmd.Flags().BoolVarP(&o.SkipResourcesUpdate, "skip-resources-update", "", false, "Skips the update of jx related resources such as webhook or Jenkins URL")
 	cmd.Flags().BoolVarP(&o.Force, "force", "", false, "Forces upgrades of all webooks even if ingress URL has not changed")
+	cmd.Flags().BoolVarP(&o.WaitForCerts, "wait-for-certs", "", false, "Waits for TLS certs to be issued by cert-manager")
 }
 
 // Run implements the command
@@ -142,15 +149,16 @@ func (o *UpgradeIngressOptions) Run() error {
 		return errors.Wrap(err, "saving ingress config into a configmap")
 	}
 
-	// if tls create CRDs
+	// ensure cert-manager is installed and add the cert-manager to all services which are going to be exposed
+	var services []*v1.Service
 	if o.IngressConfig.TLS {
 		err = o.ensureCertmanagerSetup()
 		if err != nil {
 			return errors.Wrap(err, "ensure cert-manager setup")
 		}
 
-		// annotate any service that has expose=true with correct certmanager staging / prod annotation
-		err = o.AnnotateExposedServicesWithCertManager(o.Services...)
+		// annotate any service that has expose=true with correct cert-manager staging / prod annotation
+		services, err = o.AnnotateExposedServicesWithCertManager(o.Services...)
 		if err != nil {
 			return errors.Wrap(err, "annotating the exposed service with cert-manager")
 		}
@@ -161,7 +169,7 @@ func (o *UpgradeIngressOptions) Run() error {
 		return errors.Wrap(err, "cleaning service annotations")
 	}
 
-	// delete ingress
+	// remove the ingress resource in order to allow the ingress-controller to recreate them
 	for name, namespace := range ingressToDelete {
 		log.Infof("Deleting ingress %s/%s\n", namespace, name)
 		err := client.ExtensionsV1beta1().Ingresses(namespace).Delete(name, &metav1.DeleteOptions{})
@@ -170,27 +178,104 @@ func (o *UpgradeIngressOptions) Run() error {
 		}
 	}
 
-	err = o.recreateIngressRules()
-	if err != nil {
-		return errors.Wrap(err, "recreating the ingress rules")
+	// start watching and collecting ready certificates
+	var notReadyCertsCh <-chan map[pki.Certificate]bool
+	ctx, cancel := context.WithTimeout(context.Background(), certsIssuedReadyTimeout)
+	defer cancel()
+	if o.IngressConfig.TLS && o.WaitForCerts {
+		certsCh, err := o.watchReadyCertificates(ctx)
+		if err != nil {
+			return errors.Wrap(err, "start watching ready certificates")
+		}
+		notReadyCertsCh = o.startCollectingReadyCertificates(ctx, services, certsCh)
 	}
 
+	// run the expose-controller to create the ingress rules
+	err = o.createIngressRules()
+	if err != nil {
+		return errors.Wrap(err, "creating the ingress rules")
+	}
+
+	// update all resource dependent to the ingress endpoints
 	if !o.SkipResourcesUpdate {
 		o.updateResources(previousWebHookEndpoint)
 	}
 
 	log.Success("Ingress rules recreated\n")
 
-	// todo wait for certs secrets to update ingress rules?
 	if o.IngressConfig.TLS {
-		log.Warn("It can take around 5 minutes for Cert Manager to get certificates from Lets Encrypt and update Ingress rules\n")
-		log.Info("Use the following commands to diagnose any issues:\n")
-		log.Infof("jx logs %s -n %s\n", CertManagerDeployment, CertManagerNamespace)
-		log.Info("kubectl describe certificates\n")
-		log.Info("kubectl describe issuers\n\n")
+		if o.WaitForCerts {
+			log.Infoln("Waiting for TLS certificates to be issued...")
+			select {
+			case certs := <-notReadyCertsCh:
+				cancel()
+				if len(certs) == 0 {
+					log.Success("All TLS certificates are ready\n")
+				} else {
+					log.Warn("Following TLS certificates are not ready:\n")
+					for cert := range certs {
+						log.Warnf("%s\n", cert)
+					}
+					return errors.New("not all TLS certificates are ready")
+				}
+			case <-ctx.Done():
+				log.Warn("Timeout reached while waiting for TLS certificates to be ready\n")
+			}
+		} else {
+			log.Warn("It can take around 5 minutes for Cert Manager to get certificates from Lets Encrypt and update Ingress rules\n")
+			log.Info("Use the following commands to diagnose any issues:\n")
+			log.Infof("jx logs %s -n %s\n", CertManagerDeployment, CertManagerNamespace)
+			log.Info("kubectl describe certificates\n")
+			log.Info("kubectl describe issuers\n\n")
+		}
 	}
 
 	return nil
+}
+
+func (o *UpgradeIngressOptions) watchReadyCertificates(ctx context.Context) (<-chan pki.Certificate, error) {
+	client, err := o.CreateCertManagerClient()
+	if err != nil {
+		return nil, errors.Wrap(err, "creating the cert-manager client")
+	}
+
+	// watch certificates across all namesapces
+	namespace := ""
+	certsCh, err := pki.WatchCertificatesIssuedReady(ctx, client, namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "start watching certificates")
+	}
+	return certsCh, nil
+}
+
+func (o *UpgradeIngressOptions) startCollectingReadyCertificates(ctx context.Context, services []*v1.Service,
+	certsCh <-chan pki.Certificate) <-chan map[pki.Certificate]bool {
+	resultCh := make(chan map[pki.Certificate]bool)
+	go func() {
+		certs := pki.ToCertificates(services)
+		certsMap := make(map[pki.Certificate]bool)
+		for _, cert := range certs {
+			certsMap[cert] = true
+		}
+
+		for {
+			select {
+			case cert := <-certsCh:
+				delete(certsMap, cert)
+				// check if all expected certificates are received
+				if len(certsMap) == 0 {
+					// send a map with no certificates to indicate success
+					resultCh <- certsMap
+					return
+				}
+			case <-ctx.Done():
+				// send the current state of the certificates map
+				resultCh <- certsMap
+				return
+			}
+		}
+	}()
+	return resultCh
 }
 
 func (o *UpgradeIngressOptions) updateResources(previousWebHookEndpoint string) error {
@@ -400,7 +485,7 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 	return nil
 
 }
-func (o *UpgradeIngressOptions) recreateIngressRules() error {
+func (o *UpgradeIngressOptions) createIngressRules() error {
 	client, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -438,22 +523,24 @@ func (o *UpgradeIngressOptions) ensureCertmanagerSetup() error {
 }
 
 // AnnotateExposedServicesWithCertManager annotates exposed services with cert manager
-func (o *UpgradeIngressOptions) AnnotateExposedServicesWithCertManager(svcs ...string) error {
+func (o *UpgradeIngressOptions) AnnotateExposedServicesWithCertManager(svcs ...string) ([]*v1.Service, error) {
+	result := make([]*v1.Service, 0)
 	client, err := o.KubeClient()
 	if err != nil {
-		return err
+		return result, err
 	}
 	for _, n := range o.TargetNamespaces {
 		issuer := o.IngressConfig.Issuer
 		if issuer == "" {
-			return fmt.Errorf("no issuer was configured for cert manager")
+			return result, fmt.Errorf("no issuer was configured for cert manager")
 		}
-		err := services.AnnotateServicesWithCertManagerIssuer(client, n, issuer, svcs...)
+		services, err := services.AnnotateServicesWithCertManagerIssuer(client, n, issuer, svcs...)
 		if err != nil {
-			return err
+			return result, err
 		}
+		result = append(result, services...)
 	}
-	return nil
+	return result, nil
 }
 
 // CleanServiceAnnotations cleans service annotations

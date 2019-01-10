@@ -108,7 +108,7 @@ require (
 	github.com/pelletier/go-toml v1.2.0 // indirect
 	github.com/petar/GoLLRB v0.0.0-20130427215148-53be0d36a84c // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
-	github.com/petergtz/pegomock v0.0.0-20181008215750-9750219ad78b
+	github.com/petergtz/pegomock v0.0.0-20181206220228-b113d17a7e81
 	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
 	github.com/pkg/browser v0.0.0-20170505125900-c90ca0c84f15
 	github.com/pkg/errors v0.8.0

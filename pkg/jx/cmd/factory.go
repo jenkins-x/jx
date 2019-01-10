@@ -8,8 +8,10 @@ import (
 	"os"
 	"path/filepath"
 
+	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/vault"
+	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube/services"
@@ -18,7 +20,6 @@ import (
 
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/heptio/sonobuoy/pkg/dynamic"
-	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -299,7 +300,7 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 // It will either save the config to the local file-system, or a Vault
 func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService, error) {
 	if f.UseVault() {
-		vaultClient, err := f.GetSystemVaultClient()
+		vaultClient, err := f.CreateSystemVaultClient()
 		authService := auth.NewVaultAuthConfigService(configName, vaultClient)
 		return authService, err
 	} else {
@@ -319,14 +320,14 @@ func (f *factory) UseVault() bool {
 	return f.secretLocation.InVault()
 }
 
-// GetSystemVaultClient gets the system vault client for managing the secrets
-func (f *factory) GetSystemVaultClient() (vault.Client, error) {
-	return f.GetVaultClient("", "") // GetVaultClient will use defaults if empty strings specified
+// CreateSystemVaultClient gets the system vault client for managing the secrets
+func (f *factory) CreateSystemVaultClient() (vault.Client, error) {
+	return f.CreateVaultClient("", "") // GetVaultClient will use defaults if empty strings specified
 }
 
-// GetVaultClient returns the given vault client for managing secrets
+// CreateVaultClient returns the given vault client for managing secrets
 // Will use default values for name and namespace if nil values are applied
-func (f *factory) GetVaultClient(name string, namespace string) (vault.Client, error) {
+func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client, error) {
 	vopClient, err := f.CreateVaultOperatorClient()
 	kubeClient, defaultNamespace, err := f.CreateKubeClient()
 	if err != nil {
@@ -561,7 +562,8 @@ func (f *factory) CreateVaultOperatorClient() (vaultoperatorclient.Interface, er
 	return vaultoperatorclient.NewForConfig(config)
 }
 
-func (f *factory) GetHelm(verbose bool,
+// CreateHelm creates a new Helm client
+func (f *factory) CreateHelm(verbose bool,
 	helmBinary string,
 	noTiller bool,
 	helmTemplate bool) helm.Helmer {
@@ -591,6 +593,15 @@ func (f *factory) GetHelm(verbose bool,
 		startLocalTillerIfNotRunning()
 	}
 	return h
+}
+
+// CreateCertManagerClient creates a new Kuberntes client for cert-manager resources
+func (f *factory) CreateCertManagerClient() (certmngclient.Interface, error) {
+	config, err := f.CreateKubeConfig()
+	if err != nil {
+		return nil, err
+	}
+	return certmngclient.NewForConfig(config)
 }
 
 // tillerAddress returns the address that tiller is listening on

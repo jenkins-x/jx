@@ -4,19 +4,19 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/jenkins-x/jx/pkg/auth/mocks"
+	auth_test "github.com/jenkins-x/jx/pkg/auth/mocks"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/gits/mocks"
+	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
 	gits_matchers "github.com/jenkins-x/jx/pkg/gits/mocks/matchers"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
 	cmd_matchers "github.com/jenkins-x/jx/pkg/jx/cmd/mocks/matchers"
@@ -250,7 +250,7 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 	When(factory.CreateJXClient()).ThenReturn(cs, namespace, nil)
 
 	mockHelmer := helm_test.NewMockHelmer()
-	When(factory.GetHelm(AnyBool(), AnyString(), AnyBool(), AnyBool())).ThenReturn(mockHelmer)
+	When(factory.CreateHelm(AnyBool(), AnyString(), AnyBool(), AnyBool())).ThenReturn(mockHelmer)
 
 	//UpgradeChart(chart string, releaseName string, ns string, version *string, install bool,
 	//	timeout *int, force bool, wait bool, values []string, valueFiles []string, repo string)
