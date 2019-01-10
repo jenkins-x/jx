@@ -8,6 +8,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"sort"
 	"time"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // PipelineNamespaceCache caches the pipelines for a single namespace
@@ -25,6 +26,14 @@ func NewPipelineCache(jxClient versioned.Interface, ns string) *PipelineNamespac
 		pipelines: map[string]*v1.PipelineActivity{},
 	}
 
+	// lets pre-populate the cache on startup as there's not yet a way to know when the informer has completed its first list operation
+	pipelines, _ := jxClient.JenkinsV1().PipelineActivities(ns).List(metav1.ListOptions{})
+	if pipelines != nil {
+		for _, pipeline := range pipelines.Items {
+			copy := pipeline
+			namespaceCache.pipelines[pipeline.Name] = &copy
+		}
+	}
 	_, pipelineController := cache.NewInformer(
 		pipelineListWatch,
 		pipeline,
