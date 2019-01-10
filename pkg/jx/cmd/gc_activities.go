@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
@@ -23,6 +24,7 @@ type GCActivitiesOptions struct {
 	CommonOptions
 
 	RevisionHistoryLimit int
+	PullRequestHours     int
 	jclient              gojenkins.JenkinsClient
 }
 
@@ -62,6 +64,7 @@ func NewCmdGCActivities(f Factory, in terminal.FileReader, out terminal.FileWrit
 		},
 	}
 	cmd.Flags().IntVarP(&options.RevisionHistoryLimit, "revision-history-limit", "l", 5, "Minimum number of Activities per application to keep")
+	cmd.Flags().IntVarP(&options.PullRequestHours, "pull-request-hours", "p", 48, "Number of hours to keep pull request activities for")
 	options.addCommonFlags(cmd)
 	return cmd
 }
@@ -118,6 +121,17 @@ func (o *GCActivitiesOptions) Run() error {
 	activityBuilds := make(map[string][]int)
 
 	for _, a := range activities.Items {
+		// if the activity is a PR and has completed over a week ago lets GC it
+		if strings.Contains(a.Name, "-pr-") {
+			if a.Spec.CompletedTimestamp != nil && a.Spec.CompletedTimestamp.Add(time.Duration(o.PullRequestHours)*time.Hour).Before(time.Now()) {
+				err = client.JenkinsV1().PipelineActivities(currentNs).Delete(a.Name, metav1.NewDeleteOptions(0))
+				if err != nil {
+					return err
+				}
+				continue
+			}
+		}
+
 		if !prowEnabled {
 			// if activity has no job in Jenkins delete it
 			matched := false
@@ -139,6 +153,7 @@ func (o *GCActivitiesOptions) Run() error {
 		if err != nil {
 			return err
 		}
+
 		// collect all activities for a pipeline
 		activityBuilds[a.Spec.Pipeline] = append(activityBuilds[a.Spec.Pipeline], buildNumber)
 	}

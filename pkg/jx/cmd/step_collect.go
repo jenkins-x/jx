@@ -273,7 +273,7 @@ func cloneGitHubPagesBranchToTempDir(sourceURL string, gitClient gits.Gitter) (s
 	if err != nil {
 		log.Infof("error doing shallow clone of gh-pages %v", err)
 		// swallow the error
-		log.Infof("No existing %s branch\n", ghPagesBranchName)
+		log.Infof("No existing %s branch so creating it\n", ghPagesBranchName)
 		// branch doesn't exist, so we create it following the process on https://help.github.com/articles/creating-project-pages-using-the-command-line/
 		err = gitClient.Clone(sourceURL, ghPagesDir)
 		if err != nil {
