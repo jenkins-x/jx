@@ -1825,9 +1825,6 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 		if err != nil {
 			return errors.Wrap(err, "configuring secrets location")
 		}
-
-		log.Infof("Wait for vault to be initialized...\n")
-		time.Sleep(30 * time.Second)
 	}
 	return nil
 }
