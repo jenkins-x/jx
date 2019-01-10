@@ -512,6 +512,7 @@ func (options *CreateTerraformOptions) createOrganisationGitRepo() error {
 		org := details.Organisation
 		repoName := details.RepoName
 		owner := org
+
 		if owner == "" {
 			owner = details.User.Username
 		}
@@ -584,6 +585,8 @@ func (options *CreateTerraformOptions) createOrganisationGitRepo() error {
 			}
 			fmt.Fprintf(options.Out, "Remote repository %s\n\n", util.ColorInfo(repo.HTMLURL))
 		}
+
+		options.InstallOptions.Flags.EnvironmentGitOwner = org
 	}
 
 	// create directory structure
@@ -1126,7 +1129,6 @@ func (options *CreateTerraformOptions) initAndInstall(provider string) error {
 
 	// call jx install
 	installOpts := &options.InstallOptions
-
 	err := installOpts.Run()
 	if err != nil {
 		return err
