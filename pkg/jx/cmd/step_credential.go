@@ -27,15 +27,20 @@ type StepCredentialOptions struct {
 
 var (
 	stepCredentialLong = templates.LongDesc(`
-		Returns a secret entry for easy scripting in pipeline steps.
+		Returns a credential from a Secret for easy scripting in pipeline steps.
+
+		Supports the [Jenkins Credentials Provider labels](https://jenkinsci.github.io/kubernetes-credentials-provider-plugin/examples/) on the Secrets
 
 `)
 
 	stepCredentialExample = templates.Examples(`
-		# get the password of a secret 'foo' as an environment variable
+		# get the password of a secret 'foo' which uses the Jenkins Credentials Provider labels
+		export MY_PWD="$(jx step credential -s foo)"
+
+		# get the password entry of a secret 'foo' as an environment variable
 		export MY_PWD="$(jx step credential -s foo -k passwordj)"
 
-		# create a local file from a file based secret using the Jenkins Credentials Provider annotations:
+		# create a local file from a file based secret using the Jenkins Credentials Provider labels
         export MY_KEY_FILE="$(jx step credential -s foo)"
          
 		# create a local file called cheese from a given key
@@ -120,7 +125,7 @@ func (o *StepCredentialOptions) Run() error {
 			if ok {
 				filename = string(filenameData)
 			} else {
-				return fmt.Errorf("Secret %s in namespace %s has label %s with value %s but has no filename key!", name, ns, kube.LabelCredentialsType, kind)
+				return fmt.Errorf("the Secret %s in namespace %s has label %s with value %s but has no filename key!", name, ns, kube.LabelCredentialsType, kind)
 			}
 			if key == "" {
 				key = "data"
