@@ -179,6 +179,9 @@ const (
 	// ValueCredentialTypeUsernamePassword for user password credential secrets
 	ValueCredentialTypeUsernamePassword = "usernamePassword"
 
+	// ValueCredentialTypeSecretFile for secret files
+	ValueCredentialTypeSecretFile = "secretFile"
+
 	// LabelTeam indicates the team name an environment belongs to
 	LabelTeam = "team"
 
