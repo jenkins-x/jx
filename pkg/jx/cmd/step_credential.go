@@ -125,7 +125,7 @@ func (o *StepCredentialOptions) Run() error {
 			if ok {
 				filename = string(filenameData)
 			} else {
-				return fmt.Errorf("the Secret %s in namespace %s has label %s with value %s but has no filename key!", name, ns, kube.LabelCredentialsType, kind)
+				return fmt.Errorf("the Secret %s in namespace %s has label %s with value %s but has no filename key", name, ns, kube.LabelCredentialsType, kind)
 			}
 			if key == "" {
 				key = "data"
