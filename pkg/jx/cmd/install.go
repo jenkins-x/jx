@@ -742,7 +742,7 @@ func (options *InstallOptions) installPlatform(providerEnvDir string, jxChart st
 
 	err = options.waitForInstallToBeReady(namespace)
 	if err != nil {
-		return errors.Wrap(err, "failed to wait for jenkinx-x chart installation to be ready")
+		return errors.Wrap(err, "failed to wait for jenkins-x chart installation to be ready")
 	}
 	log.Infof("Jenkins X deployments ready in namespace %s\n", namespace)
 	return nil
@@ -882,7 +882,7 @@ func (options *InstallOptions) configureHelm(client kubernetes.Interface, namesp
 }
 
 func (options *InstallOptions) configureHelmRepo() error {
-	err := options.addHelmBinaryRepoIfMissing(DEFAULT_CHARTMUSEUM_URL, "jenkins-x")
+	err := options.addHelmBinaryRepoIfMissing(DEFAULT_CHARTMUSEUM_URL, "jenkins-x", "", "")
 	if err != nil {
 		return errors.Wrap(err, "failed to add the jenkinx-x helm repo")
 	}
@@ -1583,7 +1583,7 @@ func (options *InstallOptions) configureCloudProivderPostInit(client kubernetes.
 			return errors.Wrap(err, "failed to enable the OpenShiftSCC")
 		}
 	case IKS:
-		err := options.addHelmBinaryRepoIfMissing(DEFAULT_IBMREPO_URL, "ibm")
+		err := options.addHelmBinaryRepoIfMissing(DEFAULT_IBMREPO_URL, "ibm", "", "")
 		if err != nil {
 			return errors.Wrap(err, "failed to add the IBM helm repo")
 		}

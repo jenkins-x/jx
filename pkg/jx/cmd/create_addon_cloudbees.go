@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"gopkg.in/AlecAivazis/survey.v1"
 	"io"
 	"strings"
 
@@ -12,7 +13,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
-	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -22,7 +22,7 @@ const (
 	defaultCloudBeesNamespace   = "jx"
 	coreRepoName                = "cb"
 	cbServiceName               = "cb-core"
-	coreRepoUrl                 = "https://%s:%s@chartmuseum.jx.charts-demo.cloudbees.com"
+	coreRepoUrl                 = "https://chartmuseum.jx.charts-demo.cloudbees.com"
 	defaultCloudBeesVersion     = ""
 )
 
@@ -101,7 +101,7 @@ func (o *CreateAddonCloudBeesOptions) Run() error {
 
 	// check if Helm repo is missing, the repo is authenticated and includes username/password so check with dummy values
 	// first as we wont need to prompt for username password if the host part of the URL matches an existing repo
-	missing, err := o.isHelmRepoMissing(fmt.Sprintf(coreRepoUrl, "dummy", "dummy"))
+	missing, err := o.isHelmRepoMissing(coreRepoUrl)
 	if err != nil {
 		return err
 	}
@@ -127,7 +127,7 @@ To register to get your username/password to to: %s
 		}
 		survey.AskOne(passPrompt, &password, nil, surveyOpts)
 
-		err := o.addHelmRepoIfMissing(fmt.Sprintf(coreRepoUrl, username, password), coreRepoName)
+		err := o.addHelmRepoIfMissing(coreRepoUrl, coreRepoName, username, password)
 		if err != nil {
 			return err
 		}

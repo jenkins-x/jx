@@ -7,7 +7,7 @@ type Helmer interface {
 	HelmBinary() string
 	SetHelmBinary(binary string)
 	Init(clientOnly bool, serviceAccount string, tillerNamespace string, upgrade bool) error
-	AddRepo(repo string, URL string) error
+	AddRepo(repo, URL, username, password string) error
 	RemoveRepo(repo string) error
 	ListRepos() (map[string]string, error)
 	UpdateRepo() error

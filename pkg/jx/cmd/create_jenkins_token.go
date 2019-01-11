@@ -207,6 +207,7 @@ func (o *CreateJenkinsUserOptions) getAPITokenFromREST(serverURL string, userAut
 			return errors.Wrap(err, "parsing the timeout value")
 		}
 		ctx, cancel = context.WithTimeout(context.Background(), duration)
+		defer cancel()
 	} else {
 		ctx, cancel = context.WithCancel(context.Background())
 	}
