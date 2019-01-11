@@ -309,24 +309,31 @@ func CombineValueFilesToFile(outFile string, inputFiles []string, chartName stri
 }
 
 // GetLatestVersion get's the latest version of a chart in a repo using helmer
-func GetLatestVersion(chart string, repo string, username string, password string, helmer Helmer) (latest string,
-	err error) {
-	dir, err := ioutil.TempDir("", "jx-helm-latest-version")
+func GetLatestVersion(chart string, repo string, username string, password string, helmer Helmer) (string, error) {
+	latest := ""
+	err := InspectChart(chart, repo, username, password, helmer, func(dir string) error {
+		var err error
+		_, latest, err = LoadChartNameAndVersion(filepath.Join(dir, "Chart.yaml"))
+		return err
+	})
+	return latest, err
+}
+
+// InspectChart fetches the specified chart in a repo using helmer, and then calls the closure on it, before cleaning up
+func InspectChart(chart string, repo string, username string, password string,
+	helmer Helmer, closure func(dir string) error) error {
+	dir, err := ioutil.TempDir("", fmt.Sprintf("jx-helm-fetch-%s-", chart))
 	defer func() {
 		err1 := os.RemoveAll(dir)
 		if err1 != nil {
-			err = err1
+			log.Warnf("Error removing %s %v\n", dir, err1)
 		}
 	}()
-	// We should add the latest version, which we can do by fetching a chart with no version specified
 	err = helmer.FetchChart(chart, nil, true, dir, repo, username, password)
 	if err != nil {
-		return "", err
+		return err
 	}
-	chartFile := filepath.Join(dir, chart, "Chart.yaml")
-	_, latest, err = LoadChartNameAndVersion(chartFile)
-	return latest, err
-
+	return closure(filepath.Join(dir, chart))
 }
 
 type InstallChartOptions struct {
