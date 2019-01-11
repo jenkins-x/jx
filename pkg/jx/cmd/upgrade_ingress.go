@@ -141,11 +141,6 @@ func (o *UpgradeIngressOptions) Run() error {
 		return errors.Wrap(err, "saving ingress config into a configmap")
 	}
 
-	err = o.CleanServiceAnnotations(o.Services...)
-	if err != nil {
-		return errors.Wrap(err, "cleaning service annotations")
-	}
-
 	// if tls create CRDs
 	if o.IngressConfig.TLS {
 		err = o.ensureCertmanagerSetup()
@@ -153,6 +148,12 @@ func (o *UpgradeIngressOptions) Run() error {
 			return errors.Wrap(err, "ensure cert-manager setup")
 		}
 	}
+
+	err = o.CleanServiceAnnotations(o.Services...)
+	if err != nil {
+		return errors.Wrap(err, "cleaning service annotations")
+	}
+
 	// annotate any service that has expose=true with correct certmanager staging / prod annotation
 	err = o.AnnotateExposedServicesWithCertManager(o.Services...)
 	if err != nil {
