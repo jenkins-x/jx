@@ -6,7 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/common"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/pkg/errors"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -61,7 +61,7 @@ func (v *VaultClientFactory) NewVaultClient(name string, namespace string) (*api
 	vaultClient, err := api.NewClient(config)
 	token, err := getTokenFromVault(role, jwt, vaultClient)
 	if err != nil {
-		return nil, errors.Wrapf(err, "Error getting Vault signin token")
+		return nil, errors.Wrapf(err, "getting Vault signin token")
 	}
 	vaultClient.SetToken(token)
 	return vaultClient, nil
@@ -90,7 +90,7 @@ func (v *VaultClientFactory) getServiceAccountFromVault(vault *Vault) (*v1.Servi
 
 func getTokenFromVault(role string, jwt string, vaultClient *api.Client) (string, error) {
 	if role == "" {
-		return "", errors.New("Role cannot be empty")
+		return "", errors.New("role cannot be empty")
 	}
 	if jwt == "" {
 		return "", errors.New("JWT cannot be empty empty")

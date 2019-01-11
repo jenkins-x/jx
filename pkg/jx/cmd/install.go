@@ -1357,7 +1357,7 @@ func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigSt
 		}
 		options.modifySecretCallback = func(name string, callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
 			if options.Flags.Vault {
-				vaultClient, err := options.GetSystemVaultClient()
+				vaultClient, err := options.CreateSystemVaultClient()
 				if err != nil {
 					return nil, errors.Wrap(err, "retrieving the system vault client")
 				}
@@ -1825,15 +1825,12 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 		if err != nil {
 			return errors.Wrap(err, "configuring secrets location")
 		}
-
-		log.Infof("Wait for vault to be initialized...\n")
-		time.Sleep(30 * time.Second)
 	}
 	return nil
 }
 
 func (options *InstallOptions) storeSecretYamlFilesInVault(path string, files ...string) error {
-	vaultClient, err := options.GetSystemVaultClient()
+	vaultClient, err := options.CreateSystemVaultClient()
 	if err != nil {
 		return errors.Wrap(err, "retrieving the system vault client")
 	}
@@ -1847,7 +1844,7 @@ func (options *InstallOptions) storeSecretYamlFilesInVault(path string, files ..
 }
 
 func (options *InstallOptions) storeAdminCredentialsInVault(svc *config.AdminSecretsService) error {
-	vaultClient, err := options.GetSystemVaultClient()
+	vaultClient, err := options.CreateSystemVaultClient()
 	if err != nil {
 		return errors.Wrap(err, "retrieving the system vault client")
 	}
