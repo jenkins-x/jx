@@ -346,7 +346,6 @@ func checkForCrumb(ctx context.Context, serverURL string, verbose bool, decorato
 		decorator(req)
 		req.Header.Add(crumbPieces[0], crumbPieces[1])
 	}
-	return decorator
 }
 
 // Actually generates a new API token.
