@@ -21,7 +21,7 @@ const (
 	JenkinsAdminSecret = "jenkins"
 	// NexusAdminSecret the secret name for Nexus credentials
 	NexusAdminSecret = "nexus"
-	// ChartmuseumAdminSecret the secret name for Chartmuseum credentials
+	// ChartmuseumAdminSecret the secret name for ChartMuseum credentials
 	ChartmuseumAdminSecret = "chartmuseum"
 	// GrafanaAdminSecret the secret name for Grafana credentials
 	GrafanaAdminSecret = "grafana"
