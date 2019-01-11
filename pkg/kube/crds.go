@@ -299,8 +299,14 @@ func RegisterSourceRepositoryCRD(apiClient apiextensionsclientset.Interface) err
 		{
 			Name:        "Description",
 			Type:        "string",
-			Description: "A description of the source code repository",
+			Description: "A description of the source code repository - non-functional user-data",
 			JSONPath:    ".spec.description",
+		},
+		{
+			Name:        "Provider",
+			Type:        "string",
+			Description: "The source code provider (eg github) that the source repository is hosted in",
+			JSONPath:    ".spec.org",
 		},
 		{
 			Name:        "Org",

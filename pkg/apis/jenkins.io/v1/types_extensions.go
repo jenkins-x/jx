@@ -466,7 +466,8 @@ type SourceRepositoryList struct {
 
 // SourceRepositorySpec provides details of the metadata for an App
 type SourceRepositorySpec struct {
-	Description string
+	Description string // non-functional user-data
+	Provider    string // github.com etc
 	Org         string
 	Repo        string
 }
