@@ -118,7 +118,7 @@ type AdminSecretsFlags struct {
 }
 
 func (s *AdminSecretsService) AddAdminSecretsValues(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&s.Flags.DefaultAdminPassword, "default-admin-password", "", "", "the default admin password to access Jenkins, Kubernetes Dashboard, Chartmuseum and Nexus")
+	cmd.Flags().StringVarP(&s.Flags.DefaultAdminPassword, "default-admin-password", "", "", "the default admin password to access Jenkins, Kubernetes Dashboard, ChartMuseum and Nexus")
 }
 
 func (s *AdminSecretsService) NewAdminSecretsConfig() error {

@@ -229,7 +229,7 @@ func (o *CommonOptions) helmInitDependency(dir string, chartRepos map[string]str
 	err := o.Helm().RemoveRequirementsLock()
 	if err != nil {
 		return o.Helm().HelmBinary(),
-			errors.Wrapf(err, "failed to remove requirements.lock file from chat '%s'", dir)
+			errors.Wrapf(err, "failed to remove requirements.lock file from chart '%s'", dir)
 	}
 
 	if o.Helm().HelmBinary() == "helm" {
