@@ -351,7 +351,7 @@ func checkForCrumb(ctx context.Context, serverURL string, verbose bool, decorato
 // Actually generates a new API token.
 func generateNewAPIToken(ctx context.Context, serverURL string, verbose bool, decorator func(req *http.Request)) (string, error) {
 	client := http.Client{}
-	req, err := http.NewRequest(http.MethodPost, jenkins.JenkinsNewTokenURL(serverURL, "jx create jenkins token"), nil)
+	req, err := http.NewRequest(http.MethodPost, util.UrlJoin(serverURL, fmt.Sprintf("/me/descriptorByName/jenkins.security.ApiTokenProperty/generateNewToken?newTokenName=%s", url.QueryEscape("jx create jenkins token"))), nil)
 	if err != nil {
 		return "", errors.Wrap(err, "building request to generate the API token")
 	}
