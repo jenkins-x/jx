@@ -143,7 +143,7 @@ func (o *CreateAddonSSOOptions) Run() error {
 		return errors.Wrap(err, "checking if helm is installed")
 	}
 
-	err = o.addHelmRepoIfMissing(repoURL, repoName)
+	err = o.addHelmRepoIfMissing(repoURL, repoName, "", "")
 	if err != nil {
 		return errors.Wrap(err, "adding dex chart helm repository")
 	}

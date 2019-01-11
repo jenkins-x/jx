@@ -115,8 +115,8 @@ func (h *HelmTemplate) Init(clientOnly bool, serviceAccount string, tillerNamesp
 }
 
 // AddRepo adds a new helm repo with the given name and URL
-func (h *HelmTemplate) AddRepo(repo string, URL string) error {
-	return h.Client.AddRepo(repo, URL)
+func (h *HelmTemplate) AddRepo(repo, URL, username, password string) error {
+	return h.Client.AddRepo(repo, URL, username, password)
 }
 
 // RemoveRepo removes the given repo from helm
@@ -472,7 +472,7 @@ func (h *HelmTemplate) StatusReleases(ns string) (map[string]Release, error) {
 			releaseName := labels[LabelReleaseName]
 			release := Release{
 				Release: releaseName,
-				Status: "DEPLOYED",
+				Status:  "DEPLOYED",
 				Version: "",
 			}
 
