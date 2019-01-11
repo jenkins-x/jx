@@ -331,8 +331,6 @@ func checkForCrumb(ctx context.Context, serverURL string, verbose bool, decorato
 		log.Warnf("Could not find CSRF crumb: %d %s\n", resp.StatusCode, resp.Status)
 		return decorator
 	}
-	if resp.StatusCode != 200 {
-	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Warnf("Failed to read crumb: %s\n", err)
