@@ -418,7 +418,7 @@ func (o *InitOptions) initHelm() error {
 		}
 	}
 
-	err = o.Helm().AddRepo("jenkins-x", DEFAULT_CHARTMUSEUM_URL)
+	err = o.Helm().AddRepo("jenkins-x", DEFAULT_CHARTMUSEUM_URL, "", "")
 	if err != nil {
 		return err
 	}
