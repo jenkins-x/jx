@@ -237,7 +237,7 @@ func loginLegacy(ctx context.Context, serverURL string, username string, passwor
 			return http.ErrUseLastResponse
 		},
 	}
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/j_security_check?j_username=%s&j_password=%s", serverURL, url.QueryEscape(username), url.QueryEscape(password)), nil)
+	req, err := http.NewRequest(http.MethodPost, util.UrlJoin(serverURL, fmt.Sprintf("/j_security_check?j_username=%s&j_password=%s", url.QueryEscape(username), url.QueryEscape(password))), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "building request to log in")
 	}
@@ -265,7 +265,7 @@ func loginLegacy(ctx context.Context, serverURL string, username string, passwor
 
 func verifyLogin(ctx context.Context, serverURL string, decorator func (req *http.Request)) error {
 	client := http.Client{}
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/me/api/json?tree=id", serverURL), nil)
+	req, err := http.NewRequest(http.MethodGet, util.UrlJoin(serverURL, "/me/api/json?tree=id"), nil)
 	if err != nil {
 		return errors.Wrap(err, "building request to verify login")
 	}
@@ -284,7 +284,7 @@ func verifyLogin(ctx context.Context, serverURL string, decorator func (req *htt
 
 func checkForCrumb(ctx context.Context, serverURL string, decorator func (req *http.Request)) func (req *http.Request) {
 	client := http.Client{}
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)", serverURL), nil)
+	req, err := http.NewRequest(http.MethodGet, util.UrlJoin(serverURL, "/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)"), nil)
 	if err != nil {
 		log.Warnf("Failed to build request to check for crumb: %s\n", err)
 		return decorator
