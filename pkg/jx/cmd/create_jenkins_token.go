@@ -198,7 +198,6 @@ func (o *CreateJenkinsUserOptions) Run() error {
 }
 
 func (o *CreateJenkinsUserOptions) getAPITokenFromREST(serverURL string, userAuth *auth.UserAuth) error {
-	newTokenURL := jenkins.JenkinsNewTokenURL(serverURL)
 	var ctx context.Context
 	var cancel context.CancelFunc
 	if o.Timeout != "" {
@@ -214,13 +213,13 @@ func (o *CreateJenkinsUserOptions) getAPITokenFromREST(serverURL string, userAut
 	defer cancel()
 
 	log.Infoln("Generating the API token...")
-	decorator, err := o.loginLegacy(ctx, serverURL, userAuth)
+	decorator, err := loginLegacy(ctx, serverURL, userAuth.Username, o.Password)
 	if err != nil {
 		// TODO might be modern realm; try: req.SetBasicAuth(userAuth.Username, o.Password)
 		return errors.Wrap(err, "logging in")
 	}
-	decorator = o.checkForCrumb(ctx, serverURL, decorator)
-	token, err := o.generateNewAPIToken(ctx, newTokenURL, decorator)
+	decorator = checkForCrumb(ctx, serverURL, decorator)
+	token, err := generateNewAPIToken(ctx, serverURL, decorator)
 	if err != nil {
 		return errors.Wrap(err, "generating the API token")
 	}
@@ -231,14 +230,14 @@ func (o *CreateJenkinsUserOptions) getAPITokenFromREST(serverURL string, userAut
 	return nil
 }
 
-func (o *CreateJenkinsUserOptions) loginLegacy(ctx context.Context, serverURL string, userAuth *auth.UserAuth) (func(req *http.Request), error) {
+func loginLegacy(ctx context.Context, serverURL string, username string, password string) (func(req *http.Request), error) {
 	client := http.Client{
 		// https://stackoverflow.com/a/38150816/12916 Jenkins returns a 303, but you cannot actually follow it
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			return http.ErrUseLastResponse
 		},
 	}
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/j_security_check?j_username=%s&j_password=%s", serverURL, url.QueryEscape(userAuth.Username), url.QueryEscape(o.Password)), nil)
+	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/j_security_check?j_username=%s&j_password=%s", serverURL, url.QueryEscape(username), url.QueryEscape(password)), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "building request to log in")
 	}
@@ -249,19 +248,41 @@ func (o *CreateJenkinsUserOptions) loginLegacy(ctx context.Context, serverURL st
 	}
 	defer resp.Body.Close()
 	cookies := resp.Cookies()
-	if len(cookies) > 0 {
-		log.Infof("Logged in %s to Jenkins server at %s via legacy security realm\n",
-			util.ColorInfo(o.Username), util.ColorInfo(serverURL))
-		return func(req *http.Request) {
-			for _, c := range cookies {
-				req.AddCookie(c)
-			}
-		}, nil
+	decorator := func(req *http.Request) {
+		for _, c := range cookies {
+			req.AddCookie(c)
+		}
 	}
-	return nil, errors.New("no cookies set, so bad auth or not using legacy security realm")
+	// We get the same response even if Jenkins is actually using a modern security realm, so verify it:
+	err = verifyLogin(ctx, serverURL, decorator)
+	if err != nil {
+		return nil, errors.Wrap(err, "cookies did not work; bad login or not using legacy security realm")
+	}
+	log.Infof("Logged in %s to Jenkins server at %s via legacy security realm\n",
+		util.ColorInfo(username), util.ColorInfo(serverURL))
+	return decorator, nil
 }
 
-func (o *CreateJenkinsUserOptions) checkForCrumb(ctx context.Context, serverURL string, decorator func (req *http.Request)) func (req *http.Request) {
+func verifyLogin(ctx context.Context, serverURL string, decorator func (req *http.Request)) error {
+	client := http.Client{}
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/me/api/json?tree=id", serverURL), nil)
+	if err != nil {
+		return errors.Wrap(err, "building request to verify login")
+	}
+	req = req.WithContext(ctx)
+	decorator(req)
+	resp, err := client.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "execute verify login")
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return errors.New(resp.Status)
+	}
+	return nil
+}
+
+func checkForCrumb(ctx context.Context, serverURL string, decorator func (req *http.Request)) func (req *http.Request) {
 	client := http.Client{}
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)", serverURL), nil)
 	if err != nil {
@@ -303,9 +324,9 @@ func (o *CreateJenkinsUserOptions) checkForCrumb(ctx context.Context, serverURL 
 	return decorator
 }
 
-func (o *CreateJenkinsUserOptions) generateNewAPIToken(ctx context.Context, newTokenURL string, decorator func(req *http.Request)) (string, error) {
+func generateNewAPIToken(ctx context.Context, serverURL string, decorator func(req *http.Request)) (string, error) {
 	client := http.Client{}
-	req, err := http.NewRequest(http.MethodPost, newTokenURL, nil)
+	req, err := http.NewRequest(http.MethodPost, jenkins.JenkinsNewTokenURL(serverURL), nil)
 	if err != nil {
 		return "", errors.Wrap(err, "building request to generate the API token")
 	}
