@@ -742,7 +742,7 @@ func (options *InstallOptions) installPlatform(providerEnvDir string, jxChart st
 
 	err = options.waitForInstallToBeReady(namespace)
 	if err != nil {
-		return errors.Wrap(err, "failed to wait for jenkinx-x chart installation to be ready")
+		return errors.Wrap(err, "failed to wait for jenkins-x chart installation to be ready")
 	}
 	log.Infof("Jenkins X deployments ready in namespace %s\n", namespace)
 	return nil
