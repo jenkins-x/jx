@@ -87,7 +87,7 @@ func InstallVaultOperator(o *CommonOptions, namespace string) error {
 		return errors.Wrap(err, "checking if helm is installed")
 	}
 
-	err = o.addHelmRepoIfMissing(jxRepoURL, jxRepoName)
+	err = o.addHelmRepoIfMissing(jxRepoURL, jxRepoName, "", "")
 	if err != nil {
 		return errors.Wrapf(err, "adding '%s' helm charts repository", jxRepoURL)
 	}

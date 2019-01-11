@@ -16,7 +16,7 @@ func NewFakeHelmer() helm.Helmer {
 }
 
 // AddRepo add repo
-func (FakeHelmer) AddRepo(repo string, URL string) error {
+func (FakeHelmer) AddRepo(repo, URL, username, password string) error {
 	return nil
 }
 

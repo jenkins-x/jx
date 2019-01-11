@@ -2,8 +2,6 @@ package kube
 
 import (
 	"fmt"
-	"github.com/ghodss/yaml"
-	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"os/user"
@@ -12,14 +10,17 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/ghodss/yaml"
+	"github.com/pkg/errors"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -601,11 +602,11 @@ func addValues(out io.Writer, dir string, values config.HelmValuesConfig, git gi
 	overrideMap := map[string]interface{}{}
 	err = yaml.Unmarshal(oldText, &sourceMap)
 	if err != nil {
-	  return errors.Wrapf(err, "failed to parse YAML for file %s", file)
+		return errors.Wrapf(err, "failed to parse YAML for file %s", file)
 	}
 	err = yaml.Unmarshal([]byte(text), &overrideMap)
 	if err != nil {
-	  return errors.Wrapf(err, "failed to parse YAML for file %s", file)
+		return errors.Wrapf(err, "failed to parse YAML for file %s", file)
 	}
 
 	// now lets merge together the 2 blobs of YAML

@@ -18,7 +18,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/golang-jenkins"
+	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -33,11 +33,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
-	"gopkg.in/yaml.v2"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	yaml "gopkg.in/yaml.v2"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -314,7 +314,7 @@ func (o *CommonOptions) SetGit(git gits.Gitter) {
 func (o *CommonOptions) Helm() helm.Helmer {
 	if o.helm == nil {
 		helmBinary, noTiller, helmTemplate, _ := o.TeamHelmBin()
-		o.helm = o.GetHelm(o.Verbose, helmBinary, noTiller, helmTemplate)
+		o.helm = o.CreateHelm(o.Verbose, helmBinary, noTiller, helmTemplate)
 	}
 	return o.helm
 }

@@ -1620,17 +1620,6 @@ func (o *CommonOptions) installProw() error {
 			return err
 		}
 	}
-
-	log.Infof("Installing Prow into namespace %s\n", util.ColorInfo(devNamespace))
-	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values, nil, "")
-		return nil
-	})
-
-	if err != nil {
-		return fmt.Errorf("failed to install Prow: %v", err)
-	}
-
 	log.Infof("Installing knative into namespace %s\n", util.ColorInfo(devNamespace))
 
 	kvalues := []string{"build.auth.git.username=" + o.Username, "build.auth.git.password=" + o.OAUTHToken}
@@ -1644,6 +1633,16 @@ func (o *CommonOptions) installProw() error {
 
 	if err != nil {
 		return fmt.Errorf("failed to install Knative build: %v", err)
+	}
+
+	log.Infof("Installing Prow into namespace %s\n", util.ColorInfo(devNamespace))
+	err = o.retry(2, time.Second, func() (err error) {
+		err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values, nil, "")
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to install Prow: %v", err)
 	}
 
 	log.Infof("Installing BuildTemplates into namespace %s\n", util.ColorInfo(devNamespace))
