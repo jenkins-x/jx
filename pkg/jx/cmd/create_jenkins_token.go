@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/blang/semver"
@@ -218,8 +219,8 @@ func (o *CreateJenkinsUserOptions) getAPITokenFromREST(serverURL string, userAut
 		// TODO might be modern realm; try: req.SetBasicAuth(userAuth.Username, o.Password)
 		return errors.Wrap(err, "logging in")
 	}
-	// TODO check for CSRF crumb to add as header: /crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)
-	token, err := o.generateNewAPIToken(ctx, newTokenURL, decorator, userAuth)
+	decorator = o.checkForCrumb(ctx, serverURL, decorator)
+	token, err := o.generateNewAPIToken(ctx, newTokenURL, decorator)
 	if err != nil {
 		return errors.Wrap(err, "generating the API token")
 	}
@@ -260,7 +261,49 @@ func (o *CreateJenkinsUserOptions) loginLegacy(ctx context.Context, serverURL st
 	return nil, errors.New("no cookies set, so bad auth or not using legacy security realm")
 }
 
-func (o *CreateJenkinsUserOptions) generateNewAPIToken(ctx context.Context, newTokenURL string, decorator func (req *http.Request), userAuth *auth.UserAuth) (string, error) {
+func (o *CreateJenkinsUserOptions) checkForCrumb(ctx context.Context, serverURL string, decorator func (req *http.Request)) func (req *http.Request) {
+	client := http.Client{}
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)", serverURL), nil)
+	if err != nil {
+		log.Warnf("Failed to build request to check for crumb: %s\n", err)
+		return decorator
+	}
+	req = req.WithContext(ctx)
+	decorator(req)
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Warnf("Failed to execute request to check for crumb: %s\n", err)
+		return decorator
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 404 {
+		log.Infof("Enable CSRF protection at: %s/configureSecurity/\n", serverURL)
+		return decorator
+	} else if resp.StatusCode != 200 {
+		log.Warnf("Could not find CSRF crumb: %d %s\n", resp.StatusCode, resp.Status)
+		return decorator
+	}
+	if resp.StatusCode != 200 {
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Warnf("Failed to read crumb: %s\n", err)
+		return decorator
+	}
+	crumbPieces := strings.SplitN(string(body), ":", 2)
+	if len(crumbPieces) != 2 {
+		log.Warnf("Malformed crumb: %s\n", body)
+		return decorator
+	}
+	log.Infof("Obtained crumb\n")
+	return func(req *http.Request) {
+		decorator(req)
+		req.Header.Add(crumbPieces[0], crumbPieces[1])
+	}
+	return decorator
+}
+
+func (o *CreateJenkinsUserOptions) generateNewAPIToken(ctx context.Context, newTokenURL string, decorator func(req *http.Request)) (string, error) {
 	client := http.Client{}
 	req, err := http.NewRequest(http.MethodPost, newTokenURL, nil)
 	if err != nil {
