@@ -152,8 +152,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	if userAuth.IsInvalid() && o.Password != "" && o.UseBrowser {
 		err := o.getAPITokenFromREST(server.URL, userAuth)
 		if err != nil {
-			log.Warnf("Unable to automatically find API token with REST at %s\n", server.URL)
-			log.Warnf("Error: %v\n", err)
+			return err
 		}
 	}
 
