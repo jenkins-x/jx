@@ -122,6 +122,7 @@ func (o *StartPipelineOptions) Run() error {
 			if err != nil {
 				return err
 			}
+			names = util.StringsContaining(names, o.Filter)
 		} else {
 			jobMap, err := o.getJobMap(o.Filter)
 			if err != nil {
