@@ -273,5 +273,6 @@ func (o *CreateVaultOptions) exposeVault(vaultService string) error {
 	options.Namespaces = []string{o.Namespace}
 	options.Services = []string{vaultService}
 	options.SkipResourcesUpdate = true
+	options.WaitForCerts = true
 	return options.Run()
 }

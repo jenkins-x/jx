@@ -121,8 +121,15 @@ func (h *HelmCLI) Init(clientOnly bool, serviceAccount string, tillerNamespace s
 }
 
 // AddRepo adds a new helm repo with the given name and URL
-func (h *HelmCLI) AddRepo(repo string, URL string) error {
-	return h.runHelm("repo", "add", repo, URL)
+func (h *HelmCLI) AddRepo(repo, URL, username, password string) error {
+	args := []string{"repo", "add", repo, URL}
+	if username != "" {
+		args = append(args, "--username", username)
+	}
+	if password != "" {
+		args = append(args, "--password", password)
+	}
+	return h.runHelm(args...)
 }
 
 // RemoveRepo removes the given repo from helm

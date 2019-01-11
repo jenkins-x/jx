@@ -1,23 +1,24 @@
-package util_test
+package surveyutils_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/util"
+	"testing"
+
+	"github.com/jenkins-x/jx/pkg/surveyutils"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"testing"
 )
 
 func TestNoWhitespaceValidator(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		testName	string
-		domainName  string
-		want		string
+		testName   string
+		domainName string
+		want       string
 	}{
-		{"leading whitespace"," fake.com", "supplied value \" fake.com\" must not contain any whitespace"},
-		{"trailing whitespace","fake.com ", "supplied value \"fake.com \" must not contain any whitespace"},
-		{"embedded whitespace","fake .com", "supplied value \"fake .com\" must not contain any whitespace"},
+		{"leading whitespace", " fake.com", "supplied value \" fake.com\" must not contain any whitespace"},
+		{"trailing whitespace", "fake.com ", "supplied value \"fake.com \" must not contain any whitespace"},
+		{"embedded whitespace", "fake .com", "supplied value \"fake .com\" must not contain any whitespace"},
 	}
 
 	for _, tt := range tests {
@@ -29,7 +30,7 @@ func TestNoWhitespaceValidator(t *testing.T) {
 
 func testInputValidation(t *testing.T, s string) interface{} {
 	valid := survey.ComposeValidators(
-		util.NoWhiteSpaceValidator(),
+		surveyutils.NoWhiteSpaceValidator(),
 	)
 	err := valid(s)
 	if err != nil {
@@ -37,4 +38,3 @@ func testInputValidation(t *testing.T, s string) interface{} {
 	}
 	return ""
 }
-

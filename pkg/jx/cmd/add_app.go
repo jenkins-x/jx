@@ -1,9 +1,21 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strings"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/jenkins-x/jx/pkg/surveyutils"
+
+	"github.com/ghodss/yaml"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -140,6 +152,11 @@ func (o *AddAppOptions) Run() error {
 		}
 	}
 
+	/*err = o.GenerateValues()
+	if err != nil {
+		return err
+	}*/
+
 	args := o.Args
 	if len(args) == 0 {
 		return o.Cmd.Help()
@@ -152,35 +169,150 @@ func (o *AddAppOptions) Run() error {
 		return fmt.Errorf("must specify a repository")
 	}
 
-	for _, arg := range args {
+	for _, app := range args {
 		version := o.Version
-		if version == "" {
-			var err error
-			version, err = helm.GetLatestVersion(arg, o.Repo, o.Username, o.Password, o.Helm())
-			if err != nil {
-				return err
+		var schema []byte
+		err := helm.InspectChart(app, o.Repo, o.Username, o.Password, o.Helm(), func(dir string) error {
+			if version == "" {
+				_, v, err := helm.LoadChartNameAndVersion(filepath.Join(dir, "Chart.yaml"))
+				if err != nil {
+					return err
+				}
+				version = v
+				if o.Verbose {
+					log.Infof("No version specified so using latest version which is %s\n", util.ColorInfo(version))
+				}
 			}
-			if o.Verbose {
-				log.Infof("No version specified so using latest version which is %s\n", util.ColorInfo(version))
+			schemaFile := filepath.Join(dir, "values.schema.json")
+			if _, err := os.Stat(schemaFile); !os.IsNotExist(err) {
+				schema, err = ioutil.ReadFile(schemaFile)
+				if err != nil {
+					return err
+				}
 			}
-		}
-		if o.GitOps {
-			err := o.createPR(arg, version)
-			if err != nil {
-				return err
-			}
-		} else {
-			err := o.installApp(arg, version)
-			if err != nil {
-				return err
-			}
-		}
 
+			if schema != nil {
+				secrets := make([]*corev1.Secret, 0)
+				schemaOptions := surveyutils.JSONSchemaOptions{
+					CreateSecret: func(name string, key string, value string) (*jenkinsv1.ResourceReference, error) {
+						secret := &corev1.Secret{
+							TypeMeta: metav1.TypeMeta{
+								Kind:       "Secret",
+								APIVersion: corev1.SchemeGroupVersion.Version,
+							},
+							ObjectMeta: metav1.ObjectMeta{
+								Name: name,
+							},
+							Data: map[string][]byte{
+								key: []byte(value),
+							},
+						}
+						secrets = append(secrets, secret)
+						return &jenkinsv1.ResourceReference{
+							Name: name,
+							Kind: "Secret",
+						}, nil
+
+					},
+				}
+				values, err := schemaOptions.GenerateValues(schema, []string{app}, o.In, o.Out, o.Err)
+				if err != nil {
+					return err
+				}
+				valuesYaml, err := yaml.JSONToYAML(values)
+				if err != nil {
+					return err
+				}
+				if o.Verbose {
+					log.Infof("Generated values.yaml:\n\n%v\n", util.ColorInfo(string(valuesYaml)))
+				}
+
+				// For each secret, we write a file into the chart
+				templatesDir := filepath.Join(dir, "templates")
+				err = os.MkdirAll(templatesDir, 0700)
+				if err != nil {
+					return err
+				}
+				for _, secret := range secrets {
+					file, err := ioutil.TempFile(templatesDir, fmt.Sprintf("%s-*.yaml", secret.Name))
+					defer func() {
+						err = file.Close()
+						if err != nil {
+							log.Warnf("Error closing %s because %v\n", file.Name(), err)
+						}
+					}()
+					if err != nil {
+						return err
+					}
+					bs, err := json.Marshal(secret)
+					if err != nil {
+						return err
+					}
+					ybs, err := yaml.JSONToYAML(bs)
+					if err != nil {
+						return err
+					}
+					_, err = file.Write(ybs)
+					if err != nil {
+						return err
+					}
+					if o.Verbose {
+						log.Infof("Added secret %s\n\n%v\n", secret.Name, util.ColorInfo(string(ybs)))
+					}
+					if err != nil {
+						return err
+					}
+				}
+				if !o.GitOps {
+					if len(o.ValueFiles) > 0 && schema != nil {
+						log.Warnf("values.yaml specified by --valuesFiles will be used despite presence of schema in app")
+					} else if schema != nil {
+						valuesFile, err := ioutil.TempFile("", fmt.Sprintf("%s-values.yaml", app))
+						defer func() {
+							err = valuesFile.Close()
+							if err != nil {
+								log.Warnf("Error closing %s because %v\n", valuesFile.Name(), err)
+							}
+						}()
+						if err != nil {
+							return err
+						}
+						_, err = valuesFile.Write(valuesYaml)
+						if err != nil {
+							return err
+						}
+						o.ValueFiles = []string{
+							valuesFile.Name(),
+						}
+					}
+
+					if err != nil {
+						return err
+					}
+				}
+			}
+
+			if o.GitOps {
+				err := o.createPR(app, version, schema)
+				if err != nil {
+					return err
+				}
+			} else {
+				err := o.installApp(app, dir, version)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func (o *AddAppOptions) createPR(app string, version string) error {
+func (o *AddAppOptions) createPR(app string, version string, schema []byte) error {
 
 	modifyRequirementsFn := func(requirements *helm.Requirements) error {
 		// See if the app already exists in requirements
@@ -233,7 +365,7 @@ func (o *AddAppOptions) createPR(app string, version string) error {
 	return nil
 }
 
-func (o *AddAppOptions) installApp(app string, version string) error {
+func (o *AddAppOptions) installApp(name string, chart string, version string) error {
 	err := o.ensureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that helm is present")
@@ -243,9 +375,9 @@ func (o *AddAppOptions) installApp(app string, version string) error {
 		setValues = append(setValues, strings.Split(vs, ",")...)
 	}
 
-	chart := helm.InstallChartOptions{
-		ReleaseName: app,
-		Chart:       app,
+	err = o.installChartOptions(helm.InstallChartOptions{
+		ReleaseName: name,
+		Chart:       chart,
 		Version:     version,
 		Ns:          o.Namespace,
 		HelmUpdate:  o.HelmUpdate,
@@ -254,11 +386,11 @@ func (o *AddAppOptions) installApp(app string, version string) error {
 		Repository:  o.Repo,
 		Username:    o.Username,
 		Password:    o.Password,
-	}
-
-	err = o.installChartOptions(chart)
+	})
 	if err != nil {
-		return fmt.Errorf("failed to install app %s: %v", app, err)
+		return fmt.Errorf("failed to install name %s: %v", name, err)
 	}
-	return o.OnAppInstall(app, version)
+	// Attach the secrets to the name CRD
+
+	return o.OnAppInstall(name, version)
 }

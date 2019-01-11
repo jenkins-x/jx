@@ -119,15 +119,9 @@ func CreatePipelineDetails(activity *v1.PipelineActivity) *PipelineDetails {
 }
 
 // GenerateBuildNumber generates a new build number for the given pipeline
-func GenerateBuildNumber(activities typev1.PipelineActivityInterface, pn PipelineID) (string, *v1.PipelineActivity, error) {
+func GenerateBuildNumber(activities typev1.PipelineActivityInterface, pipelines []*v1.PipelineActivity, pn PipelineID) (string, *v1.PipelineActivity, error) {
 	buildCounter := 0
-	pipelines, err := activities.List(metav1.ListOptions{})
-
-	if err != nil {
-		return "", nil, err
-	}
-
-	for _, pipeline := range pipelines.Items {
+	for _, pipeline := range pipelines {
 		if strings.EqualFold(pipeline.Spec.Pipeline, pn.ID) {
 			b := pipeline.Spec.Build
 			if b != "" {

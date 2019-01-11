@@ -131,6 +131,21 @@ func StringMatchesPattern(text string, pattern string) bool {
 	return text == pattern
 }
 
+
+// StringsContaining if the filter is not empty return all the strings which contain the text
+func StringsContaining(slice []string, filter string) []string {
+	if filter == "" {
+		return slice
+	}
+	answer := []string{}
+	for _, text := range slice {
+		if strings.Contains(text, filter) {
+			answer = append(answer, text)
+		}
+	}
+	return answer
+}
+
 // RandStringBytesMaskImprSrc returns a random hexadecimal string of length n.
 func RandStringBytesMaskImprSrc(n int) (string, error) {
 	src := rand.New(rand.NewSource(time.Now().UnixNano()))

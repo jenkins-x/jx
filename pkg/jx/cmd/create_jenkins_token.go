@@ -1,22 +1,18 @@
 package cmd
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
-	"path/filepath"
+	"net/url"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/blang/semver"
-	"github.com/chromedp/cdproto/cdp"
-	"github.com/chromedp/cdproto/network"
-	"github.com/chromedp/chromedp"
-	"github.com/chromedp/chromedp/runner"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -96,8 +92,8 @@ func NewCmdCreateJenkinsUser(f Factory, in terminal.FileReader, out terminal.Fil
 	options.ServerFlags.addGitServerFlags(cmd)
 	cmd.Flags().StringVarP(&options.ApiToken, "api-token", "t", "", "The API Token for the user")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The User password to try automatically create a new API Token")
-	cmd.Flags().StringVarP(&options.Timeout, "timeout", "", "", "The timeout if using browser automation to generate the API token (by passing username and password)")
-	cmd.Flags().BoolVarP(&options.UseBrowser, "browser", "", false, "Use a Chrome browser to automatically find the API token if the user and password are known")
+	cmd.Flags().StringVarP(&options.Timeout, "timeout", "", "", "The timeout if using REST to generate the API token (by passing username and password)")
+	cmd.Flags().BoolVarP(&options.UseBrowser, "browser", "", false, "Use REST calls to automatically find the API token if the user and password are known")
 
 	return cmd
 }
@@ -155,22 +151,16 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		userAuth.Password = o.Password
 	}
 
-	tokenUrl := jenkins.JenkinsTokenURL(server.URL)
-	if o.Verbose {
-		log.Infof("Using url %s\n", tokenUrl)
-	}
 	if userAuth.IsInvalid() && o.Password != "" && o.UseBrowser {
-		newTokenUrl := jenkins.JenkinsNewTokenURL(server.URL)
-		err := o.tryFindAPITokenFromBrowser(tokenUrl, newTokenUrl, userAuth)
+		err := o.getAPITokenFromREST(server.URL, userAuth)
 		if err != nil {
-			log.Warnf("Unable to automatically find API token with chromedp using URL %s\n", tokenUrl)
-			log.Warnf("Error: %v\n", err)
+			return err
 		}
 	}
 
 	if userAuth.IsInvalid() {
 		f := func(username string) error {
-			jenkins.PrintGetTokenFromURL(o.Out, tokenUrl)
+			jenkins.PrintGetTokenFromURL(o.Out, jenkins.JenkinsTokenURL(server.URL))
 			log.Infof("Then COPY the token and enter in into the form below:\n\n")
 			return nil
 		}
@@ -208,7 +198,8 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	return nil
 }
 
-func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, newTokenUrl string, userAuth *auth.UserAuth) error {
+// Uses Jenkins REST(ish) calls to obtain an API token given a username and password.
+func (o *CreateJenkinsUserOptions) getAPITokenFromREST(serverURL string, userAuth *auth.UserAuth) error {
 	var ctx context.Context
 	var cancel context.CancelFunc
 	if o.Timeout != "" {
@@ -217,103 +208,158 @@ func (o *CreateJenkinsUserOptions) tryFindAPITokenFromBrowser(tokenUrl string, n
 			return errors.Wrap(err, "parsing the timeout value")
 		}
 		ctx, cancel = context.WithTimeout(context.Background(), duration)
+		defer cancel()
 	} else {
 		ctx, cancel = context.WithCancel(context.Background())
 	}
 	defer cancel()
 
-	userDataDir, err := ioutil.TempDir("/tmp", "jx-login-chrome-userdata-dir")
+	log.Infoln("Generating the API token...")
+	decorator, err := loginLegacy(ctx, serverURL, o.Verbose, userAuth.Username, o.Password)
 	if err != nil {
-		return errors.Wrap(err, "creating the chrome user data dir")
-	}
-	defer util.DestroyFile(userDataDir)
-	netLogFile := filepath.Join(userDataDir, "net-logs.json")
-
-	c, err := o.createChromeClientWithNetLog(ctx, userDataDir, netLogFile)
-	if err != nil {
-		return errors.Wrap(err, "creating the chrome client")
-	}
-
-	err = c.Run(ctx, chromedp.Tasks{
-		chromedp.Navigate(tokenUrl),
-	})
-	if err != nil {
-		return errors.Wrapf(err, "navigating to token URL '%s'", tokenUrl)
-	}
-
-	nodeSlice := []*cdp.Node{}
-	err = c.Run(ctx, chromedp.Nodes("//input", &nodeSlice))
-	if err != nil {
-		return errors.Wrap(err, "serching the login form")
-	}
-
-	login := false
-	userNameInputName := "j_username"
-	passwordInputSelector := "//input[@name='j_password']"
-	for _, node := range nodeSlice {
-		name := node.AttributeValue("name")
-		if name == userNameInputName {
-			login = true
+		// Might be a modern realm, which would normally support BasicHeaderRealPasswordAuthenticator.
+		decorator = func(req *http.Request) {
+			req.SetBasicAuth(userAuth.Username, o.Password)
 		}
-	}
-
-	headerId := "header"
-	if login {
-		log.Infoln("Generating the API token...")
-		err = c.Run(ctx, chromedp.Tasks{
-			chromedp.WaitVisible(userNameInputName, chromedp.ByID),
-			chromedp.SendKeys(userNameInputName, userAuth.Username, chromedp.ByID),
-			chromedp.SendKeys(passwordInputSelector, o.Password+"\n"),
-			chromedp.WaitVisible(headerId, chromedp.ByID),
-			chromedp.ActionFunc(func(ctxt context.Context, h cdp.Executor) error {
-				cookies, err := network.GetCookies().Do(ctxt, h)
-				if err != nil {
-					return err
-				}
-				for _, cookie := range cookies {
-					if strings.HasPrefix(cookie.Name, JenkinsCookieName) {
-						jenkinsCookie := cookie.Name + "=" + cookie.Value
-						token, err := o.generateNewApiToken(newTokenUrl, jenkinsCookie)
-						if err != nil {
-							return errors.Wrap(err, "generating the API token")
-						}
-						if token != "" {
-							userAuth.ApiToken = token
-							return nil
-						} else {
-							return errors.New("received an empty API token")
-						}
-					}
-				}
-
-				return errors.New("no Jenkins cookie found after login")
-			}),
-		})
-		if err != nil {
-			return errors.Wrap(err, "generating the API token")
+		err2 := verifyLogin(ctx, serverURL, o.Verbose, decorator)
+		if err2 != nil {
+			// That did not work either.
+			log.Warnf("Failed to log in via modern security realm: %s\n", err2)
+			return errors.Wrap(err, "logging in")
 		}
+		log.Infof("Logged in %s to Jenkins server at %s via modern security realm\n",
+			util.ColorInfo(username), util.ColorInfo(serverURL))
 	}
-
-	err = c.Shutdown(ctx)
+	decorator = checkForCrumb(ctx, serverURL, o.Verbose, decorator)
+	token, err := generateNewAPIToken(ctx, serverURL, o.Verbose, decorator)
 	if err != nil {
-		return errors.Wrap(err, "shutting down the chrome client")
+		return errors.Wrap(err, "generating the API token")
 	}
-
+	if token == "" {
+		return errors.New("received an empty API token")
+	}
+	userAuth.ApiToken = token
 	return nil
 }
 
-func (o *CommonOptions) generateNewApiToken(newTokenUrl string, cookie string) (string, error) {
+// Try logging in as if LegacySecurityRealm were configured. This uses the old Servlet API login cookies.
+func loginLegacy(ctx context.Context, serverURL string, verbose bool, username string, password string) (func(req *http.Request), error) {
+	client := http.Client{
+		// https://stackoverflow.com/a/38150816/12916 Jenkins returns a 303, but you cannot actually follow it
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	req, err := http.NewRequest(http.MethodPost, util.UrlJoin(serverURL, fmt.Sprintf("/j_security_check?j_username=%s&j_password=%s", url.QueryEscape(username), url.QueryEscape(password))), nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "building request to log in")
+	}
+	req = req.WithContext(ctx)
+	if verbose {
+		req.Write(os.Stderr)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, "execute log in")
+	}
+	defer resp.Body.Close()
+	cookies := resp.Cookies()
+	decorator := func(req *http.Request) {
+		for _, c := range cookies {
+			req.AddCookie(c)
+		}
+	}
+	// We get the same response even if Jenkins is actually using a modern security realm, so verify it:
+	err = verifyLogin(ctx, serverURL, verbose, decorator)
+	if err != nil {
+		return nil, errors.Wrap(err, "cookies did not work; bad login or not using legacy security realm")
+	}
+	log.Infof("Logged in %s to Jenkins server at %s via legacy security realm\n",
+		util.ColorInfo(username), util.ColorInfo(serverURL))
+	return decorator, nil
+}
+
+// Checks whether a purported login decorator actually seems to work.
+func verifyLogin(ctx context.Context, serverURL string, verbose bool, decorator func (req *http.Request)) error {
 	client := http.Client{}
-	req, err := http.NewRequest(http.MethodPost, newTokenUrl, nil)
+	req, err := http.NewRequest(http.MethodGet, util.UrlJoin(serverURL, "/me/api/json?tree=id"), nil)
+	if err != nil {
+		return errors.Wrap(err, "building request to verify login")
+	}
+	req = req.WithContext(ctx)
+	decorator(req)
+	if verbose {
+		req.Write(os.Stderr)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return errors.Wrap(err, "execute verify login")
+	}
+	defer resp.Body.Close()
+	if verbose {
+		resp.Write(os.Stderr)
+	}
+	if resp.StatusCode != 200 {
+		return errors.New(resp.Status)
+	}
+	return nil
+}
+
+// Checks if CSRF defense is enabled, and if so, amends the decorator to include a crumb.
+func checkForCrumb(ctx context.Context, serverURL string, verbose bool, decorator func (req *http.Request)) func (req *http.Request) {
+	client := http.Client{}
+	req, err := http.NewRequest(http.MethodGet, util.UrlJoin(serverURL, "/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)"), nil)
+	if err != nil {
+		log.Warnf("Failed to build request to check for crumb: %s\n", err)
+		return decorator
+	}
+	req = req.WithContext(ctx)
+	decorator(req)
+	if verbose {
+		req.Write(os.Stderr)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Warnf("Failed to execute request to check for crumb: %s\n", err)
+		return decorator
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == 404 {
+		log.Infof("Enable CSRF protection at: %s/configureSecurity/\n", serverURL)
+		return decorator
+	} else if resp.StatusCode != 200 {
+		log.Warnf("Could not find CSRF crumb: %d %s\n", resp.StatusCode, resp.Status)
+		return decorator
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Warnf("Failed to read crumb: %s\n", err)
+		return decorator
+	}
+	crumbPieces := strings.SplitN(string(body), ":", 2)
+	if len(crumbPieces) != 2 {
+		log.Warnf("Malformed crumb: %s\n", body)
+		return decorator
+	}
+	log.Infof("Obtained crumb\n")
+	return func(req *http.Request) {
+		decorator(req)
+		req.Header.Add(crumbPieces[0], crumbPieces[1])
+	}
+}
+
+// Actually generates a new API token.
+func generateNewAPIToken(ctx context.Context, serverURL string, verbose bool, decorator func(req *http.Request)) (string, error) {
+	client := http.Client{}
+	req, err := http.NewRequest(http.MethodPost, util.UrlJoin(serverURL, fmt.Sprintf("/me/descriptorByName/jenkins.security.ApiTokenProperty/generateNewToken?newTokenName=%s", url.QueryEscape("jx create jenkins token"))), nil)
 	if err != nil {
 		return "", errors.Wrap(err, "building request to generate the API token")
 	}
-	parts := strings.Split(cookie, "=")
-	if len(parts) != 2 {
-		return "", errors.Wrap(err, "building jenkins cookie")
+	req = req.WithContext(ctx)
+	decorator(req)
+	if verbose {
+		req.Write(os.Stderr)
 	}
-	jenkinsCookie := http.Cookie{Name: parts[0], Value: parts[1]}
-	req.AddCookie(&jenkinsCookie)
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", errors.Wrap(err, "execute generate API token request")
@@ -343,102 +389,4 @@ func (o *CommonOptions) generateNewApiToken(newTokenUrl string, cookie string) (
 		return "", errors.Wrap(err, "parsing the API token from response")
 	}
 	return tokenResponse.Data.TokenValue, nil
-}
-
-func (o *CommonOptions) extractJenkinsCookie(text string) string {
-	start := strings.Index(text, JenkinsCookieName)
-	if start < 0 {
-		return ""
-	}
-	end := -1
-	for i, ch := range text[start:] {
-		if ch == '"' {
-			end = start + i
-			break
-		}
-	}
-	if end < 0 {
-		return ""
-	}
-	return text[start:end]
-}
-
-// lets try use the users browser to find the API token
-func (o *CommonOptions) createChromeClient(ctxt context.Context) (*chromedp.CDP, error) {
-	if o.Headless {
-		options := func(m map[string]interface{}) error {
-			m["remote-debugging-port"] = 9222
-			m["no-sandbox"] = true
-			m["headless"] = true
-			return nil
-		}
-
-		return chromedp.New(ctxt, chromedp.WithRunnerOptions(runner.CommandLineOption(options)))
-	}
-	return chromedp.New(ctxt)
-}
-
-func (o *CommonOptions) createChromeClientWithNetLog(ctx context.Context, userDataDir string, netLogFile string) (*chromedp.CDP, error) {
-	options := func(m map[string]interface{}) error {
-		if o.Headless {
-			m["remote-debugging-port"] = 9222
-			m["no-sandbox"] = true
-			m["headless"] = true
-		}
-		m["user-data-dir"] = userDataDir
-		m["log-net-log"] = netLogFile
-		m["net-log-capture-mode"] = "IncludeCookiesAndCredentials"
-		m["v"] = 1
-		return nil
-	}
-
-	logger := func(string, ...interface{}) {
-		return
-	}
-	return chromedp.New(ctx,
-		chromedp.WithRunnerOptions(runner.CommandLineOption(options)),
-		chromedp.WithLog(logger))
-}
-
-func (o *CommonOptions) captureScreenshot(ctxt context.Context, c *chromedp.CDP, screenshotFile string, selector interface{}, options ...chromedp.QueryOption) error {
-	log.Infoln("Creating a screenshot...")
-
-	var picture []byte
-	err := c.Run(ctxt, chromedp.Tasks{
-		chromedp.Sleep(2 * time.Second),
-		chromedp.Screenshot(selector, &picture, options...),
-	})
-	if err != nil {
-		return err
-	}
-	log.Infoln("Saving a screenshot...")
-
-	err = ioutil.WriteFile(screenshotFile, picture, util.DefaultWritePermissions)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	log.Infof("Saved screenshot: %s\n", util.ColorInfo(screenshotFile))
-	return err
-}
-
-func (o *CommonOptions) createChromeDPLogger() (func(string, ...interface{}), error) {
-	var logger func(string, ...interface{})
-	if o.Verbose {
-		logger = func(message string, args ...interface{}) {
-			log.Infof(message+"\n", args...)
-		}
-	} else {
-		file, err := ioutil.TempFile("", "jx-browser")
-		if err != nil {
-			return logger, err
-		}
-		writer := bufio.NewWriter(file)
-		log.Infof("Chrome debugging logs written to: %s\n", util.ColorInfo(file.Name()))
-
-		logger = func(message string, args ...interface{}) {
-			fmt.Fprintf(writer, message+"\n", args...)
-		}
-	}
-	return logger, nil
 }
