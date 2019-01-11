@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
@@ -112,8 +113,8 @@ func JenkinsTokenURL(url string) string {
 	return tokenUrl
 }
 
-func JenkinsNewTokenURL(url string) string {
-	return util.UrlJoin(url, "/me/descriptorByName/jenkins.security.ApiTokenProperty/generateNewToken")
+func JenkinsNewTokenURL(serverURL string, name string) string {
+	return util.UrlJoin(serverURL, fmt.Sprintf("/me/descriptorByName/jenkins.security.ApiTokenProperty/generateNewToken?newTokenName=%s", url.QueryEscape(name)))
 }
 
 func JenkinsApiURL(url string) string {
