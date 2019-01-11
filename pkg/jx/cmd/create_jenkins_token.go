@@ -223,13 +223,10 @@ func (o *CreateJenkinsUserOptions) getAPITokenFromREST(serverURL string, userAut
 	if err != nil {
 		return errors.Wrap(err, "generating the API token")
 	}
-	if token != "" {
-		userAuth.ApiToken = token
-		return nil
-	} else {
+	if token == "" {
 		return errors.New("received an empty API token")
 	}
-
+	userAuth.ApiToken = token
 	return nil
 }
 
@@ -259,9 +256,8 @@ func (o *CreateJenkinsUserOptions) loginLegacy(ctx context.Context, serverURL st
 				req.AddCookie(c)
 			}
 		}, nil
-	} else {
-		return nil, errors.New("no cookies set, so bad auth or not using legacy security realm")
 	}
+	return nil, errors.New("no cookies set, so bad auth or not using legacy security realm")
 }
 
 func (o *CreateJenkinsUserOptions) generateNewAPIToken(ctx context.Context, newTokenURL string, decorator func (req *http.Request), userAuth *auth.UserAuth) (string, error) {
