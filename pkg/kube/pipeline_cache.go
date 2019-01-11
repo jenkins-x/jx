@@ -4,26 +4,26 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/log"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/tools/cache"
-	"sort"
+	"sync"
 	"time"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // PipelineNamespaceCache caches the pipelines for a single namespace
 type PipelineNamespaceCache struct {
-	pipelines map[string]*v1.PipelineActivity
+	pipelines sync.Map
+	stop chan struct{}
 }
 
 // NewPipelineCache creates a cache of pipelines for a namespace
 func NewPipelineCache(jxClient versioned.Interface, ns string) *PipelineNamespaceCache {
 	pipeline := &v1.PipelineActivity{}
-	stop := make(chan struct{})
 	pipelineListWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "pipelineactivities", ns, fields.Everything())
 
 	namespaceCache := &PipelineNamespaceCache{
-		pipelines: map[string]*v1.PipelineActivity{},
+		stop: make(chan struct{}),
 	}
 
 	// lets pre-populate the cache on startup as there's not yet a way to know when the informer has completed its first list operation
@@ -31,7 +31,7 @@ func NewPipelineCache(jxClient versioned.Interface, ns string) *PipelineNamespac
 	if pipelines != nil {
 		for _, pipeline := range pipelines.Items {
 			copy := pipeline
-			namespaceCache.pipelines[pipeline.Name] = &copy
+			namespaceCache.pipelines.Store(pipeline.Name, &copy)
 		}
 	}
 	_, pipelineController := cache.NewInformer(
@@ -51,25 +51,26 @@ func NewPipelineCache(jxClient versioned.Interface, ns string) *PipelineNamespac
 		},
 	)
 
-	go pipelineController.Run(stop)
+	go pipelineController.Run(namespaceCache.stop)
 
 	return namespaceCache
 }
 
+// Stop closes the underlying chanel processing events which stops consuming watch events
+func (c *PipelineNamespaceCache) Stop() {
+	close(c.stop)
+}
 // Pipelines returns the pipelines in this namespace sorted in name order
 func (c *PipelineNamespaceCache) Pipelines() []*v1.PipelineActivity {
 	answer := []*v1.PipelineActivity{}
-	names := []string{}
-	for k := range c.pipelines {
-		names = append(names, k)
-	}
-	sort.Strings(names)
-	for _, name := range names {
-		pipeline := c.pipelines[name]
-		if pipeline != nil {
+	onEntry := func(key interface{}, value interface{}) bool {
+		pipeline, ok := value.(*v1.PipelineActivity)
+		if ok && pipeline != nil {
 			answer = append(answer, pipeline)
 		}
+		return true
 	}
+	c.pipelines.Range(onEntry)
 	return answer
 }
 
@@ -80,7 +81,7 @@ func (c *PipelineNamespaceCache) onPipelineObj(obj interface{}, jxClient version
 		return
 	}
 	if pipeline != nil {
-		c.pipelines[pipeline.Name] = pipeline
+		c.pipelines.Store(pipeline.Name, pipeline)
 	}
 }
 
@@ -91,6 +92,6 @@ func (c *PipelineNamespaceCache) onPipelineDelete(obj interface{}, jxClient vers
 		return
 	}
 	if pipeline != nil {
-		delete(c.pipelines, pipeline.Name)
+		c.pipelines.Delete(pipeline.Name)
 	}
 }
