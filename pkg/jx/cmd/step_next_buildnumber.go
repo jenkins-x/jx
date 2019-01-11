@@ -81,8 +81,7 @@ func (o *StepNextBuildNumberOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	activities := jxClient.JenkinsV1().PipelineActivities(ns)
-	buildNumGen := buildnum.NewCRDBuildNumGen(activities)
+	buildNumGen := buildnum.NewCRDBuildNumGen(jxClient, ns)
 
 	pID := kube.NewPipelineID(o.Owner, o.Repository, o.Branch)
 

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
@@ -74,7 +75,9 @@ func TestGenerateBuildNumber(t *testing.T) {
 	if err != nil {
 		return
 	}
+
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
+
 	org := "jstrachan"
 	repo := "cheese"
 	branch := "master"
@@ -84,7 +87,8 @@ func TestGenerateBuildNumber(t *testing.T) {
 	for i := 1; i < 4; i++ {
 		buildNumberText := strconv.Itoa(i)
 		pID := kube.NewPipelineID(repo, org, branch)
-		build, activity, err := kube.GenerateBuildNumber(activities, pID)
+		pipelines := getPipelines(activities)
+		build, activity, err := kube.GenerateBuildNumber(activities, pipelines, pID)
 		if assert.NoError(t, err, "GenerateBuildNumber %d", i) {
 			if assert.NotNil(t, activity, "No PipelineActivity returned!") {
 				results = append(results, build)
@@ -94,6 +98,16 @@ func TestGenerateBuildNumber(t *testing.T) {
 		expected = append(expected, buildNumberText)
 	}
 	assert.Equal(t, expected, results, "generated build numbers")
+}
+
+func getPipelines(activities typev1.PipelineActivityInterface) []*v1.PipelineActivity {
+	pipelineList, _ := activities.List(metav1.ListOptions{})
+	pipelines := []*v1.PipelineActivity{}
+	for _, pipeline := range pipelineList.Items {
+		copy := pipeline
+		pipelines = append(pipelines, &copy)
+	}
+	return pipelines
 }
 
 func TestCreateOrUpdateActivities(t *testing.T) {
