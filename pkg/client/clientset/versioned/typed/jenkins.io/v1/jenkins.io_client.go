@@ -12,7 +12,6 @@ import (
 type JenkinsV1Interface interface {
 	RESTClient() rest.Interface
 	AppsGetter
-	ApplicationsGetter
 	BuildPacksGetter
 	CommitStatusesGetter
 	EnvironmentsGetter
@@ -22,6 +21,7 @@ type JenkinsV1Interface interface {
 	PipelineActivitiesGetter
 	PluginsGetter
 	ReleasesGetter
+	SourceRepositoriesGetter
 	TeamsGetter
 	UsersGetter
 	WorkflowsGetter
@@ -34,10 +34,6 @@ type JenkinsV1Client struct {
 
 func (c *JenkinsV1Client) Apps(namespace string) AppInterface {
 	return newApps(c, namespace)
-}
-
-func (c *JenkinsV1Client) Applications(namespace string) ApplicationInterface {
-	return newApplications(c, namespace)
 }
 
 func (c *JenkinsV1Client) BuildPacks(namespace string) BuildPackInterface {
@@ -74,6 +70,10 @@ func (c *JenkinsV1Client) Plugins(namespace string) PluginInterface {
 
 func (c *JenkinsV1Client) Releases(namespace string) ReleaseInterface {
 	return newReleases(c, namespace)
+}
+
+func (c *JenkinsV1Client) SourceRepositories(namespace string) SourceRepositoryInterface {
+	return newSourceRepositories(c, namespace)
 }
 
 func (c *JenkinsV1Client) Teams(namespace string) TeamInterface {

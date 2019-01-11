@@ -16,10 +16,6 @@ func (c *FakeJenkinsV1) Apps(namespace string) v1.AppInterface {
 	return &FakeApps{c, namespace}
 }
 
-func (c *FakeJenkinsV1) Applications(namespace string) v1.ApplicationInterface {
-	return &FakeApplications{c, namespace}
-}
-
 func (c *FakeJenkinsV1) BuildPacks(namespace string) v1.BuildPackInterface {
 	return &FakeBuildPacks{c, namespace}
 }
@@ -54,6 +50,10 @@ func (c *FakeJenkinsV1) Plugins(namespace string) v1.PluginInterface {
 
 func (c *FakeJenkinsV1) Releases(namespace string) v1.ReleaseInterface {
 	return &FakeReleases{c, namespace}
+}
+
+func (c *FakeJenkinsV1) SourceRepositories(namespace string) v1.SourceRepositoryInterface {
+	return &FakeSourceRepositories{c, namespace}
 }
 
 func (c *FakeJenkinsV1) Teams(namespace string) v1.TeamInterface {

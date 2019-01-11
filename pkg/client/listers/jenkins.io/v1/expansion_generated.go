@@ -10,14 +10,6 @@ type AppListerExpansion interface{}
 // AppNamespaceLister.
 type AppNamespaceListerExpansion interface{}
 
-// ApplicationListerExpansion allows custom methods to be added to
-// ApplicationLister.
-type ApplicationListerExpansion interface{}
-
-// ApplicationNamespaceListerExpansion allows custom methods to be added to
-// ApplicationNamespaceLister.
-type ApplicationNamespaceListerExpansion interface{}
-
 // BuildPackListerExpansion allows custom methods to be added to
 // BuildPackLister.
 type BuildPackListerExpansion interface{}
@@ -89,6 +81,14 @@ type ReleaseListerExpansion interface{}
 // ReleaseNamespaceListerExpansion allows custom methods to be added to
 // ReleaseNamespaceLister.
 type ReleaseNamespaceListerExpansion interface{}
+
+// SourceRepositoryListerExpansion allows custom methods to be added to
+// SourceRepositoryLister.
+type SourceRepositoryListerExpansion interface{}
+
+// SourceRepositoryNamespaceListerExpansion allows custom methods to be added to
+// SourceRepositoryNamespaceLister.
+type SourceRepositoryNamespaceListerExpansion interface{}
 
 // TeamListerExpansion allows custom methods to be added to
 // TeamLister.

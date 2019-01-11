@@ -443,30 +443,29 @@ type AppList struct {
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
 
-// Application is the metadata for an Application
-type Application struct {
+// SourceRepository is the metadata for an Application/Project/SourceRepository
+type SourceRepository struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard object's metadata.
 	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
 
-	Spec ApplicationSpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
+	Spec SourceRepositorySpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ApplicationList is a structure used by k8s to store lists of apps
-type ApplicationList struct {
+// SourceRepositoryList is a structure used by k8s to store lists of apps
+type SourceRepositoryList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata"`
 
-	Items []Application `json:"items"`
+	Items []SourceRepository `json:"items"`
 }
 
-// ApplicationSpec provides details of the metadata for an App
-type ApplicationSpec struct {
-	Name        string
+// SourceRepositorySpec provides details of the metadata for an App
+type SourceRepositorySpec struct {
 	Description string
 	Org         string
 	Repo        string

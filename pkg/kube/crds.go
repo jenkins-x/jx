@@ -46,10 +46,6 @@ func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to register the App CRD")
 	}
-	err = RegisterApplicationCRD(apiClient)
-	if err != nil {
-		return errors.Wrap(err, "failed to register the Application CRD")
-	}
 	err = RegisterPluginCRD(apiClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Plugin CRD")
@@ -69,6 +65,10 @@ func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
 	err = RegisterReleaseCRD(apiClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Release CRD")
+	}
+	err = RegisterSourceRepositoryCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the SourceRepository CRD")
 	}
 	err = RegisterTeamCRD(apiClient)
 	if err != nil {
@@ -285,27 +285,27 @@ func RegisterAppCRD(apiClient apiextensionsclientset.Interface) error {
 	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }
 
-// RegisterApplicationCRD ensures that the CRD is registered for Applications
-func RegisterApplicationCRD(apiClient apiextensionsclientset.Interface) error {
+// RegisterSourceRepositoryCRD ensures that the CRD is registered for Applications
+func RegisterSourceRepositoryCRD(apiClient apiextensionsclientset.Interface) error {
 	name := "applications." + jenkinsio.GroupName
 	names := &v1beta1.CustomResourceDefinitionNames{
-		Kind:       "Application",
-		ListKind:   "ApplicationList",
-		Plural:     "applications",
-		Singular:   "application",
-		ShortNames: []string{"application"},
+		Kind:       "SourceRepository",
+		ListKind:   "SourceRepositoryList",
+		Plural:     "sourcerepositiories",
+		Singular:   "sourcerepository",
+		ShortNames: []string{"sourcerepo", "srcrepo", "sr"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{
 		{
 			Name:        "Description",
 			Type:        "string",
-			Description: "A description of the plugin",
+			Description: "A description of the source code repository",
 			JSONPath:    ".spec.description",
 		},
 		{
 			Name:        "Org",
 			Type:        "string",
-			Description: "The git organisation that the application belongs to",
+			Description: "The git organisation that the source repository belongs to",
 			JSONPath:    ".spec.org",
 		},
 		{

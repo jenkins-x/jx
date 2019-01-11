@@ -4,8 +4,6 @@ package v1
 
 type AppExpansion interface{}
 
-type ApplicationExpansion interface{}
-
 type BuildPackExpansion interface{}
 
 type CommitStatusExpansion interface{}
@@ -23,6 +21,8 @@ type PipelineActivityExpansion interface{}
 type PluginExpansion interface{}
 
 type ReleaseExpansion interface{}
+
+type SourceRepositoryExpansion interface{}
 
 type TeamExpansion interface{}
 
