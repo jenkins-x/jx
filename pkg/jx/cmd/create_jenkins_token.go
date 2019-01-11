@@ -217,8 +217,18 @@ func (o *CreateJenkinsUserOptions) getAPITokenFromREST(serverURL string, userAut
 	log.Infoln("Generating the API token...")
 	decorator, err := loginLegacy(ctx, serverURL, o.Verbose, userAuth.Username, o.Password)
 	if err != nil {
-		// TODO might be modern realm; try: req.SetBasicAuth(userAuth.Username, o.Password)
-		return errors.Wrap(err, "logging in")
+		// Might be a modern realm, which would normally support BasicHeaderRealPasswordAuthenticator.
+		decorator = func(req *http.Request) {
+			req.SetBasicAuth(userAuth.Username, o.Password)
+		}
+		err2 := verifyLogin(ctx, serverURL, o.Verbose, decorator)
+		if err2 != nil {
+			// That did not work either.
+			log.Warnf("Failed to log in via modern security realm: %s\n", err2)
+			return errors.Wrap(err, "logging in")
+		}
+		log.Infof("Logged in %s to Jenkins server at %s via modern security realm\n",
+			util.ColorInfo(username), util.ColorInfo(serverURL))
 	}
 	decorator = checkForCrumb(ctx, serverURL, o.Verbose, decorator)
 	token, err := generateNewAPIToken(ctx, serverURL, o.Verbose, decorator)
