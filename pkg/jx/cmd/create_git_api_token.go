@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
+	"github.com/chromedp/chromedp/runner"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -255,4 +257,41 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 		return err
 	}
 	return nil
+}
+
+// lets try use the users browser to find the API token
+func (o *CommonOptions) createChromeClient(ctxt context.Context) (*chromedp.CDP, error) {
+	if o.Headless {
+		options := func(m map[string]interface{}) error {
+			m["remote-debugging-port"] = 9222
+			m["no-sandbox"] = true
+			m["headless"] = true
+			return nil
+		}
+
+		return chromedp.New(ctxt, chromedp.WithRunnerOptions(runner.CommandLineOption(options)))
+	}
+	return chromedp.New(ctxt)
+}
+
+func (o *CommonOptions) captureScreenshot(ctxt context.Context, c *chromedp.CDP, screenshotFile string, selector interface{}, options ...chromedp.QueryOption) error {
+	log.Infoln("Creating a screenshot...")
+
+	var picture []byte
+	err := c.Run(ctxt, chromedp.Tasks{
+		chromedp.Sleep(2 * time.Second),
+		chromedp.Screenshot(selector, &picture, options...),
+	})
+	if err != nil {
+		return err
+	}
+	log.Infoln("Saving a screenshot...")
+
+	err = ioutil.WriteFile(screenshotFile, picture, util.DefaultWritePermissions)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	log.Infof("Saved screenshot: %s\n", util.ColorInfo(screenshotFile))
+	return err
 }

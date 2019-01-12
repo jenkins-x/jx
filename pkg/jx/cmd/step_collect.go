@@ -136,36 +136,43 @@ func (o *StepCollectOptions) Run() error {
 	return fmt.Errorf("Missing option --git-url and we could not detect the current git repository URL")
 }
 
-func (o *StepCollectOptions) collectGitURL(sourceURL string) (err error) {
-	gitInfo, err := gits.ParseGitURL(sourceURL)
+func (o *StepCollectOptions) collectGitURL(storageURL string) (err error) {
+	storageGitInfo, err := gits.ParseGitURL(storageURL)
 	if err != nil {
 		return err
 	}
-	org := gitInfo.Organisation
-	repoName := gitInfo.Name
+	storageOrg := storageGitInfo.Organisation
+	storageRepoName := storageGitInfo.Name
 
 	gitClient := o.Git()
 
-	ghPagesDir, err := cloneGitHubPagesBranchToTempDir(sourceURL, gitClient)
+	ghPagesDir, err := cloneGitHubPagesBranchToTempDir(storageURL, gitClient)
 	if err != nil {
 		return err
 	}
 
 	buildNo := o.getBuildNumber()
-	branchName := os.Getenv(envVarBranchName)
-	if branchName == "" {
+	projectGitInfo, err := o.FindGitInfo("")
+	if err != nil {
+		return err
+	}
+	projectOrg := projectGitInfo.Organisation
+	projectRepoName := projectGitInfo.Name
+
+	projectBranchName := os.Getenv(envVarBranchName)
+	if projectBranchName == "" {
 		// lets try find the branch name via git
-		branchName, err = o.Git().Branch(o.Dir)
+		projectBranchName, err = o.Git().Branch(o.Dir)
 		if err != nil {
 			return err
 		}
 	}
-	if branchName == "" {
+	if projectBranchName == "" {
 		return fmt.Errorf("Environment variable %s is empty", envVarBranchName)
 	}
 
 	classifier := o.StorageLocation.Classifier
-	repoPath := filepath.Join("jenkins-x", classifier, org, repoName, branchName, buildNo)
+	repoPath := filepath.Join("jenkins-x", classifier, projectOrg, projectRepoName, projectBranchName, buildNo)
 	repoDir := filepath.Join(ghPagesDir, repoPath)
 	err = os.MkdirAll(repoDir, 0755)
 	if err != nil {
@@ -189,7 +196,7 @@ func (o *StepCollectOptions) collectGitURL(sourceURL string) (err error) {
 				rPath := strings.TrimPrefix(strings.TrimPrefix(path, ghPagesDir), "/")
 
 				if rPath != "" {
-					url := fmt.Sprintf("https://%s.github.io/%s/%s", org, repoName, rPath)
+					url := fmt.Sprintf("https://%s.github.io/%s/%s", storageOrg, storageRepoName, rPath)
 					log.Infof("Publishing %s\n", util.ColorInfo(url))
 					urls = append(urls, url)
 				}
@@ -232,17 +239,17 @@ func (o *StepCollectOptions) collectGitURL(sourceURL string) (err error) {
 	if err != nil {
 		return err
 	}
-	build := o.getBuildNumber()
-	// TODO this pipeline name construction needs moving to a shared lib, and other things refactoring to use it
-	pipeline := fmt.Sprintf("%s-%s-%s-%s", org, repoName, branchName, build)
 
-	if pipeline != "" && build != "" {
+	// TODO this pipeline name construction needs moving to a shared lib, and other things refactoring to use it
+	pipeline := fmt.Sprintf("%s-%s-%s-%s", projectOrg, projectRepoName, projectBranchName, buildNo)
+
+	if pipeline != "" && buildNo != "" {
 		name := kube.ToValidName(pipeline)
 		key := &kube.PromoteStepActivityKey{
 			PipelineActivityKey: kube.PipelineActivityKey{
 				Name:     name,
 				Pipeline: pipeline,
-				Build:    build,
+				Build:    buildNo,
 			},
 		}
 		a, _, err := key.GetOrCreate(activities)

@@ -86,7 +86,7 @@ func TestAddRepo(t *testing.T) {
 	expectedArgs := []string{"repo", "add", repo, repoURL}
 	helm, runner := createHelm(t, nil, "")
 
-	err := helm.AddRepo(repo, repoURL)
+	err := helm.AddRepo(repo, repoURL, "", "")
 
 	assert.NoError(t, err, "should add helm repo without any error")
 	verifyArgs(t, helm, runner, expectedArgs...)

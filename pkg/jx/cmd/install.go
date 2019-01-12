@@ -330,7 +330,7 @@ func CreateInstallOptions(f Factory, in terminal.FileReader, out terminal.FileWr
 func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit bool) {
 	flags := &options.Flags
 	flags.addCloudEnvOptions(cmd)
-	cmd.Flags().StringVarP(&flags.LocalHelmRepoName, "local-helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository for the installed Chart Museum")
+	cmd.Flags().StringVarP(&flags.LocalHelmRepoName, "local-helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository for the installed ChartMuseum")
 	cmd.Flags().BoolVarP(&flags.NoDefaultEnvironments, "no-default-environments", "", false, "Disables the creation of the default Staging and Production environments")
 	cmd.Flags().StringVarP(&flags.DefaultEnvironmentPrefix, "default-environment-prefix", "", "", "Default environment repo prefix, your Git repos will be of the form 'environment-$prefix-$envName'")
 	cmd.Flags().StringVarP(&flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
@@ -564,7 +564,7 @@ func (options *InstallOptions) Run() error {
 
 	err = options.saveChartmuseumAuthConfig()
 	if err != nil {
-		return errors.Wrap(err, "saving the Chartmuseum auth configuration")
+		return errors.Wrap(err, "saving the ChartMuseum auth configuration")
 	}
 
 	if options.Flags.RegisterLocalHelmRepo {
@@ -742,7 +742,7 @@ func (options *InstallOptions) installPlatform(providerEnvDir string, jxChart st
 
 	err = options.waitForInstallToBeReady(namespace)
 	if err != nil {
-		return errors.Wrap(err, "failed to wait for jenkinx-x chart installation to be ready")
+		return errors.Wrap(err, "failed to wait for jenkins-x chart installation to be ready")
 	}
 	log.Infof("Jenkins X deployments ready in namespace %s\n", namespace)
 	return nil
@@ -882,7 +882,7 @@ func (options *InstallOptions) configureHelm(client kubernetes.Interface, namesp
 }
 
 func (options *InstallOptions) configureHelmRepo() error {
-	err := options.addHelmBinaryRepoIfMissing(DEFAULT_CHARTMUSEUM_URL, "jenkins-x")
+	err := options.addHelmBinaryRepoIfMissing(DEFAULT_CHARTMUSEUM_URL, "jenkins-x", "", "")
 	if err != nil {
 		return errors.Wrap(err, "failed to add the jenkinx-x helm repo")
 	}
@@ -1357,7 +1357,7 @@ func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigSt
 		}
 		options.modifySecretCallback = func(name string, callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
 			if options.Flags.Vault {
-				vaultClient, err := options.GetSystemVaultClient()
+				vaultClient, err := options.CreateSystemVaultClient()
 				if err != nil {
 					return nil, errors.Wrap(err, "retrieving the system vault client")
 				}
@@ -1583,7 +1583,7 @@ func (options *InstallOptions) configureCloudProivderPostInit(client kubernetes.
 			return errors.Wrap(err, "failed to enable the OpenShiftSCC")
 		}
 	case IKS:
-		err := options.addHelmBinaryRepoIfMissing(DEFAULT_IBMREPO_URL, "ibm")
+		err := options.addHelmBinaryRepoIfMissing(DEFAULT_IBMREPO_URL, "ibm", "", "")
 		if err != nil {
 			return errors.Wrap(err, "failed to add the IBM helm repo")
 		}
@@ -1825,15 +1825,12 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 		if err != nil {
 			return errors.Wrap(err, "configuring secrets location")
 		}
-
-		log.Infof("Wait for vault to be initialized...\n")
-		time.Sleep(30 * time.Second)
 	}
 	return nil
 }
 
 func (options *InstallOptions) storeSecretYamlFilesInVault(path string, files ...string) error {
-	vaultClient, err := options.GetSystemVaultClient()
+	vaultClient, err := options.CreateSystemVaultClient()
 	if err != nil {
 		return errors.Wrap(err, "retrieving the system vault client")
 	}
@@ -1847,7 +1844,7 @@ func (options *InstallOptions) storeSecretYamlFilesInVault(path string, files ..
 }
 
 func (options *InstallOptions) storeAdminCredentialsInVault(svc *config.AdminSecretsService) error {
-	vaultClient, err := options.GetSystemVaultClient()
+	vaultClient, err := options.CreateSystemVaultClient()
 	if err != nil {
 		return errors.Wrap(err, "retrieving the system vault client")
 	}

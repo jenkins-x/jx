@@ -214,7 +214,7 @@ func (o *EditExtensionsRepositoryOptions) Run() error {
 						return err
 					}
 				} else {
-					err := o.addHelmRepoIfMissing(current.Chart.Repo, current.Chart.RepoName)
+					err := o.addHelmRepoIfMissing(current.Chart.Repo, current.Chart.RepoName, "", "")
 					if err != nil {
 						return err
 					}
@@ -268,7 +268,7 @@ func (o *EditExtensionsRepositoryOptions) Run() error {
 		} else {
 			repoUrl = fmt.Sprintf("https://%s", current.Chart.Repo)
 		}
-		err := o.addHelmRepoIfMissing(repoUrl, current.Chart.RepoName)
+		err := o.addHelmRepoIfMissing(repoUrl, current.Chart.RepoName, "", "")
 		if err != nil {
 			return err
 		}

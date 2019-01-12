@@ -64,8 +64,7 @@ func (o *ServeBuildNumbersOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	activities := jxClient.JenkinsV1().PipelineActivities(ns)
-	buildNumGen := buildnum.NewCRDBuildNumGen(activities)
+	buildNumGen := buildnum.NewCRDBuildNumGen(jxClient, ns)
 
 	httpBuildNumServer := buildnum.NewHTTPBuildNumberServer(o.BindAddress, o.Port, buildNumGen)
 	return httpBuildNumServer.Start()
