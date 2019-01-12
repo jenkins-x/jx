@@ -492,7 +492,7 @@ func (options *ImportOptions) DraftCreate() error {
 		userAuth := options.GitProvider.UserAuth()
 		options.GitUserAuth = &userAuth
 	}
-	
+
 	if options.Organisation == "" {
 		gitUsername := options.GitUserAuth.Username
 		options.Organisation, err = gits.GetOwner(options.BatchMode, options.GitProvider, gitUsername, options.In, options.Out, options.Err)
