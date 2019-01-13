@@ -75,6 +75,7 @@ type PreviewOptions struct {
 	GitConfDir      string
 	GitProvider     gits.GitProvider
 	GitInfo         *gits.GitRepository
+	NoComment       bool
 
 	// calculated fields
 	PostPreviewJobTimeoutDuration time.Duration
@@ -138,6 +139,7 @@ func (options *PreviewOptions) addPreviewOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.SourceRef, "source-ref", "", "", "The source code git ref (branch/sha)")
 	cmd.Flags().StringVarP(&options.PostPreviewJobTimeout, optionPostPreviewJobTimeout, "", "2h", "The duration before we consider the post preview Jobs failed")
 	cmd.Flags().StringVarP(&options.PostPreviewJobPollTime, optionPostPreviewJobPollTime, "", "10s", "The amount of time between polls for the post preview Job status")
+	cmd.Flags().BoolVarP(&options.NoComment, "no-comment", "", false, "Disables commenting on the Pull Request after preview is created.")
 }
 
 // Run implements the command
@@ -557,7 +559,9 @@ func (o *PreviewOptions) Run() error {
 		},
 	}
 	stepPRCommentOptions.BatchMode = true
-	err = stepPRCommentOptions.Run()
+	if !o.NoComment {
+		err = stepPRCommentOptions.Run()
+	}
 	if err != nil {
 		log.Warnf("Failed to comment on the Pull Request with owner %s repo %s: %s\n", o.GitInfo.Organisation, o.GitInfo.Name, err)
 	}
