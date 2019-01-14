@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/application"
 	"io"
 	"os/user"
 	"strings"
@@ -94,8 +95,7 @@ func NewCmdDeleteApplication(f Factory, in terminal.FileReader, out terminal.Fil
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Filter the list of applications to those containing this text")
 	cmd.Flags().StringVarP(&options.Timeout, optionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
 	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
-	// TODO - Create an Application CRD that gets populated with the org when an application is created/imported to store this.
-	cmd.Flags().StringVarP(&options.Org, "org", "o", "", "github organisation/project name that source code resides in. Temporary workaround until the platform can determine this automatically")
+	cmd.Flags().StringVarP(&options.Org, "org", "o", "", "github organisation/project name that source code resides in")
 	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "Run without being prompted. WARNING! You will not be asked to confirm deletions if you use this flag.")
 
 	return cmd
@@ -128,9 +128,6 @@ func (o *DeleteApplicationOptions) Run() error {
 }
 
 func (o *DeleteApplicationOptions) deleteProwApplication() (deletedApplications []string, err error) {
-	if o.Org == "" {
-		return deletedApplications, errors.New("--org must be supplied")
-	}
 	envMap, _, err := kube.GetOrderedEnvironments(o.jxClient, "")
 	currentUser, err := user.Current()
 	if err != nil {
@@ -149,6 +146,15 @@ func (o *DeleteApplicationOptions) deleteProwApplication() (deletedApplications 
 				return deletedApplications, errors.Wrapf(err, "deleting application %s from environment %s", appName, env.Name)
 			}
 		}
+		if o.Org == "" {
+			// Fetch the Org from the stored Custom Resource
+			application, err := application.NewApplicationService(o.jxClient, o.currentNamespace).GetApplication(appName)
+			if err != nil {
+				return deletedApplications, fmt.Errorf("could not get org for %s. use --org", util.ColorInfo(appName))
+			}
+			o.Org = application.Spec.Org
+		}
+
 		repo := []string{o.Org + "/" + appName}
 		err = prow.DeleteApplication(kubeClient, repo, ns)
 		if err != nil {

@@ -14,5 +14,5 @@ type SourceRepoer interface {
 	DeleteSourceRepository(name string) error
 
 	// GetSourceRepository gets an application, if it exists and returns an error otherwise
-	GetSourceRepository(name string) (v1.SourceRepository, error)
+	GetSourceRepository(name string) (*v1.SourceRepository, error)
 }

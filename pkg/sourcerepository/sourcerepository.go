@@ -38,8 +38,8 @@ func (service *SourceRepositoryService) CreateSourceRepository(name, organisatio
 	return nil
 }
 
-func (service *SourceRepositoryService) GetSourceRepository(name string) (v1.SourceRepository, error) {
-	panic("implement me")
+func (service *SourceRepositoryService) GetSourceRepository(name string) (*v1.SourceRepository, error) {
+	return service.client.JenkinsV1().SourceRepositories(service.namespace).Get(name, metav1.GetOptions{})
 }
 
 func (service *SourceRepositoryService) DeleteSourceRepository(name string) error {
