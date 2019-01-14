@@ -22,6 +22,8 @@ type PluginExpansion interface{}
 
 type ReleaseExpansion interface{}
 
+type SourceRepositoryExpansion interface{}
+
 type TeamExpansion interface{}
 
 type UserExpansion interface{}

@@ -438,6 +438,40 @@ type AppList struct {
 	Items []App `json:"items"`
 }
 
+// +genclient
+// +genclient:noStatus
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
+
+// SourceRepository is the metadata for an Application/Project/SourceRepository
+type SourceRepository struct {
+	metav1.TypeMeta `json:",inline"`
+	// Standard object's metadata.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
+
+	Spec SourceRepositorySpec `json:"spec,omitempty" protobuf:"bytes,2,opt,name=spec"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// SourceRepositoryList is a structure used by k8s to store lists of apps
+type SourceRepositoryList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []SourceRepository `json:"items"`
+}
+
+// SourceRepositorySpec provides details of the metadata for an App
+type SourceRepositorySpec struct {
+	Description string // non-functional user-data
+	Provider    string // github.com etc
+	Org         string
+	Repo        string
+}
+
 // AppSpec provides details of the metadata for an App
 type AppSpec struct {
 	// A list of services that this App exposes
