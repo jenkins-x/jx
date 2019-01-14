@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/application"
+	"github.com/jenkins-x/jx/pkg/sourcerepository"
 	"io"
 	"os/user"
 	"strings"
@@ -113,13 +113,20 @@ func (o *DeleteApplicationOptions) Run() error {
 		return errors.Wrap(err, "getting prow config")
 	}
 
+	repoService := sourcerepository.NewSourceRepositoryService(o.jxClient, o.currentNamespace)
 	var deletedApplications []string
 	if isProw {
-		deletedApplications, err = o.deleteProwApplication()
+		deletedApplications, err = o.deleteProwApplication(repoService)
 	} else {
 		deletedApplications, err = o.deleteJenkinsApplication()
 	}
 
+	for _, deletedApplication := range deletedApplications {
+		err := repoService.DeleteSourceRepository(deletedApplication)
+		if err != nil {
+			log.Warnf("Unable to find application metadata for %s to remove", deletedApplication)
+		}
+	}
 	if err != nil {
 		return errors.Wrapf(err, "deleting application")
 	}
@@ -127,7 +134,7 @@ func (o *DeleteApplicationOptions) Run() error {
 	return nil
 }
 
-func (o *DeleteApplicationOptions) deleteProwApplication() (deletedApplications []string, err error) {
+func (o *DeleteApplicationOptions) deleteProwApplication(repoService sourcerepository.SourceRepoer) (deletedApplications []string, err error) {
 	envMap, _, err := kube.GetOrderedEnvironments(o.jxClient, "")
 	currentUser, err := user.Current()
 	if err != nil {
@@ -148,7 +155,7 @@ func (o *DeleteApplicationOptions) deleteProwApplication() (deletedApplications 
 		}
 		if o.Org == "" {
 			// Fetch the Org from the stored Custom Resource
-			application, err := application.NewApplicationService(o.jxClient, o.currentNamespace).GetApplication(appName)
+			application, err := repoService.GetSourceRepository(appName)
 			if err != nil {
 				return deletedApplications, fmt.Errorf("could not get org for %s. use --org", util.ColorInfo(appName))
 			}

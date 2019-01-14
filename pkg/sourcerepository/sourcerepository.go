@@ -43,5 +43,5 @@ func (service *SourceRepositoryService) GetSourceRepository(name string) (*v1.So
 }
 
 func (service *SourceRepositoryService) DeleteSourceRepository(name string) error {
-	panic("implement me")
+	return service.client.JenkinsV1().SourceRepositories(service.namespace).Delete(name, &metav1.DeleteOptions{})
 }
