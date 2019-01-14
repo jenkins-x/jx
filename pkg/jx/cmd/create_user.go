@@ -5,6 +5,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/users"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -95,7 +97,7 @@ func (o *CreateUserOptions) Run() error {
 		return err
 	}
 
-	_, names, err := kube.GetUsers(jxClient, ns)
+	_, names, err := users.GetUsers(jxClient, ns)
 	if err != nil {
 		return err
 	}
@@ -120,7 +122,7 @@ func (o *CreateUserOptions) Run() error {
 	if name == "" {
 		name = strings.Title(login)
 	}
-	user := kube.CreateUser(ns, login, name, spec.Email)
+	user := users.CreateUser(ns, login, name, spec.Email)
 	_, err = jxClient.JenkinsV1().Users(ns).Create(user)
 	if err != nil {
 		return fmt.Errorf("Failed to create User %s: %s", login, err)

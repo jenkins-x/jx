@@ -308,9 +308,8 @@ func validateUser(t *testing.T, cs *cs_fake.Clientset) {
 	user, err := users.Get(userK8sID, metav1.GetOptions{})
 	assert.NoError(t, err, "User should have been created.")
 	assert.NotNil(t, user)
-	//TODO: should this be used Spec instead of User (deprecated).
-	assert.Equal(t, prEmail, user.User.Email)
-	assert.Equal(t, prAuthor, user.User.Name)
+	assert.Equal(t, prEmail, user.Spec.Email)
+	assert.Equal(t, prAuthor, user.Spec.Name)
 }
 
 //Pegomock 'any' matcher for *string.

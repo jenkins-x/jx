@@ -13,6 +13,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/users"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -346,11 +348,16 @@ func (o *StepChangelogOptions) Run() error {
 		},
 	}
 
+	resolver := users.GitUserResolver{
+		GitProvider: gitProvider,
+		Namespace:   devNs,
+		JXClient:    jxClient,
+	}
 	if commits != nil {
 		for _, commit := range *commits {
 
 			if o.IncludeMergeCommits || len(commit.ParentHashes) <= 1 {
-				o.addCommit(&release.Spec, &commit)
+				o.addCommit(&release.Spec, &commit, &resolver)
 			}
 		}
 	}
@@ -503,21 +510,29 @@ func (o *StepChangelogOptions) Run() error {
 	return nil
 }
 
-func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Commit) {
+func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Commit, resolver *users.GitUserResolver) {
 	// TODO
 	url := ""
 	branch := "master"
 
 	sha := commit.Hash.String()
+	author, err := resolver.GitSignatureAsUser(&commit.Author)
+	if err != nil {
+		log.Warnf("Failed to enrich commits with issues: %v\n", err)
+	}
+	committer, err := resolver.GitSignatureAsUser(&commit.Committer)
+	if err != nil {
+		log.Warnf("Failed to enrich commits with issues: %v\n", err)
+	}
 	commitSummary := v1.CommitSummary{
 		Message:   commit.Message,
 		URL:       url,
 		SHA:       sha,
-		Author:    o.toUserDetails(commit.Author),
+		Author:    &author.Spec,
 		Branch:    branch,
-		Committer: o.toUserDetails(commit.Committer),
+		Committer: &committer.Spec,
 	}
-	err := o.addIssuesAndPullRequests(spec, &commitSummary, commit)
+	err = o.addIssuesAndPullRequests(spec, &commitSummary, commit)
 
 	spec.Commits = append(spec.Commits, commitSummary)
 	if err != nil {
@@ -543,6 +558,15 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 	}
 	message := fullCommitMessageText(rawCommit)
 	matches := regex.FindAllStringSubmatch(message, -1)
+	jxClient, ns, err := o.CreateJXClient()
+	if err != nil {
+		return err
+	}
+	resolver := users.GitUserResolver{
+		JXClient:    jxClient,
+		Namespace:   ns,
+		GitProvider: gitProvider,
+	}
 	for _, match := range matches {
 		for _, result := range match {
 			result = strings.TrimPrefix(result, "#")
@@ -562,21 +586,33 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 				if issue.User == nil {
 					log.Warnf("Failed to find user for issue %s repository %s\n", result, tracker.HomeURL())
 				} else {
-					user = *o.gitUserToUserDetails(issue.User)
+					u, err := resolver.GitUserAsUser(issue.User)
+					if err != nil {
+						return err
+					}
+					user = u.Spec
 				}
 
 				var closedBy v1.UserDetails
 				if issue.ClosedBy == nil {
 					log.Warnf("Failed to find closedBy user for issue %s repository %s\n", result, tracker.HomeURL())
 				} else {
-					closedBy = *o.gitUserToUserDetails(issue.User)
+					u, err := resolver.GitUserAsUser(issue.User)
+					if err != nil {
+						return err
+					}
+					closedBy = u.Spec
 				}
 
 				var assignees []v1.UserDetails
 				if issue.Assignees == nil {
 					log.Warnf("Failed to find assignees for issue %s repository %s\n", result, tracker.HomeURL())
 				} else {
-					assignees = o.gitUserToUserDetailSlice(issue.Assignees)
+					u, err := resolver.GitUserSliceAsUserDetailsSlice(issue.Assignees)
+					if err != nil {
+						return err
+					}
+					assignees = u
 				}
 
 				labels := toV1Labels(issue.Labels)
@@ -638,49 +674,6 @@ func fullCommitMessageText(commit *object.Commit) string {
 	commit.Parents().ForEach(fn)
 	return answer
 
-}
-
-func (o *StepChangelogOptions) gitUserToUserDetailSlice(users []gits.GitUser) []v1.UserDetails {
-	answer := []v1.UserDetails{}
-	for _, user := range users {
-		answer = append(answer, *o.gitUserToUserDetails(&user))
-	}
-	return answer
-}
-
-func (o *StepChangelogOptions) gitUserToUserDetails(user *gits.GitUser) *v1.UserDetails {
-	return &v1.UserDetails{
-		Login:     user.Login,
-		Name:      user.Name,
-		Email:     user.Email,
-		URL:       user.URL,
-		AvatarURL: user.AvatarURL,
-		/*
-			CreationTimestamp: &metav1.Time{
-				Time: user.When,
-			},
-		*/
-	}
-}
-
-func (o *StepChangelogOptions) toUserDetails(signature object.Signature) *v1.UserDetails {
-	userDetailService := kube.NewUserDetailService(o.jxClient, o.devNamespace)
-
-	user := userDetailService.FindByEmail(signature.Email)
-
-	if user != nil && user.Login != "" {
-		return user
-	}
-
-	login := ""
-	return &v1.UserDetails{
-		Login: login,
-		Name:  signature.Name,
-		Email: signature.Email,
-		CreationTimestamp: &metav1.Time{
-			Time: signature.When,
-		},
-	}
 }
 
 func (o *StepChangelogOptions) getTemplateResult(releaseSpec *v1.ReleaseSpec, templateName string, templateText string, templateFile string) (string, error) {

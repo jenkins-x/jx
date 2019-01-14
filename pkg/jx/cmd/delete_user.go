@@ -5,6 +5,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/users"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -83,7 +85,7 @@ func (o *DeleteUserOptions) Run() error {
 		return err
 	}
 
-	_, userNames, err := kube.GetUsers(jxClient, ns)
+	_, userNames, err := users.GetUsers(jxClient, ns)
 	if err != nil {
 		return err
 	}
@@ -150,7 +152,7 @@ func (o *DeleteUserOptions) deleteUser(name string) error {
 	if err != nil {
 		return err
 	}
-	return kube.DeleteUser(jxClient, ns, name)
+	return users.DeleteUser(jxClient, ns, name)
 }
 func (o *DeleteUserOptions) deleteUserFromRoleBinding(name string, ns string) error {
 	jxClient, devNs, err := o.JXClientAndDevNamespace()
