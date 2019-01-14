@@ -63,12 +63,14 @@ type PipelineID struct {
 // The string identifier is expected to follow the format `<owner>/>repository>/<branch>`, though this isn't actually
 // validated/mandated here.
 func NewPipelineIDFromString(id string) PipelineID {
+	sanitisedName := strings.Replace(strings.ToLower(id), "/", "-", -1)
+	sanitisedName = strings.Replace(sanitisedName, "_", "-", -1)
 	pID := PipelineID{
 		ID: id,
 		//TODO: disabling the encoding of the name, as it doesn't work for some upper case values. Upshot is conflicts on org/repo/branch that differ only in case.
 		//See https://github.com/jenkins-x/jx/issues/2551
 		//Name: util.EncodeKubernetesName(strings.Replace(id, "/", "-", -1)),
-		Name: strings.Replace(strings.ToLower(id), "/", "-", -1),
+		Name: sanitisedName,
 	}
 	return pID
 }
