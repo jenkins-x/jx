@@ -306,7 +306,7 @@ func RegisterSourceRepositoryCRD(apiClient apiextensionsclientset.Interface) err
 			Name:        "Provider",
 			Type:        "string",
 			Description: "The source code provider (eg github) that the source repository is hosted in",
-			JSONPath:    ".spec.org",
+			JSONPath:    ".spec.provider",
 		},
 		{
 			Name:        "Org",
