@@ -82,6 +82,14 @@ type ReleaseListerExpansion interface{}
 // ReleaseNamespaceLister.
 type ReleaseNamespaceListerExpansion interface{}
 
+// SourceRepositoryListerExpansion allows custom methods to be added to
+// SourceRepositoryLister.
+type SourceRepositoryListerExpansion interface{}
+
+// SourceRepositoryNamespaceListerExpansion allows custom methods to be added to
+// SourceRepositoryNamespaceLister.
+type SourceRepositoryNamespaceListerExpansion interface{}
+
 // TeamListerExpansion allows custom methods to be added to
 // TeamLister.
 type TeamListerExpansion interface{}

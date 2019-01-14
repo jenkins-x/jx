@@ -66,6 +66,10 @@ func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Release CRD")
 	}
+	err = RegisterSourceRepositoryCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the SourceRepository CRD")
+	}
 	err = RegisterTeamCRD(apiClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Team CRD")
@@ -277,6 +281,46 @@ func RegisterAppCRD(apiClient apiextensionsclientset.Interface) error {
 		ShortNames: []string{"app"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
+	validation := v1beta1.CustomResourceValidation{}
+	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
+}
+
+// RegisterSourceRepositoryCRD ensures that the CRD is registered for Applications
+func RegisterSourceRepositoryCRD(apiClient apiextensionsclientset.Interface) error {
+	name := "sourcerepositories." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "SourceRepository",
+		ListKind:   "SourceRepositoryList",
+		Plural:     "sourcerepositiories",
+		Singular:   "sourcerepository",
+		ShortNames: []string{"sourcerepo", "srcrepo", "sr"},
+	}
+	columns := []v1beta1.CustomResourceColumnDefinition{
+		{
+			Name:        "Description",
+			Type:        "string",
+			Description: "A description of the source code repository - non-functional user-data",
+			JSONPath:    ".spec.description",
+		},
+		{
+			Name:        "Provider",
+			Type:        "string",
+			Description: "The source code provider (eg github) that the source repository is hosted in",
+			JSONPath:    ".spec.provider",
+		},
+		{
+			Name:        "Org",
+			Type:        "string",
+			Description: "The git organisation that the source repository belongs to",
+			JSONPath:    ".spec.org",
+		},
+		{
+			Name:        "Repo",
+			Type:        "string",
+			Description: "The name of the repository",
+			JSONPath:    ".spec.repo",
+		},
+	}
 	validation := v1beta1.CustomResourceValidation{}
 	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
 }

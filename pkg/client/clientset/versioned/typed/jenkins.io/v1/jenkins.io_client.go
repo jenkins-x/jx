@@ -21,6 +21,7 @@ type JenkinsV1Interface interface {
 	PipelineActivitiesGetter
 	PluginsGetter
 	ReleasesGetter
+	SourceRepositoriesGetter
 	TeamsGetter
 	UsersGetter
 	WorkflowsGetter
@@ -69,6 +70,10 @@ func (c *JenkinsV1Client) Plugins(namespace string) PluginInterface {
 
 func (c *JenkinsV1Client) Releases(namespace string) ReleaseInterface {
 	return newReleases(c, namespace)
+}
+
+func (c *JenkinsV1Client) SourceRepositories(namespace string) SourceRepositoryInterface {
+	return newSourceRepositories(c, namespace)
 }
 
 func (c *JenkinsV1Client) Teams(namespace string) TeamInterface {

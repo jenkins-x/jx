@@ -52,6 +52,10 @@ func (c *FakeJenkinsV1) Releases(namespace string) v1.ReleaseInterface {
 	return &FakeReleases{c, namespace}
 }
 
+func (c *FakeJenkinsV1) SourceRepositories(namespace string) v1.SourceRepositoryInterface {
+	return &FakeSourceRepositories{c, namespace}
+}
+
 func (c *FakeJenkinsV1) Teams(namespace string) v1.TeamInterface {
 	return &FakeTeams{c, namespace}
 }

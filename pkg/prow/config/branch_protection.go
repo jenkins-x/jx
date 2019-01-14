@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"k8s.io/test-infra/prow/config"
@@ -13,10 +14,11 @@ func AddRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, con
 	if bp.Orgs == nil {
 		bp.Orgs = make(map[string]config.Org, 0)
 	}
-	requiredOrg, requiredRepo, err := util.GetRemoteAndRepo(repoSpec)
+	url, err := gits.ParseGitURL(repoSpec)
 	if err != nil {
 		return err
 	}
+	requiredOrg, requiredRepo := url.Organisation, url.Name
 	if _, ok := bp.Orgs[requiredOrg]; !ok {
 		bp.Orgs[requiredOrg] = config.Org{
 			Repos: make(map[string]config.Repo, 0),
@@ -43,10 +45,6 @@ func AddRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, con
 		if !util.Contains(contexts, PromotionBuild) {
 			contexts = append(contexts, PromotionBuild)
 		}
-	case Protection:
-		if !util.Contains(contexts, ComplianceCheck) {
-			contexts = append(contexts, context)
-		}
 	default:
 		return fmt.Errorf("unknown Prow config kind %s", kind)
 	}
@@ -54,16 +52,17 @@ func AddRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, con
 	return nil
 }
 
-// RemoveRepoFromBranchProtection adds a repository to the Branch Protection section of a prow config
+// RemoveRepoFromBranchProtection removes a repository to the Branch Protection section of a prow config
 func RemoveRepoFromBranchProtection(bp *config.BranchProtection, repoSpec string) error {
 	if bp.Orgs == nil {
 		return errors.New("no orgs in BranchProtection object")
 	}
-	requiredOrg, requiredRepo, err := util.GetRemoteAndRepo(repoSpec)
-
+	url, err := gits.ParseGitURL(repoSpec)
 	if err != nil {
 		return err
 	}
+	requiredOrg, requiredRepo := url.Organisation, url.Name
+
 	repos := bp.Orgs[requiredOrg].Repos
 	if repos == nil {
 		return errors.New("no repos found for org " + requiredOrg)
@@ -94,6 +93,7 @@ func GetAllBranchProtectionContexts(org string, repo string, prowConfig *config.
 	return prowRepo.RequiredStatusChecks.Contexts, nil
 }
 
+// GetBranchProtectionContexts gets the branch protection contexts for a repo
 func GetBranchProtectionContexts(org string, repo string, prowConfig *config.Config) ([]string, error) {
 	result := make([]string, 0)
 	contexts, err := GetAllBranchProtectionContexts(org, repo, prowConfig)

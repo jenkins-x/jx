@@ -185,7 +185,7 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "", false, "Performs local changes to the repo but skips the import into Jenkins X")
 	cmd.Flags().BoolVarP(&options.DisableDraft, "no-draft", "", false, "Disable Draft from trying to default a Dockerfile and Helm Chart")
 	cmd.Flags().BoolVarP(&options.DisableJenkinsfileCheck, "no-jenkinsfile", "", false, "Disable defaulting a Jenkinsfile if its missing")
-	cmd.Flags().StringVarP(&options.ImportGitCommitMessage, "import-commit-message", "", "", "Should we override the Jenkinsfile in the project?")
+	cmd.Flags().StringVarP(&options.ImportGitCommitMessage, "import-commit-message", "", "", "Specifies the initial commit message used when importing the project")
 	cmd.Flags().StringVarP(&options.BranchPattern, "branches", "", "", "The branch pattern for branches to trigger CI/CD pipelines on")
 	cmd.Flags().BoolVarP(&options.ListDraftPacks, "list-packs", "", false, "list available draft packs")
 	cmd.Flags().StringVarP(&options.DraftPack, "pack", "", "", "The name of the pack to use")
@@ -211,7 +211,7 @@ func (options *ImportOptions) Run() error {
 		return nil
 	}
 
-	options.SetBatch(options.BatchMode)
+	options.Factory.SetBatch(options.BatchMode)
 
 	var err error
 	isProw := false
@@ -488,14 +488,14 @@ func (options *ImportOptions) DraftCreate() error {
 		return err
 	}
 
-	provider, err := gits.CreateProvider(options.GitServer, options.GitUserAuth, options.Git())
-	if err != nil {
-		return err
+	if options.GitUserAuth == nil {
+		userAuth := options.GitProvider.UserAuth()
+		options.GitUserAuth = &userAuth
 	}
 
 	if options.Organisation == "" {
 		gitUsername := options.GitUserAuth.Username
-		options.Organisation, err = gits.GetOwner(options.BatchMode, provider, gitUsername, options.In, options.Out, options.Err)
+		options.Organisation, err = gits.GetOwner(options.BatchMode, options.GitProvider, gitUsername, options.In, options.Out, options.Err)
 		if err != nil {
 			return err
 		}
@@ -505,7 +505,7 @@ func (options *ImportOptions) DraftCreate() error {
 		dir := options.Dir
 		_, defaultRepoName := filepath.Split(dir)
 
-		options.AppName, err = gits.GetRepoName(options.BatchMode, false, provider, defaultRepoName, options.Organisation, options.In, options.Out, options.Err)
+		options.AppName, err = gits.GetRepoName(options.BatchMode, false, options.GitProvider, defaultRepoName, options.Organisation, options.In, options.Out, options.Err)
 		if err != nil {
 			return err
 		}
