@@ -595,6 +595,7 @@ func splitObjectsInFiles(file string) ([]string, error) {
 	if err != nil {
 		return result, errors.Wrapf(err, "opening file %q", file)
 	}
+	defer f.Close()
 	scanner := bufio.NewScanner(f)
 	var buf bytes.Buffer
 	dir := filepath.Dir(file)
@@ -644,6 +645,7 @@ func writeObjectInFile(buf *bytes.Buffer, dir string, fileName string, count int
 	if err != nil {
 		return "", errors.Wrapf(err, "creating file %q", absFile)
 	}
+	defer file.Close()
 	_, err = buf.WriteTo(file)
 	if err != nil {
 		return "", errors.Wrapf(err, "writing object to file %q", absFile)
