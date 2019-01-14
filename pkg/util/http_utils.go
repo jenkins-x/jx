@@ -20,6 +20,7 @@ var jxDefaultTransport http.RoundTripper = &http.Transport{
 	IdleConnTimeout:       time.Duration(getIntFromEnv("HTTP_IDLE_CONN_TIMEOUT", 90)) * time.Second,
 	TLSHandshakeTimeout:   time.Duration(getIntFromEnv("HTTP_TLS_HANDSHAKE_TIMEOUT", 10)) * time.Second,
 	ExpectContinueTimeout: time.Duration(getIntFromEnv("HTTP_EXPECT_CONTINUE_TIMEOUT", 1)) * time.Second,
+	Proxy:                 http.ProxyFromEnvironment,
 }
 
 var defaultClient = http.Client{Transport: jxDefaultTransport, Timeout: time.Duration(getIntFromEnv("DEFAULT_HTTP_REQUEST_TIMEOUT", 30)) * time.Second}
