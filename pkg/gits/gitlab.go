@@ -284,11 +284,6 @@ func (p *GitlabProvider) GetPullRequest(owner string, repo *GitRepository, numbe
 	}
 	err := p.UpdatePullRequestStatus(pr)
 
-	existing := p.UserInfo(pr.Author.Login)
-	if existing != nil && existing.Email != "" {
-		pr.Author = existing
-	}
-
 	return pr, err
 }
 

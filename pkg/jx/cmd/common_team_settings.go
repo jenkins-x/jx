@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"strconv"
 
+	"github.com/jenkins-x/jx/pkg/users"
+
 	"github.com/jenkins-x/jx/pkg/builds"
 
 	"github.com/jenkins-x/jx/pkg/log"
@@ -318,7 +320,7 @@ func (o *CommonOptions) ModifyUser(userName string, callback func(env *v1.User) 
 	create := false
 	user, err := userInterface.Get(userName, metav1.GetOptions{})
 	if err != nil {
-		user = kube.CreateUser(ns, userName, "", "")
+		user = users.CreateUser(ns, userName, "", "")
 		create = true
 	}
 
