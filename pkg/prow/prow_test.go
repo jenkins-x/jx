@@ -1,9 +1,9 @@
 package prow_test
 
 import (
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/prow"
 	prowconfig "github.com/jenkins-x/jx/pkg/prow/config"
-	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 
 	"k8s.io/api/core/v1"
@@ -371,7 +371,9 @@ func getProwConfig(t *testing.T, o TestOptions) (*config.Config, error) {
 }
 
 func assertInPluginConfig(t *testing.T, prowConfig *config.Config, repo string, shouldBeInConfig bool) {
-	org, r, err := util.GetRemoteAndRepo(repo)
+	url, err := gits.ParseGitURL(repo)
+	assert.NoError(t, err)
+	org, r := url.Organisation, url.Name
 	assert.NoError(t, err)
 	if shouldBeInConfig {
 		assert.NotEmpty(t, prowConfig.Presubmits[repo])

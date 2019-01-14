@@ -60,6 +60,7 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&PipelineActivityList{},
 		&Release{},
 		&ReleaseList{},
+		&SourceRepository{},
 		&Team{},
 		&TeamList{},
 		&User{},
