@@ -7,11 +7,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+//SourceRepositoryService is the implementation of SourceRepoer
 type SourceRepositoryService struct {
 	client    versioned.Interface
 	namespace string
 }
 
+// NewSourceRepositoryService creates a new Service for interacting with the Source Repository Custom Resource
 func NewSourceRepositoryService(client versioned.Interface, namespace string) SourceRepoer {
 	return &SourceRepositoryService{
 		client:    client,
@@ -19,6 +21,7 @@ func NewSourceRepositoryService(client versioned.Interface, namespace string) So
 	}
 }
 
+//CreateSourceRepository creates a repo. If a repo already exists, it will return an error
 func (service *SourceRepositoryService) CreateSourceRepository(name, organisation, providerUrl string) error {
 	_, err := service.client.JenkinsV1().SourceRepositories(service.namespace).Create(&v1.SourceRepository{
 		ObjectMeta: metav1.ObjectMeta{
@@ -38,14 +41,17 @@ func (service *SourceRepositoryService) CreateSourceRepository(name, organisatio
 	return nil
 }
 
+// GetSourceRepository gets repo, if it exists and returns an error otherwise
 func (service *SourceRepositoryService) GetSourceRepository(name string) (*v1.SourceRepository, error) {
 	return service.client.JenkinsV1().SourceRepositories(service.namespace).Get(name, metav1.GetOptions{})
 }
 
+// DeleteSourceRepository deletes a repo
 func (service *SourceRepositoryService) DeleteSourceRepository(name string) error {
 	return service.client.JenkinsV1().SourceRepositories(service.namespace).Delete(name, &metav1.DeleteOptions{})
 }
 
+// ListSourceRepository gets a list of all the repos
 func (service *SourceRepositoryService) ListSourceRepositories() (*v1.SourceRepositoryList, error) {
 	return service.client.JenkinsV1().SourceRepositories(service.namespace).List(metav1.ListOptions{})
 }
