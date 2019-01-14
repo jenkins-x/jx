@@ -36,11 +36,11 @@ var (
 `)
 
 	deleteApplicationExample = templates.Examples(`
-		# prompt for the available apps to delete
-		jx delete app 
+		# prompt for the available applications to delete
+		jx delete application 
 
 		# delete a specific app 
-		jx delete app cheese
+		jx delete application cheese
 	`)
 )
 
@@ -80,7 +80,7 @@ func NewCmdDeleteApplication(f Factory, in terminal.FileReader, out terminal.Fil
 		Short:   "Deletes one or more applications from Jenkins",
 		Long:    deleteApplicationLong,
 		Example: deleteApplicationExample,
-		Aliases: []string{"applications", "app", "apps"}, // FIXME - naming conflict with 'app'
+		Aliases: []string{"applications"}, // FIXME - naming conflict with 'app'
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -142,19 +142,19 @@ func (o *DeleteApplicationOptions) deleteProwApplication() (deletedApplications 
 		return deletedApplications, errors.Wrap(err, "getting kube client")
 	}
 
-	for _, appName := range o.Args {
+	for _, arg := range o.Args {
 		for _, env := range envMap {
-			err = o.deleteApplicationFromEnvironment(env, appName, currentUser.Username)
+			err = o.deleteApplicationFromEnvironment(env, arg, currentUser.Username)
 			if err != nil {
-				return deletedApplications, errors.Wrapf(err, "deleting application %s from environment %s", appName, env.Name)
+				return deletedApplications, errors.Wrapf(err, "deleting application %s from environment %s", arg, env.Name)
 			}
 		}
-		repo := []string{o.Org + "/" + appName}
+		repo := []string{o.Org + "/" + arg}
 		err = prow.DeleteApplication(kubeClient, repo, ns)
 		if err != nil {
-			return deletedApplications, errors.Wrapf(err, "deleting prow config for %s", appName)
+			return deletedApplications, errors.Wrapf(err, "deleting prow config for %s", arg)
 		}
-		deletedApplications = append(deletedApplications, appName)
+		deletedApplications = append(deletedApplications, arg)
 	}
 	return
 }
