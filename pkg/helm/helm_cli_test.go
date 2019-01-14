@@ -149,7 +149,7 @@ func TestUpdateRepo(t *testing.T) {
 }
 
 func TestRemoveRequirementsLock(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "reqtest")
+	dir, err := ioutil.TempDir("", "reqtest")
 	assert.NoError(t, err, "should be able to create a temporary dir")
 	defer os.RemoveAll(dir)
 	path := filepath.Join(dir, "requirements.lock")
@@ -281,7 +281,7 @@ func TestSearchChartVersions(t *testing.T) {
 }
 
 func TestFindChart(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "charttest")
+	dir, err := ioutil.TempDir("", "charttest")
 	assert.NoError(t, err, "should be able to create a temporary dir")
 	defer os.RemoveAll(dir)
 	path := filepath.Join(dir, helm.ChartFileName)
