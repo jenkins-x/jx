@@ -133,29 +133,24 @@ func (o *AddAppOptions) Run() error {
 			return util.InvalidOptionf(optionRelease, o.ReleaseName, msg, optionRelease)
 		}
 		if !o.HelmUpdate {
-			return util.InvalidOptionf(optionHelmUpdate, o.ReleaseName, msg, optionHelmUpdate)
+			return util.InvalidOptionf(optionHelmUpdate, o.HelmUpdate, msg, optionHelmUpdate)
 		}
 		if o.Namespace != "" {
-			return util.InvalidOptionf(optionNamespace, o.ReleaseName, msg, optionNamespace)
+			return util.InvalidOptionf(optionNamespace, o.Namespace, msg, optionNamespace)
 		}
 		if len(o.ValueFiles) > 0 {
-			return util.InvalidOptionf(optionValues, o.ReleaseName, msg, optionValues)
+			return util.InvalidOptionf(optionValues, o.ValueFiles, msg, optionValues)
 		}
 		if len(o.SetValues) > 0 {
-			return util.InvalidOptionf(optionSet, o.ReleaseName, msg, optionSet)
+			return util.InvalidOptionf(optionSet, o.SetValues, msg, optionSet)
 		}
 	}
 	if !o.GitOps {
 		if o.Alias != "" {
-			return util.InvalidOptionf(optionAlias, o.ReleaseName,
+			return util.InvalidOptionf(optionAlias, o.Alias,
 				"Unable to specify --%s when NOT using GitOps for your dev environment", optionAlias)
 		}
 	}
-
-	/*err = o.GenerateValues()
-	if err != nil {
-		return err
-	}*/
 
 	args := o.Args
 	if len(args) == 0 {
