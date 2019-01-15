@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/sourcerepository"
 	"io"
 	"io/ioutil"
 	"os"
@@ -215,12 +216,12 @@ func (options *ImportOptions) Run() error {
 
 	var err error
 	isProw := false
+	jxClient, ns, err := options.JXClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
 	if !options.DryRun {
 		_, err = options.KubeClient()
-		if err != nil {
-			return err
-		}
-		_, _, err = options.JXClientAndDevNamespace()
 		if err != nil {
 			return err
 		}
@@ -405,6 +406,12 @@ func (options *ImportOptions) Run() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	err = sourcerepository.NewSourceRepositoryService(jxClient, ns).CreateSourceRepository(
+		options.AppName, options.Organisation, options.GitServer.URL)
+	if err != nil {
+		return errors.Wrapf(err, "creating application resource for %s", util.ColorInfo(options.AppName))
 	}
 
 	return options.doImport()

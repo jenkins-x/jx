@@ -331,12 +331,6 @@ func (p *GiteaProvider) GetPullRequest(owner string, repo *GitRepository, number
 		Number: &number,
 	}
 	err := p.UpdatePullRequestStatus(pr)
-
-	existing := p.UserInfo(pr.Author.Login)
-	if existing != nil && existing.Email != "" {
-		pr.Author = existing
-	}
-
 	return pr, err
 }
 

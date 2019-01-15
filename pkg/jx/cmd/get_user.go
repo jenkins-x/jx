@@ -7,6 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/users"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -66,7 +67,7 @@ func (o *GetUserOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	users, names, err := kube.GetUsers(jxClient, ns)
+	users, names, err := users.GetUsers(jxClient, ns)
 	if err != nil {
 		return err
 	}
