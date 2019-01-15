@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/sourcerepository"
 	"io"
 	"os/user"
 	"strings"
@@ -94,8 +95,7 @@ func NewCmdDeleteApplication(f Factory, in terminal.FileReader, out terminal.Fil
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Filter the list of applications to those containing this text")
 	cmd.Flags().StringVarP(&options.Timeout, optionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
 	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
-	// TODO - Create an Application CRD that gets populated with the org when an application is created/imported to store this.
-	cmd.Flags().StringVarP(&options.Org, "org", "o", "", "github organisation/project name that source code resides in. Temporary workaround until the platform can determine this automatically")
+	cmd.Flags().StringVarP(&options.Org, "org", "o", "", "github organisation/project name that source code resides in")
 	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "Run without being prompted. WARNING! You will not be asked to confirm deletions if you use this flag.")
 
 	return cmd
@@ -113,13 +113,20 @@ func (o *DeleteApplicationOptions) Run() error {
 		return errors.Wrap(err, "getting prow config")
 	}
 
+	repoService := sourcerepository.NewSourceRepositoryService(o.jxClient, o.currentNamespace)
 	var deletedApplications []string
 	if isProw {
-		deletedApplications, err = o.deleteProwApplication()
+		deletedApplications, err = o.deleteProwApplication(repoService)
 	} else {
 		deletedApplications, err = o.deleteJenkinsApplication()
 	}
 
+	for _, deletedApplication := range deletedApplications {
+		err := repoService.DeleteSourceRepository(deletedApplication)
+		if err != nil {
+			log.Warnf("Unable to find application metadata for %s to remove", deletedApplication)
+		}
+	}
 	if err != nil {
 		return errors.Wrapf(err, "deleting application")
 	}
@@ -127,10 +134,7 @@ func (o *DeleteApplicationOptions) Run() error {
 	return nil
 }
 
-func (o *DeleteApplicationOptions) deleteProwApplication() (deletedApplications []string, err error) {
-	if o.Org == "" {
-		return deletedApplications, errors.New("--org must be supplied")
-	}
+func (o *DeleteApplicationOptions) deleteProwApplication(repoService sourcerepository.SourceRepoer) (deletedApplications []string, err error) {
 	envMap, _, err := kube.GetOrderedEnvironments(o.jxClient, "")
 	currentUser, err := user.Current()
 	if err != nil {
@@ -142,19 +146,28 @@ func (o *DeleteApplicationOptions) deleteProwApplication() (deletedApplications 
 		return deletedApplications, errors.Wrap(err, "getting kube client")
 	}
 
-	for _, arg := range o.Args {
+	for _, applicationName := range o.Args {
 		for _, env := range envMap {
-			err = o.deleteApplicationFromEnvironment(env, arg, currentUser.Username)
+			err = o.deleteApplicationFromEnvironment(env, applicationName, currentUser.Username)
 			if err != nil {
-				return deletedApplications, errors.Wrapf(err, "deleting application %s from environment %s", arg, env.Name)
+				return deletedApplications, errors.Wrapf(err, "deleting application %s from environment %s", applicationName, env.Name)
 			}
 		}
-		repo := []string{o.Org + "/" + arg}
+		if o.Org == "" {
+			// Fetch the Org from the stored Custom Resource
+			application, err := repoService.GetSourceRepository(applicationName)
+			if err != nil {
+				return deletedApplications, fmt.Errorf("could not get org for %s. use --org", util.ColorInfo(applicationName))
+			}
+			o.Org = application.Spec.Org
+		}
+
+		repo := []string{o.Org + "/" + applicationName}
 		err = prow.DeleteApplication(kubeClient, repo, ns)
 		if err != nil {
-			return deletedApplications, errors.Wrapf(err, "deleting prow config for %s", arg)
+			return deletedApplications, errors.Wrapf(err, "deleting prow config for %s", applicationName)
 		}
-		deletedApplications = append(deletedApplications, arg)
+		deletedApplications = append(deletedApplications, applicationName)
 	}
 	return
 }
