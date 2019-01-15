@@ -1,9 +1,8 @@
 package cmd
 
 import (
-	"fmt"
+	"github.com/jenkins-x/jx/pkg/collector"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -312,10 +311,11 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 			envName := kube.LabelValueDevEnvironment
 			devEnv := o.EnvironmentCache.Item(envName)
 			var location *v1.StorageLocation
+			settings := &devEnv.Spec.TeamSettings
 			if devEnv == nil {
 				log.Warnf("No Environment %s found\n", envName)
 			} else {
-				location = devEnv.Spec.TeamSettings.StorageLocationOrDefault(kube.ClassificationLogs)
+				location = settings.StorageLocationOrDefault(kube.ClassificationLogs)
 			}
 			if location == nil {
 				location = &v1.StorageLocation{}
@@ -326,7 +326,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 					log.Warnf("No GitURL on PipelineActivity %s\n", activity.Name)
 				}
 			}
-			logURL := o.generateBuildLogURL(podInterface, ns, activity, buildName, pod, location, o.InitGitCredentials)
+			logURL := o.generateBuildLogURL(podInterface, ns, activity, buildName, pod, location, settings, o.InitGitCredentials)
 			if logURL != "" {
 				spec.BuildLogsURL = logURL
 			}
@@ -342,7 +342,17 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 }
 
 // generates the build log URL and returns the URL
-func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation, initGitCredentials bool) string {
+func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool) string {
+
+
+	coll, err := collector.NewCollector(location, settings, o.Git())
+	if err != nil {
+		if o.Verbose {
+			log.Warnf("Could not create Collector for pod %s in namespace %s with settings %#v due to: %s\n", pod.Name, ns, settings, err)
+		}
+		return ""
+	}
+
 	data, err := builds.GetBuildLogsForPod(podInterface, pod)
 	if err != nil {
 		// probably due to not being available yet
@@ -354,17 +364,6 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 
 	if o.Verbose {
 		log.Infof("got build log for pod: %s PipelineActivity: %s with bytes: %d\n", pod.Name, activity.Name, len(data))
-	}
-
-	sourceURL := location.GitURL
-	if sourceURL == "" {
-		// TODO handle http URLs too
-		return ""
-	}
-	gitInfo, err := gits.ParseGitURL(sourceURL)
-	if err != nil {
-		log.Infof("Failed to parse git URL %s: %s\n", sourceURL, err)
-		return ""
 	}
 
 	if initGitCredentials {
@@ -379,13 +378,6 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 		}
 	}
 
-	gitClient := gits.NewGitCLI()
-	ghPagesDir, err := cloneGitHubPagesBranchToTempDir(sourceURL, gitClient)
-	if err != err {
-		log.Warnf("Failed to git clone gh-pages branch for %s: %s\n", sourceURL, err)
-		return ""
-	}
-
 	owner := activity.Spec.GitOwner
 	repository := activity.RepositoryName()
 	branch := activity.BranchName()
@@ -393,75 +385,17 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 	if buildNumber == "" {
 		buildNumber = "1"
 	}
-
+	
 	pathDir := filepath.Join("jenkins-x", "logs", owner, repository, branch)
-	outDir := filepath.Join(ghPagesDir, pathDir)
-	err = os.MkdirAll(outDir, util.DefaultWritePermissions)
-	if err != nil {
-		log.Warnf("Failed to write create dir for log file %s: %s\n", outDir, err)
-		return ""
-	}
-
 	fileName := filepath.Join(pathDir, buildNumber+".log")
-	outFile := filepath.Join(ghPagesDir, fileName)
-	err = ioutil.WriteFile(outFile, data, util.DefaultWritePermissions)
-	if err != nil {
-		log.Warnf("Failed to write log file %s: %s\n", outFile, err)
-		return ""
-	}
 
-	err = gitClient.Add(ghPagesDir, pathDir)
+	url, err := coll.CollectData(data, fileName)
 	if err != nil {
-		log.Warnf("Failed to add to gh-pages repo dir %s: %s\n", pathDir, err)
-		return ""
-	}
-	err = gitClient.CommitIfChanges(ghPagesDir, fmt.Sprintf("Publishing log for Pipeline %s", activity.Name))
-	if err != nil {
-		log.Warnf("Failed to commit gh-pages repo dir %s: %s\n", ghPagesDir, err)
-		return ""
-	}
-	err = gitClient.Push(ghPagesDir)
-	if err != nil {
-		log.Warnf("Failed to push gh-pages repo dir %s: %s\n", ghPagesDir, err)
-		return ""
-	}
-
-	// TODO only github supported for now! Lets switch to GitProvider
-	return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/gh-pages/%s", gitInfo.Organisation, gitInfo.Name, fileName)
-}
-
-// cloneGitHubPagesBranchToTempDir clones the github pages branch to a temp dir
-func cloneGitHubPagesBranchToTempDir(sourceURL string, gitClient gits.Gitter) (string, error) {
-	// First clone the git repo
-	ghPagesDir, err := ioutil.TempDir("", "jenkins-x-collect")
-	if err != nil {
-		return ghPagesDir, err
-	}
-
-	err = gitClient.ShallowCloneBranch(sourceURL, ghPagesBranchName, ghPagesDir)
-	if err != nil {
-		log.Infof("error doing shallow clone of gh-pages %v", err)
-		// swallow the error
-		log.Infof("No existing %s branch so creating it\n", ghPagesBranchName)
-		// branch doesn't exist, so we create it following the process on https://help.github.com/articles/creating-project-pages-using-the-command-line/
-		err = gitClient.Clone(sourceURL, ghPagesDir)
-		if err != nil {
-			return ghPagesDir, err
-		}
-		err = gitClient.CheckoutOrphan(ghPagesDir, ghPagesBranchName)
-		if err != nil {
-			return ghPagesDir, err
-		}
-		err = gitClient.RemoveForce(ghPagesDir, ".")
-		if err != nil {
-			return ghPagesDir, err
-		}
-		err = os.Remove(filepath.Join(ghPagesDir, ".gitignore"))
-		if err != nil {
-			// Swallow the error, doesn't matter
+		if o.Verbose {
+			log.Warnf("Failed to collect build log for pod %s in namespace %s: %s\n", pod.Name, ns, err)
 		}
 	}
-	return ghPagesDir, nil
+	return url
 }
 
 // createStepDescription uses the spec of the init container to return a description

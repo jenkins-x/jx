@@ -88,9 +88,7 @@ func (c *GitCollector) CollectFiles(patterns []string, outputPath string, basedi
 				rPath := strings.TrimPrefix(strings.TrimPrefix(path, ghPagesDir), "/")
 
 				if rPath != "" {
-					// TODO only supporting github for now!!!
-					url := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/%s", storageOrg, storageRepoName, c.gitBranch, rPath)
-					log.Infof("Publishing %s\n", util.ColorInfo(url))
+					url := c.generateUrl(storageOrg, storageRepoName, rPath)
 					urls = append(urls, url)
 				}
 			}
@@ -118,6 +116,66 @@ func (c *GitCollector) CollectFiles(patterns []string, outputPath string, basedi
 	}
 	err = gitClient.Push(ghPagesDir)
 	return urls, err
+}
+
+// CollectData collects the data storing it at the given output path and returning the URL
+// to access it
+func (c *GitCollector) CollectData(data []byte, outputPath string) (string, error) {
+	u := ""
+	gitClient := c.gitter
+	storageGitInfo := c.gitInfo
+	storageOrg := storageGitInfo.Organisation
+	storageRepoName := storageGitInfo.Name
+
+	ghPagesDir, err := cloneGitHubPagesBranchToTempDir(c.gitInfo.URL, gitClient, c.gitBranch)
+	if err != nil {
+		return u, err
+	}
+
+	repoDir := filepath.Join(ghPagesDir, outputPath)
+	err = os.MkdirAll(repoDir, 0755)
+	if err != nil {
+		return u, err
+	}
+
+	toFile := filepath.Join(repoDir, outputPath)
+	toDir, _ := filepath.Split(toFile)
+	err = os.MkdirAll(toDir, util.DefaultWritePermissions)
+	if err != nil {
+		return u, errors.Wrapf(err, "failed to create directory file %s", toDir)
+	}
+	err = ioutil.WriteFile(toFile, data, util.DefaultWritePermissions)
+	if err != nil {
+		return u, errors.Wrapf(err, "failed to write file %s", toFile)
+	}
+
+	u = c.generateUrl(storageOrg, storageRepoName, outputPath)
+
+	err = gitClient.Add(ghPagesDir, repoDir)
+	if err != nil {
+		return u, err
+	}
+	changes, err := gitClient.HasChanges(ghPagesDir)
+	if err != nil {
+		return u, err
+	}
+	if !changes {
+		return u, nil
+	}
+	err = gitClient.CommitDir(ghPagesDir, fmt.Sprintf("Publishing files for path %s", outputPath))
+	if err != nil {
+		fmt.Println(err)
+		return u, err
+	}
+	err = gitClient.Push(ghPagesDir)
+	return u, err
+}
+
+func (c *GitCollector) generateUrl(storageOrg string, storageRepoName string, rPath string) string {
+	// TODO only supporting github for now!!!
+	url := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/%s", storageOrg, storageRepoName, c.gitBranch, rPath)
+	log.Infof("Publishing %s\n", util.ColorInfo(url))
+	return url
 }
 
 // cloneGitHubPagesBranchToTempDir clones the github pages branch to a temp dir

@@ -5,11 +5,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/collector"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
-
-	"github.com/jenkins-x/jx/pkg/gits"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -176,129 +173,6 @@ func (o *StepCollectOptions) Run() error {
 	// TODO this pipeline name construction needs moving to a shared lib, and other things refactoring to use it
 	pipeline := fmt.Sprintf("%s-%s-%s-%s", projectOrg, projectRepoName, projectBranchName, buildNo)
 	activities := client.JenkinsV1().PipelineActivities(ns)
-
-	if pipeline != "" && buildNo != "" {
-		name := kube.ToValidName(pipeline)
-		key := &kube.PromoteStepActivityKey{
-			PipelineActivityKey: kube.PipelineActivityKey{
-				Name:     name,
-				Pipeline: pipeline,
-				Build:    buildNo,
-			},
-		}
-		a, _, err := key.GetOrCreate(activities)
-		if err != nil {
-			return err
-		}
-		a.Spec.Attachments = append(a.Spec.Attachments, jenkinsv1.Attachment{
-			Name: classifier,
-			URLs: urls,
-		})
-		_, err = client.JenkinsV1().PipelineActivities(ns).Update(a)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (o *StepCollectOptions) collectGitURL(storageURL string) (err error) {
-	client, ns, err := o.CreateJXClient()
-	if err != nil {
-		return errors.Wrap(err, "cannot create the JX client")
-	}
-
-	storageGitInfo, err := gits.ParseGitURL(storageURL)
-	if err != nil {
-		return err
-	}
-	storageOrg := storageGitInfo.Organisation
-	storageRepoName := storageGitInfo.Name
-
-	gitClient := o.Git()
-
-	ghPagesDir, err := cloneGitHubPagesBranchToTempDir(storageURL, gitClient)
-	if err != nil {
-		return err
-	}
-
-	buildNo := o.getBuildNumber()
-	projectGitInfo, err := o.FindGitInfo("")
-	if err != nil {
-		return err
-	}
-	projectOrg := projectGitInfo.Organisation
-	projectRepoName := projectGitInfo.Name
-
-	projectBranchName := os.Getenv(envVarBranchName)
-	if projectBranchName == "" {
-		// lets try find the branch name via git
-		projectBranchName, err = o.Git().Branch(o.Dir)
-		if err != nil {
-			return err
-		}
-	}
-	if projectBranchName == "" {
-		return fmt.Errorf("Environment variable %s is empty", envVarBranchName)
-	}
-
-	classifier := o.StorageLocation.Classifier
-	repoPath := filepath.Join("jenkins-x", classifier, projectOrg, projectRepoName, projectBranchName, buildNo)
-	repoDir := filepath.Join(ghPagesDir, repoPath)
-	err = os.MkdirAll(repoDir, 0755)
-	if err != nil {
-		return err
-	}
-
-	for _, p := range o.Pattern {
-		_, err = exec.Command("cp", "-r", p, repoDir).Output()
-		if err != nil {
-			return err
-		}
-	}
-
-	urls := make([]string, 0)
-	err = filepath.Walk(repoDir,
-		func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			if !info.IsDir() {
-				rPath := strings.TrimPrefix(strings.TrimPrefix(path, ghPagesDir), "/")
-
-				if rPath != "" {
-					url := fmt.Sprintf("https://%s.github.io/%s/%s", storageOrg, storageRepoName, rPath)
-					log.Infof("Publishing %s\n", util.ColorInfo(url))
-					urls = append(urls, url)
-				}
-			}
-			return nil
-		})
-	if err != nil {
-		return err
-	}
-
-	err = gitClient.Add(ghPagesDir, repoDir)
-	if err != nil {
-		return err
-	}
-	err = gitClient.CommitDir(ghPagesDir, fmt.Sprintf("Publishing files for build %s", buildNo))
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-	err = gitClient.Push(ghPagesDir)
-	if err != nil {
-		return err
-	}
-
-	activities := client.JenkinsV1().PipelineActivities(ns)
-	if err != nil {
-		return err
-	}
-
-	// TODO this pipeline name construction needs moving to a shared lib, and other things refactoring to use it
-	pipeline := fmt.Sprintf("%s-%s-%s-%s", projectOrg, projectRepoName, projectBranchName, buildNo)
 
 	if pipeline != "" && buildNo != "" {
 		name := kube.ToValidName(pipeline)
