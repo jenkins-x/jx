@@ -11,7 +11,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const admin_namespace_annotation = "jenkins-x.io/admin-namespace"
+const adminNamespaceAnnotation = "jenkins-x.io/admin-namespace"
 
 // GetAdminNamespace tries to find the admin namespace that corresponds to this team.
 // in other words this is the namespace where the team CRD was initially created when this team was created,
@@ -21,7 +21,7 @@ func GetAdminNamespace(kubeClient kubernetes.Interface, teamNs string) (string, 
 	if err != nil {
 		return "", errors.Wrapf(err, "Failed to obtain the team namespace (%s) when getting the admin namespace", teamNs)
 	}
-	adminNs := namespace.Annotations[admin_namespace_annotation]
+	adminNs := namespace.Annotations[adminNamespaceAnnotation]
 	if adminNs != "" {
 		return adminNs, nil
 	}
@@ -35,12 +35,12 @@ func SetAdminNamespace(kubeClient kubernetes.Interface, teamNs string , adminNs 
 	if err != nil {
 		return errors.Wrapf(err, "Failed to update the obtain the namespace (%s) when updating the admin namespace", teamNs)
 	}
-	oldAdminNs := namespace.Annotations[admin_namespace_annotation]
+	oldAdminNs := namespace.Annotations[adminNamespaceAnnotation]
 	if oldAdminNs == adminNs {
 		// nothing to do
 		return nil
 	}
-	namespace.Annotations[admin_namespace_annotation] = adminNs
+	namespace.Annotations[adminNamespaceAnnotation] = adminNs
 	// TODO use patch
 	_, err = kubeClient.CoreV1().Namespaces().Update(namespace)
 	return err
