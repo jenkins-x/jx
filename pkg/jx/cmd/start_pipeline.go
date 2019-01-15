@@ -114,7 +114,7 @@ func (o *StartPipelineOptions) Run() error {
 	names := []string{}
 	o.ProwOptions = prow.Options{
 		KubeClient: kubeClient,
-		NS: o.currentNamespace,
+		NS:         o.currentNamespace,
 	}
 	if len(args) == 0 {
 		if isProw {
