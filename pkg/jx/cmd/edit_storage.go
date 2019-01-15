@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -27,8 +28,11 @@ var (
 		# Configure the git/http URLs of where to store logs
 		jx edit storage -c logs
 
-		# Configure the git URL of where to store logs
+		# Configure the git URL of where to store logs (defaults to gh-pages branch)
 		jx edit storage -c logs --git-url https://github.com/myorg/mylogs.git'
+
+		# Configure the git URL and branch of where to store logs
+		jx edit storage -c logs --git-url https://github.com/myorg/mylogs.git' --git-branch cheese
 
 		# Configure the git URL of where all storage goes to by default unless a specific classifier has a config
 		jx edit storage -c default --git-url https://github.com/myorg/mylogs.git'
@@ -40,9 +44,7 @@ var (
 type EditStorageOptions struct {
 	CreateOptions
 
-	Classifier string
-	GitURL     string
-	HttpURL    string
+	StorageLocation jenkinsv1.StorageLocation
 }
 
 // NewCmdEditStorage creates a command object for the "create" command
@@ -74,41 +76,56 @@ func NewCmdEditStorage(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 	options.addCommonFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.Classifier, "classifier", "c", "", "A name which classifies this type of file. Example values: "+kube.ClassificationValues)
-	cmd.Flags().StringVarP(&options.HttpURL, "http-url", "", "", "Specify the HTTP endpoint to send each file to")
-	cmd.Flags().StringVarP(&options.GitURL, "git-url", "", "", "Specify the Git URL to populate in a gh-pages branch")
+	cmd.Flags().StringVarP(&options.StorageLocation.Classifier, "classifier", "c", "", "A name which classifies this type of file. Example values: "+kube.ClassificationValues)
+	cmd.Flags().StringVarP(&options.StorageLocation.HttpURL, "http-url", "", "", "Specify the HTTP endpoint to send each file to")
+	cmd.Flags().StringVarP(&options.StorageLocation.GitURL, "git-url", "", "", "Specify the Git URL to populate in a gh-pages branch")
+	cmd.Flags().StringVarP(&options.StorageLocation.GitBranch, "git-branch", "", "gh-pages", "The branch to use to store files in the git branch")
 
 	return cmd
 }
 
 // Run implements the command
 func (o *EditStorageOptions) Run() error {
-	var err error
-	if o.Classifier == "" && ! o.BatchMode {
-		o.Classifier, err = util.PickName(kube.Classifications, "Pick the content classification name", "The name is used as a key to store content in different locations", o.In, o.Out, o.Err)
+	settings, err := o.TeamSettings()
+	if err != nil {
+	  return err
+	}
+
+	classifier := o.StorageLocation.Classifier
+	if classifier == "" && ! o.BatchMode {
+		o.StorageLocation.Classifier, err = util.PickName(kube.Classifications, "Pick the content classification name", "The name is used as a key to store content in different locations", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
 	}
-	if o.Classifier == "" {
+	if classifier == "" {
 		return util.MissingOption("classifier")
 	}
 
-	if !o.BatchMode && (o.HttpURL == "" && o.GitURL == "") {
-		o.GitURL, err = util.PickValue("Git repository URL to store content:", o.GitURL, false, "The Git URL will be used to clone and push the storage to", o.In, o.Out, o.Err)
-		if err != nil {
-		  return err
+	currentLocation := settings.StorageLocationOrDefault(classifier)
+
+	if o.StorageLocation.HttpURL == "" && o.StorageLocation.GitURL == "" {
+		if o.BatchMode {
+			if currentLocation.GitURL == "" {
+				return util.MissingOption("git-url")
+			}
+			o.StorageLocation.GitURL = currentLocation.GitURL
+		} else {
+			o.StorageLocation.GitURL, err = util.PickValue("Git repository URL to store content:", currentLocation.GitURL, false, "The Git URL will be used to clone and push the storage to", o.In, o.Out, o.Err)
+			if err != nil {
+				return err
+			}
 		}
-		o.HttpURL, err = util.PickValue("HTTP URL to POST content to:", o.HttpURL, false, "The Git URL will be used to clone and push the storage to", o.In, o.Out, o.Err)
-		if err != nil {
-		  return err
+		if o.StorageLocation.GitURL == "" {
+			o.StorageLocation.HttpURL, err = util.PickValue("HTTP URL to POST content to:", o.StorageLocation.HttpURL, false, "The Git URL will be used to clone and push the storage to", o.In, o.Out, o.Err)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
 	callback := func(env *v1.Environment) error {
-		location := env.Spec.TeamSettings.StorageLocation(o.Classifier)
-		location.GitURL = o.GitURL
-		location.HttpURL = o.HttpURL
+		env.Spec.TeamSettings.SetStorageLocation(classifier, o.StorageLocation)
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)
