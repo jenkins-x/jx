@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/users"
+
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -240,6 +242,12 @@ func (o *PreviewOptions) Run() error {
 			return fmt.Errorf("cannot create Git provider %v", err)
 		}
 
+		resolver := users.GitUserResolver{
+			GitProvider: gitProvider,
+			JXClient:    jxClient,
+			Namespace:   currentNs,
+		}
+
 		if prNum > 0 {
 			pullRequest, err = gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo, prNum)
 			if err != nil {
@@ -250,38 +258,21 @@ func (o *PreviewOptions) Run() error {
 				log.Warn("Unable to get commits: " + err.Error() + "\n")
 			}
 			if pullRequest != nil {
-				author := pullRequest.Author
+				author, err := resolver.GitUserAsUser(pullRequest.Author)
+				if err != nil {
+					return err
+				}
+				author, err = resolver.UpdateUserFromPRAuthor(author, pullRequest, commits)
+				if err != nil {
+					// This isn't fatal, just nice to have!
+					log.Warnf("Unable to update user %s from %s because %v", author.Name, o.PullRequestName, err)
+				}
 				if author != nil {
-					if author.Email == "" {
-						log.Info("PullRequest author email is empty\n")
-						for _, commit := range commits {
-							if commit.Author != nil && pullRequest.Author.Login == commit.Author.Login {
-								log.Info("Found commit author match for: " + author.Login + " with email address: " + commit.Author.Email + "\n")
-								author.Email = commit.Author.Email
-								break
-							}
-						}
-					}
-
-					if author.Email != "" {
-						userDetailService := kube.NewUserDetailService(jxClient, ns)
-						err := userDetailService.CreateOrUpdateUser(&v1.UserDetails{
-							Login:     author.Login,
-							Email:     author.Email,
-							Name:      author.Name,
-							URL:       author.URL,
-							AvatarURL: author.AvatarURL,
-						})
-						if err != nil {
-							log.Warnf("An error happened attempting to CreateOrUpdateUser in namespace %s: %s\n", ns, err)
-						}
-					}
-
 					user = &v1.UserSpec{
-						Username: author.Login,
-						Name:     author.Name,
-						ImageURL: author.AvatarURL,
-						LinkURL:  author.URL,
+						Username: author.Spec.Login,
+						Name:     author.Spec.Name,
+						ImageURL: author.Spec.AvatarURL,
+						LinkURL:  author.Spec.URL,
 					}
 				}
 			}

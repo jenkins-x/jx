@@ -5,6 +5,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/users"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -93,7 +95,7 @@ func (o *EditUserRoleOptions) Run() error {
 	}
 
 	// TODO should use the admin namespace?
-	users, names, err := kube.GetUsers(jxClient, ns)
+	users, names, err := users.GetUsers(jxClient, ns)
 	if err != nil {
 		return err
 	}
