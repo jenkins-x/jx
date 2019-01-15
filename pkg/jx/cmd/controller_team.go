@@ -306,6 +306,11 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			}
 		}
 
+		err = kube.SetAdminNamespace(kubeClient, teamNs, adminNs)
+		if err != nil {
+			log.Errorf("Unable set admin namespace on team %s to %s - %s", util.ColorInfo(teamNs), util.ColorInfo(adminNs), err)
+			return
+		}
 		err = oc.ModifyTeam(adminNs, team.Name, func(team *v1.Team) error {
 			team.Status.ProvisionStatus = v1.TeamProvisionStatusComplete
 			team.Status.Message = "Installation complete"
@@ -315,7 +320,14 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			log.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(teamNs), v1.TeamProvisionStatusComplete, err)
 			return
 		}
+	} else if v1.TeamProvisionStatusComplete == team.Status.ProvisionStatus {
+		err := kube.SetAdminNamespace(kubeClient, teamNs, adminNs)
+		if err != nil {
+			log.Errorf("Unable set admin namespace on team %s to %s - %s", util.ColorInfo(teamNs), util.ColorInfo(adminNs), err)
+			return
+		}
 	}
+
 }
 
 // LoadProwOAuthConfig returns the OAuth Token for Prow
