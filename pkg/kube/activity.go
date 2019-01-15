@@ -63,12 +63,14 @@ type PipelineID struct {
 // The string identifier is expected to follow the format `<owner>/>repository>/<branch>`, though this isn't actually
 // validated/mandated here.
 func NewPipelineIDFromString(id string) PipelineID {
+	sanitisedName := strings.Replace(strings.ToLower(id), "/", "-", -1)
+	sanitisedName = strings.Replace(sanitisedName, "_", "-", -1)
 	pID := PipelineID{
 		ID: id,
 		//TODO: disabling the encoding of the name, as it doesn't work for some upper case values. Upshot is conflicts on org/repo/branch that differ only in case.
 		//See https://github.com/jenkins-x/jx/issues/2551
 		//Name: util.EncodeKubernetesName(strings.Replace(id, "/", "-", -1)),
-		Name: strings.Replace(strings.ToLower(id), "/", "-", -1),
+		Name: sanitisedName,
 	}
 	return pID
 }
@@ -119,15 +121,9 @@ func CreatePipelineDetails(activity *v1.PipelineActivity) *PipelineDetails {
 }
 
 // GenerateBuildNumber generates a new build number for the given pipeline
-func GenerateBuildNumber(activities typev1.PipelineActivityInterface, pn PipelineID) (string, *v1.PipelineActivity, error) {
+func GenerateBuildNumber(activities typev1.PipelineActivityInterface, pipelines []*v1.PipelineActivity, pn PipelineID) (string, *v1.PipelineActivity, error) {
 	buildCounter := 0
-	pipelines, err := activities.List(metav1.ListOptions{})
-
-	if err != nil {
-		return "", nil, err
-	}
-
-	for _, pipeline := range pipelines.Items {
+	for _, pipeline := range pipelines {
 		if strings.EqualFold(pipeline.Spec.Pipeline, pn.ID) {
 			b := pipeline.Spec.Build
 			if b != "" {

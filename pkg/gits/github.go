@@ -560,32 +560,6 @@ func (p *GitHubProvider) GetPullRequest(owner string, repo *GitRepository, numbe
 		Number: &number,
 	}
 	err := p.UpdatePullRequestStatus(pr)
-
-	if pr.Author != nil {
-		if pr.Author.Email == "" {
-			user := p.UserInfo(pr.Author.Login)
-			if user != nil {
-				pr.Author = user
-			}
-		}
-	}
-	for i, u := range pr.Assignees {
-		if u != nil {
-			user := p.UserInfo(u.Login)
-			if user != nil {
-				pr.Assignees[i] = user
-			}
-		}
-	}
-	for i, u := range pr.RequestedReviewers {
-		if u != nil {
-			user := p.UserInfo(u.Login)
-			if user != nil {
-				pr.RequestedReviewers[i] = user
-			}
-		}
-	}
-
 	return pr, err
 }
 

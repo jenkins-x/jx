@@ -24,6 +24,7 @@ const (
 	BitbucketCloud
 	BitbucketServer
 	Gerrit
+	Fake
 )
 
 type CommitStatus string
@@ -427,6 +428,8 @@ func (f *FakeProvider) Kind() string {
 		return KindBitBucketCloud
 	case BitbucketServer:
 		return KindBitBucketServer
+	case Fake:
+		return KindGitFake
 	default:
 		return KindUnknown
 	}
@@ -618,7 +621,7 @@ func (f *FakeProvider) UserAuth() auth.UserAuth {
 
 func (f *FakeProvider) UserInfo(username string) *GitUser {
 	for _, user := range f.Users {
-		if user.Name == username {
+		if user.Login == username {
 			return user
 		}
 	}

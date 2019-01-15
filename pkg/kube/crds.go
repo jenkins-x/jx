@@ -291,7 +291,7 @@ func RegisterSourceRepositoryCRD(apiClient apiextensionsclientset.Interface) err
 	names := &v1beta1.CustomResourceDefinitionNames{
 		Kind:       "SourceRepository",
 		ListKind:   "SourceRepositoryList",
-		Plural:     "sourcerepositiories",
+		Plural:     "sourcerepositories",
 		Singular:   "sourcerepository",
 		ShortNames: []string{"sourcerepo", "srcrepo", "sr"},
 	}

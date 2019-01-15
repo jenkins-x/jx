@@ -112,10 +112,6 @@ func JenkinsTokenURL(url string) string {
 	return tokenUrl
 }
 
-func JenkinsNewTokenURL(url string) string {
-	return util.UrlJoin(url, "/me/descriptorByName/jenkins.security.ApiTokenProperty/generateNewToken")
-}
-
 func JenkinsApiURL(url string) string {
 	return util.UrlJoin(url, "/api")
 }

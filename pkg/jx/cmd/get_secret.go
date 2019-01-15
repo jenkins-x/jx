@@ -74,9 +74,9 @@ func (o *GetSecretOptions) Run() error {
 	var vaultClient vault.Client
 	var err error
 	if o.Name != "" && o.Namespace != "" {
-		vaultClient, err = o.GetVaultClient(o.Name, o.Namespace)
+		vaultClient, err = o.CreateVaultClient(o.Name, o.Namespace)
 	} else {
-		vaultClient, err = o.GetSystemVaultClient()
+		vaultClient, err = o.CreateSystemVaultClient()
 	}
 	if err != nil {
 		return errors.Wrap(err, "retrieving the vault client")
