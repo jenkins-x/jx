@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/collector"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -28,6 +28,7 @@ type StepCollectOptions struct {
 	StepOptions
 	Pattern         []string
 	Dir             string
+	Basedir         string
 	StorageLocation jenkinsv1.StorageLocation
 }
 
@@ -49,6 +50,9 @@ var (
 
 		# lets collect some files to a specific Git URL
 		jx step collect -c tests -p "target/test-reports/*" --git-url https://github.com/myuser/myrepo.git
+
+		# lets collect some files with the file names relative to the 'target/test-reports' folder and store in a Git URL
+		jx step collect -c tests -p "target/test-reports/*" --basedir target/test-reports --git-url https://github.com/myuser/myrepo.git
 
 		# lets collect some files to a specific HTTP URL
 		jx step collect -c coverage -p "build/coverage/*" --http-url https://myserver.cheese/
@@ -79,8 +83,9 @@ func NewCmdStepCollect(f Factory, in terminal.FileReader, out terminal.FileWrite
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().StringArrayVarP(&options.Pattern, "pattern", "p", make([]string, 0), "Specify the pattern to use to look for files")
+	cmd.Flags().StringArrayVarP(&options.Pattern, "pattern", "p", nil, "Specify the pattern to use to look for files")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The source directory to try detect the current git repository or branch. Defaults to using the current directory")
+	cmd.Flags().StringVarP(&options.Basedir, "basedir", "", "", "The base directory to use to create relative output file names. e.g. if you specify '--pattern \"target/*.xml\" then you may want to supply '--basedir target' to strip the 'target/' prefix from all collected files")
 	cmd.Flags().StringVarP(&options.StorageLocation.HttpURL, "http-url", "", "", "Specify the HTTP endpoint to send each file to")
 	cmd.Flags().StringVarP(&options.StorageLocation.GitURL, "git-url", "", "", "Specify the Git URL to populate files in a gh-pages branch")
 	cmd.Flags().StringVarP(&options.StorageLocation.Classifier, "classifier", "c", "", "A name which classifies this type of file. Example values: "+kube.ClassificationValues)
@@ -88,6 +93,9 @@ func NewCmdStepCollect(f Factory, in terminal.FileReader, out terminal.FileWrite
 }
 
 func (o *StepCollectOptions) Run() error {
+	if len(o.Pattern) == 0 {
+		return util.MissingOption("pattern")
+	}
 	classifier := o.StorageLocation.Classifier
 	if classifier == "" {
 		return util.MissingOption("classifier")
@@ -99,13 +107,13 @@ func (o *StepCollectOptions) Run() error {
 			return err
 		}
 	}
+	settings, err := o.TeamSettings()
+	if err != nil {
+		return err
+	}
 	if o.StorageLocation.IsEmpty() {
 		// lets try get the location from the team settings
-		settings, err := o.TeamSettings()
-		if err != nil {
-			return err
-		}
-		o.StorageLocation = *settings.StorageLocation(classifier)
+		o.StorageLocation = *settings.StorageLocationOrDefault(classifier)
 
 		if o.StorageLocation.IsEmpty() {
 			// we have no team settings so lets try detect the git repository using an env var or local file system
@@ -124,19 +132,82 @@ func (o *StepCollectOptions) Run() error {
 			o.StorageLocation.GitURL = sourceURL
 		}
 	}
+	if o.StorageLocation.IsEmpty() {
+		return fmt.Errorf("Missing option --git-url and we could not detect the current git repository URL")
+	}
 
-	gitURL := o.StorageLocation.GitURL
-	if gitURL != "" {
-		return o.collectGitURL(gitURL)
+	coll, err := collector.NewCollector(&o.StorageLocation, settings, o.Git())
+	if err != nil {
+		return err
 	}
-	httpURL := o.StorageLocation.HttpURL
-	if httpURL != "" {
-		return o.collectHttpURL(httpURL)
+
+	client, ns, err := o.CreateJXClient()
+	if err != nil {
+		return errors.Wrap(err, "cannot create the JX client")
 	}
-	return fmt.Errorf("Missing option --git-url and we could not detect the current git repository URL")
+
+	buildNo := o.getBuildNumber()
+	projectGitInfo, err := o.FindGitInfo("")
+	if err != nil {
+		return err
+	}
+	projectOrg := projectGitInfo.Organisation
+	projectRepoName := projectGitInfo.Name
+
+	projectBranchName := os.Getenv(envVarBranchName)
+	if projectBranchName == "" {
+		// lets try find the branch name via git
+		projectBranchName, err = o.Git().Branch(o.Dir)
+		if err != nil {
+			return err
+		}
+	}
+	if projectBranchName == "" {
+		return fmt.Errorf("Environment variable %s is empty", envVarBranchName)
+	}
+
+	repoPath := filepath.Join("jenkins-x", classifier, projectOrg, projectRepoName, projectBranchName, buildNo)
+
+	urls, err := coll.CollectFiles(o.Pattern, repoPath, o.Basedir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to collect patterns %s to path %s", strings.Join(o.Pattern, ", "), repoPath)
+	}
+
+	// TODO this pipeline name construction needs moving to a shared lib, and other things refactoring to use it
+	pipeline := fmt.Sprintf("%s-%s-%s-%s", projectOrg, projectRepoName, projectBranchName, buildNo)
+	activities := client.JenkinsV1().PipelineActivities(ns)
+
+	if pipeline != "" && buildNo != "" {
+		name := kube.ToValidName(pipeline)
+		key := &kube.PromoteStepActivityKey{
+			PipelineActivityKey: kube.PipelineActivityKey{
+				Name:     name,
+				Pipeline: pipeline,
+				Build:    buildNo,
+			},
+		}
+		a, _, err := key.GetOrCreate(activities)
+		if err != nil {
+			return err
+		}
+		a.Spec.Attachments = append(a.Spec.Attachments, jenkinsv1.Attachment{
+			Name: classifier,
+			URLs: urls,
+		})
+		_, err = client.JenkinsV1().PipelineActivities(ns).Update(a)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (o *StepCollectOptions) collectGitURL(storageURL string) (err error) {
+	client, ns, err := o.CreateJXClient()
+	if err != nil {
+		return errors.Wrap(err, "cannot create the JX client")
+	}
+
 	storageGitInfo, err := gits.ParseGitURL(storageURL)
 	if err != nil {
 		return err
@@ -221,20 +292,6 @@ func (o *StepCollectOptions) collectGitURL(storageURL string) (err error) {
 		return err
 	}
 
-	client, ns, err := o.CreateJXClient()
-	if err != nil {
-		return errors.Wrap(err, "cannot create the JX client")
-	}
-
-	apisClient, err := o.ApiExtensionsClient()
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterPipelineActivityCRD(apisClient)
-	if err != nil {
-		return err
-	}
-
 	activities := client.JenkinsV1().PipelineActivities(ns)
 	if err != nil {
 		return err
@@ -266,42 +323,4 @@ func (o *StepCollectOptions) collectGitURL(storageURL string) (err error) {
 		}
 	}
 	return nil
-}
-
-// cloneGitHubPagesBranchToTempDir clones the github pages branch to a temp dir
-func cloneGitHubPagesBranchToTempDir(sourceURL string, gitClient gits.Gitter) (string, error) {
-	// First clone the git repo
-	ghPagesDir, err := ioutil.TempDir("", "jenkins-x-collect")
-	if err != nil {
-		return ghPagesDir, err
-	}
-
-	err = gitClient.ShallowCloneBranch(sourceURL, ghPagesBranchName, ghPagesDir)
-	if err != nil {
-		log.Infof("error doing shallow clone of gh-pages %v", err)
-		// swallow the error
-		log.Infof("No existing %s branch so creating it\n", ghPagesBranchName)
-		// branch doesn't exist, so we create it following the process on https://help.github.com/articles/creating-project-pages-using-the-command-line/
-		err = gitClient.Clone(sourceURL, ghPagesDir)
-		if err != nil {
-			return ghPagesDir, err
-		}
-		err = gitClient.CheckoutOrphan(ghPagesDir, ghPagesBranchName)
-		if err != nil {
-			return ghPagesDir, err
-		}
-		err = gitClient.RemoveForce(ghPagesDir, ".")
-		if err != nil {
-			return ghPagesDir, err
-		}
-		err = os.Remove(filepath.Join(ghPagesDir, ".gitignore"))
-		if err != nil {
-			// Swallow the error, doesn't matter
-		}
-	}
-	return ghPagesDir, nil
-}
-
-func (o *StepCollectOptions) collectHttpURL(httpURL string) error {
-	return fmt.Errorf("TODO! Not implemented yet! Cannot post to %s\n", httpURL)
 }

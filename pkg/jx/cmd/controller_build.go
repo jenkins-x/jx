@@ -430,6 +430,40 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 	return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/gh-pages/%s", gitInfo.Organisation, gitInfo.Name, fileName)
 }
 
+// cloneGitHubPagesBranchToTempDir clones the github pages branch to a temp dir
+func cloneGitHubPagesBranchToTempDir(sourceURL string, gitClient gits.Gitter) (string, error) {
+	// First clone the git repo
+	ghPagesDir, err := ioutil.TempDir("", "jenkins-x-collect")
+	if err != nil {
+		return ghPagesDir, err
+	}
+
+	err = gitClient.ShallowCloneBranch(sourceURL, ghPagesBranchName, ghPagesDir)
+	if err != nil {
+		log.Infof("error doing shallow clone of gh-pages %v", err)
+		// swallow the error
+		log.Infof("No existing %s branch so creating it\n", ghPagesBranchName)
+		// branch doesn't exist, so we create it following the process on https://help.github.com/articles/creating-project-pages-using-the-command-line/
+		err = gitClient.Clone(sourceURL, ghPagesDir)
+		if err != nil {
+			return ghPagesDir, err
+		}
+		err = gitClient.CheckoutOrphan(ghPagesDir, ghPagesBranchName)
+		if err != nil {
+			return ghPagesDir, err
+		}
+		err = gitClient.RemoveForce(ghPagesDir, ".")
+		if err != nil {
+			return ghPagesDir, err
+		}
+		err = os.Remove(filepath.Join(ghPagesDir, ".gitignore"))
+		if err != nil {
+			// Swallow the error, doesn't matter
+		}
+	}
+	return ghPagesDir, nil
+}
+
 // createStepDescription uses the spec of the init container to return a description
 func createStepDescription(initContainerName string, pod *corev1.Pod) string {
 	for _, c := range pod.Spec.InitContainers {

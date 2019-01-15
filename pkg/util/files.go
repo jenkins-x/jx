@@ -128,6 +128,18 @@ func RenameFile(src string, dst string) (err error) {
 	return nil
 }
 
+// CopyFileOrDir copies the source file or directory to the given destination
+func CopyFileOrDir(src string, dst string, force bool) (err error) {
+	fi, err := os.Stat(src)
+	if err != nil {
+		return errors.Wrapf(err, "getting details of file '%s'", src)
+	}
+	if fi.IsDir() {
+		return CopyDir(src, dst, force)
+	}
+	return CopyFile(src, dst)
+}
+
 // credit https://gist.github.com/r0l1/92462b38df26839a3ca324697c8cba04
 func CopyDir(src string, dst string, force bool) (err error) {
 	src = filepath.Clean(src)

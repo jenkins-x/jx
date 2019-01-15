@@ -160,7 +160,10 @@ type TeamSettings struct {
 type StorageLocation struct {
 	Classifier string `json:"classifier,omitempty" protobuf:"bytes,1,opt,name=classifier"`
 	GitURL     string `json:"gitUrl,omitempty" protobuf:"bytes,2,opt,name=gitUrl"`
-	HttpURL    string `json:"httpUrl,omitempty" protobuf:"bytes,3,opt,name=httpUrl"`
+	GitBranch  string `json:"gitBranch,omitempty" protobuf:"bytes,3,opt,name=gitBranch"`
+	HttpURL    string `json:"httpUrl,omitempty" protobuf:"bytes,4,opt,name=httpUrl"`
+	Bucket     string `json:"bucket,omitempty" protobuf:"bytes,5,opt,name=bucket"`
+	BucketKind string `json:"bucketKind,omitempty" protobuf:"bytes,6,opt,name=bucketKind"`
 }
 
 // QuickStartLocation
@@ -271,18 +274,39 @@ func (t *TeamSettings) StorageLocation(classifier string) *StorageLocation {
 	return &t.StorageLocations[len(t.StorageLocations)-1]
 }
 
+// SetStorageLocation stores the given storage location in the team settings
+func (t *TeamSettings) SetStorageLocation(classifier string, storage StorageLocation) {
+	storage.Classifier = classifier
+	for idx, sl := range t.StorageLocations {
+		if sl.Classifier == classifier {
+			t.StorageLocations[idx] = storage
+			return
+		}
+	}
+	t.StorageLocations = append(t.StorageLocations, storage)
+}
+
 // IsEmpty returns true if the storage location is empty
 func (s *StorageLocation) IsEmpty() bool {
-	return s.GitURL == "" && s.HttpURL == ""
+	return s.GitURL == "" && s.HttpURL == "" && s.Bucket == ""
 }
 
 // Description returns the textual description of the storage location
 func (s *StorageLocation) Description() string {
 	if s.GitURL != "" {
-		return "git: " + s.GitURL
+		return "git url: " + s.GitURL + " branch: " + s.GetGitBranch()
 	}
 	if s.HttpURL != "" {
 		return s.HttpURL
 	}
 	return "current git repo"
+}
+
+// GetGitBranch returns the git branch to use when using git storage
+func (s *StorageLocation) GetGitBranch() string {
+	branch := s.GitBranch
+	if branch == "" {
+		branch = "gh-pages"
+	}
+	return branch
 }
