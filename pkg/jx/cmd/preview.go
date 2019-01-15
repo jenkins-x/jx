@@ -258,7 +258,7 @@ func (o *PreviewOptions) Run() error {
 				log.Warn("Unable to get commits: " + err.Error() + "\n")
 			}
 			if pullRequest != nil {
-				author, err := resolver.GitUserAsUser(pullRequest.Author)
+				author, err := resolver.Resolve(pullRequest.Author)
 				if err != nil {
 					return err
 				}

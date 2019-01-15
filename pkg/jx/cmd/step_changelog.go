@@ -586,7 +586,7 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 				if issue.User == nil {
 					log.Warnf("Failed to find user for issue %s repository %s\n", result, tracker.HomeURL())
 				} else {
-					u, err := resolver.GitUserAsUser(issue.User)
+					u, err := resolver.Resolve(issue.User)
 					if err != nil {
 						return err
 					}
@@ -597,7 +597,7 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 				if issue.ClosedBy == nil {
 					log.Warnf("Failed to find closedBy user for issue %s repository %s\n", result, tracker.HomeURL())
 				} else {
-					u, err := resolver.GitUserAsUser(issue.User)
+					u, err := resolver.Resolve(issue.User)
 					if err != nil {
 						return err
 					}

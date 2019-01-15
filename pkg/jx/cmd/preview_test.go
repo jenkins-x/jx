@@ -232,7 +232,7 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 	number := prNum
 	mockGitPR := &gits.GitPullRequest{
 		Owner:  prOwner,
-		Author: &gits.GitUser{Name: prAuthor, Email: prEmail},
+		Author: &gits.GitUser{Name: prAuthor, Email: prEmail, Login: prAuthor},
 		Number: &number,
 	}
 	When(mockGitProvider.GetPullRequest(AnyString(), //owner

@@ -1,9 +1,11 @@
 package users
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -75,4 +77,113 @@ func DeleteUser(jxClient versioned.Interface, ns string, userName string) error 
 		err = userInterface.Delete(userName, nil)
 	}
 	return err
+}
+
+// Resolve does the heavy lifting for user resolution.
+// This function is not normally called directly but by a dedicated user resolver (e.g. GitUserResolver)
+// * checking the user custom resources to see if the user is present there
+// * calling selectUsers to try to identify the user
+// as often user info is not complete in a git response
+func Resolve(id string, providerKey string, jxClient versioned.Interface,
+	namespace string, selectUsers func(id string, users []jenkinsv1.User) (string,
+		[]jenkinsv1.User, *jenkinsv1.User, error)) (*jenkinsv1.User, error) {
+	if id == "" {
+		return nil, fmt.Errorf("id cannot be empty")
+	}
+	if id != "" {
+
+		labelSelector := fmt.Sprintf("%s=%s", providerKey, id)
+
+		// First try to find by label - this is much faster as it uses an index
+		users, err := jxClient.JenkinsV1().Users(namespace).List(metav1.ListOptions{
+			LabelSelector: labelSelector,
+		})
+		if err != nil {
+			return nil, err
+		}
+		if len(users.Items) > 1 {
+			return nil, fmt.Errorf("more than one user found in users.jenkins.io with label %s, found %v", labelSelector,
+				users.Items)
+		} else if len(users.Items) == 1 {
+			return &users.Items[0], nil
+		}
+	}
+
+	// Next try without the label - this might occur if someone manually updated the list
+	users, err := jxClient.JenkinsV1().Users(namespace).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	if id != "" {
+
+		possibles := make([]jenkinsv1.User, 0)
+		for _, u := range users.Items {
+			for _, a := range u.Spec.Accounts {
+				if a.Provider == providerKey && a.ID == id {
+					possibles = append(possibles, u)
+				}
+			}
+		}
+		if len(possibles) > 1 {
+			possibleUsers := make([]string, 0)
+			for _, p := range possibles {
+				possibleUsers = append(possibleUsers, p.Name)
+			}
+			return nil, fmt.Errorf("more than one user found in users.jenkins.io with login %s for provider %s, "+
+				"found %s", id, providerKey, possibleUsers)
+		} else if len(possibles) == 1 {
+			// Add the label for next time
+			found := &possibles[0]
+			if found.Labels == nil {
+				found.Labels = make(map[string]string)
+			}
+			found.Labels[providerKey] = id
+			found, err := jxClient.JenkinsV1().Users(namespace).Update(found)
+			if err != nil {
+				return nil, err
+			}
+			log.Infof("Adding label %s=%s to user %s in users.jenkins.io\n", providerKey, id, found.Name)
+			return found, nil
+		}
+	}
+
+	// Finally, try to resolve by callback
+	id, possibles, new, err := selectUsers(id, users.Items)
+	if err != nil {
+		return nil, err
+	}
+	if len(possibles) > 1 {
+		possibleStrings := make([]string, 0)
+		for _, p := range possibles {
+			possibleStrings = append(possibleStrings, p.Name)
+		}
+		return nil, fmt.Errorf("selected more than one user from users.jenkins.io: %v", possibleStrings)
+	} else if len(possibles) == 1 {
+		found := &possibles[0]
+		// Add the git id to the user
+		if found.Spec.Accounts == nil {
+			found.Spec.Accounts = make([]jenkinsv1.AccountReference, 0)
+		}
+		found.Spec.Accounts = append(found.Spec.Accounts, jenkinsv1.AccountReference{
+			ID:       id,
+			Provider: providerKey,
+		})
+		// Add the label as well
+		if found.Labels == nil {
+			found.Labels = make(map[string]string)
+		}
+		found.Labels[providerKey] = id
+		found, err := jxClient.JenkinsV1().Users(namespace).Update(found)
+		log.Infof("Associating user %s in users.jenkins.io with email %s to git GitProvider user with login %s as "+
+			"emails match\n", found.Name, found.Spec.Email, id)
+		log.Infof("Adding label %s=%s to user %s in users.jenkins.io\n", providerKey, id, found.Name)
+		if err != nil {
+			return nil, err
+		}
+		return found, nil
+	} else {
+		// Otherwise, create a new user
+		return jxClient.JenkinsV1().Users(namespace).Create(new)
+	}
+	return nil, nil
 }
