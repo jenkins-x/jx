@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"io"
-	"os/user"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -15,6 +14,7 @@ import (
 // GetDevPodOptions the command line options
 type GetDevPodOptions struct {
 	GetOptions
+	CommonDevPodOptions
 }
 
 var (
@@ -58,6 +58,8 @@ func NewCmdGetDevPod(f Factory, in terminal.FileReader, out terminal.FileWriter,
 		},
 	}
 
+	options.addCommonDevPodFlags(cmd)
+
 	return cmd
 }
 
@@ -73,12 +75,12 @@ func (o *GetDevPodOptions) Run() error {
 		return err
 	}
 
-	u, err := user.Current()
+	userName, err := o.getUsername(o.Username)
 	if err != nil {
 		return err
 	}
 
-	names, m, err := kube.GetDevPodNames(client, ns, u.Username)
+	names, m, err := kube.GetDevPodNames(client, ns, userName)
 
 	table := o.createTable()
 	table.AddRow("NAME", "POD TEMPLATE", "AGE", "STATUS")
