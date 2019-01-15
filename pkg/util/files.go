@@ -3,13 +3,13 @@ package util
 import (
 	"crypto/rand"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
+	"mime"
 	"os"
 	"path/filepath"
 	"strconv"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -385,4 +385,10 @@ func FilterFileExists(paths []string) []string {
 		}
 	}
 	return answer
+}
+
+// ContentTypeForFileName returns the MIME type for the given file name
+func ContentTypeForFileName(name string) string {
+	ext := filepath.Ext(name)
+	return mime.TypeByExtension(ext)
 }

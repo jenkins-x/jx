@@ -1,4 +1,4 @@
-package blob
+package buckets
 
 import (
 	"context"
