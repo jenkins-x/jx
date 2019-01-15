@@ -95,9 +95,9 @@ status:
 	assert.Equal(t, "my-admin-namespace" ,adminNs)
 }
 
-func createMockClient(nsJson string) (kubernetes.Interface, error) {
+func createMockClient(objDef string) (kubernetes.Interface, error) {
 	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode([]byte(nsJson), nil, nil)
+	obj, _, err := decode([]byte(objDef), nil, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not decode data")
 	}
