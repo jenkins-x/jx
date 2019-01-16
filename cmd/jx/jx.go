@@ -6,6 +6,7 @@ import (
 	"github.com/jenkins-x/jx/cmd/jx/app"
 )
 
+// Entrypoint for jx command
 func main() {
 	if err := app.Run(); err != nil {
 		os.Exit(1)
