@@ -531,8 +531,9 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 						return
 					} else {
 						promoteKey := po.createPromoteKey(env)
-						promoteKey.OnPromotePullRequest(activities, mergedPR)
-						promoteKey.OnPromoteUpdate(activities, kube.StartPromotionUpdate)
+
+						promoteKey.OnPromotePullRequest(o.jxClient, o.Namespace, mergedPR)
+						promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.StartPromotionUpdate)
 
 						statuses, err := gitProvider.ListCommitStatus(pr.Owner, pr.Repo, mergeSha)
 						if err == nil {
@@ -571,7 +572,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 									p.Statuses = prStatuses
 									return nil
 								}
-								promoteKey.OnPromoteUpdate(activities, updateStatuses)
+								promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, updateStatuses)
 
 								succeeded := true
 								for _, v := range urlStatusMap {
@@ -596,7 +597,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 										log.Warnf("Failed to comment on issues: %s", err)
 										return
 									}
-									err = promoteKey.OnPromoteUpdate(activities, kube.CompletePromotionUpdate)
+									err = promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.CompletePromotionUpdate)
 									if err != nil {
 										log.Warnf("Failed to update PipelineActivity on promotion completion: %s", err)
 									}

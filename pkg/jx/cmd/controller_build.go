@@ -167,7 +167,7 @@ func (o *ControllerBuildOptions) onPod(obj interface{}, kubeClient kubernetes.In
 				if key != nil {
 					name := ""
 					err := util.Retry(time.Second*20, func() error {
-						a, created, err := key.GetOrCreate(activities)
+						a, created, err := key.GetOrCreate(jxClient, ns)
 						if err != nil {
 							operation := "update"
 							if created {

@@ -21,6 +21,7 @@ func NewSourceRepositoryService(client versioned.Interface, namespace string) So
 	}
 }
 
+//FIXME: repo is not always == name, need to find a better value for ObjectMeta.Name!
 //CreateSourceRepository creates a repo. If a repo already exists, it will return an error
 func (service *SourceRepositoryService) CreateSourceRepository(name, organisation, providerUrl string) error {
 	_, err := service.client.JenkinsV1().SourceRepositories(service.namespace).Create(&v1.SourceRepository{

@@ -497,7 +497,7 @@ func (o *PreviewOptions) Run() error {
 					Build:    build,
 				},
 			}
-			a, _, p, _, err := key.GetOrCreatePreview(activities)
+			a, _, p, _, err := key.GetOrCreatePreview(o.jxClient, o.Namespace)
 			if err == nil && a != nil && p != nil {
 				updated := false
 				if p.ApplicationURL == "" {

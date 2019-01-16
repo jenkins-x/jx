@@ -235,11 +235,6 @@ func (o *StepCollectOptions) collectGitURL(storageURL string) (err error) {
 		return err
 	}
 
-	activities := client.JenkinsV1().PipelineActivities(ns)
-	if err != nil {
-		return err
-	}
-
 	// TODO this pipeline name construction needs moving to a shared lib, and other things refactoring to use it
 	pipeline := fmt.Sprintf("%s-%s-%s-%s", projectOrg, projectRepoName, projectBranchName, buildNo)
 
@@ -252,7 +247,7 @@ func (o *StepCollectOptions) collectGitURL(storageURL string) (err error) {
 				Build:    buildNo,
 			},
 		}
-		a, _, err := key.GetOrCreate(activities)
+		a, _, err := key.GetOrCreate(client, ns)
 		if err != nil {
 			return err
 		}
