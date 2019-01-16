@@ -103,6 +103,5 @@ func createMockClient(objDef string) (kubernetes.Interface, error) {
 	}
 
 	mockKubeClient := kube_mocks.NewSimpleClientset(obj)
-	//ki, bool := mockKubeClient.(kubernetes.Interface)
 	return mockKubeClient, nil
 }
