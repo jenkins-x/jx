@@ -184,40 +184,12 @@ func (o *StepCollectOptions) Run() error {
 		return errors.Wrapf(err, "failed to collect patterns %s to path %s", strings.Join(o.Pattern, ", "), repoPath)
 	}
 
-	err = gitClient.Add(ghPagesDir, repoDir)
-	if err != nil {
-		return err
-	}
-	err = gitClient.CommitDir(ghPagesDir, fmt.Sprintf("Publishing files for build %s", buildNo))
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-	err = gitClient.Push(ghPagesDir)
-	if err != nil {
-		return err
-	}
-
-	client, ns, err := o.CreateJXClient()
-	if err != nil {
-		return errors.Wrap(err, "cannot create the JX client")
-	}
-
-	apisClient, err := o.ApiExtensionsClient()
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterPipelineActivityCRD(apisClient)
-	if err != nil {
-		return err
-
 	for _, u := range urls {
 		log.Infof("Cpllected: %s\n", util.ColorInfo(u))
 	}
 
 	// TODO this pipeline name construction needs moving to a shared lib, and other things refactoring to use it
 	pipeline := fmt.Sprintf("%s-%s-%s-%s", projectOrg, projectRepoName, projectBranchName, buildNo)
-	activities := client.JenkinsV1().PipelineActivities(ns)
 
 	if pipeline != "" && buildNo != "" {
 		name := kube.ToValidName(pipeline)
