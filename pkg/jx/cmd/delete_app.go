@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 
+	"k8s.io/helm/pkg/proto/hapi/chart"
+
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -140,7 +142,8 @@ func (o *DeleteAppOptions) Run() error {
 
 func (o *DeleteAppOptions) createPR(app string) error {
 
-	modifyRequirementsFn := func(requirements *helm.Requirements) error {
+	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
+		templates map[string]map[string]interface{}) error {
 		// See if the app already exists in requirements
 		found := false
 		for i, d := range requirements.Dependencies {
@@ -161,14 +164,14 @@ func (o *DeleteAppOptions) createPR(app string) error {
 	var pullRequestInfo *gits.PullRequestInfo
 	if o.FakePullRequests != nil {
 		var err error
-		pullRequestInfo, err = o.FakePullRequests(o.DevEnv, modifyRequirementsFn, branchNameText, title, message,
+		pullRequestInfo, err = o.FakePullRequests(o.DevEnv, modifyChartFn, branchNameText, title, message,
 			nil)
 		if err != nil {
 			return err
 		}
 	} else {
 		var err error
-		pullRequestInfo, err = o.createEnvironmentPullRequest(o.DevEnv, modifyRequirementsFn, &branchNameText, &title,
+		pullRequestInfo, err = o.createEnvironmentPullRequest(o.DevEnv, modifyChartFn, &branchNameText, &title,
 			&message,
 			nil, o.ConfigureGitCallback)
 		if err != nil {

@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"k8s.io/helm/pkg/proto/hapi/chart"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -16,15 +18,19 @@ import (
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
-// ModifyRequirementsFn callback for modifying requirements
-type ModifyRequirementsFn func(requirements *helm.Requirements) error
+// ModifyChartFn callback for modifying a chart, requirements, the chart metadata,
+// the values.yaml and all files in templates are unmarshaled
+type ModifyChartFn func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
+	templates map[string]map[string]interface{}) error
 
 // ConfigureGitFolderFn callback to optionally configure git before its used for creating commits and PRs
 type ConfigureGitFolderFn func(dir string, gitInfo *gits.GitRepository, gitAdapter gits.Gitter) error
 
-type CreateEnvPullRequestFn func(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *gits.PullRequestInfo) (*gits.PullRequestInfo, error)
+// CreateEnvPullRequestFn callback that allows the pull request creation to be mocked out
+type CreateEnvPullRequestFn func(env *v1.Environment, modifyChartFn ModifyChartFn, branchNameText string,
+	title string, message string, pullRequestInfo *gits.PullRequestInfo) (*gits.PullRequestInfo, error)
 
-func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn,
+func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modifyChartFn ModifyChartFn,
 	branchNameText *string, title *string, message *string, pullRequestInfo *gits.PullRequestInfo,
 	configGitFn ConfigureGitFolderFn) (*gits.PullRequestInfo, error) {
 	var answer *gits.PullRequestInfo
@@ -131,12 +137,54 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		return answer, err
 	}
 
-	err = modifyRequirementsFn(requirements)
+	chartFile, err := helm.FindChartFileName(dir)
+	if err != nil {
+		return answer, err
+	}
+	chart, err := helm.LoadChartFile(chartFile)
 	if err != nil {
 		return answer, err
 	}
 
-	err = helm.SaveRequirementsFile(requirementsFile, requirements)
+	valuesFile, err := helm.FindValuesFileName(dir)
+	if err != nil {
+		return answer, err
+	}
+	values, err := helm.LoadValuesFile(valuesFile)
+	if err != nil {
+		return answer, err
+	}
+
+	templatesDir, err := helm.FindTemplatesDirName(dir)
+	if err != nil {
+		return answer, err
+	}
+	templates, err := helm.LoadTemplatesDir(templatesDir)
+	if err != nil {
+		return answer, err
+	}
+
+	err = modifyChartFn(requirements, chart, values, templates)
+	if err != nil {
+		return answer, err
+	}
+
+	err = helm.SaveFile(requirementsFile, requirements)
+	if err != nil {
+		return answer, err
+	}
+
+	err = helm.SaveFile(chartFile, chart)
+	if err != nil {
+		return answer, err
+	}
+
+	err = helm.SaveFile(valuesFile, values)
+	if err != nil {
+		return answer, err
+	}
+
+	err = helm.SaveDir(templatesDir, templates)
 	if err != nil {
 		return answer, err
 	}

@@ -766,7 +766,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 	requirementsFile := filepath.Join(gitOpsEnvDir, helm.RequirementsFileName)
 	secretsFile := filepath.Join(gitOpsEnvDir, helm.SecretsFileName)
 	valuesFile := filepath.Join(gitOpsEnvDir, helm.ValuesFileName)
-	err := helm.SaveRequirementsFile(requirementsFile, requirements)
+	err := helm.SaveFile(requirementsFile, requirements)
 	if err != nil {
 		return errors.Wrapf(err, "failed to save GitOps helm requirements file %s", requirementsFile)
 	}
