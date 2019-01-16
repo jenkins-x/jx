@@ -201,9 +201,9 @@ func updateActivity(k *PipelineActivityKey, activity *v1.PipelineActivity) {
 
 	updateActivitySpec(k, &activity.Spec)
 
-	activity.Labels["sourcerepository"] = activity.RepositoryName()
-	activity.Labels["branch"] = activity.BranchName()
-	activity.Labels["owner"] = activity.RepositoryOwner()
+	activity.Labels[v1.LabelSourceRepository] = activity.RepositoryName()
+	activity.Labels[v1.LabelBranch] = activity.BranchName()
+	activity.Labels[v1.LabelOwner] = activity.RepositoryOwner()
 }
 
 func updateActivitySpec(k *PipelineActivityKey, spec *v1.PipelineActivitySpec) {

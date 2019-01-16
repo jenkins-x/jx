@@ -11,6 +11,12 @@ import (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
 
+const (
+	LabelSourceRepository = "sourcerepository"
+	LabelOwner            = "owner"
+	LabelBranch           = "branch"
+)
+
 // PipelineActivity represents pipeline activity for a particular run of a pipeline
 type PipelineActivity struct {
 	metav1.TypeMeta `json:",inline"`
