@@ -390,5 +390,11 @@ func FilterFileExists(paths []string) []string {
 // ContentTypeForFileName returns the MIME type for the given file name
 func ContentTypeForFileName(name string) string {
 	ext := filepath.Ext(name)
-	return mime.TypeByExtension(ext)
+	answer := mime.TypeByExtension(ext)
+	if answer == "" {
+		if ext == ".log" || ext == ".txt" {
+			return "text/plain; charset=utf-8"
+		}
+	}
+	return answer
 }
