@@ -63,6 +63,7 @@ type CreateDevPodResults struct {
 // CreateDevPodOptions the options for the create spring command
 type CreateDevPodOptions struct {
 	CreateOptions
+	CommonDevPodOptions
 
 	Label           string
 	Suffix          string
@@ -77,7 +78,6 @@ type CreateDevPodOptions struct {
 	ImportUrl       string
 	Import          bool
 	ShellCmd        string
-	Username        string
 	DockerRegistry  string
 	TillerNamespace string
 	ServiceAccount  string
@@ -136,11 +136,11 @@ func NewCmdCreateDevPod(f Factory, in terminal.FileReader, out terminal.FileWrit
 	cmd.Flags().StringVarP(&options.ImportUrl, "import-url", "u", "", "Clone a Git repository into the DevPod. Cannot be used with --sync")
 	cmd.Flags().BoolVarP(&options.Import, "import", "", true, "Detect if there is a Git repository in the current directory and attempt to clone it into the DevPod. Ignored if used with --sync")
 	cmd.Flags().StringVarP(&options.ShellCmd, "shell", "", "", "The name of the shell to invoke in the DevPod. If nothing is specified it will use 'bash'")
-	cmd.Flags().StringVarP(&options.Username, "username", "", "", "The username to create the DevPod. If not specified defaults to the current operating system user or $USER'")
 	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker registry to use within the DevPod. If not specified, default to the built-in registry or $DOCKER_REGISTRY")
 	cmd.Flags().StringVarP(&options.TillerNamespace, "tiller-namespace", "", "", "The optional tiller namespace to use within the DevPod.")
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "", "The ServiceAccount name used for the DevPod")
 
+	options.addCommonDevPodFlags(cmd)
 	options.addCommonFlags(cmd)
 	return cmd
 }
