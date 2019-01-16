@@ -10,13 +10,15 @@ const (
 	DefaultSuggestionsMinimumDistance = 2
 )
 
-func InvalidOptionError(option string, value string, err error) error {
+// InvalidOptionError returns an error that shows the invalid option
+func InvalidOptionError(option string, value interface{}, err error) error {
 	return InvalidOptionf(option, value, "%s", err)
 }
 
-func InvalidOptionf(option string, value string, message string, a ...interface{}) error {
+// InvalidOptionf returns an error that shows the invalid option
+func InvalidOptionf(option string, value interface{}, message string, a ...interface{}) error {
 	text := fmt.Sprintf(message, a...)
-	return fmt.Errorf("Invalid option: --%s %s\n%s", option, ColorInfo(value), text)
+	return fmt.Errorf("Invalid option: --%s %v\n%s", option, ColorInfo(value), text)
 }
 
 // MissingOption reports a missing command line option using the full name expression
