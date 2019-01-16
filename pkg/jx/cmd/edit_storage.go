@@ -1,11 +1,21 @@
 package cmd
 
 import (
+	"context"
+	"fmt"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/cloud/buckets"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"gocloud.dev/blob"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
+	"net/url"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -27,8 +37,11 @@ var (
 		# Configure the git/http URLs of where to store logs
 		jx edit storage -c logs
 
-		# Configure the git URL of where to store logs
+		# Configure the git URL of where to store logs (defaults to gh-pages branch)
 		jx edit storage -c logs --git-url https://github.com/myorg/mylogs.git'
+
+		# Configure the git URL and branch of where to store logs
+		jx edit storage -c logs --git-url https://github.com/myorg/mylogs.git' --git-branch cheese
 
 		# Configure the git URL of where all storage goes to by default unless a specific classifier has a config
 		jx edit storage -c default --git-url https://github.com/myorg/mylogs.git'
@@ -40,9 +53,11 @@ var (
 type EditStorageOptions struct {
 	CreateOptions
 
-	Classifier string
-	GitURL     string
-	HttpURL    string
+	StorageLocation jenkinsv1.StorageLocation
+	Bucket          string
+	BucketKind      string
+	GKEProjectID    string
+	GKEZone         string
 }
 
 // NewCmdEditStorage creates a command object for the "create" command
@@ -74,42 +89,145 @@ func NewCmdEditStorage(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 	options.addCommonFlags(cmd)
 
-	cmd.Flags().StringVarP(&options.Classifier, "classifier", "c", "", "A name which classifies this type of file. Example values: "+kube.ClassificationValues)
-	cmd.Flags().StringVarP(&options.HttpURL, "http-url", "", "", "Specify the HTTP endpoint to send each file to")
-	cmd.Flags().StringVarP(&options.GitURL, "git-url", "", "", "Specify the Git URL to populate in a gh-pages branch")
+	cmd.Flags().StringVarP(&options.StorageLocation.Classifier, "classifier", "c", "", "A name which classifies this type of file. Example values: "+kube.ClassificationValues)
+	cmd.Flags().StringVarP(&options.StorageLocation.BucketURL, "bucket-url", "", "", "Specify the go-cloud URL of the bucket to use")
+	cmd.Flags().StringVarP(&options.StorageLocation.GitURL, "git-url", "", "", "Specify the Git URL to populate in a gh-pages branch")
+	cmd.Flags().StringVarP(&options.StorageLocation.GitBranch, "git-branch", "", "gh-pages", "The branch to use to store files in the git branch")
+	cmd.Flags().StringVarP(&options.Bucket, "bucket", "", "", "Specify the name of the bucket to use")
+	cmd.Flags().StringVarP(&options.BucketKind, "bucket-kind", "", "", "The kind of bucket to use like 'gs, s3, azure' etc")
+	cmd.Flags().StringVarP(&options.GKEProjectID, "gke-project-id", "", "", "Google Project ID to use for a new bucket")
+	cmd.Flags().StringVarP(&options.GKEZone, "gke-zone", "", "", "The zone (e.g. us-central1-a) where the new bucket will be created")
 
 	return cmd
 }
 
 // Run implements the command
 func (o *EditStorageOptions) Run() error {
-	var err error
-	if o.Classifier == "" && ! o.BatchMode {
-		o.Classifier, err = util.PickName(kube.Classifications, "Pick the content classification name", "The name is used as a key to store content in different locations", o.In, o.Out, o.Err)
+	settings, err := o.TeamSettings()
+	if err != nil {
+		return err
+	}
+
+	classifier := o.StorageLocation.Classifier
+	if classifier == "" && ! o.BatchMode {
+		o.StorageLocation.Classifier, err = util.PickName(kube.Classifications, "Pick the content classification name", "The name is used as a key to store content in different locations", o.In, o.Out, o.Err)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to pick the classification name")
 		}
 	}
-	if o.Classifier == "" {
+	if classifier == "" {
 		return util.MissingOption("classifier")
 	}
 
-	if !o.BatchMode && (o.HttpURL == "" && o.GitURL == "") {
-		o.GitURL, err = util.PickValue("Git repository URL to store content:", o.GitURL, false, "The Git URL will be used to clone and push the storage to", o.In, o.Out, o.Err)
-		if err != nil {
-		  return err
+	currentLocation := settings.StorageLocationOrDefault(classifier)
+
+	if o.StorageLocation.BucketURL == "" && o.StorageLocation.GitURL == "" {
+		if o.Bucket != "" {
+			o.StorageLocation.BucketURL, err = buckets.CreateBucketURL(o.Bucket, o.BucketKind, settings)
+			if err != nil {
+				return errors.Wrapf(err, "failed to create the bucket URL for %s", o.Bucket)
+			}
+
+			ctx, _ := context.WithTimeout(context.Background(), time.Second * 20)
+			bucket, err := blob.Open(ctx, o.StorageLocation.BucketURL)
+			if err != nil {
+				return errors.Wrapf(err, "failed to open the bucket for %s", o.StorageLocation.BucketURL)
+			}
+
+			// lets check if the bucket exists
+			iter := bucket.List(nil)
+			obj, err := iter.Next(ctx)
+			if err != nil {
+				if err == io.EOF {
+					log.Infof("bucket %s is empty\n", o.StorageLocation.BucketURL)
+				} else {
+					log.Infof("The bucket %s does not exist yet so lets create it...\n", util.ColorInfo(o.StorageLocation.BucketURL))
+					err = o.createBucket(o.StorageLocation.BucketURL, bucket)
+					if err != nil {
+						return errors.Wrapf(err, "failed to create the bucket for %s", o.StorageLocation.BucketURL)
+					}
+				}
+			} else {
+				log.Infof("Found item in bucket %s for %s\n", o.StorageLocation.BucketURL, obj.Key)
+			}
 		}
-		o.HttpURL, err = util.PickValue("HTTP URL to POST content to:", o.HttpURL, false, "The Git URL will be used to clone and push the storage to", o.In, o.Out, o.Err)
-		if err != nil {
-		  return err
+		if o.StorageLocation.BucketURL == "" {
+			o.StorageLocation.BucketURL, err = util.PickValue("Bucket URL:", o.StorageLocation.BucketURL, false, "The go-cloud bucket URL for storage such as 'gs://mybucket/ or s3://bucket2/", o.In, o.Out, o.Err)
+			if err != nil {
+				return errors.Wrapf(err, "failed to pick the bucket URL")
+			}
+		}
+
+		if o.StorageLocation.BucketURL == "" {
+			if o.BatchMode {
+				if currentLocation.GitURL == "" {
+					return util.MissingOption("git-url")
+				}
+				o.StorageLocation.GitURL = currentLocation.GitURL
+			} else {
+				o.StorageLocation.GitURL, err = util.PickValue("Git repository URL to store content:", currentLocation.GitURL, false, "The Git URL will be used to clone and push the storage to", o.In, o.Out, o.Err)
+				if err != nil {
+					return errors.Wrapf(err, "failed to pick the git URL")
+				}
+			}
 		}
 	}
 
 	callback := func(env *v1.Environment) error {
-		location := env.Spec.TeamSettings.StorageLocation(o.Classifier)
-		location.GitURL = o.GitURL
-		location.HttpURL = o.HttpURL
+		env.Spec.TeamSettings.SetStorageLocation(classifier, o.StorageLocation)
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)
+}
+
+// createBucket creates a bucket if it does not already exist
+func (o *EditStorageOptions) createBucket(bucketURL string, bucket *blob.Bucket) error {
+	u, err := url.Parse(bucketURL)
+	if err != nil {
+		return err
+	}
+	switch u.Scheme {
+	case "gs":
+		return o.createGcsBucket(u, bucket)
+	default:
+		return fmt.Errorf("Cannot create a bucket for provider %s", bucketURL)
+	}
+}
+
+func (o *EditStorageOptions) createGcsBucket(u *url.URL, bucket *blob.Bucket) error {
+	var err error
+	if o.GKEProjectID == "" {
+		o.GKEProjectID, err = o.getGoogleProjectId()
+		if err != nil {
+			return err
+		}
+	}
+
+	err = o.CreateOptions.CommonOptions.runCommandVerbose(
+		"gcloud", "config", "set", "project", o.GKEProjectID)
+	if err != nil {
+		return err
+	}
+
+	if o.GKEZone == "" {
+		defaultZone := ""
+		if cluster, err := gke.ClusterName(o.Kube()); err == nil && cluster != "" {
+			if clusterZone, err := gke.ClusterZone(cluster); err == nil {
+				defaultZone = clusterZone
+			}
+		}
+
+		o.GKEZone, err = o.getGoogleZoneWithDefault(o.GKEProjectID, defaultZone)
+		if err != nil {
+			return err
+		}
+	}
+
+	bucketName := u.Host
+	region := gke.GetRegionFromZone(o.GKEZone, )
+	err = gke.CreateBucket(o.GKEProjectID, bucketName, region)
+	if err != nil {
+		return errors.Wrapf(err, "creating bucket %s in project %s and region %s", bucketName, o.GKEProjectID, region)
+	}
+	return nil
 }

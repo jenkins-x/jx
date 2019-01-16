@@ -1,7 +1,6 @@
 module github.com/jenkins-x/jx
 
 require (
-	cloud.google.com/go v0.34.0 // indirect
 	code.gitea.io/sdk v0.0.0-20180702024448-79a281c4e34a
 	github.com/Azure/draft v0.15.0
 	github.com/Azure/go-autorest v10.14.0+incompatible // indirect
@@ -19,10 +18,9 @@ require (
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f
 	github.com/andygrunwald/go-gerrit v0.0.0-20181026193842-43cfd7a94eb4
 	github.com/andygrunwald/go-jira v1.5.0
-	github.com/aws/aws-sdk-go v1.15.50
+	github.com/aws/aws-sdk-go v1.15.57
 	github.com/banzaicloud/bank-vaults v0.0.0-20181129101211-e31657d7c4fe
 	github.com/beevik/etree v1.0.1
-	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973 // indirect
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/bouk/monkey v1.0.0
 	github.com/bwmarrin/snowflake v0.0.0-20180412010544-68117e6bbede // indirect
@@ -35,32 +33,25 @@ require (
 	github.com/cpuguy83/go-md2man v1.0.8 // indirect
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964 // indirect
 	github.com/denormal/go-gitignore v0.0.0-20180713143441-75ce8f3e513c
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/docker/spdystream v0.0.0-20170912183627-bc6354cbbc29 // indirect
 	github.com/emicklei/go-restful v2.8.0+incompatible // indirect
 	github.com/emirpasic/gods v1.9.0 // indirect
 	github.com/evanphx/json-patch v4.1.0+incompatible // indirect
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.0.0
-	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/gfleury/go-bitbucket-v1 v0.0.0-20181102191809-4910839b609e
 	github.com/ghodss/yaml v1.0.0
-	github.com/go-ini/ini v1.38.1 // indirect
 	github.com/go-ole/go-ole v1.2.1 // indirect
 	github.com/go-openapi/spec v0.17.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gogo/protobuf v1.1.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
-	github.com/golang/protobuf v1.1.0 // indirect
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
-	github.com/google/btree v0.0.0-20180124185431-e89373fe6b4a // indirect
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135 // indirect
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
-	github.com/googleapis/gax-go v2.0.0+incompatible // indirect
 	github.com/googleapis/gnostic v0.2.0 // indirect
 	github.com/gophercloud/gophercloud v0.0.0-20180721014243-9bb899a7c1d9 // indirect
-	github.com/gorilla/mux v1.6.2 // indirect
 	github.com/gorilla/sessions v1.1.1 // indirect
 	github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.0 // indirect
@@ -93,7 +84,6 @@ require (
 	github.com/magiconair/properties v1.8.0
 	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mattn/go-isatty v0.0.3 // indirect
-	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
 	github.com/mitchellh/go-homedir v0.0.0-20180523094522-3864e76763d9 // indirect
 	github.com/mitchellh/mapstructure v0.0.0-20180715050151-f15292f7a699
@@ -112,10 +102,6 @@ require (
 	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
 	github.com/pkg/browser v0.0.0-20170505125900-c90ca0c84f15
 	github.com/pkg/errors v0.8.0
-	github.com/prometheus/client_golang v0.8.0 // indirect
-	github.com/prometheus/client_model v0.0.0-20180712105110-5c3871d89910 // indirect
-	github.com/prometheus/common v0.0.0-20180518154759-7600349dcfe1 // indirect
-	github.com/prometheus/procfs v0.0.0-20180705121852-ae68e2d4c00f // indirect
 	github.com/rifflock/lfshook v0.0.0-20180227222202-bf539943797a // indirect
 	github.com/rodaine/hclencoder v0.0.0-20180926060551-0680c4321930
 	github.com/russross/blackfriday v1.5.1
@@ -128,7 +114,7 @@ require (
 	github.com/shurcooL/githubv4 v0.0.0-20180509030948-19298c78142b // indirect
 	github.com/shurcooL/go v0.0.0-20180423040247-9e1955d9fb6e // indirect
 	github.com/shurcooL/graphql v0.0.0-20180514000029-62c9ce094e75 // indirect
-	github.com/sirupsen/logrus v1.0.6
+	github.com/sirupsen/logrus v1.1.1
 	github.com/spf13/afero v1.1.1 // indirect
 	github.com/spf13/cast v1.2.0 // indirect
 	github.com/spf13/cobra v0.0.3
@@ -143,18 +129,12 @@ require (
 	github.com/wbrefvem/go-bitbucket v0.0.0-20180917214347-1c96061fe622
 	github.com/xanzy/go-gitlab v0.0.0-20180814191223-f3bc634ab936
 	github.com/xanzy/ssh-agent v0.2.0 // indirect
-	go.opencensus.io v0.14.0 // indirect
+	gocloud.dev v0.9.0
 	golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9 // indirect
 	golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81 // indirect
-	golang.org/x/oauth2 v0.0.0-20180620175406-ef147856a6dd
+	golang.org/x/oauth2 v0.0.0-20181017192945-9dcd33a902f4
 	golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f
 	golang.org/x/sys v0.0.0-20181206074257-70b957f3b65e
-	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2 // indirect
-	golang.org/x/tools v0.0.0-20180723204246-ded554d0681e // indirect
-	google.golang.org/api v0.0.0-20180724000608-2c45710c7f3f // indirect
-	google.golang.org/appengine v1.1.0 // indirect
-	google.golang.org/genproto v0.0.0-20180722052100-02b4e9547331 // indirect
-	google.golang.org/grpc v1.13.0 // indirect
 	gopkg.in/AlecAivazis/survey.v1 v1.6.2
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6 // indirect
 	gopkg.in/fsnotify.v1 v1.4.7 // indirect
