@@ -58,7 +58,6 @@ func NewCmdStep(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 	cmd.AddCommand(NewCmdStepPre(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepPR(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepPost(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepReport(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepRelease(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepSplitMonorepo(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepTag(f, in, out, errOut))
