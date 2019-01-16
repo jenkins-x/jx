@@ -940,6 +940,7 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 		return err
 	}
 
+	region, _ := amazon.ReadRegion(kubeClient, ns)
 	cm, err := kubeClient.CoreV1().ConfigMaps(ns).Get(kube.ConfigMapJenkinsDockerRegistry, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("Could not find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsDockerRegistry, ns, err)
@@ -948,7 +949,7 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 		dockerRegistry := cm.Data["docker.registry"]
 		if dockerRegistry != "" {
 			if strings.HasSuffix(dockerRegistry, ".amazonaws.com") && strings.Index(dockerRegistry, ".ecr.") > 0 {
-				return amazon.LazyCreateRegistry(dockerRegistry, orgName, appName)
+				return amazon.LazyCreateRegistry(kubeClient, ns, region, dockerRegistry, orgName, appName)
 			}
 		}
 	}

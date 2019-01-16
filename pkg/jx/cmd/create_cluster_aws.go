@@ -299,6 +299,19 @@ func (o *CreateClusterAWSOptions) Run() error {
 	log.Infoln("State of kops cluster: OK")
 	log.Blank()
 
+	region, err := amazon.ResolveRegion(o.Flags.Profile, o.Flags.Region)
+	if err != nil {
+		return err
+	}
+	kube, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	err = amazon.RememberRegion(kube, o.currentNamespace, region)
+	if err != nil {
+		return err
+	}
+
 	log.Info("Initialising cluster ...\n")
 	return o.initAndInstall(AWS)
 }

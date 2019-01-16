@@ -75,8 +75,13 @@ func (o *StepPreBuildOptions) Run() error {
 
 		log.Infof("Docker registry host: %s app name %s/%s\n", util.ColorInfo(dockerRegistry), util.ColorInfo(orgName), util.ColorInfo(appName))
 
+		kube, err := o.KubeClient()
+		if err != nil {
+			return err
+		}
+		region, _ := amazon.ReadRegion(kube, o.currentNamespace)
 		if strings.HasSuffix(dockerRegistry, ".amazonaws.com") && strings.Index(dockerRegistry, ".ecr.") > 0 {
-			return amazon.LazyCreateRegistry(dockerRegistry, orgName, appName)
+			return amazon.LazyCreateRegistry(kube, o.currentNamespace, region, dockerRegistry, orgName, appName)
 		}
 	}
 	return nil

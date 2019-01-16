@@ -199,6 +199,15 @@ cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
 		}
 	}
 
+	kube, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	err = amazon.RememberRegion(kube, o.currentNamespace, region)
+	if err != nil {
+		return err
+	}
+
 	logger.Info("Initialising cluster ...\n")
 	return o.initAndInstall(EKS)
 }
