@@ -2,6 +2,7 @@ package kube_test
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"strconv"
 	"testing"
 	"time"
@@ -116,6 +117,9 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 		Activities: map[string]*v1.PipelineActivity{},
 	}
 
+	jxClient := &fake.Clientset{}
+	ns := "fake"
+
 	const (
 		expectedName        = "demo-2"
 		expectedPipeline    = "demo"
@@ -130,7 +134,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 	}
 
 	for i := 1; i < 3; i++ {
-		a, _, err := key.GetOrCreate(activities)
+		a, _, err := key.GetOrCreate(jxClient,ns)
 		assert.Nil(t, err)
 		assert.Equal(t, expectedName, a.Name)
 		spec := &a.Spec
@@ -155,7 +159,8 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 		return nil
 	}
 
-	err := promoteKey.OnPromotePullRequest(activities, promotePullRequestStarted)
+	//err := promoteKey.OnPromotePullRequest(activities, promotePullRequestStarted)
+	err := promoteKey.OnPromotePullRequest(jxClient, ns, promotePullRequestStarted)
 	assert.Nil(t, err)
 
 	promoteStarted := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromoteUpdateStep) error {
@@ -165,7 +170,8 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 		return nil
 	}
 
-	err = promoteKey.OnPromoteUpdate(activities, promoteStarted)
+	//err = promoteKey.OnPromoteUpdate(activities, promoteStarted)
+	err = promoteKey.OnPromoteUpdate(jxClient, ns, promoteStarted)
 	assert.Nil(t, err)
 
 	// lets validate that we added a PromotePullRequest step
