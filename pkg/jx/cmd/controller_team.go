@@ -234,21 +234,15 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 
 		// TODO lets load this from the current team
 		provider := ""
-		org := ""
-		private := false
 		if adminTeamSettings != nil {
 			provider = adminTeamSettings.KubeProvider
-			org = adminTeamSettings.EnvOrganisation
-			private = adminTeamSettings.GitPrivate
 		}
 		if provider == "" {
 			log.Warnf("No kube provider specified on admin team settings %s\n. Defaulting to gke", adminNs)
 			provider = "gke"
 		}
 		io.Flags.Provider = provider
-		io.Flags.EnvironmentGitOwner = org
 		io.Flags.DisableSetKubeContext = true
-		io.GitRepositoryOptions.Private = private
 
 		//o.InstallOptions.Flags.NoDefaultEnvironments = true
 		io.Flags.Namespace = teamNs
