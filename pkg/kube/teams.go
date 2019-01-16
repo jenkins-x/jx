@@ -19,7 +19,7 @@ const adminNamespaceAnnotation = "jenkins-x.io/admin-namespace"
 func GetAdminNamespace(kubeClient kubernetes.Interface, teamNs string) (string, error) {
 	namespace, err := kubeClient.CoreV1().Namespaces().Get(teamNs, metav1.GetOptions{})
 	if err != nil {
-		return "", errors.Wrapf(err, "Failed to obtain the team namespace (%s) when getting the admin namespace", teamNs)
+		return "", errors.Wrapf(err, "obtaining the team namespace (%s) when getting the admin namespace", teamNs)
 	}
 	adminNs := namespace.Annotations[adminNamespaceAnnotation]
 	if adminNs != "" {
@@ -33,7 +33,7 @@ func GetAdminNamespace(kubeClient kubernetes.Interface, teamNs string) (string, 
 func SetAdminNamespace(kubeClient kubernetes.Interface, teamNs string , adminNs string) error {
 	namespace, err := kubeClient.CoreV1().Namespaces().Get(teamNs, metav1.GetOptions{})
 	if err != nil {
-		return errors.Wrapf(err, "Failed to update the obtain the namespace (%s) when updating the admin namespace", teamNs)
+		return errors.Wrapf(err, "obtaining the namespace (%s) when updating the admin namespace", teamNs)
 	}
 	oldAdminNs := namespace.Annotations[adminNamespaceAnnotation]
 	if oldAdminNs == adminNs {
