@@ -88,7 +88,7 @@ func (c *GitCollector) CollectFiles(patterns []string, outputPath string, basedi
 				rPath := strings.TrimPrefix(strings.TrimPrefix(path, ghPagesDir), "/")
 
 				if rPath != "" {
-					url := c.generateUrl(storageOrg, storageRepoName, rPath)
+					url := c.generateURL(storageOrg, storageRepoName, rPath)
 					urls = append(urls, url)
 				}
 			}
@@ -149,7 +149,7 @@ func (c *GitCollector) CollectData(data []byte, outputPath string) (string, erro
 		return u, errors.Wrapf(err, "failed to write file %s", toFile)
 	}
 
-	u = c.generateUrl(storageOrg, storageRepoName, outputPath)
+	u = c.generateURL(storageOrg, storageRepoName, outputPath)
 
 	err = gitClient.Add(ghPagesDir, repoDir)
 	if err != nil {
@@ -171,7 +171,7 @@ func (c *GitCollector) CollectData(data []byte, outputPath string) (string, erro
 	return u, err
 }
 
-func (c *GitCollector) generateUrl(storageOrg string, storageRepoName string, rPath string) string {
+func (c *GitCollector) generateURL(storageOrg string, storageRepoName string, rPath string) string {
 	// TODO only supporting github for now!!!
 	url := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/%s", storageOrg, storageRepoName, c.gitBranch, rPath)
 	log.Infof("Publishing %s\n", util.ColorInfo(url))

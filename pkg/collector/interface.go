@@ -1,5 +1,6 @@
 package collector
 
+// Collector an interface to collect data for storage in git or cloud storage etc
 type Collector interface {
 
 	// CollectFiles collects the given file paths and collects them into the storage
