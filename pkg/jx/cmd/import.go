@@ -303,9 +303,11 @@ func (options *ImportOptions) Run() error {
 			return err
 		}
 	}
+
 	if options.GitHub {
 		return options.ImportProjectsFromGitHub()
 	}
+
 	if options.Dir == "" {
 		args := options.Args
 		if len(args) > 0 {
@@ -408,8 +410,9 @@ func (options *ImportOptions) Run() error {
 		}
 	}
 
+
 	err = sourcerepository.NewSourceRepositoryService(jxClient, ns).CreateSourceRepository(
-		options.AppName, options.Organisation, options.GitServer.URL)
+		options.AppName, options.Organisation, options.GitProvider.ServerURL())
 	if err != nil {
 		return errors.Wrapf(err, "creating application resource for %s", util.ColorInfo(options.AppName))
 	}

@@ -77,13 +77,13 @@ func NewCmdUpgradePlatform(f Factory, in terminal.FileReader, out terminal.FileW
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The Namespace to promote to")
-	cmd.Flags().StringVarP(&options.ReleaseName, "name", "n", "jenkins-x", "The release name")
-	cmd.Flags().StringVarP(&options.Chart, "chart", "c", "jenkins-x/jenkins-x-platform", "The Chart to upgrade")
-	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The specific platform version to upgrade to")
-	cmd.Flags().StringVarP(&options.Set, "set", "s", "", "The helm parameters to pass in while upgrading")
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The Namespace to promote to.")
+	cmd.Flags().StringVarP(&options.ReleaseName, "name", "n", "jenkins-x", "The release name.")
+	cmd.Flags().StringVarP(&options.Chart, "chart", "c", "jenkins-x/jenkins-x-platform", "The Chart to upgrade.")
+	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The specific platform version to upgrade to.")
+	cmd.Flags().StringVarP(&options.Set, "set", "s", "", "The helm parameters to pass in while upgrading, separated by comma, e.g. key1=val1,key2=val2.")
 	cmd.Flags().BoolVarP(&options.AlwaysUpgrade, "always-upgrade", "", false, "If set to true, jx will upgrade platform Helm chart even if requested version is already installed.")
-	cmd.Flags().BoolVarP(&options.Flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true]")
+	cmd.Flags().BoolVarP(&options.Flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true].")
 
 	options.addCommonFlags(cmd)
 	options.InstallFlags.addCloudEnvOptions(cmd)
@@ -299,7 +299,8 @@ func (o *UpgradePlatformOptions) Run() error {
 
 	values := []string{}
 	if o.Set != "" {
-		values = append(values, o.Set)
+		sets := strings.Split(o.Set, ",")
+		values = append(values, sets...)
 	}
 
 	for _, v := range valueFiles {
