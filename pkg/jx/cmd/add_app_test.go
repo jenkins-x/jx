@@ -42,7 +42,7 @@ func TestAddAppForGitOps(t *testing.T) {
 }
 
 // Contains all useful data from the test environment initialized by `prepareInitialPromotionEnv`
-type AddAppTestEnv struct {
+type AppTestEnv struct {
 	FakePullRequests cmd.CreateEnvPullRequestFn
 	CommonOptions    *cmd.CommonOptions
 	FakeGitProvider  *gits.FakeProvider
@@ -53,7 +53,7 @@ type AddAppTestEnv struct {
 	DevEnv           *v1.Environment
 }
 
-func prepareDevEnv(t *testing.T, gitOps bool) (*AddAppTestEnv, error) {
+func prepareDevEnv(t *testing.T, gitOps bool) (*AppTestEnv, error) {
 	testOrgName := "myorg"
 	testRepoName := "my-app"
 	devEnvRepoName := fmt.Sprintf("environment-%s-%s-dev", testOrgName, testRepoName)
@@ -81,7 +81,7 @@ func prepareDevEnv(t *testing.T, gitOps bool) (*AddAppTestEnv, error) {
 		&gits.GitFake{},
 		helm_test.NewMockHelmer(),
 	)
-	return &AddAppTestEnv{
+	return &AppTestEnv{
 		FakePullRequests: o.FakePullRequests,
 		CommonOptions:    &o.CommonOptions,
 		FakeGitProvider:  fakeGitProvider,
