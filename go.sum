@@ -1,5 +1,7 @@
 cloud.google.com/go v0.25.0 h1:6vD6xZTc8Jo6To8gHxFDRVsMvWFDgY3rugNszcDalN8=
 cloud.google.com/go v0.25.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
+cloud.google.com/go v0.34.0 h1:eOI3/cP2VTU6uZLDYAoic+eyzzB9YyGmJ7eIjl8rOPg=
+cloud.google.com/go v0.34.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 code.gitea.io/sdk v0.0.0-20180702024448-79a281c4e34a h1:6FO4ymUxOGJdK30fvXqCSkZ5Em3GWQ4RpNKq9hR4lEc=
 code.gitea.io/sdk v0.0.0-20180702024448-79a281c4e34a/go.mod h1:5bZt0dRznpn2JysytQnV0yCru3FwDv9O5G91jo+lDAk=
 github.com/Azure/draft v0.15.0 h1:9GVmAwNxusaU1FIsoIBFWYT9ivnHwOYD2Q6O5cJjl7E=

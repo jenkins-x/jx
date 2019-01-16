@@ -1,7 +1,7 @@
 module github.com/jenkins-x/jx
 
 require (
-	cloud.google.com/go v0.25.0 // indirect
+	cloud.google.com/go v0.34.0 // indirect
 	code.gitea.io/sdk v0.0.0-20180702024448-79a281c4e34a
 	github.com/Azure/draft v0.15.0
 	github.com/Azure/go-autorest v10.14.0+incompatible // indirect
