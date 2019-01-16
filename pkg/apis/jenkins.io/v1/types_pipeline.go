@@ -35,18 +35,19 @@ type PipelineActivitySpec struct {
 	BuildURL           string                 `json:"buildUrl,omitempty" protobuf:"bytes,8,opt,name=buildUrl"`
 	BuildLogsURL       string                 `json:"buildLogsUrl,omitempty" protobuf:"bytes,9,opt,name=buildLogsUrl"`
 	GitURL             string                 `json:"gitUrl,omitempty" protobuf:"bytes,10,opt,name=gitUrl"`
-	GitRepository      string                 `json:"gitRepository,omitempty" protobuf:"bytes,10,opt,name=gitRepository"`
-	GitOwner           string                 `json:"gitOwner,omitempty" protobuf:"bytes,10,opt,name=gitOwner"`
-	ReleaseNotesURL    string                 `json:"releaseNotesURL,omitempty" protobuf:"bytes,11,opt,name=releaseNotesURL"`
-	LastCommitSHA      string                 `json:"lastCommitSHA,omitempty" protobuf:"bytes,12,opt,name=lastCommitSHA"`
-	LastCommitMessage  string                 `json:"lastCommitMessage,omitempty" protobuf:"bytes,13,opt,name=lastCommitMessage"`
-	LastCommitURL      string                 `json:"lastCommitURL,omitempty" protobuf:"bytes,14,opt,name=lastCommitURL"`
-	Workflow           string                 `json:"workflow,omitempty" protobuf:"bytes,15,opt,name=workflow"`
-	WorkflowStatus     ActivityStatusType     `json:"workflowStatus,omitempty" protobuf:"bytes,16,opt,name=workflowStatus"`
-	WorkflowMessage    string                 `json:"workflowMessage,omitempty" protobuf:"bytes,17,opt,name=workflowMessage"`
-	PostExtensions     []ExtensionExecution   `json:"postExtensions,omitempty" protobuf: "bytes,18,opt,name=postExtensions"`
-	Attachments        []Attachment           `json:"attachments,omitempty" protobuf: "bytes,19,opt,name=attachments"`
-	Facts              []Fact                 `json:"facts,omitempty" protobuf: "bytes,20,opt,name=facts"`
+	GitRepository      string                 `json:"gitRepository,omitempty" protobuf:"bytes,11,opt,name=gitRepository"`
+	GitOwner           string                 `json:"gitOwner,omitempty" protobuf:"bytes,12,opt,name=gitOwner"`
+	GitBranch          string                 `json:"gitBranch,omitempty" protobuf:"bytes,13,opt,name=gitBranch"`
+	ReleaseNotesURL    string                 `json:"releaseNotesURL,omitempty" protobuf:"bytes,14,opt,name=releaseNotesURL"`
+	LastCommitSHA      string                 `json:"lastCommitSHA,omitempty" protobuf:"bytes,15,opt,name=lastCommitSHA"`
+	LastCommitMessage  string                 `json:"lastCommitMessage,omitempty" protobuf:"bytes,16,opt,name=lastCommitMessage"`
+	LastCommitURL      string                 `json:"lastCommitURL,omitempty" protobuf:"bytes,17,opt,name=lastCommitURL"`
+	Workflow           string                 `json:"workflow,omitempty" protobuf:"bytes,18,opt,name=workflow"`
+	WorkflowStatus     ActivityStatusType     `json:"workflowStatus,omitempty" protobuf:"bytes,19,opt,name=workflowStatus"`
+	WorkflowMessage    string                 `json:"workflowMessage,omitempty" protobuf:"bytes,20,opt,name=workflowMessage"`
+	PostExtensions     []ExtensionExecution   `json:"postExtensions,omitempty" protobuf: "bytes,21,opt,name=postExtensions"`
+	Attachments        []Attachment           `json:"attachments,omitempty" protobuf: "bytes,22,opt,name=attachments"`
+	Facts              []Fact                 `json:"facts,omitempty" protobuf: "bytes,23,opt,name=facts"`
 }
 
 // PipelineActivityStep represents a step in a pipeline activity
@@ -259,6 +260,19 @@ func (p *PipelineActivity) RepositoryName() string {
 	return repoName
 }
 
+// RepositoryOwner returns the repository name for the given pipeline
+func (p *PipelineActivity) RepositoryOwner() string {
+	repoOwner := p.Spec.GitOwner
+	pipelineName := p.Spec.Pipeline
+
+	paths := strings.SplitN(pipelineName, "/", 2)
+	if repoOwner == "" && len(paths) > 1 {
+		repoOwner = paths[0]
+		p.Spec.GitOwner = repoOwner
+	}
+	return repoOwner
+}
+
 // BranchName returns the name of the branch for the pipeline
 func (p *PipelineActivity) BranchName() string {
 	pipelineName := p.Spec.Pipeline
@@ -266,5 +280,7 @@ func (p *PipelineActivity) BranchName() string {
 		return ""
 	}
 	paths := strings.Split(pipelineName, "/")
-	return paths[len(paths)-1]
+	branch := paths[len(paths)-1]
+	p.Spec.GitBranch = branch
+	return branch
 }

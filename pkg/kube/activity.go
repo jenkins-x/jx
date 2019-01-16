@@ -181,8 +181,7 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 		a = defaultActivity
 	}
 	oldSpec := a.Spec
-	spec := &a.Spec
-	updateActivitySpec(k, spec)
+	updateActivity(k, a)
 	if create {
 		answer, err := activities.Create(a)
 		return answer, true, err
@@ -193,6 +192,18 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 		}
 		return a, false, nil
 	}
+}
+
+func updateActivity(k *PipelineActivityKey, activity *v1.PipelineActivity) {
+	if activity.Labels == nil {
+		activity.Labels = make(map[string]string, 4)
+	}
+
+	updateActivitySpec(k, &activity.Spec)
+
+	activity.Labels["sourcerepository"] = activity.RepositoryName()
+	activity.Labels["branch"] = activity.BranchName()
+	activity.Labels["owner"] = activity.RepositoryOwner()
 }
 
 func updateActivitySpec(k *PipelineActivityKey, spec *v1.PipelineActivitySpec) {
