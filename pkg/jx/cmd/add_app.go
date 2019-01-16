@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"k8s.io/helm/pkg/proto/hapi/chart"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	corev1 "k8s.io/api/core/v1"
@@ -309,7 +311,8 @@ func (o *AddAppOptions) Run() error {
 
 func (o *AddAppOptions) createPR(app string, version string, schema []byte) error {
 
-	modifyRequirementsFn := func(requirements *helm.Requirements) error {
+	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
+		templates map[string]map[string]interface{}) error {
 		// See if the app already exists in requirements
 		found := false
 		for _, d := range requirements.Dependencies {
@@ -342,14 +345,14 @@ func (o *AddAppOptions) createPR(app string, version string, schema []byte) erro
 	var pullRequestInfo *gits.PullRequestInfo
 	if o.FakePullRequests != nil {
 		var err error
-		pullRequestInfo, err = o.FakePullRequests(o.DevEnv, modifyRequirementsFn, branchNameText, title, message,
+		pullRequestInfo, err = o.FakePullRequests(o.DevEnv, modifyChartFn, branchNameText, title, message,
 			nil)
 		if err != nil {
 			return err
 		}
 	} else {
 		var err error
-		pullRequestInfo, err = o.createEnvironmentPullRequest(o.DevEnv, modifyRequirementsFn, &branchNameText, &title,
+		pullRequestInfo, err = o.createEnvironmentPullRequest(o.DevEnv, modifyChartFn, &branchNameText, &title,
 			&message,
 			nil, o.ConfigureGitCallback)
 		if err != nil {

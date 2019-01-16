@@ -3,13 +3,13 @@ package util
 import (
 	"crypto/rand"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
+	"mime"
 	"os"
 	"path/filepath"
 	"strconv"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -27,6 +27,17 @@ func FileExists(path string) (bool, error) {
 		return false, nil
 	}
 	return true, err
+}
+
+// DirExists checks if path exists and is a directory
+func DirExists(path string) (bool, error) {
+	info, err := os.Stat(path)
+	if err == nil {
+		return info.IsDir(), nil
+	} else if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }
 
 // FirstFileExists returns the first file which exists or an error if we can't detect if a file that exists
@@ -115,6 +126,18 @@ func RenameFile(src string, dst string) (err error) {
 		return fmt.Errorf("failed to cleanup source file %s: %s", src, err)
 	}
 	return nil
+}
+
+// CopyFileOrDir copies the source file or directory to the given destination
+func CopyFileOrDir(src string, dst string, force bool) (err error) {
+	fi, err := os.Stat(src)
+	if err != nil {
+		return errors.Wrapf(err, "getting details of file '%s'", src)
+	}
+	if fi.IsDir() {
+		return CopyDir(src, dst, force)
+	}
+	return CopyFile(src, dst)
 }
 
 // credit https://gist.github.com/r0l1/92462b38df26839a3ca324697c8cba04
@@ -359,6 +382,18 @@ func FilterFileExists(paths []string) []string {
 		exists, err := FileExists(path)
 		if exists && err == nil {
 			answer = append(answer, path)
+		}
+	}
+	return answer
+}
+
+// ContentTypeForFileName returns the MIME type for the given file name
+func ContentTypeForFileName(name string) string {
+	ext := filepath.Ext(name)
+	answer := mime.TypeByExtension(ext)
+	if answer == "" {
+		if ext == ".log" || ext == ".txt" {
+			return "text/plain; charset=utf-8"
 		}
 	}
 	return answer

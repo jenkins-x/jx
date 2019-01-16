@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"fmt"
+	"github.com/jenkins-x/jx/pkg/collector"
+	"github.com/pkg/errors"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -312,10 +312,11 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 			envName := kube.LabelValueDevEnvironment
 			devEnv := o.EnvironmentCache.Item(envName)
 			var location *v1.StorageLocation
+			settings := &devEnv.Spec.TeamSettings
 			if devEnv == nil {
 				log.Warnf("No Environment %s found\n", envName)
 			} else {
-				location = devEnv.Spec.TeamSettings.StorageLocationOrDefault(kube.ClassificationLogs)
+				location = settings.StorageLocationOrDefault(kube.ClassificationLogs)
 			}
 			if location == nil {
 				location = &v1.StorageLocation{}
@@ -326,7 +327,12 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 					log.Warnf("No GitURL on PipelineActivity %s\n", activity.Name)
 				}
 			}
-			logURL := o.generateBuildLogURL(podInterface, ns, activity, buildName, pod, location, o.InitGitCredentials)
+			logURL, err := o.generateBuildLogURL(podInterface, ns, activity, buildName, pod, location, settings, o.InitGitCredentials)
+			if err != nil {
+				if o.Verbose {
+					log.Warnf("%s\n", err)
+				}
+			}
 			if logURL != "" {
 				spec.BuildLogsURL = logURL
 			}
@@ -342,29 +348,21 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 }
 
 // generates the build log URL and returns the URL
-func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation, initGitCredentials bool) string {
+func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool) (string, error) {
+
+	coll, err := collector.NewCollector(location, settings, o.Git())
+	if err != nil {
+		return "", errors.Wrapf(err, "could not create Collector for pod %s in namespace %s with settings %#v", pod.Name, ns, settings)
+	}
+
 	data, err := builds.GetBuildLogsForPod(podInterface, pod)
 	if err != nil {
 		// probably due to not being available yet
-		if o.Verbose {
-			log.Warnf("Failed to get build log for pod %s in namespace %s: %s\n", pod.Name, ns, err)
-		}
-		return ""
+		return "", errors.Wrapf(err, "failed to get build log for pod %s in namespace %s", pod.Name, ns)
 	}
 
 	if o.Verbose {
 		log.Infof("got build log for pod: %s PipelineActivity: %s with bytes: %d\n", pod.Name, activity.Name, len(data))
-	}
-
-	sourceURL := location.GitURL
-	if sourceURL == "" {
-		// TODO handle http URLs too
-		return ""
-	}
-	gitInfo, err := gits.ParseGitURL(sourceURL)
-	if err != nil {
-		log.Infof("Failed to parse git URL %s: %s\n", sourceURL, err)
-		return ""
 	}
 
 	if initGitCredentials {
@@ -374,16 +372,8 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 		log.Info("running: jx step git credentials\n")
 		err = gc.Run()
 		if err != nil {
-			log.Infof("Failed to setup git credentials: %s\n", err)
-			return ""
+			return "", errors.Wrapf(err, "Failed to setup git credentials")
 		}
-	}
-
-	gitClient := gits.NewGitCLI()
-	ghPagesDir, err := cloneGitHubPagesBranchToTempDir(sourceURL, gitClient)
-	if err != err {
-		log.Warnf("Failed to git clone gh-pages branch for %s: %s\n", sourceURL, err)
-		return ""
 	}
 
 	owner := activity.Spec.GitOwner
@@ -395,39 +385,13 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 	}
 
 	pathDir := filepath.Join("jenkins-x", "logs", owner, repository, branch)
-	outDir := filepath.Join(ghPagesDir, pathDir)
-	err = os.MkdirAll(outDir, util.DefaultWritePermissions)
-	if err != nil {
-		log.Warnf("Failed to write create dir for log file %s: %s\n", outDir, err)
-		return ""
-	}
-
 	fileName := filepath.Join(pathDir, buildNumber+".log")
-	outFile := filepath.Join(ghPagesDir, fileName)
-	err = ioutil.WriteFile(outFile, data, util.DefaultWritePermissions)
-	if err != nil {
-		log.Warnf("Failed to write log file %s: %s\n", outFile, err)
-		return ""
-	}
 
-	err = gitClient.Add(ghPagesDir, pathDir)
+	url, err := coll.CollectData(data, fileName)
 	if err != nil {
-		log.Warnf("Failed to add to gh-pages repo dir %s: %s\n", pathDir, err)
-		return ""
+		return url, errors.Wrapf(err, "failed to collect build log for pod %s in namespace %s", pod.Name, ns)
 	}
-	err = gitClient.CommitIfChanges(ghPagesDir, fmt.Sprintf("Publishing log for Pipeline %s", activity.Name))
-	if err != nil {
-		log.Warnf("Failed to commit gh-pages repo dir %s: %s\n", ghPagesDir, err)
-		return ""
-	}
-	err = gitClient.Push(ghPagesDir)
-	if err != nil {
-		log.Warnf("Failed to push gh-pages repo dir %s: %s\n", ghPagesDir, err)
-		return ""
-	}
-
-	// TODO only github supported for now! Lets switch to GitProvider
-	return fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/gh-pages/%s", gitInfo.Organisation, gitInfo.Name, fileName)
+	return url, nil
 }
 
 // createStepDescription uses the spec of the init container to return a description

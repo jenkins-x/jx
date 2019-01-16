@@ -4,6 +4,8 @@ import (
 	"io"
 	"strings"
 
+	"k8s.io/helm/pkg/proto/hapi/chart"
+
 	"fmt"
 
 	"github.com/ghodss/yaml"
@@ -161,7 +163,8 @@ func (o *UpgradeAppsOptions) createPRs() error {
 		message = fmt.Sprintf("Upgrade all apps:\n")
 	}
 	upgraded := false
-	modifyRequirementsFn := func(requirements *helm.Requirements) error {
+	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
+		templates map[string]map[string]interface{}) error {
 		for _, d := range requirements.Dependencies {
 			upgrade := false
 			// We need to ignore the platform
@@ -205,14 +208,14 @@ func (o *UpgradeAppsOptions) createPRs() error {
 
 	if o.FakePullRequests != nil {
 		var err error
-		_, err = o.FakePullRequests(o.DevEnv, modifyRequirementsFn, branchNameText, title, message,
+		_, err = o.FakePullRequests(o.DevEnv, modifyChartFn, branchNameText, title, message,
 			nil)
 		if err != nil {
 			return err
 		}
 	} else {
 		var err error
-		_, err = o.createEnvironmentPullRequest(o.DevEnv, modifyRequirementsFn, &branchNameText, &title,
+		_, err = o.createEnvironmentPullRequest(o.DevEnv, modifyChartFn, &branchNameText, &title,
 			&message,
 			nil, o.ConfigureGitCallback)
 		if err != nil {
