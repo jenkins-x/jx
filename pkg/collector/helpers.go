@@ -7,6 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/pkg/errors"
 	"gocloud.dev/blob"
+	"time"
 
 	// lets import all the blob providers we need
 	_ "gocloud.dev/blob/azureblob"
@@ -25,7 +26,7 @@ func NewCollector(storageLocation *jenkinsv1.StorageLocation, settings *jenkinsv
 	if gitURL != "" {
 		return NewGitCollector(gitter, gitURL, storageLocation.GetGitBranch())
 	}
-	ctx := context.Background()
+	ctx, _ := context.WithTimeout(context.Background(), time.Second * 20)
 	u := storageLocation.BucketURL
 	if u == "" {
 		return nil, fmt.Errorf("No GitURL or BucketURL is configured for the storage location in the TeamSettings")

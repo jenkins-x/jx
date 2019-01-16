@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/collector"
+	"github.com/pkg/errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -326,7 +327,12 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 					log.Warnf("No GitURL on PipelineActivity %s\n", activity.Name)
 				}
 			}
-			logURL := o.generateBuildLogURL(podInterface, ns, activity, buildName, pod, location, settings, o.InitGitCredentials)
+			logURL, err := o.generateBuildLogURL(podInterface, ns, activity, buildName, pod, location, settings, o.InitGitCredentials)
+			if err != nil {
+				if o.Verbose {
+					log.Warnf("%s\n", err)
+				}
+			}
 			if logURL != "" {
 				spec.BuildLogsURL = logURL
 			}
@@ -342,24 +348,17 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 }
 
 // generates the build log URL and returns the URL
-func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool) string {
-
+func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool) (string, error) {
 
 	coll, err := collector.NewCollector(location, settings, o.Git())
 	if err != nil {
-		if o.Verbose {
-			log.Warnf("Could not create Collector for pod %s in namespace %s with settings %#v due to: %s\n", pod.Name, ns, settings, err)
-		}
-		return ""
+		return "", errors.Wrapf(err, "could not create Collector for pod %s in namespace %s with settings %#v", pod.Name, ns, settings)
 	}
 
 	data, err := builds.GetBuildLogsForPod(podInterface, pod)
 	if err != nil {
 		// probably due to not being available yet
-		if o.Verbose {
-			log.Warnf("Failed to get build log for pod %s in namespace %s: %s\n", pod.Name, ns, err)
-		}
-		return ""
+		return "", errors.Wrapf(err, "failed to get build log for pod %s in namespace %s", pod.Name, ns)
 	}
 
 	if o.Verbose {
@@ -373,8 +372,7 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 		log.Info("running: jx step git credentials\n")
 		err = gc.Run()
 		if err != nil {
-			log.Infof("Failed to setup git credentials: %s\n", err)
-			return ""
+			return "", errors.Wrapf(err, "Failed to setup git credentials")
 		}
 	}
 
@@ -385,17 +383,15 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 	if buildNumber == "" {
 		buildNumber = "1"
 	}
-	
+
 	pathDir := filepath.Join("jenkins-x", "logs", owner, repository, branch)
 	fileName := filepath.Join(pathDir, buildNumber+".log")
 
 	url, err := coll.CollectData(data, fileName)
 	if err != nil {
-		if o.Verbose {
-			log.Warnf("Failed to collect build log for pod %s in namespace %s: %s\n", pod.Name, ns, err)
-		}
+		return url, errors.Wrapf(err, "failed to collect build log for pod %s in namespace %s", pod.Name, ns)
 	}
-	return url
+	return url, nil
 }
 
 // createStepDescription uses the spec of the init container to return a description

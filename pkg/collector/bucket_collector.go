@@ -7,10 +7,13 @@ import (
 	"gocloud.dev/blob"
 	"io/ioutil"
 	"path/filepath"
+	"time"
 )
 
 // BucketCollector stores the state for the git collector
 type BucketCollector struct {
+	Timeout time.Duration
+
 	bucketURL  string
 	bucket     *blob.Bucket
 	classifier string
@@ -19,6 +22,7 @@ type BucketCollector struct {
 // NewBucketCollector creates a new git based collector
 func NewBucketCollector(bucketURL string, bucket *blob.Bucket, classifier string) (Collector, error) {
 	return &BucketCollector{
+		Timeout:    time.Second * 20,
 		bucketURL:  bucketURL,
 		bucket:     bucket,
 		classifier: classifier,
@@ -30,7 +34,7 @@ func (c *BucketCollector) CollectFiles(patterns []string, outputPath string, bas
 	urls := []string{}
 	bucket := c.bucket
 
-	ctx := context.Background()
+	ctx := c.createContext()
 	for _, p := range patterns {
 		names, err := filepath.Glob(p)
 		if err != nil {
@@ -76,7 +80,7 @@ func (c *BucketCollector) CollectData(data []byte, outputName string) (string, e
 		},
 	}
 	u := ""
-	ctx := context.Background()
+	ctx := c.createContext()
 	err := c.bucket.WriteAll(ctx, outputName, data, opts)
 	if err != nil {
 		return u, errors.Wrapf(err, "failed to write to bucket %s", outputName)
@@ -84,4 +88,9 @@ func (c *BucketCollector) CollectData(data []byte, outputName string) (string, e
 
 	u = util.UrlJoin(c.bucketURL, outputName)
 	return u, nil
+}
+
+func (c *BucketCollector) createContext() context.Context {
+	ctx, _ := context.WithTimeout(context.Background(), c.Timeout)
+	return ctx
 }

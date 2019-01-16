@@ -15,6 +15,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
 	"net/url"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -111,7 +112,7 @@ func (o *EditStorageOptions) Run() error {
 	if classifier == "" && ! o.BatchMode {
 		o.StorageLocation.Classifier, err = util.PickName(kube.Classifications, "Pick the content classification name", "The name is used as a key to store content in different locations", o.In, o.Out, o.Err)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to pick the classification name")
 		}
 	}
 	if classifier == "" {
@@ -124,17 +125,18 @@ func (o *EditStorageOptions) Run() error {
 		if o.Bucket != "" {
 			o.StorageLocation.BucketURL, err = buckets.CreateBucketURL(o.Bucket, o.BucketKind, settings)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "failed to create the bucket URL for %s", o.Bucket)
 			}
 
-			bucket, err := blob.Open(context.Background(), o.StorageLocation.BucketURL)
+			ctx, _ := context.WithTimeout(context.Background(), time.Second * 20)
+			bucket, err := blob.Open(ctx, o.StorageLocation.BucketURL)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "failed to open the bucket for %s", o.StorageLocation.BucketURL)
 			}
 
 			// lets check if the bucket exists
 			iter := bucket.List(nil)
-			obj, err := iter.Next(context.Background())
+			obj, err := iter.Next(ctx)
 			if err != nil {
 				if err == io.EOF {
 					log.Infof("bucket %s is empty\n", o.StorageLocation.BucketURL)
@@ -142,7 +144,7 @@ func (o *EditStorageOptions) Run() error {
 					log.Infof("The bucket %s does not exist yet so lets create it...\n", util.ColorInfo(o.StorageLocation.BucketURL))
 					err = o.createBucket(o.StorageLocation.BucketURL, bucket)
 					if err != nil {
-						return err
+						return errors.Wrapf(err, "failed to create the bucket for %s", o.StorageLocation.BucketURL)
 					}
 				}
 			} else {
@@ -152,7 +154,7 @@ func (o *EditStorageOptions) Run() error {
 		if o.StorageLocation.BucketURL == "" {
 			o.StorageLocation.BucketURL, err = util.PickValue("Bucket URL:", o.StorageLocation.BucketURL, false, "The go-cloud bucket URL for storage such as 'gs://mybucket/ or s3://bucket2/", o.In, o.Out, o.Err)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "failed to pick the bucket URL")
 			}
 		}
 
@@ -165,7 +167,7 @@ func (o *EditStorageOptions) Run() error {
 			} else {
 				o.StorageLocation.GitURL, err = util.PickValue("Git repository URL to store content:", currentLocation.GitURL, false, "The Git URL will be used to clone and push the storage to", o.In, o.Out, o.Err)
 				if err != nil {
-					return err
+					return errors.Wrapf(err, "failed to pick the git URL")
 				}
 			}
 		}

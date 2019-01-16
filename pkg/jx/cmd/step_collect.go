@@ -137,7 +137,7 @@ func (o *StepCollectOptions) Run() error {
 
 	coll, err := collector.NewCollector(&o.StorageLocation, settings, o.Git())
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to create the collector for storage settings %s", o.StorageLocation.Description())
 	}
 
 	client, ns, err := o.CreateJXClient()
@@ -149,11 +149,15 @@ func (o *StepCollectOptions) Run() error {
 	var projectGitInfo *gits.GitRepository
 	if o.ProjectGitURL != "" {
 		projectGitInfo, err = gits.ParseGitURL(o.ProjectGitURL)
+		if err != nil {
+			return errors.Wrapf(err, "failed to parse the git URL %s", o.ProjectGitURL)
+		}
 	} else {
-		projectGitInfo, err = o.FindGitInfo("")
-	}
-	if err != nil {
-		return err
+		dir := ""
+		projectGitInfo, err = o.FindGitInfo(dir)
+		if err != nil {
+			return errors.Wrapf(err, "failed to find the git information in the directory %s", dir)
+		}
 	}
 	projectOrg := projectGitInfo.Organisation
 	projectRepoName := projectGitInfo.Name

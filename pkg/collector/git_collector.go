@@ -164,7 +164,6 @@ func (c *GitCollector) CollectData(data []byte, outputPath string) (string, erro
 	}
 	err = gitClient.CommitDir(ghPagesDir, fmt.Sprintf("Publishing files for path %s", outputPath))
 	if err != nil {
-		fmt.Println(err)
 		return u, err
 	}
 	err = gitClient.Push(ghPagesDir)
