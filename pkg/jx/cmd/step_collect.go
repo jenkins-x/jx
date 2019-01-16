@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/collector"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"io"
 	"os"
 	"path/filepath"
@@ -27,14 +28,14 @@ type StepCollectOptions struct {
 	Dir             string
 	Basedir         string
 	StorageLocation jenkinsv1.StorageLocation
+	ProjectGitURL   string
+	ProjectBranch   string
 }
 
 const (
 	envVarBranchName = "BRANCH_NAME"
 	envVarSourceUrl  = "SOURCE_URL"
 )
-
-const ghPagesBranchName = "gh-pages"
 
 var (
 	StepCollectLong = templates.LongDesc(`
@@ -83,8 +84,9 @@ func NewCmdStepCollect(f Factory, in terminal.FileReader, out terminal.FileWrite
 	cmd.Flags().StringArrayVarP(&options.Pattern, "pattern", "p", nil, "Specify the pattern to use to look for files")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The source directory to try detect the current git repository or branch. Defaults to using the current directory")
 	cmd.Flags().StringVarP(&options.Basedir, "basedir", "", "", "The base directory to use to create relative output file names. e.g. if you specify '--pattern \"target/*.xml\" then you may want to supply '--basedir target' to strip the 'target/' prefix from all collected files")
-	cmd.Flags().StringVarP(&options.StorageLocation.HttpURL, "http-url", "", "", "Specify the HTTP endpoint to send each file to")
-	cmd.Flags().StringVarP(&options.StorageLocation.GitURL, "git-url", "", "", "Specify the Git URL to populate files in a gh-pages branch")
+	cmd.Flags().StringVarP(&options.StorageLocation.BucketURL, "bucket-url", "", "", "Specify the cloud storage bucket URL to send each file to")
+	cmd.Flags().StringVarP(&options.ProjectGitURL, "project-git-url", "", "", "The project git URL to collect for. Used to default the organisation and repository folders in the storage. If not specified its discovered from the local '.git' folder")
+	cmd.Flags().StringVarP(&options.ProjectBranch, "project-branch", "", "", "The project git branch of the project to collect for. Used to default the branch folder in the storage. If not specified its discovered from the local '.git' folder")
 	cmd.Flags().StringVarP(&options.StorageLocation.Classifier, "classifier", "c", "", "A name which classifies this type of file. Example values: "+kube.ClassificationValues)
 	return cmd
 }
@@ -144,14 +146,22 @@ func (o *StepCollectOptions) Run() error {
 	}
 
 	buildNo := o.getBuildNumber()
-	projectGitInfo, err := o.FindGitInfo("")
+	var projectGitInfo *gits.GitRepository
+	if o.ProjectGitURL != "" {
+		projectGitInfo, err = gits.ParseGitURL(o.ProjectGitURL)
+	} else {
+		projectGitInfo, err = o.FindGitInfo("")
+	}
 	if err != nil {
 		return err
 	}
 	projectOrg := projectGitInfo.Organisation
 	projectRepoName := projectGitInfo.Name
 
-	projectBranchName := os.Getenv(envVarBranchName)
+	projectBranchName := o.ProjectBranch
+	if projectBranchName == "" {
+		projectBranchName = os.Getenv(envVarBranchName)
+	}
 	if projectBranchName == "" {
 		// lets try find the branch name via git
 		projectBranchName, err = o.Git().Branch(o.Dir)
@@ -168,6 +178,10 @@ func (o *StepCollectOptions) Run() error {
 	urls, err := coll.CollectFiles(o.Pattern, repoPath, o.Basedir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to collect patterns %s to path %s", strings.Join(o.Pattern, ", "), repoPath)
+	}
+
+	for _, u := range urls {
+		log.Infof("Cpllected: %s\n", util.ColorInfo(u))
 	}
 
 	// TODO this pipeline name construction needs moving to a shared lib, and other things refactoring to use it

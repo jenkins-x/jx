@@ -1,9 +1,18 @@
 package collector
 
 import (
+	"context"
 	"fmt"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/pkg/errors"
+	"gocloud.dev/blob"
+
+	// lets import all the blob providers we need
+	_ "gocloud.dev/blob/azureblob"
+	_ "gocloud.dev/blob/fileblob"
+	_ "gocloud.dev/blob/gcsblob"
+	_ "gocloud.dev/blob/s3blob"
 )
 
 // NewCollector creates a new collector from the storage configuration
@@ -16,20 +25,14 @@ func NewCollector(storageLocation *jenkinsv1.StorageLocation, settings *jenkinsv
 	if gitURL != "" {
 		return NewGitCollector(gitter, gitURL, storageLocation.GetGitBranch())
 	}
-	bucket := storageLocation.Bucket
-	if bucket != "" {
-		bucketKind := storageLocation.BucketKind
-		if bucketKind == "" {
-			bucketKind = settings.KubeProvider
-			if bucketKind == "" {
-				return nil, fmt.Errorf("Bucket %s has no associated 'bucketKind' and there is no 'kubeProvider' in the TeamSettings", bucket)
-			}
-		}
+	ctx := context.Background()
+	u := storageLocation.BucketURL
+	if u == "" {
+		return nil, fmt.Errorf("No GitURL or BucketURL is configured for the storage location in the TeamSettings")
 	}
-/*	httpURL := storageLocation.HttpURL
-	if httpURL != "" {
-		return o.collectHttpURL(httpURL)
+	bucket, err := blob.Open(ctx, u)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to open bucket %s", u)
 	}
-*/
-	return nil, fmt.Errorf("Unsupported storage configuration %#v", storageLocation)
+	return NewBucketCollector(u, bucket, classifier)
 }

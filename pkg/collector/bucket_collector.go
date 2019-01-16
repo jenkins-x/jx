@@ -11,13 +11,15 @@ import (
 
 // BucketCollector stores the state for the git collector
 type BucketCollector struct {
+	bucketURL  string
 	bucket     *blob.Bucket
 	classifier string
 }
 
 // NewBucketCollector creates a new git based collector
-func NewBucketCollector(bucket *blob.Bucket, classifier string) (Collector, error) {
+func NewBucketCollector(bucketURL string, bucket *blob.Bucket, classifier string) (Collector, error) {
 	return &BucketCollector{
+		bucketURL:  bucketURL,
 		bucket:     bucket,
 		classifier: classifier,
 	}, nil
@@ -57,15 +59,8 @@ func (c *BucketCollector) CollectFiles(patterns []string, outputPath string, bas
 				return urls, errors.Wrapf(err, "failed to write to bucket %s", toName)
 			}
 
-			url, err := bucket.SignedURL(ctx, toName, &blob.SignedURLOptions{})
-			if err != nil {
-				if !blob.IsNotImplemented(err) {
-					return urls, errors.Wrapf(err, "failed to get URL for bucket entry %s", toName)
-				}
-			}
-			if url != "" {
-				urls = append(urls, url)
-			}
+			u := util.UrlJoin(c.bucketURL, toName)
+			urls = append(urls, u)
 		}
 	}
 	return urls, nil
@@ -87,11 +82,6 @@ func (c *BucketCollector) CollectData(data []byte, outputName string) (string, e
 		return u, errors.Wrapf(err, "failed to write to bucket %s", outputName)
 	}
 
-	u, err = c.bucket.SignedURL(ctx, outputName, &blob.SignedURLOptions{})
-	if err != nil {
-		if !blob.IsNotImplemented(err) {
-			return u, errors.Wrapf(err, "failed to get URL for bucket entry %s", outputName)
-		}
-	}
+	u = util.UrlJoin(c.bucketURL, outputName)
 	return u, nil
 }

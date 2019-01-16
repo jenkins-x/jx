@@ -161,9 +161,7 @@ type StorageLocation struct {
 	Classifier string `json:"classifier,omitempty" protobuf:"bytes,1,opt,name=classifier"`
 	GitURL     string `json:"gitUrl,omitempty" protobuf:"bytes,2,opt,name=gitUrl"`
 	GitBranch  string `json:"gitBranch,omitempty" protobuf:"bytes,3,opt,name=gitBranch"`
-	HttpURL    string `json:"httpUrl,omitempty" protobuf:"bytes,4,opt,name=httpUrl"`
-	Bucket     string `json:"bucket,omitempty" protobuf:"bytes,5,opt,name=bucket"`
-	BucketKind string `json:"bucketKind,omitempty" protobuf:"bytes,6,opt,name=bucketKind"`
+	BucketURL  string `json:"bucketUrl,omitempty" protobuf:"bytes,4,opt,name=bucketUrl"`
 }
 
 // QuickStartLocation
@@ -288,16 +286,16 @@ func (t *TeamSettings) SetStorageLocation(classifier string, storage StorageLoca
 
 // IsEmpty returns true if the storage location is empty
 func (s *StorageLocation) IsEmpty() bool {
-	return s.GitURL == "" && s.HttpURL == "" && s.Bucket == ""
+	return s.GitURL == "" && s.BucketURL == ""
 }
 
 // Description returns the textual description of the storage location
 func (s *StorageLocation) Description() string {
 	if s.GitURL != "" {
-		return "git url: " + s.GitURL + " branch: " + s.GetGitBranch()
+		return s.GitURL + " branch: " + s.GetGitBranch()
 	}
-	if s.HttpURL != "" {
-		return s.HttpURL
+	if s.BucketURL != "" {
+		return s.BucketURL
 	}
 	return "current git repo"
 }
