@@ -99,14 +99,15 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 }
 
 func NewCreateEnvPullRequestFn(provider *gits.FakeProvider) CreateEnvPullRequestFn {
-	fakePrFn := func(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *gits.PullRequestInfo) (*gits.PullRequestInfo, error) {
+	fakePrFn := func(env *v1.Environment, modifyChartFn ModifyChartFn, branchNameText string, title string, message string,
+		pullRequestInfo *gits.PullRequestInfo) (*gits.PullRequestInfo, error) {
 		envURL := env.Spec.Source.URL
 		values := []string{}
 		for _, repos := range provider.Repositories {
 			for _, repo := range repos {
 				cloneURL := repo.GitRepo.CloneURL
 				if cloneURL == envURL {
-					return createFakePullRequest(repo, env, modifyRequirementsFn, branchNameText, title, message, pullRequestInfo, provider)
+					return createFakePullRequest(repo, env, modifyChartFn, branchNameText, title, message, pullRequestInfo, provider)
 				}
 				values = append(values, cloneURL)
 			}
@@ -136,7 +137,8 @@ func CreateTestPipelineActivity(jxClient versioned.Interface, ns string, folder 
 	return a, err
 }
 
-func createFakePullRequest(repository *gits.FakeRepository, env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *gits.PullRequestInfo, provider *gits.FakeProvider) (*gits.PullRequestInfo, error) {
+func createFakePullRequest(repository *gits.FakeRepository, env *v1.Environment, modifyChartFn ModifyChartFn,
+	branchNameText string, title string, message string, pullRequestInfo *gits.PullRequestInfo, provider *gits.FakeProvider) (*gits.PullRequestInfo, error) {
 	if pullRequestInfo == nil {
 		pullRequestInfo = &gits.PullRequestInfo{}
 	}

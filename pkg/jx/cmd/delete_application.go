@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/sourcerepository"
 	"io"
 	"os/user"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/sourcerepository"
+	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/pkg/errors"
@@ -280,11 +282,12 @@ func (o *DeleteApplicationOptions) deleteApplicationFromEnvironment(env *v1.Envi
 	title := "Delete application " + applicationName + " from this environment"
 	message := "The command `jx delete application` was run by " + username + " and it generated this Pull Request"
 
-	modifyRequirementsFn := func(requirements *helm.Requirements) error {
+	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
+		templates map[string]map[string]interface{}) error {
 		requirements.RemoveApplication(applicationName)
 		return nil
 	}
-	info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, &branchName, &title, &message, nil,
+	info, err := o.createEnvironmentPullRequest(env, modifyChartFn, &branchName, &title, &message, nil,
 		o.ConfigureGitCallback)
 	if err != nil {
 		return err

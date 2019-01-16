@@ -29,6 +29,17 @@ func FileExists(path string) (bool, error) {
 	return true, err
 }
 
+// DirExists checks if path exists and is a directory
+func DirExists(path string) (bool, error) {
+	info, err := os.Stat(path)
+	if err == nil {
+		return info.IsDir(), nil
+	} else if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
+}
+
 // FirstFileExists returns the first file which exists or an error if we can't detect if a file that exists
 func FirstFileExists(paths ...string) (string, error) {
 	for _, path := range paths {

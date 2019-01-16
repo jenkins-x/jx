@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/helm/pkg/proto/hapi/chart"
+
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/blang/semver"
@@ -456,7 +458,8 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 	title := app + " to " + versionName
 	message := fmt.Sprintf("Promote %s to version %s", app, versionName)
 
-	modifyRequirementsFn := func(requirements *helm.Requirements) error {
+	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
+		templates map[string]map[string]interface{}) error {
 		var err error
 		if version == "" {
 			version, err = o.findLatestVersion(app)
@@ -468,11 +471,11 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 		return nil
 	}
 	if o.FakePullRequests != nil {
-		info, err := o.FakePullRequests(env, modifyRequirementsFn, branchNameText, title, message, releaseInfo.PullRequestInfo)
+		info, err := o.FakePullRequests(env, modifyChartFn, branchNameText, title, message, releaseInfo.PullRequestInfo)
 		releaseInfo.PullRequestInfo = info
 		return err
 	} else {
-		info, err := o.createEnvironmentPullRequest(env, modifyRequirementsFn, &branchNameText, &title, &message,
+		info, err := o.createEnvironmentPullRequest(env, modifyChartFn, &branchNameText, &title, &message,
 			releaseInfo.PullRequestInfo, o.ConfigureGitCallback)
 		releaseInfo.PullRequestInfo = info
 		return err

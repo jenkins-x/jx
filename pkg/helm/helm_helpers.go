@@ -28,6 +28,8 @@ const (
 	SecretsFileName = "secrets.yaml"
 	// ValuesFileName the file name for values
 	ValuesFileName = "values.yaml"
+	// TemplatesDirName is the default name for the templates directory
+	TemplatesDirName = "templates"
 
 	// DefaultHelmRepositoryURL is the default cluster local helm repo
 	DefaultHelmRepositoryURL = "http://jenkins-x-chartmuseum:8080"
@@ -123,9 +125,28 @@ func (r *Requirements) RemoveApplication(app string) bool {
 
 // FindRequirementsFileName returns the default requirements.yaml file name
 func FindRequirementsFileName(dir string) (string, error) {
+	return findFileName(dir, RequirementsFileName)
+}
+
+// FindChartFileName returns the default chart.yaml file name
+func FindChartFileName(dir string) (string, error) {
+	return findFileName(dir, ChartFileName)
+}
+
+// FindValuesFileName returns the default values.yaml file name
+func FindValuesFileName(dir string) (string, error) {
+	return findFileName(dir, ValuesFileName)
+}
+
+// FindTemplatesDirName returns the default templates/ dir name
+func FindTemplatesDirName(dir string) (string, error) {
+	return findFileName(dir, TemplatesDirName)
+}
+
+func findFileName(dir string, fileName string) (string, error) {
 	names := []string{
-		filepath.Join(dir, defaultEnvironmentChartDir, RequirementsFileName),
-		filepath.Join(dir, RequirementsFileName),
+		filepath.Join(dir, defaultEnvironmentChartDir, fileName),
+		filepath.Join(dir, fileName),
 	}
 	for _, name := range names {
 		exists, err := util.FileExists(name)
@@ -142,7 +163,7 @@ func FindRequirementsFileName(dir string) (string, error) {
 	}
 	for _, f := range files {
 		if f.IsDir() {
-			name := filepath.Join(dir, f.Name(), RequirementsFileName)
+			name := filepath.Join(dir, f.Name(), fileName)
 			exists, err := util.FileExists(name)
 			if err != nil {
 				return "", err
@@ -157,7 +178,7 @@ func FindRequirementsFileName(dir string) (string, error) {
 		dir,
 	}
 	for _, d := range dirs {
-		name := filepath.Join(d, RequirementsFileName)
+		name := filepath.Join(d, fileName)
 		exists, err := util.FileExists(d)
 		if err != nil {
 			return "", err
@@ -186,19 +207,102 @@ func LoadRequirementsFile(fileName string) (*Requirements, error) {
 	return r, nil
 }
 
+// LoadChartFile loads the chart file or creates empty chart if the file does not exist
+func LoadChartFile(fileName string) (*chart.Metadata, error) {
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		data, err := ioutil.ReadFile(fileName)
+		if err != nil {
+			return nil, err
+		}
+		return LoadChart(data)
+	}
+	return &chart.Metadata{}, nil
+}
+
+// LoadValuesFile loads the values file or creates empty map if the file does not exist
+func LoadValuesFile(fileName string) (map[string]interface{}, error) {
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		data, err := ioutil.ReadFile(fileName)
+		if err != nil {
+			return nil, err
+		}
+		return LoadValues(data)
+	}
+	return make(map[string]interface{}), nil
+}
+
+// LoadTemplatesDir loads the files in the templates dir or creates empty map if none exist
+func LoadTemplatesDir(dirName string) (map[string]map[string]interface{}, error) {
+	exists, err := util.DirExists(dirName)
+	if err != nil {
+		return nil, err
+	}
+	answer := make(map[string]map[string]interface{})
+	if exists {
+		files, err := ioutil.ReadDir(dirName)
+		if err != nil {
+			return nil, err
+		}
+		for _, f := range files {
+			data, err := ioutil.ReadFile(f.Name())
+			if err != nil {
+				return nil, err
+			}
+			v, err := LoadValues(data)
+			if err != nil {
+				return nil, err
+			}
+			answer[f.Name()] = v
+		}
+	}
+	return answer, nil
+}
+
 // LoadRequirements loads the requirements from some data
 func LoadRequirements(data []byte) (*Requirements, error) {
 	r := &Requirements{}
 	return r, yaml.Unmarshal(data, r)
 }
 
-// SaveRequirementsFile saves the requirements file
-func SaveRequirementsFile(fileName string, requirements *Requirements) error {
-	data, err := yaml.Marshal(requirements)
+// LoadChart loads the requirements from some data
+func LoadChart(data []byte) (*chart.Metadata, error) {
+	r := &chart.Metadata{}
+	return r, yaml.Unmarshal(data, r)
+}
+
+// LoadValues loads the values from some data
+func LoadValues(data []byte) (map[string]interface{}, error) {
+	r := make(map[string]interface{})
+	return r, yaml.Unmarshal(data, &r)
+}
+
+// SaveFile saves contents (a pointer to a data structure) to a file
+func SaveFile(fileName string, contents interface{}) error {
+	data, err := yaml.Marshal(contents)
 	if err != nil {
 		return err
 	}
 	return ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+}
+
+// SaveDir saves contents (a pointer to a map of data structure where the key is the file name) to a dir
+func SaveDir(dirName string, contents map[string]map[string]interface{}) error {
+	for k, v := range contents {
+		fileName := filepath.Join(dirName, k)
+		err := SaveFile(fileName, v)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func LoadChartName(chartFile string) (string, error) {
