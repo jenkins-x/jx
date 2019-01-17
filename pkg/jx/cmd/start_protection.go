@@ -18,7 +18,7 @@ import (
 
 // StartProtectionOptions contains the command line options
 type StartProtectionOptions struct {
-	GetOptions
+	CommonOptions
 
 	Tail   bool
 	Filter string
@@ -45,14 +45,12 @@ var (
 // NewCmdStartProtection creates the command
 func NewCmdStartProtection(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StartProtectionOptions{
-		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
+		CommonOptions: CommonOptions{
+			Factory: f,
+			In:      in,
 
-				Out: out,
-				Err: errOut,
-			},
+			Out: out,
+			Err: errOut,
 		},
 	}
 
