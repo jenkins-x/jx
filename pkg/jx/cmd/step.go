@@ -64,7 +64,7 @@ func NewCmdStep(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 	cmd.AddCommand(NewCmdStepValidate(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepVerify(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepWaitForArtifact(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepCollect(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStepStash(f, in, out, errOut))
 
 	return cmd
 }

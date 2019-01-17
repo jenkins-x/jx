@@ -12,14 +12,14 @@ import (
 )
 
 
-func TestStepCollect(t *testing.T) {
+func TestStepStash(t *testing.T) {
 	t.Parallel()
 	tempDir, err := ioutil.TempDir("", "test-step-collect")
 	assert.NoError(t, err)
 
 	testData := "test_data/step_collect/junit.xml"
 
-	o := &cmd.StepCollectOptions{}
+	o := &cmd.StepStashOptions{}
 	o.StorageLocation.Classifier = "tests"
 	o.StorageLocation.BucketURL = "file://" + tempDir
 	o.Pattern = []string{testData}

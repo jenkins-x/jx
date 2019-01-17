@@ -19,8 +19,14 @@ type GetStorageOptions struct {
 
 var (
 	getStorageLong = templates.LongDesc(`
-		Display the storage configuration for different classifications
-`)
+		Display the storage configuration for different classifications.
+
+		See also:
+
+        * 'jx edit storage' command: https://jenkins-x.io/commands/jx_edit_storage/
+		* 'jx step stash' command: https://jenkins-x.io/commands/jx_step_storage/
+
+` + StorageSupportDescription)
 
 	getStorageExample = templates.Examples(`
 		# List the storage configurations for different classifications for the current team

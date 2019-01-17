@@ -21,8 +21,8 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-// StepCollect contains the command line flags
-type StepCollectOptions struct {
+// StepStash contains the command line flags
+type StepStashOptions struct {
 	StepOptions
 	Pattern         []string
 	Dir             string
@@ -38,28 +38,37 @@ const (
 )
 
 var (
-	StepCollectLong = templates.LongDesc(`
-		This pipeline step collects the specified files that need storing from the build into some stable storage location 
-`)
+	StepStashLong = templates.LongDesc(`
+		This pipeline step stashes the specified files from the build into some stable storage location.
+` + StorageSupportDescription)
 
-	StepCollectExample = templates.Examples(`
-		# lets collect some files to the team's default storage location (which if not specified using the current git repository's gh-pages branch)
-		jx step collect -c tests -p "target/test-reports/*"
+	StorageSupportDescription = `
+		Currently Jenkins X supports storing files into a git repository and branch or to use cloud blob storage like S3 / GCS / Azure blobs etc.
 
-		# lets collect some files to a specific Git URL
-		jx step collect -c tests -p "target/test-reports/*" --git-url https://github.com/myuser/myrepo.git
+		When using Cloud Storage we use URLs like 's3://nameOfBucket' on AWS, gs://anotherBucket' on GCP or on Azure 'azblob://thatBucket'
+`
+
+	StepStashExample = templates.Examples(`
+		# lets collect some files to the team's default storage location (which if not configured uses the current git repository's gh-pages branch)
+		jx step stash -c tests -p "target/test-reports/*"
+
+		# lets collect some files to a specific Git URL for a repository
+		jx step stash -c tests -p "target/test-reports/*" --git-url https://github.com/myuser/myrepo.git
 
 		# lets collect some files with the file names relative to the 'target/test-reports' folder and store in a Git URL
-		jx step collect -c tests -p "target/test-reports/*" --basedir target/test-reports --git-url https://github.com/myuser/myrepo.git
+		jx step stash -c tests -p "target/test-reports/*" --basedir target/test-reports --git-url https://github.com/myuser/myrepo.git
 
-		# lets collect some files to a specific HTTP URL
-		jx step collect -c coverage -p "build/coverage/*" --http-url https://myserver.cheese/
+		# lets collect some files to a specific AWS cloud storage bucket
+		jx step stash -c coverage -p "build/coverage/*" --bucket-url s3://my-aws-bucket
+
+		# lets collect some files to a specific cloud storage bucket
+		jx step stash -c tests -p "target/test-reports/*" ---bucket-url gs://my-gcp-bucket
 
 `)
 )
 
-func NewCmdStepCollect(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := StepCollectOptions{
+func NewCmdStepStash(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+	options := StepStashOptions{
 		StepOptions: StepOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
@@ -70,10 +79,11 @@ func NewCmdStepCollect(f Factory, in terminal.FileReader, out terminal.FileWrite
 		},
 	}
 	cmd := &cobra.Command{
-		Use:     "collect",
-		Short:   "Collects the specified files that need storing from the build",
-		Long:    StepCollectLong,
-		Example: StepCollectExample,
+		Use:     "stash",
+		Short:   "Stashes local files generated as part of a pipeline into long term storage",
+		Aliases: []string{"collect"},
+		Long:    StepStashLong,
+		Example: StepStashExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -84,14 +94,14 @@ func NewCmdStepCollect(f Factory, in terminal.FileReader, out terminal.FileWrite
 	cmd.Flags().StringArrayVarP(&options.Pattern, "pattern", "p", nil, "Specify the pattern to use to look for files")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The source directory to try detect the current git repository or branch. Defaults to using the current directory")
 	cmd.Flags().StringVarP(&options.Basedir, "basedir", "", "", "The base directory to use to create relative output file names. e.g. if you specify '--pattern \"target/*.xml\" then you may want to supply '--basedir target' to strip the 'target/' prefix from all collected files")
-	cmd.Flags().StringVarP(&options.StorageLocation.BucketURL, "bucket-url", "", "", "Specify the cloud storage bucket URL to send each file to")
+	cmd.Flags().StringVarP(&options.StorageLocation.BucketURL, "bucket-url", "", "", "Specify the cloud storage bucket URL to send each file to. e.g. use 's3://nameOfBucket' on AWS, gs://anotherBucket' on GCP or on Azure 'azblob://thatBucket'")
 	cmd.Flags().StringVarP(&options.ProjectGitURL, "project-git-url", "", "", "The project git URL to collect for. Used to default the organisation and repository folders in the storage. If not specified its discovered from the local '.git' folder")
 	cmd.Flags().StringVarP(&options.ProjectBranch, "project-branch", "", "", "The project git branch of the project to collect for. Used to default the branch folder in the storage. If not specified its discovered from the local '.git' folder")
 	cmd.Flags().StringVarP(&options.StorageLocation.Classifier, "classifier", "c", "", "A name which classifies this type of file. Example values: "+kube.ClassificationValues)
 	return cmd
 }
 
-func (o *StepCollectOptions) Run() error {
+func (o *StepStashOptions) Run() error {
 	if len(o.Pattern) == 0 {
 		return util.MissingOption("pattern")
 	}

@@ -23,19 +23,24 @@ import (
 
 var (
 	editStorageLong = templates.LongDesc(`
-		Configures the storage location for a set of pipeline output data for your team
+		Configures the storage location used by your team to stashing files or storing build logs.
 
-		Per team you can specify a Git repository URL to store artifacts inside per classification or you can use a HTTP URL.
+		If you don't specify any specific storage for a classifier it will try the classifier 'default'. If there is still no configuration then it will default to the git repository for a project.'
 
-		If you don't specify any specific storage for a classifier it will try the classifier 'default'.If there is still no configuration then it will default to the git repository for a project.'
-`)
+		See also:
+
+        * 'jx get storage' command: https://jenkins-x.io/commands/jx_get_storage/
+        * 'jx step stash' command: https://jenkins-x.io/commands/jx_step_storage/
+
+` + StorageSupportDescription)
 
 	editStorageExample = templates.Examples(`
 		# Be prompted what classification to edit
 		jx edit storage
 
-		# Configure the git/http URLs of where to store logs
+		# Configure the where to store logs prompting the user to ask for more data
 		jx edit storage -c logs
+
 
 		# Configure the git URL of where to store logs (defaults to gh-pages branch)
 		jx edit storage -c logs --git-url https://github.com/myorg/mylogs.git'
@@ -46,6 +51,12 @@ var (
 		# Configure the git URL of where all storage goes to by default unless a specific classifier has a config
 		jx edit storage -c default --git-url https://github.com/myorg/mylogs.git'
 
+
+		# Configure the tests to be stored in cloud storage (using S3 / GCS / Azure Blobs etc)
+		jx edit storage -c tests --bucket-url s3://myExistingBucketName
+
+		# Creates a new GCS bucket and configures the logs to be stored in it
+		jx edit storage -c logs --bucket myBucketName
 	`)
 )
 
@@ -75,7 +86,7 @@ func NewCmdEditStorage(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 	cmd := &cobra.Command{
 		Use:     "storage",
-		Short:   "Configures the storage location for a set of pipeline output data for your team",
+		Short:   "Configures the storage location for stashing files or storing build logs for your team",
 		Aliases: []string{"store"},
 		Long:    editStorageLong,
 		Example: editStorageExample,
