@@ -19,7 +19,7 @@ import (
 
 func TestUpgradeAppForGitOps(t *testing.T) {
 	t.Parallel()
-	testOptions := cmd.CreateAppTestOptions(true, t)
+	testOptions := CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -74,7 +74,7 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 }
 
 func TestUpgradeAppToLatestForGitOps(t *testing.T) {
-	testOptions := cmd.CreateAppTestOptions(true, t)
+	testOptions := CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -136,7 +136,7 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 }
 
 func TestUpgradeAllAppsForGitOps(t *testing.T) {
-	testOptions := cmd.CreateAppTestOptions(true, t)
+	testOptions := CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)

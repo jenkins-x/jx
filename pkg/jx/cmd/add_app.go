@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/jenkins-x/jx/pkg/gits"
 
-	corev1 "k8s.io/api/core/v1"
+	"github.com/jenkins-x/jx/pkg/vault"
 
 	"github.com/jenkins-x/jx/pkg/surveyutils"
 
@@ -59,6 +59,22 @@ const (
 	optionSet        = "set"
 	optionAlias      = "alias"
 )
+
+const (
+	appsGeneratedSecretKey = "appsGeneratedSecrets"
+)
+
+const secretTemplate = `
+{{- range .Values.generatedSecrets }}
+apiVersion: v1
+data:
+  {{ .key }}: {{ .value }}
+kind: Secret
+metadata:
+  name: {{ .name }} 
+type: Opaque
+{{- end }}
+`
 
 // NewCmdAddApp creates a command object for the "create" command
 func NewCmdAddApp(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
@@ -123,8 +139,33 @@ func (o *AddAppOptions) Run() error {
 		o.Repo = o.DevEnv.Spec.TeamSettings.AppsRepository
 	}
 
+	var vaultBasepath string
+	var vaultClient vault.Client
+	useVault := o.UseVault()
+	if useVault {
+		var err error
+		if o.GitOps {
+			gitInfo, err := gits.ParseGitURL(o.DevEnv.Spec.Source.URL)
+			if err != nil {
+				return err
+			}
+			vaultBasepath = strings.Join([]string{"gitOps", gitInfo.Organisation, gitInfo.Name}, "/")
+		} else {
+
+			teamName, _, err := o.TeamAndEnvironmentNames()
+			if err != nil {
+				return err
+			}
+			vaultBasepath = strings.Join([]string{"teams", teamName}, "/")
+		}
+		vaultClient, err = o.CreateSystemVaultClient()
+		if err != nil {
+			return err
+		}
+	}
+
 	if o.GitOps {
-		msg := "Unable to specify --%s when using GitOps for your dev environment"
+		msg := "unable to specify --%s when using GitOps for your dev environment"
 		if o.ReleaseName != "" {
 			return util.InvalidOptionf(optionRelease, o.ReleaseName, msg, optionRelease)
 		}
@@ -139,13 +180,16 @@ func (o *AddAppOptions) Run() error {
 		}
 		if len(o.ValueFiles) > 1 {
 			return util.InvalidOptionf(optionValues, o.SetValues,
-				"No more than one --%s can be specified when using GitOps for your dev environment", optionValues)
+				"no more than one --%s can be specified when using GitOps for your dev environment", optionValues)
+		}
+		if !useVault {
+			return fmt.Errorf("cannot install apps without a vault when using GitOps for your dev environment")
 		}
 	}
 	if !o.GitOps {
 		if o.Alias != "" {
 			return util.InvalidOptionf(optionAlias, o.Alias,
-				"Unable to specify --%s when NOT using GitOps for your dev environment", optionAlias)
+				"unable to specify --%s when NOT using GitOps for your dev environment", optionAlias)
 		}
 	}
 
@@ -162,15 +206,18 @@ func (o *AddAppOptions) Run() error {
 	}
 
 	for _, app := range args {
-		version := o.Version
+		var version string
+		if o.Version != "" {
+			version = o.Version
+		}
 		var schema []byte
 		err := helm.InspectChart(app, version, o.Repo, o.Username, o.Password, o.Helm(), func(dir string) error {
 			if version == "" {
-				_, v, err := helm.LoadChartNameAndVersion(filepath.Join(dir, "Chart.yaml"))
+				var err error
+				_, version, err = helm.LoadChartNameAndVersion(filepath.Join(dir, "Chart.yaml"))
 				if err != nil {
-					return err
+					return errors.Wrapf(err, "error loading chart from %s", dir)
 				}
-				version = v
 				if o.Verbose {
 					log.Infof("No version specified so using latest version which is %s\n", util.ColorInfo(version))
 				}
@@ -179,25 +226,18 @@ func (o *AddAppOptions) Run() error {
 			if _, err := os.Stat(schemaFile); !os.IsNotExist(err) {
 				schema, err = ioutil.ReadFile(schemaFile)
 				if err != nil {
-					return err
+					return errors.Wrapf(err, "error reading schema file %s", schemaFile)
 				}
 			}
 
 			if schema != nil {
-				secrets := make([]*corev1.Secret, 0)
+				secrets := make([]*surveyutils.GeneratedSecret, 0)
 				schemaOptions := surveyutils.JSONSchemaOptions{
 					CreateSecret: func(name string, key string, value string) (*jenkinsv1.ResourceReference, error) {
-						secret := &corev1.Secret{
-							TypeMeta: metav1.TypeMeta{
-								Kind:       "Secret",
-								APIVersion: corev1.SchemeGroupVersion.Version,
-							},
-							ObjectMeta: metav1.ObjectMeta{
-								Name: name,
-							},
-							Data: map[string][]byte{
-								key: []byte(value),
-							},
+						secret := &surveyutils.GeneratedSecret{
+							Name:  name,
+							Key:   key,
+							Value: value,
 						}
 						secrets = append(secrets, secret)
 						return &jenkinsv1.ResourceReference{
@@ -209,66 +249,67 @@ func (o *AddAppOptions) Run() error {
 				}
 				values, err := schemaOptions.GenerateValues(schema, []string{}, o.In, o.Out, o.Err)
 				if err != nil {
-					return err
+					return errors.Wrapf(err, "error generating values for schema %s", schemaFile)
 				}
 				valuesYaml, err := yaml.JSONToYAML(values)
 				if err != nil {
-					return err
+					return errors.Wrapf(err, "error converting values from json to yaml\n\n%v", values)
 				}
 				if o.Verbose {
 					log.Infof("Generated values.yaml:\n\n%v\n", util.ColorInfo(string(valuesYaml)))
 				}
 
-				// For each secret, we write a file into the chart
-				templatesDir := filepath.Join(dir, "templates")
-				err = os.MkdirAll(templatesDir, 0700)
+				// We write a secret template into the chart, append the values for the generated secrets to values.yaml
+				if len(secrets) > 0 {
+					if useVault {
+						for _, secret := range secrets {
+							path := strings.Join([]string{vaultBasepath, secret.Name}, "/")
+							err := vault.WriteMap(vaultClient, path, map[string]interface{}{
+								secret.Key: secret.Value,
+							})
+							if err != nil {
+								return err
+							}
+						}
+					} else {
+						// For each secret, we write a file into the chart
+						templatesDir := filepath.Join(dir, "templates")
+						err = os.MkdirAll(templatesDir, 0700)
+						if err != nil {
+							return err
+						}
+						fileName := filepath.Join(templatesDir, "app-generated-secret-template.yaml")
+						err := ioutil.WriteFile(fileName, []byte(secretTemplate), 0755)
+						if err != nil {
+							return err
+						}
+						allSecrets := map[string][]*surveyutils.GeneratedSecret{
+							appsGeneratedSecretKey: secrets,
+						}
+						ybs, err := json.Marshal(allSecrets)
+						if err != nil {
+							return err
+						}
+						valuesYaml = append(valuesYaml, ybs...)
+					}
+				}
+
 				if err != nil {
 					return err
 				}
-				for _, secret := range secrets {
-					file, err := ioutil.TempFile(templatesDir, fmt.Sprintf("%s-*.yaml", secret.Name))
-					defer func() {
-						err = file.Close()
-						if err != nil {
-							log.Warnf("Error closing %s because %v\n", file.Name(), err)
-						}
-					}()
-					if err != nil {
-						return err
-					}
-					bs, err := json.Marshal(secret)
-					if err != nil {
-						return err
-					}
-					ybs, err := yaml.JSONToYAML(bs)
-					if err != nil {
-						return err
-					}
-					_, err = file.Write(ybs)
-					if err != nil {
-						return err
-					}
-					if o.Verbose {
-						log.Infof("Added secret %s\n\n%v\n", secret.Name, util.ColorInfo(string(ybs)))
-					}
-					if err != nil {
-						return err
-					}
-				}
-				if o.BatchMode {
-					if schema != nil && o.Verbose {
-						log.Warnf("%s prevents questions from schema being asked", optionBatchMode)
-					}
-				} else {
-					if schema != nil && len(o.ValueFiles) > 0 {
-						return fmt.Errorf("if you want to use %s you must use %s as %s has configuration questions",
-							optionValues, optionBatchMode, app)
+				if !o.GitOps {
+					if len(o.ValueFiles) > 0 && schema != nil {
+						log.Warnf("values.yaml specified by --valuesFiles will be used despite presence of schema in app")
 					} else if schema != nil {
 						valuesFile, err := ioutil.TempFile("", fmt.Sprintf("%s-values.yaml", app))
 						defer func() {
 							err = valuesFile.Close()
 							if err != nil {
 								log.Warnf("Error closing %s because %v\n", valuesFile.Name(), err)
+							}
+							err = util.DeleteFile(valuesFile.Name())
+							if err != nil {
+								log.Warnf("Error deleting %s because %v\n", valuesFile.Name(), err)
 							}
 						}()
 						if err != nil {
@@ -282,10 +323,10 @@ func (o *AddAppOptions) Run() error {
 							valuesFile.Name(),
 						}
 					}
-				}
 
-				if err != nil {
-					return err
+					if err != nil {
+						return err
+					}
 				}
 			}
 
@@ -301,6 +342,7 @@ func (o *AddAppOptions) Run() error {
 				}
 			}
 			return nil
+
 		})
 		if err != nil {
 			return err

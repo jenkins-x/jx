@@ -16,7 +16,7 @@ import (
 
 func TestDeleteAppForGitOps(t *testing.T) {
 	t.Parallel()
-	testOptions := cmd.CreateAppTestOptions(true, t)
+	testOptions := CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -57,7 +57,7 @@ func TestDeleteAppForGitOps(t *testing.T) {
 
 func TestDeleteApp(t *testing.T) {
 
-	testOptions := cmd.CreateAppTestOptions(false, t)
+	testOptions := CreateAppTestOptions(false, t)
 	// Can't run in parallel
 	pegomock.RegisterMockTestingT(t)
 	defer func() {
