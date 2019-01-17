@@ -100,10 +100,9 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			log.Infof("\nIBM Kubernetes Service will use the default cluster domain: ")
 			log.Infof("%s\n", util.ColorInfo(customDomain))
 			return customDomain, nil
-		} else {
-			log.Infof("ERROR getting IBM Kubernetes Service will use the default cluster domain:")
-			log.Infof(err.Error())
 		}
+		log.Infof("ERROR getting IBM Kubernetes Service will use the default cluster domain:")
+		log.Infof(err.Error())
 	}
 
 	if address != "" {
