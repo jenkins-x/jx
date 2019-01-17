@@ -49,8 +49,14 @@ func (r *GitUserResolver) GitUserSliceAsUserDetailsSlice(users []gits.GitUser) (
 func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
 	selectUsers := func(id string, users []jenkinsv1.User) (string, []jenkinsv1.User,
 		*jenkinsv1.User, error) {
+		var gitUser *gits.GitUser
+		if user.Login != "" {
+			gitUser = r.GitProvider.UserInfo(user.Login)
+		}
+		if gitUser == nil {
+			gitUser = user
+		}
 
-		gitUser := r.GitProvider.UserInfo(user.Login)
 		possibles := make([]jenkinsv1.User, 0)
 		if gitUser == nil {
 			// annoyingly UserInfo swallows the error, so we recreate it!
@@ -62,10 +68,8 @@ func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
 				}
 			}
 		}
-		new := r.GitUserToUser(mergeGitUsers(gitUser, user))
-		if gitUser != nil {
-			id = gitUser.Login
-		}
+		new := r.GitUserToUser(gitUser)
+		id = gitUser.Login
 		return id, possibles, new, nil
 	}
 	return Resolve(user.Login, r.GitProviderKey(), r.JXClient, r.Namespace, selectUsers)
