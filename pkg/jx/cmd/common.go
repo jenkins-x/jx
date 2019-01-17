@@ -18,7 +18,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	gojenkins "github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -33,11 +33,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
-	yaml "gopkg.in/yaml.v2"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"gopkg.in/yaml.v2"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -901,4 +901,21 @@ func (o *CommonOptions) GetOut() terminal.FileWriter {
 
 func (o *CommonOptions) GetErr() io.Writer {
 	return o.Err
+}
+
+// SeeAlsoText returns text to describe which other commands to look at which are related to the current command
+func SeeAlsoText(commands ...string) string {
+	if len(commands) == 0 {
+		return ""
+	}
+
+	var sb strings.Builder
+	sb.WriteString("\nSee Also:\n\n")
+	
+	for _, command := range commands {
+		u := "https://jenkins-x.io/commands/" + strings.Replace(command, " ", "_", -1)
+		sb.WriteString(fmt.Sprintf("* %s : [%s](%s)\n", command, u, u))
+	}
+	sb.WriteString("\n")
+	return sb.String()
 }
