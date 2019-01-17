@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -20,9 +21,12 @@ func AddRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, con
 	}
 	requiredOrg, requiredRepo := url.Organisation, url.Name
 	if _, ok := bp.Orgs[requiredOrg]; !ok {
-		bp.Orgs[requiredOrg] = config.Org{
-			Repos: make(map[string]config.Repo, 0),
-		}
+		bp.Orgs[requiredOrg] = config.Org{}
+	}
+	if bp.Orgs[requiredOrg].Repos == nil {
+		org := bp.Orgs[requiredOrg]
+		org.Repos = make(map[string]config.Repo, 0)
+		bp.Orgs[requiredOrg] = org
 	}
 	if _, ok := bp.Orgs[requiredOrg].Repos[requiredRepo]; !ok {
 		bp.Orgs[requiredOrg].Repos[requiredRepo] = config.Repo{
