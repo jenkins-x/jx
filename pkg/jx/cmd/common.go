@@ -313,7 +313,10 @@ func (o *CommonOptions) SetGit(git gits.Gitter) {
 
 func (o *CommonOptions) Helm() helm.Helmer {
 	if o.helm == nil {
-		helmBinary, noTiller, helmTemplate, _ := o.TeamHelmBin()
+		helmBinary, noTiller, helmTemplate, err := o.TeamHelmBin()
+		if err != nil {
+			log.Warnf("Failed to retrieve team settings: %v - falling back to default settings...\n", err)
+		}
 		o.helm = o.CreateHelm(o.Verbose, helmBinary, noTiller, helmTemplate)
 	}
 	return o.helm

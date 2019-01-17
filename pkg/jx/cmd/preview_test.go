@@ -40,6 +40,7 @@ import (
 // Constants for some test data to be used.
 const (
 	application    = "test-app"
+	releaseName    = "test-app-release-name"
 	name           = "test-app-name"
 	namespace      = "jx"
 	gitHubLink     = "https://github.com/an-org/a-repo"
@@ -179,6 +180,7 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 				BatchMode: true,
 			},
 			Application: application,
+			ReleaseName: releaseName,
 		},
 		Namespace:    namespace,
 		DevNamespace: "jx",
@@ -282,6 +284,7 @@ func validatePreviewEnvironment(t *testing.T, cs *cs_fake.Clientset) {
 	assert.NotNil(t, previewEnv)
 	assert.Equal(t, namespace, previewEnv.Namespace)
 	assert.Equal(t, name, previewEnv.Name)
+	assert.Equal(t, releaseName, previewEnv.Annotations[kube.AnnotationReleaseName])
 	//Validate preview environment spec:
 	assert.NotNil(t, previewEnv.Spec)
 	assert.Equal(t, v1.EnvironmentKindTypePreview, previewEnv.Spec.Kind)

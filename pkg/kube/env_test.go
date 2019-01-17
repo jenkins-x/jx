@@ -11,7 +11,7 @@ import (
 	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 
 	git_mocks "github.com/jenkins-x/jx/pkg/gits/mocks"
 	. "github.com/petergtz/pegomock"
@@ -242,4 +242,44 @@ func TestCreateEnvironmentSurvey(t *testing.T) {
 
 	// Dump the terminal's screen.
 	t.Log(expect.StripTrailingEmptyLines(console.CurrentState()))
+}
+
+func TestGetPreviewEnvironmentReleaseName(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		env                 *jenkinsio_v1.Environment
+		expectedReleaseName string
+	}{
+		{
+			env:                 nil,
+			expectedReleaseName: "",
+		},
+		{
+			env:                 &jenkinsio_v1.Environment{},
+			expectedReleaseName: "",
+		},
+		{
+			env:                 kube.NewPreviewEnvironment("test"),
+			expectedReleaseName: "",
+		},
+		{
+			env: func() *jenkinsio_v1.Environment {
+				env := kube.NewPreviewEnvironment("test")
+				if env.Annotations == nil {
+					env.Annotations = map[string]string{}
+				}
+				env.Annotations[kube.AnnotationReleaseName] = "release-name"
+				return env
+			}(),
+			expectedReleaseName: "release-name",
+		},
+	}
+
+	for i, test := range tests {
+		releaseName := kube.GetPreviewEnvironmentReleaseName(test.env)
+		if releaseName != test.expectedReleaseName {
+			t.Errorf("[%d] Expected release name %s but got %s", i, test.expectedReleaseName, releaseName)
+		}
+	}
 }
