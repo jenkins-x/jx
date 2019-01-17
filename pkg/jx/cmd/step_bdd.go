@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -43,7 +44,8 @@ type StepBDDFlags struct {
 	DisableDeleteRepo   bool
 	IgnoreTestFailure   bool
 	TestRepoGitCloneUrl string
-	TestRepoBranch      string
+	TestGitBranch       string
+	TestGitPrNumber     string
 	TestCases           []string
 }
 
@@ -94,7 +96,8 @@ func NewCmdStepBDD(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 	cmd.Flags().StringVarP(&options.Flags.GitOwner, "git-owner", "", "", "the git owner of new git repositories created by the tests")
 	cmd.Flags().StringVarP(&options.Flags.ReportsOutputDir, "reports-dir", "", "reports", "the directory used to copy in any generated report files")
 	cmd.Flags().StringVarP(&options.Flags.TestRepoGitCloneUrl, "test-git-repo", "r", "https://github.com/jenkins-x/bdd-jx.git", "the git repository to clone for the BDD tests")
-	cmd.Flags().StringVarP(&options.Flags.TestRepoBranch, "test-git-repo-branch", "", "master", "the git repository branch to use for the BDD tests")
+	cmd.Flags().StringVarP(&options.Flags.TestGitBranch, "test-git-branch", "", "master", "the git repository branch to use for the BDD tests")
+	cmd.Flags().StringVarP(&options.Flags.TestGitPrNumber, "test-git-pr-number", "", "", "the Pull Request number to fetch from the repository for the BDD tests")
 	cmd.Flags().StringArrayVarP(&options.Flags.Clusters, "clusters", "c", []string{}, "the list of cluster kinds to create")
 	cmd.Flags().StringArrayVarP(&options.Flags.TestCases, "tests", "t", []string{"test-quickstart-node-http"}, "the list of the test cases to run")
 	cmd.Flags().BoolVarP(&options.Flags.DeleteTeam, "delete-team", "", true, "Whether we should delete the Team we create for each Git Provider")
@@ -332,11 +335,19 @@ func (o *StepBDDOptions) runTests(gopath string) error {
 		return errors.Wrapf(err, "Failed to clone repo %s to %s", gitURL, testDir)
 	}
 
-	branchName := o.Flags.TestRepoBranch
+	branchName := o.Flags.TestGitBranch
+	pullRequestNumber := o.Flags.TestGitPrNumber
 	log.Infof("Checking out repository branch %s to dir %s\n", util.ColorInfo(branchName), util.ColorInfo(testDir))
+	if pullRequestNumber != "" {
+		err = o.Git().FetchBranch(testDir, "origin", fmt.Sprintf("pull/%s/head:%s", pullRequestNumber, branchName))
+		if err != nil {
+			return errors.Wrapf(err, "Failed to fetch Pull request number %s", pullRequestNumber)
+		}
+	}
+
 	err = o.Git().Checkout(testDir, branchName)
 	if err != nil {
-		return errors.Wrapf(err, "Failed to checkout branch %s to %s", branchName, testDir)
+		return errors.Wrapf(err, "Failed to checkout branch %s", branchName)
 	}
 
 	env := map[string]string{
