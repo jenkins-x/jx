@@ -27,7 +27,7 @@ var (
 
 		If you don't specify any specific storage for a classifier it will try the classifier 'default'. If there is still no configuration then it will default to the git repository for a project.'
 
-` + StorageSupportDescription + SeeAlsoText("jx step stash", "jx get storage"))
+` + storageSupportDescription + SeeAlsoText("jx step stash", "jx get storage"))
 
 	editStorageExample = templates.Examples(`
 		# Be prompted what classification to edit

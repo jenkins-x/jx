@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-// StepUnstash contains the command line flags
+// StepUnstashOptions contains the command line flags
 type StepUnstashOptions struct {
 	StepOptions
 
@@ -26,11 +26,11 @@ type StepUnstashOptions struct {
 }
 
 var (
-	StepUnstashLong = templates.LongDesc(`
+	stepUnstashLong = templates.LongDesc(`
 		This pipeline step unstashes the files in storage to a local file or the console
-` + StorageSupportDescription + SeeAlsoText("jx step stash", "jx edit storage"))
+` + storageSupportDescription + SeeAlsoText("jx step stash", "jx edit storage"))
 
-	StepUnstashExample = templates.Examples(`
+	stepUnstashExample = templates.Examples(`
 		# unstash a file to the reports directory
 		jx step unstash --url s3://mybucket/tests/myOrg/myRepo/mybranch/3/junit.xml -o reports
 
@@ -39,6 +39,7 @@ var (
 `)
 )
 
+// NewCmdStepUnstash creates the CLI command
 func NewCmdStepUnstash(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepUnstashOptions{
 		StepOptions: StepOptions{
@@ -54,8 +55,8 @@ func NewCmdStepUnstash(f Factory, in terminal.FileReader, out terminal.FileWrite
 		Use:     "unstash",
 		Short:   "Unstashes files generated as part of a pipeline to a local file or directory or displays on the console",
 		Aliases: []string{"collect"},
-		Long:    StepUnstashLong,
-		Example: StepUnstashExample,
+		Long:    stepUnstashLong,
+		Example: stepUnstashExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -69,6 +70,7 @@ func NewCmdStepUnstash(f Factory, in terminal.FileReader, out terminal.FileWrite
 	return cmd
 }
 
+// Run runs the command
 func (o *StepUnstashOptions) Run() error {
 	u := o.URL
 	if u == "" {

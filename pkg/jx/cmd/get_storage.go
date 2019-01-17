@@ -20,7 +20,7 @@ type GetStorageOptions struct {
 var (
 	getStorageLong = templates.LongDesc(`
 		Display the storage configuration for different classifications.
-` + StorageSupportDescription + SeeAlsoText("jx step stash", "jx edit storage"))
+` + storageSupportDescription + SeeAlsoText("jx step stash", "jx edit storage"))
 
 	getStorageExample = templates.Examples(`
 		# List the storage configurations for different classifications for the current team

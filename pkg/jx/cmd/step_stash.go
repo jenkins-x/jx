@@ -21,7 +21,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-// StepStash contains the command line flags
+// StepStashOptions contains the command line flags
 type StepStashOptions struct {
 	StepOptions
 	Pattern         []string
@@ -35,20 +35,21 @@ type StepStashOptions struct {
 const (
 	envVarBranchName = "BRANCH_NAME"
 	envVarSourceUrl  = "SOURCE_URL"
-)
 
-var (
-	StepStashLong = templates.LongDesc(`
-		This pipeline step stashes the specified files from the build into some stable storage location.
-` + StorageSupportDescription + SeeAlsoText("jx step unstash", "jx edit storage"))
-
-	StorageSupportDescription = `
+	// storageSupportDescription common text for long command descriptions around storage
+	storageSupportDescription = `
 Currently Jenkins X supports storing files into a branch of a git repository or in cloud blob storage like S3, GCS, Azure blobs etc.
 
 When using Cloud Storage we use URLs like 's3://nameOfBucket' on AWS, 'gs://anotherBucket' on GCP or on Azure 'azblob://thatBucket'
 `
+)
 
-	StepStashExample = templates.Examples(`
+var (
+	stepStashLong = templates.LongDesc(`
+		This pipeline step stashes the specified files from the build into some stable storage location.
+` + storageSupportDescription + SeeAlsoText("jx step unstash", "jx edit storage"))
+
+	stepStashExample = templates.Examples(`
 		# lets collect some files to the team's default storage location (which if not configured uses the current git repository's gh-pages branch)
 		jx step stash -c tests -p "target/test-reports/*"
 
@@ -67,6 +68,7 @@ When using Cloud Storage we use URLs like 's3://nameOfBucket' on AWS, 'gs://anot
 `)
 )
 
+// NewCmdStepStash creates the CLI command
 func NewCmdStepStash(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepStashOptions{
 		StepOptions: StepOptions{
@@ -82,8 +84,8 @@ func NewCmdStepStash(f Factory, in terminal.FileReader, out terminal.FileWriter,
 		Use:     "stash",
 		Short:   "Stashes local files generated as part of a pipeline into long term storage",
 		Aliases: []string{"collect"},
-		Long:    StepStashLong,
-		Example: StepStashExample,
+		Long:    stepStashLong,
+		Example: stepStashExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -101,6 +103,7 @@ func NewCmdStepStash(f Factory, in terminal.FileReader, out terminal.FileWriter,
 	return cmd
 }
 
+// Run runs the command
 func (o *StepStashOptions) Run() error {
 	if len(o.Pattern) == 0 {
 		return util.MissingOption("pattern")

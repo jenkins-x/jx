@@ -49,14 +49,14 @@ func ReadURL(urlText string, timeout time.Duration) ([]byte, error) {
 	}
 	switch u.Scheme {
 	case "http", "https":
-		return ReadHttpURL(urlText, timeout)
+		return ReadHTTPURL(urlText, timeout)
 	default:
 		return ReadBucketURL(u, timeout)
 	}
 }
 
-// ReadHttpURL reads the HTTP based URL and returns the data or returning an error if a 2xx status is not returned
-func ReadHttpURL(u string, timeout time.Duration) ([]byte, error) {
+// ReadHTTPURL reads the HTTP based URL and returns the data or returning an error if a 2xx status is not returned
+func ReadHTTPURL(u string, timeout time.Duration) ([]byte, error) {
 	httpClient := util.GetClientWithTimeout(timeout)
 	resp, err := httpClient.Get(u)
 	if err != nil {
