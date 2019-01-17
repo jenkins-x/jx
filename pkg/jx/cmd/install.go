@@ -421,6 +421,11 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring the cloud provider before initializing the platform")
 	}
 
+	err = options.configureTeamSettings()
+	if err != nil {
+		return errors.Wrap(err, "configuring the team settings in the dev environment")
+	}
+
 	err = options.init()
 	if err != nil {
 		return errors.Wrap(err, "initializing the Jenkins X platform")
@@ -631,7 +636,7 @@ func (options *InstallOptions) init() error {
 		initOpts.Flags.Domain = options.Flags.Domain
 	}
 
-	// lets default the helm domain
+	// configure the helm values for expose controller
 	if exposeController != nil {
 		ecConfig := &exposeController.Config
 		if ecConfig.Domain == "" && options.Flags.Domain != "" {
@@ -642,50 +647,27 @@ func (options *InstallOptions) init() error {
 			ecConfig.PathMode = options.Flags.ExposeControllerPathMode
 			log.Success("set exposeController Config PathMode " + ecConfig.PathMode + "\n")
 		}
-		if ecConfig.Domain == "" && options.Flags.Domain != "" {
-			ecConfig.Domain = options.Flags.Domain
-			log.Success("set exposeController Config Domain " + ecConfig.Domain + "\n")
-		}
 		if isOpenShiftProvider(options.Flags.Provider) {
 			ecConfig.Exposer = "Route"
 		}
 	}
 
-	callback := func(env *v1.Environment) error {
-		if env.Spec.TeamSettings.KubeProvider == "" {
-			env.Spec.TeamSettings.KubeProvider = options.Flags.Provider
-			log.Infof("Storing the kubernetes provider %s in the TeamSettings\n", env.Spec.TeamSettings.KubeProvider)
-		}
-		return nil
-	}
-	err := options.ModifyDevEnvironment(callback)
-	if err != nil {
-		return err
-	}
 	if initOpts.Flags.NoTiller {
-		callback := func(env *v1.Environment) error {
-			env.Spec.TeamSettings.HelmTemplate = true
-			log.Info("Enabling helm template mode in the TeamSettings\n")
-			return nil
-		}
-		err = options.ModifyDevEnvironment(callback)
-		if err != nil {
-			return err
-		}
 		initOpts.helm = nil
 	}
 
+	// configure local tiller if this is required
 	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
-		err = restartLocalTiller()
+		err := restartLocalTiller()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "restarting local tiller")
 		}
 		initOpts.helm = options.helm
 	}
 
-	err = initOpts.Run()
+	err := initOpts.Run()
 	if err != nil {
-		return errors.Wrap(err, "failed to initialize the jx")
+		return errors.Wrap(err, "initializing the Jenkins X platform")
 	}
 
 	if initOpts.Flags.Domain != "" && options.Flags.Domain == "" {
@@ -2572,4 +2554,24 @@ func (options *InstallOptions) saveAsConfigMap(name string, config interface{}) 
 		cm.Data = data
 		return nil
 	})
+}
+
+func (options *InstallOptions) configureTeamSettings() error {
+	initOpts := &options.InitOptions
+	callback := func(env *v1.Environment) error {
+		if env.Spec.TeamSettings.KubeProvider == "" {
+			env.Spec.TeamSettings.KubeProvider = options.Flags.Provider
+			log.Infof("Storing the kubernetes provider %s in the TeamSettings\n", env.Spec.TeamSettings.KubeProvider)
+		}
+		if initOpts.Flags.NoTiller {
+			env.Spec.TeamSettings.HelmTemplate = true
+			log.Info("Enabling helm template mode in the TeamSettings\n")
+		}
+		return nil
+	}
+	err := options.ModifyDevEnvironment(callback)
+	if err != nil {
+		return errors.Wrap(err, "updating the team setttings in the dev environment")
+	}
+	return nil
 }

@@ -533,22 +533,6 @@ func (o *InitOptions) initIngress() error {
 		return fmt.Errorf("Failed to ensure the ingress namespace %s is created: %s\nIs this an RBAC issue on your cluster?", ingressNamespace, err)
 	}
 
-	/*
-		ingressServiceAccount := "ingress"
-		err = o.ensureServiceAccount(ingressNamespace, ingressServiceAccount)
-		if err != nil {
-			return err
-		}
-
-		role := o.Flags.IngressClusterRole
-		clusterRoleBindingName := kube.ToValidName(ingressServiceAccount + "-" + role + "-binding")
-
-		err = o.ensureClusterRoleBinding(clusterRoleBindingName, role, ingressNamespace, ingressServiceAccount)
-		if err != nil {
-			return err
-		}
-	*/
-
 	currentContext, err := o.getCommandOutput("", "kubectl", "config", "current-context")
 	if err != nil {
 		return err
