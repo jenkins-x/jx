@@ -102,6 +102,7 @@ func TestPromoteToProductionNoMergeRun(t *testing.T) {
 		Filter:              "",
 		Alias:               "",
 		FakePullRequests:    testEnv.FakePullRequests,
+		Namespace:			 "jx",
 
 		// test settings
 		UseFakeHelm: true,
@@ -174,7 +175,7 @@ func TestPromoteToProductionPRPollingRun(t *testing.T) {
 		Filter:              "",
 		Alias:               "",
 		FakePullRequests:    testEnv.FakePullRequests,
-
+		Namespace:			 "jx",
 		// test settings
 		UseFakeHelm: true,
 	}
