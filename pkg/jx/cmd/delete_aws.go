@@ -9,6 +9,8 @@ import (
 	logger "github.com/sirupsen/logrus"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
+	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/spf13/cobra"
@@ -95,13 +97,27 @@ func (o *DeleteAwsOptions) Run() error {
 	}
 	for _, internetGateway := range internetGateways.InternetGateways {
 		if len(internetGateway.Attachments) > 0 {
-			_, err = svc.DetachInternetGateway(&ec2.DetachInternetGatewayInput{InternetGatewayId: internetGateway.InternetGatewayId, VpcId: aws.String(vpcid)})
-			if err != nil {
-				return err
+			detachAttemptsLeft := 11
+			for ; detachAttemptsLeft > 0; {
+				_, err = svc.DetachInternetGateway(&ec2.DetachInternetGatewayInput{InternetGatewayId: internetGateway.InternetGatewayId, VpcId: aws.String(vpcid)})
+				fmt.Printf("Detaching internet gateway %s from VPC %s...\n", *internetGateway.InternetGatewayId, vpcid)
+				if err != nil {
+					if strings.Contains(err.Error(), "Please unmap those public address(es) before detaching the gateway") {
+						detachAttemptsLeft--
+						fmt.Printf("Waiting for public address to be unmapped from internet gateway. Detach attempts left: %d\n", detachAttemptsLeft)
+						time.Sleep(10 * time.Second)
+					} else {
+						return err
+					}
+				} else {
+					detachAttemptsLeft = 0
+				}
 			}
+			fmt.Printf("Internet gateway %s detached successfully from VPC %s...\n", *internetGateway.InternetGatewayId, vpcid)
 		}
 
 		_, err = svc.DeleteInternetGateway(&ec2.DeleteInternetGatewayInput{InternetGatewayId: internetGateway.InternetGatewayId})
+		fmt.Printf("Deleting internet gateway %s...\n", *internetGateway.InternetGatewayId)
 		if err != nil {
 			return err
 		}
