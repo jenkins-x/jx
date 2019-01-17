@@ -40,12 +40,12 @@ const (
 var (
 	StepStashLong = templates.LongDesc(`
 		This pipeline step stashes the specified files from the build into some stable storage location.
-` + StorageSupportDescription)
+` + StorageSupportDescription + SeeAlsoText("jx step unstash", "jx edit storage"))
 
 	StorageSupportDescription = `
-		Currently Jenkins X supports storing files into a git repository and branch or to use cloud blob storage like S3 / GCS / Azure blobs etc.
+Currently Jenkins X supports storing files into a branch of a git repository or in cloud blob storage like S3, GCS, Azure blobs etc.
 
-		When using Cloud Storage we use URLs like 's3://nameOfBucket' on AWS, gs://anotherBucket' on GCP or on Azure 'azblob://thatBucket'
+When using Cloud Storage we use URLs like 's3://nameOfBucket' on AWS, 'gs://anotherBucket' on GCP or on Azure 'azblob://thatBucket'
 `
 
 	StepStashExample = templates.Examples(`
