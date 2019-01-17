@@ -626,14 +626,25 @@ func (options *InstallOptions) init() error {
 	initOpts := &options.InitOptions
 	initOpts.Flags.Provider = options.Flags.Provider
 	initOpts.Flags.Namespace = options.Flags.Namespace
-	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
+	initOpts.BatchMode = options.BatchMode
 	initOpts.Flags.Http = true
+	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
 	if exposeController != nil {
 		initOpts.Flags.Http = exposeController.Config.HTTP == "true"
 	}
-	initOpts.BatchMode = options.BatchMode
 	if initOpts.Flags.Domain == "" && options.Flags.Domain != "" {
 		initOpts.Flags.Domain = options.Flags.Domain
+	}
+	if initOpts.Flags.NoTiller {
+		initOpts.helm = nil
+	}
+	// configure local tiller if this is required
+	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
+		err := restartLocalTiller()
+		if err != nil {
+			return errors.Wrap(err, "restarting local tiller")
+		}
+		initOpts.helm = options.helm
 	}
 
 	// configure the helm values for expose controller
@@ -652,27 +663,42 @@ func (options *InstallOptions) init() error {
 		}
 	}
 
-	if initOpts.Flags.NoTiller {
-		initOpts.helm = nil
-	}
-
-	// configure local tiller if this is required
-	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
-		err := restartLocalTiller()
-		if err != nil {
-			return errors.Wrap(err, "restarting local tiller")
-		}
-		initOpts.helm = options.helm
-	}
-
 	err := initOpts.Run()
 	if err != nil {
 		return errors.Wrap(err, "initializing the Jenkins X platform")
 	}
 
-	if initOpts.Flags.Domain != "" && options.Flags.Domain == "" {
-		options.Flags.Domain = initOpts.Flags.Domain
+	// update the domain if was modified during the initialization
+	domain := exposeController.Config.Domain
+	if domain == "" {
+		domain = initOpts.Flags.Domain
 	}
+	if domain == "" {
+		client, err := options.KubeClient()
+		if err != nil {
+			return errors.Wrap(err, "getting the kubernetes client")
+		}
+		ingNamespace := initOpts.Flags.IngressNamespace
+		ingService := initOpts.Flags.IngressService
+		extIP := initOpts.Flags.ExternalIP
+		domain, err = options.GetDomain(client, domain,
+			options.Flags.Provider,
+			ingNamespace,
+			ingService,
+			extIP)
+		if err != nil {
+			return errors.Wrapf(err, "getting a domain for ingress service %s/%s", ingNamespace, ingService)
+		}
+	}
+
+	// checking if the domain is by any chance empty and bail out
+	if domain == "" {
+		return fmt.Errorf("the installation cannot proceed with an empty domain. Please provide a domain in the %s option",
+			util.ColorInfo("domain"))
+	}
+
+	options.Flags.Domain = domain
+	exposeController.Config.Domain = domain
 
 	return nil
 }
@@ -1857,18 +1883,12 @@ func (options *InstallOptions) configureBuildPackMode() error {
 }
 
 func (options *InstallOptions) saveIngressConfig() (*kube.IngressConfig, error) {
-	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
-	domain := helmConfig.ExposeController.Config.Domain
-	if domain == "" {
-		domain = options.InitOptions.Flags.Domain
-		helmConfig.ExposeController.Config.Domain = domain
-	}
-
 	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
 	tls, err := util.ParseBool(exposeController.Config.TLSAcme)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse TLS exposecontroller boolean %v", err)
 	}
+	domain := exposeController.Config.Domain
 	ic := kube.IngressConfig{
 		Domain:  domain,
 		TLS:     tls,
@@ -1916,11 +1936,12 @@ func (options *InstallOptions) saveClusterConfig() error {
 func (options *InstallOptions) configureJenkins(namespace string) error {
 	if !options.Flags.GitOpsMode {
 		if !options.Flags.Prow {
-			log.Info("Getting Jenkins API Token\n")
+			log.Info("Configure Jenkins API Token\n")
 			if isOpenShiftProvider(options.Flags.Provider) {
 				options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
 				options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
 				options.CreateJenkinsUserOptions.Username = "jenkins-admin"
+				options.CreateJenkinsUserOptions.Verbose = false
 				jenkinsSaToken, err := options.getCommandOutput("", "oc", "serviceaccounts", "get-token", "jenkins", "-n", namespace)
 				if err != nil {
 					return err
@@ -1934,6 +1955,7 @@ func (options *InstallOptions) configureJenkins(namespace string) error {
 					options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
 					options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
 					options.CreateJenkinsUserOptions.UseBrowser = true
+					options.CreateJenkinsUserOptions.Verbose = false
 					if options.BatchMode {
 						options.CreateJenkinsUserOptions.BatchMode = true
 						options.CreateJenkinsUserOptions.Headless = true
