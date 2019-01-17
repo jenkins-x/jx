@@ -362,6 +362,7 @@ func (o *ControllerWorkflowOptions) createPromoteOptions(repoName string, envNam
 		HelmRepositoryURL: helm.DefaultHelmRepositoryURL,
 		LocalHelmRepoName: kube.LocalHelmRepoName,
 		FakePullRequests:  o.FakePullRequests,
+		Namespace:         o.Namespace,
 	}
 	po.CommonOptions = o.CommonOptions
 	po.BatchMode = true

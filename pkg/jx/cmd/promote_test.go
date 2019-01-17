@@ -43,6 +43,7 @@ func TestPromoteToProductionRun(t *testing.T) {
 		Filter:              "",
 		Alias:               "",
 		FakePullRequests:    testEnv.FakePullRequests,
+		Namespace:			 "jx",
 
 		// test settings
 		UseFakeHelm: true,
@@ -247,6 +248,7 @@ func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*
 		NoWatch:          true,
 		FakePullRequests: cmd.NewCreateEnvPullRequestFn(fakeGitProvider),
 		FakeGitProvider:  fakeGitProvider,
+		Namespace:		  "jx",
 	}
 
 	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://github.com/"+testOrgName+"/"+stagingRepoName+".git")
