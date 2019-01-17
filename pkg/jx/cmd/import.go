@@ -1361,3 +1361,27 @@ func (o *ImportOptions) allDraftPacks() ([]string, error) {
 	return result, err
 
 }
+
+// ConfigureImportOptions updates the import options struct based on values from the create repo struct
+func (options *ImportOptions)ConfigureImportOptions(repoData *gits.CreateRepoData) {
+	// configure the import options based on previous answers
+	options.AppName = repoData.RepoName
+	options.GitProvider = repoData.GitProvider
+	options.Organisation = repoData.Organisation
+	options.Repository = repoData.RepoName
+	options.GitDetails = *repoData
+}
+
+// GetGitRepositoryDetails determines the git repository details to use during the import command
+func (options *ImportOptions) GetGitRepositoryDetails() (*gits.CreateRepoData, error) {
+	authConfigSvc, err := options.CreateGitAuthConfigService()
+	if err != nil {
+		return nil, err
+	}
+	details, err := gits.PickNewOrExistingGitRepository(options.BatchMode, authConfigSvc,
+		"", &options.GitRepositoryOptions, nil, nil, options.Git(), false, options.In, options.Out, options.Err)
+	if err != nil {
+		return nil, err
+	}
+	return details, nil
+}
