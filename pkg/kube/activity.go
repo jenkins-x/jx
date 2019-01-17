@@ -163,17 +163,20 @@ func GenerateBuildNumber(activities typev1.PipelineActivityInterface, pipelines 
 	return build, answer, nil
 }
 
-func lazyUpdateSourceRepositoryCRD(jxClient versioned.Interface, ns string, activity *v1.PipelineActivity) error {
+func createSourcerepositoryResourceIfMissing(jxClient versioned.Interface, ns string, activity *v1.PipelineActivity) error {
 	//FIXME: this relies on a bad assumption that the name of the sourcerepositories CRD entry is always equal to the repository name
-	_, err := sourcerepository.NewSourceRepositoryService(jxClient, ns).GetSourceRepository(activity.RepositoryName())
+
+	srs := sourcerepository.NewSourceRepositoryService(jxClient, ns)
+	if srs == nil {
+		return fmt.Errorf("failed to create sourcerepository service")
+	}
+
+	_, err := srs.GetSourceRepository(activity.RepositoryName())
 
 	if err != nil {
 		// sourcerepository for this project does not exist yet, so create one
-		err := sourcerepository.NewSourceRepositoryService(jxClient, ns).CreateSourceRepository(
-			activity.RepositoryName(), activity.Spec.GitOwner,activity.Spec.GitURL)
-		if err != nil {
-			log.Warnf("lazy create of sourcerepostory for %s failed: %s", "Appname", err)
-		}
+		err = srs.CreateSourceRepository(
+			activity.RepositoryName(), activity.Spec.GitOwner, activity.Spec.GitURL)
 	}
 	return err
 }
@@ -204,7 +207,7 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 
 	// lazy create missing sourcerepository entries
 	if a.Labels[v1.LabelSourceRepository] == "" {
-		lazyUpdateSourceRepositoryCRD(jxClient, ns, a)
+		createSourcerepositoryResourceIfMissing(jxClient, ns, a)
 	}
 
 	updateActivity(k, a)
