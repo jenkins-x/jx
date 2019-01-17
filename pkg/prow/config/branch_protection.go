@@ -45,6 +45,10 @@ func AddRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, con
 		if !util.Contains(contexts, PromotionBuild) {
 			contexts = append(contexts, PromotionBuild)
 		}
+	case Protection:
+		if !util.Contains(contexts, context) {
+			contexts = append(contexts, context)
+		}
 	default:
 		return fmt.Errorf("unknown Prow config kind %s", kind)
 	}
