@@ -195,7 +195,7 @@ func (o *StepStashOptions) Run() error {
 	}
 
 	for _, u := range urls {
-		log.Infof("Cpllected: %s\n", util.ColorInfo(u))
+		log.Infof("stashed: %s\n", util.ColorInfo(u))
 	}
 
 	// TODO this pipeline name construction needs moving to a shared lib, and other things refactoring to use it

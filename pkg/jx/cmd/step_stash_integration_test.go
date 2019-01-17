@@ -4,6 +4,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/tests"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
@@ -32,4 +33,6 @@ func TestStepStash(t *testing.T) {
 
 	generatedFile := filepath.Join(tempDir, testData)
 	assert.FileExists(t, generatedFile)
+
+	tests.AssertTextFileContentsEqual(t, testData, generatedFile)
 }
