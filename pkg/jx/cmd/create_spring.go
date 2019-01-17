@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"io"
 	"os"
 
@@ -97,12 +98,20 @@ func (o *CreateSpringOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
+	details, err := o.GetGitRepositoryDetails()
+	if err != nil {
+		return err
+	}
+
 	model, err := spring.LoadSpringBoot(cacheDir)
 	if err != nil {
 		return fmt.Errorf("Failed to load Spring Boot model %s", err)
 	}
 
 	data := &o.SpringForm
+	data.ArtifactId = details.RepoName
+
 	err = model.CreateSurvey(&o.SpringForm, o.Advanced, o.BatchMode)
 	if err != nil {
 		return err
@@ -131,5 +140,30 @@ func (o *CreateSpringOptions) Run() error {
 	}
 	log.Infof("Created Spring Boot project at %s\n", util.ColorInfo(outDir))
 
+	o.ConfigureImportOptions(details)
+
 	return o.ImportCreatedProject(outDir)
+}
+
+func (o *CreateSpringOptions) ConfigureImportOptions(repoData *gits.CreateRepoData) {
+	// configure the import options based on previous answers
+	importOptions := &o.ImportOptions
+	importOptions.AppName = repoData.RepoName
+	importOptions.GitProvider = repoData.GitProvider
+	importOptions.Organisation = repoData.Organisation
+	importOptions.Repository = repoData.RepoName
+	importOptions.GitDetails = *repoData
+}
+
+func (o *CreateSpringOptions) GetGitRepositoryDetails() (*gits.CreateRepoData, error) {
+	authConfigSvc, err := o.CreateGitAuthConfigService()
+	if err != nil {
+		return nil, err
+	}
+	details, err := gits.PickNewOrExistingGitRepository(o.BatchMode, authConfigSvc,
+		"", &o.GitRepositoryOptions, nil, nil, o.Git(), false, o.In, o.Out, o.Err)
+	if err != nil {
+		return nil, err
+	}
+	return details, nil
 }
