@@ -15,6 +15,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const gatewayDetachAttempts = 11
+
 type DeleteAwsOptions struct {
 	CommonOptions
 
@@ -96,7 +98,7 @@ func (o *DeleteAwsOptions) Run() error {
 	}
 	for _, internetGateway := range internetGateways.InternetGateways {
 		if len(internetGateway.Attachments) > 0 {
-			detachAttemptsLeft := 11
+			detachAttemptsLeft := gatewayDetachAttempts
 			for ; detachAttemptsLeft > 0; {
 				_, err = svc.DetachInternetGateway(&ec2.DetachInternetGatewayInput{InternetGatewayId: internetGateway.InternetGatewayId, VpcId: aws.String(vpcid)})
 				log.Infof("Detaching internet gateway %s from VPC %s...\n", *internetGateway.InternetGatewayId, vpcid)
