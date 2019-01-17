@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"io"
@@ -199,11 +200,11 @@ cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
 		}
 	}
 
-	kube, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
-	err = amazon.RememberRegion(kube, o.currentNamespace, region)
+	err = kube.RememberRegion(kubeClient, o.currentNamespace, region)
 	if err != nil {
 		return err
 	}

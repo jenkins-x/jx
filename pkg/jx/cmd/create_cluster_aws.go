@@ -303,11 +303,11 @@ func (o *CreateClusterAWSOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	kube, err := o.KubeClient()
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
-	err = amazon.RememberRegion(kube, o.currentNamespace, region)
+	err = kube.RememberRegion(kubeClient, o.currentNamespace, region)
 	if err != nil {
 		return err
 	}

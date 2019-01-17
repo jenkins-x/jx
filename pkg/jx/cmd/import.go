@@ -940,7 +940,7 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 		return err
 	}
 
-	region, _ := amazon.ReadRegion(kubeClient, ns)
+	region, _ := kube.ReadRegion(kubeClient, ns)
 	cm, err := kubeClient.CoreV1().ConfigMaps(ns).Get(kube.ConfigMapJenkinsDockerRegistry, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("Could not find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsDockerRegistry, ns, err)

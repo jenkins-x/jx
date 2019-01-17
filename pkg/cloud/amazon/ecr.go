@@ -2,6 +2,7 @@ package amazon
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/client-go/kubernetes"
 	"regexp"
 	"strings"
@@ -52,12 +53,12 @@ read from ConfigMap (see RememberRegion function). To keep backwards compatibili
 function will be kept for a while and it will perform migration to config map. Eventually it will be removed from a
 codebase.
  */
-func GetRegionFromContainerRegistryHost(kube kubernetes.Interface, namespace string, dockerRegistry string) string {
+func GetRegionFromContainerRegistryHost(kubeClient kubernetes.Interface, namespace string, dockerRegistry string) string {
 	submatch := regexp.MustCompile(`\.ecr\.(.*)\.amazonaws\.com$`).FindStringSubmatch(dockerRegistry)
 	if len(submatch) > 1 {
 		region := submatch[1]
 		// Migrating jx installations created before AWS region config map
-		RememberRegion(kube, namespace, region)
+		kube.RememberRegion(kubeClient, namespace, region)
 		return region
 	} else {
 		return ""

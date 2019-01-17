@@ -4,18 +4,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/pkg/errors"
-	"k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes"
 	"os"
 	"path"
 	"runtime"
 )
 
 const DefaultRegion = "us-west-2"
-
-const regionDataMapKey = "AWS_REGION"
 
 func NewAwsSession(profileOption string, regionOption string) (*session.Session, error) {
 	config := aws.Config{}
@@ -65,26 +59,6 @@ func ResolveRegion(profileOption string, regionOption string) (string, error) {
 
 func ResolveRegionWithoutOptions() (string, error) {
 	return ResolveRegion("", "")
-}
-
-func RememberRegion(kubeClient kubernetes.Interface, namespace string, region string) error {
-	_, err := kube.DefaultModifyConfigMap(kubeClient, namespace, kube.ConfigMapNameJXInstallConfig, func(configMap *v1.ConfigMap) error {
-		configMap.Data[regionDataMapKey] = region
-		return nil
-	}, nil)
-	if err != nil {
-		return errors.Wrapf(err, "saving AWS region in ConfigMap %s", kube.ConfigMapNameJXInstallConfig)
-	} else {
-		return nil
-	}
-}
-
-func ReadRegion(kubeClient kubernetes.Interface, namespace string) (string, error) {
-	data, err := kube.GetConfigMapData(kubeClient, kube.ConfigMapNameJXInstallConfig, namespace)
-	if err != nil {
-		return "", err
-	}
-	return data[regionDataMapKey], nil
 }
 
 // UserHomeDir returns the home directory for the user the process is running under.
