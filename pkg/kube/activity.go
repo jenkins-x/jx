@@ -206,7 +206,7 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 	oldLabels := a.Labels
 
 	// lazy create missing sourcerepository entries
-	if a.Labels[v1.LabelSourceRepository] == "" {
+	if a.Labels == nil ||  a.Labels[v1.LabelSourceRepository] == "" {
 		createSourcerepositoryResourceIfMissing(jxClient, ns, a)
 	}
 
@@ -215,11 +215,7 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 		answer, err := activitiesClient.Create(a)
 		return answer, true, err
 	} else {
-		if !reflect.DeepEqual(&a.Spec, &oldSpec) {
-			answer, err := activitiesClient.Update(a)
-			return answer, false, err
-		}
-		if !reflect.DeepEqual(&a.Labels, &oldLabels) {
+		if !reflect.DeepEqual(&a.Spec, &oldSpec) || !reflect.DeepEqual(&a.Labels, &oldLabels) {
 			answer, err := activitiesClient.Update(a)
 			return answer, false, err
 		}
@@ -452,7 +448,7 @@ func (k *PromoteStepActivityKey) GetOrCreatePromoteUpdate(jxClient versioned.Int
 //OnPromotePullRequest updates activities on a Promote PR
 func (k *PromoteStepActivityKey) OnPromotePullRequest(jxClient versioned.Interface, ns string, fn PromotePullRequestFn) error {
 	if !k.IsValid() {
-		return nil
+		return fmt.Errorf("PromoteStepActivityKey was not valid")
 	}
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
 	if activities == nil {
