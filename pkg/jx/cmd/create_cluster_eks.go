@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"io"
@@ -197,6 +198,15 @@ cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
 		if err != nil {
 			return err
 		}
+	}
+
+	kubeClient, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	err = kube.RememberRegion(kubeClient, o.currentNamespace, region)
+	if err != nil {
+		return err
 	}
 
 	logger.Info("Initialising cluster ...\n")
