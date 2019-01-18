@@ -24,7 +24,9 @@ spec:
 {{- if .Values.restartPolicy }}
       restartPolicy: {{ .Values.restartPolicy }}
 {{- end }}
-{{- if .Values.serviceaccount.enabled }}
+{{- if .Values.serviceaccount.customName }}
+      serviceAccountName: {{ .Values.serviceaccount.customName }}
+{{- else if .Values.serviceaccount.enabled }}
       serviceAccountName: {{ template "jx.fullname" . }}
 {{- end }}
       containers:

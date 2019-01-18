@@ -14,7 +14,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -291,6 +291,18 @@ func (o *PreviewOptions) Run() error {
 		}
 	}
 
+	if o.ReleaseName == "" {
+		_, noTiller, helmTemplate, err := o.TeamHelmBin()
+		if err != nil {
+			return err
+		}
+		if noTiller || helmTemplate {
+			o.ReleaseName = "preview"
+		} else {
+			o.ReleaseName = o.Namespace
+		}
+	}
+
 	environmentsResource := jxClient.JenkinsV1().Environments(ns)
 	env, err := environmentsResource.Get(o.Name, metav1.GetOptions{})
 	if err == nil {
@@ -390,6 +402,9 @@ func (o *PreviewOptions) Run() error {
 		env = &v1.Environment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: o.Name,
+				Annotations: map[string]string{
+					kube.AnnotationReleaseName: o.ReleaseName,
+				},
 			},
 			Spec: v1.EnvironmentSpec{
 				Namespace:         o.Namespace,
@@ -416,18 +431,6 @@ func (o *PreviewOptions) Run() error {
 	err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, env, ns)
 	if err != nil {
 		return err
-	}
-
-	if o.ReleaseName == "" {
-		_, noTiller, helmTemplate, err := o.TeamHelmBin()
-		if err != nil {
-			return err
-		}
-		if noTiller || helmTemplate {
-			o.ReleaseName = "preview"
-		} else {
-			o.ReleaseName = o.Namespace
-		}
 	}
 
 	domain, err := kube.GetCurrentDomain(kubeClient, ns)

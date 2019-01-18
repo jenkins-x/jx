@@ -12,7 +12,7 @@ import (
 
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -124,12 +124,14 @@ func (o *GCPreviewsOptions) Run() error {
 
 			if strings.HasPrefix(lowerState, "clos") || strings.HasPrefix(lowerState, "merged") || strings.HasPrefix(lowerState, "superseded") || strings.HasPrefix(lowerState, "declined") {
 				// lets delete the preview environment
-				deleteOpts := DeleteEnvOptions{
-					DeleteNamespace: true,
-					CommonOptions:   o.CommonOptions,
+				deleteOpts := DeletePreviewOptions{
+					PreviewOptions: PreviewOptions{
+						PromoteOptions: PromoteOptions{
+							CommonOptions: o.CommonOptions,
+						},
+					},
 				}
-				deleteOpts.CommonOptions.Args = []string{e.Name}
-				err = deleteOpts.Run()
+				err = deleteOpts.deletePreview(e.Name)
 				if err != nil {
 					return fmt.Errorf("failed to delete preview environment %s: %v\n", e.Name, err)
 				}

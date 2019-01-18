@@ -149,24 +149,27 @@ func (o *UpgradeIngressOptions) Run() error {
 		return errors.Wrap(err, "saving ingress config into a configmap")
 	}
 
-	// ensure cert-manager is installed and add the cert-manager to all services which are going to be exposed
-	var services []*v1.Service
+	// ensure cert-manager is installed
 	if o.IngressConfig.TLS {
 		err = o.ensureCertmanagerSetup()
 		if err != nil {
 			return errors.Wrap(err, "ensure cert-manager setup")
 		}
 
-		// annotate any service that has expose=true with correct cert-manager staging / prod annotation
+	}
+	// clear the service annotations
+	err = o.CleanServiceAnnotations(o.Services...)
+	if err != nil {
+		return errors.Wrap(err, "cleaning service annotations")
+	}
+
+	// annotate any service that has expose=true with correct cert-manager staging / prod annotation
+	var services []*v1.Service
+	if o.IngressConfig.TLS {
 		services, err = o.AnnotateExposedServicesWithCertManager(o.Services...)
 		if err != nil {
 			return errors.Wrap(err, "annotating the exposed service with cert-manager")
 		}
-	}
-
-	err = o.CleanServiceAnnotations(o.Services...)
-	if err != nil {
-		return errors.Wrap(err, "cleaning service annotations")
 	}
 
 	// remove the ingress resource in order to allow the ingress-controller to recreate them
