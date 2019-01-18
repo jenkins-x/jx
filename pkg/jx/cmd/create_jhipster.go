@@ -23,7 +23,7 @@ var (
 
 		For more documentation about JHipster see: [https://www.jhipster.tech/](https://www.jhipster.tech/)
 
-	`)
+` + SeeAlsoText("jx create project"))
 
 	createJHipsterExample = templates.Examples(`
 		# Create a JHipster application and be prompted for the folder name

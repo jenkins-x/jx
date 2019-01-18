@@ -118,7 +118,7 @@ var (
 	    
 		For more documentation see: [https://jenkins-x.io/developing/import/](https://jenkins-x.io/developing/import/)
 	    
-	`)
+` + SeeAlsoText("jx create project"))
 
 	importExample = templates.Examples(`
 		# Import the current folder
