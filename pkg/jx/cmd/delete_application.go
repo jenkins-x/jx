@@ -142,7 +142,7 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService kube.Source
 		return deletedApplications, errors.Wrap(err, "getting current user")
 	}
 
-	kubeClient, ns, err := o.CreateKubeClient()
+	kubeClient, ns, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return deletedApplications, errors.Wrap(err, "getting kube client")
 	}
@@ -350,7 +350,7 @@ func (o *DeleteApplicationOptions) waitForGitOpsPullRequest(env *v1.Environment,
 
 func (o *DeleteApplicationOptions) init() error {
 	var err error
-	o.jxClient, o.currentNamespace, err = o.CreateJXClient()
+	o.jxClient, o.currentNamespace, err = o.JXClientAndDevNamespace()
 	if err != nil {
 		return errors.Wrap(err, "getting jx client")
 	}
