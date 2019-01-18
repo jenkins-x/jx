@@ -84,10 +84,6 @@ func (o *StepPostRunOptions) Run() (err error) {
 		return err
 	}
 
-	activities := client.JenkinsV1().PipelineActivities(ns)
-	if err != nil {
-		return err
-	}
 	gitInfo, err := o.FindGitInfo("")
 	appName := ""
 	if gitInfo != nil {
@@ -105,7 +101,7 @@ func (o *StepPostRunOptions) Run() (err error) {
 				Build:    build,
 			},
 		}
-		a, _, err := key.GetOrCreate(activities)
+		a, _, err := key.GetOrCreate(client, ns)
 		if err != nil {
 			return err
 		}

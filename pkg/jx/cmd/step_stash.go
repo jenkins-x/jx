@@ -203,7 +203,6 @@ func (o *StepStashOptions) Run() error {
 
 	// TODO this pipeline name construction needs moving to a shared lib, and other things refactoring to use it
 	pipeline := fmt.Sprintf("%s-%s-%s-%s", projectOrg, projectRepoName, projectBranchName, buildNo)
-	activities := client.JenkinsV1().PipelineActivities(ns)
 
 	if pipeline != "" && buildNo != "" {
 		name := kube.ToValidName(pipeline)
@@ -214,7 +213,7 @@ func (o *StepStashOptions) Run() error {
 				Build:    buildNo,
 			},
 		}
-		a, _, err := key.GetOrCreate(activities)
+		a, _, err := key.GetOrCreate(client, ns)
 		if err != nil {
 			return err
 		}
