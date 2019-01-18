@@ -107,7 +107,7 @@ func (o *DeleteExtensionOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	jxClient, ns, err := o.CreateJXClient()
+	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
