@@ -92,6 +92,7 @@ type ImportOptions struct {
 	ListDraftPacks          bool
 	DraftPack               string
 	DockerRegistryOrg       string
+	GitDetails              gits.CreateRepoData
 
 	DisableDotGitSearch   bool
 	InitialisedGit        bool
@@ -605,12 +606,15 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	_, defaultRepoName := filepath.Split(dir)
 
 	options.GitRepositoryOptions.Owner = options.getOrganisation()
-
-	details, err := gits.PickNewGitRepository(options.BatchMode, authConfigSvc, defaultRepoName, &options.GitRepositoryOptions,
-		options.GitServer, options.GitUserAuth, options.Git(), options.In, options.Out, options.Err)
-	if err != nil {
-		return err
+	details := &options.GitDetails
+	if details.RepoName == "" {
+		details, err = gits.PickNewGitRepository(options.BatchMode, authConfigSvc, defaultRepoName, &options.GitRepositoryOptions,
+			options.GitServer, options.GitUserAuth, options.Git(), options.In, options.Out, options.Err)
+		if err != nil {
+			return err
+		}
 	}
+
 	repo, err := details.CreateRepository()
 	if err != nil {
 		return err
