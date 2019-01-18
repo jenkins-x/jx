@@ -187,13 +187,17 @@ func GetPodsWithLabels(client kubernetes.Interface, ns string, selector string) 
 	return names, m, nil
 }
 
-// GetDevPodNames returns the users dev pod names
+// GetDevPodNames returns the users dev pod names. If username is blank, all devpod names will be returned
 func GetDevPodNames(client kubernetes.Interface, ns string, username string) ([]string, map[string]*v1.Pod, error) {
 	names := []string{}
 	m := map[string]*v1.Pod{}
-	list, err := client.CoreV1().Pods(ns).List(meta_v1.ListOptions{
-		LabelSelector: LabelDevPodUsername + "=" + username,
-	})
+	listOptions := meta_v1.ListOptions{}
+	if username != "" {
+		listOptions.LabelSelector = LabelDevPodUsername + "=" + username
+	} else {
+		listOptions.LabelSelector = LabelDevPodName
+	}
+	list, err := client.CoreV1().Pods(ns).List(listOptions)
 	if err != nil {
 		return names, m, fmt.Errorf("Failed to load Pods %s", err)
 	}

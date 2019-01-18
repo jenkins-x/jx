@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"os/user"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -36,6 +35,7 @@ var (
 // DeleteDevPodOptions are the flags for delete commands
 type DeleteDevPodOptions struct {
 	CommonOptions
+	CommonDevPodOptions
 }
 
 // NewCmdDeleteDevPod creates a command object for the generic "get" action, which
@@ -64,6 +64,8 @@ func NewCmdDeleteDevPod(f Factory, in terminal.FileReader, out terminal.FileWrit
 		},
 	}
 
+	options.addCommonDevPodFlags(cmd)
+
 	return cmd
 }
 
@@ -79,13 +81,8 @@ func (o *DeleteDevPodOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	u, err := user.Current()
-	if err != nil {
-		return err
-	}
-
-	username := u.Username
-	names, err := kube.GetPodNames(client, ns, username)
+	userName, err := o.getUsername(o.CommonDevPodOptions.Username)
+	names, err := kube.GetPodNames(client, ns, userName)
 	if err != nil {
 		return err
 	}

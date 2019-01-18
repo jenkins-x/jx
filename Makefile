@@ -183,7 +183,7 @@ release: check
 	gh-release checksums sha256
 	gh-release create jenkins-x/$(NAME) $(VERSION) master $(VERSION)
 
-	jx step changelog  --header-file docs/dev/changelog-header.md --version $(VERSION)
+	./build/linux/jx step changelog  --header-file docs/dev/changelog-header.md --version $(VERSION)
 
 	# Update other repo's dependencies on jx to use the new version - updates repos as specified at .updatebot.yml
 	updatebot push-version --kind brew jx $(VERSION)

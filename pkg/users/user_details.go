@@ -1,8 +1,9 @@
-package kube
+package users
 
 import (
 	"fmt"
-	"strings"
+
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -23,12 +24,8 @@ func NewUserDetailService(jxClient versioned.Interface, namespace string) UserDe
 	}
 }
 
-func EmailToK8sId(email string) string {
-	return strings.Replace(email, "@", ".", -1)
-}
-
 func (this *UserDetailService) FindByEmail(email string) *v1.UserDetails {
-	id := EmailToK8sId(email)
+	id := kube.EmailToK8sID(email)
 
 	user, err := this.jxClient.JenkinsV1().Users(this.namespace).Get(id, metav1.GetOptions{})
 	if err != nil {
@@ -46,7 +43,7 @@ func (this *UserDetailService) CreateOrUpdateUser(u *v1.UserDetails) error {
 
 	log.Infof("CreateOrUpdateUser: %s <%s>\n", u.Login, u.Email)
 
-	id := EmailToK8sId(u.Email)
+	id := kube.EmailToK8sID(u.Email)
 
 	// check for an existing user by email
 	user, err := this.jxClient.JenkinsV1().Users(this.namespace).Get(id, metav1.GetOptions{})

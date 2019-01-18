@@ -40,6 +40,7 @@ import (
 // Constants for some test data to be used.
 const (
 	application    = "test-app"
+	releaseName    = "test-app-release-name"
 	name           = "test-app-name"
 	namespace      = "jx"
 	gitHubLink     = "https://github.com/an-org/a-repo"
@@ -179,6 +180,7 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 				BatchMode: true,
 			},
 			Application: application,
+			ReleaseName: releaseName,
 		},
 		Namespace:    namespace,
 		DevNamespace: "jx",
@@ -232,7 +234,7 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 	number := prNum
 	mockGitPR := &gits.GitPullRequest{
 		Owner:  prOwner,
-		Author: &gits.GitUser{Name: prAuthor, Email: prEmail},
+		Author: &gits.GitUser{Name: prAuthor, Email: prEmail, Login: prAuthor},
 		Number: &number,
 	}
 	When(mockGitProvider.GetPullRequest(AnyString(), //owner
@@ -282,6 +284,7 @@ func validatePreviewEnvironment(t *testing.T, cs *cs_fake.Clientset) {
 	assert.NotNil(t, previewEnv)
 	assert.Equal(t, namespace, previewEnv.Namespace)
 	assert.Equal(t, name, previewEnv.Name)
+	assert.Equal(t, releaseName, previewEnv.Annotations[kube.AnnotationReleaseName])
 	//Validate preview environment spec:
 	assert.NotNil(t, previewEnv.Spec)
 	assert.Equal(t, v1.EnvironmentKindTypePreview, previewEnv.Spec.Kind)
@@ -308,9 +311,8 @@ func validateUser(t *testing.T, cs *cs_fake.Clientset) {
 	user, err := users.Get(userK8sID, metav1.GetOptions{})
 	assert.NoError(t, err, "User should have been created.")
 	assert.NotNil(t, user)
-	//TODO: should this be used Spec instead of User (deprecated).
-	assert.Equal(t, prEmail, user.User.Email)
-	assert.Equal(t, prAuthor, user.User.Name)
+	assert.Equal(t, prEmail, user.Spec.Email)
+	assert.Equal(t, prAuthor, user.Spec.Name)
 }
 
 //Pegomock 'any' matcher for *string.

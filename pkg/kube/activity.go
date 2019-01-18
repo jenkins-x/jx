@@ -63,12 +63,14 @@ type PipelineID struct {
 // The string identifier is expected to follow the format `<owner>/>repository>/<branch>`, though this isn't actually
 // validated/mandated here.
 func NewPipelineIDFromString(id string) PipelineID {
+	sanitisedName := strings.Replace(strings.ToLower(id), "/", "-", -1)
+	sanitisedName = strings.Replace(sanitisedName, "_", "-", -1)
 	pID := PipelineID{
 		ID: id,
 		//TODO: disabling the encoding of the name, as it doesn't work for some upper case values. Upshot is conflicts on org/repo/branch that differ only in case.
 		//See https://github.com/jenkins-x/jx/issues/2551
 		//Name: util.EncodeKubernetesName(strings.Replace(id, "/", "-", -1)),
-		Name: strings.Replace(strings.ToLower(id), "/", "-", -1),
+		Name: sanitisedName,
 	}
 	return pID
 }
@@ -179,8 +181,7 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 		a = defaultActivity
 	}
 	oldSpec := a.Spec
-	spec := &a.Spec
-	updateActivitySpec(k, spec)
+	updateActivity(k, a)
 	if create {
 		answer, err := activities.Create(a)
 		return answer, true, err
@@ -191,6 +192,18 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 		}
 		return a, false, nil
 	}
+}
+
+func updateActivity(k *PipelineActivityKey, activity *v1.PipelineActivity) {
+	if activity.Labels == nil {
+		activity.Labels = make(map[string]string, 4)
+	}
+
+	updateActivitySpec(k, &activity.Spec)
+
+	activity.Labels[v1.LabelSourceRepository] = activity.RepositoryName()
+	activity.Labels[v1.LabelBranch] = activity.BranchName()
+	activity.Labels[v1.LabelOwner] = activity.RepositoryOwner()
 }
 
 func updateActivitySpec(k *PipelineActivityKey, spec *v1.PipelineActivitySpec) {

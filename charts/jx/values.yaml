@@ -26,6 +26,7 @@ cronjob:
 
 serviceaccount:
   enabled: false
+  customName: ""
 
 role:
   enabled: false

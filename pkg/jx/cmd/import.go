@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/sourcerepository"
 	"io"
 	"io/ioutil"
 	"os"
@@ -91,6 +92,7 @@ type ImportOptions struct {
 	ListDraftPacks          bool
 	DraftPack               string
 	DockerRegistryOrg       string
+	GitDetails              gits.CreateRepoData
 
 	DisableDotGitSearch   bool
 	InitialisedGit        bool
@@ -191,6 +193,7 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().StringVarP(&options.DraftPack, "pack", "", "", "The name of the pack to use")
 	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The name of the docker registry organisation to use. If not specified then the Git provider organisation will be used")
 	cmd.Flags().StringVarP(&options.ExternalJenkinsBaseURL, "external-jenkins-url", "", "", "The jenkins url that an external git provider needs to use")
+	cmd.Flags().BoolVarP(&options.DisableMaven, "disable-updatebot", "", false, "disable updatebot-maven-plugin from attempting to fix/update the maven pom.xml")
 
 	options.addCommonFlags(cmd)
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
@@ -215,12 +218,12 @@ func (options *ImportOptions) Run() error {
 
 	var err error
 	isProw := false
+	jxClient, ns, err := options.JXClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
 	if !options.DryRun {
 		_, err = options.KubeClient()
-		if err != nil {
-			return err
-		}
-		_, _, err = options.JXClientAndDevNamespace()
 		if err != nil {
 			return err
 		}
@@ -302,9 +305,11 @@ func (options *ImportOptions) Run() error {
 			return err
 		}
 	}
+
 	if options.GitHub {
 		return options.ImportProjectsFromGitHub()
 	}
+
 	if options.Dir == "" {
 		args := options.Args
 		if len(args) > 0 {
@@ -405,6 +410,13 @@ func (options *ImportOptions) Run() error {
 		if err != nil {
 			return err
 		}
+	}
+
+
+	err = sourcerepository.NewSourceRepositoryService(jxClient, ns).CreateSourceRepository(
+		options.AppName, options.Organisation, options.GitProvider.ServerURL())
+	if err != nil {
+		return errors.Wrapf(err, "creating application resource for %s", util.ColorInfo(options.AppName))
 	}
 
 	return options.doImport()
@@ -594,12 +606,15 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	_, defaultRepoName := filepath.Split(dir)
 
 	options.GitRepositoryOptions.Owner = options.getOrganisation()
-
-	details, err := gits.PickNewGitRepository(options.BatchMode, authConfigSvc, defaultRepoName, &options.GitRepositoryOptions,
-		options.GitServer, options.GitUserAuth, options.Git(), options.In, options.Out, options.Err)
-	if err != nil {
-		return err
+	details := &options.GitDetails
+	if details.RepoName == "" {
+		details, err = gits.PickNewGitRepository(options.BatchMode, authConfigSvc, defaultRepoName, &options.GitRepositoryOptions,
+			options.GitServer, options.GitUserAuth, options.Git(), options.In, options.Out, options.Err)
+		if err != nil {
+			return err
+		}
 	}
+
 	repo, err := details.CreateRepository()
 	if err != nil {
 		return err

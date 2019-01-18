@@ -421,6 +421,11 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring the cloud provider before initializing the platform")
 	}
 
+	err = options.configureTeamSettings()
+	if err != nil {
+		return errors.Wrap(err, "configuring the team settings in the dev environment")
+	}
+
 	err = options.init()
 	if err != nil {
 		return errors.Wrap(err, "initializing the Jenkins X platform")
@@ -621,17 +626,28 @@ func (options *InstallOptions) init() error {
 	initOpts := &options.InitOptions
 	initOpts.Flags.Provider = options.Flags.Provider
 	initOpts.Flags.Namespace = options.Flags.Namespace
-	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
+	initOpts.BatchMode = options.BatchMode
 	initOpts.Flags.Http = true
+	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
 	if exposeController != nil {
 		initOpts.Flags.Http = exposeController.Config.HTTP == "true"
 	}
-	initOpts.BatchMode = options.BatchMode
 	if initOpts.Flags.Domain == "" && options.Flags.Domain != "" {
 		initOpts.Flags.Domain = options.Flags.Domain
 	}
+	if initOpts.Flags.NoTiller {
+		initOpts.helm = nil
+	}
+	// configure local tiller if this is required
+	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
+		err := restartLocalTiller()
+		if err != nil {
+			return errors.Wrap(err, "restarting local tiller")
+		}
+		initOpts.helm = options.helm
+	}
 
-	// lets default the helm domain
+	// configure the helm values for expose controller
 	if exposeController != nil {
 		ecConfig := &exposeController.Config
 		if ecConfig.Domain == "" && options.Flags.Domain != "" {
@@ -642,55 +658,47 @@ func (options *InstallOptions) init() error {
 			ecConfig.PathMode = options.Flags.ExposeControllerPathMode
 			log.Success("set exposeController Config PathMode " + ecConfig.PathMode + "\n")
 		}
-		if ecConfig.Domain == "" && options.Flags.Domain != "" {
-			ecConfig.Domain = options.Flags.Domain
-			log.Success("set exposeController Config Domain " + ecConfig.Domain + "\n")
-		}
 		if isOpenShiftProvider(options.Flags.Provider) {
 			ecConfig.Exposer = "Route"
 		}
 	}
 
-	callback := func(env *v1.Environment) error {
-		if env.Spec.TeamSettings.KubeProvider == "" {
-			env.Spec.TeamSettings.KubeProvider = options.Flags.Provider
-			log.Infof("Storing the kubernetes provider %s in the TeamSettings\n", env.Spec.TeamSettings.KubeProvider)
-		}
-		return nil
-	}
-	err := options.ModifyDevEnvironment(callback)
+	err := initOpts.Run()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "initializing the Jenkins X platform")
 	}
-	if initOpts.Flags.NoTiller {
-		callback := func(env *v1.Environment) error {
-			env.Spec.TeamSettings.HelmTemplate = true
-			log.Info("Enabling helm template mode in the TeamSettings\n")
-			return nil
-		}
-		err = options.ModifyDevEnvironment(callback)
+
+	// update the domain if was modified during the initialization
+	domain := exposeController.Config.Domain
+	if domain == "" {
+		domain = initOpts.Flags.Domain
+	}
+	if domain == "" {
+		client, err := options.KubeClient()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "getting the kubernetes client")
 		}
-		initOpts.helm = nil
-	}
-
-	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
-		err = restartLocalTiller()
+		ingNamespace := initOpts.Flags.IngressNamespace
+		ingService := initOpts.Flags.IngressService
+		extIP := initOpts.Flags.ExternalIP
+		domain, err = options.GetDomain(client, domain,
+			options.Flags.Provider,
+			ingNamespace,
+			ingService,
+			extIP)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "getting a domain for ingress service %s/%s", ingNamespace, ingService)
 		}
-		initOpts.helm = options.helm
 	}
 
-	err = initOpts.Run()
-	if err != nil {
-		return errors.Wrap(err, "failed to initialize the jx")
+	// checking if the domain is by any chance empty and bail out
+	if domain == "" {
+		return fmt.Errorf("the installation cannot proceed with an empty domain. Please provide a domain in the %s option",
+			util.ColorInfo("domain"))
 	}
 
-	if initOpts.Flags.Domain != "" && options.Flags.Domain == "" {
-		options.Flags.Domain = initOpts.Flags.Domain
-	}
+	options.Flags.Domain = domain
+	exposeController.Config.Domain = domain
 
 	return nil
 }
@@ -766,7 +774,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 	requirementsFile := filepath.Join(gitOpsEnvDir, helm.RequirementsFileName)
 	secretsFile := filepath.Join(gitOpsEnvDir, helm.SecretsFileName)
 	valuesFile := filepath.Join(gitOpsEnvDir, helm.ValuesFileName)
-	err := helm.SaveRequirementsFile(requirementsFile, requirements)
+	err := helm.SaveFile(requirementsFile, requirements)
 	if err != nil {
 		return errors.Wrapf(err, "failed to save GitOps helm requirements file %s", requirementsFile)
 	}
@@ -1875,18 +1883,12 @@ func (options *InstallOptions) configureBuildPackMode() error {
 }
 
 func (options *InstallOptions) saveIngressConfig() (*kube.IngressConfig, error) {
-	helmConfig := &options.CreateEnvOptions.HelmValuesConfig
-	domain := helmConfig.ExposeController.Config.Domain
-	if domain == "" {
-		domain = options.InitOptions.Flags.Domain
-		helmConfig.ExposeController.Config.Domain = domain
-	}
-
 	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
 	tls, err := util.ParseBool(exposeController.Config.TLSAcme)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse TLS exposecontroller boolean %v", err)
 	}
+	domain := exposeController.Config.Domain
 	ic := kube.IngressConfig{
 		Domain:  domain,
 		TLS:     tls,
@@ -1934,11 +1936,12 @@ func (options *InstallOptions) saveClusterConfig() error {
 func (options *InstallOptions) configureJenkins(namespace string) error {
 	if !options.Flags.GitOpsMode {
 		if !options.Flags.Prow {
-			log.Info("Getting Jenkins API Token\n")
+			log.Info("Configure Jenkins API Token\n")
 			if isOpenShiftProvider(options.Flags.Provider) {
 				options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
 				options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
 				options.CreateJenkinsUserOptions.Username = "jenkins-admin"
+				options.CreateJenkinsUserOptions.Verbose = false
 				jenkinsSaToken, err := options.getCommandOutput("", "oc", "serviceaccounts", "get-token", "jenkins", "-n", namespace)
 				if err != nil {
 					return err
@@ -1952,6 +1955,7 @@ func (options *InstallOptions) configureJenkins(namespace string) error {
 					options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
 					options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
 					options.CreateJenkinsUserOptions.UseBrowser = true
+					options.CreateJenkinsUserOptions.Verbose = false
 					if options.BatchMode {
 						options.CreateJenkinsUserOptions.BatchMode = true
 						options.CreateJenkinsUserOptions.Headless = true
@@ -2572,4 +2576,24 @@ func (options *InstallOptions) saveAsConfigMap(name string, config interface{}) 
 		cm.Data = data
 		return nil
 	})
+}
+
+func (options *InstallOptions) configureTeamSettings() error {
+	initOpts := &options.InitOptions
+	callback := func(env *v1.Environment) error {
+		if env.Spec.TeamSettings.KubeProvider == "" {
+			env.Spec.TeamSettings.KubeProvider = options.Flags.Provider
+			log.Infof("Storing the kubernetes provider %s in the TeamSettings\n", env.Spec.TeamSettings.KubeProvider)
+		}
+		if initOpts.Flags.NoTiller {
+			env.Spec.TeamSettings.HelmTemplate = true
+			log.Info("Enabling helm template mode in the TeamSettings\n")
+		}
+		return nil
+	}
+	err := options.ModifyDevEnvironment(callback)
+	if err != nil {
+		return errors.Wrap(err, "updating the team setttings in the dev environment")
+	}
+	return nil
 }

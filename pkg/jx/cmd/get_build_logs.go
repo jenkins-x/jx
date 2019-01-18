@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"io"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -30,9 +32,10 @@ import (
 type GetBuildLogsOptions struct {
 	GetOptions
 
-	Tail        bool
-	Wait        bool
-	BuildFilter builds.BuildPodInfoFilter
+	Tail          bool
+	Wait          bool
+	BuildFilter   builds.BuildPodInfoFilter
+	CurrentFolder bool
 }
 
 var (
@@ -95,6 +98,7 @@ func NewCmdGetBuildLogs(f Factory, in terminal.FileReader, out terminal.FileWrit
 	cmd.Flags().StringVarP(&options.BuildFilter.Repository, "repo", "r", "", "Filters the build repository")
 	cmd.Flags().StringVarP(&options.BuildFilter.Branch, "branch", "", "", "Filters the branch")
 	cmd.Flags().StringVarP(&options.BuildFilter.Build, "build", "b", "", "The build number to view")
+	cmd.Flags().BoolVarP(&options.CurrentFolder, "current", "c", false, "Display logs using current folder as repo name, and parent folder as owner")
 
 	return cmd
 }
@@ -124,7 +128,7 @@ func (o *GetBuildLogsOptions) Run() error {
 			return err
 		}
 		names := []string{}
-		for k, _ := range jobMap {
+		for k := range jobMap {
 			names = append(names, k)
 		}
 		sort.Strings(names)
@@ -212,6 +216,21 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 	if err != nil {
 		log.Warnf("Failed to query pods %s\n", err)
 		return err
+	}
+
+	if o.CurrentFolder {
+		currentDirectory, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+
+		gitRepository, err := gits.NewGitCLI().Info(currentDirectory)
+		if err != nil {
+			return err
+		}
+
+		o.BuildFilter.Repository = gitRepository.Name
+		o.BuildFilter.Owner = gitRepository.Organisation
 	}
 
 	buildInfos := []*builds.BuildPodInfo{}

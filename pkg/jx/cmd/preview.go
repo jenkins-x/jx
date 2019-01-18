@@ -10,9 +10,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/users"
+
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -240,6 +242,12 @@ func (o *PreviewOptions) Run() error {
 			return fmt.Errorf("cannot create Git provider %v", err)
 		}
 
+		resolver := users.GitUserResolver{
+			GitProvider: gitProvider,
+			JXClient:    jxClient,
+			Namespace:   currentNs,
+		}
+
 		if prNum > 0 {
 			pullRequest, err = gitProvider.GetPullRequest(o.GitInfo.Organisation, o.GitInfo, prNum)
 			if err != nil {
@@ -250,38 +258,21 @@ func (o *PreviewOptions) Run() error {
 				log.Warn("Unable to get commits: " + err.Error() + "\n")
 			}
 			if pullRequest != nil {
-				author := pullRequest.Author
+				author, err := resolver.Resolve(pullRequest.Author)
+				if err != nil {
+					return err
+				}
+				author, err = resolver.UpdateUserFromPRAuthor(author, pullRequest, commits)
+				if err != nil {
+					// This isn't fatal, just nice to have!
+					log.Warnf("Unable to update user %s from %s because %v", author.Name, o.PullRequestName, err)
+				}
 				if author != nil {
-					if author.Email == "" {
-						log.Info("PullRequest author email is empty\n")
-						for _, commit := range commits {
-							if commit.Author != nil && pullRequest.Author.Login == commit.Author.Login {
-								log.Info("Found commit author match for: " + author.Login + " with email address: " + commit.Author.Email + "\n")
-								author.Email = commit.Author.Email
-								break
-							}
-						}
-					}
-
-					if author.Email != "" {
-						userDetailService := kube.NewUserDetailService(jxClient, ns)
-						err := userDetailService.CreateOrUpdateUser(&v1.UserDetails{
-							Login:     author.Login,
-							Email:     author.Email,
-							Name:      author.Name,
-							URL:       author.URL,
-							AvatarURL: author.AvatarURL,
-						})
-						if err != nil {
-							log.Warnf("An error happened attempting to CreateOrUpdateUser in namespace %s: %s\n", ns, err)
-						}
-					}
-
 					user = &v1.UserSpec{
-						Username: author.Login,
-						Name:     author.Name,
-						ImageURL: author.AvatarURL,
-						LinkURL:  author.URL,
+						Username: author.Spec.Login,
+						Name:     author.Spec.Name,
+						ImageURL: author.Spec.AvatarURL,
+						LinkURL:  author.Spec.URL,
 					}
 				}
 			}
@@ -297,6 +288,18 @@ func (o *PreviewOptions) Run() error {
 				buildStatus = status.State
 				buildStatusUrl = status.TargetURL
 			}
+		}
+	}
+
+	if o.ReleaseName == "" {
+		_, noTiller, helmTemplate, err := o.TeamHelmBin()
+		if err != nil {
+			return err
+		}
+		if noTiller || helmTemplate {
+			o.ReleaseName = "preview"
+		} else {
+			o.ReleaseName = o.Namespace
 		}
 	}
 
@@ -399,6 +402,9 @@ func (o *PreviewOptions) Run() error {
 		env = &v1.Environment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: o.Name,
+				Annotations: map[string]string{
+					kube.AnnotationReleaseName: o.ReleaseName,
+				},
 			},
 			Spec: v1.EnvironmentSpec{
 				Namespace:         o.Namespace,
@@ -425,18 +431,6 @@ func (o *PreviewOptions) Run() error {
 	err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, env, ns)
 	if err != nil {
 		return err
-	}
-
-	if o.ReleaseName == "" {
-		_, noTiller, helmTemplate, err := o.TeamHelmBin()
-		if err != nil {
-			return err
-		}
-		if noTiller || helmTemplate {
-			o.ReleaseName = "preview"
-		} else {
-			o.ReleaseName = o.Namespace
-		}
 	}
 
 	domain, err := kube.GetCurrentDomain(kubeClient, ns)

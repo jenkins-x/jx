@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -20,9 +21,12 @@ func AddRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, con
 	}
 	requiredOrg, requiredRepo := url.Organisation, url.Name
 	if _, ok := bp.Orgs[requiredOrg]; !ok {
-		bp.Orgs[requiredOrg] = config.Org{
-			Repos: make(map[string]config.Repo, 0),
-		}
+		bp.Orgs[requiredOrg] = config.Org{}
+	}
+	if bp.Orgs[requiredOrg].Repos == nil {
+		org := bp.Orgs[requiredOrg]
+		org.Repos = make(map[string]config.Repo, 0)
+		bp.Orgs[requiredOrg] = org
 	}
 	if _, ok := bp.Orgs[requiredOrg].Repos[requiredRepo]; !ok {
 		bp.Orgs[requiredOrg].Repos[requiredRepo] = config.Repo{
@@ -44,6 +48,10 @@ func AddRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, con
 	case Environment:
 		if !util.Contains(contexts, PromotionBuild) {
 			contexts = append(contexts, PromotionBuild)
+		}
+	case Protection:
+		if !util.Contains(contexts, context) {
+			contexts = append(contexts, context)
 		}
 	default:
 		return fmt.Errorf("unknown Prow config kind %s", kind)

@@ -224,6 +224,9 @@ const (
 	// AnnotationIsDefaultStorageClass used to indicate a storageclass is default
 	AnnotationIsDefaultStorageClass = "storageclass.kubernetes.io/is-default-class"
 
+	// AnnotationReleaseName is the name of the annotation that stores the release name in the preview environment
+	AnnotationReleaseName = "jenkins.io/chart-release"
+
 	// SecretDataUsername the username in a Secret/Credentials
 	SecretDataUsername = "username"
 
