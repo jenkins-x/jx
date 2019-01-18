@@ -243,6 +243,9 @@ const (
 	JenkinsBearTokenField = "jenkins-bearer-token"
 
 	AUTH = "auth"
+
+	Region = "Region"
+
 )
 
 var (

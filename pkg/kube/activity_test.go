@@ -2,6 +2,8 @@ package kube_test
 
 import (
 	"fmt"
+	jxfake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
+	k8s_v1 "k8s.io/api/core/v1"
 	"strconv"
 	"testing"
 	"time"
@@ -14,7 +16,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
+	kube_mocks "k8s.io/client-go/kubernetes/fake"
 )
+
 
 type MockPipelineActivityInterface struct {
 	Activities map[string]*v1.PipelineActivity
@@ -112,9 +116,26 @@ func getPipelines(activities typev1.PipelineActivityInterface) []*v1.PipelineAct
 
 func TestCreateOrUpdateActivities(t *testing.T) {
 	t.Parallel()
-	activities := &MockPipelineActivityInterface{
-		Activities: map[string]*v1.PipelineActivity{},
+
+	nsObj := &k8s_v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "jx-testing",
+			Namespace: "testing_ns",
+		},
 	}
+
+	secret := &k8s_v1.Secret{}
+	mockKubeClient := kube_mocks.NewSimpleClientset(nsObj, secret)
+
+	ingressConfig := &k8s_v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kube.ConfigMapIngressConfig,
+		},
+		Data: map[string]string{"key1": "value1", "domain": "test-domain", "config.yml": ""},
+	}
+
+	mockKubeClient.CoreV1().ConfigMaps(nsObj.Namespace).Create(ingressConfig)
+	jxClient := jxfake.NewSimpleClientset()
 
 	const (
 		expectedName        = "demo-2"
@@ -130,7 +151,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 	}
 
 	for i := 1; i < 3; i++ {
-		a, _, err := key.GetOrCreate(activities)
+		a, _, err := key.GetOrCreate(jxClient,nsObj.Namespace)
 		assert.Nil(t, err)
 		assert.Equal(t, expectedName, a.Name)
 		spec := &a.Spec
@@ -155,7 +176,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 		return nil
 	}
 
-	err := promoteKey.OnPromotePullRequest(activities, promotePullRequestStarted)
+	err := promoteKey.OnPromotePullRequest(jxClient, nsObj.Namespace, promotePullRequestStarted)
 	assert.Nil(t, err)
 
 	promoteStarted := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromoteUpdateStep) error {
@@ -165,11 +186,11 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 		return nil
 	}
 
-	err = promoteKey.OnPromoteUpdate(activities, promoteStarted)
+	err = promoteKey.OnPromoteUpdate(jxClient, nsObj.Namespace, promoteStarted)
 	assert.Nil(t, err)
 
 	// lets validate that we added a PromotePullRequest step
-	a := activities.Activities[expectedName]
+	a, err := jxClient.JenkinsV1().PipelineActivities(nsObj.Namespace).Get(expectedName, metav1.GetOptions{})
 	assert.NotNil(t, a, "should have a PipelineActivity for %s", expectedName)
 	steps := a.Spec.Steps
 	assert.Equal(t, 2, len(steps), "Should have 2 steps!")
