@@ -495,7 +495,7 @@ func (o *StepChangelogOptions) Run() error {
 				Version:           cleanVersion,
 			},
 		}
-		a, created, err := key.GetOrCreate(activities)
+		a, created, err := key.GetOrCreate(jxClient, o.currentNamespace)
 		if err == nil && a != nil && !created {
 			_, err = activities.Update(a)
 			if err != nil {
@@ -524,13 +524,20 @@ func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Co
 	if err != nil {
 		log.Warnf("Failed to enrich commits with issues: %v\n", err)
 	}
+	var authorDetails, committerDetails v1.UserDetails
+	if author != nil {
+		authorDetails = author.Spec
+	}
+	if committer != nil {
+		committerDetails = committer.Spec
+	}
 	commitSummary := v1.CommitSummary{
 		Message:   commit.Message,
 		URL:       url,
 		SHA:       sha,
-		Author:    &author.Spec,
+		Author:    &authorDetails,
 		Branch:    branch,
-		Committer: &committer.Spec,
+		Committer: &committerDetails,
 	}
 	err = o.addIssuesAndPullRequests(spec, &commitSummary, commit)
 

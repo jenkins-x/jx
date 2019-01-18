@@ -58,7 +58,7 @@ func NewCmdDelete(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	cmd.AddCommand(NewCmdDeleteChat(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeleteContext(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeleteDevPod(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteEks(f, in, out, errOut))
+	cmd.AddCommand(newCmdDeleteEks(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeleteEnv(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeleteGit(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeleteJenkins(f, in, out, errOut))

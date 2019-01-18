@@ -90,6 +90,7 @@ func TestInstallGitOps(t *testing.T) {
 	o.Flags.NoDefaultEnvironments = true
 	o.Flags.DisableSetKubeContext = true
 	o.Flags.EnvironmentGitOwner = testOrg
+	o.Flags.Domain = "mytestdomain"
 	o.InitOptions.Flags.SkipTiller = true
 	o.InitOptions.Flags.NoTiller = true
 	o.InitOptions.Flags.SkipIngress = true

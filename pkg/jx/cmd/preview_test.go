@@ -40,6 +40,7 @@ import (
 // Constants for some test data to be used.
 const (
 	application    = "test-app"
+	releaseName    = "test-app-release-name"
 	name           = "test-app-name"
 	namespace      = "jx"
 	gitHubLink     = "https://github.com/an-org/a-repo"
@@ -48,7 +49,6 @@ const (
 	prAuthor       = "the-pr-author"
 	prOwner        = "the-pr-owner"
 	prEmail        = "the-pr-owner@organisation.com"
-	userK8sID      = "the-pr-owner.organisation.com"
 )
 
 func TestGetPreviewValuesConfig(t *testing.T) {
@@ -140,8 +140,6 @@ preview:
 // functions).
 // TODO: Refactor the implementation & test so the various stages of creating a preview env. can be tested individually.
 func TestRun_CreateNewPreviewEnv(t *testing.T) {
-	t.Parallel()
-
 	RegisterMockTestingT(t)
 
 	setupEnvironment()
@@ -179,6 +177,7 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 				BatchMode: true,
 			},
 			Application: application,
+			ReleaseName: releaseName,
 		},
 		Namespace:    namespace,
 		DevNamespace: "jx",
@@ -282,6 +281,7 @@ func validatePreviewEnvironment(t *testing.T, cs *cs_fake.Clientset) {
 	assert.NotNil(t, previewEnv)
 	assert.Equal(t, namespace, previewEnv.Namespace)
 	assert.Equal(t, name, previewEnv.Name)
+	assert.Equal(t, releaseName, previewEnv.Annotations[kube.AnnotationReleaseName])
 	//Validate preview environment spec:
 	assert.NotNil(t, previewEnv.Spec)
 	assert.Equal(t, v1.EnvironmentKindTypePreview, previewEnv.Spec.Kind)
@@ -305,7 +305,7 @@ func validatePreviewEnvironment(t *testing.T, cs *cs_fake.Clientset) {
 func validateUser(t *testing.T, cs *cs_fake.Clientset) {
 	//Validate UserDetailsService updates:
 	users := cs.JenkinsV1().Users(namespace)
-	user, err := users.Get(userK8sID, metav1.GetOptions{})
+	user, err := users.Get(prAuthor, metav1.GetOptions{})
 	assert.NoError(t, err, "User should have been created.")
 	assert.NotNil(t, user)
 	assert.Equal(t, prEmail, user.Spec.Email)
