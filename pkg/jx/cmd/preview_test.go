@@ -49,7 +49,6 @@ const (
 	prAuthor       = "the-pr-author"
 	prOwner        = "the-pr-owner"
 	prEmail        = "the-pr-owner@organisation.com"
-	userK8sID      = "the-pr-owner.organisation.com"
 )
 
 func TestGetPreviewValuesConfig(t *testing.T) {
@@ -141,8 +140,6 @@ preview:
 // functions).
 // TODO: Refactor the implementation & test so the various stages of creating a preview env. can be tested individually.
 func TestRun_CreateNewPreviewEnv(t *testing.T) {
-	t.Parallel()
-
 	RegisterMockTestingT(t)
 
 	setupEnvironment()
@@ -308,7 +305,7 @@ func validatePreviewEnvironment(t *testing.T, cs *cs_fake.Clientset) {
 func validateUser(t *testing.T, cs *cs_fake.Clientset) {
 	//Validate UserDetailsService updates:
 	users := cs.JenkinsV1().Users(namespace)
-	user, err := users.Get(userK8sID, metav1.GetOptions{})
+	user, err := users.Get(prAuthor, metav1.GetOptions{})
 	assert.NoError(t, err, "User should have been created.")
 	assert.NotNil(t, user)
 	assert.Equal(t, prEmail, user.Spec.Email)
