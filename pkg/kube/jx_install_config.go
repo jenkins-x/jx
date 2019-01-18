@@ -12,18 +12,34 @@ type JXInstallConfig struct {
 	CA     []byte `structs:"ca.crt" yaml:"ca.crt" json:"ca.crt"`
 }
 
+// RememberRegion remembers cloud providers region in Kubernetes Config Map (jx-install-config), so jx can access this
+// information later. Usually executed when provisioning new Kubernetes cluster.
+//
+// If jx-install-config config map doesn't exist, it will be created. If region value is already saved, it will be
+// overridden by this function call.
 func RememberRegion(kubeClient kubernetes.Interface, namespace string, region string) error {
 	_, err := DefaultModifyConfigMap(kubeClient, namespace, ConfigMapNameJXInstallConfig, func(configMap *v1.ConfigMap) error {
 		configMap.Data[Region] = region
 		return nil
 	}, nil)
 	if err != nil {
-		return errors.Wrapf(err, "saving AWS region in ConfigMap %s", ConfigMapNameJXInstallConfig)
-	} else {
-		return nil
+		return errors.Wrapf(err, "saving cloud region in ConfigMap %s", ConfigMapNameJXInstallConfig)
 	}
+	return nil
 }
 
+// ReadRegion allows to read cloud region from Config Map (jx-install-config). Region value is usually written using
+// RememberRegion function.
+//
+// Empty string is returned if:
+// - region value doesn't exist
+// - has empty value
+// - jx-install-config config map doesn't exist
+// - kube client returns error on Config Map read operation
+//
+// Error is returned if:
+// - jx-install-config config map doesn't exist
+// - kube client returns error on Config Map read operation
 func ReadRegion(kubeClient kubernetes.Interface, namespace string) (string, error) {
 	data, err := GetConfigMapData(kubeClient, ConfigMapNameJXInstallConfig, namespace)
 	if err != nil {
