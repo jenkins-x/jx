@@ -1,17 +1,19 @@
+// +build integration
+
 package cmd_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
-	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	"github.com/jenkins-x/jx/pkg/tests"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/tests"
+
 	"github.com/stretchr/testify/assert"
 )
-
 
 func TestStepStash(t *testing.T) {
 	t.Parallel()
@@ -26,7 +28,7 @@ func TestStepStash(t *testing.T) {
 	o.Pattern = []string{testData}
 	o.ProjectGitURL = "https://github.com/jenkins-x/dummy-repo.git"
 	o.ProjectBranch = "master"
-	cmd.ConfigureTestOptions(&o.CommonOptions, &gits.GitFake{},helm_test.NewMockHelmer())
+	cmd.ConfigureTestOptions(&o.CommonOptions, &gits.GitFake{}, helm_test.NewMockHelmer())
 
 	err = o.Run()
 	assert.NoError(t, err)
