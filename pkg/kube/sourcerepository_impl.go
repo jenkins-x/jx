@@ -1,10 +1,12 @@
-package sourcerepository
+package kube
 
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"reflect"
 )
 
 //SourceRepositoryService is the implementation of SourceRepoer
@@ -21,12 +23,57 @@ func NewSourceRepositoryService(client versioned.Interface, namespace string) So
 	}
 }
 
-//CreateSourceRepository creates a repo. If a repo already exists, it will return an error
+// CreateOrUpdateSourceRepository creates a repo if it doesn't exist or updates it if the URL has changed
+func (service *SourceRepositoryService) CreateOrUpdateSourceRepository(name, organisation, providerUrl string) error {
+	//FIXME: repo is not always == name, need to find a better value for ObjectMeta.Name!
+
+	// for now lets convert to a safe name using the organisation + repo name
+	resourceName := ToValidName(organisation + "-" + name)
+
+	repositories := service.client.JenkinsV1().SourceRepositories(service.namespace)
+	description := fmt.Sprintf("Imported application for %s/%s", organisation, name)
+
+	_, err := repositories.Create(&v1.SourceRepository{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: resourceName,
+		},
+		Spec: v1.SourceRepositorySpec{
+			Description: description,
+			Org:         organisation,
+			Provider:    providerUrl,
+			Repo:        name,
+		},
+	})
+	if err != nil {
+		// lets see if it already exists
+		sr, err := repositories.Get(resourceName, metav1.GetOptions{})
+		if err != nil {
+		  return errors.Wrapf(err, "failed to get SourceRepository %s after failing to create a new one", resourceName)
+		}
+		copy := *sr
+		copy.Spec.Description = description
+		copy.Spec.Org = organisation
+		copy.Spec.Provider = providerUrl
+		copy.Spec.Repo = name
+		if !reflect.DeepEqual(&copy.Spec, sr.Spec) {
+			_, err = repositories.Update(&copy)
+			if err != nil {
+				return errors.Wrapf(err, "failed to update SourceRepository %s", resourceName)
+			}
+		}
+	}
+	return nil
+}
+
+// CreateSourceRepository creates a repo. If a repo already exists, it will return an error
 func (service *SourceRepositoryService) CreateSourceRepository(name, organisation, providerUrl string) error {
 	//FIXME: repo is not always == name, need to find a better value for ObjectMeta.Name!
+	// for now lets convert to a safe name using the organisation + repo name
+	resourceName := ToValidName(organisation + "-" + name)
+
 	_, err := service.client.JenkinsV1().SourceRepositories(service.namespace).Create(&v1.SourceRepository{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name: resourceName,
 		},
 		Spec: v1.SourceRepositorySpec{
 			Description: fmt.Sprintf("Imported application for %s/%s", organisation, name),

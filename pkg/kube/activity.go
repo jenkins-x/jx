@@ -3,7 +3,6 @@ package kube
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/sourcerepository"
 	"reflect"
 	"strconv"
 	"strings"
@@ -163,22 +162,13 @@ func GenerateBuildNumber(activities typev1.PipelineActivityInterface, pipelines 
 	return build, answer, nil
 }
 
-func createSourcerepositoryResourceIfMissing(jxClient versioned.Interface, ns string, activity *v1.PipelineActivity) error {
-	//FIXME: this relies on a bad assumption that the name of the sourcerepositories CRD entry is always equal to the repository name
-
-	srs := sourcerepository.NewSourceRepositoryService(jxClient, ns)
+func createOrUpdateSourceRepositoryResource(jxClient versioned.Interface, ns string, activity *v1.PipelineActivity) error {
+	srs := NewSourceRepositoryService(jxClient, ns)
 	if srs == nil {
 		return fmt.Errorf("failed to create sourcerepository service")
 	}
 
-	_, err := srs.GetSourceRepository(activity.RepositoryName())
-
-	if err != nil {
-		// sourcerepository for this project does not exist yet, so create one
-		err = srs.CreateSourceRepository(
-			activity.RepositoryName(), activity.Spec.GitOwner, activity.Spec.GitURL)
-	}
-	return err
+	return srs.CreateOrUpdateSourceRepository(activity.RepositoryName(), activity.Spec.GitOwner, activity.Spec.GitURL)
 }
 
 // GetOrCreate gets or creates the pipeline activity
@@ -205,9 +195,8 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 	oldSpec := a.Spec
 	oldLabels := a.Labels
 
-	// lazy create missing sourcerepository entries
 	if a.Labels == nil ||  a.Labels[v1.LabelSourceRepository] == "" {
-		createSourcerepositoryResourceIfMissing(jxClient, ns, a)
+		createOrUpdateSourceRepositoryResource(jxClient, ns, a)
 	}
 
 	updateActivity(k, a)
