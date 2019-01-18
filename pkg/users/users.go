@@ -35,10 +35,7 @@ func GetUsers(jxClient versioned.Interface, ns string) (map[string]*jenkinsv1.Us
 
 // CreateUser creates a new default User
 func CreateUser(ns string, login string, name string, email string) *jenkinsv1.User {
-	id := login
-	if email != "" {
-		id = kube.EmailToK8sID(email)
-	}
+	id := kube.ToValidName(login)
 	user := &jenkinsv1.User{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      id,
