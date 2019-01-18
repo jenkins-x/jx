@@ -50,7 +50,7 @@ func (o *CommonOptions) getPluginCommandGroups(verifier extensions.PathVerifier)
 	// Managed plugins
 	managedPluginsEnabled := o.isManagedPluginsEnabled()
 	if managedPluginsEnabled {
-		jxClient, ns, err := o.CreateJXClient()
+		jxClient, ns, err := o.JXClientAndDevNamespace()
 		if err != nil {
 			return nil, false, err
 		}

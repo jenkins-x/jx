@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/collector"
-	"github.com/jenkins-x/jx/pkg/gits"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/collector"
+	"github.com/jenkins-x/jx/pkg/gits"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -153,7 +154,7 @@ func (o *StepStashOptions) Run() error {
 		return errors.Wrapf(err, "failed to create the collector for storage settings %s", o.StorageLocation.Description())
 	}
 
-	client, ns, err := o.CreateJXClient()
+	client, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return errors.Wrap(err, "cannot create the JX client")
 	}

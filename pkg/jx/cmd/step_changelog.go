@@ -565,7 +565,7 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 	}
 	message := fullCommitMessageText(rawCommit)
 	matches := regex.FindAllStringSubmatch(message, -1)
-	jxClient, ns, err := o.CreateJXClient()
+	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
