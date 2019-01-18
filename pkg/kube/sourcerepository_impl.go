@@ -24,7 +24,7 @@ func NewSourceRepositoryService(client versioned.Interface, namespace string) So
 }
 
 // CreateOrUpdateSourceRepository creates a repo if it doesn't exist or updates it if the URL has changed
-func (service *SourceRepositoryService) CreateOrUpdateSourceRepository(name, organisation, providerUrl string) error {
+func (service *SourceRepositoryService) CreateOrUpdateSourceRepository(name, organisation, providerURL string) error {
 	//FIXME: repo is not always == name, need to find a better value for ObjectMeta.Name!
 
 	// for now lets convert to a safe name using the organisation + repo name
@@ -40,7 +40,7 @@ func (service *SourceRepositoryService) CreateOrUpdateSourceRepository(name, org
 		Spec: v1.SourceRepositorySpec{
 			Description: description,
 			Org:         organisation,
-			Provider:    providerUrl,
+			Provider:    providerURL,
 			Repo:        name,
 		},
 	})
@@ -53,7 +53,7 @@ func (service *SourceRepositoryService) CreateOrUpdateSourceRepository(name, org
 		copy := *sr
 		copy.Spec.Description = description
 		copy.Spec.Org = organisation
-		copy.Spec.Provider = providerUrl
+		copy.Spec.Provider = providerURL
 		copy.Spec.Repo = name
 		if !reflect.DeepEqual(&copy.Spec, sr.Spec) {
 			_, err = repositories.Update(&copy)
@@ -66,7 +66,7 @@ func (service *SourceRepositoryService) CreateOrUpdateSourceRepository(name, org
 }
 
 // CreateSourceRepository creates a repo. If a repo already exists, it will return an error
-func (service *SourceRepositoryService) CreateSourceRepository(name, organisation, providerUrl string) error {
+func (service *SourceRepositoryService) CreateSourceRepository(name, organisation, providerURL string) error {
 	//FIXME: repo is not always == name, need to find a better value for ObjectMeta.Name!
 	// for now lets convert to a safe name using the organisation + repo name
 	resourceName := ToValidName(organisation + "-" + name)
@@ -78,7 +78,7 @@ func (service *SourceRepositoryService) CreateSourceRepository(name, organisatio
 		Spec: v1.SourceRepositorySpec{
 			Description: fmt.Sprintf("Imported application for %s/%s", organisation, name),
 			Org:         organisation,
-			Provider:    providerUrl,
+			Provider:    providerURL,
 			Repo:        name,
 		},
 	})
