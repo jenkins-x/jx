@@ -99,7 +99,7 @@ func (o *CreateSpringOptions) Run() error {
 		return err
 	}
 
-	details, err := o.GetGitRepositoryDetails()
+	details, err := o.getGitRepositoryDetails()
 	if err != nil {
 		return err
 	}
@@ -140,12 +140,12 @@ func (o *CreateSpringOptions) Run() error {
 	}
 	log.Infof("Created Spring Boot project at %s\n", util.ColorInfo(outDir))
 
-	o.ConfigureImportOptions(details)
+	o.configureImportOptions(details)
 
 	return o.ImportCreatedProject(outDir)
 }
 
-func (o *CreateSpringOptions) ConfigureImportOptions(repoData *gits.CreateRepoData) {
+func (o *CreateSpringOptions)configureImportOptions(repoData *gits.CreateRepoData) {
 	// configure the import options based on previous answers
 	importOptions := &o.ImportOptions
 	importOptions.AppName = repoData.RepoName
@@ -155,7 +155,7 @@ func (o *CreateSpringOptions) ConfigureImportOptions(repoData *gits.CreateRepoDa
 	importOptions.GitDetails = *repoData
 }
 
-func (o *CreateSpringOptions) GetGitRepositoryDetails() (*gits.CreateRepoData, error) {
+func (o *CreateSpringOptions) getGitRepositoryDetails() (*gits.CreateRepoData, error) {
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return nil, err
