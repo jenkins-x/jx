@@ -9,14 +9,17 @@ import (
 )
 
 func TestDeleteAppForGitOps(t *testing.T) {
-	testEnv, err := prepareDevEnv(t, true)
+	testEnv, err := prepareAppTests(t, true)
+	defer func() {
+		err := cleanupAppPRTests(t, testEnv)
+		assert.NoError(t, err)
+	}()
 	assert.NoError(t, err)
 
 	o := &cmd.DeleteAppOptions{
-		CommonOptions:    *testEnv.CommonOptions,
-		FakePullRequests: testEnv.FakePullRequests,
-		GitOps:           true,
-		DevEnv:           testEnv.DevEnv,
+		CommonOptions: *testEnv.CommonOptions,
+		GitOps:        true,
+		DevEnv:        testEnv.DevEnv,
 	}
 	o.Args = []string{"example-app"}
 	err = o.Run()

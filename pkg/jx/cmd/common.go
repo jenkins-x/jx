@@ -95,6 +95,7 @@ type CommonOptions struct {
 	vaultOperatorClient    vaultoperatorclient.Interface
 	modifyDevEnvironmentFn ModifyDevEnvironmentFn
 	modifyEnvironmentFn    ModifyEnvironmentFn
+	environmentsDir        string
 }
 
 type ServerFlags struct {
@@ -906,6 +907,17 @@ func (o *CommonOptions) GetErr() io.Writer {
 	return o.Err
 }
 
+func (o *CommonOptions) EnvironmentsDir() (string, error) {
+	if o.environmentsDir == "" {
+		var err error
+		o.environmentsDir, err = util.EnvironmentsDir()
+		if err != nil {
+			return "", err
+		}
+	}
+	return o.environmentsDir, nil
+}
+
 // SeeAlsoText returns text to describe which other commands to look at which are related to the current command
 func SeeAlsoText(commands ...string) string {
 	if len(commands) == 0 {
@@ -914,7 +926,7 @@ func SeeAlsoText(commands ...string) string {
 
 	var sb strings.Builder
 	sb.WriteString("\nSee Also:\n\n")
-	
+
 	for _, command := range commands {
 		u := "https://jenkins-x.io/commands/" + strings.Replace(command, " ", "_", -1)
 		sb.WriteString(fmt.Sprintf("* %s : [%s](%s)\n", command, u, u))

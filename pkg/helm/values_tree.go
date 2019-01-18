@@ -14,7 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 )
 
-var defaultIgnores = []string{
+var DefaultValuesTreeIgnores = []string{
 	"templates/*",
 }
 
@@ -23,7 +23,7 @@ var defaultIgnores = []string{
 // creating a nested key structure that matches the directory structure.
 // Any keys used that match files with the same name in the directory (
 // and have empty values) will be inlined as block scalars.
-// Standard UNIX glob patterns can be passed to ignore directories.
+// Standard UNIX glob patterns can be passed to IgnoreFile directories.
 func GenerateValues(dir string, ignores []string, verbose bool) ([]byte, error) {
 	info, err := os.Stat(dir)
 	if err != nil {
@@ -34,7 +34,7 @@ func GenerateValues(dir string, ignores []string, verbose bool) ([]byte, error) 
 		return nil, fmt.Errorf("%s is not a directory", dir)
 	}
 	if ignores == nil {
-		ignores = defaultIgnores
+		ignores = DefaultValuesTreeIgnores
 	}
 	files := make(map[string]map[string]string)
 	values := make(map[string]interface{})
@@ -43,8 +43,8 @@ func GenerateValues(dir string, ignores []string, verbose bool) ([]byte, error) 
 		if err != nil {
 			return err
 		}
-		// Check if should ignore the path
-		if ignore, err := ignore(rPath, ignores); err != nil {
+		// Check if should IgnoreFile the path
+		if ignore, err := util.IgnoreFile(rPath, ignores); err != nil {
 			return err
 		} else if !ignore {
 			rDir, file := filepath.Split(rPath)
@@ -65,9 +65,6 @@ func GenerateValues(dir string, ignores []string, verbose bool) ([]byte, error) 
 					values[rDir] = v
 				} else {
 					// for other files, just store a reference
-					if _, ok := files[rDir]; !ok {
-						files[rDir] = make(map[string]string)
-					}
 					files[rDir][file] = path
 				}
 			}
@@ -88,10 +85,19 @@ func GenerateValues(dir string, ignores []string, verbose bool) ([]byte, error) 
 		return nil, err
 	}
 
+	// externalFileHandler is used to read any inline any files that match into the values.yaml
+	externalFileHandler := func(path string, element map[string]interface{}, key string) error {
+		b, err := ioutil.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		element[key] = string(b)
+		return nil
+	}
 	for p, v := range values {
 		// First, do file substitution - but only if any files were actually found
 		if dirFiles := files[p]; dirFiles != nil && len(dirFiles) > 0 {
-			err := recurse(v, dirFiles, "$")
+			err := HandleExternalFileRefs(v, dirFiles, "", externalFileHandler)
 			if err != nil {
 				return nil, err
 			}
@@ -130,25 +136,32 @@ func GenerateValues(dir string, ignores []string, verbose bool) ([]byte, error) 
 	return yaml.Marshal(rootValues)
 }
 
-func recurse(element interface{}, files map[string]string, jsonPath string) error {
+// HandleExternalFileRefs recursively scans the element map structure,
+// looking for nested maps. If it finds keys that match any key-value pair in possibles it will call the handler.
+// The jsonPath is used for referencing the path in the map structure when reporting errors.
+func HandleExternalFileRefs(element interface{}, possibles map[string]string, jsonPath string,
+	handler func(path string, element map[string]interface{}, key string) error) error {
+	if jsonPath == "" {
+		// set zero value
+		jsonPath = "$"
+	}
 	if e, ok := element.(map[string]interface{}); ok {
 		for k, v := range e {
-			if path, ok := files[k]; ok {
+			if paths, ok := possibles[k]; ok {
 				if v == nil || util.IsZeroOfUnderlyingType(v) {
 					// There is a filename in the directory structure that matches this key, and it has no value,
-					// so we assign it
-					b, err := ioutil.ReadFile(path)
+					// so we handle it
+					err := handler(paths, e, k)
 					if err != nil {
 						return err
 					}
-					e[k] = string(b)
 				} else {
 					return fmt.Errorf("value at %s must be empty but is %v", jsonPath, v)
 				}
 			} else {
 				// keep on recursing
 				jsonPath = fmt.Sprintf("%s.%s", jsonPath, k)
-				err := recurse(v, files, jsonPath)
+				err := HandleExternalFileRefs(v, possibles, jsonPath, handler)
 				if err != nil {
 					return err
 				}
@@ -157,15 +170,4 @@ func recurse(element interface{}, files map[string]string, jsonPath string) erro
 	}
 	// If it's not an object, we can't do much with it
 	return nil
-}
-
-func ignore(path string, ignores []string) (bool, error) {
-	for _, ignore := range ignores {
-		if matched, err := filepath.Match(ignore, path); err != nil {
-			return false, err
-		} else if matched {
-			return true, nil
-		}
-	}
-	return false, nil
 }

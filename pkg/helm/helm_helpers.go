@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/client-go/kubernetes"
@@ -241,32 +240,20 @@ func LoadValuesFile(fileName string) (map[string]interface{}, error) {
 }
 
 // LoadTemplatesDir loads the files in the templates dir or creates empty map if none exist
-func LoadTemplatesDir(dirName string) (map[string]map[string]interface{}, error) {
+func LoadTemplatesDir(dirName string) (map[string]string, error) {
 	exists, err := util.DirExists(dirName)
 	if err != nil {
 		return nil, err
 	}
-	answer := make(map[string]map[string]interface{})
+	answer := make(map[string]string)
 	if exists {
 		files, err := ioutil.ReadDir(dirName)
 		if err != nil {
 			return nil, err
 		}
 		for _, f := range files {
-			name := f.Name()
-			// ignore files like .gitignore or README.md etc
-			if !strings.HasSuffix(name, ".yaml") && !strings.HasSuffix(name, ".yml") {
-				continue
-			}
-			data, err := ioutil.ReadFile(name)
-			if err != nil {
-				return nil, err
-			}
-			v, err := LoadValues(data)
-			if err != nil {
-				return nil, err
-			}
-			answer[name] = v
+			filename, _ := filepath.Split(f.Name())
+			answer[filename] = f.Name()
 		}
 	}
 	return answer, nil
@@ -297,18 +284,6 @@ func SaveFile(fileName string, contents interface{}) error {
 		return err
 	}
 	return ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
-}
-
-// SaveDir saves contents (a pointer to a map of data structure where the key is the file name) to a dir
-func SaveDir(dirName string, contents map[string]map[string]interface{}) error {
-	for k, v := range contents {
-		fileName := filepath.Join(dirName, k)
-		err := SaveFile(fileName, v)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func LoadChartName(chartFile string) (string, error) {

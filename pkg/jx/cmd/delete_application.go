@@ -282,7 +282,7 @@ func (o *DeleteApplicationOptions) deleteApplicationFromEnvironment(env *v1.Envi
 	message := "The command `jx delete application` was run by " + username + " and it generated this Pull Request"
 
 	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
-		templates map[string]map[string]interface{}) error {
+		templates map[string]string, dir string) error {
 		requirements.RemoveApplication(applicationName)
 		return nil
 	}

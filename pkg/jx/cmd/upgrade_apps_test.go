@@ -13,7 +13,11 @@ import (
 )
 
 func TestUpgradeAppsForGitOps(t *testing.T) {
-	testEnv, err := prepareDevEnv(t, true)
+	testEnv, err := prepareAppTests(t, true)
+	defer func() {
+		err := cleanupAppPRTests(t, testEnv)
+		assert.NoError(t, err)
+	}()
 	assert.NoError(t, err)
 
 	// Now let's merge the
@@ -22,12 +26,11 @@ func TestUpgradeAppsForGitOps(t *testing.T) {
 		AddOptions: cmd.AddOptions{
 			CommonOptions: *testEnv.CommonOptions,
 		},
-		FakePullRequests: testEnv.FakePullRequests,
-		Version:          "0.0.1",
-		Alias:            "example-alias",
-		Repo:             "http://chartmuseum.jenkins-x.io",
-		GitOps:           true,
-		DevEnv:           testEnv.DevEnv,
+		Version: "0.0.1",
+		Alias:   "example-alias",
+		Repo:    "http://chartmuseum.jenkins-x.io",
+		GitOps:  true,
+		DevEnv:  testEnv.DevEnv,
 	}
 	o.Args = []string{"example-app"}
 

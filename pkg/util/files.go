@@ -3,13 +3,14 @@ package util
 import (
 	"crypto/rand"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"mime"
 	"os"
 	"path/filepath"
 	"strconv"
+
+	"github.com/pkg/errors"
 )
 
 const (
@@ -397,4 +398,16 @@ func ContentTypeForFileName(name string) string {
 		}
 	}
 	return answer
+}
+
+// IgnoreFile returns true if the path matches any of the ignores. The match is the same as filepath.Match.
+func IgnoreFile(path string, ignores []string) (bool, error) {
+	for _, ignore := range ignores {
+		if matched, err := filepath.Match(ignore, path); err != nil {
+			return false, err
+		} else if matched {
+			return true, nil
+		}
+	}
+	return false, nil
 }

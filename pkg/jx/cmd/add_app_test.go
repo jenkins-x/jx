@@ -17,20 +17,23 @@ import (
 )
 
 func TestAddAppForGitOps(t *testing.T) {
-	testEnv, err := prepareDevEnv(t, true)
+	testEnv, err := prepareAppTests(t, true)
+	defer func() {
+		err := cleanupAppPRTests(t, testEnv)
+		assert.NoError(t, err)
+	}()
 	assert.NoError(t, err)
 
 	o := &cmd.AddAppOptions{
 		AddOptions: cmd.AddOptions{
 			CommonOptions: *testEnv.CommonOptions,
 		},
-		FakePullRequests: testEnv.FakePullRequests,
-		Version:          "0.0.1",
-		Alias:            "example-alias",
-		Repo:             "http://chartmuseum.jenkins-x.io",
-		GitOps:           true,
-		DevEnv:           testEnv.DevEnv,
-		HelmUpdate:       true, // Flag default when run on CLI
+		Version:    "0.0.1",
+		Alias:      "example-alias",
+		Repo:       "http://chartmuseum.jenkins-x.io",
+		GitOps:     true,
+		DevEnv:     testEnv.DevEnv,
+		HelmUpdate: true, // Flag default when run on CLI
 	}
 	o.Args = []string{"example-app"}
 	// Set by flag defaults
@@ -43,17 +46,24 @@ func TestAddAppForGitOps(t *testing.T) {
 
 // Contains all useful data from the test environment initialized by `prepareInitialPromotionEnv`
 type AppTestEnv struct {
-	FakePullRequests cmd.CreateEnvPullRequestFn
-	CommonOptions    *cmd.CommonOptions
-	FakeGitProvider  *gits.FakeProvider
-	DevRepo          *gits.FakeRepository
-	DevEnvRepo       *gits.FakeRepository
-	OrgName          string
-	DevEnvRepoInfo   *gits.GitRepository
-	DevEnv           *v1.Environment
+	CommonOptions   *cmd.CommonOptions
+	FakeGitProvider *gits.FakeProvider
+	DevRepo         *gits.FakeRepository
+	DevEnvRepo      *gits.FakeRepository
+	OrgName         string
+	DevEnvRepoInfo  *gits.GitRepository
+	DevEnv          *v1.Environment
 }
 
-func prepareDevEnv(t *testing.T, gitOps bool) (*AppTestEnv, error) {
+func cleanupAppPRTests(t *testing.T, testEnv *AppTestEnv) error {
+	err := cmd.CleanupTestResources(testEnv.CommonOptions)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func prepareAppTests(t *testing.T, gitOps bool) (*AppTestEnv, error) {
 	testOrgName := "myorg"
 	testRepoName := "my-app"
 	devEnvRepoName := fmt.Sprintf("environment-%s-%s-dev", testOrgName, testRepoName)
@@ -62,9 +72,7 @@ func prepareDevEnv(t *testing.T, gitOps bool) (*AppTestEnv, error) {
 
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, devEnvRepo)
 
-	o := cmd.AddAppOptions{
-		FakePullRequests: cmd.NewCreateEnvPullRequestFn(fakeGitProvider),
-	}
+	o := cmd.AddAppOptions{}
 
 	devEnv := kube.NewPermanentEnvironmentWithGit("dev", fmt.Sprintf("https://github.com/%s/%s.git", testOrgName,
 		devEnvRepoName))
@@ -81,14 +89,18 @@ func prepareDevEnv(t *testing.T, gitOps bool) (*AppTestEnv, error) {
 		&gits.GitFake{},
 		helm_test.NewMockHelmer(),
 	)
+
+	err := cmd.CreateTestEnvironmentDir(&o.CommonOptions)
+	if err != nil {
+		return nil, err
+	}
 	return &AppTestEnv{
-		FakePullRequests: o.FakePullRequests,
-		CommonOptions:    &o.CommonOptions,
-		FakeGitProvider:  fakeGitProvider,
-		DevRepo:          fakeRepo,
-		DevEnvRepo:       devEnvRepo,
-		OrgName:          testOrgName,
-		DevEnv:           devEnv,
+		CommonOptions:   &o.CommonOptions,
+		FakeGitProvider: fakeGitProvider,
+		DevRepo:         fakeRepo,
+		DevEnvRepo:      devEnvRepo,
+		OrgName:         testOrgName,
+		DevEnv:          devEnv,
 		DevEnvRepoInfo: &gits.GitRepository{
 			Name: devEnvRepoName,
 		},

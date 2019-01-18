@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -34,9 +36,9 @@ func ConfigureTestOptions(o *CommonOptions, git gits.Gitter, helm helm.Helmer) {
 }
 
 // ConfigureTestOptions lets configure the options for use in tests
-// using fake APIs to k8s cluster
-func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Object,
-	jxObjects []runtime.Object, git gits.Gitter, helm helm.Helmer) {
+// using fake APIs to k8s cluster.
+func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Object, jxObjects []runtime.Object,
+	git gits.Gitter, helm helm.Helmer) {
 	//o.Out = tests.Output()
 	o.BatchMode = true
 	if o.Factory == nil {
@@ -67,7 +69,7 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 		}
 	}
 
-	// ensure we've the dev nenvironment
+	// ensure we've the dev environment
 	if !hasDev {
 		devEnv := kube.NewPermanentEnvironment("dev")
 		devEnv.Spec.Namespace = o.currentNamespace
@@ -96,6 +98,37 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 	o.apiExtensionsClient = apifake.NewSimpleClientset()
 	o.git = git
 	o.helm = helm
+}
+
+func CreateTestEnvironmentDir(o *CommonOptions) error {
+	var err error
+	// Create a temp dir for environments
+	origEnvironmentsDir, err := o.EnvironmentsDir()
+	if err != nil {
+		return err
+	}
+	o.environmentsDir, err = ioutil.TempDir("", "jx-environments")
+	if err != nil {
+		return err
+	}
+	// Copy over any existing environments
+	err = util.CopyDir(origEnvironmentsDir, o.environmentsDir, true)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// CleanupTestEnvironmentDir should be called in a deferred function whenever CreateTestEnvironmentDir is called
+func CleanupTestResources(o *CommonOptions) error {
+	// Let's not accidentally remove the real one!
+	if strings.HasPrefix(o.environmentsDir, os.TempDir()) {
+		err := os.RemoveAll(o.environmentsDir)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func NewCreateEnvPullRequestFn(provider *gits.FakeProvider) CreateEnvPullRequestFn {

@@ -19,9 +19,9 @@ import (
 )
 
 // ModifyChartFn callback for modifying a chart, requirements, the chart metadata,
-// the values.yaml and all files in templates are unmarshaled
+// the values.yaml and all files in templates are unmarshaled, and the root dir for the chart is passed
 type ModifyChartFn func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
-	templates map[string]map[string]interface{}) error
+	templates map[string]string, dir string) error
 
 // ConfigureGitFolderFn callback to optionally configure git before its used for creating commits and PRs
 type ConfigureGitFolderFn func(dir string, gitInfo *gits.GitRepository, gitAdapter gits.Gitter) error
@@ -164,7 +164,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		return answer, err
 	}
 
-	err = modifyChartFn(requirements, chart, values, templates)
+	err = modifyChartFn(requirements, chart, values, templates, dir)
 	if err != nil {
 		return answer, err
 	}
@@ -180,11 +180,6 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 	}
 
 	err = helm.SaveFile(valuesFile, values)
-	if err != nil {
-		return answer, err
-	}
-
-	err = helm.SaveDir(templatesDir, templates)
 	if err != nil {
 		return answer, err
 	}

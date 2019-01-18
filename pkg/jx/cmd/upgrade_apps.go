@@ -164,7 +164,7 @@ func (o *UpgradeAppsOptions) createPRs() error {
 	}
 	upgraded := false
 	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
-		templates map[string]map[string]interface{}) error {
+		templates map[string]string, dir string) error {
 		for _, d := range requirements.Dependencies {
 			upgrade := false
 			// We need to ignore the platform
@@ -216,8 +216,7 @@ func (o *UpgradeAppsOptions) createPRs() error {
 	} else {
 		var err error
 		_, err = o.createEnvironmentPullRequest(o.DevEnv, modifyChartFn, &branchNameText, &title,
-			&message,
-			nil, o.ConfigureGitCallback)
+			&message, nil, o.ConfigureGitCallback)
 		if err != nil {
 			return err
 		}

@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
@@ -143,7 +145,7 @@ func (o *DeleteAppOptions) Run() error {
 func (o *DeleteAppOptions) createPR(app string) error {
 
 	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
-		templates map[string]map[string]interface{}) error {
+		templates map[string]string, dir string) error {
 		// See if the app already exists in requirements
 		found := false
 		for i, d := range requirements.Dependencies {
@@ -155,6 +157,16 @@ func (o *DeleteAppOptions) createPR(app string) error {
 		// If app not found, add it
 		if !found {
 			return fmt.Errorf("unable to delete %s as not installed", app)
+		}
+		if info, err := os.Stat(filepath.Join(dir, app)); err == nil {
+			if info.IsDir() {
+				err := util.DeleteFile(info.Name())
+				if err != nil {
+					return err
+				}
+			} else {
+				log.Warnf("Not removing %s for %s because it is not a directory", info.Name(), app)
+			}
 		}
 		return nil
 	}
