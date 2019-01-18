@@ -32,6 +32,7 @@ func TestSequentialWorkflow(t *testing.T) {
 		NoWatch:          true,
 		FakePullRequests: cmd.NewCreateEnvPullRequestFn(fakeGitProvider),
 		FakeGitProvider:  fakeGitProvider,
+		Namespace:		  "jx",
 	}
 
 	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://github.com/"+testOrgName+"/"+stagingRepoName+".git")
@@ -152,6 +153,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 		NoWatch:          true,
 		FakePullRequests: cmd.NewCreateEnvPullRequestFn(fakeGitProvider),
 		FakeGitProvider:  fakeGitProvider,
+		Namespace:	   	  "jx",
 	}
 
 	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://github.com/"+testOrgName+"/"+stagingRepoName+".git")
@@ -222,6 +224,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 		HelmRepositoryURL: helm.DefaultHelmRepositoryURL,
 		LocalHelmRepoName: kube.LocalHelmRepoName,
 		FakePullRequests:  o.FakePullRequests,
+		Namespace:		   "jx",
 	}
 	po.CommonOptions = o.CommonOptions
 	po.BatchMode = true
@@ -301,6 +304,7 @@ func TestParallelWorkflow(t *testing.T) {
 		NoWatch:          true,
 		FakePullRequests: cmd.NewCreateEnvPullRequestFn(fakeGitProvider),
 		FakeGitProvider:  fakeGitProvider,
+		Namespace:		  "jx",
 	}
 
 	envA := kube.NewPermanentEnvironmentWithGit(envNameA, "https://github.com/"+testOrgName+"/"+envRepoNameA+".git")
@@ -446,6 +450,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 		NoWatch:          true,
 		FakePullRequests: cmd.NewCreateEnvPullRequestFn(fakeGitProvider),
 		FakeGitProvider:  fakeGitProvider,
+		Namespace:		  "jx",
 	}
 
 	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://github.com/"+testOrgName+"/"+stagingRepoName+".git")
