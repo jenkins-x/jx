@@ -103,7 +103,7 @@ func (o *StepUnstashOptions) Run() error {
 		return err
 	}
 
-	data, err := buckets.ReadURL(u, o.Timeout, CreateBucketHttpFn(authSvc))
+	data, err := buckets.ReadURL(u, o.Timeout, CreateBucketHTTPFn(authSvc))
 	if err != nil {
 		return err
 	}
@@ -119,8 +119,8 @@ func (o *StepUnstashOptions) Run() error {
 	return nil
 }
 
-// CreateBucketHttpFn creates a function to transform a git URL to add the token for accessing a git based bucket
-func CreateBucketHttpFn(authSvc auth.ConfigService) func(string) (string, error) {
+// CreateBucketHTTPFn creates a function to transform a git URL to add the token for accessing a git based bucket
+func CreateBucketHTTPFn(authSvc auth.ConfigService) func(string) (string, error) {
 	return func(urlText string) (string, error) {
 		token, err := GetTokenForGitURL(authSvc, urlText)
 		if err != nil {
