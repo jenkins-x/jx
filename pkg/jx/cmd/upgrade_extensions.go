@@ -220,7 +220,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 		return err
 	}
 	log.Infof("Upgrading to Extension Repository version %s\n", util.ColorInfo(extensionsRepository.Version))
-	client, ns, err := o.CreateJXClient()
+	client, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
 	}

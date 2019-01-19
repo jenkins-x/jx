@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/sourcerepository"
 	"io"
 	"io/ioutil"
 	"os"
@@ -413,7 +412,7 @@ func (options *ImportOptions) Run() error {
 	}
 
 
-	err = sourcerepository.NewSourceRepositoryService(jxClient, ns).CreateSourceRepository(
+	err = kube.NewSourceRepositoryService(jxClient, ns).CreateOrUpdateSourceRepository(
 		options.AppName, options.Organisation, options.GitProvider.ServerURL())
 	if err != nil {
 		return errors.Wrapf(err, "creating application resource for %s", util.ColorInfo(options.AppName))
