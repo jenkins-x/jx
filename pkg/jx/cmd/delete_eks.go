@@ -14,25 +14,25 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-type DeleteEksOptions struct {
+type deleteEksOptions struct {
 	GetOptions
 	Profile string
 	Region  string
 }
 
 var (
-	DeleteEksLong = templates.LongDesc(`
-		Deletes EKS cluster resource
+	deleteEksLong = templates.LongDesc(`
+		Deletes EKS cluster resource. Under the hood this command delegated removal operation to eksctl.
 `)
 
-	DeleteEksExample = templates.Examples(`
+	deleteEksExample = templates.Examples(`
 		# Delete EKS cluster
 		jx delete eks
 	`)
 )
 
-func NewCmdDeleteEks(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := &DeleteEksOptions{
+func newCmdDeleteEks(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+	options := &deleteEksOptions{
 		GetOptions: GetOptions{
 			CommonOptions: CommonOptions{
 				Factory: f,
@@ -45,8 +45,8 @@ func NewCmdDeleteEks(f Factory, in terminal.FileReader, out terminal.FileWriter,
 	cmd := &cobra.Command{
 		Use:     "eks",
 		Short:   "Deletes EKS cluster.",
-		Long:    DeleteEksLong,
-		Example: DeleteEksExample,
+		Long:    deleteEksLong,
+		Example: deleteEksExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -61,9 +61,9 @@ func NewCmdDeleteEks(f Factory, in terminal.FileReader, out terminal.FileWriter,
 	return cmd
 }
 
-func (o *DeleteEksOptions) Run() error {
+func (o *deleteEksOptions) Run() error {
 	if len(o.Args) == 0 {
-		return errors.New("Cluster name expected.")
+		return errors.New("cluster name expected")
 	}
 	cluster := o.Args[0]
 

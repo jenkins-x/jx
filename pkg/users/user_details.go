@@ -24,26 +24,15 @@ func NewUserDetailService(jxClient versioned.Interface, namespace string) UserDe
 	}
 }
 
-func (this *UserDetailService) FindByEmail(email string) *v1.UserDetails {
-	id := kube.EmailToK8sID(email)
-
-	user, err := this.jxClient.JenkinsV1().Users(this.namespace).Get(id, metav1.GetOptions{})
-	if err != nil {
-		// we get an error when not found
-		log.Info("Unable to find user: " + id + " -- " + err.Error() + "\n")
-	}
-
-	return &user.User
-}
 
 func (this *UserDetailService) CreateOrUpdateUser(u *v1.UserDetails) error {
-	if u == nil || u.Email == "" {
-		return fmt.Errorf("Unable to get or create user, nil or missing email")
+	if u == nil || u.Login == "" {
+		return fmt.Errorf("Unable to get or create user, nil or missing login")
 	}
 
 	log.Infof("CreateOrUpdateUser: %s <%s>\n", u.Login, u.Email)
 
-	id := kube.EmailToK8sID(u.Email)
+	id := kube.ToValidName(u.Login)
 
 	// check for an existing user by email
 	user, err := this.jxClient.JenkinsV1().Users(this.namespace).Get(id, metav1.GetOptions{})
@@ -96,7 +85,7 @@ func (this *UserDetailService) CreateOrUpdateUser(u *v1.UserDetails) error {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: id,
 			},
-			User: *u,
+			Spec: *u,
 		}
 
 		log.Info("Adding missing user: " + id + "\n")

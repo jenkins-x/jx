@@ -23,19 +23,19 @@ import (
 
 var (
 	editStorageLong = templates.LongDesc(`
-		Configures the storage location for a set of pipeline output data for your team
+		Configures the storage location used by your team to stashing files or storing build logs.
 
-		Per team you can specify a Git repository URL to store artifacts inside per classification or you can use a HTTP URL.
+		If you don't specify any specific storage for a classifier it will try the classifier 'default'. If there is still no configuration then it will default to the git repository for a project.'
 
-		If you don't specify any specific storage for a classifier it will try the classifier 'default'.If there is still no configuration then it will default to the git repository for a project.'
-`)
+` + storageSupportDescription + SeeAlsoText("jx step stash", "jx get storage"))
 
 	editStorageExample = templates.Examples(`
 		# Be prompted what classification to edit
 		jx edit storage
 
-		# Configure the git/http URLs of where to store logs
+		# Configure the where to store logs prompting the user to ask for more data
 		jx edit storage -c logs
+
 
 		# Configure the git URL of where to store logs (defaults to gh-pages branch)
 		jx edit storage -c logs --git-url https://github.com/myorg/mylogs.git'
@@ -46,6 +46,12 @@ var (
 		# Configure the git URL of where all storage goes to by default unless a specific classifier has a config
 		jx edit storage -c default --git-url https://github.com/myorg/mylogs.git'
 
+
+		# Configure the tests to be stored in cloud storage (using S3 / GCS / Azure Blobs etc)
+		jx edit storage -c tests --bucket-url s3://myExistingBucketName
+
+		# Creates a new GCS bucket and configures the logs to be stored in it
+		jx edit storage -c logs --bucket myBucketName
 	`)
 )
 
@@ -75,7 +81,7 @@ func NewCmdEditStorage(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 	cmd := &cobra.Command{
 		Use:     "storage",
-		Short:   "Configures the storage location for a set of pipeline output data for your team",
+		Short:   "Configures the storage location for stashing files or storing build logs for your team",
 		Aliases: []string{"store"},
 		Long:    editStorageLong,
 		Example: editStorageExample,
@@ -88,17 +94,21 @@ func NewCmdEditStorage(f Factory, in terminal.FileReader, out terminal.FileWrite
 	}
 
 	options.addCommonFlags(cmd)
+	addStorageLocationFlags(cmd, &options.StorageLocation)
 
-	cmd.Flags().StringVarP(&options.StorageLocation.Classifier, "classifier", "c", "", "A name which classifies this type of file. Example values: "+kube.ClassificationValues)
-	cmd.Flags().StringVarP(&options.StorageLocation.BucketURL, "bucket-url", "", "", "Specify the go-cloud URL of the bucket to use")
-	cmd.Flags().StringVarP(&options.StorageLocation.GitURL, "git-url", "", "", "Specify the Git URL to populate in a gh-pages branch")
-	cmd.Flags().StringVarP(&options.StorageLocation.GitBranch, "git-branch", "", "gh-pages", "The branch to use to store files in the git branch")
 	cmd.Flags().StringVarP(&options.Bucket, "bucket", "", "", "Specify the name of the bucket to use")
 	cmd.Flags().StringVarP(&options.BucketKind, "bucket-kind", "", "", "The kind of bucket to use like 'gs, s3, azure' etc")
 	cmd.Flags().StringVarP(&options.GKEProjectID, "gke-project-id", "", "", "Google Project ID to use for a new bucket")
 	cmd.Flags().StringVarP(&options.GKEZone, "gke-zone", "", "", "The zone (e.g. us-central1-a) where the new bucket will be created")
 
 	return cmd
+}
+
+func addStorageLocationFlags(cmd *cobra.Command, location *jenkinsv1.StorageLocation) {
+	cmd.Flags().StringVarP(&location.Classifier, "classifier", "c", "", "A name which classifies this type of file. Example values: "+kube.ClassificationValues)
+	cmd.Flags().StringVarP(&location.BucketURL, "bucket-url", "", "", "Specify the cloud storage bucket URL to send each file to. e.g. use 's3://nameOfBucket' on AWS, gs://anotherBucket' on GCP or on Azure 'azblob://thatBucket'")
+	cmd.Flags().StringVarP(&location.GitURL, "git-url", "", "", "Specify the Git URL to of the repository to use for storage")
+	cmd.Flags().StringVarP(&location.GitBranch, "git-branch", "", "gh-pages", "The branch to use to store files in the git repository")
 }
 
 // Run implements the command

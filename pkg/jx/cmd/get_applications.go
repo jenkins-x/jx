@@ -220,7 +220,7 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 }
 
 func (o *GetApplicationsOptions) getAppData(kubeClient kubernetes.Interface) (namespaces []string, envApps []EnvApps, envNames, apps []string, err error) {
-	client, currentNs, err := o.CreateJXClient()
+	client, currentNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return nil, nil, nil, nil, errors.Wrap(err, "getting jx client")
 	}

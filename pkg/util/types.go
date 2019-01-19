@@ -91,3 +91,8 @@ func DereferenceFloat64(f *float64) float64 {
 	}
 	return 0
 }
+
+// IsZeroOfUnderlyingType checks if the underlying type of the interface is set to it's zero value
+func IsZeroOfUnderlyingType(x interface{}) bool {
+	return reflect.DeepEqual(x, reflect.Zero(reflect.TypeOf(x)).Interface())
+}

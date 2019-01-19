@@ -2,6 +2,7 @@ package tests
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"strings"
 	"testing"
@@ -68,6 +69,7 @@ func AssertEqualFileText(t *testing.T, expectedFile string, actualFile string) e
 	return nil
 }
 
+// AssertLoadFileText asserts that the given file name can be loaded and returns the string contents
 func AssertLoadFileText(t *testing.T, fileName string) (string, error) {
 	if !AssertFileExists(t, fileName) {
 		return "", fmt.Errorf("File %s does not exist", fileName)
@@ -78,4 +80,20 @@ func AssertLoadFileText(t *testing.T, fileName string) (string, error) {
 		return "", err
 	}
 	return string(data), nil
+}
+
+
+// AssertTextFileContentsEqual asserts that both the expected and actual files can be loaded as text
+// and that their contents are identical
+func AssertTextFileContentsEqual(t *testing.T, expectedFile string, actualFile string) {
+	assert.NotEqual(t, expectedFile, actualFile, "should be given different file names")
+
+	expected, err := AssertLoadFileText(t, expectedFile)
+	require.NoError(t, err)
+	actual, err := AssertLoadFileText(t, expectedFile)
+	require.NoError(t, err)
+
+	assert.Equal(t, expected, actual, "contents of expected file %s and actual file %s", expectedFile, actualFile)
+
+	t.Logf("compared %s and %s and they have equal content\n", expectedFile, actualFile)
 }
