@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/gits"
 	"io"
 	"os"
 
@@ -16,16 +15,16 @@ import (
 )
 
 var (
-	create_spring_long = templates.LongDesc(`
+	createSpringLong = templates.LongDesc(`
 		Creates a new Spring Boot application and then optionally setups CI/CD pipelines and GitOps promotion.
 
 		You can see a demo of this command here: [https://jenkins-x.io/demos/create_spring/](https://jenkins-x.io/demos/create_spring/)
 
 		For more documentation see: [https://jenkins-x.io/developing/create-spring/](https://jenkins-x.io/developing/create-spring/)
 
-`)
+` + SeeAlsoText("jx create project"))
 
-	create_spring_example = templates.Examples(`
+	createSpringExample = templates.Examples(`
 		# Create a Spring Boot application where you use the terminal to pick the values
 		jx create spring
 
@@ -66,8 +65,8 @@ func NewCmdCreateSpring(f Factory, in terminal.FileReader, out terminal.FileWrit
 	cmd := &cobra.Command{
 		Use:     "spring",
 		Short:   "Create a new Spring Boot application and import the generated code into Git and Jenkins for CI/CD",
-		Long:    create_spring_long,
-		Example: create_spring_example,
+		Long:    createSpringLong,
+		Example: createSpringExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -98,20 +97,12 @@ func (o *CreateSpringOptions) Run() error {
 	if err != nil {
 		return err
 	}
-
-	details, err := o.getGitRepositoryDetails()
-	if err != nil {
-		return err
-	}
-
 	model, err := spring.LoadSpringBoot(cacheDir)
 	if err != nil {
 		return fmt.Errorf("Failed to load Spring Boot model %s", err)
 	}
 
 	data := &o.SpringForm
-	data.ArtifactId = details.RepoName
-
 	err = model.CreateSurvey(&o.SpringForm, o.Advanced, o.BatchMode)
 	if err != nil {
 		return err
@@ -140,30 +131,5 @@ func (o *CreateSpringOptions) Run() error {
 	}
 	log.Infof("Created Spring Boot project at %s\n", util.ColorInfo(outDir))
 
-	o.configureImportOptions(details)
-
 	return o.ImportCreatedProject(outDir)
-}
-
-func (o *CreateSpringOptions)configureImportOptions(repoData *gits.CreateRepoData) {
-	// configure the import options based on previous answers
-	importOptions := &o.ImportOptions
-	importOptions.AppName = repoData.RepoName
-	importOptions.GitProvider = repoData.GitProvider
-	importOptions.Organisation = repoData.Organisation
-	importOptions.Repository = repoData.RepoName
-	importOptions.GitDetails = *repoData
-}
-
-func (o *CreateSpringOptions) getGitRepositoryDetails() (*gits.CreateRepoData, error) {
-	authConfigSvc, err := o.CreateGitAuthConfigService()
-	if err != nil {
-		return nil, err
-	}
-	details, err := gits.PickNewOrExistingGitRepository(o.BatchMode, authConfigSvc,
-		"", &o.GitRepositoryOptions, nil, nil, o.Git(), false, o.In, o.Out, o.Err)
-	if err != nil {
-		return nil, err
-	}
-	return details, nil
 }
