@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// EksClusterExists checks if EKS cluster with given name exists in given region.
 func EksClusterExists(clusterName string, profile string, region string) (bool, error) {
 	region, err := ResolveRegion(profile, region)
 	if err != nil {
@@ -30,11 +31,12 @@ func EksClusterExists(clusterName string, profile string, region string) (bool, 
 	return false, nil
 }
 
-/**
-If EKS cluster creation process is interrupted, there will be CloudFormation stack in ROLLBACK_COMPLETE state left.
-Such dead stack prevents eksctl from creating cluster with the same name. This is common activity then to remove stacks
-like this and this function performs this action.
- */
+
+// EksClusterObsoleteStackExists detects if there is obsolete CloudFormation stack for given EKS cluster.
+//
+// If EKS cluster creation process is interrupted, there will be CloudFormation stack in ROLLBACK_COMPLETE state left.
+// Such dead stack prevents eksctl from creating cluster with the same name. This is common activity then to remove stacks
+// like this and this function performs this action.
 func EksClusterObsoleteStackExists(clusterName string, profile string, region string) (bool, error)  {
 	session, err := NewAwsSession(profile, region)
 	if err != nil {
@@ -56,6 +58,7 @@ func EksClusterObsoleteStackExists(clusterName string, profile string, region st
 	return false, nil
 }
 
+// CleanUpObsoleteEksClusterStack removes dead eksctl CloudFormation stack associated with given EKS cluster name.
 func CleanUpObsoleteEksClusterStack(clusterName string, profile string, region string) error {
 	session, err := NewAwsSession(profile, region)
 	if err != nil {
@@ -69,6 +72,8 @@ func CleanUpObsoleteEksClusterStack(clusterName string, profile string, region s
 	return err
 }
 
+// EksctlStackName generates CloudFormation stack name for given EKS cluster name. This function follows eksctl
+// naming convention.
 func EksctlStackName(clusterName string) string {
 	return fmt.Sprintf("eksctl-%s-cluster", clusterName)
 }
