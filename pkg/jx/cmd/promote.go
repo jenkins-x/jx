@@ -197,6 +197,9 @@ func (o *PromoteOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	if o.Namespace == "" {
+		o.Namespace = ns
+	}
 
 	prow, err := o.isProw()
 	if err != nil {
