@@ -293,6 +293,9 @@ func (o *CommonOptions) GitServerHostURLKind(hostURL string) (string, error) {
 
 // gitProviderForURL returns a GitProvider for the given git URL
 func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.GitProvider, error) {
+	if o.fakeGitProvider != nil {
+		return o.fakeGitProvider, nil
+	}
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return nil, err
@@ -310,6 +313,9 @@ func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.G
 
 // gitProviderForURL returns a GitProvider for the given Git server URL
 func (o *CommonOptions) gitProviderForGitServerURL(gitServiceUrl string, gitKind string) (gits.GitProvider, error) {
+	if o.fakeGitProvider != nil {
+		return o.fakeGitProvider, nil
+	}
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return nil, err
@@ -326,10 +332,6 @@ func (o *CommonOptions) createGitProviderForURLWithoutKind(gitURL string) (gits.
 	if err != nil {
 		return nil, gitInfo, err
 	}
-	authConfigSvc, err := o.CreateGitAuthConfigService()
-	if err != nil {
-		return nil, gitInfo, err
-	}
-	gitProvider, err := gits.CreateProviderForURL(o.IsInCluster(), authConfigSvc, gitKind, gitInfo.HostURL(), o.Git(), o.BatchMode, o.In, o.Out, o.Err)
-	return gitProvider, gitInfo, err
+	provider, err := o.gitProviderForGitServerURL(gitURL, gitKind)
+	return provider, gitInfo, err
 }

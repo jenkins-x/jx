@@ -55,9 +55,6 @@ type UpgradeAppsOptions struct {
 	Namespace string
 	Set       []string
 
-	// for testing
-	FakePullRequests CreateEnvPullRequestFn
-
 	// allow git to be configured externally before a PR is created
 	ConfigureGitCallback ConfigureGitFolderFn
 
@@ -161,6 +158,12 @@ func (o *UpgradeAppsOptions) createPRs() error {
 		branchNameText = fmt.Sprintf("upgrade-all-apps")
 		title = fmt.Sprintf("Upgrade all apps")
 		message = fmt.Sprintf("Upgrade all apps:\n")
+	} else {
+		version := o.Version
+		if version == "" {
+			version = "latest"
+		}
+		branchNameText = fmt.Sprintf("upgrade-app-%s-%s", o.Args[0], version)
 	}
 	upgraded := false
 	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
@@ -195,7 +198,6 @@ func (o *UpgradeAppsOptions) createPRs() error {
 				oldVersion := d.Version
 				d.Version = version
 				if !o.All {
-					branchNameText = fmt.Sprintf("upgrade-app-%s-%s", o.Args[0], version)
 					title = fmt.Sprintf("Upgrade %s to %s", o.Args[0], version)
 					message = fmt.Sprintf("Upgrade %s from %s to %s", o.Args[0], oldVersion, version)
 				} else {
@@ -205,21 +207,10 @@ func (o *UpgradeAppsOptions) createPRs() error {
 		}
 		return nil
 	}
-
-	if o.FakePullRequests != nil {
-		var err error
-		_, err = o.FakePullRequests(o.DevEnv, modifyChartFn, branchNameText, title, message,
-			nil)
-		if err != nil {
-			return err
-		}
-	} else {
-		var err error
-		_, err = o.createEnvironmentPullRequest(o.DevEnv, modifyChartFn, &branchNameText, &title,
-			&message, nil, o.ConfigureGitCallback)
-		if err != nil {
-			return err
-		}
+	_, err := o.createEnvironmentPullRequest(o.DevEnv, modifyChartFn, &branchNameText, &title, &message, nil,
+		o.ConfigureGitCallback)
+	if err != nil {
+		return err
 	}
 
 	if !upgraded {

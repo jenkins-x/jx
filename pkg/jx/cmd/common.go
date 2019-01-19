@@ -96,6 +96,7 @@ type CommonOptions struct {
 	modifyDevEnvironmentFn ModifyDevEnvironmentFn
 	modifyEnvironmentFn    ModifyEnvironmentFn
 	environmentsDir        string
+	fakeGitProvider        *gits.FakeProvider
 }
 
 type ServerFlags struct {
@@ -907,6 +908,7 @@ func (o *CommonOptions) GetErr() io.Writer {
 	return o.Err
 }
 
+// EnvironmentsDir is the local directory the environments are stored in  - can be faked out for tests
 func (o *CommonOptions) EnvironmentsDir() (string, error) {
 	if o.environmentsDir == "" {
 		var err error

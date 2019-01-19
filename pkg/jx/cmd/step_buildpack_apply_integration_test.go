@@ -57,6 +57,7 @@ func TestStepBuildPackApply(t *testing.T) {
 		},
 		[]runtime.Object{},
 		gits.NewGitCLI(),
+		nil,
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 	)
 

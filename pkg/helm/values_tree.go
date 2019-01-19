@@ -14,6 +14,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 )
 
+//DefaultValuesTreeIgnores is the default set of ignored files for collapsing the values tree which are used if
+// ignores is nil
 var DefaultValuesTreeIgnores = []string{
 	"templates/*",
 }
@@ -65,6 +67,9 @@ func GenerateValues(dir string, ignores []string, verbose bool) ([]byte, error) 
 					values[rDir] = v
 				} else {
 					// for other files, just store a reference
+					if _, ok := files[rDir]; !ok {
+						files[rDir] = make(map[string]string)
+					}
 					files[rDir][file] = path
 				}
 			}

@@ -8,7 +8,6 @@ import (
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
-	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
 
@@ -72,11 +71,10 @@ func NewCmdDeleteApp(f Factory, in terminal.FileReader, out terminal.FileWriter,
 	}
 
 	cmd := &cobra.Command{
-		Use:     "application",
-		Short:   "Deletes one or more applications from Jenkins",
+		Use:     "app",
+		Short:   "Deletes one or more apps from Jenkins X",
 		Long:    deleteAppLong,
 		Example: deleteAppExample,
-		Aliases: []string{"applications"}, // FIXME - naming conflict with 'app'
 		Run: func(cmd *cobra.Command, args []string) {
 			o.Cmd = cmd
 			o.Args = args
@@ -156,7 +154,11 @@ func (o *DeleteAppOptions) createPR(app string) error {
 		}
 		// If app not found, add it
 		if !found {
-			return fmt.Errorf("unable to delete %s as not installed", app)
+			a := app
+			if o.Alias != "" {
+				a = fmt.Sprintf("%s with alias %s", a, o.Alias)
+			}
+			return fmt.Errorf("unable to delete app %s as not installed", app)
 		}
 		if info, err := os.Stat(filepath.Join(dir, app)); err == nil {
 			if info.IsDir() {
@@ -173,22 +175,11 @@ func (o *DeleteAppOptions) createPR(app string) error {
 	branchNameText := "delete-app-" + app
 	title := fmt.Sprintf("Delete %s", app)
 	message := fmt.Sprintf("Delete app %s", app)
-	var pullRequestInfo *gits.PullRequestInfo
-	if o.FakePullRequests != nil {
-		var err error
-		pullRequestInfo, err = o.FakePullRequests(o.DevEnv, modifyChartFn, branchNameText, title, message,
-			nil)
-		if err != nil {
-			return err
-		}
-	} else {
-		var err error
-		pullRequestInfo, err = o.createEnvironmentPullRequest(o.DevEnv, modifyChartFn, &branchNameText, &title,
-			&message,
-			nil, o.ConfigureGitCallback)
-		if err != nil {
-			return err
-		}
+	pullRequestInfo, err := o.createEnvironmentPullRequest(o.DevEnv, modifyChartFn, &branchNameText, &title,
+		&message,
+		nil, o.ConfigureGitCallback)
+	if err != nil {
+		return err
 	}
 	log.Infof("Delete app via Pull Request %s\n", pullRequestInfo.PullRequest.URL)
 	return nil

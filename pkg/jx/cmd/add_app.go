@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"k8s.io/helm/pkg/proto/hapi/chart"
+	helmchart "k8s.io/helm/pkg/proto/hapi/chart"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -166,7 +166,7 @@ func (o *AddAppOptions) Run() error {
 	for _, app := range args {
 		version := o.Version
 		var schema []byte
-		err := helm.InspectChart(app, o.Repo, o.Username, o.Password, o.Helm(), func(dir string) error {
+		err := helm.InspectChart(app, version, o.Repo, o.Username, o.Password, o.Helm(), func(dir string) error {
 			if version == "" {
 				_, v, err := helm.LoadChartNameAndVersion(filepath.Join(dir, "Chart.yaml"))
 				if err != nil {
@@ -313,8 +313,8 @@ func (o *AddAppOptions) Run() error {
 
 func (o *AddAppOptions) createPR(app string, dir string, version string) error {
 
-	modifyChartFn := func(requirements *helm.Requirements, chart *chart.Metadata, values map[string]interface{},
-		templates map[string]string, dir string) error {
+	modifyChartFn := func(requirements *helm.Requirements, chart *helmchart.Metadata, values map[string]interface{},
+		templates map[string]string, envDir string) error {
 		// See if the app already exists in requirements
 		found := false
 		for _, d := range requirements.Dependencies {
@@ -338,47 +338,113 @@ func (o *AddAppOptions) createPR(app string, dir string, version string) error {
 				Name:       app,
 				Version:    version,
 			})
+			appDir := filepath.Join(envDir, app)
+			rootValuesFileName := filepath.Join(appDir, helm.ValuesFileName)
+			err := os.MkdirAll(appDir, 0700)
+			if err != nil {
+				return errors.Wrapf(err, "cannot create app directory %s", appDir)
+			}
+			if o.Verbose {
+				log.Infof("Using %s for app files\n", appDir)
+			}
 			if len(o.ValueFiles) == 1 {
 				// We need to write the values file into the right spot for the app
-				appDir := filepath.Join(dir, app)
-				err := os.MkdirAll(appDir, 0700)
-				if err != nil {
-					return err
-				}
-				rootValuesFileName := filepath.Join(appDir, helm.ValuesFileName)
 				err = util.CopyFile(o.ValueFiles[0], rootValuesFileName)
 				if err != nil {
-					return err
+					return errors.Wrapf(err, "cannot copy values."+
+						"yaml to app directory %s", appDir)
 				}
-				// Write the readme
-				var gitRepo, releaseNotesURL, appReadme string
-				if fileName, ok := templates["release.yaml"]; ok {
-					bytes, err := ioutil.ReadFile(fileName)
+				if o.Verbose {
+					log.Infof("Writing file provided by --%s to %s\n", optionValues, rootValuesFileName)
+				}
+			}
+			// Write the release.yaml
+			var gitRepo, releaseNotesURL, appReadme, description string
+			templatesDir := filepath.Join(dir, "templates")
+			if _, err := os.Stat(templatesDir); os.IsNotExist(err) {
+				if o.Verbose {
+					log.Infof("No templates directory exists in %s", dir)
+				}
+			} else if err != nil {
+				return errors.Wrapf(err, "stat directory %s", appDir)
+			} else {
+				releaseYamlPath := filepath.Join(templatesDir, "release.yaml")
+				if _, err := os.Stat(releaseYamlPath); err == nil {
+					bytes, err := ioutil.ReadFile(releaseYamlPath)
 					if err != nil {
-						return err
+						return errors.Wrapf(err, "release.yaml from %s", templatesDir)
 					}
 					release := jenkinsv1.Release{}
 					err = yaml.Unmarshal(bytes, &release)
 					if err != nil {
-						return err
+						return errors.Wrapf(err, "unmarshal %s", releaseYamlPath)
 					}
 					gitRepo = release.Spec.GitHTTPURL
 					releaseNotesURL = release.Spec.ReleaseNotesURL
-					ioutil.WriteFile(filepath.Join(appDir, "release.yaml"), bytes, 0755)
+					releaseYamlOutPath := filepath.Join(appDir, "release.yaml")
+					err = ioutil.WriteFile(releaseYamlOutPath, bytes, 0755)
+					if err != nil {
+						return errors.Wrapf(err, "write file %s", releaseYamlOutPath)
+					}
+					if o.Verbose {
+						log.Infof("Read release notes URL %s and git repo url %s from release.yaml\nWriting release."+
+							"yaml from app to %s\n", releaseNotesURL, gitRepo, releaseYamlOutPath)
+					}
+				} else if os.IsNotExist(err) {
+					if o.Verbose {
+
+						log.Infof("Not adding release.yaml as not present in chart. Only files in %s are:\n",
+							templatesDir)
+						err := util.ListDirectory(templatesDir, true)
+						if err != nil {
+							return err
+						}
+					}
+				} else {
+					return errors.Wrapf(err, "reading release.yaml from %s", templatesDir)
+				}
+			}
+			chartYamlPath := filepath.Join(dir, helm.ChartFileName)
+			if _, err := os.Stat(chartYamlPath); err == nil {
+				bytes, err := ioutil.ReadFile(chartYamlPath)
+				if err != nil {
+					return errors.Wrapf(err, "read %s from %s", helm.ChartFileName, dir)
+				}
+				chart := helmchart.Metadata{}
+				err = yaml.Unmarshal(bytes, &chart)
+				if err != nil {
+					return errors.Wrapf(err, "unmarshal %s", chartYamlPath)
+				}
+				description = chart.Description
+
+			} else if os.IsNotExist(err) {
+				if o.Verbose {
+					log.Infof("Not adding %s as not present in chart. Only files in %s are:\n", helm.ChartFileName, dir)
+					err := util.ListDirectory(dir, true)
 					if err != nil {
 						return err
 					}
 				}
+			} else {
+				return errors.Wrapf(err, "stat Chart.yaml from %s", dir)
+			}
+			// Need to copy over any referenced files, and their schemas
+			rootValues, err := helm.LoadValuesFile(rootValuesFileName)
+			if err != nil {
+				return err
+			}
+			schemas := make(map[string][]string)
+			possibles := make(map[string]string)
+			if _, err := os.Stat(dir); err == nil {
 				files, err := ioutil.ReadDir(dir)
 				if err != nil {
-					return err
+					return errors.Wrapf(err, "unable to list files in %s", dir)
 				}
 				possibleReadmes := make([]string, 0)
 				for _, file := range files {
-					fileName, _ := filepath.Split(file.Name())
-					fileName = strings.ToUpper(fileName)
+					fileName := strings.ToUpper(file.Name())
 					if fileName == "README.MD" || fileName == "README" {
-						possibleReadmes = append(possibleReadmes, file.Name())
+						possibleReadmes = append(possibleReadmes, filepath.Join(dir, file.Name()))
 					}
 				}
 				if len(possibleReadmes) > 1 {
@@ -389,78 +455,85 @@ func (o *AddAppOptions) createPR(app string, dir string, version string) error {
 				} else if len(possibleReadmes) == 1 {
 					bytes, err := ioutil.ReadFile(possibleReadmes[0])
 					if err != nil {
-						return err
+						return errors.Wrapf(err, "unable to read file %s", possibleReadmes[0])
 					}
 					appReadme = string(bytes)
 				}
-				readme := o.generateReadme(app, version, chart.Description, o.Repo, gitRepo, releaseNotesURL, appReadme)
-				err = ioutil.WriteFile(filepath.Join(appDir, "README.md"), []byte(readme), 0755)
-				if err != nil {
-					return err
-				}
 
-				// Need to copy over any referenced files, and their schemas
-				rootValues, err := helm.LoadValuesFile(rootValuesFileName)
-				if err != nil {
-					return err
-				}
-				possibles := make(map[string]string)
-				schemas := make(map[string][]string)
-				files, err = ioutil.ReadDir(dir)
-				if err != nil {
-					return err
-				}
 				for _, f := range files {
 					ignore, err := util.IgnoreFile(f.Name(), helm.DefaultValuesTreeIgnores)
 					if err != nil {
 						return err
 					}
 					if !f.IsDir() && !ignore {
-						_, key := filepath.Split(f.Name())
+						key := f.Name()
 						// Handle .schema. files specially
 						if parts := strings.Split(key, ".schema."); len(parts) > 1 {
 							// this is a file named *.schema.*, the part before .schema is the key
 							if _, ok := schemas[parts[0]]; !ok {
 								schemas[parts[0]] = make([]string, 0)
 							}
-							schemas[parts[0]] = append(schemas[parts[0]], f.Name())
+							schemas[parts[0]] = append(schemas[parts[0]], filepath.Join(dir, f.Name()))
 						}
-						possibles[key] = f.Name()
+						possibles[key] = filepath.Join(dir, f.Name())
 
 					}
 				}
-				externalFileHandler := func(path string, element map[string]interface{}, key string) error {
-					fileName, _ := filepath.Split(path)
-					err := util.CopyFile(path, filepath.Join(appDir, fileName))
-					if err != nil {
-						return err
-					}
-					// key for schema is the filename without the extension
-					schemaKey := strings.TrimSuffix(fileName, filepath.Ext(fileName))
-					if schemaPaths, ok := schemas[schemaKey]; ok {
-						for _, schemaPath := range schemaPaths {
-							fileName, _ := filepath.Split(schemaPath)
-							err := util.CopyFile(schemaPath, filepath.Join(appDir, fileName))
-							if err != nil {
-								return err
-							}
+			} else if !os.IsNotExist(err) {
+				return errors.Wrap(err, fmt.Sprintf("error reading %s", dir))
+			}
+			if o.Verbose && appReadme == "" {
+				log.Infof("Not adding App Readme as no README, README.md, readme or readme.md found in %s\n", dir)
+			}
+			readme := o.generateReadme(app, version, description, o.Repo, gitRepo, releaseNotesURL, appReadme)
+			readmeOutPath := filepath.Join(appDir, "README.MD")
+			err = ioutil.WriteFile(readmeOutPath, []byte(readme), 0755)
+			if err != nil {
+				return errors.Wrapf(err, "write README.md to %s", appDir)
+			}
+			if o.Verbose {
+				log.Infof("Writing README.md to %s\n", readmeOutPath)
+			}
+			externalFileHandler := func(path string, element map[string]interface{}, key string) error {
+				fileName, _ := filepath.Split(path)
+				err := util.CopyFile(path, filepath.Join(appDir, fileName))
+				if err != nil {
+					return errors.Wrapf(err, "copy %s to %s", path, appDir)
+				}
+				// key for schema is the filename without the extension
+				schemaKey := strings.TrimSuffix(fileName, filepath.Ext(fileName))
+				if schemaPaths, ok := schemas[schemaKey]; ok {
+					for _, schemaPath := range schemaPaths {
+						fileName, _ := filepath.Split(schemaPath)
+						schemaOutPath := filepath.Join(appDir, fileName)
+						err := util.CopyFile(schemaPath, schemaOutPath)
+						if err != nil {
+							return errors.Wrapf(err, "copy %s to %s", schemaPath, appDir)
+						}
+						if o.Verbose {
+							log.Infof("Writing %s to %s\n", fileName, schemaOutPath)
 						}
 					}
-					return nil
 				}
-				helm.HandleExternalFileRefs(rootValues, possibles, "", externalFileHandler)
+				return nil
+			}
+			err = helm.HandleExternalFileRefs(rootValues, possibles, "", externalFileHandler)
+			if err != nil {
+				return err
 			}
 		}
+
 		return nil
 	}
 	branchNameText := "add-app-" + app + "-" + version
 	title := fmt.Sprintf("Add %s %s", app, version)
 	message := fmt.Sprintf("Add app %s %s", app, version)
+
 	pullRequestInfo, err := o.createEnvironmentPullRequest(o.DevEnv, modifyChartFn, &branchNameText, &title,
 		&message,
 		nil, o.ConfigureGitCallback)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "creating pr for %s", app)
 	}
 	log.Infof("Added app via Pull Request %s\n", pullRequestInfo.PullRequest.URL)
 	return nil
@@ -517,7 +590,7 @@ func (o *AddAppOptions) generateReadme(app string, version string, description s
 	}
 
 	if appReadme != "" {
-		readme.WriteString(fmt.Sprintf("\n##App README.MD\n\n%s\n", appReadme))
+		readme.WriteString(fmt.Sprintf("\n## App README.MD\n\n%s\n", appReadme))
 	}
 	return readme.String()
 }
@@ -525,7 +598,7 @@ func (o *AddAppOptions) generateReadme(app string, version string, description s
 func unknownZeroValue(value string) string {
 	if value == "" {
 		return "unknown"
-	} else {
-		return value
 	}
+	return value
+
 }

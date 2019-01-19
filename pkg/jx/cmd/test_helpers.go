@@ -32,13 +32,13 @@ import (
 // ConfigureTestOptions lets configure the options for use in tests
 // using fake APIs to k8s cluster
 func ConfigureTestOptions(o *CommonOptions, git gits.Gitter, helm helm.Helmer) {
-	ConfigureTestOptionsWithResources(o, nil, nil, git, helm)
+	ConfigureTestOptionsWithResources(o, nil, nil, git, nil, helm)
 }
 
 // ConfigureTestOptions lets configure the options for use in tests
 // using fake APIs to k8s cluster.
 func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Object, jxObjects []runtime.Object,
-	git gits.Gitter, helm helm.Helmer) {
+	git gits.Gitter, fakeGitProvider *gits.FakeProvider, helm helm.Helmer) {
 	//o.Out = tests.Output()
 	o.BatchMode = true
 	if o.Factory == nil {
@@ -97,9 +97,15 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 	o.jxClient = v1fake.NewSimpleClientset(jxObjects...)
 	o.apiExtensionsClient = apifake.NewSimpleClientset()
 	o.git = git
+	if fakeGitProvider != nil {
+		o.fakeGitProvider = fakeGitProvider
+	}
 	o.helm = helm
 }
 
+//CreateTestEnvironmentDir will create a temporary environment dir for the tests, copying over any existing config,
+// and updating CommonOptions.EnvironmentDir() - this is useful for testing git operations on the environments without
+// clobbering the local environments and risking the cluster getting contaminated - use with gits.GitLocal
 func CreateTestEnvironmentDir(o *CommonOptions) error {
 	var err error
 	// Create a temp dir for environments
@@ -120,7 +126,7 @@ func CreateTestEnvironmentDir(o *CommonOptions) error {
 }
 
 // CleanupTestEnvironmentDir should be called in a deferred function whenever CreateTestEnvironmentDir is called
-func CleanupTestResources(o *CommonOptions) error {
+func CleanupTestEnvironmentDir(o *CommonOptions) error {
 	// Let's not accidentally remove the real one!
 	if strings.HasPrefix(o.environmentsDir, os.TempDir()) {
 		err := os.RemoveAll(o.environmentsDir)

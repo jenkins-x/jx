@@ -1,7 +1,11 @@
 package cmd_test
 
 import (
+	"fmt"
+	"path/filepath"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/helm"
 
 	"github.com/stretchr/testify/assert"
 
@@ -9,21 +13,43 @@ import (
 )
 
 func TestDeleteAppForGitOps(t *testing.T) {
-	testEnv, err := prepareAppTests(t, true)
+	t.Parallel()
+	testOptions, err := cmd.CreateAppTestOptions(true)
 	defer func() {
-		err := cleanupAppPRTests(t, testEnv)
+		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
 	assert.NoError(t, err)
+	name, alias, _, err := testOptions.AddApp()
+	assert.NoError(t, err)
 
 	o := &cmd.DeleteAppOptions{
-		CommonOptions: *testEnv.CommonOptions,
-		GitOps:        true,
-		DevEnv:        testEnv.DevEnv,
+		CommonOptions:        *testOptions.CommonOptions,
+		GitOps:               true,
+		DevEnv:               testOptions.DevEnv,
+		ConfigureGitCallback: testOptions.ConfigureGitFn,
+		Alias:                alias,
 	}
-	o.Args = []string{"example-app"}
+	o.Args = []string{name}
+
 	err = o.Run()
 	assert.NoError(t, err)
-	_, err = testEnv.FakeGitProvider.GetPullRequest(testEnv.OrgName, testEnv.DevEnvRepoInfo, 1)
+	// Validate a PR was created
+	pr, err := testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
 	assert.NoError(t, err)
+	// Validate the PR has the right title, message
+	assert.Equal(t, fmt.Sprintf("Delete %s", name), pr.Title)
+	assert.Equal(t, fmt.Sprintf("Delete app %s", name), pr.Body)
+	// Validate the branch name
+	envDir, err := o.CommonOptions.EnvironmentsDir()
+	assert.NoError(t, err)
+	devEnvDir := filepath.Join(envDir, testOptions.OrgName, testOptions.DevEnvRepoInfo.Name)
+	branchName, err := o.Git().Branch(devEnvDir)
+	assert.NoError(t, err)
+	assert.Equal(t, fmt.Sprintf("delete-app-%s", name), branchName)
+	// Validate the updated Requirements.yaml
+	requirements, err := helm.LoadRequirementsFile(filepath.Join(devEnvDir, helm.RequirementsFileName))
+	assert.NoError(t, err)
+	assert.Len(t, requirements.Dependencies, 1)
+	assert.Nil(t, requirements.Dependencies[0])
 }

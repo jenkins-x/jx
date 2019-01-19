@@ -44,7 +44,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		return answer, err
 	}
 
-	environmentsDir, err := util.EnvironmentsDir()
+	environmentsDir, err := o.EnvironmentsDir()
 	if err != nil {
 		return answer, err
 	}
@@ -212,17 +212,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 		return answer, err
 	}
 
-	authConfigSvc, err := o.CreateGitAuthConfigService()
-	if err != nil {
-		return answer, err
-	}
-
-	gitKind, err := o.GitServerKind(gitInfo)
-	if err != nil {
-		return answer, err
-	}
-
-	provider, err := gitInfo.PickOrCreateProvider(authConfigSvc, "user name to submit the Pull Request", o.BatchMode, gitKind, o.Git(), o.In, o.Out, o.Err)
+	provider, err := o.gitProviderForURL(gitURL, "user name to submit the Pull Request")
 	if err != nil {
 		return answer, err
 	}

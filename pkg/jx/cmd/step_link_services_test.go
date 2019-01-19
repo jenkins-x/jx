@@ -60,6 +60,7 @@ func TestServiceLinking(t *testing.T) {
 		[]runtime.Object{fromNspc, toNspc, svcInFromNs, svcInToNs, svcDummyInFromNs},
 		nil,
 		gits.NewGitCLI(),
+		nil,
 		helm.NewHelmCLI("helm", helm.V2, "", true))
 	client, err := o.KubeClient()
 	assert.NoError(t, err)
