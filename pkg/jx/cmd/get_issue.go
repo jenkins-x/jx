@@ -87,7 +87,7 @@ func (o *GetIssueOptions) Run() error {
 	table := o.createTable()
 	table.AddRow("ISSUE", "STATUS", "APPLICATION", "ENVIRONMENT")
 
-	client, ns, err := o.CreateJXClient()
+	client, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return errors.Wrap(err, "cannot create the JX client")
 	}
@@ -97,7 +97,7 @@ func (o *GetIssueOptions) Run() error {
 		return errors.Wrap(err, "cannot list the environments")
 	}
 
-	kubeClient, _, err := o.CreateKubeClient()
+	kubeClient, _, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the Kubernetes client")
 	}

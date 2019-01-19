@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/sourcerepository"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"github.com/jenkins-x/jx/pkg/prow"
@@ -115,7 +114,7 @@ func (o *DeleteApplicationOptions) Run() error {
 		return errors.Wrap(err, "getting prow config")
 	}
 
-	repoService := sourcerepository.NewSourceRepositoryService(o.jxClient, o.currentNamespace)
+	repoService := kube.NewSourceRepositoryService(o.jxClient, o.currentNamespace)
 	var deletedApplications []string
 	if isProw {
 		deletedApplications, err = o.deleteProwApplication(repoService)
@@ -136,14 +135,14 @@ func (o *DeleteApplicationOptions) Run() error {
 	return nil
 }
 
-func (o *DeleteApplicationOptions) deleteProwApplication(repoService sourcerepository.SourceRepoer) (deletedApplications []string, err error) {
+func (o *DeleteApplicationOptions) deleteProwApplication(repoService kube.SourceRepoer) (deletedApplications []string, err error) {
 	envMap, _, err := kube.GetOrderedEnvironments(o.jxClient, "")
 	currentUser, err := user.Current()
 	if err != nil {
 		return deletedApplications, errors.Wrap(err, "getting current user")
 	}
 
-	kubeClient, ns, err := o.CreateKubeClient()
+	kubeClient, ns, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return deletedApplications, errors.Wrap(err, "getting kube client")
 	}
@@ -351,7 +350,7 @@ func (o *DeleteApplicationOptions) waitForGitOpsPullRequest(env *v1.Environment,
 
 func (o *DeleteApplicationOptions) init() error {
 	var err error
-	o.jxClient, o.currentNamespace, err = o.CreateJXClient()
+	o.jxClient, o.currentNamespace, err = o.JXClientAndDevNamespace()
 	if err != nil {
 		return errors.Wrap(err, "getting jx client")
 	}

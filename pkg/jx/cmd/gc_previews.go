@@ -69,7 +69,7 @@ func NewCmdGCPreviews(f Factory, in terminal.FileReader, out terminal.FileWriter
 
 // Run implements this command
 func (o *GCPreviewsOptions) Run() error {
-	client, currentNs, err := o.CreateJXClient()
+	client, currentNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
