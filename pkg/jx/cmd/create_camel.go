@@ -15,7 +15,7 @@ var (
 
 		For more documentation about Camel see: [https://camel.apache.org/](https://camel.apache.org/)
 
-	`)
+` + SeeAlsoText("jx create project"))
 
 	createCamelExample = templates.Examples(`
 		# Create a Camel application and be prompted for the folder name

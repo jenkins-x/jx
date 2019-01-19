@@ -36,7 +36,7 @@ var (
 
 		For more documentation see: [https://jenkins-x.io/developing/create-quickstart/](https://jenkins-x.io/developing/create-quickstart/)
 
-`)
+` + SeeAlsoText("jx create project"))
 
 	createQuickstartExample = templates.Examples(`
 		Create a new project from a sample/starter (found in https://github.com/jenkins-x-quickstarts)

@@ -16,16 +16,16 @@ import (
 )
 
 var (
-	create_spring_long = templates.LongDesc(`
+	createSpringLong = templates.LongDesc(`
 		Creates a new Spring Boot application and then optionally setups CI/CD pipelines and GitOps promotion.
 
 		You can see a demo of this command here: [https://jenkins-x.io/demos/create_spring/](https://jenkins-x.io/demos/create_spring/)
 
 		For more documentation see: [https://jenkins-x.io/developing/create-spring/](https://jenkins-x.io/developing/create-spring/)
 
-`)
+` + SeeAlsoText("jx create project"))
 
-	create_spring_example = templates.Examples(`
+	createSpringExample = templates.Examples(`
 		# Create a Spring Boot application where you use the terminal to pick the values
 		jx create spring
 
@@ -66,8 +66,8 @@ func NewCmdCreateSpring(f Factory, in terminal.FileReader, out terminal.FileWrit
 	cmd := &cobra.Command{
 		Use:     "spring",
 		Short:   "Create a new Spring Boot application and import the generated code into Git and Jenkins for CI/CD",
-		Long:    create_spring_long,
-		Example: create_spring_example,
+		Long:    createSpringLong,
+		Example: createSpringExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

@@ -94,13 +94,15 @@ func NewCmdStepStash(f Factory, in terminal.FileReader, out terminal.FileWriter,
 			CheckErr(err)
 		},
 	}
+
+	options.addCommonFlags(cmd)
+	addStorageLocationFlags(cmd, &options.StorageLocation)
+
 	cmd.Flags().StringArrayVarP(&options.Pattern, "pattern", "p", nil, "Specify the pattern to use to look for files")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The source directory to try detect the current git repository or branch. Defaults to using the current directory")
 	cmd.Flags().StringVarP(&options.Basedir, "basedir", "", "", "The base directory to use to create relative output file names. e.g. if you specify '--pattern \"target/*.xml\" then you may want to supply '--basedir target' to strip the 'target/' prefix from all collected files")
-	cmd.Flags().StringVarP(&options.StorageLocation.BucketURL, "bucket-url", "", "", "Specify the cloud storage bucket URL to send each file to. e.g. use 's3://nameOfBucket' on AWS, gs://anotherBucket' on GCP or on Azure 'azblob://thatBucket'")
 	cmd.Flags().StringVarP(&options.ProjectGitURL, "project-git-url", "", "", "The project git URL to collect for. Used to default the organisation and repository folders in the storage. If not specified its discovered from the local '.git' folder")
 	cmd.Flags().StringVarP(&options.ProjectBranch, "project-branch", "", "", "The project git branch of the project to collect for. Used to default the branch folder in the storage. If not specified its discovered from the local '.git' folder")
-	cmd.Flags().StringVarP(&options.StorageLocation.Classifier, "classifier", "c", "", "A name which classifies this type of file. Example values: "+kube.ClassificationValues)
 	return cmd
 }
 
