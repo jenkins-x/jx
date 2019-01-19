@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -20,8 +22,8 @@ import (
 type StepUnstashOptions struct {
 	StepOptions
 
-	URL    string
-	OutDir string
+	URL     string
+	OutDir  string
 	Timeout time.Duration
 }
 
@@ -66,7 +68,7 @@ func NewCmdStepUnstash(f Factory, in terminal.FileReader, out terminal.FileWrite
 	}
 	cmd.Flags().StringVarP(&options.URL, "url", "u", "", "The fully qualified URL to the file to unstash including the storage host, path and file name")
 	cmd.Flags().StringVarP(&options.OutDir, "output", "o", "", "The output file or directory")
-	cmd.Flags().DurationVarP(&options.Timeout, "timeout", "t", time.Second * 30, "The timeout period before we should fail unstashing the entry")
+	cmd.Flags().DurationVarP(&options.Timeout, "timeout", "t", time.Second*30, "The timeout period before we should fail unstashing the entry")
 	return cmd
 }
 
@@ -81,12 +83,12 @@ func (o *StepUnstashOptions) Run() error {
 	if file != "" {
 		isDir, err := util.DirExists(file)
 		if err != nil {
-		  return errors.Wrapf(err, "failed to check if %s is a directory", file)
+			return errors.Wrapf(err, "failed to check if %s is a directory", file)
 		}
 		if isDir {
 			u2, err := url.Parse(u)
 			if err != nil {
-			  return errors.Wrapf(err, "failed to parse URL %s", u)
+				return errors.Wrapf(err, "failed to parse URL %s", u)
 			}
 			name := u2.Path
 			if name == "" || strings.HasSuffix(name, "/") {
@@ -96,9 +98,14 @@ func (o *StepUnstashOptions) Run() error {
 		}
 	}
 
-	data, err := buckets.ReadURL(u, o.Timeout)
+	authSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
-	  return err
+		return err
+	}
+
+	data, err := buckets.ReadURL(u, o.Timeout, CreateBucketHttpFn(authSvc))
+	if err != nil {
+		return err
 	}
 	if file == "" {
 		log.Infof("%s\n", string(data))
@@ -106,8 +113,49 @@ func (o *StepUnstashOptions) Run() error {
 	}
 	err = ioutil.WriteFile(file, data, util.DefaultWritePermissions)
 	if err != nil {
-	  return errors.Wrapf(err, "failed to write file %s", file)
+		return errors.Wrapf(err, "failed to write file %s", file)
 	}
 	log.Infof("wrote: %s\n", util.ColorInfo(file))
 	return nil
+}
+
+// CreateBucketHttpFn creates a function to transform a git URL to add the token for accessing a git based bucket
+func CreateBucketHttpFn(authSvc auth.ConfigService) func(string) (string, error) {
+	return func(urlText string) (string, error) {
+		token, err := GetTokenForGitURL(authSvc, urlText)
+		if err != nil {
+			log.Warnf("Could not find the git token to access urlText %s due to: %s\n", urlText, err)
+		} else if token != "" {
+			idx := strings.Index(urlText, "://")
+			if idx > 0 {
+				idx += 3
+				urlText = urlText[0:idx] + token + "@" + urlText[idx:]
+			}
+		}
+		return urlText, nil
+	}
+}
+
+// GetTokenForGitURL returns the git token for the given git URL
+func GetTokenForGitURL(authSvc auth.ConfigService, u string) (string, error) {
+	gitInfo, err := gits.ParseGitURL(u)
+	if err != nil {
+		return "", err
+	}
+	gitServerURL := gitInfo.HostURL()
+	auths := authSvc.Config().FindUserAuths(gitServerURL)
+	for _, auth := range auths {
+		if auth.ApiToken != "" {
+			return auth.ApiToken, nil
+		}
+	}
+	if gitServerURL == "https://raw.githubusercontent.com" {
+		auths := authSvc.Config().FindUserAuths(gits.GitHubURL)
+		for _, auth := range auths {
+			if auth.ApiToken != "" {
+				return auth.ApiToken, nil
+			}
+		}
+	}
+	return "", nil
 }
