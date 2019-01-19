@@ -571,9 +571,11 @@ func (a *CreateJenkinsfileArguments) GenerateJenkinsfile(resolver ImportFileReso
 	}
 	outFile := a.OutputFile
 	outDir, _ := filepath.Split(outFile)
-	err = os.MkdirAll(outDir, util.DefaultWritePermissions)
-	if err != nil {
-		return errors.Wrapf(err, "failed to make directory %s", outDir)
+	if outDir != "" {
+		err = os.MkdirAll(outDir, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to make directory '%s' when creating Jenkinsfile '%s'", outDir, outFile)
+		}
 	}
 	file, err := os.Create(outFile)
 	if err != nil {
