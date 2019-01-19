@@ -94,17 +94,21 @@ func NewCmdEditStorage(f Factory, in terminal.FileReader, out terminal.FileWrite
 	}
 
 	options.addCommonFlags(cmd)
+	addStorageLocationFlags(cmd, &options.StorageLocation)
 
-	cmd.Flags().StringVarP(&options.StorageLocation.Classifier, "classifier", "c", "", "A name which classifies this type of file. Example values: "+kube.ClassificationValues)
-	cmd.Flags().StringVarP(&options.StorageLocation.BucketURL, "bucket-url", "", "", "Specify the go-cloud URL of the bucket to use")
-	cmd.Flags().StringVarP(&options.StorageLocation.GitURL, "git-url", "", "", "Specify the Git URL to populate in a gh-pages branch")
-	cmd.Flags().StringVarP(&options.StorageLocation.GitBranch, "git-branch", "", "gh-pages", "The branch to use to store files in the git branch")
 	cmd.Flags().StringVarP(&options.Bucket, "bucket", "", "", "Specify the name of the bucket to use")
 	cmd.Flags().StringVarP(&options.BucketKind, "bucket-kind", "", "", "The kind of bucket to use like 'gs, s3, azure' etc")
 	cmd.Flags().StringVarP(&options.GKEProjectID, "gke-project-id", "", "", "Google Project ID to use for a new bucket")
 	cmd.Flags().StringVarP(&options.GKEZone, "gke-zone", "", "", "The zone (e.g. us-central1-a) where the new bucket will be created")
 
 	return cmd
+}
+
+func addStorageLocationFlags(cmd *cobra.Command, location *jenkinsv1.StorageLocation) {
+	cmd.Flags().StringVarP(&location.Classifier, "classifier", "c", "", "A name which classifies this type of file. Example values: "+kube.ClassificationValues)
+	cmd.Flags().StringVarP(&location.BucketURL, "bucket-url", "", "", "Specify the cloud storage bucket URL to send each file to. e.g. use 's3://nameOfBucket' on AWS, gs://anotherBucket' on GCP or on Azure 'azblob://thatBucket'")
+	cmd.Flags().StringVarP(&location.GitURL, "git-url", "", "", "Specify the Git URL to of the repository to use for storage")
+	cmd.Flags().StringVarP(&location.GitBranch, "git-branch", "", "gh-pages", "The branch to use to store files in the git repository")
 }
 
 // Run implements the command

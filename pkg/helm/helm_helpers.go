@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/client-go/kubernetes"
@@ -252,7 +253,12 @@ func LoadTemplatesDir(dirName string) (map[string]map[string]interface{}, error)
 			return nil, err
 		}
 		for _, f := range files {
-			data, err := ioutil.ReadFile(f.Name())
+			name := f.Name()
+			// ignore files like .gitignore or README.md etc
+			if !strings.HasSuffix(name, ".yaml") && !strings.HasSuffix(name, ".yml") {
+				continue
+			}
+			data, err := ioutil.ReadFile(name)
 			if err != nil {
 				return nil, err
 			}
@@ -260,7 +266,7 @@ func LoadTemplatesDir(dirName string) (map[string]map[string]interface{}, error)
 			if err != nil {
 				return nil, err
 			}
-			answer[f.Name()] = v
+			answer[name] = v
 		}
 	}
 	return answer, nil

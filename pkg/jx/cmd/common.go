@@ -264,6 +264,9 @@ func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, 
 		if err != nil {
 			return nil, "", err
 		}
+		if devNs == "" {
+			devNs = ns
+		}
 		o.devNamespace = devNs
 	}
 	return o.jxClient, o.devNamespace, nil

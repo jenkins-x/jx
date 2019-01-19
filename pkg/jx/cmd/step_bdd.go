@@ -374,6 +374,16 @@ func (o *StepBDDOptions) runTests(gopath string) error {
 	}
 	_, err = c.RunWithoutRetry()
 
+	o.copyReports(testDir, err)
+
+	if o.Flags.IgnoreTestFailure && err != nil {
+		log.Infof("Ignoring test failure %s\n", err)
+		return nil
+	}
+	return err
+}
+
+func (o *StepBDDOptions) copyReports(testDir string, err error) error {
 	reportsDir := filepath.Join(testDir, "reports")
 	reportsOutputDir := o.Flags.ReportsOutputDir
 	if reportsOutputDir == "" {
@@ -382,16 +392,11 @@ func (o *StepBDDOptions) runTests(gopath string) error {
 	err = os.MkdirAll(reportsOutputDir, util.DefaultWritePermissions)
 	if err != nil {
 		log.Warnf("failed to make reports output dir: %s : %s\n", reportsOutputDir, err)
+		return err
 	}
-
 	err = util.CopyDir(reportsDir, reportsOutputDir, true)
 	if err != nil {
 		log.Warnf("failed to copy reports dir: %s directory to: %s : %s\n", reportsDir, reportsOutputDir, err)
-	}
-
-	if o.Flags.IgnoreTestFailure && err != nil {
-		log.Infof("Ignoring test failure %s\n", err)
-		return nil
 	}
 	return err
 }
