@@ -81,6 +81,7 @@ type PromoteOptions struct {
 	jenkinsURL              string
 	releaseResource         *v1.Release
 	ReleaseInfo             *ReleaseInfo
+	prow                    bool
 }
 
 type ReleaseInfo struct {
@@ -202,6 +203,7 @@ func (o *PromoteOptions) Run() error {
 		return err
 	}
 	if prow {
+		o.prow = true
 		log.Warn("prow based install so skip waiting for the merge of Pull Requests to go green as currently there is an issue with getting" +
 			"statuses from the PR, see https://github.com/jenkins-x/jx/issues/2410")
 		o.NoWaitForUpdatePipeline = true
@@ -781,6 +783,9 @@ func (o *PromoteOptions) verifyHelmConfigured() error {
 
 func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStepActivityKey {
 	pipeline := o.Pipeline
+	if o.Build == "" {
+		o.Build = o.Version
+	}
 	build := o.Build
 	buildURL := os.Getenv("BUILD_URL")
 	buildLogsURL := os.Getenv("BUILD_LOG_URL")
@@ -822,7 +827,7 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 	name := pipeline
 	if build != "" {
 		name += "-" + build
-		if buildURL == "" || buildLogsURL == "" {
+		if (buildURL == "" || buildLogsURL == "") && !o.prow {
 			jenkinsURL := o.getAndUpdateJenkinsURL()
 			if jenkinsURL != "" {
 				path := pipeline
