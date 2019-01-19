@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/sourcerepository"
 	"io"
 	"io/ioutil"
 	"os"
@@ -92,6 +91,7 @@ type ImportOptions struct {
 	ListDraftPacks          bool
 	DraftPack               string
 	DockerRegistryOrg       string
+	GitDetails              gits.CreateRepoData
 
 	DisableDotGitSearch   bool
 	InitialisedGit        bool
@@ -192,6 +192,7 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().StringVarP(&options.DraftPack, "pack", "", "", "The name of the pack to use")
 	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The name of the docker registry organisation to use. If not specified then the Git provider organisation will be used")
 	cmd.Flags().StringVarP(&options.ExternalJenkinsBaseURL, "external-jenkins-url", "", "", "The jenkins url that an external git provider needs to use")
+	cmd.Flags().BoolVarP(&options.DisableMaven, "disable-updatebot", "", false, "disable updatebot-maven-plugin from attempting to fix/update the maven pom.xml")
 
 	options.addCommonFlags(cmd)
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
@@ -411,7 +412,7 @@ func (options *ImportOptions) Run() error {
 	}
 
 
-	err = sourcerepository.NewSourceRepositoryService(jxClient, ns).CreateSourceRepository(
+	err = kube.NewSourceRepositoryService(jxClient, ns).CreateOrUpdateSourceRepository(
 		options.AppName, options.Organisation, options.GitProvider.ServerURL())
 	if err != nil {
 		return errors.Wrapf(err, "creating application resource for %s", util.ColorInfo(options.AppName))
@@ -604,12 +605,15 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	_, defaultRepoName := filepath.Split(dir)
 
 	options.GitRepositoryOptions.Owner = options.getOrganisation()
-
-	details, err := gits.PickNewGitRepository(options.BatchMode, authConfigSvc, defaultRepoName, &options.GitRepositoryOptions,
-		options.GitServer, options.GitUserAuth, options.Git(), options.In, options.Out, options.Err)
-	if err != nil {
-		return err
+	details := &options.GitDetails
+	if details.RepoName == "" {
+		details, err = gits.PickNewGitRepository(options.BatchMode, authConfigSvc, defaultRepoName, &options.GitRepositoryOptions,
+			options.GitServer, options.GitUserAuth, options.Git(), options.In, options.Out, options.Err)
+		if err != nil {
+			return err
+		}
 	}
+
 	repo, err := details.CreateRepository()
 	if err != nil {
 		return err
@@ -950,6 +954,7 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 		return err
 	}
 
+	region, _ := kube.ReadRegion(kubeClient, ns)
 	cm, err := kubeClient.CoreV1().ConfigMaps(ns).Get(kube.ConfigMapJenkinsDockerRegistry, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("Could not find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsDockerRegistry, ns, err)
@@ -958,7 +963,7 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 		dockerRegistry := cm.Data["docker.registry"]
 		if dockerRegistry != "" {
 			if strings.HasSuffix(dockerRegistry, ".amazonaws.com") && strings.Index(dockerRegistry, ".ecr.") > 0 {
-				return amazon.LazyCreateRegistry(dockerRegistry, orgName, appName)
+				return amazon.LazyCreateRegistry(kubeClient, ns, region, dockerRegistry, orgName, appName)
 			}
 		}
 	}

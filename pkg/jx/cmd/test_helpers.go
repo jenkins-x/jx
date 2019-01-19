@@ -126,7 +126,7 @@ func CreateTestPipelineActivity(jxClient versioned.Interface, ns string, folder 
 			Build:    build,
 		},
 	}
-	a, _, err := key.GetOrCreate(activities)
+	a, _, err := key.GetOrCreate(jxClient, ns)
 	version := "1.0." + build
 	a.Spec.GitOwner = folder
 	a.Spec.GitRepository = repo

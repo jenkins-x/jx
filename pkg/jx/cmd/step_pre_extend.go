@@ -109,10 +109,6 @@ func (o *StepPreExtendOptions) Run() error {
 			return err
 		}
 
-		activities := client.JenkinsV1().PipelineActivities(ns)
-		if err != nil {
-			return err
-		}
 		gitInfo, err := o.FindGitInfo("")
 		appName := ""
 		if gitInfo != nil {
@@ -130,7 +126,7 @@ func (o *StepPreExtendOptions) Run() error {
 					Build:    build,
 				},
 			}
-			a, _, err := key.GetOrCreate(activities)
+			a, _, err := key.GetOrCreate(client,ns)
 			if err != nil {
 				return err
 			}
@@ -147,7 +143,7 @@ func (o *StepPreExtendOptions) Run() error {
 					a.Spec.PostExtensions = result
 				}
 			}
-			a, err = activities.Update(a)
+			a, err = client.JenkinsV1().PipelineActivities(ns).Update(a)
 			if err != nil {
 				return err
 			}

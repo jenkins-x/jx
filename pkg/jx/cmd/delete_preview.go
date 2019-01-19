@@ -98,6 +98,24 @@ func (o *DeletePreviewOptions) Run() error {
 }
 
 func (o *DeletePreviewOptions) deletePreview(name string) error {
+	jxClient, ns, err := o.JXClient()
+	if err != nil {
+		return err
+	}
+
+	environment, err := kube.GetEnvironment(jxClient, ns, name)
+	if err != nil {
+		return err
+	}
+	releaseName := kube.GetPreviewEnvironmentReleaseName(environment)
+	if len(releaseName) > 0 {
+		log.Infof("Deleting helm release: %s\n", util.ColorInfo(releaseName))
+		err = o.Helm().DeleteRelease(ns, releaseName, true)
+		if err != nil {
+			return err
+		}
+	}
+
 	log.Infof("Deleting preview environment: %s\n", util.ColorInfo(name))
 	deleteOptions := &DeleteEnvOptions{
 		CommonOptions:   o.CommonOptions,

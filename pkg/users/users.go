@@ -35,10 +35,7 @@ func GetUsers(jxClient versioned.Interface, ns string) (map[string]*jenkinsv1.Us
 
 // CreateUser creates a new default User
 func CreateUser(ns string, login string, name string, email string) *jenkinsv1.User {
-	id := login
-	if email != "" {
-		id = kube.EmailToK8sID(email)
-	}
+	id := kube.ToValidName(login)
 	user := &jenkinsv1.User{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      id,
@@ -87,9 +84,6 @@ func DeleteUser(jxClient versioned.Interface, ns string, userName string) error 
 func Resolve(id string, providerKey string, jxClient versioned.Interface,
 	namespace string, selectUsers func(id string, users []jenkinsv1.User) (string,
 		[]jenkinsv1.User, *jenkinsv1.User, error)) (*jenkinsv1.User, error) {
-	if id == "" {
-		return nil, fmt.Errorf("id cannot be empty")
-	}
 	if id != "" {
 
 		labelSelector := fmt.Sprintf("%s=%s", providerKey, id)

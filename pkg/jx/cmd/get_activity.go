@@ -81,7 +81,7 @@ func NewCmdGetActivity(f Factory, in terminal.FileReader, out terminal.FileWrite
 
 // Run implements this command
 func (o *GetActivityOptions) Run() error {
-	client, currentNs, err := o.CreateJXClient()
+	client, currentNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
