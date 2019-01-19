@@ -514,6 +514,8 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "getting the platform version")
 	}
 
+	log.Infof("Installing jenkins-x-platform version: %s\n", util.ColorInfo(version))
+
 	if options.Flags.GitOpsMode {
 		err := options.installPlatformGitOpsMode(gitOpsEnvDir, gitOpsDir, configStore, DEFAULT_CHARTMUSEUM_URL,
 			JenkinsXPlatformChartName, ns, version, valuesFiles, secretsFiles)
