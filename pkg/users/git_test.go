@@ -21,6 +21,7 @@ import (
 )
 
 func TestFindUserByLabel(t *testing.T) {
+	t.Parallel()
 	resolver, _, err := prepare(t)
 	assert.NoError(t, err)
 	gitUserID := uuid.NewV4().String()
@@ -48,6 +49,7 @@ func TestFindUserByLabel(t *testing.T) {
 }
 
 func TestFindUserBySignature(t *testing.T) {
+	t.Parallel()
 	resolver, _, err := prepare(t)
 	assert.NoError(t, err)
 	gitUserID := uuid.NewV4().String()
@@ -70,6 +72,7 @@ func TestFindUserBySignature(t *testing.T) {
 }
 
 func TestFindUserByAccountReference(t *testing.T) {
+	t.Parallel()
 	resolver, _, err := prepare(t)
 	assert.NoError(t, err)
 	gitUserID1 := uuid.NewV4().String()
@@ -102,6 +105,7 @@ func TestFindUserByAccountReference(t *testing.T) {
 }
 
 func TestFindUserByFromGitProvider(t *testing.T) {
+	t.Parallel()
 	resolver, fakeProvider, err := prepare(t)
 	assert.NoError(t, err)
 	gitUserID1 := uuid.NewV4().String()
