@@ -3,6 +3,7 @@
 package cmd_test
 
 import (
+	"github.com/jenkins-x/jx/pkg/log"
 	"io/ioutil"
 	"os"
 	"path"
@@ -21,11 +22,14 @@ import (
 )
 
 const (
-	mavenKeepOldJenkinsfile = "maven_keep_old_jenkinsfile"
-	mavenOldJenkinsfile     = "maven_old_jenkinsfile"
-	mavenCamel              = "maven_camel"
-	mavenSpringBoot         = "maven_springboot"
-	probePrefix             = "probePath:"
+	gitSuffix                       = "_with_git"
+	mavenKeepOldJenkinsfile         = "maven_keep_old_jenkinsfile"
+	mavenKeepOldJenkinsfile_withGit = mavenKeepOldJenkinsfile + gitSuffix
+	mavenOldJenkinsfile             = "maven_old_jenkinsfile"
+	mavenOldJenkinsfile_withGit     = mavenOldJenkinsfile + gitSuffix
+	mavenCamel                      = "maven_camel"
+	mavenSpringBoot                 = "maven_springboot"
+	probePrefix                     = "probePath:"
 )
 
 func TestImportProjects(t *testing.T) {
@@ -56,6 +60,16 @@ func testImportProject(t *testing.T, tempDir string, testcase string, srcDir str
 	}
 	testDir := filepath.Join(tempDir+"-"+testDirSuffix, testcase)
 	util.CopyDir(srcDir, testDir, true)
+	if strings.HasSuffix(testcase, gitSuffix) {
+		gitDir := filepath.Join(testDir, ".gitdir")
+		dotGitExists, gitErr := util.FileExists(gitDir)
+		if gitErr != nil {
+			log.Warnf("Git source directory %s does not exist: %s", gitDir, gitErr)
+		} else if dotGitExists {
+			dotGitDir := filepath.Join(testDir, ".git")
+			util.RenameDir(gitDir, dotGitDir, true)
+		}
+	}
 	err := assertImport(t, testDir, testcase, withRename)
 	assert.NoError(t, err, "Importing dir %s from source %s", testDir, srcDir)
 }
@@ -74,7 +88,7 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 		o.Jenkinsfile = "Jenkinsfile-Renamed"
 	}
 
-	if testcase == mavenKeepOldJenkinsfile {
+	if strings.HasPrefix(testcase, mavenKeepOldJenkinsfile) {
 		o.DisableJenkinsfileCheck = true
 	}
 	if testcase == mavenCamel || dirName == mavenSpringBoot {
@@ -93,35 +107,36 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 		tests.AssertFileExists(t, filepath.Join(testDir, "Dockerfile"))
 		tests.AssertFileExists(t, filepath.Join(testDir, "charts", dirName, "Chart.yaml"))
 
-		if testcase == mavenKeepOldJenkinsfile {
+		if strings.HasPrefix(testcase, mavenKeepOldJenkinsfile) {
 			tests.AssertFileContains(t, jenkinsfile, "THIS IS OLD!")
 			tests.AssertFileDoesNotExist(t, jenkinsfile+cmd.JenkinsfileBackupSuffix)
-		} else {
-			if strings.HasPrefix(dirName, "maven") {
-				tests.AssertFileContains(t, jenkinsfile, "mvn")
-			}
-			if strings.HasPrefix(dirName, "gradle") {
-				tests.AssertFileContains(t, jenkinsfile, "gradle")
-			}
-
-			if !o.DisableMaven {
-				if testcase == mavenCamel {
-					// should have modified it
-					assertProbePathEquals(t, filepath.Join(testDir, "charts", dirName, "values.yaml"), "/health")
-				}
-				if testcase == mavenSpringBoot {
-					// should have left it
-					assertProbePathEquals(t, filepath.Join(testDir, "charts", dirName, "values.yaml"), "/actuator/health")
-				}
-			}
-		}
-		if testcase == mavenOldJenkinsfile {
+		} else if strings.HasPrefix(testcase, mavenOldJenkinsfile) {
+			tests.AssertFileExists(t, jenkinsfile)
 			if withRename {
 				tests.AssertFileExists(t, defaultJenkinsfile)
 				tests.AssertFileContains(t, defaultJenkinsfile, "THIS IS OLD!")
-				tests.AssertFileDoesNotExist(t, defaultJenkinsfile+cmd.JenkinsfileBackupSuffix)
+			} else if strings.HasSuffix(testcase, gitSuffix) {
+				tests.AssertFileDoesNotExist(t, jenkinsfile+cmd.JenkinsfileBackupSuffix)
 			} else {
-				tests.AssertFileExists(t, defaultJenkinsfile+cmd.JenkinsfileBackupSuffix)
+				tests.AssertFileExists(t, jenkinsfile+cmd.JenkinsfileBackupSuffix)
+				tests.AssertFileContains(t, jenkinsfile+cmd.JenkinsfileBackupSuffix, "THIS IS OLD!")
+			}
+		}
+		if strings.HasPrefix(dirName, "maven") && !strings.Contains(testcase, "keep_old") {
+			tests.AssertFileContains(t, jenkinsfile, "mvn")
+		}
+		if strings.HasPrefix(dirName, "gradle") {
+			tests.AssertFileContains(t, jenkinsfile, "gradle")
+		}
+
+		if !o.DisableMaven {
+			if testcase == mavenCamel {
+				// should have modified it
+				assertProbePathEquals(t, filepath.Join(testDir, "charts", dirName, "values.yaml"), "/health")
+			}
+			if testcase == mavenSpringBoot {
+				// should have left it
+				assertProbePathEquals(t, filepath.Join(testDir, "charts", dirName, "values.yaml"), "/actuator/health")
 			}
 		}
 	}

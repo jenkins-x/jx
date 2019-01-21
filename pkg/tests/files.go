@@ -23,6 +23,18 @@ func AssertFileContains(t *testing.T, fileName string, containsText string) {
 	}
 }
 
+// AssertFileContains asserts that a given file exists and does not contain the given text
+func AssertFileContainsNot(t *testing.T, fileName string, containsText string) {
+	if AssertFileExists(t, fileName) {
+		data, err := ioutil.ReadFile(fileName)
+		assert.NoError(t, err, "Failed to read file %s", fileName)
+		if err == nil {
+			text := string(data)
+			assert.True(t, strings.Index(text, containsText) == 0, "The file %s does contain text: %s", fileName, containsText)
+		}
+	}
+}
+
 // AssertFileExists asserts that the given file exists
 func AssertFileExists(t *testing.T, fileName string) bool {
 	exists, err := util.FileExists(fileName)
