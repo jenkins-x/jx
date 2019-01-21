@@ -427,7 +427,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "storing the install values")
 	}
 
-	err = options.configureCloudProivderPreInit(client)
+	err = options.configureCloudProviderPreInit(client)
 	if err != nil {
 		return errors.Wrap(err, "configuring the cloud provider before initializing the platform")
 	}
@@ -1576,7 +1576,7 @@ func (options *InstallOptions) setInstallValues(values map[string]string) {
 	}
 }
 
-func (options *InstallOptions) configureCloudProivderPreInit(client kubernetes.Interface) error {
+func (options *InstallOptions) configureCloudProviderPreInit(client kubernetes.Interface) error {
 	switch options.Flags.Provider {
 	case AKS:
 		err := options.createClusterAdmin()
