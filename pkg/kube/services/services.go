@@ -20,6 +20,7 @@ const (
 	ExposeAnnotation            = "fabric8.io/expose"
 	ExposeURLAnnotation         = "fabric8.io/exposeUrl"
 	ExposeGeneratedByAnnotation = "fabric8.io/generated-by"
+	ExposeIngressName           = "fabric8.io/ingress.name"
 	JenkinsXSkipTLSAnnotation   = "jenkins-x.io/skip.tls"
 	ExposeIngressAnnotation     = "fabric8.io/ingress.annotations"
 	CertManagerAnnotation       = "certmanager.k8s.io/issuer"
@@ -292,11 +293,19 @@ func GetServiceAppName(c kubernetes.Interface, name, ns string) (string, error) 
 // ServiceAppName retrives the application name from service labels. If no app lable exists,
 // it returns the service name
 func ServiceAppName(service *v1.Service) string {
-	app, ok := service.Labels[ServiceAppLabel]
-	if !ok {
-		app = service.GetName()
+	if annotations := service.Annotations; annotations != nil {
+		ingName, ok := annotations[ExposeIngressName]
+		if ok {
+			return ingName
+		}
 	}
-	return app
+	if labels := service.Labels; labels != nil {
+		app, ok := labels[ServiceAppLabel]
+		if ok {
+			return app
+		}
+	}
+	return service.GetName()
 }
 
 // AnnotateServicesWithCertManagerIssuer adds the cert-manager annotation to the services from the given namespace. If a list of
