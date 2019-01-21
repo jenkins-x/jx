@@ -244,8 +244,20 @@ const (
 
 	AUTH = "auth"
 
-	Region = "Region"
+	// KubeProvider stores the kubernetes provider used to create the cluster or install
+	KubeProvider = "kubeProvider"
 
+	// Region stores the cloud region the cluster is installed on
+	Region = "region"
+
+	// Zone stores the cloud zone of the install
+	Zone = "zone"
+
+	// ProjectID stores the project ID used to install the cluster (a GKE thing mostly)
+	ProjectID = "projectID"
+
+	// ClusterName stores the name of the cluster that is created
+	ClusterName = "clusterName"
 )
 
 var (

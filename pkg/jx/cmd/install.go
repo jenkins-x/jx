@@ -11,17 +11,17 @@ import (
 	"strings"
 	"time"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
-	randomdata "github.com/Pallinder/go-randomdata"
+	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
 
-	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/jenkins-x/jx/pkg/addon"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -36,9 +36,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	git "gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4"
 	core_v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -65,6 +65,8 @@ type InstallOptions struct {
 
 	modifyConfigMapCallback ModifyConfigMapCallback
 	modifySecretCallback    ModifySecretCallback
+
+	installValues map[string]string
 }
 
 // InstallFlags flags for the install command
@@ -411,9 +413,18 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrapf(err, "retrieving cloud provider '%s'", options.Flags.Provider)
 	}
 
+	options.setInstallValues(map[string]string{
+		kube.KubeProvider: options.Flags.Provider,
+	})
+
 	err = options.setMinikubeFromContext()
 	if err != nil {
 		return errors.Wrap(err, "configuring minikube from kubectl context")
+	}
+
+	err = options.storeInstallValues(client, ns)
+	if err != nil {
+		return errors.Wrap(err, "storing the install values")
 	}
 
 	err = options.configureCloudProivderPreInit(client)
@@ -1554,6 +1565,17 @@ func (options *InstallOptions) installHelmBinaries() error {
 	return options.installMissingDependencies(dependencies)
 }
 
+func (options *InstallOptions) setInstallValues(values map[string]string) {
+	if values != nil {
+		if options.installValues == nil {
+			options.installValues = map[string]string{}
+		}
+		for k, v := range values {
+			options.installValues[k] = v
+		}
+	}
+}
+
 func (options *InstallOptions) configureCloudProivderPreInit(client kubernetes.Interface) error {
 	switch options.Flags.Provider {
 	case AKS:
@@ -1925,7 +1947,9 @@ func (options *InstallOptions) saveClusterConfig() error {
 
 		_, err = options.ModifyConfigMap(kube.ConfigMapNameJXInstallConfig, func(cm *core_v1.ConfigMap) error {
 			data := util.ToStringMapStringFromStruct(jxInstallConfig)
-			cm.Data = data
+			for k, v := range data {
+				cm.Data[k] = v
+			}
 			return nil
 		})
 		if err != nil {
@@ -2596,6 +2620,18 @@ func (options *InstallOptions) configureTeamSettings() error {
 	err := options.ModifyDevEnvironment(callback)
 	if err != nil {
 		return errors.Wrap(err, "updating the team setttings in the dev environment")
+	}
+	return nil
+}
+
+func (options *InstallOptions) storeInstallValues(client kubernetes.Interface, ns string) error {
+	// TODO fix for GitOps
+	if !options.Flags.GitOpsMode {
+		log.Infof("storing configuration values %#v into namespace %s\n", options.installValues, ns)
+		err := kube.RememberInstallValues(client, ns, options.installValues)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
