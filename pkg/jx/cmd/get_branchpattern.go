@@ -3,7 +3,8 @@ package cmd
 import (
 	"io"
 
-	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -16,9 +17,6 @@ type GetBranchPatternOptions struct {
 
 const (
 	branchPattern = "branchpattern"
-
-	defaultBranchPatterns     = jenkins.BranchPatternMasterPRsAndFeatures
-	defaultForkBranchPatterns = ""
 )
 
 var (
@@ -39,10 +37,10 @@ var (
 )
 
 // NewCmdGetBranchPattern creates the new command for: jx get env
-func NewCmdGetBranchPattern(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetBranchPattern(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetBranchPatternOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -74,7 +72,7 @@ func (o *GetBranchPatternOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	table := o.createTable()
+	table := o.Table()
 	table.AddRow("BRANCH PATTERNS")
 	table.AddRow(patterns.DefaultBranchPattern)
 	table.Render()

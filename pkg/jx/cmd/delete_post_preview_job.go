@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -32,10 +34,10 @@ type DeletePostPreviewJobOptions struct {
 }
 
 // NewCmdDeletePostPreviewJob creates a command object for the "create" command
-func NewCmdDeletePostPreviewJob(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeletePostPreviewJob(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeletePostPreviewJobOptions{
 		DeleteOptions: DeleteOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -57,7 +59,7 @@ func NewCmdDeletePostPreviewJob(f Factory, in terminal.FileReader, out terminal.
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Name, optionName, "n", "", "The name of the job to be deleted")
 	return cmd

@@ -4,6 +4,8 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -17,10 +19,10 @@ type GetTokenOptions struct {
 }
 
 // NewCmdGetToken creates the command
-func NewCmdGetToken(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetToken(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetTokenOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -60,7 +62,7 @@ func (o *GetTokenOptions) displayUsersWithTokens(authConfigSvc auth.ConfigServic
 	filterKind := o.Kind
 	filterName := o.Name
 
-	table := o.createTable()
+	table := o.Table()
 	table.AddRow("KIND", "NAME", "URL", "USERNAME", "TOKEN?")
 
 	for _, s := range config.Servers {

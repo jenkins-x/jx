@@ -11,6 +11,8 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -48,11 +50,11 @@ type CreateLileOptions struct {
 }
 
 // NewCmdCreateLile creates a command object for the "create" command
-func NewCmdCreateLile(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateLile(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateLileOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 					Out:     out,
@@ -81,11 +83,11 @@ func NewCmdCreateLile(f Factory, in terminal.FileReader, out terminal.FileWriter
 
 // checkLileInstalled lazily install lile if its not installed already
 func (o CreateLileOptions) checkLileInstalled() error {
-	_, err := o.getCommandOutput("", "lile", "help")
+	_, err := o.GetCommandOutput("", "lile", "help")
 	if err != nil {
 		log.Infoln("Installing Lile's dependencies...")
 		// lets install lile
-		err = o.installBrewIfRequired()
+		err = o.InstallBrewIfRequired()
 		if err != nil {
 			return err
 		}

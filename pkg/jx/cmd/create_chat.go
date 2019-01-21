@@ -3,6 +3,8 @@ package cmd
 import (
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -13,10 +15,10 @@ type CreateChatOptions struct {
 }
 
 // NewCmdCreateChat creates a command object for the "create" command
-func NewCmdCreateChat(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateChat(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateChatOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,

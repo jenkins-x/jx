@@ -10,6 +10,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -19,7 +21,7 @@ import (
 
 // UpdateWebhooks the flags for running create cluster
 type UpdateWebhooksOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 	Org             string
 	Repo            string
 	ExactHookMatch  bool
@@ -41,7 +43,7 @@ var (
 `)
 )
 
-func NewCmdUpdateWebhooks(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpdateWebhooks(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := createUpdateWebhooksOptions(f, in, out, errOut)
 
 	cmd := &cobra.Command{
@@ -65,8 +67,8 @@ func NewCmdUpdateWebhooks(f Factory, in terminal.FileReader, out terminal.FileWr
 	return cmd
 }
 
-func createUpdateWebhooksOptions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) UpdateWebhooksOptions {
-	commonOptions := CommonOptions{
+func createUpdateWebhooksOptions(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) UpdateWebhooksOptions {
+	commonOptions := commoncmd.CommonOptions{
 		Factory: f,
 		In:      in,
 		Out:     out,
@@ -89,7 +91,7 @@ func (options *UpdateWebhooksOptions) Run() error {
 		return errors.Wrap(err, "failed to get kube client")
 	}
 
-	ns, _, err := kube.GetDevNamespace(client, options.currentNamespace)
+	ns, _, err := kube.GetDevNamespace(client, options.CurrentNamespace())
 	if err != nil {
 		return err
 	}
@@ -99,7 +101,7 @@ func (options *UpdateWebhooksOptions) Run() error {
 		return err
 	}
 
-	isProwEnabled, err := options.isProw()
+	isProwEnabled, err := options.IsProw()
 	if err != nil {
 		return err
 	}
@@ -111,7 +113,7 @@ func (options *UpdateWebhooksOptions) Run() error {
 
 	gitServer := authConfigService.Config().CurrentServer
 
-	git, err := options.gitProviderForGitServerURL(gitServer, "github")
+	git, err := options.GitProviderForGitServerURL(gitServer, "github")
 	if err != nil {
 		return errors.Wrap(err, "unable to determine git provider")
 	}

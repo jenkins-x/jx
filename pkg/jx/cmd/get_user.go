@@ -4,6 +4,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -31,10 +33,10 @@ var (
 )
 
 // NewCmdGetUser creates the new command for: jx get env
-func NewCmdGetUser(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetUser(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetUserOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -79,7 +81,7 @@ There are no Users yet. Try create one via: jx create user
 		return nil
 	}
 
-	table := o.createTable()
+	table := o.Table()
 	table.AddRow("LOGIN", "NAME", "EMAIL", "URL", "ROLES")
 	for _, name := range names {
 		user := users[name]

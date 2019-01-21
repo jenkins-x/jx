@@ -12,6 +12,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/pkg/errors"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -36,10 +38,6 @@ var (
 )
 
 const (
-	CertManagerDeployment = "cert-manager"
-	CertManagerNamespace  = "cert-manager"
-	Exposecontroller      = "exposecontroller"
-
 	certsIssuedReadyTimeout = 5 * time.Minute
 )
 
@@ -61,8 +59,8 @@ type UpgradeIngressOptions struct {
 }
 
 // NewCmdUpgradeIngress defines the command
-func NewCmdUpgradeIngress(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	commonOptions := CommonOptions{
+func NewCmdUpgradeIngress(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+	commonOptions := commoncmd.CommonOptions{
 		Factory: f,
 		In:      in,
 		Out:     out,
@@ -89,7 +87,7 @@ func NewCmdUpgradeIngress(f Factory, in terminal.FileReader, out terminal.FileWr
 		},
 	}
 	options.addFlags(cmd)
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	return cmd
 }
@@ -106,15 +104,11 @@ func (o *UpgradeIngressOptions) addFlags(cmd *cobra.Command) {
 
 // Run implements the command
 func (o *UpgradeIngressOptions) Run() error {
-	client, err := o.KubeClient()
+	client, devNamespace, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
 	}
 
-	o.devNamespace, _, err = kube.GetDevNamespace(client, o.currentNamespace)
-	if err != nil {
-		return errors.Wrap(err, "getting the dev namesapce")
-	}
 	previousWebHookEndpoint := ""
 	if !o.SkipResourcesUpdate {
 		previousWebHookEndpoint, err = o.GetWebHookEndpoint()
@@ -144,7 +138,7 @@ func (o *UpgradeIngressOptions) Run() error {
 	}
 
 	// save details to a configmap
-	_, err = kube.SaveAsConfigMap(client, kube.ConfigMapIngressConfig, o.devNamespace, o.IngressConfig)
+	_, err = kube.SaveAsConfigMap(client, kube.ConfigMapIngressConfig, devNamespace, o.IngressConfig)
 	if err != nil {
 		return errors.Wrap(err, "saving ingress config into a configmap")
 	}
@@ -227,7 +221,7 @@ func (o *UpgradeIngressOptions) Run() error {
 		} else {
 			log.Warn("It can take around 5 minutes for Cert Manager to get certificates from Lets Encrypt and update Ingress rules\n")
 			log.Info("Use the following commands to diagnose any issues:\n")
-			log.Infof("jx logs %s -n %s\n", CertManagerDeployment, CertManagerNamespace)
+			log.Infof("jx logs %s -n %s\n", commoncmd.CertManagerDeployment, commoncmd.CertManagerNamespace)
 			log.Info("kubectl describe certificates\n")
 			log.Info("kubectl describe issuers\n\n")
 		}
@@ -287,13 +281,13 @@ func (o *UpgradeIngressOptions) updateResources(previousWebHookEndpoint string) 
 		return errors.Wrap(err, "failed to get jxclient")
 	}
 
-	isProwEnabled, err := o.isProw()
+	isProwEnabled, err := o.IsProw()
 	if err != nil {
 		return errors.Wrap(err, "checking if is prow")
 	}
 
 	if !isProwEnabled {
-		err = o.updateJenkinsURL(o.TargetNamespaces)
+		err = o.UpdateJenkinsURL(o.TargetNamespaces)
 		if err != nil {
 			return errors.Wrap(err, "upgrade jenkins URL")
 		}
@@ -358,7 +352,7 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 			return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 		}
 		for _, i := range ings.Items {
-			if i.Annotations[services.ExposeGeneratedByAnnotation] == Exposecontroller {
+			if i.Annotations[services.ExposeGeneratedByAnnotation] == commoncmd.Exposecontroller {
 				if o.isIngressForServices(&i) {
 					existingIngressNames[i.Name] = i.Namespace
 				}
@@ -379,7 +373,7 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 				return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 			}
 			for _, i := range ings.Items {
-				if i.Annotations[services.ExposeGeneratedByAnnotation] == Exposecontroller {
+				if i.Annotations[services.ExposeGeneratedByAnnotation] == commoncmd.Exposecontroller {
 					if o.isIngressForServices(&i) {
 						existingIngressNames[i.Name] = i.Namespace
 					}
@@ -389,21 +383,22 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 		}
 	} else {
 		confirmMessage = "Existing ingress rules found in current namespace.  Confirm to delete and recreate them"
-		// fall back to current ns only
-		log.Infof("looking for existing ingress rules in current namespace %s\n", o.currentNamespace)
 
-		ings, err := client.ExtensionsV1beta1().Ingresses(o.currentNamespace).List(metav1.ListOptions{})
+		ns := o.CurrentNamespace()
+		log.Infof("looking for existing ingress rules in current namespace %s\n", ns)
+
+		ings, err := client.ExtensionsV1beta1().Ingresses(ns).List(metav1.ListOptions{})
 		if err != nil {
 			return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 		}
 		for _, i := range ings.Items {
-			if i.Annotations[services.ExposeGeneratedByAnnotation] == Exposecontroller {
+			if i.Annotations[services.ExposeGeneratedByAnnotation] == commoncmd.Exposecontroller {
 				if o.isIngressForServices(&i) {
 					existingIngressNames[i.Name] = i.Namespace
 				}
 			}
 		}
-		o.TargetNamespaces = append(o.TargetNamespaces, o.currentNamespace)
+		o.TargetNamespaces = append(o.TargetNamespaces, ns)
 	}
 
 	if len(existingIngressNames) == 0 {
@@ -432,7 +427,7 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 	if err != nil {
 		return err
 	}
-	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
+	devNamespace, _, err := kube.GetDevNamespace(client, o.CurrentNamespace())
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
@@ -470,7 +465,7 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 			o.IngressConfig.Issuer = "letsencrypt-" + clusterIssuer
 
 			if o.IngressConfig.Email == "" {
-				email1, err := o.getCommandOutput("", "git", "config", "user.email")
+				email1, err := o.GetCommandOutput("", "git", "config", "user.email")
 				if err != nil {
 					return err
 				}
@@ -493,7 +488,7 @@ func (o *UpgradeIngressOptions) createIngressRules() error {
 	if err != nil {
 		return err
 	}
-	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
+	devNamespace, _, err := kube.GetDevNamespace(client, o.CurrentNamespace())
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
@@ -510,7 +505,7 @@ func (o *UpgradeIngressOptions) createIngressRules() error {
 			return err
 		}
 
-		err = o.runExposecontroller(devNamespace, n, o.IngressConfig, o.Services...)
+		err = o.RunExposecontroller(devNamespace, n, o.IngressConfig, o.Services...)
 		if err != nil {
 			return err
 		}
@@ -520,7 +515,7 @@ func (o *UpgradeIngressOptions) createIngressRules() error {
 
 func (o *UpgradeIngressOptions) ensureCertmanagerSetup() error {
 	if !o.SkipCertManager {
-		return o.ensureCertmanager()
+		return o.EnsureCertmanager()
 	}
 	return nil
 }
@@ -580,7 +575,7 @@ func (o *UpgradeIngressOptions) updateWebHooks(oldHookEndpoint string, newHookEn
 	}
 
 	gitServer := authConfigService.Config().CurrentServer
-	git, err := o.gitProviderForGitServerURL(gitServer, "github")
+	git, err := o.GitProviderForGitServerURL(gitServer, "github")
 	if err != nil {
 		return errors.Wrap(err, "unable to determine git provider")
 	}

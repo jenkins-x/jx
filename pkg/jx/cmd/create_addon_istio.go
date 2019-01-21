@@ -10,6 +10,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/binaries"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -53,11 +55,11 @@ type CreateAddonIstioOptions struct {
 }
 
 // NewCmdCreateAddonIstio creates a command object for the "create" command
-func NewCmdCreateAddonIstio(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonIstio(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonIstioOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 					Out:     out,
@@ -81,7 +83,7 @@ func NewCmdCreateAddonIstio(f Factory, in terminal.FileReader, out terminal.File
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	options.addFlags(cmd, defaultIstioNamespace, defaultIstioReleaseName, defaultIstioVersion)
 
 	cmd.Flags().StringVarP(&options.Password, "password", "p", defaultIstioPassword, "The default password to use for Istio")
@@ -113,7 +115,7 @@ func (o *CreateAddonIstioOptions) Run() error {
 	if o.Chart == "" {
 		return util.MissingOption(optionChart)
 	}
-	err := o.ensureHelm()
+	err := o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that Helm is present")
 	}
@@ -127,7 +129,7 @@ func (o *CreateAddonIstioOptions) Run() error {
 		return err
 	}
 
-	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
+	devNamespace, _, err := kube.GetDevNamespace(client, o.CurrentNamespace())
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
@@ -140,7 +142,7 @@ func (o *CreateAddonIstioOptions) Run() error {
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	err = o.installChartAt(o.Dir, o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
+	err = o.InstallChartAt(o.Dir, o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
 	if err != nil {
 		return fmt.Errorf("istio deployment failed: %v", err)
 	}

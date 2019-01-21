@@ -11,6 +11,8 @@ import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/extensions"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -49,11 +51,11 @@ var (
 )
 
 // NewCmdStepEnvApply registers the command
-func NewCmdStepEnvApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepEnvApply(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepEnvApplyOptions{
 		StepEnvOptions: StepEnvOptions{
 			StepOptions: StepOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 					Out:     out,
@@ -156,12 +158,12 @@ func (o *StepEnvApplyOptions) Run() error {
 		teamSettings := &env.Spec.TeamSettings
 
 		// disable the modify of the Dev Environment lazily...
-		o.modifyDevEnvironmentFn = func(callback func(env *v1.Environment) error) error {
+		o.SetModifyDevEnvironmentFn(func(callback func(env *v1.Environment) error) error {
 			callback(&env)
 			return nil
-		}
+		})
 
-		o.helm = o.CreateHelm(false, teamSettings.HelmBinary, teamSettings.NoTiller, teamSettings.HelmTemplate)
+		o.SetHelm(o.CreateHelm(false, teamSettings.HelmBinary, teamSettings.NoTiller, teamSettings.HelmTemplate))
 
 		// ensure there's a development namespace setup
 		err = kube.EnsureDevNamespaceCreatedWithoutEnvironment(kubeClient, ns)
@@ -207,11 +209,11 @@ func (o *StepEnvApplyOptions) Run() error {
 	}
 	log.Infof("Environment applied in namespace %s\n", util.ColorInfo(ns))
 	// Now run any post install actions
-	jxClient, _, err := o.JXClientAndDevNamespace()
+	jxClient, devNamespace, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
-	err = extensions.OnApply(jxClient, kubeClient, o.devNamespace, o.Helm(), defaultInstallTimeout)
+	err = extensions.OnApply(jxClient, kubeClient, devNamespace, o.Helm(), commoncmd.DefaultInstallTimeout)
 	if err != nil {
 		return err
 	}

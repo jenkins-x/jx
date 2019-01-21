@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 
 	"strconv"
@@ -52,10 +54,10 @@ var (
 )
 
 // NewCmdGetLimits creates the command
-func NewCmdGetLimits(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetLimits(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetLimitsOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -89,7 +91,7 @@ func (o *GetLimitsOptions) Run() error {
 	}
 	config := authConfigSvc.Config()
 
-	table := o.createTable()
+	table := o.Table()
 	table.AddRow("Name", "URL", "Username", "Limit", "Remaining", "Reset")
 
 	for _, s := range config.Servers {

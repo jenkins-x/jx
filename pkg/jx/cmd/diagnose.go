@@ -1,8 +1,11 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/kube"
 	"io"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -11,13 +14,13 @@ import (
 )
 
 type DiagnoseOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 	Namespace string
 }
 
-func NewCmdDiagnose(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDiagnose(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DiagnoseOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,
@@ -35,7 +38,7 @@ func NewCmdDiagnose(f Factory, in terminal.FileReader, out terminal.FileWriter, 
 		},
 	}
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to display the kube resources from. If left out, defaults to the current namespace")
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	return cmd
 }
 
@@ -87,7 +90,7 @@ func (o *DiagnoseOptions) Run() error {
 
 // Run the specified command (jx status, kubectl get po, etc) and print its output
 func printStatus(o *DiagnoseOptions, header string, command string, options ...string) error {
-	output, err := o.getCommandOutput("", command, options...)
+	output, err := o.GetCommandOutput("", command, options...)
 	if err != nil {
 		log.Errorf("Unable to get the %s", header)
 		return err

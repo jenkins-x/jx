@@ -15,6 +15,8 @@ import (
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/util"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -41,13 +43,13 @@ const (
 
 // DeleteAppOptions are the flags for this delete commands
 type DeleteAppOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	GitOps bool
 	DevEnv *jenkinsv1.Environment
 
 	// for testing
-	FakePullRequests CreateEnvPullRequestFn
+	FakePullRequests commoncmd.CreateEnvPullRequestFn
 
 	ReleaseName string
 	Namespace   string
@@ -55,13 +57,13 @@ type DeleteAppOptions struct {
 	Alias       string
 
 	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback ConfigureGitFolderFn
+	ConfigureGitCallback commoncmd.ConfigureGitFolderFn
 }
 
 // NewCmdDeleteApp creates a command object for this command
-func NewCmdDeleteApp(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteApp(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	o := &DeleteAppOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,
@@ -171,7 +173,7 @@ func (o *DeleteAppOptions) createPR(app string) error {
 		}
 	} else {
 		var err error
-		pullRequestInfo, err = o.createEnvironmentPullRequest(o.DevEnv, modifyChartFn, &branchNameText, &title,
+		pullRequestInfo, err = o.CreateEnvironmentPullRequest(o.DevEnv, modifyChartFn, &branchNameText, &title,
 			&message,
 			nil, o.ConfigureGitCallback)
 		if err != nil {
@@ -183,7 +185,7 @@ func (o *DeleteAppOptions) createPR(app string) error {
 }
 
 func (o *DeleteAppOptions) deleteApp(name string) error {
-	err := o.ensureHelm()
+	err := o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that helm is present")
 	}
@@ -191,7 +193,7 @@ func (o *DeleteAppOptions) deleteApp(name string) error {
 	if o.ReleaseName != "" {
 		releaseName = o.ReleaseName
 	}
-	err = o.deleteChart(releaseName, o.Purge)
+	err = o.DeleteChart(releaseName, o.Purge)
 	if err != nil {
 	}
 	return err

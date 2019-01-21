@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -33,11 +35,11 @@ var (
 `)
 )
 
-func NewCmdStepHelmVersion(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepHelmVersion(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepHelmVersionOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 					Out:     out,
@@ -69,7 +71,7 @@ func NewCmdStepHelmVersion(f Factory, in terminal.FileReader, out terminal.FileW
 func (o *StepHelmVersionOptions) Run() error {
 	version := o.Version
 	if version == "" {
-		version = o.getBuildNumber()
+		version = o.GetBuildNumber()
 	}
 	if version == "" {
 		return fmt.Errorf("No version specified and could not detect the build number via $BUILD_NUMBER")

@@ -8,6 +8,8 @@ import (
 
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -38,11 +40,11 @@ type CreateAddonProwOptions struct {
 }
 
 // NewCmdCreateAddonProw creates a command object for the "create" command
-func NewCmdCreateAddonProw(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonProw(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonProwOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 
@@ -66,7 +68,7 @@ func NewCmdCreateAddonProw(f Factory, in terminal.FileReader, out terminal.FileW
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	options.addFlags(cmd, "", kube.DefaultProwReleaseName, defaultProwVersion)
 
 	cmd.Flags().StringVarP(&options.Prow.Chart, optionChart, "c", kube.ChartProw, "The name of the chart to use")
@@ -82,7 +84,7 @@ func (o *CreateAddonProwOptions) Run() error {
 		return util.MissingOption(optionRelease)
 	}
 
-	err := o.ensureHelm()
+	err := o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that Helm is present")
 	}
@@ -94,19 +96,19 @@ func (o *CreateAddonProwOptions) Run() error {
 	o.Prow.Chart = o.Chart
 	o.Prow.Version = o.Version
 	o.Prow.SetValues = o.SetValues
-	o.Namespace = o.currentNamespace
-	err = o.installProw()
+	o.Namespace = o.CurrentNamespace()
+	err = o.InstallProw()
 	if err != nil {
 		return fmt.Errorf("failed to install Prow: %v", err)
 	}
 
-	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
+	devNamespace, _, err := kube.GetDevNamespace(client, o.CurrentNamespace())
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
 
 	// create the ingress rule
-	err = o.expose(devNamespace, devNamespace, o.Password)
+	err = o.Expose(devNamespace, devNamespace, o.Password)
 	if err != nil {
 		return err
 	}

@@ -4,6 +4,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -30,11 +32,11 @@ var (
 `)
 )
 
-func NewCmdStepHelmBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepHelmBuild(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepHelmBuildOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 					Out:     out,
@@ -58,7 +60,7 @@ func NewCmdStepHelmBuild(f Factory, in terminal.FileReader, out terminal.FileWri
 	}
 
 	options.addStepHelmFlags(cmd)
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	cmd.Flags().BoolVarP(&options.recursive, "recursive", "r", false, "Build recursively the dependent charts")
 
@@ -80,8 +82,8 @@ func (o *StepHelmBuildOptions) Run() error {
 	}
 
 	if o.recursive {
-		return o.helmInitRecursiveDependencyBuild(dir, o.defaultReleaseCharts())
+		return o.HelmInitRecursiveDependencyBuild(dir, o.DefaultReleaseCharts())
 	}
-	_, err = o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
+	_, err = o.HelmInitDependencyBuild(dir, o.DefaultReleaseCharts())
 	return err
 }

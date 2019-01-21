@@ -12,6 +12,8 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -25,7 +27,7 @@ const (
 )
 
 type RshOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	Container   string
 	Namespace   string
@@ -60,9 +62,9 @@ var (
 `)
 )
 
-func NewCmdRsh(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdRsh(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &RshOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 
@@ -109,7 +111,7 @@ func (o *RshOptions) Run() error {
 	}
 
 	if o.Environment != "" {
-		ns, err = o.findEnvironmentNamespace(o.Environment)
+		ns, err = o.FindEnvironmentNamespace(o.Environment)
 		if err != nil {
 			return err
 		}
@@ -124,7 +126,7 @@ func (o *RshOptions) Run() error {
 	pods := map[string]*corev1.Pod{}
 	if o.DevPod {
 		podsName = "DevPods"
-		userName, err := o.getUsername(o.Username)
+		userName, err := o.GetUsername(o.Username)
 		if err != nil {
 			return err
 		}
@@ -232,7 +234,7 @@ func (o *RshOptions) Run() error {
 	if o.Verbose {
 		log.Infof("Running command: kubectl %s\n", strings.Join(a, " "))
 	}
-	return o.runCommandInteractive(true, "kubectl", a...)
+	return o.RunCommandInteractive(true, "kubectl", a...)
 }
 
 func (o *RshOptions) detectBash(ns string, podName string, container string) (string, error) {
@@ -241,7 +243,7 @@ func (o *RshOptions) detectBash(ns string, podName string, container string) (st
 	if container != "" {
 		args = append(args, "-c", container)
 	}
-	err := o.runCommandQuietly("kubectl", args...)
+	err := o.RunCommandQuietly("kubectl", args...)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to copy the shell file form POD '%s'", podName)
 	}

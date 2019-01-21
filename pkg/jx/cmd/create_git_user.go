@@ -6,6 +6,8 @@ import (
 
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -29,7 +31,7 @@ var (
 type CreateGitUserOptions struct {
 	CreateOptions
 
-	ServerFlags ServerFlags
+	ServerFlags commoncmd.ServerFlags
 	Username    string
 	Password    string
 	ApiToken    string
@@ -38,10 +40,10 @@ type CreateGitUserOptions struct {
 }
 
 // NewCmdCreateGitUser creates a command
-func NewCmdCreateGitUser(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateGitUser(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateGitUserOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -62,8 +64,8 @@ func NewCmdCreateGitUser(f Factory, in terminal.FileReader, out terminal.FileWri
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
-	options.ServerFlags.addGitServerFlags(cmd)
+	options.AddCommonFlags(cmd)
+	options.ServerFlags.AddGitServerFlags(cmd)
 	cmd.Flags().StringVarP(&options.ApiToken, "api-token", "t", "", "The API Token for the user")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The User password to try automatically create a new API Token")
 	cmd.Flags().StringVarP(&options.Email, "email", "e", "", "The User email address")
@@ -87,7 +89,7 @@ func (o *CreateGitUserOptions) Run() error {
 	}
 	config := authConfigSvc.Config()
 
-	server, err := o.findGitServer(config, &o.ServerFlags)
+	server, err := o.FindGitServer(config, &o.ServerFlags)
 	if err != nil {
 		return err
 	}

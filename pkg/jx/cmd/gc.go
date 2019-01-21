@@ -6,13 +6,15 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 // GCOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
 // referencing the cmd.Flags()
 type GCOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	Output string
 }
@@ -47,9 +49,9 @@ var (
 
 // NewCmdGC creates a command object for the generic "gc" action, which
 // retrieves one or more resources from a server.
-func NewCmdGC(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGC(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GCOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,

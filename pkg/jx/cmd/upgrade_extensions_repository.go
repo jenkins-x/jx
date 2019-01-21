@@ -25,6 +25,8 @@ import (
 	"github.com/stoewer/go-strcase"
 
 	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -70,11 +72,11 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdUpgradeExtensionsRepository(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeExtensionsRepository(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &UpgradeExtensionsRepositoryOptions{
 		UpgradeExtensionsOptions: UpgradeExtensionsOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 
@@ -207,7 +209,7 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 func (o *UpgradeExtensionsRepositoryOptions) walkRemote(remote string, tag string, oldLockNameMap map[string]jenkinsv1.ExtensionSpec, oldLookupByUUID map[string]jenkinsv1.ExtensionSpec) (result []jenkinsv1.ExtensionSpec, err error) {
 	result = make([]jenkinsv1.ExtensionSpec, 0)
 	if strings.HasPrefix(remote, "github.com") {
-		gitProvider, repoInfo, err := o.createGitProviderForURLWithoutKind(strings.TrimPrefix(remote, "github.com/"))
+		gitProvider, repoInfo, err := o.CreateGitProviderForURLWithoutKind(strings.TrimPrefix(remote, "github.com/"))
 		if err != nil {
 			return result, err
 		}

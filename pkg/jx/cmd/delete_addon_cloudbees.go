@@ -3,6 +3,8 @@ package cmd
 import (
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -28,10 +30,10 @@ type DeleteAddoncoreOptions struct {
 }
 
 // NewCmdDeleteAddonCloudBees defines the command
-func NewCmdDeleteAddonCloudBees(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteAddonCloudBees(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteAddoncoreOptions{
 		DeleteAddonOptions: DeleteAddonOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -63,7 +65,7 @@ func (o *DeleteAddoncoreOptions) Run() error {
 	if o.ReleaseName == "" {
 		return util.MissingOption(optionRelease)
 	}
-	err := o.deleteChart(o.ReleaseName, o.Purge)
+	err := o.DeleteChart(o.ReleaseName, o.Purge)
 	if err != nil {
 		return err
 	}

@@ -15,6 +15,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/surveyutils"
 
 	"github.com/ghodss/yaml"
@@ -46,10 +48,10 @@ type AddAppOptions struct {
 	Alias    string
 
 	// for testing
-	FakePullRequests CreateEnvPullRequestFn
+	FakePullRequests commoncmd.CreateEnvPullRequestFn
 
 	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback ConfigureGitFolderFn
+	ConfigureGitCallback commoncmd.ConfigureGitFolderFn
 
 	Namespace   string
 	Version     string
@@ -67,10 +69,10 @@ const (
 )
 
 // NewCmdAddApp creates a command object for the "create" command
-func NewCmdAddApp(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdAddApp(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &AddAppOptions{
 		AddOptions: AddOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -106,8 +108,8 @@ func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string, de
 		"The username for the repository")
 	cmd.Flags().StringVarP(&o.Password, "password", "", "",
 		"The password for the repository")
-	cmd.Flags().BoolVarP(&o.BatchMode, optionBatchMode, "b", false, "In batch mode the command never prompts for user input")
-	cmd.Flags().BoolVarP(&o.Verbose, optionVerbose, "", false, "Enable verbose logging")
+	cmd.Flags().BoolVarP(&o.BatchMode, commoncmd.OptionBatchMode, "b", false, "In batch mode the command never prompts for user input")
+	cmd.Flags().BoolVarP(&o.Verbose, commoncmd.OptionVerbose, "", false, "Enable verbose logging")
 	cmd.Flags().StringVarP(&o.Alias, optionAlias, "", "",
 		"An alias to use for the app (available when using GitOps for your dev environment)")
 	cmd.Flags().StringVarP(&o.ReleaseName, optionRelease, "r", defaultOptionRelease,
@@ -352,7 +354,7 @@ func (o *AddAppOptions) createPR(app string, version string, schema []byte) erro
 		}
 	} else {
 		var err error
-		pullRequestInfo, err = o.createEnvironmentPullRequest(o.DevEnv, modifyChartFn, &branchNameText, &title,
+		pullRequestInfo, err = o.CreateEnvironmentPullRequest(o.DevEnv, modifyChartFn, &branchNameText, &title,
 			&message,
 			nil, o.ConfigureGitCallback)
 		if err != nil {
@@ -364,7 +366,7 @@ func (o *AddAppOptions) createPR(app string, version string, schema []byte) erro
 }
 
 func (o *AddAppOptions) installApp(name string, chart string, version string) error {
-	err := o.ensureHelm()
+	err := o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that helm is present")
 	}
@@ -373,7 +375,7 @@ func (o *AddAppOptions) installApp(name string, chart string, version string) er
 		setValues = append(setValues, strings.Split(vs, ",")...)
 	}
 
-	err = o.installChartOptions(helm.InstallChartOptions{
+	err = o.InstallChartOptions(helm.InstallChartOptions{
 		ReleaseName: name,
 		Chart:       chart,
 		Version:     version,

@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -73,9 +75,9 @@ var (
 )
 
 // NewCmdCreateClusterAWS creates the command
-func NewCmdCreateClusterAWS(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterAWS(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterAWSOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, AKS),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, commoncmd.AKS),
 	}
 	cmd := &cobra.Command{
 		Use:     "aws",
@@ -91,7 +93,7 @@ func NewCmdCreateClusterAWS(f Factory, in terminal.FileReader, out terminal.File
 	}
 
 	options.addCreateClusterFlags(cmd)
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.Profile, "profile", "", "", "AWS profile to use.")
 	cmd.Flags().StringVarP(&options.Flags.Region, "region", "", "", "AWS region to use. Default: "+amazon.DefaultRegion)
@@ -114,11 +116,11 @@ func NewCmdCreateClusterAWS(f Factory, in terminal.FileReader, out terminal.File
 func (o *CreateClusterAWSOptions) Run() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	var deps []string
-	d := binaryShouldBeInstalled("kops")
+	d := commoncmd.BinaryShouldBeInstalled("kops")
 	if d != "" {
 		deps = append(deps, d)
 	}
-	err := o.installMissingDependencies(deps)
+	err := o.InstallMissingDependencies(deps)
 	if err != nil {
 		log.Errorf("%v\nPlease fix the error or install manually then try again", err)
 		os.Exit(-1)
@@ -313,7 +315,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 	}
 
 	log.Info("Initialising cluster ...\n")
-	return o.initAndInstall(AWS)
+	return o.initAndInstall(commoncmd.AWS)
 }
 
 func (o *CreateClusterAWSOptions) waitForClusterJson(clusterName string) (string, error) {
@@ -323,22 +325,22 @@ func (o *CreateClusterAWSOptions) waitForClusterJson(clusterName string) (string
 		if o.Flags.State != "" {
 			args = append(args, "--state", o.Flags.State)
 		}
-		text, err := o.getCommandOutput("", "kops", args...)
+		text, err := o.GetCommandOutput("", "kops", args...)
 		if err != nil {
 			return err
 		}
 		jsonOutput = text
 		return nil
 	}
-	err := o.retryQuiet(200, time.Second*10, f)
+	err := o.RetryQuiet(200, time.Second*10, f)
 	return jsonOutput, err
 }
 
 func (o *CreateClusterAWSOptions) waitForClusterToComeUp() error {
 	f := func() error {
-		return o.runCommandQuietly("kubectl", "get", "node")
+		return o.RunCommandQuietly("kubectl", "get", "node")
 	}
-	return o.retryQuiet(2000, time.Second*10, f)
+	return o.RetryQuiet(2000, time.Second*10, f)
 }
 
 // waitForClusterValidation retries running kops validate cluster, which is necessary
@@ -349,9 +351,9 @@ func (o *CreateClusterAWSOptions) waitForClusterValidation() error {
 		if o.Flags.State != "" {
 			args = append(args, "--state", o.Flags.State)
 		}
-		return o.runCommandQuietly("kops", args...)
+		return o.RunCommandQuietly("kops", args...)
 	}
-	return o.retryQuiet(25, time.Second*15, f)
+	return o.RetryQuiet(25, time.Second*15, f)
 }
 
 func (o *CreateClusterAWSOptions) modifyClusterConfigJson(json string, insecureRegistries string) error {
@@ -371,7 +373,7 @@ func (o *CreateClusterAWSOptions) modifyClusterConfigJson(json string, insecureR
 		return err
 	}
 	fileName := tmpFile.Name()
-	err = ioutil.WriteFile(fileName, []byte(newJson), DefaultWritePermissions)
+	err = ioutil.WriteFile(fileName, []byte(newJson), util.DefaultWritePermissions)
 	if err != nil {
 		return fmt.Errorf("Failed to write InstanceGroup JSON %s: %s", fileName, err)
 	}
@@ -403,5 +405,5 @@ func (o *CreateClusterAWSOptions) runKops(args ...string) error {
 		args = append(args, "--state", o.Flags.State)
 	}
 	log.Infof("running command: %s\n", util.ColorInfo("kops "+strings.Join(args, " ")))
-	return o.runCommandVerbose("kops", args...)
+	return o.RunCommandVerbose("kops", args...)
 }

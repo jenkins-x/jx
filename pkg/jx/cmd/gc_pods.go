@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -16,7 +18,7 @@ import (
 
 // GCPodsOptions containers the CLI options
 type GCPodsOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	Selector  string
 	Namespace string
@@ -39,9 +41,9 @@ var (
 )
 
 // NewCmdGCPods creates the command object
-func NewCmdGCPods(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGCPods(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GCPodsOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,
@@ -65,7 +67,7 @@ func NewCmdGCPods(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	cmd.Flags().StringVarP(&options.Selector, "selector", "s", "", "The selector to use to filter the pods")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to look for the pods. Defaults to the current namespace")
 	cmd.Flags().DurationVarP(&options.Age, "age", "a", time.Hour, "The minimum age of pods to garbage collect. Any newer pods will be kept")
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	return cmd
 }
 

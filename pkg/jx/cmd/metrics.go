@@ -6,6 +6,8 @@ import (
 
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -15,7 +17,7 @@ import (
 )
 
 type MetricsOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	Namespace string
 	Filter    string
@@ -39,9 +41,9 @@ var (
 `)
 )
 
-func NewCmdMetrics(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdMetrics(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &MetricsOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,
@@ -106,7 +108,10 @@ func (o *MetricsOptions) Run() error {
 			}
 		}
 
-		p, err := o.waitForReadyPodForDeployment(client, ns, name, names, false)
+		logsOpts := LogsOptions{
+			CommonOptions: o.CommonOptions,
+		}
+		p, err := logsOpts.waitForReadyPodForDeployment(client, ns, name, names, false)
 		if err != nil {
 			return err
 		}

@@ -31,6 +31,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/log"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
@@ -50,7 +52,7 @@ const (
 
 // NewJXCommand creates the `jx` command and its nested children.
 // args used to determine binary plugin to run can be overridden (does not affect compiled in commands).
-func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter,
+func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWriter,
 	err io.Writer, args []string) *cobra.Command {
 	cmds := &cobra.Command{
 		Use:   "jx",
@@ -188,7 +190,7 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter,
 
 	filters := []string{"options"}
 
-	commonOptions := CommonOptions{
+	commonOptions := commoncmd.CommonOptions{
 		Factory: f,
 		In:      in,
 		Out:     out,
@@ -199,7 +201,7 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter,
 			Root:        cmds,
 			SeenPlugins: make(map[string]string, 0),
 		}
-		pluginCommandGroups, managedPluginsEnabled, err := commonOptions.getPluginCommandGroups(verifier)
+		pluginCommandGroups, managedPluginsEnabled, err := commonOptions.GetPluginCommandGroups(verifier)
 		if err != nil {
 			log.Errorf("%v\n", err)
 		}
@@ -295,7 +297,7 @@ type PluginHandler interface {
 }
 
 type managedPluginHandler struct {
-	CommonOptions
+	commoncmd.CommonOptions
 	localPluginHandler
 }
 

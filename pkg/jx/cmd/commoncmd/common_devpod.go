@@ -1,4 +1,4 @@
-package cmd
+package commoncmd
 
 import "github.com/spf13/cobra"
 
@@ -7,6 +7,6 @@ type CommonDevPodOptions struct {
 	Username string
 }
 
-func (o *CommonDevPodOptions) addCommonDevPodFlags(cmd *cobra.Command) {
+func (o *CommonDevPodOptions) AddCommonDevPodFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.Username, "username", "", "", "The username to create the DevPod. If not specified defaults to the current operating system user or $USER'")
 }

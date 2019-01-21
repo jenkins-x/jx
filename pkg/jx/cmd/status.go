@@ -7,6 +7,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -16,7 +18,7 @@ import (
 )
 
 type StatusOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 	node string
 }
 
@@ -32,9 +34,9 @@ var (
 `)
 )
 
-func NewCmdStatus(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStatus(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StatusOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 
@@ -103,7 +105,7 @@ func (o *StatusOptions) Run() error {
 	}
 	resourceStr := clusterStatus.CheckResource()
 
-	jenkinsURL, err := o.findServiceInNamespace("jenkins", namespace)
+	jenkinsURL, err := o.FindServiceInNamespace("jenkins", namespace)
 	if err != nil {
 		if resourceStr != "" {
 			log.Warnf("%s Jenkins not found and %s\n", clusterStatus.Info(), resourceStr)

@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -45,10 +47,10 @@ type CreateDocsOptions struct {
 }
 
 // NewCmdCreateDocs creates a command object for the "create" command
-func NewCmdCreateDocs(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateDocs(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateDocsOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -83,7 +85,7 @@ func (o *CreateDocsOptions) Run() error {
 
 	exists, _ := util.FileExists(dir)
 	if !exists {
-		err := os.Mkdir(dir, DefaultWritePermissions)
+		err := os.Mkdir(dir, util.DefaultWritePermissions)
 		if err != nil {
 			return fmt.Errorf("Failed to create %s: %s", dir, err)
 		}

@@ -6,6 +6,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/addon"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -34,7 +36,7 @@ var (
 type CreateTokenAddonOptions struct {
 	CreateOptions
 
-	ServerFlags ServerFlags
+	ServerFlags commoncmd.ServerFlags
 	Username    string
 	Password    string
 	ApiToken    string
@@ -43,10 +45,10 @@ type CreateTokenAddonOptions struct {
 }
 
 // NewCmdCreateTokenAddon creates a command
-func NewCmdCreateTokenAddon(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateTokenAddon(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateTokenAddonOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -68,8 +70,8 @@ func NewCmdCreateTokenAddon(f Factory, in terminal.FileReader, out terminal.File
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
-	options.ServerFlags.addGitServerFlags(cmd)
+	options.AddCommonFlags(cmd)
+	options.ServerFlags.AddGitServerFlags(cmd)
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The password for the user")
 	cmd.Flags().StringVarP(&options.ApiToken, "api-token", "t", "", "The API Token for the user")
 	cmd.Flags().StringVarP(&options.Timeout, "timeout", "", "", "The timeout if using browser automation to generate the API token (by passing username and password)")
@@ -87,7 +89,7 @@ func (o *CreateTokenAddonOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.createAddonAuthConfigService()
+	authConfigSvc, err := o.AddonAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -101,7 +103,7 @@ func (o *CreateTokenAddonOptions) Run() error {
 	}
 
 	var server *auth.AuthServer
-	server, err = o.findAddonServer(config, &o.ServerFlags, kind)
+	server, err = o.FindAddonServer(config, &o.ServerFlags, kind)
 	if err != nil {
 		return err
 	}

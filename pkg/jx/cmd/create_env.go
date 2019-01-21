@@ -13,6 +13,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -62,13 +64,13 @@ type CreateEnvOptions struct {
 }
 
 // NewCmdCreateEnv creates a command object for the "create" command
-func NewCmdCreateEnv(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateEnv(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateEnvOptions{
 		HelmValuesConfig: config.HelmValuesConfig{
 			ExposeController: &config.ExposeController{},
 		},
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -112,10 +114,10 @@ func NewCmdCreateEnv(f Factory, in terminal.FileReader, out terminal.FileWriter,
 	cmd.Flags().BoolVarP(&options.Prow, "prow", "", false, "Install and use Prow for environment promotion")
 	cmd.Flags().BoolVarP(&options.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during the cluster creation")
 
-	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
+	commoncmd.AddGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, false)
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	return cmd
 }
@@ -155,13 +157,13 @@ func (o *CreateEnvOptions) Run() error {
 			return err
 		}
 	} else {
-		o.registerEnvironmentCRD()
+		o.RegisterEnvironmentCRD()
 		devEnv, err = kube.EnsureDevEnvironmentSetup(jxClient, ns)
 		if err != nil {
 			return err
 		}
 
-		prowFlag, err = o.isProw()
+		prowFlag, err = o.IsProw()
 		if err != nil {
 			return err
 		}
@@ -291,12 +293,12 @@ func (o *CreateEnvOptions) Run() error {
 			if user.Username == "" {
 				return fmt.Errorf("Could not find a username for git server %s", u)
 			}
-			_, err = o.updatePipelineGitCredentialsSecret(server, user)
+			_, err = o.UpdatePipelineGitCredentialsSecret(server, user)
 			if err != nil {
 				return err
 			}
 			// register the webhook
-			return o.createWebhookProw(gitURL, gitProvider)
+			return o.CreateWebhookProw(gitURL, gitProvider)
 		}
 		return o.ImportProject(gitURL, envDir, jenkins.DefaultJenkinsfile, o.BranchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)
 	}

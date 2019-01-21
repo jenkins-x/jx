@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
@@ -32,10 +34,10 @@ var (
 )
 
 // NewCmdGetURL creates the command
-func NewCmdGetURL(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetURL(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetURLOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 
@@ -76,7 +78,7 @@ func (o *GetURLOptions) Run() error {
 	if o.Namespace != "" {
 		ns = o.Namespace
 	} else if o.Environment != "" {
-		ns, err = o.findEnvironmentNamespace(o.Environment)
+		ns, err = o.FindEnvironmentNamespace(o.Environment)
 		if err != nil {
 			return err
 		}
@@ -85,7 +87,7 @@ func (o *GetURLOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	table := o.createTable()
+	table := o.Table()
 	table.AddRow("Name", "URL")
 
 	for _, url := range urls {

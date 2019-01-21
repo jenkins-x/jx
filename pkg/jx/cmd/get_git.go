@@ -6,6 +6,8 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
@@ -27,10 +29,10 @@ var (
 )
 
 // NewCmdGetGit creates the command
-func NewCmdGetGit(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetGit(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetGitOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -64,7 +66,7 @@ func (o *GetGitOptions) Run() error {
 	}
 	config := authConfigSvc.Config()
 
-	table := o.createTable()
+	table := o.Table()
 	table.AddRow("Name", "Kind", "URL")
 
 	for _, s := range config.Servers {

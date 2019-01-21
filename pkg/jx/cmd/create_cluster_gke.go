@@ -14,6 +14,8 @@ import (
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -50,8 +52,6 @@ type CreateClusterGKEFlags struct {
 	Preemptible     bool
 }
 
-const clusterListHeader = "PROJECT_ID"
-
 var (
 	createClusterGKELong = templates.LongDesc(`
 		This command creates a new Kubernetes cluster on GKE, installing required local dependencies and provisions the
@@ -78,9 +78,9 @@ var (
 
 // NewCmdCreateClusterGKE creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterGKE(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterGKEOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, GKE),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, commoncmd.GKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "gke",
@@ -96,7 +96,7 @@ func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.File
 	}
 
 	options.addCreateClusterFlags(cmd)
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster, default is a random generated name")
 	cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, "cluster-ipv4-cidr", "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")
@@ -121,7 +121,7 @@ func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.File
 }
 
 func (o *CreateClusterGKEOptions) Run() error {
-	err := o.installRequirements(GKE)
+	err := o.InstallRequirements(commoncmd.GKE)
 	if err != nil {
 		return err
 	}
@@ -139,7 +139,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	var err error
 	if !o.Flags.SkipLogin {
-		err := o.runCommandVerbose("gcloud", "auth", "login", "--brief")
+		err := o.RunCommandVerbose("gcloud", "auth", "login", "--brief")
 		if err != nil {
 			return err
 		}
@@ -147,13 +147,13 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	projectId := o.Flags.ProjectId
 	if projectId == "" {
-		projectId, err = o.getGoogleProjectId()
+		projectId, err = o.GetGoogleProjectId()
 		if err != nil {
 			return err
 		}
 	}
 
-	err = o.runCommandVerbose("gcloud", "config", "set", "project", projectId)
+	err = o.RunCommandVerbose("gcloud", "config", "set", "project", projectId)
 	if err != nil {
 		return err
 	}
@@ -162,7 +162,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	glcoudArgs := []string{"services", "enable", "container", "compute"}
 	log.Infof("Let's ensure we have container and compute enabled on your project via: %s\n", util.ColorInfo("gcloud "+strings.Join(glcoudArgs, " ")))
 
-	err = o.runCommandVerbose("gcloud", glcoudArgs...)
+	err = o.RunCommandVerbose("gcloud", glcoudArgs...)
 	if err != nil {
 		return err
 	}
@@ -174,7 +174,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	zone := o.Flags.Zone
 	if zone == "" {
-		zone, err = o.getGoogleZone(projectId)
+		zone, err = o.GetGoogleZone(projectId)
 		if err != nil {
 			return err
 		}
@@ -289,7 +289,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	if o.InstallOptions.Flags.DefaultEnvironmentPrefix == "" {
 		o.InstallOptions.Flags.DefaultEnvironmentPrefix = o.Flags.ClusterName
 	}
-	err = o.initAndInstall(GKE)
+	err = o.initAndInstall(commoncmd.GKE)
 	if err != nil {
 		return err
 	}
@@ -299,7 +299,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	context, err := o.getCommandOutput("", "kubectl", "config", "current-context")
+	context, err := o.GetCommandOutput("", "kubectl", "config", "current-context")
 	if err != nil {
 		return err
 	}

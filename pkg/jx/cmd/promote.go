@@ -18,6 +18,8 @@ import (
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -43,7 +45,7 @@ var (
 
 // PromoteOptions containers the CLI options
 type PromoteOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	Namespace               string
 	Environment             string
@@ -67,10 +69,10 @@ type PromoteOptions struct {
 	Alias                   string
 
 	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback ConfigureGitFolderFn
+	ConfigureGitCallback commoncmd.ConfigureGitFolderFn
 
 	// for testing
-	FakePullRequests CreateEnvPullRequestFn
+	FakePullRequests commoncmd.CreateEnvPullRequestFn
 	UseFakeHelm      bool
 
 	// calculated fields
@@ -120,9 +122,9 @@ var (
 )
 
 // NewCmdPromote creates the new command for: jx get prompt
-func NewCmdPromote(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdPromote(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &PromoteOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,
@@ -142,7 +144,7 @@ func NewCmdPromote(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The Namespace to promote to")
 	cmd.Flags().StringVarP(&options.Environment, optionEnvironment, "e", "", "The Environment to promote to")
@@ -201,7 +203,7 @@ func (o *PromoteOptions) Run() error {
 		o.Namespace = ns
 	}
 
-	prow, err := o.isProw()
+	prow, err := o.IsProw()
 	if err != nil {
 		return err
 	}
@@ -480,7 +482,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 		releaseInfo.PullRequestInfo = info
 		return err
 	} else {
-		info, err := o.createEnvironmentPullRequest(env, modifyChartFn, &branchNameText, &title, &message,
+		info, err := o.CreateEnvironmentPullRequest(env, modifyChartFn, &branchNameText, &title, &message,
 			releaseInfo.PullRequestInfo, o.ConfigureGitCallback)
 		releaseInfo.PullRequestInfo = info
 		return err
@@ -769,7 +771,7 @@ func (o *PromoteOptions) verifyHelmConfigured() error {
 	if !exists {
 		log.Warnf("No helm home dir at %s so lets initialise helm client\n", helmHomeDir)
 
-		err = o.helmInit("")
+		err = o.HelmInit("")
 		if err != nil {
 			return err
 		}
@@ -781,7 +783,7 @@ func (o *PromoteOptions) verifyHelmConfigured() error {
 	}
 
 	// lets add the releases chart
-	return o.registerLocalHelmRepo(o.LocalHelmRepoName, ns)
+	return o.RegisterLocalHelmRepo(o.LocalHelmRepoName, ns)
 }
 
 func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStepActivityKey {
@@ -817,7 +819,7 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 		}
 	}
 	if pipeline == "" {
-		pipeline, build = o.getPipelineName(gitInfo, pipeline, build, o.Application)
+		pipeline, build = o.GetPipelineName(gitInfo, pipeline, build, o.Application)
 	}
 	if pipeline != "" && build == "" {
 		log.Warnf("No $BUILD_NUMBER environment variable found so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
@@ -871,7 +873,7 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 }
 
 // getLatestPipelineBuild returns the latest pipeline build
-func (o *CommonOptions) getLatestPipelineBuildByCRD(pipeline string) (string, error) {
+func (o *PromoteOptions) getLatestPipelineBuildByCRD(pipeline string) (string, error) {
 	// lets find the latest build number
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
@@ -902,95 +904,11 @@ func (o *CommonOptions) getLatestPipelineBuildByCRD(pipeline string) (string, er
 	return "1", nil
 }
 
-func (o *CommonOptions) getPipelineName(gitInfo *gits.GitRepository, pipeline string, build string, appName string) (string, string) {
-	if pipeline == "" {
-		pipeline = o.getJobName()
-	}
-	if build == "" {
-		build = o.getBuildNumber()
-	}
-	if gitInfo != nil && pipeline == "" {
-		// lets default the pipeline name from the Git repo
-		branch, err := o.Git().Branch(".")
-		if err != nil {
-			log.Warnf("Could not find the branch name: %s\n", err)
-		}
-		if branch == "" {
-			branch = "master"
-		}
-		pipeline = util.UrlJoin(gitInfo.Organisation, gitInfo.Name, branch)
-	}
-	if pipeline == "" && appName != "" {
-		suffix := appName + "/master"
-
-		// lets try deduce the pipeline name via the app name
-		jxClient, ns, err := o.JXClientAndDevNamespace()
-		if err == nil {
-			pipelineList, err := jxClient.JenkinsV1().PipelineActivities(ns).List(metav1.ListOptions{})
-			if err == nil {
-				for _, pipelineResource := range pipelineList.Items {
-					pipelineName := pipelineResource.Spec.Pipeline
-					if strings.HasSuffix(pipelineName, suffix) {
-						pipeline = pipelineName
-						break
-					}
-				}
-			}
-		}
-	}
-	if pipeline == "" {
-		// lets try find
-		log.Warnf("No $JOB_NAME environment variable found so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
-	} else if build == "" {
-		// lets validate and determine the current active pipeline branch
-		p, b, err := o.getLatestPipelineBuild(pipeline)
-		if err != nil {
-			log.Warnf("Failed to try detect the current Jenkins pipeline for %s due to %s\n", pipeline, err)
-			build = "1"
-		} else {
-			pipeline = p
-			build = b
-		}
-	}
-	return pipeline, build
-}
-
-// getLatestPipelineBuild for the given pipeline name lets try find the Jenkins Pipeline and the latest build
-func (o *CommonOptions) getLatestPipelineBuild(pipeline string) (string, string, error) {
-	log.Infof("pipeline %s\n", pipeline)
-	build := ""
-	jxClient, ns, err := o.JXClientAndDevNamespace()
-	if err != nil {
-		return pipeline, build, err
-	}
-	kubeClient, err := o.KubeClient()
-	if err != nil {
-		return pipeline, build, err
-	}
-	devEnv, err := kube.GetEnrichedDevEnvironment(kubeClient, jxClient, ns)
-	webhookEngine := devEnv.Spec.WebHookEngine
-	if webhookEngine == v1.WebHookEngineProw {
-		return pipeline, build, nil
-	}
-
-	jenkins, err := o.JenkinsClient()
-	if err != nil {
-		return pipeline, build, err
-	}
-	paths := strings.Split(pipeline, "/")
-	job, err := jenkins.GetJobByPath(paths...)
-	if err != nil {
-		return pipeline, build, err
-	}
-	build = strconv.Itoa(job.LastBuild.Number)
-	return pipeline, build, nil
-}
-
 func (o *PromoteOptions) getAndUpdateJenkinsURL() string {
 	if o.jenkinsURL == "" {
 		o.jenkinsURL = os.Getenv("JENKINS_URL")
 	}
-	url, err := o.getJenkinsURL()
+	url, err := o.JenkinsURL()
 	if err != nil {
 		log.Warnf("Could not find Jenkins URL: %s", err)
 	} else {

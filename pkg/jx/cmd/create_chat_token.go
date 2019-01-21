@@ -6,6 +6,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/chats"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -34,7 +36,7 @@ var (
 type CreateChatTokenOptions struct {
 	CreateOptions
 
-	ServerFlags ServerFlags
+	ServerFlags commoncmd.ServerFlags
 	Username    string
 	Password    string
 	ApiToken    string
@@ -42,10 +44,10 @@ type CreateChatTokenOptions struct {
 }
 
 // NewCmdCreateChatToken creates a command
-func NewCmdCreateChatToken(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateChatToken(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateChatTokenOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 
@@ -68,8 +70,8 @@ func NewCmdCreateChatToken(f Factory, in terminal.FileReader, out terminal.FileW
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
-	options.ServerFlags.addGitServerFlags(cmd)
+	options.AddCommonFlags(cmd)
+	options.ServerFlags.AddGitServerFlags(cmd)
 	cmd.Flags().StringVarP(&options.ApiToken, "api-token", "t", "", "The API Token for the user")
 	cmd.Flags().StringVarP(&options.Timeout, "timeout", "", "", "The timeout if using browser automation to generate the API token (by passing username and password)")
 
@@ -85,13 +87,13 @@ func (o *CreateChatTokenOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.createChatAuthConfigService()
+	authConfigSvc, err := o.ChatAuthConfigService()
 	if err != nil {
 		return err
 	}
 	config := authConfigSvc.Config()
 
-	server, err := o.findChatServer(config, &o.ServerFlags)
+	server, err := o.FindChatServer(config, &o.ServerFlags)
 	if err != nil {
 		return err
 	}

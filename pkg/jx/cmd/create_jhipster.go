@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -40,11 +42,11 @@ type CreateJHipsterOptions struct {
 }
 
 // NewCmdCreateJHipster creates a command object for the "create" command
-func NewCmdCreateJHipster(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateJHipster(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateJHipsterOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 					Out:     out,
@@ -72,13 +74,13 @@ func NewCmdCreateJHipster(f Factory, in terminal.FileReader, out terminal.FileWr
 
 // checkJHipsterInstalled lazily install JHipster if its not installed already
 func (o CreateJHipsterOptions) checkJHipsterInstalled() error {
-	_, err := o.getCommandOutput("", "jhipster", "--version")
+	_, err := o.GetCommandOutput("", "jhipster", "--version")
 	if err != nil {
 		log.Infoln("Installing JHipster..")
-		_, err = o.getCommandOutput("", "rimraf", "--version")
+		_, err = o.GetCommandOutput("", "rimraf", "--version")
 		if err != nil {
 			log.Infoln("Installing rimraf..")
-			_, err = o.getCommandOutput("", "npm", "install", "-g", "rimraf")
+			_, err = o.GetCommandOutput("", "npm", "install", "-g", "rimraf")
 			if err != nil {
 				return err
 			}
@@ -94,11 +96,11 @@ func (o CreateJHipsterOptions) checkJHipsterInstalled() error {
 
 // GenerateJHipster creates a fresh JHipster project by running jhipster on local shell
 func (o CreateJHipsterOptions) GenerateJHipster(dir string) error {
-	err := os.MkdirAll(dir, DefaultWritePermissions)
+	err := os.MkdirAll(dir, util.DefaultWritePermissions)
 	if err != nil {
 		return err
 	}
-	return o.runCommandInteractiveInDir(!o.BatchMode, dir, "jhipster")
+	return o.RunCommandInteractiveInDir(!o.BatchMode, dir, "jhipster")
 }
 
 // Run implements the command

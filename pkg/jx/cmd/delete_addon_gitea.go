@@ -3,6 +3,8 @@ package cmd
 import (
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -28,10 +30,10 @@ type DeleteAddonGiteaOptions struct {
 }
 
 // NewCmdDeleteAddonGitea defines the command
-func NewCmdDeleteAddonGitea(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteAddonGitea(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteAddonGiteaOptions{
 		DeleteAddonOptions: DeleteAddonOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -62,7 +64,7 @@ func (o *DeleteAddonGiteaOptions) Run() error {
 	if o.ReleaseName == "" {
 		return util.MissingOption(optionRelease)
 	}
-	err := o.deleteChart(o.ReleaseName, o.Purge)
+	err := o.DeleteChart(o.ReleaseName, o.Purge)
 	if err != nil {
 		return err
 	}

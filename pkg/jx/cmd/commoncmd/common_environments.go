@@ -1,4 +1,4 @@
-package cmd
+package commoncmd
 
 import (
 	"fmt"
@@ -30,7 +30,7 @@ type ConfigureGitFolderFn func(dir string, gitInfo *gits.GitRepository, gitAdapt
 type CreateEnvPullRequestFn func(env *v1.Environment, modifyChartFn ModifyChartFn, branchNameText string,
 	title string, message string, pullRequestInfo *gits.PullRequestInfo) (*gits.PullRequestInfo, error)
 
-func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modifyChartFn ModifyChartFn,
+func (o *CommonOptions) CreateEnvironmentPullRequest(env *v1.Environment, modifyChartFn ModifyChartFn,
 	branchNameText *string, title *string, message *string, pullRequestInfo *gits.PullRequestInfo,
 	configGitFn ConfigureGitFolderFn) (*gits.PullRequestInfo, error) {
 	var answer *gits.PullRequestInfo
@@ -87,7 +87,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 			return answer, err
 		}
 	} else {
-		err := os.MkdirAll(dir, DefaultWritePermissions)
+		err := os.MkdirAll(dir, util.DefaultWritePermissions)
 		if err != nil {
 			return answer, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
 		}
@@ -252,7 +252,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *v1.Environment, modify
 	}, nil
 }
 
-func (o *CommonOptions) registerEnvironmentCRD() error {
+func (o *CommonOptions) RegisterEnvironmentCRD() error {
 	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
@@ -261,8 +261,8 @@ func (o *CommonOptions) registerEnvironmentCRD() error {
 	return err
 }
 
-// modifyDevEnvironment performs some mutation on the Development environemnt to modify team settings
-func (o *CommonOptions) modifyDevEnvironment(jxClient versioned.Interface, ns string, fn func(env *v1.Environment) error) error {
+// MutateDevEnvironment performs some mutation on the Development environemnt to modify team settings
+func (o *CommonOptions) MutateDevEnvironment(jxClient versioned.Interface, ns string, fn func(env *v1.Environment) error) error {
 	env, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
 	if err != nil {
 		return errors.Wrapf(err, "failed to ensure that dev environment is setup for namespace '%s'", ns)

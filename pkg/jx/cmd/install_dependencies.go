@@ -1,11 +1,14 @@
 package cmd
 
 import (
+	"io"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
 )
 
 // InstallDependenciesFlags flags for the install command
@@ -15,7 +18,7 @@ type InstallDependenciesFlags struct {
 
 // InstallDependenciesOptions options for install dependencies
 type InstallDependenciesOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 	Flags InstallDependenciesFlags
 }
 
@@ -60,7 +63,7 @@ var (
 )
 
 // NewCmdInstallDependencies creates a command object to install any required dependencies
-func NewCmdInstallDependencies(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdInstallDependencies(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 
 	options := CreateInstallDependenciesOptions(f, in, out, errOut)
 
@@ -78,15 +81,15 @@ func NewCmdInstallDependencies(f Factory, in terminal.FileReader, out terminal.F
 		SuggestFor: []string{"dependency"},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	cmd.Flags().StringArrayVarP(&options.Flags.Dependencies, "dependencies", "d", []string{}, "The dependencies to install")
 
 	return cmd
 }
 
 // CreateInstallDependenciesOptions creates the options for jx install dependencies
-func CreateInstallDependenciesOptions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) InstallDependenciesOptions {
-	commonOptions := CommonOptions{
+func CreateInstallDependenciesOptions(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) InstallDependenciesOptions {
+	commonOptions := commoncmd.CommonOptions{
 		Factory: f,
 		In:      in,
 		Out:     out,
@@ -117,7 +120,7 @@ func (options *InstallDependenciesOptions) Run() error {
 	}
 
 	if len(install) > 0 {
-		return options.doInstallMissingDependencies(install)
+		return options.DoInstallMissingDependencies(install)
 	}
 
 	options.Debugf("No dependencies selected to install\n")

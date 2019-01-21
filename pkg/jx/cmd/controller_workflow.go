@@ -13,6 +13,8 @@ import (
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/workflow"
@@ -39,7 +41,7 @@ type ControllerWorkflowOptions struct {
 	PullRequestPollTime string
 
 	// testing
-	FakePullRequests CreateEnvPullRequestFn
+	FakePullRequests commoncmd.CreateEnvPullRequestFn
 	FakeGitProvider  *gits.FakeProvider
 
 	// calculated fields
@@ -50,10 +52,10 @@ type ControllerWorkflowOptions struct {
 
 // NewCmdControllerWorkflow creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdControllerWorkflow(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdControllerWorkflow(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ControllerWorkflowOptions{
 		ControllerOptions: ControllerOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -74,7 +76,7 @@ func NewCmdControllerWorkflow(f Factory, in terminal.FileReader, out terminal.Fi
 		Aliases: []string{"workflows"},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to watch or defaults to the current namespace")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
@@ -85,11 +87,11 @@ func NewCmdControllerWorkflow(f Factory, in terminal.FileReader, out terminal.Fi
 
 // Run implements this command
 func (o *ControllerWorkflowOptions) Run() error {
-	err := o.registerPipelineActivityCRD()
+	err := o.RegisterPipelineActivityCRD()
 	if err != nil {
 		return err
 	}
-	err = o.registerWorkflowCRD()
+	err = o.RegisterWorkflowCRD()
 	if err != nil {
 		return err
 	}
@@ -401,7 +403,7 @@ func (o *ControllerWorkflowOptions) createGitProviderForPR(prURL string) (gits.G
 		}
 		return o.FakeGitProvider, gitInfo, nil
 	}
-	answer, gitInfo, err := o.createGitProviderForURLWithoutKind(gitUrl)
+	answer, gitInfo, err := o.CreateGitProviderForURLWithoutKind(gitUrl)
 	if err != nil {
 		return answer, gitInfo, errors.Wrapf(err, "Failed for git URL %s", gitUrl)
 	}
@@ -420,7 +422,7 @@ func (o *ControllerWorkflowOptions) createGitProvider(activity *v1.PipelineActiv
 		}
 		return o.FakeGitProvider, gitInfo, nil
 	}
-	answer, gitInfo, err := o.createGitProviderForURLWithoutKind(gitUrl)
+	answer, gitInfo, err := o.CreateGitProviderForURLWithoutKind(gitUrl)
 	if err != nil {
 		return answer, gitInfo, errors.Wrapf(err, "Failed for git URL %s", gitUrl)
 	}

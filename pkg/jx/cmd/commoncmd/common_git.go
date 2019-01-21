@@ -1,4 +1,4 @@
-package cmd
+package commoncmd
 
 import (
 	"fmt"
@@ -33,8 +33,8 @@ func (o *CommonOptions) FindGitInfo(dir string) (*gits.GitRepository, error) {
 	}
 }
 
-// createGitProvider creates a git from the given directory
-func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepository, gits.GitProvider, issues.IssueProvider, error) {
+// GitProvider creates a git from the given directory
+func (o *CommonOptions) GitProvider(dir string) (*gits.GitRepository, gits.GitProvider, issues.IssueProvider, error) {
 	gitDir, gitConfDir, err := o.Git().FindGitConfigDir(dir)
 	if err != nil {
 		return nil, nil, nil, err
@@ -61,14 +61,14 @@ func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepository, gits
 	if err != nil {
 		return gitInfo, gitProvider, nil, err
 	}
-	tracker, err := o.createIssueProvider(dir)
+	tracker, err := o.IssueProvider(dir)
 	if err != nil {
 		return gitInfo, gitProvider, tracker, err
 	}
 	return gitInfo, gitProvider, tracker, nil
 }
 
-func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) (string, error) {
+func (o *CommonOptions) UpdatePipelineGitCredentialsSecret(server *auth.AuthServer, userAuth *auth.UserAuth) (string, error) {
 	client, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return "", err
@@ -124,7 +124,7 @@ func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServ
 		return name, fmt.Errorf("Failed to %s secret %s due to %s", operation, secret.Name, err)
 	}
 
-	prow, err := o.isProw()
+	prow, err := o.IsProw()
 	if err != nil {
 		return name, err
 	}
@@ -183,7 +183,7 @@ func (o *CommonOptions) updatePipelineGitCredentialsSecret(server *auth.AuthServ
 	return name, nil
 }
 
-func (o *CommonOptions) ensureGitServiceCRD(server *auth.AuthServer) error {
+func (o *CommonOptions) EnsureGitServiceCRD(server *auth.AuthServer) error {
 	kind := server.Kind
 	if kind == "github" && server.URL == gits.GitHubURL {
 		return nil
@@ -217,7 +217,7 @@ func (o *CommonOptions) ensureGitServiceCRD(server *auth.AuthServer) error {
 	return nil
 }
 
-func (o *CommonOptions) discoverGitURL(gitConf string) (string, error) {
+func (o *CommonOptions) DiscoverGitURL(gitConf string) (string, error) {
 	if gitConf == "" {
 		return "", fmt.Errorf("No GitConfDir defined!")
 	}
@@ -239,7 +239,7 @@ func (o *CommonOptions) discoverGitURL(gitConf string) (string, error) {
 	if url == "" {
 		url = o.Git().GetRemoteUrl(cfg, "upstream")
 		if url == "" {
-			url, err = o.pickRemoteURL(cfg)
+			url, err = o.PickRemoteURL(cfg)
 			if err != nil {
 				return "", err
 			}
@@ -248,7 +248,7 @@ func (o *CommonOptions) discoverGitURL(gitConf string) (string, error) {
 	return url, nil
 }
 
-func addGitRepoOptionsArguments(cmd *cobra.Command, repositoryOptions *gits.GitRepositoryOptions) {
+func AddGitRepoOptionsArguments(cmd *cobra.Command, repositoryOptions *gits.GitRepositoryOptions) {
 	cmd.Flags().StringVarP(&repositoryOptions.ServerURL, "git-provider-url", "", "https://github.com", "The Git server URL to create new Git repositories inside")
 	cmd.Flags().StringVarP(&repositoryOptions.ServerKind, "git-provider-kind", "", "",
 		"Kind of Git server. If not specified, kind of server will be autodetected from Git provider URL. Possible values: bitbucketcloud, bitbucketserver, gitea, gitlab, github, fakegit")
@@ -292,7 +292,7 @@ func (o *CommonOptions) GitServerHostURLKind(hostURL string) (string, error) {
 }
 
 // gitProviderForURL returns a GitProvider for the given git URL
-func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.GitProvider, error) {
+func (o *CommonOptions) GitProviderForURL(gitURL string, message string) (gits.GitProvider, error) {
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return nil, err
@@ -309,7 +309,7 @@ func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.G
 }
 
 // gitProviderForURL returns a GitProvider for the given Git server URL
-func (o *CommonOptions) gitProviderForGitServerURL(gitServiceUrl string, gitKind string) (gits.GitProvider, error) {
+func (o *CommonOptions) GitProviderForGitServerURL(gitServiceUrl string, gitKind string) (gits.GitProvider, error) {
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return nil, err
@@ -317,7 +317,7 @@ func (o *CommonOptions) gitProviderForGitServerURL(gitServiceUrl string, gitKind
 	return gits.CreateProviderForURL(o.IsInCluster(), authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 }
 
-func (o *CommonOptions) createGitProviderForURLWithoutKind(gitURL string) (gits.GitProvider, *gits.GitRepository, error) {
+func (o *CommonOptions) CreateGitProviderForURLWithoutKind(gitURL string) (gits.GitProvider, *gits.GitRepository, error) {
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return nil, gitInfo, err

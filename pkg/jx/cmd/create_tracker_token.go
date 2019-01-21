@@ -6,6 +6,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/issues"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -34,7 +36,7 @@ var (
 type CreateTrackerTokenOptions struct {
 	CreateOptions
 
-	ServerFlags ServerFlags
+	ServerFlags commoncmd.ServerFlags
 	Username    string
 	Password    string
 	ApiToken    string
@@ -42,10 +44,10 @@ type CreateTrackerTokenOptions struct {
 }
 
 // NewCmdCreateTrackerToken creates a command
-func NewCmdCreateTrackerToken(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateTrackerToken(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateTrackerTokenOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -67,8 +69,8 @@ func NewCmdCreateTrackerToken(f Factory, in terminal.FileReader, out terminal.Fi
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
-	options.ServerFlags.addGitServerFlags(cmd)
+	options.AddCommonFlags(cmd)
+	options.ServerFlags.AddGitServerFlags(cmd)
 	cmd.Flags().StringVarP(&options.ApiToken, "api-token", "t", "", "The API Token for the user")
 	cmd.Flags().StringVarP(&options.Timeout, "timeout", "", "", "The timeout if using browser automation to generate the API token (by passing username and password)")
 
@@ -84,13 +86,13 @@ func (o *CreateTrackerTokenOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.createIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.IssueTrackerAuthConfigService()
 	if err != nil {
 		return err
 	}
 	config := authConfigSvc.Config()
 
-	server, err := o.findIssueTrackerServer(config, &o.ServerFlags)
+	server, err := o.FindIssueTrackerServer(config, &o.ServerFlags)
 	if err != nil {
 		return err
 	}

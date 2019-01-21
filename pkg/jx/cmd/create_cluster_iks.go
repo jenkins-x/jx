@@ -14,6 +14,8 @@ import (
 	"github.com/IBM-Cloud/bluemix-go/session"
 	randomdata "github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud/iks"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -99,9 +101,9 @@ func (s byNumberIndex) Less(i, j int) bool {
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateClusterIKS(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterIKS(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterIKSOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, OKE),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, commoncmd.OKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "iks",
@@ -145,11 +147,11 @@ func NewCmdCreateClusterIKS(f Factory, in terminal.FileReader, out terminal.File
 func (o *CreateClusterIKSOptions) Run() error {
 
 	var deps []string
-	d := binaryShouldBeInstalled("ibmcloud")
+	d := commoncmd.BinaryShouldBeInstalled("ibmcloud")
 	if d != "" {
 		deps = append(deps, d)
 	}
-	err := o.installMissingDependencies(deps)
+	err := o.InstallMissingDependencies(deps)
 	if err != nil {
 		log.Errorf("%v\nPlease fix the error or install manually then try again", err)
 		os.Exit(-1)
@@ -235,7 +237,7 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 		if o.Flags.Account != "" {
 			ibmLogin = append(ibmLogin, "-c", o.Flags.Account)
 		}
-		err = o.runCommandInteractive(true, "ibmcloud", ibmLogin...)
+		err = o.RunCommandInteractive(true, "ibmcloud", ibmLogin...)
 	}
 	accountGUID, err = iks.ConfigFromJSON(c)
 	if err != nil {
@@ -535,5 +537,5 @@ L:
 	os.Setenv("KUBECONFIG", kubeconfig)
 	log.Info("Initialising cluster ...\n")
 
-	return o.initAndInstall(IKS)
+	return o.initAndInstall(commoncmd.IKS)
 }

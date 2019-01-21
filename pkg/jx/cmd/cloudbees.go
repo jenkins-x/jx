@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -16,7 +18,7 @@ import (
 )
 
 type CloudBeesOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	OnlyViewURL bool
 }
@@ -37,9 +39,9 @@ var (
 		jx console -u`)
 )
 
-func NewCmdCloudBees(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCloudBees(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CloudBeesOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,
@@ -92,7 +94,7 @@ func (o *CloudBeesOptions) GetBaseURL() (url string, err error) {
 }
 
 func (o *CloudBeesOptions) Open(name string, label string) error {
-	url, err := o.findService(name)
+	url, err := o.FindService(name)
 	if err != nil {
 		return err
 	}

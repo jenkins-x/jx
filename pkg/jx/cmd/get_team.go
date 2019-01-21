@@ -4,6 +4,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -33,10 +35,10 @@ var (
 )
 
 // NewCmdGetTeam creates the new command for: jx get env
-func NewCmdGetTeam(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetTeam(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetTeamOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 
@@ -86,7 +88,7 @@ See https://jenkins-x.io/getting-started/\n for more detail
 		return nil
 	}
 
-	table := o.createTable()
+	table := o.Table()
 	table.AddRow("NAME")
 	for _, team := range teams {
 		table.AddRow(team.Name)
@@ -96,7 +98,7 @@ See https://jenkins-x.io/getting-started/\n for more detail
 }
 
 func (o *GetTeamOptions) getPendingTeams() error {
-	err := o.registerTeamCRD()
+	err := o.RegisterTeamCRD()
 	if err != nil {
 		return err
 	}
@@ -118,7 +120,7 @@ There are no pending Teams yet. Try create one via: jx create team --pending
 		return nil
 	}
 
-	table := o.createTable()
+	table := o.Table()
 	table.AddRow("NAME", "STATUS", "KIND", "MEMBERS")
 	for _, team := range teams {
 		spec := &team.Spec

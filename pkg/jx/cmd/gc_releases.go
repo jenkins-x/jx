@@ -10,13 +10,15 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 )
 
 // GCReleasesOptions contains the CLI options for this command
 type GCReleasesOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	RevisionHistoryLimit int
 }
@@ -34,9 +36,9 @@ var (
 )
 
 // NewCmd s a command object for the "step" command
-func NewCmdGCReleases(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGCReleases(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GCReleasesOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 
@@ -63,7 +65,7 @@ func NewCmdGCReleases(f Factory, in terminal.FileReader, out terminal.FileWriter
 
 // Run implements this command
 func (o *GCReleasesOptions) Run() error {
-	err := o.registerReleaseCRD()
+	err := o.RegisterReleaseCRD()
 	if err != nil {
 		return err
 	}
@@ -97,7 +99,7 @@ func (o *GCReleasesOptions) Run() error {
 	}
 	var jobNames []string
 	for _, j := range jobs {
-		err = o.getAllPipelineJobNames(jenkinsClient, &jobNames, j.Name)
+		err = o.GetAllPipelineJobNames(jenkinsClient, &jobNames, j.Name)
 		if err != nil {
 			return err
 		}

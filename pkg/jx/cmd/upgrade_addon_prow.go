@@ -1,10 +1,13 @@
 package cmd
 
 import (
-	"github.com/hashicorp/go-version"
-	"github.com/jenkins-x/jx/pkg/util"
 	"io"
 
+	"github.com/hashicorp/go-version"
+	"github.com/jenkins-x/jx/pkg/util"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
@@ -31,11 +34,11 @@ type UpgradeAddonProwOptions struct {
 }
 
 // NewCmdUpgradeAddonProw defines the command
-func NewCmdUpgradeAddonProw(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeAddonProw(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &UpgradeAddonProwOptions{
 		UpgradeAddonsOptions: UpgradeAddonsOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 					Out:     out,
@@ -59,7 +62,7 @@ func NewCmdUpgradeAddonProw(f Factory, in terminal.FileReader, out terminal.File
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	options.UpgradeAddonsOptions.addFlags(cmd)
 	options.InstallFlags.addCloudEnvOptions(cmd)
 	cmd.Flags().StringVarP(&options.newKnativeBuildVersion, "new-knative-build-version", "", "0.1.1", "The new kanative build verion that prow needs to work with")
@@ -80,12 +83,8 @@ func (o *UpgradeAddonProwOptions) Run() error {
 		}
 	}
 
-	kubeClient, err := o.KubeClient()
-	if err != nil {
-		return err
-	}
-
-	o.devNamespace, _, err = kube.GetDevNamespace(kubeClient, ns)
+	o.SetCurrentNamespace(ns)
+	kubeClient, _, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
@@ -147,12 +146,12 @@ func (o *UpgradeAddonProwOptions) Run() error {
 		}
 	}
 	// now let's reinstall prow
-	err = o.deleteChart("jx-prow", true)
+	err = o.DeleteChart("jx-prow", true)
 	if err != nil {
 		return err
 	}
 
 	o.OAUTHToken = oauthToken
 	o.HMACToken = hmacToken
-	return o.installProw()
+	return o.InstallProw()
 }

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -30,10 +32,10 @@ type CreateChatServerOptions struct {
 }
 
 // NewCmdCreateChatServer creates a command object for the "create" command
-func NewCmdCreateChatServer(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateChatServer(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateChatServerOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -79,7 +81,7 @@ func (o *CreateChatServerOptions) Run() error {
 	if gitUrl == "" {
 		return missingChatArguments()
 	}
-	authConfigSvc, err := o.createChatAuthConfigService()
+	authConfigSvc, err := o.ChatAuthConfigService()
 	if err != nil {
 		return err
 	}

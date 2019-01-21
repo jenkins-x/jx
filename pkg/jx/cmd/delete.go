@@ -6,12 +6,14 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 // DeleteOptions are the flags for delete commands
 type DeleteOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 }
 
 var (
@@ -28,9 +30,9 @@ var (
 
 // NewCmdDelete creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDelete(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDelete(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteOptions{
-		CommonOptions{
+		commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,

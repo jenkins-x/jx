@@ -5,6 +5,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -18,11 +20,11 @@ type DeletePreviewOptions struct {
 }
 
 // NewCmdDeletePreview creates a command object
-func NewCmdDeletePreview(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeletePreview(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeletePreviewOptions{
 		PreviewOptions: PreviewOptions{
 			PromoteOptions: PromoteOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 					Out:     out,
@@ -43,7 +45,7 @@ func NewCmdDeletePreview(f Factory, in terminal.FileReader, out terminal.FileWri
 		},
 	}
 	options.addPreviewOptions(cmd)
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	return cmd
 }
 

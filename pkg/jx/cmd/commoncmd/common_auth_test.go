@@ -1,4 +1,4 @@
-package cmd_test
+package commoncmd_test
 
 import (
 	"testing"

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -34,11 +36,11 @@ var (
 `)
 )
 
-func NewCmdStepHelmInstall(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepHelmInstall(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepHelmInstallOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 					Out:     out,
@@ -76,7 +78,7 @@ func (o *StepHelmInstallOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing chart argument")
 	}
-	err := o.registerReleaseCRD()
+	err := o.RegisterReleaseCRD()
 	if err != nil {
 		return err
 	}

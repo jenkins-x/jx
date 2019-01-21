@@ -3,6 +3,8 @@ package cmd
 import (
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -13,13 +15,11 @@ type StepPROptions struct {
 	StepOptions
 }
 
-var ()
-
 // NewCmdStep Steps a command object for the "step" command
-func NewCmdStepPR(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepPR(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepPROptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -40,7 +40,7 @@ func NewCmdStepPR(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	}
 
 	cmd.AddCommand(NewCmdStepPRComment(f, in, out, errOut))
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	return cmd
 }

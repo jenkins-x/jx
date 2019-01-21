@@ -1,16 +1,19 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
 	"io"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	logger "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -58,9 +61,9 @@ var (
 )
 
 // NewCmdCreateClusterEKS creates the command
-func NewCmdCreateClusterEKS(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterEKS(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterEKSOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, AKS),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, commoncmd.EKS),
 	}
 	cmd := &cobra.Command{
 		Use:     "eks",
@@ -76,7 +79,7 @@ func NewCmdCreateClusterEKS(f Factory, in terminal.FileReader, out terminal.File
 	}
 
 	options.addCreateClusterFlags(cmd)
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster.")
 	cmd.Flags().StringVarP(&options.Flags.NodeType, "node-type", "", "m5.large", "node instance type")
@@ -98,16 +101,16 @@ func (o *CreateClusterEKSOptions) Run() error {
 	log.ConfigureLog(o.LogLevel)
 
 	var deps []string
-	d := binaryShouldBeInstalled("eksctl")
+	d := commoncmd.BinaryShouldBeInstalled("eksctl")
 	if d != "" {
 		deps = append(deps, d)
 	}
-	d = binaryShouldBeInstalled("heptio-authenticator-aws")
+	d = commoncmd.BinaryShouldBeInstalled("heptio-authenticator-aws")
 	if d != "" {
 		deps = append(deps, d)
 	}
 	logger.Debugf("Dependencies to be installed: %s", strings.Join(deps, ", "))
-	err := o.installMissingDependencies(deps)
+	err := o.InstallMissingDependencies(deps)
 	if err != nil {
 		logger.Errorf("%v\nPlease fix the error or install manually then try again", err)
 		os.Exit(-1)
@@ -188,13 +191,13 @@ cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
 
 	logger.Debugf("Running command: %s", util.ColorInfo("eksctl "+strings.Join(args, " ")))
 	if logger.GetLevel() == logger.DebugLevel {
-		err = o.runCommandVerbose("eksctl", args...)
+		err = o.RunCommandVerbose("eksctl", args...)
 		if err != nil {
 			return err
 		}
 		log.Blank()
 	} else {
-		err = o.runCommandQuietly("eksctl", args...)
+		err = o.RunCommandQuietly("eksctl", args...)
 		if err != nil {
 			return err
 		}
@@ -210,5 +213,5 @@ cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
 	}
 
 	logger.Info("Initialising cluster ...\n")
-	return o.initAndInstall(EKS)
+	return o.initAndInstall(commoncmd.EKS)
 }

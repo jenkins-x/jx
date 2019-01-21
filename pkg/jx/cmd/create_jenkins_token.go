@@ -15,6 +15,8 @@ import (
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -53,7 +55,7 @@ var (
 type CreateJenkinsUserOptions struct {
 	CreateOptions
 
-	ServerFlags ServerFlags
+	ServerFlags commoncmd.ServerFlags
 	Username    string
 	Password    string
 	ApiToken    string
@@ -63,10 +65,10 @@ type CreateJenkinsUserOptions struct {
 }
 
 // NewCmdCreateJenkinsUser creates a command
-func NewCmdCreateJenkinsUser(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateJenkinsUser(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateJenkinsUserOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -88,8 +90,8 @@ func NewCmdCreateJenkinsUser(f Factory, in terminal.FileReader, out terminal.Fil
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
-	options.ServerFlags.addGitServerFlags(cmd)
+	options.AddCommonFlags(cmd)
+	options.ServerFlags.AddGitServerFlags(cmd)
 	cmd.Flags().StringVarP(&options.ApiToken, "api-token", "t", "", "The API Token for the user")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The User password to try automatically create a new API Token")
 	cmd.Flags().StringVarP(&options.Timeout, "timeout", "", "", "The timeout if using REST to generate the API token (by passing username and password)")
@@ -121,13 +123,13 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	var server *auth.AuthServer
 	if o.ServerFlags.IsEmpty() {
 		url := ""
-		url, err = o.findService(kube.ServiceJenkins)
+		url, err = o.FindService(kube.ServiceJenkins)
 		if err != nil {
 			return err
 		}
 		server = config.GetOrCreateServer(url)
 	} else {
-		server, err = o.findServer(config, &o.ServerFlags, "jenkins server", "Try installing one via: jx create team", false)
+		server, err = o.FindServer(config, &o.ServerFlags, "jenkins server", "Try installing one via: jx create team", false)
 		if err != nil {
 			return err
 		}
@@ -181,14 +183,14 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	}
 
 	// now lets create a secret for it so we can perform incluster interactions with Jenkins
-	s, err := kubeClient.CoreV1().Secrets(o.currentNamespace).Get(kube.SecretJenkins, metav1.GetOptions{})
+	s, err := kubeClient.CoreV1().Secrets(o.CurrentNamespace()).Get(kube.SecretJenkins, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	s.Data[kube.JenkinsAdminApiToken] = []byte(userAuth.ApiToken)
 	s.Data[kube.JenkinsBearTokenField] = []byte(userAuth.BearerToken)
 	s.Data[kube.JenkinsAdminUserField] = []byte(userAuth.Username)
-	_, err = kubeClient.CoreV1().Secrets(o.currentNamespace).Update(s)
+	_, err = kubeClient.CoreV1().Secrets(o.CurrentNamespace()).Update(s)
 	if err != nil {
 		return err
 	}
@@ -280,7 +282,7 @@ func loginLegacy(ctx context.Context, serverURL string, verbose bool, username s
 }
 
 // Checks whether a purported login decorator actually seems to work.
-func verifyLogin(ctx context.Context, serverURL string, verbose bool, decorator func (req *http.Request)) error {
+func verifyLogin(ctx context.Context, serverURL string, verbose bool, decorator func(req *http.Request)) error {
 	client := http.Client{}
 	req, err := http.NewRequest(http.MethodGet, util.UrlJoin(serverURL, "/me/api/json?tree=id"), nil)
 	if err != nil {
@@ -306,7 +308,7 @@ func verifyLogin(ctx context.Context, serverURL string, verbose bool, decorator 
 }
 
 // Checks if CSRF defense is enabled, and if so, amends the decorator to include a crumb.
-func checkForCrumb(ctx context.Context, serverURL string, verbose bool, decorator func (req *http.Request)) func (req *http.Request) {
+func checkForCrumb(ctx context.Context, serverURL string, verbose bool, decorator func(req *http.Request)) func(req *http.Request) {
 	client := http.Client{}
 	req, err := http.NewRequest(http.MethodGet, util.UrlJoin(serverURL, "/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)"), nil)
 	if err != nil {

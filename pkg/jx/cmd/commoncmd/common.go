@@ -1,4 +1,4 @@
-package cmd
+package commoncmd
 
 import (
 	"fmt"
@@ -9,8 +9,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/expose"
-
-	"github.com/jenkins-x/jx/pkg/certmanager"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/pkg/errors"
@@ -29,6 +28,7 @@ import (
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
+	jxjenkins "github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -42,17 +42,35 @@ import (
 )
 
 const (
-	optionServerName       = "name"
-	optionServerURL        = "url"
-	optionBatchMode        = "batch-mode"
-	optionVerbose          = "verbose"
-	optionLogLevel         = "log-level"
-	optionHeadless         = "headless"
-	optionNoBrew           = "no-brew"
-	optionInstallDeps      = "install-dependencies"
-	optionSkipAuthSecMerge = "skip-auth-secrets-merge"
-	optionPullSecrets      = "pull-secrets"
+	GKE        = "gke"
+	OKE        = "oke"
+	EKS        = "eks"
+	AKS        = "aks"
+	AWS        = "aws"
+	PKS        = "pks"
+	IKS        = "iks"
+	MINIKUBE   = "minikube"
+	MINISHIFT  = "minishift"
+	KUBERNETES = "kubernetes"
+	OPENSHIFT  = "openshift"
+	ORACLE     = "oracle"
+	ICP        = "icp"
+	JX_INFRA   = "jx-infra"
+
+	OptionServerName       = "name"
+	OptionServerURL        = "url"
+	OptionBatchMode        = "batch-mode"
+	OptionVerbose          = "verbose"
+	OptionLogLevel         = "log-level"
+	OptionHeadless         = "headless"
+	OptionNoBrew           = "no-brew"
+	OptionInstallDeps      = "install-dependencies"
+	OptionSkipAuthSecMerge = "skip-auth-secrets-merge"
+	OptionPullSecrets      = "pull-secrets"
+	OptionEnvironment      = "env"
 )
+
+var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, OKE, AKS, AWS, EKS, KUBERNETES, IKS, OPENSHIFT, MINISHIFT, JX_INFRA, PKS, ICP}
 
 // ModifyDevEnvironmentFn a callback to create/update the development Environment
 type ModifyDevEnvironmentFn func(callback func(env *jenkinsv1.Environment) error) error
@@ -62,7 +80,7 @@ type ModifyEnvironmentFn func(name string, callback func(env *jenkinsv1.Environm
 
 // CommonOptions contains common options and helper methods
 type CommonOptions struct {
-	Factory
+	clients.Factory
 	Prow
 
 	In                     terminal.FileReader
@@ -107,14 +125,14 @@ func (f *ServerFlags) IsEmpty() bool {
 	return f.ServerName == "" && f.ServerURL == ""
 }
 
-// CreateTable creates a new Table
-func (o *CommonOptions) createTable() table.Table {
+// Table creates a new Table on output
+func (o *CommonOptions) Table() table.Table {
 	return o.CreateTable(o.Out)
 }
 
 // NewCommonOptions a helper method to create a new CommonOptions instance
 // pre configured in a specific devNamespace
-func NewCommonOptions(devNamespace string, factory Factory) CommonOptions {
+func NewCommonOptions(devNamespace string, factory clients.Factory) CommonOptions {
 	return CommonOptions{
 		Factory:          factory,
 		Out:              os.Stdout,
@@ -138,17 +156,45 @@ func (o *CommonOptions) Debugf(format string, a ...interface{}) {
 	}
 }
 
-func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolVarP(&options.BatchMode, optionBatchMode, "b", false, "In batch mode the command never prompts for user input")
-	cmd.Flags().BoolVarP(&options.Verbose, optionVerbose, "", false, "Enable verbose logging")
-	cmd.Flags().StringVarP(&options.LogLevel, optionLogLevel, "", logrus.InfoLevel.String(), "Logging level. Possible values - panic, fatal, error, warning, info, debug.")
-	cmd.Flags().BoolVarP(&options.Headless, optionHeadless, "", false, "Enable headless operation if using browser automation")
-	cmd.Flags().BoolVarP(&options.NoBrew, optionNoBrew, "", false, "Disables the use of brew on macOS to install or upgrade command line dependencies")
-	cmd.Flags().BoolVarP(&options.InstallDependencies, optionInstallDeps, "", false, "Should any required dependencies be installed automatically")
-	cmd.Flags().BoolVarP(&options.SkipAuthSecretsMerge, optionSkipAuthSecMerge, "", false, "Skips merging a local git auth yaml file with any pipeline secrets that are found")
-	cmd.Flags().StringVarP(&options.PullSecrets, optionPullSecrets, "", "", "The pull secrets the service account created should have (useful when deploying to your own private registry): provide multiple pull secrets by providing them in a singular block of quotes e.g. --pull-secrets \"foo, bar, baz\"")
+func (options *CommonOptions) AddCommonFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolVarP(&options.BatchMode, OptionBatchMode, "b", false, "In batch mode the command never prompts for user input")
+	cmd.Flags().BoolVarP(&options.Verbose, OptionVerbose, "", false, "Enable verbose logging")
+	cmd.Flags().StringVarP(&options.LogLevel, OptionLogLevel, "", logrus.InfoLevel.String(), "Logging level. Possible values - panic, fatal, error, warning, info, debug.")
+	cmd.Flags().BoolVarP(&options.Headless, OptionHeadless, "", false, "Enable headless operation if using browser automation")
+	cmd.Flags().BoolVarP(&options.NoBrew, OptionNoBrew, "", false, "Disables the use of brew on macOS to install or upgrade command line dependencies")
+	cmd.Flags().BoolVarP(&options.InstallDependencies, OptionInstallDeps, "", false, "Should any required dependencies be installed automatically")
+	cmd.Flags().BoolVarP(&options.SkipAuthSecretsMerge, OptionSkipAuthSecMerge, "", false, "Skips merging a local git auth yaml file with any pipeline secrets that are found")
+	cmd.Flags().StringVarP(&options.PullSecrets, OptionPullSecrets, "", "", "The pull secrets the service account created should have (useful when deploying to your own private registry): provide multiple pull secrets by providing them in a singular block of quotes e.g. --pull-secrets \"foo, bar, baz\"")
 
 	options.Cmd = cmd
+}
+
+func (o *CommonOptions) CurrentNamespace() string {
+	return o.currentNamespace
+}
+
+func (o *CommonOptions) SetCurrentNamespace(ns string) {
+	o.currentNamespace = ns
+}
+
+func (o *CommonOptions) ModifyDevEnvironmentFn() ModifyDevEnvironmentFn {
+	return o.modifyDevEnvironmentFn
+}
+
+func (o *CommonOptions) SetModifyDevEnvironmentFn(fn ModifyDevEnvironmentFn) {
+	o.modifyDevEnvironmentFn = fn
+}
+
+func (o *CommonOptions) ModifyEnvironmentFn() ModifyEnvironmentFn {
+	return o.modifyEnvironmentFn
+}
+
+func (o *CommonOptions) SetModifyEnvironmentFn(fn ModifyEnvironmentFn) {
+	o.modifyEnvironmentFn = fn
+}
+
+func (o *CommonOptions) SetApiExtensionsClient(client apiextensionsclientset.Interface) {
+	o.apiExtensionsClient = client
 }
 
 func (o *CommonOptions) ApiExtensionsClient() (apiextensionsclientset.Interface, error) {
@@ -194,6 +240,10 @@ func (o *CommonOptions) KubeClientAndDevNamespace() (kubernetes.Interface, strin
 		o.devNamespace, _, err = kube.GetDevNamespace(kubeClient, curNs)
 	}
 	return kubeClient, o.devNamespace, err
+}
+
+func (o *CommonOptions) SetJXClient(jxClient versioned.Interface) {
+	o.jxClient = jxClient
 }
 
 func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
@@ -294,7 +344,7 @@ func (o *CommonOptions) JenkinsClient() (gojenkins.JenkinsClient, error) {
 	}
 	return o.jenkinsClient, nil
 }
-func (o *CommonOptions) getJenkinsURL() (string, error) {
+func (o *CommonOptions) JenkinsURL() (string, error) {
 	kubeClient, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return "", err
@@ -354,32 +404,33 @@ func (o *CommonOptions) GetImagePullSecrets() []string {
 	return pullSecrets
 }
 
-func (o *ServerFlags) addGitServerFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&o.ServerName, optionServerName, "n", "", "The name of the Git server to add a user")
-	cmd.Flags().StringVarP(&o.ServerURL, optionServerURL, "u", "", "The URL of the Git server to add a user")
+func (o *ServerFlags) AddGitServerFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&o.ServerName, OptionServerName, "n", "", "The name of the Git server to add a user")
+	cmd.Flags().StringVarP(&o.ServerURL, OptionServerURL, "u", "", "The URL of the Git server to add a user")
 }
 
 // findGitServer finds the Git server from the given flags or returns an error
-func (o *CommonOptions) findGitServer(config *auth.AuthConfig, serverFlags *ServerFlags) (*auth.AuthServer, error) {
-	return o.findServer(config, serverFlags, "git", "Try creating one via: jx create git server", false)
+func (o *CommonOptions) FindGitServer(config *auth.AuthConfig, serverFlags *ServerFlags) (*auth.AuthServer, error) {
+	return o.FindServer(config, serverFlags, "git", "Try creating one via: jx create git server", false)
 }
 
 // findIssueTrackerServer finds the issue tracker server from the given flags or returns an error
-func (o *CommonOptions) findIssueTrackerServer(config *auth.AuthConfig, serverFlags *ServerFlags) (*auth.AuthServer, error) {
-	return o.findServer(config, serverFlags, "issues", "Try creating one via: jx create tracker server", false)
+func (o *CommonOptions) FindIssueTrackerServer(config *auth.AuthConfig, serverFlags *ServerFlags) (*auth.AuthServer, error) {
+	return o.FindServer(config, serverFlags, "issues", "Try creating one via: jx create tracker server", false)
 }
 
 // findChatServer finds the chat server from the given flags or returns an error
-func (o *CommonOptions) findChatServer(config *auth.AuthConfig, serverFlags *ServerFlags) (*auth.AuthServer, error) {
-	return o.findServer(config, serverFlags, "chat", "Try creating one via: jx create chat server", false)
+func (o *CommonOptions) FindChatServer(config *auth.AuthConfig, serverFlags *ServerFlags) (*auth.AuthServer, error) {
+	return o.FindServer(config, serverFlags, "chat", "Try creating one via: jx create chat server", false)
 }
 
 // findAddonServer finds the addon server from the given flags or returns an error
-func (o *CommonOptions) findAddonServer(config *auth.AuthConfig, serverFlags *ServerFlags, kind string) (*auth.AuthServer, error) {
-	return o.findServer(config, serverFlags, kind, "Try creating one via: jx create addon", true)
+func (o *CommonOptions) FindAddonServer(config *auth.AuthConfig, serverFlags *ServerFlags, kind string) (*auth.AuthServer, error) {
+	return o.FindServer(config, serverFlags, kind, "Try creating one via: jx create addon", true)
 }
 
-func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerFlags, defaultKind string, missingServerDescription string, lazyCreate bool) (*auth.AuthServer, error) {
+func (o *CommonOptions) FindServer(config *auth.AuthConfig, serverFlags *ServerFlags, defaultKind string,
+	missingServerDescription string, lazyCreate bool) (*auth.AuthServer, error) {
 	kind := defaultKind
 	var server *auth.AuthServer
 	if serverFlags.ServerURL != "" {
@@ -388,7 +439,7 @@ func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerF
 			if lazyCreate {
 				return config.GetOrCreateServerName(serverFlags.ServerURL, serverFlags.ServerName, kind), nil
 			}
-			return nil, util.InvalidOption(optionServerURL, serverFlags.ServerURL, config.GetServerURLs())
+			return nil, util.InvalidOption(OptionServerURL, serverFlags.ServerURL, config.GetServerURLs())
 		}
 	}
 	if server == nil && serverFlags.ServerName != "" {
@@ -399,7 +450,7 @@ func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerF
 			server = config.GetServerByName(name)
 		}
 		if server == nil {
-			return nil, util.InvalidOption(optionServerName, name, config.GetServerNames())
+			return nil, util.InvalidOption(OptionServerName, name, config.GetServerNames())
 		}
 	}
 	if server == nil {
@@ -416,7 +467,7 @@ func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerF
 	}
 	if server == nil && len(config.Servers) > 1 {
 		if o.BatchMode {
-			return nil, fmt.Errorf("Multiple servers found. Please specify one via the %s option", optionServerName)
+			return nil, fmt.Errorf("Multiple servers found. Please specify one via the %s option", OptionServerName)
 		}
 		defaultServerName := ""
 		if config.CurrentServer != "" {
@@ -440,7 +491,7 @@ func (o *CommonOptions) findServer(config *auth.AuthConfig, serverFlags *ServerF
 	return server, nil
 }
 
-func (o *CommonOptions) findService(name string) (string, error) {
+func (o *CommonOptions) FindService(name string) (string, error) {
 	client, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return "", err
@@ -477,7 +528,7 @@ func (o *CommonOptions) findService(name string) (string, error) {
 	return url, nil
 }
 
-func (o *CommonOptions) findEnvironmentNamespace(envName string) (string, error) {
+func (o *CommonOptions) FindEnvironmentNamespace(envName string) (string, error) {
 	client, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return "", err
@@ -498,7 +549,7 @@ func (o *CommonOptions) findEnvironmentNamespace(envName string) (string, error)
 	}
 	env := envMap[envName]
 	if env == nil {
-		return "", util.InvalidOption(optionEnvironment, envName, envNames)
+		return "", util.InvalidOption(OptionEnvironment, envName, envNames)
 	}
 	answer := env.Spec.Namespace
 	if answer == "" {
@@ -507,7 +558,7 @@ func (o *CommonOptions) findEnvironmentNamespace(envName string) (string, error)
 	return answer, nil
 }
 
-func (o *CommonOptions) findServiceInNamespace(name string, ns string) (string, error) {
+func (o *CommonOptions) FindServiceInNamespace(name string, ns string) (string, error) {
 	client, curNs, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return "", err
@@ -540,7 +591,7 @@ func (o *CommonOptions) findServiceInNamespace(name string, ns string) (string, 
 	return url, nil
 }
 
-func (o *CommonOptions) retry(attempts int, sleep time.Duration, call func() error) (err error) {
+func (o *CommonOptions) Retry(attempts int, sleep time.Duration, call func() error) (err error) {
 	for i := 0; ; i++ {
 		err = call()
 		if err == nil {
@@ -558,7 +609,7 @@ func (o *CommonOptions) retry(attempts int, sleep time.Duration, call func() err
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
 
-func (o *CommonOptions) retryQuiet(attempts int, sleep time.Duration, call func() error) (err error) {
+func (o *CommonOptions) RetryQuiet(attempts int, sleep time.Duration, call func() error) (err error) {
 	lastMessage := ""
 	dot := false
 
@@ -593,7 +644,7 @@ func (o *CommonOptions) retryQuiet(attempts int, sleep time.Duration, call func(
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
 
-func (o *CommonOptions) retryQuietlyUntilTimeout(timeout time.Duration, sleep time.Duration, call func() error) (err error) {
+func (o *CommonOptions) RetryQuietlyUntilTimeout(timeout time.Duration, sleep time.Duration, call func() error) (err error) {
 	timeoutTime := time.Now().Add(timeout)
 
 	lastMessage := ""
@@ -630,7 +681,7 @@ func (o *CommonOptions) retryQuietlyUntilTimeout(timeout time.Duration, sleep ti
 }
 
 // retryUntilTrueOrTimeout waits until complete is true, an error occurs or the timeout
-func (o *CommonOptions) retryUntilTrueOrTimeout(timeout time.Duration, sleep time.Duration, call func() (bool, error)) (err error) {
+func (o *CommonOptions) RetryUntilTrueOrTimeout(timeout time.Duration, sleep time.Duration, call func() (bool, error)) (err error) {
 	timeoutTime := time.Now().Add(timeout)
 
 	for i := 0; ; i++ {
@@ -646,7 +697,7 @@ func (o *CommonOptions) retryUntilTrueOrTimeout(timeout time.Duration, sleep tim
 	}
 }
 
-func (o *CommonOptions) getJobMap(filter string) (map[string]gojenkins.Job, error) {
+func (o *CommonOptions) GetJobMap(filter string) (map[string]gojenkins.Job, error) {
 	jobMap := map[string]gojenkins.Job{}
 	jenkins, err := o.JenkinsClient()
 	if err != nil {
@@ -656,35 +707,35 @@ func (o *CommonOptions) getJobMap(filter string) (map[string]gojenkins.Job, erro
 	if err != nil {
 		return jobMap, err
 	}
-	o.addJobs(&jobMap, filter, "", jobs)
+	o.AddJobs(&jobMap, filter, "", jobs)
 	return jobMap, nil
 }
 
-func (o *CommonOptions) addJobs(jobMap *map[string]gojenkins.Job, filter string, prefix string, jobs []gojenkins.Job) {
+func (o *CommonOptions) AddJobs(jobMap *map[string]gojenkins.Job, filter string, prefix string, jobs []gojenkins.Job) {
 	jenkins, err := o.JenkinsClient()
 	if err != nil {
 		return
 	}
 
 	for _, j := range jobs {
-		name := jobName(prefix, &j)
-		if IsPipeline(&j) {
+		name := jxjenkins.JobName(prefix, &j)
+		if jxjenkins.IsPipeline(&j) {
 			if filter == "" || strings.Contains(name, filter) {
 				(*jobMap)[name] = j
 				continue
 			}
 		}
 		if j.Jobs != nil {
-			o.addJobs(jobMap, filter, name, j.Jobs)
+			o.AddJobs(jobMap, filter, name, j.Jobs)
 		} else {
 			job, err := jenkins.GetJob(name)
 			if err == nil && job.Jobs != nil {
-				o.addJobs(jobMap, filter, name, job.Jobs)
+				o.AddJobs(jobMap, filter, name, job.Jobs)
 			}
 		}
 	}
 }
-func (o *CommonOptions) tailBuild(jobName string, build *gojenkins.Build) error {
+func (o *CommonOptions) TailBuild(jobName string, build *gojenkins.Build) error {
 	jenkins, err := o.JenkinsClient()
 	if err != nil {
 		return nil
@@ -700,7 +751,7 @@ func (o *CommonOptions) tailBuild(jobName string, build *gojenkins.Build) error 
 	return jenkins.TailLog(buildPath, o.Out, time.Second, time.Hour*100)
 }
 
-func (o *CommonOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
+func (o *CommonOptions) PickRemoteURL(config *gitcfg.Config) (string, error) {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	urls := []string{}
 	if config.Remotes != nil {
@@ -731,13 +782,13 @@ func (o *CommonOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
 
 // todo switch to using expose as a jx plugin
 // get existing config from the devNamespace and run expose in the target environment
-func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) error {
-	return expose.Expose(devNamespace, targetNamespace, password, o.kubeClient, o.Helm(), defaultInstallTimeout)
+func (o *CommonOptions) Expose(devNamespace, targetNamespace, password string) error {
+	return expose.Expose(devNamespace, targetNamespace, password, o.kubeClient, o.Helm(), DefaultInstallTimeout)
 }
 
-func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig, services ...string) error {
+func (o *CommonOptions) RunExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig, services ...string) error {
 	return expose.RunExposecontroller(devNamespace, targetNamespace, ic, o.kubeClient, o.Helm(),
-		defaultInstallTimeout)
+		DefaultInstallTimeout)
 }
 
 // CleanExposecontrollerReources cleans expose controller resources
@@ -745,7 +796,7 @@ func (o *CommonOptions) CleanExposecontrollerReources(ns string) {
 	expose.CleanExposecontrollerReources(o.kubeClient, ns)
 }
 
-func (o *CommonOptions) getDefaultAdminPassword(devNamespace string) (string, error) {
+func (o *CommonOptions) GetDefaultAdminPassword(devNamespace string) (string, error) {
 	client, err := o.KubeClient() // cache may not have been created yet...
 	if err != nil {
 		return "", fmt.Errorf("cannot obtain k8s client %v", err)
@@ -764,7 +815,7 @@ func (o *CommonOptions) getDefaultAdminPassword(devNamespace string) (string, er
 	return adminConfig.Jenkins.JenkinsSecret.Password, nil
 }
 
-func (o *CommonOptions) ensureAddonServiceAvailable(serviceName string) (string, error) {
+func (o *CommonOptions) EnsureAddonServiceAvailable(serviceName string) (string, error) {
 	present, err := services.IsServicePresent(o.kubeClient, serviceName, o.currentNamespace)
 	if err != nil {
 		return "", fmt.Errorf("no %s provider service found, are you in your teams dev environment?  Type `jx ns` to switch.", serviceName)
@@ -781,11 +832,7 @@ func (o *CommonOptions) ensureAddonServiceAvailable(serviceName string) (string,
 	return "", nil
 }
 
-func (o *CommonOptions) copyCertmanagerResources(targetNamespace string, ic kube.IngressConfig) error {
-	return certmanager.CopyCertmanagerResources(targetNamespace, ic, o.kubeClient)
-}
-
-func (o *CommonOptions) getJobName() string {
+func (o *CommonOptions) GetJobName() string {
 	owner := os.Getenv("REPO_OWNER")
 	repo := os.Getenv("REPO_NAME")
 	branch := os.Getenv("BRANCH_NAME")
@@ -801,7 +848,7 @@ func (o *CommonOptions) getJobName() string {
 	return ""
 }
 
-func (o *CommonOptions) getBuildNumber() string {
+func (o *CommonOptions) GetBuildNumber() string {
 	buildNumber := os.Getenv("JX_BUILD_NUMBER")
 	if buildNumber != "" {
 		return buildNumber
@@ -842,7 +889,7 @@ func (o *CommonOptions) GetWebHookEndpoint() (string, error) {
 		return "", errors.Wrap(err, "failed to get kube client")
 	}
 
-	isProwEnabled, err := o.isProw()
+	isProwEnabled, err := o.IsProw()
 	if err != nil {
 		return "", err
 	}
@@ -873,21 +920,7 @@ func (o *CommonOptions) GetWebHookEndpoint() (string, error) {
 	return webHookUrl, nil
 }
 
-//ChangeNamespace switches the current jx/K8S namespace to the one specified.
-//This is analogous to running `jx namespace cheese`.
-func (o *CommonOptions) ChangeNamespace(ns string) {
-	nsOptions := &NamespaceOptions{
-		CommonOptions: *o,
-	}
-	nsOptions.BatchMode = true
-	nsOptions.Args = []string{ns}
-	err := nsOptions.Run()
-	if err != nil {
-		log.Warnf("Failed to set context to namespace %s: %s", ns, err)
-	}
-
-	//Reset all the cached clients & namespace values when switching so that they can be properly recalculated for
-	//the new namespace.
+func (o *CommonOptions) ResetClients() {
 	o.kubeClient = nil
 	o.jxClient = nil
 	o.currentNamespace = ""
@@ -914,7 +947,7 @@ func SeeAlsoText(commands ...string) string {
 
 	var sb strings.Builder
 	sb.WriteString("\nSee Also:\n\n")
-	
+
 	for _, command := range commands {
 		u := "https://jenkins-x.io/commands/" + strings.Replace(command, " ", "_", -1)
 		sb.WriteString(fmt.Sprintf("* %s : [%s](%s)\n", command, u, u))

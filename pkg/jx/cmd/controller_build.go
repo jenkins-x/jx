@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/collector"
-	"github.com/pkg/errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -10,6 +8,11 @@ import (
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/jenkins-x/jx/pkg/collector"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"k8s.io/client-go/kubernetes"
@@ -42,10 +45,10 @@ type ControllerBuildOptions struct {
 
 // NewCmdControllerBuild creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdControllerBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdControllerBuild(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ControllerBuildOptions{
 		ControllerOptions: ControllerOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -66,7 +69,7 @@ func NewCmdControllerBuild(f Factory, in terminal.FileReader, out terminal.FileW
 		Aliases: []string{"builds"},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to watch or defaults to the current namespace")
 	cmd.Flags().BoolVarP(&options.InitGitCredentials, "git-credentials", "", false, "If enable then lets run the 'jx step git credentials' step to initialise git credentials")
@@ -108,7 +111,7 @@ func (o *ControllerBuildOptions) Run() error {
 			return err
 		}
 
-		err := o.runCommandVerbose("git", "config", "--global", "credential.helper", "store")
+		err := o.RunCommandVerbose("git", "config", "--global", "credential.helper", "store")
 		if err != nil {
 			return err
 		}
@@ -348,7 +351,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 }
 
 // generates the build log URL and returns the URL
-func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool) (string, error) {
+func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool) (string, error) {
 
 	coll, err := collector.NewCollector(location, settings, o.Git())
 	if err != nil {
@@ -367,7 +370,7 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 
 	if initGitCredentials {
 		gc := &StepGitCredentialsOptions{}
-		gc.CommonOptions = *o
+		gc.CommonOptions = o.CommonOptions
 		gc.BatchMode = true
 		log.Info("running: jx step git credentials\n")
 		err = gc.Run()

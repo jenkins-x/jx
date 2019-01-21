@@ -9,6 +9,8 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	batchv1 "k8s.io/api/batch/v1"
@@ -43,10 +45,10 @@ type CreatePostPreviewJobOptions struct {
 }
 
 // NewCmdCreatePostPreviewJob creates a command object for the "create" command
-func NewCmdCreatePostPreviewJob(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreatePostPreviewJob(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreatePostPreviewJobOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 
@@ -74,7 +76,7 @@ func NewCmdCreatePostPreviewJob(f Factory, in terminal.FileReader, out terminal.
 	cmd.Flags().StringArrayVarP(&options.Commands, "commands", "c", []string{}, "The commands to run in the job")
 	cmd.Flags().Int32VarP(&options.BackoffLimit, "backoff-limit", "l", int32(2), "The backoff limit: how many times to retry the job before considering it failed) to run in the Job")
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	return cmd
 }
 

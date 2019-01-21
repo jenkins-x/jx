@@ -1,4 +1,4 @@
-package cmd
+package commoncmd
 
 import (
 	"fmt"
@@ -94,7 +94,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 			return fmt.Errorf("Could not find a username for Git server %s", u)
 		}
 
-		credentials, err = o.updatePipelineGitCredentialsSecret(server, user)
+		credentials, err = o.UpdatePipelineGitCredentialsSecret(server, user)
 		if err != nil {
 			return err
 		}
@@ -135,7 +135,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		}
 	}
 	org := gitInfo.Organisation
-	err = o.retry(10, time.Second*10, func() error {
+	err = o.Retry(10, time.Second*10, func() error {
 		folder, err := jenk.GetJob(org)
 		if err != nil {
 			// could not find folder so lets try create it
@@ -157,7 +157,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		return err
 	}
 
-	err = o.retry(10, time.Second*10, func() error {
+	err = o.Retry(10, time.Second*10, func() error {
 		projectXml := jenkins.CreateMultiBranchProjectXml(gitInfo, gitProvider, credentials, branchPattern, jenkinsfile)
 		jobName := gitInfo.Name
 		job, err := jenk.GetJobByPath(org, jobName)
@@ -177,7 +177,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 				return fmt.Errorf("Failed to find the MultiBranchProject job %s in folder %s due to: %s", jobName, org, err)
 			}
 			log.Infof("Created Jenkins Project: %s\n", util.ColorInfo(job.Url))
-			o.logImportedProject(isEnvironment, gitInfo)
+			o.LogImportedProject(isEnvironment, gitInfo)
 
 			params := url.Values{}
 			err = jenk.Build(job, params)
@@ -206,7 +206,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 	return gitProvider.CreateWebHook(webhook)
 }
 
-func (o *CommonOptions) logImportedProject(isEnvironment bool, gitInfo *gits.GitRepository) {
+func (o *CommonOptions) LogImportedProject(isEnvironment bool, gitInfo *gits.GitRepository) {
 	log.Blank()
 	if !isEnvironment {
 		log.Infof("Watch pipeline activity via:    %s\n", util.ColorInfo(fmt.Sprintf("jx get activity -f %s -w", gitInfo.Name)))

@@ -8,6 +8,8 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -26,7 +28,7 @@ const (
 
 // GetActivityOptions containers the CLI options
 type GetActivityOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	Filter      string
 	BuildNumber string
@@ -51,9 +53,9 @@ var (
 )
 
 // NewCmdGetActivity creates the new command for: jx get version
-func NewCmdGetActivity(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetActivity(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetActivityOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,
@@ -99,7 +101,7 @@ func (o *GetActivityOptions) Run() error {
 	}
 	kube.SortEnvironments(envList.Items)
 
-	table := o.createTable()
+	table := o.Table()
 	table.SetColumnAlign(1, util.ALIGN_RIGHT)
 	table.SetColumnAlign(2, util.ALIGN_RIGHT)
 	table.AddRow("STEP", "STARTED AGO", "DURATION", "STATUS")
@@ -198,7 +200,7 @@ func (o *GetActivityOptions) onActivity(table *tbl.Table, obj interface{}, yamlS
 	}
 }
 
-func (o *CommonOptions) addStepRow(table *tbl.Table, parent *v1.PipelineActivityStep, indent string) {
+func (o *GetActivityOptions) addStepRow(table *tbl.Table, parent *v1.PipelineActivityStep, indent string) {
 	stage := parent.Stage
 	preview := parent.Preview
 	promote := parent.Promote

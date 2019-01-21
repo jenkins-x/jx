@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -57,10 +59,10 @@ var (
 `)
 )
 
-func NewCmdStepWaitForArtifact(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepWaitForArtifact(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepWaitForArtifactOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -147,7 +149,7 @@ func (o *StepWaitForArtifactOptions) Run() error {
 	fn := func() error {
 		return o.getUrlStatusOK(o.ArtifactURL)
 	}
-	err = o.retryQuietlyUntilTimeout(o.TimeoutDuration, o.PollDuration, fn)
+	err = o.RetryQuietlyUntilTimeout(o.TimeoutDuration, o.PollDuration, fn)
 	if err == nil {
 		log.Infof("Found artifact at %s\n", util.ColorInfo(o.ArtifactURL))
 		return nil

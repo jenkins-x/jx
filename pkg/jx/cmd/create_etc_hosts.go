@@ -9,6 +9,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -40,10 +42,10 @@ type CreateEtcHostsOptions struct {
 }
 
 // NewCmdCreateEtcHosts creates a command object for the "create" command
-func NewCmdCreateEtcHosts(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateEtcHosts(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateEtcHostsOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -79,7 +81,7 @@ func (o *CreateEtcHostsOptions) Run() error {
 	}
 	if o.IP == "" {
 		// lets find a node ip
-		ip, err := o.getCommandOutput("", "minikube", "ip")
+		ip, err := o.GetCommandOutput("", "minikube", "ip")
 		if err != nil {
 			return err
 		}

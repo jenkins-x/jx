@@ -2,29 +2,32 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/log"
 	logger "github.com/sirupsen/logrus"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
 
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/spf13/cobra"
 )
 
 type DeleteAwsOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	Profile string
 	Region  string
 	VpcId   string
 }
 
-func NewCmdDeleteAws(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteAws(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteAwsOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,

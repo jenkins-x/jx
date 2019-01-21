@@ -7,6 +7,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -20,7 +22,7 @@ type GetStorageOptions struct {
 var (
 	getStorageLong = templates.LongDesc(`
 		Display the storage configuration for different classifications.
-` + storageSupportDescription + SeeAlsoText("jx step stash", "jx edit storage"))
+` + storageSupportDescription + commoncmd.SeeAlsoText("jx step stash", "jx edit storage"))
 
 	getStorageExample = templates.Examples(`
 		# List the storage configurations for different classifications for the current team
@@ -29,10 +31,10 @@ var (
 )
 
 // NewCmdGetStorage creates the new command for: jx get env
-func NewCmdGetStorage(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetStorage(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetStorageOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -78,7 +80,7 @@ func (o *GetStorageOptions) Run() error {
 		names = append(names, k)
 	}
 	sort.Strings(names)
-	table := o.createTable()
+	table := o.Table()
 	table.AddRow("CLASSIFICATION", "LOCATION")
 	for _, n := range names {
 		ls := m[n]

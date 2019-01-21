@@ -1,4 +1,4 @@
-package cmd
+package commoncmd
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 )
 
-func (o *CommonOptions) createIssueTrackerAuthConfigService() (auth.ConfigService, error) {
+func (o *CommonOptions) IssueTrackerAuthConfigService() (auth.ConfigService, error) {
 	secrets, err := o.LoadPipelineSecrets(kube.ValueKindIssue, "")
 	if err != nil {
 		log.Infof("The current user cannot query pipeline issue tracker secrets: %s", err)
@@ -27,7 +27,7 @@ func (o *CommonOptions) errorCreateIssueTrackerAuthConfigService(parentError err
 	return answer, err
 }
 
-func (o *CommonOptions) createIssueProvider(dir string) (issues.IssueProvider, error) {
+func (o *CommonOptions) IssueProvider(dir string) (issues.IssueProvider, error) {
 	gitDir, gitConfDir, err := o.Git().FindGitConfigDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("No issue tracker configured for this project and cannot find the .git directory: %s", err)
@@ -46,7 +46,7 @@ func (o *CommonOptions) createIssueProvider(dir string) (issues.IssueProvider, e
 		it := pc.IssueTracker
 		if it != nil {
 			if it.URL != "" && it.Kind != "" {
-				authConfigSvc, err := o.createIssueTrackerAuthConfigService()
+				authConfigSvc, err := o.IssueTrackerAuthConfigService()
 				if err != nil {
 					return nil, err
 				}
@@ -72,7 +72,7 @@ func (o *CommonOptions) createIssueProvider(dir string) (issues.IssueProvider, e
 	if err != nil {
 		return nil, err
 	}
-	gitProvider, err := o.gitProviderForURL(gitUrl, "user name to use for authenticating with git issues")
+	gitProvider, err := o.GitProviderForURL(gitUrl, "user name to use for authenticating with git issues")
 	if err != nil {
 		return nil, err
 	}

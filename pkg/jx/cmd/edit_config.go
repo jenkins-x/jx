@@ -11,6 +11,8 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -50,10 +52,10 @@ type EditConfigOptions struct {
 }
 
 // NewCmdEditConfig creates a command object for the "create" command
-func NewCmdEditConfig(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdEditConfig(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &EditConfigOptions{
 		EditOptions: EditOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -87,11 +89,11 @@ func (o *EditConfigOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.IssuesAuthConfigSvc, err = o.createIssueTrackerAuthConfigService()
+	o.IssuesAuthConfigSvc, err = o.IssueTrackerAuthConfigService()
 	if err != nil {
 		return err
 	}
-	o.ChatAuthConfigSvc, err = o.createChatAuthConfigService()
+	o.ChatAuthConfigSvc, err = o.ChatAuthConfigService()
 	if err != nil {
 		return err
 	}

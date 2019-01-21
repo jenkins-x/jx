@@ -9,6 +9,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 )
@@ -25,31 +27,12 @@ type CreateClusterOptions struct {
 }
 
 const (
-	GKE        = "gke"
-	OKE        = "oke"
-	EKS        = "eks"
-	AKS        = "aks"
-	AWS        = "aws"
-	PKS        = "pks"
-	IKS        = "iks"
-	MINIKUBE   = "minikube"
-	MINISHIFT  = "minishift"
-	KUBERNETES = "kubernetes"
-	OPENSHIFT  = "openshift"
-	ORACLE     = "oracle"
-	ICP        = "icp"
-	JX_INFRA   = "jx-infra"
-
 	optionKubernetesVersion = "kubernetes-version"
 	optionNodes             = "nodes"
 	optionClusterName       = "cluster-name"
 )
 
-var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, OKE, AKS, AWS, EKS, KUBERNETES, IKS, OPENSHIFT, MINISHIFT, JX_INFRA, PKS, ICP}
-
 const (
-	stableKubeCtlVersionURL = "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
-
 	valid_providers = `Valid Kubernetes providers include:
 
     * aks (Azure Container Service - https://docs.microsoft.com/en-us/azure/aks)
@@ -105,14 +88,14 @@ var (
 // KubernetesProviderOptions returns all the Kubernetes providers as a string
 func KubernetesProviderOptions() string {
 	values := []string{}
-	values = append(values, KUBERNETES_PROVIDERS...)
+	values = append(values, commoncmd.KUBERNETES_PROVIDERS...)
 	sort.Strings(values)
 	return strings.Join(values, ", ")
 }
 
 // NewCmdCreateCluster creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateCluster(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateCluster(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := createCreateClusterOptions(f, in, out, errOut, "")
 
 	cmd := &cobra.Command{
@@ -145,8 +128,8 @@ func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.SkipInstallation, "skip-installation", "", false, "Provision cluster only, don't install Jenkins X into it")
 }
 
-func createCreateClusterOptions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, cloudProvider string) CreateClusterOptions {
-	commonOptions := CommonOptions{
+func createCreateClusterOptions(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, cloudProvider string) CreateClusterOptions {
+	commonOptions := commoncmd.CommonOptions{
 		Factory: f,
 		In:      in,
 

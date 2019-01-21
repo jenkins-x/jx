@@ -3,6 +3,8 @@ package cmd
 import (
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/vault"
 	"github.com/pkg/errors"
@@ -37,10 +39,10 @@ var (
 )
 
 // NewCmdGetSecret creates a new command for 'jx get secrets'
-func NewCmdGetSecret(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetSecret(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetSecretOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -86,7 +88,7 @@ func (o *GetSecretOptions) Run() error {
 		return errors.Wrap(err, "listing all secrets in vault")
 	}
 
-	table := o.createTable()
+	table := o.Table()
 	table.AddRow("KEY")
 	for _, secret := range secrets {
 		table.AddRow(secret)

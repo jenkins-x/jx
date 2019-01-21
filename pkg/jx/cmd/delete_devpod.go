@@ -5,6 +5,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
@@ -34,15 +36,15 @@ var (
 
 // DeleteDevPodOptions are the flags for delete commands
 type DeleteDevPodOptions struct {
-	CommonOptions
-	CommonDevPodOptions
+	commoncmd.CommonOptions
+	commoncmd.CommonDevPodOptions
 }
 
 // NewCmdDeleteDevPod creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteDevPod(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteDevPod(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteDevPodOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,
@@ -64,7 +66,7 @@ func NewCmdDeleteDevPod(f Factory, in terminal.FileReader, out terminal.FileWrit
 		},
 	}
 
-	options.addCommonDevPodFlags(cmd)
+	options.AddCommonDevPodFlags(cmd)
 
 	return cmd
 }
@@ -81,7 +83,7 @@ func (o *DeleteDevPodOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	userName, err := o.getUsername(o.CommonDevPodOptions.Username)
+	userName, err := o.GetUsername(o.CommonDevPodOptions.Username)
 	names, err := kube.GetPodNames(client, ns, userName)
 	if err != nil {
 		return err

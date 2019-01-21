@@ -11,6 +11,8 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -57,10 +59,10 @@ type CreatePullRequestResults struct {
 }
 
 // NewCmdCreatePullRequest creates a command object for the "create" command
-func NewCmdCreatePullRequest(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreatePullRequest(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreatePullRequestOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 
@@ -90,7 +92,7 @@ func NewCmdCreatePullRequest(f Factory, in terminal.FileReader, out terminal.Fil
 	cmd.Flags().StringVarP(&options.Base, "base", "", "master", "The base branch to create the pull request into")
 	cmd.Flags().StringArrayVarP(&options.Labels, "label", "l", []string{}, "The labels to add to the pullrequest")
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	return cmd
 }
 
@@ -104,7 +106,7 @@ func (o *CreatePullRequestOptions) Run() error {
 		}
 		o.Dir = dir
 	}
-	gitInfo, provider, _, err := o.createGitProvider(o.Dir)
+	gitInfo, provider, _, err := o.GitProvider(o.Dir)
 	if err != nil {
 		return err
 	}

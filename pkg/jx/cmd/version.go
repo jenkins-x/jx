@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/util/system"
@@ -19,7 +21,7 @@ const (
 )
 
 type VersionOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	Container      string
 	Namespace      string
@@ -27,9 +29,9 @@ type VersionOptions struct {
 	NoVersionCheck bool
 }
 
-func NewCmdVersion(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdVersion(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &VersionOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,
@@ -51,7 +53,7 @@ func NewCmdVersion(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 		cmd.Flags().BoolP("client", "c", false, "Client version only (no server required).")
 		cmd.Flags().BoolP("short", "", false, "Print just the version number.")
 	*/
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	cmd.Flags().MarkShorthandDeprecated("client", "please use --client instead.")
 	cmd.Flags().BoolVarP(&options.HelmTLS, "helm-tls", "", false, "Whether to use TLS with helm")
@@ -61,7 +63,7 @@ func NewCmdVersion(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 
 func (o *VersionOptions) Run() error {
 	info := util.ColorInfo
-	table := o.createTable()
+	table := o.Table()
 	table.AddRow("NAME", "VERSION")
 	table.AddRow("jx", info(version.GetVersion()))
 
@@ -98,7 +100,7 @@ func (o *VersionOptions) Run() error {
 	}
 
 	// kubectl version
-	output, err = o.getCommandOutput("", "kubectl", "version", "--short")
+	output, err = o.GetCommandOutput("", "kubectl", "version", "--short")
 	if err != nil {
 		log.Warnf("Failed to get kubectl version: %s\n", err)
 	} else {

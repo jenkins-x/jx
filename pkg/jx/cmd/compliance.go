@@ -4,6 +4,8 @@ import (
 	"io"
 
 	"github.com/heptio/sonobuoy/pkg/buildinfo"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -20,14 +22,14 @@ var complianceImage = "gcr.io/heptio-images/sonobuoy:" + buildinfo.Version
 
 // ComplianceOptions options for compliance command
 type ComplianceOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 }
 
 // NewCompliance creates a command object for the generic "compliance" action, which
 // executes the compliance tests against a Kubernetes cluster
-func NewCompliance(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCompliance(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ComplianceOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,

@@ -9,6 +9,8 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/cve"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -43,10 +45,10 @@ var (
 )
 
 // NewCmdGetCVE creates the command
-func NewCmdGetCVE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetCVE(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetCVEOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 
@@ -70,7 +72,7 @@ func NewCmdGetCVE(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	options.addGetCVEFlags(cmd)
 
 	return cmd
@@ -96,7 +98,7 @@ func (o *GetCVEOptions) Run() error {
 		return fmt.Errorf("cannot create jx client: %v", err)
 	}
 
-	externalURL, err := o.ensureAddonServiceAvailable(kube.AddonServices[defaultAnchoreName])
+	externalURL, err := o.EnsureAddonServiceAvailable(kube.AddonServices[defaultAnchoreName])
 	if err != nil {
 		log.Warnf("no CVE provider service found, are you in your teams dev environment?  Type `jx env` to switch.\n")
 		return fmt.Errorf("if no CVE provider running, try running `jx create addon anchore` in your teams dev environment: %v", err)
@@ -107,7 +109,7 @@ func (o *GetCVEOptions) Run() error {
 		return fmt.Errorf("no --image-name, --image-id or --environment flags set\n")
 	}
 
-	server, auth, err := o.CommonOptions.getAddonAuthByKind(kube.ValueKindCVE, externalURL)
+	server, auth, err := o.CommonOptions.GetAddonAuthByKind(kube.ValueKindCVE, externalURL)
 	if err != nil {
 		return fmt.Errorf("error getting anchore engine auth details, %v", err)
 	}
@@ -116,7 +118,7 @@ func (o *GetCVEOptions) Run() error {
 	if err != nil {
 		return fmt.Errorf("error creating anchore provider, %v", err)
 	}
-	table := o.createTable()
+	table := o.Table()
 	table.AddRow("Image", util.ColorInfo("Severity"), "Vulnerability", "URL", "Package", "Fix")
 
 	query := cve.CVEQuery{
@@ -127,7 +129,7 @@ func (o *GetCVEOptions) Run() error {
 	}
 
 	if o.Env != "" {
-		targetNamespace, err := kube.GetEnvironmentNamespace(jxClient, o.currentNamespace, o.Env)
+		targetNamespace, err := kube.GetEnvironmentNamespace(jxClient, o.CurrentNamespace(), o.Env)
 		if err != nil {
 			return err
 		}

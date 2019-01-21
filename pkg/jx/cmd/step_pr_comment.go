@@ -11,6 +11,8 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -29,11 +31,11 @@ type StepPRCommentFlags struct {
 }
 
 // NewCmdStep Steps a command object for the "step" command
-func NewCmdStepPRComment(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepPRComment(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepPRCommentOptions{
 		StepPROptions: StepPROptions{
 			StepOptions: StepOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 					Out:     out,
@@ -59,7 +61,7 @@ func NewCmdStepPRComment(f Factory, in terminal.FileReader, out terminal.FileWri
 	cmd.Flags().StringVarP(&options.Flags.Repository, "repository", "r", "", "Git repository")
 	cmd.Flags().StringVarP(&options.Flags.PR, "pull-request", "p", "", "Git Pull Request number")
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	return cmd
 }

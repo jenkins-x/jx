@@ -3,6 +3,8 @@ package cmd
 import (
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -10,7 +12,7 @@ import (
 
 // UpgradeOptions are the flags for delete commands
 type UpgradeOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 }
 
 var (
@@ -31,9 +33,9 @@ var (
 )
 
 // NewCmdUpgrade creates the command
-func NewCmdUpgrade(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgrade(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &UpgradeOptions{
-		CommonOptions{
+		commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,

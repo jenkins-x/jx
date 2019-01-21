@@ -3,20 +3,22 @@ package cmd
 import (
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // DeleteChatOptions are the flags for delete commands
 type DeleteChatOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 }
 
 // NewCmdDeleteChat creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteChat(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteChat(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteChatOptions{
-		CommonOptions{
+		commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,

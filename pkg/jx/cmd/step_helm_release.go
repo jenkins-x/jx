@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -18,10 +20,6 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const (
-	defaultChartRepo = "http://jenkins-x-chartmuseum:8080"
 )
 
 // StepHelmReleaseOptions contains the command line flags
@@ -40,11 +38,11 @@ var (
 `)
 )
 
-func NewCmdStepHelmRelease(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepHelmRelease(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepHelmReleaseOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 					Out:     out,
@@ -72,7 +70,7 @@ func NewCmdStepHelmRelease(f Factory, in terminal.FileReader, out terminal.FileW
 
 func (o *StepHelmReleaseOptions) Run() error {
 	dir := o.Dir
-	_, err := o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
+	_, err := o.HelmInitDependencyBuild(dir, o.DefaultReleaseCharts())
 	if err != nil {
 		return errors.Wrapf(err, "failed to build dependencies for chart from directory '%s'", dir)
 	}
@@ -105,7 +103,7 @@ func (o *StepHelmReleaseOptions) Run() error {
 	}
 	defer os.Remove(tarball)
 
-	chartRepo := o.releaseChartMuseumUrl()
+	chartRepo := o.ReleaseChartMuseumUrl()
 
 	userName := os.Getenv("CHARTMUSEUM_CREDS_USR")
 	password := os.Getenv("CHARTMUSEUM_CREDS_PSW")

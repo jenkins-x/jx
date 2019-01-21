@@ -15,6 +15,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 )
@@ -40,10 +42,10 @@ var (
 )
 
 // NewCmdGetIssue creates the command
-func NewCmdGetIssue(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetIssue(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetIssueOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 
@@ -74,7 +76,7 @@ func NewCmdGetIssue(f Factory, in terminal.FileReader, out terminal.FileWriter, 
 
 // Run implements this command
 func (o *GetIssueOptions) Run() error {
-	tracker, err := o.createIssueProvider(o.Dir)
+	tracker, err := o.IssueProvider(o.Dir)
 	if err != nil {
 		return errors.Wrap(err, "failed to create the issue tracker")
 	}
@@ -84,7 +86,7 @@ func (o *GetIssueOptions) Run() error {
 		return errors.Wrap(err, "issue not found")
 	}
 
-	table := o.createTable()
+	table := o.Table()
 	table.AddRow("ISSUE", "STATUS", "APPLICATION", "ENVIRONMENT")
 
 	client, ns, err := o.JXClientAndDevNamespace()

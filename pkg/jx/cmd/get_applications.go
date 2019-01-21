@@ -15,6 +15,8 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -25,7 +27,7 @@ import (
 
 // GetApplicationsOptions containers the CLI options
 type GetApplicationsOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	Namespace   string
 	Environment string
@@ -86,9 +88,9 @@ var (
 )
 
 // NewCmdGetApplications creates the new command for: jx get version
-func NewCmdGetApplications(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetApplications(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetApplicationsOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,
@@ -283,7 +285,7 @@ func (o *GetApplicationsOptions) getAppData(kubeClient kubernetes.Interface) (na
 }
 
 func (o *GetApplicationsOptions) generateTableHeaders(envApps []EnvApps) table.Table {
-	t := o.createTable()
+	t := o.Table()
 	title := "APPLICATION"
 	if o.Previews {
 		title = "PULL REQUESTS"

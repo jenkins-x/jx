@@ -1,4 +1,4 @@
-package cmd
+package commoncmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -8,12 +8,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 )
 
-func (o *CommonOptions) createChatProvider(chatConfig *config.ChatConfig) (chats.ChatProvider, error) {
+func (o *CommonOptions) ChatProvider(chatConfig *config.ChatConfig) (chats.ChatProvider, error) {
 	u := chatConfig.URL
 	if u == "" {
 		return nil, nil
 	}
-	authConfigSvc, err := o.createChatAuthConfigService()
+	authConfigSvc, err := o.ChatAuthConfigService()
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +27,7 @@ func (o *CommonOptions) createChatProvider(chatConfig *config.ChatConfig) (chats
 	return chats.CreateChatProvider(server.Kind, server, userAuth, o.BatchMode)
 }
 
-func (o *CommonOptions) createChatAuthConfigService() (auth.ConfigService, error) {
+func (o *CommonOptions) ChatAuthConfigService() (auth.ConfigService, error) {
 	secrets, err := o.LoadPipelineSecrets(kube.ValueKindChat, "")
 	if err != nil {
 		log.Warnf("The current user cannot query pipeline chat secrets: %s", err)

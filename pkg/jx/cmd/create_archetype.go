@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/maven"
@@ -47,11 +49,11 @@ type CreateArchetypeOptions struct {
 }
 
 // NewCmdCreateArchetype creates a command object for the "create" command
-func NewCmdCreateArchetype(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateArchetype(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateArchetypeOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 
@@ -178,7 +180,7 @@ func (o *CreateArchetypeOptions) CreateArchetype() error {
 		args = append(args, "-Dversion="+form.Version)
 	}
 
-	err = o.runCommandInteractive(o.Interactive, "mvn", args...)
+	err = o.RunCommandInteractive(o.Interactive, "mvn", args...)
 	if err != nil {
 		return err
 	}

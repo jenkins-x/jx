@@ -7,6 +7,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -37,10 +39,10 @@ var (
 	`)
 )
 
-func NewCmdStepVerify(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepVerify(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepVerifyOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -166,8 +168,8 @@ func (o *StepVerifyOptions) Run() error {
 }
 
 func (o *StepVerifyOptions) detectPipelineActivity(jxClient versioned.Interface, namespace string) (*v1.PipelineActivity, error) {
-	pipeline := o.getJobName()
-	build := o.getBuildNumber()
+	pipeline := o.GetJobName()
+	build := o.GetBuildNumber()
 	if pipeline == "" || build == "" {
 		return nil, errors.New("JOB_NAME or BUILD_NUMBER environment variables not set")
 	}

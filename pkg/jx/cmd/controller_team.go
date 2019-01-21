@@ -9,6 +9,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -32,10 +34,10 @@ type ControllerTeamOptions struct {
 
 // NewCmdControllerTeam creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdControllerTeam(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdControllerTeam(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ControllerTeamOptions{
 		ControllerOptions: ControllerOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -57,7 +59,7 @@ func NewCmdControllerTeam(f Factory, in terminal.FileReader, out terminal.FileWr
 		Aliases: []string{"team"},
 	}
 
-	options.ControllerOptions.addCommonFlags(cmd)
+	options.ControllerOptions.AddCommonFlags(cmd)
 	options.InstallOptions.addInstallFlags(cmd, true)
 
 	return cmd
@@ -73,7 +75,7 @@ func (o *ControllerTeamOptions) Run() error {
 		return errors.Wrapf(err, "failed to initialise helm")
 	}
 
-	err = co.registerTeamCRD()
+	err = co.RegisterTeamCRD()
 	if err != nil {
 		return err
 	}
@@ -202,7 +204,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		io.SetDevNamespace(teamNs)
 		oc.SetDevNamespace(teamNs)
 
-		io.AdminSecretsService.Flags.DefaultAdminPassword, err = oc.getDefaultAdminPassword(adminNs)
+		io.AdminSecretsService.Flags.DefaultAdminPassword, err = oc.GetDefaultAdminPassword(adminNs)
 		if err != nil {
 			log.Warnf("Failed to load the default admin password from namespace %s: %s", adminNs, err)
 		}
@@ -300,7 +302,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 				env.Spec.TeamSettings.BuildPackURL = adminTeamSettings.BuildPackURL
 				return nil
 			}
-			err = oc.modifyDevEnvironment(jxClient, teamNs, callback)
+			err = oc.MutateDevEnvironment(jxClient, teamNs, callback)
 			if err != nil {
 				log.Errorf("Failed to update team settings in namespace %s: %s\n", teamNs, err)
 			}
@@ -331,7 +333,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 }
 
 // LoadProwOAuthConfig returns the OAuth Token for Prow
-func (o *CommonOptions) LoadProwOAuthConfig(ns string) (string, error) {
+func (o *ControllerOptions) LoadProwOAuthConfig(ns string) (string, error) {
 	options := *o
 	options.SetDevNamespace(ns)
 	options.SkipAuthSecretsMerge = false

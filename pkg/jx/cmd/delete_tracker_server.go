@@ -5,6 +5,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -25,15 +27,15 @@ var (
 
 // DeleteTrackerServerOptions the options for the create spring command
 type DeleteTrackerServerOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	IgnoreMissingServer bool
 }
 
 // NewCmdDeleteTrackerServer defines the command
-func NewCmdDeleteTrackerServer(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteTrackerServer(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteTrackerServerOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,
@@ -63,7 +65,7 @@ func (o *DeleteTrackerServerOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing issue tracker server name argument")
 	}
-	authConfigSvc, err := o.createIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.IssueTrackerAuthConfigService()
 	if err != nil {
 		return err
 	}

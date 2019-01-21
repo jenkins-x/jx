@@ -8,6 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
@@ -21,7 +23,7 @@ import (
 )
 
 type NamespaceOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 }
 
 const (
@@ -42,9 +44,9 @@ var (
 		jx ns cheese`)
 )
 
-func NewCmdNamespace(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdNamespace(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &NamespaceOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,
@@ -64,7 +66,7 @@ func NewCmdNamespace(f Factory, in terminal.FileReader, out terminal.FileWriter,
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	return cmd
 }
 

@@ -2,14 +2,17 @@ package cmd
 
 import (
 	"fmt"
-	"gopkg.in/AlecAivazis/survey.v1"
 	"io"
 	"strings"
+
+	"gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -50,11 +53,11 @@ type CreateAddonCloudBeesOptions struct {
 }
 
 // NewCmdCreateAddonCloudBees creates a command object for the "create" command
-func NewCmdCreateAddonCloudBees(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonCloudBees(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonCloudBeesOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 					Out:     out,
@@ -81,7 +84,7 @@ func NewCmdCreateAddonCloudBees(f Factory, in terminal.FileReader, out terminal.
 	cmd.Flags().BoolVarP(&options.Sso, "sso", "", false, "Enable single sign-on")
 	cmd.Flags().BoolVarP(&options.Basic, "basic", "", false, "Enable basic auth")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "Password to access UI when using basic auth.  Defaults to default Jenkins X admin password.")
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	options.addFlags(cmd, defaultCloudBeesNamespace, defaultCloudBeesReleaseName, defaultCloudBeesVersion)
 	return cmd
 }
@@ -101,7 +104,7 @@ func (o *CreateAddonCloudBeesOptions) Run() error {
 
 	// check if Helm repo is missing, the repo is authenticated and includes username/password so check with dummy values
 	// first as we wont need to prompt for username password if the host part of the URL matches an existing repo
-	missing, err := o.isHelmRepoMissing(coreRepoUrl)
+	missing, err := o.IsHelmRepoMissing(coreRepoUrl)
 	if err != nil {
 		return err
 	}
@@ -127,7 +130,7 @@ To register to get your username/password to to: %s
 		}
 		survey.AskOne(passPrompt, &password, nil, surveyOpts)
 
-		err := o.addHelmRepoIfMissing(coreRepoUrl, coreRepoName, username, password)
+		err := o.AddHelmRepoIfMissing(coreRepoUrl, coreRepoName, username, password)
 		if err != nil {
 			return err
 		}
@@ -135,11 +138,11 @@ To register to get your username/password to to: %s
 
 	if o.Sso {
 		log.Infof("Configuring %s...\n", util.ColorInfo("single sign-on"))
-		o.devNamespace, _, err = kube.GetDevNamespace(client, o.currentNamespace)
+		devNamespace, _, err := kube.GetDevNamespace(client, o.CurrentNamespace())
 		if err != nil {
 			return errors.Wrap(err, "retrieving the development namespace")
 		}
-		ingressConfig, err := kube.GetIngressConfig(client, o.devNamespace)
+		ingressConfig, err := kube.GetIngressConfig(client, devNamespace)
 		if err != nil {
 			return errors.Wrap(err, "retrieving existing ingress configuration")
 		}
@@ -156,7 +159,7 @@ To register to get your username/password to to: %s
 		// Strip the trailing slash automatically
 		dexURL = strings.TrimSuffix(dexURL, "/")
 
-		err = o.ensureCertmanager()
+		err = o.EnsureCertmanager()
 		if err != nil {
 			return errors.Wrap(err, "ensuring cert-manager is installed")
 		}
@@ -190,19 +193,19 @@ To register to get your username/password to to: %s
 	}
 
 	if o.Basic {
-		devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
+		devNamespace, _, err := kube.GetDevNamespace(client, o.CurrentNamespace())
 		if err != nil {
 			return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 		}
 
 		if o.Password == "" {
-			o.Password, err = o.getDefaultAdminPassword(devNamespace)
+			o.Password, err = o.GetDefaultAdminPassword(devNamespace)
 			if err != nil {
 				return err
 			}
 		}
 
-		svc, err := client.CoreV1().Services(o.currentNamespace).Get(cbServiceName, metav1.GetOptions{})
+		svc, err := client.CoreV1().Services(o.CurrentNamespace()).Get(cbServiceName, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -226,7 +229,7 @@ To register to get your username/password to to: %s
 		log.Infof("target namespace %s\n", o.Namespace)
 
 		// create the ingress rule
-		err = o.expose(devNamespace, o.Namespace, o.Password)
+		err = o.Expose(devNamespace, o.Namespace, o.Password)
 		if err != nil {
 			return err
 		}

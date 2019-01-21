@@ -6,12 +6,14 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 // Stop contains the command line options
 type Stop struct {
-	CommonOptions
+	commoncmd.CommonOptions
 }
 
 var (
@@ -26,9 +28,9 @@ var (
 )
 
 // NewCmdStop creates the command object
-func NewCmdStop(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStop(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &Stop{
-		CommonOptions{
+		commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,

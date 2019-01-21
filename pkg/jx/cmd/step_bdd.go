@@ -2,9 +2,16 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -12,11 +19,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 const (
@@ -64,10 +67,10 @@ var (
 `)
 )
 
-func NewCmdStepBDD(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepBDD(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepBDDOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -91,7 +94,7 @@ func NewCmdStepBDD(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 	installOptions := &options.InstallOptions
 	installOptions.addInstallFlags(cmd, true)
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	cmd.Flags().StringVarP(&options.Flags.GitProvider, "git-provider", "g", "", "the git provider kind")
 	cmd.Flags().StringVarP(&options.Flags.GitOwner, "git-owner", "", "", "the git owner of new git repositories created by the tests")
 	cmd.Flags().StringVarP(&options.Flags.ReportsOutputDir, "reports-dir", "", "reports", "the directory used to copy in any generated report files")
@@ -216,7 +219,7 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 			CreateOptions: CreateOptions{
 				CommonOptions: defaultOptions,
 			},
-			ServerFlags: ServerFlags{
+			ServerFlags: commoncmd.ServerFlags{
 				ServerURL: gitProviderUrl,
 			},
 			Username: gitUser,
@@ -293,7 +296,7 @@ func (o *StepBDDOptions) deleteTeam(team string) error {
 
 }
 
-func (o *StepBDDOptions) createDefaultCommonOptions() CommonOptions {
+func (o *StepBDDOptions) createDefaultCommonOptions() commoncmd.CommonOptions {
 	defaultOptions := o.CommonOptions
 	defaultOptions.BatchMode = true
 	defaultOptions.Headless = true
@@ -309,7 +312,7 @@ func (o *StepBDDOptions) gitProviderUrl() string {
 func (o *StepBDDOptions) teamNameSuffix() string {
 	repo := os.Getenv("REPO_NAME")
 	branch := os.Getenv("BRANCH_NAME")
-	buildNumber := o.getBuildNumber()
+	buildNumber := o.GetBuildNumber()
 	if buildNumber == "" {
 		buildNumber = "1"
 	}

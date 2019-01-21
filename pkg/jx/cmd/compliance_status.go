@@ -5,6 +5,8 @@ import (
 	"io"
 
 	"github.com/heptio/sonobuoy/pkg/plugin/aggregation"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -26,14 +28,14 @@ var (
 
 // ComplianceStatusOptions options for "compliance status" command
 type ComplianceStatusOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 }
 
 // NewCmdComplianceStatus creates a command object for the "compliance status" action, which
 // retrieve the status of E2E compliance tests
-func NewCmdComplianceStatus(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdComplianceStatus(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ComplianceStatusOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,

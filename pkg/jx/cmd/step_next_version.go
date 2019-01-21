@@ -15,6 +15,7 @@ import (
 
 	"github.com/blang/semver"
 	version "github.com/hashicorp/go-version"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
@@ -59,7 +60,7 @@ var (
 `)
 )
 
-func NewCmdStepNextVersion(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepNextVersion(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepNextVersionOptions{}
 	cmd := &cobra.Command{
 		Use:     "next-version",
@@ -79,7 +80,7 @@ func NewCmdStepNextVersion(f Factory, in terminal.FileReader, out terminal.FileW
 	cmd.Flags().BoolVarP(&options.Tag, "tag", "t", false, "tag and push new version")
 	cmd.Flags().BoolVarP(&options.UseGitTagOnly, "use-git-tag-only", "", false, "only use a git tag so work out new semantic version, else specify filename [pom.xml,package.json,Makefile,Chart.yaml]")
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	return cmd
 }
 

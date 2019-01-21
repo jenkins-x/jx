@@ -3,6 +3,7 @@ package cmd
 import (
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
@@ -14,7 +15,7 @@ const (
 )
 
 /* open the docs - Jenkins X docs by default */
-func NewCmdDocs(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDocs(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "docs",
 		Short: "Open the documentation in a browser",

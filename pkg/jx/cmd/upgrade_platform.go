@@ -17,6 +17,8 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -52,10 +54,10 @@ type UpgradePlatformOptions struct {
 }
 
 // NewCmdUpgradePlatform defines the command
-func NewCmdUpgradePlatform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradePlatform(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &UpgradePlatformOptions{
 		InstallOptions: InstallOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -85,7 +87,7 @@ func NewCmdUpgradePlatform(f Factory, in terminal.FileReader, out terminal.FileW
 	cmd.Flags().BoolVarP(&options.AlwaysUpgrade, "always-upgrade", "", false, "If set to true, jx will upgrade platform Helm chart even if requested version is already installed.")
 	cmd.Flags().BoolVarP(&options.Flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true].")
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	options.InstallFlags.addCloudEnvOptions(cmd)
 
 	return cmd
@@ -129,7 +131,7 @@ func (o *UpgradePlatformOptions) Run() error {
 
 		prompt := &survey.Select{
 			Message: "Select the kube provider:",
-			Options: KUBERNETES_PROVIDERS,
+			Options: commoncmd.KUBERNETES_PROVIDERS,
 			Default: "",
 		}
 		survey.AskOne(prompt, &provider, nil, surveyOpts)
@@ -212,15 +214,15 @@ func (o *UpgradePlatformOptions) Run() error {
 		return errors.Wrap(err, "failed to create a temporary config dir for Git credentials")
 	}
 
-	adminSecretsFileName := filepath.Join(dir, AdminSecretsFile)
-	configFileName := filepath.Join(dir, ExtraValuesFile)
+	adminSecretsFileName := filepath.Join(dir, commoncmd.AdminSecretsFile)
+	configFileName := filepath.Join(dir, commoncmd.ExtraValuesFile)
 
 	client, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
 	secretResources := client.CoreV1().Secrets(ns)
-	oldSecret, err := secretResources.Get(JXInstallConfig, metav1.GetOptions{})
+	oldSecret, err := secretResources.Get(commoncmd.JXInstallConfig, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrap(err, "failed to get the jx secret resource")
 	}
@@ -238,17 +240,17 @@ func (o *UpgradePlatformOptions) Run() error {
 		return nil
 	}
 
-	cloudEnvironmentValuesLocation := filepath.Join(makefileDir, CloudEnvValuesFile)
-	cloudEnvironmentSecretsLocation := filepath.Join(makefileDir, CloudEnvSecretsFile)
-	cloudEnvironmentSopsLocation := filepath.Join(makefileDir, CloudEnvSopsConfigFile)
+	cloudEnvironmentValuesLocation := filepath.Join(makefileDir, commoncmd.CloudEnvValuesFile)
+	cloudEnvironmentSecretsLocation := filepath.Join(makefileDir, commoncmd.CloudEnvSecretsFile)
+	cloudEnvironmentSopsLocation := filepath.Join(makefileDir, commoncmd.CloudEnvSopsConfigFile)
 
 	adminSecretsFileNameExists, err := util.FileExists(adminSecretsFileName)
 	if err != nil {
 		return errors.Wrapf(err, "unable to determine if %s exist", adminSecretsFileName)
 	}
 	if !adminSecretsFileNameExists {
-		log.Infof("Creating %s from %s\n", util.ColorInfo(adminSecretsFileName), util.ColorInfo(JXInstallConfig))
-		err = ioutil.WriteFile(adminSecretsFileName, oldSecret.Data[AdminSecretsFile], 0644)
+		log.Infof("Creating %s from %s\n", util.ColorInfo(adminSecretsFileName), util.ColorInfo(commoncmd.JXInstallConfig))
+		err = ioutil.WriteFile(adminSecretsFileName, oldSecret.Data[commoncmd.AdminSecretsFile], 0644)
 		if err != nil {
 			return errors.Wrapf(err, "failed to write the config file %s", adminSecretsFileName)
 		}
@@ -259,8 +261,8 @@ func (o *UpgradePlatformOptions) Run() error {
 		return errors.Wrapf(err, "unable to determine if %s exist", configFileName)
 	}
 	if !configFileNameExists {
-		log.Infof("Creating %s from %s\n", util.ColorInfo(configFileName), util.ColorInfo(JXInstallConfig))
-		err = ioutil.WriteFile(configFileName, oldSecret.Data[ExtraValuesFile], 0644)
+		log.Infof("Creating %s from %s\n", util.ColorInfo(configFileName), util.ColorInfo(commoncmd.JXInstallConfig))
+		err = ioutil.WriteFile(configFileName, oldSecret.Data[commoncmd.ExtraValuesFile], 0644)
 		if err != nil {
 			return errors.Wrapf(err, "failed to write the config file %s", configFileName)
 		}
@@ -279,7 +281,7 @@ func (o *UpgradePlatformOptions) Run() error {
 			return errors.Wrap(err, "failed to decrypt "+cloudEnvironmentSecretsLocation)
 		}
 
-		cloudEnvironmentSecretsDecryptedLocation := filepath.Join(makefileDir, CloudEnvSecretsFile+".dec")
+		cloudEnvironmentSecretsDecryptedLocation := filepath.Join(makefileDir, commoncmd.CloudEnvSecretsFile+".dec")
 		decryptedSecretsFile, err := util.FileExists(cloudEnvironmentSecretsDecryptedLocation)
 		if err != nil {
 			return errors.Wrap(err, "failed to look for "+cloudEnvironmentSecretsDecryptedLocation)

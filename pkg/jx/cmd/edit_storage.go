@@ -3,6 +3,10 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/url"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
@@ -13,10 +17,9 @@ import (
 	"github.com/spf13/cobra"
 	"gocloud.dev/blob"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-	"net/url"
-	"time"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -27,7 +30,7 @@ var (
 
 		If you don't specify any specific storage for a classifier it will try the classifier 'default'. If there is still no configuration then it will default to the git repository for a project.'
 
-` + storageSupportDescription + SeeAlsoText("jx step stash", "jx get storage"))
+` + storageSupportDescription + commoncmd.SeeAlsoText("jx step stash", "jx get storage"))
 
 	editStorageExample = templates.Examples(`
 		# Be prompted what classification to edit
@@ -67,10 +70,10 @@ type EditStorageOptions struct {
 }
 
 // NewCmdEditStorage creates a command object for the "create" command
-func NewCmdEditStorage(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdEditStorage(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &EditStorageOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -93,7 +96,7 @@ func NewCmdEditStorage(f Factory, in terminal.FileReader, out terminal.FileWrite
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	addStorageLocationFlags(cmd, &options.StorageLocation)
 
 	cmd.Flags().StringVarP(&options.Bucket, "bucket", "", "", "Specify the name of the bucket to use")
@@ -119,7 +122,7 @@ func (o *EditStorageOptions) Run() error {
 	}
 
 	classifier := o.StorageLocation.Classifier
-	if classifier == "" && ! o.BatchMode {
+	if classifier == "" && !o.BatchMode {
 		o.StorageLocation.Classifier, err = util.PickName(kube.Classifications, "Pick the content classification name", "The name is used as a key to store content in different locations", o.In, o.Out, o.Err)
 		if err != nil {
 			return errors.Wrapf(err, "failed to pick the classification name")
@@ -138,7 +141,7 @@ func (o *EditStorageOptions) Run() error {
 				return errors.Wrapf(err, "failed to create the bucket URL for %s", o.Bucket)
 			}
 
-			ctx, _ := context.WithTimeout(context.Background(), time.Second * 20)
+			ctx, _ := context.WithTimeout(context.Background(), time.Second*20)
 			bucket, err := blob.Open(ctx, o.StorageLocation.BucketURL)
 			if err != nil {
 				return errors.Wrapf(err, "failed to open the bucket for %s", o.StorageLocation.BucketURL)
@@ -207,13 +210,13 @@ func (o *EditStorageOptions) createBucket(bucketURL string, bucket *blob.Bucket)
 func (o *EditStorageOptions) createGcsBucket(u *url.URL, bucket *blob.Bucket) error {
 	var err error
 	if o.GKEProjectID == "" {
-		o.GKEProjectID, err = o.getGoogleProjectId()
+		o.GKEProjectID, err = o.GetGoogleProjectId()
 		if err != nil {
 			return err
 		}
 	}
 
-	err = o.CreateOptions.CommonOptions.runCommandVerbose(
+	err = o.CreateOptions.CommonOptions.RunCommandVerbose(
 		"gcloud", "config", "set", "project", o.GKEProjectID)
 	if err != nil {
 		return err
@@ -227,14 +230,14 @@ func (o *EditStorageOptions) createGcsBucket(u *url.URL, bucket *blob.Bucket) er
 			}
 		}
 
-		o.GKEZone, err = o.getGoogleZoneWithDefault(o.GKEProjectID, defaultZone)
+		o.GKEZone, err = o.GetGoogleZoneWithDefault(o.GKEProjectID, defaultZone)
 		if err != nil {
 			return err
 		}
 	}
 
 	bucketName := u.Host
-	region := gke.GetRegionFromZone(o.GKEZone, )
+	region := gke.GetRegionFromZone(o.GKEZone)
 	err = gke.CreateBucket(o.GKEProjectID, bucketName, region)
 	if err != nil {
 		return errors.Wrapf(err, "creating bucket %s in project %s and region %s", bucketName, o.GKEProjectID, region)

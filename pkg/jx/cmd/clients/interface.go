@@ -1,4 +1,4 @@
-package cmd
+package clients
 
 import (
 	"io"
@@ -32,7 +32,7 @@ import (
 )
 
 // Factory is the interface defined for jx interactions via the cli
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/jx/cmd Factory -o mocks/factory.go --generate-matchers
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/jx/cmd/clients Factory -o mocks/factory.go --generate-matchers
 type Factory interface {
 	//
 	// Constructors

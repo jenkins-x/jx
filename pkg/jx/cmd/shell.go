@@ -7,6 +7,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"k8s.io/client-go/tools/clientcmd"
@@ -50,7 +52,7 @@ fi
 )
 
 type ShellOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	Filter string
 }
@@ -70,9 +72,9 @@ var (
 `)
 )
 
-func NewCmdShell(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdShell(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ShellOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,
@@ -93,7 +95,7 @@ func NewCmdShell(f Factory, in terminal.FileReader, out terminal.FileWriter, err
 		},
 	}
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filter the list of contexts to switch between using the given text")
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	return cmd
 }
 

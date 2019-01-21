@@ -13,6 +13,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	gkevault "github.com/jenkins-x/jx/pkg/cloud/gke/vault"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
@@ -53,8 +55,8 @@ type CreateVaultOptions struct {
 }
 
 // NewCmdCreateVault  creates a command object for the "create" command
-func NewCmdCreateVault(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	commonOptions := CommonOptions{
+func NewCmdCreateVault(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+	commonOptions := commoncmd.CommonOptions{
 		Factory: f,
 		In:      in,
 		Out:     out,
@@ -89,7 +91,7 @@ func NewCmdCreateVault(f Factory, in terminal.FileReader, out terminal.FileWrite
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Namespace where the Vault is created")
 	cmd.Flags().StringVarP(&options.SecretsPathPrefix, "secrets-path-prefix", "p", vault.DefaultSecretsPathPrefix, "Path prefix for secrets used for access control config")
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	options.UpgradeIngressOptions.addFlags(cmd)
 	return cmd
 }
@@ -161,14 +163,14 @@ func (o *CreateVaultOptions) createVault(vaultOperatorClient versioned.Interface
 	}
 
 	if o.GKEProjectID == "" {
-		projectId, err := o.getGoogleProjectId()
+		projectId, err := o.GetGoogleProjectId()
 		if err != nil {
 			return err
 		}
 		o.GKEProjectID = projectId
 	}
 
-	err = o.CreateOptions.CommonOptions.runCommandVerbose(
+	err = o.CreateOptions.CommonOptions.RunCommandVerbose(
 		"gcloud", "config", "set", "project", o.GKEProjectID)
 	if err != nil {
 		return err
@@ -182,7 +184,7 @@ func (o *CreateVaultOptions) createVault(vaultOperatorClient versioned.Interface
 			}
 		}
 
-		zone, err := o.getGoogleZoneWithDefault(o.GKEProjectID, defaultZone)
+		zone, err := o.GetGoogleZoneWithDefault(o.GKEProjectID, defaultZone)
 		if err != nil {
 			return err
 		}

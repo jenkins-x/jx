@@ -20,6 +20,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -138,10 +140,10 @@ e.g. define environment variables GIT_USERNAME and GIT_API_TOKEN
 	JIRAIssueRegex   = regexp.MustCompile(`[A-Z][A-Z]+-(\d+)`)
 )
 
-func NewCmdStepChangelog(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepChangelog(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepChangelogOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -162,7 +164,7 @@ func NewCmdStepChangelog(f Factory, in terminal.FileReader, out terminal.FileWri
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.PreviousRevision, "previous-rev", "p", "", "the previous tag revision")
 	cmd.Flags().StringVarP(&options.PreviousDate, "previous-date", "", "", "the previous date to find a revision in format 'MonthName dayNumber year'")
@@ -192,7 +194,7 @@ func NewCmdStepChangelog(f Factory, in terminal.FileReader, out terminal.FileWri
 
 func (o *StepChangelogOptions) Run() error {
 	// lets enable batch mode if we detect we are inside a pipeline
-	if !o.BatchMode && o.getBuildNumber() != "" {
+	if !o.BatchMode && o.GetBuildNumber() != "" {
 		log.Infoln("Using batch mode as inside a pipeline")
 		o.BatchMode = true
 	}
@@ -213,7 +215,7 @@ func (o *StepChangelogOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	err = o.registerUserCRD()
+	err = o.RegisterUserCRD()
 	if err != nil {
 		return err
 	}
@@ -262,7 +264,7 @@ func (o *StepChangelogOptions) Run() error {
 		path, _ := filepath.Split(chartFile)
 		templatesDir = filepath.Join(path, "templates")
 	}
-	err = os.MkdirAll(templatesDir, DefaultWritePermissions)
+	err = os.MkdirAll(templatesDir, util.DefaultWritePermissions)
 	if err != nil {
 		return fmt.Errorf("Failed to create the templates directory %s due to %s", templatesDir, err)
 	}
@@ -288,7 +290,7 @@ func (o *StepChangelogOptions) Run() error {
 	}
 	o.State.GitInfo = gitInfo
 
-	tracker, err := o.createIssueProvider(dir)
+	tracker, err := o.IssueProvider(dir)
 	if err != nil {
 		return err
 	}
@@ -397,7 +399,7 @@ func (o *StepChangelogOptions) Run() error {
 		}
 		log.Infof("Updated the release information at %s\n", util.ColorInfo(url))
 	} else if o.OutputMarkdownFile != "" {
-		err := ioutil.WriteFile(o.OutputMarkdownFile, []byte(markdown), DefaultWritePermissions)
+		err := ioutil.WriteFile(o.OutputMarkdownFile, []byte(markdown), util.DefaultWritePermissions)
 		if err != nil {
 			return err
 		}
@@ -419,7 +421,7 @@ func (o *StepChangelogOptions) Run() error {
 	releaseFile := filepath.Join(templatesDir, o.ReleaseYamlFile)
 	crdFile := filepath.Join(templatesDir, o.CrdYamlFile)
 	if o.GenerateReleaseYaml {
-		err = ioutil.WriteFile(releaseFile, data, DefaultWritePermissions)
+		err = ioutil.WriteFile(releaseFile, data, util.DefaultWritePermissions)
 		if err != nil {
 			return fmt.Errorf("Failed to save Release YAML file %s: %s", releaseFile, err)
 		}
@@ -433,7 +435,7 @@ func (o *StepChangelogOptions) Run() error {
 			return fmt.Errorf("Failed to check for CRD YAML file %s: %s", crdFile, err)
 		}
 		if o.OverwriteCRD || !exists {
-			err = ioutil.WriteFile(crdFile, []byte(ReleaseCrdYaml), DefaultWritePermissions)
+			err = ioutil.WriteFile(crdFile, []byte(ReleaseCrdYaml), util.DefaultWritePermissions)
 			if err != nil {
 				return fmt.Errorf("Failed to save Release CRD YAML file %s: %s", crdFile, err)
 			}
@@ -466,7 +468,7 @@ func (o *StepChangelogOptions) Run() error {
 	releaseNotesURL := release.Spec.ReleaseNotesURL
 	pipeline := ""
 	build := o.Build
-	pipeline, build = o.getPipelineName(gitInfo, pipeline, build, appName)
+	pipeline, build = o.GetPipelineName(gitInfo, pipeline, build, appName)
 	if pipeline != "" && build != "" {
 		name := kube.ToValidName(pipeline + "-" + build)
 		// lets see if we can update the pipeline

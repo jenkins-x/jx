@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -34,10 +36,10 @@ type CreateTrackerServerOptions struct {
 }
 
 // NewCmdCreateTrackerServer creates a command object for the "create" command
-func NewCmdCreateTrackerServer(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateTrackerServer(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateTrackerServerOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -82,7 +84,7 @@ func (o *CreateTrackerServerOptions) Run() error {
 		// lets try find the git URL based on the provider
 		serviceName := trackerKindToServiceName[kind]
 		if serviceName != "" {
-			url, err := o.findService(serviceName)
+			url, err := o.FindService(serviceName)
 			if err != nil {
 				return fmt.Errorf("Failed to find %s issue tracker serivce %s: %s", kind, serviceName, err)
 			}
@@ -93,7 +95,7 @@ func (o *CreateTrackerServerOptions) Run() error {
 	if gitUrl == "" {
 		return missingTrackerArguments()
 	}
-	authConfigSvc, err := o.createIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.IssueTrackerAuthConfigService()
 	if err != nil {
 		return err
 	}

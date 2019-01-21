@@ -3,6 +3,8 @@ package cmd
 import (
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -35,10 +37,10 @@ type DeleteAddonSSOOptions struct {
 }
 
 // NewCmdDeleteAddonSSO defines the command
-func NewCmdDeleteAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteAddonSSO(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteAddonSSOOptions{
 		DeleteAddonOptions: DeleteAddonOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -72,7 +74,7 @@ func (o *DeleteAddonSSOOptions) Run() error {
 	}
 
 	for _, releaseName := range o.ReleaseNames {
-		err := o.deleteChart(releaseName, o.Purge)
+		err := o.DeleteChart(releaseName, o.Purge)
 		if err != nil {
 			return errors.Wrapf(err, "deleteing the helm chart release '%s'", releaseName)
 		}

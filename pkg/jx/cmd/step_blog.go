@@ -18,6 +18,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/reports"
@@ -75,10 +77,10 @@ type StepBlogState struct {
 }
 
 // NewCmdStepBlog Creates a new Command object
-func NewCmdStepBlog(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepBlog(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepBlogOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -99,7 +101,7 @@ func NewCmdStepBlog(f Factory, in terminal.FileReader, out terminal.FileWriter, 
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to query to find the projects .git directory")
 	cmd.Flags().StringVarP(&options.FromDate, "from-date", "f", "", "The date to create the charts from. Defaults to a week before the to date. Should be a format: "+util.DateFormat)
@@ -139,7 +141,7 @@ func (o *StepBlogOptions) Run() error {
 			return err
 		}
 	} else {
-		gitInfo, gitProvider, tracker, err := o.createGitProvider(o.Dir)
+		gitInfo, gitProvider, tracker, err := o.GitProvider(o.Dir)
 		if err != nil {
 			return err
 		}
@@ -222,7 +224,7 @@ func (o *StepBlogOptions) createBarReport(name string, legends ...string) report
 		}
 
 		jsDir := filepath.Join(outDir, "static", "news", blogName)
-		err := os.MkdirAll(jsDir, DefaultWritePermissions)
+		err := os.MkdirAll(jsDir, util.DefaultWritePermissions)
 		if err != nil {
 			log.Warnf("Could not create directory %s: %s", jsDir, err)
 		}
@@ -243,7 +245,7 @@ func (o *StepBlogOptions) createBarReport(name string, legends ...string) report
 `)
 		return reports.NewBlogBarReport(name, state.Writer, jsFileName, jsLinkURI)
 	}
-	return reports.NewTableBarReport(o.createTable(), legends...)
+	return reports.NewTableBarReport(o.Table(), legends...)
 }
 
 func (options *StepBlogOptions) combineMinorReleases(releases []*gits.GitRelease) []*gits.GitRelease {
@@ -353,7 +355,7 @@ This blog post was generated via the [jx step blog](https://jenkins-x.io/command
 		changelog := strings.TrimSpace(string(data))
 		changelog = strings.TrimPrefix(changelog, "## Changes")
 		text := prefix + changelog + postfix
-		err = ioutil.WriteFile(state.BlogFileName, []byte(text), DefaultWritePermissions)
+		err = ioutil.WriteFile(state.BlogFileName, []byte(text), util.DefaultWritePermissions)
 		if err != nil {
 			return err
 		}
@@ -601,7 +603,7 @@ func (o *StepBlogOptions) loadChatMetrics(chatConfig *config.ChatConfig) error {
 }
 
 func (o *StepBlogOptions) getChannelMetrics(chatConfig *config.ChatConfig, channelName string) (*chats.ChannelMetrics, error) {
-	provider, err := o.createChatProvider(chatConfig)
+	provider, err := o.ChatProvider(chatConfig)
 	if err != nil {
 		return nil, err
 	}

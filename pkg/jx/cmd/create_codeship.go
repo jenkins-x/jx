@@ -11,9 +11,13 @@ import (
 	"path"
 	"strings"
 
+	"strconv"
+
 	"github.com/Pallinder/go-randomdata"
 	"github.com/codeship/codeship-go"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -22,7 +26,6 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"strconv"
 )
 
 type CreateCodeshipFlags struct {
@@ -57,10 +60,10 @@ var (
 )
 
 // NewCmdCreateCodeship creates a command object for the "create" command
-func NewCmdCreateCodeship(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateCodeship(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateCodeshipOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -69,7 +72,7 @@ func NewCmdCreateCodeship(f Factory, in terminal.FileReader, out terminal.FileWr
 		},
 		CreateTerraformOptions: CreateTerraformOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 					Out:     out,
@@ -80,7 +83,7 @@ func NewCmdCreateCodeship(f Factory, in terminal.FileReader, out terminal.FileWr
 		},
 		CreateGkeServiceAccountOptions: CreateGkeServiceAccountOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 					Out:     out,
@@ -102,7 +105,7 @@ func NewCmdCreateCodeship(f Factory, in terminal.FileReader, out terminal.FileWr
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	options.addFlags(cmd)
 	options.CreateTerraformOptions.InstallOptions.addInstallFlags(cmd, true)
 
@@ -145,7 +148,7 @@ func (o *CreateCodeshipOptions) validate() error {
 func (o *CreateCodeshipOptions) Run() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	if !o.Flags.SkipLogin {
-		err := o.runCommandVerbose("gcloud", "auth", "login", "--brief")
+		err := o.RunCommandVerbose("gcloud", "auth", "login", "--brief")
 		if err != nil {
 			return err
 		}

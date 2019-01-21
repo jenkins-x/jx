@@ -9,6 +9,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -46,10 +48,10 @@ type DeleteBranchOptions struct {
 }
 
 // NewCmdDeleteBranch creates a command object for the "delete repo" command
-func NewCmdDeleteBranch(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteBranch(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteBranchOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -199,7 +201,7 @@ func (o *DeleteBranchOptions) Run() error {
 	return nil
 }
 
-func (o *CommonOptions) cloneOrPullRepository(org string, repo string, gitURL string) (string, error) {
+func (o *DeleteBranchOptions) cloneOrPullRepository(org string, repo string, gitURL string) (string, error) {
 	environmentsDir, err := util.EnvironmentsDir()
 	if err != nil {
 		return "", err
@@ -221,7 +223,7 @@ func (o *CommonOptions) cloneOrPullRepository(org string, repo string, gitURL st
 		err = o.Git().Stash(dir)
 		return dir, err
 	} else {
-		err := os.MkdirAll(dir, DefaultWritePermissions)
+		err := os.MkdirAll(dir, util.DefaultWritePermissions)
 		if err != nil {
 			return dir, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
 		}

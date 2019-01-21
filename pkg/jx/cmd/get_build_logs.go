@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/gits"
 	"io"
 	"os"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/gits"
 
 	"github.com/pkg/errors"
 
@@ -20,6 +21,8 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -64,10 +67,10 @@ var (
 )
 
 // NewCmdGetBuildLogs creates the command
-func NewCmdGetBuildLogs(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetBuildLogs(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetBuildLogsOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 
@@ -123,7 +126,7 @@ func (o *GetBuildLogsOptions) Run() error {
 	args := o.Args
 
 	if !o.BatchMode && len(args) == 0 {
-		jobMap, err := o.getJobMap(o.BuildFilter.Filter)
+		jobMap, err := o.GetJobMap(o.BuildFilter.Filter)
 		if err != nil {
 			return err
 		}
@@ -161,7 +164,7 @@ func (o *GetBuildLogsOptions) Run() error {
 	}
 
 	log.Infof("%s %s\n", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
-	return o.tailBuild(name, &last)
+	return o.TailBuild(name, &last)
 }
 
 func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) (gojenkins.Build, error) {
@@ -175,7 +178,7 @@ func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) 
 	f := func() error {
 		var err error
 
-		jobMap, err := o.getJobMap(o.BuildFilter.Filter)
+		jobMap, err := o.GetJobMap(o.BuildFilter.Filter)
 		if err != nil {
 			return err
 		}
@@ -203,7 +206,7 @@ func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) 
 	}
 
 	if o.Wait {
-		err := o.retry(60, time.Second*2, f)
+		err := o.Retry(60, time.Second*2, f)
 		return last, err
 	} else {
 		err := f()
@@ -322,5 +325,6 @@ func waitForInitContainerToStart(kubeClient kubernetes.Interface, ns string, pod
 
 func (o *GetBuildLogsOptions) getPodLog(ns string, pod *corev1.Pod, container corev1.Container) error {
 	log.Infof("Getting the pod log for pod %s and init container %s\n", pod.Name, container.Name)
-	return o.tailLogs(ns, pod.Name, container.Name)
+	options := o.GetOptions.CommonOptions
+	return options.TailLogs(ns, pod.Name, container.Name)
 }

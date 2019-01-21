@@ -11,6 +11,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cloud/iks"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -27,7 +29,7 @@ import (
 
 // InitOptions the options for running init
 type InitOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 	Client clientset.Clientset
 	Flags  InitFlags
 }
@@ -69,8 +71,6 @@ const (
 	JenkinsBuildPackURL = "https://github.com/jenkins-x/draft-packs.git"
 	// INGRESS_SERVICE_NAME service name for ingress controller
 	INGRESS_SERVICE_NAME = "jxing-nginx-ingress-controller"
-	// DEFAULT_CHARTMUSEUM_URL default URL for Jenkins X ChartMuseum
-	DEFAULT_CHARTMUSEUM_URL = "http://chartmuseum.jenkins-x.io"
 )
 
 var (
@@ -85,9 +85,9 @@ var (
 
 // NewCmdInit creates a command object for the generic "init" action, which
 // primes a Kubernetes cluster so it's ready for Jenkins X to be installed
-func NewCmdInit(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdInit(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &InitOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 
@@ -109,10 +109,10 @@ func NewCmdInit(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.Provider, "provider", "", "", "Cloud service providing the Kubernetes cluster.  Supported providers: "+KubernetesProviderOptions())
-	cmd.Flags().StringVarP(&options.Flags.Namespace, optionNamespace, "", "jx", "The namespace the Jenkins X platform should be installed into")
+	cmd.Flags().StringVarP(&options.Flags.Namespace, optionNamespace, "", kube.DefaultNamespace, "The namespace the Jenkins X platform should be installed into")
 	options.addInitFlags(cmd)
 	return cmd
 }
@@ -121,22 +121,22 @@ func (o *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.Flags.Domain, "domain", "", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
 	cmd.Flags().StringVarP(&o.Username, optionUsername, "", "", "The Kubernetes username used to initialise helm. Usually your email address for your Kubernetes account")
 	cmd.Flags().StringVarP(&o.Flags.UserClusterRole, "user-cluster-role", "", "cluster-admin", "The cluster role for the current user to be able to administer helm")
-	cmd.Flags().StringVarP(&o.Flags.TillerClusterRole, "tiller-cluster-role", "", "cluster-admin", "The cluster role for Helm's tiller")
-	cmd.Flags().StringVarP(&o.Flags.TillerNamespace, optionTillerNamespace, "", "kube-system", "The namespace for the Tiller when using a global tiller")
+	cmd.Flags().StringVarP(&o.Flags.TillerClusterRole, "tiller-cluster-role", "", commoncmd.DefaultTillerRole, "The cluster role for Helm's tiller")
+	cmd.Flags().StringVarP(&o.Flags.TillerNamespace, optionTillerNamespace, "", commoncmd.DefaultTillerNamesapce, "The namespace for the Tiller when using a global tiller")
 	cmd.Flags().StringVarP(&o.Flags.IngressClusterRole, "ingress-cluster-role", "", "cluster-admin", "The cluster role for the Ingress controller")
 	cmd.Flags().StringVarP(&o.Flags.IngressNamespace, "ingress-namespace", "", "kube-system", "The namespace for the Ingress controller")
 	cmd.Flags().StringVarP(&o.Flags.IngressService, "ingress-service", "", INGRESS_SERVICE_NAME, "The name of the Ingress controller Service")
 	cmd.Flags().StringVarP(&o.Flags.IngressDeployment, "ingress-deployment", "", INGRESS_SERVICE_NAME, "The name of the Ingress controller Deployment")
 	cmd.Flags().StringVarP(&o.Flags.ExternalIP, "external-ip", "", "", "The external IP used to access ingress endpoints from outside the Kubernetes cluster. For bare metal on premise clusters this is often the IP of the Kubernetes master. For cloud installations this is often the external IP of the ingress LoadBalancer.")
 	cmd.Flags().BoolVarP(&o.Flags.DraftClient, "draft-client-only", "", false, "Only install draft client")
-	cmd.Flags().BoolVarP(&o.Flags.HelmClient, "helm-client-only", "", false, "Only install helm client")
+	cmd.Flags().BoolVarP(&o.Flags.HelmClient, "helm-client-only", "", commoncmd.DefaultOnlyHelmClient, "Only install helm client")
 	cmd.Flags().BoolVarP(&o.Flags.RecreateExistingDraftRepos, "recreate-existing-draft-repos", "", false, "Delete existing helm repos used by Jenkins X under ~/draft/packs")
-	cmd.Flags().BoolVarP(&o.Flags.GlobalTiller, "global-tiller", "", true, "Whether or not to use a cluster global tiller")
-	cmd.Flags().BoolVarP(&o.Flags.RemoteTiller, "remote-tiller", "", true, "If enabled and we are using tiller for helm then run tiller remotely in the kubernetes cluster. Otherwise we run the tiller process locally.")
+	cmd.Flags().BoolVarP(&o.Flags.GlobalTiller, "global-tiller", "", commoncmd.DefaultGlobalTiller, "Whether or not to use a cluster global tiller")
+	cmd.Flags().BoolVarP(&o.Flags.RemoteTiller, "remote-tiller", "", commoncmd.DefaultRemoteTiller, "If enabled and we are using tiller for helm then run tiller remotely in the kubernetes cluster. Otherwise we run the tiller process locally.")
 	cmd.Flags().BoolVarP(&o.Flags.NoTiller, "no-tiller", "", false, "Whether to disable the use of tiller with helm. If disabled we use 'helm template' to generate the YAML from helm charts then we use 'kubectl apply' to install it to avoid using tiller completely.")
 	cmd.Flags().BoolVarP(&o.Flags.SkipIngress, "skip-ingress", "", false, "Don't install an ingress controller")
-	cmd.Flags().BoolVarP(&o.Flags.SkipTiller, "skip-setup-tiller", "", false, "Don't setup the Helm Tiller service - lets use whatever tiller is already setup for us.")
-	cmd.Flags().BoolVarP(&o.Flags.Helm3, "helm3", "", false, "Use helm3 to install Jenkins X which does not use Tiller")
+	cmd.Flags().BoolVarP(&o.Flags.SkipTiller, "skip-setup-tiller", "", commoncmd.DefaultSkipTiller, "Don't setup the Helm Tiller service - lets use whatever tiller is already setup for us.")
+	cmd.Flags().BoolVarP(&o.Flags.Helm3, "helm3", "", commoncmd.DefaultHelm3, "Use helm3 to install Jenkins X which does not use Tiller")
 	cmd.Flags().BoolVarP(&o.Flags.OnPremise, "on-premise", "", false, "If installing on an on premise cluster then lets default the 'external-ip' to be the Kubernetes master IP address")
 }
 
@@ -167,21 +167,35 @@ func (o *InitOptions) Run() error {
 
 	// So a user doesn't need to specify ingress options if provider is ICP: we will use ICP's own ingress controller
 	// and by default, the tiller namespace "jx"
-	if o.Flags.Provider == ICP {
+	if o.Flags.Provider == commoncmd.ICP {
 		o.configureForICP()
 	}
 
 	// Needs to be done early as is an ingress availablility is an indicator of cluster readyness
-	if o.Flags.Provider == IKS {
+	if o.Flags.Provider == commoncmd.IKS {
 		err = o.initIKSIngress()
 		if err != nil {
 			return err
 		}
 	}
 
+	// setup the configuration for helm init
+	err = o.checkOptions()
+	if err != nil {
+		return err
+	}
+	cfg := commoncmd.InitHelmConfig{
+		Namespace:       o.Flags.Namespace,
+		OnlyHelmClient:  o.Flags.HelmClient,
+		Helm3:           o.Flags.Helm3,
+		SkipTiller:      o.Flags.SkipTiller,
+		GlobalTiller:    o.Flags.GlobalTiller,
+		TillerNamespace: o.Flags.TillerNamespace,
+		TillerRole:      o.Flags.TillerClusterRole,
+	}
 	// helm init, this has been seen to fail intermittently on public clouds, so let's retry a couple of times
-	err = o.retry(3, 2*time.Second, func() (err error) {
-		err = o.initHelm()
+	err = o.Retry(3, 2*time.Second, func() (err error) {
+		err = o.InitHelm(cfg)
 		return
 	})
 
@@ -191,7 +205,7 @@ func (o *InitOptions) Run() error {
 	}
 
 	// draft init
-	_, err = o.initBuildPacks()
+	_, err = o.InitBuildPacks()
 	if err != nil {
 		log.Fatalf("initialise build packs failed: %v", err)
 		return err
@@ -206,6 +220,35 @@ func (o *InitOptions) Run() error {
 		}
 	}
 
+	return nil
+}
+
+func (o *InitOptions) checkOptions() error {
+	if o.Flags.Helm3 {
+		o.Flags.SkipTiller = true
+	}
+
+	if !o.Flags.SkipTiller {
+		tillerNamespace := o.Flags.TillerNamespace
+		if o.Flags.GlobalTiller {
+			if tillerNamespace == "" {
+				return util.MissingOption(optionTillerNamespace)
+			}
+		} else {
+			ns := o.Flags.Namespace
+			if ns == "" {
+				_, curNs, err := o.KubeClientAndNamespace()
+				if err != nil {
+					return err
+				}
+				ns = curNs
+			}
+			if ns == "" {
+				return util.MissingOption(optionNamespace)
+			}
+			o.Flags.Namespace = ns
+		}
+	}
 	return nil
 }
 
@@ -247,7 +290,7 @@ func (o *InitOptions) enableClusterAdminRole() error {
 		},
 	}
 
-	return o.retry(3, 10*time.Second, func() (err error) {
+	return o.Retry(3, 10*time.Second, func() (err error) {
 		_, err = clusterRoleBindingInterface.Get(clusterRoleBindingName, metav1.GetOptions{})
 		if err != nil {
 			log.Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n %v\n", clusterRoleBindingName, o.Flags.UserClusterRole, o.Username, err)
@@ -261,167 +304,6 @@ func (o *InitOptions) enableClusterAdminRole() error {
 		}
 		return err
 	})
-}
-
-func (o *InitOptions) initHelm() error {
-	var err error
-
-	if o.Flags.Helm3 {
-		log.Infof("Using %s\n", util.ColorInfo("helm3"))
-		o.Flags.SkipTiller = true
-	} else {
-		log.Infof("Using %s\n", util.ColorInfo("helm2"))
-	}
-
-	if !o.Flags.SkipTiller {
-		log.Infof("Configuring %s\n", util.ColorInfo("tiller"))
-		client, curNs, err := o.KubeClientAndNamespace()
-		if err != nil {
-			return err
-		}
-
-		serviceAccountName := "tiller"
-		tillerNamespace := o.Flags.TillerNamespace
-
-		if o.Flags.GlobalTiller {
-			if tillerNamespace == "" {
-				return util.MissingOption(optionTillerNamespace)
-			}
-		} else {
-			ns := o.Flags.Namespace
-			if ns == "" {
-				ns = curNs
-			}
-			if ns == "" {
-				return util.MissingOption(optionNamespace)
-			}
-			tillerNamespace = ns
-		}
-
-		err = o.ensureServiceAccount(tillerNamespace, serviceAccountName)
-		if err != nil {
-			return err
-		}
-
-		if o.Flags.GlobalTiller {
-			clusterRoleBindingName := serviceAccountName
-			role := o.Flags.TillerClusterRole
-
-			err = o.ensureClusterRoleBinding(clusterRoleBindingName, role, tillerNamespace, serviceAccountName)
-			if err != nil {
-				return err
-			}
-		} else {
-			// lets create a tiller service account
-			roleName := "tiller-manager"
-			roleBindingName := "tiller-binding"
-
-			_, err = client.RbacV1().Roles(tillerNamespace).Get(roleName, metav1.GetOptions{})
-			if err != nil {
-				// lets create a Role for tiller
-				role := &rbacv1.Role{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      roleName,
-						Namespace: tillerNamespace,
-					},
-					Rules: []rbacv1.PolicyRule{
-						{
-							APIGroups: []string{"", "extensions", "apps"},
-							Resources: []string{"*"},
-							Verbs:     []string{"*"},
-						},
-					},
-				}
-				_, err = client.RbacV1().Roles(tillerNamespace).Create(role)
-				if err != nil {
-					return fmt.Errorf("Failed to create Role %s in namespace %s: %s", roleName, tillerNamespace, err)
-				}
-				log.Infof("Created Role %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
-			}
-			_, err = client.RbacV1().RoleBindings(tillerNamespace).Get(roleBindingName, metav1.GetOptions{})
-			if err != nil {
-				// lets create a RoleBinding for tiller
-				roleBinding := &rbacv1.RoleBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      roleBindingName,
-						Namespace: tillerNamespace,
-					},
-					Subjects: []rbacv1.Subject{
-						{
-							Kind:      "ServiceAccount",
-							Name:      serviceAccountName,
-							Namespace: tillerNamespace,
-						},
-					},
-					RoleRef: rbacv1.RoleRef{
-						Kind:     "Role",
-						Name:     roleName,
-						APIGroup: "rbac.authorization.k8s.io",
-					},
-				}
-				_, err = client.RbacV1().RoleBindings(tillerNamespace).Create(roleBinding)
-				if err != nil {
-					return fmt.Errorf("Failed to create RoleBinding %s in namespace %s: %s", roleName, tillerNamespace, err)
-				}
-				log.Infof("Created RoleBinding %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
-			}
-		}
-
-		running, err := kube.IsDeploymentRunning(client, "tiller-deploy", tillerNamespace)
-		if running {
-			log.Infof("Tiller Deployment is running in namespace %s\n", util.ColorInfo(tillerNamespace))
-			return nil
-		}
-		if err == nil && !running {
-			return fmt.Errorf("existing tiller deployment found but not running, please check the %s namespace and resolve any issues", tillerNamespace)
-		}
-
-		if !running {
-			log.Infof("Initialising helm using ServiceAccount %s in namespace %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(tillerNamespace))
-
-			err = o.Helm().Init(false, serviceAccountName, tillerNamespace, false)
-			if err != nil {
-				return err
-			}
-			err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
-			if err != nil {
-				return err
-			}
-
-			err = o.Helm().Init(false, serviceAccountName, tillerNamespace, true)
-			if err != nil {
-				return err
-			}
-		}
-
-		log.Infof("Waiting for tiller-deploy to be ready in tiller namespace %s\n", tillerNamespace)
-		err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
-		if err != nil {
-			return err
-		}
-	} else {
-		log.Infof("Skipping %s\n", util.ColorInfo("tiller"))
-	}
-
-	if o.Flags.Helm3 {
-		err = o.Helm().Init(false, "", "", false)
-		if err != nil {
-			return err
-		}
-	} else if o.Flags.HelmClient || o.Flags.SkipTiller {
-		err = o.Helm().Init(true, "", "", false)
-		if err != nil {
-			return err
-		}
-	}
-
-	err = o.Helm().AddRepo("jenkins-x", DEFAULT_CHARTMUSEUM_URL, "", "")
-	if err != nil {
-		return err
-	}
-	log.Success("helm installed and configured")
-
-	return nil
 }
 
 func (o *InitOptions) configureForICP() {
@@ -527,15 +409,15 @@ func (o *InitOptions) initIngress() error {
 		return fmt.Errorf("Failed to ensure the ingress namespace %s is created: %s\nIs this an RBAC issue on your cluster?", ingressNamespace, err)
 	}
 
-	currentContext, err := o.getCommandOutput("", "kubectl", "config", "current-context")
+	currentContext, err := o.GetCommandOutput("", "kubectl", "config", "current-context")
 	if err != nil {
 		return err
 	}
 	if currentContext == "minikube" {
 		if o.Flags.Provider == "" {
-			o.Flags.Provider = MINIKUBE
+			o.Flags.Provider = commoncmd.MINIKUBE
 		}
-		addons, err := o.getCommandOutput("", "minikube", "addons", "list")
+		addons, err := o.GetCommandOutput("", "minikube", "addons", "list")
 		if err != nil {
 			return err
 		}
@@ -581,7 +463,7 @@ func (o *InitOptions) initIngress() error {
 		if err != nil {
 			return errors.Wrap(err, "failed to append the myvalues file")
 		}
-		if o.Flags.Provider == AWS || o.Flags.Provider == EKS {
+		if o.Flags.Provider == commoncmd.AWS || o.Flags.Provider == commoncmd.EKS {
 			// we can only enable one port for NLBs right now
 			enableHTTP := "false"
 			enableHTTPS := "true"
@@ -606,7 +488,7 @@ controller:
 				return err
 			}
 			fileName := f.Name()
-			err = ioutil.WriteFile(fileName, []byte(yamlText), DefaultWritePermissions)
+			err = ioutil.WriteFile(fileName, []byte(yamlText), util.DefaultWritePermissions)
 			if err != nil {
 				return err
 			}
@@ -639,15 +521,15 @@ controller:
 		log.Info("existing ingress controller found, no need to install a new one\n")
 	}
 
-	if o.Flags.Provider != MINIKUBE && o.Flags.Provider != MINISHIFT && o.Flags.Provider != OPENSHIFT {
+	if o.Flags.Provider != commoncmd.MINIKUBE && o.Flags.Provider != commoncmd.MINISHIFT && o.Flags.Provider != commoncmd.OPENSHIFT {
 
 		log.Infof("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in %s namespace\n", ingressNamespace)
 
-		if o.Flags.Provider == OKE {
+		if o.Flags.Provider == commoncmd.OKE {
 			log.Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a OCI free account\n")
 		}
 
-		if o.Flags.Provider == GKE {
+		if o.Flags.Provider == commoncmd.GKE {
 			log.Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a GKE free account. To view quotas run: %s\n", util.ColorInfo("gcloud compute project-info describe"))
 		}
 

@@ -13,6 +13,8 @@ import (
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud/oke"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -77,9 +79,9 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateClusterOKE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterOKE(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterOKEOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, OKE),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, commoncmd.OKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "oke",
@@ -95,7 +97,7 @@ func NewCmdCreateClusterOKE(f Factory, in terminal.FileReader, out terminal.File
 	}
 
 	options.addCreateClusterFlags(cmd)
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, "name", "", "", "The name of the cluster. Avoid entering confidential information.")
 	cmd.Flags().StringVarP(&options.Flags.CompartmentId, "compartmentId", "", "", "The OCID of the compartment in which to create the cluster.")
@@ -124,7 +126,7 @@ func NewCmdCreateClusterOKE(f Factory, in terminal.FileReader, out terminal.File
 }
 
 func (o *CreateClusterOKEOptions) Run() error {
-	err := o.installRequirements(OKE)
+	err := o.InstallRequirements(commoncmd.OKE)
 	if err != nil {
 		return err
 	}
@@ -330,7 +332,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 
 	fmt.Printf("Args are: %s\n", args)
 	log.Info("Creating cluster...\n")
-	output, err := o.getCommandOutput("", "oci", args...)
+	output, err := o.GetCommandOutput("", "oci", args...)
 	if err != nil {
 		return err
 	}
@@ -356,7 +358,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			"--cluster-id", clusterId,
 			"--file", kubeconfigFile}
 
-		err = o.runCommandVerbose("oci", kubeContextArgs...)
+		err = o.RunCommandVerbose("oci", kubeContextArgs...)
 		if err != nil {
 			return err
 		}
@@ -402,7 +404,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 		}
 
 		fmt.Printf("Pool creation args are: %s\n", poolArgsArray)
-		poolCreationOutput, err := o.getCommandOutput("", "oci", poolArgsArray...)
+		poolCreationOutput, err := o.GetCommandOutput("", "oci", poolArgsArray...)
 		if err != nil {
 			return err
 		}
@@ -448,7 +450,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			}
 			log.Info("Initialising cluster ...\n")
 
-			return o.initAndInstall(OKE)
+			return o.initAndInstall(commoncmd.OKE)
 		}
 	}
 	return nil
@@ -459,7 +461,7 @@ func (o *CreateClusterOKEOptions) waitForNodeToComeUp(nodeQuantity int, poolId s
 	status := regexp.MustCompile("ACTIVE")
 	getPoolStatusArgs := []string{"ce", "node-pool", "get", "--node-pool-id", poolId}
 	for i := 0; ; i++ {
-		poolStatusOutput, err := o.getCommandOutput("", "oci", getPoolStatusArgs...)
+		poolStatusOutput, err := o.GetCommandOutput("", "oci", getPoolStatusArgs...)
 		if err != nil {
 			return err
 		}
@@ -480,7 +482,7 @@ func (o *CreateClusterOKEOptions) waitForNodeToComeUp(nodeQuantity int, poolId s
 func (o *CreateClusterOKEOptions) waitForTillerComeUp() error {
 	f := func() error {
 		tillerStatus := "kubectl get --namespace=kube-system deployment/tiller-deploy  | tail -n +2 | awk '{print $5}' | grep 1"
-		return o.runCommandQuietly("bash", "-c", tillerStatus)
+		return o.RunCommandQuietly("bash", "-c", tillerStatus)
 	}
-	return o.retryQuiet(2000, time.Second*10, f)
+	return o.RetryQuiet(2000, time.Second*10, f)
 }

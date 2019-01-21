@@ -8,6 +8,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	configio "github.com/jenkins-x/jx/pkg/io"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -45,11 +47,11 @@ var (
 	defaultValueFileNames = []string{"values.yaml", "myvalues.yaml", helm.SecretsFileName}
 )
 
-func NewCmdStepHelmApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepHelmApply(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepHelmApplyOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 					Out:     out,
@@ -107,7 +109,7 @@ func (o *StepHelmApplyOptions) Run() error {
 	if !o.DisableHelmVersion {
 		(&StepHelmVersionOptions{}).Run()
 	}
-	_, err = o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
+	_, err = o.HelmInitDependencyBuild(dir, o.DefaultReleaseCharts())
 	if err != nil {
 		return err
 	}

@@ -4,6 +4,8 @@ import (
 	"io"
 	"runtime"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -32,10 +34,10 @@ type UpgradeCLIOptions struct {
 }
 
 // NewCmdUpgradeCLI defines the command
-func NewCmdUpgradeCLI(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeCLI(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &UpgradeCLIOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -58,7 +60,7 @@ func NewCmdUpgradeCLI(f Factory, in terminal.FileReader, out terminal.FileWriter
 		},
 	}
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The specific version to upgrade to")
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	return cmd
 }
 
@@ -89,6 +91,6 @@ func (o *UpgradeCLIOptions) Run() error {
 	if runtime.GOOS == "darwin" && !o.NoBrew {
 		return o.RunCommand("brew", "upgrade", "jx")
 	} else {
-		return o.installJx(true, newVersion.String())
+		return o.InstallJx(true, newVersion.String())
 	}
 }

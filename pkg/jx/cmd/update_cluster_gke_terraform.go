@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -45,8 +47,8 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdUpdateClusterGKETerraform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := createUpdateClusterGKETerraformOptions(f, in, out, errOut, GKE)
+func NewCmdUpdateClusterGKETerraform(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+	options := createUpdateClusterGKETerraformOptions(f, in, out, errOut, commoncmd.GKE)
 
 	cmd := &cobra.Command{
 		Use:     "terraform",
@@ -61,7 +63,7 @@ func NewCmdUpdateClusterGKETerraform(f Factory, in terminal.FileReader, out term
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster")
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
@@ -70,8 +72,8 @@ func NewCmdUpdateClusterGKETerraform(f Factory, in terminal.FileReader, out term
 	return cmd
 }
 
-func createUpdateClusterGKETerraformOptions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, cloudProvider string) UpdateClusterGKETerraformOptions {
-	commonOptions := CommonOptions{
+func createUpdateClusterGKETerraformOptions(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, cloudProvider string) UpdateClusterGKETerraformOptions {
+	commonOptions := commoncmd.CommonOptions{
 		Factory: f,
 		In:      in,
 		Out:     out,
@@ -89,7 +91,7 @@ func createUpdateClusterGKETerraformOptions(f Factory, in terminal.FileReader, o
 }
 
 func (o *UpdateClusterGKETerraformOptions) Run() error {
-	err := o.installRequirements(GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
+	err := o.InstallRequirements(commoncmd.GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
 	if err != nil {
 		return err
 	}
@@ -173,7 +175,7 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 		fmt.Sprintf("-var-file=%s", terraformVars),
 		terraformDir}
 
-	err = o.runCommandVerbose("terraform", args...)
+	err = o.RunCommandVerbose("terraform", args...)
 	if err != nil {
 		return err
 	}
@@ -199,7 +201,7 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 		fmt.Sprintf("-var-file=%s", terraformVars),
 		terraformDir}
 
-	err = o.runCommandVerbose("terraform", args...)
+	err = o.RunCommandVerbose("terraform", args...)
 	if err != nil {
 		return err
 	}

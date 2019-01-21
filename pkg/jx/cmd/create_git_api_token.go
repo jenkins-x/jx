@@ -12,6 +12,8 @@ import (
 	"github.com/chromedp/chromedp/runner"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/nodes"
@@ -46,7 +48,7 @@ var (
 type CreateGitTokenOptions struct {
 	CreateOptions
 
-	ServerFlags ServerFlags
+	ServerFlags commoncmd.ServerFlags
 	Username    string
 	Password    string
 	ApiToken    string
@@ -54,10 +56,10 @@ type CreateGitTokenOptions struct {
 }
 
 // NewCmdCreateGitToken creates a command
-func NewCmdCreateGitToken(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateGitToken(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateGitTokenOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -79,8 +81,8 @@ func NewCmdCreateGitToken(f Factory, in terminal.FileReader, out terminal.FileWr
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
-	options.ServerFlags.addGitServerFlags(cmd)
+	options.AddCommonFlags(cmd)
+	options.ServerFlags.AddGitServerFlags(cmd)
 	cmd.Flags().StringVarP(&options.ApiToken, "api-token", "t", "", "The API Token for the user")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The User password to try automatically create a new API Token")
 	cmd.Flags().StringVarP(&options.Timeout, "timeout", "", "", "The timeout if using browser automation to generate the API token (by passing username and password)")
@@ -103,11 +105,11 @@ func (o *CreateGitTokenOptions) Run() error {
 	}
 	config := authConfigSvc.Config()
 
-	server, err := o.findGitServer(config, &o.ServerFlags)
+	server, err := o.FindGitServer(config, &o.ServerFlags)
 	if err != nil {
 		return err
 	}
-	err = o.ensureGitServiceCRD(server)
+	err = o.EnsureGitServiceCRD(server)
 	if err != nil {
 		return err
 	}
@@ -153,7 +155,7 @@ func (o *CreateGitTokenOptions) Run() error {
 		return err
 	}
 
-	_, err = o.updatePipelineGitCredentialsSecret(server, userAuth)
+	_, err = o.UpdatePipelineGitCredentialsSecret(server, userAuth)
 	if err != nil {
 		log.Warnf("Failed to update Jenkins X pipeline Git credentials secret: %v\n", err)
 	}
@@ -260,7 +262,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 }
 
 // lets try use the users browser to find the API token
-func (o *CommonOptions) createChromeClient(ctxt context.Context) (*chromedp.CDP, error) {
+func (o *CreateGitTokenOptions) createChromeClient(ctxt context.Context) (*chromedp.CDP, error) {
 	if o.Headless {
 		options := func(m map[string]interface{}) error {
 			m["remote-debugging-port"] = 9222
@@ -274,7 +276,7 @@ func (o *CommonOptions) createChromeClient(ctxt context.Context) (*chromedp.CDP,
 	return chromedp.New(ctxt)
 }
 
-func (o *CommonOptions) captureScreenshot(ctxt context.Context, c *chromedp.CDP, screenshotFile string, selector interface{}, options ...chromedp.QueryOption) error {
+func (o *CreateGitTokenOptions) captureScreenshot(ctxt context.Context, c *chromedp.CDP, screenshotFile string, selector interface{}, options ...chromedp.QueryOption) error {
 	log.Infoln("Creating a screenshot...")
 
 	var picture []byte

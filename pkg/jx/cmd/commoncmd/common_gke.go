@@ -1,4 +1,4 @@
-package cmd
+package commoncmd
 
 import (
 	"fmt"
@@ -11,10 +11,12 @@ import (
 	survey "gopkg.in/AlecAivazis/survey.v1"
 )
 
+const ClusterListHeader = "PROJECT_ID"
+
 // asks to chose from existing projects or optionally creates one if none exist
-func (o *CommonOptions) getGoogleProjectId() (string, error) {
+func (o *CommonOptions) GetGoogleProjectId() (string, error) {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
-	out, err := o.getCommandOutput("", "gcloud", "projects", "list")
+	out, err := o.GetCommandOutput("", "gcloud", "projects", "list")
 	if err != nil {
 		return "", err
 	}
@@ -22,7 +24,7 @@ func (o *CommonOptions) getGoogleProjectId() (string, error) {
 	lines := strings.Split(string(out), "\n")
 	var existingProjects []string
 	for _, l := range lines {
-		if strings.Contains(l, clusterListHeader) {
+		if strings.Contains(l, ClusterListHeader) {
 			continue
 		}
 		fields := strings.Fields(l)
@@ -74,11 +76,11 @@ func (o *CommonOptions) getGoogleProjectId() (string, error) {
 	return projectId, nil
 }
 
-func (o *CommonOptions) getGoogleZone(projectId string) (string, error) {
-	return o.getGoogleZoneWithDefault(projectId, "")
+func (o *CommonOptions) GetGoogleZone(projectId string) (string, error) {
+	return o.GetGoogleZoneWithDefault(projectId, "")
 }
 
-func (o *CommonOptions) getGoogleZoneWithDefault(projectId string, defaultZone string) (string, error) {
+func (o *CommonOptions) GetGoogleZoneWithDefault(projectId string, defaultZone string) (string, error) {
 	availableZones, err := gke.GetGoogleZones(projectId)
 	if err != nil {
 		return "", err

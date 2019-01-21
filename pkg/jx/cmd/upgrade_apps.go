@@ -12,6 +12,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/addon"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -56,19 +58,19 @@ type UpgradeAppsOptions struct {
 	Set       []string
 
 	// for testing
-	FakePullRequests CreateEnvPullRequestFn
+	FakePullRequests commoncmd.CreateEnvPullRequestFn
 
 	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback ConfigureGitFolderFn
+	ConfigureGitCallback commoncmd.ConfigureGitFolderFn
 
 	InstallFlags InstallFlags
 }
 
 // NewCmdUpgradeApps defines the command
-func NewCmdUpgradeApps(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeApps(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	o := &UpgradeAppsOptions{
 		AddOptions: AddOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -91,8 +93,8 @@ func NewCmdUpgradeApps(f Factory, in terminal.FileReader, out terminal.FileWrite
 		},
 	}
 
-	cmd.Flags().BoolVarP(&o.BatchMode, optionBatchMode, "b", false, "In batch mode the command never prompts for user input")
-	cmd.Flags().BoolVarP(&o.Verbose, optionVerbose, "", false, "Enable verbose logging")
+	cmd.Flags().BoolVarP(&o.BatchMode, commoncmd.OptionBatchMode, "b", false, "In batch mode the command never prompts for user input")
+	cmd.Flags().BoolVarP(&o.Verbose, commoncmd.OptionVerbose, "", false, "Enable verbose logging")
 	cmd.Flags().StringVarP(&o.Version, "username", "", "",
 		"The username for the repository")
 	cmd.Flags().StringVarP(&o.Version, "password", "", "",
@@ -215,7 +217,7 @@ func (o *UpgradeAppsOptions) createPRs() error {
 		}
 	} else {
 		var err error
-		_, err = o.createEnvironmentPullRequest(o.DevEnv, modifyChartFn, &branchNameText, &title,
+		_, err = o.CreateEnvironmentPullRequest(o.DevEnv, modifyChartFn, &branchNameText, &title,
 			&message,
 			nil, o.ConfigureGitCallback)
 		if err != nil {
@@ -242,11 +244,8 @@ func (o *UpgradeAppsOptions) upgradeApps() error {
 		}
 	}
 
-	client, err := o.KubeClient()
-	if err != nil {
-		return err
-	}
-	o.devNamespace, _, err = kube.GetDevNamespace(client, ns)
+	o.SetCurrentNamespace(ns)
+	_, _, err = o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}
@@ -330,15 +329,15 @@ func (o *UpgradeAppsOptions) upgradeApps() error {
 }
 
 func (o *UpgradeAppsOptions) restoreConfigs(config *v1.ConfigMap, plugins *v1.ConfigMap) error {
-	client, err := o.KubeClient()
+	client, devNamespace, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}
 	var err1 error
 	if config != nil {
-		_, err = client.CoreV1().ConfigMaps(o.devNamespace).Get("config", metav1.GetOptions{})
+		_, err = client.CoreV1().ConfigMaps(devNamespace).Get("config", metav1.GetOptions{})
 		if err != nil {
-			_, err = client.CoreV1().ConfigMaps(o.devNamespace).Create(config)
+			_, err = client.CoreV1().ConfigMaps(devNamespace).Create(config)
 			if err != nil {
 				b, _ := yaml.Marshal(config)
 				err1 = fmt.Errorf("error restoring config %s\n", string(b))
@@ -346,9 +345,9 @@ func (o *UpgradeAppsOptions) restoreConfigs(config *v1.ConfigMap, plugins *v1.Co
 		}
 	}
 	if plugins != nil {
-		_, err = client.CoreV1().ConfigMaps(o.devNamespace).Get("plugins", metav1.GetOptions{})
+		_, err = client.CoreV1().ConfigMaps(devNamespace).Get("plugins", metav1.GetOptions{})
 		if err != nil {
-			_, err = client.CoreV1().ConfigMaps(o.devNamespace).Create(plugins)
+			_, err = client.CoreV1().ConfigMaps(devNamespace).Create(plugins)
 			if err != nil {
 				b, _ := yaml.Marshal(plugins)
 				err = fmt.Errorf("%v/nerror restoring plugins %s\n", err1, string(b))
@@ -359,12 +358,12 @@ func (o *UpgradeAppsOptions) restoreConfigs(config *v1.ConfigMap, plugins *v1.Co
 }
 
 func (o *UpgradeAppsOptions) backupConfigs() (*v1.ConfigMap, *v1.ConfigMap, error) {
-	client, err := o.KubeClient()
+	client, devNamespace, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return nil, nil, err
 	}
-	config, _ := client.CoreV1().ConfigMaps(o.devNamespace).Get("config", metav1.GetOptions{})
-	plugins, _ := client.CoreV1().ConfigMaps(o.devNamespace).Get("plugins", metav1.GetOptions{})
+	config, _ := client.CoreV1().ConfigMaps(devNamespace).Get("config", metav1.GetOptions{})
+	plugins, _ := client.CoreV1().ConfigMaps(devNamespace).Get("plugins", metav1.GetOptions{})
 	config = config.DeepCopy()
 	config.ResourceVersion = ""
 	plugins = plugins.DeepCopy()

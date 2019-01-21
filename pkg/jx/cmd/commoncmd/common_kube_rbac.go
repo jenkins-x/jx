@@ -1,4 +1,4 @@
-package cmd
+package commoncmd
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (o *CommonOptions) ensureServiceAccount(ns string, serviceAccountName string) error {
+func (o *CommonOptions) EnsureServiceAccount(ns string, serviceAccountName string) error {
 	client, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -64,7 +64,7 @@ func (o *CommonOptions) ensureClusterRoleExists(roleName string, namespace strin
 	return nil
 }
 
-func (o *CommonOptions) ensureClusterRoleBinding(clusterRoleBindingName string, role string, serviceAccountNamespace string, serviceAccountName string) error {
+func (o *CommonOptions) EnsureClusterRoleBinding(clusterRoleBindingName string, role string, serviceAccountNamespace string, serviceAccountName string) error {
 	client, err := o.KubeClient()
 	if err != nil {
 		return err

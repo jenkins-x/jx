@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -35,10 +37,10 @@ var (
 )
 
 // NewCmdGetRelease creates the new command for: jx get env
-func NewCmdGetRelease(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetRelease(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetReleaseOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 
@@ -90,7 +92,7 @@ func (o *GetReleaseOptions) Run() error {
 		log.Infof("To create a release try merging code to a master branch to trigger a pipeline or try: %s\n", util.ColorInfo("jx start build"))
 		return nil
 	}
-	table := o.createTable()
+	table := o.Table()
 	table.AddRow("NAME", "VERSION")
 	for _, release := range releases {
 		table.AddRow(release.Spec.Name, release.Spec.Version)

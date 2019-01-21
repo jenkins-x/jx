@@ -1,15 +1,18 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/kube"
 	"io"
 	"os"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/fatih/color"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -23,7 +26,7 @@ const (
 
 // PromptOptions containers the CLI options
 type PromptOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	NoLabel  bool
 	ShowIcon bool
@@ -57,9 +60,9 @@ var (
 )
 
 // NewCmdPrompt creates the new command for: jx get prompt
-func NewCmdPrompt(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdPrompt(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &PromptOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 

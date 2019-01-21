@@ -6,6 +6,8 @@ import (
 
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -28,14 +30,14 @@ var (
 type DeleteChatTokenOptions struct {
 	CreateOptions
 
-	ServerFlags ServerFlags
+	ServerFlags commoncmd.ServerFlags
 }
 
 // NewCmdDeleteChatToken defines the command
-func NewCmdDeleteChatToken(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteChatToken(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteChatTokenOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -57,7 +59,7 @@ func NewCmdDeleteChatToken(f Factory, in terminal.FileReader, out terminal.FileW
 			CheckErr(err)
 		},
 	}
-	options.ServerFlags.addGitServerFlags(cmd)
+	options.ServerFlags.AddGitServerFlags(cmd)
 	return cmd
 }
 
@@ -67,13 +69,13 @@ func (o *DeleteChatTokenOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing chat server user name")
 	}
-	authConfigSvc, err := o.createChatAuthConfigService()
+	authConfigSvc, err := o.ChatAuthConfigService()
 	if err != nil {
 		return err
 	}
 	config := authConfigSvc.Config()
 
-	server, err := o.findChatServer(config, &o.ServerFlags)
+	server, err := o.FindChatServer(config, &o.ServerFlags)
 	if err != nil {
 		return err
 	}

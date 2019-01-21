@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
@@ -44,10 +46,10 @@ var (
 )
 
 // NewCmdGetQuickstartLocation creates the new command for: jx get env
-func NewCmdGetQuickstartLocation(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetQuickstartLocation(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetQuickstartLocationOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 
@@ -86,7 +88,7 @@ func (o *GetQuickstartLocationOptions) Run() error {
 		return err
 	}
 
-	table := o.createTable()
+	table := o.Table()
 	table.AddRow("GIT SERVER", "KIND", "OWNER", "INCLUDES", "EXCLUDES")
 
 	for _, location := range locations {

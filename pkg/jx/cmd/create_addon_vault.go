@@ -5,6 +5,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -42,8 +44,8 @@ type CreateAddonVaultOptions struct {
 }
 
 // NewCmdCreateAddonVault creates a command object for the "create addon vault-opeator" command
-func NewCmdCreateAddonVault(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	commonOptions := CommonOptions{
+func NewCmdCreateAddonVault(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+	commonOptions := commoncmd.CommonOptions{
 		Factory: f,
 		In:      in,
 		Out:     out,
@@ -70,7 +72,7 @@ func NewCmdCreateAddonVault(f Factory, in terminal.FileReader, out terminal.File
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	options.addFlags(cmd, defaultVaultNamesapce, kube.DefaultVaultOperatorReleaseName, defaultVaultOperatorVersion)
 	return cmd
 }
@@ -81,13 +83,13 @@ func (o *CreateAddonVaultOptions) Run() error {
 }
 
 // InstallVaultOperator installs a vault operator in the namespace provided
-func InstallVaultOperator(o *CommonOptions, namespace string) error {
-	err := o.ensureHelm()
+func InstallVaultOperator(o *commoncmd.CommonOptions, namespace string) error {
+	err := o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "checking if helm is installed")
 	}
 
-	err = o.addHelmRepoIfMissing(jxRepoURL, jxRepoName, "", "")
+	err = o.AddHelmRepoIfMissing(jxRepoURL, jxRepoName, "", "")
 	if err != nil {
 		return errors.Wrapf(err, "adding '%s' helm charts repository", jxRepoURL)
 	}
@@ -104,7 +106,7 @@ func InstallVaultOperator(o *CommonOptions, namespace string) error {
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	err = o.installChart(releaseName, kube.ChartVaultOperator, o.Version, namespace, true, values, nil, "")
+	err = o.InstallChart(releaseName, kube.ChartVaultOperator, o.Version, namespace, true, values, nil, "")
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("installing %s chart", releaseName))
 	}

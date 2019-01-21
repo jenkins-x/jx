@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -17,7 +19,7 @@ import (
 
 // DeleteNamespaceOptions are the flags for delete commands
 type DeleteNamespaceOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	SelectAll    bool
 	SelectFilter string
@@ -40,9 +42,9 @@ var (
 
 // NewCmdDeleteNamespace creates a command object
 // retrieves one or more resources from a server.
-func NewCmdDeleteNamespace(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteNamespace(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteNamespaceOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 
@@ -65,7 +67,7 @@ func NewCmdDeleteNamespace(f Factory, in terminal.FileReader, out terminal.FileW
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "a", false, "Should we default to selecting all the matched namespaces for deletion")
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Filters the list of namespaces you can pick from")
 	cmd.Flags().BoolVarP(&options.Confirm, "yes", "y", false, "Confirms we should uninstall this installation")

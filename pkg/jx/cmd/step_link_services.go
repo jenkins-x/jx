@@ -2,12 +2,15 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -46,10 +49,10 @@ type StepLinkServicesOptions struct {
 }
 
 // NewCmdStepLinkServices Creates a new Command object
-func NewCmdStepLinkServices(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepLinkServices(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepLinkServicesOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -70,7 +73,7 @@ func NewCmdStepLinkServices(f Factory, in terminal.FileReader, out terminal.File
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.FromNamespace, fromNamespace, "f", "", "The source namespace from which the linking would happen")
 	cmd.Flags().StringVarP(&options.ToNamespace, toNamespace, "t", "", "The destination namespace to which the linking would happen")

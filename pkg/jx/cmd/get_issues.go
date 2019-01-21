@@ -8,6 +8,8 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
@@ -31,10 +33,10 @@ var (
 )
 
 // NewCmdGetIssues creates the command
-func NewCmdGetIssues(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetIssues(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetIssuesOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 
@@ -65,7 +67,7 @@ func NewCmdGetIssues(f Factory, in terminal.FileReader, out terminal.FileWriter,
 
 // Run implements this command
 func (o *GetIssuesOptions) Run() error {
-	tracker, err := o.createIssueProvider(o.Dir)
+	tracker, err := o.IssueProvider(o.Dir)
 	if err != nil {
 		return err
 	}
@@ -75,7 +77,7 @@ func (o *GetIssuesOptions) Run() error {
 		return err
 	}
 
-	table := o.createTable()
+	table := o.Table()
 	table.AddRow("ISSUE", "TITLE")
 	for _, i := range issues {
 		table.AddRow(i.URL, i.Title)

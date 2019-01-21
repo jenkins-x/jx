@@ -4,6 +4,8 @@ import (
 	"io"
 
 	"github.com/heptio/sonobuoy/pkg/client"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -23,14 +25,14 @@ var (
 
 // ComplianceDeleteOptions options for "compliance delete" command
 type ComplianceDeleteOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 }
 
 // NewCmdComplianceDeletecreates a command object for the "compliance delete" action, which
 // delete the Kubernetes resources allocated by the compliance tests
-func NewCmdComplianceDelete(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdComplianceDelete(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ComplianceDeleteOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 

@@ -16,6 +16,8 @@ import (
 	"os"
 
 	"github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -24,7 +26,7 @@ import (
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
 // referencing the cmd.Flags()
 type GCGKEOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	RevisionHistoryLimit int
 	jclient              gojenkins.JenkinsClient
@@ -55,9 +57,9 @@ type Rule struct {
 }
 
 // NewCmd s a command object for the "step" command
-func NewCmdGCGKE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGCGKE(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GCGKEOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,
@@ -133,8 +135,8 @@ func (o *GCGKEOptions) Run() error {
 }
 
 func (p *GCGKEOptions) cleanUpFirewalls() (string, error) {
-	o := CommonOptions{}
-	data, err := o.getCommandOutput("", "gcloud", "compute", "firewall-rules", "list", "--format", "json")
+	o := commoncmd.CommonOptions{}
+	data, err := o.GetCommandOutput("", "gcloud", "compute", "firewall-rules", "list", "--format", "json")
 	if err != nil {
 		return "", err
 	}
@@ -145,7 +147,7 @@ func (p *GCGKEOptions) cleanUpFirewalls() (string, error) {
 		return "", err
 	}
 
-	out, err := o.getCommandOutput("", "gcloud", "container", "clusters", "list")
+	out, err := o.GetCommandOutput("", "gcloud", "container", "clusters", "list")
 	if err != nil {
 		return "", err
 	}
@@ -193,7 +195,7 @@ func (o *GCGKEOptions) cleanUpPersistentDisks() ([]string, error) {
 
 	cmd := "gcloud compute zones list | grep -v NAME | awk '{printf $1 \" \"}'"
 
-	rs, err := o.getCommandOutput("", "bash", "-c", cmd)
+	rs, err := o.GetCommandOutput("", "bash", "-c", cmd)
 	if err != nil {
 		return nil, err
 	}
@@ -202,7 +204,7 @@ func (o *GCGKEOptions) cleanUpPersistentDisks() ([]string, error) {
 
 	for _, z := range zones {
 		diskCmd := fmt.Sprintf("gcloud compute disks list --filter=\"NOT users:* AND zone:(%s)\" | grep -v NAME | awk '{printf $1 \" \"}'", z)
-		diskRs, err := o.getCommandOutput("", "bash", "-c", diskCmd)
+		diskRs, err := o.GetCommandOutput("", "bash", "-c", diskCmd)
 		if err != nil {
 			return nil, err
 		}

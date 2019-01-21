@@ -1,14 +1,17 @@
 package cmd
 
 import (
+	"io"
+	"os"
+	"path/filepath"
+
 	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-	"os"
-	"path/filepath"
 )
 
 var (
@@ -37,10 +40,10 @@ type StepBuildPackApplyOptions struct {
 }
 
 // NewCmdStepBuildPackApply Creates a new Command object
-func NewCmdStepBuildPackApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepBuildPackApply(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepBuildPackApplyOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -61,7 +64,7 @@ func NewCmdStepBuildPackApply(f Factory, in terminal.FileReader, out terminal.Fi
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to query to find the projects .git directory")
 	cmd.Flags().StringVarP(&options.Jenkinsfile, "jenkinsfile", "", "", "The name of the Jenkinsfile to use. If not specified then 'Jenkinsfile' will be used")
@@ -77,13 +80,13 @@ func (o *StepBuildPackApplyOptions) Run() error {
 	if dir == "" {
 		dir, err = os.Getwd()
 		if err != nil {
-		  return err
+			return err
 		}
 	}
 
 	settings, err := o.CommonOptions.TeamSettings()
 	if err != nil {
-	  return err
+		return err
 	}
 	log.Infof("build pack is %s\n", settings.BuildPackURL)
 
@@ -98,7 +101,7 @@ func (o *StepBuildPackApplyOptions) Run() error {
 		jenkinsfile = filepath.Join(dir, jenkinsfile)
 	}
 
-	args := &InvokeDraftPack{
+	args := &commoncmd.InvokeDraftPack{
 		Dir:                     dir,
 		CustomDraftPack:         o.DraftPack,
 		Jenkinsfile:             jenkinsfile,
@@ -107,7 +110,7 @@ func (o *StepBuildPackApplyOptions) Run() error {
 		InitialisedGit:          true,
 		DisableJenkinsfileCheck: o.DisableJenkinsfileCheck,
 	}
-	_, err = o.invokeDraftPack(args)
+	_, err = o.InvokeDraftPack(args)
 	if err != nil {
 		return err
 	}

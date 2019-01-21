@@ -18,6 +18,8 @@ import (
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -74,9 +76,9 @@ var (
 
 // NewCmdCreateClusterGKETerraform creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateClusterGKETerraform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterGKETerraform(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterGKETerraformOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, GKE),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, commoncmd.GKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "terraform",
@@ -93,7 +95,7 @@ func NewCmdCreateClusterGKETerraform(f Factory, in terminal.FileReader, out term
 
 	options.addAuthFlags(cmd)
 	options.addCreateClusterFlags(cmd)
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster, default is a random generated name")
 	//cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, "cluster-ipv4-cidr", "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")
@@ -115,7 +117,7 @@ func (o *CreateClusterGKETerraformOptions) addAuthFlags(cmd *cobra.Command) {
 }
 
 func (o *CreateClusterGKETerraformOptions) Run() error {
-	err := o.installRequirements(GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
+	err := o.InstallRequirements(commoncmd.GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
 	if err != nil {
 		return err
 	}
@@ -304,7 +306,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 		fmt.Sprintf("-var-file=%s", terraformVars),
 		terraformDir}
 
-	output, err := o.getCommandOutput("", "terraform", args...)
+	output, err := o.GetCommandOutput("", "terraform", args...)
 	if err != nil {
 		return err
 	}
@@ -317,7 +319,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 		fmt.Sprintf("-var-file=%s", terraformVars),
 		terraformDir}
 
-	err = o.runCommandVerbose("terraform", args...)
+	err = o.RunCommandVerbose("terraform", args...)
 	if err != nil {
 		return err
 	}
@@ -353,7 +355,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 		return err
 	}
 
-	output, err = o.getCommandOutput("", "gcloud", "container", "clusters", "get-credentials", o.Flags.ClusterName, "--zone", zone, "--project", projectId)
+	output, err = o.GetCommandOutput("", "gcloud", "container", "clusters", "get-credentials", o.Flags.ClusterName, "--zone", zone, "--project", projectId)
 	if err != nil {
 		return err
 	}
@@ -363,12 +365,12 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 	if o.InstallOptions.Flags.DefaultEnvironmentPrefix == "" {
 		o.InstallOptions.Flags.DefaultEnvironmentPrefix = o.Flags.ClusterName
 	}
-	err = o.initAndInstall(GKE)
+	err = o.initAndInstall(commoncmd.GKE)
 	if err != nil {
 		return err
 	}
 
-	context, err := o.getCommandOutput("", "kubectl", "config", "current-context")
+	context, err := o.GetCommandOutput("", "kubectl", "config", "current-context")
 	if err != nil {
 		return err
 	}

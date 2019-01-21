@@ -6,12 +6,14 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 // AddOptions contains the command line options
 type AddOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	DisableImport bool
 	OutDir        string
@@ -31,9 +33,9 @@ var (
 )
 
 // NewCmdAdd creates a command object for the "add" command
-func NewCmdAdd(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdAdd(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &AddOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,

@@ -7,6 +7,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -48,11 +50,11 @@ type CreateAddonGiteaOptions struct {
 }
 
 // NewCmdCreateAddonGitea creates a command object for the "create" command
-func NewCmdCreateAddonGitea(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonGitea(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonGiteaOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 					Out:     out,
@@ -76,7 +78,7 @@ func NewCmdCreateAddonGitea(f Factory, in terminal.FileReader, out terminal.File
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	options.addFlags(cmd, "", defaultGiteaReleaseName, defaultGiteaVersion)
 
 	cmd.Flags().StringVarP(&options.Username, "username", "u", "", "The name for the user to create in Gitea. Note that Gitea tends to reject 'admin'")
@@ -99,12 +101,12 @@ func (o *CreateAddonGiteaOptions) Run() error {
 		return util.MissingOption(optionChart)
 	}
 
-	err := o.ensureHelm()
+	err := o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that helm is present")
 	}
 	setValues := strings.Split(o.SetValues, ",")
-	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, setValues, nil, "")
+	err = o.InstallChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, setValues, nil, "")
 	if err != nil {
 		return err
 	}

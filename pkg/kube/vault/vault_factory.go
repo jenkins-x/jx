@@ -1,26 +1,37 @@
 package vault
 
 import (
+	"io"
+
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/hashicorp/vault/api"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/common"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/pkg/errors"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
+// OptionsInterface is an interface to allow passing around of a CommonOptions object without dependencies on the whole of the cmd package
+type OptionsInterface interface {
+	KubeClientAndNamespace() (kubernetes.Interface, string, error)
+	VaultOperatorClient() (versioned.Interface, error)
+	GetIn() terminal.FileReader
+	GetOut() terminal.FileWriter
+	GetErr() io.Writer
+}
+
 // VaultClientFactory keeps the configuration required to build a new VaultClientFactory
 type VaultClientFactory struct {
-	Options          common.OptionsInterface
+	Options          OptionsInterface
 	Selector         Selector
 	kubeClient       kubernetes.Interface
 	defaultNamespace string
 }
 
 // NewInteractiveVaultClientFactory creates a VaultClientFactory that allows the user to pick vaults if necessary
-func NewInteractiveVaultClientFactory(options common.OptionsInterface) (*VaultClientFactory, error) {
+func NewInteractiveVaultClientFactory(options OptionsInterface) (*VaultClientFactory, error) {
 	factory := &VaultClientFactory{
 		Options: options,
 	}

@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -61,10 +63,10 @@ type scanResult struct {
 }
 
 // NewCmdScanCluster creates a command object for "scan cluster" command
-func NewCmdScanCluster(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdScanCluster(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ScanClusterOptions{
 		ScanOptions: ScanOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 
@@ -254,7 +256,7 @@ func (o *ScanClusterOptions) printResult(result *scanResult) error {
 		}
 		log.Info(string(output))
 	} else {
-		nodeTable := o.createTable()
+		nodeTable := o.Table()
 		nodeTable.SetColumnAlign(1, util.ALIGN_LEFT)
 		nodeTable.SetColumnAlign(2, util.ALIGN_LEFT)
 		nodeTable.AddRow("NODE", "LOCATION")
@@ -264,7 +266,7 @@ func (o *ScanClusterOptions) printResult(result *scanResult) error {
 		nodeTable.Render()
 		log.Blank()
 
-		serviceTable := o.createTable()
+		serviceTable := o.Table()
 		serviceTable.SetColumnAlign(1, util.ALIGN_LEFT)
 		serviceTable.SetColumnAlign(2, util.ALIGN_LEFT)
 		serviceTable.SetColumnAlign(3, util.ALIGN_LEFT)
@@ -275,7 +277,7 @@ func (o *ScanClusterOptions) printResult(result *scanResult) error {
 		serviceTable.Render()
 		log.Blank()
 
-		vulnTable := o.createTable()
+		vulnTable := o.Table()
 		vulnTable.SetColumnAlign(1, util.ALIGN_LEFT)
 		vulnTable.SetColumnAlign(2, util.ALIGN_LEFT)
 		vulnTable.SetColumnAlign(3, util.ALIGN_LEFT)

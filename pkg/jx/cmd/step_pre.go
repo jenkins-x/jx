@@ -3,13 +3,15 @@ package cmd
 import (
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // StepPreOptions defines the CLI arguments
 type StepPreOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	DisableImport bool
 	OutDir        string
@@ -18,9 +20,9 @@ type StepPreOptions struct {
 var ()
 
 // NewCmdStep Steps a command object for the "step" command
-func NewCmdStepPre(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepPre(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepPreOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,

@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -42,11 +44,11 @@ type CreateAddonAmbassadorOptions struct {
 }
 
 // NewCmdCreateAddonAmbassador creates a command object for the "create" command
-func NewCmdCreateAddonAmbassador(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonAmbassador(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonAmbassadorOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 					Out:     out,
@@ -70,7 +72,7 @@ func NewCmdCreateAddonAmbassador(f Factory, in terminal.FileReader, out terminal
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	options.addFlags(cmd, "", defaultAmbassadorReleaseName, defaultAmbassadorVersion)
 
 	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", kube.ChartAmbassador, "The name of the chart to use")
@@ -85,18 +87,18 @@ func (o *CreateAddonAmbassadorOptions) Run() error {
 	if o.Chart == "" {
 		return util.MissingOption(optionChart)
 	}
-	err := o.addHelmRepoIfMissing(ambassadorRepoUrl, ambassadorRepoName, "", "")
+	err := o.AddHelmRepoIfMissing(ambassadorRepoUrl, ambassadorRepoName, "", "")
 	if err != nil {
 		return err
 	}
 
-	err = o.ensureHelm()
+	err = o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that helm is present")
 	}
 
 	values := strings.Split(o.SetValues, ",")
-	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
+	err = o.InstallChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
 	if err != nil {
 		return err
 	}

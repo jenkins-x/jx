@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/table"
 )
@@ -39,10 +41,10 @@ var (
 )
 
 // NewCmdGetPipeline creates the command
-func NewCmdGetPipeline(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetPipeline(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetPipelineOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -82,7 +84,7 @@ func (o *GetPipelineOptions) Run() error {
 		return err
 	}
 
-	isProw, err := o.isProw()
+	isProw, err := o.IsProw()
 	if err != nil {
 		return err
 	}
@@ -90,7 +92,7 @@ func (o *GetPipelineOptions) Run() error {
 	if isProw {
 		o.ProwOptions = prow.Options{
 			KubeClient: client,
-			NS:         o.currentNamespace,
+			NS:         o.CurrentNamespace(),
 		}
 		names, err := o.ProwOptions.GetReleaseJobs()
 		if err != nil {
@@ -151,7 +153,7 @@ func (o *GetPipelineOptions) Run() error {
 }
 
 func createTable(o *GetPipelineOptions) table.Table {
-	table := o.createTable()
+	table := o.Table()
 	table.AddRow("Name", "URL", "LAST_BUILD", "STATUS", "DURATION")
 	return table
 }

@@ -10,6 +10,8 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 
 	"github.com/spf13/cobra"
@@ -38,10 +40,10 @@ var (
 )
 
 // NewCmdStep Steps a command object for the "step" command
-func NewCmdStepPostRun(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepPostRun(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepPostRunOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -90,8 +92,8 @@ func (o *StepPostRunOptions) Run() (err error) {
 		appName = gitInfo.Name
 	}
 	pipeline := ""
-	build := o.getBuildNumber()
-	pipeline, build = o.getPipelineName(gitInfo, pipeline, build, appName)
+	build := o.GetBuildNumber()
+	pipeline, build = o.GetPipelineName(gitInfo, pipeline, build, appName)
 	if pipeline != "" && build != "" {
 		name := kube.ToValidName(pipeline + "-" + build)
 		key := &kube.PromoteStepActivityKey{

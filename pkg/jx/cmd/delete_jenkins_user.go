@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -30,14 +32,14 @@ var (
 type DeleteJenkinsUserOptions struct {
 	CreateOptions
 
-	ServerFlags ServerFlags
+	ServerFlags commoncmd.ServerFlags
 }
 
 // NewCmdDeleteJenkinsUser defines the command
-func NewCmdDeleteJenkinsUser(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteJenkinsUser(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteJenkinsUserOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -59,7 +61,7 @@ func NewCmdDeleteJenkinsUser(f Factory, in terminal.FileReader, out terminal.Fil
 			CheckErr(err)
 		},
 	}
-	options.ServerFlags.addGitServerFlags(cmd)
+	options.ServerFlags.AddGitServerFlags(cmd)
 	return cmd
 }
 
@@ -82,13 +84,13 @@ func (o *DeleteJenkinsUserOptions) Run() error {
 	var server *auth.AuthServer
 	if o.ServerFlags.IsEmpty() {
 		url := ""
-		url, err = o.findService(kube.ServiceJenkins)
+		url, err = o.FindService(kube.ServiceJenkins)
 		if err != nil {
 			return err
 		}
 		server = config.GetOrCreateServer(url)
 	} else {
-		server, err = o.findServer(config, &o.ServerFlags, "jenkins server", "Try installing one via: jx create team", false)
+		server, err = o.FindServer(config, &o.ServerFlags, "jenkins server", "Try installing one via: jx create team", false)
 		if err != nil {
 			return err
 		}

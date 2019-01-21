@@ -1,7 +1,10 @@
-package cmd
+package commoncmd
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/jenkins-x/draft-repo/pkg/draft/pack"
 	"github.com/jenkins-x/jx/pkg/config"
 	jxdraft "github.com/jenkins-x/jx/pkg/draft"
@@ -9,8 +12,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"os"
-	"path/filepath"
+)
+
+const (
+	// JenkinsfileBackupSuffix the suffix used by Jenkins for backups
+	JenkinsfileBackupSuffix = ".backup"
 )
 
 // InvokeDraftPack used to pass arguments into the draft pack invocation
@@ -25,7 +31,7 @@ type InvokeDraftPack struct {
 }
 
 // initBuildPacks initalise the build packs
-func (o *CommonOptions) initBuildPacks() (string, error) {
+func (o *CommonOptions) InitBuildPacks() (string, error) {
 	settings, err := o.TeamSettings()
 	if err != nil {
 		return "", err
@@ -34,8 +40,8 @@ func (o *CommonOptions) initBuildPacks() (string, error) {
 }
 
 // invokeDraftPack invokes a draft pack copying in a Jenkinsfile if required
-func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
-	packsDir, err := o.initBuildPacks()
+func (o *CommonOptions) InvokeDraftPack(i *InvokeDraftPack) (string, error) {
+	packsDir, err := o.InitBuildPacks()
 	if err != nil {
 		return "", err
 	}
@@ -188,16 +194,16 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 			if err != nil {
 				return draftPack, err
 			}
-			prow, err := o.isProw()
+			prow, err := o.IsProw()
 			if err != nil {
 				return draftPack, err
 			}
 
 			if templateFile != "" {
 				arguments := &jenkinsfile.CreateJenkinsfileArguments{
-					ConfigFile:   pipelineFile,
-					TemplateFile: templateFile,
-					OutputFile:   generateJenkinsPath,
+					ConfigFile:        pipelineFile,
+					TemplateFile:      templateFile,
+					OutputFile:        generateJenkinsPath,
 					JenkinsfileRunner: prow,
 				}
 				err = arguments.GenerateJenkinsfile(moduleResolver.AsImportResolver())

@@ -10,6 +10,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -48,13 +50,13 @@ type EditEnvOptions struct {
 }
 
 // NewCmdEditEnv creates a command object for the "create" command
-func NewCmdEditEnv(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdEditEnv(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &EditEnvOptions{
 		HelmValuesConfig: config.HelmValuesConfig{
 			ExposeController: &config.ExposeController{},
 		},
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -94,7 +96,7 @@ func NewCmdEditEnv(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 
 	cmd.Flags().BoolVarP(&options.NoGitOps, "no-gitops", "x", false, "Disables the use of GitOps on the environment so that promotion is implemented by directly modifying the resources via Helm instead of using a Git repository")
 
-	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
+	commoncmd.AddGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, false)
 	return cmd
 }
@@ -174,7 +176,7 @@ func (o *EditEnvOptions) Run() error {
 	gitURL := env.Spec.Source.URL
 	if gitURL != "" {
 		if gitProvider == nil {
-			p, err := o.gitProviderForURL(gitURL, "user name to create the Git repository")
+			p, err := o.GitProviderForURL(gitURL, "user name to create the Git repository")
 			if err != nil {
 				return err
 			}

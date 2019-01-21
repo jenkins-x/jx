@@ -23,6 +23,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/extensions"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -50,14 +52,14 @@ var (
 )
 
 type GetPluginsOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 	Verifier extensions.PathVerifier
 }
 
 // NewCmdGetPlugins provides a way to list all plugin executables visible to jx
-func NewCmdGetPlugins(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetPlugins(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetPluginsOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,
@@ -97,7 +99,7 @@ func (o *GetPluginsOptions) Run() error {
 }
 
 func (o *GetPluginsOptions) printExtensionPlugins() error {
-	pcgs, managedPluginsEnabled, err := o.getPluginCommandGroups(o.Verifier)
+	pcgs, managedPluginsEnabled, err := o.GetPluginCommandGroups(o.Verifier)
 	if err != nil {
 		return err
 	}

@@ -1,4 +1,4 @@
-package cmd
+package commoncmd
 
 import (
 	"fmt"
@@ -39,7 +39,7 @@ func (o *CommonOptions) isManagedPluginsEnabled() bool {
 	return true
 }
 
-func (o *CommonOptions) getPluginCommandGroups(verifier extensions.PathVerifier) (templates.PluginCommandGroups, bool,
+func (o *CommonOptions) GetPluginCommandGroups(verifier extensions.PathVerifier) (templates.PluginCommandGroups, bool,
 	error) {
 
 	otherCommands := templates.PluginCommandGroup{

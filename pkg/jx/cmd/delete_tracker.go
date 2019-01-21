@@ -3,20 +3,22 @@ package cmd
 import (
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // DeleteTrackerOptions are the flags for delete commands
 type DeleteTrackerOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 }
 
 // NewCmdDeleteTracker creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteTracker(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteTracker(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteTrackerOptions{
-		CommonOptions{
+		commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,

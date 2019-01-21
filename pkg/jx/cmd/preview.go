@@ -17,6 +17,8 @@ import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -87,13 +89,13 @@ type PreviewOptions struct {
 }
 
 // NewCmdPreview creates a command object for the "create" command
-func NewCmdPreview(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdPreview(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &PreviewOptions{
 		HelmValuesConfig: config.HelmValuesConfig{
 			ExposeController: &config.ExposeController{},
 		},
 		PromoteOptions: PromoteOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -111,7 +113,7 @@ func NewCmdPreview(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 			options.Cmd = cmd
 			options.Args = args
 			//Default to batch-mode when running inside the pipeline (but user override wins).
-			if !cmd.Flag(optionBatchMode).Changed {
+			if !cmd.Flag(commoncmd.OptionBatchMode).Changed {
 				options.BatchMode = options.IsInCDPipeline()
 			}
 			err := options.Run()
@@ -121,7 +123,7 @@ func NewCmdPreview(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 	//addCreateAppFlags(cmd, &options.CreateOptions)
 
 	options.addPreviewOptions(cmd)
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, false)
 	options.PromoteOptions.addPromoteOptions(cmd)
 
@@ -453,7 +455,7 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	configFileName := filepath.Join(dir, ExtraValuesFile)
+	configFileName := filepath.Join(dir, commoncmd.ExtraValuesFile)
 	log.Infof("%s", config)
 	err = ioutil.WriteFile(configFileName, []byte(config), 0644)
 	if err != nil {
@@ -485,8 +487,8 @@ func (o *PreviewOptions) Run() error {
 		comment += fmt.Sprintf(" [here](%s) ", url)
 	}
 
-	pipeline := o.getJobName()
-	build := o.getBuildNumber()
+	pipeline := o.GetJobName()
+	build := o.GetBuildNumber()
 
 	if url != "" || o.PullRequestURL != "" {
 		if pipeline != "" && build != "" {
@@ -596,7 +598,7 @@ func (o *PreviewOptions) RunPostPreviewSteps(kubeClient kubernetes.Interface, ns
 			job, err := jobResources.Get(job.Name, metav1.GetOptions{})
 			return job == nil || err != nil, nil
 		}
-		o.retryUntilTrueOrTimeout(time.Minute, time.Second, hasJob)
+		o.RetryUntilTrueOrTimeout(time.Minute, time.Second, hasJob)
 
 		createdJob, err := jobResources.Create(job2)
 		if err != nil {
@@ -641,11 +643,11 @@ func (o *PreviewOptions) waitForJob(kubeClient kubernetes.Interface, job *batchv
 		count += 1
 		if count > 1 {
 			// TODO we could maybe do better - using a prefix on all logs maybe with the job name?
-			o.runCommandVerbose("kubectl", "logs", "-f", "job/"+name, "-n", ns)
+			o.RunCommandVerbose("kubectl", "logs", "-f", "job/"+name, "-n", ns)
 		}
 		return false, nil
 	}
-	err := o.retryUntilTrueOrTimeout(o.PostPreviewJobTimeoutDuration, o.PostPreviewJobPollDuration, fn)
+	err := o.RetryUntilTrueOrTimeout(o.PostPreviewJobTimeoutDuration, o.PostPreviewJobPollDuration, fn)
 	if err != nil {
 		log.Warnf("\nFailed to complete post Preview Job %s in namespace %s: %s\n", name, ns, err)
 	}
@@ -701,7 +703,7 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 				} else {
 					if root != "" {
 						o.Dir = root
-						o.SourceURL, err = o.discoverGitURL(gitConf)
+						o.SourceURL, err = o.DiscoverGitURL(gitConf)
 						if err != nil {
 							log.Warnf("Could not find the remote git source URL:  %s\n", err)
 						} else {

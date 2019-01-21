@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -45,10 +47,10 @@ var (
 `)
 )
 
-func NewCmdStepGitCredentials(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepGitCredentials(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepGitCredentialsOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -90,7 +92,7 @@ func (o *StepGitCredentialsOptions) Run() error {
 	}
 	dir, _ := filepath.Split(outFile)
 	if dir != "" {
-		err := os.MkdirAll(dir, DefaultWritePermissions)
+		err := os.MkdirAll(dir, util.DefaultWritePermissions)
 		if err != nil {
 			return err
 		}
@@ -104,7 +106,7 @@ func (o *StepGitCredentialsOptions) Run() error {
 
 func (o *StepGitCredentialsOptions) createGitCredentialsFile(fileName string, secrets *corev1.SecretList) error {
 	data := o.CreateGitCredentialsFromSecrets(secrets)
-	err := ioutil.WriteFile(fileName, data, DefaultWritePermissions)
+	err := ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 	if err != nil {
 		return fmt.Errorf("Failed to write to %s: %s", fileName, err)
 	}

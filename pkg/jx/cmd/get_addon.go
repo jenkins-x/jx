@@ -8,6 +8,8 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -31,10 +33,10 @@ var (
 )
 
 // NewCmdGetAddon creates the command
-func NewCmdGetAddon(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetAddon(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetAddonOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -84,7 +86,7 @@ func (o *GetAddonOptions) Run() error {
 
 	charts := kube.AddonCharts
 
-	table := o.createTable()
+	table := o.Table()
 	table.AddRow("NAME", "CHART", "ENABLED", "STATUS", "VERSION")
 
 	keys := util.SortedMapKeys(charts)

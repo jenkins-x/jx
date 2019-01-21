@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/workflow"
@@ -35,10 +37,10 @@ var (
 )
 
 // NewCmdGetWorkflow creates the new command for: jx get env
-func NewCmdGetWorkflow(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetWorkflow(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetWorkflowOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -88,7 +90,7 @@ func (o *GetWorkflowOptions) Run() error {
 		return err
 	}
 
-	table := o.createTable()
+	table := o.Table()
 	table.AddRow("WORKFLOW")
 	for _, workflow := range workflows.Items {
 		table.AddRow(workflow.Name)

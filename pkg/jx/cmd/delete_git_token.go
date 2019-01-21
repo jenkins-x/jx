@@ -6,6 +6,8 @@ import (
 
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -28,14 +30,14 @@ var (
 type DeleteGitTokenOptions struct {
 	CreateOptions
 
-	ServerFlags ServerFlags
+	ServerFlags commoncmd.ServerFlags
 }
 
 // NewCmdDeleteGitToken defines the command
-func NewCmdDeleteGitToken(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteGitToken(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteGitTokenOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -57,7 +59,7 @@ func NewCmdDeleteGitToken(f Factory, in terminal.FileReader, out terminal.FileWr
 			CheckErr(err)
 		},
 	}
-	options.ServerFlags.addGitServerFlags(cmd)
+	options.ServerFlags.AddGitServerFlags(cmd)
 	return cmd
 }
 
@@ -73,7 +75,7 @@ func (o *DeleteGitTokenOptions) Run() error {
 	}
 	config := authConfigSvc.Config()
 
-	server, err := o.findGitServer(config, &o.ServerFlags)
+	server, err := o.FindGitServer(config, &o.ServerFlags)
 	if err != nil {
 		return err
 	}

@@ -18,6 +18,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -40,10 +42,10 @@ var (
 
 const extensionsConfigDefaultFile = "jenkins-x-extensions.yaml"
 
-func NewCmdStepPreExtend(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepPreExtend(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepPreExtendOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -115,8 +117,8 @@ func (o *StepPreExtendOptions) Run() error {
 			appName = gitInfo.Name
 		}
 		pipeline := ""
-		build := o.getBuildNumber()
-		pipeline, build = o.getPipelineName(gitInfo, pipeline, build, appName)
+		build := o.GetBuildNumber()
+		pipeline, build = o.GetPipelineName(gitInfo, pipeline, build, appName)
 		if pipeline != "" && build != "" {
 			name := kube.ToValidName(pipeline + "-" + build)
 			key := &kube.PromoteStepActivityKey{
@@ -174,7 +176,11 @@ func (o *StepPreExtendOptions) walk(extension *jenkinsv1.ExtensionSpec, lookup m
 		}
 	} else {
 		if extension.IsPost() {
-			ext, envVarsFormatted, err := extensions.ToExecutable(extension, parameters, o.devNamespace, exts)
+			_, devNamespace, err := o.KubeClientAndDevNamespace()
+			if err != nil {
+				return result, err
+			}
+			ext, envVarsFormatted, err := extensions.ToExecutable(extension, parameters, devNamespace, exts)
 			if err != nil {
 				return result, err
 			}

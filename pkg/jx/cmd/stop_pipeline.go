@@ -10,6 +10,8 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -40,10 +42,10 @@ var (
 )
 
 // NewCmdStopPipeline creates the command
-func NewCmdStopPipeline(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStopPipeline(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StopPipelineOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -73,7 +75,7 @@ func NewCmdStopPipeline(f Factory, in terminal.FileReader, out terminal.FileWrit
 
 // Run implements this command
 func (o *StopPipelineOptions) Run() error {
-	jobMap, err := o.getJobMap(o.Filter)
+	jobMap, err := o.GetJobMap(o.Filter)
 	if err != nil {
 		return err
 	}

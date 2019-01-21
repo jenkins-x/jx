@@ -10,6 +10,8 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
@@ -34,10 +36,10 @@ var (
 )
 
 // NewCmdGetChat creates the command
-func NewCmdGetChat(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetChat(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetChatOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -65,7 +67,7 @@ func NewCmdGetChat(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 
 // Run implements this command
 func (o *GetChatOptions) Run() error {
-	authConfigSvc, err := o.createChatAuthConfigService()
+	authConfigSvc, err := o.ChatAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -77,7 +79,7 @@ func (o *GetChatOptions) Run() error {
 	}
 	filterKind := o.Kind
 
-	table := o.createTable()
+	table := o.Table()
 	if filterKind == "" {
 		table.AddRow("Name", "Kind", "URL")
 	} else {

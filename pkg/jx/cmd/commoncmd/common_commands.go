@@ -1,4 +1,4 @@
-package cmd
+package commoncmd
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 
 // TODO Refactor to use util.Run or util.RunWithoutRetry?
 
-func (o *CommonOptions) runCommandFromDir(dir, name string, args ...string) error {
+func (o *CommonOptions) RunCommandFromDir(dir, name string, args ...string) error {
 	e := exec.Command(name, args...)
 	if dir != "" {
 		e.Dir = dir
@@ -43,7 +43,7 @@ func (o *CommonOptions) RunCommand(name string, args ...string) error {
 	return err
 }
 
-func (o *CommonOptions) runCommandVerbose(name string, args ...string) error {
+func (o *CommonOptions) RunCommandVerbose(name string, args ...string) error {
 	e := exec.Command(name, args...)
 	e.Stdout = o.Out
 	e.Stderr = o.Err
@@ -55,7 +55,7 @@ func (o *CommonOptions) runCommandVerbose(name string, args ...string) error {
 	return err
 }
 
-func (o *CommonOptions) runCommandVerboseAt(dir string, name string, args ...string) error {
+func (o *CommonOptions) RunCommandVerboseAt(dir string, name string, args ...string) error {
 	e := exec.Command(name, args...)
 	if dir != "" {
 		e.Dir = dir
@@ -70,7 +70,7 @@ func (o *CommonOptions) runCommandVerboseAt(dir string, name string, args ...str
 	return err
 }
 
-func (o *CommonOptions) runCommandQuietly(name string, args ...string) error {
+func (o *CommonOptions) RunCommandQuietly(name string, args ...string) error {
 	e := exec.Command(name, args...)
 	e.Stdout = ioutil.Discard
 	e.Stderr = ioutil.Discard
@@ -78,7 +78,7 @@ func (o *CommonOptions) runCommandQuietly(name string, args ...string) error {
 	return e.Run()
 }
 
-func (o *CommonOptions) runCommandInteractive(interactive bool, name string, args ...string) error {
+func (o *CommonOptions) RunCommandInteractive(interactive bool, name string, args ...string) error {
 	e := exec.Command(name, args...)
 	e.Stdout = o.Out
 	e.Stderr = o.Err
@@ -93,7 +93,7 @@ func (o *CommonOptions) runCommandInteractive(interactive bool, name string, arg
 	return err
 }
 
-func (o *CommonOptions) runCommandInteractiveInDir(interactive bool, dir string, name string, args ...string) error {
+func (o *CommonOptions) RunCommandInteractiveInDir(interactive bool, dir string, name string, args ...string) error {
 	e := exec.Command(name, args...)
 	e.Stdout = o.Out
 	e.Stderr = o.Err
@@ -111,8 +111,8 @@ func (o *CommonOptions) runCommandInteractiveInDir(interactive bool, dir string,
 	return err
 }
 
-// getCommandOutput evaluates the given command and returns the trimmed output
-func (o *CommonOptions) getCommandOutput(dir string, name string, args ...string) (string, error) {
+// GetCommandOutput evaluates the given command and returns the trimmed output
+func (o *CommonOptions) GetCommandOutput(dir string, name string, args ...string) (string, error) {
 	os.Setenv("PATH", util.PathWithBinary())
 	e := exec.Command(name, args...)
 	if dir != "" {

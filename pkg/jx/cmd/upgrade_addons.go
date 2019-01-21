@@ -8,6 +8,8 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/addon"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -41,10 +43,10 @@ type UpgradeAddonsOptions struct {
 }
 
 // NewCmdUpgradeAddons defines the command
-func NewCmdUpgradeAddons(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeAddons(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &UpgradeAddonsOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -69,7 +71,7 @@ func NewCmdUpgradeAddons(f Factory, in terminal.FileReader, out terminal.FileWri
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The Namespace to promote to")
 	cmd.Flags().StringVarP(&options.Set, "set", "s", "", "The Helm parameters to pass in while upgrading")
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	options.InstallFlags.addCloudEnvOptions(cmd)
 
 	cmd.AddCommand(NewCmdUpgradeAddonProw(f, in, out, errOut))
@@ -97,12 +99,8 @@ func (o *UpgradeAddonsOptions) Run() error {
 		}
 	}
 
-	client, err := o.KubeClient()
-	if err != nil {
-		return err
-	}
-
-	o.devNamespace, _, err = kube.GetDevNamespace(client, ns)
+	o.SetCurrentNamespace(ns)
+	_, _, err = o.KubeClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
@@ -185,15 +183,15 @@ func (o *UpgradeAddonsOptions) Run() error {
 }
 
 func (o *UpgradeAddonsOptions) restoreConfigs(config *v1.ConfigMap, plugins *v1.ConfigMap) error {
-	client, err := o.KubeClient()
+	client, devNamespace, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
 	var err1 error
 	if config != nil {
-		_, err = client.CoreV1().ConfigMaps(o.devNamespace).Get("config", metav1.GetOptions{})
+		_, err = client.CoreV1().ConfigMaps(devNamespace).Get("config", metav1.GetOptions{})
 		if err != nil {
-			_, err = client.CoreV1().ConfigMaps(o.devNamespace).Create(config)
+			_, err = client.CoreV1().ConfigMaps(devNamespace).Create(config)
 			if err != nil {
 				b, _ := yaml.Marshal(config)
 				err1 = fmt.Errorf("error restoring config %s\n", string(b))
@@ -201,9 +199,9 @@ func (o *UpgradeAddonsOptions) restoreConfigs(config *v1.ConfigMap, plugins *v1.
 		}
 	}
 	if plugins != nil {
-		_, err = client.CoreV1().ConfigMaps(o.devNamespace).Get("plugins", metav1.GetOptions{})
+		_, err = client.CoreV1().ConfigMaps(devNamespace).Get("plugins", metav1.GetOptions{})
 		if err != nil {
-			_, err = client.CoreV1().ConfigMaps(o.devNamespace).Create(plugins)
+			_, err = client.CoreV1().ConfigMaps(devNamespace).Create(plugins)
 			if err != nil {
 				b, _ := yaml.Marshal(plugins)
 				err = fmt.Errorf("%v/nerror restoring plugins %s\n", err1, string(b))
@@ -214,12 +212,12 @@ func (o *UpgradeAddonsOptions) restoreConfigs(config *v1.ConfigMap, plugins *v1.
 }
 
 func (o *UpgradeAddonsOptions) backupConfigs() (*v1.ConfigMap, *v1.ConfigMap, error) {
-	client, err := o.KubeClient()
+	client, devNamespace, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return nil, nil, err
 	}
-	config, _ := client.CoreV1().ConfigMaps(o.devNamespace).Get("config", metav1.GetOptions{})
-	plugins, _ := client.CoreV1().ConfigMaps(o.devNamespace).Get("plugins", metav1.GetOptions{})
+	config, _ := client.CoreV1().ConfigMaps(devNamespace).Get("config", metav1.GetOptions{})
+	plugins, _ := client.CoreV1().ConfigMaps(devNamespace).Get("plugins", metav1.GetOptions{})
 	config = config.DeepCopy()
 	config.ResourceVersion = ""
 	plugins = plugins.DeepCopy()

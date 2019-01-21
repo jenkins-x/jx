@@ -13,6 +13,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 
 	"github.com/spf13/cobra"
@@ -45,15 +47,15 @@ var (
 
 // DeleteExtensionOptions are the flags for delete commands
 type DeleteExtensionOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 	All bool
 }
 
 // NewCmdDeleteExtension creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteExtension(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteExtension(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteExtensionOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,
@@ -76,7 +78,7 @@ func NewCmdDeleteExtension(f Factory, in terminal.FileReader, out terminal.FileW
 		SuggestFor: []string{"remove", "rm"},
 	}
 	cmd.Flags().BoolVarP(&options.All, "all", "", false, "Remove all extensions")
-	cmd.Flags().BoolVarP(&options.BatchMode, optionBatchMode, "b", false, "Run in batch mode")
+	cmd.Flags().BoolVarP(&options.BatchMode, commoncmd.OptionBatchMode, "b", false, "Run in batch mode")
 	return cmd
 }
 

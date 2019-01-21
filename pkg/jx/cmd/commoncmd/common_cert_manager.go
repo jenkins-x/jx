@@ -1,9 +1,10 @@
-package cmd
+package commoncmd
 
 import (
 	"fmt"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/certmanager"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -11,7 +12,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (o *CommonOptions) ensureCertmanager() error {
+const (
+	CertManagerDeployment = "cert-manager"
+	CertManagerNamespace  = "cert-manager"
+	Exposecontroller      = "exposecontroller"
+)
+
+func (o *CommonOptions) EnsureCertmanager() error {
 	log.Infof("Looking for %s deployment in namespace %s...\n", CertManagerDeployment, CertManagerNamespace)
 	client, err := o.KubeClient()
 	if err != nil {
@@ -23,7 +30,7 @@ func (o *CommonOptions) ensureCertmanager() error {
 		if ok {
 
 			values := []string{"rbac.create=true", "ingressShim.extraArgs='{--default-issuer-name=letsencrypt-staging,--default-issuer-kind=Issuer}'"}
-			err = o.installChartOptions(helm.InstallChartOptions{
+			err = o.InstallChartOptions(helm.InstallChartOptions{
 				ReleaseName: "cert-manager",
 				Chart:       "stable/cert-manager",
 				Version:     "",
@@ -44,4 +51,8 @@ func (o *CommonOptions) ensureCertmanager() error {
 		}
 	}
 	return err
+}
+
+func (o *CommonOptions) CopyCertmanagerResources(targetNamespace string, ic kube.IngressConfig) error {
+	return certmanager.CopyCertmanagerResources(targetNamespace, ic, o.kubeClient)
 }

@@ -18,6 +18,8 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -63,10 +65,10 @@ var (
 )
 
 // NewCmdStartPipeline creates the command
-func NewCmdStartPipeline(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStartPipeline(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StartPipelineOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 
@@ -106,7 +108,7 @@ func (o *StartPipelineOptions) Run() error {
 		return err
 	}
 
-	isProw, err := o.isProw()
+	isProw, err := o.IsProw()
 	if err != nil {
 		return err
 	}
@@ -114,7 +116,7 @@ func (o *StartPipelineOptions) Run() error {
 	names := []string{}
 	o.ProwOptions = prow.Options{
 		KubeClient: kubeClient,
-		NS:         o.currentNamespace,
+		NS:         o.CurrentNamespace(),
 	}
 	if len(args) == 0 {
 		if isProw {
@@ -124,7 +126,7 @@ func (o *StartPipelineOptions) Run() error {
 			}
 			names = util.StringsContaining(names, o.Filter)
 		} else {
-			jobMap, err := o.getJobMap(o.Filter)
+			jobMap, err := o.GetJobMap(o.Filter)
 			if err != nil {
 				return err
 			}
@@ -244,7 +246,7 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 	if err != nil {
 		return err
 	}
-	_, err = prow.CreateProwJob(client, o.currentNamespace, p)
+	_, err = prow.CreateProwJob(client, o.CurrentNamespace(), p)
 	return err
 }
 
@@ -278,7 +280,7 @@ func (o *StartPipelineOptions) startJenkinsJob(name string) error {
 			log.Infof("Started build of %s at %s\n", util.ColorInfo(name), util.ColorInfo(last.Url))
 			log.Infof("%s %s\n", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
 			if o.Tail {
-				return o.tailBuild(name, &last)
+				return o.TailBuild(name, &last)
 			}
 			return nil
 		}

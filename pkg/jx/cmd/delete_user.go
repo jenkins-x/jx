@@ -7,6 +7,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/users"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -20,7 +22,7 @@ import (
 
 // DeleteUserOptions are the flags for delete commands
 type DeleteUserOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	SelectAll    bool
 	SelectFilter string
@@ -40,9 +42,9 @@ var (
 
 // NewCmdDeleteUser creates a command object
 // retrieves one or more resources from a server.
-func NewCmdDeleteUser(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteUser(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteUserOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 
@@ -65,7 +67,7 @@ func NewCmdDeleteUser(f Factory, in terminal.FileReader, out terminal.FileWriter
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "a", false, "Should we default to selecting all the matched users for deletion")
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Fitlers the list of users you can pick from")
 	cmd.Flags().BoolVarP(&options.Confirm, "yes", "y", false, "Confirms we should uninstall this installation")
@@ -75,7 +77,7 @@ func NewCmdDeleteUser(f Factory, in terminal.FileReader, out terminal.FileWriter
 // Run implements this command
 func (o *DeleteUserOptions) Run() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
-	err := o.registerUserCRD()
+	err := o.RegisterUserCRD()
 	if err != nil {
 		return err
 	}

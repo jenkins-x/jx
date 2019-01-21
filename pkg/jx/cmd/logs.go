@@ -1,15 +1,13 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"io"
-	"os"
-	"os/exec"
-	"strings"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/builds"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -24,7 +22,7 @@ import (
 )
 
 type LogsOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	Container       string
 	Namespace       string
@@ -53,9 +51,9 @@ var (
 `)
 )
 
-func NewCmdLogs(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdLogs(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &LogsOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 
@@ -172,7 +170,7 @@ func (o *LogsOptions) Run() error {
 				return fmt.Errorf("No pod found for namespace %s with name %s", ns, name)
 			}
 		}
-		err = o.tailLogs(ns, pod, o.Container)
+		err = o.TailLogs(ns, pod, o.Container)
 		if err != nil {
 			return nil
 		}
@@ -187,38 +185,8 @@ func parseSelector(selectorText string) (map[string]string, error) {
 	return selector.MatchLabels, nil
 }
 
-func (o *CommonOptions) tailLogs(ns string, pod string, containerName string) error {
-	args := []string{"logs", "-n", ns, "-f"}
-	if containerName != "" {
-		args = append(args, "-c", containerName)
-	}
-	args = append(args, pod)
-	name := "kubectl"
-	e := exec.Command(name, args...)
-	e.Stderr = o.Err
-	stdout, _ := e.StdoutPipe()
-
-	os.Setenv("PATH", util.PathWithBinary())
-	err := e.Start()
-	if err != nil {
-		log.Errorf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
-	}
-
-	scanner := bufio.NewScanner(stdout)
-	scanner.Split(bufio.ScanLines)
-	for scanner.Scan() {
-		m := scanner.Text()
-		fmt.Fprintln(o.Out, m)
-		if m == "Finished: FAILURE" {
-			os.Exit(1)
-		}
-	}
-	e.Wait()
-	return err
-}
-
 // waitForReadyPodForDeployment waits for a ready pod in a Deployment in the given namespace with the given name
-func (o *CommonOptions) waitForReadyPodForDeployment(c kubernetes.Interface, ns string, name string, names []string, readyOnly bool) (string, error) {
+func (o *LogsOptions) waitForReadyPodForDeployment(c kubernetes.Interface, ns string, name string, names []string, readyOnly bool) (string, error) {
 	deployment, err := c.AppsV1beta1().Deployments(ns).Get(name, metav1.GetOptions{})
 	if err != nil || deployment == nil {
 		return "", util.InvalidArg(name, names)
@@ -234,7 +202,7 @@ func (o *CommonOptions) waitForReadyPodForDeployment(c kubernetes.Interface, ns 
 	return o.waitForReadyPodForSelectorLabels(c, ns, labels, readyOnly)
 }
 
-func (o *CommonOptions) waitForReadyPodForSelectorLabels(c kubernetes.Interface, ns string, labels map[string]string, readyOnly bool) (string, error) {
+func (o *LogsOptions) waitForReadyPodForSelectorLabels(c kubernetes.Interface, ns string, labels map[string]string, readyOnly bool) (string, error) {
 	selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: labels})
 	if err != nil {
 		return "", err
@@ -242,7 +210,7 @@ func (o *CommonOptions) waitForReadyPodForSelectorLabels(c kubernetes.Interface,
 	return o.waitForReadyPodForSelector(c, ns, selector, readyOnly)
 }
 
-func (o *CommonOptions) waitForReadyKnativeBuildPod(c kubernetes.Interface, ns string, readyOnly bool) (string, error) {
+func (o *LogsOptions) waitForReadyKnativeBuildPod(c kubernetes.Interface, ns string, readyOnly bool) (string, error) {
 	log.Warnf("Waiting for a running Knative build pod in namespace %s\n", ns)
 	lastPod := ""
 	for {
@@ -283,7 +251,7 @@ func (o *CommonOptions) waitForReadyKnativeBuildPod(c kubernetes.Interface, ns s
 					loggedInitContainerIdx = idx
 					containerName := ic.Name
 					log.Warnf("Init container on pod: %s is: %s\n", name, containerName)
-					err = o.tailLogs(ns, name, containerName)
+					err = o.TailLogs(ns, name, containerName)
 					if err != nil {
 						break
 					}
@@ -295,7 +263,7 @@ func (o *CommonOptions) waitForReadyKnativeBuildPod(c kubernetes.Interface, ns s
 	}
 }
 
-func (o *CommonOptions) waitForReadyPodForSelector(c kubernetes.Interface, ns string, selector labels.Selector, readyOnly bool) (string, error) {
+func (o *LogsOptions) waitForReadyPodForSelector(c kubernetes.Interface, ns string, selector labels.Selector, readyOnly bool) (string, error) {
 	log.Warnf("Waiting for a running pod in namespace %s with labels %v\n", ns, selector.String())
 	lastPod := ""
 	for {
@@ -338,7 +306,7 @@ func (o *CommonOptions) waitForReadyPodForSelector(c kubernetes.Interface, ns st
 					loggedInitContainerIdx = idx
 					containerName := ic.Name
 					log.Warnf("Init container on pod: %s is: %s\n", name, containerName)
-					err = o.tailLogs(ns, name, containerName)
+					err = o.TailLogs(ns, name, containerName)
 					if err != nil {
 						break
 					}

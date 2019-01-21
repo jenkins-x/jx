@@ -12,6 +12,8 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -51,8 +53,8 @@ type CreateAddonSSOOptions struct {
 }
 
 // NewCmdCreateAddonSSO creates a command object for the "create addon sso" command
-func NewCmdCreateAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	commonOptions := CommonOptions{
+func NewCmdCreateAddonSSO(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+	commonOptions := commoncmd.CommonOptions{
 		Factory: f,
 		In:      in,
 		Out:     out,
@@ -84,7 +86,7 @@ func NewCmdCreateAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWr
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	cmd.Flags().StringVarP(&options.DexVersion, "dex-version", "", defaultDexVersion, "The dex chart version to install)")
 	options.addFlags(cmd, defaultSSONamesapce, defaultSSOReleaseNamePrefix, defaultOperatorVersion)
 	options.UpgradeIngressOptions.addFlags(cmd)
@@ -97,19 +99,19 @@ func (o *CreateAddonSSOOptions) Run() error {
 	if err != nil {
 		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
 	}
-	o.devNamespace, _, err = kube.GetDevNamespace(client, o.currentNamespace)
+	devNamespace, _, err := kube.GetDevNamespace(client, o.CurrentNamespace())
 	if err != nil {
 		return errors.Wrap(err, "retrieving the development namespace")
 	}
 
-	err = o.ensureCertmanager()
+	err = o.EnsureCertmanager()
 	if err != nil {
 		return errors.Wrap(err, "ensuring cert-manager is installed")
 	}
 
 	log.Infof("Installing %s...\n", util.ColorInfo("dex identity provider"))
 
-	ingressConfig, err := kube.GetIngressConfig(client, o.devNamespace)
+	ingressConfig, err := kube.GetIngressConfig(client, devNamespace)
 	if err != nil {
 		return errors.Wrap(err, "retrieving existing ingress configuration")
 	}
@@ -138,12 +140,12 @@ func (o *CreateAddonSSOOptions) Run() error {
 		return err
 	}
 
-	err = o.ensureHelm()
+	err = o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "checking if helm is installed")
 	}
 
-	err = o.addHelmRepoIfMissing(repoURL, repoName, "", "")
+	err = o.AddHelmRepoIfMissing(repoURL, repoName, "", "")
 	if err != nil {
 		return errors.Wrap(err, "adding dex chart helm repository")
 	}
@@ -231,12 +233,12 @@ func (o *CreateAddonSSOOptions) installDex(domain string, clientID string, clien
 		"connectors.github.config.clientSecret=" + clientSecret,
 		fmt.Sprintf("connectors.github.config.orgs={%s}", strings.Join(authorizedOrgs, ",")),
 		"domain=" + domain,
-		"certs.grpc.ca.namespace=" + CertManagerNamespace,
+		"certs.grpc.ca.namespace=" + commoncmd.CertManagerNamespace,
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 	releaseName := o.ReleaseName + "-" + dexServiceName
-	return o.installChart(releaseName, kube.ChartSsoDex, o.DexVersion, o.Namespace, true, values, nil, "")
+	return o.InstallChart(releaseName, kube.ChartSsoDex, o.DexVersion, o.Namespace, true, values, nil, "")
 }
 
 func (o *CreateAddonSSOOptions) installSSOOperator(dexGrpcService string) error {
@@ -246,7 +248,7 @@ func (o *CreateAddonSSOOptions) installSSOOperator(dexGrpcService string) error 
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 	releaseName := o.ReleaseName + "-" + operatorServiceName
-	return o.installChart(releaseName, kube.ChartSsoOperator, o.Version, o.Namespace, true, values, nil, "")
+	return o.InstallChart(releaseName, kube.ChartSsoOperator, o.Version, o.Namespace, true, values, nil, "")
 }
 
 func (o *CreateAddonSSOOptions) exposeSSO() error {

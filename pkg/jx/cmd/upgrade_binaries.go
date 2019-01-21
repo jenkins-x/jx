@@ -4,6 +4,8 @@ import (
 	"io"
 	"io/ioutil"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -25,10 +27,10 @@ type UpgradeBinariesOptions struct {
 	CreateOptions
 }
 
-func NewCmdUpgradeBinaries(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeBinaries(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &UpgradeBinariesOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -65,12 +67,12 @@ func (o *UpgradeBinariesOptions) Run() error {
 
 	for _, binary := range binaries {
 		if binary.Name() == "eksctl" {
-			err = o.installEksCtl(true)
+			err = o.InstallEksCtl(true)
 			if err != nil {
 				return err
 			}
 		} else if binary.Name() == "heptio-authenticator-aws" {
-			err = o.installHeptioAuthenticatorAws(true)
+			err = o.InstallHeptioAuthenticatorAws(true)
 			if err != nil {
 				return err
 			}

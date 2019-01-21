@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -41,6 +43,10 @@ var (
 		[1] zsh completions are only supported in versions of zsh >= 5.2`)
 )
 
+type CompletionOptions struct {
+	commoncmd.CommonOptions
+}
+
 var (
 	completion_shells = map[string]func(out io.Writer, cmd *cobra.Command) error{
 		"bash": runCompletionBash,
@@ -48,12 +54,14 @@ var (
 	}
 )
 
-func NewCmdCompletion(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := &CommonOptions{
-		Factory: f,
-		In:      in,
-		Out:     out,
-		Err:     errOut,
+func NewCmdCompletion(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+	options := &CompletionOptions{
+		CommonOptions: commoncmd.CommonOptions{
+			Factory: f,
+			In:      in,
+			Out:     out,
+			Err:     errOut,
+		},
 	}
 
 	shells := []string{}
@@ -77,7 +85,7 @@ func NewCmdCompletion(f Factory, in terminal.FileReader, out terminal.FileWriter
 	return cmd
 }
 
-func (o *CommonOptions) Run() error {
+func (o *CompletionOptions) Run() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	shells := []string{}
 	for s := range completion_shells {

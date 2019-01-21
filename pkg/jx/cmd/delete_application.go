@@ -18,6 +18,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -48,7 +50,7 @@ var (
 
 // DeleteApplicationOptions are the flags for this delete commands
 type DeleteApplicationOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	SelectAll           bool
 	SelectFilter        string
@@ -63,13 +65,13 @@ type DeleteApplicationOptions struct {
 	PullRequestPollDuration *time.Duration
 
 	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback ConfigureGitFolderFn
+	ConfigureGitCallback commoncmd.ConfigureGitFolderFn
 }
 
 // NewCmdDeleteApplication creates a command object for this command
-func NewCmdDeleteApplication(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteApplication(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteApplicationOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,
@@ -109,12 +111,16 @@ func (o *DeleteApplicationOptions) Run() error {
 		return errors.Wrap(err, "setting up context")
 	}
 
-	isProw, err := o.isProw()
+	isProw, err := o.IsProw()
 	if err != nil {
 		return errors.Wrap(err, "getting prow config")
 	}
 
-	repoService := kube.NewSourceRepositoryService(o.jxClient, o.currentNamespace)
+	client, ns, err := o.JXClient()
+	if err != nil {
+		return errors.Wrap(err, "getting jx client")
+	}
+	repoService := kube.NewSourceRepositoryService(client, ns)
 	var deletedApplications []string
 	if isProw {
 		deletedApplications, err = o.deleteProwApplication(repoService)
@@ -286,7 +292,7 @@ func (o *DeleteApplicationOptions) deleteApplicationFromEnvironment(env *v1.Envi
 		requirements.RemoveApplication(applicationName)
 		return nil
 	}
-	info, err := o.createEnvironmentPullRequest(env, modifyChartFn, &branchName, &title, &message, nil,
+	info, err := o.CreateEnvironmentPullRequest(env, modifyChartFn, &branchName, &title, &message, nil,
 		o.ConfigureGitCallback)
 	if err != nil {
 		return err
@@ -350,7 +356,7 @@ func (o *DeleteApplicationOptions) waitForGitOpsPullRequest(env *v1.Environment,
 
 func (o *DeleteApplicationOptions) init() error {
 	var err error
-	o.jxClient, o.currentNamespace, err = o.JXClientAndDevNamespace()
+	_, _, err = o.JXClientAndDevNamespace()
 	if err != nil {
 		return errors.Wrap(err, "getting jx client")
 	}

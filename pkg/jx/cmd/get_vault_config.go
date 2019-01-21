@@ -5,6 +5,8 @@ import (
 	"io"
 	"runtime"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -38,10 +40,10 @@ var (
 )
 
 // NewCmdGetVaultConfig creates a new command for 'jx get secrets'
-func NewCmdGetVaultConfig(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetVaultConfig(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetVaultConfigOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -79,7 +81,7 @@ func (o *GetVaultConfigOptions) Run() error {
 	}
 
 	// Install the vault CLI for the user
-	o.installVaultCli()
+	o.InstallVaultCli()
 
 	url, token, err := vaultClient.Config()
 	// Echo the client config out to the command line to be piped into bash

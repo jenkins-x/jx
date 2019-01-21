@@ -10,6 +10,8 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
@@ -34,10 +36,10 @@ type CreateTeamOptions struct {
 }
 
 // NewCmdCreateTeam creates a command object for the "create" command
-func NewCmdCreateTeam(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateTeam(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateTeamOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -63,7 +65,7 @@ func NewCmdCreateTeam(f Factory, in terminal.FileReader, out terminal.FileWriter
 	cmd.Flags().StringVarP(&options.Name, optionName, "n", "", "The name of the new Team. Should be all lower case and no special characters other than '-'")
 	cmd.Flags().StringArrayVarP(&options.Members, "member", "m", []string{}, "The usernames of the members to add to the Team")
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	return cmd
 }
 
@@ -73,7 +75,7 @@ func (o *CreateTeamOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	err = o.registerTeamCRD()
+	err = o.RegisterTeamCRD()
 	if err != nil {
 		return err
 	}

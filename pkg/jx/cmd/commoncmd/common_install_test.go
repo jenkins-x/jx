@@ -1,12 +1,13 @@
-package cmd
+package commoncmd
 
 import (
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestInstallEksctl(t *testing.T) {
@@ -19,7 +20,7 @@ func TestInstallEksctl(t *testing.T) {
 	tempDir, err := ioutil.TempDir("", "common_install_test")
 	err = os.Setenv("JX_HOME", tempDir)
 	assert.NoError(t, err)
-	err = (&CommonOptions{}).installEksCtl(false)
+	err = (&CommonOptions{}).InstallEksCtl(false)
 	assert.NoError(t, err)
 	eksctl := filepath.Join(os.Getenv("JX_HOME"), "/bin/eksctl")
 	if runtime.GOOS == "windows" {

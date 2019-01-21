@@ -14,6 +14,8 @@ import (
 
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -51,11 +53,11 @@ type CreateAddonPipelineEventsOptions struct {
 }
 
 // NewCmdCreateAddonPipelineEvents creates a command object for the "create" command
-func NewCmdCreateAddonPipelineEvents(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonPipelineEvents(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonPipelineEventsOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 
@@ -80,7 +82,7 @@ func NewCmdCreateAddonPipelineEvents(f Factory, in terminal.FileReader, out term
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	options.addFlags(cmd, defaultPENamespace, defaultPEReleaseName, defaultPEVersion)
 
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "Password to access pipeline-events services such as Kibana and Elasticsearch.  Defaults to default Jenkins X admin password.")
@@ -94,7 +96,7 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 		return util.MissingOption(optionRelease)
 	}
 
-	err := o.ensureHelm()
+	err := o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that helm is present")
 	}
@@ -103,7 +105,7 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 		return err
 	}
 
-	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
+	devNamespace, _, err := kube.GetDevNamespace(client, o.CurrentNamespace())
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
@@ -111,7 +113,7 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 	log.Infof("found dev namespace %s\n", devNamespace)
 
 	setValues := strings.Split(o.SetValues, ",")
-	err = o.installChart(o.ReleaseName, kube.ChartPipelineEvent, o.Version, o.Namespace, true, setValues, nil, "")
+	err = o.InstallChart(o.ReleaseName, kube.ChartPipelineEvent, o.Version, o.Namespace, true, setValues, nil, "")
 	if err != nil {
 		return fmt.Errorf("elasticsearch deployment failed: %v", err)
 	}
@@ -142,13 +144,13 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 	}
 
 	if o.Password == "" {
-		o.Password, err = o.getDefaultAdminPassword(devNamespace)
+		o.Password, err = o.GetDefaultAdminPassword(devNamespace)
 		if err != nil {
 			return err
 		}
 	}
 	// create the ingress rule
-	err = o.expose(devNamespace, o.Namespace, o.Password)
+	err = o.Expose(devNamespace, o.Namespace, o.Password)
 	if err != nil {
 		return err
 	}
@@ -169,7 +171,7 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 	tokenOptions := CreateTokenAddonOptions{
 		Password: o.Password,
 		Username: "admin",
-		ServerFlags: ServerFlags{
+		ServerFlags: commoncmd.ServerFlags{
 			ServerURL:  esIng,
 			ServerName: esDeploymentName,
 		},
@@ -183,10 +185,10 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 		return fmt.Errorf("failed to create addonAuth.yaml error: %v", err)
 	}
 
-	_, err = client.CoreV1().Services(o.currentNamespace).Get(esServiceName, meta_v1.GetOptions{})
+	_, err = client.CoreV1().Services(o.CurrentNamespace()).Get(esServiceName, meta_v1.GetOptions{})
 	if err != nil {
 		// create a services link
-		err = services.CreateServiceLink(client, o.currentNamespace, o.Namespace, esServiceName, esIng)
+		err = services.CreateServiceLink(client, o.CurrentNamespace(), o.Namespace, esServiceName, esIng)
 		if err != nil {
 			return fmt.Errorf("failed creating a service link for %s in target namespace %s", esServiceName, o.Namespace)
 		}

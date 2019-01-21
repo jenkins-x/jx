@@ -1,4 +1,4 @@
-package cmd
+package commoncmd
 
 import (
 	"fmt"
@@ -23,13 +23,13 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 	address := externalIP
 	if address == "" {
 		if provider == MINIKUBE {
-			ip, err := o.getCommandOutput("", "minikube", "ip")
+			ip, err := o.GetCommandOutput("", "minikube", "ip")
 			if err != nil {
 				return "", err
 			}
 			address = ip
 		} else if provider == MINISHIFT {
-			ip, err := o.getCommandOutput("", "minishift", "ip")
+			ip, err := o.GetCommandOutput("", "minishift", "ip")
 			if err != nil {
 				return "", err
 			}
@@ -130,7 +130,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 					}
 					return fmt.Errorf("Address cannot be resolved yet %s", address)
 				}
-				o.retryQuiet(5*6, time.Second*10, f)
+				o.RetryQuiet(5*6, time.Second*10, f)
 			}
 			if addressIP == "" {
 				addNip = false

@@ -2,6 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
+	"sort"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -9,10 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sort"
 )
 
 // StepCredentialOptions contains the command line arguments for this command
@@ -50,10 +53,10 @@ var (
 )
 
 // NewCmdStepCredential creates the command
-func NewCmdStepCredential(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepCredential(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepCredentialOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -75,7 +78,7 @@ func NewCmdStepCredential(f Factory, in terminal.FileReader, out terminal.FileWr
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace to look for a Secret")
 	cmd.Flags().StringVarP(&options.Secret, "name", "s", "", "the name of the Secret")
 	cmd.Flags().StringVarP(&options.Key, "key", "k", "", "the key in the Secret to output")

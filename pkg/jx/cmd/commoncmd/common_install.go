@@ -1,4 +1,4 @@
-package cmd
+package commoncmd
 
 import (
 	"bytes"
@@ -14,6 +14,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/jenkins-x/jx/pkg/binaries"
@@ -35,6 +36,21 @@ import (
 	logger "github.com/sirupsen/logrus"
 	"gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+const (
+	stableKubeCtlVersionURL = "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
+
+	DefaultInstallTimeout  = "6000"
+	AdminSecretsFile       = "adminSecrets.yaml"
+	ExtraValuesFile        = "extraValues.yaml"
+	JXInstallConfig        = "jx-install-config"
+	CloudEnvValuesFile     = "myvalues.yaml"
+	CloudEnvSecretsFile    = "secrets.yaml"
+	CloudEnvSopsConfigFile = ".sops.yaml"
+
+	ServerlessJenkins   = "Serverless Jenkins"
+	StaticMasterJenkins = "Static Master Jenkins"
 )
 
 var (
@@ -71,7 +87,7 @@ type Prow struct {
 	OAUTHToken  string
 }
 
-func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
+func (o *CommonOptions) DoInstallMissingDependencies(install []string) error {
 	// install package managers first
 	for _, i := range install {
 		if i == "brew" {
@@ -108,7 +124,7 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 		case "kvm2":
 			err = o.installKvm2()
 		case "ksync":
-			_, err = o.installKSync()
+			_, err = o.InstallKSync()
 		case "minikube":
 			err = o.installMinikube()
 		case "minishift":
@@ -128,9 +144,9 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 		case "aws":
 			err = o.installAws()
 		case "eksctl":
-			err = o.installEksCtl(false)
+			err = o.InstallEksCtl(false)
 		case "heptio-authenticator-aws":
-			err = o.installHeptioAuthenticatorAws(false)
+			err = o.InstallHeptioAuthenticatorAws(false)
 		case "kustomize":
 			err = o.installKustomize()
 		default:
@@ -144,8 +160,8 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 }
 
 // appends the binary to the deps array if it cannot be found on the $PATH
-func binaryShouldBeInstalled(d string) string {
-	_, shouldInstall, err := shouldInstallBinary(d)
+func BinaryShouldBeInstalled(d string) string {
+	_, shouldInstall, err := ShouldInstallBinary(d)
 	if err != nil {
 		log.Warnf("Error detecting if binary should be installed: %s", err.Error())
 		return ""
@@ -165,7 +181,7 @@ func (o *CommonOptions) installBrew() error {
 	return o.RunCommand("sh", "-c", "/usr/bin/ruby -e \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\"")
 }
 
-func shouldInstallBinary(name string) (fileName string, download bool, err error) {
+func ShouldInstallBinary(name string) (fileName string, download bool, err error) {
 	fileName = binaries.BinaryWithExtension(name)
 	download = false
 	pgmPath, err := exec.LookPath(fileName)
@@ -268,7 +284,7 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 	}
 	fileName := options.Binary
 	if !options.SkipPathScan {
-		installFilename, flag, err := shouldInstallBinary(options.Binary)
+		installFilename, flag, err := ShouldInstallBinary(options.Binary)
 		fileName = installFilename
 		if err != nil || !flag {
 			return err
@@ -304,7 +320,7 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 	if options.Archived {
 		if extension == "zip" {
 			zipDir := filepath.Join(binDir, options.Binary+"-tmp-"+uuid.NewUUID().String())
-			err = os.MkdirAll(zipDir, DefaultWritePermissions)
+			err = os.MkdirAll(zipDir, util.DefaultWritePermissions)
 			if err != nil {
 				return err
 			}
@@ -351,12 +367,12 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 	return os.Chmod(fullPath, 0755)
 }
 
-func (o *CommonOptions) installBrewIfRequired() error {
+func (o *CommonOptions) InstallBrewIfRequired() error {
 	if runtime.GOOS != "darwin" || o.NoBrew {
 		return nil
 	}
 
-	_, flag, err := shouldInstallBinary("brew")
+	_, flag, err := ShouldInstallBinary("brew")
 	if err != nil || !flag {
 		return err
 	}
@@ -371,7 +387,7 @@ func (o *CommonOptions) installKubectl() error {
 	if err != nil {
 		return err
 	}
-	fileName, flag, err := shouldInstallBinary("kubectl")
+	fileName, flag, err := ShouldInstallBinary("kubectl")
 	if err != nil || !flag {
 		return err
 	}
@@ -403,7 +419,7 @@ func (o *CommonOptions) installKustomize() error {
 	if err != nil {
 		return err
 	}
-	fileName, flag, err := shouldInstallBinary("kustomize")
+	fileName, flag, err := ShouldInstallBinary("kustomize")
 	if err != nil || !flag {
 		return err
 	}
@@ -437,7 +453,7 @@ func (o *CommonOptions) installOc() error {
 		return err
 	}
 	binary := "oc"
-	fileName, flag, err := shouldInstallBinary(binary)
+	fileName, flag, err := ShouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -474,7 +490,7 @@ func (o *CommonOptions) installOc() error {
 
 	if extension == ".zip" {
 		zipDir := filepath.Join(binDir, "oc-tmp-"+uuid.NewUUID().String())
-		err = os.MkdirAll(zipDir, DefaultWritePermissions)
+		err = os.MkdirAll(zipDir, util.DefaultWritePermissions)
 		if err != nil {
 			return err
 		}
@@ -585,7 +601,7 @@ func (o *CommonOptions) installVirtualBox() error {
 }
 
 func (o *CommonOptions) installXhyve() error {
-	info, err := o.getCommandOutput("", "brew", "info", "docker-machine-driver-xhyve")
+	info, err := o.GetCommandOutput("", "brew", "info", "docker-machine-driver-xhyve")
 
 	if err != nil || strings.Contains(info, "Not installed") {
 		err = o.RunCommand("brew", "install", "docker-machine-driver-xhyve")
@@ -593,7 +609,7 @@ func (o *CommonOptions) installXhyve() error {
 			return err
 		}
 
-		brewPrefix, err := o.getCommandOutput("", "brew", "--prefix")
+		brewPrefix, err := o.GetCommandOutput("", "brew", "--prefix")
 		if err != nil {
 			return err
 		}
@@ -617,7 +633,7 @@ func (o *CommonOptions) installXhyve() error {
 }
 
 func (o *CommonOptions) installhyperv() error {
-	info, err := o.getCommandOutput("", "powershell", "Get-WindowsOptionalFeature", "-FeatureName", "Microsoft-Hyper-V-All", "-Online")
+	info, err := o.GetCommandOutput("", "powershell", "Get-WindowsOptionalFeature", "-FeatureName", "Microsoft-Hyper-V-All", "-Online")
 
 	if err != nil {
 		return err
@@ -650,13 +666,13 @@ func (o *CommonOptions) installhyperv() error {
 	return nil
 }
 
-func (o *CommonOptions) installVaultCli() error {
+func (o *CommonOptions) InstallVaultCli() error {
 	binDir, err := util.JXBinLocation()
 	if err != nil {
 		return err
 	}
 	binary := "vault"
-	fileName, flag, err := shouldInstallBinary(binary)
+	fileName, flag, err := ShouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -702,7 +718,7 @@ func (o *CommonOptions) installHelm() error {
 		return err
 	}
 
-	fileName, flag, err := shouldInstallBinary(binary)
+	fileName, flag, err := ShouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -770,7 +786,7 @@ func (o *CommonOptions) installTiller() error {
 	if err != nil {
 		return err
 	}
-	err = startLocalTillerIfNotRunning()
+	err = helm.StartLocalTillerIfNotRunning()
 	if err != nil {
 		return err
 	}
@@ -783,7 +799,7 @@ func (o *CommonOptions) installHelm3() error {
 		return err
 	}
 	binary := "helm3"
-	fileName, flag, err := shouldInstallBinary(binary)
+	fileName, flag, err := ShouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -802,7 +818,7 @@ func (o *CommonOptions) installHelm3() error {
 	clientURL := fmt.Sprintf("https://github.com/jstrachan/helm/releases/download/%v/helm-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
 
 	tmpDir := filepath.Join(binDir, "helm3.tmp")
-	err = os.MkdirAll(tmpDir, DefaultWritePermissions)
+	err = os.MkdirAll(tmpDir, util.DefaultWritePermissions)
 	if err != nil {
 		return err
 	}
@@ -865,7 +881,7 @@ func (o *CommonOptions) installHelmSecretsPlugin(helmBinary string, clientOnly b
 	return err
 }
 
-func (o *CommonOptions) installMavenIfRequired() error {
+func (o *CommonOptions) InstallMavenIfRequired() error {
 	homeDir, err := util.ConfigDir()
 	if err != nil {
 		return err
@@ -894,7 +910,7 @@ func (o *CommonOptions) installMavenIfRequired() error {
 	mvnTmpDir := filepath.Join(homeDir, "maven-tmp")
 	zipFile := filepath.Join(homeDir, "mvn.zip")
 
-	err = os.MkdirAll(mvnDir, DefaultWritePermissions)
+	err = os.MkdirAll(mvnDir, util.DefaultWritePermissions)
 	if err != nil {
 		m.Unlock()
 		return err
@@ -961,7 +977,7 @@ func (o *CommonOptions) installTerraform() error {
 		return err
 	}
 	binary := "terraform"
-	fileName, flag, err := shouldInstallBinary(binary)
+	fileName, flag, err := ShouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -998,7 +1014,7 @@ func (o *CommonOptions) installKops() error {
 		return err
 	}
 	binary := "kops"
-	fileName, flag, err := shouldInstallBinary(binary)
+	fileName, flag, err := ShouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -1020,13 +1036,13 @@ func (o *CommonOptions) installKops() error {
 	return os.Chmod(fullPath, 0755)
 }
 
-func (o *CommonOptions) installKSync() (string, error) {
+func (o *CommonOptions) InstallKSync() (string, error) {
 	binDir, err := util.JXBinLocation()
 	if err != nil {
 		return "", err
 	}
 	binary := "ksync"
-	fileName, flag, err := shouldInstallBinary(binary)
+	fileName, flag, err := ShouldInstallBinary(binary)
 	if err != nil || !flag {
 		// Exec `ksync` to find the version
 		ksyncCmd := util.Command{
@@ -1068,7 +1084,7 @@ func (o *CommonOptions) installKSync() (string, error) {
 	return latestVersion.String(), os.Chmod(fullPath, 0755)
 }
 
-func (o *CommonOptions) installJx(upgrade bool, version string) error {
+func (o *CommonOptions) InstallJx(upgrade bool, version string) error {
 	if runtime.GOOS == "darwin" && !o.NoBrew {
 		if upgrade {
 			return o.RunCommand("brew", "upgrade", "jx")
@@ -1088,7 +1104,7 @@ func (o *CommonOptions) installJx(upgrade bool, version string) error {
 	binary := "jx"
 	fileName := binary
 	if !upgrade {
-		f, flag, err := shouldInstallBinary(binary)
+		f, flag, err := ShouldInstallBinary(binary)
 		if err != nil || !flag {
 			return err
 		}
@@ -1180,7 +1196,7 @@ func (o *CommonOptions) installMinikube() error {
 	if err != nil {
 		return err
 	}
-	fileName, flag, err := shouldInstallBinary("minikube")
+	fileName, flag, err := ShouldInstallBinary("minikube")
 	if err != nil || !flag {
 		return err
 	}
@@ -1212,7 +1228,7 @@ func (o *CommonOptions) installMinishift() error {
 	if err != nil {
 		return err
 	}
-	fileName, flag, err := shouldInstallBinary(binary)
+	fileName, flag, err := ShouldInstallBinary(binary)
 	if err != nil || !flag {
 		return err
 	}
@@ -1261,7 +1277,7 @@ func (o *CommonOptions) installOciCli() error {
 	}
 	os.Chmod(filePath, 0755)
 
-	err = o.runCommandVerbose(filePath, "--accept-all-defaults")
+	err = o.RunCommandVerbose(filePath, "--accept-all-defaults")
 	if err != nil {
 		return err
 	}
@@ -1274,7 +1290,7 @@ func (o *CommonOptions) installAws() error {
 	return nil
 }
 
-func (o *CommonOptions) installEksCtl(skipPathScan bool) error {
+func (o *CommonOptions) InstallEksCtl(skipPathScan bool) error {
 	return o.installEksCtlWithVersion(binaries.EksctlVersion, skipPathScan)
 }
 
@@ -1290,7 +1306,7 @@ func (o *CommonOptions) installEksCtlWithVersion(version string, skipPathScan bo
 	})
 }
 
-func (o *CommonOptions) installHeptioAuthenticatorAws(skipPathScan bool) error {
+func (o *CommonOptions) InstallHeptioAuthenticatorAws(skipPathScan bool) error {
 	return o.installHeptioAuthenticatorAwsWithVersion(binaries.HeptioAuthenticatorAwsVersion, skipPathScan)
 }
 
@@ -1309,7 +1325,7 @@ func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	if p == "" {
 		// lets detect Minikube
-		currentContext, err := o.getCommandOutput("", "kubectl", "config", "current-context")
+		currentContext, err := o.GetCommandOutput("", "kubectl", "config", "current-context")
 		if err == nil && currentContext == "minikube" {
 			p = MINIKUBE
 		}
@@ -1335,12 +1351,12 @@ func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
 
 func (o *CommonOptions) getClusterDependencies(depsToInstall []string) []string {
 	deps := o.filterInstalledDependencies(depsToInstall)
-	d := binaryShouldBeInstalled("kubectl")
+	d := BinaryShouldBeInstalled("kubectl")
 	if d != "" && util.StringArrayIndex(deps, d) < 0 {
 		deps = append(deps, d)
 	}
 
-	d = binaryShouldBeInstalled("helm")
+	d = BinaryShouldBeInstalled("helm")
 	if d != "" && util.StringArrayIndex(deps, d) < 0 {
 		deps = append(deps, d)
 	}
@@ -1348,7 +1364,7 @@ func (o *CommonOptions) getClusterDependencies(depsToInstall []string) []string 
 	// Platform specific deps
 	if runtime.GOOS == "darwin" {
 		if !o.NoBrew {
-			d = binaryShouldBeInstalled("brew")
+			d = BinaryShouldBeInstalled("brew")
 			if d != "" && util.StringArrayIndex(deps, d) < 0 {
 				deps = append(deps, d)
 			}
@@ -1360,7 +1376,7 @@ func (o *CommonOptions) getClusterDependencies(depsToInstall []string) []string 
 func (o *CommonOptions) filterInstalledDependencies(deps []string) []string {
 	depsToInstall := []string{}
 	for _, d := range deps {
-		binary := binaryShouldBeInstalled(d)
+		binary := BinaryShouldBeInstalled(d)
 		if binary != "" {
 			depsToInstall = append(depsToInstall, binary)
 		}
@@ -1368,7 +1384,7 @@ func (o *CommonOptions) filterInstalledDependencies(deps []string) []string {
 	return depsToInstall
 }
 
-func (o *CommonOptions) installMissingDependencies(providerSpecificDeps []string) error {
+func (o *CommonOptions) InstallMissingDependencies(providerSpecificDeps []string) error {
 	deps := o.getClusterDependencies(providerSpecificDeps)
 	if len(deps) == 0 {
 		return nil
@@ -1392,11 +1408,11 @@ func (o *CommonOptions) installMissingDependencies(providerSpecificDeps []string
 		survey.AskOne(prompt, &install, nil, surveyOpts)
 	}
 
-	return o.doInstallMissingDependencies(install)
+	return o.DoInstallMissingDependencies(install)
 }
 
 // installRequirements installs any requirements for the given provider kind
-func (o *CommonOptions) installRequirements(cloudProvider string, extraDependencies ...string) error {
+func (o *CommonOptions) InstallRequirements(cloudProvider string, extraDependencies ...string) error {
 	var deps []string
 	switch cloudProvider {
 	case IKS:
@@ -1420,18 +1436,18 @@ func (o *CommonOptions) installRequirements(cloudProvider string, extraDependenc
 		deps = o.addRequiredBinary(dep, deps)
 	}
 
-	return o.installMissingDependencies(deps)
+	return o.InstallMissingDependencies(deps)
 }
 
 func (o *CommonOptions) addRequiredBinary(binName string, deps []string) []string {
-	d := binaryShouldBeInstalled(binName)
+	d := BinaryShouldBeInstalled(binName)
 	if d != "" && util.StringArrayIndex(deps, d) < 0 {
 		deps = append(deps, d)
 	}
 	return deps
 }
 
-func (o *CommonOptions) createClusterAdmin() error {
+func (o *CommonOptions) CreateClusterAdmin() error {
 
 	content := []byte(
 		`apiVersion: rbac.authorization.k8s.io/v1
@@ -1469,7 +1485,7 @@ rules:
 		return err
 	}
 
-	_, err1 := o.getCommandOutput("", "kubectl", "create", "clusterrolebinding", "kube-system-cluster-admin", "--clusterrole", "cluster-admin", "--serviceaccount", "kube-system:default")
+	_, err1 := o.GetCommandOutput("", "kubectl", "create", "clusterrolebinding", "kube-system-cluster-admin", "--clusterrole", "cluster-admin", "--serviceaccount", "kube-system:default")
 	if err1 != nil {
 		if strings.Contains(err1.Error(), "AlreadyExists") {
 			log.Success("role cluster-admin already exists for the cluster")
@@ -1478,7 +1494,7 @@ rules:
 		}
 	}
 
-	_, err2 := o.getCommandOutput("", "kubectl", "create", "-f", tmpfile.Name())
+	_, err2 := o.GetCommandOutput("", "kubectl", "create", "-f", tmpfile.Name())
 	if err2 != nil {
 		if strings.Contains(err2.Error(), "AlreadyExists") {
 			log.Success("clusterroles.rbac.authorization.k8s.io 'cluster-admin' already exists")
@@ -1490,7 +1506,7 @@ rules:
 	return nil
 }
 
-func (o *CommonOptions) updateJenkinsURL(namespaces []string) error {
+func (o *CommonOptions) UpdateJenkinsURL(namespaces []string) error {
 	client, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -1522,7 +1538,7 @@ func (o *CommonOptions) updateJenkinsURL(namespaces []string) error {
 
 func (o *CommonOptions) GetClusterUserName() (string, error) {
 
-	username, _ := o.getCommandOutput("", "gcloud", "config", "get-value", "core/account")
+	username, _ := o.GetCommandOutput("", "gcloud", "config", "get-value", "core/account")
 
 	if username != "" {
 		return GetSafeUsername(username), nil
@@ -1555,7 +1571,7 @@ func GetSafeUsername(username string) string {
 	return username
 }
 
-func (o *CommonOptions) installProw() error {
+func (o *CommonOptions) InstallProw() error {
 
 	if o.ReleaseName == "" {
 		o.ReleaseName = kube.DefaultProwReleaseName
@@ -1625,8 +1641,8 @@ func (o *CommonOptions) installProw() error {
 	kvalues := []string{"build.auth.git.username=" + o.Username, "build.auth.git.password=" + o.OAUTHToken}
 	kvalues = append(kvalues, setValues...)
 
-	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true,
+	err = o.Retry(2, time.Second, func() (err error) {
+		err = o.InstallChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true,
 			kvalues, nil, "")
 		return nil
 	})
@@ -1636,8 +1652,8 @@ func (o *CommonOptions) installProw() error {
 	}
 
 	log.Infof("Installing Prow into namespace %s\n", util.ColorInfo(devNamespace))
-	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values, nil, "")
+	err = o.Retry(2, time.Second, func() (err error) {
+		err = o.InstallChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values, nil, "")
 		return nil
 	})
 
@@ -1647,8 +1663,8 @@ func (o *CommonOptions) installProw() error {
 
 	log.Infof("Installing BuildTemplates into namespace %s\n", util.ColorInfo(devNamespace))
 
-	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(kube.DefaultBuildTemplatesReleaseName, kube.ChartBuildTemplates, "", devNamespace, true,
+	err = o.Retry(2, time.Second, func() (err error) {
+		err = o.InstallChart(kube.DefaultBuildTemplatesReleaseName, kube.ChartBuildTemplates, "", devNamespace, true,
 			values, nil, "")
 		return nil
 	})
@@ -1660,7 +1676,7 @@ func (o *CommonOptions) installProw() error {
 	return nil
 }
 
-func (o *CommonOptions) createWebhookProw(gitURL string, gitProvider gits.GitProvider) error {
+func (o *CommonOptions) CreateWebhookProw(gitURL string, gitProvider gits.GitProvider) error {
 	client, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -1692,7 +1708,7 @@ func (o *CommonOptions) createWebhookProw(gitURL string, gitProvider gits.GitPro
 	return gitProvider.CreateWebHook(webhook)
 }
 
-func (o *CommonOptions) isProw() (bool, error) {
+func (o *CommonOptions) IsProw() (bool, error) {
 	ns := o.devNamespace
 	if ns == "" {
 		ns = o.currentNamespace

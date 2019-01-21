@@ -15,6 +15,8 @@ import (
 
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -55,11 +57,11 @@ type CreateAddonAnchoreOptions struct {
 }
 
 // NewCmdCreateAddonAnchore creates a command object for the "create" command
-func NewCmdCreateAddonAnchore(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonAnchore(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateAddonAnchoreOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 					Out:     out,
@@ -83,7 +85,7 @@ func NewCmdCreateAddonAnchore(f Factory, in terminal.FileReader, out terminal.Fi
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	options.addFlags(cmd, defaultAnchoreNamespace, defaultAnchoreReleaseName, defaultAnchoreVersion)
 
 	cmd.Flags().StringVarP(&options.Password, "password", "p", defaultAnchorePassword, "The default password to use for Anchore")
@@ -94,7 +96,7 @@ func NewCmdCreateAddonAnchore(f Factory, in terminal.FileReader, out terminal.Fi
 
 // Run implements the command
 func (o *CreateAddonAnchoreOptions) Run() error {
-	err := o.ensureHelm()
+	err := o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that helm is present")
 	}
@@ -110,7 +112,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 		return err
 	}
 
-	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
+	devNamespace, _, err := kube.GetDevNamespace(client, o.CurrentNamespace())
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
@@ -120,7 +122,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 	values := []string{"globalConfig.users.admin.password=" + o.Password, "globalConfig.configDir=/anchore_service_dir"}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
+	err = o.InstallChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
 	if err != nil {
 		return fmt.Errorf("anchore deployment failed: %v", err)
 	}
@@ -152,7 +154,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 	tokenOptions := CreateTokenAddonOptions{
 		Password: o.Password,
 		Username: "admin",
-		ServerFlags: ServerFlags{
+		ServerFlags: commoncmd.ServerFlags{
 			ServerURL:  ing,
 			ServerName: anchoreDeploymentName,
 		},
@@ -166,10 +168,10 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 		return fmt.Errorf("failed to create addonAuth.yaml error: %v", err)
 	}
 
-	_, err = client.CoreV1().Services(o.currentNamespace).Get(anchoreServiceName, meta_v1.GetOptions{})
+	_, err = client.CoreV1().Services(o.CurrentNamespace()).Get(anchoreServiceName, meta_v1.GetOptions{})
 	if err != nil {
 		// create a service link
-		err = services.CreateServiceLink(client, o.currentNamespace, o.Namespace, anchoreServiceName, ing)
+		err = services.CreateServiceLink(client, o.CurrentNamespace(), o.Namespace, anchoreServiceName, ing)
 		if err != nil {
 			return fmt.Errorf("failed creating a service link for %s in target namespace %s", anchoreServiceName, o.Namespace)
 		}

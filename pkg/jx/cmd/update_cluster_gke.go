@@ -3,6 +3,8 @@ package cmd
 import (
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -27,8 +29,8 @@ var (
 `)
 )
 
-func NewCmdUpdateClusterGKE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := createUpdateClusterGKEOptions(f, in, out, errOut, GKE)
+func NewCmdUpdateClusterGKE(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+	options := createUpdateClusterGKEOptions(f, in, out, errOut, commoncmd.GKE)
 
 	cmd := &cobra.Command{
 		Use:     "gke",
@@ -48,8 +50,8 @@ func NewCmdUpdateClusterGKE(f Factory, in terminal.FileReader, out terminal.File
 	return cmd
 }
 
-func createUpdateClusterGKEOptions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, cloudProvider string) UpdateClusterGKEOptions {
-	commonOptions := CommonOptions{
+func createUpdateClusterGKEOptions(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, cloudProvider string) UpdateClusterGKEOptions {
+	commonOptions := commoncmd.CommonOptions{
 		Factory: f,
 		In:      in,
 		Out:     out,

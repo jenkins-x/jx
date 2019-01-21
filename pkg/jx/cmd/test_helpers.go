@@ -13,6 +13,8 @@ import (
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -29,22 +31,22 @@ import (
 
 // ConfigureTestOptions lets configure the options for use in tests
 // using fake APIs to k8s cluster
-func ConfigureTestOptions(o *CommonOptions, git gits.Gitter, helm helm.Helmer) {
+func ConfigureTestOptions(o *commoncmd.CommonOptions, git gits.Gitter, helm helm.Helmer) {
 	ConfigureTestOptionsWithResources(o, nil, nil, git, helm)
 }
 
 // ConfigureTestOptions lets configure the options for use in tests
 // using fake APIs to k8s cluster
-func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Object,
+func ConfigureTestOptionsWithResources(o *commoncmd.CommonOptions, k8sObjects []runtime.Object,
 	jxObjects []runtime.Object, git gits.Gitter, helm helm.Helmer) {
 	//o.Out = tests.Output()
 	o.BatchMode = true
 	if o.Factory == nil {
-		o.Factory = NewFactory()
+		o.Factory = clients.NewFactory()
 	}
-	o.currentNamespace = "jx"
+	o.SetCurrentNamespace("jx")
 
-	namespacesRequired := []string{o.currentNamespace}
+	namespacesRequired := []string{o.CurrentNamespace()}
 	namespaceMap := map[string]*corev1.Namespace{}
 
 	for _, ro := range k8sObjects {
@@ -70,7 +72,7 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 	// ensure we've the dev nenvironment
 	if !hasDev {
 		devEnv := kube.NewPermanentEnvironment("dev")
-		devEnv.Spec.Namespace = o.currentNamespace
+		devEnv.Spec.Namespace = o.CurrentNamespace()
 		devEnv.Spec.Kind = v1.EnvironmentKindTypeDevelopment
 
 		jxObjects = append(jxObjects, devEnv)
@@ -92,14 +94,14 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 
 	client := fake.NewSimpleClientset(k8sObjects...)
 	o.SetKubeClient(client)
-	o.jxClient = v1fake.NewSimpleClientset(jxObjects...)
-	o.apiExtensionsClient = apifake.NewSimpleClientset()
-	o.git = git
-	o.helm = helm
+	o.SetJXClient(v1fake.NewSimpleClientset(jxObjects...))
+	o.SetApiExtensionsClient(apifake.NewSimpleClientset())
+	o.SetGit(git)
+	o.SetHelm(helm)
 }
 
-func NewCreateEnvPullRequestFn(provider *gits.FakeProvider) CreateEnvPullRequestFn {
-	fakePrFn := func(env *v1.Environment, modifyChartFn ModifyChartFn, branchNameText string, title string, message string,
+func NewCreateEnvPullRequestFn(provider *gits.FakeProvider) commoncmd.CreateEnvPullRequestFn {
+	fakePrFn := func(env *v1.Environment, modifyChartFn commoncmd.ModifyChartFn, branchNameText string, title string, message string,
 		pullRequestInfo *gits.PullRequestInfo) (*gits.PullRequestInfo, error) {
 		envURL := env.Spec.Source.URL
 		values := []string{}
@@ -137,7 +139,7 @@ func CreateTestPipelineActivity(jxClient versioned.Interface, ns string, folder 
 	return a, err
 }
 
-func createFakePullRequest(repository *gits.FakeRepository, env *v1.Environment, modifyChartFn ModifyChartFn,
+func createFakePullRequest(repository *gits.FakeRepository, env *v1.Environment, modifyChartFn commoncmd.ModifyChartFn,
 	branchNameText string, title string, message string, pullRequestInfo *gits.PullRequestInfo, provider *gits.FakeProvider) (*gits.PullRequestInfo, error) {
 	if pullRequestInfo == nil {
 		pullRequestInfo = &gits.PullRequestInfo{}

@@ -7,6 +7,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/users"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -41,10 +43,10 @@ type EditUserRoleOptions struct {
 }
 
 // NewCmdEditUserRole creates a command object for the "create" command
-func NewCmdEditUserRole(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdEditUserRole(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &EditUserRoleOptions{
 		EditOptions: EditOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -70,17 +72,17 @@ func NewCmdEditUserRole(f Factory, in terminal.FileReader, out terminal.FileWrit
 	cmd.Flags().StringVarP(&options.Login, optionLogin, "l", "", "The user login name")
 	cmd.Flags().StringArrayVarP(&options.Roles, "role", "r", []string{}, "The roles to set on a user")
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	return cmd
 }
 
 // Run implements the command
 func (o *EditUserRoleOptions) Run() error {
-	err := o.registerUserCRD()
+	err := o.RegisterUserCRD()
 	if err != nil {
 		return err
 	}
-	err = o.registerEnvironmentRoleBindingCRD()
+	err = o.RegisterEnvironmentRoleBindingCRD()
 	if err != nil {
 		return err
 	}

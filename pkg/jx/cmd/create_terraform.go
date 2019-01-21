@@ -23,6 +23,8 @@ import (
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -264,10 +266,10 @@ const (
 )
 
 // NewCmdCreateTerraform creates a command object for the "create" command
-func NewCmdCreateTerraform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateTerraform(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateTerraformOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -290,7 +292,7 @@ func NewCmdCreateTerraform(f Factory, in terminal.FileReader, out terminal.FileW
 	}
 
 	options.InstallOptions.addInstallFlags(cmd, true)
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	options.addFlags(cmd, true)
 
 	cmd.Flags().StringVarP(&options.Flags.OrganisationName, "organisation-name", "o", "", "The organisation name that will be used as the Git repo containing cluster details, the repo will be organisation-<org name>")
@@ -334,13 +336,13 @@ func stringInValidProviders(a string) bool {
 
 // Run implements this command
 func (options *CreateTerraformOptions) Run() error {
-	err := options.installRequirements(GKE, "terraform", options.InstallOptions.InitOptions.HelmBinary())
+	err := options.InstallRequirements(commoncmd.GKE, "terraform", options.InstallOptions.InitOptions.HelmBinary())
 	if err != nil {
 		return err
 	}
 
 	if !options.Flags.SkipLogin {
-		err = options.runCommandVerbose("gcloud", "auth", "login", "--brief")
+		err = options.RunCommandVerbose("gcloud", "auth", "login", "--brief")
 		if err != nil {
 			return err
 		}
@@ -649,7 +651,7 @@ func (options *CreateTerraformOptions) CreateOrganisationFolderStructure(dir str
 		if !exists {
 			options.Debugf("cluster %s does not exist, creating...", c.Name())
 
-			os.MkdirAll(path, DefaultWritePermissions)
+			os.MkdirAll(path, util.DefaultWritePermissions)
 
 			switch c.Provider() {
 			case "gke", "jx-infra":
@@ -999,7 +1001,7 @@ func (options *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path str
 			return err
 		}
 
-		output, err := options.getCommandOutput("", "gcloud", "container", "clusters", "get-credentials", g.ClusterName(), "--zone", g.Zone, "--project", g.ProjectID)
+		output, err := options.GetCommandOutput("", "gcloud", "container", "clusters", "get-credentials", g.ClusterName(), "--zone", g.Zone, "--project", g.ProjectID)
 		if err != nil {
 			return err
 		}
@@ -1068,7 +1070,7 @@ func (options *CreateTerraformOptions) installJx(c Cluster, clusters []Cluster) 
 	}
 
 	// check if jx is already installed
-	_, err = options.findEnvironmentNamespace(c.Name())
+	_, err = options.FindEnvironmentNamespace(c.Name())
 	if err != nil {
 		// jx is missing, install,
 		options.InstallOptions.Flags.DefaultEnvironmentPrefix = c.ClusterName()
@@ -1078,7 +1080,7 @@ func (options *CreateTerraformOptions) installJx(c Cluster, clusters []Cluster) 
 			return err
 		}
 
-		context, err := options.getCommandOutput("", "kubectl", "config", "current-context")
+		context, err := options.GetCommandOutput("", "kubectl", "config", "current-context")
 		if err != nil {
 			return err
 		}

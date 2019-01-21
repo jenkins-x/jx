@@ -8,6 +8,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/users"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -38,10 +40,10 @@ type CreateUserOptions struct {
 }
 
 // NewCmdCreateUser creates a command object for the "create" command
-func NewCmdCreateUser(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateUser(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateUserOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -68,17 +70,17 @@ func NewCmdCreateUser(f Factory, in terminal.FileReader, out terminal.FileWriter
 	cmd.Flags().StringVarP(&options.UserSpec.Name, "name", "n", "", "The textual full name of the user")
 	cmd.Flags().StringVarP(&options.UserSpec.Email, "email", "e", "", "The users email address")
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	return cmd
 }
 
 // Run implements the command
 func (o *CreateUserOptions) Run() error {
-	err := o.registerUserCRD()
+	err := o.RegisterUserCRD()
 	if err != nil {
 		return err
 	}
-	err = o.registerEnvironmentRoleBindingCRD()
+	err = o.RegisterEnvironmentRoleBindingCRD()
 	if err != nil {
 		return err
 	}

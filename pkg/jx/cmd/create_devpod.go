@@ -14,6 +14,8 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
@@ -63,7 +65,7 @@ type CreateDevPodResults struct {
 // CreateDevPodOptions the options for the create spring command
 type CreateDevPodOptions struct {
 	CreateOptions
-	CommonDevPodOptions
+	commoncmd.CommonDevPodOptions
 
 	Label           string
 	Suffix          string
@@ -88,10 +90,10 @@ type CreateDevPodOptions struct {
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
-func NewCmdCreateDevPod(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateDevPod(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateDevPodOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -100,7 +102,7 @@ func NewCmdCreateDevPod(f Factory, in terminal.FileReader, out terminal.FileWrit
 		},
 		GitCredentials: StepGitCredentialsOptions{
 			StepOptions: StepOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 					Out:     out,
@@ -140,8 +142,8 @@ func NewCmdCreateDevPod(f Factory, in terminal.FileReader, out terminal.FileWrit
 	cmd.Flags().StringVarP(&options.TillerNamespace, "tiller-namespace", "", "", "The optional tiller namespace to use within the DevPod.")
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "", "The ServiceAccount name used for the DevPod")
 
-	options.addCommonDevPodFlags(cmd)
-	options.addCommonFlags(cmd)
+	options.AddCommonDevPodFlags(cmd)
+	options.AddCommonFlags(cmd)
 	return cmd
 }
 
@@ -228,7 +230,7 @@ func (o *CreateDevPodOptions) Run() error {
 		pod.Annotations = map[string]string{}
 	}
 
-	userName, err := o.getUsername(o.Username)
+	userName, err := o.GetUsername(o.Username)
 	if err != nil {
 		return err
 	}
@@ -300,7 +302,7 @@ func (o *CreateDevPodOptions) Run() error {
 	if pod.Spec.ServiceAccountName == "" {
 		sa := o.ServiceAccount
 		if sa == "" {
-			prow, err := o.isProw()
+			prow, err := o.IsProw()
 			if err != nil {
 				return err
 			}
@@ -802,7 +804,7 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	if err != nil {
 		return env, err
 	}
-	userName, err := o.getUsername(o.Username)
+	userName, err := o.GetUsername(o.Username)
 	if err != nil {
 		return env, err
 	}
@@ -817,7 +819,7 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	if !flag || err != nil {
 		log.Infof("Installing the ExposecontrollerService in the namespace: %s\n", util.ColorInfo(editNs))
 		releaseName := editNs + "-es"
-		err = o.installChartOptions(helm.InstallChartOptions{
+		err = o.InstallChartOptions(helm.InstallChartOptions{
 			ReleaseName: releaseName,
 			Chart:       kube.ChartExposecontrollerService,
 			Version:     "",
@@ -864,7 +866,7 @@ func (o *CreateDevPodOptions) updateExposeController(client kubernetes.Interface
 	if err != nil {
 		return errors.Wrapf(err, "Failed to load ingress-config in namespace %s", devNs)
 	}
-	return o.runExposecontroller(ns, ns, ingressConfig)
+	return o.RunExposecontroller(ns, ns, ingressConfig)
 }
 
 // FindDevPodLabelFromJenkinsfile finds pod labels from a Jenkinsfile

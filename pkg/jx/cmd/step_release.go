@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -39,10 +41,10 @@ type StepReleaseOptions struct {
 }
 
 // NewCmdStep Steps a command object for the "step" command
-func NewCmdStepRelease(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepRelease(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepReleaseOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -81,7 +83,7 @@ func NewCmdStepRelease(f Factory, in terminal.FileReader, out terminal.FileWrite
 // Run implements this command
 func (o *StepReleaseOptions) Run() error {
 	o.BatchMode = !o.NoBatch
-	err := o.runCommandVerbose("git", "config", "--global", "credential.helper", "store")
+	err := o.RunCommandVerbose("git", "config", "--global", "credential.helper", "store")
 	if err != nil {
 		return err
 	}
@@ -221,7 +223,7 @@ func (o *StepReleaseOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	err = o.runCommandVerbose("skaffold", "build", "-f", "skaffold.yaml")
+	err = o.RunCommandVerbose("skaffold", "build", "-f", "skaffold.yaml")
 	if err != nil {
 		return fmt.Errorf("Failed to run skaffold: %s", err)
 	}
@@ -251,14 +253,14 @@ func (o *StepReleaseOptions) Run() error {
 
 func (o *StepReleaseOptions) updateVersionInSource() error {
 	if o.isMaven() {
-		return o.runCommandVerbose("mvn", "versions:set", "-DnewVersion="+o.Version)
+		return o.RunCommandVerbose("mvn", "versions:set", "-DnewVersion="+o.Version)
 	}
 	return nil
 }
 
 func (o *StepReleaseOptions) buildSource() error {
 	if o.isMaven() {
-		return o.runCommandVerbose("mvn", "clean", "deploy")
+		return o.RunCommandVerbose("mvn", "clean", "deploy")
 	}
 	return nil
 

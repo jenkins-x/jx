@@ -15,6 +15,8 @@ import (
 
 	"github.com/chromedp/chromedp/runner"
 	"github.com/hpcloud/tail"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	jxlog "github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -48,7 +50,7 @@ type UserLoginInfo struct {
 
 // LoginOptions options for login command
 type LoginOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	URL  string
 	Team string
@@ -69,9 +71,9 @@ var (
 		`)
 )
 
-func NewCmdLogin(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdLogin(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &LoginOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 
@@ -106,7 +108,7 @@ func (o *LoginOptions) Run() error {
 	}
 
 	// ensure base set of binaries are installed which are required by jx
-	err = o.installRequirements("")
+	err = o.InstallRequirements("")
 	if err != nil {
 		return errors.Wrap(err, "installing required binaries")
 	}
@@ -172,7 +174,7 @@ func (o *LoginOptions) Login() (*UserLoginInfo, error) {
 
 	t, err := tail.TailFile(netLogFile, tail.Config{
 		Follow: true,
-		Poll: true,  // ionotify does not work on all platforms and the cost for this is not significantly high
+		Poll:   true, // ionotify does not work on all platforms and the cost for this is not significantly high
 		Logger: log.New(ioutil.Discard, "", log.LstdFlags)})
 	if err != nil {
 		return nil, errors.Wrap(err, "reading the netlog file")

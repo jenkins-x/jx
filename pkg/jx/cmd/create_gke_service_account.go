@@ -6,6 +6,8 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -36,10 +38,10 @@ var (
 )
 
 // NewCmdCreateGkeServiceAccount creates a command object for the "create" command
-func NewCmdCreateGkeServiceAccount(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateGkeServiceAccount(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateGkeServiceAccountOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -60,7 +62,7 @@ func NewCmdCreateGkeServiceAccount(f Factory, in terminal.FileReader, out termin
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	options.addFlags(cmd, true)
 
 	return cmd
@@ -78,7 +80,7 @@ func (options *CreateGkeServiceAccountOptions) addFlags(cmd *cobra.Command, addS
 func (o *CreateGkeServiceAccountOptions) Run() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	if !o.Flags.SkipLogin {
-		err := o.runCommandVerbose("gcloud", "auth", "login", "--brief")
+		err := o.RunCommandVerbose("gcloud", "auth", "login", "--brief")
 		if err != nil {
 			return err
 		}

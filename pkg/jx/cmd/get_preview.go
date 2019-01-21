@@ -5,6 +5,8 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -36,11 +38,11 @@ var (
 )
 
 // NewCmdGetPreview creates the new command for: jx get env
-func NewCmdGetPreview(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetPreview(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetPreviewOptions{
 		GetEnvOptions: GetEnvOptions{
 			GetOptions: GetOptions{
-				CommonOptions: CommonOptions{
+				CommonOptions: commoncmd.CommonOptions{
 					Factory: f,
 					In:      in,
 
@@ -80,7 +82,7 @@ func (o *GetPreviewOptions) Run() error {
 }
 
 func (o *GetPreviewOptions) CurrentPreviewUrl() error {
-	pipeline := o.getJobName()
+	pipeline := o.GetJobName()
 	if pipeline == "" {
 		return fmt.Errorf("No $JOB_NAME defined for the current pipeline job to use")
 	}

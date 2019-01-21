@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -60,10 +62,10 @@ var (
 `)
 )
 
-func NewCmdStepTag(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepTag(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepTagOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -205,7 +207,7 @@ func (o *StepTagOptions) updateChartValues(version string, chartsDir string) err
 		}
 	}
 	if updated {
-		err = ioutil.WriteFile(valuesFile, []byte(strings.Join(lines, "\n")), DefaultWritePermissions)
+		err = ioutil.WriteFile(valuesFile, []byte(strings.Join(lines, "\n")), util.DefaultWritePermissions)
 		if err != nil {
 			return fmt.Errorf("Failed to save chart file %s: %s", valuesFile, err)
 		}

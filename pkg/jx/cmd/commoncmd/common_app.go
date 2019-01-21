@@ -1,4 +1,4 @@
-package cmd
+package commoncmd
 
 import (
 	"fmt"
@@ -57,7 +57,7 @@ func (o *CommonOptions) OnAppInstall(app string, version string) error {
 	if len(appList.Items) > 1 {
 		return fmt.Errorf("more than one app (%v) was found for %s", appList.Items, selector)
 	} else if len(appList.Items) == 1 {
-		return extensions.OnInstallFromName(app, jxClient, kubeClient, ns, o.Helm(), defaultInstallTimeout)
+		return extensions.OnInstallFromName(app, jxClient, kubeClient, ns, o.Helm(), DefaultInstallTimeout)
 	}
 	return nil
 }

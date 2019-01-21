@@ -7,6 +7,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"gopkg.in/AlecAivazis/survey.v1"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -33,10 +35,10 @@ type DeleteKnativeBuildOptions struct {
 }
 
 // NewCmdDeleteAddonKnativeBuild defines the command
-func NewCmdDeleteAddonKnativeBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteAddonKnativeBuild(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteKnativeBuildOptions{
 		DeleteAddonOptions: DeleteAddonOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -89,7 +91,7 @@ func (o *DeleteKnativeBuildOptions) Run() error {
 			}
 		}
 	}
-	err = o.deleteChart(o.ReleaseName, o.Purge)
+	err = o.DeleteChart(o.ReleaseName, o.Purge)
 	if err != nil {
 		return err
 	}

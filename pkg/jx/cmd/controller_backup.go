@@ -11,6 +11,8 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -33,10 +35,10 @@ type ControllerBackupOptions struct {
 
 // NewCmdControllerBackup creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdControllerBackup(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdControllerBackup(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ControllerBackupOptions{
 		ControllerOptions: ControllerOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -60,7 +62,7 @@ func NewCmdControllerBackup(f Factory, in terminal.FileReader, out terminal.File
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to watch or defaults to the current namespace")
 	cmd.Flags().StringVarP(&options.Organisation, "organisation", "o", "", "The organisation to backup")
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	return cmd
 }
@@ -68,17 +70,17 @@ func NewCmdControllerBackup(f Factory, in terminal.FileReader, out terminal.File
 // Run implements this command
 func (o *ControllerBackupOptions) Run() error {
 	// ensure Environment / Team / User CRDs are registered before we start
-	err := o.registerEnvironmentCRD()
+	err := o.RegisterEnvironmentCRD()
 	if err != nil {
 		return err
 	}
 
-	err = o.registerTeamCRD()
+	err = o.RegisterTeamCRD()
 	if err != nil {
 		return err
 	}
 
-	err = o.registerUserCRD()
+	err = o.RegisterUserCRD()
 	if err != nil {
 		return err
 	}

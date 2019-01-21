@@ -1,20 +1,16 @@
-package cmd
+package commoncmd
 
 import (
 	"fmt"
-	"io"
 	"os/user"
 	"reflect"
-	"strconv"
 
+	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/users"
 
 	"github.com/jenkins-x/jx/pkg/builds"
 
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -29,6 +25,9 @@ type BranchPatterns struct {
 
 const (
 	defaultHelmBin = "helm"
+
+	defaultBranchPatterns     = jenkins.BranchPatternMasterPRsAndFeatures
+	defaultForkBranchPatterns = ""
 )
 
 // TeamSettings returns the team settings
@@ -125,7 +124,7 @@ func (o *CommonOptions) defaultModifyDevEnvironment(callback func(env *v1.Enviro
 	if env == nil {
 		return fmt.Errorf("No Development environment found for namespace %s", ns)
 	}
-	return o.modifyDevEnvironment(jxClient, ns, callback)
+	return o.MutateDevEnvironment(jxClient, ns, callback)
 }
 
 // defaultModifyEnvironment default implementation of modifying an environment
@@ -163,7 +162,7 @@ func (o *CommonOptions) defaultModifyEnvironment(name string, callback func(env 
 	return nil
 }
 
-func (o *CommonOptions) registerReleaseCRD() error {
+func (o *CommonOptions) RegisterReleaseCRD() error {
 	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
@@ -175,7 +174,7 @@ func (o *CommonOptions) registerReleaseCRD() error {
 	return nil
 }
 
-func (o *CommonOptions) registerTeamCRD() error {
+func (o *CommonOptions) RegisterTeamCRD() error {
 	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
@@ -187,7 +186,7 @@ func (o *CommonOptions) registerTeamCRD() error {
 	return nil
 }
 
-func (o *CommonOptions) registerUserCRD() error {
+func (o *CommonOptions) RegisterUserCRD() error {
 	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
@@ -199,7 +198,7 @@ func (o *CommonOptions) registerUserCRD() error {
 	return nil
 }
 
-func (o *CommonOptions) registerEnvironmentRoleBindingCRD() error {
+func (o *CommonOptions) RegisterEnvironmentRoleBindingCRD() error {
 	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
@@ -211,7 +210,7 @@ func (o *CommonOptions) registerEnvironmentRoleBindingCRD() error {
 	return nil
 }
 
-func (o *CommonOptions) registerPipelineActivityCRD() error {
+func (o *CommonOptions) RegisterPipelineActivityCRD() error {
 	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
@@ -223,7 +222,7 @@ func (o *CommonOptions) registerPipelineActivityCRD() error {
 	return nil
 }
 
-func (o *CommonOptions) registerWorkflowCRD() error {
+func (o *CommonOptions) RegisterWorkflowCRD() error {
 	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return err
@@ -238,7 +237,7 @@ func (o *CommonOptions) registerWorkflowCRD() error {
 // ModifyTeam lazily creates the Team CRD if it does not exist or updates it if it requires a change.
 // The Team CRD will be modified in the specified admin namespace.
 func (o *CommonOptions) ModifyTeam(adminNs string, teamName string, callback func(env *v1.Team) error) error {
-	err := o.registerTeamCRD()
+	err := o.RegisterTeamCRD()
 	if err != nil {
 		return err
 	}
@@ -294,7 +293,7 @@ func (o *CommonOptions) ModifyTeam(adminNs string, teamName string, callback fun
 
 // ModifyUser lazily creates the user if it does not exist or updates it if it requires a change
 func (o *CommonOptions) ModifyUser(userName string, callback func(env *v1.User) error) error {
-	err := o.registerUserCRD()
+	err := o.RegisterUserCRD()
 	if err != nil {
 		return err
 	}
@@ -347,7 +346,7 @@ func (o *CommonOptions) ModifyUser(userName string, callback func(env *v1.User) 
 	return nil
 }
 
-func (o *CommonOptions) getUsername(userName string) (string, error) {
+func (o *CommonOptions) GetUsername(userName string) (string, error) {
 	if userName == "" {
 		u, err := user.Current()
 		if err != nil {
@@ -356,67 +355,4 @@ func (o *CommonOptions) getUsername(userName string) (string, error) {
 		userName = u.Username
 	}
 	return userName, nil
-}
-
-func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, options *EditOptions) error {
-	teamSettings := &v1.TeamSettings{}
-	value := reflect.ValueOf(teamSettings).Elem()
-	t := value.Type()
-	for i := 0; i < value.NumField(); i++ {
-		field := value.Field(i)
-		structField := t.Field(i)
-		tag := structField.Tag
-		command, ok := tag.Lookup("command")
-		if !ok {
-			continue
-		}
-		commandUsage, ok := tag.Lookup("commandUsage")
-		if !ok {
-			continue
-		}
-
-		cmd := &cobra.Command{
-			Use:   command,
-			Short: commandUsage,
-			Run: func(cmd *cobra.Command, args []string) {
-				var value interface{}
-				var err error
-				if len(args) > 0 {
-					if structField.Type.String() == "string" {
-						value = args[0]
-					} else if structField.Type.String() == "bool" {
-						value, err = strconv.ParseBool(args[0])
-						CheckErr(err)
-					}
-				} else if !options.BatchMode {
-					var err error
-					if structField.Type.String() == "string" {
-						value, err = util.PickValue(commandUsage+":", field.String(), true, "", in, out, errOut)
-					} else if structField.Type.String() == "bool" {
-						value = util.Confirm(commandUsage+":", field.Bool(), "", in, out, errOut)
-					}
-					CheckErr(err)
-				} else {
-					fatal(fmt.Sprintf("No value to set %s", command), 1)
-				}
-
-				callback := func(env *v1.Environment) error {
-					teamSettings := &env.Spec.TeamSettings
-					valueField := reflect.ValueOf(teamSettings).Elem().FieldByName(structField.Name)
-					switch value.(type) {
-					case string:
-						valueField.SetString(value.(string))
-					case bool:
-						valueField.SetBool(value.(bool))
-					}
-					log.Infof("Setting the team %s to: %s\n", util.ColorInfo(command), util.ColorInfo(value))
-					return nil
-				}
-				CheckErr(options.ModifyDevEnvironment(callback))
-			},
-		}
-
-		baseCmd.AddCommand(cmd)
-	}
-	return nil
 }

@@ -7,6 +7,8 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/client-go/tools/clientcmd"
@@ -15,10 +17,8 @@ import (
 )
 
 type TeamOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 }
-
-const ()
 
 var (
 	teamLong = templates.LongDesc(`
@@ -39,9 +39,9 @@ var (
 `)
 )
 
-func NewCmdTeam(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdTeam(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &TeamOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,
@@ -61,7 +61,7 @@ func NewCmdTeam(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	return cmd
 }
 

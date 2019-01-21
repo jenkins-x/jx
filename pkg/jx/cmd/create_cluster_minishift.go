@@ -8,6 +8,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -51,9 +53,9 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateClusterMinishift(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterMinishift(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterMinishiftOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, MINISHIFT),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, commoncmd.MINISHIFT),
 	}
 	cmd := &cobra.Command{
 		Use:     "minishift",
@@ -69,7 +71,7 @@ func NewCmdCreateClusterMinishift(f Factory, in terminal.FileReader, out termina
 	}
 
 	options.addCreateClusterFlags(cmd)
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "4096", "Amount of RAM allocated to the Minishift VM in MB")
 	cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "3", "Number of CPUs allocated to the Minishift VM")
@@ -81,16 +83,16 @@ func NewCmdCreateClusterMinishift(f Factory, in terminal.FileReader, out termina
 
 func (o *CreateClusterMinishiftOptions) Run() error {
 	var deps []string
-	d := binaryShouldBeInstalled("minishift")
+	d := commoncmd.BinaryShouldBeInstalled("minishift")
 	if d != "" {
 		deps = append(deps, d)
 	}
-	d = binaryShouldBeInstalled("oc")
+	d = commoncmd.BinaryShouldBeInstalled("oc")
 	if d != "" {
 		deps = append(deps, d)
 	}
 
-	err := o.installMissingDependencies(deps)
+	err := o.InstallMissingDependencies(deps)
 	if err != nil {
 		log.Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
 		os.Exit(-1)
@@ -194,7 +196,7 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 	}
 
 	if driver != "none" {
-		err = o.doInstallMissingDependencies([]string{driver})
+		err = o.DoInstallMissingDependencies([]string{driver})
 		if err != nil {
 			log.Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
 			os.Exit(-1)
@@ -225,7 +227,7 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 		return err
 	}
 
-	ip, err := o.getCommandOutput("", "minishift", "ip")
+	ip, err := o.GetCommandOutput("", "minishift", "ip")
 	if err != nil {
 		return err
 	}
@@ -245,7 +247,7 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 	}
 
 	log.Info("Initialising cluster ...\n")
-	err = o.initAndInstall(MINISHIFT)
+	err = o.initAndInstall(commoncmd.MINISHIFT)
 	if err != nil {
 		return err
 	}

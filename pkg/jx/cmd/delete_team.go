@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -18,7 +20,7 @@ import (
 
 // DeleteTeamOptions are the flags for delete commands
 type DeleteTeamOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	SelectAll    bool
 	SelectFilter string
@@ -41,9 +43,9 @@ var (
 
 // NewCmdDeleteTeam creates a command object
 // retrieves one or more resources from a server.
-func NewCmdDeleteTeam(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteTeam(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &DeleteTeamOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 
@@ -66,7 +68,7 @@ func NewCmdDeleteTeam(f Factory, in terminal.FileReader, out terminal.FileWriter
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "a", false, "Should we default to selecting all the matched teams for deletion")
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Filters the list of teams you can pick from")
 	cmd.Flags().BoolVarP(&options.Confirm, "yes", "y", false, "Confirms we should uninstall this installation")
@@ -133,7 +135,7 @@ func (o *DeleteTeamOptions) Run() error {
 }
 
 func (o *DeleteTeamOptions) deleteTeam(name string) error {
-	err := o.registerTeamCRD()
+	err := o.RegisterTeamCRD()
 	if err != nil {
 		return err
 	}
@@ -152,7 +154,7 @@ func (o *DeleteTeamOptions) deleteTeam(name string) error {
 		// we don't have the namespace so the team cannot have been provisioned yet
 		return kube.DeleteTeam(jxClient, ns, name)
 	}
-	origNamespace := o.currentNamespace
+	origNamespace := o.CurrentNamespace()
 	o.ChangeNamespace(name)
 
 	uninstall := &UninstallOptions{
@@ -182,4 +184,22 @@ func (o *DeleteTeamOptions) deleteTeam(name string) error {
 	}
 	o.ChangeNamespace(origNamespace)
 	return err
+}
+
+//ChangeNamespace switches the current jx/K8S namespace to the one specified.
+//This is analogous to running `jx namespace cheese`.
+func (o *DeleteTeamOptions) ChangeNamespace(ns string) {
+	nsOptions := &NamespaceOptions{
+		CommonOptions: o.CommonOptions,
+	}
+	nsOptions.BatchMode = true
+	nsOptions.Args = []string{ns}
+	err := nsOptions.Run()
+	if err != nil {
+		log.Warnf("Failed to set context to namespace %s: %s", ns, err)
+	}
+
+	//Reset all the cached clients & namespace values when switching so that they can be properly recalculated for
+	//the new namespace.
+	o.ResetClients()
 }

@@ -17,6 +17,8 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -48,7 +50,7 @@ When using Cloud Storage we use URLs like 's3://nameOfBucket' on AWS, 'gs://anot
 var (
 	stepStashLong = templates.LongDesc(`
 		This pipeline step stashes the specified files from the build into some stable storage location.
-` + storageSupportDescription + SeeAlsoText("jx step unstash", "jx edit storage"))
+` + storageSupportDescription + commoncmd.SeeAlsoText("jx step unstash", "jx edit storage"))
 
 	stepStashExample = templates.Examples(`
 		# lets collect some files to the team's default storage location (which if not configured uses the current git repository's gh-pages branch)
@@ -70,10 +72,10 @@ var (
 )
 
 // NewCmdStepStash creates the CLI command
-func NewCmdStepStash(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepStash(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepStashOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -138,7 +140,7 @@ func (o *StepStashOptions) Run() error {
 				if err != nil {
 					log.Warnf("Could not find a .git directory: %s\n", err)
 				} else {
-					sourceURL, err = o.discoverGitURL(gitConf)
+					sourceURL, err = o.DiscoverGitURL(gitConf)
 				}
 			}
 			if sourceURL == "" {
@@ -161,7 +163,7 @@ func (o *StepStashOptions) Run() error {
 		return errors.Wrap(err, "cannot create the JX client")
 	}
 
-	buildNo := o.getBuildNumber()
+	buildNo := o.GetBuildNumber()
 	var projectGitInfo *gits.GitRepository
 	if o.ProjectGitURL != "" {
 		projectGitInfo, err = gits.ParseGitURL(o.ProjectGitURL)

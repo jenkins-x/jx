@@ -18,6 +18,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 )
@@ -25,7 +27,7 @@ import (
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
 // referencing the cmd.Flags()
 type GCHelmOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 
 	RevisionHistoryLimit int
 	OutDir               string
@@ -46,9 +48,9 @@ var (
 )
 
 // NewCmdGCHelm  a command object for the "garbage collect" command
-func NewCmdGCHelm(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGCHelm(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GCHelmOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,
@@ -68,7 +70,7 @@ func NewCmdGCHelm(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	cmd.Flags().IntVarP(&options.RevisionHistoryLimit, "revision-history-limit", "", 10, "Minimum number of versions per release to keep")
 	cmd.Flags().StringVarP(&options.OutDir, optionOutputDir, "o", "configmaps", "Relative directory to output backup to. Defaults to ./configmaps")
 	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "", false, "Does not perform the delete operation on Kubernetes")

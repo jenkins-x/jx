@@ -1,21 +1,26 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/cloud/buckets"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
 	"io/ioutil"
 	"net/url"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/cloud/buckets"
+	"github.com/jenkins-x/jx/pkg/gits"
+
+	"github.com/jenkins-x/jx/pkg/cloud/buckets"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // StepUnstashOptions contains the command line flags
@@ -30,7 +35,7 @@ type StepUnstashOptions struct {
 var (
 	stepUnstashLong = templates.LongDesc(`
 		This pipeline step unstashes the files in storage to a local file or the console
-` + storageSupportDescription + SeeAlsoText("jx step stash", "jx edit storage"))
+` + storageSupportDescription + commoncmd.SeeAlsoText("jx step stash", "jx edit storage"))
 
 	stepUnstashExample = templates.Examples(`
 		# unstash a file to the reports directory
@@ -42,10 +47,10 @@ var (
 )
 
 // NewCmdStepUnstash creates the CLI command
-func NewCmdStepUnstash(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepUnstash(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := StepUnstashOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,

@@ -5,6 +5,8 @@ import (
 
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/heptio/sonobuoy/pkg/config"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -25,14 +27,14 @@ var (
 
 // ComplianceRuntOptions options for "compliance run" command
 type ComplianceRunOptions struct {
-	CommonOptions
+	commoncmd.CommonOptions
 }
 
 // NewCmdComplianceRun creates a command object for the "compliance run" action, which
 // starts the E2E compliance tests
-func NewCmdComplianceRun(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdComplianceRun(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &ComplianceRunOptions{
-		CommonOptions: CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: f,
 			In:      in,
 			Out:     out,

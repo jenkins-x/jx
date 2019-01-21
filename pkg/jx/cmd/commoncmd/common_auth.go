@@ -1,8 +1,9 @@
-package cmd
+package commoncmd
 
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
 	"github.com/jenkins-x/jx/pkg/log"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -14,7 +15,7 @@ import (
 
 func (o *CommonOptions) CreateGitAuthConfigServiceDryRun(dryRun bool) (auth.ConfigService, error) {
 	if dryRun {
-		fileName := GitAuthConfigFile
+		fileName := clients.GitAuthConfigFile
 		return o.CreateGitAuthConfigServiceFromSecrets(fileName, nil, false)
 	}
 	return o.CreateGitAuthConfigService()
@@ -41,7 +42,7 @@ func (o *CommonOptions) CreateGitAuthConfigService() (auth.ConfigService, error)
 		}
 	}
 
-	fileName := GitAuthConfigFile
+	fileName := clients.GitAuthConfigFile
 	return o.CreateGitAuthConfigServiceFromSecrets(fileName, secrets, o.IsInCDPipeline())
 }
 

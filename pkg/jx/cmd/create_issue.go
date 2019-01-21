@@ -9,6 +9,8 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -50,10 +52,10 @@ type CreateIssueOptions struct {
 }
 
 // NewCmdCreateIssue creates a command object for the "create" command
-func NewCmdCreateIssue(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateIssue(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CreateIssueOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 
@@ -82,13 +84,13 @@ func NewCmdCreateIssue(f Factory, in terminal.FileReader, out terminal.FileWrite
 	cmd.Flags().StringVarP(&options.Body, "body", "", "", "The body of the issue")
 	cmd.Flags().StringArrayVarP(&options.Labels, "label", "l", []string{}, "The labels to add to the issue")
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	return cmd
 }
 
 // Run implements the command
 func (o *CreateIssueOptions) Run() error {
-	tracker, err := o.createIssueProvider(o.Dir)
+	tracker, err := o.IssueProvider(o.Dir)
 	if err != nil {
 		return err
 	}

@@ -1,4 +1,4 @@
-package cmd
+package commoncmd
 
 import (
 	"fmt"
@@ -9,11 +9,11 @@ import (
 )
 
 // getAddonAuth returns the server and user auth for the given addon service URL
-func (o *CommonOptions) getAddonAuth(serviceURL string) (*auth.AuthServer, *auth.UserAuth, error) {
+func (o *CommonOptions) GetAddonAuth(serviceURL string) (*auth.AuthServer, *auth.UserAuth, error) {
 	if serviceURL == "" {
 		return nil, nil, nil
 	}
-	authConfigSvc, err := o.createAddonAuthConfigService()
+	authConfigSvc, err := o.AddonAuthConfigService()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -25,8 +25,8 @@ func (o *CommonOptions) getAddonAuth(serviceURL string) (*auth.AuthServer, *auth
 }
 
 // getAddonAuth returns the server and user auth for the given addon service URL. Returns null values if there is no server
-func (o *CommonOptions) getAddonAuthByKind(kind, serverURL string) (*auth.AuthServer, *auth.UserAuth, error) {
-	authConfigSvc, err := o.createAddonAuthConfigService()
+func (o *CommonOptions) GetAddonAuthByKind(kind, serverURL string) (*auth.AuthServer, *auth.UserAuth, error) {
+	authConfigSvc, err := o.AddonAuthConfigService()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -47,7 +47,7 @@ func (o *CommonOptions) getAddonAuthByKind(kind, serverURL string) (*auth.AuthSe
 	return server, userAuth, err
 }
 
-func (o *CommonOptions) createAddonAuthConfigService() (auth.ConfigService, error) {
+func (o *CommonOptions) AddonAuthConfigService() (auth.ConfigService, error) {
 	secrets, err := o.LoadPipelineSecrets(kube.ValueKindAddon, "")
 	if err != nil {
 		log.Warnf("The current user cannot query pipeline addon secrets: %s", err)

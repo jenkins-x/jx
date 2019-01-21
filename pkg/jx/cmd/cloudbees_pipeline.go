@@ -7,6 +7,8 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/browser"
@@ -32,10 +34,10 @@ var (
 		jx cloudbees pipeline -u`)
 )
 
-func NewCmdCloudBeesPipeline(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCloudBeesPipeline(f clients.Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &CloudBeesPipelineOptions{
 		CloudBeesOptions: CloudBeesOptions{
-			CommonOptions: CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory: f,
 				In:      in,
 				Out:     out,
@@ -83,7 +85,7 @@ func (o *CloudBeesPipelineOptions) Run() error {
 }
 
 func (o *CloudBeesPipelineOptions) Open(name string, label string) error {
-	url, err := o.findService(name)
+	url, err := o.FindService(name)
 	if err != nil {
 		return err
 	}
