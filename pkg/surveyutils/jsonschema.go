@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -367,7 +369,12 @@ func (o *JSONSchemaOptions) handleConst(name string, validators []survey.Validat
 	}
 	err = validator(t.Const)
 	if answer {
-		output.Set(name, t.Const)
+		constAsString := fmt.Sprintf("%v", *t.Const)
+		v, err := convertAnswer(constAsString, t.Type)
+		if err != nil {
+			return err
+		}
+		output.Set(name, v)
 	}
 	return nil
 }
@@ -480,7 +487,7 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 	if t.Default != nil {
 		defaultValue = fmt.Sprintf("%v", t.Default)
 	}
-	answer := ""
+	var answer interface{}
 	surveyOpts := survey.WithStdio(in, out, outErr)
 	validator := survey.ComposeValidators(validators...)
 	// Ask the question
@@ -514,6 +521,29 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 		if err != nil {
 			return err
 		}
+	} else if t.Type == "boolean" {
+		// Confirm dialog
+		var d bool
+		var err error
+		if defaultValue != "" {
+			d, err = strconv.ParseBool(defaultValue)
+			if err != nil {
+				return err
+			}
+		}
+
+		var a bool
+		prompt := &survey.Confirm{
+			Message: message,
+			Help:    help,
+			Default: d,
+		}
+
+		err = survey.AskOne(prompt, &a, validator, surveyOpts)
+		if err != nil {
+			return errors.Wrapf(err, "error asking user %s using validators %v", message, validators)
+		}
+		answer = a
 	} else {
 		// Basic input
 		prompt := &survey.Input{
@@ -521,20 +551,20 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 			Default: defaultValue,
 			Help:    help,
 		}
-
-		err := survey.AskOne(prompt, &answer, validator, surveyOpts)
+		var a string
+		err := survey.AskOne(prompt, &a, validator, surveyOpts)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "error asking user %s using validators %v", message, validators)
+		}
+		answer, err = convertAnswer(a, t.Type)
+		if err != nil {
+			return errors.Wrapf(err, "error converting answer %s to type %s", a, t.Type)
 		}
 	}
 
-	v, err := convertAnswer(answer, t.Type)
-	if err != nil {
-		return err
-	}
 	if storeAsSecret {
 		secretName := kube.ToValidName(strings.Join(append(prefixes, "secret"), "-"))
-		value, err := util.AsString(v)
+		value, err := util.AsString(answer)
 		if err != nil {
 			return err
 		}
@@ -545,7 +575,7 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 		output.Set(name, secretReference)
 	} else {
 		// Write the value to the output
-		output.Set(name, v)
+		output.Set(name, answer)
 	}
 	return nil
 }
