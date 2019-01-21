@@ -502,7 +502,7 @@ func (o *PreviewOptions) Run() error {
 					Build:    build,
 				},
 			}
-			a, _, p, _, err := key.GetOrCreatePreview(o.jxClient, o.Namespace)
+			a, _, p, _, err := key.GetOrCreatePreview(jxClient, o.Namespace)
 			if err == nil && a != nil && p != nil {
 				updated := false
 				if p.ApplicationURL == "" {

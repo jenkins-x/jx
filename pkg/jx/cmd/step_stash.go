@@ -97,7 +97,7 @@ func NewCmdStepStash(f clients.Factory, in terminal.FileReader, out terminal.Fil
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 	addStorageLocationFlags(cmd, &options.StorageLocation)
 
 	cmd.Flags().StringArrayVarP(&options.Pattern, "pattern", "p", nil, "Specify the pattern to use to look for files")

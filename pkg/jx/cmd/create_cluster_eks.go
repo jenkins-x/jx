@@ -207,7 +207,7 @@ cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
 	if err != nil {
 		return err
 	}
-	err = kube.RememberRegion(kubeClient, o.currentNamespace, region)
+	err = kube.RememberRegion(kubeClient, o.CurrentNamespace(), region)
 	if err != nil {
 		return err
 	}

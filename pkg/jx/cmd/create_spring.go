@@ -24,7 +24,7 @@ var (
 
 		For more documentation see: [https://jenkins-x.io/developing/create-spring/](https://jenkins-x.io/developing/create-spring/)
 
-` + SeeAlsoText("jx create project"))
+` + commoncmd.SeeAlsoText("jx create project"))
 
 	createSpringExample = templates.Examples(`
 		# Create a Spring Boot application where you use the terminal to pick the values

@@ -474,6 +474,12 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 		return
 	}
 
+	jxClient, _, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		log.Warnf("failed to build the jx client")
+		return
+	}
+
 	for _, step := range activity.Spec.Steps {
 		promote := step.Promote
 		if promote == nil {
@@ -535,8 +541,8 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 					} else {
 						promoteKey := po.createPromoteKey(env)
 
-						promoteKey.OnPromotePullRequest(o.jxClient, o.Namespace, mergedPR)
-						promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.StartPromotionUpdate)
+						promoteKey.OnPromotePullRequest(jxClient, o.Namespace, mergedPR)
+						promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.StartPromotionUpdate)
 
 						statuses, err := gitProvider.ListCommitStatus(pr.Owner, pr.Repo, mergeSha)
 						if err == nil {
@@ -575,7 +581,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 									p.Statuses = prStatuses
 									return nil
 								}
-								promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, updateStatuses)
+								promoteKey.OnPromoteUpdate(jxClient, o.Namespace, updateStatuses)
 
 								succeeded := true
 								for _, v := range urlStatusMap {
@@ -600,7 +606,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 										log.Warnf("Failed to comment on issues: %s", err)
 										return
 									}
-									err = promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.CompletePromotionUpdate)
+									err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
 									if err != nil {
 										log.Warnf("Failed to update PipelineActivity on promotion completion: %s", err)
 									}

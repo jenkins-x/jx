@@ -12,7 +12,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/pkg/gits"
 
-	"github.com/jenkins-x/jx/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"

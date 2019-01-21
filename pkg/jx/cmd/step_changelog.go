@@ -497,7 +497,7 @@ func (o *StepChangelogOptions) Run() error {
 				Version:           cleanVersion,
 			},
 		}
-		a, created, err := key.GetOrCreate(jxClient, o.currentNamespace)
+		a, created, err := key.GetOrCreate(jxClient, o.CurrentNamespace())
 		if err == nil && a != nil && !created {
 			_, err = activities.Update(a)
 			if err != nil {

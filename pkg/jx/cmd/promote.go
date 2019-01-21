@@ -12,6 +12,7 @@ import (
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
+	"github.com/pkg/errors"
 
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -352,6 +353,10 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	} else {
 		log.Infof("Promoting app %s version %s to namespace %s\n", info(app), info(version), info(targetNS))
 	}
+	jxClient, _, err := o.JXClient()
+	if err != nil {
+		return nil, errors.Wrap(err, "getting jx client")
+	}
 	fullAppName := app
 	if o.LocalHelmRepoName != "" {
 		fullAppName = o.LocalHelmRepoName + "/" + app
@@ -401,7 +406,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 					}
 					return nil
 				}
-				err = promoteKey.OnPromotePullRequest(o.jxClient, o.Namespace, startPromotePR)
+				err = promoteKey.OnPromotePullRequest(jxClient, o.Namespace, startPromotePR)
 				if err != nil {
 					log.Warnf("Failed to update PipelineActivity: %s\n", err)
 				}
@@ -412,7 +417,6 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		}
 	}
 
-	var err error
 	if !o.UseFakeHelm {
 		err := o.verifyHelmConfigured()
 		if err != nil {
@@ -436,7 +440,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		}
 		return nil
 	}
-	promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, startPromote)
+	promoteKey.OnPromoteUpdate(jxClient, o.Namespace, startPromote)
 
 	err = o.Helm().UpgradeChart(fullAppName, releaseName, targetNS, &version, true, nil, false, true, nil, nil, "",
 		"", "")
@@ -445,9 +449,9 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		if err != nil {
 			log.Warnf("Failed to comment on issues for release %s: %s\n", releaseName, err)
 		}
-		err = promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.CompletePromotionUpdate)
+		err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
 	} else {
-		err = promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.FailedPromotionUpdate)
+		err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.FailedPromotionUpdate)
 	}
 	return releaseInfo, err
 }
@@ -545,6 +549,10 @@ func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releas
 		log.Infof("No --%s option specified on the 'jx promote' command so not waiting for the promotion to succeed\n", optionPullRequestPollTime)
 		return nil
 	}
+	jxClient, _, err := o.JXClient()
+	if err != nil {
+		return err
+	}
 	duration := *o.TimeoutDuration
 	end := time.Now().Add(duration)
 
@@ -555,7 +563,7 @@ func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releas
 		err := o.waitForGitOpsPullRequest(ns, env, releaseInfo, end, duration, promoteKey)
 		if err != nil {
 			// TODO based on if the PR completed or not fail the PR or the Promote?
-			promoteKey.OnPromotePullRequest(o.jxClient, o.Namespace, kube.FailedPromotionPullRequest)
+			promoteKey.OnPromotePullRequest(jxClient, o.Namespace, kube.FailedPromotionPullRequest)
 			return err
 		}
 	}
@@ -573,6 +581,10 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 	urlStatusMap := map[string]string{}
 	urlStatusTargetURLMap := map[string]string{}
 
+	jxClient, _, err := o.JXClient()
+	if err != nil {
+		return err
+	}
 	if pullRequestInfo != nil {
 		for {
 			pr := pullRequestInfo.PullRequest
@@ -598,7 +610,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 								p.MergeCommitSHA = mergeSha
 								return nil
 							}
-							promoteKey.OnPromotePullRequest(o.jxClient, o.Namespace, mergedPR)
+							promoteKey.OnPromotePullRequest(jxClient, o.Namespace, mergedPR)
 
 							if o.NoWaitAfterMerge {
 								log.Infof("Pull requests are merged, No wait on promotion to complete")
@@ -606,13 +618,13 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 							}
 						}
 
-						promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.StartPromotionUpdate)
+						promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.StartPromotionUpdate)
 
 						if o.NoWaitForUpdatePipeline {
 							log.Infoln("Pull Request merged but we are not waiting for the update pipeline to complete!")
 							err = o.commentOnIssues(ns, env, promoteKey)
 							if err == nil {
-								err = promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.CompletePromotionUpdate)
+								err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
 							}
 							return err
 						}
@@ -665,7 +677,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 									p.Statuses = prStatuses
 									return nil
 								}
-								promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, updateStatuses)
+								promoteKey.OnPromoteUpdate(jxClient, o.Namespace, updateStatuses)
 
 								succeeded := true
 								for _, v := range urlStatusMap {
@@ -677,7 +689,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 									log.Infoln("Merge status checks all passed so the promotion worked!")
 									err = o.commentOnIssues(ns, env, promoteKey)
 									if err == nil {
-										err = promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.CompletePromotionUpdate)
+										err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
 									}
 									return err
 								}

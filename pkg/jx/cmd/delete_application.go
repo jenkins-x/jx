@@ -142,7 +142,11 @@ func (o *DeleteApplicationOptions) Run() error {
 }
 
 func (o *DeleteApplicationOptions) deleteProwApplication(repoService kube.SourceRepoer) (deletedApplications []string, err error) {
-	envMap, _, err := kube.GetOrderedEnvironments(o.jxClient, "")
+	jxClient, _, err := o.JXClient()
+	if err != nil {
+		return deletedApplications, errors.Wrap(err, "gettign jx client")
+	}
+	envMap, _, err := kube.GetOrderedEnvironments(jxClient, "")
 	currentUser, err := user.Current()
 	if err != nil {
 		return deletedApplications, errors.Wrap(err, "getting current user")

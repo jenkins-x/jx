@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/kube"
 	"io"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
@@ -82,9 +83,9 @@ func (o *StepPreBuildOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		region, _ := kube.ReadRegion(kubeClient, o.currentNamespace)
+		region, _ := kube.ReadRegion(kubeClient, o.CurrentNamespace())
 		if strings.HasSuffix(dockerRegistry, ".amazonaws.com") && strings.Index(dockerRegistry, ".ecr.") > 0 {
-			return amazon.LazyCreateRegistry(kubeClient, o.currentNamespace, region, dockerRegistry, orgName, appName)
+			return amazon.LazyCreateRegistry(kubeClient, o.CurrentNamespace(), region, dockerRegistry, orgName, appName)
 		}
 	}
 	return nil
