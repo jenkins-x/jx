@@ -22,14 +22,14 @@ import (
 )
 
 const (
-	gitSuffix                       = "_with_git"
-	mavenKeepOldJenkinsfile         = "maven_keep_old_jenkinsfile"
-	mavenKeepOldJenkinsfile_withGit = mavenKeepOldJenkinsfile + gitSuffix
-	mavenOldJenkinsfile             = "maven_old_jenkinsfile"
-	mavenOldJenkinsfile_withGit     = mavenOldJenkinsfile + gitSuffix
-	mavenCamel                      = "maven_camel"
-	mavenSpringBoot                 = "maven_springboot"
-	probePrefix                     = "probePath:"
+	gitSuffix                      = "_with_git"
+	mavenKeepOldJenkinsfile        = "maven_keep_old_jenkinsfile"
+	mavenKeepOldJenkinsfilewithGit = mavenKeepOldJenkinsfile + gitSuffix
+	mavenOldJenkinsfile            = "maven_old_jenkinsfile"
+	mavenOldJenkinsfilewithGit     = mavenOldJenkinsfile + gitSuffix
+	mavenCamel                     = "maven_camel"
+	mavenSpringBoot                = "maven_springboot"
+	probePrefix                    = "probePath:"
 )
 
 func TestImportProjects(t *testing.T) {
