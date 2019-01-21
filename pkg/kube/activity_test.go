@@ -2,15 +2,18 @@ package kube_test
 
 import (
 	"fmt"
-	jxfake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
-	k8s_v1 "k8s.io/api/core/v1"
 	"strconv"
 	"testing"
 	"time"
 
+	jxfake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
+	k8s_v1 "k8s.io/api/core/v1"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,7 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 	kube_mocks "k8s.io/client-go/kubernetes/fake"
 )
-
 
 type MockPipelineActivityInterface struct {
 	Activities map[string]*v1.PipelineActivity
@@ -71,7 +73,7 @@ func (m *MockPipelineActivityInterface) Patch(name string, pt types.PatchType, d
 }
 
 func TestGenerateBuildNumber(t *testing.T) {
-	options := &cmd.CommonOptions{Factory: cmd.NewFactory()}
+	options := &commoncmd.CommonOptions{Factory: clients.NewFactory()}
 	cmd.ConfigureTestOptions(options, options.Git(), options.Helm())
 
 	jxClient, ns, err := options.JXClientAndDevNamespace()
@@ -119,7 +121,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 
 	nsObj := &k8s_v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "jx-testing",
+			Name:      "jx-testing",
 			Namespace: "testing_ns",
 		},
 	}
@@ -151,7 +153,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 	}
 
 	for i := 1; i < 3; i++ {
-		a, _, err := key.GetOrCreate(jxClient,nsObj.Namespace)
+		a, _, err := key.GetOrCreate(jxClient, nsObj.Namespace)
 		assert.Nil(t, err)
 		assert.Equal(t, expectedName, a.Name)
 		spec := &a.Spec

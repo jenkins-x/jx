@@ -16,6 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -148,7 +149,7 @@ func prepare(t *testing.T) (*users.GitUserResolver, *gits.FakeProvider, error) {
 	testRepoName := "my-app"
 	fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
 
-	o := cmd.CommonOptions{}
+	o := commoncmd.CommonOptions{}
 	cmd.ConfigureTestOptionsWithResources(&o,
 		[]runtime.Object{},
 		[]runtime.Object{},

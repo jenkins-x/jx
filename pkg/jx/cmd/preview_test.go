@@ -18,8 +18,10 @@ import (
 	gits_matchers "github.com/jenkins-x/jx/pkg/gits/mocks/matchers"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
-	cmd_matchers "github.com/jenkins-x/jx/pkg/jx/cmd/mocks/matchers"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
+	cmd_matchers "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks/matchers"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	k8s_v1 "k8s.io/api/core/v1"
 	k8s_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -170,7 +172,7 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 	factory := cmd_mocks.NewMockFactory()
 	previewOpts := &cmd.PreviewOptions{
 		PromoteOptions: cmd.PromoteOptions{
-			CommonOptions: cmd.CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				Factory:   factory,
 				Out:       os.Stdout,
 				In:        os.Stdin,
@@ -220,7 +222,7 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 	mockGitProvider := gits_test.NewMockGitProvider()
 	When(factory.CreateGitProvider(AnyString(), //gitURL
 		AnyString(), //message
-		cmd_matchers.AnyAuthAuthConfigService(),
+		cmd_matchers.AnyAuthConfigService(),
 		AnyString(), //gitKind
 		AnyBool(),   //batchMode,
 		cmd_matchers.AnyGitsGitter(),
@@ -241,7 +243,7 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 
 	mockConfigSaver := auth_test.NewMockConfigSaver()
 	When(mockConfigSaver.LoadConfig()).ThenReturn(&auth.AuthConfig{}, nil)
-	When(factory.CreateAuthConfigService(cmd.GitAuthConfigFile)).ThenReturn(auth.NewAuthConfigService(mockConfigSaver), nil)
+	When(factory.CreateAuthConfigService(clients.GitAuthConfigFile)).ThenReturn(auth.NewAuthConfigService(mockConfigSaver), nil)
 	When(factory.IsInCDPipeline()).ThenReturn(true)
 
 	cs := cs_fake.NewSimpleClientset()

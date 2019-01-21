@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 )
 
 const (
@@ -24,7 +25,7 @@ const (
 
 func TestStartProtection(t *testing.T) {
 	o := cmd.StartProtectionOptions{
-		CommonOptions: cmd.CommonOptions{},
+		CommonOptions: commoncmd.CommonOptions{},
 	}
 
 	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,

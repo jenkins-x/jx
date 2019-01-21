@@ -5,7 +5,8 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
+	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 
 	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
@@ -102,7 +103,7 @@ func TestStatusRun(t *testing.T) {
 
 	// Setup options
 	options := &cmd.StatusOptions{
-		CommonOptions: cmd.CommonOptions{
+		CommonOptions: commoncmd.CommonOptions{
 			Factory: factory,
 			Out:     os.Stdout,
 			Err:     os.Stderr,

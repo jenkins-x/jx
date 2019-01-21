@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 )
@@ -39,8 +40,8 @@ func TestUpgradeAppsForGitOps(t *testing.T) {
 
 // Contains all useful data from the test environment initialized by `prepareInitialPromotionEnv`
 type UpgradeAppsTestEnv struct {
-	FakePullRequests cmd.CreateEnvPullRequestFn
-	CommonOptions    *cmd.CommonOptions
+	FakePullRequests commoncmd.CreateEnvPullRequestFn
+	CommonOptions    *commoncmd.CommonOptions
 	FakeGitProvider  *gits.FakeProvider
 	DevRepo          *gits.FakeRepository
 	DevEnvRepo       *gits.FakeRepository

@@ -10,6 +10,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -43,8 +44,8 @@ func TestAddAppForGitOps(t *testing.T) {
 
 // Contains all useful data from the test environment initialized by `prepareInitialPromotionEnv`
 type AppTestEnv struct {
-	FakePullRequests cmd.CreateEnvPullRequestFn
-	CommonOptions    *cmd.CommonOptions
+	FakePullRequests commoncmd.CreateEnvPullRequestFn
+	CommonOptions    *commoncmd.CommonOptions
 	FakeGitProvider  *gits.FakeProvider
 	DevRepo          *gits.FakeRepository
 	DevEnvRepo       *gits.FakeRepository

@@ -15,6 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/testkube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -42,7 +43,7 @@ func TestStepBuildPackApply(t *testing.T) {
 
 	o := &cmd.StepBuildPackApplyOptions{
 		StepOptions: cmd.StepOptions{
-			CommonOptions: cmd.CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				In:  os.Stdin,
 				Out: os.Stdout,
 				Err: os.Stderr,

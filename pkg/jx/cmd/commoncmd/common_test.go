@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
+	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/api/core/v1"
@@ -24,7 +24,7 @@ func TestJXClient(t *testing.T) {
 	// Override CreateJXClient to return mock versiond interface
 	When(factory.CreateJXClient()).ThenReturn(versiondInterface, "jx-testing", nil)
 
-	options := cmd.CommonOptions{
+	options := commoncmd.CommonOptions{
 		Factory: factory,
 		Out:     os.Stdout,
 		Err:     os.Stderr,
@@ -56,7 +56,7 @@ func TestJXClientAndDevNameSpace(t *testing.T) {
 	// Override CreateJXClient to return mock versiond interface
 	When(factory.CreateJXClient()).ThenReturn(versiondInterface, "jx-testing", nil)
 
-	options := cmd.CommonOptions{
+	options := commoncmd.CommonOptions{
 		Factory: factory,
 		Out:     os.Stdout,
 		Err:     os.Stderr,

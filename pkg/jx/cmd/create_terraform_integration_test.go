@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -37,7 +38,7 @@ func TestCreateOrganisationFolderStructures(t *testing.T) {
 
 	o := cmd.CreateTerraformOptions{
 		CreateOptions: cmd.CreateOptions{
-			CommonOptions: cmd.CommonOptions{
+			CommonOptions: commoncmd.CommonOptions{
 				BatchMode: true,
 				In:        os.Stdin,
 				Out:       os.Stdout,

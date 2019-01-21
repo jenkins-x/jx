@@ -1,12 +1,14 @@
 package cmd_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
 
@@ -43,7 +45,7 @@ func TestPromoteToProductionRun(t *testing.T) {
 		Filter:              "",
 		Alias:               "",
 		FakePullRequests:    testEnv.FakePullRequests,
-		Namespace:			 "jx",
+		Namespace:           "jx",
 
 		// test settings
 		UseFakeHelm: true,
@@ -102,7 +104,7 @@ func TestPromoteToProductionNoMergeRun(t *testing.T) {
 		Filter:              "",
 		Alias:               "",
 		FakePullRequests:    testEnv.FakePullRequests,
-		Namespace:			 "jx",
+		Namespace:           "jx",
 
 		// test settings
 		UseFakeHelm: true,
@@ -175,7 +177,7 @@ func TestPromoteToProductionPRPollingRun(t *testing.T) {
 		Filter:              "",
 		Alias:               "",
 		FakePullRequests:    testEnv.FakePullRequests,
-		Namespace:			 "jx",
+		Namespace:           "jx",
 		// test settings
 		UseFakeHelm: true,
 	}
@@ -221,9 +223,9 @@ func TestPromoteToProductionPRPollingRun(t *testing.T) {
 // Contains all useful data from the test environment initialized by `prepareInitialPromotionEnv`
 type TestEnv struct {
 	Activity         *v1.PipelineActivity
-	FakePullRequests cmd.CreateEnvPullRequestFn
+	FakePullRequests commoncmd.CreateEnvPullRequestFn
 	WorkflowOptions  *cmd.ControllerWorkflowOptions
-	CommonOptions    *cmd.CommonOptions
+	CommonOptions    *commoncmd.CommonOptions
 	FakeGitProvider  *gits.FakeProvider
 	DevRepo          *gits.FakeRepository
 	StagingRepo      *gits.FakeRepository
@@ -249,7 +251,7 @@ func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*
 		NoWatch:          true,
 		FakePullRequests: cmd.NewCreateEnvPullRequestFn(fakeGitProvider),
 		FakeGitProvider:  fakeGitProvider,
-		Namespace:		  "jx",
+		Namespace:        "jx",
 	}
 
 	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://github.com/"+testOrgName+"/"+stagingRepoName+".git")

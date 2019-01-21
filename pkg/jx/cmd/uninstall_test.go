@@ -7,7 +7,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits/mocks"
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
+	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	kuber_mocks "github.com/jenkins-x/jx/pkg/kube/mocks"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +31,7 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_FailsWhenContextNamesDoNo
 	kubeMock := setupUninstall("current-context")
 
 	o := &cmd.UninstallOptions{
-		CommonOptions: cmd.CommonOptions{},
+		CommonOptions: commoncmd.CommonOptions{},
 		Namespace:     "ns",
 		Context:       "target-context",
 	}
@@ -45,7 +46,7 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_PassWhenContextNamesMatch
 	kubeMock := setupUninstall("correct-context-to-delete")
 
 	o := &cmd.UninstallOptions{
-		CommonOptions: cmd.CommonOptions{},
+		CommonOptions: commoncmd.CommonOptions{},
 		Namespace:     "ns",
 		Context:       "correct-context-to-delete",
 	}
@@ -70,7 +71,7 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_PassWhenForced(t *testing
 	kubeMock := setupUninstall("correct-context-to-delete")
 
 	o := &cmd.UninstallOptions{
-		CommonOptions: cmd.CommonOptions{},
+		CommonOptions: commoncmd.CommonOptions{},
 		Namespace:     "ns",
 		Force:         true,
 	}
@@ -108,8 +109,8 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_FailsWhenContextNamesDoNotM
 	}()
 
 	o := &cmd.UninstallOptions{
-		CommonOptions: cmd.CommonOptions{
-			Factory: cmd_test.NewMockFactory(),
+		CommonOptions: commoncmd.CommonOptions{
+			Factory: cmd_mocks.NewMockFactory(),
 			In:      console.In,
 			Out:     console.Out,
 			Err:     console.Err,
@@ -147,8 +148,8 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t
 	}()
 
 	o := &cmd.UninstallOptions{
-		CommonOptions: cmd.CommonOptions{
-			Factory: cmd_test.NewMockFactory(),
+		CommonOptions: commoncmd.CommonOptions{
+			Factory: cmd_mocks.NewMockFactory(),
 			In:      console.In,
 			Out:     console.Out,
 			Err:     console.Err,

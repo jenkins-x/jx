@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -95,7 +96,7 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 
 		if testcase == mavenKeepOldJenkinsfile {
 			tests.AssertFileContains(t, jenkinsfile, "THIS IS OLD!")
-			tests.AssertFileDoesNotExist(t, jenkinsfile+cmd.JenkinsfileBackupSuffix)
+			tests.AssertFileDoesNotExist(t, jenkinsfile+commoncmd.JenkinsfileBackupSuffix)
 		} else {
 			if strings.HasPrefix(dirName, "maven") {
 				tests.AssertFileContains(t, jenkinsfile, "mvn")
@@ -119,9 +120,9 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 			if withRename {
 				tests.AssertFileExists(t, defaultJenkinsfile)
 				tests.AssertFileContains(t, defaultJenkinsfile, "THIS IS OLD!")
-				tests.AssertFileDoesNotExist(t, defaultJenkinsfile+cmd.JenkinsfileBackupSuffix)
+				tests.AssertFileDoesNotExist(t, defaultJenkinsfile+commoncmd.JenkinsfileBackupSuffix)
 			} else {
-				tests.AssertFileExists(t, defaultJenkinsfile+cmd.JenkinsfileBackupSuffix)
+				tests.AssertFileExists(t, defaultJenkinsfile+commoncmd.JenkinsfileBackupSuffix)
 			}
 		}
 	}

@@ -6,7 +6,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits/mocks"
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	cmdMocks "github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
+	cmdMocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +22,7 @@ import (
 )
 
 func setupMocks(t *testing.T, term *terminal.Stdio) (*fake.Clientset, *kubevault.VaultClientFactory, kubernetes.Interface, error) {
-	options := cmd.NewCommonOptions("", cmdMocks.NewMockFactory())
+	options := commoncmd.NewCommonOptions("", cmdMocks.NewMockFactory())
 	if term != nil {
 		options.In, options.Out, options.Err = term.In, term.Out, term.Err
 	}

@@ -22,6 +22,7 @@ import (
 	"k8s.io/helm/pkg/chartutil"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -46,7 +47,7 @@ func TestInstallGitOps(t *testing.T) {
 		},
 	}
 
-	co := cmd.CommonOptions{
+	co := commoncmd.CommonOptions{
 		In:  os.Stdin,
 		Out: os.Stdout,
 		Err: os.Stderr,
@@ -82,7 +83,7 @@ func TestInstallGitOps(t *testing.T) {
 	assertNoEnvironments(t, jxClient, ns)
 
 	testOrg := "mytestorg"
-	o.Flags.Provider = cmd.GKE
+	o.Flags.Provider = commoncmd.GKE
 	o.Flags.Dir = tempDir
 	o.Flags.GitOpsMode = true
 	o.Flags.NoGitOpsEnvApply = true
@@ -140,7 +141,7 @@ func TestInstallGitOps(t *testing.T) {
 	require.Equal(t, 1, len(req.Dependencies), "Number of dependencies in file %s", reqFile)
 	dep0 := req.Dependencies[0]
 	require.NotNil(t, dep0, "first dependency in file %s", reqFile)
-	assert.Equal(t, cmd.DEFAULT_CHARTMUSEUM_URL, dep0.Repository, "requirement.dependency[0].Repository")
+	assert.Equal(t, commoncmd.DefaultChartMuseumURL, dep0.Repository, "requirement.dependency[0].Repository")
 	assert.Equal(t, cmd.JenkinsXPlatformChartName, dep0.Name, "requirement.dependency[0].Name")
 	assert.NotEmpty(t, dep0.Version, "requirement.dependency[0].Version")
 

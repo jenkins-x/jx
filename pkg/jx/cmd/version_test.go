@@ -8,6 +8,7 @@ import (
 	"github.com/blang/semver"
 	"github.com/bouk/monkey"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/commoncmd"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
@@ -17,8 +18,8 @@ import (
 
 // TODO reafcator. setup function makes tests sequence dependent. Tests cannot be run with t.Parallel()
 func setup(latestJXVersion semver.Version) {
-	var o *cmd.CommonOptions
-	monkey.PatchInstanceMethod(reflect.TypeOf(o), "GetLatestJXVersion", func(*cmd.CommonOptions) (semver.Version, error) {
+	var o *commoncmd.CommonOptions
+	monkey.PatchInstanceMethod(reflect.TypeOf(o), "GetLatestJXVersion", func(*commoncmd.CommonOptions) (semver.Version, error) {
 		return latestJXVersion, nil
 	})
 	monkey.Patch(util.ColorInfo, func(input ...interface{}) string {
