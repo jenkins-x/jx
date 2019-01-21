@@ -1,8 +1,9 @@
 package cmd_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
@@ -43,7 +44,7 @@ func TestPromoteToProductionRun(t *testing.T) {
 		Filter:              "",
 		Alias:               "",
 		FakePullRequests:    testEnv.FakePullRequests,
-		Namespace:			 "jx",
+		Namespace:           "jx",
 
 		// test settings
 		UseFakeHelm: true,
@@ -102,7 +103,7 @@ func TestPromoteToProductionNoMergeRun(t *testing.T) {
 		Filter:              "",
 		Alias:               "",
 		FakePullRequests:    testEnv.FakePullRequests,
-		Namespace:			 "jx",
+		Namespace:           "jx",
 
 		// test settings
 		UseFakeHelm: true,
@@ -175,7 +176,7 @@ func TestPromoteToProductionPRPollingRun(t *testing.T) {
 		Filter:              "",
 		Alias:               "",
 		FakePullRequests:    testEnv.FakePullRequests,
-		Namespace:			 "jx",
+		Namespace:           "jx",
 		// test settings
 		UseFakeHelm: true,
 	}
@@ -249,11 +250,13 @@ func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*
 		NoWatch:          true,
 		FakePullRequests: cmd.NewCreateEnvPullRequestFn(fakeGitProvider),
 		FakeGitProvider:  fakeGitProvider,
-		Namespace:		  "jx",
+		Namespace:        "jx",
 	}
 
-	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://github.com/"+testOrgName+"/"+stagingRepoName+".git")
-	production := kube.NewPermanentEnvironmentWithGit("production", "https://github.com/"+testOrgName+"/"+prodRepoName+".git")
+	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://fake.git/"+testOrgName+"/"+stagingRepoName+"."+
+		"git")
+	production := kube.NewPermanentEnvironmentWithGit("production",
+		"https://fake.git/"+testOrgName+"/"+prodRepoName+".git")
 	if productionManualPromotion {
 		production.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
 	}
@@ -268,6 +271,7 @@ func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*
 			kube.NewPreviewEnvironment("preview-pr-1"),
 		},
 		&gits.GitFake{},
+		nil,
 		helm_test.NewMockHelmer(),
 	)
 

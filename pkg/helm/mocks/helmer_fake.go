@@ -41,7 +41,7 @@ func (FakeHelmer) Env() map[string]string {
 }
 
 // FetchChart fake
-func (FakeHelmer) FetchChart(chart string, version *string, untar bool, untardir string, repo string,
+func (FakeHelmer) FetchChart(chart string, version string, untar bool, untardir string, repo string,
 	username string, password string) error {
 	return nil
 }

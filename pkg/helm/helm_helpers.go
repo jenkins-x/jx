@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/client-go/kubernetes"
@@ -228,45 +227,37 @@ func LoadChartFile(fileName string) (*chart.Metadata, error) {
 func LoadValuesFile(fileName string) (map[string]interface{}, error) {
 	exists, err := util.FileExists(fileName)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "checking %s exists", fileName)
 	}
 	if exists {
 		data, err := ioutil.ReadFile(fileName)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "reading %s", fileName)
 		}
-		return LoadValues(data)
+		v, err := LoadValues(data)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unmarshaling %s", fileName)
+		}
+		return v, nil
 	}
 	return make(map[string]interface{}), nil
 }
 
 // LoadTemplatesDir loads the files in the templates dir or creates empty map if none exist
-func LoadTemplatesDir(dirName string) (map[string]map[string]interface{}, error) {
+func LoadTemplatesDir(dirName string) (map[string]string, error) {
 	exists, err := util.DirExists(dirName)
 	if err != nil {
 		return nil, err
 	}
-	answer := make(map[string]map[string]interface{})
+	answer := make(map[string]string)
 	if exists {
 		files, err := ioutil.ReadDir(dirName)
 		if err != nil {
 			return nil, err
 		}
 		for _, f := range files {
-			name := f.Name()
-			// ignore files like .gitignore or README.md etc
-			if !strings.HasSuffix(name, ".yaml") && !strings.HasSuffix(name, ".yml") {
-				continue
-			}
-			data, err := ioutil.ReadFile(name)
-			if err != nil {
-				return nil, err
-			}
-			v, err := LoadValues(data)
-			if err != nil {
-				return nil, err
-			}
-			answer[name] = v
+			filename, _ := filepath.Split(f.Name())
+			answer[filename] = f.Name()
 		}
 	}
 	return answer, nil
@@ -287,6 +278,7 @@ func LoadChart(data []byte) (*chart.Metadata, error) {
 // LoadValues loads the values from some data
 func LoadValues(data []byte) (map[string]interface{}, error) {
 	r := make(map[string]interface{})
+
 	return r, yaml.Unmarshal(data, &r)
 }
 
@@ -297,18 +289,6 @@ func SaveFile(fileName string, contents interface{}) error {
 		return err
 	}
 	return ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
-}
-
-// SaveDir saves contents (a pointer to a map of data structure where the key is the file name) to a dir
-func SaveDir(dirName string, contents map[string]map[string]interface{}) error {
-	for k, v := range contents {
-		fileName := filepath.Join(dirName, k)
-		err := SaveFile(fileName, v)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func LoadChartName(chartFile string) (string, error) {
@@ -421,7 +401,8 @@ func CombineValueFilesToFile(outFile string, inputFiles []string, chartName stri
 // GetLatestVersion get's the latest version of a chart in a repo using helmer
 func GetLatestVersion(chart string, repo string, username string, password string, helmer Helmer) (string, error) {
 	latest := ""
-	err := InspectChart(chart, repo, username, password, helmer, func(dir string) error {
+	version := ""
+	err := InspectChart(chart, version, repo, username, password, helmer, func(dir string) error {
 		var err error
 		_, latest, err = LoadChartNameAndVersion(filepath.Join(dir, "Chart.yaml"))
 		return err
@@ -430,7 +411,7 @@ func GetLatestVersion(chart string, repo string, username string, password strin
 }
 
 // InspectChart fetches the specified chart in a repo using helmer, and then calls the closure on it, before cleaning up
-func InspectChart(chart string, repo string, username string, password string,
+func InspectChart(chart string, version string, repo string, username string, password string,
 	helmer Helmer, closure func(dir string) error) error {
 	dir, err := ioutil.TempDir("", fmt.Sprintf("jx-helm-fetch-%s-", chart))
 	defer func() {
@@ -439,7 +420,7 @@ func InspectChart(chart string, repo string, username string, password string,
 			log.Warnf("Error removing %s %v\n", dir, err1)
 		}
 	}()
-	err = helmer.FetchChart(chart, nil, true, dir, repo, username, password)
+	err = helmer.FetchChart(chart, version, true, dir, repo, username, password)
 	if err != nil {
 		return err
 	}

@@ -62,6 +62,7 @@ func TestInstallGitOps(t *testing.T) {
 		},
 		[]runtime.Object{},
 		gitter,
+		nil,
 		helmer,
 	)
 	o.CommonOptions.SetGit(gitter)

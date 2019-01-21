@@ -101,6 +101,7 @@ func TestEnvironmentRoleBinding(t *testing.T) {
 			envRoleBinding,
 		},
 		gits.NewGitCLI(),
+		nil,
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 	)
 

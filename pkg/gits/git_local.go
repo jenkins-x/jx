@@ -101,7 +101,7 @@ func (g *GitLocal) RemoteBranches(dir string) ([]string, error) {
 
 // Checkout checks out the given branch
 func (g *GitLocal) Checkout(dir string, branch string) error {
-	return g.GitCLI.CheckoutRemoteBranch(dir, branch)
+	return g.GitCLI.Checkout(dir, branch)
 }
 
 // CheckoutOrphan checks out the given branch as an orphan

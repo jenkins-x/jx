@@ -147,12 +147,15 @@ func prepare(t *testing.T) (*users.GitUserResolver, *gits.FakeProvider, error) {
 	testOrgName := "myorg"
 	testRepoName := "my-app"
 	fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
+	fakeProvider := gits.NewFakeProvider(fakeRepo)
+	fakeProvider.Type = gits.Fake
 
 	o := cmd.CommonOptions{}
 	cmd.ConfigureTestOptionsWithResources(&o,
 		[]runtime.Object{},
 		[]runtime.Object{},
 		&gits.GitFake{},
+		fakeProvider,
 		helm_test.NewMockHelmer(),
 	)
 
@@ -161,8 +164,6 @@ func prepare(t *testing.T) (*users.GitUserResolver, *gits.FakeProvider, error) {
 		return nil, nil, err
 	}
 
-	fakeProvider := gits.NewFakeProvider(fakeRepo)
-	fakeProvider.Type = gits.Fake
 	return &users.GitUserResolver{
 		GitProvider: fakeProvider,
 		JXClient:    jxClient,

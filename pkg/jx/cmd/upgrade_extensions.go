@@ -172,7 +172,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 			}
 			chart := fmt.Sprintf("%s/%s", current.Chart.RepoName, current.Chart.Name)
 			log.Infof("Updating extensions from Helm Chart %s repo %s \n", util.ColorInfo(chart), util.ColorInfo(current.Chart.Repo))
-			err = o.Helm().FetchChart(chart, nil, true, unpackDir, "", "", "")
+			err = o.Helm().FetchChart(chart, "", true, unpackDir, "", "", "")
 			if err != nil {
 				return err
 			}

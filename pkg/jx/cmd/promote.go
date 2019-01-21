@@ -464,7 +464,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 	message := fmt.Sprintf("Promote %s to version %s", app, versionName)
 
 	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
-		templates map[string]map[string]interface{}) error {
+		templates map[string]string, dir string) error {
 		var err error
 		if version == "" {
 			version, err = o.findLatestVersion(app)

@@ -92,7 +92,7 @@ func (mock *MockHelmer) Env() map[string]string {
 	return ret0
 }
 
-func (mock *MockHelmer) FetchChart(_param0 string, _param1 *string, _param2 bool, _param3 string, _param4 string, _param5 string, _param6 string) error {
+func (mock *MockHelmer) FetchChart(_param0 string, _param1 string, _param2 bool, _param3 string, _param4 string, _param5 string, _param6 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockHelmer().")
 	}
@@ -590,7 +590,7 @@ func (c *Helmer_Env_OngoingVerification) GetCapturedArguments() {
 func (c *Helmer_Env_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierHelmer) FetchChart(_param0 string, _param1 *string, _param2 bool, _param3 string, _param4 string, _param5 string, _param6 string) *Helmer_FetchChart_OngoingVerification {
+func (verifier *VerifierHelmer) FetchChart(_param0 string, _param1 string, _param2 bool, _param3 string, _param4 string, _param5 string, _param6 string) *Helmer_FetchChart_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "FetchChart", params)
 	return &Helmer_FetchChart_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
@@ -601,21 +601,21 @@ type Helmer_FetchChart_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_FetchChart_OngoingVerification) GetCapturedArguments() (string, *string, bool, string, string, string, string) {
+func (c *Helmer_FetchChart_OngoingVerification) GetCapturedArguments() (string, string, bool, string, string, string, string) {
 	_param0, _param1, _param2, _param3, _param4, _param5, _param6 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1], _param5[len(_param5)-1], _param6[len(_param6)-1]
 }
 
-func (c *Helmer_FetchChart_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []*string, _param2 []bool, _param3 []string, _param4 []string, _param5 []string, _param6 []string) {
+func (c *Helmer_FetchChart_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []bool, _param3 []string, _param4 []string, _param5 []string, _param6 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]*string, len(params[1]))
+		_param1 = make([]string, len(params[1]))
 		for u, param := range params[1] {
-			_param1[u] = param.(*string)
+			_param1[u] = param.(string)
 		}
 		_param2 = make([]bool, len(params[2]))
 		for u, param := range params[2] {
