@@ -441,3 +441,35 @@ func ListDirectory(root string, recurse bool) error {
 	})
 
 }
+
+
+// GlobAllFiles performs a glob on the pattern and then processes all the files found.
+// if a folder matches the glob its treated as another glob to recurse into the directory
+func GlobAllFiles(basedir string, pattern string, fn func (string) error) error {
+	names, err := filepath.Glob(pattern)
+	if err != nil {
+		return errors.Wrapf(err, "failed to evaluate glob pattern '%s'", pattern)
+	}
+	for _, name := range names {
+		fullPath := name
+		if basedir != "" {
+			fullPath = filepath.Join(basedir, name)
+		}
+		fi, err := os.Stat(fullPath)
+		if err != nil {
+			return errors.Wrapf(err, "getting details of file '%s'", fullPath)
+		}
+		if fi.IsDir() {
+			err = GlobAllFiles("", filepath.Join(fullPath, "*"), fn)
+			if err != nil {
+			  return err
+			}
+		} else {
+			err = fn(fullPath)
+			if err != nil {
+				return errors.Wrapf(err, "failed processing file '%s'", fullPath)
+			}
+		}
+	}
+	return nil
+}
