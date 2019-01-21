@@ -209,7 +209,7 @@ func (o *AddAppOptions) Run() error {
 
 					},
 				}
-				values, err := schemaOptions.GenerateValues(schema, []string{app}, o.In, o.Out, o.Err)
+				values, err := schemaOptions.GenerateValues(schema, []string{}, o.In, o.Out, o.Err)
 				if err != nil {
 					return err
 				}

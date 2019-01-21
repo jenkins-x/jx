@@ -10,6 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/iancoleman/orderedmap"
@@ -264,13 +266,9 @@ func IntegerValidator() survey.Validator {
 //BoolValidator validates that val is a bool
 func BoolValidator() survey.Validator {
 	return func(val interface{}) error {
-		str, err := util.AsString(val)
+		_, err := util.AsBool(val)
 		if err != nil {
-			return err
-		}
-		_, err = strconv.ParseBool(str)
-		if err != nil {
-			return fmt.Errorf("unable to convert %s to bool", str)
+			return errors.Wrapf(err, "unable to convert %v to bool", val)
 		}
 		return nil
 	}
