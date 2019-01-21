@@ -43,18 +43,30 @@ func WaitCertificateIssuedReady(client certclient.Interface, name string, ns str
 	return nil
 }
 
-// CleanCertSecrets removes all secrets which hold a TLS certificate issued by cert-manager
-func CleanCertSecrets(client kubernetes.Interface, ns string) error {
+// CleanCerts removes all certs and their associated secrets which hold a TLS certificate issued by cert-manager
+func CleanCerts(client kubernetes.Interface, certclient certclient.Interface, ns string) error {
+	// cleanup also all certfiicates
+	certsClient := certclient.Certmanager().Certificates(ns)
+	certsList, err := certsClient.List(metav1.ListOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "listing the certs in namespace %q", ns)
+	}
+	for _, c := range certsList.Items {
+		err := certsClient.Delete(c.GetName(), &metav1.DeleteOptions{})
+		if err != nil {
+			return errors.Wrapf(err, "deleting the cert %s/%s", ns, c.GetName())
+		}
+	}
 	// delete the tls related secrets so we dont reuse old ones when switching from http to https
 	secrets, err := client.CoreV1().Secrets(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "listing the secrets in namespace %q", ns)
 	}
 	for _, s := range secrets.Items {
 		if strings.HasPrefix(s.Name, certSecretPrefix) {
 			err := client.CoreV1().Secrets(ns).Delete(s.Name, &metav1.DeleteOptions{})
 			if err != nil {
-				return fmt.Errorf("failed to delete tls secret %s: %v", s.Name, err)
+				return errors.Wrapf(err, "deleteing the tls secret %s/%s", ns, s.GetName())
 			}
 		}
 	}
@@ -92,11 +104,7 @@ func WatchCertificatesIssuedReady(ctx context.Context, client certclient.Interfa
 				if e.Type == watch.Added || e.Type == watch.Modified {
 					cert, ok := e.Object.(*certmng.Certificate)
 					if ok {
-						isReady := cert.HasCondition(certmng.CertificateCondition{
-							Type:   certmng.CertificateConditionReady,
-							Status: certmng.ConditionTrue,
-						})
-						if isReady {
+						if isCertReady(cert) {
 							result := Certificate{
 								Name:      cert.GetName(),
 								Namespace: cert.GetNamespace(),
@@ -110,6 +118,31 @@ func WatchCertificatesIssuedReady(ctx context.Context, client certclient.Interfa
 	}()
 
 	return results, nil
+}
+
+func isCertReady(cert *certmng.Certificate) bool {
+	return cert.HasCondition(certmng.CertificateCondition{
+		Type:   certmng.CertificateConditionReady,
+		Status: certmng.ConditionTrue,
+	})
+}
+
+// GetIssuedReadyCertificates returns the current ready certificates in the given namespace
+func GetIssuedReadyCertificates(client certclient.Interface, ns string) ([]Certificate, error) {
+	certs := make([]Certificate, 0)
+	certsList, err := client.Certmanager().Certificates(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return certs, errors.Wrapf(err, "listing certificates in namespace %q", ns)
+	}
+	for _, cert := range certsList.Items {
+		if isCertReady(&cert) {
+			certs = append(certs, Certificate{
+				Name:      cert.GetName(),
+				Namespace: cert.GetNamespace(),
+			})
+		}
+	}
+	return certs, nil
 }
 
 // ToCertificates converts a list of services into a list of certificates. The certificate name is built from
