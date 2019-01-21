@@ -2,10 +2,6 @@ package tests
 
 import (
 	"bytes"
-	"github.com/acarl005/stripansi"
-	"github.com/jenkins-x/jx/pkg/auth/mocks"
-	. "github.com/petergtz/pegomock"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
 	"runtime"
@@ -14,12 +10,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/petergtz/pegomock"
+
 	"github.com/Netflix/go-expect"
+	"github.com/acarl005/stripansi"
 	"github.com/hinshun/vt10x"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/auth/mocks"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/stretchr/testify/assert"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
@@ -74,7 +75,7 @@ func CreateAuthConfigService() auth.ConfigService {
 		CurrentServer:   authServer.URL,
 	}
 	saver := auth_test.NewMockConfigSaver()
-	When(saver.LoadConfig()).ThenReturn(&authConfig, nil)
+	pegomock.When(saver.LoadConfig()).ThenReturn(&authConfig, nil)
 	authConfigSvc := auth.NewAuthConfigService(saver)
 	authConfigSvc.SetConfig(&authConfig)
 	return authConfigSvc
