@@ -219,6 +219,17 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		survey.AskOne(prompt, &maxNumOfNodes, nil, surveyOpts)
 	}
 
+	if !o.BatchMode {
+		if !o.Flags.Preemptible {
+			prompt := &survey.Confirm{
+				Message: "Would you like use preemptible VMs?",
+				Default: false,
+				Help: "Preemptible VMs can significantly lower the cost of a cluster",
+			}
+			survey.AskOne(prompt, &o.Flags.Preemptible, nil, surveyOpts)
+		}
+	}
+
 	// mandatory flags are machine type, num-nodes, zone,
 	args := []string{"container", "clusters", "create",
 		o.Flags.ClusterName, "--zone", zone,
