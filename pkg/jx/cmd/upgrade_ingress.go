@@ -199,11 +199,6 @@ func (o *UpgradeIngressOptions) Run() error {
 		return errors.Wrap(err, "creating the ingress rules")
 	}
 
-	// update all resource dependent to the ingress endpoints
-	if !o.SkipResourcesUpdate {
-		o.updateResources(previousWebHookEndpoint)
-	}
-
 	log.Success("Ingress rules recreated\n")
 
 	if o.IngressConfig.TLS {
@@ -231,6 +226,11 @@ func (o *UpgradeIngressOptions) Run() error {
 			log.Info("kubectl describe certificates\n")
 			log.Info("kubectl describe issuers\n\n")
 		}
+	}
+
+	// update all resource dependent to the ingress endpoints
+	if !o.SkipResourcesUpdate {
+		o.updateResources(previousWebHookEndpoint)
 	}
 
 	return nil
