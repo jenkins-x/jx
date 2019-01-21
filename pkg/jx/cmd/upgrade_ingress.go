@@ -266,6 +266,7 @@ func (o *UpgradeIngressOptions) startCollectingReadyCertificates(ctx context.Con
 		for {
 			select {
 			case cert := <-certsCh:
+				log.Infof("Ready Cert: %s\n", util.ColorInfo(cert))
 				delete(certsMap, cert)
 				// check if all expected certificates are received
 				if len(certsMap) == 0 {
