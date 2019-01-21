@@ -42,7 +42,7 @@ func (o *CommonOptions) ensureCertmanager() error {
 				return fmt.Errorf("CertManager deployment failed: %v", err)
 			}
 
-			log.Info("waiting for CertManager deployment to be ready, this can take a few minutes\n")
+			log.Info("Waiting for CertManager deployment to be ready, this can take a few minutes\n")
 
 			err = kube.WaitForDeploymentToBeReady(client, CertManagerDeployment, CertManagerNamespace, 10*time.Minute)
 			if err != nil {

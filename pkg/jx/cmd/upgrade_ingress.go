@@ -393,7 +393,7 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 	} else {
 		confirmMessage = "Existing ingress rules found in current namespace.  Confirm to delete and recreate them"
 		// fall back to current ns only
-		log.Infof("looking for existing ingress rules in current namespace %s\n", o.currentNamespace)
+		log.Infof("Looking for existing ingress rules in current namespace %s\n", o.currentNamespace)
 
 		ings, err := client.ExtensionsV1beta1().Ingresses(o.currentNamespace).List(metav1.ListOptions{})
 		if err != nil {
