@@ -14,8 +14,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/kube"
 
-	"github.com/jenkins-x/jx/pkg/log"
-
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/iancoleman/orderedmap"
@@ -30,10 +28,10 @@ type Type struct {
 	Version              string                `json:"$schema,omitempty"`
 	Ref                  string                `json:"$ref,omitempty"`
 	MultipleOf           *float64              `json:"multipleOf,omitempty"`
-	Maximum              *int                  `json:"maximum,omitempty"`
-	ExclusiveMaximum     *int                  `json:"exclusiveMaximum,omitempty"`
-	Minimum              *int                  `json:"minimum,omitempty"`
-	ExclusiveMinimum     *int                  `json:"exclusiveMinimum,omitempty"`
+	Maximum              *float64              `json:"maximum,omitempty"`
+	ExclusiveMaximum     *float64              `json:"exclusiveMaximum,omitempty"`
+	Minimum              *float64              `json:"minimum,omitempty"`
+	ExclusiveMinimum     *float64              `json:"exclusiveMinimum,omitempty"`
 	MaxLength            *int                  `json:"maxLength,omitempty"`
 	MinLength            *int                  `json:"minLength,omitempty"`
 	Pattern              *string               `json:"pattern,omitempty"`
@@ -45,7 +43,7 @@ type Type struct {
 	MaxProperties        *int                  `json:"maxProperties,omitempty"`
 	MinProperties        *int                  `json:"minProperties,omitempty"`
 	Required             []string              `json:"required,omitempty"`
-	Properties           Properties            `json:"properties,omitempty"`
+	Properties           *Properties           `json:"properties,omitempty"`
 	PatternProperties    map[string]*Type      `json:"patternProperties,omitempty"`
 	AdditionalProperties *Type                 `json:"additionalProperties,omitempty"`
 	Dependencies         map[string]Dependency `json:"dependencies,omitempty"`
@@ -222,32 +220,36 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 		}
 		duringValidators := []survey.Validator{
 			// These validators are run during processing of the properties
-			MaxPropertiesValidator(t.MaxProperties, result),
+			MaxPropertiesValidator(t.MaxProperties, result, name),
 		}
 		postValidators := []survey.Validator{
 			// These validators are run after the processing of the properties
-			MinPropertiesValidator(t.MinProperties, result),
+			MinPropertiesValidator(t.MinProperties, result, name),
 			EnumValidator(t.Enum),
 		}
-		for valid := false; !valid; {
-			for _, n := range t.Properties.Keys() {
-				v, _ := t.Properties.Get(n)
-				property := v.(*Type)
-				err := o.recurse(n, prefixes, t.Required, property, result, duringValidators, in, out, outErr)
-				if err != nil {
-					return err
+		if t.Properties != nil {
+			for valid := false; !valid; {
+				for _, n := range t.Properties.Keys() {
+					v, _ := t.Properties.Get(n)
+					property := v.(*Type)
+					err := o.recurse(n, prefixes, t.Required, property, result, duringValidators, in, out, outErr)
+					if err != nil {
+						return err
+					}
 				}
-			}
-			valid = true
-			for _, v := range postValidators {
-				err := v(result)
-				if err != nil {
-					log.Errorf("%v\n", err.Error())
-					valid = false
+				valid = true
+				for _, v := range postValidators {
+					err := v(result)
+					if err != nil {
+						_, err1 := out.Write([]byte(err.Error()))
+						if err1 != nil {
+							return err1
+						}
+						valid = false
+					}
 				}
 			}
 		}
-
 		output.Set(name, result)
 	case "array":
 		if t.Const != nil {
@@ -556,7 +558,9 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 		if err != nil {
 			return errors.Wrapf(err, "error asking user %s using validators %v", message, validators)
 		}
-		answer, err = convertAnswer(a, t.Type)
+		if a != "" {
+			answer, err = convertAnswer(a, t.Type)
+		}
 		if err != nil {
 			return errors.Wrapf(err, "error converting answer %s to type %s", a, t.Type)
 		}
@@ -573,19 +577,18 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 			return err
 		}
 		output.Set(name, secretReference)
-	} else {
+	} else if answer != nil {
 		// Write the value to the output
 		output.Set(name, answer)
 	}
 	return nil
 }
 
-// integers and numbers validate identically, but we have to repeat ourselves as Go has no generics
 func numberValidator(required bool, additonalValidators []survey.Validator, t *Type) []survey.Validator {
 	validators := []survey.Validator{EnumValidator(t.Enum),
 		MultipleOfValidator(t.MultipleOf),
 		RequiredValidator(required),
-		MinValidator(t.MinLength, false),
+		MinValidator(t.Minimum, false),
 		MinValidator(t.ExclusiveMinimum, true),
 		MaxValidator(t.Maximum, false),
 		MaxValidator(t.ExclusiveMaximum, true),

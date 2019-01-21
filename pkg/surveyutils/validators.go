@@ -283,28 +283,33 @@ func OverrideAnswerValidator(ans interface{}, validator survey.Validator) survey
 }
 
 // MinValidator validates that the val is more than the min, if exclusive then more than or equal to
-func MinValidator(min *int, exclusive bool) survey.Validator {
+func MinValidator(min *float64, exclusive bool) survey.Validator {
 	return func(val interface{}) error {
 		if min != nil {
-			minValue := int64(util.DereferenceInt(min))
+			minValue := util.DereferenceFloat64(min)
+			var value float64
+			strVal, err := util.AsString(val)
+			if err != nil {
+				return errors.Wrapf(err, "unable to convert %v to a string", val)
+			}
 			// See if val is a float
-			var value int64
-			if fValue, err := util.AsFloat64(val); err != nil {
+			if fValue, err := strconv.ParseFloat(strVal, 64); err != nil {
 				// See if val is an int
-				value, err = util.AsInt64(val)
+				iValue, err := strconv.ParseInt(strVal, 10, 64)
+				value = float64(iValue)
 				if err != nil {
-					return fmt.Errorf("unable to convert %v to a int64 or a float64", val)
+					return errors.Wrapf(err, "unable to convert %v to a int64 or a float64", val)
 				}
 			} else {
-				value = int64(fValue)
+				value = fValue
 			}
 			if exclusive {
 				if value <= minValue {
-					return fmt.Errorf("%d is not greater than %d", value, minValue)
+					return fmt.Errorf("%v is not greater than %v", val, *min)
 				}
 			} else {
-				if value > minValue {
-					return fmt.Errorf("%d is not greater than or equal to %d", value, minValue)
+				if value < minValue {
+					return fmt.Errorf("%v is not greater than or equal to %v", val, *min)
 				}
 			}
 		}
@@ -313,28 +318,34 @@ func MinValidator(min *int, exclusive bool) survey.Validator {
 }
 
 // MaxValidator validates that the val is less than the max, if exclusive, then less than or equal to
-func MaxValidator(max *int, exclusive bool) survey.Validator {
+func MaxValidator(max *float64, exclusive bool) survey.Validator {
 	return func(val interface{}) error {
 		if max != nil {
-			maxValue := int64(util.DereferenceInt(max))
+			maxValue := util.DereferenceFloat64(max)
+
+			var value float64
+			strVal, err := util.AsString(val)
+			if err != nil {
+				return errors.Wrapf(err, "unable to convert %v to a string", val)
+			}
 			// See if val is a float
-			var value int64
-			if fValue, err := util.AsFloat64(val); err != nil {
+			if fValue, err := strconv.ParseFloat(strVal, 64); err != nil {
 				// See if val is an int
-				value, err = util.AsInt64(val)
+				iValue, err := strconv.ParseInt(strVal, 10, 64)
+				value = float64(iValue)
 				if err != nil {
-					return fmt.Errorf("unable to convert %v to a int64 or a float64", val)
+					return errors.Wrapf(err, "unable to convert %v to a int64 or a float64", val)
 				}
 			} else {
-				value = int64(fValue)
+				value = fValue
 			}
 			if exclusive {
 				if value >= maxValue {
-					return fmt.Errorf("%d is not less than %d", value, maxValue)
+					return fmt.Errorf("%v is not less than %v", val, *max)
 				}
 			} else {
 				if value > maxValue {
-					return fmt.Errorf("%d is not less than or equal to %d", value, maxValue)
+					return fmt.Errorf("%v is not less than or equal to %v", val, *max)
 				}
 			}
 
@@ -348,20 +359,23 @@ func MultipleOfValidator(multipleOf *float64) survey.Validator {
 	return func(val interface{}) error {
 		if multipleOf != nil {
 			multipleOfValue := float64(util.DereferenceFloat64(multipleOf))
-			// See if val is a float
-			var value float64
-			if iValue, err := util.AsInt64(val); err != nil {
-				// See if val is an int
-				value, err = util.AsFloat64(val)
-				if err != nil {
-					return fmt.Errorf("unable to convert %v to a int64 or a float64", val)
-				}
-			} else {
-				value = float64(iValue)
+			var fValue float64
+			strVal, err := util.AsString(val)
+			if err != nil {
+				return errors.Wrapf(err, "unable to convert %v to a string", val)
 			}
-			res := value / multipleOfValue
+			// See if val is a float
+			if fValue, err = strconv.ParseFloat(strVal, 64); err != nil {
+				// See if val is an int
+				value, err := strconv.ParseInt(strVal, 10, 64)
+				fValue = float64(value)
+				if err != nil {
+					return errors.Wrapf(err, "unable to convert %v to a int64 or a float64", val)
+				}
+			}
+			res := fValue / multipleOfValue
 			if res != float64(int64(res)) {
-				return fmt.Errorf("%f cannot be divided by %f", value, multipleOfValue)
+				return fmt.Errorf("%v cannot be divided by %v", val, *multipleOf)
 			}
 		}
 		return nil
@@ -382,12 +396,12 @@ func MaxItemsValidator(maxItems *int, value []interface{}) survey.Validator {
 }
 
 // MaxPropertiesValidator validates that at most the maxItems number of key-value pairs exist in a map
-func MaxPropertiesValidator(maxItems *int, value *orderedmap.OrderedMap) survey.Validator {
+func MaxPropertiesValidator(maxItems *int, value *orderedmap.OrderedMap, key string) survey.Validator {
 	return func(val interface{}) error {
 		if maxItems != nil {
 			maxItemsValue := util.DereferenceInt(maxItems)
 			if len(value.Keys()) > maxItemsValue {
-				return fmt.Errorf("%d has more than %d items", value, maxItemsValue)
+				return fmt.Errorf("%v has more than %d items", key, maxItemsValue)
 			}
 		}
 		return nil
@@ -400,7 +414,7 @@ func MinItemsValidator(minItems *int, value []interface{}) survey.Validator {
 		if minItems != nil {
 			minItemsValue := util.DereferenceInt(minItems)
 			if len(value) < minItemsValue {
-				return fmt.Errorf("%d has more than %d items", value, minItemsValue)
+				return fmt.Errorf("%d has less than %d items", value, minItemsValue)
 			}
 		}
 		return nil
@@ -408,12 +422,12 @@ func MinItemsValidator(minItems *int, value []interface{}) survey.Validator {
 }
 
 // MinPropertiesValidator validates that at least the minItems number of key-value pairs exist in a map
-func MinPropertiesValidator(minItems *int, value *orderedmap.OrderedMap) survey.Validator {
+func MinPropertiesValidator(minItems *int, value *orderedmap.OrderedMap, key string) survey.Validator {
 	return func(val interface{}) error {
 		if minItems != nil {
 			minItemsValue := util.DereferenceInt(minItems)
 			if len(value.Keys()) < minItemsValue {
-				return fmt.Errorf("%d has more than %d items", value, minItemsValue)
+				return fmt.Errorf("%v has less than %d items", key, minItemsValue)
 			}
 		}
 		return nil
@@ -462,7 +476,7 @@ func PatternValidator(pattern *string) survey.Validator {
 				return err
 			}
 			if !regexp.MatchString(str) {
-				return fmt.Errorf("%s does not match %s", str, *pattern)
+				return fmt.Errorf("%v does not match %s", val, *pattern)
 			}
 		}
 		return nil

@@ -18,7 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/surveyutils"
 )
 
-// TODO Figure out how to test selects
+// TODO Figure out how to test selects (affects arrays, enums, validation keywords for arrays)
 
 type GeneratedSecret struct {
 	Name  string
@@ -131,9 +131,180 @@ stringValue: hello
 		}))
 }
 
+func TestMultipleOf(t *testing.T) {
+	GenerateValuesAsYaml(t, "multipleOf.test.schema.json",
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			// Test boolean type
+			console.ExpectString("Enter a value for numberValue")
+			console.SendLine("11.1")
+			console.ExpectString("Sorry, your reply was invalid: 11.1 cannot be divided by 10")
+			console.ExpectString("Enter a value for numberValue")
+			console.SendLine("10")
+			console.ExpectString("Enter a value for integerValue")
+			console.SendLine("12")
+			console.ExpectString("Sorry, your reply was invalid: 12 cannot be divided by 20")
+			console.ExpectString("Enter a value for integerValue")
+			console.SendLine("20")
+			console.ExpectEOF()
+		})
+}
+
+func TestMaximum(t *testing.T) {
+	GenerateValuesAsYaml(t, "maximum.test.schema.json",
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			// Test boolean type
+			console.ExpectString("Enter a value for numberValue")
+			console.SendLine("11.1")
+			console.ExpectString("Sorry, your reply was invalid: 11.1 is not less than or equal to 10.1")
+			console.ExpectString("Enter a value for numberValue")
+			console.SendLine("1")
+			console.ExpectString("Enter a value for integerValue")
+			console.SendLine("21")
+			console.ExpectString("Sorry, your reply was invalid: 21 is not less than or equal to 20")
+			console.ExpectString("Enter a value for integerValue")
+			console.SendLine("2")
+			console.ExpectEOF()
+		})
+}
+
+func TestExclusiveMaximum(t *testing.T) {
+	GenerateValuesAsYaml(t, "exclusiveMaximum.test.schema.json",
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			// Test boolean type
+			console.ExpectString("Enter a value for numberValue")
+			console.SendLine("10.1")
+			console.ExpectString("Sorry, your reply was invalid: 10.1 is not less than 10.1")
+			console.ExpectString("Enter a value for numberValue")
+			console.SendLine("1")
+			console.ExpectString("Enter a value for integerValue")
+			console.SendLine("20")
+			console.ExpectString("Sorry, your reply was invalid: 20 is not less than 20")
+			console.ExpectString("Enter a value for integerValue")
+			console.SendLine("2")
+			console.ExpectEOF()
+		})
+}
+
+func TestMinimum(t *testing.T) {
+	GenerateValuesAsYaml(t, "minimum.test.schema.json",
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			// Test boolean type
+			console.ExpectString("Enter a value for numberValue")
+			console.SendLine("9.1")
+			console.ExpectString("Sorry, your reply was invalid: 9.1 is not greater than or equal to 10.1")
+			console.ExpectString("Enter a value for numberValue")
+			console.SendLine("11")
+			console.ExpectString("Enter a value for integerValue")
+			console.SendLine("19")
+			console.ExpectString("Sorry, your reply was invalid: 19 is not greater than or equal to 20")
+			console.ExpectString("Enter a value for integerValue")
+			console.SendLine("21")
+			console.ExpectEOF()
+		})
+}
+
+func TestExclusiveMinimum(t *testing.T) {
+	GenerateValuesAsYaml(t, "exclusiveMinimum.test.schema.json",
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			// Test boolean type
+			console.ExpectString("Enter a value for numberValue")
+			console.SendLine("10.1")
+			console.ExpectString("Sorry, your reply was invalid: 10.1 is not greater than 10.1")
+			console.ExpectString("Enter a value for numberValue")
+			console.SendLine("11")
+			console.ExpectString("Enter a value for integerValue")
+			console.SendLine("20")
+			console.ExpectString("Sorry, your reply was invalid: 20 is not greater than 20")
+			console.ExpectString("Enter a value for integerValue")
+			console.SendLine("21")
+			console.ExpectEOF()
+		})
+}
+
+func TestMaxLength(t *testing.T) {
+	GenerateValuesAsYaml(t, "maxLength.test.schema.json",
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			// Test boolean type
+			console.ExpectString("Enter a value for stringValue")
+			console.SendLine("iamlongerthan10")
+			console.ExpectString("Sorry, your reply was invalid: value is too long. Max length is 10")
+			console.ExpectString("Enter a value for stringValue")
+			console.SendLine("short")
+			console.ExpectEOF()
+		})
+}
+
+func TestMinLength(t *testing.T) {
+	GenerateValuesAsYaml(t, "minLength.test.schema.json",
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			// Test boolean type
+			console.ExpectString("Enter a value for stringValue")
+			console.SendLine("short")
+			console.ExpectString("Sorry, your reply was invalid: value is too short. Min length is 10")
+			console.ExpectString("Enter a value for stringValue")
+			console.SendLine("iamlongerthan10")
+			console.ExpectEOF()
+		})
+}
+
+func TestPattern(t *testing.T) {
+	GenerateValuesAsYaml(t, "pattern.test.schema.json",
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			// Test boolean type
+			console.ExpectString("Enter a value for stringValue")
+			console.SendLine("HELLO")
+			console.ExpectString("Sorry, your reply was invalid: HELLO does not match [0-9]")
+			console.ExpectString("Enter a value for stringValue")
+			console.SendLine("123")
+			console.ExpectEOF()
+		})
+}
+
+func TestRequired(t *testing.T) {
+	GenerateValuesAsYaml(t, "required.test.schema.json",
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			// Test boolean type
+			console.ExpectString("Enter a value for stringValue")
+			console.SendLine("")
+			console.ExpectString("Sorry, your reply was invalid: Value is required")
+			console.ExpectString("Enter a value for stringValue")
+			console.SendLine("Hello")
+			console.ExpectEOF()
+		})
+}
+
+func TestMinProperties(t *testing.T) {
+	GenerateValuesAsYaml(t, "minProperties.test.schema.json",
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			// Test boolean type
+			console.ExpectString("Enter a value for stringValue")
+			console.SendLine("")
+			console.ExpectString("Enter a value for stringValue1")
+			console.SendLine("")
+			console.ExpectString("nestedObject has less than 1 items")
+			console.ExpectString("Enter a value for stringValue")
+			console.SendLine("abc")
+			console.ExpectString("Enter a value for stringValue1")
+			console.SendLine("def")
+			console.ExpectEOF()
+		})
+}
+
+
 func GenerateValuesAsYaml(t *testing.T, schemaName string, answerQuestions func(console *tests.
 	ConsoleWrapper, donec chan struct{})) string {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
+	t.Parallel()
 	secrets := make([]*GeneratedSecret, 0)
 	options := surveyutils.JSONSchemaOptions{
 		CreateSecret: func(name string, key string, value string) (*jenkinsv1.ResourceReference, error) {
