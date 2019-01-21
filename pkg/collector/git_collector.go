@@ -54,48 +54,39 @@ func (c *GitCollector) CollectFiles(patterns []string, outputPath string, basedi
 	}
 
 	for _, p := range patterns {
-		names, err := filepath.Glob(p)
-		if err != nil {
-			return urls, errors.Wrapf(err, "failed to evaluate glob pattern '%s'", p)
-		}
-		for _, name := range names {
+		fn := func(name string) error {
+			var err error
+
 			toName := name
 			if basedir != "" {
 				toName, err = filepath.Rel(basedir, name)
 				if err != nil {
-					return urls, errors.Wrapf(err, "failed to remove basedir %s from %s", basedir, name)
+					return errors.Wrapf(err, "failed to remove basedir %s from %s", basedir, name)
 				}
 			}
 			toFile := filepath.Join(repoDir, toName)
 			toDir, _ := filepath.Split(toFile)
 			err = os.MkdirAll(toDir, util.DefaultWritePermissions)
 			if err != nil {
-				return urls, errors.Wrapf(err, "failed to create directory file %s", toDir)
+				return errors.Wrapf(err, "failed to create directory file %s", toDir)
 			}
 			err = util.CopyFileOrDir(name, toFile, true)
 			if err != nil {
-				return urls, errors.Wrapf(err, "failed to copy file %s to %s", name, toFile)
+				return errors.Wrapf(err, "failed to copy file %s to %s", name, toFile)
 			}
-		}
-	}
 
-	err = filepath.Walk(repoDir,
-		func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-			if !info.IsDir() {
-				rPath := strings.TrimPrefix(strings.TrimPrefix(path, ghPagesDir), "/")
-
-				if rPath != "" {
-					url := c.generateURL(storageOrg, storageRepoName, rPath)
-					urls = append(urls, url)
-				}
+			rPath := strings.TrimPrefix(strings.TrimPrefix(toFile, ghPagesDir), "/")
+			if rPath != "" {
+				url := c.generateURL(storageOrg, storageRepoName, rPath)
+				urls = append(urls, url)
 			}
 			return nil
-		})
-	if err != nil {
-		return urls, err
+		}
+
+		err := util.GlobAllFiles("", p, fn)
+		if err != nil {
+		  return urls, err
+		}
 	}
 
 	err = gitClient.Add(ghPagesDir, repoDir)

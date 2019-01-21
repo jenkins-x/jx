@@ -36,21 +36,18 @@ func (c *BucketCollector) CollectFiles(patterns []string, outputPath string, bas
 
 	ctx := c.createContext()
 	for _, p := range patterns {
-		names, err := filepath.Glob(p)
-		if err != nil {
-			return urls, errors.Wrapf(err, "failed to evaluate glob pattern '%s'", p)
-		}
-		for _, name := range names {
+		fn := func(name string) error {
+			var err error
 			toName := name
 			if basedir != "" {
 				toName, err = filepath.Rel(basedir, name)
 				if err != nil {
-					return urls, errors.Wrapf(err, "failed to remove basedir %s from %s", basedir, name)
+					return errors.Wrapf(err, "failed to remove basedir %s from %s", basedir, name)
 				}
 			}
 			data, err := ioutil.ReadFile(name)
 			if err != nil {
-				return urls, errors.Wrapf(err, "failed to read file %s", name)
+				return errors.Wrapf(err, "failed to read file %s", name)
 			}
 			opts := &blob.WriterOptions{
 				ContentType: util.ContentTypeForFileName(name),
@@ -60,11 +57,17 @@ func (c *BucketCollector) CollectFiles(patterns []string, outputPath string, bas
 			}
 			err = bucket.WriteAll(ctx, toName, data, opts)
 			if err != nil {
-				return urls, errors.Wrapf(err, "failed to write to bucket %s", toName)
+				return errors.Wrapf(err, "failed to write to bucket %s", toName)
 			}
 
 			u := util.UrlJoin(c.bucketURL, toName)
 			urls = append(urls, u)
+			return nil
+		}
+
+		err := util.GlobAllFiles("", p, fn)
+		if err != nil {
+		  return urls, err
 		}
 	}
 	return urls, nil
