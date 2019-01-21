@@ -1,24 +1,15 @@
 package cmd
 
 import (
-	"context"
-	"fmt"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/cloud/buckets"
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gocloud.dev/blob"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
-	"net/url"
-	"time"
-
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/util"
 )
 
 var (
@@ -60,10 +51,7 @@ type EditStorageOptions struct {
 	CreateOptions
 
 	StorageLocation jenkinsv1.StorageLocation
-	Bucket          string
-	BucketKind      string
-	GKEProjectID    string
-	GKEZone         string
+	CreateBucket    CreateBucketValues
 }
 
 // NewCmdEditStorage creates a command object for the "create" command
@@ -96,13 +84,10 @@ func NewCmdEditStorage(f Factory, in terminal.FileReader, out terminal.FileWrite
 	options.addCommonFlags(cmd)
 	addStorageLocationFlags(cmd, &options.StorageLocation)
 
-	cmd.Flags().StringVarP(&options.Bucket, "bucket", "", "", "Specify the name of the bucket to use")
-	cmd.Flags().StringVarP(&options.BucketKind, "bucket-kind", "", "", "The kind of bucket to use like 'gs, s3, azure' etc")
-	cmd.Flags().StringVarP(&options.GKEProjectID, "gke-project-id", "", "", "Google Project ID to use for a new bucket")
-	cmd.Flags().StringVarP(&options.GKEZone, "gke-zone", "", "", "The zone (e.g. us-central1-a) where the new bucket will be created")
-
+	options.CreateBucket.addCreateBucketFlags(cmd)
 	return cmd
 }
+
 
 func addStorageLocationFlags(cmd *cobra.Command, location *jenkinsv1.StorageLocation) {
 	cmd.Flags().StringVarP(&location.Classifier, "classifier", "c", "", "A name which classifies this type of file. Example values: "+kube.ClassificationValues)
@@ -132,33 +117,10 @@ func (o *EditStorageOptions) Run() error {
 	currentLocation := settings.StorageLocationOrDefault(classifier)
 
 	if o.StorageLocation.BucketURL == "" && o.StorageLocation.GitURL == "" {
-		if o.Bucket != "" {
-			o.StorageLocation.BucketURL, err = buckets.CreateBucketURL(o.Bucket, o.BucketKind, settings)
+		if !o.CreateBucket.IsEmpty() {
+			o.StorageLocation.BucketURL, err = o.createBucket(&o.CreateBucket, settings)
 			if err != nil {
-				return errors.Wrapf(err, "failed to create the bucket URL for %s", o.Bucket)
-			}
-
-			ctx, _ := context.WithTimeout(context.Background(), time.Second * 20)
-			bucket, err := blob.Open(ctx, o.StorageLocation.BucketURL)
-			if err != nil {
-				return errors.Wrapf(err, "failed to open the bucket for %s", o.StorageLocation.BucketURL)
-			}
-
-			// lets check if the bucket exists
-			iter := bucket.List(nil)
-			obj, err := iter.Next(ctx)
-			if err != nil {
-				if err == io.EOF {
-					log.Infof("bucket %s is empty\n", o.StorageLocation.BucketURL)
-				} else {
-					log.Infof("The bucket %s does not exist yet so lets create it...\n", util.ColorInfo(o.StorageLocation.BucketURL))
-					err = o.createBucket(o.StorageLocation.BucketURL, bucket)
-					if err != nil {
-						return errors.Wrapf(err, "failed to create the bucket for %s", o.StorageLocation.BucketURL)
-					}
-				}
-			} else {
-				log.Infof("Found item in bucket %s for %s\n", o.StorageLocation.BucketURL, obj.Key)
+			  return err
 			}
 		}
 		if o.StorageLocation.BucketURL == "" {
@@ -188,56 +150,4 @@ func (o *EditStorageOptions) Run() error {
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)
-}
-
-// createBucket creates a bucket if it does not already exist
-func (o *EditStorageOptions) createBucket(bucketURL string, bucket *blob.Bucket) error {
-	u, err := url.Parse(bucketURL)
-	if err != nil {
-		return err
-	}
-	switch u.Scheme {
-	case "gs":
-		return o.createGcsBucket(u, bucket)
-	default:
-		return fmt.Errorf("Cannot create a bucket for provider %s", bucketURL)
-	}
-}
-
-func (o *EditStorageOptions) createGcsBucket(u *url.URL, bucket *blob.Bucket) error {
-	var err error
-	if o.GKEProjectID == "" {
-		o.GKEProjectID, err = o.getGoogleProjectId()
-		if err != nil {
-			return err
-		}
-	}
-
-	err = o.CreateOptions.CommonOptions.runCommandVerbose(
-		"gcloud", "config", "set", "project", o.GKEProjectID)
-	if err != nil {
-		return err
-	}
-
-	if o.GKEZone == "" {
-		defaultZone := ""
-		if cluster, err := gke.ClusterName(o.Kube()); err == nil && cluster != "" {
-			if clusterZone, err := gke.ClusterZone(cluster); err == nil {
-				defaultZone = clusterZone
-			}
-		}
-
-		o.GKEZone, err = o.getGoogleZoneWithDefault(o.GKEProjectID, defaultZone)
-		if err != nil {
-			return err
-		}
-	}
-
-	bucketName := u.Host
-	region := gke.GetRegionFromZone(o.GKEZone, )
-	err = gke.CreateBucket(o.GKEProjectID, bucketName, region)
-	if err != nil {
-		return errors.Wrapf(err, "creating bucket %s in project %s and region %s", bucketName, o.GKEProjectID, region)
-	}
-	return nil
 }
