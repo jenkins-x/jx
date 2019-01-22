@@ -1836,6 +1836,14 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			},
 			Namespace: namespace,
 		}
+		if options.installValues != nil {
+			if cvo.GKEProjectID == "" {
+				cvo.GKEProjectID = options.installValues[kube.ProjectID]
+			}
+			if cvo.GKEZone == "" {
+				cvo.GKEZone = options.installValues[kube.Zone]
+			}
+		}
 		vaultOperatorClient, err := cvo.CreateVaultOperatorClient()
 		if err != nil {
 			return err
