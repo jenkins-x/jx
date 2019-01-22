@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -172,6 +173,17 @@ func (o *StepHelmApplyOptions) Run() error {
 			valueFiles = append(valueFiles, file)
 		}
 	}
+
+	chartValues, err := helm.GenerateValues(dir, nil, true)
+	if err != nil {
+		return errors.Wrapf(err, "generating values.yaml for tree from %s", dir)
+	}
+	chartValuesFile := filepath.Join(dir, helm.ValuesFileName)
+	err = ioutil.WriteFile(chartValuesFile, chartValues, 0755)
+	if err != nil {
+		return errors.Wrapf(err, "writing values.yaml for tree to %s", chartValuesFile)
+	}
+	log.Infof("Wrote chart values.yaml %s generated from directory tree\n", chartValuesFile)
 
 	log.Infof("Using values files: %s\n", strings.Join(valueFiles, ", "))
 
