@@ -1982,6 +1982,7 @@ func (options *InstallOptions) configureJenkins(namespace string) error {
 					options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
 					options.CreateJenkinsUserOptions.UseBrowser = true
 					options.CreateJenkinsUserOptions.Verbose = false
+					options.CreateJenkinsUserOptions.RecreateToken = true
 					if options.BatchMode {
 						options.CreateJenkinsUserOptions.BatchMode = true
 						options.CreateJenkinsUserOptions.Headless = true

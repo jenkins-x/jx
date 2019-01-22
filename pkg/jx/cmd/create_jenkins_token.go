@@ -53,13 +53,14 @@ var (
 type CreateJenkinsUserOptions struct {
 	CreateOptions
 
-	ServerFlags ServerFlags
-	Username    string
-	Password    string
-	ApiToken    string
-	BearerToken string
-	Timeout     string
-	UseBrowser  bool
+	ServerFlags   ServerFlags
+	Username      string
+	Password      string
+	ApiToken      string
+	BearerToken   string
+	Timeout       string
+	UseBrowser    bool
+	RecreateToken bool
 }
 
 // NewCmdCreateJenkinsUser creates a command
@@ -94,6 +95,7 @@ func NewCmdCreateJenkinsUser(f Factory, in terminal.FileReader, out terminal.Fil
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The User password to try automatically create a new API Token")
 	cmd.Flags().StringVarP(&options.Timeout, "timeout", "", "", "The timeout if using REST to generate the API token (by passing username and password)")
 	cmd.Flags().BoolVarP(&options.UseBrowser, "browser", "", false, "Use REST calls to automatically find the API token if the user and password are known")
+	cmd.Flags().BoolVarP(&options.RecreateToken, "recreate-token", "", false, "Should we recreate teh API token if it already exists")
 
 	return cmd
 }
@@ -139,12 +141,17 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	}
 
 	userAuth := config.GetOrCreateUserAuth(server.URL, o.Username)
-	if o.ApiToken != "" {
-		userAuth.ApiToken = o.ApiToken
-	}
 
-	if o.BearerToken != "" {
-		userAuth.BearerToken = o.BearerToken
+	if o.RecreateToken {
+		userAuth.ApiToken = ""
+		userAuth.BearerToken = ""
+	} else {
+		if o.ApiToken != "" {
+			userAuth.ApiToken = o.ApiToken
+		}
+		if o.BearerToken != "" {
+			userAuth.BearerToken = o.BearerToken
+		}
 	}
 
 	if o.Password != "" {
@@ -280,7 +287,7 @@ func loginLegacy(ctx context.Context, serverURL string, verbose bool, username s
 }
 
 // Checks whether a purported login decorator actually seems to work.
-func verifyLogin(ctx context.Context, serverURL string, verbose bool, decorator func (req *http.Request)) error {
+func verifyLogin(ctx context.Context, serverURL string, verbose bool, decorator func(req *http.Request)) error {
 	client := http.Client{}
 	req, err := http.NewRequest(http.MethodGet, util.UrlJoin(serverURL, "/me/api/json?tree=id"), nil)
 	if err != nil {
@@ -306,7 +313,7 @@ func verifyLogin(ctx context.Context, serverURL string, verbose bool, decorator 
 }
 
 // Checks if CSRF defense is enabled, and if so, amends the decorator to include a crumb.
-func checkForCrumb(ctx context.Context, serverURL string, verbose bool, decorator func (req *http.Request)) func (req *http.Request) {
+func checkForCrumb(ctx context.Context, serverURL string, verbose bool, decorator func(req *http.Request)) func(req *http.Request) {
 	client := http.Client{}
 	req, err := http.NewRequest(http.MethodGet, util.UrlJoin(serverURL, "/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)"), nil)
 	if err != nil {
