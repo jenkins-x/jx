@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/client-go/kubernetes"
@@ -465,4 +466,40 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 	return helmer.UpgradeChart(options.Chart, options.ReleaseName, options.Ns, options.Version, true,
 		timeout, true, false, options.SetValues, options.ValueFiles, options.Repository, options.Username,
 		options.Password)
+}
+
+// GenerateReadmeForChart generates a string that can be used as a README.MD,
+// and includes info on the chart.
+func GenerateReadmeForChart(name string, version string, description string, chartRepo string,
+	gitRepo string, releaseNotesURL string, appReadme string) string {
+	var readme strings.Builder
+	readme.WriteString(fmt.Sprintf("# %s\n\n|App Metadata|---|\n", unknownZeroValue(name)))
+	if version != "" {
+		readme.WriteString(fmt.Sprintf("| **Version** | %s |\n", version))
+	}
+	if description != "" {
+		readme.WriteString(fmt.Sprintf("| **Description** | %s |\n", description))
+	}
+	if chartRepo != "" {
+		readme.WriteString(fmt.Sprintf("| **Chart Repository** | %s |\n", chartRepo))
+	}
+	if gitRepo != "" {
+		readme.WriteString(fmt.Sprintf("| **Git Repository** | %s |\n", gitRepo))
+	}
+	if releaseNotesURL != "" {
+		readme.WriteString(fmt.Sprintf("| **Release Notes** | %s |\n", releaseNotesURL))
+	}
+
+	if appReadme != "" {
+		readme.WriteString(fmt.Sprintf("\n## App README.MD\n\n%s\n", appReadme))
+	}
+	return readme.String()
+}
+
+func unknownZeroValue(value string) string {
+	if value == "" {
+		return "unknown"
+	}
+	return value
+
 }
