@@ -56,6 +56,7 @@ type UpgradeIngressOptions struct {
 	Services            []string
 	SkipResourcesUpdate bool
 	WaitForCerts        bool
+	ConfigNamespace     string
 
 	IngressConfig kube.IngressConfig
 }
@@ -102,6 +103,7 @@ func (o *UpgradeIngressOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.SkipResourcesUpdate, "skip-resources-update", "", false, "Skips the update of jx related resources such as webhook or Jenkins URL")
 	cmd.Flags().BoolVarP(&o.Force, "force", "", false, "Forces upgrades of all webooks even if ingress URL has not changed")
 	cmd.Flags().BoolVarP(&o.WaitForCerts, "wait-for-certs", "", false, "Waits for TLS certs to be issued by cert-manager")
+	cmd.Flags().StringVarP(&o.ConfigNamespace, "config-namespace", "", "", "Namespace where the ingress-config is stored (if empty, it will try to read it from Dev environment namespace)")
 }
 
 // Run implements the command
@@ -437,13 +439,19 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 	if err != nil {
 		return err
 	}
+
+	// select the namespace from where to read the ingress-config config map
 	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
+	configNamespace := devNamespace
+	if o.ConfigNamespace != "" {
+		configNamespace = o.ConfigNamespace
+	}
 
 	// Overwrites the ingress config with the values from config map only if this config map exists
-	ic, err := kube.GetIngressConfig(client, devNamespace)
+	ic, err := kube.GetIngressConfig(client, configNamespace)
 	if err == nil {
 		o.IngressConfig = ic
 	}
