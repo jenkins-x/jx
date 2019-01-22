@@ -5,6 +5,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/bdd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -15,6 +16,7 @@ import (
 	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 )
@@ -34,7 +36,7 @@ type StepBDDOptions struct {
 }
 
 type StepBDDFlags struct {
-	Clusters            []string
+	GoPath              string
 	GitProvider         string
 	GitOwner            string
 	ReportsOutputDir    string
@@ -43,9 +45,12 @@ type StepBDDFlags struct {
 	DisableDeleteApp    bool
 	DisableDeleteRepo   bool
 	IgnoreTestFailure   bool
+	Parallel            bool
+	ConfigFile          string
 	TestRepoGitCloneUrl string
 	TestGitBranch       string
 	TestGitPrNumber     string
+	JxBinary            string
 	TestCases           []string
 }
 
@@ -92,19 +97,22 @@ func NewCmdStepBDD(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 	installOptions.addInstallFlags(cmd, true)
 
 	options.addCommonFlags(cmd)
+	cmd.Flags().StringVarP(&options.Flags.ConfigFile, "config", "c", "", "the config YAML file containing the clusters to create")
+	cmd.Flags().StringVarP(&options.Flags.GoPath, "gopath", "", "", "the GOPATH directory where the BDD test git repository will be cloned")
 	cmd.Flags().StringVarP(&options.Flags.GitProvider, "git-provider", "g", "", "the git provider kind")
 	cmd.Flags().StringVarP(&options.Flags.GitOwner, "git-owner", "", "", "the git owner of new git repositories created by the tests")
 	cmd.Flags().StringVarP(&options.Flags.ReportsOutputDir, "reports-dir", "", "reports", "the directory used to copy in any generated report files")
 	cmd.Flags().StringVarP(&options.Flags.TestRepoGitCloneUrl, "test-git-repo", "r", "https://github.com/jenkins-x/bdd-jx.git", "the git repository to clone for the BDD tests")
+	cmd.Flags().StringVarP(&options.Flags.JxBinary, "binary", "", "jx", "the binary location of the 'jx' executable for creating clusters")
 	cmd.Flags().StringVarP(&options.Flags.TestGitBranch, "test-git-branch", "", "master", "the git repository branch to use for the BDD tests")
 	cmd.Flags().StringVarP(&options.Flags.TestGitPrNumber, "test-git-pr-number", "", "", "the Pull Request number to fetch from the repository for the BDD tests")
-	cmd.Flags().StringArrayVarP(&options.Flags.Clusters, "clusters", "c", []string{}, "the list of cluster kinds to create")
 	cmd.Flags().StringArrayVarP(&options.Flags.TestCases, "tests", "t", []string{"test-quickstart-node-http"}, "the list of the test cases to run")
 	cmd.Flags().BoolVarP(&options.Flags.DeleteTeam, "delete-team", "", true, "Whether we should delete the Team we create for each Git Provider")
 	cmd.Flags().BoolVarP(&options.Flags.DisableDeleteApp, "no-delete-app", "", false, "Disables deleting the created app after the test")
 	cmd.Flags().BoolVarP(&options.Flags.DisableDeleteRepo, "no-delete-repo", "", false, "Disables deleting the created repository after the test")
 	cmd.Flags().BoolVarP(&options.Flags.UseCurrentTeam, "use-current-team", "", false, "If enabled lets use the current Team to run the tests")
 	cmd.Flags().BoolVarP(&options.Flags.IgnoreTestFailure, "ignore-fail", "i", false, "Ignores test failures so that a BDD test run can capture the output and report on the test passes/failures")
+	cmd.Flags().BoolVarP(&options.Flags.IgnoreTestFailure, "parallel", "", false, "Should we process each cluster configuration in parallel")
 
 	cmd.Flags().StringVarP(&installOptions.Flags.Provider, "provider", "", "", "Cloud service providing the Kubernetes cluster.  Supported providers: "+KubernetesProviderOptions())
 
@@ -114,17 +122,38 @@ func NewCmdStepBDD(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 func (o *StepBDDOptions) Run() error {
 	flags := &o.Flags
 
+	var err error
+	if o.Flags.GoPath == "" {
+		o.Flags.GoPath = os.Getenv("GOPATH")
+		if o.Flags.GoPath == "" {
+			o.Flags.GoPath, err = os.Getwd()
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	gitProviderUrl := o.gitProviderUrl()
 	if gitProviderUrl == "" {
 		return util.MissingOption("git-provider-url")
 	}
 
-	if len(flags.Clusters) == 0 {
+	fileName := flags.ConfigFile
+	if fileName == "" {
 		return o.runOnCurrentCluster()
 	}
+
+	config, err := bdd.LoadBddClusters(fileName)
+	if err != nil {
+		return err
+	}
+	if len(config.Clusters) == 0 {
+		return fmt.Errorf("No clusters specified in configuration file %s", fileName)
+	}
+
+	// TODO handle parallel...
 	errors := []error{}
-	for _, cluster := range flags.Clusters {
-		log.Infof("Creating cluster %s", util.ColorInfo(cluster))
+	for _, cluster := range config.Clusters {
 		err := o.createCluster(cluster)
 		if err != nil {
 			return err
@@ -132,25 +161,20 @@ func (o *StepBDDOptions) Run() error {
 
 		defer o.deleteCluster(cluster)
 
-		err = o.runOnCurrentCluster()
+		err = o.runTests(o.Flags.GoPath)
 		if err != nil {
-			log.Warnf("Failed to perform tests on cluster %s: %s\n", cluster, err)
+			log.Warnf("Failed to perform tests on cluster %s: %s\n", cluster.Name, err)
 			errors = append(errors, err)
 		}
 	}
 	return util.CombineErrors(errors...)
 }
 
+
+
 // runOnCurrentCluster runs the tests on the current cluster
 func (o *StepBDDOptions) runOnCurrentCluster() error {
 	var err error
-	gopath := os.Getenv("GOPATH")
-	if gopath == "" {
-		gopath, err = os.Getwd()
-		if err != nil {
-			return err
-		}
-	}
 
 	gitProviderName := o.Flags.GitProvider
 	if gitProviderName != "" && !o.Flags.UseCurrentTeam {
@@ -260,17 +284,7 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 		log.Infof("Using the default git provider for the tests\n")
 
 	}
-	return o.runTests(gopath)
-}
-func (o *StepBDDOptions) createCluster(cluster string) error {
-	// TODO
-	return nil
-}
-
-func (o *StepBDDOptions) deleteCluster(cluster string) error {
-	// TODO
-	return nil
-
+	return o.runTests(o.Flags.GoPath)
 }
 
 func (o *StepBDDOptions) deleteTeam(team string) error {
@@ -324,6 +338,9 @@ func (o *StepBDDOptions) runTests(gopath string) error {
 	}
 
 	testDir := filepath.Join(gopath, gitRepository.Organisation, gitRepository.Name)
+
+	log.Infof("cloning BDD test repository to: %s\n", util.ColorInfo(testDir))
+	
 	err = os.MkdirAll(testDir, util.DefaultWritePermissions)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to create dir %s", testDir)
@@ -399,4 +416,62 @@ func (o *StepBDDOptions) copyReports(testDir string, err error) error {
 		log.Warnf("failed to copy reports dir: %s directory to: %s : %s\n", reportsDir, reportsOutputDir, err)
 	}
 	return err
+}
+
+func (o *StepBDDOptions) createCluster(cluster *bdd.BddCluster) error {
+	buildNum := o.getBuildNumber()
+	if buildNum == "" {
+		log.Warnf("No build number could be found from the environment variable $BUILD_NUMBER!\n")
+	}
+	cluster.Name += "-" + buildNum
+	log.Infof("\nCreating cluster %s\n", util.ColorInfo(cluster.Name))
+	binary := o.Flags.JxBinary
+	args := cluster.Args
+	args = append(args, "-n", cluster.Name)
+
+	if util.StringArrayIndex(args, "-b") < 0 && util.StringArrayIndex(args, "--batch-mode") < 0 {
+		args = append(args, "--batch-mode")
+	}
+
+	gitProviderURL := o.gitProviderUrl()
+	if gitProviderURL != "" {
+		args = append(args, "--git-provider-url", gitProviderURL)
+	}
+	gitUsername := o.InstallOptions.GitRepositoryOptions.Username
+	if gitUsername != "" {
+		args = append(args, "--git-username", gitUsername)
+	}
+	gitKind := o.InstallOptions.GitRepositoryOptions.ServerKind
+	if gitKind != "" {
+		args = append(args, "--git-provider-kind ", gitKind)
+	}
+	safeArgs := append([]string{}, args...)
+
+	gitApiToken := o.InstallOptions.GitRepositoryOptions.ApiToken
+	if gitApiToken != "" {
+		args = append(args, "--git-api-token", gitApiToken)
+		safeArgs  = append(safeArgs, "--git-api-token", "**************¬")
+	}
+	adminPwd := o.InstallOptions.AdminSecretsService.Flags.DefaultAdminPassword
+	if adminPwd != "" {
+		args = append(args, "--default-admin-password", adminPwd)
+		safeArgs  = append(safeArgs, "--default-admin-password", "**************¬")
+	}
+
+	log.Infof("running command: %s\n", util.ColorInfo(fmt.Sprintf("%s %s", binary, strings.Join(args, " "))))
+
+	// lets not log any sensitive command line arguments
+	e := exec.Command(binary, args...)
+	e.Stdout = o.Out
+	e.Stderr = o.Err
+	os.Setenv("PATH", util.PathWithBinary())
+	err := e.Run()
+	if err != nil {
+		log.Errorf("Error: Command failed  %s %s\n", binary, strings.Join(safeArgs, " "))
+	}
+	return err
+}
+
+func (o *StepBDDOptions) deleteCluster(cluster *bdd.BddCluster) error {
+	return nil
 }
