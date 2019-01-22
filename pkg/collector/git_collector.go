@@ -123,13 +123,7 @@ func (c *GitCollector) CollectData(data []byte, outputPath string) (string, erro
 		return u, err
 	}
 
-	repoDir := filepath.Join(ghPagesDir, outputPath)
-	err = os.MkdirAll(repoDir, 0755)
-	if err != nil {
-		return u, err
-	}
-
-	toFile := filepath.Join(repoDir, outputPath)
+	toFile := filepath.Join(ghPagesDir, outputPath)
 	toDir, _ := filepath.Split(toFile)
 	err = os.MkdirAll(toDir, util.DefaultWritePermissions)
 	if err != nil {
@@ -142,7 +136,7 @@ func (c *GitCollector) CollectData(data []byte, outputPath string) (string, erro
 
 	u = c.generateURL(storageOrg, storageRepoName, outputPath)
 
-	err = gitClient.Add(ghPagesDir, repoDir)
+	err = gitClient.Add(ghPagesDir, toDir)
 	if err != nil {
 		return u, err
 	}
