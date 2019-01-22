@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	defaultSSONamesapce         = "jx"
+	defaultSSONamesapce         = "sso"
 	defaultSSOReleaseNamePrefix = "jx-sso"
 	repoName                    = "jenkinsxio"
 	repoURL                     = "https://chartmuseum.jx.cd.jenkins-x.io"
