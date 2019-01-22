@@ -38,6 +38,7 @@ func TestGetWorkflow(t *testing.T) {
 			),
 		},
 		gits.NewGitCLI(),
+		nil,
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 	)
 

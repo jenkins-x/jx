@@ -310,9 +310,9 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 }
 
 // Fetch a Helm Chart
-func (h *HelmTemplate) FetchChart(chart string, version *string, untar bool, untardir string, repo string,
+func (h *HelmTemplate) FetchChart(chart string, version string, untar bool, untardir string, repo string,
 	username string, password string) error {
-	_, err := h.fetchChart(chart, asText(version), untardir, repo, username, password)
+	_, err := h.fetchChart(chart, version, untardir, repo, username, password)
 	return err
 }
 

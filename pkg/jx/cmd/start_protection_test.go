@@ -31,6 +31,7 @@ func TestStartProtection(t *testing.T) {
 		[]runtime.Object{},
 		[]runtime.Object{},
 		&gits.GitFake{},
+		nil,
 		helm_test.NewMockHelmer(),
 	)
 

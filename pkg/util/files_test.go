@@ -1,23 +1,43 @@
-package util
+package util_test
 
 import (
-	"github.com/stretchr/testify/assert"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/magiconair/properties/assert"
+	"github.com/stretchr/testify/require"
+	"sort"
 	"testing"
 )
 
-func TestContentTypeForFile(t *testing.T) {
+func TestGlobFiles(t *testing.T) {
 	t.Parallel()
 
-	testData := map[string]string{
-		"foo.log": "text/plain; charset=utf-8",
-		"foo.txt": "text/plain; charset=utf-8",
-		"foo.xml": "application/xml",
-		"foo.json": "application/json",
+	files := []string{}
+	fn := func(name string) error {
+		if util.StringArrayIndex(files, name) < 0 {
+			files = append(files, name)
+		}
+		return nil
 	}
 
-	for fileName, contentType := range testData {
-		actual := ContentTypeForFileName(fileName)
-		assert.Equal(t, contentType, actual, "content type for file %s", fileName)
+	/*	pwd, err := os.Getwd()
+		require.NoError(t, err)
+		t.Logf("Current dir is %s\n", pwd)
+	*/
+	err := util.GlobAllFiles("", "test_data/glob_test/*", fn)
+	require.NoError(t, err)
+
+	for _, f := range files {
+		t.Logf("Processed file %s\n", f)
 	}
+
+	sort.Strings(files)
+
+	t.Logf("Found %d files\n", len(files))
+
+	expected := []string{
+		"test_data/glob_test/artifacts/goodbye.txt",
+		"test_data/glob_test/hello.txt",
+	}
+	
+	assert.Equal(t, expected, files, "globbed files")
 }
-

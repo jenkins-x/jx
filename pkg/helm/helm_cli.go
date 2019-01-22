@@ -278,7 +278,7 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 }
 
 // Fetch a Helm Chart
-func (h *HelmCLI) FetchChart(chart string, version *string, untar bool, untardir string, repo string,
+func (h *HelmCLI) FetchChart(chart string, version string, untar bool, untardir string, repo string,
 	username string, password string) error {
 	args := []string{}
 	args = append(args, "fetch", chart)
@@ -301,8 +301,8 @@ func (h *HelmCLI) FetchChart(chart string, version *string, untar bool, untardir
 		args = append(args, "--password", password)
 	}
 
-	if version != nil {
-		args = append(args, "--version", *version)
+	if version != "" {
+		args = append(args, "--version", version)
 	}
 
 	if repo != "" {

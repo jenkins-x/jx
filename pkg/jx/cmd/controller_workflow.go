@@ -107,10 +107,10 @@ func (o *ControllerWorkflowOptions) Run() error {
 		return err
 	}
 
-	ns := o.Namespace
-	if ns == "" {
-		ns = devNs
+	if o.Namespace == "" {
+		o.Namespace = devNs
 	}
+	ns := o.Namespace
 
 	o.workflowMap = map[string]*v1.Workflow{}
 	o.pipelineMap = map[string]*v1.PipelineActivity{}

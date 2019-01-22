@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/sourcerepository"
 	"io"
 	"io/ioutil"
 	"os"
@@ -118,7 +117,7 @@ var (
 	    
 		For more documentation see: [https://jenkins-x.io/developing/import/](https://jenkins-x.io/developing/import/)
 	    
-	`)
+` + SeeAlsoText("jx create project"))
 
 	importExample = templates.Examples(`
 		# Import the current folder
@@ -413,7 +412,7 @@ func (options *ImportOptions) Run() error {
 	}
 
 
-	err = sourcerepository.NewSourceRepositoryService(jxClient, ns).CreateSourceRepository(
+	err = kube.NewSourceRepositoryService(jxClient, ns).CreateOrUpdateSourceRepository(
 		options.AppName, options.Organisation, options.GitProvider.ServerURL())
 	if err != nil {
 		return errors.Wrapf(err, "creating application resource for %s", util.ColorInfo(options.AppName))
@@ -770,10 +769,7 @@ func (options *ImportOptions) DiscoverGit() error {
 	if err != nil {
 		return err
 	}
-	err = options.Git().Add(dir, ".gitignore")
-	if err != nil {
-		return err
-	}
+	options.Git().Add(dir, ".gitignore")
 	err = options.Git().Add(dir, "*")
 	if err != nil {
 		return err

@@ -54,6 +54,7 @@ func TestStepPostInstall(t *testing.T) {
 			staging,
 		},
 		gits.NewGitCLI(),
+		nil,
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 	)
 

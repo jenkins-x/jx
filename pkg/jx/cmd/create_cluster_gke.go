@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"io"
 	"strings"
 
@@ -324,6 +325,13 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	if o.InstallOptions.Flags.DefaultEnvironmentPrefix == "" {
 		o.InstallOptions.Flags.DefaultEnvironmentPrefix = o.Flags.ClusterName
 	}
+
+	o.InstallOptions.setInstallValues(map[string]string{
+		kube.Zone:        zone,
+		kube.ProjectID:   projectId,
+		kube.ClusterName: o.Flags.ClusterName,
+	})
+
 	err = o.initAndInstall(GKE)
 	if err != nil {
 		return err
@@ -365,7 +373,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		}
 		err = secrets.NewSecretLocation(kubeClient, ns).SetInVault(true)
 		if err != nil {
-			return errors.Wrap(err, "configring secrets location")
+			return errors.Wrap(err, "configuring secrets location")
 		}
 	}
 

@@ -3,13 +3,17 @@ package util
 import (
 	"crypto/rand"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"mime"
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
+
+	"github.com/jenkins-x/jx/pkg/log"
+
+	"github.com/pkg/errors"
 )
 
 const (
@@ -397,4 +401,75 @@ func ContentTypeForFileName(name string) string {
 		}
 	}
 	return answer
+}
+
+// IgnoreFile returns true if the path matches any of the ignores. The match is the same as filepath.Match.
+func IgnoreFile(path string, ignores []string) (bool, error) {
+	for _, ignore := range ignores {
+		if matched, err := filepath.Match(ignore, path); err != nil {
+			return false, errors.Wrapf(err, "error when matching ignore %s against path %s", ignore, path)
+		} else if matched {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// ListDirectory logs the directory at path
+func ListDirectory(root string, recurse bool) error {
+	if info, err := os.Stat(root); err != nil {
+		if os.IsNotExist(err) {
+			return errors.Wrapf(err, "unable to list %s as does not exist", root)
+		}
+		if !info.IsDir() {
+			return errors.Errorf("%s is not a directory", root)
+		}
+		return errors.Wrapf(err, "stat %s", root)
+	}
+	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		dir, _ := filepath.Split(path)
+		if !recurse && dir != root {
+			// No recursion and we aren't in the root dir
+			return nil
+		}
+		info, err = os.Stat(path)
+		if err != nil {
+			return errors.Wrapf(err, "stat %s", path)
+		}
+		log.Infof("%v %d %s %s\n", info.Mode().String(), info.Size(), info.ModTime().Format(time.RFC822), info.Name())
+		return nil
+	})
+
+}
+
+
+// GlobAllFiles performs a glob on the pattern and then processes all the files found.
+// if a folder matches the glob its treated as another glob to recurse into the directory
+func GlobAllFiles(basedir string, pattern string, fn func (string) error) error {
+	names, err := filepath.Glob(pattern)
+	if err != nil {
+		return errors.Wrapf(err, "failed to evaluate glob pattern '%s'", pattern)
+	}
+	for _, name := range names {
+		fullPath := name
+		if basedir != "" {
+			fullPath = filepath.Join(basedir, name)
+		}
+		fi, err := os.Stat(fullPath)
+		if err != nil {
+			return errors.Wrapf(err, "getting details of file '%s'", fullPath)
+		}
+		if fi.IsDir() {
+			err = GlobAllFiles("", filepath.Join(fullPath, "*"), fn)
+			if err != nil {
+			  return err
+			}
+		} else {
+			err = fn(fullPath)
+			if err != nil {
+				return errors.Wrapf(err, "failed processing file '%s'", fullPath)
+			}
+		}
+	}
+	return nil
 }

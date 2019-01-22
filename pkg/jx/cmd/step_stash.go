@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/collector"
-	"github.com/jenkins-x/jx/pkg/gits"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/collector"
+	"github.com/jenkins-x/jx/pkg/gits"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -26,6 +27,7 @@ type StepStashOptions struct {
 	StepOptions
 	Pattern         []string
 	Dir             string
+	ToPath          string
 	Basedir         string
 	StorageLocation jenkinsv1.StorageLocation
 	ProjectGitURL   string
@@ -65,6 +67,9 @@ var (
 		# lets collect some files to a specific cloud storage bucket
 		jx step stash -c tests -p "target/test-reports/*" ---bucket-url gs://my-gcp-bucket
 
+		# lets collect some files to a specific cloud storage bucket and specify the path to store them inside
+		jx step stash -c tests -p "target/test-reports/*" ---bucket-url gs://my-gcp-bucket --to-path tests/mystuff
+
 `)
 )
 
@@ -93,13 +98,16 @@ func NewCmdStepStash(f Factory, in terminal.FileReader, out terminal.FileWriter,
 			CheckErr(err)
 		},
 	}
+
+	options.addCommonFlags(cmd)
+	addStorageLocationFlags(cmd, &options.StorageLocation)
+
 	cmd.Flags().StringArrayVarP(&options.Pattern, "pattern", "p", nil, "Specify the pattern to use to look for files")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The source directory to try detect the current git repository or branch. Defaults to using the current directory")
+	cmd.Flags().StringVarP(&options.ToPath, "to-path", "t", "", "The path within the storage to store the files. If not specified it defaults to 'jenkins-x/$category/$owner/$repoName/$branch/$buildNumber'")
 	cmd.Flags().StringVarP(&options.Basedir, "basedir", "", "", "The base directory to use to create relative output file names. e.g. if you specify '--pattern \"target/*.xml\" then you may want to supply '--basedir target' to strip the 'target/' prefix from all collected files")
-	cmd.Flags().StringVarP(&options.StorageLocation.BucketURL, "bucket-url", "", "", "Specify the cloud storage bucket URL to send each file to. e.g. use 's3://nameOfBucket' on AWS, gs://anotherBucket' on GCP or on Azure 'azblob://thatBucket'")
 	cmd.Flags().StringVarP(&options.ProjectGitURL, "project-git-url", "", "", "The project git URL to collect for. Used to default the organisation and repository folders in the storage. If not specified its discovered from the local '.git' folder")
 	cmd.Flags().StringVarP(&options.ProjectBranch, "project-branch", "", "", "The project git branch of the project to collect for. Used to default the branch folder in the storage. If not specified its discovered from the local '.git' folder")
-	cmd.Flags().StringVarP(&options.StorageLocation.Classifier, "classifier", "c", "", "A name which classifies this type of file. Example values: "+kube.ClassificationValues)
 	return cmd
 }
 
@@ -153,7 +161,7 @@ func (o *StepStashOptions) Run() error {
 		return errors.Wrapf(err, "failed to create the collector for storage settings %s", o.StorageLocation.Description())
 	}
 
-	client, ns, err := o.CreateJXClient()
+	client, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return errors.Wrap(err, "cannot create the JX client")
 	}
@@ -190,11 +198,14 @@ func (o *StepStashOptions) Run() error {
 		return fmt.Errorf("Environment variable %s is empty", envVarBranchName)
 	}
 
-	repoPath := filepath.Join("jenkins-x", classifier, projectOrg, projectRepoName, projectBranchName, buildNo)
+	storagePath := o.ToPath
+	if storagePath == "" {
+		storagePath = filepath.Join("jenkins-x", classifier, projectOrg, projectRepoName, projectBranchName, buildNo)
+	}
 
-	urls, err := coll.CollectFiles(o.Pattern, repoPath, o.Basedir)
+	urls, err := coll.CollectFiles(o.Pattern, storagePath, o.Basedir)
 	if err != nil {
-		return errors.Wrapf(err, "failed to collect patterns %s to path %s", strings.Join(o.Pattern, ", "), repoPath)
+		return errors.Wrapf(err, "failed to collect patterns %s to path %s", strings.Join(o.Pattern, ", "), storagePath)
 	}
 
 	for _, u := range urls {

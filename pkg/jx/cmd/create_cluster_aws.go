@@ -303,14 +303,9 @@ func (o *CreateClusterAWSOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	kubeClient, err := o.KubeClient()
-	if err != nil {
-		return err
-	}
-	err = kube.RememberRegion(kubeClient, o.currentNamespace, region)
-	if err != nil {
-		return err
-	}
+	o.InstallOptions.setInstallValues(map[string]string{
+		kube.Region: region,
+	})
 
 	log.Info("Initialising cluster ...\n")
 	return o.initAndInstall(AWS)

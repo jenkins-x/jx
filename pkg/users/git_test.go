@@ -21,6 +21,7 @@ import (
 )
 
 func TestFindUserByLabel(t *testing.T) {
+	t.Parallel()
 	resolver, _, err := prepare(t)
 	assert.NoError(t, err)
 	gitUserID := uuid.NewV4().String()
@@ -48,6 +49,7 @@ func TestFindUserByLabel(t *testing.T) {
 }
 
 func TestFindUserBySignature(t *testing.T) {
+	t.Parallel()
 	resolver, _, err := prepare(t)
 	assert.NoError(t, err)
 	gitUserID := uuid.NewV4().String()
@@ -70,6 +72,7 @@ func TestFindUserBySignature(t *testing.T) {
 }
 
 func TestFindUserByAccountReference(t *testing.T) {
+	t.Parallel()
 	resolver, _, err := prepare(t)
 	assert.NoError(t, err)
 	gitUserID1 := uuid.NewV4().String()
@@ -102,6 +105,7 @@ func TestFindUserByAccountReference(t *testing.T) {
 }
 
 func TestFindUserByFromGitProvider(t *testing.T) {
+	t.Parallel()
 	resolver, fakeProvider, err := prepare(t)
 	assert.NoError(t, err)
 	gitUserID1 := uuid.NewV4().String()
@@ -143,22 +147,23 @@ func prepare(t *testing.T) (*users.GitUserResolver, *gits.FakeProvider, error) {
 	testOrgName := "myorg"
 	testRepoName := "my-app"
 	fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
+	fakeProvider := gits.NewFakeProvider(fakeRepo)
+	fakeProvider.Type = gits.Fake
 
 	o := cmd.CommonOptions{}
 	cmd.ConfigureTestOptionsWithResources(&o,
 		[]runtime.Object{},
 		[]runtime.Object{},
 		&gits.GitFake{},
+		fakeProvider,
 		helm_test.NewMockHelmer(),
 	)
 
-	jxClient, ns, err := o.CreateJXClient()
+	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	fakeProvider := gits.NewFakeProvider(fakeRepo)
-	fakeProvider.Type = gits.Fake
 	return &users.GitUserResolver{
 		GitProvider: fakeProvider,
 		JXClient:    jxClient,
