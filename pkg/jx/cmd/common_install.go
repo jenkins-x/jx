@@ -1691,12 +1691,12 @@ func (o *CommonOptions) createWebhookProw(gitURL string, gitProvider gits.GitPro
 
 func (o *CommonOptions) isProw() (bool, error) {
 	ns := o.devNamespace
-	if ns == "" {
-		ns = o.currentNamespace
-	}
-	jxClient, _, err := o.JXClient()
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return false, err
+	}
+	if ns == "" {
+		ns = devNs
 	}
 	env, err := kube.GetEnvironment(jxClient, ns, "dev")
 	if err != nil {
