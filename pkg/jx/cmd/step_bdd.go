@@ -418,7 +418,7 @@ func (o *StepBDDOptions) copyReports(testDir string, err error) error {
 	return err
 }
 
-func (o *StepBDDOptions) createCluster(cluster *bdd.BddCluster) error {
+func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	buildNum := o.getBuildNumber()
 	if buildNum == "" {
 		log.Warnf("No build number could be found from the environment variable $BUILD_NUMBER!\n")
@@ -447,9 +447,9 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.BddCluster) error {
 	}
 	safeArgs := append([]string{}, args...)
 
-	gitApiToken := o.InstallOptions.GitRepositoryOptions.ApiToken
-	if gitApiToken != "" {
-		args = append(args, "--git-api-token", gitApiToken)
+	gitToken := o.InstallOptions.GitRepositoryOptions.ApiToken
+	if gitToken != "" {
+		args = append(args, "--git-api-token", gitToken)
 		safeArgs  = append(safeArgs, "--git-api-token", "**************¬")
 	}
 	adminPwd := o.InstallOptions.AdminSecretsService.Flags.DefaultAdminPassword
@@ -472,6 +472,6 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.BddCluster) error {
 	return err
 }
 
-func (o *StepBDDOptions) deleteCluster(cluster *bdd.BddCluster) error {
+func (o *StepBDDOptions) deleteCluster(cluster *bdd.CreateCluster) error {
 	return nil
 }

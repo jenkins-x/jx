@@ -56,7 +56,7 @@ type CreateJenkinsUserOptions struct {
 	ServerFlags   ServerFlags
 	Username      string
 	Password      string
-	ApiToken      string
+	APIToken      string
 	BearerToken   string
 	Timeout       string
 	UseBrowser    bool
@@ -91,7 +91,7 @@ func NewCmdCreateJenkinsUser(f Factory, in terminal.FileReader, out terminal.Fil
 	}
 	options.addCommonFlags(cmd)
 	options.ServerFlags.addGitServerFlags(cmd)
-	cmd.Flags().StringVarP(&options.ApiToken, "api-token", "t", "", "The API Token for the user")
+	cmd.Flags().StringVarP(&options.APIToken, "api-token", "t", "", "The API Token for the user")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The User password to try automatically create a new API Token")
 	cmd.Flags().StringVarP(&options.Timeout, "timeout", "", "", "The timeout if using REST to generate the API token (by passing username and password)")
 	cmd.Flags().BoolVarP(&options.UseBrowser, "browser", "", false, "Use REST calls to automatically find the API token if the user and password are known")
@@ -107,7 +107,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		o.Username = args[0]
 	}
 	if len(args) > 1 {
-		o.ApiToken = args[1]
+		o.APIToken = args[1]
 	}
 	kubeClient, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
@@ -146,8 +146,8 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		userAuth.ApiToken = ""
 		userAuth.BearerToken = ""
 	} else {
-		if o.ApiToken != "" {
-			userAuth.ApiToken = o.ApiToken
+		if o.APIToken != "" {
+			userAuth.ApiToken = o.APIToken
 		}
 		if o.BearerToken != "" {
 			userAuth.BearerToken = o.BearerToken
