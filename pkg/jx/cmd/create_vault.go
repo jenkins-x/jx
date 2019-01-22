@@ -161,11 +161,27 @@ func (o *CreateVaultOptions) createVault(vaultOperatorClient versioned.Interface
 	}
 
 	if o.GKEProjectID == "" {
-		projectId, err := o.getGoogleProjectId()
+		kubeClient, ns, err := o.KubeClientAndDevNamespace()
+		if err != nil {
+			log.Warnf("Failed create KubeClient: %s\n", err)
+		} else {
+			data, err := kube.ReadInstallValues(kubeClient, ns)
+			if err != nil {
+				log.Warnf("Failed to load install values %s\n", err)
+			} else if data != nil {
+				o.GKEProjectID = data[kube.ProjectID]
+				if o.GKEZone == "" {
+					o.GKEZone = data[kube.Zone]
+				}
+			}
+		}
+	}
+
+	if o.GKEProjectID == "" {
+		o.GKEProjectID, err = o.getGoogleProjectId()
 		if err != nil {
 			return err
 		}
-		o.GKEProjectID = projectId
 	}
 
 	err = o.CreateOptions.CommonOptions.runCommandVerbose(

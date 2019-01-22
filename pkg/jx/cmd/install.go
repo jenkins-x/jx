@@ -1836,6 +1836,14 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			},
 			Namespace: namespace,
 		}
+		if options.installValues != nil {
+			if cvo.GKEProjectID == "" {
+				cvo.GKEProjectID = options.installValues[kube.ProjectID]
+			}
+			if cvo.GKEZone == "" {
+				cvo.GKEZone = options.installValues[kube.Zone]
+			}
+		}
 		vaultOperatorClient, err := cvo.CreateVaultOperatorClient()
 		if err != nil {
 			return err
@@ -1982,6 +1990,7 @@ func (options *InstallOptions) configureJenkins(namespace string) error {
 					options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
 					options.CreateJenkinsUserOptions.UseBrowser = true
 					options.CreateJenkinsUserOptions.Verbose = false
+					options.CreateJenkinsUserOptions.RecreateToken = true
 					if options.BatchMode {
 						options.CreateJenkinsUserOptions.BatchMode = true
 						options.CreateJenkinsUserOptions.Headless = true
