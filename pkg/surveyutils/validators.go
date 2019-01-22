@@ -85,8 +85,8 @@ func DateTimeValidator() survey.Validator {
 }
 
 const (
-	rfc33339FullDate = "2006-01-02"
-	rfc3339FullTime  = "15:04:05Z07:00"
+	rfc3339FullDate = "2006-01-02"
+	rfc3339FullTime = "15:04:05Z07:00"
 )
 
 // DateValidator validates that a string is a RFC 3339 full-date format
@@ -96,10 +96,10 @@ func DateValidator() survey.Validator {
 		if err != nil {
 			return err
 		}
-		_, err = time.Parse(rfc3339FullTime, str)
+		_, err = time.Parse(rfc3339FullDate, str)
 		if err != nil {
 			return fmt.Errorf("%s is not a RFC 3339 full-date formatted string, it should be like %s", str,
-				rfc33339FullDate)
+				rfc3339FullDate)
 		}
 		return nil
 	}
@@ -130,7 +130,7 @@ func EmailValidator() survey.Validator {
 		}
 		_, err = mail.ParseAddress(str)
 		if err != nil {
-			return fmt.Errorf("%s is not a RFC 5322 address, it should be like Barry Gibbs <bg@example.com>", str)
+			return fmt.Errorf("%s is not a RFC 5322 address, it should be like Barry Gibb <bg@example.com>", str)
 		}
 		return nil
 	}
@@ -401,7 +401,7 @@ func MaxPropertiesValidator(maxItems *int, value *orderedmap.OrderedMap, key str
 		if maxItems != nil {
 			maxItemsValue := util.DereferenceInt(maxItems)
 			if len(value.Keys()) > maxItemsValue {
-				return fmt.Errorf("%v has more than %d items", key, maxItemsValue)
+				return fmt.Errorf("%v has more than %d items, has %v", key, maxItemsValue, value.Keys())
 			}
 		}
 		return nil
@@ -427,7 +427,7 @@ func MinPropertiesValidator(minItems *int, value *orderedmap.OrderedMap, key str
 		if minItems != nil {
 			minItemsValue := util.DereferenceInt(minItems)
 			if len(value.Keys()) < minItemsValue {
-				return fmt.Errorf("%v has less than %d items", key, minItemsValue)
+				return fmt.Errorf("%v has less than %d items, has %v", key, minItemsValue, value.Keys())
 			}
 		}
 		return nil

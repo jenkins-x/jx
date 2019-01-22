@@ -25,44 +25,55 @@ import (
 
 // Type represents a JSON Schema object type current to https://www.ietf.org/archive/id/draft-handrews-json-schema-validation-01.txt
 type Type struct {
-	Version              string                `json:"$schema,omitempty"`
-	Ref                  string                `json:"$ref,omitempty"`
-	MultipleOf           *float64              `json:"multipleOf,omitempty"`
-	Maximum              *float64              `json:"maximum,omitempty"`
-	ExclusiveMaximum     *float64              `json:"exclusiveMaximum,omitempty"`
-	Minimum              *float64              `json:"minimum,omitempty"`
-	ExclusiveMinimum     *float64              `json:"exclusiveMinimum,omitempty"`
-	MaxLength            *int                  `json:"maxLength,omitempty"`
-	MinLength            *int                  `json:"minLength,omitempty"`
-	Pattern              *string               `json:"pattern,omitempty"`
-	AdditionalItems      *Type                 `json:"additionalItems,omitempty"`
-	Items                Items                 `json:"items,omitempty"`
-	MaxItems             *int                  `json:"maxItems,omitempty"`
-	MinItems             *int                  `json:"minItems,omitempty"`
-	UniqueItems          bool                  `json:"uniqueItems,omitempty"`
-	MaxProperties        *int                  `json:"maxProperties,omitempty"`
-	MinProperties        *int                  `json:"minProperties,omitempty"`
-	Required             []string              `json:"required,omitempty"`
-	Properties           *Properties           `json:"properties,omitempty"`
-	PatternProperties    map[string]*Type      `json:"patternProperties,omitempty"`
-	AdditionalProperties *Type                 `json:"additionalProperties,omitempty"`
-	Dependencies         map[string]Dependency `json:"dependencies,omitempty"`
-	Enum                 []interface{}         `json:"enum,omitempty"`
-	Type                 string                `json:"type,omitempty"`
-	AllOf                []*Type               `json:"allOf,omitempty"`
-	AnyOf                []*Type               `json:"anyOf,omitempty"`
-	OneOf                []*Type               `json:"oneOf,omitempty"`
-	Not                  *Type                 `json:"not,omitempty"`
-	Definitions          Definitions           `json:"definitions,omitempty"`
-	Contains             *Type                 `json:"contains, omitempty"`
-	Const                *interface{}          `json:"const, omitempty"`
-	PropertyNames        *Type                 `json:"propertyNames, omitempty"`
-	Title                string                `json:"title,omitempty"`
-	Description          string                `json:"description,omitempty"`
-	Default              interface{}           `json:"default,omitempty"`
-	Format               *string               `json:"format,omitempty"`
-	ContentMediaType     *string               `json:"contentMediaType,omitempty"`
-	ContentEncoding      *string               `json:"contentEncoding,omitempty"`
+	Version          string      `json:"$schema,omitempty"`
+	Ref              string      `json:"$ref,omitempty"`
+	MultipleOf       *float64    `json:"multipleOf,omitempty"`
+	Maximum          *float64    `json:"maximum,omitempty"`
+	ExclusiveMaximum *float64    `json:"exclusiveMaximum,omitempty"`
+	Minimum          *float64    `json:"minimum,omitempty"`
+	ExclusiveMinimum *float64    `json:"exclusiveMinimum,omitempty"`
+	MaxLength        *int        `json:"maxLength,omitempty"`
+	MinLength        *int        `json:"minLength,omitempty"`
+	Pattern          *string     `json:"pattern,omitempty"`
+	AdditionalItems  *Type       `json:"additionalItems,omitempty"`
+	Items            Items       `json:"items,omitempty"`
+	MaxItems         *int        `json:"maxItems,omitempty"`
+	MinItems         *int        `json:"minItems,omitempty"`
+	UniqueItems      bool        `json:"uniqueItems,omitempty"`
+	MaxProperties    *int        `json:"maxProperties,omitempty"`
+	MinProperties    *int        `json:"minProperties,omitempty"`
+	Required         []string    `json:"required,omitempty"`
+	Properties       *Properties `json:"properties,omitempty"`
+	// TODO Implement support & tests for PatternProperties
+	PatternProperties map[string]*Type `json:"patternProperties,omitempty"`
+	// TODO Implement support & tests for AdditionalProperties
+	AdditionalProperties *Type `json:"additionalProperties,omitempty"`
+	// TODO Implement support & tests for Dependencies
+	Dependencies map[string]Dependency `json:"dependencies,omitempty"`
+	// TODO Implement support & tests for PropertyNames
+	PropertyNames *Type         `json:"propertyNames, omitempty"`
+	Enum          []interface{} `json:"enum,omitempty"`
+	Type          string        `json:"type,omitempty"`
+	// TODO Implement support & tests for If, Then, Else
+	// TODO Implement support & tests for All
+	AllOf []*Type `json:"allOf,omitempty"`
+	// TODO Implement support & tests for AnyOf
+	AnyOf []*Type `json:"anyOf,omitempty"`
+	// TODO Implement support & tests for OneOf
+	OneOf []*Type `json:"oneOf,omitempty"`
+	// TODO Implement support & tests for Not
+	Not *Type `json:"not,omitempty"`
+	// TODO Implement support & tests for Definitions
+	Definitions Definitions `json:"definitions,omitempty"`
+	// TODO Implement support & tests for Contains
+	Contains         *Type        `json:"contains, omitempty"`
+	Const            *interface{} `json:"const, omitempty"`
+	Title            string       `json:"title,omitempty"`
+	Description      string       `json:"description,omitempty"`
+	Default          interface{}  `json:"default,omitempty"`
+	Format           *string      `json:"format,omitempty"`
+	ContentMediaType *string      `json:"contentMediaType,omitempty"`
+	ContentEncoding  *string      `json:"contentEncoding,omitempty"`
 }
 
 // Definitions hold schema definitions.
@@ -197,38 +208,32 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 			return err
 		}
 	case "object":
-		result := orderedmap.New()
 		if t.AdditionalProperties != nil {
 			return fmt.Errorf("additionalProperties is not supported for %s", name)
-			// TODO support additionalProperties
 		}
 		if len(t.PatternProperties) > 0 {
 			return fmt.Errorf("patternProperties is not supported for %s", name)
-			// TODO support patternProperties
 		}
 		if len(t.Dependencies) > 0 {
 			return fmt.Errorf("dependencies is not supported for %s", name)
-			// TODO support dependencies
 		}
 		if t.PropertyNames != nil {
 			return fmt.Errorf("propertyNames is not supported for %s", name)
-			// TODO support propertyNames
 		}
 		if t.Const != nil {
 			return fmt.Errorf("const is not supported for %s", name)
 			// TODO support const
 		}
-		duringValidators := []survey.Validator{
-			// These validators are run during processing of the properties
-			MaxPropertiesValidator(t.MaxProperties, result, name),
-		}
-		postValidators := []survey.Validator{
-			// These validators are run after the processing of the properties
-			MinPropertiesValidator(t.MinProperties, result, name),
-			EnumValidator(t.Enum),
-		}
 		if t.Properties != nil {
 			for valid := false; !valid; {
+				result := orderedmap.New()
+				duringValidators := make([]survey.Validator, 0)
+				postValidators := []survey.Validator{
+					// These validators are run after the processing of the properties
+					MinPropertiesValidator(t.MinProperties, result, name),
+					EnumValidator(t.Enum),
+					MaxPropertiesValidator(t.MaxProperties, result, name),
+				}
 				for _, n := range t.Properties.Keys() {
 					v, _ := t.Properties.Get(n)
 					property := v.(*Type)
@@ -241,16 +246,19 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 				for _, v := range postValidators {
 					err := v(result)
 					if err != nil {
-						_, err1 := out.Write([]byte(err.Error()))
+						str := fmt.Sprintf("Sorry, your reply was invalid: %s", err.Error())
+						_, err1 := out.Write([]byte(str))
 						if err1 != nil {
 							return err1
 						}
 						valid = false
 					}
 				}
+				if valid {
+					output.Set(name, result)
+				}
 			}
 		}
-		output.Set(name, result)
 	case "array":
 		if t.Const != nil {
 			return fmt.Errorf("const is not supported for %s", name)
@@ -296,13 +304,9 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 				validators = append(validators, DateValidator())
 			case "time":
 				validators = append(validators, TimeValidator())
-			case "email":
+			case "email", "idn-email":
 				validators = append(validators, EmailValidator())
-			case "idn-email":
-				validators = append(validators, EmailValidator())
-			case "hostname":
-				validators = append(validators, HostnameValidator())
-			case "idn-hostname":
+			case "hostname", "idn-hostname":
 				validators = append(validators, HostnameValidator())
 			case "ipv4":
 				validators = append(validators, Ipv4Validator())
