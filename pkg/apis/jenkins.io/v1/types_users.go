@@ -45,6 +45,7 @@ type UserDetails struct {
 	AvatarURL         string             `json:"avatarUrl,omitempty"  protobuf:"bytes,6,opt,name=avatarUrl"`
 	ServiceAccount    string             `json:"serviceAccount,omitempty"  protobuf:"bytes,7,opt,name=serviceAccount"`
 	Accounts          []AccountReference `json:"accountReference,omitempty"  protobuf:"bytes,8,opt,name=accountReference"`
+	CreateServiceAc   bool               `json:"createServiceAc,omitempty"  protobuf:"bytes,9,opt,name=createServiceAc"`
 }
 
 // AccountReference is a reference to a user account in another system that is attached to this user
