@@ -45,6 +45,9 @@ func (c *BucketCollector) CollectFiles(patterns []string, outputPath string, bas
 					return errors.Wrapf(err, "failed to remove basedir %s from %s", basedir, name)
 				}
 			}
+			if outputPath != "" {
+				toName = filepath.Join(outputPath, toName)
+			}
 			data, err := ioutil.ReadFile(name)
 			if err != nil {
 				return errors.Wrapf(err, "failed to read file %s", name)
