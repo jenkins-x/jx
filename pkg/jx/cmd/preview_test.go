@@ -257,9 +257,9 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 	When(mockHelmer.UpgradeChart(AnyString(), //chart
 		AnyString(),      //releaseName
 		AnyString(),      // ns
-		anyPtrToString(), // version
+		AnyString(),      // version
 		AnyBool(),        // install
-		anyPtrToInt(),    // timeout
+		AnyInt(),         // timeout
 		AnyBool(),        // force
 		AnyBool(),        // wait
 		AnyStringSlice(), // values

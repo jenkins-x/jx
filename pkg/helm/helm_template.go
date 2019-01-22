@@ -248,7 +248,7 @@ func (h *HelmTemplate) Version(tls bool) (string, error) {
 // Mutation API
 
 // InstallChart installs a helm chart according with the given flags
-func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string, version *string, timeout *int,
+func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string, version string, timeout int,
 	values []string, valueFiles []string, repo string, username string, password string) error {
 
 	err := h.clearOutputDir(releaseName)
@@ -257,7 +257,7 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 	}
 	outputDir, _, chartsDir, err := h.getDirectories(releaseName)
 
-	chartDir, err := h.fetchChart(chart, asText(version), chartsDir, repo, username, password)
+	chartDir, err := h.fetchChart(chart, version, chartsDir, repo, username, password)
 	if err != nil {
 		return err
 	}
@@ -317,8 +317,8 @@ func (h *HelmTemplate) FetchChart(chart string, version string, untar bool, unta
 }
 
 // UpgradeChart upgrades a helm chart according with given helm flags
-func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string, version *string, install bool,
-	timeout *int, force bool, wait bool, values []string, valueFiles []string, repo string, username string,
+func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string, version string, install bool,
+	timeout int, force bool, wait bool, values []string, valueFiles []string, repo string, username string,
 	password string) error {
 
 	err := h.clearOutputDir(releaseName)
@@ -327,7 +327,7 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 	}
 	outputDir, _, chartsDir, err := h.getDirectories(releaseName)
 
-	chartDir, err := h.fetchChart(chart, asText(version), chartsDir, repo, username, password)
+	chartDir, err := h.fetchChart(chart, version, chartsDir, repo, username, password)
 	if err != nil {
 		return err
 	}
@@ -898,27 +898,23 @@ func (h *HelmTemplate) getChartNameAndVersion(chartDir string, version *string) 
 }
 
 // getChart returns the chart metadata for the given dir
-func (h *HelmTemplate) getChart(chartDir string, version *string) (*chart.Metadata, string, error) {
-	versionText := ""
-	if version != nil && *version != "" {
-		versionText = *version
-	}
+func (h *HelmTemplate) getChart(chartDir string, version string) (*chart.Metadata, string, error) {
 	file := filepath.Join(chartDir, ChartFileName)
 	if !filepath.IsAbs(chartDir) {
 		file = filepath.Join(h.Runner.CurrentDir(), file)
 	}
 	exists, err := util.FileExists(file)
 	if err != nil {
-		return nil, versionText, err
+		return nil, version, err
 	}
 	if !exists {
-		return nil, versionText, fmt.Errorf("No file %s found!", file)
+		return nil, version, fmt.Errorf("no file %s found!", file)
 	}
 	metadata, err := chartutil.LoadChartfile(file)
-	if versionText == "" && metadata != nil {
-		versionText = metadata.GetVersion()
+	if version == "" && metadata != nil {
+		version = metadata.GetVersion()
 	}
-	return metadata, versionText, err
+	return metadata, version, err
 }
 
 func (h *HelmTemplate) runHooks(hooks []*HelmHook, hookPhase string, ns string, chart string, releaseName string, wait bool, create bool) error {

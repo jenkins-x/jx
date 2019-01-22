@@ -617,7 +617,7 @@ controller:
 		i := 0
 		for {
 			log.Infof("Installing using helm binary: %s\n", util.ColorInfo(o.Helm().HelmBinary()))
-			err = o.Helm().InstallChart("stable/nginx-ingress", "jxing", ingressNamespace, nil, nil, values,
+			err = o.Helm().InstallChart("stable/nginx-ingress", "jxing", ingressNamespace, "", -1, values,
 				valuesFiles, "", "", "")
 			if err != nil {
 				if i >= 3 {

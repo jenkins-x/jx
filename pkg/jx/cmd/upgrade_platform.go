@@ -307,7 +307,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		o.Debugf("Adding values file %s\n", util.ColorInfo(v))
 	}
 
-	err = o.Helm().UpgradeChart(o.Chart, o.ReleaseName, ns, &targetVersion, false, nil, false, false, values,
+	err = o.Helm().UpgradeChart(o.Chart, o.ReleaseName, ns, targetVersion, false, -1, false, false, values,
 		valueFiles, "", "", "")
 	if err != nil {
 		return errors.Wrap(err, "unable to upgrade helm chart")

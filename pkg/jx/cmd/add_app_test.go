@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/petergtz/pegomock"
+
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -27,12 +29,11 @@ import (
 
 func TestAddAppForGitOps(t *testing.T) {
 	t.Parallel()
-	testOptions, err := cmd.CreateAppTestOptions(true)
+	testOptions := cmd.CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	assert.NoError(t, err)
 
 	name := uuid.NewV4().String()
 	version := "0.0.1"
@@ -50,7 +51,7 @@ func TestAddAppForGitOps(t *testing.T) {
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}
 	o.Args = []string{name}
-	err = o.Run()
+	err := o.Run()
 	assert.NoError(t, err)
 	pr, err := testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
 	assert.NoError(t, err)
@@ -77,14 +78,122 @@ func TestAddAppForGitOps(t *testing.T) {
 	assert.Equal(t, version, found[0].Version)
 }
 
-func TestAddAppWithValuesFileForGitOps(t *testing.T) {
-	t.Parallel()
-	testOptions, err := cmd.CreateAppTestOptions(true)
+func TestAddApp(t *testing.T) {
+
+	testOptions := cmd.CreateAppTestOptions(false, t)
+	// Can't run in parallel
+	pegomock.RegisterMockTestingT(t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
+
+	name := uuid.NewV4().String()
+	version := "0.0.1"
+	o := &cmd.AddAppOptions{
+		AddOptions: cmd.AddOptions{
+			CommonOptions: *testOptions.CommonOptions,
+		},
+		Version:              version,
+		Repo:                 cmd.DEFAULT_CHARTMUSEUM_URL,
+		GitOps:               false,
+		DevEnv:               testOptions.DevEnv,
+		HelmUpdate:           true, // Flag default when run on CLI
+		ConfigureGitCallback: testOptions.ConfigureGitFn,
+	}
+	o.Args = []string{name}
+	err := o.Run()
 	assert.NoError(t, err)
+
+	_, _, _, fetchDir, _, _, _ := testOptions.MockHelmer.VerifyWasCalledOnce().FetchChart(
+		pegomock.EqString(name),
+		pegomock.EqString(version),
+		pegomock.AnyBool(),
+		pegomock.AnyString(),
+		pegomock.EqString(cmd.DEFAULT_CHARTMUSEUM_URL),
+		pegomock.AnyString(),
+		pegomock.AnyString()).GetCapturedArguments()
+	testOptions.MockHelmer.VerifyWasCalledOnce().
+		UpgradeChart(
+			pegomock.EqString(filepath.Join(fetchDir, name)),
+			pegomock.EqString(name),
+			pegomock.AnyString(),
+			pegomock.EqString(version),
+			pegomock.AnyBool(),
+			pegomock.AnyInt(),
+			pegomock.AnyBool(),
+			pegomock.AnyBool(),
+			pegomock.AnyStringSlice(),
+			pegomock.AnyStringSlice(),
+			pegomock.EqString(cmd.DEFAULT_CHARTMUSEUM_URL),
+			pegomock.AnyString(),
+			pegomock.AnyString())
+}
+
+func TestAddLatestApp(t *testing.T) {
+
+	testOptions := cmd.CreateAppTestOptions(false, t)
+	// Can't run in parallel
+	pegomock.RegisterMockTestingT(t)
+	defer func() {
+		err := testOptions.Cleanup()
+		assert.NoError(t, err)
+	}()
+
+	name := uuid.NewV4().String()
+	version := "0.1.1"
+	o := &cmd.AddAppOptions{
+		AddOptions: cmd.AddOptions{
+			CommonOptions: *testOptions.CommonOptions,
+		},
+		Repo:                 cmd.DEFAULT_CHARTMUSEUM_URL,
+		GitOps:               false,
+		DevEnv:               testOptions.DevEnv,
+		HelmUpdate:           true, // Flag default when run on CLI
+		ConfigureGitCallback: testOptions.ConfigureGitFn,
+	}
+	o.Args = []string{name}
+	helm_test.StubFetchChart(name, "", cmd.DEFAULT_CHARTMUSEUM_URL, &chart.Chart{
+		Metadata: &chart.Metadata{
+			Name:    name,
+			Version: version,
+		},
+	}, testOptions.MockHelmer)
+	err := o.Run()
+	assert.NoError(t, err)
+
+	_, _, _, fetchDir, _, _, _ := testOptions.MockHelmer.VerifyWasCalledOnce().FetchChart(
+		pegomock.EqString(name),
+		pegomock.AnyString(),
+		pegomock.AnyBool(),
+		pegomock.AnyString(),
+		pegomock.EqString(cmd.DEFAULT_CHARTMUSEUM_URL),
+		pegomock.AnyString(),
+		pegomock.AnyString()).GetCapturedArguments()
+	testOptions.MockHelmer.VerifyWasCalledOnce().
+		UpgradeChart(
+			pegomock.EqString(filepath.Join(fetchDir, name)),
+			pegomock.EqString(name),
+			pegomock.AnyString(),
+			pegomock.EqString(version),
+			pegomock.AnyBool(),
+			pegomock.AnyInt(),
+			pegomock.AnyBool(),
+			pegomock.AnyBool(),
+			pegomock.AnyStringSlice(),
+			pegomock.AnyStringSlice(),
+			pegomock.EqString(cmd.DEFAULT_CHARTMUSEUM_URL),
+			pegomock.AnyString(),
+			pegomock.AnyString())
+}
+
+func TestAddAppWithValuesFileForGitOps(t *testing.T) {
+	t.Parallel()
+	testOptions := cmd.CreateAppTestOptions(true, t)
+	defer func() {
+		err := testOptions.Cleanup()
+		assert.NoError(t, err)
+	}()
 
 	values := map[string]interface{}{
 		"cheese": "cheddar",
@@ -131,12 +240,11 @@ func TestAddAppWithValuesFileForGitOps(t *testing.T) {
 }
 
 func TestAddAppWithReadmeForGitOps(t *testing.T) {
-	testOptions, err := cmd.CreateAppTestOptions(true)
+	testOptions := cmd.CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	assert.NoError(t, err)
 
 	name := uuid.NewV4().String()
 	version := "0.0.1"
@@ -215,12 +323,11 @@ func TestAddAppWithReadmeForGitOps(t *testing.T) {
 }
 
 func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
-	testOptions, err := cmd.CreateAppTestOptions(true)
+	testOptions := cmd.CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	assert.NoError(t, err)
 
 	name := uuid.NewV4().String()
 	version := "0.0.1"
@@ -253,7 +360,7 @@ func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
 			},
 		},
 	}, testOptions.MockHelmer)
-	err = o.Run()
+	err := o.Run()
 	assert.NoError(t, err)
 	// Validate that the README.md file is in the right place
 	envDir, err := o.CommonOptions.EnvironmentsDir()
@@ -278,12 +385,11 @@ func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
 }
 
 func TestAddLatestAppForGitOps(t *testing.T) {
-	testOptions, err := cmd.CreateAppTestOptions(true)
+	testOptions := cmd.CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	assert.NoError(t, err)
 
 	name := uuid.NewV4().String()
 	version := "0.1.8"
@@ -309,7 +415,7 @@ func TestAddLatestAppForGitOps(t *testing.T) {
 		},
 	}, testOptions.MockHelmer)
 
-	err = o.Run()
+	err := o.Run()
 	assert.NoError(t, err)
 	pr, err := testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
 	assert.NoError(t, err)

@@ -300,7 +300,7 @@ func (o *UpgradeAppsOptions) upgradeApps() error {
 					return errors.Wrap(err, "backing up the configuration")
 				}
 			}
-			err = o.Helm().UpgradeChart(app, k, ns, nil, false, nil, false, false, values, valueFiles, "",
+			err = o.Helm().UpgradeChart(app, k, ns, "", false, -1, false, false, values, valueFiles, "",
 				o.Username, o.Password)
 			if err != nil {
 				log.Warnf("Failed to upgrade %s app %s: %v\n", name, app, err)

@@ -90,11 +90,11 @@ func (o *StepHelmInstallOptions) Run() error {
 		}
 	}
 
-	version := &o.Version
+	version := o.Version
 	if o.Version == "" {
-		version = nil
+		version = ""
 	}
-	err = o.Helm().InstallChart(chart, releaseName, ns, version, nil, o.Values, o.ValuesFiles, "", "", "")
+	err = o.Helm().InstallChart(chart, releaseName, ns, version, -1, o.Values, o.ValuesFiles, "", "", "")
 	if err != nil {
 		return err
 	}
