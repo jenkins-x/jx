@@ -1626,9 +1626,8 @@ func (o *CommonOptions) installProw() error {
 	kvalues = append(kvalues, setValues...)
 
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true,
+		return o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true,
 			kvalues, nil, "")
-		return nil
 	})
 
 	if err != nil {
@@ -1637,8 +1636,7 @@ func (o *CommonOptions) installProw() error {
 
 	log.Infof("Installing Prow into namespace %s\n", util.ColorInfo(devNamespace))
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values, nil, "")
-		return nil
+		return o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values, nil, "")
 	})
 
 	if err != nil {
@@ -1648,9 +1646,8 @@ func (o *CommonOptions) installProw() error {
 	log.Infof("Installing BuildTemplates into namespace %s\n", util.ColorInfo(devNamespace))
 
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(kube.DefaultBuildTemplatesReleaseName, kube.ChartBuildTemplates, "", devNamespace, true,
+		return o.installChart(kube.DefaultBuildTemplatesReleaseName, kube.ChartBuildTemplates, "", devNamespace, true,
 			values, nil, "")
-		return nil
 	})
 
 	if err != nil {
