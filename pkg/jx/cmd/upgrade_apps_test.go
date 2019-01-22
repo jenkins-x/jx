@@ -19,12 +19,11 @@ import (
 
 func TestUpgradeAppForGitOps(t *testing.T) {
 	t.Parallel()
-	testOptions, err := cmd.CreateAppTestOptions(true)
+	testOptions := cmd.CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	assert.NoError(t, err)
 	name, alias, version, err := testOptions.AddApp()
 	assert.NoError(t, err)
 
@@ -75,12 +74,11 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 }
 
 func TestUpgradeAppToLatestForGitOps(t *testing.T) {
-	testOptions, err := cmd.CreateAppTestOptions(true)
+	testOptions := cmd.CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	assert.NoError(t, err)
 	name, alias, version, err := testOptions.AddApp()
 	assert.NoError(t, err)
 
@@ -138,12 +136,11 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 }
 
 func TestUpgradeAllAppsForGitOps(t *testing.T) {
-	testOptions, err := cmd.CreateAppTestOptions(true)
+	testOptions := cmd.CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	assert.NoError(t, err)
 	name1, alias1, version1, err := testOptions.AddApp()
 	assert.NoError(t, err)
 	name2, alias2, version2, err := testOptions.AddApp()

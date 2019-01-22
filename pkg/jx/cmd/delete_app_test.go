@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/petergtz/pegomock"
+
 	"github.com/jenkins-x/jx/pkg/helm"
 
 	"github.com/stretchr/testify/assert"
@@ -14,12 +16,11 @@ import (
 
 func TestDeleteAppForGitOps(t *testing.T) {
 	t.Parallel()
-	testOptions, err := cmd.CreateAppTestOptions(true)
+	testOptions := cmd.CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	assert.NoError(t, err)
 	name, alias, _, err := testOptions.AddApp()
 	assert.NoError(t, err)
 
@@ -52,4 +53,32 @@ func TestDeleteAppForGitOps(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, requirements.Dependencies, 1)
 	assert.Nil(t, requirements.Dependencies[0])
+}
+
+func TestDeleteApp(t *testing.T) {
+
+	testOptions := cmd.CreateAppTestOptions(false, t)
+	// Can't run in parallel
+	pegomock.RegisterMockTestingT(t)
+	defer func() {
+		err := testOptions.Cleanup()
+		assert.NoError(t, err)
+	}()
+
+	name, _, _, err := testOptions.AddApp()
+	assert.NoError(t, err)
+
+	o := &cmd.DeleteAppOptions{
+		CommonOptions:        *testOptions.CommonOptions,
+		GitOps:               true,
+		DevEnv:               testOptions.DevEnv,
+		ConfigureGitCallback: testOptions.ConfigureGitFn,
+	}
+	o.Args = []string{name}
+
+	err = o.Run()
+	assert.NoError(t, err)
+
+	testOptions.MockHelmer.VerifyWasCalledOnce().
+		DeleteRelease(pegomock.AnyString(), pegomock.EqString(name), pegomock.AnyBool())
 }

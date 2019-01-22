@@ -240,7 +240,7 @@ func (h *HelmCLI) BuildDependency() error {
 }
 
 // InstallChart installs a helm chart according with the given flags
-func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, version *string, timeout *int,
+func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, version string, timeout int,
 	values []string, valueFiles []string, repo string, username string, password string) error {
 	args := []string{}
 	args = append(args, "install", "--wait", "--name", releaseName, "--namespace", ns, chart)
@@ -249,11 +249,11 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 		return err
 	}
 
-	if timeout != nil {
-		args = append(args, "--timeout", strconv.Itoa(*timeout))
+	if timeout != -1 {
+		args = append(args, "--timeout", strconv.Itoa(timeout))
 	}
-	if version != nil {
-		args = append(args, "--version", *version)
+	if version != "" {
+		args = append(args, "--version", version)
 	}
 	for _, value := range values {
 		args = append(args, "--set", value)
@@ -341,8 +341,8 @@ func (h *HelmCLI) Template(chart string, releaseName string, ns string, outDir s
 }
 
 // UpgradeChart upgrades a helm chart according with given helm flags
-func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, version *string, install bool,
-	timeout *int, force bool, wait bool, values []string, valueFiles []string, repo string, username string,
+func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, version string, install bool,
+	timeout int, force bool, wait bool, values []string, valueFiles []string, repo string, username string,
 	password string) error {
 	args := []string{}
 	args = append(args, "upgrade")
@@ -361,11 +361,11 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 	if force {
 		args = append(args, "--force")
 	}
-	if timeout != nil {
-		args = append(args, "--timeout", strconv.Itoa(*timeout))
+	if timeout != -1 {
+		args = append(args, "--timeout", strconv.Itoa(timeout))
 	}
-	if version != nil {
-		args = append(args, "--version", *version)
+	if version != "" {
+		args = append(args, "--version", version)
 	}
 	for _, value := range values {
 		args = append(args, "--set", value)

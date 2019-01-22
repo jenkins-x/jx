@@ -6,6 +6,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -84,7 +87,7 @@ func (o *AppTestOptions) Cleanup() error {
 }
 
 // CreateAppTestOptions configures the mock environment for running apps related tests
-func CreateAppTestOptions(gitOps bool) (*AppTestOptions, error) {
+func CreateAppTestOptions(gitOps bool, t *testing.T) *AppTestOptions {
 	o := AppTestOptions{
 		CommonOptions: &CommonOptions{},
 	}
@@ -96,14 +99,16 @@ func CreateAppTestOptions(gitOps bool) (*AppTestOptions, error) {
 
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, devEnvRepo)
 
-	devEnv := kube.NewPermanentEnvironmentWithGit("dev", fmt.Sprintf("https://fake.git/%s/%s.git", testOrgName,
-		devEnvRepoName))
+	var devEnv *v1.Environment
 	if gitOps {
+		devEnv = kube.NewPermanentEnvironmentWithGit("dev", fmt.Sprintf("https://fake.git/%s/%s.git", testOrgName,
+			devEnvRepoName))
 		devEnv.Spec.Source.URL = devEnvRepo.GitRepo.CloneURL
 		devEnv.Spec.Source.Ref = "master"
+	} else {
+		devEnv = kube.NewPermanentEnvironment("dev")
 	}
 	o.MockHelmer = helm_test.NewMockHelmer()
-
 	ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
@@ -115,9 +120,7 @@ func CreateAppTestOptions(gitOps bool) (*AppTestOptions, error) {
 	)
 
 	err := CreateTestEnvironmentDir(o.CommonOptions)
-	if err != nil {
-		return nil, err
-	}
+	assert.NoError(t, err)
 	o.ConfigureGitFn = func(dir string, gitInfo *gits.GitRepository, gitter gits.Gitter) error {
 		err := gitter.Init(dir)
 		if err != nil {
@@ -146,6 +149,6 @@ func CreateAppTestOptions(gitOps bool) (*AppTestOptions, error) {
 	o.DevEnvRepoInfo = &gits.GitRepository{
 		Name: devEnvRepoName,
 	}
-	return &o, nil
+	return &o
 
 }
