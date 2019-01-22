@@ -1694,7 +1694,11 @@ func (o *CommonOptions) isProw() (bool, error) {
 	if ns == "" {
 		ns = o.currentNamespace
 	}
-	env, err := kube.GetEnvironment(o.jxClient, ns, "dev")
+	jxClient, _, err := o.JXClient()
+	if err != nil {
+		return false, err
+	}
+	env, err := kube.GetEnvironment(jxClient, ns, "dev")
 	if err != nil {
 		return false, err
 	}
