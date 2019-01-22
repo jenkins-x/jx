@@ -25,8 +25,6 @@ type StepPostRunOptions struct {
 	OutDir        string
 }
 
-var ()
-
 var (
 	StepPostRunLong = templates.LongDesc(`
 		This pipeline step executes any post build actions added during Pipeline execution
