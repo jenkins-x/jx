@@ -477,6 +477,11 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "cloning the jx cloud environments repo")
 	}
 
+	err = options.selectJenkinsInstallation()
+	if err != nil {
+		return errors.Wrap(err, "selecting the Jenkins installation type")
+	}
+	
 	err = options.configureHelmValues(ns)
 	if err != nil {
 		return errors.Wrap(err, "configuring helm values")
@@ -496,11 +501,6 @@ func (options *InstallOptions) Run() error {
 	err = options.configureHelmRepo()
 	if err != nil {
 		return errors.Wrap(err, "configuring the Jenkins X helm repository")
-	}
-
-	err = options.selectJenkinsInstallation()
-	if err != nil {
-		return errors.Wrap(err, "selecting the Jenkins installation type")
 	}
 
 	err = options.configureAndInstallProw(ns)
