@@ -75,7 +75,7 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 
 type ResourceReference struct {
 	// API version of the referent.
-	APIVersion string `json:"apiVersion" protobuf:"bytes,5,opt,name=apiVersion"`
+	APIVersion string `json:"apiVersion,omitempty" protobuf:"bytes,5,opt,name=apiVersion"`
 	// Kind of the referent.
 	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
 	Kind string `json:"kind" protobuf:"bytes,1,opt,name=kind"`
@@ -84,5 +84,5 @@ type ResourceReference struct {
 	Name string `json:"name" protobuf:"bytes,3,opt,name=name"`
 	// UID of the referent.
 	// More info: http://kubernetes.io/docs/user-guide/identifiers#uids
-	UID types.UID `json:"uid" protobuf:"bytes,4,opt,name=uid,casttype=k8s.io/apimachinery/pkg/types.UID"`
+	UID types.UID `json:"uid,omitempty" protobuf:"bytes,4,opt,name=uid,casttype=k8s.io/apimachinery/pkg/types.UID"`
 }
