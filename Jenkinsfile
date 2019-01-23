@@ -37,7 +37,6 @@ pipeline {
             }
             steps {
                 dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
-                    checkout scm
                     sh "git config --global credential.helper store"
                     sh "jx step git credentials"
 
@@ -80,7 +79,6 @@ pipeline {
             }
             steps {
                 dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
-                    git 'https://github.com/jenkins-x/jx'
 
                     sh "git config --global credential.helper store"
                     sh "jx step git credentials"
@@ -95,7 +93,6 @@ pipeline {
                     sh "make release"
                 }
                 dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
-                    checkout scm
 
                     sh "updatebot push-version --kind helm jx `cat pkg/version/VERSION`"
                 }
