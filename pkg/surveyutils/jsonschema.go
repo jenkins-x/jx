@@ -76,6 +76,13 @@ type Type struct {
 	ContentEncoding  *string      `json:"contentEncoding,omitempty"`
 }
 
+// GeneratedSecret is a secret that is generated from protected input (e.g. password, token)
+type GeneratedSecret struct {
+	Name  string `json: "name"`
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 // Definitions hold schema definitions.
 type Definitions map[string]*Type
 
