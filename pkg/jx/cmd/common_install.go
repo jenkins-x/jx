@@ -1625,6 +1625,15 @@ func (o *CommonOptions) installProw() error {
 	kvalues := []string{"build.auth.git.username=" + o.Username, "build.auth.git.password=" + o.OAUTHToken}
 	kvalues = append(kvalues, setValues...)
 
+	settings, err := o.TeamSettings()
+	if err != nil {
+	  return err
+	}
+	if settings.HelmTemplate || settings.NoTiller || settings.HelmBinary != "helm" {
+		// lets disable tiller
+		kvalues = append(kvalues, "tillerNamespace=")
+	}
+
 	err = o.retry(2, time.Second, func() (err error) {
 		return o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true,
 			kvalues, nil, "")
