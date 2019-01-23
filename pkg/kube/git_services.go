@@ -122,6 +122,16 @@ func GetServiceKindFromSecrets(kubeClient kubernetes.Interface, ns string, gitSe
 					return "", fmt.Errorf("no service kind label found on secret '%s' for Git service '%s'",
 						secret.GetName(), gitServiceURL)
 				}
+				if serviceKind == "" {
+					kind := labels[LabelKind]
+					if kind == "git" {
+						serviceKind = gits.SaasGitKind(gitServiceURL)
+						if serviceKind == "" {
+							// lets default to github?
+							serviceKind = gits.KindGitHub
+						}
+					}
+				}
 				return serviceKind, nil
 			}
 		}
