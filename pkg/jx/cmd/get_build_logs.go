@@ -285,7 +285,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 		}
 	}
 	if build == nil {
-		return fmt.Errorf("No Pipeline found for name %s in values: %", name, strings.Join(names, ", "))
+		return fmt.Errorf("No Pipeline found for name %s in values: %s", name, strings.Join(names, ", "))
 	}
 
 	pod := build.Pod
