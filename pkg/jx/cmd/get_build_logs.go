@@ -251,12 +251,14 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 	args := o.Args
 	names := []string{}
 	buildMap := map[string]*builds.BuildPodInfo{}
+	pipelineMap := map[string]*builds.BuildPodInfo{}
 
 	defaultName := ""
 	for _, build := range buildInfos {
 		name := build.Pipeline + " #" + build.Build
 		names = append(names, name)
 		buildMap[name] = build
+		pipelineMap[build.Pipeline] = build
 
 		if build.Branch == "master" {
 			defaultName = name
@@ -275,8 +277,15 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 	}
 	name := args[0]
 	build := buildMap[name]
+	suffix := ""
 	if build == nil {
-		return fmt.Errorf("No Pipeline found for name %s", name)
+		build = pipelineMap[name]
+		if build != nil {
+			suffix = " #" + build.Build
+		}
+	}
+	if build == nil {
+		return fmt.Errorf("No Pipeline found for name %s in values: %", name, strings.Join(names, ", "))
 	}
 
 	pod := build.Pod
@@ -288,7 +297,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 		return fmt.Errorf("No InitContainers for Pod %s for build: %s", pod.Name, name)
 	}
 
-	log.Infof("Build logs for %s\n", util.ColorInfo(name))
+	log.Infof("Build logs for %s\n", util.ColorInfo(name+suffix))
 	err = waitForInitContainerToStart(kubeClient, ns, pod)
 	if err != nil {
 		return err
