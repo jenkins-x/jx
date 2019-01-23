@@ -589,7 +589,7 @@ func (o *CommonOptions) retryQuiet(attempts int, sleep time.Duration, call func(
 				dot = false
 				log.Blank()
 			}
-			log.Infof("%s\n", lastMessage)
+			log.Warnf("%s\n\n", lastMessage)
 		}
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
