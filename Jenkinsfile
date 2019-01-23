@@ -30,7 +30,7 @@ pipeline {
     stages {
         stage('CI Build and Test') {
             when {
-                when { environment name: 'JOB_TYPE', value: 'presubmit' }
+                environment name: 'JOB_TYPE', value: 'presubmit'
             }
             steps {
                 dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
@@ -73,7 +73,7 @@ pipeline {
 
         stage('Build and Release') {
             when {
-                when { environment name: 'JOB_TYPE', value: 'postsubmit' }
+                environment name: 'JOB_TYPE', value: 'postsubmit'
             }
             steps {
                 dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
