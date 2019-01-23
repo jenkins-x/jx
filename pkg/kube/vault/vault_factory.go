@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/vault/api"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/common"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -20,11 +21,8 @@ const (
 	// of three retires)
 	maxRetries = 2
 
-	// maxHealthRetries maximum number of time to retry when checking the health of Vault
-	maxHealthRetries = 24
-
-	// healthRetyTimeout timeout for health which controls the duration of the health retry
-	healthRetyTimeout = 2 * time.Minute
+	// vaultReadyTimeout define the maximum duration to wait for vault to become initialized and unsealed
+	vaultRetyTimeout = 2 * time.Minute
 )
 
 type VaultClientFactory struct {
@@ -77,7 +75,7 @@ func (v *VaultClientFactory) NewVaultClient(name string, namespace string) (*api
 	if err != nil {
 		return nil, errors.Wrap(err, "crating vault client")
 	}
-	err = waitForVault(vaultClient)
+	err = waitForVault(vaultClient, vaultRetyTimeout)
 	if err != nil {
 		return nil, errors.Wrap(err, "wait for vault to be initialized and unsealed")
 	}
@@ -114,24 +112,20 @@ func (v *VaultClientFactory) getServiceAccountFromVault(vault *Vault) (*v1.Servi
 	return v.kubeClient.CoreV1().ServiceAccounts(vault.Namespace).Get(vault.AuthServiceAccountName, meta_v1.GetOptions{})
 }
 
-func waitForVault(vaultClient *api.Client) error {
-	sleepTime := healthRetyTimeout / maxHealthRetries
-	var err error
-	var hr *api.HealthResponse
-	for i := 0; i < maxHealthRetries; i++ {
-		hr, err = vaultClient.Sys().Health()
+func waitForVault(vaultClient *api.Client, timeout time.Duration) error {
+	return util.Retry(timeout, func() error {
+		hr, err := vaultClient.Sys().Health()
 		if err == nil && hr != nil && hr.Initialized && !hr.Sealed {
 			return nil
 		}
-		time.Sleep(sleepTime)
-	}
-	if err != nil {
-		return errors.Wrap(err, "reading vault health")
-	}
-	if hr != nil {
-		return fmt.Errorf("vault health: initialized=%t, sealed=%t", hr.Initialized, hr.Sealed)
-	}
-	return errors.New("failed to read vault health")
+		if err != nil {
+			return errors.Wrap(err, "reading vault health")
+		}
+		if hr != nil {
+			return fmt.Errorf("vault health: initialized=%t, sealed=%t", hr.Initialized, hr.Sealed)
+		}
+		return errors.New("failed to read vault health")
+	})
 }
 
 func getTokenFromVault(role string, jwt string, vaultClient *api.Client) (string, error) {
