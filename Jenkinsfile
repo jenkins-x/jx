@@ -30,7 +30,10 @@ pipeline {
     stages {
         stage('CI Build and Test') {
             when {
-                environment name: 'JOB_TYPE', value: 'presubmit'
+                anyOf {
+                    environment name: 'JOB_TYPE', value: 'presubmit'
+                    environment name: 'JOB_TYPE', value: 'batch'
+                }
             }
             steps {
                 dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
