@@ -4,6 +4,8 @@ import (
 	"os"
 	"os/user"
 
+	"github.com/jenkins-x/jx/pkg/log"
+
 	"github.com/pkg/errors"
 )
 
@@ -40,4 +42,25 @@ func EnsureUserAndEmailSetup(gitter Gitter) (string, string, error) {
 		}
 	}
 	return userName, userEmail, nil
+}
+
+// Unshallow converts a shallow git repo (one cloned with --depth=n) into one has full depth for the current branch
+// and all tags. Note that remote branches are still not fetched,
+// you need to do this manually. It checks if the repo is shallow or not before trying to unshallow it.
+func Unshallow(dir string, gitter Gitter) error {
+	shallow, err := gitter.IsShallow(dir)
+	if err != nil {
+		return err
+	}
+	if shallow {
+		if err := gitter.FetchUnshallow(dir); err != nil {
+			return err
+		}
+		if err := gitter.FetchTags(dir); err != nil {
+			return err
+		}
+		log.Infof("Converted %s to an unshallow repository\n", dir)
+		return nil
+	}
+	return nil
 }

@@ -165,6 +165,8 @@ type Gitter interface {
 	Init(dir string) error
 	Clone(url string, directory string) error
 	ShallowCloneBranch(url string, branch string, directory string) error
+	FetchUnshallow(dir string) error
+	IsShallow(dir string) (bool, error)
 	Push(dir string) error
 	PushMaster(dir string) error
 	PushTag(dir string, tag string) error

@@ -13,6 +13,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/jenkins-x/jx/pkg/users"
 
 	"github.com/ghodss/yaml"
@@ -224,6 +226,12 @@ func (o *StepChangelogOptions) Run() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	// Ensure we don't have a shallow checkout in git
+	err = gits.Unshallow(dir, o.Git())
+	if err != nil {
+		return errors.Wrapf(err, "error unshallowing git repo in %s", dir)
 	}
 	previousRev := o.PreviousRevision
 	if previousRev == "" {
