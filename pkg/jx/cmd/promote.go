@@ -787,7 +787,7 @@ func (o *PromoteOptions) verifyHelmConfigured() error {
 func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStepActivityKey {
 	pipeline := o.Pipeline
 	if o.Build == "" {
-		o.Build = o.Version
+		o.Build = o.getBuildNumber()
 	}
 	build := o.Build
 	buildURL := os.Getenv("BUILD_URL")
