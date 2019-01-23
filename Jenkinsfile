@@ -1,5 +1,6 @@
 pipeline {
     agent any
+
     environment {
         CHARTMUSEUM_CREDS   = credentials('jenkins-x-chartmuseum')
         JENKINS_CREDS       = credentials('test-jenkins-user')
@@ -27,14 +28,19 @@ pipeline {
         JX_DISABLE_DELETE_APP  = "true"
         JX_DISABLE_DELETE_REPO = "true"
     }
+    options {
+        skipDefaultCheckout(true)
+    }
     stages {
         stage('CI Build and Test') {
             when {
-                branch 'PR-*'
+                anyOf {
+                    environment name: 'JOB_TYPE', value: 'presubmit'
+                    environment name: 'JOB_TYPE', value: 'batch'
+                }
             }
             steps {
-                dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
-                    checkout scm
+                dir ('/workspace') {
                     sh "git config --global credential.helper store"
                     sh "jx step git credentials"
 
@@ -73,26 +79,24 @@ pipeline {
 
         stage('Build and Release') {
             when {
-                branch 'master'
+                environment name: 'JOB_TYPE', value: 'postsubmit'
             }
             steps {
-                dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
-                    git 'https://github.com/jenkins-x/jx'
+                dir ('/workspace') {
 
                     sh "git config --global credential.helper store"
                     sh "jx step git credentials"
                     sh "echo \$(jx-release-version) > pkg/version/VERSION"
                     sh "make release"
                 }
-                dir ('/home/jenkins/go/src/github.com/jenkins-x/jx/charts/jx') {
+                dir ('/workspace/charts/jx') {
 
                     sh "git config --global credential.helper store"
                     sh "jx step git credentials"
                     sh "helm init --client-only"
                     sh "make release"
                 }
-                dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
-                    checkout scm
+                dir ('/workspace') {
 
                     sh "updatebot push-version --kind helm jx `cat pkg/version/VERSION`"
                 }

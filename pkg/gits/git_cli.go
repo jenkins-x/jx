@@ -613,3 +613,39 @@ func (g *GitCLI) CreateBranch(dir string, branch string) error {
 func (g *GitCLI) Diff(dir string) (string, error) {
 	return g.gitCmdWithOutput(dir, "diff")
 }
+
+// FetchUnshallow runs git fetch --unshallow in dir
+func (g *GitCLI) FetchUnshallow(dir string) error {
+	err := g.gitCmd(dir, "fetch", "--unshallow")
+	if err != nil {
+		return errors.Wrapf(err, "running git fetch --unshallow %s", dir)
+	}
+	return nil
+}
+
+// IsShallow runs git rev-parse --is-shallow-repository in dir and returns the result
+func (g *GitCLI) IsShallow(dir string) (bool, error) {
+	out, err := g.gitCmdWithOutput(dir, "rev-parse", "--is-shallow-repository")
+	if err != nil {
+		return false, errors.Wrapf(err, "running git rev-parse --is-shallow-repository %s", dir)
+	}
+	if out == "--is-shallow-repository" {
+		// Newer git has a method to do it, but we use an old git in our builders, so resort to doing it manually
+		gitDir, _, err := g.FindGitConfigDir(dir)
+		if err != nil {
+			return false, errors.Wrapf(err, "finding .git for %s", dir)
+		}
+		if _, err := os.Stat(filepath.Join(gitDir, ".git", "shallow")); os.IsNotExist(err) {
+			return false, nil
+		} else if err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+	b, err := util.ParseBool(out)
+	if err != nil {
+		return false, errors.Wrapf(err, "converting %v to bool", b)
+	}
+	return b, nil
+
+}

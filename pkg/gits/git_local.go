@@ -343,3 +343,14 @@ func (g *GitLocal) CreateBranch(dir string, branch string) error {
 func (g *GitLocal) Diff(dir string) (string, error) {
 	return g.GitCLI.Diff(dir)
 }
+
+// FetchUnshallow does nothing
+// Faked out
+func (g *GitLocal) FetchUnshallow(dir string) error {
+	return g.GitFake.FetchUnshallow(dir)
+}
+
+// IsShallow runs git rev-parse --is-shalllow-repository in dir
+func (g *GitLocal) IsShallow(dir string) (bool, error) {
+	return g.GitCLI.IsShallow(dir)
+}
