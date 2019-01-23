@@ -295,6 +295,7 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 		h.deleteHooks(helmHooks, helmPrePhase, hookFailed, ns)
 		return err
 	}
+	log.Info("\n")
 	h.deleteHooks(helmHooks, helmPrePhase, hookSucceeded, ns)
 
 	err = h.runHooks(helmHooks, helmPostPhase, ns, chart, releaseName, wait, create)
@@ -305,6 +306,7 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 
 	err = h.deleteHooks(helmHooks, helmPostPhase, hookSucceeded, ns)
 	err2 := h.deleteOldResources(ns, releaseName, versionText, wait)
+	log.Info("\n")
 
 	return util.CombineErrors(err, err2)
 }

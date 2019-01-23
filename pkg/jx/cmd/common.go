@@ -555,7 +555,7 @@ func (o *CommonOptions) retry(attempts int, sleep time.Duration, call func() err
 
 		time.Sleep(sleep)
 
-		log.Infof("retrying after error:%s\n", err)
+		log.Infof("\nretrying after error:%s\n", err)
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
