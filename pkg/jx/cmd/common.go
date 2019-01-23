@@ -555,7 +555,7 @@ func (o *CommonOptions) retry(attempts int, sleep time.Duration, call func() err
 
 		time.Sleep(sleep)
 
-		log.Infof("\nretrying after error:%s\n", err)
+		log.Warnf("\nretrying after error:%s\n\n", err)
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
@@ -626,7 +626,7 @@ func (o *CommonOptions) retryQuietlyUntilTimeout(timeout time.Duration, sleep ti
 				dot = false
 				log.Blank()
 			}
-			log.Infof("%s\n", lastMessage)
+			log.Warnf("%s\n\n", lastMessage)
 		}
 	}
 }
