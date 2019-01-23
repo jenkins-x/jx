@@ -1620,7 +1620,7 @@ func (o *CommonOptions) installProw() error {
 			return err
 		}
 	}
-	log.Infof("Installing knative into namespace %s\n", util.ColorInfo(devNamespace))
+	log.Infof("\nInstalling knative into namespace %s\n", util.ColorInfo(devNamespace))
 
 	kvalues := []string{"build.auth.git.username=" + o.Username, "build.auth.git.password=" + o.OAUTHToken}
 	kvalues = append(kvalues, setValues...)
@@ -1631,19 +1631,19 @@ func (o *CommonOptions) installProw() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to install Knative build: %v", err)
+		return errors.Wrap(err, "failed to install Knative build")
 	}
 
-	log.Infof("Installing Prow into namespace %s\n", util.ColorInfo(devNamespace))
+	log.Infof("\nInstalling Prow into namespace %s\n", util.ColorInfo(devNamespace))
 	err = o.retry(2, time.Second, func() (err error) {
 		return o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values, nil, "")
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to install Prow: %v", err)
+		return errors.Wrap(err, "failed to install Prow")
 	}
 
-	log.Infof("Installing BuildTemplates into namespace %s\n", util.ColorInfo(devNamespace))
+	log.Infof("\nInstalling BuildTemplates into namespace %s\n", util.ColorInfo(devNamespace))
 
 	err = o.retry(2, time.Second, func() (err error) {
 		return o.installChart(kube.DefaultBuildTemplatesReleaseName, kube.ChartBuildTemplates, "", devNamespace, true,
@@ -1651,7 +1651,7 @@ func (o *CommonOptions) installProw() error {
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to install BuildTemplates: %v", err)
+		return errors.Wrap(err, "failed to install JX Build Templates")
 	}
 
 	return nil
