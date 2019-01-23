@@ -21,16 +21,21 @@ const defaultMavenSettings = `<settings>
       <interactiveMode>false</interactiveMode>
       <mirrors>
           <mirror>
-          <id>nexus</id>
-          <mirrorOf>external:*</mirrorOf>
-          <url>http://nexus/repository/maven-group/</url>
+              <id>nexus</id>
+              <mirrorOf>external:*</mirrorOf>
+              <url>http://nexus/repository/maven-group/</url>
           </mirror>
       </mirrors>
       <servers>
           <server>
-          <id>local-nexus</id>
-          <username>admin</username>
-          <password>%s</password>
+              <id>local-nexus</id>
+              <username>admin</username>
+              <password>%s</password>
+          </server>
+          <server>
+              <id>nexus</id>
+              <username>admin</username>
+              <password>%s</password>
           </server>
       </servers>
       <profiles>
@@ -151,7 +156,7 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 	s.Secrets.Grafana.GrafanaSecret.User = "admin"
 	s.Secrets.Grafana.GrafanaSecret.Password = s.Flags.DefaultAdminPassword
 	s.Secrets.Nexus.DefaultAdminPassword = s.Flags.DefaultAdminPassword
-	s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(defaultMavenSettings, s.Flags.DefaultAdminPassword)
+	s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(defaultMavenSettings, s.Flags.DefaultAdminPassword, s.Flags.DefaultAdminPassword)
 
 	s.newIngressBasicAuth()
 
