@@ -11,6 +11,11 @@ import (
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true
 
+const (
+	UserTypeLocal    = "User"
+	UserTypeExternal = "ServiceAccount"
+)
+
 // User represents a git user so we have a cache to find by email address
 type User struct {
 	metav1.TypeMeta `json:",inline"`
@@ -37,15 +42,15 @@ type UserList struct {
 
 // UserDetails containers details of a user
 type UserDetails struct {
-	Login                string             `json:"login,omitempty"  protobuf:"bytes,1,opt,name=login"`
-	Name                 string             `json:"name,omitempty"  protobuf:"bytes,2,opt,name=name"`
-	Email                string             `json:"email,omitempty"  protobuf:"bytes,3,opt,name=email"`
-	CreationTimestamp    *metav1.Time       `json:"creationTimestamp,omitempty" protobuf:"bytes,4,opt,name=creationTimestamp"`
-	URL                  string             `json:"url,omitempty"  protobuf:"bytes,5,opt,name=url"`
-	AvatarURL            string             `json:"avatarUrl,omitempty"  protobuf:"bytes,6,opt,name=avatarUrl"`
-	ServiceAccount       string             `json:"serviceAccount,omitempty"  protobuf:"bytes,7,opt,name=serviceAccount"`
-	Accounts             []AccountReference `json:"accountReference,omitempty"  protobuf:"bytes,8,opt,name=accountReference"`
-	CreateServiceAccount bool               `json:"createServiceAccount,omitempty"  protobuf:"bytes,9,opt,name=createServiceAccount"`
+	Login             string             `json:"login,omitempty"  protobuf:"bytes,1,opt,name=login"`
+	Name              string             `json:"name,omitempty"  protobuf:"bytes,2,opt,name=name"`
+	Email             string             `json:"email,omitempty"  protobuf:"bytes,3,opt,name=email"`
+	CreationTimestamp *metav1.Time       `json:"creationTimestamp,omitempty" protobuf:"bytes,4,opt,name=creationTimestamp"`
+	URL               string             `json:"url,omitempty"  protobuf:"bytes,5,opt,name=url"`
+	AvatarURL         string             `json:"avatarUrl,omitempty"  protobuf:"bytes,6,opt,name=avatarUrl"`
+	ServiceAccount    string             `json:"serviceAccount,omitempty"  protobuf:"bytes,7,opt,name=serviceAccount"`
+	Accounts          []AccountReference `json:"accountReference,omitempty"  protobuf:"bytes,8,opt,name=accountReference"`
+	ExternalUser      bool               `json:"externalUser,omitempty"  protobuf:"bytes,9,opt,name=externalUser"`
 }
 
 // AccountReference is a reference to a user account in another system that is attached to this user
@@ -54,12 +59,13 @@ type AccountReference struct {
 	ID       string `json:"id,omitempty"  protobuf:"bytes,2,opt,name=id"`
 }
 
-// UserKind returns the subject kind of user - either "User" or "ServiceAccount"
+// UserKind returns the subject kind of user - either "User" (native K8S user) or "ServiceAccount" (externally managed
+// user).
 func (u *User) SubjectKind() string {
-	if u.Spec.ServiceAccount != "" {
-		return "ServiceAccount"
+	if u.Spec.ExternalUser {
+		return UserTypeExternal
 	}
-	return "User"
+	return UserTypeLocal
 }
 
 // UnmarshalJSON method merges the deprecated User field and the Spec field on User, preferring Spec

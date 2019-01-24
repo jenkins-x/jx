@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	optionLogin = "login"
+	optionLogin                = "login"
 	optionCreateServiceAccount = "create-service-account"
 )
 
@@ -68,7 +68,7 @@ func NewCmdCreateUser(f Factory, in terminal.FileReader, out terminal.FileWriter
 	cmd.Flags().StringVarP(&options.UserSpec.Login, optionLogin, "l", "", "The user login name")
 	cmd.Flags().StringVarP(&options.UserSpec.Name, "name", "n", "", "The textual full name of the user")
 	cmd.Flags().StringVarP(&options.UserSpec.Email, "email", "e", "", "The users email address")
-	cmd.Flags().BoolVarP(&options.UserSpec.CreateServiceAccount, optionCreateServiceAccount, "s", false, "Enable ServiceAccount for this user.")
+	cmd.Flags().BoolVarP(&options.UserSpec.ExternalUser, optionCreateServiceAccount, "s", false, "Enable ServiceAccount for this external user")
 
 	options.addCommonFlags(cmd)
 	return cmd
@@ -125,7 +125,7 @@ func (o *CreateUserOptions) Run() error {
 		name = strings.Title(login)
 	}
 	user := users.CreateUser(ns, login, name, spec.Email)
-	user.Spec.CreateServiceAccount = spec.CreateServiceAccount
+	user.Spec.ExternalUser = spec.ExternalUser
 	_, err = jxClient.JenkinsV1().Users(ns).Create(user)
 	if err != nil {
 		return fmt.Errorf("Failed to create User %s: %s", login, err)
