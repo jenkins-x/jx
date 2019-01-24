@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"io"
 	"os"
 
@@ -97,12 +98,24 @@ func (o *CreateSpringOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
+	data := &o.SpringForm
+
+	var details *gits.CreateRepoData
+
+	if !o.BatchMode {
+		details, err = o.GetGitRepositoryDetails()
+		if err != nil {
+			return err
+		}
+
+		data.ArtifactId = details.RepoName
+	}
+
 	model, err := spring.LoadSpringBoot(cacheDir)
 	if err != nil {
 		return fmt.Errorf("Failed to load Spring Boot model %s", err)
 	}
-
-	data := &o.SpringForm
 	err = model.CreateSurvey(&o.SpringForm, o.Advanced, o.BatchMode)
 	if err != nil {
 		return err
@@ -131,5 +144,11 @@ func (o *CreateSpringOptions) Run() error {
 	}
 	log.Infof("Created Spring Boot project at %s\n", util.ColorInfo(outDir))
 
+	if details != nil {
+		o.ConfigureImportOptions(details)
+	}
+
 	return o.ImportCreatedProject(outDir)
 }
+
+

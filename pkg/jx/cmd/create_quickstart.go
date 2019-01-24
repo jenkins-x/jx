@@ -153,6 +153,18 @@ func (o *CreateQuickstartOptions) Run() error {
 		m[loc.Owner] = loc
 	}
 
+	var details *gits.CreateRepoData
+
+	if !o.BatchMode {
+		details, err = o.GetGitRepositoryDetails()
+		if err != nil {
+			return err
+		}
+
+		o.Filter.ProjectName = details.RepoName
+	}
+
+
 	model, err := o.LoadQuickstartsFromMap(config, gitMap)
 	if err != nil {
 		return fmt.Errorf("failed to load quickstarts: %s", err)
@@ -215,6 +227,11 @@ func (o *CreateQuickstartOptions) Run() error {
 	log.Infof("Created project at %s\n\n", util.ColorInfo(genDir))
 
 	o.CreateProjectOptions.ImportOptions.GitProvider = o.GitProvider
+
+	if details != nil {
+		o.ConfigureImportOptions(details)
+	}
+
 	return o.ImportCreatedProject(genDir)
 }
 
