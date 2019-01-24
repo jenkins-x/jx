@@ -174,7 +174,7 @@ func (g GKECluster) CreateTfVarsFile(path string) error {
 	if err != nil {
 		return err
 	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "enable_legacy_abac", "true")
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "enable_legacy_abac", "false")
 	if err != nil {
 		return err
 	}
