@@ -12,7 +12,9 @@ import (
 // +k8s:openapi-gen=true
 
 const (
-	UserTypeLocal    = "User"
+	// UserTypeLocal represents a User who is native to K8S (e.g. backed by GKE).
+	UserTypeLocal = "User"
+	// UserTypeExternal represents a User who is managed externally (e.g. in GitHub) and will have a linked ServiceAccount.
 	UserTypeExternal = "ServiceAccount"
 )
 
@@ -59,7 +61,7 @@ type AccountReference struct {
 	ID       string `json:"id,omitempty"  protobuf:"bytes,2,opt,name=id"`
 }
 
-// UserKind returns the subject kind of user - either "User" (native K8S user) or "ServiceAccount" (externally managed
+// SubjectKind returns the subject kind of user - either "User" (native K8S user) or "ServiceAccount" (externally managed
 // user).
 func (u *User) SubjectKind() string {
 	if u.Spec.ExternalUser {
