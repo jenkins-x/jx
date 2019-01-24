@@ -150,6 +150,13 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 		s.Flags.DefaultAdminPassword, _ = generator.Generate(20, 4, 2, false, true)
 	}
 
+	s.setDefaultSecrets()
+	s.newIngressBasicAuth()
+
+	return nil
+}
+
+func (s *AdminSecretsService) setDefaultSecrets() error {
 	s.Secrets.Jenkins.JenkinsSecret.Password = s.Flags.DefaultAdminPassword
 	s.Secrets.ChartMuseum.ChartMuseumEnv.ChartMuseumSecret.User = "admin"
 	s.Secrets.ChartMuseum.ChartMuseumEnv.ChartMuseumSecret.Password = s.Flags.DefaultAdminPassword
@@ -157,8 +164,6 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 	s.Secrets.Grafana.GrafanaSecret.Password = s.Flags.DefaultAdminPassword
 	s.Secrets.Nexus.DefaultAdminPassword = s.Flags.DefaultAdminPassword
 	s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(defaultMavenSettings, s.Flags.DefaultAdminPassword, s.Flags.DefaultAdminPassword)
-
-	s.newIngressBasicAuth()
 
 	return nil
 }
@@ -178,7 +183,10 @@ func (s *AdminSecretsService) NewAdminSecretsConfigFromSecret(decryptedSecrets s
 
 	s.Secrets = a
 	s.Flags.DefaultAdminPassword = s.Secrets.Jenkins.JenkinsSecret.Password
+
+	s.setDefaultSecrets()
 	s.updateIngressBasicAuth()
+
 	return nil
 }
 
