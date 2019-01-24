@@ -178,6 +178,16 @@ func (c *Command) RunWithoutRetry() (string, error) {
 	return r, e
 }
 
+func (c *Command) String() string {
+	var builder strings.Builder
+	builder.WriteString(c.Name)
+	for _, arg := range c.Args {
+		builder.WriteString(" ")
+		builder.WriteString(arg)
+	}
+	return builder.String()
+}
+
 func (c *Command) run() (string, error) {
 	e := exec.Command(c.Name, c.Args...)
 	if c.Dir != "" {

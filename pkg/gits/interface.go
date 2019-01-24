@@ -187,6 +187,7 @@ type Gitter interface {
 	GetRemoteUrl(config *gitcfg.Config, name string) string
 
 	Branch(dir string) (string, error)
+	CreateBranchFrom(dir string, branchName string, startPoint string) error
 	CreateBranch(dir string, branch string) error
 	CheckoutRemoteBranch(dir string, branch string) error
 	Checkout(dir string, branch string) error

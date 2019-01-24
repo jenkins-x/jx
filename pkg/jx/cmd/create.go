@@ -96,6 +96,7 @@ func NewCmdCreate(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	cmd.AddCommand(NewCmdCreateTracker(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateUser(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateVault(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateClient(f, in, out, errOut))
 
 	return cmd
 }

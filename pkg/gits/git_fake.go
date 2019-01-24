@@ -490,3 +490,8 @@ func (g *GitFake) FetchUnshallow(dir string) error {
 func (g *GitFake) IsShallow(dir string) (bool, error) {
 	return false, nil
 }
+
+// CreateBranchFrom creates a new branch called branchName from startPoint
+func (g *GitFake) CreateBranchFrom(dir string, branchName string, startPoint string) error {
+	return g.CreateBranch(dir, branchName)
+}
