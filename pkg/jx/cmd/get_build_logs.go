@@ -298,11 +298,11 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 	}
 
 	log.Infof("Build logs for %s\n", util.ColorInfo(name+suffix))
-	err = waitForInitContainerToStart(kubeClient, ns, pod)
-	if err != nil {
-		return err
-	}
-	for _, ic := range initContainers {
+	for i, ic := range initContainers {
+		err = waitForInitContainerToStart(kubeClient, ns, pod, i)
+		if err != nil {
+			return err
+		}
 		err = o.getPodLog(ns, pod, ic)
 		if err != nil {
 			return err
@@ -311,11 +311,15 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 	return nil
 }
 
-func waitForInitContainerToStart(kubeClient kubernetes.Interface, ns string, pod *corev1.Pod) error {
-	if kube.HasInitContainerStarted(pod) {
+func waitForInitContainerToStart(kubeClient kubernetes.Interface, ns string, pod *corev1.Pod, idx int) error {
+	if kube.HasInitContainerStarted(pod, idx) {
 		return nil
 	}
-	log.Infof("waiting for pod %s to start...\n", pod.Name)
+	containerName := ""
+	if idx < len(pod.Spec.InitContainers) {
+		containerName = pod.Spec.InitContainers[idx].Name
+	}
+	log.Infof("waiting for pod %s init container %s to start...\n", util.ColorInfo(pod.Name), util.ColorInfo(containerName))
 	for {
 		time.Sleep(time.Second)
 
@@ -323,13 +327,13 @@ func waitForInitContainerToStart(kubeClient kubernetes.Interface, ns string, pod
 		if err != nil {
 			return errors.Wrapf(err, "failed to load pod %s", pod.Name)
 		}
-		if kube.HasInitContainerStarted(p) {
+		if kube.HasInitContainerStarted(p, idx) {
 			return nil
 		}
 	}
 }
 
 func (o *GetBuildLogsOptions) getPodLog(ns string, pod *corev1.Pod, container corev1.Container) error {
-	log.Infof("Getting the pod log for pod %s and init container %s\n", pod.Name, container.Name)
+	log.Infof("getting the log for pod %s and init container %s\n", util.ColorInfo(pod.Name), util.ColorInfo(container.Name))
 	return o.tailLogs(ns, pod.Name, container.Name)
 }
