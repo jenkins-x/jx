@@ -649,3 +649,8 @@ func (g *GitCLI) IsShallow(dir string) (bool, error) {
 	return b, nil
 
 }
+
+// CreateBranchFrom creates a new branch called branchName from startPoint
+func (g *GitCLI) CreateBranchFrom(dir string, branchName string, startPoint string) error {
+	return g.gitCmd(dir, "branch", branchName, startPoint)
+}

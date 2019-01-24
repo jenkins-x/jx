@@ -9,7 +9,7 @@ import (
 
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
@@ -155,7 +155,6 @@ func (o *CreateEnvOptions) Run() error {
 			return err
 		}
 	} else {
-		o.registerEnvironmentCRD()
 		devEnv, err = kube.EnsureDevEnvironmentSetup(jxClient, ns)
 		if err != nil {
 			return err

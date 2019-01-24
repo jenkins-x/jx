@@ -13,14 +13,15 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"github.com/stoewer/go-strcase"
+	strcase "github.com/stoewer/go-strcase"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // +genclient
 // +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +k8s:openapi-gen=true
+// Disable openapi-gen as this is not an API we want to promote
+// +k8s:openapi-gen=false
 
 // Extension represents an extension available to this Jenkins X install
 type Extension struct {
@@ -103,6 +104,7 @@ type ExtensionExecution struct {
 }
 
 // ExtensionRepositoryLockList contains a list of ExtensionRepositoryLock items
+// +k8s:openapi-gen=false
 type ExtensionRepositoryLockList struct {
 	Version    string          `json:"version"`
 	Extensions []ExtensionSpec `json:"extensions"`

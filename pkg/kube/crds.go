@@ -1,17 +1,31 @@
 package kube
 
 import (
+	"encoding/json"
+	"fmt"
 	"reflect"
+	"regexp"
 	"time"
 
+	openapi "github.com/jenkins-x/jx/pkg/client/openapi/all"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/kube-openapi/pkg/common"
+
+	"github.com/go-openapi/jsonreference"
+
+	"github.com/jenkins-x/jx/pkg/log"
+
+	"github.com/go-openapi/spec"
 	"github.com/pkg/errors"
 
 	"github.com/cenkalti/backoff"
 	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+var refMatcher = regexp.MustCompile(`,?{?"\$ref":"([\w./-]*)"}?`)
 
 // RegisterAllCRDs ensures that all Jenkins-X CRDs are registered
 func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
@@ -122,8 +136,7 @@ func RegisterEnvironmentCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".spec.source.ref",
 		},
 	}
-	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
+	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
 }
 
 // RegisterEnvironmentRoleBindingCRD ensures that the CRD is registered for Environments
@@ -138,8 +151,7 @@ func RegisterEnvironmentRoleBindingCRD(apiClient apiextensionsclientset.Interfac
 		Categories: []string{"all"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
-	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
+	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
 }
 
 // RegisterGitServiceCRD ensures that the CRD is registered for GitServices
@@ -167,8 +179,7 @@ func RegisterGitServiceCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".spec.gitKind",
 		},
 	}
-	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
+	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
 }
 
 // RegisterPipelineActivityCRD ensures that the CRD is registered for PipelineActivity
@@ -196,8 +207,7 @@ func RegisterPipelineActivityCRD(apiClient apiextensionsclientset.Interface) err
 			JSONPath:    ".spec.status",
 		},
 	}
-	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
+	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
 }
 
 // RegisterExtensionCRD ensures that the CRD is registered for Extension
@@ -225,8 +235,7 @@ func RegisterExtensionCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".spec.description",
 		},
 	}
-	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
+	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
 }
 
 // RegisterBuildPackCRD ensures that the CRD is registered for BuildPack
@@ -260,8 +269,7 @@ func RegisterBuildPackCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".spec.gitRef",
 		},
 	}
-	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
+	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
 }
 
 // RegisterAppCRD ensures that the CRD is registered for App
@@ -276,8 +284,7 @@ func RegisterAppCRD(apiClient apiextensionsclientset.Interface) error {
 		Categories: []string{"all"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
-	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
+	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
 }
 
 // RegisterSourceRepositoryCRD ensures that the CRD is registered for Applications
@@ -317,8 +324,7 @@ func RegisterSourceRepositoryCRD(apiClient apiextensionsclientset.Interface) err
 			JSONPath:    ".spec.repo",
 		},
 	}
-	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
+	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
 }
 
 // RegisterPluginCRD ensures that the CRD is registered for Plugin
@@ -345,8 +351,7 @@ func RegisterPluginCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".spec.description",
 		},
 	}
-	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
+	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
 }
 
 // RegisterCommitStatusCRD ensures that the CRD is registered for CommitStatus
@@ -361,8 +366,7 @@ func RegisterCommitStatusCRD(apiClient apiextensionsclientset.Interface) error {
 		Categories: []string{"all"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
-	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
+	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
 }
 
 // RegisterReleaseCRD ensures that the CRD is registered for Release
@@ -396,8 +400,7 @@ func RegisterReleaseCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".spec.gitHttpUrl",
 		},
 	}
-	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
+	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
 }
 
 // RegisterUserCRD ensures that the CRD is registered for User
@@ -425,8 +428,7 @@ func RegisterUserCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".spec.email",
 		},
 	}
-	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
+	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
 }
 
 // RegisterTeamCRD ensures that the CRD is registered for Team
@@ -454,8 +456,8 @@ func RegisterTeamCRD(apiClient apiextensionsclientset.Interface) error {
 			JSONPath:    ".status.provisionStatus",
 		},
 	}
-	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
+
+	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
 }
 
 // RegisterWorkflowCRD ensures that the CRD is registered for Environments
@@ -471,31 +473,126 @@ func RegisterWorkflowCRD(apiClient apiextensionsclientset.Interface) error {
 
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
-	validation := v1beta1.CustomResourceValidation{}
-	return RegisterCRD(apiClient, name, names, columns, &validation, jenkinsio.GroupName)
+	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
 }
 
 // RegisterCRD allows new custom resources to be registered using apiClient under a particular name.
 // Various forms of the name are provided using names. In Kubernetes 1.11
 // and later a custom display format for kubectl is used, which is specified using columns.
 func RegisterCRD(apiClient apiextensionsclientset.Interface, name string,
-	names *v1beta1.CustomResourceDefinitionNames, columns []v1beta1.CustomResourceColumnDefinition,
-	validation *v1beta1.CustomResourceValidation, groupName string) error {
+	names *v1beta1.CustomResourceDefinitionNames, columns []v1beta1.CustomResourceColumnDefinition, groupName string,
+	pkg string, version string) error {
+	//"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivity":
+	schemaPath := fmt.Sprintf("%s/%s/%s.%s", pkg, groupName, version, names.Kind)
+
+	schema, err := getOpenAPISchema(schemaPath)
+	if err != nil {
+		return errors.Wrapf(err, "error generating OpenAPI Schema for %s", schemaPath)
+	}
 	crd := &v1beta1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
 		Spec: v1beta1.CustomResourceDefinitionSpec{
 			Group:                    groupName,
-			Version:                  jenkinsio.Version,
+			Version:                  version,
 			Scope:                    v1beta1.NamespaceScoped,
 			Names:                    *names,
 			AdditionalPrinterColumns: columns,
-			Validation:               validation,
+			Validation: &v1beta1.CustomResourceValidation{
+				OpenAPIV3Schema: schema,
+			},
 		},
 	}
 
 	return register(apiClient, name, crd)
+}
+
+func getOpenAPIDefinitions(name string, ref common.ReferenceCallback) *common.OpenAPIDefinition {
+	if def, ok := openapi.GetOpenAPIDefinitions(ref)[name]; ok {
+		return &def
+	}
+	return nil
+}
+
+func getOpenAPISchema(defName string) (*v1beta1.JSONSchemaProps, error) {
+	refCallBack := func(path string) spec.Ref {
+		ref, err := jsonreference.New(path)
+		if err != nil {
+			log.Warnf("Error resolving ref %s %v\n", path, err)
+		}
+		return spec.Ref{
+			Ref: ref,
+		}
+	}
+	if def := getOpenAPIDefinitions(defName, refCallBack); def != nil {
+		// resolve references
+		schema, err := FixSchema(def.Schema, refCallBack)
+		if err != nil {
+			return nil, err
+		}
+		// Unfortunately the schema is generated into one type, and the validation takes another type.
+		// However both define the OpenAPI v3 data structures and are compatible, so we i
+		bytes, err := json.Marshal(schema)
+		if err != nil {
+			return nil, err
+		}
+		def1 := v1beta1.JSONSchemaProps{}
+		err = json.Unmarshal(bytes, &def1)
+		if err != nil {
+			return nil, err
+		}
+		return &def1, nil
+	}
+	return nil, nil
+}
+
+// FixSchema walks the schema and automatically fixes it up to be better supported by Kubernetes.
+// Current automatic fixes are:
+// * resolving $ref
+// * remove unresolved $ref
+// * clear additionalProperties (this is unsupported in older kubernetes, when we drop them,
+// we can investigate adding support, for now use patternProperties)
+//
+// as these are all unsupported
+func FixSchema(schema spec.Schema, ref common.ReferenceCallback) (spec.Schema, error) {
+	if schema.Type.Contains("object") {
+		for k, v := range schema.Properties {
+			resolved, err := FixSchema(v, ref)
+			if err != nil {
+				return schema, err
+			}
+			schema.Properties[k] = resolved
+		}
+		schema.AdditionalProperties = nil
+	} else if schema.Type.Contains("array") {
+		if schema.Items.Len() == 1 {
+			resolved, err := FixSchema(*schema.Items.Schema, ref)
+			if err != nil {
+				return schema, err
+			}
+			schema.Items.Schema = &resolved
+		} else {
+			result := make([]spec.Schema, 0)
+			for _, v := range schema.Items.Schemas {
+				resolved, err := FixSchema(v, ref)
+				if err != nil {
+					return schema, err
+				}
+				result = append(result, resolved)
+			}
+			schema.Items.Schemas = result
+		}
+
+	} else if path := schema.Ref.String(); path != "" {
+		def := getOpenAPIDefinitions(path, ref)
+		if def != nil {
+			return FixSchema(def.Schema, ref)
+		}
+		// return an empty schema if we can't resolve
+		return spec.Schema{}, nil
+	}
+	return schema, nil
 }
 
 func register(apiClient apiextensionsclientset.Interface, name string, crd *v1beta1.CustomResourceDefinition) error {
@@ -507,6 +604,9 @@ func register(apiClient apiextensionsclientset.Interface, name string, crd *v1be
 			if !reflect.DeepEqual(&crd.Spec, old.Spec) {
 				old.Spec = crd.Spec
 				_, err = crdResources.Update(old)
+				if err != nil {
+					log.Infof("Error doing update to %s %v\n%v\n", old.Name, err, old.Spec)
+				}
 				return err
 			}
 			return nil
