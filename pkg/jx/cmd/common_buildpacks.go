@@ -7,7 +7,7 @@ import (
 	jxdraft "github.com/jenkins-x/jx/pkg/draft"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile/git_resolver"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile/gitresolver"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"os"
@@ -33,7 +33,7 @@ func (o *CommonOptions) initBuildPacks() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return git_resolver.InitBuildPack(o.Git(), settings.BuildPackURL, settings.BuildPackRef)
+	return gitresolver.InitBuildPack(o.Git(), settings.BuildPackURL, settings.BuildPackRef)
 }
 
 // invokeDraftPack invokes a draft pack copying in a Jenkinsfile if required
@@ -178,7 +178,7 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 			return draftPack, err
 		}
 		if exists {
-			modules, err := git_resolver.LoadModules(packsDir)
+			modules, err := gitresolver.LoadModules(packsDir)
 			if err != nil {
 				return draftPack, err
 			}
@@ -187,7 +187,7 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 			tmplFileName := jenkinsfile.PipelineTemplateFileName
 			templateFileNames := []string{filepath.Join(lpack, tmplFileName), filepath.Join(packsDir, tmplFileName)}
 
-			moduleResolver, err := git_resolver.ResolveModules(modules, o.Git())
+			moduleResolver, err := gitresolver.ResolveModules(modules, o.Git())
 			if err != nil {
 				return draftPack, err
 			}

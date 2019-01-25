@@ -5,7 +5,7 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile/git_resolver"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile/gitresolver"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -140,12 +140,12 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 	o.MissingPodTemplates = map[string]bool{}
 
-	packsDir, err := git_resolver.InitBuildPack(o.Git(), o.BuildPackURL, o.BuildPackRef)
+	packsDir, err := gitresolver.InitBuildPack(o.Git(), o.BuildPackURL, o.BuildPackRef)
 	if err != nil {
 		return err
 	}
 
-	resolver, err := git_resolver.CreateResolver(packsDir, o.Git())
+	resolver, err := gitresolver.CreateResolver(packsDir, o.Git())
 	if err != nil {
 		return err
 	}

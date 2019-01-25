@@ -32,6 +32,7 @@ const (
 )
 
 var (
+	// PipelineKinds the possible values of pipeline
 	PipelineKinds = []string{PipelineKindRelease, PipelineKindPullRequest, PipelineKindFeature}
 )
 

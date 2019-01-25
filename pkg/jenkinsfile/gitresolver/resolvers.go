@@ -1,4 +1,4 @@
-package git_resolver
+package gitresolver
 
 import (
 	"fmt"

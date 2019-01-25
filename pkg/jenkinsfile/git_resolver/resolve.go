@@ -1,2 +1,0 @@
-package git_resolver
-

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile/git_resolver"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile/gitresolver"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -124,7 +124,7 @@ func (o *StepCreateBuildTemplateOptions) Run() error {
 		return errors.Wrapf(err, "failed to create output dir %s", o.OutputDir)
 	}
 
-	packDir, err := git_resolver.InitBuildPack(o.Git(), o.BuildPackURL, o.BuildPackRef)
+	packDir, err := gitresolver.InitBuildPack(o.Git(), o.BuildPackURL, o.BuildPackRef)
 	if err != nil {
 		return err
 	}
@@ -133,7 +133,7 @@ func (o *StepCreateBuildTemplateOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	resolver, err := git_resolver.CreateResolver(packDir, o.Git())
+	resolver, err := gitresolver.CreateResolver(packDir, o.Git())
 	if err != nil {
 		return err
 	}
