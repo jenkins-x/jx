@@ -47,6 +47,7 @@ type UpgradePlatformOptions struct {
 	Namespace     string
 	Set           string
 	AlwaysUpgrade bool
+	UpdateSecrets bool
 
 	InstallFlags InstallFlags
 }
@@ -84,6 +85,7 @@ func NewCmdUpgradePlatform(f Factory, in terminal.FileReader, out terminal.FileW
 	cmd.Flags().StringVarP(&options.Set, "set", "s", "", "The helm parameters to pass in while upgrading, separated by comma, e.g. key1=val1,key2=val2.")
 	cmd.Flags().BoolVarP(&options.AlwaysUpgrade, "always-upgrade", "", false, "If set to true, jx will upgrade platform Helm chart even if requested version is already installed.")
 	cmd.Flags().BoolVarP(&options.Flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true].")
+	cmd.Flags().BoolVarP(&options.UpdateSecrets, "update-secrets", "", false, "Regenerate adminSecrets.yaml on upgrade")
 
 	options.addCommonFlags(cmd)
 	options.InstallFlags.addCloudEnvOptions(cmd)
@@ -253,25 +255,30 @@ func (o *UpgradePlatformOptions) Run() error {
 		return errors.Wrapf(err, "unable to remove %s if exist", configFileName)
 	}
 
-
 	log.Infof("Creating %s from %s\n", util.ColorInfo(adminSecretsFileName), util.ColorInfo(JXInstallConfig))
 	err = ioutil.WriteFile(adminSecretsFileName, oldSecret.Data[AdminSecretsFile], 0644)
 	if err != nil {
 		return errors.Wrapf(err, "failed to write the config file %s", adminSecretsFileName)
 	}
 
-	// load admin secrets service from adminSecretsFileName
-	err = o.AdminSecretsService.NewAdminSecretsConfigFromSecret(adminSecretsFileName)
-	if err != nil {
-		return errors.Wrap(err, "failed to create the admin secret config service from the secrets file")
-	}
+	o.Debugf("%s from %s is %s\n", AdminSecretsFile, JXInstallConfig, oldSecret.Data[AdminSecretsFile])
 
-	adminSecrets := &o.AdminSecretsService.Secrets
+	if o.UpdateSecrets {
+		// load admin secrets service from adminSecretsFileName
+		err = o.AdminSecretsService.NewAdminSecretsConfigFromSecret(adminSecretsFileName)
+		if err != nil {
+			return errors.Wrap(err, "failed to create the admin secret config service from the secrets file")
+		}
 
-	o.Debugf("Rewriting secrets file to %s\n", util.ColorInfo(adminSecretsFileName))
-	err = configStore.WriteObject(adminSecretsFileName, adminSecrets)
-	if err != nil {
-		return errors.Wrapf(err, "writing the admin secrets in the secrets file '%s'", adminSecretsFileName)
+		o.AdminSecretsService.NewMavenSettingsXML()
+		adminSecrets := &o.AdminSecretsService.Secrets
+
+
+		o.Debugf("Rewriting secrets file to %s\n", util.ColorInfo(adminSecretsFileName))
+		err = configStore.WriteObject(adminSecretsFileName, adminSecrets)
+		if err != nil {
+			return errors.Wrapf(err, "writing the admin secrets in the secrets file '%s'", adminSecretsFileName)
+		}
 	}
 
 	log.Infof("Creating %s from %s\n", util.ColorInfo(configFileName), util.ColorInfo(JXInstallConfig))

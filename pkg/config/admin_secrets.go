@@ -151,7 +151,7 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 	}
 
 	s.setDefaultSecrets()
-	s.newMavenSettingsXml()
+	s.NewMavenSettingsXML()
 	s.newIngressBasicAuth()
 
 	return nil
@@ -167,7 +167,8 @@ func (s *AdminSecretsService) setDefaultSecrets() error {
 	return nil
 }
 
-func (s *AdminSecretsService) newMavenSettingsXml() error {
+// NewMavenSettingsXML generates the maven settings
+func (s *AdminSecretsService) NewMavenSettingsXML() error {
 	s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(defaultMavenSettings, s.Flags.DefaultAdminPassword, s.Flags.DefaultAdminPassword)
 	return nil
 }
