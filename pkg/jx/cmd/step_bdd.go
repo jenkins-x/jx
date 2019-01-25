@@ -5,6 +5,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
+	configio "github.com/jenkins-x/jx/pkg/io"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/bdd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -23,8 +24,6 @@ import (
 
 const (
 	optionDefaultAdminPassword = "default-admin-password"
-	optionGitUser              = "git-user"
-	optionGitToken             = "git-token"
 )
 
 // StepBDDOptions contains the command line arguments for this command
@@ -46,6 +45,7 @@ type StepBDDFlags struct {
 	DisableDeleteRepo   bool
 	IgnoreTestFailure   bool
 	Parallel            bool
+	CloudEnvDir         string
 	ConfigFile          string
 	TestRepoGitCloneUrl string
 	TestGitBranch       string
@@ -107,6 +107,7 @@ func NewCmdStepBDD(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 	cmd.Flags().StringVarP(&options.Flags.TestGitBranch, "test-git-branch", "", "master", "the git repository branch to use for the BDD tests")
 	cmd.Flags().StringVarP(&options.Flags.TestGitPrNumber, "test-git-pr-number", "", "", "the Pull Request number to fetch from the repository for the BDD tests")
 	cmd.Flags().StringArrayVarP(&options.Flags.TestCases, "tests", "t", []string{"test-quickstart-node-http"}, "the list of the test cases to run")
+	cmd.Flags().StringVarP(&options.Flags.CloudEnvDir, "dir", "", ".", "the git clone of the jenkins-x/cloud-environments git repository. Used to default the version of jenkins-x-platform when creating clusters if no --version option is supplied")
 	cmd.Flags().BoolVarP(&options.Flags.DeleteTeam, "delete-team", "", true, "Whether we should delete the Team we create for each Git Provider")
 	cmd.Flags().BoolVarP(&options.Flags.DisableDeleteApp, "no-delete-app", "", false, "Disables deleting the created app after the test")
 	cmd.Flags().BoolVarP(&options.Flags.DisableDeleteRepo, "no-delete-repo", "", false, "Disables deleting the created repository after the test")
@@ -169,8 +170,6 @@ func (o *StepBDDOptions) Run() error {
 	}
 	return util.CombineErrors(errors...)
 }
-
-
 
 // runOnCurrentCluster runs the tests on the current cluster
 func (o *StepBDDOptions) runOnCurrentCluster() error {
@@ -340,7 +339,7 @@ func (o *StepBDDOptions) runTests(gopath string) error {
 	testDir := filepath.Join(gopath, gitRepository.Organisation, gitRepository.Name)
 
 	log.Infof("cloning BDD test repository to: %s\n", util.ColorInfo(testDir))
-	
+
 	err = os.MkdirAll(testDir, util.DefaultWritePermissions)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to create dir %s", testDir)
@@ -433,6 +432,16 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 		args = append(args, "--batch-mode")
 	}
 
+	if util.StringArrayIndex(args, "--version") < 0 && util.StringArrayHasPrefixIndex(args, "--version=") < 0 {
+		version, err := o.getVersion()
+		if err != nil {
+			return err
+		}
+		if version != "" {
+			args = append(args, "--version", version)
+		}
+	}
+
 	gitProviderURL := o.gitProviderUrl()
 	if gitProviderURL != "" {
 		args = append(args, "--git-provider-url", gitProviderURL)
@@ -450,12 +459,12 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	gitToken := o.InstallOptions.GitRepositoryOptions.ApiToken
 	if gitToken != "" {
 		args = append(args, "--git-api-token", gitToken)
-		safeArgs  = append(safeArgs, "--git-api-token", "**************¬")
+		safeArgs = append(safeArgs, "--git-api-token", "**************¬")
 	}
 	adminPwd := o.InstallOptions.AdminSecretsService.Flags.DefaultAdminPassword
 	if adminPwd != "" {
 		args = append(args, "--default-admin-password", adminPwd)
-		safeArgs  = append(safeArgs, "--default-admin-password", "**************¬")
+		safeArgs = append(safeArgs, "--default-admin-password", "**************¬")
 	}
 
 	log.Infof("running command: %s\n", util.ColorInfo(fmt.Sprintf("%s %s", binary, strings.Join(args, " "))))
@@ -474,4 +483,21 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 
 func (o *StepBDDOptions) deleteCluster(cluster *bdd.CreateCluster) error {
 	return nil
+}
+
+// getVersion returns the jenkins-x-platform version to use for the cluster or empty string if no specific version can be found
+func (o *StepBDDOptions) getVersion() (string, error) {
+	version := o.InstallOptions.Flags.Version
+	if version != "" {
+		return version, nil
+	}
+
+	// lets try detect a local `Makefile` to find the version
+	dir := o.Flags.CloudEnvDir
+	version, err := LoadVersionFromCloudEnvironmentsDir(dir, configio.NewFileStore())
+	if err != nil {
+		return version, errors.Wrapf(err, "failed to load jenkins-x-platform version from dir %s", dir)
+	}
+	log.Infof("loaded version %s from Makefile in directory %s\n\n", util.ColorInfo(version), util.ColorInfo(dir))
+	return version, nil
 }

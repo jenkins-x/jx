@@ -42,9 +42,20 @@ func StringIndexes(text string, value string) []int {
 	return answer
 }
 
+// StringArrayIndex returns the index in the slice which equals the given value
 func StringArrayIndex(array []string, value string) int {
 	for i, v := range array {
 		if v == value {
+			return i
+		}
+	}
+	return -1
+}
+
+// StringArrayHasPrefixIndex returns the index in the slice which the value has the given prefix
+func StringArrayHasPrefixIndex(array []string, prefix string) int {
+	for i, v := range array {
+		if strings.HasPrefix(v, prefix) {
 			return i
 		}
 	}
