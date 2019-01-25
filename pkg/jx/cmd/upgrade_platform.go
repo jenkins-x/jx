@@ -305,7 +305,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		}
 	}
 
-	valueFiles := []string{cloudEnvironmentValuesLocation, configFileName, cloudEnvironmentSecretsLocation, adminSecretsFileName}
+	valueFiles := []string{cloudEnvironmentValuesLocation, configFileName, adminSecretsFileName, cloudEnvironmentSecretsLocation}
 	valueFiles, err = helm.AppendMyValues(valueFiles)
 	if err != nil {
 		return errors.Wrap(err, "failed to append the myvalues.yaml file")
