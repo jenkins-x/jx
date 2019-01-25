@@ -161,18 +161,11 @@ To register to get your username/password to to: %s
 			return errors.Wrap(err, "ensuring cert-manager is installed")
 		}
 
-		ingressConfig.TLS = true
-		ingressConfig.Issuer = kube.CertmanagerIssuerProd
-		err = kube.CleanCertmanagerResources(client, o.Namespace, ingressConfig)
-		if err != nil {
-			return errors.Wrap(err, "creating cert-manager issuer")
-		}
-
 		values := []string{
 			"sso.create=true",
 			"sso.oidcIssuerUrl=" + dexURL,
 			"sso.domain=" + domain,
-			"sso.certIssuerName=" + ingressConfig.Issuer}
+			"sso.certIssuerName=" + kube.CertmanagerIssuerProd}
 
 		if len(o.SetValues) > 0 {
 			o.SetValues = o.SetValues + "," + strings.Join(values, ",")
