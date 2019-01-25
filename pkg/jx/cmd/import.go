@@ -411,7 +411,6 @@ func (options *ImportOptions) Run() error {
 		}
 	}
 
-
 	err = kube.NewSourceRepositoryService(jxClient, ns).CreateOrUpdateSourceRepository(
 		options.AppName, options.Organisation, options.GitProvider.ServerURL())
 	if err != nil {
@@ -1363,13 +1362,14 @@ func (o *ImportOptions) allDraftPacks() ([]string, error) {
 }
 
 // ConfigureImportOptions updates the import options struct based on values from the create repo struct
-func (options *ImportOptions)ConfigureImportOptions(repoData *gits.CreateRepoData) {
+func (options *ImportOptions) ConfigureImportOptions(repoData *gits.CreateRepoData) {
 	// configure the import options based on previous answers
 	options.AppName = repoData.RepoName
 	options.GitProvider = repoData.GitProvider
 	options.Organisation = repoData.Organisation
 	options.Repository = repoData.RepoName
 	options.GitDetails = *repoData
+	options.GitServer = repoData.GitServer
 }
 
 // GetGitRepositoryDetails determines the git repository details to use during the import command
