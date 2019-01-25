@@ -18,6 +18,7 @@ type CreateRepoData struct {
 	PrivateRepo  bool
 	User         *auth.UserAuth
 	GitProvider  GitProvider
+	GitServer    *auth.AuthServer
 }
 
 type GitRepositoryOptions struct {
@@ -161,6 +162,7 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigSer
 		PrivateRepo:  repoOptions.Private,
 		User:         userAuth,
 		GitProvider:  provider,
+		GitServer:    server,
 	}, err
 }
 
