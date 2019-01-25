@@ -12,7 +12,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-// GetStorageOptions containers the CLI options
+// GetStorageOptions contains the CLI options
 type GetStorageOptions struct {
 	GetOptions
 }
@@ -43,7 +43,6 @@ func NewCmdGetStorage(f Factory, in terminal.FileReader, out terminal.FileWriter
 	cmd := &cobra.Command{
 		Use:     "storage",
 		Short:   "Display the storage configuration for different classifications",
-		Aliases: []string{"helm"},
 		Long:    getStorageLong,
 		Example: getStorageExample,
 		Run: func(cmd *cobra.Command, args []string) {
