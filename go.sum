@@ -53,6 +53,8 @@ github.com/aws/aws-sdk-go v1.15.50 h1:3QZIQeiRXEMTs+w+BQ2c/3Fi9/Qz9KnipT/M7YI1ub
 github.com/aws/aws-sdk-go v1.15.50/go.mod h1:mFuSZ37Z9YOHbQEwBWztmVzqXrEkub65tZoCYDt7FT0=
 github.com/aws/aws-sdk-go v1.15.57 h1:inht07/mRNnvV4uAjjVgTVD7/rF+j0mXllYcNQxDgGA=
 github.com/aws/aws-sdk-go v1.15.57/go.mod h1:mFuSZ37Z9YOHbQEwBWztmVzqXrEkub65tZoCYDt7FT0=
+github.com/aws/aws-sdk-go v1.16.20 h1:fNQRk/PXr8B4rU3olSLeJPu2w6y79U+bTKTF6JRI5C8=
+github.com/aws/aws-sdk-go v1.16.20/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
 github.com/banzaicloud/bank-vaults v0.0.0-20181129101211-e31657d7c4fe h1:20rYK7/kelCwMs3lTlKfR/RQ2T99VpaqntPG7Vt3+cg=
 github.com/banzaicloud/bank-vaults v0.0.0-20181129101211-e31657d7c4fe/go.mod h1:DCXyt+jITEQ5JUfxOWiYUKUE6ILZ5P4IU0MKgGcnmuc=
 github.com/beevik/etree v1.0.1 h1:lWzdj5v/Pj1X360EV7bUudox5SRipy4qZLjY0rhb0ck=
