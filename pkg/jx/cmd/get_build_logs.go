@@ -365,7 +365,7 @@ func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, ns 
 	}
 	builds.SortBuildPodInfos(buildInfos)
 	if len(buildInfos) == 0 {
-		return names, defaultName, buildMap, pipelineMap, fmt.Errorf("No knative builds have been triggered which match the current filter!")
+		return names, defaultName, buildMap, pipelineMap, fmt.Errorf("no knative builds have been triggered which match the current filter")
 	}
 
 	for _, build := range buildInfos {
