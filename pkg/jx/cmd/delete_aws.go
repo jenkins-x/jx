@@ -105,9 +105,8 @@ func (o *DeleteAwsOptions) Run() error {
 					if strings.Contains(err.Error(), "Please unmap those public address(es) before detaching the gateway") {
 						log.Info("Waiting for public address to be unmapped from internet gateway.")
 						return nil, err
-					} else {
-						return &FatalError{E: err}, nil
 					}
+					return &FatalError{E: err}, nil
 				}
 				return nil, nil
 			})

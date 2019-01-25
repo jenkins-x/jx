@@ -558,6 +558,8 @@ func (o *CommonOptions) retry(attempts int, sleep time.Duration, call func() err
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
 
+// FatalError is a wrapper struct around regular error indicating that re(try) processing flow should be interrupted
+// immediately.
 type FatalError struct {
 	E error
 }
