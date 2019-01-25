@@ -151,6 +151,7 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 	}
 
 	s.setDefaultSecrets()
+	s.NewMavenSettingsXML()
 	s.newIngressBasicAuth()
 
 	return nil
@@ -163,8 +164,12 @@ func (s *AdminSecretsService) setDefaultSecrets() error {
 	s.Secrets.Grafana.GrafanaSecret.User = "admin"
 	s.Secrets.Grafana.GrafanaSecret.Password = s.Flags.DefaultAdminPassword
 	s.Secrets.Nexus.DefaultAdminPassword = s.Flags.DefaultAdminPassword
-	s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(defaultMavenSettings, s.Flags.DefaultAdminPassword, s.Flags.DefaultAdminPassword)
+	return nil
+}
 
+// NewMavenSettingsXML generates the maven settings
+func (s *AdminSecretsService) NewMavenSettingsXML() error {
+	s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(defaultMavenSettings, s.Flags.DefaultAdminPassword, s.Flags.DefaultAdminPassword)
 	return nil
 }
 
