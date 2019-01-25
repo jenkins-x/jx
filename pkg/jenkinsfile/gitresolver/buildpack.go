@@ -1,4 +1,4 @@
-package jenkinsfile
+package gitresolver
 
 import (
 	"fmt"

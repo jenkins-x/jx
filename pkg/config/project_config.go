@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"io/ioutil"
 	"path/filepath"
 	"reflect"
@@ -20,16 +21,17 @@ type ProjectConfig struct {
 	// List of global environment variables to add to each branch build and each step
 	Env []corev1.EnvVar `yaml:"env,omitempty"`
 
-	Builds              []*BranchBuild            `yaml:"builds,omitempty"`
-	PreviewEnvironments *PreviewEnvironmentConfig `yaml:"previewEnvironments,omitempty"`
-	IssueTracker        *IssueTrackerConfig       `yaml:"issueTracker,omitempty"`
-	Chat                *ChatConfig               `yaml:"chat,omitempty"`
-	Wiki                *WikiConfig               `yaml:"wiki,omitempty"`
-	Addons              []*AddonConfig            `yaml:"addons,omitempty"`
-	BuildPack           string                    `yaml:"buildPack,omitempty"`
-	BuildPackGitURL     string                    `yaml:"buildPackGitURL,omitempty"`
-	BuildPackGitURef    string                    `yaml:"buildPackGitRef,omitempty"`
-	Workflow            string                    `yaml:"workflow,omitempty"`
+	Builds              []*BranchBuild              `yaml:"builds,omitempty"`
+	PreviewEnvironments *PreviewEnvironmentConfig   `yaml:"previewEnvironments,omitempty"`
+	IssueTracker        *IssueTrackerConfig         `yaml:"issueTracker,omitempty"`
+	Chat                *ChatConfig                 `yaml:"chat,omitempty"`
+	Wiki                *WikiConfig                 `yaml:"wiki,omitempty"`
+	Addons              []*AddonConfig              `yaml:"addons,omitempty"`
+	BuildPack           string                      `yaml:"buildPack,omitempty"`
+	BuildPackGitURL     string                      `yaml:"buildPackGitURL,omitempty"`
+	BuildPackGitURef    string                      `yaml:"buildPackGitRef,omitempty"`
+	Workflow            string                      `yaml:"workflow,omitempty"`
+	PipelineConfig      *jenkinsfile.PipelineConfig `yaml:"pipelineConfig,omitempty"`
 }
 
 type PreviewEnvironmentConfig struct {

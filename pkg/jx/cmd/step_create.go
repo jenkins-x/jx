@@ -36,6 +36,7 @@ func NewCmdStepCreate(f Factory, in terminal.FileReader, out terminal.FileWriter
 	}
 	cmd.AddCommand(NewCmdStepCreateBuild(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepCreateBuildTemplate(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStepCreateTask(f, in, out, errOut))
 	return cmd
 }
 
