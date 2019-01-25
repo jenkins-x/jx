@@ -327,7 +327,11 @@ func (options *ImportOptions) Run() error {
 
 	if options.RepoURL != "" {
 		if shouldClone {
-			// lets make sure there's a .git at the end for GitHub URLs
+			// Use the git user auth to clone the repo (needed for private repos etc)
+			options.RepoURL, err = options.Git().CreatePushURL(options.RepoURL, userAuth)
+			if err != nil {
+				return err
+			}
 			err = options.CloneRepository()
 			if err != nil {
 				return err
@@ -410,7 +414,6 @@ func (options *ImportOptions) Run() error {
 			return err
 		}
 	}
-
 
 	err = kube.NewSourceRepositoryService(jxClient, ns).CreateOrUpdateSourceRepository(
 		options.AppName, options.Organisation, options.GitProvider.ServerURL())
@@ -1363,7 +1366,7 @@ func (o *ImportOptions) allDraftPacks() ([]string, error) {
 }
 
 // ConfigureImportOptions updates the import options struct based on values from the create repo struct
-func (options *ImportOptions)ConfigureImportOptions(repoData *gits.CreateRepoData) {
+func (options *ImportOptions) ConfigureImportOptions(repoData *gits.CreateRepoData) {
 	// configure the import options based on previous answers
 	options.AppName = repoData.RepoName
 	options.GitProvider = repoData.GitProvider
