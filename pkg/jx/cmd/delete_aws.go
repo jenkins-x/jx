@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const gatewayDetachAttempts = 11
+const gatewayDetachAttempts = 10
 
 type DeleteAwsOptions struct {
 	CommonOptions
@@ -98,21 +98,21 @@ func (o *DeleteAwsOptions) Run() error {
 	}
 	for _, internetGateway := range internetGateways.InternetGateways {
 		if len(internetGateway.Attachments) > 0 {
-			detachAttemptsLeft := gatewayDetachAttempts
-			for ; detachAttemptsLeft > 0; {
+			err = o.retryUntilFatalError(gatewayDetachAttempts, 10 * time.Second, func() (fatalError *FatalError, e error) {
 				_, err = svc.DetachInternetGateway(&ec2.DetachInternetGatewayInput{InternetGatewayId: internetGateway.InternetGatewayId, VpcId: aws.String(vpcid)})
 				log.Infof("Detaching internet gateway %s from VPC %s...\n", *internetGateway.InternetGatewayId, vpcid)
 				if err != nil {
 					if strings.Contains(err.Error(), "Please unmap those public address(es) before detaching the gateway") {
-						detachAttemptsLeft--
-						log.Infof("Waiting for public address to be unmapped from internet gateway. Detach attempts left: %d\n", detachAttemptsLeft)
-						time.Sleep(10 * time.Second)
+						log.Info("Waiting for public address to be unmapped from internet gateway.")
+						return nil, err
 					} else {
-						return err
+						return &FatalError{E: err}, nil
 					}
-				} else {
-					detachAttemptsLeft = 0
 				}
+				return nil, nil
+			})
+			if err != nil {
+				return err
 			}
 			log.Infof("Internet gateway %s detached successfully from VPC %s...\n", *internetGateway.InternetGatewayId, vpcid)
 		}
