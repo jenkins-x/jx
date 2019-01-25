@@ -401,6 +401,9 @@ func (o *StepBDDOptions) runTests(gopath string) error {
 
 func (o *StepBDDOptions) copyReports(testDir string, err error) error {
 	reportsDir := filepath.Join(testDir, "reports")
+	if _, err := os.Stat(reportsDir); os.IsNotExist(err) {
+		return nil
+	}
 	reportsOutputDir := o.Flags.ReportsOutputDir
 	if reportsOutputDir == "" {
 		reportsOutputDir = "reports"
