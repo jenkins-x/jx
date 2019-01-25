@@ -7,6 +7,7 @@ import (
 	jxdraft "github.com/jenkins-x/jx/pkg/draft"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile/git_resolver"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"os"
@@ -22,6 +23,8 @@ type InvokeDraftPack struct {
 	WithRename              bool
 	InitialisedGit          bool
 	DisableJenkinsfileCheck bool
+	DisableAddFiles         bool
+	ProjectConfig           *config.ProjectConfig
 }
 
 // initBuildPacks initalise the build packs
@@ -30,7 +33,7 @@ func (o *CommonOptions) initBuildPacks() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return jenkinsfile.InitBuildPack(o.Git(), settings.BuildPackURL, settings.BuildPackRef)
+	return git_resolver.InitBuildPack(o.Git(), settings.BuildPackURL, settings.BuildPackRef)
 }
 
 // invokeDraftPack invokes a draft pack copying in a Jenkinsfile if required
@@ -57,11 +60,13 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 	packagerConfigName := filepath.Join(dir, "packager-config.yml")
 	lpack := ""
 	if len(customDraftPack) == 0 {
-		projectConfig, _, err := config.LoadProjectConfig(dir)
-		if err != nil {
-			return "", err
+		if i.ProjectConfig == nil {
+			i.ProjectConfig, _, err = config.LoadProjectConfig(dir)
+			if err != nil {
+				return "", err
+			}
 		}
-		customDraftPack = projectConfig.BuildPack
+		customDraftPack = i.ProjectConfig.BuildPack
 	}
 
 	if len(customDraftPack) > 0 {
@@ -120,6 +125,11 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 	}
 	log.Success("selected pack: " + lpack + "\n")
 	draftPack := filepath.Base(lpack)
+	i.CustomDraftPack = draftPack
+
+	if i.DisableAddFiles {
+		return draftPack, nil
+	}
 
 	chartsDir := filepath.Join(dir, "charts")
 	jenkinsfileExists, err := util.FileExists(jenkinsfilePath)
@@ -168,7 +178,7 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 			return draftPack, err
 		}
 		if exists {
-			modules, err := jenkinsfile.LoadModules(packsDir)
+			modules, err := git_resolver.LoadModules(packsDir)
 			if err != nil {
 				return draftPack, err
 			}
@@ -177,7 +187,7 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 			tmplFileName := jenkinsfile.PipelineTemplateFileName
 			templateFileNames := []string{filepath.Join(lpack, tmplFileName), filepath.Join(packsDir, tmplFileName)}
 
-			moduleResolver, err := modules.Resolve(o.Git())
+			moduleResolver, err := git_resolver.ResolveModules(modules, o.Git())
 			if err != nil {
 				return draftPack, err
 			}
@@ -195,9 +205,9 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 
 			if templateFile != "" {
 				arguments := &jenkinsfile.CreateJenkinsfileArguments{
-					ConfigFile:   pipelineFile,
-					TemplateFile: templateFile,
-					OutputFile:   generateJenkinsPath,
+					ConfigFile:        pipelineFile,
+					TemplateFile:      templateFile,
+					OutputFile:        generateJenkinsPath,
 					JenkinsfileRunner: prow,
 				}
 				err = arguments.GenerateJenkinsfile(moduleResolver.AsImportResolver())

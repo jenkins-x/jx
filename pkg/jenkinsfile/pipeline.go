@@ -3,7 +3,6 @@ package jenkinsfile
 import (
 	"bytes"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -21,6 +20,19 @@ const (
 
 	// PipelineTemplateFileName defines the jenkisnfile template used to generate the pipeline
 	PipelineTemplateFileName = "Jenkinsfile.tmpl"
+
+	// PipelineKindRelease represents a release pipeline triggered on merge to master (or a release branch)
+	PipelineKindRelease = "release"
+
+	// PipelineKindPullRequest represents a Pull Request pipeline
+	PipelineKindPullRequest = "pullrequest"
+
+	// PipelineKindFeature represents a pipeline on a feature branch
+	PipelineKindFeature = "feature"
+)
+
+var (
+	PipelineKinds = []string{PipelineKindRelease, PipelineKindPullRequest, PipelineKindFeature}
 )
 
 // PipelineAgent contains the agent definition metadata
@@ -447,18 +459,6 @@ func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfil
 	return &config, err
 }
 
-// CreateResolver creates a new module resolver
-func CreateResolver(packsDir string, gitter gits.Gitter) (ImportFileResolver, error) {
-	modules, err := LoadModules(packsDir)
-	if err != nil {
-		return nil, err
-	}
-	moduleResolver, err := modules.Resolve(gitter)
-	if err != nil {
-		return nil, err
-	}
-	return moduleResolver.AsImportResolver(), nil
-}
 
 // IsEmpty returns true if this configuration is empty
 func (c *PipelineConfig) IsEmpty() bool {
