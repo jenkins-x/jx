@@ -20,6 +20,14 @@ import (
 
 const certSecretPrefix = "tls-"
 
+// Certificate keeps some information related to a certificate issued by cert-manager
+type Certificate struct {
+	// Name certificate name
+	Name string
+	//Namespace certificate namespace
+	Namespace string
+}
+
 // WaitCertificateIssuedReady wait for a certificate issued by cert-manager until is ready or the timeout is reached
 func WaitCertificateIssuedReady(client certclient.Interface, name string, ns string, timeout time.Duration) error {
 	err := wait.PollImmediate(time.Second, timeout, func() (bool, error) {
@@ -43,18 +51,37 @@ func WaitCertificateIssuedReady(client certclient.Interface, name string, ns str
 	return nil
 }
 
-// CleanCerts removes all certs and their associated secrets which hold a TLS certificate issued by cert-manager
-func CleanCerts(client kubernetes.Interface, certclient certclient.Interface, ns string) error {
-	// cleanup also all certfiicates
+// CleanAllCerts removes all certs and their associated secrets which hold a TLS certificated issued by cert-manager
+func CleanAllCerts(client kubernetes.Interface, certclient certclient.Interface, ns string) error {
+	return cleanCerts(client, certclient, ns, func(cert string) bool {
+		return strings.HasPrefix(cert, certSecretPrefix)
+	})
+}
+
+// CleanCerts removes the certs and their associated secrets which hold a TLS certificate issued by cert-manager
+func CleanCerts(client kubernetes.Interface, certclient certclient.Interface, ns string, filter []Certificate) error {
+	allowed := make(map[string]bool)
+	for _, cert := range filter {
+		allowed[cert.Name] = true
+	}
+	return cleanCerts(client, certclient, ns, func(cert string) bool {
+		_, ok := allowed[cert]
+		return ok
+	})
+}
+
+func cleanCerts(client kubernetes.Interface, certclient certclient.Interface, ns string, allow func(string) bool) error {
 	certsClient := certclient.Certmanager().Certificates(ns)
 	certsList, err := certsClient.List(metav1.ListOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "listing the certs in namespace %q", ns)
 	}
 	for _, c := range certsList.Items {
-		err := certsClient.Delete(c.GetName(), &metav1.DeleteOptions{})
-		if err != nil {
-			return errors.Wrapf(err, "deleting the cert %s/%s", ns, c.GetName())
+		if allow(c.GetName()) {
+			err := certsClient.Delete(c.GetName(), &metav1.DeleteOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "deleting the cert %s/%s", ns, c.GetName())
+			}
 		}
 	}
 	// delete the tls related secrets so we dont reuse old ones when switching from http to https
@@ -63,7 +90,7 @@ func CleanCerts(client kubernetes.Interface, certclient certclient.Interface, ns
 		return errors.Wrapf(err, "listing the secrets in namespace %q", ns)
 	}
 	for _, s := range secrets.Items {
-		if strings.HasPrefix(s.Name, certSecretPrefix) {
+		if allow(s.GetName()) {
 			err := client.CoreV1().Secrets(ns).Delete(s.Name, &metav1.DeleteOptions{})
 			if err != nil {
 				return errors.Wrapf(err, "deleteing the tls secret %s/%s", ns, s.GetName())
@@ -71,14 +98,6 @@ func CleanCerts(client kubernetes.Interface, certclient certclient.Interface, ns
 		}
 	}
 	return nil
-}
-
-// Certificate keeps some information related to a certificate issued by cert-manager
-type Certificate struct {
-	// Name certificate name
-	Name string
-	//Namespace certificate namespace
-	Namespace string
 }
 
 // String returns the certificate information in a string format

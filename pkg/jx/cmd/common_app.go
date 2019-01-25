@@ -47,6 +47,10 @@ func (o *CommonOptions) OnAppInstall(app string, version string) error {
 	if err != nil {
 		return err
 	}
+	certClient, err := o.CreateCertManagerClient()
+	if err != nil {
+		return err
+	}
 	selector := fmt.Sprintf("chart=%s-%s", app, version)
 	appList, err := jxClient.JenkinsV1().Apps(ns).List(metav1.ListOptions{
 		LabelSelector: selector,
@@ -57,7 +61,7 @@ func (o *CommonOptions) OnAppInstall(app string, version string) error {
 	if len(appList.Items) > 1 {
 		return fmt.Errorf("more than one app (%v) was found for %s", appList.Items, selector)
 	} else if len(appList.Items) == 1 {
-		return extensions.OnInstallFromName(app, jxClient, kubeClient, ns, o.Helm(), defaultInstallTimeout)
+		return extensions.OnInstallFromName(app, jxClient, kubeClient, certClient, ns, o.Helm(), defaultInstallTimeout)
 	}
 	return nil
 }

@@ -112,6 +112,11 @@ func (o *StepEnvApplyOptions) Run() error {
 		return errors.Wrapf(err, "Could not connect to the kubernetes cluster!")
 	}
 
+	certClient, err := o.CreateCertManagerClient()
+	if err != nil {
+		return errors.Wrapf(err, "creating the cert-manager client")
+	}
+
 	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the API extensions client")
@@ -211,7 +216,7 @@ func (o *StepEnvApplyOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	err = extensions.OnApply(jxClient, kubeClient, o.devNamespace, o.Helm(), defaultInstallTimeout)
+	err = extensions.OnApply(jxClient, kubeClient, certClient, o.devNamespace, o.Helm(), defaultInstallTimeout)
 	if err != nil {
 		return err
 	}

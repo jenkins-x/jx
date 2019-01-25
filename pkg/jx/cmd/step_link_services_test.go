@@ -6,6 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -61,7 +62,8 @@ func TestServiceLinking(t *testing.T) {
 		nil,
 		gits.NewGitCLI(),
 		nil,
-		helm.NewHelmCLI("helm", helm.V2, "", true))
+		helm.NewHelmCLI("helm", helm.V2, "", true),
+		resources_test.NewMockInstaller())
 	client, err := o.KubeClient()
 	assert.NoError(t, err)
 	serviceListFromNsBeforeStepLink, _ := client.CoreV1().Services(fromNs).List(metav1.ListOptions{})

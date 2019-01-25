@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/pki"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -224,7 +225,7 @@ func (o *CreateAddonSSOOptions) installDex(domain string, clientID string, clien
 		"connectors.github.config.clientSecret=" + clientSecret,
 		fmt.Sprintf("connectors.github.config.orgs={%s}", strings.Join(authorizedOrgs, ",")),
 		"domain=" + domain,
-		"certs.grpc.ca.namespace=" + CertManagerNamespace,
+		"certs.grpc.ca.namespace=" + pki.CertManagerNamespace,
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)

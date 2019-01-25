@@ -36,9 +36,7 @@ var (
 )
 
 const (
-	CertManagerDeployment = "cert-manager"
-	CertManagerNamespace  = "cert-manager"
-	Exposecontroller      = "exposecontroller"
+	Exposecontroller = "exposecontroller"
 
 	certsIssuedReadyTimeout = 5 * time.Minute
 )
@@ -157,8 +155,8 @@ func (o *UpgradeIngressOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "ensure cert-manager setup")
 		}
-
 	}
+
 	// clear the service annotations
 	err = o.CleanServiceAnnotations(o.Services...)
 	if err != nil {
@@ -224,7 +222,7 @@ func (o *UpgradeIngressOptions) Run() error {
 		} else {
 			log.Warn("It can take around 5 minutes for Cert Manager to get certificates from Lets Encrypt and update Ingress rules\n")
 			log.Info("Use the following commands to diagnose any issues:\n")
-			log.Infof("jx logs %s -n %s\n", CertManagerDeployment, CertManagerNamespace)
+			log.Infof("jx logs %s -n %s\n", pki.CertManagerDeployment, pki.CertManagerNamespace)
 			log.Info("kubectl describe certificates\n")
 			log.Info("kubectl describe issuers\n\n")
 		}
@@ -542,12 +540,24 @@ func (o *UpgradeIngressOptions) createIngressRules() error {
 	for _, n := range o.TargetNamespaces {
 		o.CleanExposecontrollerReources(n)
 
-		err := pki.CleanCerts(client, certmngClient, n)
-		if err != nil {
-			return err
+		if len(o.Services) > 0 {
+			services, err := services.GetServicesByName(client, n, o.Services)
+			if err != nil {
+				return err
+			}
+			certs := pki.ToCertificates(services)
+			err = pki.CleanCerts(client, certmngClient, n, certs)
+			if err != nil {
+				return err
+			}
+		} else {
+			err := pki.CleanAllCerts(client, certmngClient, n)
+			if err != nil {
+				return err
+			}
 		}
 
-		err = kube.CleanCertmanagerResources(client, n, o.IngressConfig)
+		err := pki.CreateCertManagerResources(certmngClient, n, o.IngressConfig)
 		if err != nil {
 			return err
 		}

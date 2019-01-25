@@ -46,6 +46,23 @@ func GetServices(client kubernetes.Interface, ns string) (map[string]*v1.Service
 	return answer, nil
 }
 
+// GetServicesByName returns a list of Service objects from a list of service names
+func GetServicesByName(client kubernetes.Interface, ns string, services []string) ([]*v1.Service, error) {
+	answer := make([]*v1.Service, 0)
+	svcList, err := client.CoreV1().Services(ns).List(meta_v1.ListOptions{})
+	if err != nil {
+		return answer, errors.Wrapf(err, "listing the services in namespace %q", ns)
+	}
+	for _, s := range svcList.Items {
+		i := util.StringArrayIndex(services, s.GetName())
+		if i > 0 {
+			copy := s
+			answer = append(answer, &copy)
+		}
+	}
+	return answer, nil
+}
+
 func GetServiceNames(client kubernetes.Interface, ns string, filter string) ([]string, error) {
 	names := []string{}
 	list, err := client.CoreV1().Services(ns).List(meta_v1.ListOptions{})

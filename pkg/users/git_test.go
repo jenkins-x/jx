@@ -8,14 +8,15 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/users"
 
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -157,6 +158,7 @@ func prepare(t *testing.T) (*users.GitUserResolver, *gits.FakeProvider, error) {
 		&gits.GitFake{},
 		fakeProvider,
 		helm_test.NewMockHelmer(),
+		resources_test.NewMockInstaller(),
 	)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()

@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
+	cmd_test "github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -20,17 +20,18 @@ import (
 
 	"github.com/ghodss/yaml"
 
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/stretchr/testify/assert"
 
 	google_protobuf "github.com/golang/protobuf/ptypes/any"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	installer_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 )
 
 func TestAddAppForGitOps(t *testing.T) {
@@ -544,6 +545,7 @@ func CreateAppTestOptions(gitOps bool, t *testing.T) *AppTestOptions {
 		devEnv = kube.NewPermanentEnvironment("dev")
 	}
 	o.MockHelmer = helm_test.NewMockHelmer()
+	installerMock := installer_test.NewMockInstaller()
 	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
@@ -552,6 +554,7 @@ func CreateAppTestOptions(gitOps bool, t *testing.T) *AppTestOptions {
 		gits.NewGitLocal(),
 		fakeGitProvider,
 		o.MockHelmer,
+		installerMock,
 	)
 
 	err := cmd.CreateTestEnvironmentDir(o.CommonOptions)
