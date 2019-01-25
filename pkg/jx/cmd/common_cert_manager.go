@@ -11,6 +11,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const certManagerChartVersion = "v0.5.2"
+
 func (o *CommonOptions) ensureCertmanager() error {
 	log.Infof("Looking for %s deployment in namespace %s...\n", CertManagerDeployment, CertManagerNamespace)
 	client, err := o.KubeClient()
@@ -33,7 +35,7 @@ func (o *CommonOptions) ensureCertmanager() error {
 			err = o.installChartOptions(helm.InstallChartOptions{
 				ReleaseName: "cert-manager",
 				Chart:       "stable/cert-manager",
-				Version:     "",
+				Version:     certManagerChartVersion,
 				Ns:          CertManagerNamespace,
 				HelmUpdate:  true,
 				SetValues:   values,
