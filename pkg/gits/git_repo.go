@@ -7,7 +7,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
@@ -17,6 +17,7 @@ type CreateRepoData struct {
 	FullName     string
 	PrivateRepo  bool
 	User         *auth.UserAuth
+	Server       *auth.AuthServer
 	GitProvider  GitProvider
 }
 
@@ -161,6 +162,7 @@ func PickNewOrExistingGitRepository(batchMode bool, authConfigSvc auth.ConfigSer
 		PrivateRepo:  repoOptions.Private,
 		User:         userAuth,
 		GitProvider:  provider,
+		Server:       server,
 	}, err
 }
 

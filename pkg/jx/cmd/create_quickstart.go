@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/quickstarts"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -10,7 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/quickstarts"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -164,7 +165,6 @@ func (o *CreateQuickstartOptions) Run() error {
 		o.Filter.ProjectName = details.RepoName
 	}
 
-
 	model, err := o.LoadQuickstartsFromMap(config, gitMap)
 	if err != nil {
 		return fmt.Errorf("failed to load quickstarts: %s", err)
@@ -225,8 +225,6 @@ func (o *CreateQuickstartOptions) Run() error {
 		}
 	}
 	log.Infof("Created project at %s\n\n", util.ColorInfo(genDir))
-
-	o.CreateProjectOptions.ImportOptions.GitProvider = o.GitProvider
 
 	if details != nil {
 		o.ConfigureImportOptions(details)

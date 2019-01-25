@@ -12,7 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/golang-jenkins"
+	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
@@ -21,7 +21,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,9 +29,9 @@ import (
 	//_ "github.com/Azure/draft/pkg/linguist"
 	"time"
 
-	"github.com/denormal/go-gitignore"
+	gitignore "github.com/denormal/go-gitignore"
 	"github.com/jenkins-x/jx/pkg/prow"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 const (
@@ -410,7 +410,6 @@ func (options *ImportOptions) Run() error {
 			return err
 		}
 	}
-
 
 	err = kube.NewSourceRepositoryService(jxClient, ns).CreateOrUpdateSourceRepository(
 		options.AppName, options.Organisation, options.GitProvider.ServerURL())
@@ -1363,12 +1362,13 @@ func (o *ImportOptions) allDraftPacks() ([]string, error) {
 }
 
 // ConfigureImportOptions updates the import options struct based on values from the create repo struct
-func (options *ImportOptions)ConfigureImportOptions(repoData *gits.CreateRepoData) {
+func (options *ImportOptions) ConfigureImportOptions(repoData *gits.CreateRepoData) {
 	// configure the import options based on previous answers
 	options.AppName = repoData.RepoName
 	options.GitProvider = repoData.GitProvider
 	options.Organisation = repoData.Organisation
 	options.Repository = repoData.RepoName
+	options.GitServer = repoData.Server
 	options.GitDetails = *repoData
 }
 
