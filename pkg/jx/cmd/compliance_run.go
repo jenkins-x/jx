@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 var (
@@ -23,7 +23,7 @@ var (
 	`)
 )
 
-// ComplianceRuntOptions options for "compliance run" command
+// ComplianceRunOptions options for "compliance run" command
 type ComplianceRunOptions struct {
 	CommonOptions
 }
