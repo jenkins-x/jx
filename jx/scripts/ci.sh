@@ -28,7 +28,11 @@ make linux
 
 echo ""
 git config --global credential.helper store
+git config --global --add user.name JenkinsXBot
+git config --global --add user.email jenkins-x@googlegroups.com
+
 jx step git credentials
+
 
 echo ""
 echo "Running the integration tests"
