@@ -502,14 +502,9 @@ func (b *BitbucketCloudProvider) GetPullRequestCommits(owner string, repository 
 			continue
 		}
 
-		commit, _, err := b.Client.CommitsApi.RepositoriesUsernameRepoSlugCommitRevisionGet(b.Context, owner, repo, sha)
+		commit, _, err := b.Client.CommitsApi.RepositoriesUsernameRepoSlugCommitNodeGet(b.Context, owner, sha, repo)
 		if err != nil {
 			return answer, err
-		}
-
-		url := ""
-		if commit.Links != nil && commit.Links.Self != nil {
-			url = commit.Links.Self.Href
 		}
 
 		// update the login and email
@@ -526,7 +521,7 @@ func (b *BitbucketCloudProvider) GetPullRequestCommits(owner string, repository 
 
 		summary := &GitCommit{
 			Message: commit.Message,
-			URL:     url,
+			URL:     "", // Commit model no longer provides links.
 			SHA:     commit.Hash,
 			Author: &GitUser{
 				Login: login,
