@@ -74,7 +74,8 @@ func cleanCerts(client kubernetes.Interface, certclient certclient.Interface, ns
 	certsClient := certclient.Certmanager().Certificates(ns)
 	certsList, err := certsClient.List(metav1.ListOptions{})
 	if err != nil {
-		return errors.Wrapf(err, "listing the certs in namespace %q", ns)
+		// there are no certificates to clean
+		return nil
 	}
 	for _, c := range certsList.Items {
 		if allow(c.GetName()) {
