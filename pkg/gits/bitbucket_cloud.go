@@ -546,8 +546,8 @@ func (b *BitbucketCloudProvider) PullRequestLastCommitStatus(pr *GitPullRequest)
 			result, _, err = b.Client.CommitstatusesApi.RepositoriesUsernameRepoSlugCommitNodeStatusesGet(
 				b.Context,
 				pr.Owner,
-				pr.Repo,
 				pr.LastCommitSha,
+				pr.Repo,
 			)
 		} else {
 			result, _, err = b.Client.PagingApi.CommitstatusesPageGet(b.Context, result.Next)
@@ -588,8 +588,8 @@ func (b *BitbucketCloudProvider) ListCommitStatus(org string, repo string, sha s
 			result, _, err = b.Client.CommitstatusesApi.RepositoriesUsernameRepoSlugCommitNodeStatusesGet(
 				b.Context,
 				org,
-				repo,
 				sha,
+				repo,
 			)
 		} else {
 			result, _, err = b.Client.PagingApi.CommitstatusesPageGet(b.Context, result.Next)
