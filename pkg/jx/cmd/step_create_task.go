@@ -10,7 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	buildapi "github.com/knative/build/pkg/apis/build/v1alpha1"
+	pipelineapi "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -33,7 +33,7 @@ var (
 		jx step create task
 
 		# create a Knative Pipeline Task
-		jx step create task -o mybuild.yaml
+		jx step create task -o mytask.yaml
 
 			`)
 )
@@ -244,22 +244,22 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 			steps = append(steps, ss...)
 		}
 	}
-	name := "jx-buildtemplate-" + languageName + "-" + templateKind
-	build := &buildapi.BuildTemplate{
+	name := "jx-task-" + languageName + "-" + templateKind
+	task := &pipelineapi.Task{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "build.knative.dev/v1alpha1",
-			Kind:       "BuildTemplate",
+			APIVersion: "pipeline.knative.dev/v1alpha1",
+			Kind:       "Task",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: kube.ToValidName(name),
 		},
-		Spec: buildapi.BuildTemplateSpec{
+		Spec: pipelineapi.TaskSpec{
 			Steps: steps,
 		},
 	}
-	data, err := yaml.Marshal(build)
+	data, err := yaml.Marshal(task)
 	if err != nil {
-		return errors.Wrapf(err, "failed to marshal Build YAML")
+		return errors.Wrapf(err, "failed to marshal Task YAML")
 	}
 	fileName := o.OutputFile
 	if fileName == "" {
@@ -268,7 +268,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	}
 	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 	if err != nil {
-		return errors.Wrapf(err, "failed to save build template file %s", fileName)
+		return errors.Wrapf(err, "failed to save Task file %s", fileName)
 	}
 	log.Infof("generated Task at %s\n", util.ColorInfo(fileName))
 	return nil
@@ -336,7 +336,7 @@ func (o *StepCreateTaskOptions) discoverBuildPack(dir string, projectConfig *con
 	}
 	pack, err := o.invokeDraftPack(args)
 	if err != nil {
-		return pack, errors.Wrapf(err, "failed to discover build pack in dir %s", o.Dir)
+		return pack, errors.Wrapf(err, "failed to discover task pack in dir %s", o.Dir)
 	}
 	return pack, nil
 }
