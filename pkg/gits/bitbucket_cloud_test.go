@@ -106,6 +106,9 @@ var bitbucketRouter = util.Router{
 	"/users/test-user": util.MethodMap{
 		"GET": "users.test-user.json",
 	},
+	"/repositories/test-user/test-repo/pullrequests/1/comments": util.MethodMap{
+		"POST": "pullrequests.test-comment.json",
+	},
 }
 
 func setupGitProvider(url, name, user string) (gits.GitProvider, error) {
@@ -431,7 +434,17 @@ func (suite *BitbucketCloudProviderTestSuite) TestCreateIssue() {
 }
 
 func (suite *BitbucketCloudProviderTestSuite) TestAddPRComment() {
-	err := suite.provider.AddPRComment(nil, "")
+	prNumber := 1
+	pr := &gits.GitPullRequest{
+		Number: &prNumber,
+		Owner: "test-user",
+		Repo: "test-repo",
+	}
+
+	comment := "This is my comment. There are many like it but this one is mine."
+
+	err := suite.provider.AddPRComment(pr, comment)
+
 	suite.Require().Nil(err)
 }
 
