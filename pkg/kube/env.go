@@ -609,8 +609,12 @@ func addValues(out io.Writer, dir string, values config.HelmValuesConfig, git gi
 		return errors.Wrapf(err, "failed to parse YAML for file %s", file)
 	}
 
-	// now lets merge together the 2 blobs of YAML
-	util.CombineMapTrees(sourceMap, overrideMap)
+	if sourceMap != nil {
+		// now lets merge together the 2 blobs of YAML
+		util.CombineMapTrees(sourceMap, overrideMap)
+	} else {
+		sourceMap = overrideMap
+	}
 
 	output, err := yaml.Marshal(sourceMap)
 	if err != nil {
