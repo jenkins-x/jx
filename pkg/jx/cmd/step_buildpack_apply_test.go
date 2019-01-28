@@ -1,15 +1,16 @@
 package cmd_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/jenkins-x/jx/pkg/tests"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/tests"
+	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -59,7 +60,7 @@ func testCreateJenkinsfile(t *testing.T, outDir string, testcase string, srcDir 
 		TemplateFile: templateFile,
 		OutputFile:   actualFile,
 	}
-	if testcase == "prow"|| strings.HasPrefix(testcase, "prow_") {
+	if testcase == "prow" || strings.HasPrefix(testcase, "prow_") {
 		arguments.JenkinsfileRunner = true
 	}
 

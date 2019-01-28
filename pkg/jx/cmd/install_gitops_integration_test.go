@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
+	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/testkube"
 	"github.com/stretchr/testify/require"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -64,6 +65,7 @@ func TestInstallGitOps(t *testing.T) {
 		gitter,
 		nil,
 		helmer,
+		resources_test.NewMockInstaller(),
 	)
 	o.CommonOptions.SetGit(gitter)
 	o.CommonOptions.InstallDependencies = true

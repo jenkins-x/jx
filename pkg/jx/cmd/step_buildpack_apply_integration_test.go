@@ -15,6 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/testkube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -59,6 +60,7 @@ func TestStepBuildPackApply(t *testing.T) {
 		gits.NewGitCLI(),
 		nil,
 		helm.NewHelmCLI("helm", helm.V2, "", true),
+		resources_test.NewMockInstaller(),
 	)
 
 	err = o.ModifyDevEnvironment(func(env *v1.Environment) error {
