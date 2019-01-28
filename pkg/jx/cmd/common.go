@@ -339,10 +339,12 @@ func (o *CommonOptions) Kube() kube.Kuber {
 	return o.kuber
 }
 
+// SetResourcesInstaller configures the installer for Kubernetes resources
 func (o *CommonOptions) SetResourcesInstaller(installer resources.Installer) {
 	o.resourcesInstaller = installer
 }
 
+// ResourcesInstaller returns the installer for Kubernetes resources
 func (o *CommonOptions) ResourcesInstaller() resources.Installer {
 	if o.resourcesInstaller == nil {
 		o.resourcesInstaller = resources.NewKubeCtlInstaller("", true, true)
