@@ -53,6 +53,7 @@ func NewCmdCreateAddon(f Factory, in terminal.FileReader, out terminal.FileWrite
 	cmd.AddCommand(NewCmdCreateAddonAmbassador(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonAnchore(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonCloudBees(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateAddonFlagger(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonGitea(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonIstio(f, in, out, errOut))
 	cmd.AddCommand(NewCmdCreateAddonKnativeBuild(f, in, out, errOut))
