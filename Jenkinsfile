@@ -105,7 +105,7 @@ pipeline {
     }
     post {
         always {
-            sleep unit: 'HOURS', time: '1'
+            sleep unit: 'HOURS', time: 1
         }
     }
 }
