@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	survey "gopkg.in/AlecAivazis/survey.v1"
 
@@ -178,7 +179,7 @@ To register to get your username/password to to: %s
 			"sso.create=true",
 			"sso.oidcIssuerUrl=" + dexURL,
 			"sso.domain=" + domain,
-			"sso.certIssuerName=" + ingressConfig.Issuer}
+			"sso.certIssuerName=" + pki.CertManagerIssuerProd}
 
 		if len(o.SetValues) > 0 {
 			o.SetValues = o.SetValues + "," + strings.Join(values, ",")
@@ -193,6 +194,21 @@ To register to get your username/password to to: %s
 	err = o.CreateAddon("cb")
 	if err != nil {
 		return err
+	}
+
+	if o.Sso {
+		// wait for cert to be issued
+		certName := pki.CertSecretPrefix + "core"
+		log.Infof("Waiting for cert: %s...\n", util.ColorInfo(certName))
+		certMngrClient, err := o.CreateCertManagerClient()
+		if err != nil {
+			return errors.Wrap(err, "creating the cert-manager client")
+		}
+		err = pki.WaitCertificateExists(certMngrClient, certName, o.Namespace, 3*time.Minute)
+		if err != nil {
+			return err // this is already wrapped by the previous call
+		}
+		log.Infof("Ready Cert: %s\n", util.ColorInfo(certName))
 	}
 
 	if o.Basic {
@@ -237,6 +253,8 @@ To register to get your username/password to to: %s
 			return err
 		}
 	}
+
+	log.Infof("Addon installed successfully.\n Run `jx cloudbees` to open the app in a browser\n")
 
 	return nil
 }
