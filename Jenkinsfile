@@ -103,4 +103,9 @@ pipeline {
             }
         }
     }
+    post {
+        always {
+            sleep unit: 'HOURS', time: '1'
+        }
+    }
 }
