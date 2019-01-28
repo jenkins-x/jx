@@ -90,19 +90,7 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 			if err != nil {
 				return "", err
 			}
-			if len(pack) > 0 {
-				if pack == util.LIBERTY {
-					lpack = filepath.Join(packsDir, "liberty")
-				} else if pack == util.APPSERVER {
-					lpack = filepath.Join(packsDir, "appserver")
-				} else if pack == util.DROPWIZARD {
-					lpack = filepath.Join(packsDir, "dropwizard")
-				} else {
-					log.Warn("Do not know how to handle pack: " + pack)
-				}
-			} else {
-				lpack = filepath.Join(packsDir, "maven")
-			}
+			lpack = filepath.Join(packsDir, pack)
 
 			exists, _ = util.FileExists(lpack)
 			if !exists {
