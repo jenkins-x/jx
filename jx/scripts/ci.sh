@@ -27,6 +27,10 @@ make linux
 #git add . && git diff --exit-code HEAD
 
 echo ""
+git config --global credential.helper store
+jx step git credentials
+
+echo ""
 echo "Running the integration tests"
 
 make test-slow-integration
