@@ -15,7 +15,7 @@ type StepPROptions struct {
 
 var ()
 
-// NewCmdStep Steps a command object for the "step" command
+// NewCmdStepPR Steps a command object for the "step pr" command
 func NewCmdStepPR(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepPROptions{
 		StepOptions: StepOptions{

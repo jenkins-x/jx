@@ -277,7 +277,7 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 	return h.runHelm(args...)
 }
 
-// Fetch a Helm Chart
+// FetchChart fetches a Helm Chart
 func (h *HelmCLI) FetchChart(chart string, version string, untar bool, untardir string, repo string,
 	username string, password string) error {
 	args := []string{}
@@ -510,7 +510,7 @@ func (h *HelmCLI) Version(tls bool) (string, error) {
 	return h.VersionWithArgs(tls)
 }
 
-// Version executes the helm version command and returns its output
+// VersionWithArgs executes the helm version command and returns its output
 func (h *HelmCLI) VersionWithArgs(tls bool, extraArgs ...string) (string, error) {
 	args := []string{"version", "--short"}
 	if tls {
