@@ -19,6 +19,7 @@ const (
 	defaultFlaggerReleaseName = "flagger"
 	defaultFlaggerVersion     = ""
 	defaultFlaggerRepo        = "https://flagger.app"
+	optionGrafanaChart        = "grafana-chart"
 )
 
 var (
@@ -34,7 +35,8 @@ var (
 
 type CreateAddonFlaggerOptions struct {
 	CreateAddonOptions
-	Chart string
+	Chart        string
+	GrafanaChart string
 }
 
 func NewCmdCreateAddonFlagger(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
@@ -66,6 +68,7 @@ func NewCmdCreateAddonFlagger(f Factory, in terminal.FileReader, out terminal.Fi
 	options.addFlags(cmd, defaultFlaggerNamespace, defaultFlaggerReleaseName, defaultFlaggerVersion)
 
 	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", kube.ChartFlagger, "The name of the chart to use")
+	cmd.Flags().StringVarP(&options.GrafanaChart, optionGrafanaChart, "", kube.ChartFlaggerGrafana, "The name of the Flagger Grafana chart to use")
 	return cmd
 }
 
@@ -76,6 +79,9 @@ func (o *CreateAddonFlaggerOptions) Run() error {
 	}
 	if o.Chart == "" {
 		return util.MissingOption(optionChart)
+	}
+	if o.GrafanaChart == "" {
+		return util.MissingOption(optionGrafanaChart)
 	}
 	err := o.ensureHelm()
 	if err != nil {
@@ -92,6 +98,10 @@ func (o *CreateAddonFlaggerOptions) Run() error {
 	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
 	if err != nil {
 		return fmt.Errorf("Flagger deployment failed: %v", err)
+	}
+	err = o.installChart(o.ReleaseName+"-grafana", o.GrafanaChart, o.Version, o.Namespace, true, values, nil, "")
+	if err != nil {
+		return fmt.Errorf("Flagger Grafana deployment failed: %v", err)
 	}
 	return nil
 }

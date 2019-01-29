@@ -20,7 +20,8 @@ const (
 	ChartGitea = "jenkins-x/gitea"
 
 	// ChartFlagger the default chart for the Flagger chart
-	ChartFlagger = "flagger/flagger"
+	ChartFlagger        = "flagger/flagger"
+	ChartFlaggerGrafana = "flagger/grafana"
 
 	// ChartIstio the default chart for the Istio chart
 	ChartIstio = "install/kubernetes/helm/istio"
