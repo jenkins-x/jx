@@ -28,7 +28,6 @@ GO_DEPENDENCIES := cmd/*/*.go cmd/*/*/*.go pkg/*/*.go pkg/*/*/*.go pkg/*//*/*/*.
 BRANCH     := $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null  || echo 'unknown')
 BUILD_DATE := $(shell date +%Y%m%d-%H:%M:%S)
 CGO_ENABLED = 0
-PARALLEL = 2
 
 VENDOR_DIR=vendor
 
@@ -44,7 +43,7 @@ VERSION := $(shell [ -z "$(ON_EXACT_TAG)" ] && echo "$(TAG)-dev+$(REV)" | sed 's
 else
 VERSION := $(shell cat pkg/version/VERSION)
 endif
-BUILDFLAGS := -p 2 -ldflags \
+BUILDFLAGS :=  -ldflags \
   " -X $(ROOT_PACKAGE)/pkg/version.Version=$(VERSION)\
 		-X $(ROOT_PACKAGE)/pkg/version.Revision='$(REV)'\
 		-X $(ROOT_PACKAGE)/pkg/version.Branch='$(BRANCH)'\
@@ -53,6 +52,13 @@ BUILDFLAGS := -p 2 -ldflags \
 
 ifdef DEBUG
 BUILDFLAGS := -gcflags "all=-N -l" $(BUILDFLAGS)
+endif
+
+ifdef PARALLEL_BUILDS
+BUILDFLAGS := -p $(PARALLEL_BUILDS) $(BUILDFLAGS)
+TESTFLAGS := -parallel $(PARALLEL_BUILDS)
+else
+TESTFLAGS := -parallel 8
 endif
 
 print-version: version
@@ -66,7 +72,7 @@ get-test-deps:
 	$(GO_NOMOD) get -u gopkg.in/matm/v1/gocov-html
 
 test:
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -coverprofile=cover.out -failfast -short -parallel $(PARALLEL) ./...
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -coverprofile=cover.out -failfast -short $(TESTFLAGS) ./...
 
 test-report: get-test-deps test
 	@gocov convert cover.out | gocov report
@@ -75,7 +81,7 @@ test-report-html: get-test-deps test
 	@gocov convert cover.out | gocov-html > cover.html && open cover.html
 
 test-slow:
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -parallel $(PARALLEL) -coverprofile=cover.out ./...
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 $(TESTFLAGS) -coverprofile=cover.out ./...
 
 test-slow-report: get-test-deps test-slow
 	@gocov convert cover.out | gocov report
