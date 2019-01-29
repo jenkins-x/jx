@@ -16,6 +16,8 @@ const (
 	defaultCacheTimeoutHours = 24
 )
 
+// CacheLoader defines cache value population callback that should be executed if cache entry with given key is
+// not present.
 type CacheLoader func() ([]byte, error)
 
 // LoadCacheData loads cached data from the given cache file name and loader
