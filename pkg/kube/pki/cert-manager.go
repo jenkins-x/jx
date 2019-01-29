@@ -2,6 +2,8 @@ package pki
 
 import (
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	certmng "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 	certclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
@@ -109,9 +111,14 @@ func CreateCertManagerResources(certclient certclient.Interface, targetNamespace
 		return nil
 	}
 
+	// do not recreate the issuer if it is already there and correctly configured
+	if alreadyConfigured(certclient, targetNamespace, ic) {
+		return nil
+	}
+
 	err := CleanCertManagerResources(certclient, targetNamespace, ic)
 	if err != nil {
-		return errors.Wrapf(err, "cleaing the cert-manager resources from namespace %q", targetNamespace)
+		return errors.Wrapf(err, "cleaning the cert-manager resources from namespace %q", targetNamespace)
 	}
 
 	err = CreateIssuer(certclient, targetNamespace, ic)
@@ -120,4 +127,25 @@ func CreateCertManagerResources(certclient certclient.Interface, targetNamespace
 	}
 
 	return nil
+}
+
+// alreadyConfigured checks if cert-manager resources are already configured and match with the ingress configuration
+func alreadyConfigured(certClient certclient.Interface, targetNamespace string, ingressConfig kube.IngressConfig) bool {
+	issuer, err := certClient.CertmanagerV1alpha1().Issuers(targetNamespace).Get(ingressConfig.Issuer, metav1.GetOptions{})
+	if err != nil {
+		log.Infof("Certificate issuer %s does not exist. Creating...\n", util.ColorInfo(ingressConfig.Issuer))
+		return false
+	}
+	// ingress and issuer email must match
+	if issuer.Spec.ACME.Email != ingressConfig.Email {
+		issuer.Spec.ACME.Email = ingressConfig.Email
+		_, err := certClient.CertmanagerV1alpha1().Issuers(targetNamespace).Update(issuer)
+		if err != nil {
+			// can not update the issuer, let's assume it needs recreation
+			log.Infof("Certificate issuer %s can not be updated. Recreating...\n", util.ColorInfo(ingressConfig.Issuer))
+			return false
+		}
+	}
+	log.Infof("Certificate issuer %s already configured.\n", util.ColorInfo(ingressConfig.Issuer))
+	return true
 }
