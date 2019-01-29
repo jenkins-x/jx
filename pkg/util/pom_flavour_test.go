@@ -2,6 +2,7 @@ package util
 
 import (
 	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,6 +18,8 @@ func TestMavenIsDefault(t *testing.T) {
 	flavour, err := PomFlavour(file.Name())
 	assert.Nil(t, err)
 	assert.Equal(t, MAVEN, flavour)
+	err = os.Remove(file.Name())
+	assert.Nil(t, err)
 }
 
 func TestMavenJava11Detection(t *testing.T) {
@@ -29,6 +32,8 @@ func TestMavenJava11Detection(t *testing.T) {
 	flavour, err := PomFlavour(file.Name())
 	assert.Nil(t, err)
 	assert.Equal(t, MAVEN_JAVA11, flavour)
+	err = os.Remove(file.Name())
+	assert.Nil(t, err)
 }
 
 func TestLibertyDetection(t *testing.T) {
@@ -41,4 +46,6 @@ func TestLibertyDetection(t *testing.T) {
 	flavour, err := PomFlavour(file.Name())
 	assert.Nil(t, err)
 	assert.Equal(t, DROPWIZARD, flavour)
+	err = os.Remove(file.Name())
+	assert.Nil(t, err)
 }
