@@ -421,6 +421,12 @@ github.com/viniciuschiele/tarx v0.0.0-20151205142357-6e3da540444d h1:Z8Bp/K+wf1+
 github.com/viniciuschiele/tarx v0.0.0-20151205142357-6e3da540444d/go.mod h1:8uo3DXfN526YN7JjAp4JkOMm4foTW4vPzPHaAzb4xiY=
 github.com/wbrefvem/go-bitbucket v0.0.0-20180917214347-1c96061fe622 h1:WcLZkGZhzEP2p+P/DZuCw+0yvB8rFe9KemRsegMt0kk=
 github.com/wbrefvem/go-bitbucket v0.0.0-20180917214347-1c96061fe622/go.mod h1:Z91j2jYBApRjJ0zlXDCxPrrZR8ohkkd4g0n+Hqs1w0Q=
+github.com/wbrefvem/go-bitbucket v0.0.0-20190125231610-40578ed68a03 h1:RAfReG+hXFHmKPsAiNisY1neRBrYaRuBJsV6pZVdZ40=
+github.com/wbrefvem/go-bitbucket v0.0.0-20190125231610-40578ed68a03/go.mod h1:Z91j2jYBApRjJ0zlXDCxPrrZR8ohkkd4g0n+Hqs1w0Q=
+github.com/wbrefvem/go-bitbucket v0.0.0-20190125233613-75bc76c212e2 h1:jsQdD/NaTmm6YyXKUxx6p76ZI6VIMOndaX+jkr1IX9A=
+github.com/wbrefvem/go-bitbucket v0.0.0-20190125233613-75bc76c212e2/go.mod h1:Z91j2jYBApRjJ0zlXDCxPrrZR8ohkkd4g0n+Hqs1w0Q=
+github.com/wbrefvem/go-bitbucket v0.0.0-20190128183802-fc08fd046abb h1:KrmaSo+FHWBt1H652w/uerwzKvQqh4H7Jgyxm4hz2BQ=
+github.com/wbrefvem/go-bitbucket v0.0.0-20190128183802-fc08fd046abb/go.mod h1:Z91j2jYBApRjJ0zlXDCxPrrZR8ohkkd4g0n+Hqs1w0Q=
 github.com/xanzy/go-gitlab v0.0.0-20180814191223-f3bc634ab936 h1:sW9o8nzZskZn9WSsSzuXN2PJHOlSLkS4sAgz2VWF3Nc=
 github.com/xanzy/go-gitlab v0.0.0-20180814191223-f3bc634ab936/go.mod h1:CRKHkvFWNU6C3AEfqLWjnCNnAs4nj8Zk95rX2S3X6Mw=
 github.com/xanzy/ssh-agent v0.2.0 h1:Adglfbi5p9Z0BmK2oKU9nTG+zKfniSfnaMYB+ULd+Ro=

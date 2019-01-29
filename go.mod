@@ -121,7 +121,7 @@ require (
 	github.com/stretchr/testify v1.2.2
 	github.com/trivago/tgo v1.0.1 // indirect
 	github.com/viniciuschiele/tarx v0.0.0-20151205142357-6e3da540444d // indirect
-	github.com/wbrefvem/go-bitbucket v0.0.0-20180917214347-1c96061fe622
+	github.com/wbrefvem/go-bitbucket v0.0.0-20190128183802-fc08fd046abb
 	github.com/xanzy/go-gitlab v0.0.0-20180814191223-f3bc634ab936
 	github.com/xanzy/ssh-agent v0.2.0 // indirect
 	gocloud.dev v0.9.0
