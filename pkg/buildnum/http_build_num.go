@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	// The URL path for the HTTP endpoint that returns health status.
+	// HealthPath is the URL path for the HTTP endpoint that returns health status.
 	HealthPath = "/health"
-	// The URL path for the HTTP endpoint that returns ready status.
+	// ReadyPath URL path for the HTTP endpoint that returns ready status.
 	ReadyPath = "/ready"
 )
 
