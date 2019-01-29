@@ -8,8 +8,9 @@ import (
 
 // JXInstallConfig is the struct used to create the jx-install-config configmap
 type JXInstallConfig struct {
-	Server string `structs:"server" yaml:"server" json:"server"`
-	CA     []byte `structs:"ca.crt" yaml:"ca.crt" json:"ca.crt"`
+	Server       string `structs:"server" yaml:"server" json:"server"`
+	CA           []byte `structs:"ca.crt" yaml:"ca.crt" json:"ca.crt"`
+	KubeProvider string `structs:"kubeProvider" yaml:"kubeProvider" json:"kubeProvider"`
 }
 
 // RememberRegion remembers cloud providers region in Kubernetes Config Map (jx-install-config), so jx can access this
@@ -27,7 +28,6 @@ func RememberRegion(kubeClient kubernetes.Interface, namespace string, region st
 	}
 	return nil
 }
-
 
 // RememberInstallValues remembers any non-blank installation values in the Kubernetes Config Map (jx-install-config), so jx can access this
 // information later. Usually executed when provisioning new Kubernetes cluster.
@@ -53,7 +53,6 @@ func RememberInstallValues(kubeClient kubernetes.Interface, namespace string, va
 	return nil
 }
 
-
 // ReadInstallValues reads the installed configuration values from the installation namespace
 //
 // Empty map is returned if:
@@ -74,7 +73,6 @@ func ReadInstallValues(kubeClient kubernetes.Interface, namespace string) (map[s
 	return data, nil
 }
 
-
 // ReadRegion allows to read cloud region from Config Map (jx-install-config). Region value is usually written using
 // RememberRegion function.
 //
@@ -90,7 +88,7 @@ func ReadInstallValues(kubeClient kubernetes.Interface, namespace string) (map[s
 func ReadRegion(kubeClient kubernetes.Interface, namespace string) (string, error) {
 	data, err := ReadInstallValues(kubeClient, namespace)
 	if err != nil {
-	  return "", err
+		return "", err
 	}
 	return data[Region], nil
 }

@@ -203,7 +203,7 @@ func (o *StepHelmApplyOptions) Run() error {
 
 func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store configio.ConfigStore) ([]string, error) {
 	files := []string{}
-	client, err := o.CreateSystemVaultClient()
+	client, err := o.CreateSystemVaultClient("")
 	if err != nil {
 		return files, errors.Wrap(err, "retrieving the system Vault")
 	}

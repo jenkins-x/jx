@@ -398,14 +398,14 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "installing helm binaries")
 	}
 
-	err = options.installCloudProviderDependencies()
-	if err != nil {
-		return errors.Wrap(err, "installing cloud provider dependencies")
-	}
-
 	err = options.configureKubectl(ns)
 	if err != nil {
 		return errors.Wrap(err, "configure the kubectl")
+	}
+
+	err = options.installCloudProviderDependencies()
+	if err != nil {
+		return errors.Wrap(err, "installing cloud provider dependencies")
 	}
 
 	options.Flags.Provider, err = options.GetCloudProvider(options.Flags.Provider)
@@ -413,28 +413,19 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrapf(err, "retrieving cloud provider '%s'", options.Flags.Provider)
 	}
 
-	options.setInstallValues(map[string]string{
-		kube.KubeProvider: options.Flags.Provider,
-	})
-
 	err = options.setMinikubeFromContext()
 	if err != nil {
 		return errors.Wrap(err, "configuring minikube from kubectl context")
 	}
 
-	err = options.storeInstallValues(client, ns)
+	err = options.configureTeamSettings()
 	if err != nil {
-		return errors.Wrap(err, "storing the install values")
+		return errors.Wrap(err, "configuring the team settings in the dev environment")
 	}
 
 	err = options.configureCloudProviderPreInit(client)
 	if err != nil {
 		return errors.Wrap(err, "configuring the cloud provider before initializing the platform")
-	}
-
-	err = options.configureTeamSettings()
-	if err != nil {
-		return errors.Wrap(err, "configuring the team settings in the dev environment")
 	}
 
 	err = options.init()
@@ -481,7 +472,7 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "selecting the Jenkins installation type")
 	}
-	
+
 	err = options.configureHelmValues(ns)
 	if err != nil {
 		return errors.Wrap(err, "configuring helm values")
@@ -618,21 +609,17 @@ func (options *InstallOptions) Run() error {
 }
 
 func (options *InstallOptions) configureKubectl(namespace string) error {
-	context := ""
-	var err error
 	if !options.Flags.DisableSetKubeContext {
-		context, err = options.getCommandOutput("", "kubectl", "config", "current-context")
+		context, err := options.getCommandOutput("", "kubectl", "config", "current-context")
 		if err != nil {
 			return errors.Wrap(err, "failed to retrieve the current context from kube configuration")
 		}
-	}
-
-	if !options.Flags.DisableSetKubeContext {
 		err = options.RunCommand("kubectl", "config", "set-context", context, "--namespace", namespace)
 		if err != nil {
 			return errors.Wrapf(err, "failed to set the context '%s' in kube configuration", context)
 		}
 	}
+
 	return nil
 }
 
@@ -1213,10 +1200,7 @@ func (options *InstallOptions) buildGitRepositoryOptionsForEnvironments() (*gits
 			if err != nil {
 				return nil, errors.Wrap(err, "determining the git owner for environments")
 			}
-			org, err = kube.GetDevEnvGitOwner(jxClient)
-			if err != nil {
-				return nil, errors.Wrap(err, "determining the git owner for environments")
-			}
+			org, _ = kube.GetDevEnvGitOwner(jxClient)
 			if org == "" {
 				org = user.Username
 			}
@@ -1379,7 +1363,7 @@ func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigSt
 		}
 		options.modifySecretCallback = func(name string, callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
 			if options.Flags.Vault {
-				vaultClient, err := options.CreateSystemVaultClient()
+				vaultClient, err := options.CreateSystemVaultClient(options.devNamespace)
 				if err != nil {
 					return nil, errors.Wrap(err, "retrieving the system vault client")
 				}
@@ -1437,9 +1421,10 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 			}
 			repo, gitProvider, err := kube.CreateEnvGitRepository(options.BatchMode, authConfigSvc, devEnv, devEnv, config, forkEnvGitURL, envDir,
 				gitRepoOptions, options.CreateEnvOptions.HelmValuesConfig, prefix, git, options.In, options.Out, options.Err)
-			if err != nil {
+			if err != nil || repo == nil || gitProvider == nil {
 				return errors.Wrapf(err, "failed to create git repository for the dev Environment source")
 			}
+
 			dir := gitOpsDir
 			err = git.Init(dir)
 			if err != nil {
@@ -1871,7 +1856,7 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 }
 
 func (options *InstallOptions) storeSecretYamlFilesInVault(path string, files ...string) error {
-	vaultClient, err := options.CreateSystemVaultClient()
+	vaultClient, err := options.CreateSystemVaultClient(options.devNamespace)
 	if err != nil {
 		return errors.Wrap(err, "retrieving the system vault client")
 	}
@@ -1885,7 +1870,7 @@ func (options *InstallOptions) storeSecretYamlFilesInVault(path string, files ..
 }
 
 func (options *InstallOptions) storeAdminCredentialsInVault(svc *config.AdminSecretsService) error {
-	vaultClient, err := options.CreateSystemVaultClient()
+	vaultClient, err := options.CreateSystemVaultClient(options.devNamespace)
 	if err != nil {
 		return errors.Wrap(err, "retrieving the system vault client")
 	}
@@ -1937,7 +1922,9 @@ func (options *InstallOptions) saveIngressConfig() (*kube.IngressConfig, error) 
 
 func (options *InstallOptions) saveClusterConfig() error {
 	if !options.Flags.DisableSetKubeContext {
-		var jxInstallConfig *kube.JXInstallConfig
+		jxInstallConfig := &kube.JXInstallConfig{
+			KubeProvider: options.Flags.Provider,
+		}
 		kubeConfig, _, err := options.Kube().LoadConfig()
 		if err != nil {
 			return errors.Wrap(err, "retrieving the current kube config")
@@ -1947,16 +1934,18 @@ func (options *InstallOptions) saveClusterConfig() error {
 			if kubeConfigContext != nil {
 				server := kube.Server(kubeConfig, kubeConfigContext)
 				certificateAuthorityData := kube.CertificateAuthorityData(kubeConfig, kubeConfigContext)
-				jxInstallConfig = &kube.JXInstallConfig{
-					Server: server,
-					CA:     certificateAuthorityData,
-				}
+				jxInstallConfig.Server = server
+				jxInstallConfig.CA = certificateAuthorityData
 			}
 		}
 
 		_, err = options.ModifyConfigMap(kube.ConfigMapNameJXInstallConfig, func(cm *core_v1.ConfigMap) error {
 			data := util.ToStringMapStringFromStruct(jxInstallConfig)
 			for k, v := range data {
+				cm.Data[k] = v
+			}
+			iv := options.installValues
+			for k, v := range iv {
 				cm.Data[k] = v
 			}
 			return nil
@@ -2630,18 +2619,6 @@ func (options *InstallOptions) configureTeamSettings() error {
 	err := options.ModifyDevEnvironment(callback)
 	if err != nil {
 		return errors.Wrap(err, "updating the team setttings in the dev environment")
-	}
-	return nil
-}
-
-func (options *InstallOptions) storeInstallValues(client kubernetes.Interface, ns string) error {
-	// TODO fix for GitOps
-	if !options.Flags.GitOpsMode {
-		log.Infof("storing configuration values %#v into namespace %s\n", options.installValues, ns)
-		err := kube.RememberInstallValues(client, ns, options.installValues)
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }

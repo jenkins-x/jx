@@ -36,7 +36,7 @@ func TestToStringMapStringFromStructJXInstallConfig(t *testing.T) {
 
 	m := util.ToStringMapStringFromStruct(jxInstallConfig)
 
-	assert.Equal(t, 2, len(m))
+	assert.Equal(t, 3, len(m))
 	assert.Equal(t, "derek.zoolander.reallygoodlooking.com", m["server"])
 	assert.Equal(t, "ICAT", m["ca.crt"])
 }
