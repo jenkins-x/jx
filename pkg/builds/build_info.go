@@ -56,7 +56,7 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 	}
 	gitURL := ""
 	for _, initContainer := range pod.Spec.InitContainers {
-		if initContainer.Name == "build-step-git-source" {
+		if initContainer.Name == "build-step-git-source" || initContainer.Name == "build-step-git-source-source" {
 			args := initContainer.Args
 			for i := 0; i <= len(args)-2; i += 2 {
 				key := args[i]
@@ -68,12 +68,17 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 				case "-revision":
 					if shaRegexp.MatchString(value) {
 						lastCommitSha = value
+					} else {
+						branch = value
 					}
 				}
 			}
 		}
 		var pullPullSha, pullBaseSha string
 		for _, v := range initContainer.Env {
+			if v.Value == "" {
+				continue
+			}
 			if v.Name == "PULL_PULL_SHA" {
 				pullPullSha = v.Value
 			}
