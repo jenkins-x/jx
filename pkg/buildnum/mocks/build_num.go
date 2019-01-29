@@ -4,11 +4,9 @@
 package buildnum_test
 
 import (
-	"reflect"
-	"time"
-
 	kube "github.com/jenkins-x/jx/pkg/kube"
 	pegomock "github.com/petergtz/pegomock"
+	"reflect"
 )
 
 type MockBuildNumberIssuer struct {
@@ -54,45 +52,26 @@ func (mock *MockBuildNumberIssuer) Ready() bool {
 }
 
 func (mock *MockBuildNumberIssuer) VerifyWasCalledOnce() *VerifierBuildNumberIssuer {
-	return &VerifierBuildNumberIssuer{
-		mock:                   mock,
-		invocationCountMatcher: pegomock.Times(1),
-	}
+	return &VerifierBuildNumberIssuer{mock, pegomock.Times(1), nil}
 }
 
 func (mock *MockBuildNumberIssuer) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierBuildNumberIssuer {
-	return &VerifierBuildNumberIssuer{
-		mock:                   mock,
-		invocationCountMatcher: invocationCountMatcher,
-	}
+	return &VerifierBuildNumberIssuer{mock, invocationCountMatcher, nil}
 }
 
 func (mock *MockBuildNumberIssuer) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierBuildNumberIssuer {
-	return &VerifierBuildNumberIssuer{
-		mock:                   mock,
-		invocationCountMatcher: invocationCountMatcher,
-		inOrderContext:         inOrderContext,
-	}
-}
-
-func (mock *MockBuildNumberIssuer) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierBuildNumberIssuer {
-	return &VerifierBuildNumberIssuer{
-		mock:                   mock,
-		invocationCountMatcher: invocationCountMatcher,
-		timeout:                timeout,
-	}
+	return &VerifierBuildNumberIssuer{mock, invocationCountMatcher, inOrderContext}
 }
 
 type VerifierBuildNumberIssuer struct {
 	mock                   *MockBuildNumberIssuer
 	invocationCountMatcher pegomock.Matcher
 	inOrderContext         *pegomock.InOrderContext
-	timeout                time.Duration
 }
 
 func (verifier *VerifierBuildNumberIssuer) NextBuildNumber(_param0 kube.PipelineID) *BuildNumberIssuer_NextBuildNumber_OngoingVerification {
 	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "NextBuildNumber", params, verifier.timeout)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "NextBuildNumber", params)
 	return &BuildNumberIssuer_NextBuildNumber_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -115,4 +94,21 @@ func (c *BuildNumberIssuer_NextBuildNumber_OngoingVerification) GetAllCapturedAr
 		}
 	}
 	return
+}
+
+func (verifier *VerifierBuildNumberIssuer) Ready() *BuildNumberIssuer_Ready_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Ready", params)
+	return &BuildNumberIssuer_Ready_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type BuildNumberIssuer_Ready_OngoingVerification struct {
+	mock              *MockBuildNumberIssuer
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *BuildNumberIssuer_Ready_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *BuildNumberIssuer_Ready_OngoingVerification) GetAllCapturedArguments() {
 }

@@ -158,7 +158,7 @@ func (o *AddAppOptions) Run() error {
 			}
 			vaultBasepath = strings.Join([]string{"teams", teamName}, "/")
 		}
-		vaultClient, err = o.CreateSystemVaultClient()
+		vaultClient, err = o.CreateSystemVaultClient("")
 		if err != nil {
 			return err
 		}

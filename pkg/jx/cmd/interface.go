@@ -80,7 +80,7 @@ type Factory interface {
 	CreateComplianceClient() (*client.SonobuoyClient, error)
 
 	// CreateSystemVaultClient creates the system vault client for managing the secreets
-	CreateSystemVaultClient() (vault.Client, error)
+	CreateSystemVaultClient(namespace string) (vault.Client, error)
 
 	// CreateVaultClient returns the vault client for given vault
 	CreateVaultClient(name string, namespace string) (vault.Client, error)

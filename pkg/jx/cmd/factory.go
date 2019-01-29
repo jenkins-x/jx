@@ -302,7 +302,7 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 // It will either save the config to the local file-system, or a Vault
 func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService, error) {
 	if f.UseVault() {
-		vaultClient, err := f.CreateSystemVaultClient()
+		vaultClient, err := f.CreateSystemVaultClient("")
 		authService := auth.NewVaultAuthConfigService(configName, vaultClient)
 		return authService, err
 	} else {
@@ -323,8 +323,8 @@ func (f *factory) UseVault() bool {
 }
 
 // CreateSystemVaultClient gets the system vault client for managing the secrets
-func (f *factory) CreateSystemVaultClient() (vault.Client, error) {
-	return f.CreateVaultClient("", "") // GetVaultClient will use defaults if empty strings specified
+func (f *factory) CreateSystemVaultClient(namespace string) (vault.Client, error) {
+	return f.CreateVaultClient(vault.SystemVaultName, namespace)
 }
 
 // CreateVaultClient returns the given vault client for managing secrets
@@ -354,7 +354,7 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 
 	clientFactory, err := kubevault.NewVaultClientFactory(kubeClient, vopClient, namespace)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "creating vault client")
 	}
 	vaultClient, err := clientFactory.NewVaultClient(name, namespace)
 	return vault.NewVaultClient(vaultClient), err
