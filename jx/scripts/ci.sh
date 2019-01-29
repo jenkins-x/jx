@@ -5,9 +5,9 @@ echo "verifying Pull Request"
 
 export ORG="jenkinsxio"
 export APP_NAME="jx"
-export PREVIEW_VERSION="0.0.0-SNAPSHOT-${BRANCH_NAME}-${BUILD_NUMBER}"
-export TEAM="$(echo ${BRANCH_NAME}-$BUILD_NUMBER  | tr '[:upper:]' '[:lower:]')"
-export PREVIEW_IMAGE_TAG="SNAPSHOT-JX-$BRANCH_NAME-$BUILD_NUMBER"
+export PREVIEW_VERSION="0.0.0-SNAPSHOT-${BRANCH_NAME}-${BUILD_ID}"
+export TEAM="$(echo ${BRANCH_NAME}-$BUILD_ID  | tr '[:upper:]' '[:lower:]')"
+export PREVIEW_IMAGE_TAG="SNAPSHOT-JX-$BRANCH_NAME-$BUILD_ID"
 
 export GHE_CREDS_PSW="$(jx step credential -s jx-pipeline-git-github-ghe)"
 export JENKINS_CREDS_PSW="$(jx step credential -s  test-jenkins-user)"
@@ -24,7 +24,18 @@ export JX_DISABLE_DELETE_REPO="true"
 echo "building Pull Request for preview $TEAM"
 
 make linux
-git add . && git diff --exit-code HEAD
+#git add . && git diff --exit-code HEAD
+
+echo ""
+git config --global credential.helper store
+git config --global --add user.name JenkinsXBot
+git config --global --add user.email jenkins-x@googlegroups.com
+
+jx step git credentials
+
+
+echo ""
+echo "Running the integration tests"
 
 make test-slow-integration
 ./build/linux/jx --help
