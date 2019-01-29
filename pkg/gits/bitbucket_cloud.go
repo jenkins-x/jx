@@ -821,6 +821,10 @@ func (b *BitbucketCloudProvider) CreateIssue(owner string, repo string, issue *G
 
 func (b *BitbucketCloudProvider) AddPRComment(pr *GitPullRequest, comment string) error {
 
+	if pr.Number == nil {
+		return fmt.Errorf("AddPRComment requires a non-nil PR number")
+	}
+
 	rawComment := bitbucket.PullrequestComment{
 		Content: &bitbucket.IssueContent{
 			Raw: comment,
