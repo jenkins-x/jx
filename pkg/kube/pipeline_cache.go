@@ -86,6 +86,7 @@ func (c *PipelineNamespaceCache) Pipelines() []*v1.PipelineActivity {
 	return answer
 }
 
+// ForEach runs the supplied function on every element in the Map. In no particular order.
 func (c *PipelineNamespaceCache) ForEach(callback func(*v1.PipelineActivity)) {
 	onEntry := func(key interface{}, value interface{}) bool {
 		pipeline, ok := value.(*v1.PipelineActivity)
