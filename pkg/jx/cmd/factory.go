@@ -337,7 +337,12 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 	}
 	// Use defaults if nothing is specified by the user
 	if namespace == "" {
-		namespace = defaultNamespace
+		devNamespace, _, err := kube.GetDevNamespace(kubeClient, defaultNamespace)
+		if err != nil {
+			return nil, errors.Wrapf(err, "getting the dev namesapce from current namesapce %q",
+				defaultNamespace)
+		}
+		namespace = devNamespace
 	}
 	if name == "" {
 		name = vault.SystemVaultName
