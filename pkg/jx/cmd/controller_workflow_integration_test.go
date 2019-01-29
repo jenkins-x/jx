@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
+	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/workflow"
 	"github.com/stretchr/testify/assert"
@@ -60,6 +61,7 @@ func TestSequentialWorkflow(t *testing.T) {
 		gits.NewGitCLI(),
 		fakeGitProvider,
 		helm.NewHelmCLI("helm", helm.V2, "", true),
+		resources_test.NewMockInstaller(),
 	)
 	o.SetGit(&gits.GitFake{})
 
@@ -174,6 +176,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 		gits.NewGitCLI(),
 		fakeGitProvider,
 		helm.NewHelmCLI("helm", helm.V2, "", true),
+		resources_test.NewMockInstaller(),
 	)
 	o.SetGit(&gits.GitFake{})
 
@@ -336,6 +339,7 @@ func TestParallelWorkflow(t *testing.T) {
 		gits.NewGitCLI(),
 		fakeGitProvider,
 		helm.NewHelmCLI("helm", helm.V2, "", true),
+		resources_test.NewMockInstaller(),
 	)
 	o.SetGit(&gits.GitFake{})
 
@@ -481,6 +485,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 		gits.NewGitCLI(),
 		fakeGitProvider,
 		helm.NewHelmCLI("helm", helm.V2, "", true),
+		resources_test.NewMockInstaller(),
 	)
 	o.SetGit(&gits.GitFake{})
 

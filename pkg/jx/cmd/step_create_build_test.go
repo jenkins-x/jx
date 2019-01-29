@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
+	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
@@ -144,7 +145,7 @@ func testStepCreateBuild(t *testing.T, tempDir string, testcase string, srcDir s
 
 	o := &cmd.StepCreateBuildOptions{}
 	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions, k8sObjects, jxObjects, gits.NewGitCLI(),
-		nil, helm.NewHelmCLI("helm", helm.V2, dirName, true))
+		nil, helm.NewHelmCLI("helm", helm.V2, dirName, true), resources_test.NewMockInstaller())
 	o.Dir = testDir
 
 	actualFile := filepath.Join(testDir, actualBuildFileName)

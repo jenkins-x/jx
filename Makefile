@@ -43,7 +43,7 @@ VERSION := $(shell [ -z "$(ON_EXACT_TAG)" ] && echo "$(TAG)-dev+$(REV)" | sed 's
 else
 VERSION := $(shell cat pkg/version/VERSION)
 endif
-BUILDFLAGS := -ldflags \
+BUILDFLAGS :=  -ldflags \
   " -X $(ROOT_PACKAGE)/pkg/version.Version=$(VERSION)\
 		-X $(ROOT_PACKAGE)/pkg/version.Revision='$(REV)'\
 		-X $(ROOT_PACKAGE)/pkg/version.Branch='$(BRANCH)'\
@@ -52,6 +52,13 @@ BUILDFLAGS := -ldflags \
 
 ifdef DEBUG
 BUILDFLAGS := -gcflags "all=-N -l" $(BUILDFLAGS)
+endif
+
+ifdef PARALLEL_BUILDS
+BUILDFLAGS := -p $(PARALLEL_BUILDS) $(BUILDFLAGS)
+TESTFLAGS := -parallel $(PARALLEL_BUILDS)
+else
+TESTFLAGS := -parallel 8
 endif
 
 print-version: version
@@ -65,7 +72,7 @@ get-test-deps:
 	$(GO_NOMOD) get -u gopkg.in/matm/v1/gocov-html
 
 test:
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -coverprofile=cover.out -failfast -short -parallel 12 ./...
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -coverprofile=cover.out -failfast -short $(TESTFLAGS) ./...
 
 test-report: get-test-deps test
 	@gocov convert cover.out | gocov report
@@ -74,7 +81,7 @@ test-report-html: get-test-deps test
 	@gocov convert cover.out | gocov-html > cover.html && open cover.html
 
 test-slow:
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -parallel 12 -coverprofile=cover.out ./...
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 $(TESTFLAGS) -coverprofile=cover.out ./...
 
 test-slow-report: get-test-deps test-slow
 	@gocov convert cover.out | gocov report
@@ -95,7 +102,7 @@ test-integration-report-html: get-test-deps test-integration
 	@gocov convert cover.out | gocov-html > cover.html && open cover.html
 
 test-slow-integration:
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration -coverprofile=cover.out ./...
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 2 -count=1 -tags=integration -coverprofile=cover.out ./...
 
 test-slow-integration-report: get-test-deps test-slow-integration
 	@gocov convert cover.out | gocov report

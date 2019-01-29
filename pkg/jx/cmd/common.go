@@ -10,8 +10,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/expose"
 
-	"github.com/jenkins-x/jx/pkg/certmanager"
-
+	"github.com/jenkins-x/jx/pkg/kube/resources"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/pkg/errors"
 
@@ -93,6 +92,7 @@ type CommonOptions struct {
 	helm                   helm.Helmer
 	kuber                  kube.Kuber
 	vaultOperatorClient    vaultoperatorclient.Interface
+	resourcesInstaller     resources.Installer
 	modifyDevEnvironmentFn ModifyDevEnvironmentFn
 	modifyEnvironmentFn    ModifyEnvironmentFn
 	environmentsDir        string
@@ -337,6 +337,19 @@ func (o *CommonOptions) Kube() kube.Kuber {
 		o.kuber = kube.NewKubeConfig()
 	}
 	return o.kuber
+}
+
+// SetResourcesInstaller configures the installer for Kubernetes resources
+func (o *CommonOptions) SetResourcesInstaller(installer resources.Installer) {
+	o.resourcesInstaller = installer
+}
+
+// ResourcesInstaller returns the installer for Kubernetes resources
+func (o *CommonOptions) ResourcesInstaller() resources.Installer {
+	if o.resourcesInstaller == nil {
+		o.resourcesInstaller = resources.NewKubeCtlInstaller("", true, true)
+	}
+	return o.resourcesInstaller
 }
 
 func (o *CommonOptions) SetKube(kuber kube.Kuber) {
@@ -765,7 +778,11 @@ func (o *CommonOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
 // todo switch to using expose as a jx plugin
 // get existing config from the devNamespace and run expose in the target environment
 func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) error {
-	return expose.Expose(devNamespace, targetNamespace, password, o.kubeClient, o.Helm(), defaultInstallTimeout)
+	certClient, err := o.CreateCertManagerClient()
+	if err != nil {
+		return errors.Wrap(err, "creating cert-manager client")
+	}
+	return expose.Expose(o.kubeClient, certClient, devNamespace, targetNamespace, password, o.Helm(), defaultInstallTimeout)
 }
 
 func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig, services ...string) error {
@@ -812,10 +829,6 @@ func (o *CommonOptions) ensureAddonServiceAvailable(serviceName string) (string,
 
 	// todo ask if user wants to install addon?
 	return "", nil
-}
-
-func (o *CommonOptions) copyCertmanagerResources(targetNamespace string, ic kube.IngressConfig) error {
-	return certmanager.CopyCertmanagerResources(targetNamespace, ic, o.kubeClient)
 }
 
 func (o *CommonOptions) getJobName() string {

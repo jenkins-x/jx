@@ -20,7 +20,12 @@ pipeline {
         TEAM                = "$BRANCH_NAME-$BUILD_NUMBER".toLowerCase()
         PREVIEW_IMAGE_TAG   = "SNAPSHOT-JX-$BRANCH_NAME-$BUILD_NUMBER"
 
-        // for BDD tests
+
+        // Build and tests configuration (run only 2 builds/tests in parallel 
+        // in order to avoid OOM issue
+        PARALLEL_BUILDS = 2
+
+        // BDD tests configuration
         GIT_PROVIDER_URL     = "https://github.beescloud.com"
         GHE_TOKEN            = "$GHE_CREDS_PSW"
         GINKGO_ARGS          = "-v"

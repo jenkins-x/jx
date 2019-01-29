@@ -3,14 +3,15 @@ package cmd_test
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
 
+	resources_mock "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -273,6 +274,7 @@ func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*
 		&gits.GitFake{},
 		nil,
 		helm_test.NewMockHelmer(),
+		resources_mock.NewMockInstaller(),
 	)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()

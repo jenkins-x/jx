@@ -9,13 +9,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/resources"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
@@ -32,13 +33,13 @@ import (
 // ConfigureTestOptions lets configure the options for use in tests
 // using fake APIs to k8s cluster
 func ConfigureTestOptions(o *CommonOptions, git gits.Gitter, helm helm.Helmer) {
-	ConfigureTestOptionsWithResources(o, nil, nil, git, nil, helm)
+	ConfigureTestOptionsWithResources(o, nil, nil, git, nil, helm, nil)
 }
 
 // ConfigureTestOptions lets configure the options for use in tests
 // using fake APIs to k8s cluster.
 func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Object, jxObjects []runtime.Object,
-	git gits.Gitter, fakeGitProvider *gits.FakeProvider, helm helm.Helmer) {
+	git gits.Gitter, fakeGitProvider *gits.FakeProvider, helm helm.Helmer, resourcesInstaller resources.Installer) {
 	//o.Out = tests.Output()
 	o.BatchMode = true
 	if o.Factory == nil {
@@ -101,6 +102,7 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 		o.fakeGitProvider = fakeGitProvider
 	}
 	o.helm = helm
+	o.resourcesInstaller = resourcesInstaller
 }
 
 //CreateTestEnvironmentDir will create a temporary environment dir for the tests, copying over any existing config,

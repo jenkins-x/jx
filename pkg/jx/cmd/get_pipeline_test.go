@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
+	resources_mock "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -78,6 +79,7 @@ func mockProwConfig(o *cmd.GetPipelineOptions, t *testing.T) {
 		&gits.GitFake{},
 		nil,
 		helm_test.NewMockHelmer(),
+		resources_mock.NewMockInstaller(),
 	)
 	_, _, err = o.JXClientAndDevNamespace()
 	assert.NoError(t, err)

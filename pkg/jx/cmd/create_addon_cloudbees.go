@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"gopkg.in/AlecAivazis/survey.v1"
 	"io"
 	"strings"
+
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/pki"
 	"github.com/jenkins-x/jx/pkg/log"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -161,9 +163,13 @@ To register to get your username/password to to: %s
 			return errors.Wrap(err, "ensuring cert-manager is installed")
 		}
 
+		certClient, err := o.CreateCertManagerClient()
+		if err != nil {
+			return errors.Wrap(err, "creating cert-manager client")
+		}
 		ingressConfig.TLS = true
-		ingressConfig.Issuer = kube.CertmanagerIssuerProd
-		err = kube.CleanCertmanagerResources(client, o.Namespace, ingressConfig)
+		ingressConfig.Issuer = pki.CertManagerIssuerProd
+		err = pki.CreateCertManagerResources(certClient, o.Namespace, ingressConfig)
 		if err != nil {
 			return errors.Wrap(err, "creating cert-manager issuer")
 		}
