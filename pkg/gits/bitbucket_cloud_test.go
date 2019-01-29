@@ -109,6 +109,9 @@ var bitbucketRouter = util.Router{
 	"/repositories/test-user/test-repo/pullrequests/1/comments": util.MethodMap{
 		"POST": "pullrequests.test-comment.json",
 	},
+	"/repositories/test-user/test-repo/issues/1/comments": util.MethodMap{
+		"POST": "issue-comments.issue-1.json",
+	},
 }
 
 func setupGitProvider(url, name, user string) (gits.GitProvider, error) {
@@ -434,23 +437,43 @@ func (suite *BitbucketCloudProviderTestSuite) TestCreateIssue() {
 }
 
 func (suite *BitbucketCloudProviderTestSuite) TestAddPRComment() {
+	comment := "This is my comment. There are many like it but this one is mine."
 	prNumber := 1
+
 	pr := &gits.GitPullRequest{
 		Number: &prNumber,
 		Owner: "test-user",
 		Repo: "test-repo",
 	}
-
-	comment := "This is my comment. There are many like it but this one is mine."
-
 	err := suite.provider.AddPRComment(pr, comment)
-
 	suite.Require().Nil(err)
+
+	pr = &gits.GitPullRequest{
+		Number: &prNumber,
+		Owner: "test-user",
+	}
+	err = suite.provider.AddPRComment(pr, comment)
+	suite.Require().NotNil(err)
 }
 
 func (suite *BitbucketCloudProviderTestSuite) TestCreateIssueComment() {
-	err := suite.provider.CreateIssueComment("", "", 0, "")
+	comment := "This is my comment. There are many like it but this one is mine."
+
+	err := suite.provider.CreateIssueComment(
+		"test-user", 
+		"test-repo", 
+		1, 
+		comment,
+	)
 	suite.Require().Nil(err)
+
+	err = suite.provider.CreateIssueComment(
+		"test-user",
+		"test-repo",
+		0,
+		comment,
+	)
+	suite.Require().NotNil(err)
 }
 
 func (suite *BitbucketCloudProviderTestSuite) TestUpdateRelease() {

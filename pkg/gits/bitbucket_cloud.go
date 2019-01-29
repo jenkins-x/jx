@@ -839,8 +839,21 @@ func (b *BitbucketCloudProvider) AddPRComment(pr *GitPullRequest, comment string
 }
 
 func (b *BitbucketCloudProvider) CreateIssueComment(owner string, repo string, number int, comment string) error {
-	log.Warn("Bitbucket Cloud doesn't support adding issue comments viea the REST API")
-	return nil
+	rawComment := bitbucket.IssueComment{
+		Content: &bitbucket.IssueContent{
+			Raw: comment,
+		},
+	}
+
+	_, err := b.Client.IssueTrackerApi.RepositoriesUsernameRepoSlugIssuesIssueIdCommentsPost(
+		b.Context,
+		strconv.FormatInt(int64(number), 10),
+		owner,
+		repo,
+		rawComment,
+	)
+
+	return err
 }
 
 func (b *BitbucketCloudProvider) HasIssues() bool {
