@@ -4,16 +4,9 @@
 package buildnum_test
 
 import (
-	"reflect"
-<<<<<<< HEAD
-	"time"
-
 	kube "github.com/jenkins-x/jx/pkg/kube"
 	pegomock "github.com/petergtz/pegomock"
-||||||| merged common ancestors
-	"time"
-=======
->>>>>>> fix: regenerated the mock with correct directives for sourcerepoer
+	"reflect"
 )
 
 type MockBuildNumberIssuer struct {
@@ -101,4 +94,21 @@ func (c *BuildNumberIssuer_NextBuildNumber_OngoingVerification) GetAllCapturedAr
 		}
 	}
 	return
+}
+
+func (verifier *VerifierBuildNumberIssuer) Ready() *BuildNumberIssuer_Ready_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Ready", params)
+	return &BuildNumberIssuer_Ready_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type BuildNumberIssuer_Ready_OngoingVerification struct {
+	mock              *MockBuildNumberIssuer
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *BuildNumberIssuer_Ready_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *BuildNumberIssuer_Ready_OngoingVerification) GetAllCapturedArguments() {
 }
