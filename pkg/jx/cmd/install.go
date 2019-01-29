@@ -1199,10 +1199,7 @@ func (options *InstallOptions) buildGitRepositoryOptionsForEnvironments() (*gits
 			if err != nil {
 				return nil, errors.Wrap(err, "determining the git owner for environments")
 			}
-			org, err = kube.GetDevEnvGitOwner(jxClient)
-			if err != nil {
-				return nil, errors.Wrap(err, "determining the git owner for environments")
-			}
+			org, _ = kube.GetDevEnvGitOwner(jxClient)
 			if org == "" {
 				org = user.Username
 			}
