@@ -110,6 +110,9 @@ test-slow-integration-report: get-test-deps test-slow-integration
 test-slow-integration-report-html: get-test-deps test-slow-integration
 	@gocov convert cover.out | gocov-html > cover.html && open cover.html
 
+test-soak:
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 2 -count=1 -tags soak -coverprofile=cover.out ./...
+
 docker-test:
 	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.11 sh -c "rm /usr/bin/git && cd /go/src/github.com/jenkins-x/jx && make test"
 
