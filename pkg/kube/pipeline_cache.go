@@ -1,20 +1,23 @@
 package kube
 
 import (
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"sync"
+	"time"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/tools/cache"
-	"sync"
-	"time"
 )
 
 // PipelineNamespaceCache caches the pipelines for a single namespace
 type PipelineNamespaceCache struct {
 	pipelines sync.Map
-	stop chan struct{}
+	stop      chan struct{}
+	//Flag to indicate whether the cache has done its initial load & is in sync.
+	ready bool
 }
 
 // NewPipelineCache creates a cache of pipelines for a namespace
@@ -22,7 +25,7 @@ func NewPipelineCache(jxClient versioned.Interface, ns string) *PipelineNamespac
 	pipeline := &v1.PipelineActivity{}
 	pipelineListWatch := cache.NewListWatchFromClient(jxClient.JenkinsV1().RESTClient(), "pipelineactivities", ns, fields.Everything())
 
-	namespaceCache := &PipelineNamespaceCache{
+	pipelineCache := &PipelineNamespaceCache{
 		stop: make(chan struct{}),
 	}
 
@@ -31,7 +34,7 @@ func NewPipelineCache(jxClient versioned.Interface, ns string) *PipelineNamespac
 	if pipelines != nil {
 		for _, pipeline := range pipelines.Items {
 			copy := pipeline
-			namespaceCache.pipelines.Store(pipeline.Name, &copy)
+			pipelineCache.pipelines.Store(pipeline.Name, &copy)
 		}
 	}
 	_, pipelineController := cache.NewInformer(
@@ -40,26 +43,35 @@ func NewPipelineCache(jxClient versioned.Interface, ns string) *PipelineNamespac
 		time.Minute*10,
 		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
-				namespaceCache.onPipelineObj(obj, jxClient, ns)
+				pipelineCache.onPipelineObj(obj, jxClient, ns)
 			},
 			UpdateFunc: func(oldObj, newObj interface{}) {
-				namespaceCache.onPipelineObj(newObj, jxClient, ns)
+				pipelineCache.onPipelineObj(newObj, jxClient, ns)
 			},
 			DeleteFunc: func(obj interface{}) {
-				namespaceCache.onPipelineDelete(obj, jxClient, ns)
+				pipelineCache.onPipelineDelete(obj, jxClient, ns)
 			},
 		},
 	)
 
-	go pipelineController.Run(namespaceCache.stop)
+	go pipelineController.Run(pipelineCache.stop)
 
-	return namespaceCache
+	pipelineCache.ready = true
+
+	return pipelineCache
+}
+
+// Ready returns true if this cache has done its initial load and is in sync.
+func (c *PipelineNamespaceCache) Ready() bool {
+	return c.ready
 }
 
 // Stop closes the underlying chanel processing events which stops consuming watch events
 func (c *PipelineNamespaceCache) Stop() {
+	c.ready = false
 	close(c.stop)
 }
+
 // Pipelines returns the pipelines in this namespace sorted in name order
 func (c *PipelineNamespaceCache) Pipelines() []*v1.PipelineActivity {
 	answer := []*v1.PipelineActivity{}
