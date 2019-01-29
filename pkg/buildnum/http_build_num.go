@@ -12,8 +12,10 @@ import (
 )
 
 const (
+	// The URL path for the HTTP endpoint that returns health status.
 	HealthPath = "/health"
-	ReadyPath  = "/ready"
+	// The URL path for the HTTP endpoint that returns ready status.
+	ReadyPath = "/ready"
 )
 
 // HTTPBuildNumberServer runs an HTTP server to serve build numbers, similar to Prow's tot
@@ -50,11 +52,13 @@ func (s *HTTPBuildNumberServer) Start() error {
 	return http.ListenAndServe(":"+strconv.Itoa(s.port), mux)
 }
 
+// health returns either HTTP 204 if the build number service is healthy, otherwise nothing ('cos it's dead).
 func (s *HTTPBuildNumberServer) health(w http.ResponseWriter, r *http.Request) {
 	logrus.Debug("Health check")
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// ready returns either HTTP 204 if the build number service is ready to serve /vend requests, otherwise HTTP 503.
 func (s *HTTPBuildNumberServer) ready(w http.ResponseWriter, r *http.Request) {
 	logrus.Debug("Ready check")
 	if s.issuer.Ready() {
