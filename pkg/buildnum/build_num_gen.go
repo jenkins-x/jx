@@ -2,10 +2,11 @@
 package buildnum
 
 import (
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"sync"
 
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+
+	v1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
 )
 
@@ -28,6 +29,11 @@ func NewCRDBuildNumGen(jxClient versioned.Interface, ns string) *PipelineActivit
 		pipelineCache:    kube.NewPipelineCache(jxClient, ns),
 		activitiesGetter: jxClient.JenkinsV1().PipelineActivities(ns),
 	}
+}
+
+// Ready returns true if the generator's cache has done its initial load.
+func (g *PipelineActivityBuildNumGen) Ready() bool {
+	return g.pipelineCache.Ready()
 }
 
 // NextBuildNumber returns the next build number for the specified pipeline ID, storing the sequence in K8S.

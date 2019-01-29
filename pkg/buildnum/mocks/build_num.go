@@ -4,10 +4,11 @@
 package buildnum_test
 
 import (
-	kube "github.com/jenkins-x/jx/pkg/kube"
-	pegomock "github.com/petergtz/pegomock"
 	"reflect"
 	"time"
+
+	kube "github.com/jenkins-x/jx/pkg/kube"
+	pegomock "github.com/petergtz/pegomock"
 )
 
 type MockBuildNumberIssuer struct {
@@ -35,6 +36,21 @@ func (mock *MockBuildNumberIssuer) NextBuildNumber(_param0 kube.PipelineID) (str
 		}
 	}
 	return ret0, ret1
+}
+
+func (mock *MockBuildNumberIssuer) Ready() bool {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockBuildNumberIssuer().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("Ready", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
+	var ret0 bool
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(bool)
+		}
+	}
+	return ret0
 }
 
 func (mock *MockBuildNumberIssuer) VerifyWasCalledOnce() *VerifierBuildNumberIssuer {
