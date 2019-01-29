@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/log"
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -67,6 +68,7 @@ func (o *DeleteAddoncoreOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	log.Infof("Addon %s deleted successfully\n", util.ColorInfo(o.ReleaseName))
 
 	return nil
 }

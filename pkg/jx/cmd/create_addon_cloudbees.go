@@ -254,7 +254,7 @@ To register to get your username/password to to: %s
 		}
 	}
 
-	log.Infof("Addon installed successfully.\n Run `jx cloudbees` to open the app in a browser\n")
+	log.Infof("Addon installed successfully.\n\n  %s Open the app in a browser\n\n", util.ColorInfo("jx cloudbees"))
 
 	return nil
 }
