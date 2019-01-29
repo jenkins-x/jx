@@ -30,7 +30,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
-	chgit "github.com/jenkins-x/chyle/chyle/git"
+	chgit "github.com/antham/chyle/chyle/git"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
