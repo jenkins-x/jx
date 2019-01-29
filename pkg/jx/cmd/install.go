@@ -608,6 +608,7 @@ func (options *InstallOptions) Run() error {
 
 	log.Infof("\nYour Kubernetes context is now set to the namespace: %s \n", util.ColorInfo(ns))
 	log.Infof("To switch back to your original namespace use: %s\n", util.ColorInfo("jx namespace "+originalNs))
+	log.Infof("Or to use this context/namespace in just one terminal use: %s\n", util.ColorInfo("jx shell"))
 	log.Infof("For help on switching contexts see: %s\n\n", util.ColorInfo("https://jenkins-x.io/developing/kube-context/"))
 
 	log.Infof("To import existing projects into Jenkins:       %s\n", util.ColorInfo("jx import"))
