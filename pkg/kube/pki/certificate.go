@@ -19,6 +19,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// CertSecretPrefix used as prefix for all certificate object names
 const CertSecretPrefix = "tls-"
 
 // Certificate keeps some information related to a certificate issued by cert-manager
@@ -53,6 +54,7 @@ func WaitCertificateIssuedReady(client certclient.Interface, name string, ns str
 	return nil
 }
 
+// WaitCertificateExists waits until the timeout for the certificate with the provided name to be available in the certificates list
 func WaitCertificateExists(client certclient.Interface, name string, ns string, timeout time.Duration) error {
 	err := wait.PollImmediate(time.Second, timeout, func() (bool, error) {
 		_, err := client.CertmanagerV1alpha1().Certificates(ns).Get(name, metav1.GetOptions{})
