@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Netflix/go-expect"
+	expect "github.com/Netflix/go-expect"
 
 	"gopkg.in/AlecAivazis/survey.v1/core"
 
@@ -33,7 +33,8 @@ func init() {
 }
 
 func TestObjectType(t *testing.T) {
-	values, _ := GenerateValuesAsYaml(t, "objectType.test.schema.json",
+	values, _, err := GenerateValuesAsYaml(t, "objectType.test.schema.json", make(map[string]interface{}), false, false,
+		false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			console.ExpectString("Enter a value for name")
@@ -44,10 +45,13 @@ func TestObjectType(t *testing.T) {
   anotherNestedObject:
     name: cheese
 `, values)
+	assert.NoError(t, err)
 }
 
 func TestDescriptionAndTitle(t *testing.T) {
-	values, _ := GenerateValuesAsYaml(t, "descriptionAndTitle.test.schema.json",
+	values, _, err := GenerateValuesAsYaml(t, "descriptionAndTitle.test.schema.json", make(map[string]interface{}),
+		false,
+		false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test explicit question
@@ -64,14 +68,112 @@ func TestDescriptionAndTitle(t *testing.T) {
 			console.SendLine("UK")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 	assert.Equal(t, `address: '?'
 country: UK
 name: Pete
 `, values)
 }
 
+func TestAutoAcceptDefaultValues(t *testing.T) {
+	values, _, err := GenerateValuesAsYaml(t, "autoAcceptDefaultValues.test.schema.json", make(map[string]interface{}),
+		false, false,
+		true, false,
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			// Test explicit question
+			console.ExpectString("What is your name? John Smith [Automatically accepted default value]")
+			console.ExpectEOF()
+		})
+	assert.Equal(t, `name: John Smith
+`, values)
+	assert.NoError(t, err)
+}
+
+func TestAcceptExisting(t *testing.T) {
+	values, _, err := GenerateValuesAsYaml(t, "acceptExisting.test.schema.json", map[string]interface{}{
+		"name": "John Smith",
+	},
+		false, false,
+		false, false,
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			// Test explicit question
+			console.ExpectString("What is your name? John Smith [Automatically accepted existing value]")
+			console.ExpectEOF()
+		})
+	assert.Equal(t, `name: John Smith
+`, values)
+	assert.NoError(t, err)
+}
+
+func TestAskExisting(t *testing.T) {
+	values, _, err := GenerateValuesAsYaml(t, "askExisting.test.schema.json", map[string]interface{}{
+		"name": "John Smith",
+	},
+		true,
+		false, false, false,
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			// Test explicit question
+			console.ExpectString("What is your name? [? for help] (John Smith)")
+			console.SendLine("")
+			console.ExpectEOF()
+		})
+	assert.NoError(t, err)
+	assert.Equal(t, `name: John Smith
+`, values)
+}
+
+func TestNoAskAndAutoAcceptDefaultsWithExisting(t *testing.T) {
+	values, _, err := GenerateValuesAsYaml(t, "noAskAndAutoAcceptDefaultsWithExisting.test.schema.json",
+		map[string]interface{}{
+			"name": "John Smith",
+		},
+		false,
+		true, true, false,
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			// Test explicit question
+			console.ExpectString("What is your name? John Smith [Automatically accepted existing value]")
+			console.ExpectString("Enter a value for country UK [Automatically accepted default value]")
+			console.ExpectEOF()
+		})
+	assert.NoError(t, err)
+	assert.Equal(t, `country: UK
+name: John Smith
+`, values)
+}
+
+func TestIgnoreMissingValues(t *testing.T) {
+	values, _, err := GenerateValuesAsYaml(t, "ignoreMissingValues.test.schema.json", make(map[string]interface{}),
+		false,
+		true,
+		false, true,
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			console.ExpectEOF()
+		})
+	assert.NoError(t, err)
+	assert.Equal(t, `{}
+`, values)
+}
+
+func TestErrorMissingValues(t *testing.T) {
+	_, _, err := GenerateValuesAsYaml(t, "ignoreMissingValues.test.schema.json", make(map[string]interface{}),
+		false,
+		true,
+		false, false,
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			console.ExpectEOF()
+		})
+	assert.Error(t, err)
+}
+
 func TestDefaultValues(t *testing.T) {
-	values, _ := GenerateValuesAsYaml(t, "defaultValues.test.schema.json",
+	values, _, err := GenerateValuesAsYaml(t, "defaultValues.test.schema.json", make(map[string]interface{}), false,
+		false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test default value
@@ -85,6 +187,7 @@ func TestDefaultValues(t *testing.T) {
 			console.SendLine("")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 	assert.Equal(t, `booleanValue: false
 integerValue: 123
 numberValue: 123.4
@@ -93,7 +196,9 @@ stringValue: UK
 }
 
 func TestConstValues(t *testing.T) {
-	values, _ := GenerateValuesAsYaml(t, "constValues.test.schema.json",
+	values, _, err := GenerateValuesAsYaml(t, "constValues.test.schema.json", make(map[string]interface{}), false,
+		false,
+		false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test default value
@@ -107,6 +212,7 @@ func TestConstValues(t *testing.T) {
 			console.SendLine("")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 	assert.Equal(t, `booleanValue: false
 integerValue: 123
 numberValue: 123.4
@@ -115,7 +221,9 @@ stringValue: UK
 }
 
 func TestBasicTypesValidation(t *testing.T) {
-	GenerateValuesAsYaml(t, "basicTypesValidation.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "basicTypesValidation.test.schema.json", make(map[string]interface{}), false,
+		false,
+		false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			console.ExpectString("Enter a value for numberValue")
@@ -130,10 +238,12 @@ func TestBasicTypesValidation(t *testing.T) {
 			console.SendLine("123")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestBasicTypes(t *testing.T) {
-	values, _ := GenerateValuesAsYaml(t, "basicTypes.test.schema.json",
+	values, _, err := GenerateValuesAsYaml(t, "basicTypes.test.schema.json", make(map[string]interface{}), false, false,
+		false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -153,10 +263,11 @@ nullValue: null
 numberValue: 123.4
 stringValue: hello
 `, values)
+	assert.NoError(t, err)
 }
 
 func TestMultipleOf(t *testing.T) {
-	GenerateValuesAsYaml(t, "multipleOf.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "multipleOf.test.schema.json", make(map[string]interface{}), false, false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -172,10 +283,11 @@ func TestMultipleOf(t *testing.T) {
 			console.SendLine("20")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestMaximum(t *testing.T) {
-	GenerateValuesAsYaml(t, "maximum.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "maximum.test.schema.json", make(map[string]interface{}), false, false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -191,10 +303,12 @@ func TestMaximum(t *testing.T) {
 			console.SendLine("2")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestExclusiveMaximum(t *testing.T) {
-	GenerateValuesAsYaml(t, "exclusiveMaximum.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "exclusiveMaximum.test.schema.json", make(map[string]interface{}), false, false, false,
+		false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -210,10 +324,11 @@ func TestExclusiveMaximum(t *testing.T) {
 			console.SendLine("2")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestMinimum(t *testing.T) {
-	GenerateValuesAsYaml(t, "minimum.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "minimum.test.schema.json", make(map[string]interface{}), false, false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -229,10 +344,12 @@ func TestMinimum(t *testing.T) {
 			console.SendLine("21")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestExclusiveMinimum(t *testing.T) {
-	GenerateValuesAsYaml(t, "exclusiveMinimum.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "exclusiveMinimum.test.schema.json", make(map[string]interface{}), false, false, false,
+		false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -248,10 +365,11 @@ func TestExclusiveMinimum(t *testing.T) {
 			console.SendLine("21")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestMaxLength(t *testing.T) {
-	GenerateValuesAsYaml(t, "maxLength.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "maxLength.test.schema.json", make(map[string]interface{}), false, false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -262,10 +380,11 @@ func TestMaxLength(t *testing.T) {
 			console.SendLine("short")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestMinLength(t *testing.T) {
-	GenerateValuesAsYaml(t, "minLength.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "minLength.test.schema.json", make(map[string]interface{}), false, false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -276,10 +395,11 @@ func TestMinLength(t *testing.T) {
 			console.SendLine("iamlongerthan10")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestPattern(t *testing.T) {
-	GenerateValuesAsYaml(t, "pattern.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "pattern.test.schema.json", make(map[string]interface{}), false, false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -290,10 +410,11 @@ func TestPattern(t *testing.T) {
 			console.SendLine("123")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestRequired(t *testing.T) {
-	GenerateValuesAsYaml(t, "required.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "required.test.schema.json", make(map[string]interface{}), false, false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -304,10 +425,11 @@ func TestRequired(t *testing.T) {
 			console.SendLine("Hello")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestMinProperties(t *testing.T) {
-	GenerateValuesAsYaml(t, "minProperties.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "minProperties.test.schema.json", make(map[string]interface{}), false, false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -322,10 +444,11 @@ func TestMinProperties(t *testing.T) {
 			console.SendLine("def")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestMaxProperties(t *testing.T) {
-	GenerateValuesAsYaml(t, "maxProperties.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "maxProperties.test.schema.json", make(map[string]interface{}), false, false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -341,10 +464,11 @@ func TestMaxProperties(t *testing.T) {
 			console.SendLine("")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestDateTime(t *testing.T) {
-	GenerateValuesAsYaml(t, "dateTime.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "dateTime.test.schema.json", make(map[string]interface{}), false, false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -356,10 +480,11 @@ func TestDateTime(t *testing.T) {
 			console.SendLine("2006-01-02T15:04:05-07:00")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestDate(t *testing.T) {
-	GenerateValuesAsYaml(t, "date.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "date.test.schema.json", make(map[string]interface{}), false, false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -371,10 +496,11 @@ func TestDate(t *testing.T) {
 			console.SendLine("2006-01-02")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestTime(t *testing.T) {
-	GenerateValuesAsYaml(t, "time.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "time.test.schema.json", make(map[string]interface{}), false, false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -386,10 +512,12 @@ func TestTime(t *testing.T) {
 			console.SendLine("15:04:05-07:00")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestPassword(t *testing.T) {
-	values, secrets := GenerateValuesAsYaml(t, "password.test.schema.json",
+	values, secrets, err := GenerateValuesAsYaml(t, "password.test.schema.json", make(map[string]interface{}), false,
+		false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -406,10 +534,13 @@ func TestPassword(t *testing.T) {
 		Value: "abc",
 		Key:   "password",
 	})
+	assert.NoError(t, err)
 }
 
 func TestToken(t *testing.T) {
-	values, secrets := GenerateValuesAsYaml(t, "token.test.schema.json",
+	values, secrets, err := GenerateValuesAsYaml(t, "token.test.schema.json", make(map[string]interface{}), false,
+		false,
+		false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -426,10 +557,12 @@ func TestToken(t *testing.T) {
 		Value: "abc",
 		Key:   "token",
 	})
+	assert.NoError(t, err)
 }
 
 func TestEmail(t *testing.T) {
-	GenerateValuesAsYaml(t, "email.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "email.test.schema.json", make(map[string]interface{}), false, false, false,
+		false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -441,10 +574,11 @@ func TestEmail(t *testing.T) {
 			console.SendLine("Maurice Gibb <mg@example.com>")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestIdnEmail(t *testing.T) {
-	GenerateValuesAsYaml(t, "idnemail.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "idnemail.test.schema.json", make(map[string]interface{}), false, false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -456,10 +590,11 @@ func TestIdnEmail(t *testing.T) {
 			console.SendLine("Maurice Gibb <mg@example.com>")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestHostname(t *testing.T) {
-	GenerateValuesAsYaml(t, "hostname.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "hostname.test.schema.json", make(map[string]interface{}), false, false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -471,10 +606,11 @@ func TestHostname(t *testing.T) {
 			console.SendLine("example.com")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestIdnHostname(t *testing.T) {
-	GenerateValuesAsYaml(t, "idnhostname.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "idnhostname.test.schema.json", make(map[string]interface{}), false, false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -486,10 +622,11 @@ func TestIdnHostname(t *testing.T) {
 			console.SendLine("example.com")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestIpv4(t *testing.T) {
-	GenerateValuesAsYaml(t, "ipv4.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "ipv4.test.schema.json", make(map[string]interface{}), false, false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -501,10 +638,11 @@ func TestIpv4(t *testing.T) {
 			console.SendLine("127.0.0.1")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestIpv6(t *testing.T) {
-	GenerateValuesAsYaml(t, "ipv6.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "ipv6.test.schema.json", make(map[string]interface{}), false, false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -516,10 +654,11 @@ func TestIpv6(t *testing.T) {
 			console.SendLine("::1")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestUri(t *testing.T) {
-	GenerateValuesAsYaml(t, "uri.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "uri.test.schema.json", make(map[string]interface{}), false, false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -530,10 +669,11 @@ func TestUri(t *testing.T) {
 			console.SendLine("https://example.com")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestUriReference(t *testing.T) {
-	GenerateValuesAsYaml(t, "uriReference.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "uriReference.test.schema.json", make(map[string]interface{}), false, false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -544,10 +684,11 @@ func TestUriReference(t *testing.T) {
 			console.SendLine("../resource.txt")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
 }
 
 func TestJSONPointer(t *testing.T) {
-	GenerateValuesAsYaml(t, "jsonPointer.test.schema.json",
+	_, _, err := GenerateValuesAsYaml(t, "jsonPointer.test.schema.json", make(map[string]interface{}), false, false, false, false,
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -558,10 +699,14 @@ func TestJSONPointer(t *testing.T) {
 			console.SendLine("/abc")
 			console.ExpectEOF()
 		})
+	assert.NoError(t, err)
+
 }
 
-func GenerateValuesAsYaml(t *testing.T, schemaName string, answerQuestions func(console *tests.
-	ConsoleWrapper, donec chan struct{})) (string, []*GeneratedSecret) {
+func GenerateValuesAsYaml(t *testing.T, schemaName string, existingValues map[string]interface{},
+	askExisting bool, noAsk bool, autoAcceptDefaults bool, ignoreMissingValues bool, answerQuestions func(
+		console *tests.
+			ConsoleWrapper, donec chan struct{})) (string, []*GeneratedSecret, error) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	t.Parallel()
 	secrets := make([]*GeneratedSecret, 0)
@@ -585,13 +730,22 @@ func GenerateValuesAsYaml(t *testing.T, schemaName string, answerQuestions func(
 	donec := make(chan struct{})
 	go answerQuestions(console, donec)
 	assert.NoError(t, err)
-	result, err := options.GenerateValues(data, make([]string, 0), console.In, console.Out, console.Err)
-	assert.NoError(t, err)
+	result, runErr := options.GenerateValues(
+		data,
+		make([]string, 0),
+		existingValues,
+		askExisting,
+		autoAcceptDefaults,
+		noAsk,
+		ignoreMissingValues,
+		console.In,
+		console.Out,
+		console.Err)
 	err = console.Close()
 	<-donec
 	assert.NoError(t, err)
 	yaml, err := yaml.JSONToYAML(result)
 	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
 	assert.NoError(t, err)
-	return string(yaml), secrets
+	return string(yaml), secrets, runErr
 }

@@ -1,28 +1,20 @@
 package cmd
 
 import (
+	"fmt"
 	"io"
-	"strings"
+
+	"github.com/jenkins-x/jx/pkg/apps"
+	"github.com/jenkins-x/jx/pkg/io/secrets"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/environments"
 
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/helm/pkg/proto/hapi/chart"
-
-	"fmt"
-
-	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/addon"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -50,6 +42,8 @@ type UpgradeAppsOptions struct {
 	Alias    string
 	Username string
 	Password string
+
+	HelmUpdate bool
 
 	Version string
 	All     bool
@@ -104,6 +98,8 @@ func NewCmdUpgradeApps(f Factory, in terminal.FileReader, out terminal.FileWrite
 	cmd.Flags().StringVarP(&o.Namespace, "namespace", "", "", "The Namespace to promote to [--no-gitops]")
 	cmd.Flags().StringArrayVarP(&o.Set, "set", "s", []string{},
 		"The Helm parameters to pass in while upgrading [--no-gitops]")
+	cmd.Flags().BoolVarP(&o.HelmUpdate, optionHelmUpdate, "", true,
+		"Should we run helm update first to ensure we use the latest version (available when NOT using GitOps for your dev environment)")
 
 	return cmd
 }
@@ -115,6 +111,18 @@ func (o *UpgradeAppsOptions) Run() error {
 		o.Repo = o.DevEnv.Spec.TeamSettings.AppsRepository
 	}
 
+	opts := apps.InstallOptions{
+		In:        o.In,
+		DevEnv:    o.DevEnv,
+		Verbose:   o.Verbose,
+		Err:       o.Err,
+		Out:       o.Out,
+		GitOps:    o.GitOps,
+		BatchMode: o.BatchMode,
+
+		Helmer: o.Helm(),
+	}
+
 	if o.GitOps {
 		msg := "Unable to specify --%s when using GitOps for your dev environment"
 		if o.Namespace != "" {
@@ -123,6 +131,25 @@ func (o *UpgradeAppsOptions) Run() error {
 		if len(o.Set) > 0 {
 			return util.InvalidOptionf(optionSet, o.ReleaseName, msg, optionSet)
 		}
+		if o.SecretsLocation() != secrets.VaultLocationKind {
+			return fmt.Errorf("cannot install apps without a vault when using GitOps for your dev environment")
+		}
+		if !o.HelmUpdate {
+			return util.InvalidOptionf(optionHelmUpdate, o.HelmUpdate, msg, optionHelmUpdate)
+		}
+		environmentsDir, err := o.EnvironmentsDir()
+		if err != nil {
+			return errors.Wrapf(err, "getting environments dir")
+		}
+		opts.EnvironmentsDir = environmentsDir
+
+		gitProvider, _, err := o.createGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
+		if err != nil {
+			return errors.Wrapf(err, "creating git provider for %s", o.DevEnv.Spec.Source.URL)
+		}
+		opts.GitProvider = gitProvider
+		opts.ConfigureGitFn = o.ConfigureGitCallback
+		opts.Gitter = o.Git()
 	}
 	if !o.GitOps {
 		msg := "Unable to specify --%s when NOT using GitOps for your dev environment"
@@ -132,248 +159,45 @@ func (o *UpgradeAppsOptions) Run() error {
 		if o.Version != "" {
 			return util.InvalidOptionf(optionVersion, o.ReleaseName, msg, optionVersion)
 		}
+		jxClient, _, err := o.JXClientAndDevNamespace()
+		if err != nil {
+			return errors.Wrapf(err, "getting jx client")
+		}
+		kubeClient, _, err := o.KubeClientAndDevNamespace()
+		if err != nil {
+			return errors.Wrapf(err, "getting kubeClient")
+		}
+		opts.Namespace = o.Namespace
+		opts.KubeClient = kubeClient
+		opts.JxClient = jxClient
+		opts.InstallTimeout = defaultInstallTimeout
 	}
 
-	if o.GitOps {
-		err := o.createPRs()
+	if o.SecretsLocation() == secrets.VaultLocationKind {
+		teamName, _, err := o.TeamAndEnvironmentNames()
 		if err != nil {
 			return err
 		}
-	} else {
-		err := o.upgradeApps()
+		opts.TeamName = teamName
+		client, err := o.CreateSystemVaultClient("")
 		if err != nil {
 			return err
 		}
+		opts.VaultClient = &client
 	}
-	return nil
-}
 
-func (o *UpgradeAppsOptions) createPRs() error {
-	var branchNameText string
-	var title string
-	var message string
-
+	app := ""
 	if len(o.Args) > 1 {
-		return fmt.Errorf("specify at most one app to upgrade")
-	} else if len(o.Args) == 0 {
-		o.All = true
-		branchNameText = fmt.Sprintf("upgrade-all-apps")
-		title = fmt.Sprintf("Upgrade all apps")
-		message = fmt.Sprintf("Upgrade all apps:\n")
-	} else {
-		version := o.Version
-		if version == "" {
-			version = "latest"
-		}
-		branchNameText = fmt.Sprintf("upgrade-app-%s-%s", o.Args[0], version)
-	}
-	upgraded := false
-	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
-		templates map[string]string, dir string) error {
-		for _, d := range requirements.Dependencies {
-			upgrade := false
-			// We need to ignore the platform
-			if d.Name == "jenkins-x-platform" {
-				upgrade = false
-			} else if o.All {
-				upgrade = true
-			} else {
-				if d.Name == o.Args[0] && d.Alias == o.Alias {
-					upgrade = true
-
-				}
-			}
-			if upgrade {
-				upgraded = true
-				version := o.Version
-				if o.All || version == "" {
-					var err error
-					version, err = helm.GetLatestVersion(d.Name, o.Repo, o.Username, o.Password, o.Helm())
-					if err != nil {
-						return err
-					}
-					if o.Verbose {
-						log.Infof("No version specified so using latest version which is %s\n", util.ColorInfo(version))
-					}
-				}
-				// Do the upgrade
-				oldVersion := d.Version
-				d.Version = version
-				if !o.All {
-					title = fmt.Sprintf("Upgrade %s to %s", o.Args[0], version)
-					message = fmt.Sprintf("Upgrade %s from %s to %s", o.Args[0], oldVersion, version)
-				} else {
-					message = fmt.Sprintf("%s\n* %s from %s to %s", message, d.Name, oldVersion, version)
-				}
-			}
-		}
-		return nil
-	}
-	gitProvider, _, err := o.createGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
-	if err != nil {
-		return errors.Wrapf(err, "creating git provider for %s", o.DevEnv.Spec.Source.URL)
-	}
-	environmentsDir, err := o.EnvironmentsDir()
-	if err != nil {
-		return errors.Wrapf(err, "getting environments dir")
+		return o.Cmd.Help()
+	} else if len(o.Args) == 1 {
+		app = o.Args[0]
 	}
 
-	options := environments.EnvironmentPullRequestOptions{
-		ConfigGitFn:   o.ConfigureGitCallback,
-		Gitter:        o.Git(),
-		ModifyChartFn: modifyChartFn,
-		GitProvider:   gitProvider,
-	}
-	_, err = options.Create(o.DevEnv, &branchNameText, &title, &message, environmentsDir, nil)
-	if err != nil {
-		return err
+	var version string
+	if o.Version != "" {
+		version = o.Version
 	}
 
-	if !upgraded {
-		log.Infof("No upgrades available\n")
-	}
-	return nil
-}
+	return opts.UpgradeApp(app, version, o.Repo, o.Username, o.Password, o.Alias, o.HelmUpdate)
 
-func (o *UpgradeAppsOptions) upgradeApps() error {
-	err := o.Helm().UpdateRepo()
-	if err != nil {
-		return err
-	}
-	ns := o.Namespace
-	if ns == "" {
-		_, ns, err = o.JXClientAndDevNamespace()
-		if err != nil {
-			return err
-		}
-	}
-
-	client, err := o.KubeClient()
-	if err != nil {
-		return err
-	}
-	o.devNamespace, _, err = kube.GetDevNamespace(client, ns)
-	if err != nil {
-		return err
-	}
-
-	appConfig, err := addon.LoadAddonsConfig()
-	if err != nil {
-		return err
-	}
-	appEnabled := map[string]bool{}
-	for _, app := range appConfig.Addons {
-		if app.Enabled {
-			appEnabled[app.Name] = true
-		}
-	}
-	statusMap, err := o.Helm().StatusReleases(ns)
-	if err != nil {
-		log.Warnf("Failed to find Helm installs: %s\n", err)
-	}
-
-	charts := kube.AddonCharts
-	keys := []string{}
-	if len(o.Args) > 0 {
-		for _, k := range o.Args {
-			chart := charts[k]
-			if chart == "" {
-				return errors.Wrapf(err, "failed to match app %s", k)
-			}
-			keys = append(keys, k)
-		}
-	} else {
-		keys = util.SortedMapKeys(charts)
-	}
-
-	for _, k := range keys {
-		app := charts[k]
-		status := statusMap[k].Status
-		name := k
-		if name == k {
-			name = "kube-cd"
-		}
-		if status != "" {
-			log.Infof("Upgrading %s app %s...\n", util.ColorInfo(name), util.ColorInfo(app))
-
-			valueFiles := []string{}
-			valueFiles, err = helm.AppendMyValues(valueFiles)
-			if err != nil {
-				return errors.Wrap(err, "failed to append the myvalues.yaml file")
-			}
-
-			values := []string{}
-			for _, vs := range o.Set {
-				values = append(values, strings.Split(vs, ",")...)
-			}
-
-			config := &v1.ConfigMap{}
-			plugins := &v1.ConfigMap{}
-			if k == kube.DefaultProwReleaseName {
-				// lets backup any Prow config as we should never replace this, eventually we'll move config to a git repo so this is temporary
-				config, plugins, err = o.backupConfigs()
-				if err != nil {
-					return errors.Wrap(err, "backing up the configuration")
-				}
-			}
-			err = o.Helm().UpgradeChart(app, k, ns, "", false, -1, false, false, values, valueFiles, "",
-				o.Username, o.Password)
-			if err != nil {
-				log.Warnf("Failed to upgrade %s app %s: %v\n", name, app, err)
-			}
-
-			if k == kube.DefaultProwReleaseName {
-				err = o.restoreConfigs(config, plugins)
-				if err != nil {
-					return err
-				}
-			}
-
-			log.Infof("Upgraded %s app %s\n", util.ColorInfo(name), util.ColorInfo(app))
-		}
-	}
-	return nil
-}
-
-func (o *UpgradeAppsOptions) restoreConfigs(config *v1.ConfigMap, plugins *v1.ConfigMap) error {
-	client, err := o.KubeClient()
-	if err != nil {
-		return err
-	}
-	var err1 error
-	if config != nil {
-		_, err = client.CoreV1().ConfigMaps(o.devNamespace).Get("config", metav1.GetOptions{})
-		if err != nil {
-			_, err = client.CoreV1().ConfigMaps(o.devNamespace).Create(config)
-			if err != nil {
-				b, _ := yaml.Marshal(config)
-				err1 = fmt.Errorf("error restoring config %s\n", string(b))
-			}
-		}
-	}
-	if plugins != nil {
-		_, err = client.CoreV1().ConfigMaps(o.devNamespace).Get("plugins", metav1.GetOptions{})
-		if err != nil {
-			_, err = client.CoreV1().ConfigMaps(o.devNamespace).Create(plugins)
-			if err != nil {
-				b, _ := yaml.Marshal(plugins)
-				err = fmt.Errorf("%v/nerror restoring plugins %s\n", err1, string(b))
-			}
-		}
-	}
-	return err
-}
-
-func (o *UpgradeAppsOptions) backupConfigs() (*v1.ConfigMap, *v1.ConfigMap, error) {
-	client, err := o.KubeClient()
-	if err != nil {
-		return nil, nil, err
-	}
-	config, _ := client.CoreV1().ConfigMaps(o.devNamespace).Get("config", metav1.GetOptions{})
-	plugins, _ := client.CoreV1().ConfigMaps(o.devNamespace).Get("plugins", metav1.GetOptions{})
-	config = config.DeepCopy()
-	config.ResourceVersion = ""
-	plugins = plugins.DeepCopy()
-	plugins.ResourceVersion = ""
-	return config, plugins, nil
 }
