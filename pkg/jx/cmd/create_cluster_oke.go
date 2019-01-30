@@ -143,7 +143,8 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 	//we assume user has prepared the oci config file under ~/.oci/
 	imagesArray, kubeVersionsArray, shapesArray, latestKubeVersion, err := oke.GetOptionValues()
 	if err != nil {
-		fmt.Println("error")
+		fmt.Println("Error getting OKE option values")
+		return err
 	}
 
 	endpoint := o.Flags.Endpoint
@@ -195,7 +196,10 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			Help:    "This is required parameter",
 		}
 
-		survey.AskOne(prompt, &kubernetesVersion, nil, surveyOpts)
+		err := survey.AskOne(prompt, &kubernetesVersion, nil, surveyOpts)
+		if err != nil {
+			return err
+		}
 	}
 
 	//Get node pool settings
@@ -214,7 +218,10 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			PageSize: 10,
 		}
 
-		survey.AskOne(prompt, &nodeImageName, nil, surveyOpts)
+		err := survey.AskOne(prompt, &nodeImageName, nil, surveyOpts)
+		if err != nil {
+			return err
+		}
 	}
 
 	nodeShape := o.Flags.NodeShape
@@ -227,7 +234,10 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			PageSize: 10,
 		}
 
-		survey.AskOne(prompt, &nodeShape, nil, surveyOpts)
+		err := survey.AskOne(prompt, &nodeShape, nil, surveyOpts)
+		if err != nil {
+			return err
+		}
 	}
 
 	nodePoolSubnetIds := o.Flags.NodePoolSubnetIds
