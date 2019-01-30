@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -259,6 +258,7 @@ func (o *AddAppOptions) Run() error {
 					log.Infof("Generated values.yaml:\n\n%v\n", util.ColorInfo(string(valuesYaml)))
 				}
 
+				var secretsYaml []byte
 				// We write a secret template into the chart, append the values for the generated secrets to values.yaml
 				if len(secrets) > 0 {
 					if useVault {
@@ -286,47 +286,68 @@ func (o *AddAppOptions) Run() error {
 						allSecrets := map[string][]*surveyutils.GeneratedSecret{
 							appsGeneratedSecretKey: secrets,
 						}
-						ybs, err := json.Marshal(allSecrets)
+						secretsYaml, err = yaml.Marshal(allSecrets)
 						if err != nil {
 							return err
 						}
-						valuesYaml = append(valuesYaml, ybs...)
 					}
 				}
 
 				if err != nil {
 					return err
 				}
-				if !o.GitOps {
-					if len(o.ValueFiles) > 0 && schema != nil {
-						log.Warnf("values.yaml specified by --valuesFiles will be used despite presence of schema in app")
-					} else if schema != nil {
-						valuesFile, err := ioutil.TempFile("", fmt.Sprintf("%s-values.yaml", app))
-						defer func() {
-							err = valuesFile.Close()
-							if err != nil {
-								log.Warnf("Error closing %s because %v\n", valuesFile.Name(), err)
-							}
-							err = util.DeleteFile(valuesFile.Name())
-							if err != nil {
-								log.Warnf("Error deleting %s because %v\n", valuesFile.Name(), err)
-							}
-						}()
+				if len(o.ValueFiles) > 0 && schema != nil {
+					log.Warnf("values.yaml specified by --valuesFiles will be used despite presence of schema in app")
+				} else if schema != nil {
+					valuesFile, err := ioutil.TempFile("", fmt.Sprintf("%s-values.yaml", app))
+					defer func() {
+						err = valuesFile.Close()
 						if err != nil {
-							return err
+							log.Warnf("Error closing %s because %v\n", valuesFile.Name(), err)
 						}
-						_, err = valuesFile.Write(valuesYaml)
+						err = util.DeleteFile(valuesFile.Name())
 						if err != nil {
-							return err
+							log.Warnf("Error deleting %s because %v\n", valuesFile.Name(), err)
 						}
-						o.ValueFiles = []string{
-							valuesFile.Name(),
-						}
-					}
-
+					}()
 					if err != nil {
 						return err
 					}
+					_, err = valuesFile.Write(valuesYaml)
+					if err != nil {
+						return err
+					}
+
+					o.ValueFiles = []string{
+						valuesFile.Name(),
+					}
+					if !o.GitOps {
+						if len(secretsYaml) > 0 {
+							secretsFile, err := ioutil.TempFile("", fmt.Sprintf("%s-secrets.yaml", app))
+							defer func() {
+								err = secretsFile.Close()
+								if err != nil {
+									log.Warnf("Error closing %s because %v\n", secretsFile.Name(), err)
+								}
+								err = util.DeleteFile(secretsFile.Name())
+								if err != nil {
+									log.Warnf("Error deleting %s because %v\n", secretsFile.Name(), err)
+								}
+							}()
+							if err != nil {
+								return err
+							}
+							_, err = secretsFile.Write(secretsYaml)
+							if err != nil {
+								return err
+							}
+							o.ValueFiles = append(o.ValueFiles, secretsFile.Name())
+						}
+					}
+				}
+
+				if err != nil {
+					return err
 				}
 			}
 

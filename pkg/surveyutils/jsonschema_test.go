@@ -33,23 +33,21 @@ func init() {
 }
 
 func TestObjectType(t *testing.T) {
-	assert.Equal(t, `nestedObject:
-  anotherNestedObject:
-    name: cheese
-`, GenerateValuesAsYaml(t, "objectType.test.schema.json",
+	values, _ := GenerateValuesAsYaml(t, "objectType.test.schema.json",
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			console.ExpectString("Enter a value for name")
 			console.SendLine("cheese")
 			console.ExpectEOF()
-		}))
+		})
+	assert.Equal(t, `nestedObject:
+  anotherNestedObject:
+    name: cheese
+`, values)
 }
 
 func TestDescriptionAndTitle(t *testing.T) {
-	assert.Equal(t, `address: '?'
-country: UK
-name: Pete
-`, GenerateValuesAsYaml(t, "descriptionAndTitle.test.schema.json",
+	values, _ := GenerateValuesAsYaml(t, "descriptionAndTitle.test.schema.json",
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test explicit question
@@ -65,15 +63,15 @@ name: Pete
 			console.ExpectString("Enter a value for country")
 			console.SendLine("UK")
 			console.ExpectEOF()
-		}))
+		})
+	assert.Equal(t, `address: '?'
+country: UK
+name: Pete
+`, values)
 }
 
 func TestDefaultValues(t *testing.T) {
-	assert.Equal(t, `booleanValue: false
-integerValue: 123
-numberValue: 123.4
-stringValue: UK
-`, GenerateValuesAsYaml(t, "defaultValues.test.schema.json",
+	values, _ := GenerateValuesAsYaml(t, "defaultValues.test.schema.json",
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test default value
@@ -86,15 +84,16 @@ stringValue: UK
 			console.ExpectString("Enter a value for integerValue (123)")
 			console.SendLine("")
 			console.ExpectEOF()
-		}))
-}
-
-func TestConstValues(t *testing.T) {
+		})
 	assert.Equal(t, `booleanValue: false
 integerValue: 123
 numberValue: 123.4
 stringValue: UK
-`, GenerateValuesAsYaml(t, "constValues.test.schema.json",
+`, values)
+}
+
+func TestConstValues(t *testing.T) {
+	values, _ := GenerateValuesAsYaml(t, "constValues.test.schema.json",
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test default value
@@ -107,7 +106,12 @@ stringValue: UK
 			console.ExpectString("Do you want to set integerValue to 123")
 			console.SendLine("")
 			console.ExpectEOF()
-		}))
+		})
+	assert.Equal(t, `booleanValue: false
+integerValue: 123
+numberValue: 123.4
+stringValue: UK
+`, values)
 }
 
 func TestBasicTypesValidation(t *testing.T) {
@@ -129,12 +133,7 @@ func TestBasicTypesValidation(t *testing.T) {
 }
 
 func TestBasicTypes(t *testing.T) {
-	assert.Equal(t, `booleanValue: true
-integerValue: 123
-nullValue: null
-numberValue: 123.4
-stringValue: hello
-`, GenerateValuesAsYaml(t, "basicTypes.test.schema.json",
+	values, _ := GenerateValuesAsYaml(t, "basicTypes.test.schema.json",
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
 			defer close(donec)
 			// Test boolean type
@@ -147,7 +146,13 @@ stringValue: hello
 			console.ExpectString("Enter a value for integerValue")
 			console.SendLine("123")
 			console.ExpectEOF()
-		}))
+		})
+	assert.Equal(t, `booleanValue: true
+integerValue: 123
+nullValue: null
+numberValue: 123.4
+stringValue: hello
+`, values)
 }
 
 func TestMultipleOf(t *testing.T) {
@@ -383,6 +388,46 @@ func TestTime(t *testing.T) {
 		})
 }
 
+func TestPassword(t *testing.T) {
+	values, secrets := GenerateValuesAsYaml(t, "password.test.schema.json",
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			// Test boolean type
+			console.ExpectString("Enter a value for passwordValue")
+			console.SendLine("abc")
+			console.ExpectEOF()
+		})
+	assert.Equal(t, `passwordValue:
+  kind: Secret
+  name: passwordvalue-secret
+`, values)
+	assert.Contains(t, secrets, &GeneratedSecret{
+		Name:  "passwordvalue-secret",
+		Value: "abc",
+		Key:   "password",
+	})
+}
+
+func TestToken(t *testing.T) {
+	values, secrets := GenerateValuesAsYaml(t, "token.test.schema.json",
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			// Test boolean type
+			console.ExpectString("Enter a value for tokenValue")
+			console.SendLine("abc")
+			console.ExpectEOF()
+		})
+	assert.Equal(t, `tokenValue:
+  kind: Secret
+  name: tokenvalue-secret
+`, values)
+	assert.Contains(t, secrets, &GeneratedSecret{
+		Name:  "tokenvalue-secret",
+		Value: "abc",
+		Key:   "token",
+	})
+}
+
 func TestEmail(t *testing.T) {
 	GenerateValuesAsYaml(t, "email.test.schema.json",
 		func(console *tests.ConsoleWrapper, donec chan struct{}) {
@@ -516,7 +561,7 @@ func TestJSONPointer(t *testing.T) {
 }
 
 func GenerateValuesAsYaml(t *testing.T, schemaName string, answerQuestions func(console *tests.
-	ConsoleWrapper, donec chan struct{})) string {
+	ConsoleWrapper, donec chan struct{})) (string, []*GeneratedSecret) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	t.Parallel()
 	secrets := make([]*GeneratedSecret, 0)
@@ -548,5 +593,5 @@ func GenerateValuesAsYaml(t *testing.T, schemaName string, answerQuestions func(
 	yaml, err := yaml.JSONToYAML(result)
 	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
 	assert.NoError(t, err)
-	return string(yaml)
+	return string(yaml), secrets
 }

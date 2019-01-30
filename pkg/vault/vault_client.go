@@ -6,10 +6,12 @@ import (
 	"github.com/hashicorp/vault/api"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 // Client is an interface for interacting with Vault
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/vault Client -o mocks/vault_client.go --generate-matchers
+// go --generate-matchers
 type Client interface {
 	// Write writes a named secret to the vault
 	Write(secretName string, data map[string]interface{}) (map[string]interface{}, error)
