@@ -56,13 +56,13 @@ func testCreateJenkinsfile(t *testing.T, outDir string, testcase string, srcDir 
 	}
 
 	arguments := &jenkinsfile.CreateJenkinsfileArguments{
-		ConfigFile:          configFile,
-		TemplateFile:        templateFile,
-		OutputFile:          actualFile,
-		ClearContainerNames: true,
+		ConfigFile:   configFile,
+		TemplateFile: templateFile,
+		OutputFile:   actualFile,
 	}
 	if testcase == "prow" || strings.HasPrefix(testcase, "prow_") {
 		arguments.JenkinsfileRunner = true
+		arguments.ClearContainerNames = true
 	}
 
 	err := arguments.GenerateJenkinsfile(resolver)
