@@ -181,7 +181,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		return fmt.Errorf("no build pack for %s exists at directory %s", name, packDir)
 	}
 	jenkinsfileRunner := true
-	pipelineConfig, err := jenkinsfile.LoadPipelineConfig(pipelineFile, resolver, jenkinsfileRunner)
+	pipelineConfig, err := jenkinsfile.LoadPipelineConfig(pipelineFile, resolver, jenkinsfileRunner, false)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load build pack pipeline YAML: %s", pipelineFile)
 	}
@@ -453,9 +453,11 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 	if step.Command != "" {
 		if containerName == "" {
 			containerName = defaultContainerName
+			log.Warnf("No 'agent.container' specified in the pipeline configuration so defaulting to use: %s\n", containerName)
 		}
 		podTemplate := o.PodTemplates[containerName]
 		if podTemplate == nil {
+			log.Warnf("Could not find a pod template for containerName %s\n", containerName)
 			o.MissingPodTemplates[containerName] = true
 			podTemplate = o.PodTemplates[defaultContainerName]
 		}
@@ -524,7 +526,7 @@ func (o *StepCreateTaskOptions) removeUnnecessaryEnvVars(container *corev1.Conta
 	envVars := []corev1.EnvVar{}
 	for _, e := range container.Env {
 		name := e.Name
-		if strings.HasPrefix(name, "GIT_") || strings.HasPrefix(name, "DOCKER_") || strings.HasPrefix(name, "XDG_") {
+		if strings.HasPrefix(name, "DOCKER_") || strings.HasPrefix(name, "XDG_") {
 			continue
 		}
 		envVars = append(envVars, e)

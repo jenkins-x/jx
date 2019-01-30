@@ -147,7 +147,7 @@ func (o *StepCreateBuildTemplateOptions) Run() error {
 				return err
 			}
 			if exists {
-				pipelineConfig, err := jenkinsfile.LoadPipelineConfig(pipelineFile, resolver, true)
+				pipelineConfig, err := jenkinsfile.LoadPipelineConfig(pipelineFile, resolver, true, false)
 				if err != nil {
 					return err
 				}

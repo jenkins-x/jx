@@ -110,10 +110,11 @@ type PipelineConfig struct {
 
 // CreateJenkinsfileArguments contains the arguents to generate a Jenkinsfiles dynamically
 type CreateJenkinsfileArguments struct {
-	ConfigFile        string
-	TemplateFile      string
-	OutputFile        string
-	JenkinsfileRunner bool
+	ConfigFile          string
+	TemplateFile        string
+	OutputFile          string
+	JenkinsfileRunner   bool
+	ClearContainerNames bool
 }
 
 // Validate validates all the arguments are set correctly
@@ -406,7 +407,7 @@ func (s *PipelineStep) ToJenkinsfileStatements() []*Statement {
 }
 
 // LoadPipelineConfig returns the pipeline configuration
-func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfileRunner bool) (*PipelineConfig, error) {
+func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfileRunner bool, clearContainer bool) (*PipelineConfig, error) {
 	config := PipelineConfig{}
 	exists, err := util.FileExists(fileName)
 	if err != nil || !exists {
@@ -422,7 +423,7 @@ func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfil
 	}
 	pipelines := &config.Pipelines
 	pipelines.RemoveWhenStatements(jenkinsfileRunner)
-	if jenkinsfileRunner {
+	if clearContainer {
 		// lets force any agent for prow / jenkinsfile runner
 		config.Agent.Label = ""
 		config.Agent.Container = ""
@@ -452,14 +453,13 @@ func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfil
 	if !exists {
 		return &config, fmt.Errorf("base pipeline file does not exist %s", file)
 	}
-	basePipeline, err := LoadPipelineConfig(file, resolver, jenkinsfileRunner)
+	basePipeline, err := LoadPipelineConfig(file, resolver, jenkinsfileRunner, clearContainer)
 	if err != nil {
 		return &config, errors.Wrapf(err, "Failed to base pipeline file %s", file)
 	}
-	err = config.ExtendPipeline(basePipeline, jenkinsfileRunner)
+	err = config.ExtendPipeline(basePipeline, clearContainer)
 	return &config, err
 }
-
 
 // IsEmpty returns true if this configuration is empty
 func (c *PipelineConfig) IsEmpty() bool {
@@ -477,8 +477,8 @@ func (c *PipelineConfig) SaveConfig(fileName string) error {
 }
 
 // ExtendPipeline inherits this pipeline from the given base pipeline
-func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, jenkinsfileRunner bool) error {
-	if jenkinsfileRunner {
+func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, clearContainer bool) error {
+	if clearContainer {
 		c.Agent.Container = ""
 		c.Agent.Label = ""
 		base.Agent.Container = ""
@@ -554,7 +554,7 @@ func (a *CreateJenkinsfileArguments) GenerateJenkinsfile(resolver ImportFileReso
 	if err != nil {
 		return err
 	}
-	config, err := LoadPipelineConfig(a.ConfigFile, resolver, a.JenkinsfileRunner)
+	config, err := LoadPipelineConfig(a.ConfigFile, resolver, a.JenkinsfileRunner, a.ClearContainerNames)
 	if err != nil {
 		return err
 	}
