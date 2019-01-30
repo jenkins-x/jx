@@ -93,7 +93,7 @@ func NewCmdGetBuildLogs(f Factory, in terminal.FileReader, out terminal.FileWrit
 	}
 	cmd.Flags().BoolVarP(&options.Tail, "tail", "t", true, "Tails the build log to the current terminal")
 	cmd.Flags().BoolVarP(&options.Wait, "wait", "w", false, "Waits for the build to start before failing")
-	cmd.Flags().DurationVarP(&options.WaitForPipelineDuration, "wait-duration", "d", time.Minute * 5, "Timeout period waiting for the given pipeline to be created")
+	cmd.Flags().DurationVarP(&options.WaitForPipelineDuration, "wait-duration", "d", time.Minute*5, "Timeout period waiting for the given pipeline to be created")
 	cmd.Flags().BoolVarP(&options.BuildFilter.Pending, "pending", "p", false, "Only display logs which are currently pending to choose from if no build name is supplied")
 	cmd.Flags().StringVarP(&options.BuildFilter.Filter, "filter", "f", "", "Filters all the available jobs by those that contain the given text")
 	cmd.Flags().StringVarP(&options.BuildFilter.Owner, "owner", "o", "", "Filters the owner (person/organisation) of the repository")
@@ -261,7 +261,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 	}
 	if build == nil && !pickedPipeline && o.Wait {
 		log.Infof("waiting for pipeline %s to start...\n", util.ColorInfo(name))
-		
+
 		// there's no pipeline with yet called 'name' so lets wait for it to start...
 		f := func() error {
 			var err error
@@ -302,7 +302,21 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 
 	log.Infof("Build logs for %s\n", util.ColorInfo(name+suffix))
 	for i, ic := range initContainers {
-		err = waitForInitContainerToStart(kubeClient, ns, pod, i)
+		pod, err = kubeClient.CoreV1().Pods(ns).Get(pod.Name, metav1.GetOptions{})
+		if err != nil {
+		  return errors.Wrapf(err, "failed to find pod %s", pod.Name)
+		}
+		if i > 0 {
+			icStatuses := pod.Status.InitContainerStatuses
+			if i < len(icStatuses) {
+				lastContainer := icStatuses[i-1]
+				terminated := lastContainer.State.Terminated
+				if terminated != nil && terminated.ExitCode != 0 {
+					log.Warnf("container %s failed with exit code %d: %s\n", lastContainer.Name, terminated.ExitCode, terminated.Message)
+				}
+			}
+		}
+		pod, err = waitForInitContainerToStart(kubeClient, ns, pod, i)
 		if err != nil {
 			return err
 		}
@@ -314,9 +328,13 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 	return nil
 }
 
-func waitForInitContainerToStart(kubeClient kubernetes.Interface, ns string, pod *corev1.Pod, idx int) error {
+func waitForInitContainerToStart(kubeClient kubernetes.Interface, ns string, pod *corev1.Pod, idx int) (*corev1.Pod, error) {
+	if pod.Status.Phase == corev1.PodFailed {
+		log.Warnf("pod %s has failed\n", pod.Name)
+		return pod, nil
+	}
 	if kube.HasInitContainerStarted(pod, idx) {
-		return nil
+		return pod, nil
 	}
 	containerName := ""
 	if idx < len(pod.Spec.InitContainers) {
@@ -328,10 +346,10 @@ func waitForInitContainerToStart(kubeClient kubernetes.Interface, ns string, pod
 
 		p, err := kubeClient.CoreV1().Pods(ns).Get(pod.Name, metav1.GetOptions{})
 		if err != nil {
-			return errors.Wrapf(err, "failed to load pod %s", pod.Name)
+			return p, errors.Wrapf(err, "failed to load pod %s", pod.Name)
 		}
 		if kube.HasInitContainerStarted(p, idx) {
-			return nil
+			return p, nil
 		}
 	}
 }
