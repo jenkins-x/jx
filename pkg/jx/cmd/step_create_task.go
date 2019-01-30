@@ -295,7 +295,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	name := kpipelines.PipelineResourceName(o.gitInfo, branch, o.Context)
 	task := &pipelineapi.Task{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: kpipelines.PipelineApiVersion,
+			APIVersion: kpipelines.PipelineAPIVersion,
 			Kind:       "Task",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -418,7 +418,7 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 	log.Infof("upserted Pipeline %s\n", info(pipeline.Name))
 
 	if pipeline.APIVersion == "" {
-		pipeline.APIVersion = kpipelines.PipelineApiVersion
+		pipeline.APIVersion = kpipelines.PipelineAPIVersion
 	}
 	if pipeline.Kind == "" {
 		pipeline.Kind = "Pipeline"
