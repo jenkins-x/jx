@@ -27,6 +27,8 @@ GO_DEPENDENCIES := cmd/*/*.go cmd/*/*/*.go pkg/*/*.go pkg/*/*/*.go pkg/*//*/*/*.
 
 BRANCH     := $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null  || echo 'unknown')
 BUILD_DATE := $(shell date +%Y%m%d-%H:%M:%S)
+PEGOMOCK_SHA := $(shell go mod graph | grep pegomock | sed -n -e 's/^.*-//p')
+PEGOMOCK_PACKAGE := github.com/petergtz/pegomock/
 CGO_ENABLED = 0
 
 VENDOR_DIR=vendor
@@ -273,7 +275,9 @@ docker-dev-all: build linux docker-pull docker-build-and-push
 
 # Generate go code using generate directives in files. Mocks etc...
 generate:
-	$(GO_NOMOD) get github.com/petergtz/pegomock/...
+	$(GO_NOMOD) get -d $(PEGOMOCK_PACKAGE)...
+	cd $(GOPATH)/src/$(PEGOMOCK_PACKAGE); git checkout master; git fetch origin; git branch -f jx $(PEGOMOCK_SHA); \
+	git checkout jx; $(GO_NOMOD) install
 	$(GO) generate ./...
 
 .PHONY: release clean arm
