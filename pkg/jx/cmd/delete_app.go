@@ -1,17 +1,11 @@
 package cmd
 
 import (
-	"fmt"
 	"io"
-	"os"
-	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/apps"
 
 	"github.com/jenkins-x/jx/pkg/environments"
-
-	"k8s.io/helm/pkg/proto/hapi/chart"
-
-	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/pkg/errors"
 
@@ -97,6 +91,17 @@ func NewCmdDeleteApp(f Factory, in terminal.FileReader, out terminal.FileWriter,
 func (o *DeleteAppOptions) Run() error {
 	o.GitOps, o.DevEnv = o.GetDevEnv()
 
+	opts := apps.InstallOptions{
+		In:        o.In,
+		DevEnv:    o.DevEnv,
+		Verbose:   o.Verbose,
+		Err:       o.Err,
+		Out:       o.Out,
+		GitOps:    o.GitOps,
+		BatchMode: o.BatchMode,
+		Helmer:    o.Helm(),
+	}
+
 	if o.GitOps {
 		msg := "Unable to specify --%s when using GitOps for your dev environment"
 		if o.ReleaseName != "" {
@@ -105,8 +110,25 @@ func (o *DeleteAppOptions) Run() error {
 		if o.Namespace != "" {
 			return util.InvalidOptionf(optionNamespace, o.Namespace, msg, optionNamespace)
 		}
+		gitProvider, _, err := o.createGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
+		if err != nil {
+			return errors.Wrapf(err, "creating git provider for %s", o.DevEnv.Spec.Source.URL)
+		}
+		environmentsDir, err := o.EnvironmentsDir()
+		if err != nil {
+			return errors.Wrapf(err, "getting environments dir")
+		}
+		opts.GitProvider = gitProvider
+		opts.Gitter = o.Git()
+		opts.EnvironmentsDir = environmentsDir
+		opts.ConfigureGitFn = o.ConfigureGitCallback
 	}
 	if !o.GitOps {
+		err := o.ensureHelm()
+		if err != nil {
+			return errors.Wrap(err, "failed to ensure that helm is present")
+		}
+
 		if o.Alias != "" {
 			return util.InvalidOptionf(optionAlias, o.Alias,
 				"Unable to specify --%s when NOT using GitOps for your dev environment", optionAlias)
@@ -121,97 +143,7 @@ func (o *DeleteAppOptions) Run() error {
 		return o.Cmd.Help()
 	}
 
-	for _, app := range args {
-		if o.GitOps {
-			err := o.createPR(app)
-			if err != nil {
-				return err
-			}
-		} else {
-			err := o.deleteApp(app)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-	}
+	app := args[0]
 
-	return nil
-}
-
-func (o *DeleteAppOptions) createPR(app string) error {
-
-	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
-		templates map[string]string, dir string) error {
-		// See if the app already exists in requirements
-		found := false
-		for i, d := range requirements.Dependencies {
-			if d.Name == app && d.Alias == o.Alias {
-				found = true
-				requirements.Dependencies[i] = nil
-			}
-		}
-		// If app not found, add it
-		if !found {
-			a := app
-			if o.Alias != "" {
-				a = fmt.Sprintf("%s with alias %s", a, o.Alias)
-			}
-			return fmt.Errorf("unable to delete app %s as not installed", app)
-		}
-		if info, err := os.Stat(filepath.Join(dir, app)); err == nil {
-			if info.IsDir() {
-				err := util.DeleteFile(info.Name())
-				if err != nil {
-					return err
-				}
-			} else {
-				log.Warnf("Not removing %s for %s because it is not a directory", info.Name(), app)
-			}
-		}
-		return nil
-	}
-	branchNameText := "delete-app-" + app
-	title := fmt.Sprintf("Delete %s", app)
-	message := fmt.Sprintf("Delete app %s", app)
-
-	gitProvider, _, err := o.createGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
-	if err != nil {
-		return errors.Wrapf(err, "creating git provider for %s", o.DevEnv.Spec.Source.URL)
-	}
-	environmentsDir, err := o.EnvironmentsDir()
-	if err != nil {
-		return errors.Wrapf(err, "getting environments dir")
-	}
-
-	options := environments.EnvironmentPullRequestOptions{
-		ConfigGitFn:   o.ConfigureGitCallback,
-		Gitter:        o.Git(),
-		ModifyChartFn: modifyChartFn,
-		GitProvider:   gitProvider,
-	}
-
-	pullRequestInfo, err := options.Create(o.DevEnv, &branchNameText, &title,
-		&message,
-		environmentsDir, nil)
-	if err != nil {
-		return err
-	}
-	log.Infof("Delete app via Pull Request %s\n", pullRequestInfo.PullRequest.URL)
-	return nil
-}
-
-func (o *DeleteAppOptions) deleteApp(name string) error {
-	err := o.ensureHelm()
-	if err != nil {
-		return errors.Wrap(err, "failed to ensure that helm is present")
-	}
-	releaseName := name
-	if o.ReleaseName != "" {
-		releaseName = o.ReleaseName
-	}
-	err = o.deleteChart(releaseName, o.Purge)
-	if err != nil {
-	}
-	return err
+	return opts.DeleteApp(app, o.Alias, o.ReleaseName, o.Purge)
 }
