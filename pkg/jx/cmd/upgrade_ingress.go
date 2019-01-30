@@ -100,7 +100,7 @@ func (o *UpgradeIngressOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVarP(&o.Services, "services", "", []string{}, "Services to upgrade")
 	cmd.Flags().BoolVarP(&o.SkipResourcesUpdate, "skip-resources-update", "", false, "Skips the update of jx related resources such as webhook or Jenkins URL")
 	cmd.Flags().BoolVarP(&o.Force, "force", "", false, "Forces upgrades of all webooks even if ingress URL has not changed")
-	cmd.Flags().BoolVarP(&o.WaitForCerts, "wait-for-certs", "", false, "Waits for TLS certs to be issued by cert-manager")
+	cmd.Flags().BoolVarP(&o.WaitForCerts, "wait-for-certs", "", true, "Waits for TLS certs to be issued by cert-manager")
 	cmd.Flags().StringVarP(&o.ConfigNamespace, "config-namespace", "", "", "Namespace where the ingress-config is stored (if empty, it will try to read it from Dev environment namespace)")
 }
 
