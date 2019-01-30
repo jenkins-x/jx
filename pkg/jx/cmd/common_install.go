@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
@@ -88,7 +87,7 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 		case "az":
 			err = o.installAzureCli()
 		case "kubectl":
-			err = o.installKubectl()
+			err = o.installKubectl(false)
 		case "gcloud":
 			err = o.installGcloud()
 		case "helm":
@@ -222,14 +221,15 @@ func (o *CommonOptions) UninstallBinary(binDir string, name string) error {
 }
 
 type InstallOrUpdateBinaryOptions struct {
-	Binary              string
-	GitHubOrganization  string
-	DownloadUrlTemplate string
-	Version             string
-	SkipPathScan        bool
-	VersionExtractor    binaries.VersionExtractor
-	Archived            bool
-	ArchiveDirectory    string
+	Binary                       string
+	GitHubOrganization           string
+	DownloadUrlTemplate          string
+	DownloadUrlTemplateLowerCase bool
+	Version                      string
+	SkipPathScan                 bool
+	VersionExtractor             binaries.VersionExtractor
+	Archived                     bool
+	ArchiveDirectory             string
 }
 
 func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptions) error {
@@ -258,7 +258,11 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 		}
 	}
 
-	urlTemplate, err := template.New(options.Binary).Parse(options.DownloadUrlTemplate)
+	downloadUrlTemplate := options.DownloadUrlTemplate
+	if !options.Archived {
+		downloadUrlTemplate = binaries.BinaryWithExtension(downloadUrlTemplate)
+	}
+	urlTemplate, err := template.New(options.Binary).Parse(downloadUrlTemplate)
 	if err != nil {
 		return err
 	}
@@ -293,7 +297,11 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 	if options.Archived {
 		tarFile = tarFile + "." + extension
 	}
-	err = binaries.DownloadFile(clientUrlBuffer.String(), tarFile)
+	downloadUrl := clientUrlBuffer.String()
+	if options.DownloadUrlTemplateLowerCase {
+		downloadUrl = strings.ToLower(downloadUrl)
+	}
+	err = binaries.DownloadFile(downloadUrl, tarFile)
 	if err != nil {
 		return err
 	}
@@ -363,36 +371,21 @@ func (o *CommonOptions) installBrewIfRequired() error {
 	return o.installBrew()
 }
 
-func (o *CommonOptions) installKubectl() error {
-	if runtime.GOOS == "darwin" && !o.NoBrew {
-		return o.RunCommand("brew", "install", "kubectl")
-	}
-	binDir, err := util.JXBinLocation()
-	if err != nil {
-		return err
-	}
-	fileName, flag, err := shouldInstallBinary("kubectl")
-	if err != nil || !flag {
-		return err
-	}
-	kubernetes := "kubernetes"
-	latestVersion, err := o.getLatestVersionFromKubernetesReleaseUrl()
-	if err != nil {
-		return fmt.Errorf("Unable to get latest version for github.com/%s/%s %v", kubernetes, kubernetes, err)
-	}
+func (o *CommonOptions) installKubectl(skipPathScan bool) error {
+	return o.installKubectlWithVersion(binaries.KubectlVersion, skipPathScan)
+}
 
-	clientURL := fmt.Sprintf("https://storage.googleapis.com/kubernetes-release/release/v%s/bin/%s/%s/%s", latestVersion, runtime.GOOS, runtime.GOARCH, fileName)
-	fullPath := filepath.Join(binDir, fileName)
-	tmpFile := fullPath + ".tmp"
-	err = binaries.DownloadFile(clientURL, tmpFile)
-	if err != nil {
-		return err
-	}
-	err = util.RenameFile(tmpFile, fullPath)
-	if err != nil {
-		return err
-	}
-	return os.Chmod(fullPath, 0755)
+func (o *CommonOptions) installKubectlWithVersion(version string, skipPathScan bool) error {
+	return o.installOrUpdateBinary(InstallOrUpdateBinaryOptions{
+		Binary:              "kubectl",
+		GitHubOrganization:  "",
+		DownloadUrlTemplate: "https://storage.googleapis.com/kubernetes-release/release/v{{.version}}/bin/{{.osTitle}}/{{.arch}}/kubectl",
+		DownloadUrlTemplateLowerCase: true,
+		Version:             version,
+		SkipPathScan:        skipPathScan,
+		VersionExtractor:    nil,
+		Archived:            false,
+	})
 }
 
 func (o *CommonOptions) installKustomize() error {
@@ -506,31 +499,6 @@ func (o *CommonOptions) installOc() error {
 		return err
 	}
 	return os.Chmod(fullPath, 0755)
-}
-
-// get the latest version from kubernetes, parse it and return it
-func (o *CommonOptions) getLatestVersionFromKubernetesReleaseUrl() (sem semver.Version, err error) {
-	response, err := util.GetClient().Get(stableKubeCtlVersionURL)
-
-	if err != nil {
-		return semver.Version{}, fmt.Errorf("Cannot get url " + stableKubeCtlVersionURL)
-	}
-	defer response.Body.Close()
-	if response.StatusCode != http.StatusOK {
-		return semver.Version{}, fmt.Errorf("download of %s failed with return code %d", stableKubeCtlVersionURL, response.StatusCode)
-	}
-
-	bytes, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return semver.Version{}, fmt.Errorf("Cannot get url body")
-	}
-
-	s := strings.TrimSpace(string(bytes))
-	if s != "" {
-		return semver.Make(strings.TrimPrefix(s, "v"))
-	}
-
-	return semver.Version{}, fmt.Errorf("Cannot get release name")
 }
 
 func (o *CommonOptions) installHyperkit() error {
