@@ -135,6 +135,7 @@ func RegisterEnvironmentRoleBindingCRD(apiClient apiextensionsclientset.Interfac
 		Plural:     "environmentrolebindings",
 		Singular:   "environmentrolebinding",
 		ShortNames: []string{"envrolebindings", "envrolebinding", "envrb"},
+		Categories: []string{"all"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
 	validation := v1beta1.CustomResourceValidation{}
@@ -150,6 +151,7 @@ func RegisterGitServiceCRD(apiClient apiextensionsclientset.Interface) error {
 		Plural:     "gitservices",
 		Singular:   "gitservice",
 		ShortNames: []string{"gits"},
+		Categories: []string{"all"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{
 		{
@@ -178,6 +180,7 @@ func RegisterPipelineActivityCRD(apiClient apiextensionsclientset.Interface) err
 		Plural:     "pipelineactivities",
 		Singular:   "pipelineactivity",
 		ShortNames: []string{"activity", "act"},
+		Categories: []string{"all"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{
 		{
@@ -206,6 +209,7 @@ func RegisterExtensionCRD(apiClient apiextensionsclientset.Interface) error {
 		Plural:     "extensions",
 		Singular:   "extensions",
 		ShortNames: []string{"extension", "ext"},
+		Categories: []string{"all"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{
 		{
@@ -234,6 +238,7 @@ func RegisterBuildPackCRD(apiClient apiextensionsclientset.Interface) error {
 		Plural:     "buildpacks",
 		Singular:   "buildpack",
 		ShortNames: []string{"bp"},
+		Categories: []string{"all"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{
 		{
@@ -268,6 +273,7 @@ func RegisterAppCRD(apiClient apiextensionsclientset.Interface) error {
 		Plural:     "apps",
 		Singular:   "app",
 		ShortNames: []string{"app"},
+		Categories: []string{"all"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
 	validation := v1beta1.CustomResourceValidation{}
@@ -283,6 +289,7 @@ func RegisterSourceRepositoryCRD(apiClient apiextensionsclientset.Interface) err
 		Plural:     "sourcerepositories",
 		Singular:   "sourcerepository",
 		ShortNames: []string{"sourcerepo", "srcrepo", "sr"},
+		Categories: []string{"all"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{
 		{
@@ -318,10 +325,11 @@ func RegisterSourceRepositoryCRD(apiClient apiextensionsclientset.Interface) err
 func RegisterPluginCRD(apiClient apiextensionsclientset.Interface) error {
 	name := "plugins." + jenkinsio.GroupName
 	names := &v1beta1.CustomResourceDefinitionNames{
-		Kind:     "Plugin",
-		ListKind: "PluginList",
-		Plural:   "plugins",
-		Singular: "plugin",
+		Kind:       "Plugin",
+		ListKind:   "PluginList",
+		Plural:     "plugins",
+		Singular:   "plugin",
+		Categories: []string{"all"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{
 		{
@@ -350,6 +358,7 @@ func RegisterCommitStatusCRD(apiClient apiextensionsclientset.Interface) error {
 		Plural:     "commitstatuses",
 		Singular:   "commitstatus",
 		ShortNames: []string{"commitstatus"},
+		Categories: []string{"all"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
 	validation := v1beta1.CustomResourceValidation{}
@@ -365,6 +374,7 @@ func RegisterReleaseCRD(apiClient apiextensionsclientset.Interface) error {
 		Plural:     "releases",
 		Singular:   "release",
 		ShortNames: []string{"rel"},
+		Categories: []string{"all"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{
 		{
@@ -399,6 +409,7 @@ func RegisterUserCRD(apiClient apiextensionsclientset.Interface) error {
 		Plural:     "users",
 		Singular:   "user",
 		ShortNames: []string{"usr"},
+		Categories: []string{"all"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{
 		{
@@ -427,6 +438,7 @@ func RegisterTeamCRD(apiClient apiextensionsclientset.Interface) error {
 		Plural:     "teams",
 		Singular:   "team",
 		ShortNames: []string{"tm"},
+		Categories: []string{"all"},
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{
 		{
@@ -455,6 +467,8 @@ func RegisterWorkflowCRD(apiClient apiextensionsclientset.Interface) error {
 		Plural:     "workflows",
 		Singular:   "workflow",
 		ShortNames: []string{"flow"},
+		Categories: []string{"all"},
+
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
 	validation := v1beta1.CustomResourceValidation{}

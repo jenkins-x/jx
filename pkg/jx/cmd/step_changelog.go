@@ -93,6 +93,8 @@ spec:
     shortNames:
     - rel
     singular: release
+    categories:
+    - all
   scope: Namespaced
   version: v1`
 )
