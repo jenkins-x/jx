@@ -20,6 +20,7 @@ import (
 	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -46,23 +47,25 @@ var (
 type StepCreateTaskOptions struct {
 	StepOptions
 
-	Pack         string
-	Dir          string
-	OutputFile   string
-	BuildPackURL string
-	BuildPackRef string
-	PipelineKind string
-	Context      string
-	Apply        bool
-	Trigger      string
-	TargetPath   string
-	SourceName   string
-	Duration     time.Duration
+	Pack           string
+	Dir            string
+	OutputFile     string
+	BuildPackURL   string
+	BuildPackRef   string
+	PipelineKind   string
+	Context        string
+	Apply          bool
+	Trigger        string
+	TargetPath     string
+	SourceName     string
+	DockerRegistry string
+	Duration       time.Duration
 
 	PodTemplates        map[string]*corev1.Pod
 	MissingPodTemplates map[string]bool
 
 	stepCounter int
+	gitInfo     *gits.GitRepository
 }
 
 // NewCmdStepCreateTask Creates a new Command object
@@ -102,6 +105,7 @@ func NewCmdStepCreateTask(f Factory, in terminal.FileReader, out terminal.FileWr
 	cmd.Flags().StringVarP(&options.Context, "context", "c", "", "The pipeline context if there are multiple separate pipelines for a given branch")
 	cmd.Flags().StringVarP(&options.Trigger, "trigger", "t", string(pipelineapi.PipelineTriggerTypeManual), "The kind of pipeline trigger")
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "build-pipeline", "The Kubernetes ServiceAccount to use to run the pipeline")
+	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
 	cmd.Flags().StringVarP(&options.TargetPath, "target-path", "", "", "The target path appended to /workspace/${source} to clone the source code")
 	cmd.Flags().StringVarP(&options.SourceName, "source", "", "source", "The name of the source repository")
 	cmd.Flags().BoolVarP(&options.Apply, "apply", "a", false, "If enabled lets apply the generated")
@@ -114,6 +118,21 @@ func (o *StepCreateTaskOptions) Run() error {
 	settings, err := o.TeamSettings()
 	if err != nil {
 		return err
+	}
+	kubeClient, ns, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+
+	if o.DockerRegistry == "" {
+		data, err := kube.GetConfigMapData(kubeClient, kube.ConfigMapJenkinsDockerRegistry, ns)
+		if err != nil {
+			return fmt.Errorf("Could not find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsDockerRegistry, ns, err)
+		}
+		o.DockerRegistry = data["docker.registry"]
+		if o.DockerRegistry == "" {
+			return util.MissingOption("docker-registry")
+		}
 	}
 	if o.BuildPackURL == "" || o.BuildPackRef == "" {
 		if o.BuildPackURL == "" {
@@ -153,7 +172,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		return util.MissingOption("pack")
 	}
 
-	err = o.loadPodTemplates()
+	err = o.loadPodTemplates(kubeClient, ns)
 	if err != nil {
 		return err
 	}
@@ -200,13 +219,9 @@ func (o *StepCreateTaskOptions) Run() error {
 	return err
 }
 
-func (o *StepCreateTaskOptions) loadPodTemplates() error {
+func (o *StepCreateTaskOptions) loadPodTemplates(kubeClient kubernetes.Interface, ns string) error {
 	o.PodTemplates = map[string]*corev1.Pod{}
 
-	kubeClient, ns, err := o.KubeClientAndDevNamespace()
-	if err != nil {
-		return err
-	}
 	configMapName := kube.ConfigMapJenkinsPodTemplates
 	cm, err := kubeClient.CoreV1().ConfigMaps(ns).Get(configMapName, metav1.GetOptions{})
 	if err != nil {
@@ -247,6 +262,17 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		return nil
 	}
 
+	var err error
+	o.gitInfo, err = o.FindGitInfo(o.Dir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to find git information from dir %s", o.Dir)
+	}
+
+	branch, err := o.Git().Branch(o.Dir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to find git branch from dir %s", o.Dir)
+	}
+
 	container := pipelineConfig.Agent.Container
 	dir := o.getWorkspaceDir()
 
@@ -266,17 +292,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		}
 	}
 
-	gitInfo, err := o.FindGitInfo(o.Dir)
-	if err != nil {
-		return errors.Wrapf(err, "failed to find git information from dir %s", o.Dir)
-	}
-
-	branch, err := o.Git().Branch(o.Dir)
-	if err != nil {
-		return errors.Wrapf(err, "failed to find git branch from dir %s", o.Dir)
-	}
-
-	name := kpipelines.PipelineResourceName(gitInfo, branch, o.Context)
+	name := kpipelines.PipelineResourceName(o.gitInfo, branch, o.Context)
 	task := &pipelineapi.Task{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: kpipelines.PipelineApiVersion,
@@ -286,13 +302,13 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 			Name: name,
 		},
 		Spec: pipelineapi.TaskSpec{
-			Steps: steps,
+			Steps:   steps,
 			Volumes: volumes,
 		},
 	}
 	fileName := o.OutputFile
 	if o.Apply {
-		err = o.applyTask(task, gitInfo, branch)
+		err = o.applyTask(task, o.gitInfo, branch)
 		if fileName == "" {
 			return err
 		}
@@ -454,6 +470,15 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 	} else if step.Dir != "" {
 		dir = step.Dir
 	}
+
+	gitInfo := o.gitInfo
+	if gitInfo != nil {
+		dir = strings.Replace(dir, "REPLACE_ME_APP_NAME", gitInfo.Name, -1)
+		dir = strings.Replace(dir, "REPLACE_ME_ORG_NAME", gitInfo.Organisation, -1)
+	} else {
+		log.Warnf("No GitInfo available!\n")
+	}
+
 	if step.Command != "" {
 		if containerName == "" {
 			containerName = defaultContainerName
@@ -529,13 +554,22 @@ func (o *StepCreateTaskOptions) removeUnnecessaryVolumes(container *corev1.Conta
 }
 
 func (o *StepCreateTaskOptions) removeUnnecessaryEnvVars(container *corev1.Container) {
+	hasDockerRegistry := false
 	envVars := []corev1.EnvVar{}
 	for _, e := range container.Env {
 		name := e.Name
-		if strings.HasPrefix(name, "DOCKER_") || strings.HasPrefix(name, "XDG_") {
-			continue
+		if name == "DOCKER_REGISTRY" {
+			hasDockerRegistry = true
 		}
-		envVars = append(envVars, e)
+		if !strings.HasPrefix(name, "JENKINS_URL_") && !strings.HasPrefix(name, "XDG_") {
+			envVars = append(envVars, e)
+		}
+	}
+	if !hasDockerRegistry {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "DOCKER_REGISTRY",
+			Value: o.DockerRegistry,
+		})
 	}
 	container.Env = envVars
 }

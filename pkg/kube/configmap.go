@@ -14,11 +14,14 @@ import (
 
 // GetConfigMapData gets config map data
 func GetConfigMapData(client kubernetes.Interface, name, ns string) (map[string]string, error) {
+	answer := map[string]string{}
 	cm, err := GetConfigMap(client, ns, name)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get configmap %s in namespace %s, %v", name, ns, err)
+		return answer, fmt.Errorf("failed to get configmap %s in namespace %s, %v", name, ns, err)
 	}
-
+	if cm.Data == nil {
+		return answer, nil
+	}
 	return cm.Data, nil
 }
 
