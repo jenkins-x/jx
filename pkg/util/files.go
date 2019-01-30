@@ -244,6 +244,61 @@ func CopyFile(src, dst string) (err error) {
 	return
 }
 
+// CopyDirPreserve copies from the src dir to the dst dir if the file does NOT already exist in dst
+func CopyDirPreserve(src string, dst string) error {
+	src = filepath.Clean(src)
+	dst = filepath.Clean(dst)
+
+	si, err := os.Stat(src)
+	if err != nil {
+		return errors.Wrapf(err, "checking %s exists", src)
+	}
+	if !si.IsDir() {
+		return fmt.Errorf("source is not a directory")
+	}
+
+	_, err = os.Stat(dst)
+	if err != nil && !os.IsNotExist(err) {
+		return errors.Wrapf(err, "checking %s exists", dst)
+	}
+
+	err = os.MkdirAll(dst, si.Mode())
+	if err != nil {
+		return errors.Wrapf(err, "creating %s", dst)
+	}
+
+	entries, err := ioutil.ReadDir(src)
+	if err != nil {
+		return errors.Wrapf(err, "reading files in %s", src)
+	}
+
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		dstPath := filepath.Join(dst, entry.Name())
+
+		if entry.IsDir() {
+			err = CopyDirPreserve(srcPath, dstPath)
+			if err != nil {
+				return errors.Wrapf(err, "recursively copying %s", entry.Name())
+			}
+		} else {
+			// Skip symlinks.
+			if entry.Mode()&os.ModeSymlink != 0 {
+				continue
+			}
+			if _, err := os.Stat(dstPath); os.IsNotExist(err) {
+				err = CopyFile(srcPath, dstPath)
+				if err != nil {
+					return errors.Wrapf(err, "copying %s to %s", srcPath, dstPath)
+				}
+			} else if err != nil {
+				return errors.Wrapf(err, "checking if %s exists", dstPath)
+			}
+		}
+	}
+	return nil
+}
+
 // CopyDirOverwrite copies from the source dir to the destination dir overwriting files along the way
 func CopyDirOverwrite(src string, dst string) (err error) {
 	src = filepath.Clean(src)
@@ -442,10 +497,9 @@ func ListDirectory(root string, recurse bool) error {
 
 }
 
-
 // GlobAllFiles performs a glob on the pattern and then processes all the files found.
 // if a folder matches the glob its treated as another glob to recurse into the directory
-func GlobAllFiles(basedir string, pattern string, fn func (string) error) error {
+func GlobAllFiles(basedir string, pattern string, fn func(string) error) error {
 	names, err := filepath.Glob(pattern)
 	if err != nil {
 		return errors.Wrapf(err, "failed to evaluate glob pattern '%s'", pattern)
@@ -462,7 +516,7 @@ func GlobAllFiles(basedir string, pattern string, fn func (string) error) error 
 		if fi.IsDir() {
 			err = GlobAllFiles("", filepath.Join(fullPath, "*"), fn)
 			if err != nil {
-			  return err
+				return err
 			}
 		} else {
 			err = fn(fullPath)

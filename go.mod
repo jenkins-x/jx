@@ -42,7 +42,8 @@ require (
 	github.com/gfleury/go-bitbucket-v1 v0.0.0-20181102191809-4910839b609e
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ole/go-ole v1.2.1 // indirect
-	github.com/go-openapi/spec v0.17.1 // indirect
+	github.com/go-openapi/jsonreference v0.17.0
+	github.com/go-openapi/spec v0.17.1
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gogo/protobuf v1.1.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b

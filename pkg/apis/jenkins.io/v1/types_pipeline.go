@@ -75,14 +75,14 @@ type CoreActivityStep struct {
 
 // StageActivityStep represents a stage of zero to more sub steps in a jenkins pipeline
 type StageActivityStep struct {
-	CoreActivityStep
+	CoreActivityStep `json:",inline"`
 
 	Steps []CoreActivityStep `json:"steps,omitempty" protobuf:"bytes,1,opt,name=steps"`
 }
 
 // PreviewActivityStep is the step of creating a preview environment as part of a Pull Request pipeline
 type PreviewActivityStep struct {
-	CoreActivityStep
+	CoreActivityStep `json:",inline"`
 
 	Environment    string `json:"environment,omitempty" protobuf:"bytes,1,opt,name=environment"`
 	PullRequestURL string `json:"pullRequestURL,omitempty" protobuf:"bytes,2,opt,name=pullRequestURL"`
@@ -91,7 +91,7 @@ type PreviewActivityStep struct {
 
 // PromoteActivityStep is the step of promoting a version of an application to an environment
 type PromoteActivityStep struct {
-	CoreActivityStep
+	CoreActivityStep `json:",inline"`
 
 	Environment    string                  `json:"environment,omitempty" protobuf:"bytes,1,opt,name=environment"`
 	PullRequest    *PromotePullRequestStep `json:"pullRequest,omitempty" protobuf:"bytes,2,opt,name=pullRequest"`
@@ -108,7 +108,7 @@ type GitStatus struct {
 // PromotePullRequestStep is the step for promoting a version to an environment by raising a Pull Request on the
 // git repository of the environment
 type PromotePullRequestStep struct {
-	CoreActivityStep
+	CoreActivityStep `json:",inline"`
 
 	PullRequestURL string `json:"pullRequestURL,omitempty" protobuf:"bytes,1,opt,name=pullRequestURL"`
 	MergeCommitSHA string `json:"mergeCommitSHA,omitempty" protobuf:"bytes,2,opt,name=mergeCommitSHA"`
@@ -116,7 +116,7 @@ type PromotePullRequestStep struct {
 
 // PromoteUpdateStep is the step for updating a promotion after the Pull Request merges to master
 type PromoteUpdateStep struct {
-	CoreActivityStep
+	CoreActivityStep `json:",inline"`
 
 	Statuses []GitStatus `json:"statuses,omitempty" protobuf:"bytes,1,opt,name=statuses"`
 }

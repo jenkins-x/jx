@@ -5,8 +5,8 @@
 package v1
 
 import (
-	batchv1 "k8s.io/api/batch/v1"
-	rbacv1 "k8s.io/api/rbac/v1"
+	batch_v1 "k8s.io/api/batch/v1"
+	rbac_v1 "k8s.io/api/rbac/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -386,13 +386,21 @@ func (in *CommitSummary) DeepCopyInto(out *CommitSummary) {
 	*out = *in
 	if in.Author != nil {
 		in, out := &in.Author, &out.Author
-		*out = new(UserDetails)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(UserDetails)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Committer != nil {
 		in, out := &in.Committer, &out.Committer
-		*out = new(UserDetails)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(UserDetails)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.IssueIDs != nil {
 		in, out := &in.IssueIDs, &out.IssueIDs
@@ -417,11 +425,19 @@ func (in *CoreActivityStep) DeepCopyInto(out *CoreActivityStep) {
 	*out = *in
 	if in.StartedTimestamp != nil {
 		in, out := &in.StartedTimestamp, &out.StartedTimestamp
-		*out = (*in).DeepCopy()
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = (*in).DeepCopy()
+		}
 	}
 	if in.CompletedTimestamp != nil {
 		in, out := &in.CompletedTimestamp, &out.CompletedTimestamp
-		*out = (*in).DeepCopy()
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = (*in).DeepCopy()
+		}
 	}
 	return
 }
@@ -605,7 +621,7 @@ func (in *EnvironmentRoleBindingSpec) DeepCopyInto(out *EnvironmentRoleBindingSp
 	*out = *in
 	if in.Subjects != nil {
 		in, out := &in.Subjects, &out.Subjects
-		*out = make([]rbacv1.Subject, len(*in))
+		*out = make([]rbac_v1.Subject, len(*in))
 		copy(*out, *in)
 	}
 	out.RoleRef = in.RoleRef
@@ -1201,8 +1217,12 @@ func (in *IssueSummary) DeepCopyInto(out *IssueSummary) {
 	*out = *in
 	if in.User != nil {
 		in, out := &in.User, &out.User
-		*out = new(UserDetails)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(UserDetails)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Assignees != nil {
 		in, out := &in.Assignees, &out.Assignees
@@ -1213,12 +1233,20 @@ func (in *IssueSummary) DeepCopyInto(out *IssueSummary) {
 	}
 	if in.ClosedBy != nil {
 		in, out := &in.ClosedBy, &out.ClosedBy
-		*out = new(UserDetails)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(UserDetails)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.CreationTimestamp != nil {
 		in, out := &in.CreationTimestamp, &out.CreationTimestamp
-		*out = (*in).DeepCopy()
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = (*in).DeepCopy()
+		}
 	}
 	if in.Labels != nil {
 		in, out := &in.Labels, &out.Labels
@@ -1346,11 +1374,19 @@ func (in *PipelineActivitySpec) DeepCopyInto(out *PipelineActivitySpec) {
 	*out = *in
 	if in.StartedTimestamp != nil {
 		in, out := &in.StartedTimestamp, &out.StartedTimestamp
-		*out = (*in).DeepCopy()
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = (*in).DeepCopy()
+		}
 	}
 	if in.CompletedTimestamp != nil {
 		in, out := &in.CompletedTimestamp, &out.CompletedTimestamp
-		*out = (*in).DeepCopy()
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = (*in).DeepCopy()
+		}
 	}
 	if in.Steps != nil {
 		in, out := &in.Steps, &out.Steps
@@ -1414,18 +1450,30 @@ func (in *PipelineActivityStep) DeepCopyInto(out *PipelineActivityStep) {
 	*out = *in
 	if in.Stage != nil {
 		in, out := &in.Stage, &out.Stage
-		*out = new(StageActivityStep)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(StageActivityStep)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Promote != nil {
 		in, out := &in.Promote, &out.Promote
-		*out = new(PromoteActivityStep)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(PromoteActivityStep)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Preview != nil {
 		in, out := &in.Preview, &out.Preview
-		*out = new(PreviewActivityStep)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(PreviewActivityStep)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	return
 }
@@ -1561,13 +1609,21 @@ func (in *PromoteActivityStep) DeepCopyInto(out *PromoteActivityStep) {
 	in.CoreActivityStep.DeepCopyInto(&out.CoreActivityStep)
 	if in.PullRequest != nil {
 		in, out := &in.PullRequest, &out.PullRequest
-		*out = new(PromotePullRequestStep)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(PromotePullRequestStep)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	if in.Update != nil {
 		in, out := &in.Update, &out.Update
-		*out = new(PromoteUpdateStep)
-		(*in).DeepCopyInto(*out)
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(PromoteUpdateStep)
+			(*in).DeepCopyInto(*out)
+		}
 	}
 	return
 }
@@ -2003,7 +2059,7 @@ func (in *TeamSettings) DeepCopyInto(out *TeamSettings) {
 	}
 	if in.PostPreviewJobs != nil {
 		in, out := &in.PostPreviewJobs, &out.PostPreviewJobs
-		*out = make([]batchv1.Job, len(*in))
+		*out = make([]batch_v1.Job, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
@@ -2096,7 +2152,11 @@ func (in *UserDetails) DeepCopyInto(out *UserDetails) {
 	*out = *in
 	if in.CreationTimestamp != nil {
 		in, out := &in.CreationTimestamp, &out.CreationTimestamp
-		*out = (*in).DeepCopy()
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = (*in).DeepCopy()
+		}
 	}
 	if in.Accounts != nil {
 		in, out := &in.Accounts, &out.Accounts
@@ -2292,8 +2352,12 @@ func (in *WorkflowStep) DeepCopyInto(out *WorkflowStep) {
 	in.Preconditions.DeepCopyInto(&out.Preconditions)
 	if in.Promote != nil {
 		in, out := &in.Promote, &out.Promote
-		*out = new(PromoteWorkflowStep)
-		**out = **in
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(PromoteWorkflowStep)
+			**out = **in
+		}
 	}
 	return
 }

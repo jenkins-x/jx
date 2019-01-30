@@ -354,3 +354,8 @@ func (g *GitLocal) FetchUnshallow(dir string) error {
 func (g *GitLocal) IsShallow(dir string) (bool, error) {
 	return g.GitCLI.IsShallow(dir)
 }
+
+// CreateBranchFrom creates a new branch called branchName from startPoint
+func (g *GitLocal) CreateBranchFrom(dir string, branchName string, startPoint string) error {
+	return g.GitCLI.CreateBranchFrom(dir, branchName, startPoint)
+}
