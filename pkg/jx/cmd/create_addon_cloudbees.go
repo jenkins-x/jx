@@ -204,7 +204,7 @@ To register to get your username/password to to: %s
 		if err != nil {
 			return errors.Wrap(err, "creating the cert-manager client")
 		}
-		err = pki.WaitCertificateExists(certMngrClient, certName, o.Namespace, 3*time.Minute)
+		err = pki.WaitCertificateIssuedReady(certMngrClient, certName, o.Namespace, 3*time.Minute)
 		if err != nil {
 			return err // this is already wrapped by the previous call
 		}

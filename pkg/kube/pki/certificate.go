@@ -35,7 +35,6 @@ func WaitCertificateIssuedReady(client certclient.Interface, name string, ns str
 	err := wait.PollImmediate(time.Second, timeout, func() (bool, error) {
 		cert, err := client.CertmanagerV1alpha1().Certificates(ns).Get(name, metav1.GetOptions{})
 		if err != nil {
-			logrus.Warnf("Failed getting certificate %q: %v", name, err)
 			return false, nil
 		}
 		isReady := cert.HasCondition(certmng.CertificateCondition{
