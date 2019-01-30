@@ -229,7 +229,7 @@ func updateActivity(k *PipelineActivityKey, activity *v1.PipelineActivity) {
 
 	updateActivitySpec(k, &activity.Spec)
 
-	activity.Labels[v1.LabelSourceRepository] = activity.RepositoryName()
+	activity.Labels[v1.LabelSourceRepository] = ToValidName(activity.Spec.GitOwner + "-" + activity.RepositoryName())
 	activity.Labels[v1.LabelBranch] = activity.BranchName()
 	activity.Labels[v1.LabelOwner] = activity.RepositoryOwner()
 }
