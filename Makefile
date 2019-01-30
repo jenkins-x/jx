@@ -171,7 +171,7 @@ darwin: version
 
 bootstrap: vendoring
 
-release: check generate-docs
+release: check
 	rm -rf build release && mkdir build release
 	for os in linux darwin ; do \
 		CGO_ENABLED=$(CGO_ENABLED) GOOS=$$os GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$$os/$(NAME) cmd/jx/jx.go ; \
@@ -205,6 +205,7 @@ release: check generate-docs
 	updatebot push-regex -r "\s*jxTag:\s*(.*)" -v $(VERSION) prow/values.yaml
 
 	echo "Updating the JX CLI & API reference docs"
+	./build/linux/jx create client docs
 	git clone https://github.com/jenkins-x/jx-docs.git
 	cp -r docs/apidocs/site jx-docs/static/apidocs
 	cd jx-docs/content/commands; \
