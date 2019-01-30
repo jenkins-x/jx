@@ -56,6 +56,7 @@ type StepCreateTaskOptions struct {
 	Apply        bool
 	Trigger      string
 	TargetPath   string
+	SourceName   string
 	Duration     time.Duration
 
 	PodTemplates        map[string]*corev1.Pod
@@ -101,7 +102,8 @@ func NewCmdStepCreateTask(f Factory, in terminal.FileReader, out terminal.FileWr
 	cmd.Flags().StringVarP(&options.Context, "context", "c", "", "The pipeline context if there are multiple separate pipelines for a given branch")
 	cmd.Flags().StringVarP(&options.Trigger, "trigger", "t", string(pipelineapi.PipelineTriggerTypeManual), "The kind of pipeline trigger")
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "build-pipeline", "The Kubernetes ServiceAccount to use to run the pipeline")
-	cmd.Flags().StringVarP(&options.TargetPath, "target-path", "", "", "The target path to expose the source code")
+	cmd.Flags().StringVarP(&options.TargetPath, "target-path", "", "", "The target path appended to /workspace/${source} to clone the source code")
+	cmd.Flags().StringVarP(&options.SourceName, "source", "", "source", "The name of the source repository")
 	cmd.Flags().BoolVarP(&options.Apply, "apply", "a", false, "If enabled lets apply the generated")
 	cmd.Flags().DurationVarP(&options.Duration, "duration", "", time.Second*30, "Retry duration when trying to create a PipelineRun")
 	return cmd
@@ -246,7 +248,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	}
 
 	container := pipelineConfig.Agent.Container
-	dir := "/workspace"
+	dir := o.getWorkspaceDir()
 
 	steps := []corev1.Container{}
 	for _, l := range lifecycles.All() {
@@ -275,7 +277,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	name := kpipelines.PipelineResourceName(gitInfo, branch, o.Context)
 	task := &pipelineapi.Task{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "pipeline.knative.dev/v1alpha1",
+			APIVersion: kpipelines.PipelineApiVersion,
 			Kind:       "Task",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -341,7 +343,7 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 	if task.Spec.Inputs == nil {
 		task.Spec.Inputs = &pipelineapi.Inputs{}
 	}
-	sourceResourceName := "source"
+	sourceResourceName := o.SourceName
 	task.Spec.Inputs.Resources = append(task.Spec.Inputs.Resources, pipelineapi.TaskResource{
 		Name:       sourceResourceName,
 		Type:       pipelineapi.PipelineResourceTypeGit,
@@ -396,6 +398,12 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 	}
 	log.Infof("upserted Pipeline %s\n", info(pipeline.Name))
 
+	if pipeline.APIVersion == "" {
+		pipeline.APIVersion = kpipelines.PipelineApiVersion
+	}
+	if pipeline.Kind == "" {
+		pipeline.Kind = "Pipeline"
+	}
 	run := &pipelineapi.PipelineRun{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "pipeline.knative.dev/v1alpha1",
@@ -403,6 +411,14 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: pipeline.Name,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: pipeline.APIVersion,
+					Kind:       pipeline.Kind,
+					Name:       pipeline.Name,
+					UID:        pipeline.UID,
+				},
+			},
 		},
 		Spec: pipelineapi.PipelineRunSpec{
 			ServiceAccount: o.ServiceAccount,
@@ -455,18 +471,19 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		o.removeUnnecessaryEnvVars(&c)
 
 		c.Command = []string{"/bin/sh"}
-		c.Args = []string{"-c", step.Command}
 
+		// lets remove any escaped "\$" stuff in the pipeline library
+		commandText := strings.Replace(step.Command, "\\$", "$", -1)
+		c.Args = []string{"-c", commandText}
+
+		workspaceDir := o.getWorkspaceDir()
 		if strings.HasPrefix(dir, "./") {
-			dir = "/workspace" + strings.TrimPrefix(dir, ".")
+			dir = workspaceDir + strings.TrimPrefix(dir, ".")
 		}
 		if !filepath.IsAbs(dir) {
-			dir = filepath.Join("/workspace", dir)
+			dir = filepath.Join(workspaceDir, dir)
 		}
 		c.WorkingDir = dir
-
-		// TODO use different image based on if its jx or not?
-		c.Image = "jenkinsxio/jx:latest"
 
 		steps = append(steps, c)
 	}
@@ -478,6 +495,10 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		steps = append(steps, childSteps...)
 	}
 	return steps, nil
+}
+
+func (o *StepCreateTaskOptions) getWorkspaceDir() string {
+	return filepath.Join("/workspace", o.SourceName)
 }
 
 func (o *StepCreateTaskOptions) discoverBuildPack(dir string, projectConfig *config.ProjectConfig) (string, error) {

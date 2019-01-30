@@ -197,12 +197,12 @@ func CreateOrUpdatePipeline(knativePipelineClient kpipelineclient.Interface, ns 
 			Tasks:     tasks,
 		},
 	}
-	_, err := resourceInterface.Create(created)
+	answer, err := resourceInterface.Create(created)
 	if err == nil {
-		return created, nil
+		return answer, nil
 	}
 
-	answer, err := resourceInterface.Get(resourceName, metav1.GetOptions{})
+	answer, err = resourceInterface.Get(resourceName, metav1.GetOptions{})
 	if err != nil {
 		return answer, errors.Wrapf(err, "failed to get Pipeline %s after failing to create a new one", resourceName)
 	}
