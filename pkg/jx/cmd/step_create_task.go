@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile/gitresolver"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/kpipelines"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -48,6 +50,8 @@ type StepCreateTaskOptions struct {
 	BuildPackURL string
 	BuildPackRef string
 	PipelineKind string
+	Context      string
+	Apply        bool
 
 	PodTemplates        map[string]*corev1.Pod
 	MissingPodTemplates map[string]bool
@@ -87,6 +91,8 @@ func NewCmdStepCreateTask(f Factory, in terminal.FileReader, out terminal.FileWr
 	cmd.Flags().StringVarP(&options.BuildPackRef, "ref", "r", "", "The Git reference (branch,tag,sha) in the Git repository to use")
 	cmd.Flags().StringVarP(&options.Pack, "pack", "p", "", "The build pack name. If none is specified its discovered from the source code")
 	cmd.Flags().StringVarP(&options.PipelineKind, "kind", "k", "release", "The kind of pipeline to create such as: "+strings.Join(jenkinsfile.PipelineKinds, ", "))
+	cmd.Flags().StringVarP(&options.Context, "context", "c", "", "The pipeline context if there are multiple separate pipelines for a given branch")
+	cmd.Flags().BoolVarP(&options.Apply, "apply", "a", false, "If enabled lets apply the generated ")
 	return cmd
 }
 
@@ -244,19 +250,34 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 			steps = append(steps, ss...)
 		}
 	}
-	name := "jx-task-" + languageName + "-" + templateKind
+
+	gitInfo, err := o.FindGitInfo(o.Dir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to find git information from dir %s", o.Dir)
+	}
+
+	branch, err := o.Git().Branch(o.Dir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to find git branch from dir %s", o.Dir)
+	}
+
+	name := kpipelines.PipelineResourceName(gitInfo, branch, o.Context)
 	task := &pipelineapi.Task{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "pipeline.knative.dev/v1alpha1",
 			Kind:       "Task",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: kube.ToValidName(name),
+			Name: name,
 		},
 		Spec: pipelineapi.TaskSpec{
 			Steps: steps,
 		},
 	}
+	if o.Apply {
+		return o.applyTask(task, gitInfo, branch)
+	}
+
 	data, err := yaml.Marshal(task)
 	if err != nil {
 		return errors.Wrapf(err, "failed to marshal Task YAML")
@@ -271,6 +292,69 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		return errors.Wrapf(err, "failed to save Task file %s", fileName)
 	}
 	log.Infof("generated Task at %s\n", util.ColorInfo(fileName))
+	return nil
+}
+
+func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.GitRepository, branch string) error {
+	_, ns, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+	kpClient, _, err := o.KnativePipelineClient()
+	if err != nil {
+		return err
+	}
+
+	resource, err := kpipelines.CreateOrUpdateSourceResource(kpClient, ns, gitInfo, branch)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create/update the PipelineResource")
+	}
+
+	gitURL := gitInfo.HttpCloneURL()
+	log.Infof("have PipelineResource %s for the git repository %s and branch %s\n", resource.Name, gitURL, branch)
+
+	if task.Spec.Inputs == nil {
+		task.Spec.Inputs = &pipelineapi.Inputs{}
+	}
+	task.Spec.Inputs.Resources = append(task.Spec.Inputs.Resources, pipelineapi.TaskResource{
+		Name:       resource.Name,
+		Type:       pipelineapi.PipelineResourceTypeGit,
+		TargetPath: "/workspace",
+	})
+
+	// now lets create the task...
+	_, err = kpipelines.CreateOrUpdateTask(kpClient, ns, task)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create/update the task")
+	}
+
+	taskInputResources := []pipelineapi.PipelineTaskInputResource{}
+	resources := []pipelineapi.PipelineDeclaredResource{}
+	if resource != nil {
+		resources = append(resources, pipelineapi.PipelineDeclaredResource{
+			Name: resource.Name,
+			Type: resource.Spec.Type,
+		})
+		taskInputResources = append(taskInputResources, pipelineapi.PipelineTaskInputResource{
+			Name:     "source",
+			Resource: resource.Name,
+		})
+	}
+	tasks := []pipelineapi.PipelineTask{
+		{
+			Name: "build",
+			Resources: &pipelineapi.PipelineTaskResources{
+				Inputs: taskInputResources,
+			},
+		},
+	}
+
+	// lets lazily create the Pipeline
+	pipeline, err := kpipelines.CreateOrUpdatePipeline(kpClient, ns, gitInfo, branch, o.Context, resources, tasks)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create/update the Pipeline")
+	}
+	log.Infof("Pipeline %s\n", util.ColorInfo(pipeline.Name))
 	return nil
 }
 

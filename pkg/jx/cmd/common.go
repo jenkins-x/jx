@@ -24,6 +24,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
 	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
+	kpipelineclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -87,6 +88,7 @@ type CommonOptions struct {
 	devNamespace           string
 	jxClient               versioned.Interface
 	knbClient              buildclient.Interface
+	kpClient			   kpipelineclient.Interface
 	jenkinsClient          gojenkins.JenkinsClient
 	git                    gits.Gitter
 	helm                   helm.Helmer
@@ -215,6 +217,24 @@ func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
 	return o.jxClient, o.currentNamespace, nil
 }
 
+// KnativePipelineClient lazily creates a new Knative Pipeline client
+func (o *CommonOptions) KnativePipelineClient() (kpipelineclient.Interface, string, error) {
+	if o.Factory == nil {
+		return nil, "", errors.New("command factory is not initialized")
+	}
+	if o.kpClient == nil {
+		knativePipelineClient, ns, err := o.CreateKnativePipelineClient()
+		if err != nil {
+			return nil, ns, err
+		}
+		o.kpClient = knativePipelineClient
+		if o.currentNamespace == "" {
+			o.currentNamespace = ns
+		}
+	}
+	return o.kpClient, o.currentNamespace, nil
+}
+
 func (o *CommonOptions) KnativeBuildClient() (buildclient.Interface, string, error) {
 	if o.Factory == nil {
 		return nil, "", errors.New("command factory is not initialized")
@@ -273,6 +293,7 @@ func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, 
 	}
 	return o.jxClient, o.devNamespace, nil
 }
+
 
 // SetJenkinsClient sets the JenkinsClient - usually used in testing
 func (o *CommonOptions) SetJenkinsClient(jenkinsClient gojenkins.JenkinsClient) {
