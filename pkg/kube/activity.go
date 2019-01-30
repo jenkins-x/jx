@@ -162,18 +162,20 @@ func GenerateBuildNumber(activities typev1.PipelineActivityInterface, pipelines 
 	return build, answer, nil
 }
 
-func createSourceRepositoryIfMissing(jxClient versioned.Interface, ns string, activity *PipelineActivityKey) error {
+func createSourceRepositoryIfMissing(jxClient versioned.Interface, ns string, activityKey *PipelineActivityKey) error {
 	srs := NewSourceRepositoryService(jxClient, ns)
 
 	if srs == nil {
 		return fmt.Errorf("failed to create sourcerepository service")
 	}
 
-	_, err := srs.GetSourceRepository(activity.Name)
+	resourceName := ToValidName(activityKey.GitInfo.Organisation + "-" + activityKey.Name)
+
+	_, err := srs.GetSourceRepository(resourceName)
 
 	if err != nil {
-		log.Infof("Creating missing sourcerepository object %s\n", activity.Name)
-		return srs.CreateOrUpdateSourceRepository(activity.Name, activity.GitInfo.Organisation, activity.GitInfo.URL)
+		log.Infof("Creating missing sourcerepository object %s\n", activityKey.Name)
+		return srs.CreateOrUpdateSourceRepository(resourceName, activityKey.GitInfo.Organisation, activityKey.GitInfo.URL)
 	}
 
 	return nil
