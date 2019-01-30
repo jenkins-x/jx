@@ -251,16 +251,18 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	dir := o.getWorkspaceDir()
 
 	steps := []corev1.Container{}
+	volumes := []corev1.Volume{}
 	for _, l := range lifecycles.All() {
 		if l == nil {
 			continue
 		}
 		for _, s := range l.Steps {
-			ss, err := o.createSteps(languageName, pipelineConfig, templateKind, s, container, dir)
+			ss, v, err := o.createSteps(languageName, pipelineConfig, templateKind, s, container, dir)
 			if err != nil {
 				return err
 			}
 			steps = append(steps, ss...)
+			volumes = kube.CombineVolumes(volumes, v...)
 		}
 	}
 
@@ -285,6 +287,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		},
 		Spec: pipelineapi.TaskSpec{
 			Steps: steps,
+			Volumes: volumes,
 		},
 	}
 	fileName := o.OutputFile
@@ -441,8 +444,9 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 	return nil
 }
 
-func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *jenkinsfile.PipelineStep, containerName string, dir string) ([]corev1.Container, error) {
+func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *jenkinsfile.PipelineStep, containerName string, dir string) ([]corev1.Container, []corev1.Volume, error) {
 
+	volumes := []corev1.Volume{}
 	steps := []corev1.Container{}
 
 	if step.Container != "" {
@@ -463,8 +467,9 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		}
 		containers := podTemplate.Spec.Containers
 		if len(containers) == 0 {
-			return steps, fmt.Errorf("No Containers for pod template %s", containerName)
+			return steps, volumes, fmt.Errorf("No Containers for pod template %s", containerName)
 		}
+		volumes = podTemplate.Spec.Volumes
 		c := containers[0]
 		o.stepCounter++
 		c.Name = "step" + strconv.Itoa(1+o.stepCounter)
@@ -490,13 +495,14 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		steps = append(steps, c)
 	}
 	for _, s := range step.Steps {
-		childSteps, err := o.createSteps(languageName, pipelineConfig, templateKind, s, containerName, dir)
+		childSteps, v, err := o.createSteps(languageName, pipelineConfig, templateKind, s, containerName, dir)
 		if err != nil {
-			return steps, err
+			return steps, v, err
 		}
 		steps = append(steps, childSteps...)
+		volumes = kube.CombineVolumes(volumes, v...)
 	}
-	return steps, nil
+	return steps, volumes, nil
 }
 
 func (o *StepCreateTaskOptions) getWorkspaceDir() string {
@@ -519,7 +525,7 @@ func (o *StepCreateTaskOptions) discoverBuildPack(dir string, projectConfig *con
 
 func (o *StepCreateTaskOptions) removeUnnecessaryVolumes(container *corev1.Container) {
 	// for now let remove them all?
-	container.VolumeMounts = nil
+	//container.VolumeMounts = nil
 }
 
 func (o *StepCreateTaskOptions) removeUnnecessaryEnvVars(container *corev1.Container) {
