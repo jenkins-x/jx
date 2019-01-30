@@ -62,6 +62,8 @@ func NewCmdStepVerify(f Factory, in terminal.FileReader, out terminal.FileWriter
 		},
 	}
 
+	cmd.AddCommand(NewCmdStepVerifyPod(f, in, out, errOut))
+
 	cmd.Flags().Int32VarP(&options.After, "after", "", 60, "The time in seconds after which the application should be ready")
 	cmd.Flags().Int32VarP(&options.Pods, "pods", "p", 1, "Number of expected pods to be running")
 	cmd.Flags().Int32VarP(&options.Restarts, "restarts", "r", 0, "Maximum number of restarts which are acceptable within the given time")
