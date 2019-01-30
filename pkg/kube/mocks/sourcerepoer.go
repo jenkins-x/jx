@@ -7,6 +7,7 @@ import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	pegomock "github.com/petergtz/pegomock"
 	"reflect"
+	"time"
 )
 
 type MockSourceRepoer struct {
@@ -101,26 +102,45 @@ func (mock *MockSourceRepoer) ListSourceRepositories() (*v1.SourceRepositoryList
 }
 
 func (mock *MockSourceRepoer) VerifyWasCalledOnce() *VerifierSourceRepoer {
-	return &VerifierSourceRepoer{mock, pegomock.Times(1), nil}
+	return &VerifierSourceRepoer{
+		mock:                   mock,
+		invocationCountMatcher: pegomock.Times(1),
+	}
 }
 
 func (mock *MockSourceRepoer) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierSourceRepoer {
-	return &VerifierSourceRepoer{mock, invocationCountMatcher, nil}
+	return &VerifierSourceRepoer{
+		mock:                   mock,
+		invocationCountMatcher: invocationCountMatcher,
+	}
 }
 
 func (mock *MockSourceRepoer) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierSourceRepoer {
-	return &VerifierSourceRepoer{mock, invocationCountMatcher, inOrderContext}
+	return &VerifierSourceRepoer{
+		mock:                   mock,
+		invocationCountMatcher: invocationCountMatcher,
+		inOrderContext:         inOrderContext,
+	}
+}
+
+func (mock *MockSourceRepoer) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierSourceRepoer {
+	return &VerifierSourceRepoer{
+		mock:                   mock,
+		invocationCountMatcher: invocationCountMatcher,
+		timeout:                timeout,
+	}
 }
 
 type VerifierSourceRepoer struct {
 	mock                   *MockSourceRepoer
 	invocationCountMatcher pegomock.Matcher
 	inOrderContext         *pegomock.InOrderContext
+	timeout                time.Duration
 }
 
 func (verifier *VerifierSourceRepoer) CreateOrUpdateSourceRepository(_param0 string, _param1 string, _param2 string) *SourceRepoer_CreateOrUpdateSourceRepository_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateOrUpdateSourceRepository", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateOrUpdateSourceRepository", params, verifier.timeout)
 	return &SourceRepoer_CreateOrUpdateSourceRepository_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -155,7 +175,7 @@ func (c *SourceRepoer_CreateOrUpdateSourceRepository_OngoingVerification) GetAll
 
 func (verifier *VerifierSourceRepoer) CreateSourceRepository(_param0 string, _param1 string, _param2 string) *SourceRepoer_CreateSourceRepository_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateSourceRepository", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateSourceRepository", params, verifier.timeout)
 	return &SourceRepoer_CreateSourceRepository_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -190,7 +210,7 @@ func (c *SourceRepoer_CreateSourceRepository_OngoingVerification) GetAllCaptured
 
 func (verifier *VerifierSourceRepoer) DeleteSourceRepository(_param0 string) *SourceRepoer_DeleteSourceRepository_OngoingVerification {
 	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "DeleteSourceRepository", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "DeleteSourceRepository", params, verifier.timeout)
 	return &SourceRepoer_DeleteSourceRepository_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -217,7 +237,7 @@ func (c *SourceRepoer_DeleteSourceRepository_OngoingVerification) GetAllCaptured
 
 func (verifier *VerifierSourceRepoer) GetSourceRepository(_param0 string) *SourceRepoer_GetSourceRepository_OngoingVerification {
 	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetSourceRepository", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetSourceRepository", params, verifier.timeout)
 	return &SourceRepoer_GetSourceRepository_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -244,7 +264,7 @@ func (c *SourceRepoer_GetSourceRepository_OngoingVerification) GetAllCapturedArg
 
 func (verifier *VerifierSourceRepoer) ListSourceRepositories() *SourceRepoer_ListSourceRepositories_OngoingVerification {
 	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ListSourceRepositories", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ListSourceRepositories", params, verifier.timeout)
 	return &SourceRepoer_ListSourceRepositories_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
