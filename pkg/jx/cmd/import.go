@@ -462,7 +462,7 @@ func (options *ImportOptions) DraftCreate() error {
 
 	jenkinsfile := jenkins.DefaultJenkinsfile
 	withRename := false
-	if options.Jenkinsfile != "" {
+	if options.Jenkinsfile != "" && options.Jenkinsfile != jenkins.DefaultJenkinsfile {
 		jenkinsfile = options.Jenkinsfile
 		withRename = true
 	}

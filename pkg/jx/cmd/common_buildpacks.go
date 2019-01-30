@@ -135,23 +135,15 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 
 	generateJenkinsPath := jenkinsfilePath
 	jenkinsfileBackup := ""
-	if jenkinsfileExists && initialisedGit && !disableJenkinsfileCheck {
-		// lets copy the old Jenkinsfile in case we overwrite it
-		jenkinsfileBackup = jenkinsfilePath + JenkinsfileBackupSuffix
-		err = util.RenameFile(jenkinsfilePath, jenkinsfileBackup)
+	defaultJenkinsfileExists, err := util.FileExists(defaultJenkinsfile)
+	if defaultJenkinsfileExists && !disableJenkinsfileCheck {
+		// lets copy the old Jenkinsfile in case we override it
+		jenkinsfileBackup = defaultJenkinsfile + JenkinsfileBackupSuffix
+		err = util.RenameFile(defaultJenkinsfile, jenkinsfileBackup)
 		if err != nil {
 			return "", fmt.Errorf("Failed to rename old Jenkinsfile: %s", err)
 		}
-	} else if withRename {
-		defaultJenkinsfileExists, err := util.FileExists(defaultJenkinsfile)
-		if defaultJenkinsfileExists && initialisedGit && !disableJenkinsfileCheck {
-			jenkinsfileBackup = defaultJenkinsfile + JenkinsfileBackupSuffix
-			err = util.RenameFile(defaultJenkinsfile, jenkinsfileBackup)
-			if err != nil {
-				return "", fmt.Errorf("Failed to rename old Jenkinsfile: %s", err)
-			}
-			generateJenkinsPath = defaultJenkinsfile
-		}
+		generateJenkinsPath = defaultJenkinsfile
 	}
 
 	err = CopyBuildPack(dir, lpack)
@@ -230,7 +222,7 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 			log.Warnf("Failed to check for Jenkinsfile %s", err)
 		} else {
 			if jenkinsfileExists {
-				if !initialisedGit {
+				if !initialisedGit && !withRename{
 					err = os.Remove(jenkinsfileBackup)
 					if err != nil {
 						log.Warnf("Failed to remove Jenkinsfile backup %s", err)
