@@ -52,13 +52,20 @@ type GKECluster struct {
 	ProjectID      string
 	Zone           string
 	MachineType    string
+	Preemptible    bool
 	MinNumOfNodes  string
 	MaxNumOfNodes  string
 	DiskSize       string
 	AutoRepair     bool
 	AutoUpgrade    bool
 	ServiceAccount string
+	DevStorageRole string
 }
+
+const (
+	devStorageFullControl = "https://www.googleapis.com/auth/devstorage.full_control"
+	devStorageReadOnly = "https://www.googleapis.com/auth/devstorage.read_only"
+)
 
 // Name Get name
 func (g GKECluster) Name() string {
@@ -147,7 +154,7 @@ func (g GKECluster) CreateTfVarsFile(path string) error {
 	if err != nil {
 		return err
 	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "node_preemptible", "false")
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "node_preemptible", strconv.FormatBool(g.Preemptible))
 	if err != nil {
 		return err
 	}
@@ -167,7 +174,7 @@ func (g GKECluster) CreateTfVarsFile(path string) error {
 	if err != nil {
 		return err
 	}
-	err = terraform.WriteKeyValueToFileIfNotExists(path, "enable_legacy_abac", "true")
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "enable_legacy_abac", "false")
 	if err != nil {
 		return err
 	}
@@ -176,6 +183,10 @@ func (g GKECluster) CreateTfVarsFile(path string) error {
 		return err
 	}
 	err = terraform.WriteKeyValueToFileIfNotExists(path, "monitoring_service", "monitoring.googleapis.com")
+	if err != nil {
+		return err
+	}
+	err = terraform.WriteKeyValueToFileIfNotExists(path, "node_devstorage_role", g.DevStorageRole)
 	if err != nil {
 		return err
 	}
@@ -192,9 +203,14 @@ func (g *GKECluster) ParseTfVarsFile(path string) {
 	g.MaxNumOfNodes, _ = terraform.ReadValueFromFile(path, "max_node_count")
 	g.MachineType, _ = terraform.ReadValueFromFile(path, "node_machine_type")
 	g.DiskSize, _ = terraform.ReadValueFromFile(path, "node_disk_size")
+	g.DevStorageRole, _ = terraform.ReadValueFromFile(path, "node_devstorage_role")
+
+	preemptible, _ := terraform.ReadValueFromFile(path, "node_preemptible")
+	b, _ := strconv.ParseBool(preemptible)
+	g.Preemptible = b
 
 	autoRepair, _ := terraform.ReadValueFromFile(path, "auto_repair")
-	b, _ := strconv.ParseBool(autoRepair)
+	b, _ = strconv.ParseBool(autoRepair)
 	g.AutoRepair = b
 
 	autoUpgrade, _ := terraform.ReadValueFromFile(path, "auto_upgrade")
@@ -215,12 +231,14 @@ type Flags struct {
 	GKESkipEnableApis           bool
 	GKEZone                     string
 	GKEMachineType              string
+	GKEPreemptible              bool
 	GKEMinNumOfNodes            string
 	GKEMaxNumOfNodes            string
 	GKEDiskSize                 string
 	GKEAutoRepair               bool
 	GKEAutoUpgrade              bool
 	GKEServiceAccount           string
+	GKEUseEnhancedScopes        bool
 	LocalOrganisationRepository string
 }
 
@@ -315,11 +333,13 @@ func (options *CreateTerraformOptions) addFlags(cmd *cobra.Command, addSharedFla
 	cmd.Flags().StringVarP(&options.Flags.GKEDiskSize, "gke-disk-size", "", "100", "Size in GB for node VM boot disks. Defaults to 100GB")
 	cmd.Flags().BoolVarP(&options.Flags.GKEAutoUpgrade, "gke-enable-autoupgrade", "", false, "Sets autoupgrade feature for a cluster's default node-pool(s)")
 	cmd.Flags().BoolVarP(&options.Flags.GKEAutoRepair, "gke-enable-autorepair", "", true, "Sets autorepair feature for a cluster's default node-pool(s)")
+	cmd.Flags().BoolVarP(&options.Flags.GKEPreemptible, "gke-preemptible", "", false, "Use preemptible VMs in the node-pool")
 	cmd.Flags().StringVarP(&options.Flags.GKEMachineType, "gke-machine-type", "", "", "The type of machine to use for nodes")
 	cmd.Flags().StringVarP(&options.Flags.GKEMinNumOfNodes, "gke-min-num-nodes", "", "", "The minimum number of nodes to be created in each of the cluster's zones")
 	cmd.Flags().StringVarP(&options.Flags.GKEMaxNumOfNodes, "gke-max-num-nodes", "", "", "The maximum number of nodes to be created in each of the cluster's zones")
 	cmd.Flags().StringVarP(&options.Flags.GKEProjectID, "gke-project-id", "", "", "Google Project ID to create cluster in")
 	cmd.Flags().StringVarP(&options.Flags.GKEZone, "gke-zone", "", "", "The compute zone (e.g. us-central1-a) for the cluster")
+	cmd.Flags().BoolVarP(&options.Flags.GKEUseEnhancedScopes, "gke-use-enhanced-scopes", "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
 
 }
 
@@ -769,12 +789,18 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 	g.AutoUpgrade = options.Flags.GKEAutoUpgrade
 	g.AutoRepair = options.Flags.GKEAutoRepair
 	g.MachineType = options.Flags.GKEMachineType
+	g.Preemptible = options.Flags.GKEPreemptible
 	g.Zone = options.Flags.GKEZone
 	g.ProjectID = options.Flags.GKEProjectID
 	g.MinNumOfNodes = options.Flags.GKEMinNumOfNodes
 	g.MaxNumOfNodes = options.Flags.GKEMaxNumOfNodes
 	g.ServiceAccount = options.Flags.GKEServiceAccount
 	g.Organisation = options.Flags.OrganisationName
+	if options.Flags.GKEUseEnhancedScopes {
+		g.DevStorageRole = devStorageFullControl
+	} else {
+		g.DevStorageRole = devStorageReadOnly
+	}
 
 	if g.ServiceAccount != "" {
 		options.Debugf("loading service account for cluster %s", g.Name())
@@ -843,6 +869,34 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 		err := survey.AskOne(prompts, &g.MachineType, nil, surveyOpts)
 		if err != nil {
 			return err
+		}
+	}
+
+	if !options.BatchMode {
+		if !g.Preemptible {
+			prompt := &survey.Confirm{
+				Message: "Would you like use preemptible VMs?",
+				Default: false,
+				Help: "Preemptible VMs can significantly lower the cost of a cluster",
+			}
+			survey.AskOne(prompt, &g.Preemptible, nil, surveyOpts)
+		}
+	}
+
+	if !options.BatchMode {
+		if !options.Flags.GKEUseEnhancedScopes {
+			prompt := &survey.Confirm{
+				Message: "Would you like to access Google Cloud Storage / Google Container Registry?",
+				Default: false,
+				Help: "Enables enhanced oauth scopes to allow access to storage based services",
+			}
+			survey.AskOne(prompt, &options.Flags.GKEUseEnhancedScopes, nil, surveyOpts)
+
+			if options.Flags.GKEUseEnhancedScopes {
+				g.DevStorageRole = devStorageFullControl
+			} else {
+				g.DevStorageRole = devStorageReadOnly
+			}
 		}
 	}
 

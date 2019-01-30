@@ -71,6 +71,7 @@ type FakeProvider struct {
 	ForkedRepositories map[string][]*FakeRepository
 	Type               FakeProviderType
 	Users              []*GitUser
+	WebHooks           []*GitWebHookArguments
 }
 
 func (f *FakeProvider) ListOrganisations() ([]GitOrganisation, error) {
@@ -384,12 +385,12 @@ func (f *FakeProvider) MergePullRequest(pr *GitPullRequest, message string) erro
 }
 
 func (f *FakeProvider) CreateWebHook(data *GitWebHookArguments) error {
+	f.WebHooks = append(f.WebHooks, data)
 	return nil
 }
 
 func (p *FakeProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
-	webHooks := []*GitWebHookArguments{}
-	return webHooks, nil
+	return p.WebHooks, nil
 }
 
 func (p *FakeProvider) UpdateWebHook(data *GitWebHookArguments) error {
@@ -661,8 +662,8 @@ func NewFakeRepository(owner string, repoName string) *FakeRepository {
 		Owner: owner,
 		GitRepo: &GitRepository{
 			Name:     repoName,
-			CloneURL: "https://github.com/" + owner + "/" + repoName + ".git",
-			HTMLURL:  "https://github.com/" + owner + "/" + repoName,
+			CloneURL: "https://fake.git/" + owner + "/" + repoName + ".git",
+			HTMLURL:  "https://fake.git/" + owner + "/" + repoName,
 		},
 		PullRequests: map[int]*FakePullRequest{},
 		Commits:      []*FakeCommit{},

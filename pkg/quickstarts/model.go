@@ -134,12 +134,12 @@ func (model *QuickstartModel) CreateSurvey(filter *QuickstartFilter, batchMode b
 	if !batchMode {
 		if name == "" {
 			name = q.Name
-		}
-		var err error
-		name, err = util.PickValue("Project name", name, true, "", in, out, errOut)
-		if err != nil {
-			return nil, err
-		}
+			var err error
+			name, err = util.PickValue("Project name", name, true, "", in, out, errOut)
+			if err != nil {
+				return nil, err
+			}
+		} 
 	}
 	if name == "" {
 		return nil, fmt.Errorf("No project name")

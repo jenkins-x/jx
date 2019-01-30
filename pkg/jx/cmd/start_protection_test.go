@@ -4,16 +4,17 @@ import (
 	"fmt"
 	"testing"
 
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/prow/config"
 
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/prow"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 )
 
 const (
@@ -31,7 +32,9 @@ func TestStartProtection(t *testing.T) {
 		[]runtime.Object{},
 		[]runtime.Object{},
 		&gits.GitFake{},
+		nil,
 		helm_test.NewMockHelmer(),
+		resources_test.NewMockInstaller(),
 	)
 
 	kubeClient, ns, err := o.KubeClientAndDevNamespace()

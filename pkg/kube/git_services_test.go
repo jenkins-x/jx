@@ -3,6 +3,7 @@ package kube_test
 import (
 	"testing"
 
+	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/api/core/v1"
@@ -37,6 +38,29 @@ func TestGitServiceKindFromSecrets(t *testing.T) {
 	kubeClient := fake.NewSimpleClientset(secret)
 
 	foundServiceKind, err := kube.GetServiceKindFromSecrets(kubeClient, "", serviceURL)
+
+	assert.NoError(t, err, "should find a service kind without any error")
+	assert.Equal(t, serviceKind, foundServiceKind, "should find a service kind equal with '%s'", serviceKind)
+}
+
+func TestGitServiceKindFromSecretsWithMissingKind(t *testing.T) {
+	t.Parallel()
+	secret := createSecret("jx-pipeline-git",
+		map[string]string{
+			"jenkins.io/kind":         "git",
+			"jenkins.io/service-kind": "",
+		},
+		map[string]string{
+			"jenkins.io/url": serviceURL,
+		})
+	ns := "jx"
+	secret.Namespace = ns
+	kubeClient := fake.NewSimpleClientset(secret)
+	jxClient := v1fake.NewSimpleClientset()
+
+	foundServiceKind, err := kube.GetGitServiceKind(jxClient, kubeClient, ns, serviceURL)
+
+	t.Logf("found service kind %s for URL %s\n\n", foundServiceKind, serviceURL)
 
 	assert.NoError(t, err, "should find a service kind without any error")
 	assert.Equal(t, serviceKind, foundServiceKind, "should find a service kind equal with '%s'", serviceKind)

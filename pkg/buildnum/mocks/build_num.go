@@ -36,6 +36,21 @@ func (mock *MockBuildNumberIssuer) NextBuildNumber(_param0 kube.PipelineID) (str
 	return ret0, ret1
 }
 
+func (mock *MockBuildNumberIssuer) Ready() bool {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockBuildNumberIssuer().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("Ready", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
+	var ret0 bool
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(bool)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockBuildNumberIssuer) VerifyWasCalledOnce() *VerifierBuildNumberIssuer {
 	return &VerifierBuildNumberIssuer{mock, pegomock.Times(1), nil}
 }
@@ -79,4 +94,21 @@ func (c *BuildNumberIssuer_NextBuildNumber_OngoingVerification) GetAllCapturedAr
 		}
 	}
 	return
+}
+
+func (verifier *VerifierBuildNumberIssuer) Ready() *BuildNumberIssuer_Ready_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Ready", params)
+	return &BuildNumberIssuer_Ready_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type BuildNumberIssuer_Ready_OngoingVerification struct {
+	mock              *MockBuildNumberIssuer
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *BuildNumberIssuer_Ready_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *BuildNumberIssuer_Ready_OngoingVerification) GetAllCapturedArguments() {
 }

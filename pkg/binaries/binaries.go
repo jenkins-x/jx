@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-const EksctlVersion = "0.1.18"
+const EksctlVersion = "0.1.19"
 const IBMCloudVersion = "0.10.1"
 const HeptioAuthenticatorAwsVersion = "1.10.3"
 

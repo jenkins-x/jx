@@ -1,21 +1,23 @@
 package cmd_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
-	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/prow"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/runtime"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"github.com/ghodss/yaml"
-	"k8s.io/test-infra/prow/config"
 	"os"
 	"testing"
+
+	"github.com/ghodss/yaml"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/gits"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/kube"
+	resources_mock "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
+	"github.com/jenkins-x/jx/pkg/prow"
+	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/test-infra/prow/config"
 )
 
 func TestGetPipelinesWithProw(t *testing.T) {
@@ -24,8 +26,8 @@ func TestGetPipelinesWithProw(t *testing.T) {
 	// fake the output stream to be checked later
 	r, fakeStdout, _ := os.Pipe()
 	o.CommonOptions = cmd.CommonOptions{
-		Out:     fakeStdout,
-		Err:     os.Stderr,
+		Out: fakeStdout,
+		Err: os.Stderr,
 	}
 
 	mockProwConfig(&o, t)
@@ -55,13 +57,13 @@ func mockProwConfig(o *cmd.GetPipelineOptions, t *testing.T) {
 	ps.Name = "release"
 	prowConfig := &config.Config{}
 	prowConfig.Postsubmits = make(map[string][]config.Postsubmit)
-	prowConfig.Postsubmits["test/repo"] = []config.Postsubmit {ps}
+	prowConfig.Postsubmits["test/repo"] = []config.Postsubmit{ps}
 	configYAML, err := yaml.Marshal(&prowConfig)
 	data := make(map[string]string)
 	data[prow.ProwConfigFilename] = string(configYAML)
 	cm := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: prow.ProwConfigMapName,
+			Name:      prow.ProwConfigMapName,
 			Namespace: "jx",
 		},
 		Data: data,
@@ -75,7 +77,9 @@ func mockProwConfig(o *cmd.GetPipelineOptions, t *testing.T) {
 			devEnv,
 		},
 		&gits.GitFake{},
+		nil,
 		helm_test.NewMockHelmer(),
+		resources_mock.NewMockInstaller(),
 	)
 	_, _, err = o.JXClientAndDevNamespace()
 	assert.NoError(t, err)

@@ -8,11 +8,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
+	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
@@ -101,7 +102,9 @@ func TestEnvironmentRoleBinding(t *testing.T) {
 			envRoleBinding,
 		},
 		gits.NewGitCLI(),
+		nil,
 		helm.NewHelmCLI("helm", helm.V2, "", true),
+		resources_test.NewMockInstaller(),
 	)
 
 	err := o.Run()

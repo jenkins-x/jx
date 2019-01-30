@@ -25,6 +25,7 @@ func TestStepStash(t *testing.T) {
 	o := &cmd.StepStashOptions{}
 	o.StorageLocation.Classifier = "tests"
 	o.StorageLocation.BucketURL = "file://" + tempDir
+	o.ToPath = "output"
 	o.Pattern = []string{testData}
 	o.ProjectGitURL = "https://github.com/jenkins-x/dummy-repo.git"
 	o.ProjectBranch = "master"
@@ -33,7 +34,7 @@ func TestStepStash(t *testing.T) {
 	err = o.Run()
 	assert.NoError(t, err)
 
-	generatedFile := filepath.Join(tempDir, testData)
+	generatedFile := filepath.Join(tempDir, o.ToPath, testData)
 	assert.FileExists(t, generatedFile)
 
 	tests.AssertTextFileContentsEqual(t, testData, generatedFile)

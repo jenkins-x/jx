@@ -17,7 +17,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// UpdateWebhooks the flags for running create cluster
+// UpdateWebhooksOptions the flags for updating webhooks
 type UpdateWebhooksOptions struct {
 	CommonOptions
 	Org             string

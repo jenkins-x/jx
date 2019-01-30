@@ -1620,41 +1620,47 @@ func (o *CommonOptions) installProw() error {
 			return err
 		}
 	}
-	log.Infof("Installing knative into namespace %s\n", util.ColorInfo(devNamespace))
+	log.Infof("\nInstalling knative into namespace %s\n", util.ColorInfo(devNamespace))
 
 	kvalues := []string{"build.auth.git.username=" + o.Username, "build.auth.git.password=" + o.OAUTHToken}
 	kvalues = append(kvalues, setValues...)
 
+	settings, err := o.TeamSettings()
+	if err != nil {
+	  return err
+	}
+	if settings.HelmTemplate || settings.NoTiller || settings.HelmBinary != "helm" {
+		// lets disable tiller
+		kvalues = append(kvalues, "tillerNamespace=")
+	}
+
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true,
+		return o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true,
 			kvalues, nil, "")
-		return nil
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to install Knative build: %v", err)
+		return errors.Wrap(err, "failed to install Knative build")
 	}
 
-	log.Infof("Installing Prow into namespace %s\n", util.ColorInfo(devNamespace))
+	log.Infof("\nInstalling Prow into namespace %s\n", util.ColorInfo(devNamespace))
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values, nil, "")
-		return nil
+		return o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values, nil, "")
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to install Prow: %v", err)
+		return errors.Wrap(err, "failed to install Prow")
 	}
 
-	log.Infof("Installing BuildTemplates into namespace %s\n", util.ColorInfo(devNamespace))
+	log.Infof("\nInstalling BuildTemplates into namespace %s\n", util.ColorInfo(devNamespace))
 
 	err = o.retry(2, time.Second, func() (err error) {
-		err = o.installChart(kube.DefaultBuildTemplatesReleaseName, kube.ChartBuildTemplates, "", devNamespace, true,
+		return o.installChart(kube.DefaultBuildTemplatesReleaseName, kube.ChartBuildTemplates, "", devNamespace, true,
 			values, nil, "")
-		return nil
 	})
 
 	if err != nil {
-		return fmt.Errorf("failed to install BuildTemplates: %v", err)
+		return errors.Wrap(err, "failed to install JX Build Templates")
 	}
 
 	return nil
@@ -1694,10 +1700,14 @@ func (o *CommonOptions) createWebhookProw(gitURL string, gitProvider gits.GitPro
 
 func (o *CommonOptions) isProw() (bool, error) {
 	ns := o.devNamespace
-	if ns == "" {
-		ns = o.currentNamespace
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return false, err
 	}
-	env, err := kube.GetEnvironment(o.jxClient, ns, "dev")
+	if ns == "" {
+		ns = devNs
+	}
+	env, err := kube.GetEnvironment(jxClient, ns, "dev")
 	if err != nil {
 		return false, err
 	}

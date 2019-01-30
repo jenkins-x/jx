@@ -13,6 +13,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/jenkins-x/jx/pkg/users"
 
 	"github.com/ghodss/yaml"
@@ -28,7 +30,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
-	chgit "github.com/jenkins-x/chyle/chyle/git"
+	chgit "github.com/antham/chyle/chyle/git"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -224,6 +226,12 @@ func (o *StepChangelogOptions) Run() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	// Ensure we don't have a shallow checkout in git
+	err = gits.Unshallow(dir, o.Git())
+	if err != nil {
+		return errors.Wrapf(err, "error unshallowing git repo in %s", dir)
 	}
 	previousRev := o.PreviousRevision
 	if previousRev == "" {

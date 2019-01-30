@@ -2,10 +2,11 @@ package amazon
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"k8s.io/client-go/kubernetes"
 	"regexp"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/kube"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -15,7 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
-// GetAccountID returns the current account ID
+// GetAccountIDAndRegion returns the current account ID and region
 func GetAccountIDAndRegion(profile string, region string) (string, string, error) {
 	sess, err := NewAwsSession(profile, region)
 	region = *sess.Config.Region
@@ -52,7 +53,7 @@ This function is kept for backwards compatibility. AWS region should not be reso
 read from ConfigMap (see RememberRegion function). To keep backwards compatibility with existing installations this
 function will be kept for a while and it will perform migration to config map. Eventually it will be removed from a
 codebase.
- */
+*/
 func GetRegionFromContainerRegistryHost(kubeClient kubernetes.Interface, namespace string, dockerRegistry string) string {
 	submatch := regexp.MustCompile(`\.ecr\.(.*)\.amazonaws\.com$`).FindStringSubmatch(dockerRegistry)
 	if len(submatch) > 1 {

@@ -45,10 +45,14 @@ func WriteYamlFiles(client Client, path string, files ...string) error {
 
 // WriteBasicAuth stores the basic authentication credentials in vault at the given path.
 func WriteBasicAuth(client Client, path string, auth config.BasicAuth) error {
-	secret := map[string]interface{}{
+	return WriteMap(client, path, map[string]interface{}{
 		usernameKey: auth.Username,
 		passwordKey: auth.Password,
-	}
+	})
+}
+
+// WriteMap stores the map in vault at the given path.
+func WriteMap(client Client, path string, secret map[string]interface{}) error {
 	_, err := client.Write(path, secret)
 	if err != nil {
 		return errors.Wrapf(err, "storing basic auth credentials into vault at path '%s'", path)

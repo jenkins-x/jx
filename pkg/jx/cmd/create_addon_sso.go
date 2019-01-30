@@ -14,12 +14,13 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/pki"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
 const (
-	defaultSSONamesapce         = "jx"
+	defaultSSONamesapce         = "sso"
 	defaultSSOReleaseNamePrefix = "jx-sso"
 	repoName                    = "jenkinsxio"
 	repoURL                     = "https://chartmuseum.jx.cd.jenkins-x.io"
@@ -46,8 +47,7 @@ var (
 // CreateAddonSSOptions the options for the create sso addon
 type CreateAddonSSOOptions struct {
 	CreateAddonOptions
-	UpgradeIngressOptions UpgradeIngressOptions
-	DexVersion            string
+	DexVersion string
 }
 
 // NewCmdCreateAddonSSO creates a command object for the "create addon sso" command
@@ -60,11 +60,6 @@ func NewCmdCreateAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWr
 	}
 	options := &CreateAddonSSOOptions{
 		CreateAddonOptions: CreateAddonOptions{
-			CreateOptions: CreateOptions{
-				CommonOptions: commonOptions,
-			},
-		},
-		UpgradeIngressOptions: UpgradeIngressOptions{
 			CreateOptions: CreateOptions{
 				CommonOptions: commonOptions,
 			},
@@ -87,7 +82,6 @@ func NewCmdCreateAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWr
 	options.addCommonFlags(cmd)
 	cmd.Flags().StringVarP(&options.DexVersion, "dex-version", "", defaultDexVersion, "The dex chart version to install)")
 	options.addFlags(cmd, defaultSSONamesapce, defaultSSOReleaseNamePrefix, defaultOperatorVersion)
-	options.UpgradeIngressOptions.addFlags(cmd)
 	return cmd
 }
 
@@ -231,7 +225,7 @@ func (o *CreateAddonSSOOptions) installDex(domain string, clientID string, clien
 		"connectors.github.config.clientSecret=" + clientSecret,
 		fmt.Sprintf("connectors.github.config.orgs={%s}", strings.Join(authorizedOrgs, ",")),
 		"domain=" + domain,
-		"certs.grpc.ca.namespace=" + CertManagerNamespace,
+		"certs.grpc.ca.namespace=" + pki.CertManagerNamespace,
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
@@ -250,8 +244,12 @@ func (o *CreateAddonSSOOptions) installSSOOperator(dexGrpcService string) error 
 }
 
 func (o *CreateAddonSSOOptions) exposeSSO() error {
-	options := &o.UpgradeIngressOptions
-	options.Namespaces = []string{o.Namespace}
-	options.SkipCertManager = true
-	return options.Run()
+	upgradeIngOpts := &UpgradeIngressOptions{
+		CreateOptions: CreateOptions{
+			CommonOptions: o.CommonOptions,
+		},
+		Namespaces:   []string{o.Namespace},
+		WaitForCerts: true,
+	}
+	return upgradeIngOpts.Run()
 }

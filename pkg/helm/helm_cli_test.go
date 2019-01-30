@@ -177,7 +177,7 @@ func TestInstallChart(t *testing.T) {
 		chart, "--set", value[0], "--values", valueFile[0]}
 	helm, runner := createHelm(t, nil, "")
 
-	err := helm.InstallChart(chart, releaseName, namespace, nil, nil, value, valueFile, "", "", "")
+	err := helm.InstallChart(chart, releaseName, namespace, "", -1, value, valueFile, "", "", "")
 	assert.NoError(t, err, "should install the chart without any error")
 	verifyArgs(t, helm, runner, expectedArgs...)
 }
@@ -191,7 +191,7 @@ func TestUpgradeChart(t *testing.T) {
 		"--timeout", fmt.Sprintf("%d", timeout), "--version", version, "--set", value[0], "--values", valueFile[0], releaseName, chart}
 	helm, runner := createHelm(t, nil, "")
 
-	err := helm.UpgradeChart(chart, releaseName, namespace, &version, true, &timeout, true, true, value, valueFile,
+	err := helm.UpgradeChart(chart, releaseName, namespace, version, true, timeout, true, true, value, valueFile,
 		"", "", "")
 
 	assert.NoError(t, err, "should upgrade the chart without any error")

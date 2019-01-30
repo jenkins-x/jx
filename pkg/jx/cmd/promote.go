@@ -436,7 +436,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	}
 	promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, startPromote)
 
-	err = o.Helm().UpgradeChart(fullAppName, releaseName, targetNS, &version, true, nil, false, true, nil, nil, "",
+	err = o.Helm().UpgradeChart(fullAppName, releaseName, targetNS, version, true, -1, false, true, nil, nil, "",
 		"", "")
 	if err == nil {
 		err = o.commentOnIssues(targetNS, env, promoteKey)
@@ -464,7 +464,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 	message := fmt.Sprintf("Promote %s to version %s", app, versionName)
 
 	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
-		templates map[string]map[string]interface{}) error {
+		templates map[string]string, dir string) error {
 		var err error
 		if version == "" {
 			version, err = o.findLatestVersion(app)
@@ -787,7 +787,7 @@ func (o *PromoteOptions) verifyHelmConfigured() error {
 func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStepActivityKey {
 	pipeline := o.Pipeline
 	if o.Build == "" {
-		o.Build = o.Version
+		o.Build = o.getBuildNumber()
 	}
 	build := o.Build
 	buildURL := os.Getenv("BUILD_URL")

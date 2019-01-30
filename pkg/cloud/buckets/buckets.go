@@ -41,14 +41,21 @@ func kubeProviderToBucketKind(provider string) string {
 	}
 }
 
-// ReadURL reads the given URL from either a http/https endpoint or a bucket URL path
-func ReadURL(urlText string, timeout time.Duration) ([]byte, error) {
+// ReadURL reads the given URL from either a http/https endpoint or a bucket URL path.
+// if specified the httpFn is a function which can append the user/password or token if using a git provider
+func ReadURL(urlText string, timeout time.Duration, httpFn func(urlString string) (string, error)) ([]byte, error) {
 	u, err := url.Parse(urlText)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to parse URL %s", urlText)
 	}
 	switch u.Scheme {
 	case "http", "https":
+		if httpFn != nil {
+			urlText, err = httpFn(urlText)
+			if err != nil {
+			  return nil, err
+			}
+		}
 		return ReadHTTPURL(urlText, timeout)
 	default:
 		return ReadBucketURL(u, timeout)

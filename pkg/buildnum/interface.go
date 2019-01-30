@@ -7,7 +7,10 @@ import "github.com/jenkins-x/jx/pkg/kube"
 //go:generate pegomock generate github.com/jenkins-x/jx/pkg/buildnum BuildNumberIssuer -o mocks/build_num.go --generate-matchers
 type BuildNumberIssuer interface {
 
-	//Generate the next build number for the supplied pipeline.
-	//Returns the build number, or the error that occurred.
+	// NextBuildNumber generates the next build number for the supplied pipeline.
+	// Returns the build number, or the error that occurred.
 	NextBuildNumber(pipeline kube.PipelineID) (string, error)
+
+	// Ready returns true if the generator is ready to generate build numbers, otherwise false.
+	Ready() bool
 }

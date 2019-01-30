@@ -311,7 +311,7 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 		return fmt.Errorf("Missing property Repo")
 	}
 	webhookUrl := data.URL
-	if repo == "" {
+	if webhookUrl == "" {
 		return fmt.Errorf("Missing property URL")
 	}
 	hooks, _, err := p.Client.Repositories.ListHooks(p.Context, owner, repo, nil)

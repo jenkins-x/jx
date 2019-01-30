@@ -14,6 +14,7 @@
 package version
 
 import (
+	"github.com/pkg/errors"
 	"strings"
 
 	"github.com/blang/semver"
@@ -65,7 +66,12 @@ func GetVersion() string {
 
 // GetSemverVersion returns a semver.Version struct representing the current version
 func GetSemverVersion() (semver.Version, error) {
-	return semver.Make(strings.TrimPrefix(GetVersion(), VersionPrefix))
+	text := strings.TrimPrefix(GetVersion(), VersionPrefix)
+	v, err := semver.Make(text)
+	if err != nil {
+	  return v, errors.Wrapf(err, "failed to parse version %s", text)
+	}
+	return v, nil
 }
 
 // VersionStringDefault returns the current version string or returns a dummy

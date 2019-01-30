@@ -10,15 +10,14 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/expose"
 
-	"github.com/jenkins-x/jx/pkg/certmanager"
-
+	"github.com/jenkins-x/jx/pkg/kube/resources"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/pkg/errors"
 
 	"github.com/sirupsen/logrus"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/golang-jenkins"
+	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -33,11 +32,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
-	"gopkg.in/yaml.v2"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	yaml "gopkg.in/yaml.v2"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -93,8 +92,11 @@ type CommonOptions struct {
 	helm                   helm.Helmer
 	kuber                  kube.Kuber
 	vaultOperatorClient    vaultoperatorclient.Interface
+	resourcesInstaller     resources.Installer
 	modifyDevEnvironmentFn ModifyDevEnvironmentFn
 	modifyEnvironmentFn    ModifyEnvironmentFn
+	environmentsDir        string
+	fakeGitProvider        *gits.FakeProvider
 }
 
 type ServerFlags struct {
@@ -337,6 +339,19 @@ func (o *CommonOptions) Kube() kube.Kuber {
 	return o.kuber
 }
 
+// SetResourcesInstaller configures the installer for Kubernetes resources
+func (o *CommonOptions) SetResourcesInstaller(installer resources.Installer) {
+	o.resourcesInstaller = installer
+}
+
+// ResourcesInstaller returns the installer for Kubernetes resources
+func (o *CommonOptions) ResourcesInstaller() resources.Installer {
+	if o.resourcesInstaller == nil {
+		o.resourcesInstaller = resources.NewKubeCtlInstaller("", true, true)
+	}
+	return o.resourcesInstaller
+}
+
 func (o *CommonOptions) SetKube(kuber kube.Kuber) {
 	o.kuber = kuber
 }
@@ -553,6 +568,37 @@ func (o *CommonOptions) retry(attempts int, sleep time.Duration, call func() err
 
 		time.Sleep(sleep)
 
+		log.Warnf("\nretrying after error:%s\n\n", err)
+	}
+	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
+}
+
+// FatalError is a wrapper struct around regular error indicating that re(try) processing flow should be interrupted
+// immediately.
+type FatalError struct {
+	E error
+}
+
+func (err *FatalError) Error() string {
+	return fmt.Sprintf("fatal error: %s", err.E.Error())
+}
+
+func (o *CommonOptions) retryUntilFatalError(attempts int, sleep time.Duration, call func() (*FatalError, error)) (err error) {
+	for i := 0; ; i++ {
+		fatalErr, err := call()
+		if fatalErr != nil {
+			return fatalErr.E
+		}
+		if err == nil {
+			return nil
+		}
+
+		if i >= (attempts - 1) {
+			break
+		}
+
+		time.Sleep(sleep)
+
 		log.Infof("retrying after error:%s\n", err)
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
@@ -587,7 +633,7 @@ func (o *CommonOptions) retryQuiet(attempts int, sleep time.Duration, call func(
 				dot = false
 				log.Blank()
 			}
-			log.Infof("%s\n", lastMessage)
+			log.Warnf("%s\n\n", lastMessage)
 		}
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
@@ -624,7 +670,7 @@ func (o *CommonOptions) retryQuietlyUntilTimeout(timeout time.Duration, sleep ti
 				dot = false
 				log.Blank()
 			}
-			log.Infof("%s\n", lastMessage)
+			log.Warnf("%s\n\n", lastMessage)
 		}
 	}
 }
@@ -732,12 +778,16 @@ func (o *CommonOptions) pickRemoteURL(config *gitcfg.Config) (string, error) {
 // todo switch to using expose as a jx plugin
 // get existing config from the devNamespace and run expose in the target environment
 func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) error {
-	return expose.Expose(devNamespace, targetNamespace, password, o.kubeClient, o.Helm(), defaultInstallTimeout)
+	certClient, err := o.CreateCertManagerClient()
+	if err != nil {
+		return errors.Wrap(err, "creating cert-manager client")
+	}
+	return expose.Expose(o.kubeClient, certClient, devNamespace, targetNamespace, password, o.Helm(), defaultInstallTimeout)
 }
 
 func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig, services ...string) error {
 	return expose.RunExposecontroller(devNamespace, targetNamespace, ic, o.kubeClient, o.Helm(),
-		defaultInstallTimeout)
+		defaultInstallTimeout, services...)
 }
 
 // CleanExposecontrollerReources cleans expose controller resources
@@ -779,10 +829,6 @@ func (o *CommonOptions) ensureAddonServiceAvailable(serviceName string) (string,
 
 	// todo ask if user wants to install addon?
 	return "", nil
-}
-
-func (o *CommonOptions) copyCertmanagerResources(targetNamespace string, ic kube.IngressConfig) error {
-	return certmanager.CopyCertmanagerResources(targetNamespace, ic, o.kubeClient)
 }
 
 func (o *CommonOptions) getJobName() string {
@@ -906,6 +952,18 @@ func (o *CommonOptions) GetErr() io.Writer {
 	return o.Err
 }
 
+// EnvironmentsDir is the local directory the environments are stored in  - can be faked out for tests
+func (o *CommonOptions) EnvironmentsDir() (string, error) {
+	if o.environmentsDir == "" {
+		var err error
+		o.environmentsDir, err = util.EnvironmentsDir()
+		if err != nil {
+			return "", err
+		}
+	}
+	return o.environmentsDir, nil
+}
+
 // SeeAlsoText returns text to describe which other commands to look at which are related to the current command
 func SeeAlsoText(commands ...string) string {
 	if len(commands) == 0 {
@@ -914,7 +972,7 @@ func SeeAlsoText(commands ...string) string {
 
 	var sb strings.Builder
 	sb.WriteString("\nSee Also:\n\n")
-	
+
 	for _, command := range commands {
 		u := "https://jenkins-x.io/commands/" + strings.Replace(command, " ", "_", -1)
 		sb.WriteString(fmt.Sprintf("* %s : [%s](%s)\n", command, u, u))
