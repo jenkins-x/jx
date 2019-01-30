@@ -28,7 +28,7 @@ type StepPRCommentFlags struct {
 	PR         string
 }
 
-// NewCmdStep Steps a command object for the "step" command
+// NewCmdStepPRComment Steps a command object for the "step pr comment" command
 func NewCmdStepPRComment(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &StepPRCommentOptions{
 		StepPROptions: StepPROptions{

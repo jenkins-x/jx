@@ -74,6 +74,11 @@ func (o *UpgradeBinariesOptions) Run() error {
 			if err != nil {
 				return err
 			}
+		} else if binary.Name() == "kubectl" {
+			err = o.installKubectl(true)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

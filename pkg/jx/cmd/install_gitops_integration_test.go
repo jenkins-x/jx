@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
+	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/testkube"
 	"github.com/stretchr/testify/require"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -54,7 +55,7 @@ func TestInstallGitOps(t *testing.T) {
 	o := cmd.CreateInstallOptions(co.Factory, co.In, co.Out, co.Err)
 
 	gitter := gits.NewGitFake()
-	helmer := helm_test.NewFakeHelmer()
+	helmer := helm_test.NewMockHelmer()
 	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
 		[]runtime.Object{
 			clusterAdminRole,
@@ -62,7 +63,9 @@ func TestInstallGitOps(t *testing.T) {
 		},
 		[]runtime.Object{},
 		gitter,
+		nil,
 		helmer,
+		resources_test.NewMockInstaller(),
 	)
 	o.CommonOptions.SetGit(gitter)
 	o.CommonOptions.InstallDependencies = true

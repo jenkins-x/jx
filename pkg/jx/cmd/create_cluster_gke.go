@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"io"
 	"strings"
 
@@ -46,6 +47,7 @@ type CreateClusterGKEFlags struct {
 	Zone            string
 	Namespace       string
 	Labels          string
+	EnhancedScopes  bool
 	Scopes          []string
 	Preemptible     bool
 }
@@ -114,6 +116,7 @@ func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.File
 	cmd.Flags().StringVarP(&options.Flags.Labels, "labels", "", "", "The labels to add to the cluster being created such as 'foo=bar,whatnot=123'. Label names must begin with a lowercase character ([a-z]), end with a lowercase alphanumeric ([a-z0-9]) with dashes (-), and lowercase alphanumeric ([a-z0-9]) between.")
 	cmd.Flags().StringArrayVarP(&options.Flags.Scopes, "scope", "", []string{}, "The OAuth scopes to be added to the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.Preemptible, "preemptible", "", false, "Use preemptible VMs in the node-pool")
+	cmd.Flags().BoolVarP(&options.Flags.EnhancedScopes, "enhanced-scopes", "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
 
 	cmd.AddCommand(NewCmdCreateClusterGKETerraform(f, in, out, errOut))
 
@@ -218,6 +221,39 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		survey.AskOne(prompt, &maxNumOfNodes, nil, surveyOpts)
 	}
 
+	if !o.BatchMode {
+		if !o.Flags.Preemptible {
+			prompt := &survey.Confirm{
+				Message: "Would you like use preemptible VMs?",
+				Default: false,
+				Help: "Preemptible VMs can significantly lower the cost of a cluster",
+			}
+			survey.AskOne(prompt, &o.Flags.Preemptible, nil, surveyOpts)
+		}
+	}
+
+	if !o.BatchMode {
+		// if scopes is empty &
+		if len(o.Flags.Scopes) == 0 && !o.Flags.EnhancedScopes {
+			prompt := &survey.Confirm{
+				Message: "Would you like to access Google Cloud Storage / Google Container Registry?",
+				Default: false,
+				Help: "Enables enhanced oauth scopes to allow access to storage based services",
+			}
+			survey.AskOne(prompt, &o.Flags.EnhancedScopes, nil, surveyOpts)
+		}
+
+		if o.Flags.EnhancedScopes {
+			o.Flags.Scopes = []string{"https://www.googleapis.com/auth/cloud-platform",
+				"https://www.googleapis.com/auth/compute",
+				"https://www.googleapis.com/auth/devstorage.full_control",
+				"https://www.googleapis.com/auth/service.management",
+				"https://www.googleapis.com/auth/servicecontrol",
+				"https://www.googleapis.com/auth/logging.write",
+				"https://www.googleapis.com/auth/monitoring"}
+		}
+	}
+
 	// mandatory flags are machine type, num-nodes, zone,
 	args := []string{"container", "clusters", "create",
 		o.Flags.ClusterName, "--zone", zone,
@@ -289,6 +325,13 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	if o.InstallOptions.Flags.DefaultEnvironmentPrefix == "" {
 		o.InstallOptions.Flags.DefaultEnvironmentPrefix = o.Flags.ClusterName
 	}
+
+	o.InstallOptions.setInstallValues(map[string]string{
+		kube.Zone:        zone,
+		kube.ProjectID:   projectId,
+		kube.ClusterName: o.Flags.ClusterName,
+	})
+
 	err = o.initAndInstall(GKE)
 	if err != nil {
 		return err
@@ -330,7 +373,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		}
 		err = secrets.NewSecretLocation(kubeClient, ns).SetInVault(true)
 		if err != nil {
-			return errors.Wrap(err, "configring secrets location")
+			return errors.Wrap(err, "configuring secrets location")
 		}
 	}
 

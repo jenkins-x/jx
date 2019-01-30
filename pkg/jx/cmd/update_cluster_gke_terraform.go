@@ -16,7 +16,8 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-// CreateClusterOptions the flags for running create cluster
+// UpdateClusterGKETerraformOptions the flags for updating a cluster on GKE
+// using terraform
 type UpdateClusterGKETerraformOptions struct {
 	UpdateClusterOptions
 
@@ -43,8 +44,8 @@ var (
 `)
 )
 
-// NewCmdGet creates a command object for the generic "init" action, which
-// installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
+// NewCmdUpdateClusterGKETerraform creates a command object for the updating an existing cluster running
+// on GKE using terraform.
 func NewCmdUpdateClusterGKETerraform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := createUpdateClusterGKETerraformOptions(f, in, out, errOut, GKE)
 

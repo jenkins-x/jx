@@ -11,6 +11,7 @@ import (
 )
 
 func TestValuesTree(t *testing.T) {
+	t.Parallel()
 	dir, err := createFiles(map[string]string{
 		"cheese/values.yaml": "foo: bar",
 		"meat/ham/values.yaml": `foo: 
@@ -34,6 +35,7 @@ meat:
 }
 
 func TestValuesTreeWithExistingFile(t *testing.T) {
+	t.Parallel()
 	dir, err := createFiles(map[string]string{
 		"values.yaml":        "people: pete",
 		"cheese/values.yaml": "foo: bar",
@@ -59,6 +61,7 @@ people: pete
 }
 
 func TestValuesTreeWithFileRefs(t *testing.T) {
+	t.Parallel()
 	dir, err := createFiles(map[string]string{
 		"milk/values.yaml": `foo:
   bar:

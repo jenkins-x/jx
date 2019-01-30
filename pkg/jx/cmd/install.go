@@ -11,17 +11,17 @@ import (
 	"strings"
 	"time"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
-	randomdata "github.com/Pallinder/go-randomdata"
+	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
 
-	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/jenkins-x/jx/pkg/addon"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -36,9 +36,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	git "gopkg.in/src-d/go-git.v4"
+	"gopkg.in/src-d/go-git.v4"
 	core_v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -65,6 +65,8 @@ type InstallOptions struct {
 
 	modifyConfigMapCallback ModifyConfigMapCallback
 	modifySecretCallback    ModifySecretCallback
+
+	installValues map[string]string
 }
 
 // InstallFlags flags for the install command
@@ -396,14 +398,14 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "installing helm binaries")
 	}
 
-	err = options.installCloudProviderDependencies()
-	if err != nil {
-		return errors.Wrap(err, "installing cloud provider dependencies")
-	}
-
 	err = options.configureKubectl(ns)
 	if err != nil {
 		return errors.Wrap(err, "configure the kubectl")
+	}
+
+	err = options.installCloudProviderDependencies()
+	if err != nil {
+		return errors.Wrap(err, "installing cloud provider dependencies")
 	}
 
 	options.Flags.Provider, err = options.GetCloudProvider(options.Flags.Provider)
@@ -416,14 +418,14 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring minikube from kubectl context")
 	}
 
-	err = options.configureCloudProivderPreInit(client)
-	if err != nil {
-		return errors.Wrap(err, "configuring the cloud provider before initializing the platform")
-	}
-
 	err = options.configureTeamSettings()
 	if err != nil {
 		return errors.Wrap(err, "configuring the team settings in the dev environment")
+	}
+
+	err = options.configureCloudProviderPreInit(client)
+	if err != nil {
+		return errors.Wrap(err, "configuring the cloud provider before initializing the platform")
 	}
 
 	err = options.init()
@@ -466,6 +468,11 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "cloning the jx cloud environments repo")
 	}
 
+	err = options.selectJenkinsInstallation()
+	if err != nil {
+		return errors.Wrap(err, "selecting the Jenkins installation type")
+	}
+
 	err = options.configureHelmValues(ns)
 	if err != nil {
 		return errors.Wrap(err, "configuring helm values")
@@ -485,11 +492,6 @@ func (options *InstallOptions) Run() error {
 	err = options.configureHelmRepo()
 	if err != nil {
 		return errors.Wrap(err, "configuring the Jenkins X helm repository")
-	}
-
-	err = options.selectJenkinsInstallation()
-	if err != nil {
-		return errors.Wrap(err, "selecting the Jenkins installation type")
 	}
 
 	err = options.configureAndInstallProw(ns)
@@ -513,6 +515,8 @@ func (options *InstallOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "getting the platform version")
 	}
+
+	log.Infof("Installing jenkins-x-platform version: %s\n", util.ColorInfo(version))
 
 	if options.Flags.GitOpsMode {
 		err := options.installPlatformGitOpsMode(gitOpsEnvDir, gitOpsDir, configStore, DEFAULT_CHARTMUSEUM_URL,
@@ -595,6 +599,7 @@ func (options *InstallOptions) Run() error {
 
 	log.Infof("\nYour Kubernetes context is now set to the namespace: %s \n", util.ColorInfo(ns))
 	log.Infof("To switch back to your original namespace use: %s\n", util.ColorInfo("jx namespace "+originalNs))
+	log.Infof("Or to use this context/namespace in just one terminal use: %s\n", util.ColorInfo("jx shell"))
 	log.Infof("For help on switching contexts see: %s\n\n", util.ColorInfo("https://jenkins-x.io/developing/kube-context/"))
 
 	log.Infof("To import existing projects into Jenkins:       %s\n", util.ColorInfo("jx import"))
@@ -604,21 +609,17 @@ func (options *InstallOptions) Run() error {
 }
 
 func (options *InstallOptions) configureKubectl(namespace string) error {
-	context := ""
-	var err error
 	if !options.Flags.DisableSetKubeContext {
-		context, err = options.getCommandOutput("", "kubectl", "config", "current-context")
+		context, err := options.getCommandOutput("", "kubectl", "config", "current-context")
 		if err != nil {
 			return errors.Wrap(err, "failed to retrieve the current context from kube configuration")
 		}
-	}
-
-	if !options.Flags.DisableSetKubeContext {
 		err = options.RunCommand("kubectl", "config", "set-context", context, "--namespace", namespace)
 		if err != nil {
 			return errors.Wrapf(err, "failed to set the context '%s' in kube configuration", context)
 		}
 	}
+
 	return nil
 }
 
@@ -738,10 +739,10 @@ func (options *InstallOptions) installPlatform(providerEnvDir string, jxChart st
 	}
 
 	if !options.Flags.InstallOnly {
-		err = options.Helm().UpgradeChart(jxChart, jxRelName, namespace, &version, true,
-			&timeoutInt, false, false, nil, allValuesFiles, "", "", "")
+		err = options.Helm().UpgradeChart(jxChart, jxRelName, namespace, version, true,
+			timeoutInt, false, false, nil, allValuesFiles, "", "", "")
 	} else {
-		err = options.Helm().InstallChart(jxChart, jxRelName, namespace, &version, &timeoutInt,
+		err = options.Helm().InstallChart(jxChart, jxRelName, namespace, version, timeoutInt,
 			nil, allValuesFiles, "", "", "")
 	}
 	if err != nil {
@@ -1199,10 +1200,7 @@ func (options *InstallOptions) buildGitRepositoryOptionsForEnvironments() (*gits
 			if err != nil {
 				return nil, errors.Wrap(err, "determining the git owner for environments")
 			}
-			org, err = kube.GetDevEnvGitOwner(jxClient)
-			if err != nil {
-				return nil, errors.Wrap(err, "determining the git owner for environments")
-			}
+			org, _ = kube.GetDevEnvGitOwner(jxClient)
 			if org == "" {
 				org = user.Username
 			}
@@ -1365,7 +1363,7 @@ func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigSt
 		}
 		options.modifySecretCallback = func(name string, callback func(secret *core_v1.Secret) error) (*core_v1.Secret, error) {
 			if options.Flags.Vault {
-				vaultClient, err := options.CreateSystemVaultClient()
+				vaultClient, err := options.CreateSystemVaultClient(options.devNamespace)
 				if err != nil {
 					return nil, errors.Wrap(err, "retrieving the system vault client")
 				}
@@ -1423,9 +1421,10 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 			}
 			repo, gitProvider, err := kube.CreateEnvGitRepository(options.BatchMode, authConfigSvc, devEnv, devEnv, config, forkEnvGitURL, envDir,
 				gitRepoOptions, options.CreateEnvOptions.HelmValuesConfig, prefix, git, options.In, options.Out, options.Err)
-			if err != nil {
+			if err != nil || repo == nil || gitProvider == nil {
 				return errors.Wrapf(err, "failed to create git repository for the dev Environment source")
 			}
+
 			dir := gitOpsDir
 			err = git.Init(dir)
 			if err != nil {
@@ -1552,7 +1551,18 @@ func (options *InstallOptions) installHelmBinaries() error {
 	return options.installMissingDependencies(dependencies)
 }
 
-func (options *InstallOptions) configureCloudProivderPreInit(client kubernetes.Interface) error {
+func (options *InstallOptions) setInstallValues(values map[string]string) {
+	if values != nil {
+		if options.installValues == nil {
+			options.installValues = map[string]string{}
+		}
+		for k, v := range values {
+			options.installValues[k] = v
+		}
+	}
+}
+
+func (options *InstallOptions) configureCloudProviderPreInit(client kubernetes.Interface) error {
 	switch options.Flags.Provider {
 	case AKS:
 		err := options.createClusterAdmin()
@@ -1600,7 +1610,7 @@ func (options *InstallOptions) configureCloudProivderPostInit(client kubernetes.
 			return errors.Wrap(err, "failed to update the helm repo")
 		}
 		err = options.Helm().UpgradeChart("ibm/ibmcloud-block-storage-plugin", "ibmcloud-block-storage-plugin",
-			"default", nil, true, nil, false, false, nil, nil, "", "", "")
+			"default", "", true, -1, false, false, nil, nil, "", "", "")
 		if err != nil {
 			return errors.Wrap(err, "failed to install/upgrade the IBM Cloud Block Storage drivers")
 		}
@@ -1812,6 +1822,14 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			},
 			Namespace: namespace,
 		}
+		if options.installValues != nil {
+			if cvo.GKEProjectID == "" {
+				cvo.GKEProjectID = options.installValues[kube.ProjectID]
+			}
+			if cvo.GKEZone == "" {
+				cvo.GKEZone = options.installValues[kube.Zone]
+			}
+		}
 		vaultOperatorClient, err := cvo.CreateVaultOperatorClient()
 		if err != nil {
 			return err
@@ -1838,7 +1856,7 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 }
 
 func (options *InstallOptions) storeSecretYamlFilesInVault(path string, files ...string) error {
-	vaultClient, err := options.CreateSystemVaultClient()
+	vaultClient, err := options.CreateSystemVaultClient(options.devNamespace)
 	if err != nil {
 		return errors.Wrap(err, "retrieving the system vault client")
 	}
@@ -1852,7 +1870,7 @@ func (options *InstallOptions) storeSecretYamlFilesInVault(path string, files ..
 }
 
 func (options *InstallOptions) storeAdminCredentialsInVault(svc *config.AdminSecretsService) error {
-	vaultClient, err := options.CreateSystemVaultClient()
+	vaultClient, err := options.CreateSystemVaultClient(options.devNamespace)
 	if err != nil {
 		return errors.Wrap(err, "retrieving the system vault client")
 	}
@@ -1904,7 +1922,9 @@ func (options *InstallOptions) saveIngressConfig() (*kube.IngressConfig, error) 
 
 func (options *InstallOptions) saveClusterConfig() error {
 	if !options.Flags.DisableSetKubeContext {
-		var jxInstallConfig *kube.JXInstallConfig
+		jxInstallConfig := &kube.JXInstallConfig{
+			KubeProvider: options.Flags.Provider,
+		}
 		kubeConfig, _, err := options.Kube().LoadConfig()
 		if err != nil {
 			return errors.Wrap(err, "retrieving the current kube config")
@@ -1914,16 +1934,20 @@ func (options *InstallOptions) saveClusterConfig() error {
 			if kubeConfigContext != nil {
 				server := kube.Server(kubeConfig, kubeConfigContext)
 				certificateAuthorityData := kube.CertificateAuthorityData(kubeConfig, kubeConfigContext)
-				jxInstallConfig = &kube.JXInstallConfig{
-					Server: server,
-					CA:     certificateAuthorityData,
-				}
+				jxInstallConfig.Server = server
+				jxInstallConfig.CA = certificateAuthorityData
 			}
 		}
 
 		_, err = options.ModifyConfigMap(kube.ConfigMapNameJXInstallConfig, func(cm *core_v1.ConfigMap) error {
 			data := util.ToStringMapStringFromStruct(jxInstallConfig)
-			cm.Data = data
+			for k, v := range data {
+				cm.Data[k] = v
+			}
+			iv := options.installValues
+			for k, v := range iv {
+				cm.Data[k] = v
+			}
 			return nil
 		})
 		if err != nil {
@@ -1956,6 +1980,7 @@ func (options *InstallOptions) configureJenkins(namespace string) error {
 					options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
 					options.CreateJenkinsUserOptions.UseBrowser = true
 					options.CreateJenkinsUserOptions.Verbose = false
+					options.CreateJenkinsUserOptions.RecreateToken = true
 					if options.BatchMode {
 						options.CreateJenkinsUserOptions.BatchMode = true
 						options.CreateJenkinsUserOptions.Headless = true

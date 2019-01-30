@@ -98,8 +98,4 @@ spec:
     - mountPath: /home/jenkins/.gnupg
       name: volume-2
 status:
-  completionTime: null
-  creationTime: null
-  startTime: null
-  stepStates: null
   stepsCompleted: null

@@ -480,3 +480,13 @@ func (g *GitFake) Diff(dir string) (string, error) {
 func (g *GitFake) notFound() error {
 	return fmt.Errorf("Not found")
 }
+
+// FetchUnshallow deepens a shallow git clone
+func (g *GitFake) FetchUnshallow(dir string) error {
+	return nil
+}
+
+// IsShallow returns false
+func (g *GitFake) IsShallow(dir string) (bool, error) {
+	return false, nil
+}

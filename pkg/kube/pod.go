@@ -92,15 +92,18 @@ func waitForPodSelectorToBeReady(client kubernetes.Interface, namespace string, 
 	return nil
 }
 
-// HasInitContainerStarted returns true if one of the init containers has started running
-func HasInitContainerStarted(pod *v1.Pod) bool {
+// HasInitContainerStarted returns true if the given InitContainer has started running
+func HasInitContainerStarted(pod *v1.Pod, idx int) bool {
 	if pod == nil {
 		return false
 	}
-	for _, ic := range pod.Status.InitContainerStatuses {
-		if ic.State.Running != nil || ic.State.Terminated != nil {
-			return true
-		}
+	statuses := pod.Status.InitContainerStatuses
+	if idx >= len(statuses) {
+		return false
+	}
+	ic := statuses[idx]
+	if ic.State.Running != nil || ic.State.Terminated != nil {
+		return true
 	}
 	return false
 }

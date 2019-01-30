@@ -9,7 +9,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-// CreateClusterOptions the flags for running create cluster
+// UpdateClusterOptions the flags for running update cluster
 type UpdateClusterOptions struct {
 	UpdateOptions
 	InstallOptions InstallOptions

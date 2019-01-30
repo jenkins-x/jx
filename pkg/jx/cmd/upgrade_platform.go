@@ -47,6 +47,7 @@ type UpgradePlatformOptions struct {
 	Namespace     string
 	Set           string
 	AlwaysUpgrade bool
+	UpdateSecrets bool
 
 	InstallFlags InstallFlags
 }
@@ -84,6 +85,7 @@ func NewCmdUpgradePlatform(f Factory, in terminal.FileReader, out terminal.FileW
 	cmd.Flags().StringVarP(&options.Set, "set", "s", "", "The helm parameters to pass in while upgrading, separated by comma, e.g. key1=val1,key2=val2.")
 	cmd.Flags().BoolVarP(&options.AlwaysUpgrade, "always-upgrade", "", false, "If set to true, jx will upgrade platform Helm chart even if requested version is already installed.")
 	cmd.Flags().BoolVarP(&options.Flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true].")
+	cmd.Flags().BoolVarP(&options.UpdateSecrets, "update-secrets", "", false, "Regenerate adminSecrets.yaml on upgrade")
 
 	options.addCommonFlags(cmd)
 	options.InstallFlags.addCloudEnvOptions(cmd)
@@ -212,8 +214,13 @@ func (o *UpgradePlatformOptions) Run() error {
 		return errors.Wrap(err, "failed to create a temporary config dir for Git credentials")
 	}
 
+	// file locations
 	adminSecretsFileName := filepath.Join(dir, AdminSecretsFile)
 	configFileName := filepath.Join(dir, ExtraValuesFile)
+
+	cloudEnvironmentValuesLocation := filepath.Join(makefileDir, CloudEnvValuesFile)
+	cloudEnvironmentSecretsLocation := filepath.Join(makefileDir, CloudEnvSecretsFile)
+	cloudEnvironmentSopsLocation := filepath.Join(makefileDir, CloudEnvSopsConfigFile)
 
 	client, err := o.KubeClient()
 	if err != nil {
@@ -222,11 +229,11 @@ func (o *UpgradePlatformOptions) Run() error {
 	secretResources := client.CoreV1().Secrets(ns)
 	oldSecret, err := secretResources.Get(JXInstallConfig, metav1.GetOptions{})
 	if err != nil {
-		return errors.Wrap(err, "failed to get the jx secret resource")
+		return errors.Wrap(err, "failed to get the jx-install-config secret")
 	}
 
 	if oldSecret == nil {
-		return errors.Wrap(err, "old secret doesn't exist, aborting")
+		return errors.Wrap(err, "secret jx-install-config doesn't exist, aborting")
 	}
 
 	if targetVersion != currentVersion {
@@ -238,32 +245,46 @@ func (o *UpgradePlatformOptions) Run() error {
 		return nil
 	}
 
-	cloudEnvironmentValuesLocation := filepath.Join(makefileDir, CloudEnvValuesFile)
-	cloudEnvironmentSecretsLocation := filepath.Join(makefileDir, CloudEnvSecretsFile)
-	cloudEnvironmentSopsLocation := filepath.Join(makefileDir, CloudEnvSopsConfigFile)
-
-	adminSecretsFileNameExists, err := util.FileExists(adminSecretsFileName)
+	err = o.removeFileIfExists(adminSecretsFileName)
 	if err != nil {
-		return errors.Wrapf(err, "unable to determine if %s exist", adminSecretsFileName)
+		return errors.Wrapf(err, "unable to remove %s if exist", adminSecretsFileName)
 	}
-	if !adminSecretsFileNameExists {
-		log.Infof("Creating %s from %s\n", util.ColorInfo(adminSecretsFileName), util.ColorInfo(JXInstallConfig))
-		err = ioutil.WriteFile(adminSecretsFileName, oldSecret.Data[AdminSecretsFile], 0644)
+
+	err = o.removeFileIfExists(configFileName)
+	if err != nil {
+		return errors.Wrapf(err, "unable to remove %s if exist", configFileName)
+	}
+
+	log.Infof("Creating %s from %s\n", util.ColorInfo(adminSecretsFileName), util.ColorInfo(JXInstallConfig))
+	err = ioutil.WriteFile(adminSecretsFileName, oldSecret.Data[AdminSecretsFile], 0644)
+	if err != nil {
+		return errors.Wrapf(err, "failed to write the config file %s", adminSecretsFileName)
+	}
+
+	o.Debugf("%s from %s is %s\n", AdminSecretsFile, JXInstallConfig, oldSecret.Data[AdminSecretsFile])
+
+	if o.UpdateSecrets {
+		// load admin secrets service from adminSecretsFileName
+		err = o.AdminSecretsService.NewAdminSecretsConfigFromSecret(adminSecretsFileName)
 		if err != nil {
-			return errors.Wrapf(err, "failed to write the config file %s", adminSecretsFileName)
+			return errors.Wrap(err, "failed to create the admin secret config service from the secrets file")
+		}
+
+		o.AdminSecretsService.NewMavenSettingsXML()
+		adminSecrets := &o.AdminSecretsService.Secrets
+
+
+		o.Debugf("Rewriting secrets file to %s\n", util.ColorInfo(adminSecretsFileName))
+		err = configStore.WriteObject(adminSecretsFileName, adminSecrets)
+		if err != nil {
+			return errors.Wrapf(err, "writing the admin secrets in the secrets file '%s'", adminSecretsFileName)
 		}
 	}
 
-	configFileNameExists, err := util.FileExists(configFileName)
+	log.Infof("Creating %s from %s\n", util.ColorInfo(configFileName), util.ColorInfo(JXInstallConfig))
+	err = ioutil.WriteFile(configFileName, oldSecret.Data[ExtraValuesFile], 0644)
 	if err != nil {
-		return errors.Wrapf(err, "unable to determine if %s exist", configFileName)
-	}
-	if !configFileNameExists {
-		log.Infof("Creating %s from %s\n", util.ColorInfo(configFileName), util.ColorInfo(JXInstallConfig))
-		err = ioutil.WriteFile(configFileName, oldSecret.Data[ExtraValuesFile], 0644)
-		if err != nil {
-			return errors.Wrapf(err, "failed to write the config file %s", configFileName)
-		}
+		return errors.Wrapf(err, "failed to write the config file %s", configFileName)
 	}
 
 	sopsFileExists, err := util.FileExists(cloudEnvironmentSopsLocation)
@@ -291,7 +312,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		}
 	}
 
-	valueFiles := []string{cloudEnvironmentValuesLocation, adminSecretsFileName, configFileName, cloudEnvironmentSecretsLocation}
+	valueFiles := []string{cloudEnvironmentValuesLocation, configFileName, adminSecretsFileName, cloudEnvironmentSecretsLocation}
 	valueFiles, err = helm.AppendMyValues(valueFiles)
 	if err != nil {
 		return errors.Wrap(err, "failed to append the myvalues.yaml file")
@@ -307,20 +328,38 @@ func (o *UpgradePlatformOptions) Run() error {
 		o.Debugf("Adding values file %s\n", util.ColorInfo(v))
 	}
 
-	err = o.Helm().UpgradeChart(o.Chart, o.ReleaseName, ns, &targetVersion, false, nil, false, false, values,
+	err = o.Helm().UpgradeChart(o.Chart, o.ReleaseName, ns, targetVersion, false, -1, false, false, values,
 		valueFiles, "", "", "")
 	if err != nil {
 		return errors.Wrap(err, "unable to upgrade helm chart")
 	}
 
 	if o.Flags.CleanupTempFiles {
-		if !configFileNameExists {
-			err = os.Remove(configFileName)
-			if err != nil {
-				return errors.Wrap(err, "failed to cleanup the config file")
-			}
+		err = o.removeFileIfExists(configFileName)
+		if err != nil {
+			return errors.Wrap(err, "failed to cleanup the config file")
+		}
+
+		err = o.removeFileIfExists(adminSecretsFileName)
+		if err != nil {
+			return errors.Wrap(err, "failed to cleanup the admin secrets file")
 		}
 	}
 
+	return nil
+}
+
+func (o *UpgradePlatformOptions) removeFileIfExists(fileName string) error {
+	fileNameExists, err := util.FileExists(fileName)
+	if err != nil {
+		return errors.Wrapf(err, "unable to determine if %s exist", fileName)
+	}
+	if fileNameExists {
+		o.Debugf("Removing values file %s\n", util.ColorInfo(fileName))
+		err = os.Remove(fileName)
+		if err != nil {
+			return errors.Wrapf(err, "failed to remove %s", fileName)
+		}
+	}
 	return nil
 }

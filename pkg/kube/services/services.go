@@ -20,6 +20,7 @@ const (
 	ExposeAnnotation            = "fabric8.io/expose"
 	ExposeURLAnnotation         = "fabric8.io/exposeUrl"
 	ExposeGeneratedByAnnotation = "fabric8.io/generated-by"
+	ExposeIngressName           = "fabric8.io/ingress.name"
 	JenkinsXSkipTLSAnnotation   = "jenkins-x.io/skip.tls"
 	ExposeIngressAnnotation     = "fabric8.io/ingress.annotations"
 	CertManagerAnnotation       = "certmanager.k8s.io/issuer"
@@ -41,6 +42,23 @@ func GetServices(client kubernetes.Interface, ns string) (map[string]*v1.Service
 		name := r.Name
 		copy := r
 		answer[name] = &copy
+	}
+	return answer, nil
+}
+
+// GetServicesByName returns a list of Service objects from a list of service names
+func GetServicesByName(client kubernetes.Interface, ns string, services []string) ([]*v1.Service, error) {
+	answer := make([]*v1.Service, 0)
+	svcList, err := client.CoreV1().Services(ns).List(meta_v1.ListOptions{})
+	if err != nil {
+		return answer, errors.Wrapf(err, "listing the services in namespace %q", ns)
+	}
+	for _, s := range svcList.Items {
+		i := util.StringArrayIndex(services, s.GetName())
+		if i > 0 {
+			copy := s
+			answer = append(answer, &copy)
+		}
 	}
 	return answer, nil
 }
@@ -292,11 +310,19 @@ func GetServiceAppName(c kubernetes.Interface, name, ns string) (string, error) 
 // ServiceAppName retrives the application name from service labels. If no app lable exists,
 // it returns the service name
 func ServiceAppName(service *v1.Service) string {
-	app, ok := service.Labels[ServiceAppLabel]
-	if !ok {
-		app = service.GetName()
+	if annotations := service.Annotations; annotations != nil {
+		ingName, ok := annotations[ExposeIngressName]
+		if ok {
+			return ingName
+		}
 	}
-	return app
+	if labels := service.Labels; labels != nil {
+		app, ok := labels[ServiceAppLabel]
+		if ok {
+			return app
+		}
+	}
+	return service.GetName()
 }
 
 // AnnotateServicesWithCertManagerIssuer adds the cert-manager annotation to the services from the given namespace. If a list of

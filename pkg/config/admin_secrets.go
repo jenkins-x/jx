@@ -21,16 +21,21 @@ const defaultMavenSettings = `<settings>
       <interactiveMode>false</interactiveMode>
       <mirrors>
           <mirror>
-          <id>nexus</id>
-          <mirrorOf>external:*</mirrorOf>
-          <url>http://nexus/repository/maven-group/</url>
+              <id>nexus</id>
+              <mirrorOf>external:*</mirrorOf>
+              <url>http://nexus/repository/maven-group/</url>
           </mirror>
       </mirrors>
       <servers>
           <server>
-          <id>local-nexus</id>
-          <username>admin</username>
-          <password>%s</password>
+              <id>local-nexus</id>
+              <username>admin</username>
+              <password>%s</password>
+          </server>
+          <server>
+              <id>nexus</id>
+              <username>admin</username>
+              <password>%s</password>
           </server>
       </servers>
       <profiles>
@@ -145,16 +150,26 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 		s.Flags.DefaultAdminPassword, _ = generator.Generate(20, 4, 2, false, true)
 	}
 
+	s.setDefaultSecrets()
+	s.NewMavenSettingsXML()
+	s.newIngressBasicAuth()
+
+	return nil
+}
+
+func (s *AdminSecretsService) setDefaultSecrets() error {
 	s.Secrets.Jenkins.JenkinsSecret.Password = s.Flags.DefaultAdminPassword
 	s.Secrets.ChartMuseum.ChartMuseumEnv.ChartMuseumSecret.User = "admin"
 	s.Secrets.ChartMuseum.ChartMuseumEnv.ChartMuseumSecret.Password = s.Flags.DefaultAdminPassword
 	s.Secrets.Grafana.GrafanaSecret.User = "admin"
 	s.Secrets.Grafana.GrafanaSecret.Password = s.Flags.DefaultAdminPassword
 	s.Secrets.Nexus.DefaultAdminPassword = s.Flags.DefaultAdminPassword
-	s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(defaultMavenSettings, s.Flags.DefaultAdminPassword)
+	return nil
+}
 
-	s.newIngressBasicAuth()
-
+// NewMavenSettingsXML generates the maven settings
+func (s *AdminSecretsService) NewMavenSettingsXML() error {
+	s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(defaultMavenSettings, s.Flags.DefaultAdminPassword, s.Flags.DefaultAdminPassword)
 	return nil
 }
 
@@ -173,7 +188,10 @@ func (s *AdminSecretsService) NewAdminSecretsConfigFromSecret(decryptedSecrets s
 
 	s.Secrets = a
 	s.Flags.DefaultAdminPassword = s.Secrets.Jenkins.JenkinsSecret.Password
+
+	s.setDefaultSecrets()
 	s.updateIngressBasicAuth()
+
 	return nil
 }
 

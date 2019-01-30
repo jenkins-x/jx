@@ -108,8 +108,12 @@ func GetServiceKindFromSecrets(kubeClient kubernetes.Interface, ns string, gitSe
 		return "", errors.Wrap(err, "failed to list the secrets")
 	}
 
+	// note sometimes the Git secret is just called 'jx-pipeline-git' if its created as part of
+	// 'jx create cluster --git-provider-url' - so lets handle the missing - on the name
+	secretNamePrefix := strings.TrimSuffix(SecretJenkinsPipelineGitCredentials, "-")
+
 	for _, secret := range secretList.Items {
-		if strings.HasPrefix(secret.GetName(), SecretJenkinsPipelineGitCredentials) {
+		if strings.HasPrefix(secret.GetName(), secretNamePrefix) {
 			annotations := secret.GetAnnotations()
 			url, ok := annotations[AnnotationURL]
 			if !ok {
@@ -121,6 +125,16 @@ func GetServiceKindFromSecrets(kubeClient kubernetes.Interface, ns string, gitSe
 				if !ok {
 					return "", fmt.Errorf("no service kind label found on secret '%s' for Git service '%s'",
 						secret.GetName(), gitServiceURL)
+				}
+				if serviceKind == "" {
+					kind := labels[LabelKind]
+					if kind == "git" {
+						serviceKind = gits.SaasGitKind(gitServiceURL)
+						if serviceKind == "" {
+							// lets default to github?
+							serviceKind = gits.KindGitHub
+						}
+					}
 				}
 				return serviceKind, nil
 			}

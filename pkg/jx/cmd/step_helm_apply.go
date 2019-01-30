@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -173,14 +174,25 @@ func (o *StepHelmApplyOptions) Run() error {
 		}
 	}
 
+	chartValues, err := helm.GenerateValues(dir, nil, true)
+	if err != nil {
+		return errors.Wrapf(err, "generating values.yaml for tree from %s", dir)
+	}
+	chartValuesFile := filepath.Join(dir, helm.ValuesFileName)
+	err = ioutil.WriteFile(chartValuesFile, chartValues, 0755)
+	if err != nil {
+		return errors.Wrapf(err, "writing values.yaml for tree to %s", chartValuesFile)
+	}
+	log.Infof("Wrote chart values.yaml %s generated from directory tree\n", chartValuesFile)
+
 	log.Infof("Using values files: %s\n", strings.Join(valueFiles, ", "))
 
 	if o.Wait {
 		timeout := 600
-		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, &timeout, o.Force, true, nil, valueFiles,
+		err = o.Helm().UpgradeChart(chartName, releaseName, ns, "", true, timeout, o.Force, true, nil, valueFiles,
 			"", "", "")
 	} else {
-		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, nil, o.Force, false, nil, valueFiles, "",
+		err = o.Helm().UpgradeChart(chartName, releaseName, ns, "", true, -1, o.Force, false, nil, valueFiles, "",
 			"", "")
 	}
 	if err != nil {
@@ -191,7 +203,7 @@ func (o *StepHelmApplyOptions) Run() error {
 
 func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store configio.ConfigStore) ([]string, error) {
 	files := []string{}
-	client, err := o.CreateSystemVaultClient()
+	client, err := o.CreateSystemVaultClient("")
 	if err != nil {
 		return files, errors.Wrap(err, "retrieving the system Vault")
 	}

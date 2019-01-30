@@ -61,6 +61,7 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&Release{},
 		&ReleaseList{},
 		&SourceRepository{},
+		&SourceRepositoryList{},
 		&Team{},
 		&TeamList{},
 		&User{},

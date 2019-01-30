@@ -97,7 +97,7 @@ func (o *CreateGitUserOptions) Run() error {
 		return fmt.Errorf("No Username specified")
 	}
 	if o.Password == "" && o.ApiToken == "" {
-		return fmt.Errorf("No password or ApiToken specified")
+		return fmt.Errorf("No password or APIToken specified")
 	}
 
 	client, ns, err := o.KubeClientAndNamespace()
