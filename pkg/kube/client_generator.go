@@ -1,12 +1,18 @@
 package kube
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"go/ast"
+	"go/format"
+	"go/parser"
+	"go/token"
 	"html/template"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -721,7 +727,7 @@ func getOutputPackageForOpenApi(pkg string, groupWithVersion []string, outputPac
 // relative to the module outputBase). Any openApiDependencies also have OpenAPI structs generated.
 // A boilerplateFile is written to the top of any generated files.
 // The gitter client is used to ensure the correct versions of dependencies are loaded.
-func GenerateOpenApi(groupsWithVersions []string, inputPackage string, outputPackage string,
+func GenerateOpenApi(groupsWithVersions []string, inputPackage string, outputPackage string, relativePackage string,
 	outputBase string, openApiDependencies []string, moduleDir string, moduleName string, gitter gits.Gitter,
 	boilerplateFile string,
 	verbose bool) error {
@@ -730,7 +736,8 @@ func GenerateOpenApi(groupsWithVersions []string, inputPackage string, outputPac
 	corePkg := fmt.Sprintf("%s/core", basePkg)
 	allPkg := fmt.Sprintf("%s/all", basePkg)
 	// Generate the dependent openapi structs as these are missing from the k8s client
-	dependentPackages, err := generateOpenApiDependenciesStruct(outputPackage, outputBase, openApiDependencies,
+	dependentPackages, err := generateOpenApiDependenciesStruct(outputPackage, relativePackage, outputBase,
+		openApiDependencies,
 		moduleDir, moduleName, gitter, verbose, boilerplateFile)
 	if err != nil {
 		return err
@@ -886,7 +893,8 @@ func defaultGenerate(generator string, name string, groupsWithVersions []string,
 	return nil
 }
 
-func generateOpenApiDependenciesStruct(outputPackage string, outputBase string, openApiDependencies []string,
+func generateOpenApiDependenciesStruct(outputPackage string, relativePackage string, outputBase string,
+	openApiDependencies []string,
 	moduleDir string, moduleName string, gitter gits.Gitter, verbose bool, boilerplateFile string) ([]string, error) {
 	paths := make([]string, 0)
 	modulesRequirements, err := util.GetModuleRequirements(moduleDir)
@@ -988,37 +996,66 @@ func generateOpenApiDependenciesStruct(outputPackage string, outputBase string, 
 		if err != nil {
 			return nil, err
 		}
-		// Unfortunately the generator doesn't always get the imports correct, but goimports can fix them
-		cmd = util.Command{
-			Name: "go",
-			Args: []string{
-				"get",
-				"golang.org/x/tools/cmd/goimports",
-			},
-			Env: map[string]string{
-				"GO111MODULE": "off",
-				"GOPATH":      codeGenDir,
-			},
-		}
-		out, err = cmd.RunWithoutRetry()
+		relativeOutputPackage, err := getOutputPackageForOpenApi(path, []string{group, version}, relativePackage)
 		if err != nil {
-			return nil, errors.Wrapf(err, "running %s, output %s", cmd.String(), out)
+			return nil, errors.Wrapf(err, "getting filename for openapi structs for %s", d)
 		}
-		generatedFile := filepath.Join(outputBase, outputPackage, "openapi_generated.go")
-		cmd = util.Command{
-			Name: "goimports",
-			Dir:  filepath.Join(codeGenDir, "bin"),
-			Args: []string{
-				"-w",
-				generatedFile,
-			},
-		}
-		out, err = cmd.RunWithoutRetry()
-		if verbose {
-			log.Infof("Running %s\n", cmd.String())
-		}
+		// the generator forgets to add the spec import in some cases
+		generatedFile := filepath.Join(relativeOutputPackage, "openapi_generated.go")
+		fs := token.NewFileSet()
+		f, err := parser.ParseFile(fs, generatedFile, nil, parser.ParseComments)
 		if err != nil {
-			return nil, errors.Wrapf(err, "running %s, output %s", cmd.String(), out)
+			return nil, errors.Wrapf(err, "parsing %s", generatedFile)
+		}
+		found := false
+		for _, imp := range f.Imports {
+			if strings.Trim(imp.Path.Value, "\"") == "github.com/go-openapi/spec" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			// Add the imports
+			for i := 0; i < len(f.Decls); i++ {
+				d := f.Decls[i]
+
+				switch d.(type) {
+				case *ast.FuncDecl:
+					// No action
+				case *ast.GenDecl:
+					dd := d.(*ast.GenDecl)
+
+					// IMPORT Declarations
+					if dd.Tok == token.IMPORT {
+						// Add the new import
+						iSpec := &ast.ImportSpec{Path: &ast.BasicLit{Value: strconv.Quote("github.com/go-openapi/spec")}}
+						dd.Specs = append(dd.Specs, iSpec)
+					}
+				}
+			}
+
+			// Sort the imports
+			ast.SortImports(fs, f)
+			var buf bytes.Buffer
+			err = format.Node(&buf, fs, f)
+			if err != nil {
+				errors.Wrapf(err, "convert AST to []byte for %s", generatedFile)
+			}
+			// Manually add new lines after build tags
+			lines := strings.Split(string(buf.Bytes()), "\n")
+			buf.Reset()
+			for _, line := range lines {
+				buf.WriteString(line)
+				buf.WriteString("\r\n")
+				if strings.HasPrefix(line, "// +") {
+					buf.WriteString("\r\n")
+				}
+			}
+
+			err = ioutil.WriteFile(generatedFile, buf.Bytes(), 0644)
+			if err != nil {
+				errors.Wrapf(err, "writing %s", generatedFile)
+			}
 		}
 		paths = append(paths, outputPackage)
 	}

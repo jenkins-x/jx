@@ -3432,7 +3432,7 @@ func schema_pkg_apis_jenkinsio_v1_ResourceReference(ref common.ReferenceCallback
 						},
 					},
 				},
-				Required: []string{"apiVersion", "kind", "name", "uid"},
+				Required: []string{"kind", "name"},
 			},
 		},
 		Dependencies: []string{},
