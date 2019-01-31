@@ -75,7 +75,7 @@ get-test-deps:
 
 test:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 1 -count=1 -coverprofile=cover.out \
-	-failfast -short $(TESTFLAGS) ./...
+	-failfast -short ./...
 
 test-report: get-test-deps test
 	@gocov convert cover.out | gocov report
