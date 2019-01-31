@@ -8,6 +8,7 @@ import (
 	clientcmd "k8s.io/client-go/tools/clientcmd"
 	api "k8s.io/client-go/tools/clientcmd/api"
 	"reflect"
+	"time"
 )
 
 type MockKuber struct {
@@ -57,26 +58,45 @@ func (mock *MockKuber) UpdateConfig(_param0 string, _param1 string, _param2 stri
 }
 
 func (mock *MockKuber) VerifyWasCalledOnce() *VerifierKuber {
-	return &VerifierKuber{mock, pegomock.Times(1), nil}
+	return &VerifierKuber{
+		mock:                   mock,
+		invocationCountMatcher: pegomock.Times(1),
+	}
 }
 
 func (mock *MockKuber) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierKuber {
-	return &VerifierKuber{mock, invocationCountMatcher, nil}
+	return &VerifierKuber{
+		mock:                   mock,
+		invocationCountMatcher: invocationCountMatcher,
+	}
 }
 
 func (mock *MockKuber) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierKuber {
-	return &VerifierKuber{mock, invocationCountMatcher, inOrderContext}
+	return &VerifierKuber{
+		mock:                   mock,
+		invocationCountMatcher: invocationCountMatcher,
+		inOrderContext:         inOrderContext,
+	}
+}
+
+func (mock *MockKuber) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierKuber {
+	return &VerifierKuber{
+		mock:                   mock,
+		invocationCountMatcher: invocationCountMatcher,
+		timeout:                timeout,
+	}
 }
 
 type VerifierKuber struct {
 	mock                   *MockKuber
 	invocationCountMatcher pegomock.Matcher
 	inOrderContext         *pegomock.InOrderContext
+	timeout                time.Duration
 }
 
 func (verifier *VerifierKuber) LoadConfig() *Kuber_LoadConfig_OngoingVerification {
 	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "LoadConfig", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "LoadConfig", params, verifier.timeout)
 	return &Kuber_LoadConfig_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -93,7 +113,7 @@ func (c *Kuber_LoadConfig_OngoingVerification) GetAllCapturedArguments() {
 
 func (verifier *VerifierKuber) UpdateConfig(_param0 string, _param1 string, _param2 string, _param3 string, _param4 string) *Kuber_UpdateConfig_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "UpdateConfig", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "UpdateConfig", params, verifier.timeout)
 	return &Kuber_UpdateConfig_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 

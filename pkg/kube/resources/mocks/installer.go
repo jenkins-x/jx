@@ -6,6 +6,7 @@ package resources_test
 import (
 	pegomock "github.com/petergtz/pegomock"
 	"reflect"
+	"time"
 )
 
 type MockInstaller struct {
@@ -55,26 +56,45 @@ func (mock *MockInstaller) InstallDir(_param0 string) (string, error) {
 }
 
 func (mock *MockInstaller) VerifyWasCalledOnce() *VerifierInstaller {
-	return &VerifierInstaller{mock, pegomock.Times(1), nil}
+	return &VerifierInstaller{
+		mock:                   mock,
+		invocationCountMatcher: pegomock.Times(1),
+	}
 }
 
 func (mock *MockInstaller) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierInstaller {
-	return &VerifierInstaller{mock, invocationCountMatcher, nil}
+	return &VerifierInstaller{
+		mock:                   mock,
+		invocationCountMatcher: invocationCountMatcher,
+	}
 }
 
 func (mock *MockInstaller) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierInstaller {
-	return &VerifierInstaller{mock, invocationCountMatcher, inOrderContext}
+	return &VerifierInstaller{
+		mock:                   mock,
+		invocationCountMatcher: invocationCountMatcher,
+		inOrderContext:         inOrderContext,
+	}
+}
+
+func (mock *MockInstaller) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierInstaller {
+	return &VerifierInstaller{
+		mock:                   mock,
+		invocationCountMatcher: invocationCountMatcher,
+		timeout:                timeout,
+	}
 }
 
 type VerifierInstaller struct {
 	mock                   *MockInstaller
 	invocationCountMatcher pegomock.Matcher
 	inOrderContext         *pegomock.InOrderContext
+	timeout                time.Duration
 }
 
 func (verifier *VerifierInstaller) Install(_param0 string) *Installer_Install_OngoingVerification {
 	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Install", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Install", params, verifier.timeout)
 	return &Installer_Install_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -101,7 +121,7 @@ func (c *Installer_Install_OngoingVerification) GetAllCapturedArguments() (_para
 
 func (verifier *VerifierInstaller) InstallDir(_param0 string) *Installer_InstallDir_OngoingVerification {
 	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "InstallDir", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "InstallDir", params, verifier.timeout)
 	return &Installer_InstallDir_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
