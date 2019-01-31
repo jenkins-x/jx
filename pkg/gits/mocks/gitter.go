@@ -1520,7 +1520,7 @@ func (c *Gitter_CreateBranch_OngoingVerification) GetAllCapturedArguments() (_pa
 
 func (verifier *VerifierGitter) CreateBranchFrom(_param0 string, _param1 string, _param2 string) *Gitter_CreateBranchFrom_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateBranchFrom", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateBranchFrom", params, verifier.timeout)
 	return &Gitter_CreateBranchFrom_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
