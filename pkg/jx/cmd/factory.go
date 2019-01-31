@@ -37,11 +37,11 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	build "github.com/knative/build/pkg/client/clientset/versioned"
 	kpipelineclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
+	build "github.com/knative/build/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-	metricsclient "k8s.io/metrics/pkg/client/clientset_generated/clientset"
+	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
 
 	// this is so that we load the auth plugins so we can connect to, say, GCP
 

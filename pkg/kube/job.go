@@ -4,12 +4,15 @@ import (
 	"fmt"
 	"time"
 
+	"context"
+
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
+	tools_watch "k8s.io/client-go/tools/watch"
 )
 
 // waits for the job to complete
@@ -33,7 +36,9 @@ func WaitForJobToSucceeded(client kubernetes.Interface, namespace, jobName strin
 		return job.Status.Succeeded == 1, nil
 	}
 
-	_, err = watch.Until(timeout, w, condition)
+	ctx, _ := context.WithTimeout(context.Background(), timeout)
+	_, err = tools_watch.UntilWithoutRetry(ctx, w, condition)
+
 	if err == wait.ErrWaitTimeout {
 		return fmt.Errorf("job %s never succeeded", jobName)
 	}
@@ -61,7 +66,8 @@ func WaitForJobToTerminate(client kubernetes.Interface, namespace, jobName strin
 		return job.Status.Succeeded == 1 || job.Status.Failed == 1, nil
 	}
 
-	_, err = watch.Until(timeout, w, condition)
+	ctx, _ := context.WithTimeout(context.Background(), timeout)
+	_, err = tools_watch.UntilWithoutRetry(ctx, w, condition)
 	if err == wait.ErrWaitTimeout {
 		return fmt.Errorf("job %s never terminated", jobName)
 	}

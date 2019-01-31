@@ -2,6 +2,7 @@ package prow
 
 import (
 	"encoding/json"
+	//"encoding/json"
 	"fmt"
 	"strings"
 
@@ -13,8 +14,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
 	"k8s.io/test-infra/prow/config"
-	prow "k8s.io/test-infra/prow/kube"
 	"k8s.io/test-infra/prow/plugins"
 )
 
@@ -462,9 +463,9 @@ func (o *Options) AddProwPlugins() error {
 			pluginConfig.Plugins[r] = pluginsList
 
 			a := plugins.Approve{
-				Repos:               []string{r},
-				ReviewActsAsApprove: true,
-				LgtmActsAsApprove:   true,
+				Repos: []string{r},
+				//ReviewActsAsApprove: true,
+				LgtmActsAsApprove: true,
 			}
 			pluginConfig.Approve = append(pluginConfig.Approve, a)
 
@@ -555,8 +556,8 @@ func (o *Options) GetPostSubmitJob(org, repo, branch string) (config.Postsubmit,
 	return p, fmt.Errorf("no prow config build spec found for %s/%s/%s", org, repo, branch)
 }
 
-func CreateProwJob(client kubernetes.Interface, ns string, j prow.ProwJob) (prow.ProwJob, error) {
-	retJob := prow.ProwJob{}
+func CreateProwJob(client kubernetes.Interface, ns string, j prowapi.ProwJob) (prowapi.ProwJob, error) {
+	retJob := prowapi.ProwJob{}
 	body, err := json.Marshal(j)
 	if err != nil {
 		return retJob, err
