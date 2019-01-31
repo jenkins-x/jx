@@ -6,6 +6,7 @@ package gits_test
 import (
 	pegomock "github.com/petergtz/pegomock"
 	"reflect"
+	"time"
 )
 
 type MockOrganisationChecker struct {
@@ -36,26 +37,45 @@ func (mock *MockOrganisationChecker) IsUserInOrganisation(_param0 string, _param
 }
 
 func (mock *MockOrganisationChecker) VerifyWasCalledOnce() *VerifierOrganisationChecker {
-	return &VerifierOrganisationChecker{mock, pegomock.Times(1), nil}
+	return &VerifierOrganisationChecker{
+		mock:                   mock,
+		invocationCountMatcher: pegomock.Times(1),
+	}
 }
 
 func (mock *MockOrganisationChecker) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierOrganisationChecker {
-	return &VerifierOrganisationChecker{mock, invocationCountMatcher, nil}
+	return &VerifierOrganisationChecker{
+		mock:                   mock,
+		invocationCountMatcher: invocationCountMatcher,
+	}
 }
 
 func (mock *MockOrganisationChecker) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierOrganisationChecker {
-	return &VerifierOrganisationChecker{mock, invocationCountMatcher, inOrderContext}
+	return &VerifierOrganisationChecker{
+		mock:                   mock,
+		invocationCountMatcher: invocationCountMatcher,
+		inOrderContext:         inOrderContext,
+	}
+}
+
+func (mock *MockOrganisationChecker) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierOrganisationChecker {
+	return &VerifierOrganisationChecker{
+		mock:                   mock,
+		invocationCountMatcher: invocationCountMatcher,
+		timeout:                timeout,
+	}
 }
 
 type VerifierOrganisationChecker struct {
 	mock                   *MockOrganisationChecker
 	invocationCountMatcher pegomock.Matcher
 	inOrderContext         *pegomock.InOrderContext
+	timeout                time.Duration
 }
 
 func (verifier *VerifierOrganisationChecker) IsUserInOrganisation(_param0 string, _param1 string) *OrganisationChecker_IsUserInOrganisation_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "IsUserInOrganisation", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "IsUserInOrganisation", params, verifier.timeout)
 	return &OrganisationChecker_IsUserInOrganisation_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
