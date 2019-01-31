@@ -461,11 +461,11 @@ func (o *Options) AddProwPlugins() error {
 		}
 		for _, r := range o.Repos {
 			pluginConfig.Plugins[r] = pluginsList
-
+			pTrue := true
 			a := plugins.Approve{
-				Repos: []string{r},
-				//ReviewActsAsApprove: true,
-				LgtmActsAsApprove: true,
+				Repos:               []string{r},
+				RequireSelfApproval: &pTrue,
+				LgtmActsAsApprove:   true,
 			}
 			pluginConfig.Approve = append(pluginConfig.Approve, a)
 
@@ -556,6 +556,7 @@ func (o *Options) GetPostSubmitJob(org, repo, branch string) (config.Postsubmit,
 	return p, fmt.Errorf("no prow config build spec found for %s/%s/%s", org, repo, branch)
 }
 
+// CreateProwJob creates a new ProbJob resource for the Prow build controller to run
 func CreateProwJob(client kubernetes.Interface, ns string, j prowapi.ProwJob) (prowapi.ProwJob, error) {
 	retJob := prowapi.ProwJob{}
 	body, err := json.Marshal(j)
