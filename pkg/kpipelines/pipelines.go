@@ -129,7 +129,9 @@ func CreatePipelineRun(knativePipelineClient kpipelineclient.Interface, ns strin
 
 	f := func() error {
 		buildNumber++
-		run.Name =  pipeline.Name + "-" + strconv.Itoa(buildNumber)
+		buildNumberText := strconv.Itoa(buildNumber)
+		run.Labels["build-number"] = buildNumberText
+		run.Name =  pipeline.Name + "-" + buildNumberText
 		created, err := resourceInterface.Create(run)
 		if err == nil {
 			answer = created
@@ -175,7 +177,7 @@ func UpdateLastPipelineBuildNumber(knativePipelineClient kpipelineclient.Interfa
 }
 
 // CreateOrUpdatePipeline lazily creates a Knative Pipeline for the given git repository, branch and context
-func CreateOrUpdatePipeline(knativePipelineClient kpipelineclient.Interface, ns string, gitInfo *gits.GitRepository, branch string, context string, resources []v1alpha1.PipelineDeclaredResource, tasks []v1alpha1.PipelineTask) (*v1alpha1.Pipeline, error) {
+func CreateOrUpdatePipeline(knativePipelineClient kpipelineclient.Interface, ns string, gitInfo *gits.GitRepository, branch string, context string, resources []v1alpha1.PipelineDeclaredResource, tasks []v1alpha1.PipelineTask, labels map[string]string) (*v1alpha1.Pipeline, error) {
 	if gitInfo == nil {
 		return nil, nil
 	}
@@ -208,6 +210,8 @@ func CreateOrUpdatePipeline(knativePipelineClient kpipelineclient.Interface, ns 
 	}
 	copy := *answer
 
+	answer.Labels = util.MergeMaps(answer.Labels, labels)
+
 	// lets make sure all the resources and tasks are added
 	for _, r1 := range resources {
 		found := false
@@ -233,7 +237,7 @@ func CreateOrUpdatePipeline(knativePipelineClient kpipelineclient.Interface, ns 
 			answer.Spec.Tasks = append(answer.Spec.Tasks, t1)
 		}
 	}
-	if !reflect.DeepEqual(&copy.Spec, &answer.Spec) {
+	if !reflect.DeepEqual(&copy.Spec, &answer.Spec) || !reflect.DeepEqual(copy.Labels, answer.Labels) {
 		answer, err = resourceInterface.Update(answer)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to update Pipeline %s", resourceName)

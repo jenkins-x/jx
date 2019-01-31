@@ -24,3 +24,13 @@ func ContainsVolume(volumes []corev1.Volume, volume corev1.Volume) bool {
 	}
 	return false
 }
+
+// ContainsVolumeMount returns true if the given volume mount slice contains the given volume
+func ContainsVolumeMount(volumes []corev1.VolumeMount, volume corev1.VolumeMount) bool {
+	for _, v := range volumes {
+		if v.Name == volume.Name {
+			return true
+		}
+	}
+	return false
+}

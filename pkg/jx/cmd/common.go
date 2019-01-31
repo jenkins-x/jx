@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/builds"
 	"io"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"strings"
@@ -880,6 +882,22 @@ func (o *CommonOptions) getBuildNumber() string {
 	buildID := os.Getenv("BUILD_ID")
 	if buildID != "" {
 		return buildID
+	}
+	// if we are in a knative build pod we can discover it via the dowmward API if the `/etc/podinfo/labels` file exists
+	const podInfoLabelsFile = "/etc/podinfo/labels"
+	exists, err := util.FileExists(podInfoLabelsFile)
+	if err != nil {
+	  log.Warnf("failed to detect if the file %s exists: %s\n", podInfoLabelsFile, err)
+	} else if exists {
+		data, err := ioutil.ReadFile(podInfoLabelsFile)
+		if err != nil {
+		  log.Warnf("failed to load downward API pod labels from %s due to: %s\n", podInfoLabelsFile, err)
+		} else {
+			text := strings.TrimSpace(string(data))
+			if text != "" {
+				return builds.GetBuildNumberFromLabelsFileData(text)
+			}
+		}
 	}
 	return ""
 }

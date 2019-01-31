@@ -69,6 +69,7 @@ type StepCreateTaskOptions struct {
 	gitInfo     *gits.GitRepository
 	branch      string
 	buildNumber string
+	labels      map[string]string
 }
 
 // NewCmdStepCreateTask Creates a new Command object
@@ -281,6 +282,14 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	// TODO generate build number properly!
 	o.buildNumber = "1"
 
+	labels := map[string]string{}
+	if o.gitInfo != nil {
+		labels["owner"] = o.gitInfo.Organisation
+		labels["repo"] = o.gitInfo.Name
+	}
+	labels["branch"] = branch
+	o.labels = labels
+
 	container := pipelineConfig.Agent.Container
 	if o.CustomImage != "" {
 		container = o.CustomImage
@@ -310,7 +319,8 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 			Kind:       "Task",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:   name,
+			Labels: o.labels,
 		},
 		Spec: pipelineapi.TaskSpec{
 			Steps:   steps,
@@ -422,7 +432,7 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 	}
 
 	// lets lazily create the Pipeline
-	pipeline, err := kpipelines.CreateOrUpdatePipeline(kpClient, ns, gitInfo, branch, o.Context, resources, tasks)
+	pipeline, err := kpipelines.CreateOrUpdatePipeline(kpClient, ns, gitInfo, branch, o.Context, resources, tasks, o.labels)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create/update the Pipeline in namespace %s", ns)
 	}
@@ -441,6 +451,7 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: pipeline.Name,
+			Labels: util.MergeMaps(o.labels),
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: pipeline.APIVersion,
@@ -510,8 +521,8 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		o.stepCounter++
 		c.Name = "step" + strconv.Itoa(1+o.stepCounter)
 
-		o.removeUnnecessaryVolumes(&c)
-		o.removeUnnecessaryEnvVars(&c)
+		volumes = o.modifyVolumes(&c, volumes)
+		o.modifyEnvVars(&c)
 
 		c.Command = []string{"/bin/sh"}
 		if o.CustomImage != "" {
@@ -562,12 +573,10 @@ func (o *StepCreateTaskOptions) discoverBuildPack(dir string, projectConfig *con
 	return pack, nil
 }
 
-func (o *StepCreateTaskOptions) removeUnnecessaryVolumes(container *corev1.Container) {
-	// for now let remove them all?
-	//container.VolumeMounts = nil
+func (o *StepCreateTaskOptions) modifyVolumes2(container *corev1.Container) {
 }
 
-func (o *StepCreateTaskOptions) removeUnnecessaryEnvVars(container *corev1.Container) {
+func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container) {
 	envVars := []corev1.EnvVar{}
 	for _, e := range container.Env {
 		name := e.Name
@@ -581,12 +590,13 @@ func (o *StepCreateTaskOptions) removeUnnecessaryEnvVars(container *corev1.Conta
 			Value: o.DockerRegistry,
 		})
 	}
-	if kube.GetSliceEnvVar(envVars, "BUILD_NUMBER") == nil {
-		envVars = append(envVars, corev1.EnvVar{
-			Name:  "BUILD_NUMBER",
-			Value: o.buildNumber,
-		})
-	}
+	/*	if kube.GetSliceEnvVar(envVars, "BUILD_NUMBER") == nil {
+			envVars = append(envVars, corev1.EnvVar{
+				Name:  "BUILD_NUMBER",
+				Value: o.buildNumber,
+			})
+		}
+	*/
 	if o.PipelineKind != "" && kube.GetSliceEnvVar(envVars, "PIPELINE_KIND") == nil {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "PIPELINE_KIND",
@@ -644,4 +654,36 @@ func (o *StepCreateTaskOptions) removeUnnecessaryEnvVars(container *corev1.Conta
 	}
 
 	container.Env = envVars
+}
+
+func (o *StepCreateTaskOptions) modifyVolumes(container *corev1.Container, volumes []corev1.Volume) []corev1.Volume {
+	answer := volumes
+	podInfoName := "podinfo"
+	volume := corev1.Volume{
+		Name: podInfoName,
+		VolumeSource: corev1.VolumeSource{
+			DownwardAPI: &corev1.DownwardAPIVolumeSource{
+				Items: []corev1.DownwardAPIVolumeFile{
+					{
+						Path: "labels",
+						FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "metadata.labels",
+						},
+					},
+				},
+			},
+		},
+	}
+	if !kube.ContainsVolume(volumes, volume) {
+		answer = append(answer, volume)
+	}
+	volumeMount := corev1.VolumeMount{
+		Name:      podInfoName,
+		MountPath: "/etc/podinfo",
+		ReadOnly:  true,
+	}
+	if !kube.ContainsVolumeMount(container.VolumeMounts, volumeMount) {
+		container.VolumeMounts = append(container.VolumeMounts, volumeMount)
+	}
+	return answer
 }
