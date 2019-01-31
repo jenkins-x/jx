@@ -16,11 +16,14 @@ import (
 )
 
 const (
-	defaultNumVaults      = 2
-	vaultImage            = "vault:0.11.2"
-	bankVaultsImage       = "banzaicloud/bank-vaults:latest"
-	gcpServiceAccountEnv  = "GOOGLE_APPLICATION_CREDENTIALS"
-	gcpServiceAccountPath = "/etc/gcp/service-account.json"
+	BankVaultsOperatorImage = "banzaicloud/vault-operator"
+	BankVaultsImage         = "banzaicloud/bank-vaults"
+	BankVaultsImageTag      = "master"
+	defaultNumVaults        = 2
+	vaultImage              = "vault"
+	vaultImageTag           = "0.11.6"
+	gcpServiceAccountEnv    = "GOOGLE_APPLICATION_CREDENTIALS"
+	gcpServiceAccountPath   = "/etc/gcp/service-account.json"
 
 	vaultAuthName     = "auth"
 	vaultAuthType     = "kubernetes"
@@ -140,8 +143,8 @@ func CreateVault(kubeClient kubernetes.Interface, vaultOperatorClient versioned.
 		},
 		Spec: v1alpha1.VaultSpec{
 			Size:            defaultNumVaults,
-			Image:           vaultImage,
-			BankVaultsImage: bankVaultsImage,
+			Image:           vaultImage + ":" + vaultImageTag,
+			BankVaultsImage: BankVaultsImage + ":" + BankVaultsImageTag,
 			ServiceType:     string(v1.ServiceTypeClusterIP),
 			ServiceAccount:  name,
 			Config: map[string]interface{}{

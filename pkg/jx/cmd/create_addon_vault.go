@@ -7,6 +7,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -15,12 +16,10 @@ import (
 )
 
 const (
-	defaultVaultNamesapce        = "jx"
-	jxRepoName                   = "jenkinsxio"
-	jxRepoURL                    = "https://chartmuseum.jx.cd.jenkins-x.io"
-	vaultOperatorImageRepository = "banzaicloud/vault-operator"
-	vaultOperatorImageTag        = "0.3.17"
-	defaultVaultOperatorVersion  = ""
+	defaultVaultNamesapce       = "jx"
+	jxRepoName                  = "jenkinsxio"
+	jxRepoURL                   = "https://chartmuseum.jx.cd.jenkins-x.io"
+	defaultVaultOperatorVersion = "0.2.1"
 )
 
 var (
@@ -99,8 +98,8 @@ func InstallVaultOperator(o *CommonOptions, namespace string) error {
 	log.Infof("Installing %s...\n", util.ColorInfo(releaseName))
 
 	values := []string{
-		"image.repository=" + vaultOperatorImageRepository,
-		"image.tag=" + vaultOperatorImageTag,
+		"image.repository=" + vault.BankVaultsOperatorImage,
+		"image.tag=" + vault.BankVaultsImageTag,
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
