@@ -9,7 +9,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metricsv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
-	metricsclient "k8s.io/metrics/pkg/client/clientset_generated/clientset"
+	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
 type HeapterConfig struct {

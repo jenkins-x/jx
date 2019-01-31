@@ -12,7 +12,6 @@ import (
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/prow"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/test-infra/prow/kube"
 	"k8s.io/test-infra/prow/pjutil"
 
 	"github.com/spf13/cobra"
@@ -181,11 +180,11 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 	if err != nil {
 		return err
 	}
-	jobSpec := kube.ProwJobSpec{
+	jobSpec := prowjobv1.ProwJobSpec{
 		BuildSpec: postSubmitJob.BuildSpec,
 		Agent:     prowjobv1.KnativeBuildAgent,
 	}
-	jobSpec.Type = kube.PostsubmitJob
+	jobSpec.Type = prowjobv1.PostsubmitJob
 
 	//todo needs to change when we add support for multiple git providers with Prow
 	sourceURL := fmt.Sprintf("https://github.com/%s/%s.git", org, repo)
@@ -232,10 +231,10 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 	}
 
 	p := pjutil.NewProwJob(jobSpec, nil)
-	p.Status = kube.ProwJobStatus{
-		State: kube.PendingState,
+	p.Status = prowjobv1.ProwJobStatus{
+		State: prowjobv1.PendingState,
 	}
-	p.Spec.Refs = &kube.Refs{
+	p.Spec.Refs = &prowjobv1.Refs{
 		BaseRef: branch,
 		Org:     org,
 		Repo:    repo,

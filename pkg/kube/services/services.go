@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
+	tools_watch "k8s.io/client-go/tools/watch"
 )
 
 const (
@@ -205,7 +207,9 @@ func WaitForExternalIP(client kubernetes.Interface, name, namespace string, time
 		return HasExternalAddress(svc), nil
 	}
 
-	_, err = watch.Until(timeout, w, condition)
+	ctx, _ := context.WithTimeout(context.Background(), timeout)
+	_, err = tools_watch.UntilWithoutRetry(ctx, w, condition)
+
 	if err == wait.ErrWaitTimeout {
 		return fmt.Errorf("service %s never became ready", name)
 	}
@@ -227,7 +231,9 @@ func WaitForService(client kubernetes.Interface, name, namespace string, timeout
 		svc := event.Object.(*v1.Service)
 		return svc.GetName() == name, nil
 	}
-	_, err = watch.Until(timeout, w, condition)
+	ctx, _ := context.WithTimeout(context.Background(), timeout)
+	_, err = tools_watch.UntilWithoutRetry(ctx, w, condition)
+
 	if err == wait.ErrWaitTimeout {
 		return fmt.Errorf("service %s never became ready", name)
 	}

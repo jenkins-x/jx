@@ -1,6 +1,7 @@
 package kube
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
+	tools_watch "k8s.io/client-go/tools/watch"
 )
 
 // credit https://github.com/kubernetes/kubernetes/blob/8719b4a/pkg/api/v1/pod/util.go
@@ -85,7 +87,9 @@ func waitForPodSelectorToBeReady(client kubernetes.Interface, namespace string, 
 		return IsPodReady(pod), nil
 	}
 
-	_, err = watch.Until(timeout, w, condition)
+	ctx, _ := context.WithTimeout(context.Background(), timeout)
+	_, err = tools_watch.UntilWithoutRetry(ctx, w, condition)
+
 	if err == wait.ErrWaitTimeout {
 		return fmt.Errorf("pod %s never became ready", options.String())
 	}

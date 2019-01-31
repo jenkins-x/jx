@@ -1,6 +1,7 @@
 package kube
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
+	tools_watch "k8s.io/client-go/tools/watch"
 )
 
 func GetDeployments(kubeClient kubernetes.Interface, ns string) (map[string]v1beta1.Deployment, error) {
@@ -102,7 +104,9 @@ func WaitForDeploymentToBeCreatedAndReady(client kubernetes.Interface, name, nam
 		running, _ := IsDeploymentRunning(client, name, namespace)
 		return running, nil
 	}
-	_, err = watch.Until(timeoutPerDeploy, w, condition)
+	ctx, _ := context.WithTimeout(context.Background(), timeoutPerDeploy)
+	_, err = tools_watch.UntilWithoutRetry(ctx, w, condition)
+
 	if err == wait.ErrWaitTimeout {
 		return fmt.Errorf("deployment %s never became ready", name)
 	}
@@ -136,7 +140,9 @@ func WaitForDeploymentToBeReady(client kubernetes.Interface, name, namespace str
 			return IsPodReady(pod), nil
 		}
 
-		_, err = watch.Until(timeout, w, condition)
+		ctx, _ := context.WithTimeout(context.Background(), timeout)
+		_, err = tools_watch.UntilWithoutRetry(ctx, w, condition)
+
 		if err == wait.ErrWaitTimeout {
 			return fmt.Errorf("deployment %s never became ready", name)
 		}
