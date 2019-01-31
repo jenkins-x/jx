@@ -27,8 +27,8 @@ const (
 	dexServiceName              = "dex"
 	operatorServiceName         = "operator"
 	githubNewOAuthAppURL        = "https://github.com/settings/applications/new"
-	defaultDexVersion           = ""
-	defaultOperatorVersion      = ""
+	defaultDexVersion           = "2.13.4"
+	defaultOperatorVersion      = "1.2.5"
 )
 
 var (
