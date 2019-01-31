@@ -3,6 +3,7 @@ package cmd
 import (
 	"flag"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/builds"
 	"io"
 	"net/url"
 	"os"
@@ -553,7 +554,8 @@ func (f *factory) CreateTable(out io.Writer) table.Table {
 func (f *factory) IsInCDPipeline() bool {
 	// TODO should we let RBAC decide if we can see the Secrets in the dev namespace?
 	// or we should test if we are in the cluster and get the current ServiceAccount name?
-	return os.Getenv("BUILD_NUMBER") != "" || os.Getenv("JX_BUILD_NUMBER") != ""
+	buildNumber := builds.GetBuildNumber()
+	return buildNumber != ""
 }
 
 // function to tell if we are running incluster

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"strings"
@@ -19,14 +18,14 @@ import (
 	"github.com/sirupsen/logrus"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	gojenkins "github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
-	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
 	kpipelineclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
+	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -35,11 +34,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
-	yaml "gopkg.in/yaml.v2"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"gopkg.in/yaml.v2"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -871,35 +870,7 @@ func (o *CommonOptions) getJobName() string {
 }
 
 func (o *CommonOptions) getBuildNumber() string {
-	buildNumber := os.Getenv("JX_BUILD_NUMBER")
-	if buildNumber != "" {
-		return buildNumber
-	}
-	buildNumber = os.Getenv("BUILD_NUMBER")
-	if buildNumber != "" {
-		return buildNumber
-	}
-	buildID := os.Getenv("BUILD_ID")
-	if buildID != "" {
-		return buildID
-	}
-	// if we are in a knative build pod we can discover it via the dowmward API if the `/etc/podinfo/labels` file exists
-	const podInfoLabelsFile = "/etc/podinfo/labels"
-	exists, err := util.FileExists(podInfoLabelsFile)
-	if err != nil {
-	  log.Warnf("failed to detect if the file %s exists: %s\n", podInfoLabelsFile, err)
-	} else if exists {
-		data, err := ioutil.ReadFile(podInfoLabelsFile)
-		if err != nil {
-		  log.Warnf("failed to load downward API pod labels from %s due to: %s\n", podInfoLabelsFile, err)
-		} else {
-			text := strings.TrimSpace(string(data))
-			if text != "" {
-				return builds.GetBuildNumberFromLabelsFileData(text)
-			}
-		}
-	}
-	return ""
+	return builds.GetBuildNumber()
 }
 
 func (o *CommonOptions) VaultOperatorClient() (vaultoperatorclient.Interface, error) {
