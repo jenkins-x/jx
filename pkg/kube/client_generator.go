@@ -417,6 +417,19 @@ func InstallGenApiDocs(version string, gitter gits.Gitter) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	// reference-docs has no dependency managemnt, but it will work with modules
+	modInitCmd := util.Command{
+		Dir:  dir,
+		Name: "go",
+		Args: []string{
+			"mod",
+			"init",
+		},
+	}
+	out, err := modInitCmd.RunWithoutRetry()
+	if err != nil {
+		return "", errors.Wrapf(err, "running %s, output %s", modInitCmd.String(), out)
+	}
 
 	installCmd := util.Command{
 		Dir:  dir,
@@ -428,7 +441,7 @@ func InstallGenApiDocs(version string, gitter gits.Gitter) (string, error) {
 			fmt.Sprintf("%s/main.go", apiDocsGeneratorDir),
 		},
 	}
-	out, err := installCmd.RunWithoutRetry()
+	out, err = installCmd.RunWithoutRetry()
 	if err != nil {
 		return "", errors.Wrapf(err, "running %s, output %s", installCmd.String(), out)
 	}
@@ -474,6 +487,10 @@ func GenerateApiDocs(configDir string, verbose bool) error {
 	if err != nil {
 		return errors.Wrapf(err, "getting ~/.jx/bin")
 	}
+	codegenRootDir, _, err := getCodeGenDirRoot()
+	if err != nil {
+		return errors.Wrapf(err, "getting codegen dir")
+	}
 	cmd := util.Command{
 		Dir:  configDir,
 		Name: filepath.Join(binDir, "apidocs-gen"),
@@ -482,6 +499,9 @@ func GenerateApiDocs(configDir string, verbose bool) error {
 			configDir,
 			"--munge-groups",
 			"false",
+		},
+		Env: map[string]string{
+			"GOPATH": codegenRootDir,
 		},
 	}
 	out, err := cmd.RunWithoutRetry()
@@ -620,6 +640,10 @@ func InstallGen(version string, gitter gits.Gitter) error {
 	if err != nil {
 		return err
 	}
+	codegenRootDir, _, err := getCodeGenDirRoot()
+	if err != nil {
+		return errors.Wrapf(err, "getting codegen dir")
+	}
 
 	for _, generator := range AllGenerators {
 		if generator != "" {
@@ -631,6 +655,9 @@ func InstallGen(version string, gitter gits.Gitter) error {
 					"-o",
 					filepath.Join(binDir, generator),
 					fmt.Sprintf("./cmd/%s", generator),
+				},
+				Env: map[string]string{
+					"GOPATH": codegenRootDir,
 				},
 			}
 			out, err := installCmd.RunWithoutRetry()
@@ -731,7 +758,6 @@ func GenerateOpenApi(groupsWithVersions []string, inputPackage string, outputPac
 	outputBase string, openApiDependencies []string, moduleDir string, moduleName string, gitter gits.Gitter,
 	boilerplateFile string,
 	verbose bool) error {
-	envVars := make(map[string]string)
 	basePkg := fmt.Sprintf("%s/openapi", outputPackage)
 	corePkg := fmt.Sprintf("%s/core", basePkg)
 	allPkg := fmt.Sprintf("%s/all", basePkg)
@@ -744,7 +770,7 @@ func GenerateOpenApi(groupsWithVersions []string, inputPackage string, outputPac
 	}
 	// Generate the main openapi struct
 	err = defaultGenerate(openApiGenerator, "openapi", groupsWithVersions, inputPackage,
-		corePkg, outputBase, envVars, boilerplateFile, verbose, "--output-package", corePkg)
+		corePkg, outputBase, boilerplateFile, verbose, "--output-package", corePkg)
 	if err != nil {
 		return err
 	}
@@ -763,7 +789,6 @@ func GenerateOpenApi(groupsWithVersions []string, inputPackage string, outputPac
 //// relative to the module outputBase). A boilerplateFile is written to the top of any generated files.
 func GenerateClient(generators []string, groupsWithVersions []string, inputPackage string, outputPackage string,
 	outputBase string, boilerplateFile string, verbose bool) error {
-	envVars := make(map[string]string)
 	for _, generatorName := range generators {
 		if generator, ok := AllGenerators[generatorName]; ok {
 			switch generatorName {
@@ -774,7 +799,6 @@ func GenerateClient(generators []string, groupsWithVersions []string, inputPacka
 					inputPackage,
 					outputPackage,
 					outputBase,
-					envVars,
 					boilerplateFile,
 					verbose,
 					"--clientset-name",
@@ -789,7 +813,6 @@ func GenerateClient(generators []string, groupsWithVersions []string, inputPacka
 					inputPackage,
 					outputPackage,
 					outputBase,
-					envVars,
 					boilerplateFile,
 					verbose,
 					"-O",
@@ -806,7 +829,6 @@ func GenerateClient(generators []string, groupsWithVersions []string, inputPacka
 					inputPackage,
 					outputPackage,
 					outputBase,
-					envVars,
 					boilerplateFile,
 					verbose,
 					"--versioned-clientset-package",
@@ -818,7 +840,7 @@ func GenerateClient(generators []string, groupsWithVersions []string, inputPacka
 				}
 			default:
 				err := generateWithOutputPackage(generator, generatorName, groupsWithVersions, inputPackage,
-					outputPackage, outputBase, envVars, boilerplateFile, verbose)
+					outputPackage, outputBase, boilerplateFile, verbose)
 				if err != nil {
 					return err
 				}
@@ -831,15 +853,15 @@ func GenerateClient(generators []string, groupsWithVersions []string, inputPacka
 }
 
 func generateWithOutputPackage(generator string, name string, groupsWithVersions []string,
-	inputPackage string, outputPackage string, outputBase string, envVars map[string]string, boilerplateFile string,
+	inputPackage string, outputPackage string, outputBase string, boilerplateFile string,
 	verbose bool, args ...string) error {
 	args = append(args, "--output-package", fmt.Sprintf("%s/%s", outputPackage, name))
-	return defaultGenerate(generator, name, groupsWithVersions, inputPackage, outputPackage, outputBase, envVars,
+	return defaultGenerate(generator, name, groupsWithVersions, inputPackage, outputPackage, outputBase,
 		boilerplateFile, verbose, args...)
 }
 
 func defaultGenerate(generator string, name string, groupsWithVersions []string, inputPackage string,
-	outputPackage string, outputBase string, envVars map[string]string, boilerplateFile string,
+	outputPackage string, outputBase string, boilerplateFile string,
 	verbose bool, args ...string) error {
 	log.Infof("Generating %s structs for %s at %s\n", name, groupsWithVersions, outputPackage)
 
@@ -855,7 +877,6 @@ func defaultGenerate(generator string, name string, groupsWithVersions []string,
 			"--go-header-file",
 			boilerplateFile,
 		},
-		Env: envVars,
 	}
 	if name == "clientset" {
 		inputDirs := make([]string, 0)
@@ -988,7 +1009,6 @@ func generateOpenApiDependenciesStruct(outputPackage string, relativePackage str
 			filepath.Join(path, pkg),
 			outputPackage,
 			outputBase,
-			map[string]string{"GOPATH": codeGenDir},
 			boilerplateFile,
 			verbose,
 			"--output-package",
