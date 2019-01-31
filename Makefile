@@ -58,9 +58,9 @@ endif
 
 ifdef PARALLEL_BUILDS
 BUILDFLAGS := -p $(PARALLEL_BUILDS) $(BUILDFLAGS)
-TESTFLAGS := -parallel $(PARALLEL_BUILDS)
+TESTFLAGS := -p $(PARALLEL_BUILDS)
 else
-TESTFLAGS := -parallel 8
+TESTFLAGS := -p 8
 endif
 
 print-version: version
