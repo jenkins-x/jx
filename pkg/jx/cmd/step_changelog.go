@@ -503,6 +503,7 @@ func (o *StepChangelogOptions) Run() error {
 				LastCommitMessage: lastCommitMessage,
 				LastCommitURL:     lastCommitURL,
 				Version:           cleanVersion,
+				GitInfo:		   gitInfo,
 			},
 		}
 		a, created, err := key.GetOrCreate(jxClient, o.currentNamespace)
