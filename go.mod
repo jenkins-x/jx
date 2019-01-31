@@ -168,18 +168,12 @@ require (
 
 )
 
-replace github.com/heptio/sonobuoy => ../../heptio/sonobuoy
+replace github.com/heptio/sonobuoy => github.com/jenkins-x/sonobuoy v0.11.7-0.20190131193045-dad27c12bf17
 
 replace k8s.io/api => k8s.io/api v0.0.0-20181128191700-6db15a15d2d3
 
 replace k8s.io/metrics => k8s.io/metrics v0.0.0-20181128195641-3954d62a524d
 
-replace github.com/Azure/go-autorest => github.com/Azure/go-autorest v10.15.5+incompatible
-
-replace github.com/docker/spdystream => github.com/docker/spdystream v0.0.0-20160310174837-449fdfce4d96
-
 replace k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20190122181752-bebe27e40fb7
-
-replace github.com/satori/go.uuid => github.com/satori/go.uuid v1.2.0
 
 replace k8s.io/client-go => k8s.io/client-go v2.0.0-alpha.0.0.20190115164855-701b91367003+incompatible
