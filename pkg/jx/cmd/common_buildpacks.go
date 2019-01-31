@@ -59,6 +59,7 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 	gradleName := filepath.Join(dir, "build.gradle")
 	jenkinsPluginsName := filepath.Join(dir, "plugins.txt")
 	packagerConfigName := filepath.Join(dir, "packager-config.yml")
+	envChart := filepath.Join(dir, "env/Chart.yaml")
 	lpack := ""
 	if len(customDraftPack) == 0 {
 		if i.ProjectConfig == nil {
@@ -103,6 +104,8 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 			lpack = filepath.Join(packsDir, "jenkins")
 		} else if exists, err := util.FileExists(packagerConfigName); err == nil && exists {
 			lpack = filepath.Join(packsDir, "cwp")
+		} else if exists, err := util.FileExists(envChart); err == nil && exists {
+			lpack = filepath.Join(packsDir, "environment")
 		} else {
 			// pack detection time
 			lpack, err = jxdraft.DoPackDetectionForBuildPack(o.Out, dir, packsDir)
