@@ -16,8 +16,8 @@ const (
 	optionBind = "bind"
 )
 
-// ServeBuildNumbersOptions holds the options for the build number service.
-type ServeBuildNumbersOptions struct {
+// ControllerBuildNumbersOptions holds the options for the build number service.
+type ControllerBuildNumbersOptions struct {
 	CommonOptions
 	BindAddress string
 	Port        int
@@ -30,9 +30,9 @@ var (
 	serveBuildNumbersExample = templates.Examples("jx " + command)
 )
 
-// NewCmdSControllerBuildNumbers builds a new command to serving build numbers over an HTTP interface.
-func NewCmdSControllerBuildNumbers(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := ServeBuildNumbersOptions{
+// NewCmdControllerBuildNumbers builds a new command to serving build numbers over an HTTP interface.
+func NewCmdControllerBuildNumbers(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+	options := ControllerBuildNumbersOptions{
 		CommonOptions: CommonOptions{
 			Factory: f,
 			In:      in,
@@ -59,7 +59,7 @@ func NewCmdSControllerBuildNumbers(f Factory, in terminal.FileReader, out termin
 }
 
 // Run will execute this command, starting the HTTP build number generation service with the specified options.
-func (o *ServeBuildNumbersOptions) Run() error {
+func (o *ControllerBuildNumbersOptions) Run() error {
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err

@@ -50,11 +50,11 @@ func NewCmdController(f Factory, in terminal.FileReader, out terminal.FileWriter
 
 	cmd.AddCommand(NewCmdControllerBackup(f, in, out, errOut))
 	cmd.AddCommand(NewCmdControllerBuild(f, in, out, errOut))
+	cmd.AddCommand(NewCmdControllerBuildNumbers(f, in, out, errOut))
 	cmd.AddCommand(NewCmdControllerRole(f, in, out, errOut))
 	cmd.AddCommand(NewCmdControllerTeam(f, in, out, errOut))
 	cmd.AddCommand(NewCmdControllerWorkflow(f, in, out, errOut))
 	cmd.AddCommand(NewCmdControllerCommitStatus(f, in, out, errOut))
-	cmd.AddCommand(NewCmdSControllerBuildNumbers(f, in, out, errOut))
 	return cmd
 }
 
