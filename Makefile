@@ -171,7 +171,10 @@ darwin: version
 
 bootstrap: vendoring
 
-release: check
+sleep:
+	sleep 2000
+
+release: sleep check
 	rm -rf build release && mkdir build release
 	for os in linux darwin ; do \
 		CGO_ENABLED=$(CGO_ENABLED) GOOS=$$os GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$$os/$(NAME) cmd/jx/jx.go ; \
