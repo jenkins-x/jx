@@ -54,11 +54,11 @@ type StepCreateTaskOptions struct {
 	BuildPackRef   string
 	PipelineKind   string
 	Context        string
-	NoApply          bool
+	NoApply        bool
 	Trigger        string
 	TargetPath     string
 	SourceName     string
-	CustomImage     string
+	CustomImage    string
 	DockerRegistry string
 	Duration       time.Duration
 
@@ -67,6 +67,8 @@ type StepCreateTaskOptions struct {
 
 	stepCounter int
 	gitInfo     *gits.GitRepository
+	branch      string
+	buildNumber string
 }
 
 // NewCmdStepCreateTask Creates a new Command object
@@ -274,6 +276,10 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	if err != nil {
 		return errors.Wrapf(err, "failed to find git branch from dir %s", o.Dir)
 	}
+	o.branch = branch
+
+	// TODO generate build number properly!
+	o.buildNumber = "1"
 
 	container := pipelineConfig.Agent.Container
 	if o.CustomImage != "" {
@@ -562,22 +568,80 @@ func (o *StepCreateTaskOptions) removeUnnecessaryVolumes(container *corev1.Conta
 }
 
 func (o *StepCreateTaskOptions) removeUnnecessaryEnvVars(container *corev1.Container) {
-	hasDockerRegistry := false
 	envVars := []corev1.EnvVar{}
 	for _, e := range container.Env {
 		name := e.Name
-		if name == "DOCKER_REGISTRY" {
-			hasDockerRegistry = true
-		}
-		if !strings.HasPrefix(name, "JENKINS_URL_") && !strings.HasPrefix(name, "XDG_") {
+		if name != "JENKINS_URL" && !strings.HasPrefix(name, "XDG_") {
 			envVars = append(envVars, e)
 		}
 	}
-	if !hasDockerRegistry {
+	if kube.GetSliceEnvVar(envVars, "DOCKER_REGISTRY") == nil {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "DOCKER_REGISTRY",
 			Value: o.DockerRegistry,
 		})
 	}
+	if kube.GetSliceEnvVar(envVars, "BUILD_NUMBER") == nil {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "BUILD_NUMBER",
+			Value: o.buildNumber,
+		})
+	}
+	if o.PipelineKind != "" && kube.GetSliceEnvVar(envVars, "PIPELINE_KIND") == nil {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "PIPELINE_KIND",
+			Value: o.PipelineKind,
+		})
+	}
+	if o.Context != "" && kube.GetSliceEnvVar(envVars, "PIPELINE_CONTEXT") == nil {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "PIPELINE_CONTEXT",
+			Value: o.Context,
+		})
+	}
+	gitInfo := o.gitInfo
+	branch := o.branch
+	if gitInfo != nil {
+		u := gitInfo.CloneURL
+		if u != "" && kube.GetSliceEnvVar(envVars, "SOURCE_URL") == nil {
+			envVars = append(envVars, corev1.EnvVar{
+				Name:  "SOURCE_URL",
+				Value: u,
+			})
+		}
+		repo := gitInfo.Name
+		owner := gitInfo.Organisation
+		if owner != "" && kube.GetSliceEnvVar(envVars, "REPO_OWNER") == nil {
+			envVars = append(envVars, corev1.EnvVar{
+				Name:  "REPO_OWNER",
+				Value: owner,
+			})
+		}
+		if repo != "" && kube.GetSliceEnvVar(envVars, "REPO_NAME") == nil {
+			envVars = append(envVars, corev1.EnvVar{
+				Name:  "REPO_NAME",
+				Value: repo,
+			})
+		}
+		if owner != "" && repo != "" && branch != "" {
+			jobName := fmt.Sprintf("%s/%s/%s", owner, repo, branch)
+			if kube.GetSliceEnvVar(envVars, "JOB_NAME") == nil {
+				envVars = append(envVars, corev1.EnvVar{
+					Name:  "JOB_NAME",
+					Value: jobName,
+				})
+			}
+		}
+	}
+	if branch != "" {
+		if kube.GetSliceEnvVar(envVars, "BRANCH_NAME") == nil {
+			envVars = append(envVars, corev1.EnvVar{
+				Name:  "BRANCH_NAME",
+				Value: branch,
+			})
+		}
+
+	}
+
 	container.Env = envVars
 }
