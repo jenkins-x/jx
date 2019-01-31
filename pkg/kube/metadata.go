@@ -5,6 +5,7 @@ import (
 	"strconv"
 )
 
+// ObjectReference represents a reference to a k8s resource
 type ObjectReference struct {
 	APIVersion string `json:"apiVersion" protobuf:"bytes,5,opt,name=apiVersion"`
 	// Kind of the referent.
