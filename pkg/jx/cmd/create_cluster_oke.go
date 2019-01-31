@@ -143,8 +143,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 	//we assume user has prepared the oci config file under ~/.oci/
 	imagesArray, kubeVersionsArray, shapesArray, latestKubeVersion, err := oke.GetOptionValues()
 	if err != nil {
-		fmt.Println("Error getting OKE option values, have you created the OKE policy? https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengpolicyconfig.htm")
-		return err
+		return errors.Wrapf(err, "Error getting OKE option values, have you created the OKE policy? https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengpolicyconfig.htm")
 	}
 
 	endpoint := o.Flags.Endpoint
