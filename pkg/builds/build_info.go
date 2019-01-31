@@ -123,6 +123,9 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 		}
 	}
 	if build == "" {
+		build = GetBuildNumberFromLabels(pod.Labels)
+	}
+	if build == "" {
 		build = "1"
 	}
 	if branch == "" {

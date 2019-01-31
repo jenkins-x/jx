@@ -13,7 +13,6 @@ var (
 	numericStringRegex = regexp.MustCompile("[0-9]+")
 )
 
-
 // GetBuildNumber returns the build number using environment variables and/or pod Downward API files
 func GetBuildNumber() string {
 	buildNumber := os.Getenv("JX_BUILD_NUMBER")
@@ -32,11 +31,11 @@ func GetBuildNumber() string {
 	const podInfoLabelsFile = "/etc/podinfo/labels"
 	exists, err := util.FileExists(podInfoLabelsFile)
 	if err != nil {
-	  log.Warnf("failed to detect if the file %s exists: %s\n", podInfoLabelsFile, err)
+		log.Warnf("failed to detect if the file %s exists: %s\n", podInfoLabelsFile, err)
 	} else if exists {
 		data, err := ioutil.ReadFile(podInfoLabelsFile)
 		if err != nil {
-		  log.Warnf("failed to load downward API pod labels from %s due to: %s\n", podInfoLabelsFile, err)
+			log.Warnf("failed to load downward API pod labels from %s due to: %s\n", podInfoLabelsFile, err)
 		} else {
 			text := strings.TrimSpace(string(data))
 			if text != "" {
@@ -50,15 +49,28 @@ func GetBuildNumber() string {
 // GetBuildNumberFromLabelsFileData parses the /etc/podinfo/labels style downward API file for a pods labels
 // and returns the build number if it can be discovered
 func GetBuildNumberFromLabelsFileData(text string) string {
-   m := LoadDownwardAPILabels(text)
-   answer := m["build.knative.dev/buildName"]
-   if answer == "" {
-	   answer = m["build-number"]
-   }
-   if answer != "" {
-   		return lastNumberFrom(answer)
-   }
-   return ""
+	m := LoadDownwardAPILabels(text)
+
+	return GetBuildNumberFromLabels(m)
+}
+
+// GetBuildNumberFromLabels returns the build number from the given Pod labels
+func GetBuildNumberFromLabels(m map[string]string) string {
+	if m == nil {
+		return ""
+	}
+
+	answer := ""
+	for _, key := range []string{LabelBuildName, "build-number", LabelOldBuildName} {
+		answer = m[key]
+		if answer != "" {
+			break
+		}
+	}
+	if answer != "" {
+		return lastNumberFrom(answer)
+	}
+	return ""
 }
 
 // lastNumberFrom splits a string such as "jstrachan-mynodething-master-1-build" via "-" and returns the last

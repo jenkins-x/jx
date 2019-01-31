@@ -60,6 +60,9 @@ type StepCreateTaskOptions struct {
 	SourceName     string
 	CustomImage    string
 	DockerRegistry string
+	CloneGitURL    string
+	Branch         string
+	DeleteTempDir  bool
 	Duration       time.Duration
 
 	PodTemplates        map[string]*corev1.Pod
@@ -67,9 +70,16 @@ type StepCreateTaskOptions struct {
 
 	stepCounter int
 	gitInfo     *gits.GitRepository
-	branch      string
 	buildNumber string
 	labels      map[string]string
+	Results     StepCreateTaskResults
+}
+
+// StepCreateTaskResults stores the generated results
+type StepCreateTaskResults struct {
+	Pipeline    *pipelineapi.Pipeline
+	Task        *pipelineapi.Task
+	PipelineRun *pipelineapi.PipelineRun
 }
 
 // NewCmdStepCreateTask Creates a new Command object
@@ -105,6 +115,7 @@ func NewCmdStepCreateTask(f Factory, in terminal.FileReader, out terminal.FileWr
 	cmd.Flags().StringVarP(&options.BuildPackURL, "url", "u", "", "The URL for the build pack Git repository")
 	cmd.Flags().StringVarP(&options.BuildPackRef, "ref", "r", "", "The Git reference (branch,tag,sha) in the Git repository to use")
 	cmd.Flags().StringVarP(&options.Pack, "pack", "p", "", "The build pack name. If none is specified its discovered from the source code")
+	cmd.Flags().StringVarP(&options.Branch, "branch", "", "", "The git branch to trigger the build in. Defaults to the current local branch name")
 	cmd.Flags().StringVarP(&options.PipelineKind, "kind", "k", "release", "The kind of pipeline to create such as: "+strings.Join(jenkinsfile.PipelineKinds, ", "))
 	cmd.Flags().StringVarP(&options.Context, "context", "c", "", "The pipeline context if there are multiple separate pipelines for a given branch")
 	cmd.Flags().StringVarP(&options.Trigger, "trigger", "t", string(pipelineapi.PipelineTriggerTypeManual), "The kind of pipeline trigger")
@@ -113,6 +124,8 @@ func NewCmdStepCreateTask(f Factory, in terminal.FileReader, out terminal.FileWr
 	cmd.Flags().StringVarP(&options.TargetPath, "target-path", "", "", "The target path appended to /workspace/${source} to clone the source code")
 	cmd.Flags().StringVarP(&options.SourceName, "source", "", "source", "The name of the source repository")
 	cmd.Flags().StringVarP(&options.CustomImage, "image", "", "", "Specify a custom image to use for the steps which overrides the image in the PodTemplates")
+	cmd.Flags().StringVarP(&options.CloneGitURL, "clone-git-url", "", "", "Specify the git URL to clone to a temporary directory to get the source code")
+	cmd.Flags().BoolVarP(&options.DeleteTempDir, "delete-temp-dir", "", false, "Deletes the temporary directory of cloned files if using the 'clone-git-url' option")
 	cmd.Flags().BoolVarP(&options.NoApply, "no-apply", "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file")
 	cmd.Flags().DurationVarP(&options.Duration, "duration", "", time.Second*30, "Retry duration when trying to create a PipelineRun")
 	return cmd
@@ -127,6 +140,16 @@ func (o *StepCreateTaskOptions) Run() error {
 	kubeClient, ns, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return err
+	}
+
+	if o.CloneGitURL != "" {
+		err = o.cloneGitRepositoryToTempDir(o.CloneGitURL)
+		if err != nil {
+			return err
+		}
+		if o.DeleteTempDir {
+			defer o.deleteTempDir()
+		}
 	}
 
 	if o.DockerRegistry == "" {
@@ -273,11 +296,12 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		return errors.Wrapf(err, "failed to find git information from dir %s", o.Dir)
 	}
 
-	branch, err := o.Git().Branch(o.Dir)
-	if err != nil {
-		return errors.Wrapf(err, "failed to find git branch from dir %s", o.Dir)
+	if o.Branch == "" {
+		o.Branch, err = o.Git().Branch(o.Dir)
+		if err != nil {
+			return errors.Wrapf(err, "failed to find git branch from dir %s", o.Dir)
+		}
 	}
-	o.branch = branch
 
 	// TODO generate build number properly!
 	o.buildNumber = "1"
@@ -287,7 +311,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		labels["owner"] = o.gitInfo.Organisation
 		labels["repo"] = o.gitInfo.Name
 	}
-	labels["branch"] = branch
+	labels["branch"] = o.Branch
 	o.labels = labels
 
 	container := pipelineConfig.Agent.Container
@@ -312,7 +336,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		}
 	}
 
-	name := kpipelines.PipelineResourceName(o.gitInfo, branch, o.Context)
+	name := kpipelines.PipelineResourceName(o.gitInfo, o.Branch, o.Context)
 	task := &pipelineapi.Task{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: kpipelines.PipelineAPIVersion,
@@ -329,7 +353,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	}
 	fileName := o.OutputFile
 	if !o.NoApply {
-		err = o.applyTask(task, o.gitInfo, branch)
+		err = o.applyTask(task, o.gitInfo, o.Branch)
 		if fileName == "" {
 			return err
 		}
@@ -447,10 +471,10 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 	run := &pipelineapi.PipelineRun{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "pipeline.knative.dev/v1alpha1",
-			Kind:       "Task",
+			Kind:       "PipelineRun",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: pipeline.Name,
+			Name:   pipeline.Name,
 			Labels: util.MergeMaps(o.labels),
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -479,6 +503,10 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 		return errors.Wrapf(err, "failed to create the PipelineRun namespace %s", ns)
 	}
 	log.Infof("created PipelineRun %s\n", info(run.Name))
+
+	o.Results.Task = task
+	o.Results.Pipeline = pipeline
+	o.Results.PipelineRun = run
 	return nil
 }
 
@@ -610,7 +638,7 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container) {
 		})
 	}
 	gitInfo := o.gitInfo
-	branch := o.branch
+	branch := o.Branch
 	if gitInfo != nil {
 		u := gitInfo.CloneURL
 		if u != "" && kube.GetSliceEnvVar(envVars, "SOURCE_URL") == nil {
@@ -686,4 +714,42 @@ func (o *StepCreateTaskOptions) modifyVolumes(container *corev1.Container, volum
 		container.VolumeMounts = append(container.VolumeMounts, volumeMount)
 	}
 	return answer
+}
+
+func (o *StepCreateTaskOptions) cloneGitRepositoryToTempDir(gitURL string) error {
+	var err error
+	o.Dir, err = ioutil.TempDir("", "git")
+	if err != nil {
+		return err
+	}
+	log.Infof("cloning repository %s to temp dir %s\n", gitURL, o.Dir)
+	err = o.Git().ShallowCloneBranch(gitURL, o.Branch, o.Dir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to clone repository %s to directory %s", gitURL, o.Dir)
+	}
+	return nil
+
+}
+
+func (o *StepCreateTaskOptions) deleteTempDir() {
+	log.Infof("removing the temp directory %s\n", o.Dir)
+	err := util.DeleteDirContents(o.Dir)
+	if err != nil {
+		log.Warnf("failed to delete dir %s: %s\n", o.Dir, err.Error())
+	}
+}
+
+// ObjectReferences creates a list of object references created
+func (r *StepCreateTaskResults) ObjectReferences() []kube.ObjectReference {
+	resources := []kube.ObjectReference{}
+	if r.Task != nil {
+		resources = append(resources, kube.CreateObjectReference(r.Task.TypeMeta, r.Task.ObjectMeta))
+	}
+	if r.Pipeline != nil {
+		resources = append(resources, kube.CreateObjectReference(r.Pipeline.TypeMeta, r.Pipeline.ObjectMeta))
+	}
+	if r.PipelineRun != nil {
+		resources = append(resources, kube.CreateObjectReference(r.PipelineRun.TypeMeta, r.PipelineRun.ObjectMeta))
+	}
+	return resources
 }

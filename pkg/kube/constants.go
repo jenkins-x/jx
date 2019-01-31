@@ -33,11 +33,24 @@ const (
 	ChartProw = "jenkins-x/prow"
 
 	// ChartKnative the default chart for knative
-	ChartKnativeBuild   = "jenkins-x/knative-build"
+	ChartKnativeBuild = "jenkins-x/knative-build"
+
+	// ChartBuildTemplates the build templates for Knative Build
 	ChartBuildTemplates = "jenkins-x/jx-build-templates"
 
-	DefaultProwReleaseName           = "jx-prow"
-	DefaultKnativeBuildReleaseName   = "knative-build"
+	// ChartKnativePipeline the default chart for knative Build Pipeline
+	ChartKnativePipeline = "jenkins-x/knative-build-pipeline"
+
+	// DefaultProwReleaseName the default helm release name for Prow
+	DefaultProwReleaseName = "jx-prow"
+
+	// DefaultKnativeBuildReleaseName the default helm release name for knative build
+	DefaultKnativeBuildReleaseName = "knative-build"
+
+	// DefaultKnativeBuildPipelineReleaseName the default helm release name for knative build pipeline
+	DefaultKnativeBuildPipelineReleaseName = "knative-build-pipeline"
+
+	// DefaultBuildTemplatesReleaseName the default helm release name for the knative build templates
 	DefaultBuildTemplatesReleaseName = "jx-build-templates"
 
 	// Charts Single Sign-On addon
@@ -248,9 +261,6 @@ const (
 
 	AUTH = "auth"
 
-	// KubeProvider stores the kubernetes provider used to create the cluster or install
-	KubeProvider = "kubeProvider"
-
 	// Region stores the cloud region the cluster is installed on
 	Region = "region"
 
@@ -266,20 +276,21 @@ const (
 
 var (
 	AddonCharts = map[string]string{
-		"ambassador":                    ChartAmbassador,
-		"anchore":                       ChartAnchore,
-		"cb":                            ChartCloudBees,
-		"gitea":                         ChartGitea,
-		"istio":                         ChartIstio,
-		"kubeless":                      ChartKubeless,
-		"prometheus":                    "stable/prometheus",
-		"grafana":                       "stable/grafana",
-		"jx-build-templates":            "jenkins-x/jx-build-templates",
-		DefaultProwReleaseName:          ChartProw,
-		DefaultKnativeBuildReleaseName:  ChartKnativeBuild,
-		DefaultSsoDexReleaseName:        ChartSsoDex,
-		DefaultSsoOperatorReleaseName:   ChartSsoOperator,
-		DefaultVaultOperatorReleaseName: ChartVaultOperator,
+		"ambassador":                           ChartAmbassador,
+		"anchore":                              ChartAnchore,
+		"cb":                                   ChartCloudBees,
+		"gitea":                                ChartGitea,
+		"istio":                                ChartIstio,
+		"kubeless":                             ChartKubeless,
+		"prometheus":                           "stable/prometheus",
+		"grafana":                              "stable/grafana",
+		"jx-build-templates":                   "jenkins-x/jx-build-templates",
+		DefaultProwReleaseName:                 ChartProw,
+		DefaultKnativeBuildReleaseName:         ChartKnativeBuild,
+		DefaultKnativeBuildPipelineReleaseName: ChartKnativePipeline,
+		DefaultSsoDexReleaseName:               ChartSsoDex,
+		DefaultSsoOperatorReleaseName:          ChartSsoOperator,
+		DefaultVaultOperatorReleaseName:        ChartVaultOperator,
 	}
 
 	AddonServices = map[string]string{
