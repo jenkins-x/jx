@@ -498,6 +498,10 @@ func (o *PreviewOptions) Run() error {
 					Name:     name,
 					Pipeline: pipeline,
 					Build:    build,
+					GitInfo: &gits.GitRepository{
+						Name:			o.GitInfo.Name,
+						Organisation:   o.GitInfo.Organisation,
+					},
 				},
 			}
 			a, _, p, _, err := key.GetOrCreatePreview(o.jxClient, o.Namespace)
