@@ -30,11 +30,11 @@ import (
 
 var (
 	createTaskLong = templates.LongDesc(`
-		Creates a Knative Pipeline Task for a project
+		Creates a Knative Pipeline Run for a project
 `)
 
 	createTaskExample = templates.Examples(`
-		# create a Knative Pipeline Task and render to the console
+		# create a Knative Pipeline Run and render to the console
 		jx step create task
 
 		# create a Knative Pipeline Task
@@ -54,10 +54,11 @@ type StepCreateTaskOptions struct {
 	BuildPackRef   string
 	PipelineKind   string
 	Context        string
-	Apply          bool
+	NoApply          bool
 	Trigger        string
 	TargetPath     string
 	SourceName     string
+	CustomImage     string
 	DockerRegistry string
 	Duration       time.Duration
 
@@ -83,7 +84,7 @@ func NewCmdStepCreateTask(f Factory, in terminal.FileReader, out terminal.FileWr
 
 	cmd := &cobra.Command{
 		Use:     "task",
-		Short:   "Creates a Knative Pipeline Task for the current folder or given build pack",
+		Short:   "Creates a Knative Pipeline Run for the current folder or given build pack",
 		Long:    createTaskLong,
 		Example: createTaskExample,
 		Aliases: []string{"bt"},
@@ -108,7 +109,8 @@ func NewCmdStepCreateTask(f Factory, in terminal.FileReader, out terminal.FileWr
 	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
 	cmd.Flags().StringVarP(&options.TargetPath, "target-path", "", "", "The target path appended to /workspace/${source} to clone the source code")
 	cmd.Flags().StringVarP(&options.SourceName, "source", "", "source", "The name of the source repository")
-	cmd.Flags().BoolVarP(&options.Apply, "apply", "a", false, "If enabled lets apply the generated")
+	cmd.Flags().StringVarP(&options.CustomImage, "image", "", "", "Specify a custom image to use for the steps which overrides the image in the PodTemplates")
+	cmd.Flags().BoolVarP(&options.NoApply, "no-apply", "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file")
 	cmd.Flags().DurationVarP(&options.Duration, "duration", "", time.Second*30, "Retry duration when trying to create a PipelineRun")
 	return cmd
 }
@@ -274,6 +276,9 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	}
 
 	container := pipelineConfig.Agent.Container
+	if o.CustomImage != "" {
+		container = o.CustomImage
+	}
 	dir := o.getWorkspaceDir()
 
 	steps := []corev1.Container{}
@@ -307,7 +312,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		},
 	}
 	fileName := o.OutputFile
-	if o.Apply {
+	if !o.NoApply {
 		err = o.applyTask(task, o.gitInfo, branch)
 		if fileName == "" {
 			return err
