@@ -74,8 +74,8 @@ get-test-deps:
 	$(GO_NOMOD) get -u gopkg.in/matm/v1/gocov-html
 
 test:
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -coverprofile=cover.out \
-	-failfast -short $(TESTFLAGS) ./...
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 1 -count=1 -coverprofile=cover.out \
+	-failfast -short ./...
 
 test-report: get-test-deps test
 	@gocov convert cover.out | gocov report
