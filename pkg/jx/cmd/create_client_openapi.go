@@ -169,7 +169,7 @@ func (o *CreateClientOpenAPIOptions) Run() error {
 	}
 
 	log.Infof("Generating Go code to %s in package %s from package %s\n", o.OutputBase, o.GoPathOutputPackage, o.GoPathInputPackage)
-	err = kube.GenerateOpenApi(o.GroupsWithVersions, o.GoPathInputPackage, o.GoPathOutputPackage,
+	err = kube.GenerateOpenApi(o.GroupsWithVersions, o.GoPathInputPackage, o.GoPathOutputPackage, o.OutputPackage,
 		filepath.Join(build.Default.GOPATH, "src"), o.OpenAPIDependencies, o.InputBase, o.ModuleName, o.Git(),
 		o.BoilerplateFile, o.Verbose)
 	if err != nil {

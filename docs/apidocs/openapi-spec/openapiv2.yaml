@@ -1265,10 +1265,8 @@ definitions:
         description: 'UID of the referent. More info: http://kubernetes.io/docs/user-guide/identifiers#uids'
         type: string
     required:
-    - apiVersion
     - kind
     - name
-    - uid
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SourceRepository:
     description: SourceRepository is the metadata for an Application/Project/SourceRepository
