@@ -174,11 +174,11 @@ func createSourceRepositoryIfMissing(jxClient versioned.Interface, ns string, ac
 	_, err := srs.GetSourceRepository(resourceName)
 
 	if err != nil {
-		log.Infof("Creating missing sourcerepository object %s\n", activityKey.Name)
-		return srs.CreateOrUpdateSourceRepository(resourceName, activityKey.GitInfo.Organisation, activityKey.GitInfo.URL)
+		log.Warnf("Creating missing sourcerepository object %s\n", resourceName)
+		err = srs.CreateOrUpdateSourceRepository(activityKey.Name, activityKey.GitInfo.Organisation, activityKey.GitInfo.URL)
 	}
 
-	return nil
+	return err
 }
 
 // GetOrCreate gets or creates the pipeline activity
@@ -206,7 +206,10 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 	oldLabels := a.Labels
 
 	if a.Labels == nil || a.Labels[v1.LabelSourceRepository] == "" {
-		createSourceRepositoryIfMissing(jxClient, ns, k)
+		err := createSourceRepositoryIfMissing(jxClient, ns, k)
+		if err != nil {
+			log.Errorf("Error trying to create missing sourcerepository object: %s\n", err.Error())
+		}
 	}
 
 	updateActivity(k, a)

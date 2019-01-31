@@ -3,8 +3,6 @@ package kube
 import "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
 // SourceRepoer is responsible for storing information about Source Repositories (aka Applications, Projects)
-// FIXME - note. At the moment, repos are only referred to by their name (ie, not the organisation) meaning you
-// can't import both github.com/org1/myawesomeapp and github.com/org2/myawesomeapp.
 // go:generate pegomock generate github.com/jenkins-x/jx/pkg/kube SourceRepoer -o mocks/sourcerepoer.go --generate-matchers
 type SourceRepoer interface {
 	// CreateOrUpdateSourceRepository creates or updates a source repository
