@@ -61,7 +61,7 @@ type StepCreateTaskOptions struct {
 	CustomImage    string
 	DockerRegistry string
 	CloneGitURL    string
-	Branch      string
+	Branch         string
 	DeleteTempDir  bool
 	Duration       time.Duration
 
@@ -72,6 +72,14 @@ type StepCreateTaskOptions struct {
 	gitInfo     *gits.GitRepository
 	buildNumber string
 	labels      map[string]string
+	Results     StepCreateTaskResults
+}
+
+// StepCreateTaskResults stores the generated results
+type StepCreateTaskResults struct {
+	Pipeline    *pipelineapi.Pipeline
+	Task        *pipelineapi.Task
+	PipelineRun *pipelineapi.PipelineRun
 }
 
 // NewCmdStepCreateTask Creates a new Command object
@@ -463,7 +471,7 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 	run := &pipelineapi.PipelineRun{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: "pipeline.knative.dev/v1alpha1",
-			Kind:       "Task",
+			Kind:       "PipelineRun",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   pipeline.Name,
@@ -495,6 +503,10 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 		return errors.Wrapf(err, "failed to create the PipelineRun namespace %s", ns)
 	}
 	log.Infof("created PipelineRun %s\n", info(run.Name))
+
+	o.Results.Task = task
+	o.Results.Pipeline = pipeline
+	o.Results.PipelineRun = run
 	return nil
 }
 
@@ -723,6 +735,21 @@ func (o *StepCreateTaskOptions) deleteTempDir() {
 	log.Infof("removing the temp directory %s\n", o.Dir)
 	err := util.DeleteDirContents(o.Dir)
 	if err != nil {
-	  log.Warnf("failed to delete dir %s: %s\n", o.Dir, err.Error())
+		log.Warnf("failed to delete dir %s: %s\n", o.Dir, err.Error())
 	}
+}
+
+// ObjectReferences creates a list of object references created
+func (r *StepCreateTaskResults) ObjectReferences() []kube.ObjectReference {
+	resources := []kube.ObjectReference{}
+	if r.Task != nil {
+		resources = append(resources, kube.CreateObjectReference(r.Task.TypeMeta, r.Task.ObjectMeta))
+	}
+	if r.Pipeline != nil {
+		resources = append(resources, kube.CreateObjectReference(r.Pipeline.TypeMeta, r.Pipeline.ObjectMeta))
+	}
+	if r.PipelineRun != nil {
+		resources = append(resources, kube.CreateObjectReference(r.PipelineRun.TypeMeta, r.PipelineRun.ObjectMeta))
+	}
+	return resources
 }

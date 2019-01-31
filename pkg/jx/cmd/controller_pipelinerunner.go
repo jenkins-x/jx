@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -42,6 +43,7 @@ type PipelineRunRequest struct {
 
 // PipelineRunResponse the results of triggering a pipeline run
 type PipelineRunResponse struct {
+	Resources []kube.ObjectReference `json:"resources,omitempty"`
 }
 
 var (
@@ -150,7 +152,6 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 		arguments.Kind = "release"
 	}
 
-
 	pr := &StepCreateTaskOptions{}
 	pr.CommonOptions = o.CommonOptions
 
@@ -171,7 +172,10 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 		return
 	}
 
-	results := &PipelineRunResponse{}
+
+	results := &PipelineRunResponse{
+		Resources: pr.Results.ObjectReferences(),
+	}
 	err = o.marshalPayload(w, r, results)
 	o.onError(err)
 	return
@@ -214,3 +218,4 @@ func (o *ControllerPipelineRunnerOptions) returnError(message string, w http.Res
 	w.WriteHeader(400)
 	w.Write([]byte(message))
 }
+
