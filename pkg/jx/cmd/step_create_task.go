@@ -508,6 +508,9 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		o.removeUnnecessaryEnvVars(&c)
 
 		c.Command = []string{"/bin/sh"}
+		if o.CustomImage != "" {
+			c.Image = o.CustomImage
+		}
 
 		// lets remove any escaped "\$" stuff in the pipeline library
 		commandText := strings.Replace(step.Command, "\\$", "$", -1)
