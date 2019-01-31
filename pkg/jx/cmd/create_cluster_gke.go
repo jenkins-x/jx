@@ -50,6 +50,7 @@ type CreateClusterGKEFlags struct {
 	EnhancedScopes  bool
 	Scopes          []string
 	Preemptible     bool
+	EnhancedApis    bool
 }
 
 const clusterListHeader = "PROJECT_ID"
@@ -117,6 +118,7 @@ func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.File
 	cmd.Flags().StringArrayVarP(&options.Flags.Scopes, "scope", "", []string{}, "The OAuth scopes to be added to the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.Preemptible, "preemptible", "", false, "Use preemptible VMs in the node-pool")
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedScopes, "enhanced-scopes", "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
+	cmd.Flags().BoolVarP(&options.Flags.EnhancedApis, "enhanced-apis", "", false, "Enable enhanced APIs to utilise Container Registry & Cloud Build")
 
 	cmd.AddCommand(NewCmdCreateClusterGKETerraform(f, in, out, errOut))
 
@@ -161,11 +163,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	// lets ensure we've got container and compute enabled
-	glcoudArgs := []string{"services", "enable", "container", "compute"}
-	log.Infof("Let's ensure we have container and compute enabled on your project via: %s\n", util.ColorInfo("gcloud "+strings.Join(glcoudArgs, " ")))
-
-	err = o.runCommandVerbose("gcloud", glcoudArgs...)
+	log.Infof("Let's ensure we have %s and %s enabled on your project\n", util.ColorInfo("container"), util.ColorInfo("container"))
+	err = gke.EnableAPIs(projectId, "container", "compute")
 	if err != nil {
 		return err
 	}
@@ -242,15 +241,37 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			}
 			survey.AskOne(prompt, &o.Flags.EnhancedScopes, nil, surveyOpts)
 		}
+	}
 
+	if o.Flags.EnhancedScopes {
+		o.Flags.Scopes = []string{"https://www.googleapis.com/auth/cloud-platform",
+			"https://www.googleapis.com/auth/compute",
+			"https://www.googleapis.com/auth/devstorage.full_control",
+			"https://www.googleapis.com/auth/service.management",
+			"https://www.googleapis.com/auth/servicecontrol",
+			"https://www.googleapis.com/auth/logging.write",
+			"https://www.googleapis.com/auth/monitoring"}
+	}
+
+	if !o.BatchMode {
+		// only provide the option if enhanced scopes are enabled
 		if o.Flags.EnhancedScopes {
-			o.Flags.Scopes = []string{"https://www.googleapis.com/auth/cloud-platform",
-				"https://www.googleapis.com/auth/compute",
-				"https://www.googleapis.com/auth/devstorage.full_control",
-				"https://www.googleapis.com/auth/service.management",
-				"https://www.googleapis.com/auth/servicecontrol",
-				"https://www.googleapis.com/auth/logging.write",
-				"https://www.googleapis.com/auth/monitoring"}
+			if !o.Flags.EnhancedApis {
+				prompt := &survey.Confirm{
+					Message: "Would you like to enable Cloud Build, Container Registry & Container Analysis APIs?",
+					Default: false,
+					Help: "Enables extra APIs on the GCP project",
+				}
+				survey.AskOne(prompt, &o.Flags.EnhancedApis, nil, surveyOpts)
+			}
+		}
+
+	}
+
+	if o.Flags.EnhancedApis {
+		err = gke.EnableAPIs(projectId, "cloudbuild", "containerregistry", "containeranalysis")
+		if err != nil {
+			return err
 		}
 	}
 
