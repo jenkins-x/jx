@@ -23,7 +23,7 @@ pipeline {
 
         // Build and tests configuration (run only 2 builds/tests in parallel 
         // in order to avoid OOM issue
-        PARALLEL_BUILDS = 2
+        PARALLEL_BUILDS = 1
 
         // BDD tests configuration
         GIT_PROVIDER_URL     = "https://github.beescloud.com"
