@@ -6,17 +6,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +genclient
-// +genclient:noStatus
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +k8s:openapi-gen=true
-
 const (
 	// UserTypeLocal represents a User who is native to K8S (e.g. backed by GKE).
 	UserTypeLocal = "User"
 	// UserTypeExternal represents a User who is managed externally (e.g. in GitHub) and will have a linked ServiceAccount.
 	UserTypeExternal = "ServiceAccount"
 )
+
+// +genclient
+// +genclient:noStatus
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+// +k8s:openapi-gen=true
 
 // User represents a git user so we have a cache to find by email address
 type User struct {

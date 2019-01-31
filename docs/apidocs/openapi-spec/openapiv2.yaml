@@ -1758,6 +1758,17 @@ definitions:
         $ref: '#/definitions/io.k8s.api.core.v1.PodTemplateSpec'
         description: 'Describes the pod that will be created when executing a job.
           More info: https://kubernetes.io/docs/concepts/workloads/controllers/jobs-run-to-completion/'
+      ttlSecondsAfterFinished:
+        description: ttlSecondsAfterFinished limits the lifetime of a Job that has
+          finished execution (either Complete or Failed). If this field is set, ttlSecondsAfterFinished
+          after the Job finishes, it is eligible to be automatically deleted. When
+          the Job is being deleted, its lifecycle guarantees (e.g. finalizers) will
+          be honored. If this field is unset, the Job won't be automatically deleted.
+          If this field is set to zero, the Job becomes eligible to be deleted immediately
+          after it finishes. This field is alpha-level and is only honored by servers
+          that enable the TTLAfterFinished feature.
+        format: int32
+        type: integer
     required:
     - template
     type: object
@@ -2132,7 +2143,7 @@ definitions:
       resources:
         $ref: '#/definitions/io.k8s.api.core.v1.ResourceRequirements'
         description: 'Compute Resources required by this container. Cannot be updated.
-          More info: https://kubernetes.io/docs/concepts/storage/persistent-volumes#resources'
+          More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
       securityContext:
         $ref: '#/definitions/io.k8s.api.core.v1.SecurityContext'
         description: 'Security options the pod should run with. More info: https://kubernetes.io/docs/concepts/policy/security-context/
@@ -2220,7 +2231,7 @@ definitions:
           port that can be referred to by services.
         type: string
       protocol:
-        description: Protocol for port. Must be UDP or TCP. Defaults to "TCP".
+        description: Protocol for port. Must be UDP, TCP, or SCTP. Defaults to "TCP".
         type: string
     required:
     - containerPort
@@ -3147,6 +3158,14 @@ definitions:
         description: 'Restart policy for all containers within the pod. One of Always,
           OnFailure, Never. Default to Always. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy'
         type: string
+      runtimeClassName:
+        description: 'RuntimeClassName refers to a RuntimeClass object in the node.k8s.io
+          group, which should be used to run this pod.  If no RuntimeClass resource
+          matches the named class, the pod will not be run. If unset or empty, the
+          "legacy" RuntimeClass will be used, which is an implicit class with an empty
+          definition that uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
+          This is an alpha feature and may change in the future.'
+        type: string
       schedulerName:
         description: If specified, the pod will be dispatched by specified scheduler.
           If not specified, the pod will be dispatched by default scheduler.
@@ -3169,8 +3188,8 @@ definitions:
           in a pod. When this is set containers will be able to view and signal processes
           from other containers in the same pod, and the first process in each container
           will not be assigned PID 1. HostPID and ShareProcessNamespace cannot both
-          be set. Optional: Default to false. This field is alpha-level and is honored
-          only by servers that enable the PodShareProcessNamespace feature.'
+          be set. Optional: Default to false. This field is beta-level and may be
+          disabled with the PodShareProcessNamespace feature.'
         type: boolean
       subdomain:
         description: If specified, the fully qualified Pod hostname will be "<hostname>.<subdomain>.<pod
@@ -3434,8 +3453,7 @@ definitions:
     properties:
       fsType:
         description: Filesystem type to mount. Must be a filesystem type supported
-          by the host operating system. Ex. "ext4", "xfs", "ntfs". Implicitly inferred
-          to be "ext4" if unspecified.
+          by the host operating system. Ex. "ext4", "xfs", "ntfs". Default is "xfs".
         type: string
       gateway:
         description: The host address of the ScaleIO API Gateway.
@@ -3458,7 +3476,7 @@ definitions:
         type: boolean
       storageMode:
         description: Indicates whether the storage for a volume should be ThickProvisioned
-          or ThinProvisioned.
+          or ThinProvisioned. Default is ThinProvisioned.
         type: string
       storagePool:
         description: The ScaleIO Storage Pool associated with the protection domain.
@@ -3580,6 +3598,12 @@ definitions:
         description: Run container in privileged mode. Processes in privileged containers
           are essentially equivalent to root on the host. Defaults to false.
         type: boolean
+      procMount:
+        description: procMount denotes the type of proc mount to use for the containers.
+          The default is DefaultProcMount which uses the container runtime defaults
+          for readonly paths and masked paths. This requires the ProcMountType feature
+          flag to be enabled.
+        type: string
       readOnlyRootFilesystem:
         description: Whether this container has a read-only root filesystem. Default
           is false.
@@ -4020,10 +4044,6 @@ definitions:
         1.5 will be serialized as "1500m"
         1.5Gi will be serialized as "1536Mi"
 
-      NOTE: We reserve the right to amend this canonical format, perhaps to
-        allow 1.5 to be canonical.
-        or after March 2015.
-
       Note that the quantity will NEVER be internally represented by a floating point number. That is the whole point of this exercise.
 
       Non-canonical values will still parse as long as they are well formed, but will be re-emitted in their canonical form. (So always use canonical form, or don't diff.)
@@ -4117,9 +4137,10 @@ definitions:
           items returned, and indicates that the server has more data available. The
           value is opaque and may be used to issue another request to the endpoint
           that served this list to retrieve the next set of available objects. Continuing
-          a list may not be possible if the server configuration has changed or more
-          than a few minutes have passed. The resourceVersion field returned when
-          using this continue value will be identical to the value in the first response.
+          a consistent list may not be possible if the server configuration has changed
+          or more than a few minutes have passed. The resourceVersion field returned
+          when using this continue value will be identical to the value in the first
+          response, unless you have received this token from an error message.
         type: string
       resourceVersion:
         description: 'String that identifies the server''s internal version of this
