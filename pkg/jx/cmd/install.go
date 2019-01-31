@@ -1814,13 +1814,8 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			CreateOptions: CreateOptions{
 				CommonOptions: options.CommonOptions,
 			},
-			UpgradeIngressOptions: UpgradeIngressOptions{
-				CreateOptions: CreateOptions{
-					CommonOptions: options.CommonOptions,
-				},
-				IngressConfig: *ic,
-			},
-			Namespace: namespace,
+			IngressConfig: *ic,
+			Namespace:     namespace,
 		}
 		if options.installValues != nil {
 			if cvo.GKEProjectID == "" {

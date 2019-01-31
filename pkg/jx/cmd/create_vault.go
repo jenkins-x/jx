@@ -44,12 +44,13 @@ var (
 // CreateVaultOptions the options for the create vault command
 type CreateVaultOptions struct {
 	CreateOptions
-	UpgradeIngressOptions UpgradeIngressOptions
 
 	GKEProjectID      string
 	GKEZone           string
 	Namespace         string
 	SecretsPathPrefix string
+
+	IngressConfig kube.IngressConfig
 }
 
 // NewCmdCreateVault  creates a command object for the "create" command
@@ -64,11 +65,7 @@ func NewCmdCreateVault(f Factory, in terminal.FileReader, out terminal.FileWrite
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOptions,
 		},
-		UpgradeIngressOptions: UpgradeIngressOptions{
-			CreateOptions: CreateOptions{
-				CommonOptions: commonOptions,
-			},
-		},
+		IngressConfig: kube.IngressConfig{},
 	}
 
 	cmd := &cobra.Command{
@@ -90,7 +87,6 @@ func NewCmdCreateVault(f Factory, in terminal.FileReader, out terminal.FileWrite
 	cmd.Flags().StringVarP(&options.SecretsPathPrefix, "secrets-path-prefix", "p", vault.DefaultSecretsPathPrefix, "Path prefix for secrets used for access control config")
 
 	options.addCommonFlags(cmd)
-	options.UpgradeIngressOptions.addFlags(cmd)
 	return cmd
 }
 
@@ -285,10 +281,16 @@ func (o *CreateVaultOptions) exposeVault(vaultService string) error {
 			return errors.Wrapf(err, "updating %s service annotations", vaultService)
 		}
 	}
-	options := &o.UpgradeIngressOptions
-	options.Namespaces = []string{o.Namespace}
-	options.Services = []string{vaultService}
-	options.SkipResourcesUpdate = true
-	options.WaitForCerts = true
-	return options.Run()
+
+	upgradeIngOpts := &UpgradeIngressOptions{
+		CreateOptions: CreateOptions{
+			CommonOptions: o.CommonOptions,
+		},
+		Namespaces:          []string{o.Namespace},
+		Services:            []string{vaultService},
+		IngressConfig:       o.IngressConfig,
+		SkipResourcesUpdate: true,
+		WaitForCerts:        true,
+	}
+	return upgradeIngOpts.Run()
 }
