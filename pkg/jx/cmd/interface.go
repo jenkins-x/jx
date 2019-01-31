@@ -13,7 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/table"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
-	gojenkins "github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
@@ -23,6 +23,7 @@ import (
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
+	kpipelineclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metricsclient "k8s.io/metrics/pkg/client/clientset_generated/clientset"
 
@@ -109,6 +110,9 @@ type Factory interface {
 
 	// CreateMetricsClient creates a new Kuberntes metrics client
 	CreateMetricsClient() (*metricsclient.Clientset, error)
+
+	// CreateKnativePipelineClient create a new Kubernetes client for Knative Pipeline resources
+	CreateKnativePipelineClient() (kpipelineclient.Interface, string, error)
 
 	// CreateKnativeBuildClient create a new Kubernetes client for Knative resources
 	CreateKnativeBuildClient() (buildclient.Interface, string, error)

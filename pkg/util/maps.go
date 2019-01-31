@@ -29,8 +29,10 @@ func MapKeys(m map[string]string) []string {
 func MergeMaps(maps ...map[string]string) map[string]string {
 	answer := map[string]string{}
 	for _, m := range maps {
-		for k, v := range m {
-			answer[k] = v
+		if m != nil {
+			for k, v := range m {
+				answer[k] = v
+			}
 		}
 	}
 	return answer

@@ -154,8 +154,8 @@ func (o *StepHelmReleaseOptions) Run() error {
 	req.Header.Set("Content-Type", "application/gzip")
 	res, err := client.Do(req)
 	if err != nil {
-		if res.Body == nil {
-			return errors.Wrapf(err, "failed to execute the chart upload HTTP request, url: '%s', status: '%s'", u, res.Status)
+		if res == nil {
+			return errors.Wrapf(err, "failed to execute the chart upload HTTP request, url: '%s', error: '%v'", u, err)
 		}
 		errRes, _ := ioutil.ReadAll(res.Body)
 		return errors.Wrapf(err, "failed to execute the chart upload HTTP request, url: '%s', status: '%s', response: '%s'", u, res.Status, string(errRes))

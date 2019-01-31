@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/builds"
 	"io"
 	"net/url"
 	"os"
@@ -17,12 +18,13 @@ import (
 	"github.com/sirupsen/logrus"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	gojenkins "github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
+	kpipelineclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
 	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 
@@ -32,11 +34,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
-	yaml "gopkg.in/yaml.v2"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"gopkg.in/yaml.v2"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -87,6 +89,7 @@ type CommonOptions struct {
 	devNamespace           string
 	jxClient               versioned.Interface
 	knbClient              buildclient.Interface
+	kpClient			   kpipelineclient.Interface
 	jenkinsClient          gojenkins.JenkinsClient
 	git                    gits.Gitter
 	helm                   helm.Helmer
@@ -215,6 +218,24 @@ func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
 	return o.jxClient, o.currentNamespace, nil
 }
 
+// KnativePipelineClient lazily creates a new Knative Pipeline client
+func (o *CommonOptions) KnativePipelineClient() (kpipelineclient.Interface, string, error) {
+	if o.Factory == nil {
+		return nil, "", errors.New("command factory is not initialized")
+	}
+	if o.kpClient == nil {
+		knativePipelineClient, ns, err := o.CreateKnativePipelineClient()
+		if err != nil {
+			return nil, ns, err
+		}
+		o.kpClient = knativePipelineClient
+		if o.currentNamespace == "" {
+			o.currentNamespace = ns
+		}
+	}
+	return o.kpClient, o.currentNamespace, nil
+}
+
 func (o *CommonOptions) KnativeBuildClient() (buildclient.Interface, string, error) {
 	if o.Factory == nil {
 		return nil, "", errors.New("command factory is not initialized")
@@ -273,6 +294,7 @@ func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, 
 	}
 	return o.jxClient, o.devNamespace, nil
 }
+
 
 // SetJenkinsClient sets the JenkinsClient - usually used in testing
 func (o *CommonOptions) SetJenkinsClient(jenkinsClient gojenkins.JenkinsClient) {
@@ -848,19 +870,7 @@ func (o *CommonOptions) getJobName() string {
 }
 
 func (o *CommonOptions) getBuildNumber() string {
-	buildNumber := os.Getenv("JX_BUILD_NUMBER")
-	if buildNumber != "" {
-		return buildNumber
-	}
-	buildNumber = os.Getenv("BUILD_NUMBER")
-	if buildNumber != "" {
-		return buildNumber
-	}
-	buildID := os.Getenv("BUILD_ID")
-	if buildID != "" {
-		return buildID
-	}
-	return ""
+	return builds.GetBuildNumber()
 }
 
 func (o *CommonOptions) VaultOperatorClient() (vaultoperatorclient.Interface, error) {

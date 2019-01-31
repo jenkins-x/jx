@@ -7,7 +7,6 @@ import (
 	pegomock "github.com/petergtz/pegomock"
 	url "net/url"
 	"reflect"
-	"time"
 )
 
 type MockClient struct {
@@ -152,45 +151,26 @@ func (mock *MockClient) WriteYaml(_param0 string, _param1 string) (map[string]in
 }
 
 func (mock *MockClient) VerifyWasCalledOnce() *VerifierClient {
-	return &VerifierClient{
-		mock:                   mock,
-		invocationCountMatcher: pegomock.Times(1),
-	}
+	return &VerifierClient{mock, pegomock.Times(1), nil}
 }
 
 func (mock *MockClient) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierClient {
-	return &VerifierClient{
-		mock:                   mock,
-		invocationCountMatcher: invocationCountMatcher,
-	}
+	return &VerifierClient{mock, invocationCountMatcher, nil}
 }
 
 func (mock *MockClient) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierClient {
-	return &VerifierClient{
-		mock:                   mock,
-		invocationCountMatcher: invocationCountMatcher,
-		inOrderContext:         inOrderContext,
-	}
-}
-
-func (mock *MockClient) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierClient {
-	return &VerifierClient{
-		mock:                   mock,
-		invocationCountMatcher: invocationCountMatcher,
-		timeout:                timeout,
-	}
+	return &VerifierClient{mock, invocationCountMatcher, inOrderContext}
 }
 
 type VerifierClient struct {
 	mock                   *MockClient
 	invocationCountMatcher pegomock.Matcher
 	inOrderContext         *pegomock.InOrderContext
-	timeout                time.Duration
 }
 
 func (verifier *VerifierClient) Config() *Client_Config_OngoingVerification {
 	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Config", params, verifier.timeout)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Config", params)
 	return &Client_Config_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -207,7 +187,7 @@ func (c *Client_Config_OngoingVerification) GetAllCapturedArguments() {
 
 func (verifier *VerifierClient) List(_param0 string) *Client_List_OngoingVerification {
 	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "List", params, verifier.timeout)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "List", params)
 	return &Client_List_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -234,7 +214,7 @@ func (c *Client_List_OngoingVerification) GetAllCapturedArguments() (_param0 []s
 
 func (verifier *VerifierClient) Read(_param0 string) *Client_Read_OngoingVerification {
 	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Read", params, verifier.timeout)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Read", params)
 	return &Client_Read_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -261,7 +241,7 @@ func (c *Client_Read_OngoingVerification) GetAllCapturedArguments() (_param0 []s
 
 func (verifier *VerifierClient) ReadObject(_param0 string, _param1 interface{}) *Client_ReadObject_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ReadObject", params, verifier.timeout)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ReadObject", params)
 	return &Client_ReadObject_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -292,7 +272,7 @@ func (c *Client_ReadObject_OngoingVerification) GetAllCapturedArguments() (_para
 
 func (verifier *VerifierClient) Write(_param0 string, _param1 map[string]interface{}) *Client_Write_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Write", params, verifier.timeout)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Write", params)
 	return &Client_Write_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -323,7 +303,7 @@ func (c *Client_Write_OngoingVerification) GetAllCapturedArguments() (_param0 []
 
 func (verifier *VerifierClient) WriteObject(_param0 string, _param1 interface{}) *Client_WriteObject_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "WriteObject", params, verifier.timeout)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "WriteObject", params)
 	return &Client_WriteObject_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -354,7 +334,7 @@ func (c *Client_WriteObject_OngoingVerification) GetAllCapturedArguments() (_par
 
 func (verifier *VerifierClient) WriteYaml(_param0 string, _param1 string) *Client_WriteYaml_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "WriteYaml", params, verifier.timeout)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "WriteYaml", params)
 	return &Client_WriteYaml_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 

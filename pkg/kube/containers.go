@@ -9,13 +9,7 @@ func GetEnvVar(container *corev1.Container, name string) *corev1.EnvVar {
 	if container == nil {
 		return nil
 	}
-	for i := range container.Env {
-		env := &container.Env[i]
-		if env.Name == name {
-			return env
-		}
-	}
-	return nil
+	return GetSliceEnvVar(container.Env, name)
 }
 
 func GetVolumeMount(volumenMounts *[]corev1.VolumeMount, name string) *corev1.VolumeMount {
