@@ -48,6 +48,7 @@ func NewCmdStep(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 	cmd.AddCommand(NewCmdStepCredential(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepCreate(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepEnv(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStepGet(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepGit(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepGpgCredentials(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepHelm(f, in, out, errOut))
