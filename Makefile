@@ -74,7 +74,7 @@ get-test-deps:
 	$(GO_NOMOD) get -u gopkg.in/matm/v1/gocov-html
 
 test:
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -toolexec '/usr/local/bin/gtime -v'-count=1 -coverprofile=cover.out \
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 1 -count=1 -coverprofile=cover.out \
 	-failfast -short $(TESTFLAGS) ./...
 
 test-report: get-test-deps test
@@ -172,10 +172,11 @@ darwin: version
 
 bootstrap: vendoring
 
+# sleeps for about 30 mins
 sleep:
 	sleep 2000
 
-release: sleep check
+release: check
 	rm -rf build release && mkdir build release
 	for os in linux darwin ; do \
 		CGO_ENABLED=$(CGO_ENABLED) GOOS=$$os GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$$os/$(NAME) cmd/jx/jx.go ; \
