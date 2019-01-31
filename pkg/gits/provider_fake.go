@@ -93,6 +93,7 @@ func (f *FakeProvider) ListRepositories(org string) ([]*GitRepository, error) {
 func (f *FakeProvider) CreateRepository(org string, name string, private bool) (*GitRepository, error) {
 	gitRepo := &GitRepository{
 		Name: name,
+		Organisation: org,
 	}
 
 	repo := &FakeRepository{
@@ -662,8 +663,9 @@ func NewFakeRepository(owner string, repoName string) *FakeRepository {
 		Owner: owner,
 		GitRepo: &GitRepository{
 			Name:     repoName,
-			CloneURL: "https://fake.git/" + owner + "/" + repoName + ".git",
-			HTMLURL:  "https://fake.git/" + owner + "/" + repoName,
+			CloneURL: 		"https://fake.git/" + owner + "/" + repoName + ".git",
+			HTMLURL:  		"https://fake.git/" + owner + "/" + repoName,
+			Organisation: 	"fake-org",
 		},
 		PullRequests: map[int]*FakePullRequest{},
 		Commits:      []*FakeCommit{},

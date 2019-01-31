@@ -165,6 +165,10 @@ func CreateTestPipelineActivity(jxClient versioned.Interface, ns string, folder 
 			Name:     folder + "-" + repo + "-" + branch + "-" + build,
 			Pipeline: folder + "/" + repo + "/" + branch,
 			Build:    build,
+			GitInfo:  &gits.GitRepository{
+				Name:			"demo-2",
+				Organisation:   "test-org",
+			},
 		},
 	}
 	a, _, err := key.GetOrCreate(jxClient, ns)
