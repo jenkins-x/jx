@@ -74,7 +74,8 @@ get-test-deps:
 	$(GO_NOMOD) get -u gopkg.in/matm/v1/gocov-html
 
 test:
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -coverprofile=cover.out -failfast -short $(TESTFLAGS) ./...
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -toolexec '/usr/local/bin/gtime -v'-count=1 -coverprofile=cover.out \
+	-failfast -short $(TESTFLAGS) ./...
 
 test-report: get-test-deps test
 	@gocov convert cover.out | gocov report
