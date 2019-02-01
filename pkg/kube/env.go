@@ -306,7 +306,7 @@ func CreateEnvGitRepository(batchMode bool, authConfigSvc auth.ConfigService, de
 			} else {
 				showURLEdit = true
 			}
-			if showURLEdit {
+			if showURLEdit && !batchMode {
 				q := &survey.Input{
 					Message: "Git URL for the Environment source code:",
 					Default: data.Spec.Source.URL,
