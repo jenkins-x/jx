@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -54,6 +55,7 @@ type CreateJenkinsUserOptions struct {
 	CreateOptions
 
 	ServerFlags   ServerFlags
+	Namespace     string
 	Username      string
 	Password      string
 	APIToken      string
@@ -96,6 +98,7 @@ func NewCmdCreateJenkinsUser(f Factory, in terminal.FileReader, out terminal.Fil
 	cmd.Flags().StringVarP(&options.Timeout, "timeout", "", "", "The timeout if using REST to generate the API token (by passing username and password)")
 	cmd.Flags().BoolVarP(&options.UseBrowser, "browser", "", false, "Use REST calls to automatically find the API token if the user and password are known")
 	cmd.Flags().BoolVarP(&options.RecreateToken, "recreate-token", "", false, "Should we recreate teh API token if it already exists")
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace of the secret where the Jenkins API token will be stored")
 
 	return cmd
 }
@@ -111,12 +114,12 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	}
 	kubeClient, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
-		return fmt.Errorf("error connecting to Kubernetes cluster: %v", err)
+		return errors.Wrap(err, "connecting to Kubernetes cluster")
 	}
 
 	authConfigSvc, err := o.CreateJenkinsAuthConfigService(kubeClient, ns)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating Jenkins Auth configuration")
 	}
 	config := authConfigSvc.Config()
 
@@ -125,17 +128,16 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		url := ""
 		url, err = o.findService(kube.ServiceJenkins)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "searching service %q", kube.ServiceJenkins)
 		}
 		server = config.GetOrCreateServer(url)
 	} else {
 		server, err = o.findServer(config, &o.ServerFlags, "jenkins server", "Try installing one via: jx create team", false)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "seraching server %s: %s", o.ServerFlags.ServerName, o.ServerFlags.ServerURL)
 		}
 	}
 
-	// TODO add the API thingy...
 	if o.Username == "" {
 		return fmt.Errorf("No Username specified")
 	}
@@ -161,7 +163,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	if userAuth.IsInvalid() && o.Password != "" && o.UseBrowser {
 		err := o.getAPITokenFromREST(server.URL, userAuth)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "generating the API token over REST API of server %q", server.URL)
 		}
 	}
 
@@ -174,34 +176,46 @@ func (o *CreateJenkinsUserOptions) Run() error {
 
 		err = config.EditUserAuth("Jenkins", userAuth, o.Username, false, o.BatchMode, f, o.In, o.Out, o.Err)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "updating the jenkins auth configuration for user %q", o.Username)
 		}
 		if userAuth.IsInvalid() {
-			return fmt.Errorf("You did not properly define the user authentication!")
+			return fmt.Errorf("you did not properly define the user authentication!")
 		}
 	}
 
 	config.CurrentServer = server.URL
 	err = authConfigSvc.SaveConfig()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "saving the auth config")
 	}
 
-	// now lets create a secret for it so we can perform incluster interactions with Jenkins
-	s, err := kubeClient.CoreV1().Secrets(o.currentNamespace).Get(kube.SecretJenkins, metav1.GetOptions{})
+	err = o.saveJenkinsAuthInSecret(kubeClient, userAuth)
 	if err != nil {
-		return err
-	}
-	s.Data[kube.JenkinsAdminApiToken] = []byte(userAuth.ApiToken)
-	s.Data[kube.JenkinsBearTokenField] = []byte(userAuth.BearerToken)
-	s.Data[kube.JenkinsAdminUserField] = []byte(userAuth.Username)
-	_, err = kubeClient.CoreV1().Secrets(o.currentNamespace).Update(s)
-	if err != nil {
-		return err
+		return errors.Wrap(err, "saving the auth config in a Kubernetes secret")
 	}
 
 	log.Infof("Created user %s API Token for Jenkins server %s at %s\n",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
+	return nil
+}
+
+func (o *CreateJenkinsUserOptions) saveJenkinsAuthInSecret(kubeClient kubernetes.Interface, auth *auth.UserAuth) error {
+	ns := o.Namespace
+	if ns == "" {
+		ns = o.currentNamespace
+	}
+	secret, err := kubeClient.CoreV1().Secrets(ns).Get(kube.SecretJenkins, metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "no %q secret found in namesapce %q", kube.SecretJenkins, ns)
+	}
+
+	secret.Data[kube.JenkinsAdminApiToken] = []byte(auth.ApiToken)
+	secret.Data[kube.JenkinsBearTokenField] = []byte(auth.BearerToken)
+	secret.Data[kube.JenkinsAdminUserField] = []byte(auth.Username)
+	_, err = kubeClient.CoreV1().Secrets(ns).Update(secret)
+	if err != nil {
+		return errors.Wrapf(err, "updating the Jenkins auth configuration in secret %s/%s", ns, kube.SecretJenkins)
+	}
 	return nil
 }
 
