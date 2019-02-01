@@ -239,6 +239,7 @@ type Flags struct {
 	GKEAutoUpgrade              bool
 	GKEServiceAccount           string
 	GKEUseEnhancedScopes        bool
+	GKEUseEnhancedApis          bool
 	LocalOrganisationRepository string
 }
 
@@ -340,7 +341,7 @@ func (options *CreateTerraformOptions) addFlags(cmd *cobra.Command, addSharedFla
 	cmd.Flags().StringVarP(&options.Flags.GKEProjectID, "gke-project-id", "", "", "Google Project ID to create cluster in")
 	cmd.Flags().StringVarP(&options.Flags.GKEZone, "gke-zone", "", "", "The compute zone (e.g. us-central1-a) for the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.GKEUseEnhancedScopes, "gke-use-enhanced-scopes", "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
-
+	cmd.Flags().BoolVarP(&options.Flags.GKEUseEnhancedApis, "gke-use-enhanced-apis", "", false, "Enable enhanced APIs to utilise Container Registry & Cloud Build")
 }
 
 func stringInValidProviders(a string) bool {
@@ -796,6 +797,7 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 	g.MaxNumOfNodes = options.Flags.GKEMaxNumOfNodes
 	g.ServiceAccount = options.Flags.GKEServiceAccount
 	g.Organisation = options.Flags.OrganisationName
+
 	if options.Flags.GKEUseEnhancedScopes {
 		g.DevStorageRole = devStorageFullControl
 	} else {
@@ -897,6 +899,28 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 			} else {
 				g.DevStorageRole = devStorageReadOnly
 			}
+		}
+	}
+
+	if !options.BatchMode {
+		// only provide the option if enhanced scopes are enabled
+		if options.Flags.GKEUseEnhancedScopes {
+			if !options.Flags.GKEUseEnhancedApis {
+				prompt := &survey.Confirm{
+					Message: "Would you like to enable Cloud Build, Container Registry & Container Analysis APIs?",
+					Default: false,
+					Help: "Enables extra APIs on the GCP project",
+				}
+				survey.AskOne(prompt, &options.Flags.GKEUseEnhancedApis, nil, surveyOpts)
+			}
+		}
+
+	}
+
+	if options.Flags.GKEUseEnhancedApis {
+		err := gke.EnableAPIs(g.ProjectID, "cloudbuild", "containerregistry", "containeranalysis")
+		if err != nil {
+			return err
 		}
 	}
 
