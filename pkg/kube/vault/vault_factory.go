@@ -21,8 +21,10 @@ const (
 	// of three retires)
 	maxRetries = 2
 
-	// vaultReadyTimeout define the maximum duration to wait for vault to become initialized and unsealed
-	vaultRetyTimeout = 2 * time.Minute
+	// healthReadyTimeout define the maximum duration to wait for vault to become initialized and unsealed
+	healthhRetyTimeout = 2 * time.Minute
+	// healthInitialRetryDelay define the initial delay before starting the retries
+	healthInitialRetryDelay = 10 * time.Second
 )
 
 type VaultClientFactory struct {
@@ -75,7 +77,7 @@ func (v *VaultClientFactory) NewVaultClient(name string, namespace string) (*api
 	if err != nil {
 		return nil, errors.Wrap(err, "crating vault client")
 	}
-	err = waitForVault(vaultClient, vaultRetyTimeout)
+	err = waitForVault(vaultClient, healthInitialRetryDelay, healthhRetyTimeout)
 	if err != nil {
 		return nil, errors.Wrap(err, "wait for vault to be initialized and unsealed")
 	}
@@ -112,8 +114,8 @@ func (v *VaultClientFactory) getServiceAccountFromVault(vault *Vault) (*v1.Servi
 	return v.kubeClient.CoreV1().ServiceAccounts(vault.Namespace).Get(vault.AuthServiceAccountName, meta_v1.GetOptions{})
 }
 
-func waitForVault(vaultClient *api.Client, timeout time.Duration) error {
-	return util.Retry(timeout, func() error {
+func waitForVault(vaultClient *api.Client, initialDelay, timeout time.Duration) error {
+	return util.RetryWithInitialDelaySlower(initialDelay, timeout, func() error {
 		hr, err := vaultClient.Sys().Health()
 		if err == nil && hr != nil && hr.Initialized && !hr.Sealed {
 			return nil
