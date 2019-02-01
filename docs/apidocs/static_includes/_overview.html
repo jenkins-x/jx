@@ -47,8 +47,9 @@ To update the status, one must invoke the specific status update operation.<BR /
 
 Note: Replacing a resource object may not result immediately in changes being propagated to downstream objects.  For instance
 replacing a <CODE>ConfigMap</CODE> or <CODE>Secret</CODE> resource will not result in all <I>Pod</I>s seeing the changes unless the <I>Pod</I>s are
-restarted out of band.</P></LI>
-Note: <STRONG>Where possible using <CODE>Patch</CODE> is preferable over <CODE>UPDATE</CODE> as if new fields have been added to the resource object that is not known about by the running code these will be lost.
+restarted out of band.<BR />
+
+Note: <STRONG>Where possible using <CODE>Patch</CODE> is preferable over <CODE>UPDATE</CODE> as if new fields have been added to the resource object that is not known about by the running code these will be lost.</P></LI>
 
 <LI><B>Patch</B>:
 Patch will apply a change to a specific field.  How the change is merged is defined per field.  Lists may either be
