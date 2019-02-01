@@ -116,6 +116,9 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "connecting to Kubernetes cluster")
 	}
+	if o.Namespace != "" {
+		ns = o.Namespace
+	}
 
 	authConfigSvc, err := o.CreateJenkinsAuthConfigService(kubeClient, ns)
 	if err != nil {
