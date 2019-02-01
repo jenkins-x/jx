@@ -28,7 +28,7 @@ const defaultMavenSettings = `<settings>
       </mirrors>
       <servers>
           <server>
-              <id>local-nexus</id>
+              <id>nexus</id>
               <username>admin</username>
               <password>%s</password>
           </server>
@@ -42,9 +42,9 @@ const defaultMavenSettings = `<settings>
           <profile>
               <id>nexus</id>
               <properties>
-                  <altDeploymentRepository>local-nexus::default::http://nexus/repository/maven-snapshots/</altDeploymentRepository>
-                  <altReleaseDeploymentRepository>local-nexus::default::http://nexus/repository/maven-releases/</altReleaseDeploymentRepository>
-                  <altSnapshotDeploymentRepository>local-nexus::default::http://nexus/repository/maven-snapshots/</altSnapshotDeploymentRepository>
+                  <altDeploymentRepository>nexus::default::http://nexus/repository/maven-snapshots/</altDeploymentRepository>
+                  <altReleaseDeploymentRepository>nexus::default::http://nexus/repository/maven-releases/</altReleaseDeploymentRepository>
+                  <altSnapshotDeploymentRepository>nexus::default::http://nexus/repository/maven-snapshots/</altSnapshotDeploymentRepository>
               </properties>
           </profile>
           <profile>
