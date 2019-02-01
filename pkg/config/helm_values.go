@@ -3,8 +3,8 @@ package config
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/ghodss/yaml"
+	"github.com/spf13/cobra"
 )
 
 type ExposeControllerConfig struct {
@@ -96,6 +96,9 @@ func (c *HelmValuesConfig) AddExposeControllerValues(cmd *cobra.Command, ignoreD
 	cmd.Flags().StringVarP(&c.ExposeController.Config.Exposer, "exposer", "", "Ingress", "Used to describe which strategy exposecontroller should use to access applications")
 	cmd.Flags().StringVarP(&c.ExposeController.Config.TLSAcme, "tls-acme", "", "", "Used to enable automatic TLS for ingress")
 	cmd.Flags().BoolVarP(&keepJob, "keep-exposecontroller-job", "", false, "Prevents Helm deleting the exposecontroller Job and Pod after running.  Useful for debugging exposecontroller logs but you will need to manually delete the job if you update an environment")
+
+	cmd.Flags().MarkDeprecated("http", "please use `jx upgrade ingress` after install instead")
+	cmd.Flags().MarkDeprecated("tls-acme", "please use `jx upgrade ingress` after install instead")
 
 	annotations := make(map[string]string)
 	annotations["helm.sh/hook"] = "post-install,post-upgrade"
