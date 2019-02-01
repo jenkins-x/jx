@@ -2051,9 +2051,7 @@ func (options *InstallOptions) configureJenkins(namespace string) error {
 					return errors.Wrap(err, "failed to get the Jenkins API token")
 				}
 			}
-		}
 
-		if !options.Flags.Prow {
 			err := options.updateJenkinsURL([]string{namespace})
 			if err != nil {
 				log.Warnf("failed to update the Jenkins external URL")
