@@ -62,6 +62,7 @@ require (
 	github.com/go-test/deep v1.0.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gocql/gocql v0.0.0-20190126123547-8516aabb0f99 // indirect
+	github.com/gogo/protobuf v1.1.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/protobuf v1.2.0
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
@@ -158,8 +159,8 @@ require (
 	k8s.io/apimachinery v0.0.0-20190122181752-bebe27e40fb7
 	k8s.io/cli-runtime v0.0.0-20181026155151-1ee5ba10d7e3 // indirect
 	k8s.io/client-go v9.0.0+incompatible
-	k8s.io/code-generator v0.0.0-20181017053441-8c97d6ab64da // indirect
-	k8s.io/gengo v0.0.0-20180718083919-906d99f89cd6 // indirect
+	k8s.io/code-generator v0.0.0-20181017053441-8c97d6ab64da
+	k8s.io/gengo v0.0.0-20180718083919-906d99f89cd6
 	k8s.io/helm v2.7.2+incompatible
 	k8s.io/kube-openapi v0.0.0-20180719232738-d8ea2fe547a4
 	k8s.io/kubernetes v1.11.3 // indirect

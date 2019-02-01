@@ -162,13 +162,23 @@ func GenerateBuildNumber(activities typev1.PipelineActivityInterface, pipelines 
 	return build, answer, nil
 }
 
-func createOrUpdateSourceRepositoryResource(jxClient versioned.Interface, ns string, activity *v1.PipelineActivity) error {
+func createSourceRepositoryIfMissing(jxClient versioned.Interface, ns string, activityKey *PipelineActivityKey) error {
 	srs := NewSourceRepositoryService(jxClient, ns)
+
 	if srs == nil {
 		return fmt.Errorf("failed to create sourcerepository service")
 	}
 
-	return srs.CreateOrUpdateSourceRepository(activity.RepositoryName(), activity.Spec.GitOwner, activity.Spec.GitURL)
+	resourceName := ToValidName(activityKey.GitInfo.Organisation + "-" + activityKey.Name)
+
+	_, err := srs.GetSourceRepository(resourceName)
+
+	if err != nil {
+		log.Warnf("Creating missing sourcerepository object %s\n", resourceName)
+		err = srs.CreateOrUpdateSourceRepository(activityKey.Name, activityKey.GitInfo.Organisation, activityKey.GitInfo.URL)
+	}
+
+	return err
 }
 
 // GetOrCreate gets or creates the pipeline activity
@@ -195,8 +205,11 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 	oldSpec := a.Spec
 	oldLabels := a.Labels
 
-	if a.Labels == nil ||  a.Labels[v1.LabelSourceRepository] == "" {
-		createOrUpdateSourceRepositoryResource(jxClient, ns, a)
+	if a.Labels == nil || a.Labels[v1.LabelSourceRepository] == "" {
+		err := createSourceRepositoryIfMissing(jxClient, ns, k)
+		if err != nil {
+			log.Errorf("Error trying to create missing sourcerepository object: %s\n", err.Error())
+		}
 	}
 
 	updateActivity(k, a)
@@ -219,7 +232,7 @@ func updateActivity(k *PipelineActivityKey, activity *v1.PipelineActivity) {
 
 	updateActivitySpec(k, &activity.Spec)
 
-	activity.Labels[v1.LabelSourceRepository] = activity.RepositoryName()
+	activity.Labels[v1.LabelSourceRepository] = ToValidName(activity.Spec.GitOwner + "-" + activity.RepositoryName())
 	activity.Labels[v1.LabelBranch] = activity.BranchName()
 	activity.Labels[v1.LabelOwner] = activity.RepositoryOwner()
 }

@@ -1,8 +1,8 @@
 package kube_test
 
 import (
-	"fmt"
 	jxfake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
+	"github.com/jenkins-x/jx/pkg/gits"
 	k8s_v1 "k8s.io/api/core/v1"
 	"strconv"
 	"testing"
@@ -14,61 +14,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/watch"
 	kube_mocks "k8s.io/client-go/kubernetes/fake"
 )
-
-
-type MockPipelineActivityInterface struct {
-	Activities map[string]*v1.PipelineActivity
-}
-
-func (m *MockPipelineActivityInterface) Create(p *v1.PipelineActivity) (*v1.PipelineActivity, error) {
-	m.Activities[p.Name] = p
-	return p, nil
-}
-
-func (m *MockPipelineActivityInterface) Update(p *v1.PipelineActivity) (*v1.PipelineActivity, error) {
-	m.Activities[p.Name] = p
-	return p, nil
-}
-
-func (m *MockPipelineActivityInterface) Delete(name string, options *metav1.DeleteOptions) error {
-	delete(m.Activities, name)
-	return nil
-}
-
-func (m *MockPipelineActivityInterface) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
-	m.Activities = map[string]*v1.PipelineActivity{}
-	return nil
-}
-
-func (m *MockPipelineActivityInterface) Get(name string, options metav1.GetOptions) (*v1.PipelineActivity, error) {
-	a, ok := m.Activities[name]
-	if ok {
-		return a, nil
-	}
-	return nil, fmt.Errorf("No such PipelineActivity %s", name)
-}
-
-func (m *MockPipelineActivityInterface) List(opts metav1.ListOptions) (*v1.PipelineActivityList, error) {
-	items := []v1.PipelineActivity{}
-	for _, p := range m.Activities {
-		items = append(items, *p)
-	}
-	return &v1.PipelineActivityList{
-		Items: items,
-	}, nil
-}
-
-func (m *MockPipelineActivityInterface) Watch(opts metav1.ListOptions) (watch.Interface, error) {
-	return nil, fmt.Errorf("TODO")
-}
-
-func (m *MockPipelineActivityInterface) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.PipelineActivity, err error) {
-	return nil, fmt.Errorf("TODO")
-}
 
 func TestGenerateBuildNumber(t *testing.T) {
 	options := &cmd.CommonOptions{Factory: cmd.NewFactory()}
@@ -142,22 +89,33 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 		expectedPipeline    = "demo"
 		expectedBuild       = "2"
 		expectedEnvironment = "staging"
+		expectedOrganisation = "test-org"
 	)
+
+	sourceRepoName := kube.ToValidName(expectedOrganisation + "-" + expectedName)
 
 	key := kube.PipelineActivityKey{
 		Name:     expectedName,
 		Pipeline: expectedPipeline,
 		Build:    expectedBuild,
+		GitInfo: &gits.GitRepository{
+			Name:			expectedName,
+			Organisation:   expectedOrganisation,
+		},
 	}
 
 	for i := 1; i < 3; i++ {
-		a, _, err := key.GetOrCreate(jxClient,nsObj.Namespace)
+		a, _, err := key.GetOrCreate(jxClient, nsObj.Namespace)
 		assert.Nil(t, err)
 		assert.Equal(t, expectedName, a.Name)
 		spec := &a.Spec
 		assert.Equal(t, expectedPipeline, spec.Pipeline)
 		assert.Equal(t, expectedBuild, spec.Build)
 	}
+
+	// validate that we have the expected sourcerepository crd that should have been created
+	sr, err := jxClient.JenkinsV1().SourceRepositories(nsObj.Namespace).Get(sourceRepoName, metav1.GetOptions{})
+	assert.NotNil(t,sr, "Should have found a sourcerepo %s", sourceRepoName)
 
 	// lazy add a PromotePullRequest
 	promoteKey := kube.PromoteStepActivityKey{
@@ -176,7 +134,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 		return nil
 	}
 
-	err := promoteKey.OnPromotePullRequest(jxClient, nsObj.Namespace, promotePullRequestStarted)
+	err = promoteKey.OnPromotePullRequest(jxClient, nsObj.Namespace, promotePullRequestStarted)
 	assert.Nil(t, err)
 
 	promoteStarted := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromoteUpdateStep) error {

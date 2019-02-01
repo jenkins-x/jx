@@ -222,6 +222,10 @@ func (o *StepStashOptions) Run() error {
 				Name:     name,
 				Pipeline: pipeline,
 				Build:    buildNo,
+				GitInfo:  &gits.GitRepository{
+					Organisation: projectOrg,
+					Name:		  projectRepoName,
+				},
 			},
 		}
 		a, _, err := key.GetOrCreate(client, ns)
