@@ -581,9 +581,13 @@ func (options *InstallOptions) Run() error {
 
 	options.logAdminPassword()
 
-	err = options.configureJenkins(ns)
-	if err != nil {
-		return errors.Wrap(err, "configuring Jenkins")
+	// Jenkins needs to be configured already here if running in non GitOps mode
+	// in order to be able to create the environments
+	if !options.Flags.GitOpsMode {
+		err = options.configureJenkins(ns)
+		if err != nil {
+			return errors.Wrap(err, "configuring Jenkins")
+		}
 	}
 
 	err = options.createEnvironments(ns)
@@ -617,6 +621,14 @@ func (options *InstallOptions) Run() error {
 	err = options.applyGitOpsDevEnvironmentConfig(gitOpsEnvDir, ns)
 	if err != nil {
 		return errors.Wrap(err, "applying the GitOps development environment config")
+	}
+	// When running in GitOps mode, Jenkins is avaialable only after applying the
+	// dev environment
+	if options.Flags.GitOpsMode {
+		err = options.configureJenkins(ns)
+		if err != nil {
+			return errors.Wrap(err, "configuring Jenkins")
+		}
 	}
 
 	log.Successf("\nJenkins X installation completed successfully")
@@ -1522,8 +1534,8 @@ func (options *InstallOptions) applyGitOpsDevEnvironmentConfig(gitOpsEnvDir stri
 			}
 		}
 	}
-	return nil
 
+	return nil
 }
 
 func (options *InstallOptions) installHelmBinaries() error {
@@ -2016,46 +2028,44 @@ func (options *InstallOptions) saveClusterConfig() error {
 }
 
 func (options *InstallOptions) configureJenkins(namespace string) error {
-	if !options.Flags.GitOpsMode {
-		if !options.Flags.Prow {
-			log.Info("Configure Jenkins API Token\n")
-			if isOpenShiftProvider(options.Flags.Provider) {
+	if !options.Flags.Prow {
+		log.Info("Configure Jenkins API Token\n")
+		if isOpenShiftProvider(options.Flags.Provider) {
+			options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
+			options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
+			options.CreateJenkinsUserOptions.Username = "jenkins-admin"
+			options.CreateJenkinsUserOptions.Verbose = false
+			jenkinsSaToken, err := options.getCommandOutput("", "oc", "serviceaccounts", "get-token", "jenkins", "-n", namespace)
+			if err != nil {
+				return err
+			}
+			options.CreateJenkinsUserOptions.BearerToken = jenkinsSaToken
+			options.CreateJenkinsUserOptions.Run()
+		} else {
+			// Wait for Jenkins service to be ready after installation before trying to generate the token
+			time.Sleep(2 * time.Second)
+			err := options.retry(3, 2*time.Second, func() (err error) {
 				options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
 				options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
-				options.CreateJenkinsUserOptions.Username = "jenkins-admin"
+				options.CreateJenkinsUserOptions.UseBrowser = true
 				options.CreateJenkinsUserOptions.Verbose = false
-				jenkinsSaToken, err := options.getCommandOutput("", "oc", "serviceaccounts", "get-token", "jenkins", "-n", namespace)
-				if err != nil {
-					return err
+				options.CreateJenkinsUserOptions.RecreateToken = true
+				if options.BatchMode {
+					options.CreateJenkinsUserOptions.BatchMode = true
+					options.CreateJenkinsUserOptions.Headless = true
+					log.Info("Attempting to find the Jenkins API Token with the browser in headless mode...\n")
 				}
-				options.CreateJenkinsUserOptions.BearerToken = jenkinsSaToken
-				options.CreateJenkinsUserOptions.Run()
-			} else {
-				// Wait for Jenkins service to be ready after installation before trying to generate the token
-				time.Sleep(2 * time.Second)
-				err := options.retry(3, 2*time.Second, func() (err error) {
-					options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
-					options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
-					options.CreateJenkinsUserOptions.UseBrowser = true
-					options.CreateJenkinsUserOptions.Verbose = false
-					options.CreateJenkinsUserOptions.RecreateToken = true
-					if options.BatchMode {
-						options.CreateJenkinsUserOptions.BatchMode = true
-						options.CreateJenkinsUserOptions.Headless = true
-						log.Info("Attempting to find the Jenkins API Token with the browser in headless mode...\n")
-					}
-					err = options.CreateJenkinsUserOptions.Run()
-					return
-				})
-				if err != nil {
-					return errors.Wrap(err, "failed to get the Jenkins API token")
-				}
-			}
-
-			err := options.updateJenkinsURL([]string{namespace})
+				err = options.CreateJenkinsUserOptions.Run()
+				return
+			})
 			if err != nil {
-				log.Warnf("failed to update the Jenkins external URL")
+				return errors.Wrap(err, "failed to get the Jenkins API token")
 			}
+		}
+
+		err := options.updateJenkinsURL([]string{namespace})
+		if err != nil {
+			log.Warnf("failed to update the Jenkins external URL")
 		}
 	}
 	return nil
