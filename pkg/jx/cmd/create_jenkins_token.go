@@ -129,7 +129,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	var server *auth.AuthServer
 	if o.ServerFlags.IsEmpty() {
 		url := ""
-		url, err = o.findService(kube.ServiceJenkins)
+		url, err = o.findServiceInNamespace(kube.ServiceJenkins, ns)
 		if err != nil {
 			return errors.Wrapf(err, "searching service %q", kube.ServiceJenkins)
 		}
@@ -142,7 +142,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	}
 
 	if o.Username == "" {
-		return fmt.Errorf("No Username specified")
+		return fmt.Errorf("no Username specified")
 	}
 
 	userAuth := config.GetOrCreateUserAuth(server.URL, o.Username)
