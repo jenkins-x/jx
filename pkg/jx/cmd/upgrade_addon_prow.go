@@ -28,6 +28,7 @@ type UpgradeAddonProwOptions struct {
 	UpgradeAddonsOptions
 
 	newKnativeBuildVersion string
+	KnativePipeline        bool
 }
 
 // NewCmdUpgradeAddonProw defines the command
@@ -63,6 +64,7 @@ func NewCmdUpgradeAddonProw(f Factory, in terminal.FileReader, out terminal.File
 	options.UpgradeAddonsOptions.addFlags(cmd)
 	options.InstallFlags.addCloudEnvOptions(cmd)
 	cmd.Flags().StringVarP(&options.newKnativeBuildVersion, "new-knative-build-version", "", "0.1.1", "The new kanative build verion that prow needs to work with")
+	cmd.Flags().BoolVarP(&options.KnativePipeline, "build-pipeline", "", true, "Enables Knative Build Pipeline. Otherwise we default to use Knative Build")
 	return cmd
 }
 
@@ -154,5 +156,5 @@ func (o *UpgradeAddonProwOptions) Run() error {
 
 	o.OAUTHToken = oauthToken
 	o.HMACToken = hmacToken
-	return o.installProw()
+	return o.installProw(o.KnativePipeline)
 }
