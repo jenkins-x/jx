@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	version2 "github.com/jenkins-x/jx/pkg/version"
 	"io"
 	"os"
 	"path/filepath"
@@ -76,6 +77,7 @@ type InstallFlags struct {
 	DockerRegistry           string
 	Provider                 string
 	CloudEnvRepository       string
+	VersionsRepository       string
 	LocalHelmRepoName        string
 	Namespace                string
 	NoDefaultEnvironments    bool
@@ -111,6 +113,7 @@ const (
 	JX_GIT_USER  = "JX_GIT_USER"
 	// Want to use your own provider file? Change this line to point to your fork
 	DefaultCloudEnvironmentsURL = "https://github.com/jenkins-x/cloud-environments"
+	DefaultVersionsURL          = "https://github.com/jenkins-x/jenkins-x-versions"
 
 	// JenkinsXPlatformChartName default chart name for Jenkins X platform
 	JenkinsXPlatformChartName = "jenkins-x-platform"
@@ -363,6 +366,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 
 func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&flags.CloudEnvRepository, "cloud-environment-repo", "", DefaultCloudEnvironmentsURL, "Cloud Environments Git repo")
+	cmd.Flags().StringVarP(&flags.VersionsRepository, "versions-repo", "", DefaultVersionsURL, "Jenkins X versions Git repo")
 	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", false, "Ignores default cloud-environment-repo and uses current directory ")
 }
 
@@ -465,6 +469,11 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring the docker registry")
 	}
 
+	versionsRepoDir, err := options.cloneJXVersionsRepo(options.Flags.VersionsRepository)
+	if err != nil {
+		return errors.Wrap(err, "cloning the jx versions repo")
+	}
+
 	cloudEnvDir, err := options.cloneJXCloudEnvironmentsRepo()
 	if err != nil {
 		return errors.Wrap(err, "cloning the jx cloud environments repo")
@@ -513,7 +522,7 @@ func (options *InstallOptions) Run() error {
 
 	log.Infof("Installing jx into namespace %s\n", util.ColorInfo(ns))
 
-	version, err := options.getPlatformVersion(cloudEnvDir, configStore)
+	version, err := options.getPlatformVersion(versionsRepoDir, configStore)
 	if err != nil {
 		return errors.Wrap(err, "getting the platform version")
 	}
@@ -2312,35 +2321,17 @@ func (options *InstallOptions) logAdminPassword() {
 	}
 }
 
-// LoadVersionFromCloudEnvironmentsDir loads a version from the cloud environments directory
+// LoadVersionFromCloudEnvironmentsDir lets load the jenkins-x-platform version
 func LoadVersionFromCloudEnvironmentsDir(wrkDir string, configStore configio.ConfigStore) (string, error) {
-	version := ""
-	path := filepath.Join(wrkDir, "Makefile")
-	exists, err := util.FileExists(path)
+	version, err := version2.LoadVersionNumber(wrkDir, version2.KindChart, JenkinsXPlatformChart)
 	if err != nil {
-		return version, err
+		return version, errors.Wrapf(err, "failed to load version of chart %s in dir %s", JenkinsXPlatformChart, wrkDir)
 	}
-	if !exists {
-		return version, fmt.Errorf("File does not exist %s", path)
+	if version == "" {
+		log.Warnf("failed to load chart version %s in dir %s", JenkinsXPlatformChart, wrkDir)
+	} else {
+		log.Infof("using version %s of chart %s\n", util.ColorInfo(version), util.ColorInfo(JenkinsXPlatformChart))
 	}
-	data, err := configStore.Read(path)
-	if err != nil {
-		return version, err
-	}
-	prefix := "CHART_VERSION"
-	separator := ":="
-	for _, line := range strings.Split(string(data), "\n") {
-		if strings.HasPrefix(line, prefix) {
-			text := strings.TrimSpace(strings.TrimPrefix(line, prefix))
-			if !strings.HasPrefix(text, separator) {
-				log.Warnf("expecting separator %s for line: %s in file %s", separator, line, path)
-			} else {
-				version = strings.TrimSpace(strings.TrimPrefix(text, separator))
-				return version, nil
-			}
-		}
-	}
-	log.Warnf("File %s does not include a line starting with %s", path, prefix)
 	return version, nil
 }
 

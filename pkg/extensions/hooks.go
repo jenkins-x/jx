@@ -14,13 +14,13 @@ import (
 
 // OnApply examines the currently installs apps to perform any post-install actions
 func OnApply(jxClient jenkinsv1client.Interface, kubeClient kubernetes.Interface, certClient certclient.Interface, ns string, helmer helm.Helmer,
-	installTimeout string) error {
+	installTimeout string, versionsDir string) error {
 	appList, err := jxClient.JenkinsV1().Apps(ns).List(metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 	for _, app := range appList.Items {
-		err = OnInstall(&app, kubeClient, certClient, ns, helmer, installTimeout)
+		err = OnInstall(&app, kubeClient, certClient, ns, helmer, installTimeout, versionsDir)
 		if err != nil {
 			return err
 		}
@@ -31,19 +31,19 @@ func OnApply(jxClient jenkinsv1client.Interface, kubeClient kubernetes.Interface
 // OnInstallFromName uses the App CRD installed by appName to perform any post-install actions.
 func OnInstallFromName(appName string, jxClient jenkinsv1client.Interface, kubeClient kubernetes.Interface, certClient certclient.Interface,
 	ns string, helmer helm.Helmer,
-	installTimeout string) error {
+	installTimeout string, versionsDir string) error {
 	app, err := jxClient.JenkinsV1().Apps(ns).Get(appName, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
-	return OnInstall(app, kubeClient, certClient, ns, helmer, installTimeout)
+	return OnInstall(app, kubeClient, certClient, ns, helmer, installTimeout, versionsDir)
 }
 
 // OnInstall uses the App CRD installed by appName to perform any post-install actions.
 func OnInstall(app *jenkinsv1.App, kubeClient kubernetes.Interface, certClient certclient.Interface, ns string,
-	helmer helm.Helmer, installTimeout string) error {
+	helmer helm.Helmer, installTimeout string, versionsDir string) error {
 	// Specific hooks go here
-	err := exposeOnInstall(app, kubeClient, certClient, ns, helmer, installTimeout)
+	err := exposeOnInstall(app, kubeClient, certClient, ns, helmer, installTimeout, versionsDir)
 	if err != nil {
 		return err
 	}
@@ -51,9 +51,9 @@ func OnInstall(app *jenkinsv1.App, kubeClient kubernetes.Interface, certClient c
 }
 
 func exposeOnInstall(app *jenkinsv1.App, kubeClient kubernetes.Interface, certClient certclient.Interface, ns string,
-	helmer helm.Helmer, installTimeout string) error {
+	helmer helm.Helmer, installTimeout string, versionsDir string) error {
 	for _, svc := range app.Spec.ExposedServices {
-		err := exposeSvc(svc, kubeClient, certClient, ns, helmer, installTimeout)
+		err := exposeSvc(svc, kubeClient, certClient, ns, helmer, installTimeout, versionsDir)
 		if err != nil {
 			return err
 		}
@@ -62,7 +62,7 @@ func exposeOnInstall(app *jenkinsv1.App, kubeClient kubernetes.Interface, certCl
 }
 
 func exposeSvc(svcName string, kubeClient kubernetes.Interface, certClient certclient.Interface, ns string,
-	helmer helm.Helmer, installTimeout string) error {
+	helmer helm.Helmer, installTimeout string, versionsDir string) error {
 	svc, err := kubeClient.CoreV1().Services(ns).Get(svcName, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "getting the addon service: %s", svc)
@@ -82,5 +82,5 @@ func exposeSvc(svcName string, kubeClient kubernetes.Interface, certClient certc
 	if err != nil {
 		return errors.Wrap(err, "retrieving the dev namespace")
 	}
-	return expose.Expose(kubeClient, certClient, devNamespace, ns, "", helmer, installTimeout)
+	return expose.Expose(kubeClient, certClient, devNamespace, ns, "", helmer, installTimeout, versionsDir)
 }

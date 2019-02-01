@@ -2,6 +2,7 @@ package helm
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/version"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -440,12 +441,30 @@ type InstallChartOptions struct {
 	Repository  string
 	Username    string
 	Password    string
+	VersionsDir string
 }
 
 // InstallFromChartOptions uses the helmer and kubeClient interfaces to install the chart from the options,
 // respeciting the installTimeout
 func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeClient kubernetes.Interface,
-	installTimeout string) error {
+	installTimeout string, ) error {
+	chart := options.Chart
+	if options.Version == "" {
+		versionsDir := options.VersionsDir
+		if versionsDir == "" {
+			return fmt.Errorf("no VersionsDir specified when trying to install a chart")
+		}
+		versionData, err := version.LoadVersionData(versionsDir, version.KindChart, chart)
+		if err != nil {
+		  return errors.Wrapf(err, "failed to load version data in dir %s for chart %s", versionsDir, chart)
+		}
+		options.Version = versionData.Version
+		if versionData.Version == "" {
+			log.Warnf("installing chart %s which is not locked down in the versions directory %s\n", chart, versionsDir)
+		} else {
+			log.Infof("using locked version %s of chart %s\n", util.ColorInfo(options.Version), util.ColorInfo(chart))
+		}
+	}
 	if options.HelmUpdate {
 		log.Infoln("Updating Helm repository...")
 		err := helmer.UpdateRepo()
@@ -463,7 +482,7 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 		return errors.Wrap(err, "failed to convert the timeout to an int")
 	}
 	helmer.SetCWD(options.Dir)
-	return helmer.UpgradeChart(options.Chart, options.ReleaseName, options.Ns, options.Version, true,
+	return helmer.UpgradeChart(chart, options.ReleaseName, options.Ns, options.Version, true,
 		timeout, true, false, options.SetValues, options.ValueFiles, options.Repository, options.Username,
 		options.Password)
 }

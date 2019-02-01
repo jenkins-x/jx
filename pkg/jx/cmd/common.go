@@ -808,12 +808,20 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) e
 	if err != nil {
 		return errors.Wrap(err, "creating cert-manager client")
 	}
-	return expose.Expose(o.kubeClient, certClient, devNamespace, targetNamespace, password, o.Helm(), defaultInstallTimeout)
+	versionsDir, err := o.cloneJXVersionsRepo("")
+	if err != nil {
+		return errors.Wrapf(err, "failed to clone the Jenkins X versions repository")
+	}
+	return expose.Expose(o.kubeClient, certClient, devNamespace, targetNamespace, password, o.Helm(), defaultInstallTimeout, versionsDir)
 }
 
 func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig, services ...string) error {
+	versionsDir, err := o.cloneJXVersionsRepo("")
+	if err != nil {
+	  return errors.Wrapf(err, "failed to clone the Jenkins X versions repository")
+	}
 	return expose.RunExposecontroller(devNamespace, targetNamespace, ic, o.kubeClient, o.Helm(),
-		defaultInstallTimeout, services...)
+		defaultInstallTimeout, versionsDir, services...)
 }
 
 // CleanExposecontrollerReources cleans expose controller resources

@@ -8,6 +8,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/src-d/go-git.v4"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -105,8 +107,64 @@ func (o *CommonOptions) installChartOptions(options helm.InstallChartOptions) er
 	if err != nil {
 		return err
 	}
+	if options.VersionsDir == "" {
+		options.VersionsDir, err = o.cloneJXVersionsRepo("")
+	}
 	return helm.InstallFromChartOptions(options, o.Helm(), client, defaultInstallTimeout)
 }
+
+
+// clones the jenkins-x versions repo to a local working dir
+func (options *CommonOptions) cloneJXVersionsRepo(versionRepository string) (string, error) {
+	surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
+	configDir, err := util.ConfigDir()
+	if err != nil {
+		return "", fmt.Errorf("error determining config dir %v", err)
+	}
+	wrkDir := filepath.Join(configDir, "jenkins-x-versions")
+
+	options.Debugf("Current configuration dir: %s\n", configDir)
+	options.Debugf("versionRepository: %s\n", versionRepository)
+
+	if versionRepository == "" {
+		versionRepository = DefaultVersionsURL
+	}
+	log.Infof("Cloning the Jenkins X versions repo to %s\n", wrkDir)
+	_, err = git.PlainClone(wrkDir, false, &git.CloneOptions{
+		URL:           versionRepository,
+		ReferenceName: "refs/heads/master",
+		SingleBranch:  true,
+		Progress:      options.Out,
+	})
+	if err != nil {
+		if strings.Contains(err.Error(), "repository already exists") {
+			flag := false
+			if options.BatchMode {
+				flag = true
+			} else {
+				confirm := &survey.Confirm{
+					Message: "A local Jenkins X versions repository already exists, recreate with latest?",
+					Default: true,
+				}
+				err := survey.AskOne(confirm, &flag, nil, surveyOpts)
+				if err != nil {
+					return wrkDir, err
+				}
+			}
+			if flag {
+				err := os.RemoveAll(wrkDir)
+				if err != nil {
+					return wrkDir, err
+				}
+				return options.cloneJXVersionsRepo(versionRepository)
+			}
+		} else {
+			return wrkDir, err
+		}
+	}
+	return wrkDir, nil
+}
+
 
 // deleteChart deletes the given chart
 func (o *CommonOptions) deleteChart(releaseName string, purge bool) error {

@@ -29,7 +29,7 @@ const (
 
 // Expose gets an existing config from the devNamespace and runs exposecontroller in the targetNamespace
 func Expose(kubeClient kubernetes.Interface, certclient certclient.Interface, devNamespace, targetNamespace, password string,
-	helmer helm.Helmer, installTimeout string) error {
+	helmer helm.Helmer, installTimeout string, versionsDir string) error {
 	// todo switch to using exposecontroller as a jx plugin
 	_, err := kubeClient.CoreV1().Secrets(targetNamespace).Get(kube.SecretBasicAuth, metav1.GetOptions{})
 	if err != nil {
@@ -75,14 +75,14 @@ func Expose(kubeClient kubernetes.Interface, certclient certclient.Interface, de
 		}
 	}
 
-	return RunExposecontroller(devNamespace, targetNamespace, ic, kubeClient, helmer, installTimeout)
+	return RunExposecontroller(devNamespace, targetNamespace, ic, kubeClient, helmer, installTimeout, versionsDir)
 }
 
 // RunExposecontroller executes the ExposeController as a Job in the targetNamespace for the ingressConfig in ic
 // using the kubeClient and helmer interfaces, and respecting the installTimeout.
 // Additional services to expose can be specified.
 func RunExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig,
-	kubeClient kubernetes.Interface, helmer helm.Helmer, installTimeout string, services ...string) error {
+	kubeClient kubernetes.Interface, helmer helm.Helmer, installTimeout string, versionsDir string, services ...string) error {
 
 	CleanExposecontrollerReources(kubeClient, targetNamespace)
 
@@ -115,6 +115,7 @@ func RunExposecontroller(devNamespace, targetNamespace string, ic kube.IngressCo
 		Version:     exposecontrollerVersion,
 		Ns:          targetNamespace,
 		HelmUpdate:  true,
+		VersionsDir: versionsDir,
 		SetValues:   exValues,
 	}, helmer, kubeClient, installTimeout)
 	if err != nil {
