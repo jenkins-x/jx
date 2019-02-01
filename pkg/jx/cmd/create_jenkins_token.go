@@ -164,7 +164,11 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	}
 
 	if userAuth.IsInvalid() && o.Password != "" && o.UseBrowser {
-		err := o.getAPITokenFromREST(server.URL, userAuth)
+		err := jenkins.CheckHealth(server.URL)
+		if err != nil {
+			return errors.Wrapf(err, "checking health of Jenkins server %q", server.URL)
+		}
+		err = o.getAPITokenFromREST(server.URL, userAuth)
 		if err != nil {
 			return errors.Wrapf(err, "generating the API token over REST API of server %q", server.URL)
 		}
@@ -274,7 +278,8 @@ func loginLegacy(ctx context.Context, serverURL string, verbose bool, username s
 			return http.ErrUseLastResponse
 		},
 	}
-	req, err := http.NewRequest(http.MethodPost, util.UrlJoin(serverURL, fmt.Sprintf("/j_security_check?j_username=%s&j_password=%s", url.QueryEscape(username), url.QueryEscape(password))), nil)
+	req, err := http.NewRequest(http.MethodPost, util.UrlJoin(serverURL, fmt.Sprintf("/j_security_check?j_username=%s&j_password=%s",
+		url.QueryEscape(username), url.QueryEscape(password))), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "building request to log in")
 	}

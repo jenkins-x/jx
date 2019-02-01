@@ -2045,8 +2045,6 @@ func (options *InstallOptions) configureJenkins(namespace string) error {
 				return errors.Wrap(err, "creating Jenkins API token")
 			}
 		} else {
-			// Wait for Jenkins service to be ready after installation before trying to generate the token
-			time.Sleep(2 * time.Second)
 			err := options.retry(3, 2*time.Second, func() (err error) {
 				options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
 				options.CreateJenkinsUserOptions.Namespace = options.devNamespace
