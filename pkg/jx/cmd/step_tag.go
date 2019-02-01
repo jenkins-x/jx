@@ -84,6 +84,8 @@ func NewCmdStepTag(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 		},
 	}
 
+	options.addCommonFlags(cmd)
+
 	cmd.Flags().StringVarP(&options.Flags.Version, VERSION, "v", "", "version number for the tag [required]")
 	cmd.Flags().StringVarP(&options.Flags.VersionFile, "version-file", "", defaultVersionFile, "The file name used to load the version number from if no '--version' option is specified")
 

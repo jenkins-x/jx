@@ -569,6 +569,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 			dir = filepath.Join(workspaceDir, dir)
 		}
 		c.WorkingDir = dir
+		c.Stdin = false
 
 		steps = append(steps, c)
 	}
@@ -599,9 +600,6 @@ func (o *StepCreateTaskOptions) discoverBuildPack(dir string, projectConfig *con
 		return pack, errors.Wrapf(err, "failed to discover task pack in dir %s", o.Dir)
 	}
 	return pack, nil
-}
-
-func (o *StepCreateTaskOptions) modifyVolumes2(container *corev1.Container) {
 }
 
 func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container) {
@@ -678,9 +676,13 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container) {
 				Value: branch,
 			})
 		}
-
 	}
-
+	if kube.GetSliceEnvVar(envVars, "JX_BATCH_MODE") == nil {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "JX_BATCH_MODE",
+			Value: "true",
+		})
+	}
 	container.Env = envVars
 }
 
