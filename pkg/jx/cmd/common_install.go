@@ -17,8 +17,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/binaries"
 
-	"gopkg.in/yaml.v2"
-
 	"github.com/Pallinder/go-randomdata"
 	"github.com/alexflint/go-filemutex"
 	"github.com/blang/semver"
@@ -233,29 +231,12 @@ type InstallOrUpdateBinaryOptions struct {
 }
 
 func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptions) error {
-	shouldInstall, err := binaries.ShouldInstallBinary(options.Binary, options.Version, options.VersionExtractor)
+	isInstalled, err := binaries.IsBinaryWithProperVersionInstalled(options.Binary, options.Version, options.VersionExtractor)
 	if err != nil {
 		return err
 	}
-	if !shouldInstall {
+	if isInstalled {
 		return nil
-	}
-
-	configDir, err := util.ConfigDir()
-	if err != nil {
-		return err
-	}
-	binariesConfiguration := filepath.Join(configDir, "/binaries.yml")
-	binariesVersions := map[string]string{}
-	if _, err := os.Stat(binariesConfiguration); err == nil {
-		binariesBytes, err := ioutil.ReadFile(binariesConfiguration)
-		if err != nil {
-			return err
-		}
-		yaml.Unmarshal(binariesBytes, &binariesVersions)
-		if binariesVersions[options.Binary] == options.Version {
-			return nil
-		}
 	}
 
 	downloadUrlTemplate := options.DownloadUrlTemplate
@@ -346,12 +327,7 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 		}
 	}
 
-	binariesVersions[options.Binary] = options.Version
-	binariesBytes, err := yaml.Marshal(binariesVersions)
-	if err != nil {
-		return err
-	}
-	err = ioutil.WriteFile(binariesConfiguration, binariesBytes, 0644)
+	err = binaries.RememberInstalledPackage(options.Binary, options.Version)
 	if err != nil {
 		return err
 	}
