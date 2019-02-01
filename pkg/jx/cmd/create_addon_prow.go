@@ -33,8 +33,9 @@ const defaultProwVersion = ""
 // CreateAddonProwOptions the options for the create spring command
 type CreateAddonProwOptions struct {
 	CreateAddonOptions
-	Password string
-	Chart    string
+	Password        string
+	Chart           string
+	KnativePipeline bool
 }
 
 // NewCmdCreateAddonProw creates a command object for the "create" command
@@ -73,6 +74,7 @@ func NewCmdCreateAddonProw(f Factory, in terminal.FileReader, out terminal.FileW
 	cmd.Flags().StringVarP(&options.Prow.HMACToken, "hmac-token", "", "", "OPTIONAL: The hmac-token is the token that you give to GitHub for validating webhooks. Generate it using any reasonable randomness-generator, eg openssl rand -hex 20")
 	cmd.Flags().StringVarP(&options.Prow.OAUTHToken, "oauth-token", "", "", "OPTIONAL: The oauth-token is an OAuth2 token that has read and write access to the bot account. Generate it from the account's settings -> Personal access tokens -> Generate new token.")
 	cmd.Flags().StringVarP(&options.Password, "password", "", "", "Overwrite the default admin password used to login to the Deck UI")
+	cmd.Flags().BoolVarP(&options.KnativePipeline, "build-pipeline", "", true, "Enables Knative Build Pipeline. Otherwise we default to use Knative Build")
 	return cmd
 }
 
@@ -95,7 +97,7 @@ func (o *CreateAddonProwOptions) Run() error {
 	o.Prow.Version = o.Version
 	o.Prow.SetValues = o.SetValues
 	o.Namespace = o.currentNamespace
-	err = o.installProw()
+	err = o.installProw(o.KnativePipeline)
 	if err != nil {
 		return fmt.Errorf("failed to install Prow: %v", err)
 	}

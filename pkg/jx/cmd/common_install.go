@@ -1499,8 +1499,7 @@ func GetSafeUsername(username string) string {
 	return username
 }
 
-func (o *CommonOptions) installProw() error {
-
+func (o *CommonOptions) installProw(useKnativePipeine bool) error {
 	if o.ReleaseName == "" {
 		o.ReleaseName = kube.DefaultProwReleaseName
 	}
@@ -1552,6 +1551,7 @@ func (o *CommonOptions) installProw() error {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
 
+
 	values := []string{"user=" + o.Username, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
@@ -1578,35 +1578,46 @@ func (o *CommonOptions) installProw() error {
 		kvalues = append(kvalues, "tillerNamespace=")
 	}
 
-	err = o.retry(2, time.Second, func() (err error) {
-		return o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true,
-			kvalues, nil, "")
-	})
+	if useKnativePipeine {
+		values = append(values, "buildnum.enabled=false", "pipelinerunner.enabled=true")
 
-	if err != nil {
-		return errors.Wrap(err, "failed to install Knative build")
+		err = o.retry(2, time.Second, func() (err error) {
+			return o.installChart(kube.DefaultKnativeBuildPipelineReleaseName, kube.ChartKnativePipeline, "", devNamespace, true,
+				kvalues, nil, "")
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to install Knative build pipeline")
+		}
+
+	} else {
+		err = o.retry(2, time.Second, func() (err error) {
+			return o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true,
+				kvalues, nil, "")
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to install Knative build")
+		}
 	}
 
 	log.Infof("\nInstalling Prow into namespace %s\n", util.ColorInfo(devNamespace))
 	err = o.retry(2, time.Second, func() (err error) {
 		return o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values, nil, "")
 	})
-
 	if err != nil {
 		return errors.Wrap(err, "failed to install Prow")
 	}
 
-	log.Infof("\nInstalling BuildTemplates into namespace %s\n", util.ColorInfo(devNamespace))
+	if !useKnativePipeine {
+		log.Infof("\nInstalling BuildTemplates into namespace %s\n", util.ColorInfo(devNamespace))
 
-	err = o.retry(2, time.Second, func() (err error) {
-		return o.installChart(kube.DefaultBuildTemplatesReleaseName, kube.ChartBuildTemplates, "", devNamespace, true,
-			values, nil, "")
-	})
-
-	if err != nil {
-		return errors.Wrap(err, "failed to install JX Build Templates")
+		err = o.retry(2, time.Second, func() (err error) {
+			return o.installChart(kube.DefaultBuildTemplatesReleaseName, kube.ChartBuildTemplates, "", devNamespace, true,
+				values, nil, "")
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to install JX Build Templates")
+		}
 	}
-
 	return nil
 }
 
