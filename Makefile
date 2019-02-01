@@ -210,7 +210,7 @@ release: check
 	updatebot push-regex -r "\s*jxTag:\s*(.*)" -v $(VERSION) prow/values.yaml
 
 	echo "Updating the JX CLI & API reference docs"
-	./build/linux/jx create client docs
+	./build/linux/jx create client docs --verbose
 	git clone https://github.com/jenkins-x/jx-docs.git
 	cp -r docs/apidocs/site jx-docs/static/apidocs
 	cd jx-docs/static/apidocs; git add *
