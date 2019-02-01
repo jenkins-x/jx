@@ -1423,7 +1423,7 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 		if !options.Flags.NoGitOpsEnvRepo {
 			authConfigSvc, err := options.CreateGitAuthConfigService()
 			if err != nil {
-				return err
+				return errors.Wrap(err, "creating git auth config service")
 			}
 			config := &v1.Environment{
 				Spec: v1.EnvironmentSpec{
@@ -1440,11 +1440,11 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 				return nil
 			})
 			if err != nil {
-				return err
+				return errors.Wrap(err, "modifying the dev environment configuration")
 			}
 			envDir, err := util.EnvironmentsDir()
 			if err != nil {
-				return err
+				return errors.Wrap(err, "getting the environments directory")
 			}
 			forkEnvGitURL := ""
 			prefix := options.Flags.DefaultEnvironmentPrefix
@@ -1460,13 +1460,13 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 			repo, gitProvider, err := kube.CreateEnvGitRepository(options.BatchMode, authConfigSvc, devEnv, devEnv, config, forkEnvGitURL, envDir,
 				gitRepoOptions, options.CreateEnvOptions.HelmValuesConfig, prefix, git, options.In, options.Out, options.Err)
 			if err != nil || repo == nil || gitProvider == nil {
-				return errors.Wrapf(err, "failed to create git repository for the dev Environment source")
+				return errors.Wrap(err, "creating git repository for the dev environment source")
 			}
 
 			dir := gitOpsDir
 			err = git.Init(dir)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "initializing the dev environment repository")
 			}
 			err = options.ModifyDevEnvironment(func(env *v1.Environment) error {
 				env.Spec.Source.URL = repo.CloneURL
@@ -1474,33 +1474,33 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 				return nil
 			})
 			if err != nil {
-				return err
+				return errors.Wrap(err, "updating the source in the dev environment")
 			}
 
 			err = git.Add(dir, ".gitignore")
 			if err != nil {
-				return err
+				return errors.Wrap(err, "adding gitignore to the dev environemnt")
 			}
 			err = git.Add(dir, "*")
 			if err != nil {
-				return err
+				return errors.Wrap(err, "adding all files from dev environment repo to git")
 			}
 			err = options.Git().CommitIfChanges(dir, "Initial import of Dev Environment source")
 			if err != nil {
-				return err
+				return errors.Wrap(err, "committing in git if there are changes")
 			}
 			userAuth := gitProvider.UserAuth()
 			pushGitURL, err := git.CreatePushURL(repo.CloneURL, &userAuth)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "creating push URL for %q", repo.CloneURL)
 			}
 			err = git.SetRemoteURL(dir, "origin", pushGitURL)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "setting remote origin to %q", pushGitURL)
 			}
 			err = git.PushMaster(dir)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "pushing master from repository %q", dir)
 			}
 			log.Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 		}
@@ -1530,7 +1530,7 @@ func (options *InstallOptions) applyGitOpsDevEnvironmentConfig(gitOpsEnvDir stri
 			}
 			err := envApplyOptions.Run()
 			if err != nil {
-				return err
+				return errors.Wrap(err, "appyting the dev environment configuration")
 			}
 		}
 	}
