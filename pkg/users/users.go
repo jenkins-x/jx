@@ -142,6 +142,8 @@ func Resolve(id string, providerKey string, jxClient versioned.Interface,
 	}
 
 	// Finally, try to resolve by callback
+	//var possibles []jenkinsv1.User
+	//var err error
 	id, possibles, new, err := selectUsers(id, users.Items)
 	if err != nil {
 		return nil, err
@@ -154,25 +156,27 @@ func Resolve(id string, providerKey string, jxClient versioned.Interface,
 		return nil, fmt.Errorf("selected more than one user from users.jenkins.io: %v", possibleStrings)
 	} else if len(possibles) == 1 {
 		found := &possibles[0]
-		// Add the git id to the user
-		if found.Spec.Accounts == nil {
-			found.Spec.Accounts = make([]jenkinsv1.AccountReference, 0)
-		}
-		found.Spec.Accounts = append(found.Spec.Accounts, jenkinsv1.AccountReference{
-			ID:       id,
-			Provider: providerKey,
-		})
-		// Add the label as well
-		if found.Labels == nil {
-			found.Labels = make(map[string]string)
-		}
-		found.Labels[providerKey] = id
-		found, err := jxClient.JenkinsV1().Users(namespace).Update(found)
-		log.Infof("Associating user %s in users.jenkins.io with email %s to git GitProvider user with login %s as "+
-			"emails match\n", found.Name, found.Spec.Email, id)
-		log.Infof("Adding label %s=%s to user %s in users.jenkins.io\n", providerKey, id, found.Name)
-		if err != nil {
-			return nil, err
+		if id != "" {
+			// Add the git id to the user
+			if found.Spec.Accounts == nil {
+				found.Spec.Accounts = make([]jenkinsv1.AccountReference, 0)
+			}
+			found.Spec.Accounts = append(found.Spec.Accounts, jenkinsv1.AccountReference{
+				ID:       id,
+				Provider: providerKey,
+			})
+			// Add the label as well
+			if found.Labels == nil {
+				found.Labels = make(map[string]string)
+			}
+			found.Labels[providerKey] = id
+			log.Infof("Associating user %s in users.jenkins.io with email %s to git GitProvider user with login %s as "+
+				"emails match\n", found.Name, found.Spec.Email, id)
+			log.Infof("Adding label %s=%s to user %s in users.jenkins.io\n", providerKey, id, found.Name)
+			_, err := jxClient.JenkinsV1().Users(namespace).Update(found)
+			if err != nil {
+				return nil, err
+			}
 		}
 		return found, nil
 	} else {
