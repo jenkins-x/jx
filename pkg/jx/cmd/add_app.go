@@ -420,5 +420,10 @@ func (o *AddAppOptions) installApp(name string, chart string, version string) er
 	}
 	// Attach the secrets to the name CRD
 
-	return o.OnAppInstall(name, version)
+	err = o.OnAppInstall(name, version)
+	if err != nil {
+		return errors.Wrapf(err, "running postinstall hooks for %s, name")
+	}
+	log.Infof("Successfully installed %s %s\n", util.ColorInfo(name), util.ColorInfo(version))
+	return nil
 }
