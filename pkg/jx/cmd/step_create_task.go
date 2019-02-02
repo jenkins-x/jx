@@ -589,6 +589,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		}
 		c.WorkingDir = dir
 		c.Stdin = false
+		c.TTY = false
 
 		steps = append(steps, c)
 	}
