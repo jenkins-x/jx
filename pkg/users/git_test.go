@@ -27,14 +27,14 @@ func TestFindUserByLabel(t *testing.T) {
 	assert.NoError(t, err)
 	gitUserID := uuid.NewV4().String()
 	// Create the user
-	labeledUserID, err := createDummyUser(resolver, true, gitUserID)
+	labeledUserID, err := createUniqueDummyUser(resolver, true, gitUserID)
 	defer func() {
 		err := removeDummyUser(labeledUserID, resolver)
 		assert.NoError(t, err)
 	}()
 	assert.NoError(t, err)
 
-	unLabeledUserID, err := createDummyUser(resolver, false, gitUserID)
+	unLabeledUserID, err := createUniqueDummyUser(resolver, false, gitUserID)
 	defer func() {
 		err := removeDummyUser(unLabeledUserID, resolver)
 		assert.NoError(t, err)
@@ -55,7 +55,7 @@ func TestFindUserBySignature(t *testing.T) {
 	assert.NoError(t, err)
 	gitUserID := uuid.NewV4().String()
 	// Create the user
-	userID, err := createDummyUser(resolver, true, gitUserID)
+	userID, err := createUniqueDummyUser(resolver, true, gitUserID)
 	defer func() {
 		err := removeDummyUser(userID, resolver)
 		assert.NoError(t, err)
@@ -79,14 +79,14 @@ func TestFindUserByAccountReference(t *testing.T) {
 	gitUserID1 := uuid.NewV4().String()
 	gitUserID2 := uuid.NewV4().String()
 	// Create the user
-	userID1, err := createDummyUser(resolver, false, gitUserID1)
+	userID1, err := createUniqueDummyUser(resolver, false, gitUserID1)
 	defer func() {
 		err := removeDummyUser(userID1, resolver)
 		assert.NoError(t, err)
 	}()
 	assert.NoError(t, err)
 
-	userID2, err := createDummyUser(resolver, false, gitUserID2)
+	userID2, err := createUniqueDummyUser(resolver, false, gitUserID2)
 	defer func() {
 		err := removeDummyUser(userID2, resolver)
 		assert.NoError(t, err)
@@ -120,7 +120,7 @@ func TestFindUserByFromGitProvider(t *testing.T) {
 	fakeProvider.Users = []*gits.GitUser{
 		gitUser1,
 	}
-	userID2, err := createDummyUser(resolver, false, gitUserID2)
+	userID2, err := createUniqueDummyUser(resolver, false, gitUserID2)
 	defer func() {
 		err := removeDummyUser(userID2, resolver)
 		assert.NoError(t, err)
@@ -142,6 +142,37 @@ func TestFindUserByFromGitProvider(t *testing.T) {
 	assert.Len(t, user.Spec.Accounts, 1)
 	assert.Equal(t, user.Spec.Accounts[0].Provider, resolver.GitProviderKey())
 	assert.Equal(t, user.Spec.Accounts[0].ID, gitUserID1)
+}
+
+func TestFindUserByFromGitProviderWithNoEmail(t *testing.T) {
+	t.Parallel()
+	resolver, fakeProvider, err := prepare(t)
+	assert.NoError(t, err)
+	gitUserID1 := uuid.NewV4().String()
+	gitUserID2 := uuid.NewV4().String()
+	assert.NoError(t, err)
+	gitUser1 := &gits.GitUser{
+		Name:  uuid.NewV4().String(),
+		Email: "",
+		Login: gitUserID1,
+	}
+	fakeProvider.Users = []*gits.GitUser{
+		gitUser1,
+	}
+	userId2 := uuid.NewV4().String()
+	err = createDummyUser(resolver, true, gitUserID2, userId2, "", userId2, userId2)
+	defer func() {
+		err := removeDummyUser(userId2, resolver)
+		assert.NoError(t, err)
+	}()
+	assert.NoError(t, err)
+	gitUser := gits.GitUser{
+		Login: gitUserID1,
+	}
+	user, err := resolver.Resolve(&gitUser)
+	assert.NoError(t, err)
+	// Validate that we don't attach the two users
+	assert.NotEqual(t, user.Name, userId2)
 }
 
 func prepare(t *testing.T) (*users.GitUserResolver, *gits.FakeProvider, error) {
@@ -173,12 +204,13 @@ func prepare(t *testing.T) (*users.GitUserResolver, *gits.FakeProvider, error) {
 	}, fakeProvider, nil
 }
 
-func createDummyUser(resolver *users.GitUserResolver, createLabels bool, gitUserID string) (string, error) {
-	id := uuid.NewV4().String()
+func createDummyUser(resolver *users.GitUserResolver, createLabels bool, gitUserID string, name string,
+	email string, login string, metaName string) error {
+
 	spec := jenkinsv1.UserDetails{
-		Name:  id,
-		Email: fmt.Sprintf("%s@test.com", id),
-		Login: id,
+		Name:  name,
+		Email: email,
+		Login: login,
 		Accounts: []jenkinsv1.AccountReference{
 			jenkinsv1.AccountReference{
 				ID:       gitUserID,
@@ -187,7 +219,7 @@ func createDummyUser(resolver *users.GitUserResolver, createLabels bool, gitUser
 		},
 	}
 	meta := metav1.ObjectMeta{
-		Name: id,
+		Name: metaName,
 	}
 	if createLabels {
 		meta.Labels = map[string]string{
@@ -198,7 +230,12 @@ func createDummyUser(resolver *users.GitUserResolver, createLabels bool, gitUser
 		Spec:       spec,
 		ObjectMeta: meta,
 	})
-	return id, err
+	return err
+}
+
+func createUniqueDummyUser(resolver *users.GitUserResolver, createLabels bool, gitUserID string) (string, error) {
+	id := uuid.NewV4().String()
+	return id, createDummyUser(resolver, createLabels, gitUserID, id, fmt.Sprintf("%s@test.com", id), id, id)
 }
 
 func removeDummyUser(id string, resolver *users.GitUserResolver) error {
