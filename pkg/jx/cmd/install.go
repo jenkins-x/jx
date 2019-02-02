@@ -570,6 +570,12 @@ func (options *InstallOptions) Run() error {
 
 	err = options.createEnvironments(ns)
 	if err != nil {
+		if strings.Contains(err.Error(), "com.atlassian.bitbucket.project.NoSuchProjectException") {
+			log.Infof("\nProject %s cannot be found. If you are using BitBucket Server, please use " +
+				"a project code instead of a project name (for example 'MYPR' instead of 'myproject'). \n",
+				util.ColorInfo(options.CreateEnvOptions.GitRepositoryOptions.Owner))
+			return nil
+		}
 		return errors.Wrap(err, "creating the environments")
 	}
 
