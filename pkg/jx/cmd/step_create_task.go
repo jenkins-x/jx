@@ -123,7 +123,7 @@ func NewCmdStepCreateTask(f Factory, in terminal.FileReader, out terminal.FileWr
 	cmd.Flags().StringVarP(&options.PipelineKind, "kind", "k", "release", "The kind of pipeline to create such as: "+strings.Join(jenkinsfile.PipelineKinds, ", "))
 	cmd.Flags().StringVarP(&options.Context, "context", "c", "", "The pipeline context if there are multiple separate pipelines for a given branch")
 	cmd.Flags().StringVarP(&options.Trigger, "trigger", "t", string(pipelineapi.PipelineTriggerTypeManual), "The kind of pipeline trigger")
-	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "pipeline", "The Kubernetes ServiceAccount to use to run the pipeline")
+	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "build-pipeline", "The Kubernetes ServiceAccount to use to run the pipeline")
 	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
 	cmd.Flags().StringVarP(&options.TargetPath, "target-path", "", "", "The target path appended to /workspace/${source} to clone the source code")
 	cmd.Flags().StringVarP(&options.SourceName, "source", "", "source", "The name of the source repository")
@@ -280,6 +280,18 @@ func (o *StepCreateTaskOptions) generateTask(name string, pipelineConfig *jenkin
 	switch kind {
 	case jenkinsfile.PipelineKindRelease:
 		lifecycles = pipelines.Release
+
+		// lets add a pre-step to setup the credentials
+		if lifecycles.Setup == nil {
+			lifecycles.Setup = &jenkinsfile.PipelineLifecycle{}
+		}
+		steps := []*jenkinsfile.PipelineStep{
+			{
+				Command: "jx step git credentials",
+			},
+		}
+		lifecycles.Setup.Steps = append(steps, lifecycles.Setup.Steps...)
+
 	case jenkinsfile.PipelineKindPullRequest:
 		lifecycles = pipelines.PullRequest
 	case jenkinsfile.PipelineKindFeature:
@@ -519,7 +531,6 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 }
 
 func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *jenkinsfile.PipelineStep, containerName string, dir string) ([]corev1.Container, []corev1.Volume, error) {
-
 	volumes := []corev1.Volume{}
 	steps := []corev1.Container{}
 
@@ -614,7 +625,7 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container) {
 	envVars := []corev1.EnvVar{}
 	for _, e := range container.Env {
 		name := e.Name
-		if name != "JENKINS_URL" && !strings.HasPrefix(name, "XDG_") {
+		if name != "JENKINS_URL" {
 			envVars = append(envVars, e)
 		}
 	}
