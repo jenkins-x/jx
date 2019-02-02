@@ -40,6 +40,9 @@ var (
 		# create a Knative Pipeline Task
 		jx step create task -o mytask.yaml
 
+		# view the steps that would be created
+		jx step create task --view
+
 			`)
 )
 
@@ -63,6 +66,7 @@ type StepCreateTaskOptions struct {
 	CloneGitURL    string
 	Branch         string
 	DeleteTempDir  bool
+	ViewSteps      bool
 	Duration       time.Duration
 
 	PodTemplates        map[string]*corev1.Pod
@@ -119,7 +123,7 @@ func NewCmdStepCreateTask(f Factory, in terminal.FileReader, out terminal.FileWr
 	cmd.Flags().StringVarP(&options.PipelineKind, "kind", "k", "release", "The kind of pipeline to create such as: "+strings.Join(jenkinsfile.PipelineKinds, ", "))
 	cmd.Flags().StringVarP(&options.Context, "context", "c", "", "The pipeline context if there are multiple separate pipelines for a given branch")
 	cmd.Flags().StringVarP(&options.Trigger, "trigger", "t", string(pipelineapi.PipelineTriggerTypeManual), "The kind of pipeline trigger")
-	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "pipeline", "The Kubernetes ServiceAccount to use to run the pipeline")
+	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "build-pipeline", "The Kubernetes ServiceAccount to use to run the pipeline")
 	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
 	cmd.Flags().StringVarP(&options.TargetPath, "target-path", "", "", "The target path appended to /workspace/${source} to clone the source code")
 	cmd.Flags().StringVarP(&options.SourceName, "source", "", "source", "The name of the source repository")
@@ -127,6 +131,7 @@ func NewCmdStepCreateTask(f Factory, in terminal.FileReader, out terminal.FileWr
 	cmd.Flags().StringVarP(&options.CloneGitURL, "clone-git-url", "", "", "Specify the git URL to clone to a temporary directory to get the source code")
 	cmd.Flags().BoolVarP(&options.DeleteTempDir, "delete-temp-dir", "", false, "Deletes the temporary directory of cloned files if using the 'clone-git-url' option")
 	cmd.Flags().BoolVarP(&options.NoApply, "no-apply", "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file")
+	cmd.Flags().BoolVarP(&options.ViewSteps, "view", "", false, "Just view the steps that would be created")
 	cmd.Flags().DurationVarP(&options.Duration, "duration", "", time.Second*30, "Retry duration when trying to create a PipelineRun")
 	return cmd
 }
@@ -275,6 +280,18 @@ func (o *StepCreateTaskOptions) generateTask(name string, pipelineConfig *jenkin
 	switch kind {
 	case jenkinsfile.PipelineKindRelease:
 		lifecycles = pipelines.Release
+
+		// lets add a pre-step to setup the credentials
+		if lifecycles.Setup == nil {
+			lifecycles.Setup = &jenkinsfile.PipelineLifecycle{}
+		}
+		steps := []*jenkinsfile.PipelineStep{
+			{
+				Command: "jx step git credentials",
+			},
+		}
+		lifecycles.Setup.Steps = append(steps, lifecycles.Setup.Steps...)
+
 	case jenkinsfile.PipelineKindPullRequest:
 		lifecycles = pipelines.PullRequest
 	case jenkinsfile.PipelineKindFeature:
@@ -352,6 +369,9 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		},
 	}
 	fileName := o.OutputFile
+	if o.ViewSteps {
+		return o.viewSteps(task)
+	}
 	if !o.NoApply {
 		err = o.applyTask(task, o.gitInfo, o.Branch)
 		if fileName == "" {
@@ -511,7 +531,6 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 }
 
 func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *jenkinsfile.PipelineStep, containerName string, dir string) ([]corev1.Container, []corev1.Volume, error) {
-
 	volumes := []corev1.Volume{}
 	steps := []corev1.Container{}
 
@@ -569,6 +588,8 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 			dir = filepath.Join(workspaceDir, dir)
 		}
 		c.WorkingDir = dir
+		c.Stdin = false
+		c.TTY = false
 
 		steps = append(steps, c)
 	}
@@ -601,14 +622,11 @@ func (o *StepCreateTaskOptions) discoverBuildPack(dir string, projectConfig *con
 	return pack, nil
 }
 
-func (o *StepCreateTaskOptions) modifyVolumes2(container *corev1.Container) {
-}
-
 func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container) {
 	envVars := []corev1.EnvVar{}
 	for _, e := range container.Env {
 		name := e.Name
-		if name != "JENKINS_URL" && !strings.HasPrefix(name, "XDG_") {
+		if name != "JENKINS_URL" {
 			envVars = append(envVars, e)
 		}
 	}
@@ -678,9 +696,13 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container) {
 				Value: branch,
 			})
 		}
-
 	}
-
+	if kube.GetSliceEnvVar(envVars, "JX_BATCH_MODE") == nil {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "JX_BATCH_MODE",
+			Value: "true",
+		})
+	}
 	container.Env = envVars
 }
 
@@ -737,6 +759,18 @@ func (o *StepCreateTaskOptions) deleteTempDir() {
 	if err != nil {
 		log.Warnf("failed to delete dir %s: %s\n", o.Dir, err.Error())
 	}
+}
+
+func (o *StepCreateTaskOptions) viewSteps(task *pipelineapi.Task) error {
+	table := o.createTable()
+	table.AddRow("NAME", "COMMAND","IMAGE")
+	for _, step := range task.Spec.Steps {
+		command := append([]string{}, step.Command...)
+		command = append(command, step.Args...)
+		table.AddRow(step.Name, strings.Join(command, " "), step.Image)
+	}
+	table.Render()
+	return nil
 }
 
 // ObjectReferences creates a list of object references created
