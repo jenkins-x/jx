@@ -2327,11 +2327,6 @@ func LoadVersionFromCloudEnvironmentsDir(wrkDir string, configStore configio.Con
 	if err != nil {
 		return version, errors.Wrapf(err, "failed to load version of chart %s in dir %s", JenkinsXPlatformChart, wrkDir)
 	}
-	if version == "" {
-		log.Warnf("failed to load chart version %s in dir %s", JenkinsXPlatformChart, wrkDir)
-	} else {
-		log.Infof("using version %s of chart %s\n", util.ColorInfo(version), util.ColorInfo(JenkinsXPlatformChart))
-	}
 	return version, nil
 }
 

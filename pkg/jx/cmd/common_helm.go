@@ -7,6 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/src-d/go-git.v4"
@@ -163,6 +164,15 @@ func (options *CommonOptions) cloneJXVersionsRepo(versionRepository string) (str
 		}
 	}
 	return wrkDir, nil
+}
+
+// getVersionNumber returns the version number for the given kind and name or blank string if there is no locked version
+func (o *CommonOptions) getVersionNumber(kind version.VersionKind, name string) (string, error) {
+	versionsDir, err := o.cloneJXVersionsRepo("")
+	if err != nil {
+	  return "", err
+	}
+	return version.LoadVersionNumber(versionsDir, kind, name)
 }
 
 

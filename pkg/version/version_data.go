@@ -1,6 +1,7 @@
 package version
 
 import (
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -33,7 +34,7 @@ func LoadVersionData(wrkDir string, kind VersionKind, name string) (*VersionData
 
 	exists, err := util.FileExists(path)
 	if err != nil {
-		return version, errors.Wrapf(err, "failed to cehck if file exists %s", path)
+		return version, errors.Wrapf(err, "failed to check if file exists %s", path)
 	}
 	if !exists {
 		return version, nil
@@ -54,8 +55,13 @@ func LoadVersionData(wrkDir string, kind VersionKind, name string) (*VersionData
 func LoadVersionNumber(wrkDir string, kind VersionKind, name string) (string, error) {
 	data, err := LoadVersionData(wrkDir, kind, name)
 	if err != nil {
-	  return "", err
+		return "", err
 	}
-	return data.Version, err
+	version := data.Version
+	if version != "" {
+		log.Infof("using locked version %s from %s of %s from %s\n", util.ColorInfo(version), string(kind), util.ColorInfo(name), wrkDir)
+	} else {
+		log.Warnf("failed to load version from %s of %s from %s - we should lock down this chart version\n", string(kind), name, wrkDir)
+	}
+	return version, err
 }
-
