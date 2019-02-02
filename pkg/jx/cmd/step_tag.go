@@ -114,6 +114,9 @@ func (o *StepTagOptions) Run() error {
 	if o.Flags.Version == "" {
 		return errors.New("No version flag")
 	}
+	if o.Verbose {
+		log.Infof("looking for charts folder...\n")
+	}
 	chartsDir := o.Flags.ChartsDir
 	if chartsDir == "" {
 		exists, err := util.FileExists(filepath.Join(chartsDir, "Chart.yaml"))
@@ -124,6 +127,9 @@ func (o *StepTagOptions) Run() error {
 				return err
 			}
 		}
+	}
+	if o.Verbose {
+		log.Infof("updating chart if it exists\n")
 	}
 	err := o.updateChart(o.Flags.Version, chartsDir)
 	if err != nil {
@@ -136,6 +142,9 @@ func (o *StepTagOptions) Run() error {
 
 	tag := "v" + o.Flags.Version
 
+	if o.Verbose {
+		log.Infof("performing git commit\n")
+	}
 	err = o.Git().AddCommit("", fmt.Sprintf("release %s", o.Flags.Version))
 	if err != nil {
 		return err
@@ -146,6 +155,9 @@ func (o *StepTagOptions) Run() error {
 		return err
 	}
 
+	if o.Verbose {
+		log.Infof("pushing git tag %s\n", tag)
+	}
 	err = o.Git().PushTag("", tag)
 	if err != nil {
 		return err
