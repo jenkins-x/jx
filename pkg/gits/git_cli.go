@@ -490,7 +490,7 @@ func (g *GitCLI) RemoteBranchNames(dir string, prefix string) ([]string, error) 
 
 // GetPreviousGitTagSHA returns the previous git tag from the repository at the given directory
 func (g *GitCLI) GetPreviousGitTagSHA(dir string) (string, error) {
-	latestTag, err := g.gitCmdWithOutput(dir, "describe", "--abbrev=0", "--tags")
+	latestTag, err := g.gitCmdWithOutput(dir, "describe", "--abbrev=0", "--tags", "--always")
 	if err != nil {
 		return "", fmt.Errorf("failed to find latest tag for project in %s : %s", dir, err)
 	}
