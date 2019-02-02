@@ -40,6 +40,9 @@ var (
 		# create a Knative Pipeline Task
 		jx step create task -o mytask.yaml
 
+		# view the steps that would be created
+		jx step create task --view
+
 			`)
 )
 
@@ -63,6 +66,7 @@ type StepCreateTaskOptions struct {
 	CloneGitURL    string
 	Branch         string
 	DeleteTempDir  bool
+	ViewSteps      bool
 	Duration       time.Duration
 
 	PodTemplates        map[string]*corev1.Pod
@@ -127,6 +131,7 @@ func NewCmdStepCreateTask(f Factory, in terminal.FileReader, out terminal.FileWr
 	cmd.Flags().StringVarP(&options.CloneGitURL, "clone-git-url", "", "", "Specify the git URL to clone to a temporary directory to get the source code")
 	cmd.Flags().BoolVarP(&options.DeleteTempDir, "delete-temp-dir", "", false, "Deletes the temporary directory of cloned files if using the 'clone-git-url' option")
 	cmd.Flags().BoolVarP(&options.NoApply, "no-apply", "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file")
+	cmd.Flags().BoolVarP(&options.ViewSteps, "view", "", false, "Just view the steps that would be created")
 	cmd.Flags().DurationVarP(&options.Duration, "duration", "", time.Second*30, "Retry duration when trying to create a PipelineRun")
 	return cmd
 }
@@ -352,6 +357,9 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		},
 	}
 	fileName := o.OutputFile
+	if o.ViewSteps {
+		return o.viewSteps(task)
+	}
 	if !o.NoApply {
 		err = o.applyTask(task, o.gitInfo, o.Branch)
 		if fileName == "" {
@@ -739,6 +747,18 @@ func (o *StepCreateTaskOptions) deleteTempDir() {
 	if err != nil {
 		log.Warnf("failed to delete dir %s: %s\n", o.Dir, err.Error())
 	}
+}
+
+func (o *StepCreateTaskOptions) viewSteps(task *pipelineapi.Task) error {
+	table := o.createTable()
+	table.AddRow("NAME", "COMMAND","IMAGE")
+	for _, step := range task.Spec.Steps {
+		command := append([]string{}, step.Command...)
+		command = append(command, step.Args...)
+		table.AddRow(step.Name, strings.Join(command, " "), step.Image)
+	}
+	table.Render()
+	return nil
 }
 
 // ObjectReferences creates a list of object references created
