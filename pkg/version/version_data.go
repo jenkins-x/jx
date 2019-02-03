@@ -19,17 +19,18 @@ var (
 	// KindPackage represents a package version
 	KindPackage VersionKind = "packages"
 )
-// VersionData stores the information about 
-type VersionData struct {
+
+// StableVersion stores the stable version information
+type StableVersion struct {
 	Version string
 	GitURL  string
 	URL     string
 }
 
-// LoadVersionData loads a version data from the version configuration directory returning an empty object if there is
-// no specific configuration available
-func LoadVersionData(wrkDir string, kind VersionKind, name string) (*VersionData, error) {
-	version := &VersionData{}
+// LoadStableVersion loads the stable version data from the version configuration directory returning an empty object if there is
+// no specific stable version configuration available
+func LoadStableVersion(wrkDir string, kind VersionKind, name string) (*StableVersion, error) {
+	version := &StableVersion{}
 
 	path := filepath.Join(wrkDir, string(kind), name+".yml")
 
@@ -52,17 +53,17 @@ func LoadVersionData(wrkDir string, kind VersionKind, name string) (*VersionData
 	return version, err
 }
 
-// LoadVersionNumber loads just the version number for the given kind and name
+// LoadVersionNumber loads just the stable version number for the given kind and name
 func LoadVersionNumber(wrkDir string, kind VersionKind, name string) (string, error) {
-	data, err := LoadVersionData(wrkDir, kind, name)
+	data, err := LoadStableVersion(wrkDir, kind, name)
 	if err != nil {
 		return "", err
 	}
 	version := data.Version
 	if version != "" {
-		log.Infof("using locked version %s from %s of %s from %s\n", util.ColorInfo(version), string(kind), util.ColorInfo(name), wrkDir)
+		log.Infof("using stable version %s from %s of %s from %s\n", util.ColorInfo(version), string(kind), util.ColorInfo(name), wrkDir)
 	} else {
-		log.Warnf("could not find a locked version from %s of %s from %s - we should lock down this chart version to improve stability. See: https://github.com/jenkins-x/jenkins-x-versions/blob/master/README.md\n", string(kind), name, wrkDir)
+		log.Warnf("could not find a stable version from %s of %s from %s - we should lock down this chart version to improve stability. See: https://github.com/jenkins-x/jenkins-x-versions/blob/master/README.md\n", string(kind), name, wrkDir)
 	}
 	return version, err
 }

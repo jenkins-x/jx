@@ -454,7 +454,7 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 		if versionsDir == "" {
 			return fmt.Errorf("no VersionsDir specified when trying to install a chart")
 		}
-		versionData, err := version.LoadVersionData(versionsDir, version.KindChart, chart)
+		versionData, err := version.LoadStableVersion(versionsDir, version.KindChart, chart)
 		if err != nil {
 		  return errors.Wrapf(err, "failed to load version data in dir %s for chart %s", versionsDir, chart)
 		}

@@ -17,10 +17,10 @@ func TestLoadVersionData(t *testing.T) {
 	AssertLoadTestData(t, dataDir, version.KindChart, "doesNotExist", "")
 }
 
-// AssertLoadTestData asserts that the VersionData can be loaded/created for the given kind
+// AssertLoadTestData asserts that the StableVersion can be loaded/created for the given kind
 func AssertLoadTestData(t *testing.T, dataDir string, kind version.VersionKind, name string, expectedValue string) {
-	data, err := version.LoadVersionData(dataDir, kind, name)
-	require.NoError(t, err, "failed to load VersionData for dir %s kind %s name %s", dataDir, string(kind), name)
+	data, err := version.LoadStableVersion(dataDir, kind, name)
+	require.NoError(t, err, "failed to load StableVersion for dir %s kind %s name %s", dataDir, string(kind), name)
 
 	assert.Equal(t, expectedValue, data.Version, "wrong version for kind %s name %s", string(kind), name)
 }
