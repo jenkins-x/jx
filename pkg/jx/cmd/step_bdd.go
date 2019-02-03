@@ -45,7 +45,7 @@ type StepBDDFlags struct {
 	DisableDeleteRepo   bool
 	IgnoreTestFailure   bool
 	Parallel            bool
-	CloudEnvDir         string
+	VersionsDir         string
 	ConfigFile          string
 	TestRepoGitCloneUrl string
 	TestGitBranch       string
@@ -107,7 +107,7 @@ func NewCmdStepBDD(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 	cmd.Flags().StringVarP(&options.Flags.TestGitBranch, "test-git-branch", "", "master", "the git repository branch to use for the BDD tests")
 	cmd.Flags().StringVarP(&options.Flags.TestGitPrNumber, "test-git-pr-number", "", "", "the Pull Request number to fetch from the repository for the BDD tests")
 	cmd.Flags().StringArrayVarP(&options.Flags.TestCases, "tests", "t", []string{"test-quickstart-node-http"}, "the list of the test cases to run")
-	cmd.Flags().StringVarP(&options.Flags.CloudEnvDir, "dir", "", ".", "the git clone of the jenkins-x/cloud-environments git repository. Used to default the version of jenkins-x-platform when creating clusters if no --version option is supplied")
+	cmd.Flags().StringVarP(&options.Flags.VersionsDir, "dir", "", "", "the git clone of the jenkins-x/jenkins-x-versions git repository. Used to default the version of jenkins-x-platform when creating clusters if no --version option is supplied")
 	cmd.Flags().BoolVarP(&options.Flags.DeleteTeam, "delete-team", "", true, "Whether we should delete the Team we create for each Git Provider")
 	cmd.Flags().BoolVarP(&options.Flags.DisableDeleteApp, "no-delete-app", "", false, "Disables deleting the created app after the test")
 	cmd.Flags().BoolVarP(&options.Flags.DisableDeleteRepo, "no-delete-repo", "", false, "Disables deleting the created repository after the test")
@@ -496,7 +496,7 @@ func (o *StepBDDOptions) getVersion() (string, error) {
 	}
 
 	// lets try detect a local `Makefile` to find the version
-	dir := o.Flags.CloudEnvDir
+	dir := o.Flags.VersionsDir
 	version, err := LoadVersionFromCloudEnvironmentsDir(dir, configio.NewFileStore())
 	if err != nil {
 		return version, errors.Wrapf(err, "failed to load jenkins-x-platform version from dir %s", dir)

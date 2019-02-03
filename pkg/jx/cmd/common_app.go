@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/extensions"
@@ -61,7 +62,11 @@ func (o *CommonOptions) OnAppInstall(app string, version string) error {
 	if len(appList.Items) > 1 {
 		return fmt.Errorf("more than one app (%v) was found for %s", appList.Items, selector)
 	} else if len(appList.Items) == 1 {
-		return extensions.OnInstallFromName(app, jxClient, kubeClient, certClient, ns, o.Helm(), defaultInstallTimeout)
+		versionsDir, err := o.cloneJXVersionsRepo("")
+		if err != nil {
+			return errors.Wrapf(err, "failed to clone the Jenkins X versions repository")
+		}
+		return extensions.OnInstallFromName(app, jxClient, kubeClient, certClient, ns, o.Helm(), defaultInstallTimeout, versionsDir)
 	}
 	return nil
 }

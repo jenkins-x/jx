@@ -216,7 +216,11 @@ func (o *StepEnvApplyOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	err = extensions.OnApply(jxClient, kubeClient, certClient, o.devNamespace, o.Helm(), defaultInstallTimeout)
+	versionsDir, err := o.cloneJXVersionsRepo("")
+	if err != nil {
+		return errors.Wrapf(err, "failed to clone the Jenkins X versions repository")
+	}
+	err = extensions.OnApply(jxClient, kubeClient, certClient, o.devNamespace, o.Helm(), defaultInstallTimeout, versionsDir)
 	if err != nil {
 		return err
 	}

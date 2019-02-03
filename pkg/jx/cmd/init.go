@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	version2 "github.com/jenkins-x/jx/pkg/version"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -613,11 +614,17 @@ controller:
 			log.Infof("Using helm values file: %s\n", fileName)
 			valuesFiles = append(valuesFiles, fileName)
 		}
+		chartName := "stable/nginx-ingress"
+
+		version, err := o.getVersionNumber(version2.KindChart, chartName)
+		if err != nil {
+		  return errors.Wrapf(err, "failed to load version of chart %s", chartName)
+		}
 
 		i := 0
 		for {
 			log.Infof("Installing using helm binary: %s\n", util.ColorInfo(o.Helm().HelmBinary()))
-			err = o.Helm().InstallChart("stable/nginx-ingress", "jxing", ingressNamespace, "", -1, values,
+			err = o.Helm().InstallChart(chartName, "jxing", ingressNamespace, version, -1, values,
 				valuesFiles, "", "", "")
 			if err != nil {
 				if i >= 3 {

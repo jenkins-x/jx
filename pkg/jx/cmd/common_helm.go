@@ -7,7 +7,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
+	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/src-d/go-git.v4"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -105,8 +108,73 @@ func (o *CommonOptions) installChartOptions(options helm.InstallChartOptions) er
 	if err != nil {
 		return err
 	}
+	if options.VersionsDir == "" {
+		options.VersionsDir, err = o.cloneJXVersionsRepo("")
+	}
 	return helm.InstallFromChartOptions(options, o.Helm(), client, defaultInstallTimeout)
 }
+
+
+// clones the jenkins-x versions repo to a local working dir
+func (o *CommonOptions) cloneJXVersionsRepo(versionRepository string) (string, error) {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
+	configDir, err := util.ConfigDir()
+	if err != nil {
+		return "", fmt.Errorf("error determining config dir %v", err)
+	}
+	wrkDir := filepath.Join(configDir, "jenkins-x-versions")
+
+	o.Debugf("Current configuration dir: %s\n", configDir)
+	o.Debugf("versionRepository: %s\n", versionRepository)
+
+	if versionRepository == "" {
+		versionRepository = DefaultVersionsURL
+	}
+	log.Infof("Cloning the Jenkins X versions repo to %s\n", wrkDir)
+	_, err = git.PlainClone(wrkDir, false, &git.CloneOptions{
+		URL:           versionRepository,
+		ReferenceName: "refs/heads/master",
+		SingleBranch:  true,
+		Progress:      o.Out,
+	})
+	if err != nil {
+		if strings.Contains(err.Error(), "repository already exists") {
+			flag := false
+			if o.BatchMode {
+				flag = true
+			} else {
+				confirm := &survey.Confirm{
+					Message: "A local Jenkins X versions repository already exists, recreate with latest?",
+					Default: true,
+				}
+				err := survey.AskOne(confirm, &flag, nil, surveyOpts)
+				if err != nil {
+					return wrkDir, err
+				}
+			}
+			if flag {
+				err := os.RemoveAll(wrkDir)
+				if err != nil {
+					return wrkDir, err
+				}
+				return o.cloneJXVersionsRepo(versionRepository)
+			}
+		} else {
+			return wrkDir, err
+		}
+	}
+	return wrkDir, nil
+}
+
+// getVersionNumber returns the version number for the given kind and name or blank string if there is no locked version
+func (o *CommonOptions) getVersionNumber(kind version.VersionKind, name string) (string, error) {
+	versionsDir, err := o.cloneJXVersionsRepo("")
+	if err != nil {
+	  return "", err
+	}
+	return version.LoadVersionNumber(versionsDir, kind, name)
+}
+
 
 // deleteChart deletes the given chart
 func (o *CommonOptions) deleteChart(releaseName string, purge bool) error {
