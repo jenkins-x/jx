@@ -116,16 +116,16 @@ func (o *CommonOptions) installChartOptions(options helm.InstallChartOptions) er
 
 
 // clones the jenkins-x versions repo to a local working dir
-func (options *CommonOptions) cloneJXVersionsRepo(versionRepository string) (string, error) {
-	surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
+func (o *CommonOptions) cloneJXVersionsRepo(versionRepository string) (string, error) {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	configDir, err := util.ConfigDir()
 	if err != nil {
 		return "", fmt.Errorf("error determining config dir %v", err)
 	}
 	wrkDir := filepath.Join(configDir, "jenkins-x-versions")
 
-	options.Debugf("Current configuration dir: %s\n", configDir)
-	options.Debugf("versionRepository: %s\n", versionRepository)
+	o.Debugf("Current configuration dir: %s\n", configDir)
+	o.Debugf("versionRepository: %s\n", versionRepository)
 
 	if versionRepository == "" {
 		versionRepository = DefaultVersionsURL
@@ -135,12 +135,12 @@ func (options *CommonOptions) cloneJXVersionsRepo(versionRepository string) (str
 		URL:           versionRepository,
 		ReferenceName: "refs/heads/master",
 		SingleBranch:  true,
-		Progress:      options.Out,
+		Progress:      o.Out,
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "repository already exists") {
 			flag := false
-			if options.BatchMode {
+			if o.BatchMode {
 				flag = true
 			} else {
 				confirm := &survey.Confirm{
@@ -157,7 +157,7 @@ func (options *CommonOptions) cloneJXVersionsRepo(versionRepository string) (str
 				if err != nil {
 					return wrkDir, err
 				}
-				return options.cloneJXVersionsRepo(versionRepository)
+				return o.cloneJXVersionsRepo(versionRepository)
 			}
 		} else {
 			return wrkDir, err

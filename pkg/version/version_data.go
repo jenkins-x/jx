@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 )
 
+// VersionKind represents the kind of version
 type VersionKind string
 
 var (
