@@ -17,7 +17,7 @@ import (
 
 func TestInstall(t *testing.T) {
 	t.Parallel()
-	testDir := path.Join("test_data", "install_cloud_environments_repo")
+	testDir := path.Join("test_data", "install_jenkins_x_versions")
 	_, err := os.Stat(testDir)
 	assert.NoError(t, err)
 
@@ -25,7 +25,7 @@ func TestInstall(t *testing.T) {
 	version, err := cmd.LoadVersionFromCloudEnvironmentsDir(testDir, configStore)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "0.0.1436", version, "For Makefile in dir %s", testDir)
+	assert.Equal(t, "0.0.3321", version, "For stable version in dir %s", testDir)
 }
 
 func TestGenerateProwSecret(t *testing.T) {
