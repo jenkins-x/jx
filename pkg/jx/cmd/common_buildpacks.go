@@ -189,10 +189,11 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 
 			if templateFile != "" {
 				arguments := &jenkinsfile.CreateJenkinsfileArguments{
-					ConfigFile:        pipelineFile,
-					TemplateFile:      templateFile,
-					OutputFile:        generateJenkinsPath,
-					JenkinsfileRunner: prow,
+					ConfigFile:          pipelineFile,
+					TemplateFile:        templateFile,
+					OutputFile:          generateJenkinsPath,
+					JenkinsfileRunner:   prow,
+					ClearContainerNames: prow,
 				}
 				err = arguments.GenerateJenkinsfile(moduleResolver.AsImportResolver())
 				if err != nil {
