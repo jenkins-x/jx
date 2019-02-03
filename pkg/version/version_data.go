@@ -61,7 +61,7 @@ func LoadVersionNumber(wrkDir string, kind VersionKind, name string) (string, er
 	if version != "" {
 		log.Infof("using locked version %s from %s of %s from %s\n", util.ColorInfo(version), string(kind), util.ColorInfo(name), wrkDir)
 	} else {
-		log.Warnf("failed to load version from %s of %s from %s - we should lock down this chart version\n", string(kind), name, wrkDir)
+		log.Warnf("could not find a locked version from %s of %s from %s - we should lock down this chart version to improve stability. See: https://github.com/jenkins-x/jenkins-x-versions/blob/master/README.md\n", string(kind), name, wrkDir)
 	}
 	return version, err
 }
