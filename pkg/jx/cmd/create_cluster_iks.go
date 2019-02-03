@@ -361,7 +361,7 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 	}
 
 	if o.Flags.MachineType == "" {
-		machinetypearr, err := iks.GetMachineTypes(*zone, machineTypes)
+		machinetypearr, err := iks.GetMachineTypes(*zone, *region, machineTypes)
 		prompts := &survey.Select{
 			Message:  "Kubernetes Node Machine Type:",
 			Options:  machinetypearr,
@@ -374,12 +374,12 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 		if err != nil {
 			return err
 		}
-		machineType, err = machineTypes.GetMachineType(machineTypeStr, *zone)
+		machineType, err = machineTypes.GetMachineType(machineTypeStr, *zone, *region)
 		if err != nil {
 			return err
 		}
 	} else {
-		machineType, err = machineTypes.GetMachineType(o.Flags.MachineType, *zone)
+		machineType, err = machineTypes.GetMachineType(o.Flags.MachineType, *zone, *region)
 		if err != nil {
 			return err
 		}
@@ -405,7 +405,7 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 			return err
 		}
 	}
-	privatearr, err := iks.GetPrivateVLANs(*zone, vLANs)
+	privatearr, err := iks.GetPrivateVLANs(*zone, *region, vLANs)
 	if privatearr != nil && len(privatearr) > 0 && err == nil && !o.Flags.CreatePrivateVLAN && o.Flags.PrivateVLAN == "" {
 		if len(privatearr) > 1 {
 			prompts := &survey.Select{
@@ -431,7 +431,7 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 		log.Infof("Chosen Private VLAN is %s\n", util.ColorInfo(privateVLAN))
 	}
 
-	publicarr, err := iks.GetPublicVLANs(*zone, vLANs)
+	publicarr, err := iks.GetPublicVLANs(*zone, *region, vLANs)
 	if publicarr != nil && len(publicarr) > 0 && err == nil && !o.Flags.CreatePublicVLAN && o.Flags.PublicVLAN == "" && !o.Flags.PrivateOnly {
 		if len(publicarr) > 1 {
 			prompts := &survey.Select{
