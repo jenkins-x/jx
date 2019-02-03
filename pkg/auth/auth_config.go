@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"net/url"
 	"sort"
@@ -339,8 +340,11 @@ func (c *AuthConfig) EditUserAuth(serverLabel string, auth *UserAuth, defaultUse
 		auth.Username = defaultUsername
 	}
 
+	logrus.Infof("XXXXX 1 %s", auth.Username)
 	if batchMode {
+		logrus.Infof("XXXXX 2 %s", auth.Username)
 		if auth.Username == "" {
+			logrus.Infof("XXXXX 3 %s", auth.Username)
 			return fmt.Errorf("Running in batch mode and no default Git username found")
 		}
 		if auth.ApiToken == "" {
