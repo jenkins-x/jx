@@ -100,6 +100,7 @@ type InstallFlags struct {
 	Vault                    bool
 	KnativePipeline          bool
 	BuildPackName            string
+	Kaniko                   bool
 }
 
 // Secrets struct for secrets

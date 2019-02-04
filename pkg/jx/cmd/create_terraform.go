@@ -241,7 +241,6 @@ type Flags struct {
 	GKEUseEnhancedScopes        bool
 	GKEUseEnhancedApis          bool
 	LocalOrganisationRepository string
-	Kaniko                      bool
 }
 
 // CreateTerraformOptions the options for the create spring command
@@ -343,7 +342,7 @@ func (options *CreateTerraformOptions) addFlags(cmd *cobra.Command, addSharedFla
 	cmd.Flags().StringVarP(&options.Flags.GKEZone, "gke-zone", "", "", "The compute zone (e.g. us-central1-a) for the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.GKEUseEnhancedScopes, "gke-use-enhanced-scopes", "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
 	cmd.Flags().BoolVarP(&options.Flags.GKEUseEnhancedApis, "gke-use-enhanced-apis", "", false, "Enable enhanced APIs to utilise Container Registry & Cloud Build")
-	cmd.Flags().BoolVarP(&options.Flags.Kaniko, "kaniko", "", false, "Use Kaniko for building docker images")
+	cmd.Flags().BoolVarP(&options.InstallOptions.Flags.Kaniko, "kaniko", "", false, "Use Kaniko for building docker images")
 }
 
 func stringInValidProviders(a string) bool {
@@ -928,14 +927,14 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 
 	if !options.BatchMode {
 		// only provide the option if enhanced scopes are enabled
-		if options.Flags.Kaniko {
-			if !options.Flags.Kaniko {
+		if options.InstallOptions.Flags.Kaniko {
+			if !options.InstallOptions.Flags.Kaniko {
 				prompt := &survey.Confirm{
 					Message: "Would you like to enable Kaniko for building container images",
 					Default: false,
 					Help: "Use Kaniko for docker images",
 				}
-				survey.AskOne(prompt, &options.Flags.Kaniko, nil, surveyOpts)
+				survey.AskOne(prompt, &options.InstallOptions.Flags.Kaniko, nil, surveyOpts)
 			}
 		}
 	}
