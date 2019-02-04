@@ -381,16 +381,14 @@ func (options *InstallOptions) Run() error {
 	// Default to verbose mode to get more information during the install
 	options.Verbose = true
 
-	client, originalNs, err := options.KubeClientAndNamespace()
+	originalNs, err := options.setupNamespace()
+	if err != nil {
+		return errors.Wrap(err, "setting up current namespace")
+	}
+	client, ns, err := options.KubeClientAndNamespace()
 	if err != nil {
 		return errors.Wrap(err, "creating the kube client")
 	}
-
-	ns := options.Flags.Namespace
-	if ns == "" {
-		ns = originalNs
-	}
-	options.SetDevNamespace(ns)
 
 	err = options.registerAllCRDs()
 	if err != nil {
@@ -402,7 +400,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring the GitOps mode")
 	}
 
-	options.configureHelm(client, originalNs)
+	options.configureHelm(client, ns)
 	err = options.installHelmBinaries()
 	if err != nil {
 		return errors.Wrap(err, "installing helm binaries")
@@ -659,6 +657,23 @@ func (options *InstallOptions) configureKubectl(namespace string) error {
 	}
 
 	return nil
+}
+
+func (options *InstallOptions) setupNamespace() (string, error) {
+	_, originalNs, err := options.KubeClientAndNamespace()
+	if err != nil {
+		return "", errors.Wrap(err, "creating kube client")
+	}
+	ns := options.Flags.Namespace
+	if ns == "" {
+		ns = originalNs
+	}
+	if ns != originalNs {
+		options.ChangeNamespace(ns)
+	}
+	options.SetDevNamespace(ns)
+
+	return originalNs, nil
 }
 
 func (options *InstallOptions) init() error {
