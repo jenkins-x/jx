@@ -214,7 +214,8 @@ func (o *StepCreateBuildTemplateOptions) generatePipeline(languageName string, p
 	dir := "/workspace"
 
 	steps := []corev1.Container{}
-	for _, l := range lifecycles.All() {
+	for _, n := range lifecycles.All() {
+		l := n.Lifecycle
 		if l == nil {
 			continue
 		}

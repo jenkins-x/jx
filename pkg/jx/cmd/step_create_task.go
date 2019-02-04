@@ -288,6 +288,7 @@ func (o *StepCreateTaskOptions) generateTask(name string, pipelineConfig *jenkin
 		steps := []*jenkinsfile.PipelineStep{
 			{
 				Command: "jx step git credentials",
+				Name: "jx-git-credentials",
 			},
 		}
 		lifecycles.Setup.Steps = append(steps, lifecycles.Setup.Steps...)
@@ -339,12 +340,13 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 
 	steps := []corev1.Container{}
 	volumes := []corev1.Volume{}
-	for _, l := range lifecycles.All() {
+	for _, n := range lifecycles.All() {
+		l := n.Lifecycle
 		if l == nil {
 			continue
 		}
 		for _, s := range l.Steps {
-			ss, v, err := o.createSteps(languageName, pipelineConfig, templateKind, s, container, dir)
+			ss, v, err := o.createSteps(languageName, pipelineConfig, templateKind, s, container, dir, n.Name)
 			if err != nil {
 				return err
 			}
@@ -530,7 +532,7 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 	return nil
 }
 
-func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *jenkinsfile.PipelineStep, containerName string, dir string) ([]corev1.Container, []corev1.Volume, error) {
+func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *jenkinsfile.PipelineStep, containerName string, dir string, prefixPath string) ([]corev1.Container, []corev1.Volume, error) {
 	volumes := []corev1.Volume{}
 	steps := []corev1.Container{}
 
@@ -566,7 +568,16 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		volumes = podTemplate.Spec.Volumes
 		c := containers[0]
 		o.stepCounter++
-		c.Name = "step" + strconv.Itoa(1+o.stepCounter)
+
+		prefix := prefixPath
+		if prefix != "" {
+			prefix += "-"
+		}
+		stepName := step.Name
+		if stepName == "" {
+			stepName = "step" + strconv.Itoa(1+o.stepCounter)
+		}
+		c.Name = prefix + stepName
 
 		volumes = o.modifyVolumes(&c, volumes)
 		o.modifyEnvVars(&c)
@@ -594,7 +605,9 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		steps = append(steps, c)
 	}
 	for _, s := range step.Steps {
-		childSteps, v, err := o.createSteps(languageName, pipelineConfig, templateKind, s, containerName, dir)
+		// TODO add child prefix?
+		childPrefixPath := prefixPath
+		childSteps, v, err := o.createSteps(languageName, pipelineConfig, templateKind, s, containerName, dir, childPrefixPath)
 		if err != nil {
 			return steps, v, err
 		}
@@ -763,7 +776,7 @@ func (o *StepCreateTaskOptions) deleteTempDir() {
 
 func (o *StepCreateTaskOptions) viewSteps(task *pipelineapi.Task) error {
 	table := o.createTable()
-	table.AddRow("NAME", "COMMAND","IMAGE")
+	table.AddRow("NAME", "COMMAND", "IMAGE")
 	for _, step := range task.Spec.Steps {
 		command := append([]string{}, step.Command...)
 		command = append(command, step.Args...)

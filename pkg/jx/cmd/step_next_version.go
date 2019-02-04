@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/xml"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/util"
 	"io"
 	"io/ioutil"
 	"path/filepath"
@@ -14,7 +15,7 @@ import (
 	"encoding/json"
 
 	"github.com/blang/semver"
-	version "github.com/hashicorp/go-version"
+	"github.com/hashicorp/go-version"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
@@ -93,11 +94,13 @@ func (o *StepNextVersionOptions) Run() error {
 		}
 	}
 
-	// in declaritive pipelines we sometimes need to write the version to a file rather than pass state
+	// in declarative pipelines we sometimes need to write the version to a file rather than pass state
 	err = ioutil.WriteFile("VERSION", []byte(o.NewVersion), 0755)
 	if err != nil {
 		return err
 	}
+
+	log.Infof("created new version: %s and written to file: ./VERSION\n", util.ColorInfo(o.NewVersion))
 
 	// if filename flag set and recognised then update version, commit
 	if o.Filename != "" {
