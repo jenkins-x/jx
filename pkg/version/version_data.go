@@ -53,8 +53,8 @@ func LoadStableVersion(wrkDir string, kind VersionKind, name string) (*StableVer
 	return version, err
 }
 
-// LoadVersionNumber loads just the stable version number for the given kind and name
-func LoadVersionNumber(wrkDir string, kind VersionKind, name string) (string, error) {
+// LoadStableVersionNumber loads just the stable version number for the given kind and name
+func LoadStableVersionNumber(wrkDir string, kind VersionKind, name string) (string, error) {
 	data, err := LoadStableVersion(wrkDir, kind, name)
 	if err != nil {
 		return "", err

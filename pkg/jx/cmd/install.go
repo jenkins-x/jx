@@ -2323,7 +2323,7 @@ func (options *InstallOptions) logAdminPassword() {
 
 // LoadVersionFromCloudEnvironmentsDir lets load the jenkins-x-platform version
 func LoadVersionFromCloudEnvironmentsDir(wrkDir string, configStore configio.ConfigStore) (string, error) {
-	version, err := version2.LoadVersionNumber(wrkDir, version2.KindChart, JenkinsXPlatformChart)
+	version, err := version2.LoadStableVersionNumber(wrkDir, version2.KindChart, JenkinsXPlatformChart)
 	if err != nil {
 		return version, errors.Wrapf(err, "failed to load version of chart %s in dir %s", JenkinsXPlatformChart, wrkDir)
 	}

@@ -454,15 +454,10 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 		if versionsDir == "" {
 			return fmt.Errorf("no VersionsDir specified when trying to install a chart")
 		}
-		versionData, err := version.LoadStableVersion(versionsDir, version.KindChart, chart)
+		var err error
+		options.Version, err = version.LoadStableVersionNumber(versionsDir, version.KindChart, chart)
 		if err != nil {
-		  return errors.Wrapf(err, "failed to load version data in dir %s for chart %s", versionsDir, chart)
-		}
-		options.Version = versionData.Version
-		if versionData.Version == "" {
-			log.Warnf("installing chart %s which is not locked down in the versions directory %s\n", chart, versionsDir)
-		} else {
-			log.Infof("using locked version %s of chart %s\n", util.ColorInfo(options.Version), util.ColorInfo(chart))
+		  return errors.Wrapf(err, "failed to load stable version in dir %s for chart %s", versionsDir, chart)
 		}
 	}
 	if options.HelmUpdate {
