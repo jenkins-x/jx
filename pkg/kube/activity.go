@@ -332,11 +332,11 @@ func (k *PromoteStepActivityKey) GetOrCreatePreview(jxClient versioned.Interface
 
 // GetOrCreateStage gets or creates the step for the given name
 func GetOrCreateStage(a *v1.PipelineActivity, stageName string) (*v1.PipelineActivityStep, *v1.StageActivityStep, bool) {
-	spec := &a.Spec
-	for _, step := range spec.Steps {
+	for i, _ := range a.Spec.Steps {
+		step := &a.Spec.Steps[i]
 		stage := step.Stage
 		if stage != nil && stage.Name == stageName {
-			return &step, stage, false
+			return step, step.Stage, false
 		}
 	}
 
@@ -345,11 +345,12 @@ func GetOrCreateStage(a *v1.PipelineActivity, stageName string) (*v1.PipelineAct
 			Name: stageName,
 		},
 	}
-	spec.Steps = append(spec.Steps, v1.PipelineActivityStep{
+	a.Spec.Steps = append(a.Spec.Steps, v1.PipelineActivityStep{
 		Kind:  v1.ActivityStepKindTypeStage,
 		Stage: stage,
 	})
-	return &spec.Steps[len(spec.Steps)-1], stage, true
+	step := &a.Spec.Steps[len(a.Spec.Steps)-1]
+	return step, step.Stage, true
 }
 
 // GetOrCreatePromote gets or creates the Promote step for the key
