@@ -21,13 +21,17 @@ import (
 const KmsLocation = "global"
 
 var (
-	REQUIRED_SERVICE_ACCOUNT_ROLES = []string{"roles/compute.instanceAdmin.v1",
+	RequiredServiceAccountRoles = []string{"roles/compute.instanceAdmin.v1",
 		"roles/iam.serviceAccountActor",
 		"roles/container.clusterAdmin",
 		"roles/container.admin",
 		"roles/container.developer",
 		"roles/storage.objectAdmin",
 		"roles/editor"}
+
+	KanikoServiceAccountRoles = []string{"roles/storage.admin",
+		"roles/storage.objectAdmin",
+		"roles/storage.objectCreator"}
 )
 
 // ClusterName gets the cluster name from the current context

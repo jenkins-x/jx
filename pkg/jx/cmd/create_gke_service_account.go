@@ -111,7 +111,7 @@ func (o *CreateGkeServiceAccountOptions) Run() error {
 		o.Flags.Project = projectId
 	}
 
-	path, err := gke.GetOrCreateServiceAccount(o.Flags.Name, o.Flags.Project, util.HomeDir(), gke.REQUIRED_SERVICE_ACCOUNT_ROLES)
+	path, err := gke.GetOrCreateServiceAccount(o.Flags.Name, o.Flags.Project, util.HomeDir(), gke.RequiredServiceAccountRoles)
 	if err != nil {
 		return err
 	}

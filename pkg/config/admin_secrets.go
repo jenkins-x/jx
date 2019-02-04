@@ -98,6 +98,10 @@ type PipelineSecrets struct {
 	MavenSettingsXML string `json:"MavenSettingsXML,omitempty"`
 }
 
+type KanikoSecret struct {
+	Data string `json:"Data,omitempty"`
+}
+
 type AdminSecretsConfig struct {
 	IngressBasicAuth string           `json:"JXBasicAuth,omitempty"`
 	ChartMuseum      *ChartMuseum     `json:"chartmuseum,omitempty"`
@@ -105,6 +109,7 @@ type AdminSecretsConfig struct {
 	Jenkins          *Jenkins         `json:"jenkins,omitempty"`
 	Nexus            *Nexus           `json:"nexus,omitempty"`
 	PipelineSecrets  *PipelineSecrets `json:"PipelineSecrets,omitempty"`
+	KanikoSecret     *KanikoSecret    `json:"KanikoSecret,omitempty"`
 }
 
 type Nexus struct {
