@@ -241,6 +241,7 @@ type Flags struct {
 	GKEUseEnhancedScopes        bool
 	GKEUseEnhancedApis          bool
 	LocalOrganisationRepository string
+	Kaniko                      bool
 }
 
 // CreateTerraformOptions the options for the create spring command
@@ -342,6 +343,7 @@ func (options *CreateTerraformOptions) addFlags(cmd *cobra.Command, addSharedFla
 	cmd.Flags().StringVarP(&options.Flags.GKEZone, "gke-zone", "", "", "The compute zone (e.g. us-central1-a) for the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.GKEUseEnhancedScopes, "gke-use-enhanced-scopes", "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
 	cmd.Flags().BoolVarP(&options.Flags.GKEUseEnhancedApis, "gke-use-enhanced-apis", "", false, "Enable enhanced APIs to utilise Container Registry & Cloud Build")
+	cmd.Flags().BoolVarP(&options.Flags.Kaniko, "kaniko", "", false, "Use Kaniko for building docker images")
 }
 
 func stringInValidProviders(a string) bool {
@@ -749,7 +751,7 @@ func (options *CreateTerraformOptions) findDevCluster(clusterDefinitions []Clust
 			return c, nil
 		}
 	}
-	return nil, fmt.Errorf("Unable to find jx environment %s", options.Flags.JxEnvironment)
+	return nil, fmt.Errorf("unable to find jx environment %s", options.Flags.JxEnvironment)
 }
 
 func (options *CreateTerraformOptions) writeGitIgnoreFile(dir string) error {
@@ -921,6 +923,20 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 		err := gke.EnableAPIs(g.ProjectID, "cloudbuild", "containerregistry", "containeranalysis")
 		if err != nil {
 			return err
+		}
+	}
+
+	if !options.BatchMode {
+		// only provide the option if enhanced scopes are enabled
+		if options.Flags.Kaniko {
+			if !options.Flags.Kaniko {
+				prompt := &survey.Confirm{
+					Message: "Would you like to enable Kaniko for building container images",
+					Default: false,
+					Help: "Use Kaniko for docker images",
+				}
+				survey.AskOne(prompt, &options.Flags.Kaniko, nil, surveyOpts)
+			}
 		}
 	}
 
