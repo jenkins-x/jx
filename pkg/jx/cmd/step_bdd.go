@@ -457,6 +457,9 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	if gitKind != "" {
 		args = append(args, "--git-provider-kind ", gitKind)
 	}
+	if o.CommonOptions.InstallDependencies {
+		args = append(args, "--install-dependencies")
+	}
 	safeArgs := append([]string{}, args...)
 
 	gitToken := o.InstallOptions.GitRepositoryOptions.ApiToken
