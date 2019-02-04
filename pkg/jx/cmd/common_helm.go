@@ -172,7 +172,7 @@ func (o *CommonOptions) getVersionNumber(kind version.VersionKind, name string) 
 	if err != nil {
 	  return "", err
 	}
-	return version.LoadVersionNumber(versionsDir, kind, name)
+	return version.LoadStableVersionNumber(versionsDir, kind, name)
 }
 
 
