@@ -208,6 +208,12 @@ func (l *NamedLifecycle) Groovy() string {
 	return lifecycles.Groovy()
 }
 
+// Groovy returns the groovy expression for this lifecycle
+func (l *PipelineLifecycle) Groovy() string {
+	nl := &NamedLifecycle{Name: "", Lifecycle: l}
+	return nl.Groovy()
+}
+
 // ToJenkinsfileStatements converts the lifecycle to one or more jenkinsfile statements
 func (l *PipelineLifecycle) ToJenkinsfileStatements() []*Statement {
 	statements := []*Statement{}
