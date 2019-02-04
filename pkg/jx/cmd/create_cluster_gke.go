@@ -2,12 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"io"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/io/secrets"
-	"github.com/pkg/errors"
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	osUser "os/user"
 
@@ -225,7 +223,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			prompt := &survey.Confirm{
 				Message: "Would you like use preemptible VMs?",
 				Default: false,
-				Help: "Preemptible VMs can significantly lower the cost of a cluster",
+				Help:    "Preemptible VMs can significantly lower the cost of a cluster",
 			}
 			survey.AskOne(prompt, &o.Flags.Preemptible, nil, surveyOpts)
 		}
@@ -237,7 +235,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			prompt := &survey.Confirm{
 				Message: "Would you like to access Google Cloud Storage / Google Container Registry?",
 				Default: false,
-				Help: "Enables enhanced oauth scopes to allow access to storage based services",
+				Help:    "Enables enhanced oauth scopes to allow access to storage based services",
 			}
 			survey.AskOne(prompt, &o.Flags.EnhancedScopes, nil, surveyOpts)
 		}
@@ -260,7 +258,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 				prompt := &survey.Confirm{
 					Message: "Would you like to enable Cloud Build, Container Registry & Container Analysis APIs?",
 					Default: false,
-					Help: "Enables extra APIs on the GCP project",
+					Help:    "Enables extra APIs on the GCP project",
 				}
 				survey.AskOne(prompt, &o.Flags.EnhancedApis, nil, surveyOpts)
 			}
@@ -379,7 +377,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	kubeClient, ns, err := o.KubeClientAndNamespace()
+	_, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}
@@ -395,18 +393,6 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	err = o.RunCommand("kubectl", "get", "ingress")
 	if err != nil {
 		return err
-	}
-
-	// TODO - Reenable vault for GitOpsMode
-	//o.CreateClusterOptions.InstallOptions.GitOpsMode || o.CreateClusterOptions.InstallOptions.Vault {
-	if o.CreateClusterOptions.InstallOptions.Vault {
-		if err = InstallVaultOperator(&o.CommonOptions, ""); err != nil {
-			return err
-		}
-		err = secrets.NewSecretLocation(kubeClient, ns).SetInVault(true)
-		if err != nil {
-			return errors.Wrap(err, "configuring secrets location")
-		}
 	}
 
 	return nil
