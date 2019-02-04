@@ -1314,21 +1314,15 @@ definitions:
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SourceRepositorySpec:
     description: SourceRepositorySpec provides details of the metadata for an App
     properties:
-      Description:
+      description:
         type: string
-      Org:
-        description: github.com etc
+      org:
         type: string
-      Provider:
-        description: non-functional user-data
+      provider:
+        description: Provider stores the URL of the git provider such as https://github.com
         type: string
-      Repo:
+      repo:
         type: string
-    required:
-    - Description
-    - Provider
-    - Org
-    - Repo
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.StageActivityStep:
     description: StageActivityStep represents a stage of zero to more sub steps in

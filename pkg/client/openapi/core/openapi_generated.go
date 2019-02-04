@@ -3533,34 +3533,32 @@ func schema_pkg_apis_jenkinsio_v1_SourceRepositorySpec(ref common.ReferenceCallb
 				Description: "SourceRepositorySpec provides details of the metadata for an App",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"Description": {
+					"description": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
 						},
 					},
-					"Provider": {
+					"provider": {
 						SchemaProps: spec.SchemaProps{
-							Description: "non-functional user-data",
+							Description: "Provider stores the URL of the git provider such as https://github.com",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
-					"Org": {
+					"org": {
 						SchemaProps: spec.SchemaProps{
-							Description: "github.com etc",
-							Type:        []string{"string"},
-							Format:      "",
+							Type:   []string{"string"},
+							Format: "",
 						},
 					},
-					"Repo": {
+					"repo": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
 						},
 					},
 				},
-				Required: []string{"Description", "Provider", "Org", "Repo"},
 			},
 		},
 		Dependencies: []string{},
