@@ -375,8 +375,35 @@ func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", false, "Ignores default cloud-environment-repo and uses current directory ")
 }
 
+func (options *InstallOptions) checkFlags() error {
+	flags := &options.Flags
+
+	// check some flags combination for GitOps mode
+	if flags.GitOpsMode {
+		options.SkipAuthSecretsMerge = true
+		flags.DisableSetKubeContext = true
+		if !flags.Vault {
+			log.Warnf("GitOps mode requires vault. %s flag is automatically set\n", util.ColorInfo("vault"))
+			flags.Vault = true
+		}
+		initFlags := &options.InitOptions.Flags
+		if !initFlags.NoTiller {
+			log.Warnf("GitOps mode requires helm without tiller server. %s flag is automatically set\n", util.ColorInfo("no-tiller"))
+			initFlags.NoTiller = true
+		}
+	}
+
+	return nil
+}
+
 // Run implements this command
 func (options *InstallOptions) Run() error {
+	// Check the provided flags before starting any installation
+	err := options.checkFlags()
+	if err != nil {
+		return errors.Wrap(err, "checking the provided flags")
+	}
+
 	configStore := configio.NewFileStore()
 
 	// Default to verbose mode to get more information during the install
@@ -1375,10 +1402,6 @@ func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigSt
 	gitOpsDir := ""
 	gitOpsEnvDir := ""
 	if options.Flags.GitOpsMode {
-		// lets disable loading of Secrets from the jx namespace
-		options.SkipAuthSecretsMerge = true
-		options.Flags.DisableSetKubeContext = true
-
 		var err error
 		if options.Flags.Dir == "" {
 			options.Flags.Dir, err = os.Getwd()
