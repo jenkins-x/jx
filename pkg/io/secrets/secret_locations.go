@@ -28,13 +28,15 @@ const (
 type SecretLocation interface {
 	// Location returns the location where the secrets are stored
 	Location() SecretsLocationKind
-	// SecretLocation configure the secrets location
-	SetLocation(location SecretsLocationKind) error
+	// SecretLocation configure the secrets location. It will save the
+	// value in a config map if persist flag is set.
+	SetLocation(location SecretsLocationKind, persist bool) error
 }
 
 type secretLocation struct {
 	kubeClient kubernetes.Interface
 	namespace  string
+	location   SecretsLocationKind
 }
 
 // NewSecretLocation creates a SecretLocation
@@ -42,30 +44,37 @@ func NewSecretLocation(kubeClient kubernetes.Interface, namespace string) Secret
 	return &secretLocation{
 		kubeClient: kubeClient,
 		namespace:  namespace,
+		location:   FileSystemLocationKind,
 	}
 }
 
-// Location returns the location of the secrets
+// Location returns the location of the secrets. It fetches the secrets location first
+// for the config map, if not value is persisted there, it will just use the default location.
 func (s *secretLocation) Location() SecretsLocationKind {
 	configMap, err := getInstallConfigMapData(s.kubeClient, s.namespace)
 	if err != nil {
-		return FileSystemLocationKind
+		return s.location
 	}
 	value, ok := configMap[SecretsLocationKey]
 	if ok && value == string(VaultLocationKind) {
 		return VaultLocationKind
 	}
-	return FileSystemLocationKind
+	return s.location
 }
 
-// SetLocation configures the cluster's installation config map to denote that secrets should be stored in vault
-func (s *secretLocation) SetLocation(location SecretsLocationKind) error {
-	_, err := kube.DefaultModifyConfigMap(s.kubeClient, s.namespace, kube.ConfigMapNameJXInstallConfig, func(configMap *v1.ConfigMap) error {
-		configMap.Data[SecretsLocationKey] = string(location)
-		return nil
-	}, nil)
-	if err != nil {
-		return errors.Wrapf(err, "saving secrets location in configmap %s", kube.ConfigMapNameJXInstallConfig)
+// SetLocation configures the secrets location. It will store the value in a config map
+// if the persist flag is set
+func (s *secretLocation) SetLocation(location SecretsLocationKind, persist bool) error {
+	s.location = location
+	if persist {
+		_, err := kube.DefaultModifyConfigMap(s.kubeClient, s.namespace, kube.ConfigMapNameJXInstallConfig,
+			func(configMap *v1.ConfigMap) error {
+				configMap.Data[SecretsLocationKey] = string(s.location)
+				return nil
+			}, nil)
+		if err != nil {
+			return errors.Wrapf(err, "saving secrets location in configmap %s", kube.ConfigMapNameJXInstallConfig)
+		}
 	}
 	return nil
 }

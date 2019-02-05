@@ -305,7 +305,7 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 // It will either save the config to the local file-system, or a Vault
 func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService, error) {
 	if f.SecretsLocation() == secrets.VaultLocationKind {
-		vaultClient, err := f.CreateSystemVaultClient("")
+		vaultClient, err := f.CreateSystemVaultClient(kube.DefaultNamespace)
 		authService := auth.NewVaultAuthConfigService(configName, vaultClient)
 		return authService, err
 	} else {
@@ -323,6 +323,23 @@ func (f *factory) SecretsLocation() secrets.SecretsLocationKind {
 		f.secretLocation = secrets.NewSecretLocation(client, namespace)
 	}
 	return f.secretLocation.Location()
+}
+
+// SetSecretsLocation configures the secrets location. It will persist the value in a config map
+// if the persist flag is set.
+func (f *factory) SetSecretsLocation(location secrets.SecretsLocationKind, persist bool) error {
+	if f.secretLocation == nil {
+		client, namespace, err := f.CreateKubeClient()
+		if err != nil {
+			return errors.Wrap(err, "creating the kube client")
+		}
+		f.secretLocation = secrets.NewSecretLocation(client, namespace)
+	}
+	err := f.secretLocation.SetLocation(location, persist)
+	if err != nil {
+		return errors.Wrapf(err, "setting the secrets location %q", location)
+	}
+	return nil
 }
 
 // ResetSecretsLocation resets the location of the secrets stored in memory

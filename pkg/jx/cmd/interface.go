@@ -152,6 +152,10 @@ type Factory interface {
 	// SecretsLocation inidcates the location of the secrets
 	SecretsLocation() secrets.SecretsLocationKind
 
+	// SetSecretsLocation configures the secrets location in memory. It will persist the secrets location in a
+	// config map if the persist flag is active.
+	SetSecretsLocation(location secrets.SecretsLocationKind, persist bool) error
+
 	// ResetSecretsLocation resets the location of the secrets
 	ResetSecretsLocation()
 }

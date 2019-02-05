@@ -11,13 +11,13 @@ import (
 
 const ns = "Galaxy"
 
-func TestUseVaultForSecrets(t *testing.T) {
+func TestSecretsLocation(t *testing.T) {
 	t.Parallel()
 
 	kubeClient := createMockCluster()
 	secretLocation := NewSecretLocation(kubeClient, ns)
 
-	err := secretLocation.SetLocation(VaultLocationKind)
+	err := secretLocation.SetLocation(VaultLocationKind, true)
 	assert.NoError(t, err)
 
 	// Test we have actually added the item to the configmap
@@ -28,7 +28,7 @@ func TestUseVaultForSecrets(t *testing.T) {
 	assert.Equal(t, "two", configMap.Data["one"])
 	assert.Equal(t, VaultLocationKind, secretLocation.Location())
 
-	err = secretLocation.SetLocation(FileSystemLocationKind)
+	err = secretLocation.SetLocation(FileSystemLocationKind, true)
 	assert.NoError(t, err)
 
 	configMap, err = kubeClient.Core().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
@@ -39,13 +39,13 @@ func TestUseVaultForSecrets(t *testing.T) {
 	assert.NotEqual(t, VaultLocationKind, secretLocation.Location())
 }
 
-func TestUseVaultForSecrets_NoJxInstallConfigMap(t *testing.T) {
+func TestSecretsLocation_NoJxInstallConfigMap(t *testing.T) {
 	t.Parallel()
 
 	kubeClient := fake.NewSimpleClientset()
 	secretLocation := NewSecretLocation(kubeClient, ns)
 
-	err := secretLocation.SetLocation(VaultLocationKind)
+	err := secretLocation.SetLocation(VaultLocationKind, true)
 	assert.NoError(t, err)
 
 	// Test we have actually added the item to the configmap
@@ -54,13 +54,38 @@ func TestUseVaultForSecrets_NoJxInstallConfigMap(t *testing.T) {
 	assert.Equal(t, string(VaultLocationKind), configMap.Data[SecretsLocationKey])
 	assert.Equal(t, VaultLocationKind, secretLocation.Location())
 
-	err = secretLocation.SetLocation(FileSystemLocationKind)
+	err = secretLocation.SetLocation(FileSystemLocationKind, true)
 	assert.NoError(t, err)
 
 	configMap, err = kubeClient.Core().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
 	assert.NoError(t, err)
 	assert.Equal(t, string(FileSystemLocationKind), configMap.Data[SecretsLocationKey])
 	assert.NotEqual(t, VaultLocationKind, secretLocation.Location())
+}
+
+func TestSecretsLocation_UpdateFromJxInstallConfigMap(t *testing.T) {
+	t.Parallel()
+
+	kubeClient := createMockCluster()
+	secretLocation := NewSecretLocation(kubeClient, ns)
+
+	err := secretLocation.SetLocation(FileSystemLocationKind, false)
+	assert.NoError(t, err)
+
+	configMap, err := kubeClient.Core().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
+	assert.NoError(t, err)
+	assert.Equal(t, "", configMap.Data[SecretsLocationKey])
+	configMap.Data[SecretsLocationKey] = string(VaultLocationKind)
+	configMap, err = kubeClient.Core().ConfigMaps(ns).Update(configMap)
+	assert.NoError(t, err)
+
+	assert.Equal(t, VaultLocationKind, secretLocation.Location())
+
+	err = secretLocation.SetLocation(FileSystemLocationKind, false)
+	assert.NoError(t, err)
+	configMap, err = kubeClient.Core().ConfigMaps(ns).Get("jx-install-config", metav1.GetOptions{})
+	assert.NoError(t, err)
+	assert.Equal(t, string(VaultLocationKind), configMap.Data[SecretsLocationKey])
 }
 
 func createMockCluster() *fake.Clientset {

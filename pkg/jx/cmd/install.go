@@ -1088,7 +1088,7 @@ func (options *InstallOptions) configureGitAuth() error {
 
 	authConfigSvc, err := options.CreateGitAuthConfigService()
 	if err != nil {
-		return errors.Wrap(err, "failed to create the git auth config service")
+		return errors.Wrap(err, "creating the git auth config service")
 	}
 
 	authConfig := authConfigSvc.Config()
@@ -1965,6 +1965,11 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			}
 			log.Infof("System vault created named %s in namespace %s.\n",
 				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(namespace))
+		}
+
+		err = options.SetSecretsLocation(secrets.VaultLocationKind, false)
+		if err != nil {
+			return errors.Wrap(err, "setting the secrets location as vault")
 		}
 	}
 	return nil
