@@ -21,6 +21,7 @@ import (
 const KmsLocation = "global"
 
 var (
+	// RequiredServiceAccountRoles the roles required to create a cluster with terraform
 	RequiredServiceAccountRoles = []string{"roles/compute.instanceAdmin.v1",
 		"roles/iam.serviceAccountActor",
 		"roles/container.clusterAdmin",
@@ -29,6 +30,7 @@ var (
 		"roles/storage.objectAdmin",
 		"roles/editor"}
 
+	// KanikoServiceAccountRoles the roles required to run kaniko with GCS
 	KanikoServiceAccountRoles = []string{"roles/storage.admin",
 		"roles/storage.objectAdmin",
 		"roles/storage.objectCreator"}
