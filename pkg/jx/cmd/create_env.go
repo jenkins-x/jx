@@ -266,11 +266,12 @@ func (o *CreateEnvOptions) Run() error {
 	return nil
 }
 
+// RegisterEnvironment performs the environment registration
 func (o *CreateEnvOptions) RegisterEnvironment(env *v1.Environment, gitProvider gits.GitProvider, authConfigSvc auth.ConfigService) error {
 	gitURL := env.Spec.Source.URL
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
-		return errors.Wrap(err, "parsing git repository URL from environment soruce")
+		return errors.Wrap(err, "parsing git repository URL from environment source")
 	}
 
 	if gitURL == "" {

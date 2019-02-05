@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	// SecretsLocationKind key in the config map which stored the location where the secrets are stored
+	// SecretsLocationKey key in the config map which stored the location where the secrets are stored
 	SecretsLocationKey = "secretsLocation"
 )
 

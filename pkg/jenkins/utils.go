@@ -116,6 +116,7 @@ func JenkinsApiURL(url string) string {
 	return util.UrlJoin(url, "/api")
 }
 
+// JenkinsLoginURL returns the Jenkins login URL
 func JenkinsLoginURL(url string) string {
 	return util.UrlJoin(url, "/login")
 }

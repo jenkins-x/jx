@@ -186,7 +186,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 			return errors.Wrapf(err, "updating the jenkins auth configuration for user %q", o.Username)
 		}
 		if userAuth.IsInvalid() {
-			return fmt.Errorf("you did not properly define the user authentication!")
+			return fmt.Errorf("you did not properly define the user authentication")
 		}
 	}
 

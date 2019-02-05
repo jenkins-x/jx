@@ -67,22 +67,22 @@ func TestParseGitURL(t *testing.T) {
 func TestSaasKind(t *testing.T) {
 	t.Parallel()
 	tests := map[string]struct {
-		gitUrl string
+		gitURL string
 		kind   string
 	}{
 		"GitHub": {
-			gitUrl: "https://github.com/test",
+			gitURL: "https://github.com/test",
 			kind:   gits.KindGitHub,
 		},
 		"GitHub Enterprise": {
-			gitUrl: "https://github.test.com",
+			gitURL: "https://github.test.com",
 			kind:   gits.KindGitHub,
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			k := gits.SaasGitKind(tc.gitUrl)
+			k := gits.SaasGitKind(tc.gitURL)
 			assert.Equal(t, tc.kind, k)
 		})
 	}
