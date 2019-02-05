@@ -154,11 +154,11 @@ func (o *UpgradePlatformOptions) Run() error {
 		io := &InstallOptions{}
 		io.CommonOptions = o.CommonOptions
 		io.Flags = o.InstallFlags
-		wrkDir, err = io.cloneJXVersionsRepo(o.Flags.VersionsRepository)
+		versionsDir, err := io.cloneJXVersionsRepo(o.Flags.VersionsRepository)
 		if err != nil {
 			return err
 		}
-		targetVersion, err = LoadVersionFromCloudEnvironmentsDir(wrkDir, configStore)
+		targetVersion, err = LoadVersionFromCloudEnvironmentsDir(versionsDir, configStore)
 		if err != nil {
 			return err
 		}
