@@ -227,6 +227,7 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 	}
 }
 
+// GitOwner returns the git owner (person / organisation) or blank string if it cannot be found
 func (k *PipelineActivityKey) GitOwner() string {
 	if k.GitInfo != nil {
 		return k.GitInfo.Organisation
@@ -242,6 +243,7 @@ func (k *PipelineActivityKey) GitOwner() string {
 	return ""
 }
 
+// GitRepository returns the git repository name or blank string if it cannot be found
 func (k *PipelineActivityKey) GitRepository() string {
 	if k.GitInfo != nil {
 		return k.GitInfo.Name
@@ -257,6 +259,7 @@ func (k *PipelineActivityKey) GitRepository() string {
 	return ""
 }
 
+// GitURL returns the git URL or blank string if it cannot be found
 func (k *PipelineActivityKey) GitURL() string {
 	if k.GitInfo != nil {
 		return k.GitInfo.URL
