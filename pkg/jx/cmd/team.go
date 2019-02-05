@@ -101,7 +101,7 @@ func (o *TeamOptions) Run() error {
 		newConfig := *config
 		ctx := kube.CurrentContext(config)
 		if ctx == nil {
-			return fmt.Errorf(noContextDefinedError)
+			return errNoContextDefined
 		}
 		if ctx.Namespace == team {
 			return nil

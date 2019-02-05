@@ -964,3 +964,23 @@ func GetPreviewEnvironmentReleaseName(env *v1.Environment) string {
 	}
 	return env.Annotations[AnnotationReleaseName]
 }
+
+// IsPermanentEnvironment indicates if an environment is permanent
+func IsPermanentEnvironment(env *v1.Environment) bool {
+	return env.Spec.Kind == v1.EnvironmentKindTypePermanent
+}
+
+// GetPermanentEnvironments returns a list with the current permanent environments
+func GetPermanentEnvironments(jxClient versioned.Interface, ns string) ([]*v1.Environment, error) {
+	result := []*v1.Environment{}
+	envs, err := jxClient.JenkinsV1().Environments(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return result, errors.Wrapf(err, "listing the environments in namespace %q", ns)
+	}
+	for _, env := range envs.Items {
+		if IsPermanentEnvironment(&env) {
+			result = append(result, &env)
+		}
+	}
+	return result, nil
+}

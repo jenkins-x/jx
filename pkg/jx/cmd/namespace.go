@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/pkg/errors"
 
 	"github.com/spf13/cobra"
 
@@ -24,8 +25,8 @@ type NamespaceOptions struct {
 	CommonOptions
 }
 
-const (
-	noContextDefinedError = "There is no context defined in your Kubernetes configuration"
+var (
+	errNoContextDefined = errors.New("there is no context defined in your Kubernetes configuration")
 )
 
 var (
@@ -71,7 +72,7 @@ func NewCmdNamespace(f Factory, in terminal.FileReader, out terminal.FileWriter,
 func (o *NamespaceOptions) Run() error {
 	config, po, err := o.Kube().LoadConfig()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "loading Kubernetes configuration")
 	}
 	ns := ""
 	args := o.Args
@@ -80,11 +81,11 @@ func (o *NamespaceOptions) Run() error {
 	}
 	client, err := o.KubeClient()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating kubernetes client")
 	}
 	names, err := GetNamespaceNames(client)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "retrieving the names of the namespaces")
 	}
 	currentNS := kube.CurrentNamespace(config)
 
@@ -96,7 +97,7 @@ func (o *NamespaceOptions) Run() error {
 		}
 		pick, err := o.PickNamespace(names, defaultNamespace)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "picking the namespace")
 		}
 		ns = pick
 	}
@@ -104,12 +105,12 @@ func (o *NamespaceOptions) Run() error {
 	if ns != "" && ns != currentNS {
 		_, err = client.CoreV1().Namespaces().Get(ns, meta_v1.GetOptions{})
 		if err != nil {
-			return util.InvalidArg(ns, names)
+			return errors.Wrapf(err, "getting namespace %q", ns)
 		}
 		newConfig := *config
 		ctx := kube.CurrentContext(config)
 		if ctx == nil {
-			return fmt.Errorf(noContextDefinedError)
+			return errNoContextDefined
 		}
 		if ctx.Namespace == ns {
 			return nil
@@ -117,7 +118,7 @@ func (o *NamespaceOptions) Run() error {
 		ctx.Namespace = ns
 		err = clientcmd.ModifyConfig(po, newConfig, false)
 		if err != nil {
-			return fmt.Errorf("Failed to update the kube config %s", err)
+			return fmt.Errorf("failed to update the kube config %s", err)
 		}
 		fmt.Fprintf(o.Out, "Now using namespace '%s' on server '%s'.\n", info(ctx.Namespace), info(kube.Server(config, ctx)))
 	} else {
@@ -133,7 +134,7 @@ func GetNamespaceNames(client kubernetes.Interface) ([]string, error) {
 	names := []string{}
 	list, err := client.CoreV1().Namespaces().List(meta_v1.ListOptions{})
 	if err != nil {
-		return names, fmt.Errorf("Failed to load Namespaces %s", err)
+		return names, fmt.Errorf("loading namespaces %s", err)
 	}
 	for _, n := range list.Items {
 		names = append(names, n.Name)

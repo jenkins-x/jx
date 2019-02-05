@@ -3,7 +3,9 @@ package cmd
 import (
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
@@ -251,54 +253,77 @@ func (o *CreateEnvOptions) Run() error {
 		}
 	}
 
-	if gitURL != "" {
-		if o.GitOpsMode {
-			return nil
-		}
-		if gitProvider == nil {
-			authConfigSvc, err := o.CreateGitAuthConfigService()
-			if err != nil {
-				return err
-			}
-			gitKind, err := o.GitServerKind(gitInfo)
-			if err != nil {
-				return err
-			}
-			message := "user name to create the Git repository"
-			p, err := o.CreateOptions.CommonOptions.CreateGitProvider(gitURL, message, authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
-			if err != nil {
-				return err
-			}
-			gitProvider = p
-		}
-		if o.Prow {
-			config := authConfigSvc.Config()
-			u := gitInfo.HostURL()
-			server := config.GetOrCreateServer(u)
-			if len(server.Users) == 0 {
-				// lets check if the host was used in `~/.jx/gitAuth.yaml` instead of URL
-				s2 := config.GetOrCreateServer(gitInfo.Host)
-				if s2 != nil && len(s2.Users) > 0 {
-					server = s2
-					u = gitInfo.Host
-				}
-			}
-			user, err := config.PickServerUserAuth(server, "user name for the Pipeline", o.BatchMode, "", o.In, o.Out, o.Err)
-			if err != nil {
-				return err
-			}
-			if user.Username == "" {
-				return fmt.Errorf("Could not find a username for git server %s", u)
-			}
-			_, err = o.updatePipelineGitCredentialsSecret(server, user)
-			if err != nil {
-				return err
-			}
-			// register the webhook
-			return o.createWebhookProw(gitURL, gitProvider)
-		}
-		return o.ImportProject(gitURL, envDir, jenkins.DefaultJenkinsfile, o.BranchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)
+	// Skip the environment registration if gitops mode is active
+	if o.GitOpsMode {
+		return nil
+	}
+
+	err = o.RegisterEnvironment(&env, gitProvider, authConfigSvc)
+	if err != nil {
+		errors.Wrapf(err, "registering the environment %s/%s", env.GetNamespace(), env.GetName())
 	}
 
 	return nil
+}
+
+func (o *CreateEnvOptions) RegisterEnvironment(env *v1.Environment, gitProvider gits.GitProvider, authConfigSvc auth.ConfigService) error {
+	gitURL := env.Spec.Source.URL
+	gitInfo, err := gits.ParseGitURL(gitURL)
+	if err != nil {
+		return errors.Wrap(err, "parsing git repository URL from environment soruce")
+	}
+
+	if gitURL == "" {
+		return nil
+	}
+
+	envDir, err := util.EnvironmentsDir()
+	if err != nil {
+		return errors.Wrap(err, "getting environments directory")
+	}
+
+	if gitProvider == nil {
+		authConfigSvc, err = o.CreateGitAuthConfigService()
+		if err != nil {
+			return err
+		}
+		gitKind, err := o.GitServerKind(gitInfo)
+		if err != nil {
+			return err
+		}
+		message := "user name to create the Git repository"
+		p, err := o.CreateOptions.CommonOptions.CreateGitProvider(gitURL, message, authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
+		if err != nil {
+			return err
+		}
+		gitProvider = p
+	}
+
+	if o.Prow {
+		config := authConfigSvc.Config()
+		u := gitInfo.HostURL()
+		server := config.GetOrCreateServer(u)
+		if len(server.Users) == 0 {
+			// lets check if the host was used in `~/.jx/gitAuth.yaml` instead of URL
+			s2 := config.GetOrCreateServer(gitInfo.Host)
+			if s2 != nil && len(s2.Users) > 0 {
+				server = s2
+				u = gitInfo.Host
+			}
+		}
+		user, err := config.PickServerUserAuth(server, "user name for the Pipeline", o.BatchMode, "", o.In, o.Out, o.Err)
+		if err != nil {
+			return err
+		}
+		if user.Username == "" {
+			return fmt.Errorf("Could not find a username for git server %s", u)
+		}
+		_, err = o.updatePipelineGitCredentialsSecret(server, user)
+		if err != nil {
+			return err
+		}
+		return o.createWebhookProw(gitURL, gitProvider)
+	}
+
+	return o.ImportProject(gitURL, envDir, jenkins.DefaultJenkinsfile, o.BranchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)
 }

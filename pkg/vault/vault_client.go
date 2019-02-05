@@ -1,17 +1,21 @@
 package vault
 
 import (
+	"encoding/base64"
+	"fmt"
 	"net/url"
 
 	"github.com/hashicorp/vault/api"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	yaml "gopkg.in/yaml.v2"
+)
+
+const (
+	yamlDataKey = "yaml"
 )
 
 // Client is an interface for interacting with Vault
 //go:generate pegomock generate github.com/jenkins-x/jx/pkg/vault Client -o mocks/vault_client.go --generate-matchers
-// go --generate-matchers
 type Client interface {
 	// Write writes a named secret to the vault
 	Write(secretName string, data map[string]interface{}) (map[string]interface{}, error)
@@ -32,6 +36,9 @@ type Client interface {
 	// ReadObject reads a generic named objec from vault.
 	// The secret _must_ be serializable to JSON.
 	ReadObject(secretName string, secret interface{}) error
+
+	// ReadYaml reads a yaml object from a named secret
+	ReadYaml(secretName string) (string, error)
 
 	// Config gets the config required for configuring the official Vault CLI
 	Config() (vaultURL url.URL, vaultToken string, err error)
@@ -71,7 +78,7 @@ func (v *client) WriteObject(secretName string, secret interface{}) (map[string]
 	// Convert the secret into a saveable map[string]interface{} format
 	m, err := util.ToMapStringInterfaceFromStruct(&secret)
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not serialize secret '%s' object for saving to vault", secretName)
+		return nil, errors.Wrapf(err, "serializing secret %q object for saving to vault", secretName)
 	}
 	return v.Write(secretName, m)
 }
@@ -80,29 +87,43 @@ func (v *client) WriteObject(secretName string, secret interface{}) (map[string]
 func (v *client) ReadObject(secretName string, secret interface{}) error {
 	m, err := v.Read(secretName)
 	if err != nil {
-		return errors.Wrapf(err, "could not read the secret '%s' from vault", secretName)
+		return errors.Wrapf(err, "reading the secret %q from vault", secretName)
 	}
 	err = util.ToStructFromMapStringInterface(m, &secret)
 	if err != nil {
-		return errors.Wrapf(err, "could not deserialize the secret '%s' from vault", secretName)
+		return errors.Wrapf(err, "deserializing the secret %q from vault", secretName)
 	}
 	return nil
 }
 
 // WriteYaml writes a yaml object to a named secret
 func (v *client) WriteYaml(secretName string, y string) (map[string]interface{}, error) {
-	// Unmarshal to a generic map
-	m := make(map[string]interface{})
-	err := yaml.Unmarshal([]byte(y), &m)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Could not unmarshal YAML %v", y)
+	data := base64.StdEncoding.EncodeToString([]byte(y))
+	secretMap := map[string]interface{}{
+		yamlDataKey: data,
 	}
+	return v.Write(secretName, secretMap)
+}
 
-	// We can't just call v.client.save on this. Although it is a map[string]interface{}, a sub-item in the may _may_
-	// be a map[interface{}]interface rather than map[string]interface{}. This will cause the vault Write action to fail
-	// Instead we need to marshall to a struct and back
-	out := util.ConvertAllMapKeysToString(m)
-	return v.Write(secretName, out.(map[string]interface{}))
+// ReadYaml reads a yaml object from a named secret
+func (v *client) ReadYaml(secretName string) (string, error) {
+	secretMap, err := v.Read(secretName)
+	if err != nil {
+		return "", errors.Wrapf(err, "reading secret %q from vault", secretName)
+	}
+	data, ok := secretMap[yamlDataKey]
+	if !ok {
+		return "", fmt.Errorf("no data found at secret key %s/%s", secretName, yamlDataKey)
+	}
+	strData, ok := data.(string)
+	if !ok {
+		return "", fmt.Errorf("data stored at secret key %s/%s is not a valid string", secretName, yamlDataKey)
+	}
+	decodedData, err := base64.StdEncoding.DecodeString(strData)
+	if err != nil {
+		return "", errors.Wrapf(err, "decoding base64 data stored at secret key %s/%s", secretName, yamlDataKey)
+	}
+	return string(decodedData), nil
 }
 
 // List lists the secrets under a given path
@@ -125,7 +146,7 @@ func (v *client) List(path string) ([]string, error) {
 	return secretNames, nil
 }
 
-// Config retruns the current vault address and api token
+// Config returns the current vault address and api token
 func (v *client) Config() (vaultURL url.URL, vaultToken string, err error) {
 	parsed, err := url.Parse(v.client.Address())
 	return *parsed, v.client.Token(), err

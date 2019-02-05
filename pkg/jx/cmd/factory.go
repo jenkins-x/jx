@@ -3,11 +3,12 @@ package cmd
 import (
 	"flag"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/builds"
 	"io"
 	"net/url"
 	"os"
 	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/builds"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
@@ -303,7 +304,7 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 // CreateAuthConfigService creates a new service saving auth config under the provided name. Depending on the factory,
 // It will either save the config to the local file-system, or a Vault
 func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService, error) {
-	if f.UseVault() {
+	if f.SecretsLocation() == secrets.VaultLocationKind {
 		vaultClient, err := f.CreateSystemVaultClient("")
 		authService := auth.NewVaultAuthConfigService(configName, vaultClient)
 		return authService, err
@@ -312,16 +313,21 @@ func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService
 	}
 }
 
-// UseVault idicates if the platform is using a Vault to manage the secrets
-func (f *factory) UseVault() bool {
+// SecretsLocation indicates the location where the secrets are stored
+func (f *factory) SecretsLocation() secrets.SecretsLocationKind {
 	client, namespace, err := f.CreateKubeClient()
 	if err != nil {
-		return false
+		return secrets.FileSystemLocationKind
 	}
 	if f.secretLocation == nil {
 		f.secretLocation = secrets.NewSecretLocation(client, namespace)
 	}
-	return f.secretLocation.InVault()
+	return f.secretLocation.Location()
+}
+
+// ResetSecretsLocation resets the location of the secrets stored in memory
+func (f *factory) ResetSecretsLocation() {
+	f.secretLocation = nil
 }
 
 // CreateSystemVaultClient gets the system vault client for managing the secrets

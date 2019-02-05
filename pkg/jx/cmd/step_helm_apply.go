@@ -9,6 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	configio "github.com/jenkins-x/jx/pkg/io"
+	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -28,6 +29,7 @@ type StepHelmApplyOptions struct {
 	Wait               bool
 	Force              bool
 	DisableHelmVersion bool
+	Vault              bool
 }
 
 var (
@@ -79,6 +81,7 @@ func NewCmdStepHelmApply(f Factory, in terminal.FileReader, out terminal.FileWri
 	cmd.Flags().BoolVarP(&options.Wait, "wait", "", true, "Wait for Kubernetes readiness probe to confirm deployment")
 	cmd.Flags().BoolVarP(&options.Force, "force", "f", true, "Whether to to pass '--force' to helm to help deal with upgrading if a previous promote failed")
 	cmd.Flags().BoolVar(&options.DisableHelmVersion, "no-helm-version", false, "Don't set Chart version before applying")
+	cmd.Flags().BoolVarP(&options.Vault, "vault", "", false, "Helm secrets are stroed in vault")
 
 	return cmd
 }
@@ -148,7 +151,7 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	o.Helm().SetCWD(dir)
 
-	if o.UseVault() {
+	if (o.SecretsLocation() == secrets.VaultLocationKind) || o.Vault {
 		store := configio.NewFileStore()
 		secretsFiles, err := o.fetchSecretFilesFromVault(dir, store)
 		if err != nil {
@@ -202,6 +205,7 @@ func (o *StepHelmApplyOptions) Run() error {
 }
 
 func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store configio.ConfigStore) ([]string, error) {
+	log.Infof("Fetching secrets from vault into directory %q\n", dir)
 	files := []string{}
 	client, err := o.CreateSystemVaultClient("")
 	if err != nil {
@@ -229,15 +233,16 @@ func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store confi
 
 	for _, secretPath := range secretPaths {
 		gitopsSecretPath := vault.GitOpsSecretPath(secretPath)
-		secret, err := client.Read(gitopsSecretPath)
+		secret, err := client.ReadYaml(gitopsSecretPath)
 		if err != nil {
-			return files, errors.Wrapf(err, "retrieving the secret '%s' from Vault", secretPath)
+			return files, errors.Wrapf(err, "retrieving the secret %q from Vault", secretPath)
 		}
 		secretFile := filepath.Join(dir, secretPath)
-		err = store.WriteObject(secretFile, secret)
+		err = store.Write(secretFile, []byte(secret))
 		if err != nil {
-			return files, errors.Wrapf(err, "saving the secret file '%s'", secretFile)
+			return files, errors.Wrapf(err, "saving the secret file %q", secretFile)
 		}
+		log.Infof("Saved secrets file %s\n", util.ColorInfo(secretFile))
 		files = append(files, secretFile)
 	}
 	return files, nil
