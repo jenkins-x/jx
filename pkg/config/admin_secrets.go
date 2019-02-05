@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"github.com/ghodss/yaml"
+
 	"io/ioutil"
 	"strings"
 
