@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"github.com/ghodss/yaml"
 	"io/ioutil"
 	"strings"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/sethvargo/go-password/password"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
 )
 
 const defaultMavenSettings = `<settings>
