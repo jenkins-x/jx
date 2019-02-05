@@ -125,6 +125,7 @@ type AdminSecretsService struct {
 
 type AdminSecretsFlags struct {
 	DefaultAdminPassword string
+	KanikoSecret         string
 }
 
 func (s *AdminSecretsService) AddAdminSecretsValues(cmd *cobra.Command) {
@@ -138,6 +139,7 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 		Jenkins:         &Jenkins{},
 		PipelineSecrets: &PipelineSecrets{},
 		Nexus:           &Nexus{},
+		KanikoSecret:    &KanikoSecret{},
 	}
 
 	if s.Flags.DefaultAdminPassword == "" {
@@ -158,6 +160,7 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 	s.setDefaultSecrets()
 	s.NewMavenSettingsXML()
 	s.newIngressBasicAuth()
+	s.newKanikoSecret()
 
 	return nil
 }
@@ -198,6 +201,10 @@ func (s *AdminSecretsService) NewAdminSecretsConfigFromSecret(decryptedSecrets s
 	s.updateIngressBasicAuth()
 
 	return nil
+}
+
+func (s *AdminSecretsService) newKanikoSecret() {
+	s.Secrets.KanikoSecret.Data = s.Flags.KanikoSecret
 }
 
 func (s *AdminSecretsService) newIngressBasicAuth() {

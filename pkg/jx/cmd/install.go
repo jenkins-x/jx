@@ -3,8 +3,10 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	version2 "github.com/jenkins-x/jx/pkg/version"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -358,6 +360,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.NoGitOpsVault, "no-gitops-vault", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a vault")
 	cmd.Flags().BoolVarP(&flags.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during installation (supported only for GKE)")
 	cmd.Flags().StringVarP(&flags.BuildPackName, "buildpack", "", "", "The name of the build pack to use for the Team")
+	cmd.Flags().BoolVarP(&flags.Kaniko, "kaniko", "", false, "Use Kaniko for building docker images")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
@@ -483,6 +486,11 @@ func (options *InstallOptions) Run() error {
 	err = options.selectJenkinsInstallation()
 	if err != nil {
 		return errors.Wrap(err, "selecting the Jenkins installation type")
+	}
+
+	err = options.configureKaniko()
+	if err != nil {
+		return errors.Wrap(err, "unable to generate the Kaniko configuration")
 	}
 
 	err = options.configureHelmValues(ns)
@@ -1811,6 +1819,36 @@ func (options *InstallOptions) getAdminSecrets(configStore configio.ConfigStore,
 	}
 
 	return adminSecretsFileName, adminSecrets, nil
+}
+
+func (options *InstallOptions) configureKaniko() error {
+	if options.Flags.Kaniko {
+		if options.Flags.Provider != GKE {
+			return fmt.Errorf("Kaniko is not supported for %s provider", options.Flags.Provider)
+		}
+
+		serviceAccountDir, err := ioutil.TempDir("", "gke")
+		if err != nil {
+			return errors.Wrap(err, "creating a temporary folder where the service account will be stored")
+		}
+		defer os.RemoveAll(serviceAccountDir)
+
+		serviceAccountName := fmt.Sprintf("jx-%s-kaniko", options.installValues[kube.ClusterName])
+
+		log.Infof("Configuring Kaniko service account %s\n", util.ColorInfo(serviceAccountName))
+		serviceAccountPath, err := gke.GetOrCreateServiceAccount(serviceAccountName, options.installValues[kube.ProjectID], serviceAccountDir, gke.KanikoServiceAccountRoles)
+		if err != nil {
+			return errors.Wrap(err, "creating the service account")
+		}
+
+		serviceAccount, err := ioutil.ReadFile(serviceAccountPath)
+		if err != nil {
+			return errors.Wrapf(err, "reading the service account from file '%s'", serviceAccountPath)
+		}
+
+		options.AdminSecretsService.Flags.KanikoSecret = string(serviceAccount)
+	}
+	return nil
 }
 
 func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string, ic *kube.IngressConfig) error {

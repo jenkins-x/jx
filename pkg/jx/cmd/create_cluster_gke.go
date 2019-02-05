@@ -119,7 +119,6 @@ func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.File
 	cmd.Flags().BoolVarP(&options.Flags.Preemptible, "preemptible", "", false, "Use preemptible VMs in the node-pool")
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedScopes, "enhanced-scopes", "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedApis, "enhanced-apis", "", false, "Enable enhanced APIs to utilise Container Registry & Cloud Build")
-	cmd.Flags().BoolVarP(&options.InstallOptions.Flags.Kaniko, "kaniko", "", false, "Use Kaniko for building docker images")
 
 	cmd.AddCommand(NewCmdCreateClusterGKETerraform(f, in, out, errOut))
 
@@ -277,15 +276,13 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	if !o.BatchMode {
 		// only provide the option if enhanced scopes are enabled
-		if o.InstallOptions.Flags.Kaniko {
-			if !o.InstallOptions.Flags.Kaniko {
-				prompt := &survey.Confirm{
-					Message: "Would you like to enable Kaniko for building container images",
-					Default: false,
-					Help: "Use Kaniko for docker images",
-				}
-				survey.AskOne(prompt, &o.InstallOptions.Flags.Kaniko, nil, surveyOpts)
+		if !o.InstallOptions.Flags.Kaniko {
+			prompt := &survey.Confirm{
+				Message: "Would you like to enable Kaniko for building container images",
+				Default: false,
+				Help: "Use Kaniko for docker images",
 			}
+			survey.AskOne(prompt, &o.InstallOptions.Flags.Kaniko, nil, surveyOpts)
 		}
 	}
 
