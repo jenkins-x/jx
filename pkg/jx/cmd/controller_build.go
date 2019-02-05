@@ -1,12 +1,12 @@
 package cmd
 
 import (
+	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/collector"
 	"github.com/pkg/errors"
 	"io"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"time"
 	"unicode"
@@ -176,8 +176,12 @@ func (o *ControllerBuildOptions) onPod(obj interface{}, kubeClient kubernetes.In
 							log.Warnf("Failed to %s PipelineActivities for build %s: %s\n", operation, buildName, err)
 						}
 						if o.updatePipelineActivity(kubeClient, ns, a, buildName, pod) {
+							if o.Verbose {
+								log.Infof("updating PipelineActivity %s\n", a.Name)
+							}
 							_, err := activities.Update(a)
 							if err != nil {
+								log.Warnf("Failed to update PipelineActivity %s due to: %s\n", a.Name, err.Error())
 								name = a.Name
 								return err
 							}
@@ -214,7 +218,7 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 }
 
 func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.Interface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod) bool {
-	copy := *activity
+	originYaml := toYamlString(activity)
 	initContainersTerminated := len(pod.Status.InitContainerStatuses) > 0
 	for _, c := range pod.Status.InitContainerStatuses {
 		name := strings.Replace(strings.TrimPrefix(c.Name, "build-step-"), "-", " ", -1)
@@ -226,9 +230,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 
 		var startedAt metav1.Time
 		var finishedAt metav1.Time
-		if running != nil {
-			startedAt = running.StartedAt
-		} else if terminated != nil {
+		if terminated != nil {
 			startedAt = terminated.StartedAt
 			finishedAt = terminated.FinishedAt
 
@@ -236,6 +238,10 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 				stage.CompletedTimestamp = &finishedAt
 			}
 		}
+		if startedAt.IsZero() && running != nil {
+			startedAt = running.StartedAt
+		}
+
 		if !startedAt.IsZero() {
 			stage.StartedTimestamp = &startedAt
 		}
@@ -262,10 +268,11 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 	allCompleted := true
 	failed := false
 	running := true
-	for _, step := range spec.Steps {
+	for i := range spec.Steps {
+		step := &spec.Steps[i]
 		stage := step.Stage
 		if stage != nil {
-			stageFinished := false
+			stageFinished := spec.Status.IsTerminated()
 			if stage.StartedTimestamp != nil && spec.StartedTimestamp == nil {
 				spec.StartedTimestamp = stage.StartedTimestamp
 			}
@@ -293,6 +300,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 			}
 		}
 	}
+
 	if !allCompleted && initContainersTerminated {
 		allCompleted = true
 	}
@@ -344,7 +352,19 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 			spec.Status = v1.ActivityStatusTypePending
 		}
 	}
-	return !reflect.DeepEqual(&copy, activity)
+
+	// lets compare YAML in case we modify arrays in place on a copy (such as the steps) and don't detect we changed things
+	newYaml := toYamlString(activity)
+	return originYaml != newYaml
+}
+
+// toYamlString returns the YAML string or error when marshalling the given resource
+func toYamlString(resource interface{}) string {
+	data, err := yaml.Marshal(resource)
+	if err != nil {
+		return err.Error()
+	}
+	return string(data)
 }
 
 // generates the build log URL and returns the URL

@@ -394,6 +394,7 @@ func (options *CreateTerraformOptions) Run() error {
 		}
 	}
 
+	options.InstallOptions.Owner = options.InstallOptions.Flags.EnvironmentGitOwner
 	err = options.createOrganisationGitRepo()
 	if err != nil {
 		return err
