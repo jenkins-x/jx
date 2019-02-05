@@ -99,6 +99,7 @@ type PipelineSecrets struct {
 	MavenSettingsXML string `json:"MavenSettingsXML,omitempty"`
 }
 
+// KanikoSecret store the kaniko service account
 type KanikoSecret struct {
 	Data string `json:"Data,omitempty"`
 }
