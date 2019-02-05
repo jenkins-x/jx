@@ -46,20 +46,21 @@ func (service *SourceRepositoryService) CreateOrUpdateSourceRepository(name, org
 	})
 	if err != nil {
 		// lets see if it already exists
-		sr, err := repositories.Get(resourceName, metav1.GetOptions{})
-		if err != nil {
-		  return errors.Wrapf(err, "failed to get SourceRepository %s after failing to create a new one", resourceName)
+		sr, err2 := repositories.Get(resourceName, metav1.GetOptions{})
+		if err2 != nil {
+			return errors.Wrapf(err, "failed to create SourceRepository %s and cannot get it either: %s", resourceName, err2.Error())
 		}
 		copy := *sr
 		copy.Spec.Description = description
 		copy.Spec.Org = organisation
 		copy.Spec.Provider = providerURL
 		copy.Spec.Repo = name
-		if !reflect.DeepEqual(&copy.Spec, sr.Spec) {
-			_, err = repositories.Update(&copy)
-			if err != nil {
-				return errors.Wrapf(err, "failed to update SourceRepository %s", resourceName)
-			}
+		if reflect.DeepEqual(&copy.Spec, sr.Spec) {
+			return nil
+		}
+		_, err = repositories.Update(&copy)
+		if err != nil {
+			return errors.Wrapf(err, "failed to update SourceRepository %s", resourceName)
 		}
 	}
 	return nil

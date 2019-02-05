@@ -163,21 +163,23 @@ func GenerateBuildNumber(activities typev1.PipelineActivityInterface, pipelines 
 }
 
 func createSourceRepositoryIfMissing(jxClient versioned.Interface, ns string, activityKey *PipelineActivityKey) error {
+	repoName := activityKey.GitRepository()
+	owner := activityKey.GitOwner()
+	gitURL := activityKey.GitURL()
+
+	if repoName == "" || owner == "" || gitURL == "" {
+		return nil;
+	}
 	srs := NewSourceRepositoryService(jxClient, ns)
-
 	if srs == nil {
-		return fmt.Errorf("failed to create sourcerepository service")
+		return fmt.Errorf("failed to create sourcerepository resource")
 	}
 
-	resourceName := ToValidName(activityKey.GitInfo.Organisation + "-" + activityKey.Name)
-
+	resourceName := ToValidName(owner + "-" + repoName)
 	_, err := srs.GetSourceRepository(resourceName)
-
 	if err != nil {
-		log.Warnf("Creating missing sourcerepository object %s\n", resourceName)
-		err = srs.CreateOrUpdateSourceRepository(activityKey.Name, activityKey.GitInfo.Organisation, activityKey.GitInfo.URL)
+		err = srs.CreateOrUpdateSourceRepository(repoName, owner, gitURL)
 	}
-
 	return err
 }
 
@@ -223,6 +225,46 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 		}
 		return a, false, nil
 	}
+}
+
+// GitOwner returns the git owner (person / organisation) or blank string if it cannot be found
+func (k *PipelineActivityKey) GitOwner() string {
+	if k.GitInfo != nil {
+		return k.GitInfo.Organisation
+	}
+	pipeline := k.Pipeline
+	if pipeline == "" {
+		return ""
+	}
+	paths := strings.Split(pipeline, "/")
+	if len(paths) > 1 {
+		return paths[0]
+	}
+	return ""
+}
+
+// GitRepository returns the git repository name or blank string if it cannot be found
+func (k *PipelineActivityKey) GitRepository() string {
+	if k.GitInfo != nil {
+		return k.GitInfo.Name
+	}
+	pipeline := k.Pipeline
+	if pipeline == "" {
+		return ""
+	}
+	paths := strings.Split(pipeline, "/")
+	if len(paths) > 1 {
+		return paths[len(paths)-2]
+	}
+	return ""
+}
+
+// GitURL returns the git URL or blank string if it cannot be found
+func (k *PipelineActivityKey) GitURL() string {
+	if k.GitInfo != nil {
+		return k.GitInfo.URL
+	}
+	return ""
 }
 
 func updateActivity(k *PipelineActivityKey, activity *v1.PipelineActivity) {
@@ -278,7 +320,6 @@ func updateActivitySpec(k *PipelineActivityKey, spec *v1.PipelineActivitySpec) {
 		}
 	}
 }
-
 
 // GetOrCreatePreview gets or creates the Preview step for the key
 func (k *PromoteStepActivityKey) GetOrCreatePreview(jxClient versioned.Interface, ns string) (*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PreviewActivityStep, bool, error) {

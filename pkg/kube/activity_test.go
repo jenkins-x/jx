@@ -3,6 +3,7 @@ package kube_test
 import (
 	jxfake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/stretchr/testify/require"
 	k8s_v1 "k8s.io/api/core/v1"
 	"strconv"
 	"testing"
@@ -66,7 +67,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 
 	nsObj := &k8s_v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "jx-testing",
+			Name:      "jx-testing",
 			Namespace: "testing_ns",
 		},
 	}
@@ -85,12 +86,12 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 	jxClient := jxfake.NewSimpleClientset()
 
 	const (
-		expectedName        = "demo-2"
-		expectedPipeline    = "demo"
-		expectedBuild       = "2"
-		expectedEnvironment = "staging"
+		expectedName         = "demo-2"
+		expectedBuild        = "2"
+		expectedEnvironment  = "staging"
 		expectedOrganisation = "test-org"
 	)
+	expectedPipeline := expectedOrganisation + "/" + expectedName + "/master"
 
 	sourceRepoName := kube.ToValidName(expectedOrganisation + "-" + expectedName)
 
@@ -99,8 +100,9 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 		Pipeline: expectedPipeline,
 		Build:    expectedBuild,
 		GitInfo: &gits.GitRepository{
-			Name:			expectedName,
-			Organisation:   expectedOrganisation,
+			Name:         expectedName,
+			Organisation: expectedOrganisation,
+			URL:          "https://github.com/" + expectedOrganisation + "/" + expectedName,
 		},
 	}
 
@@ -114,8 +116,15 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 	}
 
 	// validate that we have the expected sourcerepository crd that should have been created
-	sr, err := jxClient.JenkinsV1().SourceRepositories(nsObj.Namespace).Get(sourceRepoName, metav1.GetOptions{})
-	assert.NotNil(t,sr, "Should have found a sourcerepo %s", sourceRepoName)
+	sourceRepositoryInterface := jxClient.JenkinsV1().SourceRepositories(nsObj.Namespace)
+	list, err := sourceRepositoryInterface.List(metav1.ListOptions{})
+	require.NoError(t, err, "listing SourceRepository resources")
+	t.Logf("found %d SourceRepository resources in namespace %s\n", len(list.Items), nsObj.Namespace)
+	for _, sr := range list.Items {
+		t.Logf("found SourceRepository %s with organisation %s and repo %s\n", sr.Name, sr.Spec.Org, sr.Spec.Repo)
+	}
+	sr, err := sourceRepositoryInterface.Get(sourceRepoName, metav1.GetOptions{})
+	assert.NotNil(t, sr, "Should have found a sourcerepo %s", sourceRepoName)
 
 	// lazy add a PromotePullRequest
 	promoteKey := kube.PromoteStepActivityKey{

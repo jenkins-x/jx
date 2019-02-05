@@ -40,6 +40,7 @@ func NewCmdStepPR(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	}
 
 	cmd.AddCommand(NewCmdStepPRComment(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStepPRLabels(f, in, out, errOut))
 	options.addCommonFlags(cmd)
 
 	return cmd
