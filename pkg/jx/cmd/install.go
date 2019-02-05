@@ -383,8 +383,7 @@ func (options *InstallOptions) checkFlags() error {
 		options.SkipAuthSecretsMerge = true
 		flags.DisableSetKubeContext = true
 		if !flags.Vault {
-			log.Warnf("GitOps mode requires vault. %s flag is automatically set\n", util.ColorInfo("vault"))
-			flags.Vault = true
+			log.Warnf("GitOps mode requires %s.\n", util.ColorInfo("vault"))
 		}
 		initFlags := &options.InitOptions.Flags
 		if !initFlags.NoTiller {
