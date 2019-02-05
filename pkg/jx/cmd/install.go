@@ -1980,6 +1980,13 @@ func (options *InstallOptions) saveClusterConfig() error {
 		if err != nil {
 			return errors.Wrap(err, "retrieving the current kube config")
 		}
+
+		if options.installValues != nil {
+			if options.installValues["jx-install-version"] == "" {
+				options.installValues["jx-install-version"] = version2.GetVersion()
+			}
+		}
+
 		if kubeConfig != nil {
 			kubeConfigContext := kube.CurrentContext(kubeConfig)
 			if kubeConfigContext != nil {
