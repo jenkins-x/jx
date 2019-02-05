@@ -321,7 +321,6 @@ func updateActivitySpec(k *PipelineActivityKey, spec *v1.PipelineActivitySpec) {
 	}
 }
 
-
 // GetOrCreatePreview gets or creates the Preview step for the key
 func (k *PromoteStepActivityKey) GetOrCreatePreview(jxClient versioned.Interface, ns string) (*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PreviewActivityStep, bool, error) {
 	a, _, err := k.GetOrCreate(jxClient, ns)
