@@ -48,6 +48,7 @@ type StepBDDFlags struct {
 	VersionsDir         string
 	ConfigFile          string
 	TestRepoGitCloneUrl string
+	SkipRepoGitClone    bool
 	TestGitBranch       string
 	TestGitPrNumber     string
 	JxBinary            string
@@ -103,6 +104,7 @@ func NewCmdStepBDD(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 	cmd.Flags().StringVarP(&options.Flags.GitOwner, "git-owner", "", "", "the git owner of new git repositories created by the tests")
 	cmd.Flags().StringVarP(&options.Flags.ReportsOutputDir, "reports-dir", "", "reports", "the directory used to copy in any generated report files")
 	cmd.Flags().StringVarP(&options.Flags.TestRepoGitCloneUrl, "test-git-repo", "r", "https://github.com/jenkins-x/bdd-jx.git", "the git repository to clone for the BDD tests")
+	cmd.Flags().BoolVarP(&options.Flags.SkipRepoGitClone, "skip-test-git-repo-clone", "", false, "Skip cloning the bdd test git repo")
 	cmd.Flags().StringVarP(&options.Flags.JxBinary, "binary", "", "jx", "the binary location of the 'jx' executable for creating clusters")
 	cmd.Flags().StringVarP(&options.Flags.TestGitBranch, "test-git-branch", "", "master", "the git repository branch to use for the BDD tests")
 	cmd.Flags().StringVarP(&options.Flags.TestGitPrNumber, "test-git-pr-number", "", "", "the Pull Request number to fetch from the repository for the BDD tests")
@@ -337,33 +339,35 @@ func (o *StepBDDOptions) runTests(gopath string) error {
 	}
 
 	testDir := filepath.Join(gopath, gitRepository.Organisation, gitRepository.Name)
+	if !o.Flags.SkipRepoGitClone {
 
-	log.Infof("cloning BDD test repository to: %s\n", util.ColorInfo(testDir))
+		log.Infof("cloning BDD test repository to: %s\n", util.ColorInfo(testDir))
 
-	err = os.MkdirAll(testDir, util.DefaultWritePermissions)
-	if err != nil {
-		return errors.Wrapf(err, "Failed to create dir %s", testDir)
-	}
-
-	log.Infof("Cloning git repository %s to dir %s\n", util.ColorInfo(gitURL), util.ColorInfo(testDir))
-	err = o.Git().CloneOrPull(gitURL, testDir)
-	if err != nil {
-		return errors.Wrapf(err, "Failed to clone repo %s to %s", gitURL, testDir)
-	}
-
-	branchName := o.Flags.TestGitBranch
-	pullRequestNumber := o.Flags.TestGitPrNumber
-	log.Infof("Checking out repository branch %s to dir %s\n", util.ColorInfo(branchName), util.ColorInfo(testDir))
-	if pullRequestNumber != "" {
-		err = o.Git().FetchBranch(testDir, "origin", fmt.Sprintf("pull/%s/head:%s", pullRequestNumber, branchName))
+		err = os.MkdirAll(testDir, util.DefaultWritePermissions)
 		if err != nil {
-			return errors.Wrapf(err, "Failed to fetch Pull request number %s", pullRequestNumber)
+			return errors.Wrapf(err, "Failed to create dir %s", testDir)
 		}
-	}
 
-	err = o.Git().Checkout(testDir, branchName)
-	if err != nil {
-		return errors.Wrapf(err, "Failed to checkout branch %s", branchName)
+		log.Infof("Cloning git repository %s to dir %s\n", util.ColorInfo(gitURL), util.ColorInfo(testDir))
+		err = o.Git().CloneOrPull(gitURL, testDir)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to clone repo %s to %s", gitURL, testDir)
+		}
+
+		branchName := o.Flags.TestGitBranch
+		pullRequestNumber := o.Flags.TestGitPrNumber
+		log.Infof("Checking out repository branch %s to dir %s\n", util.ColorInfo(branchName), util.ColorInfo(testDir))
+		if pullRequestNumber != "" {
+			err = o.Git().FetchBranch(testDir, "origin", fmt.Sprintf("pull/%s/head:%s", pullRequestNumber, branchName))
+			if err != nil {
+				return errors.Wrapf(err, "Failed to fetch Pull request number %s", pullRequestNumber)
+			}
+		}
+
+		err = o.Git().Checkout(testDir, branchName)
+		if err != nil {
+			return errors.Wrapf(err, "Failed to checkout branch %s", branchName)
+		}
 	}
 
 	env := map[string]string{
