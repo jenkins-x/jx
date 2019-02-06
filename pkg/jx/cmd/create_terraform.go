@@ -221,6 +221,8 @@ func (g *GKECluster) ParseTfVarsFile(path string) {
 // Flags for a cluster
 type Flags struct {
 	Cluster                     []string
+	ClusterName                 string // cannot be used in conjunction with Cluster
+	CloudProvider               string // cannot be used in conjunction with Cluster
 	OrganisationName            string
 	SkipLogin                   bool
 	ForkOrganisationGitRepo     string
@@ -323,7 +325,9 @@ func (options *CreateTerraformOptions) addFlags(cmd *cobra.Command, addSharedFla
 	if addSharedFlags {
 		cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
 	}
-	cmd.Flags().StringArrayVarP(&options.Flags.Cluster, "cluster", "c", []string{}, "Name and Kubernetes provider (gke, aks, eks) of clusters to be created in the form --cluster foo=gke")
+	cmd.Flags().StringArrayVarP(&options.Flags.Cluster, optionCluster, "c", []string{}, "Name and Kubernetes provider (gke, aks, eks) of clusters to be created in the form --cluster foo=gke")
+	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of a single cluster to create - cannot be used in conjunction with --"+optionCluster)
+	cmd.Flags().StringVarP(&options.Flags.CloudProvider, optionCloudProvider, "", "", "The cloud provider (eg gke, aws) - cannot be used in conjunction with --"+optionCluster)
 	cmd.Flags().BoolVarP(&options.Flags.SkipTerraformApply, "skip-terraform-apply", "", false, "Skip applying the generated Terraform plans")
 	cmd.Flags().BoolVarP(&options.Flags.IgnoreTerraformWarnings, "ignore-terraform-warnings", "", false, "Ignore any warnings about the Terraform plan being potentially destructive")
 	cmd.Flags().StringVarP(&options.Flags.JxEnvironment, "jx-environment", "", "dev", "The cluster name to install jx inside")
@@ -480,10 +484,13 @@ func (options *CreateTerraformOptions) ClusterDetailsWizard() error {
 
 // ValidateClusterDetails validates the options for a cluster
 func (options *CreateTerraformOptions) ValidateClusterDetails() error {
+	if len(options.Flags.Cluster) > 0 && (options.Flags.ClusterName != "" || options.Flags.CloudProvider != "") {
+		return fmt.Errorf("--%s cannot be used in conjunction with --%s or --%s", optionCluster, optionClusterName, optionCloudProvider)
+	}
 	for _, p := range options.Flags.Cluster {
 		pair := strings.Split(p, "=")
 		if len(pair) != 2 {
-			return errors.New("need to provide cluster values as --cluster name=provider, e.g. --cluster production=gke")
+			return fmt.Errorf("need to provide cluster values as --%s name=provider, e.g. --%s production=gke", optionCluster, optionCluster)
 		}
 		if !stringInValidProviders(pair[1]) {
 			return fmt.Errorf("invalid cluster provider type %s, must be one of %v", p, validTerraformClusterProviders)

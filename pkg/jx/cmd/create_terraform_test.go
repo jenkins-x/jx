@@ -47,3 +47,25 @@ func TestValidateClusterDetailsFail(t *testing.T) {
 	err := o.ValidateClusterDetails()
 	assert.Error(t, err)
 }
+
+func TestValidateClusterDetailsForInvalidParameterCombination(t *testing.T) {
+	t.Parallel()
+	o := cmd.CreateTerraformOptions{
+		Flags: cmd.Flags{
+			Cluster:     []string{"foo=jx-infra"},
+			ClusterName: "foo",
+		},
+	}
+	err := o.ValidateClusterDetails()
+	assert.EqualError(t, err, "--cluster cannot be used in conjunction with --cluster-name or --cloud-provider")
+
+	o = cmd.CreateTerraformOptions{
+		Flags: cmd.Flags{
+			Cluster:       []string{"foo=jx-infra"},
+			CloudProvider: "gke",
+		},
+	}
+	err = o.ValidateClusterDetails()
+	assert.EqualError(t, err, "--cluster cannot be used in conjunction with --cluster-name or --cloud-provider")
+
+}
