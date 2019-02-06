@@ -415,7 +415,7 @@ func (o *InitOptions) initHelm() error {
 		}
 	}
 
-	err = o.Helm().AddRepo("jenkins-x", helm.DefaultChartMuseumURL, "", "")
+	err = o.Helm().AddRepo("jenkins-x", kube.DefaultChartMuseumURL, "", "")
 	if err != nil {
 		return err
 	}

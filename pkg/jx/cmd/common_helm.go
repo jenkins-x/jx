@@ -432,7 +432,7 @@ func (o *CommonOptions) helmInitRecursiveDependencyBuild(dir string, chartRepos 
 func (o *CommonOptions) defaultReleaseCharts() map[string]string {
 	releasesURL := o.releaseChartMuseumUrl()
 	answer := map[string]string{
-		"jenkins-x": helm.DefaultChartMuseumURL,
+		"jenkins-x": kube.DefaultChartMuseumURL,
 	}
 	if releasesURL != "" {
 		answer["releases"] = releasesURL

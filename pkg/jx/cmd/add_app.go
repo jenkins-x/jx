@@ -139,7 +139,7 @@ func (o *AddAppOptions) Run() error {
 		o.Repo = o.DevEnv.Spec.TeamSettings.AppsRepository
 	}
 	if o.Repo == "" {
-		o.Repo = helm.DefaultChartMuseumURL
+		o.Repo = kube.DefaultChartMuseumURL
 	}
 
 	var vaultBasepath string

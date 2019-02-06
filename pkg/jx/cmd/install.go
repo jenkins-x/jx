@@ -566,7 +566,7 @@ func (options *InstallOptions) Run() error {
 	log.Infof("Installing jenkins-x-platform version: %s\n", util.ColorInfo(version))
 
 	if options.Flags.GitOpsMode {
-		err := options.installPlatformGitOpsMode(gitOpsEnvDir, gitOpsDir, configStore, helm.DefaultChartMuseumURL,
+		err := options.installPlatformGitOpsMode(gitOpsEnvDir, gitOpsDir, configStore, kube.DefaultChartMuseumURL,
 			JenkinsXPlatformChartName, ns, version, valuesFiles, secretsFiles)
 		if err != nil {
 			return errors.Wrap(err, "installing the Jenkins X platform in GitOps mode")
@@ -840,7 +840,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 		{
 			Name:       JenkinsXPlatformChartName,
 			Version:    version,
-			Repository: helm.DefaultChartMuseumURL,
+			Repository: kube.DefaultChartMuseumURL,
 		},
 	}
 	requirements := &helm.Requirements{
@@ -967,7 +967,7 @@ func (options *InstallOptions) configureHelm(client kubernetes.Interface, namesp
 }
 
 func (options *InstallOptions) configureHelmRepo() error {
-	err := options.addHelmBinaryRepoIfMissing(helm.DefaultChartMuseumURL, "jenkins-x", "", "")
+	err := options.addHelmBinaryRepoIfMissing(kube.DefaultChartMuseumURL, "jenkins-x", "", "")
 	if err != nil {
 		return errors.Wrap(err, "failed to add the jenkinx-x helm repo")
 	}

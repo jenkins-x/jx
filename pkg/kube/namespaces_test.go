@@ -5,7 +5,6 @@ import (
 
 	jenkinsio_v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	versiond_mocks "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
-	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +31,7 @@ func TestEnsureDevEnvironmentSetup(t *testing.T) {
 				AskOnCreate:         false,
 				QuickstartLocations: kube.DefaultQuickstartLocations,
 				PromotionEngine:     jenkinsio_v1.PromotionEngineJenkins,
-				AppsRepository:      helm.DefaultChartMuseumURL,
+				AppsRepository:      kube.DefaultChartMuseumURL,
 			},
 		},
 	}

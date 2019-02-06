@@ -144,7 +144,7 @@ func TestInstallGitOps(t *testing.T) {
 	require.Equal(t, 1, len(req.Dependencies), "Number of dependencies in file %s", reqFile)
 	dep0 := req.Dependencies[0]
 	require.NotNil(t, dep0, "first dependency in file %s", reqFile)
-	assert.Equal(t, helm.DefaultChartMuseumURL, dep0.Repository, "requirement.dependency[0].Repository")
+	assert.Equal(t, kube.DefaultChartMuseumURL, dep0.Repository, "requirement.dependency[0].Repository")
 	assert.Equal(t, cmd.JenkinsXPlatformChartName, dep0.Name, "requirement.dependency[0].Name")
 	assert.NotEmpty(t, dep0.Version, "requirement.dependency[0].Version")
 

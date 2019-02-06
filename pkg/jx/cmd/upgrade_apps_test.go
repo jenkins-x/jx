@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -100,7 +101,7 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 	}
 	o.Args = []string{name}
 
-	helm_test.StubFetchChart(name, "", helm.DefaultChartMuseumURL, &chart.Chart{
+	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
 		Metadata: &chart.Metadata{
 			Name:    name,
 			Version: newVersion.String(),
@@ -159,13 +160,13 @@ func TestUpgradeAllAppsForGitOps(t *testing.T) {
 		AddOptions: cmd.AddOptions{
 			CommonOptions: *testOptions.CommonOptions,
 		},
-		Repo:                 helm.DefaultChartMuseumURL,
+		Repo:                 kube.DefaultChartMuseumURL,
 		GitOps:               true,
 		DevEnv:               testOptions.DevEnv,
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}
 
-	helm_test.StubFetchChart(name1, "", helm.DefaultChartMuseumURL, &chart.Chart{
+	helm_test.StubFetchChart(name1, "", kube.DefaultChartMuseumURL, &chart.Chart{
 		Metadata: &chart.Metadata{
 			Name:    name1,
 			Version: newVersion1.String(),
@@ -173,7 +174,7 @@ func TestUpgradeAllAppsForGitOps(t *testing.T) {
 	}, testOptions.MockHelmer)
 
 	helm_test.StubFetchChart(name2, "",
-		helm.DefaultChartMuseumURL, &chart.Chart{
+		kube.DefaultChartMuseumURL, &chart.Chart{
 			Metadata: &chart.Metadata{
 				Name:    name2,
 				Version: newVersion2.String(),
