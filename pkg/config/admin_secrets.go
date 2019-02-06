@@ -183,10 +183,10 @@ func (s *AdminSecretsService) NewMavenSettingsXML() error {
 	return nil
 }
 
-func (s *AdminSecretsService) NewAdminSecretsConfigFromSecret(decryptedSecrets string) error {
+func (s *AdminSecretsService) NewAdminSecretsConfigFromSecret(decryptedSecretsFile string) error {
 	a := AdminSecretsConfig{}
 
-	data, err := ioutil.ReadFile(decryptedSecrets)
+	data, err := ioutil.ReadFile(decryptedSecretsFile)
 	if err != nil {
 		return errors.Wrap(err, "unable to read file")
 	}
