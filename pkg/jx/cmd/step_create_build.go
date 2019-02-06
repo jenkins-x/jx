@@ -16,10 +16,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
+	buildapi "github.com/knative/build/pkg/apis/build/v1alpha1"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	buildapi "github.com/knative/build/pkg/apis/build/v1alpha1"
 )
 
 var (

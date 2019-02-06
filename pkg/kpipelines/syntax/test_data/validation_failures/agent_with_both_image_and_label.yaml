@@ -1,0 +1,10 @@
+agent:
+  image: some-image
+  label: some-label
+stages:
+  - name: A Working Stage
+    steps:
+      - command: echo
+        args:
+          - hello
+          - world

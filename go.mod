@@ -66,6 +66,7 @@ require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/protobuf v1.2.0
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
+	github.com/google/go-cmp v0.2.0
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135 // indirect
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
@@ -95,8 +96,8 @@ require (
 	github.com/kevinburke/ssh_config v0.0.0-20180317175531-9fc7bb800b55 // indirect
 	github.com/keybase/go-crypto v0.0.0-20181127160227-255a5089e85a // indirect
 	github.com/knative/build v0.3.0
-	github.com/knative/build-pipeline v0.0.0-20190127035435-3b5fe38dbd3d
-	github.com/knative/pkg v0.0.0-20190125193334-994b801b03ef // indirect
+	github.com/knative/build-pipeline v0.0.0-20190203191138-7b5938be3a54
+	github.com/knative/pkg v0.0.0-20190125193334-994b801b03ef
 	github.com/knq/snaker v0.0.0-20180306023312-d9ad1e7f342a // indirect
 	github.com/kr/pty v1.1.2 // indirect
 	github.com/lusis/go-slackbot v0.0.0-20180109053408-401027ccfef5 // indirect

@@ -1,0 +1,7 @@
+stages:
+  - name: A Working Stage
+    steps:
+      - command: echo
+        args:
+          - hello
+          - world

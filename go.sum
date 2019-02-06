@@ -466,6 +466,10 @@ github.com/knative/build-pipeline v0.0.0-20190125190534-405702f93a25 h1:/pdYwA3T
 github.com/knative/build-pipeline v0.0.0-20190125190534-405702f93a25/go.mod h1:mfaenlZ8/tw23y+Pck3qWpCVNTPMiFSZ0uqQkscBEAI=
 github.com/knative/build-pipeline v0.0.0-20190127035435-3b5fe38dbd3d h1:Oprlt+k5bg1iP3Qgj8whGlebonRUeuCRUeoNxzWuVv4=
 github.com/knative/build-pipeline v0.0.0-20190127035435-3b5fe38dbd3d/go.mod h1:mfaenlZ8/tw23y+Pck3qWpCVNTPMiFSZ0uqQkscBEAI=
+github.com/knative/build-pipeline v0.0.0-20190131183337-3cd318b51868 h1:L2PJOvstlcqXfhUFaIeIDO1cscumyabppnpymFn5wrk=
+github.com/knative/build-pipeline v0.0.0-20190131183337-3cd318b51868/go.mod h1:mfaenlZ8/tw23y+Pck3qWpCVNTPMiFSZ0uqQkscBEAI=
+github.com/knative/build-pipeline v0.0.0-20190203191138-7b5938be3a54 h1:gnbk07EMURuv6FAIyc7Ig5DI9bUfdxz8wI3rZCKxkMs=
+github.com/knative/build-pipeline v0.0.0-20190203191138-7b5938be3a54/go.mod h1:mfaenlZ8/tw23y+Pck3qWpCVNTPMiFSZ0uqQkscBEAI=
 github.com/knative/caching v0.0.0-20180907165633-f0d7bb60956f/go.mod h1:D6ynAUa79yFRVWCEogSqhRRNi2SooyDBf1ucp02CFKg=
 github.com/knative/pkg v0.0.0-20181205230426-0e41760cea1d/go.mod h1:7Ijfhw7rfB+H9VtosIsDYvZQ+qYTz7auK3fHW/5z4ww=
 github.com/knative/pkg v0.0.0-20190118011331-076ebf4e5675/go.mod h1:7Ijfhw7rfB+H9VtosIsDYvZQ+qYTz7auK3fHW/5z4ww=
@@ -814,6 +818,7 @@ google.golang.org/api v0.0.0-20181017004218-3f6e8463aa1d h1:oaIeWl/4IkZN1PMjqNOf
 google.golang.org/api v0.0.0-20181017004218-3f6e8463aa1d/go.mod h1:4mhQ8q/RsB7i+udVvVy5NUi08OU8ZlA0gRVgrF7VFY0=
 google.golang.org/api v0.0.0-20181021000519-a2651947f503 h1:UK7/bFlIoP9xre0fwSiXFaZZSpzmaen5MKp1sppNJ9U=
 google.golang.org/api v0.0.0-20181021000519-a2651947f503/go.mod h1:4mhQ8q/RsB7i+udVvVy5NUi08OU8ZlA0gRVgrF7VFY0=
+google.golang.org/api v0.1.0 h1:K6z2u68e86TPdSdefXdzvXgR1zEMa+459vBSfWYAZkI=
 google.golang.org/appengine v1.1.0/go.mod h1:EbEs0AVv82hx2wNQdGPgUI5lhzA/G0D9YwlJXL52JkM=
 google.golang.org/appengine v1.2.0/go.mod h1:xpcJRLb0r/rnEns0DIKYYv+WjYCduHsrkT7/EB5XEv4=
 google.golang.org/appengine v1.3.0 h1:FBSsiFRMz3LBeXIomRnVzrQwSDj4ibvcRexLG0LZGQk=

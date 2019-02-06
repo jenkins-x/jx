@@ -1,0 +1,10 @@
+apiVersion: baaaad
+agent:
+  image: some-image
+stages:
+  - name: A Working Stage
+    steps:
+      - command: echo
+        args:
+          - hello
+          - world

@@ -3,6 +3,7 @@ package jenkinsfile
 import (
 	"bytes"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kpipelines/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -65,12 +66,13 @@ type PipelineStep struct {
 
 // PipelineLifecycles defines the steps of a lifecycle section
 type PipelineLifecycles struct {
-	Setup      *PipelineLifecycle `yaml:"setup,omitempty"`
-	SetVersion *PipelineLifecycle `yaml:"setVersion,omitempty"`
-	PreBuild   *PipelineLifecycle `yaml:"preBuild,omitempty"`
-	Build      *PipelineLifecycle `yaml:"build,omitempty"`
-	PostBuild  *PipelineLifecycle `yaml:"postBuild,omitempty"`
-	Promote    *PipelineLifecycle `yaml:"promote,omitempty"`
+	Setup      *PipelineLifecycle        `yaml:"setup,omitempty"`
+	SetVersion *PipelineLifecycle        `yaml:"setVersion,omitempty"`
+	PreBuild   *PipelineLifecycle        `yaml:"preBuild,omitempty"`
+	Build      *PipelineLifecycle        `yaml:"build,omitempty"`
+	PostBuild  *PipelineLifecycle        `yaml:"postBuild,omitempty"`
+	Promote    *PipelineLifecycle        `yaml:"promote,omitempty"`
+	Pipeline   *syntax.PipelineStructure `yaml:"pipeline,omitempty"`
 }
 
 // PipelineLifecycle defines the steps of a lifecycle section
@@ -554,6 +556,8 @@ func ExtendPipelines(parent *PipelineLifecycles, base *PipelineLifecycles) *Pipe
 		Build:      ExtendLifecycle(parent.Build, base.Build),
 		PostBuild:  ExtendLifecycle(parent.PostBuild, base.PostBuild),
 		Promote:    ExtendLifecycle(parent.Promote, base.Promote),
+		// TODO: Actually do extension for Pipeline rather than just copying it wholesale
+		Pipeline: parent.Pipeline,
 	}
 }
 
@@ -604,7 +608,7 @@ func (a *CreateJenkinsfileArguments) GenerateJenkinsfile(resolver ImportFileReso
 	if outDir != "" {
 		err = os.MkdirAll(outDir, util.DefaultWritePermissions)
 		if err != nil {
-			return errors.Wrapf(err, "failed to make directory %s when creating Jenkinsfile %s", outDir, outFile)
+			return errors.Wrapf(err, "failed to make directory %s when creating PipelineStructure %s", outDir, outFile)
 		}
 	}
 	file, err := os.Create(outFile)
