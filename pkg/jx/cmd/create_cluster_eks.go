@@ -30,6 +30,7 @@ type CreateClusterEKSFlags struct {
 	NodeCount           int
 	NodesMin            int
 	NodesMax            int
+	NodeVolumeSize      int
 	Region              string
 	Zones               string
 	Profile             string
@@ -83,6 +84,7 @@ func NewCmdCreateClusterEKS(f Factory, in terminal.FileReader, out terminal.File
 	cmd.Flags().IntVarP(&options.Flags.NodeCount, optionNodes, "o", -1, "number of nodes")
 	cmd.Flags().IntVarP(&options.Flags.NodesMin, "nodes-min", "", -1, "minimum number of nodes")
 	cmd.Flags().IntVarP(&options.Flags.NodesMax, "nodes-max", "", -1, "maximum number of nodes")
+	cmd.Flags().IntVarP(&options.Flags.NodeVolumeSize, "node-volume-size", "", 20, "node volume size in GB")
 	cmd.Flags().IntVarP(&options.Flags.Verbose, "eksctl-log-level", "", -1, "set log level, use 0 to silence, 4 for debugging and 5 for debugging with AWS debug logging (default 3)")
 	cmd.Flags().DurationVarP(&options.Flags.AWSOperationTimeout, "aws-api-timeout", "", 20*time.Minute, "Duration of AWS API timeout")
 	cmd.Flags().StringVarP(&options.Flags.Region, "region", "r", "", "The region to use. Default: us-west-2")
@@ -174,6 +176,9 @@ cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
 	}
 	if flags.NodesMax >= 0 {
 		args = append(args, "--nodes-max", strconv.Itoa(flags.NodesMax))
+	}
+	if flags.NodeVolumeSize >= 0 {
+		args = append(args, "--node-volume-size", strconv.Itoa(flags.NodeVolumeSize))
 	}
 	if flags.Verbose >= 0 {
 		args = append(args, "--verbose", strconv.Itoa(flags.Verbose))
