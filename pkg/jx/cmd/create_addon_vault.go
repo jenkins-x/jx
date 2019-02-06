@@ -17,9 +17,8 @@ import (
 
 const (
 	defaultVaultNamesapce       = "jx"
-	jxRepoName                  = "jenkinsxio"
-	jxRepoURL                   = "https://chartmuseum.jx.cd.jenkins-x.io"
-	defaultVaultOperatorVersion = "0.2.1"
+	jxRepoName                  = "jenkins-x"
+	defaultVaultOperatorVersion = ""
 )
 
 var (
@@ -86,9 +85,9 @@ func InstallVaultOperator(o *CommonOptions, namespace string) error {
 		return errors.Wrap(err, "checking if helm is installed")
 	}
 
-	err = o.addHelmRepoIfMissing(jxRepoURL, jxRepoName, "", "")
+	err = o.addHelmRepoIfMissing(kube.DefaultChartMuseumURL, jxRepoName, "", "")
 	if err != nil {
-		return errors.Wrapf(err, "adding '%s' helm charts repository", jxRepoURL)
+		return errors.Wrapf(err, "adding '%s' helm charts repository", kube.DefaultChartMuseumURL)
 	}
 
 	releaseName := o.ReleaseName
