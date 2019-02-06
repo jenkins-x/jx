@@ -19,8 +19,6 @@ const (
 	CertManagerReleaseName = "cert-manager"
 	// CertManagerChart name of the cert-manager chart
 	CertManagerChart = "stable/cert-manager"
-	// CertManagerChartVersion indicates the version of the chart manager chart
-	CertManagerChartVersion = "v0.6.0"
 	// CertManagerCRDsFile files which contains the cert-manager CRDs
 	CertManagerCRDsFile = "https://raw.githubusercontent.com/jetstack/cert-manager/release-0.6/deploy/manifests/00-crds.yaml"
 
