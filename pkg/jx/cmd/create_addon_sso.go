@@ -22,13 +22,12 @@ import (
 const (
 	defaultSSONamesapce         = "sso"
 	defaultSSOReleaseNamePrefix = "jx-sso"
-	repoName                    = "jenkinsxio"
-	repoURL                     = "https://chartmuseum.jx.cd.jenkins-x.io"
+	repoName                    = "jenkins-x"
 	dexServiceName              = "dex"
 	operatorServiceName         = "operator"
 	githubNewOAuthAppURL        = "https://github.com/settings/applications/new"
-	defaultDexVersion           = "2.13.4"
-	defaultOperatorVersion      = "1.2.5"
+	defaultDexVersion           = ""
+	defaultOperatorVersion      = ""
 )
 
 var (
@@ -137,7 +136,7 @@ func (o *CreateAddonSSOOptions) Run() error {
 		return errors.Wrap(err, "checking if helm is installed")
 	}
 
-	err = o.addHelmRepoIfMissing(repoURL, repoName, "", "")
+	err = o.addHelmRepoIfMissing(kube.DefaultChartMuseumURL, repoName, "", "")
 	if err != nil {
 		return errors.Wrap(err, "adding dex chart helm repository")
 	}

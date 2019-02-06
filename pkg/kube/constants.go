@@ -57,13 +57,13 @@ const (
 	DefaultBuildTemplatesReleaseName = "jx-build-templates"
 
 	// Charts Single Sign-On addon
-	ChartSsoOperator              = "jenkinsxio/sso-operator"
+	ChartSsoOperator              = "jenkins-x/sso-operator"
 	DefaultSsoOperatorReleaseName = "jx-sso-operator"
-	ChartSsoDex                   = "jenkinsxio/dex"
+	ChartSsoDex                   = "jenkins-x/dex"
 	DefaultSsoDexReleaseName      = "jx-sso-dex"
 
 	// ChartVaultOperator the default chart for vault opeator
-	ChartVaultOperator              = "jenkinsxio/vault-operator"
+	ChartVaultOperator              = "jenkins-x/vault-operator"
 	DefaultVaultOperatorReleaseName = "vault-operator"
 
 	// ServiceJenkins is the name of the Jenkins Service
