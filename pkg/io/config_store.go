@@ -15,11 +15,11 @@ type ConfigStore interface {
 	// Write saves some secret data to the store
 	Write(name string, bytes []byte) error
 
-	// WriteObject writes a named object to the store
-	WriteObject(name string, object interface{}) error
-
 	// Read reads some secret data from the store
 	Read(name string) ([]byte, error)
+
+	// WriteObject writes a named object to the store
+	WriteObject(name string, object interface{}) error
 
 	// ReadObject reads an object from the store
 	ReadObject(name string, object interface{}) error
@@ -28,12 +28,12 @@ type ConfigStore interface {
 type fileStore struct {
 }
 
-// NewFileStore creates a ConfigStore that stores its data to the filesystem in YAML
+// NewFileStore creates a ConfigStore that stores its data to the filesystem
 func NewFileStore() ConfigStore {
 	return &fileStore{}
 }
 
-// Write writes a secret to the filesystem in YAML format
+// Write writes a secret to the filesystem
 func (f *fileStore) Write(fileName string, bytes []byte) error {
 	return ioutil.WriteFile(fileName, bytes, util.DefaultWritePermissions)
 }
@@ -107,19 +107,24 @@ func (v *vaultStore) Read(name string) ([]byte, error) {
 
 // WriteObject writes a generic named object to vault
 func (v *vaultStore) WriteObject(name string, object interface{}) error {
-	_, err := v.client.WriteObject(v.secretPath(name), object)
+	y, err := yaml.Marshal(object)
 	if err != nil {
-		return errors.Wrapf(err, "undable to write the '%s' secret object to vault", name)
+		return errors.Wrapf(err, "unable to marshal object to yaml: %v", object)
+	}
+	_, err = v.client.WriteYaml(v.secretPath(name), string(y))
+	if err != nil {
+		return errors.Wrapf(err, "writing the %q secret in YAMl format to vault", name)
 	}
 	return nil
 }
 
+// ReadObject reads a generic named object from vault
 func (v *vaultStore) ReadObject(name string, object interface{}) error {
-	err := v.client.ReadObject(v.secretPath(name), object)
+	data, err := v.client.ReadYaml(v.secretPath(name))
 	if err != nil {
-		return errors.Wrapf(err, "undable to read the '%s' secret object from vault", name)
+		return errors.Wrapf(err, "reading the %q secret in YAMl fromat from vault", name)
 	}
-	return nil
+	return yaml.Unmarshal([]byte(data), object)
 }
 
 func (v *vaultStore) secretPath(name string) string {

@@ -220,7 +220,7 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 	mockGitProvider := gits_test.NewMockGitProvider()
 	When(factory.CreateGitProvider(AnyString(), //gitURL
 		AnyString(), //message
-		cmd_matchers.AnyAuthAuthConfigService(),
+		cmd_matchers.AnyAuthConfigService(),
 		AnyString(), //gitKind
 		AnyBool(),   //batchMode,
 		cmd_matchers.AnyGitsGitter(),

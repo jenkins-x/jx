@@ -59,7 +59,7 @@ func TestCreateEnvRun(t *testing.T) {
 	When(factory.CreateGitProvider(
 		AnyString(),
 		AnyString(),
-		cmd_mock_matchers.AnyAuthAuthConfigService(),
+		cmd_mock_matchers.AnyAuthConfigService(),
 		AnyString(),
 		AnyBool(),
 		cmd_mock_matchers.AnyGitsGitter(),

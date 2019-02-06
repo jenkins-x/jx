@@ -116,6 +116,11 @@ func JenkinsApiURL(url string) string {
 	return util.UrlJoin(url, "/api")
 }
 
+// JenkinsLoginURL returns the Jenkins login URL
+func JenkinsLoginURL(url string) string {
+	return util.UrlJoin(url, "/login")
+}
+
 func EditUserAuth(url string, configService jenkauth.ConfigService, config *jenkauth.AuthConfig, auth *jenkauth.UserAuth, tokenUrl string, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (jenkauth.UserAuth, error) {
 
 	log.Infof("\nTo be able to connect to the Jenkins server we need a username and API Token\n\n")

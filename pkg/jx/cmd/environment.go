@@ -117,7 +117,7 @@ func (o *EnvironmentOptions) Run() error {
 		newConfig := *config
 		ctx := kube.CurrentContext(config)
 		if ctx == nil {
-			return fmt.Errorf(noContextDefinedError)
+			return errNoContextDefined
 		}
 		if ctx.Namespace == ns {
 			return nil

@@ -183,6 +183,9 @@ func SaasGitKind(gitServiceUrl string) string {
 	case "http://fake.git", FakeGitURL:
 		return KindGitFake
 	default:
+		if strings.HasPrefix(gitServiceUrl, "https://github") {
+			return KindGitHub
+		}
 		return ""
 	}
 }

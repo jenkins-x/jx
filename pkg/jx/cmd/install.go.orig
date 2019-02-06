@@ -3,8 +3,8 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	version2 "github.com/jenkins-x/jx/pkg/version"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -12,10 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
-	version2 "github.com/jenkins-x/jx/pkg/version"
-
-	"github.com/ghodss/yaml"
+	"gopkg.in/yaml.v2"
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
@@ -75,36 +72,34 @@ type InstallOptions struct {
 
 // InstallFlags flags for the install command
 type InstallFlags struct {
-	InstallOnly              bool
 	Domain                   string
 	ExposeControllerPathMode string
 	DockerRegistry           string
 	Provider                 string
+	CloudEnvRepository       string
 	VersionsRepository       string
-	Version                  string
 	LocalHelmRepoName        string
 	Namespace                string
-	CloudEnvRepository       string
 	NoDefaultEnvironments    bool
+	HelmTLS                  bool
 	DefaultEnvironmentPrefix string
 	LocalCloudEnvironment    bool
-	EnvironmentGitOwner      string
 	Timeout                  string
-	HelmTLS                  bool
 	RegisterLocalHelmRepo    bool
 	CleanupTempFiles         bool
+	InstallOnly              bool
+	EnvironmentGitOwner      string
+	Version                  string
 	Prow                     bool
 	DisableSetKubeContext    bool
+	GitOpsMode               bool
 	Dir                      string
+	NoGitOpsEnvApply         bool
+	NoGitOpsEnvRepo          bool
+	NoGitOpsVault            bool
 	Vault                    bool
 	KnativePipeline          bool
 	BuildPackName            string
-	Kaniko                   bool
-	GitOpsMode               bool
-	NoGitOpsEnvApply         bool
-	NoGitOpsEnvRepo          bool
-	NoGitOpsEnvSetup         bool
-	NoGitOpsVault            bool
 }
 
 // Secrets struct for secrets
@@ -360,10 +355,8 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvApply, "no-gitops-env-apply", "", false, "When using GitOps to create the source code for the development environment and installation, don't run 'jx step env apply' to perform the install")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvRepo, "no-gitops-env-repo", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a git repository for the source code")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsVault, "no-gitops-vault", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a vault")
-	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvSetup, "no-gitops-env-seup", "", false, "When using GitOps to install the development environment this falg skips the post-install setup")
 	cmd.Flags().BoolVarP(&flags.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during installation (supported only for GKE)")
 	cmd.Flags().StringVarP(&flags.BuildPackName, "buildpack", "", "", "The name of the build pack to use for the Team")
-	cmd.Flags().BoolVarP(&flags.Kaniko, "kaniko", "", false, "Use Kaniko for building docker images")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
@@ -377,34 +370,8 @@ func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", false, "Ignores default cloud-environment-repo and uses current directory ")
 }
 
-func (options *InstallOptions) checkFlags() error {
-	flags := &options.Flags
-
-	// check some flags combination for GitOps mode
-	if flags.GitOpsMode {
-		options.SkipAuthSecretsMerge = true
-		flags.DisableSetKubeContext = true
-		if !flags.Vault {
-			log.Warnf("GitOps mode requires %s.\n", util.ColorInfo("vault"))
-		}
-		initFlags := &options.InitOptions.Flags
-		if !initFlags.NoTiller {
-			log.Warnf("GitOps mode requires helm without tiller server. %s flag is automatically set\n", util.ColorInfo("no-tiller"))
-			initFlags.NoTiller = true
-		}
-	}
-
-	return nil
-}
-
 // Run implements this command
 func (options *InstallOptions) Run() error {
-	// Check the provided flags before starting any installation
-	err := options.checkFlags()
-	if err != nil {
-		return errors.Wrap(err, "checking the provided flags")
-	}
-
 	configStore := configio.NewFileStore()
 
 	// Default to verbose mode to get more information during the install
@@ -515,11 +482,6 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "selecting the Jenkins installation type")
 	}
 
-	err = options.configureKaniko()
-	if err != nil {
-		return errors.Wrap(err, "unable to generate the Kaniko configuration")
-	}
-
 	err = options.configureHelmValues(ns)
 	if err != nil {
 		return errors.Wrap(err, "configuring helm values")
@@ -620,7 +582,7 @@ func (options *InstallOptions) Run() error {
 	err = options.createEnvironments(ns)
 	if err != nil {
 		if strings.Contains(err.Error(), "com.atlassian.bitbucket.project.NoSuchProjectException") {
-			log.Infof("\nProject %s cannot be found. If you are using BitBucket Server, please use "+
+			log.Infof("\nProject %s cannot be found. If you are using BitBucket Server, please use " +
 				"a project code instead of a project name (for example 'MYPR' instead of 'myproject'). \n",
 				util.ColorInfo(options.CreateEnvOptions.GitRepositoryOptions.Owner))
 			return nil
@@ -1116,7 +1078,7 @@ func (options *InstallOptions) configureGitAuth() error {
 
 	authConfigSvc, err := options.CreateGitAuthConfigService()
 	if err != nil {
-		return errors.Wrap(err, "creating the git auth config service")
+		return errors.Wrap(err, "failed to create the git auth config service")
 	}
 
 	authConfig := authConfigSvc.Config()
@@ -1403,6 +1365,10 @@ func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigSt
 	gitOpsDir := ""
 	gitOpsEnvDir := ""
 	if options.Flags.GitOpsMode {
+		// lets disable loading of Secrets from the jx namespace
+		options.SkipAuthSecretsMerge = true
+		options.Flags.DisableSetKubeContext = true
+
 		var err error
 		if options.Flags.Dir == "" {
 			options.Flags.Dir, err = os.Getwd()
@@ -1579,7 +1545,7 @@ func (options *InstallOptions) applyGitOpsDevEnvironmentConfig(gitOpsEnvDir stri
 }
 
 func (options *InstallOptions) setupGitOpsPostApply(ns string) error {
-	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsEnvSetup {
+	if options.Flags.GitOpsMode {
 		if !options.Flags.Prow {
 			err := options.configureJenkins(ns)
 			if err != nil {
@@ -1913,36 +1879,6 @@ func (options *InstallOptions) getAdminSecrets(configStore configio.ConfigStore,
 	return adminSecretsFileName, adminSecrets, nil
 }
 
-func (options *InstallOptions) configureKaniko() error {
-	if options.Flags.Kaniko {
-		if options.Flags.Provider != GKE {
-			return fmt.Errorf("Kaniko is not supported for %s provider", options.Flags.Provider)
-		}
-
-		serviceAccountDir, err := ioutil.TempDir("", "gke")
-		if err != nil {
-			return errors.Wrap(err, "creating a temporary folder where the service account will be stored")
-		}
-		defer os.RemoveAll(serviceAccountDir)
-
-		serviceAccountName := fmt.Sprintf("jx-%s-kaniko", options.installValues[kube.ClusterName])
-
-		log.Infof("Configuring Kaniko service account %s\n", util.ColorInfo(serviceAccountName))
-		serviceAccountPath, err := gke.GetOrCreateServiceAccount(serviceAccountName, options.installValues[kube.ProjectID], serviceAccountDir, gke.KanikoServiceAccountRoles)
-		if err != nil {
-			return errors.Wrap(err, "creating the service account")
-		}
-
-		serviceAccount, err := ioutil.ReadFile(serviceAccountPath)
-		if err != nil {
-			return errors.Wrapf(err, "reading the service account from file '%s'", serviceAccountPath)
-		}
-
-		options.AdminSecretsService.Flags.KanikoSecret = string(serviceAccount)
-	}
-	return nil
-}
-
 func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string, ic *kube.IngressConfig) error {
 	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
 		if options.Flags.Provider != GKE {
@@ -1989,11 +1925,6 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			}
 			log.Infof("System vault created named %s in namespace %s.\n",
 				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(namespace))
-		}
-
-		err = options.SetSecretsLocation(secrets.VaultLocationKind, false)
-		if err != nil {
-			return errors.Wrap(err, "setting the secrets location as vault")
 		}
 	}
 	return nil
@@ -2065,6 +1996,48 @@ func (options *InstallOptions) saveIngressConfig() (*kube.IngressConfig, error) 
 }
 
 func (options *InstallOptions) saveClusterConfig() error {
+<<<<<<< HEAD
+	if !options.Flags.DisableSetKubeContext {
+		jxInstallConfig := &kube.JXInstallConfig{
+			KubeProvider: options.Flags.Provider,
+		}
+		kubeConfig, _, err := options.Kube().LoadConfig()
+		if err != nil {
+			return errors.Wrap(err, "retrieving the current kube config")
+		}
+
+		if options.installValues != nil {
+			if options.installValues["jx-install-version"] == "" {
+				options.installValues["jx-install-version"] = version2.GetVersion()
+			}
+		}
+
+		if kubeConfig != nil {
+			kubeConfigContext := kube.CurrentContext(kubeConfig)
+			if kubeConfigContext != nil {
+				server := kube.Server(kubeConfig, kubeConfigContext)
+				certificateAuthorityData := kube.CertificateAuthorityData(kubeConfig, kubeConfigContext)
+				jxInstallConfig.Server = server
+				jxInstallConfig.CA = certificateAuthorityData
+			}
+||||||| merged common ancestors
+	if !options.Flags.DisableSetKubeContext {
+		jxInstallConfig := &kube.JXInstallConfig{
+			KubeProvider: options.Flags.Provider,
+		}
+		kubeConfig, _, err := options.Kube().LoadConfig()
+		if err != nil {
+			return errors.Wrap(err, "retrieving the current kube config")
+		}
+		if kubeConfig != nil {
+			kubeConfigContext := kube.CurrentContext(kubeConfig)
+			if kubeConfigContext != nil {
+				server := kube.Server(kubeConfig, kubeConfigContext)
+				certificateAuthorityData := kube.CertificateAuthorityData(kubeConfig, kubeConfigContext)
+				jxInstallConfig.Server = server
+				jxInstallConfig.CA = certificateAuthorityData
+			}
+=======
 	jxInstallConfig := &kube.JXInstallConfig{
 		KubeProvider: options.Flags.Provider,
 	}
@@ -2079,15 +2052,12 @@ func (options *InstallOptions) saveClusterConfig() error {
 			certificateAuthorityData := kube.CertificateAuthorityData(kubeConfig, kubeConfigContext)
 			jxInstallConfig.Server = server
 			jxInstallConfig.CA = certificateAuthorityData
+>>>>>>> fix(install): get gitops mode working with vault for clasic Jenkins
 		}
 	}
 
 	if options.installValues == nil {
 		options.installValues = map[string]string{}
-	}
-	installVersionKey := "jx-install-version"
-	if options.installValues[installVersionKey] == "" {
-		options.installValues[installVersionKey] = version2.GetVersion()
 	}
 	var secretsLocation secrets.SecretsLocationKind
 	if options.Flags.Vault {

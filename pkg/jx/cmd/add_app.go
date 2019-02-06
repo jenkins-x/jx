@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/io/secrets"
 
 	"github.com/jenkins-x/jx/pkg/vault"
 
@@ -143,7 +144,8 @@ func (o *AddAppOptions) Run() error {
 
 	var vaultBasepath string
 	var vaultClient vault.Client
-	useVault := o.UseVault()
+	secretsLocation := o.SecretsLocation()
+	useVault := (secretsLocation == secrets.VaultLocationKind)
 	if useVault {
 		var err error
 		if o.GitOps {

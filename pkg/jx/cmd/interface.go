@@ -3,6 +3,7 @@ package cmd
 import (
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/vault"
 
 	"github.com/heptio/sonobuoy/pkg/dynamic"
@@ -148,6 +149,13 @@ type Factory interface {
 	// AuthMergePipelineSecrets merges the current config with the pipeline secrets provided in k8s secrets
 	AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *corev1.SecretList, kind string, isCDPipeline bool) error
 
-	// UseVault indicates if the platform is using a Vault to manage the secrets
-	UseVault() bool
+	// SecretsLocation inidcates the location of the secrets
+	SecretsLocation() secrets.SecretsLocationKind
+
+	// SetSecretsLocation configures the secrets location in memory. It will persist the secrets location in a
+	// config map if the persist flag is active.
+	SetSecretsLocation(location secrets.SecretsLocationKind, persist bool) error
+
+	// ResetSecretsLocation resets the location of the secrets
+	ResetSecretsLocation()
 }

@@ -63,3 +63,27 @@ func TestParseGitURL(t *testing.T) {
 		assert.Equal(t, data.name, info.Name, "Name does not match for input %s", data.url)
 	}
 }
+
+func TestSaasKind(t *testing.T) {
+	t.Parallel()
+	tests := map[string]struct {
+		gitURL string
+		kind   string
+	}{
+		"GitHub": {
+			gitURL: "https://github.com/test",
+			kind:   gits.KindGitHub,
+		},
+		"GitHub Enterprise": {
+			gitURL: "https://github.test.com",
+			kind:   gits.KindGitHub,
+		},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			k := gits.SaasGitKind(tc.gitURL)
+			assert.Equal(t, tc.kind, k)
+		})
+	}
+}
