@@ -28,6 +28,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	core_v1 "k8s.io/api/core/v1"
 )
 
 var (
@@ -130,8 +131,6 @@ func (o *UpgradePlatformOptions) Run() error {
 
 	if "" == settings.KubeProvider {
 		log.Warnf("Unable to determine provider from team settings")
-
-		surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 
 		provider := ""
 
@@ -423,5 +422,15 @@ func (o *UpgradePlatformOptions) repairAdminSecrets(fileName string) error {
 		return errors.Wrapf(err, "unable to marshal object to yaml: %v", admin)
 	}
 
-	return ioutil.WriteFile(fileName, y, util.DefaultWritePermissions)
+	err = ioutil.WriteFile(fileName, y, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "unable to write secrets to file %s", fileName)
+	}
+
+	_, err = o.ModifySecret(JXInstallConfig, func(secret *core_v1.Secret) error {
+		secret.Data[AdminSecretsFile] = y
+		return nil
+	})
+
+	return nil
 }
