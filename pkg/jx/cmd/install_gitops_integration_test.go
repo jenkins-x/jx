@@ -90,6 +90,7 @@ func TestInstallGitOps(t *testing.T) {
 	o.Flags.GitOpsMode = true
 	o.Flags.NoGitOpsEnvApply = true
 	o.Flags.NoGitOpsVault = true
+	o.Flags.NoGitOpsEnvSetup = true
 	o.Flags.NoDefaultEnvironments = true
 	o.Flags.DisableSetKubeContext = true
 	o.Flags.EnvironmentGitOwner = testOrg

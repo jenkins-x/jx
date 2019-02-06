@@ -75,35 +75,36 @@ type InstallOptions struct {
 
 // InstallFlags flags for the install command
 type InstallFlags struct {
+	InstallOnly              bool
 	Domain                   string
 	ExposeControllerPathMode string
 	DockerRegistry           string
 	Provider                 string
-	CloudEnvRepository       string
 	VersionsRepository       string
+	Version                  string
 	LocalHelmRepoName        string
 	Namespace                string
+	CloudEnvRepository       string
 	NoDefaultEnvironments    bool
-	HelmTLS                  bool
 	DefaultEnvironmentPrefix string
 	LocalCloudEnvironment    bool
+	EnvironmentGitOwner      string
 	Timeout                  string
+	HelmTLS                  bool
 	RegisterLocalHelmRepo    bool
 	CleanupTempFiles         bool
-	InstallOnly              bool
-	EnvironmentGitOwner      string
-	Version                  string
 	Prow                     bool
 	DisableSetKubeContext    bool
-	GitOpsMode               bool
 	Dir                      string
-	NoGitOpsEnvApply         bool
-	NoGitOpsEnvRepo          bool
-	NoGitOpsVault            bool
 	Vault                    bool
 	KnativePipeline          bool
 	BuildPackName            string
 	Kaniko                   bool
+	GitOpsMode               bool
+	NoGitOpsEnvApply         bool
+	NoGitOpsEnvRepo          bool
+	NoGitOpsEnvSetup         bool
+	NoGitOpsVault            bool
 }
 
 // Secrets struct for secrets
@@ -359,6 +360,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvApply, "no-gitops-env-apply", "", false, "When using GitOps to create the source code for the development environment and installation, don't run 'jx step env apply' to perform the install")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvRepo, "no-gitops-env-repo", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a git repository for the source code")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsVault, "no-gitops-vault", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a vault")
+	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvSetup, "no-gitops-env-seup", "", false, "When using GitOps to install the development environment this falg skips the post-install setup")
 	cmd.Flags().BoolVarP(&flags.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during installation (supported only for GKE)")
 	cmd.Flags().StringVarP(&flags.BuildPackName, "buildpack", "", "", "The name of the build pack to use for the Team")
 	cmd.Flags().BoolVarP(&flags.Kaniko, "kaniko", "", false, "Use Kaniko for building docker images")
@@ -1577,7 +1579,7 @@ func (options *InstallOptions) applyGitOpsDevEnvironmentConfig(gitOpsEnvDir stri
 }
 
 func (options *InstallOptions) setupGitOpsPostApply(ns string) error {
-	if options.Flags.GitOpsMode {
+	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsEnvSetup {
 		if !options.Flags.Prow {
 			err := options.configureJenkins(ns)
 			if err != nil {
