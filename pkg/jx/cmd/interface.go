@@ -80,7 +80,7 @@ type Factory interface {
 	// CreateComplianceClient creates a new compliance client
 	CreateComplianceClient() (*client.SonobuoyClient, error)
 
-	// CreateSystemVaultClient creates the system vault client for managing the secreets
+	// CreateSystemVaultClient creates the system vault client for managing the secrets
 	CreateSystemVaultClient(namespace string) (vault.Client, error)
 
 	// CreateVaultClient returns the vault client for given vault
@@ -96,7 +96,7 @@ type Factory interface {
 	// CreateKubeClient creates a new Kubernetes client
 	CreateKubeClient() (kubernetes.Interface, string, error)
 
-	// CreateKubeConfig creates the kuberntes configuration
+	// CreateKubeConfig creates the kubernetes configuration
 	CreateKubeConfig() (*rest.Config, error)
 
 	// CreateJXClient creates a new Kubernetes client for Jenkins X CRDs
@@ -105,10 +105,10 @@ type Factory interface {
 	// CreateApiExtensionsClient creates a new Kubernetes ApiExtensions client
 	CreateApiExtensionsClient() (apiextensionsclientset.Interface, error)
 
-	// CreateDynamicClient creates a new Kuberntes Dynamic client
+	// CreateDynamicClient creates a new Kubernetes Dynamic client
 	CreateDynamicClient() (*dynamic.APIHelper, string, error)
 
-	// CreateMetricsClient creates a new Kuberntes metrics client
+	// CreateMetricsClient creates a new Kubernetes metrics client
 	CreateMetricsClient() (*metricsclient.Clientset, error)
 
 	// CreateKnativePipelineClient create a new Kubernetes client for Knative Pipeline resources
@@ -117,10 +117,10 @@ type Factory interface {
 	// CreateKnativeBuildClient create a new Kubernetes client for Knative resources
 	CreateKnativeBuildClient() (buildclient.Interface, string, error)
 
-	// CreateVaultOperatorClient creates a new Kuberntes client for Vault operator resources
+	// CreateVaultOperatorClient creates a new Kubernetes client for Vault operator resources
 	CreateVaultOperatorClient() (vaultoperatorclient.Interface, error)
 
-	// CreateCertManagerClient creates a new Kuberntes client for cert-manager resources
+	// CreateCertManagerClient creates a new Kubernetes client for cert-manager resources
 	CreateCertManagerClient() (certmngclient.Interface, error)
 
 	//
@@ -139,7 +139,7 @@ type Factory interface {
 	// For tests only, assert that no actual network connections are being made.
 	SetOffline(offline bool)
 
-	// IsInCluster indicates if the execution takes place within a Kuberntes cluster
+	// IsInCluster indicates if the execution takes place within a Kubernetes cluster
 	IsInCluster() bool
 
 	// IsInCDPipeline indicates if the execution takes place within a CD pipeline

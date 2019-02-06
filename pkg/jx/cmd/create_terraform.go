@@ -750,7 +750,7 @@ func (options *CreateTerraformOptions) findDevCluster(clusterDefinitions []Clust
 			return c, nil
 		}
 	}
-	return nil, fmt.Errorf("Unable to find jx environment %s", options.Flags.JxEnvironment)
+	return nil, fmt.Errorf("unable to find jx environment %s", options.Flags.JxEnvironment)
 }
 
 func (options *CreateTerraformOptions) writeGitIgnoreFile(dir string) error {
@@ -925,6 +925,20 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 		}
 	}
 
+	if !options.BatchMode {
+		// only provide the option if enhanced scopes are enabled
+		if options.InstallOptions.Flags.Kaniko {
+			if !options.InstallOptions.Flags.Kaniko {
+				prompt := &survey.Confirm{
+					Message: "Would you like to enable Kaniko for building container images",
+					Default: false,
+					Help: "Use Kaniko for docker images",
+				}
+				survey.AskOne(prompt, &options.InstallOptions.Flags.Kaniko, nil, surveyOpts)
+			}
+		}
+	}
+
 	if g.MinNumOfNodes == "" {
 		prompt := &survey.Input{
 			Message: "Minimum number of Nodes",
@@ -1011,7 +1025,7 @@ func (options *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path str
 		serviceAccountName := fmt.Sprintf("jx-%s-%s", options.Flags.OrganisationName, g.Name())
 		fmt.Fprintf(options.Out, "No GCP service account provided, creating %s\n", util.ColorInfo(serviceAccountName))
 
-		_, err := gke.GetOrCreateServiceAccount(serviceAccountName, g.ProjectID, filepath.Dir(path), gke.REQUIRED_SERVICE_ACCOUNT_ROLES)
+		_, err := gke.GetOrCreateServiceAccount(serviceAccountName, g.ProjectID, filepath.Dir(path), gke.RequiredServiceAccountRoles)
 		if err != nil {
 			return err
 		}

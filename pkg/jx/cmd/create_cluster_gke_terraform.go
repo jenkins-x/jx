@@ -240,7 +240,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 		serviceAccount := fmt.Sprintf("jx-%s", o.Flags.ClusterName)
 		log.Infof("Checking for service account %s\n", serviceAccount)
 
-		keyPath, err = gke.GetOrCreateServiceAccount(serviceAccount, projectId, clusterHome, gke.REQUIRED_SERVICE_ACCOUNT_ROLES)
+		keyPath, err = gke.GetOrCreateServiceAccount(serviceAccount, projectId, clusterHome, gke.RequiredServiceAccountRoles)
 		if err != nil {
 			return err
 		}
