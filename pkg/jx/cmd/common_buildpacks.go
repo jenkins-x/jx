@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 
@@ -111,7 +112,25 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 			lpack, err = jxdraft.DoPackDetectionForBuildPack(o.Out, dir, packsDir)
 
 			if err != nil {
-				return "", err
+				if lpack == "" {
+					// lets check for a helm pack
+					files, err2 := filepath.Glob(filepath.Join(dir, "*/Chart.yaml"))
+					if err2 != nil {
+					  return "", errors.Wrapf(err, "failed to detect if there was a chart file in dir %s", dir)
+					}
+					if len(files) > 0 {
+						lpack = "helm"
+						err = nil
+					}
+				}
+				if lpack == "" {
+					if exists, err := util.FileExists(filepath.Join(dir, "Dockerfile")); err == nil && exists {
+						lpack = "docker"
+					}
+				}
+				if err != nil {
+					return "", err
+				}
 			}
 		}
 	}
