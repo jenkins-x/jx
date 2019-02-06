@@ -382,14 +382,12 @@ func (options *CreateTerraformOptions) Run() error {
 		return err
 	}
 
-	if len(options.Flags.Cluster) >= 1 {
-		err := options.ValidateClusterDetails()
-		if err != nil {
-			return err
-		}
+	err = options.ValidateClusterDetails()
+	if err != nil {
+		return err
 	}
 
-	if len(options.Flags.Cluster) == 0 {
+	if len(options.Clusters) == 0 {
 		err := options.ClusterDetailsWizard()
 		if err != nil {
 			return err
@@ -500,7 +498,7 @@ func (options *CreateTerraformOptions) ValidateClusterDetails() error {
 			c := &GKECluster{name: pair[0], provider: pair[1]}
 			options.Clusters = append(options.Clusters, c)
 		}
-	} else {
+	} else if options.Flags.ClusterName != "" || options.Flags.CloudProvider != "" {
 		options.Clusters = []Cluster{&GKECluster{name: options.Flags.ClusterName, provider: options.Flags.CloudProvider}}
 	}
 	return nil
