@@ -484,20 +484,24 @@ func (options *CreateTerraformOptions) ClusterDetailsWizard() error {
 
 // ValidateClusterDetails validates the options for a cluster
 func (options *CreateTerraformOptions) ValidateClusterDetails() error {
-	if len(options.Flags.Cluster) > 0 && (options.Flags.ClusterName != "" || options.Flags.CloudProvider != "") {
-		return fmt.Errorf("--%s cannot be used in conjunction with --%s or --%s", optionCluster, optionClusterName, optionCloudProvider)
-	}
-	for _, p := range options.Flags.Cluster {
-		pair := strings.Split(p, "=")
-		if len(pair) != 2 {
-			return fmt.Errorf("need to provide cluster values as --%s name=provider, e.g. --%s production=gke", optionCluster, optionCluster)
+	if len(options.Flags.Cluster) > 0 {
+		if options.Flags.ClusterName != "" || options.Flags.CloudProvider != "" {
+			return fmt.Errorf("--%s cannot be used in conjunction with --%s or --%s", optionCluster, optionClusterName, optionCloudProvider)
 		}
-		if !stringInValidProviders(pair[1]) {
-			return fmt.Errorf("invalid cluster provider type %s, must be one of %v", p, validTerraformClusterProviders)
-		}
+		for _, p := range options.Flags.Cluster {
+			pair := strings.Split(p, "=")
+			if len(pair) != 2 {
+				return fmt.Errorf("need to provide cluster values as --%s name=provider, e.g. --%s production=gke", optionCluster, optionCluster)
+			}
+			if !stringInValidProviders(pair[1]) {
+				return fmt.Errorf("invalid cluster provider type %s, must be one of %v", p, validTerraformClusterProviders)
+			}
 
-		c := &GKECluster{name: pair[0], provider: pair[1]}
-		options.Clusters = append(options.Clusters, c)
+			c := &GKECluster{name: pair[0], provider: pair[1]}
+			options.Clusters = append(options.Clusters, c)
+		}
+	} else {
+		options.Clusters = []Cluster{&GKECluster{name: options.Flags.ClusterName, provider: options.Flags.CloudProvider}}
 	}
 	return nil
 }
@@ -916,7 +920,7 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 				prompt := &survey.Confirm{
 					Message: "Would you like to enable Cloud Build, Container Registry & Container Analysis APIs?",
 					Default: false,
-					Help: "Enables extra APIs on the GCP project",
+					Help:    "Enables extra APIs on the GCP project",
 				}
 				survey.AskOne(prompt, &options.Flags.GKEUseEnhancedApis, nil, surveyOpts)
 			}
@@ -938,7 +942,7 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 				prompt := &survey.Confirm{
 					Message: "Would you like to enable Kaniko for building container images",
 					Default: false,
-					Help: "Use Kaniko for docker images",
+					Help:    "Use Kaniko for docker images",
 				}
 				survey.AskOne(prompt, &options.InstallOptions.Flags.Kaniko, nil, surveyOpts)
 			}
