@@ -127,7 +127,7 @@ func TestAddAppWithSecrets(t *testing.T) {
 	}
 	o.Args = []string{name}
 
-	helm_test.StubFetchChart(name, "", cmd.DEFAULT_CHARTMUSEUM_URL, &chart.Chart{
+	helm_test.StubFetchChart(name, "", helm.DefaultChartMuseumURL, &chart.Chart{
 		Metadata: &chart.Metadata{
 			Name:    name,
 			Version: version,
@@ -173,7 +173,7 @@ func TestAddAppWithSecrets(t *testing.T) {
 		pegomock.AnyBool(),
 		pegomock.AnyStringSlice(),
 		pegomock.AnyStringSlice(),
-		pegomock.EqString(cmd.DEFAULT_CHARTMUSEUM_URL),
+		pegomock.EqString(helm.DefaultChartMuseumURL),
 		pegomock.AnyString(),
 		pegomock.AnyString())).
 		Then(func(params []pegomock.Param) pegomock.ReturnValues {
@@ -233,7 +233,7 @@ func TestAddAppWithSecrets(t *testing.T) {
 			pegomock.AnyBool(),
 			pegomock.AnyStringSlice(),
 			pegomock.AnyStringSlice(),
-			pegomock.EqString(cmd.DEFAULT_CHARTMUSEUM_URL),
+			pegomock.EqString(helm.DefaultChartMuseumURL),
 			pegomock.AnyString(),
 			pegomock.AnyString())
 }
@@ -273,7 +273,7 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 	}
 	o.Args = []string{name}
 
-	helm_test.StubFetchChart(name, "", cmd.DEFAULT_CHARTMUSEUM_URL, &chart.Chart{
+	helm_test.StubFetchChart(name, "", helm.DefaultChartMuseumURL, &chart.Chart{
 		Metadata: &chart.Metadata{
 			Name:    name,
 			Version: version,
@@ -352,7 +352,7 @@ func TestAddApp(t *testing.T) {
 			CommonOptions: *testOptions.CommonOptions,
 		},
 		Version:              version,
-		Repo:                 cmd.DEFAULT_CHARTMUSEUM_URL,
+		Repo:                 helm.DefaultChartMuseumURL,
 		GitOps:               false,
 		DevEnv:               testOptions.DevEnv,
 		HelmUpdate:           true, // Flag default when run on CLI
@@ -367,7 +367,7 @@ func TestAddApp(t *testing.T) {
 		pegomock.EqString(version),
 		pegomock.AnyBool(),
 		pegomock.AnyString(),
-		pegomock.EqString(cmd.DEFAULT_CHARTMUSEUM_URL),
+		pegomock.EqString(helm.DefaultChartMuseumURL),
 		pegomock.AnyString(),
 		pegomock.AnyString()).GetCapturedArguments()
 	testOptions.MockHelmer.VerifyWasCalledOnce().
@@ -382,7 +382,7 @@ func TestAddApp(t *testing.T) {
 			pegomock.AnyBool(),
 			pegomock.AnyStringSlice(),
 			pegomock.AnyStringSlice(),
-			pegomock.EqString(cmd.DEFAULT_CHARTMUSEUM_URL),
+			pegomock.EqString(helm.DefaultChartMuseumURL),
 			pegomock.AnyString(),
 			pegomock.AnyString())
 }
@@ -403,14 +403,14 @@ func TestAddLatestApp(t *testing.T) {
 		AddOptions: cmd.AddOptions{
 			CommonOptions: *testOptions.CommonOptions,
 		},
-		Repo:                 cmd.DEFAULT_CHARTMUSEUM_URL,
+		Repo:                 helm.DefaultChartMuseumURL,
 		GitOps:               false,
 		DevEnv:               testOptions.DevEnv,
 		HelmUpdate:           true, // Flag default when run on CLI
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}
 	o.Args = []string{name}
-	helm_test.StubFetchChart(name, "", cmd.DEFAULT_CHARTMUSEUM_URL, &chart.Chart{
+	helm_test.StubFetchChart(name, "", helm.DefaultChartMuseumURL, &chart.Chart{
 		Metadata: &chart.Metadata{
 			Name:    name,
 			Version: version,
@@ -424,7 +424,7 @@ func TestAddLatestApp(t *testing.T) {
 		pegomock.AnyString(),
 		pegomock.AnyBool(),
 		pegomock.AnyString(),
-		pegomock.EqString(cmd.DEFAULT_CHARTMUSEUM_URL),
+		pegomock.EqString(helm.DefaultChartMuseumURL),
 		pegomock.AnyString(),
 		pegomock.AnyString()).GetCapturedArguments()
 	testOptions.MockHelmer.VerifyWasCalledOnce().
@@ -439,7 +439,7 @@ func TestAddLatestApp(t *testing.T) {
 			pegomock.AnyBool(),
 			pegomock.AnyStringSlice(),
 			pegomock.AnyStringSlice(),
-			pegomock.EqString(cmd.DEFAULT_CHARTMUSEUM_URL),
+			pegomock.EqString(helm.DefaultChartMuseumURL),
 			pegomock.AnyString(),
 			pegomock.AnyString())
 }
@@ -533,7 +533,7 @@ func TestAddAppWithReadmeForGitOps(t *testing.T) {
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}
 	o.Args = []string{name}
-	helm_test.StubFetchChart(name, "", cmd.DEFAULT_CHARTMUSEUM_URL, &chart.Chart{
+	helm_test.StubFetchChart(name, "", helm.DefaultChartMuseumURL, &chart.Chart{
 		Metadata: &chart.Metadata{
 			Name:        name,
 			Version:     version,
@@ -566,7 +566,7 @@ func TestAddAppWithReadmeForGitOps(t *testing.T) {
 | **Chart Repository** | %s |
 | **Git Repository** | %s |
 | **Release Notes** | %s |
-`, name, version, description, cmd.DEFAULT_CHARTMUSEUM_URL, gitRepository, releaseNotes), readmeFromPr)
+`, name, version, description, helm.DefaultChartMuseumURL, gitRepository, releaseNotes), readmeFromPr)
 	// Validate that the README.md file is in the right place
 	releaseyamlFromPrPath := filepath.Join(devEnvDir, name, "release.yaml")
 	_, err = os.Stat(releaseyamlFromPrPath)
@@ -605,7 +605,7 @@ func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
 	o.Args = []string{name}
 	readmeFileName := "README.MD"
 	readme := "Tasty Cheese!\n"
-	helm_test.StubFetchChart(name, "", cmd.DEFAULT_CHARTMUSEUM_URL, &chart.Chart{
+	helm_test.StubFetchChart(name, "", helm.DefaultChartMuseumURL, &chart.Chart{
 		Metadata: &chart.Metadata{
 			Name:    name,
 			Version: version,
@@ -638,7 +638,7 @@ func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
 ## App README.MD
 
 %s
-`, name, version, cmd.DEFAULT_CHARTMUSEUM_URL, readme), readmeFromPr)
+`, name, version, helm.DefaultChartMuseumURL, readme), readmeFromPr)
 }
 
 func TestAddLatestAppForGitOps(t *testing.T) {
@@ -656,7 +656,7 @@ func TestAddLatestAppForGitOps(t *testing.T) {
 			CommonOptions: *testOptions.CommonOptions,
 		},
 		Alias:                alias,
-		Repo:                 cmd.DEFAULT_CHARTMUSEUM_URL,
+		Repo:                 helm.DefaultChartMuseumURL,
 		GitOps:               true,
 		DevEnv:               testOptions.DevEnv,
 		HelmUpdate:           true, // Flag default when run on CLI
@@ -665,7 +665,7 @@ func TestAddLatestAppForGitOps(t *testing.T) {
 	o.Args = []string{name}
 	o.Verbose = true
 
-	helm_test.StubFetchChart(name, "", cmd.DEFAULT_CHARTMUSEUM_URL, &chart.Chart{
+	helm_test.StubFetchChart(name, "", helm.DefaultChartMuseumURL, &chart.Chart{
 		Metadata: &chart.Metadata{
 			Name:    name,
 			Version: version,

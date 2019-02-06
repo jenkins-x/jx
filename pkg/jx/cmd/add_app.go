@@ -139,7 +139,7 @@ func (o *AddAppOptions) Run() error {
 		o.Repo = o.DevEnv.Spec.TeamSettings.AppsRepository
 	}
 	if o.Repo == "" {
-		o.Repo = DEFAULT_CHARTMUSEUM_URL
+		o.Repo = helm.DefaultChartMuseumURL
 	}
 
 	var vaultBasepath string

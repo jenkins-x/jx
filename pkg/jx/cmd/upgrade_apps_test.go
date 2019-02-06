@@ -100,7 +100,7 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 	}
 	o.Args = []string{name}
 
-	helm_test.StubFetchChart(name, "", cmd.DEFAULT_CHARTMUSEUM_URL, &chart.Chart{
+	helm_test.StubFetchChart(name, "", helm.DefaultChartMuseumURL, &chart.Chart{
 		Metadata: &chart.Metadata{
 			Name:    name,
 			Version: newVersion.String(),
@@ -159,13 +159,13 @@ func TestUpgradeAllAppsForGitOps(t *testing.T) {
 		AddOptions: cmd.AddOptions{
 			CommonOptions: *testOptions.CommonOptions,
 		},
-		Repo:                 cmd.DEFAULT_CHARTMUSEUM_URL,
+		Repo:                 helm.DefaultChartMuseumURL,
 		GitOps:               true,
 		DevEnv:               testOptions.DevEnv,
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}
 
-	helm_test.StubFetchChart(name1, "", cmd.DEFAULT_CHARTMUSEUM_URL, &chart.Chart{
+	helm_test.StubFetchChart(name1, "", helm.DefaultChartMuseumURL, &chart.Chart{
 		Metadata: &chart.Metadata{
 			Name:    name1,
 			Version: newVersion1.String(),
@@ -173,7 +173,7 @@ func TestUpgradeAllAppsForGitOps(t *testing.T) {
 	}, testOptions.MockHelmer)
 
 	helm_test.StubFetchChart(name2, "",
-		cmd.DEFAULT_CHARTMUSEUM_URL, &chart.Chart{
+		helm.DefaultChartMuseumURL, &chart.Chart{
 			Metadata: &chart.Metadata{
 				Name:    name2,
 				Version: newVersion2.String(),
