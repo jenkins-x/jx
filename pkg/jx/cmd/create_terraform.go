@@ -64,7 +64,7 @@ type GKECluster struct {
 
 const (
 	devStorageFullControl = "https://www.googleapis.com/auth/devstorage.full_control"
-	devStorageReadOnly = "https://www.googleapis.com/auth/devstorage.read_only"
+	devStorageReadOnly    = "https://www.googleapis.com/auth/devstorage.read_only"
 )
 
 // Name Get name
@@ -246,10 +246,9 @@ type Flags struct {
 // CreateTerraformOptions the options for the create spring command
 type CreateTerraformOptions struct {
 	CreateOptions
-	InstallOptions       InstallOptions
-	Flags                Flags
-	Clusters             []Cluster
-	GitRepositoryOptions gits.GitRepositoryOptions
+	InstallOptions InstallOptions
+	Flags          Flags
+	Clusters       []Cluster
 }
 
 var (
@@ -527,7 +526,7 @@ func (options *CreateTerraformOptions) createOrganisationGitRepo() error {
 		}
 	} else {
 		details, err := gits.PickNewOrExistingGitRepository(options.BatchMode, authConfigSvc,
-			defaultRepoName, &options.GitRepositoryOptions, nil, nil, options.Git(), true, options.In, options.Out, options.Err)
+			defaultRepoName, &options.InstallOptions.GitRepositoryOptions, nil, nil, options.Git(), true, options.In, options.Out, options.Err)
 		if err != nil {
 			return err
 		}
@@ -880,7 +879,7 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 			prompt := &survey.Confirm{
 				Message: "Would you like use preemptible VMs?",
 				Default: false,
-				Help: "Preemptible VMs can significantly lower the cost of a cluster",
+				Help:    "Preemptible VMs can significantly lower the cost of a cluster",
 			}
 			survey.AskOne(prompt, &g.Preemptible, nil, surveyOpts)
 		}
@@ -891,7 +890,7 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 			prompt := &survey.Confirm{
 				Message: "Would you like to access Google Cloud Storage / Google Container Registry?",
 				Default: false,
-				Help: "Enables enhanced oauth scopes to allow access to storage based services",
+				Help:    "Enables enhanced oauth scopes to allow access to storage based services",
 			}
 			survey.AskOne(prompt, &options.Flags.GKEUseEnhancedScopes, nil, surveyOpts)
 
