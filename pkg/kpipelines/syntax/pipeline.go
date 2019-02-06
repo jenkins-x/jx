@@ -20,7 +20,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type Jenkinsfile struct {
+// PipelineStructure is the internal representation of the Pipeline, used to validate and create CRDs
+type PipelineStructure struct {
 	Agent       Agent       `yaml:"agent,omitempty"`
 	Environment []EnvVar    `yaml:"environment,omitempty"`
 	Options     RootOptions `yaml:"options,omitempty"`
@@ -28,6 +29,7 @@ type Jenkinsfile struct {
 	Post        []Post      `yaml:"post,omitempty"`
 }
 
+// Agent defines where the pipeline, stage, or step should run.
 type Agent struct {
 	// One of label or image is required.
 	Label string `yaml:"label,omitempty"`
@@ -35,13 +37,16 @@ type Agent struct {
 	// Perhaps we'll eventually want to add something here for specifying a volume to create? Would play into stash.
 }
 
+// EnvVar is a key/value pair defining an environment variable
 type EnvVar struct {
 	Name  string `yaml:"name"`
 	Value string `yaml:"value"`
 }
 
+// TimeoutUnit is used for calculating timeout duration
 type TimeoutUnit string
 
+// The available time units.
 const (
 	TimeoutUnitSeconds TimeoutUnit = "seconds"
 	TimeoutUnitMinutes TimeoutUnit = "minutes"
@@ -49,25 +54,27 @@ const (
 	TimeoutUnitDays    TimeoutUnit = "days"
 )
 
-var AllTimeoutUnits = []TimeoutUnit{TimeoutUnitSeconds, TimeoutUnitMinutes, TimeoutUnitHours, TimeoutUnitDays}
+// All possible time units, used for validation
+var allTimeoutUnits = []TimeoutUnit{TimeoutUnitSeconds, TimeoutUnitMinutes, TimeoutUnitHours, TimeoutUnitDays}
 
 func allTimeoutUnitsAsStrings() []string {
-	tu := make([]string, len(AllTimeoutUnits))
+	tu := make([]string, len(allTimeoutUnits))
 
-	for i, u := range AllTimeoutUnits {
+	for i, u := range allTimeoutUnits {
 		tu[i] = string(u)
 	}
 
 	return tu
 }
 
+// Timeout defines how long a stage or pipeline can run before timing out.
 type Timeout struct {
 	Time int64 `yaml:"time"`
 	// Has some sane default - probably seconds
 	Unit TimeoutUnit `yaml:"unit,omitempty"`
 }
 
-func (t Timeout) ToDuration() (*metav1.Duration, error) {
+func (t Timeout) toDuration() (*metav1.Duration, error) {
 	durationStr := ""
 	// TODO: Populate a default timeout unit, most likely seconds.
 	if t.Unit != "" {
@@ -76,30 +83,35 @@ func (t Timeout) ToDuration() (*metav1.Duration, error) {
 		durationStr = fmt.Sprintf("%ds", t.Time)
 	}
 
-	if d, err := time.ParseDuration(durationStr); err != nil {
+	d, err := time.ParseDuration(durationStr)
+	if err != nil {
 		return nil, err
-	} else {
-		return &metav1.Duration{Duration: d}, nil
 	}
+	return &metav1.Duration{Duration: d}, nil
 }
 
+// RootOptions contains options that can be configured on either a pipeline or a stage
 type RootOptions struct {
 	Timeout Timeout `yaml:"timeout,omitempty"`
 	// TODO: Not yet implemented in build-pipeline
 	Retry int8 `yaml:"retry,omitempty"`
 }
 
+// Stash defines files to be saved for use in a later stage, marked with a name
 type Stash struct {
 	Name string `yaml:"name"`
 	// Eventually make this optional so that you can do volumes instead
 	Files string `yaml:"files"`
 }
 
+// Unstash defines a previously-defined stash to be copied into this stage's workspace
 type Unstash struct {
 	Name string `yaml:"name"`
 	Dir  string `yaml:"dir,omitempty"`
 }
 
+// StageOptions contains both options that can be configured on either a pipeline or a stage, via
+// RootOptions, or stage-specific options.
 type StageOptions struct {
 	RootOptions `yaml:",inline"`
 
@@ -110,6 +122,7 @@ type StageOptions struct {
 	Workspace *string `yaml:"workspace,omitempty"`
 }
 
+// Step defines a single step, from the author's perspective, to be executed within a stage.
 type Step struct {
 	// One of command or step is required.
 	Command string `yaml:"command,omitempty"`
@@ -128,6 +141,8 @@ type Step struct {
 	Agent Agent `yaml:"agent,omitempty"`
 }
 
+// Stage is a unit of work in a pipeline, corresponding either to a Task or a set of Tasks to be run sequentially or in
+// parallel with common configuration.
 type Stage struct {
 	Name        string       `yaml:"name"`
 	Agent       Agent        `yaml:"agent,omitempty"`
@@ -139,6 +154,7 @@ type Stage struct {
 	Post        []Post       `yaml:"post,omitempty"`
 }
 
+// PostCondition is used to specify under what condition a post action should be executed.
 type PostCondition string
 
 // Probably extensible down the road
@@ -150,12 +166,14 @@ const (
 
 var allPostConditions = []PostCondition{PostConditionAlways, PostConditionSuccess, PostConditionFailure}
 
+// Post contains a PostCondition and one more actions to be executed after a pipeline or stage if the condition is met.
 type Post struct {
 	// TODO: Conditional execution of something after a Task or Pipeline completes is not yet implemented
 	Condition PostCondition `yaml:"condition"`
 	Actions   []PostAction  `yaml:"actions"`
 }
 
+// PostAction contains the name of a built-in post action and options to pass to that action.
 type PostAction struct {
 	// TODO: Notifications are not yet supported in Build Pipeline per se.
 	Name string `yaml:"name"`
@@ -164,13 +182,12 @@ type PostAction struct {
 	Options map[string]string `yaml:"options,omitempty"`
 }
 
-var _ apis.Validatable = (*Jenkinsfile)(nil)
+var _ apis.Validatable = (*PipelineStructure)(nil)
 
 func (s *Stage) taskName() string {
 	return strings.ToLower(strings.NewReplacer(" ", "-").Replace(s.Name))
 }
 
-// TODO: Combine with kube.ToValidName (that function needs to handle lengths)
 // MangleToRfc1035Label - Task/Step names need to be RFC 1035/1123 compliant DNS labels, so we mangle
 // them to make them compliant. Results should match the following regex and be
 // no more than 63 characters long:
@@ -178,6 +195,7 @@ func (s *Stage) taskName() string {
 // cf. https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
 // body is assumed to have at least one ASCII letter.
 // suffix is assumed to be alphanumeric and non-empty.
+// TODO: Combine with kube.ToValidName (that function needs to handle lengths)
 func MangleToRfc1035Label(body string, suffix string) string {
 	const maxLabelLength = 63
 	maxBodyLength := maxLabelLength - len(suffix) - 1 // Add an extra hyphen before the suffix
@@ -224,8 +242,8 @@ func MangleToRfc1035Label(body string, suffix string) string {
 }
 
 // ParseJenkinsfileYaml takes a YAML string and parses it.
-func ParseJenkinsfileYaml(jenkinsfileYaml string) (*Jenkinsfile, error) {
-	jf := Jenkinsfile{}
+func ParseJenkinsfileYaml(jenkinsfileYaml string) (*PipelineStructure, error) {
+	jf := PipelineStructure{}
 
 	err := yaml.Unmarshal([]byte(jenkinsfileYaml), &jf)
 	if err != nil {
@@ -235,10 +253,10 @@ func ParseJenkinsfileYaml(jenkinsfileYaml string) (*Jenkinsfile, error) {
 	return &jf, nil
 }
 
+// Validate checks the parsed PipelineStructure to find any errors in it.
 // TODO: Improve validation to actually return all the errors via the nested errors?
 // TODO: Add validation for the not-yet-supported-for-CRD-generation sections
-// Validate checks the parsed Jenkinsfile to find any errors in it.
-func (j *Jenkinsfile) Validate() *apis.FieldError {
+func (j *PipelineStructure) Validate() *apis.FieldError {
 	if err := validateAgent(j.Agent).ViaField("agent"); err != nil {
 		return err
 	}
@@ -412,7 +430,7 @@ func validateStageOptions(o StageOptions) *apis.FieldError {
 func validateTimeout(t Timeout) *apis.FieldError {
 	if !equality.Semantic.DeepEqual(t, Timeout{}) {
 		isAllowed := false
-		for _, allowed := range AllTimeoutUnits {
+		for _, allowed := range allTimeoutUnits {
 			if t.Unit == allowed {
 				isAllowed = true
 			}
@@ -509,7 +527,7 @@ func scopedEnv(s Stage, parentEnv []corev1.EnvVar) []corev1.EnvVar {
 	return env
 }
 
-func (j *Jenkinsfile) toStepEnvVars() []corev1.EnvVar {
+func (j *PipelineStructure) toStepEnvVars() []corev1.EnvVar {
 	env := make([]corev1.EnvVar, 0, len(j.Environment))
 
 	for _, e := range j.Environment {
@@ -760,7 +778,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 }
 
 // GenerateCRDs translates the Pipeline structure into the corresponding Pipeline and Task CRDs
-func (j *Jenkinsfile) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, suffix string, podTemplates map[string]*corev1.Pod) (*pipelinev1alpha1.Pipeline, []*pipelinev1alpha1.Task, error) {
+func (j *PipelineStructure) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, suffix string, podTemplates map[string]*corev1.Pod) (*pipelinev1alpha1.Pipeline, []*pipelinev1alpha1.Task, error) {
 	if len(j.Post) != 0 {
 		return nil, nil, errors.New("Post at top level not yet supported")
 	}

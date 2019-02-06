@@ -23,14 +23,14 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		expected         *syntax.Jenkinsfile
+		expected         *syntax.PipelineStructure
 		pipeline         *pipelinev1alpha1.Pipeline
 		tasks            []*pipelinev1alpha1.Task
 		expectedErrorMsg string
 	}{
 		{
 			name: "simple_jenkinsfile",
-			expected: &syntax.Jenkinsfile{
+			expected: &syntax.PipelineStructure{
 				Agent: syntax.Agent{
 					Image: "some-image",
 				},
@@ -64,7 +64,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "multiple_stages",
-			expected: &syntax.Jenkinsfile{
+			expected: &syntax.PipelineStructure{
 				Agent: syntax.Agent{
 					Image: "some-image",
 				},
@@ -122,7 +122,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "nested_stages",
-			expected: &syntax.Jenkinsfile{
+			expected: &syntax.PipelineStructure{
 				Agent: syntax.Agent{
 					Image: "some-image",
 				},
@@ -185,7 +185,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "parallel_stages",
-			expected: &syntax.Jenkinsfile{
+			expected: &syntax.PipelineStructure{
 				Agent: syntax.Agent{
 					Image: "some-image",
 				},
@@ -291,7 +291,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "parallel_and_nested_stages",
-			expected: &syntax.Jenkinsfile{
+			expected: &syntax.PipelineStructure{
 				Agent: syntax.Agent{
 					Image: "some-image",
 				},
@@ -426,7 +426,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "custom_workspaces",
-			expected: &syntax.Jenkinsfile{
+			expected: &syntax.PipelineStructure{
 				Agent: syntax.Agent{
 					Image: "some-image",
 				},
@@ -530,7 +530,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "inherited_custom_workspaces",
-			expected: &syntax.Jenkinsfile{
+			expected: &syntax.PipelineStructure{
 				Agent: syntax.Agent{
 					Image: "some-image",
 				},
@@ -638,7 +638,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "environment_at_top_and_in_stage",
-			expected: &syntax.Jenkinsfile{
+			expected: &syntax.PipelineStructure{
 				Agent: syntax.Agent{
 					Image: "some-image",
 				},
@@ -682,7 +682,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "syntactic_sugar_step_and_a_command",
-			expected: &syntax.Jenkinsfile{
+			expected: &syntax.PipelineStructure{
 				Agent: syntax.Agent{
 					Image: "some-image",
 				},
@@ -707,7 +707,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "post",
-			expected: &syntax.Jenkinsfile{
+			expected: &syntax.PipelineStructure{
 				Agent: syntax.Agent{
 					Image: "some-image",
 				},
@@ -755,7 +755,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "top_level_and_stage_options",
-			expected: &syntax.Jenkinsfile{
+			expected: &syntax.PipelineStructure{
 				Agent: syntax.Agent{
 					Image: "some-image",
 				},
@@ -795,7 +795,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "stage_and_step_agent",
-			expected: &syntax.Jenkinsfile{
+			expected: &syntax.PipelineStructure{
 				Stages: []syntax.Stage{{
 					Name: "A Working Stage",
 					Agent: syntax.Agent{
@@ -839,7 +839,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "mangled_task_names",
-			expected: &syntax.Jenkinsfile{
+			expected: &syntax.PipelineStructure{
 				Agent: syntax.Agent{
 					Image: "some-image",
 				},
@@ -897,7 +897,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "stage_timeout",
-			expected: &syntax.Jenkinsfile{
+			expected: &syntax.PipelineStructure{
 				Agent: syntax.Agent{
 					Image: "some-image",
 				},
@@ -942,7 +942,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "top_level_timeout",
-			expected: &syntax.Jenkinsfile{
+			expected: &syntax.PipelineStructure{
 				Agent: syntax.Agent{
 					Image: "some-image",
 				},
@@ -1004,7 +1004,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 			parsed := projectConfig.PipelineConfig.Pipelines.Release.Pipeline
 
 			if d := cmp.Diff(tt.expected, parsed); d != "" {
-				t.Errorf("Parsed Jenkinsfile did not match expected: %s", d)
+				t.Errorf("Parsed PipelineStructure did not match expected: %s", d)
 			}
 
 			validateErr := parsed.Validate()

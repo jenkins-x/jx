@@ -66,13 +66,13 @@ type PipelineStep struct {
 
 // PipelineLifecycles defines the steps of a lifecycle section
 type PipelineLifecycles struct {
-	Setup      *PipelineLifecycle  `yaml:"setup,omitempty"`
-	SetVersion *PipelineLifecycle  `yaml:"setVersion,omitempty"`
-	PreBuild   *PipelineLifecycle  `yaml:"preBuild,omitempty"`
-	Build      *PipelineLifecycle  `yaml:"build,omitempty"`
-	PostBuild  *PipelineLifecycle  `yaml:"postBuild,omitempty"`
-	Promote    *PipelineLifecycle  `yaml:"promote,omitempty"`
-	Pipeline   *syntax.Jenkinsfile `yaml:"pipeline,omitempty"`
+	Setup      *PipelineLifecycle        `yaml:"setup,omitempty"`
+	SetVersion *PipelineLifecycle        `yaml:"setVersion,omitempty"`
+	PreBuild   *PipelineLifecycle        `yaml:"preBuild,omitempty"`
+	Build      *PipelineLifecycle        `yaml:"build,omitempty"`
+	PostBuild  *PipelineLifecycle        `yaml:"postBuild,omitempty"`
+	Promote    *PipelineLifecycle        `yaml:"promote,omitempty"`
+	Pipeline   *syntax.PipelineStructure `yaml:"pipeline,omitempty"`
 }
 
 // PipelineLifecycle defines the steps of a lifecycle section
@@ -608,7 +608,7 @@ func (a *CreateJenkinsfileArguments) GenerateJenkinsfile(resolver ImportFileReso
 	if outDir != "" {
 		err = os.MkdirAll(outDir, util.DefaultWritePermissions)
 		if err != nil {
-			return errors.Wrapf(err, "failed to make directory %s when creating Jenkinsfile %s", outDir, outFile)
+			return errors.Wrapf(err, "failed to make directory %s when creating PipelineStructure %s", outDir, outFile)
 		}
 	}
 	file, err := os.Create(outFile)
