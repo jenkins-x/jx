@@ -2,6 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -9,6 +17,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkinsfile/gitresolver"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kpipelines"
+	"github.com/jenkins-x/jx/pkg/kpipelines/syntax"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -16,16 +25,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"time"
 )
 
 var (
@@ -52,7 +54,6 @@ type StepCreateTaskOptions struct {
 
 	Pack           string
 	Dir            string
-	OutputFile     string
 	BuildPackURL   string
 	BuildPackRef   string
 	PipelineKind   string
@@ -68,6 +69,7 @@ type StepCreateTaskOptions struct {
 	DeleteTempDir  bool
 	ViewSteps      bool
 	Duration       time.Duration
+	FromRepo       bool
 
 	PodTemplates        map[string]*corev1.Pod
 	MissingPodTemplates map[string]bool
@@ -82,7 +84,8 @@ type StepCreateTaskOptions struct {
 // StepCreateTaskResults stores the generated results
 type StepCreateTaskResults struct {
 	Pipeline    *pipelineapi.Pipeline
-	Task        *pipelineapi.Task
+	Tasks       []*pipelineapi.Task
+	Resources   []*pipelineapi.PipelineResource
 	PipelineRun *pipelineapi.PipelineRun
 }
 
@@ -115,7 +118,7 @@ func NewCmdStepCreateTask(f Factory, in terminal.FileReader, out terminal.FileWr
 	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to query to find the projects .git directory")
-	cmd.Flags().StringVarP(&options.OutputFile, "output", "o", "", "The output file to write the output to as YAML")
+	cmd.Flags().StringVarP(&options.OutDir, "output", "o", "", "The directory to write the output to as YAML")
 	cmd.Flags().StringVarP(&options.BuildPackURL, "url", "u", "", "The URL for the build pack Git repository")
 	cmd.Flags().StringVarP(&options.BuildPackRef, "ref", "r", "", "The Git reference (branch,tag,sha) in the Git repository to use")
 	cmd.Flags().StringVarP(&options.Pack, "pack", "p", "", "The build pack name. If none is specified its discovered from the source code")
@@ -167,6 +170,18 @@ func (o *StepCreateTaskOptions) Run() error {
 			return util.MissingOption("docker-registry")
 		}
 	}
+
+	if o.Dir == "" {
+		o.Dir, err = os.Getwd()
+		if err != nil {
+			return err
+		}
+	}
+
+	// TODO: Best to separate things cleanly into 2 steps: creation of CRDs and
+	// application of those CRDs to the cluster. Step 2 should be identical both
+	// cases, so we'd just need a flag to switch the single function that is used
+	// to generate stuff and then everything else would be identical.
 	if o.BuildPackURL == "" || o.BuildPackRef == "" {
 		if o.BuildPackURL == "" {
 			o.BuildPackURL = settings.BuildPackURL
@@ -183,12 +198,6 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 	if o.PipelineKind == "" {
 		return util.MissingOption("kind")
-	}
-	if o.Dir == "" {
-		o.Dir, err = os.Getwd()
-		if err != nil {
-			return err
-		}
 	}
 	projectConfig, projectConfigFile, err := config.LoadProjectConfig(o.Dir)
 	if err != nil {
@@ -309,28 +318,67 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	}
 
 	var err error
-	o.gitInfo, err = o.FindGitInfo(o.Dir)
+	err = o.setBuildValues()
 	if err != nil {
-		return errors.Wrapf(err, "failed to find git information from dir %s", o.Dir)
+		return err
 	}
 
-	if o.Branch == "" {
-		o.Branch, err = o.Git().Branch(o.Dir)
-		if err != nil {
-			return errors.Wrapf(err, "failed to find git branch from dir %s", o.Dir)
+	// If there's an explicitly specified Pipeline in the lifecycle, use that.
+	if lifecycles.Pipeline != nil {
+		// TODO: Seeing weird behavior seemingly related to https://golang.org/doc/faq#nil_error
+		// if err is reused, maybe we need to switch return types (perhaps upstream in build-pipeline)?
+		if validateErr := lifecycles.Pipeline.Validate(); validateErr != nil {
+			return errors.Wrapf(validateErr, "Validation failed for Pipeline")
 		}
-	}
+		err = o.setBuildValues()
+		if err != nil {
+			return err
+		}
+		// TODO: use org-name-branch for pipeline name? Create client now to get
+		// namespace? Set namespace when applying rather than during generation?
+		name := kpipelines.PipelineResourceName(o.gitInfo, o.Branch, o.Context)
+		pipeline, tasks, err := lifecycles.Pipeline.GenerateCRDs(name, o.buildNumber, "will-be-replaced", "abcd", o.PodTemplates)
+		if err != nil {
+			return errors.Wrapf(err, "Generation failed for Pipeline")
+		}
 
-	// TODO generate build number properly!
-	o.buildNumber = "1"
+		if validateErr := pipeline.Spec.Validate(); validateErr != nil {
+			return errors.Wrapf(validateErr, "Validation failed for generated Pipeline")
+		}
+		for _, task := range tasks {
+			if validateErr := task.Spec.Validate(); validateErr != nil {
+				return errors.Wrapf(validateErr, "Validation failed for generated Task: %s", task.Name)
+			}
 
-	labels := map[string]string{}
-	if o.gitInfo != nil {
-		labels["owner"] = o.gitInfo.Organisation
-		labels["repo"] = o.gitInfo.Name
+			var volumes []corev1.Volume
+			for i, step := range task.Spec.Steps {
+				volumes = o.modifyVolumes(&step, task.Spec.Volumes)
+				o.modifyEnvVars(&step)
+				task.Spec.Steps[i] = step
+			}
+
+			task.Spec.Volumes = volumes
+		}
+
+		// TODO: where should this be created? In GenerateCRDs?
+		var resources []*pipelineapi.PipelineResource
+		resources = append(resources, o.generateSourceRepoResource(name), o.generateTempOrderingResource())
+
+		// TODO: Handle o.ViewSteps
+		err = o.applyPipeline(pipeline, tasks, resources, o.gitInfo, o.Branch)
+		if err != nil {
+			return errors.Wrapf(err, "failed to apply generated Pipeline")
+		}
+
+		folderName := o.OutDir
+		if folderName != "" {
+			err = o.writeOutput(folderName, o.Results.Pipeline, o.Results.Tasks, o.Results.PipelineRun, o.Results.Resources)
+			if err != nil {
+				return errors.Wrapf(err, "failed to write generated output to %s", folderName)
+			}
+		}
+		return nil
 	}
-	labels["branch"] = o.Branch
-	o.labels = labels
 
 	container := pipelineConfig.Agent.Container
 	if o.CustomImage != "" {
@@ -358,7 +406,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	name := kpipelines.PipelineResourceName(o.gitInfo, o.Branch, o.Context)
 	task := &pipelineapi.Task{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: kpipelines.PipelineAPIVersion,
+			APIVersion: syntax.PipelineAPIVersion,
 			Kind:       "Task",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -370,62 +418,6 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 			Volumes: volumes,
 		},
 	}
-	fileName := o.OutputFile
-	if o.ViewSteps {
-		return o.viewSteps(task)
-	}
-	if !o.NoApply {
-		err = o.applyTask(task, o.gitInfo, o.Branch)
-		if fileName == "" {
-			return err
-		}
-		err2 := o.writeTask(fileName, task)
-		return util.CombineErrors(err, err2)
-	}
-
-	if fileName == "" {
-		data, err := yaml.Marshal(task)
-		if err != nil {
-			return errors.Wrapf(err, "failed to marshal Task YAML")
-		}
-		log.Infof("%s\n", string(data))
-		return nil
-	}
-	return o.writeTask(fileName, task)
-}
-
-func (o *StepCreateTaskOptions) writeTask(fileName string, task *pipelineapi.Task) error {
-	data, err := yaml.Marshal(task)
-	if err != nil {
-		return errors.Wrapf(err, "failed to marshal Task YAML")
-	}
-	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
-	if err != nil {
-		return errors.Wrapf(err, "failed to save Task file %s", fileName)
-	}
-	log.Infof("generated Task at %s\n", util.ColorInfo(fileName))
-	return nil
-}
-
-func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.GitRepository, branch string) error {
-	_, ns, err := o.KubeClientAndDevNamespace()
-	if err != nil {
-		return err
-	}
-	kpClient, _, err := o.KnativePipelineClient()
-	if err != nil {
-		return err
-	}
-
-	resource, err := kpipelines.CreateOrUpdateSourceResource(kpClient, ns, gitInfo, branch)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create/update the PipelineResource in namespace %s", ns)
-	}
-
-	gitURL := gitInfo.HttpCloneURL()
-	info := util.ColorInfo
-	log.Infof("upserted PipelineResource %s for the git repository %s and branch %s\n", info(resource.Name), info(gitURL), info(branch))
-
 	if task.Spec.Inputs == nil {
 		task.Spec.Inputs = &pipelineapi.Inputs{}
 	}
@@ -436,31 +428,187 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 		TargetPath: o.TargetPath,
 	})
 
-	_, err = kpipelines.CreateOrUpdateTask(kpClient, ns, task)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create/update the task %s in namespace %s", task.Name, ns)
+	if o.ViewSteps {
+		return o.viewSteps(task)
 	}
-	log.Infof("upserted Task %s\n", info(task.Name))
+	err = o.applyTask(task, o.gitInfo, o.Branch)
+	if err != nil {
+		return errors.Wrapf(err, "failed to apply generated Pipeline")
+	}
 
+	folderName := o.OutDir
+	if folderName != "" {
+		err = o.writeOutput(folderName, o.Results.Pipeline, o.Results.Tasks, o.Results.PipelineRun, o.Results.Resources)
+		if err != nil {
+			return errors.Wrapf(err, "failed to write generated output to %s", folderName)
+		}
+	}
+
+	return nil
+}
+
+func (o *StepCreateTaskOptions) generateSourceRepoResource(name string) *pipelineapi.PipelineResource {
+	var resource *pipelineapi.PipelineResource
+	if o.gitInfo != nil {
+		gitURL := o.gitInfo.HttpsURL()
+		if gitURL != "" {
+			resource = &pipelineapi.PipelineResource{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: syntax.PipelineAPIVersion,
+					Kind:       "PipelineResource",
+				},
+				ObjectMeta: metav1.ObjectMeta{
+					Name: name,
+				},
+				Spec: pipelineapi.PipelineResourceSpec{
+					Type: pipelineapi.PipelineResourceTypeGit,
+					Params: []pipelineapi.Param{
+						{
+							Name:  "revision",
+							Value: o.Branch,
+						},
+						{
+							Name:  "url",
+							Value: gitURL,
+						},
+					},
+				},
+			}
+		}
+	}
+	return resource
+}
+
+// TODO: This should not exist, but we need some way to enforce ordering of
+// tasks and right now resources are the only way to do that.
+func (o *StepCreateTaskOptions) generateTempOrderingResource() *pipelineapi.PipelineResource {
+	return &pipelineapi.PipelineResource{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: syntax.PipelineAPIVersion,
+			Kind:       "PipelineResource",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "temp-ordering-resource",
+		},
+		Spec: pipelineapi.PipelineResourceSpec{
+			Type: pipelineapi.PipelineResourceTypeImage,
+			Params: []pipelineapi.Param{
+				{
+					Name:  "url",
+					Value: "alpine", // Something smallish (lol)
+				},
+			},
+		},
+	}
+}
+
+func (o *StepCreateTaskOptions) setBuildValues() error {
+	var err error
+	o.gitInfo, err = o.FindGitInfo(o.Dir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to find git information from dir %s", o.Dir)
+	}
+
+	if o.Branch == "" {
+		o.Branch, err = o.Git().Branch(o.Dir)
+		if err != nil {
+			return errors.Wrapf(err, "failed to find git branch from dir %s", o.Dir)
+		}
+	}
+
+	// TODO generate build number properly!
+	o.buildNumber = "1"
+
+	labels := map[string]string{}
+	if o.gitInfo != nil {
+		labels["owner"] = o.gitInfo.Organisation
+		labels["repo"] = o.gitInfo.Name
+	}
+	labels["branch"] = o.Branch
+	o.labels = labels
+
+	return nil
+}
+
+// TODO: Use the same YAML lib here as in buildpipeline/pipeline.go
+// TODO: Use interface{} with a helper function to reduce code repetition?
+// TODO: Take no arguments and use o.Results internally?
+func (o *StepCreateTaskOptions) writeOutput(folder string, pipeline *pipelineapi.Pipeline, tasks []*pipelineapi.Task, pipelineRun *pipelineapi.PipelineRun, resources []*pipelineapi.PipelineResource) error {
+	if err := os.Mkdir(folder, os.ModePerm); err != nil {
+		if !os.IsExist(err) {
+			return err
+		}
+	}
+	data, err := yaml.Marshal(pipeline)
+	if err != nil {
+		return errors.Wrapf(err, "failed to marshal Pipeline YAML")
+	}
+	fileName := filepath.Join(folder, "pipeline.yml")
+	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save Pipeline file %s", fileName)
+	}
+	log.Infof("generated Pipeline at %s\n", util.ColorInfo(fileName))
+
+	data, err = yaml.Marshal(pipelineRun)
+	if err != nil {
+		return errors.Wrapf(err, "failed to marshal PipelineRun YAML")
+	}
+	fileName = filepath.Join(folder, "pipeline-run.yml")
+	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save PipelineRun file %s", fileName)
+	}
+	log.Infof("generated PipelineRun at %s\n", util.ColorInfo(fileName))
+
+	for i, task := range tasks {
+		data, err = yaml.Marshal(task)
+		if err != nil {
+			return errors.Wrapf(err, "failed to marshal Task YAML")
+		}
+		fileName = filepath.Join(folder, fmt.Sprintf("task-%d.yml", i))
+		err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to save Task file %s", fileName)
+		}
+		log.Infof("generated Task at %s\n", util.ColorInfo(fileName))
+	}
+
+	for i, resource := range resources {
+		data, err = yaml.Marshal(resource)
+		if err != nil {
+			return errors.Wrapf(err, "failed to marshal PipelineResource YAML")
+		}
+		fileName = filepath.Join(folder, fmt.Sprintf("resource-%d.yml", i))
+		err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to save PipelineResource file %s", fileName)
+		}
+		log.Infof("generated PipelineResource at %s\n", util.ColorInfo(fileName))
+	}
+
+	return nil
+}
+
+func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.GitRepository, branch string) error {
+	organisation := gitInfo.Organisation
+	name := gitInfo.Name
+	resourceName := kube.ToValidName(organisation + "-" + name + "-" + branch)
+	var pipelineResources []*pipelineapi.PipelineResource
+	resource := o.generateSourceRepoResource(resourceName)
+	if resource != nil {
+		pipelineResources = append(pipelineResources, resource)
+	}
 	taskInputResources := []pipelineapi.PipelineTaskInputResource{}
 	resources := []pipelineapi.PipelineDeclaredResource{}
-	resourceBindings := []pipelineapi.PipelineResourceBinding{}
-
 	if resource != nil {
 		resources = append(resources, pipelineapi.PipelineDeclaredResource{
 			Name: resource.Name,
 			Type: resource.Spec.Type,
 		})
 		taskInputResources = append(taskInputResources, pipelineapi.PipelineTaskInputResource{
-			Name:     sourceResourceName,
+			Name:     o.SourceName,
 			Resource: resource.Name,
-		})
-		resourceBindings = append(resourceBindings, pipelineapi.PipelineResourceBinding{
-			Name: resource.Name,
-			ResourceRef: pipelineapi.PipelineResourceRef{
-				Name:       resource.Name,
-				APIVersion: resource.APIVersion,
-			},
 		})
 	}
 	tasks := []pipelineapi.PipelineTask{
@@ -477,22 +625,89 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 		},
 	}
 
-	// lets lazily create the Pipeline
-	pipeline, err := kpipelines.CreateOrUpdatePipeline(kpClient, ns, gitInfo, branch, o.Context, resources, tasks, o.labels)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create/update the Pipeline in namespace %s", ns)
+	pipeline := &pipelineapi.Pipeline{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kpipelines.PipelineResourceName(gitInfo, branch, o.Context),
+		},
+		Spec: pipelineapi.PipelineSpec{
+			Resources: resources,
+			Tasks:     tasks,
+		},
 	}
-	log.Infof("upserted Pipeline %s\n", info(pipeline.Name))
+	return o.applyPipeline(pipeline, []*pipelineapi.Task{task}, pipelineResources, gitInfo, branch)
+}
 
+// Given a Pipeline and its Tasks, applies the Tasks and Pipeline to the cluster
+// and creates and applies a PipelineResource for their source repo and a PipelineRun
+// to execute them. Handles o.NoApply internally.
+// TODO: Probably needs to take PipelineResources as an input as well
+func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, tasks []*pipelineapi.Task, resources []*pipelineapi.PipelineResource, gitInfo *gits.GitRepository, branch string) error {
+	_, ns, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+	kpClient, _, err := o.KnativePipelineClient()
+	if err != nil {
+		return err
+	}
+
+	info := util.ColorInfo
+
+	var resourceBindings []pipelineapi.PipelineResourceBinding
+	for _, resource := range resources {
+		resourceBindings = append(resourceBindings, pipelineapi.PipelineResourceBinding{
+			Name: resource.Name,
+			ResourceRef: pipelineapi.PipelineResourceRef{
+				Name:       resource.Name,
+				APIVersion: resource.APIVersion,
+			},
+		})
+
+		if !o.NoApply {
+			_, err := kpipelines.CreateOrUpdateSourceResource(kpClient, ns, resource)
+			if err != nil {
+				return errors.Wrapf(err, "failed to create/update PipelineResource %s in namespace %s", resource.Name, ns)
+			}
+			if resource.Spec.Type == pipelineapi.PipelineResourceTypeGit {
+				gitURL := gitInfo.HttpCloneURL()
+				log.Infof("upserted PipelineResource %s for the git repository %s and branch %s\n", info(resource.Name), info(gitURL), info(branch))
+			} else {
+				log.Infof("upserted PipelineResource %s\n", info(resource.Name))
+			}
+		}
+	}
+
+	for _, task := range tasks {
+		task.ObjectMeta.Namespace = ns
+
+		if !o.NoApply {
+			_, err = kpipelines.CreateOrUpdateTask(kpClient, ns, task)
+			if err != nil {
+				return errors.Wrapf(err, "failed to create/update the task %s in namespace %s", task.Name, ns)
+			}
+			log.Infof("upserted Task %s\n", info(task.Name))
+		}
+	}
+
+	pipeline.ObjectMeta.Namespace = ns
 	if pipeline.APIVersion == "" {
-		pipeline.APIVersion = kpipelines.PipelineAPIVersion
+		pipeline.APIVersion = syntax.PipelineAPIVersion
 	}
 	if pipeline.Kind == "" {
 		pipeline.Kind = "Pipeline"
 	}
+	if !o.NoApply {
+		// TODO: Result is missing some fields that the original has, such as APIVersion and Kind. Why?
+		pipeline, err = kpipelines.CreateOrUpdatePipeline(kpClient, ns, pipeline, o.labels)
+		if err != nil {
+			return errors.Wrapf(err, "failed to create/update the Pipeline in namespace %s", ns)
+		}
+		log.Infof("upserted Pipeline %s\n", info(pipeline.Name))
+	}
+
 	run := &pipelineapi.PipelineRun{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: "pipeline.knative.dev/v1alpha1",
+			APIVersion: syntax.PipelineAPIVersion,
 			Kind:       "PipelineRun",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -500,8 +715,8 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 			Labels: util.MergeMaps(o.labels),
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion: pipeline.APIVersion,
-					Kind:       pipeline.Kind,
+					APIVersion: syntax.PipelineAPIVersion,
+					Kind:       "Pipeline",
 					Name:       pipeline.Name,
 					UID:        pipeline.UID,
 				},
@@ -520,14 +735,17 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 		},
 	}
 
-	_, err = kpipelines.CreatePipelineRun(kpClient, ns, pipeline, run, o.Duration)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create the PipelineRun namespace %s", ns)
+	if !o.NoApply {
+		_, err = kpipelines.CreatePipelineRun(kpClient, ns, pipeline, run, o.Duration)
+		if err != nil {
+			return errors.Wrapf(err, "failed to create the PipelineRun in namespace %s", ns)
+		}
+		log.Infof("created PipelineRun %s\n", info(run.Name))
 	}
-	log.Infof("created PipelineRun %s\n", info(run.Name))
 
-	o.Results.Task = task
+	o.Results.Tasks = tasks
 	o.Results.Pipeline = pipeline
+	o.Results.Resources = resources
 	o.Results.PipelineRun = run
 	return nil
 }
@@ -789,8 +1007,8 @@ func (o *StepCreateTaskOptions) viewSteps(task *pipelineapi.Task) error {
 // ObjectReferences creates a list of object references created
 func (r *StepCreateTaskResults) ObjectReferences() []kube.ObjectReference {
 	resources := []kube.ObjectReference{}
-	if r.Task != nil {
-		resources = append(resources, kube.CreateObjectReference(r.Task.TypeMeta, r.Task.ObjectMeta))
+	for _, task := range r.Tasks {
+		resources = append(resources, kube.CreateObjectReference(task.TypeMeta, task.ObjectMeta))
 	}
 	if r.Pipeline != nil {
 		resources = append(resources, kube.CreateObjectReference(r.Pipeline.TypeMeta, r.Pipeline.ObjectMeta))

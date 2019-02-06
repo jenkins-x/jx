@@ -56,7 +56,7 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 	}
 	gitURL := ""
 	for _, initContainer := range pod.Spec.InitContainers {
-		if initContainer.Name == "build-step-git-source" || initContainer.Name == "build-step-git-source-source" {
+		if strings.HasPrefix(initContainer.Name, "build-step-git-source") {
 			args := initContainer.Args
 			for i := 0; i <= len(args)-2; i += 2 {
 				key := args[i]

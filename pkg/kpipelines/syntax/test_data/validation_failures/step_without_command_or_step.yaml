@@ -1,0 +1,6 @@
+agent:
+  image: some-image
+stages:
+  - name: A Working Stage
+    steps:
+      - args: ['hello','world']

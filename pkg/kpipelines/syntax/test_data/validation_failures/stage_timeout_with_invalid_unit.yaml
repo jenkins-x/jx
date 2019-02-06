@@ -1,0 +1,13 @@
+agent:
+  image: some-image
+stages:
+  - name: A Working Stage
+    options:
+      timeout:
+        time: 5
+        unit: years
+    steps:
+      - command: echo
+        args:
+          - hello
+          - world

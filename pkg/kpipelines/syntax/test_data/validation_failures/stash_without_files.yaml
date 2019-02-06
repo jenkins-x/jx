@@ -1,0 +1,12 @@
+agent:
+  image: some-image
+stages:
+  - name: A Working Stage
+    options:
+      stash:
+        name: a-stash
+    steps:
+      - command: echo
+        args:
+          - hello
+          - world

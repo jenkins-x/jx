@@ -1,0 +1,8 @@
+agent:
+  image: some-image
+stages:
+  - name: A Working Stage
+    steps:
+      - command: echo
+        options:
+          someOptions: someValue
