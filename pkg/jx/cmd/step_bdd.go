@@ -429,7 +429,7 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	log.Infof("\nCreating cluster %s\n", util.ColorInfo(cluster.Name))
 	binary := o.Flags.JxBinary
 	args := cluster.Args
-	args = append(args, "-n", cluster.Name)
+	args = append(args, "--cluster-name", cluster.Name)
 
 	if util.StringArrayIndex(args, "-b") < 0 && util.StringArrayIndex(args, "--batch-mode") < 0 {
 		args = append(args, "--batch-mode")
