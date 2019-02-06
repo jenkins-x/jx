@@ -433,7 +433,7 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	log.Infof("\nCreating cluster %s\n", util.ColorInfo(cluster.Name))
 	binary := o.Flags.JxBinary
 	args := cluster.Args
-	args = append(args, "-n", cluster.Name)
+	args = append(args, "--cluster-name", cluster.Name)
 
 	if util.StringArrayIndex(args, "-b") < 0 && util.StringArrayIndex(args, "--batch-mode") < 0 {
 		args = append(args, "--batch-mode")
@@ -464,6 +464,12 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	if o.CommonOptions.InstallDependencies {
 		args = append(args, "--install-dependencies")
 	}
+
+	// expand any environment variables
+	for i, arg := range args {
+		args[i] = os.ExpandEnv(arg)
+	}
+
 	safeArgs := append([]string{}, args...)
 
 	gitToken := o.InstallOptions.GitRepositoryOptions.ApiToken
