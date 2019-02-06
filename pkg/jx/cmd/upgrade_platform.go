@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/config"
 	configio "github.com/jenkins-x/jx/pkg/io"
 
 	"io"
@@ -15,6 +16,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	do_not_use "gopkg.in/yaml.v2"
+	"github.com/ghodss/yaml"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -95,6 +99,8 @@ func NewCmdUpgradePlatform(f Factory, in terminal.FileReader, out terminal.FileW
 
 // Run implements the command
 func (o *UpgradePlatformOptions) Run() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
+
 	configStore := configio.NewFileStore()
 	targetVersion := o.Version
 	err := o.Helm().UpdateRepo()
@@ -312,6 +318,32 @@ func (o *UpgradePlatformOptions) Run() error {
 		}
 	}
 
+	invalidFormat, err :=  o.checkAdminSecretsForInvalidFormat(adminSecretsFileName)
+	if err != nil {
+		return errors.Wrap(err, "unable to check adminSecrets.yaml file for invalid format")
+	}
+
+	if invalidFormat {
+		log.Warnf("We have detected that the %s file has an invalid format", adminSecretsFileName)
+
+		confirm := false
+		prompt := &survey.Confirm{
+			Message: fmt.Sprintf("Would you like to repair the file?"),
+			Default: true,
+		}
+		survey.AskOne(prompt, &confirm, nil, surveyOpts)
+
+		if confirm {
+			err = o.repairAdminSecrets(adminSecretsFileName)
+			if err != nil {
+				return errors.Wrap(err, "unable to repair adminSecrets.yaml")
+			}
+		} else {
+			log.Error("Aborting upgrade due to invalid adminSecrets.yaml")
+			return nil
+		}
+	}
+
 	valueFiles := []string{cloudEnvironmentValuesLocation, configFileName, adminSecretsFileName, cloudEnvironmentSecretsLocation}
 	valueFiles, err = helm.AppendMyValues(valueFiles)
 	if err != nil {
@@ -362,4 +394,34 @@ func (o *UpgradePlatformOptions) removeFileIfExists(fileName string) error {
 		}
 	}
 	return nil
+}
+
+func (o *UpgradePlatformOptions) checkAdminSecretsForInvalidFormat(fileName string) (bool, error) {
+	data, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return false, errors.Wrap(err, "unable to read file")
+	}
+	return strings.Contains(string(data), "mavensettingsxml"), nil
+}
+
+func (o *UpgradePlatformOptions) repairAdminSecrets(fileName string) error {
+	admin := config.AdminSecretsConfig{}
+
+	data, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return errors.Wrap(err, "unable to read file")
+	}
+
+	err = do_not_use.Unmarshal([]byte(data), &admin)
+	if err != nil {
+		return errors.Wrap(err, "unable to unmarshall secrets")
+	}
+
+	// use the correct yaml library to persist
+	y, err := yaml.Marshal(admin)
+	if err != nil {
+		return errors.Wrapf(err, "unable to marshal object to yaml: %v", admin)
+	}
+
+	return ioutil.WriteFile(fileName, y, util.DefaultWritePermissions)
 }
