@@ -473,7 +473,7 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 		safeArgs = append(safeArgs, "--default-admin-password", "**************¬")
 	}
 
-	log.Infof("running command: %s\n", util.ColorInfo(fmt.Sprintf("%s %s", binary, strings.Join(args, " "))))
+	log.Infof("running command: %s\n", util.ColorInfo(fmt.Sprintf("%s %s", binary, strings.Join(safeArgs, " "))))
 
 	// lets not log any sensitive command line arguments
 	e := exec.Command(binary, args...)
