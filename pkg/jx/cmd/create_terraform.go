@@ -221,6 +221,8 @@ func (g *GKECluster) ParseTfVarsFile(path string) {
 // Flags for a cluster
 type Flags struct {
 	Cluster                     []string
+	ClusterName                 string // cannot be used in conjunction with Cluster
+	CloudProvider               string // cannot be used in conjunction with Cluster
 	OrganisationName            string
 	SkipLogin                   bool
 	ForkOrganisationGitRepo     string
@@ -323,7 +325,9 @@ func (options *CreateTerraformOptions) addFlags(cmd *cobra.Command, addSharedFla
 	if addSharedFlags {
 		cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
 	}
-	cmd.Flags().StringArrayVarP(&options.Flags.Cluster, "cluster", "c", []string{}, "Name and Kubernetes provider (gke, aks, eks) of clusters to be created in the form --cluster foo=gke")
+	cmd.Flags().StringArrayVarP(&options.Flags.Cluster, optionCluster, "c", []string{}, "Name and Kubernetes provider (gke, aks, eks) of clusters to be created in the form --cluster foo=gke")
+	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "", "", "The name of a single cluster to create - cannot be used in conjunction with --"+optionCluster)
+	cmd.Flags().StringVarP(&options.Flags.CloudProvider, optionCloudProvider, "", "", "The cloud provider (eg gke, aws) - cannot be used in conjunction with --"+optionCluster)
 	cmd.Flags().BoolVarP(&options.Flags.SkipTerraformApply, "skip-terraform-apply", "", false, "Skip applying the generated Terraform plans")
 	cmd.Flags().BoolVarP(&options.Flags.IgnoreTerraformWarnings, "ignore-terraform-warnings", "", false, "Ignore any warnings about the Terraform plan being potentially destructive")
 	cmd.Flags().StringVarP(&options.Flags.JxEnvironment, "jx-environment", "", "dev", "The cluster name to install jx inside")
@@ -378,14 +382,12 @@ func (options *CreateTerraformOptions) Run() error {
 		return err
 	}
 
-	if len(options.Flags.Cluster) >= 1 {
-		err := options.ValidateClusterDetails()
-		if err != nil {
-			return err
-		}
+	err = options.ValidateClusterDetails()
+	if err != nil {
+		return err
 	}
 
-	if len(options.Flags.Cluster) == 0 {
+	if len(options.Clusters) == 0 {
 		err := options.ClusterDetailsWizard()
 		if err != nil {
 			return err
@@ -480,17 +482,24 @@ func (options *CreateTerraformOptions) ClusterDetailsWizard() error {
 
 // ValidateClusterDetails validates the options for a cluster
 func (options *CreateTerraformOptions) ValidateClusterDetails() error {
-	for _, p := range options.Flags.Cluster {
-		pair := strings.Split(p, "=")
-		if len(pair) != 2 {
-			return errors.New("need to provide cluster values as --cluster name=provider, e.g. --cluster production=gke")
+	if len(options.Flags.Cluster) > 0 {
+		if options.Flags.ClusterName != "" || options.Flags.CloudProvider != "" {
+			return fmt.Errorf("--%s cannot be used in conjunction with --%s or --%s", optionCluster, optionClusterName, optionCloudProvider)
 		}
-		if !stringInValidProviders(pair[1]) {
-			return fmt.Errorf("invalid cluster provider type %s, must be one of %v", p, validTerraformClusterProviders)
-		}
+		for _, p := range options.Flags.Cluster {
+			pair := strings.Split(p, "=")
+			if len(pair) != 2 {
+				return fmt.Errorf("need to provide cluster values as --%s name=provider, e.g. --%s production=gke", optionCluster, optionCluster)
+			}
+			if !stringInValidProviders(pair[1]) {
+				return fmt.Errorf("invalid cluster provider type %s, must be one of %v", p, validTerraformClusterProviders)
+			}
 
-		c := &GKECluster{name: pair[0], provider: pair[1]}
-		options.Clusters = append(options.Clusters, c)
+			c := &GKECluster{name: pair[0], provider: pair[1]}
+			options.Clusters = append(options.Clusters, c)
+		}
+	} else if options.Flags.ClusterName != "" || options.Flags.CloudProvider != "" {
+		options.Clusters = []Cluster{&GKECluster{name: options.Flags.ClusterName, provider: options.Flags.CloudProvider}}
 	}
 	return nil
 }
@@ -909,7 +918,7 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 				prompt := &survey.Confirm{
 					Message: "Would you like to enable Cloud Build, Container Registry & Container Analysis APIs?",
 					Default: false,
-					Help: "Enables extra APIs on the GCP project",
+					Help:    "Enables extra APIs on the GCP project",
 				}
 				survey.AskOne(prompt, &options.Flags.GKEUseEnhancedApis, nil, surveyOpts)
 			}
@@ -931,7 +940,7 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 				prompt := &survey.Confirm{
 					Message: "Would you like to enable Kaniko for building container images",
 					Default: false,
-					Help: "Use Kaniko for docker images",
+					Help:    "Use Kaniko for docker images",
 				}
 				survey.AskOne(prompt, &options.InstallOptions.Flags.Kaniko, nil, surveyOpts)
 			}

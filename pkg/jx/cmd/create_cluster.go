@@ -42,7 +42,9 @@ const (
 
 	optionKubernetesVersion = "kubernetes-version"
 	optionNodes             = "nodes"
+	optionCluster           = "cluster"
 	optionClusterName       = "cluster-name"
+	optionCloudProvider     = "cloud-provider"
 )
 
 var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, OKE, AKS, AWS, EKS, KUBERNETES, IKS, OPENSHIFT, MINISHIFT, JX_INFRA, PKS, ICP}
