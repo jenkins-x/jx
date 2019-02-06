@@ -460,6 +460,12 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	if o.CommonOptions.InstallDependencies {
 		args = append(args, "--install-dependencies")
 	}
+
+	// expand any environment variables
+	for i, arg := range args {
+		args[i] = os.ExpandEnv(arg)
+	}
+
 	safeArgs := append([]string{}, args...)
 
 	gitToken := o.InstallOptions.GitRepositoryOptions.ApiToken
