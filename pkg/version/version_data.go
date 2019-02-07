@@ -11,9 +11,9 @@ import (
 	"strings"
 )
 
-// VersionCallback a callback function for processing version information. Return true to continue processing
+// Callback a callback function for processing version information. Return true to continue processing
 // or false to terminate the loop
-type VersionCallback func(kind VersionKind, name string, version *StableVersion) (bool, error)
+type Callback func(kind VersionKind, name string, version *StableVersion) (bool, error)
 
 // VersionKind represents the kind of version
 type VersionKind string
@@ -111,7 +111,7 @@ func SaveStableVersion(wrkDir string, kind VersionKind, name string, version *St
 }
 
 // ForEachVersion processes all of the versions in the wrkDir using the given callback function.
-func ForEachVersion(wrkDir string, callback VersionCallback) error {
+func ForEachVersion(wrkDir string, callback Callback) error {
 	for _, kind := range Kinds {
 		err := ForEachKindVersion(wrkDir, kind, callback)
 		if err != nil {
@@ -122,7 +122,7 @@ func ForEachVersion(wrkDir string, callback VersionCallback) error {
 }
 
 // ForEachKindVersion processes all of the versions in the wrkDir and kind using the given callback function.
-func ForEachKindVersion(wrkDir string, kind VersionKind, callback VersionCallback) error {
+func ForEachKindVersion(wrkDir string, kind VersionKind, callback Callback) error {
 	kindString := string(kind)
 	kindDir := filepath.Join(wrkDir, kindString)
 	glob := filepath.Join(kindDir, "*", "*.yml")
