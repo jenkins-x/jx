@@ -113,6 +113,12 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 
 			if err != nil {
 				if lpack == "" {
+					if exists, err2 := util.FileExists(filepath.Join(dir, "Dockerfile")); err2 == nil && exists {
+						lpack = "docker"
+						err = nil
+					}
+				}
+				if lpack == "" {
 					// lets check for a helm pack
 					files, err2 := filepath.Glob(filepath.Join(dir, "*/Chart.yaml"))
 					if err2 != nil {
@@ -121,11 +127,6 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 					if len(files) > 0 {
 						lpack = "helm"
 						err = nil
-					}
-				}
-				if lpack == "" {
-					if exists, err := util.FileExists(filepath.Join(dir, "Dockerfile")); err == nil && exists {
-						lpack = "docker"
 					}
 				}
 				if err != nil {

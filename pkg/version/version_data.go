@@ -1,6 +1,7 @@
 package version
 
 import (
+	"fmt"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -85,7 +86,7 @@ func LoadStableVersionNumber(wrkDir string, kind VersionKind, name string) (stri
 		log.Infof("using stable version %s from %s of %s from %s\n", util.ColorInfo(version), string(kind), util.ColorInfo(name), wrkDir)
 	} else {
 		log.Warnf("could not find a stable version from %s of %s from %s\nFor background see: https://jenkins-x.io/architecture/version-stream/\n", string(kind), name, wrkDir)
-		log.Infof("Please lock this version down via the command: 'jx step create version pr -k %s -n %s'\n", string(kind), name)
+		log.Infof("Please lock this version down via the command: %s\n", util.ColorInfo(fmt.Sprintf("jx step create version pr -k %s -n %s\n", string(kind), name)))
 	}
 	return version, err
 }
