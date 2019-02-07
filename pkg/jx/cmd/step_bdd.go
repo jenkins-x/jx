@@ -429,6 +429,21 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	if buildNum == "" {
 		log.Warnf("No build number could be found from the environment variable $BUILD_NUMBER!\n")
 	}
+	branch := strings.TrimPrefix(os.Getenv("BRANCH_NAME"), "PR-")
+	if branch == "" {
+		dir := o.Flags.VersionsDir
+		if dir == "" {
+			dir = "."
+		}
+		var err error
+		branch, err = o.Git().Branch(dir)
+		if err != nil {
+			log.Warnf("failed to get the git branch name in dir %s\n", dir)
+		}
+	}
+	if branch != "" {
+		cluster.Name += "-" + kube.ToValidName(branch)
+	}
 	cluster.Name += "-" + buildNum
 	log.Infof("\nCreating cluster %s\n", util.ColorInfo(cluster.Name))
 	binary := o.Flags.JxBinary
@@ -490,6 +505,9 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	e.Stdout = o.Out
 	e.Stderr = o.Err
 	os.Setenv("PATH", util.PathWithBinary())
+
+	// work around for helm apply with GitOps using a k8s local Service URL
+	os.Setenv("CHART_REPOSITORY", kube.DefaultChartMuseumURL)
 	err := e.Run()
 	if err != nil {
 		log.Errorf("Error: Command failed  %s %s\n", binary, strings.Join(safeArgs, " "))
