@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 )
 
@@ -22,9 +23,9 @@ var (
 
 // StableVersion stores the stable version information
 type StableVersion struct {
-	Version string
-	GitURL  string
-	URL     string
+	Version string `yaml:"version,omitempty"`
+	GitURL  string `yaml:"gitUrl,omitempty"`
+	URL     string `yaml:"url,omitempty"`
 }
 
 // LoadStableVersion loads the stable version data from the version configuration directory returning an empty object if there is
@@ -63,7 +64,28 @@ func LoadStableVersionNumber(wrkDir string, kind VersionKind, name string) (stri
 	if version != "" {
 		log.Infof("using stable version %s from %s of %s from %s\n", util.ColorInfo(version), string(kind), util.ColorInfo(name), wrkDir)
 	} else {
-		log.Warnf("could not find a stable version from %s of %s from %s - we should lock down this chart version to improve stability. See: https://github.com/jenkins-x/jenkins-x-versions/blob/master/README.md\n", string(kind), name, wrkDir)
+		log.Warnf("could not find a stable version from %s of %s from %s\nFor background see: https://jenkins-x.io/architecture/version-stream/\n", string(kind), name, wrkDir)
+		log.Infof("Please lock this version down via the command: 'jx step create version pr -k %s -n %s'\n", string(kind), name)
 	}
 	return version, err
+}
+
+// SaveStableVersion saves the version file
+func SaveStableVersion(wrkDir string, kind VersionKind, name string, version *StableVersion) error {
+	data, err := yaml.Marshal(version)
+	if err != nil {
+		return errors.Wrapf(err, "failed to marshal data to YAML %#v", version)
+	}
+	path := filepath.Join(wrkDir, string(kind), name+".yml")
+	dir, _ := filepath.Split(path)
+	err = os.MkdirAll(dir, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create directory %s", dir)
+	}
+
+	err = ioutil.WriteFile(path, data, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to write file %s", path)
+	}
+	return nil
 }
