@@ -53,6 +53,7 @@ func NewCmdDelete(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	}
 
 	cmd.AddCommand(NewCmdDeleteAddon(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteApp(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeleteApplication(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeleteBranch(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeleteChat(f, in, out, errOut))
