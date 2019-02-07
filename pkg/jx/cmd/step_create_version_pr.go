@@ -26,6 +26,15 @@ var (
 		# create a Pull Request to update a chart version
 		jx step create version pr -n jenkins-x/prow -v 1.2.3
 
+		# create a Pull Request to update a chart version to the latest found in the helm repo
+		jx step create version pr -n jenkins-x/prow 
+
+		# create a Pull Request to update all charts matching a filter to the latest found in the helm repo
+		jx step create version pr -f "*"
+
+		# create a Pull Request to update all charts in the 'jenkins-x' chart repository to the latest found in the helm repo
+		jx step create version pr -f "jenkins-x/*"
+
 			`)
 )
 
@@ -35,11 +44,16 @@ type StepCreateVersionPullRequestOptions struct {
 
 	Kind               string
 	Name               string
+	Includes           []string
+	Excludes           []string
 	VersionsRepository string
 	VersionsBranch     string
 	Version            string
 
 	updatedHelmRepo bool
+	branchNameText  string
+	title           string
+	message         string
 }
 
 // StepCreateVersionPullRequestResults stores the generated results
@@ -79,17 +93,16 @@ func NewCmdStepCreateVersionPullRequest(f Factory, in terminal.FileReader, out t
 
 	cmd.Flags().StringVarP(&options.VersionsRepository, "repo", "r", DefaultVersionsURL, "Jenkins X versions Git repo")
 	cmd.Flags().StringVarP(&options.VersionsBranch, "branch", "", "master", "the versions git repository branch to clone and generate a pull request from")
-	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "charts", "The kind of version. Possible values: " + strings.Join(version.KindStrings, ", "))
+	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "charts", "The kind of version. Possible values: "+strings.Join(version.KindStrings, ", "))
 	cmd.Flags().StringVarP(&options.Name, "name", "n", "", "The name of the version to update. e.g. the name of the chart like 'jenkins-x/prow'")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version to change. If no version is supplied the latest version is found")
+	cmd.Flags().StringArrayVarP(&options.Includes, "filter", "f", nil, "The name patterns to include - such as '*' for all names")
+	cmd.Flags().StringArrayVarP(&options.Excludes, "excludes", "x", nil, "The name patterns to exclude")
 	return cmd
 }
 
 // Run implements this command
 func (o *StepCreateVersionPullRequestOptions) Run() error {
-	if o.Name == "" {
-		return util.MissingOption("name")
-	}
 	if o.Kind == "" {
 		return util.MissingOption("kind")
 	}
@@ -107,19 +120,29 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 		return err
 	}
 
-	if o.Version == "" && o.Kind == string(version.KindChart) {
-		err = o.updateHelmRepo()
-		if err != nil {
-			return err
+	if len(o.Includes) == 0 {
+		if o.Name == "" {
+			return util.MissingOption("name")
 		}
-		o.Version, err = o.findLatestChartVersion(o.Name)
-		if err != nil {
-			return errors.Wrapf(err, "failed to find latest chart version for %s", o.Name)
+
+		if o.Version == "" && o.Kind == string(version.KindChart) {
+			o.Version, err = o.findLatestChartVersion(o.Name)
+			if err != nil {
+				return errors.Wrapf(err, "failed to find latest chart version for %s", o.Name)
+			}
+			log.Infof("found latest version %s for chart %s\n", util.ColorInfo(o.Version), util.ColorInfo(o.Name))
 		}
-		log.Infof("found latest version %s for chart %s\n", util.ColorInfo(o.Version), util.ColorInfo(o.Name))
-	}
-	if o.Version == "" {
-		return util.MissingOption("version")
+		if o.Version == "" {
+			return util.MissingOption("version")
+		}
+		o.branchNameText = strings.Replace("upgrade-"+o.Name+"-"+o.Version, "/", "-", -1)
+		o.branchNameText = strings.Replace(o.branchNameText, ".", "-", -1)
+
+		o.title = fmt.Sprintf("change %s to version %s", o.Name, o.Version)
+		o.message = fmt.Sprintf("change %s to version %s", o.Name, o.Version)
+	} else {
+		o.branchNameText = "upgrade-chart-versions"
+		o.title = "upgrade chart versions"
 	}
 
 	gitInfo, err := gits.ParseGitURL(o.VersionsRepository)
@@ -171,13 +194,7 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 		return errors.Wrap(err, "pulling upstream of forked versions repository")
 	}
 
-	branchNameText := strings.Replace("upgrade-"+o.Name+"-"+o.Version, "/", "-", -1)
-	branchNameText = strings.Replace(branchNameText, ".", "-", -1)
-
-	title := fmt.Sprintf("change %s to version %s", o.Name, o.Version)
-	message := fmt.Sprintf("change %s to version %s", o.Name, o.Version)
-
-	branchName := o.Git().ConvertToValidBranchName(branchNameText)
+	branchName := o.Git().ConvertToValidBranchName(o.branchNameText)
 	branchNames, err := o.Git().RemoteBranchNames(dir, "remotes/origin/")
 	if err != nil {
 		return errors.Wrapf(err, "failed to load remote branch names")
@@ -214,7 +231,7 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 		return nil
 	}
 
-	err = git.CommitDir(dir, title)
+	err = git.CommitDir(dir, o.title)
 	if err != nil {
 		return err
 	}
@@ -227,8 +244,8 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 
 	gha := &gits.GitPullRequestArguments{
 		GitRepository: gitInfo,
-		Title:         title,
-		Body:          message,
+		Title:         o.title,
+		Body:          o.message,
 		Base:          base,
 		Head:          username + ":" + branchName,
 	}
@@ -242,6 +259,15 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 }
 
 func (o *StepCreateVersionPullRequestOptions) modifyFiles(dir string) error {
+	if len(o.Includes) > 0 {
+		switch version.VersionKind(o.Kind) {
+		case version.KindChart:
+			return o.findLatestChartVersions(dir)
+		default:
+			return fmt.Errorf("We do not yet support finding the latest version of kind %s", o.Kind)
+		}
+	}
+
 	kind := version.VersionKind(o.Kind)
 	data, err := version.LoadStableVersion(dir, kind, o.Name)
 	if err != nil {
@@ -258,7 +284,36 @@ func (o *StepCreateVersionPullRequestOptions) modifyFiles(dir string) error {
 	return nil
 }
 
+func (o *StepCreateVersionPullRequestOptions) findLatestChartVersions(dir string) error {
+	callback := func(kind version.VersionKind, name string, stableVersion *version.StableVersion) (bool, error) {
+		if !util.StringMatchesAny(name, o.Includes, o.Excludes) {
+			return true, nil
+		}
+		v, err := o.findLatestChartVersion(name)
+		if err != nil {
+			log.Warnf("failed to find latest version of %s: %s\n", name, err.Error())
+			return true, nil
+		}
+		if v != stableVersion.Version {
+			stableVersion.Version = v
+			err = version.SaveStableVersion(dir, kind, name, stableVersion)
+			if err != nil {
+				return false, err
+			}
+			o.message += fmt.Sprintf("change `%s` to version `%s`\n", name, v)
+		}
+		return true, nil
+	}
+
+	err := version.ForEachKindVersion(dir, version.VersionKind(o.Kind), callback)
+	return err
+}
+
 func (o *StepCreateVersionPullRequestOptions) findLatestChartVersion(name string) (string, error) {
+	err := o.updateHelmRepo()
+	if err != nil {
+		return "", err
+	}
 	info, err := o.Helm().SearchChartVersions(name)
 	if err != nil {
 		return "", err
