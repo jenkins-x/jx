@@ -349,7 +349,11 @@ func (f *factory) ResetSecretsLocation() {
 
 // CreateSystemVaultClient gets the system vault client for managing the secrets
 func (f *factory) CreateSystemVaultClient(namespace string) (vault.Client, error) {
-	return f.CreateVaultClient(vault.SystemVaultName, namespace)
+	name, err := kubevault.SystemVaultName(f.kubeConfig)
+	if err != nil {
+		return nil, errors.Wrap(err, "building the system vault name from cluster name")
+	}
+	return f.CreateVaultClient(name, namespace)
 }
 
 // CreateVaultClient returns the given vault client for managing secrets
@@ -370,7 +374,10 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 		namespace = devNamespace
 	}
 	if name == "" {
-		name = vault.SystemVaultName
+		name, err = kubevault.SystemVaultName(f.kubeConfig)
+		if err != nil {
+			return nil, errors.Wrap(err, "building the system vault name from cluster name")
+		}
 	}
 
 	if !kubevault.FindVault(vopClient, name, namespace) {

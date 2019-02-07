@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -188,7 +189,7 @@ func (o *CreateVaultOptions) createVault(vaultOperatorClient versioned.Interface
 
 	if o.GKEZone == "" {
 		defaultZone := ""
-		if cluster, err := gke.ClusterName(o.Kube()); err == nil && cluster != "" {
+		if cluster, err := cluster.Name(o.Kube()); err == nil && cluster != "" {
 			if clusterZone, err := gke.ClusterZone(cluster); err == nil {
 				defaultZone = clusterZone
 			}
@@ -201,7 +202,7 @@ func (o *CreateVaultOptions) createVault(vaultOperatorClient versioned.Interface
 		o.GKEZone = zone
 	}
 
-	clusterName, err := gke.ShortClusterName(o.Kube())
+	clusterName, err := cluster.ShortName(o.Kube())
 	if err != nil {
 		return err
 	}
