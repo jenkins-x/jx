@@ -13,12 +13,20 @@ import (
 // VersionKind represents the kind of version
 type VersionKind string
 
-var (
+const (
 	// KindChart represents a chart version
 	KindChart VersionKind = "charts"
 
 	// KindPackage represents a package version
 	KindPackage VersionKind = "packages"
+)
+
+var (
+	// KindStrings all the kinds as strings for validating CLI arguments
+	KindStrings = []string{
+		string(KindChart),
+		string(KindPackage),
+	}
 )
 
 // StableVersion stores the stable version information

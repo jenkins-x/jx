@@ -79,7 +79,7 @@ func NewCmdStepCreateVersionPullRequest(f Factory, in terminal.FileReader, out t
 
 	cmd.Flags().StringVarP(&options.VersionsRepository, "repo", "r", DefaultVersionsURL, "Jenkins X versions Git repo")
 	cmd.Flags().StringVarP(&options.VersionsBranch, "branch", "", "master", "the versions git repository branch to clone and generate a pull request from")
-	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "charts", "The kind of version such as 'charts' or 'packages'")
+	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "charts", "The kind of version. Possible values: " + strings.Join(version.KindStrings, ", "))
 	cmd.Flags().StringVarP(&options.Name, "name", "n", "", "The name of the version to update. e.g. the name of the chart like 'jenkins-x/prow'")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version to change. If no version is supplied the latest version is found")
 	return cmd
@@ -92,6 +92,9 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 	}
 	if o.Kind == "" {
 		return util.MissingOption("kind")
+	}
+	if util.StringArrayIndex(version.KindStrings, o.Kind) < 0 {
+		return util.InvalidOption("kind", o.Kind, version.KindStrings)
 	}
 	if o.VersionsRepository == "" {
 		return util.MissingOption("repo")
@@ -277,6 +280,7 @@ func (o *StepCreateVersionPullRequestOptions) updateHelmRepo() error {
 	if o.updatedHelmRepo {
 		return nil
 	}
+	log.Info("updating helm repositories to find the latest chart versions...\n")
 	err := o.Helm().UpdateRepo()
 	if err != nil {
 		return errors.Wrap(err, "failed to update helm repos")
