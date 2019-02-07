@@ -1,6 +1,0 @@
-agent:
-  image: some-image
-stages:
-  - name: .-  ^ ö
-    steps:
-      - command: ls

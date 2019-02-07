@@ -1,7 +1,6 @@
 package syntax
 
 import (
-	"io/ioutil"
 	"strings"
 	"testing"
 )
@@ -51,62 +50,6 @@ func TestFindDuplicates(t *testing.T) {
 				}
 			}
 
-		})
-	}
-}
-
-func TestFindDuplicatesWithStages(t *testing.T) {
-	tests := []struct {
-		name          string
-		expectedError []string
-	}{
-		{
-			name:          "stages_names_ok.yaml",
-			expectedError: []string{},
-		},
-		{
-			name:          "stages_names_ok_with_sub_stages.yaml",
-			expectedError: []string{"Duplicate stage name 'A Working title 1'", "Duplicate stage name 'A Working title 2'"},
-		},
-		{
-			name:          "stages_names_duplicates_with_sub_stages.yaml",
-			expectedError: []string{"Duplicate stage name 'Stage With Stages'"},
-		},
-		{
-			name:          "stages_names_duplicates.yaml",
-			expectedError: []string{"Duplicate stage name 'A Working Stage'"},
-		},
-		{
-			name:          "stages_names_with_sub_stages.yaml",
-			expectedError: []string{"Duplicate stage name 'A Working title 2'", "Duplicate stage name 'A Working title'"},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			fileName := "test_data/stage_name_validation/" + tt.name
-			file, err := ioutil.ReadFile(fileName)
-
-			if err != nil {
-				println("ERROR: Couldn't read file ", fileName, " with error ", err)
-			}
-
-			yaml := string(file)
-			parsed, _ := ParseJenkinsfileYaml(yaml)
-
-			error := validateStageNames(parsed)
-
-			if len(tt.expectedError) == 0 {
-				if len(error.Error()) > 0 {
-					t.Fatal("Unexpected error ", error.Error())
-				}
-			}
-			for _, expected := range tt.expectedError {
-				if !strings.Contains(error.Error(), expected) {
-					t.Fatal("missing  expected error '", expected, "'")
-				}
-
-			}
 		})
 	}
 }
