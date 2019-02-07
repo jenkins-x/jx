@@ -429,6 +429,7 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	if buildNum == "" {
 		log.Warnf("No build number could be found from the environment variable $BUILD_NUMBER!\n")
 	}
+	baseClusterName := kube.ToValidName(cluster.Name)
 	branch := strings.TrimPrefix(os.Getenv("BRANCH_NAME"), "PR-")
 	if branch == "" {
 		dir := o.Flags.VersionsDir
@@ -442,7 +443,8 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 		}
 	}
 	if branch != "" {
-		cluster.Name += "-" + kube.ToValidName(branch)
+		branch = kube.ToValidName(branch)
+		cluster.Name += "-" + branch
 	}
 	cluster.Name += "-" + buildNum
 	log.Infof("\nCreating cluster %s\n", util.ColorInfo(cluster.Name))
@@ -462,6 +464,13 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 		if version != "" {
 			args = append(args, "--version", version)
 		}
+	}
+
+	if !cluster.NoLabels {
+		cluster.Labels = addLabel(cluster.Labels, "cluster", baseClusterName)
+		cluster.Labels = addLabel(cluster.Labels, "branch", branch)
+
+		args = append(args, "--labels", cluster.Labels)
 	}
 
 	gitProviderURL := o.gitProviderUrl()

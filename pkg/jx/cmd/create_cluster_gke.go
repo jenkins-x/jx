@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 
@@ -332,15 +333,10 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	labels := o.Flags.Labels
 	user, err := osUser.Current()
 	if err == nil && user != nil {
-		username := sanitizeLabel(user.Username)
-		if username != "" {
-			sep := ""
-			if labels != "" {
-				sep = ","
-			}
-			labels += sep + "created-by=" + username
-		}
+		labels = addLabel(labels, "created-by", user.Username)
 	}
+	timeText := time.Now().Format("Mon-Jan-2-2006-15:04:05")
+	labels = addLabel(labels, "create-time", timeText)
 	if labels != "" {
 		args = append(args, "--labels="+strings.ToLower(labels))
 	}
@@ -396,6 +392,20 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	return nil
+}
+
+
+// addLabel adds the given label key and value to the label string
+func addLabel(labels string, name string, value string) string {
+	username := sanitizeLabel(value)
+	if username != "" {
+		sep := ""
+		if labels != "" {
+			sep = ","
+		}
+		labels += sep + sanitizeLabel(name) + "=" + username
+	}
+	return labels
 }
 
 func sanitizeLabel(username string) string {
