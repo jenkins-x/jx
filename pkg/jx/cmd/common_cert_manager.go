@@ -46,7 +46,7 @@ func (o *CommonOptions) ensureCertmanager() error {
 			err = o.installChartOptions(helm.InstallChartOptions{
 				ReleaseName: pki.CertManagerReleaseName,
 				Chart:       pki.CertManagerChart,
-				Version:     pki.CertManagerChartVersion,
+				Version:     "",
 				Ns:          pki.CertManagerNamespace,
 				HelmUpdate:  true,
 				SetValues:   values,

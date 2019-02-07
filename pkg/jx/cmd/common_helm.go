@@ -2,6 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"net/url"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/services"
@@ -11,11 +17,6 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/src-d/go-git.v4"
-	"net/url"
-	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
 )
 
 func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
@@ -114,7 +115,6 @@ func (o *CommonOptions) installChartOptions(options helm.InstallChartOptions) er
 	return helm.InstallFromChartOptions(options, o.Helm(), client, defaultInstallTimeout)
 }
 
-
 // clones the jenkins-x versions repo to a local working dir
 func (o *CommonOptions) cloneJXVersionsRepo(versionRepository string) (string, error) {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
@@ -170,11 +170,10 @@ func (o *CommonOptions) cloneJXVersionsRepo(versionRepository string) (string, e
 func (o *CommonOptions) getVersionNumber(kind version.VersionKind, name string) (string, error) {
 	versionsDir, err := o.cloneJXVersionsRepo("")
 	if err != nil {
-	  return "", err
+		return "", err
 	}
 	return version.LoadStableVersionNumber(versionsDir, kind, name)
 }
-
 
 // deleteChart deletes the given chart
 func (o *CommonOptions) deleteChart(releaseName string, purge bool) error {
@@ -433,7 +432,7 @@ func (o *CommonOptions) helmInitRecursiveDependencyBuild(dir string, chartRepos 
 func (o *CommonOptions) defaultReleaseCharts() map[string]string {
 	releasesURL := o.releaseChartMuseumUrl()
 	answer := map[string]string{
-		"jenkins-x": DEFAULT_CHARTMUSEUM_URL,
+		"jenkins-x": kube.DefaultChartMuseumURL,
 	}
 	if releasesURL != "" {
 		answer["releases"] = releasesURL

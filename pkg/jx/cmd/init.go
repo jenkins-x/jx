@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	version2 "github.com/jenkins-x/jx/pkg/version"
 	"io"
 	"io/ioutil"
 	"strings"
 	"time"
+
+	version2 "github.com/jenkins-x/jx/pkg/version"
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
@@ -70,8 +71,6 @@ const (
 	JenkinsBuildPackURL = "https://github.com/jenkins-x/draft-packs.git"
 	// INGRESS_SERVICE_NAME service name for ingress controller
 	INGRESS_SERVICE_NAME = "jxing-nginx-ingress-controller"
-	// DEFAULT_CHARTMUSEUM_URL default URL for Jenkins X ChartMuseum
-	DEFAULT_CHARTMUSEUM_URL = "http://chartmuseum.jenkins-x.io"
 )
 
 var (
@@ -416,7 +415,7 @@ func (o *InitOptions) initHelm() error {
 		}
 	}
 
-	err = o.Helm().AddRepo("jenkins-x", DEFAULT_CHARTMUSEUM_URL, "", "")
+	err = o.Helm().AddRepo("jenkins-x", kube.DefaultChartMuseumURL, "", "")
 	if err != nil {
 		return err
 	}
@@ -618,7 +617,7 @@ controller:
 
 		version, err := o.getVersionNumber(version2.KindChart, chartName)
 		if err != nil {
-		  return errors.Wrapf(err, "failed to load version of chart %s", chartName)
+			return errors.Wrapf(err, "failed to load version of chart %s", chartName)
 		}
 
 		i := 0
