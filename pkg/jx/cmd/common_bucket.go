@@ -3,18 +3,20 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/url"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gocloud.dev/blob"
-	"io"
-	"net/url"
-	"time"
 )
 
 // CreateBucketValues contains the values to create a Bucket on cloud storage
@@ -28,19 +30,17 @@ type CreateBucketValues struct {
 }
 
 // addCreateBucketFlags adds the CLI arguments to be able to specify to create a new bucket along with any cloud specific parameters
-func (cb *CreateBucketValues) addCreateBucketFlags(cmd *cobra.Command, ) {
+func (cb *CreateBucketValues) addCreateBucketFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&cb.Bucket, "bucket", "", "", "Specify the name of the bucket to use")
 	cmd.Flags().StringVarP(&cb.BucketKind, "bucket-kind", "", "", "The kind of bucket to use like 'gs, s3, azure' etc")
 	cmd.Flags().StringVarP(&cb.GKEProjectID, "gke-project-id", "", "", "Google Project ID to use for a new bucket")
 	cmd.Flags().StringVarP(&cb.GKEZone, "gke-zone", "", "", "The GKE zone (e.g. us-central1-a) where the new bucket will be created")
 }
 
-
 // IsEmpty returns true if there is no bucket name specified
 func (cb *CreateBucketValues) IsEmpty() bool {
 	return cb.Bucket == ""
 }
-
 
 // createBucket creates a new bucket using the create bucket values and team settings returning the newly created bucket URL
 func (o *CommonOptions) createBucket(cb *CreateBucketValues, settings *v1.TeamSettings) (string, error) {
@@ -73,7 +73,6 @@ func (o *CommonOptions) createBucket(cb *CreateBucketValues, settings *v1.TeamSe
 	}
 	return bucketURL, nil
 }
-
 
 // createBucket creates a bucket if it does not already exist
 func (o *CommonOptions) createBucketFromURL(bucketURL string, bucket *blob.Bucket, cb *CreateBucketValues) error {
@@ -121,7 +120,7 @@ func (o *CommonOptions) createGcsBucket(u *url.URL, bucket *blob.Bucket, cb *Cre
 
 	if cb.GKEZone == "" {
 		defaultZone := ""
-		if cluster, err := gke.ClusterName(o.Kube()); err == nil && cluster != "" {
+		if cluster, err := cluster.Name(o.Kube()); err == nil && cluster != "" {
 			if clusterZone, err := gke.ClusterZone(cluster); err == nil {
 				defaultZone = clusterZone
 			}
@@ -141,5 +140,3 @@ func (o *CommonOptions) createGcsBucket(u *url.URL, bucket *blob.Bucket, cb *Cre
 	}
 	return nil
 }
-
-

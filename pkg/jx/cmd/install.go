@@ -1978,17 +1978,21 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			return err
 		}
 
-		if kubevault.FindVault(vaultOperatorClient, vault.SystemVaultName, namespace) {
+		systemVaultName, err := kubevault.SystemVaultName(options.Kube())
+		if err != nil {
+			return errors.Wrap(err, "building the system vault name from cluster name")
+		}
+		if kubevault.FindVault(vaultOperatorClient, systemVaultName, namespace) {
 			log.Infof("System vault named %s in namespace %s already exists\n",
-				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(namespace))
+				util.ColorInfo(systemVaultName), util.ColorInfo(namespace))
 		} else {
 			log.Info("Creating new system vault\n")
-			err = cvo.createVault(vaultOperatorClient, vault.SystemVaultName)
+			err = cvo.createVault(vaultOperatorClient, systemVaultName)
 			if err != nil {
 				return err
 			}
 			log.Infof("System vault created named %s in namespace %s.\n",
-				util.ColorInfo(vault.SystemVaultName), util.ColorInfo(namespace))
+				util.ColorInfo(systemVaultName), util.ColorInfo(namespace))
 		}
 
 		err = options.SetSecretsLocation(secrets.VaultLocationKind, false)

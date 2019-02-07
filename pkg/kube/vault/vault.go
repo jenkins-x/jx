@@ -6,6 +6,7 @@ import (
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/vault"
@@ -101,6 +102,15 @@ type Telemetry struct {
 // Storage configuration for Vault storage
 type Storage struct {
 	GCS GCSConfig `json:"gcs"`
+}
+
+// SystemVaultName returns the name of the system vault based on the cluster name
+func SystemVaultName(kuber kube.Kuber) (string, error) {
+	clusterName, err := cluster.ShortName(kuber)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s-%s", vault.SystemVaultNamePrefix, clusterName), nil
 }
 
 // CreateVault creates a new vault backed by GCP KMS and storage

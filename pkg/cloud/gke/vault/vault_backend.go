@@ -1,7 +1,6 @@
 package vault
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -38,8 +37,8 @@ type KmsConfig struct {
 // CreateKmsConfig creates a KMS config for the GKE Vault
 func CreateKmsConfig(vaultName, clusterName, projectId string) (*KmsConfig, error) {
 	config := &KmsConfig{
-		Keyring:  KeyringName(vaultName, clusterName),
-		Key:      KeyName(vaultName, clusterName),
+		Keyring:  KeyringName(vaultName),
+		Key:      KeyName(vaultName),
 		Location: gke.KmsLocation,
 		project:  projectId,
 	}
@@ -64,7 +63,7 @@ func CreateGCPServiceAccount(kubeClient kubernetes.Interface, vaultName, namespa
 	}
 	defer os.RemoveAll(serviceAccountDir)
 
-	serviceAccountName := ServiceAccountName(vaultName, clusterName)
+	serviceAccountName := ServiceAccountName(vaultName)
 	if err != nil {
 		return "", err
 	}
@@ -73,7 +72,7 @@ func CreateGCPServiceAccount(kubeClient kubernetes.Interface, vaultName, namespa
 		return "", errors.Wrap(err, "creating the service account")
 	}
 
-	secretName, err := storeGCPServiceAccountIntoSecret(kubeClient, serviceAccountPath, vaultName, namespace, clusterName)
+	secretName, err := storeGCPServiceAccountIntoSecret(kubeClient, serviceAccountPath, vaultName, namespace)
 	if err != nil {
 		return "", errors.Wrap(err, "storing the service account into a secret")
 	}
@@ -82,7 +81,7 @@ func CreateGCPServiceAccount(kubeClient kubernetes.Interface, vaultName, namespa
 
 // CreateBucket Creates a bucket in GKE to store the backend (encrypted) data for vault
 func CreateBucket(vaultName, clusterName, projectId, zone string) (string, error) {
-	bucketName := BucketName(vaultName, clusterName)
+	bucketName := BucketName(vaultName)
 	exists, err := gke.BucketExists(projectId, bucketName)
 	if err != nil {
 		return "", errors.Wrap(err, "checking if Vault GCS bucket exists")
@@ -104,7 +103,7 @@ func CreateBucket(vaultName, clusterName, projectId, zone string) (string, error
 
 // CreateAuthServiceAccount creates a Serivce Account for the Auth service for vault
 func CreateAuthServiceAccount(client kubernetes.Interface, vaultName, namespace, clusterName string) (string, error) {
-	serviceAccountName := AuthServiceAccountName(vaultName, clusterName)
+	serviceAccountName := AuthServiceAccountName(vaultName)
 	_, err := serviceaccount.CreateServiceAccount(client, namespace, serviceAccountName)
 	if err != nil {
 		return "", errors.Wrap(err, "creating vault auth service account")
@@ -112,18 +111,13 @@ func CreateAuthServiceAccount(client kubernetes.Interface, vaultName, namespace,
 	return serviceAccountName, nil
 }
 
-// GcpServiceAccountSecretName builds the secret name where the GCP service account is stored
-func GcpServiceAccountSecretName(vaultName string, clusterName string) string {
-	return fmt.Sprintf("%s-%s-gcp-sa", clusterName, vaultName)
-}
-
-func storeGCPServiceAccountIntoSecret(client kubernetes.Interface, serviceAccountPath, vaultName, namespace, clusterName string) (string, error) {
+func storeGCPServiceAccountIntoSecret(client kubernetes.Interface, serviceAccountPath, vaultName, namespace string) (string, error) {
 	serviceAccount, err := ioutil.ReadFile(serviceAccountPath)
 	if err != nil {
 		return "", errors.Wrapf(err, "reading the service account from file '%s'", serviceAccountPath)
 	}
 
-	secretName := GcpServiceAccountSecretName(vaultName, clusterName)
+	secretName := GcpServiceAccountSecretName(vaultName)
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: secretName,
