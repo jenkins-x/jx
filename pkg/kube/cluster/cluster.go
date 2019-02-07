@@ -43,7 +43,7 @@ func ShortName(kuber kube.Kuber) (string, error) {
 	return shortClusterName, nil
 }
 
-// GetSimplifiedClusterName get the simplified cluster name from the long-winded context cluster name that gets generated
+// SimplifiedClusterName get the simplified cluster name from the long-winded context cluster name that gets generated
 // GKE cluster names as defined in the kube config are of the form gke_<projectname>_<region>_<clustername>
 // This method will return <clustername> in the above
 func SimplifiedClusterName(complexClusterName string) string {
