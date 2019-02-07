@@ -38,6 +38,8 @@ type StepCreateVersionPullRequestOptions struct {
 	VersionsRepository string
 	VersionsBranch     string
 	Version            string
+
+	updatedHelmRepo bool
 }
 
 // StepCreateVersionPullRequestResults stores the generated results
@@ -79,7 +81,7 @@ func NewCmdStepCreateVersionPullRequest(f Factory, in terminal.FileReader, out t
 	cmd.Flags().StringVarP(&options.VersionsBranch, "branch", "", "master", "the versions git repository branch to clone and generate a pull request from")
 	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "charts", "The kind of version such as 'charts' or 'packages'")
 	cmd.Flags().StringVarP(&options.Name, "name", "n", "", "The name of the version to update. e.g. the name of the chart like 'jenkins-x/prow'")
-	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version to change")
+	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version to change. If no version is supplied the latest version is found")
 	return cmd
 }
 
@@ -91,19 +93,30 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 	if o.Kind == "" {
 		return util.MissingOption("kind")
 	}
-	if o.Version == "" {
-		return util.MissingOption("version")
-	}
 	if o.VersionsRepository == "" {
 		return util.MissingOption("repo")
 	}
 	if o.VersionsBranch == "" {
 		o.VersionsBranch = "master"
 	}
-
 	dir, err := ioutil.TempDir("", "create-version-pr")
 	if err != nil {
 		return err
+	}
+
+	if o.Version == "" && o.Kind == string(version.KindChart) {
+		err = o.updateHelmRepo()
+		if err != nil {
+			return err
+		}
+		o.Version, err = o.findLatestChartVersion(o.Name)
+		if err != nil {
+			return errors.Wrapf(err, "failed to find latest chart version for %s", o.Name)
+		}
+		log.Infof("found latest version %s for chart %s\n", util.ColorInfo(o.Version), util.ColorInfo(o.Name))
+	}
+	if o.Version == "" {
+		return util.MissingOption("version")
 	}
 
 	gitInfo, err := gits.ParseGitURL(o.VersionsRepository)
@@ -239,5 +252,35 @@ func (o *StepCreateVersionPullRequestOptions) modifyFiles(dir string) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to save version file")
 	}
+	return nil
+}
+
+func (o *StepCreateVersionPullRequestOptions) findLatestChartVersion(name string) (string, error) {
+	info, err := o.Helm().SearchChartVersions(name)
+	if err != nil {
+		return "", err
+	}
+	if len(info) == 0 {
+		return "", fmt.Errorf("no version found for chart %s", name)
+	}
+	if o.Verbose {
+		log.Infof("found %d versions:\n", len(info))
+		for _, v := range info {
+			log.Infof("    %s:\n", v)
+		}
+	}
+	return info[0], nil
+}
+
+// updateHelmRepo updates the helm repos if required
+func (o *StepCreateVersionPullRequestOptions) updateHelmRepo() error {
+	if o.updatedHelmRepo {
+		return nil
+	}
+	err := o.Helm().UpdateRepo()
+	if err != nil {
+		return errors.Wrap(err, "failed to update helm repos")
+	}
+	o.updatedHelmRepo = true
 	return nil
 }
