@@ -265,6 +265,10 @@ func (j *PipelineStructure) Validate() *apis.FieldError {
 		return err
 	}
 
+	if err := validateStageNames(j); err != nil {
+		return err
+	}
+
 	if err := validateRootOptions(j.Options).ViaField("options"); err != nil {
 		return err
 	}
@@ -1000,4 +1004,49 @@ func (ts transformedStage) getClosestAncestor() *transformedStage {
 	} else {
 		return ts.EnclosingStage.getClosestAncestor()
 	}
+}
+
+func findDuplicates(names []string) *apis.FieldError {
+	// Count members
+	counts := make(map[string]int)
+	for _, v := range names {
+		counts[v]++
+	}
+
+	var errors []string
+
+	for k, v := range counts {
+		if v > 1 {
+			errors = append(errors, "Duplicate stage name '"+k+"'")
+		}
+	}
+
+	if len(errors) > 0 {
+		return &apis.FieldError{
+			Message: "There are duplicate 'Stage Names' within the scope",
+			Details: strings.Join(errors, " "),
+		}
+	}
+	return nil
+}
+
+func validateStageNames(j *PipelineStructure) (err *apis.FieldError) {
+	var validate func(stages []Stage, stageNames *[]string)
+	validate = func(stages []Stage, stageNames *[]string) {
+
+		for _, stage := range stages {
+			*stageNames = append(*stageNames, stage.Name)
+			if len(stage.Stages) > 0 {
+				validate(stage.Stages, stageNames)
+			}
+		}
+
+	}
+	var names []string
+
+	validate(j.Stages, &names)
+
+	err = findDuplicates(names)
+
+	return
 }

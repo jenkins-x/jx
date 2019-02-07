@@ -22,11 +22,12 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 	customWorkspace := "custom"
 
 	tests := []struct {
-		name             string
-		expected         *syntax.PipelineStructure
-		pipeline         *pipelinev1alpha1.Pipeline
-		tasks            []*pipelinev1alpha1.Task
-		expectedErrorMsg string
+		name               string
+		expected           *syntax.PipelineStructure
+		pipeline           *pipelinev1alpha1.Pipeline
+		tasks              []*pipelinev1alpha1.Task
+		expectedErrorMsg   string
+		validationErrorMsg string
 	}{
 		{
 			name: "simple_jenkinsfile",
@@ -980,6 +981,10 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				)),
 			},
 		},
+		{
+			name:               "stage_name_validation",
+			validationErrorMsg: "Duplicate stage name 'A Working Stage'",
+		},
 	}
 
 	for _, tt := range tests {
@@ -1003,13 +1008,19 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 			}
 			parsed := projectConfig.PipelineConfig.Pipelines.Release.Pipeline
 
-			if d := cmp.Diff(tt.expected, parsed); d != "" {
+			if d := cmp.Diff(tt.expected, parsed); d != "" && tt.expected != nil {
 				t.Errorf("Parsed PipelineStructure did not match expected: %s", d)
 			}
 
 			validateErr := parsed.Validate()
-			if validateErr != nil {
+			if validateErr != nil && tt.validationErrorMsg == "" {
 				t.Errorf("Validation failed: %s", validateErr)
+			}
+
+			if validateErr != nil && tt.validationErrorMsg != "" {
+				if tt.validationErrorMsg != validateErr.Details {
+					t.Errorf("Validation Error failed: '%s', '%s'", validateErr.Details, tt.validationErrorMsg)
+				}
 			}
 
 			pipeline, tasks, err := parsed.GenerateCRDs("somepipeline", "somebuild", "somenamespace", "abcd", nil)
@@ -1024,7 +1035,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				}
 			}
 
-			if tt.expectedErrorMsg == "" {
+			if tt.expectedErrorMsg == "" && tt.pipeline != nil {
 				pipeline.TypeMeta = metav1.TypeMeta{}
 				if d := cmp.Diff(tt.pipeline, pipeline); d != "" {
 					t.Errorf("Generated Pipeline did not match expected: %s", d)

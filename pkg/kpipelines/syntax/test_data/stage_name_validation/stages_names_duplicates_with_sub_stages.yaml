@@ -1,0 +1,11 @@
+apiVersion: v0.1
+agent:
+  image: some-image
+stages:
+  - name: Stage With Stages
+    stages:
+    - name: Stage With Stages
+      steps:
+        - command: echo
+          args:
+            - hello
