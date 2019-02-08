@@ -32,6 +32,9 @@ func toValidName(name string, allowDots bool, maxLength int) string {
 			break
 		}
 		if first {
+			if ch >= 'A' && ch <= 'Z' {
+				ch += 'a' - 'A' // Offset to make letter lowercase
+			}
 			// strip non letters at start
 			if ch >= 'a' && ch <= 'z' {
 				buffer.WriteRune(ch)
@@ -40,6 +43,9 @@ func toValidName(name string, allowDots bool, maxLength int) string {
 		} else {
 			if !allowDots && ch == '.' {
 				ch = '-'
+			}
+			if ch >= 'A' && ch <= 'Z' {
+				ch += 'a' - 'A' // Offset to make letter lowercase
 			}
 			if !(ch >= 'a' && ch <= 'z') && !(ch >= '0' && ch <= '9') && ch != '-' && ch != '.' {
 				ch = '-'

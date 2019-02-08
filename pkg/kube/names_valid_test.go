@@ -10,8 +10,10 @@ import (
 func TestToValidName(t *testing.T) {
 	t.Parallel()
 	assertToValidName(t, "foo", "foo")
+	assertToValidName(t, "FOO", "foo")
 	assertToValidName(t, "foo-bar", "foo-bar")
 	assertToValidName(t, "foo-bar-", "foo-bar")
+	assertToValidName(t, "Foo Bar", "foo-bar")
 	assertToValidName(t, "foo-bar-0.1.0", "foo-bar-0-1-0")
 	assertToValidName(t, "---foo-bar-", "foo-bar")
 	assertToValidName(t, "foo/bar_*123", "foo-bar-123")
