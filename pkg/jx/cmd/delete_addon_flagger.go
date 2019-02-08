@@ -10,17 +10,17 @@ import (
 )
 
 var (
-	delete_addon_flagger_long = templates.LongDesc(`
+	deleteAddonFlaggerLong = templates.LongDesc(`
 		Deletes the Flagger addon
 `)
 
-	delete_addon_flagger_example = templates.Examples(`
+	deleteAddonFlaggerExample = templates.Examples(`
 		# Deletes the Flagger addon
 		jx delete addon flagger
 	`)
 )
 
-// DeleteAddonflaggerOptions the options for the create spring command
+// DeleteAddonFlaggerOptions the options for the create spring command
 type DeleteAddonFlaggerOptions struct {
 	DeleteAddonOptions
 
@@ -43,8 +43,8 @@ func NewCmdDeleteAddonFlagger(f Factory, in terminal.FileReader, out terminal.Fi
 	cmd := &cobra.Command{
 		Use:     "flagger",
 		Short:   "Deletes the Flagger addon",
-		Long:    delete_addon_flagger_long,
-		Example: delete_addon_flagger_example,
+		Long:    deleteAddonFlaggerLong,
+		Example: deleteAddonFlaggerExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
