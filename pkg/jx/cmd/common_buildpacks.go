@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/pkg/errors"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -113,19 +114,43 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 
 			if err != nil {
 				if lpack == "" {
+					// lets detect docker and/or helm
+
+					// TODO one day when our pipelines can include steps conditional on the presence of a file glob
+					// we can just use a single docker/helm package that does docker and/or helm
+					// but for now we've 3 separate packs for docker, docker-helm and helm
+					hasDocker := false
+					hasHelm := false
+
 					if exists, err2 := util.FileExists(filepath.Join(dir, "Dockerfile")); err2 == nil && exists {
-						lpack = "docker"
-						err = nil
+						hasDocker = true
 					}
-				}
-				if lpack == "" {
+
 					// lets check for a helm pack
-					files, err2 := filepath.Glob(filepath.Join(dir, "*/Chart.yaml"))
+					files, err2 := filepath.Glob(filepath.Join(dir, "charts/*/Chart.yaml"))
 					if err2 != nil {
-					  return "", errors.Wrapf(err, "failed to detect if there was a chart file in dir %s", dir)
+						return "", errors.Wrapf(err, "failed to detect if there was a chart file in dir %s", dir)
+					}
+					if len(files) == 0 {
+						files, err2 = filepath.Glob(filepath.Join(dir, "*/Chart.yaml"))
+						if err2 != nil {
+							return "", errors.Wrapf(err, "failed to detect if there was a chart file in dir %s", dir)
+						}
 					}
 					if len(files) > 0 {
-						lpack = "helm"
+						hasHelm = true
+					}
+
+					if hasDocker {
+						if hasHelm {
+							lpack = filepath.Join(packsDir, "docker-helm")
+							err = nil
+						} else {
+							lpack = filepath.Join(packsDir, "docker")
+							err = nil
+						}
+					} else if hasHelm {
+						lpack = filepath.Join(packsDir, "helm")
 						err = nil
 					}
 				}
@@ -172,6 +197,21 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 	err = CopyBuildPack(dir, lpack)
 	if err != nil {
 		log.Warnf("Failed to apply the build pack in %s due to %s", dir, err)
+	}
+
+	// lets delete empty charts dir if a draft pack created one
+	exists, err = util.FileExists(chartsDir)
+	if err == nil && exists {
+		files, err := ioutil.ReadDir(chartsDir)
+		if err != nil {
+		  return draftPack, errors.Wrapf(err, "failed to read charts dir %s", chartsDir)
+		}
+		if len(files) == 0 {
+			err = os.Remove(chartsDir)
+			if err != nil {
+				return draftPack, errors.Wrapf(err, "failed to remove empty charts dir %s", chartsDir)
+			}
+		}
 	}
 
 	if !jenkinsfileExists || jenkinsfileBackup != "" {
