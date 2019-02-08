@@ -47,6 +47,7 @@ func NewCmdDeleteAddon(f Factory, in terminal.FileReader, out terminal.FileWrite
 	}
 
 	cmd.AddCommand(NewCmdDeleteAddonCloudBees(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteAddonFlagger(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeleteAddonGitea(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeleteAddonSSO(f, in, out, errOut))
 	cmd.AddCommand(NewCmdDeleteAddonKnativeBuild(f, in, out, errOut))
