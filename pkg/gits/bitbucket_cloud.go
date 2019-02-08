@@ -659,6 +659,10 @@ func (b *BitbucketCloudProvider) CreateWebHook(data *GitWebHookArguments) error 
 			"active": true,
 			"events": []string{
 				"repo:push",
+				"pullrequest:created",
+				"pullrequest:updated",
+				"pullrequest:fulfilled",
+				"pullrequest:rejected",
 			},
 			"description": "Jenkins X Web Hook",
 		},
