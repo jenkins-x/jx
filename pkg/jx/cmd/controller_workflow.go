@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -31,12 +31,13 @@ import (
 type ControllerWorkflowOptions struct {
 	ControllerOptions
 
-	Namespace           string
-	NoWatch             bool
-	NoMergePullRequest  bool
-	Verbose             bool
-	LocalHelmRepoName   string
-	PullRequestPollTime string
+	Namespace               string
+	NoWatch                 bool
+	NoMergePullRequest      bool
+	Verbose                 bool
+	LocalHelmRepoName       string
+	PullRequestPollTime     string
+	NoWaitForUpdatePipeline bool
 
 	// testing
 	FakePullRequests CreateEnvPullRequestFn
@@ -100,6 +101,17 @@ func (o *ControllerWorkflowOptions) Run() error {
 			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.PullRequestPollTime, optionPullRequestPollTime, err)
 		}
 		o.PullRequestPollDuration = &duration
+	}
+
+	// See issue below and also similar code in PromotOptions.Run()
+	prow, err := o.isProw()
+	if err != nil {
+		return err
+	}
+	if prow {
+		log.Warn("prow based install so skip waiting for the merge of Pull Requests to go green as currently there is an issue with getting" +
+			"statuses from the PR, see https://github.com/jenkins-x/jx/issues/2410")
+		o.NoWaitForUpdatePipeline = true
 	}
 
 	jxClient, devNs, err := o.JXClientAndDevNamespace()
@@ -507,6 +519,9 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 			log.Warnf("Failed to get PR number: %s", err)
 			return
 		}
+		if prNumber == 42 {
+			fmt.Printf("!!!Stop\n")
+		}
 		pr, err := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo, prNumber)
 		if err != nil {
 			log.Warnf("Failed to query the Pull Request status on pipeline %s for repo %s PR %d for PR %s: %s", activity.Name, gitInfo.HttpsURL(), prNumber, prURL, err)
@@ -515,6 +530,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 				log.Infof("Pipeline %s promote Environment %s has PR %s\n", activity.Name, envName, prURL)
 			}
 			po := o.createPromoteOptionsFromActivity(activity, envName)
+			po.GitInfo = gitInfo
 
 			if pr.Merged != nil && *pr.Merged {
 				if pr.MergeCommitSHA == nil {
@@ -535,6 +551,21 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 
 						promoteKey.OnPromotePullRequest(o.jxClient, o.Namespace, mergedPR)
 						promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.StartPromotionUpdate)
+
+						if o.NoWaitForUpdatePipeline {
+							log.Infof("Pull Request %d merged but we are not waiting for the update pipeline to complete!\n",
+								prNumber)
+							err = po.commentOnIssues(ns, env, promoteKey)
+							if err != nil {
+								log.Warnf("Failed to comment on issues: %s", err)
+							}
+							err = promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.CompletePromotionUpdate)
+							if err != nil {
+								log.Warnf("PipelineActivity update failed while completing promotion step. activity=%s\n",
+									activity.Name)
+							}
+							return
+						}
 
 						statuses, err := gitProvider.ListCommitStatus(pr.Owner, pr.Repo, mergeSha)
 						if err == nil {
