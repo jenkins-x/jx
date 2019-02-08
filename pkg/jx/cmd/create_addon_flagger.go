@@ -16,7 +16,7 @@ import (
 
 const (
 	defaultFlaggerNamespace   = "istio-system"
-	defaultFlaggerReleaseName = "flagger"
+	defaultFlaggerReleaseName = kube.DefaultFlaggerReleaseName
 	defaultFlaggerVersion     = ""
 	defaultFlaggerRepo        = "https://flagger.app"
 	optionGrafanaChart        = "grafana-chart"
