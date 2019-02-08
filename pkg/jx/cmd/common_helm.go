@@ -182,7 +182,7 @@ func (o *CommonOptions) cloneJXVersionsRepo(versionRepository string) (string, e
 		}
 	}
 
-	// If there exists a this stage most likely its content is incosisten
+	// If it exists a this stage most likely its content is not consistent
 	if exists, err := util.DirExists(wrkDir); err == nil && exists {
 		err := util.DeleteDirContents(wrkDir)
 		if err != nil {
