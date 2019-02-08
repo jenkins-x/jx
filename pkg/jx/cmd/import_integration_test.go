@@ -79,6 +79,12 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 	dirName = kube.ToValidName(dirName)
 	o := &cmd.ImportOptions{}
 	cmd.ConfigureTestOptions(&o.CommonOptions, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, dirName, true))
+	if o.Out == nil {
+		o.Out = tests.Output()
+	}
+	if o.Out == nil {
+		o.Out = os.Stdout
+	}
 	o.Dir = testDir
 	o.DryRun = true
 	o.DisableMaven = true
@@ -104,8 +110,23 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 			jenkinsfile = filepath.Join(testDir, o.Jenkinsfile)
 		}
 		tests.AssertFileExists(t, jenkinsfile)
-		tests.AssertFileExists(t, filepath.Join(testDir, "Dockerfile"))
-		tests.AssertFileExists(t, filepath.Join(testDir, "charts", dirName, "Chart.yaml"))
+		if dirName == "docker" || dirName == "docker-helm" {
+			tests.AssertFileExists(t, filepath.Join(testDir, "skaffold.yaml"))
+		} else if dirName == "helm" {
+			tests.AssertFileDoesNotExist(t, filepath.Join(testDir, "skaffold.yaml"))
+		}
+		if dirName != "helm" {
+			tests.AssertFileExists(t, filepath.Join(testDir, "Dockerfile"))
+		} else {
+			tests.AssertFileDoesNotExist(t, filepath.Join(testDir, "Dockerfile"))
+		}
+		if dirName == "docker" {
+			tests.AssertFileDoesNotExist(t, filepath.Join(testDir, "charts", dirName, "Chart.yaml"))
+			tests.AssertFileDoesNotExist(t, filepath.Join(testDir, "charts"))
+			tests.AssertFileDoesNotContain(t, jenkinsfile, "helm")
+		} else {
+			tests.AssertFileExists(t, filepath.Join(testDir, "charts", dirName, "Chart.yaml"))
+		}
 
 		if strings.HasPrefix(testcase, mavenKeepOldJenkinsfile) {
 			tests.AssertFileContains(t, jenkinsfile, "THIS IS OLD!")

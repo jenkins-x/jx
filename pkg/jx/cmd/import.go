@@ -1137,6 +1137,13 @@ func (options *ImportOptions) renameChartToMatchAppName() error {
 	var oldChartsDir string
 	dir := options.Dir
 	chartsDir := filepath.Join(dir, "charts")
+	exists, err := util.FileExists(chartsDir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to check if the charts directory exists %s", chartsDir)
+	}
+	if !exists {
+		return nil
+	}
 	files, err := ioutil.ReadDir(chartsDir)
 	if err != nil {
 		return fmt.Errorf("error matching a Jenkins X draft pack name with chart folder %v", err)

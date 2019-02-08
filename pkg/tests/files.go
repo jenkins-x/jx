@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -23,14 +24,25 @@ func AssertFileContains(t *testing.T, fileName string, containsText string) {
 	}
 }
 
-// AssertFileContainsNot asserts that a given file exists and does not contain the given text
-func AssertFileContainsNot(t *testing.T, fileName string, containsText string) {
+// AssertFileDoesNotContain asserts that a given file exists and does not contain the given text
+func AssertFileDoesNotContain(t *testing.T, fileName string, containsText string) {
 	if AssertFileExists(t, fileName) {
 		data, err := ioutil.ReadFile(fileName)
 		assert.NoError(t, err, "Failed to read file %s", fileName)
 		if err == nil {
 			text := string(data)
-			assert.True(t, strings.Index(text, containsText) == 0, "The file %s does contain text: %s", fileName, containsText)
+			idx := strings.Index(text, containsText)
+			line := ""
+			if idx > 0 {
+				lines := strings.Split(text, "\n")
+				for i, l := range lines {
+					if strings.Index(l, containsText) >= 0 {
+						line = "line " + strconv.Itoa(i + 1) + " = " + l
+						break
+					}
+				}
+			}
+			assert.True(t, idx < 0, "The file %s should not contain text: %s as %s", fileName, containsText, line)
 		}
 	}
 }

@@ -98,6 +98,9 @@ test-integration:
 test-integration1:
 	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration -coverprofile=cover.out -short ./... -test.v -run $(TEST)
 
+test-rich-integration1:
+	@CGO_ENABLED=$(CGO_ENABLED) richgo test -count=1 -tags=integration -coverprofile=cover.out -short ./... -test.v -run $(TEST)
+
 test-integration-report: get-test-deps test-integration
 	@gocov convert cover.out | gocov report
 
@@ -300,6 +303,10 @@ generate-docs:
 
 generate-openapi:
 	jx create client openapi --output-package=pkg/client --input-package=pkg/apis --group-with-version=jenkins.io:v1
+
+
+richgo:
+	go get -u github.com/kyoh86/richgo
 
 .PHONY: release clean arm
 
