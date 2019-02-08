@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -14,7 +15,6 @@ import (
 	pipelinev1alpha1 "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/knative/pkg/apis"
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -239,18 +239,6 @@ func MangleToRfc1035Label(body string, suffix string) string {
 		sb.WriteString(suffix)
 	}
 	return sb.String()
-}
-
-// ParseJenkinsfileYaml takes a YAML string and parses it.
-func ParseJenkinsfileYaml(jenkinsfileYaml string) (*PipelineStructure, error) {
-	jf := PipelineStructure{}
-
-	err := yaml.Unmarshal([]byte(jenkinsfileYaml), &jf)
-	if err != nil {
-		return &jf, errors.Wrapf(err, "Failed to unmarshal string %s", jenkinsfileYaml)
-	}
-
-	return &jf, nil
 }
 
 // Validate checks the parsed PipelineStructure to find any errors in it.
@@ -524,8 +512,15 @@ func scopedEnv(s Stage, parentEnv []corev1.EnvVar) []corev1.EnvVar {
 
 	env := make([]corev1.EnvVar, 0, len(envMap))
 
-	for _, value := range envMap {
-		env = append(env, value)
+	// Avoid nondeterministic results by sorting the keys and appending vars in that order.
+	var envVars []string
+	for k := range envMap {
+		envVars = append(envVars, k)
+	}
+	sort.Strings(envVars)
+
+	for _, envVar := range envVars {
+		env = append(env, envMap[envVar])
 	}
 
 	return env
@@ -1013,18 +1008,19 @@ func findDuplicates(names []string) *apis.FieldError {
 		counts[v]++
 	}
 
-	var errors []string
-
+	var duplicateNames []string
 	for k, v := range counts {
 		if v > 1 {
-			errors = append(errors, "Duplicate stage name '"+k+"'")
+			duplicateNames = append(duplicateNames, "'"+k+"'")
 		}
 	}
 
-	if len(errors) > 0 {
+	if len(duplicateNames) > 0 {
+		// Avoid nondeterminism in error messages
+		sort.Strings(duplicateNames)
 		return &apis.FieldError{
-			Message: "There are duplicate 'Stage Names' within the scope",
-			Details: strings.Join(errors, " "),
+			Message: "Stage names must be unique",
+			Details: "The following stage names are used more than once: " + strings.Join(duplicateNames, ", "),
 		}
 	}
 	return nil

@@ -1,7 +1,6 @@
 package syntax_test
 
 import (
-	"io/ioutil"
 	"path/filepath"
 	"testing"
 
@@ -676,8 +675,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
 						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "${SOME_OTHER_VAR}"),
-						// TODO: Ordering doesn't seem to be deterministic.
-						tb.EnvVar("SOME_VAR", "A value for the env var"), tb.EnvVar("SOME_OTHER_VAR", "A value for the other env var")),
+						tb.EnvVar("SOME_OTHER_VAR", "A value for the other env var"), tb.EnvVar("SOME_VAR", "A value for the env var")),
 				)),
 			},
 		},
@@ -981,15 +979,11 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				)),
 			},
 		},
-		{
-			name:               "stage_name_validation",
-			validationErrorMsg: "Duplicate stage name 'A Working Stage'",
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			projectConfig, fn, err := config.LoadProjectConfig("test_data/" + tt.name)
+			projectConfig, fn, err := config.LoadProjectConfig(filepath.Join("test_data", tt.name))
 			if err != nil {
 				t.Fatalf("Failed to parse YAML for %s: %q", tt.name, err)
 			}
@@ -1214,23 +1208,65 @@ func TestFailedValidation(t *testing.T) {
 				Paths:   []string{"name"},
 			}).ViaFieldIndex("stages", 0),
 		},
+		{
+			name: "stage_name_duplicates",
+			expectedError: (&apis.FieldError{
+				Message: "Stage names must be unique",
+				Details: "The following stage names are used more than once: 'A Working Stage'",
+			}),
+		},
+		{
+			name: "stage_name_duplicates_deeply_nested",
+			expectedError: (&apis.FieldError{
+				Message: "Stage names must be unique",
+				Details: "The following stage names are used more than once: 'Stage With Stages'",
+			}),
+		},
+		{
+			name: "stage_name_duplicates_nested",
+			expectedError: (&apis.FieldError{
+				Message: "Stage names must be unique",
+				Details: "The following stage names are used more than once: 'Stage With Stages'",
+			}),
+		},
+		{
+			name: "stage_name_duplicates_sequential",
+			expectedError: (&apis.FieldError{
+				Message: "Stage names must be unique",
+				Details: "The following stage names are used more than once: 'A Working title 2', 'A Working title'",
+			}),
+		},
+		{
+			name: "stage_name_duplicates_unique_in_scope",
+			expectedError: (&apis.FieldError{
+				Message: "Stage names must be unique",
+				Details: "The following stage names are used more than once: 'A Working title 1', 'A Working title 2'",
+			}),
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			yamlFile := filepath.Join("test_data", "validation_failures", tt.name+".yaml")
-			YamlToRead, YamlReadErr := ioutil.ReadFile(yamlFile)
-			if YamlReadErr != nil {
-				t.Fatalf("Could not read yaml file: %s ", yamlFile)
-			}
-			tt.name = string(YamlToRead)
-
-			parsed, parseErr := syntax.ParseJenkinsfileYaml(tt.name)
-			if parseErr != nil {
-				t.Fatalf("Failed to parse YAML for %s: %q", tt.name, parseErr)
+			projectConfig, fn, err := config.LoadProjectConfig(filepath.Join("test_data", "validation_failures", tt.name))
+			if err != nil {
+				t.Fatalf("Failed to parse YAML for %s: %q", tt.name, err)
 			}
 
-			err := parsed.Validate()
+			if projectConfig.PipelineConfig == nil {
+				t.Fatalf("PipelineConfig at %s is nil: %+v", fn, projectConfig)
+			}
+			if &projectConfig.PipelineConfig.Pipelines == nil {
+				t.Fatalf("Pipelines at %s is nil: %+v", fn, projectConfig.PipelineConfig)
+			}
+			if projectConfig.PipelineConfig.Pipelines.Release == nil {
+				t.Fatalf("Release at %s is nil: %+v", fn, projectConfig.PipelineConfig.Pipelines)
+			}
+			if projectConfig.PipelineConfig.Pipelines.Release.Pipeline == nil {
+				t.Fatalf("Pipeline at %s is nil: %+v", fn, projectConfig.PipelineConfig.Pipelines.Release)
+			}
+			parsed := projectConfig.PipelineConfig.Pipelines.Release.Pipeline
+
+			err = parsed.Validate()
 
 			if err == nil {
 				t.Fatalf("Expected a validation failure but none occurred")

@@ -1,4 +1,0 @@
-agent:
-  image: some-image
-stages:
-  - name: A Broken Stage
