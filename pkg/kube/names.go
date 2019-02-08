@@ -2,25 +2,35 @@ package kube
 
 import (
 	"bytes"
+	"math"
 	"strings"
 )
 
 // ToValidName converts the given string into a valid Kubernetes resource name
 func ToValidName(name string) string {
-	return toValidName(name, false)
+	return toValidName(name, false, math.MaxInt32)
 }
 
 // ToValidNameWithDots converts the given string into a valid Kubernetes resource name
 func ToValidNameWithDots(name string) string {
-	return toValidName(name, true)
+	return toValidName(name, true, math.MaxInt32)
 }
 
-func toValidName(name string, allowDots bool) string {
+// ToValidNameTruncated converts the given string into a valid Kubernetes resource name,
+// truncating the result if it is more than maxLength characters.
+func ToValidNameTruncated(name string, maxLength int) string {
+	return toValidName(name, false, maxLength)
+}
+
+func toValidName(name string, allowDots bool, maxLength int) string {
 	var buffer bytes.Buffer
 	first := true
 	lastCharDash := false
 	lower := strings.ToLower(name)
 	for _, ch := range lower {
+		if buffer.Len()+1 > maxLength {
+			break
+		}
 		if first {
 			// strip non letters at start
 			if ch >= 'a' && ch <= 'z' {
