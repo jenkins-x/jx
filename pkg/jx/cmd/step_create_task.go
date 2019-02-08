@@ -233,26 +233,30 @@ func (o *StepCreateTaskOptions) Run() error {
 	name := o.Pack
 	packDir := filepath.Join(packsDir, name)
 
-	pipelineFile := filepath.Join(packDir, jenkinsfile.PipelineConfigFileName)
-	exists, err := util.FileExists(pipelineFile)
-	if err != nil {
-		return errors.Wrapf(err, "failed to find build pack pipeline YAML: %s", pipelineFile)
-	}
-	if !exists {
-		return fmt.Errorf("no build pack for %s exists at directory %s", name, packDir)
-	}
-	jenkinsfileRunner := true
-	pipelineConfig, err := jenkinsfile.LoadPipelineConfig(pipelineFile, resolver, jenkinsfileRunner, false)
-	if err != nil {
-		return errors.Wrapf(err, "failed to load build pack pipeline YAML: %s", pipelineFile)
-	}
-	localPipelineConfig := projectConfig.PipelineConfig
-	if localPipelineConfig != nil {
-		err = localPipelineConfig.ExtendPipeline(pipelineConfig, jenkinsfileRunner)
+	pipelineFile := projectConfigFile
+	pipelineConfig := projectConfig.PipelineConfig
+	if name != "none" {
+		pipelineFile := filepath.Join(packDir, jenkinsfile.PipelineConfigFileName)
+		exists, err := util.FileExists(pipelineFile)
 		if err != nil {
-			return errors.Wrapf(err, "failed to override PipelineConfig using configuration in file %s", projectConfigFile)
+			return errors.Wrapf(err, "failed to find build pack pipeline YAML: %s", pipelineFile)
 		}
-		pipelineConfig = localPipelineConfig
+		if !exists {
+			return fmt.Errorf("no build pack for %s exists at directory %s", name, packDir)
+		}
+		jenkinsfileRunner := true
+		pipelineConfig, err = jenkinsfile.LoadPipelineConfig(pipelineFile, resolver, jenkinsfileRunner, false)
+		if err != nil {
+			return errors.Wrapf(err, "failed to load build pack pipeline YAML: %s", pipelineFile)
+		}
+		localPipelineConfig := projectConfig.PipelineConfig
+		if localPipelineConfig != nil {
+			err = localPipelineConfig.ExtendPipeline(pipelineConfig, jenkinsfileRunner)
+			if err != nil {
+				return errors.Wrapf(err, "failed to override PipelineConfig using configuration in file %s", projectConfigFile)
+			}
+			pipelineConfig = localPipelineConfig
+		}
 	}
 	err = o.generateTask(name, pipelineConfig)
 	if err != nil {
@@ -297,7 +301,7 @@ func (o *StepCreateTaskOptions) generateTask(name string, pipelineConfig *jenkin
 		steps := []*jenkinsfile.PipelineStep{
 			{
 				Command: "jx step git credentials",
-				Name: "jx-git-credentials",
+				Name:    "jx-git-credentials",
 			},
 		}
 		lifecycles.Setup.Steps = append(steps, lifecycles.Setup.Steps...)
@@ -360,11 +364,14 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 			task.Spec.Volumes = volumes
 		}
 
+		if o.ViewSteps {
+			return o.viewSteps(tasks...)
+		}
+
 		// TODO: where should this be created? In GenerateCRDs?
 		var resources []*pipelineapi.PipelineResource
 		resources = append(resources, o.generateSourceRepoResource(name), o.generateTempOrderingResource())
 
-		// TODO: Handle o.ViewSteps
 		err = o.applyPipeline(pipeline, tasks, resources, o.gitInfo, o.Branch)
 		if err != nil {
 			return errors.Wrapf(err, "failed to apply generated Pipeline")
@@ -380,6 +387,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		return nil
 	}
 
+	// lets generate the pipeline using the build packs
 	container := pipelineConfig.Agent.Container
 	if o.CustomImage != "" {
 		container = o.CustomImage
@@ -767,7 +775,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 	} else {
 		log.Warnf("No GitInfo available!\n")
 	}
-
+	
 	if step.Command != "" {
 		if containerName == "" {
 			containerName = defaultContainerName
@@ -992,13 +1000,25 @@ func (o *StepCreateTaskOptions) deleteTempDir() {
 	}
 }
 
-func (o *StepCreateTaskOptions) viewSteps(task *pipelineapi.Task) error {
+func (o *StepCreateTaskOptions) viewSteps(tasks ...*pipelineapi.Task) error {
 	table := o.createTable()
-	table.AddRow("NAME", "COMMAND", "IMAGE")
-	for _, step := range task.Spec.Steps {
-		command := append([]string{}, step.Command...)
-		command = append(command, step.Args...)
-		table.AddRow(step.Name, strings.Join(command, " "), step.Image)
+	showTaskName := len(tasks) > 1
+	if showTaskName {
+		table.AddRow("TASK", "NAME", "COMMAND", "IMAGE")
+	} else {
+		table.AddRow("NAME", "COMMAND", "IMAGE")
+	}
+	for _, task := range tasks {
+		for _, step := range task.Spec.Steps {
+			command := append([]string{}, step.Command...)
+			command = append(command, step.Args...)
+			commands := strings.Join(command, " ")
+			if showTaskName {
+				table.AddRow(task.Name, step.Name, commands, step.Image)
+			} else {
+				table.AddRow(step.Name, commands, step.Image)
+			}
+		}
 	}
 	table.Render()
 	return nil
