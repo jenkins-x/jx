@@ -979,6 +979,135 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				)),
 			},
 		},
+		{
+			name: "loop_step",
+			expected: &syntax.PipelineStructure{
+				// Testing to make sure environment variables are inherited/reassigned properly
+				Environment: []syntax.EnvVar{{
+					Name:  "LANGUAGE",
+					Value: "rust",
+				}},
+				Agent: syntax.Agent{
+					Image: "some-image",
+				},
+				Stages: []syntax.Stage{{
+					Name: "A Working Stage",
+					Environment: []syntax.EnvVar{{
+						Name:  "DISTRO",
+						Value: "gentoo",
+					}},
+					Steps: []syntax.Step{
+						{
+							Loop: syntax.Loop{
+								Variable: "LANGUAGE",
+								Values:   []string{"maven", "gradle", "nodejs"},
+								Steps: []syntax.Step{
+									{
+										Command:   "echo",
+										Arguments: []string{"hello", "${LANGUAGE}"},
+									},
+									{
+										// Testing nested loops
+										Loop: syntax.Loop{
+											Variable: "DISTRO",
+											Values:   []string{"fedora", "ubuntu", "debian"},
+											Steps: []syntax.Step{
+												{
+													Command:   "echo",
+													Arguments: []string{"running", "${LANGUAGE}", "on", "${DISTRO}"},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+						{
+							// Testing to be sure the step counter propagates correctly outside of a loop.
+							Command:   "echo",
+							Arguments: []string{"hello", "after"},
+						},
+					},
+				}},
+			},
+			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
+					tb.PipelineTaskInputResource("workspace", "somepipeline"),
+					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
+					tb.PipelineTaskOutputResource("workspace", "somepipeline"),
+					tb.PipelineTaskOutputResource("temp-ordering-resource", "temp-ordering-resource")),
+				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
+				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
+			tasks: []*pipelinev1alpha1.Task{
+				tb.Task("somepipeline-a-working-stage", "somenamespace", tb.TaskSpec(
+					tb.TaskInputs(
+						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
+							tb.ResourceTargetPath("workspace")),
+						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
+					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
+						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
+					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "${LANGUAGE}"),
+						tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "maven")),
+					tb.Step("step3", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"),
+						tb.EnvVar("DISTRO", "fedora"), tb.EnvVar("LANGUAGE", "maven")),
+					tb.Step("step4", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"),
+						tb.EnvVar("DISTRO", "ubuntu"), tb.EnvVar("LANGUAGE", "maven")),
+					tb.Step("step5", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"),
+						tb.EnvVar("DISTRO", "debian"), tb.EnvVar("LANGUAGE", "maven")),
+					tb.Step("step6", "some-image", tb.Command("echo"), tb.Args("hello", "${LANGUAGE}"),
+						tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "gradle")),
+					tb.Step("step7", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"),
+						tb.EnvVar("DISTRO", "fedora"), tb.EnvVar("LANGUAGE", "gradle")),
+					tb.Step("step8", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"),
+						tb.EnvVar("DISTRO", "ubuntu"), tb.EnvVar("LANGUAGE", "gradle")),
+					tb.Step("step9", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"),
+						tb.EnvVar("DISTRO", "debian"), tb.EnvVar("LANGUAGE", "gradle")),
+					tb.Step("step10", "some-image", tb.Command("echo"), tb.Args("hello", "${LANGUAGE}"),
+						tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "nodejs")),
+					tb.Step("step11", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"),
+						tb.EnvVar("DISTRO", "fedora"), tb.EnvVar("LANGUAGE", "nodejs")),
+					tb.Step("step12", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"),
+						tb.EnvVar("DISTRO", "ubuntu"), tb.EnvVar("LANGUAGE", "nodejs")),
+					tb.Step("step13", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"),
+						tb.EnvVar("DISTRO", "debian"), tb.EnvVar("LANGUAGE", "nodejs")),
+					tb.Step("step14", "some-image", tb.Command("echo"), tb.Args("hello", "after"),
+						tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "rust")),
+				)),
+			},
+		},
+		{
+			name: "loop_with_syntactic_sugar_step",
+			expected: &syntax.PipelineStructure{
+				Agent: syntax.Agent{
+					Image: "some-image",
+				},
+				Stages: []syntax.Stage{{
+					Name: "A Working Stage",
+					Steps: []syntax.Step{
+						{
+							Loop: syntax.Loop{
+								Variable: "LANGUAGE",
+								Values:   []string{"maven", "gradle", "nodejs"},
+								Steps: []syntax.Step{
+									{
+										Command:   "echo",
+										Arguments: []string{"hello", "${LANGUAGE}"},
+									},
+									{
+										Step: "some-step",
+										Options: map[string]string{
+											"firstParam":  "some value",
+											"secondParam": "some other value",
+										},
+									},
+								},
+							},
+						},
+					},
+				}},
+			},
+			expectedErrorMsg: "syntactic sugar steps not yet supported",
+		},
 	}
 
 	for _, tt := range tests {
@@ -1096,24 +1225,42 @@ func TestFailedValidation(t *testing.T) {
 			expectedError: apis.ErrMultipleOneOf("steps", "stages", "parallel").ViaFieldIndex("stages", 0),
 		},
 		{
-			name:          "step_without_command_or_step",
-			expectedError: apis.ErrMissingOneOf("command", "step").ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+			name:          "step_without_command_step_or_loop",
+			expectedError: apis.ErrMissingOneOf("command", "step", "loop").ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
 		},
 		{
 			name:          "step_with_both_command_and_step",
-			expectedError: apis.ErrMultipleOneOf("command", "step").ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+			expectedError: apis.ErrMultipleOneOf("command", "step", "loop").ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+		},
+		{
+			name:          "step_with_both_command_and_loop",
+			expectedError: apis.ErrMultipleOneOf("command", "step", "loop").ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
 		},
 		{
 			name: "step_with_command_and_options",
 			expectedError: (&apis.FieldError{
-				Message: "Cannot set options for a command",
+				Message: "Cannot set options for a command or a loop",
 				Paths:   []string{"options"},
 			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
 		},
 		{
 			name: "step_with_step_and_arguments",
 			expectedError: (&apis.FieldError{
-				Message: "Cannot set command-line arguments for a step",
+				Message: "Cannot set command-line arguments for a step or a loop",
+				Paths:   []string{"args"},
+			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+		},
+		{
+			name: "step_with_loop_and_options",
+			expectedError: (&apis.FieldError{
+				Message: "Cannot set options for a command or a loop",
+				Paths:   []string{"options"},
+			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+		},
+		{
+			name: "step_with_loop_and_arguments",
+			expectedError: (&apis.FieldError{
+				Message: "Cannot set command-line arguments for a step or a loop",
 				Paths:   []string{"args"},
 			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
 		},
@@ -1210,38 +1357,50 @@ func TestFailedValidation(t *testing.T) {
 		},
 		{
 			name: "stage_name_duplicates",
-			expectedError: (&apis.FieldError{
+			expectedError: &apis.FieldError{
 				Message: "Stage names must be unique",
 				Details: "The following stage names are used more than once: 'A Working Stage'",
-			}),
+			},
 		},
 		{
 			name: "stage_name_duplicates_deeply_nested",
-			expectedError: (&apis.FieldError{
+			expectedError: &apis.FieldError{
 				Message: "Stage names must be unique",
 				Details: "The following stage names are used more than once: 'Stage With Stages'",
-			}),
+			},
 		},
 		{
 			name: "stage_name_duplicates_nested",
-			expectedError: (&apis.FieldError{
+			expectedError: &apis.FieldError{
 				Message: "Stage names must be unique",
 				Details: "The following stage names are used more than once: 'Stage With Stages'",
-			}),
+			},
 		},
 		{
 			name: "stage_name_duplicates_sequential",
-			expectedError: (&apis.FieldError{
+			expectedError: &apis.FieldError{
 				Message: "Stage names must be unique",
 				Details: "The following stage names are used more than once: 'A Working title 2', 'A Working title'",
-			}),
+			},
 		},
 		{
 			name: "stage_name_duplicates_unique_in_scope",
-			expectedError: (&apis.FieldError{
+			expectedError: &apis.FieldError{
 				Message: "Stage names must be unique",
 				Details: "The following stage names are used more than once: 'A Working title 1', 'A Working title 2'",
-			}),
+			},
+		},
+		{
+			name:          "loop_without_variable",
+			expectedError: apis.ErrMissingField("variable").ViaField("loop").ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+		},
+		{
+			name:          "loop_without_steps",
+			expectedError: apis.ErrMissingField("steps").ViaField("loop").ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+		},
+		{
+			name:          "loop_without_values",
+			expectedError: apis.ErrMissingField("values").ViaField("loop").ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
 		},
 	}
 
