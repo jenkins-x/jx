@@ -124,7 +124,7 @@ type StageOptions struct {
 
 // Step defines a single step, from the author's perspective, to be executed within a stage.
 type Step struct {
-	// One of command or step is required.
+	// One of command, step, or loop is required.
 	Command string `yaml:"command,omitempty"`
 	// args is optional, but only allowed with command
 	Arguments []string `yaml:"args,omitempty"`
@@ -137,8 +137,22 @@ type Step struct {
 	// for this option, so translate the string value for that option to a number.
 	Options map[string]string `yaml:"options,omitempty"`
 
+	Loop Loop `yaml:"loop,omitempty"`
+
 	// agent can be overridden on a step
 	Agent Agent `yaml:"agent,omitempty"`
+}
+
+// Loop is a special step that defines a variable, a list of possible values for that variable, and a set of steps to
+// repeat for each value for the variable, with the variable set with that value in the environment for the execution of
+// those steps.
+type Loop struct {
+	// The variable name.
+	Variable string `yaml:"variable"`
+	// The list of values to iterate over
+	Values []string `yaml:"values"`
+	// The steps to run
+	Steps []Step `yaml:"steps"`
 }
 
 // Stage is a unit of work in a pipeline, corresponding either to a Task or a set of Tasks to be run sequentially or in
@@ -330,37 +344,79 @@ func validateStage(s Stage, parentAgent Agent) *apis.FieldError {
 
 	if len(s.Parallel) > 0 {
 		for i, stage := range s.Parallel {
-			return validateStage(stage, parentAgent).ViaFieldIndex("parallel", i)
+			if err := validateStage(stage, parentAgent).ViaFieldIndex("parallel", i); err != nil {
+				return nil
+			}
 		}
 	}
 
 	return validateStageOptions(s.Options).ViaField("options")
 }
 
-func validateStep(s Step) *apis.FieldError {
-	if s.Command == "" && s.Step == "" {
-		return apis.ErrMissingOneOf("command", "step")
-	}
+func moreThanOneAreTrue(vals ...bool) bool {
+	count := 0
 
-	if s.Command != "" {
-		if s.Step != "" {
-			return apis.ErrMultipleOneOf("command", "step")
-		} else if len(s.Options) > 0 {
-			return &apis.FieldError{
-				Message: "Cannot set options for a command",
-				Paths:   []string{"options"},
-			}
+	for _, v := range vals {
+		if v {
+			count++
 		}
 	}
 
-	if s.Step != "" && len(s.Arguments) != 0 {
+	return count > 1
+}
+
+func validateStep(s Step) *apis.FieldError {
+	if s.Command == "" && s.Step == "" && equality.Semantic.DeepEqual(s.Loop, Loop{}) {
+		return apis.ErrMissingOneOf("command", "step", "loop")
+	}
+
+	if moreThanOneAreTrue(s.Command != "", s.Step != "", !equality.Semantic.DeepEqual(s.Loop, Loop{})) {
+		return apis.ErrMultipleOneOf("command", "step", "loop")
+	}
+
+	if (s.Command != "" || !equality.Semantic.DeepEqual(s.Loop, Loop{})) && len(s.Options) != 0 {
 		return &apis.FieldError{
-			Message: "Cannot set command-line arguments for a step",
+			Message: "Cannot set options for a command or a loop",
+			Paths:   []string{"options"},
+		}
+	}
+
+	if (s.Step != "" || !equality.Semantic.DeepEqual(s.Loop, Loop{})) && len(s.Arguments) != 0 {
+		return &apis.FieldError{
+			Message: "Cannot set command-line arguments for a step or a loop",
 			Paths:   []string{"args"},
 		}
 	}
 
+	if err := validateLoop(s.Loop); err != nil {
+		return err.ViaField("loop")
+	}
+
 	return validateAgent(s.Agent).ViaField("agent")
+}
+
+func validateLoop(l Loop) *apis.FieldError {
+	if !equality.Semantic.DeepEqual(l, Loop{}) {
+		if l.Variable == "" {
+			return apis.ErrMissingField("variable")
+		}
+
+		if len(l.Steps) == 0 {
+			return apis.ErrMissingField("steps")
+		}
+
+		if len(l.Values) == 0 {
+			return apis.ErrMissingField("values")
+		}
+
+		for i, step := range l.Steps {
+			if err := validateStep(step).ViaFieldIndex("steps", i); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func validateStages(stages []Stage, parentAgent Agent) *apis.FieldError {
@@ -493,8 +549,8 @@ func validateWorkspace(w string) *apis.FieldError {
 
 var randReader = rand.Reader
 
-func scopedEnv(s Stage, parentEnv []corev1.EnvVar) []corev1.EnvVar {
-	if len(parentEnv) == 0 && len(s.Environment) == 0 {
+func scopedEnv(newEnv []EnvVar, parentEnv []corev1.EnvVar) []corev1.EnvVar {
+	if len(parentEnv) == 0 && len(newEnv) == 0 {
 		return nil
 	}
 	envMap := make(map[string]corev1.EnvVar)
@@ -503,7 +559,7 @@ func scopedEnv(s Stage, parentEnv []corev1.EnvVar) []corev1.EnvVar {
 		envMap[e.Name] = e
 	}
 
-	for _, e := range s.Environment {
+	for _, e := range newEnv {
 		envMap[e.Name] = corev1.EnvVar{
 			Name:  e.Name,
 			Value: e.Value,
@@ -608,7 +664,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		}
 	}
 
-	env := scopedEnv(s, parentEnv)
+	env := scopedEnv(s.Environment, parentEnv)
 
 	agent := s.Agent
 
@@ -674,49 +730,16 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		// We don't want to dupe volumes for the Task if there are multiple steps
 		volumes := make(map[string]corev1.Volume)
 		for _, step := range s.Steps {
-			// TODO: Ignoring everything but commands right now, but will eventually need to handle syntactic sugar steps too
-			if step.Command != "" {
-				stepImage := agent.Image
-				if !equality.Semantic.DeepEqual(step.Agent, Agent{}) {
-					stepImage = step.Agent.Image
-				}
+			actualSteps, stepVolumes, newCounter, err := generateSteps(step, agent.Image, env, podTemplates, stepCounter)
+			if err != nil {
+				return nil, err
+			}
 
-				var c corev1.Container
+			stepCounter = newCounter
 
-				if podTemplates != nil && podTemplates[stepImage] != nil {
-					podTemplate := podTemplates[stepImage]
-					containers := podTemplate.Spec.Containers
-					for _, volume := range podTemplate.Spec.Volumes {
-						volumes[volume.Name] = volume
-					}
-					c = containers[0]
-					c.Args = append([]string{step.Command}, step.Arguments...)
-				} else {
-					c = corev1.Container{
-						Image:   stepImage,
-						Command: []string{step.Command},
-						Args:    step.Arguments,
-					}
-				}
-				stepCounter++
-				c.Name = "step" + strconv.Itoa(1+stepCounter)
-
-				c.Stdin = false
-				c.TTY = false
-
-				c.Env = env
-
-				t.Spec.Steps = append(t.Spec.Steps, c)
-
-				/*				t.Spec.Steps = append(t.Spec.Steps, corev1.Container{
-								Name:    MangleToRfc1035Label(fmt.Sprintf("stage-%s-step-%d", s.Name, i), suffix),
-								Env:     env,
-								Image:   stepImage,
-								Command: []string{step.Command},
-								Args:    step.Arguments,
-							})*/
-			} else {
-				return nil, errors.New("syntactic sugar steps not yet supported")
+			t.Spec.Steps = append(t.Spec.Steps, actualSteps...)
+			for k, v := range stepVolumes {
+				volumes[k] = v
 			}
 		}
 		for _, volume := range volumes {
@@ -774,6 +797,71 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 	}
 
 	return nil, errors.New("no steps, sequential stages, or parallel stages")
+}
+
+func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, podTemplates map[string]*corev1.Pod, stepCounter int) ([]corev1.Container, map[string]corev1.Volume, int, error) {
+	volumes := make(map[string]corev1.Volume)
+	var steps []corev1.Container
+
+	stepImage := inheritedAgent
+	if !equality.Semantic.DeepEqual(step.Agent, Agent{}) {
+		stepImage = step.Agent.Image
+	}
+
+	if step.Command != "" {
+		var c corev1.Container
+
+		if podTemplates != nil && podTemplates[stepImage] != nil {
+			podTemplate := podTemplates[stepImage]
+			containers := podTemplate.Spec.Containers
+			for _, volume := range podTemplate.Spec.Volumes {
+				volumes[volume.Name] = volume
+			}
+			c = containers[0]
+			c.Args = append([]string{step.Command}, step.Arguments...)
+		} else {
+			c = corev1.Container{
+				Image:   stepImage,
+				Command: []string{step.Command},
+				Args:    step.Arguments,
+			}
+		}
+		stepCounter++
+		c.Name = "step" + strconv.Itoa(1+stepCounter)
+
+		c.Stdin = false
+		c.TTY = false
+
+		c.Env = env
+
+		steps = append(steps, c)
+	} else if !equality.Semantic.DeepEqual(step.Loop, Loop{}) {
+		for _, v := range step.Loop.Values {
+			loopEnv := scopedEnv([]EnvVar{{Name: step.Loop.Variable, Value: v}}, env)
+
+			for _, s := range step.Loop.Steps {
+				loopSteps, loopVolumes, loopCounter, loopErr := generateSteps(s, stepImage, loopEnv, podTemplates, stepCounter)
+				if loopErr != nil {
+					return nil, nil, loopCounter, loopErr
+				}
+
+				// Bump the step counter to what we got from the loop
+				stepCounter = loopCounter
+
+				// Add the loop-generated steps
+				steps = append(steps, loopSteps...)
+
+				// Add any new volumes that may have shown up
+				for k, v := range loopVolumes {
+					volumes[k] = v
+				}
+			}
+		}
+	} else {
+		return nil, nil, stepCounter, errors.New("syntactic sugar steps not yet supported")
+	}
+
+	return steps, volumes, stepCounter, nil
 }
 
 // GenerateCRDs translates the Pipeline structure into the corresponding Pipeline and Task CRDs
