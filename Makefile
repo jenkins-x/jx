@@ -63,6 +63,8 @@ else
 TESTFLAGS := -p 8
 endif
 
+TEST_PACKAGE ?= ./...
+
 print-version: version
 	@echo $(VERSION)
 
@@ -99,7 +101,7 @@ test-integration1:
 	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration -coverprofile=cover.out -short ./... -test.v -run $(TEST)
 
 test-rich-integration1:
-	@CGO_ENABLED=$(CGO_ENABLED) richgo test -count=1 -tags=integration -coverprofile=cover.out -short ./... -test.v -run $(TEST)
+	@CGO_ENABLED=$(CGO_ENABLED) richgo test -count=1 -tags=integration -coverprofile=cover.out -short -test.v $(TEST_PACKAGE) -run $(TEST)
 
 test-integration-report: get-test-deps test-integration
 	@gocov convert cover.out | gocov report
