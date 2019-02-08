@@ -13,21 +13,22 @@ type CreateClusters struct {
 
 // CreateCluster defines how to create a cluster
 type CreateCluster struct {
-	Name string   `yaml:"name,omitempty"`
-	Args []string `yaml:"args,omitempty"`
+	Name     string   `yaml:"name,omitempty"`
+	Args     []string `yaml:"args,omitempty"`
+	NoLabels bool     `yaml:"noLabels,omitempty"`
+	Labels   string   `yaml:"labels,omitempty"`
 }
-
 
 // LoadBddClusters loads the cluster configuration from the given file
 func LoadBddClusters(fileName string) (*CreateClusters, error) {
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
-	  return nil, errors.Wrapf(err, "failed to load file %s" , fileName)
+		return nil, errors.Wrapf(err, "failed to load file %s", fileName)
 	}
 	answer := &CreateClusters{}
 	err = yaml.Unmarshal(data, answer)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to unmarshal YAML in file %s" , fileName)
+		return nil, errors.Wrapf(err, "failed to unmarshal YAML in file %s", fileName)
 	}
 	return answer, nil
 }
