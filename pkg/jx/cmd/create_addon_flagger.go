@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 	"io"
 	"strings"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -102,6 +104,20 @@ func (o *CreateAddonFlaggerOptions) Run() error {
 	err = o.installChart(o.ReleaseName+"-grafana", o.GrafanaChart, o.Version, o.Namespace, true, values, nil, "")
 	if err != nil {
 		return fmt.Errorf("Flagger Grafana deployment failed: %v", err)
+	}
+
+	// Enable Istio in production namespace
+	// TODO do not hardcode namespace
+	ns := "jx-production"
+	log.Infof("Enabling Istio in production namespace %s\n", ns)
+	client, err := o.KubeClient()
+	if err != nil {
+		return fmt.Errorf("Error enabling Istio in production namespace %s: %v", ns, err)
+	}
+	patch := []byte(`{"metadata":{"labels":{"istio-injection":"enabled"}}}`)
+	_, err = client.CoreV1().Namespaces().Patch(ns, types.MergePatchType, patch)
+	if err != nil {
+		return fmt.Errorf("Error enabling Istio in production namespace %s: %v", ns, err)
 	}
 	return nil
 }
