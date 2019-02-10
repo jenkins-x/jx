@@ -149,9 +149,11 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService kube.Source
 
 	for _, applicationName := range o.Args {
 		for _, env := range envMap {
-			err = o.deleteApplicationFromEnvironment(env, applicationName, currentUser.Username)
-			if err != nil {
-				return deletedApplications, errors.Wrapf(err, "deleting application %s from environment %s", applicationName, env.Name)
+			if env.Spec.Kind == v1.EnvironmentKindTypePermanent {
+				err = o.deleteApplicationFromEnvironment(env, applicationName, currentUser.Username)
+				if err != nil {
+					return deletedApplications, errors.Wrapf(err, "deleting application %s from environment %s", applicationName, env.Name)
+				}
 			}
 		}
 		if o.Org == "" {
