@@ -1231,7 +1231,7 @@ func (options *InstallOptions) configureGitAuth() error {
 		util.ColorInfo(pipelineAuthServerURL), util.ColorInfo(pipelineAuthUsername))
 	authConfig.UpdatePipelineServer(pipelineAuthServer, pipelineUserAuth)
 
-	log.Infof("Saving the Git authentication configuration")
+	log.Infof("Saving the Git authentication configuration\n")
 	err = authConfigSvc.SaveConfig()
 	if err != nil {
 		return errors.Wrap(err, "saving the Git authentication configuration")
