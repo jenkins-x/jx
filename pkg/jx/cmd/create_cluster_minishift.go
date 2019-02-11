@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -53,7 +54,7 @@ var (
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
 func NewCmdCreateClusterMinishift(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterMinishiftOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, MINISHIFT),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, cloud.MINISHIFT),
 	}
 	cmd := &cobra.Command{
 		Use:     "minishift",
@@ -245,7 +246,7 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 	}
 
 	log.Info("Initialising cluster ...\n")
-	err = o.initAndInstall(MINISHIFT)
+	err = o.initAndInstall(cloud.MINISHIFT)
 	if err != nil {
 		return err
 	}

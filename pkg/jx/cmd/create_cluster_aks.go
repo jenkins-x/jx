@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/Pallinder/go-randomdata"
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -82,7 +83,7 @@ var (
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
 func NewCmdCreateClusterAKS(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterAKSOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, AKS),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, cloud.AKS),
 	}
 	cmd := &cobra.Command{
 		Use:     "aks",
@@ -370,5 +371,5 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	}
 
 	log.Info("Initialising cluster ...\n")
-	return o.initAndInstall(AKS)
+	return o.initAndInstall(cloud.AKS)
 }

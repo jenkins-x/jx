@@ -12,6 +12,7 @@ import (
 
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -59,7 +60,7 @@ var (
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
 func NewCmdCreateClusterMinikube(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterMinikubeOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, MINIKUBE),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, cloud.MINIKUBE),
 	}
 	cmd := &cobra.Command{
 		Use:     "minikube",
@@ -260,7 +261,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	}
 
 	log.Info("Initialising cluster ...\n")
-	err = o.initAndInstall(MINIKUBE)
+	err = o.initAndInstall(cloud.MINIKUBE)
 	if err != nil {
 		return err
 	}

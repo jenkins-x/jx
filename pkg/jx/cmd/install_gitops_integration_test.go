@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
@@ -85,7 +86,7 @@ func TestInstallGitOps(t *testing.T) {
 	assertNoEnvironments(t, jxClient, ns)
 
 	testOrg := "mytestorg"
-	o.Flags.Provider = cmd.GKE
+	o.Flags.Provider = cloud.GKE
 	o.Flags.Dir = tempDir
 	o.Flags.GitOpsMode = true
 	o.Flags.NoGitOpsEnvApply = true

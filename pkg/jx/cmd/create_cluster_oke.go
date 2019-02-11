@@ -11,12 +11,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/Pallinder/go-randomdata"
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/oke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -80,7 +81,7 @@ var (
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
 func NewCmdCreateClusterOKE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterOKEOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, OKE),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, cloud.OKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "oke",
@@ -125,7 +126,7 @@ func NewCmdCreateClusterOKE(f Factory, in terminal.FileReader, out terminal.File
 }
 
 func (o *CreateClusterOKEOptions) Run() error {
-	err := o.installRequirements(OKE)
+	err := o.installRequirements(cloud.OKE)
 	if err != nil {
 		return err
 	}
@@ -458,7 +459,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			}
 			log.Info("Initialising cluster ...\n")
 
-			return o.initAndInstall(OKE)
+			return o.initAndInstall(cloud.OKE)
 		}
 	}
 	return nil

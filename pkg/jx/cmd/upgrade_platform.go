@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/config"
 	configio "github.com/jenkins-x/jx/pkg/io"
 
@@ -17,8 +18,8 @@ import (
 	"os"
 	"path/filepath"
 
-	do_not_use "gopkg.in/yaml.v2"
 	"github.com/ghodss/yaml"
+	do_not_use "gopkg.in/yaml.v2"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -27,8 +28,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	core_v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -136,7 +137,7 @@ func (o *UpgradePlatformOptions) Run() error {
 
 		prompt := &survey.Select{
 			Message: "Select the kube provider:",
-			Options: KUBERNETES_PROVIDERS,
+			Options: cloud.KubernetesProviders,
 			Default: "",
 		}
 		survey.AskOne(prompt, &provider, nil, surveyOpts)
@@ -278,7 +279,6 @@ func (o *UpgradePlatformOptions) Run() error {
 		o.AdminSecretsService.NewMavenSettingsXML()
 		adminSecrets := &o.AdminSecretsService.Secrets
 
-
 		o.Debugf("Rewriting secrets file to %s\n", util.ColorInfo(adminSecretsFileName))
 		err = configStore.WriteObject(adminSecretsFileName, adminSecrets)
 		if err != nil {
@@ -317,7 +317,7 @@ func (o *UpgradePlatformOptions) Run() error {
 		}
 	}
 
-	invalidFormat, err :=  o.checkAdminSecretsForInvalidFormat(adminSecretsFileName)
+	invalidFormat, err := o.checkAdminSecretsForInvalidFormat(adminSecretsFileName)
 	if err != nil {
 		return errors.Wrap(err, "unable to check adminSecrets.yaml file for invalid format")
 	}

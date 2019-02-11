@@ -13,6 +13,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/jenkins-x/jx/pkg/binaries"
@@ -353,14 +354,14 @@ func (o *CommonOptions) installKubectl(skipPathScan bool) error {
 
 func (o *CommonOptions) installKubectlWithVersion(version string, skipPathScan bool) error {
 	return o.installOrUpdateBinary(InstallOrUpdateBinaryOptions{
-		Binary:              "kubectl",
-		GitHubOrganization:  "",
-		DownloadUrlTemplate: "https://storage.googleapis.com/kubernetes-release/release/v{{.version}}/bin/{{.osTitle}}/{{.arch}}/kubectl",
+		Binary:                       "kubectl",
+		GitHubOrganization:           "",
+		DownloadUrlTemplate:          "https://storage.googleapis.com/kubernetes-release/release/v{{.version}}/bin/{{.osTitle}}/{{.arch}}/kubectl",
 		DownloadUrlTemplateLowerCase: true,
-		Version:             version,
-		SkipPathScan:        skipPathScan,
-		VersionExtractor:    nil,
-		Archived:            false,
+		Version:                      version,
+		SkipPathScan:                 skipPathScan,
+		VersionExtractor:             nil,
+		Archived:                     false,
 	})
 }
 
@@ -1255,20 +1256,20 @@ func (o *CommonOptions) GetCloudProvider(p string) (string, error) {
 		// lets detect Minikube
 		currentContext, err := o.getCommandOutput("", "kubectl", "config", "current-context")
 		if err == nil && currentContext == "minikube" {
-			p = MINIKUBE
+			p = cloud.MINIKUBE
 		}
 	}
 	if p != "" {
-		if !util.Contains(KUBERNETES_PROVIDERS, p) {
-			return "", util.InvalidArg(p, KUBERNETES_PROVIDERS)
+		if !util.Contains(cloud.KubernetesProviders, p) {
+			return "", util.InvalidArg(p, cloud.KubernetesProviders)
 		}
 	}
 
 	if p == "" {
 		prompt := &survey.Select{
 			Message: "Cloud Provider",
-			Options: KUBERNETES_PROVIDERS,
-			Default: MINIKUBE,
+			Options: cloud.KubernetesProviders,
+			Default: cloud.MINIKUBE,
 			Help:    "Cloud service providing the Kubernetes cluster, local VM (Minikube), Google (GKE), Oracle (OKE), Azure (AKS)",
 		}
 
@@ -1343,20 +1344,20 @@ func (o *CommonOptions) installMissingDependencies(providerSpecificDeps []string
 func (o *CommonOptions) installRequirements(cloudProvider string, extraDependencies ...string) error {
 	var deps []string
 	switch cloudProvider {
-	case IKS:
+	case cloud.IKS:
 		deps = o.addRequiredBinary("ibmcloud", deps)
-	case AWS:
+	case cloud.AWS:
 		deps = o.addRequiredBinary("kops", deps)
-	case EKS:
+	case cloud.EKS:
 		deps = o.addRequiredBinary("eksctl", deps)
 		deps = o.addRequiredBinary("heptio-authenticator-aws", deps)
-	case AKS:
+	case cloud.AKS:
 		deps = o.addRequiredBinary("az", deps)
-	case GKE:
+	case cloud.GKE:
 		deps = o.addRequiredBinary("gcloud", deps)
-	case OKE:
+	case cloud.OKE:
 		deps = o.addRequiredBinary("oci", deps)
-	case MINIKUBE:
+	case cloud.MINIKUBE:
 		deps = o.addRequiredBinary("minikube", deps)
 	}
 
@@ -1551,7 +1552,6 @@ func (o *CommonOptions) installProw(useKnativePipeine bool) error {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
 
-
 	values := []string{"user=" + o.Username, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
@@ -1571,7 +1571,7 @@ func (o *CommonOptions) installProw(useKnativePipeine bool) error {
 
 	settings, err := o.TeamSettings()
 	if err != nil {
-	  return err
+		return err
 	}
 	if settings.HelmTemplate || settings.NoTiller || settings.HelmBinary != "helm" {
 		// lets disable tiller

@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/log"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
@@ -25,29 +26,12 @@ type CreateClusterOptions struct {
 }
 
 const (
-	GKE        = "gke"
-	OKE        = "oke"
-	EKS        = "eks"
-	AKS        = "aks"
-	AWS        = "aws"
-	PKS        = "pks"
-	IKS        = "iks"
-	MINIKUBE   = "minikube"
-	MINISHIFT  = "minishift"
-	KUBERNETES = "kubernetes"
-	OPENSHIFT  = "openshift"
-	ORACLE     = "oracle"
-	ICP        = "icp"
-	JX_INFRA   = "jx-infra"
-
 	optionKubernetesVersion = "kubernetes-version"
 	optionNodes             = "nodes"
 	optionCluster           = "cluster"
 	optionClusterName       = "cluster-name"
 	optionCloudProvider     = "cloud-provider"
 )
-
-var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, OKE, AKS, AWS, EKS, KUBERNETES, IKS, OPENSHIFT, MINISHIFT, JX_INFRA, PKS, ICP}
 
 const (
 	stableKubeCtlVersionURL = "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
@@ -106,7 +90,7 @@ var (
 // KubernetesProviderOptions returns all the Kubernetes providers as a string
 func KubernetesProviderOptions() string {
 	values := []string{}
-	values = append(values, KUBERNETES_PROVIDERS...)
+	values = append(values, cloud.KubernetesProviders...)
 	sort.Strings(values)
 	return strings.Join(values, ", ")
 }

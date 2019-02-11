@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/cloud/iks"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -22,13 +23,13 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	address := externalIP
 	if address == "" {
-		if provider == MINIKUBE {
+		if provider == cloud.MINIKUBE {
 			ip, err := o.getCommandOutput("", "minikube", "ip")
 			if err != nil {
 				return "", err
 			}
 			address = ip
-		} else if provider == MINISHIFT {
+		} else if provider == cloud.MINISHIFT {
 			ip, err := o.getCommandOutput("", "minishift", "ip")
 			if err != nil {
 				return "", err
@@ -38,7 +39,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 			info := util.ColorInfo
 			log.Infof("Waiting to find the external host name of the ingress controller Service in namespace %s with name %s\n",
 				info(ingressNamespace), info(ingressService))
-			if provider == KUBERNETES {
+			if provider == cloud.KUBERNETES {
 				log.Infof("If you are installing Jenkins X on premise you may want to use the '--on-premise' flag or specify the '--external-ip' flags. See: %s\n",
 					info("https://jenkins-x.io/getting-started/install-on-cluster/#installing-jenkins-x-on-premise"))
 			}
@@ -59,7 +60,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 	}
 	defaultDomain := address
 
-	if provider == AWS || provider == EKS {
+	if provider == cloud.AWS || provider == cloud.EKS {
 		if domain != "" {
 			err := amazon.RegisterAwsCustomDomain(domain, address)
 			return domain, err
@@ -87,7 +88,7 @@ func (o *CommonOptions) GetDomain(client kubernetes.Interface, domain string, pr
 		}
 	}
 
-	if provider == IKS {
+	if provider == cloud.IKS {
 		if domain != "" {
 			log.Infof("\nIBM Kubernetes Service will use provided domain. Ensure name is registered with DNS (ex. CIS) and pointing the cluster ingress IP: %s\n",
 				util.ColorInfo(address))

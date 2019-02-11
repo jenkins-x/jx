@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/Pallinder/go-randomdata"
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -76,7 +77,7 @@ var (
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
 func NewCmdCreateClusterGKETerraform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterGKETerraformOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, GKE),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, cloud.GKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "terraform",
@@ -115,7 +116,7 @@ func (o *CreateClusterGKETerraformOptions) addAuthFlags(cmd *cobra.Command) {
 }
 
 func (o *CreateClusterGKETerraformOptions) Run() error {
-	err := o.installRequirements(GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
+	err := o.installRequirements(cloud.GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
 	if err != nil {
 		return err
 	}
@@ -363,7 +364,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 	if o.InstallOptions.Flags.DefaultEnvironmentPrefix == "" {
 		o.InstallOptions.Flags.DefaultEnvironmentPrefix = o.Flags.ClusterName
 	}
-	err = o.initAndInstall(GKE)
+	err = o.initAndInstall(cloud.GKE)
 	if err != nil {
 		return err
 	}
