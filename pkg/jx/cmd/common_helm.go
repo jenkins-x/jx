@@ -200,7 +200,7 @@ func (o *CommonOptions) cloneJXVersionsRepo(versionRepository string) (string, e
 	})
 
 	if err != nil {
-		return "", errors.Wrapf(err, "cloing %q repository into %q dir", versionRepository, wrkDir)
+		return "", errors.Wrapf(err, "cloning %q repository into %q dir", versionRepository, wrkDir)
 	}
 
 	return wrkDir, nil
