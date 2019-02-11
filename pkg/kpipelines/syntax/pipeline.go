@@ -818,12 +818,19 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, podTem
 				volumes[volume.Name] = volume
 			}
 			c = containers[0]
-			c.Args = append([]string{step.Command}, step.Arguments...)
+			cmdStr := step.Command
+			if len(step.Arguments) > 0 {
+				cmdStr += " " + strings.Join(step.Arguments, " ")
+			}
+			c.Args = []string{cmdStr}
+			c.WorkingDir = "/workspace/workspace"
 		} else {
 			c = corev1.Container{
 				Image:   stepImage,
 				Command: []string{step.Command},
 				Args:    step.Arguments,
+				// TODO: Better paths
+				WorkingDir: "/workspace/workspace",
 			}
 		}
 		stepCounter++

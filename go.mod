@@ -96,7 +96,7 @@ require (
 	github.com/kevinburke/ssh_config v0.0.0-20180317175531-9fc7bb800b55 // indirect
 	github.com/keybase/go-crypto v0.0.0-20181127160227-255a5089e85a // indirect
 	github.com/knative/build v0.3.0
-	github.com/knative/build-pipeline v0.0.0-20190203191138-7b5938be3a54
+	github.com/knative/build-pipeline v0.0.0-20190207174440-709bc8516d6d
 	github.com/knative/pkg v0.0.0-20190125193334-994b801b03ef
 	github.com/knq/snaker v0.0.0-20180306023312-d9ad1e7f342a // indirect
 	github.com/kr/pty v1.1.2 // indirect
