@@ -96,7 +96,7 @@ func TestAddAppForGitOps(t *testing.T) {
 
 func TestAddAppWithSecrets(t *testing.T) {
 	// TODO enable this test again when is passing
-	t.SkipNow()
+	//t.SkipNow()
 
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
@@ -159,6 +159,7 @@ func TestAddAppWithSecrets(t *testing.T) {
 		// Test boolean type
 		console.ExpectString("Enter a value for tokenValue")
 		console.SendLine("abc")
+		console.ExpectString(" ***")
 		console.ExpectEOF()
 	}()
 
