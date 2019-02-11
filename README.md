@@ -292,7 +292,7 @@ When running Minikube locally `jx` defaults to using [nip.io](http://nip.io/) as
 
 To avoid using [nip.io](http://nip.io/) you can do the following:
 
-Edit the file `~/.jenkins-x/cloud-environments/env-minikube/myvalues.yaml` and add the following content:
+Edit the file `~/.jx/cloud-environments/env-minikube/myvalues.yaml` and add the following content:
 
 ```yaml
 expose:
