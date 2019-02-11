@@ -519,9 +519,6 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 			log.Warnf("Failed to get PR number: %s", err)
 			return
 		}
-		if prNumber == 42 {
-			fmt.Printf("!!!Stop\n")
-		}
 		pr, err := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo, prNumber)
 		if err != nil {
 			log.Warnf("Failed to query the Pull Request status on pipeline %s for repo %s PR %d for PR %s: %s", activity.Name, gitInfo.HttpsURL(), prNumber, prURL, err)
