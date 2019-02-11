@@ -3,6 +3,7 @@ package cmd
 import (
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -28,7 +29,7 @@ var (
 )
 
 func NewCmdUpdateClusterGKE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := createUpdateClusterGKEOptions(f, in, out, errOut, GKE)
+	options := createUpdateClusterGKEOptions(f, in, out, errOut, cloud.GKE)
 
 	cmd := &cobra.Command{
 		Use:     "gke",

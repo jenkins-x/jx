@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cloud"
 	version2 "github.com/jenkins-x/jx/pkg/version"
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
@@ -167,12 +168,12 @@ func (o *InitOptions) Run() error {
 
 	// So a user doesn't need to specify ingress options if provider is ICP: we will use ICP's own ingress controller
 	// and by default, the tiller namespace "jx"
-	if o.Flags.Provider == ICP {
+	if o.Flags.Provider == cloud.ICP {
 		o.configureForICP()
 	}
 
 	// Needs to be done early as is an ingress availablility is an indicator of cluster readyness
-	if o.Flags.Provider == IKS {
+	if o.Flags.Provider == cloud.IKS {
 		err = o.initIKSIngress()
 		if err != nil {
 			return err
@@ -533,7 +534,7 @@ func (o *InitOptions) initIngress() error {
 	}
 	if currentContext == "minikube" {
 		if o.Flags.Provider == "" {
-			o.Flags.Provider = MINIKUBE
+			o.Flags.Provider = cloud.MINIKUBE
 		}
 		addons, err := o.getCommandOutput("", "minikube", "addons", "list")
 		if err != nil {
@@ -581,7 +582,7 @@ func (o *InitOptions) initIngress() error {
 		if err != nil {
 			return errors.Wrap(err, "failed to append the myvalues file")
 		}
-		if o.Flags.Provider == AWS || o.Flags.Provider == EKS {
+		if o.Flags.Provider == cloud.AWS || o.Flags.Provider == cloud.EKS {
 			// we can only enable one port for NLBs right now
 			enableHTTP := "false"
 			enableHTTPS := "true"
@@ -645,15 +646,15 @@ controller:
 		log.Info("existing ingress controller found, no need to install a new one\n")
 	}
 
-	if o.Flags.Provider != MINIKUBE && o.Flags.Provider != MINISHIFT && o.Flags.Provider != OPENSHIFT {
+	if o.Flags.Provider != cloud.MINIKUBE && o.Flags.Provider != cloud.MINISHIFT && o.Flags.Provider != cloud.OPENSHIFT {
 
 		log.Infof("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in %s namespace\n", ingressNamespace)
 
-		if o.Flags.Provider == OKE {
+		if o.Flags.Provider == cloud.OKE {
 			log.Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a OCI free account\n")
 		}
 
-		if o.Flags.Provider == GKE {
+		if o.Flags.Provider == cloud.GKE {
 			log.Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a GKE free account. To view quotas run: %s\n", util.ColorInfo("gcloud compute project-info describe"))
 		}
 

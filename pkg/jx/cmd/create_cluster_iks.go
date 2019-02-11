@@ -13,6 +13,7 @@ import (
 	"github.com/IBM-Cloud/bluemix-go/api/container/containerv1"
 	"github.com/IBM-Cloud/bluemix-go/session"
 	randomdata "github.com/Pallinder/go-randomdata"
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/iks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -101,7 +102,7 @@ func (s byNumberIndex) Less(i, j int) bool {
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
 func NewCmdCreateClusterIKS(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterIKSOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, OKE),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, cloud.OKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "iks",
@@ -535,5 +536,5 @@ L:
 	os.Setenv("KUBECONFIG", kubeconfig)
 	log.Info("Initialising cluster ...\n")
 
-	return o.initAndInstall(IKS)
+	return o.initAndInstall(cloud.IKS)
 }

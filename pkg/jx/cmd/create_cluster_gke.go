@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/kube"
 
 	osUser "os/user"
@@ -82,7 +83,7 @@ var (
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
 func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterGKEOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, GKE),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, cloud.GKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "gke",
@@ -125,7 +126,7 @@ func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.File
 }
 
 func (o *CreateClusterGKEOptions) Run() error {
-	err := o.installRequirements(GKE)
+	err := o.installRequirements(cloud.GKE)
 	if err != nil {
 		return err
 	}
@@ -279,7 +280,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			prompt := &survey.Confirm{
 				Message: "Would you like to enable Kaniko for building container images",
 				Default: false,
-				Help: "Use Kaniko for docker images",
+				Help:    "Use Kaniko for docker images",
 			}
 			survey.AskOne(prompt, &o.InstallOptions.Flags.Kaniko, nil, surveyOpts)
 		}
@@ -358,7 +359,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		kube.ClusterName: o.Flags.ClusterName,
 	})
 
-	err = o.initAndInstall(GKE)
+	err = o.initAndInstall(cloud.GKE)
 	if err != nil {
 		return err
 	}
@@ -393,7 +394,6 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	return nil
 }
-
 
 // addLabel adds the given label key and value to the label string
 func addLabel(labels string, name string, value string) string {

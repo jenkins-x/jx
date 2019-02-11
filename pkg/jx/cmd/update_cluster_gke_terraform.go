@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -47,7 +48,7 @@ var (
 // NewCmdUpdateClusterGKETerraform creates a command object for the updating an existing cluster running
 // on GKE using terraform.
 func NewCmdUpdateClusterGKETerraform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := createUpdateClusterGKETerraformOptions(f, in, out, errOut, GKE)
+	options := createUpdateClusterGKETerraformOptions(f, in, out, errOut, cloud.GKE)
 
 	cmd := &cobra.Command{
 		Use:     "terraform",
@@ -90,7 +91,7 @@ func createUpdateClusterGKETerraformOptions(f Factory, in terminal.FileReader, o
 }
 
 func (o *UpdateClusterGKETerraformOptions) Run() error {
-	err := o.installRequirements(GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
+	err := o.installRequirements(cloud.GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
 	if err != nil {
 		return err
 	}

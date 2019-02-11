@@ -21,6 +21,7 @@ import (
 	"path"
 
 	"github.com/Pallinder/go-randomdata"
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -358,7 +359,7 @@ func stringInValidProviders(a string) bool {
 
 // Run implements this command
 func (options *CreateTerraformOptions) Run() error {
-	err := options.installRequirements(GKE, "terraform", options.InstallOptions.InitOptions.HelmBinary())
+	err := options.installRequirements(cloud.GKE, "terraform", options.InstallOptions.InitOptions.HelmBinary())
 	if err != nil {
 		return err
 	}

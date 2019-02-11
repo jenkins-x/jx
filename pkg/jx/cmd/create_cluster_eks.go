@@ -1,15 +1,17 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
 	"io"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	logger "github.com/sirupsen/logrus"
@@ -61,7 +63,7 @@ var (
 // NewCmdCreateClusterEKS creates the command
 func NewCmdCreateClusterEKS(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterEKSOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, AKS),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, cloud.AKS),
 	}
 	cmd := &cobra.Command{
 		Use:     "eks",
@@ -209,5 +211,5 @@ cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
 	})
 
 	logger.Info("Initialising cluster ...\n")
-	return o.initAndInstall(EKS)
+	return o.initAndInstall(cloud.EKS)
 }

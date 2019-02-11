@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -75,7 +76,7 @@ var (
 // NewCmdCreateClusterAWS creates the command
 func NewCmdCreateClusterAWS(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := CreateClusterAWSOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, AKS),
+		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, cloud.AKS),
 	}
 	cmd := &cobra.Command{
 		Use:     "aws",
@@ -308,7 +309,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 	})
 
 	log.Info("Initialising cluster ...\n")
-	return o.initAndInstall(AWS)
+	return o.initAndInstall(cloud.AWS)
 }
 
 func (o *CreateClusterAWSOptions) waitForClusterJson(clusterName string) (string, error) {

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	version2 "github.com/jenkins-x/jx/pkg/version"
 
@@ -1682,20 +1683,20 @@ func (options *InstallOptions) setInstallValues(values map[string]string) {
 
 func (options *InstallOptions) configureCloudProviderPreInit(client kubernetes.Interface) error {
 	switch options.Flags.Provider {
-	case AKS:
+	case cloud.AKS:
 		err := options.createClusterAdmin()
 		if err != nil {
 			return errors.Wrap(err, "creating cluster admin for AKS cloud provider")
 		}
 		log.Success("created role cluster-admin")
-	case AWS:
+	case cloud.AWS:
 		fallthrough
-	case EKS:
+	case cloud.EKS:
 		err := options.ensureDefaultStorageClass(client, "gp2", "kubernetes.io/aws-ebs", "gp2")
 		if err != nil {
 			return errors.Wrap(err, "ensuring default storage for EKS/AWS cloud provider")
 		}
-	case MINIKUBE:
+	case cloud.MINIKUBE:
 		if options.Flags.Domain == "" {
 			ip, err := options.getCommandOutput("", "minikube", "ip")
 			if err != nil {
@@ -1711,14 +1712,14 @@ func (options *InstallOptions) configureCloudProviderPreInit(client kubernetes.I
 
 func (options *InstallOptions) configureCloudProivderPostInit(client kubernetes.Interface, namespace string) error {
 	switch options.Flags.Provider {
-	case MINISHIFT:
+	case cloud.MINISHIFT:
 		fallthrough
-	case OPENSHIFT:
+	case cloud.OPENSHIFT:
 		err := options.enableOpenShiftSCC(namespace)
 		if err != nil {
 			return errors.Wrap(err, "failed to enable the OpenShiftSCC")
 		}
-	case IKS:
+	case cloud.IKS:
 		err := options.addHelmBinaryRepoIfMissing(DEFAULT_IBMREPO_URL, "ibm", "", "")
 		if err != nil {
 			return errors.Wrap(err, "failed to add the IBM helm repo")
@@ -1768,7 +1769,7 @@ func (options *InstallOptions) configureCloudProviderRegistry(client kubernetes.
 		return "", "", err
 	}
 	switch options.Flags.Provider {
-	case AKS:
+	case cloud.AKS:
 		server := kube.CurrentServer(kubeConfig)
 		azureCLI := aks.NewAzureRunner()
 		resourceGroup, name, cluster, err := azureCLI.GetClusterClient(server)
@@ -1783,16 +1784,16 @@ func (options *InstallOptions) configureCloudProviderRegistry(client kubernetes.
 		azureCLI.AssignRole(cluster, registryID)
 		log.Infof("Assign AKS %s a reader role for ACR %s\n", util.ColorInfo(server), util.ColorInfo(dockerRegistry))
 		return config, dockerRegistry, nil
-	case IKS:
+	case cloud.IKS:
 		dockerRegistry = iks.GetClusterRegistry(client)
 		config, err := iks.GetRegistryConfigJSON(dockerRegistry)
 		if err != nil {
 			return "", "", errors.Wrap(err, "getting IKS registry configuration")
 		}
 		return config, dockerRegistry, nil
-	case MINISHIFT:
+	case cloud.MINISHIFT:
 		fallthrough
-	case OPENSHIFT:
+	case cloud.OPENSHIFT:
 		if dockerRegistry == "docker-registry.default.svc:5000" {
 			config, err := options.enableOpenShiftRegistryPermissions(namespace, dockerRegistry)
 			if err != nil {
@@ -1817,7 +1818,7 @@ func (options *InstallOptions) setMinikubeFromContext() error {
 	}
 	if currentContext == "minikube" {
 		if options.Flags.Provider == "" {
-			options.Flags.Provider = MINIKUBE
+			options.Flags.Provider = cloud.MINIKUBE
 		}
 	}
 	return nil
@@ -1915,7 +1916,7 @@ func (options *InstallOptions) getAdminSecrets(configStore configio.ConfigStore,
 
 func (options *InstallOptions) configureKaniko() error {
 	if options.Flags.Kaniko {
-		if options.Flags.Provider != GKE {
+		if options.Flags.Provider != cloud.GKE {
 			return fmt.Errorf("Kaniko is not supported for %s provider", options.Flags.Provider)
 		}
 
@@ -1945,7 +1946,7 @@ func (options *InstallOptions) configureKaniko() error {
 
 func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string, ic *kube.IngressConfig) error {
 	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
-		if options.Flags.Provider != GKE {
+		if options.Flags.Provider != cloud.GKE {
 			return fmt.Errorf("system vault is not supported for %s provider", options.Flags.Provider)
 		}
 
@@ -2410,7 +2411,7 @@ func gitOpsModifyEnvironment(dir string, name string, defaultEnvironment *v1.Env
 
 func isOpenShiftProvider(provider string) bool {
 	switch provider {
-	case OPENSHIFT, MINISHIFT:
+	case cloud.OPENSHIFT, cloud.MINISHIFT:
 		return true
 	default:
 		return false
@@ -2728,10 +2729,10 @@ func (options *InstallOptions) dockerRegistryValue() (string, error) {
 	if options.Flags.DockerRegistry != "" {
 		return options.Flags.DockerRegistry, nil
 	}
-	if options.Flags.Provider == AWS || options.Flags.Provider == EKS {
+	if options.Flags.Provider == cloud.AWS || options.Flags.Provider == cloud.EKS {
 		return amazon.GetContainerRegistryHost()
 	}
-	if options.Flags.Provider == OPENSHIFT || options.Flags.Provider == MINISHIFT {
+	if options.Flags.Provider == cloud.OPENSHIFT || options.Flags.Provider == cloud.MINISHIFT {
 		return "docker-registry.default.svc:5000", nil
 	}
 	return "", nil
