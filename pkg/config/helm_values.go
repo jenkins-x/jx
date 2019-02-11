@@ -8,12 +8,13 @@ import (
 )
 
 type ExposeControllerConfig struct {
-	Domain      string `json:"domain,omitempty"`
-	Exposer     string `json:"exposer,omitempty"`
-	HTTP        string `json:"http,omitempty"`
-	TLSAcme     string `json:"tlsacme,omitempty"`
-	PathMode    string `json:"pathMode,omitempty"`
-	UrlTemplate string `json:"urltemplate,omitempty"`
+	Domain        string `json:"domain,omitempty"`
+	Exposer       string `json:"exposer,omitempty"`
+	HTTP          string `json:"http,omitempty"`
+	TLSAcme       string `json:"tlsacme,omitempty"`
+	PathMode      string `json:"pathMode,omitempty"`
+	UrlTemplate   string `json:"urltemplate,omitempty"`
+	IngressClass  string `json:"ingressClass,omitempty"`
 }
 type ExposeController struct {
 	Config      ExposeControllerConfig `json:"config,omitempty"`
@@ -100,6 +101,7 @@ func (c *HelmValuesConfig) AddExposeControllerValues(cmd *cobra.Command, ignoreD
 	cmd.Flags().StringVarP(&c.ExposeController.Config.Exposer, "exposer", "", "Ingress", "Used to describe which strategy exposecontroller should use to access applications")
 	cmd.Flags().StringVarP(&c.ExposeController.Config.TLSAcme, "tls-acme", "", "", "Used to enable automatic TLS for ingress")
 	cmd.Flags().StringVarP(&c.ExposeController.Config.UrlTemplate, "urltemplate", "", "", "For ingress; exposers can set the urltemplate to expose")
+	cmd.Flags().StringVarP(&c.ExposeController.Config.IngressClass, "ingress-class", "", "", "Used to set the ingress.class annotation in exposecontroller created ingress")
 	cmd.Flags().BoolVarP(&keepJob, "keep-exposecontroller-job", "", false, "Prevents Helm deleting the exposecontroller Job and Pod after running.  Useful for debugging exposecontroller logs but you will need to manually delete the job if you update an environment")
 
 	cmd.Flags().MarkDeprecated("http", "please use `jx upgrade ingress` after install instead")
