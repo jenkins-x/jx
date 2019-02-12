@@ -154,7 +154,7 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService kube.Source
 			// fetch the list of sourcerepositories
 			srList, err := repoService.ListSourceRepositories()
 			if err != nil {
-				return deletedApplications, fmt.Errorf("error in sourcerepository service %s", err.Error())
+				return deletedApplications, errors.Wrapf(err, "error in sourcerepository service %s", err.Error())
 			}
 
 			srObjects := []v1.SourceRepository{}
@@ -162,12 +162,12 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService kube.Source
 				if srList.Items[sr].Spec.Repo == applicationName {
 					srObjects = append(srObjects, srList.Items[sr])
 					if len(srObjects) > 1 {
-						return deletedApplications, fmt.Errorf("application %s exists in multiple orgs, use --org to specify the app to delete", util.ColorInfo(applicationName))
+						return deletedApplications, errors.Wrapf(err, "application %s exists in multiple orgs, use --org to specify the app to delete", util.ColorInfo(applicationName))
 					}
 				}
 			}
 			if len(srObjects) == 0 {
-				return deletedApplications, fmt.Errorf("no sourcerepository object found, unable to delete %s", util.ColorInfo(applicationName))
+				return deletedApplications, errors.Wrapf(err, "unable to determine org for %s.  Please use --org to specify the app to delete", util.ColorInfo(applicationName))
 			}
 
 			// we only found a single sourceporistory resource, proceed
