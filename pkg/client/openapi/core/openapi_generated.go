@@ -2590,23 +2590,11 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivitySpec(ref common.ReferenceCallb
 							},
 						},
 					},
-					"facts": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Fact"),
-									},
-								},
-							},
-						},
-					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Attachment", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionExecution", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Fact", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStep", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Attachment", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionExecution", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStep", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 

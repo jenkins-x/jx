@@ -1409,13 +1409,6 @@ func (in *PipelineActivitySpec) DeepCopyInto(out *PipelineActivitySpec) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	if in.Facts != nil {
-		in, out := &in.Facts, &out.Facts
-		*out = make([]Fact, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
-		}
-	}
 	return
 }
 
