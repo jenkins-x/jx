@@ -122,12 +122,6 @@ func (o *DeleteApplicationOptions) Run() error {
 		deletedApplications, err = o.deleteJenkinsApplication()
 	}
 
-	for _, deletedApplication := range deletedApplications {
-		err := repoService.DeleteSourceRepository(deletedApplication)
-		if err != nil {
-			log.Warnf("Unable to find application metadata for %s to remove", deletedApplication)
-		}
-	}
 	if err != nil {
 		return errors.Wrapf(err, "deleting application")
 	}
@@ -157,12 +151,27 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService kube.Source
 			}
 		}
 		if o.Org == "" {
-			// Fetch the Org from the stored Custom Resource
-			application, err := repoService.GetSourceRepository(applicationName)
+			// fetch the list of sourcerepositories
+			srList, err := repoService.ListSourceRepositories()
 			if err != nil {
-				return deletedApplications, fmt.Errorf("could not get org for %s. use --org", util.ColorInfo(applicationName))
+				return deletedApplications, fmt.Errorf("error in sourcerepository service %s", err.Error())
 			}
-			o.Org = application.Spec.Org
+
+			srObjects := []v1.SourceRepository{}
+			for sr := range srList.Items {
+				if srList.Items[sr].Spec.Repo == applicationName {
+					srObjects = append(srObjects, srList.Items[sr])
+					if len(srObjects) > 1 {
+						return deletedApplications, fmt.Errorf("application %s exists in multiple orgs, use --org to specify the app to delete", util.ColorInfo(applicationName))
+					}
+				}
+			}
+			if len(srObjects) == 0 {
+				return deletedApplications, fmt.Errorf("no sourcerepository object found, unable to delete %s", util.ColorInfo(applicationName))
+			}
+
+			// we only found a single sourceporistory resource, proceed
+			o.Org = srObjects[0].Spec.Org
 		}
 
 		repo := []string{o.Org + "/" + applicationName}
@@ -170,7 +179,12 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService kube.Source
 		if err != nil {
 			return deletedApplications, errors.Wrapf(err, "deleting prow config for %s", applicationName)
 		}
-		deletedApplications = append(deletedApplications, applicationName)
+		deletedApplications = append(deletedApplications,applicationName)
+
+		err := repoService.DeleteSourceRepository(o.Org + "-" +applicationName)
+		if err != nil {
+			log.Warnf("Unable to find application metadata for %s to remove", applicationName)
+		}
 	}
 	return
 }
