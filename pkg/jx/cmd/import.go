@@ -587,6 +587,9 @@ func (options *ImportOptions) getCurrentUser() string {
 	return currentUser
 }
 
+// GetOrganisation gets the organisation from the RepoURL (if in the github format of github.com/org/repo). It will
+// do this in preference to the Organisation field (if set). If the repo URL does not implicitly specify an organisation
+// then the Organisation specified in the options is used.
 func (options *ImportOptions) GetOrganisation() string {
 	org := ""
 	gitInfo, err := gits.ParseGitURL(options.RepoURL)
