@@ -170,27 +170,16 @@ func (o *UpgradePlatformOptions) Run() error {
 		}
 	}
 
-	// Current version
-	var currentVersion string
-	output, err := o.Helm().ListCharts()
+	releases, err := o.Helm().StatusReleases(ns)
 	if err != nil {
-		log.Warnf("Failed to find helm installs: %s\n", err)
-		return err
-	} else {
-		o.Debugf("Installed helm charts\n%s\n", output)
-		for _, line := range strings.Split(output, "\n") {
-			fields := strings.Split(line, "\t")
-			if len(fields) > 4 && strings.TrimSpace(fields[0]) == "jenkins-x" {
-				for _, f := range fields[4:] {
-					f = strings.TrimSpace(f)
-					if strings.HasPrefix(f, jxChartPrefix) {
-						currentVersion = strings.TrimPrefix(f, jxChartPrefix)
-					}
-				}
-			}
+		return errors.Wrap(err, "list charts releases")
+	}
+	var currentVersion string
+	for name, rel := range releases {
+		if name == "jenkins-x" {
+			currentVersion = rel.Version
 		}
 	}
-
 	if currentVersion == "" {
 		return errors.New("Jenkins X platform helm chart is not installed.")
 	}

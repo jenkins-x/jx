@@ -469,8 +469,16 @@ func (h *HelmTemplate) DeleteRelease(ns string, releaseName string, purge bool) 
 
 // StatusRelease returns the output of the helm status command for a given release
 func (h *HelmTemplate) StatusRelease(ns string, releaseName string) error {
-	// TODO
-	return nil
+	releases, err := h.StatusReleases(ns)
+	if err != nil {
+		return errors.Wrap(err, "listing current chart releases")
+	}
+	for name := range releases {
+		if name == releaseName {
+			return nil
+		}
+	}
+	return fmt.Errorf("chart release %q not found", releaseName)
 }
 
 // StatusReleases returns the status of all installed releases
@@ -487,10 +495,11 @@ func (h *HelmTemplate) StatusReleases(ns string) (map[string]Release, error) {
 		labels := deploy.Labels
 		if labels != nil {
 			releaseName := labels[LabelReleaseName]
+			version := labels[LabelReleaseChartVersion]
 			release := Release{
 				Release: releaseName,
 				Status:  "DEPLOYED",
-				Version: "",
+				Version: version,
 			}
 
 			if releaseName != "" {
