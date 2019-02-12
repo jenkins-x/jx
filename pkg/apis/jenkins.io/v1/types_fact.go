@@ -39,7 +39,8 @@ type Fact struct {
 type FactSpec struct {
 	Name             string        `json:"name" protobuf:"bytes,1,opt,name=name"`
 	FactType         string        `json:"factType" protobuf:"bytes,3,opt,name=factType"`
-	Measurements     []Measurement `json:"measurements" protobuf:"bytes,4,opt,name=measurements"`
+	// +optional
+	Measurements     []Measurement `json:"measurements,omitempty" protobuf:"bytes,4,opt,name=measurements"`
 	Statements       []Statement   `json:"statements" protobuf:"bytes,5,opt,name=statements"`
 	Original         Original      `json:"original,omitempty" protobuf:"bytes,6,opt,name=original"`
 	Tags             []string      `json:"tags,omitempty" protobuf:"bytes,7,opt,name=tags"`
