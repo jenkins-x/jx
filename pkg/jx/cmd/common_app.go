@@ -66,7 +66,8 @@ func (o *CommonOptions) OnAppInstall(app string, version string) error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to clone the Jenkins X versions repository")
 		}
-		return extensions.OnInstallFromName(app, jxClient, kubeClient, certClient, ns, o.Helm(), defaultInstallTimeout, versionsDir)
+		appName := appList.Items[0].Name
+		return extensions.OnInstallFromName(appName, jxClient, kubeClient, certClient, ns, o.Helm(), defaultInstallTimeout, versionsDir)
 	}
 	return nil
 }
