@@ -11,6 +11,8 @@ approvers:
 - amuniz
 - mikecirioli
 - wbrefvem
+- daveconde
+- hferentschik
 reviewers:
 - rawlingsj
 - jstrachan
@@ -25,3 +27,5 @@ reviewers:
 - mikecirioli
 - wbrefvem
 - carlossg
+- daveconde
+- hferentschik
