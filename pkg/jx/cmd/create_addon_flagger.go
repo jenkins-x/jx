@@ -107,17 +107,20 @@ func (o *CreateAddonFlaggerOptions) Run() error {
 	}
 
 	// Enable Istio in production namespace
-	// TODO do not hardcode namespace
-	ns := "jx-production"
-	log.Infof("Enabling Istio in production namespace %s\n", ns)
 	client, err := o.KubeClient()
 	if err != nil {
-		return fmt.Errorf("Error enabling Istio in production namespace %s: %v", ns, err)
+		return fmt.Errorf("error enabling Istio in production namespace: %v", err)
 	}
+	var ns string
+	ns, err = o.findEnvironmentNamespace("production")
+	if err != nil {
+		return fmt.Errorf("error enabling Istio in production namespace: %v", err)
+	}
+	log.Infof("Enabling Istio in production namespace %s\n", ns)
 	patch := []byte(`{"metadata":{"labels":{"istio-injection":"enabled"}}}`)
 	_, err = client.CoreV1().Namespaces().Patch(ns, types.MergePatchType, patch)
 	if err != nil {
-		return fmt.Errorf("Error enabling Istio in production namespace %s: %v", ns, err)
+		return fmt.Errorf("error enabling Istio in production namespace %s: %v", ns, err)
 	}
 	return nil
 }
