@@ -28,6 +28,7 @@ func NewCmdStepGet(commonOpts *CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.AddCommand(NewCmdStepGetBuildNumber(commonOpts))
+	cmd.AddCommand(NewCmdStepGetVersionChangeSet(commonOpts))
 	return cmd
 }
 

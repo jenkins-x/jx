@@ -624,6 +624,16 @@ func (g *GitCLI) Diff(dir string) (string, error) {
 	return g.gitCmdWithOutput(dir, "diff")
 }
 
+// ListChangedFilesFromBranch lists files changed between branches
+func (g *GitCLI) ListChangedFilesFromBranch(dir string, branch string) (string, error) {
+	return g.gitCmdWithOutput(dir, "diff", "--name-status", branch)
+}
+
+// LoadFileFromBranch returns a files's contents from a branch
+func (g *GitCLI) LoadFileFromBranch(dir string, branch string, file string) (string, error) {
+	return g.gitCmdWithOutput(dir, "show", branch+":"+file)
+}
+
 // FetchUnshallow runs git fetch --unshallow in dir
 func (g *GitCLI) FetchUnshallow(dir string) error {
 	err := g.gitCmd(dir, "fetch", "--unshallow")

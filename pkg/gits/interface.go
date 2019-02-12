@@ -212,6 +212,8 @@ type Gitter interface {
 	AddCommit(dir string, msg string) error
 	HasChanges(dir string) (bool, error)
 	Diff(dir string) (string, error)
+	ListChangedFilesFromBranch(dir string, branch string) (string, error)
+	LoadFileFromBranch(dir string, branch string, file string) (string, error)
 
 	GetLatestCommitMessage(dir string) (string, error)
 	GetPreviousGitTagSHA(dir string) (string, error)
