@@ -47,7 +47,7 @@ type FactSpec struct {
 	SubjectReference string        `json:"subject" protobuf:"bytes,8,opt,name=source"`
 }
 
-// FactStatus is the status for an Environment resource
+// FactStatus is the status for an Fact resource
 type FactStatus struct {
 	Version string `json:"version,omitempty" protobuf:"bytes,1,opt,name=version"`
 }
