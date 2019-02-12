@@ -12,6 +12,7 @@ approvers:
 - mikecirioli
 - wbrefvem
 - daveconde
+- hferentschik
 reviewers:
 - rawlingsj
 - jstrachan
@@ -27,3 +28,4 @@ reviewers:
 - wbrefvem
 - carlossg
 - daveconde
+- hferentschik
