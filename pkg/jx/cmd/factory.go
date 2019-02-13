@@ -646,8 +646,8 @@ func (f *factory) CreateHelm(verbose bool,
 		h = helmCLI
 	}
 	if noTiller && !helmTemplate {
-		h.SetHost(tillerAddress())
-		startLocalTillerIfNotRunning()
+		h.SetHost(helm.GetTillerAddress())
+		helm.StartLocalTillerIfNotRunning()
 	}
 	return h
 }
@@ -659,58 +659,4 @@ func (f *factory) CreateCertManagerClient() (certmngclient.Interface, error) {
 		return nil, err
 	}
 	return certmngclient.NewForConfig(config)
-}
-
-// tillerAddress returns the address that tiller is listening on
-func tillerAddress() string {
-	tillerAddress := os.Getenv("TILLER_ADDR")
-	if tillerAddress == "" {
-		tillerAddress = ":44134"
-	}
-	return tillerAddress
-}
-
-func startLocalTillerIfNotRunning() error {
-	return startLocalTiller(true)
-}
-
-func startLocalTiller(lazy bool) error {
-	tillerAddress := getTillerAddress()
-	tillerArgs := os.Getenv("TILLER_ARGS")
-	args := []string{"-listen", tillerAddress, "-alsologtostderr"}
-	if tillerArgs != "" {
-		args = append(args, tillerArgs)
-	}
-	logsDir, err := util.LogsDir()
-	if err != nil {
-		return err
-	}
-	logFile := filepath.Join(logsDir, "tiller.log")
-	f, err := os.Create(logFile)
-	if err != nil {
-		return errors.Wrapf(err, "Failed to create tiller log file %s: %s", logFile, err)
-	}
-	err = util.RunCommandBackground("tiller", f, !lazy, args...)
-	if err == nil {
-		log.Infof("running tiller locally and logging to file: %s\n", util.ColorInfo(logFile))
-	} else if lazy {
-		// lets assume its because the process is already running so lets ignore
-		return nil
-	}
-	return err
-}
-
-func restartLocalTiller() error {
-	log.Info("checking if we need to kill a local tiller process\n")
-	util.KillProcesses("tiller")
-	return startLocalTiller(false)
-}
-
-// tillerAddress returns the address that tiller is listening on
-func getTillerAddress() string {
-	tillerAddress := os.Getenv("TILLER_ADDR")
-	if tillerAddress == "" {
-		tillerAddress = ":44134"
-	}
-	return tillerAddress
 }
