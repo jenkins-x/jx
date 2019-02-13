@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/jenkins-x/jx/pkg/binaries"
@@ -715,7 +716,7 @@ func (o *CommonOptions) installTiller() error {
 	if err != nil {
 		return err
 	}
-	err = startLocalTillerIfNotRunning()
+	err = helm.StartLocalTillerIfNotRunning()
 	if err != nil {
 		return err
 	}

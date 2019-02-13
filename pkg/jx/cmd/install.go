@@ -718,7 +718,7 @@ func (options *InstallOptions) init() error {
 	}
 	// configure local tiller if this is required
 	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
-		err := restartLocalTiller()
+		err := helm.RestartLocalTiller()
 		if err != nil {
 			return errors.Wrap(err, "restarting local tiller")
 		}
@@ -1664,7 +1664,7 @@ func (options *InstallOptions) installHelmBinaries() error {
 			}
 		}
 		dependencies = append(dependencies, "tiller")
-		options.Helm().SetHost(tillerAddress())
+		options.Helm().SetHost(helm.GetTillerAddress())
 	}
 	dependencies = append(dependencies, helmBinary)
 	return options.installMissingDependencies(dependencies)
