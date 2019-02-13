@@ -367,7 +367,7 @@ func (o *CreateClusterAWSOptions) modifyClusterConfigJson(json string, insecureR
 		return err
 	}
 	fileName := tmpFile.Name()
-	err = ioutil.WriteFile(fileName, []byte(newJson), DefaultWritePermissions)
+	err = ioutil.WriteFile(fileName, []byte(newJson), util.DefaultWritePermissions)
 	if err != nil {
 		return fmt.Errorf("Failed to write InstanceGroup JSON %s: %s", fileName, err)
 	}

@@ -607,7 +607,7 @@ controller:
 				return err
 			}
 			fileName := f.Name()
-			err = ioutil.WriteFile(fileName, []byte(yamlText), DefaultWritePermissions)
+			err = ioutil.WriteFile(fileName, []byte(yamlText), util.DefaultWritePermissions)
 			if err != nil {
 				return err
 			}

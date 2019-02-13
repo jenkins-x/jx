@@ -815,7 +815,7 @@ func (options *ImportOptions) DefaultGitIgnore() error {
 	}
 	if !exists {
 		data := []byte(defaultGitIgnoreFile)
-		err = ioutil.WriteFile(name, data, DefaultWritePermissions)
+		err = ioutil.WriteFile(name, data, util.DefaultWritePermissions)
 		if err != nil {
 			return fmt.Errorf("failed to write %s due to %s", name, err)
 		}
@@ -1198,7 +1198,7 @@ func (options *ImportOptions) fixDockerIgnoreFile() error {
 			if strings.TrimSpace(line) == "Dockerfile" {
 				lines = append(lines[:i], lines[i+1:]...)
 				text := strings.Join(lines, "\n")
-				err = ioutil.WriteFile(filename, []byte(text), DefaultWritePermissions)
+				err = ioutil.WriteFile(filename, []byte(text), util.DefaultWritePermissions)
 				if err != nil {
 					return err
 				}

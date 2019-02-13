@@ -12,8 +12,6 @@ import (
 
 const (
 	DefaultErrorExitCode = 1
-
-	DefaultWritePermissions = 0760
 )
 
 type debugError interface {

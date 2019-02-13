@@ -91,7 +91,7 @@ func (o *CommonOptions) createEnvironmentPullRequest(env *jenkinsv1.Environment,
 			return answer, err
 		}
 	} else {
-		err := os.MkdirAll(dir, DefaultWritePermissions)
+		err := os.MkdirAll(dir, util.DefaultWritePermissions)
 		if err != nil {
 			return answer, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
 		}

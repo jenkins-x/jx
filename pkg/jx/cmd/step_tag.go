@@ -219,7 +219,7 @@ func (o *StepTagOptions) updateChartValues(version string, chartsDir string) err
 		}
 	}
 	if updated {
-		err = ioutil.WriteFile(valuesFile, []byte(strings.Join(lines, "\n")), DefaultWritePermissions)
+		err = ioutil.WriteFile(valuesFile, []byte(strings.Join(lines, "\n")), util.DefaultWritePermissions)
 		if err != nil {
 			return fmt.Errorf("Failed to save chart file %s: %s", valuesFile, err)
 		}

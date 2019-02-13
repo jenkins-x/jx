@@ -94,7 +94,7 @@ func (o CreateJHipsterOptions) checkJHipsterInstalled() error {
 
 // GenerateJHipster creates a fresh JHipster project by running jhipster on local shell
 func (o CreateJHipsterOptions) GenerateJHipster(dir string) error {
-	err := os.MkdirAll(dir, DefaultWritePermissions)
+	err := os.MkdirAll(dir, util.DefaultWritePermissions)
 	if err != nil {
 		return err
 	}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
@@ -110,12 +111,12 @@ func (o *StepCreateBuildOptions) Run() error {
 
 		outDir := o.OutputDir
 		if outDir != "" {
-			err = os.MkdirAll(outDir, DefaultWritePermissions)
+			err = os.MkdirAll(outDir, util.DefaultWritePermissions)
 			if err != nil {
 				return err
 			}
 			output := filepath.Join(outDir, "build-"+branchBuild.Kind+".yml")
-			err = ioutil.WriteFile(output, data, DefaultWritePermissions)
+			err = ioutil.WriteFile(output, data, util.DefaultWritePermissions)
 			if err != nil {
 				return err
 			}

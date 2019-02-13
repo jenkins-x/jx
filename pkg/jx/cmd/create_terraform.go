@@ -680,7 +680,7 @@ func (options *CreateTerraformOptions) CreateOrganisationFolderStructure(dir str
 		if !exists {
 			options.Debugf("cluster %s does not exist, creating...", c.Name())
 
-			os.MkdirAll(path, DefaultWritePermissions)
+			os.MkdirAll(path, util.DefaultWritePermissions)
 
 			switch c.Provider() {
 			case "gke", "jx-infra":
