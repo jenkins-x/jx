@@ -6,7 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -175,7 +175,7 @@ func (o *StepPostInstallOptions) Run() (err error) {
 			return o.createWebhookProw(gitURL, gitProvider)
 		}
 
-		err = o.ImportProject(gitURL, envDir, jenkins.DefaultJenkinsfile, branchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)
+		err = o.ImportProject(gitURL, envDir, jenkinsfile.Name, branchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)
 		if err != nil {
 			log.Errorf("failed to import Environment %s with git URL %s due to: %s\n", name, gitURL, err)
 			errs = append(errs, errors.Wrapf(err, "failed to import Environment %s with git URL %s", name, gitURL))
