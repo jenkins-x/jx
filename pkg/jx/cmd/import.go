@@ -511,6 +511,7 @@ func (options *ImportOptions) DraftCreate() error {
 		options.GitUserAuth = &userAuth
 	}
 
+	options.Organisation = options.GetOrganisation()
 	if options.Organisation == "" {
 		gitUsername := options.GitUserAuth.Username
 		options.Organisation, err = gits.GetOwner(options.BatchMode, options.GitProvider, gitUsername, options.In, options.Out, options.Err)
@@ -565,7 +566,7 @@ func (options *ImportOptions) getDockerRegistryOrg() string {
 }
 
 func (options *ImportOptions) getOrganisationOrCurrentUser() string {
-	org := options.getOrganisation()
+	org := options.GetOrganisation()
 	if org == "" {
 		org = options.getCurrentUser()
 	}
@@ -590,11 +591,17 @@ func (options *ImportOptions) getCurrentUser() string {
 	return currentUser
 }
 
-func (options *ImportOptions) getOrganisation() string {
+// GetOrganisation gets the organisation from the RepoURL (if in the github format of github.com/org/repo). It will
+// do this in preference to the Organisation field (if set). If the repo URL does not implicitly specify an organisation
+// then the Organisation specified in the options is used.
+func (options *ImportOptions) GetOrganisation() string {
 	org := ""
 	gitInfo, err := gits.ParseGitURL(options.RepoURL)
 	if err == nil && gitInfo.Organisation != "" {
 		org = gitInfo.Organisation
+		if options.Organisation != "" && org != options.Organisation {
+			log.Warnf("organisation %s detected from URL %s. '--org %s' will be ignored", org, options.RepoURL, options.Organisation)
+		}
 	} else {
 		org = options.Organisation
 	}
@@ -611,7 +618,7 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	dir := options.Dir
 	_, defaultRepoName := filepath.Split(dir)
 
-	options.GitRepositoryOptions.Owner = options.getOrganisation()
+	options.GitRepositoryOptions.Owner = options.GetOrganisation()
 	details := &options.GitDetails
 	if details.RepoName == "" {
 		details, err = gits.PickNewGitRepository(options.BatchMode, authConfigSvc, defaultRepoName, &options.GitRepositoryOptions,
