@@ -47,6 +47,8 @@ type CreateClusterAWSFlags struct {
 	State                  string
 	SSHPublicKey           string
 	Tags                   string
+	UseSpotinst            bool
+	UseSpotinstOcean       bool
 }
 
 var (
@@ -108,6 +110,8 @@ func NewCmdCreateClusterAWS(f Factory, in terminal.FileReader, out terminal.File
 	cmd.Flags().StringVarP(&options.Flags.State, "state", "", "", "The S3 bucket used to store the state of the cluster.")
 	cmd.Flags().StringVarP(&options.Flags.SSHPublicKey, "ssh-public-key", "", "", "SSH public key to use for nodes (default \"~/.ssh/id_rsa.pub\").")
 	cmd.Flags().StringVarP(&options.Flags.Tags, "tags", "", "", "A list of KV pairs used to tag all instance groups in AWS (eg \"Owner=John Doe,Team=Some Team\").")
+	cmd.Flags().BoolVarP(&options.Flags.UseSpotinst, "spotinst", "", false, "Whether to enable Spotinst integration")
+	cmd.Flags().BoolVarP(&options.Flags.UseSpotinstOcean, "spotinst-ocean", "", false, "Whether to use Spotinst Ocean instance groups")
 	return cmd
 }
 
@@ -252,6 +256,25 @@ func (o *CreateClusterAWSOptions) Run() error {
 		auth = "AlwaysAllow"
 	}
 	args = append(args, "--authorization", auth, "--zones", zones, "--yes")
+
+	if flags.UseSpotinst {
+		feature := "Spotinst"
+
+		if flags.UseSpotinstOcean {
+			feature += ",SpotinstOcean"
+		}
+
+		features := os.Getenv("KOPS_FEATURE_FLAGS")
+		if features != "" {
+			features = fmt.Sprintf("%s,%s", features, feature)
+		} else {
+			features = feature
+		}
+
+		if err := os.Setenv("KOPS_FEATURE_FLAGS", features); err != nil {
+			return err
+		}
+	}
 
 	if flags.TerraformDirectory != "" {
 		args = append(args, "--out", flags.TerraformDirectory, "--target=terraform")
