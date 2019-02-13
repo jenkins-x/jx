@@ -470,6 +470,8 @@ github.com/knative/build-pipeline v0.0.0-20190131183337-3cd318b51868 h1:L2PJOvst
 github.com/knative/build-pipeline v0.0.0-20190131183337-3cd318b51868/go.mod h1:mfaenlZ8/tw23y+Pck3qWpCVNTPMiFSZ0uqQkscBEAI=
 github.com/knative/build-pipeline v0.0.0-20190203191138-7b5938be3a54 h1:gnbk07EMURuv6FAIyc7Ig5DI9bUfdxz8wI3rZCKxkMs=
 github.com/knative/build-pipeline v0.0.0-20190203191138-7b5938be3a54/go.mod h1:mfaenlZ8/tw23y+Pck3qWpCVNTPMiFSZ0uqQkscBEAI=
+github.com/knative/build-pipeline v0.0.0-20190207174440-709bc8516d6d h1:MLVDudK7ROD2BSu/EbX7q3SWus3fi/TL7NclgsRfaxw=
+github.com/knative/build-pipeline v0.0.0-20190207174440-709bc8516d6d/go.mod h1:mfaenlZ8/tw23y+Pck3qWpCVNTPMiFSZ0uqQkscBEAI=
 github.com/knative/caching v0.0.0-20180907165633-f0d7bb60956f/go.mod h1:D6ynAUa79yFRVWCEogSqhRRNi2SooyDBf1ucp02CFKg=
 github.com/knative/pkg v0.0.0-20181205230426-0e41760cea1d/go.mod h1:7Ijfhw7rfB+H9VtosIsDYvZQ+qYTz7auK3fHW/5z4ww=
 github.com/knative/pkg v0.0.0-20190118011331-076ebf4e5675/go.mod h1:7Ijfhw7rfB+H9VtosIsDYvZQ+qYTz7auK3fHW/5z4ww=
