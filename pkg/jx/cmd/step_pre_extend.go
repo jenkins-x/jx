@@ -116,7 +116,7 @@ func (o *StepPreExtendOptions) Run() error {
 		}
 		pipeline := ""
 		build := o.getBuildNumber()
-		pipeline, build = o.getPipelineName(gitInfo, pipeline, build, appName)
+		pipeline, build = o.GetPipelineName(gitInfo, pipeline, build, appName)
 		if pipeline != "" && build != "" {
 			name := kube.ToValidName(pipeline + "-" + build)
 			key := &kube.PromoteStepActivityKey{
@@ -126,7 +126,7 @@ func (o *StepPreExtendOptions) Run() error {
 					Build:    build,
 				},
 			}
-			a, _, err := key.GetOrCreate(client,ns)
+			a, _, err := key.GetOrCreate(client, ns)
 			if err != nil {
 				return err
 			}

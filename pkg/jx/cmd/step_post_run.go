@@ -89,7 +89,7 @@ func (o *StepPostRunOptions) Run() (err error) {
 	}
 	pipeline := ""
 	build := o.getBuildNumber()
-	pipeline, build = o.getPipelineName(gitInfo, pipeline, build, appName)
+	pipeline, build = o.GetPipelineName(gitInfo, pipeline, build, appName)
 	if pipeline != "" && build != "" {
 		name := kube.ToValidName(pipeline + "-" + build)
 		key := &kube.PromoteStepActivityKey{

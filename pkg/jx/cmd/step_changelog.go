@@ -476,7 +476,7 @@ func (o *StepChangelogOptions) Run() error {
 	releaseNotesURL := release.Spec.ReleaseNotesURL
 	pipeline := ""
 	build := o.Build
-	pipeline, build = o.getPipelineName(gitInfo, pipeline, build, appName)
+	pipeline, build = o.GetPipelineName(gitInfo, pipeline, build, appName)
 	if pipeline != "" && build != "" {
 		name := kube.ToValidName(pipeline + "-" + build)
 		// lets see if we can update the pipeline
@@ -503,7 +503,7 @@ func (o *StepChangelogOptions) Run() error {
 				LastCommitMessage: lastCommitMessage,
 				LastCommitURL:     lastCommitURL,
 				Version:           cleanVersion,
-				GitInfo:		   gitInfo,
+				GitInfo:           gitInfo,
 			},
 		}
 		a, created, err := key.GetOrCreate(jxClient, o.currentNamespace)
