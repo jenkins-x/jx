@@ -12,7 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// GetLatestPipelineBuild returns the latest pipeline build
+// GetLatestPipelineBuildByCRD returns the latest pipeline build
 func (o *CommonOptions) GetLatestPipelineBuildByCRD(pipeline string) (string, error) {
 	// lets find the latest build number
 	jxClient, ns, err := o.JXClientAndDevNamespace()
