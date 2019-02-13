@@ -184,7 +184,7 @@ func loadChildJobs(jenkinsClient gojenkins.JenkinsClient, name string) ([]*gojen
 	return answer, nil
 }
 
-// Jobname returns the Jenkins job name starting with the given prefix
+// JobName returns the Jenkins job name starting with the given prefix
 func JobName(prefix string, j *gojenkins.Job) string {
 	name := j.FullName
 	if name == "" {

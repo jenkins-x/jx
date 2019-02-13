@@ -84,6 +84,7 @@ func NewCmdCompletion(f Factory, in terminal.FileReader, out terminal.FileWriter
 	return cmd
 }
 
+// Run executes the completion command
 func (o *CompletionOptions) Run() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	shells := []string{}
