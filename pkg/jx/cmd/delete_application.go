@@ -288,6 +288,9 @@ func (o *DeleteApplicationOptions) applicationNameFromJenkinsJobName(name string
 }
 
 func (o *DeleteApplicationOptions) deleteApplicationFromEnvironment(env *v1.Environment, applicationName string, username string) error {
+	if o.IgnoreEnvironments {
+		return nil
+	}
 	if env.Spec.Source.URL == "" {
 		return nil
 	}
