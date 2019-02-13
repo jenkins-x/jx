@@ -1,12 +1,8 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
 	"io"
-	"os"
-	"os/exec"
-	"strings"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/builds"
@@ -172,7 +168,7 @@ func (o *LogsOptions) Run() error {
 				return fmt.Errorf("No pod found for namespace %s with name %s", ns, name)
 			}
 		}
-		err = o.tailLogs(ns, pod, o.Container)
+		err = o.TailLogs(ns, pod, o.Container)
 		if err != nil {
 			return nil
 		}
@@ -185,36 +181,6 @@ func parseSelector(selectorText string) (map[string]string, error) {
 		return nil, err
 	}
 	return selector.MatchLabels, nil
-}
-
-func (o *CommonOptions) tailLogs(ns string, pod string, containerName string) error {
-	args := []string{"logs", "-n", ns, "-f"}
-	if containerName != "" {
-		args = append(args, "-c", containerName)
-	}
-	args = append(args, pod)
-	name := "kubectl"
-	e := exec.Command(name, args...)
-	e.Stderr = o.Err
-	stdout, _ := e.StdoutPipe()
-
-	os.Setenv("PATH", util.PathWithBinary())
-	err := e.Start()
-	if err != nil {
-		log.Errorf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
-	}
-
-	scanner := bufio.NewScanner(stdout)
-	scanner.Split(bufio.ScanLines)
-	for scanner.Scan() {
-		m := scanner.Text()
-		fmt.Fprintln(o.Out, m)
-		if m == "Finished: FAILURE" {
-			os.Exit(1)
-		}
-	}
-	e.Wait()
-	return err
 }
 
 // waitForReadyPodForDeployment waits for a ready pod in a Deployment in the given namespace with the given name
@@ -283,7 +249,7 @@ func (o *CommonOptions) waitForReadyKnativeBuildPod(c kubernetes.Interface, ns s
 					loggedInitContainerIdx = idx
 					containerName := ic.Name
 					log.Warnf("Init container on pod: %s is: %s\n", name, containerName)
-					err = o.tailLogs(ns, name, containerName)
+					err = o.TailLogs(ns, name, containerName)
 					if err != nil {
 						break
 					}
@@ -338,7 +304,7 @@ func (o *CommonOptions) waitForReadyPodForSelector(c kubernetes.Interface, ns st
 					loggedInitContainerIdx = idx
 					containerName := ic.Name
 					log.Warnf("Init container on pod: %s is: %s\n", name, containerName)
-					err = o.tailLogs(ns, name, containerName)
+					err = o.TailLogs(ns, name, containerName)
 					if err != nil {
 						break
 					}

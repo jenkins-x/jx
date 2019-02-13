@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/gits"
 	"io"
 	"os"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/gits"
 
 	"github.com/pkg/errors"
 
@@ -304,7 +305,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 	for i, ic := range initContainers {
 		pod, err = kubeClient.CoreV1().Pods(ns).Get(pod.Name, metav1.GetOptions{})
 		if err != nil {
-		  return errors.Wrapf(err, "failed to find pod %s", pod.Name)
+			return errors.Wrapf(err, "failed to find pod %s", pod.Name)
 		}
 		if i > 0 {
 			icStatuses := pod.Status.InitContainerStatuses
@@ -356,7 +357,7 @@ func waitForInitContainerToStart(kubeClient kubernetes.Interface, ns string, pod
 
 func (o *GetBuildLogsOptions) getPodLog(ns string, pod *corev1.Pod, container corev1.Container) error {
 	log.Infof("getting the log for pod %s and init container %s\n", util.ColorInfo(pod.Name), util.ColorInfo(container.Name))
-	return o.tailLogs(ns, pod.Name, container.Name)
+	return o.TailLogs(ns, pod.Name, container.Name)
 }
 
 func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, ns string) ([]string, string, map[string]*builds.BuildPodInfo, map[string]*builds.BuildPodInfo, error) {
