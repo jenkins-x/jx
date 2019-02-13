@@ -817,12 +817,12 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 		}
 	}
 	if pipeline == "" {
-		pipeline, build = o.getPipelineName(gitInfo, pipeline, build, o.Application)
+		pipeline, build = o.GetPipelineName(gitInfo, pipeline, build, o.Application)
 	}
 	if pipeline != "" && build == "" {
 		log.Warnf("No $BUILD_NUMBER environment variable found so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
 		var err error
-		build, err = o.getLatestPipelineBuildByCRD(pipeline)
+		build, err = o.GetLatestPipelineBuildByCRD(pipeline)
 		if err != nil {
 			log.Warnf("Could not discover the latest PipelineActivity build %s\n", err)
 		}
@@ -868,122 +868,6 @@ func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStep
 		},
 		Environment: env.Name,
 	}
-}
-
-// getLatestPipelineBuild returns the latest pipeline build
-func (o *CommonOptions) getLatestPipelineBuildByCRD(pipeline string) (string, error) {
-	// lets find the latest build number
-	jxClient, ns, err := o.JXClientAndDevNamespace()
-	if err != nil {
-		return "", err
-	}
-	pipelines, err := jxClient.JenkinsV1().PipelineActivities(ns).List(metav1.ListOptions{})
-	if err != nil {
-		return "", err
-	}
-
-	buildNumber := 0
-	for _, p := range pipelines.Items {
-		if p.Spec.Pipeline == pipeline {
-			b := p.Spec.Build
-			if b != "" {
-				n, err := strconv.Atoi(b)
-				if err == nil {
-					if n > buildNumber {
-						buildNumber = n
-					}
-				}
-			}
-		}
-	}
-	if buildNumber > 0 {
-		return strconv.Itoa(buildNumber), nil
-	}
-	return "1", nil
-}
-
-func (o *CommonOptions) getPipelineName(gitInfo *gits.GitRepository, pipeline string, build string, appName string) (string, string) {
-	if pipeline == "" {
-		pipeline = o.getJobName()
-	}
-	if build == "" {
-		build = o.getBuildNumber()
-	}
-	if gitInfo != nil && pipeline == "" {
-		// lets default the pipeline name from the Git repo
-		branch, err := o.Git().Branch(".")
-		if err != nil {
-			log.Warnf("Could not find the branch name: %s\n", err)
-		}
-		if branch == "" {
-			branch = "master"
-		}
-		pipeline = util.UrlJoin(gitInfo.Organisation, gitInfo.Name, branch)
-	}
-	if pipeline == "" && appName != "" {
-		suffix := appName + "/master"
-
-		// lets try deduce the pipeline name via the app name
-		jxClient, ns, err := o.JXClientAndDevNamespace()
-		if err == nil {
-			pipelineList, err := jxClient.JenkinsV1().PipelineActivities(ns).List(metav1.ListOptions{})
-			if err == nil {
-				for _, pipelineResource := range pipelineList.Items {
-					pipelineName := pipelineResource.Spec.Pipeline
-					if strings.HasSuffix(pipelineName, suffix) {
-						pipeline = pipelineName
-						break
-					}
-				}
-			}
-		}
-	}
-	if pipeline == "" {
-		// lets try find
-		log.Warnf("No $JOB_NAME environment variable found so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
-	} else if build == "" {
-		// lets validate and determine the current active pipeline branch
-		p, b, err := o.getLatestPipelineBuild(pipeline)
-		if err != nil {
-			log.Warnf("Failed to try detect the current Jenkins pipeline for %s due to %s\n", pipeline, err)
-			build = "1"
-		} else {
-			pipeline = p
-			build = b
-		}
-	}
-	return pipeline, build
-}
-
-// getLatestPipelineBuild for the given pipeline name lets try find the Jenkins Pipeline and the latest build
-func (o *CommonOptions) getLatestPipelineBuild(pipeline string) (string, string, error) {
-	log.Infof("pipeline %s\n", pipeline)
-	build := ""
-	jxClient, ns, err := o.JXClientAndDevNamespace()
-	if err != nil {
-		return pipeline, build, err
-	}
-	kubeClient, err := o.KubeClient()
-	if err != nil {
-		return pipeline, build, err
-	}
-	devEnv, err := kube.GetEnrichedDevEnvironment(kubeClient, jxClient, ns)
-	webhookEngine := devEnv.Spec.WebHookEngine
-	if webhookEngine == v1.WebHookEngineProw {
-		return pipeline, build, nil
-	}
-
-	jenkins, err := o.JenkinsClient()
-	if err != nil {
-		return pipeline, build, err
-	}
-	paths := strings.Split(pipeline, "/")
-	job, err := jenkins.GetJobByPath(paths...)
-	if err != nil {
-		return pipeline, build, err
-	}
-	build = strconv.Itoa(job.LastBuild.Number)
-	return pipeline, build, nil
 }
 
 func (o *PromoteOptions) getAndUpdateJenkinsURL() string {
