@@ -328,7 +328,11 @@ func (options *ImportOptions) Run() error {
 	if options.RepoURL != "" {
 		if shouldClone {
 			// Use the git user auth to clone the repo (needed for private repos etc)
-			options.RepoURL, err = options.Git().CreatePushURL(options.RepoURL, userAuth)
+			if options.GitUserAuth == nil {
+				userAuth := options.GitProvider.UserAuth()
+				options.GitUserAuth = &userAuth
+			}
+			options.RepoURL, err = options.Git().CreatePushURL(options.RepoURL, options.GitUserAuth)
 			if err != nil {
 				return err
 			}
