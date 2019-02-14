@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/builds"
 	"io"
 	"net/url"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/builds"
 
 	"github.com/jenkins-x/jx/pkg/expose"
 
@@ -30,6 +31,7 @@ import (
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
+	jxjenkins "github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -89,7 +91,7 @@ type CommonOptions struct {
 	devNamespace           string
 	jxClient               versioned.Interface
 	knbClient              buildclient.Interface
-	kpClient			   kpipelineclient.Interface
+	kpClient               kpipelineclient.Interface
 	jenkinsClient          gojenkins.JenkinsClient
 	git                    gits.Gitter
 	helm                   helm.Helmer
@@ -298,7 +300,6 @@ func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, 
 	}
 	return o.jxClient, o.devNamespace, nil
 }
-
 
 // SetJenkinsClient sets the JenkinsClient - usually used in testing
 func (o *CommonOptions) SetJenkinsClient(jenkinsClient gojenkins.JenkinsClient) {
@@ -739,8 +740,8 @@ func (o *CommonOptions) addJobs(jobMap *map[string]gojenkins.Job, filter string,
 	}
 
 	for _, j := range jobs {
-		name := jobName(prefix, &j)
-		if IsPipeline(&j) {
+		name := jxjenkins.JobName(prefix, &j)
+		if jxjenkins.IsPipeline(&j) {
 			if filter == "" || strings.Contains(name, filter) {
 				(*jobMap)[name] = j
 				continue
@@ -818,7 +819,7 @@ func (o *CommonOptions) expose(devNamespace, targetNamespace, password string) e
 func (o *CommonOptions) runExposecontroller(devNamespace, targetNamespace string, ic kube.IngressConfig, services ...string) error {
 	versionsDir, err := o.cloneJXVersionsRepo("")
 	if err != nil {
-	  return errors.Wrapf(err, "failed to clone the Jenkins X versions repository")
+		return errors.Wrapf(err, "failed to clone the Jenkins X versions repository")
 	}
 	return expose.RunExposecontroller(devNamespace, targetNamespace, ic, o.kubeClient, o.Helm(),
 		defaultInstallTimeout, versionsDir, services...)

@@ -285,18 +285,3 @@ func (o *StartPipelineOptions) startJenkinsJob(name string) error {
 		time.Sleep(time.Second)
 	}
 }
-
-func jobName(prefix string, j *gojenkins.Job) string {
-	name := j.FullName
-	if name == "" {
-		name = j.Name
-	}
-	if prefix != "" {
-		name = prefix + "/" + name
-	}
-	return name
-}
-
-func IsPipeline(j *gojenkins.Job) bool {
-	return strings.Contains(j.Class, "Job")
-}
