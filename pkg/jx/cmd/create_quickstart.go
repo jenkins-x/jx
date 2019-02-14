@@ -47,6 +47,10 @@ var (
 		jx create quickstart
 
 		jx create quickstart -f http
+
+		To list all available quickstarts
+
+		jx create quickstart --list
 	`)
 )
 
@@ -59,6 +63,7 @@ type CreateQuickstartOptions struct {
 	GitProvider         gits.GitProvider
 	GitHost             string
 	IgnoreTeam          bool
+	ListAvailable		bool
 }
 
 // NewCmdCreateQuickstart creates a command object for the "create" command
@@ -99,11 +104,18 @@ func NewCmdCreateQuickstart(f Factory, in terminal.FileReader, out terminal.File
 	cmd.Flags().StringVarP(&options.GitHost, "git-host", "", "", "The Git server host if not using GitHub when pushing created project")
 	cmd.Flags().StringVarP(&options.Filter.Text, "filter", "f", "", "The text filter")
 	cmd.Flags().StringVarP(&options.Filter.ProjectName, "project-name", "p", "", "The project name (for use with -b batch mode)")
+	cmd.Flags().BoolVarP(&options.ListAvailable, "list", "", false, "List the available quickstart types")
 	return cmd
 }
 
 // Run implements the generic Create command
 func (o *CreateQuickstartOptions) Run() error {
+
+	//fixme: force batch mode when listing available quickstarts - not ideal but otherwise you are prompted for a project name
+	if o.ListAvailable {
+		o.BatchMode = true
+	}
+
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
@@ -169,6 +181,15 @@ func (o *CreateQuickstartOptions) Run() error {
 	if err != nil {
 		return fmt.Errorf("failed to load quickstarts: %s", err)
 	}
+
+	if (o.ListAvailable) {
+		//output list of available quickstarts and exit
+		for qs := range model.Quickstarts {
+			fmt.Fprintf(o.Out, "%s\n", qs)
+		}
+		return nil
+	}
+
 	q, err := model.CreateSurvey(&o.Filter, o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
 		return err
