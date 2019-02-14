@@ -115,20 +115,26 @@ func LoadProjectConfig(projectDir string) (*ProjectConfig, string, error) {
 	if projectDir != "" {
 		fileName = filepath.Join(projectDir, fileName)
 	}
+	config, err := LoadProjectConfigFile(fileName)
+	return config, fileName, err
+}
+
+// LoadProjectConfigFile loads a specific project YAML configuration file
+func LoadProjectConfigFile(fileName string) (*ProjectConfig, error) {
 	config := ProjectConfig{}
 	exists, err := util.FileExists(fileName)
 	if err != nil || !exists {
-		return &config, fileName, err
+		return &config, err
 	}
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
-		return &config, fileName, fmt.Errorf("Failed to load file %s due to %s", fileName, err)
+		return &config, fmt.Errorf("Failed to load file %s due to %s", fileName, err)
 	}
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {
-		return &config, fileName, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
+		return &config, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
 	}
-	return &config, fileName, nil
+	return &config, nil
 }
 
 // IsEmpty returns true if this configuration is empty

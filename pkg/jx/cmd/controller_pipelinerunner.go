@@ -94,7 +94,7 @@ func (o *ControllerPipelineRunnerOptions) Run() error {
 	mux.Handle(HealthPath, http.HandlerFunc(o.health))
 	mux.Handle(ReadyPath, http.HandlerFunc(o.ready))
 
-	logrus.Infof("Serving build numbers at http://%s:%d%s", o.BindAddress, o.Port, o.Path)
+	logrus.Infof("Waiting for Knative Pipelines to run at http://%s:%d%s", o.BindAddress, o.Port, o.Path)
 	return http.ListenAndServe(":"+strconv.Itoa(o.Port), mux)
 }
 
@@ -135,6 +135,7 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 	err := o.unmarshalBody(w, r, arguments)
 	o.onError(err)
 	if err != nil {
+		o.returnError("could not parse body: " + err.Error(), w, r)
 		return
 	}
 	if o.Verbose {
