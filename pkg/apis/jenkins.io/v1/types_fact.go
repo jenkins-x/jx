@@ -52,7 +52,7 @@ type FactStatus struct {
 	Version string `json:"version,omitempty" protobuf:"bytes,1,opt,name=version"`
 }
 
-// Measurement is a type of measurement the system will capture within a fact
+// Measurement is a percentage or a count, something measured that the system will capture within a fact
 type Measurement struct {
 	Name             string   `json:"name" protobuf:"bytes,1,opt,name=name"`
 	MeasurementType  string   `json:"measurementType" protobuf:"bytes,2,opt,name=measurementType"`
@@ -60,7 +60,7 @@ type Measurement struct {
 	Tags             []string `json:"tags,omitempty" protobuf:"bytes,4,opt,name=tags"`
 }
 
-// Statement represents attributes of a Fact object that required a decision, i.e a user 'Mr. Brown' approved a Run
+// Statement represents a decision that was made, for example that a promotion was approved or denied
 type Statement struct {
 	Name             string   `json:"name" protobuf:"bytes,1,opt,name=name"`
 	StatementType    string   `json:"statementType" protobuf:"bytes,2,opt,name=statementType"`
