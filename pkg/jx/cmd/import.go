@@ -10,6 +10,7 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/golang-jenkins"
@@ -45,9 +46,6 @@ const (
 	PlaceHolderOrg = PlaceHolderPrefix + "_ORG"
 	// PlaceHolderDockerRegistryOrg placeholder for docker registry
 	PlaceHolderDockerRegistryOrg = PlaceHolderPrefix + "_DOCKER_REGISTRY_ORG"
-
-	// JenkinsfileBackupSuffix the suffix used by Jenkins for backups
-	JenkinsfileBackupSuffix = ".backup"
 
 	minimumMavenDeployVersion = "2.8.2"
 
@@ -464,13 +462,14 @@ func (options *ImportOptions) DraftCreate() error {
 	dir := options.Dir
 	var err error
 
-	jenkinsfile := jenkins.DefaultJenkinsfile
+	defaultJenkinsfileName := jenkinsfile.Name
+	jenkinsfile := defaultJenkinsfileName
 	withRename := false
-	if options.Jenkinsfile != "" && options.Jenkinsfile != jenkins.DefaultJenkinsfile {
+	if options.Jenkinsfile != "" && options.Jenkinsfile != defaultJenkinsfileName {
 		jenkinsfile = options.Jenkinsfile
 		withRename = true
 	}
-	defaultJenkinsfile := filepath.Join(dir, jenkins.DefaultJenkinsfile)
+	defaultJenkinsfile := filepath.Join(dir, defaultJenkinsfileName)
 	if !filepath.IsAbs(jenkinsfile) {
 		jenkinsfile = filepath.Join(dir, jenkinsfile)
 	}
@@ -886,9 +885,10 @@ func (options *ImportOptions) doImport() error {
 	if err != nil {
 		return err
 	}
+	defaultJenkinsfileName := jenkinsfile.Name
 	jenkinsfile := options.Jenkinsfile
 	if jenkinsfile == "" {
-		jenkinsfile = jenkins.DefaultJenkinsfile
+		jenkinsfile = defaultJenkinsfileName
 	}
 
 	err = options.ensureDockerRepositoryExists()

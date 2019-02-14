@@ -13,7 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/testkube"
@@ -79,7 +79,7 @@ func TestStepBuildPackApply(t *testing.T) {
 	err = o.Run()
 	require.NoError(t, err, "failed to run step")
 
-	actualJenkinsfile := filepath.Join(tempDir, jenkins.DefaultJenkinsfile)
+	actualJenkinsfile := filepath.Join(tempDir, jenkinsfile.Name)
 	assert.FileExists(t, actualJenkinsfile, "No Jenkinsfile created!")
 
 	t.Logf("Found Jenkinsfile at %s\n", actualJenkinsfile)
