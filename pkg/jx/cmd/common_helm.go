@@ -25,14 +25,22 @@ import (
 )
 
 const (
-	DefaultChartRepo       = "http://jenkins-x-chartmuseum:8080"
+	// DefaultChartRepo default URL for charts repository
+	DefaultChartRepo = "http://jenkins-x-chartmuseum:8080"
+	// DefaultTillerNamesapce default namespace for helm tiller server
 	DefaultTillerNamesapce = "kube-system"
-	DefaultTillerRole      = "cluster-admin"
-	DefaultOnlyHelmClient  = false
-	DefaultHelm3           = false
-	DefaultSkipTiller      = false
-	DefaultGlobalTiller    = true
-	DefaultRemoteTiller    = true
+	// DefaultTillerRole default cluster role for service account of helm tiller server
+	DefaultTillerRole = "cluster-admin"
+	// DefaultOnlyHelmClient indicates if only the client is initialized
+	DefaultOnlyHelmClient = false
+	// DefaultHelm3 indicates if helm 3 is used
+	DefaultHelm3 = false
+	// DefaultSkipTiller skips the tiller server initialization
+	DefaultSkipTiller = false
+	// DefaultGlobalTiller indicates if a global tiller server is used
+	DefaultGlobalTiller = true
+	// DefaultRemoteTiller indicates that a remote tiller server is used
+	DefaultRemoteTiller = true
 )
 
 // InitHelmConfig configuration for helm initialization
