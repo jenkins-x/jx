@@ -7,6 +7,7 @@ import (
 	gits "github.com/jenkins-x/jx/pkg/gits"
 	pegomock "github.com/petergtz/pegomock"
 	"reflect"
+	"time"
 )
 
 type MockOrganisationLister struct {
@@ -37,26 +38,45 @@ func (mock *MockOrganisationLister) ListOrganisations() ([]gits.GitOrganisation,
 }
 
 func (mock *MockOrganisationLister) VerifyWasCalledOnce() *VerifierOrganisationLister {
-	return &VerifierOrganisationLister{mock, pegomock.Times(1), nil}
+	return &VerifierOrganisationLister{
+		mock:                   mock,
+		invocationCountMatcher: pegomock.Times(1),
+	}
 }
 
 func (mock *MockOrganisationLister) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierOrganisationLister {
-	return &VerifierOrganisationLister{mock, invocationCountMatcher, nil}
+	return &VerifierOrganisationLister{
+		mock:                   mock,
+		invocationCountMatcher: invocationCountMatcher,
+	}
 }
 
 func (mock *MockOrganisationLister) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierOrganisationLister {
-	return &VerifierOrganisationLister{mock, invocationCountMatcher, inOrderContext}
+	return &VerifierOrganisationLister{
+		mock:                   mock,
+		invocationCountMatcher: invocationCountMatcher,
+		inOrderContext:         inOrderContext,
+	}
+}
+
+func (mock *MockOrganisationLister) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierOrganisationLister {
+	return &VerifierOrganisationLister{
+		mock:                   mock,
+		invocationCountMatcher: invocationCountMatcher,
+		timeout:                timeout,
+	}
 }
 
 type VerifierOrganisationLister struct {
 	mock                   *MockOrganisationLister
 	invocationCountMatcher pegomock.Matcher
 	inOrderContext         *pegomock.InOrderContext
+	timeout                time.Duration
 }
 
 func (verifier *VerifierOrganisationLister) ListOrganisations() *OrganisationLister_ListOrganisations_OngoingVerification {
 	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ListOrganisations", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ListOrganisations", params, verifier.timeout)
 	return &OrganisationLister_ListOrganisations_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
