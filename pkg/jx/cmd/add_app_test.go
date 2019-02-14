@@ -13,8 +13,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
-
 	"k8s.io/helm/pkg/chartutil"
 
 	expect "github.com/Netflix/go-expect"
@@ -40,6 +38,7 @@ import (
 
 	google_protobuf "github.com/golang/protobuf/ptypes/any"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 )
 
 func TestAddAppForGitOps(t *testing.T) {

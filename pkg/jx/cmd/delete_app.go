@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/environments"
+
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -47,16 +49,13 @@ type DeleteAppOptions struct {
 	GitOps bool
 	DevEnv *jenkinsv1.Environment
 
-	// for testing
-	FakePullRequests CreateEnvPullRequestFn
-
 	ReleaseName string
 	Namespace   string
 	Purge       bool
 	Alias       string
 
 	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback ConfigureGitFolderFn
+	ConfigureGitCallback environments.ConfigureGitFn
 }
 
 // NewCmdDeleteApp creates a command object for this command
@@ -175,9 +174,26 @@ func (o *DeleteAppOptions) createPR(app string) error {
 	branchNameText := "delete-app-" + app
 	title := fmt.Sprintf("Delete %s", app)
 	message := fmt.Sprintf("Delete app %s", app)
-	pullRequestInfo, err := o.createEnvironmentPullRequest(o.DevEnv, modifyChartFn, &branchNameText, &title,
+
+	gitProvider, _, err := o.createGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
+	if err != nil {
+		return errors.Wrapf(err, "creating git provider for %s", o.DevEnv.Spec.Source.URL)
+	}
+	environmentsDir, err := o.EnvironmentsDir()
+	if err != nil {
+		return errors.Wrapf(err, "getting environments dir")
+	}
+
+	options := environments.EnvironmentPullRequestOptions{
+		ConfigGitFn:   o.ConfigureGitCallback,
+		Gitter:        o.Git(),
+		ModifyChartFn: modifyChartFn,
+		GitProvider:   gitProvider,
+	}
+
+	pullRequestInfo, err := options.Create(o.DevEnv, &branchNameText, &title,
 		&message,
-		nil, o.ConfigureGitCallback)
+		environmentsDir, nil)
 	if err != nil {
 		return err
 	}

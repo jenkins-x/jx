@@ -4,6 +4,9 @@ import (
 	"io"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/environments"
+
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"fmt"
@@ -19,7 +22,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -56,7 +58,7 @@ type UpgradeAppsOptions struct {
 	Set       []string
 
 	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback ConfigureGitFolderFn
+	ConfigureGitCallback environments.ConfigureGitFn
 
 	InstallFlags InstallFlags
 }
@@ -207,8 +209,22 @@ func (o *UpgradeAppsOptions) createPRs() error {
 		}
 		return nil
 	}
-	_, err := o.createEnvironmentPullRequest(o.DevEnv, modifyChartFn, &branchNameText, &title, &message, nil,
-		o.ConfigureGitCallback)
+	gitProvider, _, err := o.createGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
+	if err != nil {
+		return errors.Wrapf(err, "creating git provider for %s", o.DevEnv.Spec.Source.URL)
+	}
+	environmentsDir, err := o.EnvironmentsDir()
+	if err != nil {
+		return errors.Wrapf(err, "getting environments dir")
+	}
+
+	options := environments.EnvironmentPullRequestOptions{
+		ConfigGitFn:   o.ConfigureGitCallback,
+		Gitter:        o.Git(),
+		ModifyChartFn: modifyChartFn,
+		GitProvider:   gitProvider,
+	}
+	_, err = options.Create(o.DevEnv, &branchNameText, &title, &message, environmentsDir, nil)
 	if err != nil {
 		return err
 	}

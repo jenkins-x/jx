@@ -9,12 +9,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+
+	"github.com/jenkins-x/jx/pkg/environments"
+
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/blang/semver"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -23,7 +27,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -67,11 +71,7 @@ type PromoteOptions struct {
 	Alias                   string
 
 	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback ConfigureGitFolderFn
-
-	// for testing
-	FakePullRequests CreateEnvPullRequestFn
-	UseFakeHelm      bool
+	ConfigureGitCallback environments.ConfigureGitFn
 
 	// calculated fields
 	TimeoutDuration         *time.Duration
@@ -411,11 +411,9 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	}
 
 	var err error
-	if !o.UseFakeHelm {
-		err := o.verifyHelmConfigured()
-		if err != nil {
-			return releaseInfo, err
-		}
+	err = o.verifyHelmConfigured()
+	if err != nil {
+		return releaseInfo, err
 	}
 
 	// lets do a helm update to ensure we can find the latest version
@@ -475,16 +473,25 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 		requirements.SetAppVersion(app, version, o.HelmRepositoryURL, o.Alias)
 		return nil
 	}
-	if o.FakePullRequests != nil {
-		info, err := o.FakePullRequests(env, modifyChartFn, branchNameText, title, message, releaseInfo.PullRequestInfo)
-		releaseInfo.PullRequestInfo = info
-		return err
-	} else {
-		info, err := o.createEnvironmentPullRequest(env, modifyChartFn, &branchNameText, &title, &message,
-			releaseInfo.PullRequestInfo, o.ConfigureGitCallback)
-		releaseInfo.PullRequestInfo = info
-		return err
+	gitProvider, _, err := o.createGitProviderForURLWithoutKind(env.Spec.Source.URL)
+	if err != nil {
+		return errors.Wrapf(err, "creating git provider for %s", env.Spec.Source.URL)
 	}
+	environmentsDir, err := o.EnvironmentsDir()
+	if err != nil {
+		return errors.Wrapf(err, "getting environments dir")
+	}
+
+	options := environments.EnvironmentPullRequestOptions{
+		ConfigGitFn:   o.ConfigureGitCallback,
+		Gitter:        o.Git(),
+		ModifyChartFn: modifyChartFn,
+		GitProvider:   gitProvider,
+	}
+	info, err := options.Create(env, &branchNameText, &title, &message, environmentsDir,
+		releaseInfo.PullRequestInfo)
+	releaseInfo.PullRequestInfo = info
+	return err
 }
 
 func (o *PromoteOptions) GetTargetNamespace(ns string, env string) (string, *v1.Environment, error) {
