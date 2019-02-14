@@ -1152,6 +1152,7 @@ func (in *FactSpec) DeepCopyInto(out *FactSpec) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	out.SubjectReference = in.SubjectReference
 	return
 }
 

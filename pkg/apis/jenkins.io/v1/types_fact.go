@@ -37,14 +37,14 @@ type Fact struct {
 
 // FactSpec is the specification of a Fact
 type FactSpec struct {
-	Name             string        `json:"name" protobuf:"bytes,1,opt,name=name"`
-	FactType         string        `json:"factType" protobuf:"bytes,3,opt,name=factType"`
+	Name             string `json:"name" protobuf:"bytes,1,opt,name=name"`
+	FactType         string `json:"factType" protobuf:"bytes,3,opt,name=factType"`
 	// +optional
-	Measurements     []Measurement `json:"measurements,omitempty" protobuf:"bytes,4,opt,name=measurements"`
-	Statements       []Statement   `json:"statements" protobuf:"bytes,5,opt,name=statements"`
-	Original         Original      `json:"original,omitempty" protobuf:"bytes,6,opt,name=original"`
-	Tags             []string      `json:"tags,omitempty" protobuf:"bytes,7,opt,name=tags"`
-	SubjectReference string        `json:"subject" protobuf:"bytes,8,opt,name=source"`
+	Measurements     []Measurement     `json:"measurements,omitempty" protobuf:"bytes,4,opt,name=measurements"`
+	Statements       []Statement       `json:"statements" protobuf:"bytes,5,opt,name=statements"`
+	Original         Original          `json:"original,omitempty" protobuf:"bytes,6,opt,name=original"`
+	Tags             []string          `json:"tags,omitempty" protobuf:"bytes,7,opt,name=tags"`
+	SubjectReference ResourceReference `json:"subject" protobuf:"bytes,8,opt,name=subject"`
 }
 
 // FactStatus is the status for an Fact resource
