@@ -379,7 +379,11 @@ func (o *StepNextVersionOptions) SetVersion() error {
 		return err
 	}
 
-	err = o.Git().Add(o.Dir, o.Filename)
+	if o.Tag {
+		// lets not commit to git as we do that in the tag step
+		return nil
+	}
+	err = o.Git().Add(o.Dir, o.Filename, "VERSION")
 	if err != nil {
 		return err
 	}
