@@ -353,7 +353,7 @@ func (g *GitFake) ConvertToValidBranchName(name string) string {
 }
 
 // FetchBranch fetch branch
-func (g *GitFake) FetchBranch(dir string, repo string, refspec string) error {
+func (g *GitFake) FetchBranch(dir string, repo string, refspec ...string) error {
 	return nil
 }
 
@@ -494,4 +494,24 @@ func (g *GitFake) IsShallow(dir string) (bool, error) {
 // CreateBranchFrom creates a new branch called branchName from startPoint
 func (g *GitFake) CreateBranchFrom(dir string, branchName string, startPoint string) error {
 	return g.CreateBranch(dir, branchName)
+}
+
+// Merge merges the commitish into the current branch
+func (g *GitFake) Merge(dir string, commitish string) error {
+	return nil
+}
+
+// GetLatestCommitSha returns the sha of the last commit
+func (g *GitFake) GetLatestCommitSha(dir string) (string, error) {
+	return "", nil
+}
+
+// ResetHard performs a git reset --hard back to the commitish specified
+func (g *GitFake) ResetHard(dir string, commitish string) error {
+	return nil
+}
+
+// RemoteUpdate performs a git remote update
+func (g *GitFake) RemoteUpdate(dir string) error {
+	return nil
 }

@@ -185,6 +185,7 @@ type Gitter interface {
 	RemoteBranches(dir string) ([]string, error)
 	RemoteBranchNames(dir string, prefix string) ([]string, error)
 	GetRemoteUrl(config *gitcfg.Config, name string) string
+	RemoteUpdate(dir string) error
 
 	Branch(dir string) (string, error)
 	CreateBranchFrom(dir string, branchName string, startPoint string) error
@@ -193,7 +194,9 @@ type Gitter interface {
 	Checkout(dir string, branch string) error
 	CheckoutOrphan(dir string, branch string) error
 	ConvertToValidBranchName(name string) string
-	FetchBranch(dir string, repo string, refspec string) error
+	FetchBranch(dir string, repo string, refspec ...string) error
+	Merge(dir string, commitish string) error
+	ResetHard(dir string, commitish string) error
 
 	Stash(dir string) error
 
@@ -214,6 +217,7 @@ type Gitter interface {
 	FetchTags(dir string) error
 	Tags(dir string) ([]string, error)
 	CreateTag(dir string, tag string, msg string) error
+	GetLatestCommitSha(dir string) (string, error)
 
 	GetRevisionBeforeDate(dir string, t time.Time) (string, error)
 	GetRevisionBeforeDateText(dir string, dateText string) (string, error)
