@@ -199,7 +199,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	if o.PipelineKind == "" {
 		return util.MissingOption("kind")
 	}
-	projectConfig, projectConfigFile, err := config.LoadProjectConfig(o.Dir)
+	projectConfig, projectConfigFile, err := o.loadProjectConfig()
 	if err != nil {
 		return errors.Wrapf(err, "failed to load project config in dir %s", o.Dir)
 	}
@@ -263,6 +263,21 @@ func (o *StepCreateTaskOptions) Run() error {
 		return errors.Wrapf(err, "failed to generate Task for build pack pipeline YAML: %s", pipelineFile)
 	}
 	return err
+}
+
+func (o *StepCreateTaskOptions) loadProjectConfig() (*config.ProjectConfig, string, error) {
+	if o.Context != "" {
+		fileName := filepath.Join(o.Dir, fmt.Sprintf("jenkins-x-%s.yml", o.Context))
+		exists, err := util.FileExists(fileName)
+		if err != nil {
+		  return nil, fileName, errors.Wrapf(err, "failed to check if file exists %s", fileName)
+		}
+		if exists {
+			config, err := config.LoadProjectConfigFile(fileName)
+			return config, fileName, err
+		}
+	}
+	return config.LoadProjectConfig(o.Dir)
 }
 
 func (o *StepCreateTaskOptions) loadPodTemplates(kubeClient kubernetes.Interface, ns string) error {
