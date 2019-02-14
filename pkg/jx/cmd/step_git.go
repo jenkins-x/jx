@@ -45,6 +45,7 @@ func NewCmdStepGit(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 	}
 	cmd.AddCommand(NewCmdStepGitCredentials(f, in, out, errOut))
 	cmd.AddCommand(NewCmdStepGitEnvs(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStepGitMerge(f, in, out, errOut))
 	return cmd
 }
 

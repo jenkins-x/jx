@@ -115,6 +115,11 @@ func (g *GitCLI) UpdateRemote(dir, url string) error {
 	return g.gitCmd(dir, "remote", "set-url", "origin", url)
 }
 
+// RemoteUpdate performs a git remote update
+func (g *GitCLI) RemoteUpdate(dir string) error {
+	return g.gitCmd(dir, "remote", "update")
+}
+
 // Stash stashes the current changes from the given directory
 func (g *GitCLI) Stash(dir string) error {
 	return g.gitCmd(dir, "stash")
@@ -375,8 +380,13 @@ func (g *GitCLI) ConvertToValidBranchName(name string) string {
 	return buffer.String()
 }
 
-func (g *GitCLI) FetchBranch(dir string, repo string, refspec string) error {
-	return g.gitCmd(dir, "fetch", repo, refspec)
+// FetchBranch fetches the refspecs from the repo
+func (g *GitCLI) FetchBranch(dir string, repo string, refspecs ...string) error {
+	args := []string{"fetch", repo}
+	for _, refspec := range refspecs {
+		args = append(args, refspec)
+	}
+	return g.gitCmd(dir, args...)
 }
 
 // GetAuthorEmailForCommit returns the author email from commit message with the given SHA
@@ -653,4 +663,19 @@ func (g *GitCLI) IsShallow(dir string) (bool, error) {
 // CreateBranchFrom creates a new branch called branchName from startPoint
 func (g *GitCLI) CreateBranchFrom(dir string, branchName string, startPoint string) error {
 	return g.gitCmd(dir, "branch", branchName, startPoint)
+}
+
+// Merge merges the commitish into the current branch
+func (g *GitCLI) Merge(dir string, commitish string) error {
+	return g.gitCmd(dir, "merge", commitish)
+}
+
+// GetLatestCommitSha returns the sha of the last commit
+func (g *GitCLI) GetLatestCommitSha(dir string) (string, error) {
+	return g.gitCmdWithOutput(dir, "rev-parse", "HEAD")
+}
+
+// ResetHard performs a git reset --hard back to the commitish specified
+func (g *GitCLI) ResetHard(dir string, commitish string) error {
+	return g.gitCmd(dir, "reset", "--hard", commitish)
 }

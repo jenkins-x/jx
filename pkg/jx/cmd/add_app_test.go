@@ -1,3 +1,8 @@
+// +build integration
+
+// TODO these are not supposed to be integration tests but there was a mistaken mis-usage of go-git which means they
+//  randomly fail atm
+
 package cmd_test
 
 import (
