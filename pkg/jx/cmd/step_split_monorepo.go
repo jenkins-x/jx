@@ -139,7 +139,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 					// lets clone the project if it exists
 					repo, err = gitProvider.GetRepository(organisation, name)
 					if repo != nil && err == nil {
-						err = os.MkdirAll(outPath, DefaultWritePermissions)
+						err = os.MkdirAll(outPath, util.DefaultWritePermissions)
 						if err != nil {
 							return err
 						}
@@ -249,7 +249,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 				if exists {
 					chartDir := filepath.Join(outPath, "charts", appName)
 					templatesDir := filepath.Join(chartDir, "templates")
-					err = os.MkdirAll(templatesDir, DefaultWritePermissions)
+					err = os.MkdirAll(templatesDir, util.DefaultWritePermissions)
 					if err != nil {
 						return err
 					}
@@ -319,7 +319,7 @@ func generateFileIfMissing(path string, text string) error {
 		return err
 	}
 	if !exists {
-		return ioutil.WriteFile(path, []byte(text), DefaultWritePermissions)
+		return ioutil.WriteFile(path, []byte(text), util.DefaultWritePermissions)
 	}
 	return nil
 }

@@ -83,7 +83,7 @@ func (o *CreateDocsOptions) Run() error {
 
 	exists, _ := util.FileExists(dir)
 	if !exists {
-		err := os.Mkdir(dir, DefaultWritePermissions)
+		err := os.Mkdir(dir, util.DefaultWritePermissions)
 		if err != nil {
 			return fmt.Errorf("Failed to create %s: %s", dir, err)
 		}

@@ -4,10 +4,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/vault"
 )
 
-const (
-	DefaultWritePermissions = 0760
-)
-
 type AuthServer struct {
 	URL   string
 	Users []*UserAuth

@@ -221,7 +221,7 @@ func (o *CommonOptions) cloneOrPullRepository(org string, repo string, gitURL st
 		err = o.Git().Stash(dir)
 		return dir, err
 	} else {
-		err := os.MkdirAll(dir, DefaultWritePermissions)
+		err := os.MkdirAll(dir, util.DefaultWritePermissions)
 		if err != nil {
 			return dir, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
 		}

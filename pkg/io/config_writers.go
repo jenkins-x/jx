@@ -14,10 +14,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const (
-	defaultWritePermissions = 0640
-)
-
 //ConfigWriter interface for writing auth configuration
 type ConfigWriter interface {
 	Write(config *auth.Config) error
@@ -44,7 +40,7 @@ func (f *FileConfigWriter) Write(config *auth.Config) error {
 	if err != nil {
 		return errors.Wrap(err, "marshaling the config to yaml")
 	}
-	err = ioutil.WriteFile(f.filename, content, defaultWritePermissions)
+	err = ioutil.WriteFile(f.filename, content, util.DefaultWritePermissions)
 	return nil
 }
 

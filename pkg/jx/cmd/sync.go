@@ -196,7 +196,7 @@ func (o *SyncOptions) CreateKsync(client kubernetes.Interface, ns string, name s
 		return err
 	}
 	if !exists {
-		err = ioutil.WriteFile(ignoreFile, []byte(defaultStignoreFile), DefaultWritePermissions)
+		err = ioutil.WriteFile(ignoreFile, []byte(defaultStignoreFile), util.DefaultWritePermissions)
 		if err != nil {
 			return err
 		}

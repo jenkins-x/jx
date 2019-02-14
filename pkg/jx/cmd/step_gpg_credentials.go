@@ -103,11 +103,11 @@ func (o *StepGpgCredentialsOptions) GenerateGpgFiles(secret *v1.Secret) error {
 	if outputDir == "" {
 		return util.MissingOption(optionOutputFile)
 	}
-	err := os.MkdirAll(outputDir, DefaultWritePermissions)
+	err := os.MkdirAll(outputDir, util.DefaultWritePermissions)
 
 	for k, v := range secret.Data {
 		fileName := filepath.Join(outputDir, k)
-		err = ioutil.WriteFile(fileName, []byte(v), DefaultWritePermissions)
+		err = ioutil.WriteFile(fileName, []byte(v), util.DefaultWritePermissions)
 		if err != nil {
 			return err
 		}

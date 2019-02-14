@@ -222,7 +222,7 @@ func (o *StepBlogOptions) createBarReport(name string, legends ...string) report
 		}
 
 		jsDir := filepath.Join(outDir, "static", "news", blogName)
-		err := os.MkdirAll(jsDir, DefaultWritePermissions)
+		err := os.MkdirAll(jsDir, util.DefaultWritePermissions)
 		if err != nil {
 			log.Warnf("Could not create directory %s: %s", jsDir, err)
 		}
@@ -353,7 +353,7 @@ This blog post was generated via the [jx step blog](https://jenkins-x.io/command
 		changelog := strings.TrimSpace(string(data))
 		changelog = strings.TrimPrefix(changelog, "## Changes")
 		text := prefix + changelog + postfix
-		err = ioutil.WriteFile(state.BlogFileName, []byte(text), DefaultWritePermissions)
+		err = ioutil.WriteFile(state.BlogFileName, []byte(text), util.DefaultWritePermissions)
 		if err != nil {
 			return err
 		}

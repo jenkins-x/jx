@@ -295,7 +295,7 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 	if options.Archived {
 		if extension == "zip" {
 			zipDir := filepath.Join(binDir, options.Binary+"-tmp-"+uuid.NewUUID().String())
-			err = os.MkdirAll(zipDir, DefaultWritePermissions)
+			err = os.MkdirAll(zipDir, util.DefaultWritePermissions)
 			if err != nil {
 				return err
 			}
@@ -445,7 +445,7 @@ func (o *CommonOptions) installOc() error {
 
 	if extension == ".zip" {
 		zipDir := filepath.Join(binDir, "oc-tmp-"+uuid.NewUUID().String())
-		err = os.MkdirAll(zipDir, DefaultWritePermissions)
+		err = os.MkdirAll(zipDir, util.DefaultWritePermissions)
 		if err != nil {
 			return err
 		}
@@ -748,7 +748,7 @@ func (o *CommonOptions) installHelm3() error {
 	clientURL := fmt.Sprintf("https://github.com/jstrachan/helm/releases/download/%v/helm-%s-%s.tar.gz", latestVersion, runtime.GOOS, runtime.GOARCH)
 
 	tmpDir := filepath.Join(binDir, "helm3.tmp")
-	err = os.MkdirAll(tmpDir, DefaultWritePermissions)
+	err = os.MkdirAll(tmpDir, util.DefaultWritePermissions)
 	if err != nil {
 		return err
 	}
@@ -840,7 +840,7 @@ func (o *CommonOptions) installMavenIfRequired() error {
 	mvnTmpDir := filepath.Join(homeDir, "maven-tmp")
 	zipFile := filepath.Join(homeDir, "mvn.zip")
 
-	err = os.MkdirAll(mvnDir, DefaultWritePermissions)
+	err = os.MkdirAll(mvnDir, util.DefaultWritePermissions)
 	if err != nil {
 		m.Unlock()
 		return err

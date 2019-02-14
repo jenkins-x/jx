@@ -272,7 +272,7 @@ func (o *StepChangelogOptions) Run() error {
 		path, _ := filepath.Split(chartFile)
 		templatesDir = filepath.Join(path, "templates")
 	}
-	err = os.MkdirAll(templatesDir, DefaultWritePermissions)
+	err = os.MkdirAll(templatesDir, util.DefaultWritePermissions)
 	if err != nil {
 		return fmt.Errorf("Failed to create the templates directory %s due to %s", templatesDir, err)
 	}
@@ -407,7 +407,7 @@ func (o *StepChangelogOptions) Run() error {
 		}
 		log.Infof("Updated the release information at %s\n", util.ColorInfo(url))
 	} else if o.OutputMarkdownFile != "" {
-		err := ioutil.WriteFile(o.OutputMarkdownFile, []byte(markdown), DefaultWritePermissions)
+		err := ioutil.WriteFile(o.OutputMarkdownFile, []byte(markdown), util.DefaultWritePermissions)
 		if err != nil {
 			return err
 		}
@@ -429,7 +429,7 @@ func (o *StepChangelogOptions) Run() error {
 	releaseFile := filepath.Join(templatesDir, o.ReleaseYamlFile)
 	crdFile := filepath.Join(templatesDir, o.CrdYamlFile)
 	if o.GenerateReleaseYaml {
-		err = ioutil.WriteFile(releaseFile, data, DefaultWritePermissions)
+		err = ioutil.WriteFile(releaseFile, data, util.DefaultWritePermissions)
 		if err != nil {
 			return fmt.Errorf("Failed to save Release YAML file %s: %s", releaseFile, err)
 		}
@@ -443,7 +443,7 @@ func (o *StepChangelogOptions) Run() error {
 			return fmt.Errorf("Failed to check for CRD YAML file %s: %s", crdFile, err)
 		}
 		if o.OverwriteCRD || !exists {
-			err = ioutil.WriteFile(crdFile, []byte(ReleaseCrdYaml), DefaultWritePermissions)
+			err = ioutil.WriteFile(crdFile, []byte(ReleaseCrdYaml), util.DefaultWritePermissions)
 			if err != nil {
 				return fmt.Errorf("Failed to save Release CRD YAML file %s: %s", crdFile, err)
 			}
