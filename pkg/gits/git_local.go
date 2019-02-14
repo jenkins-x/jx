@@ -216,8 +216,8 @@ func (g *GitLocal) ConvertToValidBranchName(name string) string {
 
 // FetchBranch fetches a branch
 // Faked out
-func (g *GitLocal) FetchBranch(dir string, repo string, refspec string) error {
-	return g.GitFake.FetchBranch(dir, repo, refspec)
+func (g *GitLocal) FetchBranch(dir string, repo string, refspec ...string) error {
+	return g.GitFake.FetchBranch(dir, repo, refspec...)
 }
 
 // GetAuthorEmailForCommit returns the author email from commit message with the given SHA
@@ -358,4 +358,25 @@ func (g *GitLocal) IsShallow(dir string) (bool, error) {
 // CreateBranchFrom creates a new branch called branchName from startPoint
 func (g *GitLocal) CreateBranchFrom(dir string, branchName string, startPoint string) error {
 	return g.GitCLI.CreateBranchFrom(dir, branchName, startPoint)
+}
+
+// Merge merges the commitish into the current branch
+func (g *GitLocal) Merge(dir string, commitish string) error {
+	return g.GitCLI.Merge(dir, commitish)
+}
+
+// GetLatestCommitSha returns the sha of the last commit
+func (g *GitLocal) GetLatestCommitSha(dir string) (string, error) {
+	return g.GitCLI.GetLatestCommitSha(dir)
+}
+
+// ResetHard performs a git reset --hard back to the commitish specified
+func (g *GitLocal) ResetHard(dir string, commitish string) error {
+	return g.GitCLI.ResetHard(dir, commitish)
+}
+
+// RemoteUpdate performs a git remote update
+// Faked out
+func (g *GitLocal) RemoteUpdate(dir string) error {
+	return g.GitFake.RemoteUpdate(dir)
 }
