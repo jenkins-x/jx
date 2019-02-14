@@ -36,6 +36,10 @@ func (c *FakeJenkinsV1) Extensions(namespace string) v1.ExtensionInterface {
 	return &FakeExtensions{c, namespace}
 }
 
+func (c *FakeJenkinsV1) Facts(namespace string) v1.FactInterface {
+	return &FakeFacts{c, namespace}
+}
+
 func (c *FakeJenkinsV1) GitServices(namespace string) v1.GitServiceInterface {
 	return &FakeGitServices{c, namespace}
 }

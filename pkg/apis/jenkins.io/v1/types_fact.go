@@ -52,6 +52,16 @@ type FactStatus struct {
 	Version string `json:"version,omitempty" protobuf:"bytes,1,opt,name=version"`
 }
 
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// FactList is a list of Fact resources
+type FactList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata"`
+
+	Items []Fact `json:"items"`
+}
+
 // Measurement is a percentage or a count, something measured that the system will capture within a fact
 type Measurement struct {
 	Name             string   `json:"name" protobuf:"bytes,1,opt,name=name"`
