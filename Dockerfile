@@ -1,4 +1,4 @@
-FROM centos:7
+FROM alpine/git
 
 ENTRYPOINT ["jx", "version"]
 
