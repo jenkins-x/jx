@@ -95,32 +95,32 @@ func (o *CreateAddonFlaggerOptions) Run() error {
 	values = append(values, setValues...)
 	err = o.addHelmRepoIfMissing(defaultFlaggerRepo, "flagger", "", "")
 	if err != nil {
-		return fmt.Errorf("Flagger deployment failed: %v", err)
+		return errors.Wrap(err, "Flagger deployment failed")
 	}
 	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
 	if err != nil {
-		return fmt.Errorf("Flagger deployment failed: %v", err)
+		return errors.Wrap(err, "Flagger deployment failed")
 	}
 	err = o.installChart(o.ReleaseName+"-grafana", o.GrafanaChart, o.Version, o.Namespace, true, values, nil, "")
 	if err != nil {
-		return fmt.Errorf("Flagger Grafana deployment failed: %v", err)
+		return errors.Wrap(err, "Flagger Grafana deployment failed")
 	}
 
 	// Enable Istio in production namespace
 	client, err := o.KubeClient()
 	if err != nil {
-		return fmt.Errorf("error enabling Istio in production namespace: %v", err)
+		return errors.Wrap(err, "error enabling Istio in production namespace")
 	}
 	var ns string
 	ns, err = o.findEnvironmentNamespace("production")
 	if err != nil {
-		return fmt.Errorf("error enabling Istio in production namespace: %v", err)
+		return errors.Wrap(err, "error enabling Istio in production namespace")
 	}
 	log.Infof("Enabling Istio in production namespace %s\n", ns)
 	patch := []byte(`{"metadata":{"labels":{"istio-injection":"enabled"}}}`)
 	_, err = client.CoreV1().Namespaces().Patch(ns, types.MergePatchType, patch)
 	if err != nil {
-		return fmt.Errorf("error enabling Istio in production namespace %s: %v", ns, err)
+		return errors.Wrap(err, fmt.Sprintf("error enabling Istio in production namespace %s", ns))
 	}
 	return nil
 }

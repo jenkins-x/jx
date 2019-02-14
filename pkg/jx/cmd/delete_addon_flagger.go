@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/pkg/errors"
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -64,7 +65,11 @@ func (o *DeleteAddonFlaggerOptions) Run() error {
 	}
 	err := o.deleteChart(o.ReleaseName, o.Purge)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Failed to delete Flagger chart")
 	}
-	return o.deleteChart(o.ReleaseName+"-grafana", o.Purge)
+	err = o.deleteChart(o.ReleaseName+"-grafana", o.Purge)
+	if err != nil {
+		return errors.Wrap(err, "Failed to delete Flagger Grafana chart")
+	}
+	return err
 }
