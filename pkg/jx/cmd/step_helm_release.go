@@ -20,10 +20,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	defaultChartRepo = "http://jenkins-x-chartmuseum:8080"
-)
-
 // StepHelmReleaseOptions contains the command line flags
 type StepHelmReleaseOptions struct {
 	StepHelmOptions
