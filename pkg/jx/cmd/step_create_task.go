@@ -66,6 +66,7 @@ type StepCreateTaskOptions struct {
 	DockerRegistry string
 	CloneGitURL    string
 	Branch         string
+	Revision       string
 	DeleteTempDir  bool
 	ViewSteps      bool
 	Duration       time.Duration
@@ -123,6 +124,7 @@ func NewCmdStepCreateTask(f Factory, in terminal.FileReader, out terminal.FileWr
 	cmd.Flags().StringVarP(&options.BuildPackRef, "ref", "r", "", "The Git reference (branch,tag,sha) in the Git repository to use")
 	cmd.Flags().StringVarP(&options.Pack, "pack", "p", "", "The build pack name. If none is specified its discovered from the source code")
 	cmd.Flags().StringVarP(&options.Branch, "branch", "", "", "The git branch to trigger the build in. Defaults to the current local branch name")
+	cmd.Flags().StringVarP(&options.Revision, "revision", "", "", "The git revision to checkout, can be a branch name or git sha")
 	cmd.Flags().StringVarP(&options.PipelineKind, "kind", "k", "release", "The kind of pipeline to create such as: "+strings.Join(jenkinsfile.PipelineKinds, ", "))
 	cmd.Flags().StringVarP(&options.Context, "context", "c", "", "The pipeline context if there are multiple separate pipelines for a given branch")
 	cmd.Flags().StringVarP(&options.Trigger, "trigger", "t", string(pipelineapi.PipelineTriggerTypeManual), "The kind of pipeline trigger")
@@ -488,7 +490,7 @@ func (o *StepCreateTaskOptions) generateSourceRepoResource(name string) *pipelin
 					Params: []pipelineapi.Param{
 						{
 							Name:  "revision",
-							Value: o.Branch,
+							Value: o.Revision,
 						},
 						{
 							Name:  "url",
@@ -999,9 +1001,16 @@ func (o *StepCreateTaskOptions) cloneGitRepositoryToTempDir(gitURL string) error
 		return err
 	}
 	log.Infof("cloning repository %s to temp dir %s\n", gitURL, o.Dir)
-	err = o.Git().ShallowCloneBranch(gitURL, o.Branch, o.Dir)
+	err = o.Git().Clone(gitURL, o.Dir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to clone repository %s to directory %s", gitURL, o.Dir)
+	}
+	if o.Revision != "" {
+		log.Infof("checking out revision %s\n", o.Revision)
+		err = o.Git().Checkout(o.Dir, o.Revision)
+		if err != nil {
+			return errors.Wrapf(err, "failed to checkout revision %s", o.Revision)
+		}
 	}
 	return nil
 

@@ -35,10 +35,11 @@ type ControllerPipelineRunnerOptions struct {
 
 // PipelineRunRequest the request to trigger a pipeline run
 type PipelineRunRequest struct {
-	GitURL  string `json:"gitUrl,omitempty"`
-	Branch  string `json:"branch,omitempty"`
-	Kind    string `json:"kind,omitempty"`
-	Context string `json:"context,omitempty"`
+	GitURL   string `json:"gitUrl,omitempty"`
+	Branch   string `json:"branch,omitempty"`
+	Revision string `json:"revision,omitempty"`
+	Kind     string `json:"kind,omitempty"`
+	Context  string `json:"context,omitempty"`
 }
 
 // PipelineRunResponse the results of triggering a pipeline run
@@ -149,6 +150,9 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 	if arguments.Branch == "" {
 		arguments.Branch = "master"
 	}
+	if arguments.Revision == "" {
+		arguments.Revision = "master"
+	}
 	if arguments.Kind == "" {
 		arguments.Kind = "release"
 	}
@@ -165,6 +169,7 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 	pr.DeleteTempDir = true
 	pr.Context = arguments.Context
 	pr.Branch = arguments.Branch
+	pr.Revision = arguments.Revision
 	pr.PipelineKind = arguments.Kind
 
 	err = pr.Run()
