@@ -293,7 +293,7 @@ generate: generate-mocks generate-openapi generate-client
 generate-mocks:
 	$(GO_NOMOD) get -d $(PEGOMOCK_PACKAGE)...
 	cd $(GOPATH)/src/$(PEGOMOCK_PACKAGE); git checkout master; git fetch origin; git branch -f jx $(PEGOMOCK_SHA); \
-	git checkout jx; $(GO_NOMOD) install
+	git checkout jx; $(GO_NOMOD) install ./pegomock
 	$(GO) generate ./...
 
 generate-client:
