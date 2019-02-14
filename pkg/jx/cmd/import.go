@@ -1346,6 +1346,9 @@ func (options *ImportOptions) DefaultsFromTeamSettings() error {
 	if options.Organisation == "" {
 		options.Organisation = settings.Organisation
 	}
+	if options.GitRepositoryOptions.Owner == "" {
+		options.GitRepositoryOptions.Owner = settings.Organisation
+	}
 	if options.DockerRegistryOrg == "" {
 		options.DockerRegistryOrg = settings.DockerRegistryOrg
 	}
@@ -1396,6 +1399,10 @@ func (options *ImportOptions) ConfigureImportOptions(repoData *gits.CreateRepoDa
 
 // GetGitRepositoryDetails determines the git repository details to use during the import command
 func (options *ImportOptions) GetGitRepositoryDetails() (*gits.CreateRepoData, error) {
+	err := options.DefaultsFromTeamSettings()
+	if err != nil {
+		return nil, err
+	}
 	authConfigSvc, err := options.CreateGitAuthConfigService()
 	if err != nil {
 		return nil, err
