@@ -402,7 +402,7 @@ func DestroyFile(filename string) error {
 
 // DeleteDirContents removes all the contents of the given directory
 func DeleteDirContents(dir string) error {
-	files, err := filepath.Glob(filepath.Join(dir, "*", ".*"))
+	files, err := filepath.Glob(filepath.Join(dir, "*"))
 	if err != nil {
 		return err
 	}
