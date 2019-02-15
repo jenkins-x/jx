@@ -1,17 +1,32 @@
-package syntax_test
+package kpipelines_test
 
 import (
 	"path/filepath"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/kpipelines/syntax"
+	"github.com/jenkins-x/jx/pkg/kpipelines"
 	pipelinev1alpha1 "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	tb "github.com/knative/build-pipeline/test/builder"
 	"github.com/knative/pkg/apis"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
+
+var (
+	someImage        = "some-image"
+	echoCmd          = "echo"
+	lsCmd            = "ls"
+	someStep         = "some-step"
+	minutesStr       = v1.TimeoutUnitMinutes
+	secondsStr       = v1.TimeoutUnitSeconds
+	someSubDir       = "some/sub/dir"
+	someOtherImage   = "some-other-image"
+	parentStageName  = "Parent Stage"
+	nestedInParallel = "Nested In Parallel"
+	stage2           = "stage2"
 )
 
 // TODO: Write a builder for generating the expected objects. Because
@@ -23,7 +38,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 
 	tests := []struct {
 		name               string
-		expected           *syntax.PipelineStructure
+		expected           *v1.PipelineStructure
 		pipeline           *pipelinev1alpha1.Pipeline
 		tasks              []*pipelinev1alpha1.Task
 		expectedErrorMsg   string
@@ -31,16 +46,19 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 	}{
 		{
 			name: "simple_jenkinsfile",
-			expected: &syntax.PipelineStructure{
-				Agent: syntax.Agent{
-					Image: "some-image",
+			expected: &v1.PipelineStructure{
+				Agent: &v1.PipelineStructureAgent{
+					Image: &someImage,
 				},
-				Stages: []syntax.Stage{{
+				Stages: []*v1.PipelineStructureStage{{
 					Name: "A Working Stage",
-					Steps: []syntax.Step{{
-						Command:   "echo",
-						Arguments: []string{"hello", "world"},
+					Steps: []v1.PipelineStructureStep{{
+						Command: &echoCmd,
+						Args:    []string{"hello", "world"},
 					}},
+					Options: &v1.PipelineStructureStageOptions{
+						Workspace: &defaultWorkspace,
+					},
 				}},
 			},
 			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
@@ -52,7 +70,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
 				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
 			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-a-working-stage", "somenamespace", taskLabel("A Working Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace")),
@@ -65,24 +83,30 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "multiple_stages",
-			expected: &syntax.PipelineStructure{
-				Agent: syntax.Agent{
-					Image: "some-image",
+			expected: &v1.PipelineStructure{
+				Agent: &v1.PipelineStructureAgent{
+					Image: &someImage,
 				},
-				Stages: []syntax.Stage{
+				Stages: []*v1.PipelineStructureStage{
 					{
 						Name: "A Working Stage",
-						Steps: []syntax.Step{{
-							Command:   "echo",
-							Arguments: []string{"hello", "world"},
+						Steps: []v1.PipelineStructureStep{{
+							Command: &echoCmd,
+							Args:    []string{"hello", "world"},
 						}},
+						Options: &v1.PipelineStructureStageOptions{
+							Workspace: &defaultWorkspace,
+						},
 					},
 					{
 						Name: "Another stage",
-						Steps: []syntax.Step{{
-							Command:   "echo",
-							Arguments: []string{"again"},
+						Steps: []v1.PipelineStructureStep{{
+							Command: &echoCmd,
+							Args:    []string{"again"},
 						}},
+						Options: &v1.PipelineStructureStageOptions{
+							Workspace: &defaultWorkspace,
+						},
 					},
 				},
 			},
@@ -102,7 +126,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
 				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
 			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-a-working-stage", "somenamespace", taskLabel("A Working Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace")),
@@ -111,7 +135,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-another-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-another-stage", "somenamespace", taskLabel("Another stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
 						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
@@ -123,28 +147,41 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "nested_stages",
-			expected: &syntax.PipelineStructure{
-				Agent: syntax.Agent{
-					Image: "some-image",
+			expected: &v1.PipelineStructure{
+				Agent: &v1.PipelineStructureAgent{
+					Image: &someImage,
 				},
-				Stages: []syntax.Stage{
+				Stages: []*v1.PipelineStructureStage{
 					{
 						Name: "Parent Stage",
-						Stages: []syntax.Stage{
+						Stages: []*v1.PipelineStructureStage{
 							{
 								Name: "A Working Stage",
-								Steps: []syntax.Step{{
-									Command:   "echo",
-									Arguments: []string{"hello", "world"},
+								Steps: []v1.PipelineStructureStep{{
+									Command: &echoCmd,
+									Args:    []string{"hello", "world"},
 								}},
+								Depth:  1,
+								Parent: &parentStageName,
+								Options: &v1.PipelineStructureStageOptions{
+									Workspace: &defaultWorkspace,
+								},
 							},
 							{
 								Name: "Another stage",
-								Steps: []syntax.Step{{
-									Command:   "echo",
-									Arguments: []string{"again"},
+								Steps: []v1.PipelineStructureStep{{
+									Command: &echoCmd,
+									Args:    []string{"again"},
 								}},
+								Depth:  1,
+								Parent: &parentStageName,
+								Options: &v1.PipelineStructureStageOptions{
+									Workspace: &defaultWorkspace,
+								},
 							},
+						},
+						Options: &v1.PipelineStructureStageOptions{
+							Workspace: &defaultWorkspace,
 						},
 					},
 				},
@@ -165,7 +202,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
 				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
 			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-a-working-stage", "somenamespace", taskLabel("A Working Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace")),
@@ -174,7 +211,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-another-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-another-stage", "somenamespace", taskLabel("Another stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
 						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
@@ -186,43 +223,62 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "parallel_stages",
-			expected: &syntax.PipelineStructure{
-				Agent: syntax.Agent{
-					Image: "some-image",
+			expected: &v1.PipelineStructure{
+				Agent: &v1.PipelineStructureAgent{
+					Image: &someImage,
 				},
-				Stages: []syntax.Stage{
+				Stages: []*v1.PipelineStructureStage{
 					{
 						Name: "First Stage",
-						Steps: []syntax.Step{{
-							Command:   "echo",
-							Arguments: []string{"first"},
+						Steps: []v1.PipelineStructureStep{{
+							Command: &echoCmd,
+							Args:    []string{"first"},
 						}},
+						Options: &v1.PipelineStructureStageOptions{
+							Workspace: &defaultWorkspace,
+						},
 					},
 					{
 						Name: "Parent Stage",
-						Parallel: []syntax.Stage{
+						Parallel: []*v1.PipelineStructureStage{
 							{
 								Name: "A Working Stage",
-								Steps: []syntax.Step{{
-									Command:   "echo",
-									Arguments: []string{"hello", "world"},
+								Steps: []v1.PipelineStructureStep{{
+									Command: &echoCmd,
+									Args:    []string{"hello", "world"},
 								}},
+								Depth:  1,
+								Parent: &parentStageName,
+								Options: &v1.PipelineStructureStageOptions{
+									Workspace: &defaultWorkspace,
+								},
 							},
 							{
 								Name: "Another stage",
-								Steps: []syntax.Step{{
-									Command:   "echo",
-									Arguments: []string{"again"},
+								Steps: []v1.PipelineStructureStep{{
+									Command: &echoCmd,
+									Args:    []string{"again"},
 								}},
+								Depth:  1,
+								Parent: &parentStageName,
+								Options: &v1.PipelineStructureStageOptions{
+									Workspace: &defaultWorkspace,
+								},
 							},
+						},
+						Options: &v1.PipelineStructureStageOptions{
+							Workspace: &defaultWorkspace,
 						},
 					},
 					{
 						Name: "Last Stage",
-						Steps: []syntax.Step{{
-							Command:   "echo",
-							Arguments: []string{"last"},
+						Steps: []v1.PipelineStructureStep{{
+							Command: &echoCmd,
+							Args:    []string{"last"},
 						}},
+						Options: &v1.PipelineStructureStageOptions{
+							Workspace: &defaultWorkspace,
+						},
 					},
 				},
 			},
@@ -255,7 +311,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
 				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
 			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-first-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-first-stage", "somenamespace", taskLabel("First Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace")),
@@ -264,7 +320,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("first"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-a-working-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-a-working-stage", "somenamespace", taskLabel("A Working Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
 						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
@@ -272,7 +328,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-another-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-another-stage", "somenamespace", taskLabel("Another stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
 						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
@@ -280,7 +336,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("again"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-last-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-last-stage", "somenamespace", taskLabel("Last Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
 						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
@@ -292,55 +348,84 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "parallel_and_nested_stages",
-			expected: &syntax.PipelineStructure{
-				Agent: syntax.Agent{
-					Image: "some-image",
+			expected: &v1.PipelineStructure{
+				Agent: &v1.PipelineStructureAgent{
+					Image: &someImage,
 				},
-				Stages: []syntax.Stage{
+				Stages: []*v1.PipelineStructureStage{
 					{
 						Name: "First Stage",
-						Steps: []syntax.Step{{
-							Command:   "echo",
-							Arguments: []string{"first"},
+						Steps: []v1.PipelineStructureStep{{
+							Command: &echoCmd,
+							Args:    []string{"first"},
 						}},
+						Options: &v1.PipelineStructureStageOptions{
+							Workspace: &defaultWorkspace,
+						},
 					},
 					{
 						Name: "Parent Stage",
-						Parallel: []syntax.Stage{
+						Parallel: []*v1.PipelineStructureStage{
 							{
 								Name: "A Working Stage",
-								Steps: []syntax.Step{{
-									Command:   "echo",
-									Arguments: []string{"hello", "world"},
+								Steps: []v1.PipelineStructureStep{{
+									Command: &echoCmd,
+									Args:    []string{"hello", "world"},
 								}},
+								Depth:  1,
+								Parent: &parentStageName,
+								Options: &v1.PipelineStructureStageOptions{
+									Workspace: &defaultWorkspace,
+								},
 							},
 							{
 								Name: "Nested In Parallel",
-								Stages: []syntax.Stage{
+								Stages: []*v1.PipelineStructureStage{
 									{
 										Name: "Another stage",
-										Steps: []syntax.Step{{
-											Command:   "echo",
-											Arguments: []string{"again"},
+										Steps: []v1.PipelineStructureStep{{
+											Command: &echoCmd,
+											Args:    []string{"again"},
 										}},
+										Depth:  2,
+										Parent: &nestedInParallel,
+										Options: &v1.PipelineStructureStageOptions{
+											Workspace: &defaultWorkspace,
+										},
 									},
 									{
 										Name: "Some other stage",
-										Steps: []syntax.Step{{
-											Command:   "echo",
-											Arguments: []string{"otherwise"},
+										Steps: []v1.PipelineStructureStep{{
+											Command: &echoCmd,
+											Args:    []string{"otherwise"},
 										}},
+										Depth:  2,
+										Parent: &nestedInParallel,
+										Options: &v1.PipelineStructureStageOptions{
+											Workspace: &defaultWorkspace,
+										},
 									},
 								},
+								Depth:  1,
+								Parent: &parentStageName,
+								Options: &v1.PipelineStructureStageOptions{
+									Workspace: &defaultWorkspace,
+								},
 							},
+						},
+						Options: &v1.PipelineStructureStageOptions{
+							Workspace: &defaultWorkspace,
 						},
 					},
 					{
 						Name: "Last Stage",
-						Steps: []syntax.Step{{
-							Command:   "echo",
-							Arguments: []string{"last"},
+						Steps: []v1.PipelineStructureStep{{
+							Command: &echoCmd,
+							Args:    []string{"last"},
 						}},
+						Options: &v1.PipelineStructureStageOptions{
+							Workspace: &defaultWorkspace,
+						},
 					},
 				},
 			},
@@ -382,7 +467,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
 				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
 			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-first-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-first-stage", "somenamespace", taskLabel("First Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace")),
@@ -391,7 +476,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("first"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-a-working-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-a-working-stage", "somenamespace", taskLabel("A Working Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
 						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
@@ -399,7 +484,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-another-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-another-stage", "somenamespace", taskLabel("Another stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
 						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
@@ -407,7 +492,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("again"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-some-other-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-some-other-stage", "somenamespace", taskLabel("Some other stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
 						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
@@ -415,7 +500,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("otherwise"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-last-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-last-stage", "somenamespace", taskLabel("Last Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
 						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
@@ -427,42 +512,45 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "custom_workspaces",
-			expected: &syntax.PipelineStructure{
-				Agent: syntax.Agent{
-					Image: "some-image",
+			expected: &v1.PipelineStructure{
+				Agent: &v1.PipelineStructureAgent{
+					Image: &someImage,
 				},
-				Stages: []syntax.Stage{
+				Stages: []*v1.PipelineStructureStage{
 					{
 						Name: "stage1",
-						Steps: []syntax.Step{{
-							Command: "ls",
+						Steps: []v1.PipelineStructureStep{{
+							Command: &lsCmd,
 						}},
+						Options: &v1.PipelineStructureStageOptions{
+							Workspace: &defaultWorkspace,
+						},
 					},
 					{
 						Name: "stage2",
-						Options: syntax.StageOptions{
+						Options: &v1.PipelineStructureStageOptions{
 							Workspace: &customWorkspace,
 						},
-						Steps: []syntax.Step{{
-							Command: "ls",
+						Steps: []v1.PipelineStructureStep{{
+							Command: &lsCmd,
 						}},
 					},
 					{
 						Name: "stage3",
-						Options: syntax.StageOptions{
+						Options: &v1.PipelineStructureStageOptions{
 							Workspace: &defaultWorkspace,
 						},
-						Steps: []syntax.Step{{
-							Command: "ls",
+						Steps: []v1.PipelineStructureStep{{
+							Command: &lsCmd,
 						}},
 					},
 					{
 						Name: "stage4",
-						Options: syntax.StageOptions{
+						Options: &v1.PipelineStructureStageOptions{
 							Workspace: &customWorkspace,
 						},
-						Steps: []syntax.Step{{
-							Command: "ls",
+						Steps: []v1.PipelineStructureStep{{
+							Command: &lsCmd,
 						}},
 					},
 				},
@@ -494,7 +582,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
 				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
 			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-stage1", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-stage1", "somenamespace", taskLabel("stage1"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace")),
@@ -503,7 +591,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-stage2", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-stage2", "somenamespace", taskLabel("stage2"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
 						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
@@ -511,7 +599,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-stage3", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-stage3", "somenamespace", taskLabel("stage3"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
 						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
@@ -519,7 +607,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-stage4", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-stage4", "somenamespace", taskLabel("stage4"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
 						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
@@ -531,43 +619,58 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "inherited_custom_workspaces",
-			expected: &syntax.PipelineStructure{
-				Agent: syntax.Agent{
-					Image: "some-image",
+			expected: &v1.PipelineStructure{
+				Agent: &v1.PipelineStructureAgent{
+					Image: &someImage,
 				},
-				Stages: []syntax.Stage{
+				Stages: []*v1.PipelineStructureStage{
 					{
 						Name: "stage1",
-						Steps: []syntax.Step{{
-							Command: "ls",
+						Steps: []v1.PipelineStructureStep{{
+							Command: &lsCmd,
 						}},
+						Options: &v1.PipelineStructureStageOptions{
+							Workspace: &defaultWorkspace,
+						},
 					},
 					{
 						Name: "stage2",
-						Options: syntax.StageOptions{
+						Options: &v1.PipelineStructureStageOptions{
 							Workspace: &customWorkspace,
 						},
-						Stages: []syntax.Stage{
+						Stages: []*v1.PipelineStructureStage{
 							{
 								Name: "stage3",
-								Steps: []syntax.Step{{
-									Command: "ls",
+								Steps: []v1.PipelineStructureStep{{
+									Command: &lsCmd,
 								}},
+								Depth:  1,
+								Parent: &stage2,
+								Options: &v1.PipelineStructureStageOptions{
+									Workspace: &customWorkspace,
+								},
 							},
 							{
 								Name: "stage4",
-								Options: syntax.StageOptions{
+								Options: &v1.PipelineStructureStageOptions{
 									Workspace: &defaultWorkspace,
 								},
-								Steps: []syntax.Step{{
-									Command: "ls",
+								Steps: []v1.PipelineStructureStep{{
+									Command: &lsCmd,
 								}},
+								Depth:  1,
+								Parent: &stage2,
 							},
 							{
 								Name: "stage5",
-								Steps: []syntax.Step{{
-									Command: "ls",
+								Steps: []v1.PipelineStructureStep{{
+									Command: &lsCmd,
 								}},
+								Depth:  1,
+								Parent: &stage2,
+								Options: &v1.PipelineStructureStageOptions{
+									Workspace: &customWorkspace,
+								},
 							},
 						},
 					},
@@ -602,7 +705,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
 				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
 			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-stage1", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-stage1", "somenamespace", taskLabel("stage1"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace")),
@@ -611,7 +714,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-stage3", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-stage3", "somenamespace", taskLabel("stage3"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
 						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
@@ -619,7 +722,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-stage4", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-stage4", "somenamespace", taskLabel("stage4"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
 						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
@@ -627,7 +730,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-stage5", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-stage5", "somenamespace", taskLabel("stage5"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
 						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
@@ -639,24 +742,27 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "environment_at_top_and_in_stage",
-			expected: &syntax.PipelineStructure{
-				Agent: syntax.Agent{
-					Image: "some-image",
+			expected: &v1.PipelineStructure{
+				Agent: &v1.PipelineStructureAgent{
+					Image: &someImage,
 				},
-				Environment: []syntax.EnvVar{{
+				Environment: []v1.PipelineStructureEnvVar{{
 					Name:  "SOME_VAR",
 					Value: "A value for the env var",
 				}},
-				Stages: []syntax.Stage{{
+				Stages: []*v1.PipelineStructureStage{{
 					Name: "A stage with environment",
-					Environment: []syntax.EnvVar{{
+					Environment: []v1.PipelineStructureEnvVar{{
 						Name:  "SOME_OTHER_VAR",
 						Value: "A value for the other env var",
 					}},
-					Steps: []syntax.Step{{
-						Command:   "echo",
-						Arguments: []string{"hello", "${SOME_OTHER_VAR}"},
+					Steps: []v1.PipelineStructureStep{{
+						Command: &echoCmd,
+						Args:    []string{"hello", "${SOME_OTHER_VAR}"},
 					}},
+					Options: &v1.PipelineStructureStageOptions{
+						Workspace: &defaultWorkspace,
+					},
 				}},
 			},
 			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
@@ -668,7 +774,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
 				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
 			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-a-stage-with-environment", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-a-stage-with-environment", "somenamespace", taskLabel("A stage with environment"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace")),
@@ -682,19 +788,19 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "syntactic_sugar_step_and_a_command",
-			expected: &syntax.PipelineStructure{
-				Agent: syntax.Agent{
-					Image: "some-image",
+			expected: &v1.PipelineStructure{
+				Agent: &v1.PipelineStructureAgent{
+					Image: &someImage,
 				},
-				Stages: []syntax.Stage{{
+				Stages: []*v1.PipelineStructureStage{{
 					Name: "A Working Stage",
-					Steps: []syntax.Step{
+					Steps: []v1.PipelineStructureStep{
 						{
-							Command:   "echo",
-							Arguments: []string{"hello", "world"},
+							Command: &echoCmd,
+							Args:    []string{"hello", "world"},
 						},
 						{
-							Step: "some-step",
+							Step: &someStep,
 							Options: map[string]string{
 								"firstParam":  "some value",
 								"secondParam": "some other value",
@@ -707,20 +813,20 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "post",
-			expected: &syntax.PipelineStructure{
-				Agent: syntax.Agent{
-					Image: "some-image",
+			expected: &v1.PipelineStructure{
+				Agent: &v1.PipelineStructureAgent{
+					Image: &someImage,
 				},
-				Stages: []syntax.Stage{{
+				Stages: []*v1.PipelineStructureStage{{
 					Name: "A Working Stage",
-					Steps: []syntax.Step{{
-						Command:   "echo",
-						Arguments: []string{"hello", "world"},
+					Steps: []v1.PipelineStructureStep{{
+						Command: &echoCmd,
+						Args:    []string{"hello", "world"},
 					}},
-					Post: []syntax.Post{
+					Post: []v1.PipelineStructurePost{
 						{
 							Condition: "success",
-							Actions: []syntax.PostAction{{
+							Actions: []v1.PipelineStructurePostAction{{
 								Name: "mail",
 								Options: map[string]string{
 									"to":      "foo@bar.com",
@@ -730,7 +836,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						},
 						{
 							Condition: "failure",
-							Actions: []syntax.PostAction{{
+							Actions: []v1.PipelineStructurePostAction{{
 								Name: "slack",
 								Options: map[string]string{
 									"whatever": "the",
@@ -741,7 +847,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						},
 						{
 							Condition: "always",
-							Actions: []syntax.PostAction{{
+							Actions: []v1.PipelineStructurePostAction{{
 								Name: "junit",
 								Options: map[string]string{
 									"pattern": "target/surefire-reports/**/*.xml",
@@ -755,39 +861,37 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "top_level_and_stage_options",
-			expected: &syntax.PipelineStructure{
-				Agent: syntax.Agent{
-					Image: "some-image",
+			expected: &v1.PipelineStructure{
+				Agent: &v1.PipelineStructureAgent{
+					Image: &someImage,
 				},
-				Options: syntax.RootOptions{
-					Timeout: syntax.Timeout{
+				Options: &v1.PipelineStructureRootOptions{
+					Timeout: &v1.PipelineStructureTimeout{
 						Time: 50,
-						Unit: "minutes",
+						Unit: &minutesStr,
 					},
 					Retry: 3,
 				},
-				Stages: []syntax.Stage{{
+				Stages: []*v1.PipelineStructureStage{{
 					Name: "A Working Stage",
-					Options: syntax.StageOptions{
-						RootOptions: syntax.RootOptions{
-							Timeout: syntax.Timeout{
-								Time: 5,
-								Unit: "seconds",
-							},
-							Retry: 4,
+					Options: &v1.PipelineStructureStageOptions{
+						Timeout: &v1.PipelineStructureTimeout{
+							Time: 5,
+							Unit: &secondsStr,
 						},
-						Stash: syntax.Stash{
+						Retry: 4,
+						Stash: &v1.PipelineStructureStash{
 							Name:  "Some Files",
 							Files: "somedir/**/*",
 						},
-						Unstash: syntax.Unstash{
+						Unstash: &v1.PipelineStructureUnstash{
 							Name: "Earlier Files",
-							Dir:  "some/sub/dir",
+							Dir:  &someSubDir,
 						},
 					},
-					Steps: []syntax.Step{{
-						Command:   "echo",
-						Arguments: []string{"hello", "world"},
+					Steps: []v1.PipelineStructureStep{{
+						Command: &echoCmd,
+						Args:    []string{"hello", "world"},
 					}},
 				}},
 			},
@@ -795,24 +899,27 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "stage_and_step_agent",
-			expected: &syntax.PipelineStructure{
-				Stages: []syntax.Stage{{
+			expected: &v1.PipelineStructure{
+				Stages: []*v1.PipelineStructureStage{{
 					Name: "A Working Stage",
-					Agent: syntax.Agent{
-						Image: "some-image",
+					Agent: &v1.PipelineStructureAgent{
+						Image: &someImage,
 					},
-					Steps: []syntax.Step{
+					Steps: []v1.PipelineStructureStep{
 						{
-							Command:   "echo",
-							Arguments: []string{"hello", "world"},
-							Agent: syntax.Agent{
-								Image: "some-other-image",
+							Command: &echoCmd,
+							Args:    []string{"hello", "world"},
+							Agent: &v1.PipelineStructureAgent{
+								Image: &someOtherImage,
 							},
 						},
 						{
-							Command:   "echo",
-							Arguments: []string{"goodbye"},
+							Command: &echoCmd,
+							Args:    []string{"goodbye"},
 						},
+					},
+					Options: &v1.PipelineStructureStageOptions{
+						Workspace: &defaultWorkspace,
 					},
 				}},
 			},
@@ -825,7 +932,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
 				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
 			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-a-working-stage", "somenamespace", taskLabel("A Working Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace")),
@@ -839,24 +946,30 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "mangled_task_names",
-			expected: &syntax.PipelineStructure{
-				Agent: syntax.Agent{
-					Image: "some-image",
+			expected: &v1.PipelineStructure{
+				Agent: &v1.PipelineStructureAgent{
+					Image: &someImage,
 				},
-				Stages: []syntax.Stage{
+				Stages: []*v1.PipelineStructureStage{
 					{
 						Name: ". -a- .",
-						Steps: []syntax.Step{{
-							Command:   "ls",
-							Arguments: nil,
+						Steps: []v1.PipelineStructureStep{{
+							Command: &lsCmd,
+							Args:    nil,
 						}},
+						Options: &v1.PipelineStructureStageOptions{
+							Workspace: &defaultWorkspace,
+						},
 					},
 					{
 						Name: "Wööh!!!! - This is cool.",
-						Steps: []syntax.Step{{
-							Command:   "ls",
-							Arguments: nil,
+						Steps: []v1.PipelineStructureStep{{
+							Command: &lsCmd,
+							Args:    nil,
 						}},
+						Options: &v1.PipelineStructureStageOptions{
+							Workspace: &defaultWorkspace,
+						},
 					},
 				},
 			},
@@ -876,7 +989,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
 				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
 			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-a", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-a", "somenamespace", taskLabel(". -a- ."), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace")),
@@ -885,7 +998,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-wh-this-is-cool", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-wh-this-is-cool", "somenamespace", taskLabel("Wööh!!!! - This is cool."), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
 						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
@@ -897,23 +1010,21 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "stage_timeout",
-			expected: &syntax.PipelineStructure{
-				Agent: syntax.Agent{
-					Image: "some-image",
+			expected: &v1.PipelineStructure{
+				Agent: &v1.PipelineStructureAgent{
+					Image: &someImage,
 				},
-				Stages: []syntax.Stage{{
+				Stages: []*v1.PipelineStructureStage{{
 					Name: "A Working Stage",
-					Options: syntax.StageOptions{
-						RootOptions: syntax.RootOptions{
-							Timeout: syntax.Timeout{
-								Time: 50,
-								Unit: "minutes",
-							},
+					Options: &v1.PipelineStructureStageOptions{
+						Timeout: &v1.PipelineStructureTimeout{
+							Time: 50,
+							Unit: &minutesStr,
 						},
 					},
-					Steps: []syntax.Step{{
-						Command:   "echo",
-						Arguments: []string{"hello", "world"},
+					Steps: []v1.PipelineStructureStep{{
+						Command: &echoCmd,
+						Args:    []string{"hello", "world"},
 					}},
 				}},
 			},
@@ -927,7 +1038,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
 				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
 			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-a-working-stage", "somenamespace", taskLabel("A Working Stage"), tb.TaskSpec(
 					tb.TaskTimeout(50*time.Minute),
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
@@ -935,29 +1046,32 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
 					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
 						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
+					tb.PipelineStructureStep("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
 				)),
 			},*/
 			expectedErrorMsg: "Timeout on stage not yet supported",
 		},
 		{
 			name: "top_level_timeout",
-			expected: &syntax.PipelineStructure{
-				Agent: syntax.Agent{
-					Image: "some-image",
+			expected: &v1.PipelineStructure{
+				Agent: &v1.PipelineStructureAgent{
+					Image: &someImage,
 				},
-				Options: syntax.RootOptions{
-					Timeout: syntax.Timeout{
+				Options: &v1.PipelineStructureRootOptions{
+					Timeout: &v1.PipelineStructureTimeout{
 						Time: 50,
-						Unit: "minutes",
+						Unit: &minutesStr,
 					},
 				},
-				Stages: []syntax.Stage{{
+				Stages: []*v1.PipelineStructureStage{{
 					Name: "A Working Stage",
-					Steps: []syntax.Step{{
-						Command:   "echo",
-						Arguments: []string{"hello", "world"},
+					Steps: []v1.PipelineStructureStep{{
+						Command: &echoCmd,
+						Args:    []string{"hello", "world"},
 					}},
+					Options: &v1.PipelineStructureStageOptions{
+						Workspace: &defaultWorkspace,
+					},
 				}},
 			},
 			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
@@ -969,7 +1083,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
 				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
 			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-a-working-stage", "somenamespace", taskLabel("A Working Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace")),
@@ -982,40 +1096,40 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "loop_step",
-			expected: &syntax.PipelineStructure{
+			expected: &v1.PipelineStructure{
 				// Testing to make sure environment variables are inherited/reassigned properly
-				Environment: []syntax.EnvVar{{
+				Environment: []v1.PipelineStructureEnvVar{{
 					Name:  "LANGUAGE",
 					Value: "rust",
 				}},
-				Agent: syntax.Agent{
-					Image: "some-image",
+				Agent: &v1.PipelineStructureAgent{
+					Image: &someImage,
 				},
-				Stages: []syntax.Stage{{
+				Stages: []*v1.PipelineStructureStage{{
 					Name: "A Working Stage",
-					Environment: []syntax.EnvVar{{
+					Environment: []v1.PipelineStructureEnvVar{{
 						Name:  "DISTRO",
 						Value: "gentoo",
 					}},
-					Steps: []syntax.Step{
+					Steps: []v1.PipelineStructureStep{
 						{
-							Loop: syntax.Loop{
+							Loop: &v1.PipelineStructureLoop{
 								Variable: "LANGUAGE",
 								Values:   []string{"maven", "gradle", "nodejs"},
-								Steps: []syntax.Step{
+								Steps: []v1.PipelineStructureStep{
 									{
-										Command:   "echo",
-										Arguments: []string{"hello", "${LANGUAGE}"},
+										Command: &echoCmd,
+										Args:    []string{"hello", "${LANGUAGE}"},
 									},
 									{
 										// Testing nested loops
-										Loop: syntax.Loop{
+										Loop: &v1.PipelineStructureLoop{
 											Variable: "DISTRO",
 											Values:   []string{"fedora", "ubuntu", "debian"},
-											Steps: []syntax.Step{
+											Steps: []v1.PipelineStructureStep{
 												{
-													Command:   "echo",
-													Arguments: []string{"running", "${LANGUAGE}", "on", "${DISTRO}"},
+													Command: &echoCmd,
+													Args:    []string{"running", "${LANGUAGE}", "on", "${DISTRO}"},
 												},
 											},
 										},
@@ -1025,9 +1139,12 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						},
 						{
 							// Testing to be sure the step counter propagates correctly outside of a loop.
-							Command:   "echo",
-							Arguments: []string{"hello", "after"},
+							Command: &echoCmd,
+							Args:    []string{"hello", "after"},
 						},
+					},
+					Options: &v1.PipelineStructureStageOptions{
+						Workspace: &defaultWorkspace,
 					},
 				}},
 			},
@@ -1040,7 +1157,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
 				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
 			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-a-working-stage", "somenamespace", taskLabel("A Working Stage"), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace")),
@@ -1078,24 +1195,24 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "loop_with_syntactic_sugar_step",
-			expected: &syntax.PipelineStructure{
-				Agent: syntax.Agent{
-					Image: "some-image",
+			expected: &v1.PipelineStructure{
+				Agent: &v1.PipelineStructureAgent{
+					Image: &someImage,
 				},
-				Stages: []syntax.Stage{{
+				Stages: []*v1.PipelineStructureStage{{
 					Name: "A Working Stage",
-					Steps: []syntax.Step{
+					Steps: []v1.PipelineStructureStep{
 						{
-							Loop: syntax.Loop{
+							Loop: &v1.PipelineStructureLoop{
 								Variable: "LANGUAGE",
 								Values:   []string{"maven", "gradle", "nodejs"},
-								Steps: []syntax.Step{
+								Steps: []v1.PipelineStructureStep{
 									{
-										Command:   "echo",
-										Arguments: []string{"hello", "${LANGUAGE}"},
+										Command: &echoCmd,
+										Args:    []string{"hello", "${LANGUAGE}"},
 									},
 									{
-										Step: "some-step",
+										Step: &someStep,
 										Options: map[string]string{
 											"firstParam":  "some value",
 											"secondParam": "some other value",
@@ -1132,10 +1249,6 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 			}
 			parsed := projectConfig.PipelineConfig.Pipelines.Release.Pipeline
 
-			if d := cmp.Diff(tt.expected, parsed); d != "" && tt.expected != nil {
-				t.Errorf("Parsed PipelineStructure did not match expected: %s", d)
-			}
-
 			validateErr := parsed.Validate()
 			if validateErr != nil && tt.validationErrorMsg == "" {
 				t.Errorf("Validation failed: %s", validateErr)
@@ -1147,7 +1260,13 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				}
 			}
 
-			pipeline, tasks, err := parsed.GenerateCRDs("somepipeline", "somebuild", "somenamespace", "abcd", nil)
+			if tt.expectedErrorMsg != "" {
+				if d := cmp.Diff(tt.expected, parsed); d != "" && tt.expected != nil {
+					t.Errorf("Parsed PipelineStructure did not match expected: %s", d)
+				}
+			}
+
+			pipeline, tasks, parsed, err := kpipelines.GenerateCRDs(parsed, "somepipeline", "somebuild", "somenamespace", "abcd", nil)
 
 			if err != nil {
 				if tt.expectedErrorMsg != "" {
@@ -1160,9 +1279,13 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 			}
 
 			if tt.expectedErrorMsg == "" && tt.pipeline != nil {
+				if d := cmp.Diff(tt.expected, parsed); d != "" && tt.expected != nil {
+					t.Errorf("Parsed PipelineStructure did not match expected: %s", d)
+				}
+
 				pipeline.TypeMeta = metav1.TypeMeta{}
 				if d := cmp.Diff(tt.pipeline, pipeline); d != "" {
-					t.Errorf("Generated Pipeline did not match expected: %s", d)
+					t.Errorf("Generated Pipeline did not match expected: %s\n%+v", d, pipeline.Spec.Tasks[2])
 				}
 
 				if err := pipeline.Spec.Validate(); err != nil {
@@ -1509,7 +1632,7 @@ func TestRfc1035LabelMangling(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mangled := syntax.MangleToRfc1035Label(tt.input, "suffix")
+			mangled := v1.MangleToRfc1035Label(tt.input, "suffix")
 			if d := cmp.Diff(tt.expected, mangled); d != "" {
 				t.Fatalf("Mangled output did not match expected output: %s", d)
 			}
@@ -1521,5 +1644,11 @@ func TestRfc1035LabelMangling(t *testing.T) {
 func workingDir(dir string) tb.ContainerOp {
 	return func(container *corev1.Container) {
 		container.WorkingDir = dir
+	}
+}
+
+func taskLabel(name string) tb.TaskOp {
+	return func(t *pipelinev1alpha1.Task) {
+		t.ObjectMeta.Labels = map[string]string{v1.LabelStageName: name}
 	}
 }

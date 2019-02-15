@@ -3,7 +3,7 @@ package jenkinsfile
 import (
 	"bytes"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kpipelines/syntax"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -72,7 +72,7 @@ type PipelineLifecycles struct {
 	Build      *PipelineLifecycle        `yaml:"build,omitempty"`
 	PostBuild  *PipelineLifecycle        `yaml:"postBuild,omitempty"`
 	Promote    *PipelineLifecycle        `yaml:"promote,omitempty"`
-	Pipeline   *syntax.PipelineStructure `yaml:"pipeline,omitempty"`
+	Pipeline   *v1.PipelineStructure `yaml:"pipeline,omitempty"`
 }
 
 // PipelineLifecycle defines the steps of a lifecycle section

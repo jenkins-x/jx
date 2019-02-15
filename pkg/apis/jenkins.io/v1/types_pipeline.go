@@ -142,7 +142,7 @@ const (
 	// ActivityStepKindTypeNone no kind yet
 	ActivityStepKindTypeNone ActivityStepKindType = ""
 	// ActivityStepKindTypeStage a group of low level steps
-	ActivityStepKindTypeStage ActivityStepKindType = "Stage"
+	ActivityStepKindTypeStage ActivityStepKindType = "PipelineStructureStage"
 	// ActivityStepKindTypePreview a promote activity
 	ActivityStepKindTypePreview ActivityStepKindType = "Preview"
 	// ActivityStepKindTypePromote a promote activity

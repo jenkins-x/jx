@@ -20,6 +20,8 @@ type GitServiceExpansion interface{}
 
 type PipelineActivityExpansion interface{}
 
+type PipelineStructureExpansion interface{}
+
 type PluginExpansion interface{}
 
 type ReleaseExpansion interface{}

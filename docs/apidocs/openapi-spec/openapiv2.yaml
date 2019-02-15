@@ -981,6 +981,276 @@ definitions:
       stage:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.StageActivityStep'
     type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructure:
+    description: PipelineStructure is the internal representation of the Pipeline,
+      used to validate and create CRDs
+    properties:
+      agent:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureAgent'
+      apiVersion:
+        description: 'APIVersion defines the versioned schema of this representation
+          of an object. Servers should convert recognized schemas to the latest internal
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+        type: string
+      environment:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureEnvVar'
+        type: array
+      kind:
+        description: 'Kind is a string value representing the REST resource this object
+          represents. Servers may infer this from the endpoint the client submits
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+        type: string
+      metadata:
+        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
+      options:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureRootOptions'
+      post:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructurePost'
+        type: array
+      stages:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureStage'
+        type: array
+    required:
+    - metadata
+    - stages
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureAgent:
+    description: PipelineStructureAgent defines where the pipeline, stage, or step
+      should run.
+    properties:
+      image:
+        type: string
+      label:
+        description: One of label or image is required.
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureEnvVar:
+    description: PipelineStructureEnvVar is a key/value pair defining an environment
+      variable
+    properties:
+      name:
+        type: string
+      value:
+        type: string
+    required:
+    - name
+    - value
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureList:
+    description: PipelineStructureList is a list of PipelineStructure resources
+    properties:
+      apiVersion:
+        description: 'APIVersion defines the versioned schema of this representation
+          of an object. Servers should convert recognized schemas to the latest internal
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructure'
+        type: array
+      kind:
+        description: 'Kind is a string value representing the REST resource this object
+          represents. Servers may infer this from the endpoint the client submits
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+        type: string
+      metadata:
+        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
+    required:
+    - metadata
+    - items
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureLoop:
+    description: PipelineStructureLoop is a special step that defines a variable,
+      a list of possible values for that variable, and a set of steps to repeat for
+      each value for the variable, with the variable set with that value in the environment
+      for the execution of those steps.
+    properties:
+      steps:
+        description: The steps to run
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureStep'
+        type: array
+      values:
+        description: The list of values to iterate over
+        items:
+          type: string
+        type: array
+      variable:
+        description: The variable name.
+        type: string
+    required:
+    - variable
+    - values
+    - steps
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructurePost:
+    description: PipelineStructurePost contains a PostCondition and one more actions
+      to be executed after a pipeline or stage if the condition is met.
+    properties:
+      actions:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructurePostAction'
+        type: array
+      condition:
+        type: string
+    required:
+    - condition
+    - actions
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructurePostAction:
+    description: PipelineStructurePostAction contains the name of a built-in post
+      action and options to pass to that action.
+    properties:
+      name:
+        type: string
+      options:
+        additionalProperties:
+          type: string
+        description: Also, we'll need to do some magic to do type verification during
+          translation - i.e., this action wants a number for this option, so translate
+          the string value for that option to a number.
+        type: object
+    required:
+    - name
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureRootOptions:
+    description: PipelineStructureRootOptions contains options that can be configured
+      on either a pipeline or a stage
+    properties:
+      retry:
+        format: byte
+        type: integer
+      timeout:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureTimeout'
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureStage:
+    description: PipelineStructureStage is a unit of work in a pipeline, corresponding
+      either to a Task or a set of Tasks to be run sequentially or in parallel with
+      common configuration.
+    properties:
+      agent:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureAgent'
+      depth:
+        format: byte
+        type: integer
+      environment:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureEnvVar'
+        type: array
+      name:
+        type: string
+      options:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureStageOptions'
+      parallel:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureStage'
+        type: array
+      parent:
+        type: string
+      post:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructurePost'
+        type: array
+      stages:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureStage'
+        type: array
+      steps:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureStep'
+        type: array
+    required:
+    - name
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureStageOptions:
+    description: PipelineStructureStageOptions contains both options that can be configured
+      on either a pipeline or a stage, via PipelineStructureRootOptions, or stage-specific
+      options.
+    properties:
+      retry:
+        format: byte
+        type: integer
+      stash:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureStash'
+      timeout:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureTimeout'
+      unstash:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureUnstash'
+      workspace:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureStash:
+    description: PipelineStructureStash defines files to be saved for use in a later
+      stage, marked with a name
+    properties:
+      files:
+        description: Eventually make this optional so that you can do volumes instead
+        type: string
+      name:
+        type: string
+    required:
+    - name
+    - files
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureStep:
+    description: PipelineStructureStep defines a single step, from the author's perspective,
+      to be executed within a stage.
+    properties:
+      agent:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureAgent'
+        description: agent can be overridden on a step
+      args:
+        description: args is optional, but only allowed with command
+        items:
+          type: string
+        type: array
+      command:
+        description: One of command, step, or loop is required.
+        type: string
+      dir:
+        description: dir is optional, but only allowed with command. Refers to subdirectory
+          of workspace
+        type: string
+      loop:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureLoop'
+      options:
+        additionalProperties:
+          type: string
+        description: options is optional, but only allowed with step Also, we'll need
+          to do some magic to do type verification during translation - i.e., this
+          step wants a number for this option, so translate the string value for that
+          option to a number.
+        type: object
+      step:
+        type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureTimeout:
+    description: PipelineStructureTimeout defines how long a stage or pipeline can
+      run before timing out.
+    properties:
+      time:
+        format: int64
+        type: integer
+      unit:
+        description: Has some sane default - probably seconds
+        type: string
+    required:
+    - time
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureUnstash:
+    description: PipelineStructureUnstash defines a previously-defined stash to be
+      copied into this stage's workspace
+    properties:
+      dir:
+        type: string
+      name:
+        type: string
+    required:
+    - name
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Plugin:
     description: Plugin represents a binary plugin installed into this Jenkins X team
     properties:

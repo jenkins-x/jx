@@ -58,7 +58,7 @@ type ExtensionSpec struct {
 	Children    []string             `json:"children,omitempty"  protobuf:"bytes,11,opt,name=children"`
 }
 
-// ExtensionWhen specifies when in the lifecycle an extension should execute. By default Post.
+// ExtensionWhen specifies when in the lifecycle an extension should execute. By default PipelineStructurePost.
 type ExtensionWhen string
 
 const (

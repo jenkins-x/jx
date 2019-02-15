@@ -11,13 +11,13 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile/gitresolver"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kpipelines"
-	"github.com/jenkins-x/jx/pkg/kpipelines/syntax"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -356,7 +356,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		// TODO: use org-name-branch for pipeline name? Create client now to get
 		// namespace? Set namespace when applying rather than during generation?
 		name := kpipelines.PipelineResourceName(o.gitInfo, o.Branch, o.Context)
-		pipeline, tasks, err := lifecycles.Pipeline.GenerateCRDs(name, o.buildNumber, "will-be-replaced", "abcd", o.PodTemplates)
+		pipeline, tasks, _, err := kpipelines.GenerateCRDs(lifecycles.Pipeline, name, o.buildNumber, "will-be-replaced", "abcd", o.PodTemplates)
 		if err != nil {
 			return errors.Wrapf(err, "Generation failed for Pipeline")
 		}
@@ -429,7 +429,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	name := kpipelines.PipelineResourceName(o.gitInfo, o.Branch, o.Context)
 	task := &pipelineapi.Task{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: syntax.PipelineAPIVersion,
+			APIVersion: v1.PipelineAPIVersion,
 			Kind:       "Task",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -477,7 +477,7 @@ func (o *StepCreateTaskOptions) generateSourceRepoResource(name string) *pipelin
 		if gitURL != "" {
 			resource = &pipelineapi.PipelineResource{
 				TypeMeta: metav1.TypeMeta{
-					APIVersion: syntax.PipelineAPIVersion,
+					APIVersion: v1.PipelineAPIVersion,
 					Kind:       "PipelineResource",
 				},
 				ObjectMeta: metav1.ObjectMeta{
@@ -507,7 +507,7 @@ func (o *StepCreateTaskOptions) generateSourceRepoResource(name string) *pipelin
 func (o *StepCreateTaskOptions) generateTempOrderingResource() *pipelineapi.PipelineResource {
 	return &pipelineapi.PipelineResource{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: syntax.PipelineAPIVersion,
+			APIVersion: v1.PipelineAPIVersion,
 			Kind:       "PipelineResource",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -714,7 +714,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 
 	pipeline.ObjectMeta.Namespace = ns
 	if pipeline.APIVersion == "" {
-		pipeline.APIVersion = syntax.PipelineAPIVersion
+		pipeline.APIVersion = v1.PipelineAPIVersion
 	}
 	if pipeline.Kind == "" {
 		pipeline.Kind = "Pipeline"
@@ -730,7 +730,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 
 	run := &pipelineapi.PipelineRun{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: syntax.PipelineAPIVersion,
+			APIVersion: v1.PipelineAPIVersion,
 			Kind:       "PipelineRun",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -738,7 +738,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 			Labels: util.MergeMaps(o.labels),
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion: syntax.PipelineAPIVersion,
+					APIVersion: v1.PipelineAPIVersion,
 					Kind:       "Pipeline",
 					Name:       pipeline.Name,
 					UID:        pipeline.UID,
@@ -891,7 +891,7 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container) {
 		})
 	}
 	/*	if kube.GetSliceEnvVar(envVars, "BUILD_NUMBER") == nil {
-			envVars = append(envVars, corev1.EnvVar{
+			envVars = append(envVars, corev1.PipelineStructureEnvVar{
 				Name:  "BUILD_NUMBER",
 				Value: o.buildNumber,
 			})

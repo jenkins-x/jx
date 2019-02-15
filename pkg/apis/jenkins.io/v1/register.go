@@ -58,6 +58,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&Plugin{},
 		&PipelineActivity{},
 		&PipelineActivityList{},
+		&PipelineStructure{},
+		&PipelineStructureList{},
 		&Release{},
 		&ReleaseList{},
 		&SourceRepository{},

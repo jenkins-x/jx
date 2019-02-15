@@ -1,4 +1,4 @@
-package syntax
+package v1
 
 import (
 	"strings"
@@ -14,15 +14,15 @@ func TestFindDuplicates(t *testing.T) {
 	}{
 		{
 			name:   "Two stage name duplicated",
-			input:  []string{"Stage 1", "Stage 1", "Stage 2", "Stage 2"},
-			errors: []string{"Stage 1", "Stage 2"},
+			input:  []string{"PipelineStructureStage 1", "PipelineStructureStage 1", "PipelineStructureStage 2", "PipelineStructureStage 2"},
+			errors: []string{"PipelineStructureStage 1", "PipelineStructureStage 2"},
 		}, {
 			name:   "One stage name duplicated",
-			input:  []string{"Stage 1", "Stage 1"},
-			errors: []string{"Stage 1"},
+			input:  []string{"PipelineStructureStage 1", "PipelineStructureStage 1"},
+			errors: []string{"PipelineStructureStage 1"},
 		}, {
 			name:   "No stage name duplicated",
-			input:  []string{"Stage 0", "Stage 1", "Stage 2", "Stage 3"},
+			input:  []string{"PipelineStructureStage 0", "PipelineStructureStage 1", "PipelineStructureStage 2", "PipelineStructureStage 3"},
 			errors: nil,
 		},
 	}

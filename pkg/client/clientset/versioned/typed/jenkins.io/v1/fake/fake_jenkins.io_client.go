@@ -48,6 +48,10 @@ func (c *FakeJenkinsV1) PipelineActivities(namespace string) v1.PipelineActivity
 	return &FakePipelineActivities{c, namespace}
 }
 
+func (c *FakeJenkinsV1) PipelineStructures(namespace string) v1.PipelineStructureInterface {
+	return &FakePipelineStructures{c, namespace}
+}
+
 func (c *FakeJenkinsV1) Plugins(namespace string) v1.PluginInterface {
 	return &FakePlugins{c, namespace}
 }
