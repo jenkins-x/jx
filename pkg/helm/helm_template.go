@@ -30,6 +30,10 @@ const (
 	AnnotationChartName = "jenkins.io/chart"
 	// AnnotationAppVersion stores the chart's app version
 	AnnotationAppVersion = "jenkins.io/chart-app-version"
+	// AnnotationAppDescription stores the chart's app version
+	AnnotationAppDescription = "jenkins.io/chart-description"
+	// AnnotationAppRepository stores the chart's app repository
+	AnnotationAppRepository = "jenkins.io/chart-repository"
 
 	// LabelReleaseName stores the chart release name
 	LabelReleaseName = "jenkins.io/chart-release"
@@ -271,7 +275,7 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	helmHooks, err := h.addLabelsToFiles(chart, releaseName, versionText, metadata)
+	helmHooks, err := h.addLabelsToFiles(chart, releaseName, versionText, metadata, repo)
 	if err != nil {
 		return err
 	}
@@ -343,7 +347,7 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	helmHooks, err := h.addLabelsToFiles(chart, releaseName, versionText, metadata)
+	helmHooks, err := h.addLabelsToFiles(chart, releaseName, versionText, metadata, repo)
 	if err != nil {
 		return err
 	}
@@ -592,12 +596,12 @@ func (h *HelmTemplate) fetchChart(chart string, version string, dir string, repo
 	return answer, nil
 }
 
-func (h *HelmTemplate) addLabelsToFiles(chart string, releaseName string, version string, metadata *chart.Metadata) ([]*HelmHook, error) {
+func (h *HelmTemplate) addLabelsToFiles(chart string, releaseName string, version string, metadata *chart.Metadata, repo string) ([]*HelmHook, error) {
 	dir, helmHookDir, _, err := h.getDirectories(releaseName)
 	if err != nil {
 		return nil, err
 	}
-	return addLabelsToChartYaml(dir, helmHookDir, chart, releaseName, version, metadata)
+	return addLabelsToChartYaml(dir, helmHookDir, chart, releaseName, version, metadata, repo)
 }
 
 func splitObjectsInFiles(file string) ([]string, error) {
@@ -664,7 +668,7 @@ func writeObjectInFile(buf *bytes.Buffer, dir string, fileName string, count int
 	return absFile, nil
 }
 
-func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName string, version string, metadata *chart.Metadata) ([]*HelmHook, error) {
+func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName string, version string, metadata *chart.Metadata, appRepository string) ([]*HelmHook, error) {
 	helmHooks := []*HelmHook{}
 
 	err := filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
@@ -725,8 +729,21 @@ func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName
 				if metadata != nil {
 					chartName = metadata.GetName()
 					appVersion := metadata.GetAppVersion()
+					appDescription := metadata.GetDescription()
 					if appVersion != "" {
 						err = setYamlValue(&m, appVersion, "metadata", "annotations", AnnotationAppVersion)
+						if err != nil {
+							return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
+						}
+					}
+					if appDescription != "" {
+						err = setYamlValue(&m, appDescription, "metadata", "annotations", AnnotationAppDescription)
+						if err != nil {
+							return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
+						}
+					}
+					if appRepository != "" {
+						err = setYamlValue(&m, appRepository, "metadata", "annotations", AnnotationAppRepository)
 						if err != nil {
 							return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
 						}

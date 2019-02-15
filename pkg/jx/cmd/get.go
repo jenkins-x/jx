@@ -66,6 +66,7 @@ func NewCmdGet(f Factory, in terminal.FileReader, out terminal.FileWriter, errOu
 
 	cmd.AddCommand(NewCmdGetActivity(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetAddon(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetApps(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetApplications(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetAWSInfo(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetBranchPattern(f, in, out, errOut))
