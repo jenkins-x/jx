@@ -958,7 +958,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("temp-ordering-resource", "temp-ordering-resource")),
-				tb.PipelineTask("wööh!!!!---this-is-cool.", "somepipeline-wh-this-is-cool",
+				tb.PipelineTask("wööh!!!!---this-is-cool.", "somepipeline-w-h-this-is-cool",
 					tb.PipelineTaskInputResource("workspace", "somepipeline",
 						tb.From(".--a--.")),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource",
@@ -977,7 +977,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-wh-this-is-cool", "somenamespace", taskLabel("Wööh!!!! - This is cool."), tb.TaskSpec(
+				tb.Task("somepipeline-w-h-this-is-cool", "somenamespace", taskLabel("Wööh!!!! - This is cool."), tb.TaskSpec(
 					tb.TaskInputs(
 						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
 						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
@@ -1264,7 +1264,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 
 				pipeline.TypeMeta = metav1.TypeMeta{}
 				if d := cmp.Diff(tt.pipeline, pipeline); d != "" {
-					t.Errorf("Generated Pipeline did not match expected: %s\n%+v", d, pipeline.Spec.Tasks[2])
+					t.Errorf("Generated Pipeline did not match expected: %s", d)
 				}
 
 				if err := pipeline.Spec.Validate(); err != nil {
