@@ -50,6 +50,14 @@ type ExtensionListerExpansion interface{}
 // ExtensionNamespaceLister.
 type ExtensionNamespaceListerExpansion interface{}
 
+// FactListerExpansion allows custom methods to be added to
+// FactLister.
+type FactListerExpansion interface{}
+
+// FactNamespaceListerExpansion allows custom methods to be added to
+// FactNamespaceLister.
+type FactNamespaceListerExpansion interface{}
+
 // GitServiceListerExpansion allows custom methods to be added to
 // GitServiceLister.
 type GitServiceListerExpansion interface{}
