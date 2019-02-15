@@ -334,13 +334,6 @@ func stageToTask(s *v1.PipelineStructureStage, pipelineIdentifier string, buildI
 		}
 	}
 
-	if depth > 0 {
-		s.Depth = depth
-	}
-	if enclosingStage != nil {
-		s.Parent = &enclosingStage.Stage.Name
-	}
-
 	env := scopedEnv(s.Environment, parentEnv)
 
 	agent := s.Agent
@@ -368,7 +361,7 @@ func stageToTask(s *v1.PipelineStructureStage, pipelineIdentifier string, buildI
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
-				Name:      v1.MangleToRfc1035Label(fmt.Sprintf("%s-%s", pipelineIdentifier, s.Name), ""),
+				Name:      kube.ToValidNameTruncated(fmt.Sprintf("%s-%s", pipelineIdentifier, s.Name), 63),
 				Labels:    map[string]string{v1.LabelStageName: s.Name},
 			},
 		}

@@ -205,10 +205,6 @@ type PipelineStructureStage struct {
 	Parallel []*PipelineStructureStage `json:"parallel,omitempty" protobuf:"bytes,7,opt,name=parallel"`
 	// +optional
 	Post []PipelineStructurePost `json:"post,omitempty" protobuf:"bytes,8,opt,name=post"`
-	// +optional
-	Parent *string `json:"parent,omitempty" protobuf:"bytes,9,opt,name=parent"`
-	// +optional
-	Depth int8 `json:"depth,omitempty" protobuf:"bytes,10,opt,name=depth"`
 }
 
 // PostCondition is used to specify under what condition a post action should be executed.
@@ -245,59 +241,6 @@ var _ apis.Validatable = (*PipelineStructure)(nil)
 // TaskName translates the stage name
 func (s *PipelineStructureStage) TaskName() string {
 	return strings.ToLower(strings.NewReplacer(" ", "-").Replace(s.Name))
-}
-
-// MangleToRfc1035Label - Task/PipelineStructureStep names need to be RFC 1035/1123 compliant DNS labels, so we mangle
-// them to make them compliant. Results should match the following regex and be
-// no more than 63 characters long:
-//     [a-z]([-a-z0-9]*[a-z0-9])?
-// cf. https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
-// body is assumed to have at least one ASCII letter.
-// suffix is assumed to be alphanumeric and non-empty.
-// TODO: Combine with kube.ToValidName (that function needs to handle lengths)
-func MangleToRfc1035Label(body string, suffix string) string {
-	const maxLabelLength = 63
-	maxBodyLength := maxLabelLength - len(suffix) - 1 // Add an extra hyphen before the suffix
-
-	var sb strings.Builder
-	bufferedHyphen := false // Used to make sure we don't output consecutive hyphens.
-	for _, codepoint := range body {
-		toWrite := 0
-		if sb.Len() != 0 { // Digits and hyphens aren't allowed to be the first character
-			if codepoint == ' ' || codepoint == '-' || codepoint == '.' {
-				bufferedHyphen = true
-			} else if codepoint >= '0' && codepoint <= '9' {
-				toWrite = 1
-			}
-		}
-
-		if codepoint >= 'A' && codepoint <= 'Z' {
-			codepoint += ('a' - 'A') // Offset to make character lowercase
-			toWrite = 1
-		} else if codepoint >= 'a' && codepoint <= 'z' {
-			toWrite = 1
-		}
-
-		if toWrite > 0 {
-			if bufferedHyphen {
-				toWrite++
-			}
-			if sb.Len()+toWrite > maxBodyLength {
-				break
-			}
-			if bufferedHyphen {
-				sb.WriteRune('-')
-				bufferedHyphen = false
-			}
-			sb.WriteRune(codepoint)
-		}
-	}
-
-	if suffix != "" {
-		sb.WriteRune('-')
-		sb.WriteString(suffix)
-	}
-	return sb.String()
 }
 
 // Validate checks the parsed PipelineStructure to find any errors in it.

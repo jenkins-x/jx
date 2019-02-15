@@ -1873,15 +1873,6 @@ func (in *PipelineStructureStage) DeepCopyInto(out *PipelineStructureStage) {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
-	if in.Parent != nil {
-		in, out := &in.Parent, &out.Parent
-		if *in == nil {
-			*out = nil
-		} else {
-			*out = new(string)
-			**out = **in
-		}
-	}
 	return
 }
 

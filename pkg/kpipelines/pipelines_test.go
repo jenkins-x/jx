@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kpipelines"
+	"github.com/jenkins-x/jx/pkg/kube"
 	pipelinev1alpha1 "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	tb "github.com/knative/build-pipeline/test/builder"
 	"github.com/knative/pkg/apis"
@@ -161,8 +162,6 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 									Command: &echoCmd,
 									Args:    []string{"hello", "world"},
 								}},
-								Depth:  1,
-								Parent: &parentStageName,
 								Options: &v1.PipelineStructureStageOptions{
 									Workspace: &defaultWorkspace,
 								},
@@ -173,8 +172,6 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 									Command: &echoCmd,
 									Args:    []string{"again"},
 								}},
-								Depth:  1,
-								Parent: &parentStageName,
 								Options: &v1.PipelineStructureStageOptions{
 									Workspace: &defaultWorkspace,
 								},
@@ -247,8 +244,6 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 									Command: &echoCmd,
 									Args:    []string{"hello", "world"},
 								}},
-								Depth:  1,
-								Parent: &parentStageName,
 								Options: &v1.PipelineStructureStageOptions{
 									Workspace: &defaultWorkspace,
 								},
@@ -259,8 +254,6 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 									Command: &echoCmd,
 									Args:    []string{"again"},
 								}},
-								Depth:  1,
-								Parent: &parentStageName,
 								Options: &v1.PipelineStructureStageOptions{
 									Workspace: &defaultWorkspace,
 								},
@@ -372,8 +365,6 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 									Command: &echoCmd,
 									Args:    []string{"hello", "world"},
 								}},
-								Depth:  1,
-								Parent: &parentStageName,
 								Options: &v1.PipelineStructureStageOptions{
 									Workspace: &defaultWorkspace,
 								},
@@ -387,8 +378,6 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 											Command: &echoCmd,
 											Args:    []string{"again"},
 										}},
-										Depth:  2,
-										Parent: &nestedInParallel,
 										Options: &v1.PipelineStructureStageOptions{
 											Workspace: &defaultWorkspace,
 										},
@@ -399,15 +388,11 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 											Command: &echoCmd,
 											Args:    []string{"otherwise"},
 										}},
-										Depth:  2,
-										Parent: &nestedInParallel,
 										Options: &v1.PipelineStructureStageOptions{
 											Workspace: &defaultWorkspace,
 										},
 									},
 								},
-								Depth:  1,
-								Parent: &parentStageName,
 								Options: &v1.PipelineStructureStageOptions{
 									Workspace: &defaultWorkspace,
 								},
@@ -644,8 +629,6 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 								Steps: []v1.PipelineStructureStep{{
 									Command: &lsCmd,
 								}},
-								Depth:  1,
-								Parent: &stage2,
 								Options: &v1.PipelineStructureStageOptions{
 									Workspace: &customWorkspace,
 								},
@@ -658,16 +641,12 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 								Steps: []v1.PipelineStructureStep{{
 									Command: &lsCmd,
 								}},
-								Depth:  1,
-								Parent: &stage2,
 							},
 							{
 								Name: "stage5",
 								Steps: []v1.PipelineStructureStep{{
 									Command: &lsCmd,
 								}},
-								Depth:  1,
-								Parent: &stage2,
 								Options: &v1.PipelineStructureStageOptions{
 									Workspace: &customWorkspace,
 								},
@@ -1606,7 +1585,7 @@ func TestRfc1035LabelMangling(t *testing.T) {
 		{
 			name:     "no unprintable characters",
 			input:    "a\n\t\x00b",
-			expected: "ab-suffix",
+			expected: "a-b-suffix",
 		},
 		{
 			name:     "no unicode",
@@ -1632,7 +1611,7 @@ func TestRfc1035LabelMangling(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mangled := v1.MangleToRfc1035Label(tt.input, "suffix")
+			mangled := kube.ToValidNameTruncated(tt.input, 63 - len("-suffix")) + "-suffix"
 			if d := cmp.Diff(tt.expected, mangled); d != "" {
 				t.Fatalf("Mangled output did not match expected output: %s", d)
 			}
