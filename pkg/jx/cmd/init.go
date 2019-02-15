@@ -70,8 +70,11 @@ const (
 
 	// JenkinsBuildPackURL URL of Draft packs for Jenkins X
 	JenkinsBuildPackURL = "https://github.com/jenkins-x/draft-packs.git"
-	// INGRESS_SERVICE_NAME service name for ingress controller
-	INGRESS_SERVICE_NAME = "jxing-nginx-ingress-controller"
+
+	// defaultIngressNamesapce default namesapce fro ingress controller
+	defaultIngressNamesapce = "kube-system"
+	// defaultIngressServiceName default name for ingress controller service and deployment
+	defaultIngressServiceName = "jxing-nginx-ingress-controller"
 )
 
 var (
@@ -125,9 +128,9 @@ func (o *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.Flags.TillerClusterRole, "tiller-cluster-role", "", DefaultTillerRole, "The cluster role for Helm's tiller")
 	cmd.Flags().StringVarP(&o.Flags.TillerNamespace, optionTillerNamespace, "", DefaultTillerNamesapce, "The namespace for the Tiller when using a global tiller")
 	cmd.Flags().StringVarP(&o.Flags.IngressClusterRole, "ingress-cluster-role", "", "cluster-admin", "The cluster role for the Ingress controller")
-	cmd.Flags().StringVarP(&o.Flags.IngressNamespace, "ingress-namespace", "", "kube-system", "The namespace for the Ingress controller")
-	cmd.Flags().StringVarP(&o.Flags.IngressService, "ingress-service", "", INGRESS_SERVICE_NAME, "The name of the Ingress controller Service")
-	cmd.Flags().StringVarP(&o.Flags.IngressDeployment, "ingress-deployment", "", INGRESS_SERVICE_NAME, "The name of the Ingress controller Deployment")
+	cmd.Flags().StringVarP(&o.Flags.IngressNamespace, "ingress-namespace", "", defaultIngressNamesapce, "The namespace for the Ingress controller")
+	cmd.Flags().StringVarP(&o.Flags.IngressService, "ingress-service", "", defaultIngressServiceName, "The name of the Ingress controller Service")
+	cmd.Flags().StringVarP(&o.Flags.IngressDeployment, "ingress-deployment", "", defaultIngressServiceName, "The name of the Ingress controller Deployment")
 	cmd.Flags().StringVarP(&o.Flags.ExternalIP, "external-ip", "", "", "The external IP used to access ingress endpoints from outside the Kubernetes cluster. For bare metal on premise clusters this is often the IP of the Kubernetes master. For cloud installations this is often the external IP of the ingress LoadBalancer.")
 	cmd.Flags().BoolVarP(&o.Flags.DraftClient, "draft-client-only", "", false, "Only install draft client")
 	cmd.Flags().BoolVarP(&o.Flags.HelmClient, "helm-client-only", "", DefaultOnlyHelmClient, "Only install helm client")
@@ -135,10 +138,47 @@ func (o *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.Flags.GlobalTiller, "global-tiller", "", DefaultGlobalTiller, "Whether or not to use a cluster global tiller")
 	cmd.Flags().BoolVarP(&o.Flags.RemoteTiller, "remote-tiller", "", DefaultRemoteTiller, "If enabled and we are using tiller for helm then run tiller remotely in the kubernetes cluster. Otherwise we run the tiller process locally.")
 	cmd.Flags().BoolVarP(&o.Flags.NoTiller, "no-tiller", "", false, "Whether to disable the use of tiller with helm. If disabled we use 'helm template' to generate the YAML from helm charts then we use 'kubectl apply' to install it to avoid using tiller completely.")
-	cmd.Flags().BoolVarP(&o.Flags.SkipIngress, "skip-ingress", "", false, "Don't install an ingress controller")
+	cmd.Flags().BoolVarP(&o.Flags.SkipIngress, "skip-ingress", "", false, "Skips the installation of ingress controller. Note that a ingress controller must already be installed into the cluster in order for the installation to succeed")
 	cmd.Flags().BoolVarP(&o.Flags.SkipTiller, "skip-setup-tiller", "", DefaultSkipTiller, "Don't setup the Helm Tiller service - lets use whatever tiller is already setup for us.")
 	cmd.Flags().BoolVarP(&o.Flags.Helm3, "helm3", "", DefaultHelm3, "Use helm3 to install Jenkins X which does not use Tiller")
 	cmd.Flags().BoolVarP(&o.Flags.OnPremise, "on-premise", "", false, "If installing on an on premise cluster then lets default the 'external-ip' to be the Kubernetes master IP address")
+}
+
+func (o *InitOptions) checkOptions() error {
+	if o.Flags.Helm3 {
+		o.Flags.SkipTiller = true
+	}
+
+	if !o.Flags.SkipTiller {
+		tillerNamespace := o.Flags.TillerNamespace
+		if o.Flags.GlobalTiller {
+			if tillerNamespace == "" {
+				return util.MissingOption(optionTillerNamespace)
+			}
+		} else {
+			ns := o.Flags.Namespace
+			if ns == "" {
+				_, curNs, err := o.KubeClientAndNamespace()
+				if err != nil {
+					return err
+				}
+				ns = curNs
+			}
+			if ns == "" {
+				return util.MissingOption(optionNamespace)
+			}
+			o.Flags.Namespace = ns
+		}
+	}
+
+	if o.Flags.SkipIngress {
+		if o.Flags.ExternalIP == "" {
+			log.Warnf("Expecting ingress controller to be installed in %s\n",
+				util.ColorInfo(fmt.Sprintf("%s/%s", o.Flags.IngressNamespace, o.Flags.IngressDeployment)))
+		}
+	}
+
+	return nil
 }
 
 // Run performs initialization
@@ -275,35 +315,6 @@ func (o *InitOptions) enableClusterAdminRole() error {
 		}
 		return err
 	})
-}
-
-func (o *InitOptions) checkOptions() error {
-	if o.Flags.Helm3 {
-		o.Flags.SkipTiller = true
-	}
-
-	if !o.Flags.SkipTiller {
-		tillerNamespace := o.Flags.TillerNamespace
-		if o.Flags.GlobalTiller {
-			if tillerNamespace == "" {
-				return util.MissingOption(optionTillerNamespace)
-			}
-		} else {
-			ns := o.Flags.Namespace
-			if ns == "" {
-				_, curNs, err := o.KubeClientAndNamespace()
-				if err != nil {
-					return err
-				}
-				ns = curNs
-			}
-			if ns == "" {
-				return util.MissingOption(optionNamespace)
-			}
-			o.Flags.Namespace = ns
-		}
-	}
-	return nil
 }
 
 func (o *InitOptions) configureForICP() {
