@@ -20,6 +20,7 @@ type GetQuickstartsOptions struct {
 	GetOptions
 	GitHubOrganisations []string
 	Filter              quickstarts.QuickstartFilter
+	ShortFormat			bool
 }
 
 var (
@@ -67,6 +68,7 @@ func NewCmdGetQuickstarts(f Factory, in terminal.FileReader, out terminal.FileWr
 	cmd.Flags().StringVarP(&options.Filter.Owner, "owner", "", "", "The owner to filter on")
 	cmd.Flags().StringVarP(&options.Filter.Language, "language", "l", "", "The language to filter on")
 	cmd.Flags().StringVarP(&options.Filter.Framework, "framework", "", "", "The framework to filter on")
+	cmd.Flags().BoolVarP(&options.ShortFormat, "short", "s", false, "return minimal details")
 
 	return cmd
 }
@@ -144,8 +146,13 @@ func (o *GetQuickstartsOptions) Run() error {
 	}
 
 	//output list of available quickstarts and exit
-	for qs := range model.Quickstarts {
-		fmt.Fprintf(o.Out, "%s\n", qs)
+	filteredQuickstarts := model.Filter(&o.Filter)
+	for _, qs := range filteredQuickstarts {
+		if o.ShortFormat {
+			fmt.Fprintf(o.Out, "%s\n", qs.Name)
+		} else {
+			fmt.Fprintf(o.Out,"%s/%s/%s\n",qs.GitProvider.ServerURL(), qs.Owner, qs.Name)
+		}
 	}
 	return nil
 }
