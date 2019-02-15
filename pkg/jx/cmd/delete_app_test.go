@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
+
 	"github.com/petergtz/pegomock"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -16,7 +18,7 @@ import (
 
 func TestDeleteAppForGitOps(t *testing.T) {
 	t.Parallel()
-	testOptions := CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -57,7 +59,7 @@ func TestDeleteAppForGitOps(t *testing.T) {
 
 func TestDeleteApp(t *testing.T) {
 
-	testOptions := CreateAppTestOptions(false, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
 	// Can't run in parallel
 	pegomock.RegisterMockTestingT(t)
 	defer func() {
