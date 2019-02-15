@@ -65,6 +65,10 @@ func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Pipeline Activity CRD")
 	}
+	err = RegisterPipelineStructureCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Pipeline Structure CRD")
+	}
 	err = RegisterFactCRD(apiClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Fact CRD")
@@ -211,6 +215,21 @@ func RegisterPipelineActivityCRD(apiClient apiextensionsclientset.Interface) err
 			JSONPath:    ".spec.status",
 		},
 	}
+	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
+}
+
+// RegisterPipelineStructureCRD ensures that the CRD is registered for PipelineStructure
+func RegisterPipelineStructureCRD(apiClient apiextensionsclientset.Interface) error {
+	name := "pipelinestructures." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "PipelineStructure",
+		ListKind:   "PipelineStructureList",
+		Plural:     "pipelinestructures",
+		Singular:   "pipelinestructure",
+		ShortNames: []string{"structure"},
+		Categories: []string{"all"},
+	}
+	columns := []v1beta1.CustomResourceColumnDefinition{}
 	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
 }
 
@@ -558,7 +577,11 @@ func getOpenAPISchema(defName string) (*v1beta1.JSONSchemaProps, error) {
 	}
 	if def := getOpenAPIDefinitions(defName, refCallBack); def != nil {
 		// resolve references
-		schema, err := FixSchema(def.Schema, refCallBack)
+		root, err := json.Marshal(def.Schema)
+		if err != nil {
+			return nil, err
+		}
+		schema, err := FixSchema(def.Schema, refCallBack, root)
 		if err != nil {
 			return nil, err
 		}
@@ -586,10 +609,10 @@ func getOpenAPISchema(defName string) (*v1beta1.JSONSchemaProps, error) {
 // we can investigate adding support, for now use patternProperties)
 //
 // as these are all unsupported
-func FixSchema(schema spec.Schema, ref common.ReferenceCallback) (spec.Schema, error) {
+func FixSchema(schema spec.Schema, ref common.ReferenceCallback, root interface{}) (spec.Schema, error) {
 	if schema.Type.Contains("object") {
 		for k, v := range schema.Properties {
-			resolved, err := FixSchema(v, ref)
+			resolved, err := FixSchema(v, ref, root)
 			if err != nil {
 				return schema, err
 			}
@@ -598,7 +621,7 @@ func FixSchema(schema spec.Schema, ref common.ReferenceCallback) (spec.Schema, e
 		schema.AdditionalProperties = nil
 	} else if schema.Type.Contains("array") {
 		if schema.Items.Len() == 1 {
-			resolved, err := FixSchema(*schema.Items.Schema, ref)
+			resolved, err := FixSchema(*schema.Items.Schema, ref, root)
 			if err != nil {
 				return schema, err
 			}
@@ -606,7 +629,7 @@ func FixSchema(schema spec.Schema, ref common.ReferenceCallback) (spec.Schema, e
 		} else {
 			result := make([]spec.Schema, 0)
 			for _, v := range schema.Items.Schemas {
-				resolved, err := FixSchema(v, ref)
+				resolved, err := FixSchema(v, ref, root)
 				if err != nil {
 					return schema, err
 				}
@@ -614,14 +637,28 @@ func FixSchema(schema spec.Schema, ref common.ReferenceCallback) (spec.Schema, e
 			}
 			schema.Items.Schemas = result
 		}
-
 	} else if path := schema.Ref.String(); path != "" {
 		def := getOpenAPIDefinitions(path, ref)
 		if def != nil {
-			return FixSchema(def.Schema, ref)
+			return def.Schema, nil
 		}
-		// return an empty schema if we can't resolve
-		return spec.Schema{}, nil
+		res, _, err := schema.Ref.GetPointer().Get(root)
+		if err != nil {
+			return spec.Schema{}, err
+		}
+		switch sch := res.(type) {
+		case spec.Schema:
+			return sch, nil
+		case *spec.Schema:
+			return *sch, nil
+		case map[string]interface{}:
+			b, _ := json.Marshal(sch)
+			newSch := new(spec.Schema)
+			_ = json.Unmarshal(b, newSch)
+			return *newSch, nil
+		default:
+			return spec.Schema{}, nil
+		}
 	}
 	return schema, nil
 }
