@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -743,7 +744,11 @@ func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName
 						}
 					}
 					if appRepository != "" {
-						err = setYamlValue(&m, appRepository, "metadata", "annotations", AnnotationAppRepository)
+						repoURL, err := url.Parse(appRepository)
+						if err != nil {
+							return errors.Wrap(err, "Invalid repository url")
+						}
+						err = setYamlValue(&m, util.StripPasswordFromURL(repoURL), "metadata", "annotations", AnnotationAppRepository)
 						if err != nil {
 							return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
 						}
