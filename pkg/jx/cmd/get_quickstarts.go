@@ -35,7 +35,7 @@ var (
 	`)
 )
 
-//NewCmdGetAddon creates the command
+//NewCmdGetQuickstarts creates the command
 func NewCmdGetQuickstarts(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetQuickstartsOptions{
 		GetOptions: GetOptions{
