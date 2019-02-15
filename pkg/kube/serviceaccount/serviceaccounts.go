@@ -60,7 +60,7 @@ const (
 func CreateServiceAccount(kubeClient kubernetes.Interface, namespace string, name string) (*v1.ServiceAccount, error) {
 	err := kube.EnsureNamespaceCreated(kubeClient, namespace, nil, nil)
 	if err != nil {
-	  return nil, err
+		return nil, err
 	}
 	sa, err := kubeClient.CoreV1().ServiceAccounts(namespace).Get(name, metav1.GetOptions{})
 	// If a services account already exists just re-use it

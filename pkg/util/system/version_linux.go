@@ -11,7 +11,7 @@ import (
 
 // GetOsVersion returns a human friendly string of the current OS
 // in the case of an error this still returns a valid string for the details that can be found.
-func GetOsVersion() (string,  error) {
+func GetOsVersion() (string, error) {
 	// generic LSB compliant Linux
 	output, err := runCommand("lsb_release", "-d", "-s")
 	if err == nil {
@@ -20,7 +20,7 @@ func GetOsVersion() (string,  error) {
 	// redHat and co these have the OS and version
 	output, err = getFileContents("/etc/redhat-release")
 	if err == nil {
-		return output , nil
+		return output, nil
 	}
 	// Debian and derivatives this is just the base (Sid) which is not quite enough to say exactly
 	output, err = getFileContents("/etc/debian_version")

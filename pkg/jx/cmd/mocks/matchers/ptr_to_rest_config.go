@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	"reflect"
 	"github.com/petergtz/pegomock"
 	rest "k8s.io/client-go/rest"
+	"reflect"
 )
 
 func AnyPtrToRestConfig() *rest.Config {

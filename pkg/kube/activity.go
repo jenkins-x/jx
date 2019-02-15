@@ -168,7 +168,7 @@ func createSourceRepositoryIfMissing(jxClient versioned.Interface, ns string, ac
 	gitURL := activityKey.GitURL()
 
 	if repoName == "" || owner == "" || gitURL == "" {
-		return nil;
+		return nil
 	}
 	srs := NewSourceRepositoryService(jxClient, ns)
 	if srs == nil {

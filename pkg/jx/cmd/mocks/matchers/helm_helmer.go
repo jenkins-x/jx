@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	"reflect"
-	"github.com/petergtz/pegomock"
 	helm "github.com/jenkins-x/jx/pkg/helm"
+	"github.com/petergtz/pegomock"
+	"reflect"
 )
 
 func AnyHelmHelmer() helm.Helmer {

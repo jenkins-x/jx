@@ -244,9 +244,9 @@ func (suite *BitbucketCloudProviderTestSuite) TestRenameRepository() {
 func (suite *BitbucketCloudProviderTestSuite) TestCreatePullRequest() {
 	args := gits.GitPullRequestArguments{
 		GitRepository: &gits.GitRepository{Name: "test-repo", Organisation: "test-user"},
-		Head:              "83777f6",
-		Base:              "77d0a923f297",
-		Title:             "Test Pull Request",
+		Head:          "83777f6",
+		Base:          "77d0a923f297",
+		Title:         "Test Pull Request",
 	}
 
 	pr, err := suite.provider.CreatePullRequest(&args)
@@ -263,9 +263,9 @@ func (suite *BitbucketCloudProviderTestSuite) TestCreatePullRequest() {
 func (suite *BitbucketCloudProviderTestSuite) TestCreateOrgPullRequest() {
 	args := gits.GitPullRequestArguments{
 		GitRepository: &gits.GitRepository{Name: "test-repo", Organisation: "test-org"},
-		Head:              "83777f6",
-		Base:              "77d0a923f297",
-		Title:             "Test Pull Request",
+		Head:          "83777f6",
+		Base:          "77d0a923f297",
+		Title:         "Test Pull Request",
 	}
 
 	pr, err := suite.provider.CreatePullRequest(&args)
@@ -442,15 +442,15 @@ func (suite *BitbucketCloudProviderTestSuite) TestAddPRComment() {
 
 	pr := &gits.GitPullRequest{
 		Number: &prNumber,
-		Owner: "test-user",
-		Repo: "test-repo",
+		Owner:  "test-user",
+		Repo:   "test-repo",
 	}
 	err := suite.provider.AddPRComment(pr, comment)
 	suite.Require().Nil(err)
 
 	pr = &gits.GitPullRequest{
 		Number: &prNumber,
-		Owner: "test-user",
+		Owner:  "test-user",
 	}
 	err = suite.provider.AddPRComment(pr, comment)
 	suite.Require().NotNil(err)
@@ -460,9 +460,9 @@ func (suite *BitbucketCloudProviderTestSuite) TestCreateIssueComment() {
 	comment := "This is my comment. There are many like it but this one is mine."
 
 	err := suite.provider.CreateIssueComment(
-		"test-user", 
-		"test-repo", 
-		1, 
+		"test-user",
+		"test-repo",
+		1,
 		comment,
 	)
 	suite.Require().Nil(err)

@@ -38,6 +38,6 @@ func TestGlobFiles(t *testing.T) {
 		"test_data/glob_test/artifacts/goodbye.txt",
 		"test_data/glob_test/hello.txt",
 	}
-	
+
 	assert.Equal(t, expected, files, "globbed files")
 }

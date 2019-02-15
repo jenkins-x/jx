@@ -92,7 +92,7 @@ status:
 	assert.NoError(t, err, "error occurred calling SetAdminNamespace")
 	adminNs, err := GetAdminNamespace(client, "myteam")
 	assert.NoError(t, err, "error occurred calling GetAdminNamespace")
-	assert.Equal(t, "my-admin-namespace" ,adminNs)
+	assert.Equal(t, "my-admin-namespace", adminNs)
 }
 
 func createMockClient(objDef string) (kubernetes.Interface, error) {

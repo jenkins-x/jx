@@ -5,9 +5,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/util"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"path/filepath"
-	"gopkg.in/yaml.v2"
 )
 
 // CreateResolver creates a new module resolver
@@ -23,12 +23,11 @@ func CreateResolver(packsDir string, gitter gits.Gitter) (jenkinsfile.ImportFile
 	return moduleResolver.AsImportResolver(), nil
 }
 
-
 // Resolve resolves this module to a directory
 func Resolve(m *jenkinsfile.Module, gitter gits.Gitter) (*ModuleResolver, error) {
 	err := m.Validate()
 	if err != nil {
-	  return nil, err
+		return nil, err
 	}
 
 	dir, err := InitBuildPack(gitter, m.GitURL, m.GitRef)
@@ -37,12 +36,11 @@ func Resolve(m *jenkinsfile.Module, gitter gits.Gitter) (*ModuleResolver, error)
 	}
 
 	answer := &ModuleResolver{
-		Module: m,
+		Module:   m,
 		PacksDir: dir,
 	}
 	return answer, nil
 }
-
 
 // ModulesResolver resolves a number of modules into a structure we can use to resolve imports
 type ModulesResolver struct {
@@ -54,7 +52,6 @@ type ModuleResolver struct {
 	Module   *jenkinsfile.Module
 	PacksDir string
 }
-
 
 // LoadModules loads the modules in the given build pack directory if there are any
 func LoadModules(dir string) (*jenkinsfile.Modules, error) {
@@ -75,10 +72,8 @@ func LoadModules(dir string) (*jenkinsfile.Modules, error) {
 	return &config, err
 }
 
-
-
 // ResolveModules Resolve the modules into a module resolver
-func  ResolveModules(m *jenkinsfile.Modules, gitter gits.Gitter) (*ModulesResolver, error) {
+func ResolveModules(m *jenkinsfile.Modules, gitter gits.Gitter) (*ModulesResolver, error) {
 	answer := &ModulesResolver{
 		Modules: map[string]*ModuleResolver{},
 	}

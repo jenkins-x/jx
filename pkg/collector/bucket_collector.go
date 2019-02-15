@@ -70,7 +70,7 @@ func (c *BucketCollector) CollectFiles(patterns []string, outputPath string, bas
 
 		err := util.GlobAllFiles("", p, fn)
 		if err != nil {
-		  return urls, err
+			return urls, err
 		}
 	}
 	return urls, nil

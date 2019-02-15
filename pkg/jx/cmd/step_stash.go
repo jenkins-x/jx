@@ -222,9 +222,9 @@ func (o *StepStashOptions) Run() error {
 				Name:     name,
 				Pipeline: pipeline,
 				Build:    buildNo,
-				GitInfo:  &gits.GitRepository{
+				GitInfo: &gits.GitRepository{
 					Organisation: projectOrg,
-					Name:		  projectRepoName,
+					Name:         projectRepoName,
 				},
 			},
 		}

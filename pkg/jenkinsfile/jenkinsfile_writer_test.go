@@ -18,11 +18,11 @@ func TestJenkinsfileWriter(t *testing.T) {
 
 	statements := []*jenkinsfile.Statement{
 		{
-			Function: "container",
+			Function:  "container",
 			Arguments: []string{"maven"},
 			Children: []*jenkinsfile.Statement{
 				{
-					Function: "dir",
+					Function:  "dir",
 					Arguments: []string{"/foo/bar"},
 					Children: []*jenkinsfile.Statement{
 						{
@@ -30,15 +30,14 @@ func TestJenkinsfileWriter(t *testing.T) {
 						},
 					},
 				},
-
 			},
 		},
 		{
-			Function: "container",
+			Function:  "container",
 			Arguments: []string{"maven"},
 			Children: []*jenkinsfile.Statement{
 				{
-					Function: "dir",
+					Function:  "dir",
 					Arguments: []string{"/foo/bar"},
 					Children: []*jenkinsfile.Statement{
 						{
@@ -46,7 +45,6 @@ func TestJenkinsfileWriter(t *testing.T) {
 						},
 					},
 				},
-
 			},
 		},
 	}

@@ -509,12 +509,12 @@ func (b *BitbucketServerProvider) GetPullRequest(owner string, repo *GitReposito
 	}
 
 	return &GitPullRequest{
-		URL:    bPR.Links.Self[0].Href,
-		Owner:  bPR.Author.User.Name,
-		Repo:   bPR.ToRef.Repository.Name,
-		Number: &bPR.ID,
-		State:  &bPR.State,
-		Author: author,
+		URL:           bPR.Links.Self[0].Href,
+		Owner:         bPR.Author.User.Name,
+		Repo:          bPR.ToRef.Repository.Name,
+		Number:        &bPR.ID,
+		State:         &bPR.State,
+		Author:        author,
 		LastCommitSha: bPR.FromRef.LatestCommit,
 	}, nil
 }
