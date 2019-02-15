@@ -75,14 +75,6 @@ func NewCmdGetQuickstarts(f Factory, in terminal.FileReader, out terminal.FileWr
 
 // Run implements this command
 func (o *GetQuickstartsOptions) Run() error {
-
-	//authConfigSvc, err := o.CreateGitAuthConfigService()
-	//if err != nil {
-	//	return err
-	//}
-	//
-	//config := authConfigSvc.Config()
-
 	var locations []v1.QuickStartLocation
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
