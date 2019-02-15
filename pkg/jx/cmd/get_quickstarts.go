@@ -15,7 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 )
 
-// GetAddonOptions the command line options
+//GetQuickstartsOptions -  the command line options
 type GetQuickstartsOptions struct {
 	GetOptions
 	GitHubOrganisations []string
@@ -24,18 +24,18 @@ type GetQuickstartsOptions struct {
 }
 
 var (
-	get_quickstarts_long = templates.LongDesc(`
+	getQuickstartsLong = templates.LongDesc(`
 		Display the available quickstarts
 
 `)
 
-	get_quickstarts_example = templates.Examples(`
+	getQuickstartsExample = templates.Examples(`
 		# List all the available quickstarts
 		jx get quickstarts
 	`)
 )
 
-// NewCmdGetAddon creates the command
+//NewCmdGetAddon creates the command
 func NewCmdGetQuickstarts(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetQuickstartsOptions{
 		GetOptions: GetOptions{
@@ -51,8 +51,8 @@ func NewCmdGetQuickstarts(f Factory, in terminal.FileReader, out terminal.FileWr
 	cmd := &cobra.Command{
 		Use:     "quickstarts [flags]",
 		Short:   "Lists the available quickstarts",
-		Long:    get_quickstarts_long,
-		Example: get_quickstarts_example,
+		Long:    getQuickstartsLong,
+		Example: getQuickstartsExample,
 		Aliases: []string{"quickstart", "qs"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
