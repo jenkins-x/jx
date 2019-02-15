@@ -168,8 +168,8 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 			return err
 		}
 
-		// lets try create a fork
-		repo, err = provider.ForkRepository(originalOrg, originalRepo, username)
+		// lets try create a fork - using a blank organisation to force a user specific fork
+		repo, err = provider.ForkRepository(originalOrg, originalRepo, "")
 		if err != nil {
 			return errors.Wrapf(err, "failed to fork GitHub repo %s/%s to user %s", originalOrg, originalRepo, username)
 		}
