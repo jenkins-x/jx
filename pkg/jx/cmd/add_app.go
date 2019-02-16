@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/environments"
+
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 
@@ -43,7 +45,7 @@ type AddAppOptions struct {
 	Alias    string
 
 	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback ConfigureGitFolderFn
+	ConfigureGitCallback environments.ConfigureGitFn
 
 	Namespace   string
 	Version     string
@@ -383,11 +385,25 @@ func (o *AddAppOptions) createPR(app string, dir string, version string) error {
 	title := fmt.Sprintf("Add %s %s", app, version)
 	message := fmt.Sprintf("Add app %s %s", app, version)
 
-	pullRequestInfo, err := o.createEnvironmentPullRequest(o.DevEnv, o.CreateAddRequirementFn(app, o.Alias, version,
-		o.Repo, o.ValueFiles, dir),
-		&branchNameText, &title,
-		&message,
-		nil, o.ConfigureGitCallback)
+	environmentsDir, err := o.EnvironmentsDir()
+	if err != nil {
+		return errors.Wrapf(err, "getting environments dir")
+	}
+
+	gitProvider, _, err := o.createGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
+	if err != nil {
+		return errors.Wrapf(err, "creating git provider for %s", o.DevEnv.Spec.Source.URL)
+	}
+
+	options := environments.EnvironmentPullRequestOptions{
+		ConfigGitFn: o.ConfigureGitCallback,
+		Gitter:      o.Git(),
+		ModifyChartFn: environments.CreateAddRequirementFn(app, o.Alias, version,
+			o.Repo, o.ValueFiles, dir, o.Verbose),
+		GitProvider: gitProvider,
+	}
+
+	pullRequestInfo, err := options.Create(o.DevEnv, &branchNameText, &title, &message, environmentsDir, nil)
 	if err != nil {
 		return errors.Wrapf(err, "creating pr for %s", app)
 	}

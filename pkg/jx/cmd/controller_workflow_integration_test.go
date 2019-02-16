@@ -3,9 +3,14 @@
 package cmd_test
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
@@ -29,17 +34,45 @@ func TestSequentialWorkflow(t *testing.T) {
 
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
 
-	o := &cmd.ControllerWorkflowOptions{
-		NoWatch:          true,
-		FakePullRequests: cmd.NewCreateEnvPullRequestFn(fakeGitProvider),
-		FakeGitProvider:  fakeGitProvider,
-		Namespace:        "jx",
-	}
-
 	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://fake.git/"+testOrgName+"/"+stagingRepoName+".git")
 	production := kube.NewPermanentEnvironmentWithGit("production", "https://fake.git/"+testOrgName+"/"+prodRepoName+".git")
 	staging.Spec.Order = 100
 	production.Spec.Order = 200
+
+	configureGitFn := func(dir string, gitInfo *gits.GitRepository, gitter gits.Gitter) error {
+		err := gitter.Init(dir)
+		if err != nil {
+			return err
+		}
+		// Really we should have a dummy environment chart but for now let's just mock it out as needed
+		err = os.MkdirAll(filepath.Join(dir, "templates"), 0700)
+		if err != nil {
+			return err
+		}
+		data, err := json.Marshal(staging)
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(filepath.Join(dir, "templates", "environment-staging.yaml"), data, 0755)
+		if err != nil {
+			return err
+		}
+		data, err = json.Marshal(production)
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(filepath.Join(dir, "templates", "environment-production.yaml"), data, 0755)
+		if err != nil {
+			return err
+		}
+		return gitter.AddCommit(dir, "Initial Commit")
+	}
+
+	o := &cmd.ControllerWorkflowOptions{
+		NoWatch:        true,
+		Namespace:      "jx",
+		ConfigureGitFn: configureGitFn,
+	}
 
 	myFlowName := "myflow"
 
@@ -58,12 +91,14 @@ func TestSequentialWorkflow(t *testing.T) {
 				step2,
 			),
 		},
-		gits.NewGitCLI(),
+		gits.NewGitLocal(),
 		fakeGitProvider,
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 		resources_test.NewMockInstaller(),
 	)
-	o.SetGit(&gits.GitFake{})
+
+	err := cmd.CreateTestEnvironmentDir(&o.CommonOptions)
+	assert.NoError(t, err)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	assert.NoError(t, err)
@@ -106,7 +141,7 @@ func TestSequentialWorkflow(t *testing.T) {
 	cmd.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
 	// test no PR on production until staging completed
-	if !cmd.AssertSetPullRequestMerged(t, fakeGitProvider, stagingRepo, 1) {
+	if !cmd.AssertSetPullRequestMerged(t, fakeGitProvider, stagingRepo.Owner, stagingRepo.GitRepo.Name, 1) {
 		return
 	}
 
@@ -125,7 +160,7 @@ func TestSequentialWorkflow(t *testing.T) {
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
 	cmd.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
 
-	if !cmd.AssertSetPullRequestMerged(t, fakeGitProvider, prodRepo, 1) {
+	if !cmd.AssertSetPullRequestMerged(t, fakeGitProvider, prodRepo.Owner, prodRepo.GitRepo.Name, 1) {
 		return
 	}
 	if !cmd.AssertSetPullRequestComplete(t, fakeGitProvider, prodRepo, 1) {
@@ -152,16 +187,44 @@ func TestWorkflowManualPromote(t *testing.T) {
 
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
 
-	o := &cmd.ControllerWorkflowOptions{
-		NoWatch:          true,
-		FakePullRequests: cmd.NewCreateEnvPullRequestFn(fakeGitProvider),
-		FakeGitProvider:  fakeGitProvider,
-		Namespace:        "jx",
-	}
-
 	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://fake.git/"+testOrgName+"/"+stagingRepoName+".git")
 	production := kube.NewPermanentEnvironmentWithGit("production", "https://fake.git/"+testOrgName+"/"+prodRepoName+".git")
 	production.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
+
+	configureGitFn := func(dir string, gitInfo *gits.GitRepository, gitter gits.Gitter) error {
+		err := gitter.Init(dir)
+		if err != nil {
+			return err
+		}
+		// Really we should have a dummy environment chart but for now let's just mock it out as needed
+		err = os.MkdirAll(filepath.Join(dir, "templates"), 0700)
+		if err != nil {
+			return err
+		}
+		data, err := json.Marshal(staging)
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(filepath.Join(dir, "templates", "environment-staging.yaml"), data, 0755)
+		if err != nil {
+			return err
+		}
+		data, err = json.Marshal(production)
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(filepath.Join(dir, "templates", "environment-production.yaml"), data, 0755)
+		if err != nil {
+			return err
+		}
+		return gitter.AddCommit(dir, "Initial Commit")
+	}
+
+	o := &cmd.ControllerWorkflowOptions{
+		NoWatch:        true,
+		Namespace:      "jx",
+		ConfigureGitFn: configureGitFn,
+	}
 
 	workflowName := "default"
 
@@ -173,12 +236,14 @@ func TestWorkflowManualPromote(t *testing.T) {
 			kube.NewPreviewEnvironment("jx-jstrachan-demo96-pr-1"),
 			kube.NewPreviewEnvironment("jx-jstrachan-another-pr-3"),
 		},
-		gits.NewGitCLI(),
+		gits.NewGitLocal(),
 		fakeGitProvider,
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 		resources_test.NewMockInstaller(),
 	)
-	o.SetGit(&gits.GitFake{})
+
+	err := cmd.CreateTestEnvironmentDir(&o.CommonOptions)
+	assert.NoError(t, err)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	assert.NoError(t, err)
@@ -201,7 +266,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 	cmd.PollGitStatusAndReactToPipelineChanges(t, o, jxClient, ns)
 	cmd.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
-	if !cmd.AssertSetPullRequestMerged(t, fakeGitProvider, stagingRepo, 1) {
+	if !cmd.AssertSetPullRequestMerged(t, fakeGitProvider, stagingRepo.Owner, stagingRepo.GitRepo.Name, 1) {
 		return
 	}
 	if !cmd.AssertSetPullRequestComplete(t, fakeGitProvider, stagingRepo, 1) {
@@ -219,17 +284,17 @@ func TestWorkflowManualPromote(t *testing.T) {
 	// now lets do a manual promotion
 	version := a.Spec.Version
 	po := &cmd.PromoteOptions{
-		Application:       testRepoName,
-		Environment:       "production",
-		Pipeline:          a.Spec.Pipeline,
-		Build:             a.Spec.Build,
-		Version:           version,
-		NoPoll:            true,
-		IgnoreLocalFiles:  true,
-		HelmRepositoryURL: helm.DefaultHelmRepositoryURL,
-		LocalHelmRepoName: kube.LocalHelmRepoName,
-		FakePullRequests:  o.FakePullRequests,
-		Namespace:         "jx",
+		Application:          testRepoName,
+		Environment:          "production",
+		Pipeline:             a.Spec.Pipeline,
+		Build:                a.Spec.Build,
+		Version:              version,
+		NoPoll:               true,
+		IgnoreLocalFiles:     true,
+		HelmRepositoryURL:    helm.DefaultHelmRepositoryURL,
+		LocalHelmRepoName:    kube.LocalHelmRepoName,
+		Namespace:            "jx",
+		ConfigureGitCallback: configureGitFn,
 	}
 	po.CommonOptions = o.CommonOptions
 	po.BatchMode = true
@@ -259,7 +324,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 	cmd.AssertWorkflowStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
 	cmd.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeSucceeded)
 
-	if !cmd.AssertSetPullRequestMerged(t, fakeGitProvider, prodRepo, 1) {
+	if !cmd.AssertSetPullRequestMerged(t, fakeGitProvider, prodRepo.Owner, prodRepo.GitRepo.Name, 1) {
 		return
 	}
 
@@ -305,16 +370,52 @@ func TestParallelWorkflow(t *testing.T) {
 
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, repoA, repoB, repoC)
 
-	o := &cmd.ControllerWorkflowOptions{
-		NoWatch:          true,
-		FakePullRequests: cmd.NewCreateEnvPullRequestFn(fakeGitProvider),
-		FakeGitProvider:  fakeGitProvider,
-		Namespace:        "jx",
-	}
-
 	envA := kube.NewPermanentEnvironmentWithGit(envNameA, "https://fake.git/"+testOrgName+"/"+envRepoNameA+".git")
 	envB := kube.NewPermanentEnvironmentWithGit(envNameB, "https://fake.git/"+testOrgName+"/"+envRepoNameB+".git")
 	envC := kube.NewPermanentEnvironmentWithGit(envNameC, "https://fake.git/"+testOrgName+"/"+envRepoNameC+".git")
+
+	configureGitFn := func(dir string, gitInfo *gits.GitRepository, gitter gits.Gitter) error {
+		err := gitter.Init(dir)
+		if err != nil {
+			return err
+		}
+		// Really we should have a dummy environment chart but for now let's just mock it out as needed
+		err = os.MkdirAll(filepath.Join(dir, "templates"), 0700)
+		if err != nil {
+			return err
+		}
+		data, err := json.Marshal(envA)
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(filepath.Join(dir, "templates", fmt.Sprintf("%s.yaml", envRepoNameA)), data, 0755)
+		if err != nil {
+			return err
+		}
+		data, err = json.Marshal(envB)
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(filepath.Join(dir, "templates", fmt.Sprintf("%s.yaml", envRepoNameB)), data, 0755)
+		if err != nil {
+			return err
+		}
+		data, err = json.Marshal(envC)
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(filepath.Join(dir, "templates", fmt.Sprintf("%s.yaml", envRepoNameC)), data, 0755)
+		if err != nil {
+			return err
+		}
+		return gitter.AddCommit(dir, "Initial Commit")
+	}
+
+	o := &cmd.ControllerWorkflowOptions{
+		NoWatch:        true,
+		Namespace:      "jx",
+		ConfigureGitFn: configureGitFn,
+	}
 
 	myFlowName := "myflow"
 
@@ -336,12 +437,13 @@ func TestParallelWorkflow(t *testing.T) {
 				step3,
 			),
 		},
-		gits.NewGitCLI(),
+		gits.NewGitLocal(),
 		fakeGitProvider,
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 		resources_test.NewMockInstaller(),
 	)
-	o.SetGit(&gits.GitFake{})
+	err := cmd.CreateTestEnvironmentDir(&o.CommonOptions)
+	assert.NoError(t, err)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	assert.NoError(t, err)
@@ -388,7 +490,7 @@ func TestParallelWorkflow(t *testing.T) {
 	cmd.AssertHasNoPullRequestForEnv(t, activities, a.Name, envNameC)
 
 	// test no PR on production until staging completed
-	if !cmd.AssertSetPullRequestMerged(t, fakeGitProvider, repoA, 1) {
+	if !cmd.AssertSetPullRequestMerged(t, fakeGitProvider, repoA.Owner, repoA.GitRepo.Name, 1) {
 		return
 	}
 
@@ -407,7 +509,7 @@ func TestParallelWorkflow(t *testing.T) {
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, envNameB, v1.ActivityStatusTypeRunning)
 	cmd.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
 
-	if !cmd.AssertSetPullRequestMerged(t, fakeGitProvider, repoB, 1) {
+	if !cmd.AssertSetPullRequestMerged(t, fakeGitProvider, repoB.Owner, repoB.GitRepo.Name, 1) {
 		return
 	}
 	if !cmd.AssertSetPullRequestComplete(t, fakeGitProvider, repoB, 1) {
@@ -422,7 +524,7 @@ func TestParallelWorkflow(t *testing.T) {
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, envNameB, v1.ActivityStatusTypeSucceeded)
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, envNameC, v1.ActivityStatusTypeRunning)
 
-	if !cmd.AssertSetPullRequestMerged(t, fakeGitProvider, repoC, 1) {
+	if !cmd.AssertSetPullRequestMerged(t, fakeGitProvider, repoC.Owner, repoC.GitRepo.Name, 1) {
 		return
 	}
 	if !cmd.AssertSetPullRequestComplete(t, fakeGitProvider, repoC, 1) {
@@ -453,17 +555,45 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
 
-	o := &cmd.ControllerWorkflowOptions{
-		NoWatch:          true,
-		FakePullRequests: cmd.NewCreateEnvPullRequestFn(fakeGitProvider),
-		FakeGitProvider:  fakeGitProvider,
-		Namespace:        "jx",
-	}
-
 	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://fake.git/"+testOrgName+"/"+stagingRepoName+".git")
 	production := kube.NewPermanentEnvironmentWithGit("production", "https://fake.git/"+testOrgName+"/"+prodRepoName+".git")
 	staging.Spec.Order = 100
 	production.Spec.Order = 200
+
+	configureGitFn := func(dir string, gitInfo *gits.GitRepository, gitter gits.Gitter) error {
+		err := gitter.Init(dir)
+		if err != nil {
+			return err
+		}
+		// Really we should have a dummy environment chart but for now let's just mock it out as needed
+		err = os.MkdirAll(filepath.Join(dir, "templates"), 0700)
+		if err != nil {
+			return err
+		}
+		data, err := json.Marshal(staging)
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(filepath.Join(dir, "templates", "environment-staging.yaml"), data, 0755)
+		if err != nil {
+			return err
+		}
+		data, err = json.Marshal(production)
+		if err != nil {
+			return err
+		}
+		err = ioutil.WriteFile(filepath.Join(dir, "templates", "environment-production.yaml"), data, 0755)
+		if err != nil {
+			return err
+		}
+		return gitter.AddCommit(dir, "Initial Commit")
+	}
+
+	o := &cmd.ControllerWorkflowOptions{
+		NoWatch:        true,
+		Namespace:      "jx",
+		ConfigureGitFn: configureGitFn,
+	}
 
 	myFlowName := "myflow"
 
@@ -482,12 +612,13 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 				step2,
 			),
 		},
-		gits.NewGitCLI(),
+		gits.NewGitLocal(),
 		fakeGitProvider,
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 		resources_test.NewMockInstaller(),
 	)
-	o.SetGit(&gits.GitFake{})
+	err := cmd.CreateTestEnvironmentDir(&o.CommonOptions)
+	assert.NoError(t, err)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	assert.NoError(t, err)
@@ -541,7 +672,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 	cmd.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
 	// test no PR on production until staging completed
-	if !cmd.AssertSetPullRequestMerged(t, fakeGitProvider, stagingRepo, 2) {
+	if !cmd.AssertSetPullRequestMerged(t, fakeGitProvider, stagingRepo.Owner, stagingRepo.GitRepo.Name, 2) {
 		return
 	}
 
@@ -560,7 +691,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "production", v1.ActivityStatusTypeRunning)
 	cmd.AssertHasPipelineStatus(t, activities, a.Name, v1.ActivityStatusTypeRunning)
 
-	if !cmd.AssertSetPullRequestMerged(t, fakeGitProvider, prodRepo, 1) {
+	if !cmd.AssertSetPullRequestMerged(t, fakeGitProvider, prodRepo.Owner, prodRepo.GitRepo.Name, 1) {
 		return
 	}
 	if !cmd.AssertSetPullRequestComplete(t, fakeGitProvider, prodRepo, 1) {

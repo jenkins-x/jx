@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/environments"
+
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"github.com/jenkins-x/jx/pkg/prow"
@@ -14,8 +16,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 
-	"github.com/jenkins-x/golang-jenkins"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	gojenkins "github.com/jenkins-x/golang-jenkins"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -63,7 +65,7 @@ type DeleteApplicationOptions struct {
 	PullRequestPollDuration *time.Duration
 
 	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback ConfigureGitFolderFn
+	ConfigureGitCallback environments.ConfigureGitFn
 }
 
 // NewCmdDeleteApplication creates a command object for this command
@@ -179,9 +181,9 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService kube.Source
 		if err != nil {
 			return deletedApplications, errors.Wrapf(err, "deleting prow config for %s", applicationName)
 		}
-		deletedApplications = append(deletedApplications,applicationName)
+		deletedApplications = append(deletedApplications, applicationName)
 
-		err := repoService.DeleteSourceRepository(o.Org + "-" +applicationName)
+		err := repoService.DeleteSourceRepository(o.Org + "-" + applicationName)
 		if err != nil {
 			log.Warnf("Unable to find application metadata for %s to remove", applicationName)
 		}
@@ -305,8 +307,22 @@ func (o *DeleteApplicationOptions) deleteApplicationFromEnvironment(env *v1.Envi
 		requirements.RemoveApplication(applicationName)
 		return nil
 	}
-	info, err := o.createEnvironmentPullRequest(env, modifyChartFn, &branchName, &title, &message, nil,
-		o.ConfigureGitCallback)
+	gitProvider, _, err := o.createGitProviderForURLWithoutKind(env.Spec.Source.URL)
+	if err != nil {
+		return errors.Wrapf(err, "creating git provider for %s", env.Spec.Source.URL)
+	}
+	environmentsDir, err := o.EnvironmentsDir()
+	if err != nil {
+		return errors.Wrapf(err, "getting environments dir")
+	}
+
+	options := environments.EnvironmentPullRequestOptions{
+		ConfigGitFn:   o.ConfigureGitCallback,
+		Gitter:        o.Git(),
+		ModifyChartFn: modifyChartFn,
+		GitProvider:   gitProvider,
+	}
+	info, err := options.Create(env, &branchName, &title, &message, environmentsDir, nil)
 	if err != nil {
 		return err
 	}
