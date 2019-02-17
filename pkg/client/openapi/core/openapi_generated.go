@@ -74,6 +74,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivitySpec":              schema_pkg_apis_jenkinsio_v1_PipelineActivitySpec(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStatus":            schema_pkg_apis_jenkinsio_v1_PipelineActivityStatus(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStep":              schema_pkg_apis_jenkinsio_v1_PipelineActivityStep(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructure":                 schema_pkg_apis_jenkinsio_v1_PipelineStructure(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructureList":             schema_pkg_apis_jenkinsio_v1_PipelineStructureList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructureStage":            schema_pkg_apis_jenkinsio_v1_PipelineStructureStage(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Plugin":                            schema_pkg_apis_jenkinsio_v1_Plugin(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PluginList":                        schema_pkg_apis_jenkinsio_v1_PluginList(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PluginSpec":                        schema_pkg_apis_jenkinsio_v1_PluginSpec(ref),
@@ -2768,6 +2771,192 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivityStep(ref common.ReferenceCallb
 		},
 		Dependencies: []string{
 			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PreviewActivityStep", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteActivityStep", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.StageActivityStep"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_PipelineStructure(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineStructure contains references to the Pipeline and PipelineRun, and a list of PipelineStructureStages in the pipeline.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Standard object's metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"pipelineRunRef": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"stages": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructureStage"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"pipelineRunRef"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructureStage", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_PipelineStructureList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineStructureList is a list of PipelineStructureList resources",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructure"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"metadata", "items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructure", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_PipelineStructureStage(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineStructureStage contains the stage's name, one of either a reference to the Task corresponding to the stage if it has steps, a list of sequential stage names nested within this stage, or a list of parallel stage names nested within this stage, and information on this stage's depth within the PipelineStructure as a whole, the name of its parent stage, if any, the name of the stage before it in execution order, if any, and the name of the stage after it in execution order, if any.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"taskRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Must have one of TaskRef+TaskRunRef, Stages, or Parallel",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"taskRunRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Populated during pod discovery, not at initial creation time.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"stages": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"parallel": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"depth": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "byte",
+						},
+					},
+					"parent": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"previous": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"next": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"name", "depth"},
+			},
+		},
+		Dependencies: []string{},
 	}
 }
 

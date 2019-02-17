@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
@@ -89,6 +90,7 @@ type StepCreateTaskResults struct {
 	Tasks       []*pipelineapi.Task
 	Resources   []*pipelineapi.PipelineResource
 	PipelineRun *pipelineapi.PipelineRun
+	Structure   *v1.PipelineStructure
 }
 
 // NewCmdStepCreateTask Creates a new Command object
@@ -360,7 +362,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		// TODO: use org-name-branch for pipeline name? Create client now to get
 		// namespace? Set namespace when applying rather than during generation?
 		name := kpipelines.PipelineResourceName(o.gitInfo, o.Branch, o.Context)
-		pipeline, tasks, err := lifecycles.Pipeline.GenerateCRDs(name, o.buildNumber, "will-be-replaced", "abcd", o.PodTemplates)
+		pipeline, tasks, structure, err := lifecycles.Pipeline.GenerateCRDs(name, o.buildNumber, "will-be-replaced", "abcd", o.PodTemplates)
 		if err != nil {
 			return errors.Wrapf(err, "Generation failed for Pipeline")
 		}
@@ -391,7 +393,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		var resources []*pipelineapi.PipelineResource
 		resources = append(resources, o.generateSourceRepoResource(name), o.generateTempOrderingResource())
 
-		err = o.applyPipeline(pipeline, tasks, resources, o.gitInfo, o.Branch)
+		err = o.applyPipeline(pipeline, tasks, resources, structure, o.gitInfo, o.Branch)
 		if err != nil {
 			return errors.Wrapf(err, "failed to apply generated Pipeline")
 		}
@@ -674,14 +676,14 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 			Tasks:     tasks,
 		},
 	}
-	return o.applyPipeline(pipeline, []*pipelineapi.Task{task}, pipelineResources, gitInfo, branch)
+	return o.applyPipeline(pipeline, []*pipelineapi.Task{task}, pipelineResources, nil, gitInfo, branch)
 }
 
 // Given a Pipeline and its Tasks, applies the Tasks and Pipeline to the cluster
 // and creates and applies a PipelineResource for their source repo and a PipelineRun
 // to execute them. Handles o.NoApply internally.
 // TODO: Probably needs to take PipelineResources as an input as well
-func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, tasks []*pipelineapi.Task, resources []*pipelineapi.PipelineResource, gitInfo *gits.GitRepository, branch string) error {
+func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, tasks []*pipelineapi.Task, resources []*pipelineapi.PipelineResource, structure *v1.PipelineStructure, gitInfo *gits.GitRepository, branch string) error {
 	_, ns, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return err
@@ -781,6 +783,38 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 			return errors.Wrapf(err, "failed to create the PipelineRun in namespace %s", ns)
 		}
 		log.Infof("created PipelineRun %s\n", info(run.Name))
+
+		if structure != nil {
+			structure.PipelineRunRef = &run.Name
+
+			// TODO: Yeah, this should be moved into probably kpipelines/pipelines.go.
+			apisClient, err := o.ApiExtensionsClient()
+			if err != nil {
+				return err
+			}
+			err = kube.RegisterPipelineStructureCRD(apisClient)
+			if err != nil {
+				return err
+			}
+
+			jxClient, _, err := o.JXClientAndDevNamespace()
+			if err != nil {
+				return err
+			}
+			structuresClient := jxClient.JenkinsV1().PipelineStructures(ns)
+			structure.OwnerReferences = []metav1.OwnerReference{
+				{
+					APIVersion: syntax.PipelineAPIVersion,
+					Kind:       "Pipeline",
+					Name:       pipeline.Name,
+					UID:        pipeline.UID,
+				},
+			}
+			if _, structErr := structuresClient.Create(structure); structErr != nil {
+				return errors.Wrapf(structErr, "failed to create the PipelineStructure in namespace %s", ns)
+			}
+			log.Infof("created PipelineStructure %s\n", info(structure.Name))
+		}
 	}
 
 	o.Results.Tasks = tasks

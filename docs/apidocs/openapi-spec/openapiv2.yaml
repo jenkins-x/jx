@@ -1040,6 +1040,93 @@ definitions:
       stage:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.StageActivityStep'
     type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructure:
+    description: PipelineStructure contains references to the Pipeline and PipelineRun,
+      and a list of PipelineStructureStages in the pipeline.
+    properties:
+      apiVersion:
+        description: 'APIVersion defines the versioned schema of this representation
+          of an object. Servers should convert recognized schemas to the latest internal
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+        type: string
+      kind:
+        description: 'Kind is a string value representing the REST resource this object
+          represents. Servers may infer this from the endpoint the client submits
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+        type: string
+      metadata:
+        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
+        description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
+      pipelineRunRef:
+        type: string
+      stages:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureStage'
+        type: array
+    required:
+    - pipelineRunRef
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureList:
+    description: PipelineStructureList is a list of PipelineStructureList resources
+    properties:
+      apiVersion:
+        description: 'APIVersion defines the versioned schema of this representation
+          of an object. Servers should convert recognized schemas to the latest internal
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructure'
+        type: array
+      kind:
+        description: 'Kind is a string value representing the REST resource this object
+          represents. Servers may infer this from the endpoint the client submits
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+        type: string
+      metadata:
+        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
+    required:
+    - metadata
+    - items
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureStage:
+    description: PipelineStructureStage contains the stage's name, one of either a
+      reference to the Task corresponding to the stage if it has steps, a list of
+      sequential stage names nested within this stage, or a list of parallel stage
+      names nested within this stage, and information on this stage's depth within
+      the PipelineStructure as a whole, the name of its parent stage, if any, the
+      name of the stage before it in execution order, if any, and the name of the
+      stage after it in execution order, if any.
+    properties:
+      depth:
+        format: byte
+        type: integer
+      name:
+        type: string
+      next:
+        type: string
+      parallel:
+        items:
+          type: string
+        type: array
+      parent:
+        type: string
+      previous:
+        type: string
+      stages:
+        items:
+          type: string
+        type: array
+      taskRef:
+        description: Must have one of TaskRef+TaskRunRef, Stages, or Parallel
+        type: string
+      taskRunRef:
+        description: Populated during pod discovery, not at initial creation time.
+        type: string
+    required:
+    - name
+    - depth
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Plugin:
     description: Plugin represents a binary plugin installed into this Jenkins X team
     properties:
