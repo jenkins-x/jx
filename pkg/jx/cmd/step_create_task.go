@@ -400,7 +400,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 
 		folderName := o.OutDir
 		if folderName != "" {
-			err = o.writeOutput(folderName, o.Results.Pipeline, o.Results.Tasks, o.Results.PipelineRun, o.Results.Resources)
+			err = o.writeOutput(folderName, o.Results.Pipeline, o.Results.Tasks, o.Results.PipelineRun, o.Results.Resources, o.Results.Structure)
 			if err != nil {
 				return errors.Wrapf(err, "failed to write generated output to %s", folderName)
 			}
@@ -467,7 +467,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 
 	folderName := o.OutDir
 	if folderName != "" {
-		err = o.writeOutput(folderName, o.Results.Pipeline, o.Results.Tasks, o.Results.PipelineRun, o.Results.Resources)
+		err = o.writeOutput(folderName, o.Results.Pipeline, o.Results.Tasks, o.Results.PipelineRun, o.Results.Resources, nil)
 		if err != nil {
 			return errors.Wrapf(err, "failed to write generated output to %s", folderName)
 		}
@@ -575,7 +575,7 @@ func (o *StepCreateTaskOptions) combineLabels(labels map[string]string) error {
 // TODO: Use the same YAML lib here as in buildpipeline/pipeline.go
 // TODO: Use interface{} with a helper function to reduce code repetition?
 // TODO: Take no arguments and use o.Results internally?
-func (o *StepCreateTaskOptions) writeOutput(folder string, pipeline *pipelineapi.Pipeline, tasks []*pipelineapi.Task, pipelineRun *pipelineapi.PipelineRun, resources []*pipelineapi.PipelineResource) error {
+func (o *StepCreateTaskOptions) writeOutput(folder string, pipeline *pipelineapi.Pipeline, tasks []*pipelineapi.Task, pipelineRun *pipelineapi.PipelineRun, resources []*pipelineapi.PipelineResource, structure *v1.PipelineStructure) error {
 	if err := os.Mkdir(folder, os.ModePerm); err != nil {
 		if !os.IsExist(err) {
 			return err
@@ -603,6 +603,18 @@ func (o *StepCreateTaskOptions) writeOutput(folder string, pipeline *pipelineapi
 	}
 	log.Infof("generated PipelineRun at %s\n", util.ColorInfo(fileName))
 
+	if structure != nil {
+		data, err = yaml.Marshal(structure)
+		if err != nil {
+			return errors.Wrapf(err, "failed to marshal PipelineStructure YAML")
+		}
+		fileName = filepath.Join(folder, "structure.yml")
+		err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to save PipelineStructure file %s", fileName)
+		}
+		log.Infof("generated PipelineStructure at %s\n", util.ColorInfo(fileName))
+	}
 	for i, task := range tasks {
 		data, err = yaml.Marshal(task)
 		if err != nil {
@@ -821,6 +833,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	o.Results.Pipeline = pipeline
 	o.Results.Resources = resources
 	o.Results.PipelineRun = run
+	o.Results.Structure = structure
 	return nil
 }
 
