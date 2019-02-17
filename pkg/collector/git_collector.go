@@ -85,7 +85,7 @@ func (c *GitCollector) CollectFiles(patterns []string, outputPath string, basedi
 
 		err := util.GlobAllFiles("", p, fn)
 		if err != nil {
-		  return urls, err
+			return urls, err
 		}
 	}
 

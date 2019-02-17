@@ -69,7 +69,7 @@ func GetSemverVersion() (semver.Version, error) {
 	text := strings.TrimPrefix(GetVersion(), VersionPrefix)
 	v, err := semver.Make(text)
 	if err != nil {
-	  return v, errors.Wrapf(err, "failed to parse version %s", text)
+		return v, errors.Wrapf(err, "failed to parse version %s", text)
 	}
 	return v, nil
 }

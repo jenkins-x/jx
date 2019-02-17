@@ -6,11 +6,11 @@ import (
 )
 
 const (
-	MAVEN          = "maven"
-	MAVEN_JAVA11   = "maven-java11"
-	APPSERVER      = "appserver"
-	LIBERTY        = "liberty"
-	DROPWIZARD     = "dropwizard"
+	MAVEN        = "maven"
+	MAVEN_JAVA11 = "maven-java11"
+	APPSERVER    = "appserver"
+	LIBERTY      = "liberty"
+	DROPWIZARD   = "dropwizard"
 )
 
 func PomFlavour(path string) (string, error) {

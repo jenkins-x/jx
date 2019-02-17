@@ -270,7 +270,7 @@ func (o *StepCreateTaskOptions) loadProjectConfig() (*config.ProjectConfig, stri
 		fileName := filepath.Join(o.Dir, fmt.Sprintf("jenkins-x-%s.yml", o.Context))
 		exists, err := util.FileExists(fileName)
 		if err != nil {
-		  return nil, fileName, errors.Wrapf(err, "failed to check if file exists %s", fileName)
+			return nil, fileName, errors.Wrapf(err, "failed to check if file exists %s", fileName)
 		}
 		if exists {
 			config, err := config.LoadProjectConfigFile(fileName)
@@ -790,7 +790,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 	} else {
 		log.Warnf("No GitInfo available!\n")
 	}
-	
+
 	if step.Command != "" {
 		if containerName == "" {
 			containerName = defaultContainerName

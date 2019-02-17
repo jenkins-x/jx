@@ -53,7 +53,7 @@ func ReadURL(urlText string, timeout time.Duration, httpFn func(urlString string
 		if httpFn != nil {
 			urlText, err = httpFn(urlText)
 			if err != nil {
-			  return nil, err
+				return nil, err
 			}
 		}
 		return ReadHTTPURL(urlText, timeout)
@@ -95,7 +95,7 @@ func ReadBucketURL(u *url.URL, timeout time.Duration) ([]byte, error) {
 	}
 	data, err := bucket.ReadAll(ctx, key)
 	if err != nil {
-	  return data, errors.Wrapf(err, "failed to read key %s in bucket %s", key, bucketURL)
+		return data, errors.Wrapf(err, "failed to read key %s in bucket %s", key, bucketURL)
 	}
 	return data, nil
 }

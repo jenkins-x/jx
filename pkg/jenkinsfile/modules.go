@@ -28,8 +28,6 @@ type Module struct {
 	GitRef string `yaml:"gitRef,omitempty"`
 }
 
-
-
 // Validate returns an error if any data is missing
 func (m *Module) Validate() error {
 	if m.GitURL == "" {

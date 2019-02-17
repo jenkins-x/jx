@@ -37,8 +37,8 @@ type Fact struct {
 
 // FactSpec is the specification of a Fact
 type FactSpec struct {
-	Name             string `json:"name" protobuf:"bytes,1,opt,name=name"`
-	FactType         string `json:"factType" protobuf:"bytes,3,opt,name=factType"`
+	Name     string `json:"name" protobuf:"bytes,1,opt,name=name"`
+	FactType string `json:"factType" protobuf:"bytes,3,opt,name=factType"`
 	// +optional
 	Measurements     []Measurement     `json:"measurements,omitempty" protobuf:"bytes,4,opt,name=measurements"`
 	Statements       []Statement       `json:"statements" protobuf:"bytes,5,opt,name=statements"`

@@ -79,7 +79,7 @@ type PipelineLifecycles struct {
 type PipelineLifecycle struct {
 	Steps []*PipelineStep `yaml:"steps,omitempty"`
 
-	// PreSteps if using inheritance then invoke these steps before the base steps 
+	// PreSteps if using inheritance then invoke these steps before the base steps
 	PreSteps []*PipelineStep `yaml:"preSteps,omitempty"`
 
 	// Replace if using inheritence then replace steps from the base pipeline
@@ -235,10 +235,10 @@ func removeWhenSteps(prow bool, steps []*PipelineStep) []*PipelineStep {
 	answer := []*PipelineStep{}
 	for _, step := range steps {
 		when := strings.TrimSpace(step.When)
-		if (prow && when == "!prow") {
+		if prow && when == "!prow" {
 			continue
 		}
-		if (!prow && when == "prow") {
+		if !prow && when == "prow" {
 			continue
 		}
 		step.Steps = removeWhenSteps(prow, step.Steps)

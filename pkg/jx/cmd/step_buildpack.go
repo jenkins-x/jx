@@ -25,8 +25,8 @@ func NewCmdStepBuildPack(f Factory, in terminal.FileReader, out terminal.FileWri
 	}
 
 	cmd := &cobra.Command{
-		Use:   "buildpack",
-		Short: "buildpack [command]",
+		Use:     "buildpack",
+		Short:   "buildpack [command]",
 		Aliases: buildPacksAliases,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd

@@ -135,7 +135,7 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 	err := o.unmarshalBody(w, r, arguments)
 	o.onError(err)
 	if err != nil {
-		o.returnError("could not parse body: " + err.Error(), w, r)
+		o.returnError("could not parse body: "+err.Error(), w, r)
 		return
 	}
 	if o.Verbose {
@@ -172,7 +172,6 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 		o.returnError(err.Error(), w, r)
 		return
 	}
-
 
 	results := &PipelineRunResponse{
 		Resources: pr.Results.ObjectReferences(),
@@ -219,4 +218,3 @@ func (o *ControllerPipelineRunnerOptions) returnError(message string, w http.Res
 	w.WriteHeader(400)
 	w.Write([]byte(message))
 }
-

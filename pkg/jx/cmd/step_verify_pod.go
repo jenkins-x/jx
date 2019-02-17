@@ -26,7 +26,7 @@ var (
 
 type StepVerifyPodOptions struct {
 	StepOptions
-	Debug    bool
+	Debug bool
 }
 
 // NewCmdStepVerifyPod creates the `jx step verify pod` command
@@ -94,7 +94,7 @@ func (o *StepVerifyPodOptions) Run() error {
 		phase := pod.Status.Phase
 
 		if phase == corev1.PodFailed && o.Debug {
-			args := []string{"logs", podName }
+			args := []string{"logs", podName}
 			name := "kubectl"
 			e := exec.Command(name, args...)
 			e.Stderr = o.Err

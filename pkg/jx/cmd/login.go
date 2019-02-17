@@ -172,7 +172,7 @@ func (o *LoginOptions) Login() (*UserLoginInfo, error) {
 
 	t, err := tail.TailFile(netLogFile, tail.Config{
 		Follow: true,
-		Poll: true,  // ionotify does not work on all platforms and the cost for this is not significantly high
+		Poll:   true, // ionotify does not work on all platforms and the cost for this is not significantly high
 		Logger: log.New(ioutil.Discard, "", log.LstdFlags)})
 	if err != nil {
 		return nil, errors.Wrap(err, "reading the netlog file")

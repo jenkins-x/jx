@@ -24,7 +24,6 @@ func NewUserDetailService(jxClient versioned.Interface, namespace string) UserDe
 	}
 }
 
-
 func (this *UserDetailService) CreateOrUpdateUser(u *v1.UserDetails) error {
 	if u == nil || u.Login == "" {
 		return fmt.Errorf("Unable to get or create user, nil or missing login")

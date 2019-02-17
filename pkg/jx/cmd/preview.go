@@ -499,8 +499,8 @@ func (o *PreviewOptions) Run() error {
 					Pipeline: pipeline,
 					Build:    build,
 					GitInfo: &gits.GitRepository{
-						Name:			o.GitInfo.Name,
-						Organisation:   o.GitInfo.Organisation,
+						Name:         o.GitInfo.Name,
+						Organisation: o.GitInfo.Organisation,
 					},
 				},
 			}

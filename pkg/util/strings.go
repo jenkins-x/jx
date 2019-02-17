@@ -142,7 +142,6 @@ func StringMatchesPattern(text string, pattern string) bool {
 	return text == pattern
 }
 
-
 // StringsContaining if the filter is not empty return all the strings which contain the text
 func StringsContaining(slice []string, filter string) []string {
 	if filter == "" {
