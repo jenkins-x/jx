@@ -77,6 +77,26 @@ type pullrequestEndpointBranch struct {
 	Name string `json:"name,omitempty"`
 }
 
+type webHooksPage struct {
+	Size          int       `json:"size"`
+	Limit         int       `json:"limit"`
+	Start         int       `json:"start"`
+	NextPageStart int       `json:"nextPageStart"`
+	IsLastPage    bool      `json:"isLastPage"`
+	Values        []webHook `json:"values"`
+}
+
+type webHook struct {
+	ID            int64                  `json:"id"`
+	Name          string                 `json:"name"`
+	CreatedDate   int64                  `json:"createdDate"`
+	UpdatedDate   int64                  `json:"updatedDate"`
+	Events        []string               `json:"events"`
+	Configuration map[string]interface{} `json:"configuration"`
+	URL           string                 `json:"url"`
+	Active        bool                   `json:"active"`
+}
+
 func NewBitbucketServerProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (GitProvider, error) {
 	ctx := context.Background()
 	apiKeyAuthContext := context.WithValue(ctx, bitbucket.ContextAccessToken, user.ApiToken)
@@ -748,9 +768,47 @@ func (b *BitbucketServerProvider) CreateWebHook(data *GitWebHookArguments) error
 	return err
 }
 
-func (p *BitbucketServerProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
-	webHooks := []*GitWebHookArguments{}
-	return webHooks, fmt.Errorf("not implemented!")
+func (b *BitbucketServerProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
+	var webHooksPage webHooksPage
+	var webHooks []*GitWebHookArguments
+
+	paginationOptions := make(map[string]interface{})
+	paginationOptions["start"] = 0
+	paginationOptions["limit"] = 25
+
+	for {
+		apiResponse, err := b.Client.DefaultApi.FindWebhooks(owner, repo, paginationOptions)
+		if err != nil {
+			return nil, err
+		}
+
+		err = mapstructure.Decode(apiResponse.Values, &webHooksPage)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, wh := range webHooksPage.Values {
+			secret := ""
+			if cfg, ok := wh.Configuration["secret"].(string); ok {
+				secret = cfg
+			}
+
+			webHooks = append(webHooks, &GitWebHookArguments{
+				ID:     wh.ID,
+				Owner:  owner,
+				Repo:   nil,
+				URL:    wh.URL,
+				Secret: secret,
+			})
+		}
+
+		if webHooksPage.IsLastPage {
+			break
+		}
+		paginationOptions["start"] = webHooksPage.NextPageStart
+	}
+
+	return webHooks, nil
 }
 
 func (p *BitbucketServerProvider) UpdateWebHook(data *GitWebHookArguments) error {
