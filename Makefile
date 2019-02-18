@@ -319,25 +319,14 @@ $(FGT):
 	$(GO_NOMOD) get github.com/GeertJohan/fgt
 
 
-LINTFLAGS:=-min_confidence 1.1
-
 GOLINT := $(GOPATH)/bin/golint
 $(GOLINT):
 	$(GO_NOMOD) get github.com/golang/lint/golint
 
-$(PKGS): $(GOLINT) $(FGT)
-	@echo "LINTING"
-	@$(FGT) $(GOLINT) $(LINTFLAGS) $(GOPATH)/src/$@/*.go
-	@echo "VETTING"
-	@go vet -v $@
-	@echo "TESTING"
-	@go test -v $@
-
 .PHONY: lint
-lint: $(PKGS) $(GOLINT)
-	@cd $(BASE) && ret=0 && for pkg in $(PKGS); do \
-	    test -z "$$($(GOLINT) $$pkg | tee /dev/stderr)" || ret=1 ; \
-	done ; exit $$ret
+lint: $(GOLINT)
+	@echo "--> linting code with 'go lint' tool"
+	$(GOLINT) -min_confidence 1.1 ./...
 
 .PHONY: vet
 vet: tools.govet
