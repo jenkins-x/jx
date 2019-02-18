@@ -256,8 +256,6 @@ func toGitHubRepo(name string, repo *github.Repository) *GitRepository {
 	}
 }
 
-
-
 func (p *GitHubProvider) ForkRepository(originalOrg string, name string, destinationOrg string) (*GitRepository, error) {
 	repoConfig := &github.RepositoryCreateForkOptions{}
 	if destinationOrg != "" {
@@ -562,9 +560,9 @@ func (p *GitHubProvider) updatePullRequest(pr *GitPullRequest, source *github.Pu
 
 func (p *GitHubProvider) toPullRequest(owner string, repo string, pr *github.PullRequest) *GitPullRequest {
 	answer := &GitPullRequest{
-		URL: asText(pr.URL),
-		Owner: owner,
-		Repo: repo,
+		URL:    asText(pr.URL),
+		Owner:  owner,
+		Repo:   repo,
 		Number: pr.Number,
 	}
 	p.updatePullRequest(answer, pr)
@@ -602,7 +600,7 @@ func (p *GitHubProvider) ListOpenPullRequests(owner string, repo string) ([]*Git
 		if len(prs) < pageSize || len(prs) == 0 {
 			break
 		}
-		opt.Page += 1
+		opt.Page++
 	}
 	return answer, nil
 }

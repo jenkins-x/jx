@@ -581,7 +581,6 @@ func (b *BitbucketCloudProvider) PullRequestLastCommitStatus(pr *GitPullRequest)
 	return stateMap[latestCommitStatus.State], nil
 }
 
-
 // ListOpenPullRequests lists the open pull requests
 func (b *BitbucketCloudProvider) ListOpenPullRequests(owner string, repo string) ([]*GitPullRequest, error) {
 	answer := []*GitPullRequest{}

@@ -332,9 +332,9 @@ func (p *GiteaProvider) updatePullRequest(pr *GitPullRequest, source *gitea.Pull
 func (p *GiteaProvider) toPullRequest(owner string, repo string, pr *gitea.PullRequest) *GitPullRequest {
 	id := int(pr.Index)
 	answer := &GitPullRequest{
-		URL: pr.URL,
-		Owner: owner,
-		Repo: repo,
+		URL:    pr.URL,
+		Owner:  owner,
+		Repo:   repo,
 		Number: &id,
 	}
 	p.updatePullRequest(answer, pr)
@@ -348,7 +348,7 @@ func (p *GiteaProvider) ListOpenPullRequests(owner string, repo string) ([]*GitP
 	for {
 		prs, err := p.Client.ListRepoPullRequests(owner, repo, opt)
 		if err != nil {
-		  return answer, err
+			return answer, err
 		}
 		for _, pr := range prs {
 			answer = append(answer, p.toPullRequest(owner, repo, pr))
@@ -360,7 +360,6 @@ func (p *GiteaProvider) ListOpenPullRequests(owner string, repo string) ([]*GitP
 	}
 	return answer, nil
 }
-
 
 func (p *GiteaProvider) GetPullRequest(owner string, repo *GitRepository, number int) (*GitPullRequest, error) {
 	pr := &GitPullRequest{
