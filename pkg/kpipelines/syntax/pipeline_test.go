@@ -124,32 +124,15 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "nested_stages",
-			expected: &syntax.ParsedPipeline{
-				Agent: syntax.Agent{
-					Image: "some-image",
-				},
-				Stages: []syntax.Stage{
-					{
-						Name: "Parent Stage",
-						Stages: []syntax.Stage{
-							{
-								Name: "A Working Stage",
-								Steps: []syntax.Step{{
-									Command:   "echo",
-									Arguments: []string{"hello", "world"},
-								}},
-							},
-							{
-								Name: "Another stage",
-								Steps: []syntax.Step{{
-									Command:   "echo",
-									Arguments: []string{"again"},
-								}},
-							},
-						},
-					},
-				},
-			},
+			expected: ParsedPipeline(
+				PipelineAgent("some-image"),
+				PipelineStage("Parent Stage",
+					StageSequential("A Working Stage",
+						StageStep(StepCmd("echo"), StepArg("hello"), StepArg("world"))),
+					StageSequential("Another stage",
+						StageStep(StepCmd("echo"), StepArg("again"))),
+				),
+			),
 			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
@@ -198,46 +181,19 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "parallel_stages",
-			expected: &syntax.ParsedPipeline{
-				Agent: syntax.Agent{
-					Image: "some-image",
-				},
-				Stages: []syntax.Stage{
-					{
-						Name: "First Stage",
-						Steps: []syntax.Step{{
-							Command:   "echo",
-							Arguments: []string{"first"},
-						}},
-					},
-					{
-						Name: "Parent Stage",
-						Parallel: []syntax.Stage{
-							{
-								Name: "A Working Stage",
-								Steps: []syntax.Step{{
-									Command:   "echo",
-									Arguments: []string{"hello", "world"},
-								}},
-							},
-							{
-								Name: "Another stage",
-								Steps: []syntax.Step{{
-									Command:   "echo",
-									Arguments: []string{"again"},
-								}},
-							},
-						},
-					},
-					{
-						Name: "Last Stage",
-						Steps: []syntax.Step{{
-							Command:   "echo",
-							Arguments: []string{"last"},
-						}},
-					},
-				},
-			},
+			expected: ParsedPipeline(
+				PipelineAgent("some-image"),
+				PipelineStage("First Stage",
+					StageStep(StepCmd("echo"), StepArg("first"))),
+				PipelineStage("Parent Stage",
+					StageParallel("A Working Stage",
+						StageStep(StepCmd("echo"), StepArg("hello"), StepArg("world"))),
+					StageParallel("Another stage",
+						StageStep(StepCmd("echo"), StepArg("again"))),
+				),
+				PipelineStage("Last Stage",
+					StageStep(StepCmd("echo"), StepArg("last"))),
+			),
 			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("first-stage", "somepipeline-first-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
@@ -321,58 +277,23 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "parallel_and_nested_stages",
-			expected: &syntax.ParsedPipeline{
-				Agent: syntax.Agent{
-					Image: "some-image",
-				},
-				Stages: []syntax.Stage{
-					{
-						Name: "First Stage",
-						Steps: []syntax.Step{{
-							Command:   "echo",
-							Arguments: []string{"first"},
-						}},
-					},
-					{
-						Name: "Parent Stage",
-						Parallel: []syntax.Stage{
-							{
-								Name: "A Working Stage",
-								Steps: []syntax.Step{{
-									Command:   "echo",
-									Arguments: []string{"hello", "world"},
-								}},
-							},
-							{
-								Name: "Nested In Parallel",
-								Stages: []syntax.Stage{
-									{
-										Name: "Another stage",
-										Steps: []syntax.Step{{
-											Command:   "echo",
-											Arguments: []string{"again"},
-										}},
-									},
-									{
-										Name: "Some other stage",
-										Steps: []syntax.Step{{
-											Command:   "echo",
-											Arguments: []string{"otherwise"},
-										}},
-									},
-								},
-							},
-						},
-					},
-					{
-						Name: "Last Stage",
-						Steps: []syntax.Step{{
-							Command:   "echo",
-							Arguments: []string{"last"},
-						}},
-					},
-				},
-			},
+			expected: ParsedPipeline(
+				PipelineAgent("some-image"),
+				PipelineStage("First Stage",
+					StageStep(StepCmd("echo"), StepArg("first"))),
+				PipelineStage("Parent Stage",
+					StageParallel("A Working Stage",
+						StageStep(StepCmd("echo"), StepArg("hello"), StepArg("world"))),
+					StageParallel("Nested In Parallel",
+						StageSequential("Another stage",
+							StageStep(StepCmd("echo"), StepArg("again"))),
+						StageSequential("Some other stage",
+							StageStep(StepCmd("echo"), StepArg("otherwise"))),
+					),
+				),
+				PipelineStage("Last Stage",
+					StageStep(StepCmd("echo"), StepArg("last"))),
+			),
 			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("first-stage", "somepipeline-first-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
@@ -483,46 +404,30 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "custom_workspaces",
-			expected: &syntax.ParsedPipeline{
-				Agent: syntax.Agent{
-					Image: "some-image",
-				},
-				Stages: []syntax.Stage{
-					{
-						Name: "stage1",
-						Steps: []syntax.Step{{
-							Command: "ls",
-						}},
-					},
-					{
-						Name: "stage2",
-						Options: syntax.StageOptions{
-							Workspace: &customWorkspace,
-						},
-						Steps: []syntax.Step{{
-							Command: "ls",
-						}},
-					},
-					{
-						Name: "stage3",
-						Options: syntax.StageOptions{
-							Workspace: &defaultWorkspace,
-						},
-						Steps: []syntax.Step{{
-							Command: "ls",
-						}},
-					},
-					{
-						Name: "stage4",
-						Options: syntax.StageOptions{
-							Workspace: &customWorkspace,
-						},
-						Steps: []syntax.Step{{
-							Command: "ls",
-						}},
-					},
-				},
-			},
+			expected: ParsedPipeline(
+				PipelineAgent("some-image"),
+				PipelineStage("stage1",
+					StageStep(StepCmd("ls")),
+				),
+				PipelineStage("stage2",
+					StageOptions(
+						StageOptionsWorkspace(customWorkspace),
+					),
+					StageStep(StepCmd("ls")),
+				),
+				PipelineStage("stage3",
+					StageOptions(
+						StageOptionsWorkspace(defaultWorkspace),
+					),
+					StageStep(StepCmd("ls")),
+				),
+				PipelineStage("stage4",
+					StageOptions(
+						StageOptionsWorkspace(customWorkspace),
+					),
+					StageStep(StepCmd("ls")),
+				),
+			),
 			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("stage1", "somepipeline-stage1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
@@ -584,51 +489,38 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
 				)),
 			},
+			structure: PipelineStructure("somepipeline",
+				StructureStage("stage1"),
+				StructureStage("stage2", StructureStagePrevious("stage1")),
+				StructureStage("stage3", StructureStagePrevious("stage2")),
+				StructureStage("stage4", StructureStagePrevious("stage3")),
+			),
 		},
 		{
 			name: "inherited_custom_workspaces",
-			expected: &syntax.ParsedPipeline{
-				Agent: syntax.Agent{
-					Image: "some-image",
-				},
-				Stages: []syntax.Stage{
-					{
-						Name: "stage1",
-						Steps: []syntax.Step{{
-							Command: "ls",
-						}},
-					},
-					{
-						Name: "stage2",
-						Options: syntax.StageOptions{
-							Workspace: &customWorkspace,
-						},
-						Stages: []syntax.Stage{
-							{
-								Name: "stage3",
-								Steps: []syntax.Step{{
-									Command: "ls",
-								}},
-							},
-							{
-								Name: "stage4",
-								Options: syntax.StageOptions{
-									Workspace: &defaultWorkspace,
-								},
-								Steps: []syntax.Step{{
-									Command: "ls",
-								}},
-							},
-							{
-								Name: "stage5",
-								Steps: []syntax.Step{{
-									Command: "ls",
-								}},
-							},
-						},
-					},
-				},
-			},
+			expected: ParsedPipeline(
+				PipelineAgent("some-image"),
+				PipelineStage("stage1",
+					StageStep(StepCmd("ls")),
+				),
+				PipelineStage("stage2",
+					StageOptions(
+						StageOptionsWorkspace(customWorkspace),
+					),
+					StageSequential("stage3",
+						StageStep(StepCmd("ls")),
+					),
+					StageSequential("stage4",
+						StageOptions(
+							StageOptionsWorkspace(defaultWorkspace),
+						),
+						StageStep(StepCmd("ls")),
+					),
+					StageSequential("stage5",
+						StageStep(StepCmd("ls")),
+					),
+				),
+			),
 			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("stage1", "somepipeline-stage1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
@@ -692,29 +584,35 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
 				)),
 			},
+			structure: PipelineStructure("somepipeline",
+				StructureStage("stage1"),
+				StructureStage("stage2",
+					StructureStagePrevious("stage1"),
+					StructureStageStages("stage3", "stage4", "stage5"),
+				),
+				StructureStage("stage3",
+					StructureStageDepth(1),
+					StructureStageParent("stage2")),
+				StructureStage("stage4",
+					StructureStagePrevious("stage3"),
+					StructureStageDepth(1),
+					StructureStageParent("stage2")),
+				StructureStage("stage5",
+					StructureStagePrevious("stage4"),
+					StructureStageDepth(1),
+					StructureStageParent("stage2")),
+			),
 		},
 		{
 			name: "environment_at_top_and_in_stage",
-			expected: &syntax.ParsedPipeline{
-				Agent: syntax.Agent{
-					Image: "some-image",
-				},
-				Environment: []syntax.EnvVar{{
-					Name:  "SOME_VAR",
-					Value: "A value for the env var",
-				}},
-				Stages: []syntax.Stage{{
-					Name: "A stage with environment",
-					Environment: []syntax.EnvVar{{
-						Name:  "SOME_OTHER_VAR",
-						Value: "A value for the other env var",
-					}},
-					Steps: []syntax.Step{{
-						Command:   "echo",
-						Arguments: []string{"hello", "${SOME_OTHER_VAR}"},
-					}},
-				}},
-			},
+			expected: ParsedPipeline(
+				PipelineAgent("some-image"),
+				PipelineEnvVar("SOME_VAR", "A value for the env var"),
+				PipelineStage("A stage with environment",
+					StageEnvVar("SOME_OTHER_VAR", "A value for the other env var"),
+					StageStep(StepCmd("echo"), StepArg("hello"), StepArg("${SOME_OTHER_VAR}")),
+				),
+			),
 			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("a-stage-with-environment", "somepipeline-a-stage-with-environment",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
@@ -735,143 +633,81 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.EnvVar("SOME_OTHER_VAR", "A value for the other env var"), tb.EnvVar("SOME_VAR", "A value for the env var")),
 				)),
 			},
+			structure: PipelineStructure("somepipeline",
+				StructureStage("A stage with environment"),
+			),
 		},
 		{
 			name: "syntactic_sugar_step_and_a_command",
-			expected: &syntax.ParsedPipeline{
-				Agent: syntax.Agent{
-					Image: "some-image",
-				},
-				Stages: []syntax.Stage{{
-					Name: "A Working Stage",
-					Steps: []syntax.Step{
-						{
-							Command:   "echo",
-							Arguments: []string{"hello", "world"},
-						},
-						{
-							Step: "some-step",
-							Options: map[string]string{
-								"firstParam":  "some value",
-								"secondParam": "some other value",
-							},
-						},
-					},
-				}},
-			},
+			expected: ParsedPipeline(
+				PipelineAgent("some-image"),
+				PipelineStage("A Working Stage",
+					StageStep(StepCmd("echo"), StepArg("hello"), StepArg("world")),
+					StageStep(StepStep("some-step"),
+						StepOptions(map[string]string{"firstParam": "some value", "secondParam": "some other value"})),
+				),
+			),
 			expectedErrorMsg: "syntactic sugar steps not yet supported",
 		},
 		{
 			name: "post",
-			expected: &syntax.ParsedPipeline{
-				Agent: syntax.Agent{
-					Image: "some-image",
-				},
-				Stages: []syntax.Stage{{
-					Name: "A Working Stage",
-					Steps: []syntax.Step{{
-						Command:   "echo",
-						Arguments: []string{"hello", "world"},
-					}},
-					Post: []syntax.Post{
-						{
-							Condition: "success",
-							Actions: []syntax.PostAction{{
-								Name: "mail",
-								Options: map[string]string{
-									"to":      "foo@bar.com",
-									"subject": "Yay, it passed",
-								},
-							}},
-						},
-						{
-							Condition: "failure",
-							Actions: []syntax.PostAction{{
-								Name: "slack",
-								Options: map[string]string{
-									"whatever": "the",
-									"slack":    "config",
-									"actually": "is. =)",
-								},
-							}},
-						},
-						{
-							Condition: "always",
-							Actions: []syntax.PostAction{{
-								Name: "junit",
-								Options: map[string]string{
-									"pattern": "target/surefire-reports/**/*.xml",
-								},
-							}},
-						},
-					},
-				}},
-			},
+			expected: ParsedPipeline(
+				PipelineAgent("some-image"),
+				PipelineStage("A Working Stage",
+					StageStep(StepCmd("echo"), StepArg("hello"), StepArg("world")),
+					StagePost(syntax.PostConditionSuccess,
+						PostAction("mail", map[string]string{
+							"to":      "foo@bar.com",
+							"subject": "Yay, it passed",
+						})),
+					StagePost(syntax.PostConditionFailure,
+						PostAction("slack", map[string]string{
+							"whatever": "the",
+							"slack":    "config",
+							"actually": "is. =)",
+						})),
+					StagePost(syntax.PostConditionAlways,
+						PostAction("junit", map[string]string{
+							"pattern": "target/surefire-reports/**/*.xml",
+						}),
+					),
+				),
+			),
 			expectedErrorMsg: "post on stages not yet supported",
 		},
 		{
 			name: "top_level_and_stage_options",
-			expected: &syntax.ParsedPipeline{
-				Agent: syntax.Agent{
-					Image: "some-image",
-				},
-				Options: syntax.RootOptions{
-					Timeout: syntax.Timeout{
-						Time: 50,
-						Unit: "minutes",
-					},
-					Retry: 3,
-				},
-				Stages: []syntax.Stage{{
-					Name: "A Working Stage",
-					Options: syntax.StageOptions{
-						RootOptions: syntax.RootOptions{
-							Timeout: syntax.Timeout{
-								Time: 5,
-								Unit: "seconds",
-							},
-							Retry: 4,
-						},
-						Stash: syntax.Stash{
-							Name:  "Some Files",
-							Files: "somedir/**/*",
-						},
-						Unstash: syntax.Unstash{
-							Name: "Earlier Files",
-							Dir:  "some/sub/dir",
-						},
-					},
-					Steps: []syntax.Step{{
-						Command:   "echo",
-						Arguments: []string{"hello", "world"},
-					}},
-				}},
-			},
+			expected: ParsedPipeline(
+				PipelineAgent("some-image"),
+				PipelineOptions(
+					PipelineOptionsTimeout(50, "minutes"),
+					PipelineOptionsRetry(3),
+				),
+				PipelineStage("A Working Stage",
+					StageOptions(
+						StageOptionsTimeout(5, "seconds"),
+						StageOptionsRetry(4),
+						StageOptionsStash("Some Files", "somedir/**/*"),
+						StageOptionsUnstash("Earlier Files", "some/sub/dir"),
+					),
+					StageStep(StepCmd("echo"), StepArg("hello"), StepArg("world")),
+				),
+			),
 			expectedErrorMsg: "Retry at top level not yet supported",
 		},
 		{
 			name: "stage_and_step_agent",
-			expected: &syntax.ParsedPipeline{
-				Stages: []syntax.Stage{{
-					Name: "A Working Stage",
-					Agent: syntax.Agent{
-						Image: "some-image",
-					},
-					Steps: []syntax.Step{
-						{
-							Command:   "echo",
-							Arguments: []string{"hello", "world"},
-							Agent: syntax.Agent{
-								Image: "some-other-image",
-							},
-						},
-						{
-							Command:   "echo",
-							Arguments: []string{"goodbye"},
-						},
-					},
-				}},
-			},
+			expected: ParsedPipeline(
+				PipelineStage("A Working Stage",
+					StageAgent("some-image"),
+					StageStep(
+						StepCmd("echo"),
+						StepArg("hello"), StepArg("world"),
+						StepAgent("some-other-image"),
+					),
+					StageStep(StepCmd("echo"), StepArg("goodbye")),
+				),
+			),
 			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
@@ -892,30 +728,21 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step("step3", "some-image", tb.Command("echo"), tb.Args("goodbye"), workingDir("/workspace/workspace")),
 				)),
 			},
+			structure: PipelineStructure("somepipeline",
+				StructureStage("A Working Stage"),
+			),
 		},
 		{
 			name: "mangled_task_names",
-			expected: &syntax.ParsedPipeline{
-				Agent: syntax.Agent{
-					Image: "some-image",
-				},
-				Stages: []syntax.Stage{
-					{
-						Name: ". -a- .",
-						Steps: []syntax.Step{{
-							Command:   "ls",
-							Arguments: nil,
-						}},
-					},
-					{
-						Name: "Wööh!!!! - This is cool.",
-						Steps: []syntax.Step{{
-							Command:   "ls",
-							Arguments: nil,
-						}},
-					},
-				},
-			},
+			expected: ParsedPipeline(
+				PipelineAgent("some-image"),
+				PipelineStage(". -a- .",
+					StageStep(StepCmd("ls")),
+				),
+				PipelineStage("Wööh!!!! - This is cool.",
+					StageStep(StepCmd("ls")),
+				),
+			),
 			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask(".--a--.", "somepipeline-a",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
@@ -950,29 +777,22 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
 				)),
 			},
+			structure: PipelineStructure("somepipeline",
+				StructureStage(". -a- ."),
+				StructureStage("Wööh!!!! - This is cool.", StructureStagePrevious(". -a- .")),
+			),
 		},
 		{
 			name: "stage_timeout",
-			expected: &syntax.ParsedPipeline{
-				Agent: syntax.Agent{
-					Image: "some-image",
-				},
-				Stages: []syntax.Stage{{
-					Name: "A Working Stage",
-					Options: syntax.StageOptions{
-						RootOptions: syntax.RootOptions{
-							Timeout: syntax.Timeout{
-								Time: 50,
-								Unit: "minutes",
-							},
-						},
-					},
-					Steps: []syntax.Step{{
-						Command:   "echo",
-						Arguments: []string{"hello", "world"},
-					}},
-				}},
-			},
+			expected: ParsedPipeline(
+				PipelineAgent("some-image"),
+				PipelineStage("A Working Stage",
+					StageOptions(
+						StageOptionsTimeout(50, "minutes"),
+					),
+					StageStep(StepCmd("echo"), StepArg("hello"), StepArg("world")),
+				),
+			),
 			/* TODO: Stop erroring out once we figure out how to handle task timeouts again
 			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
@@ -998,24 +818,15 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 		},
 		{
 			name: "top_level_timeout",
-			expected: &syntax.ParsedPipeline{
-				Agent: syntax.Agent{
-					Image: "some-image",
-				},
-				Options: syntax.RootOptions{
-					Timeout: syntax.Timeout{
-						Time: 50,
-						Unit: "minutes",
-					},
-				},
-				Stages: []syntax.Stage{{
-					Name: "A Working Stage",
-					Steps: []syntax.Step{{
-						Command:   "echo",
-						Arguments: []string{"hello", "world"},
-					}},
-				}},
-			},
+			expected: ParsedPipeline(
+				PipelineAgent("some-image"),
+				PipelineOptions(
+					PipelineOptionsTimeout(50, "minutes"),
+				),
+				PipelineStage("A Working Stage",
+					StageStep(StepCmd("echo"), StepArg("hello"), StepArg("world")),
+				),
+			),
 			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
@@ -1035,58 +846,30 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
 				)),
 			},
+			structure: PipelineStructure("somepipeline",
+				StructureStage("A Working Stage"),
+			),
 		},
 		{
 			name: "loop_step",
-			expected: &syntax.ParsedPipeline{
-				// Testing to make sure environment variables are inherited/reassigned properly
-				Environment: []syntax.EnvVar{{
-					Name:  "LANGUAGE",
-					Value: "rust",
-				}},
-				Agent: syntax.Agent{
-					Image: "some-image",
-				},
-				Stages: []syntax.Stage{{
-					Name: "A Working Stage",
-					Environment: []syntax.EnvVar{{
-						Name:  "DISTRO",
-						Value: "gentoo",
-					}},
-					Steps: []syntax.Step{
-						{
-							Loop: syntax.Loop{
-								Variable: "LANGUAGE",
-								Values:   []string{"maven", "gradle", "nodejs"},
-								Steps: []syntax.Step{
-									{
-										Command:   "echo",
-										Arguments: []string{"hello", "${LANGUAGE}"},
-									},
-									{
-										// Testing nested loops
-										Loop: syntax.Loop{
-											Variable: "DISTRO",
-											Values:   []string{"fedora", "ubuntu", "debian"},
-											Steps: []syntax.Step{
-												{
-													Command:   "echo",
-													Arguments: []string{"running", "${LANGUAGE}", "on", "${DISTRO}"},
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-						{
-							// Testing to be sure the step counter propagates correctly outside of a loop.
-							Command:   "echo",
-							Arguments: []string{"hello", "after"},
-						},
-					},
-				}},
-			},
+			expected: ParsedPipeline(
+				PipelineEnvVar("LANGUAGE", "rust"),
+				PipelineAgent("some-image"),
+				PipelineStage("A Working Stage",
+					StageEnvVar("DISTRO", "gentoo"),
+					StageStep(
+						StepLoop("LANGUAGE", []string{"maven", "gradle", "nodejs"},
+							LoopStep(StepCmd("echo"), StepArg("hello"), StepArg("${LANGUAGE}")),
+							LoopStep(StepLoop("DISTRO", []string{"fedora", "ubuntu", "debian"},
+								LoopStep(StepCmd("echo"),
+									StepArg("running"), StepArg("${LANGUAGE}"),
+									StepArg("on"), StepArg("${DISTRO}")),
+							)),
+						),
+					),
+					StageStep(StepCmd("echo"), StepArg("hello"), StepArg("after")),
+				),
+			),
 			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
@@ -1131,38 +914,24 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "rust")),
 				)),
 			},
+			structure: PipelineStructure("somepipeline",
+				StructureStage("A Working Stage"),
+			),
 		},
 		{
 			name: "loop_with_syntactic_sugar_step",
-			expected: &syntax.ParsedPipeline{
-				Agent: syntax.Agent{
-					Image: "some-image",
-				},
-				Stages: []syntax.Stage{{
-					Name: "A Working Stage",
-					Steps: []syntax.Step{
-						{
-							Loop: syntax.Loop{
-								Variable: "LANGUAGE",
-								Values:   []string{"maven", "gradle", "nodejs"},
-								Steps: []syntax.Step{
-									{
-										Command:   "echo",
-										Arguments: []string{"hello", "${LANGUAGE}"},
-									},
-									{
-										Step: "some-step",
-										Options: map[string]string{
-											"firstParam":  "some value",
-											"secondParam": "some other value",
-										},
-									},
-								},
-							},
-						},
-					},
-				}},
-			},
+			expected: ParsedPipeline(
+				PipelineAgent("some-image"),
+				PipelineStage("A Working Stage",
+					StageStep(
+						StepLoop("LANGUAGE", []string{"maven", "gradle", "nodejs"},
+							LoopStep(StepCmd("echo"), StepArg("hello"), StepArg("${LANGUAGE}")),
+							LoopStep(StepStep("some-step"),
+								StepOptions(map[string]string{"firstParam": "some value", "secondParam": "some other value"})),
+						),
+					),
+				),
+			),
 			expectedErrorMsg: "syntactic sugar steps not yet supported",
 		},
 	}
