@@ -97,6 +97,7 @@ func NewCmdControllerPipelineRunner(f Factory, in terminal.FileReader, out termi
 		"The interface address to bind to (by default, will listen on all interfaces/addresses).")
 	cmd.Flags().StringVarP(&options.Path, "path", "p", "/",
 		"The path to listen on for requests to trigger a pipeline run.")
+	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "build-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
 	return cmd
 }
 
@@ -183,6 +184,7 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 	pr.Branch = arguments.Branch
 	pr.Revision = arguments.Revision
 	pr.PipelineKind = arguments.Kind
+	pr.ServiceAccount = o.ServiceAccount
 
 	// turn map into string array with = separator to match type of custom labels which are CLI flags
 	for key, value := range arguments.Labels {

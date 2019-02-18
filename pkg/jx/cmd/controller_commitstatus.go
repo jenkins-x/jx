@@ -217,6 +217,9 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 			if buildName == "" {
 				buildName = labels[builds.LabelOldBuildName]
 			}
+			if buildName == "" {
+				buildName = labels[builds.LabelPipelineRunName]
+			}
 			if buildName != "" {
 				org := ""
 				repo := ""
