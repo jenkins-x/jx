@@ -470,19 +470,25 @@ func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	if err != nil {
 		return err
 	}
-	head := result.Head
+	p.updatePullRequest(pr, result)
+	return nil
+}
+
+// updatePullRequest updates the pr with the data from GitHub
+func (p *GitHubProvider) updatePullRequest(pr *GitPullRequest, source *github.PullRequest) {
+	head := source.Head
 	if head != nil {
 		pr.LastCommitSha = notNullString(head.SHA)
 	} else {
 		pr.LastCommitSha = ""
 	}
-	if pr.Author == nil && result.User != nil && result.User.Login != nil {
+	if pr.Author == nil && source.User != nil && source.User.Login != nil {
 		pr.Author = &GitUser{
-			Login: *result.User.Login,
+			Login: *source.User.Login,
 		}
 	}
 	pr.Assignees = make([]*GitUser, 0)
-	for _, u := range result.Assignees {
+	for _, u := range source.Assignees {
 		if u != nil {
 			pr.Assignees = append(pr.Assignees, &GitUser{
 				Login: *u.Login,
@@ -490,7 +496,7 @@ func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 		}
 	}
 	pr.RequestedReviewers = make([]*GitUser, 0)
-	for _, u := range result.RequestedReviewers {
+	for _, u := range source.RequestedReviewers {
 		if u != nil {
 			pr.RequestedReviewers = append(pr.RequestedReviewers, &GitUser{
 				Login: *u.Login,
@@ -498,7 +504,7 @@ func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 		}
 	}
 	pr.Labels = make([]*Label, 0)
-	for _, l := range result.Labels {
+	for _, l := range source.Labels {
 		if l != nil {
 			pr.Labels = append(pr.Labels, &Label{
 				Name:        l.Name,
@@ -510,47 +516,57 @@ func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 			})
 		}
 	}
-	if result.Mergeable != nil {
-		pr.Mergeable = result.Mergeable
+	if source.Mergeable != nil {
+		pr.Mergeable = source.Mergeable
 	}
-	pr.MergeCommitSHA = result.MergeCommitSHA
-	if result.Merged != nil {
-		pr.Merged = result.Merged
+	pr.MergeCommitSHA = source.MergeCommitSHA
+	if source.Merged != nil {
+		pr.Merged = source.Merged
 	}
-	if result.ClosedAt != nil {
-		pr.ClosedAt = result.ClosedAt
+	if source.ClosedAt != nil {
+		pr.ClosedAt = source.ClosedAt
 	}
-	if result.MergedAt != nil {
-		pr.MergedAt = result.MergedAt
+	if source.MergedAt != nil {
+		pr.MergedAt = source.MergedAt
 	}
-	if result.State != nil {
-		pr.State = result.State
+	if source.State != nil {
+		pr.State = source.State
 	}
-	if result.Head != nil {
-		pr.HeadRef = result.Head.Ref
+	if source.Head != nil {
+		pr.HeadRef = source.Head.Ref
 	}
-	if result.StatusesURL != nil {
-		pr.StatusesURL = result.StatusesURL
+	if source.StatusesURL != nil {
+		pr.StatusesURL = source.StatusesURL
 	}
-	if result.IssueURL != nil {
-		pr.IssueURL = result.IssueURL
+	if source.IssueURL != nil {
+		pr.IssueURL = source.IssueURL
 	}
-	if result.DiffURL != nil {
-		pr.IssueURL = result.DiffURL
+	if source.DiffURL != nil {
+		pr.IssueURL = source.DiffURL
 	}
-	if result.Title != nil {
-		pr.Title = *result.Title
+	if source.Title != nil {
+		pr.Title = *source.Title
 	}
-	if result.Body != nil {
-		pr.Body = *result.Body
+	if source.Body != nil {
+		pr.Body = *source.Body
 	}
-	if result.HTMLURL != nil {
-		pr.URL = *result.HTMLURL
+	if source.HTMLURL != nil {
+		pr.URL = *source.HTMLURL
 	}
-	if result.UpdatedAt != nil {
-		pr.UpdatedAt = result.UpdatedAt
+	if source.UpdatedAt != nil {
+		pr.UpdatedAt = source.UpdatedAt
 	}
-	return nil
+}
+
+func (p *GitHubProvider) toPullRequest(owner string, repo string, pr *github.PullRequest) *GitPullRequest {
+	answer := &GitPullRequest{
+		URL:    asText(pr.URL),
+		Owner:  owner,
+		Repo:   repo,
+		Number: pr.Number,
+	}
+	p.updatePullRequest(answer, pr)
+	return answer
 }
 
 func (p *GitHubProvider) GetPullRequest(owner string, repo *GitRepository, number int) (*GitPullRequest, error) {
@@ -561,6 +577,32 @@ func (p *GitHubProvider) GetPullRequest(owner string, repo *GitRepository, numbe
 	}
 	err := p.UpdatePullRequestStatus(pr)
 	return pr, err
+}
+
+// ListOpenPullRequests lists the open pull requests
+func (p *GitHubProvider) ListOpenPullRequests(owner string, repo string) ([]*GitPullRequest, error) {
+	opt := &github.PullRequestListOptions{
+		State: "open",
+		ListOptions: github.ListOptions{
+			Page:    0,
+			PerPage: pageSize,
+		},
+	}
+	answer := []*GitPullRequest{}
+	for {
+		prs, _, err := p.Client.PullRequests.List(p.Context, owner, repo, opt)
+		if err != nil {
+			return answer, err
+		}
+		for _, pr := range prs {
+			answer = append(answer, p.toPullRequest(owner, repo, pr))
+		}
+		if len(prs) < pageSize || len(prs) == 0 {
+			break
+		}
+		opt.Page++
+	}
+	return answer, nil
 }
 
 func (p *GitHubProvider) GetPullRequestCommits(owner string, repository *GitRepository, number int) ([]*GitCommit, error) {

@@ -58,6 +58,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionRepositoryReferenceList":  schema_pkg_apis_jenkinsio_v1_ExtensionRepositoryReferenceList(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionSpec":                     schema_pkg_apis_jenkinsio_v1_ExtensionSpec(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Fact":                              schema_pkg_apis_jenkinsio_v1_Fact(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactList":                          schema_pkg_apis_jenkinsio_v1_FactList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactSpec":                          schema_pkg_apis_jenkinsio_v1_FactSpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactStatus":                        schema_pkg_apis_jenkinsio_v1_FactStatus(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitService":                        schema_pkg_apis_jenkinsio_v1_GitService(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitServiceList":                    schema_pkg_apis_jenkinsio_v1_GitServiceList(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitServiceSpec":                    schema_pkg_apis_jenkinsio_v1_GitServiceSpec(ref),
@@ -1923,18 +1926,105 @@ func schema_pkg_apis_jenkinsio_v1_Fact(ref common.ReferenceCallback) common.Open
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "Fact represents observed facts. Apps will generate Facts about the system. A naming schema is required since each Fact has a name that's unique for the whole system. Apps should prefix their generated Facts with the name of the App, like <app-name>-<fact>. This makes that different Apps can't possibly have conflicting Fact names.\n\nFor an app generating facts on a pipeline, which will be have several different executions, we recommend <app>-<fact>-<pipeline>.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The Fact labels will be used to query the API for interesting Facts. The Apps responsible for creating Facts need to add the relevant labels. For example, creating Facts on a pipeline would create Facts with the following labels {\n  subjectkind: PipelineActivity\n  pipelineName: my-org-my-app-master-23\n  org: my-org\n  repo: my-app\n  branch: master\n  buildNumber: 23\n}",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactSpec", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_FactList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "FactList is a list of Fact resources",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Fact"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"metadata", "items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Fact", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_FactSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "FactSpec is the specification of a Fact",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
-						},
-					},
-					"id": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
 						},
 					},
 					"factType": {
@@ -1985,12 +2075,37 @@ func schema_pkg_apis_jenkinsio_v1_Fact(ref common.ReferenceCallback) common.Open
 							},
 						},
 					},
+					"subject": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference"),
+						},
+					},
 				},
-				Required: []string{"name", "id", "factType", "measurements", "statements"},
+				Required: []string{"name", "factType", "statements", "subject"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Measurement", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Original", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Statement"},
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Measurement", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Original", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Statement"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_FactStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "FactStatus is the status for an Fact resource",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
 	}
 }
 
@@ -2264,7 +2379,8 @@ func schema_pkg_apis_jenkinsio_v1_Measurement(ref common.ReferenceCallback) comm
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "Measurement is a percentage or a count, something measured that the system will capture within a fact",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -2309,7 +2425,8 @@ func schema_pkg_apis_jenkinsio_v1_Original(ref common.ReferenceCallback) common.
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "Original contains the report",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"mimetype": {
 						SchemaProps: spec.SchemaProps{
@@ -3612,7 +3729,8 @@ func schema_pkg_apis_jenkinsio_v1_Statement(ref common.ReferenceCallback) common
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "Statement represents a decision that was made, for example that a promotion was approved or denied",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{

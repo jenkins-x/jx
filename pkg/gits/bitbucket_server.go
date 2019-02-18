@@ -64,6 +64,15 @@ type reposPage struct {
 	Values        []bitbucket.Repository `json:"values"`
 }
 
+type pullRequestPage struct {
+	Size          int                     `json:"size"`
+	Limit         int                     `json:"limit"`
+	Start         int                     `json:"start"`
+	NextPageStart int                     `json:"nextPageStart"`
+	IsLastPage    bool                    `json:"isLastPage"`
+	Values        []bitbucket.PullRequest `json:"values"`
+}
+
 type pullrequestEndpointBranch struct {
 	Name string `json:"name,omitempty"`
 }
@@ -501,14 +510,18 @@ func (b *BitbucketServerProvider) GetPullRequest(owner string, repo *GitReposito
 		return nil, err
 	}
 
+	answer := b.toPullRequest(bPR)
+	return answer, nil
+}
+
+func (b *BitbucketServerProvider) toPullRequest(bPR bitbucket.PullRequest) *GitPullRequest {
 	author := &GitUser{
 		URL:   bPR.Author.User.Links.Self[0].Href,
 		Login: bPR.Author.User.Slug,
 		Name:  bPR.Author.User.Name,
 		Email: bPR.Author.User.Email,
 	}
-
-	return &GitPullRequest{
+	answer := &GitPullRequest{
 		URL:           bPR.Links.Self[0].Href,
 		Owner:         bPR.Author.User.Name,
 		Repo:          bPR.ToRef.Repository.Name,
@@ -516,7 +529,46 @@ func (b *BitbucketServerProvider) GetPullRequest(owner string, repo *GitReposito
 		State:         &bPR.State,
 		Author:        author,
 		LastCommitSha: bPR.FromRef.LatestCommit,
-	}, nil
+	}
+	return answer
+}
+
+// ListOpenPullRequests lists the open pull requests
+func (b *BitbucketServerProvider) ListOpenPullRequests(owner string, repo string) ([]*GitPullRequest, error) {
+	answer := []*GitPullRequest{}
+	var pullRequests pullRequestPage
+
+	paginationOptions := make(map[string]interface{})
+
+	paginationOptions["start"] = 0
+	paginationOptions["limit"] = 25
+
+	// TODO how to pass in the owner and repo and status? these are total guesses
+	paginationOptions["owner"] = owner
+	paginationOptions["repo"] = repo
+	paginationOptions["state"] = "open"
+
+	for {
+		apiResponse, err := b.Client.DefaultApi.GetPullRequests(paginationOptions)
+		if err != nil {
+			return nil, err
+		}
+
+		err = mapstructure.Decode(apiResponse.Values, &pullRequests)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, pr := range pullRequests.Values {
+			answer = append(answer, b.toPullRequest(pr))
+		}
+
+		if pullRequests.IsLastPage {
+			break
+		}
+		paginationOptions["start"] = pullRequests.NextPageStart
+	}
+	return answer, nil
 }
 
 func convertBitBucketCommitToGitCommit(bCommit *bitbucket.Commit, repo *GitRepository) *GitCommit {

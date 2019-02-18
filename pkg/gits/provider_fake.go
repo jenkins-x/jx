@@ -276,6 +276,10 @@ func (f *FakeProvider) GetPullRequest(owner string, repo *GitRepository, number 
 	return nil, fmt.Errorf("repository with name '%s' not found", repoName)
 }
 
+func (f *FakeProvider) ListOpenPullRequests(owner string, repo string) ([]*GitPullRequest, error) {
+	return nil, nil
+}
+
 func (f *FakeProvider) GetPullRequestCommits(owner string, repo *GitRepository, number int) ([]*GitCommit, error) {
 	repos, ok := f.Repositories[owner]
 	if !ok {

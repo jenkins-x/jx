@@ -149,6 +149,11 @@ func (p *GerritProvider) GetPullRequest(owner string, repo *GitRepository, numbe
 	return nil, nil
 }
 
+// ListOpenPullRequests lists the open pull requests
+func (p *GerritProvider) ListOpenPullRequests(owner string, repo string) ([]*GitPullRequest, error) {
+	return nil, nil
+}
+
 func (p *GerritProvider) GetPullRequestCommits(owner string, repo *GitRepository, number int) ([]*GitCommit, error) {
 	return nil, nil
 }

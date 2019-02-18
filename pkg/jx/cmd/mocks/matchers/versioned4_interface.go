@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	versioned4 "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
-	"github.com/petergtz/pegomock"
 	"reflect"
+	"github.com/petergtz/pegomock"
+	versioned4 "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
 )
 
 func AnyVersioned4Interface() versioned4.Interface {
