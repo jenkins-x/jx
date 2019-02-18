@@ -177,17 +177,20 @@ func (o *JSONSchemaOptions) GenerateValues(schemaBytes []byte, existingValues ma
 	t := Type{}
 	err := json.Unmarshal(schemaBytes, &t)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unmarshaling schema %s", schemaBytes)
 	}
 	output := orderedmap.New()
 	err = o.recurse("", make([]string, 0), make([]string, 0), &t, output, make([]survey.Validator, 0), existingValues)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	// move the output up a level
 	if root, ok := output.Get(""); ok {
 		bytes, err := json.Marshal(root)
-		return bytes, err
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		return bytes, nil
 	}
 	return make([]byte, 0), fmt.Errorf("unable to find root element in %v", output)
 

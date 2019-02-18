@@ -32,13 +32,13 @@ func (o *HelmOpsOptions) AddApp(app string, chart string, version string, values
 		Ns:          o.Namespace,
 		HelmUpdate:  helmUpdate,
 		SetValues:   parsedSetValues,
-		ValueFiles:  o.valuesFiles,
+		ValueFiles:  o.valuesFiles.Items,
 		Repository:  repository,
 		Username:    username,
 		Password:    password,
 	}, o.Helmer, o.KubeClient, o.InstallTimeout)
 	if err != nil {
-		return fmt.Errorf("failed to install app %s: %v", app, err)
+		return errors.Wrapf(err, "failed to install app %s", app)
 	}
 	// Attach the current values.yaml
 	appCRDName := fmt.Sprintf("%s-%s", app, app)
@@ -62,7 +62,7 @@ func (o *HelmOpsOptions) DeleteApp(app string, releaseName string, purge bool) e
 //UpgradeApp upgrades the app with releaseName (or all apps if the app name is empty) to the specified version (
 // or the latest version if the version is empty) using the repository with username and password
 func (o *HelmOpsOptions) UpgradeApp(app string, version string, repository string, username string, password string,
-	alias string, helmUpdate bool) error {
+	releaseName string, alias string, helmUpdate bool) error {
 
 	// TODO implement this!
 	/*var branchNameText string

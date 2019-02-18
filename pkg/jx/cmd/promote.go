@@ -447,13 +447,14 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 	}
 	app := o.Application
 
-	branchNameText := "promote-" + app + "-" + versionName
-
-	title := app + " to " + versionName
-	message := fmt.Sprintf("Promote %s to version %s", app, versionName)
+	details := environments.PullRequestDetails{
+		BranchName: "promote-" + app + "-" + versionName,
+		Title:      app + " to " + versionName,
+		Message:    fmt.Sprintf("Promote %s to version %s", app, versionName),
+	}
 
 	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
-		templates map[string]string, dir string) error {
+		templates map[string]string, dir string, details *environments.PullRequestDetails) error {
 		var err error
 		if version == "" {
 			version, err = o.findLatestVersion(app)
@@ -479,8 +480,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 		ModifyChartFn: modifyChartFn,
 		GitProvider:   gitProvider,
 	}
-	info, err := options.Create(env, &branchNameText, &title, &message, environmentsDir,
-		releaseInfo.PullRequestInfo)
+	info, err := options.Create(env, environmentsDir, &details, releaseInfo.PullRequestInfo)
 	releaseInfo.PullRequestInfo = info
 	return err
 }

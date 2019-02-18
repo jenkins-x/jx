@@ -1,11 +1,16 @@
 package apps
 
 import (
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
@@ -44,27 +49,64 @@ type InstallOptions struct {
 	TeamName        string
 	VaultClient     *vault.Client
 
-	valuesFiles []string // internal variable used to track, most be passed in
+	valuesFiles *environments.ValuesFiles // internal variable used to track, most be passed in
 }
 
-// AddApp adds the app at a particular version (
+// DirectlyAddAppToGitOps adds the app at a particular version (
 // or latest if not specified) from the repository with username and password. A releaseName can be specified.
 // Values can be passed with in files or as a slice of name=value pairs. An alias can be specified.
 // GitOps or HelmOps will be automatically chosen based on the o.GitOps flag
 func (o *InstallOptions) AddApp(app string, version string, repository string, username string, password string,
 	releaseName string, valuesFiles []string, setValues []string, alias string, helmUpdate bool) error {
-	inspectChartFunc := o.createInspectChartFn(version, app, repository, username, password, releaseName, setValues,
-		alias, helmUpdate)
-	o.valuesFiles = valuesFiles
-	err := helm.InspectChart(app, version, repository, username, password, o.Helmer, inspectChartFunc)
-	if err != nil {
-		return err
+
+	o.valuesFiles = &environments.ValuesFiles{
+		Items: valuesFiles,
 	}
-	return nil
+
+	// The chart inspector allows us to operate on the unpacked chart.
+	// We need to ask questions then as we have access to the schema, and can add secrets.
+	interrogateChartFn := o.createInterrogateChartFn(version, app, repository, username, password, alias, true)
+
+	// Called whilst the chart is unpacked and modifiable
+	installAppFunc := func(dir string) error {
+		//Ask the questions, this is an install, so no existing values
+		chartDetails, err := interrogateChartFn(dir, make(map[string]interface{}))
+		defer chartDetails.Cleanup()
+		if err != nil {
+			return err
+		}
+		if o.GitOps {
+			opts := GitOpsOptions{
+				InstallOptions: o,
+			}
+			err := opts.AddApp(app, dir, chartDetails.Version, repository, alias)
+			if err != nil {
+				return errors.Wrapf(err, "adding app %s version %s with alias %s using gitops", app, version, alias)
+			}
+		} else {
+			opts := HelmOpsOptions{
+				InstallOptions: o,
+			}
+			err = opts.AddApp(app, dir, chartDetails.Version, chartDetails.Values, repository, username, password,
+				releaseName,
+				setValues,
+				helmUpdate)
+			if err != nil {
+				return errors.Wrapf(err, "adding app %s version %s with alias %s using helm", app, version, alias)
+			}
+		}
+		return nil
+	}
+
+	// Do the actual work
+	return helm.InspectChart(app, version, repository, username, password, o.Helmer, installAppFunc)
 }
 
 //DeleteApp deletes the app. An alias and releaseName can be specified. GitOps or HelmOps will be automatically chosen based on the o.GitOps flag
 func (o *InstallOptions) DeleteApp(app string, alias string, releaseName string, purge bool) error {
+	o.valuesFiles = &environments.ValuesFiles{
+		Items: make([]string, 0),
+	}
 	if o.GitOps {
 		opts := GitOpsOptions{
 			InstallOptions: o,
@@ -89,95 +131,146 @@ func (o *InstallOptions) DeleteApp(app string, alias string, releaseName string,
 // or the latest if not specified) from the repository with username and password. An alias can be specified.
 // GitOps or HelmOps will be automatically chosen based on the o.GitOps flag
 func (o *InstallOptions) UpgradeApp(app string, version string, repository string, username string, password string,
-	alias string, update bool) error {
+	releaseName string, alias string, update bool, askExisting bool) error {
+	o.valuesFiles = &environments.ValuesFiles{
+		Items: make([]string, 0),
+	}
+
+	interrogateChartFunc := o.createInterrogateChartFn(version, app, repository, username, password, alias, askExisting)
+
+	// The chart inspector allows us to operate on the unpacked chart.
+	// We need to ask questions then as we have access to the schema, and can add secrets.
+
 	if o.GitOps {
 		opts := GitOpsOptions{
 			InstallOptions: o,
 		}
-		err := opts.UpgradeApp(app, version, repository, username, password, alias)
+		// Asking questions is a bit more complex in this case as the existing values file is in the environment
+		// repo, so we need to ask questions once we have that repo available
+		err := opts.UpgradeApp(app, version, repository, username, password, alias, interrogateChartFunc)
 		if err != nil {
 			return err
 		}
 	} else {
-		opts := HelmOpsOptions{
-			InstallOptions: o,
+		upgradeAppFunc := func(dir string) error {
+			// Try to load existing answers from the apps CRD
+			appCrdName := fmt.Sprintf("%s-%s", releaseName, app)
+			appResource, err := o.JxClient.JenkinsV1().Apps(o.Namespace).Get(appCrdName, v1.GetOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "getting App CRD %s", appResource.Name)
+			}
+			var existingValues map[string]interface{}
+			if appResource.Annotations != nil {
+				if encodedValues, ok := appResource.Annotations[ValuesAnnotation]; ok {
+					existingValuesBytes, err := base64.StdEncoding.DecodeString(encodedValues)
+					if err != nil {
+						log.Warnf("Error decoding base64 encoded string from %s on %s\n%s\n", ValuesAnnotation,
+							appCrdName, encodedValues)
+					}
+					err = json.Unmarshal(existingValuesBytes, &existingValues)
+					if err != nil {
+						return errors.Wrapf(err, "unmarshaling %s", string(existingValuesBytes))
+					}
+				}
+			}
+
+			// Ask the questions
+			chartDetails, err := interrogateChartFunc(dir, existingValues)
+			defer chartDetails.Cleanup()
+			if err != nil {
+				return errors.Wrapf(err, "asking questions")
+			}
+
+			opts := HelmOpsOptions{
+				InstallOptions: o,
+			}
+			err = opts.UpgradeApp(app, version, repository, username, password, releaseName, alias, update)
+			if err != nil {
+				return err
+			}
+			return nil
 		}
-		err := opts.UpgradeApp(app, version, repository, username, password, alias, update)
+		// Do the actual work
+		err := helm.InspectChart(app, version, repository, username, password, o.Helmer, upgradeAppFunc)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+
 }
 
-func (o *InstallOptions) createInspectChartFn(version string, app string, repository string, username string,
-	password string, releaseName string, setValues []string, alias string, helmUpdate bool) func(dir string) error {
-	var schema []byte
-	var values []byte
-	inspectChartFunc := func(dir string) error {
+// ChartDetails are details about a chart returned by the chart interrogator
+type ChartDetails struct {
+	Values  []byte
+	Version string
+	Cleanup func()
+}
+
+func (o *InstallOptions) createInterrogateChartFn(version string, app string, repository string, username string,
+	password string, alias string, askExisting bool) func(chartDir string,
+	existing map[string]interface{}) (*ChartDetails, error) {
+
+	return func(chartDir string, existing map[string]interface{}) (*ChartDetails, error) {
+		var schema []byte
+		chartDetails := ChartDetails{
+			Cleanup: func() {},
+		}
 		if version == "" {
 			var err error
-			_, version, err = helm.LoadChartNameAndVersion(filepath.Join(dir, "Chart.yaml"))
+			_, version, err = helm.LoadChartNameAndVersion(filepath.Join(chartDir, "Chart.yaml"))
 			if err != nil {
-				return errors.Wrapf(err, "error loading chart from %s", dir)
+				return &chartDetails, errors.Wrapf(err, "error loading chart from %s", chartDir)
 			}
 			if o.Verbose {
 				log.Infof("No version specified so using latest version which is %s\n", util.ColorInfo(version))
 			}
 		}
-		schemaFile := filepath.Join(dir, "values.schema.json")
+
+		schemaFile := filepath.Join(chartDir, "values.schema.json")
 		if _, err := os.Stat(schemaFile); !os.IsNotExist(err) {
 			schema, err = ioutil.ReadFile(schemaFile)
 			if err != nil {
-				return errors.Wrapf(err, "error reading schema file %s", schemaFile)
+				return &chartDetails, errors.Wrapf(err, "error reading schema file %s", schemaFile)
 			}
 		}
+		var values []byte
 
 		if schema != nil {
-			if len(o.valuesFiles) > 0 {
+			if o.valuesFiles != nil && len(o.valuesFiles.Items) > 0 {
 				log.Warnf("values.yaml specified by --valuesFiles will be used despite presence of schema in app")
 			}
-			var secrets []*surveyutils.GeneratedSecret
+
 			var err error
-			values, secrets, err = GenerateQuestions(schema, o.BatchMode, o.In, o.Out, o.Err)
+			var secrets []*surveyutils.GeneratedSecret
+			values, secrets, err = GenerateQuestions(schema, o.BatchMode, askExisting, existing, o.In, o.Out, o.Err)
 			if err != nil {
-				return errors.Wrapf(err, "asking questions for schema %s", schemaFile)
+				return &chartDetails, errors.Wrapf(err, "asking questions for schema %s", schemaFile)
 			}
-			cleanup, err := o.handleValues(dir, app, values)
-			defer cleanup()
-			if err != nil {
-				return err
+			cleanupValues, err := o.handleValues(chartDir, app, values)
+			chartDetails.Cleanup = func() {
+				cleanupValues()
 			}
-			cleanup, err = o.handleSecrets(dir, app, secrets)
-			defer cleanup()
 			if err != nil {
-				return err
+				return &chartDetails, err
+			}
+			cleanupSecrets, err := o.handleSecrets(chartDir, app, secrets)
+			chartDetails.Cleanup = func() {
+				cleanupSecrets()
+				cleanupValues()
+			}
+			if err != nil {
+				return &chartDetails, err
+			}
+			chartDetails.Cleanup = func() {
+				cleanupSecrets()
+				cleanupValues()
 			}
 		}
-
-		if o.GitOps {
-			opts := GitOpsOptions{
-				InstallOptions: o,
-			}
-			err := opts.AddApp(app, dir, version, repository, alias)
-			if err != nil {
-				return err
-			}
-		} else {
-
-			opts := HelmOpsOptions{
-				InstallOptions: o,
-			}
-			err := opts.AddApp(app, dir, version, values, repository, username, password, releaseName, setValues,
-				helmUpdate)
-			if err != nil {
-				return err
-			}
-		}
-		return nil
-
+		chartDetails.Version = version
+		chartDetails.Values = values
+		return &chartDetails, nil
 	}
-	return inspectChartFunc
 }
 
 func (o *InstallOptions) handleValues(dir string, app string, values []byte) (func(), error) {
@@ -185,11 +278,7 @@ func (o *InstallOptions) handleValues(dir string, app string, values []byte) (fu
 	if err != nil {
 		return cleanup, err
 	}
-
-	if o.valuesFiles == nil {
-		o.valuesFiles = make([]string, 0)
-	}
-	o.valuesFiles = append(o.valuesFiles, valuesFile)
+	o.valuesFiles.Items = append(o.valuesFiles.Items, valuesFile)
 	return cleanup, nil
 }
 
@@ -217,9 +306,6 @@ func (o *InstallOptions) handleSecrets(dir string, app string, generatedSecrets 
 	if err != nil {
 		return func() {}, errors.Wrapf(err, "adding secrets to template for %s", app)
 	}
-	if o.valuesFiles == nil {
-		o.valuesFiles = make([]string, 0)
-	}
-	o.valuesFiles = append(o.valuesFiles, secretsFile)
+	o.valuesFiles.Items = append(o.valuesFiles.Items, secretsFile)
 	return f, nil
 }

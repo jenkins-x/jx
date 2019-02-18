@@ -36,12 +36,14 @@ type UpgradeAppsOptions struct {
 	GitOps bool
 	DevEnv *jenkinsv1.Environment
 
-	Repo     string
-	Alias    string
-	Username string
-	Password string
+	Repo        string
+	Alias       string
+	Username    string
+	Password    string
+	ReleaseName string
 
 	HelmUpdate bool
+	AskAll     bool
 
 	Version string
 	All     bool
@@ -91,7 +93,10 @@ func NewCmdUpgradeApps(commonOpts *CommonOptions) *cobra.Command {
 		"The Helm parameters to pass in while upgrading [--no-gitops]")
 	cmd.Flags().BoolVarP(&o.HelmUpdate, optionHelmUpdate, "", true,
 		"Should we run helm update first to ensure we use the latest version (available when NOT using GitOps for your dev environment)")
-
+	cmd.Flags().StringVarP(&o.ReleaseName, optionRelease, "r", "",
+		"The chart release name (by default the name of the app, available when NOT using GitOps for your dev environment)")
+	cmd.Flags().BoolVarP(&o.AskAll, "ask-all", "", false, "Ask all configuration questions. "+
+		"By default existing answers are reused automatically.")
 	return cmd
 }
 
@@ -189,6 +194,6 @@ func (o *UpgradeAppsOptions) Run() error {
 		version = o.Version
 	}
 
-	return opts.UpgradeApp(app, version, o.Repo, o.Username, o.Password, o.Alias, o.HelmUpdate)
+	return opts.UpgradeApp(app, version, o.Repo, o.Username, o.Password, o.ReleaseName, o.Alias, o.HelmUpdate, o.AskAll)
 
 }

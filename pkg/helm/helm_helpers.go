@@ -2,13 +2,14 @@ package helm
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/version"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/version"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/client-go/kubernetes"
@@ -418,7 +419,7 @@ func GetLatestVersion(chart string, repo string, username string, password strin
 
 // InspectChart fetches the specified chart in a repo using helmer, and then calls the closure on it, before cleaning up
 func InspectChart(chart string, version string, repo string, username string, password string,
-	helmer Helmer, closure func(dir string) error) error {
+	helmer Helmer, inspector func(dir string) error) error {
 	dir, err := ioutil.TempDir("", fmt.Sprintf("jx-helm-fetch-%s-", chart))
 	defer func() {
 		err1 := os.RemoveAll(dir)
@@ -430,7 +431,7 @@ func InspectChart(chart string, version string, repo string, username string, pa
 	if err != nil {
 		return err
 	}
-	return closure(filepath.Join(dir, chart))
+	return inspector(filepath.Join(dir, chart))
 }
 
 type InstallChartOptions struct {

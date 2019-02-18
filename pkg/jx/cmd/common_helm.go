@@ -3,13 +3,15 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/environments"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/environments"
 
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
@@ -21,8 +23,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/version"
 	version2 "github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
-	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/src-d/go-git.v4"
+	survey "gopkg.in/AlecAivazis/survey.v1"
+	git "gopkg.in/src-d/go-git.v4"
 	gitconfig "gopkg.in/src-d/go-git.v4/config"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -336,13 +338,31 @@ func (o *CommonOptions) installChartOrGitOps(isGitOps bool, gitOpsDir string, gi
 	if len(paths) > 1 {
 		chart = paths[1]
 	}
-	modifyFn := environments.CreateAddRequirementFn(chart, alias, version, repo, valueFiles, gitOpsEnvDir, o.Verbose)
 
-	extraValues := map[string]interface{}{}
-	valuesMap := helm.SetValuesToMap(setValues)
-	if len(valuesMap) > 0 {
-		extraValues[alias] = valuesMap
+	valuesFiles := &environments.ValuesFiles{
+		Items: valueFiles,
 	}
+	if len(setValues) > 0 {
+		extraValues := make(map[string]interface{})
+		extraValues[alias] = helm.SetValuesToMap(setValues)
+		fileName, err := ioutil.TempFile("", "values.yaml")
+		defer func() {
+			err := util.DeleteFile(fileName.Name())
+			if err != nil {
+				log.Errorf("deleting file %s: %v", fileName.Name(), err)
+			}
+		}()
+		if err != nil {
+			return errors.Wrapf(err, "creating temp file to write extra values to")
+		}
+		err = helm.SaveFile(fileName.Name(), extraValues)
+		if err != nil {
+			return errors.Wrapf(err, "writing extra values to %s\n%s\n", fileName.Name(), extraValues)
+		}
+		valuesFiles.Items = append(valuesFiles.Items, fileName.Name())
+	}
+
+	modifyFn := environments.CreateAddRequirementFn(chart, alias, version, repo, valuesFiles, gitOpsEnvDir, o.Verbose)
 
 	if len(setSecrets) > 0 {
 		secretsFile := filepath.Join(gitOpsEnvDir, helm.SecretsFileName)
@@ -358,7 +378,7 @@ func (o *CommonOptions) installChartOrGitOps(isGitOps bool, gitOpsDir string, gi
 	}
 
 	// if we are part of an initial installation we won't have done a git push yet so lets just write to the gitOpsEnvDir where the dev env chart is
-	return environments.ModifyChartFiles(gitOpsEnvDir, extraValues, modifyFn)
+	return environments.ModifyChartFiles(gitOpsEnvDir, nil, modifyFn)
 }
 
 // installChartAt installs the given chart

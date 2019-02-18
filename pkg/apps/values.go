@@ -175,8 +175,9 @@ func AddValuesToChart(dir string, app string, values []byte, verbose bool) (stri
 }
 
 //GenerateQuestions asks questions based on the schema
-func GenerateQuestions(schema []byte, batchMode bool, in terminal.FileReader, out terminal.FileWriter,
-	outErr io.Writer) ([]byte, []*surveyutils.GeneratedSecret, error) {
+func GenerateQuestions(schema []byte, batchMode bool, askExisting bool, existing map[string]interface{},
+	in terminal.FileReader,
+	out terminal.FileWriter, outErr io.Writer) ([]byte, []*surveyutils.GeneratedSecret, error) {
 	secrets := make([]*surveyutils.GeneratedSecret, 0)
 	schemaOptions := surveyutils.JSONSchemaOptions{
 		CreateSecret: func(name string, key string, value string) (*jenkinsv1.ResourceReference, error) {
@@ -198,13 +199,13 @@ func GenerateQuestions(schema []byte, batchMode bool, in terminal.FileReader, ou
 		IgnoreMissingValues: false,
 		NoAsk:               batchMode,
 		AutoAcceptDefaults:  batchMode,
-		AskExisting:         false,
+		AskExisting:         askExisting,
 	}
 	// For adding an app there are by defintion no existing values,
 	// and whether we auto-accept defaults is determined by batch mode
-	values, err := schemaOptions.GenerateValues(schema, make(map[string]interface{}))
+	values, err := schemaOptions.GenerateValues(schema, existing)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.WithStack(err)
 	}
 	return values, secrets, nil
 }

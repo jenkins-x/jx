@@ -21,9 +21,11 @@ type GitOpsOptions struct {
 
 // AddApp adds the app with version rooted in dir from the repository. An alias can be specified.
 func (o *GitOpsOptions) AddApp(app string, dir string, version string, repository string, alias string) error {
-	branchNameText := "add-app-" + app + "-" + version
-	title := fmt.Sprintf("Add %s %s", app, version)
-	message := fmt.Sprintf("Add app %s %s", app, version)
+	details := environments.PullRequestDetails{
+		BranchName: "add-app-" + app + "-" + version,
+		Title:      fmt.Sprintf("Add %s %s", app, version),
+		Message:    fmt.Sprintf("Add app %s %s", app, version),
+	}
 
 	options := environments.EnvironmentPullRequestOptions{
 		ConfigGitFn: o.ConfigureGitFn,
@@ -33,12 +35,12 @@ func (o *GitOpsOptions) AddApp(app string, dir string, version string, repositor
 		GitProvider: o.GitProvider,
 	}
 
-	pullRequestInfo, err := options.Create(o.DevEnv, &branchNameText, &title, &message, o.EnvironmentsDir, nil)
+	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil)
 
 	if err != nil {
 		return errors.Wrapf(err, "creating pr for %s", app)
 	}
-	log.Infof("Added app via Pull Request %s\n", pullRequestInfo.PullRequest.URL)
+	log.Infof("Added app via Pull Request %s\n", info.PullRequest.URL)
 	return nil
 }
 
@@ -46,79 +48,48 @@ func (o *GitOpsOptions) AddApp(app string, dir string, version string, repositor
 // or latest if empty) from a repository with username and password.
 // If one app is being upgraded an alias can be specified.
 func (o *GitOpsOptions) UpgradeApp(app string, version string, repository string, username string, password string,
-	alias string) error {
-	var branchNameText string
-	var title string
-	var message string
+	alias string, interrogateChartFunc func(dir string, existing map[string]interface{}) (*ChartDetails,
+		error)) error {
 	all := true
+	details := environments.PullRequestDetails{}
 
 	if app != "" {
 		all = false
 		if version == "" {
 			version = "latest"
 		}
-		branchNameText = fmt.Sprintf("upgrade-app-%s-%s", app, version)
+		details.BranchName = fmt.Sprintf("upgrade-app-%s-%s", app, version)
 	} else {
-		branchNameText = fmt.Sprintf("upgrade-all-apps")
-		title = fmt.Sprintf("Upgrade all apps")
-		message = fmt.Sprintf("Upgrade all apps:\n")
+		details.BranchName = fmt.Sprintf("upgrade-all-apps")
+		details.Title = fmt.Sprintf("Upgrade all apps")
+		details.Message = fmt.Sprintf("Upgrade all apps:\n")
 	}
 
-	upgraded := false
-	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
-		templates map[string]string, dir string) error {
-		for _, d := range requirements.Dependencies {
-			upgrade := false
-			// We need to ignore the platform
-			if d.Name == "jenkins-x-platform" {
-				upgrade = false
-			} else if all {
-				upgrade = true
-			} else {
-				if d.Name == app && d.Alias == alias {
-					upgrade = true
-
-				}
-			}
-			if upgrade {
-				upgraded = true
-				if all || version == "" {
-					var err error
-					version, err = helm.GetLatestVersion(d.Name, repository, username, password, o.Helmer)
-					if err != nil {
-						return err
-					}
-					if o.Verbose {
-						log.Infof("No version specified so using latest version which is %s\n", util.ColorInfo(version))
-					}
-				}
-				// Do the upgrade
-				oldVersion := d.Version
-				d.Version = version
-				if !all {
-					title = fmt.Sprintf("Upgrade %s to %s", app, version)
-					message = fmt.Sprintf("Upgrade %s from %s to %s", app, oldVersion, version)
-				} else {
-					message = fmt.Sprintf("%s\n* %s from %s to %s", message, d.Name, oldVersion, version)
-				}
-			}
+	var interrogateCleanup func()
+	defer func() {
+		if interrogateCleanup != nil {
+			interrogateCleanup()
+		}
+	}()
+	inspectChartFunc := func(chartDir string, values map[string]interface{}) error {
+		chartDetails, err := interrogateChartFunc(chartDir, values)
+		interrogateCleanup = chartDetails.Cleanup
+		if err != nil {
+			return errors.Wrapf(err, "asking questions for %s", chartDir)
 		}
 		return nil
 	}
 
 	options := environments.EnvironmentPullRequestOptions{
-		ConfigGitFn:   o.ConfigureGitFn,
-		Gitter:        o.Gitter,
-		ModifyChartFn: modifyChartFn,
-		GitProvider:   o.GitProvider,
+		ConfigGitFn: o.ConfigureGitFn,
+		Gitter:      o.Gitter,
+		ModifyChartFn: environments.CreateUpgradeRequirementsFn(all, app, alias, version, username, password,
+			o.Helmer, inspectChartFunc, o.Verbose, o.valuesFiles),
+		GitProvider: o.GitProvider,
 	}
-	_, err := options.Create(o.DevEnv, &branchNameText, &title, &message, o.EnvironmentsDir, nil)
+	_, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil)
 	if err != nil {
 		return err
-	}
-
-	if !upgraded {
-		log.Infof("No upgrades available\n")
 	}
 	return nil
 }
@@ -127,7 +98,7 @@ func (o *GitOpsOptions) UpgradeApp(app string, version string, repository string
 func (o *GitOpsOptions) DeleteApp(app string, alias string) error {
 
 	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
-		templates map[string]string, dir string) error {
+		templates map[string]string, dir string, details *environments.PullRequestDetails) error {
 		// See if the app already exists in requirements
 		found := false
 		for i, d := range requirements.Dependencies {
@@ -156,9 +127,11 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string) error {
 		}
 		return nil
 	}
-	branchNameText := "delete-app-" + app
-	title := fmt.Sprintf("Delete %s", app)
-	message := fmt.Sprintf("Delete app %s", app)
+	details := environments.PullRequestDetails{
+		BranchName: "delete-app-" + app,
+		Title:      fmt.Sprintf("Delete %s", app),
+		Message:    fmt.Sprintf("Delete app %s", app),
+	}
 
 	options := environments.EnvironmentPullRequestOptions{
 		ConfigGitFn:   o.ConfigureGitFn,
@@ -167,12 +140,10 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string) error {
 		GitProvider:   o.GitProvider,
 	}
 
-	pullRequestInfo, err := options.Create(o.DevEnv, &branchNameText, &title,
-		&message,
-		o.EnvironmentsDir, nil)
+	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil)
 	if err != nil {
 		return err
 	}
-	log.Infof("Delete app via Pull Request %s\n", pullRequestInfo.PullRequest.URL)
+	log.Infof("Delete app via Pull Request %s\n", info.PullRequest.URL)
 	return nil
 }

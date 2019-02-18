@@ -97,8 +97,6 @@ func TestAddAppForGitOps(t *testing.T) {
 }
 
 func TestAddAppWithSecrets(t *testing.T) {
-	// TODO enable this test again when is passing
-	t.SkipNow()
 
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
@@ -448,9 +446,6 @@ func TestStashValues(t *testing.T) {
 }
 
 func TestAddAppForGitOpsWithSecrets(t *testing.T) {
-	// TODO enable this test again when is passing
-	t.SkipNow()
-
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
 	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
@@ -661,7 +656,6 @@ func TestAddLatestApp(t *testing.T) {
 }
 
 func TestAddAppWithValuesFileForGitOps(t *testing.T) {
-	t.Parallel()
 	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()
