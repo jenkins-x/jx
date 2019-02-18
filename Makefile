@@ -35,7 +35,7 @@ VENDOR_DIR=vendor
 
 all: build
 
-check: fmt build test
+check: lint build test
 
 version:
 ifeq (,$(wildcard pkg/version/VERSION))
