@@ -745,6 +745,21 @@ func (b *BitbucketServerProvider) MergePullRequest(pr *GitPullRequest, message s
 func (b *BitbucketServerProvider) CreateWebHook(data *GitWebHookArguments) error {
 	projectKey, repo := parseBitBucketServerURL(data.Repo.URL)
 
+	if data.URL == "" {
+		return errors.New("missing property URL")
+	}
+
+	hooks, err := b.ListWebHooks(projectKey, repo)
+	if err != nil {
+		log.Errorf("Error querying webhooks on %s/%s: %s\n", projectKey, repo, err)
+	}
+	for _, hook := range hooks {
+		if data.URL == hook.URL {
+			log.Warnf("Already has a webhook registered for %s\n", data.URL)
+			return nil
+		}
+	}
+
 	var options = map[string]interface{}{
 		"url":    data.URL,
 		"name":   "Jenkins X Web Hook",
