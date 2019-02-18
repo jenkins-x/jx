@@ -427,6 +427,7 @@ func (b *BitbucketCloudProvider) UpdatePullRequestStatus(pr *GitPullRequest) err
 	return nil
 }
 
+// GetPullRequest returns the PR
 func (b *BitbucketCloudProvider) GetPullRequest(owner string, repoInfo *GitRepository, number int) (*GitPullRequest, error) {
 	repo := repoInfo.Name
 	pr, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdGet(
@@ -715,11 +716,13 @@ func (b *BitbucketCloudProvider) CreateWebHook(data *GitWebHookArguments) error 
 	return nil
 }
 
+// ListWebHooks lists the webhooks
 func (b *BitbucketCloudProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
 	webHooks := []*GitWebHookArguments{}
 	return webHooks, fmt.Errorf("not implemented!")
 }
 
+// UpdateWebHook updates the webhook
 func (b *BitbucketCloudProvider) UpdateWebHook(data *GitWebHookArguments) error {
 	return fmt.Errorf("not implemented!")
 }
@@ -821,6 +824,7 @@ func (b *BitbucketCloudProvider) GetIssue(org string, name string, number int) (
 	return BitbucketIssueToGitIssue(issue), nil
 }
 
+// IssueURL returns the issue URL
 func (b *BitbucketCloudProvider) IssueURL(org string, name string, number int, isPull bool) string {
 	serverPrefix := b.Server.URL
 	if strings.Index(serverPrefix, "://") < 0 {
@@ -943,14 +947,17 @@ func (b *BitbucketCloudProvider) BranchArchiveURL(org string, name string, branc
 	return util.UrlJoin(b.ServerURL(), org, name, "get", branch+".zip")
 }
 
+// CurrentUsername the current user name
 func (b *BitbucketCloudProvider) CurrentUsername() string {
 	return b.Username
 }
 
+// UserAuth returns the user auth
 func (b *BitbucketCloudProvider) UserAuth() auth.UserAuth {
 	return b.User
 }
 
+// UserInfo returns the user info
 func (b *BitbucketCloudProvider) UserInfo(username string) *GitUser {
 	user, _, err := b.Client.UsersApi.UsersUsernameGet(b.Context, username)
 	if err != nil {
