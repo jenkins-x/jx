@@ -447,7 +447,6 @@ func (o *AddAppOptions) addAppMetadata(name string, metadata *chart.Metadata) er
 		if app.Annotations == nil {
 			app.Annotations = make(map[string]string)
 		}
-		app.Annotations[helm.AnnotationAppVersion] = metadata.GetVersion()
 		app.Annotations[helm.AnnotationAppDescription] = metadata.GetDescription()
 		repoURL, err := url.Parse(o.Repo)
 		if err != nil {
