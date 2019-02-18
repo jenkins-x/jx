@@ -13,6 +13,8 @@ approvers:
 - wbrefvem
 - daveconde
 - hferentschik
+- abayer
+- dwnusbaum
 reviewers:
 - rawlingsj
 - jstrachan
@@ -29,3 +31,5 @@ reviewers:
 - carlossg
 - daveconde
 - hferentschik
+- abayer
+- dwnusbaum
