@@ -210,6 +210,8 @@ github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMo
 github.com/fsouza/fake-gcs-server v0.0.0-20180612165233-e85be23bdaa8/go.mod h1:1/HufuJ+eaDf4KTnYdS6HJMGvMRU8d4cYTuu/1QaBbI=
 github.com/gfleury/go-bitbucket-v1 v0.0.0-20181102191809-4910839b609e h1:EN5E7DmE2qREZ+v41UUTH2cCtgrgbiLllaH1P0MUz50=
 github.com/gfleury/go-bitbucket-v1 v0.0.0-20181102191809-4910839b609e/go.mod h1:Se0U4YUmRkRAOh8kD7KXz+3VCUBmvTFcdWP2QYYRjjc=
+github.com/gfleury/go-bitbucket-v1 v0.0.0-20190216152406-3a732135aa4d h1:aE3u10gkuR/X7ibh9PkbHFdtkBWGwpekBUT/O7lgbOs=
+github.com/gfleury/go-bitbucket-v1 v0.0.0-20190216152406-3a732135aa4d/go.mod h1:Se0U4YUmRkRAOh8kD7KXz+3VCUBmvTFcdWP2QYYRjjc=
 github.com/ghodss/yaml v1.0.0 h1:wQHKEahhL6wmXdzwWG11gIVCkOv05bNOh+Rxn0yngAk=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/gliderlabs/ssh v0.1.1 h1:j3L6gSLQalDETeEg/Jg0mGY0/y/N6zI2xX1978P0Uqw=

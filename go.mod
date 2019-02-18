@@ -50,7 +50,7 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.0.0
 	github.com/flynn/go-shlex v0.0.0-20150515145356-3f9db97f8568 // indirect
-	github.com/gfleury/go-bitbucket-v1 v0.0.0-20181102191809-4910839b609e
+	github.com/gfleury/go-bitbucket-v1 v0.0.0-20190216152406-3a732135aa4d
 	github.com/ghodss/yaml v1.0.0
 	github.com/gliderlabs/ssh v0.1.1 // indirect
 	github.com/go-ldap/ldap v3.0.1+incompatible // indirect
