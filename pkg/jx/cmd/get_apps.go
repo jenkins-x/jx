@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"io"
 	"k8s.io/client-go/kubernetes"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -41,11 +42,11 @@ type AppsEnvironmentInfo struct {
 }
 
 var (
-	get_apps_long = templates.LongDesc(`
+	getAppsLong = templates.LongDesc(`
 		Display installed Apps
 `)
 
-	get_apps_example = templates.Examples(`
+	getAppsExample = templates.Examples(`
 		# List all apps
 		jx get apps
 
@@ -69,8 +70,8 @@ func NewCmdGetApps(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 		Use:     "Apps",
 		Short:   "Display one or more installed Apps",
 		Aliases: []string{"app", "apps"},
-		Long:    get_apps_long,
-		Example: get_apps_example,
+		Long:    getAppsLong,
+		Example: getAppsExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -78,8 +79,6 @@ func NewCmdGetApps(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.ReleaseName, optionRelease, "r", "",
-		"The chart release name (available when NOT using GitOps for your dev environment)")
 	return cmd
 }
 
@@ -109,7 +108,7 @@ func (o *GetAppsOptions) Run() error {
 func (o *GetAppsOptions) generateTable(apps *v1.AppList, kubeClient kubernetes.Interface) table.Table {
 	table := o.generateTableHeaders(apps)
 	for _, app := range apps.Items {
-		row := []string{app.Labels[helm.LabelReleaseName], app.Labels[helm.LabelReleaseChartVersion], app.Annotations[helm.AnnotationAppDescription], app.Annotations[helm.AnnotationAppRepository]}
+		row := []string{app.Annotations[helm.AnnotationChartName], app.Labels[helm.LabelReleaseChartVersion], app.Annotations[helm.AnnotationAppDescription], app.Annotations[helm.AnnotationAppRepository]}
 		table.AddRow(row...)
 	}
 	return table
@@ -125,8 +124,8 @@ func (o *GetAppsOptions) getAppData(kubeClient kubernetes.Interface) (apps *v1.A
 		return nil, errors.Wrap(err, "getting current dev namespace")
 	}
 	listOptions := metav1.ListOptions{}
-	if o.ReleaseName != "" {
-		selector := fmt.Sprintf("jenkins.io/chart-release=%s", o.ReleaseName)
+	if len(o.Args) > 0 {
+		selector := fmt.Sprintf(helm.LabelAppName+" in (%s)", strings.Join(o.Args[:], ", "))
 		listOptions.LabelSelector = selector
 	}
 	apps, err = client.JenkinsV1().Apps(ns).List(listOptions)

@@ -453,6 +453,7 @@ func (o *AddAppOptions) addAppMetadata(name string, metadata *chart.Metadata) er
 			return errors.Wrap(err, "Invalid repository url")
 		}
 		app.Annotations[helm.AnnotationAppRepository] = util.StripCredentialsFromURL(repoURL)
+		app.Labels[helm.LabelAppName] = metadata.Name
 		_, err = o.jxClient.JenkinsV1().Apps(o.Namespace).Update(app)
 	}
 	return nil

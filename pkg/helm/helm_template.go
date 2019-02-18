@@ -40,6 +40,8 @@ const (
 
 	// LabelReleaseChartVersion stores the version of a chart installation in a label
 	LabelReleaseChartVersion = "jenkins.io/version"
+	// LabelAppName stores the chart's app name
+	LabelAppName = "jenkins.io/app-name"
 
 	hookFailed    = "hook-failed"
 	hookSucceeded = "hook-succeeded"
