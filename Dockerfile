@@ -1,4 +1,6 @@
-FROM alpine/git
+FROM centos:7
+
+RUN yum install -y git
 
 ENTRYPOINT ["jx", "version"]
 
