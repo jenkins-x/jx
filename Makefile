@@ -32,8 +32,8 @@ PEGOMOCK_PACKAGE := github.com/petergtz/pegomock/
 CGO_ENABLED = 0
 
 all: build
-
-check: lint build test
+full: check
+check: lint vet build test
 
 version:
 ifeq (,$(wildcard pkg/version/VERSION))
@@ -154,8 +154,6 @@ inttestbin:
 
 debuginttest1: inttestbin
 	cd pkg/jx/cmd && dlv --listen=:2345 --headless=true --api-version=2 exec ../../../build/jx-inttest -- -test.run $(TEST)
-
-full: $(PKGS)
 
 install: $(GO_DEPENDENCIES) version
 	GOBIN=${GOPATH}/bin $(GO) install $(BUILDFLAGS) cmd/jx/jx.go
