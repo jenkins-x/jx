@@ -341,6 +341,7 @@ func (p *GiteaProvider) toPullRequest(owner string, repo string, pr *gitea.PullR
 	return answer
 }
 
+// ListOpenPullRequests lists the open pull requests
 func (p *GiteaProvider) ListOpenPullRequests(owner string, repo string) ([]*GitPullRequest, error) {
 	opt := gitea.ListPullRequestsOptions{}
 	answer := []*GitPullRequest{}

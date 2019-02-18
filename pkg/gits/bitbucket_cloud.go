@@ -427,10 +427,10 @@ func (b *BitbucketCloudProvider) UpdatePullRequestStatus(pr *GitPullRequest) err
 	return nil
 }
 
-func (p *BitbucketCloudProvider) GetPullRequest(owner string, repoInfo *GitRepository, number int) (*GitPullRequest, error) {
+func (b *BitbucketCloudProvider) GetPullRequest(owner string, repoInfo *GitRepository, number int) (*GitPullRequest, error) {
 	repo := repoInfo.Name
-	pr, _, err := p.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdGet(
-		p.Context,
+	pr, _, err := b.Client.PullrequestsApi.RepositoriesUsernameRepoSlugPullrequestsPullRequestIdGet(
+		b.Context,
 		owner,
 		repo,
 		int32(number),
@@ -440,10 +440,10 @@ func (p *BitbucketCloudProvider) GetPullRequest(owner string, repoInfo *GitRepos
 		return nil, err
 	}
 
-	return p.toPullRequest(pr, number), nil
+	return b.toPullRequest(pr, number), nil
 }
 
-func (p *BitbucketCloudProvider) toPullRequest(pr bitbucket.Pullrequest, number int) *GitPullRequest {
+func (b *BitbucketCloudProvider) toPullRequest(pr bitbucket.Pullrequest, number int) *GitPullRequest {
 	author := &GitUser{
 		Login:     pr.Author.Username,
 		Name:      pr.Author.DisplayName,
@@ -581,6 +581,7 @@ func (b *BitbucketCloudProvider) PullRequestLastCommitStatus(pr *GitPullRequest)
 }
 
 
+// ListOpenPullRequests lists the open pull requests
 func (b *BitbucketCloudProvider) ListOpenPullRequests(owner string, repo string) ([]*GitPullRequest, error) {
 	answer := []*GitPullRequest{}
 
@@ -714,12 +715,12 @@ func (b *BitbucketCloudProvider) CreateWebHook(data *GitWebHookArguments) error 
 	return nil
 }
 
-func (p *BitbucketCloudProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
+func (b *BitbucketCloudProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
 	webHooks := []*GitWebHookArguments{}
 	return webHooks, fmt.Errorf("not implemented!")
 }
 
-func (p *BitbucketCloudProvider) UpdateWebHook(data *GitWebHookArguments) error {
+func (b *BitbucketCloudProvider) UpdateWebHook(data *GitWebHookArguments) error {
 	return fmt.Errorf("not implemented!")
 }
 
@@ -820,8 +821,8 @@ func (b *BitbucketCloudProvider) GetIssue(org string, name string, number int) (
 	return BitbucketIssueToGitIssue(issue), nil
 }
 
-func (p *BitbucketCloudProvider) IssueURL(org string, name string, number int, isPull bool) string {
-	serverPrefix := p.Server.URL
+func (b *BitbucketCloudProvider) IssueURL(org string, name string, number int, isPull bool) string {
+	serverPrefix := b.Server.URL
 	if strings.Index(serverPrefix, "://") < 0 {
 		serverPrefix = "https://" + serverPrefix
 	}
@@ -942,16 +943,16 @@ func (b *BitbucketCloudProvider) BranchArchiveURL(org string, name string, branc
 	return util.UrlJoin(b.ServerURL(), org, name, "get", branch+".zip")
 }
 
-func (p *BitbucketCloudProvider) CurrentUsername() string {
-	return p.Username
+func (b *BitbucketCloudProvider) CurrentUsername() string {
+	return b.Username
 }
 
-func (p *BitbucketCloudProvider) UserAuth() auth.UserAuth {
-	return p.User
+func (b *BitbucketCloudProvider) UserAuth() auth.UserAuth {
+	return b.User
 }
 
-func (p *BitbucketCloudProvider) UserInfo(username string) *GitUser {
-	user, _, err := p.Client.UsersApi.UsersUsernameGet(p.Context, username)
+func (b *BitbucketCloudProvider) UserInfo(username string) *GitUser {
+	user, _, err := b.Client.UsersApi.UsersUsernameGet(b.Context, username)
 	if err != nil {
 		log.Error("Unable to fetch user info for " + username + " due to " + err.Error() + "\n")
 		return nil
@@ -970,7 +971,7 @@ func (b *BitbucketCloudProvider) UpdateRelease(owner string, repo string, tag st
 	return nil
 }
 
-func (p *BitbucketCloudProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
+func (b *BitbucketCloudProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
 	answer := []*GitRelease{}
 	log.Warn("Bitbucket Cloud doesn't support releases")
 	return answer, nil

@@ -533,6 +533,7 @@ func (b *BitbucketServerProvider) toPullRequest(bPR bitbucket.PullRequest) *GitP
 	return answer
 }
 
+// ListOpenPullRequests lists the open pull requests
 func (b *BitbucketServerProvider) ListOpenPullRequests(owner string, repo string) ([]*GitPullRequest, error) {
 	answer := []*GitPullRequest{}
 	var pullRequests pullRequestPage

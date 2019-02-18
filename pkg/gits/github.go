@@ -581,6 +581,7 @@ func (p *GitHubProvider) GetPullRequest(owner string, repo *GitRepository, numbe
 	return pr, err
 }
 
+// ListOpenPullRequests lists the open pull requests
 func (p *GitHubProvider) ListOpenPullRequests(owner string, repo string) ([]*GitPullRequest, error) {
 	opt := &github.PullRequestListOptions{
 		State: "open",
