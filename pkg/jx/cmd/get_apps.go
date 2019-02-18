@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/pkg/errors"
@@ -21,8 +22,8 @@ import (
 // GetAppsOptions containers the CLI options
 type GetAppsOptions struct {
 	CommonOptions
-
-	Results GetAppsResults
+	ReleaseName string
+	Results     GetAppsResults
 }
 
 // GetAppsResults contains the data result from invoking this command
@@ -77,6 +78,8 @@ func NewCmdGetApps(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 			CheckErr(err)
 		},
 	}
+	cmd.Flags().StringVarP(&options.ReleaseName, optionRelease, "r", "",
+		"The chart release name (available when NOT using GitOps for your dev environment)")
 	return cmd
 }
 
@@ -93,7 +96,7 @@ func (o *GetAppsOptions) Run() error {
 	}
 
 	if len(apps.Items) == 0 {
-		log.Infof("No Apps found")
+		log.Infof("No Apps found\n")
 		return nil
 	}
 
@@ -106,7 +109,7 @@ func (o *GetAppsOptions) Run() error {
 func (o *GetAppsOptions) generateTable(apps *v1.AppList, kubeClient kubernetes.Interface) table.Table {
 	table := o.generateTableHeaders(apps)
 	for _, app := range apps.Items {
-		row := []string{app.Name, app.Labels[helm.LabelReleaseChartVersion], app.Annotations[helm.AnnotationAppDescription], app.Annotations[helm.AnnotationAppRepository]}
+		row := []string{app.Labels[helm.LabelReleaseName], app.Labels[helm.LabelReleaseChartVersion], app.Annotations[helm.AnnotationAppDescription], app.Annotations[helm.AnnotationAppRepository]}
 		table.AddRow(row...)
 	}
 	return table
@@ -121,7 +124,12 @@ func (o *GetAppsOptions) getAppData(kubeClient kubernetes.Interface) (apps *v1.A
 	if err != nil {
 		return nil, errors.Wrap(err, "getting current dev namespace")
 	}
-	apps, err = client.JenkinsV1().Apps(ns).List(metav1.ListOptions{})
+	listOptions := metav1.ListOptions{}
+	if o.ReleaseName != "" {
+		selector := fmt.Sprintf("jenkins.io/chart-release=%s", o.ReleaseName)
+		listOptions.LabelSelector = selector
+	}
+	apps, err = client.JenkinsV1().Apps(ns).List(listOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "listing apps")
 	}
