@@ -803,7 +803,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 	gitInfo := o.gitInfo
 	if gitInfo != nil {
 		dir = strings.Replace(dir, "REPLACE_ME_APP_NAME", gitInfo.Name, -1)
-		dir = strings.Replace(dir, "REPLACE_ME_ORG_NAME", gitInfo.Organisation, -1)
+		dir = strings.Replace(dir, "REPLACE_ME_ORG", gitInfo.Organisation, -1)
 	} else {
 		log.Warnf("No GitInfo available!\n")
 	}

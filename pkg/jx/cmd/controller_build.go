@@ -157,6 +157,9 @@ func (o *ControllerBuildOptions) onPod(obj interface{}, kubeClient kubernetes.In
 			if buildName == "" {
 				buildName = labels[builds.LabelOldBuildName]
 			}
+			if buildName == "" {
+				buildName = labels[builds.LabelPipelineRunName]
+			}
 			if buildName != "" {
 				if o.Verbose {
 					log.Infof("Found build pod %s\n", pod.Name)
