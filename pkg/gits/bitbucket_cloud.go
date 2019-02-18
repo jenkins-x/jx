@@ -971,6 +971,7 @@ func (b *BitbucketCloudProvider) UpdateRelease(owner string, repo string, tag st
 	return nil
 }
 
+// ListReleases lists the releases
 func (b *BitbucketCloudProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
 	answer := []*GitRelease{}
 	log.Warn("Bitbucket Cloud doesn't support releases")

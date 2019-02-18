@@ -276,6 +276,7 @@ func (g *GitlabProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	return nil
 }
 
+// GetPullRequest gets a PR
 func (g *GitlabProvider) GetPullRequest(owner string, repo *GitRepository, number int) (*GitPullRequest, error) {
 	pr := &GitPullRequest{
 		Owner:  owner,
@@ -314,6 +315,7 @@ func (g *GitlabProvider) ListOpenPullRequests(owner string, repo string) ([]*Git
 	return answer, nil
 }
 
+// GetPullRequestCommits gets the PR commits
 func (g *GitlabProvider) GetPullRequestCommits(owner string, repository *GitRepository, number int) ([]*GitCommit, error) {
 	repo := repository.Name
 	pid, err := g.projectId(owner, g.Username, repo)
@@ -390,6 +392,7 @@ func (g *GitlabProvider) ListCommitStatus(org string, repo string, sha string) (
 	return statuses, nil
 }
 
+// UpdateCommitStatus updates the commit status
 func (g *GitlabProvider) UpdateCommitStatus(org string, repo string, sha string, status *GitRepoStatus) (*GitRepoStatus, error) {
 	return &GitRepoStatus{}, errors.New("TODO")
 }
@@ -432,6 +435,7 @@ func (g *GitlabProvider) CreateWebHook(data *GitWebHookArguments) error {
 	return err
 }
 
+// ListWebHooks lists the webhooks
 func (g *GitlabProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
 	webHooks := []*GitWebHookArguments{}
 	return webHooks, fmt.Errorf("not implemented!")
@@ -637,25 +641,30 @@ func (g *GitlabProvider) UpdateRelease(owner string, repo string, tag string, re
 	return nil
 }
 
+// IssueURL returns the URL of the issue
 func (g *GitlabProvider) IssueURL(org string, name string, number int, isPull bool) string {
 	return ""
 }
 
+// AddCollaborator adds a collaborator
 func (g *GitlabProvider) AddCollaborator(user string, organisation string, repo string) error {
 	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab. Please add user: %v as a collaborator to this project.\n", user)
 	return nil
 }
 
+// ListInvitations lists pending invites
 func (g *GitlabProvider) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
 	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab.\n")
 	return []*github.RepositoryInvitation{}, &github.Response{}, nil
 }
 
+// AcceptInvitation accepts an invitation
 func (g *GitlabProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab.\n")
 	return &github.Response{}, nil
 }
 
+// GetContent returns the content of a file
 func (g *GitlabProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
 	return nil, fmt.Errorf("Getting content not supported on gitlab")
 }
