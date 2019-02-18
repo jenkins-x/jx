@@ -21,8 +21,7 @@ var (
 	customWorkspace  = "custom"
 )
 
-// TODO: Write a builder for generating the expected objects. Because
-// as this is now, there are way too many lines here.
+// TODO: Try to write some helper functions to make Pipeline and Task expect building less bloody verbose.
 func TestParseJenkinsfileYaml(t *testing.T) {
 
 	tests := []struct {
