@@ -20,7 +20,7 @@ type GetQuickstartsOptions struct {
 	GetOptions
 	GitHubOrganisations []string
 	Filter              quickstarts.QuickstartFilter
-	ShortFormat			bool
+	ShortFormat         bool
 }
 
 var (
@@ -116,7 +116,6 @@ func (o *GetQuickstartsOptions) Run() error {
 		m[loc.Owner] = loc
 	}
 
-
 	model := quickstarts.NewQuickstartModel()
 
 	for gitURL, m := range gitMap {
@@ -143,7 +142,7 @@ func (o *GetQuickstartsOptions) Run() error {
 		if o.ShortFormat {
 			fmt.Fprintf(o.Out, "%s\n", qs.Name)
 		} else {
-			fmt.Fprintf(o.Out,"%s/%s/%s\n",qs.GitProvider.ServerURL(), qs.Owner, qs.Name)
+			fmt.Fprintf(o.Out, "%s/%s/%s\n", qs.GitProvider.ServerURL(), qs.Owner, qs.Name)
 		}
 	}
 	return nil
