@@ -58,6 +58,7 @@ type StepCreateTaskOptions struct {
 	BuildPackRef   string
 	PipelineKind   string
 	Context        string
+	CustomLabels   []string
 	NoApply        bool
 	Trigger        string
 	TargetPath     string
@@ -127,6 +128,7 @@ func NewCmdStepCreateTask(f Factory, in terminal.FileReader, out terminal.FileWr
 	cmd.Flags().StringVarP(&options.Revision, "revision", "", "", "The git revision to checkout, can be a branch name or git sha")
 	cmd.Flags().StringVarP(&options.PipelineKind, "kind", "k", "release", "The kind of pipeline to create such as: "+strings.Join(jenkinsfile.PipelineKinds, ", "))
 	cmd.Flags().StringVarP(&options.Context, "context", "c", "", "The pipeline context if there are multiple separate pipelines for a given branch")
+	cmd.Flags().StringArrayVarP(&options.CustomLabels, "labels", "l", []string{""}, "List of custome labels to be applied to resources that are created")
 	cmd.Flags().StringVarP(&options.Trigger, "trigger", "t", string(pipelineapi.PipelineTriggerTypeManual), "The kind of pipeline trigger")
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "build-pipeline", "The Kubernetes ServiceAccount to use to run the pipeline")
 	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
@@ -550,8 +552,21 @@ func (o *StepCreateTaskOptions) setBuildValues() error {
 		labels["repo"] = o.gitInfo.Name
 	}
 	labels["branch"] = o.Branch
-	o.labels = labels
 
+	return o.combineLabels(labels)
+}
+
+func (o *StepCreateTaskOptions) combineLabels(labels map[string]string) error {
+	// add any custom labels
+	for _, customLabel := range o.CustomLabels {
+		parts := strings.Split(customLabel, "=")
+		if len(parts) != 2 {
+			return errors.Errorf("expected 2 parts to label but got %v", len(parts))
+		}
+		log.Infof("a %s : %s \n", parts[0], parts[1])
+		labels[parts[0]] = parts[1]
+	}
+	o.labels = labels
 	return nil
 }
 
