@@ -338,7 +338,16 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 }
 
 func TestAddApp(t *testing.T) {
+	name := uuid.NewV4().String()
+	version := "0.0.1"
 	testOptions := CreateAppTestOptions(false, t)
+	helm_test.StubFetchChart(name, version, kube.DefaultChartMuseumURL, &chart.Chart{
+		Metadata: &chart.Metadata{
+			Name:        name,
+			Version:     version,
+			Description: "My test chart description",
+		},
+	}, testOptions.MockHelmer)
 	// Can't run in parallel
 	pegomock.RegisterMockTestingT(t)
 	defer func() {
@@ -346,8 +355,6 @@ func TestAddApp(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	name := uuid.NewV4().String()
-	version := "0.0.1"
 	o := &cmd.AddAppOptions{
 		AddOptions: cmd.AddOptions{
 			CommonOptions: *testOptions.CommonOptions,

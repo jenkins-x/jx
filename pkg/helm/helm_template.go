@@ -277,7 +277,7 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	helmHooks, err := h.addLabelsToFiles(chart, releaseName, versionText, metadata, repo)
+	helmHooks, err := h.addLabelsToFiles(chart, releaseName, versionText, metadata)
 	if err != nil {
 		return err
 	}
@@ -349,7 +349,7 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	helmHooks, err := h.addLabelsToFiles(chart, releaseName, versionText, metadata, repo)
+	helmHooks, err := h.addLabelsToFiles(chart, releaseName, versionText, metadata)
 	if err != nil {
 		return err
 	}
@@ -598,12 +598,12 @@ func (h *HelmTemplate) fetchChart(chart string, version string, dir string, repo
 	return answer, nil
 }
 
-func (h *HelmTemplate) addLabelsToFiles(chart string, releaseName string, version string, metadata *chart.Metadata, repo string) ([]*HelmHook, error) {
+func (h *HelmTemplate) addLabelsToFiles(chart string, releaseName string, version string, metadata *chart.Metadata) ([]*HelmHook, error) {
 	dir, helmHookDir, _, err := h.getDirectories(releaseName)
 	if err != nil {
 		return nil, err
 	}
-	return addLabelsToChartYaml(dir, helmHookDir, chart, releaseName, version, metadata, repo)
+	return addLabelsToChartYaml(dir, helmHookDir, chart, releaseName, version, metadata)
 }
 
 func splitObjectsInFiles(file string) ([]string, error) {
@@ -670,7 +670,7 @@ func writeObjectInFile(buf *bytes.Buffer, dir string, fileName string, count int
 	return absFile, nil
 }
 
-func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName string, version string, metadata *chart.Metadata, appRepository string) ([]*HelmHook, error) {
+func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName string, version string, metadata *chart.Metadata) ([]*HelmHook, error) {
 	helmHooks := []*HelmHook{}
 
 	err := filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
