@@ -142,6 +142,7 @@ func (options *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, repoN
 
 				// update
 				webHookArgs := &gits.GitWebHookArguments{
+					ID:    webHook.ID,
 					Owner: options.Org,
 					Repo: &gits.GitRepository{
 						Name: repoName,
