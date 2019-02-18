@@ -486,7 +486,7 @@ func EnableAPIs(projectID string, apis ...string) error {
 	for _, toEnable := range apis {
 		fullName := fmt.Sprintf("%s.googleapis.com", toEnable)
 		if !util.Contains(enabledApis, fullName) {
-			toEnableArray = append(toEnableArray, toEnable)
+			toEnableArray = append(toEnableArray, fullName)
 		}
 	}
 
@@ -494,6 +494,7 @@ func EnableAPIs(projectID string, apis ...string) error {
 		log.Infof("No apis to enable\n")
 		return nil
 	}
+
 	args := []string{"services", "enable"}
 	args = append(args, toEnableArray...)
 
@@ -502,7 +503,7 @@ func EnableAPIs(projectID string, apis ...string) error {
 		args = append(args, projectID)
 	}
 
-	log.Infof("Lets ensure we have container and compute enabled on your project via: %s\n", util.ColorInfo("gcloud "+strings.Join(args, " ")))
+	log.Infof("Lets ensure we have %s enabled on your project via: %s\n", toEnableArray, util.ColorInfo("gcloud "+strings.Join(args, " ")))
 
 	cmd := util.Command{
 		Name: "gcloud",
