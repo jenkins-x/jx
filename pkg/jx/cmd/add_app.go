@@ -435,17 +435,26 @@ func (o *AddAppOptions) installApp(name string, chart string, version string, me
 }
 
 func (o *AddAppOptions) addAppMetadata(name string, metadata *chart.Metadata) error {
-	app, err := o.jxClient.JenkinsV1().Apps(o.Namespace).Get(name, v1.GetOptions{})
-	if app.Annotations == nil {
-		app.Annotations = make(map[string]string)
+	selector := fmt.Sprintf("chart=%s-%s", name, metadata.Version)
+	appList, _ := o.jxClient.JenkinsV1().Apps(o.Namespace).List(v1.ListOptions{
+		LabelSelector: selector,
+	})
+	if len(appList.Items) > 1 {
+		return fmt.Errorf("more than one app (%v) was found for %s", appList.Items, selector)
+	} else if len(appList.Items) == 1 {
+		appName := appList.Items[0].Name
+		app, err := o.jxClient.JenkinsV1().Apps(o.Namespace).Get(appName, v1.GetOptions{})
+		if app.Annotations == nil {
+			app.Annotations = make(map[string]string)
+		}
+		app.Annotations[helm.AnnotationAppVersion] = metadata.GetAppVersion()
+		app.Annotations[helm.AnnotationAppDescription] = metadata.GetDescription()
+		repoURL, err := url.Parse(o.Repo)
+		if err != nil {
+			return errors.Wrap(err, "Invalid repository url")
+		}
+		app.Annotations[helm.AnnotationAppRepository] = util.StripCredentialsFromURL(repoURL)
+		_, err = o.jxClient.JenkinsV1().Apps(o.Namespace).Update(app)
 	}
-	app.Annotations[helm.AnnotationAppVersion] = metadata.GetAppVersion()
-	app.Annotations[helm.AnnotationAppDescription] = metadata.GetDescription()
-	repoURL, err := url.Parse(o.Repo)
-	if err != nil {
-		return errors.Wrap(err, "Invalid repository url")
-	}
-	app.Annotations[helm.AnnotationAppRepository] = util.StripCredentialsFromURL(repoURL)
-	_, err = o.jxClient.JenkinsV1().Apps(o.Namespace).Update(app)
 	return nil
 }
