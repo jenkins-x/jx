@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/helm/pkg/proto/hapi/chart"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -215,17 +218,17 @@ func (o *AddAppOptions) Run() error {
 			version = o.Version
 		}
 		var schema []byte
+		var metadata *chart.Metadata
 		err := helm.InspectChart(app, version, o.Repo, o.Username, o.Password, o.Helm(), func(dir string) error {
-			if version == "" {
-				var err error
-				_, version, err = helm.LoadChartNameAndVersion(filepath.Join(dir, "Chart.yaml"))
-				if err != nil {
-					return errors.Wrapf(err, "error loading chart from %s", dir)
-				}
-				if o.Verbose {
-					log.Infof("No version specified so using latest version which is %s\n", util.ColorInfo(version))
-				}
+			var err error
+			metadata, err = helm.LoadChartFile(filepath.Join(dir, "Chart.yaml"))
+			if err != nil {
+				return errors.Wrapf(err, "error loading chart from %s", dir)
 			}
+			if o.Verbose && version == "" {
+				log.Infof("No version specified so using latest version which is %s\n", util.ColorInfo(metadata.Version))
+			}
+			version = metadata.Version
 			schemaFile := filepath.Join(dir, "values.schema.json")
 			if _, err := os.Stat(schemaFile); !os.IsNotExist(err) {
 				schema, err = ioutil.ReadFile(schemaFile)
@@ -362,7 +365,7 @@ func (o *AddAppOptions) Run() error {
 					return err
 				}
 			} else {
-				err := o.installApp(app, dir, version)
+				err := o.installApp(app, dir, version, metadata)
 				if err != nil {
 					return err
 				}
@@ -395,7 +398,7 @@ func (o *AddAppOptions) createPR(app string, dir string, version string) error {
 	return nil
 }
 
-func (o *AddAppOptions) installApp(name string, chart string, version string) error {
+func (o *AddAppOptions) installApp(name string, chart string, version string, metadata *chart.Metadata) error {
 	err := o.ensureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that helm is present")
@@ -426,6 +429,23 @@ func (o *AddAppOptions) installApp(name string, chart string, version string) er
 	if err != nil {
 		return errors.Wrapf(err, "running postinstall hooks for %s version %s", name, version)
 	}
+	o.addAppMetadata(name, metadata)
 	log.Infof("Successfully installed %s %s\n", util.ColorInfo(name), util.ColorInfo(version))
+	return nil
+}
+
+func (o *AddAppOptions) addAppMetadata(name string, metadata *chart.Metadata) error {
+	app, err := o.jxClient.JenkinsV1().Apps(o.Namespace).Get(name, v1.GetOptions{})
+	if app.Annotations == nil {
+		app.Annotations = make(map[string]string)
+	}
+	app.Annotations[helm.AnnotationAppVersion] = metadata.GetAppVersion()
+	app.Annotations[helm.AnnotationAppDescription] = metadata.GetDescription()
+	repoURL, err := url.Parse(o.Repo)
+	if err != nil {
+		return errors.Wrap(err, "Invalid repository url")
+	}
+	app.Annotations[helm.AnnotationAppRepository] = util.StripCredentialsFromURL(repoURL)
+	_, err = o.jxClient.JenkinsV1().Apps(o.Namespace).Update(app)
 	return nil
 }
