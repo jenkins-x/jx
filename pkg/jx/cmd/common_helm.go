@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -340,73 +341,93 @@ func (o *CommonOptions) cloneJXVersionsRepo(versionRepository string) (string, e
 	// If the repo already exists let's try to fetch the latest version
 	if exists, err := util.DirExists(wrkDir); err == nil && exists {
 		repo, err := git.PlainOpen(wrkDir)
-		if err == nil {
-			remote, err := repo.Remote("origin")
-			if err == nil {
-				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-				defer cancel()
-				err := remote.FetchContext(ctx, &git.FetchOptions{
-					RefSpecs: []gitconfig.RefSpec{
-						gitconfig.RefSpec("+refs/heads/master:refs/remotes/origin/master"),
-					},
-				})
-				// The repository is up to date
-				if err == git.NoErrAlreadyUpToDate {
-					return wrkDir, nil
+		if err != nil {
+			log.Errorf("Error opening %s", wrkDir)
+			return deleteAndReClone(wrkDir, versionRepository, o.Out)
+		}
+		remote, err := repo.Remote("origin")
+		if err != nil {
+			log.Errorf("Error getting remote origin")
+			return deleteAndReClone(wrkDir, versionRepository, o.Out)
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
+		err = remote.FetchContext(ctx, &git.FetchOptions{
+			RefSpecs: []gitconfig.RefSpec{
+				gitconfig.RefSpec("+refs/heads/master:refs/remotes/origin/master"),
+			},
+		})
+		// The repository is up to date
+		if err == git.NoErrAlreadyUpToDate {
+			return wrkDir, nil
+		} else if err != nil {
+			log.Errorf("Error fetching latest from remote")
+			return deleteAndReClone(wrkDir, versionRepository, o.Out)
+		} else {
+			pullLatest := false
+			if o.BatchMode {
+				pullLatest = true
+			} else {
+				confirm := &survey.Confirm{
+					Message: "A local Jenkins X versions repository already exists, pull the latest?",
+					Default: true,
 				}
+				survey.AskOne(confirm, &pullLatest, nil, surveyOpts)
+				if err != nil {
+					log.Errorf("Error confirming if we should pull latest, skipping %s\n", wrkDir)
+				}
+			}
+
+			if pullLatest {
+				w, err := repo.Worktree()
 				if err == nil {
-					flag := false
-					if o.BatchMode {
-						flag = true
-					} else {
-						confirm := &survey.Confirm{
-							Message: "A local Jenkins X versions repository already exists, pull the latest?",
-							Default: true,
-						}
-						err := survey.AskOne(confirm, &flag, nil, surveyOpts)
-						if err != nil {
-							return wrkDir, err
-						}
-					}
-
-					if !flag {
-						return wrkDir, err
-					}
-
-					w, err := repo.Worktree()
-					if err == nil {
-						err := w.Pull(&git.PullOptions{RemoteName: "origin"})
-						if err != nil {
-							return "", errors.Wrap(err, "pulling the latest")
-						}
+					err := w.Pull(&git.PullOptions{RemoteName: "origin"})
+					if err != nil {
+						return "", errors.Wrap(err, "pulling the latest")
 					}
 				}
 			}
+			return wrkDir, err
 		}
+	} else {
+		return deleteAndReClone(wrkDir, versionRepository, o.Out)
 	}
+}
 
+func deleteAndReClone(wrkDir string, versionRepository string, fw terminal.FileWriter) (string, error) {
+	log.Info("Deleting and cloning the Jenkins X versions repo")
+	err := deleteDirectory(wrkDir)
+	if err != nil {
+		return "", err
+	}
+	err = clone(wrkDir, versionRepository, fw)
+	if err != nil {
+		return "", err
+	}
+	return wrkDir, err
+}
+
+func clone(wrkDir string, versionRepository string, fw terminal.FileWriter) error {
+	log.Infof("Cloning the Jenkins X versions repo to %s\n", wrkDir)
+	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
+		URL:           versionRepository,
+		ReferenceName: "refs/heads/master",
+		SingleBranch:  true,
+		Progress:      fw,
+	})
+	return err
+}
+
+func deleteDirectory(wrkDir string) error {
+	log.Infof("Delete previous Jenkins X version repo from %s\n", wrkDir)
 	// If it exists a this stage most likely its content is not consistent
 	if exists, err := util.DirExists(wrkDir); err == nil && exists {
 		err := util.DeleteDirContents(wrkDir)
 		if err != nil {
-			return "", errors.Wrapf(err, "cleaning the content of %q dir", wrkDir)
+			return errors.Wrapf(err, "cleaning the content of %q dir", wrkDir)
 		}
 	}
-
-	log.Infof("Cloning the Jenkins X versions repo to %s\n", wrkDir)
-
-	_, err = git.PlainClone(wrkDir, false, &git.CloneOptions{
-		URL:           versionRepository,
-		ReferenceName: "refs/heads/master",
-		SingleBranch:  true,
-		Progress:      o.Out,
-	})
-
-	if err != nil {
-		return "", errors.Wrapf(err, "cloning %q repository into %q dir", versionRepository, wrkDir)
-	}
-
-	return wrkDir, nil
+	return nil
 }
 
 // getVersionNumber returns the version number for the given kind and name or blank string if there is no locked version
