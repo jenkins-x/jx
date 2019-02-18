@@ -23,7 +23,7 @@ func TestDeleteAppForGitOps(t *testing.T) {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	name, alias, _, err := testOptions.AddApp()
+	name, alias, _, err := testOptions.DirectlyAddAppToGitOps(nil)
 	assert.NoError(t, err)
 
 	o := &cmd.DeleteAppOptions{
@@ -67,7 +67,7 @@ func TestDeleteApp(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	name, _, _, err := testOptions.AddApp()
+	name, _, _, err := testOptions.DirectlyAddAppToGitOps(nil)
 	assert.NoError(t, err)
 
 	o := &cmd.DeleteAppOptions{

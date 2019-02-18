@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/pkg/errors"
+
 	"github.com/jenkins-x/jx/pkg/environments"
 
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
@@ -30,6 +32,11 @@ import (
 
 // Helpers for various app tests
 
+const (
+	// FakeChartmusuem is the url for the fake chart museum used in tests
+	FakeChartmusuem = "http://fake.chartmuseum"
+)
+
 // AppTestOptions contains all useful data from the test environment initialized by `prepareInitialPromotionEnv`
 type AppTestOptions struct {
 	ConfigureGitFn  environments.ConfigureGitFn
@@ -45,8 +52,9 @@ type AppTestOptions struct {
 	MockVaultClient *vault_test.MockClient
 }
 
-// AddApp modifies the environment git repo directly to add a dummy app
-func (o *AppTestOptions) AddApp() (name string, alias string, version string, err error) {
+// DirectlyAddAppToGitOps modifies the environment git repo directly to add a dummy app
+func (o *AppTestOptions) DirectlyAddAppToGitOps(values map[string]interface{}) (name string, alias string,
+	version string, err error) {
 	envDir, err := o.CommonOptions.EnvironmentsDir()
 	if err != nil {
 		return "", "", "", err
@@ -56,6 +64,8 @@ func (o *AppTestOptions) AddApp() (name string, alias string, version string, er
 	if err != nil {
 		return "", "", "", err
 	}
+
+	// Update the requirements
 	fileName := filepath.Join(devEnvDir, helm.RequirementsFileName)
 	requirements := helm.Requirements{}
 	if _, err := os.Stat(fileName); err == nil {
@@ -76,16 +86,35 @@ func (o *AppTestOptions) AddApp() (name string, alias string, version string, er
 		Name:       name,
 		Alias:      alias,
 		Version:    version,
-		Repository: "http://fake.chartmuseum",
+		Repository: FakeChartmusuem,
 	})
 	data, err := yaml.Marshal(requirements)
 	if err != nil {
 		return "", "", "", err
 	}
-	err = ioutil.WriteFile(fileName, data, 0755)
+	err = ioutil.WriteFile(fileName, data, 0600)
 	if err != nil {
 		return "", "", "", err
 	}
+
+	// Add the values.yaml
+	if values != nil {
+		appDir := filepath.Join(devEnvDir, name)
+		fileName := filepath.Join(appDir, helm.ValuesFileName)
+		err := os.MkdirAll(appDir, 0700)
+		if err != nil {
+			return "", "", "", err
+		}
+		data, err = yaml.Marshal(values)
+		if err != nil {
+			return "", "", "", errors.Wrapf(err, "marshaling %vs\n", values)
+		}
+		err = ioutil.WriteFile(fileName, data, 0600)
+		if err != nil {
+			return "", "", "", errors.Wrapf(err, "writing %s\n%s\n", fileName, string(data))
+		}
+	}
+
 	return name, alias, version, nil
 }
 

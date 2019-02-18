@@ -94,7 +94,7 @@ require (
 	github.com/kevinburke/ssh_config v0.0.0-20180317175531-9fc7bb800b55 // indirect
 	github.com/keybase/go-crypto v0.0.0-20181127160227-255a5089e85a // indirect
 	github.com/knative/build v0.3.0
-	github.com/knative/build-pipeline v0.0.0-20190218104345-4fd0f55f15a4
+	github.com/knative/build-pipeline v0.0.0-20190219204046-d0e426ad8f2f
 	github.com/knative/pkg v0.0.0-20190125193334-994b801b03ef
 	github.com/knq/snaker v0.0.0-20180306023312-d9ad1e7f342a // indirect
 	github.com/kr/pty v1.1.2 // indirect
@@ -145,6 +145,7 @@ require (
 	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4
 	golang.org/x/sys v0.0.0-20190130150945-aca44879d564
 	google.golang.org/api v0.1.0 // indirect
+	google.golang.org/genproto v0.0.0-20190219182410-082222b4a5c5 // indirect
 	gopkg.in/AlecAivazis/survey.v1 v1.6.2
 	gopkg.in/asn1-ber.v1 v1.0.0-20181015200546-f715ec2f112d // indirect
 	gopkg.in/mgo.v2 v2.0.0-20180705113604-9856a29383ce // indirect

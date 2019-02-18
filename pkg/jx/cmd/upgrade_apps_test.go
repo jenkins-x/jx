@@ -2,13 +2,16 @@ package cmd_test
 
 import (
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/tests"
+
+	google_protobuf "github.com/golang/protobuf/ptypes/any"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 
-	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -27,7 +30,7 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	name, alias, version, err := testOptions.AddApp()
+	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(nil)
 	assert.NoError(t, err)
 
 	// Now let's upgrade
@@ -41,7 +44,7 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 		},
 		Version:              newVersion.String(),
 		Alias:                alias,
-		Repo:                 "http://chartmuseum.jenkins-x.io",
+		Repo:                 cmd_test_helpers.FakeChartmusuem,
 		GitOps:               true,
 		HelmUpdate:           true,
 		DevEnv:               testOptions.DevEnv,
@@ -77,13 +80,309 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 	assert.Equal(t, newVersion.String(), found[0].Version)
 }
 
-func TestUpgradeAppToLatestForGitOps(t *testing.T) {
+func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.T) {
 	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	name, alias, version, err := testOptions.AddApp()
+
+	// Needs console
+	console := tests.NewTerminal(t)
+	testOptions.CommonOptions.In = console.In
+	testOptions.CommonOptions.Out = console.Out
+	testOptions.CommonOptions.Err = console.Err
+
+	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(map[string]interface{}{
+		"name": "testing",
+	})
+	assert.NoError(t, err)
+
+	envDir, err := testOptions.CommonOptions.EnvironmentsDir()
+	assert.NoError(t, err)
+	appDir := filepath.Join(envDir, testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, name)
+
+	existingValues, err := ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
+	assert.NoError(t, err)
+	assert.Equal(t, `name: testing
+`, string(existingValues))
+
+	// Now let's upgrade
+
+	newVersion, err := semver.Parse(version)
+	assert.NoError(t, err)
+	newVersion.Patch++
+	o := &cmd.UpgradeAppsOptions{
+		AddOptions: cmd.AddOptions{
+			CommonOptions: *testOptions.CommonOptions,
+		},
+		Version:              newVersion.String(),
+		Alias:                alias,
+		Repo:                 cmd_test_helpers.FakeChartmusuem,
+		GitOps:               true,
+		HelmUpdate:           true,
+		DevEnv:               testOptions.DevEnv,
+		ConfigureGitCallback: testOptions.ConfigureGitFn,
+	}
+	o.Args = []string{name}
+
+	helm_test.StubFetchChart(name, newVersion.String(),
+		cmd_test_helpers.FakeChartmusuem, &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:    name,
+				Version: newVersion.String(),
+			},
+			Files: []*google_protobuf.Any{
+				&google_protobuf.Any{
+					TypeUrl: "values.schema.json",
+					Value: []byte(`{
+  "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "test values.yaml",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "species": {
+      "type": "string",
+      "default": "human"
+    }
+  }
+}`),
+				},
+			},
+		}, testOptions.MockHelmer)
+
+	err = o.Run()
+	assert.NoError(t, err)
+	// Validate a PR was created
+	_, err = testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
+	assert.NoError(t, err)
+	// Validate the updated values.yaml
+	existingValues, err = ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
+	assert.NoError(t, err)
+	assert.Equal(t, `name: testing
+species: human
+`, string(existingValues))
+}
+
+func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	defer func() {
+		err := testOptions.Cleanup()
+		assert.NoError(t, err)
+	}()
+
+	// Needs console
+	console := tests.NewTerminal(t)
+	testOptions.CommonOptions.In = console.In
+	testOptions.CommonOptions.Out = console.Out
+	testOptions.CommonOptions.Err = console.Err
+
+	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(map[string]interface{}{
+		"name": "testing",
+	})
+	assert.NoError(t, err)
+
+	envDir, err := testOptions.CommonOptions.EnvironmentsDir()
+	assert.NoError(t, err)
+	appDir := filepath.Join(envDir, testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, name)
+
+	existingValues, err := ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
+	assert.NoError(t, err)
+	assert.Equal(t, `name: testing
+`, string(existingValues))
+
+	// Now let's upgrade
+
+	newVersion, err := semver.Parse(version)
+	assert.NoError(t, err)
+	newVersion.Patch++
+	o := &cmd.UpgradeAppsOptions{
+		AddOptions: cmd.AddOptions{
+			CommonOptions: *testOptions.CommonOptions,
+		},
+		Version:              newVersion.String(),
+		Alias:                alias,
+		Repo:                 cmd_test_helpers.FakeChartmusuem,
+		GitOps:               true,
+		HelmUpdate:           true,
+		DevEnv:               testOptions.DevEnv,
+		ConfigureGitCallback: testOptions.ConfigureGitFn,
+	}
+	o.Args = []string{name}
+	o.BatchMode = false
+
+	helm_test.StubFetchChart(name, newVersion.String(),
+		cmd_test_helpers.FakeChartmusuem, &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:    name,
+				Version: newVersion.String(),
+			},
+			Files: []*google_protobuf.Any{
+				&google_protobuf.Any{
+					TypeUrl: "values.schema.json",
+					Value: []byte(`{
+  "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "test values.yaml",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "species": {
+      "type": "string",
+      "default": "human"
+    }
+  }
+}`),
+				},
+			},
+		}, testOptions.MockHelmer)
+
+	// Test interactive IO
+	donec := make(chan struct{})
+	// TODO Answer questions
+	go func() {
+		defer close(donec)
+		// Test boolean type
+		console.ExpectString("Enter a value for name testing [Automatically accepted existing value]\r\n")
+		console.ExpectString("Enter a value for species (human)")
+		console.SendLine("martian")
+		console.ExpectString("martian? Enter a value for species martian")
+	}()
+
+	err = o.Run()
+	assert.NoError(t, err)
+	// Validate a PR was created
+	_, err = testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
+	assert.NoError(t, err)
+	// Validate the updated values.yaml
+	existingValues, err = ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
+	assert.NoError(t, err)
+	assert.Equal(t, `name: testing
+species: martian
+`, string(existingValues))
+}
+
+func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T) {
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	defer func() {
+		err := testOptions.Cleanup()
+		assert.NoError(t, err)
+	}()
+
+	// Needs console
+	console := tests.NewTerminal(t)
+	testOptions.CommonOptions.In = console.In
+	testOptions.CommonOptions.Out = console.Out
+	testOptions.CommonOptions.Err = console.Err
+
+	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(map[string]interface{}{
+		"name": "testing",
+	})
+	assert.NoError(t, err)
+
+	envDir, err := testOptions.CommonOptions.EnvironmentsDir()
+	assert.NoError(t, err)
+	appDir := filepath.Join(envDir, testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, name)
+
+	existingValues, err := ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
+	assert.NoError(t, err)
+	assert.Equal(t, `name: testing
+`, string(existingValues))
+
+	// Now let's upgrade
+
+	newVersion, err := semver.Parse(version)
+	assert.NoError(t, err)
+	newVersion.Patch++
+	o := &cmd.UpgradeAppsOptions{
+		AddOptions: cmd.AddOptions{
+			CommonOptions: *testOptions.CommonOptions,
+		},
+		Version:              newVersion.String(),
+		Alias:                alias,
+		Repo:                 cmd_test_helpers.FakeChartmusuem,
+		GitOps:               true,
+		HelmUpdate:           true,
+		DevEnv:               testOptions.DevEnv,
+		ConfigureGitCallback: testOptions.ConfigureGitFn,
+		AskAll:               true,
+	}
+	o.Args = []string{name}
+	o.BatchMode = false
+
+	helm_test.StubFetchChart(name, newVersion.String(),
+		cmd_test_helpers.FakeChartmusuem, &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:    name,
+				Version: newVersion.String(),
+			},
+			Files: []*google_protobuf.Any{
+				&google_protobuf.Any{
+					TypeUrl: "values.schema.json",
+					Value: []byte(`{
+  "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "test values.yaml",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "species": {
+      "type": "string",
+      "default": "human"
+    }
+  }
+}`),
+				},
+			},
+		}, testOptions.MockHelmer)
+
+	// Test interactive IO
+	donec := make(chan struct{})
+	// TODO Answer questions
+	go func() {
+		defer close(donec)
+		// Test boolean type
+		console.ExpectString("Enter a value for name (testing)")
+		console.SendLine("mark")
+		console.ExpectString("Enter a value for species (human)")
+		console.SendLine("martian")
+		console.ExpectString("martian? Enter a value for species martian")
+	}()
+
+	err = o.Run()
+	assert.NoError(t, err)
+	// Validate a PR was created
+	_, err = testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
+	assert.NoError(t, err)
+	// Validate the updated values.yaml
+	existingValues, err = ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
+	assert.NoError(t, err)
+	assert.Equal(t, `name: mark
+species: martian
+`, string(existingValues))
+}
+
+func TestUpgradeMissingExistingOrDefaultInBatchMode(t *testing.T) {
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	defer func() {
+		err := testOptions.Cleanup()
+		assert.NoError(t, err)
+	}()
+
+	// Needs console
+	console := tests.NewTerminal(t)
+	testOptions.CommonOptions.In = console.In
+	testOptions.CommonOptions.Out = console.Out
+	testOptions.CommonOptions.Err = console.Err
+
+	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(map[string]interface{}{})
 	assert.NoError(t, err)
 
 	// Now let's upgrade
@@ -97,7 +396,7 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 		},
 		Version:              newVersion.String(),
 		Alias:                alias,
-		Repo:                 "http://chartmuseum.jenkins-x.io",
+		Repo:                 cmd_test_helpers.FakeChartmusuem,
 		GitOps:               true,
 		HelmUpdate:           true,
 		DevEnv:               testOptions.DevEnv,
@@ -105,7 +404,70 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 	}
 	o.Args = []string{name}
 
-	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
+	helm_test.StubFetchChart(name, newVersion.String(),
+		cmd_test_helpers.FakeChartmusuem, &chart.Chart{
+			Metadata: &chart.Metadata{
+				Name:    name,
+				Version: newVersion.String(),
+			},
+			Files: []*google_protobuf.Any{
+				&google_protobuf.Any{
+					TypeUrl: "values.schema.json",
+					Value: []byte(`{
+  "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "test values.yaml",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "species": {
+      "type": "string",
+      "default": "human"
+    }
+  }
+}`),
+				},
+			},
+		}, testOptions.MockHelmer)
+
+	err = o.Run()
+	assert.Error(t, err)
+	// Validate a PR was not created
+	_, err = testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
+	assert.Error(t, err)
+}
+
+func TestUpgradeAppToLatestForGitOps(t *testing.T) {
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	defer func() {
+		err := testOptions.Cleanup()
+		assert.NoError(t, err)
+	}()
+	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(nil)
+	assert.NoError(t, err)
+
+	// Now let's upgrade
+
+	newVersion, err := semver.Parse(version)
+	assert.NoError(t, err)
+	newVersion.Patch++
+	o := &cmd.UpgradeAppsOptions{
+		AddOptions: cmd.AddOptions{
+			CommonOptions: *testOptions.CommonOptions,
+		},
+		Version:              newVersion.String(),
+		Alias:                alias,
+		Repo:                 cmd_test_helpers.FakeChartmusuem,
+		GitOps:               true,
+		HelmUpdate:           true,
+		DevEnv:               testOptions.DevEnv,
+		ConfigureGitCallback: testOptions.ConfigureGitFn,
+	}
+	o.Args = []string{name}
+
+	helm_test.StubFetchChart(name, "", cmd_test_helpers.FakeChartmusuem, &chart.Chart{
 		Metadata: &chart.Metadata{
 			Name:    name,
 			Version: newVersion.String(),
@@ -146,9 +508,9 @@ func TestUpgradeAllAppsForGitOps(t *testing.T) {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	name1, alias1, version1, err := testOptions.AddApp()
+	name1, alias1, version1, err := testOptions.DirectlyAddAppToGitOps(nil)
 	assert.NoError(t, err)
-	name2, alias2, version2, err := testOptions.AddApp()
+	name2, alias2, version2, err := testOptions.DirectlyAddAppToGitOps(nil)
 	assert.NoError(t, err)
 
 	newVersion1, err := semver.Parse(version1)
@@ -164,22 +526,23 @@ func TestUpgradeAllAppsForGitOps(t *testing.T) {
 		AddOptions: cmd.AddOptions{
 			CommonOptions: *testOptions.CommonOptions,
 		},
-		Repo:                 kube.DefaultChartMuseumURL,
+		Repo:                 cmd_test_helpers.FakeChartmusuem,
 		GitOps:               true,
 		HelmUpdate:           true,
 		DevEnv:               testOptions.DevEnv,
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}
 
-	helm_test.StubFetchChart(name1, "", kube.DefaultChartMuseumURL, &chart.Chart{
+	helm_test.StubFetchChart(name1, "", cmd_test_helpers.FakeChartmusuem, &chart.Chart{
 		Metadata: &chart.Metadata{
 			Name:    name1,
 			Version: newVersion1.String(),
 		},
 	}, testOptions.MockHelmer)
 
+	// The "latest" chart - requested with an empty version
 	helm_test.StubFetchChart(name2, "",
-		kube.DefaultChartMuseumURL, &chart.Chart{
+		cmd_test_helpers.FakeChartmusuem, &chart.Chart{
 			Metadata: &chart.Metadata{
 				Name:    name2,
 				Version: newVersion2.String(),

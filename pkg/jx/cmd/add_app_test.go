@@ -654,7 +654,6 @@ func TestAddLatestApp(t *testing.T) {
 }
 
 func TestAddAppWithValuesFileForGitOps(t *testing.T) {
-	t.Parallel()
 	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()
