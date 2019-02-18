@@ -440,6 +440,10 @@ func (p *BitbucketCloudProvider) GetPullRequest(owner string, repoInfo *GitRepos
 		return nil, err
 	}
 
+	return p.toPullRequest(pr, number), nil
+}
+
+func (p *BitbucketCloudProvider) toPullRequest(pr bitbucket.Pullrequest, number int) *GitPullRequest {
 	author := &GitUser{
 		Login:     pr.Author.Username,
 		Name:      pr.Author.DisplayName,
@@ -447,15 +451,15 @@ func (p *BitbucketCloudProvider) GetPullRequest(owner string, repoInfo *GitRepos
 		AvatarURL: pr.Author.Links.Avatar.Href,
 		// Note that Email is resolved using the GitUserResolver
 	}
-
-	return &GitPullRequest{
+	answer := &GitPullRequest{
 		URL:    pr.Links.Html.Href,
 		Owner:  strings.Split(pr.Destination.Repository.FullName, "/")[0],
 		Repo:   pr.Destination.Repository.Name,
 		Number: &number,
 		State:  &pr.State,
 		Author: author,
-	}, nil
+	}
+	return answer
 }
 
 func (b *BitbucketCloudProvider) GetPullRequestCommits(owner string, repository *GitRepository, number int) ([]*GitCommit, error) {
@@ -574,6 +578,35 @@ func (b *BitbucketCloudProvider) PullRequestLastCommitStatus(pr *GitPullRequest)
 	}
 
 	return stateMap[latestCommitStatus.State], nil
+}
+
+
+func (b *BitbucketCloudProvider) ListOpenPullRequests(owner string, repo string) ([]*GitPullRequest, error) {
+	answer := []*GitPullRequest{}
+
+	var results bitbucket.PaginatedPullrequests
+	var err error
+
+	for {
+		if results.Next == "" {
+			results, _, err = b.Client.PullrequestsApi.PullrequestsTargetUserGet(b.Context, "", owner, nil)
+		} else {
+			results, _, err = b.Client.PagingApi.PullrequestsPageGet(b.Context, results.Next)
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		for _, pr := range results.Values {
+			answer = append(answer, b.toPullRequest(pr, int(pr.Id)))
+		}
+
+		if results.Next == "" {
+			break
+		}
+	}
+	return answer, nil
 }
 
 func (b *BitbucketCloudProvider) ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error) {

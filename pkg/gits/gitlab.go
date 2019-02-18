@@ -287,6 +287,32 @@ func (p *GitlabProvider) GetPullRequest(owner string, repo *GitRepository, numbe
 	return pr, err
 }
 
+func (p *GitlabProvider) ListOpenPullRequests(owner string, repo string) ([]*GitPullRequest, error) {
+	gitlabOpen := "opened"
+	opt := &gitlab.ListMergeRequestsOptions{
+		State: &gitlabOpen,
+		ListOptions: gitlab.ListOptions{
+			Page:    0,
+			PerPage: pageSize,
+		},
+	}
+	answer := []*GitPullRequest{}
+	for {
+		prs, _, err := p.Client.MergeRequests.ListMergeRequests(opt)
+		if err != nil {
+			return answer, err
+		}
+		for _, pr := range prs {
+			answer = append(answer, fromMergeRequest(pr, owner, repo))
+		}
+		if len(prs) < pageSize || len(prs) == 0 {
+			break
+		}
+		opt.Page += 1
+	}
+	return answer, nil
+}
+
 func (p *GitlabProvider) GetPullRequestCommits(owner string, repository *GitRepository, number int) ([]*GitCommit, error) {
 	repo := repository.Name
 	pid, err := p.projectId(owner, p.Username, repo)

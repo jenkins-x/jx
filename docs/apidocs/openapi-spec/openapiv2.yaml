@@ -702,12 +702,65 @@ definitions:
         type: array
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Fact:
+    description: |-
+      Fact represents observed facts. Apps will generate Facts about the system. A naming schema is required since each Fact has a name that's unique for the whole system. Apps should prefix their generated Facts with the name of the App, like <app-name>-<fact>. This makes that different Apps can't possibly have conflicting Fact names.
+
+      For an app generating facts on a pipeline, which will be have several different executions, we recommend <app>-<fact>-<pipeline>.
+    properties:
+      apiVersion:
+        description: 'APIVersion defines the versioned schema of this representation
+          of an object. Servers should convert recognized schemas to the latest internal
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+        type: string
+      kind:
+        description: 'Kind is a string value representing the REST resource this object
+          represents. Servers may infer this from the endpoint the client submits
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+        type: string
+      metadata:
+        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
+        description: |-
+          The Fact labels will be used to query the API for interesting Facts. The Apps responsible for creating Facts need to add the relevant labels. For example, creating Facts on a pipeline would create Facts with the following labels {
+            subjectkind: PipelineActivity
+            pipelineName: my-org-my-app-master-23
+            org: my-org
+            repo: my-app
+            branch: master
+            buildNumber: 23
+          }
+      spec:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.FactSpec'
+      status:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.FactStatus'
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.FactList:
+    description: FactList is a list of Fact resources
+    properties:
+      apiVersion:
+        description: 'APIVersion defines the versioned schema of this representation
+          of an object. Servers should convert recognized schemas to the latest internal
+          value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Fact'
+        type: array
+      kind:
+        description: 'Kind is a string value representing the REST resource this object
+          represents. Servers may infer this from the endpoint the client submits
+          requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
+        type: string
+      metadata:
+        $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta'
+    required:
+    - metadata
+    - items
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.FactSpec:
+    description: FactSpec is the specification of a Fact
     properties:
       factType:
         type: string
-      id:
-        format: int32
-        type: integer
       measurements:
         items:
           $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Measurement'
@@ -720,16 +773,23 @@ definitions:
         items:
           $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Statement'
         type: array
+      subject:
+        $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ResourceReference'
       tags:
         items:
           type: string
         type: array
     required:
     - name
-    - id
     - factType
-    - measurements
     - statements
+    - subject
+    type: object
+  com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.FactStatus:
+    description: FactStatus is the status for an Fact resource
+    properties:
+      version:
+        type: string
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.GitService:
     description: GitService represents a git provider so we can map the host name
@@ -832,6 +892,8 @@ definitions:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.UserDetails'
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Measurement:
+    description: Measurement is a percentage or a count, something measured that the
+      system will capture within a fact
     properties:
       measurementType:
         type: string
@@ -850,6 +912,7 @@ definitions:
     - measurementValue
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Original:
+    description: Original contains the report
     properties:
       mimetype:
         type: string
@@ -920,10 +983,6 @@ definitions:
         type: string
       completedTimestamp:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time'
-      facts:
-        items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Fact'
-        type: array
       gitBranch:
         type: string
       gitOwner:
@@ -1344,6 +1403,8 @@ definitions:
         type: array
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Statement:
+    description: Statement represents a decision that was made, for example that a
+      promotion was approved or denied
     properties:
       measurementValue:
         type: boolean

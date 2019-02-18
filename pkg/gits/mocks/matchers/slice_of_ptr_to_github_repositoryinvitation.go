@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	github "github.com/google/go-github/github"
-	"github.com/petergtz/pegomock"
 	"reflect"
+	"github.com/petergtz/pegomock"
+	github "github.com/google/go-github/github"
 )
 
 func AnySliceOfPtrToGithubRepositoryInvitation() []*github.RepositoryInvitation {
