@@ -1042,7 +1042,11 @@ definitions:
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructure:
     description: PipelineStructure contains references to the Pipeline and PipelineRun,
-      and a list of PipelineStructureStages in the pipeline.
+      and a list of PipelineStructureStages in the pipeline. This allows us to map
+      between a running Pod to its TaskRun, to the TaskRun's Task and PipelineRun,
+      and finally from there to the stage and potential parent stages that the Pod
+      is actually executing, for use with populating PipelineActivity and providing
+      logs.
     properties:
       apiVersion:
         description: 'APIVersion defines the versioned schema of this representation

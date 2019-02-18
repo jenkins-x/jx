@@ -2778,7 +2778,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineStructure(ref common.ReferenceCallback
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "PipelineStructure contains references to the Pipeline and PipelineRun, and a list of PipelineStructureStages in the pipeline.",
+				Description: "PipelineStructure contains references to the Pipeline and PipelineRun, and a list of PipelineStructureStages in the pipeline. This allows us to map between a running Pod to its TaskRun, to the TaskRun's Task and PipelineRun, and finally from there to the stage and potential parent stages that the Pod is actually executing, for use with populating PipelineActivity and providing logs.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
