@@ -508,8 +508,8 @@ func deleteDirectory(wrkDir string) error {
 }
 
 // getVersionNumber returns the version number for the given kind and name or blank string if there is no locked version
-func (o *CommonOptions) getVersionNumber(kind version.VersionKind, name string) (string, error) {
-	versionsDir, err := o.cloneJXVersionsRepo("")
+func (o *CommonOptions) getVersionNumber(kind version.VersionKind, name, versionsRepoository string) (string, error) {
+	versionsDir, err := o.cloneJXVersionsRepo(versionsRepoository)
 	if err != nil {
 		return "", err
 	}

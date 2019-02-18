@@ -706,6 +706,7 @@ func (options *InstallOptions) init() error {
 	initOpts.Flags.Provider = options.Flags.Provider
 	initOpts.Flags.Namespace = options.Flags.Namespace
 	initOpts.BatchMode = options.BatchMode
+	initOpts.Flags.VersionsRepository = options.Flags.VersionsRepository
 	initOpts.Flags.Http = true
 	exposeController := options.CreateEnvOptions.HelmValuesConfig.ExposeController
 	if exposeController != nil {
