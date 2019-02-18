@@ -138,7 +138,7 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 		o.branchNameText = strings.Replace("upgrade-"+o.Name+"-"+o.Version, "/", "-", -1)
 		o.branchNameText = strings.Replace(o.branchNameText, ".", "-", -1)
 
-		o.title = fmt.Sprintf("change %s to version %s", o.Name, o.Version)
+		o.title = fmt.Sprintf("%s version upgrade of %s", o.Kind, o.Name)
 		o.message = fmt.Sprintf("change %s to version %s", o.Name, o.Version)
 	} else {
 		o.branchNameText = "upgrade-chart-versions"
