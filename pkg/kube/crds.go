@@ -65,6 +65,10 @@ func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Pipeline Activity CRD")
 	}
+	err = RegisterPipelineStructureCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Pipeline Structure CRD")
+	}
 	err = RegisterFactCRD(apiClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Fact CRD")
@@ -211,6 +215,21 @@ func RegisterPipelineActivityCRD(apiClient apiextensionsclientset.Interface) err
 			JSONPath:    ".spec.status",
 		},
 	}
+	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
+}
+
+// RegisterPipelineStructureCRD ensures that the CRD is registered for PipelineStructure
+func RegisterPipelineStructureCRD(apiClient apiextensionsclientset.Interface) error {
+	name := "pipelinestructures." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "PipelineStructure",
+		ListKind:   "PipelineStructureList",
+		Plural:     "pipelinestructures",
+		Singular:   "pipelinestructure",
+		ShortNames: []string{"structure"},
+		Categories: []string{"all"},
+	}
+	columns := []v1beta1.CustomResourceColumnDefinition{}
 	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
 }
 
