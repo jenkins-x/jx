@@ -811,8 +811,58 @@ func (b *BitbucketServerProvider) ListWebHooks(owner string, repo string) ([]*Gi
 	return webHooks, nil
 }
 
-func (p *BitbucketServerProvider) UpdateWebHook(data *GitWebHookArguments) error {
-	return fmt.Errorf("not implemented!")
+func (b *BitbucketServerProvider) UpdateWebHook(data *GitWebHookArguments) error {
+	projectKey, repo := parseBitBucketServerURL(data.Repo.URL)
+
+	if data.URL == "" {
+		return errors.New("missing property URL")
+	}
+
+	dataId := data.ID
+	if dataId == 0 && data.ExistingURL != "" {
+		hooks, err := b.ListWebHooks(projectKey, repo)
+		if err != nil {
+			log.Errorf("Error querying webhooks on %s/%s: %s\n", projectKey, repo, err)
+		}
+		for _, hook := range hooks {
+			if data.ExistingURL == hook.URL {
+				log.Warnf("Found existing webhook for url %s\n", data.ExistingURL)
+				dataId = hook.ID
+			}
+		}
+	}
+	if dataId == 0 {
+		log.Warn("No webhooks found to update")
+		return nil
+	}
+	id := int32(dataId)
+	if int64(id) != dataId {
+		log.Errorf("Failed to update webhook with ID = %d due to int32 conversion failure", dataId)
+		return nil
+	}
+
+	var options = map[string]interface{}{
+		"url":    data.URL,
+		"name":   "Jenkins X Web Hook",
+		"active": true,
+		"events": []string{"repo:refs_changed", "repo:modified", "repo:forked", "repo:comment:added", "repo:comment:edited", "repo:comment:deleted", "pr:opened", "pr:reviewer:approved", "pr:reviewer:unapproved", "pr:reviewer:needs_work", "pr:merged", "pr:declined", "pr:deleted", "pr:comment:added", "pr:comment:edited", "pr:comment:deleted"},
+	}
+
+	if data.Secret != "" {
+		options["configuration"] = map[string]interface{}{
+			"secret": data.Secret,
+		}
+	}
+
+	requestBody, err := json.Marshal(options)
+	if err != nil {
+		return err
+	}
+
+	log.Infof("Updating Bitbucket server webhook for %s/%s for url %s\n", util.ColorInfo(projectKey), util.ColorInfo(repo), util.ColorInfo(data.URL))
+	_, err = b.Client.DefaultApi.UpdateWebhook(projectKey, repo, id, requestBody, []string{"application/json"})
+
+	return err
 }
 
 func (b *BitbucketServerProvider) SearchIssues(org string, name string, query string) ([]*GitIssue, error) {

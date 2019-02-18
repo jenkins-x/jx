@@ -60,6 +60,7 @@ var bitbucketServerRouter = util.Router{
 	},
 	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/webhooks": util.MethodMap{
 		"POST": "webhook.json",
+		"PUT":  "webhook.json",
 		"GET":  "webhooks.json",
 	},
 	"/rest/api/1.0/users/test-user": util.MethodMap{
@@ -310,6 +311,19 @@ func (suite *BitbucketServerProviderTestSuite) TestListWebHooks() {
 		URL:    "http://jenkins.example.com/bitbucket-scmsource-hook/notify",
 		Secret: "abc123",
 	}, *webHook)
+}
+
+func (suite *BitbucketServerProviderTestSuite) TestUpdateWebHook() {
+
+	data := &gits.GitWebHookArguments{
+		Repo:        &gits.GitRepository{URL: "https://auth.example.com/projects/TEST-ORG/repos/test-repo"},
+		URL:         "http://jenkins.example.com/bitbucket-scmsource-hook/notify",
+		ExistingURL: "http://jenkins.example.com/bitbucket-scmsource-hook/notify",
+		Secret:      "someSecret",
+	}
+	err := suite.provider.UpdateWebHook(data)
+
+	suite.Require().Nil(err)
 }
 
 func (suite *BitbucketServerProviderTestSuite) TestUserInfo() {
