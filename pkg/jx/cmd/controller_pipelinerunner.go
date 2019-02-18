@@ -35,15 +35,28 @@ type ControllerPipelineRunnerOptions struct {
 
 // PipelineRunRequest the request to trigger a pipeline run
 type PipelineRunRequest struct {
-	GitURL  string `json:"gitUrl,omitempty"`
-	Branch  string `json:"branch,omitempty"`
-	Kind    string `json:"kind,omitempty"`
-	Context string `json:"context,omitempty"`
+	GitURL   string            `json:"gitUrl,omitempty"`
+	Branch   string            `json:"branch,omitempty"`
+	Revision string            `json:"revision,omitempty"`
+	Kind     string            `json:"kind,omitempty"`
+	Context  string            `json:"context,omitempty"`
+	Labels   map[string]string `json:"labels,omitempty"`
 }
 
 // PipelineRunResponse the results of triggering a pipeline run
 type PipelineRunResponse struct {
 	Resources []kube.ObjectReference `json:"resources,omitempty"`
+}
+
+// ObjectReference represents a reference to a k8s resource
+type ObjectReference struct {
+	APIVersion string `json:"apiVersion" protobuf:"bytes,5,opt,name=apiVersion"`
+	// Kind of the referent.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	Kind string `json:"kind" protobuf:"bytes,1,opt,name=kind"`
+	// Name of the referent.
+	// More info: http://kubernetes.io/docs/user-guide/identifiers#names
+	Name string `json:"name" protobuf:"bytes,3,opt,name=name"`
 }
 
 var (
@@ -149,6 +162,9 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 	if arguments.Branch == "" {
 		arguments.Branch = "master"
 	}
+	if arguments.Revision == "" {
+		arguments.Revision = "master"
+	}
 	if arguments.Kind == "" {
 		arguments.Kind = "release"
 	}
@@ -165,7 +181,13 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 	pr.DeleteTempDir = true
 	pr.Context = arguments.Context
 	pr.Branch = arguments.Branch
+	pr.Revision = arguments.Revision
 	pr.PipelineKind = arguments.Kind
+
+	// turn map into string array with = separator to match type of custom labels which are CLI flags
+	for key, value := range arguments.Labels {
+		pr.CustomLabels = append(pr.CustomLabels, fmt.Sprintf("%s=%s", key, value))
+	}
 
 	err = pr.Run()
 	if err != nil {
