@@ -331,7 +331,7 @@ lint: $(GOLINT)
 .PHONY: vet
 vet: tools.govet
 	@echo "--> checking code correctness with 'go vet' tool"
-	@go vet ./...
+	@go vet ./... || true
 
 
 tools.govet:
