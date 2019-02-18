@@ -6,12 +6,15 @@
 package cmd_test
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/apps"
 
 	"k8s.io/helm/pkg/chartutil"
 
@@ -124,6 +127,7 @@ func TestAddAppWithSecrets(t *testing.T) {
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}
 	o.Args = []string{name}
+	o.BatchMode = false
 
 	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
 		Metadata: &chart.Metadata{
@@ -195,7 +199,7 @@ func TestAddAppWithSecrets(t *testing.T) {
   name: tokenvalue-secret
 `, string(bytes))
 			_, secretsFileName := filepath.Split(valuesFiles[1])
-			assert.Contains(t, secretsFileName, "secrets.yaml")
+			assert.Contains(t, secretsFileName, "generatedSecrets.yaml")
 			bytes, err = ioutil.ReadFile(valuesFiles[1])
 			assert.NoError(t, err)
 			assert.Equal(t, `appsGeneratedSecrets:
@@ -237,6 +241,208 @@ func TestAddAppWithSecrets(t *testing.T) {
 			pegomock.AnyString())
 }
 
+func TestAddAppWithDefaults(t *testing.T) {
+
+	tests.SkipForWindows(t, "go-expect does not work on windows")
+	pegomock.RegisterMockTestingT(t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	defer func() {
+		err := testOptions.Cleanup()
+		assert.NoError(t, err)
+	}()
+
+	// Needs console input to create secrets
+	console := tests.NewTerminal(t)
+	testOptions.CommonOptions.In = console.In
+	testOptions.CommonOptions.Out = console.Out
+	testOptions.CommonOptions.Err = console.Err
+
+	name := uuid.NewV4().String()
+	version := "0.0.1"
+	o := &cmd.AddAppOptions{
+		AddOptions: cmd.AddOptions{
+			CommonOptions: *testOptions.CommonOptions,
+		},
+		Version:              version,
+		Repo:                 "http://chartmuseum.jenkins-x.io",
+		GitOps:               true,
+		DevEnv:               testOptions.DevEnv,
+		HelmUpdate:           true, // Flag default when run on CLI
+		ConfigureGitCallback: testOptions.ConfigureGitFn,
+	}
+	o.Args = []string{name}
+
+	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
+		Metadata: &chart.Metadata{
+			Name:    name,
+			Version: version,
+		},
+		Files: []*google_protobuf.Any{
+			&google_protobuf.Any{
+				TypeUrl: "values.schema.json",
+				Value: []byte(`{
+  "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "test values.yaml",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "default": "testing"
+    }
+  }
+}`),
+			},
+		},
+	}, testOptions.MockHelmer)
+
+	// Test interactive IO
+	donec := make(chan struct{})
+	// TODO Answer questions
+	go func() {
+		defer close(donec)
+		// Test boolean type
+		console.ExpectString("Enter a value for name testing [Automatically accepted default value]")
+		console.ExpectEOF()
+	}()
+
+	pegomock.When(testOptions.MockHelmer.UpgradeChart(
+		pegomock.AnyString(),
+		pegomock.EqString(name),
+		pegomock.AnyString(),
+		pegomock.EqString(version),
+		pegomock.AnyBool(),
+		pegomock.AnyInt(),
+		pegomock.AnyBool(),
+		pegomock.AnyBool(),
+		pegomock.AnyStringSlice(),
+		pegomock.AnyStringSlice(),
+		pegomock.EqString(kube.DefaultChartMuseumURL),
+		pegomock.AnyString(),
+		pegomock.AnyString())).
+		Then(func(params []pegomock.Param) pegomock.ReturnValues {
+			// These assertion must happen inside the UpgradeChart function otherwise the chart dir will have been
+			// deleted
+			assert.IsType(t, "", params[0])
+			assert.IsType(t, make([]string, 0), params[9])
+			chart := params[0].(string)
+			valuesFiles := params[9].([]string)
+			isChartDir, err := chartutil.IsChartDir(chart)
+			assert.NoError(t, err)
+			assert.True(t, isChartDir)
+			assert.Len(t, valuesFiles, 2)
+			_, valuesFileName := filepath.Split(valuesFiles[0])
+			assert.Contains(t, valuesFileName, "values.yaml")
+			bytes, err := ioutil.ReadFile(valuesFiles[0])
+			assert.NoError(t, err)
+			assert.Equal(t, `name: testing
+`, string(bytes))
+
+			return []pegomock.ReturnValue{
+				nil,
+			}
+		})
+
+	err := o.Run()
+	assert.NoError(t, err)
+	err = console.Close()
+	<-donec
+	assert.NoError(t, err)
+	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
+
+	testOptions.MockHelmer.VerifyWasCalledOnce().
+		UpgradeChart(
+			pegomock.AnyString(),
+			pegomock.EqString(name),
+			pegomock.AnyString(),
+			pegomock.EqString(version),
+			pegomock.AnyBool(),
+			pegomock.AnyInt(),
+			pegomock.AnyBool(),
+			pegomock.AnyBool(),
+			pegomock.AnyStringSlice(),
+			pegomock.AnyStringSlice(),
+			pegomock.EqString(kube.DefaultChartMuseumURL),
+			pegomock.AnyString(),
+			pegomock.AnyString())
+}
+
+func TestStashValues(t *testing.T) {
+	namespace := "jx"
+
+	tests.SkipForWindows(t, "go-expect does not work on windows")
+	pegomock.RegisterMockTestingT(t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	defer func() {
+		err := testOptions.Cleanup()
+		assert.NoError(t, err)
+	}()
+
+	// Needs console input to create secrets
+	console := tests.NewTerminal(t)
+	testOptions.CommonOptions.In = console.In
+	testOptions.CommonOptions.Out = console.Out
+	testOptions.CommonOptions.Err = console.Err
+
+	name := uuid.NewV4().String()
+	version := "0.0.1"
+	o := &cmd.AddAppOptions{
+		AddOptions: cmd.AddOptions{
+			CommonOptions: *testOptions.CommonOptions,
+		},
+		Version:              version,
+		Repo:                 "http://chartmuseum.jenkins-x.io",
+		GitOps:               true,
+		DevEnv:               testOptions.DevEnv,
+		HelmUpdate:           true, // Flag default when run on CLI
+		ConfigureGitCallback: testOptions.ConfigureGitFn,
+		Namespace:            namespace,
+	}
+	o.Args = []string{name}
+
+	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
+		Metadata: &chart.Metadata{
+			Name:    name,
+			Version: version,
+		},
+		Files: []*google_protobuf.Any{
+			&google_protobuf.Any{
+				TypeUrl: "values.schema.json",
+				Value: []byte(`{
+  "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "test values.yaml",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "default": "testing"
+    }
+  }
+}`),
+			},
+		},
+	}, testOptions.MockHelmer)
+
+	err := o.Run()
+	assert.NoError(t, err)
+	appCRDName := fmt.Sprintf("%s-%s", name, name)
+	jxClient, ns, err := testOptions.CommonOptions.JXClientAndDevNamespace()
+	assert.NoError(t, err)
+	appList, err := jxClient.JenkinsV1().Apps(ns).List(metav1.ListOptions{})
+	assert.Equal(t, namespace, ns)
+	assert.NoError(t, err)
+	assert.Len(t, appList.Items, 1)
+	app, err := jxClient.JenkinsV1().Apps(ns).Get(appCRDName, metav1.GetOptions{})
+	assert.NoError(t, err)
+	val, ok := app.Annotations[apps.ValuesAnnotation]
+	assert.True(t, ok)
+	dst, err := base64.StdEncoding.DecodeString(val)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"name":"testing"}`, string(dst))
+
+}
+
 func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 	// TODO enable this test again when is passing
 	t.SkipNow()
@@ -271,6 +477,7 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}
 	o.Args = []string{name}
+	o.BatchMode = false
 
 	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
 		Metadata: &chart.Metadata{
@@ -361,6 +568,7 @@ func TestAddApp(t *testing.T) {
 	err := o.Run()
 	assert.NoError(t, err)
 
+	// Check chart was installed
 	_, _, _, fetchDir, _, _, _ := testOptions.MockHelmer.VerifyWasCalledOnce().FetchChart(
 		pegomock.EqString(name),
 		pegomock.EqString(version),
@@ -384,6 +592,8 @@ func TestAddApp(t *testing.T) {
 			pegomock.EqString(kube.DefaultChartMuseumURL),
 			pegomock.AnyString(),
 			pegomock.AnyString())
+
+	// Verify the annotation
 }
 
 func TestAddLatestApp(t *testing.T) {
@@ -475,7 +685,7 @@ func TestAddAppWithValuesFileForGitOps(t *testing.T) {
 		DevEnv:               testOptions.DevEnv,
 		HelmUpdate:           true, // Flag default when run on CLI
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
-		ValueFiles:           []string{file.Name()},
+		ValuesFiles:          []string{file.Name()},
 	}
 	o.Args = []string{name}
 	err = o.Run()

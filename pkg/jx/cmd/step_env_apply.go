@@ -9,7 +9,6 @@ import (
 
 	"github.com/ghodss/yaml"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/extensions"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -113,11 +112,6 @@ func (o *StepEnvApplyOptions) Run() error {
 	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrapf(err, "connecting to the kubernetes cluster")
-	}
-
-	certClient, err := o.CreateCertManagerClient()
-	if err != nil {
-		return errors.Wrapf(err, "creating the cert-manager client")
 	}
 
 	apisClient, err := o.ApiExtensionsClient()
@@ -226,18 +220,5 @@ func (o *StepEnvApplyOptions) Run() error {
 		return errors.Wrapf(err, "appling the helm chart in dir %s", dir)
 	}
 	log.Infof("Environment applied in namespace %s\n", util.ColorInfo(ns))
-	// Now run any post install actions
-	jxClient, _, err := o.JXClientAndDevNamespace()
-	if err != nil {
-		return err
-	}
-	versionsDir, err := o.cloneJXVersionsRepo("")
-	if err != nil {
-		return errors.Wrapf(err, "failed to clone the Jenkins X versions repository")
-	}
-	err = extensions.OnApply(jxClient, kubeClient, certClient, o.devNamespace, o.Helm(), defaultInstallTimeout, versionsDir)
-	if err != nil {
-		return err
-	}
 	return nil
 }

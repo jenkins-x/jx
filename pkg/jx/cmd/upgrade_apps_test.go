@@ -43,6 +43,7 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 		Alias:                alias,
 		Repo:                 "http://chartmuseum.jenkins-x.io",
 		GitOps:               true,
+		HelmUpdate:           true,
 		DevEnv:               testOptions.DevEnv,
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}
@@ -98,6 +99,7 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 		Alias:                alias,
 		Repo:                 "http://chartmuseum.jenkins-x.io",
 		GitOps:               true,
+		HelmUpdate:           true,
 		DevEnv:               testOptions.DevEnv,
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}
@@ -164,6 +166,7 @@ func TestUpgradeAllAppsForGitOps(t *testing.T) {
 		},
 		Repo:                 kube.DefaultChartMuseumURL,
 		GitOps:               true,
+		HelmUpdate:           true,
 		DevEnv:               testOptions.DevEnv,
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}

@@ -105,6 +105,7 @@ func CreateAppTestOptions(gitOps bool, t *testing.T) *AppTestOptions {
 		CommonOptions: &cmd.CommonOptions{
 			Factory: mockFactory,
 		},
+		MockFactory: mockFactory,
 	}
 	testOrgName := uuid.NewV4().String()
 	testRepoName := uuid.NewV4().String()
