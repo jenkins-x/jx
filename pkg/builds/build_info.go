@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+// BaseBuildInfo is an interface that is implemented by both BuildPodInfo here and kpipelines.PipelineRunInfo
 type BaseBuildInfo interface {
 	GetBuild() string
 }

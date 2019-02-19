@@ -23,6 +23,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// PipelineRunInfo provides information on a PipelineRun and its stages for use in getting logs and populating activity
 type PipelineRunInfo struct {
 	Name              string
 	Organisation      string
@@ -40,6 +41,7 @@ type PipelineRunInfo struct {
 	Stages            []*StageInfo
 }
 
+// StageInfo provides information on a particular stage, including its pod info or info on its nested stages
 type StageInfo struct {
 	// TODO: For now, we're not including git info - we're going to assume we have the same git info for the whole
 	// pipeline.
@@ -58,6 +60,7 @@ type StageInfo struct {
 	Stages   []*StageInfo
 }
 
+// PipelineRunInfoFilter allows specifying criteria on which to filter a list of PipelineRunInfos
 type PipelineRunInfoFilter struct {
 	Owner      string
 	Repository string
@@ -392,7 +395,7 @@ func stageAndChildrenToStageInfo(psc *v1.PipelineStageAndChildren) *StageInfo {
 }
 
 // PipelineRunMatches returns true if the pipeline run info matches the filter
-func (o *PipelineRunInfoFilter) BuildMatches(info *PipelineRunInfo) bool {
+func (o *PipelineRunInfoFilter) PipelineRunMatches(info *PipelineRunInfo) bool {
 	if o.Owner != "" && o.Owner != info.Organisation {
 		return false
 	}
@@ -447,6 +450,7 @@ func (pri *PipelineRunInfo) Status() string {
 	return string(pod.Status.Phase)
 }
 
+// PipelineRunInfoOrder allows sorting of a slice of PipelineRunInfos
 type PipelineRunInfoOrder []*PipelineRunInfo
 
 func (a PipelineRunInfoOrder) Len() int      { return len(a) }
@@ -466,6 +470,7 @@ func (a PipelineRunInfoOrder) Less(i, j int) bool {
 	return b1.BuildNumber > b2.BuildNumber
 }
 
+// SortPipelineRunInfos sorts a slice of PipelineRunInfos by their org, repo, branch, and build number
 func SortPipelineRunInfos(pris []*PipelineRunInfo) {
 	sort.Sort(PipelineRunInfoOrder(pris))
 }
