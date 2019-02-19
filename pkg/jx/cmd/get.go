@@ -87,6 +87,7 @@ func NewCmdGet(f Factory, in terminal.FileReader, out terminal.FileWriter, errOu
 	cmd.AddCommand(NewCmdGetPostPreviewJob(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetPreview(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetQuickstartLocation(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetQuickstarts(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetRelease(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetStorage(f, in, out, errOut))
 	cmd.AddCommand(NewCmdGetTeam(f, in, out, errOut))

@@ -106,7 +106,7 @@ func (o *MetricsOptions) Run() error {
 			}
 		}
 
-		p, err := o.waitForReadyPodForDeployment(client, ns, name, names, false)
+		p, err := o.WaitForReadyPodForDeployment(client, ns, name, names, false)
 		if err != nil {
 			return err
 		}

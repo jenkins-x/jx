@@ -30,7 +30,7 @@ func GetAdminNamespace(kubeClient kubernetes.Interface, teamNs string) (string, 
 
 // SetAdminNamespace annotates the given namespace with a backlink to the admin namespace.
 // it does not make any changes if the current annotation points to the same admin namespace
-func SetAdminNamespace(kubeClient kubernetes.Interface, teamNs string , adminNs string) error {
+func SetAdminNamespace(kubeClient kubernetes.Interface, teamNs string, adminNs string) error {
 	namespace, err := kubeClient.CoreV1().Namespaces().Get(teamNs, metav1.GetOptions{})
 	if err != nil {
 		return errors.Wrapf(err, "obtaining the namespace (%s) when updating the admin namespace", teamNs)

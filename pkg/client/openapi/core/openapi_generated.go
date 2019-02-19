@@ -58,6 +58,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionRepositoryReferenceList":  schema_pkg_apis_jenkinsio_v1_ExtensionRepositoryReferenceList(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionSpec":                     schema_pkg_apis_jenkinsio_v1_ExtensionSpec(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Fact":                              schema_pkg_apis_jenkinsio_v1_Fact(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactList":                          schema_pkg_apis_jenkinsio_v1_FactList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactSpec":                          schema_pkg_apis_jenkinsio_v1_FactSpec(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactStatus":                        schema_pkg_apis_jenkinsio_v1_FactStatus(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitService":                        schema_pkg_apis_jenkinsio_v1_GitService(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitServiceList":                    schema_pkg_apis_jenkinsio_v1_GitServiceList(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.GitServiceSpec":                    schema_pkg_apis_jenkinsio_v1_GitServiceSpec(ref),
@@ -71,6 +74,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivitySpec":              schema_pkg_apis_jenkinsio_v1_PipelineActivitySpec(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStatus":            schema_pkg_apis_jenkinsio_v1_PipelineActivityStatus(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStep":              schema_pkg_apis_jenkinsio_v1_PipelineActivityStep(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructure":                 schema_pkg_apis_jenkinsio_v1_PipelineStructure(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructureList":             schema_pkg_apis_jenkinsio_v1_PipelineStructureList(ref),
+		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructureStage":            schema_pkg_apis_jenkinsio_v1_PipelineStructureStage(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Plugin":                            schema_pkg_apis_jenkinsio_v1_Plugin(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PluginList":                        schema_pkg_apis_jenkinsio_v1_PluginList(ref),
 		"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PluginSpec":                        schema_pkg_apis_jenkinsio_v1_PluginSpec(ref),
@@ -1923,18 +1929,105 @@ func schema_pkg_apis_jenkinsio_v1_Fact(ref common.ReferenceCallback) common.Open
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "Fact represents observed facts. Apps will generate Facts about the system. A naming schema is required since each Fact has a name that's unique for the whole system. Apps should prefix their generated Facts with the name of the App, like <app-name>-<fact>. This makes that different Apps can't possibly have conflicting Fact names.\n\nFor an app generating facts on a pipeline, which will be have several different executions, we recommend <app>-<fact>-<pipeline>.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "The Fact labels will be used to query the API for interesting Facts. The Apps responsible for creating Facts need to add the relevant labels. For example, creating Facts on a pipeline would create Facts with the following labels {\n  subjectkind: PipelineActivity\n  pipelineName: my-org-my-app-master-23\n  org: my-org\n  repo: my-app\n  branch: master\n  buildNumber: 23\n}",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactSpec", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.FactStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_FactList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "FactList is a list of Fact resources",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Fact"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"metadata", "items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Fact", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_FactSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "FactSpec is the specification of a Fact",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
 							Format: "",
-						},
-					},
-					"id": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"integer"},
-							Format: "int32",
 						},
 					},
 					"factType": {
@@ -1985,12 +2078,37 @@ func schema_pkg_apis_jenkinsio_v1_Fact(ref common.ReferenceCallback) common.Open
 							},
 						},
 					},
+					"subject": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference"),
+						},
+					},
 				},
-				Required: []string{"name", "id", "factType", "measurements", "statements"},
+				Required: []string{"name", "factType", "statements", "subject"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Measurement", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Original", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Statement"},
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Measurement", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Original", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ResourceReference", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Statement"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_FactStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "FactStatus is the status for an Fact resource",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"version": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{},
 	}
 }
 
@@ -2264,7 +2382,8 @@ func schema_pkg_apis_jenkinsio_v1_Measurement(ref common.ReferenceCallback) comm
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "Measurement is a percentage or a count, something measured that the system will capture within a fact",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -2309,7 +2428,8 @@ func schema_pkg_apis_jenkinsio_v1_Original(ref common.ReferenceCallback) common.
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "Original contains the report",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"mimetype": {
 						SchemaProps: spec.SchemaProps{
@@ -2590,23 +2710,11 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivitySpec(ref common.ReferenceCallb
 							},
 						},
 					},
-					"facts": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Fact"),
-									},
-								},
-							},
-						},
-					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Attachment", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionExecution", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Fact", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStep", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.Attachment", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.ExtensionExecution", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineActivityStep", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -2663,6 +2771,192 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivityStep(ref common.ReferenceCallb
 		},
 		Dependencies: []string{
 			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PreviewActivityStep", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PromoteActivityStep", "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.StageActivityStep"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_PipelineStructure(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineStructure contains references to the Pipeline and PipelineRun, and a list of PipelineStructureStages in the pipeline. This allows us to map between a running Pod to its TaskRun, to the TaskRun's Task and PipelineRun, and finally from there to the stage and potential parent stages that the Pod is actually executing, for use with populating PipelineActivity and providing logs.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Standard object's metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"pipelineRunRef": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"stages": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructureStage"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"pipelineRunRef"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructureStage", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_PipelineStructureList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineStructureList is a list of PipelineStructureList resources",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructure"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"metadata", "items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1.PipelineStructure", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_pkg_apis_jenkinsio_v1_PipelineStructureStage(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "PipelineStructureStage contains the stage's name, one of either a reference to the Task corresponding to the stage if it has steps, a list of sequential stage names nested within this stage, or a list of parallel stage names nested within this stage, and information on this stage's depth within the PipelineStructure as a whole, the name of its parent stage, if any, the name of the stage before it in execution order, if any, and the name of the stage after it in execution order, if any.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"taskRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Must have one of TaskRef+TaskRunRef, Stages, or Parallel",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"taskRunRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Populated during pod discovery, not at initial creation time.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"stages": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"parallel": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Type:   []string{"string"},
+										Format: "",
+									},
+								},
+							},
+						},
+					},
+					"depth": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "byte",
+						},
+					},
+					"parent": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"previous": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"next": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"name", "depth"},
+			},
+		},
+		Dependencies: []string{},
 	}
 }
 
@@ -3624,7 +3918,8 @@ func schema_pkg_apis_jenkinsio_v1_Statement(ref common.ReferenceCallback) common
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Type: []string{"object"},
+				Description: "Statement represents a decision that was made, for example that a promotion was approved or denied",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{

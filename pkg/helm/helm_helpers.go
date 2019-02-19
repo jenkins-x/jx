@@ -447,7 +447,7 @@ type InstallChartOptions struct {
 // InstallFromChartOptions uses the helmer and kubeClient interfaces to install the chart from the options,
 // respeciting the installTimeout
 func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeClient kubernetes.Interface,
-	installTimeout string, ) error {
+	installTimeout string) error {
 	chart := options.Chart
 	if options.Version == "" {
 		versionsDir := options.VersionsDir
@@ -457,7 +457,7 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 		var err error
 		options.Version, err = version.LoadStableVersionNumber(versionsDir, version.KindChart, chart)
 		if err != nil {
-		  return errors.Wrapf(err, "failed to load stable version in dir %s for chart %s", versionsDir, chart)
+			return errors.Wrapf(err, "failed to load stable version in dir %s for chart %s", versionsDir, chart)
 		}
 	}
 	if options.HelmUpdate {

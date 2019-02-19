@@ -2,15 +2,15 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
+	"github.com/pkg/errors"
+
 	"github.com/jenkins-x/draft-repo/pkg/draft/pack"
 	"github.com/jenkins-x/jx/pkg/config"
 	jxdraft "github.com/jenkins-x/jx/pkg/draft"
-	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile/gitresolver"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -54,7 +54,7 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 	jenkinsfilePath := i.Jenkinsfile
 	defaultJenkinsfile := i.DefaultJenkinsfile
 	if defaultJenkinsfile == "" {
-		defaultJenkinsfile = filepath.Join(dir, jenkins.DefaultJenkinsfile)
+		defaultJenkinsfile = filepath.Join(dir, jenkinsfile.Name)
 	}
 
 	pomName := filepath.Join(dir, "pom.xml")
@@ -186,7 +186,7 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 	defaultJenkinsfileExists, err := util.FileExists(defaultJenkinsfile)
 	if defaultJenkinsfileExists && !disableJenkinsfileCheck {
 		// lets copy the old Jenkinsfile in case we override it
-		jenkinsfileBackup = defaultJenkinsfile + JenkinsfileBackupSuffix
+		jenkinsfileBackup = defaultJenkinsfile + jenkinsfile.BackupSuffix
 		err = util.RenameFile(defaultJenkinsfile, jenkinsfileBackup)
 		if err != nil {
 			return "", fmt.Errorf("Failed to rename old Jenkinsfile: %s", err)
@@ -204,7 +204,7 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 	if err == nil && exists {
 		files, err := ioutil.ReadDir(chartsDir)
 		if err != nil {
-		  return draftPack, errors.Wrapf(err, "failed to read charts dir %s", chartsDir)
+			return draftPack, errors.Wrapf(err, "failed to read charts dir %s", chartsDir)
 		}
 		if len(files) == 0 {
 			err = os.Remove(chartsDir)
@@ -286,7 +286,7 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 			log.Warnf("Failed to check for Jenkinsfile %s", err)
 		} else {
 			if jenkinsfileExists {
-				if !initialisedGit && !withRename{
+				if !initialisedGit && !withRename {
 					err = os.Remove(jenkinsfileBackup)
 					if err != nil {
 						log.Warnf("Failed to remove Jenkinsfile backup %s", err)

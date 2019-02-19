@@ -164,7 +164,6 @@ func (o *CreateQuickstartOptions) Run() error {
 		o.Filter.ProjectName = details.RepoName
 	}
 
-
 	model, err := o.LoadQuickstartsFromMap(config, gitMap)
 	if err != nil {
 		return fmt.Errorf("failed to load quickstarts: %s", err)

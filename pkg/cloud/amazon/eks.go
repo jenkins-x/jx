@@ -23,7 +23,7 @@ func EksClusterExists(clusterName string, profile string, region string) (bool, 
 		if i == 0 {
 			continue
 		}
-		if strings.HasPrefix(line, clusterName + "\t") {
+		if strings.HasPrefix(line, clusterName+"\t") {
 			return true, nil
 		}
 	}
@@ -31,13 +31,12 @@ func EksClusterExists(clusterName string, profile string, region string) (bool, 
 	return false, nil
 }
 
-
 // EksClusterObsoleteStackExists detects if there is obsolete CloudFormation stack for given EKS cluster.
 //
 // If EKS cluster creation process is interrupted, there will be CloudFormation stack in ROLLBACK_COMPLETE state left.
 // Such dead stack prevents eksctl from creating cluster with the same name. This is common activity then to remove stacks
 // like this and this function performs this action.
-func EksClusterObsoleteStackExists(clusterName string, profile string, region string) (bool, error)  {
+func EksClusterObsoleteStackExists(clusterName string, profile string, region string) (bool, error) {
 	session, err := NewAwsSession(profile, region)
 	if err != nil {
 		return false, err

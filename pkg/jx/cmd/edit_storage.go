@@ -88,7 +88,6 @@ func NewCmdEditStorage(f Factory, in terminal.FileReader, out terminal.FileWrite
 	return cmd
 }
 
-
 func addStorageLocationFlags(cmd *cobra.Command, location *jenkinsv1.StorageLocation) {
 	cmd.Flags().StringVarP(&location.Classifier, "classifier", "c", "", "A name which classifies this type of file. Example values: "+kube.ClassificationValues)
 	cmd.Flags().StringVarP(&location.BucketURL, "bucket-url", "", "", "Specify the cloud storage bucket URL to send each file to. e.g. use 's3://nameOfBucket' on AWS, gs://anotherBucket' on GCP or on Azure 'azblob://thatBucket'")
@@ -104,7 +103,7 @@ func (o *EditStorageOptions) Run() error {
 	}
 
 	classifier := o.StorageLocation.Classifier
-	if classifier == "" && ! o.BatchMode {
+	if classifier == "" && !o.BatchMode {
 		o.StorageLocation.Classifier, err = util.PickName(kube.Classifications, "Pick the content classification name", "The name is used as a key to store content in different locations", o.In, o.Out, o.Err)
 		if err != nil {
 			return errors.Wrapf(err, "failed to pick the classification name")
@@ -120,7 +119,7 @@ func (o *EditStorageOptions) Run() error {
 		if !o.CreateBucket.IsEmpty() {
 			o.StorageLocation.BucketURL, err = o.createBucket(&o.CreateBucket, settings)
 			if err != nil {
-			  return err
+				return err
 			}
 		}
 		if o.StorageLocation.BucketURL == "" {

@@ -3,29 +3,16 @@ package cmd
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/helm/pkg/proto/hapi/chart"
-	"net/url"
-	"os"
-	"path/filepath"
-	"strings"
 
-	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/apps"
+
+	"github.com/jenkins-x/jx/pkg/environments"
+
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 
-	"github.com/jenkins-x/jx/pkg/vault"
-
-	"github.com/jenkins-x/jx/pkg/surveyutils"
-
-	"github.com/ghodss/yaml"
-
-	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/util"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-
-	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
@@ -46,13 +33,13 @@ type AddAppOptions struct {
 	Alias    string
 
 	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback ConfigureGitFolderFn
+	ConfigureGitCallback environments.ConfigureGitFn
 
 	Namespace   string
 	Version     string
 	ReleaseName string
 	SetValues   []string
-	ValueFiles  []string
+	ValuesFiles []string
 	HelmUpdate  bool
 }
 
@@ -62,22 +49,6 @@ const (
 	optionSet        = "set"
 	optionAlias      = "alias"
 )
-
-const (
-	appsGeneratedSecretKey = "appsGeneratedSecrets"
-)
-
-const secretTemplate = `
-{{- range .Values.generatedSecrets }}
-apiVersion: v1
-data:
-  {{ .key }}: {{ .value }}
-kind: Secret
-metadata:
-  name: {{ .name }} 
-type: Opaque
-{{- end }}
-`
 
 // NewCmdAddApp creates a command object for the "create" command
 func NewCmdAddApp(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
@@ -124,11 +95,12 @@ func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string, de
 	cmd.Flags().StringVarP(&o.Alias, optionAlias, "", "",
 		"An alias to use for the app (available when using GitOps for your dev environment)")
 	cmd.Flags().StringVarP(&o.ReleaseName, optionRelease, "r", defaultOptionRelease,
-		"The chart release name (available when NOT using GitOps for your dev environment)")
+		"The chart release name (by default the name of the app, available when NOT using GitOps for your dev"+
+			" environment)")
 	cmd.Flags().BoolVarP(&o.HelmUpdate, optionHelmUpdate, "", true,
 		"Should we run helm update first to ensure we use the latest version (available when NOT using GitOps for your dev environment)")
 	cmd.Flags().StringVarP(&o.Namespace, optionNamespace, "n", defaultNamespace, "The Namespace to install into (available when NOT using GitOps for your dev environment)")
-	cmd.Flags().StringArrayVarP(&o.ValueFiles, optionValues, "f", []string{}, "List of locations for values files, "+
+	cmd.Flags().StringArrayVarP(&o.ValuesFiles, optionValues, "f", []string{}, "List of locations for values files, "+
 		"can be local files or URLs (available when NOT using GitOps for your dev environment)")
 	cmd.Flags().StringArrayVarP(&o.SetValues, optionSet, "s", []string{},
 		"The chart set values (can specify multiple or separate values with commas: key1=val1,key2=val2) (available when NOT using GitOps for your dev environment)")
@@ -145,30 +117,16 @@ func (o *AddAppOptions) Run() error {
 		o.Repo = kube.DefaultChartMuseumURL
 	}
 
-	var vaultBasepath string
-	var vaultClient vault.Client
-	secretsLocation := o.SecretsLocation()
-	useVault := (secretsLocation == secrets.VaultLocationKind)
-	if useVault {
-		var err error
-		if o.GitOps {
-			gitInfo, err := gits.ParseGitURL(o.DevEnv.Spec.Source.URL)
-			if err != nil {
-				return err
-			}
-			vaultBasepath = strings.Join([]string{"gitOps", gitInfo.Organisation, gitInfo.Name}, "/")
-		} else {
+	opts := apps.InstallOptions{
+		In:        o.In,
+		DevEnv:    o.DevEnv,
+		Verbose:   o.Verbose,
+		Err:       o.Err,
+		Out:       o.Out,
+		GitOps:    o.GitOps,
+		BatchMode: o.BatchMode,
 
-			teamName, _, err := o.TeamAndEnvironmentNames()
-			if err != nil {
-				return err
-			}
-			vaultBasepath = strings.Join([]string{"teams", teamName}, "/")
-		}
-		vaultClient, err = o.CreateSystemVaultClient("")
-		if err != nil {
-			return err
-		}
+		Helmer: o.Helm(),
 	}
 
 	if o.GitOps {
@@ -185,19 +143,60 @@ func (o *AddAppOptions) Run() error {
 		if len(o.SetValues) > 0 {
 			return util.InvalidOptionf(optionSet, o.SetValues, msg, optionSet)
 		}
-		if len(o.ValueFiles) > 1 {
+		if len(o.ValuesFiles) > 1 {
 			return util.InvalidOptionf(optionValues, o.SetValues,
 				"no more than one --%s can be specified when using GitOps for your dev environment", optionValues)
 		}
-		if !useVault {
+		if o.SecretsLocation() != secrets.VaultLocationKind {
 			return fmt.Errorf("cannot install apps without a vault when using GitOps for your dev environment")
 		}
+		environmentsDir, err := o.EnvironmentsDir()
+		if err != nil {
+			return errors.Wrapf(err, "getting environments dir")
+		}
+		opts.EnvironmentsDir = environmentsDir
+
+		gitProvider, _, err := o.createGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
+		if err != nil {
+			return errors.Wrapf(err, "creating git provider for %s", o.DevEnv.Spec.Source.URL)
+		}
+		opts.GitProvider = gitProvider
+		opts.ConfigureGitFn = o.ConfigureGitCallback
+		opts.Gitter = o.Git()
 	}
 	if !o.GitOps {
 		if o.Alias != "" {
 			return util.InvalidOptionf(optionAlias, o.Alias,
 				"unable to specify --%s when NOT using GitOps for your dev environment", optionAlias)
 		}
+		err := o.ensureHelm()
+		if err != nil {
+			return errors.Wrap(err, "failed to ensure that helm is present")
+		}
+		jxClient, _, err := o.JXClientAndDevNamespace()
+		if err != nil {
+			return errors.Wrapf(err, "getting jx client")
+		}
+		kubeClient, _, err := o.KubeClientAndDevNamespace()
+		if err != nil {
+			return errors.Wrapf(err, "getting kubeClient")
+		}
+		opts.Namespace = o.Namespace
+		opts.KubeClient = kubeClient
+		opts.JxClient = jxClient
+		opts.InstallTimeout = defaultInstallTimeout
+	}
+	if o.SecretsLocation() == secrets.VaultLocationKind {
+		teamName, _, err := o.TeamAndEnvironmentNames()
+		if err != nil {
+			return err
+		}
+		opts.TeamName = teamName
+		client, err := o.CreateSystemVaultClient("")
+		if err != nil {
+			return err
+		}
+		opts.VaultClient = &client
 	}
 
 	args := o.Args
@@ -212,253 +211,15 @@ func (o *AddAppOptions) Run() error {
 		return fmt.Errorf("must specify a repository")
 	}
 
-	for _, app := range args {
-		var version string
-		if o.Version != "" {
-			version = o.Version
-		}
-		var schema []byte
-		var metadata *chart.Metadata
-		err := helm.InspectChart(app, version, o.Repo, o.Username, o.Password, o.Helm(), func(dir string) error {
-			var err error
-			metadata, err = helm.LoadChartFile(filepath.Join(dir, "Chart.yaml"))
-			if err != nil {
-				return errors.Wrapf(err, "error loading chart from %s", dir)
-			}
-			if o.Verbose && version == "" {
-				log.Infof("No version specified so using latest version which is %s\n", util.ColorInfo(metadata.Version))
-			}
-			version = metadata.Version
-			schemaFile := filepath.Join(dir, "values.schema.json")
-			if _, err := os.Stat(schemaFile); !os.IsNotExist(err) {
-				schema, err = ioutil.ReadFile(schemaFile)
-				if err != nil {
-					return errors.Wrapf(err, "error reading schema file %s", schemaFile)
-				}
-			}
-
-			if schema != nil {
-				secrets := make([]*surveyutils.GeneratedSecret, 0)
-				schemaOptions := surveyutils.JSONSchemaOptions{
-					CreateSecret: func(name string, key string, value string) (*jenkinsv1.ResourceReference, error) {
-						secret := &surveyutils.GeneratedSecret{
-							Name:  name,
-							Key:   key,
-							Value: value,
-						}
-						secrets = append(secrets, secret)
-						return &jenkinsv1.ResourceReference{
-							Name: name,
-							Kind: "Secret",
-						}, nil
-
-					},
-				}
-				values, err := schemaOptions.GenerateValues(schema, []string{}, o.In, o.Out, o.Err)
-				if err != nil {
-					return errors.Wrapf(err, "error generating values for schema %s", schemaFile)
-				}
-				valuesYaml, err := yaml.JSONToYAML(values)
-				if err != nil {
-					return errors.Wrapf(err, "error converting values from json to yaml\n\n%v", values)
-				}
-				if o.Verbose {
-					log.Infof("Generated values.yaml:\n\n%v\n", util.ColorInfo(string(valuesYaml)))
-				}
-
-				var secretsYaml []byte
-				// We write a secret template into the chart, append the values for the generated secrets to values.yaml
-				if len(secrets) > 0 {
-					if useVault {
-						for _, secret := range secrets {
-							path := strings.Join([]string{vaultBasepath, secret.Name}, "/")
-							err := vault.WriteMap(vaultClient, path, map[string]interface{}{
-								secret.Key: secret.Value,
-							})
-							if err != nil {
-								return err
-							}
-						}
-					} else {
-						// For each secret, we write a file into the chart
-						templatesDir := filepath.Join(dir, "templates")
-						err = os.MkdirAll(templatesDir, 0700)
-						if err != nil {
-							return err
-						}
-						fileName := filepath.Join(templatesDir, "app-generated-secret-template.yaml")
-						err := ioutil.WriteFile(fileName, []byte(secretTemplate), 0755)
-						if err != nil {
-							return err
-						}
-						allSecrets := map[string][]*surveyutils.GeneratedSecret{
-							appsGeneratedSecretKey: secrets,
-						}
-						secretsYaml, err = yaml.Marshal(allSecrets)
-						if err != nil {
-							return err
-						}
-					}
-				}
-
-				if err != nil {
-					return err
-				}
-				if len(o.ValueFiles) > 0 && schema != nil {
-					log.Warnf("values.yaml specified by --valuesFiles will be used despite presence of schema in app")
-				} else if schema != nil {
-					valuesFile, err := ioutil.TempFile("", fmt.Sprintf("%s-values.yaml", app))
-					defer func() {
-						err = valuesFile.Close()
-						if err != nil {
-							log.Warnf("Error closing %s because %v\n", valuesFile.Name(), err)
-						}
-						err = util.DeleteFile(valuesFile.Name())
-						if err != nil {
-							log.Warnf("Error deleting %s because %v\n", valuesFile.Name(), err)
-						}
-					}()
-					if err != nil {
-						return err
-					}
-					_, err = valuesFile.Write(valuesYaml)
-					if err != nil {
-						return err
-					}
-
-					o.ValueFiles = []string{
-						valuesFile.Name(),
-					}
-					if !o.GitOps {
-						if len(secretsYaml) > 0 {
-							secretsFile, err := ioutil.TempFile("", fmt.Sprintf("%s-secrets.yaml", app))
-							defer func() {
-								err = secretsFile.Close()
-								if err != nil {
-									log.Warnf("Error closing %s because %v\n", secretsFile.Name(), err)
-								}
-								err = util.DeleteFile(secretsFile.Name())
-								if err != nil {
-									log.Warnf("Error deleting %s because %v\n", secretsFile.Name(), err)
-								}
-							}()
-							if err != nil {
-								return err
-							}
-							_, err = secretsFile.Write(secretsYaml)
-							if err != nil {
-								return err
-							}
-							o.ValueFiles = append(o.ValueFiles, secretsFile.Name())
-						}
-					}
-				}
-
-				if err != nil {
-					return err
-				}
-			}
-
-			if o.GitOps {
-				err := o.createPR(app, dir, version)
-				if err != nil {
-					return err
-				}
-			} else {
-				err := o.installApp(app, dir, version, metadata)
-				if err != nil {
-					return err
-				}
-			}
-			return nil
-
-		})
-		if err != nil {
-			return err
-		}
+	var version string
+	if o.Version != "" {
+		version = o.Version
 	}
-	return nil
-}
-
-func (o *AddAppOptions) createPR(app string, dir string, version string) error {
-
-	branchNameText := "add-app-" + app + "-" + version
-	title := fmt.Sprintf("Add %s %s", app, version)
-	message := fmt.Sprintf("Add app %s %s", app, version)
-
-	pullRequestInfo, err := o.createEnvironmentPullRequest(o.DevEnv, o.CreateAddRequirementFn(app, o.Alias, version,
-		o.Repo, o.ValueFiles, dir),
-		&branchNameText, &title,
-		&message,
-		nil, o.ConfigureGitCallback)
-	if err != nil {
-		return errors.Wrapf(err, "creating pr for %s", app)
-	}
-	log.Infof("Added app via Pull Request %s\n", pullRequestInfo.PullRequest.URL)
-	return nil
-}
-
-func (o *AddAppOptions) installApp(name string, chart string, version string, metadata *chart.Metadata) error {
-	err := o.ensureHelm()
-	if err != nil {
-		return errors.Wrap(err, "failed to ensure that helm is present")
-	}
-	setValues := make([]string, 0)
-	for _, vs := range o.SetValues {
-		setValues = append(setValues, strings.Split(vs, ",")...)
+	app := args[0]
+	if o.ReleaseName == "" {
+		o.ReleaseName = app
 	}
 
-	err = o.installChartOptions(helm.InstallChartOptions{
-		ReleaseName: name,
-		Chart:       chart,
-		Version:     version,
-		Ns:          o.Namespace,
-		HelmUpdate:  o.HelmUpdate,
-		SetValues:   setValues,
-		ValueFiles:  o.ValueFiles,
-		Repository:  o.Repo,
-		Username:    o.Username,
-		Password:    o.Password,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to install name %s: %v", name, err)
-	}
-	// Attach the secrets to the name CRD
-
-	err = o.OnAppInstall(name, version)
-	if err != nil {
-		return errors.Wrapf(err, "running postinstall hooks for %s version %s", name, version)
-	}
-	err = o.addAppMetadata(name, metadata)
-	if err != nil {
-		return err
-	}
-	log.Infof("Successfully installed %s %s into %s\n", util.ColorInfo(name), util.ColorInfo(version), util.ColorInfo(o.Namespace))
-	return nil
-}
-
-func (o *AddAppOptions) addAppMetadata(name string, metadata *chart.Metadata) error {
-	selector := fmt.Sprintf("chart=%s-%s", name, metadata.Version)
-	appList, _ := o.jxClient.JenkinsV1().Apps(o.Namespace).List(v1.ListOptions{
-		LabelSelector: selector,
-	})
-	if len(appList.Items) > 1 {
-		return fmt.Errorf("more than one app (%v) was found for %s", appList.Items, selector)
-	} else if len(appList.Items) == 1 {
-		appName := appList.Items[0].Name
-		app, err := o.jxClient.JenkinsV1().Apps(o.Namespace).Get(appName, v1.GetOptions{})
-		if app.Annotations == nil {
-			app.Annotations = make(map[string]string)
-		}
-		app.Annotations[helm.AnnotationAppDescription] = metadata.GetDescription()
-		repoURL, err := url.Parse(o.Repo)
-		if err != nil {
-			return errors.Wrap(err, "Invalid repository url")
-		}
-		app.Annotations[helm.AnnotationAppRepository] = util.StripCredentialsFromURL(repoURL)
-		app.Labels[helm.LabelAppName] = metadata.Name
-		_, err = o.jxClient.JenkinsV1().Apps(o.Namespace).Update(app)
-		return nil
-	}
-	return fmt.Errorf("No app could be found %s", selector)
+	return opts.AddApp(app, version, o.Repo, o.Username, o.Password, o.ReleaseName, o.ValuesFiles, o.SetValues,
+		o.Alias, o.HelmUpdate)
 }

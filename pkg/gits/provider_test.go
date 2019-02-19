@@ -144,8 +144,8 @@ func restoreEnviron(t *testing.T, environ map[string]string) {
 
 func TestCreateGitProviderFromURL(t *testing.T) {
 	t.Parallel()
-	utiltests.SkipForWindows(t, "go-expect does not work on Windows")	
-	
+	utiltests.SkipForWindows(t, "go-expect does not work on Windows")
+
 	git := mocks.NewMockGitter()
 
 	tests := []struct {

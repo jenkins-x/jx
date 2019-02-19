@@ -150,5 +150,3 @@ func (o *CreateSpringOptions) Run() error {
 
 	return o.ImportCreatedProject(outDir)
 }
-
-

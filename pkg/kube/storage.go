@@ -7,7 +7,7 @@ const (
 	ClassificationLogs = "logs"
 
 	// ClassificationTest stores test results/rports
-	ClassificationTests= "tests"
+	ClassificationTests = "tests"
 
 	// ClassificationCoverage stores code coverage results/reports
 	ClassificationCoverage = "coverage"
@@ -21,5 +21,4 @@ var (
 
 	// ClassificationValues the classification values as a string
 	ClassificationValues = strings.Join(Classifications, ", ")
-
 )

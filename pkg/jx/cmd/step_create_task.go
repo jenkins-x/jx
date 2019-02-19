@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
@@ -58,6 +59,7 @@ type StepCreateTaskOptions struct {
 	BuildPackRef   string
 	PipelineKind   string
 	Context        string
+	CustomLabels   []string
 	NoApply        bool
 	Trigger        string
 	TargetPath     string
@@ -66,6 +68,7 @@ type StepCreateTaskOptions struct {
 	DockerRegistry string
 	CloneGitURL    string
 	Branch         string
+	Revision       string
 	DeleteTempDir  bool
 	ViewSteps      bool
 	Duration       time.Duration
@@ -87,6 +90,7 @@ type StepCreateTaskResults struct {
 	Tasks       []*pipelineapi.Task
 	Resources   []*pipelineapi.PipelineResource
 	PipelineRun *pipelineapi.PipelineRun
+	Structure   *v1.PipelineStructure
 }
 
 // NewCmdStepCreateTask Creates a new Command object
@@ -123,8 +127,10 @@ func NewCmdStepCreateTask(f Factory, in terminal.FileReader, out terminal.FileWr
 	cmd.Flags().StringVarP(&options.BuildPackRef, "ref", "r", "", "The Git reference (branch,tag,sha) in the Git repository to use")
 	cmd.Flags().StringVarP(&options.Pack, "pack", "p", "", "The build pack name. If none is specified its discovered from the source code")
 	cmd.Flags().StringVarP(&options.Branch, "branch", "", "", "The git branch to trigger the build in. Defaults to the current local branch name")
+	cmd.Flags().StringVarP(&options.Revision, "revision", "", "", "The git revision to checkout, can be a branch name or git sha")
 	cmd.Flags().StringVarP(&options.PipelineKind, "kind", "k", "release", "The kind of pipeline to create such as: "+strings.Join(jenkinsfile.PipelineKinds, ", "))
 	cmd.Flags().StringVarP(&options.Context, "context", "c", "", "The pipeline context if there are multiple separate pipelines for a given branch")
+	cmd.Flags().StringArrayVarP(&options.CustomLabels, "labels", "l", nil, "List of custom labels to be applied to resources that are created")
 	cmd.Flags().StringVarP(&options.Trigger, "trigger", "t", string(pipelineapi.PipelineTriggerTypeManual), "The kind of pipeline trigger")
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "build-pipeline", "The Kubernetes ServiceAccount to use to run the pipeline")
 	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
@@ -199,7 +205,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	if o.PipelineKind == "" {
 		return util.MissingOption("kind")
 	}
-	projectConfig, projectConfigFile, err := config.LoadProjectConfig(o.Dir)
+	projectConfig, projectConfigFile, err := o.loadProjectConfig()
 	if err != nil {
 		return errors.Wrapf(err, "failed to load project config in dir %s", o.Dir)
 	}
@@ -263,6 +269,21 @@ func (o *StepCreateTaskOptions) Run() error {
 		return errors.Wrapf(err, "failed to generate Task for build pack pipeline YAML: %s", pipelineFile)
 	}
 	return err
+}
+
+func (o *StepCreateTaskOptions) loadProjectConfig() (*config.ProjectConfig, string, error) {
+	if o.Context != "" {
+		fileName := filepath.Join(o.Dir, fmt.Sprintf("jenkins-x-%s.yml", o.Context))
+		exists, err := util.FileExists(fileName)
+		if err != nil {
+			return nil, fileName, errors.Wrapf(err, "failed to check if file exists %s", fileName)
+		}
+		if exists {
+			config, err := config.LoadProjectConfigFile(fileName)
+			return config, fileName, err
+		}
+	}
+	return config.LoadProjectConfig(o.Dir)
 }
 
 func (o *StepCreateTaskOptions) loadPodTemplates(kubeClient kubernetes.Interface, ns string) error {
@@ -341,7 +362,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		// TODO: use org-name-branch for pipeline name? Create client now to get
 		// namespace? Set namespace when applying rather than during generation?
 		name := kpipelines.PipelineResourceName(o.gitInfo, o.Branch, o.Context)
-		pipeline, tasks, err := lifecycles.Pipeline.GenerateCRDs(name, o.buildNumber, "will-be-replaced", "abcd", o.PodTemplates)
+		pipeline, tasks, structure, err := lifecycles.Pipeline.GenerateCRDs(name, o.buildNumber, "will-be-replaced", "abcd", o.PodTemplates)
 		if err != nil {
 			return errors.Wrapf(err, "Generation failed for Pipeline")
 		}
@@ -372,14 +393,14 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		var resources []*pipelineapi.PipelineResource
 		resources = append(resources, o.generateSourceRepoResource(name), o.generateTempOrderingResource())
 
-		err = o.applyPipeline(pipeline, tasks, resources, o.gitInfo, o.Branch)
+		err = o.applyPipeline(pipeline, tasks, resources, structure, o.gitInfo, o.Branch)
 		if err != nil {
 			return errors.Wrapf(err, "failed to apply generated Pipeline")
 		}
 
 		folderName := o.OutDir
 		if folderName != "" {
-			err = o.writeOutput(folderName, o.Results.Pipeline, o.Results.Tasks, o.Results.PipelineRun, o.Results.Resources)
+			err = o.writeOutput(folderName, o.Results.Pipeline, o.Results.Tasks, o.Results.PipelineRun, o.Results.Resources, o.Results.Structure)
 			if err != nil {
 				return errors.Wrapf(err, "failed to write generated output to %s", folderName)
 			}
@@ -446,7 +467,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 
 	folderName := o.OutDir
 	if folderName != "" {
-		err = o.writeOutput(folderName, o.Results.Pipeline, o.Results.Tasks, o.Results.PipelineRun, o.Results.Resources)
+		err = o.writeOutput(folderName, o.Results.Pipeline, o.Results.Tasks, o.Results.PipelineRun, o.Results.Resources, nil)
 		if err != nil {
 			return errors.Wrapf(err, "failed to write generated output to %s", folderName)
 		}
@@ -473,7 +494,7 @@ func (o *StepCreateTaskOptions) generateSourceRepoResource(name string) *pipelin
 					Params: []pipelineapi.Param{
 						{
 							Name:  "revision",
-							Value: o.Branch,
+							Value: o.Revision,
 						},
 						{
 							Name:  "url",
@@ -533,15 +554,28 @@ func (o *StepCreateTaskOptions) setBuildValues() error {
 		labels["repo"] = o.gitInfo.Name
 	}
 	labels["branch"] = o.Branch
-	o.labels = labels
 
+	return o.combineLabels(labels)
+}
+
+func (o *StepCreateTaskOptions) combineLabels(labels map[string]string) error {
+	// add any custom labels
+	for _, customLabel := range o.CustomLabels {
+		parts := strings.Split(customLabel, "=")
+		if len(parts) != 2 {
+			return errors.Errorf("expected 2 parts to label but got %v", len(parts))
+		}
+		log.Infof("a %s : %s \n", parts[0], parts[1])
+		labels[parts[0]] = parts[1]
+	}
+	o.labels = labels
 	return nil
 }
 
 // TODO: Use the same YAML lib here as in buildpipeline/pipeline.go
 // TODO: Use interface{} with a helper function to reduce code repetition?
 // TODO: Take no arguments and use o.Results internally?
-func (o *StepCreateTaskOptions) writeOutput(folder string, pipeline *pipelineapi.Pipeline, tasks []*pipelineapi.Task, pipelineRun *pipelineapi.PipelineRun, resources []*pipelineapi.PipelineResource) error {
+func (o *StepCreateTaskOptions) writeOutput(folder string, pipeline *pipelineapi.Pipeline, tasks []*pipelineapi.Task, pipelineRun *pipelineapi.PipelineRun, resources []*pipelineapi.PipelineResource, structure *v1.PipelineStructure) error {
 	if err := os.Mkdir(folder, os.ModePerm); err != nil {
 		if !os.IsExist(err) {
 			return err
@@ -569,6 +603,18 @@ func (o *StepCreateTaskOptions) writeOutput(folder string, pipeline *pipelineapi
 	}
 	log.Infof("generated PipelineRun at %s\n", util.ColorInfo(fileName))
 
+	if structure != nil {
+		data, err = yaml.Marshal(structure)
+		if err != nil {
+			return errors.Wrapf(err, "failed to marshal PipelineStructure YAML")
+		}
+		fileName = filepath.Join(folder, "structure.yml")
+		err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to save PipelineStructure file %s", fileName)
+		}
+		log.Infof("generated PipelineStructure at %s\n", util.ColorInfo(fileName))
+	}
 	for i, task := range tasks {
 		data, err = yaml.Marshal(task)
 		if err != nil {
@@ -642,14 +688,14 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 			Tasks:     tasks,
 		},
 	}
-	return o.applyPipeline(pipeline, []*pipelineapi.Task{task}, pipelineResources, gitInfo, branch)
+	return o.applyPipeline(pipeline, []*pipelineapi.Task{task}, pipelineResources, nil, gitInfo, branch)
 }
 
 // Given a Pipeline and its Tasks, applies the Tasks and Pipeline to the cluster
 // and creates and applies a PipelineResource for their source repo and a PipelineRun
 // to execute them. Handles o.NoApply internally.
 // TODO: Probably needs to take PipelineResources as an input as well
-func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, tasks []*pipelineapi.Task, resources []*pipelineapi.PipelineResource, gitInfo *gits.GitRepository, branch string) error {
+func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, tasks []*pipelineapi.Task, resources []*pipelineapi.PipelineResource, structure *v1.PipelineStructure, gitInfo *gits.GitRepository, branch string) error {
 	_, ns, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return err
@@ -749,12 +795,45 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 			return errors.Wrapf(err, "failed to create the PipelineRun in namespace %s", ns)
 		}
 		log.Infof("created PipelineRun %s\n", info(run.Name))
+
+		if structure != nil {
+			structure.PipelineRunRef = &run.Name
+
+			// TODO: Yeah, this should be moved into probably kpipelines/pipelines.go.
+			apisClient, err := o.ApiExtensionsClient()
+			if err != nil {
+				return err
+			}
+			err = kube.RegisterPipelineStructureCRD(apisClient)
+			if err != nil {
+				return err
+			}
+
+			jxClient, _, err := o.JXClientAndDevNamespace()
+			if err != nil {
+				return err
+			}
+			structuresClient := jxClient.JenkinsV1().PipelineStructures(ns)
+			structure.OwnerReferences = []metav1.OwnerReference{
+				{
+					APIVersion: syntax.PipelineAPIVersion,
+					Kind:       "Pipeline",
+					Name:       pipeline.Name,
+					UID:        pipeline.UID,
+				},
+			}
+			if _, structErr := structuresClient.Create(structure); structErr != nil {
+				return errors.Wrapf(structErr, "failed to create the PipelineStructure in namespace %s", ns)
+			}
+			log.Infof("created PipelineStructure %s\n", info(structure.Name))
+		}
 	}
 
 	o.Results.Tasks = tasks
 	o.Results.Pipeline = pipeline
 	o.Results.Resources = resources
 	o.Results.PipelineRun = run
+	o.Results.Structure = structure
 	return nil
 }
 
@@ -771,11 +850,11 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 	gitInfo := o.gitInfo
 	if gitInfo != nil {
 		dir = strings.Replace(dir, "REPLACE_ME_APP_NAME", gitInfo.Name, -1)
-		dir = strings.Replace(dir, "REPLACE_ME_ORG_NAME", gitInfo.Organisation, -1)
+		dir = strings.Replace(dir, "REPLACE_ME_ORG", gitInfo.Organisation, -1)
 	} else {
 		log.Warnf("No GitInfo available!\n")
 	}
-	
+
 	if step.Command != "" {
 		if containerName == "" {
 			containerName = defaultContainerName
@@ -984,9 +1063,16 @@ func (o *StepCreateTaskOptions) cloneGitRepositoryToTempDir(gitURL string) error
 		return err
 	}
 	log.Infof("cloning repository %s to temp dir %s\n", gitURL, o.Dir)
-	err = o.Git().ShallowCloneBranch(gitURL, o.Branch, o.Dir)
+	err = o.Git().Clone(gitURL, o.Dir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to clone repository %s to directory %s", gitURL, o.Dir)
+	}
+	if o.Revision != "" {
+		log.Infof("checking out revision %s\n", o.Revision)
+		err = o.Git().Checkout(o.Dir, o.Revision)
+		if err != nil {
+			return errors.Wrapf(err, "failed to checkout revision %s", o.Revision)
+		}
 	}
 	return nil
 

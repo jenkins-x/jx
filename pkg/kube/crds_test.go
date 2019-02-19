@@ -23,3 +23,17 @@ func TestRegisterEnvironmentCRD(t *testing.T) {
 
 	assert.NoError(t, err, "Should not error")
 }
+
+func TestRegisterPipelineStructureCRD(t *testing.T) {
+	// mock factory
+	factory := cmd_mocks.NewMockFactory()
+
+	// mock apiExtensions interface
+	apiextensionsInterface := apiextentions_mocks.NewSimpleClientset()
+	// Override CreateApiExtensionsClient to return mock apiextensions interface
+	When(factory.CreateApiExtensionsClient()).ThenReturn(apiextensionsInterface, nil)
+
+	err := kube.RegisterPipelineStructureCRD(apiextensionsInterface)
+
+	assert.NoError(t, err, "Should not error")
+}

@@ -61,7 +61,7 @@ func GetBuildNumberFromLabels(m map[string]string) string {
 	}
 
 	answer := ""
-	for _, key := range []string{LabelBuildName, "build-number", LabelOldBuildName} {
+	for _, key := range []string{LabelBuildName, "build-number", LabelOldBuildName, LabelPipelineRunName} {
 		answer = m[key]
 		if answer != "" {
 			break

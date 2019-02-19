@@ -48,12 +48,19 @@ var (
 	}
 )
 
+// CompletionOptions options for completion command
+type CompletionOptions struct {
+	CommonOptions
+}
+
 func NewCmdCompletion(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := &CommonOptions{
-		Factory: f,
-		In:      in,
-		Out:     out,
-		Err:     errOut,
+	options := &CompletionOptions{
+		CommonOptions: CommonOptions{
+			Factory: f,
+			In:      in,
+			Out:     out,
+			Err:     errOut,
+		},
 	}
 
 	shells := []string{}
@@ -77,7 +84,8 @@ func NewCmdCompletion(f Factory, in terminal.FileReader, out terminal.FileWriter
 	return cmd
 }
 
-func (o *CommonOptions) Run() error {
+// Run executes the completion command
+func (o *CompletionOptions) Run() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	shells := []string{}
 	for s := range completion_shells {

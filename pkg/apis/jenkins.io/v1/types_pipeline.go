@@ -53,7 +53,6 @@ type PipelineActivitySpec struct {
 	WorkflowMessage    string                 `json:"workflowMessage,omitempty" protobuf:"bytes,20,opt,name=workflowMessage"`
 	PostExtensions     []ExtensionExecution   `json:"postExtensions,omitempty" protobuf: "bytes,21,opt,name=postExtensions"`
 	Attachments        []Attachment           `json:"attachments,omitempty" protobuf: "bytes,22,opt,name=attachments"`
-	Facts              []Fact                 `json:"facts,omitempty" protobuf: "bytes,23,opt,name=facts"`
 }
 
 // PipelineActivityStep represents a step in a pipeline activity
@@ -176,73 +175,6 @@ type Attachment struct {
 	Name string   `json:"name,omitempty"  protobuf:"bytes,1,opt,name=name"`
 	URLs []string `json:"urls,omitempty"  protobuf:"bytes,2,opt,name=urls"`
 }
-
-type Fact struct {
-	Name         string        `json:"name"  protobuf:"bytes,1,opt,name=name"`
-	ID           int           `json:"id"  protobuf:"bytes,2,opt,name=id"`
-	FactType     string        `json:"factType"  protobuf:"bytes,3,opt,name=factType"`
-	Measurements []Measurement `json:"measurements"  protobuf:"bytes,4,opt,name=measurements"`
-	Statements   []Statement   `json:"statements"  protobuf:"bytes,5,opt,name=statements"`
-	Original     Original      `json:"original,omitempty" protobuf: "bytes,6,opt,name=original"`
-	Tags         []string      `json:"tags,omitempty" protobuf: "bytes,7,opt,name=tags"`
-}
-
-type Measurement struct {
-	Name             string   `json:"name"  protobuf:"bytes,1,opt,name=name"`
-	MeasurementType  string   `json:"measurementType"  protobuf:"bytes,2,opt,name=measurementType"`
-	MeasurementValue int      `json:"measurementValue"  protobuf:"bytes,3,opt,name=measurementValue"`
-	Tags             []string `json:"tags,omitempty" protobuf: "bytes,4,opt,name=tags"`
-}
-
-type Statement struct {
-	Name             string   `json:"name"  protobuf:"bytes,1,opt,name=name"`
-	StatementType    string   `json:"statementType"  protobuf:"bytes,2,opt,name=statementType"`
-	MeasurementValue bool     `json:"measurementValue"  protobuf:"bytes,3,opt,name=measurementValue"`
-	Tags             []string `json:"tags,omitempty" protobuf: "bytes,4,opt,name=tags"`
-}
-
-type Original struct {
-	MimeType string   `json:"mimetype,omitempty" protobuf: "bytes,1,opt,name=mimetype"`
-	URL      string   `json:"url,omitempty" protobuf: "bytes,1,opt,name=url"`
-	Tags     []string `json:"tags,omitempty" protobuf: "bytes,8,opt,name=tags"`
-}
-
-// Recommended measurements for static program analysis
-const (
-	StaticProgramAnalysisTotalClasses   = "TotalClasses"
-	StaticProgramAnalysisTotalBugs      = "TotalBugs"
-	StaticProgramAnalysisHighPriority   = "High"
-	StaticProgramAnalysisNormalPriority = "Normal"
-	StaticProgramAnalysisLowPriority    = "Low"
-	StaticProgramAnalysisIgnored        = "Ignored"
-)
-
-// Recommended measurements for code coverage
-const (
-	CodeCoverageMeasurementTotal    = "Total"
-	CodeCoverageMeasurementMissed   = "Missed"
-	CodeCoverageMeasurementCoverage = "Coverage"
-)
-
-// Recommended types for code coverage count
-const (
-	CodeCoverageCountTypeInstructions = "Instructions"
-	CodeCoverageCountTypeBranches     = "Branches"
-	CodeCoverageCountTypeComplexity   = "Complexity"
-	CodeCoverageCountTypeLines        = "Lines"
-	CodeCoverageCountTypeMethods      = "Methods"
-	CodeCoverageCountTypeClasses      = "Classes"
-)
-
-const (
-	MeasurementPercent = "percent"
-	MeasurementCount   = "count"
-)
-
-const (
-	FactTypeCoverage              = "jx.coverage"
-	FactTypeStaticProgramAnalysis = "jx.staticProgramAnalysis"
-)
 
 // IsTerminated returns true if this activity has stopped executing
 func (s ActivityStatusType) IsTerminated() bool {

@@ -26,7 +26,7 @@ func NewCollector(storageLocation *jenkinsv1.StorageLocation, settings *jenkinsv
 	if gitURL != "" {
 		return NewGitCollector(gitter, gitURL, storageLocation.GetGitBranch())
 	}
-	ctx, _ := context.WithTimeout(context.Background(), time.Second * 20)
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*20)
 	u := storageLocation.BucketURL
 	if u == "" {
 		return nil, fmt.Errorf("No GitURL or BucketURL is configured for the storage location in the TeamSettings")

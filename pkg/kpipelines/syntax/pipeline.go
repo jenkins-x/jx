@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	pipelinev1alpha1 "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/knative/pkg/apis"
 	"github.com/pkg/errors"
@@ -20,8 +21,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// PipelineStructure is the internal representation of the Pipeline, used to validate and create CRDs
-type PipelineStructure struct {
+// ParsedPipeline is the internal representation of the Pipeline, used to validate and create CRDs
+type ParsedPipeline struct {
 	Agent       Agent       `yaml:"agent,omitempty"`
 	Environment []EnvVar    `yaml:"environment,omitempty"`
 	Options     RootOptions `yaml:"options,omitempty"`
@@ -196,7 +197,7 @@ type PostAction struct {
 	Options map[string]string `yaml:"options,omitempty"`
 }
 
-var _ apis.Validatable = (*PipelineStructure)(nil)
+var _ apis.Validatable = (*ParsedPipeline)(nil)
 
 func (s *Stage) taskName() string {
 	return strings.ToLower(strings.NewReplacer(" ", "-").Replace(s.Name))
@@ -255,10 +256,10 @@ func MangleToRfc1035Label(body string, suffix string) string {
 	return sb.String()
 }
 
-// Validate checks the parsed PipelineStructure to find any errors in it.
+// Validate checks the parsed ParsedPipeline to find any errors in it.
 // TODO: Improve validation to actually return all the errors via the nested errors?
 // TODO: Add validation for the not-yet-supported-for-CRD-generation sections
-func (j *PipelineStructure) Validate() *apis.FieldError {
+func (j *ParsedPipeline) Validate() *apis.FieldError {
 	if err := validateAgent(j.Agent).ViaField("agent"); err != nil {
 		return err
 	}
@@ -582,7 +583,7 @@ func scopedEnv(newEnv []EnvVar, parentEnv []corev1.EnvVar) []corev1.EnvVar {
 	return env
 }
 
-func (j *PipelineStructure) toStepEnvVars() []corev1.EnvVar {
+func (j *ParsedPipeline) toStepEnvVars() []corev1.EnvVar {
 	env := make([]corev1.EnvVar, 0, len(j.Environment))
 
 	for _, e := range j.Environment {
@@ -608,6 +609,60 @@ type transformedStage struct {
 	// The stage immediately before this stage at the same depth, or nil if there is no such stage
 	PreviousSiblingStage *transformedStage
 	// TODO: Add the equivalent reverse relationship
+}
+
+func (ts transformedStage) toPipelineStructureStage() v1.PipelineStructureStage {
+	s := v1.PipelineStructureStage{
+		Name:  ts.Stage.Name,
+		Depth: ts.Depth,
+	}
+
+	if ts.EnclosingStage != nil {
+		s.Parent = &ts.EnclosingStage.Stage.Name
+	}
+
+	if ts.PreviousSiblingStage != nil {
+		s.Previous = &ts.PreviousSiblingStage.Stage.Name
+	}
+	// TODO: Add the equivalent reverse relationship
+
+	if ts.PipelineTask != nil {
+		s.TaskRef = &ts.PipelineTask.TaskRef.Name
+	}
+
+	if len(ts.Parallel) > 0 {
+		for _, n := range ts.Parallel {
+			s.Parallel = append(s.Parallel, n.Stage.Name)
+		}
+	}
+
+	if len(ts.Sequential) > 0 {
+		for _, n := range ts.Sequential {
+			s.Stages = append(s.Stages, n.Stage.Name)
+		}
+	}
+
+	return s
+}
+
+func (ts transformedStage) getAllAsPipelineStructureStages() []v1.PipelineStructureStage {
+	var stages []v1.PipelineStructureStage
+
+	stages = append(stages, ts.toPipelineStructureStage())
+
+	if len(ts.Parallel) > 0 {
+		for _, n := range ts.Parallel {
+			stages = append(stages, n.getAllAsPipelineStructureStages()...)
+		}
+	}
+
+	if len(ts.Sequential) > 0 {
+		for _, n := range ts.Sequential {
+			stages = append(stages, n.getAllAsPipelineStructureStages()...)
+		}
+	}
+
+	return stages
 }
 
 func (ts transformedStage) isSequential() bool {
@@ -872,15 +927,15 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, podTem
 }
 
 // GenerateCRDs translates the Pipeline structure into the corresponding Pipeline and Task CRDs
-func (j *PipelineStructure) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, suffix string, podTemplates map[string]*corev1.Pod) (*pipelinev1alpha1.Pipeline, []*pipelinev1alpha1.Task, error) {
+func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, suffix string, podTemplates map[string]*corev1.Pod) (*pipelinev1alpha1.Pipeline, []*pipelinev1alpha1.Task, *v1.PipelineStructure, error) {
 	if len(j.Post) != 0 {
-		return nil, nil, errors.New("Post at top level not yet supported")
+		return nil, nil, nil, errors.New("Post at top level not yet supported")
 	}
 
 	if !equality.Semantic.DeepEqual(j.Options, RootOptions{}) {
 		o := j.Options
 		if o.Retry != 0 {
-			return nil, nil, errors.New("Retry at top level not yet supported")
+			return nil, nil, nil, errors.New("Retry at top level not yet supported")
 		}
 	}
 
@@ -888,7 +943,7 @@ func (j *PipelineStructure) GenerateCRDs(pipelineIdentifier string, buildIdentif
 		// Generate a short random hex string.
 		b, err := ioutil.ReadAll(io.LimitReader(randReader, 3))
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		suffix = hex.EncodeToString(b)
 	}
@@ -919,6 +974,12 @@ func (j *PipelineStructure) GenerateCRDs(pipelineIdentifier string, buildIdentif
 
 	p.SetDefaults()
 
+	structure := &v1.PipelineStructure{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: p.Name,
+		},
+	}
+
 	var previousStage *transformedStage
 
 	var tasks []*pipelinev1alpha1.Task
@@ -932,15 +993,16 @@ func (j *PipelineStructure) GenerateCRDs(pipelineIdentifier string, buildIdentif
 		}
 		stage, err := stageToTask(s, pipelineIdentifier, buildIdentifier, namespace, wsPath, baseEnv, j.Agent, "default", suffix, 0, nil, previousStage, podTemplates)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, nil, err
 		}
 		previousStage = stage
 
 		tasks = append(tasks, stage.getLinearTasks()...)
+		structure.Stages = append(structure.Stages, stage.getAllAsPipelineStructureStages()...)
 		p.Spec.Tasks = append(p.Spec.Tasks, createPipelineTasks(stage, pipelineIdentifier)...)
 	}
 
-	return p, tasks, nil
+	return p, tasks, structure, nil
 }
 
 func createPipelineTasks(stage *transformedStage, pipelineIdentifier string) []pipelinev1alpha1.PipelineTask {
@@ -1121,7 +1183,7 @@ func findDuplicates(names []string) *apis.FieldError {
 	return nil
 }
 
-func validateStageNames(j *PipelineStructure) (err *apis.FieldError) {
+func validateStageNames(j *ParsedPipeline) (err *apis.FieldError) {
 	var validate func(stages []Stage, stageNames *[]string)
 	validate = func(stages []Stage, stageNames *[]string) {
 

@@ -66,20 +66,20 @@ type PipelineStep struct {
 
 // PipelineLifecycles defines the steps of a lifecycle section
 type PipelineLifecycles struct {
-	Setup      *PipelineLifecycle        `yaml:"setup,omitempty"`
-	SetVersion *PipelineLifecycle        `yaml:"setVersion,omitempty"`
-	PreBuild   *PipelineLifecycle        `yaml:"preBuild,omitempty"`
-	Build      *PipelineLifecycle        `yaml:"build,omitempty"`
-	PostBuild  *PipelineLifecycle        `yaml:"postBuild,omitempty"`
-	Promote    *PipelineLifecycle        `yaml:"promote,omitempty"`
-	Pipeline   *syntax.PipelineStructure `yaml:"pipeline,omitempty"`
+	Setup      *PipelineLifecycle     `yaml:"setup,omitempty"`
+	SetVersion *PipelineLifecycle     `yaml:"setVersion,omitempty"`
+	PreBuild   *PipelineLifecycle     `yaml:"preBuild,omitempty"`
+	Build      *PipelineLifecycle     `yaml:"build,omitempty"`
+	PostBuild  *PipelineLifecycle     `yaml:"postBuild,omitempty"`
+	Promote    *PipelineLifecycle     `yaml:"promote,omitempty"`
+	Pipeline   *syntax.ParsedPipeline `yaml:"pipeline,omitempty"`
 }
 
 // PipelineLifecycle defines the steps of a lifecycle section
 type PipelineLifecycle struct {
 	Steps []*PipelineStep `yaml:"steps,omitempty"`
 
-	// PreSteps if using inheritance then invoke these steps before the base steps 
+	// PreSteps if using inheritance then invoke these steps before the base steps
 	PreSteps []*PipelineStep `yaml:"preSteps,omitempty"`
 
 	// Replace if using inheritence then replace steps from the base pipeline
@@ -235,10 +235,10 @@ func removeWhenSteps(prow bool, steps []*PipelineStep) []*PipelineStep {
 	answer := []*PipelineStep{}
 	for _, step := range steps {
 		when := strings.TrimSpace(step.When)
-		if (prow && when == "!prow") {
+		if prow && when == "!prow" {
 			continue
 		}
-		if (!prow && when == "prow") {
+		if !prow && when == "prow" {
 			continue
 		}
 		step.Steps = removeWhenSteps(prow, step.Steps)
@@ -608,7 +608,7 @@ func (a *CreateJenkinsfileArguments) GenerateJenkinsfile(resolver ImportFileReso
 	if outDir != "" {
 		err = os.MkdirAll(outDir, util.DefaultWritePermissions)
 		if err != nil {
-			return errors.Wrapf(err, "failed to make directory %s when creating PipelineStructure %s", outDir, outFile)
+			return errors.Wrapf(err, "failed to make directory %s when creating Jenkinsfile %s", outDir, outFile)
 		}
 	}
 	file, err := os.Create(outFile)

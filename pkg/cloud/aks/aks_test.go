@@ -1,8 +1,8 @@
 package aks_test
 
 import (
-	"testing"
 	"reflect"
+	"testing"
 
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/stretchr/testify/assert"
@@ -14,7 +14,7 @@ import (
 func aksWithRunner(t *testing.T, expectedError error, expectedOutput string) *aks.AzureRunner {
 	RegisterMockTestingT(t)
 	runner := mocks.NewMockCommander()
-	When(runner.RunWithoutRetry()).ThenReturn(expectedOutput, expectedError)		
+	When(runner.RunWithoutRetry()).ThenReturn(expectedOutput, expectedError)
 	return aks.NewAzureRunnerWithCommander(runner)
 }
 
@@ -51,11 +51,11 @@ func TestNotACR(t *testing.T) {
 func TestNoRegistrySet(t *testing.T) {
 	RegisterMockTestingT(t)
 	runner := mocks.NewMockCommander()
-	When(runner.RunWithoutRetry()).Then(func(params []Param) ReturnValues { 
+	When(runner.RunWithoutRetry()).Then(func(params []Param) ReturnValues {
 		return []ReturnValue{showResult(runner), nil}
-	})		
+	})
 	azureCLI := aks.NewAzureRunnerWithCommander(runner)
-	
+
 	config, registry, id, err := azureCLI.GetRegistry("rg", "azure", "")
 	assert.Equal(t, `{"auths":{"azure.azurecr.io":{"auth":"YXp1cmU6cGFzc3dvcmQxMjM="}}}`, config)
 	assert.Equal(t, "azure.azurecr.io", registry)
@@ -66,11 +66,11 @@ func TestNoRegistrySet(t *testing.T) {
 func TestRegistry404(t *testing.T) {
 	RegisterMockTestingT(t)
 	runner := mocks.NewMockCommander()
-	When(runner.RunWithoutRetry()).Then(func(params []Param) ReturnValues { 
+	When(runner.RunWithoutRetry()).Then(func(params []Param) ReturnValues {
 		return []ReturnValue{showResult(runner), nil}
-	})		
+	})
 	azureCLI := aks.NewAzureRunnerWithCommander(runner)
-	
+
 	config, registry, id, err := azureCLI.GetRegistry("newrg", "newacr", "notfound.azurecr.io")
 	assert.Equal(t, `{"auths":{"newacr.azurecr.io":{"auth":"YXp1cmU6cGFzc3dvcmQxMjM="}}}`, config)
 	assert.Equal(t, "newacr.azurecr.io", registry)
@@ -111,5 +111,5 @@ func showResult(runner *mocks.MockCommander) string {
 			],
 			"username": "azure"
 		}`
-	} 
+	}
 }

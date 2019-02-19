@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -14,7 +15,6 @@ import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -326,5 +326,5 @@ func (o *CreateEnvOptions) RegisterEnvironment(env *v1.Environment, gitProvider 
 		return o.createWebhookProw(gitURL, gitProvider)
 	}
 
-	return o.ImportProject(gitURL, envDir, jenkins.DefaultJenkinsfile, o.BranchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)
+	return o.ImportProject(gitURL, envDir, jenkinsfile.Name, o.BranchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)
 }

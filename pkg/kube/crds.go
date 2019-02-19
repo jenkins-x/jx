@@ -65,6 +65,14 @@ func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Pipeline Activity CRD")
 	}
+	err = RegisterPipelineStructureCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Pipeline Structure CRD")
+	}
+	err = RegisterFactCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Fact CRD")
+	}
 	err = RegisterReleaseCRD(apiClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Release CRD")
@@ -205,6 +213,49 @@ func RegisterPipelineActivityCRD(apiClient apiextensionsclientset.Interface) err
 			Type:        "string",
 			Description: "The status of the pipeline",
 			JSONPath:    ".spec.status",
+		},
+	}
+	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
+}
+
+// RegisterPipelineStructureCRD ensures that the CRD is registered for PipelineStructure
+func RegisterPipelineStructureCRD(apiClient apiextensionsclientset.Interface) error {
+	name := "pipelinestructures." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "PipelineStructure",
+		ListKind:   "PipelineStructureList",
+		Plural:     "pipelinestructures",
+		Singular:   "pipelinestructure",
+		ShortNames: []string{"structure"},
+		Categories: []string{"all"},
+	}
+	columns := []v1beta1.CustomResourceColumnDefinition{}
+	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
+}
+
+// RegisterFactCRD ensures that the CRD is registered for Fact
+func RegisterFactCRD(apiClient apiextensionsclientset.Interface) error {
+	name := "facts." + jenkinsio.GroupName
+	names := &v1beta1.CustomResourceDefinitionNames{
+		Kind:       "Fact",
+		ListKind:   "FactList",
+		Plural:     "facts",
+		Singular:   "fact",
+		ShortNames: []string{"fact"},
+		Categories: []string{"all"},
+	}
+	columns := []v1beta1.CustomResourceColumnDefinition{
+		{
+			Name:        "Name",
+			Type:        "string",
+			Description: "The name of the fact",
+			JSONPath:    ".spec.name",
+		},
+		{
+			Name:        "Type",
+			Type:        "string",
+			Description: "The type of the fact",
+			JSONPath:    ".spec.factType",
 		},
 	}
 	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)
@@ -470,7 +521,6 @@ func RegisterWorkflowCRD(apiClient apiextensionsclientset.Interface) error {
 		Singular:   "workflow",
 		ShortNames: []string{"flow"},
 		Categories: []string{"all"},
-
 	}
 	columns := []v1beta1.CustomResourceColumnDefinition{}
 	return RegisterCRD(apiClient, name, names, columns, jenkinsio.GroupName, jenkinsio.Package, jenkinsio.Version)

@@ -6,7 +6,6 @@ import (
 	"io"
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/common"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/client-go/kubernetes"
@@ -27,7 +26,7 @@ type vaultSelector struct {
 }
 
 // NewVaultSelector creates a new vault selector
-func NewVaultSelector(o common.OptionsInterface) (Selector, error) {
+func NewVaultSelector(o OptionsInterface) (Selector, error) {
 	operator, err := o.VaultOperatorClient()
 	if err != nil {
 		return nil, err

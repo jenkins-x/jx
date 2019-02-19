@@ -234,8 +234,8 @@ linux: version
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/jx cmd/jx/jx.go
 
 docker: linux
-	docker build --no-cache -t rawlingsj/jx:dev135 .
-	docker push rawlingsj/jx:dev135
+	docker build --no-cache -t rawlingsj/jx:dev168 .
+	docker push rawlingsj/jx:dev168
 
 docker-go: linux Dockerfile.builder-go
 	docker build --no-cache -t builder-go -f Dockerfile.builder-go .
@@ -293,7 +293,7 @@ generate: generate-mocks generate-openapi generate-client
 generate-mocks:
 	$(GO_NOMOD) get -d $(PEGOMOCK_PACKAGE)...
 	cd $(GOPATH)/src/$(PEGOMOCK_PACKAGE); git checkout master; git fetch origin; git branch -f jx $(PEGOMOCK_SHA); \
-	git checkout jx; $(GO_NOMOD) install
+	git checkout jx; $(GO_NOMOD) install ./pegomock
 	$(GO) generate ./...
 
 generate-client:

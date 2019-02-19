@@ -35,15 +35,28 @@ type ControllerPipelineRunnerOptions struct {
 
 // PipelineRunRequest the request to trigger a pipeline run
 type PipelineRunRequest struct {
-	GitURL  string `json:"gitUrl,omitempty"`
-	Branch  string `json:"branch,omitempty"`
-	Kind    string `json:"kind,omitempty"`
-	Context string `json:"context,omitempty"`
+	GitURL   string            `json:"gitUrl,omitempty"`
+	Branch   string            `json:"branch,omitempty"`
+	Revision string            `json:"revision,omitempty"`
+	Kind     string            `json:"kind,omitempty"`
+	Context  string            `json:"context,omitempty"`
+	Labels   map[string]string `json:"labels,omitempty"`
 }
 
 // PipelineRunResponse the results of triggering a pipeline run
 type PipelineRunResponse struct {
 	Resources []kube.ObjectReference `json:"resources,omitempty"`
+}
+
+// ObjectReference represents a reference to a k8s resource
+type ObjectReference struct {
+	APIVersion string `json:"apiVersion" protobuf:"bytes,5,opt,name=apiVersion"`
+	// Kind of the referent.
+	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds
+	Kind string `json:"kind" protobuf:"bytes,1,opt,name=kind"`
+	// Name of the referent.
+	// More info: http://kubernetes.io/docs/user-guide/identifiers#names
+	Name string `json:"name" protobuf:"bytes,3,opt,name=name"`
 }
 
 var (
@@ -84,6 +97,7 @@ func NewCmdControllerPipelineRunner(f Factory, in terminal.FileReader, out termi
 		"The interface address to bind to (by default, will listen on all interfaces/addresses).")
 	cmd.Flags().StringVarP(&options.Path, "path", "p", "/",
 		"The path to listen on for requests to trigger a pipeline run.")
+	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "build-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
 	return cmd
 }
 
@@ -94,7 +108,7 @@ func (o *ControllerPipelineRunnerOptions) Run() error {
 	mux.Handle(HealthPath, http.HandlerFunc(o.health))
 	mux.Handle(ReadyPath, http.HandlerFunc(o.ready))
 
-	logrus.Infof("Serving build numbers at http://%s:%d%s", o.BindAddress, o.Port, o.Path)
+	logrus.Infof("Waiting for Knative Pipelines to run at http://%s:%d%s", o.BindAddress, o.Port, o.Path)
 	return http.ListenAndServe(":"+strconv.Itoa(o.Port), mux)
 }
 
@@ -135,6 +149,7 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 	err := o.unmarshalBody(w, r, arguments)
 	o.onError(err)
 	if err != nil {
+		o.returnError("could not parse body: "+err.Error(), w, r)
 		return
 	}
 	if o.Verbose {
@@ -147,6 +162,9 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 	}
 	if arguments.Branch == "" {
 		arguments.Branch = "master"
+	}
+	if arguments.Revision == "" {
+		arguments.Revision = "master"
 	}
 	if arguments.Kind == "" {
 		arguments.Kind = "release"
@@ -164,14 +182,20 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 	pr.DeleteTempDir = true
 	pr.Context = arguments.Context
 	pr.Branch = arguments.Branch
+	pr.Revision = arguments.Revision
 	pr.PipelineKind = arguments.Kind
+	pr.ServiceAccount = o.ServiceAccount
+
+	// turn map into string array with = separator to match type of custom labels which are CLI flags
+	for key, value := range arguments.Labels {
+		pr.CustomLabels = append(pr.CustomLabels, fmt.Sprintf("%s=%s", key, value))
+	}
 
 	err = pr.Run()
 	if err != nil {
 		o.returnError(err.Error(), w, r)
 		return
 	}
-
 
 	results := &PipelineRunResponse{
 		Resources: pr.Results.ObjectReferences(),
@@ -218,4 +242,3 @@ func (o *ControllerPipelineRunnerOptions) returnError(message string, w http.Res
 	w.WriteHeader(400)
 	w.Write([]byte(message))
 }
-

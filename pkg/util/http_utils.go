@@ -31,7 +31,7 @@ func GetClient() *http.Client {
 }
 
 // GetClientWithTimeout returns a client with JX default transport and user specified timeout
-func GetClientWithTimeout(duration time.Duration) (*http.Client) {
+func GetClientWithTimeout(duration time.Duration) *http.Client {
 	client := http.Client{}
 	client.Transport = jxDefaultTransport
 	client.Timeout = duration

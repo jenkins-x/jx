@@ -7,7 +7,7 @@ import (
 	backoff "github.com/cenkalti/backoff"
 	pegomock "github.com/petergtz/pegomock"
 	"reflect"
-	time "time"
+	"time"
 )
 
 type MockCommander struct {
@@ -218,26 +218,45 @@ func (mock *MockCommander) SetTimeout(_param0 time.Duration) {
 }
 
 func (mock *MockCommander) VerifyWasCalledOnce() *VerifierCommander {
-	return &VerifierCommander{mock, pegomock.Times(1), nil}
+	return &VerifierCommander{
+		mock:                   mock,
+		invocationCountMatcher: pegomock.Times(1),
+	}
 }
 
 func (mock *MockCommander) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierCommander {
-	return &VerifierCommander{mock, invocationCountMatcher, nil}
+	return &VerifierCommander{
+		mock:                   mock,
+		invocationCountMatcher: invocationCountMatcher,
+	}
 }
 
 func (mock *MockCommander) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierCommander {
-	return &VerifierCommander{mock, invocationCountMatcher, inOrderContext}
+	return &VerifierCommander{
+		mock:                   mock,
+		invocationCountMatcher: invocationCountMatcher,
+		inOrderContext:         inOrderContext,
+	}
+}
+
+func (mock *MockCommander) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierCommander {
+	return &VerifierCommander{
+		mock:                   mock,
+		invocationCountMatcher: invocationCountMatcher,
+		timeout:                timeout,
+	}
 }
 
 type VerifierCommander struct {
 	mock                   *MockCommander
 	invocationCountMatcher pegomock.Matcher
 	inOrderContext         *pegomock.InOrderContext
+	timeout                time.Duration
 }
 
 func (verifier *VerifierCommander) CurrentArgs() *Commander_CurrentArgs_OngoingVerification {
 	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CurrentArgs", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CurrentArgs", params, verifier.timeout)
 	return &Commander_CurrentArgs_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -254,7 +273,7 @@ func (c *Commander_CurrentArgs_OngoingVerification) GetAllCapturedArguments() {
 
 func (verifier *VerifierCommander) CurrentDir() *Commander_CurrentDir_OngoingVerification {
 	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CurrentDir", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CurrentDir", params, verifier.timeout)
 	return &Commander_CurrentDir_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -271,7 +290,7 @@ func (c *Commander_CurrentDir_OngoingVerification) GetAllCapturedArguments() {
 
 func (verifier *VerifierCommander) CurrentEnv() *Commander_CurrentEnv_OngoingVerification {
 	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CurrentEnv", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CurrentEnv", params, verifier.timeout)
 	return &Commander_CurrentEnv_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -288,7 +307,7 @@ func (c *Commander_CurrentEnv_OngoingVerification) GetAllCapturedArguments() {
 
 func (verifier *VerifierCommander) CurrentName() *Commander_CurrentName_OngoingVerification {
 	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CurrentName", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CurrentName", params, verifier.timeout)
 	return &Commander_CurrentName_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -305,7 +324,7 @@ func (c *Commander_CurrentName_OngoingVerification) GetAllCapturedArguments() {
 
 func (verifier *VerifierCommander) DidError() *Commander_DidError_OngoingVerification {
 	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "DidError", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "DidError", params, verifier.timeout)
 	return &Commander_DidError_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -322,7 +341,7 @@ func (c *Commander_DidError_OngoingVerification) GetAllCapturedArguments() {
 
 func (verifier *VerifierCommander) DidFail() *Commander_DidFail_OngoingVerification {
 	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "DidFail", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "DidFail", params, verifier.timeout)
 	return &Commander_DidFail_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -339,7 +358,7 @@ func (c *Commander_DidFail_OngoingVerification) GetAllCapturedArguments() {
 
 func (verifier *VerifierCommander) Error() *Commander_Error_OngoingVerification {
 	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Error", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Error", params, verifier.timeout)
 	return &Commander_Error_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -356,7 +375,7 @@ func (c *Commander_Error_OngoingVerification) GetAllCapturedArguments() {
 
 func (verifier *VerifierCommander) Run() *Commander_Run_OngoingVerification {
 	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Run", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Run", params, verifier.timeout)
 	return &Commander_Run_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -373,7 +392,7 @@ func (c *Commander_Run_OngoingVerification) GetAllCapturedArguments() {
 
 func (verifier *VerifierCommander) RunWithoutRetry() *Commander_RunWithoutRetry_OngoingVerification {
 	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "RunWithoutRetry", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "RunWithoutRetry", params, verifier.timeout)
 	return &Commander_RunWithoutRetry_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -390,7 +409,7 @@ func (c *Commander_RunWithoutRetry_OngoingVerification) GetAllCapturedArguments(
 
 func (verifier *VerifierCommander) SetArgs(_param0 []string) *Commander_SetArgs_OngoingVerification {
 	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetArgs", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetArgs", params, verifier.timeout)
 	return &Commander_SetArgs_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -417,7 +436,7 @@ func (c *Commander_SetArgs_OngoingVerification) GetAllCapturedArguments() (_para
 
 func (verifier *VerifierCommander) SetDir(_param0 string) *Commander_SetDir_OngoingVerification {
 	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetDir", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetDir", params, verifier.timeout)
 	return &Commander_SetDir_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -444,7 +463,7 @@ func (c *Commander_SetDir_OngoingVerification) GetAllCapturedArguments() (_param
 
 func (verifier *VerifierCommander) SetEnv(_param0 map[string]string) *Commander_SetEnv_OngoingVerification {
 	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetEnv", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetEnv", params, verifier.timeout)
 	return &Commander_SetEnv_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -471,7 +490,7 @@ func (c *Commander_SetEnv_OngoingVerification) GetAllCapturedArguments() (_param
 
 func (verifier *VerifierCommander) SetEnvVariable(_param0 string, _param1 string) *Commander_SetEnvVariable_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetEnvVariable", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetEnvVariable", params, verifier.timeout)
 	return &Commander_SetEnvVariable_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -502,7 +521,7 @@ func (c *Commander_SetEnvVariable_OngoingVerification) GetAllCapturedArguments()
 
 func (verifier *VerifierCommander) SetExponentialBackOff(_param0 *backoff.ExponentialBackOff) *Commander_SetExponentialBackOff_OngoingVerification {
 	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetExponentialBackOff", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetExponentialBackOff", params, verifier.timeout)
 	return &Commander_SetExponentialBackOff_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -529,7 +548,7 @@ func (c *Commander_SetExponentialBackOff_OngoingVerification) GetAllCapturedArgu
 
 func (verifier *VerifierCommander) SetName(_param0 string) *Commander_SetName_OngoingVerification {
 	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetName", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetName", params, verifier.timeout)
 	return &Commander_SetName_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
@@ -556,7 +575,7 @@ func (c *Commander_SetName_OngoingVerification) GetAllCapturedArguments() (_para
 
 func (verifier *VerifierCommander) SetTimeout(_param0 time.Duration) *Commander_SetTimeout_OngoingVerification {
 	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetTimeout", params)
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetTimeout", params, verifier.timeout)
 	return &Commander_SetTimeout_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 

@@ -12,7 +12,7 @@ import (
 	"k8s.io/helm/pkg/proto/hapi/chart"
 )
 
-// StubFetchChart stubs out the FetchChart operation on MockHelmer creating the chart.
+// StubFetchChart stubs out the FetchChart operations on MockHelmer creating the chart.
 func StubFetchChart(name string, version string, repo string, chartToCreate *chart.Chart, mockHelmer *MockHelmer) {
 	if name == "" {
 		name = pegomock.AnyString()

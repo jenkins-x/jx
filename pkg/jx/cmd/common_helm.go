@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -20,7 +21,210 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/src-d/go-git.v4"
 	gitconfig "gopkg.in/src-d/go-git.v4/config"
+	rbacv1 "k8s.io/api/rbac/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+const (
+	// DefaultChartRepo default URL for charts repository
+	DefaultChartRepo = "http://jenkins-x-chartmuseum:8080"
+	// DefaultTillerNamesapce default namespace for helm tiller server
+	DefaultTillerNamesapce = "kube-system"
+	// DefaultTillerRole default cluster role for service account of helm tiller server
+	DefaultTillerRole = "cluster-admin"
+	// DefaultOnlyHelmClient indicates if only the client is initialized
+	DefaultOnlyHelmClient = false
+	// DefaultHelm3 indicates if helm 3 is used
+	DefaultHelm3 = false
+	// DefaultSkipTiller skips the tiller server initialization
+	DefaultSkipTiller = false
+	// DefaultGlobalTiller indicates if a global tiller server is used
+	DefaultGlobalTiller = true
+	// DefaultRemoteTiller indicates that a remote tiller server is used
+	DefaultRemoteTiller = true
+)
+
+// InitHelmConfig configuration for helm initialization
+type InitHelmConfig struct {
+	Namespace       string
+	OnlyHelmClient  bool
+	Helm3           bool
+	SkipTiller      bool
+	GlobalTiller    bool
+	TillerNamespace string
+	TillerRole      string
+}
+
+// defaultInitHelmConfig builds the default configuration for init helm
+func (o *CommonOptions) defaultInitHelmConfig() InitHelmConfig {
+	return InitHelmConfig{
+		Namespace:       kube.DefaultNamespace,
+		OnlyHelmClient:  DefaultOnlyHelmClient,
+		Helm3:           DefaultHelm3,
+		SkipTiller:      DefaultSkipTiller,
+		GlobalTiller:    DefaultGlobalTiller,
+		TillerNamespace: DefaultTillerNamesapce,
+		TillerRole:      DefaultTillerRole,
+	}
+}
+
+// InitHelm initializes hlem client and server (tillter)
+func (o *CommonOptions) InitHelm(config InitHelmConfig) error {
+	var err error
+
+	skipTiller := config.SkipTiller
+	if config.Helm3 {
+		log.Infof("Using %s\n", util.ColorInfo("helm3"))
+		skipTiller = true
+	} else {
+		log.Infof("Using %s\n", util.ColorInfo("helm2"))
+	}
+	if !skipTiller {
+		log.Infof("Configuring %s\n", util.ColorInfo("tiller"))
+		client, curNs, err := o.KubeClientAndNamespace()
+		if err != nil {
+			return err
+		}
+
+		tillerNamespace := config.TillerNamespace
+		serviceAccountName := "tiller"
+		if config.GlobalTiller {
+			if tillerNamespace == "" {
+				return errors.New("tiller namespace is empty: glboal tiller requires a namesapce")
+			}
+		} else {
+			if config.Namespace == "" {
+				config.Namespace = curNs
+			}
+			if config.Namespace == "" {
+				return errors.New("empty namespace")
+			}
+			tillerNamespace = config.Namespace
+		}
+
+		err = o.ensureServiceAccount(tillerNamespace, serviceAccountName)
+		if err != nil {
+			return err
+		}
+
+		if config.GlobalTiller {
+			clusterRoleBindingName := serviceAccountName
+			err = o.ensureClusterRoleBinding(clusterRoleBindingName, config.TillerRole, tillerNamespace, serviceAccountName)
+			if err != nil {
+				return err
+			}
+		} else {
+			// lets create a tiller service account
+			roleName := "tiller-manager"
+			roleBindingName := "tiller-binding"
+
+			_, err = client.RbacV1().Roles(tillerNamespace).Get(roleName, metav1.GetOptions{})
+			if err != nil {
+				// lets create a Role for tiller
+				role := &rbacv1.Role{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      roleName,
+						Namespace: tillerNamespace,
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{"", "extensions", "apps"},
+							Resources: []string{"*"},
+							Verbs:     []string{"*"},
+						},
+					},
+				}
+				_, err = client.RbacV1().Roles(tillerNamespace).Create(role)
+				if err != nil {
+					return fmt.Errorf("Failed to create Role %s in namespace %s: %s", roleName, tillerNamespace, err)
+				}
+				log.Infof("Created Role %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
+			}
+			_, err = client.RbacV1().RoleBindings(tillerNamespace).Get(roleBindingName, metav1.GetOptions{})
+			if err != nil {
+				// lets create a RoleBinding for tiller
+				roleBinding := &rbacv1.RoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      roleBindingName,
+						Namespace: tillerNamespace,
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							Kind:      "ServiceAccount",
+							Name:      serviceAccountName,
+							Namespace: tillerNamespace,
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						Kind:     "Role",
+						Name:     roleName,
+						APIGroup: "rbac.authorization.k8s.io",
+					},
+				}
+				_, err = client.RbacV1().RoleBindings(tillerNamespace).Create(roleBinding)
+				if err != nil {
+					return fmt.Errorf("Failed to create RoleBinding %s in namespace %s: %s", roleName, tillerNamespace, err)
+				}
+				log.Infof("Created RoleBinding %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
+			}
+		}
+
+		running, err := kube.IsDeploymentRunning(client, "tiller-deploy", tillerNamespace)
+		if running {
+			log.Infof("Tiller Deployment is running in namespace %s\n", util.ColorInfo(tillerNamespace))
+			return nil
+		}
+		if err == nil && !running {
+			return fmt.Errorf("existing tiller deployment found but not running, please check the %s namespace and resolve any issues", tillerNamespace)
+		}
+
+		if !running {
+			log.Infof("Initialising helm using ServiceAccount %s in namespace %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(tillerNamespace))
+
+			err = o.Helm().Init(false, serviceAccountName, tillerNamespace, false)
+			if err != nil {
+				return err
+			}
+			err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
+			if err != nil {
+				return err
+			}
+
+			err = o.Helm().Init(false, serviceAccountName, tillerNamespace, true)
+			if err != nil {
+				return err
+			}
+		}
+
+		log.Infof("Waiting for tiller-deploy to be ready in tiller namespace %s\n", tillerNamespace)
+		err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Infof("Skipping %s\n", util.ColorInfo("tiller"))
+	}
+
+	if config.Helm3 {
+		err = o.Helm().Init(false, "", "", false)
+		if err != nil {
+			return err
+		}
+	} else if config.OnlyHelmClient || config.SkipTiller {
+		err = o.Helm().Init(true, "", "", false)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = o.Helm().AddRepo("jenkins-x", kube.DefaultChartMuseumURL, "", "")
+	if err != nil {
+		return err
+	}
+	log.Success("helm installed and configured")
+
+	return nil
+}
 
 func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
 	if repoName == "" {
@@ -137,73 +341,93 @@ func (o *CommonOptions) cloneJXVersionsRepo(versionRepository string) (string, e
 	// If the repo already exists let's try to fetch the latest version
 	if exists, err := util.DirExists(wrkDir); err == nil && exists {
 		repo, err := git.PlainOpen(wrkDir)
-		if err == nil {
-			remote, err := repo.Remote("origin")
-			if err == nil {
-				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-				defer cancel()
-				err := remote.FetchContext(ctx, &git.FetchOptions{
-					RefSpecs: []gitconfig.RefSpec{
-						gitconfig.RefSpec("+refs/heads/master:refs/remotes/origin/master"),
-					},
-				})
-				// The repository is up to date
-				if err == git.NoErrAlreadyUpToDate {
-					return wrkDir, nil
+		if err != nil {
+			log.Errorf("Error opening %s", wrkDir)
+			return deleteAndReClone(wrkDir, versionRepository, o.Out)
+		}
+		remote, err := repo.Remote("origin")
+		if err != nil {
+			log.Errorf("Error getting remote origin")
+			return deleteAndReClone(wrkDir, versionRepository, o.Out)
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		defer cancel()
+		err = remote.FetchContext(ctx, &git.FetchOptions{
+			RefSpecs: []gitconfig.RefSpec{
+				gitconfig.RefSpec("+refs/heads/master:refs/remotes/origin/master"),
+			},
+		})
+		// The repository is up to date
+		if err == git.NoErrAlreadyUpToDate {
+			return wrkDir, nil
+		} else if err != nil {
+			log.Errorf("Error fetching latest from remote")
+			return deleteAndReClone(wrkDir, versionRepository, o.Out)
+		} else {
+			pullLatest := false
+			if o.BatchMode {
+				pullLatest = true
+			} else {
+				confirm := &survey.Confirm{
+					Message: "A local Jenkins X versions repository already exists, pull the latest?",
+					Default: true,
 				}
+				survey.AskOne(confirm, &pullLatest, nil, surveyOpts)
+				if err != nil {
+					log.Errorf("Error confirming if we should pull latest, skipping %s\n", wrkDir)
+				}
+			}
+
+			if pullLatest {
+				w, err := repo.Worktree()
 				if err == nil {
-					flag := false
-					if o.BatchMode {
-						flag = true
-					} else {
-						confirm := &survey.Confirm{
-							Message: "A local Jenkins X versions repository already exists, pull the latest?",
-							Default: true,
-						}
-						err := survey.AskOne(confirm, &flag, nil, surveyOpts)
-						if err != nil {
-							return wrkDir, err
-						}
-					}
-
-					if !flag {
-						return wrkDir, err
-					}
-
-					w, err := repo.Worktree()
-					if err == nil {
-						err := w.Pull(&git.PullOptions{RemoteName: "origin"})
-						if err != nil {
-							return "", errors.Wrap(err, "pulling the latest")
-						}
+					err := w.Pull(&git.PullOptions{RemoteName: "origin"})
+					if err != nil {
+						return "", errors.Wrap(err, "pulling the latest")
 					}
 				}
 			}
+			return wrkDir, err
 		}
+	} else {
+		return deleteAndReClone(wrkDir, versionRepository, o.Out)
 	}
+}
 
+func deleteAndReClone(wrkDir string, versionRepository string, fw terminal.FileWriter) (string, error) {
+	log.Info("Deleting and cloning the Jenkins X versions repo")
+	err := deleteDirectory(wrkDir)
+	if err != nil {
+		return "", err
+	}
+	err = clone(wrkDir, versionRepository, fw)
+	if err != nil {
+		return "", err
+	}
+	return wrkDir, err
+}
+
+func clone(wrkDir string, versionRepository string, fw terminal.FileWriter) error {
+	log.Infof("Cloning the Jenkins X versions repo to %s\n", wrkDir)
+	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
+		URL:           versionRepository,
+		ReferenceName: "refs/heads/master",
+		SingleBranch:  true,
+		Progress:      fw,
+	})
+	return err
+}
+
+func deleteDirectory(wrkDir string) error {
+	log.Infof("Delete previous Jenkins X version repo from %s\n", wrkDir)
 	// If it exists a this stage most likely its content is not consistent
 	if exists, err := util.DirExists(wrkDir); err == nil && exists {
 		err := util.DeleteDirContents(wrkDir)
 		if err != nil {
-			return "", errors.Wrapf(err, "cleaning the content of %q dir", wrkDir)
+			return errors.Wrapf(err, "cleaning the content of %q dir", wrkDir)
 		}
 	}
-
-	log.Infof("Cloning the Jenkins X versions repo to %s\n", wrkDir)
-
-	_, err = git.PlainClone(wrkDir, false, &git.CloneOptions{
-		URL:           versionRepository,
-		ReferenceName: "refs/heads/master",
-		SingleBranch:  true,
-		Progress:      o.Out,
-	})
-
-	if err != nil {
-		return "", errors.Wrapf(err, "cloning %q repository into %q dir", versionRepository, wrkDir)
-	}
-
-	return wrkDir, nil
+	return nil
 }
 
 // getVersionNumber returns the version number for the given kind and name or blank string if there is no locked version
@@ -294,7 +518,7 @@ func (o *CommonOptions) addChartRepos(dir string, helmBinary string, chartRepos 
 		if requirements != nil {
 			for _, dep := range requirements.Dependencies {
 				repo := dep.Repository
-				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) && repo != defaultChartRepo && !strings.HasPrefix(repo, "file:") && !strings.HasPrefix(repo, "alias:") {
+				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) && repo != DefaultChartRepo && !strings.HasPrefix(repo, "file:") && !strings.HasPrefix(repo, "alias:") {
 					repoCounter++
 					// TODO we could provide some mechanism to customise the names of repos somehow?
 					err = o.addHelmBinaryRepoIfMissing(repo, "repo"+strconv.Itoa(repoCounter), "", "")
@@ -484,8 +708,8 @@ func (o *CommonOptions) releaseChartMuseumUrl() string {
 	chartRepo := os.Getenv("CHART_REPOSITORY")
 	if chartRepo == "" {
 		if o.IsInCDPipeline() {
-			chartRepo = defaultChartRepo
-			log.Warnf("No $CHART_REPOSITORY defined so using the default value of: %s\n", defaultChartRepo)
+			chartRepo = DefaultChartRepo
+			log.Warnf("No $CHART_REPOSITORY defined so using the default value of: %s\n", DefaultChartRepo)
 		} else {
 			return ""
 		}
@@ -502,8 +726,10 @@ func (o *CommonOptions) ensureHelm() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to install Helm")
 	}
-	initOpts := InitOptions{
-		CommonOptions: *o,
+	cfg := o.defaultInitHelmConfig()
+	err = o.InitHelm(cfg)
+	if err != nil {
+		return errors.Wrapf(err, "initializing helm with config: %v", cfg)
 	}
-	return initOpts.initHelm()
+	return nil
 }

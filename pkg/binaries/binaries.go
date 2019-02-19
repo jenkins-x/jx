@@ -94,7 +94,7 @@ func LoadInstalledPackages() (map[string]string, error) {
 
 func RememberInstalledPackage(packageName string, version string) error {
 	versions, err := LoadInstalledPackages()
-	if err!= nil {
+	if err != nil {
 		return err
 	}
 
@@ -117,7 +117,7 @@ func RememberInstalledPackage(packageName string, version string) error {
 }
 
 // InstalledPackagesFile returns absolute path to binaries.yml file used to store version of installed packages.
-func InstalledPackagesFile() (string, error)  {
+func InstalledPackagesFile() (string, error) {
 	configDir, err := util.ConfigDir()
 	if err != nil {
 		return "", err

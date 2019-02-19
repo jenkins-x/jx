@@ -1,14 +1,15 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/jenkins"
+	"io"
+	"os"
+	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-	"os"
-	"path/filepath"
 )
 
 var (
@@ -77,18 +78,18 @@ func (o *StepBuildPackApplyOptions) Run() error {
 	if dir == "" {
 		dir, err = os.Getwd()
 		if err != nil {
-		  return err
+			return err
 		}
 	}
 
 	settings, err := o.CommonOptions.TeamSettings()
 	if err != nil {
-	  return err
+		return err
 	}
 	log.Infof("build pack is %s\n", settings.BuildPackURL)
 
-	defaultJenkinsfile := filepath.Join(dir, jenkins.DefaultJenkinsfile)
-	jenkinsfile := jenkins.DefaultJenkinsfile
+	defaultJenkinsfile := filepath.Join(dir, jenkinsfile.Name)
+	jenkinsfile := jenkinsfile.Name
 	withRename := false
 	if o.Jenkinsfile != "" {
 		jenkinsfile = o.Jenkinsfile

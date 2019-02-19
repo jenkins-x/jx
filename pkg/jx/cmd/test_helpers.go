@@ -1,10 +1,8 @@
 package cmd
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -24,7 +22,6 @@ import (
 	apifake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/client-go/kubernetes/fake"
 
 	"github.com/ghodss/yaml"
@@ -139,25 +136,6 @@ func CleanupTestEnvironmentDir(o *CommonOptions) error {
 	return nil
 }
 
-func NewCreateEnvPullRequestFn(provider *gits.FakeProvider) CreateEnvPullRequestFn {
-	fakePrFn := func(env *v1.Environment, modifyChartFn ModifyChartFn, branchNameText string, title string, message string,
-		pullRequestInfo *gits.PullRequestInfo) (*gits.PullRequestInfo, error) {
-		envURL := env.Spec.Source.URL
-		values := []string{}
-		for _, repos := range provider.Repositories {
-			for _, repo := range repos {
-				cloneURL := repo.GitRepo.CloneURL
-				if cloneURL == envURL {
-					return createFakePullRequest(repo, env, modifyChartFn, branchNameText, title, message, pullRequestInfo, provider)
-				}
-				values = append(values, cloneURL)
-			}
-		}
-		return nil, fmt.Errorf("Could not find repository for cloneURL %s values found %s", envURL, strings.Join(values, ", "))
-	}
-	return fakePrFn
-}
-
 func CreateTestPipelineActivity(jxClient versioned.Interface, ns string, folder string, repo string, branch string, build string, workflow string) (*v1.PipelineActivity, error) {
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
 	key := &kube.PromoteStepActivityKey{
@@ -165,9 +143,9 @@ func CreateTestPipelineActivity(jxClient versioned.Interface, ns string, folder 
 			Name:     folder + "-" + repo + "-" + branch + "-" + build,
 			Pipeline: folder + "/" + repo + "/" + branch,
 			Build:    build,
-			GitInfo:  &gits.GitRepository{
-				Name:			"demo-2",
-				Organisation:   "test-org",
+			GitInfo: &gits.GitRepository{
+				Name:         "my-app",
+				Organisation: "myorg",
 			},
 		},
 	}
@@ -175,69 +153,11 @@ func CreateTestPipelineActivity(jxClient versioned.Interface, ns string, folder 
 	version := "1.0." + build
 	a.Spec.GitOwner = folder
 	a.Spec.GitRepository = repo
-	a.Spec.GitURL = "https://github.com/" + folder + "/" + repo + ".git"
+	a.Spec.GitURL = "https://fake.git/" + folder + "/" + repo + ".git"
 	a.Spec.Version = version
 	a.Spec.Workflow = workflow
 	_, err = activities.Update(a)
 	return a, err
-}
-
-func createFakePullRequest(repository *gits.FakeRepository, env *v1.Environment, modifyChartFn ModifyChartFn,
-	branchNameText string, title string, message string, pullRequestInfo *gits.PullRequestInfo, provider *gits.FakeProvider) (*gits.PullRequestInfo, error) {
-	if pullRequestInfo == nil {
-		pullRequestInfo = &gits.PullRequestInfo{}
-	}
-
-	if pullRequestInfo.GitProvider == nil {
-		pullRequestInfo.GitProvider = provider
-	}
-
-	if pullRequestInfo.PullRequest == nil {
-		pullRequestInfo.PullRequest = &gits.GitPullRequest{}
-	}
-	pr := pullRequestInfo.PullRequest
-	if pr.Number == nil {
-		repository.PullRequestCounter++
-		n := repository.PullRequestCounter
-		pr.Number = &n
-	}
-	if pr.URL == "" {
-		n := *pr.Number
-		pr.URL = "https://github.com/" + repository.Owner + "/" + repository.Name() + "/pulls/" + strconv.Itoa(n)
-	}
-	if pr.Owner == "" {
-		pr.Owner = repository.Owner
-	}
-	if pr.Repo == "" {
-		pr.Repo = repository.Name()
-	}
-
-	log.Infof("Creating fake Pull Request for env %s branch %s title %s message %s with number %d and URL %s\n", env.Name, branchNameText, title, message, *pr.Number, pr.URL)
-
-	if pr != nil && pr.Number != nil {
-		n := *pr.Number
-		log.Infof("Creating fake PullRequest number %d at URL %s\n", n, pr.URL)
-
-		// lets add a pending commit too
-		commitSha := string(uuid.NewUUID())
-		commit := &gits.FakeCommit{
-			Commit: &gits.GitCommit{
-				SHA:     commitSha,
-				Message: "dummy commit " + commitSha,
-			},
-			Status: gits.CommitStatusPending,
-		}
-
-		repository.PullRequests[n] = &gits.FakePullRequest{
-			PullRequest: pr,
-			Commits:     []*gits.FakeCommit{commit},
-			Comment:     "comment for PR",
-		}
-		repository.Commits = append(repository.Commits, commit)
-	} else {
-		log.Warnf("Missing number for PR %s\n", pr.URL)
-	}
-	return pullRequestInfo, nil
 }
 
 func AssertHasPullRequestForEnv(t *testing.T, activities typev1.PipelineActivityInterface, name string, envName string) {
@@ -456,7 +376,17 @@ func SetPullRequestClosed(pr *gits.FakePullRequest) {
 	log.Infof("PR %s is now closed\n", pr.PullRequest.URL)
 }
 
-func AssertSetPullRequestMerged(t *testing.T, provider *gits.FakeProvider, repository *gits.FakeRepository, prNumber int) bool {
+// AssertSetPullRequestMerged validates that the fake PR has merged
+func AssertSetPullRequestMerged(t *testing.T, provider *gits.FakeProvider, orgName string, repositoryName string,
+	prNumber int) bool {
+	repos := provider.Repositories[orgName]
+	var repository *gits.FakeRepository
+	for _, r := range repos {
+		if r.Name() == repositoryName {
+			repository = r
+		}
+	}
+	assert.NotNil(t, repository)
 	fakePR := repository.PullRequests[prNumber]
 	if !assert.NotNil(t, fakePR, "No PullRequest found on repository %s for number #%d", repository.String(), prNumber) {
 		return false

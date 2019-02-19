@@ -5,7 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
+
 	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
@@ -20,7 +22,7 @@ import (
 
 func TestUpgradeAppForGitOps(t *testing.T) {
 	t.Parallel()
-	testOptions := CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -41,6 +43,7 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 		Alias:                alias,
 		Repo:                 "http://chartmuseum.jenkins-x.io",
 		GitOps:               true,
+		HelmUpdate:           true,
 		DevEnv:               testOptions.DevEnv,
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}
@@ -75,7 +78,7 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 }
 
 func TestUpgradeAppToLatestForGitOps(t *testing.T) {
-	testOptions := CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -96,6 +99,7 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 		Alias:                alias,
 		Repo:                 "http://chartmuseum.jenkins-x.io",
 		GitOps:               true,
+		HelmUpdate:           true,
 		DevEnv:               testOptions.DevEnv,
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}
@@ -137,7 +141,7 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 }
 
 func TestUpgradeAllAppsForGitOps(t *testing.T) {
-	testOptions := CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -162,6 +166,7 @@ func TestUpgradeAllAppsForGitOps(t *testing.T) {
 		},
 		Repo:                 kube.DefaultChartMuseumURL,
 		GitOps:               true,
+		HelmUpdate:           true,
 		DevEnv:               testOptions.DevEnv,
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}

@@ -12,7 +12,7 @@ func TestSuccessfulTry(t *testing.T) {
 	t.Parallel()
 
 	attempts := 0
-	err := (&CommonOptions{}).retryUntilFatalError(3, time.Millisecond * 50, func() (fatalError *FatalError, e error) {
+	err := (&CommonOptions{}).retryUntilFatalError(3, time.Millisecond*50, func() (fatalError *FatalError, e error) {
 		attempts++
 		return nil, nil
 	})
@@ -25,7 +25,7 @@ func TestUnsuccessfulTry(t *testing.T) {
 	t.Parallel()
 
 	attempts := 0
-	err := (&CommonOptions{}).retryUntilFatalError(3, time.Millisecond * 50, func() (fatalError *FatalError, e error) {
+	err := (&CommonOptions{}).retryUntilFatalError(3, time.Millisecond*50, func() (fatalError *FatalError, e error) {
 		attempts++
 		return nil, errors.New("invalid attempt")
 	})
@@ -38,7 +38,7 @@ func TestSuccessfulAfterSecondAttempt(t *testing.T) {
 	t.Parallel()
 
 	attempts := 0
-	err := (&CommonOptions{}).retryUntilFatalError(3, time.Millisecond * 50, func() (fatalError *FatalError, e error) {
+	err := (&CommonOptions{}).retryUntilFatalError(3, time.Millisecond*50, func() (fatalError *FatalError, e error) {
 		attempts++
 		if attempts == 2 {
 			return nil, nil
@@ -50,12 +50,11 @@ func TestSuccessfulAfterSecondAttempt(t *testing.T) {
 	assert.Equal(t, 2, attempts)
 }
 
-
 func TestFatal(t *testing.T) {
 	t.Parallel()
 
 	attempts := 0
-	err := (&CommonOptions{}).retryUntilFatalError(3, time.Millisecond * 50, func() (fatalError *FatalError, e error) {
+	err := (&CommonOptions{}).retryUntilFatalError(3, time.Millisecond*50, func() (fatalError *FatalError, e error) {
 		attempts++
 		if attempts == 2 {
 			return &FatalError{E: errors.New("fatal error")}, nil

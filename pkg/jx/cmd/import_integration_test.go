@@ -3,7 +3,6 @@
 package cmd_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/log"
 	"io/ioutil"
 	"os"
 	"path"
@@ -11,9 +10,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/log"
+
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
@@ -104,9 +105,11 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 	err := o.Run()
 	assert.NoError(t, err, "Failed with %s", err)
 	if err == nil {
-		defaultJenkinsfile := filepath.Join(testDir, jenkins.DefaultJenkinsfile)
+		defaultJenkinsfileName := jenkinsfile.Name
+		defaultJenkinsfileBackupSuffix := jenkinsfile.BackupSuffix
+		defaultJenkinsfile := filepath.Join(testDir, defaultJenkinsfileName)
 		jenkinsfile := defaultJenkinsfile
-		if o.Jenkinsfile != "" && o.Jenkinsfile != jenkins.DefaultJenkinsfile {
+		if o.Jenkinsfile != "" && o.Jenkinsfile != defaultJenkinsfileName {
 			jenkinsfile = filepath.Join(testDir, o.Jenkinsfile)
 		}
 		tests.AssertFileExists(t, jenkinsfile)
@@ -130,17 +133,17 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 
 		if strings.HasPrefix(testcase, mavenKeepOldJenkinsfile) {
 			tests.AssertFileContains(t, jenkinsfile, "THIS IS OLD!")
-			tests.AssertFileDoesNotExist(t, jenkinsfile+cmd.JenkinsfileBackupSuffix)
+			tests.AssertFileDoesNotExist(t, jenkinsfile+defaultJenkinsfileBackupSuffix)
 		} else if strings.HasPrefix(testcase, mavenOldJenkinsfile) {
 			tests.AssertFileExists(t, jenkinsfile)
 			if withRename {
 				tests.AssertFileExists(t, defaultJenkinsfile)
 				tests.AssertFileContains(t, defaultJenkinsfile, "THIS IS OLD!")
 			} else if strings.HasSuffix(testcase, gitSuffix) {
-				tests.AssertFileDoesNotExist(t, jenkinsfile+cmd.JenkinsfileBackupSuffix)
+				tests.AssertFileDoesNotExist(t, jenkinsfile+defaultJenkinsfileBackupSuffix)
 			} else {
-				tests.AssertFileExists(t, jenkinsfile+cmd.JenkinsfileBackupSuffix)
-				tests.AssertFileContains(t, jenkinsfile+cmd.JenkinsfileBackupSuffix, "THIS IS OLD!")
+				tests.AssertFileExists(t, jenkinsfile+defaultJenkinsfileBackupSuffix)
+				tests.AssertFileContains(t, jenkinsfile+defaultJenkinsfileBackupSuffix, "THIS IS OLD!")
 			}
 		}
 		if strings.HasPrefix(dirName, "maven") && !strings.Contains(testcase, "keep_old") {

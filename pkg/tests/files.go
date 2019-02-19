@@ -37,7 +37,7 @@ func AssertFileDoesNotContain(t *testing.T, fileName string, containsText string
 				lines := strings.Split(text, "\n")
 				for i, l := range lines {
 					if strings.Index(l, containsText) >= 0 {
-						line = "line " + strconv.Itoa(i + 1) + " = " + l
+						line = "line " + strconv.Itoa(i+1) + " = " + l
 						break
 					}
 				}
@@ -105,7 +105,6 @@ func AssertLoadFileText(t *testing.T, fileName string) (string, error) {
 	}
 	return string(data), nil
 }
-
 
 // AssertTextFileContentsEqual asserts that both the expected and actual files can be loaded as text
 // and that their contents are identical

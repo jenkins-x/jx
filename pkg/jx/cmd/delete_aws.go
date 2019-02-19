@@ -98,7 +98,7 @@ func (o *DeleteAwsOptions) Run() error {
 	}
 	for _, internetGateway := range internetGateways.InternetGateways {
 		if len(internetGateway.Attachments) > 0 {
-			err = o.retryUntilFatalError(gatewayDetachAttempts, 10 * time.Second, func() (fatalError *FatalError, e error) {
+			err = o.retryUntilFatalError(gatewayDetachAttempts, 10*time.Second, func() (fatalError *FatalError, e error) {
 				_, err = svc.DetachInternetGateway(&ec2.DetachInternetGatewayInput{InternetGatewayId: internetGateway.InternetGatewayId, VpcId: aws.String(vpcid)})
 				log.Infof("Detaching internet gateway %s from VPC %s...\n", *internetGateway.InternetGatewayId, vpcid)
 				if err != nil {

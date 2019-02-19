@@ -23,8 +23,18 @@ func GetBuildPods(kubeClient kubernetes.Interface, ns string) ([]*corev1.Pod, er
 			return nil, err
 		}
 	}
+	pipelinePodList, err := kubeClient.CoreV1().Pods(ns).List(metav1.ListOptions{
+		LabelSelector: LabelPipelineRunName,
+	})
+	if err != nil {
+		return nil, err
+	}
 
 	for _, pod := range podList.Items {
+		copy := pod
+		answer = append(answer, &copy)
+	}
+	for _, pod := range pipelinePodList.Items {
 		copy := pod
 		answer = append(answer, &copy)
 	}

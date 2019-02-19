@@ -198,7 +198,7 @@ func (o *GetActivityOptions) onActivity(table *tbl.Table, obj interface{}, yamlS
 	}
 }
 
-func (o *CommonOptions) addStepRow(table *tbl.Table, parent *v1.PipelineActivityStep, indent string) {
+func (o *GetActivityOptions) addStepRow(table *tbl.Table, parent *v1.PipelineActivityStep, indent string) {
 	stage := parent.Stage
 	preview := parent.Preview
 	promote := parent.Promote

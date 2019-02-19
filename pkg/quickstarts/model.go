@@ -139,7 +139,7 @@ func (model *QuickstartModel) CreateSurvey(filter *QuickstartFilter, batchMode b
 			if err != nil {
 				return nil, err
 			}
-		} 
+		}
 	}
 	if name == "" {
 		return nil, fmt.Errorf("No project name")

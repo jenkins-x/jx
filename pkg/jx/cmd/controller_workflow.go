@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/environments"
+
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
@@ -39,14 +41,13 @@ type ControllerWorkflowOptions struct {
 	PullRequestPollTime     string
 	NoWaitForUpdatePipeline bool
 
-	// testing
-	FakePullRequests CreateEnvPullRequestFn
-	FakeGitProvider  *gits.FakeProvider
-
 	// calculated fields
 	PullRequestPollDuration *time.Duration
 	workflowMap             map[string]*v1.Workflow
 	pipelineMap             map[string]*v1.PipelineActivity
+
+	// Allow Git to be configured
+	ConfigureGitFn environments.ConfigureGitFn
 }
 
 // NewCmdControllerWorkflow creates a command object for the generic "get" action, which
@@ -364,17 +365,17 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 
 func (o *ControllerWorkflowOptions) createPromoteOptions(repoName string, envName string, pipelineName string, build string, version string) *PromoteOptions {
 	po := &PromoteOptions{
-		Application:       repoName,
-		Environment:       envName,
-		Pipeline:          pipelineName,
-		Build:             build,
-		Version:           version,
-		NoPoll:            true,
-		IgnoreLocalFiles:  true,
-		HelmRepositoryURL: helm.DefaultHelmRepositoryURL,
-		LocalHelmRepoName: kube.LocalHelmRepoName,
-		FakePullRequests:  o.FakePullRequests,
-		Namespace:         o.Namespace,
+		Application:          repoName,
+		Environment:          envName,
+		Pipeline:             pipelineName,
+		Build:                build,
+		Version:              version,
+		NoPoll:               true,
+		IgnoreLocalFiles:     true,
+		HelmRepositoryURL:    helm.DefaultHelmRepositoryURL,
+		LocalHelmRepoName:    kube.LocalHelmRepoName,
+		Namespace:            o.Namespace,
+		ConfigureGitCallback: o.ConfigureGitFn,
 	}
 	po.CommonOptions = o.CommonOptions
 	po.BatchMode = true
@@ -406,13 +407,6 @@ func (o *ControllerWorkflowOptions) createGitProviderForPR(prURL string) (gits.G
 		return nil, nil, fmt.Errorf("No / in URL: %s", gitUrl)
 	}
 	gitUrl = gitUrl[0:idx] + ".git"
-	if o.FakeGitProvider != nil {
-		gitInfo, err := gits.ParseGitURL(gitUrl)
-		if err != nil {
-			return nil, gitInfo, err
-		}
-		return o.FakeGitProvider, gitInfo, nil
-	}
 	answer, gitInfo, err := o.createGitProviderForURLWithoutKind(gitUrl)
 	if err != nil {
 		return answer, gitInfo, errors.Wrapf(err, "Failed for git URL %s", gitUrl)
@@ -424,13 +418,6 @@ func (o *ControllerWorkflowOptions) createGitProvider(activity *v1.PipelineActiv
 	gitUrl := activity.Spec.GitURL
 	if gitUrl == "" {
 		return nil, nil, fmt.Errorf("No GitURL for PipelineActivity %s", activity.Name)
-	}
-	if o.FakeGitProvider != nil {
-		gitInfo, err := gits.ParseGitURL(gitUrl)
-		if err != nil {
-			return nil, gitInfo, err
-		}
-		return o.FakeGitProvider, gitInfo, nil
 	}
 	answer, gitInfo, err := o.createGitProviderForURLWithoutKind(gitUrl)
 	if err != nil {

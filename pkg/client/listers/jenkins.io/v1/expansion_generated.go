@@ -50,6 +50,14 @@ type ExtensionListerExpansion interface{}
 // ExtensionNamespaceLister.
 type ExtensionNamespaceListerExpansion interface{}
 
+// FactListerExpansion allows custom methods to be added to
+// FactLister.
+type FactListerExpansion interface{}
+
+// FactNamespaceListerExpansion allows custom methods to be added to
+// FactNamespaceLister.
+type FactNamespaceListerExpansion interface{}
+
 // GitServiceListerExpansion allows custom methods to be added to
 // GitServiceLister.
 type GitServiceListerExpansion interface{}
@@ -65,6 +73,14 @@ type PipelineActivityListerExpansion interface{}
 // PipelineActivityNamespaceListerExpansion allows custom methods to be added to
 // PipelineActivityNamespaceLister.
 type PipelineActivityNamespaceListerExpansion interface{}
+
+// PipelineStructureListerExpansion allows custom methods to be added to
+// PipelineStructureLister.
+type PipelineStructureListerExpansion interface{}
+
+// PipelineStructureNamespaceListerExpansion allows custom methods to be added to
+// PipelineStructureNamespaceLister.
+type PipelineStructureNamespaceListerExpansion interface{}
 
 // PluginListerExpansion allows custom methods to be added to
 // PluginLister.

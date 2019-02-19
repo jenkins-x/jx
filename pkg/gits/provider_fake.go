@@ -92,7 +92,7 @@ func (f *FakeProvider) ListRepositories(org string) ([]*GitRepository, error) {
 
 func (f *FakeProvider) CreateRepository(org string, name string, private bool) (*GitRepository, error) {
 	gitRepo := &GitRepository{
-		Name: name,
+		Name:         name,
 		Organisation: org,
 	}
 
@@ -177,7 +177,7 @@ func (f *FakeProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPul
 	repo.issueCount += 1
 	number := repo.issueCount
 	pr := &GitPullRequest{
-		URL: "",
+		URL: fmt.Sprintf("https://fake.git/%s/%s/pulls/%d", org, repoName, number),
 		Author: &GitUser{
 			URL:       "",
 			Login:     "",
@@ -203,7 +203,24 @@ func (f *FakeProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPul
 		Body:           data.Body,
 	}
 
-	repo.PullRequests[number] = &FakePullRequest{PullRequest: pr}
+	fakePr := &FakePullRequest{
+		PullRequest: pr,
+		Comment:     data.Title,
+	}
+	// If there is a change in the SHA then create a fake PR
+	if data.Head != data.Base {
+		fakePr.Commits = []*FakeCommit{
+			&FakeCommit{
+				Status: CommitStatusPending,
+				Commit: &GitCommit{
+					URL:     fmt.Sprintf("https://fake.git/%s/%s/commits/%s", org, repoName, data.Head),
+					SHA:     data.Head,
+					Message: data.Title,
+				},
+			},
+		}
+	}
+	repo.PullRequests[number] = fakePr
 	return pr, nil
 }
 
@@ -257,6 +274,10 @@ func (f *FakeProvider) GetPullRequest(owner string, repo *GitRepository, number 
 	}
 
 	return nil, fmt.Errorf("repository with name '%s' not found", repoName)
+}
+
+func (f *FakeProvider) ListOpenPullRequests(owner string, repo string) ([]*GitPullRequest, error) {
+	return nil, nil
 }
 
 func (f *FakeProvider) GetPullRequestCommits(owner string, repo *GitRepository, number int) ([]*GitCommit, error) {
@@ -662,10 +683,10 @@ func NewFakeRepository(owner string, repoName string) *FakeRepository {
 	return &FakeRepository{
 		Owner: owner,
 		GitRepo: &GitRepository{
-			Name:     repoName,
-			CloneURL: 		"https://fake.git/" + owner + "/" + repoName + ".git",
-			HTMLURL:  		"https://fake.git/" + owner + "/" + repoName,
-			Organisation: 	"fake-org",
+			Name:         repoName,
+			CloneURL:     "https://fake.git/" + owner + "/" + repoName + ".git",
+			HTMLURL:      "https://fake.git/" + owner + "/" + repoName,
+			Organisation: owner,
 		},
 		PullRequests: map[int]*FakePullRequest{},
 		Commits:      []*FakeCommit{},
