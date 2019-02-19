@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/config"
 	configio "github.com/jenkins-x/jx/pkg/io"
@@ -9,8 +9,6 @@ import (
 	"io"
 	"io/ioutil"
 	"strings"
-
-	"gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 
@@ -27,6 +25,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	core_v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -113,7 +112,7 @@ func (o *UpgradePlatformOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to create the API extensions client")
 	}
-	kube.RegisterAllCRDs(apisClient)
+	err = kube.RegisterAllCRDs(apisClient)
 	if err != nil {
 		return err
 	}
