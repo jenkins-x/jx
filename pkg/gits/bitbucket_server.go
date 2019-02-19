@@ -3,8 +3,8 @@ package gits
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"strconv"
 	"strings"
 	"time"
@@ -17,6 +17,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
+
+// pageLimit is used for the page size for API responses
+const pageLimit = 25
 
 // BitbucketServerProvider implements GitProvider interface for a bitbucket server
 type BitbucketServerProvider struct {
@@ -172,7 +175,7 @@ func (b *BitbucketServerProvider) ListOrganisations() ([]GitOrganisation, error)
 	paginationOptions := make(map[string]interface{})
 
 	paginationOptions["start"] = 0
-	paginationOptions["limit"] = 25
+	paginationOptions["limit"] = pageLimit
 	for {
 		apiResponse, err := b.Client.DefaultApi.GetProjects(paginationOptions)
 		if err != nil {
@@ -203,7 +206,7 @@ func (b *BitbucketServerProvider) ListRepositories(org string) ([]*GitRepository
 	paginationOptions := make(map[string]interface{})
 
 	paginationOptions["start"] = 0
-	paginationOptions["limit"] = 25
+	paginationOptions["limit"] = pageLimit
 
 	for {
 		apiResponse, err := b.Client.DefaultApi.GetRepositoriesWithOptions(org, paginationOptions)
@@ -561,7 +564,7 @@ func (b *BitbucketServerProvider) ListOpenPullRequests(owner string, repo string
 	paginationOptions := make(map[string]interface{})
 
 	paginationOptions["start"] = 0
-	paginationOptions["limit"] = 25
+	paginationOptions["limit"] = pageLimit
 
 	// TODO how to pass in the owner and repo and status? these are total guesses
 	paginationOptions["owner"] = owner
@@ -615,7 +618,7 @@ func (b *BitbucketServerProvider) GetPullRequestCommits(owner string, repository
 	paginationOptions := make(map[string]interface{})
 
 	paginationOptions["start"] = 0
-	paginationOptions["limit"] = 25
+	paginationOptions["limit"] = pageLimit
 	for {
 		apiResponse, err := b.Client.DefaultApi.GetPullRequestCommitsWithOptions(repository.Project, repository.Name, number, paginationOptions)
 		if err != nil {
@@ -742,6 +745,7 @@ func (b *BitbucketServerProvider) MergePullRequest(pr *GitPullRequest, message s
 	return nil
 }
 
+// CreateWebHook adds a new webhook to a git repository
 func (b *BitbucketServerProvider) CreateWebHook(data *GitWebHookArguments) error {
 	projectKey, repo := parseBitBucketServerURL(data.Repo.URL)
 
@@ -751,7 +755,7 @@ func (b *BitbucketServerProvider) CreateWebHook(data *GitWebHookArguments) error
 
 	hooks, err := b.ListWebHooks(projectKey, repo)
 	if err != nil {
-		log.Errorf("Error querying webhooks on %s/%s: %s\n", projectKey, repo, err)
+		return errors.Wrapf(err, "error querying webhooks on %s/%s: %s\n", projectKey, repo)
 	}
 	for _, hook := range hooks {
 		if data.URL == hook.URL {
@@ -775,31 +779,32 @@ func (b *BitbucketServerProvider) CreateWebHook(data *GitWebHookArguments) error
 
 	requestBody, err := json.Marshal(options)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to JSON encode webhook request body for creation")
 	}
 
 	_, err = b.Client.DefaultApi.CreateWebhook(projectKey, repo, requestBody, []string{"application/json"})
 
-	return err
+	return errors.Wrapf(err, "create webhook request failed on %s/%s", projectKey, repo)
 }
 
+// ListWebHooks lists all of the webhooks on a given git repository
 func (b *BitbucketServerProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
 	var webHooksPage webHooksPage
 	var webHooks []*GitWebHookArguments
 
 	paginationOptions := make(map[string]interface{})
 	paginationOptions["start"] = 0
-	paginationOptions["limit"] = 25
+	paginationOptions["limit"] = pageLimit
 
 	for {
 		apiResponse, err := b.Client.DefaultApi.FindWebhooks(owner, repo, paginationOptions)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "failed to list webhooks on repository %s/%s", owner, repo)
 		}
 
 		err = mapstructure.Decode(apiResponse.Values, &webHooksPage)
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "failed to decode response from list webhooks")
 		}
 
 		for _, wh := range webHooksPage.Values {
@@ -826,6 +831,7 @@ func (b *BitbucketServerProvider) ListWebHooks(owner string, repo string) ([]*Gi
 	return webHooks, nil
 }
 
+// UpdateWebHook is used to update a webhook on a git repository.  It is best to pass in the webhook ID.
 func (b *BitbucketServerProvider) UpdateWebHook(data *GitWebHookArguments) error {
 	projectKey, repo := parseBitBucketServerURL(data.Repo.URL)
 
@@ -833,8 +839,8 @@ func (b *BitbucketServerProvider) UpdateWebHook(data *GitWebHookArguments) error
 		return errors.New("missing property URL")
 	}
 
-	dataId := data.ID
-	if dataId == 0 && data.ExistingURL != "" {
+	dataID := data.ID
+	if dataID == 0 && data.ExistingURL != "" {
 		hooks, err := b.ListWebHooks(projectKey, repo)
 		if err != nil {
 			log.Errorf("Error querying webhooks on %s/%s: %s\n", projectKey, repo, err)
@@ -842,18 +848,17 @@ func (b *BitbucketServerProvider) UpdateWebHook(data *GitWebHookArguments) error
 		for _, hook := range hooks {
 			if data.ExistingURL == hook.URL {
 				log.Warnf("Found existing webhook for url %s\n", data.ExistingURL)
-				dataId = hook.ID
+				dataID = hook.ID
 			}
 		}
 	}
-	if dataId == 0 {
+	if dataID == 0 {
 		log.Warn("No webhooks found to update")
 		return nil
 	}
-	id := int32(dataId)
-	if int64(id) != dataId {
-		log.Errorf("Failed to update webhook with ID = %d due to int32 conversion failure", dataId)
-		return nil
+	id := int32(dataID)
+	if int64(id) != dataID {
+		return errors.Errorf("Failed to update webhook with ID = %d due to int32 conversion failure", dataID)
 	}
 
 	var options = map[string]interface{}{
@@ -871,13 +876,13 @@ func (b *BitbucketServerProvider) UpdateWebHook(data *GitWebHookArguments) error
 
 	requestBody, err := json.Marshal(options)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to JSON encode webhook request body for update")
 	}
 
 	log.Infof("Updating Bitbucket server webhook for %s/%s for url %s\n", util.ColorInfo(projectKey), util.ColorInfo(repo), util.ColorInfo(data.URL))
 	_, err = b.Client.DefaultApi.UpdateWebhook(projectKey, repo, id, requestBody, []string{"application/json"})
 
-	return err
+	return errors.Wrapf(err, "failed to update webhook on %s/%s", projectKey, repo)
 }
 
 func (b *BitbucketServerProvider) SearchIssues(org string, name string, query string) ([]*GitIssue, error) {
