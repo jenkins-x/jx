@@ -12,7 +12,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
 )
 
 // GetAppsOptions containers the CLI options
@@ -96,8 +95,7 @@ func (o *GetAppsOptions) Run() error {
 	}
 
 	if len(apps.Items) == 0 {
-		log.Infof("No Apps found in %s\n", o.Namespace)
-		return nil
+		return errors.New("No Apps found in " + o.Namespace + "\n")
 	}
 
 	table := o.generateTable(apps, kubeClient)
