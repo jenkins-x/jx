@@ -11,7 +11,7 @@ import (
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/prow"
-	v1 "k8s.io/api/core/v1"
+	"k8s.io/api/core/v1"
 	"k8s.io/test-infra/prow/pjutil"
 
 	"github.com/spf13/cobra"
@@ -22,6 +22,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	prowjobv1 "k8s.io/test-infra/prow/apis/prowjobs/v1"
+	jenkinsv1 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+
 )
 
 const (
@@ -168,6 +170,10 @@ func (o *StartPipelineOptions) Run() error {
 }
 
 func (o *StartPipelineOptions) createProwJob(jobname string) error {
+	settings, err := o.TeamSettings()
+	if err != nil {
+	  return err
+	}
 	parts := strings.Split(jobname, "/")
 	if len(parts) != 3 {
 		return fmt.Errorf("job name [%s] does not match org/repo/branch format", jobname)
@@ -180,9 +186,13 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 	if err != nil {
 		return err
 	}
+	agent := prowjobv1.KnativeBuildAgent
+	if settings.GetProwEngine() == jenkinsv1.ProwEngineTypeBuildPipeline {
+		agent = prow.KnativeBuildPipelineAgent
+	}
 	jobSpec := prowjobv1.ProwJobSpec{
 		BuildSpec: postSubmitJob.BuildSpec,
-		Agent:     prowjobv1.KnativeBuildAgent,
+		Agent:     agent,
 	}
 	jobSpec.Type = prowjobv1.PostsubmitJob
 
@@ -194,39 +204,41 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 			Revision: branch,
 		},
 	}
-	jobSpec.BuildSpec.Source = sourceSpec
-	env := map[string]string{}
+	if jobSpec.BuildSpec != nil {
+		jobSpec.BuildSpec.Source = sourceSpec
+		env := map[string]string{}
 
-	// enrich with jenkins multi branch plugin env vars
-	env[jmbrBranchName] = branch
-	env[jmbrSourceURL] = jobSpec.BuildSpec.Source.Git.Url
-	env[repoOwnerEnv] = org
-	env[repoNameEnv] = repo
+		// enrich with jenkins multi branch plugin env vars
+		env[jmbrBranchName] = branch
+		env[jmbrSourceURL] = jobSpec.BuildSpec.Source.Git.Url
+		env[repoOwnerEnv] = org
+		env[repoNameEnv] = repo
 
-	for i, step := range jobSpec.BuildSpec.Steps {
-		if len(step.Env) == 0 {
+		for i, step := range jobSpec.BuildSpec.Steps {
+			if len(step.Env) == 0 {
 
-			step.Env = []v1.EnvVar{}
-		}
-		for k, v := range env {
-			e := v1.EnvVar{
-				Name:  k,
-				Value: v,
+				step.Env = []v1.EnvVar{}
 			}
-			jobSpec.BuildSpec.Steps[i].Env = append(jobSpec.BuildSpec.Steps[i].Env, e)
-		}
-	}
-	if jobSpec.BuildSpec.Template != nil {
-		if len(jobSpec.BuildSpec.Template.Env) == 0 {
-
-			jobSpec.BuildSpec.Template.Env = []v1.EnvVar{}
-		}
-		for k, v := range env {
-			e := v1.EnvVar{
-				Name:  k,
-				Value: v,
+			for k, v := range env {
+				e := v1.EnvVar{
+					Name:  k,
+					Value: v,
+				}
+				jobSpec.BuildSpec.Steps[i].Env = append(jobSpec.BuildSpec.Steps[i].Env, e)
 			}
-			jobSpec.BuildSpec.Template.Env = append(jobSpec.BuildSpec.Template.Env, e)
+		}
+		if jobSpec.BuildSpec.Template != nil {
+			if len(jobSpec.BuildSpec.Template.Env) == 0 {
+
+				jobSpec.BuildSpec.Template.Env = []v1.EnvVar{}
+			}
+			for k, v := range env {
+				e := v1.EnvVar{
+					Name:  k,
+					Value: v,
+				}
+				jobSpec.BuildSpec.Template.Env = append(jobSpec.BuildSpec.Template.Env, e)
+			}
 		}
 	}
 

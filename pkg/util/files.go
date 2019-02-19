@@ -30,7 +30,7 @@ func FileExists(path string) (bool, error) {
 	if os.IsNotExist(err) {
 		return false, nil
 	}
-	return true, err
+	return true, errors.Wrapf(err, "failed to check if file exists %s", path)
 }
 
 // DirExists checks if path exists and is a directory

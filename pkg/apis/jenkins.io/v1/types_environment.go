@@ -89,6 +89,28 @@ const (
 	PromotionEngineProw    PromotionEngineType = "Prow"
 )
 
+// ImportModeType is the type of import mode for new projects in a team
+type ImportModeType string
+
+const (
+	// ImportModeTypeJenkinsfile when importing we create a Jenkinfiles in the git repository of the project
+	ImportModeTypeJenkinsfile ImportModeType = "Jenkinsfile"
+
+	// ImportModeTypeYAML when importing we add a `jenkins-x.yml` file for the Next Generation Pipeline as YAML
+	ImportModeTypeYAML ImportModeType = "YAML"
+)
+
+// ProwEngineType is the type of prow execution engine
+type ProwEngineType string
+
+const (
+	// ProwEngineTypeKnativeBuild represents the Knative Build engine for use with Prow
+	ProwEngineTypeKnativeBuild ProwEngineType = "KnativeBuild"
+
+	// ProwEngineTypeBuildPipeline represents using Build Pipeline as the execution engine with Prow
+	ProwEngineTypeBuildPipeline ProwEngineType = "BuildPipeline"
+)
+
 // WebHookEngineType is the type of webhook processing implementation the team uses
 type WebHookEngineType string
 
@@ -154,6 +176,12 @@ type TeamSettings struct {
 	AppsRepository      string               `json:"appsRepository,omitempty" protobuf:"bytes,19,opt,name=appsRepository"`
 	BuildPackName       string               `json:"buildPackName,omitempty" protobuf:"bytes,20,opt,name=buildPackName"`
 	StorageLocations    []StorageLocation    `json:"storageLocations,omitempty" protobuf:"bytes,21,opt,name=storageLocations"`
+
+	// ImportMode indicates what kind of 
+	ImportMode ImportModeType `json:"importMode,omitempty" protobuf:"bytes,22,opt,name=importMode"`
+
+	// ProwEngine is the kind of prow engine used such as knative build or build pipeline
+	ProwEngine ProwEngineType `json:"prowEngine,omitempty" protobuf:"bytes,23,opt,name=prowEngine"`
 }
 
 // StorageLocation
@@ -284,6 +312,22 @@ func (t *TeamSettings) SetStorageLocation(classifier string, storage StorageLoca
 	t.StorageLocations = append(t.StorageLocations, storage)
 }
 
+// GetImportMode returns the import mode - returning a default value if it has not been populated yet
+func (t *TeamSettings) GetImportMode() ImportModeType {
+	if string(t.ImportMode) == "" {
+		return ImportModeTypeJenkinsfile
+	}
+	return t.ImportMode
+}
+
+// GetProwEngine returns the import mode - returning a default value if it has not been populated yet
+func (t *TeamSettings) GetProwEngine() ProwEngineType {
+	if string(t.ProwEngine) == "" {
+		return ProwEngineTypeKnativeBuild
+	}
+	return t.ProwEngine
+}
+
 // IsEmpty returns true if the storage location is empty
 func (s *StorageLocation) IsEmpty() bool {
 	return s.GitURL == "" && s.BucketURL == ""
@@ -308,3 +352,11 @@ func (s *StorageLocation) GetGitBranch() string {
 	}
 	return branch
 }
+
+var (
+	// ImportModeStrings contains the list of strings of all the available import modes
+	ImportModeStrings = []string{
+		string(ImportModeTypeJenkinsfile),
+		string(ImportModeTypeYAML),
+	}
+)

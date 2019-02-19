@@ -236,6 +236,7 @@ func TestReplaceProwConfig(t *testing.T) {
 	o.Setup()
 	o.Kind = prowconfig.Environment
 	o.EnvironmentNamespace = "jx-staging"
+	o.Agent = prow.KnativeBuildAgent
 
 	err := o.AddProwConfig()
 	assert.NoError(t, err)

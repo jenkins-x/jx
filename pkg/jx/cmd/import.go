@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"io"
 	"io/ioutil"
 	"os"
@@ -102,6 +103,7 @@ type ImportOptions struct {
 	DisableMaven          bool
 	PipelineUserName      string
 	PipelineServer        string
+	ImportMode            string
 }
 
 var (
@@ -164,7 +166,6 @@ func NewCmdImport(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	cmd.Flags().BoolVarP(&options.GitHub, "github", "", false, "If you wish to pick the repositories from GitHub to import")
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "", false, "If selecting projects to import from a Git provider this defaults to selecting them all")
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "", "", "If selecting projects to import from a Git provider this filters the list of repositories")
-
 	options.addImportFlags(cmd, false)
 
 	return cmd
@@ -191,6 +192,7 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The name of the docker registry organisation to use. If not specified then the Git provider organisation will be used")
 	cmd.Flags().StringVarP(&options.ExternalJenkinsBaseURL, "external-jenkins-url", "", "", "The jenkins url that an external git provider needs to use")
 	cmd.Flags().BoolVarP(&options.DisableMaven, "disable-updatebot", "", false, "disable updatebot-maven-plugin from attempting to fix/update the maven pom.xml")
+	cmd.Flags().StringVarP(&options.ImportMode, "import-mode", "m", "", fmt.Sprintf("The import mode to use. Should be one of %s", strings.Join(v1.ImportModeStrings, ", ")))
 
 	options.addCommonFlags(cmd)
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
@@ -922,7 +924,11 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 	if err != nil {
 		return err
 	}
-	err = prow.AddApplication(client, []string{repo}, options.currentNamespace, options.DraftPack)
+	settings, err := options.TeamSettings()
+	if err != nil {
+	  return err
+	}
+	err = prow.AddApplication(client, []string{repo}, options.currentNamespace, options.DraftPack, settings)
 	if err != nil {
 		return err
 	}
@@ -1367,7 +1373,7 @@ func (o *ImportOptions) allDraftPacks() ([]string, error) {
 		CommonOptions: o.CommonOptions,
 	}
 	log.Info("Getting latest packs ...\n")
-	dir, err := initOpts.initBuildPacks()
+	dir, _, err := initOpts.initBuildPacks()
 	if err != nil {
 		return nil, err
 	}
