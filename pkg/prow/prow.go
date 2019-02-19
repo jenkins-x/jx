@@ -101,10 +101,12 @@ func remove(kubeClient kubernetes.Interface, repos []string, ns string, kind pro
 	return o.RemoveProwConfig()
 }
 
+// AddEnvironment adds an environment git repo config
 func AddEnvironment(kubeClient kubernetes.Interface, repos []string, ns, environmentNamespace string, teamSettings *v1.TeamSettings) error {
 	return add(kubeClient, repos, ns, prowconfig.Environment, "", environmentNamespace, "", teamSettings)
 }
 
+// AddApplication adds an app git repo config
 func AddApplication(kubeClient kubernetes.Interface, repos []string, ns, draftPack string, teamSettings *v1.TeamSettings) error {
 	return add(kubeClient, repos, ns, prowconfig.Application, draftPack, "", "", teamSettings)
 }
@@ -114,6 +116,7 @@ func DeleteApplication(kubeClient kubernetes.Interface, repos []string, ns strin
 	return remove(kubeClient, repos, ns, prowconfig.Application)
 }
 
+// AddProtection adds a protection entry in the prow config
 func AddProtection(kubeClient kubernetes.Interface, repos []string, context string, ns string, teamSettings *v1.TeamSettings) error {
 	return add(kubeClient, repos, ns, prowconfig.Protection, "", "", context, teamSettings)
 }
