@@ -429,8 +429,11 @@ func (o *AddAppOptions) installApp(name string, chart string, version string, me
 	if err != nil {
 		return errors.Wrapf(err, "running postinstall hooks for %s version %s", name, version)
 	}
-	o.addAppMetadata(name, metadata)
-	log.Infof("Successfully installed %s %s\n", util.ColorInfo(name), util.ColorInfo(version))
+	err = o.addAppMetadata(name, metadata)
+	if err != nil {
+		return err
+	}
+	log.Infof("Successfully installed %s %s into %s\n", util.ColorInfo(name), util.ColorInfo(version), util.ColorInfo(o.Namespace))
 	return nil
 }
 
@@ -455,6 +458,7 @@ func (o *AddAppOptions) addAppMetadata(name string, metadata *chart.Metadata) er
 		app.Annotations[helm.AnnotationAppRepository] = util.StripCredentialsFromURL(repoURL)
 		app.Labels[helm.LabelAppName] = metadata.Name
 		_, err = o.jxClient.JenkinsV1().Apps(o.Namespace).Update(app)
+		return nil
 	}
-	return nil
+	return fmt.Errorf("No app could be found %s", selector)
 }

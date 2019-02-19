@@ -341,11 +341,25 @@ func TestAddApp(t *testing.T) {
 	name := uuid.NewV4().String()
 	version := "0.0.1"
 	testOptions := CreateAppTestOptions(false, t)
+	appData := jenkinsv1.App{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: map[string]string{"chart": name + "-" + version},
+		},
+		Spec: jenkinsv1.AppSpec{},
+	}
+	data, err := yaml.Marshal(appData)
 	helm_test.StubFetchChart(name, version, kube.DefaultChartMuseumURL, &chart.Chart{
 		Metadata: &chart.Metadata{
 			Name:        name,
 			Version:     version,
 			Description: "My test chart description",
+		},
+		Templates: []*chart.Template{
+			&chart.Template{
+				Name: "app.yaml",
+				Data: data,
+			},
 		},
 	}, testOptions.MockHelmer)
 	// Can't run in parallel
@@ -367,7 +381,7 @@ func TestAddApp(t *testing.T) {
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}
 	o.Args = []string{name}
-	err := o.Run()
+	err = o.Run()
 	assert.NoError(t, err)
 
 	_, _, _, fetchDir, _, _, _ := testOptions.MockHelmer.VerifyWasCalledOnce().FetchChart(
@@ -784,6 +798,7 @@ func CreateAppTestOptions(gitOps bool, t *testing.T) *AppTestOptions {
 		CommonOptions: &cmd.CommonOptions{
 			Factory: mockFactory,
 		},
+		MockFactory: mockFactory,
 	}
 	testOrgName := uuid.NewV4().String()
 	testRepoName := uuid.NewV4().String()

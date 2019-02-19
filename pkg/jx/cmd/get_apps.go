@@ -14,7 +14,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"k8s.io/api/apps/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,9 +21,9 @@ import (
 
 // GetAppsOptions containers the CLI options
 type GetAppsOptions struct {
-	CommonOptions
-	ReleaseName string
-	Results     GetAppsResults
+	GetOptions
+	Namespace string
+	Results   GetAppsResults
 }
 
 // GetAppsResults contains the data result from invoking this command
@@ -59,11 +58,13 @@ var (
 // NewCmdGetApps creates the new command for: jx get version
 func NewCmdGetApps(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
 	options := &GetAppsOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
+		GetOptions: GetOptions{
+			CommonOptions: CommonOptions{
+				Factory: f,
+				In:      in,
+				Out:     out,
+				Err:     errOut,
+			},
 		},
 	}
 	cmd := &cobra.Command{
@@ -79,6 +80,7 @@ func NewCmdGetApps(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 			CheckErr(err)
 		},
 	}
+	options.addGetFlags(cmd)
 	return cmd
 }
 
@@ -89,13 +91,13 @@ func (o *GetAppsOptions) Run() error {
 		return err
 	}
 
-	apps, err := o.getAppData(kubeClient)
+	apps, err := o.getAppData(kubeClient, o.Namespace)
 	if err != nil {
 		return err
 	}
 
 	if len(apps.Items) == 0 {
-		log.Infof("No Apps found\n")
+		log.Infof("No Apps found in %s\n", o.Namespace)
 		return nil
 	}
 
@@ -114,21 +116,17 @@ func (o *GetAppsOptions) generateTable(apps *v1.AppList, kubeClient kubernetes.I
 	return table
 }
 
-func (o *GetAppsOptions) getAppData(kubeClient kubernetes.Interface) (apps *v1.AppList, err error) {
-	client, currentNs, err := o.JXClientAndDevNamespace()
+func (o *GetAppsOptions) getAppData(kubeClient kubernetes.Interface, namespace string) (apps *v1.AppList, err error) {
+	client, _, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return nil, errors.Wrap(err, "getting jx client")
-	}
-	ns, _, err := kube.GetDevNamespace(kubeClient, currentNs)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting current dev namespace")
 	}
 	listOptions := metav1.ListOptions{}
 	if len(o.Args) > 0 {
 		selector := fmt.Sprintf(helm.LabelAppName+" in (%s)", strings.Join(o.Args[:], ", "))
 		listOptions.LabelSelector = selector
 	}
-	apps, err = client.JenkinsV1().Apps(ns).List(listOptions)
+	apps, err = client.JenkinsV1().Apps(namespace).List(listOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "listing apps")
 	}
