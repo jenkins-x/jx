@@ -141,9 +141,10 @@ require (
 	gocloud.dev v0.9.0
 	golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9 // indirect
 	golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81 // indirect
-	golang.org/x/oauth2 v0.0.0-20181017192945-9dcd33a902f4
+	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890
 	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4
 	golang.org/x/sys v0.0.0-20190130150945-aca44879d564
+	google.golang.org/api v0.1.0 // indirect
 	gopkg.in/AlecAivazis/survey.v1 v1.6.2
 	gopkg.in/asn1-ber.v1 v1.0.0-20181015200546-f715ec2f112d // indirect
 	gopkg.in/mgo.v2 v2.0.0-20180705113604-9856a29383ce // indirect
