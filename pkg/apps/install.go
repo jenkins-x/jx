@@ -1,6 +1,7 @@
 package apps
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -9,6 +10,7 @@ import (
 
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/environments"
@@ -21,6 +23,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/surveyutils"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // InstallOptions are shared options for installing, removing or upgrading apps for either GitOps or HelmOps
@@ -61,6 +64,24 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 		return err
 	}
 	return nil
+}
+
+// Gets a list of installed apps
+func (o *InstallOptions) GetApps(kubeClient kubernetes.Interface, namespace string, appNames []string) (apps *v1.AppList, err error) {
+	client := o.JxClient
+	if err != nil {
+		return nil, errors.Wrap(err, "getting jx client")
+	}
+	listOptions := metav1.ListOptions{}
+	if len(appNames) > 0 {
+		selector := fmt.Sprintf(helm.LabelAppName+" in (%s)", strings.Join(appNames[:], ", "))
+		listOptions.LabelSelector = selector
+	}
+	apps, err = client.JenkinsV1().Apps(namespace).List(listOptions)
+	if err != nil {
+		return nil, errors.Wrap(err, "listing apps")
+	}
+	return apps, nil
 }
 
 //DeleteApp deletes the app. An alias and releaseName can be specified. GitOps or HelmOps will be automatically chosen based on the o.GitOps flag

@@ -2,9 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"io"
-
 	"github.com/jenkins-x/jx/pkg/apps"
+	"io"
 
 	"github.com/jenkins-x/jx/pkg/environments"
 

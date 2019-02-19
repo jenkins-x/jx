@@ -2,15 +2,16 @@ package cmd_test
 
 import (
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/petergtz/pegomock"
 	"github.com/satori/go.uuid"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetApp(t *testing.T) {
@@ -18,7 +19,7 @@ func TestGetApp(t *testing.T) {
 	version := "0.0.1"
 	namespace := "jx-testing"
 	pegomock.RegisterMockTestingT(t)
-	testOptions := CreateAppTestOptions(false, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
 
 	defer func() {
 		err := testOptions.Cleanup()
@@ -57,6 +58,10 @@ func TestGetApp(t *testing.T) {
 		},
 		Namespace: namespace,
 	}
+	console := tests.NewTerminal(t)
+	getAppOptions.CommonOptions.In = console.In
+	getAppOptions.CommonOptions.Out = console.Out
+	getAppOptions.CommonOptions.Err = console.Err
 
 	//getAppOptions.Args = []string{name}
 

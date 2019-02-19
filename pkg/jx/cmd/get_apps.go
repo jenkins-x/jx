@@ -1,43 +1,26 @@
 package cmd
 
 import (
-	"fmt"
+	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/pkg/errors"
-	"io"
-	"k8s.io/client-go/kubernetes"
-	"strings"
-
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"io"
+	"k8s.io/client-go/kubernetes"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
-	"k8s.io/api/apps/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // GetAppsOptions containers the CLI options
 type GetAppsOptions struct {
 	GetOptions
 	Namespace string
-	Results   GetAppsResults
-}
-
-// GetAppsResults contains the data result from invoking this command
-type GetAppsResults struct {
-	// Apps is a map indexed by the Apps name then the environment name
-	Apps map[string]map[string]*AppsEnvironmentInfo
-}
-
-// AppsEnvironmentInfo contains the results of an app for an environment
-type AppsEnvironmentInfo struct {
-	Deployment  *v1beta1.Deployment
-	Environment *v1.Environment
-	Version     string
-	URL         string
+	GitOps    bool
+	DevEnv    *v1.Environment
 }
 
 var (
@@ -87,11 +70,27 @@ func NewCmdGetApps(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 // Run implements this command
 func (o *GetAppsOptions) Run() error {
 	kubeClient, err := o.KubeClient()
+	o.GitOps, o.DevEnv = o.GetDevEnv()
 	if err != nil {
 		return err
 	}
+	jxClient, _, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return errors.Wrapf(err, "getting jx client")
+	}
+	opts := apps.InstallOptions{
+		In:        o.In,
+		DevEnv:    o.DevEnv,
+		Verbose:   o.Verbose,
+		Err:       o.Err,
+		Out:       o.Out,
+		GitOps:    o.GitOps,
+		BatchMode: o.BatchMode,
+		Helmer:    o.Helm(),
+		JxClient:  jxClient,
+	}
 
-	apps, err := o.getAppData(kubeClient, o.Namespace)
+	apps, err := opts.GetApps(kubeClient, o.Namespace, o.Args)
 	if err != nil {
 		return err
 	}
@@ -110,31 +109,19 @@ func (o *GetAppsOptions) Run() error {
 func (o *GetAppsOptions) generateTable(apps *v1.AppList, kubeClient kubernetes.Interface) table.Table {
 	table := o.generateTableHeaders(apps)
 	for _, app := range apps.Items {
-		row := []string{app.Annotations[helm.AnnotationChartName], app.Labels[helm.LabelReleaseChartVersion], app.Annotations[helm.AnnotationAppDescription], app.Annotations[helm.AnnotationAppRepository]}
+		name := app.Labels[helm.LabelAppName]
+		version := app.Labels[helm.LabelAppVersion]
+		description := app.Annotations[helm.AnnotationAppDescription]
+		repository := app.Annotations[helm.AnnotationAppRepository]
+		row := []string{name, version, description, repository}
 		table.AddRow(row...)
 	}
 	return table
 }
 
-func (o *GetAppsOptions) getAppData(kubeClient kubernetes.Interface, namespace string) (apps *v1.AppList, err error) {
-	client, _, err := o.JXClientAndDevNamespace()
-	if err != nil {
-		return nil, errors.Wrap(err, "getting jx client")
-	}
-	listOptions := metav1.ListOptions{}
-	if len(o.Args) > 0 {
-		selector := fmt.Sprintf(helm.LabelAppName+" in (%s)", strings.Join(o.Args[:], ", "))
-		listOptions.LabelSelector = selector
-	}
-	apps, err = client.JenkinsV1().Apps(namespace).List(listOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "listing apps")
-	}
-	return apps, nil
-}
-
 func (o *GetAppsOptions) generateTableHeaders(apps *v1.AppList) table.Table {
 	t := o.createTable()
+	t.Out = o.CommonOptions.Out
 	titles := []string{"Name", "Version", "Description", "Chart Repository"}
 	t.AddRow(titles...)
 	return t

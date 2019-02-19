@@ -2,6 +2,9 @@ package apps
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	"net/url"
+	"path/filepath"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -47,8 +50,39 @@ func (o *HelmOpsOptions) AddApp(app string, chart string, version string, values
 	if err != nil {
 		return errors.Wrapf(err, "attaching values.yaml to %s", appCRDName)
 	}
+	err = o.addAppMetadata(appCRDName, chart, repository)
+	if err != nil {
+		return err
+	}
 	log.Infof("Successfully installed %s %s\n", util.ColorInfo(app), util.ColorInfo(version))
 	return nil
+}
+
+func (o *HelmOpsOptions) addAppMetadata(name string, chartDir string, repository string) error {
+	metadata, err := helm.LoadChartFile(filepath.Join(chartDir, "Chart.yaml"))
+	if err != nil {
+		return errors.Wrapf(err, "error loading chart from %s", chartDir)
+	}
+	app, _ := o.JxClient.JenkinsV1().Apps(o.Namespace).Get(name, v1.GetOptions{})
+	if app != nil {
+		if app.Annotations == nil {
+			app.Annotations = make(map[string]string)
+		}
+		app.Annotations[helm.AnnotationAppDescription] = metadata.GetDescription()
+		repoURL, err := url.Parse(repository)
+		if err != nil {
+			return errors.Wrap(err, "Invalid repository url")
+		}
+		app.Annotations[helm.AnnotationAppRepository] = util.StripCredentialsFromURL(repoURL)
+		if app.Labels == nil {
+			app.Labels = make(map[string]string)
+		}
+		app.Labels[helm.LabelAppName] = metadata.Name
+		app.Labels[helm.LabelAppVersion] = metadata.Version
+		_, err = o.JxClient.JenkinsV1().Apps(o.Namespace).Update(app)
+		return nil
+	}
+	return fmt.Errorf("No app could be found %s", name)
 }
 
 //DeleteApp deletes the app, optionally allowing the user to set the releaseName
