@@ -19,6 +19,51 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestGetAppsGitops(t *testing.T) {
+	t.SkipNow()
+	// TODO Get gitops working
+	pegomock.RegisterMockTestingT(t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	namespace := "jx-testing"
+
+	defer func() {
+		err := testOptions.Cleanup()
+		assert.NoError(t, err)
+	}()
+
+	name1 := uuid.NewV4().String()
+	name2 := uuid.NewV4().String()
+	addApp(t, name1, namespace, testOptions)
+	addApp(t, name2, namespace, testOptions)
+	getAppOptions := &cmd.GetAppsOptions{
+		GetOptions: cmd.GetOptions{
+			CommonOptions: *testOptions.CommonOptions,
+		},
+		Namespace: namespace,
+	}
+	console := tests.NewTerminal(t)
+	getAppOptions.CommonOptions.In = console.In
+	getAppOptions.CommonOptions.Out = console.Out
+	getAppOptions.CommonOptions.Err = console.Err
+	expectedOutputTemplate := "Name                                VersionDescription              Chart Repository\r\nAPP_NAME_10.0.1  My test chart descriptionhttp://chartmuseum.jenkins-x.io\r\nAPP_NAME_20.0.1  My test chart descriptionhttp://chartmuseum.jenkins-x.io\r\n"
+	expectedOutput := strings.Replace(expectedOutputTemplate, "APP_NAME_1", name1, 1)
+	expectedOutput = strings.Replace(expectedOutput, "APP_NAME_2", name2, 1)
+	donec := make(chan struct{})
+	// TODO Answer questions
+	go func() {
+		defer close(donec)
+		console.ExpectString(expectedOutput)
+		console.ExpectEOF()
+	}()
+
+	err := getAppOptions.Run()
+	assert.NoError(t, err)
+	err = console.Close()
+	<-donec
+	assert.NoError(t, err)
+	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
+}
+
 func TestGetApps(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
 	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
@@ -152,7 +197,6 @@ func addApp(t *testing.T, name string, namespace string, testOptions *cmd_test_h
 		DevEnv:               testOptions.DevEnv,
 		HelmUpdate:           true, // Flag default when run on CLI
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
-		Namespace:            namespace,
 	}
 	o.Args = []string{name}
 	err = o.Run()
