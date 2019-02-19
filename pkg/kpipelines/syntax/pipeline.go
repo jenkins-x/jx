@@ -747,6 +747,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      MangleToRfc1035Label(fmt.Sprintf("%s-%s", pipelineIdentifier, s.Name), ""),
+				Labels:    map[string]string{LabelStageName: s.Name},
 			},
 		}
 		t.SetDefaults()
@@ -998,8 +999,8 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		previousStage = stage
 
 		tasks = append(tasks, stage.getLinearTasks()...)
-		structure.Stages = append(structure.Stages, stage.getAllAsPipelineStructureStages()...)
 		p.Spec.Tasks = append(p.Spec.Tasks, createPipelineTasks(stage, pipelineIdentifier)...)
+		structure.Stages = append(structure.Stages, stage.getAllAsPipelineStructureStages()...)
 	}
 
 	return p, tasks, structure, nil

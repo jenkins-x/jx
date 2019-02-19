@@ -13,6 +13,10 @@ import (
 	"time"
 )
 
+type BaseBuildInfo interface {
+	GetBuild() string
+}
+
 type BuildPodInfo struct {
 	PodName           string
 	Name              string
@@ -30,6 +34,11 @@ type BuildPodInfo struct {
 	CreatedTime       time.Time
 	GitInfo           *gits.GitRepository
 	Pod               *corev1.Pod
+}
+
+// GetBuild gets the build identifier
+func (b BuildPodInfo) GetBuild() string {
+	return b.Build
 }
 
 type BuildPodInfoFilter struct {
