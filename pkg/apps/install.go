@@ -66,7 +66,7 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 	return nil
 }
 
-// Gets a list of installed apps
+//GetApps gets a list of installed apps
 func (o *InstallOptions) GetApps(kubeClient kubernetes.Interface, namespace string, appNames []string) (apps *v1.AppList, err error) {
 	client := o.JxClient
 	if err != nil {
