@@ -2,6 +2,7 @@ package cmd_test
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"testing"
 
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
@@ -42,7 +43,10 @@ func TestStartProtection(t *testing.T) {
 	// First configure a repo in prow
 	repo := fmt.Sprintf("%s/%s", protectionOrgName, protectionRepoName)
 	repos := []string{repo}
-	err = prow.AddApplication(kubeClient, repos, ns, "")
+
+	devEnv := kube.CreateDefaultDevEnvironment("jx")
+
+	err = prow.AddApplication(kubeClient, repos, ns, "", &devEnv.Spec.TeamSettings)
 	defer func() {
 		err = prow.DeleteApplication(kubeClient, repos, ns)
 		assert.NoError(t, err)

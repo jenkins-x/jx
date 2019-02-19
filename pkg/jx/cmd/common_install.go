@@ -1557,10 +1557,15 @@ func (o *CommonOptions) installProw(useKnativePipeine bool) error {
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 
+	settings, err := o.TeamSettings()
+	if err != nil {
+	  return err
+	}
+
 	// create initial configmaps if they don't already exist, use a dummy repo so tide doesn't start scanning all github
 	_, err = client.CoreV1().ConfigMaps(devNamespace).Get("config", metav1.GetOptions{})
 	if err != nil {
-		err = prow.AddApplication(client, []string{"jenkins-x/dummy"}, devNamespace, "base")
+		err = prow.AddApplication(client, []string{"jenkins-x/dummy"}, devNamespace, "base", settings)
 		if err != nil {
 			return err
 		}
@@ -1570,10 +1575,6 @@ func (o *CommonOptions) installProw(useKnativePipeine bool) error {
 	kvalues := []string{"build.auth.git.username=" + o.Username, "build.auth.git.password=" + o.OAUTHToken}
 	kvalues = append(kvalues, setValues...)
 
-	settings, err := o.TeamSettings()
-	if err != nil {
-		return err
-	}
 	if settings.HelmTemplate || settings.NoTiller || settings.HelmBinary != "helm" {
 		// lets disable tiller
 		kvalues = append(kvalues, "tillerNamespace=")

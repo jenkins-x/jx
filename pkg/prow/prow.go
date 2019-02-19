@@ -2,6 +2,8 @@ package prow
 
 import (
 	"encoding/json"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+
 	//"encoding/json"
 	"fmt"
 	"strings"
@@ -22,8 +24,9 @@ import (
 const (
 	Hook = "hook"
 
-	KnativeBuildAgent = "knative-build"
-	KubernetesAgent   = "kubernetes"
+	KnativeBuildAgent         = "knative-build"
+	KnativeBuildPipelineAgent = "knative-pipeline-run"
+	KubernetesAgent           = "kubernetes"
 
 	applyTemplate = "environment-apply"
 	buildTemplate = "environment-build"
@@ -49,16 +52,21 @@ type Options struct {
 	DraftPack            string
 	EnvironmentNamespace string
 	Context              string
+	Agent                string
 }
 
 type ExternalPlugins struct {
 	Items []plugins.ExternalPlugin
 }
 
-func add(kubeClient kubernetes.Interface, repos []string, ns string, kind prowconfig.Kind, draftPack, environmentNamespace string, context string) error {
+func add(kubeClient kubernetes.Interface, repos []string, ns string, kind prowconfig.Kind, draftPack, environmentNamespace string, context string, teamSettings *v1.TeamSettings) error {
 
 	if len(repos) == 0 {
 		return fmt.Errorf("no repo defined")
+	}
+	agent := KnativeBuildAgent
+	if teamSettings.GetProwEngine() == v1.ProwEngineTypeBuildPipeline {
+		agent = KnativeBuildPipelineAgent
 	}
 	o := Options{
 		KubeClient:           kubeClient,
@@ -68,6 +76,7 @@ func add(kubeClient kubernetes.Interface, repos []string, ns string, kind prowco
 		DraftPack:            draftPack,
 		EnvironmentNamespace: environmentNamespace,
 		Context:              context,
+		Agent:                agent,
 	}
 
 	err := o.AddProwConfig()
@@ -92,12 +101,12 @@ func remove(kubeClient kubernetes.Interface, repos []string, ns string, kind pro
 	return o.RemoveProwConfig()
 }
 
-func AddEnvironment(kubeClient kubernetes.Interface, repos []string, ns, environmentNamespace string) error {
-	return add(kubeClient, repos, ns, prowconfig.Environment, "", environmentNamespace, "")
+func AddEnvironment(kubeClient kubernetes.Interface, repos []string, ns, environmentNamespace string, teamSettings *v1.TeamSettings) error {
+	return add(kubeClient, repos, ns, prowconfig.Environment, "", environmentNamespace, "", teamSettings)
 }
 
-func AddApplication(kubeClient kubernetes.Interface, repos []string, ns, draftPack string) error {
-	return add(kubeClient, repos, ns, prowconfig.Application, draftPack, "", "")
+func AddApplication(kubeClient kubernetes.Interface, repos []string, ns, draftPack string, teamSettings *v1.TeamSettings) error {
+	return add(kubeClient, repos, ns, prowconfig.Application, draftPack, "", "", teamSettings)
 }
 
 // DeleteApplication will delete the Prow configuration for a given set of repositories
@@ -105,8 +114,8 @@ func DeleteApplication(kubeClient kubernetes.Interface, repos []string, ns strin
 	return remove(kubeClient, repos, ns, prowconfig.Application)
 }
 
-func AddProtection(kubeClient kubernetes.Interface, repos []string, context string, ns string) error {
-	return add(kubeClient, repos, ns, prowconfig.Protection, "", "", context)
+func AddProtection(kubeClient kubernetes.Interface, repos []string, context string, ns string, teamSettings *v1.TeamSettings) error {
+	return add(kubeClient, repos, ns, prowconfig.Protection, "", "", context, teamSettings)
 }
 
 // AddExternalPlugins adds one or more external plugins to the specified repos. If repos is nil,
@@ -136,16 +145,18 @@ func (o *Options) createPreSubmitEnvironment() config.Presubmit {
 	ps.AlwaysRun = true
 	ps.SkipReport = false
 	ps.Context = prowconfig.PromotionBuild
-	ps.Agent = KnativeBuildAgent
+	ps.Agent = o.Agent
 
-	spec := &build.BuildSpec{
-		ServiceAccountName: serviceAccountBuild,
-		Template: &build.TemplateInstantiationSpec{
-			Name: buildTemplate,
-		},
+	if o.Agent == KnativeBuildAgent {
+		spec := &build.BuildSpec{
+			ServiceAccountName: serviceAccountBuild,
+			Template: &build.TemplateInstantiationSpec{
+				Name: buildTemplate,
+			},
+		}
+
+		ps.BuildSpec = spec
 	}
-
-	ps.BuildSpec = spec
 	ps.RerunCommand = "/test this"
 	ps.Trigger = "(?m)^/test( all| this),?(\\s+|$)"
 
@@ -155,19 +166,21 @@ func (o *Options) createPreSubmitEnvironment() config.Presubmit {
 func (o *Options) createPostSubmitEnvironment() config.Postsubmit {
 	ps := config.Postsubmit{}
 	ps.Name = "promotion"
-	ps.Agent = KnativeBuildAgent
+	ps.Agent = o.Agent
 	ps.Branches = []string{"master"}
 
-	spec := &build.BuildSpec{
-		ServiceAccountName: serviceAccountApply,
-		Template: &build.TemplateInstantiationSpec{
-			Name: applyTemplate,
-			Env: []corev1.EnvVar{
-				{Name: "DEPLOY_NAMESPACE", Value: o.EnvironmentNamespace},
+	if o.Agent == KnativeBuildAgent {
+		spec := &build.BuildSpec{
+			ServiceAccountName: serviceAccountApply,
+			Template: &build.TemplateInstantiationSpec{
+				Name: applyTemplate,
+				Env: []corev1.EnvVar{
+					{Name: "DEPLOY_NAMESPACE", Value: o.EnvironmentNamespace},
+				},
 			},
-		},
+		}
+		ps.BuildSpec = spec
 	}
-	ps.BuildSpec = spec
 	return ps
 }
 
@@ -175,18 +188,20 @@ func (o *Options) createPostSubmitApplication() config.Postsubmit {
 	ps := config.Postsubmit{}
 	ps.Branches = []string{"master"}
 	ps.Name = "release"
-	ps.Agent = KnativeBuildAgent
+	ps.Agent = o.Agent
 
 	templateName := fmt.Sprintf("jenkins-%s", o.DraftPack)
 
-	spec := &build.BuildSpec{
-		ServiceAccountName: serviceAccountBuild,
-		Template: &build.TemplateInstantiationSpec{
-			Name: templateName,
-		},
-	}
+	if o.Agent == KnativeBuildAgent {
+		spec := &build.BuildSpec{
+			ServiceAccountName: serviceAccountBuild,
+			Template: &build.TemplateInstantiationSpec{
+				Name: templateName,
+			},
+		}
 
-	ps.BuildSpec = spec
+		ps.BuildSpec = spec
+	}
 	return ps
 }
 
@@ -199,18 +214,20 @@ func (o *Options) createPreSubmitApplication() config.Presubmit {
 	ps.Trigger = "(?m)^/test( all| this),?(\\s+|$)"
 	ps.AlwaysRun = true
 	ps.SkipReport = false
-	ps.Agent = KnativeBuildAgent
+	ps.Agent = o.Agent
 
 	templateName := fmt.Sprintf("jenkins-%s", o.DraftPack)
 
-	spec := &build.BuildSpec{
-		ServiceAccountName: serviceAccountApply,
-		Template: &build.TemplateInstantiationSpec{
-			Name: templateName,
-		},
-	}
+	if o.Agent == KnativeBuildAgent {
+		spec := &build.BuildSpec{
+			ServiceAccountName: serviceAccountApply,
+			Template: &build.TemplateInstantiationSpec{
+				Name: templateName,
+			},
+		}
 
-	ps.BuildSpec = spec
+		ps.BuildSpec = spec
+	}
 	ps.RerunCommand = "/test this"
 	ps.Trigger = "(?m)^/test( all| this),?(\\s+|$)"
 

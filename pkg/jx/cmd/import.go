@@ -924,7 +924,11 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 	if err != nil {
 		return err
 	}
-	err = prow.AddApplication(client, []string{repo}, options.currentNamespace, options.DraftPack)
+	settings, err := options.TeamSettings()
+	if err != nil {
+	  return err
+	}
+	err = prow.AddApplication(client, []string{repo}, options.currentNamespace, options.DraftPack, settings)
 	if err != nil {
 		return err
 	}

@@ -89,7 +89,13 @@ func (o *StartProtectionOptions) Run() error {
 	}
 	orgrepo := o.Args[1]
 	context := o.Args[0]
-	err = prow.AddProtection(kClient, []string{orgrepo}, context, ns)
+
+	settings, err := o.TeamSettings()
+	if err != nil {
+	  return err
+	}
+
+	err = prow.AddProtection(kClient, []string{orgrepo}, context, ns, settings)
 	if err != nil {
 		return err
 	}
