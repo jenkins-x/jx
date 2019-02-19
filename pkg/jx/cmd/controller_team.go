@@ -178,6 +178,9 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			} else if settings.PromotionEngine == v1.PromotionEngineProw {
 				o.InstallOptions.Flags.Prow = true
 			}
+			if settings.ProwEngine == v1.ProwEngineTypeBuildPipeline {
+				o.InstallOptions.Flags.KnativePipeline = true
+			}
 		}
 
 		err = oc.ModifyTeam(adminNs, team.Name, func(team *v1.Team) error {
