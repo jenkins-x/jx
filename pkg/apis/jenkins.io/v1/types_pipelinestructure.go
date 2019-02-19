@@ -19,7 +19,8 @@ type PipelineStructure struct {
 	// More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty" protobuf:"bytes,1,opt,name=metadata"`
-	PipelineRunRef    *string `json:"pipelineRunRef" protobuf:"bytes,2,opt,name=pipelinerunref"`
+	PipelineRef       *string `json:"pipelineRef" protobuf:"bytes,2,opt,name=pipelineref"`
+	PipelineRunRef    *string `json:"pipelineRunRef" protobuf:"bytes,3,opt,name=pipelinerunref"`
 
 	Stages []PipelineStructureStage `json:"stages,omitempty" protobuf:"bytes,3,opt,name=stages"`
 }

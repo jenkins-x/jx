@@ -1564,6 +1564,15 @@ func (in *PipelineStructure) DeepCopyInto(out *PipelineStructure) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
+	if in.PipelineRef != nil {
+		in, out := &in.PipelineRef, &out.PipelineRef
+		if *in == nil {
+			*out = nil
+		} else {
+			*out = new(string)
+			**out = **in
+		}
+	}
 	if in.PipelineRunRef != nil {
 		in, out := &in.PipelineRunRef, &out.PipelineRunRef
 		if *in == nil {
