@@ -57,6 +57,7 @@ func NewCmdStatus(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	}
 
 	cmd.Flags().StringVarP(&options.node, "node", "n", "", "the named node to get ")
+	options.addCommonFlags(cmd)
 	return cmd
 }
 
@@ -75,7 +76,7 @@ func (o *StatusOptions) Run() error {
 	/*
 	 * get status for all pods in all namespaces
 	 */
-	clusterStatus, err := kube.GetClusterStatus(client, "")
+	clusterStatus, err := kube.GetClusterStatus(client, "", o.Verbose)
 	if err != nil {
 		log.Error("Failed to get cluster status " + err.Error() + " \n")
 		return err
@@ -101,21 +102,13 @@ func (o *StatusOptions) Run() error {
 			return err
 		}
 	}
+
 	resourceStr := clusterStatus.CheckResource()
 
-	jenkinsURL, err := o.findServiceInNamespace("jenkins", namespace)
-	if err != nil {
-		if resourceStr != "" {
-			log.Warnf("%s Jenkins not found and %s\n", clusterStatus.Info(), resourceStr)
-		} else {
-			log.Warnf("%s Jenkins not found\n", clusterStatus.Info())
-		}
-		return err
-	}
 	if resourceStr != "" {
-		log.Warnf("Jenkins X installed for %s. Jenkins is running at %s. %s\n", clusterStatus.Info(), jenkinsURL, util.ColorWarning(resourceStr))
+		log.Warnf("Jenkins X installed for %s.\n%s\n", clusterStatus.Info(), util.ColorWarning(resourceStr))
 	} else {
-		log.Successf("Jenkins X checks passed for %s. Jenkins is running at %s\n", clusterStatus.Info(), jenkinsURL)
+		log.Successf("Jenkins X checks passed for %s.\n", clusterStatus.Info())
 	}
 
 	return nil
