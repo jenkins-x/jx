@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/apps"
 
@@ -17,7 +16,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // AddAppOptions the options for the create spring command
@@ -51,15 +49,10 @@ const (
 )
 
 // NewCmdAddApp creates a command object for the "create" command
-func NewCmdAddApp(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdAddApp(commonOpts *CommonOptions) *cobra.Command {
 	options := &AddAppOptions{
 		AddOptions: AddOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -90,8 +83,6 @@ func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string, de
 		"The username for the repository")
 	cmd.Flags().StringVarP(&o.Password, "password", "", "",
 		"The password for the repository")
-	cmd.Flags().BoolVarP(&o.BatchMode, optionBatchMode, "b", false, "In batch mode the command never prompts for user input")
-	cmd.Flags().BoolVarP(&o.Verbose, optionVerbose, "", false, "Enable verbose logging")
 	cmd.Flags().StringVarP(&o.Alias, optionAlias, "", "",
 		"An alias to use for the app (available when using GitOps for your dev environment)")
 	cmd.Flags().StringVarP(&o.ReleaseName, optionRelease, "r", defaultOptionRelease,
@@ -147,7 +138,7 @@ func (o *AddAppOptions) Run() error {
 			return util.InvalidOptionf(optionValues, o.SetValues,
 				"no more than one --%s can be specified when using GitOps for your dev environment", optionValues)
 		}
-		if o.SecretsLocation() != secrets.VaultLocationKind {
+		if o.GetSecretsLocation() != secrets.VaultLocationKind {
 			return fmt.Errorf("cannot install apps without a vault when using GitOps for your dev environment")
 		}
 		environmentsDir, err := o.EnvironmentsDir()
@@ -186,13 +177,13 @@ func (o *AddAppOptions) Run() error {
 		opts.JxClient = jxClient
 		opts.InstallTimeout = defaultInstallTimeout
 	}
-	if o.SecretsLocation() == secrets.VaultLocationKind {
+	if o.GetSecretsLocation() == secrets.VaultLocationKind {
 		teamName, _, err := o.TeamAndEnvironmentNames()
 		if err != nil {
 			return err
 		}
 		opts.TeamName = teamName
-		client, err := o.CreateSystemVaultClient("")
+		client, err := o.SystemVaultClient("")
 		if err != nil {
 			return err
 		}

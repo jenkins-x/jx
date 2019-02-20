@@ -26,10 +26,10 @@ const (
 
 func TestStartProtection(t *testing.T) {
 	o := cmd.StartProtectionOptions{
-		CommonOptions: cmd.CommonOptions{},
+		CommonOptions: &cmd.CommonOptions{},
 	}
 
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{},
 		&gits.GitFake{},

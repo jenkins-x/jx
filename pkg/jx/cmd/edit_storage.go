@@ -8,8 +8,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
 )
 
 var (
@@ -55,15 +53,10 @@ type EditStorageOptions struct {
 }
 
 // NewCmdEditStorage creates a command object for the "create" command
-func NewCmdEditStorage(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdEditStorage(commonOpts *CommonOptions) *cobra.Command {
 	options := &EditStorageOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -81,7 +74,6 @@ func NewCmdEditStorage(f Factory, in terminal.FileReader, out terminal.FileWrite
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	addStorageLocationFlags(cmd, &options.StorageLocation)
 
 	options.CreateBucket.addCreateBucketFlags(cmd)

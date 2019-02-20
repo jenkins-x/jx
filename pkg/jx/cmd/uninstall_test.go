@@ -7,7 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits/mocks"
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
+	clients_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
 	kuber_mocks "github.com/jenkins-x/jx/pkg/kube/mocks"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
@@ -30,12 +30,12 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_FailsWhenContextNamesDoNo
 	kubeMock := setupUninstall("current-context")
 
 	o := &cmd.UninstallOptions{
-		CommonOptions: cmd.CommonOptions{},
+		CommonOptions: &cmd.CommonOptions{},
 		Namespace:     "ns",
 		Context:       "target-context",
 	}
 	o.SetKube(kubeMock)
-	cmd.ConfigureTestOptions(&o.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
+	cmd.ConfigureTestOptions(o.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 
 	err := o.Run()
 	assert.EqualError(t, err, "The context 'target-context' must match the current context to uninstall")
@@ -45,12 +45,12 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_PassWhenContextNamesMatch
 	kubeMock := setupUninstall("correct-context-to-delete")
 
 	o := &cmd.UninstallOptions{
-		CommonOptions: cmd.CommonOptions{},
+		CommonOptions: &cmd.CommonOptions{},
 		Namespace:     "ns",
 		Context:       "correct-context-to-delete",
 	}
 	o.SetKube(kubeMock)
-	cmd.ConfigureTestOptions(&o.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
+	cmd.ConfigureTestOptions(o.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 
 	// Create fake namespace (that we will uninstall from)
 	err := createNamespace(o, "ns")
@@ -70,12 +70,12 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_PassWhenForced(t *testing
 	kubeMock := setupUninstall("correct-context-to-delete")
 
 	o := &cmd.UninstallOptions{
-		CommonOptions: cmd.CommonOptions{},
+		CommonOptions: &cmd.CommonOptions{},
 		Namespace:     "ns",
 		Force:         true,
 	}
 	o.SetKube(kubeMock)
-	cmd.ConfigureTestOptions(&o.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
+	cmd.ConfigureTestOptions(o.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 
 	// Create fake namespace (that we will uninstall from)
 	err := createNamespace(o, "ns")
@@ -107,14 +107,13 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_FailsWhenContextNamesDoNotM
 		console.ExpectEOF()
 	}()
 
+	commonOpts := cmd.NewCommonOptionsWithFactory(clients_mocks.NewMockFactory())
+	commonOpts.In = console.In
+	commonOpts.Out = console.Out
+	commonOpts.Err = console.Err
 	o := &cmd.UninstallOptions{
-		CommonOptions: cmd.CommonOptions{
-			Factory: cmd_test.NewMockFactory(),
-			In:      console.In,
-			Out:     console.Out,
-			Err:     console.Err,
-		},
-		Namespace: "ns",
+		CommonOptions: &commonOpts,
+		Namespace:     "ns",
 	}
 
 	o.SetKube(kubeMock)
@@ -146,18 +145,17 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t
 		console.ExpectEOF()
 	}()
 
+	commonOpts := cmd.NewCommonOptionsWithFactory(clients_mocks.NewMockFactory())
+	commonOpts.In = console.In
+	commonOpts.Out = console.Out
+	commonOpts.Err = console.Err
 	o := &cmd.UninstallOptions{
-		CommonOptions: cmd.CommonOptions{
-			Factory: cmd_test.NewMockFactory(),
-			In:      console.In,
-			Out:     console.Out,
-			Err:     console.Err,
-		},
-		Namespace: "ns",
+		CommonOptions: &commonOpts,
+		Namespace:     "ns",
 	}
 
 	o.SetKube(kubeMock)
-	cmd.ConfigureTestOptions(&o.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
+	cmd.ConfigureTestOptions(o.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 	o.BatchMode = false // The above line sets batch mode to true. Set it back here :-(
 
 	// Create fake namespace (that we will uninstall from)

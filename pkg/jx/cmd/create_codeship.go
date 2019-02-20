@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"context"
 	"errors"
@@ -10,6 +9,8 @@ import (
 	"os"
 	"path"
 	"strings"
+
+	"strconv"
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/codeship/codeship-go"
@@ -21,8 +22,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"strconv"
 )
 
 type CreateCodeshipFlags struct {
@@ -57,35 +56,20 @@ var (
 )
 
 // NewCmdCreateCodeship creates a command object for the "create" command
-func NewCmdCreateCodeship(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateCodeship(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateCodeshipOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 		CreateTerraformOptions: CreateTerraformOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
-			InstallOptions: CreateInstallOptions(f, in, out, errOut),
+			InstallOptions: CreateInstallOptions(commonOpts),
 		},
 		CreateGkeServiceAccountOptions: CreateGkeServiceAccountOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -102,7 +86,6 @@ func NewCmdCreateCodeship(f Factory, in terminal.FileReader, out terminal.FileWr
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	options.addFlags(cmd)
 	options.CreateTerraformOptions.InstallOptions.addInstallFlags(cmd, true)
 

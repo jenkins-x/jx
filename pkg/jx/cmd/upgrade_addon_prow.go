@@ -3,12 +3,10 @@ package cmd
 import (
 	"github.com/hashicorp/go-version"
 	"github.com/jenkins-x/jx/pkg/util"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -32,16 +30,11 @@ type UpgradeAddonProwOptions struct {
 }
 
 // NewCmdUpgradeAddonProw defines the command
-func NewCmdUpgradeAddonProw(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeAddonProw(commonOpts *CommonOptions) *cobra.Command {
 	options := &UpgradeAddonProwOptions{
 		UpgradeAddonsOptions: UpgradeAddonsOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -60,7 +53,6 @@ func NewCmdUpgradeAddonProw(f Factory, in terminal.FileReader, out terminal.File
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	options.UpgradeAddonsOptions.addFlags(cmd)
 	options.InstallFlags.addCloudEnvOptions(cmd)
 	cmd.Flags().StringVarP(&options.newKnativeBuildVersion, "new-knative-build-version", "", "0.1.1", "The new kanative build verion that prow needs to work with")

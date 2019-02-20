@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -19,7 +18,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -50,7 +48,7 @@ fi
 )
 
 type ShellOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Filter string
 }
@@ -70,14 +68,9 @@ var (
 `)
 )
 
-func NewCmdShell(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdShell(commonOpts *CommonOptions) *cobra.Command {
 	options := &ShellOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "shell",
@@ -93,7 +86,6 @@ func NewCmdShell(f Factory, in terminal.FileReader, out terminal.FileWriter, err
 		},
 	}
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filter the list of contexts to switch between using the given text")
-	options.addCommonFlags(cmd)
 	return cmd
 }
 

@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -27,7 +26,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
 	chgit "github.com/antham/chyle/chyle/git"
@@ -142,15 +140,10 @@ e.g. define environment variables GIT_USERNAME and GIT_API_TOKEN
 	JIRAIssueRegex   = regexp.MustCompile(`[A-Z][A-Z]+-(\d+)`)
 )
 
-func NewCmdStepChangelog(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepChangelog(commonOpts *CommonOptions) *cobra.Command {
 	options := StepChangelogOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 	cmd := &cobra.Command{
@@ -166,7 +159,6 @@ func NewCmdStepChangelog(f Factory, in terminal.FileReader, out terminal.FileWri
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.PreviousRevision, "previous-rev", "p", "", "the previous tag revision")
 	cmd.Flags().StringVarP(&options.PreviousDate, "previous-date", "", "", "the previous date to find a revision in format 'MonthName dayNumber year'")
@@ -315,7 +307,7 @@ func (o *StepChangelogOptions) Run() error {
 
 	gitKind, err := o.GitServerKind(gitInfo)
 	foundGitProvider := true
-	gitProvider, err := o.State.GitInfo.CreateProvider(o.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	gitProvider, err := o.State.GitInfo.CreateProvider(o.InCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
 		foundGitProvider = false
 		log.Warnf("Could not create GitProvide so cannot update the release notes: %s\n", err)

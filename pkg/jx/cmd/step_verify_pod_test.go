@@ -1,13 +1,14 @@
 package cmd_test
 
 import (
+	"io/ioutil"
+	"os"
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/gits/mocks"
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"os"
-	"testing"
 )
 
 func TestStepVerifyPod(t *testing.T) {
@@ -16,12 +17,12 @@ func TestStepVerifyPod(t *testing.T) {
 	options := cmd.StepVerifyPodOptions{}
 	// fake the output stream to be checked later
 	r, fakeStdout, _ := os.Pipe()
-	options.CommonOptions = cmd.CommonOptions{
-		Out: fakeStdout,
-		Err: os.Stderr,
-	}
+	commonOpts := cmd.NewCommonOptionsWithFactory(nil)
+	commonOpts.Out = fakeStdout
+	commonOpts.Err = os.Stderr
+	options.CommonOptions = &commonOpts
 
-	cmd.ConfigureTestOptions(&options.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
+	cmd.ConfigureTestOptions(options.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 	err := options.Run()
 	assert.NoError(t, err, "Command failed: %#v", options)
 
@@ -39,12 +40,12 @@ func TestStepVerifyPodDebug(t *testing.T) {
 	options := cmd.StepVerifyPodOptions{Debug: true}
 	// fake the output stream to be checked later
 	r, fakeStdout, _ := os.Pipe()
-	options.CommonOptions = cmd.CommonOptions{
-		Out: fakeStdout,
-		Err: os.Stderr,
-	}
+	commonOpts := cmd.NewCommonOptionsWithFactory(nil)
+	commonOpts.Out = fakeStdout
+	commonOpts.Err = os.Stderr
+	options.CommonOptions = &commonOpts
 
-	cmd.ConfigureTestOptions(&options.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
+	cmd.ConfigureTestOptions(options.CommonOptions, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 	err := options.Run()
 	assert.NoError(t, err, "Command failed: %#v", options)
 

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -12,7 +11,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -47,15 +45,10 @@ type DeleteRepoOptions struct {
 }
 
 // NewCmdDeleteRepo creates a command object for the "delete repo" command
-func NewCmdDeleteRepo(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteRepo(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteRepoOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -80,7 +73,6 @@ func NewCmdDeleteRepo(f Factory, in terminal.FileReader, out terminal.FileWriter
 	cmd.Flags().BoolVarP(&options.GitHub, "github", "", false, "If you wish to pick the repositories from GitHub to import")
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "a", false, "If selecting projects to delete from a Git provider this defaults to selecting them all")
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "If selecting projects to delete from a Git provider this filters the list of repositories")
-	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "Run without being prompted. WARNING! You will not be asked to confirm deletions if you use this flag.")
 	return cmd
 }
 

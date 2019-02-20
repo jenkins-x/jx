@@ -2,16 +2,15 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/builds"
-	"io"
 	"sort"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/builds"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
@@ -45,15 +44,10 @@ type EditBuildPackOptions struct {
 }
 
 // NewCmdEditBuildpack creates a command object for the "create" command
-func NewCmdEditBuildpack(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdEditBuildpack(commonOpts *CommonOptions) *cobra.Command {
 	options := &EditBuildPackOptions{
 		EditOptions: EditOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -73,7 +67,6 @@ func NewCmdEditBuildpack(f Factory, in terminal.FileReader, out terminal.FileWri
 	cmd.Flags().StringVarP(&options.BuildPackURL, "url", "u", "", "The URL for the build pack Git repository")
 	cmd.Flags().StringVarP(&options.BuildPackRef, "ref", "r", "", "The Git reference (branch,tag,sha) in the Git repository to use")
 	cmd.Flags().StringVarP(&options.BuildPackName, "name", "n", "", "The name of the BuildPack resource to use")
-	options.addCommonFlags(cmd)
 	return cmd
 }
 

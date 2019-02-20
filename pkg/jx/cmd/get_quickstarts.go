@@ -2,14 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/quickstarts"
-	"io"
-	"strings"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -20,7 +19,7 @@ type GetQuickstartsOptions struct {
 	GetOptions
 	GitHubOrganisations []string
 	Filter              quickstarts.QuickstartFilter
-	ShortFormat			bool
+	ShortFormat         bool
 }
 
 var (
@@ -36,15 +35,10 @@ var (
 )
 
 //NewCmdGetQuickstarts creates the command
-func NewCmdGetQuickstarts(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetQuickstarts(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetQuickstartsOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -116,7 +110,6 @@ func (o *GetQuickstartsOptions) Run() error {
 		m[loc.Owner] = loc
 	}
 
-
 	model := quickstarts.NewQuickstartModel()
 
 	for gitURL, m := range gitMap {
@@ -143,7 +136,7 @@ func (o *GetQuickstartsOptions) Run() error {
 		if o.ShortFormat {
 			fmt.Fprintf(o.Out, "%s\n", qs.Name)
 		} else {
-			fmt.Fprintf(o.Out,"%s/%s/%s\n",qs.GitProvider.ServerURL(), qs.Owner, qs.Name)
+			fmt.Fprintf(o.Out, "%s/%s/%s\n", qs.GitProvider.ServerURL(), qs.Owner, qs.Name)
 		}
 	}
 	return nil

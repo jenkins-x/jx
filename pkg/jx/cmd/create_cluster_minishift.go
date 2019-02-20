@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"bytes"
-	"io"
 	"os"
 	"os/exec"
 	"runtime"
@@ -14,7 +13,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterMinishiftOptions the flags for running create cluster
@@ -52,9 +50,9 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateClusterMinishift(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterMinishift(commonOpts *CommonOptions) *cobra.Command {
 	options := CreateClusterMinishiftOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, cloud.MINISHIFT),
+		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.MINISHIFT),
 	}
 	cmd := &cobra.Command{
 		Use:     "minishift",
@@ -70,7 +68,6 @@ func NewCmdCreateClusterMinishift(f Factory, in terminal.FileReader, out termina
 	}
 
 	options.addCreateClusterFlags(cmd)
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "4096", "Amount of RAM allocated to the Minishift VM in MB")
 	cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "3", "Number of CPUs allocated to the Minishift VM")

@@ -1,27 +1,19 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // DeleteGitOptions are the flags for delete commands
 type DeleteGitOptions struct {
-	CommonOptions
+	*CommonOptions
 }
 
 // NewCmdDeleteGit creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteGit(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteGit(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteGitOptions{
-		CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -36,8 +28,8 @@ func NewCmdDeleteGit(f Factory, in terminal.FileReader, out terminal.FileWriter,
 		SuggestFor: []string{"remove", "rm"},
 	}
 
-	cmd.AddCommand(NewCmdDeleteGitServer(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteGitToken(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteGitServer(commonOpts))
+	cmd.AddCommand(NewCmdDeleteGitToken(commonOpts))
 	return cmd
 }
 

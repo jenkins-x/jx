@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io"
 	"os/user"
 	"sort"
 	"strings"
@@ -12,7 +11,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -25,7 +23,7 @@ import (
 
 // GetApplicationsOptions containers the CLI options
 type GetApplicationsOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Namespace   string
 	Environment string
@@ -86,14 +84,9 @@ var (
 )
 
 // NewCmdGetApplications creates the new command for: jx get version
-func NewCmdGetApplications(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetApplications(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetApplicationsOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "applications",

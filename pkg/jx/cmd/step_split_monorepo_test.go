@@ -19,6 +19,9 @@ func TestStepSplitMonorepo(t *testing.T) {
 	assert.NoError(t, err)
 
 	options := &cmd.StepSplitMonorepoOptions{
+		StepOptions: cmd.StepOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
 		Organisation: "dummy",
 		Glob:         "*",
 		Dir:          testData,

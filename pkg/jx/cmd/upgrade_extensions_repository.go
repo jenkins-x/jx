@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -27,7 +26,6 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateExtensionsRepositoryOptions the flags for running create cluster
@@ -70,17 +68,11 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdUpgradeExtensionsRepository(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeExtensionsRepository(commonOpts *CommonOptions) *cobra.Command {
 	options := &UpgradeExtensionsRepositoryOptions{
 		UpgradeExtensionsOptions: UpgradeExtensionsOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-
-					Out: out,
-					Err: errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -99,8 +91,6 @@ func NewCmdUpgradeExtensionsRepository(f Factory, in terminal.FileReader, out te
 	}
 	cmd.Flags().StringVarP(&options.InputFile, "input-file", "i", "jenkins-x-extensions-repository.yaml", "The input file to read to generate the .lock file")
 	cmd.Flags().StringVarP(&options.OutputFile, "output-file", "o", "jenkins-x-extensions-repository.lock.yaml", "The output .lock file")
-	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
-	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "Enable batch mode")
 	return cmd
 }
 

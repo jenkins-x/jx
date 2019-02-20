@@ -30,7 +30,11 @@ func TestSetVersionJavascript(t *testing.T) {
 	err = git.Init(f)
 	assert.NoError(t, err)
 
-	o := cmd.StepNextVersionOptions{}
+	o := cmd.StepNextVersionOptions{
+		StepOptions: cmd.StepOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
+	}
 	o.Out = tests.Output()
 	o.Dir = f
 	o.Filename = "package.json"
@@ -60,7 +64,11 @@ func TestSetVersionChart(t *testing.T) {
 	err = git.Init(f)
 	assert.NoError(t, err)
 
-	o := cmd.StepNextVersionOptions{}
+	o := cmd.StepNextVersionOptions{
+		StepOptions: cmd.StepOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
+	}
 	o.Out = tests.Output()
 	o.Dir = f
 	o.Filename = "Chart.yaml"

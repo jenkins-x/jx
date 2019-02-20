@@ -1,10 +1,7 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"fmt"
 	"io/ioutil"
@@ -21,15 +18,10 @@ type StepGitOptions struct {
 }
 
 // NewCmdStepGit Steps a command object for the "step" command
-func NewCmdStepGit(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepGit(commonOpts *CommonOptions) *cobra.Command {
 	options := &StepGitOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -43,9 +35,9 @@ func NewCmdStepGit(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 			CheckErr(err)
 		},
 	}
-	cmd.AddCommand(NewCmdStepGitCredentials(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepGitEnvs(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepGitMerge(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStepGitCredentials(commonOpts))
+	cmd.AddCommand(NewCmdStepGitEnvs(commonOpts))
+	cmd.AddCommand(NewCmdStepGitMerge(commonOpts))
 	return cmd
 }
 

@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io"
 	"strings"
 	"time"
 
@@ -9,7 +8,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // GetBuildPodsOptions the command line options
@@ -45,16 +43,10 @@ var (
 )
 
 // NewCmdGetBuildPods creates the command
-func NewCmdGetBuildPods(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetBuildPods(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetBuildPodsOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-
-				Out: out,
-				Err: errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

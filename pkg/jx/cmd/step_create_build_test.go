@@ -143,8 +143,12 @@ func testStepCreateBuild(t *testing.T, tempDir string, testcase string, srcDir s
 	}
 	jxObjects := []runtime.Object{}
 
-	o := &cmd.StepCreateBuildOptions{}
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions, k8sObjects, jxObjects, gits.NewGitCLI(),
+	o := &cmd.StepCreateBuildOptions{
+		StepOptions: cmd.StepOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
+	}
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions, k8sObjects, jxObjects, gits.NewGitCLI(),
 		nil, helm.NewHelmCLI("helm", helm.V2, dirName, true), resources_test.NewMockInstaller())
 	o.Dir = testDir
 

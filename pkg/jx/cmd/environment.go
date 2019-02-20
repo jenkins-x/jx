@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/spf13/cobra"
 
@@ -13,12 +12,11 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/client-go/kubernetes"
 )
 
 type EnvironmentOptions struct {
-	CommonOptions
+	*CommonOptions
 }
 
 const ()
@@ -42,14 +40,9 @@ var (
 `)
 )
 
-func NewCmdEnvironment(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdEnvironment(commonOpts *CommonOptions) *cobra.Command {
 	options := &EnvironmentOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "environment",
@@ -64,7 +57,6 @@ func NewCmdEnvironment(f Factory, in terminal.FileReader, out terminal.FileWrite
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
 	return cmd
 }
 

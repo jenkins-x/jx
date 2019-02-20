@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
 	"time"
 
@@ -16,7 +15,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/pki"
 	"github.com/jenkins-x/jx/pkg/log"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -53,16 +51,11 @@ type CreateAddonCloudBeesOptions struct {
 }
 
 // NewCmdCreateAddonCloudBees creates a command object for the "create" command
-func NewCmdCreateAddonCloudBees(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonCloudBees(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateAddonCloudBeesOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -84,7 +77,6 @@ func NewCmdCreateAddonCloudBees(f Factory, in terminal.FileReader, out terminal.
 	cmd.Flags().BoolVarP(&options.Sso, "sso", "", false, "Enable single sign-on")
 	cmd.Flags().BoolVarP(&options.Basic, "basic", "", false, "Enable basic auth")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "Password to access UI when using basic auth.  Defaults to default Jenkins X admin password.")
-	options.addCommonFlags(cmd)
 	options.addFlags(cmd, defaultCloudBeesNamespace, defaultCloudBeesReleaseName, defaultCloudBeesVersion)
 	return cmd
 }
@@ -164,7 +156,7 @@ To register to get your username/password to to: %s
 			return errors.Wrap(err, "ensuring cert-manager is installed")
 		}
 
-		certClient, err := o.CreateCertManagerClient()
+		certClient, err := o.CertManagerClient()
 		if err != nil {
 			return errors.Wrap(err, "creating cert-manager client")
 		}
@@ -200,7 +192,7 @@ To register to get your username/password to to: %s
 		// wait for cert to be issued
 		certName := pki.CertSecretPrefix + "core"
 		log.Infof("Waiting for cert: %s...\n", util.ColorInfo(certName))
-		certMngrClient, err := o.CreateCertManagerClient()
+		certMngrClient, err := o.CertManagerClient()
 		if err != nil {
 			return errors.Wrap(err, "creating the cert-manager client")
 		}

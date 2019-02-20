@@ -31,6 +31,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/log"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
@@ -50,37 +51,43 @@ const (
 
 // NewJXCommand creates the `jx` command and its nested children.
 // args used to determine binary plugin to run can be overridden (does not affect compiled in commands).
-func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter,
+func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWriter,
 	err io.Writer, args []string) *cobra.Command {
 	cmds := &cobra.Command{
 		Use:   "jx",
 		Short: "jx is a command line tool for working with Jenkins X",
-		//Long: ``,
-		Run: runHelp,
-		/*
-			BashCompletionFunction: bash_completion_func,
-		*/
+		Run:   runHelp,
 	}
 
-	addCommands := NewCmdAdd(f, in, out, err)
-	createCommands := NewCmdCreate(f, in, out, err)
-	deleteCommands := NewCmdDelete(f, in, out, err)
-	getCommands := NewCmdGet(f, in, out, err)
-	editCommands := NewCmdEdit(f, in, out, err)
-	updateCommands := NewCmdUpdate(f, in, out, err)
+	commonOpts := &CommonOptions{
+		factory: f,
+		In:      in,
+		Out:     out,
+		Err:     err,
+	}
+
+	// commonOpts holds the global flags that will be shared/inherited by all sub-commands created bellow
+	commonOpts.addCommonFlags(cmds)
+
+	addCommands := NewCmdAdd(commonOpts)
+	createCommands := NewCmdCreate(commonOpts)
+	deleteCommands := NewCmdDelete(commonOpts)
+	getCommands := NewCmdGet(commonOpts)
+	editCommands := NewCmdEdit(commonOpts)
+	updateCommands := NewCmdUpdate(commonOpts)
 
 	installCommands := []*cobra.Command{
-		NewCmdInstall(f, in, out, err),
-		NewCmdUninstall(f, in, out, err),
-		NewCmdUpgrade(f, in, out, err),
+		NewCmdInstall(commonOpts),
+		NewCmdUninstall(commonOpts),
+		NewCmdUpgrade(commonOpts),
 	}
 	installCommands = append(installCommands, findCommands("cluster", createCommands, deleteCommands)...)
 	installCommands = append(installCommands, findCommands("cluster", updateCommands)...)
 	installCommands = append(installCommands, findCommands("jenkins token", createCommands, deleteCommands)...)
-	installCommands = append(installCommands, NewCmdInit(f, in, out, err))
+	installCommands = append(installCommands, NewCmdInit(commonOpts))
 
 	addProjectCommands := []*cobra.Command{
-		NewCmdImport(f, in, out, err),
+		NewCmdImport(commonOpts),
 	}
 	addProjectCommands = append(addProjectCommands, findCommands("create archetype", createCommands, deleteCommands)...)
 	addProjectCommands = append(addProjectCommands, findCommands("create spring", createCommands, deleteCommands)...)
@@ -91,15 +98,15 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter,
 	gitCommands := []*cobra.Command{}
 	gitCommands = append(gitCommands, findCommands("git server", createCommands, deleteCommands)...)
 	gitCommands = append(gitCommands, findCommands("git token", createCommands, deleteCommands)...)
-	gitCommands = append(gitCommands, NewCmdRepo(f, in, out, err))
+	gitCommands = append(gitCommands, NewCmdRepo(commonOpts))
 
 	addonCommands := []*cobra.Command{}
 	addonCommands = append(addonCommands, findCommands("addon", createCommands, deleteCommands)...)
 	addonCommands = append(addonCommands, findCommands("app", createCommands, deleteCommands, addCommands)...)
 
 	environmentsCommands := []*cobra.Command{
-		NewCmdPreview(f, in, out, err),
-		NewCmdPromote(f, in, out, err),
+		NewCmdPreview(commonOpts),
+		NewCmdPromote(commonOpts),
 	}
 	environmentsCommands = append(environmentsCommands, findCommands("environment", createCommands, deleteCommands, editCommands, getCommands)...)
 
@@ -123,33 +130,33 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter,
 		{
 			Message: "Working with Kubernetes:",
 			Commands: []*cobra.Command{
-				NewCompliance(f, in, out, err),
-				NewCmdCompletion(f, in, out, err),
-				NewCmdContext(f, in, out, err),
-				NewCmdEnvironment(f, in, out, err),
-				NewCmdTeam(f, in, out, err),
-				NewCmdNamespace(f, in, out, err),
-				NewCmdPrompt(f, in, out, err),
-				NewCmdScan(f, in, out, err),
-				NewCmdShell(f, in, out, err),
-				NewCmdStatus(f, in, out, err),
+				NewCompliance(commonOpts),
+				NewCmdCompletion(commonOpts),
+				NewCmdContext(commonOpts),
+				NewCmdEnvironment(commonOpts),
+				NewCmdTeam(commonOpts),
+				NewCmdNamespace(commonOpts),
+				NewCmdPrompt(commonOpts),
+				NewCmdScan(commonOpts),
+				NewCmdShell(commonOpts),
+				NewCmdStatus(commonOpts),
 			},
 		},
 		{
 			Message: "Working with Applications:",
 			Commands: []*cobra.Command{
-				NewCmdConsole(f, in, out, err),
-				NewCmdLogs(f, in, out, err),
-				NewCmdOpen(f, in, out, err),
-				NewCmdRsh(f, in, out, err),
-				NewCmdSync(f, in, out, err),
+				NewCmdConsole(commonOpts),
+				NewCmdLogs(commonOpts),
+				NewCmdOpen(commonOpts),
+				NewCmdRsh(commonOpts),
+				NewCmdSync(commonOpts),
 			},
 		},
 		{
 			Message: "Working with CloudBees application:",
 			Commands: []*cobra.Command{
-				NewCmdCloudBees(f, in, out, err),
-				NewCmdLogin(f, in, out, err),
+				NewCmdCloudBees(commonOpts),
+				NewCmdLogin(commonOpts),
 			},
 		},
 		{
@@ -165,21 +172,21 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter,
 				updateCommands,
 				deleteCommands,
 				addCommands,
-				NewCmdStart(f, in, out, err),
-				NewCmdStop(f, in, out, err),
+				NewCmdStart(commonOpts),
+				NewCmdStop(commonOpts),
 			},
 		},
 		{
 			Message: "Jenkins X Pipeline Commands:",
 			Commands: []*cobra.Command{
-				NewCmdStep(f, in, out, err),
+				NewCmdStep(commonOpts),
 			},
 		},
 		{
 			Message: "Jenkins X services:",
 			Commands: []*cobra.Command{
-				NewCmdController(f, in, out, err),
-				NewCmdGC(f, in, out, err),
+				NewCmdController(commonOpts),
+				NewCmdGC(commonOpts),
 			},
 		},
 	}
@@ -188,33 +195,27 @@ func NewJXCommand(f Factory, in terminal.FileReader, out terminal.FileWriter,
 
 	filters := []string{"options"}
 
-	commonOptions := CommonOptions{
-		Factory: f,
-		In:      in,
-		Out:     out,
-		Err:     err,
-	}
 	getPluginCommandGroups := func() (templates.PluginCommandGroups, bool) {
 		verifier := &extensions.CommandOverrideVerifier{
 			Root:        cmds,
 			SeenPlugins: make(map[string]string, 0),
 		}
-		pluginCommandGroups, managedPluginsEnabled, err := commonOptions.getPluginCommandGroups(verifier)
+		pluginCommandGroups, managedPluginsEnabled, err := commonOpts.getPluginCommandGroups(verifier)
 		if err != nil {
 			log.Errorf("%v\n", err)
 		}
 		return pluginCommandGroups, managedPluginsEnabled
 	}
 	templates.ActsAsRootCommand(cmds, filters, getPluginCommandGroups, groups...)
-	cmds.AddCommand(NewCmdDocs(f, in, out, err))
-	cmds.AddCommand(NewCmdVersion(f, in, out, err))
+	cmds.AddCommand(NewCmdDocs(commonOpts))
+	cmds.AddCommand(NewCmdVersion(commonOpts))
 	cmds.Version = version.GetVersion()
 	cmds.SetVersionTemplate("{{printf .Version}}\n")
 	cmds.AddCommand(NewCmdOptions(out))
-	cmds.AddCommand(NewCmdDiagnose(f, in, out, err))
+	cmds.AddCommand(NewCmdDiagnose(commonOpts))
 
 	managedPlugins := &managedPluginHandler{
-		CommonOptions: commonOptions,
+		CommonOptions: commonOpts,
 	}
 	localPlugins := &localPluginHandler{}
 
@@ -295,7 +296,7 @@ type PluginHandler interface {
 }
 
 type managedPluginHandler struct {
-	CommonOptions
+	*CommonOptions
 	localPluginHandler
 }
 

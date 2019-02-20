@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"io"
-
 	"fmt"
 
 	"github.com/ghodss/yaml"
@@ -14,7 +12,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -41,15 +38,10 @@ type UpgradeAddonsOptions struct {
 }
 
 // NewCmdUpgradeAddons defines the command
-func NewCmdUpgradeAddons(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeAddons(commonOpts *CommonOptions) *cobra.Command {
 	options := &UpgradeAddonsOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -69,10 +61,9 @@ func NewCmdUpgradeAddons(f Factory, in terminal.FileReader, out terminal.FileWri
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The Namespace to promote to")
 	cmd.Flags().StringVarP(&options.Set, "set", "s", "", "The Helm parameters to pass in while upgrading")
 
-	options.addCommonFlags(cmd)
 	options.InstallFlags.addCloudEnvOptions(cmd)
 
-	cmd.AddCommand(NewCmdUpgradeAddonProw(f, in, out, errOut))
+	cmd.AddCommand(NewCmdUpgradeAddonProw(commonOpts))
 
 	return cmd
 }

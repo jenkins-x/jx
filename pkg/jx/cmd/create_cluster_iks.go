@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io"
 	"math"
 	"os"
 	"regexp"
@@ -21,7 +20,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -100,9 +98,9 @@ func (s byNumberIndex) Less(i, j int) bool {
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateClusterIKS(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterIKS(commonOpts *CommonOptions) *cobra.Command {
 	options := CreateClusterIKSOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, cloud.OKE),
+		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.OKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "iks",

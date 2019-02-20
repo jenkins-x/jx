@@ -1,10 +1,7 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/pkg/browser"
 )
@@ -14,7 +11,7 @@ const (
 )
 
 /* open the docs - Jenkins X docs by default */
-func NewCmdDocs(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDocs(commonOpts *CommonOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "docs",
 		Short: "Open the documentation in a browser",

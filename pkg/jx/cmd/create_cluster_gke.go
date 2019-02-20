@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
 	"time"
 
@@ -20,7 +19,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -81,9 +79,9 @@ var (
 
 // NewCmdCreateClusterGKE creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterGKE(commonOpts *CommonOptions) *cobra.Command {
 	options := CreateClusterGKEOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, cloud.GKE),
+		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.GKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "gke",
@@ -99,7 +97,6 @@ func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.File
 	}
 
 	options.addCreateClusterFlags(cmd)
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster, default is a random generated name")
 	cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, "cluster-ipv4-cidr", "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")
@@ -120,7 +117,7 @@ func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.File
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedScopes, "enhanced-scopes", "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedApis, "enhanced-apis", "", false, "Enable enhanced APIs to utilise Container Registry & Cloud Build")
 
-	cmd.AddCommand(NewCmdCreateClusterGKETerraform(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterGKETerraform(commonOpts))
 
 	return cmd
 }

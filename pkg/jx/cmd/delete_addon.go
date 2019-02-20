@@ -1,12 +1,9 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"fmt"
@@ -17,21 +14,16 @@ import (
 
 // DeleteAddonOptions are the flags for delete commands
 type DeleteAddonOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Purge bool
 }
 
 // NewCmdDeleteAddon creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteAddon(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteAddon(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteAddonOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -46,11 +38,11 @@ func NewCmdDeleteAddon(f Factory, in terminal.FileReader, out terminal.FileWrite
 		SuggestFor: []string{"remove", "rm"},
 	}
 
-	cmd.AddCommand(NewCmdDeleteAddonCloudBees(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteAddonFlagger(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteAddonGitea(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteAddonSSO(f, in, out, errOut))
-	cmd.AddCommand(NewCmdDeleteAddonKnativeBuild(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteAddonCloudBees(commonOpts))
+	cmd.AddCommand(NewCmdDeleteAddonFlagger(commonOpts))
+	cmd.AddCommand(NewCmdDeleteAddonGitea(commonOpts))
+	cmd.AddCommand(NewCmdDeleteAddonSSO(commonOpts))
+	cmd.AddCommand(NewCmdDeleteAddonKnativeBuild(commonOpts))
 	options.addFlags(cmd)
 	return cmd
 }

@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"go/build"
-	"io"
 	"path/filepath"
 	"strings"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -59,15 +57,10 @@ Available generators include:
 )
 
 // NewCmdCreateClient creates clients for CRDs
-func NewCmdCreateClient(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClient(commonOpts *CommonOptions) *cobra.Command {
 	o := &CreateClientOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -85,9 +78,9 @@ func NewCmdCreateClient(f Factory, in terminal.FileReader, out terminal.FileWrit
 		},
 	}
 
-	cmd.AddCommand(NewCmdCreateClientDocs(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateClientOpenAPI(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateClientGo(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateClientDocs(commonOpts))
+	cmd.AddCommand(NewCmdCreateClientOpenAPI(commonOpts))
+	cmd.AddCommand(NewCmdCreateClientGo(commonOpts))
 
 	return cmd
 }

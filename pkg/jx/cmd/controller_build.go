@@ -1,15 +1,15 @@
 package cmd
 
 import (
-	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/collector"
-	"github.com/pkg/errors"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/collector"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"k8s.io/client-go/kubernetes"
@@ -20,7 +20,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -42,15 +41,10 @@ type ControllerBuildOptions struct {
 
 // NewCmdControllerBuild creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdControllerBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdControllerBuild(commonOpts *CommonOptions) *cobra.Command {
 	options := &ControllerBuildOptions{
 		ControllerOptions: ControllerOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -65,8 +59,6 @@ func NewCmdControllerBuild(f Factory, in terminal.FileReader, out terminal.FileW
 		},
 		Aliases: []string{"builds"},
 	}
-
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to watch or defaults to the current namespace")
 	cmd.Flags().BoolVarP(&options.InitGitCredentials, "git-credentials", "", false, "If enable then lets run the 'jx step git credentials' step to initialise git credentials")
@@ -390,7 +382,7 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 
 	if initGitCredentials {
 		gc := &StepGitCredentialsOptions{}
-		gc.CommonOptions = *o
+		gc.CommonOptions = o
 		gc.BatchMode = true
 		log.Info("running: jx step git credentials\n")
 		err = gc.Run()

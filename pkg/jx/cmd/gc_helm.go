@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -12,7 +11,6 @@ import (
 	"strconv"
 
 	"github.com/ghodss/yaml"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
@@ -25,7 +23,7 @@ import (
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
 // referencing the cmd.Flags()
 type GCHelmOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	RevisionHistoryLimit int
 	OutDir               string
@@ -46,14 +44,9 @@ var (
 )
 
 // NewCmdGCHelm  a command object for the "garbage collect" command
-func NewCmdGCHelm(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGCHelm(commonOpts *CommonOptions) *cobra.Command {
 	options := &GCHelmOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -68,7 +61,6 @@ func NewCmdGCHelm(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
 	cmd.Flags().IntVarP(&options.RevisionHistoryLimit, "revision-history-limit", "", 10, "Minimum number of versions per release to keep")
 	cmd.Flags().StringVarP(&options.OutDir, optionOutputDir, "o", "configmaps", "Relative directory to output backup to. Defaults to ./configmaps")
 	cmd.Flags().BoolVarP(&options.DryRun, "dry-run", "", false, "Does not perform the delete operation on Kubernetes")

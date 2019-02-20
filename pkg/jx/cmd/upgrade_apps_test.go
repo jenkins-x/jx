@@ -35,9 +35,10 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 	newVersion, err := semver.Parse(version)
 	assert.NoError(t, err)
 	newVersion.Patch++
+	commonOpts := *testOptions.CommonOptions
 	o := &cmd.UpgradeAppsOptions{
 		AddOptions: cmd.AddOptions{
-			CommonOptions: *testOptions.CommonOptions,
+			CommonOptions: &commonOpts,
 		},
 		Version:              newVersion.String(),
 		Alias:                alias,
@@ -91,9 +92,10 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 	newVersion, err := semver.Parse(version)
 	assert.NoError(t, err)
 	newVersion.Patch++
+	commonOpts := *testOptions.CommonOptions
 	o := &cmd.UpgradeAppsOptions{
 		AddOptions: cmd.AddOptions{
-			CommonOptions: *testOptions.CommonOptions,
+			CommonOptions: &commonOpts,
 		},
 		Version:              newVersion.String(),
 		Alias:                alias,
@@ -160,9 +162,10 @@ func TestUpgradeAllAppsForGitOps(t *testing.T) {
 	newVersion2.Minor++
 
 	// Now let's upgrade
+	commonOpts := *testOptions.CommonOptions
 	o := &cmd.UpgradeAppsOptions{
 		AddOptions: cmd.AddOptions{
-			CommonOptions: *testOptions.CommonOptions,
+			CommonOptions: &commonOpts,
 		},
 		Repo:                 kube.DefaultChartMuseumURL,
 		GitOps:               true,

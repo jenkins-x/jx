@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io"
 	"strings"
 
 	"fmt"
@@ -31,7 +30,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // Cluster interface for Clusters
@@ -285,17 +283,12 @@ const (
 )
 
 // NewCmdCreateTerraform creates a command object for the "create" command
-func NewCmdCreateTerraform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateTerraform(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateTerraformOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
-		InstallOptions: CreateInstallOptions(f, in, out, errOut),
+		InstallOptions: CreateInstallOptions(commonOpts),
 	}
 
 	cmd := &cobra.Command{
@@ -311,7 +304,6 @@ func NewCmdCreateTerraform(f Factory, in terminal.FileReader, out terminal.FileW
 	}
 
 	options.InstallOptions.addInstallFlags(cmd, true)
-	options.addCommonFlags(cmd)
 	options.addFlags(cmd, true)
 
 	cmd.Flags().StringVarP(&options.Flags.OrganisationName, "organisation-name", "o", "", "The organisation name that will be used as the Git repo containing cluster details, the repo will be organisation-<org name>")

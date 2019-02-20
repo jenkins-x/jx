@@ -2,6 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -10,11 +13,7 @@ import (
 	pipelineapi "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-	"io/ioutil"
 	"k8s.io/apimachinery/pkg/util/uuid"
-	"strings"
 )
 
 var (
@@ -64,15 +63,10 @@ type StepCreateVersionPullRequestResults struct {
 }
 
 // NewCmdStepCreateVersionPullRequest Creates a new Command object
-func NewCmdStepCreateVersionPullRequest(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepCreateVersionPullRequest(commonOpts *CommonOptions) *cobra.Command {
 	options := &StepCreateVersionPullRequestOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -89,7 +83,6 @@ func NewCmdStepCreateVersionPullRequest(f Factory, in terminal.FileReader, out t
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.VersionsRepository, "repo", "r", DefaultVersionsURL, "Jenkins X versions Git repo")
 	cmd.Flags().StringVarP(&options.VersionsBranch, "branch", "", "master", "the versions git repository branch to clone and generate a pull request from")
@@ -264,12 +257,11 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 
 				pr.Body = o.message
 
-
 				log.Infof("force pushed new pull request change to: %s\n", util.ColorInfo(pr.URL))
 
 				err = provider.AddPRComment(pr, o.message)
 				if err != nil {
-				  return errors.Wrapf(err, "failed to add message to PR %s", pr.URL)
+					return errors.Wrapf(err, "failed to add message to PR %s", pr.URL)
 				}
 				return nil
 			}

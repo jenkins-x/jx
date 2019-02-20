@@ -2,14 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -25,20 +23,15 @@ var (
 
 // DeleteChatServerOptions the options for the create spring command
 type DeleteChatServerOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	IgnoreMissingServer bool
 }
 
 // NewCmdDeleteChatServer defines the command
-func NewCmdDeleteChatServer(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteChatServer(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteChatServerOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{

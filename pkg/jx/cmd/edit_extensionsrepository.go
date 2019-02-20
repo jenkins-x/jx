@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -17,7 +16,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -56,15 +54,10 @@ type EditExtensionsRepositoryOptions struct {
 	ExtensionsRepositoryHelmPassword string
 }
 
-func NewCmdEditExtensionsRepository(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdEditExtensionsRepository(commonOpts *CommonOptions) *cobra.Command {
 	options := &EditExtensionsRepositoryOptions{
 		EditOptions: EditOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -87,8 +80,6 @@ func NewCmdEditExtensionsRepository(f Factory, in terminal.FileReader, out termi
 	cmd.Flags().StringVarP(&options.ExtensionsRepositoryHelmUsername, optionExtensionsRepositoryHelmUsername, "", "", "The extensions repository Helm Chart Username to use")
 	cmd.Flags().StringVarP(&options.ExtensionsRepositoryHelmPassword, optionExtensionsRepositoryHelmPassword, "", "", "The extensions repository Helm Chart Password to use")
 
-	// TODO enable this
-	// options.addCommonFlags(cmd)
 	return cmd
 }
 

@@ -1,12 +1,11 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/log"
-	"io"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/log"
+
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -35,15 +34,10 @@ var (
 )
 
 // NewCmdGetDevPod creates the command
-func NewCmdGetDevPod(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetDevPod(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetDevPodOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

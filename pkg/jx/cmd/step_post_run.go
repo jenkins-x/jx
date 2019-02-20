@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -13,7 +12,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -36,15 +34,10 @@ var (
 )
 
 // NewCmdStep Steps a command object for the "step" command
-func NewCmdStepPostRun(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepPostRun(commonOpts *CommonOptions) *cobra.Command {
 	options := &StepPostRunOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -61,7 +54,6 @@ func NewCmdStepPostRun(f Factory, in terminal.FileReader, out terminal.FileWrite
 		},
 	}
 
-	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enables verbose logging")
 	return cmd
 }
 

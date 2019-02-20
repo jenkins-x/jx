@@ -1,12 +1,10 @@
 package cmd
 
 import (
-	"io"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"fmt"
 
@@ -57,16 +55,10 @@ type CreatePullRequestResults struct {
 }
 
 // NewCmdCreatePullRequest creates a command object for the "create" command
-func NewCmdCreatePullRequest(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreatePullRequest(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreatePullRequestOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-
-				Out: out,
-				Err: errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -90,7 +82,6 @@ func NewCmdCreatePullRequest(f Factory, in terminal.FileReader, out terminal.Fil
 	cmd.Flags().StringVarP(&options.Base, "base", "", "master", "The base branch to create the pull request into")
 	cmd.Flags().StringArrayVarP(&options.Labels, "label", "l", []string{}, "The labels to add to the pullrequest")
 
-	options.addCommonFlags(cmd)
 	return cmd
 }
 

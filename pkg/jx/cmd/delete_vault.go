@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	gkevault "github.com/jenkins-x/jx/pkg/cloud/gke/vault"
@@ -14,13 +13,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DeleteVaultOptions keeps the options of delete vault command
 type DeleteVaultOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Namespace            string
 	RemoveCloudResources bool
@@ -40,14 +38,9 @@ var (
 )
 
 // NewCmdDeleteVault builds a new delete vault command
-func NewCmdDeleteVault(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteVault(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteVaultOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
@@ -14,7 +13,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -58,15 +56,10 @@ type UpgradeAppsOptions struct {
 }
 
 // NewCmdUpgradeApps defines the command
-func NewCmdUpgradeApps(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeApps(commonOpts *CommonOptions) *cobra.Command {
 	o := &UpgradeAppsOptions{
 		AddOptions: AddOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -84,8 +77,6 @@ func NewCmdUpgradeApps(f Factory, in terminal.FileReader, out terminal.FileWrite
 		},
 	}
 
-	cmd.Flags().BoolVarP(&o.BatchMode, optionBatchMode, "b", false, "In batch mode the command never prompts for user input")
-	cmd.Flags().BoolVarP(&o.Verbose, optionVerbose, "", false, "Enable verbose logging")
 	cmd.Flags().StringVarP(&o.Version, "username", "", "",
 		"The username for the repository")
 	cmd.Flags().StringVarP(&o.Version, "password", "", "",
@@ -131,7 +122,7 @@ func (o *UpgradeAppsOptions) Run() error {
 		if len(o.Set) > 0 {
 			return util.InvalidOptionf(optionSet, o.ReleaseName, msg, optionSet)
 		}
-		if o.SecretsLocation() != secrets.VaultLocationKind {
+		if o.GetSecretsLocation() != secrets.VaultLocationKind {
 			return fmt.Errorf("cannot install apps without a vault when using GitOps for your dev environment")
 		}
 		if !o.HelmUpdate {
@@ -173,13 +164,13 @@ func (o *UpgradeAppsOptions) Run() error {
 		opts.InstallTimeout = defaultInstallTimeout
 	}
 
-	if o.SecretsLocation() == secrets.VaultLocationKind {
+	if o.GetSecretsLocation() == secrets.VaultLocationKind {
 		teamName, _, err := o.TeamAndEnvironmentNames()
 		if err != nil {
 			return err
 		}
 		opts.TeamName = teamName
-		client, err := o.CreateSystemVaultClient("")
+		client, err := o.SystemVaultClient("")
 		if err != nil {
 			return err
 		}

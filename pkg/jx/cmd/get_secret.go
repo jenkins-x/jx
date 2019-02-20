@@ -1,13 +1,10 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/vault"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 type GetSecretOptions struct {
@@ -37,15 +34,10 @@ var (
 )
 
 // NewCmdGetSecret creates a new command for 'jx get secrets'
-func NewCmdGetSecret(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetSecret(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetSecretOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -74,9 +66,9 @@ func (o *GetSecretOptions) Run() error {
 	var vaultClient vault.Client
 	var err error
 	if o.Name != "" && o.Namespace != "" {
-		vaultClient, err = o.CreateVaultClient(o.Name, o.Namespace)
+		vaultClient, err = o.VaultClient(o.Name, o.Namespace)
 	} else {
-		vaultClient, err = o.CreateSystemVaultClient("")
+		vaultClient, err = o.SystemVaultClient("")
 	}
 	if err != nil {
 		return errors.Wrap(err, "retrieving the vault client")

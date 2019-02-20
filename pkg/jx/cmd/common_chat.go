@@ -32,5 +32,5 @@ func (o *CommonOptions) createChatAuthConfigService() (auth.ConfigService, error
 	if err != nil {
 		log.Warnf("The current user cannot query pipeline chat secrets: %s", err)
 	}
-	return o.CreateChatAuthConfigService(secrets)
+	return o.factory.CreateChatAuthConfigService(secrets)
 }
