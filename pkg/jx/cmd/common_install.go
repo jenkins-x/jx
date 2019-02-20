@@ -1501,7 +1501,7 @@ func GetSafeUsername(username string) string {
 	return username
 }
 
-func (o *CommonOptions) installProw(useKnativePipeine bool) error {
+func (o *CommonOptions) installProw(useKnativePipeine bool, isGitOps bool, gitOpsDir string, gitOpsEnvDir string) error {
 	if o.ReleaseName == "" {
 		o.ReleaseName = kube.DefaultProwReleaseName
 	}
@@ -1553,13 +1553,12 @@ func (o *CommonOptions) installProw(useKnativePipeine bool) error {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
 
-	values := []string{"user=" + o.Username, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
+	secretValues := []string{"user=" + o.Username, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
 	setValues := strings.Split(o.SetValues, ",")
-	values = append(values, setValues...)
 
 	settings, err := o.TeamSettings()
 	if err != nil {
-	  return err
+		return err
 	}
 
 	// create initial configmaps if they don't already exist, use a dummy repo so tide doesn't start scanning all github
@@ -1572,20 +1571,19 @@ func (o *CommonOptions) installProw(useKnativePipeine bool) error {
 	}
 	log.Infof("\nInstalling knative into namespace %s\n", util.ColorInfo(devNamespace))
 
-	kvalues := []string{"build.auth.git.username=" + o.Username, "build.auth.git.password=" + o.OAUTHToken}
-	kvalues = append(kvalues, setValues...)
+	ksecretValues := []string{"build.auth.git.username=" + o.Username, "build.auth.git.password=" + o.OAUTHToken}
 
 	if settings.HelmTemplate || settings.NoTiller || settings.HelmBinary != "helm" {
 		// lets disable tiller
-		kvalues = append(kvalues, "tillerNamespace=")
+		ksecretValues = append(ksecretValues, "tillerNamespace=")
 	}
 
 	if useKnativePipeine {
-		values = append(values, "buildnum.enabled=false", "pipelinerunner.enabled=true")
+		secretValues = append(secretValues, "buildnum.enabled=false", "pipelinerunner.enabled=true")
 
 		err = o.retry(2, time.Second, func() (err error) {
-			return o.installChart(kube.DefaultKnativeBuildPipelineReleaseName, kube.ChartKnativePipeline, "", devNamespace, true,
-				kvalues, nil, "")
+			return o.installChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, kube.DefaultKnativeBuildPipelineReleaseName,
+				kube.ChartKnativePipeline, "tekton", "", devNamespace, true, setValues, ksecretValues, nil, "")
 		})
 		if err != nil {
 			return errors.Wrap(err, "failed to install Knative build pipeline")
@@ -1593,8 +1591,8 @@ func (o *CommonOptions) installProw(useKnativePipeine bool) error {
 
 	} else {
 		err = o.retry(2, time.Second, func() (err error) {
-			return o.installChart(kube.DefaultKnativeBuildReleaseName, kube.ChartKnativeBuild, "", devNamespace, true,
-				kvalues, nil, "")
+			return o.installChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, kube.DefaultKnativeBuildReleaseName,
+				kube.ChartKnativeBuild, "knativebuild", "", devNamespace, true, setValues, ksecretValues, nil, "")
 		})
 		if err != nil {
 			return errors.Wrap(err, "failed to install Knative build")
@@ -1603,7 +1601,8 @@ func (o *CommonOptions) installProw(useKnativePipeine bool) error {
 
 	log.Infof("\nInstalling Prow into namespace %s\n", util.ColorInfo(devNamespace))
 	err = o.retry(2, time.Second, func() (err error) {
-		return o.installChart(o.ReleaseName, o.Chart, o.Version, devNamespace, true, values, nil, "")
+		return o.installChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, o.ReleaseName,
+			o.Chart, "prow", o.Version, devNamespace, true, setValues, secretValues, nil, "")
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to install Prow")
@@ -1613,8 +1612,8 @@ func (o *CommonOptions) installProw(useKnativePipeine bool) error {
 		log.Infof("\nInstalling BuildTemplates into namespace %s\n", util.ColorInfo(devNamespace))
 
 		err = o.retry(2, time.Second, func() (err error) {
-			return o.installChart(kube.DefaultBuildTemplatesReleaseName, kube.ChartBuildTemplates, "", devNamespace, true,
-				values, nil, "")
+			return o.installChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, kube.DefaultBuildTemplatesReleaseName,
+				kube.ChartBuildTemplates, "jxbuildtemplates", "", devNamespace, true, nil, nil, nil, "")
 		})
 		if err != nil {
 			return errors.Wrap(err, "failed to install JX Build Templates")

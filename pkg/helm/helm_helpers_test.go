@@ -2,8 +2,10 @@ package helm_test
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/magiconair/properties/assert"
+	"strings"
 	"testing"
 )
 
@@ -68,4 +70,20 @@ func assertCombineMapTrees(t *testing.T, expected map[string]interface{}, destin
 
 func mapToString(m map[string]interface{}) string {
 	return fmt.Sprintf("%#v", m)
+}
+
+
+func TestSetValuesToMap(t *testing.T) {
+	t.Parallel()
+
+	setValues := []string{"foo.bar=abc", "cheese=def"}
+	actual := helm.SetValuesToMap(setValues)
+
+	expected := map[string]interface{}{
+		"cheese": "def",
+		"foo": map[string]interface{}{
+			"bar": "abc",
+		},
+	}
+	assert.Equal(t, actual, expected, "setValuesToMap for values %s", strings.Join(setValues, ", "))
 }

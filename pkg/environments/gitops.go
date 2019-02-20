@@ -147,58 +147,7 @@ func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, branc
 		return answer, err
 	}
 
-	requirementsFile, err := helm.FindRequirementsFileName(dir)
-	if err != nil {
-		return answer, err
-	}
-	requirements, err := helm.LoadRequirementsFile(requirementsFile)
-	if err != nil {
-		return answer, err
-	}
-
-	chartFile, err := helm.FindChartFileName(dir)
-	if err != nil {
-		return answer, err
-	}
-	chart, err := helm.LoadChartFile(chartFile)
-	if err != nil {
-		return answer, err
-	}
-
-	valuesFile, err := helm.FindValuesFileName(dir)
-	if err != nil {
-		return answer, err
-	}
-	values, err := helm.LoadValuesFile(valuesFile)
-	if err != nil {
-		return answer, err
-	}
-
-	templatesDir, err := helm.FindTemplatesDirName(dir)
-	if err != nil {
-		return answer, err
-	}
-	templates, err := helm.LoadTemplatesDir(templatesDir)
-	if err != nil {
-		return answer, err
-	}
-
-	err = o.ModifyChartFn(requirements, chart, values, templates, dir)
-	if err != nil {
-		return answer, err
-	}
-
-	err = helm.SaveFile(requirementsFile, requirements)
-	if err != nil {
-		return answer, err
-	}
-
-	err = helm.SaveFile(chartFile, chart)
-	if err != nil {
-		return answer, err
-	}
-
-	err = helm.SaveFile(valuesFile, values)
+	err = ModifyChartFiles(dir, nil, o.ModifyChartFn)
 	if err != nil {
 		return answer, err
 	}
@@ -249,6 +198,68 @@ func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, branc
 		PullRequest:          pr,
 		PullRequestArguments: gha,
 	}, nil
+}
+
+// ModifyChartFiles modifies the chart files in the given directory using the given modify function
+func ModifyChartFiles(dir string, extraValues map[string]interface{}, modifyFn ModifyChartFn) error {
+	requirementsFile, err := helm.FindRequirementsFileName(dir)
+	if err != nil {
+		return err
+	}
+	requirements, err := helm.LoadRequirementsFile(requirementsFile)
+	if err != nil {
+		return err
+	}
+
+	chartFile, err := helm.FindChartFileName(dir)
+	if err != nil {
+		return err
+	}
+	chart, err := helm.LoadChartFile(chartFile)
+	if err != nil {
+		return err
+	}
+
+	valuesFile, err := helm.FindValuesFileName(dir)
+	if err != nil {
+		return err
+	}
+	values, err := helm.LoadValuesFile(valuesFile)
+	if err != nil {
+		return err
+	}
+	if extraValues != nil {
+		util.CombineMapTrees(values, extraValues)
+	}
+	templatesDir, err := helm.FindTemplatesDirName(dir)
+	if err != nil {
+		return err
+	}
+	templates, err := helm.LoadTemplatesDir(templatesDir)
+	if err != nil {
+		return err
+	}
+
+	err = modifyFn(requirements, chart, values, templates, dir)
+	if err != nil {
+		return err
+	}
+
+	err = helm.SaveFile(requirementsFile, requirements)
+	if err != nil {
+		return err
+	}
+
+	err = helm.SaveFile(chartFile, chart)
+	if err != nil {
+		return err
+	}
+
+	err = helm.SaveFile(valuesFile, values)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // CreateAddRequirementFn create the ModifyChartFn that adds a dependency to a chart. It takes the chart name,
@@ -308,7 +319,7 @@ func CreateAddRequirementFn(chartName string, alias string, version string, repo
 			templatesDir := filepath.Join(chartDir, "templates")
 			if _, err := os.Stat(templatesDir); os.IsNotExist(err) {
 				if verbose {
-					log.Infof("No templates directory exists in %s", chartDir)
+					log.Infof("No templates directory exists in %s\n", util.ColorInfo(chartDir))
 				}
 			} else if err != nil {
 				return errors.Wrapf(err, "stat directory %s", appDir)

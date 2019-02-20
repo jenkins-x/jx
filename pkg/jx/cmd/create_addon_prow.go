@@ -87,7 +87,10 @@ func (o *CreateAddonProwOptions) Run() error {
 	o.Prow.Version = o.Version
 	o.Prow.SetValues = o.SetValues
 	o.Namespace = o.currentNamespace
-	err = o.installProw(o.KnativePipeline)
+
+	isGitOps,_ := o.GetDevEnv()
+
+	err = o.installProw(o.KnativePipeline, isGitOps, "", "")
 	if err != nil {
 		return fmt.Errorf("failed to install Prow: %v", err)
 	}
