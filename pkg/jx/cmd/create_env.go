@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
@@ -17,6 +19,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
+)
+
+const (
+	optionPullSecrets = "pull-secrets"
 )
 
 var (
@@ -58,6 +64,7 @@ type CreateEnvOptions struct {
 	Prefix                 string
 	BranchPattern          string
 	Vault                  bool
+	PullSecrets            string
 }
 
 // NewCmdCreateEnv creates a command object for the "create" command
@@ -105,6 +112,7 @@ func NewCmdCreateEnv(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.NoGitOps, "no-gitops", "x", false, "Disables the use of GitOps on the environment so that promotion is implemented by directly modifying the resources via helm instead of using a Git repository")
 	cmd.Flags().BoolVarP(&options.Prow, "prow", "", false, "Install and use Prow for environment promotion")
 	cmd.Flags().BoolVarP(&options.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during the cluster creation")
+	cmd.Flags().StringVarP(&options.PullSecrets, optionPullSecrets, "", "", "A list of Kubernetes secret names that will be attached to the service account (e.g. foo, bar, baz)")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, false)
@@ -230,8 +238,7 @@ func (o *CreateEnvOptions) Run() error {
 				log.Warnf("Namespace %s does not exist for jx to patch the service account for, you should patch the service account manually with your pull secret(s) \n", env.Spec.Namespace)
 			}
 		}
-		// It's a common option, see addCommonFlags in common.go
-		imagePullSecrets := o.GetImagePullSecrets()
+		imagePullSecrets := strings.Fields(o.PullSecrets)
 		saName := "default"
 		//log.Infof("Patching the secrets %s for the service account %s\n", imagePullSecrets, saName)
 		err = serviceaccount.PatchImagePullSecrets(kubeClient, env.Spec.Namespace, saName, imagePullSecrets)

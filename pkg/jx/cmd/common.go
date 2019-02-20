@@ -60,7 +60,6 @@ const (
 	optionNoBrew           = "no-brew"
 	optionInstallDeps      = "install-dependencies"
 	optionSkipAuthSecMerge = "skip-auth-secrets-merge"
-	optionPullSecrets      = "pull-secrets"
 )
 
 // ModifyDevEnvironmentFn a callback to create/update the development Environment
@@ -88,7 +87,6 @@ type CommonOptions struct {
 	ServiceAccount         string
 	Username               string
 	ExternalJenkinsBaseURL string
-	PullSecrets            string
 
 	factory                clients.Factory
 	kubeClient             kubernetes.Interface
@@ -175,7 +173,6 @@ func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().BoolVarP(&options.NoBrew, optionNoBrew, "", false, "Disables brew package manger on MacOS when installing binary dependencies")
 	cmd.PersistentFlags().BoolVarP(&options.InstallDependencies, optionInstallDeps, "", false, "Enables automatic dependencies installation when required")
 	cmd.PersistentFlags().BoolVarP(&options.SkipAuthSecretsMerge, optionSkipAuthSecMerge, "", false, "Skips merging secrets from local files with secrets from Kubernetes cluster")
-	cmd.PersistentFlags().StringVarP(&options.PullSecrets, optionPullSecrets, "", "", "The pull secrets the service account created should have (useful when deploying to your own private registry): provide multiple pull secrets by providing them in a singular block of quotes e.g. --pull-secrets \"foo, bar, baz\"")
 
 	options.Cmd = cmd
 }
@@ -412,11 +409,6 @@ func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
 		return "", "", err
 	}
 	return kube.GetDevNamespace(kubeClient, currentNs)
-}
-
-func (o *CommonOptions) GetImagePullSecrets() []string {
-	pullSecrets := strings.Fields(o.PullSecrets)
-	return pullSecrets
 }
 
 func (o *ServerFlags) addGitServerFlags(cmd *cobra.Command) {
