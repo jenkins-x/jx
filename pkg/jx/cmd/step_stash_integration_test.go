@@ -33,7 +33,7 @@ func TestStepStash(t *testing.T) {
 	o.Pattern = []string{testData}
 	o.ProjectGitURL = "https://github.com/jenkins-x/dummy-repo.git"
 	o.ProjectBranch = "master"
-	cmd.ConfigureTestOptions(&o.CommonOptions, &gits.GitFake{}, helm_test.NewMockHelmer())
+	cmd.ConfigureTestOptions(o.CommonOptions, &gits.GitFake{}, helm_test.NewMockHelmer())
 
 	err = o.Run()
 	assert.NoError(t, err)
