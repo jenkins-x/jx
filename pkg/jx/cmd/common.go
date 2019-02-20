@@ -168,13 +168,13 @@ func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	if os.Getenv("JX_BATCH_MODE") == "true" {
 		defaultBatchMode = true
 	}
-	cmd.PersistentFlags().BoolVarP(&options.BatchMode, optionBatchMode, "b", defaultBatchMode, "In batch mode the command never prompts for user input")
-	cmd.PersistentFlags().BoolVarP(&options.Verbose, optionVerbose, "", false, "Enable verbose logging")
-	cmd.PersistentFlags().StringVarP(&options.LogLevel, optionLogLevel, "", logrus.InfoLevel.String(), "Logging level. Possible values - panic, fatal, error, warning, info, debug.")
-	cmd.PersistentFlags().BoolVarP(&options.Headless, optionHeadless, "", false, "Enable headless operation if using browser automation")
-	cmd.PersistentFlags().BoolVarP(&options.NoBrew, optionNoBrew, "", false, "Disables the use of brew on macOS to install or upgrade command line dependencies")
-	cmd.PersistentFlags().BoolVarP(&options.InstallDependencies, optionInstallDeps, "", false, "Should any required dependencies be installed automatically")
-	cmd.PersistentFlags().BoolVarP(&options.SkipAuthSecretsMerge, optionSkipAuthSecMerge, "", false, "Skips merging a local git auth yaml file with any pipeline secrets that are found")
+	cmd.PersistentFlags().BoolVarP(&options.BatchMode, optionBatchMode, "b", defaultBatchMode, "Runs in batch mode without prompting for user input")
+	cmd.PersistentFlags().BoolVarP(&options.Verbose, optionVerbose, "", false, "Enables verbose output")
+	cmd.PersistentFlags().StringVarP(&options.LogLevel, optionLogLevel, "", logrus.InfoLevel.String(), "Sets logging level (panic, fatal, error, warning, info, debug)")
+	cmd.PersistentFlags().BoolVarP(&options.Headless, optionHeadless, "", false, "Runs headless mode when using browser automation")
+	cmd.PersistentFlags().BoolVarP(&options.NoBrew, optionNoBrew, "", false, "Disables brew package manger on MacOS when installing binary dependencies")
+	cmd.PersistentFlags().BoolVarP(&options.InstallDependencies, optionInstallDeps, "", false, "Enables automatic dependencies installation when required")
+	cmd.PersistentFlags().BoolVarP(&options.SkipAuthSecretsMerge, optionSkipAuthSecMerge, "", false, "Skips merging secrets from local files with secrets from Kubernetes cluster")
 	cmd.PersistentFlags().StringVarP(&options.PullSecrets, optionPullSecrets, "", "", "The pull secrets the service account created should have (useful when deploying to your own private registry): provide multiple pull secrets by providing them in a singular block of quotes e.g. --pull-secrets \"foo, bar, baz\"")
 
 	options.Cmd = cmd
