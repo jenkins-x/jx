@@ -197,6 +197,7 @@ func addApp(t *testing.T, name string, namespace string, testOptions *cmd_test_h
 		DevEnv:               testOptions.DevEnv,
 		HelmUpdate:           true, // Flag default when run on CLI
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
+		Namespace:            namespace,
 	}
 	o.Args = []string{name}
 	err = o.Run()
