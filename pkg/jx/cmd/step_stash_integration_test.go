@@ -22,7 +22,11 @@ func TestStepStash(t *testing.T) {
 
 	testData := "test_data/step_collect/junit.xml"
 
-	o := &cmd.StepStashOptions{}
+	o := &cmd.StepStashOptions{
+		StepOptions: cmd.StepOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
+	}
 	o.StorageLocation.Classifier = "tests"
 	o.StorageLocation.BucketURL = "file://" + tempDir
 	o.ToPath = "output"

@@ -22,13 +22,18 @@ func TestCreateQuickstartProjects(t *testing.T) {
 	appName := "myvets"
 
 	o := &cmd.CreateQuickstartOptions{
+		CreateProjectOptions: cmd.CreateProjectOptions{
+			ImportOptions: cmd.ImportOptions{
+				CommonOptions: &cmd.CommonOptions{},
+			},
+		},
 		GitHubOrganisations: []string{"petclinic-gcp"},
 		Filter: quickstarts.QuickstartFilter{
 			Text:        "petclinic-gcp/spring-petclinic-vets-service",
 			ProjectName: appName,
 		},
 	}
-	cmd.ConfigureTestOptions(&o.CommonOptions, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, testDir, true))
+	cmd.ConfigureTestOptions(o.CommonOptions, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, testDir, true))
 	o.Dir = testDir
 	o.OutDir = testDir
 	o.DryRun = true
