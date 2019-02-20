@@ -52,5 +52,5 @@ func (o *CommonOptions) createAddonAuthConfigService() (auth.ConfigService, erro
 	if err != nil {
 		log.Warnf("The current user cannot query pipeline addon secrets: %s", err)
 	}
-	return o.CreateAddonAuthConfigService(secrets)
+	return o.AddonAuthConfigService(secrets)
 }

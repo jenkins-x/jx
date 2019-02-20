@@ -25,6 +25,9 @@ import (
 func TestEnvironmentRoleBinding(t *testing.T) {
 	t.Parallel()
 	o := &cmd.ControllerRoleOptions{
+		ControllerOptions: cmd.ControllerOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
 		NoWatch: true,
 	}
 	roleName := "myrole"
@@ -89,7 +92,7 @@ func TestEnvironmentRoleBinding(t *testing.T) {
 		},
 	}
 
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{
 			role,
 			roleWithLabel,

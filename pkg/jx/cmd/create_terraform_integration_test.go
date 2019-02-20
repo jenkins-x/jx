@@ -37,7 +37,7 @@ func TestCreateOrganisationFolderStructures(t *testing.T) {
 
 	o := cmd.CreateTerraformOptions{
 		CreateOptions: cmd.CreateOptions{
-			CommonOptions: cmd.CommonOptions{
+			CommonOptions: &cmd.CommonOptions{
 				BatchMode: true,
 				In:        os.Stdin,
 				Out:       os.Stdout,

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -10,7 +9,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -25,7 +23,7 @@ const (
 )
 
 type RshOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Container   string
 	Namespace   string
@@ -60,15 +58,9 @@ var (
 `)
 )
 
-func NewCmdRsh(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdRsh(commonOpts *CommonOptions) *cobra.Command {
 	options := &RshOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-
-			Out: out,
-			Err: errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "rsh [deploymentOrPodName]",

@@ -1,9 +1,6 @@
 package cmd
 
 import (
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
@@ -29,15 +26,10 @@ type StepGetBuildNumberOptions struct {
 }
 
 // NewCmdStepGetBuildNumber Creates a new Command object
-func NewCmdStepGetBuildNumber(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepGetBuildNumber(commonOpts *CommonOptions) *cobra.Command {
 	options := &StepGetBuildNumberOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

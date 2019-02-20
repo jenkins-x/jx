@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"go/build"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,7 +16,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClientOpenAPIOptions the options for the create client openapi command
@@ -64,17 +62,11 @@ var (
 )
 
 // NewCmdCreateClientOpenAPI creates the command
-func NewCmdCreateClientOpenAPI(f Factory, in terminal.FileReader, out terminal.FileWriter,
-	errOut io.Writer) *cobra.Command {
+func NewCmdCreateClientOpenAPI(commonOpts *CommonOptions) *cobra.Command {
 	o := &CreateClientOpenAPIOptions{
 		CreateClientOptions: CreateClientOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -119,7 +111,6 @@ func NewCmdCreateClientOpenAPI(f Factory, in terminal.FileReader, out terminal.F
 	cmd.Flags().StringVarP(&o.InputPackage, optionInputPackage, "i", "", "Input package (relative to input base), "+
 		"must specify")
 	cmd.Flags().StringVarP(&o.OutputPackage, optionOutputPackage, "o", "", "Output package, must specify")
-	cmd.Flags().BoolVarP(&o.Verbose, optionVerbose, "v", false, "Enables verbose logging")
 	cmd.Flags().StringVarP(&o.Title, "title", "", "Jenkins X", "Title for OpenAPI, JSON Schema and HTML docs")
 	cmd.Flags().StringVarP(&o.Version, "version", "", defaultVersion, "Version for OpenAPI, JSON Schema and HTML docs")
 	cmd.Flags().StringArrayVarP(&o.OpenAPIDependencies, "open-api-dependency", "", openAPIDependencies,

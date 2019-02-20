@@ -11,6 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	"k8s.io/api/core/v1"
@@ -31,6 +32,14 @@ func (o *CommonOptions) FindGitInfo(dir string) (*gits.GitRepository, error) {
 		}
 		return gits.ParseGitURL(gitURL)
 	}
+}
+
+// NewGitProvider creates a new git provider for the given list of argumentes
+func (o *CommonOptions) NewGitProvider(gitURL string, message string, authConfigSvc auth.ConfigService, gitKind string, batchMode bool, gitter gits.Gitter) (gits.GitProvider, error) {
+	if o.factory == nil {
+		return nil, errors.New("command factory is not initialized")
+	}
+	return o.factory.CreateGitProvider(gitURL, message, authConfigSvc, gitKind, batchMode, gitter, o.In, o.Out, o.Err)
 }
 
 // createGitProvider creates a git from the given directory
@@ -57,7 +66,7 @@ func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepository, gits
 		return gitInfo, nil, nil, err
 	}
 	gitKind, err := o.GitServerKind(gitInfo)
-	gitProvider, err := gitInfo.CreateProvider(o.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	gitProvider, err := gitInfo.CreateProvider(o.factory.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
 		return gitInfo, gitProvider, nil, err
 	}
@@ -320,7 +329,7 @@ func (o *CommonOptions) gitProviderForGitServerURL(gitServiceUrl string, gitKind
 	if err != nil {
 		return nil, err
 	}
-	return gits.CreateProviderForURL(o.IsInCluster(), authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	return gits.CreateProviderForURL(o.factory.IsInCluster(), authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 }
 
 func (o *CommonOptions) createGitProviderForURLWithoutKind(gitURL string) (gits.GitProvider, *gits.GitRepository, error) {

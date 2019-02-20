@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"io"
 	"strings"
 	"time"
 
@@ -18,7 +17,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -60,17 +58,10 @@ type UpgradeIngressOptions struct {
 }
 
 // NewCmdUpgradeIngress defines the command
-func NewCmdUpgradeIngress(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	commonOptions := CommonOptions{
-		Factory: f,
-		In:      in,
-		Out:     out,
-		Err:     errOut,
-	}
-
+func NewCmdUpgradeIngress(commonOpts *CommonOptions) *cobra.Command {
 	options := &UpgradeIngressOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: commonOptions,
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -88,7 +79,6 @@ func NewCmdUpgradeIngress(f Factory, in terminal.FileReader, out terminal.FileWr
 		},
 	}
 	options.addFlags(cmd)
-	options.addCommonFlags(cmd)
 
 	return cmd
 }
@@ -237,7 +227,7 @@ func (o *UpgradeIngressOptions) Run() error {
 }
 
 func (o *UpgradeIngressOptions) watchReadyCertificates(ctx context.Context) (<-chan pki.Certificate, error) {
-	client, err := o.CreateCertManagerClient()
+	client, err := o.CertManagerClient()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating the cert-manager client")
 	}
@@ -529,7 +519,7 @@ func (o *UpgradeIngressOptions) createIngressRules() error {
 	if err != nil {
 		return err
 	}
-	certmngClient, err := o.CreateCertManagerClient()
+	certmngClient, err := o.CertManagerClient()
 	if err != nil {
 		return errors.Wrap(err, "creating the cert-manager client")
 	}

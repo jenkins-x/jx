@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
 	"github.com/cenkalti/backoff"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -24,7 +24,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -68,7 +67,7 @@ type CallbackFn func() error
 
 // ImportOptions options struct for jx import
 type ImportOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	RepoURL string
 
@@ -141,14 +140,9 @@ var (
 )
 
 // NewCmdImport the cobra command for jx import
-func NewCmdImport(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdImport(commonOpts *CommonOptions) *cobra.Command {
 	options := &ImportOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "import",
@@ -194,7 +188,6 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().BoolVarP(&options.DisableMaven, "disable-updatebot", "", false, "disable updatebot-maven-plugin from attempting to fix/update the maven pom.xml")
 	cmd.Flags().StringVarP(&options.ImportMode, "import-mode", "m", "", fmt.Sprintf("The import mode to use. Should be one of %s", strings.Join(v1.ImportModeStrings, ", ")))
 
-	options.addCommonFlags(cmd)
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 }
 
@@ -213,7 +206,7 @@ func (options *ImportOptions) Run() error {
 		return nil
 	}
 
-	options.Factory.SetBatch(options.BatchMode)
+	options.SetBatchMode(options.BatchMode)
 
 	var err error
 	isProw := false
@@ -926,7 +919,7 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 	}
 	settings, err := options.TeamSettings()
 	if err != nil {
-	  return err
+		return err
 	}
 	err = prow.AddApplication(client, []string{repo}, options.currentNamespace, options.DraftPack, settings)
 	if err != nil {
@@ -935,9 +928,7 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 
 	startBuildOptions := StartPipelineOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: options.Factory,
-			},
+			CommonOptions: options.CommonOptions,
 		},
 	}
 	startBuildOptions.Args = []string{fmt.Sprintf("%s/%s/%s", gitInfo.Organisation, gitInfo.Name, masterBranch)}

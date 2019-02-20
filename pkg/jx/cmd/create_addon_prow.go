@@ -1,10 +1,7 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"fmt"
 
@@ -39,17 +36,11 @@ type CreateAddonProwOptions struct {
 }
 
 // NewCmdCreateAddonProw creates a command object for the "create" command
-func NewCmdCreateAddonProw(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonProw(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateAddonProwOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-
-					Out: out,
-					Err: errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -67,7 +58,6 @@ func NewCmdCreateAddonProw(f Factory, in terminal.FileReader, out terminal.FileW
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	options.addFlags(cmd, "", kube.DefaultProwReleaseName, defaultProwVersion)
 
 	cmd.Flags().StringVarP(&options.Prow.Chart, optionChart, "c", kube.ChartProw, "The name of the chart to use")

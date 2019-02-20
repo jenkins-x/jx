@@ -299,8 +299,9 @@ func appendIfNotPresent(s, stringToAppend string) string {
 
 func flagsNotIntersected(l *flag.FlagSet, r *flag.FlagSet) *flag.FlagSet {
 	f := flag.NewFlagSet("notIntersected", flag.ContinueOnError)
-	l.VisitAll(func(flag *flag.Flag) {
-		if r.Lookup(flag.Name) == nil {
+	f.AddFlagSet(l)
+	r.VisitAll(func(flag *flag.Flag) {
+		if l.Lookup(flag.Name) == nil {
 			f.AddFlag(flag)
 		}
 	})

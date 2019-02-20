@@ -58,9 +58,9 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateClusterMinikube(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterMinikube(commonOpts *CommonOptions) *cobra.Command {
 	options := CreateClusterMinikubeOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, cloud.MINIKUBE),
+		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.MINIKUBE),
 	}
 	cmd := &cobra.Command{
 		Use:     "minikube",
@@ -76,7 +76,6 @@ func NewCmdCreateClusterMinikube(f Factory, in terminal.FileReader, out terminal
 	}
 
 	options.addCreateClusterFlags(cmd)
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.Memory, "memory", "m", "", fmt.Sprintf("Amount of RAM allocated to the Minikube VM in MB. Defaults to %s MB.", MinikubeDefaultMemory))
 	cmd.Flags().StringVarP(&options.Flags.CPU, "cpu", "c", "", fmt.Sprintf("Number of CPUs allocated to the Minikube VM. Defaults to %s.", MinikubeDefaultCpu))

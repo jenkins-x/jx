@@ -1,17 +1,14 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 // GetBuildOptions the command line options
 type GetBuildOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Output string
 }
@@ -34,14 +31,9 @@ var (
 )
 
 // NewCmdGetBuild creates the command object
-func NewCmdGetBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetBuild(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetBuildOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -58,8 +50,8 @@ func NewCmdGetBuild(f Factory, in terminal.FileReader, out terminal.FileWriter, 
 		SuggestFor: []string{"list", "ps"},
 	}
 
-	cmd.AddCommand(NewCmdGetBuildLogs(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetBuildPods(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetBuildLogs(commonOpts))
+	cmd.AddCommand(NewCmdGetBuildPods(commonOpts))
 	return cmd
 }
 

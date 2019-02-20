@@ -3,13 +3,14 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -707,7 +708,7 @@ func (o *CommonOptions) defaultReleaseCharts() map[string]string {
 func (o *CommonOptions) releaseChartMuseumUrl() string {
 	chartRepo := os.Getenv("CHART_REPOSITORY")
 	if chartRepo == "" {
-		if o.IsInCDPipeline() {
+		if o.factory.IsInCDPipeline() {
 			chartRepo = DefaultChartRepo
 			log.Warnf("No $CHART_REPOSITORY defined so using the default value of: %s\n", DefaultChartRepo)
 		} else {

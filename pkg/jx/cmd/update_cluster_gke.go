@@ -1,12 +1,9 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -28,8 +25,8 @@ var (
 `)
 )
 
-func NewCmdUpdateClusterGKE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := createUpdateClusterGKEOptions(f, in, out, errOut, cloud.GKE)
+func NewCmdUpdateClusterGKE(commonOpts *CommonOptions) *cobra.Command {
+	options := createUpdateClusterGKEOptions(commonOpts, cloud.GKE)
 
 	cmd := &cobra.Command{
 		Use:     "gke",
@@ -44,22 +41,16 @@ func NewCmdUpdateClusterGKE(f Factory, in terminal.FileReader, out terminal.File
 		},
 	}
 
-	cmd.AddCommand(NewCmdUpdateClusterGKETerraform(f, in, out, errOut))
+	cmd.AddCommand(NewCmdUpdateClusterGKETerraform(commonOpts))
 
 	return cmd
 }
 
-func createUpdateClusterGKEOptions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, cloudProvider string) UpdateClusterGKEOptions {
-	commonOptions := CommonOptions{
-		Factory: f,
-		In:      in,
-		Out:     out,
-		Err:     errOut,
-	}
+func createUpdateClusterGKEOptions(commonOpts *CommonOptions, cloudProvider string) UpdateClusterGKEOptions {
 	options := UpdateClusterGKEOptions{
 		UpdateClusterOptions: UpdateClusterOptions{
 			UpdateOptions: UpdateOptions{
-				CommonOptions: commonOptions,
+				CommonOptions: commonOpts,
 			},
 			Provider: cloudProvider,
 		},

@@ -16,11 +16,11 @@ func (o *CommonOptions) createIssueTrackerAuthConfigService() (auth.ConfigServic
 	if err != nil {
 		log.Infof("The current user cannot query pipeline issue tracker secrets: %s", err)
 	}
-	return o.CreateIssueTrackerAuthConfigService(secrets)
+	return o.factory.CreateIssueTrackerAuthConfigService(secrets)
 }
 
 func (o *CommonOptions) errorCreateIssueTrackerAuthConfigService(parentError error) (auth.ConfigService, error) {
-	answer, err := o.CreateIssueTrackerAuthConfigService(nil)
+	answer, err := o.factory.CreateIssueTrackerAuthConfigService(nil)
 	if err == nil {
 		return answer, parentError
 	}

@@ -3,15 +3,14 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"os"
+	"os/exec"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
-	"os/exec"
 )
 
 var (
@@ -30,16 +29,11 @@ type StepVerifyPodOptions struct {
 }
 
 // NewCmdStepVerifyPod creates the `jx step verify pod` command
-func NewCmdStepVerifyPod(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepVerifyPod(commonOpts *CommonOptions) *cobra.Command {
 
 	options := StepVerifyPodOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

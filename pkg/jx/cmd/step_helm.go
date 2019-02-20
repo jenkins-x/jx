@@ -2,13 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"os"
 
@@ -33,15 +31,10 @@ type StepHelmOptions struct {
 }
 
 // NewCmdStepHelm Steps a command object for the "step" command
-func NewCmdStepHelm(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepHelm(commonOpts *CommonOptions) *cobra.Command {
 	options := &StepHelmOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -55,14 +48,14 @@ func NewCmdStepHelm(f Factory, in terminal.FileReader, out terminal.FileWriter, 
 			CheckErr(err)
 		},
 	}
-	cmd.AddCommand(NewCmdStepHelmApply(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepHelmBuild(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepHelmDelete(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepHelmEnv(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepHelmInstall(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepHelmList(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepHelmRelease(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepHelmVersion(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStepHelmApply(commonOpts))
+	cmd.AddCommand(NewCmdStepHelmBuild(commonOpts))
+	cmd.AddCommand(NewCmdStepHelmDelete(commonOpts))
+	cmd.AddCommand(NewCmdStepHelmEnv(commonOpts))
+	cmd.AddCommand(NewCmdStepHelmInstall(commonOpts))
+	cmd.AddCommand(NewCmdStepHelmList(commonOpts))
+	cmd.AddCommand(NewCmdStepHelmRelease(commonOpts))
+	cmd.AddCommand(NewCmdStepHelmVersion(commonOpts))
 	return cmd
 }
 

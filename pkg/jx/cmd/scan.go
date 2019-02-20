@@ -1,16 +1,13 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // Scan Options contains the command line options for scan commands
 type ScanOptions struct {
-	CommonOptions
+	*CommonOptions
 }
 
 var (
@@ -20,14 +17,9 @@ var (
 )
 
 // NewCmdScan creates a command object for the "scan" command
-func NewCmdScan(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdScan(commonOpts *CommonOptions) *cobra.Command {
 	options := &ScanOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -42,7 +34,7 @@ func NewCmdScan(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 		},
 	}
 
-	cmd.AddCommand(NewCmdScanCluster(f, in, out, errOut))
+	cmd.AddCommand(NewCmdScanCluster(commonOpts))
 
 	return cmd
 }

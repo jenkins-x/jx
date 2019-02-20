@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io"
 	"strings"
 	"time"
 
@@ -9,7 +8,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"fmt"
@@ -51,17 +49,11 @@ type CreateAddonPipelineEventsOptions struct {
 }
 
 // NewCmdCreateAddonPipelineEvents creates a command object for the "create" command
-func NewCmdCreateAddonPipelineEvents(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonPipelineEvents(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateAddonPipelineEventsOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-
-					Out: out,
-					Err: errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -80,7 +72,6 @@ func NewCmdCreateAddonPipelineEvents(f Factory, in terminal.FileReader, out term
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	options.addFlags(cmd, defaultPENamespace, defaultPEReleaseName, defaultPEVersion)
 
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "Password to access pipeline-events services such as Kibana and Elasticsearch.  Defaults to default Jenkins X admin password.")

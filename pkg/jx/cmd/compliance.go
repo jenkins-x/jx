@@ -1,11 +1,8 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/heptio/sonobuoy/pkg/buildinfo"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // TODO change the name of the namespace to something more jx specific (e.g. jx-compliance), but
@@ -20,19 +17,14 @@ var complianceImage = "gcr.io/heptio-images/sonobuoy:" + buildinfo.Version
 
 // ComplianceOptions options for compliance command
 type ComplianceOptions struct {
-	CommonOptions
+	*CommonOptions
 }
 
 // NewCompliance creates a command object for the generic "compliance" action, which
 // executes the compliance tests against a Kubernetes cluster
-func NewCompliance(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCompliance(commonOpts *CommonOptions) *cobra.Command {
 	options := &ComplianceOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -46,11 +38,11 @@ func NewCompliance(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 		},
 	}
 
-	cmd.AddCommand(NewCmdComplianceStatus(f, in, out, errOut))
-	cmd.AddCommand(NewCmdComplianceResults(f, in, out, errOut))
-	cmd.AddCommand(NewCmdComplianceRun(f, in, out, errOut))
-	cmd.AddCommand(NewCmdComplianceDelete(f, in, out, errOut))
-	cmd.AddCommand(NewCmdComplianceLogs(f, in, out, errOut))
+	cmd.AddCommand(NewCmdComplianceStatus(commonOpts))
+	cmd.AddCommand(NewCmdComplianceResults(commonOpts))
+	cmd.AddCommand(NewCmdComplianceRun(commonOpts))
+	cmd.AddCommand(NewCmdComplianceDelete(commonOpts))
+	cmd.AddCommand(NewCmdComplianceLogs(commonOpts))
 
 	return cmd
 }

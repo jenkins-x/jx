@@ -3,16 +3,17 @@
 package cmd_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/kube/resources/mocks"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/runtime"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/kube/resources/mocks"
+	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -81,7 +82,6 @@ func TestImportProjectNextGenPipeline(t *testing.T) {
 	}
 }
 
-
 func testImportProject(t *testing.T, tempDir string, testcase string, srcDir string, withRename bool, nextGenPipeline bool) {
 	testDirSuffix := "DefaultJenkinsfile"
 	if withRename {
@@ -106,12 +106,14 @@ func testImportProject(t *testing.T, tempDir string, testcase string, srcDir str
 func assertImport(t *testing.T, testDir string, testcase string, withRename bool, nextGenPipeline bool) error {
 	_, dirName := filepath.Split(testDir)
 	dirName = kube.ToValidName(dirName)
-	o := &cmd.ImportOptions{}
+	o := &cmd.ImportOptions{
+		CommonOptions: &cmd.CommonOptions{},
+	}
 
 	k8sObjects := []runtime.Object{}
 	jxObjects := []runtime.Object{}
 	helmer := helm.NewHelmCLI("helm", helm.V2, dirName, true)
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions, k8sObjects, jxObjects, gits.NewGitCLI(), nil, helmer, resources_test.NewMockInstaller())
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions, k8sObjects, jxObjects, gits.NewGitCLI(), nil, helmer, resources_test.NewMockInstaller())
 	if o.Out == nil {
 		o.Out = tests.Output()
 	}
@@ -122,7 +124,6 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 	o.DryRun = true
 	o.DisableMaven = true
 	o.LogLevel = "warn"
-
 
 	if nextGenPipeline {
 		callback := func(env *v1.Environment) error {

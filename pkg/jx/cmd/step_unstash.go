@@ -1,6 +1,12 @@
 package cmd
 
 import (
+	"io/ioutil"
+	"net/url"
+	"path/filepath"
+	"strings"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -9,13 +15,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-	"io/ioutil"
-	"net/url"
-	"path/filepath"
-	"strings"
-	"time"
 )
 
 // StepUnstashOptions contains the command line flags
@@ -42,15 +41,10 @@ var (
 )
 
 // NewCmdStepUnstash creates the CLI command
-func NewCmdStepUnstash(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepUnstash(commonOpts *CommonOptions) *cobra.Command {
 	options := StepUnstashOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 	cmd := &cobra.Command{

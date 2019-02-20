@@ -9,7 +9,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -29,21 +28,16 @@ var (
 
 // ComplianceLogsOptions options for "compliance logs" command
 type ComplianceLogsOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Follow bool
 }
 
 // NewCmdComplianceLogs creates a command object for the "compliance logs" action, which
 // prints the logs of compliance tests
-func NewCmdComplianceLogs(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdComplianceLogs(commonOpts *CommonOptions) *cobra.Command {
 	options := &ComplianceLogsOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -66,7 +60,7 @@ func NewCmdComplianceLogs(f Factory, in terminal.FileReader, out terminal.FileWr
 
 // Run implements the "compliance logs" command
 func (o *ComplianceLogsOptions) Run() error {
-	cc, err := o.CreateComplianceClient()
+	cc, err := o.ComplianceClient()
 	if err != nil {
 		return errors.Wrap(err, "could not create the compliance client")
 	}

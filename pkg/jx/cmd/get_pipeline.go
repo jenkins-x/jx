@@ -2,13 +2,11 @@ package cmd
 
 import (
 	"errors"
-	"io"
 	"sort"
 
 	"github.com/jenkins-x/jx/pkg/prow"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"strings"
 	"time"
@@ -39,15 +37,10 @@ var (
 )
 
 // NewCmdGetPipeline creates the command
-func NewCmdGetPipeline(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetPipeline(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetPipelineOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

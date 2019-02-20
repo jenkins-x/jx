@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"os/user"
 	"strings"
 	"time"
@@ -24,7 +23,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -50,7 +48,7 @@ var (
 
 // DeleteApplicationOptions are the flags for this delete commands
 type DeleteApplicationOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	SelectAll           bool
 	SelectFilter        string
@@ -69,14 +67,9 @@ type DeleteApplicationOptions struct {
 }
 
 // NewCmdDeleteApplication creates a command object for this command
-func NewCmdDeleteApplication(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteApplication(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteApplicationOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -99,7 +92,6 @@ func NewCmdDeleteApplication(f Factory, in terminal.FileReader, out terminal.Fil
 	cmd.Flags().StringVarP(&options.Timeout, optionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
 	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
 	cmd.Flags().StringVarP(&options.Org, "org", "o", "", "github organisation/project name that source code resides in")
-	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "Run without being prompted. WARNING! You will not be asked to confirm deletions if you use this flag.")
 
 	return cmd
 }

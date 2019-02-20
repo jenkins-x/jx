@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io"
 	"runtime"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -10,7 +9,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/version"
 	logger "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -32,15 +30,10 @@ type UpgradeCLIOptions struct {
 }
 
 // NewCmdUpgradeCLI defines the command
-func NewCmdUpgradeCLI(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeCLI(commonOpts *CommonOptions) *cobra.Command {
 	options := &UpgradeCLIOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -58,7 +51,6 @@ func NewCmdUpgradeCLI(f Factory, in terminal.FileReader, out terminal.FileWriter
 		},
 	}
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The specific version to upgrade to")
-	options.addCommonFlags(cmd)
 	return cmd
 }
 

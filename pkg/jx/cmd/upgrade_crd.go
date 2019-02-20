@@ -1,14 +1,11 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -28,15 +25,10 @@ type UpgradeCRDsOptions struct {
 }
 
 // NewCmdUpgradeCRDs defines the command
-func NewCmdUpgradeCRDs(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeCRDs(commonOpts *CommonOptions) *cobra.Command {
 	options := &UpgradeCRDsOptions{
 		UpgradeOptions: UpgradeOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

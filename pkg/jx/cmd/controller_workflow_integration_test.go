@@ -69,6 +69,9 @@ func TestSequentialWorkflow(t *testing.T) {
 	}
 
 	o := &cmd.ControllerWorkflowOptions{
+		ControllerOptions: cmd.ControllerOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
 		NoWatch:        true,
 		Namespace:      "jx",
 		ConfigureGitFn: configureGitFn,
@@ -79,7 +82,7 @@ func TestSequentialWorkflow(t *testing.T) {
 	step1 := workflow.CreateWorkflowPromoteStep("staging")
 	step2 := workflow.CreateWorkflowPromoteStep("production", step1)
 
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			staging,
@@ -97,7 +100,7 @@ func TestSequentialWorkflow(t *testing.T) {
 		resources_test.NewMockInstaller(),
 	)
 
-	err := cmd.CreateTestEnvironmentDir(&o.CommonOptions)
+	err := cmd.CreateTestEnvironmentDir(o.CommonOptions)
 	assert.NoError(t, err)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
@@ -221,6 +224,9 @@ func TestWorkflowManualPromote(t *testing.T) {
 	}
 
 	o := &cmd.ControllerWorkflowOptions{
+		ControllerOptions: cmd.ControllerOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
 		NoWatch:        true,
 		Namespace:      "jx",
 		ConfigureGitFn: configureGitFn,
@@ -228,7 +234,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 
 	workflowName := "default"
 
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			staging,
@@ -242,7 +248,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 		resources_test.NewMockInstaller(),
 	)
 
-	err := cmd.CreateTestEnvironmentDir(&o.CommonOptions)
+	err := cmd.CreateTestEnvironmentDir(o.CommonOptions)
 	assert.NoError(t, err)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
@@ -412,6 +418,9 @@ func TestParallelWorkflow(t *testing.T) {
 	}
 
 	o := &cmd.ControllerWorkflowOptions{
+		ControllerOptions: cmd.ControllerOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
 		NoWatch:        true,
 		Namespace:      "jx",
 		ConfigureGitFn: configureGitFn,
@@ -423,7 +432,7 @@ func TestParallelWorkflow(t *testing.T) {
 	step2 := workflow.CreateWorkflowPromoteStep(envNameB)
 	step3 := workflow.CreateWorkflowPromoteStep(envNameC, step1, step2)
 
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			envA,
@@ -442,7 +451,7 @@ func TestParallelWorkflow(t *testing.T) {
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 		resources_test.NewMockInstaller(),
 	)
-	err := cmd.CreateTestEnvironmentDir(&o.CommonOptions)
+	err := cmd.CreateTestEnvironmentDir(o.CommonOptions)
 	assert.NoError(t, err)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
@@ -590,6 +599,9 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 	}
 
 	o := &cmd.ControllerWorkflowOptions{
+		ControllerOptions: cmd.ControllerOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
 		NoWatch:        true,
 		Namespace:      "jx",
 		ConfigureGitFn: configureGitFn,
@@ -600,7 +612,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 	step1 := workflow.CreateWorkflowPromoteStep("staging")
 	step2 := workflow.CreateWorkflowPromoteStep("production", step1)
 
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			staging,
@@ -617,7 +629,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 		resources_test.NewMockInstaller(),
 	)
-	err := cmd.CreateTestEnvironmentDir(&o.CommonOptions)
+	err := cmd.CreateTestEnvironmentDir(o.CommonOptions)
 	assert.NoError(t, err)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()

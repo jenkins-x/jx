@@ -1,13 +1,10 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // StepNexusDropOptions contains the command line flags
@@ -27,17 +24,11 @@ var (
 `)
 )
 
-func NewCmdStepNexusDrop(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepNexusDrop(commonOpts *CommonOptions) *cobra.Command {
 	options := StepNexusDropOptions{
 		StepNexusOptions: StepNexusOptions{
 			StepOptions: StepOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-
-					Out: out,
-					Err: errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}

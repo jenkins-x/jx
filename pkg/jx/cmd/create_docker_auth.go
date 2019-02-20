@@ -3,13 +3,11 @@ package cmd
 import (
 	b64 "encoding/base64"
 	"encoding/json"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -49,16 +47,10 @@ type CreateDockerAuthOptions struct {
 }
 
 // NewCmdCreateIssue creates a command object for the "create" command
-func NewCmdCreateDockerAuth(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateDockerAuth(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateDockerAuthOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-
-				Out: out,
-				Err: errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -79,7 +71,6 @@ func NewCmdCreateDockerAuth(f Factory, in terminal.FileReader, out terminal.File
 	cmd.Flags().StringVarP(&options.User, username, "u", "", "The user to associate auth component of config.json")
 	cmd.Flags().StringVarP(&options.Secret, "secret", "s", "", "The secret to associate auth component of config.json")
 	cmd.Flags().StringVarP(&options.Email, "email", "e", "", "The email to associate auth component of config.json")
-	options.addCommonFlags(cmd)
 	return cmd
 }
 

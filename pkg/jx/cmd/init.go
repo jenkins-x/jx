@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"strings"
 	"time"
@@ -21,7 +20,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -30,7 +28,7 @@ import (
 
 // InitOptions the options for running init
 type InitOptions struct {
-	CommonOptions
+	*CommonOptions
 	Client clientset.Clientset
 	Flags  InitFlags
 }
@@ -89,15 +87,9 @@ var (
 
 // NewCmdInit creates a command object for the generic "init" action, which
 // primes a Kubernetes cluster so it's ready for Jenkins X to be installed
-func NewCmdInit(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdInit(commonOpts *CommonOptions) *cobra.Command {
 	options := &InitOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-
-			Out: out,
-			Err: errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -112,8 +104,6 @@ func NewCmdInit(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 			CheckErr(err)
 		},
 	}
-
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.Provider, "provider", "", "", "Cloud service providing the Kubernetes cluster.  Supported providers: "+KubernetesProviderOptions())
 	cmd.Flags().StringVarP(&options.Flags.Namespace, optionNamespace, "", "jx", "The namespace the Jenkins X platform should be installed into")
@@ -553,11 +543,14 @@ controller:
 		externalIP := o.Flags.ExternalIP
 		if externalIP == "" && o.Flags.OnPremise {
 			// lets find the Kubernetes master IP
-			config, err := o.CreateKubeConfig()
+			config, _, err := o.Kube().LoadConfig()
 			if err != nil {
 				return err
 			}
-			host := config.Host
+			if config == nil {
+				return errors.New("empty kubernetes config")
+			}
+			host := kube.CurrentServer(config)
 			if host == "" {
 				log.Warnf("No API server host is defined in the local kube config!\n")
 			} else {

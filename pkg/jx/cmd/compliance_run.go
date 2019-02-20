@@ -1,14 +1,11 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/heptio/sonobuoy/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -25,19 +22,14 @@ var (
 
 // ComplianceRunOptions options for "compliance run" command
 type ComplianceRunOptions struct {
-	CommonOptions
+	*CommonOptions
 }
 
 // NewCmdComplianceRun creates a command object for the "compliance run" action, which
 // starts the E2E compliance tests
-func NewCmdComplianceRun(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdComplianceRun(commonOpts *CommonOptions) *cobra.Command {
 	options := &ComplianceRunOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -59,7 +51,7 @@ func NewCmdComplianceRun(f Factory, in terminal.FileReader, out terminal.FileWri
 
 // Run implements the "compliance run" command
 func (o *ComplianceRunOptions) Run() error {
-	cc, err := o.CreateComplianceClient()
+	cc, err := o.ComplianceClient()
 	if err != nil {
 		return errors.Wrap(err, "could not create the compliance client")
 	}

@@ -24,6 +24,9 @@ const (
 func TestServiceLinking(t *testing.T) {
 	t.Parallel()
 	o := cmd.StepLinkServicesOptions{
+		StepOptions: cmd.StepOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
 		FromNamespace: fromNs,
 		Includes:      []string{serviceNameInFromNs},
 		Excludes:      []string{serviceNameDummyInFromNs},
@@ -57,7 +60,7 @@ func TestServiceLinking(t *testing.T) {
 		},
 	}
 
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{fromNspc, toNspc, svcInFromNs, svcInToNs, svcDummyInFromNs},
 		nil,
 		gits.NewGitCLI(),

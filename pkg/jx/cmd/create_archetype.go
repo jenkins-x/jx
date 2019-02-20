@@ -2,10 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"os"
 	"path/filepath"
@@ -47,17 +45,11 @@ type CreateArchetypeOptions struct {
 }
 
 // NewCmdCreateArchetype creates a command object for the "create" command
-func NewCmdCreateArchetype(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateArchetype(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateArchetypeOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-
-					Out: out,
-					Err: errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
