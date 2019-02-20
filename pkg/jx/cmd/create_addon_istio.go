@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	istioclient "github.com/knative/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -249,4 +250,13 @@ func (o *CreateAddonIstioOptions) getIstioChartsFromGitHub() (string, error) {
 func (o *CreateAddonIstioOptions) generateSecrets() error {
 	// generate secret for kiali && grafana
 	return nil
+}
+
+// IstioClient creates a new Kubernetes client for Istio resources
+func (o *CommonOptions) IstioClient() (istioclient.Interface, error) {
+	config, err := o.factory.CreateKubeConfig()
+	if err != nil {
+		return nil, err
+	}
+	return istioclient.NewForConfig(config)
 }
