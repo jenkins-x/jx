@@ -663,10 +663,8 @@ func (b *BitbucketCloudProvider) UpdateCommitStatus(org string, repo string, sha
 func (b *BitbucketCloudProvider) MergePullRequest(pr *GitPullRequest, message string) error {
 
 	options := map[string]interface{}{
-		"body": map[string]interface{}{
-			"pullrequest_merge_parameters": map[string]interface{}{
-				"message": message,
-			},
+		"body": bitbucket.PullrequestMergeParameters{
+			Message: message,
 		},
 	}
 

@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"path/filepath"
 	"reflect"
@@ -149,5 +150,9 @@ func (c *ProjectConfig) SaveConfig(fileName string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	if err != nil {
+	  return errors.Wrapf(err, "failed to save file %s", fileName)
+	}
+	return nil
 }

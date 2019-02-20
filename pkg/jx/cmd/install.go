@@ -592,6 +592,11 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring Prow in team settings")
 	}
 
+	err = options.configureImportModeInTeamSettings()
+	if err != nil {
+		return errors.Wrap(err, "configuring ImportMode in team settings")
+	}
+
 	err = options.configureTillerInDevEnvironment()
 	if err != nil {
 		return errors.Wrap(err, "configuring Tiller in the dev environment")
@@ -1389,7 +1394,11 @@ func (options *InstallOptions) configureProwInTeamSettings() error {
 			env.Spec.WebHookEngine = v1.WebHookEngineProw
 			settings := &env.Spec.TeamSettings
 			settings.PromotionEngine = v1.PromotionEngineProw
-			log.Info("Configuring the TeamSettings for Prow\n")
+			settings.ProwEngine = v1.ProwEngineTypeKnativeBuild
+			if options.Flags.KnativePipeline {
+				settings.ProwEngine = v1.ProwEngineTypeBuildPipeline
+			}
+			log.Infof("Configuring the TeamSettings for Prow with engine %s\n", string(settings.ProwEngine))
 			return nil
 		}
 		err := options.ModifyDevEnvironment(callback)
@@ -1398,6 +1407,22 @@ func (options *InstallOptions) configureProwInTeamSettings() error {
 		}
 	}
 	return nil
+}
+
+func (options *InstallOptions) configureImportModeInTeamSettings() error {
+	callback := func(env *v1.Environment) error {
+		settings := &env.Spec.TeamSettings
+		if string(settings.ImportMode) == "" {
+			if options.Flags.KnativePipeline {
+				settings.ImportMode = v1.ImportModeTypeYAML
+			} else {
+				settings.ImportMode = v1.ImportModeTypeJenkinsfile
+			}
+		}
+		log.Infof("Configuring the TeamSettings for ImportMode %s\n", string(settings.ImportMode))
+		return nil
+	}
+	return options.ModifyDevEnvironment(callback)
 }
 
 func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigStore, namespace string) (string, string, error) {

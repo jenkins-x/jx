@@ -822,6 +822,14 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 					UID:        pipeline.UID,
 				},
 			}
+
+			// Reset the structure name to be the run's name and set the PipelineRef and PipelineRunRef
+			if structure.PipelineRef == nil {
+				structure.PipelineRef = &pipeline.Name
+			}
+			structure.Name = run.Name
+			structure.PipelineRunRef = &run.Name
+
 			if _, structErr := structuresClient.Create(structure); structErr != nil {
 				return errors.Wrapf(structErr, "failed to create the PipelineStructure in namespace %s", ns)
 			}

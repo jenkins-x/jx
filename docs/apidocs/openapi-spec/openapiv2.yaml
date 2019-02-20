@@ -1061,6 +1061,8 @@ definitions:
       metadata:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta'
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
+      pipelineRef:
+        type: string
       pipelineRunRef:
         type: string
       stages:
@@ -1068,6 +1070,7 @@ definitions:
           $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureStage'
         type: array
     required:
+    - pipelineRef
     - pipelineRunRef
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureList:

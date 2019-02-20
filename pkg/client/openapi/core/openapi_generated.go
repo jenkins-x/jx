@@ -2801,6 +2801,12 @@ func schema_pkg_apis_jenkinsio_v1_PipelineStructure(ref common.ReferenceCallback
 							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
 						},
 					},
+					"pipelineRef": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 					"pipelineRunRef": {
 						SchemaProps: spec.SchemaProps{
 							Type:   []string{"string"},
@@ -2820,7 +2826,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineStructure(ref common.ReferenceCallback
 						},
 					},
 				},
-				Required: []string{"pipelineRunRef"},
+				Required: []string{"pipelineRef", "pipelineRunRef"},
 			},
 		},
 		Dependencies: []string{
