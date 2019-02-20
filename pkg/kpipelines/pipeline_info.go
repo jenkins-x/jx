@@ -259,7 +259,7 @@ func CreatePipelineRunInfo(kubeClient kubernetes.Interface, tektonClient tektonc
 	if gitURL != "" {
 		gitInfo, err := gits.ParseGitURL(gitURL)
 		if err != nil {
-			return nil, errors.Wrapf(err, "Failed to parse Git URL %s: %s", gitURL)
+			return nil, errors.Wrapf(err, "Failed to parse Git URL %s", gitURL)
 		}
 		if owner == "" {
 			owner = gitInfo.Organisation
