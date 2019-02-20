@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -9,6 +10,9 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/collector"
+	"github.com/jenkins-x/jx/pkg/kpipelines"
+	"github.com/jenkins-x/jx/pkg/kpipelines/syntax"
+	"github.com/knative/build-pipeline/pkg/apis/pipeline"
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -19,6 +23,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	tektonclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -86,6 +91,16 @@ func (o *ControllerBuildOptions) Run() error {
 		return err
 	}
 
+	tektonClient, _, err := o.KnativePipelineClient()
+	if err != nil {
+		return err
+	}
+
+	buildPipelineEnabled, err := kube.IsBuildPipelineEnabled(kubeClient, devNs)
+	if err != nil {
+		return err
+	}
+
 	ns := o.Namespace
 	if ns == "" {
 		ns = devNs
@@ -109,28 +124,53 @@ func (o *ControllerBuildOptions) Run() error {
 		}
 	}
 
-	pod := &corev1.Pod{}
-	log.Infof("Watching for Knative build pods in namespace %s\n", util.ColorInfo(ns))
-	listWatch := cache.NewListWatchFromClient(kubeClient.CoreV1().RESTClient(), "pods", ns, fields.Everything())
-	kube.SortListWatchByName(listWatch)
-	_, controller := cache.NewInformer(
-		listWatch,
-		pod,
-		time.Minute*10,
-		cache.ResourceEventHandlerFuncs{
-			AddFunc: func(obj interface{}) {
-				o.onPod(obj, kubeClient, jxClient, ns)
+	if buildPipelineEnabled {
+		pod := &corev1.Pod{}
+		log.Infof("Watching for Pods in namespace %s\n", util.ColorInfo(ns))
+		listWatch := cache.NewListWatchFromClient(kubeClient.CoreV1().RESTClient(), "pods", ns, fields.Everything())
+		kube.SortListWatchByName(listWatch)
+		_, controller := cache.NewInformer(
+			listWatch,
+			pod,
+			time.Minute*10,
+			cache.ResourceEventHandlerFuncs{
+				AddFunc: func(obj interface{}) {
+					o.onPipelinePod(obj, kubeClient, jxClient, tektonClient, ns)
+				},
+				UpdateFunc: func(oldObj, newObj interface{}) {
+					o.onPipelinePod(newObj, kubeClient, jxClient, tektonClient, ns)
+				},
+				DeleteFunc: func(obj interface{}) {
+				},
 			},
-			UpdateFunc: func(oldObj, newObj interface{}) {
-				o.onPod(newObj, kubeClient, jxClient, ns)
-			},
-			DeleteFunc: func(obj interface{}) {
-			},
-		},
-	)
+		)
 
-	stop := make(chan struct{})
-	go controller.Run(stop)
+		stop := make(chan struct{})
+		go controller.Run(stop)
+	} else {
+		pod := &corev1.Pod{}
+		log.Infof("Watching for Knative build pods in namespace %s\n", util.ColorInfo(ns))
+		listWatch := cache.NewListWatchFromClient(kubeClient.CoreV1().RESTClient(), "pods", ns, fields.Everything())
+		kube.SortListWatchByName(listWatch)
+		_, controller := cache.NewInformer(
+			listWatch,
+			pod,
+			time.Minute*10,
+			cache.ResourceEventHandlerFuncs{
+				AddFunc: func(obj interface{}) {
+					o.onPod(obj, kubeClient, jxClient, ns)
+				},
+				UpdateFunc: func(oldObj, newObj interface{}) {
+					o.onPod(newObj, kubeClient, jxClient, ns)
+				},
+				DeleteFunc: func(obj interface{}) {
+				},
+			},
+		)
+
+		stop := make(chan struct{})
+		go controller.Run(stop)
+	}
 
 	// Wait forever
 	select {}
@@ -143,50 +183,113 @@ func (o *ControllerBuildOptions) onPod(obj interface{}, kubeClient kubernetes.In
 		return
 	}
 	if pod != nil {
-		labels := pod.Labels
-		if labels != nil {
-			buildName := labels[builds.LabelBuildName]
-			if buildName == "" {
-				buildName = labels[builds.LabelOldBuildName]
-			}
-			if buildName == "" {
-				buildName = labels[builds.LabelPipelineRunName]
-			}
-			if buildName != "" {
-				if o.Verbose {
-					log.Infof("Found build pod %s\n", pod.Name)
-				}
+		o.handleStandalonePod(pod, kubeClient, jxClient, ns)
+	}
+}
 
-				activities := jxClient.JenkinsV1().PipelineActivities(ns)
-				key := o.createPromoteStepActivityKey(buildName, pod)
-				if key != nil {
-					name := ""
-					err := util.Retry(time.Second*20, func() error {
-						a, created, err := key.GetOrCreate(jxClient, ns)
-						if err != nil {
-							operation := "update"
-							if created {
-								operation = "create"
-							}
-							log.Warnf("Failed to %s PipelineActivities for build %s: %s\n", operation, buildName, err)
-						}
-						if o.updatePipelineActivity(kubeClient, ns, a, buildName, pod) {
-							if o.Verbose {
-								log.Infof("updating PipelineActivity %s\n", a.Name)
-							}
-							_, err := activities.Update(a)
-							if err != nil {
-								log.Warnf("Failed to update PipelineActivity %s due to: %s\n", a.Name, err.Error())
-								name = a.Name
-								return err
-							}
-						}
-						return nil
-					})
+func (o *ControllerBuildOptions) handleStandalonePod(pod *corev1.Pod, kubeClient kubernetes.Interface, jxClient versioned.Interface, ns string) {
+	labels := pod.Labels
+	if labels != nil {
+		buildName := labels[builds.LabelBuildName]
+		if buildName == "" {
+			buildName = labels[builds.LabelOldBuildName]
+		}
+		if buildName == "" {
+			buildName = labels[builds.LabelPipelineRunName]
+		}
+		if buildName != "" {
+			if o.Verbose {
+				log.Infof("Found build pod %s\n", pod.Name)
+			}
+
+			activities := jxClient.JenkinsV1().PipelineActivities(ns)
+			key := o.createPromoteStepActivityKey(buildName, pod)
+			if key != nil {
+				name := ""
+				err := util.Retry(time.Second*20, func() error {
+					a, created, err := key.GetOrCreate(jxClient, ns)
 					if err != nil {
-						log.Warnf("Failed to update PipelineActivities%s: %s\n", name, err)
+						operation := "update"
+						if created {
+							operation = "create"
+						}
+						log.Warnf("Failed to %s PipelineActivities for build %s: %s\n", operation, buildName, err)
+					}
+					if o.updatePipelineActivity(kubeClient, ns, a, buildName, pod) {
+						if o.Verbose {
+							log.Infof("updating PipelineActivity %s\n", a.Name)
+						}
+						_, err := activities.Update(a)
+						if err != nil {
+							log.Warnf("Failed to update PipelineActivity %s due to: %s\n", a.Name, err.Error())
+							name = a.Name
+							return err
+						}
+					}
+					return nil
+				})
+				if err != nil {
+					log.Warnf("Failed to update PipelineActivities%s: %s\n", name, err)
+				}
+			}
+		}
+	}
+
+}
+
+func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kubernetes.Interface, jxClient versioned.Interface, tektonClient tektonclient.Interface, ns string) {
+	pod, ok := obj.(*corev1.Pod)
+	if !ok {
+		log.Infof("Object is not a Pod %#v\n", obj)
+		return
+	}
+	if pod != nil {
+		if pod.Labels[pipeline.GroupName+pipeline.PipelineRunLabelKey] != "" {
+			if pod.Labels[syntax.LabelStageName] != "" {
+				prName := pod.Labels[pipeline.GroupName+pipeline.PipelineRunLabelKey]
+				pri, err := kpipelines.CreatePipelineRunInfo(kubeClient, tektonClient, jxClient, ns, prName)
+				if err != nil {
+					log.Warnf("Error creating PipelineRunInfo for PipelineRun %s: %s\n", prName, err)
+					return
+				}
+				if pri != nil {
+					if o.Verbose {
+						log.Infof("Found pipeline run %s\n", pri.Name)
+					}
+
+					activities := jxClient.JenkinsV1().PipelineActivities(ns)
+					key := o.createPromoteStepActivityKeyFromRun(pri)
+					if key != nil {
+						name := ""
+						err := util.Retry(time.Second*20, func() error {
+							a, created, err := key.GetOrCreate(jxClient, ns)
+							if err != nil {
+								operation := "update"
+								if created {
+									operation = "create"
+								}
+								log.Warnf("Failed to %s PipelineActivities for build %s: %s\n", operation, pri.Name, err)
+							}
+							if o.updatePipelineActivityForRun(kubeClient, ns, a, pri) {
+								if o.Verbose {
+									log.Infof("updating PipelineActivity %s\n", a.Name)
+								}
+								_, err := activities.Update(a)
+								if err != nil {
+									log.Warnf("Failed to update PipelineActivity %s due to: %s\n", a.Name, err.Error())
+									name = a.Name
+									return err
+								}
+							}
+							return nil
+						})
+						if err != nil {
+							log.Warnf("Failed to update PipelineActivities%s: %s\n", name, err)
+						}
 					}
 				}
+			} else {
+				o.handleStandalonePod(pod, kubeClient, jxClient, ns)
 			}
 		}
 	}
@@ -208,6 +311,24 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 			LastCommitMessage: buildInfo.LastCommitMessage,
 			LastCommitURL:     buildInfo.LastCommitURL,
 			GitInfo:           buildInfo.GitInfo,
+		},
+	}
+}
+
+// createPromoteStepActivityKeyFromRun deduces the pipeline metadata from the pipeline run info
+func (o *ControllerBuildOptions) createPromoteStepActivityKeyFromRun(pri *kpipelines.PipelineRunInfo) *kube.PromoteStepActivityKey {
+	if pri.GitURL == "" || pri.GitInfo == nil {
+		return nil
+	}
+	return &kube.PromoteStepActivityKey{
+		PipelineActivityKey: kube.PipelineActivityKey{
+			Name:              pri.Name,
+			Pipeline:          pri.Pipeline,
+			Build:             pri.Build,
+			LastCommitSHA:     pri.LastCommitSHA,
+			LastCommitMessage: pri.LastCommitMessage,
+			LastCommitURL:     pri.LastCommitURL,
+			GitInfo:           pri.GitInfo,
 		},
 	}
 }
@@ -351,6 +472,203 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 	// lets compare YAML in case we modify arrays in place on a copy (such as the steps) and don't detect we changed things
 	newYaml := toYamlString(activity)
 	return originYaml != newYaml
+}
+
+func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kubernetes.Interface, ns string, activity *v1.PipelineActivity, pri *kpipelines.PipelineRunInfo) bool {
+	originYaml := toYamlString(activity)
+	for _, stage := range pri.Stages {
+		updateForStage(stage, activity, nil)
+	}
+
+	spec := &activity.Spec
+	var biggestFinishedAt metav1.Time
+
+	allCompleted := true
+	failed := false
+	running := true
+	for i := range spec.Steps {
+		step := &spec.Steps[i]
+		stage := step.Stage
+		if stage != nil {
+			stageFinished := spec.Status.IsTerminated()
+			if stage.StartedTimestamp != nil && spec.StartedTimestamp == nil {
+				spec.StartedTimestamp = stage.StartedTimestamp
+			}
+			if stage.CompletedTimestamp != nil {
+				t := stage.CompletedTimestamp
+				if !t.IsZero() {
+					stageFinished = true
+					if biggestFinishedAt.IsZero() || t.After(biggestFinishedAt.Time) {
+						biggestFinishedAt = *t
+					}
+				}
+			}
+			if stageFinished {
+				if stage.Status != v1.ActivityStatusTypeSucceeded {
+					failed = true
+				}
+			} else {
+				allCompleted = false
+			}
+			if stage.Status == v1.ActivityStatusTypeRunning {
+				running = true
+			}
+			if stage.Status == v1.ActivityStatusTypeRunning || stage.Status == v1.ActivityStatusTypePending {
+				allCompleted = false
+			}
+		}
+	}
+
+	if allCompleted {
+		if failed {
+			spec.Status = v1.ActivityStatusTypeFailed
+		} else {
+			spec.Status = v1.ActivityStatusTypeSucceeded
+		}
+		if !biggestFinishedAt.IsZero() {
+			spec.CompletedTimestamp = &biggestFinishedAt
+		}
+		// TODO: Not yet sure how to handle BuildLogsURL
+	} else {
+		if running {
+			spec.Status = v1.ActivityStatusTypeRunning
+		} else {
+			spec.Status = v1.ActivityStatusTypePending
+		}
+	}
+
+	// lets compare YAML in case we modify arrays in place on a copy (such as the steps) and don't detect we changed things
+	newYaml := toYamlString(activity)
+	return originYaml != newYaml
+}
+
+func updateForStage(si *kpipelines.StageInfo, a *v1.PipelineActivity, parent *v1.StageActivityStep) {
+	var stage *v1.StageActivityStep
+	if a != nil {
+		_, stage, _ = kube.GetOrCreateStage(a, si.Name)
+	} else {
+		stage, _ = kube.GetOrCreateNestedStage(parent, si.Name)
+	}
+
+	stepsAndChildStagesComplete := false
+
+	if si.Pod != nil {
+		pod := si.Pod
+		stepsAndChildStagesComplete = len(pod.Status.InitContainerStatuses) > 0
+		for _, c := range pod.Status.InitContainerStatuses {
+			name := strings.Replace(strings.TrimPrefix(c.Name, "build-step-"), "-", " ", -1)
+			title := strings.Title(name)
+			step, _ := kube.GetOrCreateStepInStage(stage, title)
+			running := c.State.Running
+			terminated := c.State.Terminated
+
+			var startedAt metav1.Time
+			var finishedAt metav1.Time
+			if terminated != nil {
+				startedAt = terminated.StartedAt
+				finishedAt = terminated.FinishedAt
+
+				if !finishedAt.IsZero() {
+					step.CompletedTimestamp = &finishedAt
+				}
+			}
+			if startedAt.IsZero() && running != nil {
+				startedAt = running.StartedAt
+			}
+
+			if !startedAt.IsZero() {
+				step.StartedTimestamp = &startedAt
+			}
+			step.Description = createStepDescription(c.Name, pod)
+
+			if terminated != nil {
+				if terminated.ExitCode == 0 {
+					step.Status = v1.ActivityStatusTypeSucceeded
+				} else {
+					step.Status = v1.ActivityStatusTypeFailed
+				}
+			} else {
+				if running != nil {
+					step.Status = v1.ActivityStatusTypeRunning
+				} else {
+					step.Status = v1.ActivityStatusTypePending
+				}
+				stepsAndChildStagesComplete = false
+			}
+		}
+	}
+
+	for _, nested := range si.Parallel {
+		updateForStage(nested, nil, stage)
+	}
+
+	for _, nested := range si.Stages {
+		updateForStage(nested, nil, stage)
+	}
+
+	var biggestFinishedAt metav1.Time
+
+	allCompleted := false
+	failed := false
+	running := true
+	pending := si.Pod == nil
+
+	for i := range stage.Steps {
+		step := &stage.Steps[i]
+		if stage != nil {
+			stepFinished := step.Status.IsTerminated()
+			if step.StartedTimestamp != nil && step.StartedTimestamp == nil {
+				stage.StartedTimestamp = step.StartedTimestamp
+			}
+			if step.CompletedTimestamp != nil {
+				t := step.CompletedTimestamp
+				if !t.IsZero() {
+					stepFinished = true
+					if biggestFinishedAt.IsZero() || t.After(biggestFinishedAt.Time) {
+						biggestFinishedAt = *t
+					}
+				}
+			}
+			if stepFinished {
+				if step.Status != v1.ActivityStatusTypeSucceeded {
+					failed = true
+				}
+			} else {
+				allCompleted = false
+			}
+			if step.Status == v1.ActivityStatusTypeRunning {
+				running = true
+			}
+			if step.Status == v1.ActivityStatusTypePending {
+				pending = true
+			}
+			if step.Status == v1.ActivityStatusTypeRunning || step.Status == v1.ActivityStatusTypePending {
+				allCompleted = false
+			}
+		}
+	}
+
+	if !allCompleted && stepsAndChildStagesComplete {
+		allCompleted = true
+	}
+	if allCompleted {
+		if failed {
+			stage.Status = v1.ActivityStatusTypeFailed
+		} else {
+			stage.Status = v1.ActivityStatusTypeSucceeded
+		}
+		if !biggestFinishedAt.IsZero() {
+			stage.CompletedTimestamp = &biggestFinishedAt
+		}
+	} else {
+		if pending {
+			stage.Status = v1.ActivityStatusTypePending
+		} else if running {
+			stage.Status = v1.ActivityStatusTypeRunning
+		} else {
+			stage.Status = v1.ActivityStatusTypePending
+		}
+	}
 }
 
 // toYamlString returns the YAML string or error when marshalling the given resource

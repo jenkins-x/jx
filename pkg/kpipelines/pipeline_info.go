@@ -15,6 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kpipelines/syntax"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/knative/build-pipeline/pkg/apis/pipeline"
 	tektonclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
@@ -58,6 +59,9 @@ type StageInfo struct {
 	// These fields will only be populated for appropriate parent stages
 	Parallel []*StageInfo
 	Stages   []*StageInfo
+
+	// This field will be non-empty if this is a nested stage, containing a list of  the names of all its parent stages with the top-level parent first
+	Parents []string
 }
 
 // PipelineRunInfoFilter allows specifying criteria on which to filter a list of PipelineRunInfos
@@ -71,12 +75,27 @@ type PipelineRunInfoFilter struct {
 }
 
 func getPipelineStructureForPipelineRun(jxClient versioned.Interface, ns, prName string) (*v1.PipelineStructure, error) {
-	// Get the PipelineStructure for this PipelineRun
-	ps, err := jxClient.JenkinsV1().PipelineStructures(ns).Get(prName, metav1.GetOptions{})
+	var ps *v1.PipelineStructure
+
+	// The PipelineStructure may not exist yet.
+	f := func() error {
+		// Get the PipelineStructure for this PipelineRun
+		lookupPs, err := jxClient.JenkinsV1().PipelineStructures(ns).Get(prName, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		if lookupPs == nil {
+			log.Infof("no PipelineStructure found yet for PipelineRun %s\n", util.ColorInfo(prName))
+			return fmt.Errorf("No PipelineStructure found yet for PipelineRun %s", prName)
+		}
+		ps = lookupPs
+		return nil
+	}
+	err := util.Retry(time.Minute*5, f)
 	if err != nil {
 		return nil, err
 	}
-
 	return ps, nil
 }
 
@@ -279,7 +298,7 @@ func (pri *PipelineRunInfo) SetPodsForPipelineRun(kubeClient kubernetes.Interfac
 	var firstTaskStage *StageInfo
 
 	for _, psc := range pscs {
-		pri.Stages = append(pri.Stages, stageAndChildrenToStageInfo(psc))
+		pri.Stages = append(pri.Stages, stageAndChildrenToStageInfo(psc, []string{}))
 	}
 
 	for _, si := range pri.Stages {
@@ -375,7 +394,7 @@ func (si *StageInfo) findTaskStageInfo() *StageInfo {
 	return nil
 }
 
-func stageAndChildrenToStageInfo(psc *v1.PipelineStageAndChildren) *StageInfo {
+func stageAndChildrenToStageInfo(psc *v1.PipelineStageAndChildren, parents []string) *StageInfo {
 	si := &StageInfo{
 		Name: psc.Stage.Name,
 	}
@@ -384,11 +403,11 @@ func stageAndChildrenToStageInfo(psc *v1.PipelineStageAndChildren) *StageInfo {
 	}
 
 	for _, s := range psc.Stages {
-		si.Stages = append(si.Stages, stageAndChildrenToStageInfo(&s))
+		si.Stages = append(si.Stages, stageAndChildrenToStageInfo(&s, append(parents, psc.Stage.Name)))
 	}
 
 	for _, s := range psc.Parallel {
-		si.Parallel = append(si.Parallel, stageAndChildrenToStageInfo(&s))
+		si.Parallel = append(si.Parallel, stageAndChildrenToStageInfo(&s, append(parents, psc.Stage.Name)))
 	}
 
 	return si
