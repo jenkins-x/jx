@@ -161,6 +161,7 @@ func (o *CommonOptions) Debugf(format string, a ...interface{}) {
 	}
 }
 
+// addCommonFlags adds the common flags to the given command
 func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	defaultBatchMode := false
 	if os.Getenv("JX_BATCH_MODE") == "true" {
@@ -177,6 +178,7 @@ func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	options.Cmd = cmd
 }
 
+// ApiExtensionsClient return or creates the api extension client
 func (o *CommonOptions) ApiExtensionsClient() (apiextensionsclientset.Interface, error) {
 	var err error
 	if o.apiExtensionsClient == nil {
@@ -188,6 +190,7 @@ func (o *CommonOptions) ApiExtensionsClient() (apiextensionsclientset.Interface,
 	return o.apiExtensionsClient, nil
 }
 
+// KubeClient returns or creates the kube client
 func (o *CommonOptions) KubeClient() (kubernetes.Interface, error) {
 	if o.kubeClient == nil {
 		kubeClient, currentNs, err := o.factory.CreateKubeClient()
@@ -201,11 +204,13 @@ func (o *CommonOptions) KubeClient() (kubernetes.Interface, error) {
 	return o.kubeClient, nil
 }
 
+// KubeClientAndNamespace returns or creates the kube client and the current namespace
 func (o *CommonOptions) KubeClientAndNamespace() (kubernetes.Interface, string, error) {
 	client, err := o.KubeClient()
 	return client, o.currentNamespace, err
 }
 
+// SetKubeClient sets the kube client
 func (o *CommonOptions) SetKubeClient(kubeClient kubernetes.Interface) {
 	o.kubeClient = kubeClient
 }
@@ -222,6 +227,7 @@ func (o *CommonOptions) KubeClientAndDevNamespace() (kubernetes.Interface, strin
 	return kubeClient, o.devNamespace, err
 }
 
+// JXClient returns or creates the jx client and current namespace
 func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
 	if o.factory == nil {
 		return nil, "", errors.New("command factory is not initialized")
@@ -257,6 +263,7 @@ func (o *CommonOptions) KnativePipelineClient() (kpipelineclient.Interface, stri
 	return o.kpClient, o.currentNamespace, nil
 }
 
+// KnativeBuildClient returns or creates the knative build client
 func (o *CommonOptions) KnativeBuildClient() (buildclient.Interface, string, error) {
 	if o.factory == nil {
 		return nil, "", errors.New("command factory is not initialized")
@@ -274,6 +281,7 @@ func (o *CommonOptions) KnativeBuildClient() (buildclient.Interface, string, err
 	return o.knbClient, o.currentNamespace, nil
 }
 
+// JXClientAndAdminNamespace returns or creates the jx client and admin namespace
 func (o *CommonOptions) JXClientAndAdminNamespace() (versioned.Interface, string, error) {
 	kubeClient, _, err := o.KubeClientAndNamespace()
 	if err != nil {
@@ -288,6 +296,7 @@ func (o *CommonOptions) JXClientAndAdminNamespace() (versioned.Interface, string
 	return jxClient, ns, err
 }
 
+// JXClientAndDevNamespace returns and creates the jx client and dev namespace
 func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, error) {
 	if o.jxClient == nil {
 		jxClient, ns, err := o.JXClient()
@@ -321,6 +330,7 @@ func (o *CommonOptions) SetJenkinsClient(jenkinsClient gojenkins.JenkinsClient) 
 	o.jenkinsClient = jenkinsClient
 }
 
+// JenkinsClient returns the Jenkins client
 func (o *CommonOptions) JenkinsClient() (gojenkins.JenkinsClient, error) {
 	if o.jenkinsClient == nil {
 		kubeClient, ns, err := o.KubeClientAndDevNamespace()
@@ -338,6 +348,8 @@ func (o *CommonOptions) JenkinsClient() (gojenkins.JenkinsClient, error) {
 	}
 	return o.jenkinsClient, nil
 }
+
+// getJenkinsURL return the Jenkins URL
 func (o *CommonOptions) getJenkinsURL() (string, error) {
 	kubeClient, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
@@ -347,6 +359,7 @@ func (o *CommonOptions) getJenkinsURL() (string, error) {
 	return o.factory.GetJenkinsURL(kubeClient, ns)
 }
 
+// Git returns the git client
 func (o *CommonOptions) Git() gits.Gitter {
 	if o.git == nil {
 		o.git = gits.NewGitCLI()
@@ -354,15 +367,18 @@ func (o *CommonOptions) Git() gits.Gitter {
 	return o.git
 }
 
+// SetGit sets the git client
 func (o *CommonOptions) SetGit(git gits.Gitter) {
 	o.git = git
 }
 
+// NewHelm cerates a new helm client from the given list of parameters
 func (o *CommonOptions) NewHelm(verbose bool, helmBinary string, noTiller bool, helmTemplate bool) helm.Helmer {
 	o.helm = o.factory.CreateHelm(o.Verbose, helmBinary, noTiller, helmTemplate)
 	return o.helm
 }
 
+// Helm returns or creates the helm client
 func (o *CommonOptions) Helm() helm.Helmer {
 	if o.helm == nil {
 		helmBinary, noTiller, helmTemplate, err := o.TeamHelmBin()
@@ -379,11 +395,17 @@ func (o *CommonOptions) SetHelm(helmer helm.Helmer) {
 	o.helm = helmer
 }
 
+// Kube returns the k8s config client
 func (o *CommonOptions) Kube() kube.Kuber {
 	if o.kuber == nil {
 		o.kuber = kube.NewKubeConfig()
 	}
 	return o.kuber
+}
+
+// SetKube  sets the kube config client
+func (o *CommonOptions) SetKube(kuber kube.Kuber) {
+	o.kuber = kuber
 }
 
 // SetResourcesInstaller configures the installer for Kubernetes resources
@@ -399,10 +421,7 @@ func (o *CommonOptions) ResourcesInstaller() resources.Installer {
 	return o.resourcesInstaller
 }
 
-func (o *CommonOptions) SetKube(kuber kube.Kuber) {
-	o.kuber = kuber
-}
-
+// TeamAndEnvironmentNames returns team and environment namespace
 func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
 	kubeClient, currentNs, err := o.KubeClientAndNamespace()
 	if err != nil {
@@ -901,6 +920,7 @@ func (o *CommonOptions) getBuildNumber() string {
 	return builds.GetBuildNumber()
 }
 
+// VaultOperatorClient returns or creates the vault operator client
 func (o *CommonOptions) VaultOperatorClient() (vaultoperatorclient.Interface, error) {
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
@@ -915,6 +935,7 @@ func (o *CommonOptions) VaultOperatorClient() (vaultoperatorclient.Interface, er
 	return o.vaultOperatorClient, nil
 }
 
+// SystemVaultClient return or creates the system vault client
 func (o *CommonOptions) SystemVaultClient(namespace string) (vault.Client, error) {
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
@@ -929,6 +950,7 @@ func (o *CommonOptions) SystemVaultClient(namespace string) (vault.Client, error
 	return o.systemVaultClient, nil
 }
 
+// VaultClient returns or creates the vault client
 func (o *CommonOptions) VaultClient(name string, namespace string) (vault.Client, error) {
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
@@ -943,6 +965,7 @@ func (o *CommonOptions) VaultClient(name string, namespace string) (vault.Client
 	return o.vaultClient, nil
 }
 
+// GetSecretsLocation returns the location of the secrets
 func (o *CommonOptions) GetSecretsLocation() secrets.SecretsLocationKind {
 	if o.factory == nil {
 		return secrets.FileSystemLocationKind
@@ -950,6 +973,7 @@ func (o *CommonOptions) GetSecretsLocation() secrets.SecretsLocationKind {
 	return o.factory.SecretsLocation()
 }
 
+// SetSecretsLocation sets the secrets location
 func (o *CommonOptions) SetSecretsLocation(location secrets.SecretsLocationKind, persist bool) error {
 	if o.factory == nil {
 		return errors.New("command factory is not initialized")
@@ -957,6 +981,7 @@ func (o *CommonOptions) SetSecretsLocation(location secrets.SecretsLocationKind,
 	return o.factory.SetSecretsLocation(location, persist)
 }
 
+// ResetSecretsLocation resets the secrets location
 func (o *CommonOptions) ResetSecretsLocation() error {
 	if o.factory == nil {
 		return errors.New("command factory is not initialized")
@@ -965,6 +990,7 @@ func (o *CommonOptions) ResetSecretsLocation() error {
 	return nil
 }
 
+// GetWebHookEndpoint returns the webhook endpoint
 func (o *CommonOptions) GetWebHookEndpoint() (string, error) {
 	_, _, err := o.JXClient()
 	if err != nil {
@@ -1069,6 +1095,7 @@ func SeeAlsoText(commands ...string) string {
 	return sb.String()
 }
 
+// ComplianceClient returns or creates the compliance client
 func (o *CommonOptions) ComplianceClient() (*client.SonobuoyClient, error) {
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
@@ -1084,6 +1111,7 @@ func (o *CommonOptions) ComplianceClient() (*client.SonobuoyClient, error) {
 
 }
 
+// CertManagerClient returns or creates the cert-manager client
 func (o *CommonOptions) CertManagerClient() (certmngclient.Interface, error) {
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
@@ -1098,18 +1126,22 @@ func (o *CommonOptions) CertManagerClient() (certmngclient.Interface, error) {
 	return o.certManagerClient, nil
 }
 
+// InCluster return true if the command execution takes place in k8s cluster
 func (o *CommonOptions) InCluster() bool {
 	return o.factory.IsInCluster()
 }
 
+// InCDPipeline return true if the command execution takes place in the CD pipeline
 func (o *CommonOptions) InCDPipeline() bool {
 	return o.factory.IsInCDPipeline()
 }
 
+// SetBatchMode configures the batch mode
 func (o *CommonOptions) SetBatchMode(batchMode bool) {
 	o.factory.SetBatch(batchMode)
 }
 
+// AddonAuthConfigService creates the addon auth config service
 func (o *CommonOptions) AddonAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error) {
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
@@ -1117,6 +1149,7 @@ func (o *CommonOptions) AddonAuthConfigService(secrets *corev1.SecretList) (auth
 	return o.factory.CreateAddonAuthConfigService(secrets)
 }
 
+// JenkinsAuthConfigService creates the jenkins auth config service
 func (o *CommonOptions) JenkinsAuthConfigService(client kubernetes.Interface, namespace string) (auth.ConfigService, error) {
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
@@ -1124,6 +1157,7 @@ func (o *CommonOptions) JenkinsAuthConfigService(client kubernetes.Interface, na
 	return o.factory.CreateJenkinsAuthConfigService(client, namespace)
 }
 
+// ChartmuseumAuthConfigService creates the chart museum auth config service
 func (o *CommonOptions) ChartmuseumAuthConfigService() (auth.ConfigService, error) {
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
@@ -1131,6 +1165,7 @@ func (o *CommonOptions) ChartmuseumAuthConfigService() (auth.ConfigService, erro
 	return o.factory.CreateChartmuseumAuthConfigService()
 }
 
+// AuthConfigService creates the auth config service for given file
 func (o CommonOptions) AuthConfigService(file string) (auth.ConfigService, error) {
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")

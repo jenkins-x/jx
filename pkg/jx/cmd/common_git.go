@@ -34,6 +34,7 @@ func (o *CommonOptions) FindGitInfo(dir string) (*gits.GitRepository, error) {
 	}
 }
 
+// NewGitProvider creates a new git provider for the given list of argumentes
 func (o *CommonOptions) NewGitProvider(gitURL string, message string, authConfigSvc auth.ConfigService, gitKind string, batchMode bool, gitter gits.Gitter) (gits.GitProvider, error) {
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
