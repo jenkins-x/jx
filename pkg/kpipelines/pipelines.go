@@ -2,6 +2,10 @@ package kpipelines
 
 import (
 	"fmt"
+	"reflect"
+	"strconv"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -10,15 +14,12 @@ import (
 	kpipelineclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"reflect"
-	"strconv"
-	"time"
 )
 
 // CreateOrUpdateSourceResource lazily creates a Knative Pipeline PipelineResource for the given git repository
 func CreateOrUpdateSourceResource(knativePipelineClient kpipelineclient.Interface, ns string, created *v1alpha1.PipelineResource) (*v1alpha1.PipelineResource, error) {
 	resourceName := created.Name
-	resourceInterface := knativePipelineClient.PipelineV1alpha1().PipelineResources(ns)
+	resourceInterface := knativePipelineClient.TektonV1alpha1().PipelineResources(ns)
 
 	_, err := resourceInterface.Create(created)
 	if err == nil {
@@ -46,7 +47,7 @@ func CreateOrUpdateTask(knativePipelineClient kpipelineclient.Interface, ns stri
 	if resourceName == "" {
 		return nil, fmt.Errorf("the Task must have a name")
 	}
-	resourceInterface := knativePipelineClient.PipelineV1alpha1().Tasks(ns)
+	resourceInterface := knativePipelineClient.TektonV1alpha1().Tasks(ns)
 
 	_, err := resourceInterface.Create(created)
 	if err == nil {
@@ -92,7 +93,7 @@ func GetLastBuildNumber(pipeline *v1alpha1.Pipeline) int {
 func CreatePipelineRun(knativePipelineClient kpipelineclient.Interface, ns string, pipeline *v1alpha1.Pipeline, run *v1alpha1.PipelineRun, duration time.Duration) (*v1alpha1.PipelineRun, error) {
 	run.Name = pipeline.Name
 
-	resourceInterface := knativePipelineClient.PipelineV1alpha1().PipelineRuns(ns)
+	resourceInterface := knativePipelineClient.TektonV1alpha1().PipelineRuns(ns)
 
 	buildNumber := GetLastBuildNumber(pipeline)
 	answer := run
@@ -125,7 +126,7 @@ func CreatePipelineRun(knativePipelineClient kpipelineclient.Interface, ns strin
 // another thread/process beats us to it
 func UpdateLastPipelineBuildNumber(knativePipelineClient kpipelineclient.Interface, ns string, pipeline *v1alpha1.Pipeline, buildNumber int, duration time.Duration) error {
 	f := func() error {
-		pipelineInterface := knativePipelineClient.PipelineV1alpha1().Pipelines(ns)
+		pipelineInterface := knativePipelineClient.TektonV1alpha1().Pipelines(ns)
 		current, err := pipelineInterface.Get(pipeline.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
@@ -149,7 +150,7 @@ func UpdateLastPipelineBuildNumber(knativePipelineClient kpipelineclient.Interfa
 // CreateOrUpdatePipeline lazily creates a Knative Pipeline for the given git repository, branch and context
 func CreateOrUpdatePipeline(knativePipelineClient kpipelineclient.Interface, ns string, created *v1alpha1.Pipeline, labels map[string]string) (*v1alpha1.Pipeline, error) {
 	resourceName := created.Name
-	resourceInterface := knativePipelineClient.PipelineV1alpha1().Pipelines(ns)
+	resourceInterface := knativePipelineClient.TektonV1alpha1().Pipelines(ns)
 
 	answer, err := resourceInterface.Create(created)
 	if err == nil {
