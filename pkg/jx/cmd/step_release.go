@@ -66,7 +66,7 @@ func NewCmdStepRelease(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
 	cmd.Flags().StringVarP(&options.HelmRepositoryURL, "helm-repo-url", "", helm.DefaultHelmRepositoryURL, "The Helm Repository URL to use for the App")
-	cmd.Flags().StringVarP(&options.Build, "build", "b", "", "The Build number which is used to update the PipelineActivity. If not specified its defaulted from  the '$BUILD_NUMBER' environment variable")
+	cmd.Flags().StringVarP(&options.Build, "build", "", "", "The Build number which is used to update the PipelineActivity. If not specified its defaulted from  the '$BUILD_NUMBER' environment variable")
 
 	return cmd
 }

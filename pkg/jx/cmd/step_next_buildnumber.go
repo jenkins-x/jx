@@ -58,7 +58,7 @@ func NewCmdStepNextBuildNumber(commonOpts *CommonOptions) *cobra.Command {
 	}
 	cmd.Flags().StringVarP(&options.Owner, optionOwner, "o", "", "The Git repository owner")
 	cmd.Flags().StringVarP(&options.Repository, optionRepo, "r", "", "The Git repository name")
-	cmd.Flags().StringVarP(&options.Branch, optionBranch, "b", "master", "The Git branch")
+	cmd.Flags().StringVarP(&options.Branch, optionBranch, "", "master", "The Git branch")
 	return cmd
 }
 

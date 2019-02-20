@@ -67,7 +67,7 @@ func NewCmdGetActivity(commonOpts *CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Text to filter the pipeline names")
-	cmd.Flags().StringVarP(&options.BuildNumber, "build", "b", "", "The build number to filter on")
+	cmd.Flags().StringVarP(&options.BuildNumber, "build", "", "", "The build number to filter on")
 	cmd.Flags().BoolVarP(&options.Watch, "watch", "w", false, "Whether to watch the activities for changes")
 	return cmd
 }

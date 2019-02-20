@@ -69,7 +69,7 @@ func NewCmdGetBuildPods(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.BuildFilter.Owner, "owner", "o", "", "Filters the owner (person/organisation) of the repository")
 	cmd.Flags().StringVarP(&options.BuildFilter.Repository, "repo", "r", "", "Filters the build repository")
 	cmd.Flags().StringVarP(&options.BuildFilter.Branch, "branch", "", "", "Filters the branch")
-	cmd.Flags().StringVarP(&options.BuildFilter.Build, "build", "b", "", "Filter a specific build number")
+	cmd.Flags().StringVarP(&options.BuildFilter.Build, "build", "", "", "Filter a specific build number")
 	return cmd
 }
 
