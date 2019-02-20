@@ -339,7 +339,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 	for _, c := range pod.Status.InitContainerStatuses {
 		name := strings.Replace(strings.TrimPrefix(c.Name, "build-step-"), "-", " ", -1)
 		title := strings.Title(name)
-		_, stage, _ := kube.GetOrCreateStage(activity, title, 0)
+		_, stage, _ := kube.GetOrCreateStage(activity, title)
 
 		running := c.State.Running
 		terminated := c.State.Terminated
@@ -543,7 +543,7 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 }
 
 func updateForStage(si *kpipelines.StageInfo, a *v1.PipelineActivity) {
-	_, stage, _ := kube.GetOrCreateStage(a, si.GetStageNameIncludingParents(), len(si.Parents))
+	_, stage, _ := kube.GetOrCreateStage(a, si.GetStageNameIncludingParents())
 
 	initContainersTerminated := false
 

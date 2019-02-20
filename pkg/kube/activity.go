@@ -372,8 +372,8 @@ func (k *PromoteStepActivityKey) GetOrCreatePreview(jxClient versioned.Interface
 	return a, &spec.Steps[len(spec.Steps)-1], preview, true, nil
 }
 
-// GetOrCreateStage gets or creates the stage for the given name, with the given depth of nesting
-func GetOrCreateStage(a *v1.PipelineActivity, stageName string, depth int) (*v1.PipelineActivityStep, *v1.StageActivityStep, bool) {
+// GetOrCreateStage gets or creates the stage for the given name
+func GetOrCreateStage(a *v1.PipelineActivity, stageName string) (*v1.PipelineActivityStep, *v1.StageActivityStep, bool) {
 	for i := range a.Spec.Steps {
 		step := &a.Spec.Steps[i]
 		stage := step.Stage
@@ -386,7 +386,6 @@ func GetOrCreateStage(a *v1.PipelineActivity, stageName string, depth int) (*v1.
 		CoreActivityStep: v1.CoreActivityStep{
 			Name: stageName,
 		},
-		Depth: depth,
 	}
 	a.Spec.Steps = append(a.Spec.Steps, v1.PipelineActivityStep{
 		Kind:  v1.ActivityStepKindTypeStage,

@@ -196,7 +196,7 @@ func (o *GetActivityOptions) addStepRow(table *tbl.Table, parent *v1.PipelineAct
 	preview := parent.Preview
 	promote := parent.Promote
 	if stage != nil {
-		addStageRow(table, stage, strings.Repeat(indent, stage.Depth))
+		addStageRow(table, stage, indent)
 	} else if preview != nil {
 		addPreviewRow(table, preview, indent)
 	} else if promote != nil {
