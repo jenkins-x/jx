@@ -77,6 +77,7 @@ type StageActivityStep struct {
 	CoreActivityStep `json:",inline"`
 
 	Steps []CoreActivityStep `json:"steps,omitempty" protobuf:"bytes,1,opt,name=steps"`
+	Depth int                `json:"depth,omitempty" protobuf:"bytes,2,opt,name=depth"`
 }
 
 // PreviewActivityStep is the step of creating a preview environment as part of a Pull Request pipeline

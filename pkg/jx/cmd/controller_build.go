@@ -339,7 +339,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 	for _, c := range pod.Status.InitContainerStatuses {
 		name := strings.Replace(strings.TrimPrefix(c.Name, "build-step-"), "-", " ", -1)
 		title := strings.Title(name)
-		_, stage, _ := kube.GetOrCreateStage(activity, title)
+		_, stage, _ := kube.GetOrCreateStage(activity, title, 0)
 
 		running := c.State.Running
 		terminated := c.State.Terminated
@@ -477,7 +477,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kubernetes.Interface, ns string, activity *v1.PipelineActivity, pri *kpipelines.PipelineRunInfo) bool {
 	originYaml := toYamlString(activity)
 	for _, stage := range pri.Stages {
-		updateForStage(stage, activity, nil)
+		updateForStage(stage, activity)
 	}
 
 	spec := &activity.Spec
@@ -542,19 +542,14 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 	return originYaml != newYaml
 }
 
-func updateForStage(si *kpipelines.StageInfo, a *v1.PipelineActivity, parent *v1.StageActivityStep) {
-	var stage *v1.StageActivityStep
-	if a != nil {
-		_, stage, _ = kube.GetOrCreateStage(a, si.Name)
-	} else {
-		stage, _ = kube.GetOrCreateNestedStage(parent, si.Name)
-	}
+func updateForStage(si *kpipelines.StageInfo, a *v1.PipelineActivity) {
+	_, stage, _ := kube.GetOrCreateStage(a, si.GetStageNameIncludingParents(), len(si.Parents))
 
-	stepsAndChildStagesComplete := false
+	initContainersTerminated := false
 
 	if si.Pod != nil {
 		pod := si.Pod
-		stepsAndChildStagesComplete = len(pod.Status.InitContainerStatuses) > 0
+		initContainersTerminated = len(pod.Status.InitContainerStatuses) > 0
 		for _, c := range pod.Status.InitContainerStatuses {
 			name := strings.Replace(strings.TrimPrefix(c.Name, "build-step-"), "-", " ", -1)
 			title := strings.Title(name)
@@ -593,80 +588,138 @@ func updateForStage(si *kpipelines.StageInfo, a *v1.PipelineActivity, parent *v1
 				} else {
 					step.Status = v1.ActivityStatusTypePending
 				}
-				stepsAndChildStagesComplete = false
+				initContainersTerminated = false
 			}
 		}
 	}
 
 	for _, nested := range si.Parallel {
-		updateForStage(nested, nil, stage)
+		updateForStage(nested, a)
 	}
 
 	for _, nested := range si.Stages {
-		updateForStage(nested, nil, stage)
+		updateForStage(nested, a)
 	}
 
 	var biggestFinishedAt metav1.Time
 
-	allCompleted := false
-	failed := false
-	running := true
-	pending := si.Pod == nil
+	childStageNames := si.GetFullChildStageNames(false)
 
-	for i := range stage.Steps {
-		step := &stage.Steps[i]
-		if stage != nil {
-			stepFinished := step.Status.IsTerminated()
-			if step.StartedTimestamp != nil && step.StartedTimestamp == nil {
-				stage.StartedTimestamp = step.StartedTimestamp
+	if len(childStageNames) > 0 {
+		var childStages []*v1.StageActivityStep
+		for _, s := range a.Spec.Steps {
+			if s.Stage != nil {
+				for _, c := range childStageNames {
+					if s.Stage.Name == c {
+						childStages = append(childStages, s.Stage)
+					}
+				}
 			}
-			if step.CompletedTimestamp != nil {
-				t := step.CompletedTimestamp
+		}
+
+		childrenCompleted := true
+		childrenFailed := false
+		childrenRunning := true
+
+		for _, child := range childStages {
+			childFinished := child.Status.IsTerminated()
+			if child.StartedTimestamp != nil && stage.StartedTimestamp == nil {
+				stage.StartedTimestamp = child.StartedTimestamp
+			}
+			if child.CompletedTimestamp != nil {
+				t := child.CompletedTimestamp
 				if !t.IsZero() {
-					stepFinished = true
+					childFinished = true
 					if biggestFinishedAt.IsZero() || t.After(biggestFinishedAt.Time) {
 						biggestFinishedAt = *t
 					}
 				}
 			}
-			if stepFinished {
-				if step.Status != v1.ActivityStatusTypeSucceeded {
-					failed = true
+			if childFinished {
+				if child.Status != v1.ActivityStatusTypeSucceeded {
+					childrenFailed = true
 				}
 			} else {
-				allCompleted = false
+				childrenCompleted = false
 			}
-			if step.Status == v1.ActivityStatusTypeRunning {
-				running = true
+			if child.Status == v1.ActivityStatusTypeRunning {
+				childrenRunning = true
 			}
-			if step.Status == v1.ActivityStatusTypePending {
-				pending = true
-			}
-			if step.Status == v1.ActivityStatusTypeRunning || step.Status == v1.ActivityStatusTypePending {
-				allCompleted = false
+			if child.Status == v1.ActivityStatusTypeRunning || child.Status == v1.ActivityStatusTypePending {
+				childrenCompleted = false
 			}
 		}
-	}
 
-	if !allCompleted && stepsAndChildStagesComplete {
-		allCompleted = true
-	}
-	if allCompleted {
-		if failed {
-			stage.Status = v1.ActivityStatusTypeFailed
+		if childrenCompleted {
+			if childrenFailed {
+				stage.Status = v1.ActivityStatusTypeFailed
+			} else {
+				stage.Status = v1.ActivityStatusTypeSucceeded
+			}
+			if !biggestFinishedAt.IsZero() {
+				stage.CompletedTimestamp = &biggestFinishedAt
+			}
 		} else {
-			stage.Status = v1.ActivityStatusTypeSucceeded
-		}
-		if !biggestFinishedAt.IsZero() {
-			stage.CompletedTimestamp = &biggestFinishedAt
+			if childrenRunning {
+				stage.Status = v1.ActivityStatusTypeRunning
+			} else {
+				stage.Status = v1.ActivityStatusTypePending
+			}
 		}
 	} else {
-		if pending {
-			stage.Status = v1.ActivityStatusTypePending
-		} else if running {
-			stage.Status = v1.ActivityStatusTypeRunning
+		allCompleted := false
+		failed := false
+		running := si.Pod != nil
+		for i := range stage.Steps {
+			step := &stage.Steps[i]
+			if stage != nil {
+				stepFinished := step.Status.IsTerminated()
+				if step.StartedTimestamp != nil && stage.StartedTimestamp == nil {
+					stage.StartedTimestamp = step.StartedTimestamp
+				}
+				if step.CompletedTimestamp != nil {
+					t := step.CompletedTimestamp
+					if !t.IsZero() {
+						stepFinished = true
+						if biggestFinishedAt.IsZero() || t.After(biggestFinishedAt.Time) {
+							biggestFinishedAt = *t
+						}
+					}
+				}
+				if stepFinished {
+					if step.Status != v1.ActivityStatusTypeSucceeded {
+						failed = true
+					}
+				} else {
+					allCompleted = false
+				}
+				if step.Status == v1.ActivityStatusTypeRunning {
+					running = true
+				}
+				if step.Status == v1.ActivityStatusTypeRunning || step.Status == v1.ActivityStatusTypePending {
+					allCompleted = false
+				}
+			}
+		}
+
+		if !allCompleted && initContainersTerminated {
+			allCompleted = true
+		}
+		if allCompleted {
+			if failed {
+				stage.Status = v1.ActivityStatusTypeFailed
+			} else {
+				stage.Status = v1.ActivityStatusTypeSucceeded
+			}
+			if !biggestFinishedAt.IsZero() {
+				stage.CompletedTimestamp = &biggestFinishedAt
+			}
 		} else {
-			stage.Status = v1.ActivityStatusTypePending
+			if running {
+				stage.Status = v1.ActivityStatusTypeRunning
+			} else {
+				stage.Status = v1.ActivityStatusTypePending
+			}
 		}
 	}
 }

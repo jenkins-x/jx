@@ -3912,6 +3912,12 @@ func schema_pkg_apis_jenkinsio_v1_StageActivityStep(ref common.ReferenceCallback
 							},
 						},
 					},
+					"depth": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"integer"},
+							Format: "int32",
+						},
+					},
 				},
 			},
 		},

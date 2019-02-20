@@ -1483,6 +1483,9 @@ definitions:
     properties:
       completedTimestamp:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time'
+      depth:
+        format: int32
+        type: integer
       description:
         type: string
       name:

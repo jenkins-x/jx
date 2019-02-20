@@ -64,6 +64,11 @@ type StageInfo struct {
 	Parents []string
 }
 
+// GetStageNameIncludingParents constructs a full stage name including its parents, if they exist.
+func (si *StageInfo) GetStageNameIncludingParents() string {
+	return strings.Join(append(si.Parents, si.Name), " / ")
+}
+
 // PipelineRunInfoFilter allows specifying criteria on which to filter a list of PipelineRunInfos
 type PipelineRunInfoFilter struct {
 	Owner      string
@@ -394,9 +399,27 @@ func (si *StageInfo) findTaskStageInfo() *StageInfo {
 	return nil
 }
 
+// GetFullChildStageNames gets the fully qualified (i.e., with parents appended) names of each stage underneath this one.
+func (si *StageInfo) GetFullChildStageNames(includeSelf bool) []string {
+	if si.Task != "" && includeSelf {
+		return []string{si.GetStageNameIncludingParents()}
+	}
+
+	var names []string
+	for _, n := range si.Parallel {
+		names = append(names, n.GetFullChildStageNames(true)...)
+	}
+	for _, n := range si.Stages {
+		names = append(names, n.GetFullChildStageNames(true)...)
+	}
+
+	return names
+}
+
 func stageAndChildrenToStageInfo(psc *v1.PipelineStageAndChildren, parents []string) *StageInfo {
 	si := &StageInfo{
-		Name: psc.Stage.Name,
+		Name:    psc.Stage.Name,
+		Parents: parents,
 	}
 	if psc.Stage.TaskRef != nil {
 		si.Task = *psc.Stage.TaskRef

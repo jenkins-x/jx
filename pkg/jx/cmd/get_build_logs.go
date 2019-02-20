@@ -307,10 +307,9 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 		return fmt.Errorf("No Pipeline found for name %s in values: %s", name, strings.Join(names, ", "))
 	}
 
-	log.Infof("Build logs for %s\n", util.ColorInfo(name+suffix))
-
 	if buildPipelineEnabled {
-		pr := build.(kpipelines.PipelineRunInfo)
+		pr := build.(*kpipelines.PipelineRunInfo)
+		log.Infof("Build logs for %s\n", util.ColorInfo(name+suffix))
 		for _, stage := range pr.GetOrderedTaskStages() {
 			if stage.Pod == nil {
 				// The stage's pod hasn't been created yet, so let's wait a bit.
@@ -355,7 +354,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 				if err != nil {
 					return err
 				}
-				err = o.getPodLog(ns, pod, ic)
+				err = o.getStageLog(ns, name+suffix, stage.GetStageNameIncludingParents(), pod, ic)
 				if err != nil {
 					return err
 				}
@@ -429,6 +428,11 @@ func waitForInitContainerToStart(kubeClient kubernetes.Interface, ns string, pod
 
 func (o *GetBuildLogsOptions) getPodLog(ns string, pod *corev1.Pod, container corev1.Container) error {
 	log.Infof("getting the log for pod %s and init container %s\n", util.ColorInfo(pod.Name), util.ColorInfo(container.Name))
+	return o.TailLogs(ns, pod.Name, container.Name)
+}
+
+func (o *GetBuildLogsOptions) getStageLog(ns, build, stageName string, pod *corev1.Pod, container corev1.Container) error {
+	log.Infof("getting the log for build %s stage %s and init container %s\n", util.ColorInfo(build), util.ColorInfo(stageName), util.ColorInfo(container.Name))
 	return o.TailLogs(ns, pod.Name, container.Name)
 }
 
