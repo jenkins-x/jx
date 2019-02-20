@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/buildnum"
@@ -12,7 +11,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -39,15 +37,10 @@ var (
 `)
 )
 
-func NewCmdStepNextBuildNumber(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepNextBuildNumber(commonOpts *CommonOptions) *cobra.Command {
 	options := StepNextBuildNumberOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 	cmd := &cobra.Command{
@@ -65,7 +58,7 @@ func NewCmdStepNextBuildNumber(f Factory, in terminal.FileReader, out terminal.F
 	}
 	cmd.Flags().StringVarP(&options.Owner, optionOwner, "o", "", "The Git repository owner")
 	cmd.Flags().StringVarP(&options.Repository, optionRepo, "r", "", "The Git repository name")
-	cmd.Flags().StringVarP(&options.Branch, optionBranch, "b", "master", "The Git branch")
+	cmd.Flags().StringVarP(&options.Branch, optionBranch, "", "master", "The Git branch")
 	return cmd
 }
 

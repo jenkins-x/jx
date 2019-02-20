@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -22,7 +21,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -87,18 +85,13 @@ type PreviewOptions struct {
 }
 
 // NewCmdPreview creates a command object for the "create" command
-func NewCmdPreview(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdPreview(commonOpts *CommonOptions) *cobra.Command {
 	options := &PreviewOptions{
 		HelmValuesConfig: config.HelmValuesConfig{
 			ExposeController: &config.ExposeController{},
 		},
 		PromoteOptions: PromoteOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -112,7 +105,8 @@ func NewCmdPreview(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 			options.Args = args
 			//Default to batch-mode when running inside the pipeline (but user override wins).
 			if !cmd.Flag(optionBatchMode).Changed {
-				options.BatchMode = options.IsInCDPipeline()
+				commonOpts := options.PromoteOptions.CommonOptions
+				options.BatchMode = commonOpts.InCDPipeline()
 			}
 			err := options.Run()
 			CheckErr(err)
@@ -121,7 +115,6 @@ func NewCmdPreview(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 	//addCreateAppFlags(cmd, &options.CreateOptions)
 
 	options.addPreviewOptions(cmd)
-	options.addCommonFlags(cmd)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, false)
 	options.PromoteOptions.addPromoteOptions(cmd)
 
@@ -237,7 +230,7 @@ func (o *PreviewOptions) Run() error {
 			return err
 		}
 
-		gitProvider, err := o.CreateGitProvider(o.GitInfo.URL, "message", authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
+		gitProvider, err := o.NewGitProvider(o.GitInfo.URL, "message", authConfigSvc, gitKind, o.BatchMode, o.Git())
 		if err != nil {
 			return fmt.Errorf("cannot create Git provider %v", err)
 		}

@@ -1,10 +1,7 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateTokenOptions the options for the create spring command
@@ -13,15 +10,10 @@ type CreateTokenOptions struct {
 }
 
 // NewCmdCreateToken creates a command object for the "create" command
-func NewCmdCreateToken(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateToken(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateTokenOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -37,7 +29,7 @@ func NewCmdCreateToken(f Factory, in terminal.FileReader, out terminal.FileWrite
 		},
 	}
 
-	cmd.AddCommand(NewCmdCreateTokenAddon(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateTokenAddon(commonOpts))
 	return cmd
 }
 

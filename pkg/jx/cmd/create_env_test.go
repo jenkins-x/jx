@@ -10,8 +10,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/config"
 	gits_mocks "github.com/jenkins-x/jx/pkg/gits/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
-	cmd_mock_matchers "github.com/jenkins-x/jx/pkg/jx/cmd/mocks/matchers"
+	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
+	cmd_mock_matchers "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks/matchers"
 	"github.com/jenkins-x/jx/pkg/tests"
 	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
@@ -133,15 +133,15 @@ func TestCreateEnvRun(t *testing.T) {
 	helmValuesConfig.ExposeController.Config.HTTP = "false"
 	helmValuesConfig.ExposeController.Config.TLSAcme = "false"
 
+	commonOpts := cmd.NewCommonOptionsWithFactory(factory)
+	commonOpts.In = console.In
+	commonOpts.Out = console.Out
+	commonOpts.Err = console.Err
+
 	options := cmd.CreateEnvOptions{
 		HelmValuesConfig: helmValuesConfig,
 		CreateOptions: cmd.CreateOptions{
-			CommonOptions: cmd.CommonOptions{
-				Factory: factory,
-				In:      console.In,
-				Out:     console.Out,
-				Err:     console.Err,
-			},
+			CommonOptions: &commonOpts,
 		},
 	}
 

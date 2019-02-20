@@ -18,7 +18,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -34,20 +33,14 @@ var (
 
 // ComplianceResultsOptions options for "compliance results" command
 type ComplianceResultsOptions struct {
-	CommonOptions
+	*CommonOptions
 }
 
 // NewCmdComplianceResults creates a command object for the "compliance results" action, which
 // shows the results of E2E compliance tests
-func NewCmdComplianceResults(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdComplianceResults(commonOpts *CommonOptions) *cobra.Command {
 	options := &ComplianceResultsOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-
-			Out: out,
-			Err: errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -68,7 +61,7 @@ func NewCmdComplianceResults(f Factory, in terminal.FileReader, out terminal.Fil
 
 // Run implements the "compliance results" command
 func (o *ComplianceResultsOptions) Run() error {
-	cc, err := o.CreateComplianceClient()
+	cc, err := o.ComplianceClient()
 	if err != nil {
 		return errors.Wrap(err, "could not create the compliance client")
 	}

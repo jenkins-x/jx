@@ -22,14 +22,18 @@ func TestStepStash(t *testing.T) {
 
 	testData := "test_data/step_collect/junit.xml"
 
-	o := &cmd.StepStashOptions{}
+	o := &cmd.StepStashOptions{
+		StepOptions: cmd.StepOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
+	}
 	o.StorageLocation.Classifier = "tests"
 	o.StorageLocation.BucketURL = "file://" + tempDir
 	o.ToPath = "output"
 	o.Pattern = []string{testData}
 	o.ProjectGitURL = "https://github.com/jenkins-x/dummy-repo.git"
 	o.ProjectBranch = "master"
-	cmd.ConfigureTestOptions(&o.CommonOptions, &gits.GitFake{}, helm_test.NewMockHelmer())
+	cmd.ConfigureTestOptions(o.CommonOptions, &gits.GitFake{}, helm_test.NewMockHelmer())
 
 	err = o.Run()
 	assert.NoError(t, err)

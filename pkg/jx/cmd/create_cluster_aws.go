@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -17,7 +16,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
@@ -74,9 +72,9 @@ var (
 )
 
 // NewCmdCreateClusterAWS creates the command
-func NewCmdCreateClusterAWS(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterAWS(commonOpts *CommonOptions) *cobra.Command {
 	options := CreateClusterAWSOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, cloud.AKS),
+		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.AKS),
 	}
 	cmd := &cobra.Command{
 		Use:     "aws",
@@ -92,7 +90,6 @@ func NewCmdCreateClusterAWS(f Factory, in terminal.FileReader, out terminal.File
 	}
 
 	options.addCreateClusterFlags(cmd)
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.Profile, "profile", "", "", "AWS profile to use.")
 	cmd.Flags().StringVarP(&options.Flags.Region, "region", "", "", "AWS region to use. Default: "+amazon.DefaultRegion)

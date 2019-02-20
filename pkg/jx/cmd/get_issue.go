@@ -1,14 +1,12 @@
 package cmd
 
 import (
-	"io"
 	"os/user"
 	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
@@ -40,16 +38,10 @@ var (
 )
 
 // NewCmdGetIssue creates the command
-func NewCmdGetIssue(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetIssue(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetIssueOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-
-				Out: out,
-				Err: errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

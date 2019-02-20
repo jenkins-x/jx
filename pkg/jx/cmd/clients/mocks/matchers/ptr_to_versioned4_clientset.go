@@ -2,9 +2,9 @@
 package matchers
 
 import (
+	"reflect"
 	"github.com/petergtz/pegomock"
 	versioned4 "k8s.io/metrics/pkg/client/clientset/versioned"
-	"reflect"
 )
 
 func AnyPtrToVersioned4Clientset() *versioned4.Clientset {

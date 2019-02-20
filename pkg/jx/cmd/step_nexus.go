@@ -1,10 +1,7 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"fmt"
 	"io/ioutil"
@@ -27,15 +24,10 @@ type StepNexusOptions struct {
 }
 
 // NewCmdStepNexus Steps a command object for the "step" command
-func NewCmdStepNexus(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepNexus(commonOpts *CommonOptions) *cobra.Command {
 	options := &StepNexusOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -49,8 +41,8 @@ func NewCmdStepNexus(f Factory, in terminal.FileReader, out terminal.FileWriter,
 			CheckErr(err)
 		},
 	}
-	cmd.AddCommand(NewCmdStepNexusDrop(f, in, out, errOut))
-	cmd.AddCommand(NewCmdStepNexusRelease(f, in, out, errOut))
+	cmd.AddCommand(NewCmdStepNexusDrop(commonOpts))
+	cmd.AddCommand(NewCmdStepNexusRelease(commonOpts))
 	return cmd
 }
 

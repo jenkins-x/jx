@@ -1451,7 +1451,7 @@ func (o *CommonOptions) updateJenkinsURL(namespaces []string) error {
 
 		log.Infof("Updating Jenkins with new external URL details %s\n", externalURL)
 
-		jenkins, err := o.CreateJenkinsClient(client, n, o.In, o.Out, o.Err)
+		jenkins, err := o.factory.CreateJenkinsClient(client, n, o.In, o.Out, o.Err)
 
 		if err != nil {
 			return err

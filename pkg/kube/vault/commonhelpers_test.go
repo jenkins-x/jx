@@ -6,7 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits/mocks"
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	cmdMocks "github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
+	cmdMocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
@@ -21,14 +21,15 @@ import (
 )
 
 func setupMocks(t *testing.T, term *terminal.Stdio) (*fake.Clientset, *kubevault.VaultClientFactory, kubernetes.Interface, error) {
-	options := cmd.NewCommonOptions("", cmdMocks.NewMockFactory())
+	commonOpts := cmd.NewCommonOptionsWithFactory(cmdMocks.NewMockFactory())
+	options := &commonOpts
 	if term != nil {
 		options.In, options.Out, options.Err = term.In, term.Out, term.Err
 	}
-	cmd.ConfigureTestOptions(&options, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
+	cmd.ConfigureTestOptions(options, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 	vaultOperatorClient := fake.NewSimpleClientset()
-	When(options.CreateVaultOperatorClient()).ThenReturn(vaultOperatorClient, nil)
-	f, err := kubevault.NewInteractiveVaultClientFactory(&options)
+	When(options.VaultOperatorClient()).ThenReturn(vaultOperatorClient, nil)
+	f, err := kubevault.NewInteractiveVaultClientFactory(options)
 	kubeClient, err := options.KubeClient()
 	assert.NoError(t, err)
 	return vaultOperatorClient, f, kubeClient, err

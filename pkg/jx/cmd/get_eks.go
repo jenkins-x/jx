@@ -2,19 +2,18 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
-	"io"
-	"os"
-	"os/exec"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 type GetEksOptions struct {
@@ -40,15 +39,10 @@ var (
 	`)
 )
 
-func NewCmdGetEks(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetEks(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetEksOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 	cmd := &cobra.Command{
@@ -63,7 +57,6 @@ func NewCmdGetEks(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging.")
 	cmd.Flags().StringVarP(&options.Profile, "profile", "", "", "AWS profile to use.")
 	cmd.Flags().StringVarP(&options.Region, "region", "", "", "AWS region to use. Default: "+amazon.DefaultRegion)
 

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -25,7 +24,6 @@ import (
 	pipelineapi "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -94,15 +92,10 @@ type StepCreateTaskResults struct {
 }
 
 // NewCmdStepCreateTask Creates a new Command object
-func NewCmdStepCreateTask(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepCreateTask(commonOpts *CommonOptions) *cobra.Command {
 	options := &StepCreateTaskOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -119,7 +112,6 @@ func NewCmdStepCreateTask(f Factory, in terminal.FileReader, out terminal.FileWr
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to query to find the projects .git directory")
 	cmd.Flags().StringVarP(&options.OutDir, "output", "o", "", "The directory to write the output to as YAML")

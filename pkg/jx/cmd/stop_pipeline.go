@@ -2,12 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"sort"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -40,15 +38,10 @@ var (
 )
 
 // NewCmdStopPipeline creates the command
-func NewCmdStopPipeline(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStopPipeline(commonOpts *CommonOptions) *cobra.Command {
 	options := &StopPipelineOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -65,7 +58,7 @@ func NewCmdStopPipeline(f Factory, in terminal.FileReader, out terminal.FileWrit
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().IntVarP(&options.Build, "build", "b", 0, "The build number to stop")
+	cmd.Flags().IntVarP(&options.Build, "build", "", 0, "The build number to stop")
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filters all the available jobs by those that contain the given text")
 
 	return cmd

@@ -25,10 +25,10 @@ func TestGetPipelinesWithProw(t *testing.T) {
 
 	// fake the output stream to be checked later
 	r, fakeStdout, _ := os.Pipe()
-	o.CommonOptions = cmd.CommonOptions{
-		Out: fakeStdout,
-		Err: os.Stderr,
-	}
+	commonOpts := cmd.NewCommonOptionsWithFactory(nil)
+	commonOpts.Out = fakeStdout
+	commonOpts.Err = os.Stderr
+	o.CommonOptions = &commonOpts
 
 	mockProwConfig(&o, t)
 	err := o.Run()
@@ -69,7 +69,7 @@ func mockProwConfig(o *cmd.GetPipelineOptions, t *testing.T) {
 		Data: data,
 	}
 
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{
 			cm,
 		},

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -10,7 +9,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/prow"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -18,7 +16,7 @@ import (
 
 // StartProtectionOptions contains the command line options
 type StartProtectionOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Tail   bool
 	Filter string
@@ -43,15 +41,9 @@ var (
 )
 
 // NewCmdStartProtection creates the command
-func NewCmdStartProtection(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStartProtection(commonOpts *CommonOptions) *cobra.Command {
 	options := &StartProtectionOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-
-			Out: out,
-			Err: errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{

@@ -18,7 +18,7 @@ import (
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	cmd_test "github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
+	cmd_test "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
 	vault_test "github.com/jenkins-x/jx/pkg/vault/mocks"
 	"github.com/petergtz/pegomock"
@@ -101,11 +101,10 @@ func (o *AppTestOptions) Cleanup() error {
 // CreateAppTestOptions configures the mock environment for running apps related tests
 func CreateAppTestOptions(gitOps bool, t *testing.T) *AppTestOptions {
 	mockFactory := cmd_test.NewMockFactory()
+	commonOpts := cmd.NewCommonOptionsWithFactory(mockFactory)
 	o := AppTestOptions{
-		CommonOptions: &cmd.CommonOptions{
-			Factory: mockFactory,
-		},
-		MockFactory: mockFactory,
+		CommonOptions: &commonOpts,
+		MockFactory:   mockFactory,
 	}
 	testOrgName := uuid.NewV4().String()
 	testRepoName := uuid.NewV4().String()

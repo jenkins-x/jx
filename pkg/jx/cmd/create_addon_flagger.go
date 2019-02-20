@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/log"
-	"io"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
@@ -12,7 +12,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -43,16 +42,11 @@ type CreateAddonFlaggerOptions struct {
 	ProductionEnvironment string
 }
 
-func NewCmdCreateAddonFlagger(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonFlagger(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateAddonFlaggerOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -68,7 +62,6 @@ func NewCmdCreateAddonFlagger(f Factory, in terminal.FileReader, out terminal.Fi
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	options.addFlags(cmd, defaultFlaggerNamespace, defaultFlaggerReleaseName, defaultFlaggerVersion)
 
 	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", kube.ChartFlagger, "The name of the chart to use")

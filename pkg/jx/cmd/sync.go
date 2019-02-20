@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -11,7 +10,6 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -22,7 +20,7 @@ import (
 )
 
 type SyncOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Daemon      bool
 	NoKsyncInit bool
@@ -63,14 +61,9 @@ node_modules
 `
 )
 
-func NewCmdSync(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdSync(commonOpts *CommonOptions) *cobra.Command {
 	options := &SyncOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "sync",

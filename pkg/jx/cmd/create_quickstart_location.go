@@ -1,13 +1,10 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -53,16 +50,10 @@ type CreateQuickstartLocationOptions struct {
 }
 
 // NewCmdCreateQuickstartLocation creates a command object for the "create" command
-func NewCmdCreateQuickstartLocation(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateQuickstartLocation(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateQuickstartLocationOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-
-				Out: out,
-				Err: errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -86,7 +77,6 @@ func NewCmdCreateQuickstartLocation(f Factory, in terminal.FileReader, out termi
 	cmd.Flags().StringArrayVarP(&options.Includes, "includes", "i", []string{"*"}, "The patterns to include repositories")
 	cmd.Flags().StringArrayVarP(&options.Excludes, "excludes", "x", []string{"WIP-*"}, "The patterns to exclude repositories")
 
-	options.addCommonFlags(cmd)
 	return cmd
 }
 

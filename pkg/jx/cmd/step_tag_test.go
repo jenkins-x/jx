@@ -35,7 +35,11 @@ func TestStepTagCharts(t *testing.T) {
 	chartFile := filepath.Join(chartsDir, "Chart.yaml")
 	valuesFile := filepath.Join(chartsDir, "values.yaml")
 
-	o := cmd.StepTagOptions{}
+	o := cmd.StepTagOptions{
+		StepOptions: cmd.StepOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
+	}
 	//o.Out = tests.Output()
 	o.Flags.ChartsDir = chartsDir
 	o.Flags.Version = expectedVersion

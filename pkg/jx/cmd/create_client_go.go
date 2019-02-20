@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"go/build"
-	"io"
 	"os"
 	"path/filepath"
 
@@ -16,7 +15,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClientGoOptions the options for the create client go command
@@ -52,17 +50,11 @@ var (
 )
 
 // NewCmdCreateClientGo creates the command
-func NewCmdCreateClientGo(f Factory, in terminal.FileReader, out terminal.FileWriter,
-	errOut io.Writer) *cobra.Command {
+func NewCmdCreateClientGo(commonOpts *CommonOptions) *cobra.Command {
 	o := &CreateClientGoOptions{
 		CreateClientOptions: CreateClientOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -104,7 +96,6 @@ func NewCmdCreateClientGo(f Factory, in terminal.FileReader, out terminal.FileWr
 	cmd.Flags().StringVarP(&o.OutputPackage, optionOutputPackage, "o", "", "Output package, must specify")
 	cmd.Flags().StringVarP(&o.ClientGenVersion, "client-generator-version", "", "kubernetes-1.11.3",
 		"Version (really a commit-ish) of github.com/kubernetes/code-generator")
-	cmd.Flags().BoolVarP(&o.Verbose, optionVerbose, "v", false, "Enables verbose logging")
 	cmd.Flags().StringVarP(&o.InputBase, optionInputBase, "", wd, "Input base, defaults working directory")
 
 	return cmd

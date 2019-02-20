@@ -2,13 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -50,15 +48,10 @@ type EditConfigOptions struct {
 }
 
 // NewCmdEditConfig creates a command object for the "create" command
-func NewCmdEditConfig(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdEditConfig(commonOpts *CommonOptions) *cobra.Command {
 	options := &EditConfigOptions{
 		EditOptions: EditOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

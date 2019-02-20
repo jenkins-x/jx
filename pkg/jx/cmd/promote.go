@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -28,7 +27,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -47,7 +45,7 @@ var (
 
 // PromoteOptions containers the CLI options
 type PromoteOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Namespace               string
 	Environment             string
@@ -120,14 +118,9 @@ var (
 )
 
 // NewCmdPromote creates the new command for: jx get prompt
-func NewCmdPromote(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdPromote(commonOpts *CommonOptions) *cobra.Command {
 	options := &PromoteOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "promote [application]",
@@ -141,8 +134,6 @@ func NewCmdPromote(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 			CheckErr(err)
 		},
 	}
-
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The Namespace to promote to")
 	cmd.Flags().StringVarP(&options.Environment, optionEnvironment, "e", "", "The Environment to promote to")

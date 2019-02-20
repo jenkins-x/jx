@@ -2,6 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -13,13 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 )
 
 const (
@@ -70,17 +69,12 @@ var (
 `)
 )
 
-func NewCmdStepBDD(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepBDD(commonOpts *CommonOptions) *cobra.Command {
 	options := StepBDDOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
-		InstallOptions: CreateInstallOptions(f, in, out, errOut),
+		InstallOptions: CreateInstallOptions(commonOpts),
 	}
 	cmd := &cobra.Command{
 		Use:     "bdd",
@@ -97,7 +91,6 @@ func NewCmdStepBDD(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 	installOptions := &options.InstallOptions
 	installOptions.addInstallFlags(cmd, true)
 
-	options.addCommonFlags(cmd)
 	cmd.Flags().StringVarP(&options.Flags.ConfigFile, "config", "c", "", "the config YAML file containing the clusters to create")
 	cmd.Flags().StringVarP(&options.Flags.GoPath, "gopath", "", "", "the GOPATH directory where the BDD test git repository will be cloned")
 	cmd.Flags().StringVarP(&options.Flags.GitProvider, "git-provider", "g", "", "the git provider kind")
@@ -308,7 +301,7 @@ func (o *StepBDDOptions) deleteTeam(team string) error {
 
 }
 
-func (o *StepBDDOptions) createDefaultCommonOptions() CommonOptions {
+func (o *StepBDDOptions) createDefaultCommonOptions() *CommonOptions {
 	defaultOptions := o.CommonOptions
 	defaultOptions.BatchMode = true
 	defaultOptions.Headless = true

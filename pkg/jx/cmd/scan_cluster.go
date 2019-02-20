@@ -12,7 +12,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"gopkg.in/yaml.v2"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/api/core/v1"
@@ -61,16 +60,10 @@ type scanResult struct {
 }
 
 // NewCmdScanCluster creates a command object for "scan cluster" command
-func NewCmdScanCluster(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdScanCluster(commonOpts *CommonOptions) *cobra.Command {
 	options := &ScanClusterOptions{
 		ScanOptions: ScanOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-
-				Out: out,
-				Err: errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

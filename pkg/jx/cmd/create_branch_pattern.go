@@ -2,12 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -37,16 +35,10 @@ type CreateBranchPatternOptions struct {
 }
 
 // NewCmdCreateBranchPattern creates a command object for the "create" command
-func NewCmdCreateBranchPattern(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateBranchPattern(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateBranchPatternOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-
-				Out: out,
-				Err: errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -64,7 +56,6 @@ func NewCmdCreateBranchPattern(f Factory, in terminal.FileReader, out terminal.F
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	return cmd
 }
 

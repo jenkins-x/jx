@@ -43,7 +43,7 @@ func TestStepBuildPackApply(t *testing.T) {
 
 	o := &cmd.StepBuildPackApplyOptions{
 		StepOptions: cmd.StepOptions{
-			CommonOptions: cmd.CommonOptions{
+			CommonOptions: &cmd.CommonOptions{
 				In:  os.Stdin,
 				Out: os.Stdout,
 				Err: os.Stderr,
@@ -52,7 +52,7 @@ func TestStepBuildPackApply(t *testing.T) {
 		Dir: tempDir,
 	}
 
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{
 			testkube.CreateFakeGitSecret(),
 		},

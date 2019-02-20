@@ -1,4 +1,4 @@
-package cmd
+package clients
 
 import (
 	"flag"
@@ -49,15 +49,6 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const (
-	AddonAuthConfigFile       = "addonAuth.yaml"
-	JenkinsAuthConfigFile     = "jenkinsAuth.yaml"
-	IssuesAuthConfigFile      = "issuesAuth.yaml"
-	ChatAuthConfigFile        = "chatAuth.yaml"
-	GitAuthConfigFile         = "gitAuth.yaml"
-	ChartmuseumAuthConfigFile = "chartmuseumAuth.yaml"
 )
 
 type factory struct {
@@ -145,7 +136,7 @@ func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (str
 }
 
 func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns string) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(JenkinsAuthConfigFile)
+	authConfigSvc, err := f.CreateAuthConfigService(auth.JenkinsAuthConfigFile)
 
 	if err != nil {
 		return authConfigSvc, err
@@ -199,7 +190,7 @@ func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns stri
 }
 
 func (f *factory) CreateChartmuseumAuthConfigService() (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(ChartmuseumAuthConfigFile)
+	authConfigSvc, err := f.CreateAuthConfigService(auth.ChartmuseumAuthConfigFile)
 	if err != nil {
 		return authConfigSvc, err
 	}
@@ -211,7 +202,7 @@ func (f *factory) CreateChartmuseumAuthConfigService() (auth.ConfigService, erro
 }
 
 func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(IssuesAuthConfigFile)
+	authConfigSvc, err := f.CreateAuthConfigService(auth.IssuesAuthConfigFile)
 	if err != nil {
 		return authConfigSvc, err
 	}
@@ -226,7 +217,7 @@ func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList
 }
 
 func (f *factory) CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(ChatAuthConfigFile)
+	authConfigSvc, err := f.CreateAuthConfigService(auth.ChatAuthConfigFile)
 	if err != nil {
 		return authConfigSvc, err
 	}
@@ -241,7 +232,7 @@ func (f *factory) CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.
 }
 
 func (f *factory) CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(AddonAuthConfigFile)
+	authConfigSvc, err := f.CreateAuthConfigService(auth.AddonAuthConfigFile)
 	if err != nil {
 		return authConfigSvc, err
 	}

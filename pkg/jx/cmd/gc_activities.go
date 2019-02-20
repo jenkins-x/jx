@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"sort"
 	"strconv"
 	"strings"
@@ -10,7 +9,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/jenkins-x/golang-jenkins"
@@ -21,7 +19,7 @@ import (
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
 // referencing the cmd.Flags()
 type GCActivitiesOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	RevisionHistoryLimit int
 	PullRequestHours     int
@@ -41,14 +39,9 @@ var (
 )
 
 // NewCmd s a command object for the "step" command
-func NewCmdGCActivities(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGCActivities(commonOpts *CommonOptions) *cobra.Command {
 	options := &GCActivitiesOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -65,7 +58,6 @@ func NewCmdGCActivities(f Factory, in terminal.FileReader, out terminal.FileWrit
 	}
 	cmd.Flags().IntVarP(&options.RevisionHistoryLimit, "revision-history-limit", "l", 5, "Minimum number of Activities per application to keep")
 	cmd.Flags().IntVarP(&options.PullRequestHours, "pull-request-hours", "p", 48, "Number of hours to keep pull request activities for")
-	options.addCommonFlags(cmd)
 	return cmd
 }
 

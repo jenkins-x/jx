@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	jenkinsv1client "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
@@ -20,7 +19,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // StepPreBuildOptions contains the command line flags
@@ -40,15 +38,10 @@ var (
 
 const extensionsConfigDefaultFile = "jenkins-x-extensions.yaml"
 
-func NewCmdStepPreExtend(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepPreExtend(commonOpts *CommonOptions) *cobra.Command {
 	options := StepPreExtendOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 	cmd := &cobra.Command{

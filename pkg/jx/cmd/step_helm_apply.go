@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -17,7 +16,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/vault"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // StepHelmApplyOptions contains the command line flags
@@ -48,16 +46,11 @@ var (
 	defaultValueFileNames = []string{"values.yaml", "myvalues.yaml", helm.SecretsFileName}
 )
 
-func NewCmdStepHelmApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepHelmApply(commonOpts *CommonOptions) *cobra.Command {
 	options := StepHelmApplyOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -151,7 +144,7 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	o.Helm().SetCWD(dir)
 
-	if (o.SecretsLocation() == secrets.VaultLocationKind) || o.Vault {
+	if (o.GetSecretsLocation() == secrets.VaultLocationKind) || o.Vault {
 		store := configio.NewFileStore()
 		secretsFiles, err := o.fetchSecretFilesFromVault(dir, store)
 		if err != nil {
@@ -207,7 +200,7 @@ func (o *StepHelmApplyOptions) Run() error {
 func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store configio.ConfigStore) ([]string, error) {
 	log.Infof("Fetching secrets from vault into directory %q\n", dir)
 	files := []string{}
-	client, err := o.CreateSystemVaultClient("")
+	client, err := o.SystemVaultClient("")
 	if err != nil {
 		return files, errors.Wrap(err, "retrieving the system Vault")
 	}

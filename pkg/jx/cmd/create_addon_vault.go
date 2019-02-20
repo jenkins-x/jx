@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -12,7 +11,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -40,17 +38,11 @@ type CreateAddonVaultOptions struct {
 }
 
 // NewCmdCreateAddonVault creates a command object for the "create addon vault-opeator" command
-func NewCmdCreateAddonVault(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	commonOptions := CommonOptions{
-		Factory: f,
-		In:      in,
-		Out:     out,
-		Err:     errOut,
-	}
+func NewCmdCreateAddonVault(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateAddonVaultOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: commonOptions,
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -68,14 +60,13 @@ func NewCmdCreateAddonVault(f Factory, in terminal.FileReader, out terminal.File
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	options.addFlags(cmd, defaultVaultNamesapce, kube.DefaultVaultOperatorReleaseName, defaultVaultOperatorVersion)
 	return cmd
 }
 
 // Run implements the command
 func (o *CreateAddonVaultOptions) Run() error {
-	return InstallVaultOperator(&o.CommonOptions, o.Namespace)
+	return InstallVaultOperator(o.CommonOptions, o.Namespace)
 }
 
 // InstallVaultOperator installs a vault operator in the namespace provided

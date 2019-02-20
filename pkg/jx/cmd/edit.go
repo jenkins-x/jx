@@ -1,17 +1,14 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 // EditOptions contains the CLI options
 type EditOptions struct {
-	CommonOptions
+	*CommonOptions
 }
 
 var (
@@ -27,14 +24,9 @@ var (
 )
 
 // NewCmdEdit creates the edit command
-func NewCmdEdit(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdEdit(commonOpts *CommonOptions) *cobra.Command {
 	options := &EditOptions{
-		CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -51,16 +43,19 @@ func NewCmdEdit(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 		SuggestFor: []string{"modify"},
 	}
 
-	cmd.AddCommand(NewCmdCreateBranchPattern(f, in, out, errOut))
-	cmd.AddCommand(NewCmdEditAddon(f, in, out, errOut))
-	cmd.AddCommand(NewCmdEditBuildpack(f, in, out, errOut))
-	cmd.AddCommand(NewCmdEditConfig(f, in, out, errOut))
-	cmd.AddCommand(NewCmdEditEnv(f, in, out, errOut))
-	cmd.AddCommand(NewCmdEditHelmBin(f, in, out, errOut))
-	cmd.AddCommand(NewCmdEditStorage(f, in, out, errOut))
-	cmd.AddCommand(NewCmdEditUserRole(f, in, out, errOut))
-	cmd.AddCommand(NewCmdEditExtensionsRepository(f, in, out, errOut))
-	addTeamSettingsCommandsFromTags(cmd, in, out, errOut, options)
+	cmd.AddCommand(NewCmdCreateBranchPattern(commonOpts))
+	cmd.AddCommand(NewCmdEditAddon(commonOpts))
+	cmd.AddCommand(NewCmdEditBuildpack(commonOpts))
+	cmd.AddCommand(NewCmdEditConfig(commonOpts))
+	cmd.AddCommand(NewCmdEditEnv(commonOpts))
+	cmd.AddCommand(NewCmdEditHelmBin(commonOpts))
+	cmd.AddCommand(NewCmdEditStorage(commonOpts))
+	cmd.AddCommand(NewCmdEditUserRole(commonOpts))
+	cmd.AddCommand(NewCmdEditExtensionsRepository(commonOpts))
+
+	err := addTeamSettingsCommandsFromTags(cmd, options)
+	CheckErr(err)
+
 	return cmd
 }
 

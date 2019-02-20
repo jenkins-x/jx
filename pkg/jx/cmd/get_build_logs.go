@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"sort"
 	"strings"
@@ -18,7 +17,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -66,16 +64,10 @@ var (
 )
 
 // NewCmdGetBuildLogs creates the command
-func NewCmdGetBuildLogs(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetBuildLogs(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetBuildLogsOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-
-				Out: out,
-				Err: errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -100,7 +92,7 @@ func NewCmdGetBuildLogs(f Factory, in terminal.FileReader, out terminal.FileWrit
 	cmd.Flags().StringVarP(&options.BuildFilter.Owner, "owner", "o", "", "Filters the owner (person/organisation) of the repository")
 	cmd.Flags().StringVarP(&options.BuildFilter.Repository, "repo", "r", "", "Filters the build repository")
 	cmd.Flags().StringVarP(&options.BuildFilter.Branch, "branch", "", "", "Filters the branch")
-	cmd.Flags().StringVarP(&options.BuildFilter.Build, "build", "b", "", "The build number to view")
+	cmd.Flags().StringVarP(&options.BuildFilter.Build, "build", "", "", "The build number to view")
 	cmd.Flags().BoolVarP(&options.CurrentFolder, "current", "c", false, "Display logs using current folder as repo name, and parent folder as owner")
 
 	return cmd

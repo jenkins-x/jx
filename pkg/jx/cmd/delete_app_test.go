@@ -26,8 +26,10 @@ func TestDeleteAppForGitOps(t *testing.T) {
 	name, alias, _, err := testOptions.AddApp()
 	assert.NoError(t, err)
 
+	commonOpts := *testOptions.CommonOptions
+
 	o := &cmd.DeleteAppOptions{
-		CommonOptions:        *testOptions.CommonOptions,
+		CommonOptions:        &commonOpts,
 		GitOps:               true,
 		DevEnv:               testOptions.DevEnv,
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
@@ -70,8 +72,9 @@ func TestDeleteApp(t *testing.T) {
 	name, _, _, err := testOptions.AddApp()
 	assert.NoError(t, err)
 
+	commonOpts := *testOptions.CommonOptions
 	o := &cmd.DeleteAppOptions{
-		CommonOptions:        *testOptions.CommonOptions,
+		CommonOptions:        &commonOpts,
 		GitOps:               true,
 		DevEnv:               testOptions.DevEnv,
 		ConfigureGitCallback: testOptions.ConfigureGitFn,

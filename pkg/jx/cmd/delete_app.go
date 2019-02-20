@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/jenkins-x/jx/pkg/apps"
 
 	"github.com/jenkins-x/jx/pkg/environments"
@@ -14,7 +12,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -38,7 +35,7 @@ const (
 
 // DeleteAppOptions are the flags for this delete commands
 type DeleteAppOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	GitOps bool
 	DevEnv *jenkinsv1.Environment
@@ -53,14 +50,9 @@ type DeleteAppOptions struct {
 }
 
 // NewCmdDeleteApp creates a command object for this command
-func NewCmdDeleteApp(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteApp(commonOpts *CommonOptions) *cobra.Command {
 	o := &DeleteAppOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{

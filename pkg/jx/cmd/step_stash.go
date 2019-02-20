@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,7 +18,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // StepStashOptions contains the command line flags
@@ -74,15 +72,10 @@ var (
 )
 
 // NewCmdStepStash creates the CLI command
-func NewCmdStepStash(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepStash(commonOpts *CommonOptions) *cobra.Command {
 	options := StepStashOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 	cmd := &cobra.Command{
@@ -99,7 +92,6 @@ func NewCmdStepStash(f Factory, in terminal.FileReader, out terminal.FileWriter,
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	addStorageLocationFlags(cmd, &options.StorageLocation)
 
 	cmd.Flags().StringArrayVarP(&options.Pattern, "pattern", "p", nil, "Specify the pattern to use to look for files")

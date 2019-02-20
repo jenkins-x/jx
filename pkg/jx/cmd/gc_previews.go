@@ -2,10 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"strconv"
@@ -21,7 +19,7 @@ import (
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
 // referencing the cmd.Flags()
 type GCPreviewsOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	DisableImport bool
 	OutDir        string
@@ -41,14 +39,9 @@ var (
 )
 
 // NewCmd s a command object for the "step" command
-func NewCmdGCPreviews(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGCPreviews(commonOpts *CommonOptions) *cobra.Command {
 	options := &GCPreviewsOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -63,7 +56,6 @@ func NewCmdGCPreviews(f Factory, in terminal.FileReader, out terminal.FileWriter
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
 	return cmd
 }
 
@@ -106,7 +98,7 @@ func (o *GCPreviewsOptions) Run() error {
 				return err
 			}
 
-			gitProvider, err := gitInfo.CreateProvider(o.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+			gitProvider, err := gitInfo.CreateProvider(o.InCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}

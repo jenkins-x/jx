@@ -2,27 +2,20 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/kube"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 type DiagnoseOptions struct {
-	CommonOptions
+	*CommonOptions
 	Namespace string
 }
 
-func NewCmdDiagnose(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDiagnose(commonOpts *CommonOptions) *cobra.Command {
 	options := &DiagnoseOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:   "diagnose",
@@ -35,7 +28,6 @@ func NewCmdDiagnose(f Factory, in terminal.FileReader, out terminal.FileWriter, 
 		},
 	}
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to display the kube resources from. If left out, defaults to the current namespace")
-	options.addCommonFlags(cmd)
 	return cmd
 }
 

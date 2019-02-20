@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io"
 	"os"
 	"path/filepath"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClientDocsOptions the options for the create client docs command
@@ -47,17 +45,11 @@ var (
 const ()
 
 // NewCmdCreateClientDocs creates apidocs for CRDs
-func NewCmdCreateClientDocs(f Factory, in terminal.FileReader, out terminal.FileWriter,
-	errOut io.Writer) *cobra.Command {
+func NewCmdCreateClientDocs(commonOpts *CommonOptions) *cobra.Command {
 	o := &CreateClientDocsOptions{
 		CreateClientOptions: CreateClientOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -86,7 +78,6 @@ func NewCmdCreateClientDocs(f Factory, in terminal.FileReader, out terminal.File
 			"by default the <current working directory>/docs/apidocs")
 	cmd.Flags().StringVarP(&o.BoilerplateFile, "boilerplate-file", "", "custom-boilerplate.go.txt",
 		"Custom boilerplate to add to all files if the file is missing it will be ignored")
-	cmd.Flags().BoolVarP(&o.Verbose, optionVerbose, "v", false, "Enables verbose logging")
 	cmd.Flags().StringVarP(&o.ReferenceDocsVersion, "reference-docs-version", "",
 		"096940c697f8b79873e2cfd2c1c4da1f6df76c40", "Version (really a commit-ish) of https://github.com/kubernetes-incubator/reference-docs")
 	return cmd

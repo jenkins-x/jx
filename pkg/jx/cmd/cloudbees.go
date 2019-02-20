@@ -2,12 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -16,7 +14,7 @@ import (
 )
 
 type CloudBeesOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	OnlyViewURL bool
 }
@@ -37,14 +35,9 @@ var (
 		jx console -u`)
 )
 
-func NewCmdCloudBees(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCloudBees(commonOpts *CommonOptions) *cobra.Command {
 	options := &CloudBeesOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "cloudbees",
@@ -59,7 +52,7 @@ func NewCmdCloudBees(f Factory, in terminal.FileReader, out terminal.FileWriter,
 			CheckErr(err)
 		},
 	}
-	cmd.AddCommand(NewCmdCloudBeesPipeline(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCloudBeesPipeline(commonOpts))
 	cmd.Flags().BoolVarP(&options.OnlyViewURL, "url", "u", false, "Only displays and the URL and does not open the browser")
 	return cmd
 }

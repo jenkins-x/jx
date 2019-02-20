@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"regexp"
 	"strconv"
@@ -10,7 +9,6 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -21,7 +19,7 @@ const DefaultPrefix = "JX_PR_LABELS"
 
 // StepPRLabelsOptions holds the options for the cmd
 type StepPRLabelsOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Dir         string
 	Prefix      string
@@ -51,15 +49,9 @@ var (
 )
 
 // NewCmdStepPRLabels creates the new cmd
-func NewCmdStepPRLabels(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepPRLabels(commonOpts *CommonOptions) *cobra.Command {
 	options := &StepPRLabelsOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-
-			Out: out,
-			Err: errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "labels",
@@ -73,7 +65,6 @@ func NewCmdStepPRLabels(f Factory, in terminal.FileReader, out terminal.FileWrit
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
 	cmd.Flags().StringVarP(&options.PullRequest, "pr", "", "", "Git Pull Request number")
 	cmd.Flags().StringVarP(&options.Prefix, "prefix", "p", "", "Environment variable prefix")
 	return cmd

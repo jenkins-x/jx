@@ -55,9 +55,10 @@ func TestAddAppForGitOps(t *testing.T) {
 	name := uuid.NewV4().String()
 	version := "0.0.1"
 	alias := fmt.Sprintf("%s-alias", name)
+	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
 		AddOptions: cmd.AddOptions{
-			CommonOptions: *testOptions.CommonOptions,
+			CommonOptions: &commonOpts,
 		},
 		Version:              version,
 		Alias:                alias,
@@ -115,9 +116,10 @@ func TestAddAppWithSecrets(t *testing.T) {
 
 	name := uuid.NewV4().String()
 	version := "0.0.1"
+	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
 		AddOptions: cmd.AddOptions{
-			CommonOptions: *testOptions.CommonOptions,
+			CommonOptions: &commonOpts,
 		},
 		Version:              version,
 		Repo:                 "http://chartmuseum.jenkins-x.io",
@@ -259,9 +261,10 @@ func TestAddAppWithDefaults(t *testing.T) {
 
 	name := uuid.NewV4().String()
 	version := "0.0.1"
+	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
 		AddOptions: cmd.AddOptions{
-			CommonOptions: *testOptions.CommonOptions,
+			CommonOptions: &commonOpts,
 		},
 		Version:              version,
 		Repo:                 "http://chartmuseum.jenkins-x.io",
@@ -386,9 +389,10 @@ func TestStashValues(t *testing.T) {
 
 	name := uuid.NewV4().String()
 	version := "0.0.1"
+	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
 		AddOptions: cmd.AddOptions{
-			CommonOptions: *testOptions.CommonOptions,
+			CommonOptions: &commonOpts,
 		},
 		Version:              version,
 		Repo:                 "http://chartmuseum.jenkins-x.io",
@@ -464,9 +468,10 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 	name := uuid.NewV4().String()
 	version := "0.0.1"
 	alias := fmt.Sprintf("%s-alias", name)
+	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
 		AddOptions: cmd.AddOptions{
-			CommonOptions: *testOptions.CommonOptions,
+			CommonOptions: &commonOpts,
 		},
 		Version:              version,
 		Alias:                alias,
@@ -553,9 +558,10 @@ func TestAddApp(t *testing.T) {
 
 	name := uuid.NewV4().String()
 	version := "0.0.1"
+	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
 		AddOptions: cmd.AddOptions{
-			CommonOptions: *testOptions.CommonOptions,
+			CommonOptions: &commonOpts,
 		},
 		Version:              version,
 		Repo:                 kube.DefaultChartMuseumURL,
@@ -608,9 +614,10 @@ func TestAddLatestApp(t *testing.T) {
 
 	name := uuid.NewV4().String()
 	version := "0.1.1"
+	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
 		AddOptions: cmd.AddOptions{
-			CommonOptions: *testOptions.CommonOptions,
+			CommonOptions: &commonOpts,
 		},
 		Repo:                 kube.DefaultChartMuseumURL,
 		GitOps:               false,
@@ -674,9 +681,10 @@ func TestAddAppWithValuesFileForGitOps(t *testing.T) {
 	name := uuid.NewV4().String()
 	version := "0.0.1"
 	alias := fmt.Sprintf("%s-alias", name)
+	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
 		AddOptions: cmd.AddOptions{
-			CommonOptions: *testOptions.CommonOptions,
+			CommonOptions: &commonOpts,
 		},
 		Version:              version,
 		Alias:                alias,
@@ -729,9 +737,10 @@ func TestAddAppWithReadmeForGitOps(t *testing.T) {
 	}
 	data, err := yaml.Marshal(release)
 	assert.NoError(t, err)
+	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
 		AddOptions: cmd.AddOptions{
-			CommonOptions: *testOptions.CommonOptions,
+			CommonOptions: &commonOpts,
 		},
 		Version:              version,
 		Alias:                alias,
@@ -798,9 +807,10 @@ func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
 	name := uuid.NewV4().String()
 	version := "0.0.1"
 	alias := fmt.Sprintf("%s-alias", name)
+	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
 		AddOptions: cmd.AddOptions{
-			CommonOptions: *testOptions.CommonOptions,
+			CommonOptions: &commonOpts,
 		},
 		Version:              version,
 		Alias:                alias,
@@ -860,9 +870,10 @@ func TestAddLatestAppForGitOps(t *testing.T) {
 	name := uuid.NewV4().String()
 	version := "0.1.8"
 	alias := fmt.Sprintf("%s-alias", name)
+	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
 		AddOptions: cmd.AddOptions{
-			CommonOptions: *testOptions.CommonOptions,
+			CommonOptions: &commonOpts,
 		},
 		Alias:                alias,
 		Repo:                 kube.DefaultChartMuseumURL,

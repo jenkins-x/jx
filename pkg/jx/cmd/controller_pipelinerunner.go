@@ -3,19 +3,18 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	pipelineapi "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -27,7 +26,7 @@ const (
 
 // ControllerPipelineRunnerOptions holds the command line arguments
 type ControllerPipelineRunnerOptions struct {
-	CommonOptions
+	*CommonOptions
 	BindAddress string
 	Path        string
 	Port        int
@@ -69,14 +68,9 @@ var (
 )
 
 // NewCmdControllerPipelineRunner creates the command
-func NewCmdControllerPipelineRunner(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdControllerPipelineRunner(commonOpts *CommonOptions) *cobra.Command {
 	options := ControllerPipelineRunnerOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "pipelinerunner",
@@ -90,7 +84,6 @@ func NewCmdControllerPipelineRunner(f Factory, in terminal.FileReader, out termi
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().IntVarP(&options.Port, optionPort, "", 8080, "The TCP port to listen on.")
 	cmd.Flags().StringVarP(&options.BindAddress, optionBind, "", "",

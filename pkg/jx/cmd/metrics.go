@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"time"
 
@@ -11,11 +10,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 type MetricsOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Namespace string
 	Filter    string
@@ -39,14 +37,9 @@ var (
 `)
 )
 
-func NewCmdMetrics(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdMetrics(commonOpts *CommonOptions) *cobra.Command {
 	options := &MetricsOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "metrics [deployment]",
