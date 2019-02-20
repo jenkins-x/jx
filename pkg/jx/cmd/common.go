@@ -168,11 +168,11 @@ func (options *CommonOptions) addCommonFlags(cmd *cobra.Command) {
 	}
 	cmd.PersistentFlags().BoolVarP(&options.BatchMode, optionBatchMode, "b", defaultBatchMode, "Runs in batch mode without prompting for user input")
 	cmd.PersistentFlags().BoolVarP(&options.Verbose, optionVerbose, "", false, "Enables verbose output")
-	cmd.PersistentFlags().StringVarP(&options.LogLevel, optionLogLevel, "", logrus.InfoLevel.String(), "Sets logging level (panic, fatal, error, warning, info, debug)")
-	cmd.PersistentFlags().BoolVarP(&options.Headless, optionHeadless, "", false, "Runs headless mode when using browser automation")
-	cmd.PersistentFlags().BoolVarP(&options.NoBrew, optionNoBrew, "", false, "Disables brew package manger on MacOS when installing binary dependencies")
+	cmd.PersistentFlags().StringVarP(&options.LogLevel, optionLogLevel, "", logrus.InfoLevel.String(), "Sets the logging level (panic, fatal, error, warning, info, debug)")
+	cmd.PersistentFlags().BoolVarP(&options.Headless, optionHeadless, "", false, "Runs in headless mode when using browser automation")
+	cmd.PersistentFlags().BoolVarP(&options.NoBrew, optionNoBrew, "", false, "Disables brew package manager on MacOS when installing binary dependencies")
 	cmd.PersistentFlags().BoolVarP(&options.InstallDependencies, optionInstallDeps, "", false, "Enables automatic dependencies installation when required")
-	cmd.PersistentFlags().BoolVarP(&options.SkipAuthSecretsMerge, optionSkipAuthSecMerge, "", false, "Skips merging secrets from local files with secrets from Kubernetes cluster")
+	cmd.PersistentFlags().BoolVarP(&options.SkipAuthSecretsMerge, optionSkipAuthSecMerge, "", false, "Skips merging the secrets from local files with the secrets from Kubernetes cluster")
 
 	options.Cmd = cmd
 }
