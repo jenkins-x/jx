@@ -60,6 +60,7 @@ func NewCmdGet(commonOpts *CommonOptions) *cobra.Command {
 
 	cmd.AddCommand(NewCmdGetActivity(commonOpts))
 	cmd.AddCommand(NewCmdGetAddon(commonOpts))
+	cmd.AddCommand(NewCmdGetApps(commonOpts))
 	cmd.AddCommand(NewCmdGetApplications(commonOpts))
 	cmd.AddCommand(NewCmdGetAWSInfo(commonOpts))
 	cmd.AddCommand(NewCmdGetBranchPattern(commonOpts))

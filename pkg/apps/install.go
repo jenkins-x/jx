@@ -102,6 +102,24 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 	return helm.InspectChart(app, version, repository, username, password, o.Helmer, installAppFunc)
 }
 
+//GetApps gets a list of installed apps
+func (o *InstallOptions) GetApps(kubeClient kubernetes.Interface, namespace string, appNames []string) (apps *jenkinsv1.AppList, err error) {
+	client := o.JxClient
+	if err != nil {
+		return nil, errors.Wrap(err, "getting jx client")
+	}
+	listOptions := v1.ListOptions{}
+	if len(appNames) > 0 {
+		selector := fmt.Sprintf(helm.LabelAppName+" in (%s)", strings.Join(appNames[:], ", "))
+		listOptions.LabelSelector = selector
+	}
+	apps, err = client.JenkinsV1().Apps(namespace).List(listOptions)
+	if err != nil {
+		return nil, errors.Wrap(err, "listing apps")
+	}
+	return apps, nil
+}
+
 //DeleteApp deletes the app. An alias and releaseName can be specified. GitOps or HelmOps will be automatically chosen based on the o.GitOps flag
 func (o *InstallOptions) DeleteApp(app string, alias string, releaseName string, purge bool) error {
 	o.valuesFiles = &environments.ValuesFiles{

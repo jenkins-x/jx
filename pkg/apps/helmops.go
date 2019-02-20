@@ -43,7 +43,7 @@ func (o *HelmOpsOptions) AddApp(app string, chart string, version string, values
 	// Attach the current values.yaml
 	appCRDName := fmt.Sprintf("%s-%s", app, app)
 
-	err = StashValues(values, appCRDName, o.JxClient, o.Namespace)
+	err = StashValues(values, appCRDName, o.JxClient, o.Namespace, chart, repository)
 	if err != nil {
 		return errors.Wrapf(err, "attaching values.yaml to %s", appCRDName)
 	}
