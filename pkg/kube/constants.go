@@ -280,8 +280,8 @@ const (
 
 var (
 	AddonCharts = map[string]string{
-		"ambassador":                           ChartAmbassador,
-		"anchore":                              ChartAnchore,
+		"ambassador":                    ChartAmbassador,
+		"anchore":                       ChartAnchore,
 		"cb":                            ChartCloudBees,
 		DefaultFlaggerReleaseName:       ChartFlagger,
 		"gitea":                         ChartGitea,
