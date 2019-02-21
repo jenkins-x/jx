@@ -482,7 +482,7 @@ func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tek
 	buildMap := map[string]builds.BaseBuildInfo{}
 	pipelineMap := map[string]builds.BaseBuildInfo{}
 
-	prList, err := tektonClient.PipelineV1alpha1().PipelineRuns(ns).List(metav1.ListOptions{})
+	prList, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).List(metav1.ListOptions{})
 
 	if err != nil {
 		log.Warnf("Failed to query PipelineRuns %s\n", err)

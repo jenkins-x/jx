@@ -159,7 +159,7 @@ func CreatePipelineRunInfo(kubeClient kubernetes.Interface, tektonClient tektonc
 	}
 	gitURL := ""
 
-	pr, err := tektonClient.PipelineV1alpha1().PipelineRuns(ns).Get(prName, metav1.GetOptions{})
+	pr, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Get(prName, metav1.GetOptions{})
 	if err != nil {
 		return nil, errors.Wrapf(err, fmt.Sprintf("PipelineRun %s cannot be found", prName))
 	}
