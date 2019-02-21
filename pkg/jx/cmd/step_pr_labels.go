@@ -81,7 +81,7 @@ func (o *StepPRLabelsOptions) Run() error {
 	}
 
 	if o.PullRequest == "" {
-		o.PullRequest = os.Getenv("BRANCH_NAME")
+		o.PullRequest = strings.TrimPrefix(os.Getenv("BRANCH_NAME"), "PR-")
 	}
 
 	if o.Prefix == "" {
@@ -105,7 +105,7 @@ func (o *StepPRLabelsOptions) Run() error {
 
 	for _, v := range pr.Labels {
 		envKey := reg.ReplaceAllString(*v.Name, "_")
-		log.Infof("%v_%v=%v\n", o.Prefix, strings.ToUpper(envKey), *v.Name)
+		log.Infof("%v_%v='%v'\n", o.Prefix, strings.ToUpper(envKey), *v.Name)
 	}
 	return nil
 }
