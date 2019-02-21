@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	"reflect"
+	versioned2 "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/petergtz/pegomock"
-	versioned2 "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	"reflect"
 )
 
 func AnyVersioned2Interface() versioned2.Interface {

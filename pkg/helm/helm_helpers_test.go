@@ -72,7 +72,6 @@ func mapToString(m map[string]interface{}) string {
 	return fmt.Sprintf("%#v", m)
 }
 
-
 func TestSetValuesToMap(t *testing.T) {
 	t.Parallel()
 

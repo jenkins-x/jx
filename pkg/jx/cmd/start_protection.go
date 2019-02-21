@@ -84,7 +84,7 @@ func (o *StartProtectionOptions) Run() error {
 
 	settings, err := o.TeamSettings()
 	if err != nil {
-	  return err
+		return err
 	}
 
 	err = prow.AddProtection(kClient, []string{orgrepo}, context, ns, settings)

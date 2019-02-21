@@ -148,7 +148,7 @@ func (o *UpgradeAddonProwOptions) Run() error {
 
 	o.OAUTHToken = oauthToken
 	o.HMACToken = hmacToken
-	isGitOps,_ := o.GetDevEnv()
+	isGitOps, _ := o.GetDevEnv()
 
 	return o.installProw(o.KnativePipeline, isGitOps, "", "")
 }

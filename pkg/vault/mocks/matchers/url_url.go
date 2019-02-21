@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	"reflect"
 	"github.com/petergtz/pegomock"
 	url "net/url"
+	"reflect"
 )
 
 func AnyUrlURL() url.URL {

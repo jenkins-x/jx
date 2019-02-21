@@ -177,7 +177,7 @@ type TeamSettings struct {
 	BuildPackName       string               `json:"buildPackName,omitempty" protobuf:"bytes,20,opt,name=buildPackName"`
 	StorageLocations    []StorageLocation    `json:"storageLocations,omitempty" protobuf:"bytes,21,opt,name=storageLocations"`
 
-	// ImportMode indicates what kind of 
+	// ImportMode indicates what kind of
 	ImportMode ImportModeType `json:"importMode,omitempty" protobuf:"bytes,22,opt,name=importMode"`
 
 	// ProwEngine is the kind of prow engine used such as knative build or build pipeline
