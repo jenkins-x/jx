@@ -171,7 +171,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 				o.InstallOptions.Flags.Prow = true
 			}
 			if settings.ProwEngine == v1.ProwEngineTypeBuildPipeline {
-				o.InstallOptions.Flags.KnativePipeline = true
+				o.InstallOptions.Flags.Tekton = true
 			}
 		}
 

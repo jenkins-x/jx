@@ -152,6 +152,8 @@ func (o *CommonOptions) SetDevNamespace(ns string) {
 	o.devNamespace = ns
 	o.currentNamespace = ns
 	o.kubeClient = nil
+
+	log.Infof("setting the dev namespace to: %s\n", util.ColorInfo(ns))
 }
 
 // Debugf outputs the given text to the console if verbose mode is enabled
