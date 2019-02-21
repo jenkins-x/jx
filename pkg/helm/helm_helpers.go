@@ -288,9 +288,13 @@ func LoadValues(data []byte) (map[string]interface{}, error) {
 func SaveFile(fileName string, contents interface{}) error {
 	data, err := yaml.Marshal(contents)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to marshal helm values file %s", fileName)
 	}
-	return ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	if err != nil {
+	  return errors.Wrapf(err, "failed to save helm values file %s", fileName)
+	}
+	return nil
 }
 
 func LoadChartName(chartFile string) (string, error) {
@@ -516,4 +520,18 @@ func unknownZeroValue(value string) string {
 	}
 	return value
 
+}
+
+// SetValuesToMap converts the set of values of the form "foo.bar=123" into a helm values.yaml map structure
+func SetValuesToMap(setValues []string) map[string]interface{} {
+ 	answer := map[string]interface{}{}
+ 	for _, setValue := range setValues {
+ 		tokens := strings.SplitN(setValue, "=", 2)
+ 		if len(tokens) > 1 {
+ 			path := tokens[0]
+ 			value := tokens[1]
+ 			util.SetMapValueViaPath(answer, path, value)
+		}
+	}
+ 	return answer
 }

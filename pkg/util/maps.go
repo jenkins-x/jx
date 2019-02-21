@@ -1,5 +1,7 @@
 package util
 
+import "strings"
+
 // StringMapHasValue returns true if the given map contains the given value
 func StringMapHasValue(m map[string]string, value string) bool {
 	if m == nil {
@@ -55,5 +57,29 @@ func CombineMapTrees(destination map[string]interface{}, input map[string]interf
 			}
 		}
 		destination[k] = v
+	}
+}
+
+// SetMapValueViaPath sets the map key using the given path which supports the form `foo.bar.whatnot` to
+// mean `m["foo"]["bar"]["whatnot"]` lazily creating maps as the path is navigated
+func SetMapValueViaPath(m map[string]interface{}, path string, value interface{}) {
+	dest := m
+	paths := strings.Split(path, ".")
+
+	last := len(paths) - 1
+	for i, key := range paths {
+		if i == last {
+			dest[key] = value
+		} else {
+			entry := dest[key]
+			entryMap, ok := entry.(map[string]interface{})
+			if ok {
+				dest = entryMap
+			} else {
+				entryMap = map[string]interface{}{}
+				dest[key] = entryMap
+				dest = entryMap
+			}
+		}
 	}
 }

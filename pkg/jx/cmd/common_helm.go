@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/environments"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -18,6 +19,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
+	version2 "github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/src-d/go-git.v4"
@@ -303,6 +305,58 @@ func (o *CommonOptions) installChart(releaseName string, chart string, version s
 	setValues []string, valueFiles []string, repo string) error {
 	return o.installChartOptions(helm.InstallChartOptions{ReleaseName: releaseName, Chart: chart, Version: version,
 		Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles, Repository: repo})
+}
+
+// installChartOrGitOps if using gitOps lets write files otherwise lets use helm
+func (o *CommonOptions) installChartOrGitOps(isGitOps bool, gitOpsDir string, gitOpsEnvDir string, releaseName string, chart string, alias string, version string, ns string, helmUpdate bool,
+	setValues []string, setSecrets []string, valueFiles []string, repo string) error {
+
+	if !isGitOps {
+		return o.installChartOptions(helm.InstallChartOptions{ReleaseName: releaseName, Chart: chart, Version: version,
+			Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles, Repository: repo})
+	}
+
+	if gitOpsEnvDir == "" {
+		return fmt.Errorf("currently GitOps mode is only supported using the local file system for install time use only")
+	}
+
+	if version == "" {
+		var err error
+		version, err = o.getVersionNumber(version2.KindChart, chart)
+		if err != nil {
+			return err
+		}
+	}
+	if repo == "" {
+		repo = kube.DefaultChartMuseumURL
+	}
+
+	// lets strip the repo name from the helm chart name
+	paths := strings.SplitN(chart, "/", 2)
+	if len(paths) > 1 {
+		chart = paths[1]
+	}
+	modifyFn := environments.CreateAddRequirementFn(chart, alias, version, repo, valueFiles, gitOpsEnvDir, o.Verbose)
+
+	extraValues := map[string]interface{}{
+		alias: helm.SetValuesToMap(setValues),
+	}
+
+	if len(setSecrets) > 0 {
+		secretsFile := filepath.Join(gitOpsEnvDir, helm.SecretsFileName)
+		secretValues, err := helm.LoadValuesFile(secretsFile)
+		if err != nil {
+			return err
+		}
+		secretValues[alias] = helm.SetValuesToMap(setSecrets)
+		err = helm.SaveFile(secretsFile, secretValues)
+		if err != nil {
+			return err
+		}
+	}
+
+	// if we are part of an initial installation we won't have done a git push yet so lets just write to the gitOpsEnvDir where the dev env chart is
+	return environments.ModifyChartFiles(gitOpsEnvDir, extraValues, modifyFn)
 }
 
 // installChartAt installs the given chart

@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"k8s.io/helm/pkg/chartutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -525,7 +526,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring the Jenkins X helm repository")
 	}
 
-	err = options.configureAndInstallProw(ns)
+	err = options.configureAndInstallProw(ns, gitOpsDir, gitOpsEnvDir)
 	if err != nil {
 		return errors.Wrap(err, "configuring and installing Prow")
 	}
@@ -825,22 +826,34 @@ func (options *InstallOptions) installPlatform(providerEnvDir string, jxChart st
 func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gitOpsDir string, configStore configio.ConfigStore,
 	chartRepository string, chartName string, namespace string, version string, valuesFiles []string, secretsFiles []string) error {
 	options.CreateEnvOptions.NoDevNamespaceInit = true
-	deps := []*helm.Dependency{
-		{
-			Name:       JenkinsXPlatformChartName,
-			Version:    version,
-			Repository: kube.DefaultChartMuseumURL,
-		},
-	}
-	requirements := &helm.Requirements{
-		Dependencies: deps,
-	}
 
 	chartFile := filepath.Join(gitOpsEnvDir, helm.ChartFileName)
 	requirementsFile := filepath.Join(gitOpsEnvDir, helm.RequirementsFileName)
 	secretsFile := filepath.Join(gitOpsEnvDir, helm.SecretsFileName)
 	valuesFile := filepath.Join(gitOpsEnvDir, helm.ValuesFileName)
-	err := helm.SaveFile(requirementsFile, requirements)
+
+	platformDep := &helm.Dependency{
+		Name:       JenkinsXPlatformChartName,
+		Version:    version,
+		Repository: kube.DefaultChartMuseumURL,
+	}
+	requirements := &helm.Requirements{
+		Dependencies: []*helm.Dependency{platformDep},
+	}
+
+	// lets handle if the requirements.yaml already exists we may have added some initial apps like prow etc
+	exists, err := util.FileExists(requirementsFile)
+	if err != nil {
+		return err
+	}
+	if exists {
+		requirements, err = helm.LoadRequirementsFile(requirementsFile)
+		if err != nil {
+			return errors.Wrapf(err, "failed to load helm requirements file %s", requirementsFile)
+		}
+		requirements.Dependencies = append(requirements.Dependencies, platformDep)
+	}
+	err = helm.SaveFile(requirementsFile, requirements)
 	if err != nil {
 		return errors.Wrapf(err, "failed to save GitOps helm requirements file %s", requirementsFile)
 	}
@@ -850,7 +863,11 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 		return errors.Wrapf(err, "failed to save file %s", chartFile)
 	}
 
-	err = helm.CombineValueFilesToFile(secretsFile, secretsFiles, JenkinsXPlatformChartName, nil)
+	secretValues, err := helm.LoadValuesFile(secretsFile)
+	if err != nil {
+	  return err
+	}
+	err = helm.CombineValueFilesToFile(secretsFile, secretsFiles, JenkinsXPlatformChartName, secretValues)
 	if err != nil {
 		return errors.Wrapf(err, "failed to generate %s by combining helm Secret YAML files %s", secretsFile, strings.Join(secretsFiles, ", "))
 	}
@@ -870,6 +887,20 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 	extraValues := map[string]interface{}{
 		"postinstalljob": map[string]interface{}{"enabled": "true"},
 	}
+
+	// lets load any existing values.yaml data as we may have created this via additional apps like Prow
+	exists, err = util.FileExists(valuesFile)
+	if err != nil {
+	  return err
+	}
+	if exists {
+		currentValues, err := chartutil.ReadValuesFile(valuesFile)
+		if err != nil {
+		  return err
+		}
+		util.CombineMapTrees(extraValues, currentValues)
+	}
+
 	err = helm.CombineValueFilesToFile(valuesFile, valuesFiles, JenkinsXPlatformChartName, extraValues)
 	if err != nil {
 		return errors.Wrapf(err, "failed to generate %s by combining helm value YAML files %s", valuesFile, strings.Join(valuesFiles, ", "))
@@ -901,7 +932,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 	return nil
 }
 
-func (options *InstallOptions) configureAndInstallProw(namespace string) error {
+func (options *InstallOptions) configureAndInstallProw(namespace string, gitOpsDir string, gitOpsEnvDir string) error {
 	options.currentNamespace = namespace
 	if options.Flags.Prow {
 		_, pipelineUser, err := options.getPipelineGitAuth()
@@ -909,7 +940,7 @@ func (options *InstallOptions) configureAndInstallProw(namespace string) error {
 			return errors.Wrap(err, "retrieving the pipeline Git Auth")
 		}
 		options.OAUTHToken = pipelineUser.ApiToken
-		err = options.installProw(options.Flags.KnativePipeline)
+		err = options.installProw(options.Flags.KnativePipeline, options.Flags.GitOpsMode, gitOpsDir, gitOpsEnvDir)
 		if err != nil {
 			errors.Wrap(err, "installing Prow")
 		}
