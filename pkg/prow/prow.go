@@ -25,7 +25,7 @@ const (
 	Hook = "hook"
 
 	KnativeBuildAgent = "knative-build"
-	TektonAgent       = "takton"
+	TektonAgent       = "tekton"
 	KubernetesAgent   = "kubernetes"
 
 	applyTemplate = "environment-apply"
