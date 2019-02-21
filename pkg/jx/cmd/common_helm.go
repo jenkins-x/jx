@@ -338,8 +338,10 @@ func (o *CommonOptions) installChartOrGitOps(isGitOps bool, gitOpsDir string, gi
 	}
 	modifyFn := environments.CreateAddRequirementFn(chart, alias, version, repo, valueFiles, gitOpsEnvDir, o.Verbose)
 
-	extraValues := map[string]interface{}{
-		alias: helm.SetValuesToMap(setValues),
+	extraValues := map[string]interface{}{}
+	valuesMap := helm.SetValuesToMap(setValues)
+	if len(valuesMap) > 0 {
+		extraValues[alias] = valuesMap
 	}
 
 	if len(setSecrets) > 0 {
