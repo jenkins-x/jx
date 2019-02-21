@@ -755,7 +755,7 @@ func (b *BitbucketServerProvider) CreateWebHook(data *GitWebHookArguments) error
 
 	hooks, err := b.ListWebHooks(projectKey, repo)
 	if err != nil {
-		return errors.Wrapf(err, "error querying webhooks on %s/%s: %s\n", projectKey, repo)
+		return errors.Wrapf(err, "error querying webhooks on %s/%s\n", projectKey, repo)
 	}
 	for _, hook := range hooks {
 		if data.URL == hook.URL {
