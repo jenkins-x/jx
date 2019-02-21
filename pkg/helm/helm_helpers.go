@@ -292,7 +292,7 @@ func SaveFile(fileName string, contents interface{}) error {
 	}
 	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 	if err != nil {
-	  return errors.Wrapf(err, "failed to save helm values file %s", fileName)
+		return errors.Wrapf(err, "failed to save helm values file %s", fileName)
 	}
 	return nil
 }
@@ -524,14 +524,14 @@ func unknownZeroValue(value string) string {
 
 // SetValuesToMap converts the set of values of the form "foo.bar=123" into a helm values.yaml map structure
 func SetValuesToMap(setValues []string) map[string]interface{} {
- 	answer := map[string]interface{}{}
- 	for _, setValue := range setValues {
- 		tokens := strings.SplitN(setValue, "=", 2)
- 		if len(tokens) > 1 {
- 			path := tokens[0]
- 			value := tokens[1]
- 			util.SetMapValueViaPath(answer, path, value)
+	answer := map[string]interface{}{}
+	for _, setValue := range setValues {
+		tokens := strings.SplitN(setValue, "=", 2)
+		if len(tokens) > 1 {
+			path := tokens[0]
+			value := tokens[1]
+			util.SetMapValueViaPath(answer, path, value)
 		}
 	}
- 	return answer
+	return answer
 }

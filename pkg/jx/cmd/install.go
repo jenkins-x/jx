@@ -865,7 +865,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 
 	secretValues, err := helm.LoadValuesFile(secretsFile)
 	if err != nil {
-	  return err
+		return err
 	}
 	err = helm.CombineValueFilesToFile(secretsFile, secretsFiles, JenkinsXPlatformChartName, secretValues)
 	if err != nil {
@@ -891,12 +891,12 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 	// lets load any existing values.yaml data as we may have created this via additional apps like Prow
 	exists, err = util.FileExists(valuesFile)
 	if err != nil {
-	  return err
+		return err
 	}
 	if exists {
 		currentValues, err := chartutil.ReadValuesFile(valuesFile)
 		if err != nil {
-		  return err
+			return err
 		}
 		util.CombineMapTrees(extraValues, currentValues)
 	}

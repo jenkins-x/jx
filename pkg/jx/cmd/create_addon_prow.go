@@ -88,7 +88,7 @@ func (o *CreateAddonProwOptions) Run() error {
 	o.Prow.SetValues = o.SetValues
 	o.Namespace = o.currentNamespace
 
-	isGitOps,_ := o.GetDevEnv()
+	isGitOps, _ := o.GetDevEnv()
 
 	err = o.installProw(o.KnativePipeline, isGitOps, "", "")
 	if err != nil {

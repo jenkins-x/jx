@@ -249,7 +249,7 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 	}
 
 	if !i.UseNextGenPipeline {
-		if (!jenkinsfileExists || jenkinsfileBackup != "") {
+		if !jenkinsfileExists || jenkinsfileBackup != "" {
 			// lets check if we have a pipeline.yaml in the build pack so we can generate one dynamically
 			pipelineFile := filepath.Join(lpack, jenkinsfile.PipelineConfigFileName)
 			exists, err := util.FileExists(pipelineFile)

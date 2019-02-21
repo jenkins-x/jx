@@ -152,7 +152,7 @@ func (c *ProjectConfig) SaveConfig(fileName string) error {
 	}
 	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 	if err != nil {
-	  return errors.Wrapf(err, "failed to save file %s", fileName)
+		return errors.Wrapf(err, "failed to save file %s", fileName)
 	}
 	return nil
 }

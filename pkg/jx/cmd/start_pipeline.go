@@ -15,13 +15,12 @@ import (
 
 	"github.com/spf13/cobra"
 
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	prowjobv1 "k8s.io/test-infra/prow/apis/prowjobs/v1"
-	jenkinsv1 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-
 )
 
 const (
@@ -164,7 +163,7 @@ func (o *StartPipelineOptions) Run() error {
 func (o *StartPipelineOptions) createProwJob(jobname string) error {
 	settings, err := o.TeamSettings()
 	if err != nil {
-	  return err
+		return err
 	}
 	parts := strings.Split(jobname, "/")
 	if len(parts) != 3 {
