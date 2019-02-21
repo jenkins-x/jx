@@ -178,8 +178,8 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 		return err
 	}
 	agent := prowjobv1.KnativeBuildAgent
-	if settings.GetProwEngine() == jenkinsv1.ProwEngineTypeBuildPipeline {
-		agent = prow.KnativeBuildPipelineAgent
+	if settings.GetProwEngine() == jenkinsv1.ProwEngineTypeTekton {
+		agent = prow.TektonAgent
 	}
 	jobSpec := prowjobv1.ProwJobSpec{
 		BuildSpec: postSubmitJob.BuildSpec,

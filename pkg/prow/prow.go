@@ -24,9 +24,9 @@ import (
 const (
 	Hook = "hook"
 
-	KnativeBuildAgent         = "knative-build"
-	KnativeBuildPipelineAgent = "knative-pipeline-run"
-	KubernetesAgent           = "kubernetes"
+	KnativeBuildAgent = "knative-build"
+	TektonAgent       = "knative-pipeline-run"
+	KubernetesAgent   = "kubernetes"
 
 	applyTemplate = "environment-apply"
 	buildTemplate = "environment-build"
@@ -65,8 +65,8 @@ func add(kubeClient kubernetes.Interface, repos []string, ns string, kind prowco
 		return fmt.Errorf("no repo defined")
 	}
 	agent := KnativeBuildAgent
-	if teamSettings.GetProwEngine() == v1.ProwEngineTypeBuildPipeline {
-		agent = KnativeBuildPipelineAgent
+	if teamSettings.GetProwEngine() == v1.ProwEngineTypeTekton {
+		agent = TektonAgent
 	}
 	o := Options{
 		KubeClient:           kubeClient,

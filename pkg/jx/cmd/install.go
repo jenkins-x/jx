@@ -1422,7 +1422,7 @@ func (options *InstallOptions) configureProwInTeamSettings() error {
 			settings.PromotionEngine = v1.PromotionEngineProw
 			settings.ProwEngine = v1.ProwEngineTypeKnativeBuild
 			if options.Flags.Tekton {
-				settings.ProwEngine = v1.ProwEngineTypeBuildPipeline
+				settings.ProwEngine = v1.ProwEngineTypeTekton
 			}
 			log.Infof("Configuring the TeamSettings for Prow with engine %s\n", string(settings.ProwEngine))
 			return nil

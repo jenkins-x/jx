@@ -42,8 +42,8 @@ const (
 	// ChartBuildTemplates the build templates for Knative Build
 	ChartBuildTemplates = "jenkins-x/jx-build-templates"
 
-	// ChartKnativePipeline the default chart for knative Build Pipeline
-	ChartKnativePipeline = "jenkins-x/knative-build-pipeline"
+	// ChartTekton the default chart for tekton
+	ChartTekton = "jenkins-x/knative-build-pipeline"
 
 	// DefaultProwReleaseName the default helm release name for Prow
 	DefaultProwReleaseName = "jx-prow"
@@ -51,8 +51,8 @@ const (
 	// DefaultKnativeBuildReleaseName the default helm release name for knative build
 	DefaultKnativeBuildReleaseName = "knative-build"
 
-	// DefaultKnativeBuildPipelineReleaseName the default helm release name for knative build pipeline
-	DefaultKnativeBuildPipelineReleaseName = "knative-build-pipeline"
+	// DefaultTektonReleaseName the default helm release name for tekton
+	DefaultTektonReleaseName = "tekton"
 
 	// DefaultBuildTemplatesReleaseName the default helm release name for the knative build templates
 	DefaultBuildTemplatesReleaseName = "jx-build-templates"
@@ -282,20 +282,20 @@ var (
 	AddonCharts = map[string]string{
 		"ambassador":                           ChartAmbassador,
 		"anchore":                              ChartAnchore,
-		"cb":                                   ChartCloudBees,
-		DefaultFlaggerReleaseName:              ChartFlagger,
-		"gitea":                                ChartGitea,
-		"istio":                                ChartIstio,
-		"kubeless":                             ChartKubeless,
-		"prometheus":                           "stable/prometheus",
-		"grafana":                              "stable/grafana",
-		"jx-build-templates":                   "jenkins-x/jx-build-templates",
-		DefaultProwReleaseName:                 ChartProw,
-		DefaultKnativeBuildReleaseName:         ChartKnativeBuild,
-		DefaultKnativeBuildPipelineReleaseName: ChartKnativePipeline,
-		DefaultSsoDexReleaseName:               ChartSsoDex,
-		DefaultSsoOperatorReleaseName:          ChartSsoOperator,
-		DefaultVaultOperatorReleaseName:        ChartVaultOperator,
+		"cb":                            ChartCloudBees,
+		DefaultFlaggerReleaseName:       ChartFlagger,
+		"gitea":                         ChartGitea,
+		"istio":                         ChartIstio,
+		"kubeless":                      ChartKubeless,
+		"prometheus":                    "stable/prometheus",
+		"grafana":                       "stable/grafana",
+		"jx-build-templates":            "jenkins-x/jx-build-templates",
+		DefaultProwReleaseName:          ChartProw,
+		DefaultKnativeBuildReleaseName:  ChartKnativeBuild,
+		DefaultTektonReleaseName:        ChartTekton,
+		DefaultSsoDexReleaseName:        ChartSsoDex,
+		DefaultSsoOperatorReleaseName:   ChartSsoOperator,
+		DefaultVaultOperatorReleaseName: ChartVaultOperator,
 	}
 
 	AddonServices = map[string]string{

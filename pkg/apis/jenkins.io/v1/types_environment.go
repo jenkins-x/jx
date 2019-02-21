@@ -107,8 +107,8 @@ const (
 	// ProwEngineTypeKnativeBuild represents the Knative Build engine for use with Prow
 	ProwEngineTypeKnativeBuild ProwEngineType = "KnativeBuild"
 
-	// ProwEngineTypeBuildPipeline represents using Build Pipeline as the execution engine with Prow
-	ProwEngineTypeBuildPipeline ProwEngineType = "BuildPipeline"
+	// ProwEngineTypeTekton represents using Tekton as the execution engine with Prow
+	ProwEngineTypeTekton ProwEngineType = "Tekton"
 )
 
 // WebHookEngineType is the type of webhook processing implementation the team uses
