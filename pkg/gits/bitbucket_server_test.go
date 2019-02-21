@@ -60,8 +60,10 @@ var bitbucketServerRouter = util.Router{
 	},
 	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/webhooks": util.MethodMap{
 		"POST": "webhook.json",
-		"PUT":  "webhook.json",
 		"GET":  "webhooks.json",
+	},
+	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/webhooks/123": util.MethodMap{
+		"PUT": "webhook.json",
 	},
 	"/rest/api/1.0/users/test-user": util.MethodMap{
 		"GET": "user.json",

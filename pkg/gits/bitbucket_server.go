@@ -784,7 +784,10 @@ func (b *BitbucketServerProvider) CreateWebHook(data *GitWebHookArguments) error
 
 	_, err = b.Client.DefaultApi.CreateWebhook(projectKey, repo, requestBody, []string{"application/json"})
 
-	return errors.Wrapf(err, "create webhook request failed on %s/%s", projectKey, repo)
+	if err != nil {
+		return errors.Wrapf(err, "create webhook request failed on %s/%s", projectKey, repo)
+	}
+	return nil
 }
 
 // ListWebHooks lists all of the webhooks on a given git repository
@@ -882,7 +885,10 @@ func (b *BitbucketServerProvider) UpdateWebHook(data *GitWebHookArguments) error
 	log.Infof("Updating Bitbucket server webhook for %s/%s for url %s\n", util.ColorInfo(projectKey), util.ColorInfo(repo), util.ColorInfo(data.URL))
 	_, err = b.Client.DefaultApi.UpdateWebhook(projectKey, repo, id, requestBody, []string{"application/json"})
 
-	return errors.Wrapf(err, "failed to update webhook on %s/%s", projectKey, repo)
+	if err != nil {
+		return errors.Wrapf(err, "failed to update webhook on %s/%s", projectKey, repo)
+	}
+	return nil
 }
 
 func (b *BitbucketServerProvider) SearchIssues(org string, name string, query string) ([]*GitIssue, error) {
