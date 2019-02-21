@@ -16,13 +16,13 @@
 
 SHELL := /bin/bash
 NAME := jx
-GO := GO111MODULE=on GO15VENDOREXPERIMENT=1 go
+GO := GO111MODULE=on go
 GO_NOMOD :=GO111MODULE=off go
 REV := $(shell git rev-parse --short HEAD 2> /dev/null || echo 'unknown')
 #ROOT_PACKAGE := $(shell $(GO) list .)
 ROOT_PACKAGE := github.com/jenkins-x/jx
 GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
-PKGS := $(shell go list ./... | grep -v /vendor | grep -v generated)
+PKGS := $(shell go list ./... | grep -v generated)
 GO_DEPENDENCIES := cmd/*/*.go cmd/*/*/*.go pkg/*/*.go pkg/*/*/*.go pkg/*//*/*/*.go
 
 BRANCH     := $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null  || echo 'unknown')
@@ -31,11 +31,9 @@ PEGOMOCK_SHA := $(shell go mod graph | grep pegomock | sed -n -e 's/^.*-//p')
 PEGOMOCK_PACKAGE := github.com/petergtz/pegomock/
 CGO_ENABLED = 0
 
-VENDOR_DIR=vendor
-
 all: build
-
-check: fmt build test
+full: check
+check: lint vet build test
 
 version:
 ifeq (,$(wildcard pkg/version/VERSION))
@@ -157,8 +155,6 @@ inttestbin:
 debuginttest1: inttestbin
 	cd pkg/jx/cmd && dlv --listen=:2345 --headless=true --api-version=2 exec ../../../build/jx-inttest -- -test.run $(TEST)
 
-full: $(PKGS)
-
 install: $(GO_DEPENDENCIES) version
 	GOBIN=${GOPATH}/bin $(GO) install $(BUILDFLAGS) cmd/jx/jx.go
 
@@ -174,8 +170,6 @@ win: version
 
 darwin: version
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=darwin GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/darwin/jx cmd/jx/jx.go
-
-bootstrap: vendoring
 
 # sleeps for about 30 mins
 sleep:
@@ -325,33 +319,19 @@ $(FGT):
 	$(GO_NOMOD) get github.com/GeertJohan/fgt
 
 
-LINTFLAGS:=-min_confidence 1.1
-
 GOLINT := $(GOPATH)/bin/golint
 $(GOLINT):
 	$(GO_NOMOD) get github.com/golang/lint/golint
 
-#	@echo "FORMATTING"
-#	@$(FGT) gofmt -l=true $(GOPATH)/src/$@/*.go
-
-$(PKGS): $(GOLINT) $(FGT)
-	@echo "LINTING"
-	@$(FGT) $(GOLINT) $(LINTFLAGS) $(GOPATH)/src/$@/*.go
-	@echo "VETTING"
-	@go vet -v $@
-	@echo "TESTING"
-	@go test -v $@
-
 .PHONY: lint
-lint: vendor | $(PKGS) $(GOLINT) # ❷
-	@cd $(BASE) && ret=0 && for pkg in $(PKGS); do \
-	    test -z "$$($(GOLINT) $$pkg | tee /dev/stderr)" || ret=1 ; \
-	done ; exit $$ret
+lint: $(GOLINT)
+	@echo "--> linting code with 'go lint' tool"
+	$(GOLINT) -min_confidence 1.1 ./...
 
 .PHONY: vet
 vet: tools.govet
 	@echo "--> checking code correctness with 'go vet' tool"
-	@go vet ./...
+	@go vet ./... || true
 
 
 tools.govet:

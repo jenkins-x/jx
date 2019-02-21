@@ -97,7 +97,7 @@ type ExtensionExecution struct {
 	Name                 string                `json:"name,omitempty"  protobuf:"bytes,1,opt,name=name"`
 	Description          string                `json:"description,omitempty"  protobuf:"bytes,2,opt,name=description"`
 	Script               string                `json:"script,omitempty"  protobuf:"bytes,3,opt,name=script"`
-	EnvironmentVariables []EnvironmentVariable `json:"environmentVariables,omitempty protobuf:"bytes,4,opt,name=environmentvariables"`
+	EnvironmentVariables []EnvironmentVariable `json:"environmentVariables,omitempty" protobuf:"bytes,4,opt,name=environmentvariables"`
 	Given                ExtensionGiven        `json:"given,omitempty"  protobuf:"bytes,5,opt,name=given"`
 	Namespace            string                `json:"namespace,omitempty"  protobuf:"bytes,7,opt,name=namespace"`
 	UUID                 string                `json:"uuid,omitempty"  protobuf:"bytes,8,opt,name=uuid"`
@@ -150,8 +150,8 @@ type ExtensionDefinitionChildReference struct {
 }
 
 type EnvironmentVariable struct {
-	Name  string `json:"name,omitempty protobuf:"bytes,1,opt,name=name"`
-	Value string `json:"value,omitempty protobuf:"bytes,2,opt,name=value"`
+	Name  string `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
+	Value string `json:"value,omitempty" protobuf:"bytes,2,opt,name=value"`
 }
 
 // ExtensionsConfigList contains a list of ExtensionConfig items
@@ -163,7 +163,7 @@ type ExtensionConfigList struct {
 type ExtensionConfig struct {
 	Name       string                    `json:"name"`
 	Namespace  string                    `json:"namespace"`
-	Parameters []ExtensionParameterValue `json: "parameters"`
+	Parameters []ExtensionParameterValue `json:"parameters"`
 }
 
 const (

@@ -51,8 +51,8 @@ type PipelineActivitySpec struct {
 	Workflow           string                 `json:"workflow,omitempty" protobuf:"bytes,18,opt,name=workflow"`
 	WorkflowStatus     ActivityStatusType     `json:"workflowStatus,omitempty" protobuf:"bytes,19,opt,name=workflowStatus"`
 	WorkflowMessage    string                 `json:"workflowMessage,omitempty" protobuf:"bytes,20,opt,name=workflowMessage"`
-	PostExtensions     []ExtensionExecution   `json:"postExtensions,omitempty" protobuf: "bytes,21,opt,name=postExtensions"`
-	Attachments        []Attachment           `json:"attachments,omitempty" protobuf: "bytes,22,opt,name=attachments"`
+	PostExtensions     []ExtensionExecution   `json:"postExtensions,omitempty" protobuf:"bytes,21,opt,name=postExtensions"`
+	Attachments        []Attachment           `json:"attachments,omitempty" protobuf:"bytes,22,opt,name=attachments"`
 }
 
 // PipelineActivityStep represents a step in a pipeline activity

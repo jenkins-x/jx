@@ -51,7 +51,7 @@ pipeline {
 
                     sh "echo building Pull Request for preview ${TEAM}"
 
-                    sh "make linux"
+                    sh "make check linux fmt"
                     sh 'git add . && git diff --exit-code HEAD'
                     sh "make test-slow-integration"
                     sh "./build/linux/jx --help"
