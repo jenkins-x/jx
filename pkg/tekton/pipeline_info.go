@@ -12,9 +12,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/knative/build-pipeline/pkg/apis/pipeline"
 	tektonclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
@@ -66,7 +66,11 @@ type StageInfo struct {
 
 // GetStageNameIncludingParents constructs a full stage name including its parents, if they exist.
 func (si *StageInfo) GetStageNameIncludingParents() string {
-	return strings.Join(append(si.Parents, si.Name), " / ")
+	if si.Name != "" {
+		return strings.Join(append(si.Parents, si.Name), " / ")
+	} else {
+		return si.PodName
+	}
 }
 
 // PipelineRunInfoFilter allows specifying criteria on which to filter a list of PipelineRunInfos
@@ -97,11 +101,40 @@ func getPipelineStructureForPipelineRun(jxClient versioned.Interface, ns, prName
 		ps = lookupPs
 		return nil
 	}
-	err := util.Retry(time.Minute*5, f)
+	err := util.Retry(time.Minute*2, f)
 	if err != nil {
 		return nil, err
 	}
 	return ps, nil
+}
+
+func getBuildPodForPipelineRun(kubeClient kubernetes.Interface, ns, prName string) (*corev1.Pod, error) {
+	var pod *corev1.Pod
+
+	// The Pod may not exist yet.
+	f := func() error {
+		// Get the Pod for this PipelineRun
+		podList, err := kubeClient.CoreV1().Pods(ns).List(metav1.ListOptions{
+			LabelSelector: builds.LabelPipelineRunName + "=" + prName,
+		})
+		if err != nil {
+			return err
+		}
+
+		if len(podList.Items) == 0 {
+			log.Infof("no Pod found yet for PipelineRun %s\n", util.ColorInfo(prName))
+			return fmt.Errorf("No Pod found yet for PipelineRun %s", prName)
+		}
+		if len(podList.Items) == 1 {
+			pod = &podList.Items[0]
+		}
+		return nil
+	}
+	err := util.Retry(time.Minute*2, f)
+	if err != nil {
+		return nil, err
+	}
+	return pod, nil
 }
 
 // GetBuild gets the build identifier
@@ -170,11 +203,39 @@ func CreatePipelineRunInfo(kubeClient kubernetes.Interface, tektonClient tektonc
 		Pipeline:    pr.Spec.PipelineRef.Name,
 	}
 
-	if err := pri.SetPodsForPipelineRun(kubeClient, tektonClient, jxClient, ns); err != nil {
-		return nil, errors.Wrapf(err, "Failure populating stages and pods for PipelineRun %s", prName)
+	var pod *corev1.Pod
+
+	// TODO: Remove this when we unify generation
+	if pr.Labels[syntax.LabelPipelineFromYaml] != "true" {
+		pod, err = getBuildPodForPipelineRun(kubeClient, ns, prName)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Error finding Pod for PipelineRun %s", prName)
+		}
+		if pod == nil {
+			return nil, fmt.Errorf("could not find Pod for PipelineRun %s", prName)
+		}
+
+		si := &StageInfo{
+			Task:    pod.Labels[builds.LabelTaskName],
+			Pod:     pod,
+			PodName: pod.Name,
+			TaskRun: pod.Labels[builds.LabelTaskRunName],
+		}
+
+		si.CreatedTime = pod.CreationTimestamp.Time
+		if len(pod.Spec.InitContainers) > 2 {
+			si.FirstStepImage = pod.Spec.InitContainers[2].Image
+		}
+
+		pri.Stages = append(pri.Stages, si)
+	} else {
+		if err := pri.SetPodsForPipelineRun(kubeClient, tektonClient, jxClient, ns); err != nil {
+			return nil, errors.Wrapf(err, "Failure populating stages and pods for PipelineRun %s", prName)
+		}
 	}
 
-	pod := pri.FindFirstStagePod()
+	pod = pri.FindFirstStagePod()
+
 	if pod == nil {
 		return nil, errors.New(fmt.Sprintf("Couldn't find a Stage with steps for PipelineRun %s", prName))
 	}
@@ -344,7 +405,7 @@ func (si *StageInfo) SetPodsForStageInfo(kubeClient kubernetes.Interface, tekton
 		}
 		pod := podList.Items[0]
 		si.PodName = pod.Name
-		si.Task = pod.Labels[pipeline.GroupName+pipeline.TaskRunLabelKey]
+		si.Task = pod.Labels[builds.LabelTaskName]
 		si.Pod = &pod
 		si.CreatedTime = pod.CreationTimestamp.Time
 		if len(pod.Spec.InitContainers) > 2 {

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/util"
 	tektonv1alpha1 "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/knative/pkg/apis"
 	"github.com/pkg/errors"
@@ -747,7 +748,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      MangleToRfc1035Label(fmt.Sprintf("%s-%s", pipelineIdentifier, s.Name), ""),
-				Labels:    map[string]string{LabelStageName: s.Name},
+				Labels:    util.MergeMaps(DefaultFromYamlCRDLabels(), map[string]string{LabelStageName: s.Name}),
 			},
 		}
 		t.SetDefaults()
@@ -957,6 +958,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      fmt.Sprintf("%s", pipelineIdentifier),
+			Labels:    DefaultFromYamlCRDLabels(),
 		},
 		Spec: tektonv1alpha1.PipelineSpec{
 			Resources: []tektonv1alpha1.PipelineDeclaredResource{
@@ -1203,4 +1205,11 @@ func validateStageNames(j *ParsedPipeline) (err *apis.FieldError) {
 	err = findDuplicates(names)
 
 	return
+}
+
+// DefaultFromYamlCRDLabels returns a map of labels that will be applied to every Tekton CRD generated from YAML syntax
+func DefaultFromYamlCRDLabels() map[string]string {
+	return map[string]string{
+		LabelPipelineFromYaml: "true",
+	}
 }

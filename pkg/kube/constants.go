@@ -127,8 +127,8 @@ const (
 	// LocalHelmRepoName is the default name of the local chart repository where CI/CD releases go to
 	LocalHelmRepoName = "releases"
 
-	// DeploymentBuildPipelineController the name of the Deployment for the Build Pipeline controller
-	DeploymentBuildPipelineController = "build-pipeline-controller"
+	// DeploymentTektonController the name of the Deployment for the Tekton Pipeline controller
+	DeploymentTektonController = "tekton-pipelines-controller"
 
 	// DeploymentExposecontrollerService the name of the Deployment for the Exposecontroller Service
 	DeploymentExposecontrollerService = "exposecontroller-service"

@@ -16,10 +16,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile/gitresolver"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/tekton"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/tekton"
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
 	pipelineapi "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/pkg/errors"
@@ -335,7 +335,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	}
 
 	var err error
-	err = o.setBuildValues()
+	err = o.setBuildValues(false)
 	if err != nil {
 		return err
 	}
@@ -347,7 +347,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		if validateErr := lifecycles.Pipeline.Validate(); validateErr != nil {
 			return errors.Wrapf(validateErr, "Validation failed for Pipeline")
 		}
-		err = o.setBuildValues()
+		err = o.setBuildValues(true)
 		if err != nil {
 			return err
 		}
@@ -383,7 +383,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 
 		// TODO: where should this be created? In GenerateCRDs?
 		var resources []*pipelineapi.PipelineResource
-		resources = append(resources, o.generateSourceRepoResource(name), o.generateTempOrderingResource())
+		resources = append(resources, o.generateSourceRepoResource(name, true), o.generateTempOrderingResource())
 
 		err = o.applyPipeline(pipeline, tasks, resources, structure, o.gitInfo, o.Branch)
 		if err != nil {
@@ -468,7 +468,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	return nil
 }
 
-func (o *StepCreateTaskOptions) generateSourceRepoResource(name string) *pipelineapi.PipelineResource {
+func (o *StepCreateTaskOptions) generateSourceRepoResource(name string, fromYaml bool) *pipelineapi.PipelineResource {
 	var resource *pipelineapi.PipelineResource
 	if o.gitInfo != nil {
 		gitURL := o.gitInfo.HttpsURL()
@@ -495,6 +495,9 @@ func (o *StepCreateTaskOptions) generateSourceRepoResource(name string) *pipelin
 					},
 				},
 			}
+			if fromYaml {
+				resource.Labels = syntax.DefaultFromYamlCRDLabels()
+			}
 		}
 	}
 	return resource
@@ -509,7 +512,8 @@ func (o *StepCreateTaskOptions) generateTempOrderingResource() *pipelineapi.Pipe
 			Kind:       "PipelineResource",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "temp-ordering-resource",
+			Name:   "temp-ordering-resource",
+			Labels: syntax.DefaultFromYamlCRDLabels(),
 		},
 		Spec: pipelineapi.PipelineResourceSpec{
 			Type: pipelineapi.PipelineResourceTypeImage,
@@ -523,7 +527,7 @@ func (o *StepCreateTaskOptions) generateTempOrderingResource() *pipelineapi.Pipe
 	}
 }
 
-func (o *StepCreateTaskOptions) setBuildValues() error {
+func (o *StepCreateTaskOptions) setBuildValues(fromYaml bool) error {
 	var err error
 	o.gitInfo, err = o.FindGitInfo(o.Dir)
 	if err != nil {
@@ -546,6 +550,9 @@ func (o *StepCreateTaskOptions) setBuildValues() error {
 		labels["repo"] = o.gitInfo.Name
 	}
 	labels["branch"] = o.Branch
+	if fromYaml {
+		labels[syntax.LabelPipelineFromYaml] = "true"
+	}
 
 	return o.combineLabels(labels)
 }
@@ -641,7 +648,7 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 	name := gitInfo.Name
 	resourceName := kube.ToValidName(organisation + "-" + name + "-" + branch)
 	var pipelineResources []*pipelineapi.PipelineResource
-	resource := o.generateSourceRepoResource(resourceName)
+	resource := o.generateSourceRepoResource(resourceName, false)
 	if resource != nil {
 		pipelineResources = append(pipelineResources, resource)
 	}
@@ -757,8 +764,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 			Kind:       "PipelineRun",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   pipeline.Name,
-			Labels: util.MergeMaps(o.labels),
+			Name: pipeline.Name,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion: syntax.TektonAPIVersion,
@@ -767,6 +773,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 					UID:        pipeline.UID,
 				},
 			},
+			Labels: util.MergeMaps(o.labels),
 		},
 		Spec: pipelineapi.PipelineRunSpec{
 			ServiceAccount: o.ServiceAccount,
