@@ -97,7 +97,7 @@ type InstallFlags struct {
 	DisableSetKubeContext    bool
 	Dir                      string
 	Vault                    bool
-	KnativePipeline          bool
+	Tekton                   bool
 	BuildPackName            string
 	Kaniko                   bool
 	GitOpsMode               bool
@@ -105,6 +105,7 @@ type InstallFlags struct {
 	NoGitOpsEnvRepo          bool
 	NoGitOpsEnvSetup         bool
 	NoGitOpsVault            bool
+	NextGeneration           bool
 }
 
 // Secrets struct for secrets
@@ -340,7 +341,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().StringVarP(&flags.ExposeControllerPathMode, "exposecontroller-pathmode", "", "", "The ExposeController path mode for how services should be exposed as URLs. Defaults to using subnets. Use a value of `path` to use relative paths within the domain host such as when using AWS ELB host names")
 	cmd.Flags().StringVarP(&flags.Version, "version", "", "", "The specific platform version to install")
 	cmd.Flags().BoolVarP(&flags.Prow, "prow", "", false, "Enable Prow")
-	cmd.Flags().BoolVarP(&flags.KnativePipeline, "knative-pipeline", "", false, "Enables Knative Build Pipeline. Otherwise we default to use Knative Build")
+	cmd.Flags().BoolVarP(&flags.Tekton, "tekton", "", false, "Enables the Tekton pipeline engine (which used to be called knative build pipeline). Otherwise we default to use Knative Build")
 	cmd.Flags().BoolVarP(&flags.GitOpsMode, "gitops", "", false, "Sets up the local file system for GitOps so that the current installation can be configured or upgraded at any time via GitOps")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvApply, "no-gitops-env-apply", "", false, "When using GitOps to create the source code for the development environment and installation, don't run 'jx step env apply' to perform the install")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvRepo, "no-gitops-env-repo", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a git repository for the source code")
@@ -349,6 +350,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during installation (supported only for GKE)")
 	cmd.Flags().StringVarP(&flags.BuildPackName, "buildpack", "", "", "The name of the build pack to use for the Team")
 	cmd.Flags().BoolVarP(&flags.Kaniko, "kaniko", "", false, "Use Kaniko for building docker images")
+	cmd.Flags().BoolVarP(&flags.NextGeneration, "ng", "", false, "Use the Next Generation Jenkins X features like Prow, Tekton, No Tiller, Vault, Dev GitOps")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
@@ -365,6 +367,16 @@ func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 func (options *InstallOptions) checkFlags() error {
 	flags := &options.Flags
 
+	if flags.Tekton {
+		flags.Prow = true
+	}
+	if flags.NextGeneration {
+		flags.GitOpsMode = true
+		flags.Vault = true
+		flags.Prow = true
+		flags.Tekton = true
+		options.InitOptions.Flags.NoTiller = true
+	}
 	// check some flags combination for GitOps mode
 	if flags.GitOpsMode {
 		options.SkipAuthSecretsMerge = true
@@ -940,7 +952,7 @@ func (options *InstallOptions) configureAndInstallProw(namespace string, gitOpsD
 			return errors.Wrap(err, "retrieving the pipeline Git Auth")
 		}
 		options.OAUTHToken = pipelineUser.ApiToken
-		err = options.installProw(options.Flags.KnativePipeline, options.Flags.GitOpsMode, gitOpsDir, gitOpsEnvDir)
+		err = options.installProw(options.Flags.Tekton, options.Flags.GitOpsMode, gitOpsDir, gitOpsEnvDir)
 		if err != nil {
 			errors.Wrap(err, "installing Prow")
 		}
@@ -1409,8 +1421,8 @@ func (options *InstallOptions) configureProwInTeamSettings() error {
 			settings := &env.Spec.TeamSettings
 			settings.PromotionEngine = v1.PromotionEngineProw
 			settings.ProwEngine = v1.ProwEngineTypeKnativeBuild
-			if options.Flags.KnativePipeline {
-				settings.ProwEngine = v1.ProwEngineTypeBuildPipeline
+			if options.Flags.Tekton {
+				settings.ProwEngine = v1.ProwEngineTypeTekton
 			}
 			log.Infof("Configuring the TeamSettings for Prow with engine %s\n", string(settings.ProwEngine))
 			return nil
@@ -1427,7 +1439,7 @@ func (options *InstallOptions) configureImportModeInTeamSettings() error {
 	callback := func(env *v1.Environment) error {
 		settings := &env.Spec.TeamSettings
 		if string(settings.ImportMode) == "" {
-			if options.Flags.KnativePipeline {
+			if options.Flags.Tekton {
 				settings.ImportMode = v1.ImportModeTypeYAML
 			} else {
 				settings.ImportMode = v1.ImportModeTypeJenkinsfile
@@ -1944,6 +1956,10 @@ func (options *InstallOptions) getAdminSecrets(configStore configio.ConfigStore,
 	}
 
 	if options.Flags.Vault {
+		// lets make sure the devNamespace hasn't been overwritten to "default"
+		if options.Flags.Namespace != "" {
+			options.SetDevNamespace(options.Flags.Namespace)
+		}
 		err := options.storeAdminCredentialsInVault(&options.AdminSecretsService)
 		if err != nil {
 			return "", nil, errors.Wrapf(err, "storing the admin credentials in vault")

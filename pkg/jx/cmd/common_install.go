@@ -1501,7 +1501,7 @@ func GetSafeUsername(username string) string {
 	return username
 }
 
-func (o *CommonOptions) installProw(useKnativePipeine bool, isGitOps bool, gitOpsDir string, gitOpsEnvDir string) error {
+func (o *CommonOptions) installProw(useTekton bool, isGitOps bool, gitOpsDir string, gitOpsEnvDir string) error {
 	if o.ReleaseName == "" {
 		o.ReleaseName = kube.DefaultProwReleaseName
 	}
@@ -1571,22 +1571,23 @@ func (o *CommonOptions) installProw(useKnativePipeine bool, isGitOps bool, gitOp
 	}
 	log.Infof("\nInstalling knative into namespace %s\n", util.ColorInfo(devNamespace))
 
-	ksecretValues := []string{"build.auth.git.username=" + o.Username, "build.auth.git.password=" + o.OAUTHToken}
+	setValues = append(setValues, "build.auth.git.username="+o.Username)
+	ksecretValues := []string{"build.auth.git.password=" + o.OAUTHToken}
 
 	if settings.HelmTemplate || settings.NoTiller || settings.HelmBinary != "helm" {
 		// lets disable tiller
-		ksecretValues = append(ksecretValues, "tillerNamespace=")
+		setValues = append(setValues, "tillerNamespace=")
 	}
 
-	if useKnativePipeine {
+	if useTekton {
 		secretValues = append(secretValues, "buildnum.enabled=false", "pipelinerunner.enabled=true")
 
 		err = o.retry(2, time.Second, func() (err error) {
-			return o.installChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, kube.DefaultKnativeBuildPipelineReleaseName,
-				kube.ChartKnativePipeline, "tekton", "", devNamespace, true, setValues, ksecretValues, nil, "")
+			return o.installChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, kube.DefaultTektonReleaseName,
+				kube.ChartTekton, "tekton", "", devNamespace, true, setValues, ksecretValues, nil, "")
 		})
 		if err != nil {
-			return errors.Wrap(err, "failed to install Knative build pipeline")
+			return errors.Wrap(err, "failed to install Tekton")
 		}
 
 	} else {
@@ -1608,7 +1609,7 @@ func (o *CommonOptions) installProw(useKnativePipeine bool, isGitOps bool, gitOp
 		return errors.Wrap(err, "failed to install Prow")
 	}
 
-	if !useKnativePipeine {
+	if !useTekton {
 		log.Infof("\nInstalling BuildTemplates into namespace %s\n", util.ColorInfo(devNamespace))
 
 		err = o.retry(2, time.Second, func() (err error) {

@@ -30,9 +30,9 @@ const defaultProwVersion = ""
 // CreateAddonProwOptions the options for the create spring command
 type CreateAddonProwOptions struct {
 	CreateAddonOptions
-	Password        string
-	Chart           string
-	KnativePipeline bool
+	Password string
+	Chart    string
+	Tekton   bool
 }
 
 // NewCmdCreateAddonProw creates a command object for the "create" command
@@ -64,7 +64,7 @@ func NewCmdCreateAddonProw(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Prow.HMACToken, "hmac-token", "", "", "OPTIONAL: The hmac-token is the token that you give to GitHub for validating webhooks. Generate it using any reasonable randomness-generator, eg openssl rand -hex 20")
 	cmd.Flags().StringVarP(&options.Prow.OAUTHToken, "oauth-token", "", "", "OPTIONAL: The oauth-token is an OAuth2 token that has read and write access to the bot account. Generate it from the account's settings -> Personal access tokens -> Generate new token.")
 	cmd.Flags().StringVarP(&options.Password, "password", "", "", "Overwrite the default admin password used to login to the Deck UI")
-	cmd.Flags().BoolVarP(&options.KnativePipeline, "build-pipeline", "", true, "Enables Knative Build Pipeline. Otherwise we default to use Knative Build")
+	cmd.Flags().BoolVarP(&options.Tekton, "tekton", "t", true, "Enables Tekton. Otherwise we default to use Knative Build")
 	return cmd
 }
 
@@ -90,7 +90,7 @@ func (o *CreateAddonProwOptions) Run() error {
 
 	isGitOps, _ := o.GetDevEnv()
 
-	err = o.installProw(o.KnativePipeline, isGitOps, "", "")
+	err = o.installProw(o.Tekton, isGitOps, "", "")
 	if err != nil {
 		return fmt.Errorf("failed to install Prow: %v", err)
 	}
