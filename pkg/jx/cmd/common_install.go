@@ -1553,7 +1553,6 @@ func (o *CommonOptions) installProw(useTekton bool, isGitOps bool, gitOpsDir str
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
 
-	secretValues := []string{"user=" + o.Username, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
 	setValues := strings.Split(o.SetValues, ",")
 
 	settings, err := o.TeamSettings()
@@ -1571,8 +1570,7 @@ func (o *CommonOptions) installProw(useTekton bool, isGitOps bool, gitOpsDir str
 	}
 	log.Infof("\nInstalling knative into namespace %s\n", util.ColorInfo(devNamespace))
 
-	setValues = append(setValues, "build.auth.git.username="+o.Username)
-	ksecretValues := []string{"build.auth.git.password=" + o.OAUTHToken}
+	ksecretValues := []string{}
 
 	if settings.HelmTemplate || settings.NoTiller || settings.HelmBinary != "helm" {
 		// lets disable tiller
@@ -1580,7 +1578,13 @@ func (o *CommonOptions) installProw(useTekton bool, isGitOps bool, gitOpsDir str
 	}
 
 	if useTekton {
-		secretValues = append(secretValues, "buildnum.enabled=false", "pipelinerunner.enabled=true")
+		setValues = append(setValues,
+			"auth.git.username="+o.Username,
+			"buildnum.enabled=false",
+			"pipelinerunner.enabled=true")
+
+		ksecretValues = append(ksecretValues,
+			"auth.git.password="+o.OAUTHToken)
 
 		err = o.retry(2, time.Second, func() (err error) {
 			return o.installChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, kube.DefaultTektonReleaseName,
@@ -1591,6 +1595,8 @@ func (o *CommonOptions) installProw(useTekton bool, isGitOps bool, gitOpsDir str
 		}
 
 	} else {
+		setValues = append(setValues, "build.auth.git.username="+o.Username)
+		ksecretValues = append(ksecretValues, "build.auth.git.username="+o.Username, "build.auth.git.password="+o.OAUTHToken)
 		err = o.retry(2, time.Second, func() (err error) {
 			return o.installChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, kube.DefaultKnativeBuildReleaseName,
 				kube.ChartKnativeBuild, "knativebuild", "", devNamespace, true, setValues, ksecretValues, nil, "")
@@ -1601,6 +1607,8 @@ func (o *CommonOptions) installProw(useTekton bool, isGitOps bool, gitOpsDir str
 	}
 
 	log.Infof("\nInstalling Prow into namespace %s\n", util.ColorInfo(devNamespace))
+
+	secretValues := []string{"user=" + o.Username, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
 	err = o.retry(2, time.Second, func() (err error) {
 		return o.installChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, o.ReleaseName,
 			o.Chart, "prow", o.Version, devNamespace, true, setValues, secretValues, nil, "")
