@@ -67,9 +67,9 @@ func (ps *PipelineStructure) GetStage(name string) *PipelineStructureStage {
 // PipelineStageAndChildren represents a single stage and its children.
 // +k8s:openapi-gen=false
 type PipelineStageAndChildren struct {
-	Stage PipelineStructureStage
+	Stage    PipelineStructureStage
 	Parallel []PipelineStageAndChildren
-	Stages []PipelineStageAndChildren
+	Stages   []PipelineStageAndChildren
 }
 
 // GetAllStagesAndChildren will get a slice of all top-level stages in this pipeline, with their children

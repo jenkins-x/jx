@@ -1746,7 +1746,7 @@ func PipelineWithLabels(name, namespace string, ops ...tb.PipelineOp) *tektonv1a
 		pipeline.ObjectMeta.Labels = map[string]string{}
 	}
 	pipeline.Labels[syntax.LabelPipelineFromYaml] = "true"
-	
+
 	return pipeline
 }
 
