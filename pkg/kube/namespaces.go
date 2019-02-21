@@ -124,8 +124,8 @@ func isProwBuildNotFoundError(err error) bool {
 	return err.Error() == `deployments.apps "prow-build" not found`
 }
 
-// IsBuildPipelineEnabled returns true if Build Pipeline is enabled in the given development namespace
-func IsBuildPipelineEnabled(kubeClient kubernetes.Interface, ns string) (bool, error) {
+// IsTektonEnabled returns true if Build Pipeline is enabled in the given development namespace
+func IsTektonEnabled(kubeClient kubernetes.Interface, ns string) (bool, error) {
 	// lets try determine if its Jenkins or not via the deployments
 	_, err := kubeClient.AppsV1beta1().Deployments(ns).Get(DeploymentBuildPipelineController, metav1.GetOptions{})
 	if err != nil {

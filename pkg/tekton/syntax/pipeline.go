@@ -741,7 +741,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 
 		t := &tektonv1alpha1.Task{
 			TypeMeta: metav1.TypeMeta{
-				APIVersion: PipelineAPIVersion,
+				APIVersion: TektonAPIVersion,
 				Kind:       "Task",
 			},
 			ObjectMeta: metav1.ObjectMeta{
@@ -951,7 +951,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 
 	p := &tektonv1alpha1.Pipeline{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: PipelineAPIVersion,
+			APIVersion: TektonAPIVersion,
 			Kind:       "Pipeline",
 		},
 		ObjectMeta: metav1.ObjectMeta{

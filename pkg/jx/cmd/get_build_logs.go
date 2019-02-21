@@ -12,7 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/kpipelines"
+	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -113,7 +113,7 @@ func (o *GetBuildLogsOptions) Run() error {
 		return err
 	}
 
-	buildPipelineEnabled, err := kube.IsBuildPipelineEnabled(kubeClient, ns)
+	buildPipelineEnabled, err := kube.IsTektonEnabled(kubeClient, ns)
 	if err != nil {
 		return err
 	}
@@ -308,7 +308,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 	}
 
 	if buildPipelineEnabled {
-		pr := build.(*kpipelines.PipelineRunInfo)
+		pr := build.(*tekton.PipelineRunInfo)
 		log.Infof("Build logs for %s\n", util.ColorInfo(name+suffix))
 		for _, stage := range pr.GetOrderedTaskStages() {
 			if stage.Pod == nil {
@@ -489,9 +489,9 @@ func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tek
 		return names, defaultName, buildMap, pipelineMap, err
 	}
 
-	buildInfos := []*kpipelines.PipelineRunInfo{}
+	buildInfos := []*tekton.PipelineRunInfo{}
 	for _, pr := range prList.Items {
-		pri, err := kpipelines.CreatePipelineRunInfo(kubeClient, tektonClient, jxClient, ns, pr.Name)
+		pri, err := tekton.CreatePipelineRunInfo(kubeClient, tektonClient, jxClient, ns, pr.Name)
 		if err != nil {
 			log.Warnf("Error creating PipelineRunInfo for PipelineRun %s: %s\n", pr.Name, err)
 			return names, defaultName, buildMap, pipelineMap, err
@@ -500,7 +500,7 @@ func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tek
 			buildInfos = append(buildInfos, pri)
 		}
 	}
-	kpipelines.SortPipelineRunInfos(buildInfos)
+	tekton.SortPipelineRunInfos(buildInfos)
 	if len(buildInfos) == 0 {
 		return names, defaultName, buildMap, pipelineMap, fmt.Errorf("no knative builds have been triggered which match the current filter")
 	}

@@ -1,4 +1,4 @@
-package kpipelines
+package tekton
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/kpipelines/syntax"
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"

@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/kpipelines/syntax"
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	tektonv1alpha1 "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	tb "github.com/knative/build-pipeline/test/builder"
 	"github.com/knative/pkg/apis"

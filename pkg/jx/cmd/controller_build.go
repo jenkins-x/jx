@@ -9,8 +9,8 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/collector"
-	"github.com/jenkins-x/jx/pkg/kpipelines"
-	"github.com/jenkins-x/jx/pkg/kpipelines/syntax"
+	"github.com/jenkins-x/jx/pkg/tekton"
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/knative/build-pipeline/pkg/apis/pipeline"
 	"github.com/pkg/errors"
 
@@ -95,7 +95,7 @@ func (o *ControllerBuildOptions) Run() error {
 		return err
 	}
 
-	buildPipelineEnabled, err := kube.IsBuildPipelineEnabled(kubeClient, devNs)
+	buildPipelineEnabled, err := kube.IsTektonEnabled(kubeClient, devNs)
 	if err != nil {
 		return err
 	}
@@ -246,7 +246,7 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 		if pod.Labels[pipeline.GroupName+pipeline.PipelineRunLabelKey] != "" {
 			if pod.Labels[syntax.LabelStageName] != "" {
 				prName := pod.Labels[pipeline.GroupName+pipeline.PipelineRunLabelKey]
-				pri, err := kpipelines.CreatePipelineRunInfo(kubeClient, tektonClient, jxClient, ns, prName)
+				pri, err := tekton.CreatePipelineRunInfo(kubeClient, tektonClient, jxClient, ns, prName)
 				if err != nil {
 					log.Warnf("Error creating PipelineRunInfo for PipelineRun %s: %s\n", prName, err)
 					return
@@ -315,7 +315,7 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 }
 
 // createPromoteStepActivityKeyFromRun deduces the pipeline metadata from the pipeline run info
-func (o *ControllerBuildOptions) createPromoteStepActivityKeyFromRun(pri *kpipelines.PipelineRunInfo) *kube.PromoteStepActivityKey {
+func (o *ControllerBuildOptions) createPromoteStepActivityKeyFromRun(pri *tekton.PipelineRunInfo) *kube.PromoteStepActivityKey {
 	if pri.GitURL == "" || pri.GitInfo == nil {
 		return nil
 	}
@@ -473,7 +473,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 	return originYaml != newYaml
 }
 
-func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kubernetes.Interface, ns string, activity *v1.PipelineActivity, pri *kpipelines.PipelineRunInfo) bool {
+func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kubernetes.Interface, ns string, activity *v1.PipelineActivity, pri *tekton.PipelineRunInfo) bool {
 	originYaml := toYamlString(activity)
 	for _, stage := range pri.Stages {
 		updateForStage(stage, activity)
@@ -541,7 +541,7 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 	return originYaml != newYaml
 }
 
-func updateForStage(si *kpipelines.StageInfo, a *v1.PipelineActivity) {
+func updateForStage(si *tekton.StageInfo, a *v1.PipelineActivity) {
 	_, stage, _ := kube.GetOrCreateStage(a, si.GetStageNameIncludingParents())
 
 	initContainersTerminated := false
