@@ -483,18 +483,18 @@ definitions:
     description: ExtensionConfig is the configuration and enablement for an extension
       inside an app
     properties:
-      Parameters:
-        items:
-          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionParameterValue'
-        type: array
       name:
         type: string
       namespace:
         type: string
+      parameters:
+        items:
+          $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionParameterValue'
+        type: array
     required:
     - name
     - namespace
-    - Parameters
+    - parameters
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionConfigList:
     description: ExtensionsConfigList contains a list of ExtensionConfig items
@@ -1601,6 +1601,9 @@ definitions:
         type: string
       helmTemplate:
         type: boolean
+      importMode:
+        description: ImportMode indicates what kind of
+        type: string
       kubeProvider:
         type: string
       noTiller:
@@ -1614,6 +1617,10 @@ definitions:
           $ref: '#/definitions/io.k8s.api.batch.v1.Job'
         type: array
       promotionEngine:
+        type: string
+      prowEngine:
+        description: ProwEngine is the kind of prow engine used such as knative build
+          or build pipeline
         type: string
       quickstartLocations:
         items:

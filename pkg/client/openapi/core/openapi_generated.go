@@ -1328,7 +1328,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionConfig(ref common.ReferenceCallback) 
 							Format: "",
 						},
 					},
-					"Parameters": {
+					"parameters": {
 						SchemaProps: spec.SchemaProps{
 							Type: []string{"array"},
 							Items: &spec.SchemaOrArray{
@@ -1341,7 +1341,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionConfig(ref common.ReferenceCallback) 
 						},
 					},
 				},
-				Required: []string{"name", "namespace", "Parameters"},
+				Required: []string{"name", "namespace", "parameters"},
 			},
 		},
 		Dependencies: []string{
@@ -4251,6 +4251,20 @@ func schema_pkg_apis_jenkinsio_v1_TeamSettings(ref common.ReferenceCallback) com
 									},
 								},
 							},
+						},
+					},
+					"importMode": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ImportMode indicates what kind of",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"prowEngine": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ProwEngine is the kind of prow engine used such as knative build or build pipeline",
+							Type:        []string{"string"},
+							Format:      "",
 						},
 					},
 				},
