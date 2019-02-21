@@ -68,9 +68,8 @@ type StageInfo struct {
 func (si *StageInfo) GetStageNameIncludingParents() string {
 	if si.Name != "" {
 		return strings.Join(append(si.Parents, si.Name), " / ")
-	} else {
-		return si.PodName
 	}
+	return si.PodName
 }
 
 // PipelineRunInfoFilter allows specifying criteria on which to filter a list of PipelineRunInfos
