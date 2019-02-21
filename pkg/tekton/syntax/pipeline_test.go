@@ -44,7 +44,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
@@ -82,7 +82,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						StepCmd("echo"),
 						StepArg("again"))),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
@@ -134,7 +134,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						StageStep(StepCmd("echo"), StepArg("again"))),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
@@ -196,7 +196,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				PipelineStage("Last Stage",
 					StageStep(StepCmd("echo"), StepArg("last"))),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("first-stage", "somepipeline-first-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
@@ -297,7 +297,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				PipelineStage("Last Stage",
 					StageStep(StepCmd("echo"), StepArg("last"))),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("first-stage", "somepipeline-first-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
@@ -432,7 +432,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					StageStep(StepCmd("ls")),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("stage1", "somepipeline-stage1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
@@ -525,7 +525,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("stage1", "somepipeline-stage1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
@@ -617,7 +617,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					StageStep(StepCmd("echo"), StepArg("hello"), StepArg("${SOME_OTHER_VAR}")),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("a-stage-with-environment", "somepipeline-a-stage-with-environment",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
@@ -714,7 +714,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					StageStep(StepCmd("echo"), StepArg("goodbye")),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
@@ -750,7 +750,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					StageStep(StepCmd("ls")),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask(".--a--.", "somepipeline-a",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
@@ -802,7 +802,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				),
 			),
 			/* TODO: Stop erroring out once we figure out how to handle task timeouts again
-						pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+						pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 							tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
 								tb.PipelineTaskInputResource("workspace", "somepipeline"),
 								tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
@@ -836,7 +836,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					StageStep(StepCmd("echo"), StepArg("hello"), StepArg("world")),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
@@ -880,7 +880,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					StageStep(StepCmd("echo"), StepArg("hello"), StepArg("after")),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
@@ -1736,7 +1736,18 @@ func TaskStageLabel(value string) tb.TaskOp {
 			t.ObjectMeta.Labels = map[string]string{}
 		}
 		t.ObjectMeta.Labels[syntax.LabelStageName] = value
+		t.ObjectMeta.Labels[syntax.LabelPipelineFromYaml] = "true"
 	}
+}
+
+func PipelineWithLabels(name, namespace string, ops ...tb.PipelineOp) *tektonv1alpha1.Pipeline {
+	pipeline := tb.Pipeline(name, namespace, ops...)
+	if pipeline.ObjectMeta.Labels == nil {
+		pipeline.ObjectMeta.Labels = map[string]string{}
+	}
+	pipeline.Labels[syntax.LabelPipelineFromYaml] = "true"
+	
+	return pipeline
 }
 
 func TestParsedPipelineHelpers(t *testing.T) {
