@@ -253,7 +253,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 
 // lets try use the users browser to find the API token
 func (o *CommonOptions) createChromeClient(ctxt context.Context) (*chromedp.CDP, error) {
-	if o.Headless {
+	if o.BatchMode {
 		options := func(m map[string]interface{}) error {
 			m["remote-debugging-port"] = 9222
 			m["no-sandbox"] = true
