@@ -90,7 +90,7 @@ func NewCmdControllerPipelineRunner(commonOpts *CommonOptions) *cobra.Command {
 		"The interface address to bind to (by default, will listen on all interfaces/addresses).")
 	cmd.Flags().StringVarP(&options.Path, "path", "p", "/",
 		"The path to listen on for requests to trigger a pipeline run.")
-	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "build-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
+	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
 	return cmd
 }
 
