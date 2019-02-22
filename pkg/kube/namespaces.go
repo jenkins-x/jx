@@ -129,7 +129,7 @@ func IsTektonEnabled(kubeClient kubernetes.Interface, ns string) (bool, error) {
 	// lets try determine if its Jenkins or not via the deployments
 	_, err := kubeClient.AppsV1beta1().Deployments(ns).Get(DeploymentTektonController, metav1.GetOptions{})
 	if err != nil {
-		if isBuildPipelineNotFoundError(err) {
+		if isTektonNotFoundError(err) {
 			return false, nil
 		}
 		return false, err
@@ -137,8 +137,8 @@ func IsTektonEnabled(kubeClient kubernetes.Interface, ns string) (bool, error) {
 	return true, nil
 }
 
-func isBuildPipelineNotFoundError(err error) bool {
-	return err.Error() == `deployments.apps "build-pipeline-controller" not found`
+func isTektonNotFoundError(err error) bool {
+	return err.Error() == `deployments.apps "tekton-pipelines-controller" not found`
 }
 
 // EnsureEditEnvironmentSetup ensures that the Environment is created in the given namespace

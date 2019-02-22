@@ -95,7 +95,7 @@ func (o *ControllerBuildOptions) Run() error {
 		return err
 	}
 
-	buildPipelineEnabled, err := kube.IsTektonEnabled(kubeClient, devNs)
+	tektonEnabled, err := kube.IsTektonEnabled(kubeClient, devNs)
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func (o *ControllerBuildOptions) Run() error {
 		}
 	}
 
-	if buildPipelineEnabled {
+	if tektonEnabled {
 		pod := &corev1.Pod{}
 		log.Infof("Watching for Pods in namespace %s\n", util.ColorInfo(ns))
 		listWatch := cache.NewListWatchFromClient(kubeClient.CoreV1().RESTClient(), "pods", ns, fields.Everything())

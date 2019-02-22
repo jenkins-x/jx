@@ -113,7 +113,7 @@ func (o *GetBuildLogsOptions) Run() error {
 		return err
 	}
 
-	buildPipelineEnabled, err := kube.IsTektonEnabled(kubeClient, ns)
+	tektonEnabled, err := kube.IsTektonEnabled(kubeClient, ns)
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func (o *GetBuildLogsOptions) Run() error {
 	devEnv, err := kube.GetEnrichedDevEnvironment(kubeClient, jxClient, ns)
 	webhookEngine := devEnv.Spec.WebHookEngine
 	if webhookEngine == v1.WebHookEngineProw {
-		return o.getProwBuildLog(kubeClient, tektonClient, jxClient, ns, buildPipelineEnabled)
+		return o.getProwBuildLog(kubeClient, tektonClient, jxClient, ns, tektonEnabled)
 	}
 
 	args := o.Args
@@ -215,7 +215,7 @@ func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) 
 	}
 }
 
-func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, jxClient versioned.Interface, ns string, buildPipelineEnabled bool) error {
+func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, jxClient versioned.Interface, ns string, tektonEnabled bool) error {
 	if o.CurrentFolder {
 		currentDirectory, err := os.Getwd()
 		if err != nil {
@@ -237,7 +237,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 	var pipelineMap map[string]builds.BaseBuildInfo
 
 	var err error
-	if buildPipelineEnabled {
+	if tektonEnabled {
 		names, defaultName, buildMap, pipelineMap, err = o.loadPipelines(kubeClient, tektonClient, jxClient, ns)
 	} else {
 		names, defaultName, buildMap, pipelineMap, err = o.loadBuilds(kubeClient, ns)
@@ -277,7 +277,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 		// there's no pipeline with yet called 'name' so lets wait for it to start...
 		f := func() error {
 			var err error
-			if buildPipelineEnabled {
+			if tektonEnabled {
 				names, defaultName, buildMap, pipelineMap, err = o.loadPipelines(kubeClient, tektonClient, jxClient, ns)
 			} else {
 				names, defaultName, buildMap, pipelineMap, err = o.loadBuilds(kubeClient, ns)
@@ -307,7 +307,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 		return fmt.Errorf("No Pipeline found for name %s in values: %s", name, strings.Join(names, ", "))
 	}
 
-	if buildPipelineEnabled {
+	if tektonEnabled {
 		pr := build.(*tekton.PipelineRunInfo)
 		log.Infof("Build logs for %s\n", util.ColorInfo(name+suffix))
 		for _, stage := range pr.GetOrderedTaskStages() {
