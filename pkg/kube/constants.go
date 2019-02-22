@@ -43,7 +43,7 @@ const (
 	ChartBuildTemplates = "jenkins-x/jx-build-templates"
 
 	// ChartTekton the default chart for tekton
-	ChartTekton = "jenkins-x/knative-build-pipeline"
+	ChartTekton = "jenkins-x/tekton"
 
 	// DefaultProwReleaseName the default helm release name for Prow
 	DefaultProwReleaseName = "jx-prow"
