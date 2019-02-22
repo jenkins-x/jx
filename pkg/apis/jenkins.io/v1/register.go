@@ -52,6 +52,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&EnvironmentRoleBindingList{},
 		&Extension{},
 		&ExtensionList{},
+		&Fact{},
+		&FactList{},
 		&GitService{},
 		&GitServiceList{},
 		&PluginList{},
