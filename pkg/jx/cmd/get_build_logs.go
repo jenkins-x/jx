@@ -34,6 +34,7 @@ type GetBuildLogsOptions struct {
 	Tail                    bool
 	Wait                    bool
 	BuildFilter             builds.BuildPodInfoFilter
+	JenkinsSelector         JenkinsSelectorOptions
 	CurrentFolder           bool
 	WaitForPipelineDuration time.Duration
 }
@@ -94,6 +95,7 @@ func NewCmdGetBuildLogs(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.BuildFilter.Branch, "branch", "", "", "Filters the branch")
 	cmd.Flags().StringVarP(&options.BuildFilter.Build, "build", "", "", "The build number to view")
 	cmd.Flags().BoolVarP(&options.CurrentFolder, "current", "c", false, "Display logs using current folder as repo name, and parent folder as owner")
+	options.JenkinsSelector.AddFlags(cmd)
 
 	return cmd
 }
@@ -120,14 +122,14 @@ func (o *GetBuildLogsOptions) Run() error {
 
 	devEnv, err := kube.GetEnrichedDevEnvironment(kubeClient, jxClient, ns)
 	webhookEngine := devEnv.Spec.WebHookEngine
-	if webhookEngine == v1.WebHookEngineProw {
+	if webhookEngine == v1.WebHookEngineProw && !o.JenkinsSelector.IsCustom() {
 		return o.getProwBuildLog(kubeClient, tektonClient, jxClient, ns, tektonEnabled)
 	}
 
 	args := o.Args
 
 	if !o.BatchMode && len(args) == 0 {
-		jobMap, err := o.getJobMap(o.BuildFilter.Filter)
+		jobMap, err := o.getJobMap(&o.JenkinsSelector, o.BuildFilter.Filter)
 		if err != nil {
 			return err
 		}
@@ -165,13 +167,13 @@ func (o *GetBuildLogsOptions) Run() error {
 	}
 
 	log.Infof("%s %s\n", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
-	return o.tailBuild(name, &last)
+	return o.tailBuild(&o.JenkinsSelector, name, &last)
 }
 
 func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) (gojenkins.Build, error) {
 	var last gojenkins.Build
 
-	jenkinsClient, err := o.JenkinsClient()
+	jenkinsClient, err := o.CreateCustomJenkinsClient(&o.JenkinsSelector)
 	if err != nil {
 		return last, err
 	}
@@ -179,7 +181,7 @@ func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) 
 	f := func() error {
 		var err error
 
-		jobMap, err := o.getJobMap(o.BuildFilter.Filter)
+		jobMap, err := o.getJobMap(&o.JenkinsSelector, o.BuildFilter.Filter)
 		if err != nil {
 			return err
 		}
@@ -187,6 +189,7 @@ func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) 
 		if job.Url == "" {
 			return fmt.Errorf("No Job exists yet called %s", name)
 		}
+		job.Url = switchJenkinsBaseURL(job.Url, jenkinsClient.BaseURL())
 
 		if buildNumber > 0 {
 			last, err = jenkinsClient.GetBuild(job, buildNumber)
@@ -203,6 +206,7 @@ func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) 
 				return fmt.Errorf("No build found for name %s", name)
 			}
 		}
+		last.Url = switchJenkinsBaseURL(last.Url, jenkinsClient.BaseURL())
 		return err
 	}
 

@@ -720,9 +720,9 @@ func (o *CommonOptions) retryUntilTrueOrTimeout(timeout time.Duration, sleep tim
 	}
 }
 
-func (o *CommonOptions) getJobMap(filter string) (map[string]gojenkins.Job, error) {
+func (o *CommonOptions) getJobMap(jenkinsSelector *JenkinsSelectorOptions, filter string) (map[string]gojenkins.Job, error) {
 	jobMap := map[string]gojenkins.Job{}
-	jenkins, err := o.JenkinsClient()
+	jenkins, err := o.CreateCustomJenkinsClient(jenkinsSelector)
 	if err != nil {
 		return jobMap, err
 	}
@@ -730,16 +730,11 @@ func (o *CommonOptions) getJobMap(filter string) (map[string]gojenkins.Job, erro
 	if err != nil {
 		return jobMap, err
 	}
-	o.addJobs(&jobMap, filter, "", jobs)
+	o.addJobs(jenkins, &jobMap, filter, "", jobs)
 	return jobMap, nil
 }
 
-func (o *CommonOptions) addJobs(jobMap *map[string]gojenkins.Job, filter string, prefix string, jobs []gojenkins.Job) {
-	jenkins, err := o.JenkinsClient()
-	if err != nil {
-		return
-	}
-
+func (o *CommonOptions) addJobs(jenkins gojenkins.JenkinsClient, jobMap *map[string]gojenkins.Job, filter string, prefix string, jobs []gojenkins.Job) {
 	for _, j := range jobs {
 		name := jxjenkins.JobName(prefix, &j)
 		if jxjenkins.IsPipeline(&j) {
@@ -749,17 +744,17 @@ func (o *CommonOptions) addJobs(jobMap *map[string]gojenkins.Job, filter string,
 			}
 		}
 		if j.Jobs != nil {
-			o.addJobs(jobMap, filter, name, j.Jobs)
+			o.addJobs(jenkins, jobMap, filter, name, j.Jobs)
 		} else {
 			job, err := jenkins.GetJob(name)
 			if err == nil && job.Jobs != nil {
-				o.addJobs(jobMap, filter, name, job.Jobs)
+				o.addJobs(jenkins, jobMap, filter, name, job.Jobs)
 			}
 		}
 	}
 }
-func (o *CommonOptions) tailBuild(jobName string, build *gojenkins.Build) error {
-	jenkins, err := o.JenkinsClient()
+func (o *CommonOptions) tailBuild(jenkinsSelector *JenkinsSelectorOptions, jobName string, build *gojenkins.Build) error {
+	jenkins, err := o.CreateCustomJenkinsClient(jenkinsSelector)
 	if err != nil {
 		return nil
 	}

@@ -16,8 +16,9 @@ import (
 type StopPipelineOptions struct {
 	GetOptions
 
-	Build  int
-	Filter string
+	Build           int
+	Filter          string
+	JenkinsSelector JenkinsSelectorOptions
 
 	Jobs map[string]gojenkins.Job
 }
@@ -60,13 +61,14 @@ func NewCmdStopPipeline(commonOpts *CommonOptions) *cobra.Command {
 	}
 	cmd.Flags().IntVarP(&options.Build, "build", "", 0, "The build number to stop")
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filters all the available jobs by those that contain the given text")
+	options.JenkinsSelector.AddFlags(cmd)
 
 	return cmd
 }
 
 // Run implements this command
 func (o *StopPipelineOptions) Run() error {
-	jobMap, err := o.getJobMap(o.Filter)
+	jobMap, err := o.getJobMap(&o.JenkinsSelector, o.Filter)
 	if err != nil {
 		return err
 	}

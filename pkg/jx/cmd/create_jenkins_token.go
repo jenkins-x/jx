@@ -127,16 +127,6 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		/*
-			TODO don't think we still need this logic?
-
-			jenkinsServiceName := kube.ServiceJenkins
-			url, err = o.findServiceInNamespace(jenkinsServiceName, ns)
-			if err != nil {
-				return errors.Wrapf(err, "searching service %q", jenkinsServiceName)
-			}
-		*/
-
 		server = config.GetOrCreateServer(url)
 	} else {
 		server, err = o.findServer(config, &o.ServerFlags, "jenkins server", "Try installing one via: jx create team", false)
