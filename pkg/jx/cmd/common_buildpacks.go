@@ -55,7 +55,6 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 		i.UseNextGenPipeline = true
 		i.CreateJenkinsxYamlIfMissing = true
 	}
-	log.Infof("\n====  current import settings %s\n", string(settings.GetImportMode()))
 
 	dir := i.Dir
 	customDraftPack := i.CustomDraftPack
