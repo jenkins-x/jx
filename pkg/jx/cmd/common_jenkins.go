@@ -99,9 +99,7 @@ func (o *CommonOptions) CustomJenkinsURL(jenkinsSelector *JenkinsSelectorOptions
 	return o.factory.GetCustomJenkinsURL(kubeClient, ns, customJenkinsName)
 }
 
-// CreateCustomJenkinsClient creates either a regular Jenkins client or if useCustom is true creates a JenkinsClient
-// for a custom jenkins App. If no customJenkinsName is specified and there is only one available it is used. Otherwise
-// the user is prompted to pick the Jenkins App to use if not in batch mode.
+// PickCustomJenkinsName picks the name of a custom jenkins server App if available
 func (o *CommonOptions) PickCustomJenkinsName(jenkinsSelector *JenkinsSelectorOptions, kubeClient kubernetes.Interface, ns string) (string, error) {
 	if !jenkinsSelector.UseCustomJenkins {
 		return "", nil
