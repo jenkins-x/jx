@@ -315,7 +315,7 @@ func (o *CommonOptions) installChartOrGitOps(isGitOps bool, gitOpsDir string, gi
 
 	if !isGitOps {
 		return o.installChartOptions(helm.InstallChartOptions{ReleaseName: releaseName, Chart: chart, Version: version,
-			Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles, Repository: repo})
+			Ns: ns, HelmUpdate: helmUpdate, SetValues: append(setValues, setSecrets...), ValueFiles: valueFiles, Repository: repo})
 	}
 
 	if gitOpsEnvDir == "" {
