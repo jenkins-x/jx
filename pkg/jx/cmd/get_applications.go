@@ -91,7 +91,7 @@ func NewCmdGetApplications(commonOpts *CommonOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "applications",
 		Short:   "Display one or more Applications and their versions",
-		Aliases: []string{"app", "apps", "version", "versions"},
+		Aliases: []string{"version", "versions"},
 		Long:    get_version_long,
 		Example: get_version_example,
 		Run: func(cmd *cobra.Command, args []string) {

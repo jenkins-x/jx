@@ -30,12 +30,20 @@ const (
 	AnnotationChartName = "jenkins.io/chart"
 	// AnnotationAppVersion stores the chart's app version
 	AnnotationAppVersion = "jenkins.io/chart-app-version"
+	// AnnotationAppDescription stores the chart's app version
+	AnnotationAppDescription = "jenkins.io/chart-description"
+	// AnnotationAppRepository stores the chart's app repository
+	AnnotationAppRepository = "jenkins.io/chart-repository"
 
 	// LabelReleaseName stores the chart release name
 	LabelReleaseName = "jenkins.io/chart-release"
 
 	// LabelReleaseChartVersion stores the version of a chart installation in a label
 	LabelReleaseChartVersion = "jenkins.io/version"
+	// LabelAppName stores the chart's app name
+	LabelAppName = "jenkins.io/app-name"
+	// LabelAppVersion stores the chart's app version
+	LabelAppVersion = "jenkins.io/app-version"
 
 	hookFailed    = "hook-failed"
 	hookSucceeded = "hook-succeeded"
