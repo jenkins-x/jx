@@ -108,7 +108,7 @@ func (o *GetBuildLogsOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	tektonClient, _, err := o.KnativePipelineClient()
+	tektonClient, _, err := o.TektonClient()
 	if err != nil {
 		return err
 	}

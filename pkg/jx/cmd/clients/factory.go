@@ -38,7 +38,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	kpipelineclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
+	tektonclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
 	build "github.com/knative/build/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -417,7 +417,7 @@ func (f *factory) CreateKnativeBuildClient() (build.Interface, string, error) {
 	return client, ns, err
 }
 
-func (f *factory) CreateKnativePipelineClient() (kpipelineclient.Interface, string, error) {
+func (f *factory) CreateTektonClient() (tektonclient.Interface, string, error) {
 	config, err := f.CreateKubeConfig()
 	if err != nil {
 		return nil, "", err
@@ -427,7 +427,7 @@ func (f *factory) CreateKnativePipelineClient() (kpipelineclient.Interface, stri
 		return nil, "", err
 	}
 	ns := kube.CurrentNamespace(kubeConfig)
-	client, err := kpipelineclient.NewForConfig(config)
+	client, err := tektonclient.NewForConfig(config)
 	if err != nil {
 		return nil, ns, err
 	}

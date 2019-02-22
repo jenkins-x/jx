@@ -699,7 +699,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	if err != nil {
 		return err
 	}
-	kpClient, _, err := o.KnativePipelineClient()
+	tektonClient, _, err := o.TektonClient()
 	if err != nil {
 		return err
 	}
@@ -717,7 +717,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 		})
 
 		if !o.NoApply {
-			_, err := tekton.CreateOrUpdateSourceResource(kpClient, ns, resource)
+			_, err := tekton.CreateOrUpdateSourceResource(tektonClient, ns, resource)
 			if err != nil {
 				return errors.Wrapf(err, "failed to create/update PipelineResource %s in namespace %s", resource.Name, ns)
 			}
@@ -734,7 +734,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 		task.ObjectMeta.Namespace = ns
 
 		if !o.NoApply {
-			_, err = tekton.CreateOrUpdateTask(kpClient, ns, task)
+			_, err = tekton.CreateOrUpdateTask(tektonClient, ns, task)
 			if err != nil {
 				return errors.Wrapf(err, "failed to create/update the task %s in namespace %s", task.Name, ns)
 			}
@@ -751,7 +751,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	}
 	if !o.NoApply {
 		// TODO: Result is missing some fields that the original has, such as APIVersion and Kind. Why?
-		pipeline, err = tekton.CreateOrUpdatePipeline(kpClient, ns, pipeline, o.labels)
+		pipeline, err = tekton.CreateOrUpdatePipeline(tektonClient, ns, pipeline, o.labels)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create/update the Pipeline in namespace %s", ns)
 		}
@@ -789,7 +789,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	}
 
 	if !o.NoApply {
-		_, err = tekton.CreatePipelineRun(kpClient, ns, pipeline, run, o.Duration)
+		_, err = tekton.CreatePipelineRun(tektonClient, ns, pipeline, run, o.Duration)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create the PipelineRun in namespace %s", ns)
 		}
@@ -798,7 +798,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 		if structure != nil {
 			structure.PipelineRunRef = &run.Name
 
-			// TODO: Yeah, this should be moved into probably kpipelines/pipelines.go.
+			// TODO: Yeah, this should be moved into probably tekton/pipelines.go.
 			apisClient, err := o.ApiExtensionsClient()
 			if err != nil {
 				return err

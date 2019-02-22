@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	clients "github.com/jenkins-x/jx/pkg/jx/cmd/clients"
-	"github.com/petergtz/pegomock"
 	"reflect"
+	"github.com/petergtz/pegomock"
+	clients "github.com/jenkins-x/jx/pkg/jx/cmd/clients"
 )
 
 func AnyClientsFactory() clients.Factory {
