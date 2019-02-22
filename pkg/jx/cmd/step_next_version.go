@@ -60,7 +60,11 @@ var (
 )
 
 func NewCmdStepNextVersion(commonOpts *CommonOptions) *cobra.Command {
-	options := StepNextVersionOptions{}
+	options := StepNextVersionOptions{
+		StepOptions: StepOptions{
+			CommonOptions: commonOpts,
+		},
+	}
 	cmd := &cobra.Command{
 		Use:     "next-version",
 		Short:   "Writes next semantic version",

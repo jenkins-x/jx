@@ -102,7 +102,13 @@ func (o *StepHelmApplyOptions) Run() error {
 	}
 
 	if !o.DisableHelmVersion {
-		(&StepHelmVersionOptions{}).Run()
+		(&StepHelmVersionOptions{
+			StepHelmOptions: StepHelmOptions{
+				StepOptions: StepOptions{
+					CommonOptions: &CommonOptions{},
+				},
+			},
+		}).Run()
 	}
 	_, err = o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
 	if err != nil {
