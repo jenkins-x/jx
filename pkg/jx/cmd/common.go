@@ -30,7 +30,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
-	kpipelineclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
+	tektonclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
 	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -95,7 +95,7 @@ type CommonOptions struct {
 	devNamespace           string
 	jxClient               versioned.Interface
 	knbClient              buildclient.Interface
-	kpClient               kpipelineclient.Interface
+	tektonClient           tektonclient.Interface
 	jenkinsClient          gojenkins.JenkinsClient
 	git                    gits.Gitter
 	helm                   helm.Helmer
@@ -247,22 +247,22 @@ func (o *CommonOptions) JXClient() (versioned.Interface, string, error) {
 	return o.jxClient, o.currentNamespace, nil
 }
 
-// KnativePipelineClient lazily creates a new Knative Pipeline client
-func (o *CommonOptions) KnativePipelineClient() (kpipelineclient.Interface, string, error) {
+// TektonClient lazily creates a new Knative Pipeline client
+func (o *CommonOptions) TektonClient() (tektonclient.Interface, string, error) {
 	if o.factory == nil {
 		return nil, "", errors.New("command factory is not initialized")
 	}
-	if o.kpClient == nil {
-		knativePipelineClient, ns, err := o.factory.CreateKnativePipelineClient()
+	if o.tektonClient == nil {
+		tektonClient, ns, err := o.factory.CreateTektonClient()
 		if err != nil {
 			return nil, ns, err
 		}
-		o.kpClient = knativePipelineClient
+		o.tektonClient = tektonClient
 		if o.currentNamespace == "" {
 			o.currentNamespace = ns
 		}
 	}
-	return o.kpClient, o.currentNamespace, nil
+	return o.tektonClient, o.currentNamespace, nil
 }
 
 // KnativeBuildClient returns or creates the knative build client

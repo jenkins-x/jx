@@ -2,11 +2,12 @@ package kube
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -371,7 +372,7 @@ func (k *PromoteStepActivityKey) GetOrCreatePreview(jxClient versioned.Interface
 	return a, &spec.Steps[len(spec.Steps)-1], preview, true, nil
 }
 
-// GetOrCreateStage gets or creates the step for the given name
+// GetOrCreateStage gets or creates the stage for the given name
 func GetOrCreateStage(a *v1.PipelineActivity, stageName string) (*v1.PipelineActivityStep, *v1.StageActivityStep, bool) {
 	for i := range a.Spec.Steps {
 		step := &a.Spec.Steps[i]
@@ -392,6 +393,22 @@ func GetOrCreateStage(a *v1.PipelineActivity, stageName string) (*v1.PipelineAct
 	})
 	step := &a.Spec.Steps[len(a.Spec.Steps)-1]
 	return step, step.Stage, true
+}
+
+// GetOrCreateStepInStage gets or creates the step for the given name in the given stage
+func GetOrCreateStepInStage(stage *v1.StageActivityStep, stepName string) (*v1.CoreActivityStep, bool) {
+	for i := range stage.Steps {
+		step := &stage.Steps[i]
+		if step != nil && step.Name == stepName {
+			return step, false
+		}
+	}
+
+	step := &v1.CoreActivityStep{
+		Name: stepName,
+	}
+	stage.Steps = append(stage.Steps, *step)
+	return step, true
 }
 
 // GetOrCreatePromote gets or creates the Promote step for the key

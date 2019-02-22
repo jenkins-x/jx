@@ -64,6 +64,56 @@ func (ps *PipelineStructure) GetStage(name string) *PipelineStructureStage {
 	return nil
 }
 
+// PipelineStageAndChildren represents a single stage and its children.
+// +k8s:openapi-gen=false
+type PipelineStageAndChildren struct {
+	Stage    PipelineStructureStage
+	Parallel []PipelineStageAndChildren
+	Stages   []PipelineStageAndChildren
+}
+
+// GetAllStagesAndChildren will get a slice of all top-level stages in this pipeline, with their children
+func (ps *PipelineStructure) GetAllStagesAndChildren() []*PipelineStageAndChildren {
+	var stages []*PipelineStageAndChildren
+
+	for _, s := range ps.Stages {
+		if s.Depth == 0 {
+			psc := ps.GetStageAndChildren(s.Name)
+			if psc != nil {
+				stages = append(stages, psc)
+			}
+		}
+	}
+
+	return stages
+}
+
+// GetStageAndChildren will get a stage of a given name and all of its child stages.
+func (ps *PipelineStructure) GetStageAndChildren(name string) *PipelineStageAndChildren {
+	stage := ps.GetStage(name)
+	if stage != nil {
+		psc := &PipelineStageAndChildren{
+			Stage: *stage.DeepCopy(),
+		}
+		for _, s := range stage.Parallel {
+			childPsc := ps.GetStageAndChildren(s)
+			if childPsc != nil {
+				psc.Parallel = append(psc.Parallel, *childPsc)
+			}
+		}
+		for _, s := range stage.Stages {
+			childPsc := ps.GetStageAndChildren(s)
+			if childPsc != nil {
+				psc.Stages = append(psc.Stages, *childPsc)
+			}
+		}
+
+		return psc
+	}
+
+	return nil
+}
+
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // PipelineStructureList is a list of PipelineStructureList resources

@@ -13,7 +13,8 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	pipelinev1alpha1 "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
+	"github.com/jenkins-x/jx/pkg/util"
+	tektonv1alpha1 "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/knative/pkg/apis"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -598,10 +599,10 @@ type transformedStage struct {
 	// Only one of Sequential, Parallel, and Task is non-empty
 	Sequential []*transformedStage
 	Parallel   []*transformedStage
-	Task       *pipelinev1alpha1.Task
+	Task       *tektonv1alpha1.Task
 	// PipelineTask is non-empty only if Task is non-empty, but it is populated
 	// after Task is populated so the reverse is not true.
-	PipelineTask *pipelinev1alpha1.PipelineTask
+	PipelineTask *tektonv1alpha1.PipelineTask
 	// The depth of this stage in the full tree of stages
 	Depth int8
 	// The parallel or sequntial stage enclosing this stage, or nil if this stage is at top level
@@ -673,21 +674,21 @@ func (ts transformedStage) isParallel() bool {
 	return len(ts.Parallel) > 0
 }
 
-func (ts transformedStage) getLinearTasks() []*pipelinev1alpha1.Task {
+func (ts transformedStage) getLinearTasks() []*tektonv1alpha1.Task {
 	if ts.isSequential() {
-		var tasks []*pipelinev1alpha1.Task
+		var tasks []*tektonv1alpha1.Task
 		for _, seqTs := range ts.Sequential {
 			tasks = append(tasks, seqTs.getLinearTasks()...)
 		}
 		return tasks
 	} else if ts.isParallel() {
-		var tasks []*pipelinev1alpha1.Task
+		var tasks []*tektonv1alpha1.Task
 		for _, parTs := range ts.Parallel {
 			tasks = append(tasks, parTs.getLinearTasks()...)
 		}
 		return tasks
 	} else {
-		return []*pipelinev1alpha1.Task{ts.Task}
+		return []*tektonv1alpha1.Task{ts.Task}
 	}
 }
 
@@ -739,45 +740,46 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 			suffix = hex.EncodeToString(b)
 		}
 
-		t := &pipelinev1alpha1.Task{
+		t := &tektonv1alpha1.Task{
 			TypeMeta: metav1.TypeMeta{
-				APIVersion: PipelineAPIVersion,
+				APIVersion: TektonAPIVersion,
 				Kind:       "Task",
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      MangleToRfc1035Label(fmt.Sprintf("%s-%s", pipelineIdentifier, s.Name), ""),
+				Labels:    util.MergeMaps(DefaultFromYamlCRDLabels(), map[string]string{LabelStageName: s.Name}),
 			},
 		}
 		t.SetDefaults()
 
-		ws := &pipelinev1alpha1.TaskResource{
+		ws := &tektonv1alpha1.TaskResource{
 			Name: "workspace",
-			Type: pipelinev1alpha1.PipelineResourceTypeGit,
+			Type: tektonv1alpha1.PipelineResourceTypeGit,
 		}
 
 		if wsPath != "" {
 			ws.TargetPath = wsPath
 		}
 
-		t.Spec.Inputs = &pipelinev1alpha1.Inputs{
-			Resources: []pipelinev1alpha1.TaskResource{*ws,
+		t.Spec.Inputs = &tektonv1alpha1.Inputs{
+			Resources: []tektonv1alpha1.TaskResource{*ws,
 				{
 					Name: "temp-ordering-resource",
-					Type: pipelinev1alpha1.PipelineResourceTypeImage,
+					Type: tektonv1alpha1.PipelineResourceTypeImage,
 				},
 			},
 		}
 
-		t.Spec.Outputs = &pipelinev1alpha1.Outputs{
-			Resources: []pipelinev1alpha1.TaskResource{
+		t.Spec.Outputs = &tektonv1alpha1.Outputs{
+			Resources: []tektonv1alpha1.TaskResource{
 				{
 					Name: "workspace",
-					Type: pipelinev1alpha1.PipelineResourceTypeGit,
+					Type: tektonv1alpha1.PipelineResourceTypeGit,
 				},
 				{
 					Name: "temp-ordering-resource",
-					Type: pipelinev1alpha1.PipelineResourceTypeImage,
+					Type: tektonv1alpha1.PipelineResourceTypeImage,
 				},
 			},
 		}
@@ -927,7 +929,7 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, podTem
 }
 
 // GenerateCRDs translates the Pipeline structure into the corresponding Pipeline and Task CRDs
-func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, suffix string, podTemplates map[string]*corev1.Pod) (*pipelinev1alpha1.Pipeline, []*pipelinev1alpha1.Task, *v1.PipelineStructure, error) {
+func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, suffix string, podTemplates map[string]*corev1.Pod) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
 	if len(j.Post) != 0 {
 		return nil, nil, nil, errors.New("Post at top level not yet supported")
 	}
@@ -948,25 +950,26 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		suffix = hex.EncodeToString(b)
 	}
 
-	p := &pipelinev1alpha1.Pipeline{
+	p := &tektonv1alpha1.Pipeline{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: PipelineAPIVersion,
+			APIVersion: TektonAPIVersion,
 			Kind:       "Pipeline",
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      fmt.Sprintf("%s", pipelineIdentifier),
+			Labels:    DefaultFromYamlCRDLabels(),
 		},
-		Spec: pipelinev1alpha1.PipelineSpec{
-			Resources: []pipelinev1alpha1.PipelineDeclaredResource{
+		Spec: tektonv1alpha1.PipelineSpec{
+			Resources: []tektonv1alpha1.PipelineDeclaredResource{
 				{
 					Name: pipelineIdentifier,
-					Type: pipelinev1alpha1.PipelineResourceTypeGit,
+					Type: tektonv1alpha1.PipelineResourceTypeGit,
 				},
 				{
 					// TODO: Switch from this kind of hackish approach to non-resource-based dependencies once they land.
 					Name: "temp-ordering-resource",
-					Type: pipelinev1alpha1.PipelineResourceTypeImage,
+					Type: tektonv1alpha1.PipelineResourceTypeImage,
 				},
 			},
 		},
@@ -982,7 +985,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 
 	var previousStage *transformedStage
 
-	var tasks []*pipelinev1alpha1.Task
+	var tasks []*tektonv1alpha1.Task
 
 	baseEnv := j.toStepEnvVars()
 
@@ -998,30 +1001,30 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		previousStage = stage
 
 		tasks = append(tasks, stage.getLinearTasks()...)
-		structure.Stages = append(structure.Stages, stage.getAllAsPipelineStructureStages()...)
 		p.Spec.Tasks = append(p.Spec.Tasks, createPipelineTasks(stage, pipelineIdentifier)...)
+		structure.Stages = append(structure.Stages, stage.getAllAsPipelineStructureStages()...)
 	}
 
 	return p, tasks, structure, nil
 }
 
-func createPipelineTasks(stage *transformedStage, pipelineIdentifier string) []pipelinev1alpha1.PipelineTask {
+func createPipelineTasks(stage *transformedStage, pipelineIdentifier string) []tektonv1alpha1.PipelineTask {
 	if stage.isSequential() {
-		var pTasks []pipelinev1alpha1.PipelineTask
+		var pTasks []tektonv1alpha1.PipelineTask
 		for _, nestedStage := range stage.Sequential {
 			pTasks = append(pTasks, createPipelineTasks(nestedStage, pipelineIdentifier)...)
 		}
 		return pTasks
 	} else if stage.isParallel() {
-		var pTasks []pipelinev1alpha1.PipelineTask
+		var pTasks []tektonv1alpha1.PipelineTask
 		for _, nestedStage := range stage.Parallel {
 			pTasks = append(pTasks, createPipelineTasks(nestedStage, pipelineIdentifier)...)
 		}
 		return pTasks
 	} else {
-		pTask := pipelinev1alpha1.PipelineTask{
+		pTask := tektonv1alpha1.PipelineTask{
 			Name: stage.Stage.taskName(), // TODO: What should this actually be named?
-			TaskRef: pipelinev1alpha1.TaskRef{
+			TaskRef: tektonv1alpha1.TaskRef{
 				Name: stage.Task.Name,
 			},
 		}
@@ -1031,8 +1034,8 @@ func createPipelineTasks(stage *transformedStage, pipelineIdentifier string) []p
 		for _, previousStage := range findPreviousNonBlockStages(*stage) {
 			previousStageNames = append(previousStageNames, previousStage.PipelineTask.Name)
 		}
-		pTask.Resources = &pipelinev1alpha1.PipelineTaskResources{
-			Inputs: []pipelinev1alpha1.PipelineTaskInputResource{
+		pTask.Resources = &tektonv1alpha1.PipelineTaskResources{
+			Inputs: []tektonv1alpha1.PipelineTaskInputResource{
 				{
 					Name:     "workspace",
 					Resource: pipelineIdentifier,
@@ -1045,7 +1048,7 @@ func createPipelineTasks(stage *transformedStage, pipelineIdentifier string) []p
 					From:     previousStageNames,
 				},
 			},
-			Outputs: []pipelinev1alpha1.PipelineTaskOutputResource{
+			Outputs: []tektonv1alpha1.PipelineTaskOutputResource{
 				{
 					Name:     "workspace",
 					Resource: pipelineIdentifier,
@@ -1059,7 +1062,7 @@ func createPipelineTasks(stage *transformedStage, pipelineIdentifier string) []p
 		}
 		stage.PipelineTask = &pTask
 
-		return []pipelinev1alpha1.PipelineTask{pTask}
+		return []tektonv1alpha1.PipelineTask{pTask}
 	}
 }
 
@@ -1202,4 +1205,11 @@ func validateStageNames(j *ParsedPipeline) (err *apis.FieldError) {
 	err = findDuplicates(names)
 
 	return
+}
+
+// DefaultFromYamlCRDLabels returns a map of labels that will be applied to every Tekton CRD generated from YAML syntax
+func DefaultFromYamlCRDLabels() map[string]string {
+	return map[string]string{
+		LabelPipelineFromYaml: "true",
+	}
 }

@@ -7,8 +7,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/kpipelines/syntax"
-	pipelinev1alpha1 "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
+	tektonv1alpha1 "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	tb "github.com/knative/build-pipeline/test/builder"
 	"github.com/knative/pkg/apis"
 	corev1 "k8s.io/api/core/v1"
@@ -27,8 +27,8 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 	tests := []struct {
 		name               string
 		expected           *syntax.ParsedPipeline
-		pipeline           *pipelinev1alpha1.Pipeline
-		tasks              []*pipelinev1alpha1.Task
+		pipeline           *tektonv1alpha1.Pipeline
+		tasks              []*tektonv1alpha1.Task
 		expectedErrorMsg   string
 		validationErrorMsg string
 		structure          *v1.PipelineStructure
@@ -44,27 +44,28 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("temp-ordering-resource", "temp-ordering-resource")),
-				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
-				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
-			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage", "somenamespace", tb.TaskSpec(
-					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
-							tb.ResourceTargetPath("workspace")),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
-				)),
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit),
+				tb.PipelineDeclaredResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a-working-stage", "somenamespace", TaskStageLabel("A Working Stage"),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+								tb.ResourceTargetPath("workspace")),
+							tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+						tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+							tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+						tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
+					)),
 			},
 			structure: PipelineStructure("somepipeline",
-				StructureStage("A Working Stage"),
+				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage")),
 			),
 		},
 		{
@@ -81,7 +82,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						StepCmd("echo"),
 						StepArg("again"))),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
@@ -94,30 +95,31 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.From("a-working-stage")),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("temp-ordering-resource", "temp-ordering-resource")),
-				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
-				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
-			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage", "somenamespace", tb.TaskSpec(
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit),
+				tb.PipelineDeclaredResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a-working-stage", "somenamespace", TaskStageLabel("A Working Stage"),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+								tb.ResourceTargetPath("workspace")),
+							tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+						tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+							tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+						tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
+					)),
+				tb.Task("somepipeline-another-stage", "somenamespace", TaskStageLabel("Another stage"), tb.TaskSpec(
 					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
-							tb.ResourceTargetPath("workspace")),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
-				)),
-				tb.Task("somepipeline-another-stage", "somenamespace", tb.TaskSpec(
-					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("again"), workingDir("/workspace/workspace")),
 				)),
 			},
 			structure: PipelineStructure("somepipeline",
-				StructureStage("A Working Stage"),
-				StructureStage("Another stage",
+				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage")),
+				StructureStage("Another stage", StructureStageTaskRef("somepipeline-another-stage"),
 					StructureStagePrevious("A Working Stage")),
 			),
 		},
@@ -132,7 +134,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						StageStep(StepCmd("echo"), StepArg("again"))),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
@@ -145,34 +147,35 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.From("a-working-stage")),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("temp-ordering-resource", "temp-ordering-resource")),
-				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
-				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
-			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage", "somenamespace", tb.TaskSpec(
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit),
+				tb.PipelineDeclaredResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a-working-stage", "somenamespace", TaskStageLabel("A Working Stage"),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+								tb.ResourceTargetPath("workspace")),
+							tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+						tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+							tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+						tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
+					)),
+				tb.Task("somepipeline-another-stage", "somenamespace", TaskStageLabel("Another stage"), tb.TaskSpec(
 					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
-							tb.ResourceTargetPath("workspace")),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
-				)),
-				tb.Task("somepipeline-another-stage", "somenamespace", tb.TaskSpec(
-					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("again"), workingDir("/workspace/workspace")),
 				)),
 			},
 			structure: PipelineStructure("somepipeline",
 				StructureStage("Parent Stage",
 					StructureStageStages("A Working Stage", "Another stage")),
-				StructureStage("A Working Stage",
+				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage"),
 					StructureStageDepth(1),
 					StructureStageParent("Parent Stage")),
-				StructureStage("Another stage",
+				StructureStage("Another stage", StructureStageTaskRef("somepipeline-another-stage"),
 					StructureStageDepth(1),
 					StructureStageParent("Parent Stage"),
 					StructureStagePrevious("A Working Stage")),
@@ -193,7 +196,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				PipelineStage("Last Stage",
 					StageStep(StepCmd("echo"), StepArg("last"))),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("first-stage", "somepipeline-first-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
@@ -219,58 +222,59 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.From("a-working-stage", "another-stage")),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("temp-ordering-resource", "temp-ordering-resource")),
-				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
-				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
-			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-first-stage", "somenamespace", tb.TaskSpec(
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit),
+				tb.PipelineDeclaredResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-first-stage", "somenamespace", TaskStageLabel("First Stage"), tb.TaskSpec(
 					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace")),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
+						tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("first"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-a-working-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-a-working-stage", "somenamespace", TaskStageLabel("A Working Stage"),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+							tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+						tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+							tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+						tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
+					)),
+				tb.Task("somepipeline-another-stage", "somenamespace", TaskStageLabel("Another stage"), tb.TaskSpec(
 					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
-				)),
-				tb.Task("somepipeline-another-stage", "somenamespace", tb.TaskSpec(
-					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("again"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-last-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-last-stage", "somenamespace", TaskStageLabel("Last Stage"), tb.TaskSpec(
 					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("last"), workingDir("/workspace/workspace")),
 				)),
 			},
 			structure: PipelineStructure("somepipeline",
-				StructureStage("First Stage"),
+				StructureStage("First Stage", StructureStageTaskRef("somepipeline-first-stage")),
 				StructureStage("Parent Stage",
 					StructureStageParallel("A Working Stage", "Another stage"),
 					StructureStagePrevious("First Stage"),
 				),
-				StructureStage("A Working Stage",
+				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage"),
 					StructureStageDepth(1),
 					StructureStageParent("Parent Stage"),
 				),
-				StructureStage("Another stage",
+				StructureStage("Another stage", StructureStageTaskRef("somepipeline-another-stage"),
 					StructureStageDepth(1),
 					StructureStageParent("Parent Stage"),
 				),
-				StructureStage("Last Stage",
+				StructureStage("Last Stage", StructureStageTaskRef("somepipeline-last-stage"),
 					StructureStagePrevious("Parent Stage")),
 			),
 		},
@@ -293,7 +297,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				PipelineStage("Last Stage",
 					StageStep(StepCmd("echo"), StepArg("last"))),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("first-stage", "somepipeline-first-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
@@ -328,58 +332,59 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.From("a-working-stage", "some-other-stage")),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("temp-ordering-resource", "temp-ordering-resource")),
-				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
-				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
-			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-first-stage", "somenamespace", tb.TaskSpec(
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit),
+				tb.PipelineDeclaredResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-first-stage", "somenamespace", TaskStageLabel("First Stage"), tb.TaskSpec(
 					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace")),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
+						tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("first"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-a-working-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-a-working-stage", "somenamespace", TaskStageLabel("A Working Stage"),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+							tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+						tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+							tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+						tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
+					)),
+				tb.Task("somepipeline-another-stage", "somenamespace", TaskStageLabel("Another stage"), tb.TaskSpec(
 					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
-				)),
-				tb.Task("somepipeline-another-stage", "somenamespace", tb.TaskSpec(
-					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("again"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-some-other-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-some-other-stage", "somenamespace", TaskStageLabel("Some other stage"), tb.TaskSpec(
 					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("otherwise"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-last-stage", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-last-stage", "somenamespace", TaskStageLabel("Last Stage"), tb.TaskSpec(
 					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("last"), workingDir("/workspace/workspace")),
 				)),
 			},
 			structure: PipelineStructure("somepipeline",
-				StructureStage("First Stage"),
+				StructureStage("First Stage", StructureStageTaskRef("somepipeline-first-stage")),
 				StructureStage("Parent Stage",
 					StructureStageParallel("A Working Stage", "Nested In Parallel"),
 					StructureStagePrevious("First Stage"),
 				),
-				StructureStage("A Working Stage",
+				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage"),
 					StructureStageDepth(1),
 					StructureStageParent("Parent Stage"),
 				),
@@ -388,16 +393,16 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					StructureStageDepth(1),
 					StructureStageStages("Another stage", "Some other stage"),
 				),
-				StructureStage("Another stage",
+				StructureStage("Another stage", StructureStageTaskRef("somepipeline-another-stage"),
 					StructureStageDepth(2),
 					StructureStageParent("Nested In Parallel"),
 				),
-				StructureStage("Some other stage",
+				StructureStage("Some other stage", StructureStageTaskRef("somepipeline-some-other-stage"),
 					StructureStageDepth(2),
 					StructureStageParent("Nested In Parallel"),
 					StructureStagePrevious("Another stage"),
 				),
-				StructureStage("Last Stage",
+				StructureStage("Last Stage", StructureStageTaskRef("somepipeline-last-stage"),
 					StructureStagePrevious("Parent Stage")),
 			),
 		},
@@ -427,7 +432,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					StageStep(StepCmd("ls")),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("stage1", "somepipeline-stage1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
@@ -451,48 +456,48 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.From("stage3")),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("temp-ordering-resource", "temp-ordering-resource")),
-				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
-				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
-			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-stage1", "somenamespace", tb.TaskSpec(
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit),
+				tb.PipelineDeclaredResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-stage1", "somenamespace", TaskStageLabel("stage1"), tb.TaskSpec(
 					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace")),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
+						tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-stage2", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-stage2", "somenamespace", TaskStageLabel("stage2"), tb.TaskSpec(
 					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-stage3", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-stage3", "somenamespace", TaskStageLabel("stage3"), tb.TaskSpec(
 					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-stage4", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-stage4", "somenamespace", TaskStageLabel("stage4"), tb.TaskSpec(
 					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
 				)),
 			},
 			structure: PipelineStructure("somepipeline",
-				StructureStage("stage1"),
-				StructureStage("stage2", StructureStagePrevious("stage1")),
-				StructureStage("stage3", StructureStagePrevious("stage2")),
-				StructureStage("stage4", StructureStagePrevious("stage3")),
+				StructureStage("stage1", StructureStageTaskRef("somepipeline-stage1")),
+				StructureStage("stage2", StructureStageTaskRef("somepipeline-stage2"), StructureStagePrevious("stage1")),
+				StructureStage("stage3", StructureStageTaskRef("somepipeline-stage3"), StructureStagePrevious("stage2")),
+				StructureStage("stage4", StructureStageTaskRef("somepipeline-stage4"), StructureStagePrevious("stage3")),
 			),
 		},
 		{
@@ -520,7 +525,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("stage1", "somepipeline-stage1",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
@@ -546,57 +551,57 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.From("stage4")),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("temp-ordering-resource", "temp-ordering-resource")),
-				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
-				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
-			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-stage1", "somenamespace", tb.TaskSpec(
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit),
+				tb.PipelineDeclaredResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-stage1", "somenamespace", TaskStageLabel("stage1"), tb.TaskSpec(
 					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace")),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
+						tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-stage3", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-stage3", "somenamespace", TaskStageLabel("stage3"), tb.TaskSpec(
 					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-stage4", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-stage4", "somenamespace", TaskStageLabel("stage4"), tb.TaskSpec(
 					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-stage5", "somenamespace", tb.TaskSpec(
+				tb.Task("somepipeline-stage5", "somenamespace", TaskStageLabel("stage5"), tb.TaskSpec(
 					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
 				)),
 			},
 			structure: PipelineStructure("somepipeline",
-				StructureStage("stage1"),
+				StructureStage("stage1", StructureStageTaskRef("somepipeline-stage1")),
 				StructureStage("stage2",
 					StructureStagePrevious("stage1"),
 					StructureStageStages("stage3", "stage4", "stage5"),
 				),
-				StructureStage("stage3",
+				StructureStage("stage3", StructureStageTaskRef("somepipeline-stage3"),
 					StructureStageDepth(1),
 					StructureStageParent("stage2")),
-				StructureStage("stage4",
+				StructureStage("stage4", StructureStageTaskRef("somepipeline-stage4"),
 					StructureStagePrevious("stage3"),
 					StructureStageDepth(1),
 					StructureStageParent("stage2")),
-				StructureStage("stage5",
+				StructureStage("stage5", StructureStageTaskRef("somepipeline-stage5"),
 					StructureStagePrevious("stage4"),
 					StructureStageDepth(1),
 					StructureStageParent("stage2")),
@@ -612,28 +617,30 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					StageStep(StepCmd("echo"), StepArg("hello"), StepArg("${SOME_OTHER_VAR}")),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("a-stage-with-environment", "somepipeline-a-stage-with-environment",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("temp-ordering-resource", "temp-ordering-resource")),
-				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
-				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
-			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-a-stage-with-environment", "somenamespace", tb.TaskSpec(
-					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
-							tb.ResourceTargetPath("workspace")),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "${SOME_OTHER_VAR}"), workingDir("/workspace/workspace"),
-						tb.EnvVar("SOME_OTHER_VAR", "A value for the other env var"), tb.EnvVar("SOME_VAR", "A value for the env var")),
-				)),
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit),
+				tb.PipelineDeclaredResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a-stage-with-environment", "somenamespace",
+					TaskStageLabel("A stage with environment"),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+								tb.ResourceTargetPath("workspace")),
+							tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+						tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+							tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+						tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "${SOME_OTHER_VAR}"), workingDir("/workspace/workspace"),
+							tb.EnvVar("SOME_OTHER_VAR", "A value for the other env var"), tb.EnvVar("SOME_VAR", "A value for the env var")),
+					)),
 			},
 			structure: PipelineStructure("somepipeline",
-				StructureStage("A stage with environment"),
+				StructureStage("A stage with environment", StructureStageTaskRef("somepipeline-a-stage-with-environment")),
 			),
 		},
 		{
@@ -707,28 +714,29 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					StageStep(StepCmd("echo"), StepArg("goodbye")),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("temp-ordering-resource", "temp-ordering-resource")),
-				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
-				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
-			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage", "somenamespace", tb.TaskSpec(
-					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
-							tb.ResourceTargetPath("workspace")),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.Step("step2", "some-other-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
-					tb.Step("step3", "some-image", tb.Command("echo"), tb.Args("goodbye"), workingDir("/workspace/workspace")),
-				)),
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit),
+				tb.PipelineDeclaredResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a-working-stage", "somenamespace", TaskStageLabel("A Working Stage"),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+								tb.ResourceTargetPath("workspace")),
+							tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+						tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+							tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+						tb.Step("step2", "some-other-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
+						tb.Step("step3", "some-image", tb.Command("echo"), tb.Args("goodbye"), workingDir("/workspace/workspace")),
+					)),
 			},
 			structure: PipelineStructure("somepipeline",
-				StructureStage("A Working Stage"),
+				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage")),
 			),
 		},
 		{
@@ -742,7 +750,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					StageStep(StepCmd("ls")),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask(".--a--.", "somepipeline-a",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
@@ -755,30 +763,31 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.From(".--a--.")),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("temp-ordering-resource", "temp-ordering-resource")),
-				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
-				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
-			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-a", "somenamespace", tb.TaskSpec(
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit),
+				tb.PipelineDeclaredResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a", "somenamespace", TaskStageLabel(". -a- ."), tb.TaskSpec(
 					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace")),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
+						tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+						tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
 					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
 				)),
-				tb.Task("somepipeline-wh-this-is-cool", "somenamespace", tb.TaskSpec(
-					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
-				)),
+				tb.Task("somepipeline-wh-this-is-cool", "somenamespace", TaskStageLabel("Wööh!!!! - This is cool."),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+							tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+						tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+							tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+						tb.Step("step2", "some-image", tb.Command("ls"), workingDir("/workspace/workspace")),
+					)),
 			},
 			structure: PipelineStructure("somepipeline",
-				StructureStage(". -a- ."),
-				StructureStage("Wööh!!!! - This is cool.", StructureStagePrevious(". -a- .")),
+				StructureStage(". -a- .", StructureStageTaskRef("somepipeline-a")),
+				StructureStage("Wööh!!!! - This is cool.", StructureStageTaskRef("somepipeline-wh-this-is-cool"), StructureStagePrevious(". -a- .")),
 			),
 		},
 		{
@@ -793,26 +802,27 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				),
 			),
 			/* TODO: Stop erroring out once we figure out how to handle task timeouts again
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
-				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
-					tb.PipelineTaskInputResource("workspace", "somepipeline"),
-					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
-					tb.PipelineTaskOutputResource("workspace", "somepipeline"),
-					tb.PipelineTaskOutputResource("temp-ordering-resource", "temp-ordering-resource")),
-				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
-				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
-			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage", "somenamespace", tb.TaskSpec(
-					tb.TaskTimeout(50*time.Minute),
-					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
-							tb.ResourceTargetPath("workspace")),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
-				)),
-			},*/
+						pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
+							tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
+								tb.PipelineTaskInputResource("workspace", "somepipeline"),
+								tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
+								tb.PipelineTaskOutputResource("workspace", "somepipeline"),
+								tb.PipelineTaskOutputResource("temp-ordering-resource", "temp-ordering-resource")),
+							tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit),
+							tb.PipelineDeclaredResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage))),
+						tasks: []*tektonv1alpha1.Task{
+												tb.Task("somepipeline-a-working-stage", "somenamespace", TaskStageLabel("A Working Stage"),
+								tb.TaskSpec(
+			tb.TaskTimeout(50*time.Minute),
+								tb.TaskInputs(
+									tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+										tb.ResourceTargetPath("workspace")),
+									tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+								tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+									tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+								tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
+							)),
+						},*/
 			expectedErrorMsg: "Timeout on stage not yet supported",
 		},
 		{
@@ -826,27 +836,28 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					StageStep(StepCmd("echo"), StepArg("hello"), StepArg("world")),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("temp-ordering-resource", "temp-ordering-resource")),
-				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
-				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
-			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage", "somenamespace", tb.TaskSpec(
-					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
-							tb.ResourceTargetPath("workspace")),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
-				)),
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit),
+				tb.PipelineDeclaredResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a-working-stage", "somenamespace", TaskStageLabel("A Working Stage"),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+								tb.ResourceTargetPath("workspace")),
+							tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+						tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+							tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+						tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace")),
+					)),
 			},
 			structure: PipelineStructure("somepipeline",
-				StructureStage("A Working Stage"),
+				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage")),
 			),
 		},
 		{
@@ -869,52 +880,53 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					StageStep(StepCmd("echo"), StepArg("hello"), StepArg("after")),
 				),
 			),
-			pipeline: tb.Pipeline("somepipeline", "somenamespace", tb.PipelineSpec(
+			pipeline: PipelineWithLabels("somepipeline", "somenamespace", tb.PipelineSpec(
 				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
 					tb.PipelineTaskInputResource("workspace", "somepipeline"),
 					tb.PipelineTaskInputResource("temp-ordering-resource", "temp-ordering-resource"),
 					tb.PipelineTaskOutputResource("workspace", "somepipeline"),
 					tb.PipelineTaskOutputResource("temp-ordering-resource", "temp-ordering-resource")),
-				tb.PipelineDeclaredResource("somepipeline", pipelinev1alpha1.PipelineResourceTypeGit),
-				tb.PipelineDeclaredResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage))),
-			tasks: []*pipelinev1alpha1.Task{
-				tb.Task("somepipeline-a-working-stage", "somenamespace", tb.TaskSpec(
-					tb.TaskInputs(
-						tb.InputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit,
-							tb.ResourceTargetPath("workspace")),
-						tb.InputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.TaskOutputs(tb.OutputsResource("workspace", pipelinev1alpha1.PipelineResourceTypeGit),
-						tb.OutputsResource("temp-ordering-resource", pipelinev1alpha1.PipelineResourceTypeImage)),
-					tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "${LANGUAGE}"), workingDir("/workspace/workspace"),
-						tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "maven")),
-					tb.Step("step3", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"), workingDir("/workspace/workspace"),
-						tb.EnvVar("DISTRO", "fedora"), tb.EnvVar("LANGUAGE", "maven")),
-					tb.Step("step4", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"), workingDir("/workspace/workspace"),
-						tb.EnvVar("DISTRO", "ubuntu"), tb.EnvVar("LANGUAGE", "maven")),
-					tb.Step("step5", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"), workingDir("/workspace/workspace"),
-						tb.EnvVar("DISTRO", "debian"), tb.EnvVar("LANGUAGE", "maven")),
-					tb.Step("step6", "some-image", tb.Command("echo"), tb.Args("hello", "${LANGUAGE}"), workingDir("/workspace/workspace"),
-						tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "gradle")),
-					tb.Step("step7", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"), workingDir("/workspace/workspace"),
-						tb.EnvVar("DISTRO", "fedora"), tb.EnvVar("LANGUAGE", "gradle")),
-					tb.Step("step8", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"), workingDir("/workspace/workspace"),
-						tb.EnvVar("DISTRO", "ubuntu"), tb.EnvVar("LANGUAGE", "gradle")),
-					tb.Step("step9", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"), workingDir("/workspace/workspace"),
-						tb.EnvVar("DISTRO", "debian"), tb.EnvVar("LANGUAGE", "gradle")),
-					tb.Step("step10", "some-image", tb.Command("echo"), tb.Args("hello", "${LANGUAGE}"), workingDir("/workspace/workspace"),
-						tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "nodejs")),
-					tb.Step("step11", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"), workingDir("/workspace/workspace"),
-						tb.EnvVar("DISTRO", "fedora"), tb.EnvVar("LANGUAGE", "nodejs")),
-					tb.Step("step12", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"), workingDir("/workspace/workspace"),
-						tb.EnvVar("DISTRO", "ubuntu"), tb.EnvVar("LANGUAGE", "nodejs")),
-					tb.Step("step13", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"), workingDir("/workspace/workspace"),
-						tb.EnvVar("DISTRO", "debian"), tb.EnvVar("LANGUAGE", "nodejs")),
-					tb.Step("step14", "some-image", tb.Command("echo"), tb.Args("hello", "after"), workingDir("/workspace/workspace"),
-						tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "rust")),
-				)),
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit),
+				tb.PipelineDeclaredResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a-working-stage", "somenamespace", TaskStageLabel("A Working Stage"),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+								tb.ResourceTargetPath("workspace")),
+							tb.InputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+						tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit),
+							tb.OutputsResource("temp-ordering-resource", tektonv1alpha1.PipelineResourceTypeImage)),
+						tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "${LANGUAGE}"), workingDir("/workspace/workspace"),
+							tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "maven")),
+						tb.Step("step3", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"), workingDir("/workspace/workspace"),
+							tb.EnvVar("DISTRO", "fedora"), tb.EnvVar("LANGUAGE", "maven")),
+						tb.Step("step4", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"), workingDir("/workspace/workspace"),
+							tb.EnvVar("DISTRO", "ubuntu"), tb.EnvVar("LANGUAGE", "maven")),
+						tb.Step("step5", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"), workingDir("/workspace/workspace"),
+							tb.EnvVar("DISTRO", "debian"), tb.EnvVar("LANGUAGE", "maven")),
+						tb.Step("step6", "some-image", tb.Command("echo"), tb.Args("hello", "${LANGUAGE}"), workingDir("/workspace/workspace"),
+							tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "gradle")),
+						tb.Step("step7", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"), workingDir("/workspace/workspace"),
+							tb.EnvVar("DISTRO", "fedora"), tb.EnvVar("LANGUAGE", "gradle")),
+						tb.Step("step8", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"), workingDir("/workspace/workspace"),
+							tb.EnvVar("DISTRO", "ubuntu"), tb.EnvVar("LANGUAGE", "gradle")),
+						tb.Step("step9", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"), workingDir("/workspace/workspace"),
+							tb.EnvVar("DISTRO", "debian"), tb.EnvVar("LANGUAGE", "gradle")),
+						tb.Step("step10", "some-image", tb.Command("echo"), tb.Args("hello", "${LANGUAGE}"), workingDir("/workspace/workspace"),
+							tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "nodejs")),
+						tb.Step("step11", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"), workingDir("/workspace/workspace"),
+							tb.EnvVar("DISTRO", "fedora"), tb.EnvVar("LANGUAGE", "nodejs")),
+						tb.Step("step12", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"), workingDir("/workspace/workspace"),
+							tb.EnvVar("DISTRO", "ubuntu"), tb.EnvVar("LANGUAGE", "nodejs")),
+						tb.Step("step13", "some-image", tb.Command("echo"), tb.Args("running", "${LANGUAGE}", "on", "${DISTRO}"), workingDir("/workspace/workspace"),
+							tb.EnvVar("DISTRO", "debian"), tb.EnvVar("LANGUAGE", "nodejs")),
+						tb.Step("step14", "some-image", tb.Command("echo"), tb.Args("hello", "after"), workingDir("/workspace/workspace"),
+							tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "rust")),
+					)),
 			},
 			structure: PipelineStructure("somepipeline",
-				StructureStage("A Working Stage"),
+				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage")),
 			),
 		},
 		{
@@ -1716,6 +1728,26 @@ func StageSequential(name string, ops ...StageOp) StageOp {
 
 		stage.Stages = append(stage.Stages, n)
 	}
+}
+
+func TaskStageLabel(value string) tb.TaskOp {
+	return func(t *tektonv1alpha1.Task) {
+		if t.ObjectMeta.Labels == nil {
+			t.ObjectMeta.Labels = map[string]string{}
+		}
+		t.ObjectMeta.Labels[syntax.LabelStageName] = value
+		t.ObjectMeta.Labels[syntax.LabelPipelineFromYaml] = "true"
+	}
+}
+
+func PipelineWithLabels(name, namespace string, ops ...tb.PipelineOp) *tektonv1alpha1.Pipeline {
+	pipeline := tb.Pipeline(name, namespace, ops...)
+	if pipeline.ObjectMeta.Labels == nil {
+		pipeline.ObjectMeta.Labels = map[string]string{}
+	}
+	pipeline.Labels[syntax.LabelPipelineFromYaml] = "true"
+
+	return pipeline
 }
 
 func TestParsedPipelineHelpers(t *testing.T) {

@@ -124,6 +124,23 @@ func isProwBuildNotFoundError(err error) bool {
 	return err.Error() == `deployments.apps "prow-build" not found`
 }
 
+// IsTektonEnabled returns true if Build Pipeline is enabled in the given development namespace
+func IsTektonEnabled(kubeClient kubernetes.Interface, ns string) (bool, error) {
+	// lets try determine if its Jenkins or not via the deployments
+	_, err := kubeClient.AppsV1beta1().Deployments(ns).Get(DeploymentTektonController, metav1.GetOptions{})
+	if err != nil {
+		if isTektonNotFoundError(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+func isTektonNotFoundError(err error) bool {
+	return err.Error() == `deployments.apps "tekton-pipelines-controller" not found`
+}
+
 // EnsureEditEnvironmentSetup ensures that the Environment is created in the given namespace
 func EnsureEditEnvironmentSetup(kubeClient kubernetes.Interface, jxClient versioned.Interface, ns string, username string) (*v1.Environment, error) {
 	// lets ensure there is a dev Environment setup so that we can easily switch between all the environments

@@ -16,10 +16,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile/gitresolver"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kpipelines"
-	"github.com/jenkins-x/jx/pkg/kpipelines/syntax"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/tekton"
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
 	pipelineapi "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/pkg/errors"
@@ -124,7 +124,7 @@ func NewCmdStepCreateTask(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Context, "context", "c", "", "The pipeline context if there are multiple separate pipelines for a given branch")
 	cmd.Flags().StringArrayVarP(&options.CustomLabels, "labels", "l", nil, "List of custom labels to be applied to resources that are created")
 	cmd.Flags().StringVarP(&options.Trigger, "trigger", "t", string(pipelineapi.PipelineTriggerTypeManual), "The kind of pipeline trigger")
-	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "build-pipeline", "The Kubernetes ServiceAccount to use to run the pipeline")
+	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
 	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
 	cmd.Flags().StringVarP(&options.TargetPath, "target-path", "", "", "The target path appended to /workspace/${source} to clone the source code")
 	cmd.Flags().StringVarP(&options.SourceName, "source", "", "source", "The name of the source repository")
@@ -335,7 +335,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	}
 
 	var err error
-	err = o.setBuildValues()
+	err = o.setBuildValues(false)
 	if err != nil {
 		return err
 	}
@@ -347,13 +347,13 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		if validateErr := lifecycles.Pipeline.Validate(); validateErr != nil {
 			return errors.Wrapf(validateErr, "Validation failed for Pipeline")
 		}
-		err = o.setBuildValues()
+		err = o.setBuildValues(true)
 		if err != nil {
 			return err
 		}
 		// TODO: use org-name-branch for pipeline name? Create client now to get
 		// namespace? Set namespace when applying rather than during generation?
-		name := kpipelines.PipelineResourceName(o.gitInfo, o.Branch, o.Context)
+		name := tekton.PipelineResourceName(o.gitInfo, o.Branch, o.Context)
 		pipeline, tasks, structure, err := lifecycles.Pipeline.GenerateCRDs(name, o.buildNumber, "will-be-replaced", "abcd", o.PodTemplates)
 		if err != nil {
 			return errors.Wrapf(err, "Generation failed for Pipeline")
@@ -383,7 +383,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 
 		// TODO: where should this be created? In GenerateCRDs?
 		var resources []*pipelineapi.PipelineResource
-		resources = append(resources, o.generateSourceRepoResource(name), o.generateTempOrderingResource())
+		resources = append(resources, o.generateSourceRepoResource(name, true), o.generateTempOrderingResource())
 
 		err = o.applyPipeline(pipeline, tasks, resources, structure, o.gitInfo, o.Branch)
 		if err != nil {
@@ -424,10 +424,10 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		}
 	}
 
-	name := kpipelines.PipelineResourceName(o.gitInfo, o.Branch, o.Context)
+	name := tekton.PipelineResourceName(o.gitInfo, o.Branch, o.Context)
 	task := &pipelineapi.Task{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: syntax.PipelineAPIVersion,
+			APIVersion: syntax.TektonAPIVersion,
 			Kind:       "Task",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -468,14 +468,14 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	return nil
 }
 
-func (o *StepCreateTaskOptions) generateSourceRepoResource(name string) *pipelineapi.PipelineResource {
+func (o *StepCreateTaskOptions) generateSourceRepoResource(name string, fromYaml bool) *pipelineapi.PipelineResource {
 	var resource *pipelineapi.PipelineResource
 	if o.gitInfo != nil {
 		gitURL := o.gitInfo.HttpsURL()
 		if gitURL != "" {
 			resource = &pipelineapi.PipelineResource{
 				TypeMeta: metav1.TypeMeta{
-					APIVersion: syntax.PipelineAPIVersion,
+					APIVersion: syntax.TektonAPIVersion,
 					Kind:       "PipelineResource",
 				},
 				ObjectMeta: metav1.ObjectMeta{
@@ -495,6 +495,9 @@ func (o *StepCreateTaskOptions) generateSourceRepoResource(name string) *pipelin
 					},
 				},
 			}
+			if fromYaml {
+				resource.Labels = syntax.DefaultFromYamlCRDLabels()
+			}
 		}
 	}
 	return resource
@@ -505,11 +508,12 @@ func (o *StepCreateTaskOptions) generateSourceRepoResource(name string) *pipelin
 func (o *StepCreateTaskOptions) generateTempOrderingResource() *pipelineapi.PipelineResource {
 	return &pipelineapi.PipelineResource{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: syntax.PipelineAPIVersion,
+			APIVersion: syntax.TektonAPIVersion,
 			Kind:       "PipelineResource",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "temp-ordering-resource",
+			Name:   "temp-ordering-resource",
+			Labels: syntax.DefaultFromYamlCRDLabels(),
 		},
 		Spec: pipelineapi.PipelineResourceSpec{
 			Type: pipelineapi.PipelineResourceTypeImage,
@@ -523,7 +527,7 @@ func (o *StepCreateTaskOptions) generateTempOrderingResource() *pipelineapi.Pipe
 	}
 }
 
-func (o *StepCreateTaskOptions) setBuildValues() error {
+func (o *StepCreateTaskOptions) setBuildValues(fromYaml bool) error {
 	var err error
 	o.gitInfo, err = o.FindGitInfo(o.Dir)
 	if err != nil {
@@ -546,6 +550,9 @@ func (o *StepCreateTaskOptions) setBuildValues() error {
 		labels["repo"] = o.gitInfo.Name
 	}
 	labels["branch"] = o.Branch
+	if fromYaml {
+		labels[syntax.LabelPipelineFromYaml] = "true"
+	}
 
 	return o.combineLabels(labels)
 }
@@ -641,7 +648,7 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 	name := gitInfo.Name
 	resourceName := kube.ToValidName(organisation + "-" + name + "-" + branch)
 	var pipelineResources []*pipelineapi.PipelineResource
-	resource := o.generateSourceRepoResource(resourceName)
+	resource := o.generateSourceRepoResource(resourceName, false)
 	if resource != nil {
 		pipelineResources = append(pipelineResources, resource)
 	}
@@ -673,7 +680,7 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 
 	pipeline := &pipelineapi.Pipeline{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: kpipelines.PipelineResourceName(gitInfo, branch, o.Context),
+			Name: tekton.PipelineResourceName(gitInfo, branch, o.Context),
 		},
 		Spec: pipelineapi.PipelineSpec{
 			Resources: resources,
@@ -692,7 +699,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	if err != nil {
 		return err
 	}
-	kpClient, _, err := o.KnativePipelineClient()
+	tektonClient, _, err := o.TektonClient()
 	if err != nil {
 		return err
 	}
@@ -710,7 +717,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 		})
 
 		if !o.NoApply {
-			_, err := kpipelines.CreateOrUpdateSourceResource(kpClient, ns, resource)
+			_, err := tekton.CreateOrUpdateSourceResource(tektonClient, ns, resource)
 			if err != nil {
 				return errors.Wrapf(err, "failed to create/update PipelineResource %s in namespace %s", resource.Name, ns)
 			}
@@ -727,7 +734,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 		task.ObjectMeta.Namespace = ns
 
 		if !o.NoApply {
-			_, err = kpipelines.CreateOrUpdateTask(kpClient, ns, task)
+			_, err = tekton.CreateOrUpdateTask(tektonClient, ns, task)
 			if err != nil {
 				return errors.Wrapf(err, "failed to create/update the task %s in namespace %s", task.Name, ns)
 			}
@@ -737,14 +744,14 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 
 	pipeline.ObjectMeta.Namespace = ns
 	if pipeline.APIVersion == "" {
-		pipeline.APIVersion = syntax.PipelineAPIVersion
+		pipeline.APIVersion = syntax.TektonAPIVersion
 	}
 	if pipeline.Kind == "" {
 		pipeline.Kind = "Pipeline"
 	}
 	if !o.NoApply {
 		// TODO: Result is missing some fields that the original has, such as APIVersion and Kind. Why?
-		pipeline, err = kpipelines.CreateOrUpdatePipeline(kpClient, ns, pipeline, o.labels)
+		pipeline, err = tekton.CreateOrUpdatePipeline(tektonClient, ns, pipeline, o.labels)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create/update the Pipeline in namespace %s", ns)
 		}
@@ -753,20 +760,20 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 
 	run := &pipelineapi.PipelineRun{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: syntax.PipelineAPIVersion,
+			APIVersion: syntax.TektonAPIVersion,
 			Kind:       "PipelineRun",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   pipeline.Name,
-			Labels: util.MergeMaps(o.labels),
+			Name: pipeline.Name,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion: syntax.PipelineAPIVersion,
+					APIVersion: syntax.TektonAPIVersion,
 					Kind:       "Pipeline",
 					Name:       pipeline.Name,
 					UID:        pipeline.UID,
 				},
 			},
+			Labels: util.MergeMaps(o.labels),
 		},
 		Spec: pipelineapi.PipelineRunSpec{
 			ServiceAccount: o.ServiceAccount,
@@ -782,7 +789,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	}
 
 	if !o.NoApply {
-		_, err = kpipelines.CreatePipelineRun(kpClient, ns, pipeline, run, o.Duration)
+		_, err = tekton.CreatePipelineRun(tektonClient, ns, pipeline, run, o.Duration)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create the PipelineRun in namespace %s", ns)
 		}
@@ -791,7 +798,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 		if structure != nil {
 			structure.PipelineRunRef = &run.Name
 
-			// TODO: Yeah, this should be moved into probably kpipelines/pipelines.go.
+			// TODO: Yeah, this should be moved into probably tekton/pipelines.go.
 			apisClient, err := o.ApiExtensionsClient()
 			if err != nil {
 				return err
@@ -808,7 +815,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 			structuresClient := jxClient.JenkinsV1().PipelineStructures(ns)
 			structure.OwnerReferences = []metav1.OwnerReference{
 				{
-					APIVersion: syntax.PipelineAPIVersion,
+					APIVersion: syntax.TektonAPIVersion,
 					Kind:       "Pipeline",
 					Name:       pipeline.Name,
 					UID:        pipeline.UID,

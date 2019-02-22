@@ -2,7 +2,7 @@
 package matchers
 
 import (
-	versioned "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
+	versioned "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/petergtz/pegomock"
 	"reflect"
 )

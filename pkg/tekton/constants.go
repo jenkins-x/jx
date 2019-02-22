@@ -1,4 +1,4 @@
-package kpipelines
+package tekton
 
 const (
 	// LastBuildNumberAnnotation used to annotate the Pipeline with the latest build number
