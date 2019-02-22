@@ -68,9 +68,19 @@ func LoadStableVersionFile(path string) (*StableVersion, error) {
 	if err != nil {
 		return version, errors.Wrapf(err, "failed to load YAML file %s", path)
 	}
-	err = yaml.Unmarshal(data, version)
+	version, err = LoadStableVersionFromData(data)
 	if err != nil {
 		return version, errors.Wrapf(err, "failed to unmarshal YAML for file %s", path)
+	}
+	return version, err
+}
+
+// LoadStableVersionFromData loads the stable version data from the given the data
+func LoadStableVersionFromData(data []byte) (*StableVersion, error) {
+	version := &StableVersion{}
+	err := yaml.Unmarshal(data, version)
+	if err != nil {
+		return version, errors.Wrapf(err, "failed to unmarshal YAML")
 	}
 	return version, err
 }

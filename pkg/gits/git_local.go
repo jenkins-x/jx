@@ -344,6 +344,16 @@ func (g *GitLocal) Diff(dir string) (string, error) {
 	return g.GitCLI.Diff(dir)
 }
 
+// ListChangedFilesFromBranch lists files changed between branches
+func (g *GitLocal) ListChangedFilesFromBranch(dir string, branch string) (string, error) {
+	return g.GitCLI.ListChangedFilesFromBranch(dir, branch)
+}
+
+// LoadFileFromBranch returns a files's contents from a branch
+func (g *GitLocal) LoadFileFromBranch(dir string, branch string, file string) (string, error) {
+	return g.GitCLI.LoadFileFromBranch(dir, branch, file)
+}
+
 // FetchUnshallow does nothing
 // Faked out
 func (g *GitLocal) FetchUnshallow(dir string) error {

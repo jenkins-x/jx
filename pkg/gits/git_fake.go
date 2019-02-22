@@ -477,6 +477,16 @@ func (g *GitFake) Diff(dir string) (string, error) {
 	return "", nil
 }
 
+// ListChangedFilesFromBranch lists changes files between current checkout and a branch
+func (g *GitFake) ListChangedFilesFromBranch(dir string, branch string) (string, error) {
+	return "", nil
+}
+
+// LoadFileFromBranch returns a files's contents from a branch
+func (g *GitFake) LoadFileFromBranch(dir string, branch string, file string) (string, error) {
+	return "", nil
+}
+
 func (g *GitFake) notFound() error {
 	return fmt.Errorf("Not found")
 }
