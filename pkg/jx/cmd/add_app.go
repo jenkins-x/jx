@@ -67,15 +67,15 @@ func NewCmdAddApp(commonOpts *CommonOptions) *cobra.Command {
 		},
 	}
 
-	options.addFlags(cmd, kube.DefaultNamespace, "", "")
+	options.addFlags(cmd, kube.DefaultNamespace)
 	return cmd
 }
 
-func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string, defaultOptionRelease string, defaultVersion string) {
+func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string) {
 
 	// Common flags
 
-	cmd.Flags().StringVarP(&o.Version, "version", "v", defaultVersion,
+	cmd.Flags().StringVarP(&o.Version, "version", "v", "",
 		"The chart version to install")
 	cmd.Flags().StringVarP(&o.Repo, "repository", "", "",
 		"The repository from which the app should be installed (default specified in your dev environment)")
@@ -85,7 +85,7 @@ func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string, de
 		"The password for the repository")
 	cmd.Flags().StringVarP(&o.Alias, optionAlias, "", "",
 		"An alias to use for the app (available when using GitOps for your dev environment)")
-	cmd.Flags().StringVarP(&o.ReleaseName, optionRelease, "r", defaultOptionRelease,
+	cmd.Flags().StringVarP(&o.ReleaseName, optionRelease, "r", "",
 		"The chart release name (by default the name of the app, available when NOT using GitOps for your dev"+
 			" environment)")
 	cmd.Flags().BoolVarP(&o.HelmUpdate, optionHelmUpdate, "", true,

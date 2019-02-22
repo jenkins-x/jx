@@ -290,12 +290,8 @@ func (o *DeleteApplicationOptions) deleteApplicationFromEnvironment(env *v1.Envi
 	}
 	log.Infof("Removing application %s from environment %s\n", applicationName, env.Spec.Label)
 
-	branchName := "delete-" + applicationName
-	title := "Delete application " + applicationName + " from this environment"
-	message := "The command `jx delete application` was run by " + username + " and it generated this Pull Request"
-
 	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
-		templates map[string]string, dir string) error {
+		templates map[string]string, dir string, info *environments.PullRequestDetails) error {
 		requirements.RemoveApplication(applicationName)
 		return nil
 	}
@@ -308,13 +304,18 @@ func (o *DeleteApplicationOptions) deleteApplicationFromEnvironment(env *v1.Envi
 		return errors.Wrapf(err, "getting environments dir")
 	}
 
+	details := environments.PullRequestDetails{
+		BranchName: "delete-" + applicationName,
+		Title:      "Delete application " + applicationName + " from this environment",
+		Message:    "The command `jx delete application` was run by " + username + " and it generated this Pull Request",
+	}
 	options := environments.EnvironmentPullRequestOptions{
 		ConfigGitFn:   o.ConfigureGitCallback,
 		Gitter:        o.Git(),
 		ModifyChartFn: modifyChartFn,
 		GitProvider:   gitProvider,
 	}
-	info, err := options.Create(env, &branchName, &title, &message, environmentsDir, nil)
+	info, err := options.Create(env, environmentsDir, &details, nil)
 	if err != nil {
 		return err
 	}
@@ -322,17 +323,18 @@ func (o *DeleteApplicationOptions) deleteApplicationFromEnvironment(env *v1.Envi
 	duration := *o.TimeoutDuration
 	end := time.Now().Add(duration)
 
-	return o.waitForGitOpsPullRequest(env, info, end, duration)
+	return o.waitForGitOpsPullRequest(env, info, options.GitProvider, end, duration)
 }
 
-func (o *DeleteApplicationOptions) waitForGitOpsPullRequest(env *v1.Environment, pullRequestInfo *gits.PullRequestInfo, end time.Time, duration time.Duration) error {
+func (o *DeleteApplicationOptions) waitForGitOpsPullRequest(env *v1.Environment,
+	pullRequestInfo *gits.PullRequestInfo, gitProvider gits.GitProvider, end time.Time,
+	duration time.Duration) error {
 	if pullRequestInfo != nil {
 		logMergeFailure := false
 		pr := pullRequestInfo.PullRequest
 		log.Infof("Waiting for pull request %s to merge\n", pr.URL)
 
 		for {
-			gitProvider := pullRequestInfo.GitProvider
 			err := gitProvider.UpdatePullRequestStatus(pr)
 			if err != nil {
 				return fmt.Errorf("Failed to query the Pull Request status for %s %s", pr.URL, err)
