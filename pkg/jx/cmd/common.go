@@ -24,28 +24,27 @@ import (
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/golang-jenkins"
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	jxjenkins "github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/table"
+	"github.com/jenkins-x/jx/pkg/util"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	kpipelineclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
 	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
-	corev1 "k8s.io/api/core/v1"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-
-	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/config"
-	jxjenkins "github.com/jenkins-x/jx/pkg/jenkins"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/table"
-	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/yaml.v2"
+	corev1 "k8s.io/api/core/v1"
+	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -327,39 +326,6 @@ func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, 
 	return o.jxClient, o.devNamespace, nil
 }
 
-// SetJenkinsClient sets the JenkinsClient - usually used in testing
-func (o *CommonOptions) SetJenkinsClient(jenkinsClient gojenkins.JenkinsClient) {
-	o.jenkinsClient = jenkinsClient
-}
-
-// JenkinsClient returns the Jenkins client
-func (o *CommonOptions) JenkinsClient() (gojenkins.JenkinsClient, error) {
-	if o.jenkinsClient == nil {
-		kubeClient, ns, err := o.KubeClientAndDevNamespace()
-		if err != nil {
-			return nil, err
-		}
-
-		o.factory.SetBatch(o.BatchMode)
-		jenkins, err := o.factory.CreateJenkinsClient(kubeClient, ns, o.In, o.Out, o.Err)
-
-		if err != nil {
-			return nil, err
-		}
-		o.jenkinsClient = jenkins
-	}
-	return o.jenkinsClient, nil
-}
-
-// getJenkinsURL return the Jenkins URL
-func (o *CommonOptions) getJenkinsURL() (string, error) {
-	kubeClient, ns, err := o.KubeClientAndNamespace()
-	if err != nil {
-		return "", err
-	}
-
-	return o.factory.GetJenkinsURL(kubeClient, ns)
-}
 
 // Git returns the git client
 func (o *CommonOptions) Git() gits.Gitter {

@@ -152,20 +152,23 @@ const (
 	// ValueKindChat a chat auth secret/credentials
 	ValueKindChat = "chat"
 
+	// ValueKindCVE an CVS App secret/credentials
+	ValueKindCVE = "cve"
+
+	// ValueKindEnvironmentRole to indicate a Role which maps to an EnvironmentRoleBinding
+	ValueKindEnvironmentRole = "EnvironmentRole"
+
 	// ValueKindGit a git auth secret/credentials
 	ValueKindGit = "git"
 
 	// ValueKindIssue an issue auth secret/credentials
 	ValueKindIssue = "issue"
 
-	// ValueKindCVE an addon auth secret/credentials
-	ValueKindCVE = "cve"
+	// ValueKindJenkins an Jenkins App secret/credentials
+	ValueKindJenkins = "jenkins"
 
 	// ValueKindCVE an addon auth PipelineEvent
 	ValueKindPipelineEvent = "PipelineEvent"
-
-	// ValueKindEnvironmentRole to indicate a Role which maps to an EnvironmentRoleBinding
-	ValueKindEnvironmentRole = "EnvironmentRole"
 
 	// ValueKindCVE an addon auth PipelineEvent
 	ValueKindRelease = "Release"

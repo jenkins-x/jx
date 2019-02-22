@@ -75,6 +75,9 @@ type Factory interface {
 	// CreateJenkinsClient creates a new Jenkins client
 	CreateJenkinsClient(kubeClient kubernetes.Interface, ns string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error)
 
+	// CreateCustomJenkinsClient creates a new Jenkins client for the custom Jenkins App with the jenkinsServiceName
+	CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error)
+
 	// CreateGitProvider creates a new Git provider
 	CreateGitProvider(string, string, auth.ConfigService, string, bool, gits.Gitter, terminal.FileReader, terminal.FileWriter, io.Writer) (gits.GitProvider, error)
 
@@ -133,6 +136,9 @@ type Factory interface {
 
 	// GetJenkinsURL returns the Jenkins URL
 	GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (string, error)
+
+	// GetCustomJenkinsURL gets a custom jenkins App service URL
+	GetCustomJenkinsURL(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string) (string, error)
 
 	// SetBatch configures the batch modes
 	SetBatch(batch bool)

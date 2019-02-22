@@ -20,6 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -32,11 +33,11 @@ const (
 var JenkinsReferenceVersion = semver.Version{Major: 2, Minor: 140, Patch: 0}
 
 var (
-	create_jenkins_user_long = templates.LongDesc(`
+	createJEnkinsUserLong = templates.LongDesc(`
 		Creates a new user and API Token for the current Jenkins server
 `)
 
-	create_jenkins_user_example = templates.Examples(`
+	createJEnkinsUserExample = templates.Examples(`
 		# Add a new API Token for a user for the current Jenkins server
         # prompting the user to find and enter the API Token
 		jx create jenkins token someUserName
@@ -52,15 +53,16 @@ var (
 type CreateJenkinsUserOptions struct {
 	CreateOptions
 
-	ServerFlags   ServerFlags
-	Namespace     string
-	Username      string
-	Password      string
-	APIToken      string
-	BearerToken   string
-	Timeout       string
-	UseBrowser    bool
-	RecreateToken bool
+	ServerFlags     ServerFlags
+	JenkinsSelector JenkinsSelectorOptions
+	Namespace       string
+	Username        string
+	Password        string
+	APIToken        string
+	BearerToken     string
+	Timeout         string
+	NoREST          bool
+	RecreateToken   bool
 }
 
 // NewCmdCreateJenkinsUser creates a command
@@ -75,8 +77,8 @@ func NewCmdCreateJenkinsUser(commonOpts *CommonOptions) *cobra.Command {
 		Use:     "token [username]",
 		Short:   "Adds a new username and API token for a Jenkins server",
 		Aliases: []string{"api-token"},
-		Long:    create_jenkins_user_long,
-		Example: create_jenkins_user_example,
+		Long:    createJEnkinsUserLong,
+		Example: createJEnkinsUserExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -85,13 +87,14 @@ func NewCmdCreateJenkinsUser(commonOpts *CommonOptions) *cobra.Command {
 		},
 	}
 	options.ServerFlags.addGitServerFlags(cmd)
+	options.JenkinsSelector.AddFlags(cmd)
+
 	cmd.Flags().StringVarP(&options.APIToken, "api-token", "t", "", "The API Token for the user")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The User password to try automatically create a new API Token")
 	cmd.Flags().StringVarP(&options.Timeout, "timeout", "", "", "The timeout if using REST to generate the API token (by passing username and password)")
-	cmd.Flags().BoolVarP(&options.UseBrowser, "browser", "", false, "Use REST calls to automatically find the API token if the user and password are known")
+	cmd.Flags().BoolVarP(&options.NoREST, "no-rest", "", false, "Disables the use of REST calls to automatically find the API token if the user and password are known")
 	cmd.Flags().BoolVarP(&options.RecreateToken, "recreate-token", "", false, "Should we recreate teh API token if it already exists")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The namespace of the secret where the Jenkins API token will be stored")
-
 	return cmd
 }
 
@@ -120,16 +123,25 @@ func (o *CreateJenkinsUserOptions) Run() error {
 
 	var server *auth.AuthServer
 	if o.ServerFlags.IsEmpty() {
-		url := ""
-		url, err = o.findServiceInNamespace(kube.ServiceJenkins, ns)
+		url, err := o.CustomJenkinsURL(&o.JenkinsSelector, kubeClient, ns)
 		if err != nil {
-			return errors.Wrapf(err, "searching service %q", kube.ServiceJenkins)
+			return err
 		}
+		/*
+				TODO don't think we still need this logic?
+
+				jenkinsServiceName := kube.ServiceJenkins
+				url, err = o.findServiceInNamespace(jenkinsServiceName, ns)
+				if err != nil {
+					return errors.Wrapf(err, "searching service %q", jenkinsServiceName)
+				}
+		*/
+
 		server = config.GetOrCreateServer(url)
 	} else {
 		server, err = o.findServer(config, &o.ServerFlags, "jenkins server", "Try installing one via: jx create team", false)
 		if err != nil {
-			return errors.Wrapf(err, "seraching server %s: %s", o.ServerFlags.ServerName, o.ServerFlags.ServerURL)
+			return errors.Wrapf(err, "searching server %s: %s", o.ServerFlags.ServerName, o.ServerFlags.ServerURL)
 		}
 	}
 
@@ -155,7 +167,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		userAuth.Password = o.Password
 	}
 
-	if userAuth.IsInvalid() && o.Password != "" && o.UseBrowser {
+	if userAuth.IsInvalid() && o.Password != "" && !o.NoREST {
 		err := jenkins.CheckHealth(server.URL)
 		if err != nil {
 			return errors.Wrapf(err, "checking health of Jenkins server %q", server.URL)
@@ -203,17 +215,65 @@ func (o *CreateJenkinsUserOptions) saveJenkinsAuthInSecret(kubeClient kubernetes
 	if ns == "" {
 		ns = o.currentNamespace
 	}
-	secret, err := kubeClient.CoreV1().Secrets(ns).Get(kube.SecretJenkins, metav1.GetOptions{})
+	secretName := kube.SecretJenkins
+	customJenkinsName := o.JenkinsSelector.CustomJenkinsName
+	if customJenkinsName != "" {
+		secretName = customJenkinsName + "-auth"
+	}
+	create := false
+
+	secretInterface := kubeClient.CoreV1().Secrets(ns)
+	secret, err := secretInterface.Get(secretName, metav1.GetOptions{})
 	if err != nil {
-		return errors.Wrapf(err, "no %q secret found in namesapce %q", kube.SecretJenkins, ns)
+		create = true
+		secret = &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: secretName,
+			},
+		}
+	}
+	if secret.Labels == nil {
+		secret.Labels = map[string]string{}
+	}
+	if secret.Labels[kube.LabelKind] == "" {
+		secret.Labels[kube.LabelKind] = kube.ValueKindJenkins
+	}
+	if secret.Data == nil {
+		secret.Data = map[string][]byte{}
 	}
 
+/*
+    TODO add an ownerReference so the secret is zapped if we remove the Jenkins App
+
+	if customJenkinsName != "" {
+		hasOwnerRef := false
+		for _, ref := range secret.OwnerReferences {
+			if ref.Name == customJenkinsName && ref.Kind == "Service" {
+				hasOwnerRef = true
+			}
+		}
+		if !hasOwnerRef {
+			secret.OwnerReferences = append(secret.OwnerReferences, metav1.OwnerReference{
+				Name: customJenkinsName,
+				Kind: "Service",
+			})
+		}
+	}
+*/
 	secret.Data[kube.JenkinsAdminApiToken] = []byte(auth.ApiToken)
 	secret.Data[kube.JenkinsBearTokenField] = []byte(auth.BearerToken)
 	secret.Data[kube.JenkinsAdminUserField] = []byte(auth.Username)
-	_, err = kubeClient.CoreV1().Secrets(ns).Update(secret)
+
+	if create {
+		_, err = secretInterface.Create(secret)
+		if err != nil {
+			return errors.Wrapf(err, "creating the Jenkins auth configuration in secret %s/%s", ns, secretName)
+		}
+		return nil
+	}
+	_, err = secretInterface.Update(secret)
 	if err != nil {
-		return errors.Wrapf(err, "updating the Jenkins auth configuration in secret %s/%s", ns, kube.SecretJenkins)
+		return errors.Wrapf(err, "updating the Jenkins auth configuration in secret %s/%s", ns, secretName)
 	}
 	return nil
 }

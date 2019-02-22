@@ -108,6 +108,20 @@ func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string
 	return jenkins.GetJenkinsClient(url, f.Batch, svc, in, out, errOut)
 }
 
+// CreateCustomJenkinsClient creates a new Jenkins client for the given custom Jenkins App
+func (f *factory) CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
+	svc, err := f.CreateJenkinsAuthConfigService(kubeClient, ns)
+	if err != nil {
+		return nil, err
+	}
+	url, err := f.GetCustomJenkinsURL(kubeClient, ns, jenkinsServiceName)
+	if err != nil {
+		return nil, fmt.Errorf("%s. Try switching to the Development Tools environment via: jx env dev", err)
+	}
+	return jenkins.GetJenkinsClient(url, f.Batch, svc, in, out, errOut)
+}
+
+// GetJenkinsURL gets the Jenkins URL for the given namespace
 func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (string, error) {
 	// lets find the Kubernetes service
 	client, ns, err := f.CreateKubeClient()
@@ -125,6 +139,34 @@ func (f *factory) GetJenkinsURL(kubeClient kubernetes.Interface, ns string) (str
 			url, err = services.FindServiceURL(client, realNS, kube.ServiceJenkins)
 			if err != nil {
 				return "", fmt.Errorf("%s in namespaces %s and %s", err, realNS, ns)
+			}
+			return url, nil
+		}
+	}
+	if err != nil {
+		return "", fmt.Errorf("%s in namespace %s", err, ns)
+	}
+	return url, err
+}
+
+// GetCustomJenkinsURL gets a custom jenkins App service URL
+func (f *factory) GetCustomJenkinsURL(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string) (string, error) {
+	// lets find the Kubernetes service
+	client, ns, err := f.CreateKubeClient()
+	if err != nil {
+		return "", errors.Wrap(err, "failed to create the kube client")
+	}
+	url, err := services.FindServiceURL(client, ns, jenkinsServiceName)
+	if err != nil {
+		// lets try the real environment
+		realNS, _, err := kube.GetDevNamespace(client, ns)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to get the dev namespace from '%s' namespace", ns)
+		}
+		if realNS != ns {
+			url, err = services.FindServiceURL(client, realNS, jenkinsServiceName)
+			if err != nil {
+				return "", errors.Wrapf(err, "failed to find service URL for %s in namespaces %s and %s", jenkinsServiceName, realNS, ns)
 			}
 			return url, nil
 		}
