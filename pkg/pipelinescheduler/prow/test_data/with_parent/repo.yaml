@@ -1,0 +1,10 @@
+postsubmits:
+  items:
+  - name: release
+    branches:
+      replace: true
+      items:
+        - 2.x
+plugins:
+  items:
+  - cat
