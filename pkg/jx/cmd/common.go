@@ -56,7 +56,6 @@ const (
 	optionBatchMode        = "batch-mode"
 	optionVerbose          = "verbose"
 	optionLogLevel         = "log-level"
-	optionHeadless         = "headless"
 	optionNoBrew           = "no-brew"
 	optionInstallDeps      = "install-dependencies"
 	optionSkipAuthSecMerge = "skip-auth-secrets-merge"

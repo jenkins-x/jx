@@ -280,14 +280,13 @@ func NewCmdInstall(commonOpts *CommonOptions) *cobra.Command {
 
 // CreateInstallOptions creates the options for jx install
 func CreateInstallOptions(commonOpts *CommonOptions) InstallOptions {
-	commonOptsHeadless := *commonOpts
-	commonOptsHeadlessBatch := *commonOpts
-	commonOptsHeadlessBatch.BatchMode = true
+	commonOptsBatch := *commonOpts
+	commonOptsBatch.BatchMode = true
 	options := InstallOptions{
 		CreateJenkinsUserOptions: CreateJenkinsUserOptions{
 			Username: "admin",
 			CreateOptions: CreateOptions{
-				CommonOptions: &commonOptsHeadless,
+				CommonOptions: commonOpts,
 			},
 		},
 		GitRepositoryOptions: gits.GitRepositoryOptions{},
@@ -311,7 +310,7 @@ func CreateInstallOptions(commonOpts *CommonOptions) InstallOptions {
 			PromotionStrategy:      string(v1.PromotionStrategyTypeAutomatic),
 			ForkEnvironmentGitRepo: kube.DefaultEnvironmentGitRepoURL,
 			CreateOptions: CreateOptions{
-				CommonOptions: &commonOptsHeadlessBatch,
+				CommonOptions: &commonOptsBatch,
 			},
 		},
 		InitOptions: InitOptions{
