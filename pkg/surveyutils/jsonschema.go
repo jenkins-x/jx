@@ -488,7 +488,7 @@ func (o *JSONSchemaOptions) handleArrayProperty(name string, t *Type, output *or
 			help = t.Description
 		}
 		for _, e := range t.Items.Type.Enum {
-			options = append(options, fmt.Sprintf("%value", e))
+			options = append(options, fmt.Sprintf("%v", e))
 		}
 
 		answer := make([]string, 0)

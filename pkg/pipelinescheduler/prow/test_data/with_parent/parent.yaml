@@ -1,0 +1,8 @@
+schedulerAgent:
+  agent: prow
+policy:
+  protectTested: true
+merger:
+  policy:
+    fromBranchProtection: true
+    skipUnknownContexts: false
