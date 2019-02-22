@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/flagger"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -263,6 +264,12 @@ func (o *GetApplicationsOptions) getAppData(kubeClient kubernetes.Interface) (na
 						} else if env.Spec.Kind == v1.EnvironmentKindTypePreview {
 							appName = env.Spec.PullRequestURL
 						}
+
+						// Ignore flagger canary auxiliary deployments
+						if flagger.IsCanaryAuxiliaryDeployment(d) {
+							continue
+						}
+
 						envApp.Apps[appName] = d
 						if util.StringArrayIndex(apps, appName) < 0 {
 							apps = append(apps, appName)
