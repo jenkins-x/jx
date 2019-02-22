@@ -39,7 +39,7 @@ var (
 		jx get pipeline
 
 		# Lists all the pipelines in a custom Jenkins App
-		jx get pipeline -c
+		jx get pipeline -m
 	`)
 )
 
@@ -67,7 +67,7 @@ func NewCmdGetPipeline(commonOpts *CommonOptions) *cobra.Command {
 
 	options.addGetFlags(cmd)
 
-	cmd.Flags().BoolVarP(&options.JenkinsSelector.UseCustomJenkins, "custom", "c", false, "List the pipelines in custom Jenkins App instead of the default execution engine in Jenkins X")
+	cmd.Flags().BoolVarP(&options.JenkinsSelector.UseCustomJenkins, "custom", "m", false, "List the pipelines in custom Jenkins App instead of the default execution engine in Jenkins X")
 	cmd.Flags().StringVarP(&options.JenkinsSelector.CustomJenkinsName, "name", "n", "", "The name of the custom Jenkins App if you don't wish to list the pipelines in the default execution engine in Jenkins X")
 
 	return cmd

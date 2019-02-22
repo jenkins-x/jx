@@ -18,11 +18,14 @@ import (
 type JenkinsSelectorOptions struct {
 	UseCustomJenkins  bool
 	CustomJenkinsName string
+
+	// cached client
+	cachedCustomJenkinsClient gojenkins.JenkinsClient
 }
 
 // AddFlags add the command flags for picking a custom Jenkins App to work with
 func (o *JenkinsSelectorOptions) AddFlags(cmd *cobra.Command) {
-	cmd.Flags().BoolVarP(&o.UseCustomJenkins, "custom", "c", false, "Use a custom Jenkins App instead of the default execution engine in Jenkins X")
+	cmd.Flags().BoolVarP(&o.UseCustomJenkins, "custom", "m", false, "Use a custom Jenkins App instead of the default execution engine in Jenkins X")
 	cmd.Flags().StringVarP(&o.CustomJenkinsName, "jenkins-name", "j", "", "The name of the custom Jenkins App if you don't wish to use the default execution engine in Jenkins X")
 }
 
@@ -149,8 +152,11 @@ func (o *CommonOptions) PickCustomJenkinsName(jenkinsSelector *JenkinsSelectorOp
 // for a custom jenkins App. If no customJenkinsName is specified and there is only one available it is used. Otherwise
 // the user is prompted to pick the Jenkins App to use if not in batch mode.
 func (o *CommonOptions) CreateCustomJenkinsClient(jenkinsSelector *JenkinsSelectorOptions) (gojenkins.JenkinsClient, error) {
-	if !jenkinsSelector.UseCustomJenkins {
+	if jenkinsSelector == nil || !jenkinsSelector.UseCustomJenkins {
 		return o.JenkinsClient()
+	}
+	if jenkinsSelector.cachedCustomJenkinsClient != nil {
+		return jenkinsSelector.cachedCustomJenkinsClient, nil
 	}
 	kubeClient, ns, err := o.KubeClientAndDevNamespace()
 	if err != nil {
@@ -160,7 +166,11 @@ func (o *CommonOptions) CreateCustomJenkinsClient(jenkinsSelector *JenkinsSelect
 	if err != nil {
 	  return nil, err
 	}
-	return o.CustomJenkinsClient(customJenkinsName)
+	jenkinsClient, err := o.CustomJenkinsClient(customJenkinsName)
+	if err == nil {
+		jenkinsSelector.cachedCustomJenkinsClient = jenkinsClient
+	}
+	return jenkinsClient, err
 }
 
 // getJenkinsURL return the Jenkins URL

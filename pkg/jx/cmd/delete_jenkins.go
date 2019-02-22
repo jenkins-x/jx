@@ -28,7 +28,7 @@ func NewCmdDeleteJenkins(commonOpts *CommonOptions) *cobra.Command {
 		SuggestFor: []string{"remove", "rm"},
 	}
 
-	cmd.AddCommand(NewCmdDeleteJenkinsUser(commonOpts))
+	cmd.AddCommand(NewCmdDeleteJenkinsToken(commonOpts))
 	return cmd
 }
 
