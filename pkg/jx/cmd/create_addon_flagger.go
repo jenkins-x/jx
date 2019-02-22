@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/log"
+	istiov1alpha3 "github.com/knative/pkg/apis/istio/v1alpha3"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
@@ -12,6 +13,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -22,6 +25,7 @@ const (
 	defaultFlaggerRepo                  = "https://flagger.app"
 	optionGrafanaChart                  = "grafana-chart"
 	defaultFlaggerProductionEnvironment = "production"
+	defaultIstioGateway                 = "jx-gateway"
 )
 
 var (
@@ -40,6 +44,7 @@ type CreateAddonFlaggerOptions struct {
 	Chart                 string
 	GrafanaChart          string
 	ProductionEnvironment string
+	IstioGateway          string
 }
 
 func NewCmdCreateAddonFlagger(commonOpts *CommonOptions) *cobra.Command {
@@ -67,6 +72,7 @@ func NewCmdCreateAddonFlagger(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", kube.ChartFlagger, "The name of the chart to use")
 	cmd.Flags().StringVarP(&options.GrafanaChart, optionGrafanaChart, "", kube.ChartFlaggerGrafana, "The name of the Flagger Grafana chart to use")
 	cmd.Flags().StringVarP(&options.ProductionEnvironment, "environment", "e", defaultFlaggerProductionEnvironment, "The name of the production environment where Istio will be enabled")
+	cmd.Flags().StringVarP(&options.IstioGateway, "istio-gateway", "", defaultIstioGateway, "The name of the Istio Gateway that will be created if it does not exist")
 	return cmd
 }
 
@@ -118,6 +124,45 @@ func (o *CreateAddonFlaggerOptions) Run() error {
 		_, err = client.CoreV1().Namespaces().Patch(ns, types.MergePatchType, patch)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("error enabling Istio in namespace %s", ns))
+		}
+	}
+
+	// Create the Istio gateway
+	if o.IstioGateway != "" {
+		istioClient, err := o.CreateAddonOptions.CommonOptions.IstioClient()
+		if err != nil {
+			return errors.Wrap(err, "error building Istio client")
+		}
+		gateway, err := istioClient.NetworkingV1alpha3().Gateways(defaultIstioNamespace).Get(o.IstioGateway, metav1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			gateway = &istiov1alpha3.Gateway{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      o.IstioGateway,
+					Namespace: defaultIstioNamespace,
+				},
+				Spec: istiov1alpha3.GatewaySpec{
+					Selector: map[string]string{"istio": "ingressgateway"},
+					Servers: []istiov1alpha3.Server{
+						// TODO add https port if enabled
+						{
+							Port: istiov1alpha3.Port{
+								Number:   80,
+								Name:     "http",
+								Protocol: "HTTP",
+							},
+							Hosts: []string{"*"},
+						},
+					},
+				},
+			}
+
+			log.Infof("Creating Istio gateway: %s\n", o.IstioGateway)
+			gateway, err = istioClient.NetworkingV1alpha3().Gateways(defaultIstioNamespace).Create(gateway)
+			if err != nil {
+				return errors.Wrap(err, "error creating Istio gateway")
+			}
+		} else {
+			log.Infof("Istio gateway already exists: %s\n", o.IstioGateway)
 		}
 	}
 	return nil

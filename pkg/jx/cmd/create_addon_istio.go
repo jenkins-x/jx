@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/binaries"
 
@@ -13,16 +14,19 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	istioclient "github.com/knative/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	defaultIstioNamespace   = "istio-system"
-	defaultIstioReleaseName = "istio"
-	defaultIstioPassword    = "istio"
-	defaultIstioConfigDir   = "/istio_service_dir"
-	defaultIstioVersion     = ""
+	defaultIstioNamespace             = "istio-system"
+	defaultIstioReleaseName           = "istio"
+	defaultIstioPassword              = "istio"
+	defaultIstioConfigDir             = "/istio_service_dir"
+	defaultIstioVersion               = ""
+	defaultIstioIngressGatewayService = "istio-ingressgateway"
 )
 
 var (
@@ -43,11 +47,12 @@ var (
 type CreateAddonIstioOptions struct {
 	CreateAddonOptions
 
-	Chart             string
-	Password          string
-	ConfigDir         string
-	NoInjectorWebhook bool
-	Dir               string
+	Chart                 string
+	Password              string
+	ConfigDir             string
+	NoInjectorWebhook     bool
+	Dir                   string
+	IngressGatewayService string
 }
 
 // NewCmdCreateAddonIstio creates a command object for the "create" command
@@ -80,6 +85,7 @@ func NewCmdCreateAddonIstio(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.ConfigDir, "config-dir", "d", defaultIstioConfigDir, "The config directory to use")
 	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", "", "The name of the chart to use")
 	cmd.Flags().BoolVarP(&options.NoInjectorWebhook, "no-injector-webhook", "", false, "Disables the injector webhook")
+	cmd.Flags().StringVarP(&options.IngressGatewayService, "ingress-gateway-service", "", defaultIstioIngressGatewayService, "The name of the ingress gateway service created by Istio")
 	return cmd
 }
 
@@ -136,6 +142,35 @@ func (o *CreateAddonIstioOptions) Run() error {
 	if err != nil {
 		return fmt.Errorf("istio deployment failed: %v", err)
 	}
+
+	// get the ip of the Istio ingress gateway
+	c := make(chan string, 1)
+	go func() {
+		for {
+			svc, err := client.CoreV1().Services(o.Namespace).Get(o.IngressGatewayService, metav1.GetOptions{})
+			if err != nil {
+				log.Warnf("Error getting Istio ingress gateway %s/%s: %s\n", o.Namespace, o.IngressGatewayService, err)
+				c <- ""
+			} else {
+				if len(svc.Status.LoadBalancer.Ingress) > 0 {
+					c <- svc.Status.LoadBalancer.Ingress[0].IP
+					return
+				}
+				log.Infof("Waiting for Istio ingress gateway ip %s/%s\n", o.Namespace, o.IngressGatewayService)
+			}
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
+	select {
+	case ip := <-c:
+		if ip != "" {
+			log.Infof("Istio ingress gateway service ip: %s\n", ip)
+		}
+	case <-time.After(1 * time.Minute):
+		log.Infof("Istio ingress gateway service ip is not yet ready, you can get it with `kubectl -n istio-system get service istio-ingressgateway -o jsonpath='{.status.loadBalancer.ingress[0].ip}'`")
+	}
+
 	return nil
 }
 
@@ -215,4 +250,13 @@ func (o *CreateAddonIstioOptions) getIstioChartsFromGitHub() (string, error) {
 func (o *CreateAddonIstioOptions) generateSecrets() error {
 	// generate secret for kiali && grafana
 	return nil
+}
+
+// IstioClient creates a new Kubernetes client for Istio resources
+func (o *CommonOptions) IstioClient() (istioclient.Interface, error) {
+	config, err := o.factory.CreateKubeConfig()
+	if err != nil {
+		return nil, err
+	}
+	return istioclient.NewForConfig(config)
 }
