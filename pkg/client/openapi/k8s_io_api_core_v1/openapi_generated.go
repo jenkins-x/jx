@@ -10023,14 +10023,14 @@ func schema_k8sio_api_core_v1_VsphereVirtualDiskVolumeSource(ref common.Referenc
 					},
 					"storagePolicyName": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Storage Policy Based Management (SPBM) profile name.",
+							Description: "Storage ProtectionPolicy Based Management (SPBM) profile name.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
 					},
 					"storagePolicyID": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Storage Policy Based Management (SPBM) profile ID associated with the StoragePolicyName.",
+							Description: "Storage ProtectionPolicy Based Management (SPBM) profile ID associated with the StoragePolicyName.",
 							Type:        []string{"string"},
 							Format:      "",
 						},

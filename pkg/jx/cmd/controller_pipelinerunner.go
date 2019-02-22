@@ -3,12 +3,13 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/jenkins-x/jx/pkg/log"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
@@ -219,6 +220,7 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 	pr.Branch = branch
 	pr.Revision = revision
 	pr.ServiceAccount = o.ServiceAccount
+	pr.Po
 
 	// turn map into string array with = separator to match type of custom labels which are CLI flags
 	for key, value := range arguments.Labels {
@@ -307,7 +309,7 @@ func getBranch(spec prowapi.ProwJobSpec) string {
 		return branch
 	}
 	if len(spec.Refs.Pulls) > 0 {
-		// todo lets support multiple PRs for when we are running a batch from Tide
+		// todo lets support multiple PRs for when we are running a batch from Merger
 		branch = fmt.Sprintf("PR-%v", spec.Refs.Pulls[0].Number)
 	}
 	return branch

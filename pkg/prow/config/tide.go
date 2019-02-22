@@ -2,14 +2,16 @@ package config
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"k8s.io/test-infra/prow/config"
-	"time"
 )
 
-// CreateTide creates a default Tide Config object
+// CreateTide creates a default Merger Config object
 func CreateTide(tideURL string) config.Tide {
+	// todo get the real URL, though we need to handle the multi cluster use case where dev namespace may be another cluster, so pass it in as an arg?
 	t := config.Tide{
 		TargetURL: tideURL,
 	}
@@ -34,7 +36,7 @@ func CreateTide(tideURL string) config.Tide {
 	return t
 }
 
-// AddRepoToTideConfig adds a code repository to the Tide section of the Prow Config
+// AddRepoToTideConfig adds a code repository to the Merger section of the Prow Config
 func AddRepoToTideConfig(t *config.Tide, repo string, kind Kind) error {
 	switch kind {
 	case Application:
@@ -72,14 +74,14 @@ func AddRepoToTideConfig(t *config.Tide, repo string, kind Kind) error {
 			t.Queries = append(t.Queries, createEnvironmentTideQuery())
 		}
 	case Protection:
-		// No Tide config needed for Protection
+		// No Merger config needed for Protection
 	default:
 		return fmt.Errorf("unknown Prow config kind %s", kind)
 	}
 	return nil
 }
 
-// RemoveRepoFromTideConfig adds a code repository to the Tide section of the Prow Config
+// RemoveRepoFromTideConfig adds a code repository to the Merger section of the Prow Config
 func RemoveRepoFromTideConfig(t *config.Tide, repo string, kind Kind) error {
 	switch kind {
 	case Application:
@@ -107,7 +109,7 @@ func RemoveRepoFromTideConfig(t *config.Tide, repo string, kind Kind) error {
 			log.Infof("Failed to find 'environment' tide config, adding...\n")
 		}
 	case Protection:
-		// No Tide config needed for Protection
+		// No Merger config needed for Protection
 	default:
 		return fmt.Errorf("unknown Prow config kind %s", kind)
 	}
