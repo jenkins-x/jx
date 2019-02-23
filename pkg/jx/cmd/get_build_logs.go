@@ -365,7 +365,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 			}
 		}
 	} else {
-		b := build.(builds.BuildPodInfo)
+		b := build.(*builds.BuildPodInfo)
 		pod := b.Pod
 		if pod == nil {
 			return fmt.Errorf("No Pod found for name %s", name)
