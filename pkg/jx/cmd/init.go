@@ -46,6 +46,7 @@ type InitFlags struct {
 	IngressService             string
 	IngressDeployment          string
 	ExternalIP                 string
+	VersionsRepository         string
 	DraftClient                bool
 	HelmClient                 bool
 	Helm3                      bool
@@ -498,7 +499,7 @@ controller:
 		}
 		chartName := "stable/nginx-ingress"
 
-		version, err := o.getVersionNumber(version2.KindChart, chartName)
+		version, err := o.getVersionNumber(version2.KindChart, chartName, o.Flags.VersionsRepository)
 		if err != nil {
 			return errors.Wrapf(err, "failed to load version of chart %s", chartName)
 		}

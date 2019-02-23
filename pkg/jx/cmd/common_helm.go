@@ -324,7 +324,7 @@ func (o *CommonOptions) installChartOrGitOps(isGitOps bool, gitOpsDir string, gi
 
 	if version == "" {
 		var err error
-		version, err = o.getVersionNumber(version2.KindChart, chart)
+		version, err = o.getVersionNumber(version2.KindChart, chart, "")
 		if err != nil {
 			return err
 		}
@@ -508,8 +508,8 @@ func deleteDirectory(wrkDir string) error {
 }
 
 // getVersionNumber returns the version number for the given kind and name or blank string if there is no locked version
-func (o *CommonOptions) getVersionNumber(kind version.VersionKind, name string) (string, error) {
-	versionsDir, err := o.cloneJXVersionsRepo("")
+func (o *CommonOptions) getVersionNumber(kind version.VersionKind, name, repo string) (string, error) {
+	versionsDir, err := o.cloneJXVersionsRepo(repo)
 	if err != nil {
 		return "", err
 	}
