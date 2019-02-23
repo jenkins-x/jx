@@ -75,14 +75,18 @@ func (o *DeleteDevPodOptions) Run() error {
 		return err
 	}
 	userName, err := o.getUsername(o.CommonDevPodOptions.Username)
-	names, err := kube.GetPodNames(client, ns, userName)
+	if err != nil {
+		return err
+	}
+	name := kube.ToValidName(userName)
+	names, err := kube.GetPodNames(client, ns, name)
 	if err != nil {
 		return err
 	}
 
 	info := util.ColorInfo
 	if len(names) == 0 {
-		return fmt.Errorf("There are no DevPods for user %s in namespace %s. You can create one via: %s\n", info(username), info(ns), info("jx create devpod"))
+		return fmt.Errorf("There are no DevPods for user %s in namespace %s. You can create one via: %s\n", info(userName), info(ns), info("jx create devpod"))
 	}
 
 	if len(args) == 0 {
