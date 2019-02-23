@@ -405,6 +405,7 @@ func (si *StageInfo) SetPodsForStageInfo(kubeClient kubernetes.Interface, tekton
 		pod := podList.Items[0]
 		si.PodName = pod.Name
 		si.Task = pod.Labels[builds.LabelTaskName]
+		si.TaskRun = pod.Labels[builds.LabelTaskRunName]
 		si.Pod = &pod
 		si.CreatedTime = pod.CreationTimestamp.Time
 		if len(pod.Spec.InitContainers) > 2 {
