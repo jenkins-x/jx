@@ -31,7 +31,8 @@ gcloud auth activate-service-account --key-file $GKE_SA
 
 gcloud container clusters get-credentials anthorse --zone europe-west1-b --project jenkinsx-dev
 
-sed 's/\$VERSION/${PREVIEW_IMAGE_TAG}/g' myvalues.yaml.template > myvalues.yaml
+sed s/\$VERSION/${PREVIEW_IMAGE_TAG}/g myvalues.yaml.template > myvalues.yaml
+
 echo the myvalues.yaml file is:
 cat myvalues.yaml
 

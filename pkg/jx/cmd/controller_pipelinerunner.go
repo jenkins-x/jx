@@ -193,7 +193,6 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 	pr.Branch = branch
 	pr.Revision = revision
 	pr.ServiceAccount = o.ServiceAccount
-	pr.ProwJobType = string(pj.Type)
 
 	// turn map into string array with = separator to match type of custom labels which are CLI flags
 	for key, value := range arguments.Labels {
