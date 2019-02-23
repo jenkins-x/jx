@@ -24,28 +24,27 @@ import (
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/golang-jenkins"
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	jxjenkins "github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/table"
+	"github.com/jenkins-x/jx/pkg/util"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	tektonclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
 	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
-	corev1 "k8s.io/api/core/v1"
-	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-
-	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/config"
-	jxjenkins "github.com/jenkins-x/jx/pkg/jenkins"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/table"
-	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	"gopkg.in/yaml.v2"
+	corev1 "k8s.io/api/core/v1"
+	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -325,40 +324,6 @@ func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, 
 		o.devNamespace = devNs
 	}
 	return o.jxClient, o.devNamespace, nil
-}
-
-// SetJenkinsClient sets the JenkinsClient - usually used in testing
-func (o *CommonOptions) SetJenkinsClient(jenkinsClient gojenkins.JenkinsClient) {
-	o.jenkinsClient = jenkinsClient
-}
-
-// JenkinsClient returns the Jenkins client
-func (o *CommonOptions) JenkinsClient() (gojenkins.JenkinsClient, error) {
-	if o.jenkinsClient == nil {
-		kubeClient, ns, err := o.KubeClientAndDevNamespace()
-		if err != nil {
-			return nil, err
-		}
-
-		o.factory.SetBatch(o.BatchMode)
-		jenkins, err := o.factory.CreateJenkinsClient(kubeClient, ns, o.In, o.Out, o.Err)
-
-		if err != nil {
-			return nil, err
-		}
-		o.jenkinsClient = jenkins
-	}
-	return o.jenkinsClient, nil
-}
-
-// getJenkinsURL return the Jenkins URL
-func (o *CommonOptions) getJenkinsURL() (string, error) {
-	kubeClient, ns, err := o.KubeClientAndNamespace()
-	if err != nil {
-		return "", err
-	}
-
-	return o.factory.GetJenkinsURL(kubeClient, ns)
 }
 
 // Git returns the git client
@@ -755,9 +720,9 @@ func (o *CommonOptions) retryUntilTrueOrTimeout(timeout time.Duration, sleep tim
 	}
 }
 
-func (o *CommonOptions) getJobMap(filter string) (map[string]gojenkins.Job, error) {
+func (o *CommonOptions) getJobMap(jenkinsSelector *JenkinsSelectorOptions, filter string) (map[string]gojenkins.Job, error) {
 	jobMap := map[string]gojenkins.Job{}
-	jenkins, err := o.JenkinsClient()
+	jenkins, err := o.CreateCustomJenkinsClient(jenkinsSelector)
 	if err != nil {
 		return jobMap, err
 	}
@@ -765,16 +730,11 @@ func (o *CommonOptions) getJobMap(filter string) (map[string]gojenkins.Job, erro
 	if err != nil {
 		return jobMap, err
 	}
-	o.addJobs(&jobMap, filter, "", jobs)
+	o.addJobs(jenkins, &jobMap, filter, "", jobs)
 	return jobMap, nil
 }
 
-func (o *CommonOptions) addJobs(jobMap *map[string]gojenkins.Job, filter string, prefix string, jobs []gojenkins.Job) {
-	jenkins, err := o.JenkinsClient()
-	if err != nil {
-		return
-	}
-
+func (o *CommonOptions) addJobs(jenkins gojenkins.JenkinsClient, jobMap *map[string]gojenkins.Job, filter string, prefix string, jobs []gojenkins.Job) {
 	for _, j := range jobs {
 		name := jxjenkins.JobName(prefix, &j)
 		if jxjenkins.IsPipeline(&j) {
@@ -784,17 +744,17 @@ func (o *CommonOptions) addJobs(jobMap *map[string]gojenkins.Job, filter string,
 			}
 		}
 		if j.Jobs != nil {
-			o.addJobs(jobMap, filter, name, j.Jobs)
+			o.addJobs(jenkins, jobMap, filter, name, j.Jobs)
 		} else {
 			job, err := jenkins.GetJob(name)
 			if err == nil && job.Jobs != nil {
-				o.addJobs(jobMap, filter, name, job.Jobs)
+				o.addJobs(jenkins, jobMap, filter, name, job.Jobs)
 			}
 		}
 	}
 }
-func (o *CommonOptions) tailBuild(jobName string, build *gojenkins.Build) error {
-	jenkins, err := o.JenkinsClient()
+func (o *CommonOptions) tailBuild(jenkinsSelector *JenkinsSelectorOptions, jobName string, build *gojenkins.Build) error {
+	jenkins, err := o.CreateCustomJenkinsClient(jenkinsSelector)
 	if err != nil {
 		return nil
 	}

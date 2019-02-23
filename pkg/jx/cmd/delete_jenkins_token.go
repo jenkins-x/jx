@@ -7,7 +7,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -24,25 +23,27 @@ var (
 	`)
 )
 
-// DeleteJenkinsUserOptions the options for the create spring command
-type DeleteJenkinsUserOptions struct {
+// DeleteJenkinsTokenOptions the options for the create spring command
+type DeleteJenkinsTokenOptions struct {
 	CreateOptions
+
+	JenkinsSelector JenkinsSelectorOptions
 
 	ServerFlags ServerFlags
 }
 
-// NewCmdDeleteJenkinsUser defines the command
-func NewCmdDeleteJenkinsUser(commonOpts *CommonOptions) *cobra.Command {
-	options := &DeleteJenkinsUserOptions{
+// NewCmdDeleteJenkinsToken defines the command
+func NewCmdDeleteJenkinsToken(commonOpts *CommonOptions) *cobra.Command {
+	options := &DeleteJenkinsTokenOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
 		},
 	}
 
 	cmd := &cobra.Command{
-		Use:     "user",
+		Use:     "token",
 		Short:   "Deletes one or more Jenkins user API tokens",
-		Aliases: []string{"token"},
+		Aliases: []string{"user"},
 		Long:    delete_jenkins_user_long,
 		Example: delete_jenkins_user_example,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -53,11 +54,12 @@ func NewCmdDeleteJenkinsUser(commonOpts *CommonOptions) *cobra.Command {
 		},
 	}
 	options.ServerFlags.addGitServerFlags(cmd)
+	options.JenkinsSelector.AddFlags(cmd)
 	return cmd
 }
 
 // Run implements the command
-func (o *DeleteJenkinsUserOptions) Run() error {
+func (o *DeleteJenkinsTokenOptions) Run() error {
 	args := o.Args
 	if len(args) == 0 {
 		return fmt.Errorf("Missing Jenkins user name")
@@ -74,8 +76,7 @@ func (o *DeleteJenkinsUserOptions) Run() error {
 
 	var server *auth.AuthServer
 	if o.ServerFlags.IsEmpty() {
-		url := ""
-		url, err = o.findService(kube.ServiceJenkins)
+		url, err := o.CustomJenkinsURL(&o.JenkinsSelector, kubeClient, ns)
 		if err != nil {
 			return err
 		}

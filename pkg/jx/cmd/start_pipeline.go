@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	gojenkins "github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/prow"
 	"k8s.io/api/core/v1"
 	"k8s.io/test-infra/prow/pjutil"
@@ -34,8 +34,9 @@ const (
 type StartPipelineOptions struct {
 	GetOptions
 
-	Tail   bool
-	Filter string
+	Tail            bool
+	Filter          string
+	JenkinsSelector JenkinsSelectorOptions
 
 	Jobs map[string]gojenkins.Job
 
@@ -43,12 +44,12 @@ type StartPipelineOptions struct {
 }
 
 var (
-	start_pipeline_long = templates.LongDesc(`
+	startPipelineLong = templates.LongDesc(`
 		Starts the pipeline build.
 
 `)
 
-	start_pipeline_example = templates.Examples(`
+	startPipelineExample = templates.Examples(`
 		# Start a pipeline
 		jx start pipeline foo
 
@@ -71,8 +72,8 @@ func NewCmdStartPipeline(commonOpts *CommonOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "pipeline [flags]",
 		Short:   "Starts one or more pipelines",
-		Long:    start_pipeline_long,
-		Example: start_pipeline_example,
+		Long:    startPipelineLong,
+		Example: startPipelineExample,
 		Aliases: []string{"pipe", "pipeline", "build", "run"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
@@ -83,6 +84,7 @@ func NewCmdStartPipeline(commonOpts *CommonOptions) *cobra.Command {
 	}
 	cmd.Flags().BoolVarP(&options.Tail, "tail", "t", false, "Tails the build log to the current terminal")
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filters all the available jobs by those that contain the given text")
+	options.JenkinsSelector.AddFlags(cmd)
 
 	return cmd
 }
@@ -108,6 +110,9 @@ func (o *StartPipelineOptions) Run() error {
 		KubeClient: kubeClient,
 		NS:         o.currentNamespace,
 	}
+	if o.JenkinsSelector.IsCustom() {
+		isProw = false
+	}
 	if len(args) == 0 {
 		if isProw {
 			names, err = o.ProwOptions.GetReleaseJobs()
@@ -116,7 +121,7 @@ func (o *StartPipelineOptions) Run() error {
 			}
 			names = util.StringsContaining(names, o.Filter)
 		} else {
-			jobMap, err := o.getJobMap(o.Filter)
+			jobMap, err := o.getJobMap(&o.JenkinsSelector, o.Filter)
 			if err != nil {
 				return err
 			}
@@ -253,10 +258,12 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 
 func (o *StartPipelineOptions) startJenkinsJob(name string) error {
 	job := o.Jobs[name]
-	jenkins, err := o.JenkinsClient()
+
+	jenkins, err := o.CreateCustomJenkinsClient(&o.JenkinsSelector)
 	if err != nil {
 		return err
 	}
+	job.Url = switchJenkinsBaseURL(job.Url, jenkins.BaseURL())
 
 	// ignore errors as it could be there's no last build yet
 	previous, _ := jenkins.GetLastBuild(job)
@@ -278,10 +285,12 @@ func (o *StartPipelineOptions) startJenkinsJob(name string) error {
 		i++
 
 		if last.Number != previous.Number {
+			last.Url = switchJenkinsBaseURL(last.Url, jenkins.BaseURL())
+
 			log.Infof("Started build of %s at %s\n", util.ColorInfo(name), util.ColorInfo(last.Url))
 			log.Infof("%s %s\n", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
 			if o.Tail {
-				return o.tailBuild(name, &last)
+				return o.tailBuild(&o.JenkinsSelector, name, &last)
 			}
 			return nil
 		}
