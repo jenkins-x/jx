@@ -4,13 +4,14 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
-	"k8s.io/helm/pkg/chartutil"
 	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"k8s.io/helm/pkg/chartutil"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
@@ -279,16 +280,13 @@ func NewCmdInstall(commonOpts *CommonOptions) *cobra.Command {
 
 // CreateInstallOptions creates the options for jx install
 func CreateInstallOptions(commonOpts *CommonOptions) InstallOptions {
-	commonOptsHeadless := *commonOpts
-	commonOpts.Headless = true
-	commonOptsHeadlessBatch := *commonOpts
-	commonOptsHeadlessBatch.Headless = true
-	commonOptsHeadlessBatch.BatchMode = true
+	commonOptsBatch := *commonOpts
+	commonOptsBatch.BatchMode = true
 	options := InstallOptions{
 		CreateJenkinsUserOptions: CreateJenkinsUserOptions{
 			Username: "admin",
 			CreateOptions: CreateOptions{
-				CommonOptions: &commonOptsHeadless,
+				CommonOptions: commonOpts,
 			},
 		},
 		GitRepositoryOptions: gits.GitRepositoryOptions{},
@@ -312,7 +310,7 @@ func CreateInstallOptions(commonOpts *CommonOptions) InstallOptions {
 			PromotionStrategy:      string(v1.PromotionStrategyTypeAutomatic),
 			ForkEnvironmentGitRepo: kube.DefaultEnvironmentGitRepoURL,
 			CreateOptions: CreateOptions{
-				CommonOptions: &commonOptsHeadlessBatch,
+				CommonOptions: &commonOptsBatch,
 			},
 		},
 		InitOptions: InitOptions{
@@ -2205,7 +2203,6 @@ func (options *InstallOptions) configureJenkins(namespace string) error {
 				options.CreateJenkinsUserOptions.RecreateToken = true
 				if options.BatchMode {
 					options.CreateJenkinsUserOptions.BatchMode = true
-					options.CreateJenkinsUserOptions.Headless = true
 				}
 				err = options.CreateJenkinsUserOptions.Run()
 				return

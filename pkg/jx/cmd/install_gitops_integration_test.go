@@ -102,7 +102,6 @@ func TestInstallGitOps(t *testing.T) {
 	o.InitOptions.Flags.NoGitValidate = true
 	o.InitOptions.Flags.UserClusterRole = clusterAdminRoleName
 	o.BatchMode = true
-	o.Headless = true
 
 	// lets use a fake git provider
 	testDevRepo := "environment-dev-mytest"

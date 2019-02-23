@@ -197,7 +197,6 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 		installOptions.InitOptions.CommonOptions = defaultOptions
 		installOptions.SkipAuthSecretsMerge = true
 		installOptions.BatchMode = true
-		installOptions.Headless = true
 
 		installOptions.InitOptions.Flags.NoTiller = true
 		installOptions.InitOptions.Flags.HelmClient = true
@@ -304,7 +303,6 @@ func (o *StepBDDOptions) deleteTeam(team string) error {
 func (o *StepBDDOptions) createDefaultCommonOptions() *CommonOptions {
 	defaultOptions := o.CommonOptions
 	defaultOptions.BatchMode = true
-	defaultOptions.Headless = true
 	defaultOptions.Args = nil
 	return defaultOptions
 }

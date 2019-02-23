@@ -757,8 +757,8 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 
-	// Only want to shell into the DevPod if the headless flag isn't set
-	if !o.Headless {
+	// Only want to shell into the DevPod if the batch flag isn't set
+	if !o.BatchMode {
 		shellCommand := o.ShellCmd
 		if shellCommand == "" {
 			shellCommand = defaultRshCommand
