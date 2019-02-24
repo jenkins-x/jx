@@ -471,8 +471,9 @@ func (o *InitOptions) initIngress() error {
 			if o.Flags.Provider == cloud.EKS {
 				enableHTTP := "true"
 				enableHTTPS := "true"
-			} // For AWS we can only enable one port for NLBs right now?
-			else if o.Flags.Provider == cloud.AWS {
+			} 
+			// For AWS we can only enable one port for NLBs right now?
+			if o.Flags.Provider == cloud.AWS {
 				enableHTTP = "false"
 				enableHTTPS = "true"
 				if o.Flags.Http {
