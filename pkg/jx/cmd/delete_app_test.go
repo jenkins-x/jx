@@ -48,7 +48,7 @@ func TestDeleteAppForGitOps(t *testing.T) {
 	// Validate the branch name
 	envDir, err := o.CommonOptions.EnvironmentsDir()
 	assert.NoError(t, err)
-	devEnvDir := filepath.Join(envDir, testOptions.OrgName, testOptions.DevEnvRepoInfo.Name)
+	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	branchName, err := o.Git().Branch(devEnvDir)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("delete-app-%s", name), branchName)

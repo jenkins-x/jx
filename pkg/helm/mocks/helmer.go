@@ -389,6 +389,21 @@ func (mock *MockHelmer) StatusReleases(_param0 string) (map[string]helm.Release,
 	return ret0, ret1
 }
 
+func (mock *MockHelmer) Template(_param0 string, _param1 string, _param2 string, _param3 string, _param4 bool, _param5 []string, _param6 []string) error {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockHelmer().")
+	}
+	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("Template", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(error)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockHelmer) UpdateRepo() error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockHelmer().")
@@ -1124,6 +1139,57 @@ func (c *Helmer_StatusReleases_OngoingVerification) GetAllCapturedArguments() (_
 		_param0 = make([]string, len(params[0]))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierHelmer) Template(_param0 string, _param1 string, _param2 string, _param3 string, _param4 bool, _param5 []string, _param6 []string) *Helmer_Template_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Template", params, verifier.timeout)
+	return &Helmer_Template_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Helmer_Template_OngoingVerification struct {
+	mock              *MockHelmer
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Helmer_Template_OngoingVerification) GetCapturedArguments() (string, string, string, string, bool, []string, []string) {
+	_param0, _param1, _param2, _param3, _param4, _param5, _param6 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1], _param5[len(_param5)-1], _param6[len(_param6)-1]
+}
+
+func (c *Helmer_Template_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []string, _param4 []bool, _param5 [][]string, _param6 [][]string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
+		}
+		_param2 = make([]string, len(params[2]))
+		for u, param := range params[2] {
+			_param2[u] = param.(string)
+		}
+		_param3 = make([]string, len(params[3]))
+		for u, param := range params[3] {
+			_param3[u] = param.(string)
+		}
+		_param4 = make([]bool, len(params[4]))
+		for u, param := range params[4] {
+			_param4[u] = param.(bool)
+		}
+		_param5 = make([][]string, len(params[5]))
+		for u, param := range params[5] {
+			_param5[u] = param.([]string)
+		}
+		_param6 = make([][]string, len(params[6]))
+		for u, param := range params[6] {
+			_param6[u] = param.([]string)
 		}
 	}
 	return

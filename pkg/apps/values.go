@@ -3,10 +3,9 @@ package apps
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/environments"
 	"io"
 	"io/ioutil"
-	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -66,21 +65,9 @@ func StashValues(values []byte, name string, jxClient versioned.Interface, ns st
 		app.Annotations = make(map[string]string)
 	}
 	app.Annotations[ValuesAnnotation] = encoded
-	metadata, err := helm.LoadChartFile(filepath.Join(chartDir, "Chart.yaml"))
-	if err != nil {
-		return errors.Wrapf(err, "error loading chart from %s", chartDir)
-	}
-	app.Annotations[helm.AnnotationAppDescription] = metadata.GetDescription()
-	repoURL, err := url.Parse(repository)
-	if err != nil {
-		return errors.Wrap(err, "Invalid repository url")
-	}
-	app.Annotations[helm.AnnotationAppRepository] = util.StripCredentialsFromURL(repoURL)
-	if app.Labels == nil {
-		app.Labels = make(map[string]string)
-	}
-	app.Labels[helm.LabelAppName] = metadata.Name
-	app.Labels[helm.LabelAppVersion] = metadata.Version
+
+	environments.AddAppMetaData(chartDir, app, repository)
+
 	if create {
 		_, err := jxClient.JenkinsV1().Apps(ns).Create(app)
 		if err != nil {

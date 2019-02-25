@@ -55,6 +55,8 @@ func TestAddAppForGitOps(t *testing.T) {
 	name := uuid.NewV4().String()
 	version := "0.0.1"
 	alias := fmt.Sprintf("%s-alias", name)
+	repo := "http://chartmuseum.jenkins-x.io"
+	description := "My test chart description"
 	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
 		AddOptions: cmd.AddOptions{
@@ -62,12 +64,19 @@ func TestAddAppForGitOps(t *testing.T) {
 		},
 		Version:              version,
 		Alias:                alias,
-		Repo:                 "http://chartmuseum.jenkins-x.io",
+		Repo:                 repo,
 		GitOps:               true,
 		DevEnv:               testOptions.DevEnv,
 		HelmUpdate:           true, // Flag default when run on CLI
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}
+	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
+		Metadata: &chart.Metadata{
+			Name:        name,
+			Version:     version,
+			Description: description,
+		},
+	}, testOptions.MockHelmer)
 	o.Args = []string{name}
 	err := o.Run()
 	assert.NoError(t, err)
@@ -79,7 +88,7 @@ func TestAddAppForGitOps(t *testing.T) {
 	// Validate the branch name
 	envDir, err := o.CommonOptions.EnvironmentsDir()
 	assert.NoError(t, err)
-	devEnvDir := filepath.Join(envDir, testOptions.OrgName, testOptions.DevEnvRepoInfo.Name)
+	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	branchName, err := o.Git().Branch(devEnvDir)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("add-app-%s-%s", name, version), branchName)
@@ -94,6 +103,14 @@ func TestAddAppForGitOps(t *testing.T) {
 	}
 	assert.Len(t, found, 1)
 	assert.Equal(t, version, found[0].Version)
+	app := &jenkinsv1.App{}
+	appBytes, err := ioutil.ReadFile(filepath.Join(devEnvDir, name, "templates", name+"-app.yaml"))
+	_ = yaml.Unmarshal(appBytes, app)
+	assert.Equal(t, name, app.Labels[helm.LabelAppName])
+	assert.Equal(t, version, app.Labels[helm.LabelAppVersion])
+	assert.Equal(t, repo, app.Annotations[helm.AnnotationAppRepository])
+	assert.Equal(t, description, app.Annotations[helm.AnnotationAppDescription])
+
 }
 
 func TestAddAppWithSecrets(t *testing.T) {
@@ -525,8 +542,7 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 	// Validate that the secret reference is generated
 	envDir, err := o.CommonOptions.EnvironmentsDir()
 	assert.NoError(t, err)
-	devEnvDir := filepath.Join(envDir, testOptions.OrgName, testOptions.DevEnvRepoInfo.Name)
-	valuesFromPrPath := filepath.Join(devEnvDir, name, helm.ValuesFileName)
+	valuesFromPrPath := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name, helm.ValuesFileName)
 	_, err = os.Stat(valuesFromPrPath)
 	assert.NoError(t, err)
 	data, err := ioutil.ReadFile(valuesFromPrPath)
@@ -697,7 +713,7 @@ func TestAddAppWithValuesFileForGitOps(t *testing.T) {
 	// Validate that the values.yaml file is in the right place
 	envDir, err := o.CommonOptions.EnvironmentsDir()
 	assert.NoError(t, err)
-	devEnvDir := filepath.Join(envDir, testOptions.OrgName, testOptions.DevEnvRepoInfo.Name)
+	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	valuesFromPrPath := filepath.Join(devEnvDir, name, helm.ValuesFileName)
 	_, err = os.Stat(valuesFromPrPath)
 	assert.NoError(t, err)
@@ -765,7 +781,7 @@ func TestAddAppWithReadmeForGitOps(t *testing.T) {
 	// Validate that the README.md file is in the right place
 	envDir, err := o.CommonOptions.EnvironmentsDir()
 	assert.NoError(t, err)
-	devEnvDir := filepath.Join(envDir, testOptions.OrgName, testOptions.DevEnvRepoInfo.Name)
+	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	readmeFromPrPath := filepath.Join(devEnvDir, name, "README.MD")
 	_, err = os.Stat(readmeFromPrPath)
 	assert.NoError(t, err)
@@ -837,7 +853,7 @@ func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
 	// Validate that the README.md file is in the right place
 	envDir, err := o.CommonOptions.EnvironmentsDir()
 	assert.NoError(t, err)
-	devEnvDir := filepath.Join(envDir, testOptions.OrgName, testOptions.DevEnvRepoInfo.Name)
+	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	readmeFromPrPath := filepath.Join(devEnvDir, name, readmeFileName)
 	_, err = os.Stat(readmeFromPrPath)
 	assert.NoError(t, err)
@@ -898,7 +914,7 @@ func TestAddLatestAppForGitOps(t *testing.T) {
 	// Validate the branch name
 	envDir, err := o.CommonOptions.EnvironmentsDir()
 	assert.NoError(t, err)
-	devEnvDir := filepath.Join(envDir, testOptions.OrgName, testOptions.DevEnvRepoInfo.Name)
+	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	branchName, err := o.Git().Branch(devEnvDir)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("add-app-%s-%s", name, version), branchName)

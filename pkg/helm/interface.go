@@ -34,6 +34,7 @@ type Helmer interface {
 	SetHost(host string)
 	Env() map[string]string
 	DecryptSecrets(location string) error
+	Template(chartDir string, releaseName string, ns string, outputDir string, upgrade bool, values []string, valueFiles []string) error
 }
 
 // Release defines a struct to store details about a helm release

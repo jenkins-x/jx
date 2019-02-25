@@ -42,6 +42,7 @@ require (
 	github.com/cpuguy83/go-md2man v1.0.8 // indirect
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964 // indirect
 	github.com/denormal/go-gitignore v0.0.0-20180713143441-75ce8f3e513c
+	github.com/dsnet/compress v0.0.0-20171208185109-cc9eb1d7ad76 // indirect
 	github.com/duosecurity/duo_api_golang v0.0.0-20190107154727-539434bf0d45 // indirect
 	github.com/elazarl/go-bindata-assetfs v1.0.0 // indirect
 	github.com/elazarl/goproxy v0.0.0-20181111060418-2ce16c963a8a // indirect
@@ -103,11 +104,13 @@ require (
 	github.com/magiconair/properties v1.8.0
 	github.com/markbates/inflect v1.0.4 // indirect
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b // indirect
+	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/go-homedir v0.0.0-20180523094522-3864e76763d9 // indirect
 	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
 	github.com/mitchellh/mapstructure v0.0.0-20180715050151-f15292f7a699
 	github.com/nlopes/slack v0.0.0-20180721202243-347a74b1ea30
+	github.com/nwaples/rardecode v1.0.0 // indirect
 	github.com/onsi/ginkgo v1.6.0
 	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/operator-framework/operator-sdk v0.0.0-20181011175812-913cbf711929 // indirect
@@ -135,9 +138,11 @@ require (
 	github.com/stoewer/go-strcase v1.0.1
 	github.com/stretchr/testify v1.3.0
 	github.com/trivago/tgo v1.0.1 // indirect
+	github.com/ulikunitz/xz v0.5.6 // indirect
 	github.com/wbrefvem/go-bitbucket v0.0.0-20190128183802-fc08fd046abb
 	github.com/xanzy/go-gitlab v0.0.0-20180814191223-f3bc634ab936
 	github.com/xanzy/ssh-agent v0.2.0 // indirect
+	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	gocloud.dev v0.9.0
 	golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9 // indirect
 	golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81 // indirect

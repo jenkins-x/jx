@@ -52,6 +52,12 @@ type AppTestOptions struct {
 	MockVaultClient *vault_test.MockClient
 }
 
+// GetFullDevEnvDir returns a dev environment including org name and env
+func (o *AppTestOptions) GetFullDevEnvDir(envDir string) (name string) {
+	return filepath.Join(envDir, o.OrgName, o.DevEnvRepoInfo.Name)
+
+}
+
 // DirectlyAddAppToGitOps modifies the environment git repo directly to add a dummy app
 func (o *AppTestOptions) DirectlyAddAppToGitOps(values map[string]interface{}) (name string, alias string,
 	version string, err error) {
@@ -59,7 +65,7 @@ func (o *AppTestOptions) DirectlyAddAppToGitOps(values map[string]interface{}) (
 	if err != nil {
 		return "", "", "", err
 	}
-	devEnvDir := filepath.Join(envDir, o.OrgName, o.DevEnvRepoInfo.Name)
+	devEnvDir := o.GetFullDevEnvDir(envDir)
 	err = os.MkdirAll(devEnvDir, 0700)
 	if err != nil {
 		return "", "", "", err

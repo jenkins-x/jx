@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/table"
@@ -88,7 +89,8 @@ func (o *GetAppsOptions) Run() error {
 	}
 
 	if len(apps.Items) == 0 {
-		return errors.New("No Apps found in " + o.Namespace + "\n")
+		fmt.Fprint(o.Out, "No Apps found\n")
+		return nil
 	}
 
 	table := o.generateTable(apps, kubeClient)
@@ -101,11 +103,13 @@ func (o *GetAppsOptions) generateTable(apps *v1.AppList, kubeClient kubernetes.I
 	table := o.generateTableHeaders(apps)
 	for _, app := range apps.Items {
 		name := app.Labels[helm.LabelAppName]
-		version := app.Labels[helm.LabelAppVersion]
-		description := app.Annotations[helm.AnnotationAppDescription]
-		repository := app.Annotations[helm.AnnotationAppRepository]
-		row := []string{name, version, description, repository}
-		table.AddRow(row...)
+		if name != "" {
+			version := app.Labels[helm.LabelAppVersion]
+			description := app.Annotations[helm.AnnotationAppDescription]
+			repository := app.Annotations[helm.AnnotationAppRepository]
+			row := []string{name, version, description, repository}
+			table.AddRow(row...)
+		}
 	}
 	return table
 }

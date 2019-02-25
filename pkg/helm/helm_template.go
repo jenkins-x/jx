@@ -253,6 +253,13 @@ func (h *HelmTemplate) Version(tls bool) (string, error) {
 	return h.Client.VersionWithArgs(tls, "--client")
 }
 
+// Template generates the YAML from the chart template to the given directory
+func (h *HelmTemplate) Template(chart string, releaseName string, ns string, outDir string, upgrade bool, values []string,
+	valueFiles []string) error {
+
+	return h.Client.Template(chart, releaseName, ns, outDir, upgrade, values, valueFiles)
+}
+
 // Mutation API
 
 // InstallChart installs a helm chart according with the given flags
