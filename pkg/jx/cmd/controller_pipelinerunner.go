@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -15,6 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	pipelineapi "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/spf13/cobra"
+	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
 )
 
 const (
@@ -34,12 +36,8 @@ type ControllerPipelineRunnerOptions struct {
 
 // PipelineRunRequest the request to trigger a pipeline run
 type PipelineRunRequest struct {
-	GitURL   string            `json:"gitUrl,omitempty"`
-	Branch   string            `json:"branch,omitempty"`
-	Revision string            `json:"revision,omitempty"`
-	Kind     string            `json:"kind,omitempty"`
-	Context  string            `json:"context,omitempty"`
-	Labels   map[string]string `json:"labels,omitempty"`
+	Labels      map[string]string   `json:"labels,omitempty"`
+	ProwJobSpec prowapi.ProwJobSpec `json:"prowJobSpec,omitempty"`
 }
 
 // PipelineRunResponse the results of triggering a pipeline run
@@ -148,35 +146,52 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 	if o.Verbose {
 		logrus.Infof("got payload %#v", arguments)
 	}
+	pj := arguments.ProwJobSpec
 
-	if arguments.GitURL == "" {
-		o.returnError("missing gitUrl property", w, r)
+	var revision string
+	var prNumber string
+
+	// todo lets support batches of PRs from Prow
+	if len(pj.Refs.Pulls) > 0 {
+		revision = pj.Refs.Pulls[0].SHA
+		prNumber = strconv.Itoa(pj.Refs.Pulls[0].Number)
+	} else {
+		revision = pj.Refs.BaseSHA
+	}
+
+	sourceURL := fmt.Sprintf("https://github.com/%s/%s.git", pj.Refs.Org, pj.Refs.Repo)
+	if sourceURL == "" {
+		o.returnError("missing sourceURL property", w, r)
 		return
 	}
-	if arguments.Branch == "" {
-		arguments.Branch = "master"
-	}
-	if arguments.Revision == "" {
-		arguments.Revision = "master"
-	}
-	if arguments.Kind == "" {
-		arguments.Kind = "release"
+	if revision == "" {
+		revision = "master"
 	}
 
 	pr := &StepCreateTaskOptions{}
+	if pj.Type == prowapi.PostsubmitJob {
+		pr.PipelineKind = jenkinsfile.PipelineKindRelease
+	} else {
+		pr.PipelineKind = jenkinsfile.PipelineKindPullRequest
+	}
+
+	branch := getBranch(pj)
+	if branch == "" {
+		branch = "master"
+	}
+
 	pr.CommonOptions = o.CommonOptions
 
 	// defaults
 	pr.SourceName = "source"
 	pr.Duration = time.Second * 20
 	pr.Trigger = string(pipelineapi.PipelineTriggerTypeManual)
-
-	pr.CloneGitURL = arguments.GitURL
+	pr.PullRequestNumber = prNumber
+	pr.CloneGitURL = sourceURL
 	pr.DeleteTempDir = true
-	pr.Context = arguments.Context
-	pr.Branch = arguments.Branch
-	pr.Revision = arguments.Revision
-	pr.PipelineKind = arguments.Kind
+	pr.Context = pj.Context
+	pr.Branch = branch
+	pr.Revision = revision
 	pr.ServiceAccount = o.ServiceAccount
 
 	// turn map into string array with = separator to match type of custom labels which are CLI flags
@@ -234,4 +249,16 @@ func (o *ControllerPipelineRunnerOptions) onError(err error) {
 func (o *ControllerPipelineRunnerOptions) returnError(message string, w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(400)
 	w.Write([]byte(message))
+}
+
+func getBranch(spec prowapi.ProwJobSpec) string {
+	branch := spec.Refs.BaseRef
+	if spec.Type == prowapi.PostsubmitJob || spec.Type == prowapi.BatchJob {
+		return branch
+	}
+	if len(spec.Refs.Pulls) > 0 {
+		// todo lets support multiple PRs for when we are running a batch from Tide
+		branch = fmt.Sprintf("PR-%v", spec.Refs.Pulls[0].Number)
+	}
+	return branch
 }
