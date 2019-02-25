@@ -39,6 +39,7 @@ var (
 `)
 )
 
+// NewCmdStepCustomPipeline creates the new command
 func NewCmdStepCustomPipeline(commonOpts *CommonOptions) *cobra.Command {
 	options := StepCustomPipelineOptions{
 		StepOptions: StepOptions{
@@ -72,6 +73,7 @@ func NewCmdStepCustomPipeline(commonOpts *CommonOptions) *cobra.Command {
 	return cmd
 }
 
+// Run implements the command
 func (o *StepCustomPipelineOptions) Run() error {
 	jenkinsClient, err := o.CreateCustomJenkinsClient(&o.JenkinsSelector)
 	if err != nil {
@@ -124,15 +126,15 @@ func (o *StepCustomPipelineOptions) Run() error {
 			// lets ensure there's a folder
 			err = o.retry(3, time.Second*10, func() error {
 				if err != nil {
-					folderXml := jenkins.CreateFolderXml(jobURL, path)
+					folderXML := jenkins.CreateFolderXML(jobURL, path)
 					if i == 0 {
-						err = jenkinsClient.CreateJobWithXML(folderXml, path)
+						err = jenkinsClient.CreateJobWithXML(folderXML, path)
 						if err != nil {
 							return errors.Wrapf(err, "failed to create the %s folder at %s in Jenkins", path, jobURL)
 						}
 					} else {
 						folders := strings.Join(paths[0:i], "/job/")
-						err = jenkinsClient.CreateFolderJobWithXML(folderXml, folders, path)
+						err = jenkinsClient.CreateFolderJobWithXML(folderXML, folders, path)
 						if err != nil {
 							return errors.Wrapf(err, "failed to create the %s folder in folders %s at %s in Jenkins", path, folders, jobURL)
 						}
@@ -149,20 +151,20 @@ func (o *StepCustomPipelineOptions) Run() error {
 				return err
 			}
 		} else {
-			gitUrl := gitInfo.HttpCloneURL()
-			log.Infof("Using git URL %s and branch %s\n", util.ColorInfo(gitUrl), util.ColorInfo(branch))
+			gitURL := gitInfo.HttpCloneURL()
+			log.Infof("Using git URL %s and branch %s\n", util.ColorInfo(gitURL), util.ColorInfo(branch))
 
 			err = o.retry(3, time.Second*10, func() error {
 				if err != nil {
-					pipelineXml := jenkins.CreatePipelineXml(gitUrl, branch, o.Jenkinsfile)
+					pipelineXML := jenkins.CreatePipelineXML(gitURL, branch, o.Jenkinsfile)
 					if i == 0 {
-						err = jenkinsClient.CreateJobWithXML(pipelineXml, path)
+						err = jenkinsClient.CreateJobWithXML(pipelineXML, path)
 						if err != nil {
 							return errors.Wrapf(err, "failed to create the %s pipeline at %s in Jenkins", path, jobURL)
 						}
 					} else {
 						folders := strings.Join(paths[0:i], "/job/")
-						err = jenkinsClient.CreateFolderJobWithXML(pipelineXml, folders, path)
+						err = jenkinsClient.CreateFolderJobWithXML(pipelineXML, folders, path)
 						if err != nil {
 							return errors.Wrapf(err, "failed to create the %s pipeline in folders %s at %s in Jenkins", path, folders, jobURL)
 						}

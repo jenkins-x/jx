@@ -5,7 +5,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
-func CreateFolderXml(folderUrl string, name string) string {
+// CreateFolderXML creates a Jenkins Folder XML
+func CreateFolderXML(folderUrl string, name string) string {
 	return `<?xml version='1.0' encoding='UTF-8'?>
 <com.cloudbees.hudson.plugins.folder.Folder plugin="cloudbees-folder@6.2.1">
   <actions>
@@ -45,8 +46,8 @@ func CreateFolderXml(folderUrl string, name string) string {
 `
 }
 
-// CreatePipelineXml creates the XML for a stand alone pipeline that is not using the Multi Branch Project
-func CreatePipelineXml(gitUrl string, branch string, jenksinsfileName string) string {
+// CreatePipelineXML creates the XML for a stand alone pipeline that is not using the Multi Branch Project
+func CreatePipelineXML(gitURL string, branch string, jenksinsfileName string) string {
 	return `<?xml version='1.1' encoding='UTF-8'?>
 <flow-definition plugin="workflow-job@2.31">
   <actions>
@@ -60,7 +61,7 @@ func CreatePipelineXml(gitUrl string, branch string, jenksinsfileName string) st
       <configVersion>2</configVersion>
       <userRemoteConfigs>
         <hudson.plugins.git.UserRemoteConfig>
-          <url>` + gitUrl + `</url>
+          <url>` + gitURL + `</url>
         </hudson.plugins.git.UserRemoteConfig>
       </userRemoteConfigs>
       <branches>
