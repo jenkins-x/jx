@@ -6,7 +6,7 @@ import (
 )
 
 // CreateFolderXML creates a Jenkins Folder XML
-func CreateFolderXML(folderUrl string, name string) string {
+func CreateFolderXML(folderURL string, name string) string {
 	return `<?xml version='1.0' encoding='UTF-8'?>
 <com.cloudbees.hudson.plugins.folder.Folder plugin="cloudbees-folder@6.2.1">
   <actions>
