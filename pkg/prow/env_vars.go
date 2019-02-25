@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// PullRefs is the result of parsing the prow PULL_REFS
 type PullRefs struct {
 	BaseBranch string
 	BaseSha    string
