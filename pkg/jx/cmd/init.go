@@ -57,6 +57,7 @@ type InitFlags struct {
 	GlobalTiller               bool
 	SkipIngress                bool
 	SkipTiller                 bool
+	SkipClusterRole            bool
 	OnPremise                  bool
 	Http                       bool
 	NoGitValidate              bool
@@ -131,6 +132,8 @@ func (o *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.Flags.NoTiller, "no-tiller", "", false, "Whether to disable the use of tiller with helm. If disabled we use 'helm template' to generate the YAML from helm charts then we use 'kubectl apply' to install it to avoid using tiller completely.")
 	cmd.Flags().BoolVarP(&o.Flags.SkipIngress, "skip-ingress", "", false, "Skips the installation of ingress controller. Note that a ingress controller must already be installed into the cluster in order for the installation to succeed")
 	cmd.Flags().BoolVarP(&o.Flags.SkipTiller, "skip-setup-tiller", "", DefaultSkipTiller, "Don't setup the Helm Tiller service - lets use whatever tiller is already setup for us.")
+	cmd.Flags().BoolVarP(&o.Flags.SkipClusterRole, "skip-cluster-role", "", DefaultSkipClusterRole, "Don't enable cluster admin role for user")
+
 	cmd.Flags().BoolVarP(&o.Flags.Helm3, "helm3", "", DefaultHelm3, "Use helm3 to install Jenkins X which does not use Tiller")
 	cmd.Flags().BoolVarP(&o.Flags.OnPremise, "on-premise", "", false, "If installing on an on premise cluster then lets default the 'external-ip' to be the Kubernetes master IP address")
 }
@@ -255,6 +258,9 @@ func (o *InitOptions) Run() error {
 }
 
 func (o *InitOptions) enableClusterAdminRole() error {
+	if o.Flags.SkipClusterRole {
+		return nil
+	}
 	client, err := o.KubeClient()
 	if err != nil {
 		return err

@@ -357,7 +357,7 @@ func (o *StepCreateTaskOptions) generateTask(name string, pipelineConfig *jenkin
 
 func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineConfig *jenkinsfile.PipelineConfig, lifecycles *jenkinsfile.PipelineLifecycles, templateKind string) error {
 	if lifecycles == nil {
-		return nil
+		return errors.New("generatePipeline: no lifecycles")
 	}
 
 	var err error

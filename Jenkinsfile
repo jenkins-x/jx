@@ -3,10 +3,7 @@ pipeline {
 
     environment {
         CHARTMUSEUM_CREDS   = credentials('jenkins-x-chartmuseum')
-        JENKINS_CREDS       = credentials('test-jenkins-user')
         GH_CREDS            = credentials('jx-pipeline-git-github-github')
-        GHE_CREDS           = credentials('jx-pipeline-git-github-ghe')
-        GKE_SA              = credentials('gke-sa')
 
         GIT_USERNAME        = "$GH_CREDS_USR"	
         GIT_API_TOKEN       = "$GH_CREDS_PSW"	
@@ -16,72 +13,12 @@ pipeline {
         BRANCH_NAME         = "$BRANCH_NAME"
         ORG                 = 'jenkinsxio'
         APP_NAME            = 'jx'
-        PREVIEW_VERSION     = "0.0.0-SNAPSHOT-$BRANCH_NAME-$BUILD_NUMBER"
-        TEAM                = "$BRANCH_NAME-$BUILD_NUMBER".toLowerCase()
-        PREVIEW_IMAGE_TAG   = "SNAPSHOT-JX-$BRANCH_NAME-$BUILD_NUMBER"
 
-
-        // Build and tests configuration (run only 2 builds/tests in parallel 
-        // in order to avoid OOM issue
-        PARALLEL_BUILDS = 1
-
-        // BDD tests configuration
-        GIT_PROVIDER_URL     = "https://github.beescloud.com"
-        GHE_TOKEN            = "$GHE_CREDS_PSW"
-        GINKGO_ARGS          = "-v"
-
-        JX_DISABLE_DELETE_APP  = "true"
-        JX_DISABLE_DELETE_REPO = "true"
     }
     options {
         skipDefaultCheckout(true)
     }
     stages {
-        stage('CI Build and Test') {
-            when {
-                anyOf {
-                    environment name: 'JOB_TYPE', value: 'presubmit'
-                    environment name: 'JOB_TYPE', value: 'batch'
-                }
-            }
-            steps {
-                dir ('/workspace') {
-                    sh "git config --global credential.helper store"
-                    sh "jx step git credentials"
-
-                    sh "echo building Pull Request for preview ${TEAM}"
-
-                    sh "make check linux fmt"
-                    sh 'git add . && git diff --exit-code HEAD'
-                    sh "make test-slow-integration"
-                    sh "./build/linux/jx --help"
-
-                    sh "docker build -t docker.io/$ORG/$APP_NAME:$PREVIEW_VERSION ."
-
-                    sh "make preview"
-
-                    // lets create a team for this PR and run the BDD tests
-                    sh "gcloud auth activate-service-account --key-file $GKE_SA"
-                    sh "gcloud container clusters get-credentials anthorse --zone europe-west1-b --project jenkinsx-dev"
-
-
-                    sh "sed 's/\$VERSION/${PREVIEW_IMAGE_TAG}/g' myvalues.yaml.template > myvalues.yaml"
-                    sh "echo the myvalues.yaml file is:"
-                    sh "cat myvalues.yaml"
-
-                    sh "echo creating team: ${TEAM}"
-
-                    sh "git config --global --add user.name JenkinsXBot"
-                    sh "git config --global --add user.email jenkins-x@googlegroups.com"
-
-                    sh "cp ./build/linux/jx /usr/bin"
-
-                    // lets trigger the BDD tests in a new team and git provider
-                    sh "./build/linux/jx step bdd -b  --provider=gke --git-provider=ghe --git-provider-url=https://github.beescloud.com --git-username dev1 --git-api-token $GHE_CREDS_PSW --default-admin-password $JENKINS_CREDS_PSW --no-delete-app --no-delete-repo --tests install --tests test-create-spring"
-                }
-            }
-        }
-
         stage('Build and Release') {
             when {
                 environment name: 'JOB_TYPE', value: 'postsubmit'
