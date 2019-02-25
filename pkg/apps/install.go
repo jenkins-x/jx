@@ -83,6 +83,7 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 			if err != nil {
 				return errors.Wrapf(err, "adding app %s version %s with alias %s using gitops", app, version, alias)
 			}
+			log.Infof("Added app %s version % with alias %s using gitops\n")
 		} else {
 			opts := HelmOpsOptions{
 				InstallOptions: o,
@@ -94,12 +95,17 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 			if err != nil {
 				return errors.Wrapf(err, "adding app %s version %s with alias %s using helm", app, version, alias)
 			}
+			log.Infof("Added app %s version % with alias %s using helm\n")
 		}
 		return nil
 	}
 
 	// Do the actual work
-	return helm.InspectChart(app, version, repository, username, password, o.Helmer, installAppFunc)
+	err := helm.InspectChart(app, version, repository, username, password, o.Helmer, installAppFunc)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
 }
 
 //GetApps gets a list of installed apps
