@@ -17,7 +17,7 @@ type HelmOpsOptions struct {
 
 // AddApp adds the app with a version and releaseName from the chart from the repository with username and password.
 // A values file or a slice of name=value pairs can be passed in to configure the chart
-func (o *HelmOpsOptions) AddApp(app string, chart string, version string, values []byte, repository string,
+func (o *HelmOpsOptions) AddApp(app string, chart string, name string, version string, values []byte, repository string,
 	username string, password string, releaseName string, setValues []string, helmUpdate bool) error {
 
 	parsedSetValues := make([]string, 0)
@@ -41,13 +41,13 @@ func (o *HelmOpsOptions) AddApp(app string, chart string, version string, values
 		return errors.Wrapf(err, "failed to install app %s", app)
 	}
 	// Attach the current values.yaml
-	appCRDName := fmt.Sprintf("%s-%s", app, app)
+	appCRDName := fmt.Sprintf("%s-%s", releaseName, name)
 
 	err = StashValues(values, appCRDName, o.JxClient, o.Namespace, chart, repository)
 	if err != nil {
 		return errors.Wrapf(err, "attaching values.yaml to %s", appCRDName)
 	}
-	log.Infof("Successfully installed %s %s\n", util.ColorInfo(app), util.ColorInfo(version))
+	log.Infof("Successfully installed %s %s\n", util.ColorInfo(name), util.ColorInfo(version))
 	return nil
 }
 
