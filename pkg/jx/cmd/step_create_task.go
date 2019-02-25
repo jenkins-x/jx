@@ -51,26 +51,27 @@ var (
 type StepCreateTaskOptions struct {
 	StepOptions
 
-	Pack           string
-	Dir            string
-	BuildPackURL   string
-	BuildPackRef   string
-	PipelineKind   string
-	Context        string
-	CustomLabels   []string
-	NoApply        bool
-	Trigger        string
-	TargetPath     string
-	SourceName     string
-	CustomImage    string
-	DockerRegistry string
-	CloneGitURL    string
-	Branch         string
-	Revision       string
-	DeleteTempDir  bool
-	ViewSteps      bool
-	Duration       time.Duration
-	FromRepo       bool
+	Pack              string
+	Dir               string
+	BuildPackURL      string
+	BuildPackRef      string
+	PipelineKind      string
+	Context           string
+	CustomLabels      []string
+	NoApply           bool
+	Trigger           string
+	TargetPath        string
+	SourceName        string
+	CustomImage       string
+	DockerRegistry    string
+	CloneGitURL       string
+	Branch            string
+	Revision          string
+	PullRequestNumber string
+	DeleteTempDir     bool
+	ViewSteps         bool
+	Duration          time.Duration
+	FromRepo          bool
 
 	PodTemplates        map[string]*corev1.Pod
 	MissingPodTemplates map[string]bool
@@ -130,6 +131,7 @@ func NewCmdStepCreateTask(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.SourceName, "source", "", "source", "The name of the source repository")
 	cmd.Flags().StringVarP(&options.CustomImage, "image", "", "", "Specify a custom image to use for the steps which overrides the image in the PodTemplates")
 	cmd.Flags().StringVarP(&options.CloneGitURL, "clone-git-url", "", "", "Specify the git URL to clone to a temporary directory to get the source code")
+	cmd.Flags().StringVarP(&options.PullRequestNumber, "pr-number", "", "", "If a Pull Request this is it's number")
 	cmd.Flags().BoolVarP(&options.DeleteTempDir, "delete-temp-dir", "", false, "Deletes the temporary directory of cloned files if using the 'clone-git-url' option")
 	cmd.Flags().BoolVarP(&options.NoApply, "no-apply", "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file")
 	cmd.Flags().BoolVarP(&options.ViewSteps, "view", "", false, "Just view the steps that would be created")
@@ -1074,15 +1076,22 @@ func (o *StepCreateTaskOptions) cloneGitRepositoryToTempDir(gitURL string) error
 	if err != nil {
 		return errors.Wrapf(err, "failed to clone repository %s to directory %s", gitURL, o.Dir)
 	}
+	if o.PullRequestNumber != "" {
+		pr := fmt.Sprintf("pull/%s/head:%s", o.PullRequestNumber, o.Branch)
+		log.Infof("fetching branch %s for %s in dir %s\n", pr, gitURL, o.Dir)
+		err = o.Git().FetchBranch(o.Dir, gitURL, pr)
+		if err != nil {
+			return errors.Wrapf(err, "failed to fetch pullrequest %s for %s in dir %s: %v", pr, gitURL, o.Dir, err)
+		}
+	}
 	if o.Revision != "" {
-		log.Infof("checking out revision %s\n", o.Revision)
+		log.Infof("checkout revision %s\n", o.Revision)
 		err = o.Git().Checkout(o.Dir, o.Revision)
 		if err != nil {
 			return errors.Wrapf(err, "failed to checkout revision %s", o.Revision)
 		}
 	}
 	return nil
-
 }
 
 func (o *StepCreateTaskOptions) deleteTempDir() {
