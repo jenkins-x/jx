@@ -37,6 +37,7 @@ func NewCmdStep(commonOpts *CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdStepChangelog(commonOpts))
 	cmd.AddCommand(NewCmdStepCredential(commonOpts))
 	cmd.AddCommand(NewCmdStepCreate(commonOpts))
+	cmd.AddCommand(NewCmdStepCustomPipeline(commonOpts))
 	cmd.AddCommand(NewCmdStepEnv(commonOpts))
 	cmd.AddCommand(NewCmdStepGet(commonOpts))
 	cmd.AddCommand(NewCmdStepGit(commonOpts))
