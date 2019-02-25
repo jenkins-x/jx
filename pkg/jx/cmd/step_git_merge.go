@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jenkins-x/jx/pkg/util"
-
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/pkg/errors"
 
@@ -42,6 +40,7 @@ master:ef08a6cd194c2687d4bc12df6bb8a86f53c348ba,2739:5b351f4eae3c4afbb90dd7787f8
 	// StepGitMergeExample command example
 	StepGitMergeExample = templates.Examples(`
 		# Merge the SHAs from the PULL_REFS environment variable
+		jx step git merge
 
 		# Merge the SHA into the HEAD of master
 		jx step git merge --sha 123456a
@@ -85,33 +84,28 @@ func NewCmdStepGitMerge(commonOpts *CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *StepGitMergeOptions) Run() error {
-	if len(o.SHAs) == 0 || o.BaseBranch == "" {
+	if len(o.SHAs) == 0 || o.BaseBranch == "" || o.BaseSHA == "" {
 		// Try to look in the env vars
 		if pullRefs := os.Getenv("PULL_REFS"); pullRefs != "" {
 			log.Infof("Using SHAs from PULL_REFS=%s\n", pullRefs)
-			branchSHAs, err := prow.ParsePullRefs(pullRefs)
+			pullRefs, err := prow.ParsePullRefs(pullRefs)
 			if err != nil {
 				return errors.Wrapf(err, "parsing PULL_REFS=%s", pullRefs)
 			}
 			if len(o.SHAs) == 0 {
 				o.SHAs = make([]string, 0)
-				for _, branch := range branchSHAs.Keys() {
-					unk, _ := branchSHAs.Get(branch)
-					sha, err := util.AsString(unk)
-					if err != nil {
-						return errors.Wrapf(err, "converting %v to string", unk)
-					}
+				for _, sha := range pullRefs.ToMerge {
 					o.SHAs = append(o.SHAs, sha)
 				}
 			}
-			if o.BaseBranch == "" && len(branchSHAs.Keys()) > 0 {
-				o.BaseBranch = branchSHAs.Keys()[0]
+			if o.BaseBranch == "" {
+				o.BaseBranch = pullRefs.BaseBranch
+			}
+			if o.BaseSHA == "" {
+				o.BaseSHA = pullRefs.BaseSha
 			}
 
 		}
-	}
-	if o.BaseBranch == "" {
-		o.BaseBranch = os.Getenv("BRANCH_NAME")
 	}
 	if len(o.SHAs) == 0 {
 		return fmt.Errorf("no SHAs to merge")
