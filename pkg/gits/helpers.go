@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/user"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/log"
 
@@ -72,14 +73,14 @@ func Unshallow(dir string, gitter Gitter) error {
 // com/git/git/commit/68ee628932c2196742b77d2961c5e16360734a62) otherwise it uses git remote update to pull down the
 // whole repo.
 func FetchAndMergeSHAs(SHAs []string, baseBranch string, baseSha string, remote string, dir string,
-	gitter Gitter) error {
+	gitter Gitter, verbose bool) error {
 	refspecs := make([]string, 0)
 	for _, sha := range SHAs {
 		refspecs = append(refspecs, fmt.Sprintf("%s:", sha))
 	}
-	refspecs = append(refspecs, baseSha)
+	refspecs = append(refspecs, fmt.Sprintf("%s:", baseSha))
 	// First lets make sure we have the commits - remember that this may be a shallow clone
-	err := gitter.FetchBranch(dir, remote, refspecs...)
+	err := gitter.FetchBranchUnshallow(dir, remote, refspecs...)
 	if err != nil {
 		// This can be caused by git not being configured to allow fetching individual SHAs
 		// There is not a nice way to solve this except to attempt to do a full fetch
@@ -88,25 +89,40 @@ func FetchAndMergeSHAs(SHAs []string, baseBranch string, baseSha string, remote 
 			return errors.Wrapf(err, "updating remote %s", remote)
 		}
 	}
+	if verbose {
+		log.Infof("ran git fetch %s %s in %s\n", remote, strings.Join(refspecs, " "), dir)
+	}
 	// Ensure we are on baseBranch
 	err = gitter.Checkout(dir, baseBranch)
 	if err != nil {
 		return errors.Wrapf(err, "checking out %s", baseBranch)
+	}
+	if verbose {
+		log.Infof("ran git checkout %s in %s\n", baseBranch, dir)
 	}
 	// Ensure we are on the right revision
 	err = gitter.ResetHard(dir, baseSha)
 	if err != nil {
 		errors.Wrapf(err, "resetting %s to %s", baseBranch, baseSha)
 	}
+	if verbose {
+		log.Infof("ran git reset --hard %s in %s\n", baseSha, dir)
+	}
 	err = gitter.CleanForce(dir, ".")
 	if err != nil {
 		return errors.Wrapf(err, "cleaning up the git repo")
+	}
+	if verbose {
+		log.Infof("ran clean --force -d . in %s\n", dir)
 	}
 	// Now do the merges
 	for _, sha := range SHAs {
 		err := gitter.Merge(dir, sha)
 		if err != nil {
 			return errors.Wrapf(err, "merging %s into master", sha)
+		}
+		if verbose {
+			log.Infof("ran git merge %s in %s\n", sha, dir)
 		}
 	}
 	return nil

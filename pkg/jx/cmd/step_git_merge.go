@@ -110,5 +110,5 @@ func (o *StepGitMergeOptions) Run() error {
 	if len(o.SHAs) == 0 {
 		return fmt.Errorf("no SHAs to merge")
 	}
-	return gits.FetchAndMergeSHAs(o.SHAs, o.BaseBranch, o.BaseSHA, o.Remote, o.Dir, o.Git())
+	return gits.FetchAndMergeSHAs(o.SHAs, o.BaseBranch, o.BaseSHA, o.Remote, o.Dir, o.Git(), o.Verbose)
 }

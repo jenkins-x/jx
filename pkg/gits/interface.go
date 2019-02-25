@@ -197,6 +197,7 @@ type Gitter interface {
 	CheckoutOrphan(dir string, branch string) error
 	ConvertToValidBranchName(name string) string
 	FetchBranch(dir string, repo string, refspec ...string) error
+	FetchBranchUnshallow(dir string, repo string, refspec ...string) error
 	Merge(dir string, commitish string) error
 	ResetHard(dir string, commitish string) error
 

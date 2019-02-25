@@ -220,6 +220,12 @@ func (g *GitLocal) FetchBranch(dir string, repo string, refspec ...string) error
 	return g.GitFake.FetchBranch(dir, repo, refspec...)
 }
 
+// FetchBranchUnshallow fetches a branch
+// Faked out
+func (g *GitLocal) FetchBranchUnshallow(dir string, repo string, refspec ...string) error {
+	return g.GitFake.FetchBranch(dir, repo, refspec...)
+}
+
 // GetAuthorEmailForCommit returns the author email from commit message with the given SHA
 func (g *GitLocal) GetAuthorEmailForCommit(dir string, sha string) (string, error) {
 	return g.GitCLI.GetAuthorEmailForCommit(dir, sha)
