@@ -70,6 +70,7 @@ type StepCreateTaskOptions struct {
 	PullRequestNumber string
 	DeleteTempDir     bool
 	ViewSteps         bool
+	NoSetVersion      bool
 	Duration          time.Duration
 	FromRepo          bool
 
@@ -85,11 +86,12 @@ type StepCreateTaskOptions struct {
 
 // StepCreateTaskResults stores the generated results
 type StepCreateTaskResults struct {
-	Pipeline    *pipelineapi.Pipeline
-	Tasks       []*pipelineapi.Task
-	Resources   []*pipelineapi.PipelineResource
-	PipelineRun *pipelineapi.PipelineRun
-	Structure   *v1.PipelineStructure
+	Pipeline       *pipelineapi.Pipeline
+	Tasks          []*pipelineapi.Task
+	Resources      []*pipelineapi.PipelineResource
+	PipelineRun    *pipelineapi.PipelineRun
+	Structure      *v1.PipelineStructure
+	PipelineParams []pipelineapi.Param
 }
 
 // NewCmdStepCreateTask Creates a new Command object
@@ -135,6 +137,7 @@ func NewCmdStepCreateTask(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.DeleteTempDir, "delete-temp-dir", "", false, "Deletes the temporary directory of cloned files if using the 'clone-git-url' option")
 	cmd.Flags().BoolVarP(&options.NoApply, "no-apply", "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file")
 	cmd.Flags().BoolVarP(&options.ViewSteps, "view", "", false, "Just view the steps that would be created")
+	cmd.Flags().BoolVarP(&options.NoSetVersion, "no-set-version", "", false, "Disables creating the version and git tag up front before release pipelines")
 	cmd.Flags().DurationVarP(&options.Duration, "duration", "", time.Second*30, "Retry duration when trying to create a PipelineRun")
 	return cmd
 }
@@ -177,6 +180,20 @@ func (o *StepCreateTaskOptions) Run() error {
 			return err
 		}
 	}
+
+	o.gitInfo, err = o.FindGitInfo(o.Dir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to find git information from dir %s", o.Dir)
+	}
+	if o.Branch == "" {
+		o.Branch, err = o.Git().Branch(o.Dir)
+		if err != nil {
+			return errors.Wrapf(err, "failed to find git branch from dir %s", o.Dir)
+		}
+	}
+
+	// TODO generate build number properly!
+	o.buildNumber = "1"
 
 	// TODO: Best to separate things cleanly into 2 steps: creation of CRDs and
 	// application of those CRDs to the cluster. Step 2 should be identical both
@@ -258,6 +275,11 @@ func (o *StepCreateTaskOptions) Run() error {
 			pipelineConfig = localPipelineConfig
 		}
 	}
+	err = o.setVersionOnReleasePipelines(pipelineConfig)
+	if err != nil {
+		return errors.Wrapf(err, "failed to set the version on release pipelines")
+	}
+
 	err = o.generateTask(name, pipelineConfig)
 	if err != nil {
 		return errors.Wrapf(err, "failed to generate Task for build pack pipeline YAML: %s", pipelineFile)
@@ -416,6 +438,9 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		if l == nil {
 			continue
 		}
+		if !o.NoSetVersion && n.Name == "setversion" {
+			continue
+		}
 		for _, s := range l.Steps {
 			ss, v, err := o.createSteps(languageName, pipelineConfig, templateKind, s, container, dir, n.Name)
 			if err != nil {
@@ -427,6 +452,21 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	}
 
 	name := tekton.PipelineResourceName(o.gitInfo, o.Branch, o.Context)
+	taskParams := []pipelineapi.TaskParam{}
+	for _, param := range o.Results.PipelineParams {
+		name := param.Name
+		description := ""
+		if name == "version" {
+			description = "the version number for this release which is used as a tag on docker images"
+		} else if name == "preview_version" {
+			description = "the version number for this preview which is used as a tag on docker images"
+		}
+		taskParams = append(taskParams, pipelineapi.TaskParam{
+			Name:        name,
+			Description: description,
+			Default:     "",
+		})
+	}
 	task := &pipelineapi.Task{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: syntax.TektonAPIVersion,
@@ -439,6 +479,9 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		Spec: pipelineapi.TaskSpec{
 			Steps:   steps,
 			Volumes: volumes,
+			Inputs: &pipelineapi.Inputs{
+				Params: taskParams,
+			},
 		},
 	}
 	if task.Spec.Inputs == nil {
@@ -530,22 +573,6 @@ func (o *StepCreateTaskOptions) generateTempOrderingResource() *pipelineapi.Pipe
 }
 
 func (o *StepCreateTaskOptions) setBuildValues(fromYaml bool) error {
-	var err error
-	o.gitInfo, err = o.FindGitInfo(o.Dir)
-	if err != nil {
-		return errors.Wrapf(err, "failed to find git information from dir %s", o.Dir)
-	}
-
-	if o.Branch == "" {
-		o.Branch, err = o.Git().Branch(o.Dir)
-		if err != nil {
-			return errors.Wrapf(err, "failed to find git branch from dir %s", o.Dir)
-		}
-	}
-
-	// TODO generate build number properly!
-	o.buildNumber = "1"
-
 	labels := map[string]string{}
 	if o.gitInfo != nil {
 		labels["owner"] = o.gitInfo.Organisation
@@ -677,6 +704,7 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 				Kind:       pipelineapi.NamespacedTaskKind,
 				APIVersion: task.APIVersion,
 			},
+			Params: o.Results.PipelineParams,
 		},
 	}
 
@@ -787,6 +815,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 				APIVersion: pipeline.APIVersion,
 			},
 			Resources: resourceBindings,
+			Params:    o.Results.PipelineParams,
 		},
 	}
 
@@ -901,8 +930,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 			c.Image = o.CustomImage
 		}
 
-		// lets remove any escaped "\$" stuff in the pipeline library
-		commandText := strings.Replace(step.Command, "\\$", "$", -1)
+		commandText := o.replaceCommandText(step)
 		c.Args = []string{"-c", commandText}
 
 		workspaceDir := o.getWorkspaceDir()
@@ -929,6 +957,20 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		volumes = kube.CombineVolumes(volumes, v...)
 	}
 	return steps, volumes, nil
+}
+
+// replaceCommandText lets remove any escaped "\$" stuff in the pipeline library
+// and replace any use of the VERSION file with using the VERSION env var
+func (o *StepCreateTaskOptions) replaceCommandText(step *jenkinsfile.PipelineStep) string {
+	answer := strings.Replace(step.Command, "\\$", "$", -1)
+
+	// lets replace the old way of setting versions
+	answer = strings.Replace(answer, "export VERSION=`cat VERSION` && ", "", 1)
+
+	for _, text := range []string{"$(cat VERSION)", "$(cat ../VERSION)", "$(cat ../../VERSION)"} {
+		answer = strings.Replace(answer, text, "${VERSION}", -1)
+	}
+	return answer
 }
 
 func (o *StepCreateTaskOptions) getWorkspaceDir() string {
@@ -1030,6 +1072,16 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container) {
 			Value: "true",
 		})
 	}
+
+	for _, param := range o.Results.PipelineParams {
+		name := strings.ToUpper(param.Name)
+		if kube.GetSliceEnvVar(envVars, name) == nil {
+			envVars = append(envVars, corev1.EnvVar{
+				Name:  name,
+				Value: "${inputs.params." + param.Name + "}",
+			})
+		}
+	}
 	container.Env = envVars
 }
 
@@ -1123,6 +1175,114 @@ func (o *StepCreateTaskOptions) viewSteps(tasks ...*pipelineapi.Task) error {
 		}
 	}
 	table.Render()
+	return nil
+}
+
+func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jenkinsfile.PipelineConfig) error {
+	if o.NoSetVersion || o.ViewSteps {
+		return nil
+	}
+	version := ""
+
+	if o.PipelineKind == jenkinsfile.PipelineKindRelease {
+		release := pipelineConfig.Pipelines.Release
+		if release == nil {
+			return fmt.Errorf("no Release pipeline available")
+		}
+		sv := release.SetVersion
+		if sv == nil {
+			return fmt.Errorf("no SetVersion pipeline on the Release pipeline")
+		}
+		steps := sv.Steps
+		err := o.invokeSteps(steps)
+		if err != nil {
+			return err
+		}
+
+		versionFile := filepath.Join(o.Dir, "VERSION")
+		exist, err := util.FileExists(versionFile)
+		if err != nil {
+			return err
+		}
+		if exist {
+			data, err := ioutil.ReadFile(versionFile)
+			if err != nil {
+				return errors.Wrapf(err, "failed to read file %s", versionFile)
+			}
+			text := strings.TrimSpace(string(data))
+			if text == "" {
+				log.Warnf("versions file %s is empty!\n", versionFile)
+			} else {
+				version = text
+			}
+		}
+		if version != "" {
+			o.Results.PipelineParams = append(o.Results.PipelineParams, pipelineapi.Param{
+				Name:  "version",
+				Value: version,
+			})
+			o.Revision = "v" + version
+		}
+	} else {
+		// lets use the branchname if we can find it for the version number
+		branch := o.Branch
+		if branch == "" {
+			branch = o.Revision
+		}
+		buildNumber := o.buildNumber
+		previewVersion := "0.0.0-SNAPSHOT-" + branch + "-" + buildNumber
+		o.Results.PipelineParams = append(o.Results.PipelineParams, pipelineapi.Param{
+			Name:  "preview_version",
+			Value: previewVersion,
+		})
+	}
+	return nil
+}
+
+func (o *StepCreateTaskOptions) runStepCommand(step *jenkinsfile.PipelineStep) error {
+	c := step.Command
+	if c == "" {
+		return nil
+	}
+	log.Infof("running command: %s\n", util.ColorInfo(c))
+
+	commandText := strings.Replace(step.Command, "\\$", "$", -1)
+
+	cmd := util.Command{
+		Name: "/bin/sh",
+		Args: []string{"-c", commandText},
+		Out:  o.Out,
+		Err:  o.Err,
+		Dir:  o.Dir,
+	}
+	result, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return err
+	}
+	log.Infof("%s\n", result)
+	return nil
+}
+
+func (o *StepCreateTaskOptions) invokeSteps(steps []*jenkinsfile.PipelineStep) error {
+	for _, s := range steps {
+		if s == nil {
+			continue
+		}
+		if len(s.Steps) > 0 {
+			err := o.invokeSteps(s.Steps)
+			if err != nil {
+				return err
+			}
+		}
+		when := strings.TrimSpace(s.When)
+		if when == "!prow" || s.Command == "" {
+			continue
+		}
+		err := o.runStepCommand(s)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
