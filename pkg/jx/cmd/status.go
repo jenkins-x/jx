@@ -49,7 +49,6 @@ func NewCmdStatus(commonOpts *CommonOptions) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&options.node, "node", "n", "", "the named node to get ")
-	options.addCommonFlags(cmd)
 	return cmd
 }
 
