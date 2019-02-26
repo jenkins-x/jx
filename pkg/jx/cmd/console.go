@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/browser"
@@ -15,8 +14,9 @@ import (
 type ConsoleOptions struct {
 	GetURLOptions
 
-	OnlyViewURL bool
-	ClassicMode bool
+	OnlyViewURL     bool
+	ClassicMode     bool
+	JenkinsSelector JenkinsSelectorOptions
 }
 
 const (
@@ -66,10 +66,26 @@ func (o *ConsoleOptions) addConsoleFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.ClassicMode, "classic", "", false, "Use the classic Jenkins skin instead of Blue Ocean")
 
 	o.addGetUrlFlags(cmd)
+	o.JenkinsSelector.AddFlags(cmd)
 }
 
 func (o *ConsoleOptions) Run() error {
-	return o.Open(kube.ServiceJenkins, "Jenkins Console")
+	kubeClient, ns, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+	prow, err := o.isProw()
+	if err != nil {
+		return err
+	}
+	if prow {
+		o.JenkinsSelector.UseCustomJenkins = true
+	}
+	jenkinsServiceName, err := o.PickCustomJenkinsName(&o.JenkinsSelector, kubeClient, ns)
+	if err != nil {
+		return err
+	}
+	return o.Open(jenkinsServiceName, "Jenkins Console")
 }
 
 func (o *ConsoleOptions) Open(name string, label string) error {
