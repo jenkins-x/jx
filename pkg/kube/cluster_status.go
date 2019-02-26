@@ -15,18 +15,18 @@ import (
 )
 
 type NodeStatus struct {
-	Name                      string
-	AllocatableMemory         *resource.Quantity
-	AllocatableCPU            *resource.Quantity
-	AllocatableStorage        *resource.Quantity
+	Name               string
+	AllocatableMemory  *resource.Quantity
+	AllocatableCPU     *resource.Quantity
+	AllocatableStorage *resource.Quantity
 
-	CpuRequests               resource.Quantity
-	CpuLimits                 resource.Quantity
-	MemRequests               resource.Quantity
-	MemLimits                 resource.Quantity
+	CpuRequests resource.Quantity
+	CpuLimits   resource.Quantity
+	MemRequests resource.Quantity
+	MemLimits   resource.Quantity
 
-	DiskRequests               resource.Quantity
-	DiskLimits                 resource.Quantity
+	DiskRequests              resource.Quantity
+	DiskLimits                resource.Quantity
 	numberOfNonTerminatedPods int
 }
 
@@ -76,9 +76,9 @@ func GetClusterStatus(client kubernetes.Interface, namespace string, verbose boo
 	for _, node := range nodes.Items {
 		if verbose {
 
-		log.Infof("\n-------------------------\n")
-		log.Infof("Node:\n%s\n\n", node.Name)
-	}
+			log.Infof("\n-------------------------\n")
+			log.Infof("Node:\n%s\n\n", node.Name)
+		}
 
 		nodeStatus, err := Status(client, namespace, node, verbose)
 		if err != nil {
@@ -99,11 +99,11 @@ func (clusterStatus *ClusterStatus) MinimumResourceLimit() int {
 }
 
 func (clusterStatus *ClusterStatus) AverageCpuPercent() int {
-	return int((clusterStatus.totalUsedCpu.Value()*100) / clusterStatus.totalAllocatableCpu.Value())
+	return int((clusterStatus.totalUsedCpu.Value() * 100) / clusterStatus.totalAllocatableCpu.Value())
 }
 
 func (clusterStatus *ClusterStatus) AverageMemPercent() int {
-	return int((clusterStatus.totalUsedMemory.Value()*100) / clusterStatus.totalAllocatableMemory.Value())
+	return int((clusterStatus.totalUsedMemory.Value() * 100) / clusterStatus.totalAllocatableMemory.Value())
 }
 
 func (clusterStatus *ClusterStatus) NodeCount() int {
