@@ -930,8 +930,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 			c.Image = o.CustomImage
 		}
 
-		// lets remove any escaped "\$" stuff in the pipeline library
-		commandText := strings.Replace(step.Command, "\\$", "$", -1)
+		commandText := o.replaceCommandText(step)
 		c.Args = []string{"-c", commandText}
 
 		workspaceDir := o.getWorkspaceDir()
@@ -958,6 +957,20 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		volumes = kube.CombineVolumes(volumes, v...)
 	}
 	return steps, volumes, nil
+}
+
+// replaceCommandText lets remove any escaped "\$" stuff in the pipeline library
+// and replace any use of the VERSION file with using the VERSION env var
+func (o *StepCreateTaskOptions) replaceCommandText(step *jenkinsfile.PipelineStep) string {
+	answer := strings.Replace(step.Command, "\\$", "$", -1)
+
+	// lets replace the old way of setting versions
+	answer = strings.Replace(answer, "export VERSION=`cat VERSION` && ", "", 1)
+
+	for _, text := range []string{"$(cat VERSION)", "$(cat ../VERSION)", "$(cat ../../VERSION)"} {
+		answer = strings.Replace(answer, text, "${VERSION}", -1)
+	}
+	return answer
 }
 
 func (o *StepCreateTaskOptions) getWorkspaceDir() string {
@@ -1166,7 +1179,7 @@ func (o *StepCreateTaskOptions) viewSteps(tasks ...*pipelineapi.Task) error {
 }
 
 func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jenkinsfile.PipelineConfig) error {
-	if o.NoSetVersion {
+	if o.NoSetVersion || o.ViewSteps {
 		return nil
 	}
 	version := ""
