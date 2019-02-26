@@ -343,8 +343,7 @@ func (o *CommonOptions) installChartOrGitOps(isGitOps bool, gitOpsDir string, gi
 		Items: valueFiles,
 	}
 	if len(setValues) > 0 {
-		extraValues := make(map[string]interface{})
-		extraValues[alias] = helm.SetValuesToMap(setValues)
+		extraValues := helm.SetValuesToMap(setValues)
 		fileName, err := ioutil.TempFile("", "values.yaml")
 		defer func() {
 			err := util.DeleteFile(fileName.Name())
