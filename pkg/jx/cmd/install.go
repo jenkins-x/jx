@@ -874,11 +874,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 		return errors.Wrapf(err, "failed to save file %s", chartFile)
 	}
 
-	secretValues, err := helm.LoadValuesFile(secretsFile)
-	if err != nil {
-		return err
-	}
-	err = helm.CombineValueFilesToFile(secretsFile, secretsFiles, JenkinsXPlatformChartName, secretValues)
+	err = helm.CombineValueFilesToFile(secretsFile, secretsFiles, JenkinsXPlatformChartName, nil)
 	if err != nil {
 		return errors.Wrapf(err, "failed to generate %s by combining helm Secret YAML files %s", secretsFile, strings.Join(secretsFiles, ", "))
 	}
