@@ -364,6 +364,25 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		return err
 	}
 
+	taskParams := []pipelineapi.TaskParam{}
+	for _, param := range o.Results.PipelineParams {
+		name := param.Name
+		description := ""
+		if name == "version" {
+			description = "the version number for this release which is used as a tag on docker images"
+		} else if name == "preview_version" {
+			description = "the version number for this preview which is used as a tag on docker images"
+		}
+		taskParams = append(taskParams, pipelineapi.TaskParam{
+			Name:        name,
+			Description: description,
+			Default:     "",
+		})
+	}
+	taskInputs := &pipelineapi.Inputs{
+		Params: taskParams,
+	}
+
 	// If there's an explicitly specified Pipeline in the lifecycle, use that.
 	if lifecycles.Pipeline != nil {
 		// TODO: Seeing weird behavior seemingly related to https://golang.org/doc/faq#nil_error
@@ -399,6 +418,11 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 			}
 
 			task.Spec.Volumes = volumes
+			if task.Spec.Inputs == nil {
+				task.Spec.Inputs = taskInputs
+			} else {
+				task.Spec.Inputs.Params = taskParams
+			}
 		}
 
 		if o.ViewSteps {
@@ -452,21 +476,6 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	}
 
 	name := tekton.PipelineResourceName(o.gitInfo, o.Branch, o.Context)
-	taskParams := []pipelineapi.TaskParam{}
-	for _, param := range o.Results.PipelineParams {
-		name := param.Name
-		description := ""
-		if name == "version" {
-			description = "the version number for this release which is used as a tag on docker images"
-		} else if name == "preview_version" {
-			description = "the version number for this preview which is used as a tag on docker images"
-		}
-		taskParams = append(taskParams, pipelineapi.TaskParam{
-			Name:        name,
-			Description: description,
-			Default:     "",
-		})
-	}
 	task := &pipelineapi.Task{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: syntax.TektonAPIVersion,
@@ -479,9 +488,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		Spec: pipelineapi.TaskSpec{
 			Steps:   steps,
 			Volumes: volumes,
-			Inputs: &pipelineapi.Inputs{
-				Params: taskParams,
-			},
+			Inputs:  taskInputs,
 		},
 	}
 	if task.Spec.Inputs == nil {
