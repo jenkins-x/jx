@@ -70,6 +70,7 @@ func NewCmdStepEnvApply(commonOpts *CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The Kubernetes namespace to apply the helm charts to")
+	cmd.Flags().StringVarP(&options.ReleaseName, "name", "r", "", "The name of the release")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to look for the environment chart")
 	cmd.Flags().BoolVarP(&options.ChangeNs, "change-namespace", "", false, "Set the given namespace as the current namespace in Kubernetes configuration")
 	cmd.Flags().BoolVarP(&options.Vault, "vault", "", false, "Environment secrets are stored in vault")
