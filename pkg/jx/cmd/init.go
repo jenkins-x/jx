@@ -468,10 +468,9 @@ func (o *InitOptions) initIngress() error {
 		if o.Flags.Provider == cloud.AWS || o.Flags.Provider == cloud.EKS {
 			// For EKS enable both ports for NLBs to be able to use TLS on Nginx ingresses 
 			// Fix for https://github.com/jenkins-x/jx/issues/3079
-			if o.Flags.Provider == cloud.EKS {
-				enableHTTP := "true"
-				enableHTTPS := "true"
-			} 
+			enableHTTP := "true"
+			enableHTTPS := "true"
+
 			// For AWS we can only enable one port for NLBs right now?
 			if o.Flags.Provider == cloud.AWS {
 				enableHTTP = "false"
