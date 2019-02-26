@@ -83,7 +83,7 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 			if err != nil {
 				return errors.Wrapf(err, "adding app %s version %s with alias %s using gitops", app, version, alias)
 			}
-			log.Infof("Added app %s version % with alias %s using gitops\n")
+			log.Infof("Added app %s version %s with alias %s using gitops\n", util.ColorInfo(app), util.ColorInfo(version), util.ColorInfo(alias))
 		} else {
 			opts := HelmOpsOptions{
 				InstallOptions: o,
@@ -95,7 +95,7 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 			if err != nil {
 				return errors.Wrapf(err, "adding app %s version %s with alias %s using helm", app, version, alias)
 			}
-			log.Infof("Added app %s version % with alias %s using helm\n")
+			log.Infof("Added app %s version % with alias %s using helm\n", util.ColorInfo(app), util.ColorInfo(version), util.ColorInfo(alias))
 		}
 		return nil
 	}
