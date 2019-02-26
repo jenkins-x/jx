@@ -10,7 +10,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/builds"
 
-	gojenkins "github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/vault"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
@@ -382,11 +382,40 @@ func (f *factory) ResetSecretsLocation() {
 
 // CreateSystemVaultClient gets the system vault client for managing the secrets
 func (f *factory) CreateSystemVaultClient(namespace string) (vault.Client, error) {
-	name, err := kubevault.SystemVaultName(f.kubeConfig)
+	name, err := f.getVaultName(namespace)
 	if err != nil {
-		return nil, errors.Wrap(err, "building the system vault name from cluster name")
+		return nil, err
 	}
 	return f.CreateVaultClient(name, namespace)
+}
+
+func (f *factory) getVaultName(namespace string) (string, error) {
+	name := ""
+	var err error
+	if f.kubeConfig == nil {
+		kubeClient, _, err := f.CreateKubeClient()
+		if err != nil {
+			return name, err
+		}
+		cm, err := kube.GetConfigMap(kubeClient, namespace, kube.ConfigMapNameJXInstallConfig)
+		if err != nil {
+			return name, errors.Wrapf(err, "no ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, namespace)
+		}
+		if cm.Data == nil {
+			return name, fmt.Errorf("no data for ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, namespace)
+		}
+		name = cm.Data["clusterName"]
+		if name == "" {
+			return name, fmt.Errorf("no key clusterName in ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, namespace)
+		}
+	}
+	if name == "" {
+		name, err = kubevault.SystemVaultName(f.kubeConfig)
+		if err != nil {
+			return name, errors.Wrap(err, "building the system vault name from cluster name")
+		}
+	}
+	return name, nil
 }
 
 // CreateVaultClient returns the given vault client for managing secrets
@@ -407,9 +436,9 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 		namespace = devNamespace
 	}
 	if name == "" {
-		name, err = kubevault.SystemVaultName(f.kubeConfig)
+		name, err = f.getVaultName(namespace)
 		if err != nil {
-			return nil, errors.Wrap(err, "building the system vault name from cluster name")
+			return nil, err
 		}
 	}
 
