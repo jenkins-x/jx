@@ -4,7 +4,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"os"
 	"path/filepath"
 	"testing"
 )
@@ -31,19 +30,4 @@ func AssertPluginVersion(t *testing.T, data *jenkins.UpdateCenter, name string, 
 
 	t.Logf("plugin %s has version %s\n", name, plugin.Version)
 	assert.Equal(t, version, plugin.Version, "plugin version")
-}
-
-func TestUpdateCenterPickPlugins(t *testing.T) {
-	data, err := jenkins.LoadUpdateCenterURL(jenkins.DefaultUpdateCenterURL)
-	require.NoError(t, err, "failed to load URL %s", jenkins.DefaultUpdateCenterURL)
-
-	currentValues := []string{"jx-resources:1.0.0"}
-
-	selection, err := data.PickPlugins(currentValues, os.Stdin, os.Stdout, os.Stderr)
-	require.NoError(t, err, "failed to select plugins")
-
-	t.Logf("chosen selection:\n")
-	for _, sel := range selection {
-		t.Logf("    %s\n", sel)
-	}
 }
