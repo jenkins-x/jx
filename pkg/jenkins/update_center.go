@@ -66,6 +66,7 @@ type PluginRelease struct {
 	Wiki              string      `json:"wiki"`
 }
 
+// Signature signature metadata
 type Signature struct {
 	Certificates        []string `json:"certificates"`
 	CorrectDigest       string   `json:"correct_digest"`
