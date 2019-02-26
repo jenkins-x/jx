@@ -438,6 +438,19 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	}
 
 	name := tekton.PipelineResourceName(o.gitInfo, o.Branch, o.Context)
+	taskParams := []pipelineapi.TaskParam{}
+	for _, param := range o.Results.PipelineParams {
+		name := param.Name
+		description := ""
+		if name == "version" {
+			description = "the version number for this release which is used as a tag on docker images"
+		}
+		taskParams = append(taskParams, pipelineapi.TaskParam{
+			Name:        name,
+			Description: description,
+			Default:     "",
+		})
+	}
 	task := &pipelineapi.Task{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: syntax.TektonAPIVersion,
@@ -450,6 +463,9 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		Spec: pipelineapi.TaskSpec{
 			Steps:   steps,
 			Volumes: volumes,
+			Inputs: &pipelineapi.Inputs{
+				Params: taskParams,
+			},
 		},
 	}
 	if task.Spec.Inputs == nil {
@@ -688,6 +704,7 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 				Kind:       pipelineapi.NamespacedTaskKind,
 				APIVersion: task.APIVersion,
 			},
+			Params: o.Results.PipelineParams,
 		},
 	}
 
@@ -1041,6 +1058,16 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container) {
 			Name:  "JX_BATCH_MODE",
 			Value: "true",
 		})
+	}
+
+	for _, param := range o.Results.PipelineParams {
+		name := strings.ToUpper(param.Name)
+		if kube.GetSliceEnvVar(envVars, name) == nil {
+			envVars = append(envVars, corev1.EnvVar{
+				Name:  name,
+				Value: "${inputs.params." + param.Name + "}",
+			})
+		}
 	}
 	container.Env = envVars
 }
