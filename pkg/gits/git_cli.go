@@ -382,7 +382,20 @@ func (g *GitCLI) ConvertToValidBranchName(name string) string {
 
 // FetchBranch fetches the refspecs from the repo
 func (g *GitCLI) FetchBranch(dir string, repo string, refspecs ...string) error {
+	return g.fetchBranch(dir, repo, false, refspecs...)
+}
+
+// FetchBranch fetches the refspecs from the repo
+func (g *GitCLI) FetchBranchUnshallow(dir string, repo string, refspecs ...string) error {
+	return g.fetchBranch(dir, repo, true, refspecs...)
+}
+
+// FetchBranch fetches the refspecs from the repo
+func (g *GitCLI) fetchBranch(dir string, repo string, unshallow bool, refspecs ...string) error {
 	args := []string{"fetch", repo}
+	if unshallow {
+		args = append(args, "--unshallow")
+	}
 	for _, refspec := range refspecs {
 		args = append(args, refspec)
 	}

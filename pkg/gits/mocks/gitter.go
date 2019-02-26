@@ -396,6 +396,24 @@ func (mock *MockGitter) FetchBranch(_param0 string, _param1 string, _param2 ...s
 	return ret0
 }
 
+func (mock *MockGitter) FetchBranchUnshallow(_param0 string, _param1 string, _param2 ...string) error {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitter().")
+	}
+	params := []pegomock.Param{_param0, _param1}
+	for _, param := range _param2 {
+		params = append(params, param)
+	}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("FetchBranchUnshallow", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(error)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockGitter) FetchTags(_param0 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitter().")
@@ -1887,6 +1905,49 @@ func (c *Gitter_FetchBranch_OngoingVerification) GetCapturedArguments() (string,
 }
 
 func (c *Gitter_FetchBranch_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 [][]string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
+		}
+		_param2 = make([][]string, len(params[2]))
+		for u := range params[0] {
+			_param2[u] = make([]string, len(params)-2)
+			for x := 2; x < len(params); x++ {
+				if params[x][u] != nil {
+					_param2[u][x-2] = params[x][u].(string)
+				}
+			}
+		}
+	}
+	return
+}
+
+func (verifier *VerifierGitter) FetchBranchUnshallow(_param0 string, _param1 string, _param2 ...string) *Gitter_FetchBranchUnshallow_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1}
+	for _, param := range _param2 {
+		params = append(params, param)
+	}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "FetchBranchUnshallow", params, verifier.timeout)
+	return &Gitter_FetchBranchUnshallow_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Gitter_FetchBranchUnshallow_OngoingVerification struct {
+	mock              *MockGitter
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Gitter_FetchBranchUnshallow_OngoingVerification) GetCapturedArguments() (string, string, []string) {
+	_param0, _param1, _param2 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
+}
+
+func (c *Gitter_FetchBranchUnshallow_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 [][]string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))

@@ -28,7 +28,7 @@ func TestFetchAndMergeOneSHA(t *testing.T) {
 	env := prepareFetchAndMergeTests(t)
 	defer env.Cleanup()
 	// Test merging one commit
-	err := gits.FetchAndMergeSHAs([]string{env.Sha1}, "master", env.BaseSha, "origin", env.LocalDir, env.Gitter)
+	err := gits.FetchAndMergeSHAs([]string{env.Sha1}, "master", env.BaseSha, "origin", env.LocalDir, env.Gitter, true)
 	assert.NoError(t, err)
 	readmeFile, err := ioutil.ReadFile(env.ReadmePath)
 	assert.NoError(t, err)
@@ -41,7 +41,8 @@ func TestFetchAndMergeMultipleSHAs(t *testing.T) {
 	defer env.Cleanup()
 
 	// Test merging two commit
-	err := gits.FetchAndMergeSHAs([]string{env.Sha1, env.Sha2}, "master", env.BaseSha, "origin", env.LocalDir, env.Gitter)
+	err := gits.FetchAndMergeSHAs([]string{env.Sha1, env.Sha2}, "master", env.BaseSha, "origin", env.LocalDir,
+		env.Gitter, true)
 	assert.NoError(t, err)
 	localContributingPath := filepath.Join(env.LocalDir, contributing)
 	readmeFile, err := ioutil.ReadFile(env.ReadmePath)
@@ -59,7 +60,7 @@ func TestFetchAndMergeSHAAgainstNonHEADSHA(t *testing.T) {
 
 	// Test merging two commit
 	err := gits.FetchAndMergeSHAs([]string{env.Sha3}, "master", env.Sha1, "origin", env.LocalDir,
-		env.Gitter)
+		env.Gitter, true)
 	assert.NoError(t, err)
 
 	readmeFile, err := ioutil.ReadFile(env.ReadmePath)
