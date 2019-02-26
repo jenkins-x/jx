@@ -181,6 +181,20 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 	}
 
+	o.gitInfo, err = o.FindGitInfo(o.Dir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to find git information from dir %s", o.Dir)
+	}
+	if o.Branch == "" {
+		o.Branch, err = o.Git().Branch(o.Dir)
+		if err != nil {
+			return errors.Wrapf(err, "failed to find git branch from dir %s", o.Dir)
+		}
+	}
+
+	// TODO generate build number properly!
+	o.buildNumber = "1"
+
 	// TODO: Best to separate things cleanly into 2 steps: creation of CRDs and
 	// application of those CRDs to the cluster. Step 2 should be identical both
 	// cases, so we'd just need a flag to switch the single function that is used
@@ -444,6 +458,8 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		description := ""
 		if name == "version" {
 			description = "the version number for this release which is used as a tag on docker images"
+		} else if name == "preview_version" {
+			description = "the version number for this preview which is used as a tag on docker images"
 		}
 		taskParams = append(taskParams, pipelineapi.TaskParam{
 			Name:        name,
@@ -557,22 +573,6 @@ func (o *StepCreateTaskOptions) generateTempOrderingResource() *pipelineapi.Pipe
 }
 
 func (o *StepCreateTaskOptions) setBuildValues(fromYaml bool) error {
-	var err error
-	o.gitInfo, err = o.FindGitInfo(o.Dir)
-	if err != nil {
-		return errors.Wrapf(err, "failed to find git information from dir %s", o.Dir)
-	}
-
-	if o.Branch == "" {
-		o.Branch, err = o.Git().Branch(o.Dir)
-		if err != nil {
-			return errors.Wrapf(err, "failed to find git branch from dir %s", o.Dir)
-		}
-	}
-
-	// TODO generate build number properly!
-	o.buildNumber = "1"
-
 	labels := map[string]string{}
 	if o.gitInfo != nil {
 		labels["owner"] = o.gitInfo.Organisation
@@ -1216,13 +1216,25 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 				version = text
 			}
 		}
-	}
-	if version != "" {
+		if version != "" {
+			o.Results.PipelineParams = append(o.Results.PipelineParams, pipelineapi.Param{
+				Name:  "version",
+				Value: version,
+			})
+			o.Revision = "v" + version
+		}
+	} else {
+		// lets use the branchname if we can find it for the version number
+		branch := o.Branch
+		if branch == "" {
+			branch = o.Revision
+		}
+		buildNumber := o.buildNumber
+		previewVersion := "0.0.0-SNAPSHOT-" + branch + "-" + buildNumber
 		o.Results.PipelineParams = append(o.Results.PipelineParams, pipelineapi.Param{
-			Name:  "version",
-			Value: version,
+			Name:  "preview_version",
+			Value: previewVersion,
 		})
-		o.Revision = "v" + version
 	}
 	return nil
 }
