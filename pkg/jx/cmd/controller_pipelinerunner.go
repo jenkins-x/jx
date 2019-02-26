@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/log"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -200,6 +201,8 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 	for key, value := range arguments.Labels {
 		pr.CustomLabels = append(pr.CustomLabels, fmt.Sprintf("%s=%s", key, value))
 	}
+
+	log.Infof("triggering pipeline for repo %s branch %s revision %s context %s\n", sourceURL, branch, revision, pj.Context)
 
 	err = pr.Run()
 	if err != nil {
