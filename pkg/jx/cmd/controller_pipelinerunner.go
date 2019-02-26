@@ -100,7 +100,7 @@ func (o *ControllerPipelineRunnerOptions) Run() error {
 	mux.Handle(HealthPath, http.HandlerFunc(o.health))
 	mux.Handle(ReadyPath, http.HandlerFunc(o.ready))
 
-	logrus.Infof("Waiting for Knative Pipelines to run at http://%s:%d%s", o.BindAddress, o.Port, o.Path)
+	logrus.Infof("Waiting for dynamic Tekton Pipelines at http://%s:%d%s", o.BindAddress, o.Port, o.Path)
 	return http.ListenAndServe(":"+strconv.Itoa(o.Port), mux)
 }
 
@@ -138,10 +138,18 @@ func (o *ControllerPipelineRunnerOptions) piplineRunMethods(w http.ResponseWrite
 // handle request for pipeline runs
 func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter, r *http.Request) {
 	arguments := &PipelineRunRequest{}
-	err := o.unmarshalBody(w, r, arguments)
-	o.onError(err)
+	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		o.returnError("could not parse body: "+err.Error(), w, r)
+		o.returnError(err, "could not read the JSON request body: "+err.Error(), w, r)
+		return
+	}
+	err = json.Unmarshal(data, arguments)
+	if err != nil {
+		o.returnError(err, "failed to unmarshal the JSON request body: "+err.Error(), w, r)
+		return
+	}
+	if err != nil {
+		o.returnError(err, "could not parse body: "+err.Error(), w, r)
 		return
 	}
 	if o.Verbose {
@@ -152,19 +160,21 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 	var revision string
 	var prNumber string
 
+	if pj.Refs == nil {
+		o.returnError(err, "no prowJobSpec.refs passed in so cannot determine git repository. Input: "+string(data), w, r)
+		return
+	}
 	// todo lets support batches of PRs from Prow
-	if pj.Refs != nil {
-		if len(pj.Refs.Pulls) > 0 {
-			revision = pj.Refs.Pulls[0].SHA
-			prNumber = strconv.Itoa(pj.Refs.Pulls[0].Number)
-		} else {
-			revision = pj.Refs.BaseSHA
-		}
+	if len(pj.Refs.Pulls) > 0 {
+		revision = pj.Refs.Pulls[0].SHA
+		prNumber = strconv.Itoa(pj.Refs.Pulls[0].Number)
+	} else {
+		revision = pj.Refs.BaseSHA
 	}
 
 	sourceURL := fmt.Sprintf("https://github.com/%s/%s.git", pj.Refs.Org, pj.Refs.Repo)
 	if sourceURL == "" {
-		o.returnError("missing sourceURL property", w, r)
+		o.returnError(err, "missing sourceURL property", w, r)
 		return
 	}
 	if revision == "" {
@@ -206,7 +216,7 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 
 	err = pr.Run()
 	if err != nil {
-		o.returnError(err.Error(), w, r)
+		o.returnError(err, err.Error(), w, r)
 		return
 	}
 
@@ -251,7 +261,8 @@ func (o *ControllerPipelineRunnerOptions) onError(err error) {
 	}
 }
 
-func (o *ControllerPipelineRunnerOptions) returnError(message string, w http.ResponseWriter, r *http.Request) {
+func (o *ControllerPipelineRunnerOptions) returnError(err error, message string, w http.ResponseWriter, r *http.Request) {
+	o.onError(err)
 	w.WriteHeader(400)
 	w.Write([]byte(message))
 }
