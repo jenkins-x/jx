@@ -43,7 +43,7 @@ var (
 
 `)
 
-	defaultValueFileNames = []string{"values.yaml", "myvalues.yaml", helm.SecretsFileName}
+	defaultValueFileNames = []string{"values.yaml", "myvalues.yaml", helm.SecretsFileName, filepath.Join("env", helm.SecretsFileName)}
 )
 
 func NewCmdStepHelmApply(commonOpts *CommonOptions) *cobra.Command {
@@ -150,11 +150,26 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	o.Helm().SetCWD(dir)
 
+	valueFiles := []string{}
+	for _, name := range defaultValueFileNames {
+		file := filepath.Join(dir, name)
+		exists, err := util.FileExists(file)
+		if exists && err == nil {
+			valueFiles = append(valueFiles, file)
+		}
+	}
+
 	if (o.GetSecretsLocation() == secrets.VaultLocationKind) || o.Vault {
 		store := configio.NewFileStore()
 		secretsFiles, err := o.fetchSecretFilesFromVault(dir, store)
 		if err != nil {
 			return errors.Wrap(err, "fetching secrets files from vault")
+		}
+		for _, sf := range secretsFiles {
+			if util.StringArrayIndex(valueFiles, sf) < 0 {
+				log.Infof("adding secret file %s\n", sf)
+				valueFiles = append(valueFiles, sf)
+			}
 		}
 		defer func() {
 			for _, secretsFile := range secretsFiles {
@@ -165,15 +180,6 @@ func (o *StepHelmApplyOptions) Run() error {
 				}
 			}
 		}()
-	}
-
-	valueFiles := []string{}
-	for _, name := range defaultValueFileNames {
-		file := filepath.Join(dir, name)
-		exists, err := util.FileExists(file)
-		if exists && err == nil {
-			valueFiles = append(valueFiles, file)
-		}
 	}
 
 	chartValues, err := helm.GenerateValues(dir, nil, true)

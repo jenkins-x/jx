@@ -376,6 +376,21 @@ func AppendMyValues(valueFiles []string) ([]string, error) {
 // CombineValueFilesToFile iterates through the input files and combines them into a single Values object and then
 // write it to the output file nested inside the chartName
 func CombineValueFilesToFile(outFile string, inputFiles []string, chartName string, extraValues map[string]interface{}) error {
+	answerMap := map[string]interface{}{}
+
+	// lets load any previous values if they exist
+	exists, err := util.FileExists(outFile)
+	if err != nil {
+		return err
+	}
+	if exists {
+		answerMap, err = LoadValuesFile(outFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	// now lets merge any given input files
 	answer := chartutil.Values{}
 	for _, input := range inputFiles {
 		values, err := chartutil.ReadValuesFile(input)
@@ -390,9 +405,7 @@ func CombineValueFilesToFile(outFile string, inputFiles []string, chartName stri
 	for k, v := range extraValues {
 		m[k] = v
 	}
-	answerMap := map[string]interface{}{
-		chartName: m,
-	}
+	answerMap[chartName] = m
 	answer = chartutil.Values(answerMap)
 	text, err := answer.YAML()
 	if err != nil {
