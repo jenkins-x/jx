@@ -1147,7 +1147,7 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 	if o.PipelineKind == jenkinsfile.PipelineKindRelease {
 		release := pipelineConfig.Pipelines.Release
 		if release == nil {
-			return fmt.Errorf("no Release pipeline available!")
+			return fmt.Errorf("no Release pipeline available")
 		}
 		sv := release.SetVersion
 		if sv == nil {
