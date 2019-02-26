@@ -1078,7 +1078,7 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container) {
 		if kube.GetSliceEnvVar(envVars, name) == nil {
 			envVars = append(envVars, corev1.EnvVar{
 				Name:  name,
-				Value: "${inputs.params." + param.Name + "}",
+				Value: "${params." + param.Name + "}",
 			})
 		}
 	}
