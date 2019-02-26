@@ -152,11 +152,13 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 	var prNumber string
 
 	// todo lets support batches of PRs from Prow
-	if len(pj.Refs.Pulls) > 0 {
-		revision = pj.Refs.Pulls[0].SHA
-		prNumber = strconv.Itoa(pj.Refs.Pulls[0].Number)
-	} else {
-		revision = pj.Refs.BaseSHA
+	if pj.Refs != nil {
+		if len(pj.Refs.Pulls) > 0 {
+			revision = pj.Refs.Pulls[0].SHA
+			prNumber = strconv.Itoa(pj.Refs.Pulls[0].Number)
+		} else {
+			revision = pj.Refs.BaseSHA
+		}
 	}
 
 	sourceURL := fmt.Sprintf("https://github.com/%s/%s.git", pj.Refs.Org, pj.Refs.Repo)
