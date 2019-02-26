@@ -97,8 +97,13 @@ func PickName(names []string, message string, help string, in terminal.FileReade
 	return PickNameWithDefault(names, message, "", help, in, out, outErr)
 }
 
-// PickNames gets the user to pick multiple selections from a list of options, with a default option specified
+// PickNames gets the user to pick multiple selections from a list of options
 func PickNames(names []string, message string, help string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ([]string, error) {
+	return PickNamesWithDefaults(names, nil, message, help, in, out, outErr)
+}
+
+// PickNamesWithDefaults gets the user to pick multiple selections from a list of options with a set of default selections
+func PickNamesWithDefaults(names []string, defaults []string, message string, help string, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ([]string, error) {
 	picked := []string{}
 	if len(names) == 0 {
 		return picked, nil
@@ -108,6 +113,7 @@ func PickNames(names []string, message string, help string, in terminal.FileRead
 		prompt := &survey.MultiSelect{
 			Message: message,
 			Options: names,
+			Default: defaults,
 			Help:    help,
 		}
 		surveyOpts := survey.WithStdio(in, out, outErr)
