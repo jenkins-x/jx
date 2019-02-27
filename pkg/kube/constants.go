@@ -282,6 +282,9 @@ const (
 
 	// ClusterName stores the name of the cluster that is created
 	ClusterName = "clusterName"
+
+	// SystemVaultName stores the name of the system Vault created on install
+	SystemVaultName = "systemVaultName"
 )
 
 var (
