@@ -115,7 +115,13 @@ func SystemVaultName(kuber kube.Kuber) (string, error) {
 
 // SystemVaultNameForCluster returns the system vault name from a given cluster name
 func SystemVaultNameForCluster(clusterName string) string {
-	return fmt.Sprintf("%s-%s", vault.SystemVaultNamePrefix, clusterName)
+	shortClusterName := clusterName
+	end := len(clusterName) - 1
+	if end > 16 {
+		end = 16
+		shortClusterName = clusterName[0:end]
+	}
+	return fmt.Sprintf("%s-%s", vault.SystemVaultNamePrefix, shortClusterName)
 }
 
 // CreateVault creates a new vault backed by GCP KMS and storage
