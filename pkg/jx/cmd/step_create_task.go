@@ -1236,6 +1236,9 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 				log.Warnf("versions file %s is empty!\n", versionFile)
 			} else {
 				version = text
+				if version != "" {
+					o.Revision = "v" + version
+				}
 			}
 		}
 	} else {
@@ -1252,7 +1255,6 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 			Name:  "version",
 			Value: version,
 		})
-		o.Revision = "v" + version
 	}
 	return nil
 }
