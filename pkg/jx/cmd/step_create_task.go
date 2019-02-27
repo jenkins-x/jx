@@ -401,7 +401,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		if err != nil {
 			return errors.Wrapf(err, "Generation failed for Pipeline")
 		}
-		for i, _ := range pipeline.Spec.Tasks {
+		for i := range pipeline.Spec.Tasks {
 			if len(pipeline.Spec.Tasks[i].Params) == 0 {
 				pipeline.Spec.Tasks[i].Params = o.Results.PipelineParams
 			}
