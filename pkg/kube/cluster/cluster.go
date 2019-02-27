@@ -5,23 +5,34 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
+	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 // Name gets the cluster name from the current context
 // Note that this just reads the ClusterName from the local kube config, which can be renamed (but is unlikely to happen)
 func Name(kuber kube.Kuber) (string, error) {
-	config, _, err := kuber.LoadConfig()
+	context, err := Context(kuber)
 	if err != nil {
 		return "", err
 	}
-
-	context := kube.CurrentContext(config)
 	if context == nil {
 		return "", errors.New("kube context was nil")
 	}
 	// context.Cluster will likely be in the form gke_<accountName>_<region>_<clustername>
 	// Trim off the crud from the beginning context.Cluster
 	return SimplifiedClusterName(context.Cluster), nil
+}
+
+// Context returns the current kube context
+func Context(kuber kube.Kuber) (*api.Context, error) {
+	config, _, err := kuber.LoadConfig()
+	if err != nil {
+		return nil, err
+	}
+	if config == nil {
+		return nil, nil
+	}
+	return kube.CurrentContext(config), nil
 }
 
 // ShortName returns a short clusters name. Eg, if ClusterName would return tweetypie-jenkinsx-dev, ShortClusterName

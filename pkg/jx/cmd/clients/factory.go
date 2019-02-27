@@ -3,6 +3,7 @@ package clients
 import (
 	"flag"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	"io"
 	"net/url"
 	"os"
@@ -391,12 +392,11 @@ func (f *factory) CreateSystemVaultClient(namespace string) (vault.Client, error
 
 func (f *factory) getVaultName(namespace string) (string, error) {
 	name := ""
-	var err error
-	config, _, err := f.kubeConfig.LoadConfig()
+	context, err := cluster.Context(f.kubeConfig)
 	if err != nil {
 		return name, err
 	}
-	if config == nil {
+	if context == nil {
 		kubeClient, _, err := f.CreateKubeClient()
 		if err != nil {
 			return name, err
