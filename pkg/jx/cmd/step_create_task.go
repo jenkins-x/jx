@@ -82,6 +82,7 @@ type StepCreateTaskOptions struct {
 	buildNumber string
 	labels      map[string]string
 	Results     StepCreateTaskResults
+	version     string
 }
 
 // StepCreateTaskResults stores the generated results
@@ -368,13 +369,15 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	for _, param := range o.Results.PipelineParams {
 		name := param.Name
 		description := ""
+		defaultValue := ""
 		if name == "version" {
 			description = "the version number for this pipeline which is used as a tag on docker images and helm charts"
+			defaultValue = o.version
 		}
 		taskParams = append(taskParams, pipelineapi.TaskParam{
 			Name:        name,
 			Description: description,
-			Default:     "CHANGEME",
+			Default:     defaultValue,
 		})
 	}
 	taskInputs := &pipelineapi.Inputs{
@@ -1256,6 +1259,7 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 			Value: version,
 		})
 	}
+	o.version = version
 	return nil
 }
 
