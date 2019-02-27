@@ -1085,6 +1085,14 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container) {
 			})
 		}
 	}
+	if o.buildNumber != "" {
+		if kube.GetSliceEnvVar(envVars, "BUILD_ID") == nil {
+			envVars = append(envVars, corev1.EnvVar{
+				Name:  "BUILD_ID",
+				Value: o.buildNumber,
+			})
+		}
+	}
 	if kube.GetSliceEnvVar(envVars, "JX_BATCH_MODE") == nil {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "JX_BATCH_MODE",
