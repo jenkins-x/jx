@@ -77,12 +77,13 @@ type StepCreateTaskOptions struct {
 	PodTemplates        map[string]*corev1.Pod
 	MissingPodTemplates map[string]bool
 
-	stepCounter int
-	gitInfo     *gits.GitRepository
-	buildNumber string
-	labels      map[string]string
-	Results     StepCreateTaskResults
-	version     string
+	stepCounter          int
+	gitInfo              *gits.GitRepository
+	buildNumber          string
+	labels               map[string]string
+	Results              StepCreateTaskResults
+	version              string
+	previewVersionPrefix string
 }
 
 // StepCreateTaskResults stores the generated results
@@ -365,21 +366,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		return err
 	}
 
-	taskParams := []pipelineapi.TaskParam{}
-	for _, param := range o.Results.PipelineParams {
-		name := param.Name
-		description := ""
-		defaultValue := ""
-		if name == "version" {
-			description = "the version number for this pipeline which is used as a tag on docker images and helm charts"
-			defaultValue = o.version
-		}
-		taskParams = append(taskParams, pipelineapi.TaskParam{
-			Name:        name,
-			Description: description,
-			Default:     defaultValue,
-		})
-	}
+	taskParams := o.createTaskParams()
 	taskInputs := &pipelineapi.Inputs{
 		Params: taskParams,
 	}
@@ -528,6 +515,42 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	}
 
 	return nil
+}
+
+func (o *StepCreateTaskOptions) createTaskParams() []pipelineapi.TaskParam {
+	taskParams := []pipelineapi.TaskParam{}
+	for _, param := range o.Results.PipelineParams {
+		name := param.Name
+		description := ""
+		defaultValue := ""
+		switch name {
+		case "version":
+			description = "the version number for this pipeline which is used as a tag on docker images and helm charts"
+			defaultValue = o.version
+		case "build_id":
+			description = "the PipelineRun build number"
+			defaultValue = o.buildNumber
+		}
+		taskParams = append(taskParams, pipelineapi.TaskParam{
+			Name:        name,
+			Description: description,
+			Default:     defaultValue,
+		})
+	}
+	return taskParams
+}
+
+func (o *StepCreateTaskOptions) createPipelineParams() []pipelineapi.PipelineParam {
+	answer := []pipelineapi.PipelineParam{}
+	taskParams := o.createTaskParams()
+	for _, tp := range taskParams {
+		answer = append(answer, pipelineapi.PipelineParam{
+			Name:        tp.Name,
+			Description: tp.Description,
+			Default:     tp.Default,
+		})
+	}
+	return answer
 }
 
 func (o *StepCreateTaskOptions) generateSourceRepoResource(name string, fromYaml bool) *pipelineapi.PipelineResource {
@@ -732,6 +755,7 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 		Spec: pipelineapi.PipelineSpec{
 			Resources: resources,
 			Tasks:     tasks,
+			Params:    o.createPipelineParams(),
 		},
 	}
 	return o.applyPipeline(pipeline, []*pipelineapi.Task{task}, pipelineResources, nil, gitInfo, branch)
@@ -837,7 +861,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	}
 
 	if !o.NoApply {
-		_, err = tekton.CreatePipelineRun(tektonClient, ns, pipeline, run, o.Duration)
+		_, err = tekton.CreatePipelineRun(tektonClient, ns, pipeline, run, o.previewVersionPrefix, o.Duration)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create the PipelineRun in namespace %s", ns)
 		}
@@ -1083,14 +1107,6 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container) {
 			})
 		}
 	}
-	if o.buildNumber != "" {
-		if kube.GetSliceEnvVar(envVars, "BUILD_ID") == nil {
-			envVars = append(envVars, corev1.EnvVar{
-				Name:  "BUILD_ID",
-				Value: o.buildNumber,
-			})
-		}
-	}
 	if kube.GetSliceEnvVar(envVars, "JX_BATCH_MODE") == nil {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "JX_BATCH_MODE",
@@ -1251,7 +1267,8 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 			branch = o.Revision
 		}
 		buildNumber := o.buildNumber
-		version = "0.0.0-SNAPSHOT-" + branch + "-" + buildNumber
+		o.previewVersionPrefix = "0.0.0-SNAPSHOT-" + branch + "-"
+		version = o.previewVersionPrefix + buildNumber
 	}
 	if version != "" {
 		o.Results.PipelineParams = append(o.Results.PipelineParams, pipelineapi.Param{
@@ -1260,6 +1277,12 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 		})
 	}
 	o.version = version
+	if o.buildNumber != "" {
+		o.Results.PipelineParams = append(o.Results.PipelineParams, pipelineapi.Param{
+			Name:  "build_id",
+			Value: o.buildNumber,
+		})
+	}
 	return nil
 }
 

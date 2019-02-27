@@ -30,9 +30,8 @@ func CreateOrUpdateSourceResource(tektonClient tektonclient.Interface, ns string
 	if err != nil {
 		return answer, errors.Wrapf(err, "failed to get PipelineResource %s after failing to create a new one", resourceName)
 	}
-	copy := *answer
-	answer.Spec = created.Spec
-	if !reflect.DeepEqual(&copy.Spec, &answer.Spec) {
+	if !reflect.DeepEqual(&created.Spec, &answer.Spec) {
+		answer.Spec = created.Spec
 		answer, err = resourceInterface.Update(answer)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to update PipelineResource %s", resourceName)
@@ -58,12 +57,10 @@ func CreateOrUpdateTask(tektonClient tektonclient.Interface, ns string, created 
 	if err2 != nil {
 		return answer, errors.Wrapf(err, "failed to get PipelineResource %s with %v after failing to create a new one", resourceName, err2)
 	}
-	copy := *answer
-	answer.Spec = created.Spec
-	answer.Labels = util.MergeMaps(answer.Labels, created.Labels)
-	answer.Annotations = util.MergeMaps(answer.Annotations, created.Annotations)
-
-	if !reflect.DeepEqual(&copy.Spec, &answer.Spec) || !reflect.DeepEqual(copy.Annotations, answer.Annotations) || !reflect.DeepEqual(copy.Labels, answer.Labels) {
+	if !reflect.DeepEqual(&created.Spec, &answer.Spec) || !reflect.DeepEqual(created.Annotations, answer.Annotations) || !reflect.DeepEqual(created.Labels, answer.Labels) {
+		answer.Spec = created.Spec
+		answer.Labels = util.MergeMaps(answer.Labels, created.Labels)
+		answer.Annotations = util.MergeMaps(answer.Annotations, created.Annotations)
 		answer, err = resourceInterface.Update(answer)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to update PipelineResource %s", resourceName)
@@ -90,7 +87,7 @@ func GetLastBuildNumber(pipeline *v1alpha1.Pipeline) int {
 }
 
 // CreatePipelineRun lazily creates a Tekton Pipeline Task
-func CreatePipelineRun(tektonClient tektonclient.Interface, ns string, pipeline *v1alpha1.Pipeline, run *v1alpha1.PipelineRun, duration time.Duration) (*v1alpha1.PipelineRun, error) {
+func CreatePipelineRun(tektonClient tektonclient.Interface, ns string, pipeline *v1alpha1.Pipeline, run *v1alpha1.PipelineRun, previewVersionPrefix string, duration time.Duration) (*v1alpha1.PipelineRun, error) {
 	run.Name = pipeline.Name
 
 	resourceInterface := tektonClient.TektonV1alpha1().PipelineRuns(ns)
@@ -98,10 +95,28 @@ func CreatePipelineRun(tektonClient tektonclient.Interface, ns string, pipeline 
 	buildNumber := GetLastBuildNumber(pipeline)
 	answer := run
 
+	parameters := map[string]string{}
+
 	f := func() error {
 		buildNumber++
 		buildNumberText := strconv.Itoa(buildNumber)
 		run.Labels["build-number"] = buildNumberText
+
+		// lets update the "build_id" parameter if it exists
+		for i := range run.Spec.Params {
+			switch run.Spec.Params[i].Name {
+			case "build_id":
+				run.Spec.Params[i].Value = buildNumberText
+				parameters["build_id"] = buildNumberText
+			case "version":
+				if previewVersionPrefix != "" {
+					previewVersion := previewVersionPrefix + buildNumberText
+					run.Spec.Params[i].Value = previewVersion
+					parameters["version"] = previewVersion
+				}
+			}
+		}
+
 		run.Name = pipeline.Name + "-" + buildNumberText
 		created, err := resourceInterface.Create(run)
 		if err == nil {
@@ -113,7 +128,7 @@ func CreatePipelineRun(tektonClient tektonclient.Interface, ns string, pipeline 
 	err := util.Retry(duration, f)
 	if err == nil {
 		// lets try update the pipeline with the new label
-		err = UpdateLastPipelineBuildNumber(tektonClient, ns, pipeline, buildNumber, duration)
+		err = UpdateLastPipelineBuildNumber(tektonClient, ns, pipeline, buildNumber, parameters, duration)
 		if err != nil {
 			log.Warnf("Failed to annotate the Pipeline %s with the build number %d: %s", pipeline.Name, buildNumber, err)
 		}
@@ -124,7 +139,7 @@ func CreatePipelineRun(tektonClient tektonclient.Interface, ns string, pipeline 
 
 // UpdateLastPipelineBuildNumber keeps trying to update the last build number annotation on the Pipeline until it succeeds or
 // another thread/process beats us to it
-func UpdateLastPipelineBuildNumber(tektonClient tektonclient.Interface, ns string, pipeline *v1alpha1.Pipeline, buildNumber int, duration time.Duration) error {
+func UpdateLastPipelineBuildNumber(tektonClient tektonclient.Interface, ns string, pipeline *v1alpha1.Pipeline, buildNumber int, params map[string]string, duration time.Duration) error {
 	f := func() error {
 		pipelineInterface := tektonClient.TektonV1alpha1().Pipelines(ns)
 		current, err := pipelineInterface.Get(pipeline.Name, metav1.GetOptions{})
@@ -141,6 +156,26 @@ func UpdateLastPipelineBuildNumber(tektonClient tektonclient.Interface, ns strin
 			current.Annotations = map[string]string{}
 		}
 		current.Annotations[LastBuildNumberAnnotation] = strconv.Itoa(buildNumber)
+
+		// lets override any defaults in the Pipeline
+		for i := range current.Spec.Params {
+			value := params[current.Spec.Params[i].Name]
+			if value != "" {
+				current.Spec.Params[i].Default = value
+			}
+		}
+
+		// lets override any task parameters in the Pipeline
+		for i := range current.Spec.Tasks {
+			task := &current.Spec.Tasks[i]
+			for j := range task.Params {
+				param := &task.Params[j]
+				value := params[param.Name]
+				if value != "" {
+					param.Value = value
+				}
+			}
+		}
 		_, err = pipelineInterface.Update(current)
 		return err
 	}
@@ -161,36 +196,11 @@ func CreateOrUpdatePipeline(tektonClient tektonclient.Interface, ns string, crea
 	if err != nil {
 		return answer, errors.Wrapf(err, "failed to get Pipeline %s after failing to create a new one", resourceName)
 	}
-	copy := *answer
 
-	answer.Labels = util.MergeMaps(answer.Labels, labels)
-
-	// lets make sure all the resources and tasks are added
-	for _, r1 := range created.Spec.Resources {
-		found := false
-		for _, r2 := range answer.Spec.Resources {
-			if reflect.DeepEqual(&r1, &r2) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			answer.Spec.Resources = append(answer.Spec.Resources, r1)
-		}
-	}
-	for _, t1 := range created.Spec.Tasks {
-		found := false
-		for _, t2 := range answer.Spec.Tasks {
-			if reflect.DeepEqual(&t1, &t2) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			answer.Spec.Tasks = append(answer.Spec.Tasks, t1)
-		}
-	}
-	if !reflect.DeepEqual(&copy.Spec, &answer.Spec) || !reflect.DeepEqual(copy.Labels, answer.Labels) {
+	if !reflect.DeepEqual(&created.Spec, &answer.Spec) || !reflect.DeepEqual(created.Labels, answer.Labels) {
+		answer.Labels = util.MergeMaps(answer.Annotations, created.Labels, labels)
+		answer.Annotations = util.MergeMaps(answer.Annotations, created.Annotations)
+		answer.Spec = created.Spec
 		answer, err = resourceInterface.Update(answer)
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to update Pipeline %s", resourceName)
