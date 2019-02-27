@@ -934,7 +934,7 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, podTem
 }
 
 // GenerateCRDs translates the Pipeline structure into the corresponding Pipeline and Task CRDs
-func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, suffix string, podTemplates map[string]*corev1.Pod) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
+func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, suffix string, podTemplates map[string]*corev1.Pod, taskParams []tektonv1alpha1.TaskParam) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
 	if len(j.Post) != 0 {
 		return nil, nil, nil, errors.New("Post at top level not yet supported")
 	}
@@ -1005,7 +1005,14 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		}
 		previousStage = stage
 
-		tasks = append(tasks, stage.getLinearTasks()...)
+		linearTasks := stage.getLinearTasks()
+		for _, lt := range linearTasks {
+			if len(lt.Spec.Inputs.Params) == 0 {
+				lt.Spec.Inputs.Params = taskParams
+			}
+		}
+
+		tasks = append(tasks, linearTasks...)
 		p.Spec.Tasks = append(p.Spec.Tasks, createPipelineTasks(stage, pipelineIdentifier)...)
 		structure.Stages = append(structure.Stages, stage.getAllAsPipelineStructureStages()...)
 	}

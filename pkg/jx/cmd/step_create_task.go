@@ -374,7 +374,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		taskParams = append(taskParams, pipelineapi.TaskParam{
 			Name:        name,
 			Description: description,
-			Default:     "",
+			Default:     "CHANGEME",
 		})
 	}
 	taskInputs := &pipelineapi.Inputs{
@@ -404,14 +404,9 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 			name = shortName
 		}
 
-		pipeline, tasks, structure, err := lifecycles.Pipeline.GenerateCRDs(name, o.buildNumber, "will-be-replaced", "abcd", o.PodTemplates)
+		pipeline, tasks, structure, err := lifecycles.Pipeline.GenerateCRDs(name, o.buildNumber, "will-be-replaced", "abcd", o.PodTemplates, taskParams)
 		if err != nil {
 			return errors.Wrapf(err, "Generation failed for Pipeline")
-		}
-		for i := range pipeline.Spec.Tasks {
-			if len(pipeline.Spec.Tasks[i].Params) == 0 {
-				pipeline.Spec.Tasks[i].Params = o.Results.PipelineParams
-			}
 		}
 
 		if validateErr := pipeline.Spec.Validate(); validateErr != nil {
