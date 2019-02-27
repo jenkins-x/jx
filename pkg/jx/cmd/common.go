@@ -119,6 +119,19 @@ func (f *ServerFlags) IsEmpty() bool {
 	return f.ServerName == "" && f.ServerURL == ""
 }
 
+// GetFactory lazily creates a Factory if its not already created
+func (o *CommonOptions) GetFactory() clients.Factory {
+	if o.factory == nil {
+		o.factory = clients.NewFactory()
+	}
+	return o.factory
+}
+
+// SetFactory sets the factory to use
+func (o *CommonOptions) SetFactory(f clients.Factory) {
+	o.factory = f
+}
+
 // CreateTable creates a new Table
 func (o *CommonOptions) createTable() table.Table {
 	return o.factory.CreateTable(o.Out)
