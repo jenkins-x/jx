@@ -2,6 +2,7 @@ package vault
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
@@ -272,6 +273,7 @@ func ensureVaultRoleBinding(client kubernetes.Interface, namespace string, roleN
 func FindVault(vaultOperatorClient versioned.Interface, name string, ns string) bool {
 	_, err := GetVault(vaultOperatorClient, name, ns)
 	if err != nil {
+		log.Warnf("could not find vault %s in namespace %s due to: %s\n", name, ns, err.Error())
 		return false
 	}
 	return true
