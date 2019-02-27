@@ -143,6 +143,9 @@ type Step struct {
 
 	// agent can be overridden on a step
 	Agent Agent `yaml:"agent,omitempty"`
+
+	// Image alows the docker image for a step to be specified
+	Image string `yaml:"image,omitempty"`
 }
 
 // Loop is a special step that defines a variable, a list of possible values for that variable, and a set of steps to
@@ -861,7 +864,9 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, podTem
 	var steps []corev1.Container
 
 	stepImage := inheritedAgent
-	if !equality.Semantic.DeepEqual(step.Agent, Agent{}) {
+	if step.Image != "" {
+		stepImage = step.Image
+	} else if step.Agent.Image != "" {
 		stepImage = step.Agent.Image
 	}
 
