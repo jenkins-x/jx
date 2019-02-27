@@ -3,7 +3,6 @@ package clients
 import (
 	"flag"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	"io"
 	"net/url"
 	"os"
@@ -391,33 +390,21 @@ func (f *factory) CreateSystemVaultClient(namespace string) (vault.Client, error
 }
 
 func (f *factory) getVaultName(namespace string) (string, error) {
-	name := ""
-	context, err := cluster.Context(f.kubeConfig)
+	name, err := kubevault.SystemVaultName(f.kubeConfig)
 	if err != nil {
-		return name, err
-	}
-	if context == nil {
+		// if we cannot load the cluster name from the kube context lets try load the cluster name from the install values
 		kubeClient, _, err := f.CreateKubeClient()
 		if err != nil {
 			return name, err
 		}
-		cm, err := kube.GetConfigMap(kubeClient, namespace, kube.ConfigMapNameJXInstallConfig)
+		data, err := kube.ReadInstallValues(kubeClient, namespace)
 		if err != nil {
-			return name, errors.Wrapf(err, "no ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, namespace)
+			return name, errors.Wrapf(err, "cannot find cluster name as no ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, namespace)
 		}
-		if cm.Data == nil {
-			return name, fmt.Errorf("no data for ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, namespace)
-		}
-		name = cm.Data["clusterName"]
-		if name == "" {
-			return name, fmt.Errorf("no key clusterName in ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, namespace)
-		}
+		name = data[kube.ClusterName]
 	}
 	if name == "" {
-		name, err = kubevault.SystemVaultName(f.kubeConfig)
-		if err != nil {
-			return name, errors.Wrap(err, "building the system vault name from cluster name")
-		}
+		return name, fmt.Errorf("could not find the cluster name in namespace %s", namespace)
 	}
 	return name, nil
 }
