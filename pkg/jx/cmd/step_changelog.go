@@ -56,6 +56,7 @@ type StepChangelogOptions struct {
 	UpdateRelease       bool
 	NoReleaseInDev      bool
 	IncludeMergeCommits bool
+	FailIfFindCommits   bool
 	State               StepChangelogState
 }
 
@@ -175,8 +176,8 @@ func NewCmdStepChangelog(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.GenerateReleaseYaml, "generate-yaml", "y", true, "Generate the Release YAML in the local helm chart")
 	cmd.Flags().BoolVarP(&options.UpdateRelease, "update-release", "", true, "Should we update the release on the Git repository with the changelog")
 	cmd.Flags().BoolVarP(&options.NoReleaseInDev, "no-dev-release", "", false, "Disables the generation of Release CRDs in the development namespace to track releases being performed")
-	cmd.Flags().BoolVarP(&options.IncludeMergeCommits, "include-merge-commits", "", false,
-		"Include merge commits when generating the changelog")
+	cmd.Flags().BoolVarP(&options.IncludeMergeCommits, "include-merge-commits", "", false, "Include merge commits when generating the changelog")
+	cmd.Flags().BoolVarP(&options.FailIfFindCommits, "fail-if-no-commits", "", false, "Do we want to fail the build if we don't find any commits to generate the changelog")
 
 	cmd.Flags().StringVarP(&options.Header, "header", "", "", "The changelog header in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")
 	cmd.Flags().StringVarP(&options.HeaderFile, "header-file", "", "", "The file name of the changelog header in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")
@@ -317,7 +318,10 @@ func (o *StepChangelogOptions) Run() error {
 
 	commits, err := chgit.FetchCommits(gitDir, previousRev, currentRev)
 	if err != nil {
-		return err
+		if o.FailIfFindCommits {
+			return err
+		}
+		log.Warnf("failed to find git commits between revision %s and %s due to: %s\n", previousRev, currentRev, err.Error())
 	}
 	version := o.Version
 	if version == "" {
