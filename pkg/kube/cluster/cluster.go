@@ -41,17 +41,26 @@ func Context(kuber kube.Kuber) (*api.Context, error) {
 func ShortName(kuber kube.Kuber) (string, error) {
 	clusterName, err := Name(kuber)
 	if err != nil {
-		return "", errors.Wrap(err, "retrieveing the cluster name")
+		return "", errors.Wrap(err, "retrieving the cluster name")
 	}
-	end := len(clusterName) - 1
-	if end > 16 {
-		end = 16
+	return ShortClusterName(clusterName), nil
+}
+
+// ShortClusterName shrinks the cluster name
+func ShortClusterName(clusterName string) string {
+	return ShortNameN(clusterName, 16)
+}
+
+// ShortNameN shrinks the name to a max length
+func ShortNameN(clusterName string, maxLen int) string {
+	shortClusterName := clusterName
+	if len(clusterName) > maxLen {
+		shortClusterName = clusterName[0:maxLen]
 	}
-	shortClusterName := clusterName[0:end]
 	if strings.HasSuffix(shortClusterName, "_") || strings.HasSuffix(shortClusterName, "-") {
-		shortClusterName = shortClusterName[0 : end-1]
+		shortClusterName = shortClusterName[0 : len(shortClusterName)-1]
 	}
-	return shortClusterName, nil
+	return shortClusterName
 }
 
 // SimplifiedClusterName get the simplified cluster name from the long-winded context cluster name that gets generated
