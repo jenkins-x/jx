@@ -1232,7 +1232,16 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 		}
 		sv := release.SetVersion
 		if sv == nil {
-			return fmt.Errorf("no SetVersion pipeline on the Release pipeline")
+			// lets create a default set version pipeline
+			sv = &jenkinsfile.PipelineLifecycle{
+				Steps: []*jenkinsfile.PipelineStep{
+					{
+						Command: "jx step next-version --use-git-tag-only --tag",
+						Name:    "next-version",
+						Comment: "tags git with the next version",
+					},
+				},
+			}
 		}
 		steps := sv.Steps
 		err := o.invokeSteps(steps)
