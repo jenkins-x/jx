@@ -216,10 +216,9 @@ func CreatePipelineRunInfo(kubeClient kubernetes.Interface, tektonClient tektonc
 		if pod == nil {
 			if prStatus != nil && prStatus.Status == corev1.ConditionUnknown {
 				return nil, fmt.Errorf("could not find Pod for PipelineRun %s", prName)
-			} else {
-				// The PipelineRun has completed and its pod(s) no longer exist, so just return nil in general.
-				return nil, nil
 			}
+			// The PipelineRun has completed and its pod(s) no longer exist, so just return nil in general.
+			return nil, nil
 		}
 
 		si := &StageInfo{
@@ -246,10 +245,9 @@ func CreatePipelineRunInfo(kubeClient kubernetes.Interface, tektonClient tektonc
 	if pod == nil {
 		if prStatus != nil && prStatus.Status == corev1.ConditionUnknown {
 			return nil, errors.New(fmt.Sprintf("Couldn't find a Stage with steps for PipelineRun %s", prName))
-		} else {
-			// Just return nil if the pipeline run is completed and its pods have been GCed
-			return nil, nil
 		}
+		// Just return nil if the pipeline run is completed and its pods have been GCed
+		return nil, nil
 	}
 
 	for _, initContainer := range pod.Spec.InitContainers {
