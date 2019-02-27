@@ -369,9 +369,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		name := param.Name
 		description := ""
 		if name == "version" {
-			description = "the version number for this release which is used as a tag on docker images"
-		} else if name == "preview_version" {
-			description = "the version number for this preview which is used as a tag on docker images"
+			description = "the version number for this pipeline which is used as a tag on docker images and helm charts"
 		}
 		taskParams = append(taskParams, pipelineapi.TaskParam{
 			Name:        name,
@@ -1237,25 +1235,21 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 				version = text
 			}
 		}
-		if version != "" {
-			o.Results.PipelineParams = append(o.Results.PipelineParams, pipelineapi.Param{
-				Name:  "version",
-				Value: version,
-			})
-			o.Revision = "v" + version
-		}
 	} else {
-		// lets use the branchname if we can find it for the version number
+		// lets use the branch name if we can find it for the version number
 		branch := o.Branch
 		if branch == "" {
 			branch = o.Revision
 		}
 		buildNumber := o.buildNumber
-		previewVersion := "0.0.0-SNAPSHOT-" + branch + "-" + buildNumber
+		version = "0.0.0-SNAPSHOT-" + branch + "-" + buildNumber
+	}
+	if version != "" {
 		o.Results.PipelineParams = append(o.Results.PipelineParams, pipelineapi.Param{
-			Name:  "preview_version",
-			Value: previewVersion,
+			Name:  "version",
+			Value: version,
 		})
+		o.Revision = "v" + version
 	}
 	return nil
 }
