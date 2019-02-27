@@ -140,6 +140,14 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 			}},
 		},
 		prName: "abayer-js-test-repo-nested-1",
+	}, {
+		name: "completed-from-yaml",
+		expected: nil,
+		prName: "abayer-js-test-repo-master-1",
+	}, {
+		name: "completed-from-build-pack",
+		expected: nil,
+		prName: "abayer-jx-demo-qs-master-1",
 	}}
 
 	for _, tt := range testCases {
@@ -161,21 +169,26 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 
 			pri, err := tekton.CreatePipelineRunInfo(kubeClient, tektonClient, jxClient, ns, tt.prName)
 			if err != nil {
-				t.Errorf("Error creating PipelineRunInfo: %s", err)
+				t.Fatalf("Error creating PipelineRunInfo: %s", err)
 			}
 			if pri == nil {
-				t.Errorf("Nil PipelineRunInfo")
-			}
+				if tt.expected != nil {
+					t.Errorf("Nil PipelineRunInfo but expected one")
+				}
+			} else {
 
-			if tt.expected == nil {
-				ey, _ := yaml.Marshal(pri)
-				t.Logf("%s", ey)
-			}
-			for _, stage := range pri.Stages {
-				scrubPods(stage)
-			}
-			if d := cmp.Diff(tt.expected, pri); d != "" && tt.expected != nil {
-				t.Errorf("Generated PipelineRunInfo did not match expected: %s", d)
+				if tt.expected == nil {
+					ey, _ := yaml.Marshal(pri)
+					t.Logf("%s", ey)
+				}
+
+				for _, stage := range pri.Stages {
+					scrubPods(stage)
+				}
+
+				if d := cmp.Diff(tt.expected, pri); d != "" && tt.expected != nil {
+					t.Errorf("Generated PipelineRunInfo did not match expected: %s", d)
+				}
 			}
 		})
 	}
@@ -183,7 +196,11 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 
 func AssertLoadPods(t *testing.T, testName string) *corev1.PodList {
 	fileName := filepath.Join("test_data", "pipeline_info", testName, "pods.yml")
-	if tests.AssertFileExists(t, fileName) {
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		t.Fatalf("Error checking if file %s exists: %s", fileName, err)
+	}
+	if exists {
 		podList := &corev1.PodList{}
 		data, err := ioutil.ReadFile(fileName)
 		if assert.NoError(t, err, "Failed to load file %s", fileName) {
@@ -194,7 +211,7 @@ func AssertLoadPods(t *testing.T, testName string) *corev1.PodList {
 
 		}
 	}
-	return nil
+	return &corev1.PodList{}
 }
 
 func AssertLoadPipeline(t *testing.T, testName string) *tektonv1alpha1.Pipeline {
