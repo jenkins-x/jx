@@ -401,7 +401,7 @@ func (f *factory) getVaultName(namespace string) (string, error) {
 		if err != nil {
 			return name, errors.Wrapf(err, "cannot find cluster name as no ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, namespace)
 		}
-		name = data[kube.ClusterName]
+		name = kubevault.SystemVaultNameForCluster(data[kube.ClusterName])
 	}
 	if name == "" {
 		return name, fmt.Errorf("could not find the cluster name in namespace %s", namespace)
