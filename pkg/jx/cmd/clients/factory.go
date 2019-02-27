@@ -392,7 +392,11 @@ func (f *factory) CreateSystemVaultClient(namespace string) (vault.Client, error
 func (f *factory) getVaultName(namespace string) (string, error) {
 	name := ""
 	var err error
-	if f.kubeConfig == nil {
+	config, _, err := f.kubeConfig.LoadConfig()
+	if err != nil {
+		return name, err
+	}
+	if config == nil {
 		kubeClient, _, err := f.CreateKubeClient()
 		if err != nil {
 			return name, err
