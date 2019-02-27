@@ -401,7 +401,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		if len(name) > maxResourceLength {
 			shortName := name[len(name)-maxResourceLength:]
 			log.Infof("shortening the pipeline resource name from %s to %s\n", util.ColorInfo(name), util.ColorInfo(shortName))
-			name = shortName
+			name = kube.ToValidName(shortName)
 		}
 
 		pipeline, tasks, structure, err := lifecycles.Pipeline.GenerateCRDs(name, o.buildNumber, "will-be-replaced", "abcd", o.PodTemplates, taskParams)
