@@ -5,17 +5,16 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
+	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 // Name gets the cluster name from the current context
 // Note that this just reads the ClusterName from the local kube config, which can be renamed (but is unlikely to happen)
 func Name(kuber kube.Kuber) (string, error) {
-	config, _, err := kuber.LoadConfig()
+	context, err := Context(kuber)
 	if err != nil {
 		return "", err
 	}
-
-	context := kube.CurrentContext(config)
 	if context == nil {
 		return "", errors.New("kube context was nil")
 	}
@@ -24,23 +23,44 @@ func Name(kuber kube.Kuber) (string, error) {
 	return SimplifiedClusterName(context.Cluster), nil
 }
 
+// Context returns the current kube context
+func Context(kuber kube.Kuber) (*api.Context, error) {
+	config, _, err := kuber.LoadConfig()
+	if err != nil {
+		return nil, err
+	}
+	if config == nil {
+		return nil, nil
+	}
+	return kube.CurrentContext(config), nil
+}
+
 // ShortName returns a short clusters name. Eg, if ClusterName would return tweetypie-jenkinsx-dev, ShortClusterName
 // would return tweetypie. This is needed because GCP has character limits on things like service accounts (6-30 chars)
 // and combining a long cluster name and a long vault name exceeds this limit
 func ShortName(kuber kube.Kuber) (string, error) {
 	clusterName, err := Name(kuber)
 	if err != nil {
-		return "", errors.Wrap(err, "retrieveing the cluster name")
+		return "", errors.Wrap(err, "retrieving the cluster name")
 	}
-	end := len(clusterName) - 1
-	if end > 16 {
-		end = 16
+	return ShortClusterName(clusterName), nil
+}
+
+// ShortClusterName shrinks the cluster name
+func ShortClusterName(clusterName string) string {
+	return ShortNameN(clusterName, 16)
+}
+
+// ShortNameN shrinks the name to a max length
+func ShortNameN(clusterName string, maxLen int) string {
+	shortClusterName := clusterName
+	if len(clusterName) > maxLen {
+		shortClusterName = clusterName[0:maxLen]
 	}
-	shortClusterName := clusterName[0:end]
 	if strings.HasSuffix(shortClusterName, "_") || strings.HasSuffix(shortClusterName, "-") {
-		shortClusterName = shortClusterName[0 : end-1]
+		shortClusterName = shortClusterName[0 : len(shortClusterName)-1]
 	}
-	return shortClusterName, nil
+	return shortClusterName
 }
 
 // SimplifiedClusterName get the simplified cluster name from the long-winded context cluster name that gets generated

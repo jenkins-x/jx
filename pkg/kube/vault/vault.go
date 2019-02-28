@@ -2,6 +2,7 @@ package vault
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
@@ -110,7 +111,14 @@ func SystemVaultName(kuber kube.Kuber) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s-%s", vault.SystemVaultNamePrefix, clusterName), nil
+	return SystemVaultNameForCluster(clusterName), nil
+}
+
+// SystemVaultNameForCluster returns the system vault name from a given cluster name
+func SystemVaultNameForCluster(clusterName string) string {
+	shortClusterName := cluster.ShortClusterName(clusterName)
+	fullName := fmt.Sprintf("%s-%s", vault.SystemVaultNamePrefix, shortClusterName)
+	return cluster.ShortNameN(fullName, 22)
 }
 
 // CreateVault creates a new vault backed by GCP KMS and storage
@@ -265,6 +273,7 @@ func ensureVaultRoleBinding(client kubernetes.Interface, namespace string, roleN
 func FindVault(vaultOperatorClient versioned.Interface, name string, ns string) bool {
 	_, err := GetVault(vaultOperatorClient, name, ns)
 	if err != nil {
+		log.Warnf("could not find vault %s in namespace %s due to: %s\n", name, ns, err.Error())
 		return false
 	}
 	return true

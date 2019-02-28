@@ -10,7 +10,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/builds"
 
-	gojenkins "github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/vault"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
@@ -382,11 +382,34 @@ func (f *factory) ResetSecretsLocation() {
 
 // CreateSystemVaultClient gets the system vault client for managing the secrets
 func (f *factory) CreateSystemVaultClient(namespace string) (vault.Client, error) {
-	name, err := kubevault.SystemVaultName(f.kubeConfig)
+	name, err := f.getVaultName(namespace)
 	if err != nil {
-		return nil, errors.Wrap(err, "building the system vault name from cluster name")
+		return nil, err
 	}
 	return f.CreateVaultClient(name, namespace)
+}
+
+func (f *factory) getVaultName(namespace string) (string, error) {
+	name, err := kubevault.SystemVaultName(f.kubeConfig)
+	if err != nil {
+		// if we cannot load the cluster name from the kube context lets try load the cluster name from the install values
+		kubeClient, _, err := f.CreateKubeClient()
+		if err != nil {
+			return name, err
+		}
+		data, err := kube.ReadInstallValues(kubeClient, namespace)
+		if err != nil {
+			return name, errors.Wrapf(err, "cannot find cluster name as no ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, namespace)
+		}
+		name = data[kube.SystemVaultName]
+		if name == "" {
+			name = kubevault.SystemVaultNameForCluster(data[kube.ClusterName])
+		}
+	}
+	if name == "" {
+		return name, fmt.Errorf("could not find the cluster name in namespace %s", namespace)
+	}
+	return name, nil
 }
 
 // CreateVaultClient returns the given vault client for managing secrets
@@ -407,9 +430,9 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 		namespace = devNamespace
 	}
 	if name == "" {
-		name, err = kubevault.SystemVaultName(f.kubeConfig)
+		name, err = f.getVaultName(namespace)
 		if err != nil {
-			return nil, errors.Wrap(err, "building the system vault name from cluster name")
+			return nil, err
 		}
 	}
 

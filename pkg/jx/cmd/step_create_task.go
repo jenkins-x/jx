@@ -77,11 +77,13 @@ type StepCreateTaskOptions struct {
 	PodTemplates        map[string]*corev1.Pod
 	MissingPodTemplates map[string]bool
 
-	stepCounter int
-	gitInfo     *gits.GitRepository
-	buildNumber string
-	labels      map[string]string
-	Results     StepCreateTaskResults
+	stepCounter          int
+	gitInfo              *gits.GitRepository
+	buildNumber          string
+	labels               map[string]string
+	Results              StepCreateTaskResults
+	version              string
+	previewVersionPrefix string
 }
 
 // StepCreateTaskResults stores the generated results
@@ -364,6 +366,11 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		return err
 	}
 
+	taskParams := o.createTaskParams()
+	taskInputs := &pipelineapi.Inputs{
+		Params: taskParams,
+	}
+
 	// If there's an explicitly specified Pipeline in the lifecycle, use that.
 	if lifecycles.Pipeline != nil {
 		// TODO: Seeing weird behavior seemingly related to https://golang.org/doc/faq#nil_error
@@ -378,7 +385,16 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		// TODO: use org-name-branch for pipeline name? Create client now to get
 		// namespace? Set namespace when applying rather than during generation?
 		name := tekton.PipelineResourceName(o.gitInfo, o.Branch, o.Context)
-		pipeline, tasks, structure, err := lifecycles.Pipeline.GenerateCRDs(name, o.buildNumber, "will-be-replaced", "abcd", o.PodTemplates)
+
+		// TODO lets workaround a current gremlin in tekton - lets make sure pipeline resource names are not too big
+		maxResourceLength := 31
+		if len(name) > maxResourceLength {
+			shortName := name[len(name)-maxResourceLength:]
+			log.Infof("shortening the pipeline resource name from %s to %s\n", util.ColorInfo(name), util.ColorInfo(shortName))
+			name = kube.ToValidName(shortName)
+		}
+
+		pipeline, tasks, structure, err := lifecycles.Pipeline.GenerateCRDs(name, o.buildNumber, "will-be-replaced", "abcd", o.PodTemplates, taskParams)
 		if err != nil {
 			return errors.Wrapf(err, "Generation failed for Pipeline")
 		}
@@ -399,6 +415,11 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 			}
 
 			task.Spec.Volumes = volumes
+			if task.Spec.Inputs == nil {
+				task.Spec.Inputs = taskInputs
+			} else {
+				task.Spec.Inputs.Params = taskParams
+			}
 		}
 
 		if o.ViewSteps {
@@ -452,21 +473,6 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	}
 
 	name := tekton.PipelineResourceName(o.gitInfo, o.Branch, o.Context)
-	taskParams := []pipelineapi.TaskParam{}
-	for _, param := range o.Results.PipelineParams {
-		name := param.Name
-		description := ""
-		if name == "version" {
-			description = "the version number for this release which is used as a tag on docker images"
-		} else if name == "preview_version" {
-			description = "the version number for this preview which is used as a tag on docker images"
-		}
-		taskParams = append(taskParams, pipelineapi.TaskParam{
-			Name:        name,
-			Description: description,
-			Default:     "",
-		})
-	}
 	task := &pipelineapi.Task{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: syntax.TektonAPIVersion,
@@ -479,9 +485,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		Spec: pipelineapi.TaskSpec{
 			Steps:   steps,
 			Volumes: volumes,
-			Inputs: &pipelineapi.Inputs{
-				Params: taskParams,
-			},
+			Inputs:  taskInputs,
 		},
 	}
 	if task.Spec.Inputs == nil {
@@ -511,6 +515,42 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 	}
 
 	return nil
+}
+
+func (o *StepCreateTaskOptions) createTaskParams() []pipelineapi.TaskParam {
+	taskParams := []pipelineapi.TaskParam{}
+	for _, param := range o.Results.PipelineParams {
+		name := param.Name
+		description := ""
+		defaultValue := ""
+		switch name {
+		case "version":
+			description = "the version number for this pipeline which is used as a tag on docker images and helm charts"
+			defaultValue = o.version
+		case "build_id":
+			description = "the PipelineRun build number"
+			defaultValue = o.buildNumber
+		}
+		taskParams = append(taskParams, pipelineapi.TaskParam{
+			Name:        name,
+			Description: description,
+			Default:     defaultValue,
+		})
+	}
+	return taskParams
+}
+
+func (o *StepCreateTaskOptions) createPipelineParams() []pipelineapi.PipelineParam {
+	answer := []pipelineapi.PipelineParam{}
+	taskParams := o.createTaskParams()
+	for _, tp := range taskParams {
+		answer = append(answer, pipelineapi.PipelineParam{
+			Name:        tp.Name,
+			Description: tp.Description,
+			Default:     tp.Default,
+		})
+	}
+	return answer
 }
 
 func (o *StepCreateTaskOptions) generateSourceRepoResource(name string, fromYaml bool) *pipelineapi.PipelineResource {
@@ -715,6 +755,7 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 		Spec: pipelineapi.PipelineSpec{
 			Resources: resources,
 			Tasks:     tasks,
+			Params:    o.createPipelineParams(),
 		},
 	}
 	return o.applyPipeline(pipeline, []*pipelineapi.Task{task}, pipelineResources, nil, gitInfo, branch)
@@ -820,7 +861,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	}
 
 	if !o.NoApply {
-		_, err = tekton.CreatePipelineRun(tektonClient, ns, pipeline, run, o.Duration)
+		_, err = tekton.CreatePipelineRun(tektonClient, ns, pipeline, run, o.previewVersionPrefix, o.Duration)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create the PipelineRun in namespace %s", ns)
 		}
@@ -1191,7 +1232,16 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 		}
 		sv := release.SetVersion
 		if sv == nil {
-			return fmt.Errorf("no SetVersion pipeline on the Release pipeline")
+			// lets create a default set version pipeline
+			sv = &jenkinsfile.PipelineLifecycle{
+				Steps: []*jenkinsfile.PipelineStep{
+					{
+						Command: "jx step next-version --use-git-tag-only --tag",
+						Name:    "next-version",
+						Comment: "tags git with the next version",
+					},
+				},
+			}
 		}
 		steps := sv.Steps
 		err := o.invokeSteps(steps)
@@ -1214,26 +1264,32 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 				log.Warnf("versions file %s is empty!\n", versionFile)
 			} else {
 				version = text
+				if version != "" {
+					o.Revision = "v" + version
+				}
 			}
 		}
-		if version != "" {
-			o.Results.PipelineParams = append(o.Results.PipelineParams, pipelineapi.Param{
-				Name:  "version",
-				Value: version,
-			})
-			o.Revision = "v" + version
-		}
 	} else {
-		// lets use the branchname if we can find it for the version number
+		// lets use the branch name if we can find it for the version number
 		branch := o.Branch
 		if branch == "" {
 			branch = o.Revision
 		}
 		buildNumber := o.buildNumber
-		previewVersion := "0.0.0-SNAPSHOT-" + branch + "-" + buildNumber
+		o.previewVersionPrefix = "0.0.0-SNAPSHOT-" + branch + "-"
+		version = o.previewVersionPrefix + buildNumber
+	}
+	if version != "" {
 		o.Results.PipelineParams = append(o.Results.PipelineParams, pipelineapi.Param{
-			Name:  "preview_version",
-			Value: previewVersion,
+			Name:  "version",
+			Value: version,
+		})
+	}
+	o.version = version
+	if o.buildNumber != "" {
+		o.Results.PipelineParams = append(o.Results.PipelineParams, pipelineapi.Param{
+			Name:  "build_id",
+			Value: o.buildNumber,
 		})
 	}
 	return nil

@@ -1,6 +1,7 @@
 package cluster_test
 
 import (
+	"github.com/jenkins-x/jx/pkg/kube/vault"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
@@ -69,4 +70,9 @@ func TestClusterName(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, "my-cluster-name", clusterName)
+}
+
+func TestSystemVaultNameForCluster(t *testing.T) {
+	actual := vault.SystemVaultNameForCluster("jstrachan-kp38")
+	assert.Equal(t, "jx-vault-jstrachan-kp3", actual, "system vault name")
 }
