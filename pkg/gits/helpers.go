@@ -6,6 +6,8 @@ import (
 	"os/user"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/util"
+
 	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/pkg/errors"
@@ -82,16 +84,36 @@ func FetchAndMergeSHAs(SHAs []string, baseBranch string, baseSha string, remote 
 	// First lets make sure we have the commits - remember that this may be a shallow clone
 	err := gitter.FetchBranchUnshallow(dir, remote, refspecs...)
 	if err != nil {
-		// This can be caused by git not being configured to allow fetching individual SHAs
-		// There is not a nice way to solve this except to attempt to do a full fetch
-		err = gitter.RemoteUpdate(dir)
+		// Unshallow fetch failed, so do a full unshallow
+		// First ensure we actually have the branch refs
+		err := gitter.FetchBranch(dir, remote, refspecs...)
 		if err != nil {
-			return errors.Wrapf(err, "updating remote %s", remote)
+			// This can be caused by git not being configured to allow fetching individual SHAs
+			// There is not a nice way to solve this except to attempt to do a full fetch
+			err = gitter.RemoteUpdate(dir)
+			if err != nil {
+				return errors.Wrapf(err, "updating remote %s", remote)
+			}
+			if verbose {
+				log.Infof("ran %s in %s\n", util.ColorInfo("git remote update"), dir)
+			}
+		}
+		if verbose {
+			log.Infof("ran git fetch %s %s in %s\n", remote, strings.Join(refspecs, " "), dir)
+		}
+		err = Unshallow(dir, gitter)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		if verbose {
+			log.Infof("Unshallowed git repo in %s\n", dir)
+		}
+	} else {
+		if verbose {
+			log.Infof("ran git fetch --unshallow %s %s in %s\n", remote, strings.Join(refspecs, " "), dir)
 		}
 	}
-	if verbose {
-		log.Infof("ran git fetch %s %s in %s\n", remote, strings.Join(refspecs, " "), dir)
-	}
+
 	// Ensure we are on baseBranch
 	err = gitter.Checkout(dir, baseBranch)
 	if err != nil {
