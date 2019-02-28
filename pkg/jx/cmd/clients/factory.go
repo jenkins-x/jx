@@ -97,7 +97,7 @@ func (f *factory) WithBearerToken(token string) Factory {
 
 // CreateJenkinsClient creates a new Jenkins client
 func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
-	svc, err := f.CreateJenkinsAuthConfigService(kubeClient, ns)
+	svc, err := f.CreateJenkinsAuthConfigService(kubeClient, ns, "")
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (f *factory) CreateJenkinsClient(kubeClient kubernetes.Interface, ns string
 
 // CreateCustomJenkinsClient creates a new Jenkins client for the given custom Jenkins App
 func (f *factory) CreateCustomJenkinsClient(kubeClient kubernetes.Interface, ns string, jenkinsServiceName string, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (gojenkins.JenkinsClient, error) {
-	svc, err := f.CreateJenkinsAuthConfigService(kubeClient, ns)
+	svc, err := f.CreateJenkinsAuthConfigService(kubeClient, ns, jenkinsServiceName)
 	if err != nil {
 		return nil, err
 	}
@@ -177,8 +177,12 @@ func (f *factory) GetCustomJenkinsURL(kubeClient kubernetes.Interface, ns string
 	return url, err
 }
 
-func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns string) (auth.ConfigService, error) {
+func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns string, jenkinsServiceName string) (auth.ConfigService, error) {
 	authConfigSvc, err := f.CreateAuthConfigService(auth.JenkinsAuthConfigFile)
+
+	if jenkinsServiceName == "" {
+		jenkinsServiceName = kube.SecretJenkins
+	}
 
 	if err != nil {
 		return authConfigSvc, err
@@ -189,9 +193,17 @@ func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns stri
 	}
 
 	if len(config.Servers) == 0 {
-		s, err := c.CoreV1().Secrets(ns).Get(kube.SecretJenkins, metav1.GetOptions{})
+		s, err := c.CoreV1().Secrets(ns).Get(jenkinsServiceName, metav1.GetOptions{})
 		if err != nil {
-			return authConfigSvc, err
+			if jenkinsServiceName != kube.SecretJenkins {
+				// we may use a different secret name for custom jenkins servers
+				s, err = c.CoreV1().Secrets(ns).Get(jenkinsServiceName+"-auth", metav1.GetOptions{})
+				if err != nil {
+					return authConfigSvc, err
+				}
+			} else {
+				return authConfigSvc, err
+			}
 		}
 
 		userAuth := auth.UserAuth{
@@ -199,7 +211,7 @@ func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns stri
 			ApiToken:    string(s.Data[kube.JenkinsAdminApiToken]),
 			BearerToken: string(s.Data[kube.JenkinsBearTokenField]),
 		}
-		svc, err := c.CoreV1().Services(ns).Get(kube.ServiceJenkins, metav1.GetOptions{})
+		svc, err := c.CoreV1().Services(ns).Get(jenkinsServiceName, metav1.GetOptions{})
 		if err != nil {
 			return authConfigSvc, err
 		}

@@ -147,6 +147,13 @@ func (o *CommonOptions) PickCustomJenkinsName(jenkinsSelector *JenkinsSelectorOp
 // for a custom jenkins App. If no customJenkinsName is specified and there is only one available it is used. Otherwise
 // the user is prompted to pick the Jenkins App to use if not in batch mode.
 func (o *CommonOptions) CreateCustomJenkinsClient(jenkinsSelector *JenkinsSelectorOptions) (gojenkins.JenkinsClient, error) {
+	isProw, err := o.isProw()
+	if err != nil {
+		return nil, err
+	}
+	if isProw {
+		jenkinsSelector.UseCustomJenkins = true
+	}
 	if jenkinsSelector == nil || !jenkinsSelector.UseCustomJenkins {
 		return o.JenkinsClient()
 	}
