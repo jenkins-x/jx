@@ -885,16 +885,6 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 		if structure != nil {
 			structure.PipelineRunRef = &run.Name
 
-			// TODO: Yeah, this should be moved into probably tekton/pipelines.go.
-			apisClient, err := o.ApiExtensionsClient()
-			if err != nil {
-				return err
-			}
-			err = kube.RegisterPipelineStructureCRD(apisClient)
-			if err != nil {
-				return err
-			}
-
 			jxClient, _, err := o.JXClientAndDevNamespace()
 			if err != nil {
 				return err
