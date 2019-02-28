@@ -23,7 +23,7 @@ import (
 
 const (
 	exposecontroller        = "exposecontroller"
-	exposecontrollerVersion = "2.3.82"
+	exposecontrollerVersion = ""
 	exposecontrollerChart   = "jenkins-x/exposecontroller"
 )
 
