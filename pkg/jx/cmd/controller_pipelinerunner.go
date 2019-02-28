@@ -102,6 +102,19 @@ func (o *ControllerPipelineRunnerOptions) Run() error {
 		if err != nil {
 			return err
 		}
+
+		copy := *o.CommonOptions
+		copy.BatchMode = true
+		gsc := &StepGitCredentialsOptions{
+			StepOptions: StepOptions{
+				CommonOptions: &copy,
+			},
+		}
+		err = gsc.Run()
+		if err != nil {
+			return errors.Wrapf(err, "failed to run: jx step gc credentials")
+		}
+
 	}
 
 	mux := http.NewServeMux()
