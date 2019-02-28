@@ -33,6 +33,7 @@ type ProjectConfig struct {
 	BuildPackGitURef    string                      `yaml:"buildPackGitRef,omitempty"`
 	Workflow            string                      `yaml:"workflow,omitempty"`
 	PipelineConfig      *jenkinsfile.PipelineConfig `yaml:"pipelineConfig,omitempty"`
+	NoReleasePrepare    bool                        `yaml:"noReleasePrepare,omitempty"`
 }
 
 type PreviewEnvironmentConfig struct {

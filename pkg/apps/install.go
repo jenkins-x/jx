@@ -296,7 +296,9 @@ func (o *InstallOptions) handleValues(dir string, app string, values []byte) (fu
 	if err != nil {
 		return cleanup, err
 	}
-	o.valuesFiles.Items = append(o.valuesFiles.Items, valuesFile)
+	if valuesFile != "" {
+		o.valuesFiles.Items = append(o.valuesFiles.Items, valuesFile)
+	}
 	return cleanup, nil
 }
 
@@ -324,6 +326,8 @@ func (o *InstallOptions) handleSecrets(dir string, app string, generatedSecrets 
 	if err != nil {
 		return func() {}, errors.Wrapf(err, "adding secrets to template for %s", app)
 	}
-	o.valuesFiles.Items = append(o.valuesFiles.Items, secretsFile)
+	if secretsFile != "" {
+		o.valuesFiles.Items = append(o.valuesFiles.Items, secretsFile)
+	}
 	return f, nil
 }

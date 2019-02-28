@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -14,7 +13,6 @@ import (
 	"github.com/knative/build-pipeline/pkg/apis/pipeline"
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/pkg/gits"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -108,18 +106,9 @@ func (o *ControllerBuildOptions) Run() error {
 	o.EnvironmentCache = kube.CreateEnvironmentCache(jxClient, ns)
 
 	if o.InitGitCredentials {
-		// lets validate we have git configured
-		_, _, err = gits.EnsureUserAndEmailSetup(o.Git())
+		err = o.setupGitCredentails()
 		if err != nil {
 			return err
-		}
-
-		err := o.runCommandVerbose("git", "config", "--global", "credential.helper", "store")
-		if err != nil {
-			return err
-		}
-		if os.Getenv("XDG_CONFIG_HOME") == "" {
-			log.Warnf("Note that the environment variable $XDG_CONFIG_HOME is not defined so we may not be able to push to git!\n")
 		}
 	}
 

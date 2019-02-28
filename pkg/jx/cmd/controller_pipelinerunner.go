@@ -30,9 +30,10 @@ const (
 // ControllerPipelineRunnerOptions holds the command line arguments
 type ControllerPipelineRunnerOptions struct {
 	*CommonOptions
-	BindAddress string
-	Path        string
-	Port        int
+	BindAddress           string
+	Path                  string
+	Port                  int
+	NoGitCredeentialsInit bool
 }
 
 // PipelineRunRequest the request to trigger a pipeline run
@@ -90,11 +91,19 @@ func NewCmdControllerPipelineRunner(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Path, "path", "p", "/",
 		"The path to listen on for requests to trigger a pipeline run.")
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
+	cmd.Flags().BoolVarP(&options.NoGitCredeentialsInit, "no-git-init", "", false, "Disables checking we have setup git credentials on startup")
 	return cmd
 }
 
 // Run will implement this command
 func (o *ControllerPipelineRunnerOptions) Run() error {
+	if !o.NoGitCredeentialsInit {
+		err := o.setupGitCredentails()
+		if err != nil {
+			return err
+		}
+	}
+
 	mux := http.NewServeMux()
 	mux.Handle(o.Path, http.HandlerFunc(o.piplineRunMethods))
 	mux.Handle(HealthPath, http.HandlerFunc(o.health))

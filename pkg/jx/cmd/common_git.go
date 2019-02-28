@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -343,4 +344,22 @@ func (o *CommonOptions) createGitProviderForURLWithoutKind(gitURL string) (gits.
 	}
 	provider, err := o.gitProviderForGitServerURL(gitInfo.HostURL(), gitKind)
 	return provider, gitInfo, err
+}
+
+// setupGitCredentails validates we have git setup
+func (o *CommonOptions) setupGitCredentails() error {
+	// lets validate we have git configured
+	_, _, err := gits.EnsureUserAndEmailSetup(o.Git())
+	if err != nil {
+		return err
+	}
+
+	err = o.runCommandVerbose("git", "config", "--global", "credential.helper", "store")
+	if err != nil {
+		return err
+	}
+	if os.Getenv("XDG_CONFIG_HOME") == "" {
+		log.Warnf("Note that the environment variable $XDG_CONFIG_HOME is not defined so we may not be able to push to git!\n")
+	}
+	return nil
 }

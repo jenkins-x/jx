@@ -70,7 +70,7 @@ type StepCreateTaskOptions struct {
 	PullRequestNumber string
 	DeleteTempDir     bool
 	ViewSteps         bool
-	NoSetVersion      bool
+	NoReleasePrepare  bool
 	Duration          time.Duration
 	FromRepo          bool
 
@@ -139,7 +139,7 @@ func NewCmdStepCreateTask(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.DeleteTempDir, "delete-temp-dir", "", false, "Deletes the temporary directory of cloned files if using the 'clone-git-url' option")
 	cmd.Flags().BoolVarP(&options.NoApply, "no-apply", "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file")
 	cmd.Flags().BoolVarP(&options.ViewSteps, "view", "", false, "Just view the steps that would be created")
-	cmd.Flags().BoolVarP(&options.NoSetVersion, "no-set-version", "", false, "Disables creating the version and git tag up front before release pipelines")
+	cmd.Flags().BoolVarP(&options.NoReleasePrepare, "no-release-prepare", "", false, "Disables creating the release version number and tagging git and triggering the release pipeline from the new tag")
 	cmd.Flags().DurationVarP(&options.Duration, "duration", "", time.Second*30, "Retry duration when trying to create a PipelineRun")
 	return cmd
 }
@@ -276,6 +276,12 @@ func (o *StepCreateTaskOptions) Run() error {
 			}
 			pipelineConfig = localPipelineConfig
 		}
+	}
+
+	// lets allow a `jenkins-x.yml` to specify we want to disable release prepare mode which can be useful for
+	// working with custom jenkins pipelines in custom jenkins servers
+	if projectConfig.NoReleasePrepare {
+		o.NoReleasePrepare = true
 	}
 	err = o.setVersionOnReleasePipelines(pipelineConfig)
 	if err != nil {
@@ -463,7 +469,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		if l == nil {
 			continue
 		}
-		if !o.NoSetVersion && n.Name == "setversion" {
+		if !o.NoReleasePrepare && n.Name == "setversion" {
 			continue
 		}
 		for _, s := range l.Steps {
@@ -1225,7 +1231,7 @@ func (o *StepCreateTaskOptions) viewSteps(tasks ...*pipelineapi.Task) error {
 }
 
 func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jenkinsfile.PipelineConfig) error {
-	if o.NoSetVersion || o.ViewSteps {
+	if o.NoReleasePrepare || o.ViewSteps {
 		return nil
 	}
 	version := ""
