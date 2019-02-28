@@ -88,7 +88,7 @@ func GetBuildNumberFromLabels(m map[string]string) string {
 	return ""
 }
 
-// GetBuildNumberFromLabels returns the build number from the given Pod labels
+// GetValueFromLabels returns the first label with the given key
 func GetValueFromLabels(m map[string]string, keys ...string) string {
 	if m == nil {
 		return ""
