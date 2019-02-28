@@ -27,7 +27,17 @@ func GetBuildNumber() string {
 	if buildID != "" {
 		return buildID
 	}
-	// if we are in a knative build pod we can discover it via the dowmward API if the `/etc/podinfo/labels` file exists
+
+	m := getDownwardAPILabelsMap()
+	if m != nil {
+		return GetValueFromLabels(m, LabelBuildName, "build-number", LabelOldBuildName, LabelPipelineRunName)
+	}
+	return ""
+}
+
+// getDownwardAPILabels returns the downward API labels from inside a pod or an empty string if they could not be found
+func getDownwardAPILabelsMap() map[string]string {
+	// if we are in a knative build pod we can discover it via the Downward API if the `/etc/podinfo/labels` file exists
 	const podInfoLabelsFile = "/etc/podinfo/labels"
 	exists, err := util.FileExists(podInfoLabelsFile)
 	if err != nil {
@@ -39,29 +49,52 @@ func GetBuildNumber() string {
 		} else {
 			text := strings.TrimSpace(string(data))
 			if text != "" {
-				return GetBuildNumberFromLabelsFileData(text)
+				return LoadDownwardAPILabels(text)
 			}
 		}
 	}
-	return ""
+	return nil
 }
 
-// GetBuildNumberFromLabelsFileData parses the /etc/podinfo/labels style downward API file for a pods labels
-// and returns the build number if it can be discovered
-func GetBuildNumberFromLabelsFileData(text string) string {
-	m := LoadDownwardAPILabels(text)
-
-	return GetBuildNumberFromLabels(m)
+// GetBranchName returns the branch name using environment variables and/or pod Downward API
+func GetBranchName() string {
+	branch := os.Getenv("BRANCH_NAME")
+	if branch == "" {
+		m := getDownwardAPILabelsMap()
+		if m != nil {
+			branch = GetValueFromLabels(m, "branch")
+		}
+	}
+	return branch
 }
 
 // GetBuildNumberFromLabels returns the build number from the given Pod labels
 func GetBuildNumberFromLabels(m map[string]string) string {
+	keys := []string{}
 	if m == nil {
 		return ""
 	}
 
 	answer := ""
-	for _, key := range []string{LabelBuildName, "build-number", LabelOldBuildName, LabelPipelineRunName} {
+	for _, key := range keys {
+		answer = m[key]
+		if answer != "" {
+			break
+		}
+	}
+	if answer != "" {
+		return lastNumberFrom(answer)
+	}
+	return ""
+}
+
+// GetBuildNumberFromLabels returns the build number from the given Pod labels
+func GetValueFromLabels(m map[string]string, keys ...string) string {
+	if m == nil {
+		return ""
+	}
+	answer := ""
+	for _, key := range keys {
 		answer = m[key]
 		if answer != "" {
 			break
@@ -94,12 +127,14 @@ func lastNumberFrom(text string) string {
 // LoadDownwardAPILabels parses the /etc/podinfo/labels text into a map of label values
 func LoadDownwardAPILabels(text string) map[string]string {
 	m := map[string]string{}
-	lines := strings.Split(text, "\n")
-	for _, line := range lines {
-		l := strings.TrimSpace(line)
-		paths := strings.SplitN(l, "=", 2)
-		if len(paths) == 2 {
-			m[paths[0]] = paths[1]
+	if text != "" {
+		lines := strings.Split(text, "\n")
+		for _, line := range lines {
+			l := strings.TrimSpace(line)
+			paths := strings.SplitN(l, "=", 2)
+			if len(paths) == 2 {
+				m[paths[0]] = paths[1]
+			}
 		}
 	}
 	return m
