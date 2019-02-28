@@ -64,7 +64,7 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 	// Validate the branch name
 	envDir, err := o.CommonOptions.EnvironmentsDir()
 	assert.NoError(t, err)
-	devEnvDir := filepath.Join(envDir, testOptions.OrgName, testOptions.DevEnvRepoInfo.Name)
+	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	branchName, err := o.Git().Branch(devEnvDir)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("upgrade-app-%s-%s", name, newVersion.String()), branchName)
@@ -101,7 +101,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.
 
 	envDir, err := testOptions.CommonOptions.EnvironmentsDir()
 	assert.NoError(t, err)
-	appDir := filepath.Join(envDir, testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, name)
+	appDir := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name)
 
 	existingValues, err := ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
 	assert.NoError(t, err)
@@ -188,7 +188,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
 
 	envDir, err := testOptions.CommonOptions.EnvironmentsDir()
 	assert.NoError(t, err)
-	appDir := filepath.Join(envDir, testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, name)
+	appDir := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name)
 
 	existingValues, err := ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
 	assert.NoError(t, err)
@@ -288,7 +288,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T)
 
 	envDir, err := testOptions.CommonOptions.EnvironmentsDir()
 	assert.NoError(t, err)
-	appDir := filepath.Join(envDir, testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, name)
+	appDir := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name)
 
 	existingValues, err := ioutil.ReadFile(filepath.Join(appDir, helm.ValuesFileName))
 	assert.NoError(t, err)
@@ -487,7 +487,7 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 	// Validate the branch name
 	envDir, err := o.CommonOptions.EnvironmentsDir()
 	assert.NoError(t, err)
-	devEnvDir := filepath.Join(envDir, testOptions.OrgName, testOptions.DevEnvRepoInfo.Name)
+	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	branchName, err := o.Git().Branch(devEnvDir)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("upgrade-app-%s-%s", name, newVersion.String()), branchName)
@@ -565,7 +565,7 @@ func TestUpgradeAllAppsForGitOps(t *testing.T) {
 	// Validate the branch name1
 	envDir, err := o.CommonOptions.EnvironmentsDir()
 	assert.NoError(t, err)
-	devEnvDir := filepath.Join(envDir, testOptions.OrgName, testOptions.DevEnvRepoInfo.Name)
+	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	branchName, err := o.Git().Branch(devEnvDir)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("upgrade-all-apps"), branchName)

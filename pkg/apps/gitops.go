@@ -31,7 +31,7 @@ func (o *GitOpsOptions) AddApp(app string, dir string, version string, repositor
 		ConfigGitFn: o.ConfigureGitFn,
 		Gitter:      o.Gitter,
 		ModifyChartFn: environments.CreateAddRequirementFn(app, alias, version,
-			repository, o.valuesFiles, dir, o.Verbose),
+			repository, o.valuesFiles, dir, o.Verbose, o.Helmer),
 		GitProvider: o.GitProvider,
 	}
 

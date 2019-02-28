@@ -361,7 +361,7 @@ func (o *CommonOptions) installChartOrGitOps(isGitOps bool, gitOpsDir string, gi
 		valuesFiles.Items = append(valuesFiles.Items, fileName.Name())
 	}
 
-	modifyFn := environments.CreateAddRequirementFn(chart, alias, version, repo, valuesFiles, gitOpsEnvDir, o.Verbose)
+	modifyFn := environments.CreateAddRequirementFn(chart, alias, version, repo, valuesFiles, gitOpsEnvDir, o.Verbose, o.Helm())
 
 	if len(setSecrets) > 0 {
 		secretsFile := filepath.Join(gitOpsEnvDir, helm.SecretsFileName)

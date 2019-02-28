@@ -2,7 +2,9 @@ package environments
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,7 +13,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/satori/go.uuid"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
@@ -20,6 +22,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	helmchart "k8s.io/helm/pkg/proto/hapi/chart"
 )
 
@@ -339,7 +342,7 @@ func CreateUpgradeRequirementsFn(all bool, chartName string, alias string, versi
 							return errors.Wrapf(err, "running inspectChartFunc for %s", d.Name)
 						}
 						err = CreateNestedRequirementDir(envDir, chartName, chartDir, version, d.Repository, verbose,
-							valuesFiles)
+							valuesFiles, helmer)
 						if err != nil {
 							return errors.Wrapf(err, "creating nested app dir in chart dir %s", chartDir)
 						}
@@ -372,7 +375,7 @@ func CreateUpgradeRequirementsFn(all bool, chartName string, alias string, versi
 // which is used to add extra metadata about the chart (e.g. the charts readme, the release.yaml, the git repo url and
 // the release notes) - if this points to a non-existant directory it will be ignored.
 func CreateAddRequirementFn(chartName string, alias string, version string, repo string,
-	valuesFiles *ValuesFiles, chartDir string, verbose bool) ModifyChartFn {
+	valuesFiles *ValuesFiles, chartDir string, verbose bool, helmer helm.Helmer) ModifyChartFn {
 	return func(requirements *helm.Requirements, chart *helmchart.Metadata, values map[string]interface{},
 		templates map[string]string, envDir string, details *PullRequestDetails) error {
 		// See if the chart already exists in requirements
@@ -398,7 +401,7 @@ func CreateAddRequirementFn(chartName string, alias string, version string, repo
 				Name:       chartName,
 				Version:    version,
 			})
-			err := CreateNestedRequirementDir(envDir, chartName, chartDir, version, repo, verbose, valuesFiles)
+			err := CreateNestedRequirementDir(envDir, chartName, chartDir, version, repo, verbose, valuesFiles, helmer)
 			if err != nil {
 				return errors.Wrapf(err, "creating nested app dir in chart dir %s", chartDir)
 			}
@@ -414,7 +417,7 @@ func CreateAddRequirementFn(chartName string, alias string, version string, repo
 // requirementRepository and requirementValuesFiles are used to construct the metadata,
 // as well as info in the requirementDir which points to the unpacked chart of the requirement.
 func CreateNestedRequirementDir(dir string, requirementName string, requirementDir string, requirementVersion string,
-	requirementRepository string, verbose bool, requirementValuesFiles *ValuesFiles) error {
+	requirementRepository string, verbose bool, requirementValuesFiles *ValuesFiles, helmer helm.Helmer) error {
 	appDir := filepath.Join(dir, requirementName)
 	rootValuesFileName := filepath.Join(appDir, helm.ValuesFileName)
 	err := os.MkdirAll(appDir, 0700)
@@ -562,6 +565,10 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 	if verbose && appReadme == "" {
 		log.Infof("Not adding App Readme as no README, README.md, readme or readme.md found in %s\n", requirementDir)
 	}
+	UpdateAppResource(helmer, requirementDir, appDir, requirementName, requirementRepository)
+	if err != nil {
+		return err
+	}
 	readme := helm.GenerateReadmeForChart(requirementName, requirementVersion, description, requirementRepository, gitRepo, releaseNotesURL, appReadme)
 	readmeOutPath := filepath.Join(appDir, "README.MD")
 	err = ioutil.WriteFile(readmeOutPath, []byte(readme), 0755)
@@ -600,4 +607,85 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 		}
 	}
 	return nil
+}
+
+// AddAppMetaData applies chart metadata to an App resource
+func AddAppMetaData(chartDir string, app *jenkinsv1.App, repository string) (*jenkinsv1.App, error) {
+	metadata, err := helm.LoadChartFile(filepath.Join(chartDir, "Chart.yaml"))
+	if err != nil {
+		return nil, errors.Wrapf(err, "error loading chart from %s", chartDir)
+	}
+	if app.Annotations == nil {
+		app.Annotations = make(map[string]string)
+	}
+	app.Annotations[helm.AnnotationAppDescription] = metadata.GetDescription()
+	repoURL, err := url.Parse(repository)
+	if err != nil {
+		return nil, errors.Wrap(err, "Invalid repository url")
+	}
+	app.Annotations[helm.AnnotationAppRepository] = util.StripCredentialsFromURL(repoURL)
+	if app.Labels == nil {
+		app.Labels = make(map[string]string)
+	}
+	app.Labels[helm.LabelAppName] = metadata.Name
+	app.Labels[helm.LabelAppVersion] = metadata.Version
+	return app, nil
+}
+
+// UpdateAppResource updates app resource template with app specific metadata
+func UpdateAppResource(helmer helm.Helmer, fetchedChartDir string, outputDir string, name string, repository string) error {
+	outputTemplateDir := filepath.Join(outputDir, "templates")
+	templatesDirExists, err := util.DirExists(outputTemplateDir)
+	if err != nil {
+		return err
+	}
+	if !templatesDirExists {
+		os.Mkdir(outputTemplateDir, os.ModePerm)
+	}
+
+	templateWorkDir := filepath.Join(fetchedChartDir, "output")
+	templateWorkDirExists, err := util.DirExists(templateWorkDir)
+	if err != nil {
+		return err
+	}
+	if !templateWorkDirExists {
+		os.Mkdir(templateWorkDir, os.ModePerm)
+	}
+	err = helmer.Template(fetchedChartDir, name, "", templateWorkDir, false, make([]string, 0), make([]string, 0))
+	if err != nil {
+		return err
+	}
+	completedTemplatesDir := filepath.Join(templateWorkDir, name, "templates")
+	templates, _ := ioutil.ReadDir(completedTemplatesDir)
+	for _, template := range templates {
+		app := &jenkinsv1.App{}
+		appBytes, err := ioutil.ReadFile(filepath.Join(completedTemplatesDir, template.Name()))
+		if err == nil {
+			err = yaml.Unmarshal(appBytes, app)
+			if err == nil {
+				if app.Kind == "App" {
+					// Enhance the first app resource found
+					AddAppMetaData(fetchedChartDir, app, repository)
+					outputTemplateFile := filepath.Join(outputTemplateDir, template.Name())
+					helm.SaveFile(outputTemplateFile, app)
+					return nil
+				}
+			}
+		}
+	}
+	outputTemplateFile := filepath.Join(outputTemplateDir, name+"-app.yaml")
+	// No app resource was found so auto generate one
+	app := &jenkinsv1.App{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "App",
+			APIVersion: jenkinsio.GroupName + "/" + jenkinsio.Version,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Spec: jenkinsv1.AppSpec{},
+	}
+	AddAppMetaData(fetchedChartDir, app, repository)
+	err = helm.SaveFile(outputTemplateFile, app)
+	return err
 }

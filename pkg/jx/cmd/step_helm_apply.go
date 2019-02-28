@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -195,6 +196,11 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	log.Infof("Using values files: %s\n", strings.Join(valueFiles, ", "))
 
+	err = o.applyTemplateOverrides(chartName)
+	if err != nil {
+		return errors.Wrap(err, "applying chart overrides")
+	}
+
 	if o.Wait {
 		timeout := 600
 		err = o.Helm().UpgradeChart(chartName, releaseName, ns, "", true, timeout, o.Force, true, nil, valueFiles,
@@ -207,6 +213,41 @@ func (o *StepHelmApplyOptions) Run() error {
 		return errors.Wrapf(err, "upgrading helm chart '%s'", chartName)
 	}
 	return nil
+}
+
+func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
+	log.Infof("Applying chart overrides")
+	templateOverrides, err := filepath.Glob(chartName + "/../*/templates/*.yaml")
+	for _, overrideSrc := range templateOverrides {
+		if !strings.Contains(overrideSrc, "/env/") {
+			data, err := ioutil.ReadFile(overrideSrc)
+			if err == nil {
+				writeTemplateParts := strings.Split(overrideSrc, string(os.PathSeparator))
+				depChartsDir := filepath.Join(chartName, "charts")
+				depChartName := writeTemplateParts[len(writeTemplateParts)-3]
+				templateName := writeTemplateParts[len(writeTemplateParts)-1]
+				depChartDir := filepath.Join(depChartsDir, depChartName)
+				// If the chart directory does not exist explode the tgz
+				if exists, err := util.DirExists(depChartDir); err == nil && !exists {
+					chartArchives, _ := filepath.Glob(filepath.Join(depChartsDir, depChartName+"*.tgz"))
+					if len(chartArchives) == 1 {
+						log.Infof("Exploding chart %s", chartArchives[0])
+						archiver.Unarchive(chartArchives[0], depChartsDir)
+						// Remove the unexploded chart
+						os.Remove(chartArchives[0])
+					}
+				}
+				overrideDst := filepath.Join(depChartDir, "templates", templateName)
+				log.Infof("Copying chart override %s \n", overrideSrc)
+				err = ioutil.WriteFile(overrideDst, data, util.DefaultWritePermissions)
+				if err != nil {
+					log.Warnf("Error copying template %s to %s\n", overrideSrc, overrideDst)
+				}
+
+			}
+		}
+	}
+	return err
 }
 
 func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store configio.ConfigStore) ([]string, error) {
