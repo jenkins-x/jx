@@ -30,9 +30,14 @@ func GetBuildNumber() string {
 
 	m := getDownwardAPILabelsMap()
 	if m != nil {
-		return GetValueFromLabels(m, LabelBuildName, "build-number", LabelOldBuildName, LabelPipelineRunName)
+		return GetBuildNumberFromLabelsFileData(m)
 	}
 	return ""
+}
+
+// GetBuildNumberFromLabelsFileData returns the
+func GetBuildNumberFromLabelsFileData(m map[string]string) string {
+	return GetValueFromLabels(m, LabelBuildName, "build-number", LabelOldBuildName, LabelPipelineRunName)
 }
 
 // getDownwardAPILabels returns the downward API labels from inside a pod or an empty string if they could not be found
