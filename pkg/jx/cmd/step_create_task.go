@@ -818,8 +818,6 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	}
 
 	for _, task := range tasks {
-		task.ObjectMeta.Namespace = ns
-
 		if !o.NoApply {
 			_, err = tekton.CreateOrUpdateTask(tektonClient, ns, task)
 			if err != nil {
@@ -829,7 +827,6 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 		}
 	}
 
-	pipeline.ObjectMeta.Namespace = ns
 	if pipeline.APIVersion == "" {
 		pipeline.APIVersion = syntax.TektonAPIVersion
 	}
