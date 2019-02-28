@@ -466,12 +466,19 @@ func (o *InitOptions) initIngress() error {
 			return errors.Wrap(err, "failed to append the myvalues file")
 		}
 		if o.Flags.Provider == cloud.AWS || o.Flags.Provider == cloud.EKS {
-			// we can only enable one port for NLBs right now
-			enableHTTP := "false"
+			// For EKS enable both ports for NLBs to be able to use TLS on Nginx ingresses
+			// Fix for https://github.com/jenkins-x/jx/issues/3079
+			enableHTTP := "true"
 			enableHTTPS := "true"
-			if o.Flags.Http {
-				enableHTTP = "true"
-				enableHTTPS = "false"
+
+			// For AWS we can only enable one port for NLBs right now?
+			if o.Flags.Provider == cloud.AWS {
+				enableHTTP = "false"
+				enableHTTPS = "true"
+				if o.Flags.Http {
+					enableHTTP = "true"
+					enableHTTPS = "false"
+				}
 			}
 			yamlText := `---
 rbac:
