@@ -403,6 +403,8 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 			pipeline.Spec.Tasks[i] = pt
 		}
 
+		pipeline.Spec.Params = o.createPipelineParams()
+
 		if validateErr := pipeline.Spec.Validate(); validateErr != nil {
 			return errors.Wrapf(validateErr, "Validation failed for generated Pipeline")
 		}
