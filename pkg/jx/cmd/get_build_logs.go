@@ -506,7 +506,7 @@ func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tek
 	}
 	tekton.SortPipelineRunInfos(buildInfos)
 	if len(buildInfos) == 0 {
-		return names, defaultName, buildMap, pipelineMap, fmt.Errorf("no knative builds have been triggered which match the current filter")
+		return names, defaultName, buildMap, pipelineMap, fmt.Errorf("no Tekton pipelines have been triggered which match the current filter")
 	}
 
 	for _, build := range buildInfos {
