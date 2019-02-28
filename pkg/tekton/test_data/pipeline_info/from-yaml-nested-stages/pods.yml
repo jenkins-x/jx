@@ -9,7 +9,6 @@ items:
     labels:
       branch: nested
       build-number: "1"
-      jenkins.io/pipeline-from-yaml: "true"
       jenkins.io/task-stage-name: Build
       owner: abayer
       repo: js-test-repo
@@ -525,7 +524,6 @@ items:
     labels:
       branch: nested
       build-number: "1"
-      jenkins.io/pipeline-from-yaml: "true"
       jenkins.io/task-stage-name: Second
       owner: abayer
       repo: js-test-repo

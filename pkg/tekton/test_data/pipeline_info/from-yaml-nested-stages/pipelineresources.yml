@@ -5,8 +5,6 @@ items:
   metadata:
     creationTimestamp: 2019-02-21T22:07:36Z
     generation: 1
-    labels:
-      jenkins.io/pipeline-from-yaml: "true"
     name: abayer-js-test-repo-nested
     namespace: jx
     resourceVersion: "6975"
@@ -24,8 +22,6 @@ items:
   metadata:
     creationTimestamp: 2019-02-21T22:07:36Z
     generation: 1
-    labels:
-      jenkins.io/pipeline-from-yaml: "true"
     name: temp-ordering-resource
     namespace: jx
     resourceVersion: "6977"

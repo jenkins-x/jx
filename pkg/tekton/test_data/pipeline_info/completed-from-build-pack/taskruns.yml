@@ -8,6 +8,7 @@ items:
     labels:
       branch: master
       build-number: "1"
+      jenkins.io/task-stage-name: From-Build-Pack
       owner: abayer
       repo: jx-demo-qs
       tekton.dev/pipeline: abayer-jx-demo-qs-master

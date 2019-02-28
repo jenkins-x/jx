@@ -68,7 +68,7 @@ type StageInfo struct {
 // GetStageNameIncludingParents constructs a full stage name including its parents, if they exist.
 func (si *StageInfo) GetStageNameIncludingParents() string {
 	if si.Name != "" {
-		return strings.Join(append(si.Parents, si.Name), " / ")
+		return strings.NewReplacer("-", " ").Replace(strings.Join(append(si.Parents, si.Name), " / "))
 	}
 	return si.PodName
 }
@@ -207,37 +207,8 @@ func CreatePipelineRunInfo(kubeClient kubernetes.Interface, tektonClient tektonc
 	var pod *corev1.Pod
 
 	prStatus := pr.Status.GetCondition(duckv1alpha1.ConditionSucceeded)
-	// TODO: Remove this when we unify generation
-	if pr.Labels[syntax.LabelPipelineFromYaml] != "true" {
-		pod, err = getBuildPodForPipelineRun(kubeClient, ns, prName, prStatus)
-		if err != nil {
-			return nil, errors.Wrapf(err, "Error finding Pod for PipelineRun %s", prName)
-		}
-		if pod == nil {
-			if prStatus != nil && prStatus.Status == corev1.ConditionUnknown {
-				return nil, fmt.Errorf("could not find Pod for PipelineRun %s", prName)
-			}
-			// The PipelineRun has completed and its pod(s) no longer exist, so just return nil in general.
-			return nil, nil
-		}
-
-		si := &StageInfo{
-			Task:    pod.Labels[builds.LabelTaskName],
-			Pod:     pod,
-			PodName: pod.Name,
-			TaskRun: pod.Labels[builds.LabelTaskRunName],
-		}
-
-		si.CreatedTime = pod.CreationTimestamp.Time
-		if len(pod.Spec.InitContainers) > 2 {
-			si.FirstStepImage = pod.Spec.InitContainers[2].Image
-		}
-
-		pri.Stages = append(pri.Stages, si)
-	} else {
-		if err := pri.SetPodsForPipelineRun(kubeClient, tektonClient, jxClient, ns); err != nil {
-			return nil, errors.Wrapf(err, "Failure populating stages and pods for PipelineRun %s", prName)
-		}
+	if err := pri.SetPodsForPipelineRun(kubeClient, tektonClient, jxClient, ns); err != nil {
+		return nil, errors.Wrapf(err, "Failure populating stages and pods for PipelineRun %s", prName)
 	}
 
 	pod = pri.FindFirstStagePod()

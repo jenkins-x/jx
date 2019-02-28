@@ -532,7 +532,6 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 
 func updateForStage(si *tekton.StageInfo, a *v1.PipelineActivity) {
 	_, stage, _ := kube.GetOrCreateStage(a, si.GetStageNameIncludingParents())
-
 	initContainersTerminated := false
 
 	if si.Pod != nil {
