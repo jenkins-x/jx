@@ -93,6 +93,10 @@ func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Workflow CRD")
 	}
+	err = RegisterPipelineStructureCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the PipelineStructure CRD")
+	}
 	return nil
 }
 

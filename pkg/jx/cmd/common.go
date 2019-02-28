@@ -875,7 +875,7 @@ func (o *CommonOptions) ensureAddonServiceAvailable(serviceName string) (string,
 func (o *CommonOptions) getJobName() string {
 	owner := os.Getenv("REPO_OWNER")
 	repo := os.Getenv("REPO_NAME")
-	branch := os.Getenv("BRANCH_NAME")
+	branch := o.getBranchName("")
 
 	if owner != "" && repo != "" && branch != "" {
 		return fmt.Sprintf("%s/%s/%s", owner, repo, branch)
@@ -886,6 +886,21 @@ func (o *CommonOptions) getJobName() string {
 		return job
 	}
 	return ""
+}
+
+func (o *CommonOptions) getBranchName(dir string) string {
+	branch := builds.GetBranchName()
+	if branch == "" {
+		if dir == "" {
+			dir = "."
+		}
+		var err error
+		branch, err = o.Git().Branch(dir)
+		if err != nil {
+			log.Warnf("failed to get the git branch name in dir %s\n", dir)
+		}
+	}
+	return branch
 }
 
 func (o *CommonOptions) getBuildNumber() string {
