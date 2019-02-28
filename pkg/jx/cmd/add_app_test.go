@@ -333,7 +333,7 @@ func TestAddAppWithDefaults(t *testing.T) {
 			isChartDir, err := chartutil.IsChartDir(chart)
 			assert.NoError(t, err)
 			assert.True(t, isChartDir)
-			assert.Len(t, valuesFiles, 2)
+			assert.Len(t, valuesFiles, 1)
 			_, valuesFileName := filepath.Split(valuesFiles[0])
 			assert.Contains(t, valuesFileName, "values.yaml")
 			bytes, err := ioutil.ReadFile(valuesFiles[0])
