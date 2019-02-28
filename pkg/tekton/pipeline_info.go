@@ -18,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/knative/build-pipeline/pkg/apis/pipeline"
 	tektonclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
+	duckv1alpha1 "github.com/knative/pkg/apis/duck/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -107,7 +108,7 @@ func getPipelineStructureForPipelineRun(jxClient versioned.Interface, ns, prName
 	return ps, nil
 }
 
-func getBuildPodForPipelineRun(kubeClient kubernetes.Interface, ns, prName string) (*corev1.Pod, error) {
+func getBuildPodForPipelineRun(kubeClient kubernetes.Interface, ns, prName string, prStatus *duckv1alpha1.Condition) (*corev1.Pod, error) {
 	var pod *corev1.Pod
 
 	// The Pod may not exist yet.
@@ -120,7 +121,8 @@ func getBuildPodForPipelineRun(kubeClient kubernetes.Interface, ns, prName strin
 			return err
 		}
 
-		if len(podList.Items) == 0 {
+		// Only retry if there's no pod and the PipelineRun hasn't yet completed.
+		if len(podList.Items) == 0 && prStatus != nil && prStatus.Status == corev1.ConditionUnknown {
 			log.Infof("no Pod found yet for PipelineRun %s\n", util.ColorInfo(prName))
 			return fmt.Errorf("No Pod found yet for PipelineRun %s", prName)
 		}
@@ -204,14 +206,19 @@ func CreatePipelineRunInfo(kubeClient kubernetes.Interface, tektonClient tektonc
 
 	var pod *corev1.Pod
 
+	prStatus := pr.Status.GetCondition(duckv1alpha1.ConditionSucceeded)
 	// TODO: Remove this when we unify generation
 	if pr.Labels[syntax.LabelPipelineFromYaml] != "true" {
-		pod, err = getBuildPodForPipelineRun(kubeClient, ns, prName)
+		pod, err = getBuildPodForPipelineRun(kubeClient, ns, prName, prStatus)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error finding Pod for PipelineRun %s", prName)
 		}
 		if pod == nil {
-			return nil, fmt.Errorf("could not find Pod for PipelineRun %s", prName)
+			if prStatus != nil && prStatus.Status == corev1.ConditionUnknown {
+				return nil, fmt.Errorf("could not find Pod for PipelineRun %s", prName)
+			}
+			// The PipelineRun has completed and its pod(s) no longer exist, so just return nil in general.
+			return nil, nil
 		}
 
 		si := &StageInfo{
@@ -236,7 +243,11 @@ func CreatePipelineRunInfo(kubeClient kubernetes.Interface, tektonClient tektonc
 	pod = pri.FindFirstStagePod()
 
 	if pod == nil {
-		return nil, errors.New(fmt.Sprintf("Couldn't find a Stage with steps for PipelineRun %s", prName))
+		if prStatus != nil && prStatus.Status == corev1.ConditionUnknown {
+			return nil, errors.New(fmt.Sprintf("Couldn't find a Stage with steps for PipelineRun %s", prName))
+		}
+		// Just return nil if the pipeline run is completed and its pods have been GCed
+		return nil, nil
 	}
 
 	for _, initContainer := range pod.Spec.InitContainers {
