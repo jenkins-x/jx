@@ -16,7 +16,7 @@ spec:
   - name: abayer-jx-demo-qs-master
     type: git
   tasks:
-  - name: build
+  - name: from-build-pack
     resources:
       inputs:
       - name: source

@@ -282,7 +282,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		return errors.Wrapf(err, "failed to set the version on release pipelines")
 	}
 
-	err = o.generateTask(name, pipelineConfig)
+	err = o.generateTask(name, pipelineConfig, ns)
 	if err != nil {
 		return errors.Wrapf(err, "failed to generate Task for build pack pipeline YAML: %s", pipelineFile)
 	}
@@ -325,7 +325,7 @@ func (o *StepCreateTaskOptions) loadPodTemplates(kubeClient kubernetes.Interface
 	return nil
 }
 
-func (o *StepCreateTaskOptions) generateTask(name string, pipelineConfig *jenkinsfile.PipelineConfig) error {
+func (o *StepCreateTaskOptions) generateTask(name string, pipelineConfig *jenkinsfile.PipelineConfig, ns string) error {
 	var lifecycles *jenkinsfile.PipelineLifecycles
 	kind := o.PipelineKind
 	pipelines := pipelineConfig.Pipelines
@@ -352,16 +352,16 @@ func (o *StepCreateTaskOptions) generateTask(name string, pipelineConfig *jenkin
 	default:
 		return fmt.Errorf("Unknown pipeline kind %s. Supported values are %s", kind, strings.Join(jenkinsfile.PipelineKinds, ", "))
 	}
-	return o.generatePipeline(name, pipelineConfig, lifecycles, kind)
+	return o.generatePipeline(name, pipelineConfig, lifecycles, kind, ns)
 }
 
-func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineConfig *jenkinsfile.PipelineConfig, lifecycles *jenkinsfile.PipelineLifecycles, templateKind string) error {
+func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineConfig *jenkinsfile.PipelineConfig, lifecycles *jenkinsfile.PipelineLifecycles, templateKind, ns string) error {
 	if lifecycles == nil {
 		return nil
 	}
 
 	var err error
-	err = o.setBuildValues(false)
+	err = o.setBuildValues()
 	if err != nil {
 		return err
 	}
@@ -378,10 +378,6 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		if validateErr := lifecycles.Pipeline.Validate(); validateErr != nil {
 			return errors.Wrapf(validateErr, "Validation failed for Pipeline")
 		}
-		err = o.setBuildValues(true)
-		if err != nil {
-			return err
-		}
 		// TODO: use org-name-branch for pipeline name? Create client now to get
 		// namespace? Set namespace when applying rather than during generation?
 		name := tekton.PipelineResourceName(o.gitInfo, o.Branch, o.Context)
@@ -394,7 +390,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 			name = kube.ToValidName(shortName)
 		}
 
-		pipeline, tasks, structure, err := lifecycles.Pipeline.GenerateCRDs(name, o.buildNumber, "will-be-replaced", "abcd", o.PodTemplates, taskParams)
+		pipeline, tasks, structure, err := lifecycles.Pipeline.GenerateCRDs(name, o.buildNumber, ns, o.PodTemplates, taskParams)
 		if err != nil {
 			return errors.Wrapf(err, "Generation failed for Pipeline")
 		}
@@ -432,7 +428,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 
 		// TODO: where should this be created? In GenerateCRDs?
 		var resources []*pipelineapi.PipelineResource
-		resources = append(resources, o.generateSourceRepoResource(name, true), o.generateTempOrderingResource())
+		resources = append(resources, o.generateSourceRepoResource(name), o.generateTempOrderingResource())
 
 		err = o.applyPipeline(pipeline, tasks, resources, structure, o.gitInfo, o.Branch)
 		if err != nil {
@@ -484,7 +480,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
-			Labels: o.labels,
+			Labels: util.MergeMaps(o.labels, map[string]string{syntax.LabelStageName: syntax.DefaultStageNameForBuildPack}),
 		},
 		Spec: pipelineapi.TaskSpec{
 			Steps:   steps,
@@ -568,7 +564,7 @@ func (o *StepCreateTaskOptions) createPipelineTaskParams() []pipelineapi.Param {
 	return ptp
 }
 
-func (o *StepCreateTaskOptions) generateSourceRepoResource(name string, fromYaml bool) *pipelineapi.PipelineResource {
+func (o *StepCreateTaskOptions) generateSourceRepoResource(name string) *pipelineapi.PipelineResource {
 	var resource *pipelineapi.PipelineResource
 	if o.gitInfo != nil {
 		gitURL := o.gitInfo.HttpsURL()
@@ -595,9 +591,6 @@ func (o *StepCreateTaskOptions) generateSourceRepoResource(name string, fromYaml
 					},
 				},
 			}
-			if fromYaml {
-				resource.Labels = syntax.DefaultFromYamlCRDLabels()
-			}
 		}
 	}
 	return resource
@@ -612,8 +605,7 @@ func (o *StepCreateTaskOptions) generateTempOrderingResource() *pipelineapi.Pipe
 			Kind:       "PipelineResource",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:   "temp-ordering-resource",
-			Labels: syntax.DefaultFromYamlCRDLabels(),
+			Name: "temp-ordering-resource",
 		},
 		Spec: pipelineapi.PipelineResourceSpec{
 			Type: pipelineapi.PipelineResourceTypeImage,
@@ -627,16 +619,13 @@ func (o *StepCreateTaskOptions) generateTempOrderingResource() *pipelineapi.Pipe
 	}
 }
 
-func (o *StepCreateTaskOptions) setBuildValues(fromYaml bool) error {
+func (o *StepCreateTaskOptions) setBuildValues() error {
 	labels := map[string]string{}
 	if o.gitInfo != nil {
 		labels["owner"] = o.gitInfo.Organisation
 		labels["repo"] = o.gitInfo.Name
 	}
 	labels["branch"] = o.Branch
-	if fromYaml {
-		labels[syntax.LabelPipelineFromYaml] = "true"
-	}
 
 	return o.combineLabels(labels)
 }
@@ -732,7 +721,7 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 	name := gitInfo.Name
 	resourceName := kube.ToValidName(organisation + "-" + name + "-" + branch)
 	var pipelineResources []*pipelineapi.PipelineResource
-	resource := o.generateSourceRepoResource(resourceName, false)
+	resource := o.generateSourceRepoResource(resourceName)
 	if resource != nil {
 		pipelineResources = append(pipelineResources, resource)
 	}
@@ -750,7 +739,7 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 	}
 	tasks := []pipelineapi.PipelineTask{
 		{
-			Name: "build",
+			Name: strings.ToLower(syntax.DefaultStageNameForBuildPack),
 			Resources: &pipelineapi.PipelineTaskResources{
 				Inputs: taskInputResources,
 			},
@@ -773,7 +762,19 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 			Params:    o.createPipelineParams(),
 		},
 	}
-	return o.applyPipeline(pipeline, []*pipelineapi.Task{task}, pipelineResources, nil, gitInfo, branch)
+
+	structure := &v1.PipelineStructure{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: pipeline.Name,
+		},
+		Stages: []v1.PipelineStructureStage{{
+			Name:    syntax.DefaultStageNameForBuildPack,
+			Depth:   0,
+			TaskRef: &task.Name,
+		}},
+	}
+
+	return o.applyPipeline(pipeline, []*pipelineapi.Task{task}, pipelineResources, structure, gitInfo, branch)
 }
 
 // Given a Pipeline and its Tasks, applies the Tasks and Pipeline to the cluster

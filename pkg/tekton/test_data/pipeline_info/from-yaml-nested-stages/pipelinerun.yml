@@ -6,7 +6,6 @@ metadata:
   labels:
     branch: nested
     build-number: "1"
-    jenkins.io/pipeline-from-yaml: "true"
     owner: abayer
     repo: js-test-repo
     tekton.dev/pipeline: abayer-js-test-repo-nested

@@ -2,10 +2,7 @@ package syntax
 
 import (
 	"crypto/rand"
-	"encoding/hex"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"regexp"
 	"sort"
 	"strconv"
@@ -204,7 +201,11 @@ type PostAction struct {
 var _ apis.Validatable = (*ParsedPipeline)(nil)
 
 func (s *Stage) taskName() string {
-	return strings.ToLower(strings.NewReplacer(" ", "-").Replace(s.Name))
+	return strings.ToLower(s.stageLabelName())
+}
+
+func (s *Stage) stageLabelName() string {
+	return strings.NewReplacer(" ", "-").Replace(s.Name)
 }
 
 // MangleToRfc1035Label - Task/Step names need to be RFC 1035/1123 compliant DNS labels, so we mangle
@@ -702,7 +703,7 @@ func (ts *transformedStage) computeWorkspace(parentWorkspace string) {
 	}
 }
 
-func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, namespace string, wsPath string, parentEnv []corev1.EnvVar, parentAgent Agent, parentWorkspace string, suffix string, depth int8, enclosingStage *transformedStage, previousSiblingStage *transformedStage, podTemplates map[string]*corev1.Pod) (*transformedStage, error) {
+func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, namespace string, wsPath string, parentEnv []corev1.EnvVar, parentAgent Agent, parentWorkspace string, depth int8, enclosingStage *transformedStage, previousSiblingStage *transformedStage, podTemplates map[string]*corev1.Pod) (*transformedStage, error) {
 	if len(s.Post) != 0 {
 		return nil, errors.New("post on stages not yet supported")
 	}
@@ -734,15 +735,6 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 	stepCounter := 0
 
 	if len(s.Steps) > 0 {
-		if suffix == "" {
-			// Generate a short random hex string.
-			b, err := ioutil.ReadAll(io.LimitReader(randReader, 3))
-			if err != nil {
-				return nil, err
-			}
-			suffix = hex.EncodeToString(b)
-		}
-
 		t := &tektonv1alpha1.Task{
 			TypeMeta: metav1.TypeMeta{
 				APIVersion: TektonAPIVersion,
@@ -751,7 +743,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      MangleToRfc1035Label(fmt.Sprintf("%s-%s", pipelineIdentifier, s.Name), ""),
-				Labels:    util.MergeMaps(DefaultFromYamlCRDLabels(), map[string]string{LabelStageName: s.Name}),
+				Labels:    util.MergeMaps(map[string]string{LabelStageName: s.stageLabelName()}),
 			},
 		}
 		t.SetDefaults()
@@ -824,7 +816,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 			if i > 0 {
 				nestedPreviousSibling = tasks[i-1]
 			}
-			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, nestedWsPath, env, agent, *ts.Stage.Options.Workspace, suffix, depth+1, &ts, nestedPreviousSibling, podTemplates)
+			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, nestedWsPath, env, agent, *ts.Stage.Options.Workspace, depth+1, &ts, nestedPreviousSibling, podTemplates)
 			if err != nil {
 				return nil, err
 			}
@@ -845,7 +837,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 			if wsPath != "" && i == 0 {
 				nestedWsPath = wsPath
 			}
-			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, nestedWsPath, env, agent, *ts.Stage.Options.Workspace, suffix, depth+1, &ts, nil, podTemplates)
+			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, nestedWsPath, env, agent, *ts.Stage.Options.Workspace, depth+1, &ts, nil, podTemplates)
 			if err != nil {
 				return nil, err
 			}
@@ -934,7 +926,7 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, podTem
 }
 
 // GenerateCRDs translates the Pipeline structure into the corresponding Pipeline and Task CRDs
-func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, suffix string, podTemplates map[string]*corev1.Pod, taskParams []tektonv1alpha1.TaskParam) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
+func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, podTemplates map[string]*corev1.Pod, taskParams []tektonv1alpha1.TaskParam) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
 	if len(j.Post) != 0 {
 		return nil, nil, nil, errors.New("Post at top level not yet supported")
 	}
@@ -946,15 +938,6 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		}
 	}
 
-	if suffix == "" {
-		// Generate a short random hex string.
-		b, err := ioutil.ReadAll(io.LimitReader(randReader, 3))
-		if err != nil {
-			return nil, nil, nil, err
-		}
-		suffix = hex.EncodeToString(b)
-	}
-
 	p := &tektonv1alpha1.Pipeline{
 		TypeMeta: metav1.TypeMeta{
 			APIVersion: TektonAPIVersion,
@@ -963,7 +946,6 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
 			Name:      fmt.Sprintf("%s", pipelineIdentifier),
-			Labels:    DefaultFromYamlCRDLabels(),
 		},
 		Spec: tektonv1alpha1.PipelineSpec{
 			Resources: []tektonv1alpha1.PipelineDeclaredResource{
@@ -999,7 +981,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		if len(tasks) == 0 {
 			wsPath = "workspace"
 		}
-		stage, err := stageToTask(s, pipelineIdentifier, buildIdentifier, namespace, wsPath, baseEnv, j.Agent, "default", suffix, 0, nil, previousStage, podTemplates)
+		stage, err := stageToTask(s, pipelineIdentifier, buildIdentifier, namespace, wsPath, baseEnv, j.Agent, "default", 0, nil, previousStage, podTemplates)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -1217,11 +1199,4 @@ func validateStageNames(j *ParsedPipeline) (err *apis.FieldError) {
 	err = findDuplicates(names)
 
 	return
-}
-
-// DefaultFromYamlCRDLabels returns a map of labels that will be applied to every Tekton CRD generated from YAML syntax
-func DefaultFromYamlCRDLabels() map[string]string {
-	return map[string]string{
-		LabelPipelineFromYaml: "true",
-	}
 }

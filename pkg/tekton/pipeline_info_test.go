@@ -12,6 +12,7 @@ import (
 	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/tekton"
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
 	tektonv1alpha1 "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
@@ -50,11 +51,13 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 			PipelineRun:  "abayer-jx-demo-qs-master-1",
 			Repository:   "jx-demo-qs",
 			Stages: []*tekton.StageInfo{{
+				Name:           syntax.DefaultStageNameForBuildPack,
 				CreatedTime:    *parseTime(t, "2019-02-21T17:10:48-05:00"),
 				FirstStepImage: "gcr.io/k8s-prow/entrypoint@sha256:7c7cd8906ce4982ffee326218e9fc75da2d4896d53cabc9833b9cc8d2d6b2b8f",
 				PodName:        "abayer-jx-demo-qs-master-1-build-vhz8d-pod-cd8cba",
 				Task:           "abayer-jx-demo-qs-master",
 				TaskRun:        "abayer-jx-demo-qs-master-1-build-vhz8d",
+				Parents:        []string{},
 			}},
 		},
 		prName: "abayer-jx-demo-qs-master-1",

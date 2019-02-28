@@ -6,7 +6,6 @@ items:
     creationTimestamp: 2019-02-21T22:02:43Z
     generation: 1
     labels:
-      jenkins.io/pipeline-from-yaml: "true"
       jenkins.io/task-stage-name: Build
     name: abayer-js-test-repo-master-build
     namespace: jx
@@ -130,7 +129,6 @@ items:
     creationTimestamp: 2019-02-21T22:02:43Z
     generation: 1
     labels:
-      jenkins.io/pipeline-from-yaml: "true"
       jenkins.io/task-stage-name: Second
     name: abayer-js-test-repo-master-second
     namespace: jx
