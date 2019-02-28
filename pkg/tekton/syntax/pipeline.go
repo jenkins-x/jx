@@ -201,11 +201,12 @@ type PostAction struct {
 var _ apis.Validatable = (*ParsedPipeline)(nil)
 
 func (s *Stage) taskName() string {
-	return strings.ToLower(s.stageLabelName())
+	return strings.ToLower(strings.NewReplacer(" ", "-").Replace(s.Name))
 }
 
+// stageLabelName replaces invalid cahracters in stage names for label usage.
 func (s *Stage) stageLabelName() string {
-	return strings.NewReplacer(" ", "-").Replace(s.Name)
+	return MangleToRfc1035Label(s.Name, "")
 }
 
 // MangleToRfc1035Label - Task/Step names need to be RFC 1035/1123 compliant DNS labels, so we mangle
