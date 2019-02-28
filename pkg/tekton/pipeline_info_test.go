@@ -141,13 +141,13 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 		},
 		prName: "abayer-js-test-repo-nested-1",
 	}, {
-		name: "completed-from-yaml",
+		name:     "completed-from-yaml",
 		expected: nil,
-		prName: "abayer-js-test-repo-master-1",
+		prName:   "abayer-js-test-repo-master-1",
 	}, {
-		name: "completed-from-build-pack",
+		name:     "completed-from-build-pack",
 		expected: nil,
-		prName: "abayer-jx-demo-qs-master-1",
+		prName:   "abayer-jx-demo-qs-master-1",
 	}}
 
 	for _, tt := range testCases {
