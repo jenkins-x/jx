@@ -398,6 +398,10 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 		if err != nil {
 			return errors.Wrapf(err, "Generation failed for Pipeline")
 		}
+		for i, pt := range pipeline.Spec.Tasks {
+			pt.Params = append(pt.Params, o.createPipelineTaskParams()...)
+			pipeline.Spec.Tasks[i] = pt
+		}
 
 		if validateErr := pipeline.Spec.Validate(); validateErr != nil {
 			return errors.Wrapf(validateErr, "Validation failed for generated Pipeline")
@@ -551,6 +555,17 @@ func (o *StepCreateTaskOptions) createPipelineParams() []pipelineapi.PipelinePar
 		})
 	}
 	return answer
+}
+
+func (o *StepCreateTaskOptions) createPipelineTaskParams() []pipelineapi.Param {
+	ptp := []pipelineapi.Param{}
+	for _, p := range o.Results.PipelineParams {
+		ptp = append(ptp, pipelineapi.Param{
+			Name:  p.Name,
+			Value: fmt.Sprintf("${params.%s}", p.Name),
+		})
+	}
+	return ptp
 }
 
 func (o *StepCreateTaskOptions) generateSourceRepoResource(name string, fromYaml bool) *pipelineapi.PipelineResource {
@@ -744,7 +759,7 @@ func (o *StepCreateTaskOptions) applyTask(task *pipelineapi.Task, gitInfo *gits.
 				Kind:       pipelineapi.NamespacedTaskKind,
 				APIVersion: task.APIVersion,
 			},
-			Params: o.Results.PipelineParams,
+			Params: o.createPipelineTaskParams(),
 		},
 	}
 
