@@ -240,21 +240,20 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 	var buildMap map[string]builds.BaseBuildInfo
 	var pipelineMap map[string]builds.BaseBuildInfo
 
-	var err error
-	if tektonEnabled {
-		names, defaultName, buildMap, pipelineMap, err = o.loadPipelines(kubeClient, tektonClient, jxClient, ns)
-	} else {
-		names, defaultName, buildMap, pipelineMap, err = o.loadBuilds(kubeClient, ns)
-	}
-	if err != nil {
-		return err
-	}
-
 	args := o.Args
 	pickedPipeline := false
 	if len(args) == 0 {
 		if o.BatchMode {
 			return util.MissingArgument("pipeline")
+		}
+		var err error
+		if tektonEnabled {
+			names, defaultName, buildMap, pipelineMap, err = o.loadPipelines(kubeClient, tektonClient, jxClient, ns)
+		} else {
+			names, defaultName, buildMap, pipelineMap, err = o.loadBuilds(kubeClient, ns)
+		}
+		if err != nil {
+			return err
 		}
 		pickedPipeline = true
 		name, err := util.PickNameWithDefault(names, "Which build do you want to view the logs of?: ", defaultName, "", o.In, o.Out, o.Err)
@@ -340,7 +339,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 				return fmt.Errorf("No InitContainers for Pod %s for build: %s", pod.Name, name)
 			}
 			for i, ic := range initContainers {
-				pod, err = kubeClient.CoreV1().Pods(ns).Get(pod.Name, metav1.GetOptions{})
+				pod, err := kubeClient.CoreV1().Pods(ns).Get(pod.Name, metav1.GetOptions{})
 				if err != nil {
 					return errors.Wrapf(err, "failed to find pod %s", pod.Name)
 				}
@@ -377,7 +376,7 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 
 		log.Infof("Build logs for %s\n", util.ColorInfo(name+suffix))
 		for i, ic := range initContainers {
-			pod, err = kubeClient.CoreV1().Pods(ns).Get(pod.Name, metav1.GetOptions{})
+			pod, err := kubeClient.CoreV1().Pods(ns).Get(pod.Name, metav1.GetOptions{})
 			if err != nil {
 				return errors.Wrapf(err, "failed to find pod %s", pod.Name)
 			}
