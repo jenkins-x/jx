@@ -30,14 +30,14 @@ func GetBuildNumber() string {
 
 	m := getDownwardAPILabelsMap()
 	if m != nil {
-		return GetBuildNumberFromLabelsFileData(m)
+		return GetBuildNumberFromLabels(m)
 	}
 	return ""
 }
 
-// GetBuildNumberFromLabelsFileData returns the
-func GetBuildNumberFromLabelsFileData(m map[string]string) string {
-	return GetValueFromLabels(m, LabelBuildName, "build-number", LabelOldBuildName, LabelPipelineRunName)
+// GetBuildNumberFromLabels returns the
+func GetBuildNumberFromLabels(m map[string]string) string {
+	return GetBuildNumberFromLabelsWithKeys(m, LabelBuildName, "build-number", LabelOldBuildName, LabelPipelineRunName)
 }
 
 // getDownwardAPILabels returns the downward API labels from inside a pod or an empty string if they could not be found
@@ -67,15 +67,19 @@ func GetBranchName() string {
 	if branch == "" {
 		m := getDownwardAPILabelsMap()
 		if m != nil {
-			branch = GetValueFromLabels(m, "branch")
+			branch = GetBranchNameFromLabels(m)
 		}
 	}
 	return branch
 }
 
-// GetBuildNumberFromLabels returns the build number from the given Pod labels
-func GetBuildNumberFromLabels(m map[string]string) string {
-	keys := []string{}
+// GetBranchNameFromLabels returns the branch name from the given pod labels
+func GetBranchNameFromLabels(m map[string]string) string {
+	return GetValueFromLabels(m, "branch")
+}
+
+// GetBuildNumberFromLabelsWithKeys returns the build number from the given Pod labels
+func GetBuildNumberFromLabelsWithKeys(m map[string]string, keys ...string) string {
 	if m == nil {
 		return ""
 	}
@@ -105,20 +109,13 @@ func GetValueFromLabels(m map[string]string, keys ...string) string {
 			break
 		}
 	}
-	if answer != "" {
-		return lastNumberFrom(answer)
-	}
-	return ""
+	return answer
 }
 
 // lastNumberFrom splits a string such as "jstrachan-mynodething-master-1-build" via "-" and returns the last
 // numeric string
 func lastNumberFrom(text string) string {
 	// lets remove any whilespace or double quotes
-	text = strings.TrimSpace(text)
-	text = strings.TrimPrefix(text, "\"")
-	text = strings.TrimSuffix(text, "\"")
-
 	paths := strings.Split(text, "-")
 	for i := len(paths) - 1; i >= 0; i-- {
 		path := paths[i]
@@ -127,6 +124,13 @@ func lastNumberFrom(text string) string {
 		}
 	}
 	return ""
+}
+
+func trimValue(text string) string {
+	text = strings.TrimSpace(text)
+	text = strings.TrimPrefix(text, "\"")
+	text = strings.TrimSuffix(text, "\"")
+	return text
 }
 
 // LoadDownwardAPILabels parses the /etc/podinfo/labels text into a map of label values
@@ -138,7 +142,7 @@ func LoadDownwardAPILabels(text string) map[string]string {
 			l := strings.TrimSpace(line)
 			paths := strings.SplitN(l, "=", 2)
 			if len(paths) == 2 {
-				m[paths[0]] = paths[1]
+				m[paths[0]] = trimValue(paths[1])
 			}
 		}
 	}
