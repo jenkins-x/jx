@@ -263,10 +263,16 @@ const (
 	// SecretBasicAuth the name for the Jenkins X basic auth secret
 	SecretBasicAuth = "jx-basic-auth"
 
+	// JenkinsAdminApiToken the API token
 	JenkinsAdminApiToken = "jenkins-admin-api-token"
 
+	// JenkinsAdminUserField the admin user name
 	JenkinsAdminUserField = "jenkins-admin-user"
 
+	// JenkinsAdminPasswordField the password field
+	JenkinsAdminPasswordField = "jenkins-admin-password"
+
+	// JenkinsBearTokenField the bearer token
 	JenkinsBearTokenField = "jenkins-bearer-token"
 
 	AUTH = "auth"

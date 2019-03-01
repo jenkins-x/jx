@@ -192,25 +192,37 @@ func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns stri
 		return authConfigSvc, err
 	}
 
-	if len(config.Servers) == 0 {
-		s, err := c.CoreV1().Secrets(ns).Get(jenkinsServiceName, metav1.GetOptions{})
+	customJenkins := jenkinsServiceName != kube.SecretJenkins
+
+	if len(config.Servers) == 0 || customJenkins {
+		secretName := jenkinsServiceName
+		if customJenkins {
+			secretName = jenkinsServiceName + "-auth"
+		}
+		userAuth := auth.UserAuth{}
+
+		s, err := c.CoreV1().Secrets(ns).Get(secretName, metav1.GetOptions{})
 		if err != nil {
-			if jenkinsServiceName != kube.SecretJenkins {
-				// we may use a different secret name for custom jenkins servers
-				s, err = c.CoreV1().Secrets(ns).Get(jenkinsServiceName+"-auth", metav1.GetOptions{})
-				if err != nil {
-					return authConfigSvc, err
-				}
-			} else {
+			if !customJenkins {
 				return authConfigSvc, err
 			}
 		}
-
-		userAuth := auth.UserAuth{
-			Username:    string(s.Data[kube.JenkinsAdminUserField]),
-			ApiToken:    string(s.Data[kube.JenkinsAdminApiToken]),
-			BearerToken: string(s.Data[kube.JenkinsBearTokenField]),
+		if s != nil {
+			userAuth.Username = string(s.Data[kube.JenkinsAdminUserField])
+			userAuth.ApiToken = string(s.Data[kube.JenkinsAdminApiToken])
+			userAuth.BearerToken = string(s.Data[kube.JenkinsBearTokenField])
 		}
+
+		if customJenkins {
+			s, err = c.CoreV1().Secrets(ns).Get(jenkinsServiceName, metav1.GetOptions{})
+			if err == nil {
+				if userAuth.Username == "" {
+					userAuth.Username = string(s.Data[kube.JenkinsAdminUserField])
+				}
+				userAuth.Password = string(s.Data[kube.JenkinsAdminPasswordField])
+			}
+		}
+
 		svc, err := c.CoreV1().Services(ns).Get(jenkinsServiceName, metav1.GetOptions{})
 		if err != nil {
 			return authConfigSvc, err
@@ -224,15 +236,20 @@ func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns stri
 		if err != nil {
 			return authConfigSvc, err
 		}
-		if !userAuth.IsInvalid() {
-			config.Servers = []*auth.AuthServer{
-				{
-					Name:  u.Host,
-					URL:   svcURL,
-					Users: []*auth.UserAuth{&userAuth},
-				},
+		if !userAuth.IsInvalid() || (customJenkins && userAuth.Password != "") {
+			if len(config.Servers) == 0 {
+				config.Servers = []*auth.AuthServer{
+					{
+						Name:  u.Host,
+						URL:   svcURL,
+						Users: []*auth.UserAuth{&userAuth},
+					},
+				}
+			} else {
+				server := config.GetOrCreateServer(svcURL)
+				server.Name = u.Host
+				server.Users = []*auth.UserAuth{&userAuth}
 			}
-
 			// lets save the file so that if we call LoadConfig() again we still have this defaulted user auth
 			err = authConfigSvc.SaveConfig()
 			if err != nil {
