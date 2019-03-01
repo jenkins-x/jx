@@ -1141,7 +1141,7 @@ func (o *CommonOptions) JenkinsAuthConfigService(client kubernetes.Interface, na
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
 	}
-	return o.factory.CreateJenkinsAuthConfigService(client, namespace)
+	return o.factory.CreateJenkinsAuthConfigService(client, namespace, "")
 }
 
 // ChartmuseumAuthConfigService creates the chart museum auth config service
