@@ -10,6 +10,7 @@ import (
 	pegomock "github.com/petergtz/pegomock"
 	"reflect"
 	"time"
+	"fmt"
 )
 
 type MockGitProvider struct {
@@ -2233,4 +2234,8 @@ func (c *GitProvider_ValidateRepositoryName_OngoingVerification) GetAllCapturedA
 		}
 	}
 	return
+}
+
+func (p *MockGitProvider) ListCommits(owner, repo string, opt *gits.ListCommitsArguments) ([]*gits.GitCommit, error) {
+	return nil, fmt.Errorf("Listing commits not supported on mock git")
 }

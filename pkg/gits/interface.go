@@ -54,6 +54,8 @@ type GitProvider interface {
 
 	ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error)
 
+	ListCommits(owner string, repo string, opt *ListCommitsArguments) ([]*GitCommit, error)
+
 	UpdateCommitStatus(org string, repo string, sha string, status *GitRepoStatus) (*GitRepoStatus, error)
 
 	MergePullRequest(pr *GitPullRequest, message string) error

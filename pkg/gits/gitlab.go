@@ -681,3 +681,6 @@ func (g *GitlabProvider) ShouldForkForPullRequest(originalOwner string, repoName
 func GitlabAccessTokenURL(url string) string {
 	return util.UrlJoin(url, "/profile/personal_access_tokens")
 }
+func (p *GitlabProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
+    return nil, fmt.Errorf("Listing commits not supported on gitlab")
+}

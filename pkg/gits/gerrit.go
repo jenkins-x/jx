@@ -317,3 +317,7 @@ func (p *GerritProvider) GetContent(org string, name string, path string, ref st
 func (p *GerritProvider) ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool {
 	return originalOwner != username
 }
+
+func (p *GerritProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
+    return nil, fmt.Errorf("Listing commits not supported on gerrit")
+}
