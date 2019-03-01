@@ -418,7 +418,7 @@ func (o *StepCreateTaskOptions) generatePipeline(languageName string, pipelineCo
 			var volumes []corev1.Volume
 			for i, step := range task.Spec.Steps {
 				volumes = o.modifyVolumes(&step, task.Spec.Volumes)
-				o.modifyEnvVars(&step)
+				o.modifyEnvVars(&step, pipelineConfig.Env)
 				task.Spec.Steps[i] = step
 			}
 
@@ -975,7 +975,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		c.Name = prefix + stepName
 
 		volumes = o.modifyVolumes(&c, volumes)
-		o.modifyEnvVars(&c)
+		o.modifyEnvVars(&c, pipelineConfig.Env)
 
 		c.Command = []string{"/bin/sh"}
 		if o.CustomImage != "" {
@@ -1043,7 +1043,7 @@ func (o *StepCreateTaskOptions) discoverBuildPack(dir string, projectConfig *con
 	return pack, nil
 }
 
-func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container) {
+func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globalEnv []corev1.EnvVar) {
 	envVars := []corev1.EnvVar{}
 	for _, e := range container.Env {
 		name := e.Name
@@ -1134,6 +1134,13 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container) {
 			})
 		}
 	}
+
+	for _, e := range globalEnv {
+		if kube.GetSliceEnvVar(envVars, e.Name) == nil {
+			envVars = append(envVars, e)
+		}
+	}
+
 	container.Env = envVars
 }
 

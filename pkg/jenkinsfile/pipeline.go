@@ -3,16 +3,18 @@ package jenkinsfile
 import (
 	"bytes"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"text/template"
+
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
+	"gopkg.in/yaml.v2"
+	corev1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -111,10 +113,10 @@ func (x *PipelineExtends) ImportFile() *ImportFile {
 
 // PipelineConfig defines the pipeline configuration
 type PipelineConfig struct {
-	Extends     *PipelineExtends `yaml:"extends,omitempty"`
-	Agent       PipelineAgent    `yaml:"agent,omitempty"`
-	Environment string           `yaml:"environment,omitempty"`
-	Pipelines   Pipelines        `yaml:"pipelines,omitempty"`
+	Extends   *PipelineExtends `yaml:"extends,omitempty"`
+	Agent     PipelineAgent    `yaml:"agent,omitempty"`
+	Env       []corev1.EnvVar  `yaml:"env,omitempty"`
+	Pipelines Pipelines        `yaml:"pipelines,omitempty"`
 }
 
 // CreateJenkinsfileArguments contains the arguents to generate a Jenkinsfiles dynamically
