@@ -421,11 +421,9 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 		log.Warnf("No build number could be found from the environment variable $BUILD_NUMBER!\n")
 	}
 	baseClusterName := kube.ToValidName(cluster.Name)
-	branch := kube.ToValidName(strings.TrimPrefix(o.getBranchName(o.Flags.VersionsDir), "PR-"))
-	if branch != "" {
-		cluster.Name += "-" + branch
-	}
-	cluster.Name += "-" + buildNum
+	branch := kube.ToValidName(o.getBranchName(o.Flags.VersionsDir))
+	log.Infof("found branch name %s\n", branch)
+	cluster.Name += "-" + branch + "-" + buildNum
 	log.Infof("\nCreating cluster %s\n", util.ColorInfo(cluster.Name))
 	binary := o.Flags.JxBinary
 	args := cluster.Args
