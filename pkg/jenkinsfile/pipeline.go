@@ -113,10 +113,11 @@ func (x *PipelineExtends) ImportFile() *ImportFile {
 
 // PipelineConfig defines the pipeline configuration
 type PipelineConfig struct {
-	Extends   *PipelineExtends `yaml:"extends,omitempty"`
-	Agent     PipelineAgent    `yaml:"agent,omitempty"`
-	Env       []corev1.EnvVar  `yaml:"env,omitempty"`
-	Pipelines Pipelines        `yaml:"pipelines,omitempty"`
+	Extends     *PipelineExtends `yaml:"extends,omitempty"`
+	Agent       PipelineAgent    `yaml:"agent,omitempty"`
+	Env         []corev1.EnvVar  `yaml:"env,omitempty"`
+	Environment string           `yaml:"environment,omitempty"`
+	Pipelines   Pipelines        `yaml:"pipelines,omitempty"`
 }
 
 // CreateJenkinsfileArguments contains the arguents to generate a Jenkinsfiles dynamically
