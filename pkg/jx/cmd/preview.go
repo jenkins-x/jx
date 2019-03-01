@@ -863,6 +863,9 @@ func getImageName() (string, error) {
 func getImageTag() (string, error) {
 	tag := os.Getenv(PREVIEW_VERSION)
 	if tag == "" {
+		tag = os.Getenv("VERSION")
+	}
+	if tag == "" {
 		return "", fmt.Errorf("no %s environment variable found", PREVIEW_VERSION)
 	}
 	return tag, nil
