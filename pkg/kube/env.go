@@ -13,14 +13,14 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/pkg/errors"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -564,6 +564,30 @@ func ModifyNamespace(out io.Writer, dir string, env *v1.Environment, git gits.Gi
 		if err != nil {
 			return err
 		}
+	}
+
+	// lets ensure the namespace is set in a jenkins-x.yml file for tekton
+	projectConfig, projectConfigFile, err := config.LoadProjectConfig(dir)
+	if err != nil {
+		return err
+	}
+	foundEnv := false
+	for i := range projectConfig.Env {
+		if projectConfig.Env[i].Name == "DEPLOY_NAMESPACE" {
+			projectConfig.Env[i].Value = ns
+			foundEnv = true
+			break
+		}
+	}
+	if !foundEnv {
+		projectConfig.Env = append(projectConfig.Env, corev1.EnvVar{
+			Name:  "DEPLOY_NAMESPACE",
+			Value: ns,
+		})
+	}
+	err = projectConfig.SaveConfig(projectConfigFile)
+	if err != nil {
+		return err
 	}
 
 	err = git.Add(dir, "*")
