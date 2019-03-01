@@ -936,11 +936,15 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 	} else if step.Dir != "" {
 		dir = step.Dir
 	}
+	dir = strings.Replace(dir, "/home/jenkins/go/src/REPLACE_ME_GIT_PROVIDER/REPLACE_ME_ORG/REPLACE_ME_APP_NAME", o.getWorkspaceDir(), -1)
 
 	gitInfo := o.gitInfo
 	if gitInfo != nil {
-		dir = strings.Replace(dir, "REPLACE_ME_APP_NAME", gitInfo.Name, -1)
-		dir = strings.Replace(dir, "REPLACE_ME_ORG", gitInfo.Organisation, -1)
+		gitProviderHost := gitInfo.Host
+		dir = strings.Replace(dir, PlaceHolderAppName, gitInfo.Name, -1)
+		dir = strings.Replace(dir, PlaceHolderOrg, gitInfo.Organisation, -1)
+		dir = strings.Replace(dir, PlaceHolderGitProvider, gitProviderHost, -1)
+		dir = strings.Replace(dir, PlaceHolderDockerRegistryOrg, strings.ToLower(o.dockerRegistryOrg(gitInfo)), -1)
 	} else {
 		log.Warnf("No GitInfo available!\n")
 	}
@@ -1018,6 +1022,7 @@ func (o *StepCreateTaskOptions) replaceCommandText(step *jenkinsfile.PipelineSte
 
 	// lets replace the old way of setting versions
 	answer = strings.Replace(answer, "export VERSION=`cat VERSION` && ", "", 1)
+	answer = strings.Replace(answer, "export VERSION=$PREVIEW_VERSION && ", "", 1)
 
 	for _, text := range []string{"$(cat VERSION)", "$(cat ../VERSION)", "$(cat ../../VERSION)"} {
 		answer = strings.Replace(answer, text, "${VERSION}", -1)
@@ -1351,6 +1356,14 @@ func (o *StepCreateTaskOptions) invokeSteps(steps []*jenkinsfile.PipelineStep) e
 		}
 	}
 	return nil
+}
+
+func (o *StepCreateTaskOptions) dockerRegistryOrg(repository *gits.GitRepository) string {
+	answer := os.Getenv("DOCKER_REGISTRY_ORG")
+	if answer == "" {
+		answer = repository.Organisation
+	}
+	return answer
 }
 
 // ObjectReferences creates a list of object references created

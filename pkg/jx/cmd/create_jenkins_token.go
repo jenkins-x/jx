@@ -115,7 +115,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		ns = o.Namespace
 	}
 
-	authConfigSvc, err := o.JenkinsAuthConfigService(kubeClient, ns)
+	authConfigSvc, err := o.JenkinsAuthConfigService(kubeClient, ns, &o.JenkinsSelector)
 	if err != nil {
 		return errors.Wrap(err, "creating Jenkins Auth configuration")
 	}
