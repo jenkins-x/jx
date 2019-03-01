@@ -1,0 +1,23 @@
+pipelineConfig:
+  env:
+    - name: FRUIT
+      value: BANANA
+  pipelines:
+    release:
+      pipeline:
+        agent:
+          image: nodejs
+        stages:
+          - name: Build-a-really-long-stage-name-please-but-not-too-long-thanks
+            steps:
+              - command: echo
+                args:
+                  - hello world
+              - command: ls
+                args:
+                  - -la
+          - name: Second
+            steps:
+              - command: echo
+                args:
+                  - hi ${FRUIT}

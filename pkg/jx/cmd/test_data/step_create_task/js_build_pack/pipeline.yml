@@ -1,0 +1,22 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  creationTimestamp: null
+  name: abayer-js-test-repo-build-pack
+spec:
+  params: []
+  resources:
+  - name: abayer-js-test-repo-build-pack
+    type: git
+  tasks:
+  - name: from-build-pack
+    resources:
+      inputs:
+      - name: source
+        resource: abayer-js-test-repo-build-pack
+      outputs: null
+    taskRef:
+      apiVersion: tekton.dev/v1alpha1
+      kind: Task
+      name: abayer-js-test-repo-build-pack
+status: {}

@@ -1,0 +1,165 @@
+package cmd_test
+
+import (
+	"io/ioutil"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/ghodss/yaml"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/tekton/tektontesthelpers"
+	"github.com/jenkins-x/jx/pkg/tests"
+	pipelineapi "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
+	"github.com/stretchr/testify/assert"
+	corev1 "k8s.io/api/core/v1"
+)
+
+func TestGenerateTektonCRDs(t *testing.T) {
+	tests.SkipForWindows(t, "go-expect does not work on windows")
+	t.Parallel()
+
+	testData := path.Join("test_data", "step_create_task")
+	_, err := os.Stat(testData)
+	assert.NoError(t, err)
+
+	packsDir := path.Join(testData, "packs")
+	_, err = os.Stat(packsDir)
+	assert.NoError(t, err)
+
+	resolver := func(importFile *jenkinsfile.ImportFile) (string, error) {
+		dirPath := []string{packsDir, "import_dir", importFile.Import}
+		// lets handle cross platform paths in `importFile.File`
+		path := append(dirPath, strings.Split(importFile.File, "/")...)
+		return filepath.Join(path...), nil
+	}
+
+	cases := []struct {
+		name         string
+		language     string
+		repoName     string
+		organization string
+		branch       string
+	}{
+		{
+			name:         "js_build_pack",
+			language:     "javascript",
+			repoName:     "js-test-repo",
+			organization: "abayer",
+			branch:       "build-pack",
+		},
+		{
+			name:         "maven_build_pack",
+			language:     "maven",
+			repoName:     "jx-demo-qs",
+			organization: "abayer",
+			branch:       "master",
+		},
+		{
+			name:         "from_yaml",
+			language:     "none",
+			repoName:     "js-test-repo",
+			organization: "abayer",
+			branch:       "really-long",
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			caseDir := path.Join(testData, tt.name)
+			_, err = os.Stat(caseDir)
+			assert.NoError(t, err)
+
+			projectConfig, projectConfigFile, err := config.LoadProjectConfig(caseDir)
+			assert.NoError(t, err)
+
+			createTask := &cmd.StepCreateTaskOptions{
+				Pack:             tt.language,
+				NoReleasePrepare: true,
+				PipelineKind:     jenkinsfile.PipelineKindRelease,
+				PodTemplates:     assertLoadPodTemplates(t),
+				GitInfo: &gits.GitRepository{
+					Host:         "github.com",
+					Name:         tt.repoName,
+					Organisation: tt.organization,
+				},
+				Branch:  tt.branch,
+				Trigger: string(pipelineapi.PipelineTriggerTypeManual),
+				StepOptions: cmd.StepOptions{
+					CommonOptions: &cmd.CommonOptions{
+						ServiceAccount: "tekton-bot",
+					},
+				},
+			}
+			if tt.language != "none" {
+				createTask.SourceName = "source"
+			} else {
+				createTask.SourceName = "workspace"
+			}
+
+			pipeline, tasks, resources, run, structure, err := createTask.GenerateTektonCRDs(packsDir, projectConfig, projectConfigFile, resolver, "jx")
+
+			if err != nil {
+				t.Fatalf("Error generating CRDs: %s", err)
+			}
+
+			taskList := &pipelineapi.TaskList{}
+			for _, task := range tasks {
+				taskList.Items = append(taskList.Items, *task)
+			}
+
+			resourceList := &pipelineapi.PipelineResourceList{}
+			for _, resource := range resources {
+				resourceList.Items = append(resourceList.Items, *resource)
+			}
+
+			if d := cmp.Diff(tektontesthelpers.AssertLoadPipeline(t, caseDir), pipeline); d != "" {
+				t.Errorf("Generated Pipeline did not match expected: %s", d)
+			}
+			if d := cmp.Diff(tektontesthelpers.AssertLoadTasks(t, caseDir), taskList, cmpopts.IgnoreFields(corev1.ResourceRequirements{}, "Requests")); d != "" {
+				t.Errorf("Generated Tasks did not match expected: %s", d)
+			}
+			if d := cmp.Diff(tektontesthelpers.AssertLoadPipelineResources(t, caseDir), resourceList); d != "" {
+				t.Errorf("Generated PipelineResources did not match expected: %s", d)
+			}
+			if d := cmp.Diff(tektontesthelpers.AssertLoadPipelineRun(t, caseDir), run); d != "" {
+				t.Errorf("Generated PipelineRun did not match expected: %s", d)
+			}
+			if d := cmp.Diff(tektontesthelpers.AssertLoadPipelineStructure(t, caseDir), structure); d != "" {
+				t.Errorf("Generated PipelineStructure did not match expected: %s", d)
+			}
+		})
+	}
+}
+
+func assertLoadPodTemplates(t *testing.T) map[string]*corev1.Pod {
+	fileName := filepath.Join("test_data", "step_create_task", "podTemplates.yml")
+	if tests.AssertFileExists(t, fileName) {
+		configMap := &corev1.ConfigMap{}
+		data, err := ioutil.ReadFile(fileName)
+		if assert.NoError(t, err, "Failed to load file %s", fileName) {
+			err = yaml.Unmarshal(data, configMap)
+			if assert.NoError(t, err, "Failed to unmarshall YAML file %s", fileName) {
+				podTemplates := make(map[string]*corev1.Pod)
+				for k, v := range configMap.Data {
+					pod := &corev1.Pod{}
+					if v != "" {
+						err := yaml.Unmarshal([]byte(v), pod)
+						if assert.NoError(t, err, "Failed to parse pod template") {
+							podTemplates[k] = pod
+						}
+					}
+				}
+				return podTemplates
+			}
+		}
+	}
+	return nil
+}
