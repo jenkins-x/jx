@@ -1137,11 +1137,29 @@ func (o *CommonOptions) AddonAuthConfigService(secrets *corev1.SecretList) (auth
 }
 
 // JenkinsAuthConfigService creates the jenkins auth config service
-func (o *CommonOptions) JenkinsAuthConfigService(client kubernetes.Interface, namespace string) (auth.ConfigService, error) {
+func (o *CommonOptions) JenkinsAuthConfigService(client kubernetes.Interface, namespace string, selector *JenkinsSelectorOptions) (auth.ConfigService, error) {
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
 	}
-	return o.factory.CreateJenkinsAuthConfigService(client, namespace, "")
+	prow, err := o.isProw()
+	if err != nil {
+		return nil, err
+	}
+	if prow {
+		selector.UseCustomJenkins = true
+	}
+	jenkinsServiceName := ""
+	if selector.IsCustom() {
+		kubeClient, ns, err := o.KubeClientAndDevNamespace()
+		if err != nil {
+			return nil, err
+		}
+		jenkinsServiceName, err = o.PickCustomJenkinsName(selector, kubeClient, ns)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return o.factory.CreateJenkinsAuthConfigService(client, namespace, jenkinsServiceName)
 }
 
 // ChartmuseumAuthConfigService creates the chart museum auth config service
