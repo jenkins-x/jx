@@ -136,6 +136,17 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	}
 
 	if o.Username == "" {
+		// lets default the user if there's only 1
+		userAuths := config.FindUserAuths(server.URL)
+		if len(userAuths) == 1 {
+			ua := userAuths[0]
+			o.Username = ua.Username
+			if o.Password == "" {
+				o.Password = ua.Password
+			}
+		}
+	}
+	if o.Username == "" {
 		return fmt.Errorf("no Username specified")
 	}
 
@@ -164,7 +175,11 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		}
 		err = o.getAPITokenFromREST(server.URL, userAuth)
 		if err != nil {
-			return errors.Wrapf(err, "generating the API token over REST API of server %q", server.URL)
+			if o.BatchMode {
+				return errors.Wrapf(err, "generating the API token over REST API of server %q", server.URL)
+			}
+			log.Warnf("failed to generate API token over REST API of server %s due to: %s\n", server.URL, err.Error())
+			log.Info("So unfortunately you will have to provide this by hand...\n\n")
 		}
 	}
 

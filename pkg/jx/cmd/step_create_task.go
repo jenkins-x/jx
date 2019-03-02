@@ -1146,6 +1146,10 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 		}
 	}
 
+	xdgHome := kube.GetSliceEnvVar(envVars, "XDG_CONFIG_HOME")
+	if xdgHome != nil {
+		xdgHome.Value = "/workspace/xdg_config"
+	}
 	container.Env = envVars
 }
 
