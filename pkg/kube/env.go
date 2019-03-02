@@ -2,6 +2,7 @@ package kube
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"io"
 	"io/ioutil"
 	"os/user"
@@ -581,6 +582,25 @@ func ModifyNamespace(out io.Writer, dir string, env *v1.Environment, git gits.Gi
 	}
 	if !foundEnv {
 		projectConfig.Env = append(projectConfig.Env, corev1.EnvVar{
+			Name:  "DEPLOY_NAMESPACE",
+			Value: ns,
+		})
+	}
+	foundEnv = false
+	pipelineConfig := projectConfig.PipelineConfig
+	if pipelineConfig == nil {
+		projectConfig.PipelineConfig = &jenkinsfile.PipelineConfig{}
+		pipelineConfig = projectConfig.PipelineConfig
+	}
+	for i := range pipelineConfig.Env {
+		if pipelineConfig.Env[i].Name == "DEPLOY_NAMESPACE" {
+			pipelineConfig.Env[i].Value = ns
+			foundEnv = true
+			break
+		}
+	}
+	if !foundEnv {
+		pipelineConfig.Env = append(pipelineConfig.Env, corev1.EnvVar{
 			Name:  "DEPLOY_NAMESPACE",
 			Value: ns,
 		})
