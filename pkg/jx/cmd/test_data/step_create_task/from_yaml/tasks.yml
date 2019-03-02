@@ -108,14 +108,14 @@ items:
         readOnly: true
       workingDir: /workspace/workspace
     volumes:
-    - emptyDir: {}
-      name: workspace-volume
     - hostPath:
         path: /var/run/docker.sock
       name: docker-daemon
     - name: volume-0
       secret:
         secretName: jenkins-docker-cfg
+    - emptyDir: {}
+      name: workspace-volume
     - downwardAPI:
         items:
         - fieldRef:
