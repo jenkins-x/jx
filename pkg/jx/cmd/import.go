@@ -262,7 +262,7 @@ func (options *ImportOptions) Run() error {
 		}
 
 		if options.UseDefaultGit {
-		    userAuth= config.CurrentUser(server, true)
+		    userAuth= config.CurrentUser(server, options.CommonOptions.InCluster())
 		} else  {
 		// Get the org in case there is more than one user auth on the server and batchMode is true
 		org := options.getOrganisationOrCurrentUser()
