@@ -1114,6 +1114,14 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 				})
 			}
 		}
+
+		// lets keep the APP_NAME environment variable we need for previews
+		if repo != "" && kube.GetSliceEnvVar(envVars, "APP_NAME") == nil {
+			envVars = append(envVars, corev1.EnvVar{
+				Name:  "APP_NAME",
+				Value: repo,
+			})
+		}
 	}
 	if branch != "" {
 		if kube.GetSliceEnvVar(envVars, "BRANCH_NAME") == nil {
