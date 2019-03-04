@@ -759,12 +759,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		}
 
 		t.Spec.Inputs = &tektonv1alpha1.Inputs{
-			Resources: []tektonv1alpha1.TaskResource{*ws,
-				{
-					Name: "temp-ordering-resource",
-					Type: tektonv1alpha1.PipelineResourceTypeImage,
-				},
-			},
+			Resources: []tektonv1alpha1.TaskResource{*ws},
 		}
 
 		t.Spec.Outputs = &tektonv1alpha1.Outputs{
@@ -772,10 +767,6 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 				{
 					Name: "workspace",
 					Type: tektonv1alpha1.PipelineResourceTypeGit,
-				},
-				{
-					Name: "temp-ordering-resource",
-					Type: tektonv1alpha1.PipelineResourceTypeImage,
 				},
 			},
 		}
@@ -963,11 +954,6 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 					Name: pipelineIdentifier,
 					Type: tektonv1alpha1.PipelineResourceTypeGit,
 				},
-				{
-					// TODO: Switch from this kind of hackish approach to non-resource-based dependencies once they land.
-					Name: "temp-ordering-resource",
-					Type: tektonv1alpha1.PipelineResourceTypeImage,
-				},
 			},
 		},
 	}
@@ -1045,25 +1031,15 @@ func createPipelineTasks(stage *transformedStage, pipelineIdentifier string) []t
 					Resource: pipelineIdentifier,
 					From:     provider,
 				},
-				{
-					// TODO: Switch from this kind of hackish approach to non-resource-based dependencies once they land.
-					Name:     "temp-ordering-resource",
-					Resource: "temp-ordering-resource",
-					From:     previousStageNames,
-				},
 			},
 			Outputs: []tektonv1alpha1.PipelineTaskOutputResource{
 				{
 					Name:     "workspace",
 					Resource: pipelineIdentifier,
 				},
-				{
-					// TODO: Switch from this kind of hackish approach to non-resource-based dependencies once they land.
-					Name:     "temp-ordering-resource",
-					Resource: "temp-ordering-resource",
-				},
 			},
 		}
+		pTask.RunAfter = previousStageNames
 		stage.PipelineTask = &pTask
 
 		return []tektonv1alpha1.PipelineTask{pTask}

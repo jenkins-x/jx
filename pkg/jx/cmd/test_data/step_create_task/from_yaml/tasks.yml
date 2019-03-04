@@ -13,17 +13,11 @@ items:
       - name: workspace
         targetPath: workspace
         type: git
-      - name: temp-ordering-resource
-        targetPath: ""
-        type: image
     outputs:
       resources:
       - name: workspace
         targetPath: ""
         type: git
-      - name: temp-ordering-resource
-        targetPath: ""
-        type: image
     steps:
     - args:
       - echo hello world
@@ -140,17 +134,11 @@ items:
       - name: workspace
         targetPath: ""
         type: git
-      - name: temp-ordering-resource
-        targetPath: ""
-        type: image
     outputs:
       resources:
       - name: workspace
         targetPath: ""
         type: git
-      - name: temp-ordering-resource
-        targetPath: ""
-        type: image
     steps:
     - args:
       - echo hi ${FRUIT}

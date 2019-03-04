@@ -12,15 +12,4 @@ items:
       value: https://github.com/abayer/js-test-repo
     type: git
   status: {}
-- apiVersion: tekton.dev/v1alpha1
-  kind: PipelineResource
-  metadata:
-    creationTimestamp: null
-    name: temp-ordering-resource
-  spec:
-    params:
-    - name: url
-      value: alpine
-    type: image
-  status: {}
 metadata: {}
