@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -117,6 +118,7 @@ func (o *StepTagOptions) Run() error {
 			if err != nil {
 				return err
 			}
+			o.Flags.ChartsDir = chartsDir
 		}
 	}
 	if o.Verbose {
@@ -220,14 +222,48 @@ func (o *StepTagOptions) updateChartValues(version string, chartsDir string) err
 
 func (o *StepTagOptions) defaultChartValueRepository() string {
 	dockerRegistry := os.Getenv("DOCKER_REGISTRY")
+	if dockerRegistry == "" {
+		kubeClient, ns, err := o.KubeClientAndDevNamespace()
+		if err != nil {
+			log.Warnf("failed to create kube client: %s\n", err.Error())
+		} else {
+			name := kube.ConfigMapJenkinsDockerRegistry
+			data, err := kube.GetConfigMapData(kubeClient, name, ns)
+			if err != nil {
+				log.Warnf("failed to load ConfigMap %s in namespace %s: %s\n", name, ns, err.Error())
+			} else {
+				dockerRegistry = data["docker.registry"]
+			}
+		}
+	}
 	dockerRegistryOrg := os.Getenv("DOCKER_REGISTRY_ORG")
 	if dockerRegistryOrg == "" {
 		dockerRegistryOrg = os.Getenv("ORG")
 	}
+	if dockerRegistryOrg == "" {
+		dockerRegistryOrg = os.Getenv("REPO_OWNER")
+	}
 	appName := os.Getenv("APP_NAME")
+	if appName == "" {
+		appName = os.Getenv("REPO_NAME")
+	}
+	if dockerRegistryOrg == "" || appName == "" {
+		gitInfo, err := o.FindGitInfo(o.Flags.ChartsDir)
+		if err != nil {
+			log.Warnf("failed to find git repository: %s\n", err.Error())
+		} else {
+			if dockerRegistryOrg == "" {
+				dockerRegistryOrg = gitInfo.Organisation
+			}
+			if appName == "" {
+				appName = gitInfo.Name
+			}
+		}
+	}
 	if dockerRegistry != "" && dockerRegistryOrg != "" && appName != "" {
 		return dockerRegistry + "/" + dockerRegistryOrg + "/" + appName
 	}
+	log.Warnf("could not generate chart repository name for dockerRegistry %s, dockerRegistryOrg %s, appName %s", dockerRegistry, dockerRegistryOrg, appName)
 	return ""
 }
 

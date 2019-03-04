@@ -1114,6 +1114,14 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 				})
 			}
 		}
+
+		// lets keep the APP_NAME environment variable we need for previews
+		if repo != "" && kube.GetSliceEnvVar(envVars, "APP_NAME") == nil {
+			envVars = append(envVars, corev1.EnvVar{
+				Name:  "APP_NAME",
+				Value: repo,
+			})
+		}
 	}
 	if branch != "" {
 		if kube.GetSliceEnvVar(envVars, "BRANCH_NAME") == nil {
@@ -1150,6 +1158,12 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 		if envVars[i].Name == "XDG_CONFIG_HOME" {
 			envVars[i].Value = "/workspace/xdg_config"
 		}
+	}
+	if kube.GetSliceEnvVar(envVars, "PREVIEW_VERSION") == nil && kube.GetSliceEnvVar(envVars, "VERSION") != nil {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "PREVIEW_VERSION",
+			Value: "${inputs.params.version}",
+		})
 	}
 	container.Env = envVars
 }

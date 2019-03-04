@@ -13,7 +13,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -844,10 +844,16 @@ func getImageName() (string, error) {
 
 	organisation := os.Getenv(ORG)
 	if organisation == "" {
+		organisation = os.Getenv(REPO_OWNER)
+	}
+	if organisation == "" {
 		return "", fmt.Errorf("no %s environment variable found", ORG)
 	}
 
 	app := os.Getenv(APP_NAME)
+	if app == "" {
+		app = os.Getenv(REPO_NAME)
+	}
 	if app == "" {
 		return "", fmt.Errorf("no %s environment variable found", APP_NAME)
 	}
