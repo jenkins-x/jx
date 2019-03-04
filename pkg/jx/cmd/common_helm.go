@@ -47,6 +47,8 @@ const (
 	DefaultGlobalTiller = true
 	// DefaultRemoteTiller indicates that a remote tiller server is used
 	DefaultRemoteTiller = true
+	// DefaultSkipClusterRole skips the cluster role creation
+	DefaultSkipClusterRole = false
 )
 
 // InitHelmConfig configuration for helm initialization
