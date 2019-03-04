@@ -40,7 +40,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -49,6 +49,8 @@ items:
         value: js-test-repo
       - name: JOB_NAME
         value: abayer/js-test-repo/build-pack
+      - name: APP_NAME
+        value: js-test-repo
       - name: BRANCH_NAME
         value: build-pack
       - name: JX_BATCH_MODE
@@ -96,7 +98,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -105,6 +107,8 @@ items:
         value: js-test-repo
       - name: JOB_NAME
         value: abayer/js-test-repo/build-pack
+      - name: APP_NAME
+        value: js-test-repo
       - name: BRANCH_NAME
         value: build-pack
       - name: JX_BATCH_MODE
@@ -152,7 +156,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -161,6 +165,8 @@ items:
         value: js-test-repo
       - name: JOB_NAME
         value: abayer/js-test-repo/build-pack
+      - name: APP_NAME
+        value: js-test-repo
       - name: BRANCH_NAME
         value: build-pack
       - name: JX_BATCH_MODE
@@ -208,7 +214,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -217,6 +223,8 @@ items:
         value: js-test-repo
       - name: JOB_NAME
         value: abayer/js-test-repo/build-pack
+      - name: APP_NAME
+        value: js-test-repo
       - name: BRANCH_NAME
         value: build-pack
       - name: JX_BATCH_MODE
@@ -264,7 +272,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -273,6 +281,8 @@ items:
         value: js-test-repo
       - name: JOB_NAME
         value: abayer/js-test-repo/build-pack
+      - name: APP_NAME
+        value: js-test-repo
       - name: BRANCH_NAME
         value: build-pack
       - name: JX_BATCH_MODE
@@ -320,7 +330,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -329,6 +339,8 @@ items:
         value: js-test-repo
       - name: JOB_NAME
         value: abayer/js-test-repo/build-pack
+      - name: APP_NAME
+        value: js-test-repo
       - name: BRANCH_NAME
         value: build-pack
       - name: JX_BATCH_MODE
@@ -376,7 +388,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -385,6 +397,8 @@ items:
         value: js-test-repo
       - name: JOB_NAME
         value: abayer/js-test-repo/build-pack
+      - name: APP_NAME
+        value: js-test-repo
       - name: BRANCH_NAME
         value: build-pack
       - name: JX_BATCH_MODE
@@ -432,7 +446,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -441,6 +455,8 @@ items:
         value: js-test-repo
       - name: JOB_NAME
         value: abayer/js-test-repo/build-pack
+      - name: APP_NAME
+        value: js-test-repo
       - name: BRANCH_NAME
         value: build-pack
       - name: JX_BATCH_MODE
@@ -488,7 +504,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -497,6 +513,8 @@ items:
         value: js-test-repo
       - name: JOB_NAME
         value: abayer/js-test-repo/build-pack
+      - name: APP_NAME
+        value: js-test-repo
       - name: BRANCH_NAME
         value: build-pack
       - name: JX_BATCH_MODE
@@ -544,7 +562,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -553,6 +571,8 @@ items:
         value: js-test-repo
       - name: JOB_NAME
         value: abayer/js-test-repo/build-pack
+      - name: APP_NAME
+        value: js-test-repo
       - name: BRANCH_NAME
         value: build-pack
       - name: JX_BATCH_MODE
