@@ -1,0 +1,9 @@
+metadata:
+  creationTimestamp: null
+  name: abayer-jx-demo-qs-master
+pipelineRef: null
+pipelineRunRef: null
+stages:
+- depth: 0
+  name: From-Build-Pack
+  taskRef: abayer-jx-demo-qs-master

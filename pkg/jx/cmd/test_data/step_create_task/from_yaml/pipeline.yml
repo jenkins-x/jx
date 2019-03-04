@@ -1,0 +1,47 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  creationTimestamp: null
+  name: abayer-js-test-repo-really-long
+  namespace: jx
+spec:
+  params: []
+  resources:
+  - name: abayer-js-test-repo-really-long
+    type: git
+  - name: temp-ordering-resource
+    type: image
+  tasks:
+  - name: build-a-really-long-stage-name-please-but-not-too-long-thanks
+    resources:
+      inputs:
+      - name: workspace
+        resource: abayer-js-test-repo-really-long
+      - name: temp-ordering-resource
+        resource: temp-ordering-resource
+      outputs:
+      - name: workspace
+        resource: abayer-js-test-repo-really-long
+      - name: temp-ordering-resource
+        resource: temp-ordering-resource
+    taskRef:
+      name: abayer-js-test-repo-really-long-build-a-really-long-stage-name
+  - name: second
+    resources:
+      inputs:
+      - from:
+        - build-a-really-long-stage-name-please-but-not-too-long-thanks
+        name: workspace
+        resource: abayer-js-test-repo-really-long
+      - from:
+        - build-a-really-long-stage-name-please-but-not-too-long-thanks
+        name: temp-ordering-resource
+        resource: temp-ordering-resource
+      outputs:
+      - name: workspace
+        resource: abayer-js-test-repo-really-long
+      - name: temp-ordering-resource
+        resource: temp-ordering-resource
+    taskRef:
+      name: abayer-js-test-repo-really-long-second
+status: {}

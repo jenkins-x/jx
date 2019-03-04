@@ -222,6 +222,6 @@ func PipelineResourceName(gitInfo *gits.GitRepository, branch string, context st
 	// characters, which is not allowed. Longest known prefix for now is 28
 	// chars (build-step-artifact-copy-to-), so we truncate to 35 so the
 	// generated container names are no more than 63 chars.
-	resourceName := kube.ToValidNameTruncated(dirtyName, 35)
+	resourceName := kube.ToValidNameTruncated(dirtyName, 31)
 	return resourceName
 }

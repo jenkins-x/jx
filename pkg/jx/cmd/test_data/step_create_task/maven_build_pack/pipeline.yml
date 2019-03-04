@@ -1,0 +1,22 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  creationTimestamp: null
+  name: abayer-jx-demo-qs-master
+spec:
+  params: []
+  resources:
+  - name: abayer-jx-demo-qs-master
+    type: git
+  tasks:
+  - name: from-build-pack
+    resources:
+      inputs:
+      - name: source
+        resource: abayer-jx-demo-qs-master
+      outputs: null
+    taskRef:
+      apiVersion: tekton.dev/v1alpha1
+      kind: Task
+      name: abayer-jx-demo-qs-master
+status: {}

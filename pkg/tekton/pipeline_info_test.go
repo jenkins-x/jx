@@ -1,24 +1,19 @@
 package tekton_test
 
 import (
-	"io/ioutil"
-	"path/filepath"
+	"path"
 	"testing"
 	"time"
 
 	"github.com/ghodss/yaml"
 	"github.com/google/go-cmp/cmp"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
-	"github.com/jenkins-x/jx/pkg/tests"
-	"github.com/jenkins-x/jx/pkg/util"
-	tektonv1alpha1 "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
+	"github.com/jenkins-x/jx/pkg/tekton/tekton_helpers_test"
 	tektonfake "github.com/knative/build-pipeline/pkg/client/clientset/versioned/fake"
 	"github.com/stretchr/testify/assert"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/fake"
 )
@@ -155,19 +150,20 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
-			kubeClient := fake.NewSimpleClientset(AssertLoadPods(t, tt.name))
+			testCaseDir := path.Join("test_data", "pipeline_info", tt.name)
+			kubeClient := fake.NewSimpleClientset(tekton_helpers_test.AssertLoadPods(t, testCaseDir))
 
-			jxObjects := []runtime.Object{AssertLoadPipelineActivity(t, tt.name)}
-			structure := AssertLoadPipelineStructure(t, tt.name)
+			jxObjects := []runtime.Object{tekton_helpers_test.AssertLoadPipelineActivity(t, testCaseDir)}
+			structure := tekton_helpers_test.AssertLoadPipelineStructure(t, testCaseDir)
 			if structure != nil {
 				jxObjects = append(jxObjects, structure)
 			}
 			jxClient := v1fake.NewSimpleClientset(jxObjects...)
 
-			tektonObjects := []runtime.Object{AssertLoadPipelineRun(t, tt.name), AssertLoadPipeline(t, tt.name)}
-			tektonObjects = append(tektonObjects, AssertLoadTasks(t, tt.name))
-			tektonObjects = append(tektonObjects, AssertLoadTaskRuns(t, tt.name))
-			tektonObjects = append(tektonObjects, AssertLoadPipelineResources(t, tt.name))
+			tektonObjects := []runtime.Object{tekton_helpers_test.AssertLoadPipelineRun(t, testCaseDir), tekton_helpers_test.AssertLoadPipeline(t, testCaseDir)}
+			tektonObjects = append(tektonObjects, tekton_helpers_test.AssertLoadTasks(t, testCaseDir))
+			tektonObjects = append(tektonObjects, tekton_helpers_test.AssertLoadTaskRuns(t, testCaseDir))
+			tektonObjects = append(tektonObjects, tekton_helpers_test.AssertLoadPipelineResources(t, testCaseDir))
 			tektonClient := tektonfake.NewSimpleClientset(tektonObjects...)
 
 			pri, err := tekton.CreatePipelineRunInfo(kubeClient, tektonClient, jxClient, ns, tt.prName)
@@ -195,142 +191,6 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 			}
 		})
 	}
-}
-
-func AssertLoadPods(t *testing.T, testName string) *corev1.PodList {
-	fileName := filepath.Join("test_data", "pipeline_info", testName, "pods.yml")
-	exists, err := util.FileExists(fileName)
-	if err != nil {
-		t.Fatalf("Error checking if file %s exists: %s", fileName, err)
-	}
-	if exists {
-		podList := &corev1.PodList{}
-		data, err := ioutil.ReadFile(fileName)
-		if assert.NoError(t, err, "Failed to load file %s", fileName) {
-			err = yaml.Unmarshal(data, podList)
-			if assert.NoError(t, err, "Failed to unmarshall YAML file %s", fileName) {
-				return podList
-			}
-
-		}
-	}
-	return &corev1.PodList{}
-}
-
-func AssertLoadPipeline(t *testing.T, testName string) *tektonv1alpha1.Pipeline {
-	fileName := filepath.Join("test_data", "pipeline_info", testName, "pipeline.yml")
-	if tests.AssertFileExists(t, fileName) {
-		pipeline := &tektonv1alpha1.Pipeline{}
-		data, err := ioutil.ReadFile(fileName)
-		if assert.NoError(t, err, "Failed to load file %s", fileName) {
-			err = yaml.Unmarshal(data, pipeline)
-			if assert.NoError(t, err, "Failed to unmarshall YAML file %s", fileName) {
-				return pipeline
-			}
-
-		}
-	}
-	return nil
-}
-
-func AssertLoadPipelineRun(t *testing.T, testName string) *tektonv1alpha1.PipelineRun {
-	fileName := filepath.Join("test_data", "pipeline_info", testName, "pipelinerun.yml")
-	if tests.AssertFileExists(t, fileName) {
-		pipelineRun := &tektonv1alpha1.PipelineRun{}
-		data, err := ioutil.ReadFile(fileName)
-		if assert.NoError(t, err, "Failed to load file %s", fileName) {
-			err = yaml.Unmarshal(data, pipelineRun)
-			if assert.NoError(t, err, "Failed to unmarshall YAML file %s", fileName) {
-				return pipelineRun
-			}
-
-		}
-	}
-	return nil
-}
-
-func AssertLoadPipelineActivity(t *testing.T, testName string) *v1.PipelineActivity {
-	fileName := filepath.Join("test_data", "pipeline_info", testName, "activity.yml")
-	if tests.AssertFileExists(t, fileName) {
-		activity := &v1.PipelineActivity{}
-		data, err := ioutil.ReadFile(fileName)
-		if assert.NoError(t, err, "Failed to load file %s", fileName) {
-			err = yaml.Unmarshal(data, activity)
-			if assert.NoError(t, err, "Failed to unmarshall YAML file %s", fileName) {
-				return activity
-			}
-
-		}
-	}
-	return nil
-}
-
-func AssertLoadPipelineStructure(t *testing.T, testName string) *v1.PipelineStructure {
-	fileName := filepath.Join("test_data", "pipeline_info", testName, "structure.yml")
-	exists, err := util.FileExists(fileName)
-	if err != nil {
-		t.Fatalf("Error checking if file %s exists: %s", fileName, err)
-	}
-	if exists {
-		structure := &v1.PipelineStructure{}
-		data, err := ioutil.ReadFile(fileName)
-		if assert.NoError(t, err, "Failed to load file %s", fileName) {
-			err = yaml.Unmarshal(data, structure)
-			if assert.NoError(t, err, "Failed to unmarshall YAML file %s", fileName) {
-				return structure
-			}
-
-		}
-	}
-	return nil
-}
-
-func AssertLoadTasks(t *testing.T, testName string) *tektonv1alpha1.TaskList {
-	fileName := filepath.Join("test_data", "pipeline_info", testName, "tasks.yml")
-	if tests.AssertFileExists(t, fileName) {
-		taskList := &tektonv1alpha1.TaskList{}
-		data, err := ioutil.ReadFile(fileName)
-		if assert.NoError(t, err, "Failed to load file %s", fileName) {
-			err = yaml.Unmarshal(data, taskList)
-			if assert.NoError(t, err, "Failed to unmarshall YAML file %s", fileName) {
-				return taskList
-			}
-
-		}
-	}
-	return nil
-}
-
-func AssertLoadTaskRuns(t *testing.T, testName string) *tektonv1alpha1.TaskRunList {
-	fileName := filepath.Join("test_data", "pipeline_info", testName, "taskruns.yml")
-	if tests.AssertFileExists(t, fileName) {
-		taskRunList := &tektonv1alpha1.TaskRunList{}
-		data, err := ioutil.ReadFile(fileName)
-		if assert.NoError(t, err, "Failed to load file %s", fileName) {
-			err = yaml.Unmarshal(data, taskRunList)
-			if assert.NoError(t, err, "Failed to unmarshall YAML file %s", fileName) {
-				return taskRunList
-			}
-
-		}
-	}
-	return nil
-}
-
-func AssertLoadPipelineResources(t *testing.T, testName string) *tektonv1alpha1.PipelineResourceList {
-	fileName := filepath.Join("test_data", "pipeline_info", testName, "pipelineresources.yml")
-	if tests.AssertFileExists(t, fileName) {
-		resourceList := &tektonv1alpha1.PipelineResourceList{}
-		data, err := ioutil.ReadFile(fileName)
-		if assert.NoError(t, err, "Failed to load file %s", fileName) {
-			err = yaml.Unmarshal(data, resourceList)
-			if assert.NoError(t, err, "Failed to unmarshall YAML file %s", fileName) {
-				return resourceList
-			}
-
-		}
-	}
-	return nil
 }
 
 func parseTime(t *testing.T, timeString string) *time.Time {

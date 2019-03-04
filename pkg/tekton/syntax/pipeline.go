@@ -795,9 +795,18 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 				volumes[k] = v
 			}
 		}
-		for _, volume := range volumes {
-			t.Spec.Volumes = append(t.Spec.Volumes, volume)
+
+		// Avoid nondeterministic results by sorting the keys and appending volumes in that order.
+		var volNames []string
+		for k := range volumes {
+			volNames = append(volNames, k)
 		}
+		sort.Strings(volNames)
+
+		for _, v := range volNames {
+			t.Spec.Volumes = append(t.Spec.Volumes, volumes[v])
+		}
+
 		ts := transformedStage{Stage: s, Task: t, Depth: depth, EnclosingStage: enclosingStage, PreviousSiblingStage: previousSiblingStage}
 		ts.computeWorkspace(parentWorkspace)
 		return &ts, nil
