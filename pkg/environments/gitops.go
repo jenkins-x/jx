@@ -249,7 +249,7 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 
 		username = o.GitProvider.CurrentUsername()
 
-		if gitInfo.Organisation != username {
+		if originalOrg != username && username != "" && originalOrg != "" {
 			fork = true
 		}
 	}

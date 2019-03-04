@@ -148,6 +148,7 @@ func CreateAppTestOptions(gitOps bool, t *testing.T) *AppTestOptions {
 	devEnvRepo := gits.NewFakeRepository(testOrgName, devEnvRepoName)
 
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, devEnvRepo)
+	fakeGitProvider.User.Username = testOrgName
 
 	var devEnv *jenkinsv1.Environment
 	if gitOps {
