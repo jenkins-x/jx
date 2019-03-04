@@ -11,7 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
-	"github.com/jenkins-x/jx/pkg/tekton/tektontesthelpers"
+	"github.com/jenkins-x/jx/pkg/tekton/tekton_helpers_test"
 	tektonfake "github.com/knative/build-pipeline/pkg/client/clientset/versioned/fake"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -151,19 +151,19 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			testCaseDir := path.Join("test_data", "pipeline_info", tt.name)
-			kubeClient := fake.NewSimpleClientset(tektontesthelpers.AssertLoadPods(t, testCaseDir))
+			kubeClient := fake.NewSimpleClientset(tekton_helpers_test.AssertLoadPods(t, testCaseDir))
 
-			jxObjects := []runtime.Object{tektontesthelpers.AssertLoadPipelineActivity(t, testCaseDir)}
-			structure := tektontesthelpers.AssertLoadPipelineStructure(t, testCaseDir)
+			jxObjects := []runtime.Object{tekton_helpers_test.AssertLoadPipelineActivity(t, testCaseDir)}
+			structure := tekton_helpers_test.AssertLoadPipelineStructure(t, testCaseDir)
 			if structure != nil {
 				jxObjects = append(jxObjects, structure)
 			}
 			jxClient := v1fake.NewSimpleClientset(jxObjects...)
 
-			tektonObjects := []runtime.Object{tektontesthelpers.AssertLoadPipelineRun(t, testCaseDir), tektontesthelpers.AssertLoadPipeline(t, testCaseDir)}
-			tektonObjects = append(tektonObjects, tektontesthelpers.AssertLoadTasks(t, testCaseDir))
-			tektonObjects = append(tektonObjects, tektontesthelpers.AssertLoadTaskRuns(t, testCaseDir))
-			tektonObjects = append(tektonObjects, tektontesthelpers.AssertLoadPipelineResources(t, testCaseDir))
+			tektonObjects := []runtime.Object{tekton_helpers_test.AssertLoadPipelineRun(t, testCaseDir), tekton_helpers_test.AssertLoadPipeline(t, testCaseDir)}
+			tektonObjects = append(tektonObjects, tekton_helpers_test.AssertLoadTasks(t, testCaseDir))
+			tektonObjects = append(tektonObjects, tekton_helpers_test.AssertLoadTaskRuns(t, testCaseDir))
+			tektonObjects = append(tektonObjects, tekton_helpers_test.AssertLoadPipelineResources(t, testCaseDir))
 			tektonClient := tektonfake.NewSimpleClientset(tektonObjects...)
 
 			pri, err := tekton.CreatePipelineRunInfo(kubeClient, tektonClient, jxClient, ns, tt.prName)

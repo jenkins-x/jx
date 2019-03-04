@@ -15,7 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	"github.com/jenkins-x/jx/pkg/tekton/tektontesthelpers"
+	"github.com/jenkins-x/jx/pkg/tekton/tekton_helpers_test"
 	"github.com/jenkins-x/jx/pkg/tests"
 	pipelineapi "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/stretchr/testify/assert"
@@ -120,19 +120,19 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				resourceList.Items = append(resourceList.Items, *resource)
 			}
 
-			if d := cmp.Diff(tektontesthelpers.AssertLoadPipeline(t, caseDir), pipeline); d != "" {
+			if d := cmp.Diff(tekton_helpers_test.AssertLoadPipeline(t, caseDir), pipeline); d != "" {
 				t.Errorf("Generated Pipeline did not match expected: %s", d)
 			}
-			if d := cmp.Diff(tektontesthelpers.AssertLoadTasks(t, caseDir), taskList, cmpopts.IgnoreFields(corev1.ResourceRequirements{}, "Requests")); d != "" {
+			if d := cmp.Diff(tekton_helpers_test.AssertLoadTasks(t, caseDir), taskList, cmpopts.IgnoreFields(corev1.ResourceRequirements{}, "Requests")); d != "" {
 				t.Errorf("Generated Tasks did not match expected: %s", d)
 			}
-			if d := cmp.Diff(tektontesthelpers.AssertLoadPipelineResources(t, caseDir), resourceList); d != "" {
+			if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineResources(t, caseDir), resourceList); d != "" {
 				t.Errorf("Generated PipelineResources did not match expected: %s", d)
 			}
-			if d := cmp.Diff(tektontesthelpers.AssertLoadPipelineRun(t, caseDir), run); d != "" {
+			if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineRun(t, caseDir), run); d != "" {
 				t.Errorf("Generated PipelineRun did not match expected: %s", d)
 			}
-			if d := cmp.Diff(tektontesthelpers.AssertLoadPipelineStructure(t, caseDir), structure); d != "" {
+			if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineStructure(t, caseDir), structure); d != "" {
 				t.Errorf("Generated PipelineStructure did not match expected: %s", d)
 			}
 		})

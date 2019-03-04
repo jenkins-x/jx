@@ -197,10 +197,6 @@ func (o *StepCreateTaskOptions) Run() error {
 	// TODO generate build number properly!
 	o.BuildNumber = "1"
 
-	// TODO: Best to separate things cleanly into 2 steps: creation of CRDs and
-	// application of those CRDs to the cluster. Step 2 should be identical both
-	// cases, so we'd just need a flag to switch the single function that is used
-	// to generate stuff and then everything else would be identical.
 	if o.BuildPackURL == "" || o.BuildPackRef == "" {
 		if o.BuildPackURL == "" {
 			o.BuildPackURL = settings.BuildPackURL
@@ -343,14 +339,6 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	var structure *v1.PipelineStructure
 
 	pipelineResourceName := tekton.PipelineResourceName(o.GitInfo, o.Branch, o.Context)
-
-	// TODO lets workaround a current gremlin in tekton - lets make sure pipeline resource names are not too big
-	maxResourceLength := 31
-	if len(pipelineResourceName) > maxResourceLength {
-		shortName := pipelineResourceName[len(pipelineResourceName)-maxResourceLength:]
-		log.Infof("shortening the pipeline resource name from %s to %s\n", util.ColorInfo(pipelineResourceName), util.ColorInfo(shortName))
-		pipelineResourceName = kube.ToValidName(shortName)
-	}
 
 	err = o.setBuildValues()
 	if err != nil {
@@ -869,7 +857,7 @@ func (o *StepCreateTaskOptions) writeOutput(folder string, pipeline *pipelineapi
 
 // Given a Pipeline and its Tasks, applies the Tasks and Pipeline to the cluster
 // and creates and applies a PipelineResource for their source repo and a PipelineRun
-// to execute them. Handles o.NoApply internally.
+// to execute them.
 func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, tasks []*pipelineapi.Task, resources []*pipelineapi.PipelineResource, structure *v1.PipelineStructure, run *pipelineapi.PipelineRun, gitInfo *gits.GitRepository, branch string) error {
 	_, ns, err := o.KubeClientAndDevNamespace()
 	if err != nil {

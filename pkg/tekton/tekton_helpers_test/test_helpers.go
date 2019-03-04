@@ -1,4 +1,4 @@
-package tektontesthelpers
+package tekton_helpers_test
 
 import (
 	"io/ioutil"
