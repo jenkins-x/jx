@@ -2034,7 +2034,9 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			return errors.Wrap(err, "building the system vault name from cluster name")
 		}
 
-		// lets store the system vault name for later
+		if options.installValues == nil {
+			options.installValues = make(map[string]string)
+		}
 		options.installValues[kube.SystemVaultName] = systemVaultName
 
 		if kubevault.FindVault(vaultOperatorClient, systemVaultName, namespace) {

@@ -26,6 +26,9 @@ const (
 	healthhRetyTimeout = 2 * time.Minute
 	// healthInitialRetryDelay define the initial delay before starting the retries
 	healthInitialRetryDelay = 10 * time.Second
+
+	// authRetryTimeout define the maximum duration to wait for vault to authenticate
+	authRetryTimeout = 1 * time.Minute
 )
 
 // OptionsInterface is an interface to allow passing around of a CommonOptions object without dependencies on the whole of the cmd package
@@ -92,7 +95,7 @@ func (v *VaultClientFactory) NewVaultClient(name string, namespace string) (*api
 	if err != nil {
 		return nil, errors.Wrap(err, "wait for vault to be initialized and unsealed")
 	}
-	token, err := getTokenFromVault(role, jwt, vaultClient)
+	token, err := getTokenFromVault(role, jwt, vaultClient, authRetryTimeout)
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting Vault authentication token")
 	}
@@ -141,7 +144,7 @@ func waitForVault(vaultClient *api.Client, initialDelay, timeout time.Duration) 
 	})
 }
 
-func getTokenFromVault(role string, jwt string, vaultClient *api.Client) (string, error) {
+func getTokenFromVault(role string, jwt string, vaultClient *api.Client, timeout time.Duration) (string, error) {
 	if role == "" {
 		return "", errors.New("role cannot be empty")
 	}
@@ -152,9 +155,16 @@ func getTokenFromVault(role string, jwt string, vaultClient *api.Client) (string
 		"jwt":  jwt,
 		"role": role,
 	}
-	sec, err := vaultClient.Logical().Write("/auth/kubernetes/login", m)
-	if err != nil {
-		return "", err
-	}
-	return sec.Auth.ClientToken, err
+
+	clientToken := ""
+	err := util.Retry(timeout, func() error {
+		sec, err := vaultClient.Logical().Write("/auth/kubernetes/login", m)
+		if err == nil {
+			clientToken = sec.Auth.ClientToken
+			return nil
+		}
+		return errors.Wrap(err, "auth with kubernetes login")
+	})
+
+	return clientToken, err
 }
