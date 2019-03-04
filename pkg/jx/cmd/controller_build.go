@@ -106,7 +106,7 @@ func (o *ControllerBuildOptions) Run() error {
 	o.EnvironmentCache = kube.CreateEnvironmentCache(jxClient, ns)
 
 	if o.InitGitCredentials {
-		err = o.setupGitCredentails()
+		err = o.initGitConfigAndUser()
 		if err != nil {
 			return err
 		}
