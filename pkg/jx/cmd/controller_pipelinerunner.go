@@ -98,23 +98,10 @@ func NewCmdControllerPipelineRunner(commonOpts *CommonOptions) *cobra.Command {
 // Run will implement this command
 func (o *ControllerPipelineRunnerOptions) Run() error {
 	if !o.NoGitCredeentialsInit {
-		err := o.setupGitCredentails()
+		err := o.initGitConfigAndUser()
 		if err != nil {
 			return err
 		}
-
-		copy := *o.CommonOptions
-		copy.BatchMode = true
-		gsc := &StepGitCredentialsOptions{
-			StepOptions: StepOptions{
-				CommonOptions: &copy,
-			},
-		}
-		err = gsc.Run()
-		if err != nil {
-			return errors.Wrapf(err, "failed to run: jx step gc credentials")
-		}
-
 	}
 
 	mux := http.NewServeMux()
@@ -159,6 +146,10 @@ func (o *ControllerPipelineRunnerOptions) piplineRunMethods(w http.ResponseWrite
 
 // handle request for pipeline runs
 func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter, r *http.Request) {
+	err := o.stepGitCredentials()
+	if err != nil {
+		log.Warn(err.Error())
+	}
 	arguments := &PipelineRunRequest{}
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -287,6 +278,23 @@ func (o *ControllerPipelineRunnerOptions) returnError(err error, message string,
 	o.onError(err)
 	w.WriteHeader(400)
 	w.Write([]byte(message))
+}
+
+func (o *ControllerPipelineRunnerOptions) stepGitCredentials() error {
+	if !o.NoGitCredeentialsInit {
+		copy := *o.CommonOptions
+		copy.BatchMode = true
+		gsc := &StepGitCredentialsOptions{
+			StepOptions: StepOptions{
+				CommonOptions: &copy,
+			},
+		}
+		err := gsc.Run()
+		if err != nil {
+			return errors.Wrapf(err, "failed to run: jx step gc credentials")
+		}
+	}
+	return nil
 }
 
 func getBranch(spec prowapi.ProwJobSpec) string {

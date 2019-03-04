@@ -346,8 +346,8 @@ func (o *CommonOptions) createGitProviderForURLWithoutKind(gitURL string) (gits.
 	return provider, gitInfo, err
 }
 
-// setupGitCredentails validates we have git setup
-func (o *CommonOptions) setupGitCredentails() error {
+// initGitConfigAndUser validates we have git setup
+func (o *CommonOptions) initGitConfigAndUser() error {
 	// lets validate we have git configured
 	_, _, err := gits.EnsureUserAndEmailSetup(o.Git())
 	if err != nil {
