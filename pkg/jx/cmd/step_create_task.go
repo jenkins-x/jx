@@ -1151,6 +1151,12 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 			envVars[i].Value = "/workspace/xdg_config"
 		}
 	}
+	if kube.GetSliceEnvVar(envVars, "PREVIEW_VERSION") == nil && kube.GetSliceEnvVar(envVars, "VERSION") != nil {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "PREVIEW_VERSION",
+			Value: "${inputs.params.version}",
+		})
+	}
 	container.Env = envVars
 }
 
