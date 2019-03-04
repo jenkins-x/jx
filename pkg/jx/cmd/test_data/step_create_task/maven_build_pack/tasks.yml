@@ -40,7 +40,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
@@ -53,6 +53,8 @@ items:
         value: jx-demo-qs
       - name: JOB_NAME
         value: abayer/jx-demo-qs/master
+      - name: APP_NAME
+        value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
       - name: JX_BATCH_MODE
@@ -106,7 +108,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
@@ -119,6 +121,8 @@ items:
         value: jx-demo-qs
       - name: JOB_NAME
         value: abayer/jx-demo-qs/master
+      - name: APP_NAME
+        value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
       - name: JX_BATCH_MODE
@@ -172,7 +176,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
@@ -185,6 +189,8 @@ items:
         value: jx-demo-qs
       - name: JOB_NAME
         value: abayer/jx-demo-qs/master
+      - name: APP_NAME
+        value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
       - name: JX_BATCH_MODE
@@ -238,7 +244,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
@@ -251,6 +257,8 @@ items:
         value: jx-demo-qs
       - name: JOB_NAME
         value: abayer/jx-demo-qs/master
+      - name: APP_NAME
+        value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
       - name: JX_BATCH_MODE
@@ -304,7 +312,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
@@ -317,6 +325,8 @@ items:
         value: jx-demo-qs
       - name: JOB_NAME
         value: abayer/jx-demo-qs/master
+      - name: APP_NAME
+        value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
       - name: JX_BATCH_MODE
@@ -370,7 +380,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
@@ -383,6 +393,8 @@ items:
         value: jx-demo-qs
       - name: JOB_NAME
         value: abayer/jx-demo-qs/master
+      - name: APP_NAME
+        value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
       - name: JX_BATCH_MODE
@@ -436,7 +448,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
@@ -449,6 +461,8 @@ items:
         value: jx-demo-qs
       - name: JOB_NAME
         value: abayer/jx-demo-qs/master
+      - name: APP_NAME
+        value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
       - name: JX_BATCH_MODE
@@ -502,7 +516,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
@@ -515,6 +529,8 @@ items:
         value: jx-demo-qs
       - name: JOB_NAME
         value: abayer/jx-demo-qs/master
+      - name: APP_NAME
+        value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
       - name: JX_BATCH_MODE
@@ -568,7 +584,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
@@ -581,6 +597,8 @@ items:
         value: jx-demo-qs
       - name: JOB_NAME
         value: abayer/jx-demo-qs/master
+      - name: APP_NAME
+        value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
       - name: JX_BATCH_MODE
@@ -634,7 +652,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
@@ -647,6 +665,8 @@ items:
         value: jx-demo-qs
       - name: JOB_NAME
         value: abayer/jx-demo-qs/master
+      - name: APP_NAME
+        value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
       - name: JX_BATCH_MODE
@@ -700,7 +720,7 @@ items:
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
       - name: XDG_CONFIG_HOME
-        value: /home/jenkins
+        value: /workspace/xdg_config
       - name: _JAVA_OPTIONS
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
@@ -713,6 +733,8 @@ items:
         value: jx-demo-qs
       - name: JOB_NAME
         value: abayer/jx-demo-qs/master
+      - name: APP_NAME
+        value: jx-demo-qs
       - name: BRANCH_NAME
         value: master
       - name: JX_BATCH_MODE

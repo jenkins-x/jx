@@ -41,6 +41,8 @@ items:
         value: js-test-repo
       - name: JOB_NAME
         value: abayer/js-test-repo/really-long
+      - name: APP_NAME
+        value: js-test-repo
       - name: BRANCH_NAME
         value: really-long
       - name: JX_BATCH_MODE
@@ -82,6 +84,8 @@ items:
         value: js-test-repo
       - name: JOB_NAME
         value: abayer/js-test-repo/really-long
+      - name: APP_NAME
+        value: js-test-repo
       - name: BRANCH_NAME
         value: really-long
       - name: JX_BATCH_MODE
@@ -164,6 +168,8 @@ items:
         value: js-test-repo
       - name: JOB_NAME
         value: abayer/js-test-repo/really-long
+      - name: APP_NAME
+        value: js-test-repo
       - name: BRANCH_NAME
         value: really-long
       - name: JX_BATCH_MODE
