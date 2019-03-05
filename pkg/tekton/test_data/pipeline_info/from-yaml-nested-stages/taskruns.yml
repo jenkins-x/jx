@@ -8,7 +8,7 @@ items:
     labels:
       branch: nested
       build-number: "1"
-      jenkins.io/task-stage-name: Build
+      jenkins.io/task-stage-name: build
       owner: abayer
       repo: js-test-repo
       tekton.dev/pipeline: abayer-js-test-repo-nested
@@ -125,7 +125,7 @@ items:
     labels:
       branch: nested
       build-number: "1"
-      jenkins.io/task-stage-name: Second
+      jenkins.io/task-stage-name: second
       owner: abayer
       repo: js-test-repo
       tekton.dev/pipeline: abayer-js-test-repo-nested

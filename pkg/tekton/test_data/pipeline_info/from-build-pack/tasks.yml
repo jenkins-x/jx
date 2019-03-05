@@ -7,7 +7,7 @@ items:
     generation: 1
     labels:
       branch: master
-      jenkins.io/task-stage-name: From-Build-Pack
+      jenkins.io/task-stage-name: from-build-pack
       owner: abayer
       repo: jx-demo-qs
     name: abayer-jx-demo-qs-master

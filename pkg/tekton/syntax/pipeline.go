@@ -204,7 +204,7 @@ func (s *Stage) taskName() string {
 	return strings.ToLower(strings.NewReplacer(" ", "-").Replace(s.Name))
 }
 
-// stageLabelName replaces invalid cahracters in stage names for label usage.
+// stageLabelName replaces invalid characters in stage names for label usage.
 func (s *Stage) stageLabelName() string {
 	return MangleToRfc1035Label(s.Name, "")
 }
@@ -1168,13 +1168,15 @@ func (ts transformedStage) getClosestAncestor() *transformedStage {
 func findDuplicates(names []string) *apis.FieldError {
 	// Count members
 	counts := make(map[string]int)
+	mangled := make(map[string]string)
 	for _, v := range names {
-		counts[v]++
+		counts[MangleToRfc1035Label(v, "")]++
+		mangled[v] = MangleToRfc1035Label(v, "")
 	}
 
 	var duplicateNames []string
-	for k, v := range counts {
-		if v > 1 {
+	for k, v := range mangled {
+		if counts[v] > 1 {
 			duplicateNames = append(duplicateNames, "'"+k+"'")
 		}
 	}
