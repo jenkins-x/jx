@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"strings"
 
 	"github.com/ghodss/yaml"
@@ -138,12 +139,22 @@ func (o *EnvironmentPullRequestOptions) PushEnvironmentRepo(dir string, branchNa
 		return nil, err
 	}
 
+	headPrefix := ""
+
+	username := o.GitProvider.CurrentUsername()
+	if username == "" {
+		return nil, fmt.Errorf("no git user name found")
+	}
+	if gitInfo.Organisation != username {
+		headPrefix = username + ":"
+	}
+
 	gha := &gits.GitPullRequestArguments{
 		GitRepository: gitInfo,
 		Title:         pullRequestDetails.Title,
 		Body:          pullRequestDetails.Message,
 		Base:          base,
-		Head:          branchName,
+		Head:          headPrefix + branchName,
 	}
 
 	pr, err := o.GitProvider.CreatePullRequest(gha)
@@ -222,58 +233,73 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 	}
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
-		return "", "", nil, err
+		return "", "", nil, errors.Wrapf(err, "failed to parse git URL %s", gitURL)
 	}
 
-	if err != nil {
-		return "", "", nil, err
+	fork := false
+	username := ""
+	originalOrg := gitInfo.Organisation
+	originalRepo := gitInfo.Name
+
+	if o.GitProvider == nil {
+		log.Warnf("No GitProvider specified!\n")
+		debug.PrintStack()
+	} else {
+		// lets check if we need to fork the repository...
+
+		username = o.GitProvider.CurrentUsername()
+
+		if originalOrg != username && username != "" && originalOrg != "" {
+			fork = true
+		}
 	}
+
 	dir := filepath.Join(environmentsDir, gitInfo.Organisation, gitInfo.Name)
-
-	// now lets clone the fork and pull it...
-	exists, err := util.FileExists(dir)
-	if err != nil {
-		return "", "", nil, err
-	}
 
 	base := source.Ref
 	if base == "" {
 		base = "master"
 	}
 
-	if exists {
-		if o.ConfigGitFn != nil {
-			err = o.ConfigGitFn(dir, gitInfo, o.Gitter)
+	if fork {
+		if o.GitProvider == nil {
+			return "", "", nil, errors.Wrapf(err, "no Git Provider specified for git URL %s", gitURL)
+		}
+		provider := o.GitProvider
+		git := o.Gitter
+
+		repo, err := provider.GetRepository(username, originalRepo)
+		if err != nil {
+			// lets try create a fork - using a blank organisation to force a user specific fork
+			repo, err = provider.ForkRepository(originalOrg, originalRepo, "")
 			if err != nil {
-				return "", "", nil, err
+				return "", "", nil, errors.Wrapf(err, "failed to fork GitHub repo %s/%s to user %s", originalOrg, originalRepo, username)
 			}
+			log.Infof("Forked Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 		}
-		// lets check the git remote URL is setup correctly
-		err = o.Gitter.SetRemoteURL(dir, "origin", gitURL)
+
+		dir, err = ioutil.TempDir("", fmt.Sprintf("fork-%s-%s", gitInfo.Organisation, gitInfo.Name))
 		if err != nil {
-			return "", "", nil, err
+			return "", "", nil, errors.Wrap(err, "failed to create temp dir")
 		}
-		err = o.Gitter.Stash(dir)
-		if err != nil {
-			return "", "", nil, err
-		}
-		err = o.Gitter.Checkout(dir, base)
-		if err != nil {
-			return "", "", nil, err
-		}
-		err = o.Gitter.Pull(dir)
-		if err != nil {
-			return "", "", nil, err
-		}
-	} else {
-		err := os.MkdirAll(dir, util.DefaultWritePermissions)
+
+		err = os.MkdirAll(dir, util.DefaultWritePermissions)
 		if err != nil {
 			return "", "", nil, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
 		}
-		err = o.Gitter.Clone(gitURL, dir)
+		err = o.Gitter.Clone(repo.CloneURL, dir)
 		if err != nil {
 			return "", "", nil, err
 		}
+		err = git.SetRemoteURL(dir, "upstream", gitURL)
+		if err != nil {
+			return "", "", nil, errors.Wrapf(err, "setting remote upstream %q in forked environment repo", gitURL)
+		}
+		err = git.PullUpstream(dir)
+		if err != nil {
+			return "", "", nil, errors.Wrap(err, "pulling upstream of forked versions repository")
+		}
+
 		if o.ConfigGitFn != nil {
 			err = o.ConfigGitFn(dir, gitInfo, o.Gitter)
 			if err != nil {
@@ -286,8 +312,59 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 				return "", "", nil, err
 			}
 		}
+	} else {
+		// now lets clone the fork and pull it...
+		exists, err := util.FileExists(dir)
+		if err != nil {
+			return "", "", nil, errors.Wrapf(err, "failed to check if directory %s exists", dir)
+		}
 
-		// TODO lets fork if required???
+		if exists {
+			if o.ConfigGitFn != nil {
+				err = o.ConfigGitFn(dir, gitInfo, o.Gitter)
+				if err != nil {
+					return "", "", nil, err
+				}
+			}
+			// lets check the git remote URL is setup correctly
+			err = o.Gitter.SetRemoteURL(dir, "origin", gitURL)
+			if err != nil {
+				return "", "", nil, err
+			}
+			err = o.Gitter.Stash(dir)
+			if err != nil {
+				return "", "", nil, err
+			}
+			err = o.Gitter.Checkout(dir, base)
+			if err != nil {
+				return "", "", nil, err
+			}
+			err = o.Gitter.Pull(dir)
+			if err != nil {
+				return "", "", nil, err
+			}
+		} else {
+			err := os.MkdirAll(dir, util.DefaultWritePermissions)
+			if err != nil {
+				return "", "", nil, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
+			}
+			err = o.Gitter.Clone(gitURL, dir)
+			if err != nil {
+				return "", "", nil, err
+			}
+			if o.ConfigGitFn != nil {
+				err = o.ConfigGitFn(dir, gitInfo, o.Gitter)
+				if err != nil {
+					return "", "", nil, err
+				}
+			}
+			if base != "master" {
+				err = o.Gitter.Checkout(dir, base)
+				if err != nil {
+					return "", "", nil, err
+				}
+			}
+		}
 	}
 	return dir, base, gitInfo, nil
 }

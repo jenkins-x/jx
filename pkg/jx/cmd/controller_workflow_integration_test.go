@@ -33,6 +33,7 @@ func TestSequentialWorkflow(t *testing.T) {
 	prodRepo := gits.NewFakeRepository(testOrgName, prodRepoName)
 
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
+	fakeGitProvider.User.Username = testOrgName
 
 	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://fake.git/"+testOrgName+"/"+stagingRepoName+".git")
 	production := kube.NewPermanentEnvironmentWithGit("production", "https://fake.git/"+testOrgName+"/"+prodRepoName+".git")
@@ -189,6 +190,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 	prodRepo := gits.NewFakeRepository(testOrgName, prodRepoName)
 
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
+	fakeGitProvider.User.Username = testOrgName
 
 	staging := kube.NewPermanentEnvironmentWithGit("staging", "https://fake.git/"+testOrgName+"/"+stagingRepoName+".git")
 	production := kube.NewPermanentEnvironmentWithGit("production", "https://fake.git/"+testOrgName+"/"+prodRepoName+".git")
