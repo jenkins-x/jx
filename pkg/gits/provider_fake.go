@@ -720,5 +720,5 @@ func NewFakeProvider(repositories ...*FakeRepository) *FakeProvider {
 	return provider
 }
 func (p *FakeProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
-    return nil, fmt.Errorf("Listing commits not supported on fake")
+	return nil, fmt.Errorf("Listing commits not supported on fake")
 }

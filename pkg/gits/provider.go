@@ -79,12 +79,12 @@ type GitCommit struct {
 }
 
 type ListCommitsArguments struct {
-	SHA string
-	Path string
-	Author string
-	Since time.Time
-	Until time.Time
-	Page int
+	SHA     string
+	Path    string
+	Author  string
+	Since   time.Time
+	Until   time.Time
+	Page    int
 	PerPage int
 }
 

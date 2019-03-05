@@ -1017,5 +1017,5 @@ func BitBucketCloudAccessTokenURL(url string, username string) string {
 	return util.UrlJoin(url, "/account/user", username, "/app-passwords/new")
 }
 func (p *BitbucketCloudProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
-    return nil, fmt.Errorf("Listing commits not supported on bitbucket")
+	return nil, fmt.Errorf("Listing commits not supported on bitbucket")
 }

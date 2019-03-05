@@ -43,7 +43,6 @@ func TestStepSplitMonorepo(t *testing.T) {
 		filepath.Join(tempDir, "bar", "charts", "bar", "templates", "deployment.yaml"))
 }
 
-
 func TestStepSplitMonorepoGetLastGitCommit(t *testing.T) {
 	t.Parallel()
 	testData := filepath.Join("test_data", "split_monorepo")
@@ -59,7 +58,7 @@ func TestStepSplitMonorepoGetLastGitCommit(t *testing.T) {
 		Glob:         "*",
 		Dir:          testData,
 		OutputDir:    tempDir,
-		RepoName:      "test",
+		RepoName:     "test",
 		NoGit:        true,
 	}
 

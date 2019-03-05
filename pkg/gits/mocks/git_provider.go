@@ -4,13 +4,13 @@
 package gits_test
 
 import (
+	"fmt"
 	github "github.com/google/go-github/github"
 	auth "github.com/jenkins-x/jx/pkg/auth"
 	gits "github.com/jenkins-x/jx/pkg/gits"
 	pegomock "github.com/petergtz/pegomock"
 	"reflect"
 	"time"
-	"fmt"
 )
 
 type MockGitProvider struct {

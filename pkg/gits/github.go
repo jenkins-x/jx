@@ -1173,10 +1173,10 @@ func asText(text *string) string {
 	return ""
 }
 func (p *GitHubProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
-	githubOpt := &github.CommitsListOptions {
-		Path:   opt.Path,
-		ListOptions: github.ListOptions {
-			Page: opt.Page,
+	githubOpt := &github.CommitsListOptions{
+		Path: opt.Path,
+		ListOptions: github.ListOptions{
+			Page:    opt.Page,
 			PerPage: opt.PerPage,
 		},
 	}
@@ -1187,11 +1187,11 @@ func (p *GitHubProvider) ListCommits(owner, repo string, opt *ListCommitsArgumen
 	}
 	var commits []*GitCommit
 	if len(githubCommits) > 0 {
-		for i :=0; i < len(githubCommits); i++ {
-			commits = append(commits, &GitCommit {
-				SHA : *githubCommits[0].SHA,
-				Message : *githubCommits[0].Commit.Message,
-				URL  : *githubCommits[0].Commit.URL,
+		for i := 0; i < len(githubCommits); i++ {
+			commits = append(commits, &GitCommit{
+				SHA:     *githubCommits[0].SHA,
+				Message: *githubCommits[0].Commit.Message,
+				URL:     *githubCommits[0].Commit.URL,
 			})
 		}
 	}
