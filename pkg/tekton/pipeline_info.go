@@ -365,12 +365,11 @@ func (si *StageInfo) SetPodsForStageInfo(kubeClient kubernetes.Interface, tekton
 	if si.Task != "" {
 		selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: map[string]string{
 			pipeline.GroupName + pipeline.PipelineRunLabelKey: prName,
-			syntax.LabelStageName:                             si.Name,
+			syntax.LabelStageName:                             syntax.MangleToRfc1035Label(si.Name, ""),
 		}})
 		if err != nil {
 			return err
 		}
-
 		podList, err := kubeClient.CoreV1().Pods(ns).List(metav1.ListOptions{
 			LabelSelector: selector.String(),
 		})

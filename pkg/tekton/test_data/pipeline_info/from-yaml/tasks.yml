@@ -6,7 +6,7 @@ items:
     creationTimestamp: 2019-02-21T22:02:43Z
     generation: 1
     labels:
-      jenkins.io/task-stage-name: Build
+      jenkins.io/task-stage-name: build
     name: abayer-js-test-repo-master-build
     namespace: jx
     resourceVersion: "5934"
@@ -129,7 +129,7 @@ items:
     creationTimestamp: 2019-02-21T22:02:43Z
     generation: 1
     labels:
-      jenkins.io/task-stage-name: Second
+      jenkins.io/task-stage-name: second
     name: abayer-js-test-repo-master-second
     namespace: jx
     resourceVersion: "5935"
