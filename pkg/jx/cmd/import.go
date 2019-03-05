@@ -262,14 +262,14 @@ func (options *ImportOptions) Run() error {
 		}
 
 		if options.UseDefaultGit {
-		    userAuth= config.CurrentUser(server, options.CommonOptions.InCluster())
-		} else  {
-		// Get the org in case there is more than one user auth on the server and batchMode is true
-		org := options.getOrganisationOrCurrentUser()
-		userAuth, err = config.PickServerUserAuth(server, "Git user name:", options.BatchMode, org, options.In, options.Out, options.Err)
-		if err != nil {
-			return err
-		}
+			userAuth = config.CurrentUser(server, options.CommonOptions.InCluster())
+		} else {
+			// Get the org in case there is more than one user auth on the server and batchMode is true
+			org := options.getOrganisationOrCurrentUser()
+			userAuth, err = config.PickServerUserAuth(server, "Git user name:", options.BatchMode, org, options.In, options.Out, options.Err)
+			if err != nil {
+				return err
+			}
 		}
 		if server.Kind == "" {
 			server.Kind, err = options.GitServerHostURLKind(server.URL)
