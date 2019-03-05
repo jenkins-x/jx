@@ -64,6 +64,7 @@ type InstallOptions struct {
 	CreateJenkinsUserOptions
 	CreateEnvOptions
 	config.AdminSecretsService
+	kubevault.AWSConfig
 
 	InitOptions InitOptions
 	Flags       InstallFlags
@@ -274,6 +275,7 @@ func NewCmdInstall(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Flags.Provider, "provider", "", "", "Cloud service providing the Kubernetes cluster.  Supported providers: "+KubernetesProviderOptions())
 
 	cmd.AddCommand(NewCmdInstallDependencies(commonOpts))
+	awsCreateVaultOptions(cmd, &options.AWSConfig)
 
 	return cmd
 }
@@ -1533,7 +1535,7 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 			git := options.Git()
 			gitRepoOptions, err := options.buildGitRepositoryOptionsForEnvironments()
 			if err != nil || gitRepoOptions == nil {
-				if gitRepoOptions == nil {
+				if err == nil {
 					err = errors.New("empty git repository options")
 				}
 				return errors.Wrap(err, "building the git repository options for environment")
@@ -1996,7 +1998,7 @@ func (options *InstallOptions) configureKaniko() error {
 
 func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string, ic *kube.IngressConfig) error {
 	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
-		if options.Flags.Provider != cloud.GKE {
+		if options.Flags.Provider != cloud.GKE && options.Flags.Provider != cloud.EKS && options.Flags.Provider != cloud.AWS {
 			return fmt.Errorf("system vault is not supported for %s provider", options.Flags.Provider)
 		}
 
@@ -2015,13 +2017,32 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			},
 			IngressConfig: *ic,
 			Namespace:     namespace,
+			AWSConfig:     options.AWSConfig,
 		}
 		if options.installValues != nil {
-			if cvo.GKEProjectID == "" {
-				cvo.GKEProjectID = options.installValues[kube.ProjectID]
+			if options.Flags.Provider == cloud.GKE {
+				if cvo.GKEProjectID == "" {
+					cvo.GKEProjectID = options.installValues[kube.ProjectID]
+				}
+				if cvo.GKEZone == "" {
+					cvo.GKEZone = options.installValues[kube.Zone]
+				}
 			}
-			if cvo.GKEZone == "" {
-				cvo.GKEZone = options.installValues[kube.Zone]
+			if options.Flags.Provider == cloud.AWS || options.Flags.Provider == cloud.EKS {
+				defaultRegion := options.installValues[kube.Region]
+				if cvo.DynamoDBRegion == "" {
+					cvo.DynamoDBRegion = defaultRegion
+					log.Infof("Region not specified for DynamoDB, defaulting to %s\n", util.ColorInfo(defaultRegion))
+				}
+				if cvo.KMSRegion == "" {
+					cvo.KMSRegion = defaultRegion
+					log.Infof("Region not specified for KMS, defaulting to %s\n", util.ColorInfo(defaultRegion))
+
+				}
+				if cvo.S3Region == "" {
+					cvo.S3Region = defaultRegion
+					log.Infof("Region not specified for S3, defaulting to %s\n", util.ColorInfo(defaultRegion))
+				}
 			}
 		}
 		vaultOperatorClient, err := cvo.VaultOperatorClient()
@@ -2044,7 +2065,7 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 				util.ColorInfo(systemVaultName), util.ColorInfo(namespace))
 		} else {
 			log.Info("Creating new system vault\n")
-			err = cvo.createVault(vaultOperatorClient, systemVaultName)
+			err = cvo.createVault(vaultOperatorClient, systemVaultName, options.Flags.Provider)
 			if err != nil {
 				return err
 			}

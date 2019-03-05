@@ -12,11 +12,6 @@ func ServiceAccountName(vaultName string) string {
 	return generateName(vaultName, "sa")
 }
 
-// AuthServiceAccountName creates a service account name for a given vault and cluster name
-func AuthServiceAccountName(vaultName string) string {
-	return generateName(vaultName, "auth-sa")
-}
-
 // KeyringName creates a keyring name for a given vault and cluster name
 func KeyringName(vaultName string) string {
 	return generateName(vaultName, "keyring")
