@@ -337,26 +337,26 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 				}
 			}
 			pod := stage.Pod
-			initContainers := pod.Spec.InitContainers
-			if len(initContainers) <= 0 {
-				return fmt.Errorf("No InitContainers for Pod %s for build: %s", pod.Name, name)
+			containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
+			if len(containers) <= 0 {
+				return fmt.Errorf("No Containers for Pod %s for build: %s", pod.Name, name)
 			}
-			for i, ic := range initContainers {
+			for i, ic := range containers {
 				pod, err := kubeClient.CoreV1().Pods(ns).Get(pod.Name, metav1.GetOptions{})
 				if err != nil {
 					return errors.Wrapf(err, "failed to find pod %s", pod.Name)
 				}
 				if i > 0 {
-					icStatuses := pod.Status.InitContainerStatuses
-					if i < len(icStatuses) {
-						lastContainer := icStatuses[i-1]
+					_, containerStatuses, _ := kube.GetContainersWithStatusAndIsInit(pod)
+					if i < len(containerStatuses) {
+						lastContainer := containerStatuses[i-1]
 						terminated := lastContainer.State.Terminated
 						if terminated != nil && terminated.ExitCode != 0 {
 							log.Warnf("container %s failed with exit code %d: %s\n", lastContainer.Name, terminated.ExitCode, terminated.Message)
 						}
 					}
 				}
-				pod, err = waitForInitContainerToStart(kubeClient, ns, pod, i)
+				pod, err = waitForContainerToStart(kubeClient, ns, pod, i)
 				if err != nil {
 					return err
 				}
@@ -372,28 +372,28 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 		if pod == nil {
 			return fmt.Errorf("No Pod found for name %s", name)
 		}
-		initContainers := pod.Spec.InitContainers
-		if len(initContainers) <= 0 {
-			return fmt.Errorf("No InitContainers for Pod %s for build: %s", pod.Name, name)
+		containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
+		if len(containers) <= 0 {
+			return fmt.Errorf("No Containers for Pod %s for build: %s", pod.Name, name)
 		}
 
 		log.Infof("Build logs for %s\n", util.ColorInfo(name+suffix))
-		for i, ic := range initContainers {
+		for i, ic := range containers {
 			pod, err := kubeClient.CoreV1().Pods(ns).Get(pod.Name, metav1.GetOptions{})
 			if err != nil {
 				return errors.Wrapf(err, "failed to find pod %s", pod.Name)
 			}
 			if i > 0 {
-				icStatuses := pod.Status.InitContainerStatuses
-				if i < len(icStatuses) {
-					lastContainer := icStatuses[i-1]
+				_, containerStatuses, _ := kube.GetContainersWithStatusAndIsInit(pod)
+				if i < len(containerStatuses) {
+					lastContainer := containerStatuses[i-1]
 					terminated := lastContainer.State.Terminated
 					if terminated != nil && terminated.ExitCode != 0 {
 						log.Warnf("container %s failed with exit code %d: %s\n", lastContainer.Name, terminated.ExitCode, terminated.Message)
 					}
 				}
 			}
-			pod, err = waitForInitContainerToStart(kubeClient, ns, pod, i)
+			pod, err = waitForContainerToStart(kubeClient, ns, pod, i)
 			if err != nil {
 				return err
 			}
@@ -406,19 +406,20 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 	return nil
 }
 
-func waitForInitContainerToStart(kubeClient kubernetes.Interface, ns string, pod *corev1.Pod, idx int) (*corev1.Pod, error) {
+func waitForContainerToStart(kubeClient kubernetes.Interface, ns string, pod *corev1.Pod, idx int) (*corev1.Pod, error) {
 	if pod.Status.Phase == corev1.PodFailed {
 		log.Warnf("pod %s has failed\n", pod.Name)
 		return pod, nil
 	}
-	if kube.HasInitContainerStarted(pod, idx) {
+	if kube.HasContainerStarted(pod, idx) {
 		return pod, nil
 	}
 	containerName := ""
-	if idx < len(pod.Spec.InitContainers) {
-		containerName = pod.Spec.InitContainers[idx].Name
+	containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
+	if idx < len(containers) {
+		containerName = containers[idx].Name
 	}
-	log.Infof("waiting for pod %s init container %s to start...\n", util.ColorInfo(pod.Name), util.ColorInfo(containerName))
+	log.Infof("waiting for pod %s container %s to start...\n", util.ColorInfo(pod.Name), util.ColorInfo(containerName))
 	for {
 		time.Sleep(time.Second)
 
@@ -426,19 +427,19 @@ func waitForInitContainerToStart(kubeClient kubernetes.Interface, ns string, pod
 		if err != nil {
 			return p, errors.Wrapf(err, "failed to load pod %s", pod.Name)
 		}
-		if kube.HasInitContainerStarted(p, idx) {
+		if kube.HasContainerStarted(p, idx) {
 			return p, nil
 		}
 	}
 }
 
 func (o *GetBuildLogsOptions) getPodLog(ns string, pod *corev1.Pod, container corev1.Container) error {
-	log.Infof("getting the log for pod %s and init container %s\n", util.ColorInfo(pod.Name), util.ColorInfo(container.Name))
+	log.Infof("getting the log for pod %s and container %s\n", util.ColorInfo(pod.Name), util.ColorInfo(container.Name))
 	return o.TailLogs(ns, pod.Name, container.Name)
 }
 
 func (o *GetBuildLogsOptions) getStageLog(ns, build, stageName string, pod *corev1.Pod, container corev1.Container) error {
-	log.Infof("getting the log for build %s stage %s and init container %s\n", util.ColorInfo(build), util.ColorInfo(stageName), util.ColorInfo(container.Name))
+	log.Infof("getting the log for build %s stage %s and container %s\n", util.ColorInfo(build), util.ColorInfo(stageName), util.ColorInfo(container.Name))
 	return o.TailLogs(ns, pod.Name, container.Name)
 }
 
@@ -456,8 +457,8 @@ func (o *GetBuildLogsOptions) loadBuilds(kubeClient kubernetes.Interface, ns str
 
 	buildInfos := []*builds.BuildPodInfo{}
 	for _, pod := range pods {
-		initContainers := pod.Spec.InitContainers
-		if len(initContainers) > 0 {
+		containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
+		if len(containers) > 0 {
 			buildInfo := builds.CreateBuildPodInfo(pod)
 			if o.BuildFilter.BuildMatches(buildInfo) {
 				buildInfos = append(buildInfos, buildInfo)

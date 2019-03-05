@@ -221,9 +221,10 @@ func CreatePipelineRunInfo(kubeClient kubernetes.Interface, tektonClient tektonc
 		return nil, nil
 	}
 
-	for _, initContainer := range pod.Spec.InitContainers {
-		if strings.HasPrefix(initContainer.Name, "build-step-git-source") {
-			args := initContainer.Args
+	containers, _, isInit := kube.GetContainersWithStatusAndIsInit(pod)
+	for _, container := range containers {
+		if strings.HasPrefix(container.Name, "build-step-git-source") {
+			_, args := kube.GetCommandAndArgs(&container, isInit)
 			for i := 0; i <= len(args)-2; i += 2 {
 				key := args[i]
 				value := args[i+1]
@@ -241,7 +242,7 @@ func CreatePipelineRunInfo(kubeClient kubernetes.Interface, tektonClient tektonc
 			}
 		}
 		var pullPullSha, pullBaseSha string
-		for _, v := range initContainer.Env {
+		for _, v := range container.Env {
 			if v.Value == "" {
 				continue
 			}
@@ -268,14 +269,14 @@ func CreatePipelineRunInfo(kubeClient kubernetes.Interface, tektonClient tektonc
 			}
 		}
 		if branch == "" {
-			for _, v := range initContainer.Env {
+			for _, v := range container.Env {
 				if v.Name == "PULL_BASE_REF" {
 					build = v.Value
 				}
 			}
 		}
 		if build == "" {
-			for _, v := range initContainer.Env {
+			for _, v := range container.Env {
 				if v.Name == "BUILD_NUMBER" || v.Name == "BUILD_ID" {
 					build = v.Value
 				}
@@ -389,8 +390,11 @@ func (si *StageInfo) SetPodsForStageInfo(kubeClient kubernetes.Interface, tekton
 		si.TaskRun = pod.Labels[builds.LabelTaskRunName]
 		si.Pod = &pod
 		si.CreatedTime = pod.CreationTimestamp.Time
-		if len(pod.Spec.InitContainers) > 2 {
-			si.FirstStepImage = pod.Spec.InitContainers[2].Image
+		containers, _, isInit := kube.GetContainersWithStatusAndIsInit(&pod)
+		if isInit && len(containers) > 2 {
+			si.FirstStepImage = containers[2].Image
+		} else if !isInit && len(containers) > 1 {
+			si.FirstStepImage = containers[1].Image
 		}
 	} else if len(si.Stages) > 0 {
 		for _, child := range si.Stages {

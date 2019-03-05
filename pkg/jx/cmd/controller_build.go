@@ -323,8 +323,9 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKeyFromRun(pri *tekton
 
 func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.Interface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod) bool {
 	originYaml := toYamlString(activity)
-	initContainersTerminated := len(pod.Status.InitContainerStatuses) > 0
-	for _, c := range pod.Status.InitContainerStatuses {
+	_, containerStatuses, _ := kube.GetContainersWithStatusAndIsInit(pod)
+	containersTerminated := len(containerStatuses) > 0
+	for _, c := range containerStatuses {
 		name := strings.Replace(strings.TrimPrefix(c.Name, "build-step-"), "-", " ", -1)
 		title := strings.Title(name)
 		_, stage, _ := kube.GetOrCreateStage(activity, title)
@@ -363,7 +364,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 			} else {
 				stage.Status = v1.ActivityStatusTypePending
 			}
-			initContainersTerminated = false
+			containersTerminated = false
 		}
 	}
 	spec := &activity.Spec
@@ -405,7 +406,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 		}
 	}
 
-	if !allCompleted && initContainersTerminated {
+	if !allCompleted && containersTerminated {
 		allCompleted = true
 	}
 	if allCompleted {
@@ -532,12 +533,13 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 
 func updateForStage(si *tekton.StageInfo, a *v1.PipelineActivity) {
 	_, stage, _ := kube.GetOrCreateStage(a, si.GetStageNameIncludingParents())
-	initContainersTerminated := false
+	containersTerminated := false
 
 	if si.Pod != nil {
 		pod := si.Pod
-		initContainersTerminated = len(pod.Status.InitContainerStatuses) > 0
-		for _, c := range pod.Status.InitContainerStatuses {
+		_, containerStatuses, _ := kube.GetContainersWithStatusAndIsInit(pod)
+		containersTerminated = len(containerStatuses) > 0
+		for _, c := range containerStatuses {
 			name := strings.Replace(strings.TrimPrefix(c.Name, "build-step-"), "-", " ", -1)
 			title := strings.Title(name)
 			step, _ := kube.GetOrCreateStepInStage(stage, title)
@@ -575,7 +577,7 @@ func updateForStage(si *tekton.StageInfo, a *v1.PipelineActivity) {
 				} else {
 					step.Status = v1.ActivityStatusTypePending
 				}
-				initContainersTerminated = false
+				containersTerminated = false
 			}
 		}
 	}
@@ -689,7 +691,7 @@ func updateForStage(si *tekton.StageInfo, a *v1.PipelineActivity) {
 			}
 		}
 
-		if !allCompleted && initContainersTerminated {
+		if !allCompleted && containersTerminated {
 			allCompleted = true
 		}
 		if allCompleted {
@@ -767,11 +769,13 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 	return url, nil
 }
 
-// createStepDescription uses the spec of the init container to return a description
-func createStepDescription(initContainerName string, pod *corev1.Pod) string {
-	for _, c := range pod.Spec.InitContainers {
-		args := c.Args
-		if c.Name == initContainerName && len(args) > 0 {
+// createStepDescription uses the spec of the container to return a description
+func createStepDescription(containerName string, pod *corev1.Pod) string {
+	containers, _, isInit := kube.GetContainersWithStatusAndIsInit(pod)
+
+	for _, c := range containers {
+		_, args := kube.GetCommandAndArgs(&c, isInit)
+		if c.Name == containerName && len(args) > 0 {
 			if args[0] == "-url" && len(args) > 1 {
 				return args[1]
 			}

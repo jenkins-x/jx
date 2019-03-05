@@ -223,8 +223,10 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 				buildId := ""
 				sourceUrl := ""
 				branch := ""
-				for _, initContainer := range pod.Spec.InitContainers {
-					for _, e := range initContainer.Env {
+
+				containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
+				for _, container := range containers {
+					for _, e := range container.Env {
 						switch e.Name {
 						case "REPO_OWNER":
 							org = e.Value
