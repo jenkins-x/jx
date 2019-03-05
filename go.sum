@@ -107,6 +107,8 @@ github.com/aws/aws-sdk-go v1.16.18 h1:ZXmG9Uexu2f2kKK0Onlod3Hl4X77qQvCGx2725fSub
 github.com/aws/aws-sdk-go v1.16.18/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
 github.com/aws/aws-sdk-go v1.16.20 h1:fNQRk/PXr8B4rU3olSLeJPu2w6y79U+bTKTF6JRI5C8=
 github.com/aws/aws-sdk-go v1.16.20/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
+github.com/aws/aws-sdk-go v1.17.10 h1:m8vArG9yPW5YZ27IXcLg1tRkOXZtGrjgzljAo46qWaE=
+github.com/aws/aws-sdk-go v1.17.10/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN924inxo=
 github.com/banzaicloud/bank-vaults v0.0.0-20181129101211-e31657d7c4fe h1:20rYK7/kelCwMs3lTlKfR/RQ2T99VpaqntPG7Vt3+cg=
 github.com/banzaicloud/bank-vaults v0.0.0-20181129101211-e31657d7c4fe/go.mod h1:DCXyt+jITEQ5JUfxOWiYUKUE6ILZ5P4IU0MKgGcnmuc=
 github.com/bazelbuild/buildtools v0.0.0-20180226164855-80c7f0d45d7e/go.mod h1:5JP0TXzWDHXv8qvxRC4InIazwdyDseBDbzESUMKk1yU=
