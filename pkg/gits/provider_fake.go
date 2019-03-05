@@ -700,6 +700,9 @@ func NewFakeProvider(repositories ...*FakeRepository) *FakeProvider {
 	}
 	for _, repo := range repositories {
 		owner := repo.Owner
+		if provider.User.Username == "" {
+			provider.User.Username = owner
+		}
 		if owner == "" {
 			log.Warnf("Missing owner for Repository %s\n", repo.Name())
 		}
