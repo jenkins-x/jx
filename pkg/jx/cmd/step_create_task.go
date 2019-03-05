@@ -365,7 +365,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 			return nil, nil, nil, nil, nil, o.viewSteps(tasks...)
 		}
 
-		resources = append(resources, o.generateSourceRepoResource(pipelineResourceName), o.generateTempOrderingResource())
+		resources = append(resources, o.generateSourceRepoResource(pipelineResourceName))
 	} else {
 		t, err := o.CreateTaskForBuildPack(name, pipelineConfig, lifecycles, kind, ns)
 		if err != nil {
@@ -726,29 +726,6 @@ func (o *StepCreateTaskOptions) generateSourceRepoResource(name string) *pipelin
 		}
 	}
 	return resource
-}
-
-// TODO: This should not exist, but we need some way to enforce ordering of
-// tasks and right now resources are the only way to do that.
-func (o *StepCreateTaskOptions) generateTempOrderingResource() *pipelineapi.PipelineResource {
-	return &pipelineapi.PipelineResource{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: syntax.TektonAPIVersion,
-			Kind:       "PipelineResource",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "temp-ordering-resource",
-		},
-		Spec: pipelineapi.PipelineResourceSpec{
-			Type: pipelineapi.PipelineResourceTypeImage,
-			Params: []pipelineapi.Param{
-				{
-					Name:  "url",
-					Value: "alpine", // Something smallish (lol)
-				},
-			},
-		},
-	}
 }
 
 func (o *StepCreateTaskOptions) setBuildValues() error {

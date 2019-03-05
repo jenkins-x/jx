@@ -18,10 +18,6 @@ spec:
     resourceRef:
       apiVersion: tekton.dev/v1alpha1
       name: abayer-js-test-repo-really-long
-  - name: temp-ordering-resource
-    resourceRef:
-      apiVersion: tekton.dev/v1alpha1
-      name: temp-ordering-resource
   serviceAccount: tekton-bot
   trigger:
     type: manual
