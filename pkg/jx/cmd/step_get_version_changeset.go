@@ -1,8 +1,8 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
 	"path/filepath"
@@ -116,8 +116,8 @@ func (o *StepGetVersionChangeSetOptions) Run() error {
 	}
 	updateEnv := strings.Join(appUpdatedVersions, ",")
 	previousEnv := strings.Join(appPreviousVersions, ",")
-	log.Infof("JX_CHANGED_VERSIONS=\"%s\"\n", updateEnv)
-	log.Infof("JX_STABLE_VERSIONS=\"%s\"\n", previousEnv)
+	fmt.Fprintf(o.Out, "JX_CHANGED_VERSIONS=\"%s\"\n", updateEnv)
+	fmt.Fprintf(o.Out, "JX_STABLE_VERSIONS=\"%s\"\n", previousEnv)
 	return nil
 }
 
