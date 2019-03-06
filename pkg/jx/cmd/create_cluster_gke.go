@@ -421,13 +421,13 @@ func sanitizeLabel(username string) string {
 func validateClusterName(clustername string) error {
 	// Check for length greater than 40.
 	if len(clustername) > 40 {
-		err := fmt.Errorf("Cluster name %v is greater than 40 characters", clustername)
+		err := fmt.Errorf("cluster name %v is greater than the maximum 40 characters", clustername)
 		return err
 	}
 	// Now we need only make sure that clustername is limited to
 	// lowercase alphanumerics and dashes.
 	if disallowedLabelCharacters.MatchString(clustername) {
-		err := fmt.Errorf("Cluster name has %v invalid stuff in it", clustername)
+		err := fmt.Errorf("cluster name %v contains invalid characters. Permitted are lowercase alphanumerics and `-`", clustername)
 		return err
 	}
 	return nil
