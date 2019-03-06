@@ -1421,7 +1421,7 @@ func (o *StepCreateTaskOptions) modifyStep(container *corev1.Container, gitInfo 
 		if strings.HasPrefix(inputArgText, "skaffold build") {
 			sourceDir := o.getWorkspaceDir()
 			dockerfile := filepath.Join(sourceDir, "Dockerfile")
-			localRepo := o.dockerRegistry()
+			localRepo := o.getDockerRegistry()
 			destination := o.dockerImage(gitInfo)
 
 			args := []string{"--cache=true", "--cache-dir=/workspace",
@@ -1448,7 +1448,7 @@ func (o *StepCreateTaskOptions) modifyStep(container *corev1.Container, gitInfo 
 }
 
 func (o *StepCreateTaskOptions) dockerImage(gitInfo *gits.GitRepository) string {
-	dockerRegistry := o.dockerRegistry()
+	dockerRegistry := o.getDockerRegistry()
 
 	dockeerRegistryOrg := o.DockerRegistryOrg
 	if dockeerRegistryOrg == "" {
@@ -1458,7 +1458,7 @@ func (o *StepCreateTaskOptions) dockerImage(gitInfo *gits.GitRepository) string 
 	return dockerRegistry + "/" + dockeerRegistryOrg + "/" + appName
 }
 
-func (o *StepCreateTaskOptions) dockerRegistry() string {
+func (o *StepCreateTaskOptions) getDockerRegistry() string {
 	dockerRegistry := o.DockerRegistry
 	if dockerRegistry == "" {
 		dockerRegistry = o.dockerRegistry()
