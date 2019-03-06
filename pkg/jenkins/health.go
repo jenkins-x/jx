@@ -2,6 +2,7 @@ package jenkins
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 	"net/http"
 	"time"
 
@@ -15,14 +16,19 @@ const (
 )
 
 // CheckHealth checks the health of Jenkins server using the login URL
-func CheckHealth(url string) error {
-	healthEndpoin := JenkinsLoginURL(url)
+func CheckHealth(url string, healthTimeout time.Duration) error {
+	endpoint := JenkinsLoginURL(url)
+
+	if ping(endpoint) == nil {
+		return nil
+	}
+	log.Infof("waiting up to %s for the Jenkins server to be healty at URL %s\n", util.ColorInfo(healthTimeout.String()), util.ColorInfo(endpoint))
 	err := util.Retry(healthTimeout, func() error {
-		return ping(healthEndpoin)
+		return ping(endpoint)
 	})
 
 	if err != nil {
-		return errors.Wrapf(err, "pinging Jenkins server %q", healthEndpoin)
+		return errors.Wrapf(err, "pinging Jenkins server %q", endpoint)
 	}
 	return nil
 }
