@@ -268,7 +268,7 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 		if err != nil {
 			return err
 		}
-		versionFile := filepath.Join(configDir, "jenkins-x-versions", "packages", options.Binary + ".yml")
+		versionFile := filepath.Join(configDir, "jenkins-x-versions", "packages", options.Binary+".yml")
 		ver, err := version.LoadStableVersionFile(versionFile)
 		if err != nil {
 			return err
@@ -277,7 +277,6 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 			options.Version = ver.Version
 		}
 	}
-
 
 	if options.Version == "" {
 		options.Version, err = util.GetLatestVersionStringFromGitHub(options.GitHubOrganization, options.Binary)
