@@ -490,7 +490,7 @@ func (o *StepCreateTaskOptions) CreateTaskForBuildPack(languageName string, pipe
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
-			Labels: util.MergeMaps(o.labels, map[string]string{syntax.LabelStageName: syntax.DefaultStageNameForBuildPack}),
+			Labels: util.MergeMaps(o.labels, map[string]string{syntax.LabelStageName: syntax.MangleToRfc1035Label(syntax.DefaultStageNameForBuildPack, "")}),
 		},
 		Spec: pipelineapi.TaskSpec{
 			Steps:   steps,
@@ -536,7 +536,7 @@ func (o *StepCreateTaskOptions) CreatePipelineAndStructureForBuildPack(task *pip
 	}
 	tasks := []pipelineapi.PipelineTask{
 		{
-			Name: strings.ToLower(syntax.DefaultStageNameForBuildPack),
+			Name: syntax.MangleToRfc1035Label(syntax.DefaultStageNameForBuildPack, ""),
 			Resources: &pipelineapi.PipelineTaskResources{
 				Inputs: taskInputResources,
 			},
