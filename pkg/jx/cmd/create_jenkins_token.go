@@ -63,6 +63,7 @@ type CreateJenkinsUserOptions struct {
 	Timeout         string
 	NoREST          bool
 	RecreateToken   bool
+	HealthTimeout   time.Duration
 }
 
 // NewCmdCreateJenkinsUser creates a command
@@ -95,6 +96,7 @@ func NewCmdCreateJenkinsUser(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.NoREST, "no-rest", "", false, "Disables the use of REST calls to automatically find the API token if the user and password are known")
 	cmd.Flags().BoolVarP(&options.RecreateToken, "recreate-token", "", false, "Should we recreate teh API token if it already exists")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The namespace of the secret where the Jenkins API token will be stored")
+	cmd.Flags().DurationVarP(&options.HealthTimeout, "health-timeout", "", 30*time.Minute, "The maximum duration to wait for the Jenkins service to be healthy before trying to create the API token")
 	return cmd
 }
 
@@ -169,7 +171,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	}
 
 	if userAuth.IsInvalid() && o.Password != "" && !o.NoREST {
-		err := jenkins.CheckHealth(server.URL)
+		err := jenkins.CheckHealth(server.URL, o.HealthTimeout)
 		if err != nil {
 			return errors.Wrapf(err, "checking health of Jenkins server %q", server.URL)
 		}
