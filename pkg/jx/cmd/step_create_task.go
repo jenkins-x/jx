@@ -1433,7 +1433,6 @@ func (o *StepCreateTaskOptions) modifyStep(container *corev1.Container, gitInfo 
 			}
 
 			if ipAddressRegistryRegex.MatchString(localRepo) {
-				log.Infof("===== insecure docker registry")
 				args = append(args, "--insecure")
 			}
 
