@@ -308,6 +308,9 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 			pipelineConfig = localPipelineConfig
 		}
 	}
+	if pipelineConfig == nil {
+		return nil, nil, nil, nil, nil, fmt.Errorf("failed to find PipelineConfig in file %s", projectConfigFile)
+	}
 
 	// lets allow a `jenkins-x.yml` to specify we want to disable release prepare mode which can be useful for
 	// working with custom jenkins pipelines in custom jenkins servers
