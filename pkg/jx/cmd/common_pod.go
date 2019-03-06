@@ -50,7 +50,7 @@ func (o *CommonOptions) WaitForReadyKnativeBuildPod(c kubernetes.Interface, ns s
 			return "", err
 		}
 		name := ""
-		loggedInitContainerIdx := -1
+		loggedContainerIdx := -1
 		var latestPod *corev1.Pod
 		lastTime := time.Time{}
 		for _, pod := range pods {
@@ -69,19 +69,19 @@ func (o *CommonOptions) WaitForReadyKnativeBuildPod(c kubernetes.Interface, ns s
 		if latestPod != nil && name != "" {
 			if name != lastPod {
 				lastPod = name
-				loggedInitContainerIdx = -1
+				loggedContainerIdx = -1
 				log.Warnf("Found newest pod: %s\n", name)
 			}
 			if kube.IsPodReady(latestPod) {
 				return name, nil
 			}
 
-			initContainers := latestPod.Status.InitContainerStatuses
-			for idx, ic := range initContainers {
-				if isContainerStarted(&ic.State) && idx > loggedInitContainerIdx {
-					loggedInitContainerIdx = idx
+			_, containerStatuses, _ := kube.GetContainersWithStatusAndIsInit(latestPod)
+			for idx, ic := range containerStatuses {
+				if isContainerStarted(&ic.State) && idx > loggedContainerIdx {
+					loggedContainerIdx = idx
 					containerName := ic.Name
-					log.Warnf("Init container on pod: %s is: %s\n", name, containerName)
+					log.Warnf("Container on pod: %s is: %s\n", name, containerName)
 					err = o.TailLogs(ns, name, containerName)
 					if err != nil {
 						break
@@ -106,7 +106,7 @@ func (o *CommonOptions) WaitForReadyPodForSelector(c kubernetes.Interface, ns st
 			return "", err
 		}
 		name := ""
-		loggedInitContainerIdx := -1
+		loggedContainerIdx := -1
 		var latestPod *corev1.Pod
 		lastTime := time.Time{}
 		for _, pod := range pods.Items {
@@ -125,19 +125,19 @@ func (o *CommonOptions) WaitForReadyPodForSelector(c kubernetes.Interface, ns st
 		if latestPod != nil && name != "" {
 			if name != lastPod {
 				lastPod = name
-				loggedInitContainerIdx = -1
+				loggedContainerIdx = -1
 				log.Warnf("Found newest pod: %s\n", name)
 			}
 			if kube.IsPodReady(latestPod) {
 				return name, nil
 			}
 
-			initContainers := latestPod.Status.InitContainerStatuses
-			for idx, ic := range initContainers {
-				if isContainerStarted(&ic.State) && idx > loggedInitContainerIdx {
-					loggedInitContainerIdx = idx
+			_, containerStatuses, _ := kube.GetContainersWithStatusAndIsInit(latestPod)
+			for idx, ic := range containerStatuses {
+				if isContainerStarted(&ic.State) && idx > loggedContainerIdx {
+					loggedContainerIdx = idx
 					containerName := ic.Name
-					log.Warnf("Init container on pod: %s is: %s\n", name, containerName)
+					log.Warnf("Container on pod: %s is: %s\n", name, containerName)
 					err = o.TailLogs(ns, name, containerName)
 					if err != nil {
 						break

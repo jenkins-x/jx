@@ -65,9 +65,12 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 		log.Warnf("Failed to compile regexp because %s", err)
 	}
 	gitURL := ""
-	for _, initContainer := range pod.Spec.InitContainers {
-		if strings.HasPrefix(initContainer.Name, "build-step-git-source") {
-			args := initContainer.Args
+
+	containers, _, isInit := kube.GetContainersWithStatusAndIsInit(pod)
+
+	for _, container := range containers {
+		if strings.HasPrefix(container.Name, "build-step-git-source") {
+			_, args := kube.GetCommandAndArgs(&container, isInit)
 			for i := 0; i <= len(args)-2; i += 2 {
 				key := args[i]
 				value := args[i+1]
@@ -85,7 +88,7 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 			}
 		}
 		var pullPullSha, pullBaseSha string
-		for _, v := range initContainer.Env {
+		for _, v := range container.Env {
 			if v.Value == "" {
 				continue
 			}
@@ -112,14 +115,14 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 			}
 		}
 		if branch == "" {
-			for _, v := range initContainer.Env {
+			for _, v := range container.Env {
 				if v.Name == "PULL_BASE_REF" {
 					build = v.Value
 				}
 			}
 		}
 		if build == "" {
-			for _, v := range initContainer.Env {
+			for _, v := range container.Env {
 				if v.Name == "BUILD_NUMBER" || v.Name == "BUILD_ID" {
 					build = v.Value
 				}
@@ -157,8 +160,10 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 		LastCommitURL:     lastCommitURL,
 		CreatedTime:       pod.CreationTimestamp.Time,
 	}
-	if len(pod.Spec.InitContainers) > 2 {
-		answer.FirstStepImage = pod.Spec.InitContainers[2].Image
+	if isInit && len(containers) > 2 {
+		answer.FirstStepImage = containers[2].Image
+	} else if !isInit && len(containers) > 1 {
+		answer.FirstStepImage = containers[1].Image
 	}
 
 	if gitURL != "" {

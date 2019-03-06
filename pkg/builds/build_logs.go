@@ -3,6 +3,7 @@ package builds
 import (
 	"bufio"
 	"bytes"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
 	"io"
 	corev1 "k8s.io/api/core/v1"
@@ -13,7 +14,10 @@ import (
 func GetBuildLogsForPod(podInterface v1.PodInterface, pod *corev1.Pod) ([]byte, error) {
 	var buffer bytes.Buffer
 	podName := pod.Name
-	for _, container := range pod.Spec.InitContainers {
+
+	containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
+
+	for _, container := range containers {
 		buffer.WriteString("Step: ")
 		buffer.WriteString(container.Name)
 		buffer.WriteString(":\n\n")

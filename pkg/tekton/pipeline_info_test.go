@@ -26,7 +26,7 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 		expected *tekton.PipelineRunInfo
 		prName   string
 	}{{
-		name: "from-build-pack",
+		name: "from-build-pack-init-containers",
 		expected: &tekton.PipelineRunInfo{
 			Branch:      "master",
 			Build:       "1",
@@ -57,7 +57,7 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 		},
 		prName: "abayer-jx-demo-qs-master-1",
 	}, {
-		name: "from-yaml",
+		name: "from-yaml-init-containers",
 		expected: &tekton.PipelineRunInfo{
 			Branch:      "master",
 			Build:       "1",
@@ -96,7 +96,7 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 		},
 		prName: "abayer-js-test-repo-master-1",
 	}, {
-		name: "from-yaml-nested-stages",
+		name: "from-yaml-nested-stages-init-containers",
 		expected: &tekton.PipelineRunInfo{
 			Branch:      "nested",
 			Build:       "1",
@@ -138,6 +138,45 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 			}},
 		},
 		prName: "abayer-js-test-repo-nested-1",
+	}, {
+		name: "from-yaml",
+		expected: &tekton.PipelineRunInfo{
+			Branch:      "master",
+			Build:       "1",
+			BuildNumber: 1,
+			GitInfo: &gits.GitRepository{
+				Host:         "github.com",
+				Name:         "js-test-repo",
+				Organisation: "abayer",
+				Project:      "abayer",
+				Scheme:       "https",
+				URL:          "https://github.com/abayer/js-test-repo",
+			},
+			GitURL:       "https://github.com/abayer/js-test-repo",
+			Name:         "abayer-js-test-repo-master-1",
+			Organisation: "abayer",
+			Pipeline:     "abayer/js-test-repo/master",
+			PipelineRun:  "abayer-js-test-repo-master-1",
+			Repository:   "js-test-repo",
+			Stages: []*tekton.StageInfo{{
+				Name:           "Build",
+				CreatedTime:    *parseTime(t, "2019-03-05T15:06:13-05:00"),
+				FirstStepImage: "jenkinsxio/builder-nodejs:0.1.263",
+				PodName:        "abayer-js-test-repo-master-1-build-jmcbd-pod-a726d6",
+				Task:           "abayer-js-test-repo-master-build",
+				TaskRun:        "abayer-js-test-repo-master-1-build-jmcbd",
+				Parents:        []string{},
+			}, {
+				Name:           "Second",
+				CreatedTime:    *parseTime(t, "2019-03-05T15:07:05-05:00"),
+				FirstStepImage: "us.gcr.io/abayer-jx-experiment/bash-1155d67b477d7c4e2f7998b1fc6b4e43@sha256:ad8c6fffadb5f2723fe8a4aa3ac7f4ac091e1fe14b1badec7418c3705911af3c",
+				PodName:        "abayer-js-test-repo-master-1-second-wglk8-pod-762f8d",
+				Task:           "abayer-js-test-repo-master-second",
+				TaskRun:        "abayer-js-test-repo-master-1-second-wglk8",
+				Parents:        []string{},
+			}},
+		},
+		prName: "abayer-js-test-repo-master-1",
 	}, {
 		name:     "completed-from-yaml",
 		expected: nil,
