@@ -362,7 +362,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		return nil, nil, nil, nil, nil, err
 	}
 
-	if lifecycles.Pipeline != nil {
+	if lifecycles != nil && lifecycles.Pipeline != nil {
 		// TODO: Seeing weird behavior seemingly related to https://golang.org/doc/faq#nil_error
 		// if err is reused, maybe we need to switch return types (perhaps upstream in build-pipeline)?
 		if validateErr := lifecycles.Pipeline.Validate(); validateErr != nil {

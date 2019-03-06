@@ -221,14 +221,14 @@ func (o *CreateEnvOptions) Run() error {
 		return err
 	}
 	if o.Prow {
-		repo := fmt.Sprintf("%s/environment-%s-%s", gitInfo.Organisation, o.Prefix, env.Name)
+		repo := fmt.Sprintf("%s/%s", gitInfo.Organisation, gitInfo.Name)
 		err = prow.AddEnvironment(kubeClient, []string{repo}, devEnv.Spec.Namespace, env.Spec.Namespace, &devEnv.Spec.TeamSettings)
 		if err != nil {
 			return fmt.Errorf("failed to add repo %s to Prow config in namespace %s: %v", repo, env.Spec.Namespace, err)
 		}
 	}
-	/* It is important this pull secret handling goes after any namespace creation code; the service account exists in the created namespace */
 
+	/* It is important this pull secret handling goes after any namespace creation code; the service account exists in the created namespace */
 	if o.PullSecrets != "" {
 		// We need the namespace to be created first - do the check
 		if !o.GitOpsMode {
