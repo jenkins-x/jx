@@ -121,6 +121,9 @@ func (o *GetBuildLogsOptions) Run() error {
 	}
 
 	devEnv, err := kube.GetEnrichedDevEnvironment(kubeClient, jxClient, ns)
+	if devEnv == nil {
+		return fmt.Errorf("No development environment found for namespace %s", ns)
+	}
 	webhookEngine := devEnv.Spec.WebHookEngine
 	if webhookEngine == v1.WebHookEngineProw && !o.JenkinsSelector.IsCustom() {
 		return o.getProwBuildLog(kubeClient, tektonClient, jxClient, ns, tektonEnabled)

@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -221,21 +220,7 @@ func (o *StepTagOptions) updateChartValues(version string, chartsDir string) err
 }
 
 func (o *StepTagOptions) defaultChartValueRepository() string {
-	dockerRegistry := os.Getenv("DOCKER_REGISTRY")
-	if dockerRegistry == "" {
-		kubeClient, ns, err := o.KubeClientAndDevNamespace()
-		if err != nil {
-			log.Warnf("failed to create kube client: %s\n", err.Error())
-		} else {
-			name := kube.ConfigMapJenkinsDockerRegistry
-			data, err := kube.GetConfigMapData(kubeClient, name, ns)
-			if err != nil {
-				log.Warnf("failed to load ConfigMap %s in namespace %s: %s\n", name, ns, err.Error())
-			} else {
-				dockerRegistry = data["docker.registry"]
-			}
-		}
-	}
+	dockerRegistry := o.dockerRegistry()
 	dockerRegistryOrg := os.Getenv("DOCKER_REGISTRY_ORG")
 	if dockerRegistryOrg == "" {
 		dockerRegistryOrg = os.Getenv("ORG")
