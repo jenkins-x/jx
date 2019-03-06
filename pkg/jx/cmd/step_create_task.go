@@ -597,9 +597,15 @@ func (o *StepCreateTaskOptions) EnhanceTasksAndPipeline(tasks []*pipelineapi.Tas
 		o.enhanceTaskWithVolumesEnvAndInputs(t, pipelineConfig, *taskInputs)
 	}
 
+	taskParams := o.createPipelineTaskParams()
+
 	for i, pt := range pipeline.Spec.Tasks {
-		pt.Params = append(pt.Params, o.createPipelineTaskParams()...)
-		pipeline.Spec.Tasks[i] = pt
+		for _, tp := range taskParams {
+			if !hasPipelineParam(pt.Params, tp.Name) {
+				pt.Params = append(pt.Params, tp)
+				pipeline.Spec.Tasks[i] = pt
+			}
+		}
 	}
 
 	pipeline.Spec.Params = o.createPipelineParams()
@@ -1310,19 +1316,41 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 		version = o.previewVersionPrefix + buildNumber
 	}
 	if version != "" {
-		o.Results.PipelineParams = append(o.Results.PipelineParams, pipelineapi.Param{
-			Name:  "version",
-			Value: version,
-		})
+		if !hasParam(o.Results.PipelineParams, "version") {
+			o.Results.PipelineParams = append(o.Results.PipelineParams, pipelineapi.Param{
+				Name:  "version",
+				Value: version,
+			})
+		}
 	}
 	o.version = version
 	if o.BuildNumber != "" {
-		o.Results.PipelineParams = append(o.Results.PipelineParams, pipelineapi.Param{
-			Name:  "build_id",
-			Value: o.BuildNumber,
-		})
+		if !hasParam(o.Results.PipelineParams, "build_id") {
+			o.Results.PipelineParams = append(o.Results.PipelineParams, pipelineapi.Param{
+				Name:  "build_id",
+				Value: o.BuildNumber,
+			})
+		}
 	}
 	return nil
+}
+
+func hasParam(params []pipelineapi.Param, name string) bool {
+	for _, param := range params {
+		if param.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func hasPipelineParam(params []pipelineapi.Param, name string) bool {
+	for _, param := range params {
+		if param.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 func (o *StepCreateTaskOptions) runStepCommand(step *jenkinsfile.PipelineStep) error {
