@@ -363,3 +363,30 @@ func (o *CommonOptions) initGitConfigAndUser() error {
 	}
 	return nil
 }
+
+func (o *CommonOptions) dockerRegistryOrg(repository *gits.GitRepository) string {
+	answer := os.Getenv("DOCKER_REGISTRY_ORG")
+	if answer == "" {
+		answer = repository.Organisation
+	}
+	return answer
+}
+
+func (o *CommonOptions) dockerRegistry() string {
+	dockerRegistry := os.Getenv("DOCKER_REGISTRY")
+	if dockerRegistry == "" {
+		kubeClient, ns, err := o.KubeClientAndDevNamespace()
+		if err != nil {
+			log.Warnf("failed to create kube client: %s\n", err.Error())
+		} else {
+			name := kube.ConfigMapJenkinsDockerRegistry
+			data, err := kube.GetConfigMapData(kubeClient, name, ns)
+			if err != nil {
+				log.Warnf("failed to load ConfigMap %s in namespace %s: %s\n", name, ns, err.Error())
+			} else {
+				dockerRegistry = data["docker.registry"]
+			}
+		}
+	}
+	return dockerRegistry
+}
