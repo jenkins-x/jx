@@ -534,6 +534,34 @@ func (pri *PipelineRunInfo) Status() string {
 	return string(pod.Status.Phase)
 }
 
+// ToBuildPodInfo converts the object into a BuildPodInfo so it can be easily filtered
+func (pri PipelineRunInfo) ToBuildPodInfo() *builds.BuildPodInfo {
+	answer := &builds.BuildPodInfo{
+		Name:              pri.Name,
+		Organisation:      pri.Organisation,
+		Repository:        pri.Repository,
+		Branch:            pri.Branch,
+		Build:             pri.Build,
+		BuildNumber:       pri.BuildNumber,
+		Pipeline:          pri.Pipeline,
+		LastCommitSHA:     pri.LastCommitSHA,
+		LastCommitURL:     pri.LastCommitURL,
+		LastCommitMessage: pri.LastCommitMessage,
+		GitInfo:           pri.GitInfo,
+	}
+	pod := pri.FindFirstStagePod()
+	if pod != nil {
+		answer.Pod = pod
+		answer.PodName = pod.Name
+		containers := pod.Spec.Containers
+		if len(containers) > 0 {
+			answer.FirstStepImage = containers[0].Image
+		}
+		answer.CreatedTime = pod.CreationTimestamp.Time
+	}
+	return answer
+}
+
 // PipelineRunInfoOrder allows sorting of a slice of PipelineRunInfos
 type PipelineRunInfoOrder []*PipelineRunInfo
 
