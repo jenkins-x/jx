@@ -17,5 +17,5 @@ pipelineRef: abayer-jx-demo-qs-master
 pipelineRunRef: abayer-jx-demo-qs-master-1
 stages:
   - depth: 0
-    name: from-build-pack
+    name: From Build Pack
     taskRef: abayer-jx-demo-qs-master
