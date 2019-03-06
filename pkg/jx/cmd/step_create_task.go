@@ -30,6 +30,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+const (
+	kanikoDockerImage = "rawlingsj/executor:dev40"
+)
+
 var (
 	createTaskLong = templates.LongDesc(`
 		Creates a Knative Pipeline Run for a project
@@ -147,7 +151,7 @@ func NewCmdStepCreateTask(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.ViewSteps, "view", "", false, "Just view the steps that would be created")
 	cmd.Flags().BoolVarP(&options.NoReleasePrepare, "no-release-prepare", "", false, "Disables creating the release version number and tagging git and triggering the release pipeline from the new tag")
 	cmd.Flags().BoolVarP(&options.NoKaniko, "no-kaniko", "", false, "Disables using kaniko directly for building docker images")
-	cmd.Flags().StringVarP(&options.KanikoImage, "kaniko-image", "", "rawlingsj/executor:dev40", "The docker image for Kaniko")
+	cmd.Flags().StringVarP(&options.KanikoImage, "kaniko-image", "", kanikoDockerImage, "The docker image for Kaniko")
 	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The Docker registry organisation. If blank the git repository owner is used")
 	cmd.Flags().DurationVarP(&options.Duration, "duration", "", time.Second*30, "Retry duration when trying to create a PipelineRun")
 	return cmd
@@ -398,7 +402,8 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	}
 	for _, task := range tasks {
 		if validateErr := task.Spec.Validate(); validateErr != nil {
-			return nil, nil, nil, nil, nil, errors.Wrapf(validateErr, "Validation failed for generated Task: %s", task.Name)
+			data, _ := yaml.Marshal(task)
+			return nil, nil, nil, nil, nil, errors.Wrapf(validateErr, "Validation failed for generated Task: %s %s", task.Name, string(data))
 		}
 	}
 	if validateErr := run.Spec.Validate(); validateErr != nil {
@@ -1440,6 +1445,9 @@ func (o *StepCreateTaskOptions) modifyStep(container *corev1.Container, gitInfo 
 			answer.Command = []string{"/kaniko/executor"}
 			//answer.Args = []string{container.Args[0], "/kaniko/executor " + strings.Join(args, " ")}
 			answer.Args = args
+			if o.KanikoImage == "" {
+				o.KanikoImage = kanikoDockerImage
+			}
 			answer.Image = o.KanikoImage
 			return &answer
 		}
