@@ -14,7 +14,7 @@ import (
 func TestStepVerifyPod(t *testing.T) {
 	t.Parallel()
 
-	options := cmd.StepVerifyPodOptions{}
+	options := cmd.StepVerifyPodReadyOptions{}
 	// fake the output stream to be checked later
 	r, fakeStdout, _ := os.Pipe()
 	commonOpts := cmd.NewCommonOptionsWithFactory(nil)
@@ -37,7 +37,7 @@ func TestStepVerifyPod(t *testing.T) {
 func TestStepVerifyPodDebug(t *testing.T) {
 	t.Parallel()
 
-	options := cmd.StepVerifyPodOptions{Debug: true}
+	options := cmd.StepVerifyPodReadyOptions{Debug: true}
 	// fake the output stream to be checked later
 	r, fakeStdout, _ := os.Pipe()
 	commonOpts := cmd.NewCommonOptionsWithFactory(nil)
