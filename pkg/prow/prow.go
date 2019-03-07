@@ -3,6 +3,7 @@ package prow
 import (
 	"encoding/json"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	//"encoding/json"
 	"fmt"
@@ -372,7 +373,21 @@ func (o *Options) GetProwConfig() (*config.Config, bool, error) {
 		prowConfig.Presubmits = make(map[string][]config.Presubmit)
 		prowConfig.Postsubmits = make(map[string][]config.Postsubmit)
 		prowConfig.BranchProtection = config.BranchProtection{}
-		prowConfig.Tide = prowconfig.CreateTide()
+
+		// calculate the tide url from the ingress config
+		ingressConfigMap, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(kube.IngressConfigConfigmap, metav1.GetOptions{})
+		if err != nil {
+			return prowConfig, create, err
+		}
+		domain := ingressConfigMap.Data["domain"]
+		tls := ingressConfigMap.Data["tls"]
+		scheme := "http"
+		if tls == "true" {
+			scheme = "https"
+		}
+		
+		tideUrl := fmt.Sprintf("%s://deck.%s.%s", scheme, o.NS, domain)
+		prowConfig.Tide = prowconfig.CreateTide(tideUrl)
 	} else {
 		// config exists, updating
 		create = false
