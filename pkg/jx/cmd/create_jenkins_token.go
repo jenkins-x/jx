@@ -222,9 +222,11 @@ func (o *CreateJenkinsUserOptions) saveJenkinsAuthInSecret(kubeClient kubernetes
 	if ns == "" {
 		ns = o.currentNamespace
 	}
+	serviceName := kube.ServiceJenkins
 	secretName := kube.SecretJenkins
 	customJenkinsName := o.JenkinsSelector.CustomJenkinsName
 	if customJenkinsName != "" {
+		serviceName = customJenkinsName
 		secretName = customJenkinsName + "-auth"
 	}
 	create := false
@@ -249,24 +251,19 @@ func (o *CreateJenkinsUserOptions) saveJenkinsAuthInSecret(kubeClient kubernetes
 		secret.Data = map[string][]byte{}
 	}
 
-	/*
-	       TODO add an ownerReference so the secret is zapped if we remove the Jenkins App
+	svc, err := kubeClient.CoreV1().Services(ns).Get(serviceName, metav1.GetOptions{})
+	if err == nil && svc != nil {
+		hasOwnerRef := false
+		for _, ref := range secret.OwnerReferences {
+			if ref.Name == svc.Name && ref.Kind == "Service" {
+				hasOwnerRef = true
+			}
+		}
+		if !hasOwnerRef {
+			secret.OwnerReferences = append(secret.OwnerReferences, kube.ServiceOwnerRef(svc))
+		}
+	}
 
-	   	if customJenkinsName != "" {
-	   		hasOwnerRef := false
-	   		for _, ref := range secret.OwnerReferences {
-	   			if ref.Name == customJenkinsName && ref.Kind == "Service" {
-	   				hasOwnerRef = true
-	   			}
-	   		}
-	   		if !hasOwnerRef {
-	   			secret.OwnerReferences = append(secret.OwnerReferences, metav1.OwnerReference{
-	   				Name: customJenkinsName,
-	   				Kind: "Service",
-	   			})
-	   		}
-	   	}
-	*/
 	secret.Data[kube.JenkinsAdminApiToken] = []byte(auth.ApiToken)
 	secret.Data[kube.JenkinsBearTokenField] = []byte(auth.BearerToken)
 	secret.Data[kube.JenkinsAdminUserField] = []byte(auth.Username)
