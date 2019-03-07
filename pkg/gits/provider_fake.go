@@ -666,6 +666,7 @@ func (f *FakeProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 	return &github.Response{}, nil
 }
 
+// GetContent gets the content
 func (f *FakeProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
 	return nil, nil
 }
