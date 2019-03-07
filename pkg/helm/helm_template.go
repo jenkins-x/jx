@@ -455,7 +455,7 @@ func (h *HelmTemplate) deleteOldResources(ns string, releaseName string, version
 }
 
 func (h *HelmTemplate) deleteResourcesBySelector(ns string, selector string, wait bool) error {
-	kinds := []string{"all", "pvc", "configmap", "release"}
+	kinds := []string{"all", "pvc", "configmap", "release", "sa", "clusterrole", "clusterrolebinding", "role", "rolebinding", "secret"}
 	for _, kind := range kinds {
 		args := []string{"delete", kind, "--ignore-not-found", "--namespace", ns, "-l", selector}
 		if wait {
@@ -955,20 +955,24 @@ func (h *HelmTemplate) runHooks(hooks []*HelmHook, hookPhase string, ns string, 
 }
 
 func (h *HelmTemplate) deleteHooks(hooks []*HelmHook, hookPhase string, hookDeletePolicy string, ns string) error {
+	flag := os.Getenv("JX_DISABLE_DELETE_HELM_HOOKS")
 	matchingHooks := MatchingHooks(hooks, hookPhase, hookDeletePolicy)
 	for _, hook := range matchingHooks {
 		kind := hook.Kind
 		name := hook.Name
 		if kind == "Job" && name != "" {
 			log.Infof("Waiting for helm %s hook Job %s to complete before removing it\n", hookPhase, name)
-			err := kube.WaitForJobToTerminate(h.KubeClient, ns, name, time.Minute*10)
+			err := kube.WaitForJobToComplete(h.KubeClient, ns, name, time.Minute*30, false)
 			if err != nil {
 				log.Warnf("Job %s has not yet terminated for helm hook phase %s due to: %s so removing it anyway\n", name, hookPhase, err)
 			}
 		} else {
 			log.Warnf("Could not wait for hook resource to complete as it is kind %s and name %s for phase %s\n", kind, name, hookPhase)
 		}
-		// TODO wait for job to be complete
+		if flag == "true" {
+			log.Infof("Not deleting the Job %s as we have the $JX_DISABLE_DELETE_HELM_HOOKS enabled\n", name)
+			continue
+		}
 		err := h.kubectlDeleteFile(ns, hook.File)
 		if err != nil {
 			return err
