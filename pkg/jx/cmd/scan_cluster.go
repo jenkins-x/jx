@@ -40,22 +40,22 @@ type node struct {
 }
 
 type service struct {
-	Service     string `json:"service yaml:"service"`
-	Location    string `json:"location yaml:"location"`
-	Description string `json:"description yaml:"description"`
+	Service     string `json:"service" yaml:"service"`
+	Location    string `json:"location" yaml:"location"`
+	Description string `json:"description" yaml:"description"`
 }
 
 type vulnerability struct {
 	Vulnerability string `json:"vulnerability" yaml:"vulnerability"`
-	Location      string `json:"location yaml:"location"`
-	Category      string `json:"category yaml:"category"`
+	Location      string `json:"location" yaml:"location"`
+	Category      string `json:"category" yaml:"category"`
 	Description   string `json:"description" yaml:"description"`
 	Evidence      string `json:"evidence" yaml:"evidence"`
 }
 
 type scanResult struct {
 	Nodes           []node          `json:"nodes" yaml:"nodes"`
-	Services        []service       `json:"services yaml:"services"`
+	Services        []service       `json:"services" yaml:"services"`
 	Vulnerabilities []vulnerability `json:"vulnerabilities" yaml:"vulnerabilities"`
 }
 
