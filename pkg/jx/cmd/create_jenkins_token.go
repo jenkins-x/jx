@@ -262,6 +262,8 @@ func (o *CreateJenkinsUserOptions) saveJenkinsAuthInSecret(kubeClient kubernetes
 		if !hasOwnerRef {
 			secret.OwnerReferences = append(secret.OwnerReferences, kube.ServiceOwnerRef(svc))
 		}
+	} else {
+		log.Warnf("Could not find service %s in namespace %s: %v\n", serviceName, ns, err)
 	}
 
 	secret.Data[kube.JenkinsAdminApiToken] = []byte(auth.ApiToken)
