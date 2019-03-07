@@ -51,7 +51,7 @@ type Type struct {
 	// TODO Implement support & tests for Dependencies
 	Dependencies map[string]Dependency `json:"dependencies,omitempty"`
 	// TODO Implement support & tests for PropertyNames
-	PropertyNames *Type         `json:"propertyNames, omitempty"`
+	PropertyNames *Type         `json:"propertyNames,omitempty"`
 	Enum          []interface{} `json:"enum,omitempty"`
 	Type          string        `json:"type,omitempty"`
 	// TODO Implement support & tests for If, Then, Else
@@ -66,8 +66,8 @@ type Type struct {
 	// TODO Implement support & tests for Definitions
 	Definitions Definitions `json:"definitions,omitempty"`
 	// TODO Implement support & tests for Contains
-	Contains         *Type        `json:"contains, omitempty"`
-	Const            *interface{} `json:"const, omitempty"`
+	Contains         *Type        `json:"contains,omitempty"`
+	Const            *interface{} `json:"const,omitempty"`
 	Title            string       `json:"title,omitempty"`
 	Description      string       `json:"description,omitempty"`
 	Default          interface{}  `json:"default,omitempty"`

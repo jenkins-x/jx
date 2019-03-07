@@ -27,7 +27,7 @@ func TestAdminSecrets(t *testing.T) {
 	assert.NoError(t, err)
 
 	secretsFromService := service.Secrets
-	tests.Debugf("%s", secretsFromService)
+	tests.Debugf("%v", secretsFromService)
 
 	assert.Equal(t, secretsFromFile, secretsFromService, "expected admin secret values do not match")
 }
