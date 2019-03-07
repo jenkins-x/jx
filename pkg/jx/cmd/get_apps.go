@@ -44,9 +44,9 @@ func NewCmdGetApps(commonOpts *CommonOptions) *cobra.Command {
 		},
 	}
 	cmd := &cobra.Command{
-		Use:     "Apps",
+		Use:     "apps",
 		Short:   "Display one or more installed Apps",
-		Aliases: []string{"app", "apps"},
+		Aliases: []string{"app"},
 		Long:    getAppsLong,
 		Example: getAppsExample,
 		Run: func(cmd *cobra.Command, args []string) {
