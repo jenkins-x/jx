@@ -1001,7 +1001,7 @@ func (b *BitbucketCloudProvider) GetContent(org string, name string, path string
 	return nil, fmt.Errorf("Getting content not supported on bitbucket")
 }
 
-// ShouldFork returns true if we should create a personal fork of this repository
+// ShouldForkForPullReques treturns true if we should create a personal fork of this repository
 // before creating a pull request
 func (b *BitbucketCloudProvider) ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool {
 	// return originalOwner != username

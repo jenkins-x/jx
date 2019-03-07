@@ -144,7 +144,7 @@ type GitProvider interface {
 	// TODO Refactor to remove bespoke types when we implement another provider
 	AcceptInvitation(int64) (*github.Response, error)
 
-	// ShouldFork returns true if we should create a personal fork of this repository
+	// ShouldForkForPullReques treturns true if we should create a personal fork of this repository
 	// before creating a pull request
 	ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool
 }

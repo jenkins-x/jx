@@ -666,11 +666,11 @@ func (f *FakeProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 	return &github.Response{}, nil
 }
 
-func (r *FakeProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
+func (f *FakeProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
 	return nil, nil
 }
 
-// ShouldFork returns true if we should create a personal fork of this repository
+// ShouldForkForPullReques treturns true if we should create a personal fork of this repository
 // before creating a pull request
 func (r *FakeProvider) ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool {
 	// TODO assuming forking doesn't work yet?
