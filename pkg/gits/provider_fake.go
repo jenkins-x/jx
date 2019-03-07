@@ -666,8 +666,16 @@ func (f *FakeProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 	return &github.Response{}, nil
 }
 
-func (r *FakeProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
+// GetContent gets the content
+func (f *FakeProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
 	return nil, nil
+}
+
+// ShouldForkForPullReques treturns true if we should create a personal fork of this repository
+// before creating a pull request
+func (r *FakeProvider) ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool {
+	// TODO assuming forking doesn't work yet?
+	return false
 }
 
 func (r *FakeRepository) String() string {

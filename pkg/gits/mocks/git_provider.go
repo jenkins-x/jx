@@ -708,6 +708,21 @@ func (mock *MockGitProvider) ServerURL() string {
 	return ret0
 }
 
+func (mock *MockGitProvider) ShouldForkForPullRequest(_param0 string, _param1 string, _param2 string) bool {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
+	}
+	params := []pegomock.Param{_param0, _param1, _param2}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("ShouldForkForPullRequest", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
+	var ret0 bool
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(bool)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockGitProvider) UpdateCommitStatus(_param0 string, _param1 string, _param2 string, _param3 *gits.GitRepoStatus) (*gits.GitRepoStatus, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
@@ -1976,6 +1991,41 @@ func (c *GitProvider_ServerURL_OngoingVerification) GetCapturedArguments() {
 }
 
 func (c *GitProvider_ServerURL_OngoingVerification) GetAllCapturedArguments() {
+}
+
+func (verifier *VerifierGitProvider) ShouldForkForPullRequest(_param0 string, _param1 string, _param2 string) *GitProvider_ShouldForkForPullRequest_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ShouldForkForPullRequest", params, verifier.timeout)
+	return &GitProvider_ShouldForkForPullRequest_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type GitProvider_ShouldForkForPullRequest_OngoingVerification struct {
+	mock              *MockGitProvider
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *GitProvider_ShouldForkForPullRequest_OngoingVerification) GetCapturedArguments() (string, string, string) {
+	_param0, _param1, _param2 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
+}
+
+func (c *GitProvider_ShouldForkForPullRequest_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
+		}
+		_param2 = make([]string, len(params[2]))
+		for u, param := range params[2] {
+			_param2[u] = param.(string)
+		}
+	}
+	return
 }
 
 func (verifier *VerifierGitProvider) UpdateCommitStatus(_param0 string, _param1 string, _param2 string, _param3 *gits.GitRepoStatus) *GitProvider_UpdateCommitStatus_OngoingVerification {

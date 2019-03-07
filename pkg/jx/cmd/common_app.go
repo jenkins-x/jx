@@ -25,6 +25,10 @@ func (o *CommonOptions) GetDevEnv() (gitOps bool, devEnv *jenkinsv1.Environment)
 			return false, &jenkinsv1.Environment{}
 		}
 		gitOps := false
+		if devEnv == nil {
+			devEnv = &jenkinsv1.Environment{}
+			devEnv.Spec.Namespace = ns
+		}
 		if devEnv.Spec.Source.URL != "" {
 			gitOps = true
 		}
