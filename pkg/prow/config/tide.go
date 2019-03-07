@@ -9,9 +9,9 @@ import (
 )
 
 // CreateTide creates a default Tide Config object
-func CreateTide(tideUrl string) config.Tide {
+func CreateTide(tideURL string) config.Tide {
 	t := config.Tide{
-		TargetURL: tideUrl,
+		TargetURL: tideURL,
 	}
 
 	var qs []config.TideQuery

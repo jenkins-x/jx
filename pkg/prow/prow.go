@@ -386,8 +386,8 @@ func (o *Options) GetProwConfig() (*config.Config, bool, error) {
 			scheme = "https"
 		}
 
-		tideUrl := fmt.Sprintf("%s://deck.%s.%s", scheme, o.NS, domain)
-		prowConfig.Tide = prowconfig.CreateTide(tideUrl)
+		tideURL := fmt.Sprintf("%s://deck.%s.%s", scheme, o.NS, domain)
+		prowConfig.Tide = prowconfig.CreateTide(tideURL)
 	} else {
 		// config exists, updating
 		create = false
