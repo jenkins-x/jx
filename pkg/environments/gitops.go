@@ -241,6 +241,9 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 	originalOrg := gitInfo.Organisation
 	originalRepo := gitInfo.Name
 
+	provider := o.GitProvider
+	git := o.Gitter
+
 	if o.GitProvider == nil {
 		log.Warnf("No GitProvider specified!\n")
 		debug.PrintStack()
@@ -249,7 +252,7 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 
 		username = o.GitProvider.CurrentUsername()
 
-		if originalOrg != username && username != "" && originalOrg != "" {
+		if originalOrg != username && username != "" && originalOrg != "" && provider.ShouldForkForPullRequest(originalOrg, originalRepo, username) {
 			fork = true
 		}
 	}
@@ -265,9 +268,6 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 		if o.GitProvider == nil {
 			return "", "", nil, errors.Wrapf(err, "no Git Provider specified for git URL %s", gitURL)
 		}
-		provider := o.GitProvider
-		git := o.Gitter
-
 		repo, err := provider.GetRepository(username, originalRepo)
 		if err != nil {
 			// lets try create a fork - using a blank organisation to force a user specific fork

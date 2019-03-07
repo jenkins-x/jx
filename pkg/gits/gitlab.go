@@ -669,6 +669,14 @@ func (g *GitlabProvider) GetContent(org string, name string, path string, ref st
 	return nil, fmt.Errorf("Getting content not supported on gitlab")
 }
 
+// ShouldFork returns true if we should create a personal fork of this repository
+// before creating a pull request
+func (g *GitlabProvider) ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool {
+	// return originalOwner != username
+	// TODO assuming forking doesn't work yet?
+	return false
+}
+
 // GitlabAccessTokenURL returns the URL to click on to generate a personal access token for the Git provider
 func GitlabAccessTokenURL(url string) string {
 	return util.UrlJoin(url, "/profile/personal_access_tokens")

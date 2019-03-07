@@ -1146,6 +1146,12 @@ func (p *GitHubProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 	return p.Client.Users.AcceptInvitation(p.Context, ID)
 }
 
+// ShouldFork returns true if we should create a personal fork of this repository
+// before creating a pull request
+func (p *GitHubProvider) ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool {
+	return originalOwner != username
+}
+
 func asBool(b *bool) bool {
 	if b != nil {
 		return *b

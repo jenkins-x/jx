@@ -670,6 +670,13 @@ func (r *FakeProvider) GetContent(org string, name string, path string, ref stri
 	return nil, nil
 }
 
+// ShouldFork returns true if we should create a personal fork of this repository
+// before creating a pull request
+func (r *FakeProvider) ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool {
+	// TODO assuming forking doesn't work yet?
+	return false
+}
+
 func (r *FakeRepository) String() string {
 	return r.Owner + "/" + r.Name()
 }
