@@ -500,8 +500,9 @@ func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tek
 	for _, pr := range prList.Items {
 		pri, err := tekton.CreatePipelineRunInfo(kubeClient, tektonClient, jxClient, ns, pr.Name)
 		if err != nil {
-			log.Warnf("Error creating PipelineRunInfo for PipelineRun %s: %s\n", pr.Name, err)
-			return names, defaultName, buildMap, pipelineMap, err
+			if o.Verbose {
+				log.Warnf("Error creating PipelineRunInfo for PipelineRun %s: %s\n", pr.Name, err)
+			}
 		}
 		if pri != nil && o.BuildFilter.BuildMatches(pri.ToBuildPodInfo()) {
 			buildInfos = append(buildInfos, pri)
