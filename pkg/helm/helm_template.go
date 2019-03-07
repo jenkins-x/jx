@@ -455,7 +455,7 @@ func (h *HelmTemplate) deleteOldResources(ns string, releaseName string, version
 }
 
 func (h *HelmTemplate) deleteResourcesBySelector(ns string, selector string, wait bool) error {
-	kinds := []string{"all", "pvc", "configmap", "release", "sa", "clusterrole", "clusterrolebinding", "role", "rolebinding"}
+	kinds := []string{"all", "pvc", "configmap", "release", "sa", "clusterrole", "clusterrolebinding", "role", "rolebinding", "secret"}
 	for _, kind := range kinds {
 		args := []string{"delete", kind, "--ignore-not-found", "--namespace", ns, "-l", selector}
 		if wait {
