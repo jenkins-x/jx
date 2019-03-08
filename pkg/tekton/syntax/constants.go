@@ -8,5 +8,5 @@ const (
 	LabelStageName = "jenkins.io/task-stage-name"
 
 	// DefaultStageNameForBuildPack - the name we use for the single stage created from build packs currently.
-	DefaultStageNameForBuildPack = "From Build Pack"
+	DefaultStageNameForBuildPack = "from-build-pack"
 )
