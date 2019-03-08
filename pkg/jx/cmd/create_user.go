@@ -26,7 +26,7 @@ var (
 
 	createUserExample = templates.Examples(`
 		# Create a user
-		jx create user -e "user@email.com" --login username --name username"
+		jx create user -e "user@email.com" --login username --name username
 	`)
 )
 
