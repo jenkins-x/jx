@@ -103,6 +103,7 @@ type ImportOptions struct {
 	PipelineUserName      string
 	PipelineServer        string
 	ImportMode            string
+	UseDefaultGit         bool
 }
 
 var (
@@ -187,6 +188,7 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().StringVarP(&options.ExternalJenkinsBaseURL, "external-jenkins-url", "", "", "The jenkins url that an external git provider needs to use")
 	cmd.Flags().BoolVarP(&options.DisableMaven, "disable-updatebot", "", false, "disable updatebot-maven-plugin from attempting to fix/update the maven pom.xml")
 	cmd.Flags().StringVarP(&options.ImportMode, "import-mode", "m", "", fmt.Sprintf("The import mode to use. Should be one of %s", strings.Join(v1.ImportModeStrings, ", ")))
+	cmd.Flags().BoolVarP(&options.UseDefaultGit, "use-default-git", "", false, "use default git account")
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 }
@@ -258,11 +260,16 @@ func (options *ImportOptions) Run() error {
 				return err
 			}
 		}
-		// Get the org in case there is more than one user auth on the server and batchMode is true
-		org := options.getOrganisationOrCurrentUser()
-		userAuth, err = config.PickServerUserAuth(server, "Git user name:", options.BatchMode, org, options.In, options.Out, options.Err)
-		if err != nil {
-			return err
+
+		if options.UseDefaultGit {
+			userAuth = config.CurrentUser(server, options.CommonOptions.InCluster())
+		} else {
+			// Get the org in case there is more than one user auth on the server and batchMode is true
+			org := options.getOrganisationOrCurrentUser()
+			userAuth, err = config.PickServerUserAuth(server, "Git user name:", options.BatchMode, org, options.In, options.Out, options.Err)
+			if err != nil {
+				return err
+			}
 		}
 		if server.Kind == "" {
 			server.Kind, err = options.GitServerHostURLKind(server.URL)

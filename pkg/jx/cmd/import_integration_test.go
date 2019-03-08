@@ -124,6 +124,7 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 	o.DryRun = true
 	o.DisableMaven = true
 	o.LogLevel = "warn"
+	o.UseDefaultGit = true
 
 	if nextGenPipeline {
 		callback := func(env *v1.Environment) error {
