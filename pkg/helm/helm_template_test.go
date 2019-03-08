@@ -1,6 +1,7 @@
 package helm
 
 import (
+	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"os"
 	"path"
@@ -33,13 +34,14 @@ func TestAddYamlLabels(t *testing.T) {
 	expectedChartName := "mychart"
 	expectedChartRelease := "cheese"
 	expectedChartVersion := "1.2.3"
+	expectedNamespace := "jx"
 
 	chartMetadata := &chart.Metadata{
 		Name:    expectedChartName,
 		Version: expectedChartVersion,
 	}
 
-	helmHooks, err := addLabelsToChartYaml(outDir, hooksDir, expectedChartName, expectedChartRelease, expectedChartVersion, chartMetadata)
+	helmHooks, err := addLabelsToChartYaml(outDir, hooksDir, expectedChartName, expectedChartRelease, expectedChartVersion, chartMetadata, expectedNamespace)
 	assert.NoError(t, err, "Failed to add labels to YAML")
 
 	err = filepath.Walk(outDir, func(path string, f os.FileInfo, err error) error {
@@ -48,22 +50,23 @@ func TestAddYamlLabels(t *testing.T) {
 			file := path
 			svc := &corev1.Service{}
 			data, err := ioutil.ReadFile(file)
-			assert.NoError(t, err, "Failed to load Service YAML %s", path)
+			assert.NoError(t, err, "Failed to load YAML %s", path)
 			if err == nil {
 				err = yaml.Unmarshal(data, &svc)
-				assert.NoError(t, err, "Failed to parse Service YAML %s", path)
+				assert.NoError(t, err, "Failed to parse YAML %s", path)
 				if err == nil {
 					labels := svc.Labels
-					assert.NotNil(t, labels, "No labels on Service %s", path)
+					assert.NotNil(t, labels, "No labels on path %s", path)
 					if labels != nil {
-						key := LabelReleaseName
-						actual := labels[key]
-						assert.Equal(t, expectedChartRelease, actual, "Failed to find label %s on Service YAML %s", key, path)
-						//log.Infof("Found label %s = %s for file %s\n", key, actual, path)
+						assertLabelValue(t, expectedChartRelease, labels, LabelReleaseName, path)
+						assertLabelValue(t, expectedChartVersion, labels, LabelReleaseChartVersion, path)
 
-						key = LabelReleaseChartVersion
-						actual = labels[key]
-						assert.Equal(t, expectedChartVersion, actual, "Failed to find label %s on Service YAML %s", key, path)
+						_, fileName := filepath.Split(file)
+						if fileName == "clusterrole.yaml" {
+							assertLabelValue(t, expectedNamespace, labels, LabelNamespace, path)
+						} else {
+							assertNoLabelValue(t, labels, LabelNamespace, path)
+						}
 					}
 				}
 			}
@@ -82,6 +85,20 @@ func TestAddYamlLabels(t *testing.T) {
 		}
 	}
 	assert.NoError(t, err, "Failed to walk folders")
+}
+
+func assertLabelValue(t *testing.T, expectedValue string, labels map[string]string, key string, path string) bool {
+	require.NotNil(t, labels, "labels were nil for path %s", path)
+	actual := labels[key]
+	return assert.Equal(t, expectedValue, actual, "Failed to find label %s on AML %s", key, path)
+}
+
+func assertNoLabelValue(t *testing.T, labels map[string]string, key string, path string) bool {
+	if labels != nil {
+		actual := labels[key]
+		return assert.Equal(t, "", actual, "Should not have label %s on YAML %s", key, path)
+	}
+	return true
 }
 
 func TestSplitObjectsInFiles(t *testing.T) {

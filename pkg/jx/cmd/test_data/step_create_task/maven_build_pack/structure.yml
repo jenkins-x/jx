@@ -5,5 +5,5 @@ pipelineRef: null
 pipelineRunRef: null
 stages:
 - depth: 0
-  name: From Build Pack
+  name: from-build-pack
   taskRef: abayer-jx-demo-qs-master
