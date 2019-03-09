@@ -520,7 +520,7 @@ func (o *StepCreateTaskOptions) CreateTaskForBuildPack(languageName string, pipe
 
 // CreateSourceRepoResourceForBuildPack creates the source repository PipelineResource for a build pack
 func (o *StepCreateTaskOptions) CreateSourceRepoResourceForBuildPack(task *pipelineapi.Task, gitInfo *gits.GitRepository, branch string) *pipelineapi.PipelineResource {
-	return o.generateSourceRepoResource(kube.ToValidName(gitInfo.Organisation + "-" + gitInfo.Name + "-" + branch))
+	return o.generateSourceRepoResource(kube.ToValidNameTruncated(gitInfo.Organisation+"-"+gitInfo.Name+"-"+branch, 63))
 }
 
 // CreatePipelineAndStructureForBuildPack creates the Pipeline and PipelineStructure for a build pack
