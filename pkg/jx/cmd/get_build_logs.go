@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tekton"
+	"github.com/knative/build-pipeline/pkg/apis/pipeline"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
@@ -320,7 +321,19 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, t
 			if stage.Pod == nil {
 				// The stage's pod hasn't been created yet, so let's wait a bit.
 				f := func() error {
-					if err := stage.SetPodsForStageInfo(kubeClient, tektonClient, ns, pr.PipelineRun); err != nil {
+					selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: map[string]string{
+						pipeline.GroupName + pipeline.PipelineRunLabelKey: pr.PipelineRun,
+					}})
+					if err != nil {
+						return err
+					}
+					podList, err := kubeClient.CoreV1().Pods(ns).List(metav1.ListOptions{
+						LabelSelector: selector.String(),
+					})
+					if err != nil {
+						return err
+					}
+					if err := stage.SetPodsForStageInfo(podList, pr.PipelineRun); err != nil {
 						return err
 					}
 
@@ -490,15 +503,33 @@ func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tek
 	pipelineMap := map[string]builds.BaseBuildInfo{}
 
 	prList, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).List(metav1.ListOptions{})
-
 	if err != nil {
 		log.Warnf("Failed to query PipelineRuns %s\n", err)
 		return names, defaultName, buildMap, pipelineMap, err
 	}
 
+	structures, err := jxClient.JenkinsV1().PipelineStructures(ns).List(metav1.ListOptions{})
+	if err != nil {
+		log.Warnf("Failed to query PipelineStructures %s\n", err)
+		return names, defaultName, buildMap, pipelineMap, err
+	}
+
 	buildInfos := []*tekton.PipelineRunInfo{}
+
+	podList, err := kubeClient.CoreV1().Pods(ns).List(metav1.ListOptions{
+		LabelSelector: pipeline.GroupName + pipeline.PipelineRunLabelKey,
+	})
+	if err != nil {
+		return names, defaultName, buildMap, pipelineMap, err
+	}
 	for _, pr := range prList.Items {
-		pri, err := tekton.CreatePipelineRunInfo(kubeClient, tektonClient, jxClient, ns, pr.Name)
+		var ps *v1.PipelineStructure
+		for _, p := range structures.Items {
+			if p.Name == pr.Name {
+				ps = &p
+			}
+		}
+		pri, err := tekton.CreatePipelineRunInfo(pr.Name, podList, ps, &pr)
 		if err != nil {
 			if o.Verbose {
 				log.Warnf("Error creating PipelineRunInfo for PipelineRun %s: %s\n", pr.Name, err)
@@ -508,6 +539,7 @@ func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tek
 			buildInfos = append(buildInfos, pri)
 		}
 	}
+
 	tekton.SortPipelineRunInfos(buildInfos)
 	if len(buildInfos) == 0 {
 		return names, defaultName, buildMap, pipelineMap, fmt.Errorf("no Tekton pipelines have been triggered which match the current filter")

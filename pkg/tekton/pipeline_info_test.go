@@ -7,15 +7,14 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/google/go-cmp/cmp"
-	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/tekton/tekton_helpers_test"
 	tektonfake "github.com/knative/build-pipeline/pkg/client/clientset/versioned/fake"
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestCreatePipelineRunInfo(t *testing.T) {
@@ -190,14 +189,12 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			testCaseDir := path.Join("test_data", "pipeline_info", tt.name)
-			kubeClient := fake.NewSimpleClientset(tekton_helpers_test.AssertLoadPods(t, testCaseDir))
 
 			jxObjects := []runtime.Object{tekton_helpers_test.AssertLoadPipelineActivity(t, testCaseDir)}
 			structure := tekton_helpers_test.AssertLoadPipelineStructure(t, testCaseDir)
 			if structure != nil {
 				jxObjects = append(jxObjects, structure)
 			}
-			jxClient := v1fake.NewSimpleClientset(jxObjects...)
 
 			tektonObjects := []runtime.Object{tekton_helpers_test.AssertLoadPipelineRun(t, testCaseDir), tekton_helpers_test.AssertLoadPipeline(t, testCaseDir)}
 			tektonObjects = append(tektonObjects, tekton_helpers_test.AssertLoadTasks(t, testCaseDir))
@@ -205,7 +202,13 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 			tektonObjects = append(tektonObjects, tekton_helpers_test.AssertLoadPipelineResources(t, testCaseDir))
 			tektonClient := tektonfake.NewSimpleClientset(tektonObjects...)
 
-			pri, err := tekton.CreatePipelineRunInfo(kubeClient, tektonClient, jxClient, ns, tt.prName)
+			podList := tekton_helpers_test.AssertLoadPods(t, testCaseDir)
+
+			pr, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Get(tt.prName, metav1.GetOptions{})
+			if err != nil {
+				t.Fatalf("Error fetching PipelineRun: %s", err)
+			}
+			pri, err := tekton.CreatePipelineRunInfo(tt.prName, podList, structure, pr)
 			if err != nil {
 				t.Fatalf("Error creating PipelineRunInfo: %s", err)
 			}

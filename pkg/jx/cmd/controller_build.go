@@ -235,7 +235,25 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 		if pod.Labels[pipeline.GroupName+pipeline.PipelineRunLabelKey] != "" {
 			if pod.Labels[syntax.LabelStageName] != "" {
 				prName := pod.Labels[pipeline.GroupName+pipeline.PipelineRunLabelKey]
-				pri, err := tekton.CreatePipelineRunInfo(kubeClient, tektonClient, jxClient, ns, prName)
+				pr, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Get(prName, metav1.GetOptions{})
+				if err != nil {
+					log.Warnf("Error getting PipelineRun for name %s: %s\n", prName, err)
+					return
+				}
+				// Get the Pod for this PipelineRun
+				podList, err := kubeClient.CoreV1().Pods(ns).List(metav1.ListOptions{
+					LabelSelector: builds.LabelPipelineRunName + "=" + prName,
+				})
+				if err != nil {
+					log.Warnf("Error getting PodList for PipelineRun %s: %s\n", prName, err)
+					return
+				}
+				structure, err := jxClient.JenkinsV1().PipelineStructures(ns).Get(prName, metav1.GetOptions{})
+				if err != nil {
+					log.Warnf("Error getting PipelineStructure for PipelineRun %s: %s\n", prName, err)
+					return
+				}
+				pri, err := tekton.CreatePipelineRunInfo(prName, podList, structure, pr)
 				if err != nil {
 					log.Warnf("Error creating PipelineRunInfo for PipelineRun %s: %s\n", prName, err)
 					return
