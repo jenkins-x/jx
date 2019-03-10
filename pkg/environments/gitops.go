@@ -70,7 +70,7 @@ type EnvironmentPullRequestOptions struct {
 func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, environmentsDir string,
 	pullRequestDetails *PullRequestDetails, pullRequestInfo *gits.PullRequestInfo) (*gits.PullRequestInfo, error) {
 
-	dir, base, gitInfo, err := o.PullEnvironmentRepo(env, environmentsDir)
+	dir, base, gitInfo, fork, err := o.PullEnvironmentRepo(env, environmentsDir)
 	if err != nil {
 		return nil, errors.Wrapf(err, "pulling environment repo %s into %s", env.Spec.Source.URL,
 			environmentsDir)
@@ -100,7 +100,7 @@ func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, envir
 	if err != nil {
 		return nil, err
 	}
-	return o.PushEnvironmentRepo(dir, branchName, gitInfo, base, pullRequestDetails, pullRequestInfo)
+	return o.PushEnvironmentRepo(dir, branchName, gitInfo, base, pullRequestDetails, pullRequestInfo, fork)
 }
 
 // PushEnvironmentRepo commits and pushes the changes in the repo rooted at dir.
@@ -109,7 +109,7 @@ func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, envir
 // It uses and updates pullRequestInfo to identify whether to rebase an existing PR.
 func (o *EnvironmentPullRequestOptions) PushEnvironmentRepo(dir string, branchName string,
 	gitInfo *gits.GitRepository, base string, pullRequestDetails *PullRequestDetails,
-	pullRequestInfo *gits.PullRequestInfo) (*gits.PullRequestInfo, error) {
+	pullRequestInfo *gits.PullRequestInfo, fork bool) (*gits.PullRequestInfo, error) {
 	err := o.Gitter.Add(dir, "-A")
 	if err != nil {
 		return nil, err
@@ -145,7 +145,7 @@ func (o *EnvironmentPullRequestOptions) PushEnvironmentRepo(dir string, branchNa
 	if username == "" {
 		return nil, fmt.Errorf("no git user name found")
 	}
-	if gitInfo.Organisation != username {
+	if gitInfo.Organisation != username && fork {
 		headPrefix = username + ":"
 	}
 
@@ -225,18 +225,18 @@ func ModifyChartFiles(dir string, details *PullRequestDetails, modifyFn ModifyCh
 
 // PullEnvironmentRepo pulls the repo for env into environmentsDir
 func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Environment,
-	environmentsDir string) (string, string, *gits.GitRepository, error) {
+	environmentsDir string) (string, string, *gits.GitRepository, bool, error) {
 	source := &env.Spec.Source
 	gitURL := source.URL
+	fork := false
 	if gitURL == "" {
-		return "", "", nil, fmt.Errorf("No source git URL")
+		return "", "", nil, fork, fmt.Errorf("No source git URL")
 	}
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
-		return "", "", nil, errors.Wrapf(err, "failed to parse git URL %s", gitURL)
+		return "", "", nil, fork, errors.Wrapf(err, "failed to parse git URL %s", gitURL)
 	}
 
-	fork := false
 	username := ""
 	originalOrg := gitInfo.Organisation
 	originalRepo := gitInfo.Name
@@ -266,107 +266,107 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 
 	if fork {
 		if o.GitProvider == nil {
-			return "", "", nil, errors.Wrapf(err, "no Git Provider specified for git URL %s", gitURL)
+			return "", "", nil, fork, errors.Wrapf(err, "no Git Provider specified for git URL %s", gitURL)
 		}
 		repo, err := provider.GetRepository(username, originalRepo)
 		if err != nil {
 			// lets try create a fork - using a blank organisation to force a user specific fork
 			repo, err = provider.ForkRepository(originalOrg, originalRepo, "")
 			if err != nil {
-				return "", "", nil, errors.Wrapf(err, "failed to fork GitHub repo %s/%s to user %s", originalOrg, originalRepo, username)
+				return "", "", nil, fork, errors.Wrapf(err, "failed to fork GitHub repo %s/%s to user %s", originalOrg, originalRepo, username)
 			}
 			log.Infof("Forked Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 		}
 
 		dir, err = ioutil.TempDir("", fmt.Sprintf("fork-%s-%s", gitInfo.Organisation, gitInfo.Name))
 		if err != nil {
-			return "", "", nil, errors.Wrap(err, "failed to create temp dir")
+			return "", "", nil, fork, errors.Wrap(err, "failed to create temp dir")
 		}
 
 		err = os.MkdirAll(dir, util.DefaultWritePermissions)
 		if err != nil {
-			return "", "", nil, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
+			return "", "", nil, fork, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
 		}
 		err = o.Gitter.Clone(repo.CloneURL, dir)
 		if err != nil {
-			return "", "", nil, err
+			return "", "", nil, fork, err
 		}
 		err = git.SetRemoteURL(dir, "upstream", gitURL)
 		if err != nil {
-			return "", "", nil, errors.Wrapf(err, "setting remote upstream %q in forked environment repo", gitURL)
+			return "", "", nil, fork, errors.Wrapf(err, "setting remote upstream %q in forked environment repo", gitURL)
 		}
 		err = git.PullUpstream(dir)
 		if err != nil {
-			return "", "", nil, errors.Wrap(err, "pulling upstream of forked versions repository")
+			return "", "", nil, fork, errors.Wrap(err, "pulling upstream of forked versions repository")
 		}
 
 		if o.ConfigGitFn != nil {
 			err = o.ConfigGitFn(dir, gitInfo, o.Gitter)
 			if err != nil {
-				return "", "", nil, err
+				return "", "", nil, fork, err
 			}
 		}
 		if base != "master" {
 			err = o.Gitter.Checkout(dir, base)
 			if err != nil {
-				return "", "", nil, err
+				return "", "", nil, fork, err
 			}
 		}
 	} else {
 		// now lets clone the fork and pull it...
 		exists, err := util.FileExists(dir)
 		if err != nil {
-			return "", "", nil, errors.Wrapf(err, "failed to check if directory %s exists", dir)
+			return "", "", nil, fork, errors.Wrapf(err, "failed to check if directory %s exists", dir)
 		}
 
 		if exists {
 			if o.ConfigGitFn != nil {
 				err = o.ConfigGitFn(dir, gitInfo, o.Gitter)
 				if err != nil {
-					return "", "", nil, err
+					return "", "", nil, fork, err
 				}
 			}
 			// lets check the git remote URL is setup correctly
 			err = o.Gitter.SetRemoteURL(dir, "origin", gitURL)
 			if err != nil {
-				return "", "", nil, err
+				return "", "", nil, fork, err
 			}
 			err = o.Gitter.Stash(dir)
 			if err != nil {
-				return "", "", nil, err
+				return "", "", nil, fork, err
 			}
 			err = o.Gitter.Checkout(dir, base)
 			if err != nil {
-				return "", "", nil, err
+				return "", "", nil, fork, err
 			}
 			err = o.Gitter.Pull(dir)
 			if err != nil {
-				return "", "", nil, err
+				return "", "", nil, fork, err
 			}
 		} else {
 			err := os.MkdirAll(dir, util.DefaultWritePermissions)
 			if err != nil {
-				return "", "", nil, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
+				return "", "", nil, fork, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
 			}
 			err = o.Gitter.Clone(gitURL, dir)
 			if err != nil {
-				return "", "", nil, err
+				return "", "", nil, fork, err
 			}
 			if o.ConfigGitFn != nil {
 				err = o.ConfigGitFn(dir, gitInfo, o.Gitter)
 				if err != nil {
-					return "", "", nil, err
+					return "", "", nil, fork, err
 				}
 			}
 			if base != "master" {
 				err = o.Gitter.Checkout(dir, base)
 				if err != nil {
-					return "", "", nil, err
+					return "", "", nil, fork, err
 				}
 			}
 		}
 	}
-	return dir, base, gitInfo, nil
+	return dir, base, gitInfo, fork, nil
 }
 
 // CreateUpgradeRequirementsFn creates the ModifyChartFn that upgrades the requirements of a chart.

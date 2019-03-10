@@ -59,6 +59,7 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 	dir := i.Dir
 	customDraftPack := i.CustomDraftPack
 	disableJenkinsfileCheck := i.DisableJenkinsfileCheck
+	backupJeninsfile := true
 	initialisedGit := i.InitialisedGit
 	withRename := i.WithRename
 	jenkinsfilePath := i.Jenkinsfile
@@ -165,6 +166,18 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 						err = nil
 					}
 				}
+				if lpack == "" {
+					// lets check for custom jenkinsfile build pack
+					exists, err2 := util.FileExists(filepath.Join(dir, jenkinsfile.Name))
+					if exists && err2 == nil {
+						i.CreateJenkinsxYamlIfMissing = true
+						disableJenkinsfileCheck = false
+						backupJeninsfile = false
+						jenkinsfilePath = defaultJenkinsfile
+						lpack = filepath.Join(packsDir, "custom-jenkins")
+						err = nil
+					}
+				}
 				if err != nil {
 					return "", err
 				}
@@ -203,7 +216,7 @@ func (o *CommonOptions) invokeDraftPack(i *InvokeDraftPack) (string, error) {
 	generateJenkinsPath := jenkinsfilePath
 	jenkinsfileBackup := ""
 	defaultJenkinsfileExists, err := util.FileExists(defaultJenkinsfile)
-	if defaultJenkinsfileExists && !disableJenkinsfileCheck {
+	if defaultJenkinsfileExists && !disableJenkinsfileCheck && backupJeninsfile {
 		// lets copy the old Jenkinsfile in case we override it
 		jenkinsfileBackup = defaultJenkinsfile + jenkinsfile.BackupSuffix
 		err = util.RenameFile(defaultJenkinsfile, jenkinsfileBackup)
