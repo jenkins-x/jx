@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/log"
@@ -409,6 +410,23 @@ func DeleteDirContents(dir string) error {
 	for _, file := range files {
 		// lets ignore the top level dir
 		if dir != file {
+			err = os.RemoveAll(file)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func DeleteDirContentsExcept(dir string, exceptDir string) error {
+	files, err := filepath.Glob(filepath.Join(dir, "*"))
+	if err != nil {
+		return err
+	}
+	for _, file := range files {
+		// lets ignore the top level dir
+		if dir != file && !strings.HasSuffix(file, exceptDir) {
 			err = os.RemoveAll(file)
 			if err != nil {
 				return err

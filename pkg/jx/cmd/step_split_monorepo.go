@@ -150,6 +150,11 @@ func (o *StepSplitMonorepoOptions) Run() error {
 					}
 				}
 
+				err = util.DeleteDirContentsExcept(outPath, ".git")
+				if err != nil {
+					return err
+				}
+
 				err = util.CopyDirOverwrite(path, outPath)
 				if err != nil {
 					return err
