@@ -729,3 +729,9 @@ func (p *GiteaProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 func (p *GiteaProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
 	return nil, fmt.Errorf("Getting content not supported on gitea")
 }
+
+// ShouldForkForPullReques treturns true if we should create a personal fork of this repository
+// before creating a pull request
+func (p *GiteaProvider) ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool {
+	return originalOwner != username
+}

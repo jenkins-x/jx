@@ -124,6 +124,7 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 	o.DryRun = true
 	o.DisableMaven = true
 	o.LogLevel = "warn"
+	o.UseDefaultGit = true
 
 	if nextGenPipeline {
 		callback := func(env *v1.Environment) error {
@@ -151,31 +152,35 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 		defaultJenkinsfileName := jenkinsfile.Name
 		defaultJenkinsfileBackupSuffix := jenkinsfile.BackupSuffix
 		defaultJenkinsfile := filepath.Join(testDir, defaultJenkinsfileName)
-		jenkinsfile := defaultJenkinsfile
+		jfname := defaultJenkinsfile
 		if o.Jenkinsfile != "" && o.Jenkinsfile != defaultJenkinsfileName {
-			jenkinsfile = filepath.Join(testDir, o.Jenkinsfile)
+			jfname = filepath.Join(testDir, o.Jenkinsfile)
 		}
-		if nextGenPipeline {
-			tests.AssertFileDoesNotExist(t, jenkinsfile)
+		if dirName == "custom-jenkins" {
+			tests.AssertFileExists(t, filepath.Join(testDir, jenkinsfile.Name))
+			tests.AssertFileDoesNotExist(t, filepath.Join(testDir, jenkinsfile.Name+".backup"))
+			tests.AssertFileDoesNotExist(t, filepath.Join(testDir, jenkinsfile.Name+"-Renamed"))
+		} else if nextGenPipeline {
+			tests.AssertFileDoesNotExist(t, jfname)
 		} else {
-			tests.AssertFileExists(t, jenkinsfile)
+			tests.AssertFileExists(t, jfname)
 		}
 
 		if dirName == "docker" || dirName == "docker-helm" {
 			tests.AssertFileExists(t, filepath.Join(testDir, "skaffold.yaml"))
-		} else if dirName == "helm" {
+		} else if dirName == "helm" || dirName == "custom-jenkins" {
 			tests.AssertFileDoesNotExist(t, filepath.Join(testDir, "skaffold.yaml"))
 		}
-		if dirName != "helm" {
-			tests.AssertFileExists(t, filepath.Join(testDir, "Dockerfile"))
-		} else {
+		if dirName == "helm" || dirName == "custom-jenkins" {
 			tests.AssertFileDoesNotExist(t, filepath.Join(testDir, "Dockerfile"))
+		} else {
+			tests.AssertFileExists(t, filepath.Join(testDir, "Dockerfile"))
 		}
-		if dirName == "docker" {
+		if dirName == "docker" || dirName == "custom-jenkins" {
 			tests.AssertFileDoesNotExist(t, filepath.Join(testDir, "charts", dirName, "Chart.yaml"))
 			tests.AssertFileDoesNotExist(t, filepath.Join(testDir, "charts"))
-			if !nextGenPipeline {
-				tests.AssertFileDoesNotContain(t, jenkinsfile, "helm")
+			if !nextGenPipeline && dirName != "custom-jenkins" {
+				tests.AssertFileDoesNotContain(t, jfname, "helm")
 			}
 		} else {
 			tests.AssertFileExists(t, filepath.Join(testDir, "charts", dirName, "Chart.yaml"))
@@ -183,26 +188,26 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 
 		if !nextGenPipeline {
 			if strings.HasPrefix(testcase, mavenKeepOldJenkinsfile) {
-				tests.AssertFileContains(t, jenkinsfile, "THIS IS OLD!")
-				tests.AssertFileDoesNotExist(t, jenkinsfile+defaultJenkinsfileBackupSuffix)
+				tests.AssertFileContains(t, jfname, "THIS IS OLD!")
+				tests.AssertFileDoesNotExist(t, jfname+defaultJenkinsfileBackupSuffix)
 			} else if strings.HasPrefix(testcase, mavenOldJenkinsfile) {
-				tests.AssertFileExists(t, jenkinsfile)
+				tests.AssertFileExists(t, jfname)
 				if withRename {
 					tests.AssertFileExists(t, defaultJenkinsfile)
 					tests.AssertFileContains(t, defaultJenkinsfile, "THIS IS OLD!")
 				} else if strings.HasSuffix(testcase, gitSuffix) {
-					tests.AssertFileDoesNotExist(t, jenkinsfile+defaultJenkinsfileBackupSuffix)
+					tests.AssertFileDoesNotExist(t, jfname+defaultJenkinsfileBackupSuffix)
 				} else {
-					tests.AssertFileExists(t, jenkinsfile+defaultJenkinsfileBackupSuffix)
-					tests.AssertFileContains(t, jenkinsfile+defaultJenkinsfileBackupSuffix, "THIS IS OLD!")
+					tests.AssertFileExists(t, jfname+defaultJenkinsfileBackupSuffix)
+					tests.AssertFileContains(t, jfname+defaultJenkinsfileBackupSuffix, "THIS IS OLD!")
 				}
 			}
 
 			if strings.HasPrefix(dirName, "maven") && !strings.Contains(testcase, "keep_old") {
-				tests.AssertFileContains(t, jenkinsfile, "mvn")
+				tests.AssertFileContains(t, jfname, "mvn")
 			}
 			if strings.HasPrefix(dirName, "gradle") {
-				tests.AssertFileContains(t, jenkinsfile, "gradle")
+				tests.AssertFileContains(t, jfname, "gradle")
 			}
 		}
 

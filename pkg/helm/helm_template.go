@@ -38,6 +38,9 @@ const (
 	// LabelReleaseName stores the chart release name
 	LabelReleaseName = "jenkins.io/chart-release"
 
+	// LabelNamespace stores the chart namespace for cluster wide resources
+	LabelNamespace = "jenkins.io/namespace"
+
 	// LabelReleaseChartVersion stores the version of a chart installation in a label
 	LabelReleaseChartVersion = "jenkins.io/version"
 	// LabelAppName stores the chart's app name
@@ -286,7 +289,7 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	helmHooks, err := h.addLabelsToFiles(chart, releaseName, versionText, metadata)
+	helmHooks, err := h.addLabelsToFiles(chart, releaseName, versionText, metadata, ns)
 	if err != nil {
 		return err
 	}
@@ -358,7 +361,7 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	helmHooks, err := h.addLabelsToFiles(chart, releaseName, versionText, metadata)
+	helmHooks, err := h.addLabelsToFiles(chart, releaseName, versionText, metadata, ns)
 	if err != nil {
 		return err
 	}
@@ -448,16 +451,36 @@ func (h *HelmTemplate) kubectlDeleteFile(ns string, file string) error {
 
 func (h *HelmTemplate) deleteOldResources(ns string, releaseName string, versionText string, wait bool) error {
 	selector := LabelReleaseName + "=" + releaseName + "," + LabelReleaseChartVersion + "!=" + versionText
-
-	log.Infof("Removing Kubernetes resources from older releases using selector: %s\n", util.ColorInfo(selector))
-
-	return h.deleteResourcesBySelector(ns, selector, wait)
+	return h.deleteResourcesAndClusterResourcesBySelector(ns, selector, wait, "older releases")
 }
 
-func (h *HelmTemplate) deleteResourcesBySelector(ns string, selector string, wait bool) error {
-	kinds := []string{"all", "pvc", "configmap", "release"}
+func (h *HelmTemplate) deleteResourcesAndClusterResourcesBySelector(ns string, selector string, wait bool, message string) error {
+	kinds := []string{"all", "pvc", "configmap", "release", "sa", "role", "rolebinding", "secret"}
+	clusterKinds := []string{"clusterrole", "clusterrolebinding"}
+
+	errList := []error{}
+
+	log.Infof("Removing Kubernetes resources from %s using selector: %s from %s\n", message, util.ColorInfo(selector), strings.Join(kinds, " "))
+	err := h.deleteResourcesBySelector(ns, kinds, selector, wait)
+	if err != nil {
+		errList = append(errList, err)
+	}
+
+	selector += "," + LabelNamespace + "=" + ns
+	log.Infof("Removing Kubernetes resources from %s using selector: %s from %s\n", message, util.ColorInfo(selector), strings.Join(clusterKinds, " "))
+	err = h.deleteResourcesBySelector("", clusterKinds, selector, wait)
+	if err != nil {
+		errList = append(errList, err)
+	}
+	return util.CombineErrors(errList...)
+}
+
+func (h *HelmTemplate) deleteResourcesBySelector(ns string, kinds []string, selector string, wait bool) error {
 	for _, kind := range kinds {
-		args := []string{"delete", kind, "--ignore-not-found", "--namespace", ns, "-l", selector}
+		args := []string{"delete", kind, "--ignore-not-found", "-l", selector}
+		if ns != "" {
+			args = append(args, "--namespace", ns)
+		}
 		if wait {
 			args = append(args, "--wait")
 		}
@@ -473,13 +496,19 @@ func (h *HelmTemplate) deleteResourcesBySelector(ns string, selector string, wai
 	return nil
 }
 
+// isClusterKind returns true if the kind or resource name is a cluster wide resource
+func isClusterKind(kind string) bool {
+	lower := strings.ToLower(kind)
+	return strings.HasPrefix(lower, "cluster") || strings.HasPrefix(lower, "namespace")
+}
+
 // DeleteRelease removes the given release
 func (h *HelmTemplate) DeleteRelease(ns string, releaseName string, purge bool) error {
+	if ns == "" {
+		ns = h.Namespace
+	}
 	selector := LabelReleaseName + "=" + releaseName
-
-	log.Infof("Removing release %s using selector: %s\n", util.ColorInfo(releaseName), util.ColorInfo(selector))
-
-	return h.deleteResourcesBySelector(ns, selector, true)
+	return h.deleteResourcesAndClusterResourcesBySelector(ns, selector, true, fmt.Sprintf("release %s", releaseName))
 }
 
 // StatusRelease returns the output of the helm status command for a given release
@@ -607,12 +636,12 @@ func (h *HelmTemplate) fetchChart(chart string, version string, dir string, repo
 	return answer, nil
 }
 
-func (h *HelmTemplate) addLabelsToFiles(chart string, releaseName string, version string, metadata *chart.Metadata) ([]*HelmHook, error) {
+func (h *HelmTemplate) addLabelsToFiles(chart string, releaseName string, version string, metadata *chart.Metadata, ns string) ([]*HelmHook, error) {
 	dir, helmHookDir, _, err := h.getDirectories(releaseName)
 	if err != nil {
 		return nil, err
 	}
-	return addLabelsToChartYaml(dir, helmHookDir, chart, releaseName, version, metadata)
+	return addLabelsToChartYaml(dir, helmHookDir, chart, releaseName, version, metadata, ns)
 }
 
 func splitObjectsInFiles(file string) ([]string, error) {
@@ -679,7 +708,7 @@ func writeObjectInFile(buf *bytes.Buffer, dir string, fileName string, count int
 	return absFile, nil
 }
 
-func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName string, version string, metadata *chart.Metadata) ([]*HelmHook, error) {
+func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName string, version string, metadata *chart.Metadata, ns string) ([]*HelmHook, error) {
 	helmHooks := []*HelmHook{}
 
 	err := filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
@@ -700,6 +729,7 @@ func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName
 				if err != nil {
 					return errors.Wrapf(err, "Failed to parse YAML of file %s", file)
 				}
+				kind := getYamlValueString(&m, "kind")
 				helmHook := getYamlValueString(&m, "metadata", "annotations", "helm.sh/hook")
 				if helmHook != "" {
 					// lets move any helm hooks to the new path
@@ -722,7 +752,6 @@ func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName
 						return err
 					}
 					name := getYamlValueString(&m, "metadata", "name")
-					kind := getYamlValueString(&m, "kind")
 					helmDeletePolicy := getYamlValueString(&m, "metadata", "annotations", "helm.sh/hook-delete-policy")
 					helmHooks = append(helmHooks, NewHelmHook(kind, name, newPath, helmHook, helmDeletePolicy))
 					return nil
@@ -730,6 +759,12 @@ func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName
 				err = setYamlValue(&m, releaseName, "metadata", "labels", LabelReleaseName)
 				if err != nil {
 					return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
+				}
+				if isClusterKind(kind) {
+					err = setYamlValue(&m, ns, "metadata", "labels", LabelNamespace)
+					if err != nil {
+						return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
+					}
 				}
 				err = setYamlValue(&m, version, "metadata", "labels", LabelReleaseChartVersion)
 				if err != nil {
@@ -955,20 +990,24 @@ func (h *HelmTemplate) runHooks(hooks []*HelmHook, hookPhase string, ns string, 
 }
 
 func (h *HelmTemplate) deleteHooks(hooks []*HelmHook, hookPhase string, hookDeletePolicy string, ns string) error {
+	flag := os.Getenv("JX_DISABLE_DELETE_HELM_HOOKS")
 	matchingHooks := MatchingHooks(hooks, hookPhase, hookDeletePolicy)
 	for _, hook := range matchingHooks {
 		kind := hook.Kind
 		name := hook.Name
 		if kind == "Job" && name != "" {
 			log.Infof("Waiting for helm %s hook Job %s to complete before removing it\n", hookPhase, name)
-			err := kube.WaitForJobToTerminate(h.KubeClient, ns, name, time.Minute*10)
+			err := kube.WaitForJobToComplete(h.KubeClient, ns, name, time.Minute*30, false)
 			if err != nil {
 				log.Warnf("Job %s has not yet terminated for helm hook phase %s due to: %s so removing it anyway\n", name, hookPhase, err)
 			}
 		} else {
 			log.Warnf("Could not wait for hook resource to complete as it is kind %s and name %s for phase %s\n", kind, name, hookPhase)
 		}
-		// TODO wait for job to be complete
+		if flag == "true" {
+			log.Infof("Not deleting the Job %s as we have the $JX_DISABLE_DELETE_HELM_HOOKS enabled\n", name)
+			continue
+		}
 		err := h.kubectlDeleteFile(ns, hook.File)
 		if err != nil {
 			return err

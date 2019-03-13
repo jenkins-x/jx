@@ -96,12 +96,12 @@ func waitForPodSelectorToBeReady(client kubernetes.Interface, namespace string, 
 	return nil
 }
 
-// HasInitContainerStarted returns true if the given InitContainer has started running
-func HasInitContainerStarted(pod *v1.Pod, idx int) bool {
+// HasContainerStarted returns true if the given Container has started running
+func HasContainerStarted(pod *v1.Pod, idx int) bool {
 	if pod == nil {
 		return false
 	}
-	statuses := pod.Status.InitContainerStatuses
+	_, statuses, _ := GetContainersWithStatusAndIsInit(pod)
 	if idx >= len(statuses) {
 		return false
 	}
@@ -229,4 +229,24 @@ func GetPodRestarts(pod *v1.Pod) int32 {
 		restarts += status.RestartCount
 	}
 	return restarts
+}
+
+// GetContainersWithStatusAndIsInit gets the containers in the pod, either init containers or non-init depending on whether
+// non-init containers are present, and a flag as to whether this list of containers are init containers or not.
+func GetContainersWithStatusAndIsInit(pod *v1.Pod) ([]v1.Container, []v1.ContainerStatus, bool) {
+	isInit := false
+	containers := pod.Spec.Containers
+	statuses := pod.Status.ContainerStatuses
+
+	// If there's only one "container" and it's named "nop", then the actual steps are on the init containers.
+	if len(containers) == 1 && containers[0].Name == "nop" {
+		isInit = true
+		containers = pod.Spec.InitContainers
+		statuses = pod.Status.InitContainerStatuses
+	} else if containers[len(containers)-1].Name == "nop" {
+		// Trim off the no-op container at the end of the list.
+		containers = containers[:len(containers)-1]
+	}
+
+	return containers, statuses, isInit
 }

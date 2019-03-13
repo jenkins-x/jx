@@ -63,6 +63,7 @@ type CreateJenkinsUserOptions struct {
 	Timeout         string
 	NoREST          bool
 	RecreateToken   bool
+	HealthTimeout   time.Duration
 }
 
 // NewCmdCreateJenkinsUser creates a command
@@ -95,6 +96,7 @@ func NewCmdCreateJenkinsUser(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.NoREST, "no-rest", "", false, "Disables the use of REST calls to automatically find the API token if the user and password are known")
 	cmd.Flags().BoolVarP(&options.RecreateToken, "recreate-token", "", false, "Should we recreate teh API token if it already exists")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The namespace of the secret where the Jenkins API token will be stored")
+	cmd.Flags().DurationVarP(&options.HealthTimeout, "health-timeout", "", 30*time.Minute, "The maximum duration to wait for the Jenkins service to be healthy before trying to create the API token")
 	return cmd
 }
 
@@ -169,7 +171,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	}
 
 	if userAuth.IsInvalid() && o.Password != "" && !o.NoREST {
-		err := jenkins.CheckHealth(server.URL)
+		err := jenkins.CheckHealth(server.URL, o.HealthTimeout)
 		if err != nil {
 			return errors.Wrapf(err, "checking health of Jenkins server %q", server.URL)
 		}
@@ -220,9 +222,11 @@ func (o *CreateJenkinsUserOptions) saveJenkinsAuthInSecret(kubeClient kubernetes
 	if ns == "" {
 		ns = o.currentNamespace
 	}
+	serviceName := kube.ServiceJenkins
 	secretName := kube.SecretJenkins
 	customJenkinsName := o.JenkinsSelector.CustomJenkinsName
 	if customJenkinsName != "" {
+		serviceName = customJenkinsName
 		secretName = customJenkinsName + "-auth"
 	}
 	create := false
@@ -247,24 +251,21 @@ func (o *CreateJenkinsUserOptions) saveJenkinsAuthInSecret(kubeClient kubernetes
 		secret.Data = map[string][]byte{}
 	}
 
-	/*
-	       TODO add an ownerReference so the secret is zapped if we remove the Jenkins App
+	svc, err := kubeClient.CoreV1().Services(ns).Get(serviceName, metav1.GetOptions{})
+	if err == nil && svc != nil {
+		hasOwnerRef := false
+		for _, ref := range secret.OwnerReferences {
+			if ref.Name == svc.Name && ref.Kind == "Service" {
+				hasOwnerRef = true
+			}
+		}
+		if !hasOwnerRef {
+			secret.OwnerReferences = append(secret.OwnerReferences, kube.ServiceOwnerRef(svc))
+		}
+	} else {
+		log.Warnf("Could not find service %s in namespace %s: %v\n", serviceName, ns, err)
+	}
 
-	   	if customJenkinsName != "" {
-	   		hasOwnerRef := false
-	   		for _, ref := range secret.OwnerReferences {
-	   			if ref.Name == customJenkinsName && ref.Kind == "Service" {
-	   				hasOwnerRef = true
-	   			}
-	   		}
-	   		if !hasOwnerRef {
-	   			secret.OwnerReferences = append(secret.OwnerReferences, metav1.OwnerReference{
-	   				Name: customJenkinsName,
-	   				Kind: "Service",
-	   			})
-	   		}
-	   	}
-	*/
 	secret.Data[kube.JenkinsAdminApiToken] = []byte(auth.ApiToken)
 	secret.Data[kube.JenkinsBearTokenField] = []byte(auth.BearerToken)
 	secret.Data[kube.JenkinsAdminUserField] = []byte(auth.Username)

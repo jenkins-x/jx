@@ -17,7 +17,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/knative/build-pipeline/pkg/apis/pipeline"
-	tektonclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
+	tektonv1alpha1 "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	duckv1alpha1 "github.com/knative/pkg/apis/duck/v1alpha1"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -179,7 +179,7 @@ func (si *StageInfo) getOrderedTaskStagesForStage() []*StageInfo {
 }
 
 // CreatePipelineRunInfo looks up the PipelineRun for a given name and creates the PipelineRunInfo for it
-func CreatePipelineRunInfo(kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, jxClient versioned.Interface, ns, prName string) (*PipelineRunInfo, error) {
+func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.PipelineStructure, pr *tektonv1alpha1.PipelineRun) (*PipelineRunInfo, error) {
 	branch := ""
 	lastCommitSha := ""
 	lastCommitMessage := ""
@@ -193,9 +193,8 @@ func CreatePipelineRunInfo(kubeClient kubernetes.Interface, tektonClient tektonc
 	}
 	gitURL := ""
 
-	pr, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Get(prName, metav1.GetOptions{})
-	if err != nil {
-		return nil, errors.Wrapf(err, fmt.Sprintf("PipelineRun %s cannot be found", prName))
+	if pr == nil {
+		return nil, errors.New(fmt.Sprintf("PipelineRun %s cannot be found", prName))
 	}
 
 	pri := &PipelineRunInfo{
@@ -207,7 +206,7 @@ func CreatePipelineRunInfo(kubeClient kubernetes.Interface, tektonClient tektonc
 	var pod *corev1.Pod
 
 	prStatus := pr.Status.GetCondition(duckv1alpha1.ConditionSucceeded)
-	if err := pri.SetPodsForPipelineRun(kubeClient, tektonClient, jxClient, ns); err != nil {
+	if err := pri.SetPodsForPipelineRun(podList, ps); err != nil {
 		return nil, errors.Wrapf(err, "Failure populating stages and pods for PipelineRun %s", prName)
 	}
 
@@ -221,9 +220,10 @@ func CreatePipelineRunInfo(kubeClient kubernetes.Interface, tektonClient tektonc
 		return nil, nil
 	}
 
-	for _, initContainer := range pod.Spec.InitContainers {
-		if strings.HasPrefix(initContainer.Name, "build-step-git-source") {
-			args := initContainer.Args
+	containers, _, isInit := kube.GetContainersWithStatusAndIsInit(pod)
+	for _, container := range containers {
+		if strings.HasPrefix(container.Name, "build-step-git-source") {
+			_, args := kube.GetCommandAndArgs(&container, isInit)
 			for i := 0; i <= len(args)-2; i += 2 {
 				key := args[i]
 				value := args[i+1]
@@ -241,7 +241,7 @@ func CreatePipelineRunInfo(kubeClient kubernetes.Interface, tektonClient tektonc
 			}
 		}
 		var pullPullSha, pullBaseSha string
-		for _, v := range initContainer.Env {
+		for _, v := range container.Env {
 			if v.Value == "" {
 				continue
 			}
@@ -268,14 +268,14 @@ func CreatePipelineRunInfo(kubeClient kubernetes.Interface, tektonClient tektonc
 			}
 		}
 		if branch == "" {
-			for _, v := range initContainer.Env {
+			for _, v := range container.Env {
 				if v.Name == "PULL_BASE_REF" {
 					build = v.Value
 				}
 			}
 		}
 		if build == "" {
-			for _, v := range initContainer.Env {
+			for _, v := range container.Env {
 				if v.Name == "BUILD_NUMBER" || v.Name == "BUILD_ID" {
 					build = v.Value
 				}
@@ -328,14 +328,11 @@ func CreatePipelineRunInfo(kubeClient kubernetes.Interface, tektonClient tektonc
 }
 
 // SetPodsForPipelineRun populates the pods for all stages within its PipelineRunInfo
-func (pri *PipelineRunInfo) SetPodsForPipelineRun(kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, jxClient versioned.Interface, ns string) error {
+func (pri *PipelineRunInfo) SetPodsForPipelineRun(podList *corev1.PodList, ps *v1.PipelineStructure) error {
 	if pri.PipelineRun == "" {
 		return errors.New("No PipelineRun specified")
 	}
-	ps, err := getPipelineStructureForPipelineRun(jxClient, ns, pri.PipelineRun)
-	if err != nil {
-		return err
-	}
+
 	if ps == nil {
 		return errors.New(fmt.Sprintf("Could not find PipelineStructure for PipelineRun %s", pri.PipelineRun))
 	}
@@ -352,7 +349,7 @@ func (pri *PipelineRunInfo) SetPodsForPipelineRun(kubeClient kubernetes.Interfac
 		if firstTaskStage == nil {
 			firstTaskStage = si
 		}
-		if err := si.SetPodsForStageInfo(kubeClient, tektonClient, ns, pri.PipelineRun); err != nil {
+		if err := si.SetPodsForStageInfo(podList, pri.PipelineRun); err != nil {
 			return errors.Wrapf(err, "Couldn't populate Pods for Stages")
 		}
 	}
@@ -361,47 +358,44 @@ func (pri *PipelineRunInfo) SetPodsForPipelineRun(kubeClient kubernetes.Interfac
 }
 
 // SetPodsForStageInfo populates the pods for a particular stage and/or its children
-func (si *StageInfo) SetPodsForStageInfo(kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, ns, prName string) error {
-	if si.Task != "" {
-		selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: map[string]string{
-			pipeline.GroupName + pipeline.PipelineRunLabelKey: prName,
-			syntax.LabelStageName:                             si.Name,
-		}})
-		if err != nil {
-			return err
-		}
+func (si *StageInfo) SetPodsForStageInfo(podList *corev1.PodList, prName string) error {
+	var podListItems []corev1.Pod
 
-		podList, err := kubeClient.CoreV1().Pods(ns).List(metav1.ListOptions{
-			LabelSelector: selector.String(),
-		})
-		if err != nil {
-			return err
+	for _, p := range podList.Items {
+		if p.Labels[syntax.LabelStageName] == syntax.MangleToRfc1035Label(si.Name, "") && p.Labels[pipeline.GroupName+pipeline.PipelineRunLabelKey] == prName {
+			podListItems = append(podListItems, p)
 		}
-		if len(podList.Items) == 0 {
+	}
+
+	if si.Task != "" {
+		if len(podListItems) == 0 {
 			// TODO: Probably the pod just hasn't started yet, so return nil
 			return nil
 		}
-		if len(podList.Items) > 1 {
-			return errors.New(fmt.Sprintf("Too many Pods (%d) found for PipelineRun %s and Stage %s", len(podList.Items), prName, si.Name))
+		if len(podListItems) > 1 {
+			return errors.New(fmt.Sprintf("Too many Pods (%d) found for PipelineRun %s and Stage %s", len(podListItems), prName, si.Name))
 		}
-		pod := podList.Items[0]
+		pod := podListItems[0]
 		si.PodName = pod.Name
 		si.Task = pod.Labels[builds.LabelTaskName]
 		si.TaskRun = pod.Labels[builds.LabelTaskRunName]
 		si.Pod = &pod
 		si.CreatedTime = pod.CreationTimestamp.Time
-		if len(pod.Spec.InitContainers) > 2 {
-			si.FirstStepImage = pod.Spec.InitContainers[2].Image
+		containers, _, isInit := kube.GetContainersWithStatusAndIsInit(&pod)
+		if isInit && len(containers) > 2 {
+			si.FirstStepImage = containers[2].Image
+		} else if !isInit && len(containers) > 1 {
+			si.FirstStepImage = containers[1].Image
 		}
 	} else if len(si.Stages) > 0 {
 		for _, child := range si.Stages {
-			if err := child.SetPodsForStageInfo(kubeClient, tektonClient, ns, prName); err != nil {
+			if err := child.SetPodsForStageInfo(podList, prName); err != nil {
 				return err
 			}
 		}
 	} else if len(si.Parallel) > 0 {
 		for _, child := range si.Parallel {
-			if err := child.SetPodsForStageInfo(kubeClient, tektonClient, ns, prName); err != nil {
+			if err := child.SetPodsForStageInfo(podList, prName); err != nil {
 				return err
 			}
 		}
@@ -533,6 +527,34 @@ func (pri *PipelineRunInfo) Status() string {
 		return "No Pod"
 	}
 	return string(pod.Status.Phase)
+}
+
+// ToBuildPodInfo converts the object into a BuildPodInfo so it can be easily filtered
+func (pri PipelineRunInfo) ToBuildPodInfo() *builds.BuildPodInfo {
+	answer := &builds.BuildPodInfo{
+		Name:              pri.Name,
+		Organisation:      pri.Organisation,
+		Repository:        pri.Repository,
+		Branch:            pri.Branch,
+		Build:             pri.Build,
+		BuildNumber:       pri.BuildNumber,
+		Pipeline:          pri.Pipeline,
+		LastCommitSHA:     pri.LastCommitSHA,
+		LastCommitURL:     pri.LastCommitURL,
+		LastCommitMessage: pri.LastCommitMessage,
+		GitInfo:           pri.GitInfo,
+	}
+	pod := pri.FindFirstStagePod()
+	if pod != nil {
+		answer.Pod = pod
+		answer.PodName = pod.Name
+		containers := pod.Spec.Containers
+		if len(containers) > 0 {
+			answer.FirstStepImage = containers[0].Image
+		}
+		answer.CreatedTime = pod.CreationTimestamp.Time
+	}
+	return answer
 }
 
 // PipelineRunInfoOrder allows sorting of a slice of PipelineRunInfos

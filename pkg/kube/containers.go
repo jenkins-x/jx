@@ -34,3 +34,34 @@ func GetVolume(volumes *[]corev1.Volume, name string) *corev1.Volume {
 	return nil
 
 }
+
+func entrypointIndex(args []string) *int {
+	for i, a := range args {
+		if a == "-entrypoint" {
+			return &i
+		}
+	}
+
+	return nil
+}
+
+// GetCommandAndArgs extracts the command and arguments for the container, taking into account the
+// entrypoint invocation if it's not an init container
+func GetCommandAndArgs(container *corev1.Container, isInit bool) ([]string, []string) {
+	if isInit {
+		return container.Command, container.Args
+	}
+
+	idx := entrypointIndex(container.Args)
+
+	if idx == nil {
+		// TODO: Logging here probably
+		return nil, nil
+	} else if *idx >= len(container.Args) {
+		// TODO: Logging here probably
+		return nil, nil
+	}
+
+	// Args ends up as [..., "-entrypoint", COMMAND, "--", ARGS...]
+	return []string{container.Args[*idx+1]}, container.Args[*idx+3:]
+}

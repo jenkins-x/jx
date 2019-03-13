@@ -84,13 +84,13 @@ func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string) {
 	cmd.Flags().StringVarP(&o.Password, "password", "", "",
 		"The password for the repository")
 	cmd.Flags().StringVarP(&o.Alias, optionAlias, "", "",
-		"An alias to use for the app (available when using GitOps for your dev environment)")
+		"An alias to use for the app if you wish to install multiple instances of the same app")
 	cmd.Flags().StringVarP(&o.ReleaseName, optionRelease, "r", "",
 		"The chart release name (by default the name of the app, available when NOT using GitOps for your dev"+
 			" environment)")
 	cmd.Flags().BoolVarP(&o.HelmUpdate, optionHelmUpdate, "", true,
 		"Should we run helm update first to ensure we use the latest version (available when NOT using GitOps for your dev environment)")
-	cmd.Flags().StringVarP(&o.Namespace, optionNamespace, "n", defaultNamespace, "The Namespace to install into (available when NOT using GitOps for your dev environment)")
+	cmd.Flags().StringVarP(&o.Namespace, optionNamespace, "n", "", "The Namespace to install into (available when NOT using GitOps for your dev environment)")
 	cmd.Flags().StringArrayVarP(&o.ValuesFiles, optionValues, "f", []string{}, "List of locations for values files, "+
 		"can be local files or URLs (available when NOT using GitOps for your dev environment)")
 	cmd.Flags().StringArrayVarP(&o.SetValues, optionSet, "s", []string{},
@@ -156,21 +156,32 @@ func (o *AddAppOptions) Run() error {
 		opts.Gitter = o.Git()
 	}
 	if !o.GitOps {
-		if o.Alias != "" {
-			return util.InvalidOptionf(optionAlias, o.Alias,
-				"unable to specify --%s when NOT using GitOps for your dev environment", optionAlias)
-		}
 		err := o.ensureHelm()
 		if err != nil {
 			return errors.Wrap(err, "failed to ensure that helm is present")
 		}
-		jxClient, _, err := o.JXClientAndDevNamespace()
+		jxClient, ns, err := o.JXClientAndDevNamespace()
 		if err != nil {
 			return errors.Wrapf(err, "getting jx client")
 		}
 		kubeClient, _, err := o.KubeClientAndDevNamespace()
 		if err != nil {
 			return errors.Wrapf(err, "getting kubeClient")
+		}
+		if o.Namespace == "" {
+			o.Namespace = ns
+		}
+
+		if o.Alias != "" && o.ReleaseName == "" {
+			bin, noTiller, helmTemplate, err := o.TeamHelmBin()
+			if err != nil {
+				return err
+			}
+			if bin != "helm" || noTiller || helmTemplate {
+				o.ReleaseName = o.Alias
+			} else {
+				o.ReleaseName = o.Alias + "-" + o.Namespace
+			}
 		}
 		opts.Namespace = o.Namespace
 		opts.KubeClient = kubeClient

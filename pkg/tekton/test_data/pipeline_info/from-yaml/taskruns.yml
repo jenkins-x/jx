@@ -3,18 +3,18 @@ items:
 - apiVersion: tekton.dev/v1alpha1
   kind: TaskRun
   metadata:
-    creationTimestamp: 2019-02-21T22:02:43Z
+    creationTimestamp: 2019-03-05T20:06:13Z
     generation: 1
     labels:
       branch: master
       build-number: "1"
-      jenkins.io/task-stage-name: Build
+      jenkins.io/task-stage-name: build
       owner: abayer
       repo: js-test-repo
       tekton.dev/pipeline: abayer-js-test-repo-master
       tekton.dev/pipelineRun: abayer-js-test-repo-master-1
       tekton.dev/task: abayer-js-test-repo-master-build
-    name: abayer-js-test-repo-master-1-build-ttvzf
+    name: abayer-js-test-repo-master-1-build-jmcbd
     namespace: jx
     ownerReferences:
     - apiVersion: tekton.dev/v1alpha1
@@ -22,19 +22,14 @@ items:
       controller: true
       kind: PipelineRun
       name: abayer-js-test-repo-master-1
-      uid: 69fb89f5-3624-11e9-b776-42010a8a00ac
-    resourceVersion: "6218"
-    selfLink: /apis/tekton.dev/v1alpha1/namespaces/jx/taskruns/abayer-js-test-repo-master-1-build-ttvzf
-    uid: 6a01fd37-3624-11e9-b776-42010a8a00ac
+      uid: 209c34f9-3f82-11e9-bd41-42010a8a00a2
+    resourceVersion: "1421341"
+    selfLink: /apis/tekton.dev/v1alpha1/namespaces/jx/taskruns/abayer-js-test-repo-master-1-build-jmcbd
+    uid: 20a2999a-3f82-11e9-bd41-42010a8a00a2
   spec:
     Status: ""
     inputs:
       resources:
-      - name: temp-ordering-resource
-        paths: null
-        resourceRef:
-          name: temp-ordering-resource
-        resourceSpec: null
       - name: workspace
         paths: null
         resourceRef:
@@ -47,12 +42,6 @@ items:
         - /pvc/build/workspace
         resourceRef:
           name: abayer-js-test-repo-master
-        resourceSpec: null
-      - name: temp-ordering-resource
-        paths:
-        - /pvc/build/temp-ordering-resource
-        resourceRef:
-          name: temp-ordering-resource
         resourceSpec: null
     serviceAccount: tekton-bot
     taskRef:
@@ -62,69 +51,33 @@ items:
       type: ""
   status:
     conditions:
-    - lastTransitionTime: 2019-02-21T22:03:54Z
+    - lastTransitionTime: 2019-03-05T20:07:04Z
       status: "True"
       type: Succeeded
-    podName: abayer-js-test-repo-master-1-build-ttvzf-pod-937200
-    startTime: 2019-02-21T22:02:43Z
+    podName: abayer-js-test-repo-master-1-build-jmcbd-pod-a726d6
+    startTime: 2019-03-05T20:06:13Z
     steps:
-    - logsURL: ""
-      terminated:
-        containerID: docker://ed2e0600af698c48c12c02aacdfd76c5a02ca8ebdf9849bc4df1f4c093fa327f
+    - terminated:
+        containerID: docker://cd8f631f053e6d7de0e32a943c4084518590537984ce2f551a23af8e3a236e3c
         exitCode: 0
-        finishedAt: 2019-02-21T22:03:04Z
+        finishedAt: 2019-03-05T20:06:36Z
         reason: Completed
-        startedAt: 2019-02-21T22:03:01Z
-    - logsURL: ""
-      terminated:
-        containerID: docker://8aee17337d7eab04996c91717012e103bfb0510184a3ca20bcab01eb21e4d432
-        exitCode: 0
-        finishedAt: 2019-02-21T22:03:07Z
-        reason: Completed
-        startedAt: 2019-02-21T22:03:07Z
-    - logsURL: ""
-      terminated:
-        containerID: docker://a1713f8af2bd6d0ac007f39482feec7206a1d164f5b2c329be267f4836ef110d
-        exitCode: 0
-        finishedAt: 2019-02-21T22:03:37Z
-        reason: Completed
-        startedAt: 2019-02-21T22:03:36Z
-    - logsURL: ""
-      terminated:
-        containerID: docker://aaa2a796eb46ab3eae0053a300ce9a0964f81b3b41eadd2b2794873f2617817c
-        exitCode: 0
-        finishedAt: 2019-02-21T22:03:38Z
-        reason: Completed
-        startedAt: 2019-02-21T22:03:38Z
-    - logsURL: ""
-      terminated:
-        containerID: docker://68a65e3ca44fd47c149aebd64190273c480b7f83c020bd579d14cd3d25a1ef6b
-        exitCode: 0
-        finishedAt: 2019-02-21T22:03:40Z
-        reason: Completed
-        startedAt: 2019-02-21T22:03:40Z
-    - logsURL: ""
-      terminated:
-        containerID: docker://7f9f6a78dd471731997a63013872f617cb0da785bbcca244f9ba2b356296901a
-        exitCode: 0
-        finishedAt: 2019-02-21T22:03:42Z
-        reason: Completed
-        startedAt: 2019-02-21T22:03:42Z
+        startedAt: 2019-03-05T20:06:36Z
 - apiVersion: tekton.dev/v1alpha1
   kind: TaskRun
   metadata:
-    creationTimestamp: 2019-02-21T22:03:54Z
+    creationTimestamp: 2019-03-05T20:07:04Z
     generation: 1
     labels:
       branch: master
       build-number: "1"
-      jenkins.io/task-stage-name: Second
+      jenkins.io/task-stage-name: second
       owner: abayer
       repo: js-test-repo
       tekton.dev/pipeline: abayer-js-test-repo-master
       tekton.dev/pipelineRun: abayer-js-test-repo-master-1
       tekton.dev/task: abayer-js-test-repo-master-second
-    name: abayer-js-test-repo-master-1-second-9czt5
+    name: abayer-js-test-repo-master-1-second-wglk8
     namespace: jx
     ownerReferences:
     - apiVersion: tekton.dev/v1alpha1
@@ -132,10 +85,10 @@ items:
       controller: true
       kind: PipelineRun
       name: abayer-js-test-repo-master-1
-      uid: 69fb89f5-3624-11e9-b776-42010a8a00ac
-    resourceVersion: "6343"
-    selfLink: /apis/tekton.dev/v1alpha1/namespaces/jx/taskruns/abayer-js-test-repo-master-1-second-9czt5
-    uid: 94397268-3624-11e9-b776-42010a8a00ac
+      uid: 209c34f9-3f82-11e9-bd41-42010a8a00a2
+    resourceVersion: "1421355"
+    selfLink: /apis/tekton.dev/v1alpha1/namespaces/jx/taskruns/abayer-js-test-repo-master-1-second-wglk8
+    uid: 3eaa13d6-3f82-11e9-bd41-42010a8a00a2
   spec:
     Status: ""
     inputs:
@@ -146,12 +99,6 @@ items:
         resourceRef:
           name: abayer-js-test-repo-master
         resourceSpec: null
-      - name: temp-ordering-resource
-        paths:
-        - /pvc/build/temp-ordering-resource
-        resourceRef:
-          name: temp-ordering-resource
-        resourceSpec: null
     outputs:
       resources:
       - name: workspace
@@ -159,12 +106,6 @@ items:
         - /pvc/second/workspace
         resourceRef:
           name: abayer-js-test-repo-master
-        resourceSpec: null
-      - name: temp-ordering-resource
-        paths:
-        - /pvc/second/temp-ordering-resource
-        resourceRef:
-          name: temp-ordering-resource
         resourceSpec: null
     serviceAccount: tekton-bot
     taskRef:
@@ -174,54 +115,17 @@ items:
       type: ""
   status:
     conditions:
-    - lastTransitionTime: 2019-02-21T22:04:24Z
-      status: "True"
+    - lastTransitionTime: 2019-03-05T20:07:05Z
+      message: 'pod status "Initialized":"False"; message: "containers with incomplete
+        status: [build-step-credential-initializer-cdlb9 build-step-place-tools]"'
+      reason: Pending
+      status: Unknown
       type: Succeeded
-    podName: abayer-js-test-repo-master-1-second-9czt5-pod-62d12d
-    startTime: 2019-02-21T22:03:56Z
+    podName: abayer-js-test-repo-master-1-second-wglk8-pod-762f8d
+    startTime: 2019-03-05T20:07:05Z
     steps:
-    - logsURL: ""
-      terminated:
-        containerID: docker://557e7e7571f62c607c854f3ffa654b10f82196101d46f20939829fbdc6a1320e
-        exitCode: 0
-        finishedAt: 2019-02-21T22:04:07Z
-        reason: Completed
-        startedAt: 2019-02-21T22:04:07Z
-    - logsURL: ""
-      terminated:
-        containerID: docker://3b4150a8ad7e8c6b171e57188fbfb74ffc794aafaeb6073d5997a46d9d399004
-        exitCode: 0
-        finishedAt: 2019-02-21T22:04:08Z
-        reason: Completed
-        startedAt: 2019-02-21T22:04:08Z
-    - logsURL: ""
-      terminated:
-        containerID: docker://c98db7ca8b2ff5566605deddaa22694009fc5f23bdf7a56bb1efa4c92fd0a222
-        exitCode: 0
-        finishedAt: 2019-02-21T22:04:09Z
-        reason: Completed
-        startedAt: 2019-02-21T22:04:09Z
-    - logsURL: ""
-      terminated:
-        containerID: docker://130a294841624b138d801306a7bf6923e9d6f18dbb2d161bb9d18107bffc896f
-        exitCode: 0
-        finishedAt: 2019-02-21T22:04:10Z
-        reason: Completed
-        startedAt: 2019-02-21T22:04:10Z
-    - logsURL: ""
-      terminated:
-        containerID: docker://712659711fe0dd07add0740d22898207768bfeb823a2dc11b062092a3fbb5110
-        exitCode: 0
-        finishedAt: 2019-02-21T22:04:11Z
-        reason: Completed
-        startedAt: 2019-02-21T22:04:11Z
-    - logsURL: ""
-      terminated:
-        containerID: docker://b7dd7d255a48ef595b47206f247d1b49ea33b3aed21c126b24fa1db3a22c91c3
-        exitCode: 0
-        finishedAt: 2019-02-21T22:04:12Z
-        reason: Completed
-        startedAt: 2019-02-21T22:04:12Z
+    - waiting:
+        reason: PodInitializing
 kind: List
 metadata:
   resourceVersion: ""

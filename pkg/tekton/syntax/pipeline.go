@@ -204,7 +204,7 @@ func (s *Stage) taskName() string {
 	return strings.ToLower(strings.NewReplacer(" ", "-").Replace(s.Name))
 }
 
-// stageLabelName replaces invalid cahracters in stage names for label usage.
+// stageLabelName replaces invalid characters in stage names for label usage.
 func (s *Stage) stageLabelName() string {
 	return MangleToRfc1035Label(s.Name, "")
 }
@@ -759,12 +759,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		}
 
 		t.Spec.Inputs = &tektonv1alpha1.Inputs{
-			Resources: []tektonv1alpha1.TaskResource{*ws,
-				{
-					Name: "temp-ordering-resource",
-					Type: tektonv1alpha1.PipelineResourceTypeImage,
-				},
-			},
+			Resources: []tektonv1alpha1.TaskResource{*ws},
 		}
 
 		t.Spec.Outputs = &tektonv1alpha1.Outputs{
@@ -772,10 +767,6 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 				{
 					Name: "workspace",
 					Type: tektonv1alpha1.PipelineResourceTypeGit,
-				},
-				{
-					Name: "temp-ordering-resource",
-					Type: tektonv1alpha1.PipelineResourceTypeImage,
 				},
 			},
 		}
@@ -963,11 +954,6 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 					Name: pipelineIdentifier,
 					Type: tektonv1alpha1.PipelineResourceTypeGit,
 				},
-				{
-					// TODO: Switch from this kind of hackish approach to non-resource-based dependencies once they land.
-					Name: "temp-ordering-resource",
-					Type: tektonv1alpha1.PipelineResourceTypeImage,
-				},
 			},
 		},
 	}
@@ -1045,25 +1031,15 @@ func createPipelineTasks(stage *transformedStage, pipelineIdentifier string) []t
 					Resource: pipelineIdentifier,
 					From:     provider,
 				},
-				{
-					// TODO: Switch from this kind of hackish approach to non-resource-based dependencies once they land.
-					Name:     "temp-ordering-resource",
-					Resource: "temp-ordering-resource",
-					From:     previousStageNames,
-				},
 			},
 			Outputs: []tektonv1alpha1.PipelineTaskOutputResource{
 				{
 					Name:     "workspace",
 					Resource: pipelineIdentifier,
 				},
-				{
-					// TODO: Switch from this kind of hackish approach to non-resource-based dependencies once they land.
-					Name:     "temp-ordering-resource",
-					Resource: "temp-ordering-resource",
-				},
 			},
 		}
+		pTask.RunAfter = previousStageNames
 		stage.PipelineTask = &pTask
 
 		return []tektonv1alpha1.PipelineTask{pTask}
@@ -1168,13 +1144,15 @@ func (ts transformedStage) getClosestAncestor() *transformedStage {
 func findDuplicates(names []string) *apis.FieldError {
 	// Count members
 	counts := make(map[string]int)
+	mangled := make(map[string]string)
 	for _, v := range names {
-		counts[v]++
+		counts[MangleToRfc1035Label(v, "")]++
+		mangled[v] = MangleToRfc1035Label(v, "")
 	}
 
 	var duplicateNames []string
-	for k, v := range counts {
-		if v > 1 {
+	for k, v := range mangled {
+		if counts[v] > 1 {
 			duplicateNames = append(duplicateNames, "'"+k+"'")
 		}
 	}

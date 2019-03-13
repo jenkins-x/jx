@@ -46,7 +46,7 @@ type CreateDockerAuthOptions struct {
 	Email  string
 }
 
-// NewCmdCreateIssue creates a command object for the "create" command
+// NewCmdCreateDockerAuth creates a command object for the "create" command
 func NewCmdCreateDockerAuth(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateDockerAuthOptions{
 		CreateOptions: CreateOptions{

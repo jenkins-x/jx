@@ -3,6 +3,7 @@ package cmd_test
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"k8s.io/api/core/v1"
 	"testing"
 
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -45,6 +47,20 @@ func TestStartProtection(t *testing.T) {
 	repos := []string{repo}
 
 	devEnv := kube.CreateDefaultDevEnvironment("jx")
+
+	data := make(map[string]string)
+	data["domain"] = "dummy.domain.nip.io"
+	data["tls"] = "false"
+
+	cm := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kube.IngressConfigConfigmap,
+		},
+		Data: data,
+	}
+
+	_, err = kubeClient.CoreV1().ConfigMaps(ns).Create(cm)
+	assert.NoError(t, err)
 
 	err = prow.AddApplication(kubeClient, repos, ns, "", &devEnv.Spec.TeamSettings)
 	defer func() {

@@ -5,7 +5,7 @@ items:
     creationTimestamp: null
     labels:
       branch: build-pack
-      jenkins.io/task-stage-name: From-Build-Pack
+      jenkins.io/task-stage-name: from-build-pack
       owner: abayer
       repo: js-test-repo
     name: abayer-js-test-repo-build-pack

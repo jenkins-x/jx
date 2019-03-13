@@ -7,15 +7,14 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/google/go-cmp/cmp"
-	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/tekton/tekton_helpers_test"
 	tektonfake "github.com/knative/build-pipeline/pkg/client/clientset/versioned/fake"
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestCreatePipelineRunInfo(t *testing.T) {
@@ -26,7 +25,7 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 		expected *tekton.PipelineRunInfo
 		prName   string
 	}{{
-		name: "from-build-pack",
+		name: "from-build-pack-init-containers",
 		expected: &tekton.PipelineRunInfo{
 			Branch:      "master",
 			Build:       "1",
@@ -57,7 +56,7 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 		},
 		prName: "abayer-jx-demo-qs-master-1",
 	}, {
-		name: "from-yaml",
+		name: "from-yaml-init-containers",
 		expected: &tekton.PipelineRunInfo{
 			Branch:      "master",
 			Build:       "1",
@@ -96,7 +95,7 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 		},
 		prName: "abayer-js-test-repo-master-1",
 	}, {
-		name: "from-yaml-nested-stages",
+		name: "from-yaml-nested-stages-init-containers",
 		expected: &tekton.PipelineRunInfo{
 			Branch:      "nested",
 			Build:       "1",
@@ -139,6 +138,45 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 		},
 		prName: "abayer-js-test-repo-nested-1",
 	}, {
+		name: "from-yaml",
+		expected: &tekton.PipelineRunInfo{
+			Branch:      "master",
+			Build:       "1",
+			BuildNumber: 1,
+			GitInfo: &gits.GitRepository{
+				Host:         "github.com",
+				Name:         "js-test-repo",
+				Organisation: "abayer",
+				Project:      "abayer",
+				Scheme:       "https",
+				URL:          "https://github.com/abayer/js-test-repo",
+			},
+			GitURL:       "https://github.com/abayer/js-test-repo",
+			Name:         "abayer-js-test-repo-master-1",
+			Organisation: "abayer",
+			Pipeline:     "abayer/js-test-repo/master",
+			PipelineRun:  "abayer-js-test-repo-master-1",
+			Repository:   "js-test-repo",
+			Stages: []*tekton.StageInfo{{
+				Name:           "Build",
+				CreatedTime:    *parseTime(t, "2019-03-05T15:06:13-05:00"),
+				FirstStepImage: "jenkinsxio/builder-nodejs:0.1.263",
+				PodName:        "abayer-js-test-repo-master-1-build-jmcbd-pod-a726d6",
+				Task:           "abayer-js-test-repo-master-build",
+				TaskRun:        "abayer-js-test-repo-master-1-build-jmcbd",
+				Parents:        []string{},
+			}, {
+				Name:           "Second",
+				CreatedTime:    *parseTime(t, "2019-03-05T15:07:05-05:00"),
+				FirstStepImage: "us.gcr.io/abayer-jx-experiment/bash-1155d67b477d7c4e2f7998b1fc6b4e43@sha256:ad8c6fffadb5f2723fe8a4aa3ac7f4ac091e1fe14b1badec7418c3705911af3c",
+				PodName:        "abayer-js-test-repo-master-1-second-wglk8-pod-762f8d",
+				Task:           "abayer-js-test-repo-master-second",
+				TaskRun:        "abayer-js-test-repo-master-1-second-wglk8",
+				Parents:        []string{},
+			}},
+		},
+		prName: "abayer-js-test-repo-master-1",
+	}, {
 		name:     "completed-from-yaml",
 		expected: nil,
 		prName:   "abayer-js-test-repo-master-1",
@@ -151,14 +189,12 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			testCaseDir := path.Join("test_data", "pipeline_info", tt.name)
-			kubeClient := fake.NewSimpleClientset(tekton_helpers_test.AssertLoadPods(t, testCaseDir))
 
 			jxObjects := []runtime.Object{tekton_helpers_test.AssertLoadPipelineActivity(t, testCaseDir)}
 			structure := tekton_helpers_test.AssertLoadPipelineStructure(t, testCaseDir)
 			if structure != nil {
 				jxObjects = append(jxObjects, structure)
 			}
-			jxClient := v1fake.NewSimpleClientset(jxObjects...)
 
 			tektonObjects := []runtime.Object{tekton_helpers_test.AssertLoadPipelineRun(t, testCaseDir), tekton_helpers_test.AssertLoadPipeline(t, testCaseDir)}
 			tektonObjects = append(tektonObjects, tekton_helpers_test.AssertLoadTasks(t, testCaseDir))
@@ -166,7 +202,13 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 			tektonObjects = append(tektonObjects, tekton_helpers_test.AssertLoadPipelineResources(t, testCaseDir))
 			tektonClient := tektonfake.NewSimpleClientset(tektonObjects...)
 
-			pri, err := tekton.CreatePipelineRunInfo(kubeClient, tektonClient, jxClient, ns, tt.prName)
+			podList := tekton_helpers_test.AssertLoadPods(t, testCaseDir)
+
+			pr, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Get(tt.prName, metav1.GetOptions{})
+			if err != nil {
+				t.Fatalf("Error fetching PipelineRun: %s", err)
+			}
+			pri, err := tekton.CreatePipelineRunInfo(tt.prName, podList, structure, pr)
 			if err != nil {
 				t.Fatalf("Error creating PipelineRunInfo: %s", err)
 			}

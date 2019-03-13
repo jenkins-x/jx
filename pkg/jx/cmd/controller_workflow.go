@@ -723,9 +723,13 @@ func (o *ControllerWorkflowOptions) createPromoteStepActivityKey(buildName strin
 		build = "1"
 	}
 	gitUrl := ""
-	for _, initContainer := range pod.Spec.InitContainers {
-		if initContainer.Name == "workflow-step-git-source" {
-			args := initContainer.Args
+
+	containers, _, isInit := kube.GetContainersWithStatusAndIsInit(pod)
+
+	for _, container := range containers {
+		if container.Name == "workflow-step-git-source" {
+			_, args := kube.GetCommandAndArgs(&container, isInit)
+
 			for i := 0; i <= len(args)-2; i += 2 {
 				key := args[i]
 				value := args[i+1]

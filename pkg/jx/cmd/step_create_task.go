@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -29,6 +30,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+const (
+	kanikoDockerImage = "rawlingsj/executor:dev40"
+)
+
 var (
 	createTaskLong = templates.LongDesc(`
 		Creates a Knative Pipeline Run for a project
@@ -45,6 +50,8 @@ var (
 		jx step create task --view
 
 			`)
+
+	ipAddressRegistryRegex = regexp.MustCompile(`\d+\.\d+\.\d+\.\d+.\d+(:\d+)?`)
 )
 
 // StepCreateTaskOptions contains the command line flags
@@ -73,6 +80,9 @@ type StepCreateTaskOptions struct {
 	NoReleasePrepare  bool
 	Duration          time.Duration
 	FromRepo          bool
+	NoKaniko          bool
+	KanikoImage       string
+	DockerRegistryOrg string
 
 	PodTemplates        map[string]*corev1.Pod
 	MissingPodTemplates map[string]bool
@@ -140,6 +150,9 @@ func NewCmdStepCreateTask(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.NoApply, "no-apply", "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file")
 	cmd.Flags().BoolVarP(&options.ViewSteps, "view", "", false, "Just view the steps that would be created")
 	cmd.Flags().BoolVarP(&options.NoReleasePrepare, "no-release-prepare", "", false, "Disables creating the release version number and tagging git and triggering the release pipeline from the new tag")
+	cmd.Flags().BoolVarP(&options.NoKaniko, "no-kaniko", "", false, "Disables using kaniko directly for building docker images")
+	cmd.Flags().StringVarP(&options.KanikoImage, "kaniko-image", "", kanikoDockerImage, "The docker image for Kaniko")
+	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The Docker registry organisation. If blank the git repository owner is used")
 	cmd.Flags().DurationVarP(&options.Duration, "duration", "", time.Second*30, "Retry duration when trying to create a PipelineRun")
 	return cmd
 }
@@ -154,6 +167,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	o.devNamespace = ns
 
 	if o.CloneGitURL != "" {
 		err = o.cloneGitRepositoryToTempDir(o.CloneGitURL)
@@ -294,6 +308,9 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 			pipelineConfig = localPipelineConfig
 		}
 	}
+	if pipelineConfig == nil {
+		return nil, nil, nil, nil, nil, fmt.Errorf("failed to find PipelineConfig in file %s", projectConfigFile)
+	}
 
 	// lets allow a `jenkins-x.yml` to specify we want to disable release prepare mode which can be useful for
 	// working with custom jenkins pipelines in custom jenkins servers
@@ -345,7 +362,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		return nil, nil, nil, nil, nil, err
 	}
 
-	if lifecycles.Pipeline != nil {
+	if lifecycles != nil && lifecycles.Pipeline != nil {
 		// TODO: Seeing weird behavior seemingly related to https://golang.org/doc/faq#nil_error
 		// if err is reused, maybe we need to switch return types (perhaps upstream in build-pipeline)?
 		if validateErr := lifecycles.Pipeline.Validate(); validateErr != nil {
@@ -365,7 +382,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 			return nil, nil, nil, nil, nil, o.viewSteps(tasks...)
 		}
 
-		resources = append(resources, o.generateSourceRepoResource(pipelineResourceName), o.generateTempOrderingResource())
+		resources = append(resources, o.generateSourceRepoResource(pipelineResourceName))
 	} else {
 		t, err := o.CreateTaskForBuildPack(name, pipelineConfig, lifecycles, kind, ns)
 		if err != nil {
@@ -388,7 +405,8 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	}
 	for _, task := range tasks {
 		if validateErr := task.Spec.Validate(); validateErr != nil {
-			return nil, nil, nil, nil, nil, errors.Wrapf(validateErr, "Validation failed for generated Task: %s", task.Name)
+			data, _ := yaml.Marshal(task)
+			return nil, nil, nil, nil, nil, errors.Wrapf(validateErr, "Validation failed for generated Task: %s %s", task.Name, string(data))
 		}
 	}
 	if validateErr := run.Spec.Validate(); validateErr != nil {
@@ -475,7 +493,7 @@ func (o *StepCreateTaskOptions) CreateTaskForBuildPack(languageName string, pipe
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
-			Labels: util.MergeMaps(o.labels, map[string]string{syntax.LabelStageName: syntax.DefaultStageNameForBuildPack}),
+			Labels: util.MergeMaps(o.labels, map[string]string{syntax.LabelStageName: syntax.MangleToRfc1035Label(syntax.DefaultStageNameForBuildPack, "")}),
 		},
 		Spec: pipelineapi.TaskSpec{
 			Steps:   steps,
@@ -502,7 +520,7 @@ func (o *StepCreateTaskOptions) CreateTaskForBuildPack(languageName string, pipe
 
 // CreateSourceRepoResourceForBuildPack creates the source repository PipelineResource for a build pack
 func (o *StepCreateTaskOptions) CreateSourceRepoResourceForBuildPack(task *pipelineapi.Task, gitInfo *gits.GitRepository, branch string) *pipelineapi.PipelineResource {
-	return o.generateSourceRepoResource(kube.ToValidName(gitInfo.Organisation + "-" + gitInfo.Name + "-" + branch))
+	return o.generateSourceRepoResource(kube.ToValidNameTruncated(gitInfo.Organisation+"-"+gitInfo.Name+"-"+branch, 63))
 }
 
 // CreatePipelineAndStructureForBuildPack creates the Pipeline and PipelineStructure for a build pack
@@ -521,7 +539,7 @@ func (o *StepCreateTaskOptions) CreatePipelineAndStructureForBuildPack(task *pip
 	}
 	tasks := []pipelineapi.PipelineTask{
 		{
-			Name: strings.ToLower(syntax.DefaultStageNameForBuildPack),
+			Name: syntax.MangleToRfc1035Label(syntax.DefaultStageNameForBuildPack, ""),
 			Resources: &pipelineapi.PipelineTaskResources{
 				Inputs: taskInputResources,
 			},
@@ -597,9 +615,15 @@ func (o *StepCreateTaskOptions) EnhanceTasksAndPipeline(tasks []*pipelineapi.Tas
 		o.enhanceTaskWithVolumesEnvAndInputs(t, pipelineConfig, *taskInputs)
 	}
 
+	taskParams := o.createPipelineTaskParams()
+
 	for i, pt := range pipeline.Spec.Tasks {
-		pt.Params = append(pt.Params, o.createPipelineTaskParams()...)
-		pipeline.Spec.Tasks[i] = pt
+		for _, tp := range taskParams {
+			if !hasPipelineParam(pt.Params, tp.Name) {
+				pt.Params = append(pt.Params, tp)
+				pipeline.Spec.Tasks[i] = pt
+			}
+		}
 	}
 
 	pipeline.Spec.Params = o.createPipelineParams()
@@ -726,29 +750,6 @@ func (o *StepCreateTaskOptions) generateSourceRepoResource(name string) *pipelin
 		}
 	}
 	return resource
-}
-
-// TODO: This should not exist, but we need some way to enforce ordering of
-// tasks and right now resources are the only way to do that.
-func (o *StepCreateTaskOptions) generateTempOrderingResource() *pipelineapi.PipelineResource {
-	return &pipelineapi.PipelineResource{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: syntax.TektonAPIVersion,
-			Kind:       "PipelineResource",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "temp-ordering-resource",
-		},
-		Spec: pipelineapi.PipelineResourceSpec{
-			Type: pipelineapi.PipelineResourceTypeImage,
-			Params: []pipelineapi.Param{
-				{
-					Name:  "url",
-					Value: "alpine", // Something smallish (lol)
-				},
-			},
-		},
-	}
 }
 
 func (o *StepCreateTaskOptions) setBuildValues() error {
@@ -1011,7 +1012,10 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		c.Stdin = false
 		c.TTY = false
 
-		steps = append(steps, c)
+		c2 := o.modifyStep(&c, gitInfo, pipelineConfig, templateKind, step, containerName, dir)
+		if c2 != nil {
+			steps = append(steps, *c2)
+		}
 	}
 	for _, s := range step.Steps {
 		// TODO add child prefix?
@@ -1333,19 +1337,41 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 		version = o.previewVersionPrefix + buildNumber
 	}
 	if version != "" {
-		o.Results.PipelineParams = append(o.Results.PipelineParams, pipelineapi.Param{
-			Name:  "version",
-			Value: version,
-		})
+		if !hasParam(o.Results.PipelineParams, "version") {
+			o.Results.PipelineParams = append(o.Results.PipelineParams, pipelineapi.Param{
+				Name:  "version",
+				Value: version,
+			})
+		}
 	}
 	o.version = version
 	if o.BuildNumber != "" {
-		o.Results.PipelineParams = append(o.Results.PipelineParams, pipelineapi.Param{
-			Name:  "build_id",
-			Value: o.BuildNumber,
-		})
+		if !hasParam(o.Results.PipelineParams, "build_id") {
+			o.Results.PipelineParams = append(o.Results.PipelineParams, pipelineapi.Param{
+				Name:  "build_id",
+				Value: o.BuildNumber,
+			})
+		}
 	}
 	return nil
+}
+
+func hasParam(params []pipelineapi.Param, name string) bool {
+	for _, param := range params {
+		if param.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func hasPipelineParam(params []pipelineapi.Param, name string) bool {
+	for _, param := range params {
+		if param.Name == name {
+			return true
+		}
+	}
+	return false
 }
 
 func (o *StepCreateTaskOptions) runStepCommand(step *jenkinsfile.PipelineStep) error {
@@ -1395,12 +1421,60 @@ func (o *StepCreateTaskOptions) invokeSteps(steps []*jenkinsfile.PipelineStep) e
 	return nil
 }
 
-func (o *StepCreateTaskOptions) dockerRegistryOrg(repository *gits.GitRepository) string {
-	answer := os.Getenv("DOCKER_REGISTRY_ORG")
-	if answer == "" {
-		answer = repository.Organisation
+// modifyStep allows a container step to be modified to do something different
+func (o *StepCreateTaskOptions) modifyStep(container *corev1.Container, gitInfo *gits.GitRepository, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *jenkinsfile.PipelineStep, containerName string, dir string) *corev1.Container {
+
+	if !o.NoKaniko && len(container.Args) > 0 {
+		inputArgText := strings.Join(container.Args[1:], " ")
+		if strings.HasPrefix(inputArgText, "skaffold build") {
+			sourceDir := o.getWorkspaceDir()
+			dockerfile := filepath.Join(sourceDir, "Dockerfile")
+			localRepo := o.getDockerRegistry()
+			destination := o.dockerImage(gitInfo)
+
+			args := []string{"--cache=true", "--cache-dir=/workspace",
+				"--context=" + sourceDir,
+				"--dockerfile=" + dockerfile,
+				"--destination=" + destination + ":${inputs.params.version}",
+				"--cache-repo=" + localRepo + "/",
+				"--skip-tls-verify-registry=" + localRepo,
+			}
+
+			if ipAddressRegistryRegex.MatchString(localRepo) {
+				args = append(args, "--insecure")
+			}
+
+			answer := *container
+			answer.Command = []string{"/kaniko/executor"}
+			//answer.Args = []string{container.Args[0], "/kaniko/executor " + strings.Join(args, " ")}
+			answer.Args = args
+			if o.KanikoImage == "" {
+				o.KanikoImage = kanikoDockerImage
+			}
+			answer.Image = o.KanikoImage
+			return &answer
+		}
 	}
-	return answer
+	return container
+}
+
+func (o *StepCreateTaskOptions) dockerImage(gitInfo *gits.GitRepository) string {
+	dockerRegistry := o.getDockerRegistry()
+
+	dockeerRegistryOrg := o.DockerRegistryOrg
+	if dockeerRegistryOrg == "" {
+		dockeerRegistryOrg = o.dockerRegistryOrg(gitInfo)
+	}
+	appName := gitInfo.Name
+	return dockerRegistry + "/" + dockeerRegistryOrg + "/" + appName
+}
+
+func (o *StepCreateTaskOptions) getDockerRegistry() string {
+	dockerRegistry := o.DockerRegistry
+	if dockerRegistry == "" {
+		dockerRegistry = o.dockerRegistry()
+	}
+	return dockerRegistry
 }
 
 // ObjectReferences creates a list of object references created

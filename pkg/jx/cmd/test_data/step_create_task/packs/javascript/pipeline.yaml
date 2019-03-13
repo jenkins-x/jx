@@ -1,3 +1,6 @@
+agent:
+  label: jenkins-nodejs
+  container: nodejs
 extends:
   import: classic
   file: javascript/pipeline.yaml

@@ -24,6 +24,10 @@ func TestFindDuplicates(t *testing.T) {
 			name:   "No stage name duplicated",
 			input:  []string{"Stage 0", "Stage 1", "Stage 2", "Stage 3"},
 			errors: nil,
+		}, {
+			name:   "Case-insensitive stage name duplicated",
+			input:  []string{"Stage 1", "stage 1"},
+			errors: []string{"Stage 1"},
 		},
 	}
 
@@ -37,9 +41,9 @@ func TestFindDuplicates(t *testing.T) {
 			}
 
 			if len(tt.errors) > 0 && len(err.Details) > 0 {
-				for _, error := range tt.errors {
-					if !strings.Contains(err.Details, error) {
-						t.Fatal("Not all duplicates found", error)
+				for _, expectedError := range tt.errors {
+					if !strings.Contains(err.Details, expectedError) {
+						t.Fatal("Not all duplicates found", expectedError)
 					}
 				}
 			}

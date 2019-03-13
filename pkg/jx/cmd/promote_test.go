@@ -253,6 +253,7 @@ func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*
 	// Needed for another helpe
 
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
+	fakeGitProvider.User.Username = testOrgName
 
 	o := &cmd.ControllerWorkflowOptions{
 		ControllerOptions: cmd.ControllerOptions{

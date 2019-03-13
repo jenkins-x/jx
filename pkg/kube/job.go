@@ -2,6 +2,8 @@ package kube
 
 import (
 	"fmt"
+	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/log"
 	"time"
 
 	"context"
@@ -45,8 +47,8 @@ func WaitForJobToSucceeded(client kubernetes.Interface, namespace, jobName strin
 	return nil
 }
 
-// waits for the job to terminate
-func WaitForJobToTerminate(client kubernetes.Interface, namespace, jobName string, timeout time.Duration) error {
+// WaitForJobToComplete waits for the job to complete
+func WaitForJobToComplete(client kubernetes.Interface, namespace, jobName string, timeout time.Duration, verbose bool) error {
 	job, err := client.BatchV1().Jobs(namespace).Get(jobName, metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -63,7 +65,13 @@ func WaitForJobToTerminate(client kubernetes.Interface, namespace, jobName strin
 
 	condition := func(event watch.Event) (bool, error) {
 		job := event.Object.(*batchv1.Job)
-		return job.Status.Succeeded == 1 || job.Status.Failed == 1, nil
+		completionTime := job.Status.CompletionTime
+		complete := completionTime != nil && !completionTime.IsZero()
+		if complete && verbose {
+			data, _ := yaml.Marshal(job)
+			log.Infof("Job %s is complete: %s\n", jobName, string(data))
+		}
+		return complete, nil
 	}
 
 	ctx, _ := context.WithTimeout(context.Background(), timeout)

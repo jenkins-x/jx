@@ -123,7 +123,13 @@ func NewCmdCreateClusterGKE(commonOpts *CommonOptions) *cobra.Command {
 }
 
 func (o *CreateClusterGKEOptions) Run() error {
-	err := o.installRequirements(cloud.GKE)
+	// Issue 3251
+	err := validateClusterName(o.Flags.ClusterName)
+	if err != nil {
+		return err
+	}
+
+	err = o.installRequirements(cloud.GKE)
 	if err != nil {
 		return err
 	}
@@ -408,4 +414,21 @@ func addLabel(labels string, name string, value string) string {
 func sanitizeLabel(username string) string {
 	sanitized := strings.ToLower(username)
 	return disallowedLabelCharacters.ReplaceAllString(sanitized, "-")
+}
+
+// validateClusterName checks for compliance of a user supplied
+// cluster name against GKE's rules for these names.
+func validateClusterName(clustername string) error {
+	// Check for length greater than 40.
+	if len(clustername) > 40 {
+		err := fmt.Errorf("cluster name %v is greater than the maximum 40 characters", clustername)
+		return err
+	}
+	// Now we need only make sure that clustername is limited to
+	// lowercase alphanumerics and dashes.
+	if disallowedLabelCharacters.MatchString(clustername) {
+		err := fmt.Errorf("cluster name %v contains invalid characters. Permitted are lowercase alphanumerics and `-`", clustername)
+		return err
+	}
+	return nil
 }

@@ -1,7 +1,12 @@
 package cmd_test
 
 import (
+	"github.com/jenkins-x/jx/pkg/gits/mocks"
+	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/satori/go.uuid"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/runtime"
 	"os"
 	"path"
 	"path/filepath"
@@ -20,6 +25,7 @@ import (
 	pipelineapi "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestGenerateTektonCRDs(t *testing.T) {
@@ -42,11 +48,12 @@ func TestGenerateTektonCRDs(t *testing.T) {
 	}
 
 	cases := []struct {
-		name         string
-		language     string
-		repoName     string
-		organization string
-		branch       string
+		name           string
+		language       string
+		repoName       string
+		organization   string
+		branch         string
+		expectingError bool
 	}{
 		{
 			name:         "js_build_pack",
@@ -69,7 +76,32 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			organization: "abayer",
 			branch:       "really-long",
 		},
+		{
+			name:           "no_pipeline_config",
+			language:       "none",
+			repoName:       "anything",
+			organization:   "anything",
+			branch:         "anything",
+			expectingError: true,
+		},
 	}
+
+	k8sObjects := []runtime.Object{
+		&corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      kube.ConfigMapJenkinsDockerRegistry,
+				Namespace: "jx",
+			},
+			Data: map[string]string{
+				"docker.registry": "1.2.3.4:5000",
+			},
+		},
+	}
+	jxObjects := []runtime.Object{}
+	repoOwner := uuid.NewV4().String()
+	repoName := uuid.NewV4().String()
+	fakeRepo := gits.NewFakeRepository(repoOwner, repoName)
+	fakeGitProvider := gits.NewFakeProvider(fakeRepo)
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
@@ -90,14 +122,17 @@ func TestGenerateTektonCRDs(t *testing.T) {
 					Name:         tt.repoName,
 					Organisation: tt.organization,
 				},
-				Branch:  tt.branch,
-				Trigger: string(pipelineapi.PipelineTriggerTypeManual),
+				Branch:   tt.branch,
+				NoKaniko: true,
+				Trigger:  string(pipelineapi.PipelineTriggerTypeManual),
 				StepOptions: cmd.StepOptions{
 					CommonOptions: &cmd.CommonOptions{
 						ServiceAccount: "tekton-bot",
 					},
 				},
 			}
+			cmd.ConfigureTestOptionsWithResources(createTask.CommonOptions, k8sObjects, jxObjects, gits_test.NewMockGitter(), fakeGitProvider, helm_test.NewMockHelmer(), nil)
+
 			if tt.language != "none" {
 				createTask.SourceName = "source"
 			} else {
@@ -105,35 +140,40 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			}
 
 			pipeline, tasks, resources, run, structure, err := createTask.GenerateTektonCRDs(packsDir, projectConfig, projectConfigFile, resolver, "jx")
+			if tt.expectingError {
+				if err == nil {
+					t.Fatalf("Expected an error generating CRDs")
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("Error generating CRDs: %s", err)
+				}
 
-			if err != nil {
-				t.Fatalf("Error generating CRDs: %s", err)
-			}
+				taskList := &pipelineapi.TaskList{}
+				for _, task := range tasks {
+					taskList.Items = append(taskList.Items, *task)
+				}
 
-			taskList := &pipelineapi.TaskList{}
-			for _, task := range tasks {
-				taskList.Items = append(taskList.Items, *task)
-			}
+				resourceList := &pipelineapi.PipelineResourceList{}
+				for _, resource := range resources {
+					resourceList.Items = append(resourceList.Items, *resource)
+				}
 
-			resourceList := &pipelineapi.PipelineResourceList{}
-			for _, resource := range resources {
-				resourceList.Items = append(resourceList.Items, *resource)
-			}
-
-			if d := cmp.Diff(tekton_helpers_test.AssertLoadPipeline(t, caseDir), pipeline); d != "" {
-				t.Errorf("Generated Pipeline did not match expected: %s", d)
-			}
-			if d := cmp.Diff(tekton_helpers_test.AssertLoadTasks(t, caseDir), taskList, cmpopts.IgnoreFields(corev1.ResourceRequirements{}, "Requests")); d != "" {
-				t.Errorf("Generated Tasks did not match expected: %s", d)
-			}
-			if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineResources(t, caseDir), resourceList); d != "" {
-				t.Errorf("Generated PipelineResources did not match expected: %s", d)
-			}
-			if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineRun(t, caseDir), run); d != "" {
-				t.Errorf("Generated PipelineRun did not match expected: %s", d)
-			}
-			if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineStructure(t, caseDir), structure); d != "" {
-				t.Errorf("Generated PipelineStructure did not match expected: %s", d)
+				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipeline(t, caseDir), pipeline); d != "" {
+					t.Errorf("Generated Pipeline did not match expected: %s", d)
+				}
+				if d := cmp.Diff(tekton_helpers_test.AssertLoadTasks(t, caseDir), taskList, cmpopts.IgnoreFields(corev1.ResourceRequirements{}, "Requests")); d != "" {
+					t.Errorf("Generated Tasks did not match expected: %s", d)
+				}
+				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineResources(t, caseDir), resourceList); d != "" {
+					t.Errorf("Generated PipelineResources did not match expected: %s", d)
+				}
+				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineRun(t, caseDir), run); d != "" {
+					t.Errorf("Generated PipelineRun did not match expected: %s", d)
+				}
+				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineStructure(t, caseDir), structure); d != "" {
+					t.Errorf("Generated PipelineStructure did not match expected: %s", d)
+				}
 			}
 		})
 	}
