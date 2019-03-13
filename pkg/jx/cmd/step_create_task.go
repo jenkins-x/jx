@@ -274,6 +274,8 @@ func (o *StepCreateTaskOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to apply Tekton CRDS")
 		}
+		// only include labels on PipelineRuns because they're unique, Task and Pipeline are static resources so we'd overwrite existing labels if applied to them too
+		run.Labels = util.MergeMaps(run.Labels, o.labels)
 	}
 
 	return nil
@@ -892,7 +894,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 		log.Infof("upserted Task %s\n", info(task.Name))
 	}
 
-	pipeline, err = tekton.CreateOrUpdatePipeline(tektonClient, ns, pipeline, o.labels)
+	pipeline, err = tekton.CreateOrUpdatePipeline(tektonClient, ns, pipeline)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create/update the Pipeline in namespace %s", ns)
 	}
