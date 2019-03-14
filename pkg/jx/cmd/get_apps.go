@@ -2,15 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
-
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 // GetAppsOptions containers the CLI options
@@ -89,6 +88,10 @@ func (o *GetAppsOptions) Run() error {
 	}
 
 	if len(apps.Items) == 0 {
+		if len(o.Args) > 0 {
+			return errors.New("No Apps found")
+		}
+
 		fmt.Fprint(o.Out, "No Apps found\n")
 		return nil
 	}
