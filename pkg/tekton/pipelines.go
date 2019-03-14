@@ -183,7 +183,7 @@ func UpdateLastPipelineBuildNumber(tektonClient tektonclient.Interface, ns strin
 }
 
 // CreateOrUpdatePipeline lazily creates a Tekton Pipeline for the given git repository, branch and context
-func CreateOrUpdatePipeline(tektonClient tektonclient.Interface, ns string, created *v1alpha1.Pipeline, labels map[string]string) (*v1alpha1.Pipeline, error) {
+func CreateOrUpdatePipeline(tektonClient tektonclient.Interface, ns string, created *v1alpha1.Pipeline) (*v1alpha1.Pipeline, error) {
 	resourceName := created.Name
 	resourceInterface := tektonClient.TektonV1alpha1().Pipelines(ns)
 
@@ -198,7 +198,6 @@ func CreateOrUpdatePipeline(tektonClient tektonclient.Interface, ns string, crea
 	}
 
 	if !reflect.DeepEqual(&created.Spec, &answer.Spec) || !reflect.DeepEqual(created.Labels, answer.Labels) {
-		answer.Labels = util.MergeMaps(answer.Annotations, created.Labels, labels)
 		answer.Annotations = util.MergeMaps(answer.Annotations, created.Annotations)
 		answer.Spec = created.Spec
 		answer, err = resourceInterface.Update(answer)
