@@ -32,6 +32,7 @@ type GitRepository struct {
 	Host             string
 	Organisation     string
 	Project          string
+	Private          bool
 }
 
 type GitPullRequest struct {

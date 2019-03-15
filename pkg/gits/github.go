@@ -253,6 +253,7 @@ func toGitHubRepo(name string, repo *github.Repository) *GitRepository {
 		Fork:             asBool(repo.Fork),
 		Language:         asText(repo.Language),
 		Stars:            asInt(repo.StargazersCount),
+		Private:          asBool(repo.Private),
 	}
 }
 
@@ -1149,7 +1150,19 @@ func (p *GitHubProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 // ShouldForkForPullReques treturns true if we should create a personal fork of this repository
 // before creating a pull request
 func (p *GitHubProvider) ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool {
-	return originalOwner != username
+	if originalOwner == username {
+		return false
+	}
+
+	// lets check if the repo is private as that disables forking on github
+	repo, err := p.GetRepository(originalOwner, repoName)
+	if err != nil {
+		return false
+	}
+	if repo.Private {
+		return false
+	}
+	return true
 }
 
 func asBool(b *bool) bool {
