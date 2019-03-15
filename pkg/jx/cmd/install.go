@@ -2200,6 +2200,7 @@ func (options *InstallOptions) configureJenkins(namespace string) error {
 				options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
 				options.CreateJenkinsUserOptions.Namespace = options.devNamespace
 				options.CreateJenkinsUserOptions.RecreateToken = true
+				options.CreateJenkinsUserOptions.Username = options.AdminSecretsService.Flags.DefaultAdminUsername
 				options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
 				options.CreateJenkinsUserOptions.Verbose = false
 				options.CreateJenkinsUserOptions.RecreateToken = true
@@ -2650,7 +2651,7 @@ func (options *InstallOptions) saveChartmuseumAuthConfig() error {
 	}
 
 	user := &auth.UserAuth{
-		Username: "admin",
+		Username: options.AdminSecretsService.Flags.DefaultAdminUsername,
 		Password: options.AdminSecretsService.Flags.DefaultAdminPassword,
 	}
 
