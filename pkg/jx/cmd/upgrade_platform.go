@@ -264,6 +264,22 @@ func (o *UpgradePlatformOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "writing the admin secrets in the secrets file '%s'", adminSecretsFileName)
 		}
+
+		// save updated admin secretes to Kubernetes
+		y, err := yaml.Marshal(adminSecrets)
+		if err != nil {
+			return errors.Wrapf(err, "unable to marshal admin secrets to yaml: %v", adminSecrets)
+		}
+
+		_, err = o.ModifySecret(JXInstallConfig, func(secret *core_v1.Secret) error {
+			secret.Data[AdminSecretsFile] = y
+			return nil
+		})
+		if err != nil {
+			return errors.Wrapf(err, "unable to save admin secrets to kubernetes secret: %s", JXInstallConfig)
+		}
+
+		o.Debugf("Saved admin secrets to Kubernetes secret %s\n", util.ColorInfo(JXInstallConfig))
 	}
 
 	log.Infof("Creating %s from %s\n", util.ColorInfo(configFileName), util.ColorInfo(JXInstallConfig))
@@ -411,6 +427,9 @@ func (o *UpgradePlatformOptions) repairAdminSecrets(fileName string) error {
 		secret.Data[AdminSecretsFile] = y
 		return nil
 	})
+	if err != nil {
+		return errors.Wrapf(err, "unable to save admin secrets to kubernetes secret: %s", JXInstallConfig)
+	}
 
 	return nil
 }
