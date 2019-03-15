@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/version"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -259,6 +260,21 @@ func (o *CommonOptions) installOrUpdateBinary(options InstallOrUpdateBinaryOptio
 		fileName = installFilename
 		if err != nil || !flag {
 			return err
+		}
+	}
+
+	if options.Version == "" {
+		configDir, err := util.ConfigDir()
+		if err != nil {
+			return err
+		}
+		versionFile := filepath.Join(configDir, "jenkins-x-versions", "packages", options.Binary+".yml")
+		ver, err := version.LoadStableVersionFile(versionFile)
+		if err != nil {
+			return err
+		}
+		if ver.Version != "" {
+			options.Version = ver.Version
 		}
 	}
 

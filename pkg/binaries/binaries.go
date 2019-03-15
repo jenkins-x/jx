@@ -50,7 +50,11 @@ func IsBinaryWithProperVersionInstalled(binary string, expectedVersion string, v
 		if err != nil {
 			return false, err
 		}
-		return installedVersions[binary] == expectedVersion, nil
+		if versionValue, versionExists := installedVersions[binary]; versionExists {
+			return versionValue == expectedVersion, nil
+		}
+
+		return false, nil
 	}
 
 	binaryPath, err := LookupForBinary(binary)
