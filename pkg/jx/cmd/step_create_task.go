@@ -761,7 +761,9 @@ func (o *StepCreateTaskOptions) setBuildValues() error {
 		labels["repo"] = o.GitInfo.Name
 	}
 	labels["branch"] = o.Branch
-
+	if o.Context != "" {
+		labels["context"] = o.Context
+	}
 	return o.combineLabels(labels)
 }
 
