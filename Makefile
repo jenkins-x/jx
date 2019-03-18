@@ -178,22 +178,22 @@ sleep:
 
 release: check
 	rm -rf build release && mkdir build release
-	# for os in linux darwin ; do \
-	# 	CGO_ENABLED=$(CGO_ENABLED) GOOS=$$os GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$$os/$(NAME) cmd/jx/jx.go ; \
-	# done
-	# CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME)-windows-amd64.exe cmd/jx/jx.go
-	# zip --junk-paths release/$(NAME)-windows-amd64.zip build/$(NAME)-windows-amd64.exe README.md LICENSE
-	# CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/arm/$(NAME) cmd/jx/jx.go
+	for os in linux darwin ; do \
+		CGO_ENABLED=$(CGO_ENABLED) GOOS=$$os GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$$os/$(NAME) cmd/jx/jx.go ; \
+	done
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME)-windows-amd64.exe cmd/jx/jx.go
+	zip --junk-paths release/$(NAME)-windows-amd64.zip build/$(NAME)-windows-amd64.exe README.md LICENSE
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/arm/$(NAME) cmd/jx/jx.go
 
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/$(NAME) cmd/jx/jx.go
+	# CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/$(NAME) cmd/jx/jx.go
 
-	# chmod +x build/darwin/$(NAME)
+	chmod +x build/darwin/$(NAME)
 	chmod +x build/linux/$(NAME)
-	# chmod +x build/arm/$(NAME)
+	chmod +x build/arm/$(NAME)
 
-	# cd ./build/darwin; tar -zcvf ../../release/jx-darwin-amd64.tar.gz jx
+	cd ./build/darwin; tar -zcvf ../../release/jx-darwin-amd64.tar.gz jx
 	cd ./build/linux; tar -zcvf ../../release/jx-linux-amd64.tar.gz jx
-	# cd ./build/arm; tar -zcvf ../../release/jx-linux-arm.tar.gz jx
+	cd ./build/arm; tar -zcvf ../../release/jx-linux-arm.tar.gz jx
 
 	go get -u github.com/progrium/gh-release
 	gh-release checksums sha256

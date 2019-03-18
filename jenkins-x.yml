@@ -100,18 +100,14 @@ pipelineConfig:
                 command: /kaniko/executor
                 args: ['--dockerfile=/workspace/workspace/Dockerfile','--destination=docker.io/jenkinsxio/jx:${inputs.params.version}','--context=/workspace/workspace','--cache-dir=/workspace']
 
-          - name: release-chart
-            options:
-              workspace: charts/jx
-            steps:
               - name: release-charts
-                image: gcr.io/jenkinsxio/builder-maven:0.1.286
+                image: gcr.io/jenkinsxio/builder-go:0.1.289
                 command: make
                 args:
                 - "release"
+                - -f
+                - /workspace/workspace/charts/jx/Makefile
 
-          - name: update-downstream
-            steps:
               - name: update-downstream
                 image: gcr.io/jenkinsxio/builder-maven:0.1.286
                 command: ./jx/scripts/update-downstream.sh
