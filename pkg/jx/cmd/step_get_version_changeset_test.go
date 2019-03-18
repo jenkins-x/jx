@@ -1,18 +1,19 @@
 package cmd_test
 
 import (
+	"io/ioutil"
+	"os"
+	"testing"
+
 	"github.com/acarl005/stripansi"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	"github.com/jenkins-x/jx/pkg/kube/resources/mocks"
+	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/version"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"k8s.io/apimachinery/pkg/runtime"
-	"os"
-	"testing"
 )
 
 func TestStepGetVersionChangeSetOptionsBranch(t *testing.T) {
@@ -22,8 +23,12 @@ func TestStepGetVersionChangeSetOptionsBranch(t *testing.T) {
 		err := os.RemoveAll(testDir)
 		assert.NoError(t, err)
 	}()
-	repoOwner := uuid.NewV4().String()
-	repoName := uuid.NewV4().String()
+	repoOwnerUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	repoOwner := repoOwnerUUID.String()
+	repoNameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	repoName := repoNameUUID.String()
 	fakeRepo := gits.NewFakeRepository(repoOwner, repoName)
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo)
 	testBranch := "test-app-version-bump"
@@ -65,7 +70,7 @@ func TestStepGetVersionChangeSetOptionsBranch(t *testing.T) {
 	gitter.Push(testDir)
 	gitter.Checkout(testDir, stableBranch)
 
-	err := options.Run()
+	err = options.Run()
 	assert.NoError(t, err)
 	fakeStdout.Close()
 	outBytes, _ := ioutil.ReadAll(r)
@@ -83,8 +88,12 @@ func TestStepGetVersionChangeSetOptionsPR(t *testing.T) {
 		err := os.RemoveAll(testDir)
 		assert.NoError(t, err)
 	}()
-	repoOwner := uuid.NewV4().String()
-	repoName := uuid.NewV4().String()
+	repoOwnerUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	repoOwner := repoOwnerUUID.String()
+	repoNameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	repoName := repoNameUUID.String()
 	fakeRepo := gits.NewFakeRepository(repoOwner, repoName)
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo)
 	testBranch := "test-app-version-bump"
@@ -126,7 +135,7 @@ func TestStepGetVersionChangeSetOptionsPR(t *testing.T) {
 	gitter.CreateBranch(testDir, "1")
 	gitter.Checkout(testDir, stableBranch)
 
-	err := options.Run()
+	err = options.Run()
 	assert.NoError(t, err)
 	fakeStdout.Close()
 	outBytes, _ := ioutil.ReadAll(r)

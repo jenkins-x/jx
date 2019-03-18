@@ -126,7 +126,7 @@ require (
 	github.com/rodaine/hclencoder v0.0.0-20180926060551-0680c4321930
 	github.com/russross/blackfriday v1.5.1
 	github.com/ryanuber/go-glob v0.0.0-20170128012129-256dc444b735 // indirect
-	github.com/satori/go.uuid v1.2.0
+	github.com/satori/go.uuid v1.2.1-0.20180103174451-36e9d2ebbde5
 	github.com/sergi/go-diff v1.0.0 // indirect
 	github.com/sethvargo/go-password v0.1.2
 	github.com/shirou/gopsutil v0.0.0-20180901134234-eb1f1ab16f2e
@@ -175,7 +175,7 @@ require (
 
 )
 
-replace github.com/heptio/sonobuoy => github.com/jenkins-x/sonobuoy v0.11.7-0.20190131193045-dad27c12bf17
+replace github.com/heptio/sonobuoy => github.com/jenkins-x/sonobuoy v0.11.7-0.20190318120422-253758214767
 
 replace k8s.io/api => k8s.io/api v0.0.0-20181128191700-6db15a15d2d3
 

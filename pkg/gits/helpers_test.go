@@ -146,7 +146,9 @@ func prepareFetchAndMergeTests(t *testing.T) FetchAndMergeTestEnv {
 	assert.NoError(t, err)
 
 	// Put some commits on a branch
-	branchName := uuid.NewV4().String()
+	branchNameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	branchName := branchNameUUID.String()
 	err = gitter.CreateBranchFrom(remoteDir, branchName, baseSha)
 	assert.NoError(t, err)
 	err = gitter.Checkout(remoteDir, branchName)

@@ -2,7 +2,6 @@ package environments
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -10,11 +9,13 @@ import (
 	"runtime/debug"
 	"strings"
 
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+
 	"github.com/ghodss/yaml"
 
 	"github.com/pkg/errors"
 
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
@@ -85,7 +86,11 @@ func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, envir
 	//log.Infof("Found remote branch names %s\n", strings.Join(branchNames, ", "))
 	if util.StringArrayIndex(branchNames, branchName) >= 0 {
 		// lets append a UUID as the branch name already exists
-		branchName += "-" + string(uuid.NewV4().String())
+		branchNameUUID, err := uuid.NewV4()
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		branchName += "-" + string(branchNameUUID.String())
 	}
 	err = o.Gitter.CreateBranch(dir, branchName)
 	if err != nil {
