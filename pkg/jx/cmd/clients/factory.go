@@ -38,8 +38,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	tektonclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
 	build "github.com/knative/build/pkg/client/clientset/versioned"
+	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"

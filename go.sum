@@ -15,6 +15,7 @@ git.apache.org/thrift.git v0.0.0-20180902110319-2566ecd5d999/go.mod h1:fPE2ZNJGy
 github.com/Azure/azure-pipeline-go v0.0.0-20180507050906-098e490af5dc/go.mod h1:XA1kFWRVhSK+KNFiOhfv83Fv8L9achrP7OxIzeTn1Yg=
 github.com/Azure/azure-pipeline-go v0.1.8 h1:KmVRa8oFMaargVesEuuEoiLCQ4zCCwQ8QX/xg++KS20=
 github.com/Azure/azure-pipeline-go v0.1.8/go.mod h1:XA1kFWRVhSK+KNFiOhfv83Fv8L9achrP7OxIzeTn1Yg=
+github.com/Azure/azure-sdk-for-go v21.1.0+incompatible h1:43w4ZSx8u8wh5tgs1P+hO5Dgjh5bhP0qAlEnCdAuMQA=
 github.com/Azure/azure-sdk-for-go v21.1.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
 github.com/Azure/azure-storage-blob-go v0.0.0-20180507052152-66ba96e49ebb/go.mod h1:x2mtS6O3mnMEZOJp7d7oldh8IvatBrMfReiyQ+cKgKY=
 github.com/Azure/azure-storage-blob-go v0.0.0-20181023070848-cf01652132cc h1:BElWmFfsryQD72OcovStKpkIcd4e9ozSkdsTNQDSHGk=
@@ -172,6 +173,7 @@ github.com/djherbis/atime v1.0.0/go.mod h1:5W+KBIuTwVGcqjIfaTwt+KSYX1o6uep8dteve
 github.com/dnaeon/go-vcr v1.0.1 h1:r8L/HqC0Hje5AXMu1ooW8oyQyOFv4GxqpL0nRP7SLLY=
 github.com/dnaeon/go-vcr v1.0.1/go.mod h1:aBB1+wY4s93YsC3HHjMBMrwTj2R9FHDzUr9KyGc8n1E=
 github.com/docker/distribution v0.0.0-20170726174610-edc3ab29cdff/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
+github.com/docker/docker v0.0.0-20171206114025-5e5fadb3c020 h1:aiKCZxnxoraZKXbM2zJj0ZI1n8eamkdK7zNxP7jlbII=
 github.com/docker/docker v0.0.0-20171206114025-5e5fadb3c020/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
 github.com/docker/go-connections v0.3.0 h1:3lOnM9cSzgGwx8VfK/NGOW5fLQ0GjIlCkaktF+n1M6o=
 github.com/docker/go-connections v0.3.0/go.mod h1:Gbd7IOopHjR8Iph03tsViu4nIes5XhDvyHbTtUxmeec=
@@ -282,6 +284,8 @@ github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c/go.mod h1:lNA+9X1NB3Z
 github.com/google/go-cmp v0.2.0 h1:+dTQ8DZQJz0Mb/HjFlkptS1FeQ4cWSnN941F8aEG4SQ=
 github.com/google/go-cmp v0.2.0/go.mod h1:oXzfMopK8JAjlY9xF4vHSVASa0yLyX7SntLO5aqRK0M=
 github.com/google/go-containerregistry v0.0.0-20181010182908-24bbadfcffb5/go.mod h1:yZAFP63pRshzrEYLXLGPmUt0Ay+2zdjmMN1loCnRLUk=
+github.com/google/go-containerregistry v0.0.0-20190317040536-ebbba8469d06 h1:NpQB+kIohBPM3cbY/XTyNlLls6I9n5XELX7/TEFa4iI=
+github.com/google/go-containerregistry v0.0.0-20190317040536-ebbba8469d06/go.mod h1:yZAFP63pRshzrEYLXLGPmUt0Ay+2zdjmMN1loCnRLUk=
 github.com/google/go-github v0.0.0-20170604030111-7a51fb928f52/go.mod h1:zLgOLi98H3fifZn+44m+umXrS52loVEgC2AApnigrVQ=
 github.com/google/go-github v17.0.0+incompatible h1:N0LgJ1j65A7kfXrZnUDaYCs/Sf4rEjNlfyDHW9dolSY=
 github.com/google/go-github v17.0.0+incompatible/go.mod h1:zLgOLi98H3fifZn+44m+umXrS52loVEgC2AApnigrVQ=
@@ -734,6 +738,11 @@ github.com/stretchr/testify v1.2.2 h1:bSDNvY7ZPG5RlJ8otE/7V6gMiyenm9RtJ7IUVIAoJ1
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/stretchr/testify v1.3.0 h1:TivCn/peBQ7UY8ooIcPgZFpTNSz0Q2U6UrFlUfqbe0Q=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
+github.com/tektoncd/pipeline v0.1.0 h1:w+u1jBc5WvVG1qbV4YZnBc5zMS0en7RaROquG+g2GIQ=
+github.com/tektoncd/pipeline v0.1.0/go.mod h1:IZzJdiX9EqEMuUcgdnElozdYYRh0/ZRC+NKMLj1K3Yw=
+github.com/tektoncd/pipeline v0.1.1-0.20190304131739-7c289d8aedf7/go.mod h1:IZzJdiX9EqEMuUcgdnElozdYYRh0/ZRC+NKMLj1K3Yw=
+github.com/tektoncd/pipeline v0.1.1-0.20190315182348-1861bddc364c h1:CLGj5Pz9FK1DNulo5EEduV58doVXsiHK6hyLPRfYO5Q=
+github.com/tektoncd/pipeline v0.1.1-0.20190315182348-1861bddc364c/go.mod h1:IZzJdiX9EqEMuUcgdnElozdYYRh0/ZRC+NKMLj1K3Yw=
 github.com/tidwall/gjson v1.1.0/go.mod h1:c/nTNbUr0E0OrXEhq1pwa8iEgc2DOt4ZZqAt1HtCkPA=
 github.com/tidwall/match v0.0.0-20171002075945-1731857f09b1/go.mod h1:LujAq0jyVjBy028G1WhWfIzbpQfMO8bBZ6Tyb0+pL9E=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20170815181823-89b8d40f7ca8/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
@@ -975,6 +984,7 @@ k8s.io/kube-openapi v0.0.0-20171101183504-39a7bf85c140/go.mod h1:BXM9ceUBTj2QnfH
 k8s.io/kube-openapi v0.0.0-20180711000925-0cf8f7e6ed1d/go.mod h1:BXM9ceUBTj2QnfH2MK1odQs778ajze1RxcmP6S8RVVc=
 k8s.io/kube-openapi v0.0.0-20180719232738-d8ea2fe547a4 h1:C8xi0mJeE8wOFsLofmG7JVxRV2ZAgjYftRc9m2ypdmo=
 k8s.io/kube-openapi v0.0.0-20180719232738-d8ea2fe547a4/go.mod h1:BXM9ceUBTj2QnfH2MK1odQs778ajze1RxcmP6S8RVVc=
+k8s.io/kubernetes v1.11.3 h1:49Pz+NOerox7nZ9F0m/fWv2MIuFDU5cDAoYMozurx1k=
 k8s.io/kubernetes v1.11.3/go.mod h1:ocZa8+6APFNC2tX1DZASIbocyYT5jHzqFVsY5aoB7Jk=
 k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b h1:LcRDe4wxlsysUmLVy0Oi1YOOMwMRfu1gRV7DO30FxWk=
 k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b/go.mod h1:a25VAbm3QT3xiVl1jtoF1ueAKQM149UdZ+L93ePfV3M=

@@ -11,8 +11,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/tekton/tekton_helpers_test"
-	tektonfake "github.com/knative/build-pipeline/pkg/client/clientset/versioned/fake"
 	"github.com/stretchr/testify/assert"
+	tektonfake "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )

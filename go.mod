@@ -66,6 +66,7 @@ require (
 	github.com/golang/protobuf v1.2.0
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
 	github.com/google/go-cmp v0.2.0
+	github.com/google/go-containerregistry v0.0.0-20190317040536-ebbba8469d06 // indirect
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135 // indirect
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
@@ -95,7 +96,6 @@ require (
 	github.com/kevinburke/ssh_config v0.0.0-20180317175531-9fc7bb800b55 // indirect
 	github.com/keybase/go-crypto v0.0.0-20181127160227-255a5089e85a // indirect
 	github.com/knative/build v0.3.0
-	github.com/knative/build-pipeline v0.1.1-0.20190304131739-7c289d8aedf7
 	github.com/knative/pkg v0.0.0-20190125193334-994b801b03ef
 	github.com/knq/snaker v0.0.0-20180306023312-d9ad1e7f342a // indirect
 	github.com/kr/pty v1.1.2 // indirect
@@ -137,6 +137,7 @@ require (
 	github.com/src-d/gcfg v1.3.0 // indirect
 	github.com/stoewer/go-strcase v1.0.1
 	github.com/stretchr/testify v1.3.0
+	github.com/tektoncd/pipeline v0.1.1-0.20190315182348-1861bddc364c
 	github.com/trivago/tgo v1.0.1 // indirect
 	github.com/ulikunitz/xz v0.5.6 // indirect
 	github.com/wbrefvem/go-bitbucket v0.0.0-20190128183802-fc08fd046abb

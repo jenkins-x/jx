@@ -2084,7 +2084,7 @@ func schema_pkg_apis_jenkinsio_v1_FactSpec(ref common.ReferenceCallback) common.
 						},
 					},
 				},
-				Required: []string{"name", "factType", "statements", "subject"},
+				Required: []string{"name", "factType", "subject"},
 			},
 		},
 		Dependencies: []string{
