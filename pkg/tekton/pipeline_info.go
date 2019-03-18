@@ -84,7 +84,7 @@ type PipelineRunInfoFilter struct {
 }
 
 func getPipelineStructureForPipelineRun(jxClient versioned.Interface, ns, prName string) (*v1.PipelineStructure, error) {
-	var ps *v1.PipelineStructure
+	var ps v1.PipelineStructure
 
 	// The PipelineStructure may not exist yet.
 	f := func() error {
@@ -98,14 +98,14 @@ func getPipelineStructureForPipelineRun(jxClient versioned.Interface, ns, prName
 			log.Infof("no PipelineStructure found yet for PipelineRun %s\n", util.ColorInfo(prName))
 			return fmt.Errorf("No PipelineStructure found yet for PipelineRun %s", prName)
 		}
-		ps = lookupPs
+		ps = *lookupPs
 		return nil
 	}
 	err := util.Retry(time.Minute*2, f)
 	if err != nil {
 		return nil, err
 	}
-	return ps, nil
+	return &ps, nil
 }
 
 func getBuildPodForPipelineRun(kubeClient kubernetes.Interface, ns, prName string, prStatus *duckv1alpha1.Condition) (*corev1.Pod, error) {

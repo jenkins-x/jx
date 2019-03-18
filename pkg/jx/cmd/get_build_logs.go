@@ -523,13 +523,13 @@ func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tek
 		return names, defaultName, buildMap, pipelineMap, err
 	}
 	for _, pr := range prList.Items {
-		var ps *v1.PipelineStructure
+		var ps v1.PipelineStructure
 		for _, p := range structures.Items {
 			if p.Name == pr.Name {
-				ps = &p
+				ps = p
 			}
 		}
-		pri, err := tekton.CreatePipelineRunInfo(pr.Name, podList, ps, &pr)
+		pri, err := tekton.CreatePipelineRunInfo(pr.Name, podList, &ps, &pr)
 		if err != nil {
 			if o.Verbose {
 				log.Warnf("Error creating PipelineRunInfo for PipelineRun %s: %s\n", pr.Name, err)
