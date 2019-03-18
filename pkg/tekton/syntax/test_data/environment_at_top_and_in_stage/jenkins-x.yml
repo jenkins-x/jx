@@ -7,11 +7,19 @@ pipelineConfig:
         environment:
           - name: SOME_VAR
             value: A value for the env var
+          - name: SOME_SECRET
+            fromSecret:
+              key: SOME_KEY
+              configMap: some-config-map
         stages:
           - name: A stage with environment
             environment:
                 - name: SOME_OTHER_VAR
                   value: A value for the other env var
+                - name: SOME_OTHER_SECRET
+                  fromSecret:
+                    configMap: some-config-map
+                    key: SOME_OTHER_KEY
             steps:
               - command: echo
                 args: ['hello', '${SOME_OTHER_VAR}']

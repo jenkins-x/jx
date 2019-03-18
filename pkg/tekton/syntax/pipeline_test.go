@@ -510,8 +510,10 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 			expected: ParsedPipeline(
 				PipelineAgent("some-image"),
 				PipelineEnvVar("SOME_VAR", "A value for the env var"),
+				PipelineEnvVarFromSecret("SOME_SECRET", "some-config-map", "SOME_KEY"),
 				PipelineStage("A stage with environment",
 					StageEnvVar("SOME_OTHER_VAR", "A value for the other env var"),
+					StageEnvVarFromSecret("SOME_OTHER_SECRET", "some-config-map", "SOME_OTHER_KEY"),
 					StageStep(StepCmd("echo"), StepArg("hello"), StepArg("${SOME_OTHER_VAR}")),
 				),
 			),
@@ -529,7 +531,24 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 								tb.ResourceTargetPath("workspace"))),
 						tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
 						tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "${SOME_OTHER_VAR}"), workingDir("/workspace/workspace"),
-							tb.EnvVar("SOME_OTHER_VAR", "A value for the other env var"), tb.EnvVar("SOME_VAR", "A value for the env var")),
+							TaskEnvVarFrom("SOME_OTHER_SECRET", &corev1.EnvVarSource{
+								SecretKeyRef: &corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "some-config-map",
+									},
+									Key: "SOME_OTHER_KEY",
+								},
+							}),
+							tb.EnvVar("SOME_OTHER_VAR", "A value for the other env var"),
+							TaskEnvVarFrom("SOME_SECRET", &corev1.EnvVarSource{
+								SecretKeyRef: &corev1.SecretKeySelector{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: "some-config-map",
+									},
+									Key: "SOME_KEY",
+								},
+							}),
+							tb.EnvVar("SOME_VAR", "A value for the env var")),
 					)),
 			},
 			structure: PipelineStructure("somepipeline",
@@ -1375,6 +1394,19 @@ func PipelineEnvVar(name, value string) PipelineOp {
 	}
 }
 
+// PipelineEnvVarFromSecret add an environment variable, with specified name and valueFrom, to the pipeline.
+func PipelineEnvVarFromSecret(name, configMapName, key string) PipelineOp {
+	return func(parsed *syntax.ParsedPipeline) {
+		parsed.Environment = append(parsed.Environment, syntax.EnvVar{
+			Name: name,
+			FromSecret: &syntax.EnvVarSecret{
+				ConfigMap: configMapName,
+				Key:       key,
+			},
+		})
+	}
+}
+
 func PipelinePost(condition syntax.PostCondition, ops ...PipelinePostOp) PipelineOp {
 	return func(parsed *syntax.ParsedPipeline) {
 		post := syntax.Post{
@@ -1470,12 +1502,25 @@ func StageOptionsUnstash(name, dir string) StageOptionsOp {
 	}
 }
 
-// AgentEnvVar add an environment variable, with specified name and value, to the stage.
+// StageEnvVar add an environment variable, with specified name and value, to the stage.
 func StageEnvVar(name, value string) StageOp {
 	return func(stage *syntax.Stage) {
 		stage.Environment = append(stage.Environment, syntax.EnvVar{
 			Name:  name,
 			Value: value,
+		})
+	}
+}
+
+// StageEnvVarFromSecret add an environment variable, with specified name and valueFrom, to the stage.
+func StageEnvVarFromSecret(name, configMapName, key string) StageOp {
+	return func(stage *syntax.Stage) {
+		stage.Environment = append(stage.Environment, syntax.EnvVar{
+			Name: name,
+			FromSecret: &syntax.EnvVarSecret{
+				ConfigMap: configMapName,
+				Key:       key,
+			},
 		})
 	}
 }
@@ -1604,6 +1649,16 @@ func TaskStageLabel(value string) tb.TaskOp {
 	}
 }
 
+// TaskEnvVarFrom add an environment variable, with specified name and valueFrom, to the Container (step).
+func TaskEnvVarFrom(name string, valueFrom *corev1.EnvVarSource) tb.ContainerOp {
+	return func(c *corev1.Container) {
+		c.Env = append(c.Env, corev1.EnvVar{
+			Name:      name,
+			ValueFrom: valueFrom,
+		})
+	}
+}
+
 func TestParsedPipelineHelpers(t *testing.T) {
 	input := ParsedPipeline(
 		PipelineAgent("some-image"),
@@ -1613,6 +1668,7 @@ func TestParsedPipelineHelpers(t *testing.T) {
 		),
 		PipelineEnvVar("ANIMAL", "MONKEY"),
 		PipelineEnvVar("FRUIT", "BANANA"),
+		PipelineEnvVarFromSecret("SOME_SECRET", "some-config-map", "SOME_KEY"),
 		PipelinePost(syntax.PostConditionSuccess,
 			PostAction("mail", map[string]string{
 				"to":      "foo@bar.com",
@@ -1649,6 +1705,7 @@ func TestParsedPipelineHelpers(t *testing.T) {
 				),
 				StageEnvVar("STAGE_VAR_ONE", "some value"),
 				StageEnvVar("STAGE_VAR_TWO", "some other value"),
+				StageEnvVarFromSecret("SOME_OTHER_SECRET", "some-config-map", "SOME_OTHER_KEY"),
 				StagePost(syntax.PostConditionAlways,
 					PostAction("junit", map[string]string{
 						"pattern": "target/surefire-reports/**/*.xml",
@@ -1700,6 +1757,13 @@ func TestParsedPipelineHelpers(t *testing.T) {
 			{
 				Name:  "FRUIT",
 				Value: "BANANA",
+			},
+			{
+				Name: "SOME_SECRET",
+				FromSecret: &syntax.EnvVarSecret{
+					ConfigMap: "some-config-map",
+					Key:       "SOME_KEY",
+				},
 			},
 		},
 		Post: []syntax.Post{
@@ -1773,6 +1837,13 @@ func TestParsedPipelineHelpers(t *testing.T) {
 							{
 								Name:  "STAGE_VAR_TWO",
 								Value: "some other value",
+							},
+							{
+								Name: "SOME_OTHER_SECRET",
+								FromSecret: &syntax.EnvVarSecret{
+									ConfigMap: "some-config-map",
+									Key:       "SOME_OTHER_KEY",
+								},
 							},
 						},
 						Post: []syntax.Post{{

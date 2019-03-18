@@ -38,8 +38,36 @@ type Agent struct {
 
 // EnvVar is a key/value pair defining an environment variable
 type EnvVar struct {
-	Name  string `yaml:"name"`
-	Value string `yaml:"value"`
+	Name       string        `yaml:"name"`
+	Value      string        `yaml:"value,omitempty"`
+	FromSecret *EnvVarSecret `yaml:"fromSecret,omitempty"`
+}
+
+// EnvVarSecret is the name of a config map and the secret key to use from that config map.
+type EnvVarSecret struct {
+	ConfigMap string `yaml:"configMap"`
+	Key       string `yaml:"key"`
+}
+
+func (e EnvVar) toStepEnvVar() corev1.EnvVar {
+	ev := corev1.EnvVar{
+		Name: e.Name,
+	}
+
+	if e.FromSecret != nil {
+		ev.ValueFrom = &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: e.FromSecret.ConfigMap,
+				},
+				Key: e.FromSecret.Key,
+			},
+		}
+	} else {
+		ev.Value = e.Value
+	}
+
+	return ev
 }
 
 // TimeoutUnit is used for calculating timeout duration
@@ -567,10 +595,7 @@ func scopedEnv(newEnv []EnvVar, parentEnv []corev1.EnvVar) []corev1.EnvVar {
 	}
 
 	for _, e := range newEnv {
-		envMap[e.Name] = corev1.EnvVar{
-			Name:  e.Name,
-			Value: e.Value,
-		}
+		envMap[e.Name] = e.toStepEnvVar()
 	}
 
 	env := make([]corev1.EnvVar, 0, len(envMap))
@@ -593,7 +618,7 @@ func (j *ParsedPipeline) toStepEnvVars() []corev1.EnvVar {
 	env := make([]corev1.EnvVar, 0, len(j.Environment))
 
 	for _, e := range j.Environment {
-		env = append(env, corev1.EnvVar{Name: e.Name, Value: e.Value})
+		env = append(env, e.toStepEnvVar())
 	}
 
 	return env
