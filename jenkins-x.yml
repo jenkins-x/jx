@@ -102,7 +102,7 @@ pipelineConfig:
 
           - name: release-chart
             options:
-              workspace: custom
+              workspace: charts/jx
             steps:
               - name: release-charts
                 image: gcr.io/jenkinsxio/builder-maven:0.1.286
