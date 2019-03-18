@@ -17,12 +17,7 @@ type VaultTestCase struct {
 	err                bool
 	authServiceAccount string
 	secretsPathPrefix  string
-}
-
-type vaultGKETestCase struct {
-	VaultTestCase
-	gcpSecretName      string
-	gcpConfig          *vault.GCPConfig
+	secretName         string
 }
 
 func TestCreateGKEVault(t *testing.T) {
@@ -30,16 +25,19 @@ func TestCreateGKEVault(t *testing.T) {
 	client := k8sfake.NewSimpleClientset()
 	vaultclient := fakevaultclient.NewSimpleClientset()
 
-	tests := map[string]vaultGKETestCase{
+	tests := map[string]struct {
+		VaultTestCase
+		gcpConfig *vault.GCPConfig
+	}{
 		"create vault in GKE": {
-		VaultTestCase: VaultTestCase{
-			name:          "test-vault",
-			namespace:     "test-ns",
-			authServiceAccount: "test-auth",
-			secretsPathPrefix:  "test/*",
-			err:                false,
-		},
-			gcpSecretName: "test-gcp",
+			VaultTestCase: VaultTestCase{
+				name:               "test-vault",
+				namespace:          "test-ns",
+				authServiceAccount: "test-auth",
+				secretsPathPrefix:  "test/*",
+				err:                false,
+				secretName:         "test-gcp",
+			},
 			gcpConfig: &vault.GCPConfig{
 				ProjectId:   "test",
 				KmsKeyring:  "test",
@@ -52,17 +50,12 @@ func TestCreateGKEVault(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			err := vault.CreateGKEVault(client, vaultclient, tc.name, tc.namespace, tc.gcpSecretName,
+			err := vault.CreateGKEVault(client, vaultclient, tc.name, tc.namespace, tc.secretName,
 				tc.gcpConfig, tc.authServiceAccount, tc.namespace, tc.secretsPathPrefix)
 
-			validateVault(err, vaultclient, tc.VaultTestCase, t, client)
+			validateVault(err, vaultclient, &tc.VaultTestCase, t, client)
 		})
 	}
-}
-
-type vaultAWSTestCase struct {
-	VaultTestCase
-	awsConfig     *vault.AWSConfig
 }
 
 func TestCreateAWSVault(t *testing.T) {
@@ -70,46 +63,47 @@ func TestCreateAWSVault(t *testing.T) {
 	client := k8sfake.NewSimpleClientset()
 	vaultclient := fakevaultclient.NewSimpleClientset()
 
-	tc := vaultAWSTestCase{
-		VaultTestCase: VaultTestCase{
-			name:          "test-vault",
-			namespace:     "test-ns",
-			authServiceAccount: "test-auth",
-			secretsPathPrefix:  "test/*",
-			err:                false,
+	tc := VaultTestCase{
+		name:               "test-vault",
+		namespace:          "test-ns",
+		authServiceAccount: "test-auth",
+		secretsPathPrefix:  "test/*",
+		err:                false,
+		secretName:         "test-aws",
+	}
+
+	awsConfig := &vault.AWSConfig{
+		AWSUnsealConfig: v1alpha1.AWSUnsealConfig{
+			KMSKeyID:  "test",
+			KMSRegion: "test",
+			S3Bucket:  "test",
+			S3Prefix:  "test",
+			S3Region:  "test",
 		},
-		awsConfig: &vault.AWSConfig{
-			AWSUnsealConfig: v1alpha1.AWSUnsealConfig{
-				KMSKeyID:  "test",
-				KMSRegion: "test",
-				S3Bucket:  "test",
-				S3Prefix:  "test",
-				S3Region:  "test",
-			},
-			DynamoDBTable:            "test",
-			DynamoDBRegion:           "test",
-			ServiceAccountSecretName: "test",
-		},
+		DynamoDBTable:   "test",
+		DynamoDBRegion:  "test",
+		AccessKeyID:     "test",
+		SecretAccessKey: "test",
 	}
 
 	t.Run("create vault in AWS", func(t *testing.T) {
-		err := vault.CreateAWSVault(client, vaultclient, tc.name, tc.namespace,
-			tc.awsConfig, tc.authServiceAccount, tc.namespace, tc.secretsPathPrefix)
+		err := vault.CreateAWSVault(client, vaultclient, tc.name, tc.namespace, tc.secretName,
+			awsConfig, tc.authServiceAccount, tc.namespace, tc.secretsPathPrefix)
 
-		validateVault(err, vaultclient, tc.VaultTestCase, t, client)
+		validateVault(err, vaultclient, &tc, t, client)
 	})
 }
 
-func validateVault(err error, vaultclient *fakevaultclient.Clientset, tc VaultTestCase, t *testing.T, client *k8sfake.Clientset) {
+func validateVault(err error, vaultclient *fakevaultclient.Clientset, tc *VaultTestCase, t *testing.T, client *k8sfake.Clientset) {
 	if tc.err {
 		assert.Error(t, err, "should create vault with an error")
 	} else {
 		assert.NoError(t, err, "should create vault without an error")
 	}
 
-	vault, err := vaultclient.Vault().Vaults(tc.namespace).Get(tc.name, metav1.GetOptions{})
+	vaultCRD, err := vaultclient.Vault().Vaults(tc.namespace).Get(tc.name, metav1.GetOptions{})
 	assert.NoError(t, err, "should retrieve created vault without an error")
-	assert.NotNil(t, vault, "created vault should not be nil")
+	assert.NotNil(t, vaultCRD, "created vault should not be nil")
 	sa, err := client.CoreV1().ServiceAccounts(tc.namespace).Get(tc.name, metav1.GetOptions{})
 	assert.NoError(t, err, "should retrieve vault service account without error")
 	assert.NotNil(t, sa, "created vault service account should not be nil")
