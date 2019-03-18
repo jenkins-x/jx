@@ -9,7 +9,7 @@ setup:
 
 build: setup clean
 	helm dependency build
-	helm lint
+	helm lint charts/jx
 
 install: clean setup build
 	helm upgrade --install $(NAME) .
