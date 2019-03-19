@@ -782,7 +782,6 @@ definitions:
     required:
     - name
     - factType
-    - statements
     - subject
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.FactStatus:
