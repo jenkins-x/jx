@@ -20,7 +20,7 @@ type User struct {
 	Username    string   `json:"username"`
 	ApiToken    string   `json:"apitoken"`
 	BearerToken string   `json:"bearertoken"`
-	Password    string   `json:"password,omitempty" json:"password"`
+	Password    string   `json:"password,omitempty"`
 	Kind        UserKind `json:"kind"`
 }
 
