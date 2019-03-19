@@ -7,13 +7,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	yaml "gopkg.in/yaml.v2"
-
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	"sigs.k8s.io/yaml"
 )
 
 // KmsLocation indicates the location used by the Google KMS service
@@ -60,7 +59,7 @@ func ClusterZone(cluster string) (string, error) {
 
 func parseClusterZone(clusterInfo string) (string, error) {
 	ci := struct {
-		Zone string `yaml:"zone"`
+		Zone string `json:"zone"`
 	}{}
 
 	err := yaml.Unmarshal([]byte(clusterInfo), &ci)

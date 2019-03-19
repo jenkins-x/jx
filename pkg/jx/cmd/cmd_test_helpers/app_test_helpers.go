@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"sigs.k8s.io/yaml"
 
 	"github.com/jenkins-x/jx/pkg/environments"
 
@@ -26,7 +27,6 @@ import (
 	"github.com/petergtz/pegomock"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
-	yaml "gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 

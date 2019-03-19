@@ -13,8 +13,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -41,51 +41,51 @@ var (
 
 // PipelineAgent contains the agent definition metadata
 type PipelineAgent struct {
-	Label     string `yaml:"label,omitempty"`
-	Container string `yaml:"container,omitempty"`
-	Dir       string `yaml:"dir,omitempty"`
+	Label     string `json:"label,omitempty"`
+	Container string `json:"container,omitempty"`
+	Dir       string `json:"dir,omitempty"`
 }
 
 // Pipelines contains all the different kinds of pipeline for diferent branches
 type Pipelines struct {
-	PullRequest *PipelineLifecycles `yaml:"pullRequest,omitempty"`
-	Release     *PipelineLifecycles `yaml:"release,omitempty"`
-	Feature     *PipelineLifecycles `yaml:"feature,omitempty"`
-	Post        *PipelineLifecycle  `yaml:"post,omitempty"`
+	PullRequest *PipelineLifecycles `json:"pullRequest,omitempty"`
+	Release     *PipelineLifecycles `json:"release,omitempty"`
+	Feature     *PipelineLifecycles `json:"feature,omitempty"`
+	Post        *PipelineLifecycle  `json:"post,omitempty"`
 }
 
 // PipelineStep defines an individual step in a pipeline, either a command (sh) or groovy block
 type PipelineStep struct {
-	Name      string          `yaml:"name,omitempty"`
-	Comment   string          `yaml:"comment,omitempty"`
-	Container string          `yaml:"container,omitempty"`
-	Dir       string          `yaml:"dir,omitempty"`
-	Command   string          `yaml:"sh,omitempty"`
-	Groovy    string          `yaml:"groovy,omitempty"`
-	Steps     []*PipelineStep `yaml:"steps,omitempty"`
-	When      string          `yaml:"when,omitempty"`
+	Name      string          `json:"name,omitempty"`
+	Comment   string          `json:"comment,omitempty"`
+	Container string          `json:"container,omitempty"`
+	Dir       string          `json:"dir,omitempty"`
+	Command   string          `json:"sh,omitempty"`
+	Groovy    string          `json:"groovy,omitempty"`
+	Steps     []*PipelineStep `json:"steps,omitempty"`
+	When      string          `json:"when,omitempty"`
 }
 
 // PipelineLifecycles defines the steps of a lifecycle section
 type PipelineLifecycles struct {
-	Setup      *PipelineLifecycle     `yaml:"setup,omitempty"`
-	SetVersion *PipelineLifecycle     `yaml:"setVersion,omitempty"`
-	PreBuild   *PipelineLifecycle     `yaml:"preBuild,omitempty"`
-	Build      *PipelineLifecycle     `yaml:"build,omitempty"`
-	PostBuild  *PipelineLifecycle     `yaml:"postBuild,omitempty"`
-	Promote    *PipelineLifecycle     `yaml:"promote,omitempty"`
-	Pipeline   *syntax.ParsedPipeline `yaml:"pipeline,omitempty"`
+	Setup      *PipelineLifecycle     `json:"setup,omitempty"`
+	SetVersion *PipelineLifecycle     `json:"setVersion,omitempty"`
+	PreBuild   *PipelineLifecycle     `json:"preBuild,omitempty"`
+	Build      *PipelineLifecycle     `json:"build,omitempty"`
+	PostBuild  *PipelineLifecycle     `json:"postBuild,omitempty"`
+	Promote    *PipelineLifecycle     `json:"promote,omitempty"`
+	Pipeline   *syntax.ParsedPipeline `json:"pipeline,omitempty"`
 }
 
 // PipelineLifecycle defines the steps of a lifecycle section
 type PipelineLifecycle struct {
-	Steps []*PipelineStep `yaml:"steps,omitempty"`
+	Steps []*PipelineStep `json:"steps,omitempty"`
 
 	// PreSteps if using inheritance then invoke these steps before the base steps
-	PreSteps []*PipelineStep `yaml:"preSteps,omitempty"`
+	PreSteps []*PipelineStep `json:"preSteps,omitempty"`
 
 	// Replace if using inheritence then replace steps from the base pipeline
-	Replace bool `yaml:"replace,omitempty"`
+	Replace bool `json:"replace,omitempty"`
 }
 
 // NamedLifecycle a lifecycle and its name
@@ -99,8 +99,8 @@ type PipelineLifecycleArray []NamedLifecycle
 
 // PipelineExtends defines the extension (e.g. parent pipeline which is overloaded
 type PipelineExtends struct {
-	Import string `yaml:"import,omitempty"`
-	File   string `yaml:"file,omitempty"`
+	Import string `json:"import,omitempty"`
+	File   string `json:"file,omitempty"`
 }
 
 // ImportFile returns an ImportFile for the given extension
@@ -113,11 +113,11 @@ func (x *PipelineExtends) ImportFile() *ImportFile {
 
 // PipelineConfig defines the pipeline configuration
 type PipelineConfig struct {
-	Extends     *PipelineExtends `yaml:"extends,omitempty"`
-	Agent       PipelineAgent    `yaml:"agent,omitempty"`
-	Env         []corev1.EnvVar  `yaml:"env,omitempty"`
-	Environment string           `yaml:"environment,omitempty"`
-	Pipelines   Pipelines        `yaml:"pipelines,omitempty"`
+	Extends     *PipelineExtends `json:"extends,omitempty"`
+	Agent       PipelineAgent    `json:"agent,omitempty"`
+	Env         []corev1.EnvVar  `json:"env,omitempty"`
+	Environment string           `json:"environment,omitempty"`
+	Pipelines   Pipelines        `json:"pipelines,omitempty"`
 }
 
 // CreateJenkinsfileArguments contains the arguents to generate a Jenkinsfiles dynamically

@@ -5,7 +5,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
+
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -42,9 +43,9 @@ var (
 
 // StableVersion stores the stable version information
 type StableVersion struct {
-	Version string `yaml:"version,omitempty"`
-	GitURL  string `yaml:"gitUrl,omitempty"`
-	URL     string `yaml:"url,omitempty"`
+	Version string `json:"version,omitempty"`
+	GitURL  string `json:"gitUrl,omitempty"`
+	URL     string `json:"url,omitempty"`
 }
 
 // LoadStableVersion loads the stable version data from the version configuration directory returning an empty object if there is

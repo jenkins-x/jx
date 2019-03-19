@@ -17,11 +17,11 @@ const (
 
 //User store the auth infomation for a user
 type User struct {
-	Username    string   `yaml:"username"`
-	ApiToken    string   `yaml:"apitoken"`
-	BearerToken string   `yaml:"bearertoken"`
-	Password    string   `yaml:"password,omitempty" json:"password"`
-	Kind        UserKind `yaml:"kind"`
+	Username    string   `json:"username"`
+	ApiToken    string   `json:"apitoken"`
+	BearerToken string   `json:"bearertoken"`
+	Password    string   `json:"password,omitempty" json:"password"`
+	Kind        UserKind `json:"kind"`
 }
 
 //ServerKind type of the server
@@ -54,16 +54,16 @@ const (
 
 //Server stores the server configuration for a server
 type Server struct {
-	URL         string      `yaml:"url"`
-	Name        string      `yaml:"name"`
-	Kind        ServerKind  `yaml:"kind"`
-	ServiceKind ServiceKind `yaml:"servicekind"`
-	Users       []*User     `yaml:"users"`
+	URL         string      `json:"url"`
+	Name        string      `json:"name"`
+	Kind        ServerKind  `json:"kind"`
+	ServiceKind ServiceKind `json:"servicekind"`
+	Users       []*User     `json:"users"`
 }
 
 // Config stores the entire auth configuration for a number of sservers
 type Config struct {
-	Servers []*Server `yaml:"servers"`
+	Servers []*Server `json:"servers"`
 }
 
 // Checker verifies if the configuration is valid

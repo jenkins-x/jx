@@ -13,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
 	"github.com/jenkins-x/jx/pkg/vault"
+	"sigs.k8s.io/yaml"
 
 	"github.com/jenkins-x/jx/pkg/expose"
 
@@ -42,7 +43,6 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
-	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"

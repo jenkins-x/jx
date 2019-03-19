@@ -18,14 +18,14 @@ type ImportFileResolver func(importFile *ImportFile) (string, error)
 
 // Modules defines the dependent modules for a build pack
 type Modules struct {
-	Modules []*Module `yaml:"modules,omitempty"`
+	Modules []*Module `json:"modules,omitempty"`
 }
 
 // Module defines a dependent module for a build pack
 type Module struct {
-	Name   string `yaml:"name,omitempty"`
-	GitURL string `yaml:"gitUrl,omitempty"`
-	GitRef string `yaml:"gitRef,omitempty"`
+	Name   string `json:"name,omitempty"`
+	GitURL string `json:"gitUrl,omitempty"`
+	GitRef string `json:"gitRef,omitempty"`
 }
 
 // Validate returns an error if any data is missing

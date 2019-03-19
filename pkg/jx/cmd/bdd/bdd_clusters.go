@@ -2,21 +2,22 @@ package bdd
 
 import (
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
+
 	"io/ioutil"
 )
 
 // CreateClusters contains an array of clusters
 type CreateClusters struct {
-	Clusters []*CreateCluster `yaml:"clusters,omitempty"`
+	Clusters []*CreateCluster `json:"clusters,omitempty"`
 }
 
 // CreateCluster defines how to create a cluster
 type CreateCluster struct {
-	Name     string   `yaml:"name,omitempty"`
-	Args     []string `yaml:"args,omitempty"`
-	NoLabels bool     `yaml:"noLabels,omitempty"`
-	Labels   string   `yaml:"labels,omitempty"`
+	Name     string   `json:"name,omitempty"`
+	Args     []string `json:"args,omitempty"`
+	NoLabels bool     `json:"noLabels,omitempty"`
+	Labels   string   `json:"labels,omitempty"`
 }
 
 // LoadBddClusters loads the cluster configuration from the given file

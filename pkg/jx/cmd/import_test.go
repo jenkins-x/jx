@@ -11,7 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 )
 
 const testUsername = "derek_zoolander"
