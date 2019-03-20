@@ -65,22 +65,22 @@ var (
 
 	get_version_example = templates.Examples(`
 		# List applications, their URL and pod counts for all environments
-		jx get apps
+		jx get applications
 
 		# List applications only in the Staging environment
-		jx get apps -e staging
+		jx get applications -e staging
 
 		# List applications only in the Production environment
-		jx get apps -e production
+		jx get applications -e production
 
 		# List applications only in a specific namespace
-		jx get apps -n jx-staging
+		jx get applications -n jx-staging
 
 		# List applications hiding the URLs
-		jx get apps -u
+		jx get applications -u
 
 		# List applications just showing the versions (hiding urls and pod counts)
-		jx get apps -u -p
+		jx get applications -u -p
 	`)
 )
 
