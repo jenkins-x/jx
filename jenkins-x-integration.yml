@@ -20,6 +20,11 @@ pipelineConfig:
                 value: /workspace/workspace
 
             steps:
+              - name: git-merge
+                image: gcr.io/jenkinsxio/builder-jx:0.1.297
+                command: jx
+                args: ['step','git','merge']
+
               - name: init-jx
                 image: jenkinsxio/jx:1.3.938
                 command: jx

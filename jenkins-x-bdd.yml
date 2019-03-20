@@ -19,6 +19,11 @@ pipelineConfig:
               - name: BASE_WORKSPACE
                 value: /workspace/workspace
             steps:
+            - name: git-merge
+              image: gcr.io/jenkinsxio/builder-jx:0.1.297
+              command: jx
+              args: ['step','git','merge']
+
             - name: build-binary
               image: docker.io/golang:1.11.5
               command: make
