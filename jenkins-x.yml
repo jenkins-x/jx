@@ -109,7 +109,7 @@ pipelineConfig:
                 - /workspace/workspace/charts/jx/Makefile
 
               - name: update-bot
-                image: gcr.io/jenkinsxio/builder-maven:0.1.297
+                image: gcr.io/jenkinsxio/builder-base:0.0.11
                 command: ./jx/scripts/update-bot.sh
 
               - name: update-downstream
