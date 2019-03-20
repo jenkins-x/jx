@@ -10,8 +10,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/collector"
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
-	"github.com/knative/build-pipeline/pkg/apis/pipeline"
 	"github.com/pkg/errors"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 
 	"k8s.io/client-go/kubernetes"
 
@@ -20,8 +20,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	tektonclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
+	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
