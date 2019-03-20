@@ -71,6 +71,7 @@ type StepCreateTaskOptions struct {
 	PipelineKind      string
 	Context           string
 	CustomLabels      []string
+	CustomEnvs        []string
 	NoApply           bool
 	Trigger           string
 	TargetPath        string
@@ -101,6 +102,7 @@ type StepCreateTaskOptions struct {
 	GitInfo              *gits.GitRepository
 	BuildNumber          string
 	labels               map[string]string
+	envVars              []corev1.EnvVar
 	Results              StepCreateTaskResults
 	version              string
 	previewVersionPrefix string
@@ -148,7 +150,8 @@ func NewCmdStepCreateTask(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Revision, "revision", "", "", "The git revision to checkout, can be a branch name or git sha")
 	cmd.Flags().StringVarP(&options.PipelineKind, "kind", "k", "release", "The kind of pipeline to create such as: "+strings.Join(jenkinsfile.PipelineKinds, ", "))
 	cmd.Flags().StringVarP(&options.Context, "context", "c", "", "The pipeline context if there are multiple separate pipelines for a given branch")
-	cmd.Flags().StringArrayVarP(&options.CustomLabels, "labels", "l", nil, "List of custom labels to be applied to resources that are created")
+	cmd.Flags().StringArrayVarP(&options.CustomLabels, "label", "l", nil, "List of custom labels to be applied to resources that are created")
+	cmd.Flags().StringArrayVarP(&options.CustomEnvs, "env", "e", nil, "List of custom environment variables to be applied to resources that are created")
 	cmd.Flags().StringVarP(&options.Trigger, "trigger", "t", string(pipelineapi.PipelineTriggerTypeManual), "The kind of pipeline trigger")
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
 	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
@@ -402,6 +405,12 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 			pipelineConfig = localPipelineConfig
 		}
 	}
+
+	err := o.combineEnvVars(pipelineConfig)
+	if err != nil {
+		return nil, nil, nil, nil, nil, errors.Wrapf(err, "failed to combine env vars")
+	}
+
 	if pipelineConfig == nil {
 		return nil, nil, nil, nil, nil, fmt.Errorf("failed to find PipelineConfig in file %s", projectConfigFile)
 	}
@@ -411,7 +420,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	if projectConfig.NoReleasePrepare {
 		o.NoReleasePrepare = true
 	}
-	err := o.setVersionOnReleasePipelines(pipelineConfig)
+	err = o.setVersionOnReleasePipelines(pipelineConfig)
 	if err != nil {
 		return nil, nil, nil, nil, nil, errors.Wrapf(err, "failed to set the version on release pipelines")
 	}
@@ -799,6 +808,24 @@ func (o *StepCreateTaskOptions) combineLabels(labels map[string]string) error {
 		labels[parts[0]] = parts[1]
 	}
 	o.labels = labels
+	return nil
+}
+
+func (o *StepCreateTaskOptions) combineEnvVars(projectConfig *jenkinsfile.PipelineConfig) error {
+	// add any custom env vars
+	var envVars []corev1.EnvVar
+	for _, customEnvVar := range o.CustomEnvs {
+		parts := strings.Split(customEnvVar, "=")
+		if len(parts) != 2 {
+			return errors.Errorf("expected 2 parts to env var but got %v", len(parts))
+		}
+		e := corev1.EnvVar{
+			Name:  parts[0],
+			Value: parts[1],
+		}
+		envVars = append(envVars, e)
+	}
+	projectConfig.Env = envVars
 	return nil
 }
 
