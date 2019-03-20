@@ -18,6 +18,7 @@ import (
 	"github.com/spf13/cobra"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
+	"k8s.io/test-infra/prow/pod-utils/downwardapi"
 )
 
 const (
@@ -103,12 +104,10 @@ func (o *ControllerPipelineRunnerOptions) Run() error {
 			return err
 		}
 	}
-
 	mux := http.NewServeMux()
 	mux.Handle(o.Path, http.HandlerFunc(o.pipelineRunMethods))
 	mux.Handle(HealthPath, http.HandlerFunc(o.health))
 	mux.Handle(ReadyPath, http.HandlerFunc(o.ready))
-
 	logrus.Infof("Waiting for dynamic Tekton Pipelines at http://%s:%d%s", o.BindAddress, o.Port, o.Path)
 	return http.ListenAndServe(":"+strconv.Itoa(o.Port), mux)
 }
@@ -177,12 +176,19 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 		o.returnError(err, "no prowJobSpec.refs passed in so cannot determine git repository. Input: "+string(data), w, r)
 		return
 	}
-	// todo lets support batches of PRs from Prow
+
+	// lets change this to support new pipelineresource type that handles batches
 	if len(pj.Refs.Pulls) > 0 {
 		revision = pj.Refs.Pulls[0].SHA
 		prNumber = strconv.Itoa(pj.Refs.Pulls[0].Number)
 	} else {
 		revision = pj.Refs.BaseSHA
+	}
+
+	envs, err := downwardapi.EnvForSpec(downwardapi.NewJobSpec(pj, "", ""))
+	if err != nil {
+		o.returnError(err, "failed to get env vars from prowjob", w, r)
+		return
 	}
 
 	sourceURL := fmt.Sprintf("https://github.com/%s/%s.git", pj.Refs.Org, pj.Refs.Repo)
@@ -224,6 +230,11 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 	// turn map into string array with = separator to match type of custom labels which are CLI flags
 	for key, value := range arguments.Labels {
 		pr.CustomLabels = append(pr.CustomLabels, fmt.Sprintf("%s=%s", key, value))
+	}
+
+	// turn map into string array with = separator to match type of custom env vars which are CLI flags
+	for key, value := range envs {
+		pr.CustomEnvs = append(pr.CustomEnvs, fmt.Sprintf("%s=%s", key, value))
 	}
 
 	log.Infof("triggering pipeline for repo %s branch %s revision %s context %s\n", sourceURL, branch, revision, pj.Context)
