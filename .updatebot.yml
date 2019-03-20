@@ -9,6 +9,7 @@ github:
     - name: jenkins-x-builders
     - name: jenkins-x-serverless
     - name: jx-tutorial
+    - name: dev-env
   - name: jenkins-x-charts
     repositories:
     - name: prow
