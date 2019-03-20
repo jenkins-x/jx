@@ -49,7 +49,7 @@ pipelineConfig:
               - name: build-binary
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
-                image: jenkinsxio/builder-go:0.1.254
+                image: jenkinsxio/builder-go:0.1.297
                 command: make
                 args: ['test-slow-integration']
                 workingDir: "/workspace/workspace"

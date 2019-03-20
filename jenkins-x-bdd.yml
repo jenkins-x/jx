@@ -64,7 +64,7 @@ pipelineConfig:
               args: ['--dockerfile=/workspace/workspace/Dockerfile.builder-go','--destination=docker.io/jenkinsxio/builder-go:${inputs.params.version}','--context=/workspace/workspace','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
 
             - name: preview
-              image: jenkinsxio/builder-go:0.1.246
+              image: jenkinsxio/builder-go:0.1.297
               command: ./jx/scripts/ci.sh
               workingDir: "/workspace/workspace"
               env:

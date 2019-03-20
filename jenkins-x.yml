@@ -101,7 +101,7 @@ pipelineConfig:
                 args: ['--dockerfile=/workspace/workspace/Dockerfile','--destination=docker.io/jenkinsxio/jx:${inputs.params.version}','--context=/workspace/workspace','--cache-dir=/workspace']
 
               - name: release-charts
-                image: gcr.io/jenkinsxio/builder-go:0.1.289
+                image: gcr.io/jenkinsxio/builder-go:0.1.297
                 command: make
                 args:
                 - "release"
@@ -109,9 +109,9 @@ pipelineConfig:
                 - /workspace/workspace/charts/jx/Makefile
 
               - name: update-bot
-                image: gcr.io/jenkinsxio/builder-maven:0.1.286
+                image: gcr.io/jenkinsxio/builder-maven:0.1.297
                 command: ./jx/scripts/update-bot.sh
 
               - name: update-downstream
-                image: gcr.io/jenkinsxio/builder-go:0.1.286
+                image: gcr.io/jenkinsxio/builder-go:0.1.297
                 command: ./jx/scripts/update-website.sh
