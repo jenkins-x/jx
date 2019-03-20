@@ -1,17 +1,18 @@
 package cmd_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/gits/mocks"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/satori/go.uuid"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/runtime"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/pkg/kube"
+	uuid "github.com/satori/go.uuid"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/ghodss/yaml"
 	"github.com/google/go-cmp/cmp"
@@ -98,8 +99,12 @@ func TestGenerateTektonCRDs(t *testing.T) {
 		},
 	}
 	jxObjects := []runtime.Object{}
-	repoOwner := uuid.NewV4().String()
-	repoName := uuid.NewV4().String()
+	repoOwnerUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	repoOwner := repoOwnerUUID.String()
+	repoNameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	repoName := repoNameUUID.String()
 	fakeRepo := gits.NewFakeRepository(repoOwner, repoName)
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo)
 

@@ -52,7 +52,9 @@ func TestAddAppForGitOps(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.0.1"
 	alias := fmt.Sprintf("%s-alias", name)
 	repo := "http://chartmuseum.jenkins-x.io"
@@ -78,7 +80,7 @@ func TestAddAppForGitOps(t *testing.T) {
 		},
 	}, testOptions.MockHelmer)
 	o.Args = []string{name}
-	err := o.Run()
+	err = o.Run()
 	assert.NoError(t, err)
 	pr, err := testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
 	assert.NoError(t, err)
@@ -131,7 +133,9 @@ func TestAddAppWithSecrets(t *testing.T) {
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.0.1"
 	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
@@ -234,7 +238,7 @@ func TestAddAppWithSecrets(t *testing.T) {
 			}
 		})
 
-	err := o.Run()
+	err = o.Run()
 	assert.NoError(t, err)
 	err = console.Close()
 	<-donec
@@ -276,7 +280,9 @@ func TestAddAppWithDefaults(t *testing.T) {
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.0.1"
 	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
@@ -363,7 +369,7 @@ func TestAddAppWithDefaults(t *testing.T) {
 			}
 		})
 
-	err := o.Run()
+	err = o.Run()
 	assert.NoError(t, err)
 	err = console.Close()
 	<-donec
@@ -404,7 +410,9 @@ func TestStashValues(t *testing.T) {
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.0.1"
 	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
@@ -445,7 +453,7 @@ func TestStashValues(t *testing.T) {
 		},
 	}, testOptions.MockHelmer)
 
-	err := o.Run()
+	err = o.Run()
 	assert.NoError(t, err)
 	appCRDName := fmt.Sprintf("%s-%s", name, name)
 	jxClient, ns, err := testOptions.CommonOptions.JXClientAndDevNamespace()
@@ -479,7 +487,9 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.0.1"
 	alias := fmt.Sprintf("%s-alias", name)
 	commonOpts := *testOptions.CommonOptions
@@ -532,7 +542,7 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 		console.SendLine("abc")
 		console.ExpectEOF()
 	}()
-	err := o.Run()
+	err = o.Run()
 	assert.NoError(t, err)
 	err = console.Close()
 	<-donec
@@ -569,7 +579,9 @@ func TestAddApp(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.0.1"
 	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
@@ -584,7 +596,7 @@ func TestAddApp(t *testing.T) {
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}
 	o.Args = []string{name}
-	err := o.Run()
+	err = o.Run()
 	assert.NoError(t, err)
 
 	// Check chart was installed
@@ -625,7 +637,9 @@ func TestAddLatestApp(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.1.1"
 	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
@@ -645,7 +659,7 @@ func TestAddLatestApp(t *testing.T) {
 			Version: version,
 		},
 	}, testOptions.MockHelmer)
-	err := o.Run()
+	err = o.Run()
 	assert.NoError(t, err)
 
 	_, _, _, fetchDir, _, _, _ := testOptions.MockHelmer.VerifyWasCalledOnce().FetchChart(
@@ -690,7 +704,9 @@ func TestAddAppWithValuesFileForGitOps(t *testing.T) {
 	_, err = file.Write(data)
 	assert.NoError(t, err)
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.0.1"
 	alias := fmt.Sprintf("%s-alias", name)
 	commonOpts := *testOptions.CommonOptions
@@ -732,7 +748,9 @@ func TestAddAppWithReadmeForGitOps(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.0.1"
 	alias := fmt.Sprintf("%s-alias", name)
 	description := "Example description"
@@ -816,7 +834,9 @@ func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.0.1"
 	alias := fmt.Sprintf("%s-alias", name)
 	commonOpts := *testOptions.CommonOptions
@@ -848,7 +868,7 @@ func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
 			},
 		},
 	}, testOptions.MockHelmer)
-	err := o.Run()
+	err = o.Run()
 	assert.NoError(t, err)
 	// Validate that the README.md file is in the right place
 	envDir, err := o.CommonOptions.EnvironmentsDir()
@@ -879,7 +899,9 @@ func TestAddLatestAppForGitOps(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.1.8"
 	alias := fmt.Sprintf("%s-alias", name)
 	commonOpts := *testOptions.CommonOptions
@@ -904,7 +926,7 @@ func TestAddLatestAppForGitOps(t *testing.T) {
 		},
 	}, testOptions.MockHelmer)
 
-	err := o.Run()
+	err = o.Run()
 	assert.NoError(t, err)
 	pr, err := testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
 	assert.NoError(t, err)

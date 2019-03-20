@@ -8,10 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/golang-jenkins"
+	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/prow"
-	"k8s.io/api/core/v1"
-	"k8s.io/test-infra/prow/pjutil"
 
 	"github.com/spf13/cobra"
 
@@ -20,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
+	v1 "k8s.io/api/core/v1"
 	prowjobv1 "k8s.io/test-infra/prow/apis/prowjobs/v1"
 )
 
@@ -238,7 +237,7 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 		}
 	}
 
-	p := pjutil.NewProwJob(jobSpec, nil)
+	p := prow.NewProwJob(jobSpec, nil)
 	p.Status = prowjobv1.ProwJobStatus{
 		State: prowjobv1.PendingState,
 	}

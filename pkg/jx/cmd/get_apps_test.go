@@ -1,23 +1,24 @@
 package cmd_test
 
 import (
-	"github.com/Netflix/go-expect"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"testing"
+
+	expect "github.com/Netflix/go-expect"
 	"github.com/acarl005/stripansi"
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/petergtz/pegomock"
-	"github.com/satori/go.uuid"
-	"io/ioutil"
+	uuid "github.com/satori/go.uuid"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/helm/pkg/proto/hapi/chart"
-	"os"
-	"path/filepath"
-	"testing"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +34,9 @@ func TestGetAppsGitops(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	name1 := uuid.NewV4().String()
+	name1UUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name1 := name1UUID.String()
 	addApp(t, name1, namespace, testOptions, true)
 	namespace = "jx-testing"
 	envDir, err := testOptions.CommonOptions.EnvironmentsDir()
@@ -93,8 +96,12 @@ func TestGetApps(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	name1 := uuid.NewV4().String()
-	name2 := uuid.NewV4().String()
+	name1UUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name1 := name1UUID.String()
+	name2UUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name2 := name2UUID.String()
 	addApp(t, name1, namespace, testOptions, false)
 	addApp(t, name2, namespace, testOptions, false)
 	getAppOptions := &cmd.GetAppsOptions{
@@ -109,7 +116,7 @@ func TestGetApps(t *testing.T) {
 	getAppOptions.CommonOptions.Out = fakeStdout
 	getAppOptions.CommonOptions.Err = console.Err
 	getAppOptions.Args = []string{}
-	err := getAppOptions.Run()
+	err = getAppOptions.Run()
 	assert.NoError(t, err)
 	err = console.Close()
 
@@ -134,8 +141,12 @@ func TestGetApp(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	name1 := uuid.NewV4().String()
-	name2 := uuid.NewV4().String()
+	name1UUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name1 := name1UUID.String()
+	name2UUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name2 := name2UUID.String()
 	addApp(t, name1, namespace, testOptions, false)
 	addApp(t, name2, namespace, testOptions, false)
 	getAppOptions := &cmd.GetAppsOptions{
@@ -150,7 +161,7 @@ func TestGetApp(t *testing.T) {
 	getAppOptions.CommonOptions.In = console.In
 	getAppOptions.CommonOptions.Out = fakeStdout
 	getAppOptions.CommonOptions.Err = console.Err
-	err := getAppOptions.Run()
+	err = getAppOptions.Run()
 	assert.NoError(t, err)
 
 	// check output
@@ -172,8 +183,12 @@ func TestGetAppNotFound(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	name1 := uuid.NewV4().String()
-	name2 := uuid.NewV4().String()
+	name1UUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name1 := name1UUID.String()
+	name2UUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name2 := name2UUID.String()
 	addApp(t, name1, namespace, testOptions, false)
 	addApp(t, name2, namespace, testOptions, false)
 	getAppOptions := &cmd.GetAppsOptions{
@@ -188,7 +203,7 @@ func TestGetAppNotFound(t *testing.T) {
 	getAppOptions.CommonOptions.Out = fakeStdout
 	getAppOptions.CommonOptions.Err = console.Err
 	getAppOptions.Args = []string{"cheese"}
-	err := getAppOptions.Run()
+	err = getAppOptions.Run()
 	assert.NoError(t, err)
 	fakeStdout.Close()
 	outBytes, _ := ioutil.ReadAll(r)

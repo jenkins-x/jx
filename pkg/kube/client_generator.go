@@ -693,7 +693,11 @@ func cloneOrFetch(gitUrl string, commitish string, gitter gits.Gitter) (string, 
 			return "", errors.Wrapf(err, "fetching origin from %s", gitUrl)
 		}
 	}
-	branchName := uuid.NewV4().String()
+	branchNameUUID, err := uuid.NewV4()
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	branchName := branchNameUUID.String()
 	if commitish == "" {
 		commitish = "master"
 	}
@@ -988,7 +992,11 @@ func generateOpenApiDependenciesStruct(outputPackage string, relativePackage str
 		parts = append(parts, strings.Split(path, "/")...)
 		dir := filepath.Join(parts...)
 		log.Infof("Adding OpenAPI dependency %s to %s\n", d, dir)
-		branchName := uuid.NewV4().String()
+		branchNameUUID, err := uuid.NewV4()
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		branchName := branchNameUUID.String()
 		err = gitter.CreateBranchFrom(dir, branchName, dependencyVersion)
 		if err != nil {
 			return nil, errors.Wrapf(err, "creating branch from %s", dependencyVersion)
