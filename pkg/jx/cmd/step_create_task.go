@@ -362,12 +362,10 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 
 	tr := &syntax.TektonResources{}
 	pipelineResourceName := tekton.PipelineResourceName(o.GitInfo, o.Branch, o.Context)
-
 	err = o.setBuildValues()
 	if err != nil {
 		return nil, err
 	}
-
 	if lifecycles != nil && lifecycles.Pipeline != nil {
 		// TODO: Seeing weird behavior seemingly related to https://golang.org/doc/faq#nil_error
 		// if err is reused, maybe we need to switch return types (perhaps upstream in build-pipeline)?
@@ -387,6 +385,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		tr.Resources = append(tr.Resources, o.generateSourceRepoResource(pipelineResourceName))
 	} else {
 		t, err := o.CreateTaskForBuildPack(name, pipelineConfig, lifecycles, kind, ns)
+
 		if err != nil {
 			return nil, errors.Wrapf(err, "Failed to generate Task from build pack")
 		}
@@ -477,6 +476,8 @@ func (o *StepCreateTaskOptions) CreateTaskForBuildPack(languageName string, pipe
 		if !o.NoReleasePrepare && n.Name == "setversion" {
 			continue
 		}
+
+		l.Steps = append([]*jenkinsfile.PipelineStep{getDefaultPipelineStep()}, l.Steps...)
 		for _, s := range l.Steps {
 			ss, v, err := o.createSteps(languageName, pipelineConfig, templateKind, s, container, dir, n.Name)
 			if err != nil {
@@ -594,6 +595,7 @@ func (o *StepCreateTaskOptions) GetDefaultTaskInputs() *pipelineapi.Inputs {
 }
 
 func (o *StepCreateTaskOptions) enhanceTaskWithVolumesEnvAndInputs(task *pipelineapi.Task, pipelineConfig *jenkinsfile.PipelineConfig, inputs pipelineapi.Inputs) {
+
 	var volumes []corev1.Volume
 	for i, step := range task.Spec.Steps {
 		volumes = o.modifyVolumes(&step, task.Spec.Volumes)
@@ -774,7 +776,6 @@ func (o *StepCreateTaskOptions) combineLabels(labels map[string]string) error {
 		if len(parts) != 2 {
 			return errors.Errorf("expected 2 parts to label but got %v", len(parts))
 		}
-		log.Infof("a %s : %s \n", parts[0], parts[1])
 		labels[parts[0]] = parts[1]
 	}
 	o.labels = labels
@@ -1014,7 +1015,6 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 
 		volumes = o.modifyVolumes(&c, volumes)
 		o.modifyEnvVars(&c, pipelineConfig.Env)
-
 		c.Command = []string{"/bin/sh"}
 		if o.CustomImage != "" {
 			c.Image = o.CustomImage
@@ -1512,4 +1512,13 @@ func (r *StepCreateTaskResults) ObjectReferences() []kube.ObjectReference {
 		resources = append(resources, kube.CreateObjectReference(r.PipelineRun.TypeMeta, r.PipelineRun.ObjectMeta))
 	}
 	return resources
+}
+
+func getDefaultPipelineStep() *jenkinsfile.PipelineStep {
+	return &jenkinsfile.PipelineStep{
+		Name:      "git-merge",
+		Container: syntax.GitMergeImage,
+		Command:   "jx step git merge",
+		Dir:       "/workspace/source",
+	}
 }

@@ -229,6 +229,9 @@ jenkins-maven: linux Dockerfile.jenkins-maven
 docker-base: linux
 	docker build -t rawlingsj/builder-base:dev16 . -f Dockerfile.builder-base
 
+docker-jx: linux Dockerfile.builder-jx
+	docker build --no-cache -t builder-jx -f Dockerfile.builder-jx .
+
 docker-pull:
 	docker images | grep -v REPOSITORY | awk '{print $$1}' | uniq -u | grep jenkinsxio | awk '{print $$1":latest"}' | xargs -L1 docker pull
 

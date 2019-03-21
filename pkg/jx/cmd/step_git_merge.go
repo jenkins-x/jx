@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"fmt"
+	"github.com/sirupsen/logrus"
 	"os"
 
 	"github.com/jenkins-x/jx/pkg/prow"
@@ -108,7 +108,8 @@ func (o *StepGitMergeOptions) Run() error {
 		}
 	}
 	if len(o.SHAs) == 0 {
-		return fmt.Errorf("no SHAs to merge")
+		logrus.Warnf("no SHAs to merge, falling back to initial cloned commit")
+		return nil
 	}
 	return gits.FetchAndMergeSHAs(o.SHAs, o.BaseBranch, o.BaseSHA, o.Remote, o.Dir, o.Git(), o.Verbose)
 }
