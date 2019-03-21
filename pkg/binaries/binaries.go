@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
+
 	"io/ioutil"
 	"os"
 	"os/exec"

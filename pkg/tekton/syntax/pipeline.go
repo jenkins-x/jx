@@ -21,25 +21,25 @@ import (
 
 // ParsedPipeline is the internal representation of the Pipeline, used to validate and create CRDs
 type ParsedPipeline struct {
-	Agent       Agent       `yaml:"agent,omitempty"`
-	Environment []EnvVar    `yaml:"environment,omitempty"`
-	Options     RootOptions `yaml:"options,omitempty"`
-	Stages      []Stage     `yaml:"stages"`
-	Post        []Post      `yaml:"post,omitempty"`
+	Agent       Agent       `json:"agent,omitempty"`
+	Environment []EnvVar    `json:"environment,omitempty"`
+	Options     RootOptions `json:"options,omitempty"`
+	Stages      []Stage     `json:"stages"`
+	Post        []Post      `json:"post,omitempty"`
 }
 
 // Agent defines where the pipeline, stage, or step should run.
 type Agent struct {
 	// One of label or image is required.
-	Label string `yaml:"label,omitempty"`
-	Image string `yaml:"image,omitempty"`
+	Label string `json:"label,omitempty"`
+	Image string `json:"image,omitempty"`
 	// Perhaps we'll eventually want to add something here for specifying a volume to create? Would play into stash.
 }
 
 // EnvVar is a key/value pair defining an environment variable
 type EnvVar struct {
-	Name  string `yaml:"name"`
-	Value string `yaml:"value"`
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 // TimeoutUnit is used for calculating timeout duration
@@ -68,9 +68,9 @@ func allTimeoutUnitsAsStrings() []string {
 
 // Timeout defines how long a stage or pipeline can run before timing out.
 type Timeout struct {
-	Time int64 `yaml:"time"`
+	Time int64 `json:"time"`
 	// Has some sane default - probably seconds
-	Unit TimeoutUnit `yaml:"unit,omitempty"`
+	Unit TimeoutUnit `json:"unit,omitempty"`
 }
 
 func (t Timeout) toDuration() (*metav1.Duration, error) {
@@ -91,58 +91,58 @@ func (t Timeout) toDuration() (*metav1.Duration, error) {
 
 // RootOptions contains options that can be configured on either a pipeline or a stage
 type RootOptions struct {
-	Timeout Timeout `yaml:"timeout,omitempty"`
+	Timeout Timeout `json:"timeout,omitempty"`
 	// TODO: Not yet implemented in build-pipeline
-	Retry int8 `yaml:"retry,omitempty"`
+	Retry int8 `json:"retry,omitempty"`
 }
 
 // Stash defines files to be saved for use in a later stage, marked with a name
 type Stash struct {
-	Name string `yaml:"name"`
+	Name string `json:"name"`
 	// Eventually make this optional so that you can do volumes instead
-	Files string `yaml:"files"`
+	Files string `json:"files"`
 }
 
 // Unstash defines a previously-defined stash to be copied into this stage's workspace
 type Unstash struct {
-	Name string `yaml:"name"`
-	Dir  string `yaml:"dir,omitempty"`
+	Name string `json:"name"`
+	Dir  string `json:"dir,omitempty"`
 }
 
 // StageOptions contains both options that can be configured on either a pipeline or a stage, via
 // RootOptions, or stage-specific options.
 type StageOptions struct {
-	RootOptions `yaml:",inline"`
+	RootOptions `json:",inline"`
 
 	// TODO: Not yet implemented in build-pipeline
-	Stash   Stash   `yaml:"stash,omitempty"`
-	Unstash Unstash `yaml:"unstash,omitempty"`
+	Stash   Stash   `json:"stash,omitempty"`
+	Unstash Unstash `json:"unstash,omitempty"`
 
-	Workspace *string `yaml:"workspace,omitempty"`
+	Workspace *string `json:"workspace,omitempty"`
 }
 
 // Step defines a single step, from the author's perspective, to be executed within a stage.
 type Step struct {
 	// One of command, step, or loop is required.
-	Command string `yaml:"command,omitempty"`
+	Command string `json:"command,omitempty"`
 	// args is optional, but only allowed with command
-	Arguments []string `yaml:"args,omitempty"`
+	Arguments []string `json:"args,omitempty"`
 	// dir is optional, but only allowed with command. Refers to subdirectory of workspace
-	Dir string `yaml:"dir,omitempty"`
+	Dir string `json:"dir,omitempty"`
 
-	Step string `yaml:"step,omitempty"`
+	Step string `json:"step,omitempty"`
 	// options is optional, but only allowed with step
 	// Also, we'll need to do some magic to do type verification during translation - i.e., this step wants a number
 	// for this option, so translate the string value for that option to a number.
-	Options map[string]string `yaml:"options,omitempty"`
+	Options map[string]string `json:"options,omitempty"`
 
-	Loop Loop `yaml:"loop,omitempty"`
+	Loop Loop `json:"loop,omitempty"`
 
 	// agent can be overridden on a step
-	Agent Agent `yaml:"agent,omitempty"`
+	Agent Agent `json:"agent,omitempty"`
 
 	// Image alows the docker image for a step to be specified
-	Image string `yaml:"image,omitempty"`
+	Image string `json:"image,omitempty"`
 }
 
 // Loop is a special step that defines a variable, a list of possible values for that variable, and a set of steps to
@@ -150,24 +150,24 @@ type Step struct {
 // those steps.
 type Loop struct {
 	// The variable name.
-	Variable string `yaml:"variable"`
+	Variable string `json:"variable"`
 	// The list of values to iterate over
-	Values []string `yaml:"values"`
+	Values []string `json:"values"`
 	// The steps to run
-	Steps []Step `yaml:"steps"`
+	Steps []Step `json:"steps"`
 }
 
 // Stage is a unit of work in a pipeline, corresponding either to a Task or a set of Tasks to be run sequentially or in
 // parallel with common configuration.
 type Stage struct {
-	Name        string       `yaml:"name"`
-	Agent       Agent        `yaml:"agent,omitempty"`
-	Options     StageOptions `yaml:"options,omitempty"`
-	Environment []EnvVar     `yaml:"environment,omitempty"`
-	Steps       []Step       `yaml:"steps,omitempty"`
-	Stages      []Stage      `yaml:"stages,omitempty"`
-	Parallel    []Stage      `yaml:"parallel,omitempty"`
-	Post        []Post       `yaml:"post,omitempty"`
+	Name        string       `json:"name"`
+	Agent       Agent        `json:"agent,omitempty"`
+	Options     StageOptions `json:"options,omitempty"`
+	Environment []EnvVar     `json:"environment,omitempty"`
+	Steps       []Step       `json:"steps,omitempty"`
+	Stages      []Stage      `json:"stages,omitempty"`
+	Parallel    []Stage      `json:"parallel,omitempty"`
+	Post        []Post       `json:"post,omitempty"`
 }
 
 // PostCondition is used to specify under what condition a post action should be executed.
@@ -185,17 +185,17 @@ var allPostConditions = []PostCondition{PostConditionAlways, PostConditionSucces
 // Post contains a PostCondition and one more actions to be executed after a pipeline or stage if the condition is met.
 type Post struct {
 	// TODO: Conditional execution of something after a Task or Pipeline completes is not yet implemented
-	Condition PostCondition `yaml:"condition"`
-	Actions   []PostAction  `yaml:"actions"`
+	Condition PostCondition `json:"condition"`
+	Actions   []PostAction  `json:"actions"`
 }
 
 // PostAction contains the name of a built-in post action and options to pass to that action.
 type PostAction struct {
 	// TODO: Notifications are not yet supported in Build Pipeline per se.
-	Name string `yaml:"name"`
+	Name string `json:"name"`
 	// Also, we'll need to do some magic to do type verification during translation - i.e., this action wants a number
 	// for this option, so translate the string value for that option to a number.
-	Options map[string]string `yaml:"options,omitempty"`
+	Options map[string]string `json:"options,omitempty"`
 }
 
 var _ apis.Validatable = (*ParsedPipeline)(nil)

@@ -5,6 +5,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/config"
 	configio "github.com/jenkins-x/jx/pkg/io"
+	"sigs.k8s.io/yaml"
 
 	"io/ioutil"
 	"strings"
@@ -14,9 +15,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-
-	"github.com/ghodss/yaml"
-	do_not_use "gopkg.in/yaml.v2"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -407,7 +405,7 @@ func (o *UpgradePlatformOptions) repairAdminSecrets(fileName string) error {
 		return errors.Wrap(err, "unable to read file")
 	}
 
-	err = do_not_use.Unmarshal([]byte(data), &admin)
+	err = yaml.Unmarshal([]byte(data), &admin)
 	if err != nil {
 		return errors.Wrap(err, "unable to unmarshall secrets")
 	}

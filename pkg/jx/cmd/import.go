@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"sigs.k8s.io/yaml"
 
 	"github.com/cenkalti/backoff"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -32,7 +33,6 @@ import (
 
 	"github.com/denormal/go-gitignore"
 	"github.com/jenkins-x/jx/pkg/prow"
-	"gopkg.in/yaml.v2"
 )
 
 const (
