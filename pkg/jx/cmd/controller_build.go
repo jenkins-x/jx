@@ -511,7 +511,10 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 				}
 			}
 			if stageFinished {
-				if stage.Status != v1.ActivityStatusTypeSucceeded {
+				switch stage.Status {
+				case v1.ActivityStatusTypeSucceeded, v1.ActivityStatusTypeNotExecuted:
+					// stage did not fail
+				default:
 					failed = true
 				}
 			} else {
