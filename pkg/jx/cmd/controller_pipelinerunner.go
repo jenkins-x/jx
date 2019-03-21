@@ -315,11 +315,13 @@ func (o *ControllerPipelineRunnerOptions) stepGitCredentials() error {
 
 func getBranch(spec prowapi.ProwJobSpec) string {
 	branch := spec.Refs.BaseRef
-	if spec.Type == prowapi.PostsubmitJob || spec.Type == prowapi.BatchJob {
+	if spec.Type == prowapi.PostsubmitJob {
 		return branch
 	}
+	if spec.Type == prowapi.BatchJob {
+		return "batch"
+	}
 	if len(spec.Refs.Pulls) > 0 {
-		// todo lets support multiple PRs for when we are running a batch from Tide
 		branch = fmt.Sprintf("PR-%v", spec.Refs.Pulls[0].Number)
 	}
 	return branch
