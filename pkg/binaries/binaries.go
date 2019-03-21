@@ -14,7 +14,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const EksctlVersion = "0.1.19"
 const IBMCloudVersion = "0.10.1"
 const HeptioAuthenticatorAwsVersion = "1.10.3"
 const KubectlVersion = "1.13.2"
@@ -96,7 +95,16 @@ func LoadInstalledPackages() (map[string]string, error) {
 	return map[string]string{}, nil
 }
 
+// RememberInstalledPackage writes the version of package into local file system. This allows to identify
+// what version of package is currently installed in ~/.jx/bin .
 func RememberInstalledPackage(packageName string, version string) error {
+	if packageName == "" {
+		return errors.New("package name cannot be empty")
+	}
+	if version == "" {
+		return errors.New("package version cannot be empty")
+	}
+
 	versions, err := LoadInstalledPackages()
 	if err != nil {
 		return err

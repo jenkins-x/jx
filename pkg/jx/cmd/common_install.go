@@ -1237,7 +1237,7 @@ func (o *CommonOptions) installAws() error {
 }
 
 func (o *CommonOptions) installEksCtl(skipPathScan bool) error {
-	return o.installEksCtlWithVersion(binaries.EksctlVersion, skipPathScan)
+	return o.installEksCtlWithVersion("", skipPathScan)
 }
 
 func (o *CommonOptions) installEksCtlWithVersion(version string, skipPathScan bool) error {
