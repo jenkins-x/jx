@@ -595,6 +595,8 @@ func (o *StepCreateTaskOptions) CreateStageForBuildPack(languageName string, pip
 		if !o.NoReleasePrepare && n.Name == "setversion" {
 			continue
 		}
+
+		l.Steps = append([]*jenkinsfile.PipelineStep{getDefaultPipelineStep()}, l.Steps...)
 		for _, s := range l.Steps {
 			steps = append(steps, o.createSteps(languageName, pipelineConfig, templateKind, s, container, dir, n.Name)...)
 		}
@@ -804,7 +806,6 @@ func (o *StepCreateTaskOptions) combineLabels(labels map[string]string) error {
 		if len(parts) != 2 {
 			return errors.Errorf("expected 2 parts to label but got %v", len(parts))
 		}
-		log.Infof("a %s : %s \n", parts[0], parts[1])
 		labels[parts[0]] = parts[1]
 	}
 	o.labels = labels
@@ -1604,4 +1605,13 @@ func (r *StepCreateTaskResults) ObjectReferences() []kube.ObjectReference {
 		log.Warnf("no Tasks, Pipeline or PipelineRuns created\n")
 	}
 	return resources
+}
+
+func getDefaultPipelineStep() *jenkinsfile.PipelineStep {
+	return &jenkinsfile.PipelineStep{
+		Name:      "git-merge",
+		Container: syntax.GitMergeImage,
+		Command:   "jx step git merge",
+		Dir:       "/workspace/source",
+	}
 }
