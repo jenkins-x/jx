@@ -20,7 +20,7 @@ type Helmer interface {
 		password string) error
 	UpgradeChart(chart string, releaseName string, ns string, version string, install bool,
 		timeout int, force bool, wait bool, values []string, valueFiles []string, repo string, username string,
-		password string) error
+		password string, reuseValues bool) error
 	DeleteRelease(ns string, releaseName string, purge bool) error
 	ListCharts() (string, error)
 	SearchChartVersions(chart string) ([]string, error)

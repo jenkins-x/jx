@@ -192,10 +192,21 @@ func TestUpgradeChart(t *testing.T) {
 	helm, runner := createHelm(t, nil, "")
 
 	err := helm.UpgradeChart(chart, releaseName, namespace, version, true, timeout, true, true, value, valueFile,
-		"", "", "")
+		"", "", "", false)
 
 	assert.NoError(t, err, "should upgrade the chart without any error")
 	verifyArgs(t, helm, runner, expectedArgs...)
+
+	// check reuse-values
+	expectedArgs = []string{"upgrade", "--namespace", namespace, "--install", "--wait", "--force",
+		"--timeout", fmt.Sprintf("%d", timeout), "--version", version, "--set", value[0], "--values", valueFile[0], "--reuse-values", releaseName, chart}
+
+	err = helm.UpgradeChart(chart, releaseName, namespace, version, true, timeout, true, true, value, valueFile,
+		"", "", "", true)
+
+	assert.NoError(t, err, "should upgrade the chart without any error")
+	verifyArgs(t, helm, runner, expectedArgs...)
+
 }
 
 func TestDeleteRelaese(t *testing.T) {

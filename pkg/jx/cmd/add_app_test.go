@@ -18,7 +18,7 @@ import (
 
 	"k8s.io/helm/pkg/chartutil"
 
-	expect "github.com/Netflix/go-expect"
+	"github.com/Netflix/go-expect"
 	"github.com/jenkins-x/jx/pkg/tests"
 
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -30,12 +30,12 @@ import (
 
 	"github.com/ghodss/yaml"
 
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/satori/go.uuid"
 
 	"github.com/stretchr/testify/assert"
 
@@ -201,7 +201,8 @@ func TestAddAppWithSecrets(t *testing.T) {
 		pegomock.AnyStringSlice(),
 		pegomock.EqString(kube.DefaultChartMuseumURL),
 		pegomock.AnyString(),
-		pegomock.AnyString())).
+		pegomock.AnyString(),
+		false)).
 		Then(func(params []pegomock.Param) pegomock.ReturnValues {
 			// These assertion must happen inside the UpgradeChart function otherwise the chart dir will have been
 			// deleted
@@ -345,7 +346,8 @@ func TestAddAppWithDefaults(t *testing.T) {
 		pegomock.AnyStringSlice(),
 		pegomock.EqString(kube.DefaultChartMuseumURL),
 		pegomock.AnyString(),
-		pegomock.AnyString())).
+		pegomock.AnyString(),
+		false)).
 		Then(func(params []pegomock.Param) pegomock.ReturnValues {
 			// These assertion must happen inside the UpgradeChart function otherwise the chart dir will have been
 			// deleted
