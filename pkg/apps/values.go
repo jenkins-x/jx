@@ -75,7 +75,7 @@ func StashValues(values []byte, name string, jxClient versioned.Interface, ns st
 			return errors.Wrapf(err, "creating App %s to annotate with values.yaml", name)
 		}
 	} else {
-		_, err = jxClient.JenkinsV1().Apps(ns).Update(app)
+		_, err = jxClient.JenkinsV1().Apps(ns).PatchUpdate(app)
 		if err != nil {
 			return errors.Wrapf(err, "updating App %s to annotate with values.yaml", name)
 		}
