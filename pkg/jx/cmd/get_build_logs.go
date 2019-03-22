@@ -62,6 +62,8 @@ var (
 		# Pick a knative build for the 1234 Pull Request on the repo cheese
 		jx get build log --repo cheese --branch PR-1234
 
+		# View the build logs for a specific tekton build pod
+		jx get build log --pod my-pod-name
 	`)
 )
 
@@ -95,6 +97,7 @@ func NewCmdGetBuildLogs(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.BuildFilter.Repository, "repo", "r", "", "Filters the build repository")
 	cmd.Flags().StringVarP(&options.BuildFilter.Branch, "branch", "", "", "Filters the branch")
 	cmd.Flags().StringVarP(&options.BuildFilter.Build, "build", "", "", "The build number to view")
+	cmd.Flags().StringVarP(&options.BuildFilter.Pod, "pod", "", "", "The pod name to view")
 	cmd.Flags().BoolVarP(&options.CurrentFolder, "current", "c", false, "Display logs using current folder as repo name, and parent folder as owner")
 	options.JenkinsSelector.AddFlags(cmd)
 
