@@ -24,10 +24,10 @@ import (
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/jenkins-x/jx/pkg/addon"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -76,37 +76,38 @@ type InstallOptions struct {
 
 // InstallFlags flags for the install command
 type InstallFlags struct {
-	InstallOnly              bool
-	Domain                   string
-	ExposeControllerPathMode string
-	DockerRegistry           string
-	Provider                 string
-	VersionsRepository       string
-	Version                  string
-	LocalHelmRepoName        string
-	Namespace                string
-	CloudEnvRepository       string
-	NoDefaultEnvironments    bool
-	DefaultEnvironmentPrefix string
-	LocalCloudEnvironment    bool
-	EnvironmentGitOwner      string
-	Timeout                  string
-	HelmTLS                  bool
-	RegisterLocalHelmRepo    bool
-	CleanupTempFiles         bool
-	Prow                     bool
-	DisableSetKubeContext    bool
-	Dir                      string
-	Vault                    bool
-	Tekton                   bool
-	BuildPackName            string
-	Kaniko                   bool
-	GitOpsMode               bool
-	NoGitOpsEnvApply         bool
-	NoGitOpsEnvRepo          bool
-	NoGitOpsEnvSetup         bool
-	NoGitOpsVault            bool
-	NextGeneration           bool
+	InstallOnly                 bool
+	Domain                      string
+	ExposeControllerURLTemplate string
+	ExposeControllerPathMode    string
+	DockerRegistry              string
+	Provider                    string
+	VersionsRepository          string
+	Version                     string
+	LocalHelmRepoName           string
+	Namespace                   string
+	CloudEnvRepository          string
+	NoDefaultEnvironments       bool
+	DefaultEnvironmentPrefix    string
+	LocalCloudEnvironment       bool
+	EnvironmentGitOwner         string
+	Timeout                     string
+	HelmTLS                     bool
+	RegisterLocalHelmRepo       bool
+	CleanupTempFiles            bool
+	Prow                        bool
+	DisableSetKubeContext       bool
+	Dir                         string
+	Vault                       bool
+	Tekton                      bool
+	BuildPackName               string
+	Kaniko                      bool
+	GitOpsMode                  bool
+	NoGitOpsEnvApply            bool
+	NoGitOpsEnvRepo             bool
+	NoGitOpsEnvSetup            bool
+	NoGitOpsVault               bool
+	NextGeneration              bool
 }
 
 // Secrets struct for secrets
@@ -336,6 +337,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.HelmTLS, "helm-tls", "", false, "Whether to use TLS with helm")
 	cmd.Flags().BoolVarP(&flags.InstallOnly, "install-only", "", false, "Force the install command to fail if there is already an installation. Otherwise lets update the installation")
 	cmd.Flags().StringVarP(&flags.DockerRegistry, "docker-registry", "", "", "The Docker Registry host or host:port which is used when tagging and pushing images. If not specified it defaults to the internal registry unless there is a better provider default (e.g. ECR on AWS/EKS)")
+	cmd.Flags().StringVarP(&flags.ExposeControllerURLTemplate, "exposecontroller-urltemplate", "", "", "The ExposeController urltemplate for how services should be exposed as URLs. Defaults to being empty, which in turn defaults to \"{{.Service}}.{{.Namespace}}.{{.Domain}}\".")
 	cmd.Flags().StringVarP(&flags.ExposeControllerPathMode, "exposecontroller-pathmode", "", "", "The ExposeController path mode for how services should be exposed as URLs. Defaults to using subnets. Use a value of `path` to use relative paths within the domain host such as when using AWS ELB host names")
 	cmd.Flags().StringVarP(&flags.Version, "version", "", "", "The specific platform version to install")
 	cmd.Flags().BoolVarP(&flags.Prow, "prow", "", false, "Enable Prow to implement Serverless Jenkins and support ChatOps on Pull Requests")
@@ -735,6 +737,10 @@ func (options *InstallOptions) init() error {
 		if ecConfig.PathMode == "" && options.Flags.ExposeControllerPathMode != "" {
 			ecConfig.PathMode = options.Flags.ExposeControllerPathMode
 			log.Success("set exposeController Config PathMode " + ecConfig.PathMode + "\n")
+		}
+		if ecConfig.UrlTemplate == "" && options.Flags.ExposeControllerURLTemplate != "" {
+			ecConfig.UrlTemplate = options.Flags.ExposeControllerURLTemplate
+			log.Success("set exposeController Config URLTemplate " + ecConfig.UrlTemplate + "\n")
 		}
 		if isOpenShiftProvider(options.Flags.Provider) {
 			ecConfig.Exposer = "Route"
@@ -2113,9 +2119,10 @@ func (options *InstallOptions) saveIngressConfig() (*kube.IngressConfig, error) 
 	}
 	domain := exposeController.Config.Domain
 	ic := kube.IngressConfig{
-		Domain:  domain,
-		TLS:     tls,
-		Exposer: exposeController.Config.Exposer,
+		Domain:      domain,
+		TLS:         tls,
+		Exposer:     exposeController.Config.Exposer,
+		UrlTemplate: exposeController.Config.UrlTemplate,
 	}
 	// save ingress config details to a configmap
 	_, err = options.saveAsConfigMap(kube.IngressConfigConfigmap, ic)

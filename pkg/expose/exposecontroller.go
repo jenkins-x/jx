@@ -90,6 +90,7 @@ func RunExposecontroller(devNamespace, targetNamespace string, ic kube.IngressCo
 		"config.exposer=" + ic.Exposer,
 		"config.domain=" + ic.Domain,
 		"config.tlsacme=" + strconv.FormatBool(ic.TLS),
+		"config.urltemplate=" + ic.UrlTemplate,
 	}
 
 	if !ic.TLS && ic.Issuer != "" {
