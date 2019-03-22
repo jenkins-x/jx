@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	"github.com/spf13/cobra"
 
@@ -84,6 +85,9 @@ func (o *ConsoleOptions) Run() error {
 	jenkinsServiceName, err := o.PickCustomJenkinsName(&o.JenkinsSelector, kubeClient, ns)
 	if err != nil {
 		return err
+	}
+	if jenkinsServiceName == "" && !prow {
+		jenkinsServiceName = kube.ServiceJenkins
 	}
 	return o.Open(jenkinsServiceName, "Jenkins Console")
 }
