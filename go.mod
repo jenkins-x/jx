@@ -42,7 +42,7 @@ require (
 	github.com/duosecurity/duo_api_golang v0.0.0-20190107154727-539434bf0d45 // indirect
 	github.com/elazarl/go-bindata-assetfs v1.0.0 // indirect
 	github.com/elazarl/goproxy v0.0.0-20181111060418-2ce16c963a8a // indirect
-	github.com/emicklei/go-restful v2.8.0+incompatible // indirect
+	github.com/emicklei/go-restful v2.8.0+incompatible
 	github.com/emirpasic/gods v1.9.0 // indirect
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.0.0
