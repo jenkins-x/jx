@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/binaries"
+	"github.com/jenkins-x/jx/pkg/packages"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -213,7 +213,7 @@ func (o *CreateAddonIstioOptions) getIstioChartsFromGitHub() (string, error) {
 
 	tarPath := filepath.Join(binDir, "istio-"+extension)
 	os.Remove(tarPath)
-	err = binaries.DownloadFile(clientURL, tarPath)
+	err = packages.DownloadFile(clientURL, tarPath)
 	if err != nil {
 		return answer, err
 	}
