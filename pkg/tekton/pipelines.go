@@ -21,14 +21,14 @@ func CreateOrUpdateSourceResource(tektonClient tektonclient.Interface, ns string
 	resourceName := created.Name
 	resourceInterface := tektonClient.TektonV1alpha1().PipelineResources(ns)
 
-	_, err := resourceInterface.Create(created)
-	if err == nil {
+	_, err2 := resourceInterface.Create(created)
+	if err2 == nil {
 		return created, nil
 	}
 
 	answer, err := resourceInterface.Get(resourceName, metav1.GetOptions{})
 	if err != nil {
-		return answer, errors.Wrapf(err, "failed to get PipelineResource %s after failing to create a new one", resourceName)
+		return answer, errors.Wrapf(err, "failed to get PipelineResource %s after failing to create a new one with error %s", resourceName, err2.Error())
 	}
 	if !reflect.DeepEqual(&created.Spec, &answer.Spec) {
 		answer.Spec = created.Spec

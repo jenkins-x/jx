@@ -48,6 +48,7 @@ type BuildPodInfoFilter struct {
 	Branch     string
 	Build      string
 	Filter     string
+	Pod        string
 	Pending    bool
 }
 
@@ -199,6 +200,9 @@ func (o *BuildPodInfoFilter) BuildMatches(info *BuildPodInfo) bool {
 		return false
 	}
 	if o.Build != "" && o.Build != info.Build {
+		return false
+	}
+	if o.Pod != "" && o.Pod != info.PodName {
 		return false
 	}
 	if o.Filter != "" && !strings.Contains(info.Name, o.Filter) {
