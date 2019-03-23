@@ -24,7 +24,6 @@ const (
 	enableVirtualTerminalProcessing = 0x4
 )
 
-
 // configureTerminalForAnsiEscapes enables the windows 10 console to translate ansi escape sequences
 // requires windows 10 1511 or higher and fails gracefully on older versions (and prior releases like windows 7)
 // https://docs.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences
