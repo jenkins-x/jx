@@ -365,8 +365,17 @@ func (o *CommonOptions) initGitConfigAndUser() error {
 }
 
 func (o *CommonOptions) dockerRegistryOrg(repository *gits.GitRepository) string {
-	answer := os.Getenv("DOCKER_REGISTRY_ORG")
+	answer := ""
+	teamSettings, err := o.TeamSettings()
+	if err != nil {
+		log.Warnf("Could not load team settings %s\n", err.Error())
+	} else {
+		answer = teamSettings.DockerRegistryOrg
+	}
 	if answer == "" {
+		answer = os.Getenv("DOCKER_REGISTRY_ORG")
+	}
+	if answer == "" && repository != nil {
 		answer = repository.Organisation
 	}
 	return answer
