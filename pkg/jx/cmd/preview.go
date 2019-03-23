@@ -783,7 +783,7 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 
 // GetPreviewValuesConfig returns the PreviewValuesConfig to use as extraValues for helm
 func (o *PreviewOptions) GetPreviewValuesConfig(domain string) (*config.PreviewValuesConfig, error) {
-	repository, err := getImageName()
+	repository, err := o.getImageName()
 	if err != nil {
 		return nil, err
 	}
@@ -836,7 +836,7 @@ func getContainerRegistry() (string, error) {
 	return fmt.Sprintf("%s:%s", registryHost, registryPort), nil
 }
 
-func getImageName() (string, error) {
+func (o *PreviewOptions) getImageName() (string, error) {
 	containerRegistry, err := getContainerRegistry()
 	if err != nil {
 		return "", err
@@ -858,7 +858,7 @@ func getImageName() (string, error) {
 		return "", fmt.Errorf("no %s environment variable found", APP_NAME)
 	}
 
-	dockerRegistryOrg := os.Getenv(DOCKER_REGISTRY_ORG)
+	dockerRegistryOrg := o.dockerRegistryOrg(o.GitInfo)
 	if dockerRegistryOrg == "" {
 		dockerRegistryOrg = organisation
 	}
