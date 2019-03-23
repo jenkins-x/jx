@@ -183,6 +183,9 @@ type Gitter interface {
 	PullRemoteBranches(dir string) error
 	PullUpstream(dir string) error
 
+	// ResetToUpstream resets the given branch to the upstream version
+	ResetToUpstream(dir string, branch string) error
+
 	AddRemote(dir string, name string, url string) error
 	SetRemoteURL(dir string, name string, gitURL string) error
 	UpdateRemote(dir, url string) error

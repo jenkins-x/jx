@@ -300,9 +300,9 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 		if err != nil {
 			return "", "", nil, fork, errors.Wrapf(err, "setting remote upstream %q in forked environment repo", gitURL)
 		}
-		err = git.PullUpstream(dir)
+		err = git.ResetToUpstream(dir, base)
 		if err != nil {
-			return "", "", nil, fork, errors.Wrap(err, "pulling upstream of forked versions repository")
+			return "", "", nil, fork, errors.Wrapf(err, "resetting forked branch %s to upstream version", base)
 		}
 
 		if o.ConfigGitFn != nil {
