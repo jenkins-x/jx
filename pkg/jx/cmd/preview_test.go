@@ -109,12 +109,15 @@ preview:
 `,
 		},
 	}
+	co := &cmd.CommonOptions{}
+	cmd.ConfigureTestOptions(co, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 
 	for i, test := range tests {
 		for k, v := range test.env {
 			os.Setenv(k, v)
 		}
 
+		test.opts.CommonOptions = co
 		config, err := test.opts.GetPreviewValuesConfig(test.domain)
 		if err != nil {
 			t.Errorf("[%d] got unexpected err: %v", i, err)
