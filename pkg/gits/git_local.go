@@ -74,6 +74,11 @@ func (g *GitLocal) PullUpstream(dir string) error {
 	return g.GitFake.PullUpstream(dir)
 }
 
+// ResetToUpstream resets the given branch to the upstream version
+func (g *GitLocal) ResetToUpstream(dir string, branch string) error {
+	return g.GitFake.ResetToUpstream(dir, branch)
+}
+
 // AddRemote adds a remote repository at the given URL and with the given name
 func (g *GitLocal) AddRemote(dir string, name string, url string) error {
 	return g.GitCLI.AddRemote(dir, name, url)
