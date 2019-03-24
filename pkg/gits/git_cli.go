@@ -107,7 +107,11 @@ func (g *GitCLI) PullUpstream(dir string) error {
 
 // ResetToUpstream resets the given branch to the upstream version
 func (g *GitCLI) ResetToUpstream(dir string, branch string) error {
-	err := g.gitCmd(dir, "reset", "--hard", "upstream/"+branch)
+	err := g.gitCmd(dir, "fetch", "upstream")
+	if err != nil {
+		return err
+	}
+	err = g.gitCmd(dir, "reset", "--hard", "upstream/"+branch)
 	if err != nil {
 		return err
 	}
