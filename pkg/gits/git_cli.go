@@ -111,11 +111,7 @@ func (g *GitCLI) ResetToUpstream(dir string, branch string) error {
 	if err != nil {
 		return err
 	}
-	err = g.gitCmd(dir, "reset", "--hard", "upstream/"+branch)
-	if err != nil {
-		return err
-	}
-	return g.gitCmd(dir, "push", "origin", branch, "--force")
+	return g.gitCmd(dir, "reset", "--hard", "upstream/"+branch)
 }
 
 // AddRemote adds a remote repository at the given URL and with the given name
