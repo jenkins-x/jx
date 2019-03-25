@@ -121,20 +121,20 @@ func NewCmdPreview(commonOpts *CommonOptions) *cobra.Command {
 	return cmd
 }
 
-func (options *PreviewOptions) addPreviewOptions(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&options.Name, kube.OptionName, "n", "", "The Environment resource name. Must follow the Kubernetes name conventions like Services, Namespaces")
-	cmd.Flags().StringVarP(&options.Label, "label", "l", "", "The Environment label which is a descriptive string like 'Production' or 'Staging'")
-	cmd.Flags().StringVarP(&options.Namespace, kube.OptionNamespace, "", "", "The Kubernetes namespace for the Environment")
-	cmd.Flags().StringVarP(&options.DevNamespace, "dev-namespace", "", "", "The Developer namespace where the preview command should run")
-	cmd.Flags().StringVarP(&options.Cluster, "cluster", "c", "", "The Kubernetes cluster for the Environment. If blank and a namespace is specified assumes the current cluster")
-	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The source directory used to detect the git source URL and reference")
-	cmd.Flags().StringVarP(&options.PullRequest, "pr", "", "", "The Pull Request Name (e.g. 'PR-23' or just '23'")
-	cmd.Flags().StringVarP(&options.PullRequestURL, "pr-url", "", "", "The Pull Request URL")
-	cmd.Flags().StringVarP(&options.SourceURL, "source-url", "s", "", "The source code git URL")
-	cmd.Flags().StringVarP(&options.SourceRef, "source-ref", "", "", "The source code git ref (branch/sha)")
-	cmd.Flags().StringVarP(&options.PostPreviewJobTimeout, optionPostPreviewJobTimeout, "", "2h", "The duration before we consider the post preview Jobs failed")
-	cmd.Flags().StringVarP(&options.PostPreviewJobPollTime, optionPostPreviewJobPollTime, "", "10s", "The amount of time between polls for the post preview Job status")
-	cmd.Flags().BoolVarP(&options.NoComment, "no-comment", "", false, "Disables commenting on the Pull Request after preview is created.")
+func (o *PreviewOptions) addPreviewOptions(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&o.Name, kube.OptionName, "n", "", "The Environment resource name. Must follow the Kubernetes name conventions like Services, Namespaces")
+	cmd.Flags().StringVarP(&o.Label, "label", "l", "", "The Environment label which is a descriptive string like 'Production' or 'Staging'")
+	cmd.Flags().StringVarP(&o.Namespace, kube.OptionNamespace, "", "", "The Kubernetes namespace for the Environment")
+	cmd.Flags().StringVarP(&o.DevNamespace, "dev-namespace", "", "", "The Developer namespace where the preview command should run")
+	cmd.Flags().StringVarP(&o.Cluster, "cluster", "c", "", "The Kubernetes cluster for the Environment. If blank and a namespace is specified assumes the current cluster")
+	cmd.Flags().StringVarP(&o.Dir, "dir", "", "", "The source directory used to detect the git source URL and reference")
+	cmd.Flags().StringVarP(&o.PullRequest, "pr", "", "", "The Pull Request Name (e.g. 'PR-23' or just '23'")
+	cmd.Flags().StringVarP(&o.PullRequestURL, "pr-url", "", "", "The Pull Request URL")
+	cmd.Flags().StringVarP(&o.SourceURL, "source-url", "s", "", "The source code git URL")
+	cmd.Flags().StringVarP(&o.SourceRef, "source-ref", "", "", "The source code git ref (branch/sha)")
+	cmd.Flags().StringVarP(&o.PostPreviewJobTimeout, optionPostPreviewJobTimeout, "", "2h", "The duration before we consider the post preview Jobs failed")
+	cmd.Flags().StringVarP(&o.PostPreviewJobPollTime, optionPostPreviewJobPollTime, "", "10s", "The amount of time between polls for the post preview Job status")
+	cmd.Flags().BoolVarP(&o.NoComment, "no-comment", "", false, "Disables commenting on the Pull Request after preview is created.")
 }
 
 // Run implements the command
@@ -783,7 +783,7 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 
 // GetPreviewValuesConfig returns the PreviewValuesConfig to use as extraValues for helm
 func (o *PreviewOptions) GetPreviewValuesConfig(domain string) (*config.PreviewValuesConfig, error) {
-	repository, err := getImageName()
+	repository, err := o.getImageName()
 	if err != nil {
 		return nil, err
 	}
@@ -836,7 +836,7 @@ func getContainerRegistry() (string, error) {
 	return fmt.Sprintf("%s:%s", registryHost, registryPort), nil
 }
 
-func getImageName() (string, error) {
+func (o *PreviewOptions) getImageName() (string, error) {
 	containerRegistry, err := getContainerRegistry()
 	if err != nil {
 		return "", err
@@ -858,7 +858,7 @@ func getImageName() (string, error) {
 		return "", fmt.Errorf("no %s environment variable found", APP_NAME)
 	}
 
-	dockerRegistryOrg := os.Getenv(DOCKER_REGISTRY_ORG)
+	dockerRegistryOrg := o.dockerRegistryOrg(o.GitInfo)
 	if dockerRegistryOrg == "" {
 		dockerRegistryOrg = organisation
 	}

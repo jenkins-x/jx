@@ -40,8 +40,8 @@ func TestGlobFiles(t *testing.T) {
 	t.Logf("Found %d files\n", len(files))
 
 	expected := []string{
-		"test_data/glob_test/artifacts/goodbye.txt",
-		"test_data/glob_test/hello.txt",
+		filepath.Join("test_data", "glob_test", "artifacts", "goodbye.txt"),
+		filepath.Join("test_data", "glob_test", "hello.txt"),
 	}
 
 	assert.Equal(t, expected, files, "globbed files")

@@ -220,8 +220,13 @@ func (o *StepTagOptions) updateChartValues(version string, chartsDir string) err
 }
 
 func (o *StepTagOptions) defaultChartValueRepository() string {
+	gitInfo, err := o.FindGitInfo(o.Flags.ChartsDir)
+	if err != nil {
+		log.Warnf("failed to find git repository: %s\n", err.Error())
+	}
+
 	dockerRegistry := o.dockerRegistry()
-	dockerRegistryOrg := os.Getenv("DOCKER_REGISTRY_ORG")
+	dockerRegistryOrg := o.dockerRegistryOrg(gitInfo)
 	if dockerRegistryOrg == "" {
 		dockerRegistryOrg = os.Getenv("ORG")
 	}
@@ -232,18 +237,11 @@ func (o *StepTagOptions) defaultChartValueRepository() string {
 	if appName == "" {
 		appName = os.Getenv("REPO_NAME")
 	}
-	if dockerRegistryOrg == "" || appName == "" {
-		gitInfo, err := o.FindGitInfo(o.Flags.ChartsDir)
-		if err != nil {
-			log.Warnf("failed to find git repository: %s\n", err.Error())
-		} else {
-			if dockerRegistryOrg == "" {
-				dockerRegistryOrg = gitInfo.Organisation
-			}
-			if appName == "" {
-				appName = gitInfo.Name
-			}
-		}
+	if dockerRegistryOrg == "" && gitInfo != nil {
+		dockerRegistryOrg = gitInfo.Organisation
+	}
+	if appName == "" && gitInfo != nil {
+		appName = gitInfo.Name
 	}
 	if dockerRegistry != "" && dockerRegistryOrg != "" && appName != "" {
 		return dockerRegistry + "/" + dockerRegistryOrg + "/" + appName
