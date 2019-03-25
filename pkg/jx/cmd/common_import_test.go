@@ -52,8 +52,9 @@ func TestImportProject(t *testing.T) {
 	donec := make(chan struct{})
 	go func() {
 		defer close(donec)
-		console.ExpectString("Do you wish to use jx-testing-user as the user name for the Jenkins Pipeline")
-		console.SendLine("Y")
+		/*		console.ExpectString("Do you wish to use jx-testing-user as the user name for the Jenkins Pipeline")
+				console.SendLine("Y")
+		*/
 		console.ExpectEOF()
 	}()
 

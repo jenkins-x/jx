@@ -947,7 +947,7 @@ func (options *InstallOptions) configureAndInstallProw(namespace string, gitOpsD
 			return errors.Wrap(err, "retrieving the pipeline Git Auth")
 		}
 		options.OAUTHToken = pipelineUser.ApiToken
-		err = options.installProw(options.Flags.Tekton, options.Flags.GitOpsMode, gitOpsDir, gitOpsEnvDir)
+		err = options.installProw(options.Flags.Tekton, options.Flags.GitOpsMode, gitOpsDir, gitOpsEnvDir, pipelineUser.Username)
 		if err != nil {
 			errors.Wrap(err, "installing Prow")
 		}
@@ -1228,8 +1228,14 @@ func (options *InstallOptions) configureGitAuth() error {
 		}
 	}
 
-	message = fmt.Sprintf("pipelines Git user for %s server:", pipelineAuthServer.Label())
-	pipelineUserAuth, err := authConfig.PickServerUserAuth(authServer, message, options.BatchMode, "", options.In, options.Out, options.Err)
+	// lets default the values from the CLI arguments
+	if options.GitRepositoryOptions.Username != "" {
+		authConfig.PipeLineUsername = options.GitRepositoryOptions.Username
+	}
+	if options.GitRepositoryOptions.ServerURL != "" {
+		authConfig.PipeLineServer = options.GitRepositoryOptions.ServerURL
+	}
+	pipelineUserAuth, err := options.PickPipelineUserAuth(authConfig, authServer)
 	if err != nil {
 		return errors.Wrapf(err, "selecting the pipeline user for git server %s", authServer.Label())
 	}
@@ -2599,19 +2605,6 @@ func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 		}
 	}
 	return wrkDir, nil
-}
-
-func (options *InstallOptions) getPipelineGitAuth() (*auth.AuthServer, *auth.UserAuth, error) {
-	authConfigSvc, err := options.CreateGitAuthConfigService()
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to create the git auth config service")
-	}
-	authConfig := authConfigSvc.Config()
-	if authConfig == nil {
-		return nil, nil, errors.New("empty Git config")
-	}
-	server, user := authConfig.GetPipelineAuth()
-	return server, user, nil
 }
 
 func (options *InstallOptions) waitForInstallToBeReady(ns string) error {

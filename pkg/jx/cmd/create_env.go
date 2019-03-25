@@ -310,7 +310,7 @@ func (o *CreateEnvOptions) RegisterEnvironment(env *v1.Environment, gitProvider 
 				u = gitInfo.Host
 			}
 		}
-		user, err := config.PickServerUserAuth(server, "user name for the Pipeline", o.BatchMode, "", o.In, o.Out, o.Err)
+		user, err := o.PickPipelineUserAuth(config, server)
 		if err != nil {
 			return err
 		}

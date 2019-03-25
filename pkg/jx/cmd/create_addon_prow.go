@@ -90,7 +90,16 @@ func (o *CreateAddonProwOptions) Run() error {
 
 	isGitOps, _ := o.GetDevEnv()
 
-	err = o.installProw(o.Tekton, isGitOps, "", "")
+	_, pipelineUser, err := o.getPipelineGitAuth()
+	if err != nil {
+		return errors.Wrap(err, "retrieving the pipeline Git Auth")
+	}
+	pipelineUserName := ""
+	if pipelineUser != nil {
+		pipelineUserName = pipelineUser.Username
+	}
+
+	err = o.installProw(o.Tekton, isGitOps, "", "", pipelineUserName)
 	if err != nil {
 		return fmt.Errorf("failed to install Prow: %v", err)
 	}

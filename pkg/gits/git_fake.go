@@ -191,6 +191,11 @@ func (g *GitFake) PullUpstream(dir string) error {
 	return nil
 }
 
+// ResetToUpstream resets the given branch to the upstream version
+func (g *GitFake) ResetToUpstream(dir string, branch string) error {
+	return nil
+}
+
 // AddRemote adds a remote
 func (g *GitFake) AddRemote(dir string, name string, url string) error {
 	r := GitRemote{

@@ -116,8 +116,9 @@ func TestCreateEnvRun(t *testing.T) {
 		console.SendLine("https://github.com/jx-testing-user/testing-env")
 		console.ExpectString("Git branch for the Environment source code:")
 		console.SendLine("master")
-		console.ExpectString("Do you wish to use jx-testing-user as the user name for the Jenkins Pipeline")
-		console.SendLine("Y")
+		/*		console.ExpectString("Do you wish to use jx-testing-user as the user name for the Jenkins Pipeline")
+				console.SendLine("Y")
+		*/
 		console.ExpectEOF()
 	}()
 

@@ -70,9 +70,11 @@ func CreateAuthConfigService() auth.ConfigService {
 		Name:        "jx-testing-server",
 	}
 	authConfig := auth.AuthConfig{
-		Servers:         []*auth.AuthServer{&authServer},
-		DefaultUsername: userAuth.Username,
-		CurrentServer:   authServer.URL,
+		Servers:          []*auth.AuthServer{&authServer},
+		DefaultUsername:  userAuth.Username,
+		CurrentServer:    authServer.URL,
+		PipeLineUsername: "jx-pipeline-user",
+		PipeLineServer:   "https://github.com",
 	}
 	saver := auth_test.NewMockConfigSaver()
 	pegomock.When(saver.LoadConfig()).ThenReturn(&authConfig, nil)

@@ -31,6 +31,7 @@ type PipelineRunInfo struct {
 	Organisation      string
 	Repository        string
 	Branch            string
+	Context           string
 	Build             string
 	BuildNumber       int
 	Pipeline          string
@@ -220,6 +221,9 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 		return nil, nil
 	}
 
+	if pod.Labels != nil {
+		pri.Context = pod.Labels["context"]
+	}
 	containers, _, isInit := kube.GetContainersWithStatusAndIsInit(pod)
 	for _, container := range containers {
 		if strings.HasPrefix(container.Name, "build-step-git-source") {
