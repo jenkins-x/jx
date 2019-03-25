@@ -550,6 +550,9 @@ func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tek
 
 	for _, build := range buildInfos {
 		name := build.Pipeline + " #" + build.Build
+		if build.Context != "" {
+			name += " " + build.Context
+		}
 		names = append(names, name)
 		buildMap[name] = build
 		pipelineMap[build.Pipeline] = build

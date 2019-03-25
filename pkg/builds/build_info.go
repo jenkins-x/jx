@@ -25,6 +25,7 @@ type BuildPodInfo struct {
 	Repository        string
 	Branch            string
 	Build             string
+	Context           string
 	BuildNumber       int
 	Pipeline          string
 	LastCommitSHA     string
@@ -160,6 +161,9 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 		LastCommitMessage: lastCommitMessage,
 		LastCommitURL:     lastCommitURL,
 		CreatedTime:       pod.CreationTimestamp.Time,
+	}
+	if pod.Labels != nil {
+		answer.Context = pod.Labels["context"]
 	}
 	if isInit && len(containers) > 2 {
 		answer.FirstStepImage = containers[2].Image
