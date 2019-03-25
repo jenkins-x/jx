@@ -202,7 +202,7 @@ func TestAddAppWithSecrets(t *testing.T) {
 		pegomock.EqString(kube.DefaultChartMuseumURL),
 		pegomock.AnyString(),
 		pegomock.AnyString(),
-		false)).
+		pegomock.AnyBool())).
 		Then(func(params []pegomock.Param) pegomock.ReturnValues {
 			// These assertion must happen inside the UpgradeChart function otherwise the chart dir will have been
 			// deleted
@@ -262,7 +262,8 @@ func TestAddAppWithSecrets(t *testing.T) {
 			pegomock.AnyStringSlice(),
 			pegomock.EqString(kube.DefaultChartMuseumURL),
 			pegomock.AnyString(),
-			pegomock.AnyString())
+			pegomock.AnyString(),
+			pegomock.AnyBool())
 }
 
 func TestAddAppWithDefaults(t *testing.T) {
@@ -347,7 +348,7 @@ func TestAddAppWithDefaults(t *testing.T) {
 		pegomock.EqString(kube.DefaultChartMuseumURL),
 		pegomock.AnyString(),
 		pegomock.AnyString(),
-		false)).
+		pegomock.AnyBool())).
 		Then(func(params []pegomock.Param) pegomock.ReturnValues {
 			// These assertion must happen inside the UpgradeChart function otherwise the chart dir will have been
 			// deleted
@@ -392,7 +393,8 @@ func TestAddAppWithDefaults(t *testing.T) {
 			pegomock.AnyStringSlice(),
 			pegomock.EqString(kube.DefaultChartMuseumURL),
 			pegomock.AnyString(),
-			pegomock.AnyString())
+			pegomock.AnyString(),
+			pegomock.AnyBool())
 }
 
 func TestStashValues(t *testing.T) {
@@ -624,7 +626,8 @@ func TestAddApp(t *testing.T) {
 			pegomock.AnyStringSlice(),
 			pegomock.EqString(kube.DefaultChartMuseumURL),
 			pegomock.AnyString(),
-			pegomock.AnyString())
+			pegomock.AnyString(),
+			pegomock.AnyBool())
 
 	// Verify the annotation
 }
@@ -686,7 +689,8 @@ func TestAddLatestApp(t *testing.T) {
 			pegomock.AnyStringSlice(),
 			pegomock.EqString(kube.DefaultChartMuseumURL),
 			pegomock.AnyString(),
-			pegomock.AnyString())
+			pegomock.AnyString(),
+			pegomock.AnyBool())
 }
 
 func TestAddAppWithValuesFileForGitOps(t *testing.T) {
