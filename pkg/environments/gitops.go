@@ -300,11 +300,6 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 		if err != nil {
 			return "", "", nil, fork, errors.Wrapf(err, "setting remote upstream %q in forked environment repo", gitURL)
 		}
-		err = git.ResetToUpstream(dir, base)
-		if err != nil {
-			return "", "", nil, fork, errors.Wrapf(err, "resetting forked branch %s to upstream version", base)
-		}
-
 		if o.ConfigGitFn != nil {
 			err = o.ConfigGitFn(dir, gitInfo, o.Gitter)
 			if err != nil {
@@ -317,6 +312,11 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 				return "", "", nil, fork, err
 			}
 		}
+		err = git.ResetToUpstream(dir, base)
+		if err != nil {
+			return "", "", nil, fork, errors.Wrapf(err, "resetting forked branch %s to upstream version", base)
+		}
+
 	} else {
 		// now lets clone the fork and pull it...
 		exists, err := util.FileExists(dir)
