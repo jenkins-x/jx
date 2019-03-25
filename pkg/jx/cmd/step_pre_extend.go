@@ -136,7 +136,7 @@ func (o *StepPreExtendOptions) Run() error {
 					a.Spec.PostExtensions = append(a.Spec.PostExtensions, result...)
 				}
 			}
-			a, err = client.JenkinsV1().PipelineActivities(ns).Update(a)
+			a, err = client.JenkinsV1().PipelineActivities(ns).PatchUpdate(a)
 			if err != nil {
 				return err
 			}

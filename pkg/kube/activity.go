@@ -221,7 +221,7 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 		return answer, true, err
 	} else {
 		if !reflect.DeepEqual(&a.Spec, &oldSpec) || !reflect.DeepEqual(&a.Labels, &oldLabels) {
-			answer, err := activitiesClient.Update(a)
+			answer, err := activitiesClient.PatchUpdate(a)
 			return answer, false, err
 		}
 		return a, false, nil
@@ -528,7 +528,7 @@ func (k *PromoteStepActivityKey) OnPromotePullRequest(jxClient versioned.Interfa
 	p2 := *p
 
 	if added || !reflect.DeepEqual(p1, p2) {
-		_, err = activities.Update(a)
+		_, err = activities.PatchUpdate(a)
 	}
 	return err
 }
@@ -561,7 +561,7 @@ func (k *PromoteStepActivityKey) OnPromoteUpdate(jxClient versioned.Interface, n
 	p2 := asYaml(a)
 
 	if added || p1 == "" || p1 != p2 {
-		_, err = activities.Update(a)
+		_, err = activities.PatchUpdate(a)
 	}
 	return err
 }

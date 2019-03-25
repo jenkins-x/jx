@@ -285,7 +285,7 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 					if o.Verbose {
 						log.Infof("pod watcher: Adding lastCommitSha: %s and gitUrl: %s to %s\n", act.Spec.LastCommitSHA, act.Spec.GitURL, pipelineActName)
 					}
-					_, err := jxClient.JenkinsV1().PipelineActivities(ns).Update(act)
+					_, err := jxClient.JenkinsV1().PipelineActivities(ns).PatchUpdate(act)
 					if err != nil {
 						// We can safely return this error as it will just get logged
 						return err
@@ -412,7 +412,7 @@ func (o *ControllerCommitStatusOptions) UpsertCommitStatusCheck(name string, pip
 		} else if insert {
 			status.Spec.Items = append(status.Spec.Items, statusDetails)
 			log.Infof("pod watcher: Adding commit status for pipeline activity %s\n", pipelineActName)
-			_, err := jxClient.JenkinsV1().CommitStatuses(ns).Update(status)
+			_, err := jxClient.JenkinsV1().CommitStatuses(ns).PatchUpdate(status)
 			if err != nil {
 				return err
 			}

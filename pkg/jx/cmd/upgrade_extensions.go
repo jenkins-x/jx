@@ -319,7 +319,7 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension *jenkinsv1.Extensio
 		}
 		if existingVersion.LT(newVersion) {
 			existing.Spec = *extension
-			_, err := exts.Update(&existing)
+			_, err := exts.PatchUpdate(&existing)
 			if err != nil {
 				return result, err
 			}

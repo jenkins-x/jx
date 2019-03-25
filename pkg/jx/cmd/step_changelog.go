@@ -504,7 +504,8 @@ func (o *StepChangelogOptions) Run() error {
 		}
 		a, created, err := key.GetOrCreate(jxClient, o.currentNamespace)
 		if err == nil && a != nil && !created {
-			_, err = activities.Update(a)
+			// TODO issue #3314 check out
+			_, err = activities.PatchUpdate(a)
 			if err != nil {
 				log.Warnf("Failed to update PipelineActivities %s: %s\n", name, err)
 			} else {
