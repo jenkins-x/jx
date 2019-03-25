@@ -153,7 +153,7 @@ func (o *CommonOptions) defaultModifyEnvironment(name string, callback func(env 
 		}
 	} else {
 		log.Infof("Updating %s Environment in namespace %s\n", env.Name, ns)
-		_, err = environmentInterface.Update(env)
+		_, err = environmentInterface.PatchUpdate(env)
 		if err != nil {
 			return errors.Wrapf(err, "failed to update Environment %s in namespace %s", name, ns)
 		}
@@ -281,7 +281,7 @@ func (o *CommonOptions) ModifyTeam(adminNs string, teamName string, callback fun
 		}
 	} else {
 		if !reflect.DeepEqual(&original, team) {
-			_, err = teamInterface.Update(team)
+			_, err = teamInterface.PatchUpdate(team)
 			if err != nil {
 				return errors.Wrapf(err, "failed update Team %s", teamName)
 			}

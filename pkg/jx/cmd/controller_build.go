@@ -207,7 +207,7 @@ func (o *ControllerBuildOptions) handleStandalonePod(pod *corev1.Pod, kubeClient
 						if o.Verbose {
 							log.Infof("updating PipelineActivity %s\n", a.Name)
 						}
-						_, err := activities.Update(a)
+						_, err := activities.PatchUpdate(a)
 						if err != nil {
 							log.Warnf("Failed to update PipelineActivity %s due to: %s\n", a.Name, err.Error())
 							name = a.Name
@@ -280,7 +280,7 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 								if o.Verbose {
 									log.Infof("updating PipelineActivity %s\n", a.Name)
 								}
-								_, err := activities.Update(a)
+								_, err := activities.PatchUpdate(a)
 								if err != nil {
 									log.Warnf("Failed to update PipelineActivity %s due to: %s\n", a.Name, err.Error())
 									name = a.Name
