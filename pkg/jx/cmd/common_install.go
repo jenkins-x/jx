@@ -1517,7 +1517,7 @@ func GetSafeUsername(username string) string {
 	return username
 }
 
-func (o *CommonOptions) installProw(useTekton bool, isGitOps bool, gitOpsDir string, gitOpsEnvDir string) error {
+func (o *CommonOptions) installProw(useTekton bool, isGitOps bool, gitOpsDir string, gitOpsEnvDir string, gitUsername string) error {
 	if o.ReleaseName == "" {
 		o.ReleaseName = kube.DefaultProwReleaseName
 	}
@@ -1558,6 +1558,9 @@ func (o *CommonOptions) installProw(useTekton bool, isGitOps bool, gitOpsDir str
 			return err
 		}
 	}
+	if gitUsername == "" {
+		gitUsername = o.Username
+	}
 
 	client, err := o.KubeClient()
 	if err != nil {
@@ -1595,7 +1598,7 @@ func (o *CommonOptions) installProw(useTekton bool, isGitOps bool, gitOpsDir str
 
 	if useTekton {
 		setValues = append(setValues,
-			"auth.git.username="+o.Username,
+			"auth.git.username="+gitUsername,
 			"buildnum.enabled=false",
 			"pipelinerunner.enabled=true")
 
@@ -1611,8 +1614,8 @@ func (o *CommonOptions) installProw(useTekton bool, isGitOps bool, gitOpsDir str
 		}
 
 	} else {
-		setValues = append(setValues, "build.auth.git.username="+o.Username)
-		ksecretValues = append(ksecretValues, "build.auth.git.username="+o.Username, "build.auth.git.password="+o.OAUTHToken)
+		setValues = append(setValues, "build.auth.git.username="+gitUsername)
+		ksecretValues = append(ksecretValues, "build.auth.git.username="+gitUsername, "build.auth.git.password="+o.OAUTHToken)
 		err = o.retry(2, time.Second, func() (err error) {
 			return o.installChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, kube.DefaultKnativeBuildReleaseName,
 				kube.ChartKnativeBuild, "knativebuild", "", devNamespace, true, setValues, ksecretValues, nil, "")
@@ -1624,7 +1627,7 @@ func (o *CommonOptions) installProw(useTekton bool, isGitOps bool, gitOpsDir str
 
 	log.Infof("\nInstalling Prow into namespace %s\n", util.ColorInfo(devNamespace))
 
-	secretValues := []string{"user=" + o.Username, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
+	secretValues := []string{"user=" + gitUsername, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
 	err = o.retry(2, time.Second, func() (err error) {
 		return o.installChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, o.ReleaseName,
 			o.Chart, "prow", o.Version, devNamespace, true, setValues, secretValues, nil, "")

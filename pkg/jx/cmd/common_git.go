@@ -399,3 +399,16 @@ func (o *CommonOptions) dockerRegistry() string {
 	}
 	return dockerRegistry
 }
+
+func (o *CommonOptions) getPipelineGitAuth() (*auth.AuthServer, *auth.UserAuth, error) {
+	authConfigSvc, err := o.CreateGitAuthConfigService()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to create the git auth config service")
+	}
+	authConfig := authConfigSvc.Config()
+	if authConfig == nil {
+		return nil, nil, errors.New("empty Git config")
+	}
+	server, user := authConfig.GetPipelineAuth()
+	return server, user, nil
+}
