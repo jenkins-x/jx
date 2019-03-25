@@ -276,7 +276,7 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 								}
 								log.Warnf("Failed to %s PipelineActivities for build %s: %s\n", operation, pri.Name, err)
 							}
-							if o.updatePipelineActivityForRun(kubeClient, ns, a, pri) {
+							if o.updatePipelineActivityForRun(kubeClient, ns, a, pri, pod) {
 								if o.Verbose {
 									log.Infof("updating PipelineActivity %s\n", a.Name)
 								}
@@ -481,7 +481,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 	return originYaml != newYaml
 }
 
-func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kubernetes.Interface, ns string, activity *v1.PipelineActivity, pri *tekton.PipelineRunInfo) bool {
+func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kubernetes.Interface, ns string, activity *v1.PipelineActivity, pri *tekton.PipelineRunInfo, pod *corev1.Pod) bool {
 	originYaml := toYamlString(activity)
 	for _, stage := range pri.Stages {
 		updateForStage(stage, activity)
@@ -538,7 +538,41 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 		if !biggestFinishedAt.IsZero() {
 			spec.CompletedTimestamp = &biggestFinishedAt
 		}
-		// TODO: Not yet sure how to handle BuildLogsURL
+
+		// lets ensure we overwrite any canonical jenkins build URL thats generated automatically
+		if spec.BuildLogsURL == "" {
+			podInterface := kubeClient.CoreV1().Pods(ns)
+
+			envName := kube.LabelValueDevEnvironment
+			devEnv := o.EnvironmentCache.Item(envName)
+			var location *v1.StorageLocation
+			settings := &devEnv.Spec.TeamSettings
+			if devEnv == nil {
+				log.Warnf("No Environment %s found\n", envName)
+			} else {
+				location = settings.StorageLocationOrDefault(kube.ClassificationLogs)
+			}
+			if location == nil {
+				location = &v1.StorageLocation{}
+			}
+			if location.IsEmpty() {
+				location.GitURL = activity.Spec.GitURL
+				if location.GitURL == "" {
+					log.Warnf("No GitURL on PipelineActivity %s\n", activity.Name)
+				}
+			}
+
+			logURL, err := o.generateBuildLogURL(podInterface, ns, activity, pri.PipelineRun, pod, location, settings, o.InitGitCredentials)
+			if err != nil {
+				if o.Verbose {
+					log.Warnf("%s\n", err)
+				}
+			}
+			if logURL != "" {
+				spec.BuildLogsURL = logURL
+			}
+		}
+
 	} else {
 		if running {
 			spec.Status = v1.ActivityStatusTypeRunning
