@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-
 	"github.com/jenkins-x/jx/pkg/log"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -123,4 +122,32 @@ func (o *CommonOptions) LoadPipelineSecrets(kind, serviceKind string) (*corev1.S
 		LabelSelector: selector,
 	}
 	return kubeClient.CoreV1().Secrets(ns).List(opts)
+}
+
+// PickPipelineUserAuth returns the user auth for the pipeline user
+func (o *CommonOptions) PickPipelineUserAuth(config *auth.AuthConfig, server *auth.AuthServer) (*auth.UserAuth, error) {
+	userName := config.PipeLineUsername
+	if userName != "" {
+		userAuth := config.GetOrCreateUserAuth(server.URL, userName)
+		if userAuth != nil {
+			return userAuth, nil
+		}
+	}
+	var userAuth *auth.UserAuth
+	var err error
+	url := server.URL
+	userAuths := config.FindUserAuths(url)
+	if len(userAuths) > 1 {
+		userAuth, err = config.PickServerUserAuth(server, "user name for the Pipeline", o.BatchMode, "", o.In, o.Out, o.Err)
+		if err != nil {
+			return userAuth, err
+		}
+	}
+	if userAuth != nil {
+		config.PipeLineUsername = userAuth.Username
+	} else {
+		// lets create an empty one for now
+		userAuth = &auth.UserAuth{}
+	}
+	return userAuth, nil
 }

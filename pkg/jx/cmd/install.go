@@ -1228,8 +1228,14 @@ func (options *InstallOptions) configureGitAuth() error {
 		}
 	}
 
-	message = fmt.Sprintf("pipelines Git user for %s server:", pipelineAuthServer.Label())
-	pipelineUserAuth, err := authConfig.PickServerUserAuth(authServer, message, options.BatchMode, "", options.In, options.Out, options.Err)
+	// lets default the values from the CLI arguments
+	if options.GitRepositoryOptions.Username != "" {
+		authConfig.PipeLineUsername = options.GitRepositoryOptions.Username
+	}
+	if options.GitRepositoryOptions.ServerURL != "" {
+		authConfig.PipeLineServer = options.GitRepositoryOptions.ServerURL
+	}
+	pipelineUserAuth, err := options.PickPipelineUserAuth(authConfig, authServer)
 	if err != nil {
 		return errors.Wrapf(err, "selecting the pipeline user for git server %s", authServer.Label())
 	}
