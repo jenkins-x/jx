@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -507,6 +508,7 @@ func (f *factory) CreateJXClient() (versioned.Interface, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
+
 	kubeConfig, _, err := f.kubeConfig.LoadConfig()
 	if err != nil {
 		return nil, "", err
@@ -672,6 +674,14 @@ func (f *factory) CreateKubeConfig() (*rest.Config, error) {
 	user := f.getImpersonateUser()
 	if config != nil && user != "" && config.Impersonate.UserName == "" {
 		config.Impersonate.UserName = user
+	}
+
+	// for testing purposes one can enable tracing of Kube REST API calls
+	trace := os.Getenv("TRACE_KUBE_API")
+	if trace == "1" || trace == "on" {
+		config.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
+			return &Tracer{rt}
+		}
 	}
 	return config, nil
 }
