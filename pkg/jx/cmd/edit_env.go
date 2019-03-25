@@ -153,7 +153,7 @@ func (o *EditEnvOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	_, err = jxClient.JenkinsV1().Environments(ns).Update(env)
+	_, err = jxClient.JenkinsV1().Environments(ns).PatchUpdate(env)
 	if err != nil {
 		return err
 	}

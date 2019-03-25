@@ -18,7 +18,7 @@ func GetOrCreateRelease(jxClient versioned.Interface, ns string, release *v1.Rel
 	old, err := releaseInterface.Get(name, metav1.GetOptions{})
 	if err == nil {
 		old.Spec = release.Spec
-		answer, err := releaseInterface.Update(old)
+		answer, err := releaseInterface.PatchUpdate(old)
 		if err != nil {
 			return answer, errors.Wrapf(err, "Failed to update Release %s in namespace %s", name, ns)
 		}

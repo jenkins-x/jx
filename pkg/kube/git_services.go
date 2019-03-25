@@ -34,7 +34,7 @@ func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, k
 			if oldKind != kind {
 				fmt.Fprintf(out, "Updating GitService %s as the kind has changed from %s to %s\n", gs.Name, oldKind, kind)
 				gs.Spec.GitKind = kind
-				_, err = gitServices.Update(&gs)
+				_, err = gitServices.PatchUpdate(&gs)
 				if err != nil {
 					return fmt.Errorf("Failed to update kind on GitService with name %s: %s", gs.Name, err)
 				}
@@ -76,7 +76,7 @@ func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, k
 			current.Spec.URL = gitSvc.Spec.URL
 			current.Spec.GitKind = gitSvc.Spec.GitKind
 
-			_, err = gitServices.Update(current)
+			_, err = gitServices.PatchUpdate(current)
 			if err != nil {
 				return fmt.Errorf("Failed to update GitService with name %s: %s", gitSvc.Name, err)
 			}
