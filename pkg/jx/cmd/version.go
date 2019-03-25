@@ -171,6 +171,7 @@ func (o *VersionOptions) Run() error {
 	return nil
 }
 
+// ShouldUpdate checks if CLI version should be updated
 func (o *VersionOptions) ShouldUpdate(newVersion semver.Version) (bool, error) {
 	currentVersion, err := version.GetSemverVersion()
 	if err != nil {
