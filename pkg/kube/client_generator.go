@@ -342,7 +342,7 @@ func GetBoilerplateFile(fileName string, verbose bool) (string, error) {
 
 // GenerateSchema calls the generated schema writer and then loads the output and also writes out a yaml version. The
 // outputDir is the base directory for writing the schemas to (they get put in the openapi-spec subdir),
-// inputPackage is the packge in which generated code lives, inputBase is the path to the module,
+// inputPackage is the package in which generated code lives, inputBase is the path to the module,
 // title and version are used in the OpenAPI spec files.
 func GenerateSchema(outputDir string, inputPackage string, inputBase string, title string, version string) error {
 	schemaWriterSrc := filepath.Join(inputPackage, OpenApiDir, SchemaWriterSrcFileName)

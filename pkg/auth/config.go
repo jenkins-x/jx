@@ -15,7 +15,7 @@ const (
 	UserKindPipeline UserKind = "pipeline"
 )
 
-//User store the auth infomation for a user
+//User store the auth information for a user
 type User struct {
 	Username    string   `json:"username"`
 	ApiToken    string   `json:"apitoken"`

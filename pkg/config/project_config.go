@@ -81,7 +81,7 @@ type BranchBuild struct {
 	// an environment variable defined on that step
 	EnvFrom []corev1.EnvFromSource `json:"envFrom,omitempty"`
 
-	// List of environment variables to add to each step if there is not already a environemnt variable of that name
+	// List of environment variables to add to each step if there is not already a environment variable of that name
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
 	ExcludePodTemplateEnv     bool `json:"excludePodTemplateEnv,omitempty"`

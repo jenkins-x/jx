@@ -205,7 +205,7 @@ func GenerateQuestions(schema []byte, batchMode bool, askExisting bool, existing
 		AutoAcceptDefaults:  batchMode,
 		AskExisting:         askExisting,
 	}
-	// For adding an app there are by defintion no existing values,
+	// For adding an app there are by definition no existing values,
 	// and whether we auto-accept defaults is determined by batch mode
 	values, err := schemaOptions.GenerateValues(schema, existing)
 	if err != nil {

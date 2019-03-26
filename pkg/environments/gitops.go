@@ -455,7 +455,7 @@ func CreateUpgradeRequirementsFn(all bool, chartName string, alias string, versi
 // an alias for the chart, the version of the chart, the repo to load the chart from,
 // valuesFiles (an array of paths to values.yaml files to add). The chartDir is the unpacked chart being added,
 // which is used to add extra metadata about the chart (e.g. the charts readme, the release.yaml, the git repo url and
-// the release notes) - if this points to a non-existant directory it will be ignored.
+// the release notes) - if this points to a non-existent directory it will be ignored.
 func CreateAddRequirementFn(chartName string, alias string, version string, repo string,
 	valuesFiles *ValuesFiles, chartDir string, verbose bool, helmer helm.Helmer) ModifyChartFn {
 	return func(requirements *helm.Requirements, chart *helmchart.Metadata, values map[string]interface{},

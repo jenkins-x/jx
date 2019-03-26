@@ -11,14 +11,16 @@ fi
 
 golangci-lint run \
 	--no-config \
-	-E goconst \
 	-E goimports \
 	-E gocritic \
-	-E golint \
 	-E interfacer \
 	-E maligned \
 	-E misspell \
 	-E unconvert \
 	-E unparam \
 	-D errcheck \
+    -D ineffassign \
   --skip-dirs vendor
+
+# -E goconst \
+# -E golint \
