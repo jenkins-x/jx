@@ -12,8 +12,6 @@ fi
 golangci-lint run \
 	--no-config \
 	-E goimports \
-	-E gocritic \
-	-E interfacer \
 	-E maligned \
 	-E misspell \
 	-E unconvert \
@@ -28,3 +26,5 @@ golangci-lint run \
 # -E golint
 # -E gosec
 # -E unparam
+# -E gocritic
+# -E interfacer
