@@ -1,6 +1,6 @@
 #!/bin/bash
 
-make generate-openapi
+GO111MODULE=on make generate-openapi
 
 readonly DOCS_CHANGES=`git diff --name-status master | grep "docs/openapi" | wc -l`
 
