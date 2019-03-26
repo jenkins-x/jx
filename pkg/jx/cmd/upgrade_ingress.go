@@ -502,6 +502,10 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 				}
 			}
 		}
+		o.IngressConfig.UrlTemplate, err = util.PickValue("UrlTemplate:", o.IngressConfig.UrlTemplate, true, "", o.In, o.Out, o.Err)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
