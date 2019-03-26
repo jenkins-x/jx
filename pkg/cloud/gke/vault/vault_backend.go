@@ -83,9 +83,9 @@ func CreateGCPServiceAccount(kubeClient kubernetes.Interface, vaultName, namespa
 }
 
 // CreateBucket Creates a bucket in GKE to store the backend (encrypted) data for vault
-func CreateBucket(vaultName, clusterName, projectId, zone string, recreate bool, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
+func CreateBucket(vaultName, clusterName, projectID, zone string, recreate bool, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
 	bucketName := BucketName(vaultName)
-	exists, err := gke.BucketExists(projectId, bucketName)
+	exists, err := gke.BucketExists(projectID, bucketName)
 	if err != nil {
 		return "", errors.Wrap(err, "checking if Vault GCS bucket exists")
 	}
@@ -111,7 +111,7 @@ func CreateBucket(vaultName, clusterName, projectId, zone string, recreate bool,
 		return "", errors.New("GKE zone must be provided in 'gke-zone' option")
 	}
 	region := gke.GetRegionFromZone(zone)
-	err = gke.CreateBucket(projectId, bucketName, region)
+	err = gke.CreateBucket(projectID, bucketName, region)
 	if err != nil {
 		return "", errors.Wrap(err, "creating Vault GCS bucket")
 	}
