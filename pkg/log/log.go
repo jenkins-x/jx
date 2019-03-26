@@ -117,7 +117,12 @@ func (f *SimpleLogFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	return []byte(fmt.Sprintf(entry.Message) + "\n"), nil
 }
 
+// ConfigureLog configures the logs level
 func ConfigureLog(level string) {
+	// Set warning level when the level is empty to avoid an unexpected exit
+	if level == "" {
+		level = "warn"
+	}
 	logrus.SetFormatter(&SimpleLogFormatter{})
 	lvl, err := logrus.ParseLevel(level)
 	if err != nil {
