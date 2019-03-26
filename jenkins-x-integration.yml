@@ -46,6 +46,28 @@ pipelineConfig:
                     cpu: 0.1
                     memory: 64Mi
 
+              - name: check
+                #image: docker.io/golang:1.11.5
+                # needs helm in the image for install_gitops_integration_test.go
+                image: gcr.io/jenkinsxio/builder-go:0.1.297
+                command: make
+                args: ['check']
+                workingDir: "/workspace/workspace"
+                env:
+                  - name: GOPATH
+                    value: /workspace/go
+                  - name: GOPROXY
+                    value: http://athens-proxy.jx.cd.jenkins-x.io
+                  - name: HELM_HOME
+                    value: /builder/home/.helm
+                resources:
+                  limits:
+                    cpu: 4
+                    memory: 6144Mi
+                  requests:
+                    cpu: 3
+                    memory: 3072Mi
+
               - name: build-binary
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
