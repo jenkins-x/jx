@@ -16,6 +16,9 @@ func GetModuleRequirements(dir string) (map[string]map[string]string, error) {
 			"mod",
 			"graph",
 		},
+		Env: map[string]string{
+			"GO111MODULE": "on",
+		},
 	}
 	out, err := cmd.RunWithoutRetry()
 	if err != nil {
