@@ -5,7 +5,7 @@ items:
     creationTimestamp: null
     labels:
       jenkins.io/task-stage-name: build-a-really-long-stage-name-please-but-not-too-long-thanks
-    name: abayer-js-test-repo-really-long-build-a-really-long-stage-name
+    name: abayer-js-test-repo-really-long-build-a-really-long-stage-nam-1
     namespace: jx
   spec:
     inputs:
@@ -44,6 +44,8 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -104,6 +106,8 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -160,7 +164,7 @@ items:
     creationTimestamp: null
     labels:
       jenkins.io/task-stage-name: second
-    name: abayer-js-test-repo-really-long-second
+    name: abayer-js-test-repo-really-long-second-1
     namespace: jx
   spec:
     inputs:
@@ -199,6 +203,8 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER

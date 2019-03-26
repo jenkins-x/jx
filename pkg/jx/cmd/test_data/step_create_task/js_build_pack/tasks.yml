@@ -5,7 +5,7 @@ items:
     creationTimestamp: null
     labels:
       jenkins.io/task-stage-name: from-build-pack
-    name: abayer-js-test-repo-build-pack-from-build-pack
+    name: abayer-js-test-repo-build-pack-from-build-pack-1
     namespace: jx
   spec:
     inputs:
@@ -44,6 +44,8 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -102,6 +104,8 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -160,6 +164,8 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -218,6 +224,8 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -276,6 +284,8 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -334,6 +344,8 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -392,6 +404,8 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -450,6 +464,8 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -508,6 +524,8 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -566,6 +584,8 @@ items:
         value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
