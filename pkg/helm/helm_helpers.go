@@ -497,7 +497,7 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 	helmer.SetCWD(options.Dir)
 	return helmer.UpgradeChart(chart, options.ReleaseName, options.Ns, options.Version, true,
 		timeout, true, false, options.SetValues, options.ValueFiles, options.Repository, options.Username,
-		options.Password)
+		options.Password, false)
 }
 
 // GenerateReadmeForChart generates a string that can be used as a README.MD,

@@ -20,7 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -339,7 +339,7 @@ func (h *HelmTemplate) FetchChart(chart string, version string, untar bool, unta
 // UpgradeChart upgrades a helm chart according with given helm flags
 func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string, version string, install bool,
 	timeout int, force bool, wait bool, values []string, valueFiles []string, repo string, username string,
-	password string) error {
+	password string, reuseValues bool) error {
 
 	err := h.clearOutputDir(releaseName)
 	if err != nil {
