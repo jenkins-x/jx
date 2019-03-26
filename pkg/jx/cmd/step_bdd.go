@@ -454,9 +454,14 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	if gitProviderURL != "" {
 		args = append(args, "--git-provider-url", gitProviderURL)
 	}
+
 	gitUsername := o.InstallOptions.GitRepositoryOptions.Username
 	if gitUsername != "" {
 		args = append(args, "--git-username", gitUsername)
+	}
+	gitOwner := o.Flags.GitOwner
+	if gitOwner != "" {
+		args = append(args, "--environment-git-owner", gitOwner)
 	}
 	gitKind := o.InstallOptions.GitRepositoryOptions.ServerKind
 	if gitKind != "" {
