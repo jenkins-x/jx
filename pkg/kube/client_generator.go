@@ -417,7 +417,9 @@ func InstallGenApiDocs(version string, gitter gits.Gitter) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// reference-docs has no dependency managemnt, but it will work with modules
+
+	// reference-docs has no dependency management, but it will work with modules
+	_ = os.Remove(dir + "/go.mod") // if go mod init was already ran
 	modInitCmd := util.Command{
 		Dir:  dir,
 		Name: "go",
