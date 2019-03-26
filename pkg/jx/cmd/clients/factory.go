@@ -178,7 +178,7 @@ func (f *factory) GetCustomJenkinsURL(kubeClient kubernetes.Interface, ns string
 }
 
 func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns string, jenkinsServiceName string) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(auth.JenkinsAuthConfigFile)
+	authConfigSvc, err := f.CreateAuthConfigService(auth.JenkinsAuthConfigFile, ns)
 
 	if jenkinsServiceName == "" {
 		jenkinsServiceName = kube.SecretJenkins
@@ -260,8 +260,8 @@ func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns stri
 	return authConfigSvc, err
 }
 
-func (f *factory) CreateChartmuseumAuthConfigService() (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(auth.ChartmuseumAuthConfigFile)
+func (f *factory) CreateChartmuseumAuthConfigService(namespace string) (auth.ConfigService, error) {
+	authConfigSvc, err := f.CreateAuthConfigService(auth.ChartmuseumAuthConfigFile, namespace)
 	if err != nil {
 		return authConfigSvc, err
 	}
@@ -272,8 +272,8 @@ func (f *factory) CreateChartmuseumAuthConfigService() (auth.ConfigService, erro
 	return authConfigSvc, err
 }
 
-func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(auth.IssuesAuthConfigFile)
+func (f *factory) CreateIssueTrackerAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error) {
+	authConfigSvc, err := f.CreateAuthConfigService(auth.IssuesAuthConfigFile, namespace)
 	if err != nil {
 		return authConfigSvc, err
 	}
@@ -287,8 +287,8 @@ func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList
 	return authConfigSvc, err
 }
 
-func (f *factory) CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(auth.ChatAuthConfigFile)
+func (f *factory) CreateChatAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error) {
+	authConfigSvc, err := f.CreateAuthConfigService(auth.ChatAuthConfigFile, namespace)
 	if err != nil {
 		return authConfigSvc, err
 	}
@@ -302,8 +302,8 @@ func (f *factory) CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.
 	return authConfigSvc, err
 }
 
-func (f *factory) CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(auth.AddonAuthConfigFile)
+func (f *factory) CreateAddonAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error) {
+	authConfigSvc, err := f.CreateAuthConfigService(auth.AddonAuthConfigFile, namespace)
 	if err != nil {
 		return authConfigSvc, err
 	}
@@ -365,9 +365,9 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 
 // CreateAuthConfigService creates a new service saving auth config under the provided name. Depending on the factory,
 // It will either save the config to the local file-system, or a Vault
-func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService, error) {
+func (f *factory) CreateAuthConfigService(configName string, namespace string) (auth.ConfigService, error) {
 	if f.SecretsLocation() == secrets.VaultLocationKind {
-		vaultClient, err := f.CreateSystemVaultClient(kube.DefaultNamespace)
+		vaultClient, err := f.CreateSystemVaultClient(namespace)
 		authService := auth.NewVaultAuthConfigService(configName, vaultClient)
 		return authService, err
 	} else {

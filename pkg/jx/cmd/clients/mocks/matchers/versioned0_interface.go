@@ -2,8 +2,8 @@
 package matchers
 
 import (
-	versioned0 "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/petergtz/pegomock"
+	versioned0 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	"reflect"
 )
 

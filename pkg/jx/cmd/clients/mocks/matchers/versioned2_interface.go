@@ -2,7 +2,7 @@
 package matchers
 
 import (
-	versioned2 "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
+	versioned2 "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/petergtz/pegomock"
 	"reflect"
 )

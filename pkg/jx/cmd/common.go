@@ -928,6 +928,13 @@ func (o *CommonOptions) SystemVaultClient(namespace string) (vault.Client, error
 		return nil, errors.New("command factory is not initialized")
 	}
 	if o.systemVaultClient == nil {
+		if namespace == "" {
+			var err error
+			_, namespace, err = o.KubeClientAndDevNamespace()
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to find development namespace")
+			}
+		}
 		systemVaultClient, err := o.factory.CreateSystemVaultClient(namespace)
 		if err != nil {
 			return nil, err
@@ -943,6 +950,13 @@ func (o *CommonOptions) VaultClient(name string, namespace string) (vault.Client
 		return nil, errors.New("command factory is not initialized")
 	}
 	if o.systemVaultClient == nil {
+		if namespace == "" {
+			var err error
+			_, namespace, err = o.KubeClientAndDevNamespace()
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to find development namespace")
+			}
+		}
 		vaultClient, err := o.factory.CreateVaultClient(name, namespace)
 		if err != nil {
 			return nil, err
@@ -1133,7 +1147,11 @@ func (o *CommonOptions) AddonAuthConfigService(secrets *corev1.SecretList) (auth
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
 	}
-	return o.factory.CreateAddonAuthConfigService(secrets)
+	_, namespace, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find development namespace")
+	}
+	return o.factory.CreateAddonAuthConfigService(namespace, secrets)
 }
 
 // JenkinsAuthConfigService creates the jenkins auth config service
@@ -1149,11 +1167,14 @@ func (o *CommonOptions) JenkinsAuthConfigService(client kubernetes.Interface, na
 		selector.UseCustomJenkins = true
 	}
 	jenkinsServiceName := ""
+	kubeClient, ns, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return nil, err
+	}
+	if namespace == "" {
+		namespace = ns
+	}
 	if selector.IsCustom() {
-		kubeClient, ns, err := o.KubeClientAndDevNamespace()
-		if err != nil {
-			return nil, err
-		}
 		jenkinsServiceName, err = o.PickCustomJenkinsName(selector, kubeClient, ns)
 		if err != nil {
 			return nil, err
@@ -1167,7 +1188,11 @@ func (o *CommonOptions) ChartmuseumAuthConfigService() (auth.ConfigService, erro
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
 	}
-	return o.factory.CreateChartmuseumAuthConfigService()
+	_, namespace, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find development namespace")
+	}
+	return o.factory.CreateChartmuseumAuthConfigService(namespace)
 }
 
 // AuthConfigService creates the auth config service for given file
@@ -1175,5 +1200,9 @@ func (o CommonOptions) AuthConfigService(file string) (auth.ConfigService, error
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
 	}
-	return o.factory.CreateAuthConfigService(file)
+	_, namespace, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find development namespace")
+	}
+	return o.factory.CreateAuthConfigService(file, namespace)
 }
