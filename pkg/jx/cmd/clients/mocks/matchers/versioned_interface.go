@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	"reflect"
 	"github.com/petergtz/pegomock"
 	versioned "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
+	"reflect"
 )
 
 func AnyVersionedInterface() versioned.Interface {

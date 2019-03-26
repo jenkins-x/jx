@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	"reflect"
-	"github.com/petergtz/pegomock"
 	gits "github.com/jenkins-x/jx/pkg/gits"
+	"github.com/petergtz/pegomock"
+	"reflect"
 )
 
 func AnySliceOfPtrToGitsGitRepoStatus() []*gits.GitRepoStatus {

@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	"reflect"
-	"github.com/petergtz/pegomock"
 	vault "github.com/jenkins-x/jx/pkg/vault"
+	"github.com/petergtz/pegomock"
+	"reflect"
 )
 
 func AnyVaultClient() vault.Client {
