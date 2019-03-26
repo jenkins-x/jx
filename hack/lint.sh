@@ -17,6 +17,8 @@ echo "Running validation scripts..."
 #)
 scripts=(
     "hack/gofmt.sh"
+    "hack/check-docs.sh"
+    "hack/check-openapi.sh"
 )
 fail=0
 for s in "${scripts[@]}"; do
