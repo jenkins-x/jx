@@ -21,7 +21,8 @@ golangci-lint run \
 	-E unparam \
 	-D errcheck \
     -D ineffassign \
-  --skip-dirs vendor
+  --skip-dirs vendor \
+  --deadline 10m0s
 
 # ? deadcode / unused
 # -E goconst \
