@@ -13,10 +13,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-	gkevault "github.com/jenkins-x/jx/pkg/cloud/gke/vault"
 	awsvault "github.com/jenkins-x/jx/pkg/cloud/amazon/vault"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	gkevault "github.com/jenkins-x/jx/pkg/cloud/gke/vault"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
@@ -52,8 +52,8 @@ type CreateVaultOptions struct {
 
 	GKECreateVaultOptions
 	kubevault.AWSConfig
-	Namespace         string
-	SecretsPathPrefix string
+	Namespace           string
+	SecretsPathPrefix   string
 	RecreateVaultBucket bool
 
 	IngressConfig kube.IngressConfig
@@ -61,8 +61,8 @@ type CreateVaultOptions struct {
 
 // GKECreateVaultOptions the options for vault on GKE
 type GKECreateVaultOptions struct {
-	GKEProjectID      string
-	GKEZone           string
+	GKEProjectID string
+	GKEZone      string
 }
 
 // NewCmdCreateVault  creates a command object for the "create" command

@@ -114,4 +114,3 @@ func validateVault(err error, vaultclient *fakevaultclient.Clientset, tc *VaultT
 	assert.NoError(t, err, "should retrieve vault cluster role binding without error")
 	assert.NotNil(t, rb, "created vault cluster role binding should not be nil")
 }
-

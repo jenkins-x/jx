@@ -2,8 +2,8 @@
 package matchers
 
 import (
-	versioned "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/petergtz/pegomock"
+	versioned "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	"reflect"
 )
 

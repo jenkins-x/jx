@@ -77,39 +77,39 @@ type InstallOptions struct {
 
 // InstallFlags flags for the install command
 type InstallFlags struct {
-	InstallOnly              bool
-	Domain                   string
+	InstallOnly                 bool
+	Domain                      string
 	ExposeControllerURLTemplate string
-	ExposeControllerPathMode string
-	DockerRegistry           string
-	Provider                 string
-	VersionsRepository       string
-	Version                  string
-	LocalHelmRepoName        string
-	Namespace                string
-	CloudEnvRepository       string
-	NoDefaultEnvironments    bool
-	DefaultEnvironmentPrefix string
-	LocalCloudEnvironment    bool
-	EnvironmentGitOwner      string
-	Timeout                  string
-	HelmTLS                  bool
-	RegisterLocalHelmRepo    bool
-	CleanupTempFiles         bool
-	Prow                     bool
-	DisableSetKubeContext    bool
-	Dir                      string
-	Vault                    bool
-	RecreateVaultBucket      bool
-	Tekton                   bool
-	BuildPackName            string
-	Kaniko                   bool
-	GitOpsMode               bool
-	NoGitOpsEnvApply         bool
-	NoGitOpsEnvRepo          bool
-	NoGitOpsEnvSetup         bool
-	NoGitOpsVault            bool
-	NextGeneration           bool
+	ExposeControllerPathMode    string
+	DockerRegistry              string
+	Provider                    string
+	VersionsRepository          string
+	Version                     string
+	LocalHelmRepoName           string
+	Namespace                   string
+	CloudEnvRepository          string
+	NoDefaultEnvironments       bool
+	DefaultEnvironmentPrefix    string
+	LocalCloudEnvironment       bool
+	EnvironmentGitOwner         string
+	Timeout                     string
+	HelmTLS                     bool
+	RegisterLocalHelmRepo       bool
+	CleanupTempFiles            bool
+	Prow                        bool
+	DisableSetKubeContext       bool
+	Dir                         string
+	Vault                       bool
+	RecreateVaultBucket         bool
+	Tekton                      bool
+	BuildPackName               string
+	Kaniko                      bool
+	GitOpsMode                  bool
+	NoGitOpsEnvApply            bool
+	NoGitOpsEnvRepo             bool
+	NoGitOpsEnvSetup            bool
+	NoGitOpsVault               bool
+	NextGeneration              bool
 }
 
 // Secrets struct for secrets
@@ -2032,9 +2032,9 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			CreateOptions: CreateOptions{
 				CommonOptions: options.CommonOptions,
 			},
-			IngressConfig: *ic,
-			Namespace:     namespace,
-			AWSConfig:     options.AWSConfig,
+			IngressConfig:       *ic,
+			Namespace:           namespace,
+			AWSConfig:           options.AWSConfig,
 			RecreateVaultBucket: options.Flags.RecreateVaultBucket,
 		}
 		if options.installValues != nil {

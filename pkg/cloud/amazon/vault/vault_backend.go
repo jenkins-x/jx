@@ -37,4 +37,3 @@ aws_secret_access_key=%s
 	}
 	return secretName, nil
 }
-
