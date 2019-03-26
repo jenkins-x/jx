@@ -1278,6 +1278,13 @@ func TestFailedValidation(t *testing.T) {
 			name:          "loop_without_values",
 			expectedError: apis.ErrMissingField("values").ViaField("loop").ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
 		},
+		{
+			name: "top_level_container_options_with_command",
+			expectedError: (&apis.FieldError{
+				Message: "Command cannot be specified in containerOptions",
+				Paths:   []string{"command"},
+			}).ViaField("containerOptions").ViaField("options"),
+		},
 	}
 
 	for _, tt := range tests {

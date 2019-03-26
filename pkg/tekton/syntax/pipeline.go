@@ -461,6 +461,45 @@ func validateRootOptions(o RootOptions) *apis.FieldError {
 				Paths:   []string{"retry"},
 			}
 		}
+
+		return validateContainerOptions(o.ContainerOptions).ViaField("containerOptions")
+	}
+
+	return nil
+}
+
+func validateContainerOptions(c *corev1.Container) *apis.FieldError {
+	if c != nil {
+		if len(c.Command) != 0 {
+			return &apis.FieldError{
+				Message: "Command cannot be specified in containerOptions",
+				Paths:   []string{"command"},
+			}
+		}
+		if len(c.Args) != 0 {
+			return &apis.FieldError{
+				Message: "Arguments cannot be specified in containerOptions",
+				Paths:   []string{"args"},
+			}
+		}
+		if c.Image != "" {
+			return &apis.FieldError{
+				Message: "Image cannot be specified in containerOptions",
+				Paths:   []string{"image"},
+			}
+		}
+		if c.WorkingDir != "" {
+			return &apis.FieldError{
+				Message: "WorkingDir cannot be specified in containerOptions",
+				Paths:   []string{"workingDir"},
+			}
+		}
+		if len(c.VolumeMounts) != 0 {
+			return &apis.FieldError{
+				Message: "VolumeMounts cannot be specified in containerOptions",
+				Paths:   []string{"volumeMounts"},
+			}
+		}
 	}
 
 	return nil
