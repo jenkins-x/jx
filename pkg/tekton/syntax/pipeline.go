@@ -500,6 +500,24 @@ func validateContainerOptions(c *corev1.Container) *apis.FieldError {
 				Paths:   []string{"volumeMounts"},
 			}
 		}
+		if c.Name != "" {
+			return &apis.FieldError{
+				Message: "Name cannot be specified in containerOptions",
+				Paths:   []string{"name"},
+			}
+		}
+		if c.Stdin {
+			return &apis.FieldError{
+				Message: "Stdin cannot be specified in containerOptions",
+				Paths:   []string{"stdin"},
+			}
+		}
+		if c.TTY {
+			return &apis.FieldError{
+				Message: "TTY cannot be specified in containerOptions",
+				Paths:   []string{"tty"},
+			}
+		}
 	}
 
 	return nil
@@ -601,11 +619,11 @@ func validateWorkspace(w string) *apis.FieldError {
 
 var randReader = rand.Reader
 
-func scopedEnv(newEnv []EnvVar, parentEnv []corev1.EnvVar) []corev1.EnvVar {
+func scopedEnv(newEnv []EnvVar, parentEnv []corev1.EnvVar, o *RootOptions) []corev1.EnvVar {
 	if len(parentEnv) == 0 && len(newEnv) == 0 {
 		return nil
 	}
-	envMap := make(map[string]corev1.EnvVar)
+	envMap := getContainerOptionsEnvVars(o)
 
 	for _, e := range parentEnv {
 		envMap[e.Name] = e
@@ -635,13 +653,37 @@ func scopedEnv(newEnv []EnvVar, parentEnv []corev1.EnvVar) []corev1.EnvVar {
 }
 
 func (j *ParsedPipeline) toStepEnvVars() []corev1.EnvVar {
-	env := make([]corev1.EnvVar, 0, len(j.Environment))
+	envMap := getContainerOptionsEnvVars(&j.Options)
 
 	for _, e := range j.Environment {
-		env = append(env, corev1.EnvVar{Name: e.Name, Value: e.Value})
+		envMap[e.Name] = corev1.EnvVar{Name: e.Name, Value: e.Value}
+	}
+
+	env := make([]corev1.EnvVar, 0, len(envMap))
+	// Avoid nondeterministic results by sorting the keys and appending vars in that order.
+	var envVars []string
+	for k := range envMap {
+		envVars = append(envVars, k)
+	}
+	sort.Strings(envVars)
+
+	for _, envVar := range envVars {
+		env = append(env, envMap[envVar])
 	}
 
 	return env
+}
+
+func getContainerOptionsEnvVars(o *RootOptions) map[string]corev1.EnvVar {
+	envMap := make(map[string]corev1.EnvVar)
+
+	if o != nil && o.ContainerOptions != nil {
+		for _, e := range o.ContainerOptions.Env {
+			envMap[e.Name] = e
+		}
+	}
+
+	return envMap
 }
 
 type transformedStage struct {
@@ -756,6 +798,8 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 
 	stageContainer := &corev1.Container{}
 
+	var rootOptions *RootOptions
+
 	if !equality.Semantic.DeepEqual(s.Options, StageOptions{}) {
 		o := s.Options
 		if !equality.Semantic.DeepEqual(o.Timeout, Timeout{}) {
@@ -772,6 +816,8 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		}
 
 		stageContainer = o.ContainerOptions
+
+		rootOptions = &o.RootOptions
 	}
 
 	if parentContainer != nil {
@@ -780,7 +826,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		}
 	}
 
-	env := scopedEnv(s.Environment, parentEnv)
+	env := scopedEnv(s.Environment, parentEnv, rootOptions)
 
 	agent := s.Agent
 
@@ -960,7 +1006,7 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 		steps = append(steps, *c)
 	} else if !equality.Semantic.DeepEqual(step.Loop, Loop{}) {
 		for _, v := range step.Loop.Values {
-			loopEnv := scopedEnv([]EnvVar{{Name: step.Loop.Variable, Value: v}}, env)
+			loopEnv := scopedEnv([]EnvVar{{Name: step.Loop.Variable, Value: v}}, env, nil)
 
 			for _, s := range step.Loop.Steps {
 				loopSteps, loopVolumes, loopCounter, loopErr := generateSteps(s, stepImage, loopEnv, parentContainer, podTemplates, stepCounter)

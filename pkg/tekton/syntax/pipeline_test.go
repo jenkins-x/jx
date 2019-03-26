@@ -978,6 +978,56 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage")),
 			),
 		},
+		{
+			name: "container_options_env_merge",
+			expected: ParsedPipeline(
+				PipelineAgent("some-image"),
+				PipelineOptions(
+					PipelineContainerOptions(
+						tb.EnvVar("SOME_VAR", "A value for the env var"),
+						tb.EnvVar("OVERRIDE_ENV", "Original value"),
+						tb.EnvVar("OVERRIDE_STAGE_ENV", "Original value"),
+					),
+				),
+				PipelineEnvVar("SOME_OTHER_VAR", "A value for the other env var"),
+				PipelineEnvVar("OVERRIDE_ENV", "New value"),
+				PipelineStage("A Working Stage",
+					StageOptions(
+						StageContainerOptions(
+							tb.EnvVar("ANOTHER_OVERRIDE_STAGE_ENV", "Original value"),
+						),
+					),
+					StageStep(StepCmd("echo"), StepArg("hello"), StepArg("world")),
+					StageEnvVar("OVERRIDE_STAGE_ENV", "New value"),
+					StageEnvVar("ANOTHER_OVERRIDE_STAGE_ENV", "New value"),
+				),
+			),
+			pipeline: tb.Pipeline("somepipeline", "jx", tb.PipelineSpec(
+				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
+					tb.PipelineTaskInputResource("workspace", "somepipeline"),
+					tb.PipelineTaskOutputResource("workspace", "somepipeline")),
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a-working-stage", "jx",
+					TaskStageLabel("A Working Stage"),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+								tb.ResourceTargetPath("workspace"))),
+						tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
+						tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace"),
+							tb.EnvVar("ANOTHER_OVERRIDE_STAGE_ENV", "New value"),
+							tb.EnvVar("OVERRIDE_ENV", "New value"),
+							tb.EnvVar("OVERRIDE_STAGE_ENV", "New value"),
+							tb.EnvVar("SOME_OTHER_VAR", "A value for the other env var"),
+							tb.EnvVar("SOME_VAR", "A value for the env var"),
+						),
+					)),
+			},
+			structure: PipelineStructure("somepipeline",
+				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage")),
+			),
+		},
 	}
 
 	for _, tt := range tests {
