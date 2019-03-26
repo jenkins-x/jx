@@ -239,7 +239,7 @@ func createDummyUser(resolver *users.GitUserResolver, createLabels bool, gituser
 		Email: email,
 		Login: login,
 		Accounts: []jenkinsv1.AccountReference{
-			jenkinsv1.AccountReference{
+			{
 				ID:       gituserID,
 				Provider: resolver.GitProviderKey(),
 			},

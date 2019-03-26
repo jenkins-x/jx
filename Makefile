@@ -77,6 +77,7 @@ get-test-deps:
 test:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 1 -count=1 -coverprofile=cover.out \
 	-failfast -short ./...
+	./test.sh
 
 test-verbose:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -v -coverprofile=cover.out -failfast ./...

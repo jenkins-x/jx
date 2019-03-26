@@ -26,10 +26,10 @@ func TestFileConfigWriter(t *testing.T) {
 		"write config to file": {
 			config: auth.Config{
 				Servers: []*auth.Server{
-					&auth.Server{
+					{
 						URL: "https://github.com",
 						Users: []*auth.User{
-							&auth.User{
+							{
 								Username: "test",
 								ApiToken: "test",
 							},
@@ -88,15 +88,15 @@ func TestKubeSecretsConfigWriter(t *testing.T) {
 			namespace: "test",
 			config: &auth.Config{
 				Servers: []*auth.Server{
-					&auth.Server{
+					{
 						URL: "https://github.com",
 						Users: []*auth.User{
-							&auth.User{
+							{
 								Username: "test1",
 								ApiToken: "test1",
 								Kind:     auth.UserKindPipeline,
 							},
-							&auth.User{
+							{
 								Username: "test2",
 								ApiToken: "test2",
 								Kind:     auth.UserKindLocal,
@@ -110,7 +110,7 @@ func TestKubeSecretsConfigWriter(t *testing.T) {
 			},
 			err: false,
 			want: []*corev1.Secret{
-				&corev1.Secret{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "jx-pipeline-git-github-github",
 						Namespace: "test",
@@ -137,15 +137,15 @@ func TestKubeSecretsConfigWriter(t *testing.T) {
 			namespace: "test",
 			config: &auth.Config{
 				Servers: []*auth.Server{
-					&auth.Server{
+					{
 						URL: "https://github.com",
 						Users: []*auth.User{
-							&auth.User{
+							{
 								Username: "test1",
 								ApiToken: "test1",
 								Kind:     auth.UserKindPipeline,
 							},
-							&auth.User{
+							{
 								Username: "test2",
 								ApiToken: "test2",
 								Kind:     auth.UserKindLocal,
@@ -155,15 +155,15 @@ func TestKubeSecretsConfigWriter(t *testing.T) {
 						Kind:        auth.ServerKindGit,
 						ServiceKind: auth.ServiceKindGithub,
 					},
-					&auth.Server{
+					{
 						URL: "https://gitlab.com",
 						Users: []*auth.User{
-							&auth.User{
+							{
 								Username: "test1",
 								ApiToken: "test1",
 								Kind:     auth.UserKindPipeline,
 							},
-							&auth.User{
+							{
 								Username: "test2",
 								ApiToken: "test2",
 								Kind:     auth.UserKindLocal,
@@ -177,7 +177,7 @@ func TestKubeSecretsConfigWriter(t *testing.T) {
 			},
 			err: false,
 			want: []*corev1.Secret{
-				&corev1.Secret{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "jx-pipeline-git-github-github",
 						Namespace: "test",
@@ -198,7 +198,7 @@ func TestKubeSecretsConfigWriter(t *testing.T) {
 						"password": []byte("test1"),
 					},
 				},
-				&corev1.Secret{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "jx-pipeline-git-gitlab-gitlab",
 						Namespace: "test",
@@ -225,7 +225,7 @@ func TestKubeSecretsConfigWriter(t *testing.T) {
 			namespace: "test",
 			config: &auth.Config{
 				Servers: []*auth.Server{
-					&auth.Server{
+					{
 						URL:         "https://github.com",
 						Users:       []*auth.User{},
 						Name:        "GitHub",
@@ -266,15 +266,15 @@ func TestKubeSecretsConfigWriter(t *testing.T) {
 			},
 			config: &auth.Config{
 				Servers: []*auth.Server{
-					&auth.Server{
+					{
 						URL: "https://github.com",
 						Users: []*auth.User{
-							&auth.User{
+							{
 								Username: "test1",
 								ApiToken: "test1",
 								Kind:     auth.UserKindPipeline,
 							},
-							&auth.User{
+							{
 								Username: "test2",
 								ApiToken: "test2",
 								Kind:     auth.UserKindLocal,
@@ -288,7 +288,7 @@ func TestKubeSecretsConfigWriter(t *testing.T) {
 			},
 			err: false,
 			want: []*corev1.Secret{
-				&corev1.Secret{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "jx-pipeline-git-github-github",
 						Namespace: "test",

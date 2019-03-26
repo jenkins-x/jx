@@ -78,7 +78,7 @@ func UpdateUserRoles(kubeClient kubernetes.Interface, jxClient versioned.Interfa
 	envRoleInterface := jxClient.JenkinsV1().EnvironmentRoleBindings(ns)
 	envRoles, _, err := GetEnvironmentRoles(jxClient, ns)
 
-	for name, _ := range roles {
+	for name := range roles {
 		envRole := envRoles[name]
 		if envRole == nil {
 			envRole = &v1.EnvironmentRoleBinding{
@@ -210,7 +210,7 @@ func CreateClusterRoleBinding(kubeClient kubernetes.Interface, namespace string,
 			Name: name,
 		},
 		Subjects: []rbacv1.Subject{
-			rbacv1.Subject{
+			{
 				Kind:      subjectKind,
 				Name:      serviceAccountName,
 				Namespace: namespace,
@@ -260,7 +260,7 @@ func CreateClusterRole(kubeClient kubernetes.Interface, namesapce string, name s
 			Name: name,
 		},
 		Rules: []rbacv1.PolicyRule{
-			rbacv1.PolicyRule{
+			{
 				APIGroups: apiGroups,
 				Resources: resources,
 				Verbs:     verbs,

@@ -158,7 +158,7 @@ func TestAddAppWithSecrets(t *testing.T) {
 			Version: version,
 		},
 		Files: []*google_protobuf.Any{
-			&google_protobuf.Any{
+			{
 				TypeUrl: "values.schema.json",
 				Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
@@ -306,7 +306,7 @@ func TestAddAppWithDefaults(t *testing.T) {
 			Version: version,
 		},
 		Files: []*google_protobuf.Any{
-			&google_protobuf.Any{
+			{
 				TypeUrl: "values.schema.json",
 				Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
@@ -439,7 +439,7 @@ func TestStashValues(t *testing.T) {
 			Version: version,
 		},
 		Files: []*google_protobuf.Any{
-			&google_protobuf.Any{
+			{
 				TypeUrl: "values.schema.json",
 				Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
@@ -518,7 +518,7 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 			Version: version,
 		},
 		Files: []*google_protobuf.Any{
-			&google_protobuf.Any{
+			{
 				TypeUrl: "values.schema.json",
 				Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
@@ -794,7 +794,7 @@ func TestAddAppWithReadmeForGitOps(t *testing.T) {
 			Description: description,
 		},
 		Templates: []*chart.Template{
-			&chart.Template{
+			{
 				Name: "release.yaml",
 				Data: data,
 			},
@@ -868,7 +868,7 @@ func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
 			Version: version,
 		},
 		Files: []*google_protobuf.Any{
-			&google_protobuf.Any{
+			{
 				TypeUrl: readmeFileName,
 				Value:   []byte(readme),
 			},

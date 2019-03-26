@@ -19,8 +19,6 @@ type EnvironmentOptions struct {
 	*CommonOptions
 }
 
-const ()
-
 var (
 	environment_long = templates.LongDesc(`
 		Displays or changes the current environment.

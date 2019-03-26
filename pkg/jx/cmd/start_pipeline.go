@@ -126,7 +126,7 @@ func (o *StartPipelineOptions) Run() error {
 			}
 			o.Jobs = jobMap
 
-			for k, _ := range o.Jobs {
+			for k := range o.Jobs {
 				names = append(names, k)
 			}
 		}

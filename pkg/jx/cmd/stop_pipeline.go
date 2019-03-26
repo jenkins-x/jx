@@ -75,7 +75,7 @@ func (o *StopPipelineOptions) Run() error {
 	o.Jobs = jobMap
 	args := o.Args
 	names := []string{}
-	for k, _ := range o.Jobs {
+	for k := range o.Jobs {
 		names = append(names, k)
 	}
 	sort.Strings(names)

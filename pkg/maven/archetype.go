@@ -70,7 +70,7 @@ func NewArchetypeModel() ArchetypeModel {
 
 func (m *ArchetypeModel) GroupIDs(filter string) []string {
 	answer := []string{}
-	for group, _ := range m.Groups {
+	for group := range m.Groups {
 		if filter == "" || strings.Index(group, filter) >= 0 {
 			answer = append(answer, group)
 		}
@@ -83,7 +83,7 @@ func (m *ArchetypeModel) ArtifactIDs(groupId string, filter string) []string {
 	answer := []string{}
 	artifact := m.Groups[groupId]
 	if artifact != nil {
-		for a, _ := range artifact.Artifacts {
+		for a := range artifact.Artifacts {
 			if filter == "" || strings.Index(a, filter) >= 0 {
 				answer = append(answer, a)
 			}

@@ -58,7 +58,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 
 func GetNames(ref common.ReferenceCallback) []string {
 	result := make([]string, 0)
-	for k, _ := range openapicore.GetOpenAPIDefinitions(ref) {
+	for k := range openapicore.GetOpenAPIDefinitions(ref) {
 		result = append(result, k)
 	}
 	return result
