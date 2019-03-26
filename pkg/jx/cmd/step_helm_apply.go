@@ -253,7 +253,7 @@ func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
 func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store configio.ConfigStore) ([]string, error) {
 	log.Infof("Fetching secrets from vault into directory %q\n", dir)
 	files := []string{}
-	client, err := o.SystemVaultClient("")
+	client, err := o.SystemVaultClient(kube.DefaultNamespace)
 	if err != nil {
 		return files, errors.Wrap(err, "retrieving the system Vault")
 	}

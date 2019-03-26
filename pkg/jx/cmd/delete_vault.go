@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/cloud"
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	gkevault "github.com/jenkins-x/jx/pkg/cloud/gke/vault"
@@ -9,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
+	awsvault "github.com/jenkins-x/jx/pkg/cloud/amazon/vault"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -79,6 +81,11 @@ func (o *DeleteVaultOptions) Run() error {
 		o.Namespace = ns
 	}
 
+	teamSettings, err := o.TeamSettings()
+	if err != nil {
+		return errors.Wrap(err, "retrieving the team settings")
+	}
+
 	vaultOperatorClient, err := o.VaultOperatorClient()
 	if err != nil {
 		return errors.Wrap(err, "creating vault operator client")
@@ -105,12 +112,17 @@ func (o *DeleteVaultOptions) Run() error {
 		return errors.Wrapf(err, "deleting the vault auth service account '%s'", authServiceAccountName)
 	}
 
-	gcpServiceAccountSecretName := gkevault.GcpServiceAccountSecretName(vaultName)
-	err = client.CoreV1().Secrets(o.Namespace).Delete(gcpServiceAccountSecretName, &metav1.DeleteOptions{})
-	if err != nil {
-		return errors.Wrapf(err, "deleting secret '%s' where GCP service account is stored", gcpServiceAccountSecretName)
+	var secretName string
+	if teamSettings.KubeProvider == cloud.GKE {
+		secretName = gkevault.GcpServiceAccountSecretName(vaultName)
 	}
-
+	if teamSettings.KubeProvider == cloud.AWS || teamSettings.KubeProvider == cloud.EKS {
+		secretName = awsvault.AwsServiceAccountSecretName(vaultName)
+	}
+	err = client.CoreV1().Secrets(o.Namespace).Delete(secretName, &metav1.DeleteOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "deleting secret '%s' where GCP service account is stored", secretName)
+	}
 	err = kube.DeleteClusterRoleBinding(client, vaultName)
 	if err != nil {
 		return errors.Wrapf(err, "deleting the cluster role binding '%s' for vault", vaultName)
@@ -119,12 +131,7 @@ func (o *DeleteVaultOptions) Run() error {
 	log.Infof("Vault %s deleted\n", util.ColorInfo(vaultName))
 
 	if o.RemoveCloudResources {
-		teamSettings, err := o.TeamSettings()
-		if err != nil {
-			return errors.Wrap(err, "retrieving the team settings")
-		}
-
-		if teamSettings.KubeProvider == gkeKubeProvider {
+		if teamSettings.KubeProvider == cloud.GKE {
 			log.Infof("Removing GCP resources allocated for Vault...\n")
 			err := o.removeGCPResources(vaultName)
 			if err != nil {
@@ -132,7 +139,6 @@ func (o *DeleteVaultOptions) Run() error {
 			}
 			log.Infof("Cloud resources allocated for vault %s deleted\n", util.ColorInfo(vaultName))
 		}
-
 	}
 
 	return nil

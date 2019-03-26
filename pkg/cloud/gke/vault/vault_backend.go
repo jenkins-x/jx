@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
-	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -99,16 +98,6 @@ func CreateBucket(vaultName, clusterName, projectId, zone string) (string, error
 		return "", errors.Wrap(err, "creating Vault GCS bucket")
 	}
 	return bucketName, nil
-}
-
-// CreateAuthServiceAccount creates a Serivce Account for the Auth service for vault
-func CreateAuthServiceAccount(client kubernetes.Interface, vaultName, namespace, clusterName string) (string, error) {
-	serviceAccountName := AuthServiceAccountName(vaultName)
-	_, err := serviceaccount.CreateServiceAccount(client, namespace, serviceAccountName)
-	if err != nil {
-		return "", errors.Wrap(err, "creating vault auth service account")
-	}
-	return serviceAccountName, nil
 }
 
 func storeGCPServiceAccountIntoSecret(client kubernetes.Interface, serviceAccountPath, vaultName, namespace string) (string, error) {
