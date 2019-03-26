@@ -49,13 +49,14 @@ func TestCreateEnvRun(t *testing.T) {
 			Namespace: "jx-testing",
 		},
 	}
+	devNs := "jx"
 
 	// mock gitProvider
 	gitProviderInterface := gits_mocks.NewMockGitProvider()
 
 	// mock factory
 	factory := cmd_mocks.NewMockFactory()
-	When(factory.CreateAuthConfigService(AnyString())).ThenReturn(tests.CreateAuthConfigService(), nil)
+	When(factory.CreateAuthConfigService(AnyString(), devNs)).ThenReturn(tests.CreateAuthConfigService(), nil)
 	When(factory.CreateGitProvider(
 		AnyString(),
 		AnyString(),
