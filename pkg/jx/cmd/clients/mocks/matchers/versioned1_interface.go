@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	versioned1 "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
-	"github.com/petergtz/pegomock"
 	"reflect"
+	"github.com/petergtz/pegomock"
+	versioned1 "github.com/knative/build/pkg/client/clientset/versioned"
 )
 
 func AnyVersioned1Interface() versioned1.Interface {

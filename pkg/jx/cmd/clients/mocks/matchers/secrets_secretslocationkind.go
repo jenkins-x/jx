@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	secrets "github.com/jenkins-x/jx/pkg/io/secrets"
-	"github.com/petergtz/pegomock"
 	"reflect"
+	"github.com/petergtz/pegomock"
+	secrets "github.com/jenkins-x/jx/pkg/io/secrets"
 )
 
 func AnySecretsSecretsLocationKind() secrets.SecretsLocationKind {

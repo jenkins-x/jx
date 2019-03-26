@@ -2,9 +2,9 @@
 package matchers
 
 import (
-	gits "github.com/jenkins-x/jx/pkg/gits"
-	"github.com/petergtz/pegomock"
 	"reflect"
+	"github.com/petergtz/pegomock"
+	gits "github.com/jenkins-x/jx/pkg/gits"
 )
 
 func AnySliceOfPtrToGitsGitPullRequest() []*gits.GitPullRequest {
