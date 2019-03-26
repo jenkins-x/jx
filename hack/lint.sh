@@ -7,17 +7,12 @@ GREEN='\033[0;32m'
 RESET='\033[0m'
 
 echo "Running validation scripts..."
-#scripts=(
-#    "hack/boilerplate.sh"
-#    "hack/gofmt.sh"
 #    "hack/linter.sh"
-#    "hack/dep.sh"
-#    "hack/check-samples.sh"
-#    "hack/check-docs.sh"
 #)
 scripts=(
     "hack/gofmt.sh"
-    "hack/check-docs.sh"
+#    "hack/linter.sh"
+#    "hack/check-docs.sh"
     "hack/check-openapi.sh"
 )
 fail=0
