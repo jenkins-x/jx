@@ -11,7 +11,7 @@ echo "Running validation scripts..."
 #)
 scripts=(
     "hack/gofmt.sh"
-#    "hack/linter.sh"
+    "hack/linter.sh"
 #    "hack/check-docs.sh"
     "hack/check-openapi.sh"
 )

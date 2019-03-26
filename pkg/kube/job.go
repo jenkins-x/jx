@@ -97,7 +97,6 @@ func DeleteJob(client kubernetes.Interface, namespace, name string) error {
 	err := client.BatchV1().Jobs(namespace).Delete(name, metav1.NewDeleteOptions(0))
 	if err != nil {
 		return fmt.Errorf("error deleting job %s. error: %v", name, err)
-		return fmt.Errorf("job %s never succeeded", name)
 	}
 	return nil
 }

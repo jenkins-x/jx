@@ -306,7 +306,7 @@ $(GOLINT):
 lint: $(GOLINT)
 	@echo "--> linting code with 'go lint' tool"
 	$(GOLINT) -min_confidence 1.1 ./...
-	./hack/lint.sh
+	./hack/run-all-checks.sh
 
 .PHONY: vet
 vet: tools.govet

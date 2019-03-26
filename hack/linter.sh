@@ -13,6 +13,7 @@ golangci-lint run \
 	--no-config \
 	-E goimports \
 	-E gocritic \
+	-E gosec \
 	-E interfacer \
 	-E maligned \
 	-E misspell \
@@ -22,5 +23,6 @@ golangci-lint run \
     -D ineffassign \
   --skip-dirs vendor
 
+# ? deadcode / unused
 # -E goconst \
 # -E golint \

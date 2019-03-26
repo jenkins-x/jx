@@ -46,7 +46,7 @@ pipelineConfig:
                     cpu: 0.1
                     memory: 64Mi
 
-              - name: check
+              - name: lint
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
                 image: gcr.io/jenkinsxio/builder-go:0.1.297
