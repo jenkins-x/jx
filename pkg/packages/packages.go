@@ -1,4 +1,4 @@
-package binaries
+package packages
 
 import (
 	"fmt"
