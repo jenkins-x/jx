@@ -77,38 +77,39 @@ type InstallOptions struct {
 
 // InstallFlags flags for the install command
 type InstallFlags struct {
-	InstallOnly                 bool
-	Domain                      string
+	InstallOnly              bool
+	Domain                   string
 	ExposeControllerURLTemplate string
-	ExposeControllerPathMode    string
-	DockerRegistry              string
-	Provider                    string
-	VersionsRepository          string
-	Version                     string
-	LocalHelmRepoName           string
-	Namespace                   string
-	CloudEnvRepository          string
-	NoDefaultEnvironments       bool
-	DefaultEnvironmentPrefix    string
-	LocalCloudEnvironment       bool
-	EnvironmentGitOwner         string
-	Timeout                     string
-	HelmTLS                     bool
-	RegisterLocalHelmRepo       bool
-	CleanupTempFiles            bool
-	Prow                        bool
-	DisableSetKubeContext       bool
-	Dir                         string
-	Vault                       bool
-	Tekton                      bool
-	BuildPackName               string
-	Kaniko                      bool
-	GitOpsMode                  bool
-	NoGitOpsEnvApply            bool
-	NoGitOpsEnvRepo             bool
-	NoGitOpsEnvSetup            bool
-	NoGitOpsVault               bool
-	NextGeneration              bool
+	ExposeControllerPathMode string
+	DockerRegistry           string
+	Provider                 string
+	VersionsRepository       string
+	Version                  string
+	LocalHelmRepoName        string
+	Namespace                string
+	CloudEnvRepository       string
+	NoDefaultEnvironments    bool
+	DefaultEnvironmentPrefix string
+	LocalCloudEnvironment    bool
+	EnvironmentGitOwner      string
+	Timeout                  string
+	HelmTLS                  bool
+	RegisterLocalHelmRepo    bool
+	CleanupTempFiles         bool
+	Prow                     bool
+	DisableSetKubeContext    bool
+	Dir                      string
+	Vault                    bool
+	RecreateVaultBucket      bool
+	Tekton                   bool
+	BuildPackName            string
+	Kaniko                   bool
+	GitOpsMode               bool
+	NoGitOpsEnvApply         bool
+	NoGitOpsEnvRepo          bool
+	NoGitOpsEnvSetup         bool
+	NoGitOpsVault            bool
+	NextGeneration           bool
 }
 
 // Secrets struct for secrets
@@ -350,6 +351,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.NoGitOpsVault, "no-gitops-vault", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a vault")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvSetup, "no-gitops-env-setup", "", false, "When using GitOps to install the development environment this flag skips the post-install setup")
 	cmd.Flags().BoolVarP(&flags.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during installation (supported only for GKE)")
+	cmd.Flags().BoolVarP(&flags.RecreateVaultBucket, "vault-bucket-recreate", "", true, "If the vault bucket already exists delete it then create it empty")
 	cmd.Flags().StringVarP(&flags.BuildPackName, "buildpack", "", "", "The name of the build pack to use for the Team")
 	cmd.Flags().BoolVarP(&flags.Kaniko, "kaniko", "", false, "Use Kaniko for building docker images")
 	cmd.Flags().BoolVarP(&flags.NextGeneration, "ng", "", false, "Use the Next Generation Jenkins X features like Prow, Tekton, No Tiller, Vault, Dev GitOps")
@@ -371,6 +373,9 @@ func (options *InstallOptions) checkFlags() error {
 
 	if flags.Tekton {
 		flags.Prow = true
+		if !options.InitOptions.Flags.NoTiller {
+			log.Infof("note that if using Serverless Jenkins with Tekton we recommend the extra flag: %s\n", util.ColorInfo("--no-tiller"))
+		}
 	}
 	if flags.NextGeneration {
 		flags.GitOpsMode = true
@@ -2030,6 +2035,7 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			IngressConfig: *ic,
 			Namespace:     namespace,
 			AWSConfig:     options.AWSConfig,
+			RecreateVaultBucket: options.Flags.RecreateVaultBucket,
 		}
 		if options.installValues != nil {
 			if options.Flags.Provider == cloud.GKE {

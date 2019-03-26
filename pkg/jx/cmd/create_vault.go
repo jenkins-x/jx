@@ -54,6 +54,7 @@ type CreateVaultOptions struct {
 	kubevault.AWSConfig
 	Namespace         string
 	SecretsPathPrefix string
+	RecreateVaultBucket bool
 
 	IngressConfig kube.IngressConfig
 }
@@ -94,6 +95,7 @@ func NewCmdCreateVault(commonOpts *CommonOptions) *cobra.Command {
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Namespace where the Vault is created")
 	cmd.Flags().StringVarP(&options.SecretsPathPrefix, "secrets-path-prefix", "p", vault.DefaultSecretsPathPrefix, "Path prefix for secrets used for access control config")
+	cmd.Flags().BoolVarP(&options.RecreateVaultBucket, "recreate", "", true, "If the bucket already exists delete it so its created empty for the vault")
 
 	return cmd
 }
@@ -262,7 +264,7 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 	}
 	log.Infof("KMS Key %s created in keying %s\n", util.ColorInfo(kmsConfig.Key), util.ColorInfo(kmsConfig.Keyring))
 
-	vaultBucket, err := gkevault.CreateBucket(vaultName, clusterName, o.GKEProjectID, o.GKEZone)
+	vaultBucket, err := gkevault.CreateBucket(vaultName, clusterName, o.GKEProjectID, o.GKEZone, o.RecreateVaultBucket)
 	if err != nil {
 		return errors.Wrap(err, "creating Vault GCS data bucket")
 	}
