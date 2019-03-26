@@ -9,9 +9,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/knative/pkg/apis"
+	"github.com/knative/pkg/kmp"
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	tb "github.com/tektoncd/pipeline/test/builder"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -810,6 +812,222 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 			),
 			expectedErrorMsg: "syntactic sugar steps not yet supported",
 		},
+		{
+			name: "top_level_container_options",
+			expected: ParsedPipeline(
+				PipelineOptions(
+					PipelineContainerOptions(
+						ContainerResourceLimits("0.2", "128Mi"),
+						ContainerResourceRequests("0.1", "64Mi"),
+					),
+				),
+				PipelineAgent("some-image"),
+				PipelineStage("A Working Stage",
+					StageStep(
+						StepCmd("echo"),
+						StepArg("hello"), StepArg("world"),
+					),
+				),
+			),
+			pipeline: tb.Pipeline("somepipeline", "jx", tb.PipelineSpec(
+				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
+					tb.PipelineTaskInputResource("workspace", "somepipeline"),
+					tb.PipelineTaskOutputResource("workspace", "somepipeline")),
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a-working-stage", "jx", TaskStageLabel("A Working Stage"),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+								tb.ResourceTargetPath("workspace"))),
+						tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
+						tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace"),
+							ContainerResourceLimits("0.2", "128Mi"),
+							ContainerResourceRequests("0.1", "64Mi"),
+						),
+					)),
+			},
+			structure: PipelineStructure("somepipeline",
+				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage")),
+			),
+		},
+		{
+			name: "stage_overrides_top_level_container_options",
+			expected: ParsedPipeline(
+				PipelineOptions(
+					PipelineContainerOptions(
+						ContainerResourceLimits("0.2", "128Mi"),
+						ContainerResourceRequests("0.1", "64Mi"),
+					),
+				),
+				PipelineAgent("some-image"),
+				PipelineStage("A Working Stage",
+					StageOptions(
+						StageContainerOptions(
+							ContainerResourceLimits("0.4", "256Mi"),
+							ContainerResourceRequests("0.2", "128Mi"),
+						),
+					),
+					StageStep(
+						StepCmd("echo"),
+						StepArg("hello"), StepArg("world"),
+					),
+				),
+			),
+			pipeline: tb.Pipeline("somepipeline", "jx", tb.PipelineSpec(
+				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
+					tb.PipelineTaskInputResource("workspace", "somepipeline"),
+					tb.PipelineTaskOutputResource("workspace", "somepipeline")),
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a-working-stage", "jx", TaskStageLabel("A Working Stage"),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+								tb.ResourceTargetPath("workspace"))),
+						tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
+						tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace"),
+							ContainerResourceLimits("0.4", "256Mi"),
+							ContainerResourceRequests("0.2", "128Mi"),
+						),
+					)),
+			},
+			structure: PipelineStructure("somepipeline",
+				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage")),
+			),
+		},
+		{
+			name: "merge_container_options",
+			expected: ParsedPipeline(
+				PipelineOptions(
+					PipelineContainerOptions(
+						ContainerResourceRequests("0.1", "64Mi"),
+					),
+				),
+				PipelineAgent("some-image"),
+				PipelineStage("A Working Stage",
+					StageOptions(
+						StageContainerOptions(
+							ContainerResourceLimits("0.4", "256Mi"),
+						),
+					),
+					StageStep(
+						StepCmd("echo"),
+						StepArg("hello"), StepArg("world"),
+					),
+				),
+			),
+			pipeline: tb.Pipeline("somepipeline", "jx", tb.PipelineSpec(
+				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
+					tb.PipelineTaskInputResource("workspace", "somepipeline"),
+					tb.PipelineTaskOutputResource("workspace", "somepipeline")),
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a-working-stage", "jx", TaskStageLabel("A Working Stage"),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+								tb.ResourceTargetPath("workspace"))),
+						tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
+						tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace"),
+							ContainerResourceLimits("0.4", "256Mi"),
+							ContainerResourceRequests("0.1", "64Mi"),
+						),
+					)),
+			},
+			structure: PipelineStructure("somepipeline",
+				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage")),
+			),
+		},
+		{
+			name: "stage_level_container_options",
+			expected: ParsedPipeline(
+				PipelineAgent("some-image"),
+				PipelineStage("A Working Stage",
+					StageOptions(
+						StageContainerOptions(
+							ContainerResourceLimits("0.2", "128Mi"),
+							ContainerResourceRequests("0.1", "64Mi"),
+						),
+					),
+					StageStep(
+						StepCmd("echo"),
+						StepArg("hello"), StepArg("world"),
+					),
+				),
+			),
+			pipeline: tb.Pipeline("somepipeline", "jx", tb.PipelineSpec(
+				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
+					tb.PipelineTaskInputResource("workspace", "somepipeline"),
+					tb.PipelineTaskOutputResource("workspace", "somepipeline")),
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a-working-stage", "jx", TaskStageLabel("A Working Stage"),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+								tb.ResourceTargetPath("workspace"))),
+						tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
+						tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace"),
+							ContainerResourceLimits("0.2", "128Mi"),
+							ContainerResourceRequests("0.1", "64Mi"),
+						),
+					)),
+			},
+			structure: PipelineStructure("somepipeline",
+				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage")),
+			),
+		},
+		{
+			name: "container_options_env_merge",
+			expected: ParsedPipeline(
+				PipelineAgent("some-image"),
+				PipelineOptions(
+					PipelineContainerOptions(
+						tb.EnvVar("SOME_VAR", "A value for the env var"),
+						tb.EnvVar("OVERRIDE_ENV", "Original value"),
+						tb.EnvVar("OVERRIDE_STAGE_ENV", "Original value"),
+					),
+				),
+				PipelineEnvVar("SOME_OTHER_VAR", "A value for the other env var"),
+				PipelineEnvVar("OVERRIDE_ENV", "New value"),
+				PipelineStage("A Working Stage",
+					StageOptions(
+						StageContainerOptions(
+							tb.EnvVar("ANOTHER_OVERRIDE_STAGE_ENV", "Original value"),
+						),
+					),
+					StageStep(StepCmd("echo"), StepArg("hello"), StepArg("world")),
+					StageEnvVar("OVERRIDE_STAGE_ENV", "New value"),
+					StageEnvVar("ANOTHER_OVERRIDE_STAGE_ENV", "New value"),
+				),
+			),
+			pipeline: tb.Pipeline("somepipeline", "jx", tb.PipelineSpec(
+				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage",
+					tb.PipelineTaskInputResource("workspace", "somepipeline"),
+					tb.PipelineTaskOutputResource("workspace", "somepipeline")),
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a-working-stage", "jx",
+					TaskStageLabel("A Working Stage"),
+					tb.TaskSpec(
+						tb.TaskInputs(
+							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+								tb.ResourceTargetPath("workspace"))),
+						tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
+						tb.Step("step2", "some-image", tb.Command("echo"), tb.Args("hello", "world"), workingDir("/workspace/workspace"),
+							tb.EnvVar("ANOTHER_OVERRIDE_STAGE_ENV", "New value"),
+							tb.EnvVar("OVERRIDE_ENV", "New value"),
+							tb.EnvVar("OVERRIDE_STAGE_ENV", "New value"),
+							tb.EnvVar("SOME_OTHER_VAR", "A value for the other env var"),
+							tb.EnvVar("SOME_VAR", "A value for the env var"),
+						),
+					)),
+			},
+			structure: PipelineStructure("somepipeline",
+				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage")),
+			),
+		},
 	}
 
 	for _, tt := range tests {
@@ -833,7 +1051,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 			}
 			parsed := projectConfig.PipelineConfig.Pipelines.Release.Pipeline
 
-			if d := cmp.Diff(tt.expected, parsed); d != "" && tt.expected != nil {
+			if d, _ := kmp.SafeDiff(tt.expected, parsed); d != "" && tt.expected != nil {
 				t.Errorf("Parsed ParsedPipeline did not match expected: %s", d)
 			}
 
@@ -873,7 +1091,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				for _, task := range tasks {
 					task.TypeMeta = metav1.TypeMeta{}
 				}
-				if d := cmp.Diff(tt.tasks, tasks); d != "" {
+				if d, _ := kmp.SafeDiff(tt.tasks, tasks); d != "" {
 					t.Errorf("Generated Tasks did not match expected: %s", d)
 				}
 
@@ -1109,6 +1327,13 @@ func TestFailedValidation(t *testing.T) {
 		{
 			name:          "loop_without_values",
 			expectedError: apis.ErrMissingField("values").ViaField("loop").ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+		},
+		{
+			name: "top_level_container_options_with_command",
+			expectedError: (&apis.FieldError{
+				Message: "Command cannot be specified in containerOptions",
+				Paths:   []string{"command"},
+			}).ViaField("containerOptions").ViaField("options"),
 		},
 	}
 
@@ -1346,6 +1571,48 @@ func PipelineOptions(ops ...PipelineOptionsOp) PipelineOp {
 
 		for _, op := range ops {
 			op(&parsed.Options)
+		}
+	}
+}
+
+func PipelineContainerOptions(ops ...tb.ContainerOp) PipelineOptionsOp {
+	return func(options *syntax.RootOptions) {
+		options.ContainerOptions = &corev1.Container{}
+
+		for _, op := range ops {
+			op(options.ContainerOptions)
+		}
+	}
+}
+
+func StageContainerOptions(ops ...tb.ContainerOp) StageOptionsOp {
+	return func(options *syntax.StageOptions) {
+		options.ContainerOptions = &corev1.Container{}
+
+		for _, op := range ops {
+			op(options.ContainerOptions)
+		}
+	}
+}
+
+func ContainerResourceLimits(cpus, memory string) tb.ContainerOp {
+	return func(container *corev1.Container) {
+		cpuQuantity, _ := resource.ParseQuantity(cpus)
+		memoryQuantity, _ := resource.ParseQuantity(memory)
+		container.Resources.Limits = corev1.ResourceList{
+			"cpu":    cpuQuantity,
+			"memory": memoryQuantity,
+		}
+	}
+}
+
+func ContainerResourceRequests(cpus, memory string) tb.ContainerOp {
+	return func(container *corev1.Container) {
+		cpuQuantity, _ := resource.ParseQuantity(cpus)
+		memoryQuantity, _ := resource.ParseQuantity(memory)
+		container.Resources.Requests = corev1.ResourceList{
+			"cpu":    cpuQuantity,
+			"memory": memoryQuantity,
 		}
 	}
 }

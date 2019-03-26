@@ -47,8 +47,8 @@ items:
       name: step2
       resources:
         requests:
-          cpu: 400m
-          memory: 512Mi
+          cpu: 0.1
+          memory: 64Mi
       securityContext:
         privileged: true
       volumeMounts:
@@ -90,8 +90,8 @@ items:
       name: step3
       resources:
         requests:
-          cpu: 400m
-          memory: 512Mi
+          cpu: 0.1
+          memory: 64Mi
       securityContext:
         privileged: true
       volumeMounts:
@@ -168,8 +168,11 @@ items:
       name: step2
       resources:
         requests:
-          cpu: 400m
-          memory: 512Mi
+          cpu: 0.1
+          memory: 64Mi
+        limits:
+          cpu: 0.4
+          memory: 256Mi
       securityContext:
         privileged: true
       volumeMounts:

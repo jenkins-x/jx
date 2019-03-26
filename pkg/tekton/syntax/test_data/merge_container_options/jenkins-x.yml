@@ -1,7 +1,4 @@
 pipelineConfig:
-  env:
-    - name: FRUIT
-      value: BANANA
   pipelines:
     release:
       pipeline:
@@ -12,21 +9,14 @@ pipelineConfig:
                 cpu: 0.1
                 memory: 64Mi
         agent:
-          image: nodejs
+          image: some-image
         stages:
-          - name: Build-a-really-long-stage-name-please-but-not-too-long-thanks
+          - name: A Working Stage
             steps:
               - command: echo
                 args:
-                  - hello world
-              - command: ls
-                args:
-                  - -la
-          - name: Second
-            steps:
-              - command: echo
-                args:
-                  - hi ${FRUIT}
+                  - hello
+                  - world
             options:
               containerOptions:
                 resources:
