@@ -27,8 +27,8 @@ const (
 	gcpServiceAccountEnv    = "GOOGLE_APPLICATION_CREDENTIALS"
 	gcpServiceAccountPath   = "/etc/gcp/service-account.json"
 
-	awsServiceAccountEnv    = "AWS_SHARED_CREDENTIALS_FILE"
-	awsServiceAccountPath   = "/etc/aws/credentials"
+	awsServiceAccountEnv  = "AWS_SHARED_CREDENTIALS_FILE"
+	awsServiceAccountPath = "/etc/aws/credentials"
 
 	vaultAuthName     = "auth"
 	vaultAuthType     = "kubernetes"
@@ -123,7 +123,7 @@ type Telemetry struct {
 
 // Storage configuration for Vault storage
 type Storage struct {
-	GCS *GCSConfig `json:"gcs,omitempty"`
+	GCS      *GCSConfig      `json:"gcs,omitempty"`
 	DynamoDB *DynamoDBConfig `json:"dynamodb,omitempty"`
 }
 
@@ -159,7 +159,7 @@ func CreateGKEVault(kubeClient kubernetes.Interface, vaultOperatorClient version
 			HaEnabled: "true",
 		},
 	}
-	vault.Spec.UnsealConfig =  v1alpha1.UnsealConfig{
+	vault.Spec.UnsealConfig = v1alpha1.UnsealConfig{
 		Google: &v1alpha1.GoogleUnsealConfig{
 			KMSKeyRing:    gcpConfig.KmsKeyring,
 			KMSCryptoKey:  gcpConfig.KmsKey,
@@ -173,7 +173,6 @@ func CreateGKEVault(kubeClient kubernetes.Interface, vaultOperatorClient version
 		Path:       gcpServiceAccountPath,
 		SecretName: gcpServiceAccountSecretName,
 	}
-
 
 	_, err = vaultOperatorClient.VaultV1alpha1().Vaults(ns).Create(vault)
 	return err
@@ -198,7 +197,7 @@ func CreateAWSVault(kubeClient kubernetes.Interface, vaultOperatorClient version
 			SecretAccessKey: awsConfig.SecretAccessKey,
 		},
 	}
-	vault.Spec.UnsealConfig =  v1alpha1.UnsealConfig{
+	vault.Spec.UnsealConfig = v1alpha1.UnsealConfig{
 		AWS: &awsConfig.AWSUnsealConfig,
 	}
 	vault.Spec.CredentialsConfig = v1alpha1.CredentialsConfig{
@@ -206,7 +205,6 @@ func CreateAWSVault(kubeClient kubernetes.Interface, vaultOperatorClient version
 		Path:       awsServiceAccountPath,
 		SecretName: awsServiceAccountSecretName,
 	}
-
 
 	_, err = vaultOperatorClient.VaultV1alpha1().Vaults(ns).Create(vault)
 	return err

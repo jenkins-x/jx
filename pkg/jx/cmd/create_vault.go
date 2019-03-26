@@ -13,10 +13,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-	gkevault "github.com/jenkins-x/jx/pkg/cloud/gke/vault"
 	awsvault "github.com/jenkins-x/jx/pkg/cloud/amazon/vault"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	gkevault "github.com/jenkins-x/jx/pkg/cloud/gke/vault"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
@@ -52,16 +52,17 @@ type CreateVaultOptions struct {
 
 	GKECreateVaultOptions
 	kubevault.AWSConfig
-	Namespace         string
-	SecretsPathPrefix string
+	Namespace           string
+	SecretsPathPrefix   string
+	RecreateVaultBucket bool
 
 	IngressConfig kube.IngressConfig
 }
 
 // GKECreateVaultOptions the options for vault on GKE
 type GKECreateVaultOptions struct {
-	GKEProjectID      string
-	GKEZone           string
+	GKEProjectID string
+	GKEZone      string
 }
 
 // NewCmdCreateVault  creates a command object for the "create" command
@@ -94,6 +95,7 @@ func NewCmdCreateVault(commonOpts *CommonOptions) *cobra.Command {
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "Namespace where the Vault is created")
 	cmd.Flags().StringVarP(&options.SecretsPathPrefix, "secrets-path-prefix", "p", vault.DefaultSecretsPathPrefix, "Path prefix for secrets used for access control config")
+	cmd.Flags().BoolVarP(&options.RecreateVaultBucket, "recreate", "", true, "If the bucket already exists delete it so its created empty for the vault")
 
 	return cmd
 }
@@ -262,7 +264,7 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 	}
 	log.Infof("KMS Key %s created in keying %s\n", util.ColorInfo(kmsConfig.Key), util.ColorInfo(kmsConfig.Keyring))
 
-	vaultBucket, err := gkevault.CreateBucket(vaultName, clusterName, o.GKEProjectID, o.GKEZone)
+	vaultBucket, err := gkevault.CreateBucket(vaultName, clusterName, o.GKEProjectID, o.GKEZone, o.RecreateVaultBucket, o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
 		return errors.Wrap(err, "creating Vault GCS data bucket")
 	}

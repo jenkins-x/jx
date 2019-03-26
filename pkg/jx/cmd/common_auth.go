@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -46,7 +47,11 @@ func (o *CommonOptions) CreateGitAuthConfigService() (auth.ConfigService, error)
 
 // CreateGitAuthConfigServiceFromSecrets Creates a git auth config service from secrets
 func (o *CommonOptions) CreateGitAuthConfigServiceFromSecrets(fileName string, secrets *corev1.SecretList, isCDPipeline bool) (auth.ConfigService, error) {
-	authConfigSvc, err := o.factory.CreateAuthConfigService(fileName)
+	_, namespace, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find development namespace")
+	}
+	authConfigSvc, err := o.factory.CreateAuthConfigService(fileName, namespace)
 	if err != nil {
 		return authConfigSvc, err
 	}

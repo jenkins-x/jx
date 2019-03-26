@@ -55,7 +55,7 @@ func TestCreateEnvRun(t *testing.T) {
 
 	// mock factory
 	factory := cmd_mocks.NewMockFactory()
-	When(factory.CreateAuthConfigService(AnyString())).ThenReturn(tests.CreateAuthConfigService(), nil)
+	When(factory.CreateAuthConfigService(AnyString(), AnyString())).ThenReturn(tests.CreateAuthConfigService(), nil)
 	When(factory.CreateGitProvider(
 		AnyString(),
 		AnyString(),

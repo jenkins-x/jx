@@ -243,7 +243,7 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 
 	mockConfigSaver := auth_test.NewMockConfigSaver()
 	When(mockConfigSaver.LoadConfig()).ThenReturn(&auth.AuthConfig{}, nil)
-	When(factory.CreateAuthConfigService(auth.GitAuthConfigFile)).ThenReturn(auth.NewAuthConfigService(mockConfigSaver), nil)
+	When(factory.CreateAuthConfigService(AnyString(), AnyString())).ThenReturn(auth.NewAuthConfigService(mockConfigSaver), nil)
 	When(factory.IsInCDPipeline()).ThenReturn(true)
 
 	cs := cs_fake.NewSimpleClientset()
@@ -269,7 +269,7 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 		AnyString(),      // repo
 		AnyString(),      // username
 		AnyString(),      // password
-		AnyBool(),   // reuse-values
+		AnyBool(),        // reuse-values
 	)).ThenReturn(nil) //err=nil
 
 	return previewOpts, cs

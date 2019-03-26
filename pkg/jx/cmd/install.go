@@ -100,6 +100,7 @@ type InstallFlags struct {
 	DisableSetKubeContext       bool
 	Dir                         string
 	Vault                       bool
+	RecreateVaultBucket         bool
 	Tekton                      bool
 	BuildPackName               string
 	Kaniko                      bool
@@ -350,6 +351,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.NoGitOpsVault, "no-gitops-vault", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a vault")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvSetup, "no-gitops-env-setup", "", false, "When using GitOps to install the development environment this flag skips the post-install setup")
 	cmd.Flags().BoolVarP(&flags.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during installation (supported only for GKE)")
+	cmd.Flags().BoolVarP(&flags.RecreateVaultBucket, "vault-bucket-recreate", "", true, "If the vault bucket already exists delete it then create it empty")
 	cmd.Flags().StringVarP(&flags.BuildPackName, "buildpack", "", "", "The name of the build pack to use for the Team")
 	cmd.Flags().BoolVarP(&flags.Kaniko, "kaniko", "", false, "Use Kaniko for building docker images")
 	cmd.Flags().BoolVarP(&flags.NextGeneration, "ng", "", false, "Use the Next Generation Jenkins X features like Prow, Tekton, No Tiller, Vault, Dev GitOps")
@@ -371,6 +373,9 @@ func (options *InstallOptions) checkFlags() error {
 
 	if flags.Tekton {
 		flags.Prow = true
+		if !options.InitOptions.Flags.NoTiller {
+			log.Infof("note that if using Serverless Jenkins with Tekton we recommend the extra flag: %s\n", util.ColorInfo("--no-tiller"))
+		}
 	}
 	if flags.NextGeneration {
 		flags.GitOpsMode = true
@@ -2027,9 +2032,10 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			CreateOptions: CreateOptions{
 				CommonOptions: options.CommonOptions,
 			},
-			IngressConfig: *ic,
-			Namespace:     namespace,
-			AWSConfig:     options.AWSConfig,
+			IngressConfig:       *ic,
+			Namespace:           namespace,
+			AWSConfig:           options.AWSConfig,
+			RecreateVaultBucket: options.Flags.RecreateVaultBucket,
 		}
 		if options.installValues != nil {
 			if options.Flags.Provider == cloud.GKE {

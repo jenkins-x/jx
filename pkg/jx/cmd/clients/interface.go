@@ -51,22 +51,22 @@ type Factory interface {
 	//
 
 	// CreateAuthConfigService creates a new authentication configuration service
-	CreateAuthConfigService(fileName string) (auth.ConfigService, error)
+	CreateAuthConfigService(fileName string, namespace string) (auth.ConfigService, error)
 
 	// CreateJenkinsAuthConfigService creates a new Jenkins authentication configuration service
 	CreateJenkinsAuthConfigService(kubernetes.Interface, string, string) (auth.ConfigService, error)
 
 	// CreateChartmuseumAuthConfigService creates a new Chartmuseum authentication configuration service
-	CreateChartmuseumAuthConfigService() (auth.ConfigService, error)
+	CreateChartmuseumAuthConfigService(namespace string) (auth.ConfigService, error)
 
 	// CreateIssueTrackerAuthConfigService creates a new issuer tracker configuration service
-	CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error)
+	CreateIssueTrackerAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error)
 
 	// CreateChatAuthConfigService creates a new chat configuration service
-	CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error)
+	CreateChatAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error)
 
 	// CreateAddonAuthConfigService creates a new addon auth configuration service
-	CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error)
+	CreateAddonAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error)
 
 	//
 	// Generic clients

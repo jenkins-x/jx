@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -16,11 +17,19 @@ func (o *CommonOptions) createIssueTrackerAuthConfigService() (auth.ConfigServic
 	if err != nil {
 		log.Infof("The current user cannot query pipeline issue tracker secrets: %s", err)
 	}
-	return o.factory.CreateIssueTrackerAuthConfigService(secrets)
+	_, namespace, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find development namespace")
+	}
+	return o.factory.CreateIssueTrackerAuthConfigService(namespace, secrets)
 }
 
 func (o *CommonOptions) errorCreateIssueTrackerAuthConfigService(parentError error) (auth.ConfigService, error) {
-	answer, err := o.factory.CreateIssueTrackerAuthConfigService(nil)
+	_, namespace, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find development namespace")
+	}
+	answer, err := o.factory.CreateIssueTrackerAuthConfigService(namespace, nil)
 	if err == nil {
 		return answer, parentError
 	}
