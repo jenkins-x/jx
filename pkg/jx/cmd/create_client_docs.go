@@ -42,8 +42,6 @@ var (
 `)
 )
 
-const ()
-
 // NewCmdCreateClientDocs creates apidocs for CRDs
 func NewCmdCreateClientDocs(commonOpts *CommonOptions) *cobra.Command {
 	o := &CreateClientDocsOptions{

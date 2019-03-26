@@ -473,7 +473,7 @@ Welcome to our new ` + role + `!
 `)
 
 		keys := []string{}
-		for k, _ := range newUsers {
+		for k := range newUsers {
 			keys = append(keys, k)
 		}
 		sort.Strings(keys)

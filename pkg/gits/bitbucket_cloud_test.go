@@ -33,12 +33,12 @@ const (
 )
 
 var profiles = []UserProfile{
-	UserProfile{
+	{
 		url:      "https://auth.example.com",
 		name:     "Test Auth Server",
 		username: "test-user",
 	},
-	UserProfile{
+	{
 		url:      "https://auth.example.com",
 		name:     "Test Auth Server with Underscore user",
 		username: "test_user",

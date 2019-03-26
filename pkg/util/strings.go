@@ -90,7 +90,7 @@ func FirstNotEmptyString(values ...string) string {
 // SortedMapKeys returns the sorted keys of the given map
 func SortedMapKeys(m map[string]string) []string {
 	answer := []string{}
-	for k, _ := range m {
+	for k := range m {
 		answer = append(answer, k)
 	}
 	sort.Strings(answer)

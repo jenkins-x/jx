@@ -321,7 +321,7 @@ func (o *CreateDevPodOptions) Run() error {
 			Name:  "theia",
 			Image: fmt.Sprintf("theiaide/theia-full:%s", theiaVersion),
 			Ports: []corev1.ContainerPort{
-				corev1.ContainerPort{
+				{
 					ContainerPort: 3000,
 				},
 			},
@@ -591,7 +591,7 @@ func (o *CreateDevPodOptions) Run() error {
 				},
 				Spec: corev1.ServiceSpec{
 					Ports: []corev1.ServicePort{
-						corev1.ServicePort{
+						{
 							Name:       theiaServiceName,
 							Port:       80,
 							TargetPort: intstr.FromInt(3000),

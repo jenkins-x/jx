@@ -92,7 +92,7 @@ func (o *CreatePostPreviewJobOptions) Run() error {
 
 	callback := func(env *v1.Environment) error {
 		settings := &env.Spec.TeamSettings
-		for i, _ := range settings.PostPreviewJobs {
+		for i := range settings.PostPreviewJobs {
 			job := &settings.PostPreviewJobs[i]
 			if job.Name == name {
 				podSpec := &job.Spec.Template.Spec

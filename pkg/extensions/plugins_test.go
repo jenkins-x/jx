@@ -54,17 +54,17 @@ func TestEnsurePluginInstalled(t *testing.T) {
 		Spec: jenkinsv1.PluginSpec{
 			Description: "Test Plugin",
 			Binaries: []jenkinsv1.Binary{
-				jenkinsv1.Binary{
+				{
 					URL:    fmt.Sprintf("http://%s:%d/jx-test", "localhost", port),
 					Goarch: "amd64",
 					Goos:   "Windows",
 				},
-				jenkinsv1.Binary{
+				{
 					URL:    fmt.Sprintf("http://%s:%d/jx-test", "localhost", port),
 					Goarch: "amd64",
 					Goos:   "Darwin",
 				},
-				jenkinsv1.Binary{
+				{
 					URL:    fmt.Sprintf("http://%s:%d/jx-test", "localhost", port),
 					Goarch: "amd64",
 					Goos:   "Linux",

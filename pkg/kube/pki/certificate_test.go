@@ -64,14 +64,14 @@ func TestWatchCertificatesIssuedReady(t *testing.T) {
 
 		"watch one namespace": {
 			map[string][]string{
-				"test": []string{"test1, test2"},
+				"test": {"test1, test2"},
 			},
 		},
 		"watch multiple namespaces": {
 			map[string][]string{
-				"test1": []string{"tests1, test2"},
-				"test2": []string{"tests1, test2"},
-				"test3": []string{"tests1, test2"},
+				"test1": {"tests1, test2"},
+				"test2": {"tests1, test2"},
+				"test3": {"tests1, test2"},
 			},
 		},
 	}

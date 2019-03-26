@@ -84,7 +84,7 @@ func (o *DeleteContextOptions) Run() error {
 	allNames := []string{}
 
 	args := o.Args
-	for k, _ := range config.Contexts {
+	for k := range config.Contexts {
 		allNames = append(allNames, k)
 		if matchesFilter(k, args) {
 			names = append(names, k)

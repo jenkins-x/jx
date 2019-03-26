@@ -654,7 +654,7 @@ func (o *PreviewOptions) modifyJob(originalJob *batchv1.Job, envVars map[string]
 	job := *originalJob
 	for k, v := range envVars {
 		templateSpec := &job.Spec.Template.Spec
-		for i, _ := range templateSpec.Containers {
+		for i := range templateSpec.Containers {
 			container := &templateSpec.Containers[i]
 			if kube.GetEnvVar(container, k) == nil {
 				container.Env = append(container.Env, corev1.EnvVar{

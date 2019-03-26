@@ -13,8 +13,6 @@ type StepPostOptions struct {
 	OutDir        string
 }
 
-var ()
-
 // NewCmdStep Steps a command object for the "step" command
 func NewCmdStepPost(commonOpts *CommonOptions) *cobra.Command {
 	options := &StepPostOptions{
