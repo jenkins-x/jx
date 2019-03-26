@@ -94,12 +94,12 @@ func CreateBucket(vaultName, clusterName, projectID, zone string, recreate bool,
 			return bucketName, nil
 		}
 		if batchMode {
+			log.Warnf("we are deleting the Vault bucket %s so that Vault will install cleanly\n", bucketName)
+		} else {
 			if !util.Confirm("we are about to delete bucket: %s so we can install a clean Vault. Are you sure: ",
 				true, "we recommend you delete the Vault bucket on install to ensure Vault starts up reliably", in, out, outErr) {
 				return bucketName, nil
 			}
-		} else {
-			log.Warnf("we are deleting the Vault bucket %s so that Vault will install cleanly\n", bucketName)
 		}
 		err = gke.DeleteBucket(bucketName)
 		if err != nil {
