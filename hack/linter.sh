@@ -11,7 +11,8 @@ fi
 
 golangci-lint run \
 	--no-config \
-	-E goimports \
+    --print-resources-usage \
+    --fast \
 	-E misspell \
 	-E unconvert \
 	-D errcheck \
@@ -20,11 +21,13 @@ golangci-lint run \
     -D govet \
     -D varcheck \
     -D structcheck \
+    -D typecheck \
   --skip-dirs vendor \
   --deadline 10m0s
 
 # ? deadcode / unused
 
+# -E goimports
 # -E goconst
 # -E golint
 # -E gosec

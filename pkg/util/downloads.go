@@ -5,8 +5,6 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/pkg/errors"
 	"io"
 	"net/http"
 	"os"
@@ -14,6 +12,9 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/pkg/errors"
 
 	"github.com/blang/semver"
 	"github.com/google/go-github/github"
