@@ -1,12 +1,13 @@
 package util
 
 import (
-	"github.com/jenkins-x/jx/pkg/log"
 	"net"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/log"
 )
 
 // defaults mirror the default http.Transport values

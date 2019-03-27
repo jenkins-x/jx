@@ -2,8 +2,9 @@ package jenkinsfile
 
 import (
 	"bytes"
-	"github.com/jenkins-x/jx/pkg/util"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/util"
 )
 
 var (

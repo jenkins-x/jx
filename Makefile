@@ -34,7 +34,7 @@ CGO_ENABLED = 0
 
 all: build
 full: check
-check: lint build test
+check: build test
 
 version:
 ifeq (,$(wildcard pkg/version/VERSION))
