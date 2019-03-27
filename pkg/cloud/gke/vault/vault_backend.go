@@ -101,6 +101,10 @@ func CreateBucket(vaultName, clusterName, projectID, zone string, recreate bool,
 				return bucketName, nil
 			}
 		}
+		err = gke.DeleteAllObjectsInBucket(bucketName)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to remove objects from GCS bucket %s", bucketName)
+		}
 		err = gke.DeleteBucket(bucketName)
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to delete GCS bucket %s", bucketName)
