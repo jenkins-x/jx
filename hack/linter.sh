@@ -12,12 +12,14 @@ fi
 golangci-lint run \
 	--no-config \
 	-E goimports \
-	-E maligned \
 	-E misspell \
 	-E unconvert \
 	-D errcheck \
     -D ineffassign \
     -D deadcode \
+    -D govet \
+    -D varcheck \
+    -D structcheck \
   --skip-dirs vendor \
   --deadline 10m0s
 
@@ -29,3 +31,4 @@ golangci-lint run \
 # -E unparam
 # -E gocritic
 # -E interfacer
+# -E maligned
