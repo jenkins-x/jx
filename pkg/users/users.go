@@ -183,5 +183,4 @@ func Resolve(id string, providerKey string, jxClient versioned.Interface,
 		// Otherwise, create a new user
 		return jxClient.JenkinsV1().Users(namespace).Create(new)
 	}
-	return nil, nil
 }

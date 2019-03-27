@@ -33,7 +33,7 @@ type InvokeDraftPack struct {
 	ProjectConfig               *config.ProjectConfig
 }
 
-// initBuildPacks initalise the build packs
+// initBuildPacks initialise the build packs
 func (o *CommonOptions) initBuildPacks() (string, *v1.TeamSettings, error) {
 	settings, err := o.TeamSettings()
 	if err != nil {

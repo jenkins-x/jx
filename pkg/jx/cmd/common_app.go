@@ -6,7 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 )
 
-// GetDevEnv gets the Development Enviornment CRD as devEnv,
+// GetDevEnv gets the Development Environment CRD as devEnv,
 // and also tells the user whether the development environment is using gitOps
 func (o *CommonOptions) GetDevEnv() (gitOps bool, devEnv *jenkinsv1.Environment) {
 

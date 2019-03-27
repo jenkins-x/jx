@@ -201,7 +201,7 @@ func CheckMark() string {
 	return "\u2705"
 }
 
-// RemoveStringFromSlice removes the first occurence of the specified string from a slice, if it exists and returns the result
+// RemoveStringFromSlice removes the first occurrence of the specified string from a slice, if it exists and returns the result
 func RemoveStringFromSlice(strings []string, toRemove string) []string {
 	for i, str := range strings {
 		if str == toRemove {

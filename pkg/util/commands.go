@@ -93,7 +93,7 @@ func (c *Command) SetEnv(env map[string]string) {
 	c.Env = env
 }
 
-// CurrentEnv returns the current envrionment variables
+// CurrentEnv returns the current environment variables
 func (c *Command) CurrentEnv() map[string]string {
 	return c.Env
 }

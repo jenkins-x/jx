@@ -46,7 +46,7 @@ type PipelineAgent struct {
 	Dir       string `json:"dir,omitempty"`
 }
 
-// Pipelines contains all the different kinds of pipeline for diferent branches
+// Pipelines contains all the different kinds of pipeline for different branches
 type Pipelines struct {
 	PullRequest *PipelineLifecycles `json:"pullRequest,omitempty"`
 	Release     *PipelineLifecycles `json:"release,omitempty"`
@@ -84,7 +84,7 @@ type PipelineLifecycle struct {
 	// PreSteps if using inheritance then invoke these steps before the base steps
 	PreSteps []*PipelineStep `json:"preSteps,omitempty"`
 
-	// Replace if using inheritence then replace steps from the base pipeline
+	// Replace if using inheritance then replace steps from the base pipeline
 	Replace bool `json:"replace,omitempty"`
 }
 

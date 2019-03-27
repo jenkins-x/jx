@@ -30,7 +30,7 @@ type HTTPBuildNumberServer struct {
 // NewHTTPBuildNumberServer creates a new, initialised HTTPBuildNumberServer.
 // Use 'bindAddress' to control the address/interface the HTTP service will listen on; to listen on all interfaces
 // (i.e. 0.0.0.0 or ::) provide a blank string.
-// Build numbers will be generated using the specifed BuildNumberIssuer.
+// Build numbers will be generated using the specified BuildNumberIssuer.
 func NewHTTPBuildNumberServer(bindAddress string, port int, issuer BuildNumberIssuer) *HTTPBuildNumberServer {
 	return &HTTPBuildNumberServer{
 		bindAddress: bindAddress,

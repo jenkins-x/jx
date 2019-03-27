@@ -31,7 +31,7 @@ const (
 	certManagerIssuerStagingServer = "https://acme-staging-v02.api.letsencrypt.org/directory"
 )
 
-// CleanCertManagerResources removed the cert-manager resoruces from the given namespaces
+// CleanCertManagerResources removed the cert-manager resources from the given namespaces
 func CleanCertManagerResources(certclient certclient.Interface, ns string, ic kube.IngressConfig) error {
 	if ic.Issuer == CertManagerIssuerProd {
 		_, err := certclient.Certmanager().Issuers(ns).Get(CertManagerIssuerProd, metav1.GetOptions{})

@@ -34,7 +34,7 @@ CGO_ENABLED = 0
 
 all: build
 full: check
-check: lint vet build test
+check: lint build test
 
 version:
 ifeq (,$(wildcard pkg/version/VERSION))
@@ -77,7 +77,6 @@ get-test-deps:
 test:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 1 -count=1 -coverprofile=cover.out \
 	-failfast -short ./...
-	./test.sh
 
 test-verbose:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -v -coverprofile=cover.out -failfast ./...
@@ -301,36 +300,6 @@ FGT := $(GOPATH)/bin/fgt
 $(FGT):
 	$(GO_NOMOD) get github.com/GeertJohan/fgt
 
-
-GOLINT := $(GOPATH)/bin/golint
-$(GOLINT):
-	$(GO_NOMOD) get github.com/golang/lint/golint
-
 .PHONY: lint
-lint: $(GOLINT)
-	@echo "--> linting code with 'go lint' tool"
-	$(GOLINT) -min_confidence 1.1 ./...
-
-.PHONY: vet
-vet: tools.govet
-	@echo "--> checking code correctness with 'go vet' tool"
-	@go vet ./... || true
-
-
-tools.govet:
-	@go tool vet 2>/dev/null ; if [ $$? -eq 3 ]; then \
-		echo "--> installing govet"; \
-		$(GO_NOMOD) get golang.org/x/tools/cmd/vet; \
-	fi
-
-GOSEC := $(GOPATH)/bin/gosec
-$(GOSEC):
-	$(GO_NOMOD) get github.com/securego/gosec/cmd/gosec/...
-
-.PHONY: sec
-sec: $(GOSEC)
-	@echo "SECURITY"
-	@mkdir -p scanning
-	$(GOSEC) -fmt=yaml -out=scanning/results.yaml ./...
-
-
+lint:
+	./hack/run-all-checks.sh

@@ -373,7 +373,7 @@ func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*
 	// There is no PR for production, as it is manual
 	cmd.AssertHasNoPullRequestForEnv(t, activities, a.Name, "production")
 
-	// Promote to staging suceeded...
+	// Promote to staging succeeded...
 	cmd.AssertHasPromoteStatus(t, activities, a.Name, "staging", v1.ActivityStatusTypeSucceeded)
 	// ...and all promote-to-staging steps were successful
 	cmd.AssertAllPromoteStepsSuccessful(t, activities, a.Name)
