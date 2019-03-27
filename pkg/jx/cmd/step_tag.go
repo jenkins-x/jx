@@ -110,14 +110,13 @@ func (o *StepTagOptions) Run() error {
 	}
 	chartsDir := o.Flags.ChartsDir
 	if chartsDir == "" {
-		exists, err := util.FileExists(filepath.Join(chartsDir, "Chart.yaml"))
+		exists, err := util.FileExists("Chart.yaml")
 		if !exists && err == nil {
 			// lets try find the charts/foo dir ignoring the charts/preview dir
 			chartsDir, err = o.findChartsDir()
 			if err != nil {
 				return err
 			}
-			o.Flags.ChartsDir = chartsDir
 		}
 	}
 	if o.Verbose {
@@ -177,6 +176,7 @@ func (o *StepTagOptions) updateChart(version string, chartsDir string) error {
 		return nil
 	}
 	chart.Version = version
+	log.Infof("Updating chart version in %s to %s\n", chartFile, version)
 	err = chartutil.SaveChartfile(chartFile, chart)
 	if err != nil {
 		return fmt.Errorf("Failed to save chart %s: %s", chartFile, err)
@@ -204,9 +204,11 @@ func (o *StepTagOptions) updateChartValues(version string, chartsDir string) err
 	for idx, line := range lines {
 		if chartValueRepository != "" && strings.HasPrefix(line, ValuesYamlRepositoryPrefix) {
 			updated = true
+			log.Infof("Updating repository in %s to %s\n", valuesFile, chartValueRepository)
 			lines[idx] = ValuesYamlRepositoryPrefix + " " + chartValueRepository
 		} else if strings.HasPrefix(line, ValuesYamlTagPrefix) {
 			updated = true
+			log.Infof("Updating tag in %s to %s\n", valuesFile, version)
 			lines[idx] = ValuesYamlTagPrefix + " " + version
 		}
 	}
