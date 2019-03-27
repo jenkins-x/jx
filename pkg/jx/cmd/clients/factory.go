@@ -433,6 +433,8 @@ func (f *factory) getVaultName(namespace string) (string, error) {
 	if data != nil {
 		name = data[kube.SystemVaultName]
 		if name == "" {
+			log.Warnf("ConfigMap %s in dev namespace %s does not have key %s", kube.ConfigMapNameJXInstallConfig, namespace, kube.SystemVaultName)
+
 			clusterName := data[kube.ClusterName]
 			if clusterName != "" {
 				name = kubevault.SystemVaultNameForCluster(clusterName)
@@ -460,7 +462,7 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 	if namespace == "" {
 		devNamespace, _, err := kube.GetDevNamespace(kubeClient, defaultNamespace)
 		if err != nil {
-			return nil, errors.Wrapf(err, "getting the dev namespace from current namesapce %q",
+			return nil, errors.Wrapf(err, "getting the dev namespace from current namespace %q",
 				defaultNamespace)
 		}
 		namespace = devNamespace
@@ -487,7 +489,8 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 				return nil, fmt.Errorf("no '%s' vault found in namespace '%s'", name, namespace)
 			}
 		} else {
-			return nil, fmt.Errorf("no '%s' vault found in namespace '%s'", name, namespace)
+			debug.PrintStack()
+			return nil, fmt.Errorf("no '%s' vault found in namespace '%s' despite it being the vault name from jx-install-config ConfigMap", name, namespace)
 		}
 	}
 
