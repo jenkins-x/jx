@@ -3,6 +3,8 @@ package gits
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -450,8 +452,14 @@ func (p *GitHubProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitP
 	if base != "" {
 		config.Base = github.String(base)
 	}
-	pr, _, err := p.Client.PullRequests.Create(p.Context, owner, repo, config)
+	pr, resp, err := p.Client.PullRequests.Create(p.Context, owner, repo, config)
 	if err != nil {
+		if resp != nil && resp.Body != nil {
+			data, err2 := ioutil.ReadAll(resp.Body)
+			if err2 == nil && len(data) > 0 {
+				return nil, errors.Wrapf(err, "response: %s", string(data))
+			}
+		}
 		return nil, err
 	}
 	return &GitPullRequest{
