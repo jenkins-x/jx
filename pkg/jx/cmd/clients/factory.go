@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 
 	"github.com/jenkins-x/jx/pkg/builds"
 
@@ -472,7 +473,22 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 	}
 
 	if !kubevault.FindVault(vopClient, name, namespace) {
-		return nil, fmt.Errorf("no '%s' vault found in namespace '%s'", name, namespace)
+		name2, err2 := f.getVaultName(namespace)
+		if err2 != nil {
+			return nil, errors.Wrapf(err, "no '%s' vault found in namespace '%s' and could not find vault name", name, namespace)
+		}
+
+		if name2 != name {
+			log.Warnf("was using wrong vault name %s which should be %s\n", name, name2)
+			debug.PrintStack()
+
+			name = name2
+			if !kubevault.FindVault(vopClient, name, namespace) {
+				return nil, fmt.Errorf("no '%s' vault found in namespace '%s'", name, namespace)
+			}
+		} else {
+			return nil, fmt.Errorf("no '%s' vault found in namespace '%s'", name, namespace)
+		}
 	}
 
 	clientFactory, err := kubevault.NewVaultClientFactory(kubeClient, vopClient, namespace)
