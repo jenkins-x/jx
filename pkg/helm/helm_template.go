@@ -337,9 +337,7 @@ func (h *HelmTemplate) FetchChart(chart string, version string, untar bool, unta
 }
 
 // UpgradeChart upgrades a helm chart according with given helm flags
-func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string, version string, install bool,
-	timeout int, force bool, wait bool, values []string, valueFiles []string, repo string, username string,
-	password string, reuseValues bool) error {
+func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string, version string, install bool, timeout int, force bool, wait bool, values []string, valueFiles []string, repo string, username string, password string) error {
 
 	err := h.clearOutputDir(releaseName)
 	if err != nil {

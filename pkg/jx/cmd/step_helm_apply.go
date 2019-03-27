@@ -203,11 +203,9 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	if o.Wait {
 		timeout := 600
-		err = o.Helm().UpgradeChart(chartName, releaseName, ns, "", true, timeout, o.Force, true, nil, valueFiles,
-			"", "", "", false)
+		err = o.Helm().UpgradeChart(chartName, releaseName, ns, "", true, timeout, o.Force, true, nil, valueFiles, "", "", "")
 	} else {
-		err = o.Helm().UpgradeChart(chartName, releaseName, ns, "", true, -1, o.Force, false, nil, valueFiles, "",
-			"", "", false)
+		err = o.Helm().UpgradeChart(chartName, releaseName, ns, "", true, -1, o.Force, false, nil, valueFiles, "", "", "")
 	}
 	if err != nil {
 		return errors.Wrapf(err, "upgrading helm chart '%s'", chartName)
