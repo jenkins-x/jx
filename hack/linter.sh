@@ -11,27 +11,26 @@ fi
 
 golangci-lint run \
 	--no-config \
-    --print-resources-usage \
-    --fast \
+    --disable-all \
 	-E misspell \
 	-E unconvert \
-	-D errcheck \
-    -D ineffassign \
-    -D deadcode \
-    -D govet \
-    -D varcheck \
-    -D structcheck \
-    -D typecheck \
-  --skip-dirs vendor \
-  --deadline 10m0s
+    -E deadcode \
+    -E unconvert \
+    --skip-dirs vendor \
+    --deadline 1m0s
 
-# ? deadcode / unused
-
-# -E goimports
-# -E goconst
-# -E golint
-# -E gosec
-# -E unparam
-# -E gocritic
-# -E interfacer
-# -E maligned
+#    -E goconst \
+#    -D errcheck \
+#    -D ineffassign \
+#    -D deadcode \
+#    -D govet \
+#    -D varcheck \
+#    -D structcheck \
+#    -D typecheck \
+#    -E goimports
+#    -E golint
+#    -E gosec
+#    -E unparam
+#    -E gocritic
+#    -E interfacer
+#    -E maligned
