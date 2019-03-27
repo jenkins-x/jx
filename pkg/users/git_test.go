@@ -202,6 +202,81 @@ func TestFindUserByFromGitProviderWithNoEmail(t *testing.T) {
 	assert.NotEqual(t, user.Name, userID2)
 }
 
+func TestFindUserWithDifferentEmailButSameGitLogin(t *testing.T) {
+	t.Parallel()
+	resolver, fakeProvider, err := prepare(t)
+	assert.NoError(t, err)
+	userID1UUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	userID := userID1UUID.String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
+	gitUser1 := &gits.GitUser{
+		Name:  name,
+		Email: fmt.Sprintf("%s@test.com", name),
+		Login: userID,
+	}
+	fakeProvider.Users = []*gits.GitUser{
+		gitUser1,
+	}
+	err = createDummyUser(resolver, true, "", userID, fmt.Sprintf("%s@acme.com", userID), userID, userID)
+	defer func() {
+		err := removeDummyUser(userID, resolver)
+		assert.NoError(t, err)
+	}()
+	assert.NoError(t, err)
+	gitUser := gits.GitUser{
+		Login: gitUser1.Login,
+		Email: gitUser1.Email,
+	}
+	_, err = resolver.Resolve(&gitUser)
+	assert.NoError(t, err)
+	users, err := resolver.JXClient.JenkinsV1().Users(resolver.Namespace).List(metav1.ListOptions{})
+	assert.NoError(t, err)
+	assert.Len(t, users.Items, 2)
+	userIds := make([]string, 0)
+	for _, u := range users.Items {
+		userIds = append(userIds, u.Name)
+	}
+	t.Logf("Found two users: %v", userIds)
+}
+
+func TestFindUserWithNoEmailButSameGitLogin(t *testing.T) {
+	t.Parallel()
+	resolver, fakeProvider, err := prepare(t)
+	assert.NoError(t, err)
+	userID1UUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	userID := userID1UUID.String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
+	gitUser1 := &gits.GitUser{
+		Name:  name,
+		Email: "",
+		Login: userID,
+	}
+	fakeProvider.Users = []*gits.GitUser{
+		gitUser1,
+	}
+	err = createDummyUser(resolver, true, "", userID, fmt.Sprintf("%s@test.com", name), userID, userID)
+	defer func() {
+		err := removeDummyUser(userID, resolver)
+		assert.NoError(t, err)
+	}()
+	assert.NoError(t, err)
+	gitUser := gits.GitUser{
+		Login: gitUser1.Login,
+		Email: gitUser1.Email,
+	}
+	_, err = resolver.Resolve(&gitUser)
+	assert.NoError(t, err)
+	users, err := resolver.JXClient.JenkinsV1().Users(resolver.Namespace).List(metav1.ListOptions{})
+	assert.NoError(t, err)
+	assert.Len(t, users.Items, 2)
+}
+
 func prepare(t *testing.T) (*users.GitUserResolver, *gits.FakeProvider, error) {
 	testOrgName := "myorg"
 	testRepoName := "my-app"
@@ -238,19 +313,22 @@ func createDummyUser(resolver *users.GitUserResolver, createLabels bool, gituser
 		Name:  name,
 		Email: email,
 		Login: login,
-		Accounts: []jenkinsv1.AccountReference{
-			{
-				ID:       gituserID,
-				Provider: resolver.GitProviderKey(),
-			},
-		},
 	}
 	meta := metav1.ObjectMeta{
 		Name: metaName,
 	}
-	if createLabels {
-		meta.Labels = map[string]string{
-			resolver.GitProviderKey(): gituserID,
+	if gituserID != "" {
+		spec.Accounts = []jenkinsv1.AccountReference{
+			{
+				ID:       gituserID,
+				Provider: resolver.GitProviderKey(),
+			},
+		}
+
+		if createLabels {
+			meta.Labels = map[string]string{
+				resolver.GitProviderKey(): gituserID,
+			}
 		}
 	}
 	_, err := resolver.JXClient.JenkinsV1().Users(resolver.Namespace).Create(&jenkinsv1.User{

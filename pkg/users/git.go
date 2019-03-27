@@ -3,6 +3,10 @@ package users
 import (
 	"fmt"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -71,6 +75,15 @@ func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
 		}
 		new := r.GitUserToUser(gitUser)
 		id = gitUser.Login
+		// Check if the user id is available, if not append "-<n>" where <n> is some integer
+		for i := 0; true; i++ {
+			_, err := r.JXClient.JenkinsV1().Users(r.Namespace).Get(id, v1.GetOptions{})
+			if errors.IsNotFound(err) {
+				break
+			}
+			id = fmt.Sprintf("%s-%d", gitUser.Login, i)
+		}
+		new.Name = id
 		return id, possibles, new, nil
 	}
 	return Resolve(user.Login, r.GitProviderKey(), r.JXClient, r.Namespace, selectUsers)
