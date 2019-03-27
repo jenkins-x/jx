@@ -45,10 +45,9 @@ var (
 // CreateAddonCloudBeesOptions the options for the create spring command
 type CreateAddonCloudBeesOptions struct {
 	CreateAddonOptions
-	Sso         bool
-	DefaultRole string
-	Basic       bool
-	Password    string
+	Sso      bool
+	Basic    bool
+	Password string
 }
 
 // NewCmdCreateAddonCloudBees creates a command object for the "create" command
@@ -76,7 +75,6 @@ func NewCmdCreateAddonCloudBees(commonOpts *CommonOptions) *cobra.Command {
 	}
 
 	cmd.Flags().BoolVarP(&options.Sso, "sso", "", false, "Enable single sign-on")
-	cmd.Flags().StringVarP(&options.DefaultRole, "default-role", "", "", "The default role to apply to new users. Defaults to no role and applies to the admin namespace only")
 	cmd.Flags().BoolVarP(&options.Basic, "basic", "", false, "Enable basic auth")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "Password to access UI when using basic auth.  Defaults to default Jenkins X admin password.")
 	options.addFlags(cmd, defaultCloudBeesNamespace, defaultCloudBeesReleaseName, defaultCloudBeesVersion)
@@ -88,9 +86,6 @@ func (o *CreateAddonCloudBeesOptions) Run() error {
 
 	if o.Sso == false && o.Basic == false {
 		return fmt.Errorf("please use --sso or --basic flag")
-	}
-	if o.Sso == false && o.DefaultRole != "" {
-		return fmt.Errorf("--default-role can not be used in conjunction with --basic flag")
 	}
 
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
@@ -182,13 +177,6 @@ To register to get your username/password to to: %s
 			o.SetValues = o.SetValues + "," + strings.Join(values, ",")
 		} else {
 			o.SetValues = strings.Join(values, ",")
-		}
-		if o.DefaultRole != "" {
-			if len(o.SetValues) > 0 {
-				o.SetValues = o.SetValues + "," + "defaultRole=" + o.DefaultRole
-			} else {
-				o.SetValues = "defaultRole=" + o.DefaultRole
-			}
 		}
 	} else {
 		// Disable SSO for basic auth
