@@ -11,7 +11,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/cmd/codegen/generator"
 )
 
 func main() {
@@ -34,7 +34,7 @@ func main() {
 		}
 		names = openapi.GetNames(refCallback)
 	}
-	err := kube.WriteSchemaToDisk(outputDir, title, version, openapi.GetOpenAPIDefinitions, names)
+	err := generator.WriteSchemaToDisk(outputDir, title, version, openapi.GetOpenAPIDefinitions, names)
 	if err != nil {
 		panic(errors.Wrapf(err, "writing schema to %s", outputDir))
 	}

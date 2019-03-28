@@ -345,7 +345,6 @@ func schema_k8sio_api_rbac_v1_PolicyRule(ref common.ReferenceCallback) common.Op
 				Required: []string{"verbs"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -583,7 +582,6 @@ func schema_k8sio_api_rbac_v1_RoleRef(ref common.ReferenceCallback) common.OpenA
 				Required: []string{"apiGroup", "kind", "name"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -626,6 +624,5 @@ func schema_k8sio_api_rbac_v1_Subject(ref common.ReferenceCallback) common.OpenA
 				Required: []string{"kind", "name"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }

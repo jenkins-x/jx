@@ -3,7 +3,7 @@
 package fake
 
 import (
-	jenkins_io_v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	jenkinsiov1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -23,20 +23,20 @@ var teamsResource = schema.GroupVersionResource{Group: "jenkins.io", Version: "v
 var teamsKind = schema.GroupVersionKind{Group: "jenkins.io", Version: "v1", Kind: "Team"}
 
 // Get takes name of the team, and returns the corresponding team object, and an error if there is any.
-func (c *FakeTeams) Get(name string, options v1.GetOptions) (result *jenkins_io_v1.Team, err error) {
+func (c *FakeTeams) Get(name string, options v1.GetOptions) (result *jenkinsiov1.Team, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(teamsResource, c.ns, name), &jenkins_io_v1.Team{})
+		Invokes(testing.NewGetAction(teamsResource, c.ns, name), &jenkinsiov1.Team{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.Team), err
+	return obj.(*jenkinsiov1.Team), err
 }
 
 // List takes label and field selectors, and returns the list of Teams that match those selectors.
-func (c *FakeTeams) List(opts v1.ListOptions) (result *jenkins_io_v1.TeamList, err error) {
+func (c *FakeTeams) List(opts v1.ListOptions) (result *jenkinsiov1.TeamList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(teamsResource, teamsKind, c.ns, opts), &jenkins_io_v1.TeamList{})
+		Invokes(testing.NewListAction(teamsResource, teamsKind, c.ns, opts), &jenkinsiov1.TeamList{})
 
 	if obj == nil {
 		return nil, err
@@ -46,8 +46,8 @@ func (c *FakeTeams) List(opts v1.ListOptions) (result *jenkins_io_v1.TeamList, e
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &jenkins_io_v1.TeamList{ListMeta: obj.(*jenkins_io_v1.TeamList).ListMeta}
-	for _, item := range obj.(*jenkins_io_v1.TeamList).Items {
+	list := &jenkinsiov1.TeamList{ListMeta: obj.(*jenkinsiov1.TeamList).ListMeta}
+	for _, item := range obj.(*jenkinsiov1.TeamList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
 		}
@@ -63,31 +63,31 @@ func (c *FakeTeams) Watch(opts v1.ListOptions) (watch.Interface, error) {
 }
 
 // Create takes the representation of a team and creates it.  Returns the server's representation of the team, and an error, if there is any.
-func (c *FakeTeams) Create(team *jenkins_io_v1.Team) (result *jenkins_io_v1.Team, err error) {
+func (c *FakeTeams) Create(team *jenkinsiov1.Team) (result *jenkinsiov1.Team, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(teamsResource, c.ns, team), &jenkins_io_v1.Team{})
+		Invokes(testing.NewCreateAction(teamsResource, c.ns, team), &jenkinsiov1.Team{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.Team), err
+	return obj.(*jenkinsiov1.Team), err
 }
 
 // Update takes the representation of a team and updates it. Returns the server's representation of the team, and an error, if there is any.
-func (c *FakeTeams) Update(team *jenkins_io_v1.Team) (result *jenkins_io_v1.Team, err error) {
+func (c *FakeTeams) Update(team *jenkinsiov1.Team) (result *jenkinsiov1.Team, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(teamsResource, c.ns, team), &jenkins_io_v1.Team{})
+		Invokes(testing.NewUpdateAction(teamsResource, c.ns, team), &jenkinsiov1.Team{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.Team), err
+	return obj.(*jenkinsiov1.Team), err
 }
 
 // Delete takes name of the team and deletes it. Returns an error if one occurs.
 func (c *FakeTeams) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(teamsResource, c.ns, name), &jenkins_io_v1.Team{})
+		Invokes(testing.NewDeleteAction(teamsResource, c.ns, name), &jenkinsiov1.Team{})
 
 	return err
 }
@@ -96,17 +96,17 @@ func (c *FakeTeams) Delete(name string, options *v1.DeleteOptions) error {
 func (c *FakeTeams) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	action := testing.NewDeleteCollectionAction(teamsResource, c.ns, listOptions)
 
-	_, err := c.Fake.Invokes(action, &jenkins_io_v1.TeamList{})
+	_, err := c.Fake.Invokes(action, &jenkinsiov1.TeamList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched team.
-func (c *FakeTeams) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkins_io_v1.Team, err error) {
+func (c *FakeTeams) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkinsiov1.Team, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(teamsResource, c.ns, name, data, subresources...), &jenkins_io_v1.Team{})
+		Invokes(testing.NewPatchSubresourceAction(teamsResource, c.ns, name, data, subresources...), &jenkinsiov1.Team{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.Team), err
+	return obj.(*jenkinsiov1.Team), err
 }

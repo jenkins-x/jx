@@ -5,7 +5,7 @@ package v1
 import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	scheme "github.com/jenkins-x/jx/pkg/client/clientset/versioned/scheme"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
@@ -21,11 +21,11 @@ type PipelineActivitiesGetter interface {
 type PipelineActivityInterface interface {
 	Create(*v1.PipelineActivity) (*v1.PipelineActivity, error)
 	Update(*v1.PipelineActivity) (*v1.PipelineActivity, error)
-	Delete(name string, options *meta_v1.DeleteOptions) error
-	DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error
-	Get(name string, options meta_v1.GetOptions) (*v1.PipelineActivity, error)
-	List(opts meta_v1.ListOptions) (*v1.PipelineActivityList, error)
-	Watch(opts meta_v1.ListOptions) (watch.Interface, error)
+	Delete(name string, options *metav1.DeleteOptions) error
+	DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error
+	Get(name string, options metav1.GetOptions) (*v1.PipelineActivity, error)
+	List(opts metav1.ListOptions) (*v1.PipelineActivityList, error)
+	Watch(opts metav1.ListOptions) (watch.Interface, error)
 	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.PipelineActivity, err error)
 	PipelineActivityExpansion
 }
@@ -45,7 +45,7 @@ func newPipelineActivities(c *JenkinsV1Client, namespace string) *pipelineActivi
 }
 
 // Get takes name of the pipelineActivity, and returns the corresponding pipelineActivity object, and an error if there is any.
-func (c *pipelineActivities) Get(name string, options meta_v1.GetOptions) (result *v1.PipelineActivity, err error) {
+func (c *pipelineActivities) Get(name string, options metav1.GetOptions) (result *v1.PipelineActivity, err error) {
 	result = &v1.PipelineActivity{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -58,7 +58,7 @@ func (c *pipelineActivities) Get(name string, options meta_v1.GetOptions) (resul
 }
 
 // List takes label and field selectors, and returns the list of PipelineActivities that match those selectors.
-func (c *pipelineActivities) List(opts meta_v1.ListOptions) (result *v1.PipelineActivityList, err error) {
+func (c *pipelineActivities) List(opts metav1.ListOptions) (result *v1.PipelineActivityList, err error) {
 	result = &v1.PipelineActivityList{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -70,7 +70,7 @@ func (c *pipelineActivities) List(opts meta_v1.ListOptions) (result *v1.Pipeline
 }
 
 // Watch returns a watch.Interface that watches the requested pipelineActivities.
-func (c *pipelineActivities) Watch(opts meta_v1.ListOptions) (watch.Interface, error) {
+func (c *pipelineActivities) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 	opts.Watch = true
 	return c.client.Get().
 		Namespace(c.ns).
@@ -105,7 +105,7 @@ func (c *pipelineActivities) Update(pipelineActivity *v1.PipelineActivity) (resu
 }
 
 // Delete takes name of the pipelineActivity and deletes it. Returns an error if one occurs.
-func (c *pipelineActivities) Delete(name string, options *meta_v1.DeleteOptions) error {
+func (c *pipelineActivities) Delete(name string, options *metav1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("pipelineactivities").
@@ -116,7 +116,7 @@ func (c *pipelineActivities) Delete(name string, options *meta_v1.DeleteOptions)
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *pipelineActivities) DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error {
+func (c *pipelineActivities) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("pipelineactivities").

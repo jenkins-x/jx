@@ -5,7 +5,7 @@ package v1
 import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	scheme "github.com/jenkins-x/jx/pkg/client/clientset/versioned/scheme"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
@@ -21,11 +21,11 @@ type PipelineStructuresGetter interface {
 type PipelineStructureInterface interface {
 	Create(*v1.PipelineStructure) (*v1.PipelineStructure, error)
 	Update(*v1.PipelineStructure) (*v1.PipelineStructure, error)
-	Delete(name string, options *meta_v1.DeleteOptions) error
-	DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error
-	Get(name string, options meta_v1.GetOptions) (*v1.PipelineStructure, error)
-	List(opts meta_v1.ListOptions) (*v1.PipelineStructureList, error)
-	Watch(opts meta_v1.ListOptions) (watch.Interface, error)
+	Delete(name string, options *metav1.DeleteOptions) error
+	DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error
+	Get(name string, options metav1.GetOptions) (*v1.PipelineStructure, error)
+	List(opts metav1.ListOptions) (*v1.PipelineStructureList, error)
+	Watch(opts metav1.ListOptions) (watch.Interface, error)
 	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.PipelineStructure, err error)
 	PipelineStructureExpansion
 }
@@ -45,7 +45,7 @@ func newPipelineStructures(c *JenkinsV1Client, namespace string) *pipelineStruct
 }
 
 // Get takes name of the pipelineStructure, and returns the corresponding pipelineStructure object, and an error if there is any.
-func (c *pipelineStructures) Get(name string, options meta_v1.GetOptions) (result *v1.PipelineStructure, err error) {
+func (c *pipelineStructures) Get(name string, options metav1.GetOptions) (result *v1.PipelineStructure, err error) {
 	result = &v1.PipelineStructure{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -58,7 +58,7 @@ func (c *pipelineStructures) Get(name string, options meta_v1.GetOptions) (resul
 }
 
 // List takes label and field selectors, and returns the list of PipelineStructures that match those selectors.
-func (c *pipelineStructures) List(opts meta_v1.ListOptions) (result *v1.PipelineStructureList, err error) {
+func (c *pipelineStructures) List(opts metav1.ListOptions) (result *v1.PipelineStructureList, err error) {
 	result = &v1.PipelineStructureList{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -70,7 +70,7 @@ func (c *pipelineStructures) List(opts meta_v1.ListOptions) (result *v1.Pipeline
 }
 
 // Watch returns a watch.Interface that watches the requested pipelineStructures.
-func (c *pipelineStructures) Watch(opts meta_v1.ListOptions) (watch.Interface, error) {
+func (c *pipelineStructures) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 	opts.Watch = true
 	return c.client.Get().
 		Namespace(c.ns).
@@ -105,7 +105,7 @@ func (c *pipelineStructures) Update(pipelineStructure *v1.PipelineStructure) (re
 }
 
 // Delete takes name of the pipelineStructure and deletes it. Returns an error if one occurs.
-func (c *pipelineStructures) Delete(name string, options *meta_v1.DeleteOptions) error {
+func (c *pipelineStructures) Delete(name string, options *metav1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("pipelinestructures").
@@ -116,7 +116,7 @@ func (c *pipelineStructures) Delete(name string, options *meta_v1.DeleteOptions)
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *pipelineStructures) DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error {
+func (c *pipelineStructures) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("pipelinestructures").
