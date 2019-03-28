@@ -105,7 +105,7 @@ func (o *ControllerPipelineRunnerOptions) Run() error {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle(o.Path, http.HandlerFunc(o.piplineRunMethods))
+	mux.Handle(o.Path, http.HandlerFunc(o.pipelineRunMethods))
 	mux.Handle(HealthPath, http.HandlerFunc(o.health))
 	mux.Handle(ReadyPath, http.HandlerFunc(o.ready))
 
@@ -130,7 +130,7 @@ func (o *ControllerPipelineRunnerOptions) ready(w http.ResponseWriter, r *http.R
 }
 
 // handle request for pipeline runs
-func (o *ControllerPipelineRunnerOptions) piplineRunMethods(w http.ResponseWriter, r *http.Request) {
+func (o *ControllerPipelineRunnerOptions) pipelineRunMethods(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		fmt.Fprintf(w, "Please POST JSON to this endpoint!\n")
