@@ -1021,9 +1021,10 @@ func GetPermanentEnvironments(jxClient versioned.Interface, ns string) ([]*v1.En
 	if err != nil {
 		return result, errors.Wrapf(err, "listing the environments in namespace %q", ns)
 	}
-	for _, env := range envs.Items {
-		if IsPermanentEnvironment(&env) {
-			result = append(result, &env)
+	for i := range envs.Items {
+		env := &envs.Items[i]
+		if IsPermanentEnvironment(env) {
+			result = append(result, env)
 		}
 	}
 	return result, nil
