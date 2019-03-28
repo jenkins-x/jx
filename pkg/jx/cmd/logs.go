@@ -184,10 +184,3 @@ func isContainerStarted(state *corev1.ContainerState) bool {
 	}
 	return false
 }
-
-func isContainerCompleted(state *corev1.ContainerState) bool {
-	if state != nil && state.Terminated != nil {
-		return !state.Terminated.FinishedAt.IsZero()
-	}
-	return false
-}

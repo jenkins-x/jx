@@ -381,7 +381,7 @@ func (o *StepBDDOptions) runTests(gopath string) error {
 		Args: o.Flags.TestCases,
 		Env:  env,
 		Out:  os.Stdout,
-		Err:  os.Stderr,
+		Err:  os.Stdout,
 	}
 	_, err = c.RunWithoutRetry()
 

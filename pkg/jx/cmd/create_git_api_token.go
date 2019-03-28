@@ -19,10 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
-const (
-	jenkinsGitCredentialsSecretKey = "credentials"
-)
-
 var (
 	create_git_token_long = templates.LongDesc(`
 		Creates a new API Token for a user on a Git Server

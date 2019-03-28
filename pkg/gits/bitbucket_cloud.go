@@ -1016,3 +1016,6 @@ func BitBucketCloudAccessTokenURL(url string, username string) string {
 	// is there a way to do that for bitbucket?
 	return util.UrlJoin(url, "/account/user", username, "/app-passwords/new")
 }
+func (p *BitbucketCloudProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
+	return nil, fmt.Errorf("Listing commits not supported on bitbucket")
+}

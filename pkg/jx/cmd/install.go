@@ -661,7 +661,7 @@ func (options *InstallOptions) Run() error {
 
 	err = options.setupGitOpsPostApply(ns)
 	if err != nil {
-		return errors.Wrap(err, "settinup GitOps post installation")
+		return errors.Wrap(err, "setting up GitOps post installation")
 	}
 
 	log.Successf("\nJenkins X installation completed successfully")
@@ -1659,9 +1659,17 @@ func (options *InstallOptions) setupGitOpsPostApply(ns string) error {
 
 		envs, err := kube.GetPermanentEnvironments(jxClient, devNs)
 		if err != nil {
-			return errors.Wrapf(err, "retrieving the current permanent environments in namspace %q", devNs)
+			return errors.Wrapf(err, "retrieving the current permanent environments in namespace %q", devNs)
+		}
+		devEnv, err := kube.GetDevEnvironment(jxClient, devNs)
+		if err != nil {
+			return errors.Wrapf(err, "get the dev environment namespace %q", devNs)
+		}
+		if devEnv != nil {
+			envs = append(envs, devEnv)
 		}
 
+		errs := []error{}
 		createEnvOpts := CreateEnvOptions{
 			CreateOptions: CreateOptions{
 				CommonOptions: options.CommonOptions,
@@ -1675,10 +1683,11 @@ func (options *InstallOptions) setupGitOpsPostApply(ns string) error {
 		for _, env := range envs {
 			err := createEnvOpts.RegisterEnvironment(env, nil, nil)
 			if err != nil {
-				errors.Wrapf(err, "registering environment %q", env.GetName())
+				errs = append(errs, errors.Wrapf(err, "registering environment %q", env.GetName()))
 			}
-			log.Infof("Registered environment %q", util.ColorInfo(env.GetName()))
+			log.Infof("Registered environment %q\n", util.ColorInfo(env.GetName()))
 		}
+		return util.CombineErrors(errs...)
 	}
 	return nil
 }

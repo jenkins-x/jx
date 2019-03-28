@@ -143,9 +143,9 @@ func (o *StepCredentialOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to store file %s", filename)
 		}
-		log.Infof("%s\n", string(filename))
+		log.Infof("%s\n", filename)
 		return nil
 	}
-	log.Infof("%s\n", string(value))
+	log.Infof("%s\n", value)
 	return nil
 }

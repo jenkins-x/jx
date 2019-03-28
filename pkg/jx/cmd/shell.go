@@ -21,8 +21,6 @@ import (
 )
 
 const (
-	bashEnvPrefix = "PS1="
-
 	defaultRcFile = `
 if [ -f /etc/bashrc ]; then
     source /etc/bashrc

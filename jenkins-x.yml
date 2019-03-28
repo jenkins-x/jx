@@ -78,7 +78,7 @@ pipelineConfig:
               - name: release
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
-                image: jenkinsxio/builder-go:0.1.254
+                image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: make
                 args: ['release']
                 workingDir: "/workspace/workspace"
@@ -101,7 +101,7 @@ pipelineConfig:
                 args: ['--dockerfile=/workspace/workspace/Dockerfile','--destination=docker.io/jenkinsxio/jx:${inputs.params.version}','--context=/workspace/workspace','--cache-dir=/workspace']
 
               - name: release-charts
-                image: gcr.io/jenkinsxio/builder-go:0.1.297
+                image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: make
                 args:
                 - "release"
@@ -109,9 +109,9 @@ pipelineConfig:
                 - /workspace/workspace/charts/jx/Makefile
 
               - name: update-bot
-                image: gcr.io/jenkinsxio/builder-base:0.0.11
+                image: gcr.io/jenkinsxio/builder-jx:0.1.332
                 command: ./jx/scripts/update-bot.sh
 
               - name: update-downstream
-                image: gcr.io/jenkinsxio/builder-go:0.1.297
+                image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: ./jx/scripts/update-website.sh

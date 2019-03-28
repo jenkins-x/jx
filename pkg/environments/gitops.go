@@ -90,7 +90,7 @@ func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, envir
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
-		branchName += "-" + string(branchNameUUID.String())
+		branchName += "-" + branchNameUUID.String()
 	}
 	err = o.Gitter.CreateBranch(dir, branchName)
 	if err != nil {

@@ -358,7 +358,7 @@ func MaxValidator(max *float64, exclusive bool) survey.Validator {
 func MultipleOfValidator(multipleOf *float64) survey.Validator {
 	return func(val interface{}) error {
 		if multipleOf != nil {
-			multipleOfValue := float64(util.DereferenceFloat64(multipleOf))
+			multipleOfValue := util.DereferenceFloat64(multipleOf)
 			var fValue float64
 			strVal, err := util.AsString(val)
 			if err != nil {

@@ -404,7 +404,7 @@ func (o *UpgradePlatformOptions) repairAdminSecrets(fileName string) error {
 		return errors.Wrap(err, "unable to read file")
 	}
 
-	err = yaml.Unmarshal([]byte(data), &admin)
+	err = yaml.Unmarshal(data, &admin)
 	if err != nil {
 		return errors.Wrap(err, "unable to unmarshall secrets")
 	}

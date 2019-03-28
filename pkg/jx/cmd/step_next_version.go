@@ -417,11 +417,3 @@ func (o *StepNextVersionOptions) setPomVersion(b []byte) error {
 }
 
 // returns a string array containing the git owner and repo name for a given URL
-func getCurrentGitOwnerRepo(url string) []string {
-	var OwnerNameRegexp = regexp.MustCompile(`([^:]+)(/[^\/].+)?$`)
-
-	matched2 := OwnerNameRegexp.FindStringSubmatch(url)
-	s := strings.TrimSuffix(matched2[0], ".git")
-
-	return strings.Split(s, "/")
-}

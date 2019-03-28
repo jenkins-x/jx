@@ -1243,7 +1243,7 @@ func (options *ImportOptions) CreateProwOwnersFile() error {
 		if err != nil {
 			return err
 		}
-		err = ioutil.WriteFile(filename, []byte(yaml), 0644)
+		err = ioutil.WriteFile(filename, yaml, 0644)
 		if err != nil {
 			return err
 		}
@@ -1276,7 +1276,7 @@ func (options *ImportOptions) CreateProwOwnersAliasesFile() error {
 		if err != nil {
 			return err
 		}
-		return ioutil.WriteFile(filename, []byte(yaml), 0644)
+		return ioutil.WriteFile(filename, yaml, 0644)
 	}
 	return errors.New("GitUserAuth.Username not set")
 }

@@ -509,7 +509,7 @@ func (k *PromoteStepActivityKey) GetOrCreatePromoteUpdate(jxClient versioned.Int
 //OnPromotePullRequest updates activities on a Promote PR
 func (k *PromoteStepActivityKey) OnPromotePullRequest(jxClient versioned.Interface, ns string, fn PromotePullRequestFn) error {
 	if !k.IsValid() {
-		return fmt.Errorf("PromoteStepActivityKey was not valid")
+		return nil
 	}
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
 	if activities == nil {

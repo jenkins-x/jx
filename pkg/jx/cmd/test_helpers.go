@@ -433,30 +433,9 @@ func PollGitStatusAndReactToPipelineChanges(t *testing.T, o *ControllerWorkflowO
 	return err
 }
 
-func dumpActivity(t *testing.T, activities typev1.PipelineActivityInterface, name string) *v1.PipelineActivity {
-	activity, err := activities.Get(name, metav1.GetOptions{})
-	assert.NoError(t, err)
-	if err != nil {
-		return nil
-	}
-	assert.NotNil(t, activity, "No PipelineActivity found for name %s", name)
-	if activity != nil {
-		dumpFailedActivity(activity)
-	}
-	return activity
-}
-
 func dumpFailedActivity(activity *v1.PipelineActivity) {
 	data, err := yaml.Marshal(activity)
 	if err == nil {
 		log.Warnf("YAML: %s\n", string(data))
 	}
-}
-
-func dumpPipelineMap(o *ControllerWorkflowOptions) {
-	log.Infof("Dumping PipelineMap {\n")
-	for k, v := range o.PipelineMap() {
-		log.Infof("    Pipeline %s %s\n", k, v.Name)
-	}
-	log.Infof("}\n")
 }

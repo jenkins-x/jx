@@ -433,18 +433,41 @@ func GetLatestVersion(chart string, repo string, username string, password strin
 // InspectChart fetches the specified chart in a repo using helmer, and then calls the closure on it, before cleaning up
 func InspectChart(chart string, version string, repo string, username string, password string,
 	helmer Helmer, inspector func(dir string) error) error {
-	dir, err := ioutil.TempDir("", fmt.Sprintf("jx-helm-fetch-%s-", chart))
+	isLocal := false
+	dirPrefix := fmt.Sprintf("jx-helm-fetch-%s-", chart)
+	if strings.HasPrefix(chart, "/") || strings.HasPrefix(chart, ".") || strings.Count(chart, "/") > 1 {
+		isLocal = true
+		dirPrefix = "jx-helm-fetch"
+	}
+
+	dir, err := ioutil.TempDir("", dirPrefix)
 	defer func() {
 		err1 := os.RemoveAll(dir)
 		if err1 != nil {
 			log.Warnf("Error removing %s %v\n", dir, err1)
 		}
 	}()
-	err = helmer.FetchChart(chart, version, true, dir, repo, username, password)
-	if err != nil {
-		return err
+	inspectPath := filepath.Join(dir, chart)
+	if isLocal {
+		// This is a local path
+		err := util.CopyDir(chart, dir, true)
+		if err != nil {
+			return errors.Wrapf(err, "copying %s to %s", chart, dir)
+		}
+		// We need to manually build the dependencies
+		err = helmer.BuildDependency()
+		if err != nil {
+			return errors.Wrapf(err, "building dependencies for %s", chart)
+		}
+		inspectPath = dir
+	} else {
+		err = helmer.FetchChart(chart, version, true, dir, repo, username, password)
+		if err != nil {
+			return err
+		}
 	}
-	return inspector(filepath.Join(dir, chart))
+
+	return inspector(inspectPath)
 }
 
 type InstallChartOptions struct {
@@ -470,7 +493,7 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 	if options.Version == "" {
 		versionsDir := options.VersionsDir
 		if versionsDir == "" {
-			return fmt.Errorf("no VersionsDir specified when trying to install a chart")
+			return errors.Errorf("no VersionsDir specified when trying to install a chart")
 		}
 		var err error
 		options.Version, err = version.LoadStableVersionNumber(versionsDir, version.KindChart, chart)
