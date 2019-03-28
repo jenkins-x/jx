@@ -908,6 +908,15 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 		"postinstalljob": map[string]interface{}{"enabled": "true"},
 	}
 
+	err = options.setValuesFileValue(filepath.Join(gitOpsEnvDir, "jenkins", helm.ValuesFileName), "enabled", !options.Flags.Prow)
+	if err != nil {
+		return err
+	}
+	err = options.setValuesFileValue(filepath.Join(gitOpsEnvDir, "controllerworkflow", helm.ValuesFileName), "enabled", !options.Flags.Tekton)
+	if err != nil {
+		return err
+	}
+
 	// lets load any existing values.yaml data as we may have created this via additional apps like Prow
 	exists, err = util.FileExists(valuesFile)
 	if err != nil {
@@ -2857,6 +2866,39 @@ func (options *InstallOptions) configureTeamSettings() error {
 	err := options.ModifyDevEnvironment(callback)
 	if err != nil {
 		return errors.Wrap(err, "updating the team setttings in the dev environment")
+	}
+	return nil
+}
+
+// setValuesFileValue lazily creates the values.yaml file possibly in a new directory and ensures there is the key in the values with the given value
+func (options *InstallOptions) setValuesFileValue(fileName string, key string, value interface{}) error {
+	dir, _ := filepath.Split(fileName)
+	err := os.MkdirAll(dir, util.DefaultWritePermissions)
+	if err != nil {
+		return err
+	}
+	answerMap := map[string]interface{}{}
+
+	// lets load any previous values if they exist
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		return err
+	}
+	if exists {
+		answerMap, err = helm.LoadValuesFile(fileName)
+		if err != nil {
+			return err
+		}
+	}
+	answerMap[key] = value
+	answer := chartutil.Values(answerMap)
+	text, err := answer.YAML()
+	if err != nil {
+		return errors.Wrap(err, "Failed to marshal the updated values YAML files back to YAML")
+	}
+	err = ioutil.WriteFile(fileName, []byte(text), util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to save updated helm values YAML file %s", fileName)
 	}
 	return nil
 }
