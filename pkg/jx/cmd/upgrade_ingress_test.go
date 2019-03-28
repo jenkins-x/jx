@@ -24,7 +24,7 @@ type TestOptions struct {
 func (o *TestOptions) Setup() {
 	o.UpgradeIngressOptions = cmd.UpgradeIngressOptions{
 		CreateOptions: cmd.CreateOptions{
-			CommonOptions: cmd.CommonOptions{},
+			CommonOptions: &cmd.CommonOptions{},
 		},
 		IngressConfig: kube.IngressConfig{
 			Issuer: "letsencrypt-prod",

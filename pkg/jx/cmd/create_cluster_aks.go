@@ -1,17 +1,16 @@
 package cmd
 
 import (
-	"io"
 	"os"
 	"strings"
 
 	"github.com/Pallinder/go-randomdata"
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -80,9 +79,9 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateClusterAKS(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterAKS(commonOpts *CommonOptions) *cobra.Command {
 	options := CreateClusterAKSOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, AKS),
+		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.AKS),
 	}
 	cmd := &cobra.Command{
 		Use:     "aks",
@@ -98,7 +97,6 @@ func NewCmdCreateClusterAKS(f Factory, in terminal.FileReader, out terminal.File
 	}
 
 	options.addCreateClusterFlags(cmd)
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.UserName, "user-name", "u", "", "Azure user name")
 	cmd.Flags().StringVarP(&options.Flags.Password, "password", "p", "", "Azure password")
@@ -370,5 +368,5 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	}
 
 	log.Info("Initialising cluster ...\n")
-	return o.initAndInstall(AKS)
+	return o.initAndInstall(cloud.AKS)
 }

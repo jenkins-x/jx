@@ -1,6 +1,7 @@
 package kube
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
+	tools_watch "k8s.io/client-go/tools/watch"
 )
 
 // credit https://github.com/kubernetes/kubernetes/blob/8719b4a/pkg/api/v1/pod/util.go
@@ -85,22 +87,27 @@ func waitForPodSelectorToBeReady(client kubernetes.Interface, namespace string, 
 		return IsPodReady(pod), nil
 	}
 
-	_, err = watch.Until(timeout, w, condition)
+	ctx, _ := context.WithTimeout(context.Background(), timeout)
+	_, err = tools_watch.UntilWithoutRetry(ctx, w, condition)
+
 	if err == wait.ErrWaitTimeout {
 		return fmt.Errorf("pod %s never became ready", options.String())
 	}
 	return nil
 }
 
-// HasInitContainerStarted returns true if one of the init containers has started running
-func HasInitContainerStarted(pod *v1.Pod) bool {
+// HasContainerStarted returns true if the given Container has started running
+func HasContainerStarted(pod *v1.Pod, idx int) bool {
 	if pod == nil {
 		return false
 	}
-	for _, ic := range pod.Status.InitContainerStatuses {
-		if ic.State.Running != nil || ic.State.Terminated != nil {
-			return true
-		}
+	_, statuses, _ := GetContainersWithStatusAndIsInit(pod)
+	if idx >= len(statuses) {
+		return false
+	}
+	ic := statuses[idx]
+	if ic.State.Running != nil || ic.State.Terminated != nil {
+		return true
 	}
 	return false
 }
@@ -187,13 +194,17 @@ func GetPodsWithLabels(client kubernetes.Interface, ns string, selector string) 
 	return names, m, nil
 }
 
-// GetDevPodNames returns the users dev pod names
+// GetDevPodNames returns the users dev pod names. If username is blank, all devpod names will be returned
 func GetDevPodNames(client kubernetes.Interface, ns string, username string) ([]string, map[string]*v1.Pod, error) {
 	names := []string{}
 	m := map[string]*v1.Pod{}
-	list, err := client.CoreV1().Pods(ns).List(meta_v1.ListOptions{
-		LabelSelector: LabelDevPodUsername + "=" + username,
-	})
+	listOptions := meta_v1.ListOptions{}
+	if username != "" {
+		listOptions.LabelSelector = LabelDevPodUsername + "=" + username
+	} else {
+		listOptions.LabelSelector = LabelDevPodName
+	}
+	list, err := client.CoreV1().Pods(ns).List(listOptions)
 	if err != nil {
 		return names, m, fmt.Errorf("Failed to load Pods %s", err)
 	}
@@ -218,4 +229,24 @@ func GetPodRestarts(pod *v1.Pod) int32 {
 		restarts += status.RestartCount
 	}
 	return restarts
+}
+
+// GetContainersWithStatusAndIsInit gets the containers in the pod, either init containers or non-init depending on whether
+// non-init containers are present, and a flag as to whether this list of containers are init containers or not.
+func GetContainersWithStatusAndIsInit(pod *v1.Pod) ([]v1.Container, []v1.ContainerStatus, bool) {
+	isInit := false
+	containers := pod.Spec.Containers
+	statuses := pod.Status.ContainerStatuses
+
+	// If there's only one "container" and it's named "nop", then the actual steps are on the init containers.
+	if len(containers) == 1 && containers[0].Name == "nop" {
+		isInit = true
+		containers = pod.Spec.InitContainers
+		statuses = pod.Status.InitContainerStatuses
+	} else if containers[len(containers)-1].Name == "nop" {
+		// Trim off the no-op container at the end of the list.
+		containers = containers[:len(containers)-1]
+	}
+
+	return containers, statuses, isInit
 }

@@ -1,19 +1,20 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/cloud/amazon"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
-	"io"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	logger "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterEKSOptions contains the CLI flags
@@ -29,6 +30,7 @@ type CreateClusterEKSFlags struct {
 	NodeCount           int
 	NodesMin            int
 	NodesMax            int
+	NodeVolumeSize      int
 	Region              string
 	Zones               string
 	Profile             string
@@ -57,9 +59,9 @@ var (
 )
 
 // NewCmdCreateClusterEKS creates the command
-func NewCmdCreateClusterEKS(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterEKS(commonOpts *CommonOptions) *cobra.Command {
 	options := CreateClusterEKSOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, AKS),
+		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.AKS),
 	}
 	cmd := &cobra.Command{
 		Use:     "eks",
@@ -75,20 +77,20 @@ func NewCmdCreateClusterEKS(f Factory, in terminal.FileReader, out terminal.File
 	}
 
 	options.addCreateClusterFlags(cmd)
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster.")
 	cmd.Flags().StringVarP(&options.Flags.NodeType, "node-type", "", "m5.large", "node instance type")
 	cmd.Flags().IntVarP(&options.Flags.NodeCount, optionNodes, "o", -1, "number of nodes")
 	cmd.Flags().IntVarP(&options.Flags.NodesMin, "nodes-min", "", -1, "minimum number of nodes")
 	cmd.Flags().IntVarP(&options.Flags.NodesMax, "nodes-max", "", -1, "maximum number of nodes")
+	cmd.Flags().IntVarP(&options.Flags.NodeVolumeSize, "node-volume-size", "", 20, "node volume size in GB")
 	cmd.Flags().IntVarP(&options.Flags.Verbose, "eksctl-log-level", "", -1, "set log level, use 0 to silence, 4 for debugging and 5 for debugging with AWS debug logging (default 3)")
 	cmd.Flags().DurationVarP(&options.Flags.AWSOperationTimeout, "aws-api-timeout", "", 20*time.Minute, "Duration of AWS API timeout")
 	cmd.Flags().StringVarP(&options.Flags.Region, "region", "r", "", "The region to use. Default: us-west-2")
 	cmd.Flags().StringVarP(&options.Flags.Zones, optionZones, "z", "", "Availability Zones. Auto-select if not specified. If provided, this overrides the $EKS_AVAILABILITY_ZONES environment variable")
 	cmd.Flags().StringVarP(&options.Flags.Profile, "profile", "p", "", "AWS profile to use. If provided, this overrides the AWS_PROFILE environment variable")
 	cmd.Flags().StringVarP(&options.Flags.SshPublicKey, "ssh-public-key", "", "", "SSH public key to use for nodes (import from local path, or use existing EC2 key pair) (default \"~/.ssh/id_rsa.pub\")")
-	cmd.Flags().StringVarP(&options.Flags.Tags, "tags", "", "", "A list of KV pairs used to tag all instance groups in AWS (eg \"Owner=John Doe,Team=Some Team\").")
+	cmd.Flags().StringVarP(&options.Flags.Tags, "tags", "", "CreatedBy=JenkinsX", "A list of KV pairs used to tag all instance groups in AWS (eg \"Owner=John Doe,Team=Some Team\").")
 	return cmd
 }
 
@@ -174,6 +176,9 @@ cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
 	if flags.NodesMax >= 0 {
 		args = append(args, "--nodes-max", strconv.Itoa(flags.NodesMax))
 	}
+	if flags.NodeVolumeSize >= 0 {
+		args = append(args, "--node-volume-size", strconv.Itoa(flags.NodeVolumeSize))
+	}
 	if flags.Verbose >= 0 {
 		args = append(args, "--verbose", strconv.Itoa(flags.Verbose))
 	}
@@ -198,7 +203,10 @@ cluster provisioning. Cleaning up stack %s and recreating it with eksctl.`,
 			return err
 		}
 	}
+	o.InstallOptions.setInstallValues(map[string]string{
+		kube.Region: region,
+	})
 
 	logger.Info("Initialising cluster ...\n")
-	return o.initAndInstall(EKS)
+	return o.initAndInstall(cloud.EKS)
 }

@@ -71,6 +71,7 @@ type FakeProvider struct {
 	ForkedRepositories map[string][]*FakeRepository
 	Type               FakeProviderType
 	Users              []*GitUser
+	WebHooks           []*GitWebHookArguments
 }
 
 func (f *FakeProvider) ListOrganisations() ([]GitOrganisation, error) {
@@ -91,7 +92,8 @@ func (f *FakeProvider) ListRepositories(org string) ([]*GitRepository, error) {
 
 func (f *FakeProvider) CreateRepository(org string, name string, private bool) (*GitRepository, error) {
 	gitRepo := &GitRepository{
-		Name: name,
+		Name:         name,
+		Organisation: org,
 	}
 
 	repo := &FakeRepository{
@@ -175,7 +177,7 @@ func (f *FakeProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPul
 	repo.issueCount += 1
 	number := repo.issueCount
 	pr := &GitPullRequest{
-		URL: "",
+		URL: fmt.Sprintf("https://fake.git/%s/%s/pulls/%d", org, repoName, number),
 		Author: &GitUser{
 			URL:       "",
 			Login:     "",
@@ -201,7 +203,24 @@ func (f *FakeProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPul
 		Body:           data.Body,
 	}
 
-	repo.PullRequests[number] = &FakePullRequest{PullRequest: pr}
+	fakePr := &FakePullRequest{
+		PullRequest: pr,
+		Comment:     data.Title,
+	}
+	// If there is a change in the SHA then create a fake PR
+	if data.Head != data.Base {
+		fakePr.Commits = []*FakeCommit{
+			{
+				Status: CommitStatusPending,
+				Commit: &GitCommit{
+					URL:     fmt.Sprintf("https://fake.git/%s/%s/commits/%s", org, repoName, data.Head),
+					SHA:     data.Head,
+					Message: data.Title,
+				},
+			},
+		}
+	}
+	repo.PullRequests[number] = fakePr
 	return pr, nil
 }
 
@@ -255,6 +274,10 @@ func (f *FakeProvider) GetPullRequest(owner string, repo *GitRepository, number 
 	}
 
 	return nil, fmt.Errorf("repository with name '%s' not found", repoName)
+}
+
+func (f *FakeProvider) ListOpenPullRequests(owner string, repo string) ([]*GitPullRequest, error) {
+	return nil, nil
 }
 
 func (f *FakeProvider) GetPullRequestCommits(owner string, repo *GitRepository, number int) ([]*GitCommit, error) {
@@ -384,12 +407,12 @@ func (f *FakeProvider) MergePullRequest(pr *GitPullRequest, message string) erro
 }
 
 func (f *FakeProvider) CreateWebHook(data *GitWebHookArguments) error {
+	f.WebHooks = append(f.WebHooks, data)
 	return nil
 }
 
 func (p *FakeProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookArguments, error) {
-	webHooks := []*GitWebHookArguments{}
-	return webHooks, nil
+	return p.WebHooks, nil
 }
 
 func (p *FakeProvider) UpdateWebHook(data *GitWebHookArguments) error {
@@ -643,8 +666,16 @@ func (f *FakeProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 	return &github.Response{}, nil
 }
 
-func (r *FakeProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
+// GetContent gets the content
+func (f *FakeProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
 	return nil, nil
+}
+
+// ShouldForkForPullReques treturns true if we should create a personal fork of this repository
+// before creating a pull request
+func (r *FakeProvider) ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool {
+	// TODO assuming forking doesn't work yet?
+	return false
 }
 
 func (r *FakeRepository) String() string {
@@ -660,9 +691,10 @@ func NewFakeRepository(owner string, repoName string) *FakeRepository {
 	return &FakeRepository{
 		Owner: owner,
 		GitRepo: &GitRepository{
-			Name:     repoName,
-			CloneURL: "https://github.com/" + owner + "/" + repoName + ".git",
-			HTMLURL:  "https://github.com/" + owner + "/" + repoName,
+			Name:         repoName,
+			CloneURL:     "https://fake.git/" + owner + "/" + repoName + ".git",
+			HTMLURL:      "https://fake.git/" + owner + "/" + repoName,
+			Organisation: owner,
 		},
 		PullRequests: map[int]*FakePullRequest{},
 		Commits:      []*FakeCommit{},
@@ -676,6 +708,9 @@ func NewFakeProvider(repositories ...*FakeRepository) *FakeProvider {
 	}
 	for _, repo := range repositories {
 		owner := repo.Owner
+		if provider.User.Username == "" {
+			provider.User.Username = owner
+		}
 		if owner == "" {
 			log.Warnf("Missing owner for Repository %s\n", repo.Name())
 		}
@@ -683,4 +718,7 @@ func NewFakeProvider(repositories ...*FakeRepository) *FakeProvider {
 		provider.Repositories[owner] = s
 	}
 	return provider
+}
+func (p *FakeProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
+	return nil, fmt.Errorf("Listing commits not supported on fake")
 }

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -37,7 +36,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // ControllerCommitStatusOptions the options for the controller
@@ -46,15 +44,10 @@ type ControllerCommitStatusOptions struct {
 }
 
 // NewCmdControllerCommitStatus creates a command object for the "create" command
-func NewCmdControllerCommitStatus(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdControllerCommitStatus(commonOpts *CommonOptions) *cobra.Command {
 	options := &ControllerCommitStatusOptions{
 		ControllerOptions: ControllerOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -68,7 +61,6 @@ func NewCmdControllerCommitStatus(f Factory, in terminal.FileReader, out termina
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "v", false, "Enable verbose logging")
 	return cmd
 }
 
@@ -217,6 +209,9 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 			if buildName == "" {
 				buildName = labels[builds.LabelOldBuildName]
 			}
+			if buildName == "" {
+				buildName = labels[builds.LabelPipelineRunName]
+			}
 			if buildName != "" {
 				org := ""
 				repo := ""
@@ -228,8 +223,10 @@ func (o *ControllerCommitStatusOptions) onPod(pod *corev1.Pod, jxClient jenkinsv
 				buildId := ""
 				sourceUrl := ""
 				branch := ""
-				for _, initContainer := range pod.Spec.InitContainers {
-					for _, e := range initContainer.Env {
+
+				containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
+				for _, container := range containers {
+					for _, e := range container.Env {
 						switch e.Name {
 						case "REPO_OWNER":
 							org = e.Value

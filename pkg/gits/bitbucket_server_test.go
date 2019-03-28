@@ -14,8 +14,7 @@ import (
 )
 
 const (
-	userName = "test-user"
-	orgname  = "test-org"
+	orgname = "test-org"
 )
 
 type BitbucketServerProviderTestSuite struct {
@@ -60,6 +59,10 @@ var bitbucketServerRouter = util.Router{
 	},
 	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/webhooks": util.MethodMap{
 		"POST": "webhook.json",
+		"GET":  "webhooks.json",
+	},
+	"/rest/api/1.0/projects/TEST-ORG/repos/test-repo/webhooks/123": util.MethodMap{
+		"PUT": "webhook.json",
 	},
 	"/rest/api/1.0/users/test-user": util.MethodMap{
 		"GET": "user.json",
@@ -290,6 +293,36 @@ func (suite *BitbucketServerProviderTestSuite) TestCreateWebHook() {
 		Secret: "someSecret",
 	}
 	err := suite.provider.CreateWebHook(data)
+
+	suite.Require().Nil(err)
+}
+
+func (suite *BitbucketServerProviderTestSuite) TestListWebHooks() {
+
+	webHooks, err := suite.provider.ListWebHooks("TEST-ORG", "test-repo")
+
+	suite.Require().Nil(err)
+	suite.Require().Len(webHooks, 1)
+
+	webHook := webHooks[0]
+	suite.Require().Equal(gits.GitWebHookArguments{
+		ID:     123,
+		Owner:  "TEST-ORG",
+		Repo:   nil,
+		URL:    "http://jenkins.example.com/bitbucket-scmsource-hook/notify",
+		Secret: "abc123",
+	}, *webHook)
+}
+
+func (suite *BitbucketServerProviderTestSuite) TestUpdateWebHook() {
+
+	data := &gits.GitWebHookArguments{
+		Repo:        &gits.GitRepository{URL: "https://auth.example.com/projects/TEST-ORG/repos/test-repo"},
+		URL:         "http://jenkins.example.com/bitbucket-scmsource-hook/notify",
+		ExistingURL: "http://jenkins.example.com/bitbucket-scmsource-hook/notify",
+		Secret:      "someSecret",
+	}
+	err := suite.provider.UpdateWebHook(data)
 
 	suite.Require().Nil(err)
 }

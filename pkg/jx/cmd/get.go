@@ -6,7 +6,6 @@ import (
 	"io"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -16,7 +15,7 @@ import (
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
 // referencing the cmd.Flags()
 type GetOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Output string
 }
@@ -40,14 +39,9 @@ var (
 
 // NewCmdGet creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdGet(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGet(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -64,41 +58,43 @@ func NewCmdGet(f Factory, in terminal.FileReader, out terminal.FileWriter, errOu
 		SuggestFor: []string{"list", "ps"},
 	}
 
-	cmd.AddCommand(NewCmdGetActivity(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetAddon(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetApplications(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetAWSInfo(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetBranchPattern(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetBuild(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetBuildPack(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetChat(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetConfig(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetCVE(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetDevPod(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetEks(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetEnv(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetGit(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetHelmBin(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetIssue(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetIssues(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetLimits(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetPipeline(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetPostPreviewJob(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetPreview(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetQuickstartLocation(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetRelease(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetStorage(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetTeam(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetTeamRole(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetToken(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetTracker(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetURL(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetUser(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetWorkflow(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetVault(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetSecret(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetVaultConfig(f, in, out, errOut))
-	cmd.AddCommand(NewCmdGetPlugins(f, in, out, errOut))
+	cmd.AddCommand(NewCmdGetActivity(commonOpts))
+	cmd.AddCommand(NewCmdGetAddon(commonOpts))
+	cmd.AddCommand(NewCmdGetApps(commonOpts))
+	cmd.AddCommand(NewCmdGetApplications(commonOpts))
+	cmd.AddCommand(NewCmdGetAWSInfo(commonOpts))
+	cmd.AddCommand(NewCmdGetBranchPattern(commonOpts))
+	cmd.AddCommand(NewCmdGetBuild(commonOpts))
+	cmd.AddCommand(NewCmdGetBuildPack(commonOpts))
+	cmd.AddCommand(NewCmdGetChat(commonOpts))
+	cmd.AddCommand(NewCmdGetConfig(commonOpts))
+	cmd.AddCommand(NewCmdGetCVE(commonOpts))
+	cmd.AddCommand(NewCmdGetDevPod(commonOpts))
+	cmd.AddCommand(NewCmdGetEks(commonOpts))
+	cmd.AddCommand(NewCmdGetEnv(commonOpts))
+	cmd.AddCommand(NewCmdGetGit(commonOpts))
+	cmd.AddCommand(NewCmdGetHelmBin(commonOpts))
+	cmd.AddCommand(NewCmdGetIssue(commonOpts))
+	cmd.AddCommand(NewCmdGetIssues(commonOpts))
+	cmd.AddCommand(NewCmdGetLimits(commonOpts))
+	cmd.AddCommand(NewCmdGetPipeline(commonOpts))
+	cmd.AddCommand(NewCmdGetPostPreviewJob(commonOpts))
+	cmd.AddCommand(NewCmdGetPreview(commonOpts))
+	cmd.AddCommand(NewCmdGetQuickstartLocation(commonOpts))
+	cmd.AddCommand(NewCmdGetQuickstarts(commonOpts))
+	cmd.AddCommand(NewCmdGetRelease(commonOpts))
+	cmd.AddCommand(NewCmdGetStorage(commonOpts))
+	cmd.AddCommand(NewCmdGetTeam(commonOpts))
+	cmd.AddCommand(NewCmdGetTeamRole(commonOpts))
+	cmd.AddCommand(NewCmdGetToken(commonOpts))
+	cmd.AddCommand(NewCmdGetTracker(commonOpts))
+	cmd.AddCommand(NewCmdGetURL(commonOpts))
+	cmd.AddCommand(NewCmdGetUser(commonOpts))
+	cmd.AddCommand(NewCmdGetWorkflow(commonOpts))
+	cmd.AddCommand(NewCmdGetVault(commonOpts))
+	cmd.AddCommand(NewCmdGetSecret(commonOpts))
+	cmd.AddCommand(NewCmdGetVaultConfig(commonOpts))
+	cmd.AddCommand(NewCmdGetPlugins(commonOpts))
 	return cmd
 }
 

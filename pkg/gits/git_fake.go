@@ -191,6 +191,11 @@ func (g *GitFake) PullUpstream(dir string) error {
 	return nil
 }
 
+// ResetToUpstream resets the given branch to the upstream version
+func (g *GitFake) ResetToUpstream(dir string, branch string) error {
+	return nil
+}
+
 // AddRemote adds a remote
 func (g *GitFake) AddRemote(dir string, name string, url string) error {
 	r := GitRemote{
@@ -353,7 +358,12 @@ func (g *GitFake) ConvertToValidBranchName(name string) string {
 }
 
 // FetchBranch fetch branch
-func (g *GitFake) FetchBranch(dir string, repo string, refspec string) error {
+func (g *GitFake) FetchBranch(dir string, repo string, refspec ...string) error {
+	return nil
+}
+
+// FetchBranch fetch branch
+func (g *GitFake) FetchBranchUnshallow(dir string, repo string, refspec ...string) error {
 	return nil
 }
 
@@ -477,6 +487,51 @@ func (g *GitFake) Diff(dir string) (string, error) {
 	return "", nil
 }
 
+// ListChangedFilesFromBranch lists changes files between current checkout and a branch
+func (g *GitFake) ListChangedFilesFromBranch(dir string, branch string) (string, error) {
+	return "", nil
+}
+
+// LoadFileFromBranch returns a files's contents from a branch
+func (g *GitFake) LoadFileFromBranch(dir string, branch string, file string) (string, error) {
+	return "", nil
+}
+
 func (g *GitFake) notFound() error {
 	return fmt.Errorf("Not found")
+}
+
+// FetchUnshallow deepens a shallow git clone
+func (g *GitFake) FetchUnshallow(dir string) error {
+	return nil
+}
+
+// IsShallow returns false
+func (g *GitFake) IsShallow(dir string) (bool, error) {
+	return false, nil
+}
+
+// CreateBranchFrom creates a new branch called branchName from startPoint
+func (g *GitFake) CreateBranchFrom(dir string, branchName string, startPoint string) error {
+	return g.CreateBranch(dir, branchName)
+}
+
+// Merge merges the commitish into the current branch
+func (g *GitFake) Merge(dir string, commitish string) error {
+	return nil
+}
+
+// GetLatestCommitSha returns the sha of the last commit
+func (g *GitFake) GetLatestCommitSha(dir string) (string, error) {
+	return "", nil
+}
+
+// ResetHard performs a git reset --hard back to the commitish specified
+func (g *GitFake) ResetHard(dir string, commitish string) error {
+	return nil
+}
+
+// RemoteUpdate performs a git remote update
+func (g *GitFake) RemoteUpdate(dir string) error {
+	return nil
 }

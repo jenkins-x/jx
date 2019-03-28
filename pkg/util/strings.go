@@ -42,9 +42,20 @@ func StringIndexes(text string, value string) []int {
 	return answer
 }
 
+// StringArrayIndex returns the index in the slice which equals the given value
 func StringArrayIndex(array []string, value string) int {
 	for i, v := range array {
 		if v == value {
+			return i
+		}
+	}
+	return -1
+}
+
+// StringArrayHasPrefixIndex returns the index in the slice which the value has the given prefix
+func StringArrayHasPrefixIndex(array []string, prefix string) int {
+	for i, v := range array {
+		if strings.HasPrefix(v, prefix) {
 			return i
 		}
 	}
@@ -79,7 +90,7 @@ func FirstNotEmptyString(values ...string) string {
 // SortedMapKeys returns the sorted keys of the given map
 func SortedMapKeys(m map[string]string) []string {
 	answer := []string{}
-	for k, _ := range m {
+	for k := range m {
 		answer = append(answer, k)
 	}
 	sort.Strings(answer)
@@ -130,7 +141,6 @@ func StringMatchesPattern(text string, pattern string) bool {
 	}
 	return text == pattern
 }
-
 
 // StringsContaining if the filter is not empty return all the strings which contain the text
 func StringsContaining(slice []string, filter string) []string {
@@ -191,7 +201,7 @@ func CheckMark() string {
 	return "\u2705"
 }
 
-// RemoveStringFromSlice removes the first occurence of the specified string from a slice, if it exists and returns the result
+// RemoveStringFromSlice removes the first occurrence of the specified string from a slice, if it exists and returns the result
 func RemoveStringFromSlice(strings []string, toRemove string) []string {
 	for i, str := range strings {
 		if str == toRemove {

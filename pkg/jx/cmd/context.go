@@ -2,22 +2,21 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"io"
 	"sort"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
 type ContextOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Filter string
 }
@@ -39,15 +38,9 @@ var (
 		jx ctx minikube`)
 )
 
-func NewCmdContext(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdContext(commonOpts *CommonOptions) *cobra.Command {
 	options := &ContextOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-
-			Out: out,
-			Err: errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "context",
@@ -63,7 +56,6 @@ func NewCmdContext(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 		},
 	}
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filter the list of contexts to switch between using the given text")
-	options.addCommonFlags(cmd)
 	return cmd
 }
 

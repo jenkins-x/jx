@@ -1,6 +1,9 @@
 package kube
 
 const (
+	// DefaultChartMuseumURL default URL for Jenkins X Charts
+	DefaultChartMuseumURL = "http://chartmuseum.jenkins-x.io"
+
 	// ChartAmbassador the default chart for ambassador
 	ChartAmbassador = "datawire/ambassador"
 
@@ -19,6 +22,11 @@ const (
 	// ChartGitea the default name of the gitea chart
 	ChartGitea = "jenkins-x/gitea"
 
+	// ChartFlagger the default chart for the Flagger chart
+	ChartFlagger              = "flagger/flagger"
+	ChartFlaggerGrafana       = "flagger/grafana"
+	DefaultFlaggerReleaseName = "flagger"
+
 	// ChartIstio the default chart for the Istio chart
 	ChartIstio = "install/kubernetes/helm/istio"
 
@@ -29,21 +37,34 @@ const (
 	ChartProw = "jenkins-x/prow"
 
 	// ChartKnative the default chart for knative
-	ChartKnativeBuild   = "jenkins-x/knative-build"
+	ChartKnativeBuild = "jenkins-x/knative-build"
+
+	// ChartBuildTemplates the build templates for Knative Build
 	ChartBuildTemplates = "jenkins-x/jx-build-templates"
 
-	DefaultProwReleaseName           = "jx-prow"
-	DefaultKnativeBuildReleaseName   = "knative-build"
+	// ChartTekton the default chart for tekton
+	ChartTekton = "jenkins-x/tekton"
+
+	// DefaultProwReleaseName the default helm release name for Prow
+	DefaultProwReleaseName = "jx-prow"
+
+	// DefaultKnativeBuildReleaseName the default helm release name for knative build
+	DefaultKnativeBuildReleaseName = "knative-build"
+
+	// DefaultTektonReleaseName the default helm release name for tekton
+	DefaultTektonReleaseName = "tekton"
+
+	// DefaultBuildTemplatesReleaseName the default helm release name for the knative build templates
 	DefaultBuildTemplatesReleaseName = "jx-build-templates"
 
 	// Charts Single Sign-On addon
-	ChartSsoOperator              = "jenkinsxio/sso-operator"
+	ChartSsoOperator              = "jenkins-x/sso-operator"
 	DefaultSsoOperatorReleaseName = "jx-sso-operator"
-	ChartSsoDex                   = "jenkinsxio/dex"
+	ChartSsoDex                   = "jenkins-x/dex"
 	DefaultSsoDexReleaseName      = "jx-sso-dex"
 
 	// ChartVaultOperator the default chart for vault opeator
-	ChartVaultOperator              = "jenkinsxio/vault-operator"
+	ChartVaultOperator              = "jenkins-x/vault-operator"
 	DefaultVaultOperatorReleaseName = "vault-operator"
 
 	// ServiceJenkins is the name of the Jenkins Service
@@ -106,6 +127,9 @@ const (
 	// LocalHelmRepoName is the default name of the local chart repository where CI/CD releases go to
 	LocalHelmRepoName = "releases"
 
+	// DeploymentTektonController the name of the Deployment for the Tekton Pipeline controller
+	DeploymentTektonController = "tekton-pipelines-controller"
+
 	// DeploymentExposecontrollerService the name of the Deployment for the Exposecontroller Service
 	DeploymentExposecontrollerService = "exposecontroller-service"
 
@@ -131,20 +155,23 @@ const (
 	// ValueKindChat a chat auth secret/credentials
 	ValueKindChat = "chat"
 
+	// ValueKindCVE an CVS App secret/credentials
+	ValueKindCVE = "cve"
+
+	// ValueKindEnvironmentRole to indicate a Role which maps to an EnvironmentRoleBinding
+	ValueKindEnvironmentRole = "EnvironmentRole"
+
 	// ValueKindGit a git auth secret/credentials
 	ValueKindGit = "git"
 
 	// ValueKindIssue an issue auth secret/credentials
 	ValueKindIssue = "issue"
 
-	// ValueKindCVE an addon auth secret/credentials
-	ValueKindCVE = "cve"
+	// ValueKindJenkins an Jenkins App secret/credentials
+	ValueKindJenkins = "jenkins"
 
 	// ValueKindCVE an addon auth PipelineEvent
 	ValueKindPipelineEvent = "PipelineEvent"
-
-	// ValueKindEnvironmentRole to indicate a Role which maps to an EnvironmentRoleBinding
-	ValueKindEnvironmentRole = "EnvironmentRole"
 
 	// ValueKindCVE an addon auth PipelineEvent
 	ValueKindRelease = "Release"
@@ -224,6 +251,9 @@ const (
 	// AnnotationIsDefaultStorageClass used to indicate a storageclass is default
 	AnnotationIsDefaultStorageClass = "storageclass.kubernetes.io/is-default-class"
 
+	// AnnotationReleaseName is the name of the annotation that stores the release name in the preview environment
+	AnnotationReleaseName = "jenkins.io/chart-release"
+
 	// SecretDataUsername the username in a Secret/Credentials
 	SecretDataUsername = "username"
 
@@ -233,13 +263,34 @@ const (
 	// SecretBasicAuth the name for the Jenkins X basic auth secret
 	SecretBasicAuth = "jx-basic-auth"
 
+	// JenkinsAdminApiToken the API token
 	JenkinsAdminApiToken = "jenkins-admin-api-token"
 
+	// JenkinsAdminUserField the admin user name
 	JenkinsAdminUserField = "jenkins-admin-user"
 
+	// JenkinsAdminPasswordField the password field
+	JenkinsAdminPasswordField = "jenkins-admin-password"
+
+	// JenkinsBearTokenField the bearer token
 	JenkinsBearTokenField = "jenkins-bearer-token"
 
 	AUTH = "auth"
+
+	// Region stores the cloud region the cluster is installed on
+	Region = "region"
+
+	// Zone stores the cloud zone of the install
+	Zone = "zone"
+
+	// ProjectID stores the project ID used to install the cluster (a GKE thing mostly)
+	ProjectID = "projectID"
+
+	// ClusterName stores the name of the cluster that is created
+	ClusterName = "clusterName"
+
+	// SystemVaultName stores the name of the system Vault created on install
+	SystemVaultName = "systemVaultName"
 )
 
 var (
@@ -247,6 +298,7 @@ var (
 		"ambassador":                    ChartAmbassador,
 		"anchore":                       ChartAnchore,
 		"cb":                            ChartCloudBees,
+		DefaultFlaggerReleaseName:       ChartFlagger,
 		"gitea":                         ChartGitea,
 		"istio":                         ChartIstio,
 		"kubeless":                      ChartKubeless,
@@ -255,6 +307,7 @@ var (
 		"jx-build-templates":            "jenkins-x/jx-build-templates",
 		DefaultProwReleaseName:          ChartProw,
 		DefaultKnativeBuildReleaseName:  ChartKnativeBuild,
+		DefaultTektonReleaseName:        ChartTekton,
 		DefaultSsoDexReleaseName:        ChartSsoDex,
 		DefaultSsoOperatorReleaseName:   ChartSsoOperator,
 		DefaultVaultOperatorReleaseName: ChartVaultOperator,

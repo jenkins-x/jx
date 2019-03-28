@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/users"
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
@@ -20,7 +21,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -85,18 +85,13 @@ type PreviewOptions struct {
 }
 
 // NewCmdPreview creates a command object for the "create" command
-func NewCmdPreview(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdPreview(commonOpts *CommonOptions) *cobra.Command {
 	options := &PreviewOptions{
 		HelmValuesConfig: config.HelmValuesConfig{
 			ExposeController: &config.ExposeController{},
 		},
 		PromoteOptions: PromoteOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -110,7 +105,8 @@ func NewCmdPreview(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 			options.Args = args
 			//Default to batch-mode when running inside the pipeline (but user override wins).
 			if !cmd.Flag(optionBatchMode).Changed {
-				options.BatchMode = options.IsInCDPipeline()
+				commonOpts := options.PromoteOptions.CommonOptions
+				options.BatchMode = commonOpts.InCDPipeline()
 			}
 			err := options.Run()
 			CheckErr(err)
@@ -119,27 +115,26 @@ func NewCmdPreview(f Factory, in terminal.FileReader, out terminal.FileWriter, e
 	//addCreateAppFlags(cmd, &options.CreateOptions)
 
 	options.addPreviewOptions(cmd)
-	options.addCommonFlags(cmd)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, false)
 	options.PromoteOptions.addPromoteOptions(cmd)
 
 	return cmd
 }
 
-func (options *PreviewOptions) addPreviewOptions(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&options.Name, kube.OptionName, "n", "", "The Environment resource name. Must follow the Kubernetes name conventions like Services, Namespaces")
-	cmd.Flags().StringVarP(&options.Label, "label", "l", "", "The Environment label which is a descriptive string like 'Production' or 'Staging'")
-	cmd.Flags().StringVarP(&options.Namespace, kube.OptionNamespace, "", "", "The Kubernetes namespace for the Environment")
-	cmd.Flags().StringVarP(&options.DevNamespace, "dev-namespace", "", "", "The Developer namespace where the preview command should run")
-	cmd.Flags().StringVarP(&options.Cluster, "cluster", "c", "", "The Kubernetes cluster for the Environment. If blank and a namespace is specified assumes the current cluster")
-	cmd.Flags().StringVarP(&options.Dir, "dir", "", "", "The source directory used to detect the git source URL and reference")
-	cmd.Flags().StringVarP(&options.PullRequest, "pr", "", "", "The Pull Request Name (e.g. 'PR-23' or just '23'")
-	cmd.Flags().StringVarP(&options.PullRequestURL, "pr-url", "", "", "The Pull Request URL")
-	cmd.Flags().StringVarP(&options.SourceURL, "source-url", "s", "", "The source code git URL")
-	cmd.Flags().StringVarP(&options.SourceRef, "source-ref", "", "", "The source code git ref (branch/sha)")
-	cmd.Flags().StringVarP(&options.PostPreviewJobTimeout, optionPostPreviewJobTimeout, "", "2h", "The duration before we consider the post preview Jobs failed")
-	cmd.Flags().StringVarP(&options.PostPreviewJobPollTime, optionPostPreviewJobPollTime, "", "10s", "The amount of time between polls for the post preview Job status")
-	cmd.Flags().BoolVarP(&options.NoComment, "no-comment", "", false, "Disables commenting on the Pull Request after preview is created.")
+func (o *PreviewOptions) addPreviewOptions(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&o.Name, kube.OptionName, "n", "", "The Environment resource name. Must follow the Kubernetes name conventions like Services, Namespaces")
+	cmd.Flags().StringVarP(&o.Label, "label", "l", "", "The Environment label which is a descriptive string like 'Production' or 'Staging'")
+	cmd.Flags().StringVarP(&o.Namespace, kube.OptionNamespace, "", "", "The Kubernetes namespace for the Environment")
+	cmd.Flags().StringVarP(&o.DevNamespace, "dev-namespace", "", "", "The Developer namespace where the preview command should run")
+	cmd.Flags().StringVarP(&o.Cluster, "cluster", "c", "", "The Kubernetes cluster for the Environment. If blank and a namespace is specified assumes the current cluster")
+	cmd.Flags().StringVarP(&o.Dir, "dir", "", "", "The source directory used to detect the git source URL and reference")
+	cmd.Flags().StringVarP(&o.PullRequest, "pr", "", "", "The Pull Request Name (e.g. 'PR-23' or just '23'")
+	cmd.Flags().StringVarP(&o.PullRequestURL, "pr-url", "", "", "The Pull Request URL")
+	cmd.Flags().StringVarP(&o.SourceURL, "source-url", "s", "", "The source code git URL")
+	cmd.Flags().StringVarP(&o.SourceRef, "source-ref", "", "", "The source code git ref (branch/sha)")
+	cmd.Flags().StringVarP(&o.PostPreviewJobTimeout, optionPostPreviewJobTimeout, "", "2h", "The duration before we consider the post preview Jobs failed")
+	cmd.Flags().StringVarP(&o.PostPreviewJobPollTime, optionPostPreviewJobPollTime, "", "10s", "The amount of time between polls for the post preview Job status")
+	cmd.Flags().BoolVarP(&o.NoComment, "no-comment", "", false, "Disables commenting on the Pull Request after preview is created.")
 }
 
 // Run implements the command
@@ -235,9 +230,15 @@ func (o *PreviewOptions) Run() error {
 			return err
 		}
 
-		gitProvider, err := o.CreateGitProvider(o.GitInfo.URL, "message", authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
+		gitProvider, err := o.NewGitProvider(o.GitInfo.URL, "message", authConfigSvc, gitKind, o.BatchMode, o.Git())
 		if err != nil {
 			return fmt.Errorf("cannot create Git provider %v", err)
+		}
+
+		resolver := users.GitUserResolver{
+			GitProvider: gitProvider,
+			JXClient:    jxClient,
+			Namespace:   currentNs,
 		}
 
 		if prNum > 0 {
@@ -250,38 +251,21 @@ func (o *PreviewOptions) Run() error {
 				log.Warn("Unable to get commits: " + err.Error() + "\n")
 			}
 			if pullRequest != nil {
-				author := pullRequest.Author
+				author, err := resolver.Resolve(pullRequest.Author)
+				if err != nil {
+					return err
+				}
+				author, err = resolver.UpdateUserFromPRAuthor(author, pullRequest, commits)
+				if err != nil {
+					// This isn't fatal, just nice to have!
+					log.Warnf("Unable to update user %s from %s because %v", author.Name, o.PullRequestName, err)
+				}
 				if author != nil {
-					if author.Email == "" {
-						log.Info("PullRequest author email is empty\n")
-						for _, commit := range commits {
-							if commit.Author != nil && pullRequest.Author.Login == commit.Author.Login {
-								log.Info("Found commit author match for: " + author.Login + " with email address: " + commit.Author.Email + "\n")
-								author.Email = commit.Author.Email
-								break
-							}
-						}
-					}
-
-					if author.Email != "" {
-						userDetailService := kube.NewUserDetailService(jxClient, ns)
-						err := userDetailService.CreateOrUpdateUser(&v1.UserDetails{
-							Login:     author.Login,
-							Email:     author.Email,
-							Name:      author.Name,
-							URL:       author.URL,
-							AvatarURL: author.AvatarURL,
-						})
-						if err != nil {
-							log.Warnf("An error happened attempting to CreateOrUpdateUser in namespace %s: %s\n", ns, err)
-						}
-					}
-
 					user = &v1.UserSpec{
-						Username: author.Login,
-						Name:     author.Name,
-						ImageURL: author.AvatarURL,
-						LinkURL:  author.URL,
+						Username: author.Spec.Login,
+						Name:     author.Spec.Name,
+						ImageURL: author.Spec.AvatarURL,
+						LinkURL:  author.Spec.URL,
 					}
 				}
 			}
@@ -297,6 +281,18 @@ func (o *PreviewOptions) Run() error {
 				buildStatus = status.State
 				buildStatusUrl = status.TargetURL
 			}
+		}
+	}
+
+	if o.ReleaseName == "" {
+		_, noTiller, helmTemplate, err := o.TeamHelmBin()
+		if err != nil {
+			return err
+		}
+		if noTiller || helmTemplate {
+			o.ReleaseName = "preview"
+		} else {
+			o.ReleaseName = o.Namespace
 		}
 	}
 
@@ -399,6 +395,9 @@ func (o *PreviewOptions) Run() error {
 		env = &v1.Environment{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: o.Name,
+				Annotations: map[string]string{
+					kube.AnnotationReleaseName: o.ReleaseName,
+				},
 			},
 			Spec: v1.EnvironmentSpec{
 				Namespace:         o.Namespace,
@@ -425,18 +424,6 @@ func (o *PreviewOptions) Run() error {
 	err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, env, ns)
 	if err != nil {
 		return err
-	}
-
-	if o.ReleaseName == "" {
-		_, noTiller, helmTemplate, err := o.TeamHelmBin()
-		if err != nil {
-			return err
-		}
-		if noTiller || helmTemplate {
-			o.ReleaseName = "preview"
-		} else {
-			o.ReleaseName = o.Namespace
-		}
 	}
 
 	domain, err := kube.GetCurrentDomain(kubeClient, ns)
@@ -466,8 +453,8 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	err = o.Helm().UpgradeChart(".", o.ReleaseName, o.Namespace, nil, true, nil, true, true, nil,
-		[]string{configFileName}, "", "", "")
+	err = o.Helm().UpgradeChart(".", o.ReleaseName, o.Namespace, "", true, -1, true, true, nil,
+		[]string{configFileName}, "", "", "", false)
 	if err != nil {
 		return err
 	}
@@ -504,9 +491,13 @@ func (o *PreviewOptions) Run() error {
 					Name:     name,
 					Pipeline: pipeline,
 					Build:    build,
+					GitInfo: &gits.GitRepository{
+						Name:         o.GitInfo.Name,
+						Organisation: o.GitInfo.Organisation,
+					},
 				},
 			}
-			a, _, p, _, err := key.GetOrCreatePreview(activities)
+			a, _, p, _, err := key.GetOrCreatePreview(o.jxClient, ns)
 			if err == nil && a != nil && p != nil {
 				updated := false
 				if p.ApplicationURL == "" {
@@ -663,7 +654,7 @@ func (o *PreviewOptions) modifyJob(originalJob *batchv1.Job, envVars map[string]
 	job := *originalJob
 	for k, v := range envVars {
 		templateSpec := &job.Spec.Template.Spec
-		for i, _ := range templateSpec.Containers {
+		for i := range templateSpec.Containers {
 			container := &templateSpec.Containers[i]
 			if kube.GetEnvVar(container, k) == nil {
 				container.Env = append(container.Env, corev1.EnvVar{
@@ -792,7 +783,7 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 
 // GetPreviewValuesConfig returns the PreviewValuesConfig to use as extraValues for helm
 func (o *PreviewOptions) GetPreviewValuesConfig(domain string) (*config.PreviewValuesConfig, error) {
-	repository, err := getImageName()
+	repository, err := o.getImageName()
 	if err != nil {
 		return nil, err
 	}
@@ -845,7 +836,7 @@ func getContainerRegistry() (string, error) {
 	return fmt.Sprintf("%s:%s", registryHost, registryPort), nil
 }
 
-func getImageName() (string, error) {
+func (o *PreviewOptions) getImageName() (string, error) {
 	containerRegistry, err := getContainerRegistry()
 	if err != nil {
 		return "", err
@@ -853,15 +844,21 @@ func getImageName() (string, error) {
 
 	organisation := os.Getenv(ORG)
 	if organisation == "" {
+		organisation = os.Getenv(REPO_OWNER)
+	}
+	if organisation == "" {
 		return "", fmt.Errorf("no %s environment variable found", ORG)
 	}
 
 	app := os.Getenv(APP_NAME)
 	if app == "" {
+		app = os.Getenv(REPO_NAME)
+	}
+	if app == "" {
 		return "", fmt.Errorf("no %s environment variable found", APP_NAME)
 	}
 
-	dockerRegistryOrg := os.Getenv(DOCKER_REGISTRY_ORG)
+	dockerRegistryOrg := o.dockerRegistryOrg(o.GitInfo)
 	if dockerRegistryOrg == "" {
 		dockerRegistryOrg = organisation
 	}
@@ -871,6 +868,9 @@ func getImageName() (string, error) {
 
 func getImageTag() (string, error) {
 	tag := os.Getenv(PREVIEW_VERSION)
+	if tag == "" {
+		tag = os.Getenv("VERSION")
+	}
 	if tag == "" {
 		return "", fmt.Errorf("no %s environment variable found", PREVIEW_VERSION)
 	}

@@ -1,12 +1,10 @@
 package cmd
 
 import (
-	"io"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -42,16 +40,11 @@ type CreateAddonAmbassadorOptions struct {
 }
 
 // NewCmdCreateAddonAmbassador creates a command object for the "create" command
-func NewCmdCreateAddonAmbassador(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonAmbassador(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateAddonAmbassadorOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -70,7 +63,6 @@ func NewCmdCreateAddonAmbassador(f Factory, in terminal.FileReader, out terminal
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	options.addFlags(cmd, "", defaultAmbassadorReleaseName, defaultAmbassadorVersion)
 
 	cmd.Flags().StringVarP(&options.Chart, optionChart, "c", kube.ChartAmbassador, "The name of the chart to use")
@@ -96,7 +88,7 @@ func (o *CreateAddonAmbassadorOptions) Run() error {
 	}
 
 	values := strings.Split(o.SetValues, ",")
-	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
+	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, o.ValueFiles, "")
 	if err != nil {
 		return err
 	}

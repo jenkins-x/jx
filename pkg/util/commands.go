@@ -38,7 +38,7 @@ func (c CommandError) Error() string {
 	sanitisedArgs := make([]string, len(c.Command.Args))
 	copy(sanitisedArgs, c.Command.Args)
 	for i, arg := range sanitisedArgs {
-		if strings.Contains(strings.ToLower(arg), "password") && i <= len(sanitisedArgs)-1 {
+		if strings.Contains(strings.ToLower(arg), "password") && i < len(sanitisedArgs)-1 {
 			// sanitise the subsequent argument to any 'password' fields
 			sanitisedArgs[i+1] = "*****"
 		}
@@ -93,7 +93,7 @@ func (c *Command) SetEnv(env map[string]string) {
 	c.Env = env
 }
 
-// CurrentEnv returns the current envrionment variables
+// CurrentEnv returns the current environment variables
 func (c *Command) CurrentEnv() map[string]string {
 	return c.Env
 }
@@ -176,6 +176,16 @@ func (c *Command) RunWithoutRetry() (string, error) {
 		c.Errors = append(c.Errors, e)
 	}
 	return r, e
+}
+
+func (c *Command) String() string {
+	var builder strings.Builder
+	builder.WriteString(c.Name)
+	for _, arg := range c.Args {
+		builder.WriteString(" ")
+		builder.WriteString(arg)
+	}
+	return builder.String()
 }
 
 func (c *Command) run() (string, error) {

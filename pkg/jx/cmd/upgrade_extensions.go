@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -32,7 +31,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 //const upstreamExtensionsRepositoryGitHub = "https://raw.githubusercontent.com/jenkins-x/jenkins-x-extensions/master/jenkins-x-extensions-repository.lock.yaml"
@@ -57,15 +55,10 @@ type UpgradeExtensionsOptions struct {
 	ExtensionsRepositoryFile string
 }
 
-func NewCmdUpgradeExtensions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeExtensions(commonOpts *CommonOptions) *cobra.Command {
 	options := &UpgradeExtensionsOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -73,7 +66,7 @@ func NewCmdUpgradeExtensions(f Factory, in terminal.FileReader, out terminal.Fil
 		Use:     "extensions",
 		Short:   "Upgrades the Jenkins X extensions available to this Jenkins X install if there are new versions available",
 		Long:    upgradeExtensionsLong,
-		Example: upgradeBInariesExample,
+		Example: upgradeExtensionsExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -81,8 +74,7 @@ func NewCmdUpgradeExtensions(f Factory, in terminal.FileReader, out terminal.Fil
 			CheckErr(err)
 		},
 	}
-	cmd.AddCommand(NewCmdUpgradeExtensionsRepository(f, in, out, errOut))
-	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
+	cmd.AddCommand(NewCmdUpgradeExtensionsRepository(commonOpts))
 	cmd.Flags().StringVarP(&options.ExtensionsRepositoryFile, "extensions-repository-file", "", "", "Specify the extensions repository yaml file to read from")
 	return cmd
 }
@@ -172,7 +164,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 			}
 			chart := fmt.Sprintf("%s/%s", current.Chart.RepoName, current.Chart.Name)
 			log.Infof("Updating extensions from Helm Chart %s repo %s \n", util.ColorInfo(chart), util.ColorInfo(current.Chart.Repo))
-			err = o.Helm().FetchChart(chart, nil, true, unpackDir, "", "", "")
+			err = o.Helm().FetchChart(chart, "", true, unpackDir, "", "", "")
 			if err != nil {
 				return err
 			}
@@ -220,7 +212,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 		return err
 	}
 	log.Infof("Upgrading to Extension Repository version %s\n", util.ColorInfo(extensionsRepository.Version))
-	client, ns, err := o.CreateJXClient()
+	client, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
 	}

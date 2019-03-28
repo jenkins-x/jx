@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	jenkinsv1client "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
@@ -20,7 +19,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // StepPreBuildOptions contains the command line flags
@@ -40,15 +38,10 @@ var (
 
 const extensionsConfigDefaultFile = "jenkins-x-extensions.yaml"
 
-func NewCmdStepPreExtend(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepPreExtend(commonOpts *CommonOptions) *cobra.Command {
 	options := StepPreExtendOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 	cmd := &cobra.Command{
@@ -109,10 +102,6 @@ func (o *StepPreExtendOptions) Run() error {
 			return err
 		}
 
-		activities := client.JenkinsV1().PipelineActivities(ns)
-		if err != nil {
-			return err
-		}
 		gitInfo, err := o.FindGitInfo("")
 		appName := ""
 		if gitInfo != nil {
@@ -120,7 +109,7 @@ func (o *StepPreExtendOptions) Run() error {
 		}
 		pipeline := ""
 		build := o.getBuildNumber()
-		pipeline, build = o.getPipelineName(gitInfo, pipeline, build, appName)
+		pipeline, build = o.GetPipelineName(gitInfo, pipeline, build, appName)
 		if pipeline != "" && build != "" {
 			name := kube.ToValidName(pipeline + "-" + build)
 			key := &kube.PromoteStepActivityKey{
@@ -130,7 +119,7 @@ func (o *StepPreExtendOptions) Run() error {
 					Build:    build,
 				},
 			}
-			a, _, err := key.GetOrCreate(activities)
+			a, _, err := key.GetOrCreate(client, ns)
 			if err != nil {
 				return err
 			}
@@ -144,10 +133,10 @@ func (o *StepPreExtendOptions) Run() error {
 					if err != nil {
 						return err
 					}
-					a.Spec.PostExtensions = result
+					a.Spec.PostExtensions = append(a.Spec.PostExtensions, result...)
 				}
 			}
-			a, err = activities.Update(a)
+			a, err = client.JenkinsV1().PipelineActivities(ns).Update(a)
 			if err != nil {
 				return err
 			}

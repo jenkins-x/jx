@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -13,7 +12,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/helm/pkg/chartutil"
 )
 
@@ -60,15 +58,10 @@ var (
 `)
 )
 
-func NewCmdStepTag(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepTag(commonOpts *CommonOptions) *cobra.Command {
 	options := StepTagOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 	cmd := &cobra.Command{
@@ -112,9 +105,12 @@ func (o *StepTagOptions) Run() error {
 	if o.Flags.Version == "" {
 		return errors.New("No version flag")
 	}
+	if o.Verbose {
+		log.Infof("looking for charts folder...\n")
+	}
 	chartsDir := o.Flags.ChartsDir
 	if chartsDir == "" {
-		exists, err := util.FileExists(filepath.Join(chartsDir, "Chart.yaml"))
+		exists, err := util.FileExists("Chart.yaml")
 		if !exists && err == nil {
 			// lets try find the charts/foo dir ignoring the charts/preview dir
 			chartsDir, err = o.findChartsDir()
@@ -122,6 +118,9 @@ func (o *StepTagOptions) Run() error {
 				return err
 			}
 		}
+	}
+	if o.Verbose {
+		log.Infof("updating chart if it exists\n")
 	}
 	err := o.updateChart(o.Flags.Version, chartsDir)
 	if err != nil {
@@ -134,6 +133,9 @@ func (o *StepTagOptions) Run() error {
 
 	tag := "v" + o.Flags.Version
 
+	if o.Verbose {
+		log.Infof("performing git commit\n")
+	}
 	err = o.Git().AddCommit("", fmt.Sprintf("release %s", o.Flags.Version))
 	if err != nil {
 		return err
@@ -144,6 +146,9 @@ func (o *StepTagOptions) Run() error {
 		return err
 	}
 
+	if o.Verbose {
+		log.Infof("pushing git tag %s\n", tag)
+	}
 	err = o.Git().PushTag("", tag)
 	if err != nil {
 		return err
@@ -171,6 +176,7 @@ func (o *StepTagOptions) updateChart(version string, chartsDir string) error {
 		return nil
 	}
 	chart.Version = version
+	log.Infof("Updating chart version in %s to %s\n", chartFile, version)
 	err = chartutil.SaveChartfile(chartFile, chart)
 	if err != nil {
 		return fmt.Errorf("Failed to save chart %s: %s", chartFile, err)
@@ -198,14 +204,16 @@ func (o *StepTagOptions) updateChartValues(version string, chartsDir string) err
 	for idx, line := range lines {
 		if chartValueRepository != "" && strings.HasPrefix(line, ValuesYamlRepositoryPrefix) {
 			updated = true
+			log.Infof("Updating repository in %s to %s\n", valuesFile, chartValueRepository)
 			lines[idx] = ValuesYamlRepositoryPrefix + " " + chartValueRepository
 		} else if strings.HasPrefix(line, ValuesYamlTagPrefix) {
 			updated = true
+			log.Infof("Updating tag in %s to %s\n", valuesFile, version)
 			lines[idx] = ValuesYamlTagPrefix + " " + version
 		}
 	}
 	if updated {
-		err = ioutil.WriteFile(valuesFile, []byte(strings.Join(lines, "\n")), DefaultWritePermissions)
+		err = ioutil.WriteFile(valuesFile, []byte(strings.Join(lines, "\n")), util.DefaultWritePermissions)
 		if err != nil {
 			return fmt.Errorf("Failed to save chart file %s: %s", valuesFile, err)
 		}
@@ -214,15 +222,33 @@ func (o *StepTagOptions) updateChartValues(version string, chartsDir string) err
 }
 
 func (o *StepTagOptions) defaultChartValueRepository() string {
-	dockerRegistry := os.Getenv("DOCKER_REGISTRY")
-	dockerRegistryOrg := os.Getenv("DOCKER_REGISTRY_ORG")
+	gitInfo, err := o.FindGitInfo(o.Flags.ChartsDir)
+	if err != nil {
+		log.Warnf("failed to find git repository: %s\n", err.Error())
+	}
+
+	dockerRegistry := o.dockerRegistry()
+	dockerRegistryOrg := o.dockerRegistryOrg(gitInfo)
 	if dockerRegistryOrg == "" {
 		dockerRegistryOrg = os.Getenv("ORG")
 	}
+	if dockerRegistryOrg == "" {
+		dockerRegistryOrg = os.Getenv("REPO_OWNER")
+	}
 	appName := os.Getenv("APP_NAME")
+	if appName == "" {
+		appName = os.Getenv("REPO_NAME")
+	}
+	if dockerRegistryOrg == "" && gitInfo != nil {
+		dockerRegistryOrg = gitInfo.Organisation
+	}
+	if appName == "" && gitInfo != nil {
+		appName = gitInfo.Name
+	}
 	if dockerRegistry != "" && dockerRegistryOrg != "" && appName != "" {
 		return dockerRegistry + "/" + dockerRegistryOrg + "/" + appName
 	}
+	log.Warnf("could not generate chart repository name for dockerRegistry %s, dockerRegistryOrg %s, appName %s", dockerRegistry, dockerRegistryOrg, appName)
 	return ""
 }
 

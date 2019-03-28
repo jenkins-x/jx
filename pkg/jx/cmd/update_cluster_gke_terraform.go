@@ -2,21 +2,21 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-// CreateClusterOptions the flags for running create cluster
+// UpdateClusterGKETerraformOptions the flags for updating a cluster on GKE
+// using terraform
 type UpdateClusterGKETerraformOptions struct {
 	UpdateClusterOptions
 
@@ -43,10 +43,10 @@ var (
 `)
 )
 
-// NewCmdGet creates a command object for the generic "init" action, which
-// installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdUpdateClusterGKETerraform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := createUpdateClusterGKETerraformOptions(f, in, out, errOut, GKE)
+// NewCmdUpdateClusterGKETerraform creates a command object for the updating an existing cluster running
+// on GKE using terraform.
+func NewCmdUpdateClusterGKETerraform(commonOpts *CommonOptions) *cobra.Command {
+	options := createUpdateClusterGKETerraformOptions(commonOpts, cloud.GKE)
 
 	cmd := &cobra.Command{
 		Use:     "terraform",
@@ -61,8 +61,6 @@ func NewCmdUpdateClusterGKETerraform(f Factory, in terminal.FileReader, out term
 		},
 	}
 
-	options.addCommonFlags(cmd)
-
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster")
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "", "Use a service account to login to GCE")
@@ -70,17 +68,11 @@ func NewCmdUpdateClusterGKETerraform(f Factory, in terminal.FileReader, out term
 	return cmd
 }
 
-func createUpdateClusterGKETerraformOptions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, cloudProvider string) UpdateClusterGKETerraformOptions {
-	commonOptions := CommonOptions{
-		Factory: f,
-		In:      in,
-		Out:     out,
-		Err:     errOut,
-	}
+func createUpdateClusterGKETerraformOptions(commonOpts *CommonOptions, cloudProvider string) UpdateClusterGKETerraformOptions {
 	options := UpdateClusterGKETerraformOptions{
 		UpdateClusterOptions: UpdateClusterOptions{
 			UpdateOptions: UpdateOptions{
-				CommonOptions: commonOptions,
+				CommonOptions: commonOpts,
 			},
 			Provider: cloudProvider,
 		},
@@ -89,7 +81,7 @@ func createUpdateClusterGKETerraformOptions(f Factory, in terminal.FileReader, o
 }
 
 func (o *UpdateClusterGKETerraformOptions) Run() error {
-	err := o.installRequirements(GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
+	err := o.installRequirements(cloud.GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
 	if err != nil {
 		return err
 	}

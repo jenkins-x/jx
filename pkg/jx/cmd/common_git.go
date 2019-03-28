@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -11,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	"k8s.io/api/core/v1"
@@ -31,6 +33,14 @@ func (o *CommonOptions) FindGitInfo(dir string) (*gits.GitRepository, error) {
 		}
 		return gits.ParseGitURL(gitURL)
 	}
+}
+
+// NewGitProvider creates a new git provider for the given list of argumentes
+func (o *CommonOptions) NewGitProvider(gitURL string, message string, authConfigSvc auth.ConfigService, gitKind string, batchMode bool, gitter gits.Gitter) (gits.GitProvider, error) {
+	if o.factory == nil {
+		return nil, errors.New("command factory is not initialized")
+	}
+	return o.factory.CreateGitProvider(gitURL, message, authConfigSvc, gitKind, batchMode, gitter, o.In, o.Out, o.Err)
 }
 
 // createGitProvider creates a git from the given directory
@@ -57,7 +67,7 @@ func (o *CommonOptions) createGitProvider(dir string) (*gits.GitRepository, gits
 		return gitInfo, nil, nil, err
 	}
 	gitKind, err := o.GitServerKind(gitInfo)
-	gitProvider, err := gitInfo.CreateProvider(o.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	gitProvider, err := gitInfo.CreateProvider(o.factory.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
 		return gitInfo, gitProvider, nil, err
 	}
@@ -293,6 +303,9 @@ func (o *CommonOptions) GitServerHostURLKind(hostURL string) (string, error) {
 
 // gitProviderForURL returns a GitProvider for the given git URL
 func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.GitProvider, error) {
+	if o.fakeGitProvider != nil {
+		return o.fakeGitProvider, nil
+	}
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return nil, err
@@ -310,11 +323,14 @@ func (o *CommonOptions) gitProviderForURL(gitURL string, message string) (gits.G
 
 // gitProviderForURL returns a GitProvider for the given Git server URL
 func (o *CommonOptions) gitProviderForGitServerURL(gitServiceUrl string, gitKind string) (gits.GitProvider, error) {
+	if o.fakeGitProvider != nil {
+		return o.fakeGitProvider, nil
+	}
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return nil, err
 	}
-	return gits.CreateProviderForURL(o.IsInCluster(), authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	return gits.CreateProviderForURL(o.factory.IsInCluster(), authConfigSvc, gitKind, gitServiceUrl, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 }
 
 func (o *CommonOptions) createGitProviderForURLWithoutKind(gitURL string) (gits.GitProvider, *gits.GitRepository, error) {
@@ -326,10 +342,73 @@ func (o *CommonOptions) createGitProviderForURLWithoutKind(gitURL string) (gits.
 	if err != nil {
 		return nil, gitInfo, err
 	}
+	provider, err := o.gitProviderForGitServerURL(gitInfo.HostURL(), gitKind)
+	return provider, gitInfo, err
+}
+
+// initGitConfigAndUser validates we have git setup
+func (o *CommonOptions) initGitConfigAndUser() error {
+	// lets validate we have git configured
+	_, _, err := gits.EnsureUserAndEmailSetup(o.Git())
+	if err != nil {
+		return err
+	}
+
+	err = o.runCommandVerbose("git", "config", "--global", "credential.helper", "store")
+	if err != nil {
+		return err
+	}
+	if os.Getenv("XDG_CONFIG_HOME") == "" {
+		log.Warnf("Note that the environment variable $XDG_CONFIG_HOME is not defined so we may not be able to push to git!\n")
+	}
+	return nil
+}
+
+func (o *CommonOptions) dockerRegistryOrg(repository *gits.GitRepository) string {
+	answer := ""
+	teamSettings, err := o.TeamSettings()
+	if err != nil {
+		log.Warnf("Could not load team settings %s\n", err.Error())
+	} else {
+		answer = teamSettings.DockerRegistryOrg
+	}
+	if answer == "" {
+		answer = os.Getenv("DOCKER_REGISTRY_ORG")
+	}
+	if answer == "" && repository != nil {
+		answer = repository.Organisation
+	}
+	return answer
+}
+
+func (o *CommonOptions) dockerRegistry() string {
+	dockerRegistry := os.Getenv("DOCKER_REGISTRY")
+	if dockerRegistry == "" {
+		kubeClient, ns, err := o.KubeClientAndDevNamespace()
+		if err != nil {
+			log.Warnf("failed to create kube client: %s\n", err.Error())
+		} else {
+			name := kube.ConfigMapJenkinsDockerRegistry
+			data, err := kube.GetConfigMapData(kubeClient, name, ns)
+			if err != nil {
+				log.Warnf("failed to load ConfigMap %s in namespace %s: %s\n", name, ns, err.Error())
+			} else {
+				dockerRegistry = data["docker.registry"]
+			}
+		}
+	}
+	return dockerRegistry
+}
+
+func (o *CommonOptions) getPipelineGitAuth() (*auth.AuthServer, *auth.UserAuth, error) {
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
-		return nil, gitInfo, err
+		return nil, nil, errors.Wrap(err, "failed to create the git auth config service")
 	}
-	gitProvider, err := gits.CreateProviderForURL(o.IsInCluster(), authConfigSvc, gitKind, gitInfo.HostURL(), o.Git(), o.BatchMode, o.In, o.Out, o.Err)
-	return gitProvider, gitInfo, err
+	authConfig := authConfigSvc.Config()
+	if authConfig == nil {
+		return nil, nil, errors.New("empty Git config")
+	}
+	server, user := authConfig.GetPipelineAuth()
+	return server, user, nil
 }

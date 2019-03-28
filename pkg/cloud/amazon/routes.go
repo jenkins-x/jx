@@ -69,7 +69,7 @@ func RegisterAwsCustomDomain(customDomain string, elbAddress string) error {
 		HostedZoneId: hostedZoneId,
 		ChangeBatch: &route53.ChangeBatch{
 			Changes: []*route53.Change{
-				&route53.Change{
+				{
 					Action: &upsert,
 					ResourceRecordSet: &route53.ResourceRecordSet{
 						Name: aws.String(wildcard),

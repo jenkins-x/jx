@@ -7,61 +7,32 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/kube"
-	yaml "gopkg.in/yaml.v2"
-
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	"sigs.k8s.io/yaml"
 )
 
 // KmsLocation indicates the location used by the Google KMS service
 const KmsLocation = "global"
 
 var (
-	REQUIRED_SERVICE_ACCOUNT_ROLES = []string{"roles/compute.instanceAdmin.v1",
+	// RequiredServiceAccountRoles the roles required to create a cluster with terraform
+	RequiredServiceAccountRoles = []string{"roles/compute.instanceAdmin.v1",
 		"roles/iam.serviceAccountActor",
 		"roles/container.clusterAdmin",
 		"roles/container.admin",
 		"roles/container.developer",
 		"roles/storage.objectAdmin",
 		"roles/editor"}
+
+	// KanikoServiceAccountRoles the roles required to run kaniko with GCS
+	KanikoServiceAccountRoles = []string{"roles/storage.admin",
+		"roles/storage.objectAdmin",
+		"roles/storage.objectCreator"}
 )
-
-// ClusterName gets the cluster name from the current context
-// Note that this just reads the ClusterName from the local kube config, which can be renamed (but is unlikely to happen)
-func ClusterName(kuber kube.Kuber) (string, error) {
-	config, _, err := kuber.LoadConfig()
-	if err != nil {
-		return "", err
-	}
-
-	context := kube.CurrentContext(config)
-	if context == nil {
-		return "", errors.New("kube context was nil")
-	}
-	// context.Cluster will likely be in the form gke_<accountName>_<region>_<clustername>
-	// Trim off the crud from the beginning context.Cluster
-	return GetSimplifiedClusterName(context.Cluster), nil
-}
-
-// ShortClusterName returns a short clusters name. Eg, if ClusterName would return tweetypie-jenkinsx-dev, ShortClusterName
-// would return tweetypie. This is needed because GCP has character limits on things like service accounts (6-30 chars)
-// and combining a long cluster name and a long vault name exceeds this limit
-func ShortClusterName(kuber kube.Kuber) (string, error) {
-	clusterName, err := ClusterName(kuber)
-	return strings.Split(clusterName, "-")[0], err
-}
-
-// GetSimplifiedClusterName get the simplified cluster name from the long-winded context cluster name that gets generated
-// GKE cluster names as defined in the kube config are of the form gke_<projectname>_<region>_<clustername>
-// This method will return <clustername> in the above
-func GetSimplifiedClusterName(complexClusterName string) string {
-	split := strings.Split(complexClusterName, "_")
-	return split[len(split)-1]
-}
 
 // ClusterZone retrives the zone of GKE cluster description
 func ClusterZone(cluster string) (string, error) {
@@ -88,7 +59,7 @@ func ClusterZone(cluster string) (string, error) {
 
 func parseClusterZone(clusterInfo string) (string, error) {
 	ci := struct {
-		Zone string `yaml:"zone"`
+		Zone string `json:"zone"`
 	}{}
 
 	err := yaml.Unmarshal([]byte(clusterInfo), &ci)
@@ -490,7 +461,7 @@ func GetEnabledApis(projectID string) ([]string, error) {
 		return nil, err
 	}
 
-	lines := strings.Split(string(out), "\n")
+	lines := strings.Split(out, "\n")
 	for _, l := range lines {
 		if strings.Contains(l, "NAME") {
 			continue
@@ -514,7 +485,7 @@ func EnableAPIs(projectID string, apis ...string) error {
 	for _, toEnable := range apis {
 		fullName := fmt.Sprintf("%s.googleapis.com", toEnable)
 		if !util.Contains(enabledApis, fullName) {
-			toEnableArray = append(toEnableArray, toEnable)
+			toEnableArray = append(toEnableArray, fullName)
 		}
 	}
 
@@ -522,6 +493,7 @@ func EnableAPIs(projectID string, apis ...string) error {
 		log.Infof("No apis to enable\n")
 		return nil
 	}
+
 	args := []string{"services", "enable"}
 	args = append(args, toEnableArray...)
 
@@ -530,7 +502,7 @@ func EnableAPIs(projectID string, apis ...string) error {
 		args = append(args, projectID)
 	}
 
-	log.Infof("Lets ensure we have container and compute enabled on your project via: %s\n", util.ColorInfo("gcloud "+strings.Join(args, " ")))
+	log.Infof("Lets ensure we have %s enabled on your project via: %s\n", toEnableArray, util.ColorInfo("gcloud "+strings.Join(args, " ")))
 
 	cmd := util.Command{
 		Name: "gcloud",

@@ -2,8 +2,14 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile/gitresolver"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -11,14 +17,8 @@ import (
 	buildapi "github.com/knative/build/pkg/apis/build/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 const (
@@ -54,15 +54,10 @@ type StepCreateBuildTemplateOptions struct {
 }
 
 // NewCmdStepCreateBuildTemplate Creates a new Command object
-func NewCmdStepCreateBuildTemplate(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepCreateBuildTemplate(commonOpts *CommonOptions) *cobra.Command {
 	options := &StepCreateBuildTemplateOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -79,7 +74,6 @@ func NewCmdStepCreateBuildTemplate(f Factory, in terminal.FileReader, out termin
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to query to find the projects .git directory")
 	cmd.Flags().StringVarP(&options.OutputDir, "output-dir", "o", "jx-build-templates", "The directory where the generated build yaml files will be output to")
@@ -123,7 +117,7 @@ func (o *StepCreateBuildTemplateOptions) Run() error {
 		return errors.Wrapf(err, "failed to create output dir %s", o.OutputDir)
 	}
 
-	packDir, err := jenkinsfile.InitBuildPack(o.Git(), o.BuildPackURL, o.BuildPackRef)
+	packDir, err := gitresolver.InitBuildPack(o.Git(), o.BuildPackURL, o.BuildPackRef)
 	if err != nil {
 		return err
 	}
@@ -132,7 +126,7 @@ func (o *StepCreateBuildTemplateOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	resolver, err := jenkinsfile.CreateResolver(packDir, o.Git())
+	resolver, err := gitresolver.CreateResolver(packDir, o.Git())
 	if err != nil {
 		return err
 	}
@@ -146,7 +140,7 @@ func (o *StepCreateBuildTemplateOptions) Run() error {
 				return err
 			}
 			if exists {
-				pipelineConfig, err := jenkinsfile.LoadPipelineConfig(pipelineFile, resolver, true)
+				pipelineConfig, err := jenkinsfile.LoadPipelineConfig(pipelineFile, resolver, true, false)
 				if err != nil {
 					return err
 				}
@@ -213,7 +207,8 @@ func (o *StepCreateBuildTemplateOptions) generatePipeline(languageName string, p
 	dir := "/workspace"
 
 	steps := []corev1.Container{}
-	for _, l := range lifecycles.All() {
+	for _, n := range lifecycles.All() {
+		l := n.Lifecycle
 		if l == nil {
 			continue
 		}

@@ -2,6 +2,9 @@ package config
 
 import (
 	"fmt"
+
+	"github.com/ghodss/yaml"
+
 	"io/ioutil"
 	"strings"
 
@@ -11,7 +14,6 @@ import (
 	"github.com/sethvargo/go-password/password"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
 )
 
 const defaultMavenSettings = `<settings>
@@ -21,25 +23,30 @@ const defaultMavenSettings = `<settings>
       <interactiveMode>false</interactiveMode>
       <mirrors>
           <mirror>
-          <id>nexus</id>
-          <mirrorOf>external:*</mirrorOf>
-          <url>http://nexus/repository/maven-group/</url>
+              <id>nexus</id>
+              <mirrorOf>external:*</mirrorOf>
+              <url>http://nexus/repository/maven-group/</url>
           </mirror>
       </mirrors>
       <servers>
           <server>
-          <id>local-nexus</id>
-          <username>admin</username>
-          <password>%s</password>
+              <id>nexus</id>
+              <username>admin</username>
+              <password>%s</password>
+          </server>
+          <server>
+              <id>nexus</id>
+              <username>admin</username>
+              <password>%s</password>
           </server>
       </servers>
       <profiles>
           <profile>
               <id>nexus</id>
               <properties>
-                  <altDeploymentRepository>local-nexus::default::http://nexus/repository/maven-snapshots/</altDeploymentRepository>
-                  <altReleaseDeploymentRepository>local-nexus::default::http://nexus/repository/maven-releases/</altReleaseDeploymentRepository>
-                  <altSnapshotDeploymentRepository>local-nexus::default::http://nexus/repository/maven-snapshots/</altSnapshotDeploymentRepository>
+                  <altDeploymentRepository>nexus::default::http://nexus/repository/maven-snapshots/</altDeploymentRepository>
+                  <altReleaseDeploymentRepository>nexus::default::http://nexus/repository/maven-releases/</altReleaseDeploymentRepository>
+                  <altSnapshotDeploymentRepository>nexus::default::http://nexus/repository/maven-snapshots/</altSnapshotDeploymentRepository>
               </properties>
           </profile>
           <profile>
@@ -93,6 +100,11 @@ type PipelineSecrets struct {
 	MavenSettingsXML string `json:"MavenSettingsXML,omitempty"`
 }
 
+// KanikoSecret store the kaniko service account
+type KanikoSecret struct {
+	Data string `json:"Data,omitempty"`
+}
+
 type AdminSecretsConfig struct {
 	IngressBasicAuth string           `json:"JXBasicAuth,omitempty"`
 	ChartMuseum      *ChartMuseum     `json:"chartmuseum,omitempty"`
@@ -100,6 +112,7 @@ type AdminSecretsConfig struct {
 	Jenkins          *Jenkins         `json:"jenkins,omitempty"`
 	Nexus            *Nexus           `json:"nexus,omitempty"`
 	PipelineSecrets  *PipelineSecrets `json:"PipelineSecrets,omitempty"`
+	KanikoSecret     *KanikoSecret    `json:"KanikoSecret,omitempty"`
 }
 
 type Nexus struct {
@@ -114,11 +127,14 @@ type AdminSecretsService struct {
 }
 
 type AdminSecretsFlags struct {
+	DefaultAdminUsername string
 	DefaultAdminPassword string
+	KanikoSecret         string
 }
 
 func (s *AdminSecretsService) AddAdminSecretsValues(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&s.Flags.DefaultAdminPassword, "default-admin-password", "", "", "the default admin password to access Jenkins, Kubernetes Dashboard, ChartMuseum and Nexus")
+	cmd.Flags().StringVarP(&s.Flags.DefaultAdminUsername, "default-admin-username", "", "admin", "the default admin username to access Jenkins, Kubernetes Dashboard, ChartMuseum and Nexus")
 }
 
 func (s *AdminSecretsService) NewAdminSecretsConfig() error {
@@ -128,6 +144,7 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 		Jenkins:         &Jenkins{},
 		PipelineSecrets: &PipelineSecrets{},
 		Nexus:           &Nexus{},
+		KanikoSecret:    &KanikoSecret{},
 	}
 
 	if s.Flags.DefaultAdminPassword == "" {
@@ -145,36 +162,54 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 		s.Flags.DefaultAdminPassword, _ = generator.Generate(20, 4, 2, false, true)
 	}
 
+	s.setDefaultSecrets()
+	s.NewMavenSettingsXML()
+	s.newIngressBasicAuth()
+	s.newKanikoSecret()
+
+	return nil
+}
+
+func (s *AdminSecretsService) setDefaultSecrets() error {
 	s.Secrets.Jenkins.JenkinsSecret.Password = s.Flags.DefaultAdminPassword
 	s.Secrets.ChartMuseum.ChartMuseumEnv.ChartMuseumSecret.User = "admin"
 	s.Secrets.ChartMuseum.ChartMuseumEnv.ChartMuseumSecret.Password = s.Flags.DefaultAdminPassword
 	s.Secrets.Grafana.GrafanaSecret.User = "admin"
 	s.Secrets.Grafana.GrafanaSecret.Password = s.Flags.DefaultAdminPassword
 	s.Secrets.Nexus.DefaultAdminPassword = s.Flags.DefaultAdminPassword
-	s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(defaultMavenSettings, s.Flags.DefaultAdminPassword)
-
-	s.newIngressBasicAuth()
-
 	return nil
 }
 
-func (s *AdminSecretsService) NewAdminSecretsConfigFromSecret(decryptedSecrets string) error {
+// NewMavenSettingsXML generates the maven settings
+func (s *AdminSecretsService) NewMavenSettingsXML() error {
+	s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(defaultMavenSettings, s.Flags.DefaultAdminPassword, s.Flags.DefaultAdminPassword)
+	return nil
+}
+
+func (s *AdminSecretsService) NewAdminSecretsConfigFromSecret(decryptedSecretsFile string) error {
 	a := AdminSecretsConfig{}
 
-	data, err := ioutil.ReadFile(decryptedSecrets)
+	data, err := ioutil.ReadFile(decryptedSecretsFile)
 	if err != nil {
 		return errors.Wrap(err, "unable to read file")
 	}
 
-	err = yaml.Unmarshal([]byte(data), &a)
+	err = yaml.Unmarshal(data, &a)
 	if err != nil {
 		return errors.Wrap(err, "unable to unmarshall secrets")
 	}
 
 	s.Secrets = a
 	s.Flags.DefaultAdminPassword = s.Secrets.Jenkins.JenkinsSecret.Password
+
+	s.setDefaultSecrets()
 	s.updateIngressBasicAuth()
+
 	return nil
+}
+
+func (s *AdminSecretsService) newKanikoSecret() {
+	s.Secrets.KanikoSecret.Data = s.Flags.KanikoSecret
 }
 
 func (s *AdminSecretsService) newIngressBasicAuth() {

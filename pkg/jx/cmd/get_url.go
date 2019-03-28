@@ -1,12 +1,9 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
@@ -32,16 +29,10 @@ var (
 )
 
 // NewCmdGetURL creates the command
-func NewCmdGetURL(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetURL(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetURLOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-
-				Out: out,
-				Err: errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

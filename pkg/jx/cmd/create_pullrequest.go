@@ -1,12 +1,11 @@
 package cmd
 
 import (
-	"io"
+	"github.com/pkg/errors"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"fmt"
 
@@ -57,16 +56,10 @@ type CreatePullRequestResults struct {
 }
 
 // NewCmdCreatePullRequest creates a command object for the "create" command
-func NewCmdCreatePullRequest(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreatePullRequest(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreatePullRequestOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-
-				Out: out,
-				Err: errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -90,7 +83,6 @@ func NewCmdCreatePullRequest(f Factory, in terminal.FileReader, out terminal.Fil
 	cmd.Flags().StringVarP(&options.Base, "base", "", "master", "The base branch to create the pull request into")
 	cmd.Flags().StringArrayVarP(&options.Labels, "label", "l", []string{}, "The labels to add to the pullrequest")
 
-	options.addCommonFlags(cmd)
 	return cmd
 }
 
@@ -117,8 +109,9 @@ func (o *CreatePullRequestOptions) Run() error {
 		return err
 	}
 
+	base := o.Base
 	arguments := &gits.GitPullRequestArguments{
-		Base: o.Base,
+		Base: base,
 		Head: branchName,
 	}
 	err = o.PopulatePullRequest(arguments, gitInfo)
@@ -128,7 +121,7 @@ func (o *CreatePullRequestOptions) Run() error {
 
 	pr, err := provider.CreatePullRequest(arguments)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", base, branchName)
 	}
 
 	o.Results.PullRequest = pr

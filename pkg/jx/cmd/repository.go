@@ -2,19 +2,17 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 type RepoOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Dir         string
 	OnlyViewURL bool
@@ -35,15 +33,9 @@ var (
 `)
 )
 
-func NewCmdRepo(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdRepo(commonOpts *CommonOptions) *cobra.Command {
 	options := &RepoOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-
-			Out: out,
-			Err: errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "repository",
@@ -58,7 +50,6 @@ func NewCmdRepo(f Factory, in terminal.FileReader, out terminal.FileWriter, errO
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
 	cmd.Flags().BoolVarP(&options.OnlyViewURL, "url", "u", false, "Only displays and the URL and does not open the browser")
 	return cmd
 }

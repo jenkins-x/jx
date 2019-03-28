@@ -1,14 +1,12 @@
 package cmd
 
 import (
-	"io"
 	"os/user"
 	"regexp"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
@@ -40,16 +38,10 @@ var (
 )
 
 // NewCmdGetIssue creates the command
-func NewCmdGetIssue(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetIssue(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetIssueOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-
-				Out: out,
-				Err: errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -87,7 +79,7 @@ func (o *GetIssueOptions) Run() error {
 	table := o.createTable()
 	table.AddRow("ISSUE", "STATUS", "APPLICATION", "ENVIRONMENT")
 
-	client, ns, err := o.CreateJXClient()
+	client, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return errors.Wrap(err, "cannot create the JX client")
 	}
@@ -97,7 +89,7 @@ func (o *GetIssueOptions) Run() error {
 		return errors.Wrap(err, "cannot list the environments")
 	}
 
-	kubeClient, _, err := o.CreateKubeClient()
+	kubeClient, _, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return errors.Wrap(err, "failed to create the Kubernetes client")
 	}
@@ -204,7 +196,7 @@ func (o *GetIssueOptions) getApplications(client kubernetes.Interface, env *v1.E
 		return apps, errors.Wrap(err, "failed to retrieve the application deployments")
 	}
 
-	for k, _ := range deployments {
+	for k := range deployments {
 		appName := kube.GetAppName(k, envNs)
 		if env.Spec.Kind == v1.EnvironmentKindTypeEdit {
 			if appName == kube.DeploymentExposecontrollerService {

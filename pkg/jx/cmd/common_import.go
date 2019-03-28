@@ -86,7 +86,7 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 				u = gitInfo.Host
 			}
 		}
-		user, err := config.PickServerUserAuth(server, "user name for the Jenkins Pipeline", batchMode, "", o.In, o.Out, o.Err)
+		user, err := o.PickPipelineUserAuth(config, server)
 		if err != nil {
 			return err
 		}
@@ -140,8 +140,8 @@ func (o *CommonOptions) ImportProject(gitURL string, dir string, jenkinsfile str
 		if err != nil {
 			// could not find folder so lets try create it
 			jobUrl := util.UrlJoin(jenk.BaseURL(), jenk.GetJobURLPath(org))
-			folderXml := jenkins.CreateFolderXml(jobUrl, org)
-			err = jenk.CreateJobWithXML(folderXml, org)
+			folderXML := jenkins.CreateFolderXML(jobUrl, org)
+			err = jenk.CreateJobWithXML(folderXML, org)
 			if err != nil {
 				return fmt.Errorf("Failed to create the %s folder in Jenkins: %s", org, err)
 			}

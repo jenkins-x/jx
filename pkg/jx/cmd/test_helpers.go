@@ -1,19 +1,21 @@
 package cmd
 
 import (
-	"fmt"
-	"strconv"
+	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	v1fake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/resources"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +23,6 @@ import (
 	apifake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/client-go/kubernetes/fake"
 
 	"github.com/ghodss/yaml"
@@ -30,17 +31,17 @@ import (
 // ConfigureTestOptions lets configure the options for use in tests
 // using fake APIs to k8s cluster
 func ConfigureTestOptions(o *CommonOptions, git gits.Gitter, helm helm.Helmer) {
-	ConfigureTestOptionsWithResources(o, nil, nil, git, helm)
+	ConfigureTestOptionsWithResources(o, nil, nil, git, nil, helm, nil)
 }
 
 // ConfigureTestOptions lets configure the options for use in tests
-// using fake APIs to k8s cluster
-func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Object,
-	jxObjects []runtime.Object, git gits.Gitter, helm helm.Helmer) {
+// using fake APIs to k8s cluster.
+func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Object, jxObjects []runtime.Object,
+	git gits.Gitter, fakeGitProvider *gits.FakeProvider, helm helm.Helmer, resourcesInstaller resources.Installer) {
 	//o.Out = tests.Output()
 	o.BatchMode = true
-	if o.Factory == nil {
-		o.Factory = NewFactory()
+	if o.factory == nil {
+		o.factory = clients.NewFactory()
 	}
 	o.currentNamespace = "jx"
 
@@ -67,7 +68,7 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 		}
 	}
 
-	// ensure we've the dev nenvironment
+	// ensure we've the dev environment
 	if !hasDev {
 		devEnv := kube.NewPermanentEnvironment("dev")
 		devEnv.Spec.Namespace = o.currentNamespace
@@ -95,25 +96,45 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 	o.jxClient = v1fake.NewSimpleClientset(jxObjects...)
 	o.apiExtensionsClient = apifake.NewSimpleClientset()
 	o.git = git
+	if fakeGitProvider != nil {
+		o.fakeGitProvider = fakeGitProvider
+	}
 	o.helm = helm
+	o.resourcesInstaller = resourcesInstaller
 }
 
-func NewCreateEnvPullRequestFn(provider *gits.FakeProvider) CreateEnvPullRequestFn {
-	fakePrFn := func(env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *gits.PullRequestInfo) (*gits.PullRequestInfo, error) {
-		envURL := env.Spec.Source.URL
-		values := []string{}
-		for _, repos := range provider.Repositories {
-			for _, repo := range repos {
-				cloneURL := repo.GitRepo.CloneURL
-				if cloneURL == envURL {
-					return createFakePullRequest(repo, env, modifyRequirementsFn, branchNameText, title, message, pullRequestInfo, provider)
-				}
-				values = append(values, cloneURL)
-			}
-		}
-		return nil, fmt.Errorf("Could not find repository for cloneURL %s values found %s", envURL, strings.Join(values, ", "))
+//CreateTestEnvironmentDir will create a temporary environment dir for the tests, copying over any existing config,
+// and updating CommonOptions.EnvironmentDir() - this is useful for testing git operations on the environments without
+// clobbering the local environments and risking the cluster getting contaminated - use with gits.GitLocal
+func CreateTestEnvironmentDir(o *CommonOptions) error {
+	var err error
+	// Create a temp dir for environments
+	origEnvironmentsDir, err := o.EnvironmentsDir()
+	if err != nil {
+		return err
 	}
-	return fakePrFn
+	o.environmentsDir, err = ioutil.TempDir("", "jx-environments")
+	if err != nil {
+		return err
+	}
+	// Copy over any existing environments
+	err = util.CopyDir(origEnvironmentsDir, o.environmentsDir, true)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// CleanupTestEnvironmentDir should be called in a deferred function whenever CreateTestEnvironmentDir is called
+func CleanupTestEnvironmentDir(o *CommonOptions) error {
+	// Let's not accidentally remove the real one!
+	if strings.HasPrefix(o.environmentsDir, os.TempDir()) {
+		err := os.RemoveAll(o.environmentsDir)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func CreateTestPipelineActivity(jxClient versioned.Interface, ns string, folder string, repo string, branch string, build string, workflow string) (*v1.PipelineActivity, error) {
@@ -123,74 +144,21 @@ func CreateTestPipelineActivity(jxClient versioned.Interface, ns string, folder 
 			Name:     folder + "-" + repo + "-" + branch + "-" + build,
 			Pipeline: folder + "/" + repo + "/" + branch,
 			Build:    build,
+			GitInfo: &gits.GitRepository{
+				Name:         "my-app",
+				Organisation: "myorg",
+			},
 		},
 	}
-	a, _, err := key.GetOrCreate(activities)
+	a, _, err := key.GetOrCreate(jxClient, ns)
 	version := "1.0." + build
 	a.Spec.GitOwner = folder
 	a.Spec.GitRepository = repo
-	a.Spec.GitURL = "https://github.com/" + folder + "/" + repo + ".git"
+	a.Spec.GitURL = "https://fake.git/" + folder + "/" + repo + ".git"
 	a.Spec.Version = version
 	a.Spec.Workflow = workflow
 	_, err = activities.Update(a)
 	return a, err
-}
-
-func createFakePullRequest(repository *gits.FakeRepository, env *v1.Environment, modifyRequirementsFn ModifyRequirementsFn, branchNameText string, title string, message string, pullRequestInfo *gits.PullRequestInfo, provider *gits.FakeProvider) (*gits.PullRequestInfo, error) {
-	if pullRequestInfo == nil {
-		pullRequestInfo = &gits.PullRequestInfo{}
-	}
-
-	if pullRequestInfo.GitProvider == nil {
-		pullRequestInfo.GitProvider = provider
-	}
-
-	if pullRequestInfo.PullRequest == nil {
-		pullRequestInfo.PullRequest = &gits.GitPullRequest{}
-	}
-	pr := pullRequestInfo.PullRequest
-	if pr.Number == nil {
-		repository.PullRequestCounter++
-		n := repository.PullRequestCounter
-		pr.Number = &n
-	}
-	if pr.URL == "" {
-		n := *pr.Number
-		pr.URL = "https://github.com/" + repository.Owner + "/" + repository.Name() + "/pulls/" + strconv.Itoa(n)
-	}
-	if pr.Owner == "" {
-		pr.Owner = repository.Owner
-	}
-	if pr.Repo == "" {
-		pr.Repo = repository.Name()
-	}
-
-	log.Infof("Creating fake Pull Request for env %s branch %s title %s message %s with number %d and URL %s\n", env.Name, branchNameText, title, message, *pr.Number, pr.URL)
-
-	if pr != nil && pr.Number != nil {
-		n := *pr.Number
-		log.Infof("Creating fake PullRequest number %d at URL %s\n", n, pr.URL)
-
-		// lets add a pending commit too
-		commitSha := string(uuid.NewUUID())
-		commit := &gits.FakeCommit{
-			Commit: &gits.GitCommit{
-				SHA:     commitSha,
-				Message: "dummy commit " + commitSha,
-			},
-			Status: gits.CommitStatusPending,
-		}
-
-		repository.PullRequests[n] = &gits.FakePullRequest{
-			PullRequest: pr,
-			Commits:     []*gits.FakeCommit{commit},
-			Comment:     "comment for PR",
-		}
-		repository.Commits = append(repository.Commits, commit)
-	} else {
-		log.Warnf("Missing number for PR %s\n", pr.URL)
-	}
-	return pullRequestInfo, nil
 }
 
 func AssertHasPullRequestForEnv(t *testing.T, activities typev1.PipelineActivityInterface, name string, envName string) {
@@ -409,7 +377,17 @@ func SetPullRequestClosed(pr *gits.FakePullRequest) {
 	log.Infof("PR %s is now closed\n", pr.PullRequest.URL)
 }
 
-func AssertSetPullRequestMerged(t *testing.T, provider *gits.FakeProvider, repository *gits.FakeRepository, prNumber int) bool {
+// AssertSetPullRequestMerged validates that the fake PR has merged
+func AssertSetPullRequestMerged(t *testing.T, provider *gits.FakeProvider, orgName string, repositoryName string,
+	prNumber int) bool {
+	repos := provider.Repositories[orgName]
+	var repository *gits.FakeRepository
+	for _, r := range repos {
+		if r.Name() == repositoryName {
+			repository = r
+		}
+	}
+	assert.NotNil(t, repository)
 	fakePR := repository.PullRequests[prNumber]
 	if !assert.NotNil(t, fakePR, "No PullRequest found on repository %s for number #%d", repository.String(), prNumber) {
 		return false
@@ -455,30 +433,9 @@ func PollGitStatusAndReactToPipelineChanges(t *testing.T, o *ControllerWorkflowO
 	return err
 }
 
-func dumpActivity(t *testing.T, activities typev1.PipelineActivityInterface, name string) *v1.PipelineActivity {
-	activity, err := activities.Get(name, metav1.GetOptions{})
-	assert.NoError(t, err)
-	if err != nil {
-		return nil
-	}
-	assert.NotNil(t, activity, "No PipelineActivity found for name %s", name)
-	if activity != nil {
-		dumpFailedActivity(activity)
-	}
-	return activity
-}
-
 func dumpFailedActivity(activity *v1.PipelineActivity) {
 	data, err := yaml.Marshal(activity)
 	if err == nil {
 		log.Warnf("YAML: %s\n", string(data))
 	}
-}
-
-func dumpPipelineMap(o *ControllerWorkflowOptions) {
-	log.Infof("Dumping PipelineMap {\n")
-	for k, v := range o.PipelineMap() {
-		log.Infof("    Pipeline %s %s\n", k, v.Name)
-	}
-	log.Infof("}\n")
 }

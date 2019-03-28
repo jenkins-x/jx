@@ -1,27 +1,19 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // DeleteTokenOptions are the flags for delete commands
 type DeleteTokenOptions struct {
-	CommonOptions
+	*CommonOptions
 }
 
 // NewCmdDeleteToken creates a command object
 // retrieves one or more resources from a server.
-func NewCmdDeleteToken(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteToken(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteTokenOptions{
-		CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -36,7 +28,7 @@ func NewCmdDeleteToken(f Factory, in terminal.FileReader, out terminal.FileWrite
 		},
 	}
 
-	cmd.AddCommand(NewCmdDeleteTokenAddon(f, in, out, errOut))
+	cmd.AddCommand(NewCmdDeleteTokenAddon(commonOpts))
 	return cmd
 }
 

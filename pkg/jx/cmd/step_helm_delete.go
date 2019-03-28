@@ -2,13 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // StepHelmDeleteOptions contains the command line flags
@@ -32,16 +30,11 @@ var (
 )
 
 // NewCmdStepHelmDelete creates the command object
-func NewCmdStepHelmDelete(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepHelmDelete(commonOpts *CommonOptions) *cobra.Command {
 	options := StepHelmDeleteOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}

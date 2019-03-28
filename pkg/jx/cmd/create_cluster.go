@@ -2,12 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/log"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
@@ -25,38 +24,20 @@ type CreateClusterOptions struct {
 }
 
 const (
-	GKE        = "gke"
-	OKE        = "oke"
-	EKS        = "eks"
-	AKS        = "aks"
-	AWS        = "aws"
-	PKS        = "pks"
-	IKS        = "iks"
-	MINIKUBE   = "minikube"
-	MINISHIFT  = "minishift"
-	KUBERNETES = "kubernetes"
-	OPENSHIFT  = "openshift"
-	ORACLE     = "oracle"
-	ICP        = "icp"
-	JX_INFRA   = "jx-infra"
-
 	optionKubernetesVersion = "kubernetes-version"
 	optionNodes             = "nodes"
+	optionCluster           = "cluster"
 	optionClusterName       = "cluster-name"
+	optionCloudProvider     = "cloud-provider"
 )
 
-var KUBERNETES_PROVIDERS = []string{MINIKUBE, GKE, OKE, AKS, AWS, EKS, KUBERNETES, IKS, OPENSHIFT, MINISHIFT, JX_INFRA, PKS, ICP}
-
 const (
-	stableKubeCtlVersionURL = "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
-
 	valid_providers = `Valid Kubernetes providers include:
 
     * aks (Azure Container Service - https://docs.microsoft.com/en-us/azure/aks)
     * aws (Amazon Web Services via kops - https://github.com/aws-samples/aws-workshop-for-kubernetes/blob/master/readme.adoc)
     * eks (Amazon Web Services Elastic Container Service for Kubernetes - https://docs.aws.amazon.com/eks/latest/userguide/getting-started.html)
     * gke (Google Container Engine - https://cloud.google.com/kubernetes-engine)
-    * oke (Oracle Cloud Infrastructure Container Engine for Kubernetes - https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm)
     # icp (IBM Cloud Private) - https://www.ibm.com/cloud/private
     * iks (IBM Cloud Kubernetes Service - https://console.bluemix.net/docs/containers)
     * oke (Oracle Cloud Infrastructure Container Engine for Kubernetes - https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengoverview.htm)
@@ -105,15 +86,15 @@ var (
 // KubernetesProviderOptions returns all the Kubernetes providers as a string
 func KubernetesProviderOptions() string {
 	values := []string{}
-	values = append(values, KUBERNETES_PROVIDERS...)
+	values = append(values, cloud.KubernetesProviders...)
 	sort.Strings(values)
 	return strings.Join(values, ", ")
 }
 
 // NewCmdCreateCluster creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateCluster(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := createCreateClusterOptions(f, in, out, errOut, "")
+func NewCmdCreateCluster(commonOpts *CommonOptions) *cobra.Command {
+	options := createCreateClusterOptions(commonOpts, "")
 
 	cmd := &cobra.Command{
 		Use:     "cluster [kubernetes provider]",
@@ -128,14 +109,14 @@ func NewCmdCreateCluster(f Factory, in terminal.FileReader, out terminal.FileWri
 		},
 	}
 
-	cmd.AddCommand(NewCmdCreateClusterAKS(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterAWS(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterEKS(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterGKE(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterMinikube(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterMinishift(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterOKE(f, in, out, errOut))
-	cmd.AddCommand(NewCmdCreateClusterIKS(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterAKS(commonOpts))
+	cmd.AddCommand(NewCmdCreateClusterAWS(commonOpts))
+	cmd.AddCommand(NewCmdCreateClusterEKS(commonOpts))
+	cmd.AddCommand(NewCmdCreateClusterGKE(commonOpts))
+	cmd.AddCommand(NewCmdCreateClusterMinikube(commonOpts))
+	cmd.AddCommand(NewCmdCreateClusterMinishift(commonOpts))
+	cmd.AddCommand(NewCmdCreateClusterOKE(commonOpts))
+	cmd.AddCommand(NewCmdCreateClusterIKS(commonOpts))
 
 	return cmd
 }
@@ -145,20 +126,13 @@ func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.SkipInstallation, "skip-installation", "", false, "Provision cluster only, don't install Jenkins X into it")
 }
 
-func createCreateClusterOptions(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, cloudProvider string) CreateClusterOptions {
-	commonOptions := CommonOptions{
-		Factory: f,
-		In:      in,
-
-		Out: out,
-		Err: errOut,
-	}
+func createCreateClusterOptions(commonOpts *CommonOptions, cloudProvider string) CreateClusterOptions {
 	options := CreateClusterOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: commonOptions,
+			CommonOptions: commonOpts,
 		},
 		Provider:       cloudProvider,
-		InstallOptions: CreateInstallOptions(f, in, out, errOut),
+		InstallOptions: CreateInstallOptions(commonOpts),
 	}
 	return options
 }

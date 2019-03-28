@@ -1,14 +1,12 @@
 package cmd
 
 import (
-	"io"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"fmt"
@@ -55,16 +53,11 @@ type CreateAddonAnchoreOptions struct {
 }
 
 // NewCmdCreateAddonAnchore creates a command object for the "create" command
-func NewCmdCreateAddonAnchore(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonAnchore(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateAddonAnchoreOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -83,7 +76,6 @@ func NewCmdCreateAddonAnchore(f Factory, in terminal.FileReader, out terminal.Fi
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	options.addFlags(cmd, defaultAnchoreNamespace, defaultAnchoreReleaseName, defaultAnchoreVersion)
 
 	cmd.Flags().StringVarP(&options.Password, "password", "p", defaultAnchorePassword, "The default password to use for Anchore")

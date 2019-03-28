@@ -2,17 +2,16 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
+	"sort"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-	"io/ioutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sort"
 )
 
 // StepCredentialOptions contains the command line arguments for this command
@@ -29,8 +28,7 @@ var (
 	stepCredentialLong = templates.LongDesc(`
 		Returns a credential from a Secret for easy scripting in pipeline steps.
 
-		Supports the [Jenkins Credentials Provider labels](https://jenkinsci.github.io/kubernetes-credentials-provider-plugin/examples/) on the Secrets
-
+		Supports the [Jenkins Credentials Provider labels on the Secrets](https://jenkinsci.github.io/kubernetes-credentials-provider-plugin/examples/) 
 `)
 
 	stepCredentialExample = templates.Examples(`
@@ -50,15 +48,10 @@ var (
 )
 
 // NewCmdStepCredential creates the command
-func NewCmdStepCredential(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepCredential(commonOpts *CommonOptions) *cobra.Command {
 	options := StepCredentialOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 	cmd := &cobra.Command{
@@ -75,7 +68,6 @@ func NewCmdStepCredential(f Factory, in terminal.FileReader, out terminal.FileWr
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "the namespace to look for a Secret")
 	cmd.Flags().StringVarP(&options.Secret, "name", "s", "", "the name of the Secret")
 	cmd.Flags().StringVarP(&options.Key, "key", "k", "", "the key in the Secret to output")
@@ -151,9 +143,9 @@ func (o *StepCredentialOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to store file %s", filename)
 		}
-		log.Infof("%s\n", string(filename))
+		log.Infof("%s\n", filename)
 		return nil
 	}
-	log.Infof("%s\n", string(value))
+	log.Infof("%s\n", value)
 	return nil
 }

@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/environments"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -18,7 +19,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/workflow"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -31,34 +31,29 @@ import (
 type ControllerWorkflowOptions struct {
 	ControllerOptions
 
-	Namespace           string
-	NoWatch             bool
-	NoMergePullRequest  bool
-	Verbose             bool
-	LocalHelmRepoName   string
-	PullRequestPollTime string
-
-	// testing
-	FakePullRequests CreateEnvPullRequestFn
-	FakeGitProvider  *gits.FakeProvider
+	Namespace               string
+	NoWatch                 bool
+	NoMergePullRequest      bool
+	Verbose                 bool
+	LocalHelmRepoName       string
+	PullRequestPollTime     string
+	NoWaitForUpdatePipeline bool
 
 	// calculated fields
 	PullRequestPollDuration *time.Duration
 	workflowMap             map[string]*v1.Workflow
 	pipelineMap             map[string]*v1.PipelineActivity
+
+	// Allow Git to be configured
+	ConfigureGitFn environments.ConfigureGitFn
 }
 
 // NewCmdControllerWorkflow creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdControllerWorkflow(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdControllerWorkflow(commonOpts *CommonOptions) *cobra.Command {
 	options := &ControllerWorkflowOptions{
 		ControllerOptions: ControllerOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -73,8 +68,6 @@ func NewCmdControllerWorkflow(f Factory, in terminal.FileReader, out terminal.Fi
 		},
 		Aliases: []string{"workflows"},
 	}
-
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to watch or defaults to the current namespace")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
@@ -102,15 +95,26 @@ func (o *ControllerWorkflowOptions) Run() error {
 		o.PullRequestPollDuration = &duration
 	}
 
+	// See issue below and also similar code in PromotOptions.Run()
+	prow, err := o.isProw()
+	if err != nil {
+		return err
+	}
+	if prow {
+		log.Warn("prow based install so skip waiting for the merge of Pull Requests to go green as currently there is an issue with getting" +
+			"statuses from the PR, see https://github.com/jenkins-x/jx/issues/2410")
+		o.NoWaitForUpdatePipeline = true
+	}
+
 	jxClient, devNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
 
-	ns := o.Namespace
-	if ns == "" {
-		ns = devNs
+	if o.Namespace == "" {
+		o.Namespace = devNs
 	}
+	ns := o.Namespace
 
 	o.workflowMap = map[string]*v1.Workflow{}
 	o.pipelineMap = map[string]*v1.PipelineActivity{}
@@ -352,16 +356,17 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 
 func (o *ControllerWorkflowOptions) createPromoteOptions(repoName string, envName string, pipelineName string, build string, version string) *PromoteOptions {
 	po := &PromoteOptions{
-		Application:       repoName,
-		Environment:       envName,
-		Pipeline:          pipelineName,
-		Build:             build,
-		Version:           version,
-		NoPoll:            true,
-		IgnoreLocalFiles:  true,
-		HelmRepositoryURL: helm.DefaultHelmRepositoryURL,
-		LocalHelmRepoName: kube.LocalHelmRepoName,
-		FakePullRequests:  o.FakePullRequests,
+		Application:          repoName,
+		Environment:          envName,
+		Pipeline:             pipelineName,
+		Build:                build,
+		Version:              version,
+		NoPoll:               true,
+		IgnoreLocalFiles:     true,
+		HelmRepositoryURL:    helm.DefaultHelmRepositoryURL,
+		LocalHelmRepoName:    kube.LocalHelmRepoName,
+		Namespace:            o.Namespace,
+		ConfigureGitCallback: o.ConfigureGitFn,
 	}
 	po.CommonOptions = o.CommonOptions
 	po.BatchMode = true
@@ -393,13 +398,6 @@ func (o *ControllerWorkflowOptions) createGitProviderForPR(prURL string) (gits.G
 		return nil, nil, fmt.Errorf("No / in URL: %s", gitUrl)
 	}
 	gitUrl = gitUrl[0:idx] + ".git"
-	if o.FakeGitProvider != nil {
-		gitInfo, err := gits.ParseGitURL(gitUrl)
-		if err != nil {
-			return nil, gitInfo, err
-		}
-		return o.FakeGitProvider, gitInfo, nil
-	}
 	answer, gitInfo, err := o.createGitProviderForURLWithoutKind(gitUrl)
 	if err != nil {
 		return answer, gitInfo, errors.Wrapf(err, "Failed for git URL %s", gitUrl)
@@ -411,13 +409,6 @@ func (o *ControllerWorkflowOptions) createGitProvider(activity *v1.PipelineActiv
 	gitUrl := activity.Spec.GitURL
 	if gitUrl == "" {
 		return nil, nil, fmt.Errorf("No GitURL for PipelineActivity %s", activity.Name)
-	}
-	if o.FakeGitProvider != nil {
-		gitInfo, err := gits.ParseGitURL(gitUrl)
-		if err != nil {
-			return nil, gitInfo, err
-		}
-		return o.FakeGitProvider, gitInfo, nil
 	}
 	answer, gitInfo, err := o.createGitProviderForURLWithoutKind(gitUrl)
 	if err != nil {
@@ -514,6 +505,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 				log.Infof("Pipeline %s promote Environment %s has PR %s\n", activity.Name, envName, prURL)
 			}
 			po := o.createPromoteOptionsFromActivity(activity, envName)
+			po.GitInfo = gitInfo
 
 			if pr.Merged != nil && *pr.Merged {
 				if pr.MergeCommitSHA == nil {
@@ -531,8 +523,24 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 						return
 					} else {
 						promoteKey := po.createPromoteKey(env)
-						promoteKey.OnPromotePullRequest(activities, mergedPR)
-						promoteKey.OnPromoteUpdate(activities, kube.StartPromotionUpdate)
+
+						promoteKey.OnPromotePullRequest(o.jxClient, o.Namespace, mergedPR)
+						promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.StartPromotionUpdate)
+
+						if o.NoWaitForUpdatePipeline {
+							log.Infof("Pull Request %d merged but we are not waiting for the update pipeline to complete!\n",
+								prNumber)
+							err = po.commentOnIssues(ns, env, promoteKey)
+							if err != nil {
+								log.Warnf("Failed to comment on issues: %s", err)
+							}
+							err = promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.CompletePromotionUpdate)
+							if err != nil {
+								log.Warnf("PipelineActivity update failed while completing promotion step. activity=%s\n",
+									activity.Name)
+							}
+							return
+						}
 
 						statuses, err := gitProvider.ListCommitStatus(pr.Owner, pr.Repo, mergeSha)
 						if err == nil {
@@ -571,7 +579,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 									p.Statuses = prStatuses
 									return nil
 								}
-								promoteKey.OnPromoteUpdate(activities, updateStatuses)
+								promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, updateStatuses)
 
 								succeeded := true
 								for _, v := range urlStatusMap {
@@ -596,7 +604,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 										log.Warnf("Failed to comment on issues: %s", err)
 										return
 									}
-									err = promoteKey.OnPromoteUpdate(activities, kube.CompletePromotionUpdate)
+									err = promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.CompletePromotionUpdate)
 									if err != nil {
 										log.Warnf("Failed to update PipelineActivity on promotion completion: %s", err)
 									}
@@ -715,9 +723,13 @@ func (o *ControllerWorkflowOptions) createPromoteStepActivityKey(buildName strin
 		build = "1"
 	}
 	gitUrl := ""
-	for _, initContainer := range pod.Spec.InitContainers {
-		if initContainer.Name == "workflow-step-git-source" {
-			args := initContainer.Args
+
+	containers, _, isInit := kube.GetContainersWithStatusAndIsInit(pod)
+
+	for _, container := range containers {
+		if container.Name == "workflow-step-git-source" {
+			_, args := kube.GetCommandAndArgs(&container, isInit)
+
 			for i := 0; i <= len(args)-2; i += 2 {
 				key := args[i]
 				value := args[i+1]
@@ -777,12 +789,6 @@ func (o *ControllerWorkflowOptions) isReleaseBranch(branchName string) bool {
 }
 
 func noopCallback(activity *v1.PipelineActivity) bool {
-	return true
-}
-
-func setActivitySucceeded(activity *v1.PipelineActivity) bool {
-	activity.Spec.Status = v1.ActivityStatusTypeSucceeded
-	activity.Spec.WorkflowStatus = v1.ActivityStatusTypeSucceeded
 	return true
 }
 

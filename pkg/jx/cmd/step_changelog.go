@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -12,6 +11,10 @@ import (
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/pkg/errors"
+
+	"github.com/jenkins-x/jx/pkg/users"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
@@ -23,10 +26,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
 
-	chgit "github.com/jenkins-x/chyle/chyle/git"
+	chgit "github.com/antham/chyle/chyle/git"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -54,6 +56,7 @@ type StepChangelogOptions struct {
 	UpdateRelease       bool
 	NoReleaseInDev      bool
 	IncludeMergeCommits bool
+	FailIfFindCommits   bool
 	State               StepChangelogState
 }
 
@@ -89,6 +92,8 @@ spec:
     shortNames:
     - rel
     singular: release
+    categories:
+    - all
   scope: Namespaced
   version: v1`
 )
@@ -136,15 +141,10 @@ e.g. define environment variables GIT_USERNAME and GIT_API_TOKEN
 	JIRAIssueRegex   = regexp.MustCompile(`[A-Z][A-Z]+-(\d+)`)
 )
 
-func NewCmdStepChangelog(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepChangelog(commonOpts *CommonOptions) *cobra.Command {
 	options := StepChangelogOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 	cmd := &cobra.Command{
@@ -160,7 +160,6 @@ func NewCmdStepChangelog(f Factory, in terminal.FileReader, out terminal.FileWri
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.PreviousRevision, "previous-rev", "p", "", "the previous tag revision")
 	cmd.Flags().StringVarP(&options.PreviousDate, "previous-date", "", "", "the previous date to find a revision in format 'MonthName dayNumber year'")
@@ -177,8 +176,8 @@ func NewCmdStepChangelog(f Factory, in terminal.FileReader, out terminal.FileWri
 	cmd.Flags().BoolVarP(&options.GenerateReleaseYaml, "generate-yaml", "y", true, "Generate the Release YAML in the local helm chart")
 	cmd.Flags().BoolVarP(&options.UpdateRelease, "update-release", "", true, "Should we update the release on the Git repository with the changelog")
 	cmd.Flags().BoolVarP(&options.NoReleaseInDev, "no-dev-release", "", false, "Disables the generation of Release CRDs in the development namespace to track releases being performed")
-	cmd.Flags().BoolVarP(&options.IncludeMergeCommits, "include-merge-commits", "", false,
-		"Include merge commits when generating the changelog")
+	cmd.Flags().BoolVarP(&options.IncludeMergeCommits, "include-merge-commits", "", false, "Include merge commits when generating the changelog")
+	cmd.Flags().BoolVarP(&options.FailIfFindCommits, "fail-if-no-commits", "", false, "Do we want to fail the build if we don't find any commits to generate the changelog")
 
 	cmd.Flags().StringVarP(&options.Header, "header", "", "", "The changelog header in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")
 	cmd.Flags().StringVarP(&options.HeaderFile, "header-file", "", "", "The file name of the changelog header in markdown for the changelog. Can use go template expressions on the ReleaseSpec object: https://golang.org/pkg/text/template/")
@@ -223,6 +222,12 @@ func (o *StepChangelogOptions) Run() error {
 			return err
 		}
 	}
+
+	// Ensure we don't have a shallow checkout in git
+	err = gits.Unshallow(dir, o.Git())
+	if err != nil {
+		return errors.Wrapf(err, "error unshallowing git repo in %s", dir)
+	}
 	previousRev := o.PreviousRevision
 	if previousRev == "" {
 		previousDate := o.PreviousDate
@@ -260,7 +265,7 @@ func (o *StepChangelogOptions) Run() error {
 		path, _ := filepath.Split(chartFile)
 		templatesDir = filepath.Join(path, "templates")
 	}
-	err = os.MkdirAll(templatesDir, DefaultWritePermissions)
+	err = os.MkdirAll(templatesDir, util.DefaultWritePermissions)
 	if err != nil {
 		return fmt.Errorf("Failed to create the templates directory %s due to %s", templatesDir, err)
 	}
@@ -303,7 +308,7 @@ func (o *StepChangelogOptions) Run() error {
 
 	gitKind, err := o.GitServerKind(gitInfo)
 	foundGitProvider := true
-	gitProvider, err := o.State.GitInfo.CreateProvider(o.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+	gitProvider, err := o.State.GitInfo.CreateProvider(o.InCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
 		foundGitProvider = false
 		log.Warnf("Could not create GitProvide so cannot update the release notes: %s\n", err)
@@ -313,7 +318,10 @@ func (o *StepChangelogOptions) Run() error {
 
 	commits, err := chgit.FetchCommits(gitDir, previousRev, currentRev)
 	if err != nil {
-		return err
+		if o.FailIfFindCommits {
+			return err
+		}
+		log.Warnf("failed to find git commits between revision %s and %s due to: %s\n", previousRev, currentRev, err.Error())
 	}
 	version := o.Version
 	if version == "" {
@@ -346,11 +354,16 @@ func (o *StepChangelogOptions) Run() error {
 		},
 	}
 
+	resolver := users.GitUserResolver{
+		GitProvider: gitProvider,
+		Namespace:   devNs,
+		JXClient:    jxClient,
+	}
 	if commits != nil {
 		for _, commit := range *commits {
 
 			if o.IncludeMergeCommits || len(commit.ParentHashes) <= 1 {
-				o.addCommit(&release.Spec, &commit)
+				o.addCommit(&release.Spec, &commit, &resolver)
 			}
 		}
 	}
@@ -390,7 +403,7 @@ func (o *StepChangelogOptions) Run() error {
 		}
 		log.Infof("Updated the release information at %s\n", util.ColorInfo(url))
 	} else if o.OutputMarkdownFile != "" {
-		err := ioutil.WriteFile(o.OutputMarkdownFile, []byte(markdown), DefaultWritePermissions)
+		err := ioutil.WriteFile(o.OutputMarkdownFile, []byte(markdown), util.DefaultWritePermissions)
 		if err != nil {
 			return err
 		}
@@ -412,7 +425,7 @@ func (o *StepChangelogOptions) Run() error {
 	releaseFile := filepath.Join(templatesDir, o.ReleaseYamlFile)
 	crdFile := filepath.Join(templatesDir, o.CrdYamlFile)
 	if o.GenerateReleaseYaml {
-		err = ioutil.WriteFile(releaseFile, data, DefaultWritePermissions)
+		err = ioutil.WriteFile(releaseFile, data, util.DefaultWritePermissions)
 		if err != nil {
 			return fmt.Errorf("Failed to save Release YAML file %s: %s", releaseFile, err)
 		}
@@ -426,7 +439,7 @@ func (o *StepChangelogOptions) Run() error {
 			return fmt.Errorf("Failed to check for CRD YAML file %s: %s", crdFile, err)
 		}
 		if o.OverwriteCRD || !exists {
-			err = ioutil.WriteFile(crdFile, []byte(ReleaseCrdYaml), DefaultWritePermissions)
+			err = ioutil.WriteFile(crdFile, []byte(ReleaseCrdYaml), util.DefaultWritePermissions)
 			if err != nil {
 				return fmt.Errorf("Failed to save Release CRD YAML file %s: %s", crdFile, err)
 			}
@@ -459,7 +472,7 @@ func (o *StepChangelogOptions) Run() error {
 	releaseNotesURL := release.Spec.ReleaseNotesURL
 	pipeline := ""
 	build := o.Build
-	pipeline, build = o.getPipelineName(gitInfo, pipeline, build, appName)
+	pipeline, build = o.GetPipelineName(gitInfo, pipeline, build, appName)
 	if pipeline != "" && build != "" {
 		name := kube.ToValidName(pipeline + "-" + build)
 		// lets see if we can update the pipeline
@@ -486,9 +499,10 @@ func (o *StepChangelogOptions) Run() error {
 				LastCommitMessage: lastCommitMessage,
 				LastCommitURL:     lastCommitURL,
 				Version:           cleanVersion,
+				GitInfo:           gitInfo,
 			},
 		}
-		a, created, err := key.GetOrCreate(activities)
+		a, created, err := key.GetOrCreate(jxClient, o.currentNamespace)
 		if err == nil && a != nil && !created {
 			_, err = activities.Update(a)
 			if err != nil {
@@ -503,21 +517,36 @@ func (o *StepChangelogOptions) Run() error {
 	return nil
 }
 
-func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Commit) {
+func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Commit, resolver *users.GitUserResolver) {
 	// TODO
 	url := ""
 	branch := "master"
 
 	sha := commit.Hash.String()
+	author, err := resolver.GitSignatureAsUser(&commit.Author)
+	if err != nil {
+		log.Warnf("Failed to enrich commits with issues: %v\n", err)
+	}
+	committer, err := resolver.GitSignatureAsUser(&commit.Committer)
+	if err != nil {
+		log.Warnf("Failed to enrich commits with issues: %v\n", err)
+	}
+	var authorDetails, committerDetails v1.UserDetails
+	if author != nil {
+		authorDetails = author.Spec
+	}
+	if committer != nil {
+		committerDetails = committer.Spec
+	}
 	commitSummary := v1.CommitSummary{
 		Message:   commit.Message,
 		URL:       url,
 		SHA:       sha,
-		Author:    o.toUserDetails(commit.Author),
+		Author:    &authorDetails,
 		Branch:    branch,
-		Committer: o.toUserDetails(commit.Committer),
+		Committer: &committerDetails,
 	}
-	err := o.addIssuesAndPullRequests(spec, &commitSummary, commit)
+	err = o.addIssuesAndPullRequests(spec, &commitSummary, commit)
 
 	spec.Commits = append(spec.Commits, commitSummary)
 	if err != nil {
@@ -543,6 +572,15 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 	}
 	message := fullCommitMessageText(rawCommit)
 	matches := regex.FindAllStringSubmatch(message, -1)
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+	resolver := users.GitUserResolver{
+		JXClient:    jxClient,
+		Namespace:   ns,
+		GitProvider: gitProvider,
+	}
 	for _, match := range matches {
 		for _, result := range match {
 			result = strings.TrimPrefix(result, "#")
@@ -562,21 +600,33 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 				if issue.User == nil {
 					log.Warnf("Failed to find user for issue %s repository %s\n", result, tracker.HomeURL())
 				} else {
-					user = *o.gitUserToUserDetails(issue.User)
+					u, err := resolver.Resolve(issue.User)
+					if err != nil {
+						return err
+					}
+					user = u.Spec
 				}
 
 				var closedBy v1.UserDetails
 				if issue.ClosedBy == nil {
 					log.Warnf("Failed to find closedBy user for issue %s repository %s\n", result, tracker.HomeURL())
 				} else {
-					closedBy = *o.gitUserToUserDetails(issue.User)
+					u, err := resolver.Resolve(issue.User)
+					if err != nil {
+						return err
+					}
+					closedBy = u.Spec
 				}
 
 				var assignees []v1.UserDetails
 				if issue.Assignees == nil {
 					log.Warnf("Failed to find assignees for issue %s repository %s\n", result, tracker.HomeURL())
 				} else {
-					assignees = o.gitUserToUserDetailSlice(issue.Assignees)
+					u, err := resolver.GitUserSliceAsUserDetailsSlice(issue.Assignees)
+					if err != nil {
+						return err
+					}
+					assignees = u
 				}
 
 				labels := toV1Labels(issue.Labels)
@@ -638,49 +688,6 @@ func fullCommitMessageText(commit *object.Commit) string {
 	commit.Parents().ForEach(fn)
 	return answer
 
-}
-
-func (o *StepChangelogOptions) gitUserToUserDetailSlice(users []gits.GitUser) []v1.UserDetails {
-	answer := []v1.UserDetails{}
-	for _, user := range users {
-		answer = append(answer, *o.gitUserToUserDetails(&user))
-	}
-	return answer
-}
-
-func (o *StepChangelogOptions) gitUserToUserDetails(user *gits.GitUser) *v1.UserDetails {
-	return &v1.UserDetails{
-		Login:     user.Login,
-		Name:      user.Name,
-		Email:     user.Email,
-		URL:       user.URL,
-		AvatarURL: user.AvatarURL,
-		/*
-			CreationTimestamp: &metav1.Time{
-				Time: user.When,
-			},
-		*/
-	}
-}
-
-func (o *StepChangelogOptions) toUserDetails(signature object.Signature) *v1.UserDetails {
-	userDetailService := kube.NewUserDetailService(o.jxClient, o.devNamespace)
-
-	user := userDetailService.FindByEmail(signature.Email)
-
-	if user != nil && user.Login != "" {
-		return user
-	}
-
-	login := ""
-	return &v1.UserDetails{
-		Login: login,
-		Name:  signature.Name,
-		Email: signature.Email,
-		CreationTimestamp: &metav1.Time{
-			Time: signature.When,
-		},
-	}
 }
 
 func (o *StepChangelogOptions) getTemplateResult(releaseSpec *v1.ReleaseSpec, templateName string, templateText string, templateFile string) (string, error) {

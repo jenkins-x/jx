@@ -3,7 +3,6 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -14,7 +13,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -45,15 +43,10 @@ var (
 `)
 )
 
-func NewCmdStepGitCredentials(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepGitCredentials(commonOpts *CommonOptions) *cobra.Command {
 	options := StepGitCredentialsOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 	cmd := &cobra.Command{
@@ -90,7 +83,7 @@ func (o *StepGitCredentialsOptions) Run() error {
 	}
 	dir, _ := filepath.Split(outFile)
 	if dir != "" {
-		err := os.MkdirAll(dir, DefaultWritePermissions)
+		err := os.MkdirAll(dir, util.DefaultWritePermissions)
 		if err != nil {
 			return err
 		}
@@ -104,7 +97,7 @@ func (o *StepGitCredentialsOptions) Run() error {
 
 func (o *StepGitCredentialsOptions) createGitCredentialsFile(fileName string, secrets *corev1.SecretList) error {
 	data := o.CreateGitCredentialsFromSecrets(secrets)
-	err := ioutil.WriteFile(fileName, data, DefaultWritePermissions)
+	err := ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 	if err != nil {
 		return fmt.Errorf("Failed to write to %s: %s", fileName, err)
 	}

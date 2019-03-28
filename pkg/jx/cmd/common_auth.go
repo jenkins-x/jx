@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -14,7 +14,7 @@ import (
 
 func (o *CommonOptions) CreateGitAuthConfigServiceDryRun(dryRun bool) (auth.ConfigService, error) {
 	if dryRun {
-		fileName := GitAuthConfigFile
+		fileName := auth.GitAuthConfigFile
 		return o.CreateGitAuthConfigServiceFromSecrets(fileName, nil, false)
 	}
 	return o.CreateGitAuthConfigService()
@@ -41,13 +41,17 @@ func (o *CommonOptions) CreateGitAuthConfigService() (auth.ConfigService, error)
 		}
 	}
 
-	fileName := GitAuthConfigFile
-	return o.CreateGitAuthConfigServiceFromSecrets(fileName, secrets, o.IsInCDPipeline())
+	fileName := auth.GitAuthConfigFile
+	return o.CreateGitAuthConfigServiceFromSecrets(fileName, secrets, o.factory.IsInCDPipeline())
 }
 
 // CreateGitAuthConfigServiceFromSecrets Creates a git auth config service from secrets
 func (o *CommonOptions) CreateGitAuthConfigServiceFromSecrets(fileName string, secrets *corev1.SecretList, isCDPipeline bool) (auth.ConfigService, error) {
-	authConfigSvc, err := o.CreateAuthConfigService(fileName)
+	_, namespace, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find development namespace")
+	}
+	authConfigSvc, err := o.factory.CreateAuthConfigService(fileName, namespace)
 	if err != nil {
 		return authConfigSvc, err
 	}
@@ -58,7 +62,7 @@ func (o *CommonOptions) CreateGitAuthConfigServiceFromSecrets(fileName string, s
 	}
 
 	if secrets != nil {
-		err = o.AuthMergePipelineSecrets(config, secrets, kube.ValueKindGit, isCDPipeline || o.IsInCluster())
+		err = o.factory.AuthMergePipelineSecrets(config, secrets, kube.ValueKindGit, isCDPipeline || o.factory.IsInCluster())
 		if err != nil {
 			return authConfigSvc, err
 		}
@@ -123,4 +127,32 @@ func (o *CommonOptions) LoadPipelineSecrets(kind, serviceKind string) (*corev1.S
 		LabelSelector: selector,
 	}
 	return kubeClient.CoreV1().Secrets(ns).List(opts)
+}
+
+// PickPipelineUserAuth returns the user auth for the pipeline user
+func (o *CommonOptions) PickPipelineUserAuth(config *auth.AuthConfig, server *auth.AuthServer) (*auth.UserAuth, error) {
+	userName := config.PipeLineUsername
+	if userName != "" {
+		userAuth := config.GetOrCreateUserAuth(server.URL, userName)
+		if userAuth != nil {
+			return userAuth, nil
+		}
+	}
+	var userAuth *auth.UserAuth
+	var err error
+	url := server.URL
+	userAuths := config.FindUserAuths(url)
+	if len(userAuths) > 1 {
+		userAuth, err = config.PickServerUserAuth(server, "user name for the Pipeline", o.BatchMode, "", o.In, o.Out, o.Err)
+		if err != nil {
+			return userAuth, err
+		}
+	}
+	if userAuth != nil {
+		config.PipeLineUsername = userAuth.Username
+	} else {
+		// lets create an empty one for now
+		userAuth = &auth.UserAuth{}
+	}
+	return userAuth, nil
 }

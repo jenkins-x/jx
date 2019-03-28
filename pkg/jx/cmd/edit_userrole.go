@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/users"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -11,7 +12,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -39,15 +39,10 @@ type EditUserRoleOptions struct {
 }
 
 // NewCmdEditUserRole creates a command object for the "create" command
-func NewCmdEditUserRole(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdEditUserRole(commonOpts *CommonOptions) *cobra.Command {
 	options := &EditUserRoleOptions{
 		EditOptions: EditOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -68,7 +63,6 @@ func NewCmdEditUserRole(f Factory, in terminal.FileReader, out terminal.FileWrit
 	cmd.Flags().StringVarP(&options.Login, optionLogin, "l", "", "The user login name")
 	cmd.Flags().StringArrayVarP(&options.Roles, "role", "r", []string{}, "The roles to set on a user")
 
-	options.addCommonFlags(cmd)
 	return cmd
 }
 
@@ -93,7 +87,7 @@ func (o *EditUserRoleOptions) Run() error {
 	}
 
 	// TODO should use the admin namespace?
-	users, names, err := kube.GetUsers(jxClient, ns)
+	users, names, err := users.GetUsers(jxClient, ns)
 	if err != nil {
 		return err
 	}

@@ -19,7 +19,7 @@ func (o *CommonOptions) getGoogleProjectId() (string, error) {
 		return "", err
 	}
 
-	lines := strings.Split(string(out), "\n")
+	lines := strings.Split(out, "\n")
 	var existingProjects []string
 	for _, l := range lines {
 		if strings.Contains(l, clusterListHeader) {

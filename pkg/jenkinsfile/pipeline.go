@@ -3,16 +3,18 @@ package jenkinsfile
 import (
 	"bytes"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"text/template"
+
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -21,62 +23,84 @@ const (
 
 	// PipelineTemplateFileName defines the jenkisnfile template used to generate the pipeline
 	PipelineTemplateFileName = "Jenkinsfile.tmpl"
+
+	// PipelineKindRelease represents a release pipeline triggered on merge to master (or a release branch)
+	PipelineKindRelease = "release"
+
+	// PipelineKindPullRequest represents a Pull Request pipeline
+	PipelineKindPullRequest = "pullrequest"
+
+	// PipelineKindFeature represents a pipeline on a feature branch
+	PipelineKindFeature = "feature"
+)
+
+var (
+	// PipelineKinds the possible values of pipeline
+	PipelineKinds = []string{PipelineKindRelease, PipelineKindPullRequest, PipelineKindFeature}
 )
 
 // PipelineAgent contains the agent definition metadata
 type PipelineAgent struct {
-	Label     string `yaml:"label,omitempty"`
-	Container string `yaml:"container,omitempty"`
-	Dir       string `yaml:"dir,omitempty"`
+	Label     string `json:"label,omitempty"`
+	Container string `json:"container,omitempty"`
+	Dir       string `json:"dir,omitempty"`
 }
 
-// Pipelines contains all the different kinds of pipeline for diferent branches
+// Pipelines contains all the different kinds of pipeline for different branches
 type Pipelines struct {
-	PullRequest *PipelineLifecycles `yaml:"pullRequest,omitempty"`
-	Release     *PipelineLifecycles `yaml:"release,omitempty"`
-	Feature     *PipelineLifecycles `yaml:"feature,omitempty"`
-	Post        *PipelineLifecycle  `yaml:"post,omitempty"`
+	PullRequest *PipelineLifecycles `json:"pullRequest,omitempty"`
+	Release     *PipelineLifecycles `json:"release,omitempty"`
+	Feature     *PipelineLifecycles `json:"feature,omitempty"`
+	Post        *PipelineLifecycle  `json:"post,omitempty"`
 }
 
 // PipelineStep defines an individual step in a pipeline, either a command (sh) or groovy block
 type PipelineStep struct {
-	Comment   string          `yaml:"comment,omitempty"`
-	Container string          `yaml:"container,omitempty"`
-	Dir       string          `yaml:"dir,omitempty"`
-	Command   string          `yaml:"sh,omitempty"`
-	Groovy    string          `yaml:"groovy,omitempty"`
-	Steps     []*PipelineStep `yaml:"steps,omitempty"`
-	When      string          `yaml:"when,omitempty"`
+	Name      string          `json:"name,omitempty"`
+	Comment   string          `json:"comment,omitempty"`
+	Container string          `json:"container,omitempty"`
+	Dir       string          `json:"dir,omitempty"`
+	Command   string          `json:"sh,omitempty"`
+	Groovy    string          `json:"groovy,omitempty"`
+	Steps     []*PipelineStep `json:"steps,omitempty"`
+	When      string          `json:"when,omitempty"`
 }
 
 // PipelineLifecycles defines the steps of a lifecycle section
 type PipelineLifecycles struct {
-	Setup      *PipelineLifecycle `yaml:"setup,omitempty"`
-	SetVersion *PipelineLifecycle `yaml:"setVersion,omitempty"`
-	PreBuild   *PipelineLifecycle `yaml:"preBuild,omitempty"`
-	Build      *PipelineLifecycle `yaml:"build,omitempty"`
-	PostBuild  *PipelineLifecycle `yaml:"postBuild,omitempty"`
-	Promote    *PipelineLifecycle `yaml:"promote,omitempty"`
+	Setup      *PipelineLifecycle     `json:"setup,omitempty"`
+	SetVersion *PipelineLifecycle     `json:"setVersion,omitempty"`
+	PreBuild   *PipelineLifecycle     `json:"preBuild,omitempty"`
+	Build      *PipelineLifecycle     `json:"build,omitempty"`
+	PostBuild  *PipelineLifecycle     `json:"postBuild,omitempty"`
+	Promote    *PipelineLifecycle     `json:"promote,omitempty"`
+	Pipeline   *syntax.ParsedPipeline `json:"pipeline,omitempty"`
 }
 
 // PipelineLifecycle defines the steps of a lifecycle section
 type PipelineLifecycle struct {
-	Steps []*PipelineStep `yaml:"steps,omitempty"`
+	Steps []*PipelineStep `json:"steps,omitempty"`
 
-	// PreSteps if using inheritance then invoke these steps before the base steps 
-	PreSteps []*PipelineStep `yaml:"preSteps,omitempty"`
+	// PreSteps if using inheritance then invoke these steps before the base steps
+	PreSteps []*PipelineStep `json:"preSteps,omitempty"`
 
-	// Replace if using inheritence then replace steps from the base pipeline
-	Replace bool `yaml:"replace,omitempty"`
+	// Replace if using inheritance then replace steps from the base pipeline
+	Replace bool `json:"replace,omitempty"`
 }
 
-// PipelineLifecycleArray an array of lifecycle pointers
-type PipelineLifecycleArray []*PipelineLifecycle
+// NamedLifecycle a lifecycle and its name
+type NamedLifecycle struct {
+	Name      string
+	Lifecycle *PipelineLifecycle
+}
+
+// PipelineLifecycleArray an array of named lifecycle pointers
+type PipelineLifecycleArray []NamedLifecycle
 
 // PipelineExtends defines the extension (e.g. parent pipeline which is overloaded
 type PipelineExtends struct {
-	Import string `yaml:"import,omitempty"`
-	File   string `yaml:"file,omitempty"`
+	Import string `json:"import,omitempty"`
+	File   string `json:"file,omitempty"`
 }
 
 // ImportFile returns an ImportFile for the given extension
@@ -89,18 +113,20 @@ func (x *PipelineExtends) ImportFile() *ImportFile {
 
 // PipelineConfig defines the pipeline configuration
 type PipelineConfig struct {
-	Extends     *PipelineExtends `yaml:"extends,omitempty"`
-	Agent       PipelineAgent    `yaml:"agent,omitempty"`
-	Environment string           `yaml:"environment,omitempty"`
-	Pipelines   Pipelines        `yaml:"pipelines,omitempty"`
+	Extends     *PipelineExtends `json:"extends,omitempty"`
+	Agent       PipelineAgent    `json:"agent,omitempty"`
+	Env         []corev1.EnvVar  `json:"env,omitempty"`
+	Environment string           `json:"environment,omitempty"`
+	Pipelines   Pipelines        `json:"pipelines,omitempty"`
 }
 
 // CreateJenkinsfileArguments contains the arguents to generate a Jenkinsfiles dynamically
 type CreateJenkinsfileArguments struct {
-	ConfigFile        string
-	TemplateFile      string
-	OutputFile        string
-	JenkinsfileRunner bool
+	ConfigFile          string
+	TemplateFile        string
+	OutputFile          string
+	JenkinsfileRunner   bool
+	ClearContainerNames bool
 }
 
 // Validate validates all the arguments are set correctly
@@ -135,17 +161,31 @@ func (a *PipelineLifecycles) Groovy() string {
 
 // All returns all lifecycles in order
 func (a *PipelineLifecycles) All() PipelineLifecycleArray {
-	return []*PipelineLifecycle{a.Setup, a.SetVersion, a.PreBuild, a.Build, a.PostBuild, a.Promote}
+	return []NamedLifecycle{
+		{"setup", a.Setup},
+		{"setversion", a.SetVersion},
+		{"prebuild", a.PreBuild},
+		{"build", a.Build},
+		{"postbuild", a.PostBuild},
+		{"promote", a.Promote},
+	}
 }
 
 // AllButPromote returns all lifecycles but promote
 func (a *PipelineLifecycles) AllButPromote() PipelineLifecycleArray {
-	return []*PipelineLifecycle{a.Setup, a.SetVersion, a.PreBuild, a.Build, a.PostBuild}
+	return []NamedLifecycle{
+		{"setup", a.Setup},
+		{"setversion", a.SetVersion},
+		{"prebuild", a.PreBuild},
+		{"build", a.Build},
+		{"postbuild", a.PostBuild},
+	}
 }
 
 // RemoveWhenStatements removes any when conditions
 func (a *PipelineLifecycles) RemoveWhenStatements(prow bool) {
-	for _, v := range a.All() {
+	for _, n := range a.All() {
+		v := n.Lifecycle
 		if v != nil {
 			v.RemoveWhenStatements(prow)
 		}
@@ -155,7 +195,8 @@ func (a *PipelineLifecycles) RemoveWhenStatements(prow bool) {
 // Groovy returns the groovy string for the lifecycles
 func (s PipelineLifecycleArray) Groovy() string {
 	statements := []*Statement{}
-	for _, l := range s {
+	for _, n := range s {
+		l := n.Lifecycle
 		if l != nil {
 			statements = append(statements, l.ToJenkinsfileStatements()...)
 		}
@@ -167,9 +208,15 @@ func (s PipelineLifecycleArray) Groovy() string {
 }
 
 // Groovy returns the groovy expression for this lifecycle
-func (l *PipelineLifecycle) Groovy() string {
-	lifecycles := PipelineLifecycleArray([]*PipelineLifecycle{l})
+func (l *NamedLifecycle) Groovy() string {
+	lifecycles := PipelineLifecycleArray([]NamedLifecycle{*l})
 	return lifecycles.Groovy()
+}
+
+// Groovy returns the groovy expression for this lifecycle
+func (l *PipelineLifecycle) Groovy() string {
+	nl := &NamedLifecycle{Name: "", Lifecycle: l}
+	return nl.Groovy()
 }
 
 // ToJenkinsfileStatements converts the lifecycle to one or more jenkinsfile statements
@@ -191,10 +238,10 @@ func removeWhenSteps(prow bool, steps []*PipelineStep) []*PipelineStep {
 	answer := []*PipelineStep{}
 	for _, step := range steps {
 		when := strings.TrimSpace(step.When)
-		if (prow && when == "!prow") {
+		if prow && when == "!prow" {
 			continue
 		}
-		if (!prow && when == "prow") {
+		if !prow && when == "prow" {
 			continue
 		}
 		step.Steps = removeWhenSteps(prow, step.Steps)
@@ -246,7 +293,8 @@ func defaultLifecycleContainerAndDir(container string, dir string, lifecycles Pi
 	if container == "" && dir == "" {
 		return
 	}
-	for _, l := range lifecycles {
+	for _, n := range lifecycles {
+		l := n.Lifecycle
 		if l != nil {
 			if dir != "" {
 				l.PreSteps = defaultDirAroundSteps(dir, l.PreSteps)
@@ -393,7 +441,7 @@ func (s *PipelineStep) ToJenkinsfileStatements() []*Statement {
 }
 
 // LoadPipelineConfig returns the pipeline configuration
-func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfileRunner bool) (*PipelineConfig, error) {
+func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfileRunner bool, clearContainer bool) (*PipelineConfig, error) {
 	config := PipelineConfig{}
 	exists, err := util.FileExists(fileName)
 	if err != nil || !exists {
@@ -409,7 +457,7 @@ func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfil
 	}
 	pipelines := &config.Pipelines
 	pipelines.RemoveWhenStatements(jenkinsfileRunner)
-	if jenkinsfileRunner {
+	if clearContainer {
 		// lets force any agent for prow / jenkinsfile runner
 		config.Agent.Label = ""
 		config.Agent.Container = ""
@@ -439,25 +487,12 @@ func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfil
 	if !exists {
 		return &config, fmt.Errorf("base pipeline file does not exist %s", file)
 	}
-	basePipeline, err := LoadPipelineConfig(file, resolver, jenkinsfileRunner)
+	basePipeline, err := LoadPipelineConfig(file, resolver, jenkinsfileRunner, clearContainer)
 	if err != nil {
 		return &config, errors.Wrapf(err, "Failed to base pipeline file %s", file)
 	}
-	err = config.ExtendPipeline(basePipeline, jenkinsfileRunner)
+	err = config.ExtendPipeline(basePipeline, clearContainer)
 	return &config, err
-}
-
-// CreateResolver creates a new module resolver
-func CreateResolver(packsDir string, gitter gits.Gitter) (ImportFileResolver, error) {
-	modules, err := LoadModules(packsDir)
-	if err != nil {
-		return nil, err
-	}
-	moduleResolver, err := modules.Resolve(gitter)
-	if err != nil {
-		return nil, err
-	}
-	return moduleResolver.AsImportResolver(), nil
 }
 
 // IsEmpty returns true if this configuration is empty
@@ -476,8 +511,8 @@ func (c *PipelineConfig) SaveConfig(fileName string) error {
 }
 
 // ExtendPipeline inherits this pipeline from the given base pipeline
-func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, jenkinsfileRunner bool) error {
-	if jenkinsfileRunner {
+func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, clearContainer bool) error {
+	if clearContainer {
 		c.Agent.Container = ""
 		c.Agent.Label = ""
 		base.Agent.Container = ""
@@ -524,6 +559,8 @@ func ExtendPipelines(parent *PipelineLifecycles, base *PipelineLifecycles) *Pipe
 		Build:      ExtendLifecycle(parent.Build, base.Build),
 		PostBuild:  ExtendLifecycle(parent.PostBuild, base.PostBuild),
 		Promote:    ExtendLifecycle(parent.Promote, base.Promote),
+		// TODO: Actually do extension for Pipeline rather than just copying it wholesale
+		Pipeline: parent.Pipeline,
 	}
 }
 
@@ -553,7 +590,7 @@ func (a *CreateJenkinsfileArguments) GenerateJenkinsfile(resolver ImportFileReso
 	if err != nil {
 		return err
 	}
-	config, err := LoadPipelineConfig(a.ConfigFile, resolver, a.JenkinsfileRunner)
+	config, err := LoadPipelineConfig(a.ConfigFile, resolver, a.JenkinsfileRunner, a.ClearContainerNames)
 	if err != nil {
 		return err
 	}
@@ -571,9 +608,11 @@ func (a *CreateJenkinsfileArguments) GenerateJenkinsfile(resolver ImportFileReso
 	}
 	outFile := a.OutputFile
 	outDir, _ := filepath.Split(outFile)
-	err = os.MkdirAll(outDir, util.DefaultWritePermissions)
-	if err != nil {
-		return errors.Wrapf(err, "failed to make directory %s", outDir)
+	if outDir != "" {
+		err = os.MkdirAll(outDir, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to make directory %s when creating Jenkinsfile %s", outDir, outFile)
+		}
 	}
 	file, err := os.Create(outFile)
 	if err != nil {

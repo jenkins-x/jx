@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,7 +14,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -46,15 +44,10 @@ type DeleteBranchOptions struct {
 }
 
 // NewCmdDeleteBranch creates a command object for the "delete repo" command
-func NewCmdDeleteBranch(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteBranch(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteBranchOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -81,7 +74,6 @@ func NewCmdDeleteBranch(f Factory, in terminal.FileReader, out terminal.FileWrit
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "If selecting branches to remove this filters the list of repositories")
 	cmd.Flags().BoolVarP(&options.SelectAllRepos, "all-repos", "", false, "If selecting projects to remove branches this defaults to selecting them all")
 	cmd.Flags().StringVarP(&options.SelectFilterRepos, "filter-repos", "", "", "If selecting projects to remove brancehs this filters the list of repositories")
-	cmd.Flags().BoolVarP(&options.BatchMode, "batch-mode", "b", false, "Run without being prompted. WARNING! You will not be asked to confirm deletions if you use this flag.")
 	return cmd
 }
 
@@ -221,7 +213,7 @@ func (o *CommonOptions) cloneOrPullRepository(org string, repo string, gitURL st
 		err = o.Git().Stash(dir)
 		return dir, err
 	} else {
-		err := os.MkdirAll(dir, DefaultWritePermissions)
+		err := os.MkdirAll(dir, util.DefaultWritePermissions)
 		if err != nil {
 			return dir, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
 		}

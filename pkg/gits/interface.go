@@ -46,11 +46,15 @@ type GitProvider interface {
 
 	GetPullRequest(owner string, repo *GitRepository, number int) (*GitPullRequest, error)
 
+	ListOpenPullRequests(owner string, repo string) ([]*GitPullRequest, error)
+
 	GetPullRequestCommits(owner string, repo *GitRepository, number int) ([]*GitCommit, error)
 
 	PullRequestLastCommitStatus(pr *GitPullRequest) (string, error)
 
 	ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error)
+
+	ListCommits(owner string, repo string, opt *ListCommitsArguments) ([]*GitCommit, error)
 
 	UpdateCommitStatus(org string, repo string, sha string, status *GitRepoStatus) (*GitRepoStatus, error)
 
@@ -141,6 +145,10 @@ type GitProvider interface {
 	ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error)
 	// TODO Refactor to remove bespoke types when we implement another provider
 	AcceptInvitation(int64) (*github.Response, error)
+
+	// ShouldForkForPullReques treturns true if we should create a personal fork of this repository
+	// before creating a pull request
+	ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool
 }
 
 // Gitter defines common git actions used by Jenkins X via git cli
@@ -165,6 +173,8 @@ type Gitter interface {
 	Init(dir string) error
 	Clone(url string, directory string) error
 	ShallowCloneBranch(url string, branch string, directory string) error
+	FetchUnshallow(dir string) error
+	IsShallow(dir string) (bool, error)
 	Push(dir string) error
 	PushMaster(dir string) error
 	PushTag(dir string, tag string) error
@@ -175,6 +185,9 @@ type Gitter interface {
 	PullRemoteBranches(dir string) error
 	PullUpstream(dir string) error
 
+	// ResetToUpstream resets the given branch to the upstream version
+	ResetToUpstream(dir string, branch string) error
+
 	AddRemote(dir string, name string, url string) error
 	SetRemoteURL(dir string, name string, gitURL string) error
 	UpdateRemote(dir, url string) error
@@ -183,14 +196,19 @@ type Gitter interface {
 	RemoteBranches(dir string) ([]string, error)
 	RemoteBranchNames(dir string, prefix string) ([]string, error)
 	GetRemoteUrl(config *gitcfg.Config, name string) string
+	RemoteUpdate(dir string) error
 
 	Branch(dir string) (string, error)
+	CreateBranchFrom(dir string, branchName string, startPoint string) error
 	CreateBranch(dir string, branch string) error
 	CheckoutRemoteBranch(dir string, branch string) error
 	Checkout(dir string, branch string) error
 	CheckoutOrphan(dir string, branch string) error
 	ConvertToValidBranchName(name string) string
-	FetchBranch(dir string, repo string, refspec string) error
+	FetchBranch(dir string, repo string, refspec ...string) error
+	FetchBranchUnshallow(dir string, repo string, refspec ...string) error
+	Merge(dir string, commitish string) error
+	ResetHard(dir string, commitish string) error
 
 	Stash(dir string) error
 
@@ -204,6 +222,8 @@ type Gitter interface {
 	AddCommit(dir string, msg string) error
 	HasChanges(dir string) (bool, error)
 	Diff(dir string) (string, error)
+	ListChangedFilesFromBranch(dir string, branch string) (string, error)
+	LoadFileFromBranch(dir string, branch string, file string) (string, error)
 
 	GetLatestCommitMessage(dir string) (string, error)
 	GetPreviousGitTagSHA(dir string) (string, error)
@@ -211,6 +231,7 @@ type Gitter interface {
 	FetchTags(dir string) error
 	Tags(dir string) ([]string, error)
 	CreateTag(dir string, tag string, msg string) error
+	GetLatestCommitSha(dir string) (string, error)
 
 	GetRevisionBeforeDate(dir string, t time.Time) (string, error)
 	GetRevisionBeforeDateText(dir string, dateText string) (string, error)

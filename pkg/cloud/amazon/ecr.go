@@ -5,6 +5,9 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/kube"
+	"k8s.io/client-go/kubernetes"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ecr"
@@ -13,7 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
-// GetAccountID returns the current account ID
+// GetAccountIDAndRegion returns the current account ID and region
 func GetAccountIDAndRegion(profile string, region string) (string, string, error) {
 	sess, err := NewAwsSession(profile, region)
 	region = *sess.Config.Region
@@ -43,17 +46,28 @@ func GetContainerRegistryHost() (string, error) {
 	return accountId + ".dkr.ecr." + region + ".amazonaws.com", nil
 }
 
-func GetRegionFromContainerRegistryHost(dockerRegistry string) string {
+/*
+Deprecated!
+
+This function is kept for backwards compatibility. AWS region should not be resolved from ECR address, but
+read from ConfigMap (see RememberRegion function). To keep backwards compatibility with existing installations this
+function will be kept for a while and it will perform migration to config map. Eventually it will be removed from a
+codebase.
+*/
+func GetRegionFromContainerRegistryHost(kubeClient kubernetes.Interface, namespace string, dockerRegistry string) string {
 	submatch := regexp.MustCompile(`\.ecr\.(.*)\.amazonaws\.com$`).FindStringSubmatch(dockerRegistry)
 	if len(submatch) > 1 {
-		return submatch[1]
+		region := submatch[1]
+		// Migrating jx installations created before AWS region config map
+		kube.RememberRegion(kubeClient, namespace, region)
+		return region
 	} else {
 		return ""
 	}
 }
 
 // LazyCreateRegistry lazily creates the ECR registry if it does not already exist
-func LazyCreateRegistry(dockerRegistry string, orgName string, appName string) error {
+func LazyCreateRegistry(kube kubernetes.Interface, namespace string, region string, dockerRegistry string, orgName string, appName string) error {
 	// strip any tag/version from the app name
 	idx := strings.Index(appName, ":")
 	if idx > 0 {
@@ -65,7 +79,10 @@ func LazyCreateRegistry(dockerRegistry string, orgName string, appName string) e
 	}
 	repoName = strings.ToLower(repoName)
 	log.Infof("Let's ensure that we have an ECR repository for the Docker image %s\n", util.ColorInfo(repoName))
-	sess, err := NewAwsSession("", GetRegionFromContainerRegistryHost(dockerRegistry))
+	if region == "" {
+		region = GetRegionFromContainerRegistryHost(kube, namespace, dockerRegistry)
+	}
+	sess, err := NewAwsSession("", region)
 	if err != nil {
 		return err
 	}

@@ -105,6 +105,15 @@ func (g *GitCLI) PullUpstream(dir string) error {
 	return g.gitCmd(dir, "pull", "-r", "upstream", "master")
 }
 
+// ResetToUpstream resets the given branch to the upstream version
+func (g *GitCLI) ResetToUpstream(dir string, branch string) error {
+	err := g.gitCmd(dir, "fetch", "upstream")
+	if err != nil {
+		return err
+	}
+	return g.gitCmd(dir, "reset", "--hard", "upstream/"+branch)
+}
+
 // AddRemote adds a remote repository at the given URL and with the given name
 func (g *GitCLI) AddRemote(dir string, name string, url string) error {
 	return g.gitCmd(dir, "remote", "add", name, url)
@@ -113,6 +122,11 @@ func (g *GitCLI) AddRemote(dir string, name string, url string) error {
 // UpdateRemote updates the URL of the remote repository
 func (g *GitCLI) UpdateRemote(dir, url string) error {
 	return g.gitCmd(dir, "remote", "set-url", "origin", url)
+}
+
+// RemoteUpdate performs a git remote update
+func (g *GitCLI) RemoteUpdate(dir string) error {
+	return g.gitCmd(dir, "remote", "update")
 }
 
 // Stash stashes the current changes from the given directory
@@ -375,8 +389,26 @@ func (g *GitCLI) ConvertToValidBranchName(name string) string {
 	return buffer.String()
 }
 
-func (g *GitCLI) FetchBranch(dir string, repo string, refspec string) error {
-	return g.gitCmd(dir, "fetch", repo, refspec)
+// FetchBranch fetches the refspecs from the repo
+func (g *GitCLI) FetchBranch(dir string, repo string, refspecs ...string) error {
+	return g.fetchBranch(dir, repo, false, refspecs...)
+}
+
+// FetchBranch fetches the refspecs from the repo
+func (g *GitCLI) FetchBranchUnshallow(dir string, repo string, refspecs ...string) error {
+	return g.fetchBranch(dir, repo, true, refspecs...)
+}
+
+// FetchBranch fetches the refspecs from the repo
+func (g *GitCLI) fetchBranch(dir string, repo string, unshallow bool, refspecs ...string) error {
+	args := []string{"fetch", repo}
+	if unshallow {
+		args = append(args, "--unshallow")
+	}
+	for _, refspec := range refspecs {
+		args = append(args, refspec)
+	}
+	return g.gitCmd(dir, args...)
 }
 
 // GetAuthorEmailForCommit returns the author email from commit message with the given SHA
@@ -490,7 +522,7 @@ func (g *GitCLI) RemoteBranchNames(dir string, prefix string) ([]string, error) 
 
 // GetPreviousGitTagSHA returns the previous git tag from the repository at the given directory
 func (g *GitCLI) GetPreviousGitTagSHA(dir string) (string, error) {
-	latestTag, err := g.gitCmdWithOutput(dir, "describe", "--abbrev=0", "--tags")
+	latestTag, err := g.gitCmdWithOutput(dir, "describe", "--abbrev=0", "--tags", "--always")
 	if err != nil {
 		return "", fmt.Errorf("failed to find latest tag for project in %s : %s", dir, err)
 	}
@@ -612,4 +644,70 @@ func (g *GitCLI) CreateBranch(dir string, branch string) error {
 // Diff runs git diff
 func (g *GitCLI) Diff(dir string) (string, error) {
 	return g.gitCmdWithOutput(dir, "diff")
+}
+
+// ListChangedFilesFromBranch lists files changed between branches
+func (g *GitCLI) ListChangedFilesFromBranch(dir string, branch string) (string, error) {
+	return g.gitCmdWithOutput(dir, "diff", "--name-status", branch)
+}
+
+// LoadFileFromBranch returns a files's contents from a branch
+func (g *GitCLI) LoadFileFromBranch(dir string, branch string, file string) (string, error) {
+	return g.gitCmdWithOutput(dir, "show", branch+":"+file)
+}
+
+// FetchUnshallow runs git fetch --unshallow in dir
+func (g *GitCLI) FetchUnshallow(dir string) error {
+	err := g.gitCmd(dir, "fetch", "--unshallow")
+	if err != nil {
+		return errors.Wrapf(err, "running git fetch --unshallow %s", dir)
+	}
+	return nil
+}
+
+// IsShallow runs git rev-parse --is-shallow-repository in dir and returns the result
+func (g *GitCLI) IsShallow(dir string) (bool, error) {
+	out, err := g.gitCmdWithOutput(dir, "rev-parse", "--is-shallow-repository")
+	if err != nil {
+		return false, errors.Wrapf(err, "running git rev-parse --is-shallow-repository %s", dir)
+	}
+	if out == "--is-shallow-repository" {
+		// Newer git has a method to do it, but we use an old git in our builders, so resort to doing it manually
+		gitDir, _, err := g.FindGitConfigDir(dir)
+		if err != nil {
+			return false, errors.Wrapf(err, "finding .git for %s", dir)
+		}
+		if _, err := os.Stat(filepath.Join(gitDir, ".git", "shallow")); os.IsNotExist(err) {
+			return false, nil
+		} else if err != nil {
+			return false, err
+		}
+		return true, nil
+	}
+	b, err := util.ParseBool(out)
+	if err != nil {
+		return false, errors.Wrapf(err, "converting %v to bool", b)
+	}
+	return b, nil
+
+}
+
+// CreateBranchFrom creates a new branch called branchName from startPoint
+func (g *GitCLI) CreateBranchFrom(dir string, branchName string, startPoint string) error {
+	return g.gitCmd(dir, "branch", branchName, startPoint)
+}
+
+// Merge merges the commitish into the current branch
+func (g *GitCLI) Merge(dir string, commitish string) error {
+	return g.gitCmd(dir, "merge", commitish)
+}
+
+// GetLatestCommitSha returns the sha of the last commit
+func (g *GitCLI) GetLatestCommitSha(dir string) (string, error) {
+	return g.gitCmdWithOutput(dir, "rev-parse", "HEAD")
+}
+
+// ResetHard performs a git reset --hard back to the commitish specified
+func (g *GitCLI) ResetHard(dir string, commitish string) error {
+	return g.gitCmd(dir, "reset", "--hard", commitish)
 }

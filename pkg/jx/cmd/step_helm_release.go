@@ -3,7 +3,6 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -16,12 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-const (
-	defaultChartRepo = "http://jenkins-x-chartmuseum:8080"
 )
 
 // StepHelmReleaseOptions contains the command line flags
@@ -40,16 +34,11 @@ var (
 `)
 )
 
-func NewCmdStepHelmRelease(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepHelmRelease(commonOpts *CommonOptions) *cobra.Command {
 	options := StepHelmReleaseOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -154,8 +143,8 @@ func (o *StepHelmReleaseOptions) Run() error {
 	req.Header.Set("Content-Type", "application/gzip")
 	res, err := client.Do(req)
 	if err != nil {
-		if res.Body == nil {
-			return errors.Wrapf(err, "failed to execute the chart upload HTTP request, url: '%s', status: '%s'", u, res.Status)
+		if res == nil {
+			return errors.Wrapf(err, "failed to execute the chart upload HTTP request, url: '%s', error: '%v'", u, err)
 		}
 		errRes, _ := ioutil.ReadAll(res.Body)
 		return errors.Wrapf(err, "failed to execute the chart upload HTTP request, url: '%s', status: '%s', response: '%s'", u, res.Status, string(errRes))

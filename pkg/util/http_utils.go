@@ -1,12 +1,13 @@
 package util
 
 import (
-	"github.com/jenkins-x/jx/pkg/log"
 	"net"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/log"
 )
 
 // defaults mirror the default http.Transport values
@@ -20,6 +21,7 @@ var jxDefaultTransport http.RoundTripper = &http.Transport{
 	IdleConnTimeout:       time.Duration(getIntFromEnv("HTTP_IDLE_CONN_TIMEOUT", 90)) * time.Second,
 	TLSHandshakeTimeout:   time.Duration(getIntFromEnv("HTTP_TLS_HANDSHAKE_TIMEOUT", 10)) * time.Second,
 	ExpectContinueTimeout: time.Duration(getIntFromEnv("HTTP_EXPECT_CONTINUE_TIMEOUT", 1)) * time.Second,
+	Proxy:                 http.ProxyFromEnvironment,
 }
 
 var defaultClient = http.Client{Transport: jxDefaultTransport, Timeout: time.Duration(getIntFromEnv("DEFAULT_HTTP_REQUEST_TIMEOUT", 30)) * time.Second}
@@ -30,7 +32,7 @@ func GetClient() *http.Client {
 }
 
 // GetClientWithTimeout returns a client with JX default transport and user specified timeout
-func GetClientWithTimeout(duration time.Duration) (*http.Client) {
+func GetClientWithTimeout(duration time.Duration) *http.Client {
 	client := http.Client{}
 	client.Transport = jxDefaultTransport
 	client.Timeout = duration

@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/json"
 	"errors"
-	"io"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -11,7 +10,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -34,15 +32,10 @@ type UpgradeClusterOptions struct {
 }
 
 // NewCmdUpgradeCluster defines the command
-func NewCmdUpgradeCluster(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeCluster(commonOpts *CommonOptions) *cobra.Command {
 	options := &UpgradeClusterOptions{
 		UpgradeOptions: UpgradeOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -120,7 +113,7 @@ func (o *UpgradeClusterOptions) getClusterName() (string, error) {
 		return "", err
 	}
 
-	lines := strings.Split(string(out), "\n")
+	lines := strings.Split(out, "\n")
 	var existingClusters []string
 	for _, l := range lines {
 		if strings.Contains(l, "MASTER_VERSION") {

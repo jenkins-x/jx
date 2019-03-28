@@ -1,35 +1,32 @@
 package cmd
 
 import (
-	"fmt"
+	"strings"
+	"time"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/log"
 	logger "github.com/sirupsen/logrus"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
 
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/spf13/cobra"
 )
 
+const gatewayDetachAttempts = 10
+
 type DeleteAwsOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Profile string
 	Region  string
 	VpcId   string
 }
 
-func NewCmdDeleteAws(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteAws(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteAwsOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:   "aws",
@@ -70,12 +67,12 @@ func (o *DeleteAwsOptions) Run() error {
 	}
 	for _, loadBalancer := range loadBalancers.LoadBalancers {
 		if *loadBalancer.VpcId == vpcid {
-			fmt.Printf("Deleting load balancer %s...\n", *loadBalancer.LoadBalancerName)
+			log.Infof("Deleting load balancer %s...\n", *loadBalancer.LoadBalancerName)
 			_, err = elbSvc.DeleteLoadBalancer(&elbv2.DeleteLoadBalancerInput{LoadBalancerArn: loadBalancer.LoadBalancerArn})
 			if err != nil {
 				return err
 			}
-			fmt.Printf("Load balancer %s deleted.\n", *loadBalancer.LoadBalancerName)
+			log.Infof("Load balancer %s deleted.\n", *loadBalancer.LoadBalancerName)
 		}
 	}
 
@@ -95,13 +92,26 @@ func (o *DeleteAwsOptions) Run() error {
 	}
 	for _, internetGateway := range internetGateways.InternetGateways {
 		if len(internetGateway.Attachments) > 0 {
-			_, err = svc.DetachInternetGateway(&ec2.DetachInternetGatewayInput{InternetGatewayId: internetGateway.InternetGatewayId, VpcId: aws.String(vpcid)})
+			err = o.retryUntilFatalError(gatewayDetachAttempts, 10*time.Second, func() (fatalError *FatalError, e error) {
+				_, err = svc.DetachInternetGateway(&ec2.DetachInternetGatewayInput{InternetGatewayId: internetGateway.InternetGatewayId, VpcId: aws.String(vpcid)})
+				log.Infof("Detaching internet gateway %s from VPC %s...\n", *internetGateway.InternetGatewayId, vpcid)
+				if err != nil {
+					if strings.Contains(err.Error(), "Please unmap those public address(es) before detaching the gateway") {
+						log.Info("Waiting for public address to be unmapped from internet gateway.")
+						return nil, err
+					}
+					return &FatalError{E: err}, nil
+				}
+				return nil, nil
+			})
 			if err != nil {
 				return err
 			}
+			log.Infof("Internet gateway %s detached successfully from VPC %s...\n", *internetGateway.InternetGatewayId, vpcid)
 		}
 
 		_, err = svc.DeleteInternetGateway(&ec2.DeleteInternetGatewayInput{InternetGatewayId: internetGateway.InternetGatewayId})
+		log.Infof("Deleting internet gateway %s...\n", *internetGateway.InternetGatewayId)
 		if err != nil {
 			return err
 		}
@@ -134,7 +144,7 @@ func (o *DeleteAwsOptions) Run() error {
 		}
 		for _, iface := range interfaces.NetworkInterfaces {
 			if iface.Attachment != nil {
-				fmt.Printf("Detaching interface %s\n", *iface.NetworkInterfaceId)
+				log.Infof("Detaching interface %s\n", *iface.NetworkInterfaceId)
 				_, err = svc.DetachNetworkInterface(&ec2.DetachNetworkInterfaceInput{AttachmentId: iface.Attachment.AttachmentId})
 				if err != nil {
 					return err

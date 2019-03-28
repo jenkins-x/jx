@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io"
 	"strings"
 	"time"
 
@@ -14,7 +13,6 @@ import (
 	tbl "github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/tools/cache"
@@ -26,7 +24,7 @@ const (
 
 // GetActivityOptions containers the CLI options
 type GetActivityOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Filter      string
 	BuildNumber string
@@ -51,14 +49,9 @@ var (
 )
 
 // NewCmdGetActivity creates the new command for: jx get version
-func NewCmdGetActivity(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetActivity(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetActivityOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "activities",
@@ -74,14 +67,14 @@ func NewCmdGetActivity(f Factory, in terminal.FileReader, out terminal.FileWrite
 		},
 	}
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Text to filter the pipeline names")
-	cmd.Flags().StringVarP(&options.BuildNumber, "build", "b", "", "The build number to filter on")
+	cmd.Flags().StringVarP(&options.BuildNumber, "build", "", "", "The build number to filter on")
 	cmd.Flags().BoolVarP(&options.Watch, "watch", "w", false, "Whether to watch the activities for changes")
 	return cmd
 }
 
 // Run implements this command
 func (o *GetActivityOptions) Run() error {
-	client, currentNs, err := o.CreateJXClient()
+	client, currentNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
@@ -198,7 +191,7 @@ func (o *GetActivityOptions) onActivity(table *tbl.Table, obj interface{}, yamlS
 	}
 }
 
-func (o *CommonOptions) addStepRow(table *tbl.Table, parent *v1.PipelineActivityStep, indent string) {
+func (o *GetActivityOptions) addStepRow(table *tbl.Table, parent *v1.PipelineActivityStep, indent string) {
 	stage := parent.Stage
 	preview := parent.Preview
 	promote := parent.Promote

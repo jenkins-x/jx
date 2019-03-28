@@ -1,5 +1,6 @@
 pipeline {
     agent any
+
     environment {
         CHARTMUSEUM_CREDS   = credentials('jenkins-x-chartmuseum')
         JENKINS_CREDS       = credentials('test-jenkins-user')
@@ -19,7 +20,12 @@ pipeline {
         TEAM                = "$BRANCH_NAME-$BUILD_NUMBER".toLowerCase()
         PREVIEW_IMAGE_TAG   = "SNAPSHOT-JX-$BRANCH_NAME-$BUILD_NUMBER"
 
-        // for BDD tests
+
+        // Build and tests configuration (run only 2 builds/tests in parallel 
+        // in order to avoid OOM issue
+        PARALLEL_BUILDS = 1
+
+        // BDD tests configuration
         GIT_PROVIDER_URL     = "https://github.beescloud.com"
         GHE_TOKEN            = "$GHE_CREDS_PSW"
         GINKGO_ARGS          = "-v"
@@ -27,20 +33,25 @@ pipeline {
         JX_DISABLE_DELETE_APP  = "true"
         JX_DISABLE_DELETE_REPO = "true"
     }
+    options {
+        skipDefaultCheckout(true)
+    }
     stages {
         stage('CI Build and Test') {
             when {
-                branch 'PR-*'
+                anyOf {
+                    environment name: 'JOB_TYPE', value: 'presubmit'
+                    environment name: 'JOB_TYPE', value: 'batch'
+                }
             }
             steps {
-                dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
-                    checkout scm
+                dir ('/workspace') {
                     sh "git config --global credential.helper store"
                     sh "jx step git credentials"
 
                     sh "echo building Pull Request for preview ${TEAM}"
 
-                    sh "make linux"
+                    sh "make check linux fmt"
                     sh 'git add . && git diff --exit-code HEAD'
                     sh "make test-slow-integration"
                     sh "./build/linux/jx --help"
@@ -73,26 +84,24 @@ pipeline {
 
         stage('Build and Release') {
             when {
-                branch 'master'
+                environment name: 'JOB_TYPE', value: 'postsubmit'
             }
             steps {
-                dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
-                    git 'https://github.com/jenkins-x/jx'
+                dir ('/workspace') {
 
                     sh "git config --global credential.helper store"
                     sh "jx step git credentials"
                     sh "echo \$(jx-release-version) > pkg/version/VERSION"
                     sh "make release"
                 }
-                dir ('/home/jenkins/go/src/github.com/jenkins-x/jx/charts/jx') {
+                dir ('/workspace/charts/jx') {
 
                     sh "git config --global credential.helper store"
                     sh "jx step git credentials"
                     sh "helm init --client-only"
                     sh "make release"
                 }
-                dir ('/home/jenkins/go/src/github.com/jenkins-x/jx') {
-                    checkout scm
+                dir ('/workspace') {
 
                     sh "updatebot push-version --kind helm jx `cat pkg/version/VERSION`"
                 }

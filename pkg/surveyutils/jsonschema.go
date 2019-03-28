@@ -8,61 +8,79 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
 	"github.com/jenkins-x/jx/pkg/kube"
-
-	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/iancoleman/orderedmap"
 
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // Type represents a JSON Schema object type current to https://www.ietf.org/archive/id/draft-handrews-json-schema-validation-01.txt
 type Type struct {
-	Version              string                `json:"$schema,omitempty"`
-	Ref                  string                `json:"$ref,omitempty"`
-	MultipleOf           *float64              `json:"multipleOf,omitempty"`
-	Maximum              *int                  `json:"maximum,omitempty"`
-	ExclusiveMaximum     *int                  `json:"exclusiveMaximum,omitempty"`
-	Minimum              *int                  `json:"minimum,omitempty"`
-	ExclusiveMinimum     *int                  `json:"exclusiveMinimum,omitempty"`
-	MaxLength            *int                  `json:"maxLength,omitempty"`
-	MinLength            *int                  `json:"minLength,omitempty"`
-	Pattern              *string               `json:"pattern,omitempty"`
-	AdditionalItems      *Type                 `json:"additionalItems,omitempty"`
-	Items                Items                 `json:"items,omitempty"`
-	MaxItems             *int                  `json:"maxItems,omitempty"`
-	MinItems             *int                  `json:"minItems,omitempty"`
-	UniqueItems          bool                  `json:"uniqueItems,omitempty"`
-	MaxProperties        *int                  `json:"maxProperties,omitempty"`
-	MinProperties        *int                  `json:"minProperties,omitempty"`
-	Required             []string              `json:"required,omitempty"`
-	Properties           Properties            `json:"properties,omitempty"`
-	PatternProperties    map[string]*Type      `json:"patternProperties,omitempty"`
-	AdditionalProperties *Type                 `json:"additionalProperties,omitempty"`
-	Dependencies         map[string]Dependency `json:"dependencies,omitempty"`
-	Enum                 []interface{}         `json:"enum,omitempty"`
-	Type                 string                `json:"type,omitempty"`
-	AllOf                []*Type               `json:"allOf,omitempty"`
-	AnyOf                []*Type               `json:"anyOf,omitempty"`
-	OneOf                []*Type               `json:"oneOf,omitempty"`
-	Not                  *Type                 `json:"not,omitempty"`
-	Definitions          Definitions           `json:"definitions,omitempty"`
-	Contains             *Type                 `json:"contains, omitempty"`
-	Const                *interface{}          `json:"const, omitempty"`
-	PropertyNames        *Type                 `json:"propertyNames, omitempty"`
-	Title                string                `json:"title,omitempty"`
-	Description          string                `json:"description,omitempty"`
-	Default              interface{}           `json:"default,omitempty"`
-	Format               *string               `json:"format,omitempty"`
-	ContentMediaType     *string               `json:"contentMediaType,omitempty"`
-	ContentEncoding      *string               `json:"contentEncoding,omitempty"`
+	Version          string      `json:"$schema,omitempty"`
+	Ref              string      `json:"$ref,omitempty"`
+	MultipleOf       *float64    `json:"multipleOf,omitempty"`
+	Maximum          *float64    `json:"maximum,omitempty"`
+	ExclusiveMaximum *float64    `json:"exclusiveMaximum,omitempty"`
+	Minimum          *float64    `json:"minimum,omitempty"`
+	ExclusiveMinimum *float64    `json:"exclusiveMinimum,omitempty"`
+	MaxLength        *int        `json:"maxLength,omitempty"`
+	MinLength        *int        `json:"minLength,omitempty"`
+	Pattern          *string     `json:"pattern,omitempty"`
+	AdditionalItems  *Type       `json:"additionalItems,omitempty"`
+	Items            Items       `json:"items,omitempty"`
+	MaxItems         *int        `json:"maxItems,omitempty"`
+	MinItems         *int        `json:"minItems,omitempty"`
+	UniqueItems      bool        `json:"uniqueItems,omitempty"`
+	MaxProperties    *int        `json:"maxProperties,omitempty"`
+	MinProperties    *int        `json:"minProperties,omitempty"`
+	Required         []string    `json:"required,omitempty"`
+	Properties       *Properties `json:"properties,omitempty"`
+	// TODO Implement support & tests for PatternProperties
+	PatternProperties map[string]*Type `json:"patternProperties,omitempty"`
+	// TODO Implement support & tests for AdditionalProperties
+	AdditionalProperties *Type `json:"additionalProperties,omitempty"`
+	// TODO Implement support & tests for Dependencies
+	Dependencies map[string]Dependency `json:"dependencies,omitempty"`
+	// TODO Implement support & tests for PropertyNames
+	PropertyNames *Type         `json:"propertyNames,omitempty"`
+	Enum          []interface{} `json:"enum,omitempty"`
+	Type          string        `json:"type,omitempty"`
+	// TODO Implement support & tests for If, Then, Else
+	// TODO Implement support & tests for All
+	AllOf []*Type `json:"allOf,omitempty"`
+	// TODO Implement support & tests for AnyOf
+	AnyOf []*Type `json:"anyOf,omitempty"`
+	// TODO Implement support & tests for OneOf
+	OneOf []*Type `json:"oneOf,omitempty"`
+	// TODO Implement support & tests for Not
+	Not *Type `json:"not,omitempty"`
+	// TODO Implement support & tests for Definitions
+	Definitions Definitions `json:"definitions,omitempty"`
+	// TODO Implement support & tests for Contains
+	Contains         *Type        `json:"contains,omitempty"`
+	Const            *interface{} `json:"const,omitempty"`
+	Title            string       `json:"title,omitempty"`
+	Description      string       `json:"description,omitempty"`
+	Default          interface{}  `json:"default,omitempty"`
+	Format           *string      `json:"format,omitempty"`
+	ContentMediaType *string      `json:"contentMediaType,omitempty"`
+	ContentEncoding  *string      `json:"contentEncoding,omitempty"`
+}
+
+// GeneratedSecret is a secret that is generated from protected input (e.g. password, token)
+type GeneratedSecret struct {
+	Name  string `json: "name"`
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 // Definitions hold schema definitions.
@@ -139,36 +157,47 @@ func (t *Items) UnmarshalJSON(b []byte) error {
 
 // JSONSchemaOptions are options for generating values from a schema
 type JSONSchemaOptions struct {
-	CreateSecret func(name string, key string, value string) (*jenkinsv1.ResourceReference, error)
+	CreateSecret        func(name string, key string, value string) (*jenkinsv1.ResourceReference, error)
+	AskExisting         bool
+	AutoAcceptDefaults  bool
+	NoAsk               bool
+	IgnoreMissingValues bool
+	In                  terminal.FileReader
+	Out                 terminal.FileWriter
+	OutErr              io.Writer
 }
 
 // GenerateValues examines the schema in schemaBytes, asks a series of questions using in, out and outErr,
-// applying validators, returning a generated json file
-func (o *JSONSchemaOptions) GenerateValues(schemaBytes []byte, prefixes []string, in terminal.FileReader,
-	out terminal.FileWriter,
-	outErr io.Writer) ([]byte, error) {
+// applying validators, returning a generated json file.
+// If there are existingValues then those questions will be ignored and the existing value used unless askExisting is
+// true. If autoAcceptDefaults is true, then default values will be used automatically.
+// If ignoreMissingValues is false then any values which don't have an existing value (
+// or a default value if autoAcceptDefaults is true) will cause an error
+func (o *JSONSchemaOptions) GenerateValues(schemaBytes []byte, existingValues map[string]interface{}) ([]byte, error) {
 	t := Type{}
 	err := json.Unmarshal(schemaBytes, &t)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "unmarshaling schema %s", schemaBytes)
 	}
 	output := orderedmap.New()
-	err = o.recurse("", prefixes, make([]string, 0), &t, output, make([]survey.Validator, 0), in, out,
-		outErr)
+	err = o.recurse("", make([]string, 0), make([]string, 0), &t, output, make([]survey.Validator, 0), existingValues)
 	if err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	// move the output up a level
 	if root, ok := output.Get(""); ok {
 		bytes, err := json.Marshal(root)
-		return bytes, err
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		return bytes, nil
 	}
 	return make([]byte, 0), fmt.Errorf("unable to find root element in %v", output)
 
 }
 
 func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFields []string, t *Type, output *orderedmap.OrderedMap,
-	additionalValidators []survey.Validator, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) error {
+	additionalValidators []survey.Validator, existingValues map[string]interface{}) error {
 	required := util.Contains(requiredFields, name)
 	if name != "" {
 		prefixes = append(prefixes, name)
@@ -192,61 +221,73 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 			BoolValidator(),
 		}
 		validators = append(validators, additionalValidators...)
-		err := o.handleBasicProperty(name, prefixes, validators, t, output, in, out, outErr)
+		err := o.handleBasicProperty(name, prefixes, validators, t, output, existingValues)
 		if err != nil {
 			return err
 		}
 	case "object":
-		result := orderedmap.New()
 		if t.AdditionalProperties != nil {
 			return fmt.Errorf("additionalProperties is not supported for %s", name)
-			// TODO support additionalProperties
 		}
 		if len(t.PatternProperties) > 0 {
 			return fmt.Errorf("patternProperties is not supported for %s", name)
-			// TODO support patternProperties
 		}
 		if len(t.Dependencies) > 0 {
 			return fmt.Errorf("dependencies is not supported for %s", name)
-			// TODO support dependencies
 		}
 		if t.PropertyNames != nil {
 			return fmt.Errorf("propertyNames is not supported for %s", name)
-			// TODO support propertyNames
 		}
 		if t.Const != nil {
 			return fmt.Errorf("const is not supported for %s", name)
 			// TODO support const
 		}
-		duringValidators := []survey.Validator{
-			// These validators are run during processing of the properties
-			MaxPropertiesValidator(t.MaxProperties, result),
-		}
-		postValidators := []survey.Validator{
-			// These validators are run after the processing of the properties
-			MinPropertiesValidator(t.MinProperties, result),
-			EnumValidator(t.Enum),
-		}
-		for valid := false; !valid; {
-			for _, n := range t.Properties.Keys() {
-				v, _ := t.Properties.Get(n)
-				property := v.(*Type)
-				err := o.recurse(n, prefixes, t.Required, property, result, duringValidators, in, out, outErr)
-				if err != nil {
-					return err
+		if t.Properties != nil {
+			for valid := false; !valid; {
+				result := orderedmap.New()
+				duringValidators := make([]survey.Validator, 0)
+				postValidators := []survey.Validator{
+					// These validators are run after the processing of the properties
+					MinPropertiesValidator(t.MinProperties, result, name),
+					EnumValidator(t.Enum),
+					MaxPropertiesValidator(t.MaxProperties, result, name),
+				}
+				for _, n := range t.Properties.Keys() {
+					v, _ := t.Properties.Get(n)
+					property := v.(*Type)
+					var nestedExistingValues map[string]interface{}
+					if name == "" {
+						// This is the root element
+						nestedExistingValues = existingValues
+					} else if v, ok := existingValues[name]; ok {
+						var err error
+						nestedExistingValues, err = util.AsMapOfStringsIntefaces(v)
+						if err != nil {
+							return errors.Wrapf(err, "converting key %s from %v to map[string]interface{}", name, existingValues)
+						}
+					}
+					err := o.recurse(n, prefixes, t.Required, property, result, duringValidators, nestedExistingValues)
+					if err != nil {
+						return err
+					}
+				}
+				valid = true
+				for _, v := range postValidators {
+					err := v(result)
+					if err != nil {
+						str := fmt.Sprintf("Sorry, your reply was invalid: %s", err.Error())
+						_, err1 := o.Out.Write([]byte(str))
+						if err1 != nil {
+							return err1
+						}
+						valid = false
+					}
+				}
+				if valid {
+					output.Set(name, result)
 				}
 			}
-			valid = true
-			for _, v := range postValidators {
-				err := v(result)
-				if err != nil {
-					log.Errorf("%v\n", err.Error())
-					valid = false
-				}
-			}
 		}
-
-		output.Set(name, result)
 	case "array":
 		if t.Const != nil {
 			return fmt.Errorf("const is not supported for %s", name)
@@ -260,15 +301,14 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 			return fmt.Errorf("additionalItems is not supported for %s", name)
 			// TODO support additonalItems
 		}
-		err := o.handleArrayProperty(name, t, output, in, out, outErr)
+		err := o.handleArrayProperty(name, t, output, existingValues)
 		if err != nil {
 			return err
 		}
 	case "number":
 		validators := additionalValidators
 		validators = append(validators, FloatValidator())
-		err := o.handleBasicProperty(name, prefixes, numberValidator(required, validators, t), t, output, in, out,
-			outErr)
+		err := o.handleBasicProperty(name, prefixes, numberValidator(required, validators, t), t, output, existingValues)
 		if err != nil {
 			return err
 		}
@@ -292,13 +332,9 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 				validators = append(validators, DateValidator())
 			case "time":
 				validators = append(validators, TimeValidator())
-			case "email":
+			case "email", "idn-email":
 				validators = append(validators, EmailValidator())
-			case "idn-email":
-				validators = append(validators, EmailValidator())
-			case "hostname":
-				validators = append(validators, HostnameValidator())
-			case "idn-hostname":
+			case "hostname", "idn-hostname":
 				validators = append(validators, HostnameValidator())
 			case "ipv4":
 				validators = append(validators, Ipv4Validator())
@@ -323,15 +359,15 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 			}
 		}
 		validators = append(validators, additionalValidators...)
-		err := o.handleBasicProperty(name, prefixes, validators, t, output, in, out, outErr)
+		err := o.handleBasicProperty(name, prefixes, validators, t, output, existingValues)
 		if err != nil {
 			return err
 		}
 	case "integer":
 		validators := additionalValidators
 		validators = append(validators, IntegerValidator())
-		err := o.handleBasicProperty(name, prefixes, numberValidator(required, validators, t), t, output, in, out,
-			outErr)
+		err := o.handleBasicProperty(name, prefixes, numberValidator(required, validators, t), t, output,
+			existingValues)
 		if err != nil {
 			return err
 		}
@@ -342,8 +378,7 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 
 // According to the spec, "An instance validates successfully against this keyword if its value
 // is equal to the value of the keyword." which we interpret for questions as "this is the value of this keyword"
-func (o *JSONSchemaOptions) handleConst(name string, validators []survey.Validator, t *Type, output *orderedmap.OrderedMap, in terminal.FileReader,
-	out terminal.FileWriter, outErr io.Writer) error {
+func (o *JSONSchemaOptions) handleConst(name string, validators []survey.Validator, t *Type, output *orderedmap.OrderedMap) error {
 	message := fmt.Sprintf("Do you want to set %s to %v", name, *t.Const)
 	help := ""
 	if t.Title != "" {
@@ -358,7 +393,7 @@ func (o *JSONSchemaOptions) handleConst(name string, validators []survey.Validat
 		Default: true,
 	}
 	answer := false
-	surveyOpts := survey.WithStdio(in, out, outErr)
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.OutErr)
 	validator := survey.ComposeValidators(validators...)
 
 	err := survey.AskOne(prompt, &answer, NoopValidator(), surveyOpts)
@@ -367,13 +402,18 @@ func (o *JSONSchemaOptions) handleConst(name string, validators []survey.Validat
 	}
 	err = validator(t.Const)
 	if answer {
-		output.Set(name, t.Const)
+		constAsString := fmt.Sprintf("%v", *t.Const)
+		v, err := convertAnswer(constAsString, t.Type)
+		if err != nil {
+			return err
+		}
+		output.Set(name, v)
 	}
 	return nil
 }
 
-func (o *JSONSchemaOptions) handleArrayProperty(name string, t *Type, output *orderedmap.OrderedMap, in terminal.FileReader,
-	out terminal.FileWriter, outErr io.Writer) error {
+func (o *JSONSchemaOptions) handleArrayProperty(name string, t *Type, output *orderedmap.OrderedMap,
+	existingValues map[string]interface{}) error {
 	results := make([]interface{}, 0)
 
 	validators := []survey.Validator{
@@ -394,24 +434,39 @@ func (o *JSONSchemaOptions) handleArrayProperty(name string, t *Type, output *or
 		}
 		message := fmt.Sprintf("Select values for %s", name)
 		help := ""
+		ask := true
 		var defaultValue []string
-		options := make([]string, 0)
-		if t.Title != "" {
-			message = t.Title
-		}
-		if t.Description != "" {
-			help = t.Description
-		}
-		for _, e := range t.Items.Type.Enum {
-			options = append(options, fmt.Sprintf("%v", e))
-		}
-		if t.Default != nil {
+		autoAcceptMessage := ""
+		if value, ok := existingValues[name]; ok {
+			if !o.AskExisting {
+				ask = false
+			}
+			existingString, err := util.AsString(value)
+			existingArray, err1 := util.AsSliceOfStrings(value)
+			if err != nil && err1 != nil {
+				v := reflect.ValueOf(value)
+				v = reflect.Indirect(v)
+				return fmt.Errorf("Cannot convert %v (%v) to string or []string", v.Type(), value)
+			}
+			if existingString != "" {
+				defaultValue = []string{
+					existingString,
+				}
+			} else {
+				defaultValue = existingArray
+			}
+			autoAcceptMessage = "Automatically accepted existing value"
+		} else if t.Default != nil {
+			if o.AutoAcceptDefaults {
+				ask = false
+				autoAcceptMessage = "Automatically accepted default value"
+			}
 			defaultString, err := util.AsString(t.Default)
 			defaultArray, err1 := util.AsSliceOfStrings(t.Default)
 			if err != nil && err1 != nil {
 				v := reflect.ValueOf(t.Default)
 				v = reflect.Indirect(v)
-				return fmt.Errorf("Cannot convert %v (%v) to string or []string", v.Type(), t.Default)
+				return fmt.Errorf("Cannot convert %value (%value) to string or []string", v.Type(), t.Default)
 			}
 			if defaultString != "" {
 				defaultValue = []string{
@@ -421,21 +476,46 @@ func (o *JSONSchemaOptions) handleArrayProperty(name string, t *Type, output *or
 				defaultValue = defaultArray
 			}
 		}
+		if o.NoAsk {
+			ask = false
+		}
+
+		options := make([]string, 0)
+		if t.Title != "" {
+			message = t.Title
+		}
+		if t.Description != "" {
+			help = t.Description
+		}
+		for _, e := range t.Items.Type.Enum {
+			options = append(options, fmt.Sprintf("%value", e))
+		}
+
 		answer := make([]string, 0)
-		surveyOpts := survey.WithStdio(in, out, outErr)
+		surveyOpts := survey.WithStdio(o.In, o.Out, o.OutErr)
 		// TODO^^^ Apply correct validators for type
 		validator := survey.ComposeValidators(validators...)
 
-		prompt := &survey.MultiSelect{
-			Default: defaultValue,
-			Help:    help,
-			Message: message,
-			Options: options,
+		if ask {
+			prompt := &survey.MultiSelect{
+				Default: defaultValue,
+				Help:    help,
+				Message: message,
+				Options: options,
+			}
+			err := survey.AskOne(prompt, &answer, validator, surveyOpts)
+			if err != nil {
+				return err
+			}
+		} else {
+			answer = defaultValue
+			msg := fmt.Sprintf("%s %s [%s]\n", message, util.ColorInfo(answer), autoAcceptMessage)
+			_, err := fmt.Fprint(terminal.NewAnsiStdout(o.Out), msg)
+			if err != nil {
+				return errors.Wrapf(err, "writing %s to console", msg)
+			}
 		}
-		err := survey.AskOne(prompt, &answer, validator, surveyOpts)
-		if err != nil {
-			return err
-		}
+
 		for _, a := range answer {
 			v, err := convertAnswer(a, t.Items.Type.Type)
 			// An error is a genuine error as we've already done type validation
@@ -463,40 +543,78 @@ func convertAnswer(answer string, t string) (interface{}, error) {
 }
 
 func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, validators []survey.Validator, t *Type,
-	output *orderedmap.OrderedMap, in terminal.FileReader,
-	out terminal.FileWriter, outErr io.Writer) error {
+	output *orderedmap.OrderedMap, existingValues map[string]interface{}) error {
 	if t.Const != nil {
-		return o.handleConst(name, validators, t, output, in, out, outErr)
+		return o.handleConst(name, validators, t, output)
 	}
+
+	ask := true
+	defaultValue := ""
+	autoAcceptMessage := ""
+	if v, ok := existingValues[name]; ok {
+		if !o.AskExisting {
+			ask = false
+		}
+		defaultValue = fmt.Sprintf("%v", v)
+		autoAcceptMessage = "Automatically accepted existing value"
+	} else if t.Default != nil {
+		if o.AutoAcceptDefaults {
+			ask = false
+			autoAcceptMessage = "Automatically accepted default value"
+		}
+		defaultValue = fmt.Sprintf("%v", t.Default)
+	}
+	if o.NoAsk {
+		ask = false
+	}
+
+	var result interface{}
 	message := fmt.Sprintf("Enter a value for %s", name)
 	help := ""
-	defaultValue := ""
 	if t.Title != "" {
 		message = t.Title
 	}
 	if t.Description != "" {
 		help = t.Description
 	}
-	if t.Default != nil {
-		defaultValue = fmt.Sprintf("%v", t.Default)
+
+	if !ask && !o.IgnoreMissingValues && defaultValue == "" {
+		return fmt.Errorf("no existing or default value in answer to question %s", message)
 	}
-	answer := ""
-	surveyOpts := survey.WithStdio(in, out, outErr)
+
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.OutErr)
 	validator := survey.ComposeValidators(validators...)
 	// Ask the question
 	// Custom format support for passwords
 	storeAsSecret := false
 	if util.DereferenceString(t.Format) == "password" || util.DereferenceString(t.Format) == "token" {
 		storeAsSecret = true
-		// Basic input
+		// Secret input
 		prompt := &survey.Password{
 			Message: message,
 			Help:    help,
 		}
 
-		err := survey.AskOne(prompt, &answer, validator, surveyOpts)
-		if err != nil {
-			return err
+		var answer string
+		var err error
+		if ask {
+			err := survey.AskOne(prompt, &answer, validator, surveyOpts)
+			if err != nil {
+				return err
+			}
+		} else {
+			answer = defaultValue
+			msg := fmt.Sprintf("%s %s [%s]\n", message, util.ColorInfo(answer), autoAcceptMessage)
+			_, err := fmt.Fprint(terminal.NewAnsiStdout(o.Out), msg)
+			if err != nil {
+				return errors.Wrapf(err, "writing %s to console", msg)
+			}
+		}
+		if answer != "" {
+			result, err = convertAnswer(answer, t.Type)
+			if err != nil {
+				return errors.Wrapf(err, "error converting answer %s to type %s", answer, t.Type)
+			}
 		}
 	} else if t.Enum != nil {
 		// Support for selects
@@ -510,10 +628,51 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 			Default: defaultValue,
 			Help:    help,
 		}
-		err := survey.AskOne(prompt, &answer, validator, surveyOpts)
-		if err != nil {
-			return err
+		if ask {
+			err := survey.AskOne(prompt, &result, validator, surveyOpts)
+			if err != nil {
+				return err
+			}
+		} else {
+			result = defaultValue
+			msg := fmt.Sprintf("%s %s [%s]\n", message, util.ColorInfo(result), autoAcceptMessage)
+			_, err := fmt.Fprint(terminal.NewAnsiStdout(o.Out), msg)
+			if err != nil {
+				return errors.Wrapf(err, "writing %s to console", msg)
+			}
 		}
+	} else if t.Type == "boolean" {
+		// Confirm dialog
+		var d bool
+		var err error
+		if defaultValue != "" {
+			d, err = strconv.ParseBool(defaultValue)
+			if err != nil {
+				return err
+			}
+		}
+
+		var answer bool
+		prompt := &survey.Confirm{
+			Message: message,
+			Help:    help,
+			Default: d,
+		}
+
+		if ask {
+			err = survey.AskOne(prompt, &answer, validator, surveyOpts)
+			if err != nil {
+				return errors.Wrapf(err, "error asking user %s using validators %v", message, validators)
+			}
+		} else {
+			answer = d
+			msg := fmt.Sprintf("%s %s [%s]\n", message, util.ColorInfo(answer), autoAcceptMessage)
+			_, err := fmt.Fprint(terminal.NewAnsiStdout(o.Out), msg)
+			if err != nil {
+				return errors.Wrapf(err, "writing %s to console", msg)
+			}
+		}
+		result = answer
 	} else {
 		// Basic input
 		prompt := &survey.Input{
@@ -521,20 +680,32 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 			Default: defaultValue,
 			Help:    help,
 		}
-
-		err := survey.AskOne(prompt, &answer, validator, surveyOpts)
+		var answer string
+		var err error
+		if ask {
+			err = survey.AskOne(prompt, &answer, validator, surveyOpts)
+			if err != nil {
+				return errors.Wrapf(err, "error asking user %s using validators %v", message, validators)
+			}
+		} else {
+			answer = defaultValue
+			msg := fmt.Sprintf("%s %s [%s]\n", message, util.ColorInfo(answer), autoAcceptMessage)
+			_, err := fmt.Fprint(terminal.NewAnsiStdout(o.Out), msg)
+			if err != nil {
+				return errors.Wrapf(err, "writing %s to console", msg)
+			}
+		}
+		if answer != "" {
+			result, err = convertAnswer(answer, t.Type)
+		}
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "error converting result %s to type %s", answer, t.Type)
 		}
 	}
 
-	v, err := convertAnswer(answer, t.Type)
-	if err != nil {
-		return err
-	}
 	if storeAsSecret {
 		secretName := kube.ToValidName(strings.Join(append(prefixes, "secret"), "-"))
-		value, err := util.AsString(v)
+		value, err := util.AsString(result)
 		if err != nil {
 			return err
 		}
@@ -543,19 +714,18 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 			return err
 		}
 		output.Set(name, secretReference)
-	} else {
+	} else if result != nil {
 		// Write the value to the output
-		output.Set(name, v)
+		output.Set(name, result)
 	}
 	return nil
 }
 
-// integers and numbers validate identically, but we have to repeat ourselves as Go has no generics
 func numberValidator(required bool, additonalValidators []survey.Validator, t *Type) []survey.Validator {
 	validators := []survey.Validator{EnumValidator(t.Enum),
 		MultipleOfValidator(t.MultipleOf),
 		RequiredValidator(required),
-		MinValidator(t.MinLength, false),
+		MinValidator(t.Minimum, false),
 		MinValidator(t.ExclusiveMinimum, true),
 		MaxValidator(t.Maximum, false),
 		MaxValidator(t.ExclusiveMaximum, true),

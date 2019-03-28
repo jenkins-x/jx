@@ -281,15 +281,6 @@ func rpad(s string, padding int) string {
 	return fmt.Sprintf(template, s)
 }
 
-func indentLines(s string, indentation int) string {
-	r := []string{}
-	for _, line := range strings.Split(s, "\n") {
-		indented := strings.Repeat(" ", indentation) + line
-		r = append(r, indented)
-	}
-	return strings.Join(r, "\n")
-}
-
 func appendIfNotPresent(s, stringToAppend string) string {
 	if strings.Contains(s, stringToAppend) {
 		return s
@@ -299,8 +290,9 @@ func appendIfNotPresent(s, stringToAppend string) string {
 
 func flagsNotIntersected(l *flag.FlagSet, r *flag.FlagSet) *flag.FlagSet {
 	f := flag.NewFlagSet("notIntersected", flag.ContinueOnError)
-	l.VisitAll(func(flag *flag.Flag) {
-		if r.Lookup(flag.Name) == nil {
+	f.AddFlagSet(l)
+	r.VisitAll(func(flag *flag.Flag) {
+		if l.Lookup(flag.Name) == nil {
 			f.AddFlag(flag)
 		}
 	})

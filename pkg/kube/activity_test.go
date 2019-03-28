@@ -1,73 +1,28 @@
 package kube_test
 
 import (
-	"fmt"
 	"strconv"
 	"testing"
 	"time"
 
+	jxfake "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/stretchr/testify/require"
+	k8s_v1 "k8s.io/api/core/v1"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/watch"
+	kube_mocks "k8s.io/client-go/kubernetes/fake"
 )
 
-type MockPipelineActivityInterface struct {
-	Activities map[string]*v1.PipelineActivity
-}
-
-func (m *MockPipelineActivityInterface) Create(p *v1.PipelineActivity) (*v1.PipelineActivity, error) {
-	m.Activities[p.Name] = p
-	return p, nil
-}
-
-func (m *MockPipelineActivityInterface) Update(p *v1.PipelineActivity) (*v1.PipelineActivity, error) {
-	m.Activities[p.Name] = p
-	return p, nil
-}
-
-func (m *MockPipelineActivityInterface) Delete(name string, options *metav1.DeleteOptions) error {
-	delete(m.Activities, name)
-	return nil
-}
-
-func (m *MockPipelineActivityInterface) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
-	m.Activities = map[string]*v1.PipelineActivity{}
-	return nil
-}
-
-func (m *MockPipelineActivityInterface) Get(name string, options metav1.GetOptions) (*v1.PipelineActivity, error) {
-	a, ok := m.Activities[name]
-	if ok {
-		return a, nil
-	}
-	return nil, fmt.Errorf("No such PipelineActivity %s", name)
-}
-
-func (m *MockPipelineActivityInterface) List(opts metav1.ListOptions) (*v1.PipelineActivityList, error) {
-	items := []v1.PipelineActivity{}
-	for _, p := range m.Activities {
-		items = append(items, *p)
-	}
-	return &v1.PipelineActivityList{
-		Items: items,
-	}, nil
-}
-
-func (m *MockPipelineActivityInterface) Watch(opts metav1.ListOptions) (watch.Interface, error) {
-	return nil, fmt.Errorf("TODO")
-}
-
-func (m *MockPipelineActivityInterface) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.PipelineActivity, err error) {
-	return nil, fmt.Errorf("TODO")
-}
-
 func TestGenerateBuildNumber(t *testing.T) {
-	options := &cmd.CommonOptions{Factory: cmd.NewFactory()}
+	commonOpts := cmd.NewCommonOptionsWithFactory(clients.NewFactory())
+	options := &commonOpts
 	cmd.ConfigureTestOptions(options, options.Git(), options.Helm())
 
 	jxClient, ns, err := options.JXClientAndDevNamespace()
@@ -112,31 +67,67 @@ func getPipelines(activities typev1.PipelineActivityInterface) []*v1.PipelineAct
 
 func TestCreateOrUpdateActivities(t *testing.T) {
 	t.Parallel()
-	activities := &MockPipelineActivityInterface{
-		Activities: map[string]*v1.PipelineActivity{},
+
+	nsObj := &k8s_v1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "jx-testing",
+			Namespace: "testing_ns",
+		},
 	}
 
+	secret := &k8s_v1.Secret{}
+	mockKubeClient := kube_mocks.NewSimpleClientset(nsObj, secret)
+
+	ingressConfig := &k8s_v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kube.ConfigMapIngressConfig,
+		},
+		Data: map[string]string{"key1": "value1", "domain": "test-domain", "config.yml": ""},
+	}
+
+	mockKubeClient.CoreV1().ConfigMaps(nsObj.Namespace).Create(ingressConfig)
+	jxClient := jxfake.NewSimpleClientset()
+
 	const (
-		expectedName        = "demo-2"
-		expectedPipeline    = "demo"
-		expectedBuild       = "2"
-		expectedEnvironment = "staging"
+		expectedName         = "demo-2"
+		expectedBuild        = "2"
+		expectedEnvironment  = "staging"
+		expectedOrganisation = "test-org"
 	)
+	expectedPipeline := expectedOrganisation + "/" + expectedName + "/master"
+
+	sourceRepoName := kube.ToValidName(expectedOrganisation + "-" + expectedName)
 
 	key := kube.PipelineActivityKey{
 		Name:     expectedName,
 		Pipeline: expectedPipeline,
 		Build:    expectedBuild,
+		GitInfo: &gits.GitRepository{
+			Name:         expectedName,
+			Organisation: expectedOrganisation,
+			URL:          "https://github.com/" + expectedOrganisation + "/" + expectedName,
+		},
 	}
 
 	for i := 1; i < 3; i++ {
-		a, _, err := key.GetOrCreate(activities)
+		a, _, err := key.GetOrCreate(jxClient, nsObj.Namespace)
 		assert.Nil(t, err)
 		assert.Equal(t, expectedName, a.Name)
 		spec := &a.Spec
 		assert.Equal(t, expectedPipeline, spec.Pipeline)
 		assert.Equal(t, expectedBuild, spec.Build)
 	}
+
+	// validate that we have the expected sourcerepository crd that should have been created
+	sourceRepositoryInterface := jxClient.JenkinsV1().SourceRepositories(nsObj.Namespace)
+	list, err := sourceRepositoryInterface.List(metav1.ListOptions{})
+	require.NoError(t, err, "listing SourceRepository resources")
+	t.Logf("found %d SourceRepository resources in namespace %s\n", len(list.Items), nsObj.Namespace)
+	for _, sr := range list.Items {
+		t.Logf("found SourceRepository %s with organisation %s and repo %s\n", sr.Name, sr.Spec.Org, sr.Spec.Repo)
+	}
+	sr, err := sourceRepositoryInterface.Get(sourceRepoName, metav1.GetOptions{})
+	assert.NotNil(t, sr, "Should have found a sourcerepo %s", sourceRepoName)
 
 	// lazy add a PromotePullRequest
 	promoteKey := kube.PromoteStepActivityKey{
@@ -155,7 +146,7 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 		return nil
 	}
 
-	err := promoteKey.OnPromotePullRequest(activities, promotePullRequestStarted)
+	err = promoteKey.OnPromotePullRequest(jxClient, nsObj.Namespace, promotePullRequestStarted)
 	assert.Nil(t, err)
 
 	promoteStarted := func(a *v1.PipelineActivity, s *v1.PipelineActivityStep, ps *v1.PromoteActivityStep, p *v1.PromoteUpdateStep) error {
@@ -165,11 +156,11 @@ func TestCreateOrUpdateActivities(t *testing.T) {
 		return nil
 	}
 
-	err = promoteKey.OnPromoteUpdate(activities, promoteStarted)
+	err = promoteKey.OnPromoteUpdate(jxClient, nsObj.Namespace, promoteStarted)
 	assert.Nil(t, err)
 
 	// lets validate that we added a PromotePullRequest step
-	a := activities.Activities[expectedName]
+	a, err := jxClient.JenkinsV1().PipelineActivities(nsObj.Namespace).Get(expectedName, metav1.GetOptions{})
 	assert.NotNil(t, a, "should have a PipelineActivity for %s", expectedName)
 	steps := a.Spec.Steps
 	assert.Equal(t, 2, len(steps), "Should have 2 steps!")

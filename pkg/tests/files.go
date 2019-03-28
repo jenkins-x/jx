@@ -2,7 +2,9 @@ package tests
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/require"
 	"io/ioutil"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -18,6 +20,29 @@ func AssertFileContains(t *testing.T, fileName string, containsText string) {
 		if err == nil {
 			text := string(data)
 			assert.True(t, strings.Index(text, containsText) >= 0, "The file %s does not contain text: %s", fileName, containsText)
+		}
+	}
+}
+
+// AssertFileDoesNotContain asserts that a given file exists and does not contain the given text
+func AssertFileDoesNotContain(t *testing.T, fileName string, containsText string) {
+	if AssertFileExists(t, fileName) {
+		data, err := ioutil.ReadFile(fileName)
+		assert.NoError(t, err, "Failed to read file %s", fileName)
+		if err == nil {
+			text := string(data)
+			idx := strings.Index(text, containsText)
+			line := ""
+			if idx > 0 {
+				lines := strings.Split(text, "\n")
+				for i, l := range lines {
+					if strings.Index(l, containsText) >= 0 {
+						line = "line " + strconv.Itoa(i+1) + " = " + l
+						break
+					}
+				}
+			}
+			assert.True(t, idx < 0, "The file %s should not contain text: %s as %s", fileName, containsText, line)
 		}
 	}
 }
@@ -68,6 +93,7 @@ func AssertEqualFileText(t *testing.T, expectedFile string, actualFile string) e
 	return nil
 }
 
+// AssertLoadFileText asserts that the given file name can be loaded and returns the string contents
 func AssertLoadFileText(t *testing.T, fileName string) (string, error) {
 	if !AssertFileExists(t, fileName) {
 		return "", fmt.Errorf("File %s does not exist", fileName)
@@ -78,4 +104,19 @@ func AssertLoadFileText(t *testing.T, fileName string) (string, error) {
 		return "", err
 	}
 	return string(data), nil
+}
+
+// AssertTextFileContentsEqual asserts that both the expected and actual files can be loaded as text
+// and that their contents are identical
+func AssertTextFileContentsEqual(t *testing.T, expectedFile string, actualFile string) {
+	assert.NotEqual(t, expectedFile, actualFile, "should be given different file names")
+
+	expected, err := AssertLoadFileText(t, expectedFile)
+	require.NoError(t, err)
+	actual, err := AssertLoadFileText(t, expectedFile)
+	require.NoError(t, err)
+
+	assert.Equal(t, expected, actual, "contents of expected file %s and actual file %s", expectedFile, actualFile)
+
+	t.Logf("compared %s and %s and they have equal content\n", expectedFile, actualFile)
 }

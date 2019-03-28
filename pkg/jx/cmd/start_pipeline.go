@@ -3,25 +3,22 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"io"
 	"net/url"
 	"sort"
 	"strings"
 	"time"
 
+	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/prow"
-	"k8s.io/api/core/v1"
-	"k8s.io/test-infra/prow/kube"
-	"k8s.io/test-infra/prow/pjutil"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
-	"github.com/jenkins-x/golang-jenkins"
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
+	v1 "k8s.io/api/core/v1"
 	prowjobv1 "k8s.io/test-infra/prow/apis/prowjobs/v1"
 )
 
@@ -36,8 +33,9 @@ const (
 type StartPipelineOptions struct {
 	GetOptions
 
-	Tail   bool
-	Filter string
+	Tail            bool
+	Filter          string
+	JenkinsSelector JenkinsSelectorOptions
 
 	Jobs map[string]gojenkins.Job
 
@@ -45,12 +43,12 @@ type StartPipelineOptions struct {
 }
 
 var (
-	start_pipeline_long = templates.LongDesc(`
+	startPipelineLong = templates.LongDesc(`
 		Starts the pipeline build.
 
 `)
 
-	start_pipeline_example = templates.Examples(`
+	startPipelineExample = templates.Examples(`
 		# Start a pipeline
 		jx start pipeline foo
 
@@ -63,24 +61,18 @@ var (
 )
 
 // NewCmdStartPipeline creates the command
-func NewCmdStartPipeline(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStartPipeline(commonOpts *CommonOptions) *cobra.Command {
 	options := &StartPipelineOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-
-				Out: out,
-				Err: errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
 	cmd := &cobra.Command{
 		Use:     "pipeline [flags]",
 		Short:   "Starts one or more pipelines",
-		Long:    start_pipeline_long,
-		Example: start_pipeline_example,
+		Long:    startPipelineLong,
+		Example: startPipelineExample,
 		Aliases: []string{"pipe", "pipeline", "build", "run"},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
@@ -91,6 +83,7 @@ func NewCmdStartPipeline(f Factory, in terminal.FileReader, out terminal.FileWri
 	}
 	cmd.Flags().BoolVarP(&options.Tail, "tail", "t", false, "Tails the build log to the current terminal")
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "Filters all the available jobs by those that contain the given text")
+	options.JenkinsSelector.AddFlags(cmd)
 
 	return cmd
 }
@@ -114,7 +107,10 @@ func (o *StartPipelineOptions) Run() error {
 	names := []string{}
 	o.ProwOptions = prow.Options{
 		KubeClient: kubeClient,
-		NS: o.currentNamespace,
+		NS:         o.currentNamespace,
+	}
+	if o.JenkinsSelector.IsCustom() {
+		isProw = false
 	}
 	if len(args) == 0 {
 		if isProw {
@@ -124,13 +120,13 @@ func (o *StartPipelineOptions) Run() error {
 			}
 			names = util.StringsContaining(names, o.Filter)
 		} else {
-			jobMap, err := o.getJobMap(o.Filter)
+			jobMap, err := o.getJobMap(&o.JenkinsSelector, o.Filter)
 			if err != nil {
 				return err
 			}
 			o.Jobs = jobMap
 
-			for k, _ := range o.Jobs {
+			for k := range o.Jobs {
 				names = append(names, k)
 			}
 		}
@@ -169,6 +165,10 @@ func (o *StartPipelineOptions) Run() error {
 }
 
 func (o *StartPipelineOptions) createProwJob(jobname string) error {
+	settings, err := o.TeamSettings()
+	if err != nil {
+		return err
+	}
 	parts := strings.Split(jobname, "/")
 	if len(parts) != 3 {
 		return fmt.Errorf("job name [%s] does not match org/repo/branch format", jobname)
@@ -181,10 +181,15 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 	if err != nil {
 		return err
 	}
-	jobSpec := kube.ProwJobSpec{
-		BuildSpec: postSubmitJob.BuildSpec,
-		Agent:     prowjobv1.KnativeBuildAgent,
+	agent := prowjobv1.KnativeBuildAgent
+	if settings.GetProwEngine() == jenkinsv1.ProwEngineTypeTekton {
+		agent = prow.TektonAgent
 	}
+	jobSpec := prowjobv1.ProwJobSpec{
+		BuildSpec: postSubmitJob.BuildSpec,
+		Agent:     agent,
+	}
+	jobSpec.Type = prowjobv1.PostsubmitJob
 
 	//todo needs to change when we add support for multiple git providers with Prow
 	sourceURL := fmt.Sprintf("https://github.com/%s/%s.git", org, repo)
@@ -194,47 +199,49 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 			Revision: branch,
 		},
 	}
-	jobSpec.BuildSpec.Source = sourceSpec
-	env := map[string]string{}
+	if jobSpec.BuildSpec != nil {
+		jobSpec.BuildSpec.Source = sourceSpec
+		env := map[string]string{}
 
-	// enrich with jenkins multi branch plugin env vars
-	env[jmbrBranchName] = branch
-	env[jmbrSourceURL] = jobSpec.BuildSpec.Source.Git.Url
-	env[repoOwnerEnv] = org
-	env[repoNameEnv] = repo
+		// enrich with jenkins multi branch plugin env vars
+		env[jmbrBranchName] = branch
+		env[jmbrSourceURL] = jobSpec.BuildSpec.Source.Git.Url
+		env[repoOwnerEnv] = org
+		env[repoNameEnv] = repo
 
-	for i, step := range jobSpec.BuildSpec.Steps {
-		if len(step.Env) == 0 {
+		for i, step := range jobSpec.BuildSpec.Steps {
+			if len(step.Env) == 0 {
 
-			step.Env = []v1.EnvVar{}
-		}
-		for k, v := range env {
-			e := v1.EnvVar{
-				Name:  k,
-				Value: v,
+				step.Env = []v1.EnvVar{}
 			}
-			jobSpec.BuildSpec.Steps[i].Env = append(jobSpec.BuildSpec.Steps[i].Env, e)
-		}
-	}
-	if jobSpec.BuildSpec.Template != nil {
-		if len(jobSpec.BuildSpec.Template.Env) == 0 {
-
-			jobSpec.BuildSpec.Template.Env = []v1.EnvVar{}
-		}
-		for k, v := range env {
-			e := v1.EnvVar{
-				Name:  k,
-				Value: v,
+			for k, v := range env {
+				e := v1.EnvVar{
+					Name:  k,
+					Value: v,
+				}
+				jobSpec.BuildSpec.Steps[i].Env = append(jobSpec.BuildSpec.Steps[i].Env, e)
 			}
-			jobSpec.BuildSpec.Template.Env = append(jobSpec.BuildSpec.Template.Env, e)
+		}
+		if jobSpec.BuildSpec.Template != nil {
+			if len(jobSpec.BuildSpec.Template.Env) == 0 {
+
+				jobSpec.BuildSpec.Template.Env = []v1.EnvVar{}
+			}
+			for k, v := range env {
+				e := v1.EnvVar{
+					Name:  k,
+					Value: v,
+				}
+				jobSpec.BuildSpec.Template.Env = append(jobSpec.BuildSpec.Template.Env, e)
+			}
 		}
 	}
 
-	p := pjutil.NewProwJob(jobSpec, nil)
-	p.Status = kube.ProwJobStatus{
-		State: kube.PendingState,
+	p := prow.NewProwJob(jobSpec, nil)
+	p.Status = prowjobv1.ProwJobStatus{
+		State: prowjobv1.PendingState,
 	}
-	p.Spec.Refs = &kube.Refs{
+	p.Spec.Refs = &prowjobv1.Refs{
 		BaseRef: branch,
 		Org:     org,
 		Repo:    repo,
@@ -250,10 +257,12 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 
 func (o *StartPipelineOptions) startJenkinsJob(name string) error {
 	job := o.Jobs[name]
-	jenkins, err := o.JenkinsClient()
+
+	jenkins, err := o.CreateCustomJenkinsClient(&o.JenkinsSelector)
 	if err != nil {
 		return err
 	}
+	job.Url = switchJenkinsBaseURL(job.Url, jenkins.BaseURL())
 
 	// ignore errors as it could be there's no last build yet
 	previous, _ := jenkins.GetLastBuild(job)
@@ -275,28 +284,15 @@ func (o *StartPipelineOptions) startJenkinsJob(name string) error {
 		i++
 
 		if last.Number != previous.Number {
+			last.Url = switchJenkinsBaseURL(last.Url, jenkins.BaseURL())
+
 			log.Infof("Started build of %s at %s\n", util.ColorInfo(name), util.ColorInfo(last.Url))
 			log.Infof("%s %s\n", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
 			if o.Tail {
-				return o.tailBuild(name, &last)
+				return o.tailBuild(&o.JenkinsSelector, name, &last)
 			}
 			return nil
 		}
 		time.Sleep(time.Second)
 	}
-}
-
-func jobName(prefix string, j *gojenkins.Job) string {
-	name := j.FullName
-	if name == "" {
-		name = j.Name
-	}
-	if prefix != "" {
-		name = prefix + "/" + name
-	}
-	return name
-}
-
-func IsPipeline(j *gojenkins.Job) bool {
-	return strings.Contains(j.Class, "Job")
 }

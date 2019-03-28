@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -22,7 +21,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -63,6 +61,7 @@ type CreateDevPodResults struct {
 // CreateDevPodOptions the options for the create spring command
 type CreateDevPodOptions struct {
 	CreateOptions
+	CommonDevPodOptions
 
 	Label           string
 	Suffix          string
@@ -77,10 +76,10 @@ type CreateDevPodOptions struct {
 	ImportUrl       string
 	Import          bool
 	ShellCmd        string
-	Username        string
 	DockerRegistry  string
 	TillerNamespace string
 	ServiceAccount  string
+	PullSecrets     string
 
 	GitCredentials StepGitCredentialsOptions
 
@@ -88,24 +87,14 @@ type CreateDevPodOptions struct {
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
-func NewCmdCreateDevPod(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateDevPod(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateDevPodOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 		GitCredentials: StepGitCredentialsOptions{
 			StepOptions: StepOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -136,12 +125,12 @@ func NewCmdCreateDevPod(f Factory, in terminal.FileReader, out terminal.FileWrit
 	cmd.Flags().StringVarP(&options.ImportUrl, "import-url", "u", "", "Clone a Git repository into the DevPod. Cannot be used with --sync")
 	cmd.Flags().BoolVarP(&options.Import, "import", "", true, "Detect if there is a Git repository in the current directory and attempt to clone it into the DevPod. Ignored if used with --sync")
 	cmd.Flags().StringVarP(&options.ShellCmd, "shell", "", "", "The name of the shell to invoke in the DevPod. If nothing is specified it will use 'bash'")
-	cmd.Flags().StringVarP(&options.Username, "username", "", "", "The username to create the DevPod. If not specified defaults to the current operating system user or $USER'")
 	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker registry to use within the DevPod. If not specified, default to the built-in registry or $DOCKER_REGISTRY")
 	cmd.Flags().StringVarP(&options.TillerNamespace, "tiller-namespace", "", "", "The optional tiller namespace to use within the DevPod.")
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "", "The ServiceAccount name used for the DevPod")
+	cmd.Flags().StringVarP(&options.PullSecrets, optionPullSecrets, "", "", "A list of Kubernetes secret names that will be attached to the service account (e.g. foo, bar, baz)")
 
-	options.addCommonFlags(cmd)
+	options.addCommonDevPodFlags(cmd)
 	return cmd
 }
 
@@ -209,7 +198,7 @@ func (o *CreateDevPodOptions) Run() error {
 
 	// If the user passed in Image Pull Secrets, patch them in to the edit env's default service account
 	if o.PullSecrets != "" {
-		imagePullSecrets := o.GetImagePullSecrets()
+		imagePullSecrets := strings.Fields(o.PullSecrets)
 		err = serviceaccount.PatchImagePullSecrets(client, editEnv.Spec.Namespace, "default", imagePullSecrets)
 		if err != nil {
 			return fmt.Errorf("Failed to add pull secrets %s to service account default in namespace %s: %v", imagePullSecrets, editEnv.Spec.Namespace, err)
@@ -332,7 +321,7 @@ func (o *CreateDevPodOptions) Run() error {
 			Name:  "theia",
 			Image: fmt.Sprintf("theiaide/theia-full:%s", theiaVersion),
 			Ports: []corev1.ContainerPort{
-				corev1.ContainerPort{
+				{
 					ContainerPort: 3000,
 				},
 			},
@@ -602,7 +591,7 @@ func (o *CreateDevPodOptions) Run() error {
 				},
 				Spec: corev1.ServiceSpec{
 					Ports: []corev1.ServicePort{
-						corev1.ServicePort{
+						{
 							Name:       theiaServiceName,
 							Port:       80,
 							TargetPort: intstr.FromInt(3000),
@@ -768,8 +757,8 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 
-	// Only want to shell into the DevPod if the headless flag isn't set
-	if !o.Headless {
+	// Only want to shell into the DevPod if the batch flag isn't set
+	if !o.BatchMode {
 		shellCommand := o.ShellCmd
 		if shellCommand == "" {
 			shellCommand = defaultRshCommand

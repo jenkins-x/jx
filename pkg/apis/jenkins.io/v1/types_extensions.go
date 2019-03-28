@@ -20,7 +20,8 @@ import (
 // +genclient
 // +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +k8s:openapi-gen=true
+// Disable openapi-gen as this is not an API we want to promote
+// +k8s:openapi-gen=false
 
 // Extension represents an extension available to this Jenkins X install
 type Extension struct {
@@ -96,13 +97,14 @@ type ExtensionExecution struct {
 	Name                 string                `json:"name,omitempty"  protobuf:"bytes,1,opt,name=name"`
 	Description          string                `json:"description,omitempty"  protobuf:"bytes,2,opt,name=description"`
 	Script               string                `json:"script,omitempty"  protobuf:"bytes,3,opt,name=script"`
-	EnvironmentVariables []EnvironmentVariable `json:"environmentVariables,omitempty protobuf:"bytes,4,opt,name=environmentvariables"`
+	EnvironmentVariables []EnvironmentVariable `json:"environmentVariables,omitempty" protobuf:"bytes,4,opt,name=environmentvariables"`
 	Given                ExtensionGiven        `json:"given,omitempty"  protobuf:"bytes,5,opt,name=given"`
 	Namespace            string                `json:"namespace,omitempty"  protobuf:"bytes,7,opt,name=namespace"`
 	UUID                 string                `json:"uuid,omitempty"  protobuf:"bytes,8,opt,name=uuid"`
 }
 
 // ExtensionRepositoryLockList contains a list of ExtensionRepositoryLock items
+// +k8s:openapi-gen=false
 type ExtensionRepositoryLockList struct {
 	Version    string          `json:"version"`
 	Extensions []ExtensionSpec `json:"extensions"`
@@ -148,8 +150,8 @@ type ExtensionDefinitionChildReference struct {
 }
 
 type EnvironmentVariable struct {
-	Name  string `json:"name,omitempty protobuf:"bytes,1,opt,name=name"`
-	Value string `json:"value,omitempty protobuf:"bytes,2,opt,name=value"`
+	Name  string `json:"name,omitempty" protobuf:"bytes,1,opt,name=name"`
+	Value string `json:"value,omitempty" protobuf:"bytes,2,opt,name=value"`
 }
 
 // ExtensionsConfigList contains a list of ExtensionConfig items
@@ -161,7 +163,7 @@ type ExtensionConfigList struct {
 type ExtensionConfig struct {
 	Name       string                    `json:"name"`
 	Namespace  string                    `json:"namespace"`
-	Parameters []ExtensionParameterValue `json: "parameters"`
+	Parameters []ExtensionParameterValue `json:"parameters"`
 }
 
 const (
@@ -466,10 +468,11 @@ type SourceRepositoryList struct {
 
 // SourceRepositorySpec provides details of the metadata for an App
 type SourceRepositorySpec struct {
-	Description string // non-functional user-data
-	Provider    string // github.com etc
-	Org         string
-	Repo        string
+	Description string `json:"description,omitempty" protobuf:"bytes,1,opt,name=description"`
+	// Provider stores the URL of the git provider such as https://github.com
+	Provider string `json:"provider,omitempty" protobuf:"bytes,2,opt,name=provider"`
+	Org      string `json:"org,omitempty" protobuf:"bytes,3,opt,name=org"`
+	Repo     string `json:"repo,omitempty" protobuf:"bytes,4,opt,name=repo"`
 }
 
 // AppSpec provides details of the metadata for an App

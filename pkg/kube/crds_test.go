@@ -3,7 +3,7 @@ package kube_test
 import (
 	"testing"
 
-	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
+	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
 	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
@@ -20,6 +20,20 @@ func TestRegisterEnvironmentCRD(t *testing.T) {
 	When(factory.CreateApiExtensionsClient()).ThenReturn(apiextensionsInterface, nil)
 
 	err := kube.RegisterEnvironmentCRD(apiextensionsInterface)
+
+	assert.NoError(t, err, "Should not error")
+}
+
+func TestRegisterPipelineStructureCRD(t *testing.T) {
+	// mock factory
+	factory := cmd_mocks.NewMockFactory()
+
+	// mock apiExtensions interface
+	apiextensionsInterface := apiextentions_mocks.NewSimpleClientset()
+	// Override CreateApiExtensionsClient to return mock apiextensions interface
+	When(factory.CreateApiExtensionsClient()).ThenReturn(apiextensionsInterface, nil)
+
+	err := kube.RegisterPipelineStructureCRD(apiextensionsInterface)
 
 	assert.NoError(t, err, "Should not error")
 }

@@ -14,9 +14,13 @@ type EnvironmentRoleBindingExpansion interface{}
 
 type ExtensionExpansion interface{}
 
+type FactExpansion interface{}
+
 type GitServiceExpansion interface{}
 
 type PipelineActivityExpansion interface{}
+
+type PipelineStructureExpansion interface{}
 
 type PluginExpansion interface{}
 

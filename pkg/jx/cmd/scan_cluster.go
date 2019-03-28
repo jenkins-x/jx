@@ -12,11 +12,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"gopkg.in/yaml.v2"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 const (
@@ -41,36 +40,30 @@ type node struct {
 }
 
 type service struct {
-	Service     string `json:"service yaml:"service"`
-	Location    string `json:"location yaml:"location"`
-	Description string `json:"description yaml:"description"`
+	Service     string `json:"service" yaml:"service"`
+	Location    string `json:"location" yaml:"location"`
+	Description string `json:"description" yaml:"description"`
 }
 
 type vulnerability struct {
 	Vulnerability string `json:"vulnerability" yaml:"vulnerability"`
-	Location      string `json:"location yaml:"location"`
-	Category      string `json:"category yaml:"category"`
+	Location      string `json:"location" yaml:"location"`
+	Category      string `json:"category" yaml:"category"`
 	Description   string `json:"description" yaml:"description"`
 	Evidence      string `json:"evidence" yaml:"evidence"`
 }
 
 type scanResult struct {
 	Nodes           []node          `json:"nodes" yaml:"nodes"`
-	Services        []service       `json:"services yaml:"services"`
+	Services        []service       `json:"services" yaml:"services"`
 	Vulnerabilities []vulnerability `json:"vulnerabilities" yaml:"vulnerabilities"`
 }
 
 // NewCmdScanCluster creates a command object for "scan cluster" command
-func NewCmdScanCluster(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdScanCluster(commonOpts *CommonOptions) *cobra.Command {
 	options := &ScanClusterOptions{
 		ScanOptions: ScanOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-
-				Out: out,
-				Err: errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 

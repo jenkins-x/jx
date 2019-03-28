@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"io"
 	"strings"
 	"time"
 
@@ -18,7 +17,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -36,9 +34,7 @@ var (
 )
 
 const (
-	CertManagerDeployment = "cert-manager"
-	CertManagerNamespace  = "cert-manager"
-	Exposecontroller      = "exposecontroller"
+	exposecontroller = "exposecontroller"
 
 	certsIssuedReadyTimeout = 5 * time.Minute
 )
@@ -56,22 +52,16 @@ type UpgradeIngressOptions struct {
 	Services            []string
 	SkipResourcesUpdate bool
 	WaitForCerts        bool
+	ConfigNamespace     string
 
 	IngressConfig kube.IngressConfig
 }
 
 // NewCmdUpgradeIngress defines the command
-func NewCmdUpgradeIngress(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	commonOptions := CommonOptions{
-		Factory: f,
-		In:      in,
-		Out:     out,
-		Err:     errOut,
-	}
-
+func NewCmdUpgradeIngress(commonOpts *CommonOptions) *cobra.Command {
 	options := &UpgradeIngressOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: commonOptions,
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -89,7 +79,6 @@ func NewCmdUpgradeIngress(f Factory, in terminal.FileReader, out terminal.FileWr
 		},
 	}
 	options.addFlags(cmd)
-	options.addCommonFlags(cmd)
 
 	return cmd
 }
@@ -101,7 +90,8 @@ func (o *UpgradeIngressOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVarP(&o.Services, "services", "", []string{}, "Services to upgrade")
 	cmd.Flags().BoolVarP(&o.SkipResourcesUpdate, "skip-resources-update", "", false, "Skips the update of jx related resources such as webhook or Jenkins URL")
 	cmd.Flags().BoolVarP(&o.Force, "force", "", false, "Forces upgrades of all webooks even if ingress URL has not changed")
-	cmd.Flags().BoolVarP(&o.WaitForCerts, "wait-for-certs", "", false, "Waits for TLS certs to be issued by cert-manager")
+	cmd.Flags().BoolVarP(&o.WaitForCerts, "wait-for-certs", "", true, "Waits for TLS certs to be issued by cert-manager")
+	cmd.Flags().StringVarP(&o.ConfigNamespace, "config-namespace", "", "", "Namespace where the ingress-config is stored (if empty, it will try to read it from Dev environment namespace)")
 }
 
 // Run implements the command
@@ -149,24 +139,27 @@ func (o *UpgradeIngressOptions) Run() error {
 		return errors.Wrap(err, "saving ingress config into a configmap")
 	}
 
-	// ensure cert-manager is installed and add the cert-manager to all services which are going to be exposed
-	var services []*v1.Service
+	// ensure cert-manager is installed
 	if o.IngressConfig.TLS {
 		err = o.ensureCertmanagerSetup()
 		if err != nil {
 			return errors.Wrap(err, "ensure cert-manager setup")
 		}
+	}
 
-		// annotate any service that has expose=true with correct cert-manager staging / prod annotation
+	// clear the service annotations
+	err = o.CleanServiceAnnotations(o.Services...)
+	if err != nil {
+		return errors.Wrap(err, "cleaning service annotations")
+	}
+
+	// annotate any service that has expose=true with correct cert-manager staging / prod annotation
+	var services []*v1.Service
+	if o.IngressConfig.TLS {
 		services, err = o.AnnotateExposedServicesWithCertManager(o.Services...)
 		if err != nil {
 			return errors.Wrap(err, "annotating the exposed service with cert-manager")
 		}
-	}
-
-	err = o.CleanServiceAnnotations(o.Services...)
-	if err != nil {
-		return errors.Wrap(err, "cleaning service annotations")
 	}
 
 	// remove the ingress resource in order to allow the ingress-controller to recreate them
@@ -196,11 +189,6 @@ func (o *UpgradeIngressOptions) Run() error {
 		return errors.Wrap(err, "creating the ingress rules")
 	}
 
-	// update all resource dependent to the ingress endpoints
-	if !o.SkipResourcesUpdate {
-		o.updateResources(previousWebHookEndpoint)
-	}
-
 	log.Success("Ingress rules recreated\n")
 
 	if o.IngressConfig.TLS {
@@ -224,17 +212,22 @@ func (o *UpgradeIngressOptions) Run() error {
 		} else {
 			log.Warn("It can take around 5 minutes for Cert Manager to get certificates from Lets Encrypt and update Ingress rules\n")
 			log.Info("Use the following commands to diagnose any issues:\n")
-			log.Infof("jx logs %s -n %s\n", CertManagerDeployment, CertManagerNamespace)
+			log.Infof("jx logs %s -n %s\n", pki.CertManagerDeployment, pki.CertManagerNamespace)
 			log.Info("kubectl describe certificates\n")
 			log.Info("kubectl describe issuers\n\n")
 		}
+	}
+
+	// update all resource dependent to the ingress endpoints
+	if !o.SkipResourcesUpdate {
+		o.updateResources(previousWebHookEndpoint)
 	}
 
 	return nil
 }
 
 func (o *UpgradeIngressOptions) watchReadyCertificates(ctx context.Context) (<-chan pki.Certificate, error) {
-	client, err := o.CreateCertManagerClient()
+	client, err := o.CertManagerClient()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating the cert-manager client")
 	}
@@ -258,9 +251,12 @@ func (o *UpgradeIngressOptions) startCollectingReadyCertificates(ctx context.Con
 			certsMap[cert] = true
 		}
 
+		log.Infof("Expecting certificates: %v\n", certs)
+
 		for {
 			select {
 			case cert := <-certsCh:
+				log.Infof("Ready Cert: %s\n", util.ColorInfo(cert))
 				delete(certsMap, cert)
 				// check if all expected certificates are received
 				if len(certsMap) == 0 {
@@ -355,7 +351,7 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 			return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 		}
 		for _, i := range ings.Items {
-			if i.Annotations[services.ExposeGeneratedByAnnotation] == Exposecontroller {
+			if i.Annotations[services.ExposeGeneratedByAnnotation] == exposecontroller {
 				if o.isIngressForServices(&i) {
 					existingIngressNames[i.Name] = i.Namespace
 				}
@@ -376,7 +372,7 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 				return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 			}
 			for _, i := range ings.Items {
-				if i.Annotations[services.ExposeGeneratedByAnnotation] == Exposecontroller {
+				if i.Annotations[services.ExposeGeneratedByAnnotation] == exposecontroller {
 					if o.isIngressForServices(&i) {
 						existingIngressNames[i.Name] = i.Namespace
 					}
@@ -387,14 +383,14 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 	} else {
 		confirmMessage = "Existing ingress rules found in current namespace.  Confirm to delete and recreate them"
 		// fall back to current ns only
-		log.Infof("looking for existing ingress rules in current namespace %s\n", o.currentNamespace)
+		log.Infof("Looking for existing ingress rules in current namespace %s\n", o.currentNamespace)
 
 		ings, err := client.ExtensionsV1beta1().Ingresses(o.currentNamespace).List(metav1.ListOptions{})
 		if err != nil {
 			return existingIngressNames, fmt.Errorf("cannot list all ingresses in cluster: %v", err)
 		}
 		for _, i := range ings.Items {
-			if i.Annotations[services.ExposeGeneratedByAnnotation] == Exposecontroller {
+			if i.Annotations[services.ExposeGeneratedByAnnotation] == exposecontroller {
 				if o.isIngressForServices(&i) {
 					existingIngressNames[i.Name] = i.Namespace
 				}
@@ -407,17 +403,19 @@ func (o *UpgradeIngressOptions) getExistingIngressRules() (map[string]string, er
 		return existingIngressNames, nil
 	}
 
-	confirm := &survey.Confirm{
-		Message: confirmMessage,
-		Default: true,
-	}
-	flag := true
-	err = survey.AskOne(confirm, &flag, nil, surveyOpts)
-	if err != nil {
-		return existingIngressNames, err
-	}
-	if !flag {
-		return existingIngressNames, errors.New("Not able to automatically delete existing ingress rules.  Either delete manually or change the scope the command should run in")
+	if !o.BatchMode {
+		confirm := &survey.Confirm{
+			Message: confirmMessage,
+			Default: true,
+		}
+		flag := true
+		err = survey.AskOne(confirm, &flag, nil, surveyOpts)
+		if err != nil {
+			return existingIngressNames, err
+		}
+		if !flag {
+			return existingIngressNames, errors.New("Not able to automatically delete existing ingress rules.  Either delete manually or change the scope the command should run in")
+		}
 	}
 
 	return existingIngressNames, nil
@@ -429,66 +427,105 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 	if err != nil {
 		return err
 	}
+
+	// select the namespace from where to read the ingress-config config map
 	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
+	configNamespace := devNamespace
+	if o.ConfigNamespace != "" {
+		configNamespace = o.ConfigNamespace
+	}
 
 	// Overwrites the ingress config with the values from config map only if this config map exists
-	ic, err := kube.GetIngressConfig(client, devNamespace)
+	ic, err := kube.GetIngressConfig(client, configNamespace)
 	if err == nil {
 		o.IngressConfig = ic
 	}
 
-	o.IngressConfig.Exposer, err = util.PickNameWithDefault([]string{"Ingress", "Route"}, "Expose type", o.IngressConfig.Exposer, "", o.In, o.Out, o.Err)
-	if err != nil {
-		return err
-	}
-
-	o.IngressConfig.Domain, err = util.PickValue("Domain:", o.IngressConfig.Domain, true, "", o.In, o.Out, o.Err)
-	if err != nil {
-		return err
-	}
-
-	if !strings.HasSuffix(o.IngressConfig.Domain, "nip.io") {
-
-		o.IngressConfig.TLS = util.Confirm("If your network is publicly available would you like to enable cluster wide TLS?", true, "Enables cert-manager and configures TLS with signed certificates from LetsEncrypt", o.In, o.Out, o.Err)
-
+	if o.BatchMode {
+		if err := checkEmtptyIngressConfig(o.IngressConfig.Exposer, "exposer"); err != nil {
+			return err
+		}
+		if err := checkEmtptyIngressConfig(o.IngressConfig.Domain, "domain"); err != nil {
+			return err
+		}
 		if o.IngressConfig.TLS {
-			log.Infof("If testing LetsEncrypt you should use staging as you may be rate limited using production.")
-			clusterIssuer, err := util.PickNameWithDefault([]string{"staging", "production"}, "Use LetsEncrypt staging or production?", "production", "", o.In, o.Out, o.Err)
-			// if the cluster issuer is production the string needed by letsencrypt is prod
-			if clusterIssuer == "production" {
-				clusterIssuer = "prod"
-			}
-			if err != nil {
+			if err := checkEmtptyIngressConfig(o.IngressConfig.Issuer, "issuer"); err != nil {
 				return err
 			}
-			o.IngressConfig.Issuer = "letsencrypt-" + clusterIssuer
+			if err := checkEmtptyIngressConfig(o.IngressConfig.Email, "email"); err != nil {
+				return err
+			}
+		}
+	} else {
+		o.IngressConfig.Exposer, err = util.PickNameWithDefault([]string{"Ingress", "Route"}, "Expose type", o.IngressConfig.Exposer, "", o.In, o.Out, o.Err)
+		if err != nil {
+			return err
+		}
 
-			if o.IngressConfig.Email == "" {
-				email1, err := o.getCommandOutput("", "git", "config", "user.email")
+		o.IngressConfig.Domain, err = util.PickValue("Domain:", o.IngressConfig.Domain, true, "", o.In, o.Out, o.Err)
+		if err != nil {
+			return err
+		}
+
+		if !strings.HasSuffix(o.IngressConfig.Domain, "nip.io") {
+			if !o.BatchMode {
+				o.IngressConfig.TLS = util.Confirm("If your network is publicly available would you like to enable cluster wide TLS?", true, "Enables cert-manager and configures TLS with signed certificates from LetsEncrypt", o.In, o.Out, o.Err)
+			}
+
+			if o.IngressConfig.TLS {
+				log.Infof("If testing LetsEncrypt you should use staging as you may be rate limited using production.")
+				clusterIssuer, err := util.PickNameWithDefault([]string{"staging", "production"}, "Use LetsEncrypt staging or production?", "production", "", o.In, o.Out, o.Err)
+				// if the cluster issuer is production the string needed by letsencrypt is prod
+				if clusterIssuer == "production" {
+					clusterIssuer = "prod"
+				}
 				if err != nil {
 					return err
 				}
+				o.IngressConfig.Issuer = "letsencrypt-" + clusterIssuer
 
-				o.IngressConfig.Email = strings.TrimSpace(email1)
-			}
+				if o.IngressConfig.Email == "" {
+					email1, err := o.getCommandOutput("", "git", "config", "user.email")
+					if err != nil {
+						return err
+					}
 
-			o.IngressConfig.Email, err = util.PickValue("Email address to register with LetsEncrypt:", o.IngressConfig.Email, true, "", o.In, o.Out, o.Err)
-			if err != nil {
-				return err
+					o.IngressConfig.Email = strings.TrimSpace(email1)
+				}
+
+				o.IngressConfig.Email, err = util.PickValue("Email address to register with LetsEncrypt:", o.IngressConfig.Email, true, "", o.In, o.Out, o.Err)
+				if err != nil {
+					return err
+				}
 			}
+		}
+		o.IngressConfig.UrlTemplate, err = util.PickValue("UrlTemplate:", o.IngressConfig.UrlTemplate, true, "", o.In, o.Out, o.Err)
+		if err != nil {
+			return err
 		}
 	}
 
 	return nil
-
 }
+
+func checkEmtptyIngressConfig(value string, name string) error {
+	if value == "" {
+		return fmt.Errorf("%v config value must not be empty", name)
+	}
+	return nil
+}
+
 func (o *UpgradeIngressOptions) createIngressRules() error {
 	client, err := o.KubeClient()
 	if err != nil {
 		return err
+	}
+	certmngClient, err := o.CertManagerClient()
+	if err != nil {
+		return errors.Wrap(err, "creating the cert-manager client")
 	}
 	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
 	if err != nil {
@@ -497,12 +534,24 @@ func (o *UpgradeIngressOptions) createIngressRules() error {
 	for _, n := range o.TargetNamespaces {
 		o.CleanExposecontrollerReources(n)
 
-		err := pki.CleanCertSecrets(client, n)
-		if err != nil {
-			return err
+		if len(o.Services) > 0 {
+			services, err := services.GetServicesByName(client, n, o.Services)
+			if err != nil {
+				return err
+			}
+			certs := pki.ToCertificates(services)
+			err = pki.CleanCerts(client, certmngClient, n, certs)
+			if err != nil {
+				return err
+			}
+		} else {
+			err := pki.CleanAllCerts(client, certmngClient, n)
+			if err != nil {
+				return err
+			}
 		}
 
-		err = kube.CleanCertmanagerResources(client, n, o.IngressConfig)
+		err := pki.CreateCertManagerResources(certmngClient, n, o.IngressConfig)
 		if err != nil {
 			return err
 		}

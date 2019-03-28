@@ -1,10 +1,7 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"fmt"
 
@@ -35,20 +32,15 @@ type CreateAddonProwOptions struct {
 	CreateAddonOptions
 	Password string
 	Chart    string
+	Tekton   bool
 }
 
 // NewCmdCreateAddonProw creates a command object for the "create" command
-func NewCmdCreateAddonProw(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonProw(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateAddonProwOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-
-					Out: out,
-					Err: errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -66,13 +58,13 @@ func NewCmdCreateAddonProw(f Factory, in terminal.FileReader, out terminal.FileW
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	options.addFlags(cmd, "", kube.DefaultProwReleaseName, defaultProwVersion)
 
 	cmd.Flags().StringVarP(&options.Prow.Chart, optionChart, "c", kube.ChartProw, "The name of the chart to use")
 	cmd.Flags().StringVarP(&options.Prow.HMACToken, "hmac-token", "", "", "OPTIONAL: The hmac-token is the token that you give to GitHub for validating webhooks. Generate it using any reasonable randomness-generator, eg openssl rand -hex 20")
 	cmd.Flags().StringVarP(&options.Prow.OAUTHToken, "oauth-token", "", "", "OPTIONAL: The oauth-token is an OAuth2 token that has read and write access to the bot account. Generate it from the account's settings -> Personal access tokens -> Generate new token.")
 	cmd.Flags().StringVarP(&options.Password, "password", "", "", "Overwrite the default admin password used to login to the Deck UI")
+	cmd.Flags().BoolVarP(&options.Tekton, "tekton", "t", true, "Enables Tekton. Otherwise we default to use Knative Build")
 	return cmd
 }
 
@@ -95,7 +87,19 @@ func (o *CreateAddonProwOptions) Run() error {
 	o.Prow.Version = o.Version
 	o.Prow.SetValues = o.SetValues
 	o.Namespace = o.currentNamespace
-	err = o.installProw()
+
+	isGitOps, _ := o.GetDevEnv()
+
+	_, pipelineUser, err := o.getPipelineGitAuth()
+	if err != nil {
+		return errors.Wrap(err, "retrieving the pipeline Git Auth")
+	}
+	pipelineUserName := ""
+	if pipelineUser != nil {
+		pipelineUserName = pipelineUser.Username
+	}
+
+	err = o.installProw(o.Tekton, isGitOps, "", "", pipelineUserName)
 	if err != nil {
 		return fmt.Errorf("failed to install Prow: %v", err)
 	}

@@ -2,10 +2,11 @@ package auth
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"path/filepath"
+
+	"github.com/jenkins-x/jx/pkg/util"
+	"sigs.k8s.io/yaml"
 )
 
 // NewFileAuthConfigService
@@ -65,5 +66,5 @@ func (s *FileAuthConfigSaver) SaveConfig(config *AuthConfig) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(fileName, data, DefaultWritePermissions)
+	return ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 }

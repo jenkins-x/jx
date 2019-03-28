@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -21,8 +20,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -33,11 +33,11 @@ const (
 var JenkinsReferenceVersion = semver.Version{Major: 2, Minor: 140, Patch: 0}
 
 var (
-	create_jenkins_user_long = templates.LongDesc(`
+	createJEnkinsUserLong = templates.LongDesc(`
 		Creates a new user and API Token for the current Jenkins server
 `)
 
-	create_jenkins_user_example = templates.Examples(`
+	createJEnkinsUserExample = templates.Examples(`
 		# Add a new API Token for a user for the current Jenkins server
         # prompting the user to find and enter the API Token
 		jx create jenkins token someUserName
@@ -53,25 +53,24 @@ var (
 type CreateJenkinsUserOptions struct {
 	CreateOptions
 
-	ServerFlags ServerFlags
-	Username    string
-	Password    string
-	ApiToken    string
-	BearerToken string
-	Timeout     string
-	UseBrowser  bool
+	ServerFlags     ServerFlags
+	JenkinsSelector JenkinsSelectorOptions
+	Namespace       string
+	Username        string
+	Password        string
+	APIToken        string
+	BearerToken     string
+	Timeout         string
+	NoREST          bool
+	RecreateToken   bool
+	HealthTimeout   time.Duration
 }
 
 // NewCmdCreateJenkinsUser creates a command
-func NewCmdCreateJenkinsUser(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateJenkinsUser(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateJenkinsUserOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -79,8 +78,8 @@ func NewCmdCreateJenkinsUser(f Factory, in terminal.FileReader, out terminal.Fil
 		Use:     "token [username]",
 		Short:   "Adds a new username and API token for a Jenkins server",
 		Aliases: []string{"api-token"},
-		Long:    create_jenkins_user_long,
-		Example: create_jenkins_user_example,
+		Long:    createJEnkinsUserLong,
+		Example: createJEnkinsUserExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -88,13 +87,16 @@ func NewCmdCreateJenkinsUser(f Factory, in terminal.FileReader, out terminal.Fil
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
 	options.ServerFlags.addGitServerFlags(cmd)
-	cmd.Flags().StringVarP(&options.ApiToken, "api-token", "t", "", "The API Token for the user")
+	options.JenkinsSelector.AddFlags(cmd)
+
+	cmd.Flags().StringVarP(&options.APIToken, "api-token", "t", "", "The API Token for the user")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The User password to try automatically create a new API Token")
 	cmd.Flags().StringVarP(&options.Timeout, "timeout", "", "", "The timeout if using REST to generate the API token (by passing username and password)")
-	cmd.Flags().BoolVarP(&options.UseBrowser, "browser", "", false, "Use REST calls to automatically find the API token if the user and password are known")
-
+	cmd.Flags().BoolVarP(&options.NoREST, "no-rest", "", false, "Disables the use of REST calls to automatically find the API token if the user and password are known")
+	cmd.Flags().BoolVarP(&options.RecreateToken, "recreate-token", "", false, "Should we recreate teh API token if it already exists")
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The namespace of the secret where the Jenkins API token will be stored")
+	cmd.Flags().DurationVarP(&options.HealthTimeout, "health-timeout", "", 30*time.Minute, "The maximum duration to wait for the Jenkins service to be healthy before trying to create the API token")
 	return cmd
 }
 
@@ -105,23 +107,25 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		o.Username = args[0]
 	}
 	if len(args) > 1 {
-		o.ApiToken = args[1]
+		o.APIToken = args[1]
 	}
 	kubeClient, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
-		return fmt.Errorf("error connecting to Kubernetes cluster: %v", err)
+		return errors.Wrap(err, "connecting to Kubernetes cluster")
+	}
+	if o.Namespace != "" {
+		ns = o.Namespace
 	}
 
-	authConfigSvc, err := o.CreateJenkinsAuthConfigService(kubeClient, ns)
+	authConfigSvc, err := o.JenkinsAuthConfigService(kubeClient, ns, &o.JenkinsSelector)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "creating Jenkins Auth configuration")
 	}
 	config := authConfigSvc.Config()
 
 	var server *auth.AuthServer
 	if o.ServerFlags.IsEmpty() {
-		url := ""
-		url, err = o.findService(kube.ServiceJenkins)
+		url, err := o.CustomJenkinsURL(&o.JenkinsSelector, kubeClient, ns)
 		if err != nil {
 			return err
 		}
@@ -129,32 +133,55 @@ func (o *CreateJenkinsUserOptions) Run() error {
 	} else {
 		server, err = o.findServer(config, &o.ServerFlags, "jenkins server", "Try installing one via: jx create team", false)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "searching server %s: %s", o.ServerFlags.ServerName, o.ServerFlags.ServerURL)
 		}
 	}
 
-	// TODO add the API thingy...
 	if o.Username == "" {
-		return fmt.Errorf("No Username specified")
+		// lets default the user if there's only 1
+		userAuths := config.FindUserAuths(server.URL)
+		if len(userAuths) == 1 {
+			ua := userAuths[0]
+			o.Username = ua.Username
+			if o.Password == "" {
+				o.Password = ua.Password
+			}
+		}
+	}
+	if o.Username == "" {
+		return fmt.Errorf("no Username specified")
 	}
 
 	userAuth := config.GetOrCreateUserAuth(server.URL, o.Username)
-	if o.ApiToken != "" {
-		userAuth.ApiToken = o.ApiToken
-	}
 
-	if o.BearerToken != "" {
-		userAuth.BearerToken = o.BearerToken
+	if o.RecreateToken {
+		userAuth.ApiToken = ""
+		userAuth.BearerToken = ""
+	} else {
+		if o.APIToken != "" {
+			userAuth.ApiToken = o.APIToken
+		}
+		if o.BearerToken != "" {
+			userAuth.BearerToken = o.BearerToken
+		}
 	}
 
 	if o.Password != "" {
 		userAuth.Password = o.Password
 	}
 
-	if userAuth.IsInvalid() && o.Password != "" && o.UseBrowser {
-		err := o.getAPITokenFromREST(server.URL, userAuth)
+	if userAuth.IsInvalid() && o.Password != "" && !o.NoREST {
+		err := jenkins.CheckHealth(server.URL, o.HealthTimeout)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "checking health of Jenkins server %q", server.URL)
+		}
+		err = o.getAPITokenFromREST(server.URL, userAuth)
+		if err != nil {
+			if o.BatchMode {
+				return errors.Wrapf(err, "generating the API token over REST API of server %q", server.URL)
+			}
+			log.Warnf("failed to generate API token over REST API of server %s due to: %s\n", server.URL, err.Error())
+			log.Info("So unfortunately you will have to provide this by hand...\n\n")
 		}
 	}
 
@@ -167,34 +194,93 @@ func (o *CreateJenkinsUserOptions) Run() error {
 
 		err = config.EditUserAuth("Jenkins", userAuth, o.Username, false, o.BatchMode, f, o.In, o.Out, o.Err)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "updating the jenkins auth configuration for user %q", o.Username)
 		}
 		if userAuth.IsInvalid() {
-			return fmt.Errorf("You did not properly define the user authentication!")
+			return fmt.Errorf("you did not properly define the user authentication")
 		}
 	}
 
 	config.CurrentServer = server.URL
 	err = authConfigSvc.SaveConfig()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "saving the auth config")
 	}
 
-	// now lets create a secret for it so we can perform incluster interactions with Jenkins
-	s, err := kubeClient.CoreV1().Secrets(o.currentNamespace).Get(kube.SecretJenkins, metav1.GetOptions{})
+	err = o.saveJenkinsAuthInSecret(kubeClient, userAuth)
 	if err != nil {
-		return err
-	}
-	s.Data[kube.JenkinsAdminApiToken] = []byte(userAuth.ApiToken)
-	s.Data[kube.JenkinsBearTokenField] = []byte(userAuth.BearerToken)
-	s.Data[kube.JenkinsAdminUserField] = []byte(userAuth.Username)
-	_, err = kubeClient.CoreV1().Secrets(o.currentNamespace).Update(s)
-	if err != nil {
-		return err
+		return errors.Wrap(err, "saving the auth config in a Kubernetes secret")
 	}
 
 	log.Infof("Created user %s API Token for Jenkins server %s at %s\n",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
+	return nil
+}
+
+func (o *CreateJenkinsUserOptions) saveJenkinsAuthInSecret(kubeClient kubernetes.Interface, auth *auth.UserAuth) error {
+	ns := o.Namespace
+	if ns == "" {
+		ns = o.currentNamespace
+	}
+	serviceName := kube.ServiceJenkins
+	secretName := kube.SecretJenkins
+	customJenkinsName := o.JenkinsSelector.CustomJenkinsName
+	if customJenkinsName != "" {
+		serviceName = customJenkinsName
+		secretName = customJenkinsName + "-auth"
+	}
+	create := false
+
+	secretInterface := kubeClient.CoreV1().Secrets(ns)
+	secret, err := secretInterface.Get(secretName, metav1.GetOptions{})
+	if err != nil {
+		create = true
+		secret = &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: secretName,
+			},
+		}
+	}
+	if secret.Labels == nil {
+		secret.Labels = map[string]string{}
+	}
+	if secret.Labels[kube.LabelKind] == "" {
+		secret.Labels[kube.LabelKind] = kube.ValueKindJenkins
+	}
+	if secret.Data == nil {
+		secret.Data = map[string][]byte{}
+	}
+
+	svc, err := kubeClient.CoreV1().Services(ns).Get(serviceName, metav1.GetOptions{})
+	if err == nil && svc != nil {
+		hasOwnerRef := false
+		for _, ref := range secret.OwnerReferences {
+			if ref.Name == svc.Name && ref.Kind == "Service" {
+				hasOwnerRef = true
+			}
+		}
+		if !hasOwnerRef {
+			secret.OwnerReferences = append(secret.OwnerReferences, kube.ServiceOwnerRef(svc))
+		}
+	} else {
+		log.Warnf("Could not find service %s in namespace %s: %v\n", serviceName, ns, err)
+	}
+
+	secret.Data[kube.JenkinsAdminApiToken] = []byte(auth.ApiToken)
+	secret.Data[kube.JenkinsBearTokenField] = []byte(auth.BearerToken)
+	secret.Data[kube.JenkinsAdminUserField] = []byte(auth.Username)
+
+	if create {
+		_, err = secretInterface.Create(secret)
+		if err != nil {
+			return errors.Wrapf(err, "creating the Jenkins auth configuration in secret %s/%s", ns, secretName)
+		}
+		return nil
+	}
+	_, err = secretInterface.Update(secret)
+	if err != nil {
+		return errors.Wrapf(err, "updating the Jenkins auth configuration in secret %s/%s", ns, secretName)
+	}
 	return nil
 }
 
@@ -250,7 +336,8 @@ func loginLegacy(ctx context.Context, serverURL string, verbose bool, username s
 			return http.ErrUseLastResponse
 		},
 	}
-	req, err := http.NewRequest(http.MethodPost, util.UrlJoin(serverURL, fmt.Sprintf("/j_security_check?j_username=%s&j_password=%s", url.QueryEscape(username), url.QueryEscape(password))), nil)
+	req, err := http.NewRequest(http.MethodPost, util.UrlJoin(serverURL, fmt.Sprintf("/j_security_check?j_username=%s&j_password=%s",
+		url.QueryEscape(username), url.QueryEscape(password))), nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "building request to log in")
 	}
@@ -280,7 +367,7 @@ func loginLegacy(ctx context.Context, serverURL string, verbose bool, username s
 }
 
 // Checks whether a purported login decorator actually seems to work.
-func verifyLogin(ctx context.Context, serverURL string, verbose bool, decorator func (req *http.Request)) error {
+func verifyLogin(ctx context.Context, serverURL string, verbose bool, decorator func(req *http.Request)) error {
 	client := http.Client{}
 	req, err := http.NewRequest(http.MethodGet, util.UrlJoin(serverURL, "/me/api/json?tree=id"), nil)
 	if err != nil {
@@ -306,7 +393,7 @@ func verifyLogin(ctx context.Context, serverURL string, verbose bool, decorator 
 }
 
 // Checks if CSRF defense is enabled, and if so, amends the decorator to include a crumb.
-func checkForCrumb(ctx context.Context, serverURL string, verbose bool, decorator func (req *http.Request)) func (req *http.Request) {
+func checkForCrumb(ctx context.Context, serverURL string, verbose bool, decorator func(req *http.Request)) func(req *http.Request) {
 	client := http.Client{}
 	req, err := http.NewRequest(http.MethodGet, util.UrlJoin(serverURL, "/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)"), nil)
 	if err != nil {

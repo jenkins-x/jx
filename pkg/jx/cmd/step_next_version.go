@@ -4,21 +4,21 @@ import (
 	"bufio"
 	"encoding/xml"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/util"
+
 	"encoding/json"
 
 	"github.com/blang/semver"
-	version "github.com/hashicorp/go-version"
+	"github.com/hashicorp/go-version"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -59,8 +59,12 @@ var (
 `)
 )
 
-func NewCmdStepNextVersion(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	options := StepNextVersionOptions{}
+func NewCmdStepNextVersion(commonOpts *CommonOptions) *cobra.Command {
+	options := StepNextVersionOptions{
+		StepOptions: StepOptions{
+			CommonOptions: commonOpts,
+		},
+	}
 	cmd := &cobra.Command{
 		Use:     "next-version",
 		Short:   "Writes next semantic version",
@@ -79,7 +83,6 @@ func NewCmdStepNextVersion(f Factory, in terminal.FileReader, out terminal.FileW
 	cmd.Flags().BoolVarP(&options.Tag, "tag", "t", false, "tag and push new version")
 	cmd.Flags().BoolVarP(&options.UseGitTagOnly, "use-git-tag-only", "", false, "only use a git tag so work out new semantic version, else specify filename [pom.xml,package.json,Makefile,Chart.yaml]")
 
-	options.addCommonFlags(cmd)
 	return cmd
 }
 
@@ -93,11 +96,13 @@ func (o *StepNextVersionOptions) Run() error {
 		}
 	}
 
-	// in declaritive pipelines we sometimes need to write the version to a file rather than pass state
+	// in declarative pipelines we sometimes need to write the version to a file rather than pass state
 	err = ioutil.WriteFile("VERSION", []byte(o.NewVersion), 0755)
 	if err != nil {
 		return err
 	}
+
+	log.Infof("created new version: %s and written to file: ./VERSION\n", util.ColorInfo(o.NewVersion))
 
 	// if filename flag set and recognised then update version, commit
 	if o.Filename != "" {
@@ -376,6 +381,10 @@ func (o *StepNextVersionOptions) SetVersion() error {
 		return err
 	}
 
+	if o.Tag {
+		// lets not commit to git as we do that in the tag step
+		return nil
+	}
 	err = o.Git().Add(o.Dir, o.Filename)
 	if err != nil {
 		return err
@@ -408,11 +417,3 @@ func (o *StepNextVersionOptions) setPomVersion(b []byte) error {
 }
 
 // returns a string array containing the git owner and repo name for a given URL
-func getCurrentGitOwnerRepo(url string) []string {
-	var OwnerNameRegexp = regexp.MustCompile(`([^:]+)(/[^\/].+)?$`)
-
-	matched2 := OwnerNameRegexp.FindStringSubmatch(url)
-	s := strings.TrimSuffix(matched2[0], ".git")
-
-	return strings.Split(s, "/")
-}

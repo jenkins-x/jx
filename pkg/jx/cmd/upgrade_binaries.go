@@ -1,13 +1,11 @@
 package cmd
 
 import (
-	"io"
 	"io/ioutil"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -25,15 +23,10 @@ type UpgradeBinariesOptions struct {
 	CreateOptions
 }
 
-func NewCmdUpgradeBinaries(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeBinaries(commonOpts *CommonOptions) *cobra.Command {
 	options := &UpgradeBinariesOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -49,7 +42,6 @@ func NewCmdUpgradeBinaries(f Factory, in terminal.FileReader, out terminal.FileW
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enable verbose logging")
 	return cmd
 }
 
@@ -71,6 +63,11 @@ func (o *UpgradeBinariesOptions) Run() error {
 			}
 		} else if binary.Name() == "heptio-authenticator-aws" {
 			err = o.installHeptioAuthenticatorAws(true)
+			if err != nil {
+				return err
+			}
+		} else if binary.Name() == "kubectl" {
+			err = o.installKubectl(true)
 			if err != nil {
 				return err
 			}

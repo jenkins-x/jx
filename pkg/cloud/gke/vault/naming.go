@@ -3,30 +3,30 @@ package vault
 import "fmt"
 
 // BucketName creates a Bucket name for a given vault name and cluster name
-func BucketName(vaultName string, clusterName string) string {
-	return generatePrefix(vaultName, clusterName) + "bucket"
+func BucketName(vaultName string) string {
+	return generateName(vaultName, "bucket")
 }
 
 // ServiceAccountName creates a service account name for a given vault and cluster name
-func ServiceAccountName(vaultName string, clusterName string) string {
-	return generatePrefix(vaultName, clusterName) + "sa"
-}
-
-// AuthServiceAccountName creates a service account name for a given vault and cluster name
-func AuthServiceAccountName(vaultName string, clusterName string) string {
-	return generatePrefix(vaultName, clusterName) + "auth-sa"
+func ServiceAccountName(vaultName string) string {
+	return generateName(vaultName, "sa")
 }
 
 // KeyringName creates a keyring name for a given vault and cluster name
-func KeyringName(vaultName string, clusterName string) string {
-	return generatePrefix(vaultName, clusterName) + "keyring"
+func KeyringName(vaultName string) string {
+	return generateName(vaultName, "keyring")
 }
 
 // KeyName creates a key name for a given vault and cluster name
-func KeyName(vaultName string, clusterName string) string {
-	return generatePrefix(vaultName, clusterName) + "key"
+func KeyName(vaultName string) string {
+	return generateName(vaultName, "key")
 }
 
-func generatePrefix(vaultName string, clusterName string) string {
-	return fmt.Sprintf("%s-%s-", clusterName, vaultName)
+// GcpServiceAccountSecretName builds the secret name where the GCP service account is stored
+func GcpServiceAccountSecretName(vaultName string) string {
+	return generateName(vaultName, "gcp-sa")
+}
+
+func generateName(vaultName string, name string) string {
+	return fmt.Sprintf("%s-%s", vaultName, name)
 }

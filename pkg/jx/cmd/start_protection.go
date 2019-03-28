@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -10,7 +9,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/prow"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -18,7 +16,7 @@ import (
 
 // StartProtectionOptions contains the command line options
 type StartProtectionOptions struct {
-	GetOptions
+	*CommonOptions
 
 	Tail   bool
 	Filter string
@@ -43,17 +41,9 @@ var (
 )
 
 // NewCmdStartProtection creates the command
-func NewCmdStartProtection(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStartProtection(commonOpts *CommonOptions) *cobra.Command {
 	options := &StartProtectionOptions{
-		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-
-				Out: out,
-				Err: errOut,
-			},
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -91,7 +81,13 @@ func (o *StartProtectionOptions) Run() error {
 	}
 	orgrepo := o.Args[1]
 	context := o.Args[0]
-	err = prow.AddProtection(kClient, []string{orgrepo}, context, ns)
+
+	settings, err := o.TeamSettings()
+	if err != nil {
+		return err
+	}
+
+	err = prow.AddProtection(kClient, []string{orgrepo}, context, ns, settings)
 	if err != nil {
 		return err
 	}

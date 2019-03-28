@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io"
 	"math"
 	"os"
 	"regexp"
@@ -13,6 +12,7 @@ import (
 	"github.com/IBM-Cloud/bluemix-go/api/container/containerv1"
 	"github.com/IBM-Cloud/bluemix-go/session"
 	randomdata "github.com/Pallinder/go-randomdata"
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/iks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -20,7 +20,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -99,9 +98,9 @@ func (s byNumberIndex) Less(i, j int) bool {
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateClusterIKS(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterIKS(commonOpts *CommonOptions) *cobra.Command {
 	options := CreateClusterIKSOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, OKE),
+		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.OKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "iks",
@@ -361,7 +360,7 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 	}
 
 	if o.Flags.MachineType == "" {
-		machinetypearr, err := iks.GetMachineTypes(*zone, machineTypes)
+		machinetypearr, err := iks.GetMachineTypes(*zone, *region, machineTypes)
 		prompts := &survey.Select{
 			Message:  "Kubernetes Node Machine Type:",
 			Options:  machinetypearr,
@@ -374,12 +373,12 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 		if err != nil {
 			return err
 		}
-		machineType, err = machineTypes.GetMachineType(machineTypeStr, *zone)
+		machineType, err = machineTypes.GetMachineType(machineTypeStr, *zone, *region)
 		if err != nil {
 			return err
 		}
 	} else {
-		machineType, err = machineTypes.GetMachineType(o.Flags.MachineType, *zone)
+		machineType, err = machineTypes.GetMachineType(o.Flags.MachineType, *zone, *region)
 		if err != nil {
 			return err
 		}
@@ -405,7 +404,7 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 			return err
 		}
 	}
-	privatearr, err := iks.GetPrivateVLANs(*zone, vLANs)
+	privatearr, err := iks.GetPrivateVLANs(*zone, *region, vLANs)
 	if privatearr != nil && len(privatearr) > 0 && err == nil && !o.Flags.CreatePrivateVLAN && o.Flags.PrivateVLAN == "" {
 		if len(privatearr) > 1 {
 			prompts := &survey.Select{
@@ -431,7 +430,7 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 		log.Infof("Chosen Private VLAN is %s\n", util.ColorInfo(privateVLAN))
 	}
 
-	publicarr, err := iks.GetPublicVLANs(*zone, vLANs)
+	publicarr, err := iks.GetPublicVLANs(*zone, *region, vLANs)
 	if publicarr != nil && len(publicarr) > 0 && err == nil && !o.Flags.CreatePublicVLAN && o.Flags.PublicVLAN == "" && !o.Flags.PrivateOnly {
 		if len(publicarr) > 1 {
 			prompts := &survey.Select{
@@ -535,5 +534,5 @@ L:
 	os.Setenv("KUBECONFIG", kubeconfig)
 	log.Info("Initialising cluster ...\n")
 
-	return o.initAndInstall(IKS)
+	return o.initAndInstall(cloud.IKS)
 }

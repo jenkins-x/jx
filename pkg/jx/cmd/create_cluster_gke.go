@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
+	"time"
 
-	"github.com/jenkins-x/jx/pkg/io/secrets"
-	"github.com/pkg/errors"
+	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	osUser "os/user"
 
@@ -19,7 +19,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -46,8 +45,10 @@ type CreateClusterGKEFlags struct {
 	Zone            string
 	Namespace       string
 	Labels          string
+	EnhancedScopes  bool
 	Scopes          []string
 	Preemptible     bool
+	EnhancedApis    bool
 }
 
 const clusterListHeader = "PROJECT_ID"
@@ -78,9 +79,9 @@ var (
 
 // NewCmdCreateClusterGKE creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterGKE(commonOpts *CommonOptions) *cobra.Command {
 	options := CreateClusterGKEOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, GKE),
+		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.GKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "gke",
@@ -96,7 +97,6 @@ func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.File
 	}
 
 	options.addCreateClusterFlags(cmd)
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster, default is a random generated name")
 	cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, "cluster-ipv4-cidr", "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")
@@ -114,14 +114,22 @@ func NewCmdCreateClusterGKE(f Factory, in terminal.FileReader, out terminal.File
 	cmd.Flags().StringVarP(&options.Flags.Labels, "labels", "", "", "The labels to add to the cluster being created such as 'foo=bar,whatnot=123'. Label names must begin with a lowercase character ([a-z]), end with a lowercase alphanumeric ([a-z0-9]) with dashes (-), and lowercase alphanumeric ([a-z0-9]) between.")
 	cmd.Flags().StringArrayVarP(&options.Flags.Scopes, "scope", "", []string{}, "The OAuth scopes to be added to the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.Preemptible, "preemptible", "", false, "Use preemptible VMs in the node-pool")
+	cmd.Flags().BoolVarP(&options.Flags.EnhancedScopes, "enhanced-scopes", "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
+	cmd.Flags().BoolVarP(&options.Flags.EnhancedApis, "enhanced-apis", "", false, "Enable enhanced APIs to utilise Container Registry & Cloud Build")
 
-	cmd.AddCommand(NewCmdCreateClusterGKETerraform(f, in, out, errOut))
+	cmd.AddCommand(NewCmdCreateClusterGKETerraform(commonOpts))
 
 	return cmd
 }
 
 func (o *CreateClusterGKEOptions) Run() error {
-	err := o.installRequirements(GKE)
+	// Issue 3251
+	err := validateClusterName(o.Flags.ClusterName)
+	if err != nil {
+		return err
+	}
+
+	err = o.installRequirements(cloud.GKE)
 	if err != nil {
 		return err
 	}
@@ -158,11 +166,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	// lets ensure we've got container and compute enabled
-	glcoudArgs := []string{"services", "enable", "container", "compute"}
-	log.Infof("Let's ensure we have container and compute enabled on your project via: %s\n", util.ColorInfo("gcloud "+strings.Join(glcoudArgs, " ")))
-
-	err = o.runCommandVerbose("gcloud", glcoudArgs...)
+	log.Infof("Let's ensure we have %s and %s enabled on your project\n", util.ColorInfo("container"), util.ColorInfo("compute"))
+	err = gke.EnableAPIs(projectId, "container", "compute")
 	if err != nil {
 		return err
 	}
@@ -218,6 +223,72 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		survey.AskOne(prompt, &maxNumOfNodes, nil, surveyOpts)
 	}
 
+	if !o.BatchMode {
+		if !o.Flags.Preemptible {
+			prompt := &survey.Confirm{
+				Message: "Would you like use preemptible VMs?",
+				Default: false,
+				Help:    "Preemptible VMs can significantly lower the cost of a cluster",
+			}
+			survey.AskOne(prompt, &o.Flags.Preemptible, nil, surveyOpts)
+		}
+	}
+
+	if !o.BatchMode {
+		// if scopes is empty &
+		if len(o.Flags.Scopes) == 0 && !o.Flags.EnhancedScopes {
+			prompt := &survey.Confirm{
+				Message: "Would you like to access Google Cloud Storage / Google Container Registry?",
+				Default: false,
+				Help:    "Enables enhanced oauth scopes to allow access to storage based services",
+			}
+			survey.AskOne(prompt, &o.Flags.EnhancedScopes, nil, surveyOpts)
+		}
+	}
+
+	if o.Flags.EnhancedScopes {
+		o.Flags.Scopes = []string{"https://www.googleapis.com/auth/cloud-platform",
+			"https://www.googleapis.com/auth/compute",
+			"https://www.googleapis.com/auth/devstorage.full_control",
+			"https://www.googleapis.com/auth/service.management",
+			"https://www.googleapis.com/auth/servicecontrol",
+			"https://www.googleapis.com/auth/logging.write",
+			"https://www.googleapis.com/auth/monitoring"}
+	}
+
+	if !o.BatchMode {
+		// only provide the option if enhanced scopes are enabled
+		if o.Flags.EnhancedScopes {
+			if !o.Flags.EnhancedApis {
+				prompt := &survey.Confirm{
+					Message: "Would you like to enable Cloud Build, Container Registry & Container Analysis APIs?",
+					Default: false,
+					Help:    "Enables extra APIs on the GCP project",
+				}
+				survey.AskOne(prompt, &o.Flags.EnhancedApis, nil, surveyOpts)
+			}
+		}
+	}
+
+	if o.Flags.EnhancedApis {
+		err = gke.EnableAPIs(projectId, "cloudbuild", "containerregistry", "containeranalysis")
+		if err != nil {
+			return err
+		}
+	}
+
+	if !o.BatchMode {
+		// only provide the option if enhanced scopes are enabled
+		if !o.InstallOptions.Flags.Kaniko {
+			prompt := &survey.Confirm{
+				Message: "Would you like to enable Kaniko for building container images",
+				Default: false,
+				Help:    "Use Kaniko for docker images",
+			}
+			survey.AskOne(prompt, &o.InstallOptions.Flags.Kaniko, nil, surveyOpts)
+		}
+	}
+
 	// mandatory flags are machine type, num-nodes, zone,
 	args := []string{"container", "clusters", "create",
 		o.Flags.ClusterName, "--zone", zone,
@@ -266,15 +337,10 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	labels := o.Flags.Labels
 	user, err := osUser.Current()
 	if err == nil && user != nil {
-		username := sanitizeLabel(user.Username)
-		if username != "" {
-			sep := ""
-			if labels != "" {
-				sep = ","
-			}
-			labels += sep + "created-by=" + username
-		}
+		labels = addLabel(labels, "created-by", user.Username)
 	}
+	timeText := time.Now().Format("Mon-Jan-2-2006-15:04:05")
+	labels = addLabel(labels, "create-time", timeText)
 	if labels != "" {
 		args = append(args, "--labels="+strings.ToLower(labels))
 	}
@@ -289,7 +355,14 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	if o.InstallOptions.Flags.DefaultEnvironmentPrefix == "" {
 		o.InstallOptions.Flags.DefaultEnvironmentPrefix = o.Flags.ClusterName
 	}
-	err = o.initAndInstall(GKE)
+
+	o.InstallOptions.setInstallValues(map[string]string{
+		kube.Zone:        zone,
+		kube.ProjectID:   projectId,
+		kube.ClusterName: o.Flags.ClusterName,
+	})
+
+	err = o.initAndInstall(cloud.GKE)
 	if err != nil {
 		return err
 	}
@@ -304,7 +377,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	kubeClient, ns, err := o.KubeClientAndNamespace()
+	_, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}
@@ -322,22 +395,40 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	// TODO - Reenable vault for GitOpsMode
-	//o.CreateClusterOptions.InstallOptions.GitOpsMode || o.CreateClusterOptions.InstallOptions.Vault {
-	if o.CreateClusterOptions.InstallOptions.Vault {
-		if err = InstallVaultOperator(&o.CommonOptions, ""); err != nil {
-			return err
-		}
-		err = secrets.NewSecretLocation(kubeClient, ns).SetInVault(true)
-		if err != nil {
-			return errors.Wrap(err, "configring secrets location")
-		}
-	}
-
 	return nil
+}
+
+// addLabel adds the given label key and value to the label string
+func addLabel(labels string, name string, value string) string {
+	username := sanitizeLabel(value)
+	if username != "" {
+		sep := ""
+		if labels != "" {
+			sep = ","
+		}
+		labels += sep + sanitizeLabel(name) + "=" + username
+	}
+	return labels
 }
 
 func sanitizeLabel(username string) string {
 	sanitized := strings.ToLower(username)
 	return disallowedLabelCharacters.ReplaceAllString(sanitized, "-")
+}
+
+// validateClusterName checks for compliance of a user supplied
+// cluster name against GKE's rules for these names.
+func validateClusterName(clustername string) error {
+	// Check for length greater than 40.
+	if len(clustername) > 40 {
+		err := fmt.Errorf("cluster name %v is greater than the maximum 40 characters", clustername)
+		return err
+	}
+	// Now we need only make sure that clustername is limited to
+	// lowercase alphanumerics and dashes.
+	if disallowedLabelCharacters.MatchString(clustername) {
+		err := fmt.Errorf("cluster name %v contains invalid characters. Permitted are lowercase alphanumerics and `-`", clustername)
+		return err
+	}
+	return nil
 }

@@ -2,20 +2,19 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/quickstarts"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/quickstarts"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -36,7 +35,7 @@ var (
 
 		For more documentation see: [https://jenkins-x.io/developing/create-quickstart/](https://jenkins-x.io/developing/create-quickstart/)
 
-`)
+` + SeeAlsoText("jx create project"))
 
 	createQuickstartExample = templates.Examples(`
 		Create a new project from a sample/starter (found in https://github.com/jenkins-x-quickstarts)
@@ -62,16 +61,11 @@ type CreateQuickstartOptions struct {
 }
 
 // NewCmdCreateQuickstart creates a command object for the "create" command
-func NewCmdCreateQuickstart(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateQuickstart(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateQuickstartOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -153,6 +147,17 @@ func (o *CreateQuickstartOptions) Run() error {
 		m[loc.Owner] = loc
 	}
 
+	var details *gits.CreateRepoData
+
+	if !o.BatchMode {
+		details, err = o.GetGitRepositoryDetails()
+		if err != nil {
+			return err
+		}
+
+		o.Filter.ProjectName = details.RepoName
+	}
+
 	model, err := o.LoadQuickstartsFromMap(config, gitMap)
 	if err != nil {
 		return fmt.Errorf("failed to load quickstarts: %s", err)
@@ -215,6 +220,11 @@ func (o *CreateQuickstartOptions) Run() error {
 	log.Infof("Created project at %s\n\n", util.ColorInfo(genDir))
 
 	o.CreateProjectOptions.ImportOptions.GitProvider = o.GitProvider
+
+	if details != nil {
+		o.ConfigureImportOptions(details)
+	}
+
 	return o.ImportCreatedProject(genDir)
 }
 

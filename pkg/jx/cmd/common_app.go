@@ -1,16 +1,12 @@
 package cmd
 
 import (
-	"fmt"
-
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/extensions"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// GetDevEnv gets the Development Enviornment CRD as devEnv,
+// GetDevEnv gets the Development Environment CRD as devEnv,
 // and also tells the user whether the development environment is using gitOps
 func (o *CommonOptions) GetDevEnv() (gitOps bool, devEnv *jenkinsv1.Environment) {
 
@@ -29,35 +25,13 @@ func (o *CommonOptions) GetDevEnv() (gitOps bool, devEnv *jenkinsv1.Environment)
 			return false, &jenkinsv1.Environment{}
 		}
 		gitOps := false
+		if devEnv == nil {
+			devEnv = &jenkinsv1.Environment{}
+			devEnv.Spec.Namespace = ns
+		}
 		if devEnv.Spec.Source.URL != "" {
 			gitOps = true
 		}
 		return gitOps, devEnv
 	}
-}
-
-// OnAppInstall calls extensions.OnAppInstall for the current cmd, passing app and version
-func (o *CommonOptions) OnAppInstall(app string, version string) error {
-	// Find the app metadata, if any
-	jxClient, ns, err := o.JXClientAndDevNamespace()
-	if err != nil {
-		return err
-	}
-	kubeClient, _, err := o.KubeClientAndDevNamespace()
-	if err != nil {
-		return err
-	}
-	selector := fmt.Sprintf("chart=%s-%s", app, version)
-	appList, err := jxClient.JenkinsV1().Apps(ns).List(metav1.ListOptions{
-		LabelSelector: selector,
-	})
-	if err != nil {
-		return err
-	}
-	if len(appList.Items) > 1 {
-		return fmt.Errorf("more than one app (%v) was found for %s", appList.Items, selector)
-	} else if len(appList.Items) == 1 {
-		return extensions.OnInstallFromName(app, jxClient, kubeClient, ns, o.Helm(), defaultInstallTimeout)
-	}
-	return nil
 }

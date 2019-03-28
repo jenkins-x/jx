@@ -9,8 +9,8 @@ import (
 	versiond_mocks "github.com/jenkins-x/jx/pkg/client/clientset/versioned/fake"
 	git_mocks "github.com/jenkins-x/jx/pkg/gits/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
-	cmd_mock_matchers "github.com/jenkins-x/jx/pkg/jx/cmd/mocks/matchers"
+	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
+	cmd_mock_matchers "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks/matchers"
 	"github.com/jenkins-x/jx/pkg/tests"
 	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
@@ -52,8 +52,9 @@ func TestImportProject(t *testing.T) {
 	donec := make(chan struct{})
 	go func() {
 		defer close(donec)
-		console.ExpectString("Do you wish to use jx-testing-user as the user name for the Jenkins Pipeline")
-		console.SendLine("Y")
+		/*		console.ExpectString("Do you wish to use jx-testing-user as the user name for the Jenkins Pipeline")
+				console.SendLine("Y")
+		*/
 		console.ExpectEOF()
 	}()
 
@@ -80,13 +81,12 @@ func TestImportProject(t *testing.T) {
 
 	When(jenkinsClientInterface.GetJob(AnyString())).ThenReturn(jenkinsJob, nil)
 
+	commonOpts := cmd.NewCommonOptionsWithFactory(factory)
+	commonOpts.In = console.In
+	commonOpts.Out = console.Out
+	commonOpts.Err = console.Err
 	o := &cmd.ImportOptions{
-		CommonOptions: cmd.CommonOptions{
-			Factory: factory,
-			In:      console.In,
-			Out:     console.Out,
-			Err:     console.Err,
-		},
+		CommonOptions: &commonOpts,
 	}
 
 	gitURL := "https://github.com/jx-testing-user/jx-testing-env"

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -20,7 +19,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -48,7 +46,7 @@ type UserLoginInfo struct {
 
 // LoginOptions options for login command
 type LoginOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	URL  string
 	Team string
@@ -69,15 +67,9 @@ var (
 		`)
 )
 
-func NewCmdLogin(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdLogin(commonOpts *CommonOptions) *cobra.Command {
 	options := &LoginOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-
-			Out: out,
-			Err: errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "login",
@@ -172,7 +164,7 @@ func (o *LoginOptions) Login() (*UserLoginInfo, error) {
 
 	t, err := tail.TailFile(netLogFile, tail.Config{
 		Follow: true,
-		Poll: true,  // ionotify does not work on all platforms and the cost for this is not significantly high
+		Poll:   true, // ionotify does not work on all platforms and the cost for this is not significantly high
 		Logger: log.New(ioutil.Discard, "", log.LstdFlags)})
 	if err != nil {
 		return nil, errors.Wrap(err, "reading the netlog file")

@@ -50,3 +50,17 @@ func UrlHostNameWithoutPort(rawUri string) (string, error) {
 func URLEqual(url1, url2 string) bool {
 	return url1 == url2 || strings.TrimSuffix(url1, "/") == strings.TrimSuffix(url2, "/")
 }
+
+// StripCredentialsFromURL strip credentials from URL
+func StripCredentialsFromURL(u *url.URL) string {
+	pass, hasPassword := u.User.Password()
+	userName := u.User.Username()
+	if hasPassword {
+		textToReplace := pass + "@"
+		if userName != "" {
+			textToReplace = userName + ":" + textToReplace
+		}
+		return strings.Replace(u.String(), textToReplace, "", 1)
+	}
+	return u.String()
+}

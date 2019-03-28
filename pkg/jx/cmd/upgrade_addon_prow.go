@@ -3,12 +3,11 @@ package cmd
 import (
 	"github.com/hashicorp/go-version"
 	"github.com/jenkins-x/jx/pkg/util"
-	"io"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,19 +27,15 @@ type UpgradeAddonProwOptions struct {
 	UpgradeAddonsOptions
 
 	newKnativeBuildVersion string
+	Tekton                 bool
 }
 
 // NewCmdUpgradeAddonProw defines the command
-func NewCmdUpgradeAddonProw(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradeAddonProw(commonOpts *CommonOptions) *cobra.Command {
 	options := &UpgradeAddonProwOptions{
 		UpgradeAddonsOptions: UpgradeAddonsOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -59,10 +54,10 @@ func NewCmdUpgradeAddonProw(f Factory, in terminal.FileReader, out terminal.File
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	options.UpgradeAddonsOptions.addFlags(cmd)
 	options.InstallFlags.addCloudEnvOptions(cmd)
 	cmd.Flags().StringVarP(&options.newKnativeBuildVersion, "new-knative-build-version", "", "0.1.1", "The new kanative build verion that prow needs to work with")
+	cmd.Flags().BoolVarP(&options.Tekton, "tekton", "t", true, "Enables Knative Build Pipeline. Otherwise we default to use Knative Build")
 	return cmd
 }
 
@@ -154,5 +149,16 @@ func (o *UpgradeAddonProwOptions) Run() error {
 
 	o.OAUTHToken = oauthToken
 	o.HMACToken = hmacToken
-	return o.installProw()
+	isGitOps, _ := o.GetDevEnv()
+
+	_, pipelineUser, err := o.getPipelineGitAuth()
+	if err != nil {
+		return errors.Wrap(err, "retrieving the pipeline Git Auth")
+	}
+	pipelineUserName := ""
+	if pipelineUser != nil {
+		pipelineUserName = pipelineUser.Username
+	}
+
+	return o.installProw(o.Tekton, isGitOps, "", "", pipelineUserName)
 }

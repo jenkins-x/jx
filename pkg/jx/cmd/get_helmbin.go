@@ -1,13 +1,10 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // GetHelmBinOptions containers the CLI options
@@ -15,13 +12,7 @@ type GetHelmBinOptions struct {
 	GetOptions
 }
 
-const ()
-
 var (
-	helmBinsAliases = []string{
-		"branch pattern",
-	}
-
 	getHelmBinLong = templates.LongDesc(`
 		Display the Helm binary name used in pipelines.
 
@@ -35,15 +26,10 @@ var (
 )
 
 // NewCmdGetHelmBin creates the new command for: jx get env
-func NewCmdGetHelmBin(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetHelmBin(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetHelmBinOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 	cmd := &cobra.Command{

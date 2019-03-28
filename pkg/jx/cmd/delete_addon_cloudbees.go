@@ -1,12 +1,11 @@
 package cmd
 
 import (
-	"io"
+	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -28,15 +27,10 @@ type DeleteAddoncoreOptions struct {
 }
 
 // NewCmdDeleteAddonCloudBees defines the command
-func NewCmdDeleteAddonCloudBees(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteAddonCloudBees(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteAddoncoreOptions{
 		DeleteAddonOptions: DeleteAddonOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -67,6 +61,7 @@ func (o *DeleteAddoncoreOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	log.Infof("Addon %s deleted successfully\n", util.ColorInfo(o.ReleaseName))
 
 	return nil
 }

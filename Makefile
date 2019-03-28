@@ -16,24 +16,25 @@
 
 SHELL := /bin/bash
 NAME := jx
-GO := GO111MODULE=on GO15VENDOREXPERIMENT=1 go
+GO := GO111MODULE=on go
 GO_NOMOD :=GO111MODULE=off go
 REV := $(shell git rev-parse --short HEAD 2> /dev/null || echo 'unknown')
 #ROOT_PACKAGE := $(shell $(GO) list .)
 ROOT_PACKAGE := github.com/jenkins-x/jx
 GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
-PKGS := $(shell go list ./... | grep -v /vendor | grep -v generated)
+PKGS := $(shell go list ./... | grep -v generated)
 GO_DEPENDENCIES := cmd/*/*.go cmd/*/*/*.go pkg/*/*.go pkg/*/*/*.go pkg/*//*/*/*.go
 
 BRANCH     := $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null  || echo 'unknown')
 BUILD_DATE := $(shell date +%Y%m%d-%H:%M:%S)
+PEGOMOCK_SHA := $(shell go mod graph | grep pegomock | sed -n -e 's/^.*-//p')
+GITHUB_ACCESS_TOKEN := $(shell cat /builder/home/git-token 2> /dev/null)
+PEGOMOCK_PACKAGE := github.com/petergtz/pegomock/
 CGO_ENABLED = 0
 
-VENDOR_DIR=vendor
-
 all: build
-
-check: fmt build test
+full: check
+check: build test
 
 version:
 ifeq (,$(wildcard pkg/version/VERSION))
@@ -43,7 +44,7 @@ VERSION := $(shell [ -z "$(ON_EXACT_TAG)" ] && echo "$(TAG)-dev+$(REV)" | sed 's
 else
 VERSION := $(shell cat pkg/version/VERSION)
 endif
-BUILDFLAGS := -ldflags \
+BUILDFLAGS :=  -ldflags \
   " -X $(ROOT_PACKAGE)/pkg/version.Version=$(VERSION)\
 		-X $(ROOT_PACKAGE)/pkg/version.Revision='$(REV)'\
 		-X $(ROOT_PACKAGE)/pkg/version.Branch='$(BRANCH)'\
@@ -53,6 +54,15 @@ BUILDFLAGS := -ldflags \
 ifdef DEBUG
 BUILDFLAGS := -gcflags "all=-N -l" $(BUILDFLAGS)
 endif
+
+ifdef PARALLEL_BUILDS
+BUILDFLAGS := -p $(PARALLEL_BUILDS) $(BUILDFLAGS)
+TESTFLAGS := -p $(PARALLEL_BUILDS)
+else
+TESTFLAGS := -p 8
+endif
+
+TEST_PACKAGE ?= ./...
 
 print-version: version
 	@echo $(VERSION)
@@ -65,7 +75,11 @@ get-test-deps:
 	$(GO_NOMOD) get -u gopkg.in/matm/v1/gocov-html
 
 test:
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -coverprofile=cover.out -failfast -short -parallel 12 ./...
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 1 -count=1 -coverprofile=cover.out \
+	-failfast -short ./...
+
+test-verbose:
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -v -coverprofile=cover.out -failfast ./...
 
 test-report: get-test-deps test
 	@gocov convert cover.out | gocov report
@@ -74,7 +88,7 @@ test-report-html: get-test-deps test
 	@gocov convert cover.out | gocov-html > cover.html && open cover.html
 
 test-slow:
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -parallel 12 -coverprofile=cover.out ./...
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 $(TESTFLAGS) -coverprofile=cover.out ./...
 
 test-slow-report: get-test-deps test-slow
 	@gocov convert cover.out | gocov report
@@ -88,6 +102,9 @@ test-integration:
 test-integration1:
 	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration -coverprofile=cover.out -short ./... -test.v -run $(TEST)
 
+test-rich-integration1:
+	@CGO_ENABLED=$(CGO_ENABLED) richgo test -count=1 -tags=integration -coverprofile=cover.out -short -test.v $(TEST_PACKAGE) -run $(TEST)
+
 test-integration-report: get-test-deps test-integration
 	@gocov convert cover.out | gocov report
 
@@ -95,13 +112,16 @@ test-integration-report-html: get-test-deps test-integration
 	@gocov convert cover.out | gocov-html > cover.html && open cover.html
 
 test-slow-integration:
-	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration -coverprofile=cover.out ./...
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 2 -count=1 -tags=integration -coverprofile=cover.out ./...
 
 test-slow-integration-report: get-test-deps test-slow-integration
 	@gocov convert cover.out | gocov report
 
 test-slow-integration-report-html: get-test-deps test-slow-integration
 	@gocov convert cover.out | gocov-html > cover.html && open cover.html
+
+test-soak:
+	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 2 -count=1 -tags soak -coverprofile=cover.out ./...
 
 docker-test:
 	docker run --rm -v $(shell pwd):/go/src/github.com/jenkins-x/jx golang:1.11 sh -c "rm /usr/bin/git && cd /go/src/github.com/jenkins-x/jx && make test"
@@ -139,8 +159,6 @@ inttestbin:
 debuginttest1: inttestbin
 	cd pkg/jx/cmd && dlv --listen=:2345 --headless=true --api-version=2 exec ../../../build/jx-inttest -- -test.run $(TEST)
 
-full: $(PKGS)
-
 install: $(GO_DEPENDENCIES) version
 	GOBIN=${GOPATH}/bin $(GO) install $(BUILDFLAGS) cmd/jx/jx.go
 
@@ -154,10 +172,15 @@ arm: version
 win: version
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME).exe cmd/jx/jx.go
 
+win32: version
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=386 $(GO) build $(BUILDFLAGS) -o build/$(NAME)-386.exe cmd/jx/jx.go
+
 darwin: version
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=darwin GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/darwin/jx cmd/jx/jx.go
 
-bootstrap: vendoring
+# sleeps for about 30 mins
+sleep:
+	sleep 2000
 
 release: check
 	rm -rf build release && mkdir build release
@@ -168,8 +191,7 @@ release: check
 	zip --junk-paths release/$(NAME)-windows-amd64.zip build/$(NAME)-windows-amd64.exe README.md LICENSE
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/arm/$(NAME) cmd/jx/jx.go
 
-	docker build --ulimit nofile=90000:90000 -t docker.io/jenkinsxio/$(NAME):$(VERSION) .
-	docker push docker.io/jenkinsxio/$(NAME):$(VERSION)
+	# CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/$(NAME) cmd/jx/jx.go
 
 	chmod +x build/darwin/$(NAME)
 	chmod +x build/linux/$(NAME)
@@ -181,26 +203,9 @@ release: check
 
 	go get -u github.com/progrium/gh-release
 	gh-release checksums sha256
-	gh-release create jenkins-x/$(NAME) $(VERSION) master $(VERSION)
+	GITHUB_ACCESS_TOKEN=$(GITHUB_ACCESS_TOKEN) gh-release create jenkins-x/$(NAME) $(VERSION) master $(VERSION)
 
-	jx step changelog  --header-file docs/dev/changelog-header.md --version $(VERSION)
-
-	# Update other repo's dependencies on jx to use the new version - updates repos as specified at .updatebot.yml
-	updatebot push-version --kind brew jx $(VERSION)
-	updatebot push-version --kind docker JX_VERSION $(VERSION)
-	updatebot push-regex -r "\s*release = \"(.*)\"" -v $(VERSION) config.toml
-	updatebot push-regex -r "JX_VERSION=(.*)" -v $(VERSION) install-jx.sh
-	updatebot push-regex -r "\s*jxTag:\s*(.*)" -v $(VERSION) prow/values.yaml
-
-	echo "Updating the JX CLI reference docs"
-	git clone https://github.com/jenkins-x/jx-docs.git
-	cd jx-docs/content/commands; \
-		../../../build/linux/jx create docs; \
-		git config credential.helper store; \
-		git add *; \
-		git commit --allow-empty -a -m "updated jx commands from $(VERSION)"; \
-		git push origin
-		
+	./build/linux/jx step changelog  --header-file docs/dev/changelog-header.md --version $(VERSION)
 
 clean:
 	rm -rf build release cover.out cover.html
@@ -209,8 +214,8 @@ linux: version
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/jx cmd/jx/jx.go
 
 docker: linux
-	docker build --no-cache -t rawlingsj/jx:dev135 .
-	docker push rawlingsj/jx:dev135
+	docker build -t rawlingsj/jx:dev207 .
+	docker push rawlingsj/jx:dev207
 
 docker-go: linux Dockerfile.builder-go
 	docker build --no-cache -t builder-go -f Dockerfile.builder-go .
@@ -261,69 +266,40 @@ docker-dev-all: build linux docker-pull docker-build-and-push
 	docker build --no-cache -t $(DOCKER_HUB_USER)/builder-ruby:dev -f Dockerfile.builder-ruby .
 	docker push $(DOCKER_HUB_USER)/builder-ruby:dev
 
-# Generate go code using generate directives in files. Mocks etc...
-generate:
-	$(GO_NOMOD) get github.com/petergtz/pegomock/...
+# Generate go code using generate directives in files and kubernetes code generation
+# Anything generated by this target should be checked in
+generate: generate-mocks generate-openapi generate-client fmt
+	@ECHO "Generation complete"
+
+generate-mocks:
+	@echo "Generating Mocks using pegomock"
+	$(GO_NOMOD) get -d $(PEGOMOCK_PACKAGE)...
+	cd $(GOPATH)/src/$(PEGOMOCK_PACKAGE); git checkout master; git fetch origin; git branch -f jx $(PEGOMOCK_SHA); \
+	git checkout jx; $(GO_NOMOD) install ./pegomock
 	$(GO) generate ./...
 
-.PHONY: release clean arm
+generate-client:
+	@echo "Generating Kubernetes Clients for pkg/apis in pkg/client for jenkins.io:v1"
+	jx create client go --output-package=pkg/client --input-package=pkg/apis --group-with-version=jenkins.io:v1
 
-preview:
-	docker build --no-cache -t docker.io/jenkinsxio/builder-maven:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.builder-maven .
-	docker push docker.io/jenkinsxio/builder-maven:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
-	docker build --no-cache -t docker.io/jenkinsxio/builder-go:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.builder-go .
-	docker push docker.io/jenkinsxio/builder-go:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
-	docker build --no-cache -t docker.io/jenkinsxio/builder-nodejs:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER) -f Dockerfile.builder-nodejs .
-	docker push docker.io/jenkinsxio/builder-nodejs:SNAPSHOT-JX-$(BRANCH_NAME)-$(BUILD_NUMBER)
+# Generated docs are not checked in
+generate-docs:
+	@echo "Generating HTML docs for Kubernetes Clients"
+	jx create client docs
+
+generate-openapi:
+	@echo "Generating OpenAPI structs for Kubernetes Clients"
+	jx create client openapi --output-package=pkg/client --input-package=pkg/apis --group-with-version=jenkins.io:v1
+
+richgo:
+	go get -u github.com/kyoh86/richgo
+
+.PHONY: release clean arm
 
 FGT := $(GOPATH)/bin/fgt
 $(FGT):
 	$(GO_NOMOD) get github.com/GeertJohan/fgt
 
-
-LINTFLAGS:=-min_confidence 1.1
-
-GOLINT := $(GOPATH)/bin/golint
-$(GOLINT):
-	$(GO_NOMOD) get github.com/golang/lint/golint
-
-#	@echo "FORMATTING"
-#	@$(FGT) gofmt -l=true $(GOPATH)/src/$@/*.go
-
-$(PKGS): $(GOLINT) $(FGT)
-	@echo "LINTING"
-	@$(FGT) $(GOLINT) $(LINTFLAGS) $(GOPATH)/src/$@/*.go
-	@echo "VETTING"
-	@go vet -v $@
-	@echo "TESTING"
-	@go test -v $@
-
 .PHONY: lint
-lint: vendor | $(PKGS) $(GOLINT) # ❷
-	@cd $(BASE) && ret=0 && for pkg in $(PKGS); do \
-	    test -z "$$($(GOLINT) $$pkg | tee /dev/stderr)" || ret=1 ; \
-	done ; exit $$ret
-
-.PHONY: vet
-vet: tools.govet
-	@echo "--> checking code correctness with 'go vet' tool"
-	@go vet ./...
-
-
-tools.govet:
-	@go tool vet 2>/dev/null ; if [ $$? -eq 3 ]; then \
-		echo "--> installing govet"; \
-		$(GO_NOMOD) get golang.org/x/tools/cmd/vet; \
-	fi
-
-GOSEC := $(GOPATH)/bin/gosec
-$(GOSEC):
-	$(GO_NOMOD) get github.com/securego/gosec/cmd/gosec/...
-
-.PHONY: sec
-sec: $(GOSEC)
-	@echo "SECURITY"
-	@mkdir -p scanning
-	$(GOSEC) -fmt=yaml -out=scanning/results.yaml ./...
-
-
+lint:
+	./hack/run-all-checks.sh

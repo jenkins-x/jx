@@ -10,10 +10,12 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
+	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/testkube"
 	"github.com/stretchr/testify/require"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -51,18 +53,20 @@ func TestInstallGitOps(t *testing.T) {
 		Out: os.Stdout,
 		Err: os.Stderr,
 	}
-	o := cmd.CreateInstallOptions(co.Factory, co.In, co.Out, co.Err)
+	o := cmd.CreateInstallOptions(&co)
 
 	gitter := gits.NewGitFake()
-	helmer := helm_test.NewFakeHelmer()
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	helmer := helm_test.NewMockHelmer()
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{
 			clusterAdminRole,
 			testkube.CreateFakeGitSecret(),
 		},
 		[]runtime.Object{},
 		gitter,
+		nil,
 		helmer,
+		resources_test.NewMockInstaller(),
 	)
 	o.CommonOptions.SetGit(gitter)
 	o.CommonOptions.InstallDependencies = true
@@ -82,21 +86,23 @@ func TestInstallGitOps(t *testing.T) {
 	assertNoEnvironments(t, jxClient, ns)
 
 	testOrg := "mytestorg"
-	o.Flags.Provider = cmd.GKE
+	o.Flags.Provider = cloud.GKE
 	o.Flags.Dir = tempDir
 	o.Flags.GitOpsMode = true
 	o.Flags.NoGitOpsEnvApply = true
 	o.Flags.NoGitOpsVault = true
+	o.Flags.NoGitOpsEnvSetup = true
 	o.Flags.NoDefaultEnvironments = true
 	o.Flags.DisableSetKubeContext = true
 	o.Flags.EnvironmentGitOwner = testOrg
+	o.Flags.Domain = "mytestdomain"
 	o.InitOptions.Flags.SkipTiller = true
 	o.InitOptions.Flags.NoTiller = true
 	o.InitOptions.Flags.SkipIngress = true
+	o.InitOptions.Flags.SkipClusterRole = true
 	o.InitOptions.Flags.NoGitValidate = true
 	o.InitOptions.Flags.UserClusterRole = clusterAdminRoleName
 	o.BatchMode = true
-	o.Headless = true
 
 	// lets use a fake git provider
 	testDevRepo := "environment-dev-mytest"
@@ -139,7 +145,7 @@ func TestInstallGitOps(t *testing.T) {
 	require.Equal(t, 1, len(req.Dependencies), "Number of dependencies in file %s", reqFile)
 	dep0 := req.Dependencies[0]
 	require.NotNil(t, dep0, "first dependency in file %s", reqFile)
-	assert.Equal(t, cmd.DEFAULT_CHARTMUSEUM_URL, dep0.Repository, "requirement.dependency[0].Repository")
+	assert.Equal(t, kube.DefaultChartMuseumURL, dep0.Repository, "requirement.dependency[0].Repository")
 	assert.Equal(t, cmd.JenkinsXPlatformChartName, dep0.Name, "requirement.dependency[0].Name")
 	assert.NotEmpty(t, dep0.Version, "requirement.dependency[0].Version")
 

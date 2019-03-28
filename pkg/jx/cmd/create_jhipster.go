@@ -2,11 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"os"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -23,7 +21,7 @@ var (
 
 		For more documentation about JHipster see: [https://www.jhipster.tech/](https://www.jhipster.tech/)
 
-	`)
+` + SeeAlsoText("jx create project"))
 
 	createJHipsterExample = templates.Examples(`
 		# Create a JHipster application and be prompted for the folder name
@@ -40,16 +38,11 @@ type CreateJHipsterOptions struct {
 }
 
 // NewCmdCreateJHipster creates a command object for the "create" command
-func NewCmdCreateJHipster(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateJHipster(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateJHipsterOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -94,7 +87,7 @@ func (o CreateJHipsterOptions) checkJHipsterInstalled() error {
 
 // GenerateJHipster creates a fresh JHipster project by running jhipster on local shell
 func (o CreateJHipsterOptions) GenerateJHipster(dir string) error {
-	err := os.MkdirAll(dir, DefaultWritePermissions)
+	err := os.MkdirAll(dir, util.DefaultWritePermissions)
 	if err != nil {
 		return err
 	}

@@ -68,6 +68,21 @@ func AsSliceOfStrings(unk interface{}) ([]string, error) {
 	return result, nil
 }
 
+//AsMapOfStringsIntefaces attempts to convert unk to a map[string]interface{}
+func AsMapOfStringsIntefaces(unk interface{}) (map[string]interface{}, error) {
+	v := reflect.ValueOf(unk)
+	v = reflect.Indirect(v)
+
+	if v.Kind() != reflect.Map {
+		return make(map[string]interface{}), fmt.Errorf("cannot convert %v (%v) to map[string]interface{}", v.Type(), v)
+	}
+	result := make(map[string]interface{})
+	for _, key := range v.MapKeys() {
+		result[key.String()] = v.MapIndex(key).Interface()
+	}
+	return result, nil
+}
+
 // DereferenceInt will return the int value or the empty value for int
 func DereferenceInt(i *int) int {
 	if i != nil {
@@ -90,4 +105,9 @@ func DereferenceFloat64(f *float64) float64 {
 		return *f
 	}
 	return 0
+}
+
+// IsZeroOfUnderlyingType checks if the underlying type of the interface is set to it's zero value
+func IsZeroOfUnderlyingType(x interface{}) bool {
+	return reflect.DeepEqual(x, reflect.Zero(reflect.TypeOf(x)).Interface())
 }

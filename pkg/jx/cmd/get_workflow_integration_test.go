@@ -9,13 +9,18 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
+	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/workflow"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestGetWorkflow(t *testing.T) {
-	o := &cmd.GetWorkflowOptions{}
+	o := &cmd.GetWorkflowOptions{
+		GetOptions: cmd.GetOptions{
+			CommonOptions: &cmd.CommonOptions{},
+		},
+	}
 
 	staging := kube.NewPermanentEnvironment("staging")
 	production := kube.NewPermanentEnvironment("production")
@@ -23,7 +28,7 @@ func TestGetWorkflow(t *testing.T) {
 	production.Spec.Order = 200
 
 	myFlowName := "myflow"
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{},
 		[]runtime.Object{
 			staging,
@@ -38,7 +43,9 @@ func TestGetWorkflow(t *testing.T) {
 			),
 		},
 		gits.NewGitCLI(),
+		nil,
 		helm.NewHelmCLI("helm", helm.V2, "", true),
+		resources_test.NewMockInstaller(),
 	)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()

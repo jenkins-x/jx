@@ -1,21 +1,22 @@
 package cmd
 
 import (
-	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	configio "github.com/jenkins-x/jx/pkg/io"
+	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/mholt/archiver"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // StepHelmApplyOptions contains the command line flags
@@ -27,6 +28,7 @@ type StepHelmApplyOptions struct {
 	Wait               bool
 	Force              bool
 	DisableHelmVersion bool
+	Vault              bool
 }
 
 var (
@@ -42,19 +44,14 @@ var (
 
 `)
 
-	defaultValueFileNames = []string{"values.yaml", "myvalues.yaml", helm.SecretsFileName}
+	defaultValueFileNames = []string{"values.yaml", "myvalues.yaml", helm.SecretsFileName, filepath.Join("env", helm.SecretsFileName)}
 )
 
-func NewCmdStepHelmApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepHelmApply(commonOpts *CommonOptions) *cobra.Command {
 	options := StepHelmApplyOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -78,6 +75,7 @@ func NewCmdStepHelmApply(f Factory, in terminal.FileReader, out terminal.FileWri
 	cmd.Flags().BoolVarP(&options.Wait, "wait", "", true, "Wait for Kubernetes readiness probe to confirm deployment")
 	cmd.Flags().BoolVarP(&options.Force, "force", "f", true, "Whether to to pass '--force' to helm to help deal with upgrading if a previous promote failed")
 	cmd.Flags().BoolVar(&options.DisableHelmVersion, "no-helm-version", false, "Don't set Chart version before applying")
+	cmd.Flags().BoolVarP(&options.Vault, "vault", "", false, "Helm secrets are stored in vault")
 
 	return cmd
 }
@@ -105,7 +103,13 @@ func (o *StepHelmApplyOptions) Run() error {
 	}
 
 	if !o.DisableHelmVersion {
-		(&StepHelmVersionOptions{}).Run()
+		(&StepHelmVersionOptions{
+			StepHelmOptions: StepHelmOptions{
+				StepOptions: StepOptions{
+					CommonOptions: &CommonOptions{},
+				},
+			},
+		}).Run()
 	}
 	_, err = o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
 	if err != nil {
@@ -147,11 +151,26 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	o.Helm().SetCWD(dir)
 
-	if o.UseVault() {
+	valueFiles := []string{}
+	for _, name := range defaultValueFileNames {
+		file := filepath.Join(dir, name)
+		exists, err := util.FileExists(file)
+		if exists && err == nil {
+			valueFiles = append(valueFiles, file)
+		}
+	}
+
+	if (o.GetSecretsLocation() == secrets.VaultLocationKind) || o.Vault {
 		store := configio.NewFileStore()
 		secretsFiles, err := o.fetchSecretFilesFromVault(dir, store)
 		if err != nil {
 			return errors.Wrap(err, "fetching secrets files from vault")
+		}
+		for _, sf := range secretsFiles {
+			if util.StringArrayIndex(valueFiles, sf) < 0 {
+				log.Infof("adding secret file %s\n", sf)
+				valueFiles = append(valueFiles, sf)
+			}
 		}
 		defer func() {
 			for _, secretsFile := range secretsFiles {
@@ -164,24 +183,31 @@ func (o *StepHelmApplyOptions) Run() error {
 		}()
 	}
 
-	valueFiles := []string{}
-	for _, name := range defaultValueFileNames {
-		file := filepath.Join(dir, name)
-		exists, err := util.FileExists(file)
-		if exists && err == nil {
-			valueFiles = append(valueFiles, file)
-		}
+	chartValues, err := helm.GenerateValues(dir, nil, true)
+	if err != nil {
+		return errors.Wrapf(err, "generating values.yaml for tree from %s", dir)
 	}
+	chartValuesFile := filepath.Join(dir, helm.ValuesFileName)
+	err = ioutil.WriteFile(chartValuesFile, chartValues, 0755)
+	if err != nil {
+		return errors.Wrapf(err, "writing values.yaml for tree to %s", chartValuesFile)
+	}
+	log.Infof("Wrote chart values.yaml %s generated from directory tree\n", chartValuesFile)
 
 	log.Infof("Using values files: %s\n", strings.Join(valueFiles, ", "))
 
+	err = o.applyTemplateOverrides(chartName)
+	if err != nil {
+		return errors.Wrap(err, "applying chart overrides")
+	}
+
 	if o.Wait {
 		timeout := 600
-		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, &timeout, o.Force, true, nil, valueFiles,
-			"", "", "")
+		err = o.Helm().UpgradeChart(chartName, releaseName, ns, "", true, timeout, o.Force, true, nil, valueFiles,
+			"", "", "", false)
 	} else {
-		err = o.Helm().UpgradeChart(chartName, releaseName, ns, nil, true, nil, o.Force, false, nil, valueFiles, "",
-			"", "")
+		err = o.Helm().UpgradeChart(chartName, releaseName, ns, "", true, -1, o.Force, false, nil, valueFiles, "",
+			"", "", false)
 	}
 	if err != nil {
 		return errors.Wrapf(err, "upgrading helm chart '%s'", chartName)
@@ -189,9 +215,45 @@ func (o *StepHelmApplyOptions) Run() error {
 	return nil
 }
 
+func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
+	log.Infof("Applying chart overrides")
+	templateOverrides, err := filepath.Glob(chartName + "/../*/templates/*.yaml")
+	for _, overrideSrc := range templateOverrides {
+		if !strings.Contains(overrideSrc, "/env/") {
+			data, err := ioutil.ReadFile(overrideSrc)
+			if err == nil {
+				writeTemplateParts := strings.Split(overrideSrc, string(os.PathSeparator))
+				depChartsDir := filepath.Join(chartName, "charts")
+				depChartName := writeTemplateParts[len(writeTemplateParts)-3]
+				templateName := writeTemplateParts[len(writeTemplateParts)-1]
+				depChartDir := filepath.Join(depChartsDir, depChartName)
+				// If the chart directory does not exist explode the tgz
+				if exists, err := util.DirExists(depChartDir); err == nil && !exists {
+					chartArchives, _ := filepath.Glob(filepath.Join(depChartsDir, depChartName+"*.tgz"))
+					if len(chartArchives) == 1 {
+						log.Infof("Exploding chart %s", chartArchives[0])
+						archiver.Unarchive(chartArchives[0], depChartsDir)
+						// Remove the unexploded chart
+						os.Remove(chartArchives[0])
+					}
+				}
+				overrideDst := filepath.Join(depChartDir, "templates", templateName)
+				log.Infof("Copying chart override %s \n", overrideSrc)
+				err = ioutil.WriteFile(overrideDst, data, util.DefaultWritePermissions)
+				if err != nil {
+					log.Warnf("Error copying template %s to %s\n", overrideSrc, overrideDst)
+				}
+
+			}
+		}
+	}
+	return err
+}
+
 func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store configio.ConfigStore) ([]string, error) {
+	log.Infof("Fetching secrets from vault into directory %q\n", dir)
 	files := []string{}
-	client, err := o.CreateSystemVaultClient()
+	client, err := o.SystemVaultClient(kube.DefaultNamespace)
 	if err != nil {
 		return files, errors.Wrap(err, "retrieving the system Vault")
 	}
@@ -217,15 +279,16 @@ func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store confi
 
 	for _, secretPath := range secretPaths {
 		gitopsSecretPath := vault.GitOpsSecretPath(secretPath)
-		secret, err := client.Read(gitopsSecretPath)
+		secret, err := client.ReadYaml(gitopsSecretPath)
 		if err != nil {
-			return files, errors.Wrapf(err, "retrieving the secret '%s' from Vault", secretPath)
+			return files, errors.Wrapf(err, "retrieving the secret %q from Vault", secretPath)
 		}
 		secretFile := filepath.Join(dir, secretPath)
-		err = store.WriteObject(secretFile, secret)
+		err = store.Write(secretFile, []byte(secret))
 		if err != nil {
-			return files, errors.Wrapf(err, "saving the secret file '%s'", secretFile)
+			return files, errors.Wrapf(err, "saving the secret file %q", secretFile)
 		}
+		log.Infof("Saved secrets file %s\n", util.ColorInfo(secretFile))
 		files = append(files, secretFile)
 	}
 	return files, nil

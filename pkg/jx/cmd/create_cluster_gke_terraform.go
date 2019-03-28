@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io"
 	"strings"
 
 	"fmt"
@@ -17,13 +16,13 @@ import (
 	"time"
 
 	"github.com/Pallinder/go-randomdata"
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"gopkg.in/src-d/go-git.v4"
 )
 
@@ -74,9 +73,9 @@ var (
 
 // NewCmdCreateClusterGKETerraform creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateClusterGKETerraform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterGKETerraform(commonOpts *CommonOptions) *cobra.Command {
 	options := CreateClusterGKETerraformOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, GKE),
+		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.GKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "terraform",
@@ -93,7 +92,6 @@ func NewCmdCreateClusterGKETerraform(f Factory, in terminal.FileReader, out term
 
 	options.addAuthFlags(cmd)
 	options.addCreateClusterFlags(cmd)
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, optionClusterName, "n", "", "The name of this cluster, default is a random generated name")
 	//cmd.Flags().StringVarP(&options.Flags.ClusterIpv4Cidr, "cluster-ipv4-cidr", "", "", "The IP address range for the pods in this cluster in CIDR notation (e.g. 10.0.0.0/14)")
@@ -115,7 +113,7 @@ func (o *CreateClusterGKETerraformOptions) addAuthFlags(cmd *cobra.Command) {
 }
 
 func (o *CreateClusterGKETerraformOptions) Run() error {
-	err := o.installRequirements(GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
+	err := o.installRequirements(cloud.GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
 	if err != nil {
 		return err
 	}
@@ -240,7 +238,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 		serviceAccount := fmt.Sprintf("jx-%s", o.Flags.ClusterName)
 		log.Infof("Checking for service account %s\n", serviceAccount)
 
-		keyPath, err = gke.GetOrCreateServiceAccount(serviceAccount, projectId, clusterHome, gke.REQUIRED_SERVICE_ACCOUNT_ROLES)
+		keyPath, err = gke.GetOrCreateServiceAccount(serviceAccount, projectId, clusterHome, gke.RequiredServiceAccountRoles)
 		if err != nil {
 			return err
 		}
@@ -363,7 +361,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 	if o.InstallOptions.Flags.DefaultEnvironmentPrefix == "" {
 		o.InstallOptions.Flags.DefaultEnvironmentPrefix = o.Flags.ClusterName
 	}
-	err = o.initAndInstall(GKE)
+	err = o.initAndInstall(cloud.GKE)
 	if err != nil {
 		return err
 	}

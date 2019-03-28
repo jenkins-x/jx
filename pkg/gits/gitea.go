@@ -295,19 +295,25 @@ func (p *GiteaProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	if err != nil {
 		return fmt.Errorf("Could not find pull request for %s/%s #%d: %s", pr.Owner, pr.Repo, n, err)
 	}
+	p.updatePullRequest(pr, result)
+	return nil
+}
+
+// updatePullRequest updates the pr with the data from Gitea
+func (p *GiteaProvider) updatePullRequest(pr *GitPullRequest, source *gitea.PullRequest) {
 	pr.Author = &GitUser{
-		Login: result.Poster.UserName,
+		Login: source.Poster.UserName,
 	}
-	merged := result.HasMerged
+	merged := source.HasMerged
 	pr.Merged = &merged
-	pr.Mergeable = &result.Mergeable
-	pr.MergedAt = result.Merged
-	pr.MergeCommitSHA = result.MergedCommitID
-	pr.Title = result.Title
-	pr.Body = result.Body
-	stateText := string(result.State)
+	pr.Mergeable = &source.Mergeable
+	pr.MergedAt = source.Merged
+	pr.MergeCommitSHA = source.MergedCommitID
+	pr.Title = source.Title
+	pr.Body = source.Body
+	stateText := string(source.State)
 	pr.State = &stateText
-	head := result.Head
+	head := source.Head
 	if head != nil {
 		pr.LastCommitSha = head.Sha
 	} else {
@@ -316,12 +322,43 @@ func (p *GiteaProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	/*
 		TODO
 
-		pr.ClosedAt = result.Closed
-		pr.StatusesURL = result.StatusesURL
-		pr.IssueURL = result.IssueURL
-		pr.DiffURL = result.DiffURL
+		pr.ClosedAt = source.Closed
+		pr.StatusesURL = source.StatusesURL
+		pr.IssueURL = source.IssueURL
+		pr.DiffURL = source.DiffURL
 	*/
-	return nil
+}
+
+func (p *GiteaProvider) toPullRequest(owner string, repo string, pr *gitea.PullRequest) *GitPullRequest {
+	id := int(pr.Index)
+	answer := &GitPullRequest{
+		URL:    pr.URL,
+		Owner:  owner,
+		Repo:   repo,
+		Number: &id,
+	}
+	p.updatePullRequest(answer, pr)
+	return answer
+}
+
+// ListOpenPullRequests lists the open pull requests
+func (p *GiteaProvider) ListOpenPullRequests(owner string, repo string) ([]*GitPullRequest, error) {
+	opt := gitea.ListPullRequestsOptions{}
+	answer := []*GitPullRequest{}
+	for {
+		prs, err := p.Client.ListRepoPullRequests(owner, repo, opt)
+		if err != nil {
+			return answer, err
+		}
+		for _, pr := range prs {
+			answer = append(answer, p.toPullRequest(owner, repo, pr))
+		}
+		if len(prs) < pageSize || len(prs) == 0 {
+			break
+		}
+		opt.Page += 1
+	}
+	return answer, nil
 }
 
 func (p *GiteaProvider) GetPullRequest(owner string, repo *GitRepository, number int) (*GitPullRequest, error) {
@@ -331,12 +368,6 @@ func (p *GiteaProvider) GetPullRequest(owner string, repo *GitRepository, number
 		Number: &number,
 	}
 	err := p.UpdatePullRequestStatus(pr)
-
-	existing := p.UserInfo(pr.Author.Login)
-	if existing != nil && existing.Email != "" {
-		pr.Author = existing
-	}
-
 	return pr, err
 }
 
@@ -697,4 +728,14 @@ func (p *GiteaProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 
 func (p *GiteaProvider) GetContent(org string, name string, path string, ref string) (*GitFileContent, error) {
 	return nil, fmt.Errorf("Getting content not supported on gitea")
+}
+
+// ShouldForkForPullReques treturns true if we should create a personal fork of this repository
+// before creating a pull request
+func (p *GiteaProvider) ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool {
+	return originalOwner != username
+}
+
+func (p *GiteaProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
+	return nil, fmt.Errorf("Listing commits not supported on gitea")
 }

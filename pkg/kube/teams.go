@@ -1,6 +1,7 @@
 package kube
 
 import (
+	"github.com/pkg/errors"
 	"sort"
 	"strings"
 
@@ -10,11 +11,39 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-// GetAdminNamespace tries to find the namespace which is annotated as the global admin namespace for the cluster
-// or returns the current namespace
-func GetAdminNamespace(kubeClient kubernetes.Interface, ns string) (string, error) {
-	// TODO find the admin namespace via a label on the current dev namespace - or use current?
-	return ns, nil
+const adminNamespaceAnnotation = "jenkins-x.io/admin-namespace"
+
+// GetAdminNamespace tries to find the admin namespace that corresponds to this team.
+// in other words this is the namespace where the team CRD was initially created when this team was created,
+// or the current team namespace for the case where this team was just created with a standalone `jx install`
+func GetAdminNamespace(kubeClient kubernetes.Interface, teamNs string) (string, error) {
+	namespace, err := kubeClient.CoreV1().Namespaces().Get(teamNs, metav1.GetOptions{})
+	if err != nil {
+		return "", errors.Wrapf(err, "obtaining the team namespace (%s) when getting the admin namespace", teamNs)
+	}
+	adminNs := namespace.Annotations[adminNamespaceAnnotation]
+	if adminNs != "" {
+		return adminNs, nil
+	}
+	return teamNs, nil
+}
+
+// SetAdminNamespace annotates the given namespace with a backlink to the admin namespace.
+// it does not make any changes if the current annotation points to the same admin namespace
+func SetAdminNamespace(kubeClient kubernetes.Interface, teamNs string, adminNs string) error {
+	namespace, err := kubeClient.CoreV1().Namespaces().Get(teamNs, metav1.GetOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "obtaining the namespace (%s) when updating the admin namespace", teamNs)
+	}
+	oldAdminNs := namespace.Annotations[adminNamespaceAnnotation]
+	if oldAdminNs == adminNs {
+		// nothing to do
+		return nil
+	}
+	namespace.Annotations[adminNamespaceAnnotation] = adminNs
+	// TODO use patch
+	_, err = kubeClient.CoreV1().Namespaces().Update(namespace)
+	return err
 }
 
 // GetPendingTeams returns the pending teams with the sorted order of names

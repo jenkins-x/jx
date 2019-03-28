@@ -32,6 +32,7 @@ type GitRepository struct {
 	Host             string
 	Organisation     string
 	Project          string
+	Private          bool
 }
 
 type GitPullRequest struct {
@@ -76,6 +77,16 @@ type GitCommit struct {
 	URL       string
 	Branch    string
 	Committer *GitUser
+}
+
+type ListCommitsArguments struct {
+	SHA     string
+	Path    string
+	Author  string
+	Since   time.Time
+	Until   time.Time
+	Page    int
+	PerPage int
 }
 
 type GitIssue struct {
@@ -211,7 +222,7 @@ func CreateProvider(server *auth.AuthServer, user *auth.UserAuth, git Gitter) (G
 	} else if server.Kind == KindGitlab {
 		return NewGitlabProvider(server, user, git)
 	} else if server.Kind == KindGitFake {
-		return NewFakeGitProvider(server, user, git)
+		return NewFakeProvider(), nil
 	} else {
 		return NewGitHubProvider(server, user, git)
 	}

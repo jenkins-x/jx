@@ -10,9 +10,16 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/kube/resources/mocks"
+	"github.com/stretchr/testify/require"
+	"k8s.io/apimachinery/pkg/runtime"
+
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/log"
+
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
@@ -21,11 +28,14 @@ import (
 )
 
 const (
-	mavenKeepOldJenkinsfile = "maven_keep_old_jenkinsfile"
-	mavenOldJenkinsfile     = "maven_old_jenkinsfile"
-	mavenCamel              = "maven_camel"
-	mavenSpringBoot         = "maven_springboot"
-	probePrefix             = "probePath:"
+	gitSuffix                      = "_with_git"
+	mavenKeepOldJenkinsfile        = "maven_keep_old_jenkinsfile"
+	mavenKeepOldJenkinsfilewithGit = mavenKeepOldJenkinsfile + gitSuffix
+	mavenOldJenkinsfile            = "maven_old_jenkinsfile"
+	mavenOldJenkinsfilewithGit     = mavenOldJenkinsfile + gitSuffix
+	mavenCamel                     = "maven_camel"
+	mavenSpringBoot                = "maven_springboot"
+	probePrefix                    = "probePath:"
 )
 
 func TestImportProjects(t *testing.T) {
@@ -43,38 +53,93 @@ func TestImportProjects(t *testing.T) {
 		if f.IsDir() {
 			name := f.Name()
 			srcDir := filepath.Join(testData, name)
-			testImportProject(t, tempDir, name, srcDir, false)
-			testImportProject(t, tempDir, name, srcDir, true)
+			testImportProject(t, tempDir, name, srcDir, false, false)
+			testImportProject(t, tempDir, name, srcDir, true, false)
 		}
 	}
 }
 
-func testImportProject(t *testing.T, tempDir string, testcase string, srcDir string, withRename bool) {
+func TestImportProjectNextGenPipeline(t *testing.T) {
+	tempDir, err := ioutil.TempDir("", "test-import-ng-projects")
+	assert.NoError(t, err)
+
+	testData := path.Join("test_data", "import_projects")
+	_, err = os.Stat(testData)
+	assert.NoError(t, err)
+
+	files, err := ioutil.ReadDir(testData)
+	assert.NoError(t, err)
+
+	for _, f := range files {
+		if f.IsDir() {
+			name := f.Name()
+			if strings.HasPrefix(name, "maven_keep_old_jenkinsfile") {
+				continue
+			}
+			srcDir := filepath.Join(testData, name)
+			testImportProject(t, tempDir, name, srcDir, false, true)
+		}
+	}
+}
+
+func testImportProject(t *testing.T, tempDir string, testcase string, srcDir string, withRename bool, nextGenPipeline bool) {
 	testDirSuffix := "DefaultJenkinsfile"
 	if withRename {
 		testDirSuffix = "RenamedJenkinsfile"
 	}
 	testDir := filepath.Join(tempDir+"-"+testDirSuffix, testcase)
 	util.CopyDir(srcDir, testDir, true)
-	err := assertImport(t, testDir, testcase, withRename)
+	if strings.HasSuffix(testcase, gitSuffix) {
+		gitDir := filepath.Join(testDir, ".gitdir")
+		dotGitExists, gitErr := util.FileExists(gitDir)
+		if gitErr != nil {
+			log.Warnf("Git source directory %s does not exist: %s", gitDir, gitErr)
+		} else if dotGitExists {
+			dotGitDir := filepath.Join(testDir, ".git")
+			util.RenameDir(gitDir, dotGitDir, true)
+		}
+	}
+	err := assertImport(t, testDir, testcase, withRename, nextGenPipeline)
 	assert.NoError(t, err, "Importing dir %s from source %s", testDir, srcDir)
 }
 
-func assertImport(t *testing.T, testDir string, testcase string, withRename bool) error {
+func assertImport(t *testing.T, testDir string, testcase string, withRename bool, nextGenPipeline bool) error {
 	_, dirName := filepath.Split(testDir)
 	dirName = kube.ToValidName(dirName)
-	o := &cmd.ImportOptions{}
-	cmd.ConfigureTestOptions(&o.CommonOptions, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, dirName, true))
+	o := &cmd.ImportOptions{
+		CommonOptions: &cmd.CommonOptions{},
+	}
+
+	k8sObjects := []runtime.Object{}
+	jxObjects := []runtime.Object{}
+	helmer := helm.NewHelmCLI("helm", helm.V2, dirName, true)
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions, k8sObjects, jxObjects, gits.NewGitCLI(), nil, helmer, resources_test.NewMockInstaller())
+	if o.Out == nil {
+		o.Out = tests.Output()
+	}
+	if o.Out == nil {
+		o.Out = os.Stdout
+	}
 	o.Dir = testDir
 	o.DryRun = true
 	o.DisableMaven = true
 	o.LogLevel = "warn"
+	o.UseDefaultGit = true
+
+	if nextGenPipeline {
+		callback := func(env *v1.Environment) error {
+			env.Spec.TeamSettings.ImportMode = v1.ImportModeTypeYAML
+			return nil
+		}
+		err := o.ModifyDevEnvironment(callback)
+		require.NoError(t, err, "failed to modify Dev Environment")
+	}
 
 	if withRename {
 		o.Jenkinsfile = "Jenkinsfile-Renamed"
 	}
 
-	if testcase == mavenKeepOldJenkinsfile {
+	if strings.HasPrefix(testcase, mavenKeepOldJenkinsfile) {
 		o.DisableJenkinsfileCheck = true
 	}
 	if testcase == mavenCamel || dirName == mavenSpringBoot {
@@ -84,44 +149,76 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 	err := o.Run()
 	assert.NoError(t, err, "Failed with %s", err)
 	if err == nil {
-		defaultJenkinsfile := filepath.Join(testDir, jenkins.DefaultJenkinsfile)
-		jenkinsfile := defaultJenkinsfile
-		if o.Jenkinsfile != "" && o.Jenkinsfile != jenkins.DefaultJenkinsfile {
-			jenkinsfile = filepath.Join(testDir, o.Jenkinsfile)
+		defaultJenkinsfileName := jenkinsfile.Name
+		defaultJenkinsfileBackupSuffix := jenkinsfile.BackupSuffix
+		defaultJenkinsfile := filepath.Join(testDir, defaultJenkinsfileName)
+		jfname := defaultJenkinsfile
+		if o.Jenkinsfile != "" && o.Jenkinsfile != defaultJenkinsfileName {
+			jfname = filepath.Join(testDir, o.Jenkinsfile)
 		}
-		tests.AssertFileExists(t, jenkinsfile)
-		tests.AssertFileExists(t, filepath.Join(testDir, "Dockerfile"))
-		tests.AssertFileExists(t, filepath.Join(testDir, "charts", dirName, "Chart.yaml"))
-
-		if testcase == mavenKeepOldJenkinsfile {
-			tests.AssertFileContains(t, jenkinsfile, "THIS IS OLD!")
-			tests.AssertFileDoesNotExist(t, jenkinsfile+cmd.JenkinsfileBackupSuffix)
+		if dirName == "custom-jenkins" {
+			tests.AssertFileExists(t, filepath.Join(testDir, jenkinsfile.Name))
+			tests.AssertFileDoesNotExist(t, filepath.Join(testDir, jenkinsfile.Name+".backup"))
+			tests.AssertFileDoesNotExist(t, filepath.Join(testDir, jenkinsfile.Name+"-Renamed"))
+		} else if nextGenPipeline {
+			tests.AssertFileDoesNotExist(t, jfname)
 		} else {
-			if strings.HasPrefix(dirName, "maven") {
-				tests.AssertFileContains(t, jenkinsfile, "mvn")
+			tests.AssertFileExists(t, jfname)
+		}
+
+		if dirName == "docker" || dirName == "docker-helm" {
+			tests.AssertFileExists(t, filepath.Join(testDir, "skaffold.yaml"))
+		} else if dirName == "helm" || dirName == "custom-jenkins" {
+			tests.AssertFileDoesNotExist(t, filepath.Join(testDir, "skaffold.yaml"))
+		}
+		if dirName == "helm" || dirName == "custom-jenkins" {
+			tests.AssertFileDoesNotExist(t, filepath.Join(testDir, "Dockerfile"))
+		} else {
+			tests.AssertFileExists(t, filepath.Join(testDir, "Dockerfile"))
+		}
+		if dirName == "docker" || dirName == "custom-jenkins" {
+			tests.AssertFileDoesNotExist(t, filepath.Join(testDir, "charts", dirName, "Chart.yaml"))
+			tests.AssertFileDoesNotExist(t, filepath.Join(testDir, "charts"))
+			if !nextGenPipeline && dirName != "custom-jenkins" {
+				tests.AssertFileDoesNotContain(t, jfname, "helm")
+			}
+		} else {
+			tests.AssertFileExists(t, filepath.Join(testDir, "charts", dirName, "Chart.yaml"))
+		}
+
+		if !nextGenPipeline {
+			if strings.HasPrefix(testcase, mavenKeepOldJenkinsfile) {
+				tests.AssertFileContains(t, jfname, "THIS IS OLD!")
+				tests.AssertFileDoesNotExist(t, jfname+defaultJenkinsfileBackupSuffix)
+			} else if strings.HasPrefix(testcase, mavenOldJenkinsfile) {
+				tests.AssertFileExists(t, jfname)
+				if withRename {
+					tests.AssertFileExists(t, defaultJenkinsfile)
+					tests.AssertFileContains(t, defaultJenkinsfile, "THIS IS OLD!")
+				} else if strings.HasSuffix(testcase, gitSuffix) {
+					tests.AssertFileDoesNotExist(t, jfname+defaultJenkinsfileBackupSuffix)
+				} else {
+					tests.AssertFileExists(t, jfname+defaultJenkinsfileBackupSuffix)
+					tests.AssertFileContains(t, jfname+defaultJenkinsfileBackupSuffix, "THIS IS OLD!")
+				}
+			}
+
+			if strings.HasPrefix(dirName, "maven") && !strings.Contains(testcase, "keep_old") {
+				tests.AssertFileContains(t, jfname, "mvn")
 			}
 			if strings.HasPrefix(dirName, "gradle") {
-				tests.AssertFileContains(t, jenkinsfile, "gradle")
-			}
-
-			if !o.DisableMaven {
-				if testcase == mavenCamel {
-					// should have modified it
-					assertProbePathEquals(t, filepath.Join(testDir, "charts", dirName, "values.yaml"), "/health")
-				}
-				if testcase == mavenSpringBoot {
-					// should have left it
-					assertProbePathEquals(t, filepath.Join(testDir, "charts", dirName, "values.yaml"), "/actuator/health")
-				}
+				tests.AssertFileContains(t, jfname, "gradle")
 			}
 		}
-		if testcase == mavenOldJenkinsfile {
-			if withRename {
-				tests.AssertFileExists(t, defaultJenkinsfile)
-				tests.AssertFileContains(t, defaultJenkinsfile, "THIS IS OLD!")
-				tests.AssertFileDoesNotExist(t, defaultJenkinsfile+cmd.JenkinsfileBackupSuffix)
-			} else {
-				tests.AssertFileExists(t, defaultJenkinsfile+cmd.JenkinsfileBackupSuffix)
+
+		if !o.DisableMaven {
+			if testcase == mavenCamel {
+				// should have modified it
+				assertProbePathEquals(t, filepath.Join(testDir, "charts", dirName, "values.yaml"), "/health")
+			}
+			if testcase == mavenSpringBoot {
+				// should have left it
+				assertProbePathEquals(t, filepath.Join(testDir, "charts", dirName, "values.yaml"), "/actuator/health")
 			}
 		}
 	}

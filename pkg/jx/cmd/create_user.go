@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/users"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -11,11 +12,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
-	optionLogin = "login"
+	optionLogin                = "login"
+	optionCreateServiceAccount = "create-service-account"
 )
 
 var (
@@ -25,7 +26,7 @@ var (
 
 	createUserExample = templates.Examples(`
 		# Create a user
-		jx create user -e "user@email.com" --login username --name username"
+		jx create user -e "user@email.com" --login username --name username
 	`)
 )
 
@@ -36,15 +37,10 @@ type CreateUserOptions struct {
 }
 
 // NewCmdCreateUser creates a command object for the "create" command
-func NewCmdCreateUser(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateUser(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateUserOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -65,8 +61,8 @@ func NewCmdCreateUser(f Factory, in terminal.FileReader, out terminal.FileWriter
 	cmd.Flags().StringVarP(&options.UserSpec.Login, optionLogin, "l", "", "The user login name")
 	cmd.Flags().StringVarP(&options.UserSpec.Name, "name", "n", "", "The textual full name of the user")
 	cmd.Flags().StringVarP(&options.UserSpec.Email, "email", "e", "", "The users email address")
+	cmd.Flags().BoolVarP(&options.UserSpec.ExternalUser, optionCreateServiceAccount, "s", false, "Enable ServiceAccount for this external user")
 
-	options.addCommonFlags(cmd)
 	return cmd
 }
 
@@ -95,7 +91,7 @@ func (o *CreateUserOptions) Run() error {
 		return err
 	}
 
-	_, names, err := kube.GetUsers(jxClient, ns)
+	_, names, err := users.GetUsers(jxClient, ns)
 	if err != nil {
 		return err
 	}
@@ -120,7 +116,8 @@ func (o *CreateUserOptions) Run() error {
 	if name == "" {
 		name = strings.Title(login)
 	}
-	user := kube.CreateUser(ns, login, name, spec.Email)
+	user := users.CreateUser(ns, login, name, spec.Email)
+	user.Spec.ExternalUser = spec.ExternalUser
 	_, err = jxClient.JenkinsV1().Users(ns).Create(user)
 	if err != nil {
 		return fmt.Errorf("Failed to create User %s: %s", login, err)

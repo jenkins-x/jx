@@ -2,25 +2,21 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
-	defaultVaultNamesapce        = "jx"
-	jxRepoName                   = "jenkinsxio"
-	jxRepoURL                    = "https://chartmuseum.jx.cd.jenkins-x.io"
-	vaultOperatorImageRepository = "banzaicloud/vault-operator"
-	vaultOperatorImageTag        = "0.3.17"
-	defaultVaultOperatorVersion  = ""
+	defaultVaultNamesapce       = "jx"
+	jxRepoName                  = "jenkins-x"
+	defaultVaultOperatorVersion = ""
 )
 
 var (
@@ -42,17 +38,11 @@ type CreateAddonVaultOptions struct {
 }
 
 // NewCmdCreateAddonVault creates a command object for the "create addon vault-opeator" command
-func NewCmdCreateAddonVault(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	commonOptions := CommonOptions{
-		Factory: f,
-		In:      in,
-		Out:     out,
-		Err:     errOut,
-	}
+func NewCmdCreateAddonVault(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateAddonVaultOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: commonOptions,
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -70,14 +60,13 @@ func NewCmdCreateAddonVault(f Factory, in terminal.FileReader, out terminal.File
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	options.addFlags(cmd, defaultVaultNamesapce, kube.DefaultVaultOperatorReleaseName, defaultVaultOperatorVersion)
 	return cmd
 }
 
 // Run implements the command
 func (o *CreateAddonVaultOptions) Run() error {
-	return InstallVaultOperator(&o.CommonOptions, o.Namespace)
+	return InstallVaultOperator(o.CommonOptions, o.Namespace)
 }
 
 // InstallVaultOperator installs a vault operator in the namespace provided
@@ -87,9 +76,9 @@ func InstallVaultOperator(o *CommonOptions, namespace string) error {
 		return errors.Wrap(err, "checking if helm is installed")
 	}
 
-	err = o.addHelmRepoIfMissing(jxRepoURL, jxRepoName, "", "")
+	err = o.addHelmRepoIfMissing(kube.DefaultChartMuseumURL, jxRepoName, "", "")
 	if err != nil {
-		return errors.Wrapf(err, "adding '%s' helm charts repository", jxRepoURL)
+		return errors.Wrapf(err, "adding '%s' helm charts repository", kube.DefaultChartMuseumURL)
 	}
 
 	releaseName := o.ReleaseName
@@ -99,8 +88,8 @@ func InstallVaultOperator(o *CommonOptions, namespace string) error {
 	log.Infof("Installing %s...\n", util.ColorInfo(releaseName))
 
 	values := []string{
-		"image.repository=" + vaultOperatorImageRepository,
-		"image.tag=" + vaultOperatorImageTag,
+		"image.repository=" + vault.BankVaultsOperatorImage,
+		"image.tag=" + vault.BankVaultsImageTag,
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)

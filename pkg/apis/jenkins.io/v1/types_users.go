@@ -6,6 +6,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// UserTypeLocal represents a User who is native to K8S (e.g. backed by GKE).
+	UserTypeLocal = "User"
+	// UserTypeExternal represents a User who is managed externally (e.g. in GitHub) and will have a linked ServiceAccount.
+	UserTypeExternal = "ServiceAccount"
+)
+
 // +genclient
 // +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
@@ -45,6 +52,7 @@ type UserDetails struct {
 	AvatarURL         string             `json:"avatarUrl,omitempty"  protobuf:"bytes,6,opt,name=avatarUrl"`
 	ServiceAccount    string             `json:"serviceAccount,omitempty"  protobuf:"bytes,7,opt,name=serviceAccount"`
 	Accounts          []AccountReference `json:"accountReference,omitempty"  protobuf:"bytes,8,opt,name=accountReference"`
+	ExternalUser      bool               `json:"externalUser,omitempty"  protobuf:"bytes,9,opt,name=externalUser"`
 }
 
 // AccountReference is a reference to a user account in another system that is attached to this user
@@ -53,12 +61,13 @@ type AccountReference struct {
 	ID       string `json:"id,omitempty"  protobuf:"bytes,2,opt,name=id"`
 }
 
-// UserKind returns the subject kind of user - either "User" or "ServiceAccount"
+// SubjectKind returns the subject kind of user - either "User" (native K8S user) or "ServiceAccount" (externally managed
+// user).
 func (u *User) SubjectKind() string {
-	if u.Spec.ServiceAccount != "" {
-		return "ServiceAccount"
+	if u.Spec.ExternalUser {
+		return UserTypeExternal
 	}
-	return "User"
+	return UserTypeLocal
 }
 
 // UnmarshalJSON method merges the deprecated User field and the Spec field on User, preferring Spec

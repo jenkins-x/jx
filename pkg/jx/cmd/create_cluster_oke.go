@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -12,13 +11,14 @@ import (
 	"time"
 
 	"github.com/Pallinder/go-randomdata"
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/oke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -77,9 +77,9 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateClusterOKE(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterOKE(commonOpts *CommonOptions) *cobra.Command {
 	options := CreateClusterOKEOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, OKE),
+		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.OKE),
 	}
 	cmd := &cobra.Command{
 		Use:     "oke",
@@ -95,7 +95,6 @@ func NewCmdCreateClusterOKE(f Factory, in terminal.FileReader, out terminal.File
 	}
 
 	options.addCreateClusterFlags(cmd)
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.ClusterName, "name", "", "", "The name of the cluster. Avoid entering confidential information.")
 	cmd.Flags().StringVarP(&options.Flags.CompartmentId, "compartmentId", "", "", "The OCID of the compartment in which to create the cluster.")
@@ -124,7 +123,7 @@ func NewCmdCreateClusterOKE(f Factory, in terminal.FileReader, out terminal.File
 }
 
 func (o *CreateClusterOKEOptions) Run() error {
-	err := o.installRequirements(OKE)
+	err := o.installRequirements(cloud.OKE)
 	if err != nil {
 		return err
 	}
@@ -143,7 +142,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 	//we assume user has prepared the oci config file under ~/.oci/
 	imagesArray, kubeVersionsArray, shapesArray, latestKubeVersion, err := oke.GetOptionValues()
 	if err != nil {
-		fmt.Println("error")
+		return errors.Wrapf(err, "Error getting OKE option values, have you created the OKE policy? https://docs.cloud.oracle.com/iaas/Content/ContEng/Concepts/contengpolicyconfig.htm")
 	}
 
 	endpoint := o.Flags.Endpoint
@@ -195,7 +194,10 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			Help:    "This is required parameter",
 		}
 
-		survey.AskOne(prompt, &kubernetesVersion, nil, surveyOpts)
+		err := survey.AskOne(prompt, &kubernetesVersion, nil, surveyOpts)
+		if err != nil {
+			return err
+		}
 	}
 
 	//Get node pool settings
@@ -214,7 +216,10 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			PageSize: 10,
 		}
 
-		survey.AskOne(prompt, &nodeImageName, nil, surveyOpts)
+		err := survey.AskOne(prompt, &nodeImageName, nil, surveyOpts)
+		if err != nil {
+			return err
+		}
 	}
 
 	nodeShape := o.Flags.NodeShape
@@ -227,7 +232,10 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			PageSize: 10,
 		}
 
-		survey.AskOne(prompt, &nodeShape, nil, surveyOpts)
+		err := survey.AskOne(prompt, &nodeShape, nil, surveyOpts)
+		if err != nil {
+			return err
+		}
 	}
 
 	nodePoolSubnetIds := o.Flags.NodePoolSubnetIds
@@ -448,7 +456,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			}
 			log.Info("Initialising cluster ...\n")
 
-			return o.initAndInstall(OKE)
+			return o.initAndInstall(cloud.OKE)
 		}
 	}
 	return nil

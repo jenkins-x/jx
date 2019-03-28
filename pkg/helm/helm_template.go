@@ -20,7 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -30,12 +30,23 @@ const (
 	AnnotationChartName = "jenkins.io/chart"
 	// AnnotationAppVersion stores the chart's app version
 	AnnotationAppVersion = "jenkins.io/chart-app-version"
+	// AnnotationAppDescription stores the chart's app version
+	AnnotationAppDescription = "jenkins.io/chart-description"
+	// AnnotationAppRepository stores the chart's app repository
+	AnnotationAppRepository = "jenkins.io/chart-repository"
 
 	// LabelReleaseName stores the chart release name
 	LabelReleaseName = "jenkins.io/chart-release"
 
+	// LabelNamespace stores the chart namespace for cluster wide resources
+	LabelNamespace = "jenkins.io/namespace"
+
 	// LabelReleaseChartVersion stores the version of a chart installation in a label
 	LabelReleaseChartVersion = "jenkins.io/version"
+	// LabelAppName stores the chart's app name
+	LabelAppName = "jenkins.io/app-name"
+	// LabelAppVersion stores the chart's app version
+	LabelAppVersion = "jenkins.io/app-version"
 
 	hookFailed    = "hook-failed"
 	hookSucceeded = "hook-succeeded"
@@ -245,10 +256,17 @@ func (h *HelmTemplate) Version(tls bool) (string, error) {
 	return h.Client.VersionWithArgs(tls, "--client")
 }
 
+// Template generates the YAML from the chart template to the given directory
+func (h *HelmTemplate) Template(chart string, releaseName string, ns string, outDir string, upgrade bool, values []string,
+	valueFiles []string) error {
+
+	return h.Client.Template(chart, releaseName, ns, outDir, upgrade, values, valueFiles)
+}
+
 // Mutation API
 
 // InstallChart installs a helm chart according with the given flags
-func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string, version *string, timeout *int,
+func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string, version string, timeout int,
 	values []string, valueFiles []string, repo string, username string, password string) error {
 
 	err := h.clearOutputDir(releaseName)
@@ -257,7 +275,7 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 	}
 	outputDir, _, chartsDir, err := h.getDirectories(releaseName)
 
-	chartDir, err := h.fetchChart(chart, asText(version), chartsDir, repo, username, password)
+	chartDir, err := h.fetchChart(chart, version, chartsDir, repo, username, password)
 	if err != nil {
 		return err
 	}
@@ -271,7 +289,7 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	helmHooks, err := h.addLabelsToFiles(chart, releaseName, versionText, metadata)
+	helmHooks, err := h.addLabelsToFiles(chart, releaseName, versionText, metadata, ns)
 	if err != nil {
 		return err
 	}
@@ -295,6 +313,7 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 		h.deleteHooks(helmHooks, helmPrePhase, hookFailed, ns)
 		return err
 	}
+	log.Info("\n")
 	h.deleteHooks(helmHooks, helmPrePhase, hookSucceeded, ns)
 
 	err = h.runHooks(helmHooks, helmPostPhase, ns, chart, releaseName, wait, create)
@@ -305,21 +324,22 @@ func (h *HelmTemplate) InstallChart(chart string, releaseName string, ns string,
 
 	err = h.deleteHooks(helmHooks, helmPostPhase, hookSucceeded, ns)
 	err2 := h.deleteOldResources(ns, releaseName, versionText, wait)
+	log.Info("\n")
 
 	return util.CombineErrors(err, err2)
 }
 
-// Fetch a Helm Chart
-func (h *HelmTemplate) FetchChart(chart string, version *string, untar bool, untardir string, repo string,
+// FetchChart fetches a Helm Chart
+func (h *HelmTemplate) FetchChart(chart string, version string, untar bool, untardir string, repo string,
 	username string, password string) error {
-	_, err := h.fetchChart(chart, asText(version), untardir, repo, username, password)
+	_, err := h.fetchChart(chart, version, untardir, repo, username, password)
 	return err
 }
 
 // UpgradeChart upgrades a helm chart according with given helm flags
-func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string, version *string, install bool,
-	timeout *int, force bool, wait bool, values []string, valueFiles []string, repo string, username string,
-	password string) error {
+func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string, version string, install bool,
+	timeout int, force bool, wait bool, values []string, valueFiles []string, repo string, username string,
+	password string, reuseValues bool) error {
 
 	err := h.clearOutputDir(releaseName)
 	if err != nil {
@@ -327,7 +347,7 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 	}
 	outputDir, _, chartsDir, err := h.getDirectories(releaseName)
 
-	chartDir, err := h.fetchChart(chart, asText(version), chartsDir, repo, username, password)
+	chartDir, err := h.fetchChart(chart, version, chartsDir, repo, username, password)
 	if err != nil {
 		return err
 	}
@@ -341,7 +361,7 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 		return err
 	}
 
-	helmHooks, err := h.addLabelsToFiles(chart, releaseName, versionText, metadata)
+	helmHooks, err := h.addLabelsToFiles(chart, releaseName, versionText, metadata, ns)
 	if err != nil {
 		return err
 	}
@@ -431,16 +451,36 @@ func (h *HelmTemplate) kubectlDeleteFile(ns string, file string) error {
 
 func (h *HelmTemplate) deleteOldResources(ns string, releaseName string, versionText string, wait bool) error {
 	selector := LabelReleaseName + "=" + releaseName + "," + LabelReleaseChartVersion + "!=" + versionText
-
-	log.Infof("Removing Kubernetes resources from older releases using selector: %s\n", util.ColorInfo(selector))
-
-	return h.deleteResourcesBySelector(ns, selector, wait)
+	return h.deleteResourcesAndClusterResourcesBySelector(ns, selector, wait, "older releases")
 }
 
-func (h *HelmTemplate) deleteResourcesBySelector(ns string, selector string, wait bool) error {
-	kinds := []string{"all", "pvc", "configmap", "release"}
+func (h *HelmTemplate) deleteResourcesAndClusterResourcesBySelector(ns string, selector string, wait bool, message string) error {
+	kinds := []string{"all", "pvc", "configmap", "release", "sa", "role", "rolebinding", "secret"}
+	clusterKinds := []string{"clusterrole", "clusterrolebinding"}
+
+	errList := []error{}
+
+	log.Infof("Removing Kubernetes resources from %s using selector: %s from %s\n", message, util.ColorInfo(selector), strings.Join(kinds, " "))
+	err := h.deleteResourcesBySelector(ns, kinds, selector, wait)
+	if err != nil {
+		errList = append(errList, err)
+	}
+
+	selector += "," + LabelNamespace + "=" + ns
+	log.Infof("Removing Kubernetes resources from %s using selector: %s from %s\n", message, util.ColorInfo(selector), strings.Join(clusterKinds, " "))
+	err = h.deleteResourcesBySelector("", clusterKinds, selector, wait)
+	if err != nil {
+		errList = append(errList, err)
+	}
+	return util.CombineErrors(errList...)
+}
+
+func (h *HelmTemplate) deleteResourcesBySelector(ns string, kinds []string, selector string, wait bool) error {
 	for _, kind := range kinds {
-		args := []string{"delete", kind, "--ignore-not-found", "--namespace", ns, "-l", selector}
+		args := []string{"delete", kind, "--ignore-not-found", "-l", selector}
+		if ns != "" {
+			args = append(args, "--namespace", ns)
+		}
 		if wait {
 			args = append(args, "--wait")
 		}
@@ -456,19 +496,33 @@ func (h *HelmTemplate) deleteResourcesBySelector(ns string, selector string, wai
 	return nil
 }
 
+// isClusterKind returns true if the kind or resource name is a cluster wide resource
+func isClusterKind(kind string) bool {
+	lower := strings.ToLower(kind)
+	return strings.HasPrefix(lower, "cluster") || strings.HasPrefix(lower, "namespace")
+}
+
 // DeleteRelease removes the given release
 func (h *HelmTemplate) DeleteRelease(ns string, releaseName string, purge bool) error {
+	if ns == "" {
+		ns = h.Namespace
+	}
 	selector := LabelReleaseName + "=" + releaseName
-
-	log.Infof("Removing release %s using selector: %s\n", util.ColorInfo(releaseName), util.ColorInfo(selector))
-
-	return h.deleteResourcesBySelector(ns, selector, true)
+	return h.deleteResourcesAndClusterResourcesBySelector(ns, selector, true, fmt.Sprintf("release %s", releaseName))
 }
 
 // StatusRelease returns the output of the helm status command for a given release
 func (h *HelmTemplate) StatusRelease(ns string, releaseName string) error {
-	// TODO
-	return nil
+	releases, err := h.StatusReleases(ns)
+	if err != nil {
+		return errors.Wrap(err, "listing current chart releases")
+	}
+	for name := range releases {
+		if name == releaseName {
+			return nil
+		}
+	}
+	return fmt.Errorf("chart release %q not found", releaseName)
 }
 
 // StatusReleases returns the status of all installed releases
@@ -485,10 +539,11 @@ func (h *HelmTemplate) StatusReleases(ns string) (map[string]Release, error) {
 		labels := deploy.Labels
 		if labels != nil {
 			releaseName := labels[LabelReleaseName]
+			version := labels[LabelReleaseChartVersion]
 			release := Release{
 				Release: releaseName,
 				Status:  "DEPLOYED",
-				Version: "",
+				Version: version,
 			}
 
 			if releaseName != "" {
@@ -581,12 +636,12 @@ func (h *HelmTemplate) fetchChart(chart string, version string, dir string, repo
 	return answer, nil
 }
 
-func (h *HelmTemplate) addLabelsToFiles(chart string, releaseName string, version string, metadata *chart.Metadata) ([]*HelmHook, error) {
+func (h *HelmTemplate) addLabelsToFiles(chart string, releaseName string, version string, metadata *chart.Metadata, ns string) ([]*HelmHook, error) {
 	dir, helmHookDir, _, err := h.getDirectories(releaseName)
 	if err != nil {
 		return nil, err
 	}
-	return addLabelsToChartYaml(dir, helmHookDir, chart, releaseName, version, metadata)
+	return addLabelsToChartYaml(dir, helmHookDir, chart, releaseName, version, metadata, ns)
 }
 
 func splitObjectsInFiles(file string) ([]string, error) {
@@ -595,6 +650,7 @@ func splitObjectsInFiles(file string) ([]string, error) {
 	if err != nil {
 		return result, errors.Wrapf(err, "opening file %q", file)
 	}
+	defer f.Close()
 	scanner := bufio.NewScanner(f)
 	var buf bytes.Buffer
 	dir := filepath.Dir(file)
@@ -644,6 +700,7 @@ func writeObjectInFile(buf *bytes.Buffer, dir string, fileName string, count int
 	if err != nil {
 		return "", errors.Wrapf(err, "creating file %q", absFile)
 	}
+	defer file.Close()
 	_, err = buf.WriteTo(file)
 	if err != nil {
 		return "", errors.Wrapf(err, "writing object to file %q", absFile)
@@ -651,7 +708,7 @@ func writeObjectInFile(buf *bytes.Buffer, dir string, fileName string, count int
 	return absFile, nil
 }
 
-func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName string, version string, metadata *chart.Metadata) ([]*HelmHook, error) {
+func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName string, version string, metadata *chart.Metadata, ns string) ([]*HelmHook, error) {
 	helmHooks := []*HelmHook{}
 
 	err := filepath.Walk(dir, func(path string, f os.FileInfo, err error) error {
@@ -672,6 +729,7 @@ func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName
 				if err != nil {
 					return errors.Wrapf(err, "Failed to parse YAML of file %s", file)
 				}
+				kind := getYamlValueString(&m, "kind")
 				helmHook := getYamlValueString(&m, "metadata", "annotations", "helm.sh/hook")
 				if helmHook != "" {
 					// lets move any helm hooks to the new path
@@ -694,7 +752,6 @@ func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName
 						return err
 					}
 					name := getYamlValueString(&m, "metadata", "name")
-					kind := getYamlValueString(&m, "kind")
 					helmDeletePolicy := getYamlValueString(&m, "metadata", "annotations", "helm.sh/hook-delete-policy")
 					helmHooks = append(helmHooks, NewHelmHook(kind, name, newPath, helmHook, helmDeletePolicy))
 					return nil
@@ -702,6 +759,12 @@ func addLabelsToChartYaml(dir string, hooksDir string, chart string, releaseName
 				err = setYamlValue(&m, releaseName, "metadata", "labels", LabelReleaseName)
 				if err != nil {
 					return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
+				}
+				if isClusterKind(kind) {
+					err = setYamlValue(&m, ns, "metadata", "labels", LabelNamespace)
+					if err != nil {
+						return errors.Wrapf(err, "Failed to modify YAML of file %s", file)
+					}
 				}
 				err = setYamlValue(&m, version, "metadata", "labels", LabelReleaseChartVersion)
 				if err != nil {
@@ -896,27 +959,23 @@ func (h *HelmTemplate) getChartNameAndVersion(chartDir string, version *string) 
 }
 
 // getChart returns the chart metadata for the given dir
-func (h *HelmTemplate) getChart(chartDir string, version *string) (*chart.Metadata, string, error) {
-	versionText := ""
-	if version != nil && *version != "" {
-		versionText = *version
-	}
+func (h *HelmTemplate) getChart(chartDir string, version string) (*chart.Metadata, string, error) {
 	file := filepath.Join(chartDir, ChartFileName)
 	if !filepath.IsAbs(chartDir) {
 		file = filepath.Join(h.Runner.CurrentDir(), file)
 	}
 	exists, err := util.FileExists(file)
 	if err != nil {
-		return nil, versionText, err
+		return nil, version, err
 	}
 	if !exists {
-		return nil, versionText, fmt.Errorf("No file %s found!", file)
+		return nil, version, fmt.Errorf("no file %s found!", file)
 	}
 	metadata, err := chartutil.LoadChartfile(file)
-	if versionText == "" && metadata != nil {
-		versionText = metadata.GetVersion()
+	if version == "" && metadata != nil {
+		version = metadata.GetVersion()
 	}
-	return metadata, versionText, err
+	return metadata, version, err
 }
 
 func (h *HelmTemplate) runHooks(hooks []*HelmHook, hookPhase string, ns string, chart string, releaseName string, wait bool, create bool) error {
@@ -931,20 +990,24 @@ func (h *HelmTemplate) runHooks(hooks []*HelmHook, hookPhase string, ns string, 
 }
 
 func (h *HelmTemplate) deleteHooks(hooks []*HelmHook, hookPhase string, hookDeletePolicy string, ns string) error {
+	flag := os.Getenv("JX_DISABLE_DELETE_HELM_HOOKS")
 	matchingHooks := MatchingHooks(hooks, hookPhase, hookDeletePolicy)
 	for _, hook := range matchingHooks {
 		kind := hook.Kind
 		name := hook.Name
 		if kind == "Job" && name != "" {
 			log.Infof("Waiting for helm %s hook Job %s to complete before removing it\n", hookPhase, name)
-			err := kube.WaitForJobToTerminate(h.KubeClient, ns, name, time.Minute*10)
+			err := kube.WaitForJobToComplete(h.KubeClient, ns, name, time.Minute*30, false)
 			if err != nil {
 				log.Warnf("Job %s has not yet terminated for helm hook phase %s due to: %s so removing it anyway\n", name, hookPhase, err)
 			}
 		} else {
 			log.Warnf("Could not wait for hook resource to complete as it is kind %s and name %s for phase %s\n", kind, name, hookPhase)
 		}
-		// TODO wait for job to be complete
+		if flag == "true" {
+			log.Infof("Not deleting the Job %s as we have the $JX_DISABLE_DELETE_HELM_HOOKS enabled\n", name)
+			continue
+		}
 		err := h.kubectlDeleteFile(ns, hook.File)
 		if err != nil {
 			return err
@@ -974,11 +1037,4 @@ func MatchingHooks(hooks []*HelmHook, hook string, hookDeletePolicy string) []*H
 		}
 	}
 	return answer
-}
-
-func asText(text *string) string {
-	if text != nil {
-		return *text
-	}
-	return ""
 }

@@ -2,6 +2,7 @@ package prow_test
 
 import (
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/prow"
 	prowconfig "github.com/jenkins-x/jx/pkg/prow/config"
 	"github.com/stretchr/testify/assert"
@@ -37,7 +38,21 @@ func TestProwConfigEnvironment(t *testing.T) {
 	o.Kind = prowconfig.Environment
 	o.EnvironmentNamespace = "jx-staging"
 
-	err := o.AddProwConfig()
+	data := make(map[string]string)
+	data["domain"] = "dummy.domain.nip.io"
+	data["tls"] = "false"
+
+	cm := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kube.IngressConfigConfigmap,
+		},
+		Data: data,
+	}
+
+	_, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Create(cm)
+	assert.NoError(t, err)
+
+	err = o.AddProwConfig()
 	assert.NoError(t, err)
 }
 
@@ -104,9 +119,23 @@ func TestMergeProwPlugin(t *testing.T) {
 	assert.NoError(t, err)
 
 	data := make(map[string]string)
-	data[prow.ProwPluginsFilename] = string(c)
+	data["domain"] = "dummy.domain.nip.io"
+	data["tls"] = "false"
 
 	cm := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kube.IngressConfigConfigmap,
+		},
+		Data: data,
+	}
+
+	_, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Create(cm)
+	assert.NoError(t, err)
+
+	data = make(map[string]string)
+	data[prow.ProwPluginsFilename] = string(c)
+
+	cm = &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: prow.ProwPluginsConfigMapName,
 		},
@@ -137,10 +166,24 @@ func TestAddProwPlugin(t *testing.T) {
 
 	o.Repos = append(o.Repos, "test/repo2")
 
-	err := o.AddProwPlugins()
+	data := make(map[string]string)
+	data["domain"] = "dummy.domain.nip.io"
+	data["tls"] = "false"
+
+	cm := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kube.IngressConfigConfigmap,
+		},
+		Data: data,
+	}
+
+	_, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Create(cm)
 	assert.NoError(t, err)
 
-	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwPluginsConfigMapName, metav1.GetOptions{})
+	err = o.AddProwPlugins()
+	assert.NoError(t, err)
+
+	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwPluginsConfigMapName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	pluginConfig := &plugins.Configuration{}
@@ -165,13 +208,28 @@ func TestAddProwExternalPlugin(t *testing.T) {
 	}
 
 	o.Repos = append(o.Repos, "test/repo4")
-	err := o.AddProwPlugins()
+
+	data := make(map[string]string)
+	data["domain"] = "dummy.domain.nip.io"
+	data["tls"] = "false"
+
+	cm := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kube.IngressConfigConfigmap,
+		},
+		Data: data,
+	}
+
+	_, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Create(cm)
+	assert.NoError(t, err)
+
+	err = o.AddProwPlugins()
 	assert.NoError(t, err)
 
 	err = prow.AddExternalPlugins(o.KubeClient, nil, o.NS, externalPlugin)
 	assert.NoError(t, err)
 
-	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwPluginsConfigMapName, metav1.GetOptions{})
+	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwPluginsConfigMapName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	pluginConfig := &plugins.Configuration{}
@@ -195,7 +253,21 @@ func TestAddProwConfig(t *testing.T) {
 
 	o.Repos = append(o.Repos, "test/repo2")
 
-	err := o.AddProwConfig()
+	data := make(map[string]string)
+	data["domain"] = "dummy.domain.nip.io"
+	data["tls"] = "false"
+
+	cm := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kube.IngressConfigConfigmap,
+		},
+		Data: data,
+	}
+
+	_, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Create(cm)
+	assert.NoError(t, err)
+
+	err = o.AddProwConfig()
 	assert.NoError(t, err)
 
 	prowConfig, err := getProwConfig(t, o)
@@ -213,7 +285,22 @@ func TestRemoveProwConfig(t *testing.T) {
 	o.Kind = prowconfig.Environment
 	o.EnvironmentNamespace = "jx-staging"
 	o.Repos = append(o.Repos, "test/repo2")
-	err := o.AddProwConfig()
+
+	data := make(map[string]string)
+	data["domain"] = "dummy.domain.nip.io"
+	data["tls"] = "false"
+
+	cm := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kube.IngressConfigConfigmap,
+		},
+		Data: data,
+	}
+
+	_, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Create(cm)
+	assert.NoError(t, err)
+
+	err = o.AddProwConfig()
 	assert.NoError(t, err)
 
 	// Remove test/repo (created in o.Setup())
@@ -236,12 +323,27 @@ func TestReplaceProwConfig(t *testing.T) {
 	o.Setup()
 	o.Kind = prowconfig.Environment
 	o.EnvironmentNamespace = "jx-staging"
+	o.Agent = prow.KnativeBuildAgent
 
-	err := o.AddProwConfig()
+	data := make(map[string]string)
+	data["domain"] = "dummy.domain.nip.io"
+	data["tls"] = "false"
+
+	cm := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kube.IngressConfigConfigmap,
+		},
+		Data: data,
+	}
+
+	_, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Create(cm)
+	assert.NoError(t, err)
+
+	err = o.AddProwConfig()
 	assert.NoError(t, err)
 
 	// now modify the cm
-	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwConfigMapName, metav1.GetOptions{})
+	cm, err = o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(prow.ProwConfigMapName, metav1.GetOptions{})
 	assert.NoError(t, err)
 
 	prowConfig := &config.Config{}
@@ -256,7 +358,7 @@ func TestReplaceProwConfig(t *testing.T) {
 	configYAML, err := yaml.Marshal(&prowConfig)
 	assert.NoError(t, err)
 
-	data := make(map[string]string)
+	data = make(map[string]string)
 	data[prow.ProwConfigFilename] = string(configYAML)
 	cm = &v1.ConfigMap{
 		Data: data,
@@ -334,7 +436,21 @@ func TestGetReleaseJobs(t *testing.T) {
 	o.Options.Repos = []string{"test/repo"}
 	o.Kind = prowconfig.Application
 
-	err := o.AddProwConfig()
+	data := make(map[string]string)
+	data["domain"] = "dummy.domain.nip.io"
+	data["tls"] = "false"
+
+	cm := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kube.IngressConfigConfigmap,
+		},
+		Data: data,
+	}
+
+	_, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Create(cm)
+	assert.NoError(t, err)
+
+	err = o.AddProwConfig()
 	assert.NoError(t, err)
 
 	// now lets get the release job
@@ -352,7 +468,21 @@ func TestGetPostSubmitJob(t *testing.T) {
 	o.Options.Repos = []string{"test/repo"}
 	o.Kind = prowconfig.Application
 
-	err := o.AddProwConfig()
+	data := make(map[string]string)
+	data["domain"] = "dummy.domain.nip.io"
+	data["tls"] = "false"
+
+	cm := &v1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kube.IngressConfigConfigmap,
+		},
+		Data: data,
+	}
+
+	_, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Create(cm)
+	assert.NoError(t, err)
+
+	err = o.AddProwConfig()
 	assert.NoError(t, err)
 
 	// now lets get the release job

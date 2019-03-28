@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -16,7 +15,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -45,20 +43,15 @@ var (
 
 // DeleteExtensionOptions are the flags for delete commands
 type DeleteExtensionOptions struct {
-	CommonOptions
+	*CommonOptions
 	All bool
 }
 
 // NewCmdDeleteExtension creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteExtension(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteExtension(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteExtensionOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -76,7 +69,6 @@ func NewCmdDeleteExtension(f Factory, in terminal.FileReader, out terminal.FileW
 		SuggestFor: []string{"remove", "rm"},
 	}
 	cmd.Flags().BoolVarP(&options.All, "all", "", false, "Remove all extensions")
-	cmd.Flags().BoolVarP(&options.BatchMode, optionBatchMode, "b", false, "Run in batch mode")
 	return cmd
 }
 
@@ -107,7 +99,7 @@ func (o *DeleteExtensionOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	jxClient, ns, err := o.CreateJXClient()
+	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
 	}

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -12,7 +11,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -40,15 +38,10 @@ var (
 `)
 )
 
-func NewCmdStepGpgCredentials(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepGpgCredentials(commonOpts *CommonOptions) *cobra.Command {
 	options := StepGpgCredentialsOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 	cmd := &cobra.Command{
@@ -103,11 +96,11 @@ func (o *StepGpgCredentialsOptions) GenerateGpgFiles(secret *v1.Secret) error {
 	if outputDir == "" {
 		return util.MissingOption(optionOutputFile)
 	}
-	err := os.MkdirAll(outputDir, DefaultWritePermissions)
+	err := os.MkdirAll(outputDir, util.DefaultWritePermissions)
 
 	for k, v := range secret.Data {
 		fileName := filepath.Join(outputDir, k)
-		err = ioutil.WriteFile(fileName, []byte(v), DefaultWritePermissions)
+		err = ioutil.WriteFile(fileName, v, util.DefaultWritePermissions)
 		if err != nil {
 			return err
 		}

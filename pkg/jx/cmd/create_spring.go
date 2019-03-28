@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"os"
 
+	"github.com/jenkins-x/jx/pkg/gits"
+
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -15,16 +15,16 @@ import (
 )
 
 var (
-	create_spring_long = templates.LongDesc(`
+	createSpringLong = templates.LongDesc(`
 		Creates a new Spring Boot application and then optionally setups CI/CD pipelines and GitOps promotion.
 
 		You can see a demo of this command here: [https://jenkins-x.io/demos/create_spring/](https://jenkins-x.io/demos/create_spring/)
 
 		For more documentation see: [https://jenkins-x.io/developing/create-spring/](https://jenkins-x.io/developing/create-spring/)
 
-`)
+` + SeeAlsoText("jx create project"))
 
-	create_spring_example = templates.Examples(`
+	createSpringExample = templates.Examples(`
 		# Create a Spring Boot application where you use the terminal to pick the values
 		jx create spring
 
@@ -48,16 +48,11 @@ type CreateSpringOptions struct {
 }
 
 // NewCmdCreateSpring creates a command object for the "create" command
-func NewCmdCreateSpring(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateSpring(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateSpringOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -65,8 +60,8 @@ func NewCmdCreateSpring(f Factory, in terminal.FileReader, out terminal.FileWrit
 	cmd := &cobra.Command{
 		Use:     "spring",
 		Short:   "Create a new Spring Boot application and import the generated code into Git and Jenkins for CI/CD",
-		Long:    create_spring_long,
-		Example: create_spring_example,
+		Long:    createSpringLong,
+		Example: createSpringExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -97,12 +92,24 @@ func (o *CreateSpringOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
+	data := &o.SpringForm
+
+	var details *gits.CreateRepoData
+
+	if !o.BatchMode {
+		details, err = o.GetGitRepositoryDetails()
+		if err != nil {
+			return err
+		}
+
+		data.ArtifactId = details.RepoName
+	}
+
 	model, err := spring.LoadSpringBoot(cacheDir)
 	if err != nil {
 		return fmt.Errorf("Failed to load Spring Boot model %s", err)
 	}
-
-	data := &o.SpringForm
 	err = model.CreateSurvey(&o.SpringForm, o.Advanced, o.BatchMode)
 	if err != nil {
 		return err
@@ -130,6 +137,10 @@ func (o *CreateSpringOptions) Run() error {
 		return err
 	}
 	log.Infof("Created Spring Boot project at %s\n", util.ColorInfo(outDir))
+
+	if details != nil {
+		o.ConfigureImportOptions(details)
+	}
 
 	return o.ImportCreatedProject(outDir)
 }

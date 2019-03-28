@@ -1,13 +1,10 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -43,16 +40,10 @@ type CreatePostPreviewJobOptions struct {
 }
 
 // NewCmdCreatePostPreviewJob creates a command object for the "create" command
-func NewCmdCreatePostPreviewJob(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreatePostPreviewJob(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreatePostPreviewJobOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-
-				Out: out,
-				Err: errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -74,7 +65,6 @@ func NewCmdCreatePostPreviewJob(f Factory, in terminal.FileReader, out terminal.
 	cmd.Flags().StringArrayVarP(&options.Commands, "commands", "c", []string{}, "The commands to run in the job")
 	cmd.Flags().Int32VarP(&options.BackoffLimit, "backoff-limit", "l", int32(2), "The backoff limit: how many times to retry the job before considering it failed) to run in the Job")
 
-	options.addCommonFlags(cmd)
 	return cmd
 }
 
@@ -102,7 +92,7 @@ func (o *CreatePostPreviewJobOptions) Run() error {
 
 	callback := func(env *v1.Environment) error {
 		settings := &env.Spec.TeamSettings
-		for i, _ := range settings.PostPreviewJobs {
+		for i := range settings.PostPreviewJobs {
 			job := &settings.PostPreviewJobs[i]
 			if job.Name == name {
 				podSpec := &job.Spec.Template.Spec

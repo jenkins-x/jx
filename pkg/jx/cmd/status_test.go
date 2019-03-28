@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
+	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
 
 	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
@@ -24,8 +24,8 @@ func TestStatusRun(t *testing.T) {
 		},
 		Status: v1.NodeStatus{
 			Capacity: v1.ResourceList{
-				v1.ResourceName(v1.ResourceCPU):    resource.MustParse("10"),
-				v1.ResourceName(v1.ResourceMemory): resource.MustParse("10G"),
+				v1.ResourceCPU:    resource.MustParse("10"),
+				v1.ResourceMemory: resource.MustParse("10G"),
 			},
 		},
 	}
@@ -101,12 +101,11 @@ func TestStatusRun(t *testing.T) {
 	When(factory.CreateKubeClient()).ThenReturn(kubernetesInterface, "jx-testing", nil)
 
 	// Setup options
+	commonOpts := cmd.NewCommonOptionsWithFactory(factory)
+	commonOpts.Out = os.Stdout
+	commonOpts.Err = os.Stderr
 	options := &cmd.StatusOptions{
-		CommonOptions: cmd.CommonOptions{
-			Factory: factory,
-			Out:     os.Stdout,
-			Err:     os.Stderr,
-		},
+		CommonOptions: &commonOpts,
 	}
 
 	err := options.Run()

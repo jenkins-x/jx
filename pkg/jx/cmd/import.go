@@ -2,14 +2,17 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"sigs.k8s.io/yaml"
+
 	"github.com/cenkalti/backoff"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/golang-jenkins"
@@ -22,7 +25,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -31,7 +33,6 @@ import (
 
 	"github.com/denormal/go-gitignore"
 	"github.com/jenkins-x/jx/pkg/prow"
-	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -45,9 +46,6 @@ const (
 	PlaceHolderOrg = PlaceHolderPrefix + "_ORG"
 	// PlaceHolderDockerRegistryOrg placeholder for docker registry
 	PlaceHolderDockerRegistryOrg = PlaceHolderPrefix + "_DOCKER_REGISTRY_ORG"
-
-	// JenkinsfileBackupSuffix the suffix used by Jenkins for backups
-	JenkinsfileBackupSuffix = ".backup"
 
 	minimumMavenDeployVersion = "2.8.2"
 
@@ -69,7 +67,7 @@ type CallbackFn func() error
 
 // ImportOptions options struct for jx import
 type ImportOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	RepoURL string
 
@@ -91,6 +89,7 @@ type ImportOptions struct {
 	ListDraftPacks          bool
 	DraftPack               string
 	DockerRegistryOrg       string
+	GitDetails              gits.CreateRepoData
 
 	DisableDotGitSearch   bool
 	InitialisedGit        bool
@@ -103,6 +102,8 @@ type ImportOptions struct {
 	DisableMaven          bool
 	PipelineUserName      string
 	PipelineServer        string
+	ImportMode            string
+	UseDefaultGit         bool
 }
 
 var (
@@ -116,7 +117,7 @@ var (
 	    
 		For more documentation see: [https://jenkins-x.io/developing/import/](https://jenkins-x.io/developing/import/)
 	    
-	`)
+` + SeeAlsoText("jx create project"))
 
 	importExample = templates.Examples(`
 		# Import the current folder
@@ -140,14 +141,9 @@ var (
 )
 
 // NewCmdImport the cobra command for jx import
-func NewCmdImport(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdImport(commonOpts *CommonOptions) *cobra.Command {
 	options := &ImportOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "import",
@@ -165,7 +161,6 @@ func NewCmdImport(f Factory, in terminal.FileReader, out terminal.FileWriter, er
 	cmd.Flags().BoolVarP(&options.GitHub, "github", "", false, "If you wish to pick the repositories from GitHub to import")
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "", false, "If selecting projects to import from a Git provider this defaults to selecting them all")
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "", "", "If selecting projects to import from a Git provider this filters the list of repositories")
-
 	options.addImportFlags(cmd, false)
 
 	return cmd
@@ -191,8 +186,10 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().StringVarP(&options.DraftPack, "pack", "", "", "The name of the pack to use")
 	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The name of the docker registry organisation to use. If not specified then the Git provider organisation will be used")
 	cmd.Flags().StringVarP(&options.ExternalJenkinsBaseURL, "external-jenkins-url", "", "", "The jenkins url that an external git provider needs to use")
+	cmd.Flags().BoolVarP(&options.DisableMaven, "disable-updatebot", "", false, "disable updatebot-maven-plugin from attempting to fix/update the maven pom.xml")
+	cmd.Flags().StringVarP(&options.ImportMode, "import-mode", "m", "", fmt.Sprintf("The import mode to use. Should be one of %s", strings.Join(v1.ImportModeStrings, ", ")))
+	cmd.Flags().BoolVarP(&options.UseDefaultGit, "use-default-git", "", false, "use default git account")
 
-	options.addCommonFlags(cmd)
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 }
 
@@ -211,16 +208,16 @@ func (options *ImportOptions) Run() error {
 		return nil
 	}
 
-	options.Factory.SetBatch(options.BatchMode)
+	options.SetBatchMode(options.BatchMode)
 
 	var err error
 	isProw := false
+	jxClient, ns, err := options.JXClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
 	if !options.DryRun {
 		_, err = options.KubeClient()
-		if err != nil {
-			return err
-		}
-		_, _, err = options.JXClientAndDevNamespace()
 		if err != nil {
 			return err
 		}
@@ -263,11 +260,16 @@ func (options *ImportOptions) Run() error {
 				return err
 			}
 		}
-		// Get the org in case there is more than one user auth on the server and batchMode is true
-		org := options.getOrganisationOrCurrentUser()
-		userAuth, err = config.PickServerUserAuth(server, "Git user name:", options.BatchMode, org, options.In, options.Out, options.Err)
-		if err != nil {
-			return err
+
+		if options.UseDefaultGit {
+			userAuth = config.CurrentUser(server, options.CommonOptions.InCluster())
+		} else {
+			// Get the org in case there is more than one user auth on the server and batchMode is true
+			org := options.getOrganisationOrCurrentUser()
+			userAuth, err = config.PickServerUserAuth(server, "Git user name:", options.BatchMode, org, options.In, options.Out, options.Err)
+			if err != nil {
+				return err
+			}
 		}
 		if server.Kind == "" {
 			server.Kind, err = options.GitServerHostURLKind(server.URL)
@@ -302,9 +304,11 @@ func (options *ImportOptions) Run() error {
 			return err
 		}
 	}
+
 	if options.GitHub {
 		return options.ImportProjectsFromGitHub()
 	}
+
 	if options.Dir == "" {
 		args := options.Args
 		if len(args) > 0 {
@@ -323,7 +327,15 @@ func (options *ImportOptions) Run() error {
 
 	if options.RepoURL != "" {
 		if shouldClone {
-			// lets make sure there's a .git at the end for GitHub URLs
+			// Use the git user auth to clone the repo (needed for private repos etc)
+			if options.GitUserAuth == nil {
+				userAuth := options.GitProvider.UserAuth()
+				options.GitUserAuth = &userAuth
+			}
+			options.RepoURL, err = options.Git().CreatePushURL(options.RepoURL, options.GitUserAuth)
+			if err != nil {
+				return err
+			}
 			err = options.CloneRepository()
 			if err != nil {
 				return err
@@ -407,6 +419,12 @@ func (options *ImportOptions) Run() error {
 		}
 	}
 
+	err = kube.NewSourceRepositoryService(jxClient, ns).CreateOrUpdateSourceRepository(
+		options.AppName, options.Organisation, options.GitProvider.ServerURL())
+	if err != nil {
+		return errors.Wrapf(err, "creating application resource for %s", util.ColorInfo(options.AppName))
+	}
+
 	return options.doImport()
 }
 
@@ -446,13 +464,14 @@ func (options *ImportOptions) DraftCreate() error {
 	dir := options.Dir
 	var err error
 
-	jenkinsfile := jenkins.DefaultJenkinsfile
+	defaultJenkinsfileName := jenkinsfile.Name
+	jenkinsfile := defaultJenkinsfileName
 	withRename := false
-	if options.Jenkinsfile != "" {
+	if options.Jenkinsfile != "" && options.Jenkinsfile != defaultJenkinsfileName {
 		jenkinsfile = options.Jenkinsfile
 		withRename = true
 	}
-	defaultJenkinsfile := filepath.Join(dir, jenkins.DefaultJenkinsfile)
+	defaultJenkinsfile := filepath.Join(dir, defaultJenkinsfileName)
 	if !filepath.IsAbs(jenkinsfile) {
 		jenkinsfile = filepath.Join(dir, jenkinsfile)
 	}
@@ -493,6 +512,7 @@ func (options *ImportOptions) DraftCreate() error {
 		options.GitUserAuth = &userAuth
 	}
 
+	options.Organisation = options.GetOrganisation()
 	if options.Organisation == "" {
 		gitUsername := options.GitUserAuth.Username
 		options.Organisation, err = gits.GetOwner(options.BatchMode, options.GitProvider, gitUsername, options.In, options.Out, options.Err)
@@ -547,7 +567,7 @@ func (options *ImportOptions) getDockerRegistryOrg() string {
 }
 
 func (options *ImportOptions) getOrganisationOrCurrentUser() string {
-	org := options.getOrganisation()
+	org := options.GetOrganisation()
 	if org == "" {
 		org = options.getCurrentUser()
 	}
@@ -572,11 +592,17 @@ func (options *ImportOptions) getCurrentUser() string {
 	return currentUser
 }
 
-func (options *ImportOptions) getOrganisation() string {
+// GetOrganisation gets the organisation from the RepoURL (if in the github format of github.com/org/repo). It will
+// do this in preference to the Organisation field (if set). If the repo URL does not implicitly specify an organisation
+// then the Organisation specified in the options is used.
+func (options *ImportOptions) GetOrganisation() string {
 	org := ""
 	gitInfo, err := gits.ParseGitURL(options.RepoURL)
 	if err == nil && gitInfo.Organisation != "" {
 		org = gitInfo.Organisation
+		if options.Organisation != "" && org != options.Organisation {
+			log.Warnf("organisation %s detected from URL %s. '--org %s' will be ignored", org, options.RepoURL, options.Organisation)
+		}
 	} else {
 		org = options.Organisation
 	}
@@ -593,13 +619,16 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	dir := options.Dir
 	_, defaultRepoName := filepath.Split(dir)
 
-	options.GitRepositoryOptions.Owner = options.getOrganisation()
-
-	details, err := gits.PickNewGitRepository(options.BatchMode, authConfigSvc, defaultRepoName, &options.GitRepositoryOptions,
-		options.GitServer, options.GitUserAuth, options.Git(), options.In, options.Out, options.Err)
-	if err != nil {
-		return err
+	options.GitRepositoryOptions.Owner = options.GetOrganisation()
+	details := &options.GitDetails
+	if details.RepoName == "" {
+		details, err = gits.PickNewGitRepository(options.BatchMode, authConfigSvc, defaultRepoName, &options.GitRepositoryOptions,
+			options.GitServer, options.GitUserAuth, options.Git(), options.In, options.Out, options.Err)
+		if err != nil {
+			return err
+		}
 	}
+
 	repo, err := details.CreateRepository()
 	if err != nil {
 		return err
@@ -755,10 +784,7 @@ func (options *ImportOptions) DiscoverGit() error {
 	if err != nil {
 		return err
 	}
-	err = options.Git().Add(dir, ".gitignore")
-	if err != nil {
-		return err
-	}
+	options.Git().Add(dir, ".gitignore")
 	err = options.Git().Add(dir, "*")
 	if err != nil {
 		return err
@@ -801,7 +827,7 @@ func (options *ImportOptions) DefaultGitIgnore() error {
 	}
 	if !exists {
 		data := []byte(defaultGitIgnoreFile)
-		err = ioutil.WriteFile(name, data, DefaultWritePermissions)
+		err = ioutil.WriteFile(name, data, util.DefaultWritePermissions)
 		if err != nil {
 			return fmt.Errorf("failed to write %s due to %s", name, err)
 		}
@@ -861,9 +887,10 @@ func (options *ImportOptions) doImport() error {
 	if err != nil {
 		return err
 	}
+	defaultJenkinsfileName := jenkinsfile.Name
 	jenkinsfile := options.Jenkinsfile
 	if jenkinsfile == "" {
-		jenkinsfile = jenkins.DefaultJenkinsfile
+		jenkinsfile = defaultJenkinsfileName
 	}
 
 	err = options.ensureDockerRepositoryExists()
@@ -897,16 +924,18 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 	if err != nil {
 		return err
 	}
-	err = prow.AddApplication(client, []string{repo}, options.currentNamespace, options.DraftPack)
+	settings, err := options.TeamSettings()
+	if err != nil {
+		return err
+	}
+	err = prow.AddApplication(client, []string{repo}, options.currentNamespace, options.DraftPack, settings)
 	if err != nil {
 		return err
 	}
 
 	startBuildOptions := StartPipelineOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: options.Factory,
-			},
+			CommonOptions: options.CommonOptions,
 		},
 	}
 	startBuildOptions.Args = []string{fmt.Sprintf("%s/%s/%s", gitInfo.Organisation, gitInfo.Name, masterBranch)}
@@ -940,6 +969,7 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 		return err
 	}
 
+	region, _ := kube.ReadRegion(kubeClient, ns)
 	cm, err := kubeClient.CoreV1().ConfigMaps(ns).Get(kube.ConfigMapJenkinsDockerRegistry, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("Could not find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsDockerRegistry, ns, err)
@@ -948,7 +978,7 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 		dockerRegistry := cm.Data["docker.registry"]
 		if dockerRegistry != "" {
 			if strings.HasSuffix(dockerRegistry, ".amazonaws.com") && strings.Index(dockerRegistry, ".ecr.") > 0 {
-				return amazon.LazyCreateRegistry(dockerRegistry, orgName, appName)
+				return amazon.LazyCreateRegistry(kubeClient, ns, region, dockerRegistry, orgName, appName)
 			}
 		}
 	}
@@ -1122,6 +1152,13 @@ func (options *ImportOptions) renameChartToMatchAppName() error {
 	var oldChartsDir string
 	dir := options.Dir
 	chartsDir := filepath.Join(dir, "charts")
+	exists, err := util.FileExists(chartsDir)
+	if err != nil {
+		return errors.Wrapf(err, "failed to check if the charts directory exists %s", chartsDir)
+	}
+	if !exists {
+		return nil
+	}
 	files, err := ioutil.ReadDir(chartsDir)
 	if err != nil {
 		return fmt.Errorf("error matching a Jenkins X draft pack name with chart folder %v", err)
@@ -1176,7 +1213,7 @@ func (options *ImportOptions) fixDockerIgnoreFile() error {
 			if strings.TrimSpace(line) == "Dockerfile" {
 				lines = append(lines[:i], lines[i+1:]...)
 				text := strings.Join(lines, "\n")
-				err = ioutil.WriteFile(filename, []byte(text), DefaultWritePermissions)
+				err = ioutil.WriteFile(filename, []byte(text), util.DefaultWritePermissions)
 				if err != nil {
 					return err
 				}
@@ -1206,7 +1243,7 @@ func (options *ImportOptions) CreateProwOwnersFile() error {
 		if err != nil {
 			return err
 		}
-		err = ioutil.WriteFile(filename, []byte(yaml), 0644)
+		err = ioutil.WriteFile(filename, yaml, 0644)
 		if err != nil {
 			return err
 		}
@@ -1239,7 +1276,7 @@ func (options *ImportOptions) CreateProwOwnersAliasesFile() error {
 		if err != nil {
 			return err
 		}
-		return ioutil.WriteFile(filename, []byte(yaml), 0644)
+		return ioutil.WriteFile(filename, yaml, 0644)
 	}
 	return errors.New("GitUserAuth.Username not set")
 }
@@ -1313,6 +1350,9 @@ func (options *ImportOptions) DefaultsFromTeamSettings() error {
 	if options.Organisation == "" {
 		options.Organisation = settings.Organisation
 	}
+	if options.GitRepositoryOptions.Owner == "" {
+		options.GitRepositoryOptions.Owner = settings.Organisation
+	}
 	if options.DockerRegistryOrg == "" {
 		options.DockerRegistryOrg = settings.DockerRegistryOrg
 	}
@@ -1331,7 +1371,7 @@ func (o *ImportOptions) allDraftPacks() ([]string, error) {
 		CommonOptions: o.CommonOptions,
 	}
 	log.Info("Getting latest packs ...\n")
-	dir, err := initOpts.initBuildPacks()
+	dir, _, err := initOpts.initBuildPacks()
 	if err != nil {
 		return nil, err
 	}
@@ -1348,4 +1388,33 @@ func (o *ImportOptions) allDraftPacks() ([]string, error) {
 	}
 	return result, err
 
+}
+
+// ConfigureImportOptions updates the import options struct based on values from the create repo struct
+func (options *ImportOptions) ConfigureImportOptions(repoData *gits.CreateRepoData) {
+	// configure the import options based on previous answers
+	options.AppName = repoData.RepoName
+	options.GitProvider = repoData.GitProvider
+	options.Organisation = repoData.Organisation
+	options.Repository = repoData.RepoName
+	options.GitDetails = *repoData
+	options.GitServer = repoData.GitServer
+}
+
+// GetGitRepositoryDetails determines the git repository details to use during the import command
+func (options *ImportOptions) GetGitRepositoryDetails() (*gits.CreateRepoData, error) {
+	err := options.DefaultsFromTeamSettings()
+	if err != nil {
+		return nil, err
+	}
+	authConfigSvc, err := options.CreateGitAuthConfigService()
+	if err != nil {
+		return nil, err
+	}
+	details, err := gits.PickNewOrExistingGitRepository(options.BatchMode, authConfigSvc,
+		"", &options.GitRepositoryOptions, nil, nil, options.Git(), false, options.In, options.Out, options.Err)
+	if err != nil {
+		return nil, err
+	}
+	return details, nil
 }

@@ -1,10 +1,7 @@
 package cmd
 
 import (
-	"io"
-
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"strconv"
 
@@ -28,17 +25,12 @@ type StepPRCommentFlags struct {
 	PR         string
 }
 
-// NewCmdStep Steps a command object for the "step" command
-func NewCmdStepPRComment(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+// NewCmdStepPRComment Steps a command object for the "step pr comment" command
+func NewCmdStepPRComment(commonOpts *CommonOptions) *cobra.Command {
 	options := &StepPRCommentOptions{
 		StepPROptions: StepPROptions{
 			StepOptions: StepOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -58,8 +50,6 @@ func NewCmdStepPRComment(f Factory, in terminal.FileReader, out terminal.FileWri
 	cmd.Flags().StringVarP(&options.Flags.Owner, "owner", "o", "", "Git organisation / owner")
 	cmd.Flags().StringVarP(&options.Flags.Repository, "repository", "r", "", "Git repository")
 	cmd.Flags().StringVarP(&options.Flags.PR, "pull-request", "p", "", "Git Pull Request number")
-
-	options.addCommonFlags(cmd)
 
 	return cmd
 }
@@ -93,7 +83,7 @@ func (o *StepPRCommentOptions) Run() error {
 		return err
 	}
 
-	provider, err := o.CreateGitProvider(gitInfo.URL, "user name to submit comment as", authConfigSvc, gitKind, o.BatchMode, o.Git(), o.In, o.Out, o.Err)
+	provider, err := o.NewGitProvider(gitInfo.URL, "user name to submit comment as", authConfigSvc, gitKind, o.BatchMode, o.Git())
 	if err != nil {
 		return err
 	}

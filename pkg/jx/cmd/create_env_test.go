@@ -10,8 +10,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/config"
 	gits_mocks "github.com/jenkins-x/jx/pkg/gits/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
-	cmd_mock_matchers "github.com/jenkins-x/jx/pkg/jx/cmd/mocks/matchers"
+	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
+	cmd_mock_matchers "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks/matchers"
 	"github.com/jenkins-x/jx/pkg/tests"
 	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
@@ -55,11 +55,11 @@ func TestCreateEnvRun(t *testing.T) {
 
 	// mock factory
 	factory := cmd_mocks.NewMockFactory()
-	When(factory.CreateAuthConfigService(AnyString())).ThenReturn(tests.CreateAuthConfigService(), nil)
+	When(factory.CreateAuthConfigService(AnyString(), AnyString())).ThenReturn(tests.CreateAuthConfigService(), nil)
 	When(factory.CreateGitProvider(
 		AnyString(),
 		AnyString(),
-		cmd_mock_matchers.AnyAuthAuthConfigService(),
+		cmd_mock_matchers.AnyAuthConfigService(),
 		AnyString(),
 		AnyBool(),
 		cmd_mock_matchers.AnyGitsGitter(),
@@ -116,8 +116,9 @@ func TestCreateEnvRun(t *testing.T) {
 		console.SendLine("https://github.com/jx-testing-user/testing-env")
 		console.ExpectString("Git branch for the Environment source code:")
 		console.SendLine("master")
-		console.ExpectString("Do you wish to use jx-testing-user as the user name for the Jenkins Pipeline")
-		console.SendLine("Y")
+		/*		console.ExpectString("Do you wish to use jx-testing-user as the user name for the Jenkins Pipeline")
+				console.SendLine("Y")
+		*/
 		console.ExpectEOF()
 	}()
 
@@ -133,15 +134,15 @@ func TestCreateEnvRun(t *testing.T) {
 	helmValuesConfig.ExposeController.Config.HTTP = "false"
 	helmValuesConfig.ExposeController.Config.TLSAcme = "false"
 
+	commonOpts := cmd.NewCommonOptionsWithFactory(factory)
+	commonOpts.In = console.In
+	commonOpts.Out = console.Out
+	commonOpts.Err = console.Err
+
 	options := cmd.CreateEnvOptions{
 		HelmValuesConfig: helmValuesConfig,
 		CreateOptions: cmd.CreateOptions{
-			CommonOptions: cmd.CommonOptions{
-				Factory: factory,
-				In:      console.In,
-				Out:     console.Out,
-				Err:     console.Err,
-			},
+			CommonOptions: &commonOpts,
 		},
 	}
 

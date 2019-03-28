@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	"gopkg.in/AlecAivazis/survey.v1"
-	"io"
 	"strings"
+	"time"
+
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -12,8 +13,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/pki"
 	"github.com/jenkins-x/jx/pkg/log"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -44,22 +45,18 @@ var (
 // CreateAddonCloudBeesOptions the options for the create spring command
 type CreateAddonCloudBeesOptions struct {
 	CreateAddonOptions
-	Sso      bool
-	Basic    bool
-	Password string
+	Sso         bool
+	DefaultRole string
+	Basic       bool
+	Password    string
 }
 
 // NewCmdCreateAddonCloudBees creates a command object for the "create" command
-func NewCmdCreateAddonCloudBees(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateAddonCloudBees(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateAddonCloudBeesOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -79,9 +76,9 @@ func NewCmdCreateAddonCloudBees(f Factory, in terminal.FileReader, out terminal.
 	}
 
 	cmd.Flags().BoolVarP(&options.Sso, "sso", "", false, "Enable single sign-on")
+	cmd.Flags().StringVarP(&options.DefaultRole, "default-role", "", "", "The default role to apply to new users. Defaults to no role and applies to the admin namespace only")
 	cmd.Flags().BoolVarP(&options.Basic, "basic", "", false, "Enable basic auth")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "Password to access UI when using basic auth.  Defaults to default Jenkins X admin password.")
-	options.addCommonFlags(cmd)
 	options.addFlags(cmd, defaultCloudBeesNamespace, defaultCloudBeesReleaseName, defaultCloudBeesVersion)
 	return cmd
 }
@@ -91,6 +88,9 @@ func (o *CreateAddonCloudBeesOptions) Run() error {
 
 	if o.Sso == false && o.Basic == false {
 		return fmt.Errorf("please use --sso or --basic flag")
+	}
+	if o.Sso == false && o.DefaultRole != "" {
+		return fmt.Errorf("--default-role can not be used in conjunction with --basic flag")
 	}
 
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
@@ -161,9 +161,13 @@ To register to get your username/password to to: %s
 			return errors.Wrap(err, "ensuring cert-manager is installed")
 		}
 
+		certClient, err := o.CertManagerClient()
+		if err != nil {
+			return errors.Wrap(err, "creating cert-manager client")
+		}
 		ingressConfig.TLS = true
-		ingressConfig.Issuer = kube.CertmanagerIssuerProd
-		err = kube.CleanCertmanagerResources(client, o.Namespace, ingressConfig)
+		ingressConfig.Issuer = pki.CertManagerIssuerProd
+		err = pki.CreateCertManagerResources(certClient, o.Namespace, ingressConfig)
 		if err != nil {
 			return errors.Wrap(err, "creating cert-manager issuer")
 		}
@@ -172,12 +176,19 @@ To register to get your username/password to to: %s
 			"sso.create=true",
 			"sso.oidcIssuerUrl=" + dexURL,
 			"sso.domain=" + domain,
-			"sso.certIssuerName=" + ingressConfig.Issuer}
+			"sso.certIssuerName=" + pki.CertManagerIssuerProd}
 
 		if len(o.SetValues) > 0 {
 			o.SetValues = o.SetValues + "," + strings.Join(values, ",")
 		} else {
 			o.SetValues = strings.Join(values, ",")
+		}
+		if o.DefaultRole != "" {
+			if len(o.SetValues) > 0 {
+				o.SetValues = o.SetValues + "," + "defaultRole=" + o.DefaultRole
+			} else {
+				o.SetValues = "defaultRole=" + o.DefaultRole
+			}
 		}
 	} else {
 		// Disable SSO for basic auth
@@ -187,6 +198,21 @@ To register to get your username/password to to: %s
 	err = o.CreateAddon("cb")
 	if err != nil {
 		return err
+	}
+
+	if o.Sso {
+		// wait for cert to be issued
+		certName := pki.CertSecretPrefix + "core"
+		log.Infof("Waiting for cert: %s...\n", util.ColorInfo(certName))
+		certMngrClient, err := o.CertManagerClient()
+		if err != nil {
+			return errors.Wrap(err, "creating the cert-manager client")
+		}
+		err = pki.WaitCertificateIssuedReady(certMngrClient, certName, o.Namespace, 3*time.Minute)
+		if err != nil {
+			return err // this is already wrapped by the previous call
+		}
+		log.Infof("Ready Cert: %s\n", util.ColorInfo(certName))
 	}
 
 	if o.Basic {
@@ -231,6 +257,8 @@ To register to get your username/password to to: %s
 			return err
 		}
 	}
+
+	log.Infof("Addon installed successfully.\n\n  %s Open the app in a browser\n\n", util.ColorInfo("jx cloudbees"))
 
 	return nil
 }

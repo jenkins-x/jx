@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"time"
 
@@ -17,12 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/nodes"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/apimachinery/pkg/util/uuid"
-)
-
-const (
-	jenkinsGitCredentialsSecretKey = "credentials"
 )
 
 var (
@@ -54,15 +48,10 @@ type CreateGitTokenOptions struct {
 }
 
 // NewCmdCreateGitToken creates a command
-func NewCmdCreateGitToken(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateGitToken(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateGitTokenOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -79,7 +68,6 @@ func NewCmdCreateGitToken(f Factory, in terminal.FileReader, out terminal.FileWr
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
 	options.ServerFlags.addGitServerFlags(cmd)
 	cmd.Flags().StringVarP(&options.ApiToken, "api-token", "t", "", "The API Token for the user")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The User password to try automatically create a new API Token")
@@ -153,9 +141,11 @@ func (o *CreateGitTokenOptions) Run() error {
 		return err
 	}
 
-	_, err = o.updatePipelineGitCredentialsSecret(server, userAuth)
-	if err != nil {
-		log.Warnf("Failed to update Jenkins X pipeline Git credentials secret: %v\n", err)
+	if config.PipeLineUsername == userAuth.Username {
+		_, err = o.updatePipelineGitCredentialsSecret(server, userAuth)
+		if err != nil {
+			log.Warnf("Failed to update Jenkins X pipeline Git credentials secret: %v\n", err)
+		}
 	}
 
 	log.Infof("Created user %s API Token for Git server %s at %s\n",
@@ -261,7 +251,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 
 // lets try use the users browser to find the API token
 func (o *CommonOptions) createChromeClient(ctxt context.Context) (*chromedp.CDP, error) {
-	if o.Headless {
+	if o.BatchMode {
 		options := func(m map[string]interface{}) error {
 			m["remote-debugging-port"] = 9222
 			m["no-sandbox"] = true

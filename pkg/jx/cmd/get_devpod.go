@@ -1,12 +1,11 @@
 package cmd
 
 import (
-	"io"
-	"os/user"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/log"
+
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -15,6 +14,9 @@ import (
 // GetDevPodOptions the command line options
 type GetDevPodOptions struct {
 	GetOptions
+	CommonDevPodOptions
+
+	AllUsernames bool
 }
 
 var (
@@ -32,15 +34,10 @@ var (
 )
 
 // NewCmdGetDevPod creates the command
-func NewCmdGetDevPod(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetDevPod(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetDevPodOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -58,6 +55,10 @@ func NewCmdGetDevPod(f Factory, in terminal.FileReader, out terminal.FileWriter,
 		},
 	}
 
+	cmd.Flags().BoolVarP(&options.AllUsernames, "all-usernames", "", false, "Gets devpods for all usernames")
+
+	options.addCommonDevPodFlags(cmd)
+
 	return cmd
 }
 
@@ -73,12 +74,19 @@ func (o *GetDevPodOptions) Run() error {
 		return err
 	}
 
-	u, err := user.Current()
-	if err != nil {
-		return err
+	var userName string
+	if o.AllUsernames {
+		if o.Username != "" {
+			log.Warn("getting devpods for all usernames. Explicit username will be ignored")
+		}
+		// Leave userName blank
+	} else {
+		userName, err = o.getUsername(o.Username)
+		if err != nil {
+			return err
+		}
 	}
-
-	names, m, err := kube.GetDevPodNames(client, ns, u.Username)
+	names, m, err := kube.GetDevPodNames(client, ns, userName)
 
 	table := o.createTable()
 	table.AddRow("NAME", "POD TEMPLATE", "AGE", "STATUS")

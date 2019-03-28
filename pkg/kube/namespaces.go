@@ -11,8 +11,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
-const DEFAULT_APPS_REPOSITORY = "http://chartmuseum.jenkins-x.io"
-
 func EnsureEnvironmentNamespaceSetup(kubeClient kubernetes.Interface, jxClient versioned.Interface, env *v1.Environment, ns string) error {
 	// lets create the namespace if we are on the same cluster
 	spec := &env.Spec
@@ -82,7 +80,7 @@ func CreateDefaultDevEnvironment(ns string) *v1.Environment {
 				AskOnCreate:         false,
 				QuickstartLocations: DefaultQuickstartLocations,
 				PromotionEngine:     v1.PromotionEngineJenkins,
-				AppsRepository:      DEFAULT_APPS_REPOSITORY,
+				AppsRepository:      DefaultChartMuseumURL,
 			},
 		},
 	}
@@ -124,6 +122,23 @@ func IsProwEnabled(kubeClient kubernetes.Interface, ns string) (bool, error) {
 
 func isProwBuildNotFoundError(err error) bool {
 	return err.Error() == `deployments.apps "prow-build" not found`
+}
+
+// IsTektonEnabled returns true if Build Pipeline is enabled in the given development namespace
+func IsTektonEnabled(kubeClient kubernetes.Interface, ns string) (bool, error) {
+	// lets try determine if its Jenkins or not via the deployments
+	_, err := kubeClient.AppsV1beta1().Deployments(ns).Get(DeploymentTektonController, metav1.GetOptions{})
+	if err != nil {
+		if isTektonNotFoundError(err) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+func isTektonNotFoundError(err error) bool {
+	return err.Error() == `deployments.apps "tekton-pipelines-controller" not found`
 }
 
 // EnsureEditEnvironmentSetup ensures that the Environment is created in the given namespace

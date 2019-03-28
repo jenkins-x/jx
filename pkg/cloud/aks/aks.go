@@ -87,8 +87,7 @@ func (az *AzureRunner) GetClusterClient(server string) (string, string, string, 
 	return group, name, clientID, err
 }
 
-
- // GetRegistry Return the docker registry config, registry login server and resource id, error
+// GetRegistry Return the docker registry config, registry login server and resource id, error
 func (az *AzureRunner) GetRegistry(resourceGroup string, name string, registry string) (string, string, string, error) {
 	registryID := ""
 	loginServer := registry
@@ -159,9 +158,9 @@ func (az *AzureRunner) createRegistry(resourceGroup string, name string) (string
 	registryID, err := az.azureCLI("acr", "create", "-g", resourceGroup, "-n", name, "--sku", "Standard", "--admin-enabled", "--query", "id", "-o", "tsv")
 	if err != nil {
 		log.Infof("Failed to create ACR %s in resource group %s\n", util.ColorInfo(name), util.ColorInfo(resourceGroup))
-		return "", "", err	
+		return "", "", err
 	}
-	return string(registryID), formatLoginServer(name), nil
+	return registryID, formatLoginServer(name), nil
 }
 
 // getACRCredential return .dockerconfig value for the ACR
@@ -169,12 +168,12 @@ func (az *AzureRunner) getACRCredential(resourceGroup string, name string) (stri
 	credstr, err := az.azureCLI("acr", "credential", "show", "-g", resourceGroup, "-n", name)
 	if err != nil {
 		log.Infof("Failed to get credential for ACR %s in resource group %s\n", util.ColorInfo(name), util.ColorInfo(resourceGroup))
-		return "", err	
+		return "", err
 	}
 	cred := credential{}
 	err = json.Unmarshal([]byte(credstr), &cred)
 	if err != nil {
-		return "", err	
+		return "", err
 	}
 	newSecret := &auth{}
 	dockerConfig := &config{}
@@ -191,7 +190,7 @@ func formatLoginServer(name string) string {
 	return name + ".azurecr.io"
 }
 
-func  (az *AzureRunner) azureCLI(args ...string) (string, error) {
+func (az *AzureRunner) azureCLI(args ...string) (string, error) {
 	az.Runner.SetName("az")
 	az.Runner.SetArgs(args)
 	return az.Runner.RunWithoutRetry()

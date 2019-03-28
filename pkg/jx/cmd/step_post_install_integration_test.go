@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkins/fake"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
+	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/testkube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -31,14 +32,14 @@ func TestStepPostInstall(t *testing.T) {
 
 	o := cmd.StepPostInstallOptions{
 		StepOptions: cmd.StepOptions{
-			CommonOptions: cmd.CommonOptions{
+			CommonOptions: &cmd.CommonOptions{
 				In:  os.Stdin,
 				Out: os.Stdout,
 				Err: os.Stderr,
 			},
 		},
 	}
-	cmd.ConfigureTestOptionsWithResources(&o.CommonOptions,
+	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,
 		[]runtime.Object{
 			&corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{
@@ -54,7 +55,9 @@ func TestStepPostInstall(t *testing.T) {
 			staging,
 		},
 		gits.NewGitCLI(),
+		nil,
 		helm.NewHelmCLI("helm", helm.V2, "", true),
+		resources_test.NewMockInstaller(),
 	)
 
 	o.BatchMode = true

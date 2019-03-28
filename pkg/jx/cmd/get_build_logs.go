@@ -2,25 +2,27 @@ package cmd
 
 import (
 	"fmt"
-	"io"
+	"os"
 	"sort"
 	"strings"
 	"time"
-
-	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/tekton"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,9 +32,12 @@ import (
 type GetBuildLogsOptions struct {
 	GetOptions
 
-	Tail        bool
-	Wait        bool
-	BuildFilter builds.BuildPodInfoFilter
+	Tail                    bool
+	Wait                    bool
+	BuildFilter             builds.BuildPodInfoFilter
+	JenkinsSelector         JenkinsSelectorOptions
+	CurrentFolder           bool
+	WaitForPipelineDuration time.Duration
 }
 
 var (
@@ -57,20 +62,16 @@ var (
 		# Pick a knative build for the 1234 Pull Request on the repo cheese
 		jx get build log --repo cheese --branch PR-1234
 
+		# View the build logs for a specific tekton build pod
+		jx get build log --pod my-pod-name
 	`)
 )
 
 // NewCmdGetBuildLogs creates the command
-func NewCmdGetBuildLogs(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetBuildLogs(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetBuildLogsOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-
-				Out: out,
-				Err: errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -89,12 +90,16 @@ func NewCmdGetBuildLogs(f Factory, in terminal.FileReader, out terminal.FileWrit
 	}
 	cmd.Flags().BoolVarP(&options.Tail, "tail", "t", true, "Tails the build log to the current terminal")
 	cmd.Flags().BoolVarP(&options.Wait, "wait", "w", false, "Waits for the build to start before failing")
+	cmd.Flags().DurationVarP(&options.WaitForPipelineDuration, "wait-duration", "d", time.Minute*5, "Timeout period waiting for the given pipeline to be created")
 	cmd.Flags().BoolVarP(&options.BuildFilter.Pending, "pending", "p", false, "Only display logs which are currently pending to choose from if no build name is supplied")
 	cmd.Flags().StringVarP(&options.BuildFilter.Filter, "filter", "f", "", "Filters all the available jobs by those that contain the given text")
 	cmd.Flags().StringVarP(&options.BuildFilter.Owner, "owner", "o", "", "Filters the owner (person/organisation) of the repository")
 	cmd.Flags().StringVarP(&options.BuildFilter.Repository, "repo", "r", "", "Filters the build repository")
 	cmd.Flags().StringVarP(&options.BuildFilter.Branch, "branch", "", "", "Filters the branch")
-	cmd.Flags().StringVarP(&options.BuildFilter.Build, "build", "b", "", "The build number to view")
+	cmd.Flags().StringVarP(&options.BuildFilter.Build, "build", "", "", "The build number to view")
+	cmd.Flags().StringVarP(&options.BuildFilter.Pod, "pod", "", "", "The pod name to view")
+	cmd.Flags().BoolVarP(&options.CurrentFolder, "current", "c", false, "Display logs using current folder as repo name, and parent folder as owner")
+	options.JenkinsSelector.AddFlags(cmd)
 
 	return cmd
 }
@@ -109,22 +114,34 @@ func (o *GetBuildLogsOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	tektonClient, _, err := o.TektonClient()
+	if err != nil {
+		return err
+	}
+
+	tektonEnabled, err := kube.IsTektonEnabled(kubeClient, ns)
+	if err != nil {
+		return err
+	}
 
 	devEnv, err := kube.GetEnrichedDevEnvironment(kubeClient, jxClient, ns)
+	if devEnv == nil {
+		return fmt.Errorf("No development environment found for namespace %s", ns)
+	}
 	webhookEngine := devEnv.Spec.WebHookEngine
-	if webhookEngine == v1.WebHookEngineProw {
-		return o.getProwBuildLog(kubeClient, jxClient, ns)
+	if webhookEngine == v1.WebHookEngineProw && !o.JenkinsSelector.IsCustom() {
+		return o.getProwBuildLog(kubeClient, tektonClient, jxClient, ns, tektonEnabled)
 	}
 
 	args := o.Args
 
 	if !o.BatchMode && len(args) == 0 {
-		jobMap, err := o.getJobMap(o.BuildFilter.Filter)
+		jobMap, err := o.getJobMap(&o.JenkinsSelector, o.BuildFilter.Filter)
 		if err != nil {
 			return err
 		}
 		names := []string{}
-		for k, _ := range jobMap {
+		for k := range jobMap {
 			names = append(names, k)
 		}
 		sort.Strings(names)
@@ -157,13 +174,13 @@ func (o *GetBuildLogsOptions) Run() error {
 	}
 
 	log.Infof("%s %s\n", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
-	return o.tailBuild(name, &last)
+	return o.tailBuild(&o.JenkinsSelector, name, &last)
 }
 
 func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) (gojenkins.Build, error) {
 	var last gojenkins.Build
 
-	jenkinsClient, err := o.JenkinsClient()
+	jenkinsClient, err := o.CreateCustomJenkinsClient(&o.JenkinsSelector)
 	if err != nil {
 		return last, err
 	}
@@ -171,7 +188,7 @@ func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) 
 	f := func() error {
 		var err error
 
-		jobMap, err := o.getJobMap(o.BuildFilter.Filter)
+		jobMap, err := o.getJobMap(&o.JenkinsSelector, o.BuildFilter.Filter)
 		if err != nil {
 			return err
 		}
@@ -179,6 +196,7 @@ func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) 
 		if job.Url == "" {
 			return fmt.Errorf("No Job exists yet called %s", name)
 		}
+		job.Url = switchJenkinsBaseURL(job.Url, jenkinsClient.BaseURL())
 
 		if buildNumber > 0 {
 			last, err = jenkinsClient.GetBuild(job, buildNumber)
@@ -195,6 +213,7 @@ func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) 
 				return fmt.Errorf("No build found for name %s", name)
 			}
 		}
+		last.Url = switchJenkinsBaseURL(last.Url, jenkinsClient.BaseURL())
 		return err
 	}
 
@@ -207,44 +226,43 @@ func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) 
 	}
 }
 
-func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, jxClient versioned.Interface, ns string) error {
-	pods, err := builds.GetBuildPods(kubeClient, ns)
-	if err != nil {
-		log.Warnf("Failed to query pods %s\n", err)
-		return err
+func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, jxClient versioned.Interface, ns string, tektonEnabled bool) error {
+	if o.CurrentFolder {
+		currentDirectory, err := os.Getwd()
+		if err != nil {
+			return err
+		}
+
+		gitRepository, err := gits.NewGitCLI().Info(currentDirectory)
+		if err != nil {
+			return err
+		}
+
+		o.BuildFilter.Repository = gitRepository.Name
+		o.BuildFilter.Owner = gitRepository.Organisation
 	}
 
-	buildInfos := []*builds.BuildPodInfo{}
-	for _, pod := range pods {
-		initContainers := pod.Spec.InitContainers
-		if len(initContainers) > 0 {
-			buildInfo := builds.CreateBuildPodInfo(pod)
-			if o.BuildFilter.BuildMatches(buildInfo) {
-				buildInfos = append(buildInfos, buildInfo)
-			}
-		}
-	}
-	builds.SortBuildPodInfos(buildInfos)
-	if len(buildInfos) == 0 {
-		return fmt.Errorf("No knative builds have been triggered which match the current filter!")
-	}
+	var names []string
+	var defaultName string
+	var buildMap map[string]builds.BaseBuildInfo
+	var pipelineMap map[string]builds.BaseBuildInfo
 
 	args := o.Args
-	names := []string{}
-	buildMap := map[string]*builds.BuildPodInfo{}
-
-	defaultName := ""
-	for _, build := range buildInfos {
-		name := build.Pipeline + " #" + build.Build
-		names = append(names, name)
-		buildMap[name] = build
-
-		if build.Branch == "master" {
-			defaultName = name
-		}
-	}
-
+	pickedPipeline := false
 	if len(args) == 0 {
+		if o.BatchMode {
+			return util.MissingArgument("pipeline")
+		}
+		var err error
+		if tektonEnabled {
+			names, defaultName, buildMap, pipelineMap, err = o.loadPipelines(kubeClient, tektonClient, jxClient, ns)
+		} else {
+			names, defaultName, buildMap, pipelineMap, err = o.loadBuilds(kubeClient, ns)
+		}
+		if err != nil {
+			return err
+		}
+		pickedPipeline = true
 		name, err := util.PickNameWithDefault(names, "Which build do you want to view the logs of?: ", defaultName, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
@@ -256,52 +274,292 @@ func (o *GetBuildLogsOptions) getProwBuildLog(kubeClient kubernetes.Interface, j
 	}
 	name := args[0]
 	build := buildMap[name]
+	suffix := ""
 	if build == nil {
-		return fmt.Errorf("No Pipeline found for name %s", name)
+		build = pipelineMap[name]
+		if build != nil {
+			suffix = " #" + build.GetBuild()
+		}
 	}
+	if build == nil && !pickedPipeline && o.Wait {
+		log.Infof("waiting for pipeline %s to start...\n", util.ColorInfo(name))
 
-	pod := build.Pod
-	if pod == nil {
-		return fmt.Errorf("No Pod found for name %s", name)
-	}
-	initContainers := pod.Spec.InitContainers
-	if len(initContainers) <= 0 {
-		return fmt.Errorf("No InitContainers for Pod %s for build: %s", pod.Name, name)
-	}
-
-	log.Infof("Build logs for %s\n", util.ColorInfo(name))
-	err = waitForInitContainerToStart(kubeClient, ns, pod)
-	if err != nil {
-		return err
-	}
-	for _, ic := range initContainers {
-		err = o.getPodLog(ns, pod, ic)
+		// there's no pipeline with yet called 'name' so lets wait for it to start...
+		f := func() error {
+			var err error
+			if tektonEnabled {
+				names, defaultName, buildMap, pipelineMap, err = o.loadPipelines(kubeClient, tektonClient, jxClient, ns)
+			} else {
+				names, defaultName, buildMap, pipelineMap, err = o.loadBuilds(kubeClient, ns)
+			}
+			if err != nil {
+				return err
+			}
+			build = buildMap[name]
+			if build == nil {
+				build = pipelineMap[name]
+				if build != nil {
+					suffix = " #" + build.GetBuild()
+				}
+			}
+			if build == nil {
+				log.Infof("no build found in: %s\n", util.ColorInfo(strings.Join(names, ", ")))
+				return fmt.Errorf("No pipeline exists yet: %s", name)
+			}
+			return nil
+		}
+		err := util.Retry(o.WaitForPipelineDuration, f)
 		if err != nil {
 			return err
+		}
+	}
+	if build == nil {
+		return fmt.Errorf("No Pipeline found for name %s in values: %s", name, strings.Join(names, ", "))
+	}
+
+	if tektonEnabled {
+		pr := build.(*tekton.PipelineRunInfo)
+		log.Infof("Build logs for %s\n", util.ColorInfo(name+suffix))
+		for _, stage := range pr.GetOrderedTaskStages() {
+			if stage.Pod == nil {
+				// The stage's pod hasn't been created yet, so let's wait a bit.
+				f := func() error {
+					selector, err := metav1.LabelSelectorAsSelector(&metav1.LabelSelector{MatchLabels: map[string]string{
+						pipeline.GroupName + pipeline.PipelineRunLabelKey: pr.PipelineRun,
+					}})
+					if err != nil {
+						return err
+					}
+					podList, err := kubeClient.CoreV1().Pods(ns).List(metav1.ListOptions{
+						LabelSelector: selector.String(),
+					})
+					if err != nil {
+						return err
+					}
+					if err := stage.SetPodsForStageInfo(podList, pr.PipelineRun); err != nil {
+						return err
+					}
+
+					if stage.Pod == nil {
+						log.Infof("no pod found yet for stage %s in build %s\n", util.ColorInfo(stage.Name), util.ColorInfo(pr.PipelineRun))
+						return fmt.Errorf("No pod for stage %s in build %s exists yet", stage.Name, pr.PipelineRun)
+					}
+
+					return nil
+				}
+				err := util.Retry(o.WaitForPipelineDuration, f)
+				if err != nil {
+					return err
+				}
+			}
+			pod := stage.Pod
+			containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
+			if len(containers) <= 0 {
+				return fmt.Errorf("No Containers for Pod %s for build: %s", pod.Name, name)
+			}
+			for i, ic := range containers {
+				pod, err := kubeClient.CoreV1().Pods(ns).Get(pod.Name, metav1.GetOptions{})
+				if err != nil {
+					return errors.Wrapf(err, "failed to find pod %s", pod.Name)
+				}
+				if i > 0 {
+					_, containerStatuses, _ := kube.GetContainersWithStatusAndIsInit(pod)
+					if i < len(containerStatuses) {
+						lastContainer := containerStatuses[i-1]
+						terminated := lastContainer.State.Terminated
+						if terminated != nil && terminated.ExitCode != 0 {
+							log.Warnf("container %s failed with exit code %d: %s\n", lastContainer.Name, terminated.ExitCode, terminated.Message)
+						}
+					}
+				}
+				pod, err = waitForContainerToStart(kubeClient, ns, pod, i)
+				if err != nil {
+					return err
+				}
+				err = o.getStageLog(ns, name+suffix, stage.GetStageNameIncludingParents(), pod, ic)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	} else {
+		b := build.(*builds.BuildPodInfo)
+		pod := b.Pod
+		if pod == nil {
+			return fmt.Errorf("No Pod found for name %s", name)
+		}
+		containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
+		if len(containers) <= 0 {
+			return fmt.Errorf("No Containers for Pod %s for build: %s", pod.Name, name)
+		}
+
+		log.Infof("Build logs for %s\n", util.ColorInfo(name+suffix))
+		for i, ic := range containers {
+			pod, err := kubeClient.CoreV1().Pods(ns).Get(pod.Name, metav1.GetOptions{})
+			if err != nil {
+				return errors.Wrapf(err, "failed to find pod %s", pod.Name)
+			}
+			if i > 0 {
+				_, containerStatuses, _ := kube.GetContainersWithStatusAndIsInit(pod)
+				if i < len(containerStatuses) {
+					lastContainer := containerStatuses[i-1]
+					terminated := lastContainer.State.Terminated
+					if terminated != nil && terminated.ExitCode != 0 {
+						log.Warnf("container %s failed with exit code %d: %s\n", lastContainer.Name, terminated.ExitCode, terminated.Message)
+					}
+				}
+			}
+			pod, err = waitForContainerToStart(kubeClient, ns, pod, i)
+			if err != nil {
+				return err
+			}
+			err = o.getPodLog(ns, pod, ic)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
-func waitForInitContainerToStart(kubeClient kubernetes.Interface, ns string, pod *corev1.Pod) error {
-	if kube.HasInitContainerStarted(pod) {
-		return nil
+func waitForContainerToStart(kubeClient kubernetes.Interface, ns string, pod *corev1.Pod, idx int) (*corev1.Pod, error) {
+	if pod.Status.Phase == corev1.PodFailed {
+		log.Warnf("pod %s has failed\n", pod.Name)
+		return pod, nil
 	}
-	log.Infof("waiting for pod %s to start...\n", pod.Name)
+	if kube.HasContainerStarted(pod, idx) {
+		return pod, nil
+	}
+	containerName := ""
+	containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
+	if idx < len(containers) {
+		containerName = containers[idx].Name
+	}
+	log.Infof("waiting for pod %s container %s to start...\n", util.ColorInfo(pod.Name), util.ColorInfo(containerName))
 	for {
 		time.Sleep(time.Second)
 
 		p, err := kubeClient.CoreV1().Pods(ns).Get(pod.Name, metav1.GetOptions{})
 		if err != nil {
-			return errors.Wrapf(err, "failed to load pod %s", pod.Name)
+			return p, errors.Wrapf(err, "failed to load pod %s", pod.Name)
 		}
-		if kube.HasInitContainerStarted(p) {
-			return nil
+		if kube.HasContainerStarted(p, idx) {
+			return p, nil
 		}
 	}
 }
 
 func (o *GetBuildLogsOptions) getPodLog(ns string, pod *corev1.Pod, container corev1.Container) error {
-	log.Infof("Getting the pod log for pod %s and init container %s\n", pod.Name, container.Name)
-	return o.tailLogs(ns, pod.Name, container.Name)
+	log.Infof("getting the log for pod %s and container %s\n", util.ColorInfo(pod.Name), util.ColorInfo(container.Name))
+	return o.TailLogs(ns, pod.Name, container.Name)
+}
+
+func (o *GetBuildLogsOptions) getStageLog(ns, build, stageName string, pod *corev1.Pod, container corev1.Container) error {
+	log.Infof("getting the log for build %s stage %s and container %s\n", util.ColorInfo(build), util.ColorInfo(stageName), util.ColorInfo(container.Name))
+	return o.TailLogs(ns, pod.Name, container.Name)
+}
+
+func (o *GetBuildLogsOptions) loadBuilds(kubeClient kubernetes.Interface, ns string) ([]string, string, map[string]builds.BaseBuildInfo, map[string]builds.BaseBuildInfo, error) {
+	defaultName := ""
+	names := []string{}
+	buildMap := map[string]builds.BaseBuildInfo{}
+	pipelineMap := map[string]builds.BaseBuildInfo{}
+
+	pods, err := builds.GetBuildPods(kubeClient, ns)
+	if err != nil {
+		log.Warnf("Failed to query pods %s\n", err)
+		return names, defaultName, buildMap, pipelineMap, err
+	}
+
+	buildInfos := []*builds.BuildPodInfo{}
+	for _, pod := range pods {
+		containers, _, _ := kube.GetContainersWithStatusAndIsInit(pod)
+		if len(containers) > 0 {
+			buildInfo := builds.CreateBuildPodInfo(pod)
+			if o.BuildFilter.BuildMatches(buildInfo) {
+				buildInfos = append(buildInfos, buildInfo)
+			}
+		}
+	}
+	builds.SortBuildPodInfos(buildInfos)
+	if len(buildInfos) == 0 {
+		return names, defaultName, buildMap, pipelineMap, fmt.Errorf("no knative builds have been triggered which match the current filter")
+	}
+
+	for _, build := range buildInfos {
+		name := build.Pipeline + " #" + build.Build
+		names = append(names, name)
+		buildMap[name] = build
+		pipelineMap[build.Pipeline] = build
+
+		if build.Branch == "master" {
+			defaultName = name
+		}
+	}
+	return names, defaultName, buildMap, pipelineMap, nil
+}
+
+func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tektonClient tektonclient.Interface, jxClient versioned.Interface, ns string) ([]string, string, map[string]builds.BaseBuildInfo, map[string]builds.BaseBuildInfo, error) {
+	defaultName := ""
+	names := []string{}
+	buildMap := map[string]builds.BaseBuildInfo{}
+	pipelineMap := map[string]builds.BaseBuildInfo{}
+
+	prList, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).List(metav1.ListOptions{})
+	if err != nil {
+		log.Warnf("Failed to query PipelineRuns %s\n", err)
+		return names, defaultName, buildMap, pipelineMap, err
+	}
+
+	structures, err := jxClient.JenkinsV1().PipelineStructures(ns).List(metav1.ListOptions{})
+	if err != nil {
+		log.Warnf("Failed to query PipelineStructures %s\n", err)
+		return names, defaultName, buildMap, pipelineMap, err
+	}
+
+	buildInfos := []*tekton.PipelineRunInfo{}
+
+	podList, err := kubeClient.CoreV1().Pods(ns).List(metav1.ListOptions{
+		LabelSelector: pipeline.GroupName + pipeline.PipelineRunLabelKey,
+	})
+	if err != nil {
+		return names, defaultName, buildMap, pipelineMap, err
+	}
+	for _, pr := range prList.Items {
+		var ps v1.PipelineStructure
+		for _, p := range structures.Items {
+			if p.Name == pr.Name {
+				ps = p
+			}
+		}
+		pri, err := tekton.CreatePipelineRunInfo(pr.Name, podList, &ps, &pr)
+		if err != nil {
+			if o.Verbose {
+				log.Warnf("Error creating PipelineRunInfo for PipelineRun %s: %s\n", pr.Name, err)
+			}
+		}
+		if pri != nil && o.BuildFilter.BuildMatches(pri.ToBuildPodInfo()) {
+			buildInfos = append(buildInfos, pri)
+		}
+	}
+
+	tekton.SortPipelineRunInfos(buildInfos)
+	if len(buildInfos) == 0 {
+		return names, defaultName, buildMap, pipelineMap, fmt.Errorf("no Tekton pipelines have been triggered which match the current filter")
+	}
+
+	for _, build := range buildInfos {
+		name := build.Pipeline + " #" + build.Build
+		if build.Context != "" {
+			name += " " + build.Context
+		}
+		names = append(names, name)
+		buildMap[name] = build
+		pipelineMap[build.Pipeline] = build
+
+		if build.Branch == "master" {
+			defaultName = name
+		}
+	}
+	return names, defaultName, buildMap, pipelineMap, nil
 }

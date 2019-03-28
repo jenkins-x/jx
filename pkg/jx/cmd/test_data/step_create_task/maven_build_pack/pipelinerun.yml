@@ -1,0 +1,25 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  creationTimestamp: null
+  labels:
+    branch: master
+    owner: abayer
+    repo: jx-demo-qs
+  name: abayer-jx-demo-qs-master
+spec:
+  Status: ""
+  params: null
+  pipelineRef:
+    apiVersion: tekton.dev/v1alpha1
+    name: abayer-jx-demo-qs-master
+  resources:
+  - name: abayer-jx-demo-qs-master
+    resourceRef:
+      apiVersion: tekton.dev/v1alpha1
+      name: abayer-jx-demo-qs-master
+  serviceAccount: tekton-bot
+  trigger:
+    type: manual
+status:
+  conditions: null

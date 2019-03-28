@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
@@ -161,8 +163,29 @@ func GenerateBuildNumber(activities typev1.PipelineActivityInterface, pipelines 
 	return build, answer, nil
 }
 
+func createSourceRepositoryIfMissing(jxClient versioned.Interface, ns string, activityKey *PipelineActivityKey) error {
+	repoName := activityKey.GitRepository()
+	owner := activityKey.GitOwner()
+	gitURL := activityKey.GitURL()
+
+	if repoName == "" || owner == "" || gitURL == "" {
+		return nil
+	}
+	srs := NewSourceRepositoryService(jxClient, ns)
+	if srs == nil {
+		return fmt.Errorf("failed to create sourcerepository resource")
+	}
+
+	resourceName := ToValidName(owner + "-" + repoName)
+	_, err := srs.GetSourceRepository(resourceName)
+	if err != nil {
+		err = srs.CreateOrUpdateSourceRepository(repoName, owner, gitURL)
+	}
+	return err
+}
+
 // GetOrCreate gets or creates the pipeline activity
-func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, bool, error) {
+func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns string) (*v1.PipelineActivity, bool, error) {
 	name := ToValidName(k.Name)
 	create := false
 	defaultActivity := &v1.PipelineActivity{
@@ -171,28 +194,90 @@ func (k *PipelineActivityKey) GetOrCreate(activities typev1.PipelineActivityInte
 		},
 		Spec: v1.PipelineActivitySpec{},
 	}
-	if activities == nil {
+	activitiesClient := jxClient.JenkinsV1().PipelineActivities(ns)
+
+	if activitiesClient == nil {
 		log.Warn("Warning: no PipelineActivities client available!")
 		return defaultActivity, create, nil
 	}
-	a, err := activities.Get(name, metav1.GetOptions{})
+	a, err := activitiesClient.Get(name, metav1.GetOptions{})
 	if err != nil {
 		create = true
 		a = defaultActivity
 	}
 	oldSpec := a.Spec
-	spec := &a.Spec
-	updateActivitySpec(k, spec)
+	oldLabels := a.Labels
+
+	if a.Labels == nil || a.Labels[v1.LabelSourceRepository] == "" {
+		err := createSourceRepositoryIfMissing(jxClient, ns, k)
+		if err != nil {
+			log.Errorf("Error trying to create missing sourcerepository object: %s\n", err.Error())
+		}
+	}
+
+	updateActivity(k, a)
 	if create {
-		answer, err := activities.Create(a)
+		answer, err := activitiesClient.Create(a)
 		return answer, true, err
 	} else {
-		if !reflect.DeepEqual(&a.Spec, &oldSpec) {
-			answer, err := activities.Update(a)
+		if !reflect.DeepEqual(&a.Spec, &oldSpec) || !reflect.DeepEqual(&a.Labels, &oldLabels) {
+			answer, err := activitiesClient.Update(a)
 			return answer, false, err
 		}
 		return a, false, nil
 	}
+}
+
+// GitOwner returns the git owner (person / organisation) or blank string if it cannot be found
+func (k *PipelineActivityKey) GitOwner() string {
+	if k.GitInfo != nil {
+		return k.GitInfo.Organisation
+	}
+	pipeline := k.Pipeline
+	if pipeline == "" {
+		return ""
+	}
+	paths := strings.Split(pipeline, "/")
+	if len(paths) > 1 {
+		return paths[0]
+	}
+	return ""
+}
+
+// GitRepository returns the git repository name or blank string if it cannot be found
+func (k *PipelineActivityKey) GitRepository() string {
+	if k.GitInfo != nil {
+		return k.GitInfo.Name
+	}
+	pipeline := k.Pipeline
+	if pipeline == "" {
+		return ""
+	}
+	paths := strings.Split(pipeline, "/")
+	if len(paths) > 1 {
+		return paths[len(paths)-2]
+	}
+	return ""
+}
+
+// GitURL returns the git URL or blank string if it cannot be found
+func (k *PipelineActivityKey) GitURL() string {
+	if k.GitInfo != nil {
+		return k.GitInfo.URL
+	}
+	return ""
+}
+
+func updateActivity(k *PipelineActivityKey, activity *v1.PipelineActivity) {
+	if activity.Labels == nil {
+		activity.Labels = make(map[string]string, 4)
+	}
+
+	updateActivitySpec(k, &activity.Spec)
+
+	activity.Labels[v1.LabelSourceRepository] = ToValidName(activity.Spec.GitOwner + "-" + activity.RepositoryName())
+	activity.Labels[v1.LabelBranch] = activity.BranchName()
+	activity.Labels[v1.LabelOwner] = activity.RepositoryOwner()
 }
 
 func updateActivitySpec(k *PipelineActivityKey, spec *v1.PipelineActivitySpec) {
@@ -238,8 +323,8 @@ func updateActivitySpec(k *PipelineActivityKey, spec *v1.PipelineActivitySpec) {
 }
 
 // GetOrCreatePreview gets or creates the Preview step for the key
-func (k *PromoteStepActivityKey) GetOrCreatePreview(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PreviewActivityStep, bool, error) {
-	a, _, err := k.GetOrCreate(activities)
+func (k *PromoteStepActivityKey) GetOrCreatePreview(jxClient versioned.Interface, ns string) (*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PreviewActivityStep, bool, error) {
+	a, _, err := k.GetOrCreate(jxClient, ns)
 	if err != nil {
 		return nil, nil, nil, false, err
 	}
@@ -287,13 +372,13 @@ func (k *PromoteStepActivityKey) GetOrCreatePreview(activities typev1.PipelineAc
 	return a, &spec.Steps[len(spec.Steps)-1], preview, true, nil
 }
 
-// GetOrCreateStage gets or creates the step for the given name
+// GetOrCreateStage gets or creates the stage for the given name
 func GetOrCreateStage(a *v1.PipelineActivity, stageName string) (*v1.PipelineActivityStep, *v1.StageActivityStep, bool) {
-	spec := &a.Spec
-	for _, step := range spec.Steps {
+	for i := range a.Spec.Steps {
+		step := &a.Spec.Steps[i]
 		stage := step.Stage
 		if stage != nil && stage.Name == stageName {
-			return &step, stage, false
+			return step, step.Stage, false
 		}
 	}
 
@@ -302,16 +387,33 @@ func GetOrCreateStage(a *v1.PipelineActivity, stageName string) (*v1.PipelineAct
 			Name: stageName,
 		},
 	}
-	spec.Steps = append(spec.Steps, v1.PipelineActivityStep{
+	a.Spec.Steps = append(a.Spec.Steps, v1.PipelineActivityStep{
 		Kind:  v1.ActivityStepKindTypeStage,
 		Stage: stage,
 	})
-	return &spec.Steps[len(spec.Steps)-1], stage, true
+	step := &a.Spec.Steps[len(a.Spec.Steps)-1]
+	return step, step.Stage, true
+}
+
+// GetOrCreateStepInStage gets or creates the step for the given name in the given stage
+func GetOrCreateStepInStage(stage *v1.StageActivityStep, stepName string) (*v1.CoreActivityStep, bool) {
+	for i := range stage.Steps {
+		step := &stage.Steps[i]
+		if step != nil && step.Name == stepName {
+			return step, false
+		}
+	}
+
+	step := &v1.CoreActivityStep{
+		Name: stepName,
+	}
+	stage.Steps = append(stage.Steps, *step)
+	return step, true
 }
 
 // GetOrCreatePromote gets or creates the Promote step for the key
-func (k *PromoteStepActivityKey) GetOrCreatePromote(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, bool, error) {
-	a, _, err := k.GetOrCreate(activities)
+func (k *PromoteStepActivityKey) GetOrCreatePromote(jxClient versioned.Interface, ns string) (*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, bool, error) {
+	a, _, err := k.GetOrCreate(jxClient, ns)
 	if err != nil {
 		return nil, nil, nil, false, err
 	}
@@ -360,8 +462,8 @@ func (k *PromoteStepActivityKey) GetOrCreatePromote(activities typev1.PipelineAc
 }
 
 // GetOrCreatePromotePullRequest gets or creates the PromotePullRequest for the key
-func (k *PromoteStepActivityKey) GetOrCreatePromotePullRequest(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, *v1.PromotePullRequestStep, bool, error) {
-	a, s, p, created, err := k.GetOrCreatePromote(activities)
+func (k *PromoteStepActivityKey) GetOrCreatePromotePullRequest(jxClient versioned.Interface, ns string) (*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, *v1.PromotePullRequestStep, bool, error) {
+	a, s, p, created, err := k.GetOrCreatePromote(jxClient, ns)
 	if err != nil {
 		return nil, nil, nil, nil, created, err
 	}
@@ -379,8 +481,8 @@ func (k *PromoteStepActivityKey) GetOrCreatePromotePullRequest(activities typev1
 }
 
 // GetOrCreatePromoteUpdate gets or creates the Promote for the key
-func (k *PromoteStepActivityKey) GetOrCreatePromoteUpdate(activities typev1.PipelineActivityInterface) (*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, *v1.PromoteUpdateStep, bool, error) {
-	a, s, p, created, err := k.GetOrCreatePromote(activities)
+func (k *PromoteStepActivityKey) GetOrCreatePromoteUpdate(jxClient versioned.Interface, ns string) (*v1.PipelineActivity, *v1.PipelineActivityStep, *v1.PromoteActivityStep, *v1.PromoteUpdateStep, bool, error) {
+	a, s, p, created, err := k.GetOrCreatePromote(jxClient, ns)
 	if err != nil {
 		return nil, nil, nil, nil, created, err
 	}
@@ -404,15 +506,17 @@ func (k *PromoteStepActivityKey) GetOrCreatePromoteUpdate(activities typev1.Pipe
 	return a, s, p, p.Update, created, err
 }
 
-func (k *PromoteStepActivityKey) OnPromotePullRequest(activities typev1.PipelineActivityInterface, fn PromotePullRequestFn) error {
+//OnPromotePullRequest updates activities on a Promote PR
+func (k *PromoteStepActivityKey) OnPromotePullRequest(jxClient versioned.Interface, ns string, fn PromotePullRequestFn) error {
 	if !k.IsValid() {
-		return nil
+		return fmt.Errorf("PromoteStepActivityKey was not valid")
 	}
+	activities := jxClient.JenkinsV1().PipelineActivities(ns)
 	if activities == nil {
 		log.Warn("Warning: no PipelineActivities client available!")
 		return nil
 	}
-	a, s, ps, p, added, err := k.GetOrCreatePromotePullRequest(activities)
+	a, s, ps, p, added, err := k.GetOrCreatePromotePullRequest(jxClient, ns)
 	if err != nil {
 		return err
 	}
@@ -429,15 +533,17 @@ func (k *PromoteStepActivityKey) OnPromotePullRequest(activities typev1.Pipeline
 	return err
 }
 
-func (k *PromoteStepActivityKey) OnPromoteUpdate(activities typev1.PipelineActivityInterface, fn PromoteUpdateFn) error {
+//OnPromoteUpdate updates activities on a Promote Update
+func (k *PromoteStepActivityKey) OnPromoteUpdate(jxClient versioned.Interface, ns string, fn PromoteUpdateFn) error {
 	if !k.IsValid() {
 		return nil
 	}
+	activities := jxClient.JenkinsV1().PipelineActivities(ns)
 	if activities == nil {
 		log.Warn("Warning: no PipelineActivities client available!")
 		return nil
 	}
-	a, s, ps, p, added, err := k.GetOrCreatePromoteUpdate(activities)
+	a, s, ps, p, added, err := k.GetOrCreatePromoteUpdate(jxClient, ns)
 	if err != nil {
 		return err
 	}

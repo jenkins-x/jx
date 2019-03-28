@@ -1,0 +1,9 @@
+metadata:
+  creationTimestamp: null
+  name: abayer-js-test-repo-build-pack
+pipelineRef: null
+pipelineRunRef: null
+stages:
+- depth: 0
+  name: from-build-pack
+  taskRef: abayer-js-test-repo-build-pack

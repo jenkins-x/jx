@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -13,7 +12,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 const (
@@ -45,15 +43,10 @@ type CreateDocsOptions struct {
 }
 
 // NewCmdCreateDocs creates a command object for the "create" command
-func NewCmdCreateDocs(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateDocs(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateDocsOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -78,12 +71,12 @@ func NewCmdCreateDocs(f Factory, in terminal.FileReader, out terminal.FileWriter
 
 // Run implements the command
 func (o *CreateDocsOptions) Run() error {
-	jxcommand := NewJXCommand(o.Factory, o.In, o.Out, o.Err, nil)
+	jxcommand := NewJXCommand(o.factory, o.In, o.Out, o.Err, nil)
 	dir := o.Dir
 
 	exists, _ := util.FileExists(dir)
 	if !exists {
-		err := os.Mkdir(dir, DefaultWritePermissions)
+		err := os.Mkdir(dir, util.DefaultWritePermissions)
 		if err != nil {
 			return fmt.Errorf("Failed to create %s: %s", dir, err)
 		}

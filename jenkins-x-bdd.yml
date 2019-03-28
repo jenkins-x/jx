@@ -1,0 +1,85 @@
+buildPack: none
+pipelineConfig:
+  pipelines:
+    pullRequest:
+      pipeline:
+        agent:
+          image: rawlingsj/executor:dev31
+        stages:
+          - name: ci
+            environment:
+              - name: GIT_COMMITTER_EMAIL
+                value: jenkins-x@googlegroups.com
+              - name: GIT_AUTHOR_EMAIL
+                value: jenkins-x@googlegroups.com
+              - name: GIT_AUTHOR_NAME
+                value: jenkins-x-bot
+              - name: GIT_COMMITTER_NAME
+                value: jenkins-x-bot
+              - name: BASE_WORKSPACE
+                value: /workspace/workspace
+            steps:
+            - name: build-binary
+              image: docker.io/golang:1.11.5
+              command: make
+              args: ['linux']
+              workingDir: "/workspace/workspace"
+              env:
+                - name: GOPATH
+                  value: /workspace/go
+                - name: GOPROXY
+                  value: http://jx-app-athens-athens-proxy
+              resources:
+                limits:
+                  cpu: 4
+                  memory: 6144Mi
+                requests:
+                  cpu: 3
+                  memory: 3072Mi
+
+            - name: validate-binary
+              image: docker.io/golang:1.11.5
+              command: "./build/linux/jx"
+              args: ['--help']
+              workingDir: "/workspace/workspace"
+              env:
+                - name: GOPATH
+                  value: /workspace/go
+
+            - name: build-and-push-image
+              image: rawlingsj/executor:dev40
+              command: /kaniko/executor
+              args: ['--dockerfile=/workspace/workspace/Dockerfile','--destination=docker.io/jenkinsxio/jx:${inputs.params.version}','--context=/workspace/workspace','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
+            - name: build-and-push-nodejs
+              image: rawlingsj/executor:dev40
+              command: /kaniko/executor
+              args: ['--dockerfile=/workspace/workspace/Dockerfile.builder-nodejs','--destination=docker.io/jenkinsxio/builder-nodejs:${inputs.params.version}','--context=/workspace/workspace','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
+            - name: build-and-push-maven
+              image: rawlingsj/executor:dev40
+              command: /kaniko/executor
+              args: ['--dockerfile=/workspace/workspace/Dockerfile.builder-maven','--destination=docker.io/jenkinsxio/builder-maven:${inputs.params.version}','--context=/workspace/workspace','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
+            - name: build-and-push-go
+              image: rawlingsj/executor:dev40
+              command: /kaniko/executor
+              args: ['--dockerfile=/workspace/workspace/Dockerfile.builder-go','--destination=docker.io/jenkinsxio/builder-go:${inputs.params.version}','--context=/workspace/workspace','--cache-repo=jenkins-x-docker-registry.jx.svc.cluster.local:5000/','--cache=true','--cache-dir=/workspace','--skip-tls-verify-registry=jenkins-x-docker-registry.jx.svc.cluster.local:5000']
+
+            - name: preview
+              image: gcr.io/jenkinsxio/builder-go:0.1.332
+              command: ./jx/scripts/ci.sh
+              workingDir: "/workspace/workspace"
+              env:
+                - name: HOME
+                  value: /workspace
+                - name: GOPATH
+                  value: /workspace/go
+                - name: PATH
+                  value: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/bin/google-cloud-sdk/bin:/opt/google/chrome:/usr/local/go/bin:/usr/local/glide:/usr/local/dep:/usr/local/:/home/jenkins/go/bin:/workspace/go/bin"
+                - name: GOPROXY
+                  value: http://jx-app-athens-athens-proxy
+              resources:
+                limits:
+                  cpu: 4
+                  memory: 6144Mi
+                requests:
+                  cpu: 3
+                  memory: 3072Mi

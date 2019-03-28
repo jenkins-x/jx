@@ -4,7 +4,6 @@ approvers:
 - rajdavies
 - ccojocar
 - garethjevans
-- i0n
 - pmuir
 - jtnord
 - agentgonzo
@@ -12,13 +11,16 @@ approvers:
 - amuniz
 - mikecirioli
 - wbrefvem
+- daveconde
+- hferentschik
+- abayer
+- dwnusbaum
 reviewers:
 - rawlingsj
 - jstrachan
 - rajdavies
 - ccojocar
 - garethjevans
-- i0n
 - pmuir
 - jtnord
 - agentgonzo
@@ -26,3 +28,8 @@ reviewers:
 - amuniz
 - mikecirioli
 - wbrefvem
+- carlossg
+- daveconde
+- hferentschik
+- abayer
+- dwnusbaum

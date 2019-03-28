@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io"
 	"os/user"
 	"sort"
 	"strings"
@@ -12,9 +11,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/flagger"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -25,7 +24,7 @@ import (
 
 // GetApplicationsOptions containers the CLI options
 type GetApplicationsOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Namespace   string
 	Environment string
@@ -66,39 +65,34 @@ var (
 
 	get_version_example = templates.Examples(`
 		# List applications, their URL and pod counts for all environments
-		jx get apps
+		jx get applications
 
 		# List applications only in the Staging environment
-		jx get apps -e staging
+		jx get applications -e staging
 
 		# List applications only in the Production environment
-		jx get apps -e production
+		jx get applications -e production
 
 		# List applications only in a specific namespace
-		jx get apps -n jx-staging
+		jx get applications -n jx-staging
 
 		# List applications hiding the URLs
-		jx get apps -u
+		jx get applications -u
 
 		# List applications just showing the versions (hiding urls and pod counts)
-		jx get apps -u -p
+		jx get applications -u -p
 	`)
 )
 
 // NewCmdGetApplications creates the new command for: jx get version
-func NewCmdGetApplications(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetApplications(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetApplicationsOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 	cmd := &cobra.Command{
 		Use:     "applications",
 		Short:   "Display one or more Applications and their versions",
-		Aliases: []string{"app", "apps", "version", "versions"},
+		Aliases: []string{"version", "versions"},
 		Long:    get_version_long,
 		Example: get_version_example,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -220,7 +214,7 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 }
 
 func (o *GetApplicationsOptions) getAppData(kubeClient kubernetes.Interface) (namespaces []string, envApps []EnvApps, envNames, apps []string, err error) {
-	client, currentNs, err := o.CreateJXClient()
+	client, currentNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return nil, nil, nil, nil, errors.Wrap(err, "getting jx client")
 	}
@@ -270,6 +264,12 @@ func (o *GetApplicationsOptions) getAppData(kubeClient kubernetes.Interface) (na
 						} else if env.Spec.Kind == v1.EnvironmentKindTypePreview {
 							appName = env.Spec.PullRequestURL
 						}
+
+						// Ignore flagger canary auxiliary deployments
+						if flagger.IsCanaryAuxiliaryDeployment(d) {
+							continue
+						}
+
 						envApp.Apps[appName] = d
 						if util.StringArrayIndex(apps, appName) < 0 {
 							apps = append(apps, appName)

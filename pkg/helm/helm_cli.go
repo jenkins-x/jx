@@ -240,7 +240,7 @@ func (h *HelmCLI) BuildDependency() error {
 }
 
 // InstallChart installs a helm chart according with the given flags
-func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, version *string, timeout *int,
+func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, version string, timeout int,
 	values []string, valueFiles []string, repo string, username string, password string) error {
 	args := []string{}
 	args = append(args, "install", "--wait", "--name", releaseName, "--namespace", ns, chart)
@@ -249,11 +249,11 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 		return err
 	}
 
-	if timeout != nil {
-		args = append(args, "--timeout", strconv.Itoa(*timeout))
+	if timeout != -1 {
+		args = append(args, "--timeout", strconv.Itoa(timeout))
 	}
-	if version != nil {
-		args = append(args, "--version", *version)
+	if version != "" {
+		args = append(args, "--version", version)
 	}
 	for _, value := range values {
 		args = append(args, "--set", value)
@@ -277,8 +277,8 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 	return h.runHelm(args...)
 }
 
-// Fetch a Helm Chart
-func (h *HelmCLI) FetchChart(chart string, version *string, untar bool, untardir string, repo string,
+// FetchChart fetches a Helm Chart
+func (h *HelmCLI) FetchChart(chart string, version string, untar bool, untardir string, repo string,
 	username string, password string) error {
 	args := []string{}
 	args = append(args, "fetch", chart)
@@ -301,8 +301,8 @@ func (h *HelmCLI) FetchChart(chart string, version *string, untar bool, untardir
 		args = append(args, "--password", password)
 	}
 
-	if version != nil {
-		args = append(args, "--version", *version)
+	if version != "" {
+		args = append(args, "--version", version)
 	}
 
 	if repo != "" {
@@ -341,9 +341,10 @@ func (h *HelmCLI) Template(chart string, releaseName string, ns string, outDir s
 }
 
 // UpgradeChart upgrades a helm chart according with given helm flags
-func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, version *string, install bool,
-	timeout *int, force bool, wait bool, values []string, valueFiles []string, repo string, username string,
-	password string) error {
+// reuseValues true if values from a previous install should be merged with the given values and valueFiles
+func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, version string, install bool,
+	timeout int, force bool, wait bool, values []string, valueFiles []string, repo string, username string,
+	password string, reuseValues bool) error {
 	args := []string{}
 	args = append(args, "upgrade")
 	args = append(args, "--namespace", ns)
@@ -361,11 +362,11 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 	if force {
 		args = append(args, "--force")
 	}
-	if timeout != nil {
-		args = append(args, "--timeout", strconv.Itoa(*timeout))
+	if timeout != -1 {
+		args = append(args, "--timeout", strconv.Itoa(timeout))
 	}
-	if version != nil {
-		args = append(args, "--version", *version)
+	if version != "" {
+		args = append(args, "--version", version)
 	}
 	for _, value := range values {
 		args = append(args, "--set", value)
@@ -381,6 +382,9 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 	}
 	if password != "" {
 		args = append(args, "--password", password)
+	}
+	if reuseValues {
+		args = append(args, "--reuse-values")
 	}
 	args = append(args, releaseName, chart)
 
@@ -510,7 +514,7 @@ func (h *HelmCLI) Version(tls bool) (string, error) {
 	return h.VersionWithArgs(tls)
 }
 
-// Version executes the helm version command and returns its output
+// VersionWithArgs executes the helm version command and returns its output
 func (h *HelmCLI) VersionWithArgs(tls bool, extraArgs ...string) (string, error) {
 	args := []string{"version", "--short"}
 	if tls {

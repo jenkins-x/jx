@@ -2,13 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"io"
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/browser"
@@ -17,8 +15,9 @@ import (
 type ConsoleOptions struct {
 	GetURLOptions
 
-	OnlyViewURL bool
-	ClassicMode bool
+	OnlyViewURL     bool
+	ClassicMode     bool
+	JenkinsSelector JenkinsSelectorOptions
 }
 
 const (
@@ -39,16 +38,11 @@ var (
 		jx console --classic`)
 )
 
-func NewCmdConsole(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdConsole(commonOpts *CommonOptions) *cobra.Command {
 	options := &ConsoleOptions{
 		GetURLOptions: GetURLOptions{
 			GetOptions: GetOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -73,10 +67,29 @@ func (o *ConsoleOptions) addConsoleFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.ClassicMode, "classic", "", false, "Use the classic Jenkins skin instead of Blue Ocean")
 
 	o.addGetUrlFlags(cmd)
+	o.JenkinsSelector.AddFlags(cmd)
 }
 
 func (o *ConsoleOptions) Run() error {
-	return o.Open(kube.ServiceJenkins, "Jenkins Console")
+	kubeClient, ns, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+	prow, err := o.isProw()
+	if err != nil {
+		return err
+	}
+	if prow {
+		o.JenkinsSelector.UseCustomJenkins = true
+	}
+	jenkinsServiceName, err := o.PickCustomJenkinsName(&o.JenkinsSelector, kubeClient, ns)
+	if err != nil {
+		return err
+	}
+	if jenkinsServiceName == "" && !prow {
+		jenkinsServiceName = kube.ServiceJenkins
+	}
+	return o.Open(jenkinsServiceName, "Jenkins Console")
 }
 
 func (o *ConsoleOptions) Open(name string, label string) error {

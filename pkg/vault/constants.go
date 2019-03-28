@@ -1,8 +1,8 @@
 package vault
 
 const (
-	// SystemVaultName name of the system vault used by the jenkins-x platfrom
-	SystemVaultName = "jx-vault"
+	// SystemVaultNamePrefix name prefix of the system vault used by the jenkins-x platform
+	SystemVaultNamePrefix = "jx-vault"
 	// GitOpsSecretsPath the path of secrets generated for GitOps
 	GitOpsSecretsPath = "gitops/"
 	// GitOpsTemplatesPath the path of gitops templates secrets

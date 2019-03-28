@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io"
 	"strings"
 	"time"
 
@@ -9,7 +8,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // GetBuildPodsOptions the command line options
@@ -45,16 +43,10 @@ var (
 )
 
 // NewCmdGetBuildPods creates the command
-func NewCmdGetBuildPods(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetBuildPods(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetBuildPodsOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-
-				Out: out,
-				Err: errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -77,7 +69,7 @@ func NewCmdGetBuildPods(f Factory, in terminal.FileReader, out terminal.FileWrit
 	cmd.Flags().StringVarP(&options.BuildFilter.Owner, "owner", "o", "", "Filters the owner (person/organisation) of the repository")
 	cmd.Flags().StringVarP(&options.BuildFilter.Repository, "repo", "r", "", "Filters the build repository")
 	cmd.Flags().StringVarP(&options.BuildFilter.Branch, "branch", "", "", "Filters the branch")
-	cmd.Flags().StringVarP(&options.BuildFilter.Build, "build", "b", "", "Filter a specific build number")
+	cmd.Flags().StringVarP(&options.BuildFilter.Build, "build", "", "", "Filter a specific build number")
 	return cmd
 }
 
@@ -97,7 +89,7 @@ func (o *GetBuildPodsOptions) Run() error {
 	}
 
 	table := o.createTable()
-	table.AddRow("OWNER", "REPOSITORY", "BRANCH", "BUILD", "AGE", "STATUS", "STEP 1 IMAGE", "POD", "GIT URL")
+	table.AddRow("OWNER", "REPOSITORY", "BRANCH", "BUILD", "CONTEXT", "AGE", "STATUS", "STEP 1 IMAGE", "POD", "GIT URL")
 
 	buildInfos := []*builds.BuildPodInfo{}
 	for _, pod := range pods {
@@ -112,7 +104,7 @@ func (o *GetBuildPodsOptions) Run() error {
 	for _, build := range buildInfos {
 		duration := strings.TrimSuffix(now.Sub(build.CreatedTime).Round(time.Minute).String(), "0s")
 
-		table.AddRow(build.Organisation, build.Repository, build.Branch, build.Build, duration, build.Status(), build.FirstStepImage, build.PodName, build.GitURL)
+		table.AddRow(build.Organisation, build.Repository, build.Branch, build.Build, build.Context, duration, build.Status(), build.FirstStepImage, build.PodName, build.GitURL)
 	}
 	table.Render()
 	return nil

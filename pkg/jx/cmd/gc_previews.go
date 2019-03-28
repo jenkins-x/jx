@@ -2,17 +2,15 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"strconv"
 
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -21,7 +19,7 @@ import (
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
 // referencing the cmd.Flags()
 type GCPreviewsOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	DisableImport bool
 	OutDir        string
@@ -41,14 +39,9 @@ var (
 )
 
 // NewCmd s a command object for the "step" command
-func NewCmdGCPreviews(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGCPreviews(commonOpts *CommonOptions) *cobra.Command {
 	options := &GCPreviewsOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -63,13 +56,12 @@ func NewCmdGCPreviews(f Factory, in terminal.FileReader, out terminal.FileWriter
 			CheckErr(err)
 		},
 	}
-	options.addCommonFlags(cmd)
 	return cmd
 }
 
 // Run implements this command
 func (o *GCPreviewsOptions) Run() error {
-	client, currentNs, err := o.CreateJXClient()
+	client, currentNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
@@ -106,7 +98,7 @@ func (o *GCPreviewsOptions) Run() error {
 				return err
 			}
 
-			gitProvider, err := gitInfo.CreateProvider(o.IsInCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
+			gitProvider, err := gitInfo.CreateProvider(o.InCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 			if err != nil {
 				return err
 			}
@@ -124,12 +116,14 @@ func (o *GCPreviewsOptions) Run() error {
 
 			if strings.HasPrefix(lowerState, "clos") || strings.HasPrefix(lowerState, "merged") || strings.HasPrefix(lowerState, "superseded") || strings.HasPrefix(lowerState, "declined") {
 				// lets delete the preview environment
-				deleteOpts := DeleteEnvOptions{
-					DeleteNamespace: true,
-					CommonOptions:   o.CommonOptions,
+				deleteOpts := DeletePreviewOptions{
+					PreviewOptions: PreviewOptions{
+						PromoteOptions: PromoteOptions{
+							CommonOptions: o.CommonOptions,
+						},
+					},
 				}
-				deleteOpts.CommonOptions.Args = []string{e.Name}
-				err = deleteOpts.Run()
+				err = deleteOpts.deletePreview(e.Name)
 				if err != nil {
 					return fmt.Errorf("failed to delete preview environment %s: %v\n", e.Name, err)
 				}

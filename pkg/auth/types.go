@@ -4,10 +4,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/vault"
 )
 
-const (
-	DefaultWritePermissions = 0760
-)
-
 type AuthServer struct {
 	URL   string
 	Users []*UserAuth
@@ -21,7 +17,7 @@ type UserAuth struct {
 	Username    string
 	ApiToken    string
 	BearerToken string
-	Password    string `yaml:"password,omitempty"`
+	Password    string `json:"password,omitempty"`
 }
 
 type AuthConfig struct {

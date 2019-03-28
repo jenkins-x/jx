@@ -7,6 +7,9 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
+
+	"github.com/jenkins-x/jx/pkg/version"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/client-go/kubernetes"
@@ -28,6 +31,8 @@ const (
 	SecretsFileName = "secrets.yaml"
 	// ValuesFileName the file name for values
 	ValuesFileName = "values.yaml"
+	// TemplatesDirName is the default name for the templates directory
+	TemplatesDirName = "templates"
 
 	// DefaultHelmRepositoryURL is the default cluster local helm repo
 	DefaultHelmRepositoryURL = "http://jenkins-x-chartmuseum:8080"
@@ -123,9 +128,28 @@ func (r *Requirements) RemoveApplication(app string) bool {
 
 // FindRequirementsFileName returns the default requirements.yaml file name
 func FindRequirementsFileName(dir string) (string, error) {
+	return findFileName(dir, RequirementsFileName)
+}
+
+// FindChartFileName returns the default chart.yaml file name
+func FindChartFileName(dir string) (string, error) {
+	return findFileName(dir, ChartFileName)
+}
+
+// FindValuesFileName returns the default values.yaml file name
+func FindValuesFileName(dir string) (string, error) {
+	return findFileName(dir, ValuesFileName)
+}
+
+// FindTemplatesDirName returns the default templates/ dir name
+func FindTemplatesDirName(dir string) (string, error) {
+	return findFileName(dir, TemplatesDirName)
+}
+
+func findFileName(dir string, fileName string) (string, error) {
 	names := []string{
-		filepath.Join(dir, defaultEnvironmentChartDir, RequirementsFileName),
-		filepath.Join(dir, RequirementsFileName),
+		filepath.Join(dir, defaultEnvironmentChartDir, fileName),
+		filepath.Join(dir, fileName),
 	}
 	for _, name := range names {
 		exists, err := util.FileExists(name)
@@ -142,7 +166,7 @@ func FindRequirementsFileName(dir string) (string, error) {
 	}
 	for _, f := range files {
 		if f.IsDir() {
-			name := filepath.Join(dir, f.Name(), RequirementsFileName)
+			name := filepath.Join(dir, f.Name(), fileName)
 			exists, err := util.FileExists(name)
 			if err != nil {
 				return "", err
@@ -157,7 +181,7 @@ func FindRequirementsFileName(dir string) (string, error) {
 		dir,
 	}
 	for _, d := range dirs {
-		name := filepath.Join(d, RequirementsFileName)
+		name := filepath.Join(d, fileName)
 		exists, err := util.FileExists(d)
 		if err != nil {
 			return "", err
@@ -186,19 +210,92 @@ func LoadRequirementsFile(fileName string) (*Requirements, error) {
 	return r, nil
 }
 
+// LoadChartFile loads the chart file or creates empty chart if the file does not exist
+func LoadChartFile(fileName string) (*chart.Metadata, error) {
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		data, err := ioutil.ReadFile(fileName)
+		if err != nil {
+			return nil, err
+		}
+		return LoadChart(data)
+	}
+	return &chart.Metadata{}, nil
+}
+
+// LoadValuesFile loads the values file or creates empty map if the file does not exist
+func LoadValuesFile(fileName string) (map[string]interface{}, error) {
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		return nil, errors.Wrapf(err, "checking %s exists", fileName)
+	}
+	if exists {
+		data, err := ioutil.ReadFile(fileName)
+		if err != nil {
+			return nil, errors.Wrapf(err, "reading %s", fileName)
+		}
+		v, err := LoadValues(data)
+		if err != nil {
+			return nil, errors.Wrapf(err, "unmarshaling %s", fileName)
+		}
+		return v, nil
+	}
+	return make(map[string]interface{}), nil
+}
+
+// LoadTemplatesDir loads the files in the templates dir or creates empty map if none exist
+func LoadTemplatesDir(dirName string) (map[string]string, error) {
+	exists, err := util.DirExists(dirName)
+	if err != nil {
+		return nil, err
+	}
+	answer := make(map[string]string)
+	if exists {
+		files, err := ioutil.ReadDir(dirName)
+		if err != nil {
+			return nil, err
+		}
+		for _, f := range files {
+			filename, _ := filepath.Split(f.Name())
+			answer[filename] = f.Name()
+		}
+	}
+	return answer, nil
+}
+
 // LoadRequirements loads the requirements from some data
 func LoadRequirements(data []byte) (*Requirements, error) {
 	r := &Requirements{}
 	return r, yaml.Unmarshal(data, r)
 }
 
-// SaveRequirementsFile saves the requirements file
-func SaveRequirementsFile(fileName string, requirements *Requirements) error {
-	data, err := yaml.Marshal(requirements)
+// LoadChart loads the requirements from some data
+func LoadChart(data []byte) (*chart.Metadata, error) {
+	r := &chart.Metadata{}
+	return r, yaml.Unmarshal(data, r)
+}
+
+// LoadValues loads the values from some data
+func LoadValues(data []byte) (map[string]interface{}, error) {
+	r := make(map[string]interface{})
+
+	return r, yaml.Unmarshal(data, &r)
+}
+
+// SaveFile saves contents (a pointer to a data structure) to a file
+func SaveFile(fileName string, contents interface{}) error {
+	data, err := yaml.Marshal(contents)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to marshal helm values file %s", fileName)
 	}
-	return ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save helm values file %s", fileName)
+	}
+	return nil
 }
 
 func LoadChartName(chartFile string) (string, error) {
@@ -279,6 +376,21 @@ func AppendMyValues(valueFiles []string) ([]string, error) {
 // CombineValueFilesToFile iterates through the input files and combines them into a single Values object and then
 // write it to the output file nested inside the chartName
 func CombineValueFilesToFile(outFile string, inputFiles []string, chartName string, extraValues map[string]interface{}) error {
+	answerMap := map[string]interface{}{}
+
+	// lets load any previous values if they exist
+	exists, err := util.FileExists(outFile)
+	if err != nil {
+		return err
+	}
+	if exists {
+		answerMap, err = LoadValuesFile(outFile)
+		if err != nil {
+			return err
+		}
+	}
+
+	// now lets merge any given input files
 	answer := chartutil.Values{}
 	for _, input := range inputFiles {
 		values, err := chartutil.ReadValuesFile(input)
@@ -293,9 +405,7 @@ func CombineValueFilesToFile(outFile string, inputFiles []string, chartName stri
 	for k, v := range extraValues {
 		m[k] = v
 	}
-	answerMap := map[string]interface{}{
-		chartName: m,
-	}
+	answerMap[chartName] = m
 	answer = chartutil.Values(answerMap)
 	text, err := answer.YAML()
 	if err != nil {
@@ -311,7 +421,8 @@ func CombineValueFilesToFile(outFile string, inputFiles []string, chartName stri
 // GetLatestVersion get's the latest version of a chart in a repo using helmer
 func GetLatestVersion(chart string, repo string, username string, password string, helmer Helmer) (string, error) {
 	latest := ""
-	err := InspectChart(chart, repo, username, password, helmer, func(dir string) error {
+	version := ""
+	err := InspectChart(chart, version, repo, username, password, helmer, func(dir string) error {
 		var err error
 		_, latest, err = LoadChartNameAndVersion(filepath.Join(dir, "Chart.yaml"))
 		return err
@@ -320,8 +431,8 @@ func GetLatestVersion(chart string, repo string, username string, password strin
 }
 
 // InspectChart fetches the specified chart in a repo using helmer, and then calls the closure on it, before cleaning up
-func InspectChart(chart string, repo string, username string, password string,
-	helmer Helmer, closure func(dir string) error) error {
+func InspectChart(chart string, version string, repo string, username string, password string,
+	helmer Helmer, inspector func(dir string) error) error {
 	dir, err := ioutil.TempDir("", fmt.Sprintf("jx-helm-fetch-%s-", chart))
 	defer func() {
 		err1 := os.RemoveAll(dir)
@@ -329,11 +440,11 @@ func InspectChart(chart string, repo string, username string, password string,
 			log.Warnf("Error removing %s %v\n", dir, err1)
 		}
 	}()
-	err = helmer.FetchChart(chart, nil, true, dir, repo, username, password)
+	err = helmer.FetchChart(chart, version, true, dir, repo, username, password)
 	if err != nil {
 		return err
 	}
-	return closure(filepath.Join(dir, chart))
+	return inspector(filepath.Join(dir, chart))
 }
 
 type InstallChartOptions struct {
@@ -348,12 +459,25 @@ type InstallChartOptions struct {
 	Repository  string
 	Username    string
 	Password    string
+	VersionsDir string
 }
 
 // InstallFromChartOptions uses the helmer and kubeClient interfaces to install the chart from the options,
 // respeciting the installTimeout
 func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeClient kubernetes.Interface,
 	installTimeout string) error {
+	chart := options.Chart
+	if options.Version == "" {
+		versionsDir := options.VersionsDir
+		if versionsDir == "" {
+			return fmt.Errorf("no VersionsDir specified when trying to install a chart")
+		}
+		var err error
+		options.Version, err = version.LoadStableVersionNumber(versionsDir, version.KindChart, chart)
+		if err != nil {
+			return errors.Wrapf(err, "failed to load stable version in dir %s for chart %s", versionsDir, chart)
+		}
+	}
 	if options.HelmUpdate {
 		log.Infoln("Updating Helm repository...")
 		err := helmer.UpdateRepo()
@@ -371,7 +495,57 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 		return errors.Wrap(err, "failed to convert the timeout to an int")
 	}
 	helmer.SetCWD(options.Dir)
-	return helmer.UpgradeChart(options.Chart, options.ReleaseName, options.Ns, &options.Version, true,
-		&timeout, true, false, options.SetValues, options.ValueFiles, options.Repository, options.Username,
-		options.Password)
+	return helmer.UpgradeChart(chart, options.ReleaseName, options.Ns, options.Version, true,
+		timeout, true, false, options.SetValues, options.ValueFiles, options.Repository, options.Username,
+		options.Password, false)
+}
+
+// GenerateReadmeForChart generates a string that can be used as a README.MD,
+// and includes info on the chart.
+func GenerateReadmeForChart(name string, version string, description string, chartRepo string,
+	gitRepo string, releaseNotesURL string, appReadme string) string {
+	var readme strings.Builder
+	readme.WriteString(fmt.Sprintf("# %s\n\n|App Metadata|---|\n", unknownZeroValue(name)))
+	if version != "" {
+		readme.WriteString(fmt.Sprintf("| **Version** | %s |\n", version))
+	}
+	if description != "" {
+		readme.WriteString(fmt.Sprintf("| **Description** | %s |\n", description))
+	}
+	if chartRepo != "" {
+		readme.WriteString(fmt.Sprintf("| **Chart Repository** | %s |\n", chartRepo))
+	}
+	if gitRepo != "" {
+		readme.WriteString(fmt.Sprintf("| **Git Repository** | %s |\n", gitRepo))
+	}
+	if releaseNotesURL != "" {
+		readme.WriteString(fmt.Sprintf("| **Release Notes** | %s |\n", releaseNotesURL))
+	}
+
+	if appReadme != "" {
+		readme.WriteString(fmt.Sprintf("\n## App README.MD\n\n%s\n", appReadme))
+	}
+	return readme.String()
+}
+
+func unknownZeroValue(value string) string {
+	if value == "" {
+		return "unknown"
+	}
+	return value
+
+}
+
+// SetValuesToMap converts the set of values of the form "foo.bar=123" into a helm values.yaml map structure
+func SetValuesToMap(setValues []string) map[string]interface{} {
+	answer := map[string]interface{}{}
+	for _, setValue := range setValues {
+		tokens := strings.SplitN(setValue, "=", 2)
+		if len(tokens) > 1 {
+			path := tokens[0]
+			value := tokens[1]
+			util.SetMapValueViaPath(answer, path, value)
+		}
+	}
+	return answer
 }

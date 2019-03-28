@@ -1,0 +1,17 @@
+pipelineConfig:
+  pipelines:
+    release:
+      pipeline:
+        agent:
+          image: some-image
+        environment:
+          - name: SOME_VAR
+            value: A value for the env var
+        stages:
+          - name: A stage with environment
+            environment:
+                - name: SOME_OTHER_VAR
+                  value: A value for the other env var
+            steps:
+              - command: echo
+                args: ['hello', '${SOME_OTHER_VAR}']

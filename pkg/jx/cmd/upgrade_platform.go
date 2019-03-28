@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/config"
 	configio "github.com/jenkins-x/jx/pkg/io"
+	"sigs.k8s.io/yaml"
 
-	"io"
 	"io/ioutil"
 	"strings"
-
-	"gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 
@@ -22,7 +22,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	survey "gopkg.in/AlecAivazis/survey.v1"
+	core_v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -47,20 +48,16 @@ type UpgradePlatformOptions struct {
 	Namespace     string
 	Set           string
 	AlwaysUpgrade bool
+	UpdateSecrets bool
 
 	InstallFlags InstallFlags
 }
 
 // NewCmdUpgradePlatform defines the command
-func NewCmdUpgradePlatform(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdUpgradePlatform(commonOpts *CommonOptions) *cobra.Command {
 	options := &UpgradePlatformOptions{
 		InstallOptions: InstallOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -77,15 +74,15 @@ func NewCmdUpgradePlatform(f Factory, in terminal.FileReader, out terminal.FileW
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The Namespace to promote to")
-	cmd.Flags().StringVarP(&options.ReleaseName, "name", "n", "jenkins-x", "The release name")
-	cmd.Flags().StringVarP(&options.Chart, "chart", "c", "jenkins-x/jenkins-x-platform", "The Chart to upgrade")
-	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The specific platform version to upgrade to")
-	cmd.Flags().StringVarP(&options.Set, "set", "s", "", "The helm parameters to pass in while upgrading")
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The Namespace to promote to.")
+	cmd.Flags().StringVarP(&options.ReleaseName, "name", "n", "jenkins-x", "The release name.")
+	cmd.Flags().StringVarP(&options.Chart, "chart", "c", "jenkins-x/jenkins-x-platform", "The Chart to upgrade.")
+	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The specific platform version to upgrade to.")
+	cmd.Flags().StringVarP(&options.Set, "set", "s", "", "The helm parameters to pass in while upgrading, separated by comma, e.g. key1=val1,key2=val2.")
 	cmd.Flags().BoolVarP(&options.AlwaysUpgrade, "always-upgrade", "", false, "If set to true, jx will upgrade platform Helm chart even if requested version is already installed.")
-	cmd.Flags().BoolVarP(&options.Flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true]")
+	cmd.Flags().BoolVarP(&options.Flags.CleanupTempFiles, "cleanup-temp-files", "", true, "Cleans up any temporary values.yaml used by helm install [default true].")
+	cmd.Flags().BoolVarP(&options.UpdateSecrets, "update-secrets", "", false, "Regenerate adminSecrets.yaml on upgrade")
 
-	options.addCommonFlags(cmd)
 	options.InstallFlags.addCloudEnvOptions(cmd)
 
 	return cmd
@@ -93,6 +90,8 @@ func NewCmdUpgradePlatform(f Factory, in terminal.FileReader, out terminal.FileW
 
 // Run implements the command
 func (o *UpgradePlatformOptions) Run() error {
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
+
 	configStore := configio.NewFileStore()
 	targetVersion := o.Version
 	err := o.Helm().UpdateRepo()
@@ -103,7 +102,7 @@ func (o *UpgradePlatformOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to create the API extensions client")
 	}
-	kube.RegisterAllCRDs(apisClient)
+	err = kube.RegisterAllCRDs(apisClient)
 	if err != nil {
 		return err
 	}
@@ -123,13 +122,11 @@ func (o *UpgradePlatformOptions) Run() error {
 	if "" == settings.KubeProvider {
 		log.Warnf("Unable to determine provider from team settings")
 
-		surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
-
 		provider := ""
 
 		prompt := &survey.Select{
 			Message: "Select the kube provider:",
-			Options: KUBERNETES_PROVIDERS,
+			Options: cloud.KubernetesProviders,
 			Default: "",
 		}
 		survey.AskOne(prompt, &provider, nil, surveyOpts)
@@ -152,37 +149,26 @@ func (o *UpgradePlatformOptions) Run() error {
 		io := &InstallOptions{}
 		io.CommonOptions = o.CommonOptions
 		io.Flags = o.InstallFlags
-		wrkDir, err = io.cloneJXCloudEnvironmentsRepo()
+		versionsDir, err := io.cloneJXVersionsRepo(o.Flags.VersionsRepository)
 		if err != nil {
 			return err
 		}
-		targetVersion, err = LoadVersionFromCloudEnvironmentsDir(wrkDir, configStore)
+		targetVersion, err = LoadVersionFromCloudEnvironmentsDir(versionsDir, configStore)
 		if err != nil {
 			return err
 		}
 	}
 
-	// Current version
-	var currentVersion string
-	output, err := o.Helm().ListCharts()
+	releases, err := o.Helm().StatusReleases(ns)
 	if err != nil {
-		log.Warnf("Failed to find helm installs: %s\n", err)
-		return err
-	} else {
-		o.Debugf("Installed helm charts\n%s\n", output)
-		for _, line := range strings.Split(output, "\n") {
-			fields := strings.Split(line, "\t")
-			if len(fields) > 4 && strings.TrimSpace(fields[0]) == "jenkins-x" {
-				for _, f := range fields[4:] {
-					f = strings.TrimSpace(f)
-					if strings.HasPrefix(f, jxChartPrefix) {
-						currentVersion = strings.TrimPrefix(f, jxChartPrefix)
-					}
-				}
-			}
+		return errors.Wrap(err, "list charts releases")
+	}
+	var currentVersion string
+	for name, rel := range releases {
+		if name == "jenkins-x" {
+			currentVersion = rel.Version
 		}
 	}
-
 	if currentVersion == "" {
 		return errors.New("Jenkins X platform helm chart is not installed.")
 	}
@@ -212,8 +198,13 @@ func (o *UpgradePlatformOptions) Run() error {
 		return errors.Wrap(err, "failed to create a temporary config dir for Git credentials")
 	}
 
+	// file locations
 	adminSecretsFileName := filepath.Join(dir, AdminSecretsFile)
 	configFileName := filepath.Join(dir, ExtraValuesFile)
+
+	cloudEnvironmentValuesLocation := filepath.Join(makefileDir, CloudEnvValuesFile)
+	cloudEnvironmentSecretsLocation := filepath.Join(makefileDir, CloudEnvSecretsFile)
+	cloudEnvironmentSopsLocation := filepath.Join(makefileDir, CloudEnvSopsConfigFile)
 
 	client, err := o.KubeClient()
 	if err != nil {
@@ -222,11 +213,11 @@ func (o *UpgradePlatformOptions) Run() error {
 	secretResources := client.CoreV1().Secrets(ns)
 	oldSecret, err := secretResources.Get(JXInstallConfig, metav1.GetOptions{})
 	if err != nil {
-		return errors.Wrap(err, "failed to get the jx secret resource")
+		return errors.Wrap(err, "failed to get the jx-install-config secret")
 	}
 
 	if oldSecret == nil {
-		return errors.Wrap(err, "old secret doesn't exist, aborting")
+		return errors.Wrap(err, "secret jx-install-config doesn't exist, aborting")
 	}
 
 	if targetVersion != currentVersion {
@@ -238,32 +229,61 @@ func (o *UpgradePlatformOptions) Run() error {
 		return nil
 	}
 
-	cloudEnvironmentValuesLocation := filepath.Join(makefileDir, CloudEnvValuesFile)
-	cloudEnvironmentSecretsLocation := filepath.Join(makefileDir, CloudEnvSecretsFile)
-	cloudEnvironmentSopsLocation := filepath.Join(makefileDir, CloudEnvSopsConfigFile)
-
-	adminSecretsFileNameExists, err := util.FileExists(adminSecretsFileName)
+	err = o.removeFileIfExists(adminSecretsFileName)
 	if err != nil {
-		return errors.Wrapf(err, "unable to determine if %s exist", adminSecretsFileName)
-	}
-	if !adminSecretsFileNameExists {
-		log.Infof("Creating %s from %s\n", util.ColorInfo(adminSecretsFileName), util.ColorInfo(JXInstallConfig))
-		err = ioutil.WriteFile(adminSecretsFileName, oldSecret.Data[AdminSecretsFile], 0644)
-		if err != nil {
-			return errors.Wrapf(err, "failed to write the config file %s", adminSecretsFileName)
-		}
+		return errors.Wrapf(err, "unable to remove %s if exist", adminSecretsFileName)
 	}
 
-	configFileNameExists, err := util.FileExists(configFileName)
+	err = o.removeFileIfExists(configFileName)
 	if err != nil {
-		return errors.Wrapf(err, "unable to determine if %s exist", configFileName)
+		return errors.Wrapf(err, "unable to remove %s if exist", configFileName)
 	}
-	if !configFileNameExists {
-		log.Infof("Creating %s from %s\n", util.ColorInfo(configFileName), util.ColorInfo(JXInstallConfig))
-		err = ioutil.WriteFile(configFileName, oldSecret.Data[ExtraValuesFile], 0644)
+
+	log.Infof("Creating %s from %s\n", util.ColorInfo(adminSecretsFileName), util.ColorInfo(JXInstallConfig))
+	err = ioutil.WriteFile(adminSecretsFileName, oldSecret.Data[AdminSecretsFile], 0644)
+	if err != nil {
+		return errors.Wrapf(err, "failed to write the config file %s", adminSecretsFileName)
+	}
+
+	o.Debugf("%s from %s is %s\n", AdminSecretsFile, JXInstallConfig, oldSecret.Data[AdminSecretsFile])
+
+	if o.UpdateSecrets {
+		// load admin secrets service from adminSecretsFileName
+		err = o.AdminSecretsService.NewAdminSecretsConfigFromSecret(adminSecretsFileName)
 		if err != nil {
-			return errors.Wrapf(err, "failed to write the config file %s", configFileName)
+			return errors.Wrap(err, "failed to create the admin secret config service from the secrets file")
 		}
+
+		o.AdminSecretsService.NewMavenSettingsXML()
+		adminSecrets := &o.AdminSecretsService.Secrets
+
+		o.Debugf("Rewriting secrets file to %s\n", util.ColorInfo(adminSecretsFileName))
+		err = configStore.WriteObject(adminSecretsFileName, adminSecrets)
+		if err != nil {
+			return errors.Wrapf(err, "writing the admin secrets in the secrets file '%s'", adminSecretsFileName)
+		}
+
+		// save updated admin secretes to Kubernetes
+		y, err := yaml.Marshal(adminSecrets)
+		if err != nil {
+			return errors.Wrapf(err, "unable to marshal admin secrets to yaml: %v", adminSecrets)
+		}
+
+		_, err = o.ModifySecret(JXInstallConfig, func(secret *core_v1.Secret) error {
+			secret.Data[AdminSecretsFile] = y
+			return nil
+		})
+		if err != nil {
+			return errors.Wrapf(err, "unable to save admin secrets to kubernetes secret: %s", JXInstallConfig)
+		}
+
+		o.Debugf("Saved admin secrets to Kubernetes secret %s\n", util.ColorInfo(JXInstallConfig))
+	}
+
+	log.Infof("Creating %s from %s\n", util.ColorInfo(configFileName), util.ColorInfo(JXInstallConfig))
+	err = ioutil.WriteFile(configFileName, oldSecret.Data[ExtraValuesFile], 0644)
+	if err != nil {
+		return errors.Wrapf(err, "failed to write the config file %s", configFileName)
 	}
 
 	sopsFileExists, err := util.FileExists(cloudEnvironmentSopsLocation)
@@ -291,7 +311,33 @@ func (o *UpgradePlatformOptions) Run() error {
 		}
 	}
 
-	valueFiles := []string{cloudEnvironmentValuesLocation, adminSecretsFileName, configFileName, cloudEnvironmentSecretsLocation}
+	invalidFormat, err := o.checkAdminSecretsForInvalidFormat(adminSecretsFileName)
+	if err != nil {
+		return errors.Wrap(err, "unable to check adminSecrets.yaml file for invalid format")
+	}
+
+	if invalidFormat {
+		log.Warnf("We have detected that the %s file has an invalid format", adminSecretsFileName)
+
+		confirm := false
+		prompt := &survey.Confirm{
+			Message: fmt.Sprintf("Would you like to repair the file?"),
+			Default: true,
+		}
+		survey.AskOne(prompt, &confirm, nil, surveyOpts)
+
+		if confirm {
+			err = o.repairAdminSecrets(adminSecretsFileName)
+			if err != nil {
+				return errors.Wrap(err, "unable to repair adminSecrets.yaml")
+			}
+		} else {
+			log.Error("Aborting upgrade due to invalid adminSecrets.yaml")
+			return nil
+		}
+	}
+
+	valueFiles := []string{cloudEnvironmentValuesLocation, configFileName, adminSecretsFileName, cloudEnvironmentSecretsLocation}
 	valueFiles, err = helm.AppendMyValues(valueFiles)
 	if err != nil {
 		return errors.Wrap(err, "failed to append the myvalues.yaml file")
@@ -299,26 +345,88 @@ func (o *UpgradePlatformOptions) Run() error {
 
 	values := []string{}
 	if o.Set != "" {
-		values = append(values, o.Set)
+		sets := strings.Split(o.Set, ",")
+		values = append(values, sets...)
 	}
 
 	for _, v := range valueFiles {
 		o.Debugf("Adding values file %s\n", util.ColorInfo(v))
 	}
 
-	err = o.Helm().UpgradeChart(o.Chart, o.ReleaseName, ns, &targetVersion, false, nil, false, false, values,
-		valueFiles, "", "", "")
+	err = o.Helm().UpgradeChart(o.Chart, o.ReleaseName, ns, targetVersion, false, -1, false, false, values,
+		valueFiles, "", "", "", false)
 	if err != nil {
 		return errors.Wrap(err, "unable to upgrade helm chart")
 	}
 
 	if o.Flags.CleanupTempFiles {
-		if !configFileNameExists {
-			err = os.Remove(configFileName)
-			if err != nil {
-				return errors.Wrap(err, "failed to cleanup the config file")
-			}
+		err = o.removeFileIfExists(configFileName)
+		if err != nil {
+			return errors.Wrap(err, "failed to cleanup the config file")
 		}
+
+		err = o.removeFileIfExists(adminSecretsFileName)
+		if err != nil {
+			return errors.Wrap(err, "failed to cleanup the admin secrets file")
+		}
+	}
+
+	return nil
+}
+
+func (o *UpgradePlatformOptions) removeFileIfExists(fileName string) error {
+	fileNameExists, err := util.FileExists(fileName)
+	if err != nil {
+		return errors.Wrapf(err, "unable to determine if %s exist", fileName)
+	}
+	if fileNameExists {
+		o.Debugf("Removing values file %s\n", util.ColorInfo(fileName))
+		err = os.Remove(fileName)
+		if err != nil {
+			return errors.Wrapf(err, "failed to remove %s", fileName)
+		}
+	}
+	return nil
+}
+
+func (o *UpgradePlatformOptions) checkAdminSecretsForInvalidFormat(fileName string) (bool, error) {
+	data, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return false, errors.Wrap(err, "unable to read file")
+	}
+	return strings.Contains(string(data), "mavensettingsxml"), nil
+}
+
+func (o *UpgradePlatformOptions) repairAdminSecrets(fileName string) error {
+	admin := config.AdminSecretsConfig{}
+
+	data, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		return errors.Wrap(err, "unable to read file")
+	}
+
+	err = yaml.Unmarshal(data, &admin)
+	if err != nil {
+		return errors.Wrap(err, "unable to unmarshall secrets")
+	}
+
+	// use the correct yaml library to persist
+	y, err := yaml.Marshal(admin)
+	if err != nil {
+		return errors.Wrapf(err, "unable to marshal object to yaml: %v", admin)
+	}
+
+	err = ioutil.WriteFile(fileName, y, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "unable to write secrets to file %s", fileName)
+	}
+
+	_, err = o.ModifySecret(JXInstallConfig, func(secret *core_v1.Secret) error {
+		secret.Data[AdminSecretsFile] = y
+		return nil
+	})
+	if err != nil {
+		return errors.Wrapf(err, "unable to save admin secrets to kubernetes secret: %s", JXInstallConfig)
 	}
 
 	return nil

@@ -2,12 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"io"
-	"os"
 )
 
 const (
@@ -30,8 +29,9 @@ var (
 	}
 
 	createProjectLong = templates.LongDesc(`
-		Creates a project
-`)
+		Create a new Project by importing code, using a Quickstart or custom wizard for Spring or Camel.
+
+` + SeeAlsoText("jx create quickstart", "jx create spring", "jx create camel", "jx create jhipster", "jx import"))
 
 	createProjectExample = templates.Examples(`
 		# Create a project
@@ -45,15 +45,10 @@ type CreateProjectWizardOptions struct {
 }
 
 // NewCmdCreateProject creates a command object for the "create" command
-func NewCmdCreateProject(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateProject(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateProjectWizardOptions{
 		CreateOptions: CreateOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -70,7 +65,6 @@ func NewCmdCreateProject(f Factory, in terminal.FileReader, out terminal.FileWri
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	return cmd
 }
 

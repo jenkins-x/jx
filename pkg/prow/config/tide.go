@@ -9,10 +9,9 @@ import (
 )
 
 // CreateTide creates a default Tide Config object
-func CreateTide() config.Tide {
-	// todo get the real URL, though we need to handle the multi cluster use case where dev namespace may be another cluster, so pass it in as an arg?
+func CreateTide(tideURL string) config.Tide {
 	t := config.Tide{
-		TargetURL: "https://tide.foo.bar",
+		TargetURL: tideURL,
 	}
 
 	var qs []config.TideQuery

@@ -2,17 +2,17 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"os/user"
 	"reflect"
 	"strconv"
+
+	"github.com/jenkins-x/jx/pkg/users"
 
 	"github.com/jenkins-x/jx/pkg/builds"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -318,7 +318,7 @@ func (o *CommonOptions) ModifyUser(userName string, callback func(env *v1.User) 
 	create := false
 	user, err := userInterface.Get(userName, metav1.GetOptions{})
 	if err != nil {
-		user = kube.CreateUser(ns, userName, "", "")
+		user = users.CreateUser(ns, userName, "", "")
 		create = true
 	}
 
@@ -356,7 +356,7 @@ func (o *CommonOptions) getUsername(userName string) (string, error) {
 	return userName, nil
 }
 
-func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer, options *EditOptions) error {
+func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, options *EditOptions) error {
 	teamSettings := &v1.TeamSettings{}
 	value := reflect.ValueOf(teamSettings).Elem()
 	t := value.Type()
@@ -389,9 +389,9 @@ func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, in terminal.FileRea
 				} else if !options.BatchMode {
 					var err error
 					if structField.Type.String() == "string" {
-						value, err = util.PickValue(commandUsage+":", field.String(), true, "", in, out, errOut)
+						value, err = util.PickValue(commandUsage+":", field.String(), true, "", options.In, options.Out, options.Err)
 					} else if structField.Type.String() == "bool" {
-						value = util.Confirm(commandUsage+":", field.Bool(), "", in, out, errOut)
+						value = util.Confirm(commandUsage+":", field.Bool(), "", options.In, options.Out, options.Err)
 					}
 					CheckErr(err)
 				} else {

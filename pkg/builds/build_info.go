@@ -13,6 +13,11 @@ import (
 	"time"
 )
 
+// BaseBuildInfo is an interface that is implemented by both BuildPodInfo here and tekton.PipelineRunInfo
+type BaseBuildInfo interface {
+	GetBuild() string
+}
+
 type BuildPodInfo struct {
 	PodName           string
 	Name              string
@@ -20,6 +25,7 @@ type BuildPodInfo struct {
 	Repository        string
 	Branch            string
 	Build             string
+	Context           string
 	BuildNumber       int
 	Pipeline          string
 	LastCommitSHA     string
@@ -32,12 +38,18 @@ type BuildPodInfo struct {
 	Pod               *corev1.Pod
 }
 
+// GetBuild gets the build identifier
+func (b BuildPodInfo) GetBuild() string {
+	return b.Build
+}
+
 type BuildPodInfoFilter struct {
 	Owner      string
 	Repository string
 	Branch     string
 	Build      string
 	Filter     string
+	Pod        string
 	Pending    bool
 }
 
@@ -55,9 +67,12 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 		log.Warnf("Failed to compile regexp because %s", err)
 	}
 	gitURL := ""
-	for _, initContainer := range pod.Spec.InitContainers {
-		if initContainer.Name == "build-step-git-source" {
-			args := initContainer.Args
+
+	containers, _, isInit := kube.GetContainersWithStatusAndIsInit(pod)
+
+	for _, container := range containers {
+		if strings.HasPrefix(container.Name, "build-step-git-source") {
+			_, args := kube.GetCommandAndArgs(&container, isInit)
 			for i := 0; i <= len(args)-2; i += 2 {
 				key := args[i]
 				value := args[i+1]
@@ -68,12 +83,17 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 				case "-revision":
 					if shaRegexp.MatchString(value) {
 						lastCommitSha = value
+					} else {
+						branch = value
 					}
 				}
 			}
 		}
 		var pullPullSha, pullBaseSha string
-		for _, v := range initContainer.Env {
+		for _, v := range container.Env {
+			if v.Value == "" {
+				continue
+			}
 			if v.Name == "PULL_PULL_SHA" {
 				pullPullSha = v.Value
 			}
@@ -97,14 +117,14 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 			}
 		}
 		if branch == "" {
-			for _, v := range initContainer.Env {
+			for _, v := range container.Env {
 				if v.Name == "PULL_BASE_REF" {
 					build = v.Value
 				}
 			}
 		}
 		if build == "" {
-			for _, v := range initContainer.Env {
+			for _, v := range container.Env {
 				if v.Name == "BUILD_NUMBER" || v.Name == "BUILD_ID" {
 					build = v.Value
 				}
@@ -116,6 +136,9 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 		if lastCommitSha == "" && pullBaseSha != "" {
 			lastCommitSha = pullBaseSha
 		}
+	}
+	if build == "" {
+		build = GetBuildNumberFromLabels(pod.Labels)
 	}
 	if build == "" {
 		build = "1"
@@ -139,8 +162,13 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 		LastCommitURL:     lastCommitURL,
 		CreatedTime:       pod.CreationTimestamp.Time,
 	}
-	if len(pod.Spec.InitContainers) > 2 {
-		answer.FirstStepImage = pod.Spec.InitContainers[2].Image
+	if pod.Labels != nil {
+		answer.Context = pod.Labels["context"]
+	}
+	if isInit && len(containers) > 2 {
+		answer.FirstStepImage = containers[2].Image
+	} else if !isInit && len(containers) > 1 {
+		answer.FirstStepImage = containers[1].Image
 	}
 
 	if gitURL != "" {
@@ -176,6 +204,9 @@ func (o *BuildPodInfoFilter) BuildMatches(info *BuildPodInfo) bool {
 		return false
 	}
 	if o.Build != "" && o.Build != info.Build {
+		return false
+	}
+	if o.Pod != "" && o.Pod != info.PodName {
 		return false
 	}
 	if o.Filter != "" && !strings.Contains(info.Name, o.Filter) {

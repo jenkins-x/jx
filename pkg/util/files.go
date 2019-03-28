@@ -5,9 +5,14 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"mime"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
+	"time"
+
+	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/pkg/errors"
 )
@@ -26,7 +31,18 @@ func FileExists(path string) (bool, error) {
 	if os.IsNotExist(err) {
 		return false, nil
 	}
-	return true, err
+	return true, errors.Wrapf(err, "failed to check if file exists %s", path)
+}
+
+// DirExists checks if path exists and is a directory
+func DirExists(path string) (bool, error) {
+	info, err := os.Stat(path)
+	if err == nil {
+		return info.IsDir(), nil
+	} else if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }
 
 // FirstFileExists returns the first file which exists or an error if we can't detect if a file that exists
@@ -115,6 +131,18 @@ func RenameFile(src string, dst string) (err error) {
 		return fmt.Errorf("failed to cleanup source file %s: %s", src, err)
 	}
 	return nil
+}
+
+// CopyFileOrDir copies the source file or directory to the given destination
+func CopyFileOrDir(src string, dst string, force bool) (err error) {
+	fi, err := os.Stat(src)
+	if err != nil {
+		return errors.Wrapf(err, "getting details of file '%s'", src)
+	}
+	if fi.IsDir() {
+		return CopyDir(src, dst, force)
+	}
+	return CopyFile(src, dst)
 }
 
 // credit https://gist.github.com/r0l1/92462b38df26839a3ca324697c8cba04
@@ -215,6 +243,61 @@ func CopyFile(src, dst string) (err error) {
 	}
 
 	return
+}
+
+// CopyDirPreserve copies from the src dir to the dst dir if the file does NOT already exist in dst
+func CopyDirPreserve(src string, dst string) error {
+	src = filepath.Clean(src)
+	dst = filepath.Clean(dst)
+
+	si, err := os.Stat(src)
+	if err != nil {
+		return errors.Wrapf(err, "checking %s exists", src)
+	}
+	if !si.IsDir() {
+		return fmt.Errorf("source is not a directory")
+	}
+
+	_, err = os.Stat(dst)
+	if err != nil && !os.IsNotExist(err) {
+		return errors.Wrapf(err, "checking %s exists", dst)
+	}
+
+	err = os.MkdirAll(dst, si.Mode())
+	if err != nil {
+		return errors.Wrapf(err, "creating %s", dst)
+	}
+
+	entries, err := ioutil.ReadDir(src)
+	if err != nil {
+		return errors.Wrapf(err, "reading files in %s", src)
+	}
+
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		dstPath := filepath.Join(dst, entry.Name())
+
+		if entry.IsDir() {
+			err = CopyDirPreserve(srcPath, dstPath)
+			if err != nil {
+				return errors.Wrapf(err, "recursively copying %s", entry.Name())
+			}
+		} else {
+			// Skip symlinks.
+			if entry.Mode()&os.ModeSymlink != 0 {
+				continue
+			}
+			if _, err := os.Stat(dstPath); os.IsNotExist(err) {
+				err = CopyFile(srcPath, dstPath)
+				if err != nil {
+					return errors.Wrapf(err, "copying %s to %s", srcPath, dstPath)
+				}
+			} else if err != nil {
+				return errors.Wrapf(err, "checking if %s exists", dstPath)
+			}
+		}
+	}
+	return nil
 }
 
 // CopyDirOverwrite copies from the source dir to the destination dir overwriting files along the way
@@ -320,13 +403,30 @@ func DestroyFile(filename string) error {
 
 // DeleteDirContents removes all the contents of the given directory
 func DeleteDirContents(dir string) error {
-	files, err := filepath.Glob(filepath.Join(dir, "*", ".*"))
+	files, err := filepath.Glob(filepath.Join(dir, "*"))
 	if err != nil {
 		return err
 	}
 	for _, file := range files {
 		// lets ignore the top level dir
 		if dir != file {
+			err = os.RemoveAll(file)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func DeleteDirContentsExcept(dir string, exceptDir string) error {
+	files, err := filepath.Glob(filepath.Join(dir, "*"))
+	if err != nil {
+		return err
+	}
+	for _, file := range files {
+		// lets ignore the top level dir
+		if dir != file && !strings.HasSuffix(file, exceptDir) {
 			err = os.RemoveAll(file)
 			if err != nil {
 				return err
@@ -362,4 +462,86 @@ func FilterFileExists(paths []string) []string {
 		}
 	}
 	return answer
+}
+
+// ContentTypeForFileName returns the MIME type for the given file name
+func ContentTypeForFileName(name string) string {
+	ext := filepath.Ext(name)
+	answer := mime.TypeByExtension(ext)
+	if answer == "" {
+		if ext == ".log" || ext == ".txt" {
+			return "text/plain; charset=utf-8"
+		}
+	}
+	return answer
+}
+
+// IgnoreFile returns true if the path matches any of the ignores. The match is the same as filepath.Match.
+func IgnoreFile(path string, ignores []string) (bool, error) {
+	for _, ignore := range ignores {
+		if matched, err := filepath.Match(ignore, path); err != nil {
+			return false, errors.Wrapf(err, "error when matching ignore %s against path %s", ignore, path)
+		} else if matched {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// ListDirectory logs the directory at path
+func ListDirectory(root string, recurse bool) error {
+	if info, err := os.Stat(root); err != nil {
+		if os.IsNotExist(err) {
+			return errors.Wrapf(err, "unable to list %s as does not exist", root)
+		}
+		if !info.IsDir() {
+			return errors.Errorf("%s is not a directory", root)
+		}
+		return errors.Wrapf(err, "stat %s", root)
+	}
+	return filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		dir, _ := filepath.Split(path)
+		if !recurse && dir != root {
+			// No recursion and we aren't in the root dir
+			return nil
+		}
+		info, err = os.Stat(path)
+		if err != nil {
+			return errors.Wrapf(err, "stat %s", path)
+		}
+		log.Infof("%v %d %s %s\n", info.Mode().String(), info.Size(), info.ModTime().Format(time.RFC822), info.Name())
+		return nil
+	})
+
+}
+
+// GlobAllFiles performs a glob on the pattern and then processes all the files found.
+// if a folder matches the glob its treated as another glob to recurse into the directory
+func GlobAllFiles(basedir string, pattern string, fn func(string) error) error {
+	names, err := filepath.Glob(pattern)
+	if err != nil {
+		return errors.Wrapf(err, "failed to evaluate glob pattern '%s'", pattern)
+	}
+	for _, name := range names {
+		fullPath := name
+		if basedir != "" {
+			fullPath = filepath.Join(basedir, name)
+		}
+		fi, err := os.Stat(fullPath)
+		if err != nil {
+			return errors.Wrapf(err, "getting details of file '%s'", fullPath)
+		}
+		if fi.IsDir() {
+			err = GlobAllFiles("", filepath.Join(fullPath, "*"), fn)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = fn(fullPath)
+			if err != nil {
+				return errors.Wrapf(err, "failed processing file '%s'", fullPath)
+			}
+		}
+	}
+	return nil
 }

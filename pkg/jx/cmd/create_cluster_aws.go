@@ -2,13 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -16,7 +16,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
@@ -73,9 +72,9 @@ var (
 )
 
 // NewCmdCreateClusterAWS creates the command
-func NewCmdCreateClusterAWS(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdCreateClusterAWS(commonOpts *CommonOptions) *cobra.Command {
 	options := CreateClusterAWSOptions{
-		CreateClusterOptions: createCreateClusterOptions(f, in, out, errOut, AKS),
+		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.AKS),
 	}
 	cmd := &cobra.Command{
 		Use:     "aws",
@@ -91,7 +90,6 @@ func NewCmdCreateClusterAWS(f Factory, in terminal.FileReader, out terminal.File
 	}
 
 	options.addCreateClusterFlags(cmd)
-	options.addCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.Flags.Profile, "profile", "", "", "AWS profile to use.")
 	cmd.Flags().StringVarP(&options.Flags.Region, "region", "", "", "AWS region to use. Default: "+amazon.DefaultRegion)
@@ -299,8 +297,16 @@ func (o *CreateClusterAWSOptions) Run() error {
 	log.Infoln("State of kops cluster: OK")
 	log.Blank()
 
+	region, err := amazon.ResolveRegion(o.Flags.Profile, o.Flags.Region)
+	if err != nil {
+		return err
+	}
+	o.InstallOptions.setInstallValues(map[string]string{
+		kube.Region: region,
+	})
+
 	log.Info("Initialising cluster ...\n")
-	return o.initAndInstall(AWS)
+	return o.initAndInstall(cloud.AWS)
 }
 
 func (o *CreateClusterAWSOptions) waitForClusterJson(clusterName string) (string, error) {
@@ -358,7 +364,7 @@ func (o *CreateClusterAWSOptions) modifyClusterConfigJson(json string, insecureR
 		return err
 	}
 	fileName := tmpFile.Name()
-	err = ioutil.WriteFile(fileName, []byte(newJson), DefaultWritePermissions)
+	err = ioutil.WriteFile(fileName, []byte(newJson), util.DefaultWritePermissions)
 	if err != nil {
 		return fmt.Errorf("Failed to write InstanceGroup JSON %s: %s", fileName, err)
 	}

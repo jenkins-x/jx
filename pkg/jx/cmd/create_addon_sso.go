@@ -2,27 +2,25 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/pki"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
 const (
-	defaultSSONamesapce         = "jx"
+	defaultSSONamesapce         = "sso"
 	defaultSSOReleaseNamePrefix = "jx-sso"
-	repoName                    = "jenkinsxio"
-	repoURL                     = "https://chartmuseum.jx.cd.jenkins-x.io"
+	repoName                    = "jenkins-x"
 	dexServiceName              = "dex"
 	operatorServiceName         = "operator"
 	githubNewOAuthAppURL        = "https://github.com/settings/applications/new"
@@ -46,27 +44,15 @@ var (
 // CreateAddonSSOptions the options for the create sso addon
 type CreateAddonSSOOptions struct {
 	CreateAddonOptions
-	UpgradeIngressOptions UpgradeIngressOptions
-	DexVersion            string
+	DexVersion string
 }
 
 // NewCmdCreateAddonSSO creates a command object for the "create addon sso" command
-func NewCmdCreateAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
-	commonOptions := CommonOptions{
-		Factory: f,
-		In:      in,
-		Out:     out,
-		Err:     errOut,
-	}
+func NewCmdCreateAddonSSO(commonOpts *CommonOptions) *cobra.Command {
 	options := &CreateAddonSSOOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
-				CommonOptions: commonOptions,
-			},
-		},
-		UpgradeIngressOptions: UpgradeIngressOptions{
-			CreateOptions: CreateOptions{
-				CommonOptions: commonOptions,
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -84,10 +70,8 @@ func NewCmdCreateAddonSSO(f Factory, in terminal.FileReader, out terminal.FileWr
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	cmd.Flags().StringVarP(&options.DexVersion, "dex-version", "", defaultDexVersion, "The dex chart version to install)")
 	options.addFlags(cmd, defaultSSONamesapce, defaultSSOReleaseNamePrefix, defaultOperatorVersion)
-	options.UpgradeIngressOptions.addFlags(cmd)
 	return cmd
 }
 
@@ -143,7 +127,7 @@ func (o *CreateAddonSSOOptions) Run() error {
 		return errors.Wrap(err, "checking if helm is installed")
 	}
 
-	err = o.addHelmRepoIfMissing(repoURL, repoName, "", "")
+	err = o.addHelmRepoIfMissing(kube.DefaultChartMuseumURL, repoName, "", "")
 	if err != nil {
 		return errors.Wrap(err, "adding dex chart helm repository")
 	}
@@ -231,7 +215,7 @@ func (o *CreateAddonSSOOptions) installDex(domain string, clientID string, clien
 		"connectors.github.config.clientSecret=" + clientSecret,
 		fmt.Sprintf("connectors.github.config.orgs={%s}", strings.Join(authorizedOrgs, ",")),
 		"domain=" + domain,
-		"certs.grpc.ca.namespace=" + CertManagerNamespace,
+		"certs.grpc.ca.namespace=" + pki.CertManagerNamespace,
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
@@ -250,8 +234,12 @@ func (o *CreateAddonSSOOptions) installSSOOperator(dexGrpcService string) error 
 }
 
 func (o *CreateAddonSSOOptions) exposeSSO() error {
-	options := &o.UpgradeIngressOptions
-	options.Namespaces = []string{o.Namespace}
-	options.SkipCertManager = true
-	return options.Run()
+	upgradeIngOpts := &UpgradeIngressOptions{
+		CreateOptions: CreateOptions{
+			CommonOptions: o.CommonOptions,
+		},
+		Namespaces:   []string{o.Namespace},
+		WaitForCerts: true,
+	}
+	return upgradeIngOpts.Run()
 }

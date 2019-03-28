@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -13,7 +12,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -24,8 +22,6 @@ type StepPostRunOptions struct {
 	DisableImport bool
 	OutDir        string
 }
-
-var ()
 
 var (
 	StepPostRunLong = templates.LongDesc(`
@@ -38,15 +34,10 @@ var (
 )
 
 // NewCmdStep Steps a command object for the "step" command
-func NewCmdStepPostRun(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepPostRun(commonOpts *CommonOptions) *cobra.Command {
 	options := &StepPostRunOptions{
 		StepOptions: StepOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -63,14 +54,13 @@ func NewCmdStepPostRun(f Factory, in terminal.FileReader, out terminal.FileWrite
 		},
 	}
 
-	cmd.Flags().BoolVarP(&options.Verbose, "verbose", "", false, "Enables verbose logging")
 	return cmd
 }
 
 // Run implements this command
 func (o *StepPostRunOptions) Run() (err error) {
 	// TODO Support for conditions other than Always
-	client, ns, err := o.CreateJXClient()
+	client, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return errors.Wrap(err, "cannot create the JX client")
 	}
@@ -84,10 +74,6 @@ func (o *StepPostRunOptions) Run() (err error) {
 		return err
 	}
 
-	activities := client.JenkinsV1().PipelineActivities(ns)
-	if err != nil {
-		return err
-	}
 	gitInfo, err := o.FindGitInfo("")
 	appName := ""
 	if gitInfo != nil {
@@ -95,7 +81,7 @@ func (o *StepPostRunOptions) Run() (err error) {
 	}
 	pipeline := ""
 	build := o.getBuildNumber()
-	pipeline, build = o.getPipelineName(gitInfo, pipeline, build, appName)
+	pipeline, build = o.GetPipelineName(gitInfo, pipeline, build, appName)
 	if pipeline != "" && build != "" {
 		name := kube.ToValidName(pipeline + "-" + build)
 		key := &kube.PromoteStepActivityKey{
@@ -105,7 +91,7 @@ func (o *StepPostRunOptions) Run() (err error) {
 				Build:    build,
 			},
 		}
-		a, _, err := key.GetOrCreate(activities)
+		a, _, err := key.GetOrCreate(client, ns)
 		if err != nil {
 			return err
 		}

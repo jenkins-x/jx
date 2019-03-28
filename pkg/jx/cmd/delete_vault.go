@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"io"
+	"github.com/jenkins-x/jx/pkg/cloud"
 
+	awsvault "github.com/jenkins-x/jx/pkg/cloud/amazon/vault"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	gkevault "github.com/jenkins-x/jx/pkg/cloud/gke/vault"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -14,13 +15,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DeleteVaultOptions keeps the options of delete vault command
 type DeleteVaultOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	Namespace            string
 	RemoveCloudResources bool
@@ -40,14 +40,9 @@ var (
 )
 
 // NewCmdDeleteVault builds a new delete vault command
-func NewCmdDeleteVault(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteVault(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteVaultOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -86,10 +81,11 @@ func (o *DeleteVaultOptions) Run() error {
 		o.Namespace = ns
 	}
 
-	clusterName, err := gke.ShortClusterName(o.Kube())
+	teamSettings, err := o.TeamSettings()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "retrieving the team settings")
 	}
+
 	vaultOperatorClient, err := o.VaultOperatorClient()
 	if err != nil {
 		return errors.Wrap(err, "creating vault operator client")
@@ -116,12 +112,17 @@ func (o *DeleteVaultOptions) Run() error {
 		return errors.Wrapf(err, "deleting the vault auth service account '%s'", authServiceAccountName)
 	}
 
-	gcpServiceAccountSecretName := gkevault.GcpServiceAccountSecretName(vaultName, clusterName)
-	err = client.CoreV1().Secrets(o.Namespace).Delete(gcpServiceAccountSecretName, &metav1.DeleteOptions{})
-	if err != nil {
-		return errors.Wrapf(err, "deleting secret '%s' where GCP service account is stored", gcpServiceAccountSecretName)
+	var secretName string
+	if teamSettings.KubeProvider == cloud.GKE {
+		secretName = gkevault.GcpServiceAccountSecretName(vaultName)
 	}
-
+	if teamSettings.KubeProvider == cloud.AWS || teamSettings.KubeProvider == cloud.EKS {
+		secretName = awsvault.AwsServiceAccountSecretName(vaultName)
+	}
+	err = client.CoreV1().Secrets(o.Namespace).Delete(secretName, &metav1.DeleteOptions{})
+	if err != nil {
+		return errors.Wrapf(err, "deleting secret '%s' where GCP service account is stored", secretName)
+	}
 	err = kube.DeleteClusterRoleBinding(client, vaultName)
 	if err != nil {
 		return errors.Wrapf(err, "deleting the cluster role binding '%s' for vault", vaultName)
@@ -130,12 +131,7 @@ func (o *DeleteVaultOptions) Run() error {
 	log.Infof("Vault %s deleted\n", util.ColorInfo(vaultName))
 
 	if o.RemoveCloudResources {
-		teamSettings, err := o.TeamSettings()
-		if err != nil {
-			return errors.Wrap(err, "retrieving the team settings")
-		}
-
-		if teamSettings.KubeProvider == gkeKubeProvider {
+		if teamSettings.KubeProvider == cloud.GKE {
 			log.Infof("Removing GCP resources allocated for Vault...\n")
 			err := o.removeGCPResources(vaultName)
 			if err != nil {
@@ -143,7 +139,6 @@ func (o *DeleteVaultOptions) Run() error {
 			}
 			log.Infof("Cloud resources allocated for vault %s deleted\n", util.ColorInfo(vaultName))
 		}
-
 	}
 
 	return nil
@@ -175,19 +170,14 @@ func (o *DeleteVaultOptions) removeGCPResources(vaultName string) error {
 		o.GKEZone = zone
 	}
 
-	clusterName, err := gke.ShortClusterName(o.Kube())
-	if err != nil {
-		return err
-	}
-
-	sa := gkevault.ServiceAccountName(vaultName, clusterName)
+	sa := gkevault.ServiceAccountName(vaultName)
 	err = gke.DeleteServiceAccount(sa, o.GKEProjectID, gkevault.ServiceAccountRoles)
 	if err != nil {
 		return errors.Wrapf(err, "deleting the GCP service account '%s'", sa)
 	}
 	log.Infof("GCP service account %s deleted\n", util.ColorInfo(sa))
 
-	bucket := gkevault.BucketName(vaultName, clusterName)
+	bucket := gkevault.BucketName(vaultName)
 	err = gke.DeleteAllObjectsInBucket(bucket)
 	if err != nil {
 		return errors.Wrapf(err, "deleting all objects in GCS bucket '%s'", bucket)

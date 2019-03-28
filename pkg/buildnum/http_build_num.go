@@ -11,6 +11,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	// HealthPath is the URL path for the HTTP endpoint that returns health status.
+	HealthPath = "/health"
+	// ReadyPath URL path for the HTTP endpoint that returns ready status.
+	ReadyPath = "/ready"
+)
+
 // HTTPBuildNumberServer runs an HTTP server to serve build numbers, similar to Prow's tot
 // (https://github.com/kubernetes/test-infra/tree/master/prow/cmd/tot)
 type HTTPBuildNumberServer struct {
@@ -23,7 +30,7 @@ type HTTPBuildNumberServer struct {
 // NewHTTPBuildNumberServer creates a new, initialised HTTPBuildNumberServer.
 // Use 'bindAddress' to control the address/interface the HTTP service will listen on; to listen on all interfaces
 // (i.e. 0.0.0.0 or ::) provide a blank string.
-// Build numbers will be generated using the specifed BuildNumberIssuer.
+// Build numbers will be generated using the specified BuildNumberIssuer.
 func NewHTTPBuildNumberServer(bindAddress string, port int, issuer BuildNumberIssuer) *HTTPBuildNumberServer {
 	return &HTTPBuildNumberServer{
 		bindAddress: bindAddress,
@@ -38,9 +45,27 @@ func NewHTTPBuildNumberServer(bindAddress string, port int, issuer BuildNumberIs
 func (s *HTTPBuildNumberServer) Start() error {
 	mux := http.NewServeMux()
 	mux.Handle(s.path, http.HandlerFunc(s.vend))
+	mux.Handle(HealthPath, http.HandlerFunc(s.health))
+	mux.Handle(ReadyPath, http.HandlerFunc(s.ready))
 
 	logrus.Infof("Serving build numbers at http://%s:%d%s", s.bindAddress, s.port, s.path)
 	return http.ListenAndServe(":"+strconv.Itoa(s.port), mux)
+}
+
+// health returns either HTTP 204 if the build number service is healthy, otherwise nothing ('cos it's dead).
+func (s *HTTPBuildNumberServer) health(w http.ResponseWriter, r *http.Request) {
+	logrus.Debug("Health check")
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// ready returns either HTTP 204 if the build number service is ready to serve /vend requests, otherwise HTTP 503.
+func (s *HTTPBuildNumberServer) ready(w http.ResponseWriter, r *http.Request) {
+	logrus.Debug("Ready check")
+	if s.issuer.Ready() {
+		w.WriteHeader(http.StatusNoContent)
+	} else {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}
 }
 
 // Serve an incoming request to the server's base URL (default: /vend). The generated build number (or other

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -11,7 +10,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 var (
@@ -40,21 +38,16 @@ var (
 
 // DeleteQuickstartLocationOptions the options for the create spring command
 type DeleteQuickstartLocationOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	GitUrl string
 	Owner  string
 }
 
 // NewCmdDeleteQuickstartLocation defines the command
-func NewCmdDeleteQuickstartLocation(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteQuickstartLocation(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteQuickstartLocationOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-			Out:     out,
-			Err:     errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -73,7 +66,6 @@ func NewCmdDeleteQuickstartLocation(f Factory, in terminal.FileReader, out termi
 	cmd.Flags().StringVarP(&options.GitUrl, optionGitUrl, "u", gits.GitHubURL, "The URL of the Git service")
 	cmd.Flags().StringVarP(&options.Owner, optionOwner, "o", "", "The owner is the user or organisation of the Git provider")
 
-	options.addCommonFlags(cmd)
 	return cmd
 }
 

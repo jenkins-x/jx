@@ -6,8 +6,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tests"
-	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/yaml"
 
 	"github.com/stretchr/testify/assert"
 )

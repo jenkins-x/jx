@@ -6,6 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/pkg/errors"
 )
 
 func (o *CommonOptions) createChatProvider(chatConfig *config.ChatConfig) (chats.ChatProvider, error) {
@@ -32,5 +33,9 @@ func (o *CommonOptions) createChatAuthConfigService() (auth.ConfigService, error
 	if err != nil {
 		log.Warnf("The current user cannot query pipeline chat secrets: %s", err)
 	}
-	return o.CreateChatAuthConfigService(secrets)
+	_, namespace, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find development namespace")
+	}
+	return o.factory.CreateChatAuthConfigService(namespace, secrets)
 }

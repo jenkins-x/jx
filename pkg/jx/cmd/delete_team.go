@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -12,13 +11,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DeleteTeamOptions are the flags for delete commands
 type DeleteTeamOptions struct {
-	CommonOptions
+	*CommonOptions
 
 	SelectAll    bool
 	SelectFilter string
@@ -41,15 +39,9 @@ var (
 
 // NewCmdDeleteTeam creates a command object
 // retrieves one or more resources from a server.
-func NewCmdDeleteTeam(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdDeleteTeam(commonOpts *CommonOptions) *cobra.Command {
 	options := &DeleteTeamOptions{
-		CommonOptions: CommonOptions{
-			Factory: f,
-			In:      in,
-
-			Out: out,
-			Err: errOut,
-		},
+		CommonOptions: commonOpts,
 	}
 
 	cmd := &cobra.Command{
@@ -66,7 +58,6 @@ func NewCmdDeleteTeam(f Factory, in terminal.FileReader, out terminal.FileWriter
 		},
 	}
 
-	options.addCommonFlags(cmd)
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "a", false, "Should we default to selecting all the matched teams for deletion")
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Filters the list of teams you can pick from")
 	cmd.Flags().BoolVarP(&options.Confirm, "yes", "y", false, "Confirms we should uninstall this installation")

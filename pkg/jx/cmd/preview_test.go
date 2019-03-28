@@ -1,25 +1,24 @@
 package cmd_test
 
 import (
-	"reflect"
 	"strconv"
 
-	auth_test "github.com/jenkins-x/jx/pkg/auth/mocks"
+	"github.com/jenkins-x/jx/pkg/auth/mocks"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 
 	"github.com/jenkins-x/jx/pkg/gits"
-	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
+	"github.com/jenkins-x/jx/pkg/gits/mocks"
 	gits_matchers "github.com/jenkins-x/jx/pkg/gits/mocks/matchers"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/mocks"
-	cmd_matchers "github.com/jenkins-x/jx/pkg/jx/cmd/mocks/matchers"
+	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
+	cmd_matchers "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks/matchers"
 	"github.com/jenkins-x/jx/pkg/kube"
 	k8s_v1 "k8s.io/api/core/v1"
 	k8s_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -40,6 +39,7 @@ import (
 // Constants for some test data to be used.
 const (
 	application    = "test-app"
+	releaseName    = "test-app-release-name"
 	name           = "test-app-name"
 	namespace      = "jx"
 	gitHubLink     = "https://github.com/an-org/a-repo"
@@ -48,7 +48,6 @@ const (
 	prAuthor       = "the-pr-author"
 	prOwner        = "the-pr-owner"
 	prEmail        = "the-pr-owner@organisation.com"
-	userK8sID      = "the-pr-owner.organisation.com"
 )
 
 func TestGetPreviewValuesConfig(t *testing.T) {
@@ -109,12 +108,15 @@ preview:
 `,
 		},
 	}
+	co := &cmd.CommonOptions{}
+	cmd.ConfigureTestOptions(co, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 
 	for i, test := range tests {
 		for k, v := range test.env {
 			os.Setenv(k, v)
 		}
 
+		test.opts.CommonOptions = co
 		config, err := test.opts.GetPreviewValuesConfig(test.domain)
 		if err != nil {
 			t.Errorf("[%d] got unexpected err: %v", i, err)
@@ -140,8 +142,6 @@ preview:
 // functions).
 // TODO: Refactor the implementation & test so the various stages of creating a preview env. can be tested individually.
 func TestRun_CreateNewPreviewEnv(t *testing.T) {
-	t.Parallel()
-
 	RegisterMockTestingT(t)
 
 	setupEnvironment()
@@ -170,15 +170,15 @@ func setupEnvironment() {
 
 func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 	factory := cmd_mocks.NewMockFactory()
+	commonOpts := cmd.NewCommonOptionsWithFactory(factory)
+	commonOpts.Out = os.Stdout
+	commonOpts.In = os.Stdin
+	commonOpts.BatchMode = true
 	previewOpts := &cmd.PreviewOptions{
 		PromoteOptions: cmd.PromoteOptions{
-			CommonOptions: cmd.CommonOptions{
-				Factory:   factory,
-				Out:       os.Stdout,
-				In:        os.Stdin,
-				BatchMode: true,
-			},
-			Application: application,
+			CommonOptions: &commonOpts,
+			Application:   application,
+			ReleaseName:   releaseName,
 		},
 		Namespace:    namespace,
 		DevNamespace: "jx",
@@ -221,7 +221,7 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 	mockGitProvider := gits_test.NewMockGitProvider()
 	When(factory.CreateGitProvider(AnyString(), //gitURL
 		AnyString(), //message
-		cmd_matchers.AnyAuthAuthConfigService(),
+		cmd_matchers.AnyAuthConfigService(),
 		AnyString(), //gitKind
 		AnyBool(),   //batchMode,
 		cmd_matchers.AnyGitsGitter(),
@@ -232,7 +232,7 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 	number := prNum
 	mockGitPR := &gits.GitPullRequest{
 		Owner:  prOwner,
-		Author: &gits.GitUser{Name: prAuthor, Email: prEmail},
+		Author: &gits.GitUser{Name: prAuthor, Email: prEmail, Login: prAuthor},
 		Number: &number,
 	}
 	When(mockGitProvider.GetPullRequest(AnyString(), //owner
@@ -242,7 +242,7 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 
 	mockConfigSaver := auth_test.NewMockConfigSaver()
 	When(mockConfigSaver.LoadConfig()).ThenReturn(&auth.AuthConfig{}, nil)
-	When(factory.CreateAuthConfigService(cmd.GitAuthConfigFile)).ThenReturn(auth.NewAuthConfigService(mockConfigSaver), nil)
+	When(factory.CreateAuthConfigService(AnyString(), AnyString())).ThenReturn(auth.NewAuthConfigService(mockConfigSaver), nil)
 	When(factory.IsInCDPipeline()).ThenReturn(true)
 
 	cs := cs_fake.NewSimpleClientset()
@@ -258,9 +258,9 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 	When(mockHelmer.UpgradeChart(AnyString(), //chart
 		AnyString(),      //releaseName
 		AnyString(),      // ns
-		anyPtrToString(), // version
+		AnyString(),      // version
 		AnyBool(),        // install
-		anyPtrToInt(),    // timeout
+		AnyInt(),         // timeout
 		AnyBool(),        // force
 		AnyBool(),        // wait
 		AnyStringSlice(), // values
@@ -268,6 +268,7 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 		AnyString(),      // repo
 		AnyString(),      // username
 		AnyString(),      // password
+		AnyBool(),        // reuse-values
 	)).ThenReturn(nil) //err=nil
 
 	return previewOpts, cs
@@ -282,6 +283,7 @@ func validatePreviewEnvironment(t *testing.T, cs *cs_fake.Clientset) {
 	assert.NotNil(t, previewEnv)
 	assert.Equal(t, namespace, previewEnv.Namespace)
 	assert.Equal(t, name, previewEnv.Name)
+	assert.Equal(t, releaseName, previewEnv.Annotations[kube.AnnotationReleaseName])
 	//Validate preview environment spec:
 	assert.NotNil(t, previewEnv.Spec)
 	assert.Equal(t, v1.EnvironmentKindTypePreview, previewEnv.Spec.Kind)
@@ -305,26 +307,15 @@ func validatePreviewEnvironment(t *testing.T, cs *cs_fake.Clientset) {
 func validateUser(t *testing.T, cs *cs_fake.Clientset) {
 	//Validate UserDetailsService updates:
 	users := cs.JenkinsV1().Users(namespace)
-	user, err := users.Get(userK8sID, metav1.GetOptions{})
+	user, err := users.Get(prAuthor, metav1.GetOptions{})
 	assert.NoError(t, err, "User should have been created.")
 	assert.NotNil(t, user)
-	//TODO: should this be used Spec instead of User (deprecated).
-	assert.Equal(t, prEmail, user.User.Email)
-	assert.Equal(t, prAuthor, user.User.Name)
+	assert.Equal(t, prEmail, user.Spec.Email)
+	assert.Equal(t, prAuthor, user.Spec.Name)
 }
 
 //Pegomock 'any' matcher for *string.
 //(since these don't seem to get generated).
-func anyPtrToString() *string {
-	RegisterMatcher(NewAnyMatcher(reflect.TypeOf((*(*string))(nil)).Elem()))
-	var nullValue *string
-	return nullValue
-}
 
 //Pegomock 'any' matcher for *int.
 //(since these don't seem to get generated).
-func anyPtrToInt() *int {
-	RegisterMatcher(NewAnyMatcher(reflect.TypeOf((*(*int))(nil)).Elem()))
-	var nullValue *int
-	return nullValue
-}

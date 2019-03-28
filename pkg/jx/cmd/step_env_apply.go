@@ -2,14 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/ghodss/yaml"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/extensions"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -17,7 +15,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
 // StepEnvApplyOptions contains the command line flags
@@ -30,6 +27,8 @@ type StepEnvApplyOptions struct {
 	Wait               bool
 	Force              bool
 	DisableHelmVersion bool
+	ChangeNs           bool
+	Vault              bool
 }
 
 var (
@@ -49,16 +48,11 @@ var (
 )
 
 // NewCmdStepEnvApply registers the command
-func NewCmdStepEnvApply(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdStepEnvApply(commonOpts *CommonOptions) *cobra.Command {
 	options := StepEnvApplyOptions{
 		StepEnvOptions: StepEnvOptions{
 			StepOptions: StepOptions{
-				CommonOptions: CommonOptions{
-					Factory: f,
-					In:      in,
-					Out:     out,
-					Err:     errOut,
-				},
+				CommonOptions: commonOpts,
 			},
 		},
 	}
@@ -76,7 +70,10 @@ func NewCmdStepEnvApply(f Factory, in terminal.FileReader, out terminal.FileWrit
 		},
 	}
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The Kubernetes namespace to apply the helm charts to")
+	cmd.Flags().StringVarP(&options.ReleaseName, "name", "r", "", "The name of the release")
 	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to look for the environment chart")
+	cmd.Flags().BoolVarP(&options.ChangeNs, "change-namespace", "", false, "Set the given namespace as the current namespace in Kubernetes configuration")
+	cmd.Flags().BoolVarP(&options.Vault, "vault", "", false, "Environment secrets are stored in vault")
 
 	// step helm apply flags
 	cmd.Flags().BoolVarP(&options.Wait, "wait", "", true, "Wait for Kubernetes readiness probe to confirm deployment")
@@ -88,13 +85,12 @@ func NewCmdStepEnvApply(f Factory, in terminal.FileReader, out terminal.FileWrit
 
 // Run performs the comamand
 func (o *StepEnvApplyOptions) Run() error {
-
 	var err error
 	dir := o.Dir
 	if dir == "" {
 		dir, err = os.Getwd()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "getting the working directory")
 		}
 	}
 
@@ -103,29 +99,29 @@ func (o *StepEnvApplyOptions) Run() error {
 		ns = os.Getenv("DEPLOY_NAMESPACE")
 	}
 	if ns == "" {
-		return fmt.Errorf("No --namespace option specified or $DEPLOY_NAMESPACE environment variable available")
+		return fmt.Errorf("no --namespace option specified or $DEPLOY_NAMESPACE environment variable available")
 	}
 
 	o.SetDevNamespace(ns)
 	kubeClient, err := o.KubeClient()
 	if err != nil {
-		return errors.Wrapf(err, "Could not connect to the kubernetes cluster!")
+		return errors.Wrapf(err, "connecting to the kubernetes cluster")
 	}
 
 	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
-		return errors.Wrap(err, "failed to create the API extensions client")
+		return errors.Wrap(err, "creating the API extensions client")
 	}
 	kube.RegisterAllCRDs(apisClient)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "registering all CRDs")
 	}
 
 	// now lets find the dev environment to know what kind of helmer to use
 	chartFile := filepath.Join(dir, helm.ChartFileName)
 	exists, err := util.FileExists(chartFile)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "checking if file exits")
 	}
 	if !exists {
 		envDir := filepath.Join(dir, "env")
@@ -134,7 +130,7 @@ func (o *StepEnvApplyOptions) Run() error {
 		if exists2 && err == nil {
 			dir = envDir
 		} else {
-			return fmt.Errorf("There is no Environment chart file at %s or %s\nPlease try specify the directory containing the Chart.yaml or env/Chart.yaml with --dir", chartFile, chartFile2)
+			return fmt.Errorf("there is no Environment chart file at %s or %s\nplease try specify the directory containing the Chart.yaml or env/Chart.yaml with --dir", chartFile, chartFile2)
 		}
 	}
 	devEnvFile := filepath.Join(dir, "templates", "dev-env.yaml")
@@ -146,11 +142,11 @@ func (o *StepEnvApplyOptions) Run() error {
 		env := v1.Environment{}
 		data, err := ioutil.ReadFile(devEnvFile)
 		if err != nil {
-			return errors.Wrapf(err, "Could not load file %s", devEnvFile)
+			return errors.Wrapf(err, "loading configuration file %s", devEnvFile)
 		}
 		err = yaml.Unmarshal(data, &env)
 		if err != nil {
-			return errors.Wrapf(err, "Failed to unmarshall YAML file %s", devEnvFile)
+			return errors.Wrapf(err, "unmarshalling YAML file %s", devEnvFile)
 		}
 
 		teamSettings := &env.Spec.TeamSettings
@@ -161,12 +157,12 @@ func (o *StepEnvApplyOptions) Run() error {
 			return nil
 		}
 
-		o.helm = o.CreateHelm(false, teamSettings.HelmBinary, teamSettings.NoTiller, teamSettings.HelmTemplate)
+		o.helm = o.NewHelm(false, teamSettings.HelmBinary, teamSettings.NoTiller, teamSettings.HelmTemplate)
 
 		// ensure there's a development namespace setup
 		err = kube.EnsureDevNamespaceCreatedWithoutEnvironment(kubeClient, ns)
 		if err != nil {
-			return errors.Wrapf(err, "Failed to create Namespace %s for Development Environment", ns)
+			return errors.Wrapf(err, "creating namespace %s for development environment", ns)
 		}
 
 		if o.ReleaseName == "" {
@@ -176,7 +172,18 @@ func (o *StepEnvApplyOptions) Run() error {
 		// ensure there's a development namespace setup
 		err = kube.EnsureNamespaceCreated(kubeClient, ns, nil, nil)
 		if err != nil {
-			return errors.Wrapf(err, "Failed to create Namespace %s for Environment", ns)
+			return errors.Wrapf(err, "creating  namespace %s for environment", ns)
+		}
+	}
+
+	// Change the current namesapce before applying the environment step
+	if o.ChangeNs {
+		_, currentNs, err := o.KubeClientAndNamespace()
+		if err != nil {
+			errors.Wrap(err, "creating the kube client")
+		}
+		if currentNs != ns {
+			o.ChangeNamespace(ns)
 		}
 	}
 
@@ -190,7 +197,7 @@ func (o *StepEnvApplyOptions) Run() error {
 	}
 	err = stepHelmBuild.Run()
 	if err != nil {
-		return errors.Wrapf(err, "Failed to build helm chart in dir %s", dir)
+		return errors.Wrapf(err, "buildng helm chart in dir %s", dir)
 	}
 
 	stepApply := &StepHelmApplyOptions{
@@ -200,20 +207,12 @@ func (o *StepEnvApplyOptions) Run() error {
 		Wait:               o.Wait,
 		DisableHelmVersion: o.DisableHelmVersion,
 		Force:              o.Force,
+		Vault:              o.Vault,
 	}
 	err = stepApply.Run()
 	if err != nil {
-		return errors.Wrapf(err, "Failed to apply helm chart in dir %s", dir)
+		return errors.Wrapf(err, "appling the helm chart in dir %s", dir)
 	}
 	log.Infof("Environment applied in namespace %s\n", util.ColorInfo(ns))
-	// Now run any post install actions
-	jxClient, _, err := o.JXClientAndDevNamespace()
-	if err != nil {
-		return err
-	}
-	err = extensions.OnApply(jxClient, kubeClient, o.devNamespace, o.Helm(), defaultInstallTimeout)
-	if err != nil {
-		return err
-	}
 	return nil
 }

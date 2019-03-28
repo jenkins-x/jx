@@ -11,7 +11,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
 )
 
 const testUsername = "derek_zoolander"
@@ -158,4 +158,50 @@ func TestCreateProwOwnersAliasesFileCreateWhenDoesNotExistAndNoGitUserSet(t *tes
 
 	err = cmd.CreateProwOwnersAliasesFile()
 	assert.Error(t, err, "There should an error")
+}
+
+func TestImportOptions_GetOrganisation(t *testing.T) {
+	tests := []struct {
+		name    string
+		options cmd.ImportOptions
+		want    string
+	}{
+		{
+			name: "Get org from github URL (ignore user-specified org)",
+			options: cmd.ImportOptions{
+				RepoURL:      "https://github.com/orga/myrepo",
+				Organisation: "orgb",
+			},
+			want: "orga",
+		},
+		{
+			name: "Get org from github URL (no user-specified org)",
+			options: cmd.ImportOptions{
+				RepoURL: "https://github.com/orga/myrepo",
+			},
+			want: "orga",
+		},
+		{
+			name: "Get org from user flag",
+			options: cmd.ImportOptions{
+				RepoURL:      "https://myrepo.com/myrepo", // No org here
+				Organisation: "orgb",
+			},
+			want: "orgb",
+		},
+		{
+			name: "No org specified",
+			options: cmd.ImportOptions{
+				RepoURL: "https://myrepo.com/myrepo", // No org here
+			},
+			want: "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.options.GetOrganisation(); got != tt.want {
+				t.Errorf("ImportOptions.GetOrganisation() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

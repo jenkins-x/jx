@@ -149,7 +149,7 @@ func TestUpdateRepo(t *testing.T) {
 }
 
 func TestRemoveRequirementsLock(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "reqtest")
+	dir, err := ioutil.TempDir("", "reqtest")
 	assert.NoError(t, err, "should be able to create a temporary dir")
 	defer os.RemoveAll(dir)
 	path := filepath.Join(dir, "requirements.lock")
@@ -177,7 +177,7 @@ func TestInstallChart(t *testing.T) {
 		chart, "--set", value[0], "--values", valueFile[0]}
 	helm, runner := createHelm(t, nil, "")
 
-	err := helm.InstallChart(chart, releaseName, namespace, nil, nil, value, valueFile, "", "", "")
+	err := helm.InstallChart(chart, releaseName, namespace, "", -1, value, valueFile, "", "", "")
 	assert.NoError(t, err, "should install the chart without any error")
 	verifyArgs(t, helm, runner, expectedArgs...)
 }
@@ -191,11 +191,22 @@ func TestUpgradeChart(t *testing.T) {
 		"--timeout", fmt.Sprintf("%d", timeout), "--version", version, "--set", value[0], "--values", valueFile[0], releaseName, chart}
 	helm, runner := createHelm(t, nil, "")
 
-	err := helm.UpgradeChart(chart, releaseName, namespace, &version, true, &timeout, true, true, value, valueFile,
-		"", "", "")
+	err := helm.UpgradeChart(chart, releaseName, namespace, version, true, timeout, true, true, value, valueFile,
+		"", "", "", false)
 
 	assert.NoError(t, err, "should upgrade the chart without any error")
 	verifyArgs(t, helm, runner, expectedArgs...)
+
+	// check reuse-values
+	expectedArgs = []string{"upgrade", "--namespace", namespace, "--install", "--wait", "--force",
+		"--timeout", fmt.Sprintf("%d", timeout), "--version", version, "--set", value[0], "--values", valueFile[0], "--reuse-values", releaseName, chart}
+
+	err = helm.UpgradeChart(chart, releaseName, namespace, version, true, timeout, true, true, value, valueFile,
+		"", "", "", true)
+
+	assert.NoError(t, err, "should upgrade the chart without any error")
+	verifyArgs(t, helm, runner, expectedArgs...)
+
 }
 
 func TestDeleteRelaese(t *testing.T) {
@@ -281,7 +292,7 @@ func TestSearchChartVersions(t *testing.T) {
 }
 
 func TestFindChart(t *testing.T) {
-	dir, err := ioutil.TempDir("/tmp", "charttest")
+	dir, err := ioutil.TempDir("", "charttest")
 	assert.NoError(t, err, "should be able to create a temporary dir")
 	defer os.RemoveAll(dir)
 	path := filepath.Join(dir, helm.ChartFileName)

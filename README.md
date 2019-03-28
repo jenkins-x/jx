@@ -1,6 +1,12 @@
 # JX 
 
-[![Reviewed by Hound](https://img.shields.io/badge/Reviewed_by-Hound-8E64B0.svg)](https://houndci.com)
+[![GoDoc](https://godoc.org/github.com/jenkins-x/jx?status.svg)](https://godoc.org/github.com/jenkins-x/jx)
+[![Docs](https://readthedocs.org/projects/docs/badge/?version=latest)](https://jenkins-x.io/documentation/)
+[![Docker Pulls](https://img.shields.io/docker/pulls/jenkinsxio/jx.svg)](https://hub.docker.com/r/jenkinsxio/jx/tags)
+[![Downloads](https://img.shields.io/github/downloads/jenkins-x/jx/total.svg)](https://github.com/jenkins-x/jx/releases)
+[![GoReport](https://goreportcard.com/badge/github.com/jenkins-x/jx)](https://goreportcard.com/report/github.com/jenkins-x/jx)
+[![Apache](https://img.shields.io/badge/license-Apache-blue.svg)](https://github.com/jenkins-x/jx/blob/master/LICENSE)
+[![Reviewed by Hound](https://img.shields.io/badge/reviewed_by-Hound-8E64B0.svg)](https://houndci.com)
 
 JX is a command line tool for installing and using [Jenkins X](http://jenkins-x.io/)
 
@@ -292,7 +298,7 @@ When running Minikube locally `jx` defaults to using [nip.io](http://nip.io/) as
 
 To avoid using [nip.io](http://nip.io/) you can do the following:
 
-Edit the file `~/.jenkins-x/cloud-environments/env-minikube/myvalues.yaml` and add the following content:
+Edit the file `~/.jx/cloud-environments/env-minikube/myvalues.yaml` and add the following content:
 
 ```yaml
 expose:

@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io"
 	"sort"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -9,18 +8,17 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 
-// GetStorageOptions containers the CLI options
+// GetStorageOptions contains the CLI options
 type GetStorageOptions struct {
 	GetOptions
 }
 
 var (
 	getStorageLong = templates.LongDesc(`
-		Display the storage configuration for different classifications
-`)
+		Display the storage configuration for different classifications.
+` + storageSupportDescription + SeeAlsoText("jx step stash", "jx edit storage"))
 
 	getStorageExample = templates.Examples(`
 		# List the storage configurations for different classifications for the current team
@@ -29,21 +27,15 @@ var (
 )
 
 // NewCmdGetStorage creates the new command for: jx get env
-func NewCmdGetStorage(f Factory, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) *cobra.Command {
+func NewCmdGetStorage(commonOpts *CommonOptions) *cobra.Command {
 	options := &GetStorageOptions{
 		GetOptions: GetOptions{
-			CommonOptions: CommonOptions{
-				Factory: f,
-				In:      in,
-				Out:     out,
-				Err:     errOut,
-			},
+			CommonOptions: commonOpts,
 		},
 	}
 	cmd := &cobra.Command{
 		Use:     "storage",
 		Short:   "Display the storage configuration for different classifications",
-		Aliases: []string{"helm"},
 		Long:    getStorageLong,
 		Example: getStorageExample,
 		Run: func(cmd *cobra.Command, args []string) {

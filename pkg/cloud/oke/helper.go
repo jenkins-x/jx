@@ -14,7 +14,7 @@ func GetOptionValues() ([]string, []string, []string, string, error) {
 		return nil, nil, nil, "", err
 	}
 	var dat map[string]interface{}
-	if err := json.Unmarshal([]byte(jsonString), &dat); err != nil {
+	if err := json.Unmarshal(jsonString, &dat); err != nil {
 		fmt.Println("error")
 		return nil, nil, nil, "", err
 	}
