@@ -54,6 +54,5 @@ func schema_apimachinery_pkg_api_resource_int64Amount(ref common.ReferenceCallba
 				Required: []string{"value", "scale"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }

@@ -138,7 +138,6 @@ func schema_pkg_apis_jenkinsio_v1_AccountReference(ref common.ReferenceCallback)
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -253,7 +252,6 @@ func schema_pkg_apis_jenkinsio_v1_AppSpec(ref common.ReferenceCallback) common.O
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -285,7 +283,6 @@ func schema_pkg_apis_jenkinsio_v1_Attachment(ref common.ReferenceCallback) commo
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -317,7 +314,6 @@ func schema_pkg_apis_jenkinsio_v1_Binary(ref common.ReferenceCallback) common.Op
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -480,7 +476,6 @@ func schema_pkg_apis_jenkinsio_v1_ChartRef(ref common.ReferenceCallback) common.
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -551,7 +546,6 @@ func schema_pkg_apis_jenkinsio_v1_CommitStatusCommitReference(ref common.Referen
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -632,7 +626,6 @@ func schema_pkg_apis_jenkinsio_v1_CommitStatusItem(ref common.ReferenceCallback)
 				Required: []string{"pass"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -903,7 +896,6 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentFilter(ref common.ReferenceCallback
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -982,7 +974,6 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentRepository(ref common.ReferenceCall
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -1142,7 +1133,6 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBindingStatus(ref common.Refere
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -1240,7 +1230,6 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentStatus(ref common.ReferenceCallback
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -1265,7 +1254,6 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentVariable(ref common.ReferenceCallba
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -1506,7 +1494,6 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionChildReference(ref common.R
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -1567,7 +1554,6 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionReference(ref common.Refere
 				Required: []string{"remote", "tag"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -1743,7 +1729,6 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionParameter(ref common.ReferenceCallbac
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -1769,7 +1754,6 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionParameterValue(ref common.ReferenceCa
 				Required: []string{"name", "value"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -2108,7 +2092,6 @@ func schema_pkg_apis_jenkinsio_v1_FactStatus(ref common.ReferenceCallback) commo
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -2227,7 +2210,6 @@ func schema_pkg_apis_jenkinsio_v1_GitServiceSpec(ref common.ReferenceCallback) c
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -2253,7 +2235,6 @@ func schema_pkg_apis_jenkinsio_v1_GitStatus(ref common.ReferenceCallback) common
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -2284,7 +2265,6 @@ func schema_pkg_apis_jenkinsio_v1_IssueLabel(ref common.ReferenceCallback) commo
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -2420,7 +2400,6 @@ func schema_pkg_apis_jenkinsio_v1_Measurement(ref common.ReferenceCallback) comm
 				Required: []string{"name", "measurementType", "measurementValue"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -2459,7 +2438,6 @@ func schema_pkg_apis_jenkinsio_v1_Original(ref common.ReferenceCallback) common.
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -2734,7 +2712,6 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivityStatus(ref common.ReferenceCal
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -2962,7 +2939,6 @@ func schema_pkg_apis_jenkinsio_v1_PipelineStructureStage(ref common.ReferenceCal
 				Required: []string{"name", "depth"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -3430,7 +3406,6 @@ func schema_pkg_apis_jenkinsio_v1_PromoteWorkflowStep(ref common.ReferenceCallba
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -3488,7 +3463,6 @@ func schema_pkg_apis_jenkinsio_v1_QuickStartLocation(ref common.ReferenceCallbac
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -3693,7 +3667,6 @@ func schema_pkg_apis_jenkinsio_v1_ReleaseStatus(ref common.ReferenceCallback) co
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -3735,7 +3708,6 @@ func schema_pkg_apis_jenkinsio_v1_ResourceReference(ref common.ReferenceCallback
 				Required: []string{"kind", "name"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -3861,7 +3833,6 @@ func schema_pkg_apis_jenkinsio_v1_SourceRepositorySpec(ref common.ReferenceCallb
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -3962,7 +3933,6 @@ func schema_pkg_apis_jenkinsio_v1_Statement(ref common.ReferenceCallback) common
 				Required: []string{"name", "statementType", "measurementValue"},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -4000,7 +3970,6 @@ func schema_pkg_apis_jenkinsio_v1_StorageLocation(ref common.ReferenceCallback) 
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -4310,7 +4279,6 @@ func schema_pkg_apis_jenkinsio_v1_TeamSpec(ref common.ReferenceCallback) common.
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -4336,7 +4304,6 @@ func schema_pkg_apis_jenkinsio_v1_TeamStatus(ref common.ReferenceCallback) commo
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -4541,7 +4508,6 @@ func schema_pkg_apis_jenkinsio_v1_UserSpec(ref common.ReferenceCallback) common.
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -4661,7 +4627,6 @@ func schema_pkg_apis_jenkinsio_v1_WorkflowPreconditions(ref common.ReferenceCall
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
@@ -4714,7 +4679,6 @@ func schema_pkg_apis_jenkinsio_v1_WorkflowStatus(ref common.ReferenceCallback) c
 				},
 			},
 		},
-		Dependencies: []string{},
 	}
 }
 
