@@ -1078,6 +1078,12 @@ func (options *InstallOptions) configureHelmValues(namespace string) error {
 		enableControllerBuild := true
 		helmConfig.ControllerBuild.Enabled = &enableControllerBuild
 	}
+
+	if options.Flags.Kaniko || options.Flags.Tekton {
+		// As we use Kaniko to build docker images, we don't need docker.sock bind mount in build containers
+		helmConfig.Jenkins.Agent.DockerHostPath = ""
+	}
+
 	return nil
 }
 

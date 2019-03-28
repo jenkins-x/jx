@@ -23,6 +23,11 @@ type ExposeController struct {
 type JenkinsValuesConfig struct {
 	Servers JenkinsServersValuesConfig `json:"Servers,omitempty"`
 	Enabled *bool                      `json:"enabled,omitempty"`
+	Agent   JenkinsAgentValuesConfig   `json:"Agent,omitempty"`
+}
+
+type JenkinsAgentValuesConfig struct {
+	DockerHostPath string  `json:"DockerHostPath,omitempty"`
 }
 
 type ProwValuesConfig struct {
