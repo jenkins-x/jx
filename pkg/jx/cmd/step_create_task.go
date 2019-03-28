@@ -1611,7 +1611,7 @@ func getDefaultPipelineStep() *jenkinsfile.PipelineStep {
 	return &jenkinsfile.PipelineStep{
 		Name:      "git-merge",
 		Container: syntax.GitMergeImage,
-		Command:   "jx step git merge",
+		Command:   "jx step git merge --verbose",
 		Dir:       "/workspace/source",
 	}
 }
