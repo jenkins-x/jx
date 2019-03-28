@@ -4,7 +4,6 @@ require (
 	code.gitea.io/sdk v0.0.0-20180702024448-79a281c4e34a
 	github.com/Azure/draft v0.15.0
 	github.com/Azure/go-ansiterm v0.0.0-20170929234023-d6e3b3328b78 // indirect
-	github.com/DataDog/datadog-go v0.0.0-20180822151419-281ae9f2d895 // indirect
 	github.com/IBM-Cloud/bluemix-go v0.0.0-20181008063305-d718d474c7c2
 	github.com/Jeffail/gabs v1.1.1
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e
@@ -22,6 +21,7 @@ require (
 	github.com/andygrunwald/go-jira v1.5.0
 	github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 // indirect
 	github.com/antham/chyle v1.4.0
+	github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf // indirect
 	github.com/aws/aws-sdk-go v1.17.10
@@ -30,13 +30,9 @@ require (
 	github.com/bitly/go-hostpool v0.0.0-20171023180738-a3a6125de932 // indirect
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
-	github.com/bouk/monkey v1.0.0
-	github.com/bwmarrin/snowflake v0.0.0-20180412010544-68117e6bbede // indirect
 	github.com/cenkalti/backoff v2.0.0+incompatible
-	github.com/chai2010/gettext-go v0.0.0-20170215093142-bf70f2a70fb1 // indirect
 	github.com/chromedp/cdproto v0.0.0-20180720050708-57cf4773008d
 	github.com/chromedp/chromedp v0.1.1
-	github.com/circonus-labs/circonus-gometrics v2.2.6+incompatible // indirect
 	github.com/codeship/codeship-go v0.0.0-20180717142545-7793ca823354
 	github.com/containerd/continuity v0.0.0-20181203112020-004b46473808 // indirect
 	github.com/cpuguy83/go-md2man v1.0.8 // indirect
@@ -61,7 +57,6 @@ require (
 	github.com/go-test/deep v1.0.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gocql/gocql v0.0.0-20190126123547-8516aabb0f99 // indirect
-	github.com/gogo/protobuf v1.1.1
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/protobuf v1.2.0
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
@@ -70,16 +65,18 @@ require (
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135 // indirect
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
-	github.com/hashicorp/consul v1.4.2 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.0 // indirect
 	github.com/hashicorp/go-hclog v0.0.0-20190109152822-4783caec6f2e // indirect
+	github.com/hashicorp/go-immutable-radix v1.0.0 // indirect
 	github.com/hashicorp/go-memdb v0.0.0-20181108192425-032f93b25bec // indirect
+	github.com/hashicorp/go-multierror v1.0.0 // indirect
 	github.com/hashicorp/go-plugin v0.0.0-20190129155509-362c99b11937 // indirect
 	github.com/hashicorp/go-retryablehttp v0.0.0-20180718195005-e651d75abec6 // indirect
 	github.com/hashicorp/go-rootcerts v0.0.0-20160503143440-6bb64b370b90 // indirect
+	github.com/hashicorp/go-sockaddr v1.0.0 // indirect
+	github.com/hashicorp/go-uuid v1.0.1 // indirect
 	github.com/hashicorp/go-version v0.0.0-20180716215031-270f2f71b1ee
 	github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce
-	github.com/hashicorp/serf v0.8.2 // indirect
 	github.com/hashicorp/vault v0.11.4
 	github.com/hashicorp/vault-plugin-secrets-kv v0.0.0-20190115203747-edbfe287c5d9 // indirect
 	github.com/heptio/sonobuoy v0.12.0
@@ -98,7 +95,6 @@ require (
 	github.com/keybase/go-crypto v0.0.0-20181127160227-255a5089e85a // indirect
 	github.com/knative/build v0.3.0
 	github.com/knative/pkg v0.0.0-20190125193334-994b801b03ef
-	github.com/knq/snaker v0.0.0-20180306023312-d9ad1e7f342a // indirect
 	github.com/kr/pty v1.1.2 // indirect
 	github.com/lusis/go-slackbot v0.0.0-20180109053408-401027ccfef5 // indirect
 	github.com/lusis/slack-test v0.0.0-20180109053238-3c758769bfa6 // indirect
@@ -117,6 +113,7 @@ require (
 	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/operator-framework/operator-sdk v0.0.0-20181011175812-913cbf711929 // indirect
 	github.com/ory/dockertest v3.3.4+incompatible // indirect
+	github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pborman/uuid v0.0.0-20170612153648-e790cca94e6c
 	github.com/pelletier/go-buffruneio v0.2.0 // indirect
@@ -149,6 +146,7 @@ require (
 	gocloud.dev v0.9.0
 	golang.org/x/crypto v0.0.0-20181203042331-505ab145d0a9 // indirect
 	golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81 // indirect
+	golang.org/x/net v0.0.0-20181201002055-351d144fa1fc // indirect
 	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890
 	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4
 	golang.org/x/sys v0.0.0-20190130150945-aca44879d564
@@ -166,10 +164,7 @@ require (
 	k8s.io/api v0.0.0-20190126160303-ccdd560a045f
 	k8s.io/apiextensions-apiserver v0.0.0-20181128195303-1f84094d7e8e
 	k8s.io/apimachinery v0.0.0-20190122181752-bebe27e40fb7
-	k8s.io/cli-runtime v0.0.0-20181026155151-1ee5ba10d7e3 // indirect
 	k8s.io/client-go v9.0.0+incompatible
-	k8s.io/code-generator v0.0.0-20181017053441-8c97d6ab64da
-	k8s.io/gengo v0.0.0-20180718083919-906d99f89cd6
 	k8s.io/helm v2.7.2+incompatible
 	k8s.io/kube-openapi v0.0.0-20180719232738-d8ea2fe547a4
 	k8s.io/kubernetes v1.11.3 // indirect
