@@ -5,7 +5,7 @@ package v1
 import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	scheme "github.com/jenkins-x/jx/pkg/client/clientset/versioned/scheme"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
@@ -21,11 +21,11 @@ type BuildPacksGetter interface {
 type BuildPackInterface interface {
 	Create(*v1.BuildPack) (*v1.BuildPack, error)
 	Update(*v1.BuildPack) (*v1.BuildPack, error)
-	Delete(name string, options *meta_v1.DeleteOptions) error
-	DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error
-	Get(name string, options meta_v1.GetOptions) (*v1.BuildPack, error)
-	List(opts meta_v1.ListOptions) (*v1.BuildPackList, error)
-	Watch(opts meta_v1.ListOptions) (watch.Interface, error)
+	Delete(name string, options *metav1.DeleteOptions) error
+	DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error
+	Get(name string, options metav1.GetOptions) (*v1.BuildPack, error)
+	List(opts metav1.ListOptions) (*v1.BuildPackList, error)
+	Watch(opts metav1.ListOptions) (watch.Interface, error)
 	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.BuildPack, err error)
 	BuildPackExpansion
 }
@@ -45,7 +45,7 @@ func newBuildPacks(c *JenkinsV1Client, namespace string) *buildPacks {
 }
 
 // Get takes name of the buildPack, and returns the corresponding buildPack object, and an error if there is any.
-func (c *buildPacks) Get(name string, options meta_v1.GetOptions) (result *v1.BuildPack, err error) {
+func (c *buildPacks) Get(name string, options metav1.GetOptions) (result *v1.BuildPack, err error) {
 	result = &v1.BuildPack{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -58,7 +58,7 @@ func (c *buildPacks) Get(name string, options meta_v1.GetOptions) (result *v1.Bu
 }
 
 // List takes label and field selectors, and returns the list of BuildPacks that match those selectors.
-func (c *buildPacks) List(opts meta_v1.ListOptions) (result *v1.BuildPackList, err error) {
+func (c *buildPacks) List(opts metav1.ListOptions) (result *v1.BuildPackList, err error) {
 	result = &v1.BuildPackList{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -70,7 +70,7 @@ func (c *buildPacks) List(opts meta_v1.ListOptions) (result *v1.BuildPackList, e
 }
 
 // Watch returns a watch.Interface that watches the requested buildPacks.
-func (c *buildPacks) Watch(opts meta_v1.ListOptions) (watch.Interface, error) {
+func (c *buildPacks) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 	opts.Watch = true
 	return c.client.Get().
 		Namespace(c.ns).
@@ -105,7 +105,7 @@ func (c *buildPacks) Update(buildPack *v1.BuildPack) (result *v1.BuildPack, err 
 }
 
 // Delete takes name of the buildPack and deletes it. Returns an error if one occurs.
-func (c *buildPacks) Delete(name string, options *meta_v1.DeleteOptions) error {
+func (c *buildPacks) Delete(name string, options *metav1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("buildpacks").
@@ -116,7 +116,7 @@ func (c *buildPacks) Delete(name string, options *meta_v1.DeleteOptions) error {
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *buildPacks) DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error {
+func (c *buildPacks) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("buildpacks").

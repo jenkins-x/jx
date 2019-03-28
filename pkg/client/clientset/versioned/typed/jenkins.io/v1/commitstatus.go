@@ -5,7 +5,7 @@ package v1
 import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	scheme "github.com/jenkins-x/jx/pkg/client/clientset/versioned/scheme"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
@@ -21,11 +21,11 @@ type CommitStatusesGetter interface {
 type CommitStatusInterface interface {
 	Create(*v1.CommitStatus) (*v1.CommitStatus, error)
 	Update(*v1.CommitStatus) (*v1.CommitStatus, error)
-	Delete(name string, options *meta_v1.DeleteOptions) error
-	DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error
-	Get(name string, options meta_v1.GetOptions) (*v1.CommitStatus, error)
-	List(opts meta_v1.ListOptions) (*v1.CommitStatusList, error)
-	Watch(opts meta_v1.ListOptions) (watch.Interface, error)
+	Delete(name string, options *metav1.DeleteOptions) error
+	DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error
+	Get(name string, options metav1.GetOptions) (*v1.CommitStatus, error)
+	List(opts metav1.ListOptions) (*v1.CommitStatusList, error)
+	Watch(opts metav1.ListOptions) (watch.Interface, error)
 	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.CommitStatus, err error)
 	CommitStatusExpansion
 }
@@ -45,7 +45,7 @@ func newCommitStatuses(c *JenkinsV1Client, namespace string) *commitStatuses {
 }
 
 // Get takes name of the commitStatus, and returns the corresponding commitStatus object, and an error if there is any.
-func (c *commitStatuses) Get(name string, options meta_v1.GetOptions) (result *v1.CommitStatus, err error) {
+func (c *commitStatuses) Get(name string, options metav1.GetOptions) (result *v1.CommitStatus, err error) {
 	result = &v1.CommitStatus{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -58,7 +58,7 @@ func (c *commitStatuses) Get(name string, options meta_v1.GetOptions) (result *v
 }
 
 // List takes label and field selectors, and returns the list of CommitStatuses that match those selectors.
-func (c *commitStatuses) List(opts meta_v1.ListOptions) (result *v1.CommitStatusList, err error) {
+func (c *commitStatuses) List(opts metav1.ListOptions) (result *v1.CommitStatusList, err error) {
 	result = &v1.CommitStatusList{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -70,7 +70,7 @@ func (c *commitStatuses) List(opts meta_v1.ListOptions) (result *v1.CommitStatus
 }
 
 // Watch returns a watch.Interface that watches the requested commitStatuses.
-func (c *commitStatuses) Watch(opts meta_v1.ListOptions) (watch.Interface, error) {
+func (c *commitStatuses) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 	opts.Watch = true
 	return c.client.Get().
 		Namespace(c.ns).
@@ -105,7 +105,7 @@ func (c *commitStatuses) Update(commitStatus *v1.CommitStatus) (result *v1.Commi
 }
 
 // Delete takes name of the commitStatus and deletes it. Returns an error if one occurs.
-func (c *commitStatuses) Delete(name string, options *meta_v1.DeleteOptions) error {
+func (c *commitStatuses) Delete(name string, options *metav1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("commitstatuses").
@@ -116,7 +116,7 @@ func (c *commitStatuses) Delete(name string, options *meta_v1.DeleteOptions) err
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *commitStatuses) DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error {
+func (c *commitStatuses) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("commitstatuses").
