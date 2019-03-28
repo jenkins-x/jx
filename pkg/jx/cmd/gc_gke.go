@@ -155,7 +155,7 @@ func (p *GCGKEOptions) cleanUpFirewalls() (string, error) {
 		return "", err
 	}
 
-	lines := strings.Split(string(out), "\n")
+	lines := strings.Split(out, "\n")
 	var existingClusters []string
 	for _, l := range lines {
 		if strings.Contains(l, "NAME") {

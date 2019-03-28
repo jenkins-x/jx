@@ -19,8 +19,6 @@ const (
 )
 
 var (
-	stepSplitMonorepoOptions = []string{optionMinJxVersion}
-
 	stepSplitMonorepoLong = templates.LongDesc(`
 		Mirrors the code from a monorepo into separate microservice style Git repositories so its easier to do finer grained releases.
 

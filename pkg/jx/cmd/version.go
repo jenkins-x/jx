@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
 	"github.com/blang/semver"
@@ -213,16 +212,4 @@ func (o *VersionOptions) upgradeCli(newVersion semver.Version) error {
 // in the case of an error this still returns a valid string for the details that can be found.
 func (o *VersionOptions) GetOsVersion() (string, error) {
 	return system.GetOsVersion()
-}
-
-func extractSemVer(text string) string {
-	re, err := regexp.Compile(".*SemVer:\"(.*)\"")
-	if err != nil {
-		return ""
-	}
-	matches := re.FindStringSubmatch(text)
-	if len(matches) > 1 {
-		return matches[1]
-	}
-	return ""
 }

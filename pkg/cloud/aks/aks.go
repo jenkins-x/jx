@@ -160,7 +160,7 @@ func (az *AzureRunner) createRegistry(resourceGroup string, name string) (string
 		log.Infof("Failed to create ACR %s in resource group %s\n", util.ColorInfo(name), util.ColorInfo(resourceGroup))
 		return "", "", err
 	}
-	return string(registryID), formatLoginServer(name), nil
+	return registryID, formatLoginServer(name), nil
 }
 
 // getACRCredential return .dockerconfig value for the ACR

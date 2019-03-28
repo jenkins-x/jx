@@ -151,38 +151,3 @@ func (r *GitUserResolver) GitProviderKey() string {
 }
 
 // mergeGitUsers merges user1 into user2, replacing any that do not have empty values on user2 with those from user1
-func mergeGitUsers(user1 *gits.GitUser, user2 *gits.GitUser) *gits.GitUser {
-	if user1 == nil {
-		return user2
-	}
-	if user2 == nil {
-		return user1
-	}
-	answer := &gits.GitUser{}
-	if user1.AvatarURL != "" {
-		answer.AvatarURL = user1.AvatarURL
-	} else {
-		answer.AvatarURL = user2.AvatarURL
-	}
-	if user1.URL != "" {
-		answer.URL = user1.URL
-	} else {
-		answer.URL = user2.URL
-	}
-	if user1.Name != "" {
-		answer.Name = user1.Name
-	} else {
-		answer.Name = user2.Name
-	}
-	if user1.Login != "" {
-		answer.Login = user1.Login
-	} else {
-		answer.Login = user2.Login
-	}
-	if user1.Email != "" {
-		answer.Email = user1.Email
-	} else {
-		answer.Email = user2.Email
-	}
-	return answer
-}

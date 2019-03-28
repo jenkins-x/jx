@@ -792,12 +792,6 @@ func noopCallback(activity *v1.PipelineActivity) bool {
 	return true
 }
 
-func setActivitySucceeded(activity *v1.PipelineActivity) bool {
-	activity.Spec.Status = v1.ActivityStatusTypeSucceeded
-	activity.Spec.WorkflowStatus = v1.ActivityStatusTypeSucceeded
-	return true
-}
-
 func setActivityAborted(activity *v1.PipelineActivity) bool {
 	activity.Spec.Status = v1.ActivityStatusTypeAborted
 	activity.Spec.WorkflowStatus = v1.ActivityStatusTypeAborted

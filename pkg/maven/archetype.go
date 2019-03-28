@@ -185,17 +185,17 @@ func LoadArchetypes(name string, archetypeCatalogURL string, cacheDir string) (*
 		}
 		switch t := token.(type) {
 		case xml.StartElement:
-			elmt := xml.StartElement(t)
+			elmt := t
 			elementName = elmt.Name.Local
 		case xml.EndElement:
-			elmt := xml.EndElement(t)
+			elmt := t
 			elementName = elmt.Name.Local
 			if elementName == "archetype" {
 				model.AddArtifact(&artifact)
 				artifact = ArtifactData{}
 			}
 		case xml.CharData:
-			bytes := xml.CharData(t)
+			bytes := t
 			text := strings.TrimSpace(string(bytes))
 			if text != "" {
 				switch elementName {

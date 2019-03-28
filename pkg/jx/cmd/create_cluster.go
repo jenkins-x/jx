@@ -32,8 +32,6 @@ const (
 )
 
 const (
-	stableKubeCtlVersionURL = "https://storage.googleapis.com/kubernetes-release/release/stable.txt"
-
 	valid_providers = `Valid Kubernetes providers include:
 
     * aks (Azure Container Service - https://docs.microsoft.com/en-us/azure/aks)

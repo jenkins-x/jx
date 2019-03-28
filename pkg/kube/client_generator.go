@@ -121,16 +121,16 @@ const (
 	openApiGeneratorGitUrl  = "https://github.com/kubernetes/kube-openapi.git"
 	apiDocsGeneratorGitUrl  = "https://github.com/kubernetes-incubator/reference-docs.git"
 	codeGeneratorGitUrl     = "https://github.com/kubernetes/code-generator.git"
-	bootstrapUrl            = "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
-	openApiGenerator        = "openapi-gen"
-	apiDocsGenerator        = "apidocs-gen"
-	apiDocsGeneratorDir     = "gen-apidocs"
-	codeGenDir              = "codegen"
-	bootstrapJsUrl          = "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
-	bootstrapJsFileName     = "bootstrap-3.3.7.min.js"
-	jqueryUrl               = "https://code.jquery.com/jquery-3.2.1.min.js"
-	jqueryFileName          = "jquery-3.2.1.min.js"
-	gengoPackage            = "k8s.io/gengo@v0.0.0-20190116091435-f8a0810f38af"
+
+	openApiGenerator    = "openapi-gen"
+	apiDocsGenerator    = "apidocs-gen"
+	apiDocsGeneratorDir = "gen-apidocs"
+	codeGenDir          = "codegen"
+	bootstrapJsUrl      = "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+	bootstrapJsFileName = "bootstrap-3.3.7.min.js"
+	jqueryUrl           = "https://code.jquery.com/jquery-3.2.1.min.js"
+	jqueryFileName      = "jquery-3.2.1.min.js"
+	gengoPackage        = "k8s.io/gengo@v0.0.0-20190116091435-f8a0810f38af"
 )
 
 // AllGenerators is a list of all the generators provide by kubernetes code-generator

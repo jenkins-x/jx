@@ -14,8 +14,7 @@ import (
 )
 
 const (
-	userName = "test-user"
-	orgname  = "test-org"
+	orgname = "test-org"
 )
 
 type BitbucketServerProviderTestSuite struct {

@@ -1,22 +1,21 @@
 package cmd_test
 
 import (
-	"reflect"
 	"strconv"
 
-	auth_test "github.com/jenkins-x/jx/pkg/auth/mocks"
+	"github.com/jenkins-x/jx/pkg/auth/mocks"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 
 	"github.com/jenkins-x/jx/pkg/gits"
-	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
+	"github.com/jenkins-x/jx/pkg/gits/mocks"
 	gits_matchers "github.com/jenkins-x/jx/pkg/gits/mocks/matchers"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
 	cmd_matchers "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks/matchers"
@@ -317,16 +316,6 @@ func validateUser(t *testing.T, cs *cs_fake.Clientset) {
 
 //Pegomock 'any' matcher for *string.
 //(since these don't seem to get generated).
-func anyPtrToString() *string {
-	RegisterMatcher(NewAnyMatcher(reflect.TypeOf((*(*string))(nil)).Elem()))
-	var nullValue *string
-	return nullValue
-}
 
 //Pegomock 'any' matcher for *int.
 //(since these don't seem to get generated).
-func anyPtrToInt() *int {
-	RegisterMatcher(NewAnyMatcher(reflect.TypeOf((*(*int))(nil)).Elem()))
-	var nullValue *int
-	return nullValue
-}
