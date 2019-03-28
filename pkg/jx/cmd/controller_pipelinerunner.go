@@ -59,7 +59,7 @@ type ObjectReference struct {
 }
 
 var (
-	controllerPipelineRunnersLong = templates.LongDesc(`Runs the service to generate Knative PipelineRun resources from source code webhooks`)
+	controllerPipelineRunnersLong = templates.LongDesc(`Runs the service to generate Tekton PipelineRun resources from source code webhooks such as from Prow`)
 
 	controllerPipelineRunnersExample = templates.Examples(`
 			# run the pipeline runner controller
@@ -74,7 +74,7 @@ func NewCmdControllerPipelineRunner(commonOpts *CommonOptions) *cobra.Command {
 	}
 	cmd := &cobra.Command{
 		Use:     "pipelinerunner",
-		Short:   "Runs the service to generate Knative PipelineRun resources from source code webhooks",
+		Short:   "Runs the service to generate Tekton PipelineRun resources from source code webhooks such as from Prow",
 		Long:    controllerPipelineRunnersLong,
 		Example: controllerPipelineRunnersExample,
 		Run: func(cmd *cobra.Command, args []string) {

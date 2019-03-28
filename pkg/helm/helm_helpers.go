@@ -567,7 +567,14 @@ func SetValuesToMap(setValues []string) map[string]interface{} {
 		if len(tokens) > 1 {
 			path := tokens[0]
 			value := tokens[1]
-			util.SetMapValueViaPath(answer, path, value)
+
+			// lets assume false is a boolean
+			if value == "false" {
+				util.SetMapValueViaPath(answer, path, false)
+
+			} else {
+				util.SetMapValueViaPath(answer, path, value)
+			}
 		}
 	}
 	return answer

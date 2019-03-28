@@ -139,10 +139,20 @@ func (o *StepHelmApplyOptions) Run() error {
 		return err
 	}
 
+	_, devNs, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+
 	if releaseName == "" {
-		releaseName = ns
-		if helmBinary != "helm" || noTiller || helmTemplate {
-			releaseName = "jx"
+		if devNs == ns {
+			releaseName = "jenkins-x"
+		} else {
+			releaseName = ns
+
+			if helmBinary != "helm" || noTiller || helmTemplate {
+				releaseName = "jx"
+			}
 		}
 	}
 
@@ -193,6 +203,14 @@ func (o *StepHelmApplyOptions) Run() error {
 		return errors.Wrapf(err, "writing values.yaml for tree to %s", chartValuesFile)
 	}
 	log.Infof("Wrote chart values.yaml %s generated from directory tree\n", chartValuesFile)
+
+	data, err := ioutil.ReadFile(chartValuesFile)
+	if err != nil {
+		log.Warnf("failed to load file %s: %s\n", chartValuesFile, err.Error())
+	} else {
+		log.Infof("generated helm %s\n", chartValuesFile)
+		log.Infof("\n%s\n\n", util.ColorStatus(string(data)))
+	}
 
 	log.Infof("Using values files: %s\n", strings.Join(valueFiles, ", "))
 

@@ -458,11 +458,13 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 					log.Warnf("No GitURL on PipelineActivity %s\n", activity.Name)
 				}
 			}
-			logURL, err := o.generateBuildLogURL(podInterface, ns, activity, buildName, pod, location, settings, o.InitGitCredentials)
+			masker, err := kube.NewLogMasker(kubeClient, ns)
 			if err != nil {
-				if o.Verbose {
-					log.Warnf("%s\n", err)
-				}
+				log.Warnf("Failed to create LogMasker in namespace %s: %s\n", ns, err.Error())
+			}
+			logURL, err := o.generateBuildLogURL(podInterface, ns, activity, buildName, pod, location, settings, o.InitGitCredentials, masker)
+			if err != nil {
+				log.Warnf("%s\n", err)
 			}
 			if logURL != "" {
 				spec.BuildLogsURL = logURL
@@ -562,7 +564,12 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 				}
 			}
 
-			logURL, err := o.generateBuildLogURL(podInterface, ns, activity, pri.PipelineRun, pod, location, settings, o.InitGitCredentials)
+			masker, err := kube.NewLogMasker(kubeClient, ns)
+			if err != nil {
+				log.Warnf("Failed to create LogMasker in namespace %s: %s\n", ns, err.Error())
+			}
+
+			logURL, err := o.generateBuildLogURL(podInterface, ns, activity, pri.PipelineRun, pod, location, settings, o.InitGitCredentials, masker)
 			if err != nil {
 				if o.Verbose {
 					log.Warnf("%s\n", err)
@@ -778,7 +785,7 @@ func toYamlString(resource interface{}) string {
 }
 
 // generates the build log URL and returns the URL
-func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool) (string, error) {
+func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool, logMasker *kube.LogMasker) (string, error) {
 
 	coll, err := collector.NewCollector(location, settings, o.Git())
 	if err != nil {
@@ -791,6 +798,9 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 		return "", errors.Wrapf(err, "failed to get build log for pod %s in namespace %s", pod.Name, ns)
 	}
 
+	if logMasker != nil {
+		data = logMasker.MaskLogData(data)
+	}
 	if o.Verbose {
 		log.Infof("got build log for pod: %s PipelineActivity: %s with bytes: %d\n", pod.Name, activity.Name, len(data))
 	}

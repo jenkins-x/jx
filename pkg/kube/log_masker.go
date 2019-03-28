@@ -12,6 +12,19 @@ type LogMasker struct {
 	ReplaceWords map[string]string
 }
 
+// NewLogMasker creates a new LogMasker loading secrets from the given namespace
+func NewLogMasker(kubeClient kubernetes.Interface, ns string) (*LogMasker, error) {
+	masker := &LogMasker{}
+	resourceList, err := kubeClient.CoreV1().Secrets(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return masker, err
+	}
+	for _, secret := range resourceList.Items {
+		masker.LoadSecret(&secret)
+	}
+	return masker, nil
+}
+
 // LoadSecrets loads the secrets into the log masker
 func (m *LogMasker) LoadSecrets(kubeClient kubernetes.Interface, ns string) error {
 	resourceList, err := kubeClient.CoreV1().Secrets(ns).List(metav1.ListOptions{})
@@ -49,4 +62,10 @@ func (m *LogMasker) MaskLog(text string) string {
 		answer = strings.Replace(answer, k, v, -1)
 	}
 	return answer
+}
+
+// MaskLogData masks the log data
+func (m *LogMasker) MaskLogData(logData []byte) []byte {
+	text := m.MaskLog(string(logData))
+	return []byte(text)
 }
