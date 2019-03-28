@@ -6,4 +6,4 @@ pipelineRunRef: null
 stages:
 - depth: 0
   name: from-build-pack
-  taskRef: abayer-js-test-repo-build-pack
+  taskRef: abayer-js-test-repo-build-pack-from-build-pack
