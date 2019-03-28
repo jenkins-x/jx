@@ -139,10 +139,20 @@ func (o *StepHelmApplyOptions) Run() error {
 		return err
 	}
 
+	_, devNs, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+
 	if releaseName == "" {
-		releaseName = ns
-		if helmBinary != "helm" || noTiller || helmTemplate {
-			releaseName = "jx"
+		if devNs == ns {
+			releaseName = "jenkins-x"
+		} else {
+			releaseName = ns
+
+			if helmBinary != "helm" || noTiller || helmTemplate {
+				releaseName = "jx"
+			}
 		}
 	}
 

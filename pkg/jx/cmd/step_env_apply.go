@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/ghodss/yaml"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -32,7 +32,6 @@ type StepEnvApplyOptions struct {
 }
 
 var (
-
 	// stepEnvApplyLong long description
 	stepEnvApplyLong = templates.LongDesc(`
 		Applies the GitOps source code (by default in the current directory) to the Environment.
@@ -197,7 +196,7 @@ func (o *StepEnvApplyOptions) Run() error {
 	}
 	err = stepHelmBuild.Run()
 	if err != nil {
-		return errors.Wrapf(err, "buildng helm chart in dir %s", dir)
+		return errors.Wrapf(err, "building helm chart in dir %s", dir)
 	}
 
 	stepApply := &StepHelmApplyOptions{
@@ -211,7 +210,7 @@ func (o *StepEnvApplyOptions) Run() error {
 	}
 	err = stepApply.Run()
 	if err != nil {
-		return errors.Wrapf(err, "appling the helm chart in dir %s", dir)
+		return errors.Wrapf(err, "applying the helm chart in dir %s", dir)
 	}
 	log.Infof("Environment applied in namespace %s\n", util.ColorInfo(ns))
 	return nil

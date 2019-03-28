@@ -1638,13 +1638,11 @@ func (options *InstallOptions) applyGitOpsDevEnvironmentConfig(gitOpsEnvDir stri
 						CommonOptions: options.CommonOptions,
 					},
 				},
-				Dir:       gitOpsEnvDir,
-				Namespace: namespace,
-				ChangeNs:  true,
-				Vault:     options.Flags.Vault,
-			}
-			if options.InitOptions.Flags.NoTiller {
-				envApplyOptions.ReleaseName = "jx"
+				Dir:         gitOpsEnvDir,
+				Namespace:   namespace,
+				ChangeNs:    true,
+				Vault:       options.Flags.Vault,
+				ReleaseName: "jenkins-x",
 			}
 
 			err := envApplyOptions.Run()
