@@ -4,6 +4,7 @@
 package gits_test
 
 import (
+	"fmt"
 	github "github.com/google/go-github/github"
 	auth "github.com/jenkins-x/jx/pkg/auth"
 	gits "github.com/jenkins-x/jx/pkg/gits"
@@ -2233,4 +2234,8 @@ func (c *GitProvider_ValidateRepositoryName_OngoingVerification) GetAllCapturedA
 		}
 	}
 	return
+}
+
+func (p *MockGitProvider) ListCommits(owner, repo string, opt *gits.ListCommitsArguments) ([]*gits.GitCommit, error) {
+	return nil, fmt.Errorf("Listing commits not supported on mock git")
 }

@@ -79,6 +79,16 @@ type GitCommit struct {
 	Committer *GitUser
 }
 
+type ListCommitsArguments struct {
+	SHA     string
+	Path    string
+	Author  string
+	Since   time.Time
+	Until   time.Time
+	Page    int
+	PerPage int
+}
+
 type GitIssue struct {
 	URL           string
 	Owner         string

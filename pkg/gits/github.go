@@ -1193,3 +1193,29 @@ func asText(text *string) string {
 	}
 	return ""
 }
+func (p *GitHubProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
+	githubOpt := &github.CommitsListOptions{
+		Path: opt.Path,
+		ListOptions: github.ListOptions{
+			Page:    opt.Page,
+			PerPage: opt.PerPage,
+		},
+	}
+	githubCommits, _, err := p.Client.Repositories.ListCommits(p.Context, owner, repo, githubOpt)
+	if err != nil {
+		fmt.Println(err)
+		return nil, fmt.Errorf("Could not find commits for repository %s/%s", owner, repo)
+	}
+	var commits []*GitCommit
+	if len(githubCommits) > 0 {
+		for i := 0; i < len(githubCommits); i++ {
+			commits = append(commits, &GitCommit{
+				SHA:     *githubCommits[0].SHA,
+				Message: *githubCommits[0].Commit.Message,
+				URL:     *githubCommits[0].Commit.URL,
+			})
+		}
+	}
+
+	return commits, nil
+}

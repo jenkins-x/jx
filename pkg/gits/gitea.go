@@ -735,3 +735,7 @@ func (p *GiteaProvider) GetContent(org string, name string, path string, ref str
 func (p *GiteaProvider) ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool {
 	return originalOwner != username
 }
+
+func (p *GiteaProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
+	return nil, fmt.Errorf("Listing commits not supported on gitea")
+}
