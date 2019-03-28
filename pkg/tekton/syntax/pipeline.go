@@ -1,7 +1,6 @@
 package syntax
 
 import (
-	"crypto/rand"
 	"fmt"
 	"regexp"
 	"sort"
@@ -185,8 +184,6 @@ const (
 	PostConditionFailure PostCondition = "failure"
 	PostConditionAlways  PostCondition = "always"
 )
-
-var allPostConditions = []PostCondition{PostConditionAlways, PostConditionSuccess, PostConditionFailure}
 
 // Post contains a PostCondition and one more actions to be executed after a pipeline or stage if the condition is met.
 type Post struct {
@@ -616,8 +613,6 @@ func validateWorkspace(w string) *apis.FieldError {
 
 	return nil
 }
-
-var randReader = rand.Reader
 
 func scopedEnv(newEnv []EnvVar, parentEnv []corev1.EnvVar, o *RootOptions) []corev1.EnvVar {
 	if len(parentEnv) == 0 && len(newEnv) == 0 {

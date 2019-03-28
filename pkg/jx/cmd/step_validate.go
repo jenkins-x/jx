@@ -21,8 +21,6 @@ const (
 )
 
 var (
-	stepValidationOptions = []string{optionMinJxVersion}
-
 	stepValidateLong = templates.LongDesc(`
 		Validates the command line tools, container and platform to ensure a pipeline can run properly.
 

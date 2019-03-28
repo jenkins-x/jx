@@ -28,7 +28,7 @@ func GetGoogleZones(project string) ([]string, error) {
 		return nil, err
 	}
 
-	for _, item := range strings.Split(string(out), "\n") {
+	for _, item := range strings.Split(out, "\n") {
 		zone := strings.Split(item, " ")[0]
 		if strings.Contains(zone, "-") {
 			zones = append(zones, zone)
@@ -52,7 +52,7 @@ func GetGoogleProjects() ([]string, error) {
 		return []string{}, nil
 	}
 
-	lines := strings.Split(string(out), "\n")
+	lines := strings.Split(out, "\n")
 	var existingProjects []string
 	for _, l := range lines {
 		if strings.Contains(l, PROJECT_LIST_HEADER) {

@@ -66,7 +66,7 @@ func NewCmdUpgradeExtensions(commonOpts *CommonOptions) *cobra.Command {
 		Use:     "extensions",
 		Short:   "Upgrades the Jenkins X extensions available to this Jenkins X install if there are new versions available",
 		Long:    upgradeExtensionsLong,
-		Example: upgradeBInariesExample,
+		Example: upgradeExtensionsExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

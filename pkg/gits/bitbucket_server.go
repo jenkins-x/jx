@@ -76,10 +76,6 @@ type pullRequestPage struct {
 	Values        []bitbucket.PullRequest `json:"values"`
 }
 
-type pullrequestEndpointBranch struct {
-	Name string `json:"name,omitempty"`
-}
-
 type webHooksPage struct {
 	Size          int       `json:"size"`
 	Limit         int       `json:"limit"`

@@ -30,11 +30,11 @@ const (
 	awsServiceAccountEnv  = "AWS_SHARED_CREDENTIALS_FILE"
 	awsServiceAccountPath = "/etc/aws/credentials"
 
-	vaultAuthName     = "auth"
-	vaultAuthType     = "kubernetes"
-	vaultAuthTTL      = "1h"
-	vaultAuthSaSuffix = "auth-sa"
-	vaultRoleName     = "vault-auth"
+	vaultAuthName = "auth"
+	vaultAuthType = "kubernetes"
+	vaultAuthTTL  = "1h"
+
+	vaultRoleName = "vault-auth"
 )
 
 // Vault stores some details of a Vault resource

@@ -194,7 +194,7 @@ func (s *AdminSecretsService) NewAdminSecretsConfigFromSecret(decryptedSecretsFi
 		return errors.Wrap(err, "unable to read file")
 	}
 
-	err = yaml.Unmarshal([]byte(data), &a)
+	err = yaml.Unmarshal(data, &a)
 	if err != nil {
 		return errors.Wrap(err, "unable to unmarshall secrets")
 	}

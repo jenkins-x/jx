@@ -100,7 +100,7 @@ func (o *StepGpgCredentialsOptions) GenerateGpgFiles(secret *v1.Secret) error {
 
 	for k, v := range secret.Data {
 		fileName := filepath.Join(outputDir, k)
-		err = ioutil.WriteFile(fileName, []byte(v), util.DefaultWritePermissions)
+		err = ioutil.WriteFile(fileName, v, util.DefaultWritePermissions)
 		if err != nil {
 			return err
 		}

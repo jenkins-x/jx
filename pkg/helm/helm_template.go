@@ -1038,10 +1038,3 @@ func MatchingHooks(hooks []*HelmHook, hook string, hookDeletePolicy string) []*H
 	}
 	return answer
 }
-
-func asText(text *string) string {
-	if text != nil {
-		return *text
-	}
-	return ""
-}

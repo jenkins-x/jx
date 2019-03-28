@@ -13,10 +13,6 @@ type GetHelmBinOptions struct {
 }
 
 var (
-	helmBinsAliases = []string{
-		"branch pattern",
-	}
-
 	getHelmBinLong = templates.LongDesc(`
 		Display the Helm binary name used in pipelines.
 

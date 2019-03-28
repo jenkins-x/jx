@@ -461,7 +461,7 @@ func GetEnabledApis(projectID string) ([]string, error) {
 		return nil, err
 	}
 
-	lines := strings.Split(string(out), "\n")
+	lines := strings.Split(out, "\n")
 	for _, l := range lines {
 		if strings.Contains(l, "NAME") {
 			continue

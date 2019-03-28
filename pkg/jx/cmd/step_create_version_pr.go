@@ -2,7 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"io/ioutil"
+	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -34,6 +37,9 @@ var (
 		# create a Pull Request to update all charts in the 'jenkins-x' chart repository to the latest found in the helm repo
 		jx step create version pr -f "jenkins-x/*"
 
+		# create a Pull Request to update all charts in the 'jenkins-x' chart repository and update the BDD test images
+		jx step create version pr -f "jenkins-x/*" --images
+
 			`)
 )
 
@@ -48,11 +54,13 @@ type StepCreateVersionPullRequestOptions struct {
 	VersionsRepository string
 	VersionsBranch     string
 	Version            string
+	UpdateTektonImages bool
 
-	updatedHelmRepo bool
-	branchNameText  string
-	title           string
-	message         string
+	updatedHelmRepo     bool
+	branchNameText      string
+	title               string
+	message             string
+	builderImageVersion string
 }
 
 // StepCreateVersionPullRequestResults stores the generated results
@@ -91,6 +99,7 @@ func NewCmdStepCreateVersionPullRequest(commonOpts *CommonOptions) *cobra.Comman
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version to change. If no version is supplied the latest version is found")
 	cmd.Flags().StringArrayVarP(&options.Includes, "filter", "f", nil, "The name patterns to include - such as '*' for all names")
 	cmd.Flags().StringArrayVarP(&options.Excludes, "excludes", "x", nil, "The name patterns to exclude")
+	cmd.Flags().BoolVarP(&options.UpdateTektonImages, "images", "", false, "Update the tekton builder images for the Jenkins X Versions BDD tests")
 	return cmd
 }
 
@@ -111,6 +120,15 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 	dir, err := ioutil.TempDir("", "create-version-pr")
 	if err != nil {
 		return err
+	}
+
+	if o.UpdateTektonImages {
+		o.builderImageVersion, err = o.findLatestBuilderImageVersion()
+		if err != nil {
+			return err
+		}
+
+		log.Infof("the latest builder image version is %s\n", util.ColorInfo(o.builderImageVersion))
 	}
 
 	if len(o.Includes) == 0 {
@@ -292,6 +310,12 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 }
 
 func (o *StepCreateVersionPullRequestOptions) modifyFiles(dir string) error {
+	if o.builderImageVersion != "" {
+		err := o.modifyRegex(filepath.Join(dir, "jenkins-x-*.yml"), "gcr.io/jenkinsxio/builder-go-maven:(.+)", "gcr.io/jenkinsxio/builder-go-maven:"+o.builderImageVersion)
+		if err != nil {
+			return err
+		}
+	}
 	if len(o.Includes) > 0 {
 		switch version.VersionKind(o.Kind) {
 		case version.KindChart:
@@ -374,5 +398,38 @@ func (o *StepCreateVersionPullRequestOptions) updateHelmRepo() error {
 		return errors.Wrap(err, "failed to update helm repos")
 	}
 	o.updatedHelmRepo = true
+	return nil
+}
+
+func (o *StepCreateVersionPullRequestOptions) findLatestBuilderImageVersion() (string, error) {
+	output, err := o.getCommandOutput("", "gcloud", "container", "images", "list-tags", "gcr.io/jenkinsxio/builder-maven", "--format", "json")
+	if err != nil {
+		return "", err
+	}
+	return gke.FindLatestImageTag(output)
+}
+
+// modifyRegex performs a search and replace of the given regular expression with the replacement in the given set of globPattern files
+func (o *StepCreateVersionPullRequestOptions) modifyRegex(globPattern string, regexPattern string, replacement string) error {
+	files, err := filepath.Glob(globPattern)
+	if err != nil {
+		return errors.Wrapf(err, "failed to find glob pattern %s", globPattern)
+	}
+	re, err := regexp.Compile(regexPattern)
+	if err != nil {
+		return errors.Wrapf(err, "failed to parse regex %s", regexPattern)
+	}
+
+	for _, file := range files {
+		data, err := ioutil.ReadFile(file)
+		if err != nil {
+			return errors.Wrapf(err, "failed to load file %s", file)
+		}
+		data = re.ReplaceAll(data, []byte(replacement))
+		err = ioutil.WriteFile(file, data, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to save file %s", file)
+		}
+	}
 	return nil
 }

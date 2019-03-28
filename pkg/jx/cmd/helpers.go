@@ -14,10 +14,6 @@ const (
 	DefaultErrorExitCode = 1
 )
 
-type debugError interface {
-	DebugError() (msg string, args []interface{})
-}
-
 var fatalErrHandler = fatal
 
 // BehaviorOnFatal allows you to override the default behavior when a fatal
@@ -65,9 +61,6 @@ func CheckErr(err error) {
 }
 
 // checkErrWithPrefix works like CheckErr, but adds a caller-defined prefix to non-nil errors
-func checkErrWithPrefix(prefix string, err error) {
-	checkErr(prefix, err, fatalErrHandler)
-}
 
 // checkErr formats a given error as a string and calls the passed handleErr
 // func with that string and an kubectl exit code.
