@@ -517,7 +517,7 @@ func (o *PromoteOptions) GetTargetNamespace(ns string, env string) (string, *v1.
 		}
 		targetNS = envResource.Spec.Namespace
 		if targetNS == "" {
-			return "", nil, fmt.Errorf("Environment %s does not have a namespace associated with it!", env)
+			return "", nil, fmt.Errorf("environment %s does not have a namespace associated with it!", env)
 		}
 	} else if ns != "" {
 		targetNS = ns
