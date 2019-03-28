@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// ImageTagInfo contains tag information for container images
 type ImageTagInfo struct {
 	Digest string   `json: "digest"`
 	Tags   []string `json: "tags"`
