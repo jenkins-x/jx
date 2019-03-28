@@ -67,6 +67,7 @@ type HelmValuesConfig struct {
 	Prow             ProwValuesConfig                   `json:"prow,omitempty"`
 	PipelineSecrets  JenkinsPipelineSecretsValuesConfig `json:"PipelineSecrets,omitempty"`
 	ControllerBuild  ControllerBuildConfig              `json:"controllerbuild,omitempty"`
+	DockerRegistry   string                             `json:"dockerRegistry,omitempty"`
 }
 
 type HelmValuesConfigService struct {

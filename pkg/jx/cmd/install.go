@@ -1838,10 +1838,14 @@ func (options *InstallOptions) configureDockerRegistry(client kubernetes.Interfa
 		helmConfig.PipelineSecrets.DockerConfig = dockerRegistryConfig
 	}
 	if dockerRegistry != "" {
-		if helmConfig.Jenkins.Servers.Global.EnvVars == nil {
-			helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
+		if !options.Flags.Prow {
+			if helmConfig.Jenkins.Servers.Global.EnvVars == nil {
+				helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
+			}
+			helmConfig.Jenkins.Servers.Global.EnvVars["DOCKER_REGISTRY"] = dockerRegistry
+		} else {
+			helmConfig.DockerRegistry = dockerRegistry
 		}
-		helmConfig.Jenkins.Servers.Global.EnvVars["DOCKER_REGISTRY"] = dockerRegistry
 	}
 	return nil
 }
