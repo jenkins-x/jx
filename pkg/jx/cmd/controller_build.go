@@ -464,9 +464,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 			}
 			logURL, err := o.generateBuildLogURL(podInterface, ns, activity, buildName, pod, location, settings, o.InitGitCredentials, masker)
 			if err != nil {
-				if o.Verbose {
-					log.Warnf("%s\n", err)
-				}
+				log.Warnf("%s\n", err)
 			}
 			if logURL != "" {
 				spec.BuildLogsURL = logURL
