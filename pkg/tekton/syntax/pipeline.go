@@ -1324,7 +1324,7 @@ func getDefaultTaskSpec(envs []corev1.EnvVar) tektonv1alpha1.TaskSpec {
 				//Image:   "gcr.io/jenkinsxio/builder-jx:0.1.297",
 				Image:      v,
 				Command:    []string{"jx"},
-				Args:       []string{"step", "git", "merge"},
+				Args:       []string{"step", "git", "merge", "--verbose"},
 				WorkingDir: "/workspace/workspace",
 				Env:        envs,
 			},
