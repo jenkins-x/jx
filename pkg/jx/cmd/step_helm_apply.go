@@ -194,6 +194,14 @@ func (o *StepHelmApplyOptions) Run() error {
 	}
 	log.Infof("Wrote chart values.yaml %s generated from directory tree\n", chartValuesFile)
 
+	data, err := ioutil.ReadFile(chartValuesFile)
+	if err != nil {
+		log.Warnf("failed to load file %s: %s\n", chartValuesFile, err.Error())
+	} else {
+		log.Infof("generated helm %s\n", chartValuesFile)
+		log.Infof("\n%s\n\n", util.ColorStatus(string(data)))
+	}
+
 	log.Infof("Using values files: %s\n", strings.Join(valueFiles, ", "))
 
 	err = o.applyTemplateOverrides(chartName)
