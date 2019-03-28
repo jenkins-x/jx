@@ -682,8 +682,7 @@ func TestAddAppFromPath(t *testing.T) {
 			pegomock.AnyStringSlice(),
 			pegomock.AnyString(),
 			pegomock.AnyString(),
-			pegomock.AnyString(),
-			pegomock.AnyBool())
+			pegomock.AnyString())
 
 	// Verify the annotation
 }
