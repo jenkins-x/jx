@@ -1598,9 +1598,7 @@ func (o *CommonOptions) installProw(useTekton bool, isGitOps bool, gitOpsDir str
 
 	if useTekton {
 		setValues = append(setValues,
-			"auth.git.username="+gitUsername,
-			"buildnum.enabled=false",
-			"pipelinerunner.enabled=true")
+			"auth.git.username="+gitUsername)
 
 		ksecretValues = append(ksecretValues,
 			"auth.git.password="+o.OAUTHToken)
@@ -1612,6 +1610,11 @@ func (o *CommonOptions) installProw(useTekton bool, isGitOps bool, gitOpsDir str
 		if err != nil {
 			return errors.Wrap(err, "failed to install Tekton")
 		}
+
+		setValues = append(setValues,
+			"buildnum.enabled=false",
+			"pipelinerunner.enabled=true",
+		)
 
 	} else {
 		setValues = append(setValues, "build.auth.git.username="+gitUsername)
