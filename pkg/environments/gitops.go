@@ -2,6 +2,7 @@ package environments
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/auth"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -243,6 +244,7 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 	}
 
 	username := ""
+	userDetails := auth.UserAuth{}
 	originalOrg := gitInfo.Organisation
 	originalRepo := gitInfo.Name
 
@@ -253,10 +255,10 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 		log.Warnf("No GitProvider specified!\n")
 		debug.PrintStack()
 	} else {
-		// lets check if we need to fork the repository...
-
+		userDetails = o.GitProvider.UserAuth()
 		username = o.GitProvider.CurrentUsername()
 
+		// lets check if we need to fork the repository...
 		if originalOrg != username && username != "" && originalOrg != "" && provider.ShouldForkForPullRequest(originalOrg, originalRepo, username) {
 			fork = true
 		}
@@ -292,7 +294,11 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 		if err != nil {
 			return "", "", nil, fork, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
 		}
-		err = o.Gitter.Clone(repo.CloneURL, dir)
+		cloneGitURL, err := git.CreatePushURL(repo.CloneURL, &userDetails)
+		if err != nil {
+			return "", "", nil, fork, errors.Wrapf(err, "failed to get clone URL from %s and user %s", repo.CloneURL, username)
+		}
+		err = o.Gitter.Clone(cloneGitURL, dir)
 		if err != nil {
 			return "", "", nil, fork, err
 		}
@@ -353,7 +359,12 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 			if err != nil {
 				return "", "", nil, fork, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
 			}
-			err = o.Gitter.Clone(gitURL, dir)
+			cloneGitURL, err := git.CreatePushURL(gitURL, &userDetails)
+			if err != nil {
+				return "", "", nil, fork, errors.Wrapf(err, "failed to get clone URL from %s and user %s", gitURL, username)
+			}
+
+			err = o.Gitter.Clone(cloneGitURL, dir)
 			if err != nil {
 				return "", "", nil, fork, err
 			}
