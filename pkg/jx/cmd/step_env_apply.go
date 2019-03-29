@@ -165,7 +165,7 @@ func (o *StepEnvApplyOptions) Run() error {
 		}
 
 		if o.ReleaseName == "" {
-			o.ReleaseName = "jenkins-x"
+			o.ReleaseName = JenkinsXPlatformRelease
 		}
 	} else {
 		// ensure there's a development namespace setup

@@ -419,7 +419,9 @@ func (h *HelmTemplate) kubectlApply(ns string, chart string, releaseName string,
 	if !h.KubectlValidate {
 		args = append(args, "--validate=false")
 	}
-	return h.runKubectl(args...)
+	err := h.runKubectl(args...)
+	log.Info("\n")
+	return err
 }
 
 func (h *HelmTemplate) kubectlApplyFile(ns string, helmHook string, wait bool, create bool, file string) error {
@@ -439,7 +441,9 @@ func (h *HelmTemplate) kubectlApplyFile(ns string, helmHook string, wait bool, c
 	if !h.KubectlValidate {
 		args = append(args, "--validate=false")
 	}
-	return h.runKubectl(args...)
+	err := h.runKubectl(args...)
+	log.Info("\n")
+	return err
 }
 
 func (h *HelmTemplate) kubectlDeleteFile(ns string, file string) error {

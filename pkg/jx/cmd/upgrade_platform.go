@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/config"
 	configio "github.com/jenkins-x/jx/pkg/io"
@@ -22,7 +22,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 	core_v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -75,7 +75,7 @@ func NewCmdUpgradePlatform(commonOpts *CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The Namespace to promote to.")
-	cmd.Flags().StringVarP(&options.ReleaseName, "name", "n", "jenkins-x", "The release name.")
+	cmd.Flags().StringVarP(&options.ReleaseName, "name", "n", JenkinsXPlatformRelease, "The release name.")
 	cmd.Flags().StringVarP(&options.Chart, "chart", "c", "jenkins-x/jenkins-x-platform", "The Chart to upgrade.")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The specific platform version to upgrade to.")
 	cmd.Flags().StringVarP(&options.Set, "set", "s", "", "The helm parameters to pass in while upgrading, separated by comma, e.g. key1=val1,key2=val2.")
@@ -145,14 +145,15 @@ func (o *UpgradePlatformOptions) Run() error {
 
 	wrkDir := ""
 
+	io := &InstallOptions{}
+	io.CommonOptions = o.CommonOptions
+	io.Flags = o.InstallFlags
+	versionsDir, err := io.cloneJXVersionsRepo(o.Flags.VersionsRepository)
+	if err != nil {
+		return err
+	}
+
 	if targetVersion == "" {
-		io := &InstallOptions{}
-		io.CommonOptions = o.CommonOptions
-		io.Flags = o.InstallFlags
-		versionsDir, err := io.cloneJXVersionsRepo(o.Flags.VersionsRepository)
-		if err != nil {
-			return err
-		}
 		targetVersion, err = LoadVersionFromCloudEnvironmentsDir(versionsDir, configStore)
 		if err != nil {
 			return err
@@ -171,6 +172,26 @@ func (o *UpgradePlatformOptions) Run() error {
 	}
 	if currentVersion == "" {
 		return errors.New("Jenkins X platform helm chart is not installed.")
+	}
+
+	if targetVersion != currentVersion {
+		log.Infof("Upgrading platform from version %s to version %s\n", util.ColorInfo(currentVersion), util.ColorInfo(targetVersion))
+	} else if o.AlwaysUpgrade {
+		log.Infof("Rerunning platform version %s\n", util.ColorInfo(targetVersion))
+	} else {
+		log.Infof("Already installed platform version %s. Skipping upgrade process.\n", util.ColorInfo(targetVersion))
+		return nil
+	}
+
+	isGitOps, devEnv := o.GetDevEnv()
+	if isGitOps {
+		if devEnv == nil {
+			return fmt.Errorf("no Dev environment found")
+		}
+		if devEnv.Spec.Source.URL == "" {
+			return fmt.Errorf("Dev environment does not have source URL")
+		}
+		return o.upgradePlatformViaGitOps(devEnv, targetVersion, versionsDir, configStore)
 	}
 
 	helmConfig := &o.CreateEnvOptions.HelmValuesConfig
@@ -218,15 +239,6 @@ func (o *UpgradePlatformOptions) Run() error {
 
 	if oldSecret == nil {
 		return errors.Wrap(err, "secret jx-install-config doesn't exist, aborting")
-	}
-
-	if targetVersion != currentVersion {
-		log.Infof("Upgrading platform from version %s to version %s\n", util.ColorInfo(currentVersion), util.ColorInfo(targetVersion))
-	} else if o.AlwaysUpgrade {
-		log.Infof("Rerunning platform version %s\n", util.ColorInfo(targetVersion))
-	} else {
-		log.Infof("Already installed platform version %s. Skipping upgrade process.\n", util.ColorInfo(targetVersion))
-		return nil
 	}
 
 	err = o.removeFileIfExists(adminSecretsFileName)
@@ -429,4 +441,19 @@ func (o *UpgradePlatformOptions) repairAdminSecrets(fileName string) error {
 	}
 
 	return nil
+}
+
+func (o *UpgradePlatformOptions) upgradePlatformViaGitOps(devEnv *v1.Environment, targetVersion string, versionsDir string, configStore configio.ConfigStore) error {
+	opts := &UpgradeAppsOptions{}
+	opts.CommonOptions = o.CommonOptions
+	opts.ReleaseName = JenkinsXPlatformRelease
+	opts.GitOps = true
+	opts.Version = targetVersion
+	opts.Repo = DefaultChartRepo
+	opts.HelmUpdate = true
+
+	//opts.Chart = JenkinsXPlatformChartName
+	opts.Args = []string{JenkinsXPlatformChartName}
+
+	return opts.Run()
 }

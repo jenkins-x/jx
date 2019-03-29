@@ -146,7 +146,7 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	if releaseName == "" {
 		if devNs == ns {
-			releaseName = "jenkins-x"
+			releaseName = JenkinsXPlatformRelease
 		} else {
 			releaseName = ns
 
@@ -232,7 +232,7 @@ func (o *StepHelmApplyOptions) Run() error {
 }
 
 func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
-	log.Infof("Applying chart overrides")
+	log.Infof("Applying chart overrides\n")
 	templateOverrides, err := filepath.Glob(chartName + "/../*/templates/*.yaml")
 	for _, overrideSrc := range templateOverrides {
 		if !strings.Contains(overrideSrc, "/env/") {
@@ -247,14 +247,14 @@ func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
 				if exists, err := util.DirExists(depChartDir); err == nil && !exists {
 					chartArchives, _ := filepath.Glob(filepath.Join(depChartsDir, depChartName+"*.tgz"))
 					if len(chartArchives) == 1 {
-						log.Infof("Exploding chart %s", chartArchives[0])
+						log.Infof("Exploding chart %s\n", chartArchives[0])
 						archiver.Unarchive(chartArchives[0], depChartsDir)
 						// Remove the unexploded chart
 						os.Remove(chartArchives[0])
 					}
 				}
 				overrideDst := filepath.Join(depChartDir, "templates", templateName)
-				log.Infof("Copying chart override %s \n", overrideSrc)
+				log.Infof("Copying chart override %s\n", overrideSrc)
 				err = ioutil.WriteFile(overrideDst, data, util.DefaultWritePermissions)
 				if err != nil {
 					log.Warnf("Error copying template %s to %s\n", overrideSrc, overrideDst)
