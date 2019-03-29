@@ -389,16 +389,15 @@ func CreateUpgradeRequirementsFn(all bool, chartName string, alias string, versi
 
 		// Work through the upgrades
 		for _, d := range requirements.Dependencies {
+			// We need to ignore the platform unless the chart name is the platform
 			upgrade := false
-			// We need to ignore the platform
-			if d.Name == "jenkins-x-platform" {
-				upgrade = false
-			} else if all {
-				upgrade = true
-			} else {
-				if d.Name == chartName && d.Alias == alias {
+			if all {
+				if d.Name != "jenkins-x-platform" {
 					upgrade = true
-
+				}
+			} else {
+				if d.Name == chartName && (d.Alias == "" || d.Alias == alias) {
+					upgrade = true
 				}
 			}
 			if upgrade {
