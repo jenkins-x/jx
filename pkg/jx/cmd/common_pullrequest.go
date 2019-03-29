@@ -63,7 +63,7 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 
 	err = gitter.Clone(repo.CloneURL, dir)
 	if err != nil {
-		return errors.Wrapf(err, "cloning the $s %q", message, repo.CloneURL)
+		return errors.Wrapf(err, "cloning the %s %q", message, repo.CloneURL)
 	}
 	log.Infof("cloned fork of %s %s to %s\n", message, util.ColorInfo(repo.HTMLURL), util.ColorInfo(dir))
 
