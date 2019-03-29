@@ -97,7 +97,7 @@ func (o *DeleteUserOptions) Run() error {
 			return fmt.Errorf("In batch mode you must specify the '-y' flag to confirm")
 		}
 	} else {
-		log.Warnf("You are about to delete these users '%s' on the Git provider. This operation CANNOT be undone!",
+		log.Warnf("You are about to delete these users '%s'. This operation CANNOT be undone!",
 			strings.Join(names, ","))
 
 		flag := false
