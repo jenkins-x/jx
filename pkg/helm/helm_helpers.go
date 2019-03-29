@@ -526,7 +526,8 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 func GenerateReadmeForChart(name string, version string, description string, chartRepo string,
 	gitRepo string, releaseNotesURL string, appReadme string) string {
 	var readme strings.Builder
-	readme.WriteString(fmt.Sprintf("# %s\n\n|App Metadata|---|\n", unknownZeroValue(name)))
+	readme.WriteString(fmt.Sprintf("# %s\n\n|App Metadata||\n", unknownZeroValue(name)))
+	readme.WriteString("|---|---|\n")
 	if version != "" {
 		readme.WriteString(fmt.Sprintf("| **Version** | %s |\n", version))
 	}
