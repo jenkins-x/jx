@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/config"
 	configio "github.com/jenkins-x/jx/pkg/io"
@@ -22,7 +22,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 	core_v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -145,18 +145,30 @@ func (o *UpgradePlatformOptions) Run() error {
 
 	wrkDir := ""
 
+	io := &InstallOptions{}
+	io.CommonOptions = o.CommonOptions
+	io.Flags = o.InstallFlags
+	versionsDir, err := io.cloneJXVersionsRepo(o.Flags.VersionsRepository)
+	if err != nil {
+		return err
+	}
+
 	if targetVersion == "" {
-		io := &InstallOptions{}
-		io.CommonOptions = o.CommonOptions
-		io.Flags = o.InstallFlags
-		versionsDir, err := io.cloneJXVersionsRepo(o.Flags.VersionsRepository)
-		if err != nil {
-			return err
-		}
 		targetVersion, err = LoadVersionFromCloudEnvironmentsDir(versionsDir, configStore)
 		if err != nil {
 			return err
 		}
+	}
+
+	isGitOps, devEnv := o.GetDevEnv()
+	if isGitOps {
+		if devEnv == nil {
+			return fmt.Errorf("no Dev environment found")
+		}
+		if devEnv.Spec.Source.URL == "" {
+			return fmt.Errorf("Dev environment does not have source URL")
+		}
+		return o.upgradePlatformViaGitOps(devEnv, targetVersion, versionsDir, configStore)
 	}
 
 	releases, err := o.Helm().StatusReleases(ns)
@@ -430,4 +442,19 @@ func (o *UpgradePlatformOptions) repairAdminSecrets(fileName string) error {
 	}
 
 	return nil
+}
+
+func (o *UpgradePlatformOptions) upgradePlatformViaGitOps(devEnv *v1.Environment, targetVersion string, versionsDir string, configStore configio.ConfigStore) error {
+	opts := &UpgradeAppsOptions{}
+	opts.CommonOptions = o.CommonOptions
+	opts.ReleaseName = "jenkins-x"
+	opts.GitOps = true
+	opts.Version = targetVersion
+	opts.Repo = DefaultChartRepo
+	opts.HelmUpdate = true
+
+	//opts.Chart = JenkinsXPlatformChartName
+	opts.Args = []string{JenkinsXPlatformChartName}
+
+	return opts.Run()
 }
