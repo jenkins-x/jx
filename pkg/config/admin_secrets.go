@@ -64,7 +64,7 @@ const defaultMavenSettings = `<settings>
   </settings>
 `
 
-const allowedSymbols = "~!#%^*_+-=?,."
+const allowedSymbols = "~!#%^_+-=?,."
 
 type ChartMuseum struct {
 	ChartMuseumEnv ChartMuseumEnv `json:"env"`
