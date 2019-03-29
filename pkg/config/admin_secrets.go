@@ -34,11 +34,6 @@ const defaultMavenSettings = `<settings>
               <username>admin</username>
               <password>%s</password>
           </server>
-          <server>
-              <id>nexus</id>
-              <username>admin</username>
-              <password>%s</password>
-          </server>
       </servers>
       <profiles>
           <profile>
