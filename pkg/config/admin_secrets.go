@@ -177,7 +177,7 @@ func (s *AdminSecretsService) setDefaultSecrets() error {
 
 // NewMavenSettingsXML generates the maven settings
 func (s *AdminSecretsService) NewMavenSettingsXML() error {
-	s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(defaultMavenSettings, s.Flags.DefaultAdminPassword, s.Flags.DefaultAdminPassword)
+	s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(defaultMavenSettings, s.Flags.DefaultAdminPassword)
 	return nil
 }
 
