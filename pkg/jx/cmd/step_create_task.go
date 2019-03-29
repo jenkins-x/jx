@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/prow"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -224,6 +225,38 @@ func (o *StepCreateTaskOptions) Run() error {
 		if err != nil {
 			return err
 		}
+
+		var pr *prow.PullRefs
+
+		for _, envVar := range o.CustomEnvs {
+			parts := strings.Split(envVar, "=")
+			if parts[0] == "PULL_REFS" {
+				pr, err = prow.ParsePullRefs(parts[1])
+				if err != nil {
+					return err
+				}
+			}
+		}
+		var shas []string
+		for _, sha := range pr.ToMerge {
+			shas = append(shas, sha)
+		}
+
+		mergeOpts := StepGitMergeOptions{
+			StepOptions: StepOptions{
+				CommonOptions: o.CommonOptions,
+			},
+			Dir:        o.Dir,
+			BaseSHA:    pr.BaseSha,
+			SHAs:       shas,
+			BaseBranch: pr.BaseBranch,
+		}
+		mergeOpts.Verbose = true
+		err = mergeOpts.Run()
+		if err != nil {
+			return errors.Wrapf(err, "failed to merge git shas %s with base sha %s", shas, pr.BaseSha)
+		}
+
 		if o.DeleteTempDir {
 			defer o.deleteTempDir()
 		}
