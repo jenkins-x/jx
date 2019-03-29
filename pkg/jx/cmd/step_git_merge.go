@@ -84,6 +84,9 @@ func NewCmdStepGitMerge(commonOpts *CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *StepGitMergeOptions) Run() error {
+	if o.Remote == "" {
+		o.Remote = "origin"
+	}
 	if len(o.SHAs) == 0 || o.BaseBranch == "" || o.BaseSHA == "" {
 		// Try to look in the env vars
 		if pullRefs := os.Getenv("PULL_REFS"); pullRefs != "" {
