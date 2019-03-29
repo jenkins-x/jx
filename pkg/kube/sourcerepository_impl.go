@@ -58,7 +58,7 @@ func (service *SourceRepositoryService) CreateOrUpdateSourceRepository(name, org
 		if reflect.DeepEqual(&copy.Spec, sr.Spec) {
 			return nil
 		}
-		_, err = repositories.Update(&copy)
+		_, err = repositories.PatchUpdate(&copy)
 		if err != nil {
 			return errors.Wrapf(err, "failed to update SourceRepository %s", resourceName)
 		}

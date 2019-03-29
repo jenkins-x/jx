@@ -42,7 +42,7 @@ require (
 	github.com/duosecurity/duo_api_golang v0.0.0-20190107154727-539434bf0d45 // indirect
 	github.com/elazarl/go-bindata-assetfs v1.0.0 // indirect
 	github.com/elazarl/goproxy v0.0.0-20181111060418-2ce16c963a8a // indirect
-	github.com/emicklei/go-restful v2.8.0+incompatible // indirect
+	github.com/emicklei/go-restful v2.8.0+incompatible
 	github.com/emirpasic/gods v1.9.0 // indirect
 	github.com/fatih/color v1.7.0
 	github.com/fatih/structs v1.0.0
@@ -96,6 +96,8 @@ require (
 	github.com/knative/build v0.3.0
 	github.com/knative/pkg v0.0.0-20190125193334-994b801b03ef
 	github.com/kr/pty v1.1.2 // indirect
+	github.com/kubernetes/code-generator v0.0.0-20180904193909-8c97d6ab64da // indirect
+	github.com/kubernetes/kube-openapi v0.0.0-20190320154901-5e45bb682580 // indirect
 	github.com/lusis/go-slackbot v0.0.0-20180109053408-401027ccfef5 // indirect
 	github.com/lusis/slack-test v0.0.0-20180109053238-3c758769bfa6 // indirect
 	github.com/magiconair/properties v1.8.0
@@ -165,7 +167,10 @@ require (
 	k8s.io/apiextensions-apiserver v0.0.0-20181128195303-1f84094d7e8e
 	k8s.io/apimachinery v0.0.0-20190122181752-bebe27e40fb7
 	k8s.io/client-go v9.0.0+incompatible
+	k8s.io/code-generator v0.0.0-20180904193909-8c97d6ab64da
+	k8s.io/gengo v0.0.0-20180718083919-906d99f89cd6
 	k8s.io/helm v2.7.2+incompatible
+	k8s.io/klog v0.2.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20180719232738-d8ea2fe547a4
 	k8s.io/kubernetes v1.11.3 // indirect
 	k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b

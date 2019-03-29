@@ -231,7 +231,7 @@ func (o *StepVerifyPodCountOptions) updatePipelineActivity(activity *v1.Pipeline
 
 	activities := jxClient.JenkinsV1().PipelineActivities(devNs)
 	activity.Spec.Status = status
-	_, err = activities.Update(activity)
+	_, err = activities.PatchUpdate(activity)
 	if err != nil {
 		return errors.Wrapf(err, "failed to update activity status to '%s'", status)
 	}

@@ -1,6 +1,8 @@
-package cmd
+package app
 
 import (
+	"github.com/jenkins-x/jx/cmd/codegen/generator"
+	"github.com/jenkins-x/jx/cmd/codegen/util"
 	"go/build"
 	"os"
 	"path/filepath"
@@ -8,29 +10,26 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 
-	"github.com/jenkins-x/jx/pkg/log"
-
-	"github.com/jenkins-x/jx/pkg/util"
+	jxutil "github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/spf13/cobra"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
 )
 
-// CreateClientGoOptions the options for the create client go command
-type CreateClientGoOptions struct {
-	CreateClientOptions
+// ClientSetGenerationOptions contain the options for the clientset generation.
+type ClientSetGenerationOptions struct {
+	GenerateOptions
 	Generators []string
 }
 
 var (
-	createClientGoLong = templates.LongDesc(`This command code generates clients for the specified custom resources.
- 
-`)
+	createClientGoLong = templates.LongDesc(`This command code generates clients for the specified custom resources.`)
 
 	createClientGoExample = templates.Examples(`
 		# lets generate a client
-		jx create client
+		codegen clientset
 			--output-package=github.com/jenkins-x/jx/pkg/client \
 			--input-package=github.com/jenkins-x/pkg-apis \
 			--group-with-version=jenkins.io:v1
@@ -38,7 +37,7 @@ var (
 		# You will normally want to add a target to your Makefile that looks like:
 
 		generate-clients:
-			jx create client
+			codegen clientset
 				--output-package=github.com/jenkins-x/jx/pkg/client \
 				--input-package=github.com/jenkins-x/jx/pkg/apis \
 				--group-with-version=jenkins.io:v1
@@ -49,27 +48,25 @@ var (
 `)
 )
 
-// NewCmdCreateClientGo creates the command
-func NewCmdCreateClientGo(commonOpts *CommonOptions) *cobra.Command {
-	o := &CreateClientGoOptions{
-		CreateClientOptions: CreateClientOptions{
-			CreateOptions: CreateOptions{
-				CommonOptions: commonOpts,
-			},
+// NewGenerateClientSetCmd creates the command
+func NewGenerateClientSetCmd(commonOpts *cmd.CommonOptions) *cobra.Command {
+	o := &ClientSetGenerationOptions{
+		GenerateOptions: GenerateOptions{
+			CommonOptions: commonOpts,
 		},
 	}
 
 	cmd := &cobra.Command{
-		Use:     "go",
+		Use:     "clientset",
 		Short:   "Creates Go client for Custom Resources",
 		Long:    createClientGoLong,
 		Example: createClientGoExample,
 
-		Run: func(cmd *cobra.Command, args []string) {
-			o.Cmd = cmd
+		Run: func(c *cobra.Command, args []string) {
+			o.Cmd = c
 			o.Args = args
 			err := o.Run()
-			CheckErr(err)
+			cmd.CheckErr(err)
 		},
 	}
 
@@ -82,7 +79,7 @@ func NewCmdCreateClientGo(commonOpts *CommonOptions) *cobra.Command {
 
 	wd, err := os.Getwd()
 	if err != nil {
-		log.Warnf("Error getting working directory for %v\n", err)
+		util.AppLogger().Warnf("Error getting working directory for %v\n", err)
 	}
 
 	cmd.Flags().StringArrayVarP(&o.Generators, "generator", "", availableGenerators, "Enable a generator")
@@ -101,33 +98,33 @@ func NewCmdCreateClientGo(commonOpts *CommonOptions) *cobra.Command {
 	return cmd
 }
 
-// Run implements this command
-func (o *CreateClientGoOptions) Run() error {
+// Run executes this command.
+func (o *ClientSetGenerationOptions) Run() error {
 	var err error
-	o.BoilerplateFile, err = kube.GetBoilerplateFile(o.BoilerplateFile, o.Verbose)
+	o.BoilerplateFile, err = generator.GetBoilerplateFile(o.BoilerplateFile)
 	if err != nil {
 		return errors.Wrapf(err, "reading file %s specified by %s", o.BoilerplateFile, optionBoilerplateFile)
 	}
 	if len(o.GroupsWithVersions) < 1 {
-		return util.InvalidOptionf(optionGroupWithVersion, o.GroupsWithVersions, "must specify at least once")
+		return jxutil.InvalidOptionf(optionGroupWithVersion, o.GroupsWithVersions, "must specify at least once")
 	}
 	if o.InputPackage == "" {
-		return util.MissingOption(optionInputPackage)
+		return jxutil.MissingOption(optionInputPackage)
 	}
 	if o.OutputPackage == "" {
-		return util.MissingOption(optionOutputPackage)
+		return jxutil.MissingOption(optionOutputPackage)
 	}
 
-	err = o.configureGoPath()
+	err = o.configure()
 	if err != nil {
-		return errors.Wrapf(err, "ensuring GOPATH is set correctly")
+		return errors.Wrapf(err, "ensure GOPATH is set correctly")
 	}
 
-	err = kube.InstallGen(o.ClientGenVersion, o.Git())
+	err = generator.InstallCodeGenerators(o.ClientGenVersion)
 	if err != nil {
 		return errors.Wrapf(err, "installing kubernetes code generator tools")
 	}
-	log.Infof("Generating Go code to %s in package %s from package %s\n", o.OutputBase, o.GoPathOutputPackage, o.GoPathInputPackage)
-	return kube.GenerateClient(o.Generators, o.GroupsWithVersions, o.GoPathInputPackage, o.GoPathOutputPackage,
-		filepath.Join(build.Default.GOPATH, "src"), o.BoilerplateFile, o.Verbose)
+	util.AppLogger().Infof("generating Go code to %s in package %s from package %s\n", o.OutputBase, o.GoPathOutputPackage, o.GoPathInputPackage)
+	return generator.GenerateClient(o.Generators, o.GroupsWithVersions, o.GoPathInputPackage, o.GoPathOutputPackage,
+		filepath.Join(build.Default.GOPATH, "src"), o.BoilerplateFile)
 }
