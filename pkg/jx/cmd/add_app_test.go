@@ -868,7 +868,8 @@ func TestAddAppWithReadmeForGitOps(t *testing.T) {
 	readmeFromPr := string(data)
 	assert.Equal(t, fmt.Sprintf(`# %s
 
-|App Metadata|---|
+|App Metadata||
+|---|---|
 | **Version** | %s |
 | **Description** | %s |
 | **Chart Repository** | %s |
@@ -942,7 +943,8 @@ func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
 	readmeFromPr := string(data)
 	assert.Equal(t, fmt.Sprintf(`# %s
 
-|App Metadata|---|
+|App Metadata||
+|---|---|
 | **Version** | %s |
 | **Chart Repository** | %s |
 
