@@ -87,6 +87,12 @@ func (o *StepGitMergeOptions) Run() error {
 	if o.Remote == "" {
 		o.Remote = "origin"
 	}
+
+	// set dummy git config details if none set so we can do a local commit when merging
+	err := o.setGitConfig()
+	if err != nil {
+		return errors.Wrapf(err, "failed to set git config")
+	}
 	if len(o.SHAs) == 0 || o.BaseBranch == "" || o.BaseSHA == "" {
 		// Try to look in the env vars
 		if pullRefs := os.Getenv("PULL_REFS"); pullRefs != "" {
@@ -107,7 +113,6 @@ func (o *StepGitMergeOptions) Run() error {
 			if o.BaseSHA == "" {
 				o.BaseSHA = pullRefs.BaseSha
 			}
-
 		}
 	}
 	if len(o.SHAs) == 0 {
@@ -115,4 +120,22 @@ func (o *StepGitMergeOptions) Run() error {
 		return nil
 	}
 	return gits.FetchAndMergeSHAs(o.SHAs, o.BaseBranch, o.BaseSHA, o.Remote, o.Dir, o.Git(), o.Verbose)
+}
+
+func (o *StepGitMergeOptions) setGitConfig() error {
+	user, err := o.getCommandOutput(o.Dir, "git", "config", "user.name")
+	if err != nil || user == "" {
+		err := o.runCommandFromDir(o.Dir, "git", "config", "user.name", "jenkins-x")
+		if err != nil {
+			return err
+		}
+	}
+	email, err := o.getCommandOutput(o.Dir, "git", "config", "user.email")
+	if email == "" || err != nil {
+		err := o.runCommandFromDir(o.Dir, "git", "config", "user.email", "jenkins-x@googlegroups.com")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
