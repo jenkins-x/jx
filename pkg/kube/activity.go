@@ -221,7 +221,7 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 		return answer, true, err
 	} else {
 		if !reflect.DeepEqual(&a.Spec, &oldSpec) || !reflect.DeepEqual(&a.Labels, &oldLabels) {
-			answer, err := activitiesClient.Update(a)
+			answer, err := activitiesClient.PatchUpdate(a)
 			return answer, false, err
 		}
 		return a, false, nil
@@ -509,7 +509,7 @@ func (k *PromoteStepActivityKey) GetOrCreatePromoteUpdate(jxClient versioned.Int
 //OnPromotePullRequest updates activities on a Promote PR
 func (k *PromoteStepActivityKey) OnPromotePullRequest(jxClient versioned.Interface, ns string, fn PromotePullRequestFn) error {
 	if !k.IsValid() {
-		return fmt.Errorf("PromoteStepActivityKey was not valid")
+		return nil
 	}
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
 	if activities == nil {
@@ -528,7 +528,7 @@ func (k *PromoteStepActivityKey) OnPromotePullRequest(jxClient versioned.Interfa
 	p2 := *p
 
 	if added || !reflect.DeepEqual(p1, p2) {
-		_, err = activities.Update(a)
+		_, err = activities.PatchUpdate(a)
 	}
 	return err
 }
@@ -561,7 +561,7 @@ func (k *PromoteStepActivityKey) OnPromoteUpdate(jxClient versioned.Interface, n
 	p2 := asYaml(a)
 
 	if added || p1 == "" || p1 != p2 {
-		_, err = activities.Update(a)
+		_, err = activities.PatchUpdate(a)
 	}
 	return err
 }

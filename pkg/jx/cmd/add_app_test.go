@@ -7,6 +7,7 @@ package cmd_test
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -14,11 +15,13 @@ import (
 	"strings"
 	"testing"
 
+	expect "github.com/Netflix/go-expect"
 	"github.com/jenkins-x/jx/pkg/apps"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	uuid "github.com/satori/go.uuid"
 
 	"k8s.io/helm/pkg/chartutil"
 
-	"github.com/Netflix/go-expect"
 	"github.com/jenkins-x/jx/pkg/tests"
 
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -30,12 +33,9 @@ import (
 
 	"github.com/ghodss/yaml"
 
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"github.com/jenkins-x/jx/pkg/helm"
-
-	"github.com/satori/go.uuid"
 
 	"github.com/stretchr/testify/assert"
 
@@ -201,8 +201,7 @@ func TestAddAppWithSecrets(t *testing.T) {
 		pegomock.AnyStringSlice(),
 		pegomock.EqString(kube.DefaultChartMuseumURL),
 		pegomock.AnyString(),
-		pegomock.AnyString(),
-		pegomock.AnyBool())).
+		pegomock.AnyString())).
 		Then(func(params []pegomock.Param) pegomock.ReturnValues {
 			// These assertion must happen inside the UpgradeChart function otherwise the chart dir will have been
 			// deleted
@@ -262,8 +261,7 @@ func TestAddAppWithSecrets(t *testing.T) {
 			pegomock.AnyStringSlice(),
 			pegomock.EqString(kube.DefaultChartMuseumURL),
 			pegomock.AnyString(),
-			pegomock.AnyString(),
-			pegomock.AnyBool())
+			pegomock.AnyString())
 }
 
 func TestAddAppWithDefaults(t *testing.T) {
@@ -347,8 +345,7 @@ func TestAddAppWithDefaults(t *testing.T) {
 		pegomock.AnyStringSlice(),
 		pegomock.EqString(kube.DefaultChartMuseumURL),
 		pegomock.AnyString(),
-		pegomock.AnyString(),
-		pegomock.AnyBool())).
+		pegomock.AnyString())).
 		Then(func(params []pegomock.Param) pegomock.ReturnValues {
 			// These assertion must happen inside the UpgradeChart function otherwise the chart dir will have been
 			// deleted
@@ -393,8 +390,7 @@ func TestAddAppWithDefaults(t *testing.T) {
 			pegomock.AnyStringSlice(),
 			pegomock.EqString(kube.DefaultChartMuseumURL),
 			pegomock.AnyString(),
-			pegomock.AnyString(),
-			pegomock.AnyBool())
+			pegomock.AnyString())
 }
 
 func TestStashValues(t *testing.T) {
@@ -626,8 +622,67 @@ func TestAddApp(t *testing.T) {
 			pegomock.AnyStringSlice(),
 			pegomock.EqString(kube.DefaultChartMuseumURL),
 			pegomock.AnyString(),
+			pegomock.AnyString())
+
+	// Verify the annotation
+}
+
+func TestAddAppFromPath(t *testing.T) {
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	// Can't run in parallel
+	pegomock.RegisterMockTestingT(t)
+	defer func() {
+		err := testOptions.Cleanup()
+		assert.NoError(t, err)
+	}()
+
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
+	version := "0.0.1"
+	commonOpts := *testOptions.CommonOptions
+
+	// Make the local chart
+	chartDir, err := ioutil.TempDir("", "local-chart")
+	assert.NoError(t, err)
+	chart := chart.Metadata{
+		Version: version,
+		Name:    name,
+	}
+	chartBytes, err := json.Marshal(chart)
+	assert.NoError(t, err)
+	err = ioutil.WriteFile(filepath.Join(chartDir, helm.ChartFileName), chartBytes, 0600)
+	assert.NoError(t, err)
+
+	o := &cmd.AddAppOptions{
+		AddOptions: cmd.AddOptions{
+			CommonOptions: &commonOpts,
+		},
+		GitOps:               false,
+		DevEnv:               testOptions.DevEnv,
+		HelmUpdate:           true, // Flag default when run on CLI
+		ConfigureGitCallback: testOptions.ConfigureGitFn,
+	}
+
+	o.Args = []string{chartDir}
+	err = o.Run()
+	assert.NoError(t, err)
+
+	testOptions.MockHelmer.VerifyWasCalledOnce().
+		UpgradeChart(
 			pegomock.AnyString(),
-			pegomock.AnyBool())
+			pegomock.EqString(name),
+			pegomock.AnyString(),
+			pegomock.EqString(version),
+			pegomock.AnyBool(),
+			pegomock.AnyInt(),
+			pegomock.AnyBool(),
+			pegomock.AnyBool(),
+			pegomock.AnyStringSlice(),
+			pegomock.AnyStringSlice(),
+			pegomock.AnyString(),
+			pegomock.AnyString(),
+			pegomock.AnyString())
 
 	// Verify the annotation
 }
@@ -689,8 +744,7 @@ func TestAddLatestApp(t *testing.T) {
 			pegomock.AnyStringSlice(),
 			pegomock.EqString(kube.DefaultChartMuseumURL),
 			pegomock.AnyString(),
-			pegomock.AnyString(),
-			pegomock.AnyBool())
+			pegomock.AnyString())
 }
 
 func TestAddAppWithValuesFileForGitOps(t *testing.T) {
@@ -814,7 +868,8 @@ func TestAddAppWithReadmeForGitOps(t *testing.T) {
 	readmeFromPr := string(data)
 	assert.Equal(t, fmt.Sprintf(`# %s
 
-|App Metadata|---|
+|App Metadata||
+|---|---|
 | **Version** | %s |
 | **Description** | %s |
 | **Chart Repository** | %s |
@@ -888,7 +943,8 @@ func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
 	readmeFromPr := string(data)
 	assert.Equal(t, fmt.Sprintf(`# %s
 
-|App Metadata|---|
+|App Metadata||
+|---|---|
 | **Version** | %s |
 | **Chart Repository** | %s |
 

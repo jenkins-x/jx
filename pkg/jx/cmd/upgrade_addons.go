@@ -157,7 +157,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 					return errors.Wrap(err, "backing up the prow config")
 				}
 			}
-			err = o.Helm().UpgradeChart(chart, k, ns, "", false, -1, false, false, values, valueFiles, "", "", "", true)
+			err = o.Helm().UpgradeChart(chart, k, ns, "", false, -1, false, false, values, valueFiles, "", "", "")
 			if err != nil {
 				log.Warnf("Failed to upgrade %s chart %s: %v\n", name, chart, err)
 			}

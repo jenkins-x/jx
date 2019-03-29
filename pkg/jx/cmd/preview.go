@@ -371,7 +371,7 @@ func (o *PreviewOptions) Run() error {
 		}
 
 		if update {
-			env, err = environmentsResource.Update(env)
+			env, err = environmentsResource.PatchUpdate(env)
 			if err != nil {
 				return fmt.Errorf("Failed to update Environment %s due to %s", o.Name, err)
 			}
@@ -453,8 +453,7 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	err = o.Helm().UpgradeChart(".", o.ReleaseName, o.Namespace, "", true, -1, true, true, nil,
-		[]string{configFileName}, "", "", "", false)
+	err = o.Helm().UpgradeChart(".", o.ReleaseName, o.Namespace, "", true, -1, true, true, nil, []string{configFileName}, "", "", "")
 	if err != nil {
 		return err
 	}
@@ -509,7 +508,7 @@ func (o *PreviewOptions) Run() error {
 					updated = true
 				}
 				if updated {
-					_, err = activities.Update(a)
+					_, err = activities.PatchUpdate(a)
 					if err != nil {
 						log.Warnf("Failed to update PipelineActivities %s: %s\n", name, err)
 					} else {
@@ -528,7 +527,7 @@ func (o *PreviewOptions) Run() error {
 		}
 		if env != nil && env.Spec.PreviewGitSpec.ApplicationURL == "" {
 			env.Spec.PreviewGitSpec.ApplicationURL = url
-			_, err = environmentsResource.Update(env)
+			_, err = environmentsResource.PatchUpdate(env)
 			if err != nil {
 				return fmt.Errorf("Failed to update Environment %s due to %s", o.Name, err)
 			}

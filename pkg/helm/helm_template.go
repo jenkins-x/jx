@@ -337,9 +337,7 @@ func (h *HelmTemplate) FetchChart(chart string, version string, untar bool, unta
 }
 
 // UpgradeChart upgrades a helm chart according with given helm flags
-func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string, version string, install bool,
-	timeout int, force bool, wait bool, values []string, valueFiles []string, repo string, username string,
-	password string, reuseValues bool) error {
+func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string, version string, install bool, timeout int, force bool, wait bool, values []string, valueFiles []string, repo string, username string, password string) error {
 
 	err := h.clearOutputDir(releaseName)
 	if err != nil {
@@ -421,7 +419,9 @@ func (h *HelmTemplate) kubectlApply(ns string, chart string, releaseName string,
 	if !h.KubectlValidate {
 		args = append(args, "--validate=false")
 	}
-	return h.runKubectl(args...)
+	err := h.runKubectl(args...)
+	log.Info("\n")
+	return err
 }
 
 func (h *HelmTemplate) kubectlApplyFile(ns string, helmHook string, wait bool, create bool, file string) error {
@@ -441,7 +441,9 @@ func (h *HelmTemplate) kubectlApplyFile(ns string, helmHook string, wait bool, c
 	if !h.KubectlValidate {
 		args = append(args, "--validate=false")
 	}
-	return h.runKubectl(args...)
+	err := h.runKubectl(args...)
+	log.Info("\n")
+	return err
 }
 
 func (h *HelmTemplate) kubectlDeleteFile(ns string, file string) error {

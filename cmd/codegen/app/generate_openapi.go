@@ -1,6 +1,9 @@
-package cmd
+package app
 
 import (
+	"github.com/jenkins-x/jx/cmd/codegen/generator"
+	"github.com/jenkins-x/jx/cmd/codegen/util"
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"go/build"
 	"os"
 	"path/filepath"
@@ -9,18 +12,15 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/kube"
 
-	"github.com/jenkins-x/jx/pkg/log"
-
-	"github.com/jenkins-x/jx/pkg/util"
+	jxutil "github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/spf13/cobra"
 )
 
 // CreateClientOpenAPIOptions the options for the create client openapi command
 type CreateClientOpenAPIOptions struct {
-	CreateClientOptions
+	GenerateOptions
 	Title                string
 	Version              string
 	ReferenceDocsVersion string
@@ -38,7 +38,7 @@ var (
 
 	createClientOpenAPIExample = templates.Examples(`
 		# lets generate client docs
-		jx create client openapi
+		codegen openapi
 			--output-package=github.com/jenkins-x/jx/pkg/client \
 			--input-package=github.com/jenkins-x/pkg-apis \
 			--group-with-version=jenkins.io:v1
@@ -48,7 +48,7 @@ var (
 		# You will normally want to add a target to your Makefile that looks like:
 
 		generate-openapi:
-			jx create client openapi
+			codegen openapi
 				--output-package=github.com/jenkins-x/jx/pkg/client \
 				--input-package=github.com/jenkins-x/jx/pkg/apis \
 				--group-with-version=jenkins.io:v1
@@ -62,12 +62,10 @@ var (
 )
 
 // NewCmdCreateClientOpenAPI creates the command
-func NewCmdCreateClientOpenAPI(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateClientOpenAPI(commonOpts *cmd.CommonOptions) *cobra.Command {
 	o := &CreateClientOpenAPIOptions{
-		CreateClientOptions: CreateClientOptions{
-			CreateOptions: CreateOptions{
-				CommonOptions: commonOpts,
-			},
+		GenerateOptions: GenerateOptions{
+			CommonOptions: commonOpts,
 		},
 	}
 
@@ -77,17 +75,17 @@ func NewCmdCreateClientOpenAPI(commonOpts *CommonOptions) *cobra.Command {
 		Long:    createClientOpenAPILong,
 		Example: createClientOpenAPIExample,
 
-		Run: func(cmd *cobra.Command, args []string) {
-			o.Cmd = cmd
+		Run: func(c *cobra.Command, args []string) {
+			o.Cmd = c
 			o.Args = args
 			err := o.Run()
-			CheckErr(err)
+			cmd.CheckErr(err)
 		},
 	}
 
 	wd, err := os.Getwd()
 	if err != nil {
-		log.Warnf("Error getting working directory for %v\n", err)
+		util.AppLogger().Warnf("Error getting working directory for %v\n", err)
 	}
 
 	openAPIDependencies := []string{
@@ -131,45 +129,46 @@ func NewCmdCreateClientOpenAPI(commonOpts *CommonOptions) *cobra.Command {
 // Run implements this command
 func (o *CreateClientOpenAPIOptions) Run() error {
 	var err error
-	o.BoilerplateFile, err = kube.GetBoilerplateFile(o.BoilerplateFile, o.Verbose)
+	o.BoilerplateFile, err = generator.GetBoilerplateFile(o.BoilerplateFile)
 	if err != nil {
 		return errors.Wrapf(err, "reading file %s specified by %s", o.BoilerplateFile, optionBoilerplateFile)
 	}
 	if o.InputPackage == "" {
-		return util.MissingOption(optionInputPackage)
+		return jxutil.MissingOption(optionInputPackage)
 	}
 	if o.OutputPackage == "" {
-		return util.MissingOption(optionOutputPackage)
+		return jxutil.MissingOption(optionOutputPackage)
 	}
 
-	err = o.configureGoPath()
+	err = o.configure()
 	if err != nil {
 		return errors.Wrapf(err, "ensuring GOPATH is set correctly")
 	}
+
 	if len(o.GroupsWithVersions) < 1 {
-		return util.InvalidOptionf(optionGroupWithVersion, o.GroupsWithVersions, "must specify at least once")
+		return jxutil.InvalidOptionf(optionGroupWithVersion, o.GroupsWithVersions, "must specify at least once")
 	}
 
-	err = kube.InstallOpenApiGen(o.OpenAPIGenVersion, o.Git())
+	err = generator.InstallOpenApiGen()
 	if err != nil {
-		return errors.Wrapf(err, "installing kubernetes openapi tools")
+		return errors.Wrapf(err, "error installing kubernetes openapi tools")
 	}
 
 	if !filepath.IsAbs(o.OpenAPIOutputDir) {
 		o.OpenAPIOutputDir = filepath.Join(o.OutputBase, o.OpenAPIOutputDir)
 	}
 
-	log.Infof("Generating Go code to %s in package %s from package %s\n", o.OutputBase, o.GoPathOutputPackage, o.GoPathInputPackage)
-	err = kube.GenerateOpenApi(o.GroupsWithVersions, o.GoPathInputPackage, o.GoPathOutputPackage, o.OutputPackage,
+	util.AppLogger().Infof("generating Go code to %s in package %s from package %s\n", o.OutputBase, o.GoPathOutputPackage, o.InputPackage)
+	err = generator.GenerateOpenApi(o.GroupsWithVersions, o.InputPackage, o.GoPathOutputPackage, o.OutputPackage,
 		filepath.Join(build.Default.GOPATH, "src"), o.OpenAPIDependencies, o.InputBase, o.ModuleName, o.Git(),
-		o.BoilerplateFile, o.Verbose)
+		o.BoilerplateFile)
 	if err != nil {
 		return errors.Wrapf(err, "generating openapi structs to %s", o.GoPathOutputPackage)
 	}
 
-	log.Infof("Generating OpenAPI spec files to %s from package %s\n", o.OpenAPIOutputDir, filepath.Join(o.InputBase,
+	util.AppLogger().Infof("generating OpenAPI spec files to %s from package %s\n", o.OpenAPIOutputDir, filepath.Join(o.InputBase,
 		o.InputPackage))
-	err = kube.GenerateSchema(o.OpenAPIOutputDir, o.OutputPackage, o.InputBase, o.Title, o.Version)
+	err = generator.GenerateSchema(o.OpenAPIOutputDir, o.OutputPackage, o.InputBase, o.Title, o.Version)
 	if err != nil {
 		return errors.Wrapf(err, "generating schema to %s", o.OpenAPIOutputDir)
 	}

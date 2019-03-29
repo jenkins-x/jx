@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/users"
@@ -12,8 +14,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // DeleteUserOptions are the flags for delete commands
@@ -97,7 +97,7 @@ func (o *DeleteUserOptions) Run() error {
 			return fmt.Errorf("In batch mode you must specify the '-y' flag to confirm")
 		}
 	} else {
-		log.Warnf("You are about to delete these users '%s' on the Git provider. This operation CANNOT be undone!",
+		log.Warnf("You are about to delete these users '%s'. This operation CANNOT be undone!",
 			strings.Join(names, ","))
 
 		flag := false
@@ -122,7 +122,7 @@ func (o *DeleteUserOptions) Run() error {
 			log.Infof("Deleted user %s\n", util.ColorInfo(name))
 		}
 		log.Infof("Attempting to unbind user %s from associated role\n", util.ColorInfo(name))
-		err = o.deleteUserFromRoleBinding(name, ns)
+		err = o.deleteUserFromRoleBindings(name, ns, jxClient)
 		if err != nil {
 			log.Warnf("Problem to unbind user %s from associated role\n", util.ColorWarning(name))
 		}
@@ -145,33 +145,20 @@ func (o *DeleteUserOptions) deleteUser(name string) error {
 	}
 	return users.DeleteUser(jxClient, ns, name)
 }
-func (o *DeleteUserOptions) deleteUserFromRoleBinding(name string, ns string) error {
-	jxClient, devNs, err := o.JXClientAndDevNamespace()
+
+func (o *DeleteUserOptions) deleteUserFromRoleBindings(name string, ns string, jxClient versioned.Interface) error {
+	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
 	}
-	foundUser := 0
-	envRoleBindingsList, err := jxClient.JenkinsV1().EnvironmentRoleBindings(devNs).List(metav1.ListOptions{})
-	for _, envRoleBinding := range envRoleBindingsList.Items {
-		subjects := envRoleBinding.Spec.Subjects
-		if subjects != nil {
-			filteredEnvRoleBinding := subjects[:0]
-			for _, subject := range subjects {
-				if util.StringMatchesPattern(strings.Trim(name, ""), strings.Trim(subject.Name, "")) && util.StringMatchesPattern(strings.Trim(ns, ""), strings.Trim(subject.Namespace, "")) {
-					subjectToDel := rbacv1.Subject{
-						Name:      name,
-						Namespace: ns,
-					}
-					filteredEnvRoleBinding = append(filteredEnvRoleBinding, subjectToDel)
-					log.Infof("Found user %s to unbind from role\n", util.ColorInfo(name))
-					foundUser = 1
-					break
-				}
-			}
-			if foundUser == 1 {
-				break
-			}
-		}
+
+	roles, roleNames, err := kube.GetTeamRoles(kubeClient, ns)
+	if err != nil {
+		return err
 	}
-	return nil
+	if len(roleNames) == 0 {
+		return nil
+	}
+
+	return kube.UpdateUserRoles(kubeClient, jxClient, ns, v1.UserTypeLocal, name, nil, roles)
 }

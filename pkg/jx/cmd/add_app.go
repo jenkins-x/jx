@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+
 	"github.com/jenkins-x/jx/pkg/apps"
 
 	"github.com/jenkins-x/jx/pkg/environments"
@@ -48,6 +50,18 @@ const (
 	optionAlias      = "alias"
 )
 
+var (
+	add_app_long = templates.LongDesc(`
+		Adds an app to Jenkins X.
+`)
+	add_app_example = templates.Examples(`
+		# Add an app
+		jx add app jx-app-jacoco
+
+		# Add an app from a local path
+		jx add app .`)
+)
+
 // NewCmdAddApp creates a command object for the "create" command
 func NewCmdAddApp(commonOpts *CommonOptions) *cobra.Command {
 	options := &AddAppOptions{
@@ -57,8 +71,10 @@ func NewCmdAddApp(commonOpts *CommonOptions) *cobra.Command {
 	}
 
 	cmd := &cobra.Command{
-		Use:   "app",
-		Short: "Adds an app",
+		Use:     "app",
+		Short:   "Adds an app",
+		Long:    add_app_long,
+		Example: add_app_example,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

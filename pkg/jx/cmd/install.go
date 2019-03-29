@@ -24,10 +24,10 @@ import (
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
 
-	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/jenkins-x/jx/pkg/addon"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -382,6 +382,7 @@ func (options *InstallOptions) checkFlags() error {
 		flags.Vault = true
 		flags.Prow = true
 		flags.Tekton = true
+		flags.Kaniko = true
 		options.InitOptions.Flags.NoTiller = true
 	}
 	// check some flags combination for GitOps mode
@@ -829,8 +830,7 @@ func (options *InstallOptions) installPlatform(providerEnvDir string, jxChart st
 	}
 
 	if !options.Flags.InstallOnly {
-		err = options.Helm().UpgradeChart(jxChart, jxRelName, namespace, version, true,
-			timeoutInt, false, false, nil, allValuesFiles, "", "", "", false)
+		err = options.Helm().UpgradeChart(jxChart, jxRelName, namespace, version, true, timeoutInt, false, false, nil, allValuesFiles, "", "", "")
 	} else {
 		err = options.Helm().InstallChart(jxChart, jxRelName, namespace, version, timeoutInt,
 			nil, allValuesFiles, "", "", "")
@@ -906,6 +906,15 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 
 	extraValues := map[string]interface{}{
 		"postinstalljob": map[string]interface{}{"enabled": "true"},
+	}
+
+	err = options.setValuesFileValue(filepath.Join(gitOpsEnvDir, "jenkins", helm.ValuesFileName), "enabled", !options.Flags.Prow)
+	if err != nil {
+		return err
+	}
+	err = options.setValuesFileValue(filepath.Join(gitOpsEnvDir, "controllerworkflow", helm.ValuesFileName), "enabled", !options.Flags.Tekton)
+	if err != nil {
+		return err
 	}
 
 	// lets load any existing values.yaml data as we may have created this via additional apps like Prow
@@ -1629,11 +1638,13 @@ func (options *InstallOptions) applyGitOpsDevEnvironmentConfig(gitOpsEnvDir stri
 						CommonOptions: options.CommonOptions,
 					},
 				},
-				Dir:       gitOpsEnvDir,
-				Namespace: namespace,
-				ChangeNs:  true,
-				Vault:     options.Flags.Vault,
+				Dir:         gitOpsEnvDir,
+				Namespace:   namespace,
+				ChangeNs:    true,
+				Vault:       options.Flags.Vault,
+				ReleaseName: "jenkins-x",
 			}
+
 			err := envApplyOptions.Run()
 			if err != nil {
 				return errors.Wrap(err, "appyting the dev environment configuration")
@@ -1802,8 +1813,7 @@ func (options *InstallOptions) configureCloudProivderPostInit(client kubernetes.
 		if err != nil {
 			return errors.Wrap(err, "failed to update the helm repo")
 		}
-		err = options.Helm().UpgradeChart("ibm/ibmcloud-block-storage-plugin", "ibmcloud-block-storage-plugin",
-			"default", "", true, -1, false, false, nil, nil, "", "", "", false)
+		err = options.Helm().UpgradeChart("ibm/ibmcloud-block-storage-plugin", "ibmcloud-block-storage-plugin", "default", "", true, -1, false, false, nil, nil, "", "", "")
 		if err != nil {
 			return errors.Wrap(err, "failed to install/upgrade the IBM Cloud Block Storage drivers")
 		}
@@ -1825,10 +1835,14 @@ func (options *InstallOptions) configureDockerRegistry(client kubernetes.Interfa
 		helmConfig.PipelineSecrets.DockerConfig = dockerRegistryConfig
 	}
 	if dockerRegistry != "" {
-		if helmConfig.Jenkins.Servers.Global.EnvVars == nil {
-			helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
+		if !options.Flags.Prow {
+			if helmConfig.Jenkins.Servers.Global.EnvVars == nil {
+				helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
+			}
+			helmConfig.Jenkins.Servers.Global.EnvVars["DOCKER_REGISTRY"] = dockerRegistry
+		} else {
+			helmConfig.DockerRegistry = dockerRegistry
 		}
-		helmConfig.Jenkins.Servers.Global.EnvVars["DOCKER_REGISTRY"] = dockerRegistry
 	}
 	return nil
 }
@@ -2853,6 +2867,39 @@ func (options *InstallOptions) configureTeamSettings() error {
 	err := options.ModifyDevEnvironment(callback)
 	if err != nil {
 		return errors.Wrap(err, "updating the team setttings in the dev environment")
+	}
+	return nil
+}
+
+// setValuesFileValue lazily creates the values.yaml file possibly in a new directory and ensures there is the key in the values with the given value
+func (options *InstallOptions) setValuesFileValue(fileName string, key string, value interface{}) error {
+	dir, _ := filepath.Split(fileName)
+	err := os.MkdirAll(dir, util.DefaultWritePermissions)
+	if err != nil {
+		return err
+	}
+	answerMap := map[string]interface{}{}
+
+	// lets load any previous values if they exist
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		return err
+	}
+	if exists {
+		answerMap, err = helm.LoadValuesFile(fileName)
+		if err != nil {
+			return err
+		}
+	}
+	answerMap[key] = value
+	answer := chartutil.Values(answerMap)
+	text, err := answer.YAML()
+	if err != nil {
+		return errors.Wrap(err, "Failed to marshal the updated values YAML files back to YAML")
+	}
+	err = ioutil.WriteFile(fileName, []byte(text), util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to save updated helm values YAML file %s", fileName)
 	}
 	return nil
 }
