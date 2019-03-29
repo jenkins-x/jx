@@ -518,9 +518,7 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 		return errors.Wrap(err, "failed to convert the timeout to an int")
 	}
 	helmer.SetCWD(options.Dir)
-	return helmer.UpgradeChart(chart, options.ReleaseName, options.Ns, options.Version, true,
-		timeout, true, false, options.SetValues, options.ValueFiles, options.Repository, options.Username,
-		options.Password, false)
+	return helmer.UpgradeChart(chart, options.ReleaseName, options.Ns, options.Version, true, timeout, true, false, options.SetValues, options.ValueFiles, options.Repository, options.Username, options.Password)
 }
 
 // GenerateReadmeForChart generates a string that can be used as a README.MD,
