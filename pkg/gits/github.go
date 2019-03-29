@@ -1195,6 +1195,7 @@ func asText(text *string) string {
 }
 func (p *GitHubProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
 	githubOpt := &github.CommitsListOptions{
+		SHA: opt.SHA,
 		Path: opt.Path,
 		ListOptions: github.ListOptions{
 			Page:    opt.Page,

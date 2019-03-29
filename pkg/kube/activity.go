@@ -29,6 +29,10 @@ type PipelineActivityKey struct {
 	LastCommitMessage string
 	LastCommitURL     string
 	GitInfo           *gits.GitRepository
+	GitBranch         string
+	PullNumber        string
+	Author            string
+	PullTitle         string
 }
 
 func (k *PipelineActivityKey) IsValid() bool {
@@ -307,6 +311,12 @@ func updateActivitySpec(k *PipelineActivityKey, spec *v1.PipelineActivitySpec) {
 	}
 	if k.Version != "" && spec.Version == "" {
 		spec.Version = k.Version
+	}
+	if k.Author != "" && spec.Author == "" {
+		spec.Author = k.Author
+	}
+	if k.PullTitle != "" && spec.PullTitle == "" {
+		spec.PullTitle = k.PullTitle
 	}
 	gi := k.GitInfo
 	if gi != nil {

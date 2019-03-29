@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/gits"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -192,6 +194,7 @@ func (o *ControllerBuildOptions) handleStandalonePod(pod *corev1.Pod, kubeClient
 
 			activities := jxClient.JenkinsV1().PipelineActivities(ns)
 			key := o.createPromoteStepActivityKey(buildName, pod)
+			o.completeBuildSourceInfo(key)
 			if key != nil {
 				name := ""
 				err := util.Retry(time.Second*20, func() error {
@@ -308,6 +311,7 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 	if buildInfo.GitURL == "" || buildInfo.GitInfo == nil {
 		return nil
 	}
+
 	return &kube.PromoteStepActivityKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
 			Name:              buildInfo.Name,
@@ -317,7 +321,56 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 			LastCommitMessage: buildInfo.LastCommitMessage,
 			LastCommitURL:     buildInfo.LastCommitURL,
 			GitInfo:           buildInfo.GitInfo,
+			GitBranch:         buildInfo.Branch,
+			PullNumber:        buildInfo.PullNumber,
 		},
+	}
+}
+
+func (o *ControllerBuildOptions) completeBuildSourceInfo(key *kube.PromoteStepActivityKey) {
+	// get a github API client
+	if !key.GitInfo.IsGitHub() {
+		// this is GH only for now
+		return
+	}
+	provider, e := o.gitProviderForGitServerURL(key.GitRepository(), gits.KindGitHub)
+	if e != nil {
+		log.Warnf("Cannot extract author information from GitHub. Error: %s", e)
+		return
+	}
+	// extract (org, repo, commit) or (org, repo, #PR) from key
+	prNumber := 0
+	if key.PullNumber != "" {
+		prNumber, e = strconv.Atoi(key.PullNumber)
+		if e != nil {
+			log.Warnf("Cannot extract PR number from [%s]. Error: %s", key.PullNumber, e)
+			return
+		}
+	}
+	if prNumber != 0 {
+		// this is a PR build
+		pr, e := provider.GetPullRequest(key.GitInfo.Organisation, key.GitInfo, prNumber)
+		if e != nil {
+			log.Warnf("Cannot read PR from Github. Error: %s", e)
+			return
+		}
+		key.Author = pr.Author.Login
+		key.PullTitle = pr.Title
+	} else {
+		// this is a branch build
+		gitCommits, e := provider.ListCommits(key.GitInfo.Organisation, key.GitInfo.Name, &gits.ListCommitsArguments{
+			SHA:     key.GitBranch,
+			Page:    1,
+			PerPage: 1,
+		})
+		if e != nil {
+			log.Warnf("Cannot read last branch commit from Github. Error: %s", e)
+			return
+		}
+		if len(gitCommits) > 0 {
+			key.Author = gitCommits[0].Author.Login
+			key.LastCommitMessage = gitCommits[0].Message
+		}
 	}
 }
 
