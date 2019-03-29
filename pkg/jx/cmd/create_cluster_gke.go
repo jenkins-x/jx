@@ -234,6 +234,12 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		}
 	}
 
+	if o.InstallOptions.Flags.NextGeneration {
+		o.Flags.EnhancedApis = true
+		o.Flags.EnhancedScopes = true
+		o.InstallOptions.Flags.Kaniko = true
+	}
+
 	if !o.BatchMode {
 		// if scopes is empty &
 		if len(o.Flags.Scopes) == 0 && !o.Flags.EnhancedScopes {
