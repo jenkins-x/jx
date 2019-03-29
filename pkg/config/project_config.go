@@ -159,3 +159,11 @@ func (c *ProjectConfig) SaveConfig(fileName string) error {
 	}
 	return nil
 }
+
+// GetOrCreatePipelineConfig lazily creates a PipelineConfig if required
+func (c *ProjectConfig) GetOrCreatePipelineConfig() *jenkinsfile.PipelineConfig {
+	if c.PipelineConfig == nil {
+		c.PipelineConfig = &jenkinsfile.PipelineConfig{}
+	}
+	return c.PipelineConfig
+}

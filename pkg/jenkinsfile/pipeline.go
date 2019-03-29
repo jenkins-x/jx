@@ -32,11 +32,28 @@ const (
 
 	// PipelineKindFeature represents a pipeline on a feature branch
 	PipelineKindFeature = "feature"
+
+	// the modes of adding a step
+
+	// CreateStepModePre creates steps before any existing steps
+	CreateStepModePre = "pre"
+
+	// CreateStepModePost creates steps after the existing steps
+	CreateStepModePost = "post"
+
+	// CreateStepModeReplace replaces the existing steps with the new steps
+	CreateStepModeReplace = "replace"
 )
 
 var (
 	// PipelineKinds the possible values of pipeline
 	PipelineKinds = []string{PipelineKindRelease, PipelineKindPullRequest, PipelineKindFeature}
+
+	// PipelineLifecycleNames the possible names of lifecycles of pipeline
+	PipelineLifecycleNames = []string{"setup", "setversion", "prebuild", "build", "postbuild", "promote"}
+
+	// CreateStepModes the step creation modes
+	CreateStepModes = []string{CreateStepModePre, CreateStepModePost, CreateStepModeReplace}
 )
 
 // PipelineAgent contains the agent definition metadata
@@ -192,6 +209,40 @@ func (a *PipelineLifecycles) RemoveWhenStatements(prow bool) {
 	}
 }
 
+// GetLifecycle returns the pipeline lifecycle of the given name lazy creating on the fly if required
+// or returns an error if the name is not valid
+func (a *PipelineLifecycles) GetLifecycle(name string, lazyCreate bool) (*PipelineLifecycle, error) {
+	switch name {
+	case "setup":
+		if a.Setup == nil && lazyCreate {
+			a.Setup = &PipelineLifecycle{}
+		}
+		return a.Setup, nil
+	case "setversion":
+		if a.Setup == nil && lazyCreate {
+			a.Setup = &PipelineLifecycle{}
+		}
+		return a.Setup, nil
+	case "prebuild":
+		if a.Setup == nil && lazyCreate {
+			a.Setup = &PipelineLifecycle{}
+		}
+		return a.Setup, nil
+	case "build":
+		if a.Setup == nil && lazyCreate {
+			a.Setup = &PipelineLifecycle{}
+		}
+		return a.Setup, nil
+	case "postbuild":
+		if a.Setup == nil && lazyCreate {
+			a.Setup = &PipelineLifecycle{}
+		}
+		return a.Setup, nil
+	default:
+		return nil, fmt.Errorf("unknown pipeline lifecycle stage: %s", name)
+	}
+}
+
 // Groovy returns the groovy string for the lifecycles
 func (s PipelineLifecycleArray) Groovy() string {
 	statements := []*Statement{}
@@ -232,6 +283,26 @@ func (l *PipelineLifecycle) ToJenkinsfileStatements() []*Statement {
 func (l *PipelineLifecycle) RemoveWhenStatements(prow bool) {
 	l.PreSteps = removeWhenSteps(prow, l.PreSteps)
 	l.Steps = removeWhenSteps(prow, l.Steps)
+}
+
+// CreateStep creates the given step using the mode
+func (l *PipelineLifecycle) CreateStep(mode string, step *PipelineStep) error {
+	err := step.Validate()
+	if err != nil {
+		return err
+	}
+	switch mode {
+	case CreateStepModePre:
+		l.PreSteps = append(l.PreSteps, step)
+	case CreateStepModePost:
+		l.Steps = append(l.Steps, step)
+	case CreateStepModeReplace:
+		l.Steps = []*PipelineStep{step}
+		l.Replace = true
+	default:
+		return fmt.Errorf("uknown create mode: %s", mode)
+	}
+	return nil
 }
 
 func removeWhenSteps(prow bool, steps []*PipelineStep) []*PipelineStep {
@@ -278,6 +349,29 @@ func (p *Pipelines) RemoveWhenStatements(prow bool) {
 	}
 	if p.Post != nil {
 		p.Post.RemoveWhenStatements(prow)
+	}
+}
+
+// GetPipeline returns the pipeline for the given name, creating if required if lazyCreate is true or returns an error if its not a valid name
+func (p *Pipelines) GetPipeline(kind string, lazyCreate bool) (*PipelineLifecycles, error) {
+	switch kind {
+	case PipelineKindRelease:
+		if p.Release == nil && lazyCreate {
+			p.Release = &PipelineLifecycles{}
+		}
+		return p.Release, nil
+	case PipelineKindPullRequest:
+		if p.PullRequest == nil && lazyCreate {
+			p.PullRequest = &PipelineLifecycles{}
+		}
+		return p.PullRequest, nil
+	case PipelineKindFeature:
+		if p.Feature == nil && lazyCreate {
+			p.Feature = &PipelineLifecycles{}
+		}
+		return p.Feature, nil
+	default:
+		return nil, fmt.Errorf("no such pipeline kind: %s", kind)
 	}
 }
 
@@ -438,6 +532,14 @@ func (s *PipelineStep) ToJenkinsfileStatements() []*Statement {
 		}
 	}
 	return statements
+}
+
+// Validate validates the step is populated correctly
+func (s *PipelineStep) Validate() error {
+	if len(s.Steps) > 0 || s.Command != "" {
+		return nil
+	}
+	return fmt.Errorf("invalid step %#v as no child steps or command", s)
 }
 
 // LoadPipelineConfig returns the pipeline configuration
