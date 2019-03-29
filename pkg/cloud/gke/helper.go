@@ -38,6 +38,36 @@ func GetGoogleZones(project string) ([]string, error) {
 	return zones, nil
 }
 
+func GetGoogleRegions(project string) ([]string, error) {
+	var regions []string
+	args := []string{"compute", "regions", "list"}
+
+	if "" != project {
+		args = append(args, "--project")
+		args = append(args, project)
+	}
+
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+
+	out, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return nil, err
+	}
+
+	regions = append(regions, "none")
+	for _, item := range strings.Split(out, "\n") {
+		region := strings.Split(item, " ")[0]
+		if strings.Contains(region, "-") {
+			regions = append(regions, region)
+		}
+		sort.Strings(regions)
+	}
+	return regions, nil
+}
+
 func GetGoogleProjects() ([]string, error) {
 	cmd := util.Command{
 		Name: "gcloud",
