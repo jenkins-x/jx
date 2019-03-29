@@ -556,6 +556,11 @@ func (h *HelmTemplate) StatusReleases(ns string) (map[string]Release, error) {
 	return statusMap, nil
 }
 
+// StatusReleaseWithOutput returns the output of the helm status command for a given release
+func (h *HelmTemplate) StatusReleaseWithOutput(ns string, releaseName string, outputFormat string) (string, error) {
+	return h.Client.StatusReleaseWithOutput(ns, releaseName, outputFormat)
+}
+
 func (h *HelmTemplate) getDirectories(releaseName string) (string, string, string, error) {
 	if releaseName == "" {
 		return "", "", "", fmt.Errorf("No release name specified!")
