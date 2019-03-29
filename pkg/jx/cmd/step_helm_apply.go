@@ -146,7 +146,7 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	if releaseName == "" {
 		if devNs == ns {
-			releaseName = "jenkins-x"
+			releaseName = JenkinsXPlatformRelease
 		} else {
 			releaseName = ns
 
