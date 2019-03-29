@@ -382,6 +382,7 @@ func (options *InstallOptions) checkFlags() error {
 		flags.Vault = true
 		flags.Prow = true
 		flags.Tekton = true
+		flags.Kaniko = true
 		options.InitOptions.Flags.NoTiller = true
 	}
 	// check some flags combination for GitOps mode
