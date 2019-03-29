@@ -1051,6 +1051,8 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		c.Command = []string{"/bin/sh"}
 		if o.CustomImage != "" {
 			c.Image = o.CustomImage
+		} else {
+			c.Image = containerName
 		}
 
 		commandText := o.replaceCommandText(step)
