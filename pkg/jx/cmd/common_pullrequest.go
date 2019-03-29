@@ -21,6 +21,7 @@ type PullRequestDetails struct {
 	Message           string
 }
 
+// CreatePullRequest creates a Pull Request on the given repository
 func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn func() error) error {
 	if o.RepositoryBranch == "" {
 		o.RepositoryBranch = "master"
