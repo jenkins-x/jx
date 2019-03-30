@@ -5,7 +5,7 @@ items:
     creationTimestamp: null
     labels:
       jenkins.io/task-stage-name: from-build-pack
-    name: abayer-jx-demo-qs-master-from-build-pack
+    name: abayer-jx-demo-qs-master-from-build-pack-1
     namespace: jx
   spec:
     inputs:
@@ -48,6 +48,8 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -116,6 +118,8 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -184,6 +188,8 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -252,6 +258,8 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -320,6 +328,8 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -388,6 +398,8 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -456,6 +468,8 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -524,6 +538,8 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -592,6 +608,8 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -660,6 +678,8 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -728,6 +748,8 @@ items:
         value: -XX:+UnlockExperimentalVMOptions -Dsun.zip.disableMemoryMapping=true
           -XX:+UseParallelGC -XX:MinHeapFreeRatio=5 -XX:MaxHeapFreeRatio=10 -XX:GCTimeRatio=4
           -XX:AdaptiveSizePolicyWeight=90 -Xms10m -Xmx192m
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER

@@ -136,6 +136,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 						ServiceAccount: "tekton-bot",
 					},
 				},
+				BuildNumber: "1",
 			}
 			cmd.ConfigureTestOptionsWithResources(createTask.CommonOptions, k8sObjects, jxObjects, gits_test.NewMockGitter(), fakeGitProvider, helm_test.NewMockHelmer(), nil)
 

@@ -36,14 +36,14 @@ const (
 
 var (
 	createTaskLong = templates.LongDesc(`
-		Creates a Knative Pipeline Run for a project
+		Creates a Tekton Pipeline Run for a project
 `)
 
 	createTaskExample = templates.Examples(`
-		# create a Knative Pipeline Run and render to the console
+		# create a Tekton Pipeline Run and render to the console
 		jx step create task
 
-		# create a Knative Pipeline Task
+		# create a Tekton Pipeline Task
 		jx step create task -o mytask.yaml
 
 		# view the steps that would be created
@@ -116,7 +116,7 @@ func NewCmdStepCreateTask(commonOpts *CommonOptions) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "task",
-		Short:   "Creates a Knative Pipeline Run for the current folder or given build pack",
+		Short:   "Creates a Tekton Pipeline Run for the current folder or given build pack",
 		Long:    createTaskLong,
 		Example: createTaskExample,
 		Aliases: []string{"bt"},
@@ -208,8 +208,18 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 	}
 
-	// TODO generate build number properly!
-	o.BuildNumber = "1"
+	if o.NoApply {
+		o.BuildNumber = "1"
+	} else {
+		jxClient, _, err := o.JXClient()
+		if err != nil {
+			return err
+		}
+		o.BuildNumber, err = tekton.GenerateNextBuildNumber(jxClient, ns, o.GitInfo, o.Branch, o.Duration)
+		if err != nil {
+			return err
+		}
+	}
 
 	if o.BuildPackURL == "" || o.BuildPackRef == "" {
 		if o.BuildPackURL == "" {
@@ -786,7 +796,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	info := util.ColorInfo
 
 	for _, resource := range resources {
-		_, err := tekton.CreateOrUpdateSourceResource(tektonClient, ns, resource)
+		_, err := tekton.CreateSourceResource(tektonClient, ns, resource)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create/update PipelineResource %s in namespace %s", resource.Name, ns)
 		}
@@ -799,14 +809,14 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	}
 
 	for _, task := range tasks {
-		_, err = tekton.CreateOrUpdateTask(tektonClient, ns, task)
+		_, err = tekton.CreateTask(tektonClient, ns, task)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create/update the task %s in namespace %s", task.Name, ns)
 		}
 		log.Infof("upserted Task %s\n", info(task.Name))
 	}
 
-	pipeline, err = tekton.CreateOrUpdatePipeline(tektonClient, ns, pipeline)
+	pipeline, err = tekton.CreatePipeline(tektonClient, ns, pipeline)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create/update the Pipeline in namespace %s", ns)
 	}
@@ -822,7 +832,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	structure.OwnerReferences = []metav1.OwnerReference{pipelineOwnerReference}
 	run.OwnerReferences = []metav1.OwnerReference{pipelineOwnerReference}
 
-	_, err = tekton.CreatePipelineRun(tektonClient, ns, pipeline, run, o.previewVersionPrefix, o.Duration)
+	_, err = tekton.CreatePipelineRun(tektonClient, ns, run)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create the PipelineRun in namespace %s", ns)
 	}
@@ -962,13 +972,12 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 			Value: o.DockerRegistry,
 		})
 	}
-	/*	if kube.GetSliceEnvVar(envVars, "BUILD_NUMBER") == nil {
-			envVars = append(envVars, corev1.EnvVar{
-				Name:  "BUILD_NUMBER",
-				Value: o.BuildNumber,
-			})
-		}
-	*/
+	if kube.GetSliceEnvVar(envVars, "BUILD_NUMBER") == nil {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "BUILD_NUMBER",
+			Value: o.BuildNumber,
+		})
+	}
 	if o.PipelineKind != "" && kube.GetSliceEnvVar(envVars, "PIPELINE_KIND") == nil {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "PIPELINE_KIND",

@@ -2,7 +2,7 @@ apiVersion: tekton.dev/v1alpha1
 kind: Pipeline
 metadata:
   creationTimestamp: null
-  name: abayer-js-test-repo-build-pack
+  name: abayer-js-test-repo-build-pack-1
   namespace: jx
 spec:
   params: []
@@ -19,5 +19,5 @@ spec:
         - name: workspace
           resource: abayer-js-test-repo-build-pack
     taskRef:
-      name: abayer-js-test-repo-build-pack-from-build-pack
+      name: abayer-js-test-repo-build-pack-from-build-pack-1
 status: {}

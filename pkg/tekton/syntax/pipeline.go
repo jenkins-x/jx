@@ -851,7 +851,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
-				Name:      MangleToRfc1035Label(fmt.Sprintf("%s-%s", pipelineIdentifier, s.Name), ""),
+				Name:      MangleToRfc1035Label(fmt.Sprintf("%s-%s", pipelineIdentifier, s.Name), buildIdentifier),
 				Labels:    util.MergeMaps(map[string]string{LabelStageName: s.stageLabelName()}),
 			},
 		}
@@ -1070,7 +1070,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
-			Name:      fmt.Sprintf("%s", pipelineIdentifier),
+			Name:      MangleToRfc1035Label(fmt.Sprintf("%s", pipelineIdentifier), buildIdentifier),
 		},
 		Spec: tektonv1alpha1.PipelineSpec{
 			Resources: []tektonv1alpha1.PipelineDeclaredResource{
@@ -1115,24 +1115,24 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		}
 
 		tasks = append(tasks, linearTasks...)
-		p.Spec.Tasks = append(p.Spec.Tasks, createPipelineTasks(stage, pipelineIdentifier)...)
+		p.Spec.Tasks = append(p.Spec.Tasks, createPipelineTasks(stage, p.Spec.Resources[0].Name)...)
 		structure.Stages = append(structure.Stages, stage.getAllAsPipelineStructureStages()...)
 	}
 
 	return p, tasks, structure, nil
 }
 
-func createPipelineTasks(stage *transformedStage, pipelineIdentifier string) []tektonv1alpha1.PipelineTask {
+func createPipelineTasks(stage *transformedStage, resourceName string) []tektonv1alpha1.PipelineTask {
 	if stage.isSequential() {
 		var pTasks []tektonv1alpha1.PipelineTask
 		for _, nestedStage := range stage.Sequential {
-			pTasks = append(pTasks, createPipelineTasks(nestedStage, pipelineIdentifier)...)
+			pTasks = append(pTasks, createPipelineTasks(nestedStage, resourceName)...)
 		}
 		return pTasks
 	} else if stage.isParallel() {
 		var pTasks []tektonv1alpha1.PipelineTask
 		for _, nestedStage := range stage.Parallel {
-			pTasks = append(pTasks, createPipelineTasks(nestedStage, pipelineIdentifier)...)
+			pTasks = append(pTasks, createPipelineTasks(nestedStage, resourceName)...)
 		}
 		return pTasks
 	} else {
@@ -1152,14 +1152,14 @@ func createPipelineTasks(stage *transformedStage, pipelineIdentifier string) []t
 			Inputs: []tektonv1alpha1.PipelineTaskInputResource{
 				{
 					Name:     "workspace",
-					Resource: pipelineIdentifier,
+					Resource: resourceName,
 					From:     provider,
 				},
 			},
 			Outputs: []tektonv1alpha1.PipelineTaskOutputResource{
 				{
 					Name:     "workspace",
-					Resource: pipelineIdentifier,
+					Resource: resourceName,
 				},
 			},
 		}
