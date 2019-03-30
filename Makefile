@@ -14,17 +14,16 @@
 # limitations under the License.
 #
 
-# Make does not offer a recursive wildcard function, so here's one:
-rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
-
 SHELL := /bin/bash
 NAME := jx
 GO := GO111MODULE=on go
 GO_NOMOD :=GO111MODULE=off go
 REV := $(shell git rev-parse --short HEAD 2> /dev/null || echo 'unknown')
+#ROOT_PACKAGE := $(shell $(GO) list .)
 ROOT_PACKAGE := github.com/jenkins-x/jx
 GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
-GO_DEPENDENCIES := $(call rwildcard,pkg/,*.go) $(call rwildcard,cmd/jx/,*.go)
+PKGS := $(shell go list ./... | grep -v generated)
+GO_DEPENDENCIES := cmd/*/*.go cmd/*/*/*.go pkg/*/*.go pkg/*/*/*.go pkg/*//*/*/*.go
 
 BRANCH     := $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null  || echo 'unknown')
 BUILD_DATE := $(shell date +%Y%m%d-%H:%M:%S)
@@ -33,8 +32,13 @@ GITHUB_ACCESS_TOKEN := $(shell cat /builder/home/git-token 2> /dev/null)
 PEGOMOCK_PACKAGE := github.com/petergtz/pegomock/
 CGO_ENABLED = 0
 
+all: build
+full: check
+check: build test
+
+version:
 ifeq (,$(wildcard pkg/version/VERSION))
-TAG := $(shell git describe --abbrev=0 --tags 2>/dev/null)
+TAG := $(shell git fetch --all -q 2>/dev/null && git describe --abbrev=0 --tags 2>/dev/null)
 ON_EXACT_TAG := $(shell git name-rev --name-only --tags --no-undefined HEAD 2>/dev/null | sed -n 's/^\([^^~]\{1,\}\)\(\^0\)\{0,1\}$$/\1/p')
 VERSION := $(shell [ -z "$(ON_EXACT_TAG)" ] && echo "$(TAG)-dev+$(REV)" | sed 's/^v//' || echo "$(TAG)" | sed 's/^v//' )
 else
@@ -60,14 +64,10 @@ endif
 
 TEST_PACKAGE ?= ./...
 
-all: build
-full: check
-check: build test
-
-print-version:
+print-version: version
 	@echo $(VERSION)
 
-build: $(GO_DEPENDENCIES)
+build: $(GO_DEPENDENCIES) version
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) build $(BUILDFLAGS) -o build/$(NAME) cmd/jx/jx.go
 
 get-test-deps:
@@ -159,33 +159,29 @@ inttestbin:
 debuginttest1: inttestbin
 	cd pkg/jx/cmd && dlv --listen=:2345 --headless=true --api-version=2 exec ../../../build/jx-inttest -- -test.run $(TEST)
 
-install: $(GO_DEPENDENCIES)
+install: $(GO_DEPENDENCIES) version
 	GOBIN=${GOPATH}/bin $(GO) install $(BUILDFLAGS) cmd/jx/jx.go
 
 fmt:
 	@FORMATTED=`$(GO) fmt ./...`
 	@([[ ! -z "$(FORMATTED)" ]] && printf "Fixed unformatted files:\n$(FORMATTED)") || true
 
-linux:
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/jx cmd/jx/jx.go
-
-arm:
+arm: version
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/$(NAME)-arm cmd/jx/jx.go
 
-win:
+win: version
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME).exe cmd/jx/jx.go
 
-win32:
+win32: version
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=386 $(GO) build $(BUILDFLAGS) -o build/$(NAME)-386.exe cmd/jx/jx.go
 
-darwin:
+darwin: version
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=darwin GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/darwin/jx cmd/jx/jx.go
 
 # sleeps for about 30 mins
 sleep:
 	sleep 2000
 
-.PHONY: release
 release: check
 	rm -rf build release && mkdir build release
 	for os in linux darwin ; do \
@@ -213,6 +209,9 @@ release: check
 
 clean:
 	rm -rf build release cover.out cover.html
+
+linux: version
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/jx cmd/jx/jx.go
 
 docker: linux
 	docker build -t rawlingsj/jx:dev207 .
@@ -271,6 +270,8 @@ include Makefile.codegen
 
 richgo:
 	go get -u github.com/kyoh86/richgo
+
+.PHONY: release clean arm
 
 FGT := $(GOPATH)/bin/fgt
 $(FGT):
