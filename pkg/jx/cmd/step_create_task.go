@@ -169,6 +169,9 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 	o.devNamespace = ns
 
+	if o.Verbose {
+		log.Infof("cloning git for %s\n", o.CloneGitURL)
+	}
 	if o.CloneGitURL != "" {
 		err = o.cloneGitRepositoryToTempDir(o.CloneGitURL)
 		if err != nil {
@@ -177,6 +180,10 @@ func (o *StepCreateTaskOptions) Run() error {
 		if o.DeleteTempDir {
 			defer o.deleteTempDir()
 		}
+	}
+
+	if o.Verbose {
+		log.Infof("setting up docker registry for %s\n", o.CloneGitURL)
 	}
 
 	if o.DockerRegistry == "" {
