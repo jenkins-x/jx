@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"path/filepath"
 	"strconv"
@@ -333,15 +334,55 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(key *kube.PromoteStepAc
 		// this is GH only for now
 		return
 	}
-	provider, e := o.gitProviderForGitServerURL(key.GitRepository(), gits.KindGitHub)
-	if e != nil {
-		log.Warnf("Cannot extract author information from GitHub. Error: %s", e)
+	if key.Author != "" {
+		// info already set, save some GH requests
 		return
 	}
+
+	secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, "github")
+	if err != nil {
+		log.Warnf("Cannot load pipeline secrets. Error: %s", err)
+	}
+
+	gitInfo, err := gits.ParseGitURL(key.GitURL())
+	if err != nil {
+		log.Warnf("Cannot parse git repo URL. Error: %s", err)
+	}
+	var provider gits.GitProvider
+	if secrets != nil {
+		for _, secret := range secrets.Items {
+			labels := secret.Labels
+			annotations := secret.Annotations
+			data := secret.Data
+			if labels != nil && labels[kube.LabelKind] == kube.ValueKindGit && annotations != nil {
+				u := annotations[kube.AnnotationURL]
+				if u != "" && data != nil {
+					username := data[kube.SecretDataUsername]
+					pwd := data[kube.SecretDataPassword]
+					// server *auth.AuthServer, user *auth.UserAuth, git Gitter
+					provider, err = gits.NewGitHubProvider(&auth.AuthServer{
+						URL: gitInfo.HostURL(),
+						Kind: "github",
+					},
+					&auth.UserAuth{
+						Username: string(username),
+						ApiToken: string(pwd),
+					}, nil)
+					if err != nil {
+						log.Warnf("Cannot create git provider. Error: %s", err)
+						return
+					}
+					break
+				}
+			}
+		}
+	}
+
 	// extract (org, repo, commit) or (org, repo, #PR) from key
-	prNumber := 0
+	var prNumber int
 	if key.PullNumber != "" {
-		prNumber, e = strconv.Atoi(key.PullNumber)
+		num, e := strconv.Atoi(key.PullNumber)
+		prNumber = num
 		if e != nil {
 			log.Warnf("Cannot extract PR number from [%s]. Error: %s", key.PullNumber, e)
 			return
@@ -354,7 +395,9 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(key *kube.PromoteStepAc
 			log.Warnf("Cannot read PR from Github. Error: %s", e)
 			return
 		}
-		key.Author = pr.Author.Login
+		if pr.Author != nil {
+			key.Author = pr.Author.Login
+		}
 		key.PullTitle = pr.Title
 	} else {
 		// this is a branch build
@@ -368,8 +411,10 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(key *kube.PromoteStepAc
 			return
 		}
 		if len(gitCommits) > 0 {
-			key.Author = gitCommits[0].Author.Login
-			key.LastCommitMessage = gitCommits[0].Message
+			if gitCommits[0] != nil && gitCommits[0].Author != nil {
+				key.Author = gitCommits[0].Author.Login
+				key.LastCommitMessage = gitCommits[0].Message
+			}
 		}
 	}
 }
