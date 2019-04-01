@@ -65,6 +65,7 @@ func GenerateNextBuildNumber(jxClient jxClient.Interface, ns string, gitInfo *gi
 		if err != nil {
 			return errors.Wrapf(err, "Unable to generate next build number for %s/%s", sourceRepoName, branch)
 		}
+		sourceRepoName = sourceRepo.Name
 		if sourceRepo.Annotations == nil {
 			sourceRepo.Annotations = make(map[string]string, 1)
 		}
