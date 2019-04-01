@@ -171,16 +171,11 @@ func createSourceRepositoryIfMissing(jxClient versioned.Interface, ns string, ac
 	if repoName == "" || owner == "" || gitURL == "" {
 		return nil
 	}
-	srs := NewSourceRepositoryService(jxClient, ns)
+	srs := jxClient.JenkinsV1().SourceRepositories(ns)
 	if srs == nil {
 		return fmt.Errorf("failed to create sourcerepository resource")
 	}
-
-	resourceName := ToValidName(owner + "-" + repoName)
-	_, err := srs.GetSourceRepository(resourceName)
-	if err != nil {
-		_, err = GetOrCreateSourceRepository(jxClient, ns, repoName, owner, gits.GitProviderURL(gitURL))
-	}
+	_, err := GetOrCreateSourceRepository(jxClient, ns, repoName, owner, gits.GitProviderURL(gitURL))
 	return err
 }
 
