@@ -61,7 +61,7 @@ func GenerateNextBuildNumber(jxClient jxClient.Interface, ns string, gitInfo *gi
 	sourceRepoName := kube.ToValidName(gitInfo.Organisation + "-" + gitInfo.Name)
 
 	f := func() error {
-		sourceRepo, err := resourceInterface.Get(sourceRepoName, metav1.GetOptions{})
+		sourceRepo, err := kube.GetOrCreateSourceRepository(jxClient, ns, gitInfo.Name, gitInfo.Organisation, gitInfo.ProviderURL())
 		if err != nil {
 			return errors.Wrapf(err, "Unable to generate next build number for %s/%s", sourceRepoName, branch)
 		}
