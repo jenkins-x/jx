@@ -796,7 +796,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	info := util.ColorInfo
 
 	for _, resource := range resources {
-		_, err := tekton.CreateSourceResource(tektonClient, ns, resource)
+		_, err := tekton.CreateOrUpdateSourceResource(tektonClient, ns, resource)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create/update PipelineResource %s in namespace %s", resource.Name, ns)
 		}
@@ -809,14 +809,14 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	}
 
 	for _, task := range tasks {
-		_, err = tekton.CreateTask(tektonClient, ns, task)
+		_, err = tekton.CreateOrUpdateTask(tektonClient, ns, task)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create/update the task %s in namespace %s", task.Name, ns)
 		}
 		log.Infof("upserted Task %s\n", info(task.Name))
 	}
 
-	pipeline, err = tekton.CreatePipeline(tektonClient, ns, pipeline)
+	pipeline, err = tekton.CreateOrUpdatePipeline(tektonClient, ns, pipeline)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create/update the Pipeline in namespace %s", ns)
 	}
