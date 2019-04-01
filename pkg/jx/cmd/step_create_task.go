@@ -274,6 +274,13 @@ func (o *StepCreateTaskOptions) Run() error {
 		return err
 	}
 
+	// output results for invokers of this command like the pipelinerunner
+	o.Results.Pipeline = pipeline
+	o.Results.Tasks = tasks
+	o.Results.Resources = resources
+	o.Results.PipelineRun = run
+	o.Results.Structure = structure
+
 	if o.NoApply {
 		err := o.writeOutput(o.OutDir, pipeline, tasks, run, resources, structure)
 		if err != nil {
