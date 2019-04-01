@@ -220,11 +220,18 @@ func (o *StepCreateTaskOptions) Run() error {
 			return err
 		}
 
+		if o.Verbose {
+			log.Infof("generating build number...\n")
+		}
+
 		pipelineResourceName := tekton.PipelineResourceName(o.GitInfo, o.Branch, o.Context)
 
 		o.BuildNumber, err = tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, o.GitInfo, o.Branch, o.Duration, pipelineResourceName)
 		if err != nil {
 			return err
+		}
+		if o.Verbose {
+			log.Infof("generated build number %s for %s\n", o.BuildNumber, o.CloneGitURL)
 		}
 	}
 
