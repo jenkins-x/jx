@@ -90,7 +90,9 @@ func TestSaasKind(t *testing.T) {
 }
 
 func TestGitInfoProviderURL(t *testing.T) {
-	info, err := gits.ParseGitURL("https://github.com/jenkins-x/x.git")
-	require.NoError(t, err)
-	assert.Equal(t, "https://github.com", info.ProviderURL(), "ProviderURL()")
+	for _, u := range []string{"https://github.com/jenkins-x/x.git", "git@github.com:jenkins-x/jx.git"} {
+		info, err := gits.ParseGitURL(u)
+		require.NoError(t, err, "for URL %s", u)
+		assert.Equal(t, "https://github.com", info.ProviderURL(), "ProviderURL() for %s", u)
+	}
 }

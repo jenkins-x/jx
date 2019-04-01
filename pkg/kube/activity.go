@@ -179,7 +179,7 @@ func createSourceRepositoryIfMissing(jxClient versioned.Interface, ns string, ac
 	resourceName := ToValidName(owner + "-" + repoName)
 	_, err := srs.GetSourceRepository(resourceName)
 	if err != nil {
-		err = srs.CreateOrUpdateSourceRepository(repoName, owner, gitURL)
+		_, err = GetOrCreateSourceRepository(jxClient, ns, repoName, owner, gits.GitProviderURL(gitURL))
 	}
 	return err
 }
