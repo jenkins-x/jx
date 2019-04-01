@@ -465,7 +465,7 @@ func (o *InitOptions) initIngress() error {
 			return nil
 		}
 
-		values := []string{"rbac.create=true" /*,"rbac.serviceAccountName="+ingressServiceAccount*/}
+		values := []string{"rbac.create=true", fmt.Sprintf("controller.extraArgs.publish-service=%s/%s", ingressNamespace, defaultIngressServiceName) /*,"rbac.serviceAccountName="+ingressServiceAccount*/}
 		valuesFiles := []string{}
 		valuesFiles, err = helm.AppendMyValues(valuesFiles)
 		if err != nil {
