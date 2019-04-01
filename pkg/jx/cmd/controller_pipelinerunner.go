@@ -237,7 +237,9 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 		Resources: pr.Results.ObjectReferences(),
 	}
 	err = o.marshalPayload(w, r, results)
-	o.onError(err)
+	if err != nil {
+		o.returnError(err, "failed to marshal payload", w, r)
+	}
 	return
 }
 

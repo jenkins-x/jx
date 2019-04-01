@@ -1387,7 +1387,7 @@ func (o *StepCreateTaskOptions) getDockerRegistry() string {
 func (r *StepCreateTaskResults) ObjectReferences() []kube.ObjectReference {
 	resources := []kube.ObjectReference{}
 	for _, task := range r.Tasks {
-		if task.Name == "" {
+		if task.ObjectMeta.Name == "" {
 			log.Warnf("created Task has no name: %#v\n", task)
 
 		} else {
@@ -1395,7 +1395,7 @@ func (r *StepCreateTaskResults) ObjectReferences() []kube.ObjectReference {
 		}
 	}
 	if r.Pipeline != nil {
-		if r.Pipeline.Name == "" {
+		if r.Pipeline.ObjectMeta.Name == "" {
 			log.Warnf("created Pipeline has no name: %#v\n", r.Pipeline)
 
 		} else {
@@ -1403,7 +1403,7 @@ func (r *StepCreateTaskResults) ObjectReferences() []kube.ObjectReference {
 		}
 	}
 	if r.PipelineRun != nil {
-		if r.PipelineRun.Name == "" {
+		if r.PipelineRun.ObjectMeta.Name == "" {
 			log.Warnf("created PipelineRun has no name: %#v\n", r.PipelineRun)
 		} else {
 			resources = append(resources, kube.CreateObjectReference(r.PipelineRun.TypeMeta, r.PipelineRun.ObjectMeta))
