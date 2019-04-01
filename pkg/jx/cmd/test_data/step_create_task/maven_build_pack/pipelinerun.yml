@@ -6,13 +6,13 @@ metadata:
     branch: master
     owner: abayer
     repo: jx-demo-qs
-  name: abayer-jx-demo-qs-master
+  name: abayer-jx-demo-qs-master-1
 spec:
   Status: ""
   params: null
   pipelineRef:
     apiVersion: tekton.dev/v1alpha1
-    name: abayer-jx-demo-qs-master
+    name: abayer-jx-demo-qs-master-1
   resources:
   - name: abayer-jx-demo-qs-master
     resourceRef:

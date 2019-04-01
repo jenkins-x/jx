@@ -111,7 +111,7 @@ func (r *GitUserResolver) UpdateUserFromPRAuthor(author *jenkinsv1.User, pullReq
 			}
 		}
 		if updated {
-			return r.JXClient.JenkinsV1().Users(r.Namespace).Update(author)
+			return r.JXClient.JenkinsV1().Users(r.Namespace).PatchUpdate(author)
 		}
 	}
 	return author, nil

@@ -419,11 +419,11 @@ func (mock *MockHelmer) UpdateRepo() error {
 	return ret0
 }
 
-func (mock *MockHelmer) UpgradeChart(_param0 string, _param1 string, _param2 string, _param3 string, _param4 bool, _param5 int, _param6 bool, _param7 bool, _param8 []string, _param9 []string, _param10 string, _param11 string, _param12 string, _param13 bool) error {
+func (mock *MockHelmer) UpgradeChart(_param0 string, _param1 string, _param2 string, _param3 string, _param4 bool, _param5 int, _param6 bool, _param7 bool, _param8 []string, _param9 []string, _param10 string, _param11 string, _param12 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockHelmer().")
 	}
-	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8, _param9, _param10, _param11, _param12, _param13}
+	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8, _param9, _param10, _param11, _param12}
 	result := pegomock.GetGenericMockFrom(mock).Invoke("UpgradeChart", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 error
 	if len(result) != 0 {
@@ -1212,8 +1212,8 @@ func (c *Helmer_UpdateRepo_OngoingVerification) GetCapturedArguments() {
 func (c *Helmer_UpdateRepo_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierHelmer) UpgradeChart(_param0 string, _param1 string, _param2 string, _param3 string, _param4 bool, _param5 int, _param6 bool, _param7 bool, _param8 []string, _param9 []string, _param10 string, _param11 string, _param12 string, _param13 bool) *Helmer_UpgradeChart_OngoingVerification {
-	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8, _param9, _param10, _param11, _param12, _param13}
+func (verifier *VerifierHelmer) UpgradeChart(_param0 string, _param1 string, _param2 string, _param3 string, _param4 bool, _param5 int, _param6 bool, _param7 bool, _param8 []string, _param9 []string, _param10 string, _param11 string, _param12 string) *Helmer_UpgradeChart_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8, _param9, _param10, _param11, _param12}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "UpgradeChart", params, verifier.timeout)
 	return &Helmer_UpgradeChart_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
@@ -1223,12 +1223,12 @@ type Helmer_UpgradeChart_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_UpgradeChart_OngoingVerification) GetCapturedArguments() (string, string, string, string, bool, int, bool, bool, []string, []string, string, string, string, bool) {
-	_param0, _param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8, _param9, _param10, _param11, _param12, _param13 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1], _param5[len(_param5)-1], _param6[len(_param6)-1], _param7[len(_param7)-1], _param8[len(_param8)-1], _param9[len(_param9)-1], _param10[len(_param10)-1], _param11[len(_param11)-1], _param12[len(_param12)-1], _param13[len(_param13)-1]
+func (c *Helmer_UpgradeChart_OngoingVerification) GetCapturedArguments() (string, string, string, string, bool, int, bool, bool, []string, []string, string, string, string) {
+	_param0, _param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8, _param9, _param10, _param11, _param12 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1], _param5[len(_param5)-1], _param6[len(_param6)-1], _param7[len(_param7)-1], _param8[len(_param8)-1], _param9[len(_param9)-1], _param10[len(_param10)-1], _param11[len(_param11)-1], _param12[len(_param12)-1]
 }
 
-func (c *Helmer_UpgradeChart_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []string, _param4 []bool, _param5 []int, _param6 []bool, _param7 []bool, _param8 [][]string, _param9 [][]string, _param10 []string, _param11 []string, _param12 []string, _param13 []bool) {
+func (c *Helmer_UpgradeChart_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []string, _param4 []bool, _param5 []int, _param6 []bool, _param7 []bool, _param8 [][]string, _param9 [][]string, _param10 []string, _param11 []string, _param12 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1282,10 +1282,6 @@ func (c *Helmer_UpgradeChart_OngoingVerification) GetAllCapturedArguments() (_pa
 		_param12 = make([]string, len(params[12]))
 		for u, param := range params[12] {
 			_param12[u] = param.(string)
-		}
-		_param13 = make([]bool, len(params[13]))
-		for u, param := range params[13] {
-			_param13[u] = param.(bool)
 		}
 	}
 	return

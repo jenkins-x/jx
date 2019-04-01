@@ -5,10 +5,10 @@ set -o nounset
 set -o pipefail
 
 echo "Updating the JX CLI & API reference docs"
-./build/linux/jx create client docs --verbose
+make generate-docs
 git clone https://github.com/jenkins-x/jx-docs.git
 cp -r docs/apidocs/site jx-docs/static/apidocs
-cd static/apidocs; git add *
+cd jx-docs/static/apidocs; git add *
 cd content/commands; \
     ../../build/linux/jx create docs; \
     git config credential.helper store; \

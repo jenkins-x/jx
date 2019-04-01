@@ -341,10 +341,7 @@ func (h *HelmCLI) Template(chart string, releaseName string, ns string, outDir s
 }
 
 // UpgradeChart upgrades a helm chart according with given helm flags
-// reuseValues true if values from a previous install should be merged with the given values and valueFiles
-func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, version string, install bool,
-	timeout int, force bool, wait bool, values []string, valueFiles []string, repo string, username string,
-	password string, reuseValues bool) error {
+func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, version string, install bool, timeout int, force bool, wait bool, values []string, valueFiles []string, repo string, username string, password string) error {
 	args := []string{}
 	args = append(args, "upgrade")
 	args = append(args, "--namespace", ns)
@@ -382,9 +379,6 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 	}
 	if password != "" {
 		args = append(args, "--password", password)
-	}
-	if reuseValues {
-		args = append(args, "--reuse-values")
 	}
 	args = append(args, releaseName, chart)
 

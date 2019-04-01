@@ -32,7 +32,7 @@ func (o *CommonOptions) modifyDevEnvironment(jxClient versioned.Interface, ns st
 	if err != nil {
 		return errors.Wrap(err, "failed to call the callback function for dev environment")
 	}
-	_, err = jxClient.JenkinsV1().Environments(ns).Update(env)
+	_, err = jxClient.JenkinsV1().Environments(ns).PatchUpdate(env)
 	if err != nil {
 		return fmt.Errorf("Failed to update Development environment in namespace %s: %s", ns, err)
 	}

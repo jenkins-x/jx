@@ -34,11 +34,6 @@ const defaultMavenSettings = `<settings>
               <username>admin</username>
               <password>%s</password>
           </server>
-          <server>
-              <id>nexus</id>
-              <username>admin</username>
-              <password>%s</password>
-          </server>
       </servers>
       <profiles>
           <profile>
@@ -64,7 +59,7 @@ const defaultMavenSettings = `<settings>
   </settings>
 `
 
-const allowedSymbols = "~!#%^*_+-=?,."
+const allowedSymbols = "~!#%^_+-=?,."
 
 type ChartMuseum struct {
 	ChartMuseumEnv ChartMuseumEnv `json:"env"`
@@ -182,7 +177,7 @@ func (s *AdminSecretsService) setDefaultSecrets() error {
 
 // NewMavenSettingsXML generates the maven settings
 func (s *AdminSecretsService) NewMavenSettingsXML() error {
-	s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(defaultMavenSettings, s.Flags.DefaultAdminPassword, s.Flags.DefaultAdminPassword)
+	s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(defaultMavenSettings, s.Flags.DefaultAdminPassword)
 	return nil
 }
 

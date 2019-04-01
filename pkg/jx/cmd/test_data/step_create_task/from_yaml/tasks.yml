@@ -5,7 +5,7 @@ items:
     creationTimestamp: null
     labels:
       jenkins.io/task-stage-name: build-a-really-long-stage-name-please-but-not-too-long-thanks
-    name: abayer-js-test-repo-really-long-build-a-really-long-stage-name
+    name: abayer-js-test-repo-really-long-build-a-really-long-stage-nam-1
     namespace: jx
   spec:
     inputs:
@@ -25,8 +25,27 @@ items:
       - /bin/sh
       - -c
       env:
+      - name: DOCKER_CONFIG
+        value: /home/jenkins/.docker/
       - name: DOCKER_REGISTRY
-        value:
+        valueFrom:
+          configMapKeyRef:
+            key: docker.registry
+            name: jenkins-x-docker-registry
+      - name: GIT_AUTHOR_EMAIL
+        value: jenkins-x@googlegroups.com
+      - name: GIT_AUTHOR_NAME
+        value: jenkins-x-bot
+      - name: GIT_COMMITTER_EMAIL
+        value: jenkins-x@googlegroups.com
+      - name: GIT_COMMITTER_NAME
+        value: jenkins-x-bot
+      - name: TILLER_NAMESPACE
+        value: kube-system
+      - name: XDG_CONFIG_HOME
+        value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -68,8 +87,27 @@ items:
       - /bin/sh
       - -c
       env:
+      - name: DOCKER_CONFIG
+        value: /home/jenkins/.docker/
       - name: DOCKER_REGISTRY
-        value:
+        valueFrom:
+          configMapKeyRef:
+            key: docker.registry
+            name: jenkins-x-docker-registry
+      - name: GIT_AUTHOR_EMAIL
+        value: jenkins-x@googlegroups.com
+      - name: GIT_AUTHOR_NAME
+        value: jenkins-x-bot
+      - name: GIT_COMMITTER_EMAIL
+        value: jenkins-x@googlegroups.com
+      - name: GIT_COMMITTER_NAME
+        value: jenkins-x-bot
+      - name: TILLER_NAMESPACE
+        value: kube-system
+      - name: XDG_CONFIG_HOME
+        value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -126,7 +164,7 @@ items:
     creationTimestamp: null
     labels:
       jenkins.io/task-stage-name: second
-    name: abayer-js-test-repo-really-long-second
+    name: abayer-js-test-repo-really-long-second-1
     namespace: jx
   spec:
     inputs:
@@ -146,8 +184,27 @@ items:
       - /bin/sh
       - -c
       env:
+      - name: DOCKER_CONFIG
+        value: /home/jenkins/.docker/
       - name: DOCKER_REGISTRY
-        value:
+        valueFrom:
+          configMapKeyRef:
+            key: docker.registry
+            name: jenkins-x-docker-registry
+      - name: GIT_AUTHOR_EMAIL
+        value: jenkins-x@googlegroups.com
+      - name: GIT_AUTHOR_NAME
+        value: jenkins-x-bot
+      - name: GIT_COMMITTER_EMAIL
+        value: jenkins-x@googlegroups.com
+      - name: GIT_COMMITTER_NAME
+        value: jenkins-x-bot
+      - name: TILLER_NAMESPACE
+        value: kube-system
+      - name: XDG_CONFIG_HOME
+        value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER

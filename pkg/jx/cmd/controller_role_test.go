@@ -168,7 +168,7 @@ func TestEnvironmentRoleBinding(t *testing.T) {
 		Namespace: teamNs,
 	})
 
-	envRoleBinding, err = jxClient.JenkinsV1().EnvironmentRoleBindings(teamNs).Update(envRoleBinding)
+	envRoleBinding, err = jxClient.JenkinsV1().EnvironmentRoleBindings(teamNs).PatchUpdate(envRoleBinding)
 	require.NoError(t, err, "Updating EnvironmentRoleBinding in ns %s with name %s", teamNs, roleBindingName)
 
 	// now lets simulate the watch...
@@ -195,7 +195,7 @@ func TestEnvironmentRoleBinding(t *testing.T) {
 
 	// now lets remove the user...
 	envRoleBinding.Spec.Subjects = AssertRemoveSubject(t, envRoleBinding.Spec.Subjects, message, newUserKind, teamNs, newUser)
-	envRoleBinding, err = jxClient.JenkinsV1().EnvironmentRoleBindings(teamNs).Update(envRoleBinding)
+	envRoleBinding, err = jxClient.JenkinsV1().EnvironmentRoleBindings(teamNs).PatchUpdate(envRoleBinding)
 	require.NoError(t, err, "Updating EnvironmentRoleBinding in ns %s with name %s", teamNs, roleBindingName)
 
 	// now lets simulate the watch...

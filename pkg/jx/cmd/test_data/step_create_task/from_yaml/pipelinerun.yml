@@ -6,13 +6,13 @@ metadata:
     branch: really-long
     owner: abayer
     repo: js-test-repo
-  name: abayer-js-test-repo-really-long
+  name: abayer-js-test-repo-really-long-1
 spec:
   Status: ""
   params: null
   pipelineRef:
     apiVersion: tekton.dev/v1alpha1
-    name: abayer-js-test-repo-really-long
+    name: abayer-js-test-repo-really-long-1
   resources:
   - name: abayer-js-test-repo-really-long
     resourceRef:

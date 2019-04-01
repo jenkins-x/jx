@@ -1,13 +1,13 @@
 metadata:
   creationTimestamp: null
-  name: abayer-js-test-repo-really-long
+  name: abayer-js-test-repo-really-long-1
 pipelineRef: null
 pipelineRunRef: null
 stages:
 - depth: 0
   name: Build-a-really-long-stage-name-please-but-not-too-long-thanks
-  taskRef: abayer-js-test-repo-really-long-build-a-really-long-stage-name
+  taskRef: abayer-js-test-repo-really-long-build-a-really-long-stage-nam-1
 - depth: 0
   name: Second
   previous: Build-a-really-long-stage-name-please-but-not-too-long-thanks
-  taskRef: abayer-js-test-repo-really-long-second
+  taskRef: abayer-js-test-repo-really-long-second-1

@@ -4,33 +4,34 @@ items:
   metadata:
     creationTimestamp: null
     labels:
-      branch: build-pack
       jenkins.io/task-stage-name: from-build-pack
-      owner: abayer
-      repo: js-test-repo
-    name: abayer-js-test-repo-build-pack
+    name: abayer-js-test-repo-build-pack-from-build-pack-1
+    namespace: jx
   spec:
     inputs:
       resources:
-      - name: source
-        targetPath: ""
+      - name: workspace
+        targetPath: source
         type: git
+    outputs:
+      resources:
+        - name: workspace
+          targetPath: ""
+          type: git
     steps:
     - args:
-      - -c
       - jx step git credentials
       command:
       - /bin/sh
+      - -c
       env:
+      - name: DOCKER_CONFIG
+        value: /home/jenkins/.docker/
       - name: DOCKER_REGISTRY
         valueFrom:
           configMapKeyRef:
             key: docker.registry
             name: jenkins-x-docker-registry
-      - name: TILLER_NAMESPACE
-        value: kube-system
-      - name: DOCKER_CONFIG
-        value: /home/jenkins/.docker/
       - name: GIT_AUTHOR_EMAIL
         value: jenkins-x@googlegroups.com
       - name: GIT_AUTHOR_NAME
@@ -39,8 +40,12 @@ items:
         value: jenkins-x@googlegroups.com
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
+      - name: TILLER_NAMESPACE
+        value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -75,20 +80,18 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - -c
       - echo $(jx-release-version) > VERSION
       command:
       - /bin/sh
+      - -c
       env:
+      - name: DOCKER_CONFIG
+        value: /home/jenkins/.docker/
       - name: DOCKER_REGISTRY
         valueFrom:
           configMapKeyRef:
             key: docker.registry
             name: jenkins-x-docker-registry
-      - name: TILLER_NAMESPACE
-        value: kube-system
-      - name: DOCKER_CONFIG
-        value: /home/jenkins/.docker/
       - name: GIT_AUTHOR_EMAIL
         value: jenkins-x@googlegroups.com
       - name: GIT_AUTHOR_NAME
@@ -97,8 +100,12 @@ items:
         value: jenkins-x@googlegroups.com
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
+      - name: TILLER_NAMESPACE
+        value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -116,7 +123,7 @@ items:
       image: jenkinsxio/builder-nodejs:0.1.235
       name: setversion-next-version
       resources:
-        requests:
+       requests:
           cpu: 400m
           memory: 512Mi
       securityContext:
@@ -133,20 +140,18 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - -c
       - jx step tag --version ${VERSION}
       command:
       - /bin/sh
+      - -c
       env:
+      - name: DOCKER_CONFIG
+        value: /home/jenkins/.docker/
       - name: DOCKER_REGISTRY
         valueFrom:
           configMapKeyRef:
             key: docker.registry
             name: jenkins-x-docker-registry
-      - name: TILLER_NAMESPACE
-        value: kube-system
-      - name: DOCKER_CONFIG
-        value: /home/jenkins/.docker/
       - name: GIT_AUTHOR_EMAIL
         value: jenkins-x@googlegroups.com
       - name: GIT_AUTHOR_NAME
@@ -155,8 +160,12 @@ items:
         value: jenkins-x@googlegroups.com
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
+      - name: TILLER_NAMESPACE
+        value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -191,20 +200,18 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - -c
       - npm install
       command:
       - /bin/sh
+      - -c
       env:
+      - name: DOCKER_CONFIG
+        value: /home/jenkins/.docker/
       - name: DOCKER_REGISTRY
         valueFrom:
           configMapKeyRef:
             key: docker.registry
             name: jenkins-x-docker-registry
-      - name: TILLER_NAMESPACE
-        value: kube-system
-      - name: DOCKER_CONFIG
-        value: /home/jenkins/.docker/
       - name: GIT_AUTHOR_EMAIL
         value: jenkins-x@googlegroups.com
       - name: GIT_AUTHOR_NAME
@@ -213,8 +220,12 @@ items:
         value: jenkins-x@googlegroups.com
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
+      - name: TILLER_NAMESPACE
+        value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -249,20 +260,18 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - -c
       - CI=true DISPLAY=:99 npm test
       command:
       - /bin/sh
+      - -c
       env:
+      - name: DOCKER_CONFIG
+        value: /home/jenkins/.docker/
       - name: DOCKER_REGISTRY
         valueFrom:
           configMapKeyRef:
             key: docker.registry
             name: jenkins-x-docker-registry
-      - name: TILLER_NAMESPACE
-        value: kube-system
-      - name: DOCKER_CONFIG
-        value: /home/jenkins/.docker/
       - name: GIT_AUTHOR_EMAIL
         value: jenkins-x@googlegroups.com
       - name: GIT_AUTHOR_NAME
@@ -271,8 +280,12 @@ items:
         value: jenkins-x@googlegroups.com
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
+      - name: TILLER_NAMESPACE
+        value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -307,20 +320,18 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - -c
       - skaffold build -f skaffold.yaml
       command:
       - /bin/sh
+      - -c
       env:
+      - name: DOCKER_CONFIG
+        value: /home/jenkins/.docker/
       - name: DOCKER_REGISTRY
         valueFrom:
           configMapKeyRef:
             key: docker.registry
             name: jenkins-x-docker-registry
-      - name: TILLER_NAMESPACE
-        value: kube-system
-      - name: DOCKER_CONFIG
-        value: /home/jenkins/.docker/
       - name: GIT_AUTHOR_EMAIL
         value: jenkins-x@googlegroups.com
       - name: GIT_AUTHOR_NAME
@@ -329,8 +340,12 @@ items:
         value: jenkins-x@googlegroups.com
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
+      - name: TILLER_NAMESPACE
+        value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -365,20 +380,18 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - -c
       - jx step post build --image $DOCKER_REGISTRY/$ORG/$APP_NAME:${VERSION}
       command:
       - /bin/sh
+      - -c
       env:
+      - name: DOCKER_CONFIG
+        value: /home/jenkins/.docker/
       - name: DOCKER_REGISTRY
         valueFrom:
           configMapKeyRef:
             key: docker.registry
             name: jenkins-x-docker-registry
-      - name: TILLER_NAMESPACE
-        value: kube-system
-      - name: DOCKER_CONFIG
-        value: /home/jenkins/.docker/
       - name: GIT_AUTHOR_EMAIL
         value: jenkins-x@googlegroups.com
       - name: GIT_AUTHOR_NAME
@@ -387,8 +400,12 @@ items:
         value: jenkins-x@googlegroups.com
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
+      - name: TILLER_NAMESPACE
+        value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -423,20 +440,18 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - -c
       - jx step changelog --batch-mode --version v${VERSION}
       command:
       - /bin/sh
+      - -c
       env:
+      - name: DOCKER_CONFIG
+        value: /home/jenkins/.docker/
       - name: DOCKER_REGISTRY
         valueFrom:
           configMapKeyRef:
             key: docker.registry
             name: jenkins-x-docker-registry
-      - name: TILLER_NAMESPACE
-        value: kube-system
-      - name: DOCKER_CONFIG
-        value: /home/jenkins/.docker/
       - name: GIT_AUTHOR_EMAIL
         value: jenkins-x@googlegroups.com
       - name: GIT_AUTHOR_NAME
@@ -445,8 +460,12 @@ items:
         value: jenkins-x@googlegroups.com
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
+      - name: TILLER_NAMESPACE
+        value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -481,20 +500,18 @@ items:
         readOnly: true
       workingDir: /workspace/source/charts/js-test-repo
     - args:
-      - -c
       - jx step helm release
       command:
       - /bin/sh
+      - -c
       env:
+      - name: DOCKER_CONFIG
+        value: /home/jenkins/.docker/
       - name: DOCKER_REGISTRY
         valueFrom:
           configMapKeyRef:
             key: docker.registry
             name: jenkins-x-docker-registry
-      - name: TILLER_NAMESPACE
-        value: kube-system
-      - name: DOCKER_CONFIG
-        value: /home/jenkins/.docker/
       - name: GIT_AUTHOR_EMAIL
         value: jenkins-x@googlegroups.com
       - name: GIT_AUTHOR_NAME
@@ -503,8 +520,12 @@ items:
         value: jenkins-x@googlegroups.com
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
+      - name: TILLER_NAMESPACE
+        value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -539,20 +560,18 @@ items:
         readOnly: true
       workingDir: /workspace/source/charts/js-test-repo
     - args:
-      - -c
       - jx promote -b --all-auto --timeout 1h --version ${VERSION}
       command:
       - /bin/sh
+      - -c
       env:
+      - name: DOCKER_CONFIG
+        value: /home/jenkins/.docker/
       - name: DOCKER_REGISTRY
         valueFrom:
           configMapKeyRef:
             key: docker.registry
             name: jenkins-x-docker-registry
-      - name: TILLER_NAMESPACE
-        value: kube-system
-      - name: DOCKER_CONFIG
-        value: /home/jenkins/.docker/
       - name: GIT_AUTHOR_EMAIL
         value: jenkins-x@googlegroups.com
       - name: GIT_AUTHOR_NAME
@@ -561,8 +580,12 @@ items:
         value: jenkins-x@googlegroups.com
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
+      - name: TILLER_NAMESPACE
+        value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
       - name: PIPELINE_KIND
         value: release
       - name: REPO_OWNER
@@ -597,14 +620,14 @@ items:
         readOnly: true
       workingDir: /workspace/source/charts/js-test-repo
     volumes:
-    - emptyDir: {}
-      name: workspace-volume
     - hostPath:
         path: /var/run/docker.sock
       name: docker-daemon
     - name: volume-0
       secret:
         secretName: jenkins-docker-cfg
+    - emptyDir: {}
+      name: workspace-volume
     - downwardAPI:
         items:
         - fieldRef:

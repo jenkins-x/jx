@@ -5,20 +5,20 @@ import (
 	"strings"
 	"time"
 
+	randomdata "github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/kube"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	osUser "os/user"
 
 	"regexp"
 
-	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 // CreateClusterOptions the flags for running create cluster
@@ -42,6 +42,7 @@ type CreateClusterGKEFlags struct {
 	ProjectId       string
 	SkipLogin       bool
 	SubNetwork      string
+	Region          string
 	Zone            string
 	Namespace       string
 	Labels          string
@@ -110,6 +111,7 @@ func NewCmdCreateClusterGKE(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Flags.ProjectId, "project-id", "p", "", "Google Project ID to create cluster in")
 	cmd.Flags().StringVarP(&options.Flags.SubNetwork, "subnetwork", "", "", "The Google Compute Engine subnetwork to which the cluster is connected")
 	cmd.Flags().StringVarP(&options.Flags.Zone, "zone", "z", "", "The compute zone (e.g. us-central1-a) for the cluster")
+	cmd.Flags().StringVarP(&options.Flags.Region, "region", "r", "", "Compute region (e.g. us-central1) for the cluster")
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
 	cmd.Flags().StringVarP(&options.Flags.Labels, "labels", "", "", "The labels to add to the cluster being created such as 'foo=bar,whatnot=123'. Label names must begin with a lowercase character ([a-z]), end with a lowercase alphanumeric ([a-z0-9]) with dashes (-), and lowercase alphanumeric ([a-z0-9]) between.")
 	cmd.Flags().StringArrayVarP(&options.Flags.Scopes, "scope", "", []string{}, "The OAuth scopes to be added to the cluster")
@@ -177,8 +179,15 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		log.Infof("No cluster name provided so using a generated one: %s\n", o.Flags.ClusterName)
 	}
 
+	region := o.Flags.Region
 	zone := o.Flags.Zone
-	if zone == "" {
+	if region == "" && region != "none" && zone == "" {
+		region, err = o.getGoogleRegion(projectId)
+		if err != nil {
+			return err
+		}
+	}
+	if zone == "" && (region == "" || region == "none") {
 		zone, err = o.getGoogleZone(projectId)
 		if err != nil {
 			return err
@@ -203,10 +212,14 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	minNumOfNodes := o.Flags.MinNumOfNodes
 	if minNumOfNodes == "" {
+		defaultNodes := "3"
+		if region != "" && region != "none" {
+			defaultNodes = "1"
+		}
 		prompt := &survey.Input{
-			Message: "Minimum number of Nodes",
-			Default: "3",
-			Help:    "We recommend a minimum of 3 for Jenkins X,  the minimum number of nodes to be created in each of the cluster's zones",
+			Message: "Minimum number of Nodes (per zone)",
+			Default: defaultNodes,
+			Help:    "We recommend a minimum of " + defaultNodes + " for Jenkins X, the minimum number of nodes to be created in each of the cluster's zones",
 		}
 
 		survey.AskOne(prompt, &minNumOfNodes, nil, surveyOpts)
@@ -214,10 +227,14 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	maxNumOfNodes := o.Flags.MaxNumOfNodes
 	if maxNumOfNodes == "" {
+		defaultNodes := "5"
+		if region != "" && region != "none" {
+			defaultNodes = "2"
+		}
 		prompt := &survey.Input{
 			Message: "Maximum number of Nodes",
-			Default: "5",
-			Help:    "We recommend at least 5 for Jenkins X,  the maximum number of nodes to be created in each of the cluster's zones",
+			Default: defaultNodes,
+			Help:    "We recommend at least " + defaultNodes + " for Jenkins X, the maximum number of nodes to be created in each of the cluster's zones",
 		}
 
 		survey.AskOne(prompt, &maxNumOfNodes, nil, surveyOpts)
@@ -232,6 +249,12 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			}
 			survey.AskOne(prompt, &o.Flags.Preemptible, nil, surveyOpts)
 		}
+	}
+
+	if o.InstallOptions.Flags.NextGeneration {
+		o.Flags.EnhancedApis = true
+		o.Flags.EnhancedScopes = true
+		o.InstallOptions.Flags.Kaniko = true
 	}
 
 	if !o.BatchMode {
@@ -289,14 +312,20 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		}
 	}
 
-	// mandatory flags are machine type, num-nodes, zone,
+	// mandatory flags are machine type, num-nodes, zone or region
 	args := []string{"container", "clusters", "create",
-		o.Flags.ClusterName, "--zone", zone,
+		o.Flags.ClusterName,
 		"--num-nodes", minNumOfNodes,
 		"--machine-type", machineType,
 		"--enable-autoscaling",
 		"--min-nodes", minNumOfNodes,
 		"--max-nodes", maxNumOfNodes}
+
+	if region != "" && region != "none" {
+		args = append(args, "--region", region)
+	} else {
+		args = append(args, "--zone", zone)
+	}
 
 	if o.Flags.DiskSize != "" {
 		args = append(args, "--disk-size", o.Flags.DiskSize)
@@ -358,6 +387,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	o.InstallOptions.setInstallValues(map[string]string{
 		kube.Zone:        zone,
+		kube.Region:      region,
 		kube.ProjectID:   projectId,
 		kube.ClusterName: o.Flags.ClusterName,
 	})

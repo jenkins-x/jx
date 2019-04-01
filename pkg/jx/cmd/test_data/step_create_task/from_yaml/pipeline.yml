@@ -2,7 +2,7 @@ apiVersion: tekton.dev/v1alpha1
 kind: Pipeline
 metadata:
   creationTimestamp: null
-  name: abayer-js-test-repo-really-long
+  name: abayer-js-test-repo-really-long-1
   namespace: jx
 spec:
   params: []
@@ -19,7 +19,7 @@ spec:
       - name: workspace
         resource: abayer-js-test-repo-really-long
     taskRef:
-      name: abayer-js-test-repo-really-long-build-a-really-long-stage-name
+      name: abayer-js-test-repo-really-long-build-a-really-long-stage-nam-1
   - name: second
     resources:
       inputs:
@@ -33,5 +33,5 @@ spec:
     runAfter:
       - build-a-really-long-stage-name-please-but-not-too-long-thanks
     taskRef:
-      name: abayer-js-test-repo-really-long-second
+      name: abayer-js-test-repo-really-long-second-1
 status: {}

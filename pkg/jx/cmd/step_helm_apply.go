@@ -139,10 +139,20 @@ func (o *StepHelmApplyOptions) Run() error {
 		return err
 	}
 
+	_, devNs, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+
 	if releaseName == "" {
-		releaseName = ns
-		if helmBinary != "helm" || noTiller || helmTemplate {
-			releaseName = "jx"
+		if devNs == ns {
+			releaseName = JenkinsXPlatformRelease
+		} else {
+			releaseName = ns
+
+			if helmBinary != "helm" || noTiller || helmTemplate {
+				releaseName = "jx"
+			}
 		}
 	}
 
@@ -194,6 +204,14 @@ func (o *StepHelmApplyOptions) Run() error {
 	}
 	log.Infof("Wrote chart values.yaml %s generated from directory tree\n", chartValuesFile)
 
+	data, err := ioutil.ReadFile(chartValuesFile)
+	if err != nil {
+		log.Warnf("failed to load file %s: %s\n", chartValuesFile, err.Error())
+	} else {
+		log.Infof("generated helm %s\n", chartValuesFile)
+		log.Infof("\n%s\n\n", util.ColorStatus(string(data)))
+	}
+
 	log.Infof("Using values files: %s\n", strings.Join(valueFiles, ", "))
 
 	err = o.applyTemplateOverrides(chartName)
@@ -203,11 +221,9 @@ func (o *StepHelmApplyOptions) Run() error {
 
 	if o.Wait {
 		timeout := 600
-		err = o.Helm().UpgradeChart(chartName, releaseName, ns, "", true, timeout, o.Force, true, nil, valueFiles,
-			"", "", "", false)
+		err = o.Helm().UpgradeChart(chartName, releaseName, ns, "", true, timeout, o.Force, true, nil, valueFiles, "", "", "")
 	} else {
-		err = o.Helm().UpgradeChart(chartName, releaseName, ns, "", true, -1, o.Force, false, nil, valueFiles, "",
-			"", "", false)
+		err = o.Helm().UpgradeChart(chartName, releaseName, ns, "", true, -1, o.Force, false, nil, valueFiles, "", "", "")
 	}
 	if err != nil {
 		return errors.Wrapf(err, "upgrading helm chart '%s'", chartName)
@@ -216,7 +232,7 @@ func (o *StepHelmApplyOptions) Run() error {
 }
 
 func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
-	log.Infof("Applying chart overrides")
+	log.Infof("Applying chart overrides\n")
 	templateOverrides, err := filepath.Glob(chartName + "/../*/templates/*.yaml")
 	for _, overrideSrc := range templateOverrides {
 		if !strings.Contains(overrideSrc, "/env/") {
@@ -231,14 +247,14 @@ func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
 				if exists, err := util.DirExists(depChartDir); err == nil && !exists {
 					chartArchives, _ := filepath.Glob(filepath.Join(depChartsDir, depChartName+"*.tgz"))
 					if len(chartArchives) == 1 {
-						log.Infof("Exploding chart %s", chartArchives[0])
+						log.Infof("Exploding chart %s\n", chartArchives[0])
 						archiver.Unarchive(chartArchives[0], depChartsDir)
 						// Remove the unexploded chart
 						os.Remove(chartArchives[0])
 					}
 				}
 				overrideDst := filepath.Join(depChartDir, "templates", templateName)
-				log.Infof("Copying chart override %s \n", overrideSrc)
+				log.Infof("Copying chart override %s\n", overrideSrc)
 				err = ioutil.WriteFile(overrideDst, data, util.DefaultWritePermissions)
 				if err != nil {
 					log.Warnf("Error copying template %s to %s\n", overrideSrc, overrideDst)

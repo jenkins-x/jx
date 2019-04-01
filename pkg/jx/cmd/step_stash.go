@@ -228,7 +228,7 @@ func (o *StepStashOptions) Run() error {
 			Name: classifier,
 			URLs: urls,
 		})
-		_, err = client.JenkinsV1().PipelineActivities(ns).Update(a)
+		_, err = client.JenkinsV1().PipelineActivities(ns).PatchUpdate(a)
 		if err != nil {
 			return err
 		}

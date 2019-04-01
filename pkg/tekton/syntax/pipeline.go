@@ -128,6 +128,9 @@ type StageOptions struct {
 
 // Step defines a single step, from the author's perspective, to be executed within a stage.
 type Step struct {
+	// An optional name to give the step for reporting purposes
+	Name string `json:"name,omitempty"`
+
 	// One of command, step, or loop is required.
 	Command string `json:"command,omitempty"`
 	// args is optional, but only allowed with command
@@ -614,7 +617,19 @@ func validateWorkspace(w string) *apis.FieldError {
 	return nil
 }
 
-func scopedEnv(newEnv []EnvVar, parentEnv []corev1.EnvVar, o *RootOptions) []corev1.EnvVar {
+func toContainerEnvVars(origEnv []EnvVar) []corev1.EnvVar {
+	env := make([]corev1.EnvVar, 0, len(origEnv))
+	for _, e := range origEnv {
+		env = append(env, corev1.EnvVar{
+			Name:  e.Name,
+			Value: e.Value,
+		})
+	}
+
+	return env
+}
+
+func scopedEnv(newEnv []corev1.EnvVar, parentEnv []corev1.EnvVar, o *RootOptions) []corev1.EnvVar {
 	if len(parentEnv) == 0 && len(newEnv) == 0 {
 		return nil
 	}
@@ -625,10 +640,7 @@ func scopedEnv(newEnv []EnvVar, parentEnv []corev1.EnvVar, o *RootOptions) []cor
 	}
 
 	for _, e := range newEnv {
-		envMap[e.Name] = corev1.EnvVar{
-			Name:  e.Name,
-			Value: e.Value,
-		}
+		envMap[e.Name] = e
 	}
 
 	env := make([]corev1.EnvVar, 0, len(envMap))
@@ -821,7 +833,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		}
 	}
 
-	env := scopedEnv(s.Environment, parentEnv, rootOptions)
+	env := scopedEnv(toContainerEnvVars(s.Environment), parentEnv, rootOptions)
 
 	agent := s.Agent
 
@@ -839,7 +851,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
-				Name:      MangleToRfc1035Label(fmt.Sprintf("%s-%s", pipelineIdentifier, s.Name), ""),
+				Name:      MangleToRfc1035Label(fmt.Sprintf("%s-%s", pipelineIdentifier, s.Name), buildIdentifier),
 				Labels:    util.MergeMaps(map[string]string{LabelStageName: s.stageLabelName()}),
 			},
 		}
@@ -959,6 +971,10 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 		stepImage = step.Agent.Image
 	}
 
+	workingDir := step.Dir
+	if workingDir == "" {
+		workingDir = "/workspace/workspace"
+	}
 	if step.Command != "" {
 		c := &corev1.Container{}
 		if parentContainer != nil {
@@ -982,26 +998,29 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 				cmdStr += " " + strings.Join(step.Arguments, " ")
 			}
 			c.Args = []string{cmdStr}
-			c.WorkingDir = "/workspace/workspace"
 		} else {
 			c.Image = stepImage
 			c.Command = []string{step.Command}
 			c.Args = step.Arguments
 			// TODO: Better paths
-			c.WorkingDir = "/workspace/workspace"
 		}
+		c.WorkingDir = workingDir
 		stepCounter++
-		c.Name = "step" + strconv.Itoa(1+stepCounter)
+		if step.Name != "" {
+			c.Name = step.Name
+		} else {
+			c.Name = "step" + strconv.Itoa(1+stepCounter)
+		}
 
 		c.Stdin = false
 		c.TTY = false
 
-		c.Env = env
+		c.Env = scopedEnv(env, c.Env, nil)
 
 		steps = append(steps, *c)
 	} else if !equality.Semantic.DeepEqual(step.Loop, Loop{}) {
 		for _, v := range step.Loop.Values {
-			loopEnv := scopedEnv([]EnvVar{{Name: step.Loop.Variable, Value: v}}, env, nil)
+			loopEnv := scopedEnv([]corev1.EnvVar{{Name: step.Loop.Variable, Value: v}}, env, nil)
 
 			for _, s := range step.Loop.Steps {
 				loopSteps, loopVolumes, loopCounter, loopErr := generateSteps(s, stepImage, loopEnv, parentContainer, podTemplates, stepCounter)
@@ -1028,8 +1047,13 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 	return steps, volumes, stepCounter, nil
 }
 
+// PipelineRunName returns the pipeline name given the pipeline and build identifier
+func PipelineRunName(pipelineIdentifier string, buildIdentifier string) string {
+	return MangleToRfc1035Label(fmt.Sprintf("%s", pipelineIdentifier), buildIdentifier)
+}
+
 // GenerateCRDs translates the Pipeline structure into the corresponding Pipeline and Task CRDs
-func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, podTemplates map[string]*corev1.Pod, taskParams []tektonv1alpha1.TaskParam) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
+func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, podTemplates map[string]*corev1.Pod, taskParams []tektonv1alpha1.TaskParam, sourceDir string) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
 	if len(j.Post) != 0 {
 		return nil, nil, nil, errors.New("Post at top level not yet supported")
 	}
@@ -1051,7 +1075,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
-			Name:      fmt.Sprintf("%s", pipelineIdentifier),
+			Name:      PipelineRunName(pipelineIdentifier, buildIdentifier),
 		},
 		Spec: tektonv1alpha1.PipelineSpec{
 			Resources: []tektonv1alpha1.PipelineDeclaredResource{
@@ -1080,7 +1104,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 	for _, s := range j.Stages {
 		wsPath := ""
 		if len(tasks) == 0 {
-			wsPath = "workspace"
+			wsPath = sourceDir
 		}
 		stage, err := stageToTask(s, pipelineIdentifier, buildIdentifier, namespace, wsPath, baseEnv, j.Agent, "default", parentContainer, 0, nil, previousStage, podTemplates)
 		if err != nil {
@@ -1096,24 +1120,24 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		}
 
 		tasks = append(tasks, linearTasks...)
-		p.Spec.Tasks = append(p.Spec.Tasks, createPipelineTasks(stage, pipelineIdentifier)...)
+		p.Spec.Tasks = append(p.Spec.Tasks, createPipelineTasks(stage, p.Spec.Resources[0].Name)...)
 		structure.Stages = append(structure.Stages, stage.getAllAsPipelineStructureStages()...)
 	}
 
 	return p, tasks, structure, nil
 }
 
-func createPipelineTasks(stage *transformedStage, pipelineIdentifier string) []tektonv1alpha1.PipelineTask {
+func createPipelineTasks(stage *transformedStage, resourceName string) []tektonv1alpha1.PipelineTask {
 	if stage.isSequential() {
 		var pTasks []tektonv1alpha1.PipelineTask
 		for _, nestedStage := range stage.Sequential {
-			pTasks = append(pTasks, createPipelineTasks(nestedStage, pipelineIdentifier)...)
+			pTasks = append(pTasks, createPipelineTasks(nestedStage, resourceName)...)
 		}
 		return pTasks
 	} else if stage.isParallel() {
 		var pTasks []tektonv1alpha1.PipelineTask
 		for _, nestedStage := range stage.Parallel {
-			pTasks = append(pTasks, createPipelineTasks(nestedStage, pipelineIdentifier)...)
+			pTasks = append(pTasks, createPipelineTasks(nestedStage, resourceName)...)
 		}
 		return pTasks
 	} else {
@@ -1133,14 +1157,14 @@ func createPipelineTasks(stage *transformedStage, pipelineIdentifier string) []t
 			Inputs: []tektonv1alpha1.PipelineTaskInputResource{
 				{
 					Name:     "workspace",
-					Resource: pipelineIdentifier,
+					Resource: resourceName,
 					From:     provider,
 				},
 			},
 			Outputs: []tektonv1alpha1.PipelineTaskOutputResource{
 				{
 					Name:     "workspace",
-					Resource: pipelineIdentifier,
+					Resource: resourceName,
 				},
 			},
 		}

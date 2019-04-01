@@ -52,7 +52,7 @@ type InstallOptions struct {
 	valuesFiles *environments.ValuesFiles // internal variable used to track, most be passed in
 }
 
-// DirectlyAddAppToGitOps adds the app at a particular version (
+// AddApp adds the app at a particular version (
 // or latest if not specified) from the repository with username and password. A releaseName can be specified.
 // Values can be passed with in files or as a slice of name=value pairs. An alias can be specified.
 // GitOps or HelmOps will be automatically chosen based on the o.GitOps flag
@@ -87,12 +87,18 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 			opts := HelmOpsOptions{
 				InstallOptions: o,
 			}
-			err = opts.AddApp(app, dir, chartDetails.Version, chartDetails.Values, repository, username, password,
-				releaseName,
+			err = opts.AddApp(app, dir, chartDetails.Name, chartDetails.Version, chartDetails.Values, repository,
+				username, password,
+				chartDetails.Name,
 				setValues,
 				helmUpdate)
 			if err != nil {
-				return errors.Wrapf(err, "adding app %s version %s with alias %s using helm", app, version, alias)
+				errStr := fmt.Sprintf("adding app %s version %s using helm", app, version)
+				if alias != "" {
+					errStr = fmt.Sprintf("%s with alias %s", errStr, alias)
+				}
+				errStr = fmt.Sprintf("%s with helm", errStr)
+				return errors.Wrap(err, errStr)
 			}
 		}
 		return nil
@@ -222,6 +228,7 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 type ChartDetails struct {
 	Values  []byte
 	Version string
+	Name    string
 	Cleanup func()
 }
 
@@ -234,14 +241,23 @@ func (o *InstallOptions) createInterrogateChartFn(version string, app string, re
 		chartDetails := ChartDetails{
 			Cleanup: func() {},
 		}
-		if version == "" {
-			var err error
-			_, version, err = helm.LoadChartNameAndVersion(filepath.Join(chartDir, "Chart.yaml"))
+		chartyamlpath := filepath.Join(chartDir, "Chart.yaml")
+		if _, err := os.Stat(chartyamlpath); err == nil {
+			loadedName, loadedVersion, err := helm.LoadChartNameAndVersion(chartyamlpath)
 			if err != nil {
 				return &chartDetails, errors.Wrapf(err, "error loading chart from %s", chartDir)
 			}
+			chartDetails.Name = loadedName
+			chartDetails.Version = loadedVersion
+		} else {
+			chartDetails.Name = app
+			chartDetails.Version = version
+		}
+
+		if version == "" {
 			if o.Verbose {
-				log.Infof("No version specified so using latest version which is %s\n", util.ColorInfo(version))
+				log.Infof("No version specified so using latest version which is %s\n",
+					util.ColorInfo(chartDetails.Version))
 			}
 		}
 
@@ -285,14 +301,13 @@ func (o *InstallOptions) createInterrogateChartFn(version string, app string, re
 				cleanupValues()
 			}
 		}
-		chartDetails.Version = version
 		chartDetails.Values = values
 		return &chartDetails, nil
 	}
 }
 
 func (o *InstallOptions) handleValues(dir string, app string, values []byte) (func(), error) {
-	valuesFile, cleanup, err := AddValuesToChart(dir, app, values, o.Verbose)
+	valuesFile, cleanup, err := AddValuesToChart(app, values, o.Verbose)
 	if err != nil {
 		return cleanup, err
 	}

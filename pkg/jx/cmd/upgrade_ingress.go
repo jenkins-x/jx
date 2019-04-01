@@ -92,6 +92,7 @@ func (o *UpgradeIngressOptions) addFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.Force, "force", "", false, "Forces upgrades of all webooks even if ingress URL has not changed")
 	cmd.Flags().BoolVarP(&o.WaitForCerts, "wait-for-certs", "", true, "Waits for TLS certs to be issued by cert-manager")
 	cmd.Flags().StringVarP(&o.ConfigNamespace, "config-namespace", "", "", "Namespace where the ingress-config is stored (if empty, it will try to read it from Dev environment namespace)")
+	cmd.Flags().StringVarP(&o.IngressConfig.UrlTemplate, "urltemplate", "", "", "For ingress; exposers can set the urltemplate to expose. The default value is \"{{.Service}}-{{.Namespace}}.{{.Domain}}\". Leave empty to preserve the current value.")
 }
 
 // Run implements the command
@@ -439,9 +440,18 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 	}
 
 	// Overwrites the ingress config with the values from config map only if this config map exists
+	urlTemplate := o.IngressConfig.UrlTemplate
 	ic, err := kube.GetIngressConfig(client, configNamespace)
 	if err == nil {
+		// TODO: Add the rest of the Ingress-related info as arguments and assign to `o.IngressConfig` only those that were not specified, instead of the whole `ic`.`
 		o.IngressConfig = ic
+		if urlTemplate != "" {
+			// Template must be surrouned by quotes
+			if !strings.HasPrefix(urlTemplate, "\"") && !strings.HasPrefix(urlTemplate, "'") {
+				urlTemplate = "\"" + urlTemplate + "\""
+			}
+			o.IngressConfig.UrlTemplate = urlTemplate
+		}
 	}
 
 	if o.BatchMode {
@@ -502,7 +512,7 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 				}
 			}
 		}
-		o.IngressConfig.UrlTemplate, err = util.PickValue("UrlTemplate:", o.IngressConfig.UrlTemplate, true, "", o.In, o.Out, o.Err)
+		o.IngressConfig.UrlTemplate, err = util.PickValue("UrlTemplate (press <Enter> to keep the current value):", o.IngressConfig.UrlTemplate, false, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}

@@ -419,8 +419,7 @@ func (options *ImportOptions) Run() error {
 		}
 	}
 
-	err = kube.NewSourceRepositoryService(jxClient, ns).CreateOrUpdateSourceRepository(
-		options.AppName, options.Organisation, options.GitProvider.ServerURL())
+	_, err = kube.GetOrCreateSourceRepository(jxClient, ns, options.AppName, options.Organisation, gits.SourceRepositoryProviderURL(options.GitProvider))
 	if err != nil {
 		return errors.Wrapf(err, "creating application resource for %s", util.ColorInfo(options.AppName))
 	}

@@ -3,7 +3,7 @@ package apps
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/environments"
+
 	"io"
 	"io/ioutil"
 	"os"
@@ -13,6 +13,7 @@ import (
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/environments"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 
@@ -74,7 +75,7 @@ func StashValues(values []byte, name string, jxClient versioned.Interface, ns st
 			return errors.Wrapf(err, "creating App %s to annotate with values.yaml", name)
 		}
 	} else {
-		_, err = jxClient.JenkinsV1().Apps(ns).Update(app)
+		_, err = jxClient.JenkinsV1().Apps(ns).PatchUpdate(app)
 		if err != nil {
 			return errors.Wrapf(err, "updating App %s to annotate with values.yaml", name)
 		}
@@ -123,7 +124,7 @@ func AddSecretsToTemplate(dir string, app string, generatedSecrets []*surveyutil
 		if err != nil {
 			return "", func() {}, err
 		}
-		secretsFile, err := ioutil.TempFile("", fmt.Sprintf("%s-generatedSecrets.yaml", app))
+		secretsFile, err := ioutil.TempFile("", fmt.Sprintf("%s-generatedSecrets.yaml", ToValidFileSystemName(app)))
 		cleanup := func() {
 			err = secretsFile.Close()
 			if err != nil {
@@ -148,7 +149,7 @@ func AddSecretsToTemplate(dir string, app string, generatedSecrets []*surveyutil
 }
 
 // AddValuesToChart adds a values file to the chart rooted at dir
-func AddValuesToChart(dir string, app string, values []byte, verbose bool) (string, func(), error) {
+func AddValuesToChart(app string, values []byte, verbose bool) (string, func(), error) {
 	valuesYaml, err := yaml.JSONToYAML(values)
 	if err != nil {
 		return "", func() {}, errors.Wrapf(err, "error converting values from json to yaml\n\n%v", values)
@@ -157,7 +158,7 @@ func AddValuesToChart(dir string, app string, values []byte, verbose bool) (stri
 		log.Infof("Generated values.yaml:\n\n%v\n", util.ColorInfo(string(valuesYaml)))
 	}
 
-	valuesFile, err := ioutil.TempFile("", fmt.Sprintf("%s-values.yaml", app))
+	valuesFile, err := ioutil.TempFile("", fmt.Sprintf("%s-values.yaml", ToValidFileSystemName(app)))
 	cleanup := func() {
 		err = valuesFile.Close()
 		if err != nil {

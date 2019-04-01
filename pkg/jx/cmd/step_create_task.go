@@ -36,14 +36,14 @@ const (
 
 var (
 	createTaskLong = templates.LongDesc(`
-		Creates a Knative Pipeline Run for a project
+		Creates a Tekton Pipeline Run for a project
 `)
 
 	createTaskExample = templates.Examples(`
-		# create a Knative Pipeline Run and render to the console
+		# create a Tekton Pipeline Run and render to the console
 		jx step create task
 
-		# create a Knative Pipeline Task
+		# create a Tekton Pipeline Task
 		jx step create task -o mytask.yaml
 
 		# view the steps that would be created
@@ -116,7 +116,7 @@ func NewCmdStepCreateTask(commonOpts *CommonOptions) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "task",
-		Short:   "Creates a Knative Pipeline Run for the current folder or given build pack",
+		Short:   "Creates a Tekton Pipeline Run for the current folder or given build pack",
 		Long:    createTaskLong,
 		Example: createTaskExample,
 		Aliases: []string{"bt"},
@@ -169,6 +169,9 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 	o.devNamespace = ns
 
+	if o.Verbose {
+		log.Infof("cloning git for %s\n", o.CloneGitURL)
+	}
 	if o.CloneGitURL != "" {
 		err = o.cloneGitRepositoryToTempDir(o.CloneGitURL)
 		if err != nil {
@@ -177,6 +180,10 @@ func (o *StepCreateTaskOptions) Run() error {
 		if o.DeleteTempDir {
 			defer o.deleteTempDir()
 		}
+	}
+
+	if o.Verbose {
+		log.Infof("setting up docker registry for %s\n", o.CloneGitURL)
 	}
 
 	if o.DockerRegistry == "" {
@@ -208,8 +215,32 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 	}
 
-	// TODO generate build number properly!
-	o.BuildNumber = "1"
+	if o.NoApply {
+		o.BuildNumber = "1"
+	} else {
+		jxClient, _, err := o.JXClient()
+		if err != nil {
+			return err
+		}
+		tektonClient, _, err := o.TektonClient()
+		if err != nil {
+			return err
+		}
+
+		if o.Verbose {
+			log.Infof("generating build number...\n")
+		}
+
+		pipelineResourceName := tekton.PipelineResourceName(o.GitInfo, o.Branch, o.Context)
+
+		o.BuildNumber, err = tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, o.GitInfo, o.Branch, o.Duration, pipelineResourceName)
+		if err != nil {
+			return err
+		}
+		if o.Verbose {
+			log.Infof("generated build number %s for %s\n", o.BuildNumber, o.CloneGitURL)
+		}
+	}
 
 	if o.BuildPackURL == "" || o.BuildPackRef == "" {
 		if o.BuildPackURL == "" {
@@ -259,10 +290,23 @@ func (o *StepCreateTaskOptions) Run() error {
 		return err
 	}
 
+	if o.Verbose {
+		log.Infof("about to create the tekton CRDs\n")
+	}
 	pipeline, tasks, resources, run, structure, err := o.GenerateTektonCRDs(packsDir, projectConfig, projectConfigFile, resolver, ns)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to generate Tekton CRD")
 	}
+	if o.Verbose {
+		log.Infof("created tekton CRDs for %s\n", run.Name)
+	}
+
+	// output results for invokers of this command like the pipelinerunner
+	o.Results.Pipeline = pipeline
+	o.Results.Tasks = tasks
+	o.Results.Resources = resources
+	o.Results.PipelineRun = run
+	o.Results.Structure = structure
 
 	if o.NoApply {
 		err := o.writeOutput(o.OutDir, pipeline, tasks, run, resources, structure)
@@ -272,12 +316,15 @@ func (o *StepCreateTaskOptions) Run() error {
 	} else {
 		err := o.applyPipeline(pipeline, tasks, resources, structure, run, o.GitInfo, o.Branch)
 		if err != nil {
-			return errors.Wrapf(err, "failed to apply Tekton CRDS")
+			return errors.Wrapf(err, "failed to apply Tekton CRDs")
 		}
 		// only include labels on PipelineRuns because they're unique, Task and Pipeline are static resources so we'd overwrite existing labels if applied to them too
 		run.Labels = util.MergeMaps(run.Labels, o.labels)
-	}
 
+		if o.Verbose {
+			log.Infof("applied tekton CRDs for %s\n", run.Name)
+		}
+	}
 	return nil
 }
 
@@ -364,42 +411,38 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		return nil, nil, nil, nil, nil, err
 	}
 
+	var parsed *syntax.ParsedPipeline
+
 	if lifecycles != nil && lifecycles.Pipeline != nil {
-		// TODO: Seeing weird behavior seemingly related to https://golang.org/doc/faq#nil_error
-		// if err is reused, maybe we need to switch return types (perhaps upstream in build-pipeline)?
-		if validateErr := lifecycles.Pipeline.Validate(); validateErr != nil {
-			return nil, nil, nil, nil, nil, errors.Wrapf(validateErr, "Validation failed for Pipeline")
-		}
-
-		p, t, s, err := lifecycles.Pipeline.GenerateCRDs(pipelineResourceName, o.BuildNumber, ns, o.PodTemplates, o.GetDefaultTaskInputs().Params)
-		if err != nil {
-			return nil, nil, nil, nil, nil, errors.Wrapf(err, "Generation failed for Pipeline")
-		}
-
-		pipeline = p
-		tasks = t
-		structure = s
-
-		if o.ViewSteps {
-			return nil, nil, nil, nil, nil, o.viewSteps(tasks...)
-		}
-
-		resources = append(resources, o.generateSourceRepoResource(pipelineResourceName))
+		parsed = lifecycles.Pipeline
 	} else {
-		t, err := o.CreateTaskForBuildPack(name, pipelineConfig, lifecycles, kind, ns)
+		stage, err := o.CreateStageForBuildPack(name, pipelineConfig, lifecycles, kind, ns)
 		if err != nil {
-			return nil, nil, nil, nil, nil, errors.Wrapf(err, "Failed to generate Task from build pack")
+			return nil, nil, nil, nil, nil, errors.Wrapf(err, "Failed to generate stage from build pack")
 		}
-		r := o.CreateSourceRepoResourceForBuildPack(t, o.GitInfo, o.Branch)
 
-		pipeline, structure = o.CreatePipelineAndStructureForBuildPack(t, r, pipelineResourceName)
-
-		tasks = append(tasks, t)
-		resources = append(resources, r)
+		parsed = &syntax.ParsedPipeline{
+			Stages: []syntax.Stage{*stage},
+		}
 	}
 
-	o.EnhanceTasksAndPipeline(tasks, pipeline, pipelineConfig)
+	// TODO: Seeing weird behavior seemingly related to https://golang.org/doc/faq#nil_error
+	// if err is reused, maybe we need to switch return types (perhaps upstream in build-pipeline)?
+	if validateErr := parsed.Validate(); validateErr != nil {
+		return nil, nil, nil, nil, nil, errors.Wrapf(validateErr, "Validation failed for Pipeline")
+	}
 
+	pipeline, tasks, structure, err = parsed.GenerateCRDs(pipelineResourceName, o.BuildNumber, ns, o.PodTemplates, o.GetDefaultTaskInputs().Params, o.SourceName)
+	if err != nil {
+		return nil, nil, nil, nil, nil, errors.Wrapf(err, "Generation failed for Pipeline")
+	}
+
+	if o.ViewSteps {
+		return nil, nil, nil, nil, nil, o.viewSteps(tasks...)
+	}
+
+	resources = append(resources, o.generateSourceRepoResource(pipelineResourceName))
+	tasks, pipeline = o.EnhanceTasksAndPipeline(tasks, pipeline, pipelineConfig)
 	run = o.CreatePipelineRun(pipeline, resources)
 
 	if validateErr := pipeline.Spec.Validate(); validateErr != nil {
@@ -454,8 +497,8 @@ func (o *StepCreateTaskOptions) loadPodTemplates(kubeClient kubernetes.Interface
 	return nil
 }
 
-// CreateTaskForBuildPack generates the Task for a build pack
-func (o *StepCreateTaskOptions) CreateTaskForBuildPack(languageName string, pipelineConfig *jenkinsfile.PipelineConfig, lifecycles *jenkinsfile.PipelineLifecycles, templateKind, ns string) (*pipelineapi.Task, error) {
+// CreateStageForBuildPack generates the Task for a build pack
+func (o *StepCreateTaskOptions) CreateStageForBuildPack(languageName string, pipelineConfig *jenkinsfile.PipelineConfig, lifecycles *jenkinsfile.PipelineLifecycles, templateKind, ns string) (*syntax.Stage, error) {
 	if lifecycles == nil {
 		return nil, errors.New("generatePipeline: no lifecycles")
 	}
@@ -465,10 +508,12 @@ func (o *StepCreateTaskOptions) CreateTaskForBuildPack(languageName string, pipe
 	if o.CustomImage != "" {
 		container = o.CustomImage
 	}
+	if container == "" {
+		container = defaultContainerName
+	}
 	dir := o.getWorkspaceDir()
 
-	steps := []corev1.Container{}
-	volumes := []corev1.Volume{}
+	steps := []syntax.Step{}
 	for _, n := range lifecycles.All() {
 		l := n.Lifecycle
 		if l == nil {
@@ -478,109 +523,19 @@ func (o *StepCreateTaskOptions) CreateTaskForBuildPack(languageName string, pipe
 			continue
 		}
 		for _, s := range l.Steps {
-			ss, v, err := o.createSteps(languageName, pipelineConfig, templateKind, s, container, dir, n.Name)
-			if err != nil {
-				return nil, err
-			}
-			steps = append(steps, ss...)
-			volumes = kube.CombineVolumes(volumes, v...)
+			steps = append(steps, o.createSteps(languageName, pipelineConfig, templateKind, s, container, dir, n.Name)...)
 		}
 	}
 
-	name := tekton.PipelineResourceName(o.GitInfo, o.Branch, o.Context)
-	task := &pipelineapi.Task{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: syntax.TektonAPIVersion,
-			Kind:       "Task",
+	stage := &syntax.Stage{
+		Name: syntax.DefaultStageNameForBuildPack,
+		Agent: syntax.Agent{
+			Image: container,
 		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:   name,
-			Labels: util.MergeMaps(o.labels, map[string]string{syntax.LabelStageName: syntax.MangleToRfc1035Label(syntax.DefaultStageNameForBuildPack, "")}),
-		},
-		Spec: pipelineapi.TaskSpec{
-			Steps:   steps,
-			Volumes: volumes,
-			Inputs:  o.GetDefaultTaskInputs(),
-		},
-	}
-	if task.Spec.Inputs == nil {
-		task.Spec.Inputs = &pipelineapi.Inputs{}
-	}
-	sourceResourceName := o.SourceName
-	task.Spec.Inputs.Resources = append(task.Spec.Inputs.Resources, pipelineapi.TaskResource{
-		Name:       sourceResourceName,
-		Type:       pipelineapi.PipelineResourceTypeGit,
-		TargetPath: o.TargetPath,
-	})
-
-	if o.ViewSteps {
-		return nil, o.viewSteps(task)
+		Steps: steps,
 	}
 
-	return task, nil
-}
-
-// CreateSourceRepoResourceForBuildPack creates the source repository PipelineResource for a build pack
-func (o *StepCreateTaskOptions) CreateSourceRepoResourceForBuildPack(task *pipelineapi.Task, gitInfo *gits.GitRepository, branch string) *pipelineapi.PipelineResource {
-	return o.generateSourceRepoResource(kube.ToValidNameTruncated(gitInfo.Organisation+"-"+gitInfo.Name+"-"+branch, 63))
-}
-
-// CreatePipelineAndStructureForBuildPack creates the Pipeline and PipelineStructure for a build pack
-func (o *StepCreateTaskOptions) CreatePipelineAndStructureForBuildPack(task *pipelineapi.Task, sourceRepoResource *pipelineapi.PipelineResource, pipelineResourceName string) (*pipelineapi.Pipeline, *v1.PipelineStructure) {
-	taskInputResources := []pipelineapi.PipelineTaskInputResource{}
-	resources := []pipelineapi.PipelineDeclaredResource{}
-	if sourceRepoResource != nil {
-		resources = append(resources, pipelineapi.PipelineDeclaredResource{
-			Name: sourceRepoResource.Name,
-			Type: sourceRepoResource.Spec.Type,
-		})
-		taskInputResources = append(taskInputResources, pipelineapi.PipelineTaskInputResource{
-			Name:     o.SourceName,
-			Resource: sourceRepoResource.Name,
-		})
-	}
-	tasks := []pipelineapi.PipelineTask{
-		{
-			Name: syntax.MangleToRfc1035Label(syntax.DefaultStageNameForBuildPack, ""),
-			Resources: &pipelineapi.PipelineTaskResources{
-				Inputs: taskInputResources,
-			},
-			TaskRef: pipelineapi.TaskRef{
-				Name:       task.Name,
-				Kind:       pipelineapi.NamespacedTaskKind,
-				APIVersion: task.APIVersion,
-			},
-		},
-	}
-
-	taskParams := o.createPipelineTaskParams()
-	if len(taskParams) > 0 {
-		tasks[0].Params = taskParams
-	}
-
-	pipeline := &pipelineapi.Pipeline{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: pipelineResourceName,
-		},
-		Spec: pipelineapi.PipelineSpec{
-			Resources: resources,
-			Tasks:     tasks,
-			Params:    o.createPipelineParams(),
-		},
-	}
-
-	structure := &v1.PipelineStructure{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: pipeline.Name,
-		},
-		Stages: []v1.PipelineStructureStage{{
-			Name:    syntax.DefaultStageNameForBuildPack,
-			Depth:   0,
-			TaskRef: &task.Name,
-		}},
-	}
-
-	return pipeline, structure
+	return stage, nil
 }
 
 // GetDefaultTaskInputs gets the base, built-in task parameters as an Input.
@@ -610,7 +565,7 @@ func (o *StepCreateTaskOptions) enhanceTaskWithVolumesEnvAndInputs(task *pipelin
 }
 
 // EnhanceTasksAndPipeline takes a slice of Tasks and a Pipeline and modifies them to include built-in volumes, environment variables, and parameters
-func (o *StepCreateTaskOptions) EnhanceTasksAndPipeline(tasks []*pipelineapi.Task, pipeline *pipelineapi.Pipeline, pipelineConfig *jenkinsfile.PipelineConfig) {
+func (o *StepCreateTaskOptions) EnhanceTasksAndPipeline(tasks []*pipelineapi.Task, pipeline *pipelineapi.Pipeline, pipelineConfig *jenkinsfile.PipelineConfig) ([]*pipelineapi.Task, *pipelineapi.Pipeline) {
 	taskInputs := o.GetDefaultTaskInputs()
 
 	for _, t := range tasks {
@@ -636,6 +591,8 @@ func (o *StepCreateTaskOptions) EnhanceTasksAndPipeline(tasks []*pipelineapi.Tas
 	if pipeline.Kind == "" {
 		pipeline.Kind = "Pipeline"
 	}
+
+	return tasks, pipeline
 }
 
 // CreatePipelineRun creates a PipelineRun for a given Pipeline
@@ -912,7 +869,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	structure.OwnerReferences = []metav1.OwnerReference{pipelineOwnerReference}
 	run.OwnerReferences = []metav1.OwnerReference{pipelineOwnerReference}
 
-	_, err = tekton.CreatePipelineRun(tektonClient, ns, pipeline, run, o.previewVersionPrefix, o.Duration)
+	_, err = tekton.CreatePipelineRun(tektonClient, ns, run)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create the PipelineRun in namespace %s", ns)
 	}
@@ -943,9 +900,8 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	return nil
 }
 
-func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *jenkinsfile.PipelineStep, containerName string, dir string, prefixPath string) ([]corev1.Container, []corev1.Volume, error) {
-	volumes := []corev1.Volume{}
-	steps := []corev1.Container{}
+func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *jenkinsfile.PipelineStep, containerName string, dir string, prefixPath string) []syntax.Step {
+	steps := []syntax.Step{}
 
 	if step.Container != "" {
 		containerName = step.Container
@@ -970,20 +926,9 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 			containerName = defaultContainerName
 			log.Warnf("No 'agent.container' specified in the pipeline configuration so defaulting to use: %s\n", containerName)
 		}
-		podTemplate := o.PodTemplates[containerName]
-		if podTemplate == nil {
-			log.Warnf("Could not find a pod template for containerName %s\n", containerName)
-			o.MissingPodTemplates[containerName] = true
-			podTemplate = o.PodTemplates[defaultContainerName]
-		}
-		containers := podTemplate.Spec.Containers
-		if len(containers) == 0 {
-			return steps, volumes, fmt.Errorf("No Containers for pod template %s", containerName)
-		}
-		volumes = podTemplate.Spec.Volumes
-		c := containers[0]
-		o.stepCounter++
 
+		s := syntax.Step{}
+		o.stepCounter++
 		prefix := prefixPath
 		if prefix != "" {
 			prefix += "-"
@@ -992,18 +937,11 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		if stepName == "" {
 			stepName = "step" + strconv.Itoa(1+o.stepCounter)
 		}
-		c.Name = prefix + stepName
-
-		volumes = o.modifyVolumes(&c, volumes)
-		o.modifyEnvVars(&c, pipelineConfig.Env)
-
-		c.Command = []string{"/bin/sh"}
+		s.Name = prefix + stepName
+		s.Command = o.replaceCommandText(step)
 		if o.CustomImage != "" {
-			c.Image = o.CustomImage
+			s.Image = o.CustomImage
 		}
-
-		commandText := o.replaceCommandText(step)
-		c.Args = []string{"-c", commandText}
 
 		workspaceDir := o.getWorkspaceDir()
 		if strings.HasPrefix(dir, "./") {
@@ -1012,26 +950,16 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		if !filepath.IsAbs(dir) {
 			dir = filepath.Join(workspaceDir, dir)
 		}
-		c.WorkingDir = dir
-		c.Stdin = false
-		c.TTY = false
+		s.Dir = dir
 
-		c2 := o.modifyStep(&c, gitInfo, pipelineConfig, templateKind, step, containerName, dir)
-		if c2 != nil {
-			steps = append(steps, *c2)
-		}
+		steps = append(steps, o.modifyStep(s, gitInfo, pipelineConfig, templateKind, step, containerName, dir))
 	}
 	for _, s := range step.Steps {
 		// TODO add child prefix?
 		childPrefixPath := prefixPath
-		childSteps, v, err := o.createSteps(languageName, pipelineConfig, templateKind, s, containerName, dir, childPrefixPath)
-		if err != nil {
-			return steps, v, err
-		}
-		steps = append(steps, childSteps...)
-		volumes = kube.CombineVolumes(volumes, v...)
+		steps = append(steps, o.createSteps(languageName, pipelineConfig, templateKind, s, containerName, dir, childPrefixPath)...)
 	}
-	return steps, volumes, nil
+	return steps
 }
 
 // replaceCommandText lets remove any escaped "\$" stuff in the pipeline library
@@ -1081,13 +1009,12 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 			Value: o.DockerRegistry,
 		})
 	}
-	/*	if kube.GetSliceEnvVar(envVars, "BUILD_NUMBER") == nil {
-			envVars = append(envVars, corev1.EnvVar{
-				Name:  "BUILD_NUMBER",
-				Value: o.BuildNumber,
-			})
-		}
-	*/
+	if kube.GetSliceEnvVar(envVars, "BUILD_NUMBER") == nil {
+		envVars = append(envVars, corev1.EnvVar{
+			Name:  "BUILD_NUMBER",
+			Value: o.BuildNumber,
+		})
+	}
 	if o.PipelineKind != "" && kube.GetSliceEnvVar(envVars, "PIPELINE_KIND") == nil {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "PIPELINE_KIND",
@@ -1426,10 +1353,10 @@ func (o *StepCreateTaskOptions) invokeSteps(steps []*jenkinsfile.PipelineStep) e
 }
 
 // modifyStep allows a container step to be modified to do something different
-func (o *StepCreateTaskOptions) modifyStep(container *corev1.Container, gitInfo *gits.GitRepository, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *jenkinsfile.PipelineStep, containerName string, dir string) *corev1.Container {
+func (o *StepCreateTaskOptions) modifyStep(parsedStep syntax.Step, gitInfo *gits.GitRepository, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *jenkinsfile.PipelineStep, containerName string, dir string) syntax.Step {
 
-	if !o.NoKaniko && len(container.Args) > 0 {
-		inputArgText := strings.Join(container.Args[1:], " ")
+	if !o.NoKaniko && len(parsedStep.Arguments) > 0 {
+		inputArgText := strings.Join(parsedStep.Arguments[1:], " ")
 		if strings.HasPrefix(inputArgText, "skaffold build") {
 			sourceDir := o.getWorkspaceDir()
 			dockerfile := filepath.Join(sourceDir, "Dockerfile")
@@ -1448,18 +1375,16 @@ func (o *StepCreateTaskOptions) modifyStep(container *corev1.Container, gitInfo 
 				args = append(args, "--insecure")
 			}
 
-			answer := *container
-			answer.Command = []string{"/kaniko/executor"}
+			parsedStep.Command = "/kaniko/executor"
 			//answer.Args = []string{container.Args[0], "/kaniko/executor " + strings.Join(args, " ")}
-			answer.Args = args
+			parsedStep.Arguments = args
 			if o.KanikoImage == "" {
 				o.KanikoImage = kanikoDockerImage
 			}
-			answer.Image = o.KanikoImage
-			return &answer
+			parsedStep.Image = o.KanikoImage
 		}
 	}
-	return container
+	return parsedStep
 }
 
 func (o *StepCreateTaskOptions) dockerImage(gitInfo *gits.GitRepository) string {
@@ -1485,13 +1410,30 @@ func (o *StepCreateTaskOptions) getDockerRegistry() string {
 func (r *StepCreateTaskResults) ObjectReferences() []kube.ObjectReference {
 	resources := []kube.ObjectReference{}
 	for _, task := range r.Tasks {
-		resources = append(resources, kube.CreateObjectReference(task.TypeMeta, task.ObjectMeta))
+		if task.ObjectMeta.Name == "" {
+			log.Warnf("created Task has no name: %#v\n", task)
+
+		} else {
+			resources = append(resources, kube.CreateObjectReference(task.TypeMeta, task.ObjectMeta))
+		}
 	}
 	if r.Pipeline != nil {
-		resources = append(resources, kube.CreateObjectReference(r.Pipeline.TypeMeta, r.Pipeline.ObjectMeta))
+		if r.Pipeline.ObjectMeta.Name == "" {
+			log.Warnf("created Pipeline has no name: %#v\n", r.Pipeline)
+
+		} else {
+			resources = append(resources, kube.CreateObjectReference(r.Pipeline.TypeMeta, r.Pipeline.ObjectMeta))
+		}
 	}
 	if r.PipelineRun != nil {
-		resources = append(resources, kube.CreateObjectReference(r.PipelineRun.TypeMeta, r.PipelineRun.ObjectMeta))
+		if r.PipelineRun.ObjectMeta.Name == "" {
+			log.Warnf("created PipelineRun has no name: %#v\n", r.PipelineRun)
+		} else {
+			resources = append(resources, kube.CreateObjectReference(r.PipelineRun.TypeMeta, r.PipelineRun.ObjectMeta))
+		}
+	}
+	if len(resources) == 0 {
+		log.Warnf("no Tasks, Pipeline or PipelineRuns created\n")
 	}
 	return resources
 }

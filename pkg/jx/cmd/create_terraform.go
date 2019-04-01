@@ -887,6 +887,12 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 		}
 	}
 
+	if options.InstallOptions.Flags.NextGeneration {
+		options.Flags.GKEUseEnhancedApis = true
+		options.Flags.GKEUseEnhancedScopes = true
+		options.InstallOptions.Flags.Kaniko = true
+	}
+
 	if !options.BatchMode {
 		if !options.Flags.GKEUseEnhancedScopes {
 			prompt := &survey.Confirm{

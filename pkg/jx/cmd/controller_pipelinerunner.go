@@ -59,7 +59,7 @@ type ObjectReference struct {
 }
 
 var (
-	controllerPipelineRunnersLong = templates.LongDesc(`Runs the service to generate Knative PipelineRun resources from source code webhooks`)
+	controllerPipelineRunnersLong = templates.LongDesc(`Runs the service to generate Tekton PipelineRun resources from source code webhooks such as from Prow`)
 
 	controllerPipelineRunnersExample = templates.Examples(`
 			# run the pipeline runner controller
@@ -74,7 +74,7 @@ func NewCmdControllerPipelineRunner(commonOpts *CommonOptions) *cobra.Command {
 	}
 	cmd := &cobra.Command{
 		Use:     "pipelinerunner",
-		Short:   "Runs the service to generate Knative PipelineRun resources from source code webhooks",
+		Short:   "Runs the service to generate Tekton PipelineRun resources from source code webhooks such as from Prow",
 		Long:    controllerPipelineRunnersLong,
 		Example: controllerPipelineRunnersExample,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -105,7 +105,7 @@ func (o *ControllerPipelineRunnerOptions) Run() error {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle(o.Path, http.HandlerFunc(o.piplineRunMethods))
+	mux.Handle(o.Path, http.HandlerFunc(o.pipelineRunMethods))
 	mux.Handle(HealthPath, http.HandlerFunc(o.health))
 	mux.Handle(ReadyPath, http.HandlerFunc(o.ready))
 
@@ -130,7 +130,7 @@ func (o *ControllerPipelineRunnerOptions) ready(w http.ResponseWriter, r *http.R
 }
 
 // handle request for pipeline runs
-func (o *ControllerPipelineRunnerOptions) piplineRunMethods(w http.ResponseWriter, r *http.Request) {
+func (o *ControllerPipelineRunnerOptions) pipelineRunMethods(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		fmt.Fprintf(w, "Please POST JSON to this endpoint!\n")
@@ -237,7 +237,9 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 		Resources: pr.Results.ObjectReferences(),
 	}
 	err = o.marshalPayload(w, r, results)
-	o.onError(err)
+	if err != nil {
+		o.returnError(err, "failed to marshal payload", w, r)
+	}
 	return
 }
 
@@ -275,6 +277,8 @@ func (o *ControllerPipelineRunnerOptions) onError(err error) {
 }
 
 func (o *ControllerPipelineRunnerOptions) returnError(err error, message string, w http.ResponseWriter, r *http.Request) {
+	logrus.Errorf("%v %s", err, message)
+
 	o.onError(err)
 	w.WriteHeader(400)
 	w.Write([]byte(message))
