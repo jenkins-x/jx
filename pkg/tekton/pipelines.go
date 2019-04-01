@@ -9,6 +9,7 @@ import (
 	jxClient "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
@@ -70,7 +71,7 @@ func CreateOrUpdateTask(tektonClient tektonclient.Interface, ns string, created 
 }
 
 // GenerateNextBuildNumber generates a new build number for the given project.
-func GenerateNextBuildNumber(jxClient jxClient.Interface, ns string, gitInfo *gits.GitRepository, branch string, duration time.Duration) (string, error) {
+func GenerateNextBuildNumber(tektonClient tektonclient.Interface, jxClient jxClient.Interface, ns string, gitInfo *gits.GitRepository, branch string, duration time.Duration, pipelineIdentifier string) (string, error) {
 	nextBuildNumber := ""
 	resourceInterface := jxClient.JenkinsV1().SourceRepositories(ns)
 	// TODO: How does SourceRepository handle name overlap?
@@ -94,11 +95,23 @@ func GenerateNextBuildNumber(jxClient jxClient.Interface, ns string, gitInfo *gi
 				return errors.Wrapf(err, "Expected number but SourceRepository %s has annotation %s with value %s\n", sourceRepoName, annKey, annVal)
 			}
 		}
-		sourceRepo.Annotations[annKey] = strconv.Itoa(lastBuildNumber + 1)
-		if _, err := resourceInterface.Update(sourceRepo); err != nil {
-			return err
+		for nextNumber := lastBuildNumber + 1; true; nextNumber++ {
+			// lets check there is not already a PipelineRun for this number
+			buildIdentifier := strconv.Itoa(nextNumber)
+			pipelineResourceName := syntax.PipelineRunName(pipelineIdentifier, buildIdentifier)
+			_, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Get(pipelineResourceName, metav1.GetOptions{})
+			if err == nil {
+				// lets try make another build number as there's already a PipelineRun
+				// which could be due to name clashes
+				continue
+			}
+			sourceRepo.Annotations[annKey] = buildIdentifier
+			if _, err := resourceInterface.Update(sourceRepo); err != nil {
+				return err
+			}
+			nextBuildNumber = sourceRepo.Annotations[annKey]
+			return nil
 		}
-		nextBuildNumber = sourceRepo.Annotations[annKey]
 		return nil
 	}
 

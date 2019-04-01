@@ -215,7 +215,14 @@ func (o *StepCreateTaskOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		o.BuildNumber, err = tekton.GenerateNextBuildNumber(jxClient, ns, o.GitInfo, o.Branch, o.Duration)
+		tektonClient, _, err := o.TektonClient()
+		if err != nil {
+			return err
+		}
+
+		pipelineResourceName := tekton.PipelineResourceName(o.GitInfo, o.Branch, o.Context)
+
+		o.BuildNumber, err = tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, o.GitInfo, o.Branch, o.Duration, pipelineResourceName)
 		if err != nil {
 			return err
 		}
