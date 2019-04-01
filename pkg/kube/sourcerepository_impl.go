@@ -27,13 +27,18 @@ func NewSourceRepositoryService(client versioned.Interface, namespace string) So
 func (service *SourceRepositoryService) CreateOrUpdateSourceRepository(name, organisation, providerURL string) error {
 	//FIXME: repo is not always == name, need to find a better value for ObjectMeta.Name!
 
-	// for now lets convert to a safe name using the organisation + repo name
+	_, err := GetOrCreateSourceRepository(service.client, service.namespace, name, organisation, providerURL)
+	return err
+}
+
+// GetOrCreateSourceRepository gets or creates the SourceRepository for the given repository name and organisation
+func GetOrCreateSourceRepository(jxClient versioned.Interface, ns string, name, organisation, providerURL string) (*v1.SourceRepository, error) {
 	resourceName := ToValidName(organisation + "-" + name)
 
-	repositories := service.client.JenkinsV1().SourceRepositories(service.namespace)
+	repositories := jxClient.JenkinsV1().SourceRepositories(ns)
 	description := fmt.Sprintf("Imported application for %s/%s", organisation, name)
 
-	_, err := repositories.Create(&v1.SourceRepository{
+	answer, err := repositories.Create(&v1.SourceRepository{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: resourceName,
 		},
@@ -48,7 +53,7 @@ func (service *SourceRepositoryService) CreateOrUpdateSourceRepository(name, org
 		// lets see if it already exists
 		sr, err2 := repositories.Get(resourceName, metav1.GetOptions{})
 		if err2 != nil {
-			return errors.Wrapf(err, "failed to create SourceRepository %s and cannot get it either: %s", resourceName, err2.Error())
+			return answer, errors.Wrapf(err, "failed to create SourceRepository %s and cannot get it either: %s", resourceName, err2.Error())
 		}
 		copy := *sr
 		copy.Spec.Description = description
@@ -56,14 +61,14 @@ func (service *SourceRepositoryService) CreateOrUpdateSourceRepository(name, org
 		copy.Spec.Provider = providerURL
 		copy.Spec.Repo = name
 		if reflect.DeepEqual(&copy.Spec, sr.Spec) {
-			return nil
+			return answer, nil
 		}
-		_, err = repositories.PatchUpdate(&copy)
+		answer, err = repositories.PatchUpdate(&copy)
 		if err != nil {
-			return errors.Wrapf(err, "failed to update SourceRepository %s", resourceName)
+			return answer, errors.Wrapf(err, "failed to update SourceRepository %s", resourceName)
 		}
 	}
-	return nil
+	return answer, nil
 }
 
 // CreateSourceRepository creates a repo. If a repo already exists, it will return an error

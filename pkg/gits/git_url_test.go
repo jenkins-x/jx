@@ -1,6 +1,7 @@
 package gits_test
 
 import (
+	"github.com/stretchr/testify/require"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -86,4 +87,10 @@ func TestSaasKind(t *testing.T) {
 			assert.Equal(t, tc.kind, k)
 		})
 	}
+}
+
+func TestGitInfoProviderURL(t *testing.T) {
+	info, err := gits.ParseGitURL("https://github.com/jenkins-x/x.git")
+	require.NoError(t, err)
+	assert.Equal(t, "https://github.com", info.ProviderURL(), "ProviderURL()")
 }

@@ -117,11 +117,11 @@ func main() {
 	OpenApiV2JSON           = "openapiv2.json"
 	OpenApiV2YAML           = "openapiv2.yaml"
 	openApiGenerator        = "openapi-gen"
-	codeGenDir              = "codegen"
-	bootstrapJsUrl          = "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
-	bootstrapJsFileName     = "bootstrap-3.3.7.min.js"
-	jqueryUrl               = "https://code.jquery.com/jquery-3.2.1.min.js"
-	jqueryFileName          = "jquery-3.2.1.min.js"
+
+	bootstrapJsUrl      = "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+	bootstrapJsFileName = "bootstrap-3.3.7.min.js"
+	jqueryUrl           = "https://code.jquery.com/jquery-3.2.1.min.js"
+	jqueryFileName      = "jquery-3.2.1.min.js"
 
 	openApiGen = "github.com/kubernetes/kube-openapi/cmd/openapi-gen"
 )
@@ -357,7 +357,7 @@ func packageToDirName(pkg string) string {
 
 // GenerateSchema calls the generated schema writer and then loads the output and also writes out a yaml version. The
 // outputDir is the base directory for writing the schemas to (they get put in the openapi-spec subdir),
-// inputPackage is the packge in which generated code lives, inputBase is the path to the module,
+// inputPackage is the package in which generated code lives, inputBase is the path to the module,
 // title and version are used in the OpenAPI spec files.
 func GenerateSchema(outputDir string, inputPackage string, inputBase string, title string, version string) error {
 	schemaWriterSrc := filepath.Join(inputPackage, OpenApiDir, SchemaWriterSrcFileName)
