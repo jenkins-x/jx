@@ -912,6 +912,10 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 	if err != nil {
 		return err
 	}
+	err = options.setValuesFileValue(filepath.Join(gitOpsEnvDir, "controllerbuild", helm.ValuesFileName), "enabled", options.Flags.Prow)
+	if err != nil {
+		return err
+	}
 	err = options.setValuesFileValue(filepath.Join(gitOpsEnvDir, "controllerworkflow", helm.ValuesFileName), "enabled", !options.Flags.Tekton)
 	if err != nil {
 		return err
