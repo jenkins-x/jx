@@ -296,7 +296,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	} else {
 		err := o.applyPipeline(pipeline, tasks, resources, structure, run, o.GitInfo, o.Branch)
 		if err != nil {
-			return errors.Wrapf(err, "failed to apply Tekton CRDS")
+			return errors.Wrapf(err, "failed to apply Tekton CRDs")
 		}
 		// only include labels on PipelineRuns because they're unique, Task and Pipeline are static resources so we'd overwrite existing labels if applied to them too
 		run.Labels = util.MergeMaps(run.Labels, o.labels)
@@ -1387,13 +1387,30 @@ func (o *StepCreateTaskOptions) getDockerRegistry() string {
 func (r *StepCreateTaskResults) ObjectReferences() []kube.ObjectReference {
 	resources := []kube.ObjectReference{}
 	for _, task := range r.Tasks {
-		resources = append(resources, kube.CreateObjectReference(task.TypeMeta, task.ObjectMeta))
+		if task.Name == "" {
+			log.Warnf("created Task has no name: %#v\n", task)
+
+		} else {
+			resources = append(resources, kube.CreateObjectReference(task.TypeMeta, task.ObjectMeta))
+		}
 	}
 	if r.Pipeline != nil {
-		resources = append(resources, kube.CreateObjectReference(r.Pipeline.TypeMeta, r.Pipeline.ObjectMeta))
+		if r.Pipeline.Name == "" {
+			log.Warnf("created Pipeline has no name: %#v\n", r.Pipeline)
+
+		} else {
+			resources = append(resources, kube.CreateObjectReference(r.Pipeline.TypeMeta, r.Pipeline.ObjectMeta))
+		}
 	}
 	if r.PipelineRun != nil {
-		resources = append(resources, kube.CreateObjectReference(r.PipelineRun.TypeMeta, r.PipelineRun.ObjectMeta))
+		if r.PipelineRun.Name == "" {
+			log.Warnf("created PipelineRun has no name: %#v\n", r.PipelineRun)
+		} else {
+			resources = append(resources, kube.CreateObjectReference(r.PipelineRun.TypeMeta, r.PipelineRun.ObjectMeta))
+		}
+	}
+	if len(resources) == 0 {
+		log.Warnf("no Tasks, Pipeline or PipelineRuns created\n")
 	}
 	return resources
 }
