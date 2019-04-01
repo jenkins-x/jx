@@ -9,6 +9,7 @@ import (
 	jxClient "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
@@ -16,45 +17,61 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// CreateSourceResource lazily creates a Tekton PipelineResource. This
-// function fails if there is already a distinct PipelineResource by the same name.
-func CreateSourceResource(tektonClient tektonclient.Interface, ns string, created *v1alpha1.PipelineResource) (*v1alpha1.PipelineResource, error) {
+// CreateOrUpdateSourceResource lazily creates a Tekton Pipeline PipelineResource for the given git repository
+func CreateOrUpdateSourceResource(tektonClient tektonclient.Interface, ns string, created *v1alpha1.PipelineResource) (*v1alpha1.PipelineResource, error) {
 	resourceName := created.Name
 	resourceInterface := tektonClient.TektonV1alpha1().PipelineResources(ns)
 
-	_, err2 := resourceInterface.Create(created)
-	if err2 == nil {
+	_, err := resourceInterface.Create(created)
+	if err == nil {
 		return created, nil
 	}
 
 	answer, err := resourceInterface.Get(resourceName, metav1.GetOptions{})
 	if err != nil {
-		return answer, errors.Wrapf(err, "failed to get PipelineResource %s after failing to create a new one with error %s", resourceName, err2.Error())
+		return answer, errors.Wrapf(err, "failed to get PipelineResource %s after failing to create a new one", resourceName)
 	}
 	if !reflect.DeepEqual(&created.Spec, &answer.Spec) {
-		return nil, errors.Wrapf(err, "Unable to create PipelineResource %s because a PipelineResource with the same name but different values already exists", resourceName)
+		answer.Spec = created.Spec
+		answer, err = resourceInterface.Update(answer)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to update PipelineResource %s", resourceName)
+		}
 	}
 	return answer, nil
 }
 
-// CreateTask lazily creates a Tekton Task. If a Task with the same name already
-// exists, this function returns an error.
-func CreateTask(tektonClient tektonclient.Interface, ns string, created *v1alpha1.Task) (*v1alpha1.Task, error) {
+// CreateOrUpdateTask lazily creates a Tekton Pipeline Task
+func CreateOrUpdateTask(tektonClient tektonclient.Interface, ns string, created *v1alpha1.Task) (*v1alpha1.Task, error) {
 	resourceName := created.Name
 	if resourceName == "" {
 		return nil, fmt.Errorf("the Task must have a name")
 	}
 	resourceInterface := tektonClient.TektonV1alpha1().Tasks(ns)
 
-	answer, err := resourceInterface.Create(created)
-	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to create Task %s", resourceName)
+	_, err := resourceInterface.Create(created)
+	if err == nil {
+		return created, nil
+	}
+
+	answer, err2 := resourceInterface.Get(resourceName, metav1.GetOptions{})
+	if err2 != nil {
+		return answer, errors.Wrapf(err, "failed to get PipelineResource %s with %v after failing to create a new one", resourceName, err2)
+	}
+	if !reflect.DeepEqual(&created.Spec, &answer.Spec) || !reflect.DeepEqual(created.Annotations, answer.Annotations) || !reflect.DeepEqual(created.Labels, answer.Labels) {
+		answer.Spec = created.Spec
+		answer.Labels = util.MergeMaps(answer.Labels, created.Labels)
+		answer.Annotations = util.MergeMaps(answer.Annotations, created.Annotations)
+		answer, err = resourceInterface.Update(answer)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to update PipelineResource %s", resourceName)
+		}
 	}
 	return answer, nil
 }
 
 // GenerateNextBuildNumber generates a new build number for the given project.
-func GenerateNextBuildNumber(jxClient jxClient.Interface, ns string, gitInfo *gits.GitRepository, branch string, duration time.Duration) (string, error) {
+func GenerateNextBuildNumber(tektonClient tektonclient.Interface, jxClient jxClient.Interface, ns string, gitInfo *gits.GitRepository, branch string, duration time.Duration, pipelineIdentifier string) (string, error) {
 	nextBuildNumber := ""
 	resourceInterface := jxClient.JenkinsV1().SourceRepositories(ns)
 	// TODO: How does SourceRepository handle name overlap?
@@ -65,6 +82,7 @@ func GenerateNextBuildNumber(jxClient jxClient.Interface, ns string, gitInfo *gi
 		if err != nil {
 			return errors.Wrapf(err, "Unable to generate next build number for %s/%s", sourceRepoName, branch)
 		}
+		sourceRepoName = sourceRepo.Name
 		if sourceRepo.Annotations == nil {
 			sourceRepo.Annotations = make(map[string]string, 1)
 		}
@@ -77,11 +95,23 @@ func GenerateNextBuildNumber(jxClient jxClient.Interface, ns string, gitInfo *gi
 				return errors.Wrapf(err, "Expected number but SourceRepository %s has annotation %s with value %s\n", sourceRepoName, annKey, annVal)
 			}
 		}
-		sourceRepo.Annotations[annKey] = strconv.Itoa(lastBuildNumber + 1)
-		if _, err := resourceInterface.Update(sourceRepo); err != nil {
-			return err
+		for nextNumber := lastBuildNumber + 1; true; nextNumber++ {
+			// lets check there is not already a PipelineRun for this number
+			buildIdentifier := strconv.Itoa(nextNumber)
+			pipelineResourceName := syntax.PipelineRunName(pipelineIdentifier, buildIdentifier)
+			_, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Get(pipelineResourceName, metav1.GetOptions{})
+			if err == nil {
+				// lets try make another build number as there's already a PipelineRun
+				// which could be due to name clashes
+				continue
+			}
+			sourceRepo.Annotations[annKey] = buildIdentifier
+			if _, err := resourceInterface.Update(sourceRepo); err != nil {
+				return err
+			}
+			nextBuildNumber = sourceRepo.Annotations[annKey]
+			return nil
 		}
-		nextBuildNumber = sourceRepo.Annotations[annKey]
 		return nil
 	}
 
@@ -104,16 +134,28 @@ func CreatePipelineRun(tektonClient tektonclient.Interface, ns string, run *v1al
 	return answer, nil
 }
 
-// CreatePipeline lazily creates a Tekton Pipeline for the given git repository,
-// branch and context. If a Pipeline with the same name already exists, this
-// function returns an error.
-func CreatePipeline(tektonClient tektonclient.Interface, ns string, created *v1alpha1.Pipeline) (*v1alpha1.Pipeline, error) {
+// CreateOrUpdatePipeline lazily creates a Tekton Pipeline for the given git repository, branch and context
+func CreateOrUpdatePipeline(tektonClient tektonclient.Interface, ns string, created *v1alpha1.Pipeline) (*v1alpha1.Pipeline, error) {
 	resourceName := created.Name
 	resourceInterface := tektonClient.TektonV1alpha1().Pipelines(ns)
 
 	answer, err := resourceInterface.Create(created)
+	if err == nil {
+		return answer, nil
+	}
+
+	answer, err = resourceInterface.Get(resourceName, metav1.GetOptions{})
 	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to create Pipeline %s", resourceName)
+		return answer, errors.Wrapf(err, "failed to get Pipeline %s after failing to create a new one", resourceName)
+	}
+
+	if !reflect.DeepEqual(&created.Spec, &answer.Spec) || !reflect.DeepEqual(created.Labels, answer.Labels) {
+		answer.Annotations = util.MergeMaps(answer.Annotations, created.Annotations)
+		answer.Spec = created.Spec
+		answer, err = resourceInterface.Update(answer)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to update Pipeline %s", resourceName)
+		}
 	}
 	return answer, nil
 }

@@ -401,7 +401,11 @@ func (i *GitRepository) CreateProvider(inCluster bool, authConfigSvc auth.Config
 
 // ProviderURL returns the git provider URL
 func (i *GitRepository) ProviderURL() string {
-	return i.Scheme + "://" + i.Host
+	scheme := i.Scheme
+	if !strings.HasPrefix(scheme, "http") {
+		scheme = "https"
+	}
+	return scheme + "://" + i.Host
 }
 
 // CreateProviderForURL creates the Git provider for the given git kind and host URL

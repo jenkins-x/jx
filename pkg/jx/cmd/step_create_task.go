@@ -215,7 +215,14 @@ func (o *StepCreateTaskOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		o.BuildNumber, err = tekton.GenerateNextBuildNumber(jxClient, ns, o.GitInfo, o.Branch, o.Duration)
+		tektonClient, _, err := o.TektonClient()
+		if err != nil {
+			return err
+		}
+
+		pipelineResourceName := tekton.PipelineResourceName(o.GitInfo, o.Branch, o.Context)
+
+		o.BuildNumber, err = tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, o.GitInfo, o.Branch, o.Duration, pipelineResourceName)
 		if err != nil {
 			return err
 		}
@@ -269,10 +276,23 @@ func (o *StepCreateTaskOptions) Run() error {
 		return err
 	}
 
+	if o.Verbose {
+		log.Infof("about to create the tekton CRDs\n")
+	}
 	pipeline, tasks, resources, run, structure, err := o.GenerateTektonCRDs(packsDir, projectConfig, projectConfigFile, resolver, ns)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to generate Tekton CRD")
 	}
+	if o.Verbose {
+		log.Infof("created tekton CRDs for %s\n", run.Name)
+	}
+
+	// output results for invokers of this command like the pipelinerunner
+	o.Results.Pipeline = pipeline
+	o.Results.Tasks = tasks
+	o.Results.Resources = resources
+	o.Results.PipelineRun = run
+	o.Results.Structure = structure
 
 	if o.NoApply {
 		err := o.writeOutput(o.OutDir, pipeline, tasks, run, resources, structure)
@@ -282,12 +302,15 @@ func (o *StepCreateTaskOptions) Run() error {
 	} else {
 		err := o.applyPipeline(pipeline, tasks, resources, structure, run, o.GitInfo, o.Branch)
 		if err != nil {
-			return errors.Wrapf(err, "failed to apply Tekton CRDS")
+			return errors.Wrapf(err, "failed to apply Tekton CRDs")
 		}
 		// only include labels on PipelineRuns because they're unique, Task and Pipeline are static resources so we'd overwrite existing labels if applied to them too
 		run.Labels = util.MergeMaps(run.Labels, o.labels)
-	}
 
+		if o.Verbose {
+			log.Infof("applied tekton CRDs for %s\n", run.Name)
+		}
+	}
 	return nil
 }
 
@@ -796,7 +819,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	info := util.ColorInfo
 
 	for _, resource := range resources {
-		_, err := tekton.CreateSourceResource(tektonClient, ns, resource)
+		_, err := tekton.CreateOrUpdateSourceResource(tektonClient, ns, resource)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create/update PipelineResource %s in namespace %s", resource.Name, ns)
 		}
@@ -809,14 +832,14 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	}
 
 	for _, task := range tasks {
-		_, err = tekton.CreateTask(tektonClient, ns, task)
+		_, err = tekton.CreateOrUpdateTask(tektonClient, ns, task)
 		if err != nil {
 			return errors.Wrapf(err, "failed to create/update the task %s in namespace %s", task.Name, ns)
 		}
 		log.Infof("upserted Task %s\n", info(task.Name))
 	}
 
-	pipeline, err = tekton.CreatePipeline(tektonClient, ns, pipeline)
+	pipeline, err = tekton.CreateOrUpdatePipeline(tektonClient, ns, pipeline)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create/update the Pipeline in namespace %s", ns)
 	}
@@ -1373,13 +1396,30 @@ func (o *StepCreateTaskOptions) getDockerRegistry() string {
 func (r *StepCreateTaskResults) ObjectReferences() []kube.ObjectReference {
 	resources := []kube.ObjectReference{}
 	for _, task := range r.Tasks {
-		resources = append(resources, kube.CreateObjectReference(task.TypeMeta, task.ObjectMeta))
+		if task.ObjectMeta.Name == "" {
+			log.Warnf("created Task has no name: %#v\n", task)
+
+		} else {
+			resources = append(resources, kube.CreateObjectReference(task.TypeMeta, task.ObjectMeta))
+		}
 	}
 	if r.Pipeline != nil {
-		resources = append(resources, kube.CreateObjectReference(r.Pipeline.TypeMeta, r.Pipeline.ObjectMeta))
+		if r.Pipeline.ObjectMeta.Name == "" {
+			log.Warnf("created Pipeline has no name: %#v\n", r.Pipeline)
+
+		} else {
+			resources = append(resources, kube.CreateObjectReference(r.Pipeline.TypeMeta, r.Pipeline.ObjectMeta))
+		}
 	}
 	if r.PipelineRun != nil {
-		resources = append(resources, kube.CreateObjectReference(r.PipelineRun.TypeMeta, r.PipelineRun.ObjectMeta))
+		if r.PipelineRun.ObjectMeta.Name == "" {
+			log.Warnf("created PipelineRun has no name: %#v\n", r.PipelineRun)
+		} else {
+			resources = append(resources, kube.CreateObjectReference(r.PipelineRun.TypeMeta, r.PipelineRun.ObjectMeta))
+		}
+	}
+	if len(resources) == 0 {
+		log.Warnf("no Tasks, Pipeline or PipelineRuns created\n")
 	}
 	return resources
 }

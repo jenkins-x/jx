@@ -237,7 +237,9 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 		Resources: pr.Results.ObjectReferences(),
 	}
 	err = o.marshalPayload(w, r, results)
-	o.onError(err)
+	if err != nil {
+		o.returnError(err, "failed to marshal payload", w, r)
+	}
 	return
 }
 
@@ -275,6 +277,8 @@ func (o *ControllerPipelineRunnerOptions) onError(err error) {
 }
 
 func (o *ControllerPipelineRunnerOptions) returnError(err error, message string, w http.ResponseWriter, r *http.Request) {
+	logrus.Errorf("%v %s", err, message)
+
 	o.onError(err)
 	w.WriteHeader(400)
 	w.Write([]byte(message))

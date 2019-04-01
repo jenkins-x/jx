@@ -17,12 +17,14 @@ import (
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -108,10 +110,15 @@ func (o *DeleteApplicationOptions) Run() error {
 		return errors.Wrap(err, "getting prow config")
 	}
 
-	repoService := kube.NewSourceRepositoryService(o.jxClient, o.currentNamespace)
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+
 	var deletedApplications []string
 	if isProw {
-		deletedApplications, err = o.deleteProwApplication(repoService)
+		sourceRepositoryInterface := jxClient.JenkinsV1().SourceRepositories(ns)
+		deletedApplications, err = o.deleteProwApplication(sourceRepositoryInterface)
 	} else {
 		deletedApplications, err = o.deleteJenkinsApplication()
 	}
@@ -123,7 +130,7 @@ func (o *DeleteApplicationOptions) Run() error {
 	return nil
 }
 
-func (o *DeleteApplicationOptions) deleteProwApplication(repoService kube.SourceRepoer) (deletedApplications []string, err error) {
+func (o *DeleteApplicationOptions) deleteProwApplication(repoService jenkinsv1.SourceRepositoryInterface) (deletedApplications []string, err error) {
 	envMap, _, err := kube.GetOrderedEnvironments(o.jxClient, "")
 	currentUser, err := user.Current()
 	if err != nil {
@@ -146,7 +153,7 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService kube.Source
 		}
 		if o.Org == "" {
 			// fetch the list of sourcerepositories
-			srList, err := repoService.ListSourceRepositories()
+			srList, err := repoService.List(metav1.ListOptions{})
 			if err != nil {
 				return deletedApplications, errors.Wrapf(err, "error in sourcerepository service %s", err.Error())
 			}
@@ -175,7 +182,7 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService kube.Source
 		}
 		deletedApplications = append(deletedApplications, applicationName)
 
-		err := repoService.DeleteSourceRepository(o.Org + "-" + applicationName)
+		err := repoService.Delete(o.Org+"-"+applicationName, nil)
 		if err != nil {
 			log.Warnf("Unable to find application metadata for %s to remove", applicationName)
 		}

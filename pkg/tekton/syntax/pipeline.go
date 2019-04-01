@@ -1047,6 +1047,11 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 	return steps, volumes, stepCounter, nil
 }
 
+// PipelineRunName returns the pipeline name given the pipeline and build identifier
+func PipelineRunName(pipelineIdentifier string, buildIdentifier string) string {
+	return MangleToRfc1035Label(fmt.Sprintf("%s", pipelineIdentifier), buildIdentifier)
+}
+
 // GenerateCRDs translates the Pipeline structure into the corresponding Pipeline and Task CRDs
 func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, podTemplates map[string]*corev1.Pod, taskParams []tektonv1alpha1.TaskParam, sourceDir string) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
 	if len(j.Post) != 0 {
@@ -1070,7 +1075,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
-			Name:      MangleToRfc1035Label(fmt.Sprintf("%s", pipelineIdentifier), buildIdentifier),
+			Name:      PipelineRunName(pipelineIdentifier, buildIdentifier),
 		},
 		Spec: tektonv1alpha1.PipelineSpec{
 			Resources: []tektonv1alpha1.PipelineDeclaredResource{
