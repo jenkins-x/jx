@@ -47,6 +47,10 @@ func GetOrCreateSourceRepository(jxClient versioned.Interface, ns string, name, 
 		if err != nil {
 			return answer, errors.Wrapf(err, "failed to update SourceRepository %s", resourceName)
 		}
+		answer, err = repositories.Get(resourceName, metav1.GetOptions{})
+		if err != nil {
+			return answer, errors.Wrapf(err, "failed to get SourceRepository %s", resourceName)
+		}
 	}
 	return answer, nil
 }

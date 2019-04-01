@@ -169,6 +169,9 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 	o.devNamespace = ns
 
+	if o.Verbose {
+		log.Infof("cloning git for %s\n", o.CloneGitURL)
+	}
 	if o.CloneGitURL != "" {
 		err = o.cloneGitRepositoryToTempDir(o.CloneGitURL)
 		if err != nil {
@@ -177,6 +180,10 @@ func (o *StepCreateTaskOptions) Run() error {
 		if o.DeleteTempDir {
 			defer o.deleteTempDir()
 		}
+	}
+
+	if o.Verbose {
+		log.Infof("setting up docker registry for %s\n", o.CloneGitURL)
 	}
 
 	if o.DockerRegistry == "" {
@@ -220,11 +227,18 @@ func (o *StepCreateTaskOptions) Run() error {
 			return err
 		}
 
+		if o.Verbose {
+			log.Infof("generating build number...\n")
+		}
+
 		pipelineResourceName := tekton.PipelineResourceName(o.GitInfo, o.Branch, o.Context)
 
 		o.BuildNumber, err = tekton.GenerateNextBuildNumber(tektonClient, jxClient, ns, o.GitInfo, o.Branch, o.Duration, pipelineResourceName)
 		if err != nil {
 			return err
+		}
+		if o.Verbose {
+			log.Infof("generated build number %s for %s\n", o.BuildNumber, o.CloneGitURL)
 		}
 	}
 
