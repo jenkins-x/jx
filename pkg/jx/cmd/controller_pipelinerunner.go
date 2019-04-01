@@ -275,6 +275,8 @@ func (o *ControllerPipelineRunnerOptions) onError(err error) {
 }
 
 func (o *ControllerPipelineRunnerOptions) returnError(err error, message string, w http.ResponseWriter, r *http.Request) {
+	logrus.Errorf("%v %s", err, message)
+
 	o.onError(err)
 	w.WriteHeader(400)
 	w.Write([]byte(message))
