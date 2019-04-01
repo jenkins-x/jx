@@ -276,9 +276,15 @@ func (o *StepCreateTaskOptions) Run() error {
 		return err
 	}
 
+	if o.Verbose {
+		log.Infof("about to create the tekton CRDs\n")
+	}
 	pipeline, tasks, resources, run, structure, err := o.GenerateTektonCRDs(packsDir, projectConfig, projectConfigFile, resolver, ns)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to generate Tekton CRD")
+	}
+	if o.Verbose {
+		log.Infof("created tekton CRDs for %s\n", run.Name)
 	}
 
 	// output results for invokers of this command like the pipelinerunner
@@ -300,8 +306,11 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 		// only include labels on PipelineRuns because they're unique, Task and Pipeline are static resources so we'd overwrite existing labels if applied to them too
 		run.Labels = util.MergeMaps(run.Labels, o.labels)
-	}
 
+		if o.Verbose {
+			log.Infof("applied tekton CRDs for %s\n", run.Name)
+		}
+	}
 	return nil
 }
 
