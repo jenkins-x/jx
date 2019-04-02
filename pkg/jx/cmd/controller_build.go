@@ -202,6 +202,7 @@ func (o *ControllerBuildOptions) handleStandalonePod(pod *corev1.Pod, kubeClient
 							operation = "create"
 						}
 						log.Warnf("Failed to %s PipelineActivities for build %s: %s\n", operation, buildName, err)
+						return err
 					}
 					if o.updatePipelineActivity(kubeClient, ns, a, buildName, pod) {
 						if o.Verbose {
@@ -217,7 +218,7 @@ func (o *ControllerBuildOptions) handleStandalonePod(pod *corev1.Pod, kubeClient
 					return nil
 				})
 				if err != nil {
-					log.Warnf("Failed to update PipelineActivities%s: %s\n", name, err)
+					log.Warnf("Failed to update PipelineActivities %s: %s\n", name, err)
 				}
 			}
 		}
@@ -275,6 +276,7 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 									operation = "create"
 								}
 								log.Warnf("Failed to %s PipelineActivities for build %s: %s\n", operation, pri.Name, err)
+								return err
 							}
 							if o.updatePipelineActivityForRun(kubeClient, ns, a, pri, pod) {
 								if o.Verbose {
@@ -409,7 +411,10 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 				}
 			}
 			if stageFinished {
-				if stage.Status != v1.ActivityStatusTypeSucceeded {
+				switch stage.Status {
+				case v1.ActivityStatusTypeSucceeded, v1.ActivityStatusTypeNotExecuted:
+					// stage did not fail
+				default:
 					failed = true
 				}
 			} else {

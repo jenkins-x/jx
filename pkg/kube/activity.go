@@ -192,8 +192,8 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 	activitiesClient := jxClient.JenkinsV1().PipelineActivities(ns)
 
 	if activitiesClient == nil {
-		log.Warn("Warning: no PipelineActivities client available!")
-		return defaultActivity, create, nil
+		log.Errorf("No PipelineActivities client available")
+		return defaultActivity, create, fmt.Errorf("no PipelineActivities client available")
 	}
 	a, err := activitiesClient.Get(name, metav1.GetOptions{})
 	if err != nil {
