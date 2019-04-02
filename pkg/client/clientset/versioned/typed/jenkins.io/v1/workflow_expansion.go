@@ -25,7 +25,13 @@ func (c *workflows) PatchUpdate(workflow *v1.Workflow) (*v1.Workflow, error) {
 	}
 
 	patch, err := util.CreatePatch(orig, workflow)
+	if err != nil {
+		return nil, err
+	}
 	patched, err := c.Patch(resourceName, types.JSONPatchType, patch)
+	if err != nil {
+		return nil, err
+	}
 
 	return patched, nil
 }

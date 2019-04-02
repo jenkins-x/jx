@@ -25,7 +25,13 @@ func (c *gitServices) PatchUpdate(gitService *v1.GitService) (*v1.GitService, er
 	}
 
 	patch, err := util.CreatePatch(orig, gitService)
+	if err != nil {
+		return nil, err
+	}
 	patched, err := c.Patch(resourceName, types.JSONPatchType, patch)
+	if err != nil {
+		return nil, err
+	}
 
 	return patched, nil
 }

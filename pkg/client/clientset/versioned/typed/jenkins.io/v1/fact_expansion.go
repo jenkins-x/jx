@@ -25,7 +25,13 @@ func (c *facts) PatchUpdate(fact *v1.Fact) (*v1.Fact, error) {
 	}
 
 	patch, err := util.CreatePatch(orig, fact)
+	if err != nil {
+		return nil, err
+	}
 	patched, err := c.Patch(resourceName, types.JSONPatchType, patch)
+	if err != nil {
+		return nil, err
+	}
 
 	return patched, nil
 }
