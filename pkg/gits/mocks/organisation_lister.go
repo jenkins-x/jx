@@ -14,16 +14,9 @@ type MockOrganisationLister struct {
 	fail func(message string, callerSkip ...int)
 }
 
-func NewMockOrganisationLister(options ...pegomock.Option) *MockOrganisationLister {
-	mock := &MockOrganisationLister{}
-	for _, option := range options {
-		option.Apply(mock)
-	}
-	return mock
+func NewMockOrganisationLister() *MockOrganisationLister {
+	return &MockOrganisationLister{fail: pegomock.GlobalFailHandler}
 }
-
-func (mock *MockOrganisationLister) SetFailHandler(fh pegomock.FailHandler) { mock.fail = fh }
-func (mock *MockOrganisationLister) FailHandler() pegomock.FailHandler      { return mock.fail }
 
 func (mock *MockOrganisationLister) ListOrganisations() ([]gits.GitOrganisation, error) {
 	if mock == nil {
@@ -44,56 +37,56 @@ func (mock *MockOrganisationLister) ListOrganisations() ([]gits.GitOrganisation,
 	return ret0, ret1
 }
 
-func (mock *MockOrganisationLister) VerifyWasCalledOnce() *VerifierMockOrganisationLister {
-	return &VerifierMockOrganisationLister{
+func (mock *MockOrganisationLister) VerifyWasCalledOnce() *VerifierOrganisationLister {
+	return &VerifierOrganisationLister{
 		mock:                   mock,
 		invocationCountMatcher: pegomock.Times(1),
 	}
 }
 
-func (mock *MockOrganisationLister) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierMockOrganisationLister {
-	return &VerifierMockOrganisationLister{
+func (mock *MockOrganisationLister) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierOrganisationLister {
+	return &VerifierOrganisationLister{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 	}
 }
 
-func (mock *MockOrganisationLister) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierMockOrganisationLister {
-	return &VerifierMockOrganisationLister{
+func (mock *MockOrganisationLister) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierOrganisationLister {
+	return &VerifierOrganisationLister{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 		inOrderContext:         inOrderContext,
 	}
 }
 
-func (mock *MockOrganisationLister) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierMockOrganisationLister {
-	return &VerifierMockOrganisationLister{
+func (mock *MockOrganisationLister) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierOrganisationLister {
+	return &VerifierOrganisationLister{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 		timeout:                timeout,
 	}
 }
 
-type VerifierMockOrganisationLister struct {
+type VerifierOrganisationLister struct {
 	mock                   *MockOrganisationLister
 	invocationCountMatcher pegomock.Matcher
 	inOrderContext         *pegomock.InOrderContext
 	timeout                time.Duration
 }
 
-func (verifier *VerifierMockOrganisationLister) ListOrganisations() *MockOrganisationLister_ListOrganisations_OngoingVerification {
+func (verifier *VerifierOrganisationLister) ListOrganisations() *OrganisationLister_ListOrganisations_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ListOrganisations", params, verifier.timeout)
-	return &MockOrganisationLister_ListOrganisations_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &OrganisationLister_ListOrganisations_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type MockOrganisationLister_ListOrganisations_OngoingVerification struct {
+type OrganisationLister_ListOrganisations_OngoingVerification struct {
 	mock              *MockOrganisationLister
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockOrganisationLister_ListOrganisations_OngoingVerification) GetCapturedArguments() {
+func (c *OrganisationLister_ListOrganisations_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *MockOrganisationLister_ListOrganisations_OngoingVerification) GetAllCapturedArguments() {
+func (c *OrganisationLister_ListOrganisations_OngoingVerification) GetAllCapturedArguments() {
 }

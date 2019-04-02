@@ -13,16 +13,9 @@ type MockInstaller struct {
 	fail func(message string, callerSkip ...int)
 }
 
-func NewMockInstaller(options ...pegomock.Option) *MockInstaller {
-	mock := &MockInstaller{}
-	for _, option := range options {
-		option.Apply(mock)
-	}
-	return mock
+func NewMockInstaller() *MockInstaller {
+	return &MockInstaller{fail: pegomock.GlobalFailHandler}
 }
-
-func (mock *MockInstaller) SetFailHandler(fh pegomock.FailHandler) { mock.fail = fh }
-func (mock *MockInstaller) FailHandler() pegomock.FailHandler      { return mock.fail }
 
 func (mock *MockInstaller) Install(_param0 string) (string, error) {
 	if mock == nil {
@@ -62,60 +55,60 @@ func (mock *MockInstaller) InstallDir(_param0 string) (string, error) {
 	return ret0, ret1
 }
 
-func (mock *MockInstaller) VerifyWasCalledOnce() *VerifierMockInstaller {
-	return &VerifierMockInstaller{
+func (mock *MockInstaller) VerifyWasCalledOnce() *VerifierInstaller {
+	return &VerifierInstaller{
 		mock:                   mock,
 		invocationCountMatcher: pegomock.Times(1),
 	}
 }
 
-func (mock *MockInstaller) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierMockInstaller {
-	return &VerifierMockInstaller{
+func (mock *MockInstaller) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierInstaller {
+	return &VerifierInstaller{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 	}
 }
 
-func (mock *MockInstaller) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierMockInstaller {
-	return &VerifierMockInstaller{
+func (mock *MockInstaller) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierInstaller {
+	return &VerifierInstaller{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 		inOrderContext:         inOrderContext,
 	}
 }
 
-func (mock *MockInstaller) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierMockInstaller {
-	return &VerifierMockInstaller{
+func (mock *MockInstaller) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierInstaller {
+	return &VerifierInstaller{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 		timeout:                timeout,
 	}
 }
 
-type VerifierMockInstaller struct {
+type VerifierInstaller struct {
 	mock                   *MockInstaller
 	invocationCountMatcher pegomock.Matcher
 	inOrderContext         *pegomock.InOrderContext
 	timeout                time.Duration
 }
 
-func (verifier *VerifierMockInstaller) Install(_param0 string) *MockInstaller_Install_OngoingVerification {
+func (verifier *VerifierInstaller) Install(_param0 string) *Installer_Install_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Install", params, verifier.timeout)
-	return &MockInstaller_Install_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &Installer_Install_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type MockInstaller_Install_OngoingVerification struct {
+type Installer_Install_OngoingVerification struct {
 	mock              *MockInstaller
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockInstaller_Install_OngoingVerification) GetCapturedArguments() string {
+func (c *Installer_Install_OngoingVerification) GetCapturedArguments() string {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *MockInstaller_Install_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *Installer_Install_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -126,23 +119,23 @@ func (c *MockInstaller_Install_OngoingVerification) GetAllCapturedArguments() (_
 	return
 }
 
-func (verifier *VerifierMockInstaller) InstallDir(_param0 string) *MockInstaller_InstallDir_OngoingVerification {
+func (verifier *VerifierInstaller) InstallDir(_param0 string) *Installer_InstallDir_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "InstallDir", params, verifier.timeout)
-	return &MockInstaller_InstallDir_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &Installer_InstallDir_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type MockInstaller_InstallDir_OngoingVerification struct {
+type Installer_InstallDir_OngoingVerification struct {
 	mock              *MockInstaller
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockInstaller_InstallDir_OngoingVerification) GetCapturedArguments() string {
+func (c *Installer_InstallDir_OngoingVerification) GetCapturedArguments() string {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *MockInstaller_InstallDir_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *Installer_InstallDir_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
