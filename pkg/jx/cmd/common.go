@@ -336,7 +336,7 @@ func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, 
 	return o.jxClient, o.devNamespace, nil
 }
 
-// JXClientAndAdminNamespace returns or creates the jx client, dev and admin namespace
+// JXClientDevAndAdminNamespace returns or creates the jx client, dev and admin namespaces
 func (o *CommonOptions) JXClientDevAndAdminNamespace() (versioned.Interface, string, string, error) {
 	kubeClient, _, err := o.KubeClientAndNamespace()
 	if err != nil {
