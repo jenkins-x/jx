@@ -973,7 +973,8 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 
 	workingDir := step.Dir
 	if workingDir == "" {
-		workingDir = "/workspace/workspace"
+		// TODO: Should be using SourceName from step_create_task, but initial experiments there ended up with some null cases.
+		workingDir = "/workspace/source"
 	}
 	if step.Command != "" {
 		c := &corev1.Container{}

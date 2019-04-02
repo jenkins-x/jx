@@ -80,7 +80,7 @@ items:
       - mountPath: /etc/podinfo
         name: podinfo
         readOnly: true
-      workingDir: /workspace/workspace
+      workingDir: /workspace/source
     - args:
       - ls -la
       command:
@@ -142,7 +142,7 @@ items:
       - mountPath: /etc/podinfo
         name: podinfo
         readOnly: true
-      workingDir: /workspace/workspace
+      workingDir: /workspace/source
     volumes:
     - hostPath:
         path: /var/run/docker.sock
@@ -242,7 +242,7 @@ items:
       - mountPath: /etc/podinfo
         name: podinfo
         readOnly: true
-      workingDir: /workspace/workspace
+      workingDir: /workspace/source
     volumes:
     - hostPath:
         path: /var/run/docker.sock
