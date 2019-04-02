@@ -1596,6 +1596,8 @@ func (o *CommonOptions) installProw(useTekton bool, isGitOps bool, gitOpsDir str
 		setValues = append(setValues, "tillerNamespace=")
 	}
 
+	prowVersion := o.Version
+
 	if useTekton {
 		setValues = append(setValues,
 			"auth.git.username="+gitUsername)
@@ -1626,6 +1628,11 @@ func (o *CommonOptions) installProw(useTekton bool, isGitOps bool, gitOpsDir str
 		if err != nil {
 			return errors.Wrap(err, "failed to install Knative build")
 		}
+
+		if prowVersion == "" {
+			prowVersion, err = o.getVersionNumber(version.KindChart, o.Chart, "")
+			return errors.Wrap(err, "failed to find Prow Knative build version")
+		}
 	}
 
 	log.Infof("\nInstalling Prow into namespace %s\n", util.ColorInfo(devNamespace))
@@ -1633,7 +1640,7 @@ func (o *CommonOptions) installProw(useTekton bool, isGitOps bool, gitOpsDir str
 	secretValues := []string{"user=" + gitUsername, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
 	err = o.retry(2, time.Second, func() (err error) {
 		return o.installChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, o.ReleaseName,
-			o.Chart, "prow", o.Version, devNamespace, true, setValues, secretValues, nil, "")
+			o.Chart, "prow", prowVersion, devNamespace, true, setValues, secretValues, nil, "")
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to install Prow")
