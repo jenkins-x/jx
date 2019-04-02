@@ -325,6 +325,8 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 	}
 }
 
+// completeBuildSourceInfo sets the PR author and PR title from GitHub in the given PA
+// If the PA is a branch build it then sets the commit author and last commit message
 func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineActivity) {
 
 	log.Infof("[BuildInfo] Completing build info for PipelineActivity=%s\n", activity.Name)
@@ -349,34 +351,9 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineAc
 	}
 
 	// get a github API client
-	var provider gits.GitProvider
-	if secrets != nil {
-		for _, secret := range secrets.Items {
-			labels := secret.Labels
-			annotations := secret.Annotations
-			data := secret.Data
-			if labels != nil && labels[kube.LabelKind] == kube.ValueKindGit && annotations != nil {
-				u := annotations[kube.AnnotationURL]
-				if u != "" && data != nil {
-					username := data[kube.SecretDataUsername]
-					pwd := data[kube.SecretDataPassword]
-					// server *auth.AuthServer, user *auth.UserAuth, git Gitter
-					provider, err = gits.NewGitHubProvider(&auth.AuthServer{
-						URL:  gitInfo.HostURL(),
-						Kind: "github",
-					},
-						&auth.UserAuth{
-							Username: string(username),
-							ApiToken: string(pwd),
-						}, nil)
-					if err != nil {
-						log.Warnf("Cannot create git provider. Error: %s\n", err)
-						return
-					}
-					break
-				}
-			}
-		}
+	provider, err := o.getGithubProvider(secrets, gitInfo)
+	if err != nil {
+		log.Warnf("Cannot create GitHub provider. Error: %s", err)
 	}
 
 	// extract (org, repo, commit) or (org, repo, #PR) from key
@@ -418,6 +395,38 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineAc
 		log.Infof("[BuildInfo] PipelineActicity set with author=%s and last message=%s\n", activity.Spec.Author, activity.Spec.LastCommitMessage)
 	}
 
+}
+
+func (o *ControllerBuildOptions) getGithubProvider(secrets *corev1.SecretList, gitInfo *gits.GitRepository) (gits.GitProvider, error) {
+	if secrets != nil {
+		for _, secret := range secrets.Items {
+			labels := secret.Labels
+			annotations := secret.Annotations
+			data := secret.Data
+			if labels != nil && labels[kube.LabelKind] == kube.ValueKindGit && annotations != nil {
+				u := annotations[kube.AnnotationURL]
+				if u != "" && data != nil {
+					username := data[kube.SecretDataUsername]
+					pwd := data[kube.SecretDataPassword]
+					// server *auth.AuthServer, user *auth.UserAuth, git Gitter
+					provider, err := gits.NewGitHubProvider(&auth.AuthServer{
+						URL:  gitInfo.HostURL(),
+						Kind: "github",
+					},
+						&auth.UserAuth{
+							Username: string(username),
+							ApiToken: string(pwd),
+						}, nil)
+					if err != nil {
+						log.Warnf("Cannot create git provider. Error: %s\n", err)
+						return nil, err
+					}
+					return provider, nil
+				}
+			}
+		}
+	}
+	return nil, errors.New("No secrets provided, cannot create GitHub provider")
 }
 
 // createPromoteStepActivityKeyFromRun deduces the pipeline metadata from the pipeline run info
