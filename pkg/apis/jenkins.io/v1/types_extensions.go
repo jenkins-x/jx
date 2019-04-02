@@ -366,8 +366,7 @@ func (e *ExtensionSpec) Contains(when ExtensionWhen) bool {
 // +genclient
 // +genclient:noStatus
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-// +k8s:openapi-gen=true
-
+// +k8s:openapi-gen=false
 // CommitStatus represents the commit statuses for a particular pull request
 type CommitStatus struct {
 	metav1.TypeMeta `json:",inline"`
@@ -380,7 +379,7 @@ type CommitStatus struct {
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
+// +k8s:openapi-gen=false
 // CommitStatusList is a structure used by k8s to store lists of commit statuses
 type CommitStatusList struct {
 	metav1.TypeMeta `json:",inline"`
@@ -389,11 +388,13 @@ type CommitStatusList struct {
 	Items []CommitStatus `json:"Items"`
 }
 
+// +k8s:openapi-gen=false
 // CommitStatusSpec provides details of a particular commit status
 type CommitStatusSpec struct {
 	Items []CommitStatusDetails `json:"items"  protobuf:"bytes,1,opt,name=items"`
 }
 
+// +k8s:openapi-gen=false
 type CommitStatusDetails struct {
 	PipelineActivity ResourceReference           `json:"pipelineActivity"  protobuf:"bytes,1,opt,name=pipelineActivity"`
 	Items            []CommitStatusItem          `json:"Items,omitempty"  protobuf:"bytes,2,opt,name=Items"`
@@ -402,12 +403,14 @@ type CommitStatusDetails struct {
 	Context          string                      `json:"context"  protobuf:"bytes,5,opt,name=context"`
 }
 
+// +k8s:openapi-gen=false
 type CommitStatusCommitReference struct {
 	GitURL      string `json:"gitUrl,omitempty"  protobuf:"bytes,1,opt,name=gitUrl"`
 	PullRequest string `json:"pullRequest,omitempty"  protobuf:"bytes,2,opt,name=pullRequest"`
 	SHA         string `json:"sha,omitempty"  protobuf:"bytes,3,opt,name=sha"`
 }
 
+// +k8s:openapi-gen=false
 type CommitStatusItem struct {
 	Name        string `json:"name,omitempty"  protobuf:"bytes,1,opt,name=name"`
 	Description string `json:"description,omitempty"  protobuf:"bytes,2,opt,name=description"`
