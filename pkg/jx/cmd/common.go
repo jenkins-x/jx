@@ -336,6 +336,21 @@ func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, 
 	return o.jxClient, o.devNamespace, nil
 }
 
+// JXClientDevAndAdminNamespace returns or creates the jx client, dev and admin namespaces
+func (o *CommonOptions) JXClientDevAndAdminNamespace() (versioned.Interface, string, string, error) {
+	kubeClient, _, err := o.KubeClientAndNamespace()
+	if err != nil {
+		return nil, "", "", err
+	}
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	adminNs, err := kube.GetAdminNamespace(kubeClient, devNs)
+	return jxClient, devNs, adminNs, err
+}
+
 // Git returns the git client
 func (o *CommonOptions) Git() gits.Gitter {
 	if o.git == nil {
