@@ -974,6 +974,8 @@ definitions:
         items:
           $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Attachment'
         type: array
+      author:
+        type: string
       build:
         type: string
       buildLogsUrl:
@@ -1002,6 +1004,8 @@ definitions:
         items:
           $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionExecution'
         type: array
+      pullTitle:
+        type: string
       releaseNotesURL:
         type: string
       startedTimestamp:

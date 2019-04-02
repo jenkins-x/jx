@@ -361,13 +361,13 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(key *kube.PromoteStepAc
 					pwd := data[kube.SecretDataPassword]
 					// server *auth.AuthServer, user *auth.UserAuth, git Gitter
 					provider, err = gits.NewGitHubProvider(&auth.AuthServer{
-						URL: gitInfo.HostURL(),
+						URL:  gitInfo.HostURL(),
 						Kind: "github",
 					},
-					&auth.UserAuth{
-						Username: string(username),
-						ApiToken: string(pwd),
-					}, nil)
+						&auth.UserAuth{
+							Username: string(username),
+							ApiToken: string(pwd),
+						}, nil)
 					if err != nil {
 						log.Warnf("Cannot create git provider. Error: %s", err)
 						return

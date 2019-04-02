@@ -14,9 +14,16 @@ type MockHelmer struct {
 	fail func(message string, callerSkip ...int)
 }
 
-func NewMockHelmer() *MockHelmer {
-	return &MockHelmer{fail: pegomock.GlobalFailHandler}
+func NewMockHelmer(options ...pegomock.Option) *MockHelmer {
+	mock := &MockHelmer{}
+	for _, option := range options {
+		option.Apply(mock)
+	}
+	return mock
 }
+
+func (mock *MockHelmer) SetFailHandler(fh pegomock.FailHandler) { mock.fail = fh }
+func (mock *MockHelmer) FailHandler() pegomock.FailHandler      { return mock.fail }
 
 func (mock *MockHelmer) AddRepo(_param0 string, _param1 string, _param2 string, _param3 string) error {
 	if mock == nil {
@@ -453,60 +460,60 @@ func (mock *MockHelmer) Version(_param0 bool) (string, error) {
 	return ret0, ret1
 }
 
-func (mock *MockHelmer) VerifyWasCalledOnce() *VerifierHelmer {
-	return &VerifierHelmer{
+func (mock *MockHelmer) VerifyWasCalledOnce() *VerifierMockHelmer {
+	return &VerifierMockHelmer{
 		mock:                   mock,
 		invocationCountMatcher: pegomock.Times(1),
 	}
 }
 
-func (mock *MockHelmer) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierHelmer {
-	return &VerifierHelmer{
+func (mock *MockHelmer) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierMockHelmer {
+	return &VerifierMockHelmer{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 	}
 }
 
-func (mock *MockHelmer) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierHelmer {
-	return &VerifierHelmer{
+func (mock *MockHelmer) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierMockHelmer {
+	return &VerifierMockHelmer{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 		inOrderContext:         inOrderContext,
 	}
 }
 
-func (mock *MockHelmer) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierHelmer {
-	return &VerifierHelmer{
+func (mock *MockHelmer) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierMockHelmer {
+	return &VerifierMockHelmer{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 		timeout:                timeout,
 	}
 }
 
-type VerifierHelmer struct {
+type VerifierMockHelmer struct {
 	mock                   *MockHelmer
 	invocationCountMatcher pegomock.Matcher
 	inOrderContext         *pegomock.InOrderContext
 	timeout                time.Duration
 }
 
-func (verifier *VerifierHelmer) AddRepo(_param0 string, _param1 string, _param2 string, _param3 string) *Helmer_AddRepo_OngoingVerification {
+func (verifier *VerifierMockHelmer) AddRepo(_param0 string, _param1 string, _param2 string, _param3 string) *MockHelmer_AddRepo_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2, _param3}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "AddRepo", params, verifier.timeout)
-	return &Helmer_AddRepo_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_AddRepo_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_AddRepo_OngoingVerification struct {
+type MockHelmer_AddRepo_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_AddRepo_OngoingVerification) GetCapturedArguments() (string, string, string, string) {
+func (c *MockHelmer_AddRepo_OngoingVerification) GetCapturedArguments() (string, string, string, string) {
 	_param0, _param1, _param2, _param3 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1]
 }
 
-func (c *Helmer_AddRepo_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []string) {
+func (c *MockHelmer_AddRepo_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -529,40 +536,40 @@ func (c *Helmer_AddRepo_OngoingVerification) GetAllCapturedArguments() (_param0 
 	return
 }
 
-func (verifier *VerifierHelmer) BuildDependency() *Helmer_BuildDependency_OngoingVerification {
+func (verifier *VerifierMockHelmer) BuildDependency() *MockHelmer_BuildDependency_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "BuildDependency", params, verifier.timeout)
-	return &Helmer_BuildDependency_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_BuildDependency_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_BuildDependency_OngoingVerification struct {
+type MockHelmer_BuildDependency_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_BuildDependency_OngoingVerification) GetCapturedArguments() {
+func (c *MockHelmer_BuildDependency_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *Helmer_BuildDependency_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockHelmer_BuildDependency_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierHelmer) DecryptSecrets(_param0 string) *Helmer_DecryptSecrets_OngoingVerification {
+func (verifier *VerifierMockHelmer) DecryptSecrets(_param0 string) *MockHelmer_DecryptSecrets_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "DecryptSecrets", params, verifier.timeout)
-	return &Helmer_DecryptSecrets_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_DecryptSecrets_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_DecryptSecrets_OngoingVerification struct {
+type MockHelmer_DecryptSecrets_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_DecryptSecrets_OngoingVerification) GetCapturedArguments() string {
+func (c *MockHelmer_DecryptSecrets_OngoingVerification) GetCapturedArguments() string {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *Helmer_DecryptSecrets_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *MockHelmer_DecryptSecrets_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -573,23 +580,23 @@ func (c *Helmer_DecryptSecrets_OngoingVerification) GetAllCapturedArguments() (_
 	return
 }
 
-func (verifier *VerifierHelmer) DeleteRelease(_param0 string, _param1 string, _param2 bool) *Helmer_DeleteRelease_OngoingVerification {
+func (verifier *VerifierMockHelmer) DeleteRelease(_param0 string, _param1 string, _param2 bool) *MockHelmer_DeleteRelease_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "DeleteRelease", params, verifier.timeout)
-	return &Helmer_DeleteRelease_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_DeleteRelease_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_DeleteRelease_OngoingVerification struct {
+type MockHelmer_DeleteRelease_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_DeleteRelease_OngoingVerification) GetCapturedArguments() (string, string, bool) {
+func (c *MockHelmer_DeleteRelease_OngoingVerification) GetCapturedArguments() (string, string, bool) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *Helmer_DeleteRelease_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []bool) {
+func (c *MockHelmer_DeleteRelease_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -608,40 +615,40 @@ func (c *Helmer_DeleteRelease_OngoingVerification) GetAllCapturedArguments() (_p
 	return
 }
 
-func (verifier *VerifierHelmer) Env() *Helmer_Env_OngoingVerification {
+func (verifier *VerifierMockHelmer) Env() *MockHelmer_Env_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Env", params, verifier.timeout)
-	return &Helmer_Env_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_Env_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_Env_OngoingVerification struct {
+type MockHelmer_Env_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_Env_OngoingVerification) GetCapturedArguments() {
+func (c *MockHelmer_Env_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *Helmer_Env_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockHelmer_Env_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierHelmer) FetchChart(_param0 string, _param1 string, _param2 bool, _param3 string, _param4 string, _param5 string, _param6 string) *Helmer_FetchChart_OngoingVerification {
+func (verifier *VerifierMockHelmer) FetchChart(_param0 string, _param1 string, _param2 bool, _param3 string, _param4 string, _param5 string, _param6 string) *MockHelmer_FetchChart_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "FetchChart", params, verifier.timeout)
-	return &Helmer_FetchChart_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_FetchChart_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_FetchChart_OngoingVerification struct {
+type MockHelmer_FetchChart_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_FetchChart_OngoingVerification) GetCapturedArguments() (string, string, bool, string, string, string, string) {
+func (c *MockHelmer_FetchChart_OngoingVerification) GetCapturedArguments() (string, string, bool, string, string, string, string) {
 	_param0, _param1, _param2, _param3, _param4, _param5, _param6 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1], _param5[len(_param5)-1], _param6[len(_param6)-1]
 }
 
-func (c *Helmer_FetchChart_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []bool, _param3 []string, _param4 []string, _param5 []string, _param6 []string) {
+func (c *MockHelmer_FetchChart_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []bool, _param3 []string, _param4 []string, _param5 []string, _param6 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -676,57 +683,57 @@ func (c *Helmer_FetchChart_OngoingVerification) GetAllCapturedArguments() (_para
 	return
 }
 
-func (verifier *VerifierHelmer) FindChart() *Helmer_FindChart_OngoingVerification {
+func (verifier *VerifierMockHelmer) FindChart() *MockHelmer_FindChart_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "FindChart", params, verifier.timeout)
-	return &Helmer_FindChart_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_FindChart_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_FindChart_OngoingVerification struct {
+type MockHelmer_FindChart_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_FindChart_OngoingVerification) GetCapturedArguments() {
+func (c *MockHelmer_FindChart_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *Helmer_FindChart_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockHelmer_FindChart_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierHelmer) HelmBinary() *Helmer_HelmBinary_OngoingVerification {
+func (verifier *VerifierMockHelmer) HelmBinary() *MockHelmer_HelmBinary_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "HelmBinary", params, verifier.timeout)
-	return &Helmer_HelmBinary_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_HelmBinary_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_HelmBinary_OngoingVerification struct {
+type MockHelmer_HelmBinary_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_HelmBinary_OngoingVerification) GetCapturedArguments() {
+func (c *MockHelmer_HelmBinary_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *Helmer_HelmBinary_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockHelmer_HelmBinary_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierHelmer) Init(_param0 bool, _param1 string, _param2 string, _param3 bool) *Helmer_Init_OngoingVerification {
+func (verifier *VerifierMockHelmer) Init(_param0 bool, _param1 string, _param2 string, _param3 bool) *MockHelmer_Init_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2, _param3}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Init", params, verifier.timeout)
-	return &Helmer_Init_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_Init_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_Init_OngoingVerification struct {
+type MockHelmer_Init_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_Init_OngoingVerification) GetCapturedArguments() (bool, string, string, bool) {
+func (c *MockHelmer_Init_OngoingVerification) GetCapturedArguments() (bool, string, string, bool) {
 	_param0, _param1, _param2, _param3 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1]
 }
 
-func (c *Helmer_Init_OngoingVerification) GetAllCapturedArguments() (_param0 []bool, _param1 []string, _param2 []string, _param3 []bool) {
+func (c *MockHelmer_Init_OngoingVerification) GetAllCapturedArguments() (_param0 []bool, _param1 []string, _param2 []string, _param3 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]bool, len(params[0]))
@@ -749,23 +756,23 @@ func (c *Helmer_Init_OngoingVerification) GetAllCapturedArguments() (_param0 []b
 	return
 }
 
-func (verifier *VerifierHelmer) InstallChart(_param0 string, _param1 string, _param2 string, _param3 string, _param4 int, _param5 []string, _param6 []string, _param7 string, _param8 string, _param9 string) *Helmer_InstallChart_OngoingVerification {
+func (verifier *VerifierMockHelmer) InstallChart(_param0 string, _param1 string, _param2 string, _param3 string, _param4 int, _param5 []string, _param6 []string, _param7 string, _param8 string, _param9 string) *MockHelmer_InstallChart_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8, _param9}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "InstallChart", params, verifier.timeout)
-	return &Helmer_InstallChart_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_InstallChart_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_InstallChart_OngoingVerification struct {
+type MockHelmer_InstallChart_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_InstallChart_OngoingVerification) GetCapturedArguments() (string, string, string, string, int, []string, []string, string, string, string) {
+func (c *MockHelmer_InstallChart_OngoingVerification) GetCapturedArguments() (string, string, string, string, int, []string, []string, string, string, string) {
 	_param0, _param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8, _param9 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1], _param5[len(_param5)-1], _param6[len(_param6)-1], _param7[len(_param7)-1], _param8[len(_param8)-1], _param9[len(_param9)-1]
 }
 
-func (c *Helmer_InstallChart_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []string, _param4 []int, _param5 [][]string, _param6 [][]string, _param7 []string, _param8 []string, _param9 []string) {
+func (c *MockHelmer_InstallChart_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []string, _param4 []int, _param5 [][]string, _param6 [][]string, _param7 []string, _param8 []string, _param9 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -812,23 +819,23 @@ func (c *Helmer_InstallChart_OngoingVerification) GetAllCapturedArguments() (_pa
 	return
 }
 
-func (verifier *VerifierHelmer) IsRepoMissing(_param0 string) *Helmer_IsRepoMissing_OngoingVerification {
+func (verifier *VerifierMockHelmer) IsRepoMissing(_param0 string) *MockHelmer_IsRepoMissing_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "IsRepoMissing", params, verifier.timeout)
-	return &Helmer_IsRepoMissing_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_IsRepoMissing_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_IsRepoMissing_OngoingVerification struct {
+type MockHelmer_IsRepoMissing_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_IsRepoMissing_OngoingVerification) GetCapturedArguments() string {
+func (c *MockHelmer_IsRepoMissing_OngoingVerification) GetCapturedArguments() string {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *Helmer_IsRepoMissing_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *MockHelmer_IsRepoMissing_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -839,91 +846,91 @@ func (c *Helmer_IsRepoMissing_OngoingVerification) GetAllCapturedArguments() (_p
 	return
 }
 
-func (verifier *VerifierHelmer) Lint() *Helmer_Lint_OngoingVerification {
+func (verifier *VerifierMockHelmer) Lint() *MockHelmer_Lint_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Lint", params, verifier.timeout)
-	return &Helmer_Lint_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_Lint_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_Lint_OngoingVerification struct {
+type MockHelmer_Lint_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_Lint_OngoingVerification) GetCapturedArguments() {
+func (c *MockHelmer_Lint_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *Helmer_Lint_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockHelmer_Lint_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierHelmer) ListCharts() *Helmer_ListCharts_OngoingVerification {
+func (verifier *VerifierMockHelmer) ListCharts() *MockHelmer_ListCharts_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ListCharts", params, verifier.timeout)
-	return &Helmer_ListCharts_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_ListCharts_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_ListCharts_OngoingVerification struct {
+type MockHelmer_ListCharts_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_ListCharts_OngoingVerification) GetCapturedArguments() {
+func (c *MockHelmer_ListCharts_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *Helmer_ListCharts_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockHelmer_ListCharts_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierHelmer) ListRepos() *Helmer_ListRepos_OngoingVerification {
+func (verifier *VerifierMockHelmer) ListRepos() *MockHelmer_ListRepos_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ListRepos", params, verifier.timeout)
-	return &Helmer_ListRepos_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_ListRepos_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_ListRepos_OngoingVerification struct {
+type MockHelmer_ListRepos_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_ListRepos_OngoingVerification) GetCapturedArguments() {
+func (c *MockHelmer_ListRepos_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *Helmer_ListRepos_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockHelmer_ListRepos_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierHelmer) PackageChart() *Helmer_PackageChart_OngoingVerification {
+func (verifier *VerifierMockHelmer) PackageChart() *MockHelmer_PackageChart_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "PackageChart", params, verifier.timeout)
-	return &Helmer_PackageChart_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_PackageChart_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_PackageChart_OngoingVerification struct {
+type MockHelmer_PackageChart_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_PackageChart_OngoingVerification) GetCapturedArguments() {
+func (c *MockHelmer_PackageChart_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *Helmer_PackageChart_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockHelmer_PackageChart_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierHelmer) RemoveRepo(_param0 string) *Helmer_RemoveRepo_OngoingVerification {
+func (verifier *VerifierMockHelmer) RemoveRepo(_param0 string) *MockHelmer_RemoveRepo_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "RemoveRepo", params, verifier.timeout)
-	return &Helmer_RemoveRepo_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_RemoveRepo_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_RemoveRepo_OngoingVerification struct {
+type MockHelmer_RemoveRepo_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_RemoveRepo_OngoingVerification) GetCapturedArguments() string {
+func (c *MockHelmer_RemoveRepo_OngoingVerification) GetCapturedArguments() string {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *Helmer_RemoveRepo_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *MockHelmer_RemoveRepo_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -934,40 +941,40 @@ func (c *Helmer_RemoveRepo_OngoingVerification) GetAllCapturedArguments() (_para
 	return
 }
 
-func (verifier *VerifierHelmer) RemoveRequirementsLock() *Helmer_RemoveRequirementsLock_OngoingVerification {
+func (verifier *VerifierMockHelmer) RemoveRequirementsLock() *MockHelmer_RemoveRequirementsLock_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "RemoveRequirementsLock", params, verifier.timeout)
-	return &Helmer_RemoveRequirementsLock_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_RemoveRequirementsLock_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_RemoveRequirementsLock_OngoingVerification struct {
+type MockHelmer_RemoveRequirementsLock_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_RemoveRequirementsLock_OngoingVerification) GetCapturedArguments() {
+func (c *MockHelmer_RemoveRequirementsLock_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *Helmer_RemoveRequirementsLock_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockHelmer_RemoveRequirementsLock_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierHelmer) SearchChartVersions(_param0 string) *Helmer_SearchChartVersions_OngoingVerification {
+func (verifier *VerifierMockHelmer) SearchChartVersions(_param0 string) *MockHelmer_SearchChartVersions_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SearchChartVersions", params, verifier.timeout)
-	return &Helmer_SearchChartVersions_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_SearchChartVersions_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_SearchChartVersions_OngoingVerification struct {
+type MockHelmer_SearchChartVersions_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_SearchChartVersions_OngoingVerification) GetCapturedArguments() string {
+func (c *MockHelmer_SearchChartVersions_OngoingVerification) GetCapturedArguments() string {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *Helmer_SearchChartVersions_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *MockHelmer_SearchChartVersions_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -978,23 +985,23 @@ func (c *Helmer_SearchChartVersions_OngoingVerification) GetAllCapturedArguments
 	return
 }
 
-func (verifier *VerifierHelmer) SearchCharts(_param0 string) *Helmer_SearchCharts_OngoingVerification {
+func (verifier *VerifierMockHelmer) SearchCharts(_param0 string) *MockHelmer_SearchCharts_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SearchCharts", params, verifier.timeout)
-	return &Helmer_SearchCharts_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_SearchCharts_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_SearchCharts_OngoingVerification struct {
+type MockHelmer_SearchCharts_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_SearchCharts_OngoingVerification) GetCapturedArguments() string {
+func (c *MockHelmer_SearchCharts_OngoingVerification) GetCapturedArguments() string {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *Helmer_SearchCharts_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *MockHelmer_SearchCharts_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1005,23 +1012,23 @@ func (c *Helmer_SearchCharts_OngoingVerification) GetAllCapturedArguments() (_pa
 	return
 }
 
-func (verifier *VerifierHelmer) SetCWD(_param0 string) *Helmer_SetCWD_OngoingVerification {
+func (verifier *VerifierMockHelmer) SetCWD(_param0 string) *MockHelmer_SetCWD_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetCWD", params, verifier.timeout)
-	return &Helmer_SetCWD_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_SetCWD_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_SetCWD_OngoingVerification struct {
+type MockHelmer_SetCWD_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_SetCWD_OngoingVerification) GetCapturedArguments() string {
+func (c *MockHelmer_SetCWD_OngoingVerification) GetCapturedArguments() string {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *Helmer_SetCWD_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *MockHelmer_SetCWD_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1032,23 +1039,23 @@ func (c *Helmer_SetCWD_OngoingVerification) GetAllCapturedArguments() (_param0 [
 	return
 }
 
-func (verifier *VerifierHelmer) SetHelmBinary(_param0 string) *Helmer_SetHelmBinary_OngoingVerification {
+func (verifier *VerifierMockHelmer) SetHelmBinary(_param0 string) *MockHelmer_SetHelmBinary_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetHelmBinary", params, verifier.timeout)
-	return &Helmer_SetHelmBinary_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_SetHelmBinary_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_SetHelmBinary_OngoingVerification struct {
+type MockHelmer_SetHelmBinary_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_SetHelmBinary_OngoingVerification) GetCapturedArguments() string {
+func (c *MockHelmer_SetHelmBinary_OngoingVerification) GetCapturedArguments() string {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *Helmer_SetHelmBinary_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *MockHelmer_SetHelmBinary_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1059,23 +1066,23 @@ func (c *Helmer_SetHelmBinary_OngoingVerification) GetAllCapturedArguments() (_p
 	return
 }
 
-func (verifier *VerifierHelmer) SetHost(_param0 string) *Helmer_SetHost_OngoingVerification {
+func (verifier *VerifierMockHelmer) SetHost(_param0 string) *MockHelmer_SetHost_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetHost", params, verifier.timeout)
-	return &Helmer_SetHost_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_SetHost_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_SetHost_OngoingVerification struct {
+type MockHelmer_SetHost_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_SetHost_OngoingVerification) GetCapturedArguments() string {
+func (c *MockHelmer_SetHost_OngoingVerification) GetCapturedArguments() string {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *Helmer_SetHost_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *MockHelmer_SetHost_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1086,23 +1093,23 @@ func (c *Helmer_SetHost_OngoingVerification) GetAllCapturedArguments() (_param0 
 	return
 }
 
-func (verifier *VerifierHelmer) StatusRelease(_param0 string, _param1 string) *Helmer_StatusRelease_OngoingVerification {
+func (verifier *VerifierMockHelmer) StatusRelease(_param0 string, _param1 string) *MockHelmer_StatusRelease_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "StatusRelease", params, verifier.timeout)
-	return &Helmer_StatusRelease_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_StatusRelease_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_StatusRelease_OngoingVerification struct {
+type MockHelmer_StatusRelease_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_StatusRelease_OngoingVerification) GetCapturedArguments() (string, string) {
+func (c *MockHelmer_StatusRelease_OngoingVerification) GetCapturedArguments() (string, string) {
 	_param0, _param1 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *Helmer_StatusRelease_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
+func (c *MockHelmer_StatusRelease_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1117,23 +1124,23 @@ func (c *Helmer_StatusRelease_OngoingVerification) GetAllCapturedArguments() (_p
 	return
 }
 
-func (verifier *VerifierHelmer) StatusReleases(_param0 string) *Helmer_StatusReleases_OngoingVerification {
+func (verifier *VerifierMockHelmer) StatusReleases(_param0 string) *MockHelmer_StatusReleases_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "StatusReleases", params, verifier.timeout)
-	return &Helmer_StatusReleases_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_StatusReleases_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_StatusReleases_OngoingVerification struct {
+type MockHelmer_StatusReleases_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_StatusReleases_OngoingVerification) GetCapturedArguments() string {
+func (c *MockHelmer_StatusReleases_OngoingVerification) GetCapturedArguments() string {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *Helmer_StatusReleases_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *MockHelmer_StatusReleases_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1144,23 +1151,23 @@ func (c *Helmer_StatusReleases_OngoingVerification) GetAllCapturedArguments() (_
 	return
 }
 
-func (verifier *VerifierHelmer) Template(_param0 string, _param1 string, _param2 string, _param3 string, _param4 bool, _param5 []string, _param6 []string) *Helmer_Template_OngoingVerification {
+func (verifier *VerifierMockHelmer) Template(_param0 string, _param1 string, _param2 string, _param3 string, _param4 bool, _param5 []string, _param6 []string) *MockHelmer_Template_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Template", params, verifier.timeout)
-	return &Helmer_Template_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_Template_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_Template_OngoingVerification struct {
+type MockHelmer_Template_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_Template_OngoingVerification) GetCapturedArguments() (string, string, string, string, bool, []string, []string) {
+func (c *MockHelmer_Template_OngoingVerification) GetCapturedArguments() (string, string, string, string, bool, []string, []string) {
 	_param0, _param1, _param2, _param3, _param4, _param5, _param6 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1], _param5[len(_param5)-1], _param6[len(_param6)-1]
 }
 
-func (c *Helmer_Template_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []string, _param4 []bool, _param5 [][]string, _param6 [][]string) {
+func (c *MockHelmer_Template_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []string, _param4 []bool, _param5 [][]string, _param6 [][]string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1195,40 +1202,40 @@ func (c *Helmer_Template_OngoingVerification) GetAllCapturedArguments() (_param0
 	return
 }
 
-func (verifier *VerifierHelmer) UpdateRepo() *Helmer_UpdateRepo_OngoingVerification {
+func (verifier *VerifierMockHelmer) UpdateRepo() *MockHelmer_UpdateRepo_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "UpdateRepo", params, verifier.timeout)
-	return &Helmer_UpdateRepo_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_UpdateRepo_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_UpdateRepo_OngoingVerification struct {
+type MockHelmer_UpdateRepo_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_UpdateRepo_OngoingVerification) GetCapturedArguments() {
+func (c *MockHelmer_UpdateRepo_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *Helmer_UpdateRepo_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockHelmer_UpdateRepo_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierHelmer) UpgradeChart(_param0 string, _param1 string, _param2 string, _param3 string, _param4 bool, _param5 int, _param6 bool, _param7 bool, _param8 []string, _param9 []string, _param10 string, _param11 string, _param12 string) *Helmer_UpgradeChart_OngoingVerification {
+func (verifier *VerifierMockHelmer) UpgradeChart(_param0 string, _param1 string, _param2 string, _param3 string, _param4 bool, _param5 int, _param6 bool, _param7 bool, _param8 []string, _param9 []string, _param10 string, _param11 string, _param12 string) *MockHelmer_UpgradeChart_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8, _param9, _param10, _param11, _param12}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "UpgradeChart", params, verifier.timeout)
-	return &Helmer_UpgradeChart_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_UpgradeChart_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_UpgradeChart_OngoingVerification struct {
+type MockHelmer_UpgradeChart_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_UpgradeChart_OngoingVerification) GetCapturedArguments() (string, string, string, string, bool, int, bool, bool, []string, []string, string, string, string) {
+func (c *MockHelmer_UpgradeChart_OngoingVerification) GetCapturedArguments() (string, string, string, string, bool, int, bool, bool, []string, []string, string, string, string) {
 	_param0, _param1, _param2, _param3, _param4, _param5, _param6, _param7, _param8, _param9, _param10, _param11, _param12 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1], _param4[len(_param4)-1], _param5[len(_param5)-1], _param6[len(_param6)-1], _param7[len(_param7)-1], _param8[len(_param8)-1], _param9[len(_param9)-1], _param10[len(_param10)-1], _param11[len(_param11)-1], _param12[len(_param12)-1]
 }
 
-func (c *Helmer_UpgradeChart_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []string, _param4 []bool, _param5 []int, _param6 []bool, _param7 []bool, _param8 [][]string, _param9 [][]string, _param10 []string, _param11 []string, _param12 []string) {
+func (c *MockHelmer_UpgradeChart_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []string, _param4 []bool, _param5 []int, _param6 []bool, _param7 []bool, _param8 [][]string, _param9 [][]string, _param10 []string, _param11 []string, _param12 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1287,23 +1294,23 @@ func (c *Helmer_UpgradeChart_OngoingVerification) GetAllCapturedArguments() (_pa
 	return
 }
 
-func (verifier *VerifierHelmer) Version(_param0 bool) *Helmer_Version_OngoingVerification {
+func (verifier *VerifierMockHelmer) Version(_param0 bool) *MockHelmer_Version_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Version", params, verifier.timeout)
-	return &Helmer_Version_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockHelmer_Version_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Helmer_Version_OngoingVerification struct {
+type MockHelmer_Version_OngoingVerification struct {
 	mock              *MockHelmer
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Helmer_Version_OngoingVerification) GetCapturedArguments() bool {
+func (c *MockHelmer_Version_OngoingVerification) GetCapturedArguments() bool {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *Helmer_Version_OngoingVerification) GetAllCapturedArguments() (_param0 []bool) {
+func (c *MockHelmer_Version_OngoingVerification) GetAllCapturedArguments() (_param0 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]bool, len(params[0]))
