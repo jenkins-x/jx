@@ -33,6 +33,8 @@ import (
 const (
 	kanikoDockerImage = "gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6"
 	kanikoSecretMount = "/kaniko-secret/secret.json"
+	kanikoSecretName  = "kaniko-secret"
+	kanikoSecretKey   = "kaniko-secret"
 )
 
 var (
@@ -84,6 +86,9 @@ type StepCreateTaskOptions struct {
 	NoKaniko          bool
 	KanikoImage       string
 	KanikoSecretMount string
+	KanikoSecret      string
+	KanikoSecretKey   string
+	ProjectID         string
 	DockerRegistryOrg string
 
 	PodTemplates        map[string]*corev1.Pod
@@ -155,6 +160,9 @@ func NewCmdStepCreateTask(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.NoKaniko, "no-kaniko", "", false, "Disables using kaniko directly for building docker images")
 	cmd.Flags().StringVarP(&options.KanikoImage, "kaniko-image", "", kanikoDockerImage, "The docker image for Kaniko")
 	cmd.Flags().StringVarP(&options.KanikoSecretMount, "kaniko-secret-mount", "", kanikoSecretMount, "The mount point of the Kaniko secret")
+	cmd.Flags().StringVarP(&options.KanikoSecret, "kaniko-secret", "", kanikoSecretName, "The name of the kaniko secret")
+	cmd.Flags().StringVarP(&options.KanikoSecretKey, "kaniko-secret-key", "", kanikoSecretKey, "The key in the Kaniko Secret to mount")
+	cmd.Flags().StringVarP(&options.ProjectID, "project-id", "", "", "The cloud project ID. If not specified we default to the install project")
 	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The Docker registry organisation. If blank the git repository owner is used")
 	cmd.Flags().DurationVarP(&options.Duration, "duration", "", time.Second*30, "Retry duration when trying to create a PipelineRun")
 	return cmd
@@ -172,6 +180,16 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 	o.devNamespace = ns
 
+	if o.ProjectID == "" {
+		data, err := kube.ReadInstallValues(kubeClient, ns)
+		if err != nil {
+			return errors.Wrapf(err, "failed to read install values from namespace %s", ns)
+		}
+		o.ProjectID = data["projectID"]
+		if o.ProjectID == "" {
+			o.ProjectID = "todo"
+		}
+	}
 	if o.KanikoImage == "" {
 		o.KanikoImage = kanikoDockerImage
 	}
@@ -1140,8 +1158,14 @@ func (o *StepCreateTaskOptions) modifyVolumes(container *corev1.Container, volum
 		if err != nil {
 			log.Warnf("failed to find kaniko secret: %s\n", err)
 		} else {
-			secretName := "kaniko-secret"
-			key := "kaniko-secret"
+			if o.KanikoSecret == "" {
+				o.KanikoSecret = kanikoSecretName
+			}
+			if o.KanikoSecretKey == "" {
+				o.KanikoSecretKey = kanikoSecretKey
+			}
+			secretName := o.KanikoSecret
+			key := o.KanikoSecretKey
 			secret, err := kubeClient.CoreV1().Secrets(ns).Get(secretName, metav1.GetOptions{})
 			if err != nil {
 				log.Warnf("failed to find secret %s in namespace %s: %s\n", secretName, ns, err)
@@ -1169,6 +1193,7 @@ func (o *StepCreateTaskOptions) modifyVolumes(container *corev1.Container, volum
 				}
 
 				mountDir, _ := filepath.Split(o.KanikoSecretMount)
+				mountDir = strings.TrimSuffix(mountDir, "/")
 				volumeMount := corev1.VolumeMount{
 					Name:      volumeName,
 					MountPath: mountDir,
@@ -1177,7 +1202,6 @@ func (o *StepCreateTaskOptions) modifyVolumes(container *corev1.Container, volum
 				if !kube.ContainsVolumeMount(container.VolumeMounts, volumeMount) {
 					container.VolumeMounts = append(container.VolumeMounts, volumeMount)
 				}
-
 			}
 		}
 	}
@@ -1433,8 +1457,10 @@ func (o *StepCreateTaskOptions) modifyStep(parsedStep syntax.Step, gitInfo *gits
 				"--context=" + sourceDir,
 				"--dockerfile=" + dockerfile,
 				"--destination=" + destination + ":${inputs.params.version}",
-				"--cache-repo=" + localRepo + "/",
-				"--skip-tls-verify-registry=" + localRepo,
+				"--cache-repo=" + localRepo + "/" + o.ProjectID + "/cache",
+			}
+			if localRepo != "gcr.io" {
+				args = append(args, "--skip-tls-verify-registry="+localRepo)
 			}
 
 			if ipAddressRegistryRegex.MatchString(localRepo) {
