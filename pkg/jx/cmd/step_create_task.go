@@ -1355,9 +1355,9 @@ func (o *StepCreateTaskOptions) invokeSteps(steps []*jenkinsfile.PipelineStep) e
 // modifyStep allows a container step to be modified to do something different
 func (o *StepCreateTaskOptions) modifyStep(parsedStep syntax.Step, gitInfo *gits.GitRepository, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *jenkinsfile.PipelineStep, containerName string, dir string) syntax.Step {
 
-	if !o.NoKaniko && len(parsedStep.Arguments) > 0 {
-		inputArgText := strings.Join(parsedStep.Arguments[1:], " ")
-		if strings.HasPrefix(inputArgText, "skaffold build") {
+	if !o.NoKaniko {
+		if strings.HasPrefix(parsedStep.Command, "skaffold build") ||
+			(len(parsedStep.Arguments) > 0 && strings.HasPrefix(strings.Join(parsedStep.Arguments[1:], " "), "skaffold build")) {
 			sourceDir := o.getWorkspaceDir()
 			dockerfile := filepath.Join(sourceDir, "Dockerfile")
 			localRepo := o.getDockerRegistry()
