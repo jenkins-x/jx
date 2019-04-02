@@ -24,7 +24,6 @@ type BuildPodInfo struct {
 	Organisation      string
 	Repository        string
 	Branch            string
-	PullNumber        string
 	Build             string
 	Context           string
 	BuildNumber       int
@@ -63,7 +62,6 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 	owner := ""
 	repo := ""
 	build := ""
-	pullNumber := ""
 	shaRegexp, err := regexp.Compile("\b[a-z0-9]{40}\b")
 	if err != nil {
 		log.Warnf("Failed to compile regexp because %s", err)
@@ -101,9 +99,6 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 			}
 			if v.Name == "PULL_BASE_SHA" {
 				pullBaseSha = v.Value
-			}
-			if v.Name == "PULL_NUMBER" {
-				pullNumber = v.Value
 			}
 			if v.Name == "BRANCH_NAME" {
 				branch = v.Value
@@ -161,7 +156,6 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 		Build:             build,
 		BuildNumber:       buildNumber,
 		Branch:            branch,
-		PullNumber:        pullNumber,
 		GitURL:            gitURL,
 		LastCommitSHA:     lastCommitSha,
 		LastCommitMessage: lastCommitMessage,
