@@ -31,7 +31,8 @@ import (
 )
 
 const (
-	kanikoDockerImage = "rawlingsj/executor:dev40"
+	kanikoDockerImage = "gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6"
+	kanikoSecretMount = "/kaniko-secret/secret.json"
 )
 
 var (
@@ -82,6 +83,7 @@ type StepCreateTaskOptions struct {
 	FromRepo          bool
 	NoKaniko          bool
 	KanikoImage       string
+	KanikoSecretMount string
 	DockerRegistryOrg string
 
 	PodTemplates        map[string]*corev1.Pod
@@ -152,6 +154,7 @@ func NewCmdStepCreateTask(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.NoReleasePrepare, "no-release-prepare", "", false, "Disables creating the release version number and tagging git and triggering the release pipeline from the new tag")
 	cmd.Flags().BoolVarP(&options.NoKaniko, "no-kaniko", "", false, "Disables using kaniko directly for building docker images")
 	cmd.Flags().StringVarP(&options.KanikoImage, "kaniko-image", "", kanikoDockerImage, "The docker image for Kaniko")
+	cmd.Flags().StringVarP(&options.KanikoSecretMount, "kaniko-secret-mount", "", kanikoSecretMount, "The mount point of the Kaniko secret")
 	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The Docker registry organisation. If blank the git repository owner is used")
 	cmd.Flags().DurationVarP(&options.Duration, "duration", "", time.Second*30, "Retry duration when trying to create a PipelineRun")
 	return cmd
@@ -169,6 +172,12 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 	o.devNamespace = ns
 
+	if o.KanikoImage == "" {
+		o.KanikoImage = kanikoDockerImage
+	}
+	if o.KanikoSecretMount == "" {
+		o.KanikoSecretMount = kanikoSecretMount
+	}
 	if o.Verbose {
 		log.Infof("cloning git for %s\n", o.CloneGitURL)
 	}
@@ -549,9 +558,9 @@ func (o *StepCreateTaskOptions) GetDefaultTaskInputs() *pipelineapi.Inputs {
 }
 
 func (o *StepCreateTaskOptions) enhanceTaskWithVolumesEnvAndInputs(task *pipelineapi.Task, pipelineConfig *jenkinsfile.PipelineConfig, inputs pipelineapi.Inputs) {
-	var volumes []corev1.Volume
+	volumes := task.Spec.Volumes
 	for i, step := range task.Spec.Steps {
-		volumes = o.modifyVolumes(&step, task.Spec.Volumes)
+		volumes = o.modifyVolumes(&step, volumes)
 		o.modifyEnvVars(&step, pipelineConfig.Env)
 		task.Spec.Steps[i] = step
 	}
@@ -1105,6 +1114,15 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 			envVars[i].Value = "/workspace/xdg_config"
 		}
 	}
+
+	if container.Name == "build-container-build" {
+		if kube.GetSliceEnvVar(envVars, "GOOGLE_APPLICATION_CREDENTIALS") == nil {
+			envVars = append(envVars, corev1.EnvVar{
+				Name:  "GOOGLE_APPLICATION_CREDENTIALS",
+				Value: o.KanikoSecretMount,
+			})
+		}
+	}
 	if kube.GetSliceEnvVar(envVars, "PREVIEW_VERSION") == nil && kube.GetSliceEnvVar(envVars, "VERSION") != nil {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "PREVIEW_VERSION",
@@ -1116,6 +1134,54 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 
 func (o *StepCreateTaskOptions) modifyVolumes(container *corev1.Container, volumes []corev1.Volume) []corev1.Volume {
 	answer := volumes
+
+	if container.Name == "build-container-build" {
+		kubeClient, ns, err := o.KubeClientAndDevNamespace()
+		if err != nil {
+			log.Warnf("failed to find kaniko secret: %s\n", err)
+		} else {
+			secretName := "kaniko-secret"
+			key := "kaniko-secret"
+			secret, err := kubeClient.CoreV1().Secrets(ns).Get(secretName, metav1.GetOptions{})
+			if err != nil {
+				log.Warnf("failed to find secret %s in namespace %s: %s\n", secretName, ns, err)
+			} else if secret != nil && secret.Data != nil && secret.Data[key] != nil {
+				// lets mount the kaniko secret
+				volumeName := "kaniko-secret"
+				_, fileName := filepath.Split(o.KanikoSecretMount)
+
+				volume := corev1.Volume{
+					Name: volumeName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: secretName,
+							Items: []corev1.KeyToPath{
+								{
+									Key:  key,
+									Path: fileName,
+								},
+							},
+						},
+					},
+				}
+				if !kube.ContainsVolume(answer, volume) {
+					answer = append(answer, volume)
+				}
+
+				mountDir, _ := filepath.Split(o.KanikoSecretMount)
+				volumeMount := corev1.VolumeMount{
+					Name:      volumeName,
+					MountPath: mountDir,
+					ReadOnly:  true,
+				}
+				if !kube.ContainsVolumeMount(container.VolumeMounts, volumeMount) {
+					container.VolumeMounts = append(container.VolumeMounts, volumeMount)
+				}
+
+			}
+		}
+	}
+
 	podInfoName := "podinfo"
 	volume := corev1.Volume{
 		Name: podInfoName,
@@ -1376,8 +1442,8 @@ func (o *StepCreateTaskOptions) modifyStep(parsedStep syntax.Step, gitInfo *gits
 			}
 
 			parsedStep.Command = "/kaniko/executor"
-			//answer.Args = []string{container.Args[0], "/kaniko/executor " + strings.Join(args, " ")}
 			parsedStep.Arguments = args
+
 			if o.KanikoImage == "" {
 				o.KanikoImage = kanikoDockerImage
 			}
