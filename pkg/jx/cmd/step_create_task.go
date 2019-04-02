@@ -1133,7 +1133,7 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 		}
 	}
 
-	if container.Name == "build-container-build" {
+	if container.Name == "build-container-build" && !o.NoKaniko {
 		if kube.GetSliceEnvVar(envVars, "GOOGLE_APPLICATION_CREDENTIALS") == nil {
 			envVars = append(envVars, corev1.EnvVar{
 				Name:  "GOOGLE_APPLICATION_CREDENTIALS",
@@ -1153,7 +1153,7 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 func (o *StepCreateTaskOptions) modifyVolumes(container *corev1.Container, volumes []corev1.Volume) []corev1.Volume {
 	answer := volumes
 
-	if container.Name == "build-container-build" {
+	if container.Name == "build-container-build" && !o.NoKaniko {
 		kubeClient, ns, err := o.KubeClientAndDevNamespace()
 		if err != nil {
 			log.Warnf("failed to find kaniko secret: %s\n", err)
