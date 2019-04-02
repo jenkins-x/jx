@@ -89,6 +89,7 @@ func UpdateUserRoles(kubeClient kubernetes.Interface, jxClient versioned.Interfa
 		return errors.Wrapf(err, "Obtaining admin namespace for user lookup")
 	}
 
+	// make sure all of the EnvironmentRoleBinding are created
 	for name := range roles {
 		envRole := envRoles[name]
 		if envRole == nil {
@@ -121,6 +122,7 @@ func UpdateUserRoles(kubeClient kubernetes.Interface, jxClient versioned.Interfa
 
 	deleteRoles, createRoles := util.DiffSlices(oldRoles, userRoles)
 
+	// should we use a single patch or create at the end and be atomic for the whole operation?
 	for _, name := range deleteRoles {
 		envRole := envRoles[name]
 		if envRole == nil {
@@ -135,6 +137,7 @@ func UpdateUserRoles(kubeClient kubernetes.Interface, jxClient versioned.Interfa
 					if err != nil {
 						return errors.Wrapf(err, "Failed to remove User %s kind %s as a Subject of EnvironmentRoleBinding %s: %s", userName, userKind, name, err)
 					}
+					break
 				}
 			}
 			if !found {
