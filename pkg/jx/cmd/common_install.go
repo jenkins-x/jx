@@ -1629,8 +1629,9 @@ func (o *CommonOptions) installProw(useTekton bool, isGitOps bool, gitOpsDir str
 			return errors.Wrap(err, "failed to install Knative build")
 		}
 
+		// lets use the stable knative build prow
 		if prowVersion == "" {
-			prowVersion, err = o.getVersionNumber(version.KindChart, o.Chart, "")
+			prowVersion, err = o.getVersionNumber(version.KindChart, "jenkins-x/prow-knative", "")
 			return errors.Wrap(err, "failed to find Prow Knative build version")
 		}
 	}
