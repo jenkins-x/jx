@@ -238,24 +238,27 @@ func (o *StepCreateTaskOptions) Run() error {
 				}
 			}
 		}
-		var shas []string
-		for _, sha := range pr.ToMerge {
-			shas = append(shas, sha)
-		}
 
-		mergeOpts := StepGitMergeOptions{
-			StepOptions: StepOptions{
-				CommonOptions: o.CommonOptions,
-			},
-			Dir:        o.Dir,
-			BaseSHA:    pr.BaseSha,
-			SHAs:       shas,
-			BaseBranch: pr.BaseBranch,
-		}
-		mergeOpts.Verbose = true
-		err = mergeOpts.Run()
-		if err != nil {
-			return errors.Wrapf(err, "failed to merge git shas %s with base sha %s", shas, pr.BaseSha)
+		if pr != nil {
+			var shas []string
+			for _, sha := range pr.ToMerge {
+				shas = append(shas, sha)
+			}
+
+			mergeOpts := StepGitMergeOptions{
+				StepOptions: StepOptions{
+					CommonOptions: o.CommonOptions,
+				},
+				Dir:        o.Dir,
+				BaseSHA:    pr.BaseSha,
+				SHAs:       shas,
+				BaseBranch: pr.BaseBranch,
+			}
+			mergeOpts.Verbose = true
+			err = mergeOpts.Run()
+			if err != nil {
+				return errors.Wrapf(err, "failed to merge git shas %s with base sha %s", shas, pr.BaseSha)
+			}
 		}
 
 		if o.DeleteTempDir {
