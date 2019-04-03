@@ -135,7 +135,6 @@ func (o *EditDeployKindOptions) setDeployKindInValuesYaml(yamlText string, deplo
 
 	lines := strings.Split(yamlText, "\n")
 	for _, line := range lines {
-		line = strings.TrimSpace(line)
 		if strings.HasPrefix(line, knativeDeployKey) {
 			buffer.WriteString(knativeDeployKey)
 			buffer.WriteString(" ")

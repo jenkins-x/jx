@@ -541,8 +541,9 @@ func (o *CommonOptions) FindHelmChartInDir(dir string) (string, error) {
 			return "", errors.Wrap(err, "failed to get the current working directory")
 		}
 	}
-	o.Helm().SetCWD(dir)
-	return o.Helm().FindChart()
+	helmer := o.Helm()
+	helmer.SetCWD(dir)
+	return helmer.FindChart()
 }
 
 // FindChartValuesYaml finds the helm chart value.yaml in the given dir. If no dir is specified then the current dir is used
