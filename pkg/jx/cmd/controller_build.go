@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"path/filepath"
 	"strconv"
@@ -407,35 +406,15 @@ func (o *ControllerBuildOptions) getGithubProvider(secrets *corev1.SecretList, g
 	}
 
 	// production code always goes this way
-	if secrets != nil {
-		for _, secret := range secrets.Items {
-			labels := secret.Labels
-			annotations := secret.Annotations
-			data := secret.Data
-			if labels != nil && labels[kube.LabelKind] == kube.ValueKindGit && annotations != nil {
-				u := annotations[kube.AnnotationURL]
-				if u == "https://github.com" && data != nil {
-					username := data[kube.SecretDataUsername]
-					pwd := data[kube.SecretDataPassword]
-					// server *auth.AuthServer, user *auth.UserAuth, git Gitter
-					provider, err := gits.NewGitHubProvider(&auth.AuthServer{
-						URL:  gitInfo.HostURL(),
-						Kind: "github",
-					},
-						&auth.UserAuth{
-							Username: string(username),
-							ApiToken: string(pwd),
-						}, nil)
-					if err != nil {
-						log.Warnf("Cannot create git provider. Error: %s\n", err)
-						return nil, err
-					}
-					return provider, nil
-				}
-			}
-		}
+	server, userAuth, err := o.getPipelineGitAuth()
+	if err != nil {
+		return nil, err
 	}
-	return nil, errors.New("No secrets provided, cannot create GitHub provider")
+	gitProvider, err := gits.CreateProvider(server, userAuth, nil)
+	if err != nil {
+		return nil, err
+	}
+	return gitProvider, nil
 }
 
 // createPromoteStepActivityKeyFromRun deduces the pipeline metadata from the pipeline run info
