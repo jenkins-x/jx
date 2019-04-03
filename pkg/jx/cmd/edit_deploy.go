@@ -13,8 +13,11 @@ import (
 )
 
 const (
-	deployKindKnative = "knative"
-	deployKindDefault = "default"
+	// DeployKindKnative for knative serve based deployments
+	DeployKindKnative = "knative"
+
+	// DeployKindDefault for default kubernetes Deployment + Service deployment kinds
+	DeployKindDefault = "default"
 )
 
 var (
@@ -39,7 +42,7 @@ var (
 		jx edit deploy --team knative
 	`)
 
-	deployKinds = []string{deployKindKnative, deployKindDefault}
+	deployKinds = []string{DeployKindKnative, DeployKindDefault}
 
 	knativeDeployKey = "knativeDeploy:"
 )
@@ -124,9 +127,9 @@ func (o *EditDeployKindOptions) findDefaultDeployKindInValuesYaml(yamlText strin
 		}
 	}
 	if knativeFlag == "true" {
-		return deployKindKnative
+		return DeployKindKnative
 	}
-	return deployKindDefault
+	return DeployKindDefault
 }
 
 // setDeployKindInValuesYaml sets the `knativeDeployKey` key to true or false based on the deployment kind
@@ -138,7 +141,7 @@ func (o *EditDeployKindOptions) setDeployKindInValuesYaml(yamlText string, deplo
 		if strings.HasPrefix(line, knativeDeployKey) {
 			buffer.WriteString(knativeDeployKey)
 			buffer.WriteString(" ")
-			if deployKind == deployKindKnative {
+			if deployKind == DeployKindKnative {
 				buffer.WriteString("true")
 			} else {
 				buffer.WriteString("false")

@@ -126,6 +126,9 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 	o.LogLevel = "warn"
 	o.UseDefaultGit = true
 
+	if dirName == "maven-camel" {
+		o.DeployKind = cmd.DeployKindKnative
+	}
 	if nextGenPipeline {
 		callback := func(env *v1.Environment) error {
 			env.Spec.TeamSettings.ImportMode = v1.ImportModeTypeYAML
@@ -186,6 +189,10 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 			tests.AssertFileExists(t, filepath.Join(testDir, "charts", dirName, "Chart.yaml"))
 		}
 
+		// lets test we modified the deployment kind
+		if dirName == "maven-camel" {
+			tests.AssertFileContains(t, filepath.Join(testDir, "charts", "maven-camel", "values.yaml"), "knativeDeploy: true")
+		}
 		if !nextGenPipeline {
 			if strings.HasPrefix(testcase, mavenKeepOldJenkinsfile) {
 				tests.AssertFileContains(t, jfname, "THIS IS OLD!")
