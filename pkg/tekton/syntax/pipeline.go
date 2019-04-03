@@ -1,6 +1,7 @@
 package syntax
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"sort"
@@ -271,7 +272,7 @@ func MangleToRfc1035Label(body string, suffix string) string {
 // Validate checks the parsed ParsedPipeline to find any errors in it.
 // TODO: Improve validation to actually return all the errors via the nested errors?
 // TODO: Add validation for the not-yet-supported-for-CRD-generation sections
-func (j *ParsedPipeline) Validate() *apis.FieldError {
+func (j *ParsedPipeline) Validate(context context.Context) *apis.FieldError {
 	if err := validateAgent(j.Agent).ViaField("agent"); err != nil {
 		return err
 	}
@@ -855,7 +856,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 				Labels:    util.MergeMaps(map[string]string{LabelStageName: s.stageLabelName()}),
 			},
 		}
-		t.SetDefaults()
+		t.SetDefaults(context.Background())
 
 		ws := &tektonv1alpha1.TaskResource{
 			Name: "workspace",
@@ -1087,7 +1088,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		},
 	}
 
-	p.SetDefaults()
+	p.SetDefaults(context.Background())
 
 	structure := &v1.PipelineStructure{
 		ObjectMeta: metav1.ObjectMeta{
