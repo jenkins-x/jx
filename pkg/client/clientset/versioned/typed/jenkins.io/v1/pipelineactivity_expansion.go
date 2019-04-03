@@ -25,7 +25,13 @@ func (c *pipelineActivities) PatchUpdate(pipelineActivity *v1.PipelineActivity) 
 	}
 
 	patch, err := util.CreatePatch(orig, pipelineActivity)
+	if err != nil {
+		return nil, err
+	}
 	patched, err := c.Patch(resourceName, types.JSONPatchType, patch)
+	if err != nil {
+		return nil, err
+	}
 
 	return patched, nil
 }

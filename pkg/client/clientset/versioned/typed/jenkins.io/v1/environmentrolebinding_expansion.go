@@ -25,7 +25,13 @@ func (c *environmentRoleBindings) PatchUpdate(environmentRoleBinding *v1.Environ
 	}
 
 	patch, err := util.CreatePatch(orig, environmentRoleBinding)
+	if err != nil {
+		return nil, err
+	}
 	patched, err := c.Patch(resourceName, types.JSONPatchType, patch)
+	if err != nil {
+		return nil, err
+	}
 
 	return patched, nil
 }

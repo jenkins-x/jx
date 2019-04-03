@@ -25,7 +25,13 @@ func (c *buildPacks) PatchUpdate(buildPack *v1.BuildPack) (*v1.BuildPack, error)
 	}
 
 	patch, err := util.CreatePatch(orig, buildPack)
+	if err != nil {
+		return nil, err
+	}
 	patched, err := c.Patch(resourceName, types.JSONPatchType, patch)
+	if err != nil {
+		return nil, err
+	}
 
 	return patched, nil
 }

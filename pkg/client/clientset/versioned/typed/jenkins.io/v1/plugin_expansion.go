@@ -25,7 +25,13 @@ func (c *plugins) PatchUpdate(plugin *v1.Plugin) (*v1.Plugin, error) {
 	}
 
 	patch, err := util.CreatePatch(orig, plugin)
+	if err != nil {
+		return nil, err
+	}
 	patched, err := c.Patch(resourceName, types.JSONPatchType, patch)
+	if err != nil {
+		return nil, err
+	}
 
 	return patched, nil
 }
