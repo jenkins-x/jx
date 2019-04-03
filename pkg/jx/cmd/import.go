@@ -90,6 +90,7 @@ type ImportOptions struct {
 	DraftPack               string
 	DockerRegistryOrg       string
 	GitDetails              gits.CreateRepoData
+	DeployKind              string
 
 	DisableDotGitSearch   bool
 	InitialisedGit        bool
@@ -189,6 +190,7 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().BoolVarP(&options.DisableMaven, "disable-updatebot", "", false, "disable updatebot-maven-plugin from attempting to fix/update the maven pom.xml")
 	cmd.Flags().StringVarP(&options.ImportMode, "import-mode", "m", "", fmt.Sprintf("The import mode to use. Should be one of %s", strings.Join(v1.ImportModeStrings, ", ")))
 	cmd.Flags().BoolVarP(&options.UseDefaultGit, "use-default-git", "", false, "use default git account")
+	cmd.Flags().StringVarP(&options.DeployKind, "deploy-kind", "", "", fmt.Sprintf("The kind of deployment to use for the project. Should be one of %s", strings.Join(deployKinds, ", ")))
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 }
@@ -490,6 +492,11 @@ func (options *ImportOptions) DraftCreate() error {
 
 	// lets rename the chart to be the same as our app name
 	err = options.renameChartToMatchAppName()
+	if err != nil {
+		return err
+	}
+
+	err = options.modifyDeployKind()
 	if err != nil {
 		return err
 	}
@@ -1346,6 +1353,9 @@ func (options *ImportOptions) DefaultsFromTeamSettings() error {
 	if err != nil {
 		return err
 	}
+	if options.DeployKind == "" {
+		options.DeployKind = settings.DeployKind
+	}
 	if options.Organisation == "" {
 		options.Organisation = settings.Organisation
 	}
@@ -1416,4 +1426,23 @@ func (options *ImportOptions) GetGitRepositoryDetails() (*gits.CreateRepoData, e
 		return nil, err
 	}
 	return details, nil
+}
+
+// modifyDeployKind lets modify the deployment kind if the team settings or CLI settings are different
+func (options *ImportOptions) modifyDeployKind() error {
+	deployKind := options.DeployKind
+	if deployKind == "" {
+		return nil
+	}
+
+	eo := &EditDeployKindOptions{}
+	copy := *options.CommonOptions
+	eo.CommonOptions = &copy
+	eo.Args = []string{deployKind}
+	eo.Dir = options.Dir
+	err := eo.Run()
+	if err != nil {
+		return errors.Wrapf(err, "failed to modify the deployment kind to %s", deployKind)
+	}
+	return nil
 }

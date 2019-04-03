@@ -206,7 +206,8 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 		branch = "master"
 	}
 
-	pr.CommonOptions = o.CommonOptions
+	copy := *o.CommonOptions
+	pr.CommonOptions = &copy
 
 	// defaults
 	pr.SourceName = "source"

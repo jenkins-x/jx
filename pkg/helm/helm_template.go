@@ -111,6 +111,7 @@ func (h *HelmTemplate) SetHost(tillerAddress string) {
 // SetCWD configures the common working directory of helm CLI
 func (h *HelmTemplate) SetCWD(dir string) {
 	h.Client.SetCWD(dir)
+	h.CWD = dir
 }
 
 // HelmBinary return the configured helm CLI

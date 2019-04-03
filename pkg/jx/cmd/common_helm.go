@@ -23,8 +23,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/version"
 	version2 "github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
-	survey "gopkg.in/AlecAivazis/survey.v1"
-	git "gopkg.in/src-d/go-git.v4"
+	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/src-d/go-git.v4"
 	gitconfig "gopkg.in/src-d/go-git.v4/config"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -527,13 +527,45 @@ func (o *CommonOptions) deleteChart(releaseName string, purge bool) error {
 	return o.Helm().DeleteRelease(ns, releaseName, purge)
 }
 
+// FindHelmChart finds the helm chart in the current dir
 func (o *CommonOptions) FindHelmChart() (string, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", errors.Wrap(err, "failed to get the current working directory")
+	return o.FindHelmChartInDir("")
+}
+
+// FindHelmChartInDir finds the helm chart in the given dir. If no dir is specified then the current dir is used
+func (o *CommonOptions) FindHelmChartInDir(dir string) (string, error) {
+	if dir == "" {
+		var err error
+		dir, err = os.Getwd()
+		if err != nil {
+			return "", errors.Wrap(err, "failed to get the current working directory")
+		}
 	}
-	o.Helm().SetCWD(dir)
-	return o.Helm().FindChart()
+	helmer := o.Helm()
+	helmer.SetCWD(dir)
+	return helmer.FindChart()
+}
+
+// FindChartValuesYaml finds the helm chart value.yaml in the given dir. If no dir is specified then the current dir is used
+func (o *CommonOptions) FindChartValuesYaml(dir string) (string, error) {
+	chartFile, err := o.FindHelmChartInDir(dir)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to find helm chart")
+	}
+	chartDir, _ := filepath.Split(chartFile)
+	valuesFileName, err := helm.FindValuesFileName(chartDir)
+	if valuesFileName == "" {
+		return "", fmt.Errorf("could not find a helm chart values.yaml in the charts folder")
+	}
+
+	exists, err := util.FileExists(valuesFileName)
+	if err != nil {
+		return "", err
+	}
+	if !exists {
+		return "", fmt.Errorf("could not find a helm chart values.yaml in the charts folder %s", chartDir)
+	}
+	return valuesFileName, nil
 }
 
 func (o *CommonOptions) DiscoverAppName() (string, error) {
@@ -809,5 +841,33 @@ func (o *CommonOptions) ensureHelm() error {
 	if err != nil {
 		return errors.Wrapf(err, "initializing helm with config: %v", cfg)
 	}
+	return nil
+}
+
+// modifyHelmValuesFile modifies the helm values.yaml file using some kind of callback
+func (o *CommonOptions) modifyHelmValuesFile(dir string, fn func(string) (string, error)) error {
+	// lets find the project dir...
+	valuesFileName, err := o.FindChartValuesYaml(dir)
+	if err != nil {
+		return err
+	}
+
+	data, err := ioutil.ReadFile(valuesFileName)
+	if err != nil {
+		return errors.Wrapf(err, "failed to read file %s", valuesFileName)
+	}
+
+	text := string(data)
+	text, err = fn(text)
+	if err != nil {
+		return errors.Wrapf(err, "failed to process file %s", valuesFileName)
+	}
+
+	err = ioutil.WriteFile(valuesFileName, []byte(text), util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to write file %s", valuesFileName)
+	}
+
+	log.Infof("modified the helm file: %s\n", util.ColorInfo(valuesFileName))
 	return nil
 }

@@ -436,14 +436,14 @@ func (h *HelmCLI) FindChart() (string, error) {
 		return "", errors.Wrapf(err, "no Chart.yaml file found in directory '%s'", dir)
 	}
 	if !exists {
-		files, err := filepath.Glob("*/Chart.yaml")
+		files, err := filepath.Glob(filepath.Join(dir, "*", "Chart.yaml"))
 		if err != nil {
 			return "", errors.Wrap(err, "no Chart.yaml file found")
 		}
 		if len(files) > 0 {
 			chartFile = files[0]
 		} else {
-			files, err = filepath.Glob("*/*/Chart.yaml")
+			files, err = filepath.Glob(filepath.Join(dir, "*", "*", "Chart.yaml"))
 			if err != nil {
 				return "", errors.Wrap(err, "no Chart.yaml file found")
 			}
