@@ -25,7 +25,13 @@ func (c *environments) PatchUpdate(environment *v1.Environment) (*v1.Environment
 	}
 
 	patch, err := util.CreatePatch(orig, environment)
+	if err != nil {
+		return nil, err
+	}
 	patched, err := c.Patch(resourceName, types.JSONPatchType, patch)
+	if err != nil {
+		return nil, err
+	}
 
 	return patched, nil
 }

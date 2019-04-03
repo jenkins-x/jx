@@ -25,7 +25,13 @@ func (c *teams) PatchUpdate(team *v1.Team) (*v1.Team, error) {
 	}
 
 	patch, err := util.CreatePatch(orig, team)
+	if err != nil {
+		return nil, err
+	}
 	patched, err := c.Patch(resourceName, types.JSONPatchType, patch)
+	if err != nil {
+		return nil, err
+	}
 
 	return patched, nil
 }
