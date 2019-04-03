@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -360,6 +361,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	name := o.Pack
 	packDir := filepath.Join(packsDir, name)
 
+	ctx := context.Background()
 	pipelineConfig := projectConfig.PipelineConfig
 	if name != "none" {
 		pipelineFile := filepath.Join(packDir, jenkinsfile.PipelineConfigFileName)
@@ -455,7 +457,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 
 	// TODO: Seeing weird behavior seemingly related to https://golang.org/doc/faq#nil_error
 	// if err is reused, maybe we need to switch return types (perhaps upstream in build-pipeline)?
-	if validateErr := parsed.Validate(); validateErr != nil {
+	if validateErr := parsed.Validate(ctx); validateErr != nil {
 		return nil, nil, nil, nil, nil, errors.Wrapf(validateErr, "Validation failed for Pipeline")
 	}
 
@@ -472,16 +474,16 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	tasks, pipeline = o.EnhanceTasksAndPipeline(tasks, pipeline, pipelineConfig)
 	run = o.CreatePipelineRun(pipeline, resources)
 
-	if validateErr := pipeline.Spec.Validate(); validateErr != nil {
+	if validateErr := pipeline.Spec.Validate(ctx); validateErr != nil {
 		return nil, nil, nil, nil, nil, errors.Wrapf(validateErr, "Validation failed for generated Pipeline")
 	}
 	for _, task := range tasks {
-		if validateErr := task.Spec.Validate(); validateErr != nil {
+		if validateErr := task.Spec.Validate(ctx); validateErr != nil {
 			data, _ := yaml.Marshal(task)
 			return nil, nil, nil, nil, nil, errors.Wrapf(validateErr, "Validation failed for generated Task: %s %s", task.Name, string(data))
 		}
 	}
-	if validateErr := run.Spec.Validate(); validateErr != nil {
+	if validateErr := run.Spec.Validate(ctx); validateErr != nil {
 		return nil, nil, nil, nil, nil, errors.Wrapf(validateErr, "Validation failed for generated PipelineRun")
 	}
 

@@ -24,6 +24,7 @@ import (
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
+	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
@@ -115,11 +116,14 @@ type Factory interface {
 	// CreateMetricsClient creates a new Kubernetes metrics client
 	CreateMetricsClient() (*metricsclient.Clientset, error)
 
-	// CreateTektonClient create a new Kubernetes client for Knative Pipeline resources
+	// CreateTektonClient create a new Kubernetes client for Tekton resources
 	CreateTektonClient() (tektonclient.Interface, string, error)
 
-	// CreateKnativeBuildClient create a new Kubernetes client for Knative resources
+	// CreateKnativeBuildClient create a new Kubernetes client for Knative Build resources
 	CreateKnativeBuildClient() (buildclient.Interface, string, error)
+
+	// CreateKnativeServeClient create a new Kubernetes client for Knative serve resources
+	CreateKnativeServeClient() (kserve.Interface, string, error)
 
 	// CreateVaultOperatorClient creates a new Kubernetes client for Vault operator resources
 	CreateVaultOperatorClient() (vaultoperatorclient.Interface, error)

@@ -38,6 +38,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
+	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -92,6 +93,7 @@ type CommonOptions struct {
 	devNamespace           string
 	jxClient               versioned.Interface
 	knbClient              buildclient.Interface
+	kserveClient           kserve.Interface
 	tektonClient           tektonclient.Interface
 	jenkinsClient          gojenkins.JenkinsClient
 	git                    gits.Gitter
@@ -290,6 +292,24 @@ func (o *CommonOptions) KnativeBuildClient() (buildclient.Interface, string, err
 		}
 	}
 	return o.knbClient, o.currentNamespace, nil
+}
+
+// KnativeServeClient returns or creates the knative serve client
+func (o *CommonOptions) KnativeServeClient() (kserve.Interface, string, error) {
+	if o.factory == nil {
+		return nil, "", errors.New("command factory is not initialized")
+	}
+	if o.kserveClient == nil {
+		kserveClient, ns, err := o.factory.CreateKnativeServeClient()
+		if err != nil {
+			return nil, ns, err
+		}
+		o.kserveClient = kserveClient
+		if o.currentNamespace == "" {
+			o.currentNamespace = ns
+		}
+	}
+	return o.kserveClient, o.currentNamespace, nil
 }
 
 // JXClientAndAdminNamespace returns or creates the jx client and admin namespace

@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/kserving"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/pkg/errors"
@@ -18,6 +19,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"k8s.io/api/apps/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -116,6 +118,10 @@ func (o *GetApplicationsOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	kserveClient, _, err := o.KnativeServeClient()
+	if err != nil {
+		return err
+	}
 
 	_, envApps, envNames, apps, err := o.getAppData(kubeClient)
 	if err != nil {
@@ -131,13 +137,13 @@ func (o *GetApplicationsOptions) Run() error {
 	o.Results.EnvApps = envApps
 	o.Results.EnvNames = envNames
 
-	table := o.generateTable(apps, envApps, kubeClient)
+	table := o.generateTable(apps, envApps, kubeClient, kserveClient)
 
 	table.Render()
 	return nil
 }
 
-func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps, kubeClient kubernetes.Interface) table.Table {
+func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps, kubeClient kubernetes.Interface, kserveClient kserve.Interface) table.Table {
 	table := o.generateTableHeaders(envApps)
 
 	appEnvMap := map[string]map[string]*ApplicationEnvironmentInfo{}
@@ -174,9 +180,20 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 						row = append(row, pods)
 					}
 					if !o.HideUrl {
-						url, _ := services.FindServiceURL(kubeClient, d.Namespace, appName)
-						if url == "" {
-							url, _ = services.FindServiceURL(kubeClient, d.Namespace, d.Name)
+						url := ""
+						names := []string{appName}
+						if d.Name != appName {
+							names = append(names, d.Name)
+						}
+						for _, name := range names {
+							url, _ = services.FindServiceURL(kubeClient, d.Namespace, name)
+							if url != "" {
+								break
+							}
+							url, _ = kserving.FindServiceURL(kserveClient, kubeClient, d.Namespace, name)
+							if url != "" {
+								break
+							}
 						}
 						if url == "" {
 							// handle helm3
@@ -255,6 +272,13 @@ func (o *GetApplicationsOptions) getAppData(kubeClient kubernetes.Interface) (na
 					}
 					envApps = append(envApps, envApp)
 					for k, d := range m {
+						// lets use the logical service name from kserve
+						if d.Labels != nil {
+							serviceName := d.Labels[kserving.ServiceLabel]
+							if serviceName != "" {
+								k = serviceName
+							}
+						}
 						appName := kube.GetAppName(k, ens)
 						if env.Spec.Kind == v1.EnvironmentKindTypeEdit {
 							if appName == kube.DeploymentExposecontrollerService || env.Spec.PreviewGitSpec.User.Username != u.Username {
