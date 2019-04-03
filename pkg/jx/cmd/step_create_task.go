@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/prow"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -11,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/prow"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -142,7 +143,7 @@ func NewCmdStepCreateTask(commonOpts *CommonOptions) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to query to find the projects .git directory")
+	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "/workspace/source", "The directory to query to find the projects .git directory")
 	cmd.Flags().StringVarP(&options.OutDir, "output", "o", "", "The directory to write the output to as YAML")
 	cmd.Flags().StringVarP(&options.BuildPackURL, "url", "u", "", "The URL for the build pack Git repository")
 	cmd.Flags().StringVarP(&options.BuildPackRef, "ref", "r", "", "The Git reference (branch,tag,sha) in the Git repository to use")
@@ -629,7 +630,6 @@ func (o *StepCreateTaskOptions) CreateStageForBuildPack(languageName string, pip
 			continue
 		}
 
-		l.Steps = append([]*jenkinsfile.PipelineStep{getDefaultPipelineStep()}, l.Steps...)
 		for _, s := range l.Steps {
 			steps = append(steps, o.createSteps(languageName, pipelineConfig, templateKind, s, container, dir, n.Name)...)
 		}
@@ -1638,13 +1638,4 @@ func (r *StepCreateTaskResults) ObjectReferences() []kube.ObjectReference {
 		log.Warnf("no Tasks, Pipeline or PipelineRuns created\n")
 	}
 	return resources
-}
-
-func getDefaultPipelineStep() *jenkinsfile.PipelineStep {
-	return &jenkinsfile.PipelineStep{
-		Name:      "git-merge",
-		Container: syntax.GitMergeImage,
-		Command:   "jx step git merge --verbose",
-		Dir:       "/workspace/source",
-	}
 }
