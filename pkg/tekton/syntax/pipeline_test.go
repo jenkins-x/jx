@@ -1,6 +1,7 @@
 package syntax_test
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 
@@ -25,7 +26,7 @@ var (
 
 // TODO: Try to write some helper functions to make Pipeline and Task expect building less bloody verbose.
 func TestParseJenkinsfileYaml(t *testing.T) {
-
+	ctx := context.Background()
 	tests := []struct {
 		name               string
 		expected           *syntax.ParsedPipeline
@@ -1055,7 +1056,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				t.Errorf("Parsed ParsedPipeline did not match expected: %s", d)
 			}
 
-			validateErr := parsed.Validate()
+			validateErr := parsed.Validate(ctx)
 			if validateErr != nil && tt.validationErrorMsg == "" {
 				t.Errorf("Validation failed: %s", validateErr)
 			}
@@ -1084,8 +1085,8 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					t.Errorf("Generated Pipeline did not match expected: %s", d)
 				}
 
-				if err := pipeline.Spec.Validate(); err != nil {
-					t.Errorf("PipelineSpec.Validate() = %v", err)
+				if err := pipeline.Spec.Validate(ctx); err != nil {
+					t.Errorf("PipelineSpec.Validate(ctx) = %v", err)
 				}
 
 				for _, task := range tasks {
@@ -1096,8 +1097,8 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				}
 
 				for _, task := range tasks {
-					if err := task.Spec.Validate(); err != nil {
-						t.Errorf("TaskSpec.Validate() = %v", err)
+					if err := task.Spec.Validate(ctx); err != nil {
+						t.Errorf("TaskSpec.Validate(ctx) = %v", err)
 					}
 				}
 
@@ -1112,6 +1113,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 }
 
 func TestFailedValidation(t *testing.T) {
+	ctx := context.Background()
 	tests := []struct {
 		name          string
 		expectedError *apis.FieldError
@@ -1358,7 +1360,7 @@ func TestFailedValidation(t *testing.T) {
 			}
 			parsed := projectConfig.PipelineConfig.Pipelines.Release.Pipeline
 
-			err = parsed.Validate()
+			err = parsed.Validate(ctx)
 
 			if err == nil {
 				t.Fatalf("Expected a validation failure but none occurred")

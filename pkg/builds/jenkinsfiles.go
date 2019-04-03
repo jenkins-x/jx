@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"strings"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	corev1 "k8s.io/api/core/v1"
@@ -45,38 +44,45 @@ func (j *JenkinsConverter) ToJenkinsfile() (string, error) {
 
 	j.startBlock("stages")
 
-	for _, branchBuild := range projectConfig.Builds {
-		kind := branchBuild.Kind
-		build := &branchBuild.Build
+	pipelines := projectConfig.PipelineConfig
+	if pipelines != nil {
+		pipeline := pipelines.Pipelines.PullRequest
+		if pipeline != nil {
+			for _, branchBuild := range pipeline.All() {
+				build := branchBuild.Lifecycle
+				if build == nil {
+					continue
+				}
 
-		name := branchBuild.Name
-		if name == "" {
-			name = strings.Title(kind)
+				name := branchBuild.Name
+
+				// TODO hack!
+				branchPattern := "PR-*"
+
+				j.startBlock(fmt.Sprintf(`stage '%s'`, name))
+
+				if branchPattern != "" {
+					j.startBlock("when")
+					j.println(fmt.Sprintf(`branch '%s'`, branchPattern))
+					j.endBlock()
+				}
+				j.environmentBlock(pipelines.Env)
+
+				j.startBlock("step")
+				j.startContainer()
+				for _, step := range build.Steps {
+					cmd := step.Command
+					j.println(fmt.Sprintf(`sh "%s"`, cmd))
+				}
+				j.endContainer()
+
+				j.endBlock()
+
+				j.endBlock()
+			}
 		}
-		// TODO hack!
-		branchPattern := "PR-*"
-
-		j.startBlock(fmt.Sprintf(`stage '%s'`, name))
-
-		if branchPattern != "" {
-			j.startBlock("when")
-			j.println(fmt.Sprintf(`branch '%s'`, branchPattern))
-			j.endBlock()
-		}
-		j.environmentBlock(branchBuild.Env)
-
-		j.startBlock("step")
-		j.startContainer()
-		for _, step := range build.Steps {
-			cmd := strings.Join(step.Args, " ")
-			j.println(fmt.Sprintf(`sh "%s"`, cmd))
-		}
-		j.endContainer()
-
-		j.endBlock()
-
-		j.endBlock()
 	}
+
 	j.endBlock()
 	j.endBlock()
 	return j.String(), nil

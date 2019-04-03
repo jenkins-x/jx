@@ -3,6 +3,7 @@ package kube
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/kserving"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -24,6 +25,16 @@ func GetVersion(r *metav1.ObjectMeta) string {
 					return last
 				}
 				return v
+			}
+
+			// find the kserve revision
+			kversion := labels[kserving.RevisionLabel]
+			if kversion != "" {
+				idx := strings.LastIndex(kversion, "-")
+				if idx > 0 {
+					kversion = kversion[idx+1:]
+				}
+				return kversion
 			}
 		}
 	}

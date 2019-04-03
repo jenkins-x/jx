@@ -4,7 +4,6 @@
 package gits_test
 
 import (
-	"fmt"
 	github "github.com/google/go-github/github"
 	auth "github.com/jenkins-x/jx/pkg/auth"
 	gits "github.com/jenkins-x/jx/pkg/gits"
@@ -477,6 +476,25 @@ func (mock *MockGitProvider) ListCommitStatus(_param0 string, _param1 string, _p
 	if len(result) != 0 {
 		if result[0] != nil {
 			ret0 = result[0].([]*gits.GitRepoStatus)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
+}
+
+func (mock *MockGitProvider) ListCommits(_param0 string, _param1 string, _param2 *gits.ListCommitsArguments) ([]*gits.GitCommit, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockGitProvider().")
+	}
+	params := []pegomock.Param{_param0, _param1, _param2}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("ListCommits", params, []reflect.Type{reflect.TypeOf((*[]*gits.GitCommit)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 []*gits.GitCommit
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].([]*gits.GitCommit)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(error)
@@ -1660,6 +1678,41 @@ func (c *GitProvider_ListCommitStatus_OngoingVerification) GetAllCapturedArgumen
 	return
 }
 
+func (verifier *VerifierGitProvider) ListCommits(_param0 string, _param1 string, _param2 *gits.ListCommitsArguments) *GitProvider_ListCommits_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ListCommits", params, verifier.timeout)
+	return &GitProvider_ListCommits_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type GitProvider_ListCommits_OngoingVerification struct {
+	mock              *MockGitProvider
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *GitProvider_ListCommits_OngoingVerification) GetCapturedArguments() (string, string, *gits.ListCommitsArguments) {
+	_param0, _param1, _param2 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
+}
+
+func (c *GitProvider_ListCommits_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []*gits.ListCommitsArguments) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
+		}
+		_param2 = make([]*gits.ListCommitsArguments, len(params[2]))
+		for u, param := range params[2] {
+			_param2[u] = param.(*gits.ListCommitsArguments)
+		}
+	}
+	return
+}
+
 func (verifier *VerifierGitProvider) ListInvitations() *GitProvider_ListInvitations_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ListInvitations", params, verifier.timeout)
@@ -2234,8 +2287,4 @@ func (c *GitProvider_ValidateRepositoryName_OngoingVerification) GetAllCapturedA
 		}
 	}
 	return
-}
-
-func (p *MockGitProvider) ListCommits(owner, repo string, opt *gits.ListCommitsArguments) ([]*gits.GitCommit, error) {
-	return nil, fmt.Errorf("Listing commits not supported on mock git")
 }
