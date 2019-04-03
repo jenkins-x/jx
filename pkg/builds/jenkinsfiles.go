@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -46,20 +47,29 @@ func (j *JenkinsConverter) ToJenkinsfile() (string, error) {
 
 	pipelines := projectConfig.PipelineConfig
 	if pipelines != nil {
-		pipeline := pipelines.Pipelines.PullRequest
-		if pipeline != nil {
+		for pipelineKind, pipeline := range pipelines.Pipelines.AllMap() {
+			if pipeline == nil {
+				continue
+			}
 			for _, branchBuild := range pipeline.All() {
 				build := branchBuild.Lifecycle
 				if build == nil {
 					continue
 				}
 
-				name := branchBuild.Name
+				branchPattern := ""
 
-				// TODO hack!
-				branchPattern := "PR-*"
-
-				j.startBlock(fmt.Sprintf(`stage '%s'`, name))
+				switch pipelineKind {
+				case jenkinsfile.PipelineKindRelease:
+					branchPattern = "master"
+				case jenkinsfile.PipelineKindPullRequest:
+					branchPattern = "PR-*"
+				case jenkinsfile.PipelineKindFeature:
+					branchPattern = "feature*"
+				default:
+					return "", fmt.Errorf("unknown pipeline kind %s", pipelineKind)
+				}
+				j.startBlock(fmt.Sprintf(`stage '%s'`, pipelineKind))
 
 				if branchPattern != "" {
 					j.startBlock("when")

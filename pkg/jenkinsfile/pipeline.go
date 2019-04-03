@@ -335,6 +335,21 @@ func (p *Pipelines) All() []*PipelineLifecycles {
 	return []*PipelineLifecycles{p.PullRequest, p.Feature, p.Release}
 }
 
+// AllMap returns all the lifecycles in this pipeline indexed by the pipeline name
+func (p *Pipelines) AllMap() map[string]*PipelineLifecycles {
+	m := map[string]*PipelineLifecycles{}
+	if p.PullRequest != nil {
+		m[PipelineKindPullRequest] = p.PullRequest
+	}
+	if p.Feature != nil {
+		m[PipelineKindFeature] = p.Feature
+	}
+	if p.Release != nil {
+		m[PipelineKindRelease] = p.Release
+	}
+	return m
+}
+
 // defaultContainerAndDir defaults the container if none is being used
 func (p *Pipelines) defaultContainerAndDir(container string, dir string) {
 	defaultContainerAndDir(container, dir, p.All()...)
