@@ -44,7 +44,7 @@ type ControllerBuildOptions struct {
 	EnvironmentCache *kube.EnvironmentNamespaceCache
 
 	// private fields added for easier testing
-	gitHubProvider  gits.GitProvider
+	gitHubProvider gits.GitProvider
 }
 
 // NewCmdControllerBuild creates a command object for the generic "get" action, which

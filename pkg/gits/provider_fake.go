@@ -719,6 +719,7 @@ func NewFakeProvider(repositories ...*FakeRepository) *FakeProvider {
 	}
 	return provider
 }
+
 // ListCommits returns the list of commits in the master brach only (TODO: read opt param to apply to other branches)
 func (f *FakeProvider) ListCommits(owner, name string, opt *ListCommitsArguments) ([]*GitCommit, error) {
 	repos, ok := f.Repositories[owner]

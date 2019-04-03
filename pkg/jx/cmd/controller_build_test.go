@@ -29,7 +29,7 @@ func TestDigitSuffix(t *testing.T) {
 func TestCompleteBuildSourceInfo(t *testing.T) {
 	o := &ControllerBuildOptions{
 		gitHubProvider: gits.NewFakeProvider(getFakeRepository()),
-		Namespace: "test",
+		Namespace:      "test",
 
 		ControllerOptions: ControllerOptions{
 			CommonOptions: &CommonOptions{},
@@ -48,7 +48,7 @@ func TestCompleteBuildSourceInfo(t *testing.T) {
 	)
 
 	act := &v1.PipelineActivity{
-		ObjectMeta: metav1.ObjectMeta {
+		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-org-my-repo-master-1",
 		},
 		Spec: v1.PipelineActivitySpec{
@@ -63,7 +63,7 @@ func TestCompleteBuildSourceInfo(t *testing.T) {
 	assert.Equal(t, act.Spec.LastCommitMessage, "This is a commit message")
 
 	act = &v1.PipelineActivity{
-		ObjectMeta: metav1.ObjectMeta {
+		ObjectMeta: metav1.ObjectMeta{
 			Name: "my-org-my-repo-pr-4",
 		},
 		Spec: v1.PipelineActivitySpec{
@@ -106,10 +106,10 @@ func getFakeRepository() *gits.FakeRepository {
 	return &gits.FakeRepository{
 		Owner: "my-org",
 		GitRepo: &gits.GitRepository{
-			Name: "my-repo",
+			Name:         "my-repo",
 			Organisation: "my-org",
 		},
-		Commits: []*gits.FakeCommit {
+		Commits: []*gits.FakeCommit{
 			{
 				Status: gits.CommitSatusSuccess,
 				Commit: &gits.GitCommit{
