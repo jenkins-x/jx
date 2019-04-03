@@ -32,10 +32,11 @@ import (
 )
 
 const (
-	kanikoDockerImage = "gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6"
-	kanikoSecretMount = "/kaniko-secret/secret.json"
-	kanikoSecretName  = "kaniko-secret"
-	kanikoSecretKey   = "kaniko-secret"
+	kanikoDockerImage    = "gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6"
+	kanikoSecretMount    = "/kaniko-secret/secret.json"
+	kanikoSecretName     = "kaniko-secret"
+	kanikoSecretKey      = "kaniko-secret"
+	defaultContainerName = "maven"
 )
 
 var (

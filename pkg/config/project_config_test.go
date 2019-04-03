@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tests"
 	corev1 "k8s.io/api/core/v1"
@@ -15,18 +16,49 @@ import (
 func TestProjectConfigMarshal(t *testing.T) {
 	t.Parallel()
 	projectConfig := &config.ProjectConfig{
-		Builds: []*config.BranchBuild{
+		BuildPack: "maven",
+		Env: []corev1.EnvVar{
 			{
-				Kind: "release",
-				Build: config.Build{
-					Steps: []corev1.Container{
-						{
-							Args: []string{"mvn", "test"},
+				Name:  "ORG",
+				Value: "myorg",
+			},
+			{
+				Name:  "APP_NAME",
+				Value: "thingy",
+			},
+		},
+		PipelineConfig: &jenkinsfile.PipelineConfig{
+			Pipelines: jenkinsfile.Pipelines{
+				PullRequest: &jenkinsfile.PipelineLifecycles{
+					Build: &jenkinsfile.PipelineLifecycle{
+						Steps: []*jenkinsfile.PipelineStep{
+							{
+								Command: "mvn test",
+							},
 						},
 					},
 				},
-				ExcludePodTemplateEnv:     true,
-				ExcludePodTemplateVolumes: true,
+				Release: &jenkinsfile.PipelineLifecycles{
+					Build: &jenkinsfile.PipelineLifecycle{
+						Steps: []*jenkinsfile.PipelineStep{
+							{
+								Command: "mvn test",
+							},
+							{
+								Command: "mvn deploy",
+							},
+							{
+								Command: "jx promote --all-auto",
+							},
+						},
+					},
+				},
+			},
+			Env: []corev1.EnvVar{
+				{
+					Name:  "PREVIEW_VERSION",
+					Value: "0.0.0-SNAPSHOT-$BRANCH_NAME-$BUILD_NUMBER",
+				},
 			},
 		},
 	}
@@ -44,6 +76,8 @@ func TestProjectConfigMarshal(t *testing.T) {
 	err = yaml.Unmarshal(data, copy)
 	assert.NoError(t, err)
 
-	assert.True(t, projectConfig.Builds[0].ExcludePodTemplateEnv)
-	assert.True(t, projectConfig.Builds[0].ExcludePodTemplateVolumes)
+	assert.Equal(t, 2, len(projectConfig.Env), "len(projectConfig.Env)")
+	assert.NotNil(t, projectConfig.PipelineConfig, "projectConfig.PipelineConfig")
+	assert.NotNil(t, projectConfig.PipelineConfig.Pipelines.Release, "projectConfig.PipelineConfig.Pipelines.Release")
+	assert.Equal(t, 1, len(projectConfig.PipelineConfig.Env), "len(projectConfig.PipelineConfig.Env)")
 }
