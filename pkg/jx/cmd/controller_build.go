@@ -395,7 +395,7 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineAc
 				activity.Spec.LastCommitMessage = gitCommits[0].Message
 			}
 		}
-		log.Infof("[BuildInfo] PipelineActicity set with author=%s and last message=%s\n", activity.Spec.Author, activity.Spec.LastCommitMessage)
+		log.Infof("[BuildInfo] PipelineActicity set with author=%s and last message\n", activity.Spec.Author)
 	}
 
 }
