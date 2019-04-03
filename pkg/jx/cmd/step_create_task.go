@@ -1063,7 +1063,13 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 			stepName = "step" + strconv.Itoa(1+o.stepCounter)
 		}
 		s.Name = prefix + stepName
-		s.Command = o.replaceCommandText(step)
+		commandText := o.replaceCommandText(step)
+
+		commands := strings.Split(commandText, " ")
+		s.Command = commands[0]
+		if len(commands) > 1 {
+			s.Arguments = append(s.Arguments, commands[1:]...)
+		}
 		if o.CustomImage != "" {
 			s.Image = o.CustomImage
 		} else {
