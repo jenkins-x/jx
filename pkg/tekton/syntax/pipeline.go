@@ -1335,7 +1335,7 @@ func getDefaultTaskSpec(envs []corev1.EnvVar) tektonv1alpha1.TaskSpec {
 				Image:      v,
 				Command:    []string{"jx"},
 				Args:       []string{"step", "git", "merge", "--verbose"},
-				WorkingDir: "/workspace/workspace",
+				WorkingDir: "/workspace/source",
 				Env:        envs,
 			},
 		},
