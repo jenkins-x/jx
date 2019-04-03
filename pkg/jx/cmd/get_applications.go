@@ -160,27 +160,8 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 						appEnvMap[appName] = appMap
 					}
 					version = kube.GetVersion(&d.ObjectMeta)
-					appEnvInfo := &ApplicationEnvironmentInfo{
-						Deployment:  &d,
-						Environment: &ea.Environment,
-						Version:     version,
-					}
-					appMap[ea.Environment.Name] = appEnvInfo
-					if ea.Environment.Spec.Kind != v1.EnvironmentKindTypePreview {
-						row = append(row, version)
-					}
-					if !o.HidePod {
-						pods := ""
-						replicas := ""
-						ready := d.Status.ReadyReplicas
-						if d.Spec.Replicas != nil && ready > 0 {
-							replicas = formatInt32(*d.Spec.Replicas)
-							pods = formatInt32(ready) + "/" + replicas
-						}
-						row = append(row, pods)
-					}
+					url := ""
 					if !o.HideUrl {
-						url := ""
 						names := []string{appName}
 						if d.Name != appName {
 							names = append(names, d.Name)
@@ -190,8 +171,15 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 							if url != "" {
 								break
 							}
-							url, _ = kserving.FindServiceURL(kserveClient, kubeClient, d.Namespace, name)
-							if url != "" {
+							url2, svc, _ := kserving.FindServiceURL(kserveClient, kubeClient, d.Namespace, name)
+							if url2 != "" {
+								url = url2
+								if svc != nil {
+									svcVersion := kube.GetVersion(&svc.ObjectMeta)
+									if svcVersion != "" {
+										version = svcVersion
+									}
+								}
 								break
 							}
 						}
@@ -208,8 +196,31 @@ func (o *GetApplicationsOptions) generateTable(apps []string, envApps []EnvApps,
 								}
 							}
 						}
+					}
+
+					appEnvInfo := &ApplicationEnvironmentInfo{
+						Deployment:  &d,
+						Environment: &ea.Environment,
+						Version:     version,
+						URL:         url,
+					}
+					appMap[ea.Environment.Name] = appEnvInfo
+
+					if ea.Environment.Spec.Kind != v1.EnvironmentKindTypePreview {
+						row = append(row, version)
+					}
+					if !o.HidePod {
+						pods := ""
+						replicas := ""
+						ready := d.Status.ReadyReplicas
+						if d.Spec.Replicas != nil && ready > 0 {
+							replicas = formatInt32(*d.Spec.Replicas)
+							pods = formatInt32(ready) + "/" + replicas
+						}
+						row = append(row, pods)
+					}
+					if !o.HideUrl {
 						row = append(row, url)
-						appEnvInfo.URL = url
 					}
 				} else {
 					if ea.Environment.Spec.Kind != v1.EnvironmentKindTypePreview {

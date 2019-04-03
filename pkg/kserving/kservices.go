@@ -8,13 +8,13 @@ import (
 )
 
 // FindServiceURL finds the service URL for the given knative service name
-func FindServiceURL(client kserve.Interface, kubeClient kubernetes.Interface, namespace string, name string) (string, error) {
+func FindServiceURL(client kserve.Interface, kubeClient kubernetes.Interface, namespace string, name string) (string, *v1alpha1.Service, error) {
 	svc, err := client.ServingV1alpha1().Services(namespace).Get(name, metav1.GetOptions{})
 	if err != nil {
-		return "", err
+		return "", svc, err
 	}
 	answer := GetServiceURL(svc, kubeClient, namespace)
-	return answer, nil
+	return answer, svc, nil
 }
 
 // GetServiceURL returns the URL for the given knative service

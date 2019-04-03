@@ -468,7 +468,7 @@ func (o *PreviewOptions) Run() error {
 	for _, n := range appNames {
 		url, err = services.FindServiceURL(kubeClient, o.Namespace, n)
 		if url == "" {
-			url, err = kserving.FindServiceURL(kserveClient, kubeClient, o.Namespace, n)
+			url, _, err = kserving.FindServiceURL(kserveClient, kubeClient, o.Namespace, n)
 		}
 		if url != "" {
 			writePreviewURL(o, url)
