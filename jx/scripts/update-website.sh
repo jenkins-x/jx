@@ -14,7 +14,7 @@ pushd jx-docs/static/apidocs
 popd
 
 pushd jx-docs/content/commands
-  ../../build/linux/jx create docs
+  ../../../build/linux/jx create docs
   git config credential.helper store
   git add *
   git commit --allow-empty -a -m "updated jx commands & API docs from $VERSION"
