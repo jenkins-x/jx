@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/kserving"
 	"github.com/jenkins-x/jx/pkg/users"
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
@@ -165,6 +166,10 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 	kubeClient, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+	kserveClient, _, err := o.KnativeServeClient()
 	if err != nil {
 		return err
 	}
@@ -462,6 +467,9 @@ func (o *PreviewOptions) Run() error {
 	appNames := []string{o.Application, o.ReleaseName, o.Namespace + "-preview", o.ReleaseName + "-" + o.Application}
 	for _, n := range appNames {
 		url, err = services.FindServiceURL(kubeClient, o.Namespace, n)
+		if url == "" {
+			url, err = kserving.FindServiceURL(kserveClient, kubeClient, o.Namespace, n)
+		}
 		if url != "" {
 			writePreviewURL(o, url)
 			break
