@@ -81,7 +81,7 @@ func (o *EditDeployKindOptions) Run() error {
 			return err
 		}
 		if name == "" {
-			return fmt.Errorf("No kind chosen!")
+			return fmt.Errorf("no kind chosen")
 		}
 	} else {
 		name = args[0]
