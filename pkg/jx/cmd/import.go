@@ -562,7 +562,7 @@ func (options *ImportOptions) getDockerRegistryOrg() string {
 	if dockerRegistryOrg == "" {
 		dockerRegistryOrg = options.getOrganisationOrCurrentUser()
 	}
-	return dockerRegistryOrg
+	return strings.ToLower(dockerRegistryOrg)
 }
 
 func (options *ImportOptions) getOrganisationOrCurrentUser() string {

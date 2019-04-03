@@ -27,8 +27,6 @@ func NewCmdStepCreate(commonOpts *CommonOptions) *cobra.Command {
 			CheckErr(err)
 		},
 	}
-	cmd.AddCommand(NewCmdStepCreateBuild(commonOpts))
-	cmd.AddCommand(NewCmdStepCreateBuildTemplate(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateTask(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateVersionPullRequest(commonOpts))
 	return cmd

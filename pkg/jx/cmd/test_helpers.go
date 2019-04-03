@@ -18,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube/resources"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	kservefake "github.com/knative/serving/pkg/client/clientset/versioned/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	apifake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
@@ -95,6 +96,7 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 	o.SetKubeClient(client)
 	o.jxClient = v1fake.NewSimpleClientset(jxObjects...)
 	o.apiExtensionsClient = apifake.NewSimpleClientset()
+	o.kserveClient = kservefake.NewSimpleClientset()
 	o.git = git
 	if fakeGitProvider != nil {
 		o.fakeGitProvider = fakeGitProvider

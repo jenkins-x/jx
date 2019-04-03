@@ -24,7 +24,6 @@ type ProjectConfig struct {
 	// List of global environment variables to add to each branch build and each step
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
-	Builds              []*BranchBuild              `json:"builds,omitempty"`
 	PreviewEnvironments *PreviewEnvironmentConfig   `json:"previewEnvironments,omitempty"`
 	IssueTracker        *IssueTrackerConfig         `json:"issueTracker,omitempty"`
 	Chat                *ChatConfig                 `json:"chat,omitempty"`

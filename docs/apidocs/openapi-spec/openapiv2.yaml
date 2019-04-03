@@ -1586,6 +1586,8 @@ definitions:
         type: string
       buildPackUrl:
         type: string
+      deployKind:
+        type: string
       dockerRegistryOrg:
         type: string
       envOrganisation:

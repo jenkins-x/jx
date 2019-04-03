@@ -25,7 +25,13 @@ func (c *apps) PatchUpdate(app *v1.App) (*v1.App, error) {
 	}
 
 	patch, err := util.CreatePatch(orig, app)
+	if err != nil {
+		return nil, err
+	}
 	patchedApp, err := c.Patch(resourceName, types.JSONPatchType, patch)
+	if err != nil {
+		return nil, err
+	}
 
 	return patchedApp, nil
 }

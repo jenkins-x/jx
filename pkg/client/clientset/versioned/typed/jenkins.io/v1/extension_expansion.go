@@ -25,7 +25,13 @@ func (c *extensions) PatchUpdate(extension *v1.Extension) (*v1.Extension, error)
 	}
 
 	patch, err := util.CreatePatch(orig, extension)
+	if err != nil {
+		return nil, err
+	}
 	patched, err := c.Patch(resourceName, types.JSONPatchType, patch)
+	if err != nil {
+		return nil, err
+	}
 
 	return patched, nil
 }

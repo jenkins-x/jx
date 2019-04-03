@@ -25,7 +25,13 @@ func (c *commitStatuses) PatchUpdate(commitStatus *v1.CommitStatus) (*v1.CommitS
 	}
 
 	patch, err := util.CreatePatch(orig, commitStatus)
+	if err != nil {
+		return nil, err
+	}
 	patched, err := c.Patch(resourceName, types.JSONPatchType, patch)
+	if err != nil {
+		return nil, err
+	}
 
 	return patched, nil
 }
