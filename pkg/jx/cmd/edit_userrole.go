@@ -81,13 +81,13 @@ func (o *EditUserRoleOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	jxClient, ns, err := o.JXClientAndDevNamespace()
+
+	jxClient, teamNs, adminNs, err := o.JXClientDevAndAdminNamespace()
 	if err != nil {
 		return err
 	}
 
-	// TODO should use the admin namespace?
-	users, names, err := users.GetUsers(jxClient, ns)
+	users, names, err := users.GetUsers(jxClient, adminNs)
 	if err != nil {
 		return err
 	}
@@ -117,19 +117,24 @@ func (o *EditUserRoleOptions) Run() error {
 	}
 	userKind := user.SubjectKind()
 
-	roles, roleNames, err := kube.GetTeamRoles(kubeClient, ns)
+	roles, roleNames, err := kube.GetTeamRoles(kubeClient, teamNs)
 	if err != nil {
 		return err
 	}
 
 	if len(roleNames) == 0 {
-		log.Warnf("No Team roles for team %s\n", ns)
+		log.Warnf("No Team roles for team %s\n", teamNs)
 		return nil
 	}
 
 	userRoles := o.Roles
 	if !o.BatchMode && len(userRoles) == 0 {
-		userRoles, err = util.PickNames(roleNames, "Roles for user: "+name, "", o.In, o.Out, o.Err)
+
+		currentRoles, err := kube.GetUserRoles(kubeClient, jxClient, teamNs, userKind, name)
+		if err != nil {
+			return err
+		}
+		userRoles, err = util.PickNamesWithDefaults(roleNames, currentRoles, "Roles for user: "+name, "", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
@@ -138,7 +143,7 @@ func (o *EditUserRoleOptions) Run() error {
 	rolesText := strings.Join(userRoles, ", ")
 	log.Infof("updating user %s for roles %s\n", name, rolesText)
 
-	err = kube.UpdateUserRoles(kubeClient, jxClient, ns, userKind, name, userRoles, roles)
+	err = kube.UpdateUserRoles(kubeClient, jxClient, teamNs, userKind, name, userRoles, roles)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to update user roles for user %s kind %s and roles %s", name, userKind, rolesText)
 	}

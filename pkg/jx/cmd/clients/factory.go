@@ -41,6 +41,7 @@ import (
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	build "github.com/knative/build/pkg/client/clientset/versioned"
+	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -532,6 +533,23 @@ func (f *factory) CreateKnativeBuildClient() (build.Interface, string, error) {
 	}
 	ns := kube.CurrentNamespace(kubeConfig)
 	client, err := build.NewForConfig(config)
+	if err != nil {
+		return nil, ns, err
+	}
+	return client, ns, err
+}
+
+func (f *factory) CreateKnativeServeClient() (kserve.Interface, string, error) {
+	config, err := f.CreateKubeConfig()
+	if err != nil {
+		return nil, "", err
+	}
+	kubeConfig, _, err := f.kubeConfig.LoadConfig()
+	if err != nil {
+		return nil, "", err
+	}
+	ns := kube.CurrentNamespace(kubeConfig)
+	client, err := kserve.NewForConfig(config)
 	if err != nil {
 		return nil, ns, err
 	}

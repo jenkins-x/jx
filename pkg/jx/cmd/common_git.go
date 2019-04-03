@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -378,7 +379,7 @@ func (o *CommonOptions) dockerRegistryOrg(repository *gits.GitRepository) string
 	if answer == "" && repository != nil {
 		answer = repository.Organisation
 	}
-	return answer
+	return strings.ToLower(answer)
 }
 
 func (o *CommonOptions) dockerRegistry() string {

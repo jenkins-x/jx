@@ -4234,6 +4234,12 @@ func schema_pkg_apis_jenkinsio_v1_TeamSettings(ref common.ReferenceCallback) com
 							},
 						},
 					},
+					"deployKind": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
 					"importMode": {
 						SchemaProps: spec.SchemaProps{
 							Description: "ImportMode indicates what kind of",

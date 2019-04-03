@@ -38,6 +38,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
+	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -92,6 +93,7 @@ type CommonOptions struct {
 	devNamespace           string
 	jxClient               versioned.Interface
 	knbClient              buildclient.Interface
+	kserveClient           kserve.Interface
 	tektonClient           tektonclient.Interface
 	jenkinsClient          gojenkins.JenkinsClient
 	git                    gits.Gitter
@@ -292,6 +294,24 @@ func (o *CommonOptions) KnativeBuildClient() (buildclient.Interface, string, err
 	return o.knbClient, o.currentNamespace, nil
 }
 
+// KnativeServeClient returns or creates the knative serve client
+func (o *CommonOptions) KnativeServeClient() (kserve.Interface, string, error) {
+	if o.factory == nil {
+		return nil, "", errors.New("command factory is not initialized")
+	}
+	if o.kserveClient == nil {
+		kserveClient, ns, err := o.factory.CreateKnativeServeClient()
+		if err != nil {
+			return nil, ns, err
+		}
+		o.kserveClient = kserveClient
+		if o.currentNamespace == "" {
+			o.currentNamespace = ns
+		}
+	}
+	return o.kserveClient, o.currentNamespace, nil
+}
+
 // JXClientAndAdminNamespace returns or creates the jx client and admin namespace
 func (o *CommonOptions) JXClientAndAdminNamespace() (versioned.Interface, string, error) {
 	kubeClient, _, err := o.KubeClientAndNamespace()
@@ -334,6 +354,21 @@ func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, 
 		o.devNamespace = devNs
 	}
 	return o.jxClient, o.devNamespace, nil
+}
+
+// JXClientDevAndAdminNamespace returns or creates the jx client, dev and admin namespaces
+func (o *CommonOptions) JXClientDevAndAdminNamespace() (versioned.Interface, string, string, error) {
+	kubeClient, _, err := o.KubeClientAndNamespace()
+	if err != nil {
+		return nil, "", "", err
+	}
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	adminNs, err := kube.GetAdminNamespace(kubeClient, devNs)
+	return jxClient, devNs, adminNs, err
 }
 
 // Git returns the git client
