@@ -42,6 +42,9 @@ type ControllerBuildOptions struct {
 	InitGitCredentials bool
 
 	EnvironmentCache *kube.EnvironmentNamespaceCache
+
+	// private fields added for easier testing
+	gitHubProvider  gits.GitProvider
 }
 
 // NewCmdControllerBuild creates a command object for the generic "get" action, which
@@ -398,6 +401,12 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineAc
 }
 
 func (o *ControllerBuildOptions) getGithubProvider(secrets *corev1.SecretList, gitInfo *gits.GitRepository) (gits.GitProvider, error) {
+	// this internal provider is only used during tests
+	if o.gitHubProvider != nil {
+		return o.gitHubProvider, nil
+	}
+
+	// production code always goes this way
 	if secrets != nil {
 		for _, secret := range secrets.Items {
 			labels := secret.Labels
@@ -405,7 +414,7 @@ func (o *ControllerBuildOptions) getGithubProvider(secrets *corev1.SecretList, g
 			data := secret.Data
 			if labels != nil && labels[kube.LabelKind] == kube.ValueKindGit && annotations != nil {
 				u := annotations[kube.AnnotationURL]
-				if u != "" && data != nil {
+				if u == "https://github.com" && data != nil {
 					username := data[kube.SecretDataUsername]
 					pwd := data[kube.SecretDataPassword]
 					// server *auth.AuthServer, user *auth.UserAuth, git Gitter
