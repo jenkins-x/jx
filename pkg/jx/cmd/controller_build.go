@@ -807,7 +807,8 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 
 	if initGitCredentials {
 		gc := &StepGitCredentialsOptions{}
-		gc.CommonOptions = o
+		copy := *o
+		gc.CommonOptions = &copy
 		gc.BatchMode = true
 		log.Info("running: jx step git credentials\n")
 		err = gc.Run()
