@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"k8s.io/client-go/kubernetes"
-	"time"
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
@@ -206,14 +207,8 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 	}
 
 	if o.GKEProjectID == "" {
-		kubeClient, ns, err := o.KubeClientAndDevNamespace()
-		if err != nil {
-			log.Warnf("Failed create KubeClient: %s\n", err)
-		} else {
-			data, err := kube.ReadInstallValues(kubeClient, ns)
-			if err != nil {
-				log.Warnf("Failed to load install values %s\n", err)
-			} else if data != nil {
+		if kubeClient, ns, err := o.KubeClientAndDevNamespace(); err == nil {
+			if data, err := kube.ReadInstallValues(kubeClient, ns); err == nil && data != nil {
 				o.GKEProjectID = data[kube.ProjectID]
 				if o.GKEZone == "" {
 					o.GKEZone = data[kube.Zone]

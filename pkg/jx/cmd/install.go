@@ -24,10 +24,10 @@ import (
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/jenkins-x/jx/pkg/addon"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -2072,6 +2072,7 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			AWSConfig:           options.AWSConfig,
 			RecreateVaultBucket: options.Flags.RecreateVaultBucket,
 		}
+
 		if options.installValues != nil {
 			if options.Flags.Provider == cloud.GKE {
 				if cvo.GKEProjectID == "" {
@@ -2098,6 +2099,7 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 				}
 			}
 		}
+
 		vaultOperatorClient, err := cvo.VaultOperatorClient()
 		if err != nil {
 			return err
@@ -2125,6 +2127,9 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			log.Infof("System vault created named %s in namespace %s.\n",
 				util.ColorInfo(systemVaultName), util.ColorInfo(namespace))
 		}
+
+		// Make sure that the dev namespace wasn't overwritte
+		options.SetDevNamespace(namespace)
 
 		err = options.SetSecretsLocation(secrets.VaultLocationKind, false)
 		if err != nil {
