@@ -2054,7 +2054,7 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 
 		err := gke.EnableAPIs(options.installValues[kube.ProjectID], "cloudkms")
 		if err != nil {
-			return errors.Wrap(err,"unable to enable 'cloudkms' api")
+			return errors.Wrap(err, "unable to enable 'cloudkms' api")
 		}
 
 		err = InstallVaultOperator(options.CommonOptions, namespace)
