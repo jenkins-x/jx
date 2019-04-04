@@ -464,6 +464,14 @@ func (h *HelmCLI) StatusRelease(ns string, releaseName string) error {
 	return h.runHelm("status", releaseName)
 }
 
+// StatusReleaseWithOutput returns the output of the helm status command for a given release
+func (h *HelmCLI) StatusReleaseWithOutput(ns string, releaseName string, outputFormat string) (string, error) {
+	if outputFormat == "" {
+		return h.runHelmWithOutput("status", releaseName)
+	}
+	return h.runHelmWithOutput("status", releaseName, "--output", outputFormat)
+}
+
 // StatusReleases returns the status of all installed releases
 func (h *HelmCLI) StatusReleases(ns string) (map[string]Release, error) {
 	output, err := h.ListCharts()

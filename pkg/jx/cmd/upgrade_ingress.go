@@ -446,7 +446,7 @@ func (o *UpgradeIngressOptions) confirmExposecontrollerConfig() error {
 		// TODO: Add the rest of the Ingress-related info as arguments and assign to `o.IngressConfig` only those that were not specified, instead of the whole `ic`.`
 		o.IngressConfig = ic
 		if urlTemplate != "" {
-			// Template must be surrouned by quotes
+			// Template must be surrounded by quotes
 			if !strings.HasPrefix(urlTemplate, "\"") && !strings.HasPrefix(urlTemplate, "'") {
 				urlTemplate = "\"" + urlTemplate + "\""
 			}

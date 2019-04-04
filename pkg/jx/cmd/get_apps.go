@@ -1,24 +1,51 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
-
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 // GetAppsOptions containers the CLI options
 type GetAppsOptions struct {
 	GetOptions
-	Namespace string
-	GitOps    bool
-	DevEnv    *v1.Environment
+	Namespace  string
+	ShowStatus bool
+	GitOps     bool
+	DevEnv     *v1.Environment
+}
+
+type appsResult struct {
+	AppOutput []appOutput `json:"items"`
+}
+
+type appOutput struct {
+	Name            string `yaml:"appName" json:"appName"`
+	Version         string `yaml:"version" json:"version"`
+	Description     string `yaml:"description" json:"description"`
+	ChartRepository string `yaml:"chartRepository" json:"chartRepository"`
+	Status          string `yaml:"status" json:"status"`
+}
+
+// HelmOutput is the representation of the Helm status command
+type HelmOutput struct {
+	helmInfo `yaml:"info" json:"info"`
+}
+
+type helmInfo struct {
+	helmInfoStatus `yaml:"status" json:"status"`
+}
+
+type helmInfoStatus struct {
+	Resources string `json:"resources" json:"resources"`
 }
 
 var (
@@ -32,7 +59,15 @@ var (
 
 		# Display details about the app called cheese
 		jx get app cheese
+		
+		# Display detailed status info about the app called cheese
+		jx get app cheese --status
 
+		# Display detailed status info about the app called cheese in 'json' format
+		jx get app cheese --status -o json
+
+		# Display details about the app called cheese in 'yaml' format
+		jx get app cheese -o yaml
 	`)
 )
 
@@ -57,6 +92,8 @@ func NewCmdGetApps(commonOpts *CommonOptions) *cobra.Command {
 		},
 	}
 	options.addGetFlags(cmd)
+	cmd.Flags().StringVarP(&options.Namespace, optionNamespace, "n", "", "The namespace where you want to search the apps in")
+	cmd.Flags().BoolVarP(&options.ShowStatus, "status", "s", false, "Shows detailed information about the state of the app")
 	return cmd
 }
 
@@ -93,23 +130,86 @@ func (o *GetAppsOptions) Run() error {
 		return nil
 	}
 
-	table := o.generateTable(apps, kubeClient)
+	if o.ShowStatus {
+		differentAppsInSlice, err := checkDifferentAppsInAppsSlice(apps)
+		if err != nil {
+			fmt.Fprintln(o.Out, "There was a problem trying to show the status of the app: ", err)
+			return nil
+		}
+		if differentAppsInSlice {
+			fmt.Fprint(o.Out, "Different apps provided. Provide only one app to check the status of\n")
+			return nil
+		}
+		return o.generateAppStatusOutput(&apps.Items[0])
+	}
 
+	if o.Output != "" {
+		appsResult := o.generateTableFormatted(apps)
+		return o.renderResult(appsResult, o.Output)
+	}
+	table := o.generateTable(apps, kubeClient)
 	table.Render()
 	return nil
 }
 
+func (o *GetAppsOptions) generateAppStatusOutput(app *v1.App) error {
+	output, err := o.Helm().StatusReleaseWithOutput(o.Namespace, app.Labels[helm.LabelAppName], "json")
+	if err != nil {
+		return err
+	}
+	return o.printHelmResourcesWithFormat(output)
+}
+
+func (o *GetAppsOptions) generateTableFormatted(apps *v1.AppList) appsResult {
+	releasesMap, err := o.Helm().StatusReleases(o.Namespace)
+	if err != nil {
+		log.Warnf("There was a problem obtaining the app status: %v\n", err)
+	}
+	results := appsResult{}
+	for _, app := range apps.Items {
+		if app.Labels != nil {
+			name := app.Labels[helm.LabelAppName]
+			if name != "" && app.Annotations != nil {
+				var status string
+				if releasesMap != nil {
+					status = releasesMap[name].Status
+				}
+				results.AppOutput = append(results.AppOutput, appOutput{
+					Name:            name,
+					Version:         app.Labels[helm.LabelAppVersion],
+					Description:     app.Annotations[helm.AnnotationAppDescription],
+					ChartRepository: app.Annotations[helm.AnnotationAppRepository],
+					Status:          status,
+				})
+			}
+		}
+	}
+	return results
+}
+
 func (o *GetAppsOptions) generateTable(apps *v1.AppList, kubeClient kubernetes.Interface) table.Table {
 	table := o.generateTableHeaders(apps)
+	releasesMap, err := o.Helm().StatusReleases(o.Namespace)
+	if err != nil {
+		log.Warnf("There was a problem obtaining the app status: %v\n", err)
+	}
 	for _, app := range apps.Items {
-		name := app.Labels[helm.LabelAppName]
-		if name != "" {
-			version := app.Labels[helm.LabelAppVersion]
-			description := app.Annotations[helm.AnnotationAppDescription]
-			repository := app.Annotations[helm.AnnotationAppRepository]
-			row := []string{name, version, description, repository}
-			table.AddRow(row...)
+		if app.Labels != nil {
+			name := app.Labels[helm.LabelAppName]
+			if name != "" && app.Annotations != nil {
+				version := app.Labels[helm.LabelAppVersion]
+				description := app.Annotations[helm.AnnotationAppDescription]
+				repository := app.Annotations[helm.AnnotationAppRepository]
+				var status string
+				if releasesMap != nil {
+					status = releasesMap[name].Status
+				}
+				namespace := app.Namespace
+				row := []string{name, version, repository, namespace, status, description}
+				table.AddRow(row...)
+			}
 		}
+
 	}
 	return table
 }
@@ -117,7 +217,34 @@ func (o *GetAppsOptions) generateTable(apps *v1.AppList, kubeClient kubernetes.I
 func (o *GetAppsOptions) generateTableHeaders(apps *v1.AppList) table.Table {
 	t := o.createTable()
 	t.Out = o.CommonOptions.Out
-	titles := []string{"Name", "Version", "Description", "Chart Repository"}
+	titles := []string{"Name", "Version", "Chart Repository", "Namespace", "Status", "Description"}
 	t.AddRow(titles...)
 	return t
+}
+
+func (o *GetAppsOptions) printHelmResourcesWithFormat(helmOutputJSON string) error {
+	h := HelmOutput{}
+	err := json.Unmarshal([]byte(helmOutputJSON), &h)
+	if err != nil {
+		return err
+	}
+	if o.Output == "" {
+		fmt.Fprintln(o.Out, h.helmInfoStatus.Resources)
+		return nil
+	}
+	return o.renderResult(h, o.Output)
+
+}
+
+func checkDifferentAppsInAppsSlice(apps *v1.AppList) (bool, error) {
+	if len(apps.Items) == 0 {
+		return false, errors.New("no apps were provided to check the status of")
+	}
+	x, a := apps.Items[0], apps.Items[1:]
+	for _, app := range a {
+		if app.Name != x.Name {
+			return true, nil
+		}
+	}
+	return false, nil
 }

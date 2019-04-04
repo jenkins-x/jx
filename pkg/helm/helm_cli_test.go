@@ -219,6 +219,28 @@ func TestStatusRelease(t *testing.T) {
 	verifyArgs(t, helm, runner, expectedArgs...)
 }
 
+func TestStatusReleaseWithOutputNoFormat(t *testing.T) {
+	expectedArgs := []string{"status", releaseName}
+	helm, runner := createHelm(t, nil, "")
+	ns := "default"
+
+	_, err := helm.StatusReleaseWithOutput(ns, releaseName, "")
+
+	assert.NoErrorf(t, err, "should return the status of the helm chart without format")
+	verifyArgs(t, helm, runner, expectedArgs...)
+}
+
+func TestStatusReleaseWithOutputWithFormat(t *testing.T) {
+	expectedArgs := []string{"status", releaseName, "--output", "json"}
+	helm, runner := createHelm(t, nil, "")
+	ns := "default"
+
+	_, err := helm.StatusReleaseWithOutput(ns, releaseName, "json")
+
+	assert.NoErrorf(t, err, "should return the status of the helm chart without in Json format")
+	verifyArgs(t, helm, runner, expectedArgs...)
+}
+
 func TestStatusReleases(t *testing.T) {
 	expectedArgs := []string{"list"}
 	expectedSatusMap := map[string]string{
