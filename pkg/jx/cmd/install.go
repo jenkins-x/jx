@@ -2024,8 +2024,34 @@ func (options *InstallOptions) configureKaniko() error {
 		}
 		defer os.RemoveAll(serviceAccountDir)
 
-		serviceAccountName := kube.ToValidNameTruncated(fmt.Sprintf("jxkankio-%s", options.installValues[kube.ClusterName]), 30)
+		clusterName := options.installValues[kube.ClusterName]
 		projectID := options.installValues[kube.ProjectID]
+		if projectID == "" || clusterName == "" {
+			if kubeClient, ns, err := options.KubeClientAndDevNamespace(); err == nil {
+				if data, err := kube.ReadInstallValues(kubeClient, ns); err == nil && data != nil {
+					if projectID == "" {
+						projectID = data[kube.ProjectID]
+					}
+					if clusterName == "" {
+						clusterName = data[kube.ClusterName]
+					}
+				}
+			}
+		}
+		if projectID == "" {
+			projectID, err = options.getGoogleProjectId()
+			if err != nil {
+				return errors.Wrap(err, "getting the GCP project ID")
+			}
+		}
+		if clusterName == "" {
+			clusterName, err = options.getGKEClusterNameFromContext()
+			if err != nil {
+				return errors.Wrap(err, "gettting the GKE cluster name from current context")
+			}
+		}
+
+		serviceAccountName := kube.ToValidNameTruncated(fmt.Sprintf("jxkankio-%s", clusterName), 30)
 
 		log.Infof("Configuring Kaniko service account %s for project %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
 		serviceAccountPath, err := gke.GetOrCreateServiceAccount(serviceAccountName, projectID, serviceAccountDir, gke.KanikoServiceAccountRoles)
