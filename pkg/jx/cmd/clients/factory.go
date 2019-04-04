@@ -60,7 +60,6 @@ type factory struct {
 	impersonateUser string
 	bearerToken     string
 	secretLocation  secrets.SecretLocation
-	useVault        bool
 	offline         bool
 }
 
