@@ -667,6 +667,16 @@ func splitObjectsInFiles(file string) ([]string, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		if line == resourcesSeparator && buf.Len() > 0 {
+			// ensure that we actually have YAML in the buffer
+			m := yaml.MapSlice{}
+			err = yaml.Unmarshal(buf.Bytes(), &m)
+			if err != nil {
+				return make([]string, 0), errors.Wrapf(err, "Failed to parse the following YAML from file '%s':\n%s", file, buf.String())
+			}
+			if len(m) == 0 {
+				buf.Reset()
+				continue
+			}
 			objFile, err := writeObjectInFile(&buf, dir, fileName, count)
 			if err != nil {
 				return result, errors.Wrapf(err, "saving object")
