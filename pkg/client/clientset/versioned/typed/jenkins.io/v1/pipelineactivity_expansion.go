@@ -34,5 +34,5 @@ func (c *pipelineActivities) PatchUpdate(pipelineActivity *v1.PipelineActivity) 
 		return nil, err
 	}
 
-	return patched, err
+	return patched, nil
 }

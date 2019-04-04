@@ -15,7 +15,7 @@ const (
 )
 
 // Client is an interface for interacting with Vault
-//go:generate pegomock generate github.com/jenkins-x/jx/pkg/vault Client -o mocks/vault_client.go --generate-matchers
+//go:generate pegomock generate github.com/jenkins-x/jx/pkg/vault Client -o mocks/vault_client.go
 type Client interface {
 	// Write writes a named secret to the vault
 	Write(secretName string, data map[string]interface{}) (map[string]interface{}, error)
