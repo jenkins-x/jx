@@ -495,12 +495,6 @@ func validateContainerOptions(c *corev1.Container) *apis.FieldError {
 				Paths:   []string{"workingDir"},
 			}
 		}
-		if len(c.VolumeMounts) != 0 {
-			return &apis.FieldError{
-				Message: "VolumeMounts cannot be specified in containerOptions",
-				Paths:   []string{"volumeMounts"},
-			}
-		}
 		if c.Name != "" {
 			return &apis.FieldError{
 				Message: "Name cannot be specified in containerOptions",
@@ -995,17 +989,15 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 			} else {
 				c = &containers[0]
 			}
-			cmdStr := step.Command
-			if len(step.Arguments) > 0 {
-				cmdStr += " " + strings.Join(step.Arguments, " ")
-			}
-			c.Args = []string{cmdStr}
 		} else {
 			c.Image = stepImage
-			c.Command = []string{step.Command}
-			c.Args = step.Arguments
-			// TODO: Better paths
+			c.Command = []string{"/bin/sh", "-c"}
 		}
+		cmdStr := step.Command
+		if len(step.Arguments) > 0 {
+			cmdStr += " " + strings.Join(step.Arguments, " ")
+		}
+		c.Args = []string{cmdStr}
 		c.WorkingDir = workingDir
 		stepCounter++
 		if step.Name != "" {

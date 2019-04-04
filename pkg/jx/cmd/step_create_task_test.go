@@ -86,6 +86,13 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			branch:         "anything",
 			expectingError: true,
 		},
+		{
+			name:         "per_step_container_build_pack",
+			language:     "apps",
+			repoName:     "golang-qs-test",
+			organization: "abayer",
+			branch:       "master",
+		},
 	}
 
 	k8sObjects := []runtime.Object{

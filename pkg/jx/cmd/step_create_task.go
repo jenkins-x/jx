@@ -27,6 +27,7 @@ import (
 	"github.com/spf13/cobra"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -453,6 +454,25 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 
 		parsed = &syntax.ParsedPipeline{
 			Stages: []syntax.Stage{*stage},
+		}
+
+		// If agent.container is specified, use that for default container configuration for step images.
+		containerName := pipelineConfig.Agent.Container
+		if containerName != "" {
+			if o.PodTemplates != nil && o.PodTemplates[containerName] != nil {
+				podTemplate := o.PodTemplates[containerName]
+				container := podTemplate.Spec.Containers[0]
+				if !equality.Semantic.DeepEqual(container, corev1.Container{}) {
+					container.Name = ""
+					container.Command = []string{}
+					container.Args = []string{}
+					container.Image = ""
+					container.WorkingDir = ""
+					container.Stdin = false
+					container.TTY = false
+					parsed.Options.ContainerOptions = &container
+				}
+			}
 		}
 	}
 
@@ -971,6 +991,8 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		s.Command = o.replaceCommandText(step)
 		if o.CustomImage != "" {
 			s.Image = o.CustomImage
+		} else {
+			s.Image = containerName
 		}
 
 		workspaceDir := o.getWorkspaceDir()
