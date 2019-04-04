@@ -1,0 +1,29 @@
+branch-protection:
+  protect-tested-repos: true
+deck:
+  spyglass: {}
+gerrit: {}
+owners_dir_blacklist:
+  default: null
+  repos: null
+plank: {}
+pod_namespace: jx
+postsubmits:
+  cb-kubecd/jx-scheduler-test-group-repo:
+  - agent: tekton
+    branches:
+    - master
+    context: ""
+    name: bdd
+  cb-kubecd/jx-scheduler-test-repo:
+  - agent: tekton
+    branches:
+    - master
+    context: ""
+    name: bdd
+prowjob_namespace: jx
+push_gateway: {}
+sinker: {}
+tide:
+  context_options:
+    required-if-present-contexts: null

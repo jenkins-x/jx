@@ -194,7 +194,8 @@ type TeamSettings struct {
 	VersionStreamRef string `json:"versionStreamRef,omitempty" protobuf:"bytes,26,opt,name=versionStreamRef"`
 
 	// AppsPrefixes is the list of prefixes for appNames
-	AppsPrefixes []string `json:"appPrefixes,omitempty" protobuf:"bytes,27,opt,name=appPrefixes"`
+	AppsPrefixes     []string          `json:"appPrefixes,omitempty" protobuf:"bytes,27,opt,name=appPrefixes"`
+	DefaultScheduler ResourceReference `json:"defaultScheduler,omitempty" protobuf:"bytes,28,opt,name=defaultScheduler"`
 }
 
 // StorageLocation
