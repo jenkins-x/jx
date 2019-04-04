@@ -329,33 +329,32 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 
 // completeBuildSourceInfo sets the PR author and PR title from GitHub in the given PA
 // If the PA is a branch build it then sets the commit author and last commit message
-func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineActivity) {
+func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineActivity) error {
 
 	log.Infof("[BuildInfo] Completing build info for PipelineActivity=%s\n", activity.Name)
 
 	gitInfo, err := gits.ParseGitURL(activity.Spec.GitURL)
 	if err != nil {
-		log.Warnf("Cannot parse git repo URL [%s]. Error: %s\n", activity.Spec.GitURL, err)
-		return
+		return err
 	}
 	if !gitInfo.IsGitHub() {
 		// this is GH only for now
-		return
+		return nil
 	}
 	if activity.Spec.Author != "" {
 		// info already set, save some GH requests
-		return
+		return nil
 	}
 
 	secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, "github")
 	if err != nil {
-		log.Warnf("Cannot load pipeline secrets. Error: %s\n", err)
+		return err
 	}
 
 	// get a github API client
 	provider, err := o.getGithubProvider(secrets, gitInfo)
 	if err != nil {
-		log.Warnf("Cannot create GitHub provider. Error: %s", err)
+		return err
 	}
 
 	// extract (org, repo, commit) or (org, repo, #PR) from key
@@ -364,13 +363,11 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineAc
 		n := strings.Replace(strings.ToUpper(activity.Spec.GitBranch), "PR-", "", -1)
 		prNumber, err := strconv.Atoi(n)
 		if err != nil {
-			log.Warnf("Cannot extract PR number from [%s]. Error: %s\n", activity.Spec.GitBranch, err)
-			return
+			return err
 		}
 		pr, e := provider.GetPullRequest(gitInfo.Organisation, gitInfo, prNumber)
 		if e != nil {
-			log.Warnf("Cannot read PR from Github. Error: %s\n", e)
-			return
+			return err
 		}
 		if pr.Author != nil {
 			activity.Spec.Author = pr.Author.Login
@@ -385,8 +382,7 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineAc
 			PerPage: 1,
 		})
 		if e != nil {
-			log.Warnf("Cannot read last branch commit from Github. Error: %s\n", e)
-			return
+			return e
 		}
 		if len(gitCommits) > 0 {
 			if gitCommits[0] != nil && gitCommits[0].Author != nil {
@@ -396,7 +392,7 @@ func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineAc
 		}
 		log.Infof("[BuildInfo] PipelineActicity set with author=%s and last message\n", activity.Spec.Author)
 	}
-
+	return nil
 }
 
 func (o *ControllerBuildOptions) getGithubProvider(secrets *corev1.SecretList, gitInfo *gits.GitRepository) (gits.GitProvider, error) {
@@ -575,7 +571,10 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 	}
 
 	if spec.Author == "" {
-		o.completeBuildSourceInfo(activity)
+		err := o.completeBuildSourceInfo(activity)
+		if err != nil {
+			log.Warnf("Error completing build information: %s", err)
+		}
 	}
 
 	// lets compare YAML in case we modify arrays in place on a copy (such as the steps) and don't detect we changed things
