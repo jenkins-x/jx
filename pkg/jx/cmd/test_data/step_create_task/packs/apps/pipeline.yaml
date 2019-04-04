@@ -30,17 +30,16 @@ pipelines:
               name: helm-version
               container: gcr.io/jenkinsxio/builder-go:0.0.0-SNAPSHOT-PR-380-56
     promote:
-      build:
-        steps:
-          - sh: make release
-            name: release
-            container: gcr.io/jenkinsxio/builder-go:0.0.0-SNAPSHOT-PR-380-56
-          - dir: charts/REPLACE_ME_APP_NAME
-            steps:
-              - comment: Let's release the helm chart
-                sh: jx step helm release
-                name: helm-release
-              - comment: Let's promote through all 'Auto' promotion Environments
-                sh: jx promote -b --all-auto --timeout 1h --version \$(cat ../../VERSION)
-                name: jx-promote
-                container: gcr.io/jenkinsxio/builder-go:0.0.0-SNAPSHOT-PR-380-56
+      steps:
+        - sh: make release
+          name: release
+          container: gcr.io/jenkinsxio/builder-go:0.0.0-SNAPSHOT-PR-380-56
+        - dir: charts/REPLACE_ME_APP_NAME
+          steps:
+            - comment: Let's release the helm chart
+              sh: jx step helm release
+              name: helm-release
+            - comment: Let's promote through all 'Auto' promotion Environments
+              sh: jx promote -b --all-auto --timeout 1h --version \$(cat ../../VERSION)
+              name: jx-promote
+              container: gcr.io/jenkinsxio/builder-go:0.0.0-SNAPSHOT-PR-380-56
