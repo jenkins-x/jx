@@ -126,6 +126,10 @@ func (o *GetAppsOptions) Run() error {
 	}
 
 	if len(apps.Items) == 0 {
+		if len(o.Args) > 0 {
+			return errors.New("No Apps found")
+		}
+
 		fmt.Fprint(o.Out, "No Apps found\n")
 		return nil
 	}
