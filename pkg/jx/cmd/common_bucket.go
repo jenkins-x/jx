@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -91,17 +91,12 @@ func (o *CommonOptions) createBucketFromURL(bucketURL string, bucket *blob.Bucke
 func (o *CommonOptions) createGcsBucket(u *url.URL, bucket *blob.Bucket, cb *CreateBucketValues) error {
 	var err error
 	if cb.GKEProjectID == "" {
-		kubeClient, ns, err := o.KubeClientAndDevNamespace()
-		if err != nil {
-			return err
-		}
-		data, err := kube.ReadInstallValues(kubeClient, ns)
-		if err != nil {
-			log.Warnf("Failed to load install values %s\n", err)
-		} else if data != nil {
-			cb.GKEProjectID = data[kube.ProjectID]
-			if cb.GKEZone == "" {
-				cb.GKEZone = data[kube.Zone]
+		if kubeClient, ns, err := o.KubeClientAndDevNamespace(); err == nil {
+			if data, err := kube.ReadInstallValues(kubeClient, ns); err == nil && data != nil {
+				cb.GKEProjectID = data[kube.ProjectID]
+				if cb.GKEZone == "" {
+					cb.GKEZone = data[kube.Zone]
+				}
 			}
 		}
 	}
