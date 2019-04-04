@@ -167,14 +167,7 @@ func (o *GetAppsOptions) generateAppStatusOutput(app *v1.App) error {
 func (o *GetAppsOptions) generateTableFormatted(apps *v1.AppList) appsResult {
 	releasesMap, err := o.Helm().StatusReleases(o.Namespace)
 	if err != nil {
-		
-    
-    
-    
-    
-    
-    
-    .Warnf("There was a problem obtaining the app status: %v\n", err)
+		log.Warnf("There was a problem obtaining the app status: %v\n", err)
 	}
 	results := appsResult{}
 	for _, app := range apps.Items {

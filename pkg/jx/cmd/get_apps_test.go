@@ -653,12 +653,9 @@ func TestGetAppNotFound(t *testing.T) {
 	getAppOptions.CommonOptions.Err = console.Err
 	getAppOptions.Args = []string{"cheese"}
 	err = getAppOptions.Run()
-	assert.NoError(t, err)
 	fakeStdout.Close()
-	outBytes, _ := ioutil.ReadAll(r)
 	r.Close()
-	output := stripansi.Strip(string(outBytes))
-	assert.Contains(t, output, "No Apps found\n")
+	assert.EqualError(t, err, "No Apps found")
 }
 
 func addApp(t *testing.T, name string, namespace string, testOptions *cmd_test_helpers.AppTestOptions, gitOps bool) {
