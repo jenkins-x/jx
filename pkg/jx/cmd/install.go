@@ -2052,9 +2052,14 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 		// Configure the vault flag if only GitOps mode is on
 		options.Flags.Vault = true
 
-		err := InstallVaultOperator(options.CommonOptions, namespace)
+		err := gke.EnableAPIs(options.installValues[kube.ProjectID], "cloudkms")
 		if err != nil {
-			return err
+			return errors.Wrap(err, "unable to enable 'cloudkms' api")
+		}
+
+		err = InstallVaultOperator(options.CommonOptions, namespace)
+		if err != nil {
+			return errors.Wrap(err, "unable to install vault operator")
 		}
 
 		// Create a new System vault
