@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -224,9 +225,15 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 			Name: gitProviderName,
 			URL:  gitProviderUrl,
 		}
-		err = createGitServer.Run()
+		err = o.retry(10, time.Second*10, func() error {
+			err = createGitServer.Run()
+			if err != nil {
+				return errors.Wrapf(err, "Failed to create git server with kind %s at url %s in team %s", gitProviderName, gitProviderUrl, team)
+			}
+			return nil
+		})
 		if err != nil {
-			return errors.Wrapf(err, "Failed to create git server with kind %s at url %s in team %s", gitProviderName, gitProviderUrl, team)
+			return err
 		}
 
 		createGitToken := &CreateGitTokenOptions{
