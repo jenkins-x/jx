@@ -1,11 +1,17 @@
 package gke
 
 import (
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
+	"io/ioutil"
+	"k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	"os"
 	"sort"
 	"strings"
-
-	"github.com/jenkins-x/jx/pkg/util"
 )
+
 
 var PROJECT_LIST_HEADER = "PROJECT_ID"
 
@@ -132,5 +138,54 @@ func GetGoogleMachineTypes() []string {
 		"n1-highcpu-32",
 		"n1-highcpu-64",
 		"n1-highcpu-96",
+	} // CreateGCPServiceAccount creates a service account in GCP for the vault service
+}
+
+func CreateGCPServiceAccount(kubeClient kubernetes.Interface, serviceName, namespace, clusterName, projectId string, serviceAccountRoles []string, serviceAccountSecretKey string) (string, error) {
+	serviceAccountDir, err := ioutil.TempDir("", "gke")
+	if err != nil {
+		return "", errors.Wrap(err, "creating a temporary folder where the service account will be stored")
 	}
+	defer os.RemoveAll(serviceAccountDir)
+
+	serviceAccountName := ServiceAccountName(serviceName)
+	if err != nil {
+		return "", err
+	}
+	serviceAccountPath, err := GetOrCreateServiceAccount(serviceAccountName, projectId, serviceAccountDir, serviceAccountRoles)
+	if err != nil {
+		return "", errors.Wrap(err, "creating the service account")
+	}
+
+	secretName, err := storeGCPServiceAccountIntoSecret(kubeClient, serviceAccountPath, serviceName, namespace, serviceAccountSecretKey)
+	if err != nil {
+		return "", errors.Wrap(err, "storing the service account into a secret")
+	}
+	return secretName, nil
+}
+
+func storeGCPServiceAccountIntoSecret(client kubernetes.Interface, serviceAccountPath, serviceName, namespace string, serviceAccountSecretKey string) (string, error) {
+	serviceAccount, err := ioutil.ReadFile(serviceAccountPath)
+	if err != nil {
+		return "", errors.Wrapf(err, "reading the service account from file '%s'", serviceAccountPath)
+	}
+
+	secretName := GcpServiceAccountSecretName(serviceName)
+	secret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: secretName,
+		},
+		Data: map[string][]byte{
+			serviceAccountSecretKey: serviceAccount,
+		},
+	}
+
+	secrets := client.CoreV1().Secrets(namespace)
+	_, err = secrets.Get(secretName, metav1.GetOptions{})
+	if err != nil {
+		_, err = secrets.Create(secret)
+	} else {
+		_, err = secrets.Update(secret)
+	}
+	return secretName, nil
 }

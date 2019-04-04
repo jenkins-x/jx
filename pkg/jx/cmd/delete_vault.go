@@ -116,7 +116,7 @@ func (o *DeleteVaultOptions) Run() error {
 
 	var secretName string
 	if teamSettings.KubeProvider == cloud.GKE {
-		secretName = gkevault.GcpServiceAccountSecretName(vaultName)
+		secretName = gke.GcpServiceAccountSecretName(vaultName)
 	}
 	if teamSettings.KubeProvider == cloud.AWS || teamSettings.KubeProvider == cloud.EKS {
 		secretName = awsvault.AwsServiceAccountSecretName(vaultName)
@@ -172,14 +172,14 @@ func (o *DeleteVaultOptions) removeGCPResources(vaultName string) error {
 		o.GKEZone = zone
 	}
 
-	sa := gkevault.ServiceAccountName(vaultName)
+	sa := gke.ServiceAccountName(vaultName)
 	err = gke.DeleteServiceAccount(sa, o.GKEProjectID, gkevault.ServiceAccountRoles)
 	if err != nil {
 		return errors.Wrapf(err, "deleting the GCP service account '%s'", sa)
 	}
 	log.Infof("GCP service account %s deleted\n", util.ColorInfo(sa))
 
-	bucket := gkevault.BucketName(vaultName)
+	bucket := gke.BucketName(vaultName)
 	err = gke.DeleteAllObjectsInBucket(bucket)
 	if err != nil {
 		return errors.Wrapf(err, "deleting all objects in GCS bucket '%s'", bucket)
