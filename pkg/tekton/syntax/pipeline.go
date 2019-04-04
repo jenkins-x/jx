@@ -993,11 +993,10 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 			c.Image = stepImage
 			c.Command = []string{"/bin/sh", "-c"}
 		}
-		cmdStr := step.Command
+		c.Args = []string{step.Command}
 		if len(step.Arguments) > 0 {
-			cmdStr += " " + strings.Join(step.Arguments, " ")
+			c.Args = append(c.Args, strings.Join(step.Arguments, " "))
 		}
-		c.Args = []string{cmdStr}
 		c.WorkingDir = workingDir
 		stepCounter++
 		if step.Name != "" {
