@@ -123,6 +123,8 @@ func (c *GitCollector) CollectData(data []byte, outputPath string) (string, erro
 		return u, err
 	}
 
+	defer os.RemoveAll(ghPagesDir)
+
 	toFile := filepath.Join(ghPagesDir, outputPath)
 	toDir, _ := filepath.Split(toFile)
 	err = os.MkdirAll(toDir, util.DefaultWritePermissions)

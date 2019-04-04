@@ -1270,7 +1270,7 @@ func (o *StepCreateTaskOptions) cloneGitRepositoryToTempDir(gitURL string) error
 
 func (o *StepCreateTaskOptions) deleteTempDir() {
 	log.Infof("removing the temp directory %s\n", o.Dir)
-	err := util.DeleteDirContents(o.Dir)
+	err := os.RemoveAll(o.Dir)
 	if err != nil {
 		log.Warnf("failed to delete dir %s: %s\n", o.Dir, err.Error())
 	}
