@@ -1,16 +1,18 @@
 package vault
 
 import (
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
+
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/pkg/errors"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -96,7 +98,7 @@ func CreateBucket(vaultName, clusterName, projectID, zone string, recreate bool,
 		if batchMode {
 			log.Warnf("we are deleting the Vault bucket %s so that Vault will install cleanly\n", bucketName)
 		} else {
-			if !util.Confirm("we are about to delete bucket: %s so we can install a clean Vault. Are you sure: ",
+			if !util.Confirm(fmt.Sprintf("we are about to delete bucket %q, so we can install a clean Vault. Are you sure: ", bucketName),
 				true, "we recommend you delete the Vault bucket on install to ensure Vault starts up reliably", in, out, outErr) {
 				return bucketName, nil
 			}
