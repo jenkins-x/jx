@@ -62,6 +62,7 @@ type InitFlags struct {
 	OnPremise                  bool
 	Http                       bool
 	NoGitValidate              bool
+	ExternalDNS                bool
 }
 
 const (
@@ -594,6 +595,7 @@ controller:
 		}
 
 		o.Flags.Domain, err = o.GetDomain(client, o.Flags.Domain, o.Flags.Provider, ingressNamespace, o.Flags.IngressService, externalIP)
+		o.CommonOptions.Domain = o.Flags.Domain
 		if err != nil {
 			return err
 		}

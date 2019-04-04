@@ -104,6 +104,7 @@ type InstallFlags struct {
 	RecreateVaultBucket         bool
 	Tekton                      bool
 	KnativeBuild                bool
+	ExternalDNS                 bool
 	BuildPackName               string
 	Kaniko                      bool
 	GitOpsMode                  bool
@@ -338,6 +339,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.Prow, "prow", "", false, "Enable Prow to implement Serverless Jenkins and support ChatOps on Pull Requests")
 	cmd.Flags().BoolVarP(&flags.Tekton, "tekton", "", false, "Enables the Tekton pipeline engine (which used to be called knative build pipeline) along with Prow to provide Serverless Jenkins. Otherwise we default to use Knative Build if you enable Prow")
 	cmd.Flags().BoolVarP(&flags.KnativeBuild, "knative-build", "", false, "Note this option is deprecated now in favour of tekton. If specified this will keep using the old knative build with Prow instead of the stratgegic tekton")
+	cmd.Flags().BoolVarP(&flags.ExternalDNS, "external-dns", "", false, "Installs external-dns into the cluster. ExternalDNS manages service DNS records for your cluster, providing you've setup your domain record")
 	cmd.Flags().BoolVarP(&flags.GitOpsMode, "gitops", "", false, "Creates a git repository for the Dev environment to manage the installation, configuration, upgrade and addition of Apps in Jenkins X all via GitOps")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvApply, "no-gitops-env-apply", "", false, "When using GitOps to create the source code for the development environment and installation, don't run 'jx step env apply' to perform the install")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvRepo, "no-gitops-env-repo", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a git repository for the source code")
@@ -975,7 +977,7 @@ func (options *InstallOptions) configureAndInstallProw(namespace string, gitOpsD
 			return errors.Wrap(err, "retrieving the pipeline Git Auth")
 		}
 		options.OAUTHToken = pipelineUser.ApiToken
-		err = options.InstallProw(options.Flags.Tekton, options.Flags.GitOpsMode, gitOpsDir, gitOpsEnvDir, pipelineUser.Username)
+		err = options.InstallProw(options.Flags.Tekton, options.Flags.ExternalDNS, options.Flags.GitOpsMode, gitOpsDir, gitOpsEnvDir, pipelineUser.Username)
 		if err != nil {
 			errors.Wrap(err, "installing Prow")
 		}

@@ -67,6 +67,12 @@ const (
 	ChartVaultOperator              = "jenkins-x/vault-operator"
 	DefaultVaultOperatorReleaseName = "vault-operator"
 
+	//ChartExternalDNS the default chart for external-dns
+	ChartExternalDNS                = "bitnami/external-dns"
+	DefaultExternalDNSReleaseName   = "external-dns"
+	DefaultExternalDNSTag           = "1.5.2"
+
+
 	// ServiceJenkins is the name of the Jenkins Service
 	ServiceJenkins = "jenkins"
 

@@ -2,12 +2,13 @@ package opts
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/pflag"
 	"io"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/pflag"
 
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
@@ -66,47 +67,49 @@ type ModifyEnvironmentFn func(name string, callback func(env *jenkinsv1.Environm
 type CommonOptions struct {
 	Prow
 
-	In                     terminal.FileReader
-	Out                    terminal.FileWriter
-	Err                    io.Writer
-	Cmd                    *cobra.Command
 	Args                   []string
 	BatchMode              bool
-	Verbose                bool
-	LogLevel               string
-	NoBrew                 bool
-	InstallDependencies    bool
-	SkipAuthSecretsMerge   bool
-	ServiceAccount         string
-	Username               string
+	Cmd                    *cobra.Command
+	Domain                 string
+	Err                    io.Writer
 	ExternalJenkinsBaseURL string
+	In                     terminal.FileReader
+	InstallDependencies    bool
+	LogLevel               string
 	ModifyDevEnvironmentFn ModifyDevEnvironmentFn
 	ModifyEnvironmentFn    ModifyEnvironmentFn
+	NoBrew                 bool
+	Out                    terminal.FileWriter
+	ServiceAccount         string
+	SkipAuthSecretsMerge   bool
+	Username               string
+	Verbose                bool
 
-	factory             clients.Factory
-	kubeClient          kubernetes.Interface
-	apiExtensionsClient apiextensionsclientset.Interface
-	currentNamespace    string
-	devNamespace        string
-	jxClient            versioned.Interface
-	knbClient           buildclient.Interface
-	kserveClient        kserve.Interface
-	tektonClient        tektonclient.Interface
-	jenkinsClient       gojenkins.JenkinsClient
-	git                 gits.Gitter
-	helm                helm.Helmer
-	kuber               kube.Kuber
-	vaultOperatorClient vaultoperatorclient.Interface
-	vaultClient         vault.Client
-	systemVaultClient   vault.Client
-	resourcesInstaller  resources.Installer
-	complianceClient    *client.SonobuoyClient
-	certManagerClient   certmngclient.Interface
-	environmentsDir     string
-	fakeGitProvider     *gits.FakeProvider
+	apiExtensionsClient    apiextensionsclientset.Interface
+	certManagerClient      certmngclient.Interface
+	complianceClient       *client.SonobuoyClient
+	currentNamespace       string
+	devNamespace           string
+	environmentsDir        string
+	factory                clients.Factory
+	fakeGitProvider        *gits.FakeProvider
+	git                    gits.Gitter
+	helm                   helm.Helmer
+	jenkinsClient          gojenkins.JenkinsClient
+	jxClient               versioned.Interface
+	knbClient              buildclient.Interface
+	kserveClient           kserve.Interface
+	kubeClient             kubernetes.Interface
+	kuber                  kube.Kuber
+	modifyDevEnvironmentFn ModifyDevEnvironmentFn
+	modifyEnvironmentFn    ModifyEnvironmentFn
+	resourcesInstaller     resources.Installer
+	systemVaultClient      vault.Client
+	tektonClient           tektonclient.Interface
+	vaultClient            vault.Client
+	vaultOperatorClient    vaultoperatorclient.Interface
 }
 
-// ServerFlags keeps generic server flags
 type ServerFlags struct {
 	ServerName string
 	ServerURL  string
