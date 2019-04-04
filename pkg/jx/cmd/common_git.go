@@ -207,22 +207,14 @@ func (o *CommonOptions) ensureGitServiceCRD(server *auth.AuthServer) error {
 	if server.Name == "" {
 		server.Name = kind
 	}
-	apisClient, err := o.ApiExtensionsClient()
-	if err != nil {
-		return err
-	}
-	err = kube.RegisterGitServiceCRD(apisClient)
-	if err != nil {
-		return err
-	}
 
 	jxClient, devNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create JX Client")
 	}
 	err = kube.EnsureGitServiceExistsForHost(jxClient, devNs, kind, server.Name, server.URL, o.Out)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to ensure GitService exists for kind %s server %s in namespace %s", kind, server.URL, devNs)
 	}
 	log.Infof("Ensured we have a GitService called %s for URL %s in namespace %s\n", server.Name, server.URL, devNs)
 	return nil

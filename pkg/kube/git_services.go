@@ -26,7 +26,7 @@ func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, k
 	gitServices := jxClient.JenkinsV1().GitServices(devNs)
 	list, err := gitServices.List(metav1.ListOptions{})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to list git services")
 	}
 	for _, gs := range list.Items {
 		if gitUrlsEqual(gs.Spec.URL, gitUrl) {
@@ -38,7 +38,7 @@ func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, k
 				if err != nil {
 					return fmt.Errorf("Failed to update kind on GitService with name %s: %s", gs.Name, err)
 				}
-				return err
+				return errors.Wrap(err, "failed to PatchUpdate")
 			} else {
 				log.Infof("already has GitService %s in namespace %s for URL %s\n", gs.Name, devNs, gitUrl)
 				return nil
@@ -48,7 +48,7 @@ func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, k
 	if name == "" {
 		u, err := url.Parse(gitUrl)
 		if err != nil {
-			return fmt.Errorf("No name supplied and could not parse URL %s due to %s", u, err)
+			return errors.Wrapf(err, "no name supplied and could not parse URL %s", u)
 		}
 		name = u.Host
 	}
@@ -68,7 +68,7 @@ func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, k
 	if err != nil {
 		_, err = gitServices.Create(gitSvc)
 		if err != nil {
-			return fmt.Errorf("Failed to create GitService with name %s: %s", gitSvc.Name, err)
+			return errors.Wrapf(err, "failed to create GitService with name %s", gitSvc.Name)
 		}
 		log.Infof("GitService %s created in namespace %s for URL %s\n", gitSvc.Name, devNs, gitUrl)
 	} else if current != nil {
@@ -78,7 +78,7 @@ func EnsureGitServiceExistsForHost(jxClient versioned.Interface, devNs string, k
 
 			_, err = gitServices.PatchUpdate(current)
 			if err != nil {
-				return fmt.Errorf("Failed to update GitService with name %s: %s", gitSvc.Name, err)
+				return errors.Wrapf(err, "failed to PatchUpdate GitService with name %s", gitSvc.Name)
 			}
 			log.Infof("GitService %s updated in namespace %s for URL %s\n", gitSvc.Name, devNs, gitUrl)
 		}

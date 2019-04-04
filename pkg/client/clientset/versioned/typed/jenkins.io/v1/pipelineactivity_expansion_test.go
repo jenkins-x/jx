@@ -3,11 +3,12 @@ package v1
 import (
 	"encoding/json"
 	"errors"
+	"net/http"
+	"testing"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"net/http"
-	"testing"
 )
 
 var (
@@ -35,8 +36,9 @@ func TestPatchUpdatePipelineActivityNoModification(t *testing.T) {
 	fakeClient := newClientForTest(get, patch)
 
 	pipelineActivities := pipelineActivities{
-		client: fakeClient,
-		ns:     "default",
+		client:           fakeClient,
+		ns:               "default",
+		returnPatchValue: true,
 	}
 
 	updated, err := pipelineActivities.PatchUpdate(testPipelineActivity)
@@ -68,8 +70,9 @@ func TestPatchUpdatePipelineActivityWithChange(t *testing.T) {
 	fakeClient := newClientForTest(get, patch)
 
 	pipelineActivities := pipelineActivities{
-		client: fakeClient,
-		ns:     "default",
+		client:           fakeClient,
+		ns:               "default",
+		returnPatchValue: true,
 	}
 
 	updated, err := pipelineActivities.PatchUpdate(testPipelineActivity)
@@ -87,8 +90,9 @@ func TestPatchUpdatePipelineActivityWithErrorInGet(t *testing.T) {
 	fakeClient := newClientForTest(get, nil)
 
 	pipelineActivities := pipelineActivities{
-		client: fakeClient,
-		ns:     "default",
+		client:           fakeClient,
+		ns:               "default",
+		returnPatchValue: true,
 	}
 
 	updated, err := pipelineActivities.PatchUpdate(testPipelineActivity)
@@ -114,8 +118,9 @@ func TestPatchUpdatePipelineActivityWithErrorInPatch(t *testing.T) {
 	fakeClient := newClientForTest(get, patch)
 
 	pipelineActivities := pipelineActivities{
-		client: fakeClient,
-		ns:     "default",
+		client:           fakeClient,
+		ns:               "default",
+		returnPatchValue: true,
 	}
 
 	updated, err := pipelineActivities.PatchUpdate(testPipelineActivity)
