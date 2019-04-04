@@ -864,7 +864,7 @@ func (o *CreateDevPodOptions) guessDevPodLabel(dir string, labels []string) (str
 		} else if exists {
 			answer, err = FindDevPodLabelFromJenkinsfile(jenkinsfile, labels)
 			if err != nil {
-				return answer, errors.Wrapf(err, "could not extract the pod template label from file: %s", jenkinsfile, err)
+				return answer, errors.Wrapf(err, "could not extract the pod template label from file: %s", jenkinsfile)
 			}
 
 		}
