@@ -2,13 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 
+	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/util/system"
 	"github.com/jenkins-x/jx/pkg/version"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -154,67 +155,61 @@ func (o *VersionOptions) Run() error {
 	table.Render()
 
 	if !o.NoVersionCheck {
-		return o.VersionCheck()
+		newVersion, err := o.GetLatestJXVersion()
+		if err != nil {
+			return errors.Wrap(err, "getting latest jx version")
+		}
+		update, err := o.ShouldUpdate(newVersion)
+		if err != nil {
+			return errors.Wrap(err, "checking version")
+		}
+		if update {
+			return o.upgradeCli(newVersion)
+		}
 	}
 	return nil
 }
 
-func (o *VersionOptions) VersionCheck() error {
-	newVersion, err := o.GetLatestJXVersion()
-	if err != nil {
-		return err
-	}
-
+// ShouldUpdate checks if CLI version should be updated
+func (o *VersionOptions) ShouldUpdate(newVersion semver.Version) (bool, error) {
 	currentVersion, err := version.GetSemverVersion()
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	if newVersion.GT(currentVersion) {
 		// Do not ask to update if we are using a dev build...
 		for _, x := range currentVersion.Pre {
 			if x.VersionStr == "dev" {
-				return nil
+				return false, nil
 			}
 		}
-		app := util.ColorInfo("jx")
-		log.Warnf("\nA new %s version is available: %s\n", app, util.ColorInfo(newVersion.String()))
+		return true, nil
+	}
+	return false, nil
+}
 
-		if o.BatchMode {
-			log.Warnf("To upgrade to this new version use: %s\n", util.ColorInfo("jx upgrade cli"))
-		} else {
-			message := fmt.Sprintf("Would you like to upgrade to the new %s version?", app)
-			if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.", o.In, o.Out, o.Err) {
-				return o.UpgradeCli()
+func (o *VersionOptions) upgradeCli(newVersion semver.Version) error {
+	app := util.ColorInfo("jx")
+	log.Warnf("\nA new %s version is available: %s\n", app, util.ColorInfo(newVersion.String()))
+	if o.BatchMode {
+		log.Warnf("To upgrade to this new version use: %s\n", util.ColorInfo("jx upgrade cli"))
+	} else {
+		message := fmt.Sprintf("Would you like to upgrade to the new %s version?", app)
+		if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.", o.In, o.Out, o.Err) {
+			options := &UpgradeCLIOptions{
+				CreateOptions: CreateOptions{
+					CommonOptions: o.CommonOptions,
+				},
 			}
+			return options.Run()
 		}
 	}
 	return nil
-}
-
-func (o *VersionOptions) UpgradeCli() error {
-	options := &UpgradeCLIOptions{
-		CreateOptions: CreateOptions{
-			CommonOptions: o.CommonOptions,
-		},
-	}
-	return options.Run()
 }
 
 // GetOsVersion returns a human friendly string of the current OS
 // in the case of an error this still returns a valid string for the details that can be found.
 func (o *VersionOptions) GetOsVersion() (string, error) {
 	return system.GetOsVersion()
-}
-
-func extractSemVer(text string) string {
-	re, err := regexp.Compile(".*SemVer:\"(.*)\"")
-	if err != nil {
-		return ""
-	}
-	matches := re.FindStringSubmatch(text)
-	if len(matches) > 1 {
-		return matches[1]
-	}
-	return ""
 }

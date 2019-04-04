@@ -1,11 +1,14 @@
 package vault
 
 import (
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
+	"io"
 	"io/ioutil"
 	"os"
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
-	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -80,35 +83,39 @@ func CreateGCPServiceAccount(kubeClient kubernetes.Interface, vaultName, namespa
 }
 
 // CreateBucket Creates a bucket in GKE to store the backend (encrypted) data for vault
-func CreateBucket(vaultName, clusterName, projectId, zone string) (string, error) {
+func CreateBucket(vaultName, clusterName, projectID, zone string, recreate bool, batchMode bool, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) (string, error) {
 	bucketName := BucketName(vaultName)
-	exists, err := gke.BucketExists(projectId, bucketName)
+	exists, err := gke.BucketExists(projectID, bucketName)
 	if err != nil {
 		return "", errors.Wrap(err, "checking if Vault GCS bucket exists")
 	}
 	if exists {
-		return bucketName, nil
+		if !recreate {
+			return bucketName, nil
+		}
+		if batchMode {
+			log.Warnf("we are deleting the Vault bucket %s so that Vault will install cleanly\n", bucketName)
+		} else {
+			if !util.Confirm("we are about to delete bucket: %s so we can install a clean Vault. Are you sure: ",
+				true, "we recommend you delete the Vault bucket on install to ensure Vault starts up reliably", in, out, outErr) {
+				return bucketName, nil
+			}
+		}
+		err = gke.DeleteAllObjectsInBucket(bucketName)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to remove objects from GCS bucket %s", bucketName)
+		}
 	}
 
 	if zone == "" {
 		return "", errors.New("GKE zone must be provided in 'gke-zone' option")
 	}
 	region := gke.GetRegionFromZone(zone)
-	err = gke.CreateBucket(projectId, bucketName, region)
+	err = gke.CreateBucket(projectID, bucketName, region)
 	if err != nil {
 		return "", errors.Wrap(err, "creating Vault GCS bucket")
 	}
 	return bucketName, nil
-}
-
-// CreateAuthServiceAccount creates a Serivce Account for the Auth service for vault
-func CreateAuthServiceAccount(client kubernetes.Interface, vaultName, namespace, clusterName string) (string, error) {
-	serviceAccountName := AuthServiceAccountName(vaultName)
-	_, err := serviceaccount.CreateServiceAccount(client, namespace, serviceAccountName)
-	if err != nil {
-		return "", errors.Wrap(err, "creating vault auth service account")
-	}
-	return serviceAccountName, nil
 }
 
 func storeGCPServiceAccountIntoSecret(client kubernetes.Interface, serviceAccountPath, vaultName, namespace string) (string, error) {

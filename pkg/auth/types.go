@@ -5,28 +5,28 @@ import (
 )
 
 type AuthServer struct {
-	URL   string
-	Users []*UserAuth
-	Name  string
-	Kind  string
+	URL   string      `json:"url"`
+	Users []*UserAuth `json:"users"`
+	Name  string      `json:"name"`
+	Kind  string      `json:"kind"`
 
-	CurrentUser string
+	CurrentUser string `json:"currentuser"`
 }
 
 type UserAuth struct {
-	Username    string
-	ApiToken    string
-	BearerToken string
-	Password    string `yaml:"password,omitempty"`
+	Username    string `json:"username"`
+	ApiToken    string `json:"apitoken"`
+	BearerToken string `json:"bearertoken"`
+	Password    string `json:"password,omitempty"`
 }
 
 type AuthConfig struct {
-	Servers []*AuthServer
+	Servers []*AuthServer `json:"servers"`
 
-	DefaultUsername  string
-	CurrentServer    string
-	PipeLineUsername string
-	PipeLineServer   string
+	DefaultUsername  string `json:"defaultusername"`
+	CurrentServer    string `json:"currentserver"`
+	PipeLineUsername string `json:"pipelineusername"`
+	PipeLineServer   string `json:"pipelineserver"`
 }
 
 // AuthConfigService implements the generic features of the ConfigService because we don't have superclasses

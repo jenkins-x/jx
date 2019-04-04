@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"sigs.k8s.io/yaml"
 
 	"github.com/cenkalti/backoff"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -32,7 +33,6 @@ import (
 
 	"github.com/denormal/go-gitignore"
 	"github.com/jenkins-x/jx/pkg/prow"
-	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -90,6 +90,7 @@ type ImportOptions struct {
 	DraftPack               string
 	DockerRegistryOrg       string
 	GitDetails              gits.CreateRepoData
+	DeployKind              string
 
 	DisableDotGitSearch   bool
 	InitialisedGit        bool
@@ -189,6 +190,7 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().BoolVarP(&options.DisableMaven, "disable-updatebot", "", false, "disable updatebot-maven-plugin from attempting to fix/update the maven pom.xml")
 	cmd.Flags().StringVarP(&options.ImportMode, "import-mode", "m", "", fmt.Sprintf("The import mode to use. Should be one of %s", strings.Join(v1.ImportModeStrings, ", ")))
 	cmd.Flags().BoolVarP(&options.UseDefaultGit, "use-default-git", "", false, "use default git account")
+	cmd.Flags().StringVarP(&options.DeployKind, "deploy-kind", "", "", fmt.Sprintf("The kind of deployment to use for the project. Should be one of %s", strings.Join(deployKinds, ", ")))
 
 	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 }
@@ -419,8 +421,7 @@ func (options *ImportOptions) Run() error {
 		}
 	}
 
-	err = kube.NewSourceRepositoryService(jxClient, ns).CreateOrUpdateSourceRepository(
-		options.AppName, options.Organisation, options.GitProvider.ServerURL())
+	_, err = kube.GetOrCreateSourceRepository(jxClient, ns, options.AppName, options.Organisation, gits.SourceRepositoryProviderURL(options.GitProvider))
 	if err != nil {
 		return errors.Wrapf(err, "creating application resource for %s", util.ColorInfo(options.AppName))
 	}
@@ -495,6 +496,11 @@ func (options *ImportOptions) DraftCreate() error {
 		return err
 	}
 
+	err = options.modifyDeployKind()
+	if err != nil {
+		return err
+	}
+
 	if options.PostDraftPackCallback != nil {
 		err = options.PostDraftPackCallback()
 		if err != nil {
@@ -563,7 +569,7 @@ func (options *ImportOptions) getDockerRegistryOrg() string {
 	if dockerRegistryOrg == "" {
 		dockerRegistryOrg = options.getOrganisationOrCurrentUser()
 	}
-	return dockerRegistryOrg
+	return strings.ToLower(dockerRegistryOrg)
 }
 
 func (options *ImportOptions) getOrganisationOrCurrentUser() string {
@@ -1243,7 +1249,7 @@ func (options *ImportOptions) CreateProwOwnersFile() error {
 		if err != nil {
 			return err
 		}
-		err = ioutil.WriteFile(filename, []byte(yaml), 0644)
+		err = ioutil.WriteFile(filename, yaml, 0644)
 		if err != nil {
 			return err
 		}
@@ -1276,7 +1282,7 @@ func (options *ImportOptions) CreateProwOwnersAliasesFile() error {
 		if err != nil {
 			return err
 		}
-		return ioutil.WriteFile(filename, []byte(yaml), 0644)
+		return ioutil.WriteFile(filename, yaml, 0644)
 	}
 	return errors.New("GitUserAuth.Username not set")
 }
@@ -1346,6 +1352,9 @@ func (options *ImportOptions) DefaultsFromTeamSettings() error {
 	settings, err := options.TeamSettings()
 	if err != nil {
 		return err
+	}
+	if options.DeployKind == "" {
+		options.DeployKind = settings.DeployKind
 	}
 	if options.Organisation == "" {
 		options.Organisation = settings.Organisation
@@ -1417,4 +1426,23 @@ func (options *ImportOptions) GetGitRepositoryDetails() (*gits.CreateRepoData, e
 		return nil, err
 	}
 	return details, nil
+}
+
+// modifyDeployKind lets modify the deployment kind if the team settings or CLI settings are different
+func (options *ImportOptions) modifyDeployKind() error {
+	deployKind := options.DeployKind
+	if deployKind == "" {
+		return nil
+	}
+
+	eo := &EditDeployKindOptions{}
+	copy := *options.CommonOptions
+	eo.CommonOptions = &copy
+	eo.Args = []string{deployKind}
+	eo.Dir = options.Dir
+	err := eo.Run()
+	if err != nil {
+		return errors.Wrapf(err, "failed to modify the deployment kind to %s", deployKind)
+	}
+	return nil
 }

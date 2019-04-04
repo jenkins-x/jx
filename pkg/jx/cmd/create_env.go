@@ -11,7 +11,7 @@ import (
 
 	"fmt"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -215,18 +215,6 @@ func (o *CreateEnvOptions) Run() error {
 			return err
 		}
 	}
-	gitURL := env.Spec.Source.URL
-	gitInfo, err := gits.ParseGitURL(gitURL)
-	if err != nil {
-		return err
-	}
-	if o.Prow {
-		repo := fmt.Sprintf("%s/%s", gitInfo.Organisation, gitInfo.Name)
-		err = prow.AddEnvironment(kubeClient, []string{repo}, devEnv.Spec.Namespace, env.Spec.Namespace, &devEnv.Spec.TeamSettings)
-		if err != nil {
-			return fmt.Errorf("failed to add repo %s to Prow config in namespace %s: %v", repo, env.Spec.Namespace, err)
-		}
-	}
 
 	/* It is important this pull secret handling goes after any namespace creation code; the service account exists in the created namespace */
 	if o.PullSecrets != "" {
@@ -266,6 +254,10 @@ func (o *CreateEnvOptions) Run() error {
 // RegisterEnvironment performs the environment registration
 func (o *CreateEnvOptions) RegisterEnvironment(env *v1.Environment, gitProvider gits.GitProvider, authConfigSvc auth.ConfigService) error {
 	gitURL := env.Spec.Source.URL
+	if gitURL == "" {
+		log.Warnf("environment %s does not have a git source URL\n", env.Name)
+		return nil
+	}
 	gitInfo, err := gits.ParseGitURL(gitURL)
 	if err != nil {
 		return errors.Wrap(err, "parsing git repository URL from environment source")
@@ -299,6 +291,22 @@ func (o *CreateEnvOptions) RegisterEnvironment(env *v1.Environment, gitProvider 
 	}
 
 	if o.Prow {
+		repo := fmt.Sprintf("%s/%s", gitInfo.Organisation, gitInfo.Name)
+
+		teamSettings, err := o.TeamSettings()
+		if err != nil {
+			return err
+		}
+		kubeClient, devNs, err := o.KubeClientAndDevNamespace()
+		if err != nil {
+			return err
+		}
+
+		err = prow.AddEnvironment(kubeClient, []string{repo}, devNs, env.Spec.Namespace, teamSettings)
+		if err != nil {
+			return fmt.Errorf("failed to add repo %s to Prow config in namespace %s: %v", repo, env.Spec.Namespace, err)
+		}
+
 		config := authConfigSvc.Config()
 		u := gitInfo.HostURL()
 		server := config.GetOrCreateServer(u)
@@ -310,7 +318,7 @@ func (o *CreateEnvOptions) RegisterEnvironment(env *v1.Environment, gitProvider 
 				u = gitInfo.Host
 			}
 		}
-		user, err := config.PickServerUserAuth(server, "user name for the Pipeline", o.BatchMode, "", o.In, o.Out, o.Err)
+		user, err := o.PickPipelineUserAuth(config, server)
 		if err != nil {
 			return err
 		}

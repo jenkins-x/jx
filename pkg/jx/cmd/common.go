@@ -13,6 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
 	"github.com/jenkins-x/jx/pkg/vault"
+	"sigs.k8s.io/yaml"
 
 	"github.com/jenkins-x/jx/pkg/expose"
 
@@ -36,13 +37,13 @@ import (
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
-	tektonclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
 	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
+	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
+	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
-	"gopkg.in/yaml.v2"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -92,6 +93,7 @@ type CommonOptions struct {
 	devNamespace           string
 	jxClient               versioned.Interface
 	knbClient              buildclient.Interface
+	kserveClient           kserve.Interface
 	tektonClient           tektonclient.Interface
 	jenkinsClient          gojenkins.JenkinsClient
 	git                    gits.Gitter
@@ -292,6 +294,24 @@ func (o *CommonOptions) KnativeBuildClient() (buildclient.Interface, string, err
 	return o.knbClient, o.currentNamespace, nil
 }
 
+// KnativeServeClient returns or creates the knative serve client
+func (o *CommonOptions) KnativeServeClient() (kserve.Interface, string, error) {
+	if o.factory == nil {
+		return nil, "", errors.New("command factory is not initialized")
+	}
+	if o.kserveClient == nil {
+		kserveClient, ns, err := o.factory.CreateKnativeServeClient()
+		if err != nil {
+			return nil, ns, err
+		}
+		o.kserveClient = kserveClient
+		if o.currentNamespace == "" {
+			o.currentNamespace = ns
+		}
+	}
+	return o.kserveClient, o.currentNamespace, nil
+}
+
 // JXClientAndAdminNamespace returns or creates the jx client and admin namespace
 func (o *CommonOptions) JXClientAndAdminNamespace() (versioned.Interface, string, error) {
 	kubeClient, _, err := o.KubeClientAndNamespace()
@@ -334,6 +354,21 @@ func (o *CommonOptions) JXClientAndDevNamespace() (versioned.Interface, string, 
 		o.devNamespace = devNs
 	}
 	return o.jxClient, o.devNamespace, nil
+}
+
+// JXClientDevAndAdminNamespace returns or creates the jx client, dev and admin namespaces
+func (o *CommonOptions) JXClientDevAndAdminNamespace() (versioned.Interface, string, string, error) {
+	kubeClient, _, err := o.KubeClientAndNamespace()
+	if err != nil {
+		return nil, "", "", err
+	}
+	jxClient, devNs, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return nil, "", "", err
+	}
+
+	adminNs, err := kube.GetAdminNamespace(kubeClient, devNs)
+	return jxClient, devNs, adminNs, err
 }
 
 // Git returns the git client
@@ -928,6 +963,13 @@ func (o *CommonOptions) SystemVaultClient(namespace string) (vault.Client, error
 		return nil, errors.New("command factory is not initialized")
 	}
 	if o.systemVaultClient == nil {
+		if namespace == "" {
+			var err error
+			_, namespace, err = o.KubeClientAndDevNamespace()
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to find development namespace")
+			}
+		}
 		systemVaultClient, err := o.factory.CreateSystemVaultClient(namespace)
 		if err != nil {
 			return nil, err
@@ -943,6 +985,13 @@ func (o *CommonOptions) VaultClient(name string, namespace string) (vault.Client
 		return nil, errors.New("command factory is not initialized")
 	}
 	if o.systemVaultClient == nil {
+		if namespace == "" {
+			var err error
+			_, namespace, err = o.KubeClientAndDevNamespace()
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to find development namespace")
+			}
+		}
 		vaultClient, err := o.factory.CreateVaultClient(name, namespace)
 		if err != nil {
 			return nil, err
@@ -1133,7 +1182,11 @@ func (o *CommonOptions) AddonAuthConfigService(secrets *corev1.SecretList) (auth
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
 	}
-	return o.factory.CreateAddonAuthConfigService(secrets)
+	_, namespace, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find development namespace")
+	}
+	return o.factory.CreateAddonAuthConfigService(namespace, secrets)
 }
 
 // JenkinsAuthConfigService creates the jenkins auth config service
@@ -1149,11 +1202,14 @@ func (o *CommonOptions) JenkinsAuthConfigService(client kubernetes.Interface, na
 		selector.UseCustomJenkins = true
 	}
 	jenkinsServiceName := ""
+	kubeClient, ns, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return nil, err
+	}
+	if namespace == "" {
+		namespace = ns
+	}
 	if selector.IsCustom() {
-		kubeClient, ns, err := o.KubeClientAndDevNamespace()
-		if err != nil {
-			return nil, err
-		}
 		jenkinsServiceName, err = o.PickCustomJenkinsName(selector, kubeClient, ns)
 		if err != nil {
 			return nil, err
@@ -1167,7 +1223,11 @@ func (o *CommonOptions) ChartmuseumAuthConfigService() (auth.ConfigService, erro
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
 	}
-	return o.factory.CreateChartmuseumAuthConfigService()
+	_, namespace, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find development namespace")
+	}
+	return o.factory.CreateChartmuseumAuthConfigService(namespace)
 }
 
 // AuthConfigService creates the auth config service for given file
@@ -1175,5 +1235,9 @@ func (o CommonOptions) AuthConfigService(file string) (auth.ConfigService, error
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
 	}
-	return o.factory.CreateAuthConfigService(file)
+	_, namespace, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to find development namespace")
+	}
+	return o.factory.CreateAuthConfigService(file, namespace)
 }

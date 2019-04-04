@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+
 	"github.com/ghodss/yaml"
 
 	"io/ioutil"
@@ -33,11 +34,6 @@ const defaultMavenSettings = `<settings>
               <username>admin</username>
               <password>%s</password>
           </server>
-          <server>
-              <id>nexus</id>
-              <username>admin</username>
-              <password>%s</password>
-          </server>
       </servers>
       <profiles>
           <profile>
@@ -63,7 +59,7 @@ const defaultMavenSettings = `<settings>
   </settings>
 `
 
-const allowedSymbols = "~!#%^*_+-=?,."
+const allowedSymbols = "~!#%^_+-=?,."
 
 type ChartMuseum struct {
 	ChartMuseumEnv ChartMuseumEnv `json:"env"`
@@ -126,12 +122,14 @@ type AdminSecretsService struct {
 }
 
 type AdminSecretsFlags struct {
+	DefaultAdminUsername string
 	DefaultAdminPassword string
 	KanikoSecret         string
 }
 
 func (s *AdminSecretsService) AddAdminSecretsValues(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&s.Flags.DefaultAdminPassword, "default-admin-password", "", "", "the default admin password to access Jenkins, Kubernetes Dashboard, ChartMuseum and Nexus")
+	cmd.Flags().StringVarP(&s.Flags.DefaultAdminUsername, "default-admin-username", "", "admin", "the default admin username to access Jenkins, Kubernetes Dashboard, ChartMuseum and Nexus")
 }
 
 func (s *AdminSecretsService) NewAdminSecretsConfig() error {
@@ -179,7 +177,7 @@ func (s *AdminSecretsService) setDefaultSecrets() error {
 
 // NewMavenSettingsXML generates the maven settings
 func (s *AdminSecretsService) NewMavenSettingsXML() error {
-	s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(defaultMavenSettings, s.Flags.DefaultAdminPassword, s.Flags.DefaultAdminPassword)
+	s.Secrets.PipelineSecrets.MavenSettingsXML = fmt.Sprintf(defaultMavenSettings, s.Flags.DefaultAdminPassword)
 	return nil
 }
 
@@ -191,7 +189,7 @@ func (s *AdminSecretsService) NewAdminSecretsConfigFromSecret(decryptedSecretsFi
 		return errors.Wrap(err, "unable to read file")
 	}
 
-	err = yaml.Unmarshal([]byte(data), &a)
+	err = yaml.Unmarshal(data, &a)
 	if err != nil {
 		return errors.Wrap(err, "unable to unmarshall secrets")
 	}

@@ -64,10 +64,16 @@ func GetEnvironmentRoles(jxClient versioned.Interface, ns string) (map[string]*v
 
 // UpdateUserRoles updates the EnvironmentRoleBinding values based on the given userRoles
 // userKind is "User" or "ServiceAccount"
-func GetUserRoles(jxClient versioned.Interface, ns string, userKind string, userName string) ([]string, error) {
+func GetUserRoles(kubeClient kubernetes.Interface, jxClient versioned.Interface, ns string, userKind string, userName string) ([]string, error) {
 	envRoles, _, err := GetEnvironmentRoles(jxClient, ns)
-
-	currentRoles := userRolesFor(userKind, userName, envRoles)
+	if err != nil {
+		return nil, err
+	}
+	adminNs, err := GetAdminNamespace(kubeClient, ns)
+	if err != nil {
+		return nil, err
+	}
+	currentRoles := userRolesFor(userKind, userName, adminNs, envRoles)
 	return currentRoles, err
 }
 
@@ -78,7 +84,12 @@ func UpdateUserRoles(kubeClient kubernetes.Interface, jxClient versioned.Interfa
 	envRoleInterface := jxClient.JenkinsV1().EnvironmentRoleBindings(ns)
 	envRoles, _, err := GetEnvironmentRoles(jxClient, ns)
 
-	for name, _ := range roles {
+	adminNs, err := GetAdminNamespace(kubeClient, ns)
+	if err != nil {
+		return errors.Wrapf(err, "Obtaining admin namespace for user lookup")
+	}
+
+	for name := range roles {
 		envRole := envRoles[name]
 		if envRole == nil {
 			envRole = &v1.EnvironmentRoleBinding{
@@ -106,7 +117,7 @@ func UpdateUserRoles(kubeClient kubernetes.Interface, jxClient versioned.Interfa
 		}
 	}
 
-	oldRoles := userRolesFor(userKind, userName, envRoles)
+	oldRoles := userRolesFor(userKind, userName, adminNs, envRoles)
 
 	deleteRoles, createRoles := util.DiffSlices(oldRoles, userRoles)
 
@@ -117,17 +128,17 @@ func UpdateUserRoles(kubeClient kubernetes.Interface, jxClient versioned.Interfa
 		} else {
 			found := false
 			for idx, subject := range envRole.Spec.Subjects {
-				if subject.Kind == userKind && subject.Name == userName {
+				if subject.Kind == userKind && subject.Name == userName && subject.Namespace == adminNs {
 					found = true
 					envRole.Spec.Subjects = append(envRole.Spec.Subjects[0:idx], envRole.Spec.Subjects[idx+1:]...)
-					_, err = envRoleInterface.Update(envRole)
+					_, err = envRoleInterface.PatchUpdate(envRole)
 					if err != nil {
-						return errors.Wrapf(err, "Failed to add User %s kind %s as a Subject of EnvironmentRoleBinding %s: %s", userName, userKind, name, err)
+						return errors.Wrapf(err, "Failed to remove User %s kind %s as a Subject of EnvironmentRoleBinding %s: %s", userName, userKind, name, err)
 					}
 				}
 			}
 			if !found {
-				log.Warnf("User user %s kind %s is not a Subject of EnvironmentRoleBinding %s", userName, userKind, name)
+				log.Warnf("User %s kind %s is not a Subject of EnvironmentRoleBinding %s", userName, userKind, name)
 			}
 		}
 	}
@@ -139,7 +150,7 @@ func UpdateUserRoles(kubeClient kubernetes.Interface, jxClient versioned.Interfa
 		} else {
 			found := false
 			for _, subject := range envRole.Spec.Subjects {
-				if subject.Kind == userKind && subject.Name == userName {
+				if subject.Kind == userKind && subject.Name == userName && subject.Namespace == adminNs {
 					found = true
 				}
 			}
@@ -149,7 +160,7 @@ func UpdateUserRoles(kubeClient kubernetes.Interface, jxClient versioned.Interfa
 				newSubject := rbacv1.Subject{
 					Name:      userName,
 					Kind:      userKind,
-					Namespace: ns,
+					Namespace: adminNs,
 				}
 				newEnvRole, err := envRoleInterface.Get(envRole.Name, metav1.GetOptions{})
 				create := false
@@ -166,7 +177,7 @@ func UpdateUserRoles(kubeClient kubernetes.Interface, jxClient versioned.Interfa
 						return errors.Wrapf(err, "Failed to create EnvironmentRoleBinding %s with Subject User %s kind %s: %s", name, userName, userKind, err)
 					}
 				} else {
-					_, err = envRoleInterface.Update(newEnvRole)
+					_, err = envRoleInterface.PatchUpdate(newEnvRole)
 					if err != nil {
 						return errors.Wrapf(err, "Failed to add User %s kind %s as a Subject of EnvironmentRoleBinding %s: %s", userName, userKind, name, err)
 					}
@@ -177,11 +188,11 @@ func UpdateUserRoles(kubeClient kubernetes.Interface, jxClient versioned.Interfa
 	return nil
 }
 
-func userRolesFor(userKind string, userName string, envRoles map[string]*v1.EnvironmentRoleBinding) []string {
+func userRolesFor(userKind string, userName string, userNamespace string, envRoles map[string]*v1.EnvironmentRoleBinding) []string {
 	answer := []string{}
 	for _, envRole := range envRoles {
 		for _, subject := range envRole.Spec.Subjects {
-			if subject.Kind == userKind && subject.Name == userName {
+			if subject.Kind == userKind && subject.Name == userName && subject.Namespace == userNamespace {
 				answer = append(answer, envRole.Name)
 			}
 		}
@@ -210,7 +221,7 @@ func CreateClusterRoleBinding(kubeClient kubernetes.Interface, namespace string,
 			Name: name,
 		},
 		Subjects: []rbacv1.Subject{
-			rbacv1.Subject{
+			{
 				Kind:      subjectKind,
 				Name:      serviceAccountName,
 				Namespace: namespace,
@@ -260,7 +271,7 @@ func CreateClusterRole(kubeClient kubernetes.Interface, namesapce string, name s
 			Name: name,
 		},
 		Rules: []rbacv1.PolicyRule{
-			rbacv1.PolicyRule{
+			{
 				APIGroups: apiGroups,
 				Resources: resources,
 				Verbs:     verbs,

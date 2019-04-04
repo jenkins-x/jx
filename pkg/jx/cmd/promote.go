@@ -425,8 +425,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	}
 	promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, startPromote)
 
-	err = o.Helm().UpgradeChart(fullAppName, releaseName, targetNS, version, true, -1, false, true, nil, nil, "",
-		"", "")
+	err = o.Helm().UpgradeChart(fullAppName, releaseName, targetNS, version, true, -1, false, true, nil, nil, "", "", "")
 	if err == nil {
 		err = o.commentOnIssues(targetNS, env, promoteKey)
 		if err != nil {
@@ -517,7 +516,7 @@ func (o *PromoteOptions) GetTargetNamespace(ns string, env string) (string, *v1.
 		}
 		targetNS = envResource.Spec.Namespace
 		if targetNS == "" {
-			return "", nil, fmt.Errorf("Environment %s does not have a namspace associated with it!", env)
+			return "", nil, fmt.Errorf("environment %s does not have a namespace associated with it!", env)
 		}
 	} else if ns != "" {
 		targetNS = ns

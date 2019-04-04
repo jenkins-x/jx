@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/pkg/errors"
 	"os"
 	"strings"
 
@@ -108,8 +109,9 @@ func (o *CreatePullRequestOptions) Run() error {
 		return err
 	}
 
+	base := o.Base
 	arguments := &gits.GitPullRequestArguments{
-		Base: o.Base,
+		Base: base,
 		Head: branchName,
 	}
 	err = o.PopulatePullRequest(arguments, gitInfo)
@@ -119,7 +121,7 @@ func (o *CreatePullRequestOptions) Run() error {
 
 	pr, err := provider.CreatePullRequest(arguments)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", base, branchName)
 	}
 
 	o.Results.PullRequest = pr

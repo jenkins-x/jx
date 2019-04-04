@@ -66,7 +66,7 @@ func NewCmdUpgradeExtensions(commonOpts *CommonOptions) *cobra.Command {
 		Use:     "extensions",
 		Short:   "Upgrades the Jenkins X extensions available to this Jenkins X install if there are new versions available",
 		Long:    upgradeExtensionsLong,
-		Example: upgradeBInariesExample,
+		Example: upgradeExtensionsExample,
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -319,7 +319,7 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension *jenkinsv1.Extensio
 		}
 		if existingVersion.LT(newVersion) {
 			existing.Spec = *extension
-			_, err := exts.Update(&existing)
+			_, err := exts.PatchUpdate(&existing)
 			if err != nil {
 				return result, err
 			}

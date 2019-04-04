@@ -134,7 +134,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.
 				Version: newVersion.String(),
 			},
 			Files: []*google_protobuf.Any{
-				&google_protobuf.Any{
+				{
 					TypeUrl: "values.schema.json",
 					Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
@@ -222,7 +222,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
 				Version: newVersion.String(),
 			},
 			Files: []*google_protobuf.Any{
-				&google_protobuf.Any{
+				{
 					TypeUrl: "values.schema.json",
 					Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
@@ -323,7 +323,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T)
 				Version: newVersion.String(),
 			},
 			Files: []*google_protobuf.Any{
-				&google_protobuf.Any{
+				{
 					TypeUrl: "values.schema.json",
 					Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
@@ -412,7 +412,7 @@ func TestUpgradeMissingExistingOrDefaultInBatchMode(t *testing.T) {
 				Version: newVersion.String(),
 			},
 			Files: []*google_protobuf.Any{
-				&google_protobuf.Any{
+				{
 					TypeUrl: "values.schema.json",
 					Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",

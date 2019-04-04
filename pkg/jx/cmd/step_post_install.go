@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
@@ -151,7 +150,7 @@ func (o *StepPostInstallOptions) Run() (err error) {
 					u = gitInfo.Host
 				}
 			}
-			user, err := config.PickServerUserAuth(server, "user name for the Pipeline", o.BatchMode, "", o.In, o.Out, o.Err)
+			user, err := o.PickPipelineUserAuth(config, server)
 			if err != nil {
 				return err
 			}

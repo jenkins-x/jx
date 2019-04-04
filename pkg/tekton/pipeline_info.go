@@ -10,19 +10,15 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/knative/build-pipeline/pkg/apis/pipeline"
-	tektonv1alpha1 "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	duckv1alpha1 "github.com/knative/pkg/apis/duck/v1alpha1"
 	"github.com/pkg/errors"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
+	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 // PipelineRunInfo provides information on a PipelineRun and its stages for use in getting logs and populating activity
@@ -31,6 +27,7 @@ type PipelineRunInfo struct {
 	Organisation      string
 	Repository        string
 	Branch            string
+	Context           string
 	Build             string
 	BuildNumber       int
 	Pipeline          string
@@ -81,61 +78,6 @@ type PipelineRunInfoFilter struct {
 	Build      string
 	Filter     string
 	Pending    bool
-}
-
-func getPipelineStructureForPipelineRun(jxClient versioned.Interface, ns, prName string) (*v1.PipelineStructure, error) {
-	var ps *v1.PipelineStructure
-
-	// The PipelineStructure may not exist yet.
-	f := func() error {
-		// Get the PipelineStructure for this PipelineRun
-		lookupPs, err := jxClient.JenkinsV1().PipelineStructures(ns).Get(prName, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-
-		if lookupPs == nil {
-			log.Infof("no PipelineStructure found yet for PipelineRun %s\n", util.ColorInfo(prName))
-			return fmt.Errorf("No PipelineStructure found yet for PipelineRun %s", prName)
-		}
-		ps = lookupPs
-		return nil
-	}
-	err := util.Retry(time.Minute*2, f)
-	if err != nil {
-		return nil, err
-	}
-	return ps, nil
-}
-
-func getBuildPodForPipelineRun(kubeClient kubernetes.Interface, ns, prName string, prStatus *duckv1alpha1.Condition) (*corev1.Pod, error) {
-	var pod *corev1.Pod
-
-	// The Pod may not exist yet.
-	f := func() error {
-		// Get the Pod for this PipelineRun
-		podList, err := kubeClient.CoreV1().Pods(ns).List(metav1.ListOptions{
-			LabelSelector: builds.LabelPipelineRunName + "=" + prName,
-		})
-		if err != nil {
-			return err
-		}
-
-		// Only retry if there's no pod and the PipelineRun hasn't yet completed.
-		if len(podList.Items) == 0 && prStatus != nil && prStatus.Status == corev1.ConditionUnknown {
-			log.Infof("no Pod found yet for PipelineRun %s\n", util.ColorInfo(prName))
-			return fmt.Errorf("No Pod found yet for PipelineRun %s", prName)
-		}
-		if len(podList.Items) == 1 {
-			pod = &podList.Items[0]
-		}
-		return nil
-	}
-	err := util.Retry(time.Minute*2, f)
-	if err != nil {
-		return nil, err
-	}
-	return pod, nil
 }
 
 // GetBuild gets the build identifier
@@ -220,6 +162,9 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 		return nil, nil
 	}
 
+	if pod.Labels != nil {
+		pri.Context = pod.Labels["context"]
+	}
 	containers, _, isInit := kube.GetContainersWithStatusAndIsInit(pod)
 	for _, container := range containers {
 		if strings.HasPrefix(container.Name, "build-step-git-source") {

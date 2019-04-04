@@ -22,7 +22,7 @@ type ExposeController struct {
 
 type JenkinsValuesConfig struct {
 	Servers JenkinsServersValuesConfig `json:"Servers,omitempty"`
-	Enabled *bool                      `json:"enabled"`
+	Enabled *bool                      `json:"enabled,omitempty"`
 }
 
 type ProwValuesConfig struct {
@@ -58,7 +58,7 @@ type JenkinsPipelineSecretsValuesConfig struct {
 
 // ControllerBuildConfig to configure the build controller
 type ControllerBuildConfig struct {
-	Enabled *bool `json:"enabled"`
+	Enabled *bool `json:"enabled,omitempty"`
 }
 
 type HelmValuesConfig struct {
@@ -67,6 +67,7 @@ type HelmValuesConfig struct {
 	Prow             ProwValuesConfig                   `json:"prow,omitempty"`
 	PipelineSecrets  JenkinsPipelineSecretsValuesConfig `json:"PipelineSecrets,omitempty"`
 	ControllerBuild  ControllerBuildConfig              `json:"controllerbuild,omitempty"`
+	DockerRegistry   string                             `json:"dockerRegistry,omitempty"`
 }
 
 type HelmValuesConfigService struct {

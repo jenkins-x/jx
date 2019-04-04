@@ -11,8 +11,7 @@ import (
 )
 
 const (
-	healthTimeout = 2 * time.Minute
-	pingTimeout   = 2 * time.Second
+	pingTimeout = 2 * time.Second
 )
 
 // CheckHealth checks the health of Jenkins server using the login URL

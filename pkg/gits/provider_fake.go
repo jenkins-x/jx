@@ -210,7 +210,7 @@ func (f *FakeProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitPul
 	// If there is a change in the SHA then create a fake PR
 	if data.Head != data.Base {
 		fakePr.Commits = []*FakeCommit{
-			&FakeCommit{
+			{
 				Status: CommitStatusPending,
 				Commit: &GitCommit{
 					URL:     fmt.Sprintf("https://fake.git/%s/%s/commits/%s", org, repoName, data.Head),
@@ -718,4 +718,7 @@ func NewFakeProvider(repositories ...*FakeRepository) *FakeProvider {
 		provider.Repositories[owner] = s
 	}
 	return provider
+}
+func (p *FakeProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
+	return nil, fmt.Errorf("Listing commits not supported on fake")
 }

@@ -18,7 +18,7 @@ func (o *CommonOptions) registerEnvironmentCRD() error {
 	return err
 }
 
-// modifyDevEnvironment performs some mutation on the Development environemnt to modify team settings
+// modifyDevEnvironment performs some mutation on the Development environment to modify team settings
 func (o *CommonOptions) modifyDevEnvironment(jxClient versioned.Interface, ns string,
 	fn func(env *jenkinsv1.Environment) error) error {
 	env, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
@@ -32,7 +32,7 @@ func (o *CommonOptions) modifyDevEnvironment(jxClient versioned.Interface, ns st
 	if err != nil {
 		return errors.Wrap(err, "failed to call the callback function for dev environment")
 	}
-	_, err = jxClient.JenkinsV1().Environments(ns).Update(env)
+	_, err = jxClient.JenkinsV1().Environments(ns).PatchUpdate(env)
 	if err != nil {
 		return fmt.Errorf("Failed to update Development environment in namespace %s: %s", ns, err)
 	}

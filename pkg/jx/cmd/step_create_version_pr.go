@@ -2,18 +2,19 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"io/ioutil"
+	"path/filepath"
+	"regexp"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
-	pipelineapi "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"k8s.io/apimachinery/pkg/util/uuid"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 )
 
 var (
@@ -34,6 +35,9 @@ var (
 		# create a Pull Request to update all charts in the 'jenkins-x' chart repository to the latest found in the helm repo
 		jx step create version pr -f "jenkins-x/*"
 
+		# create a Pull Request to update all charts in the 'jenkins-x' chart repository and update the BDD test images
+		jx step create version pr -f "jenkins-x/*" --images
+
 			`)
 )
 
@@ -45,14 +49,13 @@ type StepCreateVersionPullRequestOptions struct {
 	Name               string
 	Includes           []string
 	Excludes           []string
-	VersionsRepository string
-	VersionsBranch     string
 	Version            string
+	UpdateTektonImages bool
 
-	updatedHelmRepo bool
-	branchNameText  string
-	title           string
-	message         string
+	updatedHelmRepo     bool
+	builderImageVersion string
+
+	PullRequestDetails PullRequestDetails
 }
 
 // StepCreateVersionPullRequestResults stores the generated results
@@ -84,13 +87,14 @@ func NewCmdStepCreateVersionPullRequest(commonOpts *CommonOptions) *cobra.Comman
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.VersionsRepository, "repo", "r", DefaultVersionsURL, "Jenkins X versions Git repo")
-	cmd.Flags().StringVarP(&options.VersionsBranch, "branch", "", "master", "the versions git repository branch to clone and generate a pull request from")
+	cmd.Flags().StringVarP(&options.PullRequestDetails.RepositoryGitURL, "repo", "r", DefaultVersionsURL, "Jenkins X versions Git repo")
+	cmd.Flags().StringVarP(&options.PullRequestDetails.RepositoryBranch, "branch", "", "master", "the versions git repository branch to clone and generate a pull request from")
 	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "charts", "The kind of version. Possible values: "+strings.Join(version.KindStrings, ", "))
 	cmd.Flags().StringVarP(&options.Name, "name", "n", "", "The name of the version to update. e.g. the name of the chart like 'jenkins-x/prow'")
 	cmd.Flags().StringVarP(&options.Version, "version", "v", "", "The version to change. If no version is supplied the latest version is found")
 	cmd.Flags().StringArrayVarP(&options.Includes, "filter", "f", nil, "The name patterns to include - such as '*' for all names")
 	cmd.Flags().StringArrayVarP(&options.Excludes, "excludes", "x", nil, "The name patterns to exclude")
+	cmd.Flags().BoolVarP(&options.UpdateTektonImages, "images", "", false, "Update the tekton builder images for the Jenkins X Versions BDD tests")
 	return cmd
 }
 
@@ -102,15 +106,23 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 	if util.StringArrayIndex(version.KindStrings, o.Kind) < 0 {
 		return util.InvalidOption("kind", o.Kind, version.KindStrings)
 	}
-	if o.VersionsRepository == "" {
+	opts := &o.PullRequestDetails
+
+	if opts.RepositoryGitURL == "" {
 		return util.MissingOption("repo")
-	}
-	if o.VersionsBranch == "" {
-		o.VersionsBranch = "master"
 	}
 	dir, err := ioutil.TempDir("", "create-version-pr")
 	if err != nil {
 		return err
+	}
+
+	if o.UpdateTektonImages {
+		o.builderImageVersion, err = o.findLatestBuilderImageVersion()
+		if err != nil {
+			return err
+		}
+
+		log.Infof("the latest builder image version is %s\n", util.ColorInfo(o.builderImageVersion))
 	}
 
 	if len(o.Includes) == 0 {
@@ -128,170 +140,32 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 		if o.Version == "" {
 			return util.MissingOption("version")
 		}
-		o.branchNameText = strings.Replace("upgrade-"+o.Name+"-"+o.Version, "/", "-", -1)
-		o.branchNameText = strings.Replace(o.branchNameText, ".", "-", -1)
+		o.PullRequestDetails.BranchNameText = strings.Replace("upgrade-"+o.Name+"-"+o.Version, "/", "-", -1)
+		o.PullRequestDetails.BranchNameText = strings.Replace(o.PullRequestDetails.BranchNameText, ".", "-", -1)
 
-		o.title = fmt.Sprintf("%s version upgrade of %s", o.Kind, o.Name)
-		o.message = fmt.Sprintf("change %s to version %s", o.Name, o.Version)
+		o.PullRequestDetails.Title = fmt.Sprintf("%s version upgrade of %s", o.Kind, o.Name)
+		o.PullRequestDetails.Message = fmt.Sprintf("change %s to version %s", o.Name, o.Version)
 	} else {
-		o.branchNameText = "upgrade-chart-versions"
-		o.title = "upgrade chart versions"
+		o.PullRequestDetails.BranchNameText = "upgrade-chart-versions"
+		o.PullRequestDetails.Title = "upgrade chart versions"
 	}
 
-	gitInfo, err := gits.ParseGitURL(o.VersionsRepository)
-	if err != nil {
-		return err
-	}
-	provider, err := o.gitProviderForURL(o.VersionsRepository, "versions repository")
-	if err != nil {
-		return err
-	}
+	opts.Dir = dir
+	opts.RepositoryMessage = "versions repository"
 
-	username := provider.CurrentUsername()
-	if username == "" {
-		return fmt.Errorf("no git user name found")
+	fn := func() error {
+		return o.modifyFiles(dir)
 	}
-
-	originalOrg := gitInfo.Organisation
-	originalRepo := gitInfo.Name
-
-	repo, err := provider.GetRepository(username, originalRepo)
-	if err != nil {
-		if originalOrg == username {
-			return err
-		}
-
-		// lets try create a fork - using a blank organisation to force a user specific fork
-		repo, err = provider.ForkRepository(originalOrg, originalRepo, "")
-		if err != nil {
-			return errors.Wrapf(err, "failed to fork GitHub repo %s/%s to user %s", originalOrg, originalRepo, username)
-		}
-		log.Infof("Forked Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
-	}
-
-	originalGitURL := o.VersionsRepository
-	git := o.Git()
-
-	err = git.Clone(repo.CloneURL, dir)
-	if err != nil {
-		return errors.Wrapf(err, "cloning the version repository %q", repo.CloneURL)
-	}
-	log.Infof("cloned fork of version repository %s to %s\n", util.ColorInfo(repo.HTMLURL), util.ColorInfo(dir))
-
-	err = git.SetRemoteURL(dir, "upstream", originalGitURL)
-	if err != nil {
-		return errors.Wrapf(err, "setting remote upstream %q in forked environment repo", originalGitURL)
-	}
-	err = git.PullUpstream(dir)
-	if err != nil {
-		return errors.Wrap(err, "pulling upstream of forked versions repository")
-	}
-
-	branchName := o.Git().ConvertToValidBranchName(o.branchNameText)
-	branchNames, err := o.Git().RemoteBranchNames(dir, "remotes/origin/")
-	if err != nil {
-		return errors.Wrapf(err, "failed to load remote branch names")
-	}
-	if util.StringArrayIndex(branchNames, branchName) >= 0 {
-		// lets append a UUID as the branch name already exists
-		branchName += "-" + string(uuid.NewUUID())
-	}
-
-	err = git.CreateBranch(dir, branchName)
-	if err != nil {
-		return err
-	}
-	err = git.Checkout(dir, branchName)
-	if err != nil {
-		return err
-	}
-
-	err = o.modifyFiles(dir)
-	if err != nil {
-		return err
-	}
-
-	err = o.Git().Add(dir, "*", "*/*")
-	if err != nil {
-		return err
-	}
-	changes, err := git.HasChanges(dir)
-	if err != nil {
-		return err
-	}
-	if !changes {
-		log.Infof("No source changes so not generating a Pull Request\n")
-		return nil
-	}
-
-	err = git.CommitDir(dir, o.title)
-	if err != nil {
-		return err
-	}
-
-	// lets find a previous PR so we can force push to its branch
-	prs, err := provider.ListOpenPullRequests(gitInfo.Organisation, gitInfo.Name)
-	if err != nil {
-		return errors.Wrapf(err, "failed to list open pull requests on %s", gitInfo.HTMLURL)
-	}
-	for _, pr := range prs {
-		author := pr.Author
-		if pr.Title == o.title && author != nil && author.Login == username {
-			log.Infof("found existing PullRequest: %s\n", util.ColorInfo(pr.URL))
-
-			head := pr.HeadRef
-			if head == nil {
-				log.Warnf("No head value!\n")
-			} else {
-				headText := *head
-				remoteBranch := headText
-				paths := strings.SplitN(headText, ":", 2)
-				if len(paths) > 1 {
-					remoteBranch = paths[1]
-				}
-				log.Infof("force pushing to remote branch %s\n", util.ColorInfo(remoteBranch))
-				err := git.ForcePushBranch(dir, branchName, remoteBranch)
-				if err != nil {
-					return errors.Wrapf(err, "failed to force push to remote branch %s", remoteBranch)
-				}
-
-				pr.Body = o.message
-
-				log.Infof("force pushed new pull request change to: %s\n", util.ColorInfo(pr.URL))
-
-				err = provider.AddPRComment(pr, o.message)
-				if err != nil {
-					return errors.Wrapf(err, "failed to add message to PR %s", pr.URL)
-				}
-				return nil
-			}
-		}
-	}
-
-	err = git.Push(dir)
-	if err != nil {
-		return errors.Wrapf(err, "pushing forked environment dir %q", dir)
-	}
-
-	base := o.VersionsBranch
-
-	gha := &gits.GitPullRequestArguments{
-		GitRepository: gitInfo,
-		Title:         o.title,
-		Body:          o.message,
-		Base:          base,
-		Head:          username + ":" + branchName,
-	}
-
-	pr, err := provider.CreatePullRequest(gha)
-	if err != nil {
-		return err
-	}
-	log.Infof("Created Pull Request: %s\n\n", util.ColorInfo(pr.URL))
-	return nil
+	return o.CreatePullRequest(&o.PullRequestDetails, fn)
 }
 
 func (o *StepCreateVersionPullRequestOptions) modifyFiles(dir string) error {
+	if o.builderImageVersion != "" {
+		err := o.modifyRegex(filepath.Join(dir, "jenkins-x-*.yml"), "gcr.io/jenkinsxio/builder-go-maven:(.+)", "gcr.io/jenkinsxio/builder-go-maven:"+o.builderImageVersion)
+		if err != nil {
+			return err
+		}
+	}
 	if len(o.Includes) > 0 {
 		switch version.VersionKind(o.Kind) {
 		case version.KindChart:
@@ -333,7 +207,7 @@ func (o *StepCreateVersionPullRequestOptions) findLatestChartVersions(dir string
 			if err != nil {
 				return false, err
 			}
-			o.message += fmt.Sprintf("change `%s` to version `%s`\n", name, v)
+			o.PullRequestDetails.Message += fmt.Sprintf("change `%s` to version `%s`\n", name, v)
 		}
 		return true, nil
 	}
@@ -374,5 +248,38 @@ func (o *StepCreateVersionPullRequestOptions) updateHelmRepo() error {
 		return errors.Wrap(err, "failed to update helm repos")
 	}
 	o.updatedHelmRepo = true
+	return nil
+}
+
+func (o *StepCreateVersionPullRequestOptions) findLatestBuilderImageVersion() (string, error) {
+	output, err := o.getCommandOutput("", "gcloud", "container", "images", "list-tags", "gcr.io/jenkinsxio/builder-maven", "--format", "json")
+	if err != nil {
+		return "", err
+	}
+	return gke.FindLatestImageTag(output)
+}
+
+// modifyRegex performs a search and replace of the given regular expression with the replacement in the given set of globPattern files
+func (o *StepCreateVersionPullRequestOptions) modifyRegex(globPattern string, regexPattern string, replacement string) error {
+	files, err := filepath.Glob(globPattern)
+	if err != nil {
+		return errors.Wrapf(err, "failed to find glob pattern %s", globPattern)
+	}
+	re, err := regexp.Compile(regexPattern)
+	if err != nil {
+		return errors.Wrapf(err, "failed to parse regex %s", regexPattern)
+	}
+
+	for _, file := range files {
+		data, err := ioutil.ReadFile(file)
+		if err != nil {
+			return errors.Wrapf(err, "failed to load file %s", file)
+		}
+		data = re.ReplaceAll(data, []byte(replacement))
+		err = ioutil.WriteFile(file, data, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to save file %s", file)
+		}
+	}
 	return nil
 }

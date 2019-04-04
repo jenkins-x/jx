@@ -1,22 +1,21 @@
 package cmd_test
 
 import (
-	"reflect"
 	"strconv"
 
-	auth_test "github.com/jenkins-x/jx/pkg/auth/mocks"
+	"github.com/jenkins-x/jx/pkg/auth/mocks"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 
 	"github.com/jenkins-x/jx/pkg/gits"
-	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
+	"github.com/jenkins-x/jx/pkg/gits/mocks"
 	gits_matchers "github.com/jenkins-x/jx/pkg/gits/mocks/matchers"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
 	cmd_matchers "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks/matchers"
@@ -109,12 +108,15 @@ preview:
 `,
 		},
 	}
+	co := &cmd.CommonOptions{}
+	cmd.ConfigureTestOptions(co, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 
 	for i, test := range tests {
 		for k, v := range test.env {
 			os.Setenv(k, v)
 		}
 
+		test.opts.CommonOptions = co
 		config, err := test.opts.GetPreviewValuesConfig(test.domain)
 		if err != nil {
 			t.Errorf("[%d] got unexpected err: %v", i, err)
@@ -240,7 +242,7 @@ func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 
 	mockConfigSaver := auth_test.NewMockConfigSaver()
 	When(mockConfigSaver.LoadConfig()).ThenReturn(&auth.AuthConfig{}, nil)
-	When(factory.CreateAuthConfigService(auth.GitAuthConfigFile)).ThenReturn(auth.NewAuthConfigService(mockConfigSaver), nil)
+	When(factory.CreateAuthConfigService(AnyString(), AnyString())).ThenReturn(auth.NewAuthConfigService(mockConfigSaver), nil)
 	When(factory.IsInCDPipeline()).ThenReturn(true)
 
 	cs := cs_fake.NewSimpleClientset()
@@ -313,16 +315,6 @@ func validateUser(t *testing.T, cs *cs_fake.Clientset) {
 
 //Pegomock 'any' matcher for *string.
 //(since these don't seem to get generated).
-func anyPtrToString() *string {
-	RegisterMatcher(NewAnyMatcher(reflect.TypeOf((*(*string))(nil)).Elem()))
-	var nullValue *string
-	return nullValue
-}
 
 //Pegomock 'any' matcher for *int.
 //(since these don't seem to get generated).
-func anyPtrToInt() *int {
-	RegisterMatcher(NewAnyMatcher(reflect.TypeOf((*(*int))(nil)).Elem()))
-	var nullValue *int
-	return nullValue
-}

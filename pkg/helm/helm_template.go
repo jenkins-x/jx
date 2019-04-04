@@ -20,7 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
@@ -111,6 +111,7 @@ func (h *HelmTemplate) SetHost(tillerAddress string) {
 // SetCWD configures the common working directory of helm CLI
 func (h *HelmTemplate) SetCWD(dir string) {
 	h.Client.SetCWD(dir)
+	h.CWD = dir
 }
 
 // HelmBinary return the configured helm CLI
@@ -337,9 +338,7 @@ func (h *HelmTemplate) FetchChart(chart string, version string, untar bool, unta
 }
 
 // UpgradeChart upgrades a helm chart according with given helm flags
-func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string, version string, install bool,
-	timeout int, force bool, wait bool, values []string, valueFiles []string, repo string, username string,
-	password string) error {
+func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string, version string, install bool, timeout int, force bool, wait bool, values []string, valueFiles []string, repo string, username string, password string) error {
 
 	err := h.clearOutputDir(releaseName)
 	if err != nil {
@@ -421,7 +420,9 @@ func (h *HelmTemplate) kubectlApply(ns string, chart string, releaseName string,
 	if !h.KubectlValidate {
 		args = append(args, "--validate=false")
 	}
-	return h.runKubectl(args...)
+	err := h.runKubectl(args...)
+	log.Info("\n")
+	return err
 }
 
 func (h *HelmTemplate) kubectlApplyFile(ns string, helmHook string, wait bool, create bool, file string) error {
@@ -441,7 +442,9 @@ func (h *HelmTemplate) kubectlApplyFile(ns string, helmHook string, wait bool, c
 	if !h.KubectlValidate {
 		args = append(args, "--validate=false")
 	}
-	return h.runKubectl(args...)
+	err := h.runKubectl(args...)
+	log.Info("\n")
+	return err
 }
 
 func (h *HelmTemplate) kubectlDeleteFile(ns string, file string) error {
@@ -552,6 +555,11 @@ func (h *HelmTemplate) StatusReleases(ns string) (map[string]Release, error) {
 		}
 	}
 	return statusMap, nil
+}
+
+// StatusReleaseWithOutput returns the output of the helm status command for a given release
+func (h *HelmTemplate) StatusReleaseWithOutput(ns string, releaseName string, outputFormat string) (string, error) {
+	return h.Client.StatusReleaseWithOutput(ns, releaseName, outputFormat)
 }
 
 func (h *HelmTemplate) getDirectories(releaseName string) (string, string, string, error) {
@@ -1037,11 +1045,4 @@ func MatchingHooks(hooks []*HelmHook, hook string, hookDeletePolicy string) []*H
 		}
 	}
 	return answer
-}
-
-func asText(text *string) string {
-	if text != nil {
-		return *text
-	}
-	return ""
 }

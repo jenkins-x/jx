@@ -1,7 +1,7 @@
 package syntax
 
 import (
-	"crypto/rand"
+	"context"
 	"fmt"
 	"regexp"
 	"sort"
@@ -9,11 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/imdario/mergo"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/util"
-	tektonv1alpha1 "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/knative/pkg/apis"
 	"github.com/pkg/errors"
+	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,25 +22,25 @@ import (
 
 // ParsedPipeline is the internal representation of the Pipeline, used to validate and create CRDs
 type ParsedPipeline struct {
-	Agent       Agent       `yaml:"agent,omitempty"`
-	Environment []EnvVar    `yaml:"environment,omitempty"`
-	Options     RootOptions `yaml:"options,omitempty"`
-	Stages      []Stage     `yaml:"stages"`
-	Post        []Post      `yaml:"post,omitempty"`
+	Agent       Agent       `json:"agent,omitempty"`
+	Environment []EnvVar    `json:"environment,omitempty"`
+	Options     RootOptions `json:"options,omitempty"`
+	Stages      []Stage     `json:"stages"`
+	Post        []Post      `json:"post,omitempty"`
 }
 
 // Agent defines where the pipeline, stage, or step should run.
 type Agent struct {
 	// One of label or image is required.
-	Label string `yaml:"label,omitempty"`
-	Image string `yaml:"image,omitempty"`
+	Label string `json:"label,omitempty"`
+	Image string `json:"image,omitempty"`
 	// Perhaps we'll eventually want to add something here for specifying a volume to create? Would play into stash.
 }
 
 // EnvVar is a key/value pair defining an environment variable
 type EnvVar struct {
-	Name  string `yaml:"name"`
-	Value string `yaml:"value"`
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 // TimeoutUnit is used for calculating timeout duration
@@ -68,9 +69,9 @@ func allTimeoutUnitsAsStrings() []string {
 
 // Timeout defines how long a stage or pipeline can run before timing out.
 type Timeout struct {
-	Time int64 `yaml:"time"`
+	Time int64 `json:"time"`
 	// Has some sane default - probably seconds
-	Unit TimeoutUnit `yaml:"unit,omitempty"`
+	Unit TimeoutUnit `json:"unit,omitempty"`
 }
 
 func (t Timeout) toDuration() (*metav1.Duration, error) {
@@ -91,58 +92,66 @@ func (t Timeout) toDuration() (*metav1.Duration, error) {
 
 // RootOptions contains options that can be configured on either a pipeline or a stage
 type RootOptions struct {
-	Timeout Timeout `yaml:"timeout,omitempty"`
+	Timeout Timeout `json:"timeout,omitempty"`
 	// TODO: Not yet implemented in build-pipeline
-	Retry int8 `yaml:"retry,omitempty"`
+	Retry int8 `json:"retry,omitempty"`
+	// ContainerOptions allows for advanced configuration of containers for a single stage or the whole
+	// pipeline, adding to configuration that can be configured through the syntax already. This includes things
+	// like CPU/RAM requests/limits, secrets, ports, etc. Some of these things will end up with native syntax approaches
+	// down the road.
+	ContainerOptions *corev1.Container `json:"containerOptions,omitempty"`
 }
 
 // Stash defines files to be saved for use in a later stage, marked with a name
 type Stash struct {
-	Name string `yaml:"name"`
+	Name string `json:"name"`
 	// Eventually make this optional so that you can do volumes instead
-	Files string `yaml:"files"`
+	Files string `json:"files"`
 }
 
 // Unstash defines a previously-defined stash to be copied into this stage's workspace
 type Unstash struct {
-	Name string `yaml:"name"`
-	Dir  string `yaml:"dir,omitempty"`
+	Name string `json:"name"`
+	Dir  string `json:"dir,omitempty"`
 }
 
 // StageOptions contains both options that can be configured on either a pipeline or a stage, via
 // RootOptions, or stage-specific options.
 type StageOptions struct {
-	RootOptions `yaml:",inline"`
+	RootOptions `json:",inline"`
 
 	// TODO: Not yet implemented in build-pipeline
-	Stash   Stash   `yaml:"stash,omitempty"`
-	Unstash Unstash `yaml:"unstash,omitempty"`
+	Stash   Stash   `json:"stash,omitempty"`
+	Unstash Unstash `json:"unstash,omitempty"`
 
-	Workspace *string `yaml:"workspace,omitempty"`
+	Workspace *string `json:"workspace,omitempty"`
 }
 
 // Step defines a single step, from the author's perspective, to be executed within a stage.
 type Step struct {
-	// One of command, step, or loop is required.
-	Command string `yaml:"command,omitempty"`
-	// args is optional, but only allowed with command
-	Arguments []string `yaml:"args,omitempty"`
-	// dir is optional, but only allowed with command. Refers to subdirectory of workspace
-	Dir string `yaml:"dir,omitempty"`
+	// An optional name to give the step for reporting purposes
+	Name string `json:"name,omitempty"`
 
-	Step string `yaml:"step,omitempty"`
+	// One of command, step, or loop is required.
+	Command string `json:"command,omitempty"`
+	// args is optional, but only allowed with command
+	Arguments []string `json:"args,omitempty"`
+	// dir is optional, but only allowed with command. Refers to subdirectory of workspace
+	Dir string `json:"dir,omitempty"`
+
+	Step string `json:"step,omitempty"`
 	// options is optional, but only allowed with step
 	// Also, we'll need to do some magic to do type verification during translation - i.e., this step wants a number
 	// for this option, so translate the string value for that option to a number.
-	Options map[string]string `yaml:"options,omitempty"`
+	Options map[string]string `json:"options,omitempty"`
 
-	Loop Loop `yaml:"loop,omitempty"`
+	Loop Loop `json:"loop,omitempty"`
 
 	// agent can be overridden on a step
-	Agent Agent `yaml:"agent,omitempty"`
+	Agent Agent `json:"agent,omitempty"`
 
 	// Image alows the docker image for a step to be specified
-	Image string `yaml:"image,omitempty"`
+	Image string `json:"image,omitempty"`
 }
 
 // Loop is a special step that defines a variable, a list of possible values for that variable, and a set of steps to
@@ -150,24 +159,24 @@ type Step struct {
 // those steps.
 type Loop struct {
 	// The variable name.
-	Variable string `yaml:"variable"`
+	Variable string `json:"variable"`
 	// The list of values to iterate over
-	Values []string `yaml:"values"`
+	Values []string `json:"values"`
 	// The steps to run
-	Steps []Step `yaml:"steps"`
+	Steps []Step `json:"steps"`
 }
 
 // Stage is a unit of work in a pipeline, corresponding either to a Task or a set of Tasks to be run sequentially or in
 // parallel with common configuration.
 type Stage struct {
-	Name        string       `yaml:"name"`
-	Agent       Agent        `yaml:"agent,omitempty"`
-	Options     StageOptions `yaml:"options,omitempty"`
-	Environment []EnvVar     `yaml:"environment,omitempty"`
-	Steps       []Step       `yaml:"steps,omitempty"`
-	Stages      []Stage      `yaml:"stages,omitempty"`
-	Parallel    []Stage      `yaml:"parallel,omitempty"`
-	Post        []Post       `yaml:"post,omitempty"`
+	Name        string       `json:"name"`
+	Agent       Agent        `json:"agent,omitempty"`
+	Options     StageOptions `json:"options,omitempty"`
+	Environment []EnvVar     `json:"environment,omitempty"`
+	Steps       []Step       `json:"steps,omitempty"`
+	Stages      []Stage      `json:"stages,omitempty"`
+	Parallel    []Stage      `json:"parallel,omitempty"`
+	Post        []Post       `json:"post,omitempty"`
 }
 
 // PostCondition is used to specify under what condition a post action should be executed.
@@ -180,22 +189,20 @@ const (
 	PostConditionAlways  PostCondition = "always"
 )
 
-var allPostConditions = []PostCondition{PostConditionAlways, PostConditionSuccess, PostConditionFailure}
-
 // Post contains a PostCondition and one more actions to be executed after a pipeline or stage if the condition is met.
 type Post struct {
 	// TODO: Conditional execution of something after a Task or Pipeline completes is not yet implemented
-	Condition PostCondition `yaml:"condition"`
-	Actions   []PostAction  `yaml:"actions"`
+	Condition PostCondition `json:"condition"`
+	Actions   []PostAction  `json:"actions"`
 }
 
 // PostAction contains the name of a built-in post action and options to pass to that action.
 type PostAction struct {
 	// TODO: Notifications are not yet supported in Build Pipeline per se.
-	Name string `yaml:"name"`
+	Name string `json:"name"`
 	// Also, we'll need to do some magic to do type verification during translation - i.e., this action wants a number
 	// for this option, so translate the string value for that option to a number.
-	Options map[string]string `yaml:"options,omitempty"`
+	Options map[string]string `json:"options,omitempty"`
 }
 
 var _ apis.Validatable = (*ParsedPipeline)(nil)
@@ -265,7 +272,7 @@ func MangleToRfc1035Label(body string, suffix string) string {
 // Validate checks the parsed ParsedPipeline to find any errors in it.
 // TODO: Improve validation to actually return all the errors via the nested errors?
 // TODO: Add validation for the not-yet-supported-for-CRD-generation sections
-func (j *ParsedPipeline) Validate() *apis.FieldError {
+func (j *ParsedPipeline) Validate(context context.Context) *apis.FieldError {
 	if err := validateAgent(j.Agent).ViaField("agent"); err != nil {
 		return err
 	}
@@ -455,6 +462,63 @@ func validateRootOptions(o RootOptions) *apis.FieldError {
 				Paths:   []string{"retry"},
 			}
 		}
+
+		return validateContainerOptions(o.ContainerOptions).ViaField("containerOptions")
+	}
+
+	return nil
+}
+
+func validateContainerOptions(c *corev1.Container) *apis.FieldError {
+	if c != nil {
+		if len(c.Command) != 0 {
+			return &apis.FieldError{
+				Message: "Command cannot be specified in containerOptions",
+				Paths:   []string{"command"},
+			}
+		}
+		if len(c.Args) != 0 {
+			return &apis.FieldError{
+				Message: "Arguments cannot be specified in containerOptions",
+				Paths:   []string{"args"},
+			}
+		}
+		if c.Image != "" {
+			return &apis.FieldError{
+				Message: "Image cannot be specified in containerOptions",
+				Paths:   []string{"image"},
+			}
+		}
+		if c.WorkingDir != "" {
+			return &apis.FieldError{
+				Message: "WorkingDir cannot be specified in containerOptions",
+				Paths:   []string{"workingDir"},
+			}
+		}
+		if len(c.VolumeMounts) != 0 {
+			return &apis.FieldError{
+				Message: "VolumeMounts cannot be specified in containerOptions",
+				Paths:   []string{"volumeMounts"},
+			}
+		}
+		if c.Name != "" {
+			return &apis.FieldError{
+				Message: "Name cannot be specified in containerOptions",
+				Paths:   []string{"name"},
+			}
+		}
+		if c.Stdin {
+			return &apis.FieldError{
+				Message: "Stdin cannot be specified in containerOptions",
+				Paths:   []string{"stdin"},
+			}
+		}
+		if c.TTY {
+			return &apis.FieldError{
+				Message: "TTY cannot be specified in containerOptions",
+				Paths:   []string{"tty"},
+			}
+		}
 	}
 
 	return nil
@@ -554,23 +618,30 @@ func validateWorkspace(w string) *apis.FieldError {
 	return nil
 }
 
-var randReader = rand.Reader
+func toContainerEnvVars(origEnv []EnvVar) []corev1.EnvVar {
+	env := make([]corev1.EnvVar, 0, len(origEnv))
+	for _, e := range origEnv {
+		env = append(env, corev1.EnvVar{
+			Name:  e.Name,
+			Value: e.Value,
+		})
+	}
 
-func scopedEnv(newEnv []EnvVar, parentEnv []corev1.EnvVar) []corev1.EnvVar {
+	return env
+}
+
+func scopedEnv(newEnv []corev1.EnvVar, parentEnv []corev1.EnvVar, o *RootOptions) []corev1.EnvVar {
 	if len(parentEnv) == 0 && len(newEnv) == 0 {
 		return nil
 	}
-	envMap := make(map[string]corev1.EnvVar)
+	envMap := getContainerOptionsEnvVars(o)
 
 	for _, e := range parentEnv {
 		envMap[e.Name] = e
 	}
 
 	for _, e := range newEnv {
-		envMap[e.Name] = corev1.EnvVar{
-			Name:  e.Name,
-			Value: e.Value,
-		}
+		envMap[e.Name] = e
 	}
 
 	env := make([]corev1.EnvVar, 0, len(envMap))
@@ -590,13 +661,37 @@ func scopedEnv(newEnv []EnvVar, parentEnv []corev1.EnvVar) []corev1.EnvVar {
 }
 
 func (j *ParsedPipeline) toStepEnvVars() []corev1.EnvVar {
-	env := make([]corev1.EnvVar, 0, len(j.Environment))
+	envMap := getContainerOptionsEnvVars(&j.Options)
 
 	for _, e := range j.Environment {
-		env = append(env, corev1.EnvVar{Name: e.Name, Value: e.Value})
+		envMap[e.Name] = corev1.EnvVar{Name: e.Name, Value: e.Value}
+	}
+
+	env := make([]corev1.EnvVar, 0, len(envMap))
+	// Avoid nondeterministic results by sorting the keys and appending vars in that order.
+	var envVars []string
+	for k := range envMap {
+		envVars = append(envVars, k)
+	}
+	sort.Strings(envVars)
+
+	for _, envVar := range envVars {
+		env = append(env, envMap[envVar])
 	}
 
 	return env
+}
+
+func getContainerOptionsEnvVars(o *RootOptions) map[string]corev1.EnvVar {
+	envMap := make(map[string]corev1.EnvVar)
+
+	if o != nil && o.ContainerOptions != nil {
+		for _, e := range o.ContainerOptions.Env {
+			envMap[e.Name] = e
+		}
+	}
+
+	return envMap
 }
 
 type transformedStage struct {
@@ -704,10 +799,14 @@ func (ts *transformedStage) computeWorkspace(parentWorkspace string) {
 	}
 }
 
-func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, namespace string, wsPath string, parentEnv []corev1.EnvVar, parentAgent Agent, parentWorkspace string, depth int8, enclosingStage *transformedStage, previousSiblingStage *transformedStage, podTemplates map[string]*corev1.Pod) (*transformedStage, error) {
+func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, namespace string, wsPath string, parentEnv []corev1.EnvVar, parentAgent Agent, parentWorkspace string, parentContainer *corev1.Container, depth int8, enclosingStage *transformedStage, previousSiblingStage *transformedStage, podTemplates map[string]*corev1.Pod) (*transformedStage, error) {
 	if len(s.Post) != 0 {
 		return nil, errors.New("post on stages not yet supported")
 	}
+
+	stageContainer := &corev1.Container{}
+
+	var rootOptions *RootOptions
 
 	if !equality.Semantic.DeepEqual(s.Options, StageOptions{}) {
 		o := s.Options
@@ -723,9 +822,19 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		if !equality.Semantic.DeepEqual(o.Unstash, Unstash{}) {
 			return nil, errors.New("Unstash on stage not yet supported")
 		}
+
+		stageContainer = o.ContainerOptions
+
+		rootOptions = &o.RootOptions
 	}
 
-	env := scopedEnv(s.Environment, parentEnv)
+	if parentContainer != nil {
+		if err := mergo.Merge(stageContainer, parentContainer); err != nil {
+			return nil, errors.Wrapf(err, "Error merging stage and parent container overrides: %s", err)
+		}
+	}
+
+	env := scopedEnv(toContainerEnvVars(s.Environment), parentEnv, rootOptions)
 
 	agent := s.Agent
 
@@ -743,11 +852,11 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 			},
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
-				Name:      MangleToRfc1035Label(fmt.Sprintf("%s-%s", pipelineIdentifier, s.Name), ""),
+				Name:      MangleToRfc1035Label(fmt.Sprintf("%s-%s", pipelineIdentifier, s.Name), buildIdentifier),
 				Labels:    util.MergeMaps(map[string]string{LabelStageName: s.stageLabelName()}),
 			},
 		}
-		t.SetDefaults()
+		t.SetDefaults(context.Background())
 
 		ws := &tektonv1alpha1.TaskResource{
 			Name: "workspace",
@@ -774,7 +883,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		// We don't want to dupe volumes for the Task if there are multiple steps
 		volumes := make(map[string]corev1.Volume)
 		for _, step := range s.Steps {
-			actualSteps, stepVolumes, newCounter, err := generateSteps(step, agent.Image, env, podTemplates, stepCounter)
+			actualSteps, stepVolumes, newCounter, err := generateSteps(step, agent.Image, env, stageContainer, podTemplates, stepCounter)
 			if err != nil {
 				return nil, err
 			}
@@ -817,7 +926,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 			if i > 0 {
 				nestedPreviousSibling = tasks[i-1]
 			}
-			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, nestedWsPath, env, agent, *ts.Stage.Options.Workspace, depth+1, &ts, nestedPreviousSibling, podTemplates)
+			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, nestedWsPath, env, agent, *ts.Stage.Options.Workspace, stageContainer, depth+1, &ts, nestedPreviousSibling, podTemplates)
 			if err != nil {
 				return nil, err
 			}
@@ -838,7 +947,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 			if wsPath != "" && i == 0 {
 				nestedWsPath = wsPath
 			}
-			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, nestedWsPath, env, agent, *ts.Stage.Options.Workspace, depth+1, &ts, nil, podTemplates)
+			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, nestedWsPath, env, agent, *ts.Stage.Options.Workspace, stageContainer, depth+1, &ts, nil, podTemplates)
 			if err != nil {
 				return nil, err
 			}
@@ -852,7 +961,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 	return nil, errors.New("no steps, sequential stages, or parallel stages")
 }
 
-func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, podTemplates map[string]*corev1.Pod, stepCounter int) ([]corev1.Container, map[string]corev1.Volume, int, error) {
+func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parentContainer *corev1.Container, podTemplates map[string]*corev1.Pod, stepCounter int) ([]corev1.Container, map[string]corev1.Volume, int, error) {
 	volumes := make(map[string]corev1.Volume)
 	var steps []corev1.Container
 
@@ -863,46 +972,59 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, podTem
 		stepImage = step.Agent.Image
 	}
 
+	workingDir := step.Dir
+	if workingDir == "" {
+		workingDir = "/workspace/workspace"
+	}
 	if step.Command != "" {
-		var c corev1.Container
-
+		c := &corev1.Container{}
+		if parentContainer != nil {
+			c = parentContainer.DeepCopy()
+		}
 		if podTemplates != nil && podTemplates[stepImage] != nil {
 			podTemplate := podTemplates[stepImage]
 			containers := podTemplate.Spec.Containers
 			for _, volume := range podTemplate.Spec.Volumes {
 				volumes[volume.Name] = volume
 			}
-			c = containers[0]
+			if !equality.Semantic.DeepEqual(c, corev1.Container{}) {
+				if err := mergo.Merge(c, containers[0]); err != nil {
+					return nil, nil, stepCounter, errors.Wrapf(err, "Error merging pod template and parent container: %s", err)
+				}
+			} else {
+				c = &containers[0]
+			}
 			cmdStr := step.Command
 			if len(step.Arguments) > 0 {
 				cmdStr += " " + strings.Join(step.Arguments, " ")
 			}
 			c.Args = []string{cmdStr}
-			c.WorkingDir = "/workspace/workspace"
 		} else {
-			c = corev1.Container{
-				Image:   stepImage,
-				Command: []string{step.Command},
-				Args:    step.Arguments,
-				// TODO: Better paths
-				WorkingDir: "/workspace/workspace",
-			}
+			c.Image = stepImage
+			c.Command = []string{step.Command}
+			c.Args = step.Arguments
+			// TODO: Better paths
 		}
+		c.WorkingDir = workingDir
 		stepCounter++
-		c.Name = "step" + strconv.Itoa(1+stepCounter)
+		if step.Name != "" {
+			c.Name = step.Name
+		} else {
+			c.Name = "step" + strconv.Itoa(1+stepCounter)
+		}
 
 		c.Stdin = false
 		c.TTY = false
 
-		c.Env = env
+		c.Env = scopedEnv(env, c.Env, nil)
 
-		steps = append(steps, c)
+		steps = append(steps, *c)
 	} else if !equality.Semantic.DeepEqual(step.Loop, Loop{}) {
 		for _, v := range step.Loop.Values {
-			loopEnv := scopedEnv([]EnvVar{{Name: step.Loop.Variable, Value: v}}, env)
+			loopEnv := scopedEnv([]corev1.EnvVar{{Name: step.Loop.Variable, Value: v}}, env, nil)
 
 			for _, s := range step.Loop.Steps {
-				loopSteps, loopVolumes, loopCounter, loopErr := generateSteps(s, stepImage, loopEnv, podTemplates, stepCounter)
+				loopSteps, loopVolumes, loopCounter, loopErr := generateSteps(s, stepImage, loopEnv, parentContainer, podTemplates, stepCounter)
 				if loopErr != nil {
 					return nil, nil, loopCounter, loopErr
 				}
@@ -926,17 +1048,25 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, podTem
 	return steps, volumes, stepCounter, nil
 }
 
+// PipelineRunName returns the pipeline name given the pipeline and build identifier
+func PipelineRunName(pipelineIdentifier string, buildIdentifier string) string {
+	return MangleToRfc1035Label(fmt.Sprintf("%s", pipelineIdentifier), buildIdentifier)
+}
+
 // GenerateCRDs translates the Pipeline structure into the corresponding Pipeline and Task CRDs
-func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, podTemplates map[string]*corev1.Pod, taskParams []tektonv1alpha1.TaskParam) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
+func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier string, namespace string, podTemplates map[string]*corev1.Pod, taskParams []tektonv1alpha1.TaskParam, sourceDir string) (*tektonv1alpha1.Pipeline, []*tektonv1alpha1.Task, *v1.PipelineStructure, error) {
 	if len(j.Post) != 0 {
 		return nil, nil, nil, errors.New("Post at top level not yet supported")
 	}
+
+	var parentContainer *corev1.Container
 
 	if !equality.Semantic.DeepEqual(j.Options, RootOptions{}) {
 		o := j.Options
 		if o.Retry != 0 {
 			return nil, nil, nil, errors.New("Retry at top level not yet supported")
 		}
+		parentContainer = o.ContainerOptions
 	}
 
 	p := &tektonv1alpha1.Pipeline{
@@ -946,7 +1076,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: namespace,
-			Name:      fmt.Sprintf("%s", pipelineIdentifier),
+			Name:      PipelineRunName(pipelineIdentifier, buildIdentifier),
 		},
 		Spec: tektonv1alpha1.PipelineSpec{
 			Resources: []tektonv1alpha1.PipelineDeclaredResource{
@@ -958,7 +1088,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		},
 	}
 
-	p.SetDefaults()
+	p.SetDefaults(context.Background())
 
 	structure := &v1.PipelineStructure{
 		ObjectMeta: metav1.ObjectMeta{
@@ -975,9 +1105,9 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 	for _, s := range j.Stages {
 		wsPath := ""
 		if len(tasks) == 0 {
-			wsPath = "workspace"
+			wsPath = sourceDir
 		}
-		stage, err := stageToTask(s, pipelineIdentifier, buildIdentifier, namespace, wsPath, baseEnv, j.Agent, "default", 0, nil, previousStage, podTemplates)
+		stage, err := stageToTask(s, pipelineIdentifier, buildIdentifier, namespace, wsPath, baseEnv, j.Agent, "default", parentContainer, 0, nil, previousStage, podTemplates)
 		if err != nil {
 			return nil, nil, nil, err
 		}
@@ -991,24 +1121,24 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		}
 
 		tasks = append(tasks, linearTasks...)
-		p.Spec.Tasks = append(p.Spec.Tasks, createPipelineTasks(stage, pipelineIdentifier)...)
+		p.Spec.Tasks = append(p.Spec.Tasks, createPipelineTasks(stage, p.Spec.Resources[0].Name)...)
 		structure.Stages = append(structure.Stages, stage.getAllAsPipelineStructureStages()...)
 	}
 
 	return p, tasks, structure, nil
 }
 
-func createPipelineTasks(stage *transformedStage, pipelineIdentifier string) []tektonv1alpha1.PipelineTask {
+func createPipelineTasks(stage *transformedStage, resourceName string) []tektonv1alpha1.PipelineTask {
 	if stage.isSequential() {
 		var pTasks []tektonv1alpha1.PipelineTask
 		for _, nestedStage := range stage.Sequential {
-			pTasks = append(pTasks, createPipelineTasks(nestedStage, pipelineIdentifier)...)
+			pTasks = append(pTasks, createPipelineTasks(nestedStage, resourceName)...)
 		}
 		return pTasks
 	} else if stage.isParallel() {
 		var pTasks []tektonv1alpha1.PipelineTask
 		for _, nestedStage := range stage.Parallel {
-			pTasks = append(pTasks, createPipelineTasks(nestedStage, pipelineIdentifier)...)
+			pTasks = append(pTasks, createPipelineTasks(nestedStage, resourceName)...)
 		}
 		return pTasks
 	} else {
@@ -1028,14 +1158,14 @@ func createPipelineTasks(stage *transformedStage, pipelineIdentifier string) []t
 			Inputs: []tektonv1alpha1.PipelineTaskInputResource{
 				{
 					Name:     "workspace",
-					Resource: pipelineIdentifier,
+					Resource: resourceName,
 					From:     provider,
 				},
 			},
 			Outputs: []tektonv1alpha1.PipelineTaskOutputResource{
 				{
 					Name:     "workspace",
-					Resource: pipelineIdentifier,
+					Resource: resourceName,
 				},
 			},
 		}

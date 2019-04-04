@@ -105,6 +105,15 @@ func (g *GitCLI) PullUpstream(dir string) error {
 	return g.gitCmd(dir, "pull", "-r", "upstream", "master")
 }
 
+// ResetToUpstream resets the given branch to the upstream version
+func (g *GitCLI) ResetToUpstream(dir string, branch string) error {
+	err := g.gitCmd(dir, "fetch", "upstream")
+	if err != nil {
+		return err
+	}
+	return g.gitCmd(dir, "reset", "--hard", "upstream/"+branch)
+}
+
 // AddRemote adds a remote repository at the given URL and with the given name
 func (g *GitCLI) AddRemote(dir string, name string, url string) error {
 	return g.gitCmd(dir, "remote", "add", name, url)

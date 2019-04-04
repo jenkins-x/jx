@@ -4,10 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"regexp"
 	"time"
 
-	openapi "github.com/jenkins-x/jx/pkg/client/openapi/all"
+	"github.com/jenkins-x/jx/pkg/client/openapi/all"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kube-openapi/pkg/common"
@@ -20,12 +19,10 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/cenkalti/backoff"
-	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 )
-
-var refMatcher = regexp.MustCompile(`,?{?"\$ref":"([\w./-]*)"}?`)
 
 // RegisterAllCRDs ensures that all Jenkins-X CRDs are registered
 func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {

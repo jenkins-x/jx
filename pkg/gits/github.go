@@ -3,6 +3,8 @@ package gits
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -253,6 +255,7 @@ func toGitHubRepo(name string, repo *github.Repository) *GitRepository {
 		Fork:             asBool(repo.Fork),
 		Language:         asText(repo.Language),
 		Stars:            asInt(repo.StargazersCount),
+		Private:          asBool(repo.Private),
 	}
 }
 
@@ -449,8 +452,14 @@ func (p *GitHubProvider) CreatePullRequest(data *GitPullRequestArguments) (*GitP
 	if base != "" {
 		config.Base = github.String(base)
 	}
-	pr, _, err := p.Client.PullRequests.Create(p.Context, owner, repo, config)
+	pr, resp, err := p.Client.PullRequests.Create(p.Context, owner, repo, config)
 	if err != nil {
+		if resp != nil && resp.Body != nil {
+			data, err2 := ioutil.ReadAll(resp.Body)
+			if err2 == nil && len(data) > 0 {
+				return nil, errors.Wrapf(err, "response: %s", string(data))
+			}
+		}
 		return nil, err
 	}
 	return &GitPullRequest{
@@ -1146,10 +1155,22 @@ func (p *GitHubProvider) AcceptInvitation(ID int64) (*github.Response, error) {
 	return p.Client.Users.AcceptInvitation(p.Context, ID)
 }
 
-// ShouldForkForPullReques treturns true if we should create a personal fork of this repository
+// ShouldForkForPullRequest returns true if we should create a personal fork of this repository
 // before creating a pull request
 func (p *GitHubProvider) ShouldForkForPullRequest(originalOwner string, repoName string, username string) bool {
-	return originalOwner != username
+	if originalOwner == username {
+		return false
+	}
+
+	// lets check if the repo is private as that disables forking on github
+	repo, err := p.GetRepository(originalOwner, repoName)
+	if err != nil {
+		return false
+	}
+	if repo.Private {
+		return false
+	}
+	return true
 }
 
 func asBool(b *bool) bool {
@@ -1171,4 +1192,30 @@ func asText(text *string) string {
 		return *text
 	}
 	return ""
+}
+func (p *GitHubProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
+	githubOpt := &github.CommitsListOptions{
+		Path: opt.Path,
+		ListOptions: github.ListOptions{
+			Page:    opt.Page,
+			PerPage: opt.PerPage,
+		},
+	}
+	githubCommits, _, err := p.Client.Repositories.ListCommits(p.Context, owner, repo, githubOpt)
+	if err != nil {
+		fmt.Println(err)
+		return nil, fmt.Errorf("Could not find commits for repository %s/%s", owner, repo)
+	}
+	var commits []*GitCommit
+	if len(githubCommits) > 0 {
+		for i := 0; i < len(githubCommits); i++ {
+			commits = append(commits, &GitCommit{
+				SHA:     *githubCommits[0].SHA,
+				Message: *githubCommits[0].Commit.Message,
+				URL:     *githubCommits[0].Commit.URL,
+			})
+		}
+	}
+
+	return commits, nil
 }

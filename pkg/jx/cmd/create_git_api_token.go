@@ -19,10 +19,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
-const (
-	jenkinsGitCredentialsSecretKey = "credentials"
-)
-
 var (
 	create_git_token_long = templates.LongDesc(`
 		Creates a new API Token for a user on a Git Server
@@ -145,9 +141,11 @@ func (o *CreateGitTokenOptions) Run() error {
 		return err
 	}
 
-	_, err = o.updatePipelineGitCredentialsSecret(server, userAuth)
-	if err != nil {
-		log.Warnf("Failed to update Jenkins X pipeline Git credentials secret: %v\n", err)
+	if config.PipeLineUsername == userAuth.Username {
+		_, err = o.updatePipelineGitCredentialsSecret(server, userAuth)
+		if err != nil {
+			log.Warnf("Failed to update Jenkins X pipeline Git credentials secret: %v\n", err)
+		}
 	}
 
 	log.Infof("Created user %s API Token for Git server %s at %s\n",

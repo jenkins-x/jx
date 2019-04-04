@@ -5,11 +5,11 @@ package v1
 import (
 	time "time"
 
-	jenkins_io_v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	jenkinsiov1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	versioned "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	internalinterfaces "github.com/jenkins-x/jx/pkg/client/informers/externalversions/internalinterfaces"
 	v1 "github.com/jenkins-x/jx/pkg/client/listers/jenkins.io/v1"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"
 	cache "k8s.io/client-go/tools/cache"
@@ -41,20 +41,20 @@ func NewEnvironmentInformer(client versioned.Interface, namespace string, resync
 func NewFilteredEnvironmentInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
-			ListFunc: func(options meta_v1.ListOptions) (runtime.Object, error) {
+			ListFunc: func(options metav1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
 				return client.JenkinsV1().Environments(namespace).List(options)
 			},
-			WatchFunc: func(options meta_v1.ListOptions) (watch.Interface, error) {
+			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
 				return client.JenkinsV1().Environments(namespace).Watch(options)
 			},
 		},
-		&jenkins_io_v1.Environment{},
+		&jenkinsiov1.Environment{},
 		resyncPeriod,
 		indexers,
 	)
@@ -65,7 +65,7 @@ func (f *environmentInformer) defaultInformer(client versioned.Interface, resync
 }
 
 func (f *environmentInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&jenkins_io_v1.Environment{}, f.defaultInformer)
+	return f.factory.InformerFor(&jenkinsiov1.Environment{}, f.defaultInformer)
 }
 
 func (f *environmentInformer) Lister() v1.EnvironmentLister {

@@ -191,8 +191,7 @@ func TestUpgradeChart(t *testing.T) {
 		"--timeout", fmt.Sprintf("%d", timeout), "--version", version, "--set", value[0], "--values", valueFile[0], releaseName, chart}
 	helm, runner := createHelm(t, nil, "")
 
-	err := helm.UpgradeChart(chart, releaseName, namespace, version, true, timeout, true, true, value, valueFile,
-		"", "", "")
+	err := helm.UpgradeChart(chart, releaseName, namespace, version, true, timeout, true, true, value, valueFile, "", "", "")
 
 	assert.NoError(t, err, "should upgrade the chart without any error")
 	verifyArgs(t, helm, runner, expectedArgs...)
@@ -217,6 +216,28 @@ func TestStatusRelease(t *testing.T) {
 	err := helm.StatusRelease(ns, releaseName)
 
 	assert.NoError(t, err, "should get the status of a helm chart release without any error")
+	verifyArgs(t, helm, runner, expectedArgs...)
+}
+
+func TestStatusReleaseWithOutputNoFormat(t *testing.T) {
+	expectedArgs := []string{"status", releaseName}
+	helm, runner := createHelm(t, nil, "")
+	ns := "default"
+
+	_, err := helm.StatusReleaseWithOutput(ns, releaseName, "")
+
+	assert.NoErrorf(t, err, "should return the status of the helm chart without format")
+	verifyArgs(t, helm, runner, expectedArgs...)
+}
+
+func TestStatusReleaseWithOutputWithFormat(t *testing.T) {
+	expectedArgs := []string{"status", releaseName, "--output", "json"}
+	helm, runner := createHelm(t, nil, "")
+	ns := "default"
+
+	_, err := helm.StatusReleaseWithOutput(ns, releaseName, "json")
+
+	assert.NoErrorf(t, err, "should return the status of the helm chart without in Json format")
 	verifyArgs(t, helm, runner, expectedArgs...)
 }
 

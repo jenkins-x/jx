@@ -196,7 +196,7 @@ func (o *GetIssueOptions) getApplications(client kubernetes.Interface, env *v1.E
 		return apps, errors.Wrap(err, "failed to retrieve the application deployments")
 	}
 
-	for k, _ := range deployments {
+	for k := range deployments {
 		appName := kube.GetAppName(k, envNs)
 		if env.Spec.Kind == v1.EnvironmentKindTypeEdit {
 			if appName == kube.DeploymentExposecontrollerService {

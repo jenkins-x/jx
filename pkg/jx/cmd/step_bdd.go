@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
@@ -224,9 +225,15 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 			Name: gitProviderName,
 			URL:  gitProviderUrl,
 		}
-		err = createGitServer.Run()
+		err = o.retry(10, time.Second*10, func() error {
+			err = createGitServer.Run()
+			if err != nil {
+				return errors.Wrapf(err, "Failed to create git server with kind %s at url %s in team %s", gitProviderName, gitProviderUrl, team)
+			}
+			return nil
+		})
 		if err != nil {
-			return errors.Wrapf(err, "Failed to create git server with kind %s at url %s in team %s", gitProviderName, gitProviderUrl, team)
+			return err
 		}
 
 		createGitToken := &CreateGitTokenOptions{
@@ -381,7 +388,7 @@ func (o *StepBDDOptions) runTests(gopath string) error {
 		Args: o.Flags.TestCases,
 		Env:  env,
 		Out:  os.Stdout,
-		Err:  os.Stderr,
+		Err:  os.Stdout,
 	}
 	_, err = c.RunWithoutRetry()
 
@@ -421,9 +428,13 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 		log.Warnf("No build number could be found from the environment variable $BUILD_NUMBER!\n")
 	}
 	baseClusterName := kube.ToValidName(cluster.Name)
-	branch := kube.ToValidName(o.getBranchName(o.Flags.VersionsDir))
-	log.Infof("found branch name %s\n", branch)
-	cluster.Name += "-" + branch + "-" + buildNum
+	branch := o.getBranchName(o.Flags.VersionsDir)
+	if branch == "" {
+		branch = "x"
+	} else {
+		log.Infof("found branch name %s\n", branch)
+	}
+	cluster.Name = kube.ToValidName(branch + "-" + buildNum + "-" + cluster.Name)
 	log.Infof("\nCreating cluster %s\n", util.ColorInfo(cluster.Name))
 	binary := o.Flags.JxBinary
 	args := cluster.Args
@@ -454,9 +465,14 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	if gitProviderURL != "" {
 		args = append(args, "--git-provider-url", gitProviderURL)
 	}
+
 	gitUsername := o.InstallOptions.GitRepositoryOptions.Username
 	if gitUsername != "" {
 		args = append(args, "--git-username", gitUsername)
+	}
+	gitOwner := o.Flags.GitOwner
+	if gitOwner != "" {
+		args = append(args, "--environment-git-owner", gitOwner)
 	}
 	gitKind := o.InstallOptions.GitRepositoryOptions.ServerKind
 	if gitKind != "" {

@@ -56,6 +56,10 @@ func NewCmdGetUser(commonOpts *CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *GetUserOptions) Run() error {
+	kubeClient, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
 	jxClient, ns, err := o.JXClientAndAdminNamespace()
 	if err != nil {
 		return err
@@ -79,12 +83,11 @@ There are no Users yet. Try create one via: jx create user
 		if user != nil {
 			spec := &user.Spec
 			userKind := user.SubjectKind()
-			userName := user.Name
-			roleNames, err := kube.GetUserRoles(jxClient, ns, userKind, userName)
+			roleNames, err := kube.GetUserRoles(kubeClient, jxClient, ns, userKind, name)
 			if err != nil {
-				log.Warnf("Failed to find User roles in namespace %s for User %s kind %s: %s\n", ns, userName, userKind, err)
+				log.Warnf("Failed to find User roles in namespace %s for User %s kind %s: %s\n", ns, name, userKind, err)
 			}
-			table.AddRow(userName, spec.Name, spec.Email, spec.URL, strings.Join(roleNames, ", "))
+			table.AddRow(name, spec.Name, spec.Email, spec.URL, strings.Join(roleNames, ", "))
 		}
 	}
 	table.Render()

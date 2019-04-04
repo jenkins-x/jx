@@ -80,7 +80,7 @@ func TestValidServer(t *testing.T) {
 				URL:  "https://tests",
 				Name: "test",
 				Users: []*auth.User{
-					&auth.User{
+					{
 						Username: "test",
 						ApiToken: "test",
 					},
@@ -101,7 +101,7 @@ func TestValidServer(t *testing.T) {
 				URL:  "",
 				Name: "test",
 				Users: []*auth.User{
-					&auth.User{
+					{
 						Username: "test",
 						ApiToken: "test",
 					},
@@ -114,7 +114,7 @@ func TestValidServer(t *testing.T) {
 				URL:  "https://tests",
 				Name: "test",
 				Users: []*auth.User{
-					&auth.User{
+					{
 						Username: "test",
 					},
 				},
@@ -146,12 +146,12 @@ func TestPipelineUser(t *testing.T) {
 				URL:  "https://test",
 				Name: "test",
 				Users: []*auth.User{
-					&auth.User{
+					{
 						Username: "test1",
 						ApiToken: "test",
 						Kind:     auth.UserKindPipeline,
 					},
-					&auth.User{
+					{
 						Username: "test2",
 						ApiToken: "test",
 						Kind:     auth.UserKindLocal,
@@ -177,12 +177,12 @@ func TestPipelineUser(t *testing.T) {
 				URL:  "https://test",
 				Name: "test",
 				Users: []*auth.User{
-					&auth.User{
+					{
 						Username: "test1",
 						ApiToken: "test",
 						Kind:     auth.UserKindLocal,
 					},
-					&auth.User{
+					{
 						Username: "test2",
 						ApiToken: "test",
 						Kind:     auth.UserKindLocal,

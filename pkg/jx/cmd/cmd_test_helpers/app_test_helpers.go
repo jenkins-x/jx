@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
+	"sigs.k8s.io/yaml"
 
 	"github.com/jenkins-x/jx/pkg/environments"
 
@@ -26,7 +27,6 @@ import (
 	"github.com/petergtz/pegomock"
 	uuid "github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
-	yaml "gopkg.in/yaml.v2"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -85,7 +85,12 @@ func (o *AppTestOptions) DirectlyAddAppToGitOps(values map[string]interface{}) (
 			return "", "", "", err
 		}
 	}
-	name = uuid.NewV4().String()
+	// Put some commits on a branch
+	nameUUID, err := uuid.NewV4()
+	if err != nil {
+		return "", "", "", err
+	}
+	name = nameUUID.String()
 	alias = fmt.Sprintf("%s-alias", name)
 	version = "0.0.1"
 	requirements.Dependencies = append(requirements.Dependencies, &helm.Dependency{
@@ -141,8 +146,12 @@ func CreateAppTestOptions(gitOps bool, t *testing.T) *AppTestOptions {
 		CommonOptions: &commonOpts,
 		MockFactory:   mockFactory,
 	}
-	testOrgName := uuid.NewV4().String()
-	testRepoName := uuid.NewV4().String()
+	testOrgNameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	testOrgName := testOrgNameUUID.String()
+	testRepoNameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	testRepoName := testRepoNameUUID.String()
 	devEnvRepoName := fmt.Sprintf("environment-%s-%s-dev", testOrgName, testRepoName)
 	fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
 	devEnvRepo := gits.NewFakeRepository(testOrgName, devEnvRepoName)
@@ -176,7 +185,7 @@ func CreateAppTestOptions(gitOps bool, t *testing.T) *AppTestOptions {
 		installerMock,
 	)
 
-	err := cmd.CreateTestEnvironmentDir(o.CommonOptions)
+	err = cmd.CreateTestEnvironmentDir(o.CommonOptions)
 	assert.NoError(t, err)
 	o.ConfigureGitFn = func(dir string, gitInfo *gits.GitRepository, gitter gits.Gitter) error {
 		err := gitter.Init(dir)

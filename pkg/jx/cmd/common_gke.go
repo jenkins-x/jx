@@ -19,7 +19,7 @@ func (o *CommonOptions) getGoogleProjectId() (string, error) {
 		return "", err
 	}
 
-	lines := strings.Split(string(out), "\n")
+	lines := strings.Split(out, "\n")
 	var existingProjects []string
 	for _, l := range lines {
 		if strings.Contains(l, clusterListHeader) {
@@ -78,6 +78,10 @@ func (o *CommonOptions) getGoogleZone(projectId string) (string, error) {
 	return o.getGoogleZoneWithDefault(projectId, "")
 }
 
+func (o *CommonOptions) getGoogleRegion(projectId string) (string, error) {
+	return o.getGoogleRegionWithDefault(projectId, "none")
+}
+
 func (o *CommonOptions) getGoogleZoneWithDefault(projectId string, defaultZone string) (string, error) {
 	availableZones, err := gke.GetGoogleZones(projectId)
 	if err != nil {
@@ -97,4 +101,25 @@ func (o *CommonOptions) getGoogleZoneWithDefault(projectId string, defaultZone s
 		return "", err
 	}
 	return zone, nil
+}
+
+func (o *CommonOptions) getGoogleRegionWithDefault(projectId string, defaultRegion string) (string, error) {
+	availableRegions, err := gke.GetGoogleRegions(projectId)
+	if err != nil {
+		return "", err
+	}
+	prompts := &survey.Select{
+		Message:  "Google Cloud Region (choose 'none' to make it zonal):",
+		Options:  availableRegions,
+		PageSize: 10,
+		Help:     "The compute region (e.g. us-central1) for the cluster",
+		Default:  defaultRegion,
+	}
+	region := ""
+	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
+	err = survey.AskOne(prompts, &region, nil, surveyOpts)
+	if err != nil {
+		return "", err
+	}
+	return region, nil
 }

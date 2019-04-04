@@ -490,7 +490,7 @@ func (o *Options) AddProwPlugins() error {
 		if o.Repos == nil {
 			// Then we need react for all repos defined in the plugins list
 			o.Repos = make([]string, 0)
-			for r, _ := range pluginConfig.Plugins {
+			for r := range pluginConfig.Plugins {
 				o.Repos = append(o.Repos, r)
 			}
 		}

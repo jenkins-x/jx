@@ -5,7 +5,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/yaml.v2"
+	"sigs.k8s.io/yaml"
+
 	"io/ioutil"
 	"path/filepath"
 )

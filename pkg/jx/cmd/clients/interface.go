@@ -23,8 +23,9 @@ import (
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
-	tektonclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
 	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
+	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
+	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
 
@@ -51,22 +52,22 @@ type Factory interface {
 	//
 
 	// CreateAuthConfigService creates a new authentication configuration service
-	CreateAuthConfigService(fileName string) (auth.ConfigService, error)
+	CreateAuthConfigService(fileName string, namespace string) (auth.ConfigService, error)
 
 	// CreateJenkinsAuthConfigService creates a new Jenkins authentication configuration service
 	CreateJenkinsAuthConfigService(kubernetes.Interface, string, string) (auth.ConfigService, error)
 
 	// CreateChartmuseumAuthConfigService creates a new Chartmuseum authentication configuration service
-	CreateChartmuseumAuthConfigService() (auth.ConfigService, error)
+	CreateChartmuseumAuthConfigService(namespace string) (auth.ConfigService, error)
 
 	// CreateIssueTrackerAuthConfigService creates a new issuer tracker configuration service
-	CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error)
+	CreateIssueTrackerAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error)
 
 	// CreateChatAuthConfigService creates a new chat configuration service
-	CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error)
+	CreateChatAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error)
 
 	// CreateAddonAuthConfigService creates a new addon auth configuration service
-	CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error)
+	CreateAddonAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error)
 
 	//
 	// Generic clients
@@ -115,11 +116,14 @@ type Factory interface {
 	// CreateMetricsClient creates a new Kubernetes metrics client
 	CreateMetricsClient() (*metricsclient.Clientset, error)
 
-	// CreateTektonClient create a new Kubernetes client for Knative Pipeline resources
+	// CreateTektonClient create a new Kubernetes client for Tekton resources
 	CreateTektonClient() (tektonclient.Interface, string, error)
 
-	// CreateKnativeBuildClient create a new Kubernetes client for Knative resources
+	// CreateKnativeBuildClient create a new Kubernetes client for Knative Build resources
 	CreateKnativeBuildClient() (buildclient.Interface, string, error)
+
+	// CreateKnativeServeClient create a new Kubernetes client for Knative serve resources
+	CreateKnativeServeClient() (kserve.Interface, string, error)
 
 	// CreateVaultOperatorClient creates a new Kubernetes client for Vault operator resources
 	CreateVaultOperatorClient() (vaultoperatorclient.Interface, error)

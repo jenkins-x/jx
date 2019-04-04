@@ -28,7 +28,7 @@ func GetGoogleZones(project string) ([]string, error) {
 		return nil, err
 	}
 
-	for _, item := range strings.Split(string(out), "\n") {
+	for _, item := range strings.Split(out, "\n") {
 		zone := strings.Split(item, " ")[0]
 		if strings.Contains(zone, "-") {
 			zones = append(zones, zone)
@@ -36,6 +36,36 @@ func GetGoogleZones(project string) ([]string, error) {
 		sort.Strings(zones)
 	}
 	return zones, nil
+}
+
+func GetGoogleRegions(project string) ([]string, error) {
+	var regions []string
+	args := []string{"compute", "regions", "list"}
+
+	if "" != project {
+		args = append(args, "--project")
+		args = append(args, project)
+	}
+
+	cmd := util.Command{
+		Name: "gcloud",
+		Args: args,
+	}
+
+	out, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return nil, err
+	}
+
+	regions = append(regions, "none")
+	for _, item := range strings.Split(out, "\n") {
+		region := strings.Split(item, " ")[0]
+		if strings.Contains(region, "-") {
+			regions = append(regions, region)
+		}
+		sort.Strings(regions)
+	}
+	return regions, nil
 }
 
 func GetGoogleProjects() ([]string, error) {
@@ -52,7 +82,7 @@ func GetGoogleProjects() ([]string, error) {
 		return []string{}, nil
 	}
 
-	lines := strings.Split(string(out), "\n")
+	lines := strings.Split(out, "\n")
 	var existingProjects []string
 	for _, l := range lines {
 		if strings.Contains(l, PROJECT_LIST_HEADER) {

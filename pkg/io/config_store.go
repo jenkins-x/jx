@@ -86,7 +86,7 @@ func (v *vaultStore) Write(name string, bytes []byte) error {
 	return nil
 }
 
-// Read reads a secret from vault wich was stored as an array of bytes
+// Read reads a secret from vault which was stored as an array of bytes
 func (v *vaultStore) Read(name string) ([]byte, error) {
 	secret, err := v.client.Read(v.secretPath(name))
 	if err != nil {

@@ -80,7 +80,7 @@ func GetClusterRegistry(kubeClient kubernetes.Interface) string {
 	dockerConfig := &Config{}
 	err = json.Unmarshal(secretFromConfig.Data[".dockerconfigjson"], dockerConfig)
 	if err == nil {
-		for k, _ := range dockerConfig.Auths {
+		for k := range dockerConfig.Auths {
 			registry = k
 		}
 	}

@@ -32,6 +32,7 @@ type GitRepository struct {
 	Host             string
 	Organisation     string
 	Project          string
+	Private          bool
 }
 
 type GitPullRequest struct {
@@ -76,6 +77,16 @@ type GitCommit struct {
 	URL       string
 	Branch    string
 	Committer *GitUser
+}
+
+type ListCommitsArguments struct {
+	SHA     string
+	Path    string
+	Author  string
+	Since   time.Time
+	Until   time.Time
+	Page    int
+	PerPage int
 }
 
 type GitIssue struct {
@@ -386,6 +397,15 @@ func (i *GitRepository) CreateProviderForUser(server *auth.AuthServer, user *aut
 func (i *GitRepository) CreateProvider(inCluster bool, authConfigSvc auth.ConfigService, gitKind string, git Gitter, batchMode bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (GitProvider, error) {
 	hostUrl := i.HostURLWithoutUser()
 	return CreateProviderForURL(inCluster, authConfigSvc, gitKind, hostUrl, git, batchMode, in, out, errOut)
+}
+
+// ProviderURL returns the git provider URL
+func (i *GitRepository) ProviderURL() string {
+	scheme := i.Scheme
+	if !strings.HasPrefix(scheme, "http") {
+		scheme = "https"
+	}
+	return scheme + "://" + i.Host
 }
 
 // CreateProviderForURL creates the Git provider for the given git kind and host URL

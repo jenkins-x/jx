@@ -4,9 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 
 	"github.com/jenkins-x/jx/pkg/builds"
 
@@ -38,8 +40,9 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	tektonclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
 	build "github.com/knative/build/pkg/client/clientset/versioned"
+	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
+	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	metricsclient "k8s.io/metrics/pkg/client/clientset/versioned"
@@ -178,7 +181,7 @@ func (f *factory) GetCustomJenkinsURL(kubeClient kubernetes.Interface, ns string
 }
 
 func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns string, jenkinsServiceName string) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(auth.JenkinsAuthConfigFile)
+	authConfigSvc, err := f.CreateAuthConfigService(auth.JenkinsAuthConfigFile, ns)
 
 	if jenkinsServiceName == "" {
 		jenkinsServiceName = kube.SecretJenkins
@@ -260,8 +263,8 @@ func (f *factory) CreateJenkinsAuthConfigService(c kubernetes.Interface, ns stri
 	return authConfigSvc, err
 }
 
-func (f *factory) CreateChartmuseumAuthConfigService() (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(auth.ChartmuseumAuthConfigFile)
+func (f *factory) CreateChartmuseumAuthConfigService(namespace string) (auth.ConfigService, error) {
+	authConfigSvc, err := f.CreateAuthConfigService(auth.ChartmuseumAuthConfigFile, namespace)
 	if err != nil {
 		return authConfigSvc, err
 	}
@@ -272,8 +275,8 @@ func (f *factory) CreateChartmuseumAuthConfigService() (auth.ConfigService, erro
 	return authConfigSvc, err
 }
 
-func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(auth.IssuesAuthConfigFile)
+func (f *factory) CreateIssueTrackerAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error) {
+	authConfigSvc, err := f.CreateAuthConfigService(auth.IssuesAuthConfigFile, namespace)
 	if err != nil {
 		return authConfigSvc, err
 	}
@@ -287,8 +290,8 @@ func (f *factory) CreateIssueTrackerAuthConfigService(secrets *corev1.SecretList
 	return authConfigSvc, err
 }
 
-func (f *factory) CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(auth.ChatAuthConfigFile)
+func (f *factory) CreateChatAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error) {
+	authConfigSvc, err := f.CreateAuthConfigService(auth.ChatAuthConfigFile, namespace)
 	if err != nil {
 		return authConfigSvc, err
 	}
@@ -302,8 +305,8 @@ func (f *factory) CreateChatAuthConfigService(secrets *corev1.SecretList) (auth.
 	return authConfigSvc, err
 }
 
-func (f *factory) CreateAddonAuthConfigService(secrets *corev1.SecretList) (auth.ConfigService, error) {
-	authConfigSvc, err := f.CreateAuthConfigService(auth.AddonAuthConfigFile)
+func (f *factory) CreateAddonAuthConfigService(namespace string, secrets *corev1.SecretList) (auth.ConfigService, error) {
+	authConfigSvc, err := f.CreateAuthConfigService(auth.AddonAuthConfigFile, namespace)
 	if err != nil {
 		return authConfigSvc, err
 	}
@@ -365,9 +368,9 @@ func (f *factory) AuthMergePipelineSecrets(config *auth.AuthConfig, secrets *cor
 
 // CreateAuthConfigService creates a new service saving auth config under the provided name. Depending on the factory,
 // It will either save the config to the local file-system, or a Vault
-func (f *factory) CreateAuthConfigService(configName string) (auth.ConfigService, error) {
+func (f *factory) CreateAuthConfigService(configName string, namespace string) (auth.ConfigService, error) {
 	if f.SecretsLocation() == secrets.VaultLocationKind {
-		vaultClient, err := f.CreateSystemVaultClient(kube.DefaultNamespace)
+		vaultClient, err := f.CreateSystemVaultClient(namespace)
 		authService := auth.NewVaultAuthConfigService(configName, vaultClient)
 		return authService, err
 	} else {
@@ -419,24 +422,32 @@ func (f *factory) CreateSystemVaultClient(namespace string) (vault.Client, error
 }
 
 func (f *factory) getVaultName(namespace string) (string, error) {
-	name, err := kubevault.SystemVaultName(f.kubeConfig)
+	// if we cannot load the cluster name from the kube context lets try load the cluster name from the install values
+	kubeClient, _, err := f.CreateKubeClient()
 	if err != nil {
-		// if we cannot load the cluster name from the kube context lets try load the cluster name from the install values
-		kubeClient, _, err := f.CreateKubeClient()
-		if err != nil {
-			return name, err
-		}
-		data, err := kube.ReadInstallValues(kubeClient, namespace)
-		if err != nil {
-			return name, errors.Wrapf(err, "cannot find cluster name as no ConfigMap %s in namespace %s", kube.ConfigMapNameJXInstallConfig, namespace)
-		}
+		return "", err
+	}
+	data, err := kube.ReadInstallValues(kubeClient, namespace)
+	if err != nil {
+		log.Warnf("cannot find vault name as no ConfigMap %s in dev namespace %s", kube.ConfigMapNameJXInstallConfig, namespace)
+	}
+	name := ""
+	if data != nil {
 		name = data[kube.SystemVaultName]
 		if name == "" {
-			name = kubevault.SystemVaultNameForCluster(data[kube.ClusterName])
+			log.Warnf("ConfigMap %s in dev namespace %s does not have key %s", kube.ConfigMapNameJXInstallConfig, namespace, kube.SystemVaultName)
+
+			clusterName := data[kube.ClusterName]
+			if clusterName != "" {
+				name = kubevault.SystemVaultNameForCluster(clusterName)
+			}
 		}
 	}
 	if name == "" {
-		return name, fmt.Errorf("could not find the cluster name in namespace %s", namespace)
+		name, err = kubevault.SystemVaultName(f.kubeConfig)
+		if err != nil {
+			return name, fmt.Errorf("could not find the system vault namein namespace %s", namespace)
+		}
 	}
 	return name, nil
 }
@@ -453,7 +464,7 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 	if namespace == "" {
 		devNamespace, _, err := kube.GetDevNamespace(kubeClient, defaultNamespace)
 		if err != nil {
-			return nil, errors.Wrapf(err, "getting the dev namesapce from current namesapce %q",
+			return nil, errors.Wrapf(err, "getting the dev namespace from current namespace %q",
 				defaultNamespace)
 		}
 		namespace = devNamespace
@@ -466,7 +477,23 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 	}
 
 	if !kubevault.FindVault(vopClient, name, namespace) {
-		return nil, fmt.Errorf("no '%s' vault found in namespace '%s'", name, namespace)
+		name2, err2 := f.getVaultName(namespace)
+		if err2 != nil {
+			return nil, errors.Wrapf(err, "no '%s' vault found in namespace '%s' and could not find vault name", name, namespace)
+		}
+
+		if name2 != name {
+			log.Warnf("was using wrong vault name %s which should be %s\n", name, name2)
+			debug.PrintStack()
+
+			name = name2
+			if !kubevault.FindVault(vopClient, name, namespace) {
+				return nil, fmt.Errorf("no '%s' vault found in namespace '%s'", name, namespace)
+			}
+		} else {
+			debug.PrintStack()
+			return nil, fmt.Errorf("no '%s' vault found in namespace '%s' despite it being the vault name from jx-install-config ConfigMap", name, namespace)
+		}
 	}
 
 	clientFactory, err := kubevault.NewVaultClientFactory(kubeClient, vopClient, namespace)
@@ -482,6 +509,7 @@ func (f *factory) CreateJXClient() (versioned.Interface, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
+
 	kubeConfig, _, err := f.kubeConfig.LoadConfig()
 	if err != nil {
 		return nil, "", err
@@ -505,6 +533,23 @@ func (f *factory) CreateKnativeBuildClient() (build.Interface, string, error) {
 	}
 	ns := kube.CurrentNamespace(kubeConfig)
 	client, err := build.NewForConfig(config)
+	if err != nil {
+		return nil, ns, err
+	}
+	return client, ns, err
+}
+
+func (f *factory) CreateKnativeServeClient() (kserve.Interface, string, error) {
+	config, err := f.CreateKubeConfig()
+	if err != nil {
+		return nil, "", err
+	}
+	kubeConfig, _, err := f.kubeConfig.LoadConfig()
+	if err != nil {
+		return nil, "", err
+	}
+	ns := kube.CurrentNamespace(kubeConfig)
+	client, err := kserve.NewForConfig(config)
 	if err != nil {
 		return nil, ns, err
 	}
@@ -647,6 +692,14 @@ func (f *factory) CreateKubeConfig() (*rest.Config, error) {
 	user := f.getImpersonateUser()
 	if config != nil && user != "" && config.Impersonate.UserName == "" {
 		config.Impersonate.UserName = user
+	}
+
+	// for testing purposes one can enable tracing of Kube REST API calls
+	trace := os.Getenv("TRACE_KUBE_API")
+	if trace == "1" || trace == "on" {
+		config.WrapTransport = func(rt http.RoundTripper) http.RoundTripper {
+			return &Tracer{rt}
+		}
 	}
 	return config, nil
 }

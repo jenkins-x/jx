@@ -345,7 +345,7 @@ func (o *ControllerWorkflowOptions) onActivity(pipeline *v1.PipelineActivity, jx
 		if allStepsComplete && (pipeline.Spec.Status != v1.ActivityStatusTypeSucceeded || pipeline.Spec.WorkflowStatus != v1.ActivityStatusTypeSucceeded) {
 			pipeline.Spec.Status = v1.ActivityStatusTypeSucceeded
 			pipeline.Spec.WorkflowStatus = v1.ActivityStatusTypeSucceeded
-			_, err := jxClient.JenkinsV1().PipelineActivities(ns).Update(pipeline)
+			_, err := jxClient.JenkinsV1().PipelineActivities(ns).PatchUpdate(pipeline)
 			if err != nil {
 				log.Warnf("Failed to update PipelineActivity %s due to being complete: %s", pipeline.Name, err)
 			}
@@ -792,12 +792,6 @@ func noopCallback(activity *v1.PipelineActivity) bool {
 	return true
 }
 
-func setActivitySucceeded(activity *v1.PipelineActivity) bool {
-	activity.Spec.Status = v1.ActivityStatusTypeSucceeded
-	activity.Spec.WorkflowStatus = v1.ActivityStatusTypeSucceeded
-	return true
-}
-
 func setActivityAborted(activity *v1.PipelineActivity) bool {
 	activity.Spec.Status = v1.ActivityStatusTypeAborted
 	activity.Spec.WorkflowStatus = v1.ActivityStatusTypeAborted
@@ -832,7 +826,7 @@ func modifyPipeline(activities typev1.PipelineActivityInterface, activity *v1.Pi
 	old := activity
 	if callback(activity) {
 		if !reflect.DeepEqual(activity, &old) {
-			_, err := activities.Update(activity)
+			_, err := activities.PatchUpdate(activity)
 			if err != nil {
 				log.Warnf("Failed to update PipelineActivity %s: %s\n", activity.Name, err)
 				return err

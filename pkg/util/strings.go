@@ -90,7 +90,7 @@ func FirstNotEmptyString(values ...string) string {
 // SortedMapKeys returns the sorted keys of the given map
 func SortedMapKeys(m map[string]string) []string {
 	answer := []string{}
-	for k, _ := range m {
+	for k := range m {
 		answer = append(answer, k)
 	}
 	sort.Strings(answer)
@@ -201,7 +201,7 @@ func CheckMark() string {
 	return "\u2705"
 }
 
-// RemoveStringFromSlice removes the first occurence of the specified string from a slice, if it exists and returns the result
+// RemoveStringFromSlice removes the first occurrence of the specified string from a slice, if it exists and returns the result
 func RemoveStringFromSlice(strings []string, toRemove string) []string {
 	for i, str := range strings {
 		if str == toRemove {

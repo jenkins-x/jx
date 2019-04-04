@@ -433,18 +433,41 @@ func GetLatestVersion(chart string, repo string, username string, password strin
 // InspectChart fetches the specified chart in a repo using helmer, and then calls the closure on it, before cleaning up
 func InspectChart(chart string, version string, repo string, username string, password string,
 	helmer Helmer, inspector func(dir string) error) error {
-	dir, err := ioutil.TempDir("", fmt.Sprintf("jx-helm-fetch-%s-", chart))
+	isLocal := false
+	dirPrefix := fmt.Sprintf("jx-helm-fetch-%s-", chart)
+	if strings.HasPrefix(chart, "/") || strings.HasPrefix(chart, ".") || strings.Count(chart, "/") > 1 {
+		isLocal = true
+		dirPrefix = "jx-helm-fetch"
+	}
+
+	dir, err := ioutil.TempDir("", dirPrefix)
 	defer func() {
 		err1 := os.RemoveAll(dir)
 		if err1 != nil {
 			log.Warnf("Error removing %s %v\n", dir, err1)
 		}
 	}()
-	err = helmer.FetchChart(chart, version, true, dir, repo, username, password)
-	if err != nil {
-		return err
+	inspectPath := filepath.Join(dir, chart)
+	if isLocal {
+		// This is a local path
+		err := util.CopyDir(chart, dir, true)
+		if err != nil {
+			return errors.Wrapf(err, "copying %s to %s", chart, dir)
+		}
+		// We need to manually build the dependencies
+		err = helmer.BuildDependency()
+		if err != nil {
+			return errors.Wrapf(err, "building dependencies for %s", chart)
+		}
+		inspectPath = dir
+	} else {
+		err = helmer.FetchChart(chart, version, true, dir, repo, username, password)
+		if err != nil {
+			return err
+		}
 	}
-	return inspector(filepath.Join(dir, chart))
+
+	return inspector(inspectPath)
 }
 
 type InstallChartOptions struct {
@@ -470,7 +493,7 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 	if options.Version == "" {
 		versionsDir := options.VersionsDir
 		if versionsDir == "" {
-			return fmt.Errorf("no VersionsDir specified when trying to install a chart")
+			return errors.Errorf("no VersionsDir specified when trying to install a chart")
 		}
 		var err error
 		options.Version, err = version.LoadStableVersionNumber(versionsDir, version.KindChart, chart)
@@ -495,9 +518,7 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 		return errors.Wrap(err, "failed to convert the timeout to an int")
 	}
 	helmer.SetCWD(options.Dir)
-	return helmer.UpgradeChart(chart, options.ReleaseName, options.Ns, options.Version, true,
-		timeout, true, false, options.SetValues, options.ValueFiles, options.Repository, options.Username,
-		options.Password)
+	return helmer.UpgradeChart(chart, options.ReleaseName, options.Ns, options.Version, true, timeout, true, false, options.SetValues, options.ValueFiles, options.Repository, options.Username, options.Password)
 }
 
 // GenerateReadmeForChart generates a string that can be used as a README.MD,
@@ -505,7 +526,8 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 func GenerateReadmeForChart(name string, version string, description string, chartRepo string,
 	gitRepo string, releaseNotesURL string, appReadme string) string {
 	var readme strings.Builder
-	readme.WriteString(fmt.Sprintf("# %s\n\n|App Metadata|---|\n", unknownZeroValue(name)))
+	readme.WriteString(fmt.Sprintf("# %s\n\n|App Metadata||\n", unknownZeroValue(name)))
+	readme.WriteString("|---|---|\n")
 	if version != "" {
 		readme.WriteString(fmt.Sprintf("| **Version** | %s |\n", version))
 	}
@@ -544,7 +566,14 @@ func SetValuesToMap(setValues []string) map[string]interface{} {
 		if len(tokens) > 1 {
 			path := tokens[0]
 			value := tokens[1]
-			util.SetMapValueViaPath(answer, path, value)
+
+			// lets assume false is a boolean
+			if value == "false" {
+				util.SetMapValueViaPath(answer, path, false)
+
+			} else {
+				util.SetMapValueViaPath(answer, path, value)
+			}
 		}
 	}
 	return answer

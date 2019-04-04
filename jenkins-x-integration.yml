@@ -1,8 +1,3 @@
-chat:
-  kind: slack
-  url: http://kubernetes.slack.com/
-  developerChannel: '#jenkins-x-dev'
-  userChannel: '#jenkins-x-user'
 buildPack: none
 pipelineConfig:
   pipelines:
@@ -22,14 +17,13 @@ pipelineConfig:
               - name: GIT_COMMITTER_NAME
                 value: jenkins-x-bot
               - name: BASE_WORKSPACE
-                value: /workspace/workspace
+                value: /workspace/source
 
             steps:
               - name: init-jx
                 image: jenkinsxio/jx:1.3.938
                 command: jx
                 args: ['create','git','token','-n','fake','-t','1234','-u','https://github.com','fake']
-                workingDir: "/workspace/workspace"
                 resources:
                   limits:
                     cpu: 0.2
@@ -42,7 +36,6 @@ pipelineConfig:
                 image: alpine/helm:2.12.3
                 command: helm
                 args: ['init','--client-only']
-                workingDir: "/workspace/workspace"
                 resources:
                   limits:
                     cpu: 0.2
@@ -51,13 +44,33 @@ pipelineConfig:
                     cpu: 0.1
                     memory: 64Mi
 
+              - name: check
+                #image: docker.io/golang:1.11.5
+                # needs helm in the image for install_gitops_integration_test.go
+                image: gcr.io/jenkinsxio/builder-go:0.1.332
+                command: make
+                args: ['check']
+                env:
+                  - name: GOPATH
+                    value: /workspace/go
+                  - name: GOPROXY
+                    value: http://athens-proxy.jx.cd.jenkins-x.io
+                  - name: HELM_HOME
+                    value: /builder/home/.helm
+                resources:
+                  limits:
+                    cpu: 4
+                    memory: 6144Mi
+                  requests:
+                    cpu: 3
+                    memory: 3072Mi
+
               - name: build-binary
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
-                image: jenkinsxio/builder-go:0.1.254
+                image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: make
                 args: ['test-slow-integration']
-                workingDir: "/workspace/workspace"
                 env:
                   - name: GOPATH
                     value: /workspace/go

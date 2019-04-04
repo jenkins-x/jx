@@ -2,7 +2,7 @@ package environments
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	"github.com/jenkins-x/jx/pkg/auth"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -10,11 +10,13 @@ import (
 	"runtime/debug"
 	"strings"
 
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+
 	"github.com/ghodss/yaml"
 
 	"github.com/pkg/errors"
 
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
@@ -85,7 +87,11 @@ func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, envir
 	//log.Infof("Found remote branch names %s\n", strings.Join(branchNames, ", "))
 	if util.StringArrayIndex(branchNames, branchName) >= 0 {
 		// lets append a UUID as the branch name already exists
-		branchName += "-" + string(uuid.NewV4().String())
+		branchNameUUID, err := uuid.NewV4()
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		branchName += "-" + branchNameUUID.String()
 	}
 	err = o.Gitter.CreateBranch(dir, branchName)
 	if err != nil {
@@ -206,7 +212,10 @@ func ModifyChartFiles(dir string, details *PullRequestDetails, modifyFn ModifyCh
 		return err
 	}
 
-	err = modifyFn(requirements, chart, values, templates, dir, details)
+	// lets pass in the folder containing the `Chart.yaml` which is the `env` dir in GitOps management
+	chartDir, _ := filepath.Split(chartFile)
+
+	err = modifyFn(requirements, chart, values, templates, chartDir, details)
 	if err != nil {
 		return err
 	}
@@ -238,6 +247,7 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 	}
 
 	username := ""
+	userDetails := auth.UserAuth{}
 	originalOrg := gitInfo.Organisation
 	originalRepo := gitInfo.Name
 
@@ -248,10 +258,10 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 		log.Warnf("No GitProvider specified!\n")
 		debug.PrintStack()
 	} else {
-		// lets check if we need to fork the repository...
-
+		userDetails = o.GitProvider.UserAuth()
 		username = o.GitProvider.CurrentUsername()
 
+		// lets check if we need to fork the repository...
 		if originalOrg != username && username != "" && originalOrg != "" && provider.ShouldForkForPullRequest(originalOrg, originalRepo, username) {
 			fork = true
 		}
@@ -287,7 +297,11 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 		if err != nil {
 			return "", "", nil, fork, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
 		}
-		err = o.Gitter.Clone(repo.CloneURL, dir)
+		cloneGitURL, err := git.CreatePushURL(repo.CloneURL, &userDetails)
+		if err != nil {
+			return "", "", nil, fork, errors.Wrapf(err, "failed to get clone URL from %s and user %s", repo.CloneURL, username)
+		}
+		err = o.Gitter.Clone(cloneGitURL, dir)
 		if err != nil {
 			return "", "", nil, fork, err
 		}
@@ -295,11 +309,6 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 		if err != nil {
 			return "", "", nil, fork, errors.Wrapf(err, "setting remote upstream %q in forked environment repo", gitURL)
 		}
-		err = git.PullUpstream(dir)
-		if err != nil {
-			return "", "", nil, fork, errors.Wrap(err, "pulling upstream of forked versions repository")
-		}
-
 		if o.ConfigGitFn != nil {
 			err = o.ConfigGitFn(dir, gitInfo, o.Gitter)
 			if err != nil {
@@ -312,6 +321,11 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 				return "", "", nil, fork, err
 			}
 		}
+		err = git.ResetToUpstream(dir, base)
+		if err != nil {
+			return "", "", nil, fork, errors.Wrapf(err, "resetting forked branch %s to upstream version", base)
+		}
+
 	} else {
 		// now lets clone the fork and pull it...
 		exists, err := util.FileExists(dir)
@@ -348,7 +362,12 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 			if err != nil {
 				return "", "", nil, fork, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
 			}
-			err = o.Gitter.Clone(gitURL, dir)
+			cloneGitURL, err := git.CreatePushURL(gitURL, &userDetails)
+			if err != nil {
+				return "", "", nil, fork, errors.Wrapf(err, "failed to get clone URL from %s and user %s", gitURL, username)
+			}
+
+			err = o.Gitter.Clone(cloneGitURL, dir)
 			if err != nil {
 				return "", "", nil, fork, err
 			}
@@ -384,16 +403,15 @@ func CreateUpgradeRequirementsFn(all bool, chartName string, alias string, versi
 
 		// Work through the upgrades
 		for _, d := range requirements.Dependencies {
+			// We need to ignore the platform unless the chart name is the platform
 			upgrade := false
-			// We need to ignore the platform
-			if d.Name == "jenkins-x-platform" {
-				upgrade = false
-			} else if all {
-				upgrade = true
-			} else {
-				if d.Name == chartName && d.Alias == alias {
+			if all {
+				if d.Name != "jenkins-x-platform" {
 					upgrade = true
-
+				}
+			} else {
+				if d.Name == chartName && (d.Alias == "" || d.Alias == alias) {
+					upgrade = true
 				}
 			}
 			if upgrade {
@@ -450,7 +468,7 @@ func CreateUpgradeRequirementsFn(all bool, chartName string, alias string, versi
 // an alias for the chart, the version of the chart, the repo to load the chart from,
 // valuesFiles (an array of paths to values.yaml files to add). The chartDir is the unpacked chart being added,
 // which is used to add extra metadata about the chart (e.g. the charts readme, the release.yaml, the git repo url and
-// the release notes) - if this points to a non-existant directory it will be ignored.
+// the release notes) - if this points to a non-existent directory it will be ignored.
 func CreateAddRequirementFn(chartName string, alias string, version string, repo string,
 	valuesFiles *ValuesFiles, chartDir string, verbose bool, helmer helm.Helmer) ModifyChartFn {
 	return func(requirements *helm.Requirements, chart *helmchart.Metadata, values map[string]interface{},

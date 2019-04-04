@@ -5,6 +5,12 @@ pipelineConfig:
   pipelines:
     release:
       pipeline:
+        options:
+          containerOptions:
+            resources:
+              requests:
+                cpu: 0.1
+                memory: 64Mi
         agent:
           image: nodejs
         stages:
@@ -21,3 +27,9 @@ pipelineConfig:
               - command: echo
                 args:
                   - hi ${FRUIT}
+            options:
+              containerOptions:
+                resources:
+                  limits:
+                    cpu: 0.4
+                    memory: 256Mi

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -365,11 +366,20 @@ func (o *CommonOptions) initGitConfigAndUser() error {
 }
 
 func (o *CommonOptions) dockerRegistryOrg(repository *gits.GitRepository) string {
-	answer := os.Getenv("DOCKER_REGISTRY_ORG")
+	answer := ""
+	teamSettings, err := o.TeamSettings()
+	if err != nil {
+		log.Warnf("Could not load team settings %s\n", err.Error())
+	} else {
+		answer = teamSettings.DockerRegistryOrg
+	}
 	if answer == "" {
+		answer = os.Getenv("DOCKER_REGISTRY_ORG")
+	}
+	if answer == "" && repository != nil {
 		answer = repository.Organisation
 	}
-	return answer
+	return strings.ToLower(answer)
 }
 
 func (o *CommonOptions) dockerRegistry() string {
@@ -389,4 +399,17 @@ func (o *CommonOptions) dockerRegistry() string {
 		}
 	}
 	return dockerRegistry
+}
+
+func (o *CommonOptions) getPipelineGitAuth() (*auth.AuthServer, *auth.UserAuth, error) {
+	authConfigSvc, err := o.CreateGitAuthConfigService()
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to create the git auth config service")
+	}
+	authConfig := authConfigSvc.Config()
+	if authConfig == nil {
+		return nil, nil, errors.New("empty Git config")
+	}
+	server, user := authConfig.GetPipelineAuth()
+	return server, user, nil
 }

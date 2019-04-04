@@ -6,13 +6,14 @@ import (
 	"strconv"
 	"time"
 
+	jxClient "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
-	tektonclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -69,117 +70,68 @@ func CreateOrUpdateTask(tektonClient tektonclient.Interface, ns string, created 
 	return answer, nil
 }
 
-// GetLastBuildNumber returns the last build number on the Pipeline
-func GetLastBuildNumber(pipeline *v1alpha1.Pipeline) int {
-	buildNumber := 0
-	if pipeline.Annotations != nil {
-		ann := pipeline.Annotations[LastBuildNumberAnnotation]
-		if ann != "" {
-			n, err := strconv.Atoi(ann)
-			if err != nil {
-				log.Warnf("expected number but Pipeline %s has annotation %s with value %s\n", pipeline.Name, LastBuildNumberAnnotation, ann)
-			} else {
-				buildNumber = n
-			}
-		}
-	}
-	return buildNumber
-}
-
-// CreatePipelineRun lazily creates a Tekton Pipeline Task
-func CreatePipelineRun(tektonClient tektonclient.Interface, ns string, pipeline *v1alpha1.Pipeline, run *v1alpha1.PipelineRun, previewVersionPrefix string, duration time.Duration) (*v1alpha1.PipelineRun, error) {
-	run.Name = pipeline.Name
-
-	resourceInterface := tektonClient.TektonV1alpha1().PipelineRuns(ns)
-
-	buildNumber := GetLastBuildNumber(pipeline)
-	answer := run
-
-	parameters := map[string]string{}
+// GenerateNextBuildNumber generates a new build number for the given project.
+func GenerateNextBuildNumber(tektonClient tektonclient.Interface, jxClient jxClient.Interface, ns string, gitInfo *gits.GitRepository, branch string, duration time.Duration, pipelineIdentifier string) (string, error) {
+	nextBuildNumber := ""
+	resourceInterface := jxClient.JenkinsV1().SourceRepositories(ns)
+	// TODO: How does SourceRepository handle name overlap?
+	sourceRepoName := kube.ToValidName(gitInfo.Organisation + "-" + gitInfo.Name)
 
 	f := func() error {
-		buildNumber++
-		buildNumberText := strconv.Itoa(buildNumber)
-		run.Labels["build-number"] = buildNumberText
-
-		// lets update the "build_id" parameter if it exists
-		for i := range run.Spec.Params {
-			switch run.Spec.Params[i].Name {
-			case "build_id":
-				run.Spec.Params[i].Value = buildNumberText
-				parameters["build_id"] = buildNumberText
-			case "version":
-				if previewVersionPrefix != "" {
-					previewVersion := previewVersionPrefix + buildNumberText
-					run.Spec.Params[i].Value = previewVersion
-					parameters["version"] = previewVersion
-				}
+		sourceRepo, err := kube.GetOrCreateSourceRepository(jxClient, ns, gitInfo.Name, gitInfo.Organisation, gitInfo.ProviderURL())
+		if err != nil {
+			return errors.Wrapf(err, "Unable to generate next build number for %s/%s", sourceRepoName, branch)
+		}
+		sourceRepoName = sourceRepo.Name
+		if sourceRepo.Annotations == nil {
+			sourceRepo.Annotations = make(map[string]string, 1)
+		}
+		annKey := LastBuildNumberAnnotationPrefix + kube.ToValidName(branch)
+		annVal := sourceRepo.Annotations[annKey]
+		lastBuildNumber := 0
+		if annVal != "" {
+			lastBuildNumber, err = strconv.Atoi(annVal)
+			if err != nil {
+				return errors.Wrapf(err, "Expected number but SourceRepository %s has annotation %s with value %s\n", sourceRepoName, annKey, annVal)
 			}
 		}
-
-		run.Name = pipeline.Name + "-" + buildNumberText
-		created, err := resourceInterface.Create(run)
-		if err == nil {
-			answer = created
+		for nextNumber := lastBuildNumber + 1; true; nextNumber++ {
+			// lets check there is not already a PipelineRun for this number
+			buildIdentifier := strconv.Itoa(nextNumber)
+			pipelineResourceName := syntax.PipelineRunName(pipelineIdentifier, buildIdentifier)
+			_, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Get(pipelineResourceName, metav1.GetOptions{})
+			if err == nil {
+				// lets try make another build number as there's already a PipelineRun
+				// which could be due to name clashes
+				continue
+			}
+			sourceRepo.Annotations[annKey] = buildIdentifier
+			if _, err := resourceInterface.Update(sourceRepo); err != nil {
+				return err
+			}
+			nextBuildNumber = sourceRepo.Annotations[annKey]
+			return nil
 		}
-		return err
+		return nil
 	}
 
 	err := util.Retry(duration, f)
-	if err == nil {
-		// lets try update the pipeline with the new label
-		err = UpdateLastPipelineBuildNumber(tektonClient, ns, pipeline, buildNumber, parameters, duration)
-		if err != nil {
-			log.Warnf("Failed to annotate the Pipeline %s with the build number %d: %s", pipeline.Name, buildNumber, err)
-		}
-		return answer, nil
+	if err != nil {
+		return "", err
 	}
-	return answer, err
+	return nextBuildNumber, nil
 }
 
-// UpdateLastPipelineBuildNumber keeps trying to update the last build number annotation on the Pipeline until it succeeds or
-// another thread/process beats us to it
-func UpdateLastPipelineBuildNumber(tektonClient tektonclient.Interface, ns string, pipeline *v1alpha1.Pipeline, buildNumber int, params map[string]string, duration time.Duration) error {
-	f := func() error {
-		pipelineInterface := tektonClient.TektonV1alpha1().Pipelines(ns)
-		current, err := pipelineInterface.Get(pipeline.Name, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-		currentBuildNumber := GetLastBuildNumber(current)
+// CreatePipelineRun lazily creates a Tekton PipelineRun.
+func CreatePipelineRun(tektonClient tektonclient.Interface, ns string, run *v1alpha1.PipelineRun) (*v1alpha1.PipelineRun, error) {
+	resourceName := run.Name
+	resourceInterface := tektonClient.TektonV1alpha1().PipelineRuns(ns)
 
-		// another PipelineRun has already happened
-		if currentBuildNumber > buildNumber {
-			return nil
-		}
-		if current.Annotations == nil {
-			current.Annotations = map[string]string{}
-		}
-		current.Annotations[LastBuildNumberAnnotation] = strconv.Itoa(buildNumber)
-
-		// lets override any defaults in the Pipeline
-		for i := range current.Spec.Params {
-			value := params[current.Spec.Params[i].Name]
-			if value != "" {
-				current.Spec.Params[i].Default = value
-			}
-		}
-
-		// lets override any task parameters in the Pipeline
-		for i := range current.Spec.Tasks {
-			task := &current.Spec.Tasks[i]
-			for j := range task.Params {
-				param := &task.Params[j]
-				value := params[param.Name]
-				if value != "" {
-					param.Value = value
-				}
-			}
-		}
-		_, err = pipelineInterface.Update(current)
-		return err
+	answer, err := resourceInterface.Create(run)
+	if err != nil {
+		return nil, errors.Wrapf(err, "Failed to create PipelineRun %s", resourceName)
 	}
-	return util.Retry(duration, f)
+	return answer, nil
 }
 
 // CreateOrUpdatePipeline lazily creates a Tekton Pipeline for the given git repository, branch and context
@@ -216,7 +168,7 @@ func PipelineResourceName(gitInfo *gits.GitRepository, branch string, context st
 	if context != "" {
 		dirtyName += "-" + context
 	}
-	// TODO: https://github.com/knative/build-pipeline/issues/481 causes
+	// TODO: https://github.com/tektoncd/pipeline/issues/481 causes
 	// problems since autogenerated container names can end up surpassing 63
 	// characters, which is not allowed. Longest known prefix for now is 28
 	// chars (build-step-artifact-copy-to-), so we truncate to 35 so the

@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/hashicorp/go-version"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -150,5 +151,14 @@ func (o *UpgradeAddonProwOptions) Run() error {
 	o.HMACToken = hmacToken
 	isGitOps, _ := o.GetDevEnv()
 
-	return o.installProw(o.Tekton, isGitOps, "", "")
+	_, pipelineUser, err := o.getPipelineGitAuth()
+	if err != nil {
+		return errors.Wrap(err, "retrieving the pipeline Git Auth")
+	}
+	pipelineUserName := ""
+	if pipelineUser != nil {
+		pipelineUserName = pipelineUser.Username
+	}
+
+	return o.installProw(o.Tekton, isGitOps, "", "", pipelineUserName)
 }

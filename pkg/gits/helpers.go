@@ -2,6 +2,7 @@ package gits
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"os/user"
 	"strings"
@@ -148,4 +149,29 @@ func FetchAndMergeSHAs(SHAs []string, baseBranch string, baseSha string, remote 
 		}
 	}
 	return nil
+}
+
+// SourceRepositoryProviderURL returns the git provider URL for the SourceRepository which is something like
+// either `https://hostname` or `http://hostname`
+func SourceRepositoryProviderURL(gitProvider GitProvider) string {
+	return GitProviderURL(gitProvider.ServerURL())
+}
+
+// GitProviderURL returns the git provider host URL for the SourceRepository which is something like
+// either `https://hostname` or `http://hostname`
+func GitProviderURL(text string) string {
+	if text == "" {
+		return text
+	}
+	u, err := url.Parse(text)
+	if err != nil {
+		log.Warnf("failed to parse git provider URL %s: %s\n", text, err.Error())
+		return text
+	}
+	u.Path = ""
+	if !strings.HasPrefix(u.Scheme, "http") {
+		// lets convert other schemes like 'git' to 'https'
+		u.Scheme = "https"
+	}
+	return u.String()
 }

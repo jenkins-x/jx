@@ -27,18 +27,16 @@ type BitbucketCloudProviderTestSuite struct {
 }
 
 const (
-	username           = "test-user"
-	orgName            = "test-org"
-	underscoreUsername = "test_user"
+	orgName = "test-org"
 )
 
 var profiles = []UserProfile{
-	UserProfile{
+	{
 		url:      "https://auth.example.com",
 		name:     "Test Auth Server",
 		username: "test-user",
 	},
-	UserProfile{
+	{
 		url:      "https://auth.example.com",
 		name:     "Test Auth Server with Underscore user",
 		username: "test_user",
@@ -254,7 +252,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestCreatePullRequest() {
 	suite.Require().NotNil(pr)
 	suite.Require().Nil(err)
 	suite.Require().Equal(*pr.State, "OPEN")
-	suite.Require().Equal(int(*pr.Number), 3)
+	suite.Require().Equal(*pr.Number, 3)
 	suite.Require().Equal(pr.Owner, "test-user")
 	suite.Require().Equal(pr.Repo, "test-repo")
 	suite.Require().Equal(pr.Author.Login, "test-user")
@@ -273,7 +271,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestCreateOrgPullRequest() {
 	suite.Require().NotNil(pr)
 	suite.Require().Nil(err)
 	suite.Require().Equal(*pr.State, "OPEN")
-	suite.Require().Equal(int(*pr.Number), 4)
+	suite.Require().Equal(*pr.Number, 4)
 	suite.Require().Equal(pr.Owner, "test-org")
 	suite.Require().Equal(pr.Repo, "test-repo")
 	suite.Require().Equal(pr.Author.Login, "test-user")
@@ -295,7 +293,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestUpdatePullRequestStatus() {
 	suite.Require().NotNil(pr)
 	suite.Require().Nil(err)
 	suite.Require().Equal(*pr.State, "DECLINED")
-	suite.Require().Equal(int(*pr.Number), 3)
+	suite.Require().Equal(*pr.Number, 3)
 	suite.Require().Equal(pr.Owner, "test-user")
 	suite.Require().Equal(pr.Repo, "test-repo")
 	suite.Require().Equal(pr.Author.Login, "test-user")
@@ -317,7 +315,7 @@ func (suite *BitbucketCloudProviderTestSuite) TestUpdateOrgPullRequestStatus() {
 	suite.Require().NotNil(pr)
 	suite.Require().Nil(err)
 	suite.Require().Equal(*pr.State, "DECLINED")
-	suite.Require().Equal(int(*pr.Number), 4)
+	suite.Require().Equal(*pr.Number, 4)
 	suite.Require().Equal(pr.Owner, "test-org")
 	suite.Require().Equal(pr.Repo, "test-repo")
 	suite.Require().Equal(pr.Author.Login, "test-user")

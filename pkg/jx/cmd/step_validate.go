@@ -21,8 +21,6 @@ const (
 )
 
 var (
-	stepValidationOptions = []string{optionMinJxVersion}
-
 	stepValidateLong = templates.LongDesc(`
 		Validates the command line tools, container and platform to ensure a pipeline can run properly.
 
@@ -31,7 +29,7 @@ var (
 
 	stepValidateExample = templates.Examples(`
 		# Validates that the jx version is new enough
-		jx validate --min-jx-version ` + version.VersionStringDefault(version.ExampleVersion) + `
+		jx step validate --min-jx-version ` + version.VersionStringDefault(version.ExampleVersion) + `
 			`)
 )
 

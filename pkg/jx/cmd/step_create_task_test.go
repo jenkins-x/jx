@@ -1,17 +1,19 @@
 package cmd_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/gits/mocks"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/satori/go.uuid"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/runtime"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/knative/pkg/kmp"
+	uuid "github.com/satori/go.uuid"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/ghodss/yaml"
 	"github.com/google/go-cmp/cmp"
@@ -22,8 +24,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/tekton/tekton_helpers_test"
 	"github.com/jenkins-x/jx/pkg/tests"
-	pipelineapi "github.com/knative/build-pipeline/pkg/apis/pipeline/v1alpha1"
 	"github.com/stretchr/testify/assert"
+	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -98,8 +100,12 @@ func TestGenerateTektonCRDs(t *testing.T) {
 		},
 	}
 	jxObjects := []runtime.Object{}
-	repoOwner := uuid.NewV4().String()
-	repoName := uuid.NewV4().String()
+	repoOwnerUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	repoOwner := repoOwnerUUID.String()
+	repoNameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	repoName := repoNameUUID.String()
 	fakeRepo := gits.NewFakeRepository(repoOwner, repoName)
 	fakeGitProvider := gits.NewFakeProvider(fakeRepo)
 
@@ -130,6 +136,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 						ServiceAccount: "tekton-bot",
 					},
 				},
+				BuildNumber: "1",
 			}
 			cmd.ConfigureTestOptionsWithResources(createTask.CommonOptions, k8sObjects, jxObjects, gits_test.NewMockGitter(), fakeGitProvider, helm_test.NewMockHelmer(), nil)
 
@@ -162,7 +169,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipeline(t, caseDir), pipeline); d != "" {
 					t.Errorf("Generated Pipeline did not match expected: %s", d)
 				}
-				if d := cmp.Diff(tekton_helpers_test.AssertLoadTasks(t, caseDir), taskList, cmpopts.IgnoreFields(corev1.ResourceRequirements{}, "Requests")); d != "" {
+				if d, _ := kmp.SafeDiff(tekton_helpers_test.AssertLoadTasks(t, caseDir), taskList, cmpopts.IgnoreFields(corev1.ResourceRequirements{}, "Requests")); d != "" {
 					t.Errorf("Generated Tasks did not match expected: %s", d)
 				}
 				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineResources(t, caseDir), resourceList); d != "" {

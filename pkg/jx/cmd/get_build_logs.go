@@ -14,15 +14,15 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tekton"
-	"github.com/knative/build-pipeline/pkg/apis/pipeline"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	tektonclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
+	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -62,6 +62,8 @@ var (
 		# Pick a knative build for the 1234 Pull Request on the repo cheese
 		jx get build log --repo cheese --branch PR-1234
 
+		# View the build logs for a specific tekton build pod
+		jx get build log --pod my-pod-name
 	`)
 )
 
@@ -95,6 +97,7 @@ func NewCmdGetBuildLogs(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.BuildFilter.Repository, "repo", "r", "", "Filters the build repository")
 	cmd.Flags().StringVarP(&options.BuildFilter.Branch, "branch", "", "", "Filters the branch")
 	cmd.Flags().StringVarP(&options.BuildFilter.Build, "build", "", "", "The build number to view")
+	cmd.Flags().StringVarP(&options.BuildFilter.Pod, "pod", "", "", "The pod name to view")
 	cmd.Flags().BoolVarP(&options.CurrentFolder, "current", "c", false, "Display logs using current folder as repo name, and parent folder as owner")
 	options.JenkinsSelector.AddFlags(cmd)
 
@@ -523,13 +526,13 @@ func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tek
 		return names, defaultName, buildMap, pipelineMap, err
 	}
 	for _, pr := range prList.Items {
-		var ps *v1.PipelineStructure
+		var ps v1.PipelineStructure
 		for _, p := range structures.Items {
 			if p.Name == pr.Name {
-				ps = &p
+				ps = p
 			}
 		}
-		pri, err := tekton.CreatePipelineRunInfo(pr.Name, podList, ps, &pr)
+		pri, err := tekton.CreatePipelineRunInfo(pr.Name, podList, &ps, &pr)
 		if err != nil {
 			if o.Verbose {
 				log.Warnf("Error creating PipelineRunInfo for PipelineRun %s: %s\n", pr.Name, err)
@@ -547,6 +550,9 @@ func (o *GetBuildLogsOptions) loadPipelines(kubeClient kubernetes.Interface, tek
 
 	for _, build := range buildInfos {
 		name := build.Pipeline + " #" + build.Build
+		if build.Context != "" {
+			name += " " + build.Context
+		}
 		names = append(names, name)
 		buildMap[name] = build
 		pipelineMap[build.Pipeline] = build

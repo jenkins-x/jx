@@ -52,6 +52,11 @@ type Rule struct {
 	TargetTags []string `json:"targetTags"`
 }
 
+type address struct {
+	Name   string `json:"name"`
+	Region string `json:"region"`
+}
+
 // NewCmd s a command object for the "step" command
 func NewCmdGCGKE(commonOpts *CommonOptions) *cobra.Command {
 	options := &GCGKEOptions{
@@ -100,6 +105,8 @@ func (o *GCGKEOptions) Run() error {
 
 %v
 
+%s
+
 `
 	log.Warn("This command is experimental and the generated script should be executed at the users own risk\n")
 	log.Warn("We will generate a script for you to review and execute, this command will not delete any resources by itself\n")
@@ -115,7 +122,12 @@ func (o *GCGKEOptions) Run() error {
 		return err
 	}
 
-	data := fmt.Sprintf(message, fw, disks)
+	addr, err := o.cleanUpAddresses()
+	if err != nil {
+		return err
+	}
+
+	data := fmt.Sprintf(message, fw, disks, addr)
 	data = strings.Replace(data, "[", "", -1)
 	data = strings.Replace(data, "]", "", -1)
 
@@ -143,7 +155,7 @@ func (p *GCGKEOptions) cleanUpFirewalls() (string, error) {
 		return "", err
 	}
 
-	lines := strings.Split(string(out), "\n")
+	lines := strings.Split(out, "\n")
 	var existingClusters []string
 	for _, l := range lines {
 		if strings.Contains(l, "NAME") {
@@ -215,6 +227,42 @@ func (o *GCGKEOptions) cleanUpPersistentDisks() ([]string, error) {
 	return line, nil
 }
 
+func (o *GCGKEOptions) cleanUpAddresses() ([]string, error) {
+
+	cmd := "gcloud compute addresses list --filter=\"status:RESERVED\" --format=json"
+	data, err := o.getCommandOutput("", "bash", "-c", cmd)
+	if err != nil {
+		return nil, err
+	}
+
+	var addresses []address
+	err = json.Unmarshal([]byte(data), &addresses)
+	if err != nil {
+		return nil, err
+	}
+
+	var line []string
+	if len(addresses) > 0 {
+		for _, address := range addresses {
+			var scope string
+			if address.Region != "" {
+				region := getLastString(strings.Split(address.Region, "/"))
+				scope = fmt.Sprintf("--region %s", region)
+			} else {
+				scope = "--global"
+			}
+			line = append(line, fmt.Sprintf("gcloud compute addresses delete %s %s\n", address.Name, scope))
+		}
+		return line, nil
+	}
+
+	if len(line) == 0 {
+		line = append(line, "# No addresses found for deletion\n")
+	}
+
+	return line, nil
+}
+
 func contains(s []string, e string) bool {
 	for _, a := range s {
 		if strings.HasPrefix(e, a) {
@@ -222,4 +270,8 @@ func contains(s []string, e string) bool {
 		}
 	}
 	return false
+}
+
+func getLastString(s []string) string {
+	return s[len(s)-1]
 }

@@ -18,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube/resources"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	kservefake "github.com/knative/serving/pkg/client/clientset/versioned/fake"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	apifake "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
@@ -95,6 +96,7 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 	o.SetKubeClient(client)
 	o.jxClient = v1fake.NewSimpleClientset(jxObjects...)
 	o.apiExtensionsClient = apifake.NewSimpleClientset()
+	o.kserveClient = kservefake.NewSimpleClientset()
 	o.git = git
 	if fakeGitProvider != nil {
 		o.fakeGitProvider = fakeGitProvider
@@ -433,30 +435,9 @@ func PollGitStatusAndReactToPipelineChanges(t *testing.T, o *ControllerWorkflowO
 	return err
 }
 
-func dumpActivity(t *testing.T, activities typev1.PipelineActivityInterface, name string) *v1.PipelineActivity {
-	activity, err := activities.Get(name, metav1.GetOptions{})
-	assert.NoError(t, err)
-	if err != nil {
-		return nil
-	}
-	assert.NotNil(t, activity, "No PipelineActivity found for name %s", name)
-	if activity != nil {
-		dumpFailedActivity(activity)
-	}
-	return activity
-}
-
 func dumpFailedActivity(activity *v1.PipelineActivity) {
 	data, err := yaml.Marshal(activity)
 	if err == nil {
 		log.Warnf("YAML: %s\n", string(data))
 	}
-}
-
-func dumpPipelineMap(o *ControllerWorkflowOptions) {
-	log.Infof("Dumping PipelineMap {\n")
-	for k, v := range o.PipelineMap() {
-		log.Infof("    Pipeline %s %s\n", k, v.Name)
-	}
-	log.Infof("}\n")
 }

@@ -5,7 +5,7 @@ package v1
 import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	scheme "github.com/jenkins-x/jx/pkg/client/clientset/versioned/scheme"
-	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
 	rest "k8s.io/client-go/rest"
@@ -21,11 +21,11 @@ type TeamsGetter interface {
 type TeamInterface interface {
 	Create(*v1.Team) (*v1.Team, error)
 	Update(*v1.Team) (*v1.Team, error)
-	Delete(name string, options *meta_v1.DeleteOptions) error
-	DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error
-	Get(name string, options meta_v1.GetOptions) (*v1.Team, error)
-	List(opts meta_v1.ListOptions) (*v1.TeamList, error)
-	Watch(opts meta_v1.ListOptions) (watch.Interface, error)
+	Delete(name string, options *metav1.DeleteOptions) error
+	DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error
+	Get(name string, options metav1.GetOptions) (*v1.Team, error)
+	List(opts metav1.ListOptions) (*v1.TeamList, error)
+	Watch(opts metav1.ListOptions) (watch.Interface, error)
 	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.Team, err error)
 	TeamExpansion
 }
@@ -45,7 +45,7 @@ func newTeams(c *JenkinsV1Client, namespace string) *teams {
 }
 
 // Get takes name of the team, and returns the corresponding team object, and an error if there is any.
-func (c *teams) Get(name string, options meta_v1.GetOptions) (result *v1.Team, err error) {
+func (c *teams) Get(name string, options metav1.GetOptions) (result *v1.Team, err error) {
 	result = &v1.Team{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -58,7 +58,7 @@ func (c *teams) Get(name string, options meta_v1.GetOptions) (result *v1.Team, e
 }
 
 // List takes label and field selectors, and returns the list of Teams that match those selectors.
-func (c *teams) List(opts meta_v1.ListOptions) (result *v1.TeamList, err error) {
+func (c *teams) List(opts metav1.ListOptions) (result *v1.TeamList, err error) {
 	result = &v1.TeamList{}
 	err = c.client.Get().
 		Namespace(c.ns).
@@ -70,7 +70,7 @@ func (c *teams) List(opts meta_v1.ListOptions) (result *v1.TeamList, err error) 
 }
 
 // Watch returns a watch.Interface that watches the requested teams.
-func (c *teams) Watch(opts meta_v1.ListOptions) (watch.Interface, error) {
+func (c *teams) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 	opts.Watch = true
 	return c.client.Get().
 		Namespace(c.ns).
@@ -105,7 +105,7 @@ func (c *teams) Update(team *v1.Team) (result *v1.Team, err error) {
 }
 
 // Delete takes name of the team and deletes it. Returns an error if one occurs.
-func (c *teams) Delete(name string, options *meta_v1.DeleteOptions) error {
+func (c *teams) Delete(name string, options *metav1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("teams").
@@ -116,7 +116,7 @@ func (c *teams) Delete(name string, options *meta_v1.DeleteOptions) error {
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *teams) DeleteCollection(options *meta_v1.DeleteOptions, listOptions meta_v1.ListOptions) error {
+func (c *teams) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("teams").

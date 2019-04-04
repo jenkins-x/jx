@@ -25,6 +25,7 @@ type BuildPodInfo struct {
 	Repository        string
 	Branch            string
 	Build             string
+	Context           string
 	BuildNumber       int
 	Pipeline          string
 	LastCommitSHA     string
@@ -48,6 +49,7 @@ type BuildPodInfoFilter struct {
 	Branch     string
 	Build      string
 	Filter     string
+	Pod        string
 	Pending    bool
 }
 
@@ -160,6 +162,9 @@ func CreateBuildPodInfo(pod *corev1.Pod) *BuildPodInfo {
 		LastCommitURL:     lastCommitURL,
 		CreatedTime:       pod.CreationTimestamp.Time,
 	}
+	if pod.Labels != nil {
+		answer.Context = pod.Labels["context"]
+	}
 	if isInit && len(containers) > 2 {
 		answer.FirstStepImage = containers[2].Image
 	} else if !isInit && len(containers) > 1 {
@@ -199,6 +204,9 @@ func (o *BuildPodInfoFilter) BuildMatches(info *BuildPodInfo) bool {
 		return false
 	}
 	if o.Build != "" && o.Build != info.Build {
+		return false
+	}
+	if o.Pod != "" && o.Pod != info.PodName {
 		return false
 	}
 	if o.Filter != "" && !strings.Contains(info.Name, o.Filter) {

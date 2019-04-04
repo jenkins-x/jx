@@ -341,9 +341,7 @@ func (h *HelmCLI) Template(chart string, releaseName string, ns string, outDir s
 }
 
 // UpgradeChart upgrades a helm chart according with given helm flags
-func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, version string, install bool,
-	timeout int, force bool, wait bool, values []string, valueFiles []string, repo string, username string,
-	password string) error {
+func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, version string, install bool, timeout int, force bool, wait bool, values []string, valueFiles []string, repo string, username string, password string) error {
 	args := []string{}
 	args = append(args, "upgrade")
 	args = append(args, "--namespace", ns)
@@ -438,14 +436,14 @@ func (h *HelmCLI) FindChart() (string, error) {
 		return "", errors.Wrapf(err, "no Chart.yaml file found in directory '%s'", dir)
 	}
 	if !exists {
-		files, err := filepath.Glob("*/Chart.yaml")
+		files, err := filepath.Glob(filepath.Join(dir, "*", "Chart.yaml"))
 		if err != nil {
 			return "", errors.Wrap(err, "no Chart.yaml file found")
 		}
 		if len(files) > 0 {
 			chartFile = files[0]
 		} else {
-			files, err = filepath.Glob("*/*/Chart.yaml")
+			files, err = filepath.Glob(filepath.Join(dir, "*", "*", "Chart.yaml"))
 			if err != nil {
 				return "", errors.Wrap(err, "no Chart.yaml file found")
 			}
@@ -464,6 +462,14 @@ func (h *HelmCLI) FindChart() (string, error) {
 // StatusRelease returns the output of the helm status command for a given release
 func (h *HelmCLI) StatusRelease(ns string, releaseName string) error {
 	return h.runHelm("status", releaseName)
+}
+
+// StatusReleaseWithOutput returns the output of the helm status command for a given release
+func (h *HelmCLI) StatusReleaseWithOutput(ns string, releaseName string, outputFormat string) (string, error) {
+	if outputFormat == "" {
+		return h.runHelmWithOutput("status", releaseName)
+	}
+	return h.runHelmWithOutput("status", releaseName, "--output", outputFormat)
 }
 
 // StatusReleases returns the status of all installed releases

@@ -10,8 +10,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/collector"
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
-	"github.com/knative/build-pipeline/pkg/apis/pipeline"
 	"github.com/pkg/errors"
+	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 
 	"k8s.io/client-go/kubernetes"
 
@@ -20,8 +20,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	tektonclient "github.com/knative/build-pipeline/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
+	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -207,7 +207,7 @@ func (o *ControllerBuildOptions) handleStandalonePod(pod *corev1.Pod, kubeClient
 						if o.Verbose {
 							log.Infof("updating PipelineActivity %s\n", a.Name)
 						}
-						_, err := activities.Update(a)
+						_, err := activities.PatchUpdate(a)
 						if err != nil {
 							log.Warnf("Failed to update PipelineActivity %s due to: %s\n", a.Name, err.Error())
 							name = a.Name
@@ -276,11 +276,11 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 								}
 								log.Warnf("Failed to %s PipelineActivities for build %s: %s\n", operation, pri.Name, err)
 							}
-							if o.updatePipelineActivityForRun(kubeClient, ns, a, pri) {
+							if o.updatePipelineActivityForRun(kubeClient, ns, a, pri, pod) {
 								if o.Verbose {
 									log.Infof("updating PipelineActivity %s\n", a.Name)
 								}
-								_, err := activities.Update(a)
+								_, err := activities.PatchUpdate(a)
 								if err != nil {
 									log.Warnf("Failed to update PipelineActivity %s due to: %s\n", a.Name, err.Error())
 									name = a.Name
@@ -458,11 +458,13 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 					log.Warnf("No GitURL on PipelineActivity %s\n", activity.Name)
 				}
 			}
-			logURL, err := o.generateBuildLogURL(podInterface, ns, activity, buildName, pod, location, settings, o.InitGitCredentials)
+			masker, err := kube.NewLogMasker(kubeClient, ns)
 			if err != nil {
-				if o.Verbose {
-					log.Warnf("%s\n", err)
-				}
+				log.Warnf("Failed to create LogMasker in namespace %s: %s\n", ns, err.Error())
+			}
+			logURL, err := o.generateBuildLogURL(podInterface, ns, activity, buildName, pod, location, settings, o.InitGitCredentials, masker)
+			if err != nil {
+				log.Warnf("%s\n", err)
 			}
 			if logURL != "" {
 				spec.BuildLogsURL = logURL
@@ -481,7 +483,7 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 	return originYaml != newYaml
 }
 
-func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kubernetes.Interface, ns string, activity *v1.PipelineActivity, pri *tekton.PipelineRunInfo) bool {
+func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kubernetes.Interface, ns string, activity *v1.PipelineActivity, pri *tekton.PipelineRunInfo, pod *corev1.Pod) bool {
 	originYaml := toYamlString(activity)
 	for _, stage := range pri.Stages {
 		updateForStage(stage, activity)
@@ -511,7 +513,10 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 				}
 			}
 			if stageFinished {
-				if stage.Status != v1.ActivityStatusTypeSucceeded {
+				switch stage.Status {
+				case v1.ActivityStatusTypeSucceeded, v1.ActivityStatusTypeNotExecuted:
+					// stage did not fail
+				default:
 					failed = true
 				}
 			} else {
@@ -535,7 +540,46 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 		if !biggestFinishedAt.IsZero() {
 			spec.CompletedTimestamp = &biggestFinishedAt
 		}
-		// TODO: Not yet sure how to handle BuildLogsURL
+
+		// lets ensure we overwrite any canonical jenkins build URL thats generated automatically
+		if spec.BuildLogsURL == "" {
+			podInterface := kubeClient.CoreV1().Pods(ns)
+
+			envName := kube.LabelValueDevEnvironment
+			devEnv := o.EnvironmentCache.Item(envName)
+			var location *v1.StorageLocation
+			settings := &devEnv.Spec.TeamSettings
+			if devEnv == nil {
+				log.Warnf("No Environment %s found\n", envName)
+			} else {
+				location = settings.StorageLocationOrDefault(kube.ClassificationLogs)
+			}
+			if location == nil {
+				location = &v1.StorageLocation{}
+			}
+			if location.IsEmpty() {
+				location.GitURL = activity.Spec.GitURL
+				if location.GitURL == "" {
+					log.Warnf("No GitURL on PipelineActivity %s\n", activity.Name)
+				}
+			}
+
+			masker, err := kube.NewLogMasker(kubeClient, ns)
+			if err != nil {
+				log.Warnf("Failed to create LogMasker in namespace %s: %s\n", ns, err.Error())
+			}
+
+			logURL, err := o.generateBuildLogURL(podInterface, ns, activity, pri.PipelineRun, pod, location, settings, o.InitGitCredentials, masker)
+			if err != nil {
+				if o.Verbose {
+					log.Warnf("%s\n", err)
+				}
+			}
+			if logURL != "" {
+				spec.BuildLogsURL = logURL
+			}
+		}
+
 	} else {
 		if running {
 			spec.Status = v1.ActivityStatusTypeRunning
@@ -741,7 +785,7 @@ func toYamlString(resource interface{}) string {
 }
 
 // generates the build log URL and returns the URL
-func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool) (string, error) {
+func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool, logMasker *kube.LogMasker) (string, error) {
 
 	coll, err := collector.NewCollector(location, settings, o.Git())
 	if err != nil {
@@ -754,13 +798,17 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 		return "", errors.Wrapf(err, "failed to get build log for pod %s in namespace %s", pod.Name, ns)
 	}
 
+	if logMasker != nil {
+		data = logMasker.MaskLogData(data)
+	}
 	if o.Verbose {
 		log.Infof("got build log for pod: %s PipelineActivity: %s with bytes: %d\n", pod.Name, activity.Name, len(data))
 	}
 
 	if initGitCredentials {
 		gc := &StepGitCredentialsOptions{}
-		gc.CommonOptions = o
+		copy := *o
+		gc.CommonOptions = &copy
 		gc.BatchMode = true
 		log.Info("running: jx step git credentials\n")
 		err = gc.Run()

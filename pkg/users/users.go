@@ -22,7 +22,10 @@ func GetUsers(jxClient versioned.Interface, ns string) (map[string]*jenkinsv1.Us
 		return m, names, err
 	}
 	for _, user := range userList.Items {
-		n := user.Name
+		n := user.Spec.Login
+		if n == "" {
+			n = user.Name
+		}
 		copy := user
 		m[n] = &copy
 		if n != "" {
@@ -68,10 +71,11 @@ func AddAccountReference(user *jenkinsv1.User, gitProviderKey string, id string)
 
 // DeleteUser deletes the user resource but does not uninstall the underlying namespaces
 func DeleteUser(jxClient versioned.Interface, ns string, userName string) error {
+	id := kube.ToValidName(userName)
 	userInterface := jxClient.JenkinsV1().Users(ns)
-	_, err := userInterface.Get(userName, metav1.GetOptions{})
+	_, err := userInterface.Get(id, metav1.GetOptions{})
 	if err == nil {
-		err = userInterface.Delete(userName, nil)
+		err = userInterface.Delete(id, nil)
 	}
 	return err
 }
@@ -183,5 +187,4 @@ func Resolve(id string, providerKey string, jxClient versioned.Interface,
 		// Otherwise, create a new user
 		return jxClient.JenkinsV1().Users(namespace).Create(new)
 	}
-	return nil, nil
 }

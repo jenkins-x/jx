@@ -64,6 +64,7 @@ type InstallOptions struct {
 	CreateJenkinsUserOptions
 	CreateEnvOptions
 	config.AdminSecretsService
+	kubevault.AWSConfig
 
 	InitOptions InitOptions
 	Flags       InstallFlags
@@ -76,37 +77,40 @@ type InstallOptions struct {
 
 // InstallFlags flags for the install command
 type InstallFlags struct {
-	InstallOnly              bool
-	Domain                   string
-	ExposeControllerPathMode string
-	DockerRegistry           string
-	Provider                 string
-	VersionsRepository       string
-	Version                  string
-	LocalHelmRepoName        string
-	Namespace                string
-	CloudEnvRepository       string
-	NoDefaultEnvironments    bool
-	DefaultEnvironmentPrefix string
-	LocalCloudEnvironment    bool
-	EnvironmentGitOwner      string
-	Timeout                  string
-	HelmTLS                  bool
-	RegisterLocalHelmRepo    bool
-	CleanupTempFiles         bool
-	Prow                     bool
-	DisableSetKubeContext    bool
-	Dir                      string
-	Vault                    bool
-	Tekton                   bool
-	BuildPackName            string
-	Kaniko                   bool
-	GitOpsMode               bool
-	NoGitOpsEnvApply         bool
-	NoGitOpsEnvRepo          bool
-	NoGitOpsEnvSetup         bool
-	NoGitOpsVault            bool
-	NextGeneration           bool
+	InstallOnly                 bool
+	Domain                      string
+	ExposeControllerURLTemplate string
+	ExposeControllerPathMode    string
+	DockerRegistry              string
+	DockerRegistryOrg           string
+	Provider                    string
+	VersionsRepository          string
+	Version                     string
+	LocalHelmRepoName           string
+	Namespace                   string
+	CloudEnvRepository          string
+	NoDefaultEnvironments       bool
+	DefaultEnvironmentPrefix    string
+	LocalCloudEnvironment       bool
+	EnvironmentGitOwner         string
+	Timeout                     string
+	HelmTLS                     bool
+	RegisterLocalHelmRepo       bool
+	CleanupTempFiles            bool
+	Prow                        bool
+	DisableSetKubeContext       bool
+	Dir                         string
+	Vault                       bool
+	RecreateVaultBucket         bool
+	Tekton                      bool
+	BuildPackName               string
+	Kaniko                      bool
+	GitOpsMode                  bool
+	NoGitOpsEnvApply            bool
+	NoGitOpsEnvRepo             bool
+	NoGitOpsEnvSetup            bool
+	NoGitOpsVault               bool
+	NextGeneration              bool
 }
 
 // Secrets struct for secrets
@@ -274,6 +278,7 @@ func NewCmdInstall(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Flags.Provider, "provider", "", "", "Cloud service providing the Kubernetes cluster.  Supported providers: "+KubernetesProviderOptions())
 
 	cmd.AddCommand(NewCmdInstallDependencies(commonOpts))
+	awsCreateVaultOptions(cmd, &options.AWSConfig)
 
 	return cmd
 }
@@ -336,6 +341,8 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.HelmTLS, "helm-tls", "", false, "Whether to use TLS with helm")
 	cmd.Flags().BoolVarP(&flags.InstallOnly, "install-only", "", false, "Force the install command to fail if there is already an installation. Otherwise lets update the installation")
 	cmd.Flags().StringVarP(&flags.DockerRegistry, "docker-registry", "", "", "The Docker Registry host or host:port which is used when tagging and pushing images. If not specified it defaults to the internal registry unless there is a better provider default (e.g. ECR on AWS/EKS)")
+	cmd.Flags().StringVarP(&flags.DockerRegistryOrg, "docker-registry-org", "", "", "The Docker Registry organiation/user to create images inside. On GCP this is typically your Google Project ID.")
+	cmd.Flags().StringVarP(&flags.ExposeControllerURLTemplate, "exposecontroller-urltemplate", "", "", "The ExposeController urltemplate for how services should be exposed as URLs. Defaults to being empty, which in turn defaults to \"{{.Service}}.{{.Namespace}}.{{.Domain}}\".")
 	cmd.Flags().StringVarP(&flags.ExposeControllerPathMode, "exposecontroller-pathmode", "", "", "The ExposeController path mode for how services should be exposed as URLs. Defaults to using subnets. Use a value of `path` to use relative paths within the domain host such as when using AWS ELB host names")
 	cmd.Flags().StringVarP(&flags.Version, "version", "", "", "The specific platform version to install")
 	cmd.Flags().BoolVarP(&flags.Prow, "prow", "", false, "Enable Prow to implement Serverless Jenkins and support ChatOps on Pull Requests")
@@ -346,6 +353,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.NoGitOpsVault, "no-gitops-vault", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a vault")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvSetup, "no-gitops-env-setup", "", false, "When using GitOps to install the development environment this flag skips the post-install setup")
 	cmd.Flags().BoolVarP(&flags.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during installation (supported only for GKE)")
+	cmd.Flags().BoolVarP(&flags.RecreateVaultBucket, "vault-bucket-recreate", "", true, "If the vault bucket already exists delete it then create it empty")
 	cmd.Flags().StringVarP(&flags.BuildPackName, "buildpack", "", "", "The name of the build pack to use for the Team")
 	cmd.Flags().BoolVarP(&flags.Kaniko, "kaniko", "", false, "Use Kaniko for building docker images")
 	cmd.Flags().BoolVarP(&flags.NextGeneration, "ng", "", false, "Use the Next Generation Jenkins X features like Prow, Tekton, No Tiller, Vault, Dev GitOps")
@@ -367,12 +375,16 @@ func (options *InstallOptions) checkFlags() error {
 
 	if flags.Tekton {
 		flags.Prow = true
+		if !options.InitOptions.Flags.NoTiller {
+			log.Infof("note that if using Serverless Jenkins with Tekton we recommend the extra flag: %s\n", util.ColorInfo("--no-tiller"))
+		}
 	}
 	if flags.NextGeneration {
 		flags.GitOpsMode = true
 		flags.Vault = true
 		flags.Prow = true
 		flags.Tekton = true
+		flags.Kaniko = true
 		options.InitOptions.Flags.NoTiller = true
 	}
 	// check some flags combination for GitOps mode
@@ -652,7 +664,7 @@ func (options *InstallOptions) Run() error {
 
 	err = options.setupGitOpsPostApply(ns)
 	if err != nil {
-		return errors.Wrap(err, "settinup GitOps post installation")
+		return errors.Wrap(err, "setting up GitOps post installation")
 	}
 
 	log.Successf("\nJenkins X installation completed successfully")
@@ -736,6 +748,10 @@ func (options *InstallOptions) init() error {
 			ecConfig.PathMode = options.Flags.ExposeControllerPathMode
 			log.Success("set exposeController Config PathMode " + ecConfig.PathMode + "\n")
 		}
+		if ecConfig.UrlTemplate == "" && options.Flags.ExposeControllerURLTemplate != "" {
+			ecConfig.UrlTemplate = options.Flags.ExposeControllerURLTemplate
+			log.Success("set exposeController Config URLTemplate " + ecConfig.UrlTemplate + "\n")
+		}
 		if isOpenShiftProvider(options.Flags.Provider) {
 			ecConfig.Exposer = "Route"
 		}
@@ -816,8 +832,7 @@ func (options *InstallOptions) installPlatform(providerEnvDir string, jxChart st
 	}
 
 	if !options.Flags.InstallOnly {
-		err = options.Helm().UpgradeChart(jxChart, jxRelName, namespace, version, true,
-			timeoutInt, false, false, nil, allValuesFiles, "", "", "")
+		err = options.Helm().UpgradeChart(jxChart, jxRelName, namespace, version, true, timeoutInt, false, false, nil, allValuesFiles, "", "", "")
 	} else {
 		err = options.Helm().InstallChart(jxChart, jxRelName, namespace, version, timeoutInt,
 			nil, allValuesFiles, "", "", "")
@@ -895,6 +910,19 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 		"postinstalljob": map[string]interface{}{"enabled": "true"},
 	}
 
+	err = options.setValuesFileValue(filepath.Join(gitOpsEnvDir, "jenkins", helm.ValuesFileName), "enabled", !options.Flags.Prow)
+	if err != nil {
+		return err
+	}
+	err = options.setValuesFileValue(filepath.Join(gitOpsEnvDir, "controllerbuild", helm.ValuesFileName), "enabled", options.Flags.Prow)
+	if err != nil {
+		return err
+	}
+	err = options.setValuesFileValue(filepath.Join(gitOpsEnvDir, "controllerworkflow", helm.ValuesFileName), "enabled", !options.Flags.Tekton)
+	if err != nil {
+		return err
+	}
+
 	// lets load any existing values.yaml data as we may have created this via additional apps like Prow
 	exists, err = util.FileExists(valuesFile)
 	if err != nil {
@@ -947,7 +975,7 @@ func (options *InstallOptions) configureAndInstallProw(namespace string, gitOpsD
 			return errors.Wrap(err, "retrieving the pipeline Git Auth")
 		}
 		options.OAUTHToken = pipelineUser.ApiToken
-		err = options.installProw(options.Flags.Tekton, options.Flags.GitOpsMode, gitOpsDir, gitOpsEnvDir)
+		err = options.installProw(options.Flags.Tekton, options.Flags.GitOpsMode, gitOpsDir, gitOpsEnvDir, pipelineUser.Username)
 		if err != nil {
 			errors.Wrap(err, "installing Prow")
 		}
@@ -1228,8 +1256,14 @@ func (options *InstallOptions) configureGitAuth() error {
 		}
 	}
 
-	message = fmt.Sprintf("pipelines Git user for %s server:", pipelineAuthServer.Label())
-	pipelineUserAuth, err := authConfig.PickServerUserAuth(authServer, message, options.BatchMode, "", options.In, options.Out, options.Err)
+	// lets default the values from the CLI arguments
+	if options.GitRepositoryOptions.Username != "" {
+		authConfig.PipeLineUsername = options.GitRepositoryOptions.Username
+	}
+	if options.GitRepositoryOptions.ServerURL != "" {
+		authConfig.PipeLineServer = options.GitRepositoryOptions.ServerURL
+	}
+	pipelineUserAuth, err := options.PickPipelineUserAuth(authConfig, authServer)
 	if err != nil {
 		return errors.Wrapf(err, "selecting the pipeline user for git server %s", authServer.Label())
 	}
@@ -1533,7 +1567,7 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 			git := options.Git()
 			gitRepoOptions, err := options.buildGitRepositoryOptionsForEnvironments()
 			if err != nil || gitRepoOptions == nil {
-				if gitRepoOptions == nil {
+				if err == nil {
 					err = errors.New("empty git repository options")
 				}
 				return errors.Wrap(err, "building the git repository options for environment")
@@ -1610,11 +1644,13 @@ func (options *InstallOptions) applyGitOpsDevEnvironmentConfig(gitOpsEnvDir stri
 						CommonOptions: options.CommonOptions,
 					},
 				},
-				Dir:       gitOpsEnvDir,
-				Namespace: namespace,
-				ChangeNs:  true,
-				Vault:     options.Flags.Vault,
+				Dir:         gitOpsEnvDir,
+				Namespace:   namespace,
+				ChangeNs:    true,
+				Vault:       options.Flags.Vault,
+				ReleaseName: "jenkins-x",
 			}
+
 			err := envApplyOptions.Run()
 			if err != nil {
 				return errors.Wrap(err, "appyting the dev environment configuration")
@@ -1641,9 +1677,17 @@ func (options *InstallOptions) setupGitOpsPostApply(ns string) error {
 
 		envs, err := kube.GetPermanentEnvironments(jxClient, devNs)
 		if err != nil {
-			return errors.Wrapf(err, "retrieving the current permanent environments in namspace %q", devNs)
+			return errors.Wrapf(err, "retrieving the current permanent environments in namespace %q", devNs)
+		}
+		devEnv, err := kube.GetDevEnvironment(jxClient, devNs)
+		if err != nil {
+			return errors.Wrapf(err, "get the dev environment namespace %q", devNs)
+		}
+		if devEnv != nil {
+			envs = append(envs, devEnv)
 		}
 
+		errs := []error{}
 		createEnvOpts := CreateEnvOptions{
 			CreateOptions: CreateOptions{
 				CommonOptions: options.CommonOptions,
@@ -1657,10 +1701,11 @@ func (options *InstallOptions) setupGitOpsPostApply(ns string) error {
 		for _, env := range envs {
 			err := createEnvOpts.RegisterEnvironment(env, nil, nil)
 			if err != nil {
-				errors.Wrapf(err, "registering environment %q", env.GetName())
+				errs = append(errs, errors.Wrapf(err, "registering environment %q", env.GetName()))
 			}
-			log.Infof("Registered environment %q", util.ColorInfo(env.GetName()))
+			log.Infof("Registered environment %q\n", util.ColorInfo(env.GetName()))
 		}
+		return util.CombineErrors(errs...)
 	}
 	return nil
 }
@@ -1774,8 +1819,7 @@ func (options *InstallOptions) configureCloudProivderPostInit(client kubernetes.
 		if err != nil {
 			return errors.Wrap(err, "failed to update the helm repo")
 		}
-		err = options.Helm().UpgradeChart("ibm/ibmcloud-block-storage-plugin", "ibmcloud-block-storage-plugin",
-			"default", "", true, -1, false, false, nil, nil, "", "", "")
+		err = options.Helm().UpgradeChart("ibm/ibmcloud-block-storage-plugin", "ibmcloud-block-storage-plugin", "default", "", true, -1, false, false, nil, nil, "", "", "")
 		if err != nil {
 			return errors.Wrap(err, "failed to install/upgrade the IBM Cloud Block Storage drivers")
 		}
@@ -1797,10 +1841,14 @@ func (options *InstallOptions) configureDockerRegistry(client kubernetes.Interfa
 		helmConfig.PipelineSecrets.DockerConfig = dockerRegistryConfig
 	}
 	if dockerRegistry != "" {
-		if helmConfig.Jenkins.Servers.Global.EnvVars == nil {
-			helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
+		if !options.Flags.Prow {
+			if helmConfig.Jenkins.Servers.Global.EnvVars == nil {
+				helmConfig.Jenkins.Servers.Global.EnvVars = map[string]string{}
+			}
+			helmConfig.Jenkins.Servers.Global.EnvVars["DOCKER_REGISTRY"] = dockerRegistry
+		} else {
+			helmConfig.DockerRegistry = dockerRegistry
 		}
-		helmConfig.Jenkins.Servers.Global.EnvVars["DOCKER_REGISTRY"] = dockerRegistry
 	}
 	return nil
 }
@@ -1977,9 +2025,10 @@ func (options *InstallOptions) configureKaniko() error {
 		defer os.RemoveAll(serviceAccountDir)
 
 		serviceAccountName := fmt.Sprintf("jx-%s-kaniko", options.installValues[kube.ClusterName])
+		projectID := options.installValues[kube.ProjectID]
 
-		log.Infof("Configuring Kaniko service account %s\n", util.ColorInfo(serviceAccountName))
-		serviceAccountPath, err := gke.GetOrCreateServiceAccount(serviceAccountName, options.installValues[kube.ProjectID], serviceAccountDir, gke.KanikoServiceAccountRoles)
+		log.Infof("Configuring Kaniko service account %s for project %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
+		serviceAccountPath, err := gke.GetOrCreateServiceAccount(serviceAccountName, projectID, serviceAccountDir, gke.KanikoServiceAccountRoles)
 		if err != nil {
 			return errors.Wrap(err, "creating the service account")
 		}
@@ -1996,7 +2045,7 @@ func (options *InstallOptions) configureKaniko() error {
 
 func (options *InstallOptions) createSystemVault(client kubernetes.Interface, namespace string, ic *kube.IngressConfig) error {
 	if options.Flags.GitOpsMode && !options.Flags.NoGitOpsVault || options.Flags.Vault {
-		if options.Flags.Provider != cloud.GKE {
+		if options.Flags.Provider != cloud.GKE && options.Flags.Provider != cloud.EKS && options.Flags.Provider != cloud.AWS {
 			return fmt.Errorf("system vault is not supported for %s provider", options.Flags.Provider)
 		}
 
@@ -2013,15 +2062,35 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			CreateOptions: CreateOptions{
 				CommonOptions: options.CommonOptions,
 			},
-			IngressConfig: *ic,
-			Namespace:     namespace,
+			IngressConfig:       *ic,
+			Namespace:           namespace,
+			AWSConfig:           options.AWSConfig,
+			RecreateVaultBucket: options.Flags.RecreateVaultBucket,
 		}
 		if options.installValues != nil {
-			if cvo.GKEProjectID == "" {
-				cvo.GKEProjectID = options.installValues[kube.ProjectID]
+			if options.Flags.Provider == cloud.GKE {
+				if cvo.GKEProjectID == "" {
+					cvo.GKEProjectID = options.installValues[kube.ProjectID]
+				}
+				if cvo.GKEZone == "" {
+					cvo.GKEZone = options.installValues[kube.Zone]
+				}
 			}
-			if cvo.GKEZone == "" {
-				cvo.GKEZone = options.installValues[kube.Zone]
+			if options.Flags.Provider == cloud.AWS || options.Flags.Provider == cloud.EKS {
+				defaultRegion := options.installValues[kube.Region]
+				if cvo.DynamoDBRegion == "" {
+					cvo.DynamoDBRegion = defaultRegion
+					log.Infof("Region not specified for DynamoDB, defaulting to %s\n", util.ColorInfo(defaultRegion))
+				}
+				if cvo.KMSRegion == "" {
+					cvo.KMSRegion = defaultRegion
+					log.Infof("Region not specified for KMS, defaulting to %s\n", util.ColorInfo(defaultRegion))
+
+				}
+				if cvo.S3Region == "" {
+					cvo.S3Region = defaultRegion
+					log.Infof("Region not specified for S3, defaulting to %s\n", util.ColorInfo(defaultRegion))
+				}
 			}
 		}
 		vaultOperatorClient, err := cvo.VaultOperatorClient()
@@ -2044,7 +2113,7 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 				util.ColorInfo(systemVaultName), util.ColorInfo(namespace))
 		} else {
 			log.Info("Creating new system vault\n")
-			err = cvo.createVault(vaultOperatorClient, systemVaultName)
+			err = cvo.createVault(vaultOperatorClient, systemVaultName, options.Flags.Provider)
 			if err != nil {
 				return err
 			}
@@ -2113,9 +2182,10 @@ func (options *InstallOptions) saveIngressConfig() (*kube.IngressConfig, error) 
 	}
 	domain := exposeController.Config.Domain
 	ic := kube.IngressConfig{
-		Domain:  domain,
-		TLS:     tls,
-		Exposer: exposeController.Config.Exposer,
+		Domain:      domain,
+		TLS:         tls,
+		Exposer:     exposeController.Config.Exposer,
+		UrlTemplate: exposeController.Config.UrlTemplate,
 	}
 	// save ingress config details to a configmap
 	_, err = options.saveAsConfigMap(kube.IngressConfigConfigmap, ic)
@@ -2200,6 +2270,7 @@ func (options *InstallOptions) configureJenkins(namespace string) error {
 				options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
 				options.CreateJenkinsUserOptions.Namespace = options.devNamespace
 				options.CreateJenkinsUserOptions.RecreateToken = true
+				options.CreateJenkinsUserOptions.Username = options.AdminSecretsService.Flags.DefaultAdminUsername
 				options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
 				options.CreateJenkinsUserOptions.Verbose = false
 				options.CreateJenkinsUserOptions.RecreateToken = true
@@ -2600,19 +2671,6 @@ func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 	return wrkDir, nil
 }
 
-func (options *InstallOptions) getPipelineGitAuth() (*auth.AuthServer, *auth.UserAuth, error) {
-	authConfigSvc, err := options.CreateGitAuthConfigService()
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to create the git auth config service")
-	}
-	authConfig := authConfigSvc.Config()
-	if authConfig == nil {
-		return nil, nil, errors.New("empty Git config")
-	}
-	server, user := authConfig.GetPipelineAuth()
-	return server, user, nil
-}
-
 func (options *InstallOptions) waitForInstallToBeReady(ns string) error {
 	client, err := options.KubeClient()
 	if err != nil {
@@ -2650,7 +2708,7 @@ func (options *InstallOptions) saveChartmuseumAuthConfig() error {
 	}
 
 	user := &auth.UserAuth{
-		Username: "admin",
+		Username: options.AdminSecretsService.Flags.DefaultAdminUsername,
 		Password: options.AdminSecretsService.Flags.DefaultAdminPassword,
 	}
 
@@ -2811,11 +2869,48 @@ func (options *InstallOptions) configureTeamSettings() error {
 			env.Spec.TeamSettings.HelmTemplate = true
 			log.Info("Enabling helm template mode in the TeamSettings\n")
 		}
+		if options.Flags.DockerRegistryOrg != "" {
+			env.Spec.TeamSettings.DockerRegistryOrg = options.Flags.DockerRegistryOrg
+			log.Infof("Setting the docker registry organisation to %s in the TeamSettings\n", env.Spec.TeamSettings.DockerRegistryOrg)
+		}
 		return nil
 	}
 	err := options.ModifyDevEnvironment(callback)
 	if err != nil {
 		return errors.Wrap(err, "updating the team setttings in the dev environment")
+	}
+	return nil
+}
+
+// setValuesFileValue lazily creates the values.yaml file possibly in a new directory and ensures there is the key in the values with the given value
+func (options *InstallOptions) setValuesFileValue(fileName string, key string, value interface{}) error {
+	dir, _ := filepath.Split(fileName)
+	err := os.MkdirAll(dir, util.DefaultWritePermissions)
+	if err != nil {
+		return err
+	}
+	answerMap := map[string]interface{}{}
+
+	// lets load any previous values if they exist
+	exists, err := util.FileExists(fileName)
+	if err != nil {
+		return err
+	}
+	if exists {
+		answerMap, err = helm.LoadValuesFile(fileName)
+		if err != nil {
+			return err
+		}
+	}
+	answerMap[key] = value
+	answer := chartutil.Values(answerMap)
+	text, err := answer.YAML()
+	if err != nil {
+		return errors.Wrap(err, "Failed to marshal the updated values YAML files back to YAML")
+	}
+	err = ioutil.WriteFile(fileName, []byte(text), util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "Failed to save updated helm values YAML file %s", fileName)
 	}
 	return nil
 }

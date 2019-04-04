@@ -24,8 +24,8 @@ func TestStatusRun(t *testing.T) {
 		},
 		Status: v1.NodeStatus{
 			Capacity: v1.ResourceList{
-				v1.ResourceName(v1.ResourceCPU):    resource.MustParse("10"),
-				v1.ResourceName(v1.ResourceMemory): resource.MustParse("10G"),
+				v1.ResourceCPU:    resource.MustParse("10"),
+				v1.ResourceMemory: resource.MustParse("10G"),
 			},
 		},
 	}

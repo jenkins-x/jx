@@ -54,6 +54,8 @@ type GitProvider interface {
 
 	ListCommitStatus(org string, repo string, sha string) ([]*GitRepoStatus, error)
 
+	ListCommits(owner string, repo string, opt *ListCommitsArguments) ([]*GitCommit, error)
+
 	UpdateCommitStatus(org string, repo string, sha string, status *GitRepoStatus) (*GitRepoStatus, error)
 
 	MergePullRequest(pr *GitPullRequest, message string) error
@@ -182,6 +184,9 @@ type Gitter interface {
 	Pull(dir string) error
 	PullRemoteBranches(dir string) error
 	PullUpstream(dir string) error
+
+	// ResetToUpstream resets the given branch to the upstream version
+	ResetToUpstream(dir string, branch string) error
 
 	AddRemote(dir string, name string, url string) error
 	SetRemoteURL(dir string, name string, gitURL string) error

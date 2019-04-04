@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"path/filepath"
+	"runtime"
 
 	"github.com/spf13/cobra"
 
@@ -21,8 +22,6 @@ import (
 )
 
 const (
-	bashEnvPrefix = "PS1="
-
 	defaultRcFile = `
 if [ -f /etc/bashrc ]; then
     source /etc/bashrc
@@ -132,27 +131,23 @@ func (o *ShellOptions) Run() error {
 	newConfig := *config
 	newConfig.CurrentContext = ctxName
 
-	//clean old folders
-	files, err := filepath.Glob("/tmp/.jx-shell-*")
-	if err != nil {
-		panic(err)
-	}
-	for _, f := range files {
-		if err := os.RemoveAll(f); err != nil {
-			panic(err)
-		}
-	}
-	tmpDirName, err := ioutil.TempDir("/tmp", ".jx-shell-")
+	tmpDirName, err := ioutil.TempDir("", ".jx-shell-")
 	if err != nil {
 		return err
 	}
-	tmpConfigFileName := tmpDirName + "/config"
+	tmpConfigFileName := filepath.Join(tmpDirName, "/config")
 	err = clientcmd.WriteToFile(newConfig, tmpConfigFileName)
 	if err != nil {
 		return err
 	}
 
-	shell := filepath.Base(os.Getenv("SHELL"))
+	fullShell := os.Getenv("SHELL")
+	shell := filepath.Base(fullShell)
+	if fullShell == "" && runtime.GOOS == "windows" {
+		// SHELL is set by git-bash but not cygwin :-(
+		shell = "cmd.exe"
+	}
+
 	prompt := o.createNewBashPrompt(os.Getenv("PS1"))
 	rcFile := defaultRcFile + "\nexport PS1=" + prompt + "\nexport KUBECONFIG=\"" + tmpConfigFileName + "\"\n"
 	tmpRCFileName := tmpDirName + "/.bashrc"
@@ -169,7 +164,9 @@ func (o *ShellOptions) Run() error {
 
 	info := util.ColorInfo
 	log.Infof("Creating a new shell using the Kubernetes context %s\n", info(ctxName))
-	log.Infof("Shell RC file is %s\n\n", tmpRCFileName)
+	if shell != "cmd.exe" {
+		log.Infof("Shell RC file is %s\n\n", tmpRCFileName)
+	}
 	log.Infof("All changes to the Kubernetes context like changing environment, namespace or context will be local to this shell\n")
 	log.Infof("To return to the global context use the command: exit\n\n")
 
@@ -179,12 +176,22 @@ func (o *ShellOptions) Run() error {
 		env = append(env, fmt.Sprintf("ZDOTDIR=%s", tmpDirName))
 		e = exec.Command(shell, "-i")
 		e.Env = env
+	} else if shell == "cmd.exe" {
+		env := os.Environ()
+		env = append(env, fmt.Sprintf("KUBECONFIG=%s", tmpConfigFileName))
+		e = exec.Command(shell)
+		e.Env = env
 	}
 
 	e.Stdout = o.Out
 	e.Stderr = o.Err
 	e.Stdin = os.Stdin
-	return e.Run()
+	err = e.Run()
+	if deleteError := os.RemoveAll(tmpDirName); deleteError != nil {
+		panic(err)
+	}
+	return err
+
 }
 
 func (o *ShellOptions) PickContext(names []string, defaultValue string) (string, error) {

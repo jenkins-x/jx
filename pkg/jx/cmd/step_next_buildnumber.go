@@ -14,8 +14,7 @@ import (
 )
 
 const (
-	optionBranch  = "branch"
-	optionService = "service"
+	optionBranch = "branch"
 )
 
 // StepNextBuildNumberOptions contains the command line flags

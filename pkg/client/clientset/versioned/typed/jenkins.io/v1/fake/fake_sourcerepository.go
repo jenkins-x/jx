@@ -3,7 +3,7 @@
 package fake
 
 import (
-	jenkins_io_v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	jenkinsiov1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -23,20 +23,20 @@ var sourcerepositoriesResource = schema.GroupVersionResource{Group: "jenkins.io"
 var sourcerepositoriesKind = schema.GroupVersionKind{Group: "jenkins.io", Version: "v1", Kind: "SourceRepository"}
 
 // Get takes name of the sourceRepository, and returns the corresponding sourceRepository object, and an error if there is any.
-func (c *FakeSourceRepositories) Get(name string, options v1.GetOptions) (result *jenkins_io_v1.SourceRepository, err error) {
+func (c *FakeSourceRepositories) Get(name string, options v1.GetOptions) (result *jenkinsiov1.SourceRepository, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewGetAction(sourcerepositoriesResource, c.ns, name), &jenkins_io_v1.SourceRepository{})
+		Invokes(testing.NewGetAction(sourcerepositoriesResource, c.ns, name), &jenkinsiov1.SourceRepository{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.SourceRepository), err
+	return obj.(*jenkinsiov1.SourceRepository), err
 }
 
 // List takes label and field selectors, and returns the list of SourceRepositories that match those selectors.
-func (c *FakeSourceRepositories) List(opts v1.ListOptions) (result *jenkins_io_v1.SourceRepositoryList, err error) {
+func (c *FakeSourceRepositories) List(opts v1.ListOptions) (result *jenkinsiov1.SourceRepositoryList, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewListAction(sourcerepositoriesResource, sourcerepositoriesKind, c.ns, opts), &jenkins_io_v1.SourceRepositoryList{})
+		Invokes(testing.NewListAction(sourcerepositoriesResource, sourcerepositoriesKind, c.ns, opts), &jenkinsiov1.SourceRepositoryList{})
 
 	if obj == nil {
 		return nil, err
@@ -46,8 +46,8 @@ func (c *FakeSourceRepositories) List(opts v1.ListOptions) (result *jenkins_io_v
 	if label == nil {
 		label = labels.Everything()
 	}
-	list := &jenkins_io_v1.SourceRepositoryList{ListMeta: obj.(*jenkins_io_v1.SourceRepositoryList).ListMeta}
-	for _, item := range obj.(*jenkins_io_v1.SourceRepositoryList).Items {
+	list := &jenkinsiov1.SourceRepositoryList{ListMeta: obj.(*jenkinsiov1.SourceRepositoryList).ListMeta}
+	for _, item := range obj.(*jenkinsiov1.SourceRepositoryList).Items {
 		if label.Matches(labels.Set(item.Labels)) {
 			list.Items = append(list.Items, item)
 		}
@@ -63,31 +63,31 @@ func (c *FakeSourceRepositories) Watch(opts v1.ListOptions) (watch.Interface, er
 }
 
 // Create takes the representation of a sourceRepository and creates it.  Returns the server's representation of the sourceRepository, and an error, if there is any.
-func (c *FakeSourceRepositories) Create(sourceRepository *jenkins_io_v1.SourceRepository) (result *jenkins_io_v1.SourceRepository, err error) {
+func (c *FakeSourceRepositories) Create(sourceRepository *jenkinsiov1.SourceRepository) (result *jenkinsiov1.SourceRepository, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewCreateAction(sourcerepositoriesResource, c.ns, sourceRepository), &jenkins_io_v1.SourceRepository{})
+		Invokes(testing.NewCreateAction(sourcerepositoriesResource, c.ns, sourceRepository), &jenkinsiov1.SourceRepository{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.SourceRepository), err
+	return obj.(*jenkinsiov1.SourceRepository), err
 }
 
 // Update takes the representation of a sourceRepository and updates it. Returns the server's representation of the sourceRepository, and an error, if there is any.
-func (c *FakeSourceRepositories) Update(sourceRepository *jenkins_io_v1.SourceRepository) (result *jenkins_io_v1.SourceRepository, err error) {
+func (c *FakeSourceRepositories) Update(sourceRepository *jenkinsiov1.SourceRepository) (result *jenkinsiov1.SourceRepository, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewUpdateAction(sourcerepositoriesResource, c.ns, sourceRepository), &jenkins_io_v1.SourceRepository{})
+		Invokes(testing.NewUpdateAction(sourcerepositoriesResource, c.ns, sourceRepository), &jenkinsiov1.SourceRepository{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.SourceRepository), err
+	return obj.(*jenkinsiov1.SourceRepository), err
 }
 
 // Delete takes name of the sourceRepository and deletes it. Returns an error if one occurs.
 func (c *FakeSourceRepositories) Delete(name string, options *v1.DeleteOptions) error {
 	_, err := c.Fake.
-		Invokes(testing.NewDeleteAction(sourcerepositoriesResource, c.ns, name), &jenkins_io_v1.SourceRepository{})
+		Invokes(testing.NewDeleteAction(sourcerepositoriesResource, c.ns, name), &jenkinsiov1.SourceRepository{})
 
 	return err
 }
@@ -96,17 +96,17 @@ func (c *FakeSourceRepositories) Delete(name string, options *v1.DeleteOptions) 
 func (c *FakeSourceRepositories) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
 	action := testing.NewDeleteCollectionAction(sourcerepositoriesResource, c.ns, listOptions)
 
-	_, err := c.Fake.Invokes(action, &jenkins_io_v1.SourceRepositoryList{})
+	_, err := c.Fake.Invokes(action, &jenkinsiov1.SourceRepositoryList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched sourceRepository.
-func (c *FakeSourceRepositories) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkins_io_v1.SourceRepository, err error) {
+func (c *FakeSourceRepositories) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *jenkinsiov1.SourceRepository, err error) {
 	obj, err := c.Fake.
-		Invokes(testing.NewPatchSubresourceAction(sourcerepositoriesResource, c.ns, name, data, subresources...), &jenkins_io_v1.SourceRepository{})
+		Invokes(testing.NewPatchSubresourceAction(sourcerepositoriesResource, c.ns, name, data, subresources...), &jenkinsiov1.SourceRepository{})
 
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*jenkins_io_v1.SourceRepository), err
+	return obj.(*jenkinsiov1.SourceRepository), err
 }

@@ -3,3 +3,113 @@ chat:
   url: http://kubernetes.slack.com/
   developerChannel: '#jenkins-x-dev'
   userChannel: '#jenkins-x-user'
+buildPack: none
+pipelineConfig:
+  pipelines:
+    release:
+      pipeline:
+        agent:
+          image: gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
+        stages:
+          - name: release
+            environment:
+              - name: GIT_COMMITTER_EMAIL
+                value: jenkins-x@googlegroups.com
+              - name: GIT_AUTHOR_EMAIL
+                value: jenkins-x@googlegroups.com
+              - name: GIT_AUTHOR_NAME
+                value: jenkins-x-bot
+              - name: GIT_COMMITTER_NAME
+                value: jenkins-x-bot
+              - name: BASE_WORKSPACE
+                value: /workspace/source
+              - name: HELM_HOME
+                value: /builder/home/.helm
+            steps:
+              - name: init-helm
+                image: alpine/helm:2.12.3
+                command: helm
+                args: ['init','--client-only']
+                resources:
+                  limits:
+                    cpu: 0.2
+                    memory: 128Mi
+                  requests:
+                    cpu: 0.1
+                    memory: 64Mi
+
+              - image: jenkinsxio/jx:1.3.963
+                command: jx
+                args:
+                  - step
+                  - credential
+                  - -s
+                  - knative-git-user-pass
+                  - -k
+                  - password
+                  - -f
+                  - /builder/home/git-token
+
+              - image: jenkinsxio/jx:1.3.963
+                command: jx
+                args:
+                  - step
+                  - credential
+                  - -s
+                  - jenkins-x-chartmuseum
+                  - -k
+                  - BASIC_AUTH_USER
+                  - -f
+                  - /builder/home/basic-auth-user
+
+              - image: jenkinsxio/jx:1.3.963
+                command: jx
+                args:
+                  - step
+                  - credential
+                  - -s
+                  - jenkins-x-chartmuseum
+                  - -k
+                  - BASIC_AUTH_PASS
+                  - -f
+                  - /builder/home/basic-auth-pass
+
+              - name: release
+                #image: docker.io/golang:1.11.5
+                # needs helm in the image for install_gitops_integration_test.go
+                image: gcr.io/jenkinsxio/builder-go:0.1.332
+                command: make
+                args: ['release']
+                env:
+                  - name: GOPATH
+                    value: /workspace/go
+                  - name: GOPROXY
+                    value: http://jx-app-athens-athens-proxy
+                resources:
+                  limits:
+                    cpu: 4
+                    memory: 6144Mi
+                  requests:
+                    cpu: 3
+                    memory: 3072Mi
+
+              - name: build-and-push-image
+                image: gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6
+                command: /kaniko/executor
+                args: ['--dockerfile=/workspace/source/Dockerfile','--destination=docker.io/jenkinsxio/jx:${inputs.params.version}','--context=/workspace/source','--cache-dir=/workspace']
+
+              - name: release-charts
+                image: gcr.io/jenkinsxio/builder-go:0.1.332
+                command: make
+                args:
+                - "release"
+                - -f
+                - /workspace/source/charts/jx/Makefile
+
+              - name: update-bot
+                image: gcr.io/jenkinsxio/builder-jx:0.1.332
+                command: ./jx/scripts/update-bot.sh
+
+              - name: update-downstream
+                image: gcr.io/jenkinsxio/builder-go:0.1.332
+                command: ./jx/scripts/update-website.sh

@@ -7,6 +7,7 @@ package cmd_test
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -14,11 +15,13 @@ import (
 	"strings"
 	"testing"
 
+	expect "github.com/Netflix/go-expect"
 	"github.com/jenkins-x/jx/pkg/apps"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	uuid "github.com/satori/go.uuid"
 
 	"k8s.io/helm/pkg/chartutil"
 
-	expect "github.com/Netflix/go-expect"
 	"github.com/jenkins-x/jx/pkg/tests"
 
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -30,12 +33,9 @@ import (
 
 	"github.com/ghodss/yaml"
 
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"github.com/jenkins-x/jx/pkg/helm"
-
-	uuid "github.com/satori/go.uuid"
 
 	"github.com/stretchr/testify/assert"
 
@@ -52,7 +52,9 @@ func TestAddAppForGitOps(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.0.1"
 	alias := fmt.Sprintf("%s-alias", name)
 	repo := "http://chartmuseum.jenkins-x.io"
@@ -78,7 +80,7 @@ func TestAddAppForGitOps(t *testing.T) {
 		},
 	}, testOptions.MockHelmer)
 	o.Args = []string{name}
-	err := o.Run()
+	err = o.Run()
 	assert.NoError(t, err)
 	pr, err := testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
 	assert.NoError(t, err)
@@ -131,7 +133,9 @@ func TestAddAppWithSecrets(t *testing.T) {
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.0.1"
 	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
@@ -154,7 +158,7 @@ func TestAddAppWithSecrets(t *testing.T) {
 			Version: version,
 		},
 		Files: []*google_protobuf.Any{
-			&google_protobuf.Any{
+			{
 				TypeUrl: "values.schema.json",
 				Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
@@ -234,7 +238,7 @@ func TestAddAppWithSecrets(t *testing.T) {
 			}
 		})
 
-	err := o.Run()
+	err = o.Run()
 	assert.NoError(t, err)
 	err = console.Close()
 	<-donec
@@ -276,7 +280,9 @@ func TestAddAppWithDefaults(t *testing.T) {
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.0.1"
 	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
@@ -298,7 +304,7 @@ func TestAddAppWithDefaults(t *testing.T) {
 			Version: version,
 		},
 		Files: []*google_protobuf.Any{
-			&google_protobuf.Any{
+			{
 				TypeUrl: "values.schema.json",
 				Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
@@ -363,7 +369,7 @@ func TestAddAppWithDefaults(t *testing.T) {
 			}
 		})
 
-	err := o.Run()
+	err = o.Run()
 	assert.NoError(t, err)
 	err = console.Close()
 	<-donec
@@ -404,7 +410,9 @@ func TestStashValues(t *testing.T) {
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.0.1"
 	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
@@ -427,7 +435,7 @@ func TestStashValues(t *testing.T) {
 			Version: version,
 		},
 		Files: []*google_protobuf.Any{
-			&google_protobuf.Any{
+			{
 				TypeUrl: "values.schema.json",
 				Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
@@ -445,7 +453,7 @@ func TestStashValues(t *testing.T) {
 		},
 	}, testOptions.MockHelmer)
 
-	err := o.Run()
+	err = o.Run()
 	assert.NoError(t, err)
 	appCRDName := fmt.Sprintf("%s-%s", name, name)
 	jxClient, ns, err := testOptions.CommonOptions.JXClientAndDevNamespace()
@@ -479,7 +487,9 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.0.1"
 	alias := fmt.Sprintf("%s-alias", name)
 	commonOpts := *testOptions.CommonOptions
@@ -504,7 +514,7 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 			Version: version,
 		},
 		Files: []*google_protobuf.Any{
-			&google_protobuf.Any{
+			{
 				TypeUrl: "values.schema.json",
 				Value: []byte(`{
   "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
@@ -532,7 +542,7 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 		console.SendLine("abc")
 		console.ExpectEOF()
 	}()
-	err := o.Run()
+	err = o.Run()
 	assert.NoError(t, err)
 	err = console.Close()
 	<-donec
@@ -569,7 +579,9 @@ func TestAddApp(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.0.1"
 	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
@@ -584,7 +596,7 @@ func TestAddApp(t *testing.T) {
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}
 	o.Args = []string{name}
-	err := o.Run()
+	err = o.Run()
 	assert.NoError(t, err)
 
 	// Check chart was installed
@@ -615,6 +627,66 @@ func TestAddApp(t *testing.T) {
 	// Verify the annotation
 }
 
+func TestAddAppFromPath(t *testing.T) {
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	// Can't run in parallel
+	pegomock.RegisterMockTestingT(t)
+	defer func() {
+		err := testOptions.Cleanup()
+		assert.NoError(t, err)
+	}()
+
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
+	version := "0.0.1"
+	commonOpts := *testOptions.CommonOptions
+
+	// Make the local chart
+	chartDir, err := ioutil.TempDir("", "local-chart")
+	assert.NoError(t, err)
+	chart := chart.Metadata{
+		Version: version,
+		Name:    name,
+	}
+	chartBytes, err := json.Marshal(chart)
+	assert.NoError(t, err)
+	err = ioutil.WriteFile(filepath.Join(chartDir, helm.ChartFileName), chartBytes, 0600)
+	assert.NoError(t, err)
+
+	o := &cmd.AddAppOptions{
+		AddOptions: cmd.AddOptions{
+			CommonOptions: &commonOpts,
+		},
+		GitOps:               false,
+		DevEnv:               testOptions.DevEnv,
+		HelmUpdate:           true, // Flag default when run on CLI
+		ConfigureGitCallback: testOptions.ConfigureGitFn,
+	}
+
+	o.Args = []string{chartDir}
+	err = o.Run()
+	assert.NoError(t, err)
+
+	testOptions.MockHelmer.VerifyWasCalledOnce().
+		UpgradeChart(
+			pegomock.AnyString(),
+			pegomock.EqString(name),
+			pegomock.AnyString(),
+			pegomock.EqString(version),
+			pegomock.AnyBool(),
+			pegomock.AnyInt(),
+			pegomock.AnyBool(),
+			pegomock.AnyBool(),
+			pegomock.AnyStringSlice(),
+			pegomock.AnyStringSlice(),
+			pegomock.AnyString(),
+			pegomock.AnyString(),
+			pegomock.AnyString())
+
+	// Verify the annotation
+}
+
 func TestAddLatestApp(t *testing.T) {
 
 	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
@@ -625,7 +697,9 @@ func TestAddLatestApp(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.1.1"
 	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
@@ -645,7 +719,7 @@ func TestAddLatestApp(t *testing.T) {
 			Version: version,
 		},
 	}, testOptions.MockHelmer)
-	err := o.Run()
+	err = o.Run()
 	assert.NoError(t, err)
 
 	_, _, _, fetchDir, _, _, _ := testOptions.MockHelmer.VerifyWasCalledOnce().FetchChart(
@@ -690,7 +764,9 @@ func TestAddAppWithValuesFileForGitOps(t *testing.T) {
 	_, err = file.Write(data)
 	assert.NoError(t, err)
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.0.1"
 	alias := fmt.Sprintf("%s-alias", name)
 	commonOpts := *testOptions.CommonOptions
@@ -732,7 +808,9 @@ func TestAddAppWithReadmeForGitOps(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.0.1"
 	alias := fmt.Sprintf("%s-alias", name)
 	description := "Example description"
@@ -770,7 +848,7 @@ func TestAddAppWithReadmeForGitOps(t *testing.T) {
 			Description: description,
 		},
 		Templates: []*chart.Template{
-			&chart.Template{
+			{
 				Name: "release.yaml",
 				Data: data,
 			},
@@ -790,7 +868,8 @@ func TestAddAppWithReadmeForGitOps(t *testing.T) {
 	readmeFromPr := string(data)
 	assert.Equal(t, fmt.Sprintf(`# %s
 
-|App Metadata|---|
+|App Metadata||
+|---|---|
 | **Version** | %s |
 | **Description** | %s |
 | **Chart Repository** | %s |
@@ -816,7 +895,9 @@ func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.0.1"
 	alias := fmt.Sprintf("%s-alias", name)
 	commonOpts := *testOptions.CommonOptions
@@ -842,13 +923,13 @@ func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
 			Version: version,
 		},
 		Files: []*google_protobuf.Any{
-			&google_protobuf.Any{
+			{
 				TypeUrl: readmeFileName,
 				Value:   []byte(readme),
 			},
 		},
 	}, testOptions.MockHelmer)
-	err := o.Run()
+	err = o.Run()
 	assert.NoError(t, err)
 	// Validate that the README.md file is in the right place
 	envDir, err := o.CommonOptions.EnvironmentsDir()
@@ -862,7 +943,8 @@ func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
 	readmeFromPr := string(data)
 	assert.Equal(t, fmt.Sprintf(`# %s
 
-|App Metadata|---|
+|App Metadata||
+|---|---|
 | **Version** | %s |
 | **Chart Repository** | %s |
 
@@ -879,7 +961,9 @@ func TestAddLatestAppForGitOps(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	name := uuid.NewV4().String()
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
 	version := "0.1.8"
 	alias := fmt.Sprintf("%s-alias", name)
 	commonOpts := *testOptions.CommonOptions
@@ -904,7 +988,7 @@ func TestAddLatestAppForGitOps(t *testing.T) {
 		},
 	}, testOptions.MockHelmer)
 
-	err := o.Run()
+	err = o.Run()
 	assert.NoError(t, err)
 	pr, err := testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
 	assert.NoError(t, err)

@@ -91,7 +91,7 @@ func GetColor(optionName string, colorNames []string) (*color.Color, error) {
 // ColorNameValues returns all the color names sorted
 func ColorNameValues() []string {
 	answer := []string{}
-	for k, _ := range colorMap {
+	for k := range colorMap {
 		answer = append(answer, k)
 	}
 	sort.Strings(answer)

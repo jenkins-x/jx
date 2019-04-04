@@ -12,6 +12,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -178,7 +179,14 @@ func (o *CreateDevPodOptions) Run() error {
 
 	label := o.Label
 	if label == "" {
-		label = o.guessDevPodLabel(dir, labels)
+		label, err = o.guessDevPodLabel(dir, labels)
+		if err != nil {
+			return err
+		}
+
+		if label == "javascript" {
+			label = "nodejs"
+		}
 	}
 	if label == "" {
 		label, err = util.PickName(labels, "Pick which kind of DevPod you wish to create: ", "", o.In, o.Out, o.Err)
@@ -294,8 +302,15 @@ func (o *CreateDevPodOptions) Run() error {
 				return err
 			}
 
+			settings, err := o.TeamSettings()
+			if err != nil {
+				return err
+			}
+
 			sa = "jenkins"
-			if prow {
+			if settings.IsJenkinsXPipelines() {
+				sa = "tekton-bot"
+			} else if prow {
 				sa = "knative-build-bot"
 			}
 		}
@@ -321,7 +336,7 @@ func (o *CreateDevPodOptions) Run() error {
 			Name:  "theia",
 			Image: fmt.Sprintf("theiaide/theia-full:%s", theiaVersion),
 			Ports: []corev1.ContainerPort{
-				corev1.ContainerPort{
+				{
 					ContainerPort: 3000,
 				},
 			},
@@ -591,7 +606,7 @@ func (o *CreateDevPodOptions) Run() error {
 				},
 				Spec: corev1.ServiceSpec{
 					Ports: []corev1.ServicePort{
-						corev1.ServicePort{
+						{
 							Name:       theiaServiceName,
 							Port:       80,
 							TargetPort: intstr.FromInt(3000),
@@ -818,33 +833,43 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	return env, err
 }
 
-func (o *CreateDevPodOptions) guessDevPodLabel(dir string, labels []string) string {
-	gopath := os.Getenv("GOPATH")
-	if gopath != "" {
-		rel, err := filepath.Rel(gopath, dir)
-		if err == nil && rel != "" && !strings.HasPrefix(rel, "../") {
-			return "go"
-		}
-	}
+func (o *CreateDevPodOptions) guessDevPodLabel(dir string, labels []string) (string, error) {
 	root, _, err := o.Git().FindGitConfigDir(o.Dir)
 	if err != nil {
 		log.Warnf("Could not find a .git directory: %s\n", err)
 	}
 	answer := ""
 	if root != "" {
+		projectConfig, _, err := config.LoadProjectConfig(root)
+		if err != nil {
+			return answer, err
+		}
+		args := &InvokeDraftPack{
+			Dir:                     root,
+			ProjectConfig:           projectConfig,
+			DisableAddFiles:         true,
+			DisableJenkinsfileCheck: true,
+		}
+		answer, err = o.invokeDraftPack(args)
+		if err != nil {
+			return answer, errors.Wrapf(err, "failed to discover task pack in dir %s", o.Dir)
+		}
+		if answer != "" {
+			return answer, nil
+		}
 		jenkinsfile := filepath.Join(root, "Jenkinsfile")
 		exists, err := util.FileExists(jenkinsfile)
 		if err != nil {
-			log.Warnf("Could not find a Jenkinsfile at %s: %s\n", jenkinsfile, err)
+			return answer, errors.Wrapf(err, "could not find file: %s", jenkinsfile)
 		} else if exists {
 			answer, err = FindDevPodLabelFromJenkinsfile(jenkinsfile, labels)
 			if err != nil {
-				log.Warnf("Could not extract the pod template label from Jenkinsfile at %s: %s\n", jenkinsfile, err)
+				return answer, errors.Wrapf(err, "could not extract the pod template label from file: %s", jenkinsfile)
 			}
 
 		}
 	}
-	return answer
+	return answer, nil
 }
 
 // updateExposeController lets update the exposecontroller to expose any new Service resources created for this devpod
