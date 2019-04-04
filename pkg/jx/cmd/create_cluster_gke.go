@@ -251,7 +251,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		}
 	}
 
-	if o.InstallOptions.Flags.NextGeneration {
+	if o.InstallOptions.Flags.NextGeneration || o.InstallOptions.Flags.Tekton {
 		o.Flags.EnhancedApis = true
 		o.Flags.EnhancedScopes = true
 		o.InstallOptions.Flags.Kaniko = true
