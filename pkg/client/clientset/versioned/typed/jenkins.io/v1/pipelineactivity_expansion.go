@@ -28,10 +28,12 @@ func (c *pipelineActivities) PatchUpdate(pipelineActivity *v1.PipelineActivity) 
 	if err != nil {
 		return nil, err
 	}
-	patched, err := c.Patch(resourceName, types.JSONPatchType, patch)
+	_, err = c.Patch(resourceName, types.JSONPatchType, patch)
 	if err != nil {
 		return nil, err
 	}
 
-	return patched, nil
+	// lets return the latest version to ensure the resource is fully populated
+	// otherwise we can sometimes get failures later on with `resource name may not be empty`
+	return c.Get(resourceName, metav1.GetOptions{})
 }
