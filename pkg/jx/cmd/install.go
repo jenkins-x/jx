@@ -2023,9 +2023,10 @@ func (options *InstallOptions) configureKaniko() error {
 		defer os.RemoveAll(serviceAccountDir)
 
 		serviceAccountName := fmt.Sprintf("jx-%s-kaniko", options.installValues[kube.ClusterName])
+		projectID := options.installValues[kube.ProjectID]
 
-		log.Infof("Configuring Kaniko service account %s\n", util.ColorInfo(serviceAccountName))
-		serviceAccountPath, err := gke.GetOrCreateServiceAccount(serviceAccountName, options.installValues[kube.ProjectID], serviceAccountDir, gke.KanikoServiceAccountRoles)
+		log.Infof("Configuring Kaniko service account %s for project %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
+		serviceAccountPath, err := gke.GetOrCreateServiceAccount(serviceAccountName, projectID, serviceAccountDir, gke.KanikoServiceAccountRoles)
 		if err != nil {
 			return errors.Wrap(err, "creating the service account")
 		}
