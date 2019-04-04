@@ -28,9 +28,13 @@ func (c *pipelineActivities) PatchUpdate(pipelineActivity *v1.PipelineActivity) 
 	if err != nil {
 		return nil, err
 	}
-	_, err = c.Patch(resourceName, types.JSONPatchType, patch)
+	patched, err := c.Patch(resourceName, types.JSONPatchType, patch)
 	if err != nil {
 		return nil, err
+	}
+
+	if c.returnPatchValue {
+		return patched, err
 	}
 
 	// lets return the latest version to ensure the resource is fully populated
