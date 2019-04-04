@@ -1,0 +1,41 @@
+schedulerAgent:
+  agent: prow
+policy:
+  protectTested: true
+postsubmits:
+  items:
+    - name: release
+      context: ""
+      branches:
+        items:
+          - master
+      agent: tekton
+presubmits:
+  items:
+    - agent: tekton
+      alwaysRun: true
+      context: integration
+      name: integration
+      rerunCommand: /test this
+      trigger: (?m)^/test( all| this),?(\s+|$)
+      query:
+        labels:
+          items:
+          - approved
+        missingLabels:
+          items:
+          - do-not-merge
+          - do-not-merge/hold
+          - do-not-merge/work-in-progress
+          - needs-ok-to-test
+          - needs-rebase
+      policy:
+        protect: true
+        requiredStatusChecks:
+          contexts:
+            items:
+            - integration
+merger:
+  policy:
+    fromBranchProtection: true
+    skipUnknownContexts: false
