@@ -24,7 +24,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/golang-jenkins"
+	gojenkins "github.com/jenkins-x/golang-jenkins"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -46,7 +46,7 @@ import (
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -165,7 +165,7 @@ func (o *CommonOptions) SetDevNamespace(ns string) {
 	o.currentNamespace = ns
 	o.kubeClient = nil
 
-	log.Infof("setting the dev namespace to: %s\n", util.ColorInfo(ns))
+	log.Infof("Setting the dev namespace to: %s\n", util.ColorInfo(ns))
 }
 
 // Debugf outputs the given text to the console if verbose mode is enabled
@@ -1231,7 +1231,7 @@ func (o *CommonOptions) ChartmuseumAuthConfigService() (auth.ConfigService, erro
 }
 
 // AuthConfigService creates the auth config service for given file
-func (o CommonOptions) AuthConfigService(file string) (auth.ConfigService, error) {
+func (o *CommonOptions) AuthConfigService(file string) (auth.ConfigService, error) {
 	if o.factory == nil {
 		return nil, errors.New("command factory is not initialized")
 	}
