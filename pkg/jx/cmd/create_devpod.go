@@ -302,8 +302,15 @@ func (o *CreateDevPodOptions) Run() error {
 				return err
 			}
 
+			settings, err := o.TeamSettings()
+			if err != nil {
+				return err
+			}
+
 			sa = "jenkins"
-			if prow {
+			if settings.IsJenkinsXPipelines() {
+				sa = "tekton-bot"
+			} else if prow {
 				sa = "knative-build-bot"
 			}
 		}

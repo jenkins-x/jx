@@ -329,6 +329,11 @@ func (t *TeamSettings) GetProwEngine() ProwEngineType {
 	return t.ProwEngine
 }
 
+// IsJenkinsXPipelines returns true if using tekton
+func (t *TeamSettings) IsJenkinsXPipelines() bool {
+	return t.GetProwEngine() == ProwEngineTypeTekton
+}
+
 // IsEmpty returns true if the storage location is empty
 func (s *StorageLocation) IsEmpty() bool {
 	return s.GitURL == "" && s.BucketURL == ""
