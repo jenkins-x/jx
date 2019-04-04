@@ -10,6 +10,8 @@ import (
 	"strings"
 	"text/template"
 
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -130,11 +132,12 @@ func (x *PipelineExtends) ImportFile() *ImportFile {
 
 // PipelineConfig defines the pipeline configuration
 type PipelineConfig struct {
-	Extends     *PipelineExtends `json:"extends,omitempty"`
-	Agent       PipelineAgent    `json:"agent,omitempty"`
-	Env         []corev1.EnvVar  `json:"env,omitempty"`
-	Environment string           `json:"environment,omitempty"`
-	Pipelines   Pipelines        `json:"pipelines,omitempty"`
+	Extends     *PipelineExtends  `json:"extends,omitempty"`
+	Agent       PipelineAgent     `json:"agent,omitempty"`
+	Env         []corev1.EnvVar   `json:"env,omitempty"`
+	Environment string            `json:"environment,omitempty"`
+	Pipelines   Pipelines         `json:"pipelines,omitempty"`
+	Scheduler   *v1.SchedulerSpec `json:"scheduler,omitempty"`
 }
 
 // CreateJenkinsfileArguments contains the arguents to generate a Jenkinsfiles dynamically

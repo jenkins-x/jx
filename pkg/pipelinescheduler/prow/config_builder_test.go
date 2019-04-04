@@ -18,14 +18,14 @@ func TestBuild(t *testing.T) {
 
 	org := uuid.New()
 	leaf1 := &pipelinescheduler.SchedulerLeaf{
-		Org:       org,
-		Repo:      uuid.New(),
-		Scheduler: testhelpers.CompleteScheduler(),
+		Org:           org,
+		Repo:          uuid.New(),
+		SchedulerSpec: testhelpers.CompleteScheduler(),
 	}
 	leaf2 := &pipelinescheduler.SchedulerLeaf{
-		Org:       org,
-		Repo:      uuid.New(),
-		Scheduler: testhelpers.CompleteScheduler(),
+		Org:           org,
+		Repo:          uuid.New(),
+		SchedulerSpec: testhelpers.CompleteScheduler(),
 	}
 	leaves := []*pipelinescheduler.SchedulerLeaf{
 		leaf1,

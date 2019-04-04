@@ -32,6 +32,8 @@ type Interface interface {
 	Plugins() PluginInformer
 	// Releases returns a ReleaseInformer.
 	Releases() ReleaseInformer
+	// Schedulers returns a SchedulerInformer.
+	Schedulers() SchedulerInformer
 	// SourceRepositories returns a SourceRepositoryInformer.
 	SourceRepositories() SourceRepositoryInformer
 	// Teams returns a TeamInformer.
@@ -111,6 +113,11 @@ func (v *version) Plugins() PluginInformer {
 // Releases returns a ReleaseInformer.
 func (v *version) Releases() ReleaseInformer {
 	return &releaseInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// Schedulers returns a SchedulerInformer.
+func (v *version) Schedulers() SchedulerInformer {
+	return &schedulerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // SourceRepositories returns a SourceRepositoryInformer.

@@ -375,6 +375,10 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 
 	if o.Verbose {
+		log.Infof("about to update scheduler configuration\n")
+	}
+
+	if o.Verbose {
 		log.Infof("about to create the tekton CRDs\n")
 	}
 	pipeline, tasks, resources, run, structure, err := o.GenerateTektonCRDs(packsDir, projectConfig, projectConfigFile, resolver, ns)
@@ -410,6 +414,10 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 	}
 	return nil
+}
+
+func (o *StepCreateTaskOptions) ReadSchedulerConfiguration() {
+
 }
 
 // GenerateTektonCRDs creates the Pipeline, Task, PipelineResource, PipelineRun, and PipelineStructure CRDs that will be applied to actually kick off the pipeline

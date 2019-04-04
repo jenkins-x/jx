@@ -13,7 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"github.com/stoewer/go-strcase"
+	strcase "github.com/stoewer/go-strcase"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -470,9 +470,10 @@ type SourceRepositoryList struct {
 type SourceRepositorySpec struct {
 	Description string `json:"description,omitempty" protobuf:"bytes,1,opt,name=description"`
 	// Provider stores the URL of the git provider such as https://github.com
-	Provider string `json:"provider,omitempty" protobuf:"bytes,2,opt,name=provider"`
-	Org      string `json:"org,omitempty" protobuf:"bytes,3,opt,name=org"`
-	Repo     string `json:"repo,omitempty" protobuf:"bytes,4,opt,name=repo"`
+	Provider  string            `json:"provider,omitempty" protobuf:"bytes,2,opt,name=provider"`
+	Org       string            `json:"org,omitempty" protobuf:"bytes,3,opt,name=org"`
+	Repo      string            `json:"repo,omitempty" protobuf:"bytes,4,opt,name=repo"`
+	Scheduler ResourceReference `json:"repo,omitempty" protobuf:"bytes,5,opt,name=scheduler"`
 }
 
 // AppSpec provides details of the metadata for an App

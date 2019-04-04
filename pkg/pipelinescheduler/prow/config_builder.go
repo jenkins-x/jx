@@ -3,6 +3,8 @@ package prow
 import (
 	"fmt"
 
+	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+
 	"k8s.io/test-infra/prow/plugins"
 
 	"github.com/jenkins-x/jx/pkg/pipelinescheduler"
@@ -20,15 +22,15 @@ func Build(schedulers []*pipelinescheduler.SchedulerLeaf) (*config.Config, *plug
 	}
 	pluginsResult := plugins.Configuration{}
 	for _, scheduler := range schedulers {
-		err := buildJobConfig(&configResult.JobConfig, &configResult.ProwConfig, scheduler.Scheduler, scheduler.Org, scheduler.Repo)
+		err := buildJobConfig(&configResult.JobConfig, &configResult.ProwConfig, scheduler.SchedulerSpec, scheduler.Org, scheduler.Repo)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "building JobConfig for %v", scheduler)
 		}
-		err = buildProwConfig(&configResult.ProwConfig, scheduler.Scheduler)
+		err = buildProwConfig(&configResult.ProwConfig, scheduler.SchedulerSpec)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "building ProwConfig for %v", scheduler)
 		}
-		err = buildPlugins(&pluginsResult, scheduler.Scheduler, scheduler.Org, scheduler.Repo)
+		err = buildPlugins(&pluginsResult, scheduler.SchedulerSpec, scheduler.Org, scheduler.Repo)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "building Plugins for %v", scheduler)
 		}
@@ -36,7 +38,7 @@ func Build(schedulers []*pipelinescheduler.SchedulerLeaf) (*config.Config, *plug
 	return &configResult, &pluginsResult, nil
 }
 
-func buildPlugins(answer *plugins.Configuration, scheduler *pipelinescheduler.Scheduler, orgName string,
+func buildPlugins(answer *plugins.Configuration, scheduler *jenkinsv1.SchedulerSpec, orgName string,
 	repoName string) error {
 	if scheduler.Plugins != nil {
 		if answer.Plugins == nil {
@@ -95,7 +97,7 @@ func buildPlugins(answer *plugins.Configuration, scheduler *pipelinescheduler.Sc
 	return nil
 }
 
-func buildTrigger(answer *plugins.Trigger, trigger *pipelinescheduler.Trigger, orgName string, repoName string) error {
+func buildTrigger(answer *plugins.Trigger, trigger *jenkinsv1.Trigger, orgName string, repoName string) error {
 	if trigger.TrustedOrg != nil {
 		answer.TrustedOrg = *trigger.TrustedOrg
 	} else {
@@ -116,7 +118,7 @@ func buildTrigger(answer *plugins.Trigger, trigger *pipelinescheduler.Trigger, o
 	return nil
 }
 
-func buildLgtm(answer *plugins.Lgtm, lgtm *pipelinescheduler.Lgtm, orgName string, repoName string) error {
+func buildLgtm(answer *plugins.Lgtm, lgtm *jenkinsv1.Lgtm, orgName string, repoName string) error {
 	if lgtm.StickyLgtmTeam != nil {
 		answer.StickyLgtmTeam = *lgtm.StickyLgtmTeam
 	}
@@ -132,7 +134,7 @@ func buildLgtm(answer *plugins.Lgtm, lgtm *pipelinescheduler.Lgtm, orgName strin
 	return nil
 }
 
-func buildApprove(answer *plugins.Approve, approve *pipelinescheduler.Approve, orgName string, repoName string) error {
+func buildApprove(answer *plugins.Approve, approve *jenkinsv1.Approve, orgName string, repoName string) error {
 	answer.IgnoreReviewState = approve.IgnoreReviewState
 	answer.RequireSelfApproval = approve.RequireSelfApproval
 	if approve.IssueRequired != nil {
@@ -147,7 +149,7 @@ func buildApprove(answer *plugins.Approve, approve *pipelinescheduler.Approve, o
 	return nil
 }
 
-func buildExternalPlugin(answer *plugins.ExternalPlugin, plugin *pipelinescheduler.ExternalPlugin) error {
+func buildExternalPlugin(answer *plugins.ExternalPlugin, plugin *jenkinsv1.ExternalPlugin) error {
 	if plugin.Name != nil {
 		answer.Name = *plugin.Name
 	}
@@ -160,7 +162,7 @@ func buildExternalPlugin(answer *plugins.ExternalPlugin, plugin *pipelineschedul
 	return nil
 }
 
-func buildProwConfig(prowConfig *config.ProwConfig, scheduler *pipelinescheduler.Scheduler) error {
+func buildProwConfig(prowConfig *config.ProwConfig, scheduler *jenkinsv1.SchedulerSpec) error {
 	if scheduler.Policy != nil {
 		err := buildGlobalBranchProtection(&prowConfig.BranchProtection, scheduler.Policy)
 		if err != nil {
@@ -176,7 +178,7 @@ func buildProwConfig(prowConfig *config.ProwConfig, scheduler *pipelinescheduler
 	return nil
 }
 
-func buildPolicy(answer *config.Policy, policy *pipelinescheduler.ProtectionPolicy) error {
+func buildPolicy(answer *config.Policy, policy *jenkinsv1.ProtectionPolicy) error {
 	if policy.Protect != nil {
 		answer.Protect = policy.Protect
 	}
@@ -214,7 +216,7 @@ func buildPolicy(answer *config.Policy, policy *pipelinescheduler.ProtectionPoli
 }
 
 func buildBranchProtectionContextPolicy(answer *config.ContextPolicy,
-	policy *pipelinescheduler.BranchProtectionContextPolicy) error {
+	policy *jenkinsv1.BranchProtectionContextPolicy) error {
 	if policy.Contexts != nil {
 		answer.Contexts = policy.Contexts.Items
 	}
@@ -224,7 +226,7 @@ func buildBranchProtectionContextPolicy(answer *config.ContextPolicy,
 	return nil
 }
 
-func buildRequiredPullRequestReviews(answer *config.ReviewPolicy, policy *pipelinescheduler.ReviewPolicy) error {
+func buildRequiredPullRequestReviews(answer *config.ReviewPolicy, policy *jenkinsv1.ReviewPolicy) error {
 	if policy.Approvals != nil {
 		answer.Approvals = policy.Approvals
 	}
@@ -246,7 +248,7 @@ func buildRequiredPullRequestReviews(answer *config.ReviewPolicy, policy *pipeli
 	return nil
 }
 
-func buildRestrictions(answer *config.Restrictions, restrictions *pipelinescheduler.Restrictions) error {
+func buildRestrictions(answer *config.Restrictions, restrictions *jenkinsv1.Restrictions) error {
 	if restrictions.Users != nil {
 		answer.Users = restrictions.Users.Items
 	}
@@ -257,7 +259,7 @@ func buildRestrictions(answer *config.Restrictions, restrictions *pipelineschedu
 }
 
 func buildJobConfig(jobConfig *config.JobConfig, prowConfig *config.ProwConfig,
-	scheduler *pipelinescheduler.Scheduler, org string, repo string) error {
+	scheduler *jenkinsv1.SchedulerSpec, org string, repo string) error {
 	if scheduler.Postsubmits != nil && scheduler.Postsubmits.Items != nil {
 		err := buildPostsubmits(jobConfig, scheduler.Postsubmits.Items, org, repo)
 		if err != nil {
@@ -273,7 +275,7 @@ func buildJobConfig(jobConfig *config.JobConfig, prowConfig *config.ProwConfig,
 	return nil
 }
 
-func buildPostsubmits(jobConfig *config.JobConfig, items []*pipelinescheduler.Postsubmit, orgName string, repoName string) error {
+func buildPostsubmits(jobConfig *config.JobConfig, items []*jenkinsv1.Postsubmit, orgName string, repoName string) error {
 	if jobConfig.Postsubmits == nil {
 		jobConfig.Postsubmits = make(map[string][]config.Postsubmit)
 	}
@@ -311,7 +313,7 @@ func buildPostsubmits(jobConfig *config.JobConfig, items []*pipelinescheduler.Po
 }
 
 func buildPresubmits(jobConfig *config.JobConfig, prowConfig *config.ProwConfig,
-	items []*pipelinescheduler.Presubmit, orgName string, repoName string) error {
+	items []*jenkinsv1.Presubmit, orgName string, repoName string) error {
 	if jobConfig.Presubmits == nil {
 		jobConfig.Presubmits = make(map[string][]config.Presubmit)
 	}
@@ -410,7 +412,7 @@ func buildPresubmits(jobConfig *config.JobConfig, prowConfig *config.ProwConfig,
 }
 
 func buildGlobalBranchProtection(answer *config.BranchProtection,
-	globalProtectionPolicy *pipelinescheduler.GlobalProtectionPolicy) error {
+	globalProtectionPolicy *jenkinsv1.GlobalProtectionPolicy) error {
 	if globalProtectionPolicy.ProtectTested != nil {
 		answer.ProtectTested = *globalProtectionPolicy.ProtectTested
 	}
@@ -424,7 +426,7 @@ func buildGlobalBranchProtection(answer *config.BranchProtection,
 }
 
 func buildBranchProtection(answer *config.BranchProtection,
-	protectionPolicy *pipelinescheduler.ProtectionPolicy, orgName string, repoName string, branchName string) error {
+	protectionPolicy *jenkinsv1.ProtectionPolicy, orgName string, repoName string, branchName string) error {
 	policy := config.Policy{}
 	err := buildPolicy(&policy, protectionPolicy)
 	if err != nil {
@@ -475,7 +477,7 @@ func orgSlashRepo(org string, repo string) string {
 	return fmt.Sprintf("%s/%s", org, repo)
 }
 
-func buildJobBase(answer *config.JobBase, jobBase *pipelinescheduler.JobBase) error {
+func buildJobBase(answer *config.JobBase, jobBase *jenkinsv1.JobBase) error {
 	if jobBase.Agent != nil {
 		answer.Agent = *jobBase.Agent
 	}
@@ -497,7 +499,7 @@ func buildJobBase(answer *config.JobBase, jobBase *pipelinescheduler.JobBase) er
 	return nil
 }
 
-func buildBrancher(answer *config.Brancher, brancher *pipelinescheduler.Brancher) error {
+func buildBrancher(answer *config.Brancher, brancher *jenkinsv1.Brancher) error {
 	if brancher.SkipBranches != nil && brancher.SkipBranches.Items != nil {
 		answer.SkipBranches = brancher.SkipBranches.Items
 	}
@@ -508,14 +510,14 @@ func buildBrancher(answer *config.Brancher, brancher *pipelinescheduler.Brancher
 }
 
 func buildRegexChangeMatacher(answer *config.RegexpChangeMatcher,
-	matcher *pipelinescheduler.RegexpChangeMatcher) error {
+	matcher *jenkinsv1.RegexpChangeMatcher) error {
 	if matcher.RunIfChanged != nil {
 		answer.RunIfChanged = *matcher.RunIfChanged
 	}
 	return nil
 }
 
-func buildMerger(answer *config.Tide, merger *pipelinescheduler.Merger) error {
+func buildMerger(answer *config.Tide, merger *jenkinsv1.Merger) error {
 	if merger.SyncPeriod != nil {
 		answer.SyncPeriod = *merger.SyncPeriod
 	}
@@ -547,7 +549,7 @@ func buildMerger(answer *config.Tide, merger *pipelinescheduler.Merger) error {
 }
 
 func buildRepoContextPolicy(answer *config.TideRepoContextPolicy,
-	repoContextPolicy *pipelinescheduler.RepoContextPolicy) error {
+	repoContextPolicy *jenkinsv1.RepoContextPolicy) error {
 	err := buildContextPolicy(&answer.TideContextPolicy, repoContextPolicy.ContextPolicy)
 	if err != nil {
 		return errors.Wrapf(err, "building ContextPolicy for %v", repoContextPolicy)
@@ -566,7 +568,7 @@ func buildRepoContextPolicy(answer *config.TideRepoContextPolicy,
 }
 
 func buildContextPolicy(answer *config.TideContextPolicy,
-	contextOptions *pipelinescheduler.ContextPolicy) error {
+	contextOptions *jenkinsv1.ContextPolicy) error {
 	if contextOptions.SkipUnknownContexts != nil {
 		answer.SkipUnknownContexts = contextOptions.SkipUnknownContexts
 	}
@@ -585,7 +587,7 @@ func buildContextPolicy(answer *config.TideContextPolicy,
 	return nil
 }
 
-func buildQuery(answer *config.Tide, query *pipelinescheduler.Query, org string, repo string) error {
+func buildQuery(answer *config.Tide, query *jenkinsv1.Query, org string, repo string) error {
 	if answer.Queries == nil {
 		answer.Queries = config.TideQueries{}
 	}
