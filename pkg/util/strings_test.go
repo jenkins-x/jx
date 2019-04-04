@@ -1,6 +1,8 @@
 package util_test
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/util"
@@ -52,4 +54,30 @@ func TestRemoveStringFromSlice_NotAMember(t *testing.T) {
 func assertStringIndices(t *testing.T, text string, sep string, expected []int) {
 	actual := util.StringIndexes(text, sep)
 	assert.Equal(t, expected, actual, "Failed to evaluate StringIndices(%s, %s)", text, sep)
+}
+
+func TestDiffSlices(t *testing.T) {
+	// no inserts or deletes
+	assertDiffSlice(t, []string{"a", "b", "c"}, []string{"a", "b", "c"}, []string{}, []string{})
+
+	// all inserts no deletes
+	assertDiffSlice(t, []string{}, []string{"a", "b", "c"}, []string{}, []string{"a", "b", "c"})
+
+	// no inserts all deletes
+	assertDiffSlice(t, []string{"a", "b", "c"}, []string{}, []string{"a", "b", "c"}, []string{})
+
+	// all inserts and all deletes
+	assertDiffSlice(t, []string{"a", "b", "c"}, []string{"d", "e", "f"}, []string{"a", "b", "c"}, []string{"d", "e", "f"})
+
+	// remove single in the middle
+	assertDiffSlice(t, []string{"a", "b", "c"}, []string{"b"}, []string{"a", "c"}, []string{})
+
+	// replace single in the middle
+	assertDiffSlice(t, []string{"a", "b", "c"}, []string{"a", "x", "c"}, []string{"b"}, []string{"x"})
+}
+
+func assertDiffSlice(t *testing.T, originalSlice, newSlice, removed, added []string) {
+	toDelete, toInsert := util.DiffSlices(originalSlice, newSlice)
+	assert.Equal(t, toDelete, removed, fmt.Sprintf("removal incorrect - original [%s] new [%s]", strings.Join(originalSlice, ", "), strings.Join(newSlice, ", ")))
+	assert.Equal(t, toInsert, added, fmt.Sprintf("insert incorrect - original [%s] new [%s]", strings.Join(originalSlice, ", "), strings.Join(newSlice, ", ")))
 }

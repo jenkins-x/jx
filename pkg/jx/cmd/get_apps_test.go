@@ -29,6 +29,7 @@ import (
 )
 
 func TestGetAppsGitops(t *testing.T) {
+	tests.SkipForWindows(t, "NewTerminal() does not work on windows")
 	pegomock.RegisterMockTestingT(t)
 	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
 	namespace := ""
@@ -91,6 +92,7 @@ func TestGetAppsGitops(t *testing.T) {
 }
 
 func TestGetApps(t *testing.T) {
+	tests.SkipForWindows(t, "NewTerminal() does not work on windows")
 	pegomock.RegisterMockTestingT(t)
 	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
 	namespace := "jx-testing"
@@ -236,6 +238,7 @@ func TestGetAppsWithErrorGettingStatusWithOutput(t *testing.T) {
 }
 
 func TestGetApp(t *testing.T) {
+	tests.SkipForWindows(t, "NewTerminal() does not work on windows")
 	pegomock.RegisterMockTestingT(t)
 	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
 	namespace := "jx-testing"
@@ -623,6 +626,7 @@ func TestGetAppsResourcesStatusRawFormat(t *testing.T) {
 }
 
 func TestGetAppNotFound(t *testing.T) {
+	tests.SkipForWindows(t, "NewTerminal() does not work on windows")
 	pegomock.RegisterMockTestingT(t)
 	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
 	namespace := "jx-testing"

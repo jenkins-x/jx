@@ -176,7 +176,7 @@ func DiffSlices(oldSlice []string, newSlice []string) ([]string, []string) {
 
 	for _, name := range oldSlice {
 		if StringArrayIndex(newSlice, name) < 0 {
-			toDelete = append(toInsert, name)
+			toDelete = append(toDelete, name)
 		}
 	}
 	for _, name := range newSlice {
