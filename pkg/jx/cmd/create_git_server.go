@@ -1,11 +1,10 @@
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -91,7 +90,7 @@ func (o *CreateGitServerOptions) Run() error {
 			if serviceName != "" {
 				url, err := o.findService(serviceName)
 				if err != nil {
-					return fmt.Errorf("Failed to find %s Git service %s: %s", kind, serviceName, err)
+					return errors.Wrapf(err, "Failed to find %s Git service %s", kind, serviceName)
 				}
 				gitUrl = url
 			}
@@ -103,14 +102,14 @@ func (o *CreateGitServerOptions) Run() error {
 
 	authConfigSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create CreateGitAuthConfigService")
 	}
 	config := authConfigSvc.Config()
 	server := config.GetOrCreateServerName(gitUrl, name, kind)
 	config.CurrentServer = gitUrl
 	err = authConfigSvc.SaveConfig()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to save GitAuthConfigService")
 	}
 	log.Infof("Added Git server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
 
