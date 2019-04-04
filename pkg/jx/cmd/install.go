@@ -2024,7 +2024,7 @@ func (options *InstallOptions) configureKaniko() error {
 		}
 		defer os.RemoveAll(serviceAccountDir)
 
-		serviceAccountName := fmt.Sprintf("jx-%s-kaniko", options.installValues[kube.ClusterName])
+		serviceAccountName := kube.ToValidNameTruncated(fmt.Sprintf("jxkankio-%s", options.installValues[kube.ClusterName]), 30)
 		projectID := options.installValues[kube.ProjectID]
 
 		log.Infof("Configuring Kaniko service account %s for project %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
