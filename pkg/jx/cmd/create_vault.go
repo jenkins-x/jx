@@ -245,6 +245,12 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 		o.GKEZone = zone
 	}
 
+	log.Infof("Enssure KMS API is enabled\n")
+	err = gke.EnableAPIs(o.GKEProjectID, "cloudkms")
+	if err != nil {
+		return errors.Wrap(err, "unable to enable 'cloudkms' API")
+	}
+
 	log.Infof("Creating GCP service account for Vault backend\n")
 	gcpServiceAccountSecretName, err := gkevault.CreateGCPServiceAccount(kubeClient, vaultName, o.Namespace, clusterName, o.GKEProjectID)
 	if err != nil {
