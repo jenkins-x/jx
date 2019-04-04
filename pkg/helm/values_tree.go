@@ -20,7 +20,7 @@ var DefaultValuesTreeIgnores = []string{
 	"templates/*",
 }
 
-//GenerateValues will generate a values.yaml file in dir. It scans all subdirectories for values.yaml files,
+// GenerateValues will generate a values.yaml file in dir. It scans all subdirectories for values.yaml files,
 // and merges them into the values.yaml in the root directory,
 // creating a nested key structure that matches the directory structure.
 // Any keys used that match files with the same name in the directory (
