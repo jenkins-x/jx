@@ -27,7 +27,7 @@ GO_DEPENDENCIES := cmd/*/*.go cmd/*/*/*.go pkg/*/*.go pkg/*/*/*.go pkg/*//*/*/*.
 
 BRANCH     := $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null  || echo 'unknown')
 BUILD_DATE := $(shell date +%Y%m%d-%H:%M:%S)
-PEGOMOCK_SHA := $(shell go mod graph | grep pegomock | sed -n -e 's/^.*-//p')
+PEGOMOCK_SHA := $(shell $(GO) mod graph | grep pegomock | sed -n -e 's/^.*-//p')
 GITHUB_ACCESS_TOKEN := $(shell cat /builder/home/git-token 2> /dev/null)
 PEGOMOCK_PACKAGE := github.com/petergtz/pegomock/
 CGO_ENABLED = 0

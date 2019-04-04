@@ -719,6 +719,28 @@ func NewFakeProvider(repositories ...*FakeRepository) *FakeProvider {
 	}
 	return provider
 }
-func (p *FakeProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
-	return nil, fmt.Errorf("Listing commits not supported on fake")
+
+// ListCommits returns the list of commits in the master brach only (TODO: read opt param to apply to other branches)
+func (f *FakeProvider) ListCommits(owner, name string, opt *ListCommitsArguments) ([]*GitCommit, error) {
+	repos, ok := f.Repositories[owner]
+	if !ok {
+		return nil, fmt.Errorf("organization '%s' not found", owner)
+	}
+	var repo *FakeRepository
+	for _, r := range repos {
+		if r.GitRepo.Name == name {
+			repo = r
+			break
+		}
+	}
+	if repo == nil {
+		return nil, fmt.Errorf("repository with name '%s' not found", name)
+	}
+
+	commits := []*GitCommit{}
+	for _, c := range repo.Commits {
+		commits = append(commits, c.Commit)
+	}
+	return commits, nil
+
 }

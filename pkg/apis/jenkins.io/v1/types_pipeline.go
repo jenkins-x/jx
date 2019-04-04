@@ -44,15 +44,17 @@ type PipelineActivitySpec struct {
 	GitRepository      string                 `json:"gitRepository,omitempty" protobuf:"bytes,11,opt,name=gitRepository"`
 	GitOwner           string                 `json:"gitOwner,omitempty" protobuf:"bytes,12,opt,name=gitOwner"`
 	GitBranch          string                 `json:"gitBranch,omitempty" protobuf:"bytes,13,opt,name=gitBranch"`
-	ReleaseNotesURL    string                 `json:"releaseNotesURL,omitempty" protobuf:"bytes,14,opt,name=releaseNotesURL"`
-	LastCommitSHA      string                 `json:"lastCommitSHA,omitempty" protobuf:"bytes,15,opt,name=lastCommitSHA"`
-	LastCommitMessage  string                 `json:"lastCommitMessage,omitempty" protobuf:"bytes,16,opt,name=lastCommitMessage"`
-	LastCommitURL      string                 `json:"lastCommitURL,omitempty" protobuf:"bytes,17,opt,name=lastCommitURL"`
-	Workflow           string                 `json:"workflow,omitempty" protobuf:"bytes,18,opt,name=workflow"`
-	WorkflowStatus     ActivityStatusType     `json:"workflowStatus,omitempty" protobuf:"bytes,19,opt,name=workflowStatus"`
-	WorkflowMessage    string                 `json:"workflowMessage,omitempty" protobuf:"bytes,20,opt,name=workflowMessage"`
-	PostExtensions     []ExtensionExecution   `json:"postExtensions,omitempty" protobuf:"bytes,21,opt,name=postExtensions"`
-	Attachments        []Attachment           `json:"attachments,omitempty" protobuf:"bytes,22,opt,name=attachments"`
+	Author             string                 `json:"author,omitempty" protobuf:"bytes,14,opt,name=author"`
+	PullTitle          string                 `json:"pullTitle,omitempty" protobuf:"bytes,15,opt,name=pullTitle"`
+	ReleaseNotesURL    string                 `json:"releaseNotesURL,omitempty" protobuf:"bytes,16,opt,name=releaseNotesURL"`
+	LastCommitSHA      string                 `json:"lastCommitSHA,omitempty" protobuf:"bytes,17,opt,name=lastCommitSHA"`
+	LastCommitMessage  string                 `json:"lastCommitMessage,omitempty" protobuf:"bytes,18,opt,name=lastCommitMessage"`
+	LastCommitURL      string                 `json:"lastCommitURL,omitempty" protobuf:"bytes,19,opt,name=lastCommitURL"`
+	Workflow           string                 `json:"workflow,omitempty" protobuf:"bytes,20,opt,name=workflow"`
+	WorkflowStatus     ActivityStatusType     `json:"workflowStatus,omitempty" protobuf:"bytes,21,opt,name=workflowStatus"`
+	WorkflowMessage    string                 `json:"workflowMessage,omitempty" protobuf:"bytes,22,opt,name=workflowMessage"`
+	PostExtensions     []ExtensionExecution   `json:"postExtensions,omitempty" protobuf:"bytes,23,opt,name=postExtensions"`
+	Attachments        []Attachment           `json:"attachments,omitempty" protobuf:"bytes,24,opt,name=attachments"`
 }
 
 // PipelineActivityStep represents a step in a pipeline activity

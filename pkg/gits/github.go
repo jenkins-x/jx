@@ -1195,6 +1195,7 @@ func asText(text *string) string {
 }
 func (p *GitHubProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
 	githubOpt := &github.CommitsListOptions{
+		SHA:  opt.SHA,
 		Path: opt.Path,
 		ListOptions: github.ListOptions{
 			Page:    opt.Page,
@@ -1210,9 +1211,12 @@ func (p *GitHubProvider) ListCommits(owner, repo string, opt *ListCommitsArgumen
 	if len(githubCommits) > 0 {
 		for i := 0; i < len(githubCommits); i++ {
 			commits = append(commits, &GitCommit{
-				SHA:     *githubCommits[0].SHA,
-				Message: *githubCommits[0].Commit.Message,
-				URL:     *githubCommits[0].Commit.URL,
+				SHA:     *githubCommits[i].SHA,
+				Message: *githubCommits[i].Commit.Message,
+				URL:     *githubCommits[i].Commit.URL,
+				Author: &GitUser{
+					Login: *githubCommits[i].Author.Login,
+				},
 			})
 		}
 	}

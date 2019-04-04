@@ -1,7 +1,9 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/gits"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -39,6 +41,9 @@ type ControllerBuildOptions struct {
 	InitGitCredentials bool
 
 	EnvironmentCache *kube.EnvironmentNamespaceCache
+
+	// private fields added for easier testing
+	gitHubProvider gits.GitProvider
 }
 
 // NewCmdControllerBuild creates a command object for the generic "get" action, which
@@ -310,6 +315,7 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 	if buildInfo.GitURL == "" || buildInfo.GitInfo == nil {
 		return nil
 	}
+
 	return &kube.PromoteStepActivityKey{
 		PipelineActivityKey: kube.PipelineActivityKey{
 			Name:              buildInfo.Name,
@@ -321,6 +327,92 @@ func (o *ControllerBuildOptions) createPromoteStepActivityKey(buildName string, 
 			GitInfo:           buildInfo.GitInfo,
 		},
 	}
+}
+
+// completeBuildSourceInfo sets the PR author and PR title from GitHub in the given PA
+// If the PA is a branch build it then sets the commit author and last commit message
+func (o *ControllerBuildOptions) completeBuildSourceInfo(activity *v1.PipelineActivity) error {
+
+	log.Infof("[BuildInfo] Completing build info for PipelineActivity=%s\n", activity.Name)
+
+	gitInfo, err := gits.ParseGitURL(activity.Spec.GitURL)
+	if err != nil {
+		return err
+	}
+	if !gitInfo.IsGitHub() {
+		// this is GH only for now
+		return nil
+	}
+	if activity.Spec.Author != "" {
+		// info already set, save some GH requests
+		return nil
+	}
+
+	secrets, err := o.LoadPipelineSecrets(kube.ValueKindGit, "github")
+	if err != nil {
+		return err
+	}
+
+	// get a github API client
+	provider, err := o.getGithubProvider(secrets, gitInfo)
+	if err != nil {
+		return err
+	}
+
+	// extract (org, repo, commit) or (org, repo, #PR) from key
+	if strings.HasPrefix(strings.ToUpper(activity.Spec.GitBranch), "PR-") {
+		// this is a PR build
+		n := strings.Replace(strings.ToUpper(activity.Spec.GitBranch), "PR-", "", -1)
+		prNumber, err := strconv.Atoi(n)
+		if err != nil {
+			return err
+		}
+		pr, e := provider.GetPullRequest(gitInfo.Organisation, gitInfo, prNumber)
+		if e != nil {
+			return err
+		}
+		if pr.Author != nil {
+			activity.Spec.Author = pr.Author.Login
+		}
+		activity.Spec.PullTitle = pr.Title
+		log.Infof("[BuildInfo] PipelineActivity set with author=%s and PR title=%s\n", activity.Spec.Author, activity.Spec.PullTitle)
+	} else {
+		// this is a branch build
+		gitCommits, e := provider.ListCommits(gitInfo.Organisation, gitInfo.Name, &gits.ListCommitsArguments{
+			SHA:     activity.Spec.GitBranch,
+			Page:    1,
+			PerPage: 1,
+		})
+		if e != nil {
+			return e
+		}
+		if len(gitCommits) > 0 {
+			if gitCommits[0] != nil && gitCommits[0].Author != nil {
+				activity.Spec.Author = gitCommits[0].Author.Login
+				activity.Spec.LastCommitMessage = gitCommits[0].Message
+			}
+		}
+		log.Infof("[BuildInfo] PipelineActicity set with author=%s and last message\n", activity.Spec.Author)
+	}
+	return nil
+}
+
+func (o *ControllerBuildOptions) getGithubProvider(secrets *corev1.SecretList, gitInfo *gits.GitRepository) (gits.GitProvider, error) {
+	// this internal provider is only used during tests
+	if o.gitHubProvider != nil {
+		return o.gitHubProvider, nil
+	}
+
+	// production code always goes this way
+	server, userAuth, err := o.getPipelineGitAuth()
+	if err != nil {
+		return nil, err
+	}
+	gitProvider, err := gits.CreateProvider(server, userAuth, nil)
+	if err != nil {
+		return nil, err
+	}
+	return gitProvider, nil
 }
 
 // createPromoteStepActivityKeyFromRun deduces the pipeline metadata from the pipeline run info
@@ -480,6 +572,13 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 			spec.Status = v1.ActivityStatusTypeRunning
 		} else {
 			spec.Status = v1.ActivityStatusTypePending
+		}
+	}
+
+	if spec.Author == "" {
+		err := o.completeBuildSourceInfo(activity)
+		if err != nil {
+			log.Warnf("Error completing build information: %s", err)
 		}
 	}
 
