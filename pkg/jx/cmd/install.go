@@ -82,6 +82,7 @@ type InstallFlags struct {
 	ExposeControllerURLTemplate string
 	ExposeControllerPathMode    string
 	DockerRegistry              string
+	DockerRegistryOrg           string
 	Provider                    string
 	VersionsRepository          string
 	Version                     string
@@ -340,6 +341,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.HelmTLS, "helm-tls", "", false, "Whether to use TLS with helm")
 	cmd.Flags().BoolVarP(&flags.InstallOnly, "install-only", "", false, "Force the install command to fail if there is already an installation. Otherwise lets update the installation")
 	cmd.Flags().StringVarP(&flags.DockerRegistry, "docker-registry", "", "", "The Docker Registry host or host:port which is used when tagging and pushing images. If not specified it defaults to the internal registry unless there is a better provider default (e.g. ECR on AWS/EKS)")
+	cmd.Flags().StringVarP(&flags.DockerRegistryOrg, "docker-registry-org", "", "", "The Docker Registry organiation/user to create images inside. On GCP this is typically your Google Project ID.")
 	cmd.Flags().StringVarP(&flags.ExposeControllerURLTemplate, "exposecontroller-urltemplate", "", "", "The ExposeController urltemplate for how services should be exposed as URLs. Defaults to being empty, which in turn defaults to \"{{.Service}}.{{.Namespace}}.{{.Domain}}\".")
 	cmd.Flags().StringVarP(&flags.ExposeControllerPathMode, "exposecontroller-pathmode", "", "", "The ExposeController path mode for how services should be exposed as URLs. Defaults to using subnets. Use a value of `path` to use relative paths within the domain host such as when using AWS ELB host names")
 	cmd.Flags().StringVarP(&flags.Version, "version", "", "", "The specific platform version to install")
@@ -2866,6 +2868,10 @@ func (options *InstallOptions) configureTeamSettings() error {
 		if initOpts.Flags.NoTiller {
 			env.Spec.TeamSettings.HelmTemplate = true
 			log.Info("Enabling helm template mode in the TeamSettings\n")
+		}
+		if options.Flags.DockerRegistryOrg != "" {
+			env.Spec.TeamSettings.DockerRegistryOrg = options.Flags.DockerRegistryOrg
+			log.Infof("Setting the docker registry organisation to %s in the TeamSettings\n", env.Spec.TeamSettings.DockerRegistryOrg)
 		}
 		return nil
 	}

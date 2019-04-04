@@ -257,6 +257,18 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		o.InstallOptions.Flags.Kaniko = true
 	}
 
+	if o.InstallOptions.Flags.NextGeneration || o.InstallOptions.Flags.Tekton || o.InstallOptions.Flags.Kaniko {
+		// lets default the docker registry to GCR
+		if o.InstallOptions.Flags.DockerRegistry == "" {
+			o.InstallOptions.Flags.DockerRegistry = "gcr.io"
+		}
+
+		// lets default the docker registry org to the project id
+		if o.InstallOptions.Flags.DockerRegistryOrg == "" {
+			o.InstallOptions.Flags.DockerRegistryOrg = projectId
+		}
+	}
+
 	if !o.BatchMode {
 		// if scopes is empty &
 		if len(o.Flags.Scopes) == 0 && !o.Flags.EnhancedScopes {
