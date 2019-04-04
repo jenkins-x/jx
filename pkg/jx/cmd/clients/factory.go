@@ -8,11 +8,10 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"runtime/debug"
 
 	"github.com/jenkins-x/jx/pkg/builds"
 
-	"github.com/jenkins-x/golang-jenkins"
+	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/vault"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
@@ -421,32 +420,28 @@ func (f *factory) CreateSystemVaultClient(namespace string) (vault.Client, error
 	return f.CreateVaultClient(name, namespace)
 }
 
+// getVaultName gets the vault name from install configuration or builds a new name from
+// cluster name
 func (f *factory) getVaultName(namespace string) (string, error) {
-	// if we cannot load the cluster name from the kube context lets try load the cluster name from the install values
 	kubeClient, _, err := f.CreateKubeClient()
 	if err != nil {
 		return "", err
 	}
-	data, err := kube.ReadInstallValues(kubeClient, namespace)
-	if err != nil {
-		log.Warnf("cannot find vault name as no ConfigMap %s in dev namespace %s", kube.ConfigMapNameJXInstallConfig, namespace)
-	}
-	name := ""
-	if data != nil {
+	var name string
+	if data, err := kube.ReadInstallValues(kubeClient, namespace); err == nil && data != nil {
 		name = data[kube.SystemVaultName]
 		if name == "" {
-			log.Warnf("ConfigMap %s in dev namespace %s does not have key %s", kube.ConfigMapNameJXInstallConfig, namespace, kube.SystemVaultName)
-
 			clusterName := data[kube.ClusterName]
 			if clusterName != "" {
 				name = kubevault.SystemVaultNameForCluster(clusterName)
 			}
 		}
 	}
+
 	if name == "" {
 		name, err = kubevault.SystemVaultName(f.kubeConfig)
-		if err != nil {
-			return name, fmt.Errorf("could not find the system vault namein namespace %s", namespace)
+		if err != nil || name == "" {
+			return name, fmt.Errorf("could not find the system vault name in namespace %q", namespace)
 		}
 	}
 	return name, nil
@@ -456,11 +451,15 @@ func (f *factory) getVaultName(namespace string) (string, error) {
 // Will use default values for name and namespace if nil values are applied
 func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client, error) {
 	vopClient, err := f.CreateVaultOperatorClient()
+	if err != nil {
+		return nil, errors.Wrap(err, "creating the vault operator client")
+	}
 	kubeClient, defaultNamespace, err := f.CreateKubeClient()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "creating the kube client")
 	}
-	// Use defaults if nothing is specified by the user
+
+	// Use the dev namespace from default namespace if nothing is specified by the user
 	if namespace == "" {
 		devNamespace, _, err := kube.GetDevNamespace(kubeClient, defaultNamespace)
 		if err != nil {
@@ -469,31 +468,17 @@ func (f *factory) CreateVaultClient(name string, namespace string) (vault.Client
 		}
 		namespace = devNamespace
 	}
+
+	// Get the system vault name from configuration if nothing is specified by the user
 	if name == "" {
 		name, err = f.getVaultName(namespace)
-		if err != nil {
-			return nil, err
+		if err != nil || name == "" {
+			return nil, errors.Wrap(err, "reading the vault name from configuration")
 		}
 	}
 
 	if !kubevault.FindVault(vopClient, name, namespace) {
-		name2, err2 := f.getVaultName(namespace)
-		if err2 != nil {
-			return nil, errors.Wrapf(err, "no '%s' vault found in namespace '%s' and could not find vault name", name, namespace)
-		}
-
-		if name2 != name {
-			log.Warnf("was using wrong vault name %s which should be %s\n", name, name2)
-			debug.PrintStack()
-
-			name = name2
-			if !kubevault.FindVault(vopClient, name, namespace) {
-				return nil, fmt.Errorf("no '%s' vault found in namespace '%s'", name, namespace)
-			}
-		} else {
-			debug.PrintStack()
-			return nil, fmt.Errorf("no '%s' vault found in namespace '%s' despite it being the vault name from jx-install-config ConfigMap", name, namespace)
-		}
+		return nil, fmt.Errorf("no %q vault found in namespace %q", name, namespace)
 	}
 
 	clientFactory, err := kubevault.NewVaultClientFactory(kubeClient, vopClient, namespace)
