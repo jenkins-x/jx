@@ -212,7 +212,10 @@ func ModifyChartFiles(dir string, details *PullRequestDetails, modifyFn ModifyCh
 		return err
 	}
 
-	err = modifyFn(requirements, chart, values, templates, dir, details)
+	// lets pass in the folder containing the `Chart.yaml` which is the `env` dir in GitOps management
+	chartDir, _ := filepath.Split(chartFile)
+
+	err = modifyFn(requirements, chart, values, templates, chartDir, details)
 	if err != nil {
 		return err
 	}
