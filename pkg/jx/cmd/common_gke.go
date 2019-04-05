@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -122,4 +123,9 @@ func (o *CommonOptions) getGoogleRegionWithDefault(projectId string, defaultRegi
 		return "", err
 	}
 	return region, nil
+}
+
+// getGKEClusterNameFromContext returns the GKE cluster name from current Kubernetes context
+func (o *CommonOptions) getGKEClusterNameFromContext() (string, error) {
+	return cluster.ShortName(o.kuber)
 }

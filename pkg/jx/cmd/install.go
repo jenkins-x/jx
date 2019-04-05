@@ -24,10 +24,10 @@ import (
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/jenkins-x/jx/pkg/addon"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -2024,8 +2024,34 @@ func (options *InstallOptions) configureKaniko() error {
 		}
 		defer os.RemoveAll(serviceAccountDir)
 
-		serviceAccountName := kube.ToValidNameTruncated(fmt.Sprintf("jxkankio-%s", options.installValues[kube.ClusterName]), 30)
+		clusterName := options.installValues[kube.ClusterName]
 		projectID := options.installValues[kube.ProjectID]
+		if projectID == "" || clusterName == "" {
+			if kubeClient, ns, err := options.KubeClientAndDevNamespace(); err == nil {
+				if data, err := kube.ReadInstallValues(kubeClient, ns); err == nil && data != nil {
+					if projectID == "" {
+						projectID = data[kube.ProjectID]
+					}
+					if clusterName == "" {
+						clusterName = data[kube.ClusterName]
+					}
+				}
+			}
+		}
+		if projectID == "" {
+			projectID, err = options.getGoogleProjectId()
+			if err != nil {
+				return errors.Wrap(err, "getting the GCP project ID")
+			}
+		}
+		if clusterName == "" {
+			clusterName, err = options.getGKEClusterNameFromContext()
+			if err != nil {
+				return errors.Wrap(err, "gettting the GKE cluster name from current context")
+			}
+		}
+
+		serviceAccountName := kube.ToValidNameTruncated(fmt.Sprintf("jxkankio-%s", clusterName), 30)
 
 		log.Infof("Configuring Kaniko service account %s for project %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
 		serviceAccountPath, err := gke.GetOrCreateServiceAccount(serviceAccountName, projectID, serviceAccountDir, gke.KanikoServiceAccountRoles)
@@ -2052,12 +2078,7 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 		// Configure the vault flag if only GitOps mode is on
 		options.Flags.Vault = true
 
-		err := gke.EnableAPIs(options.installValues[kube.ProjectID], "cloudkms")
-		if err != nil {
-			return errors.Wrap(err, "unable to enable 'cloudkms' api")
-		}
-
-		err = InstallVaultOperator(options.CommonOptions, namespace)
+		err := InstallVaultOperator(options.CommonOptions, namespace)
 		if err != nil {
 			return errors.Wrap(err, "unable to install vault operator")
 		}
@@ -2072,6 +2093,7 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			AWSConfig:           options.AWSConfig,
 			RecreateVaultBucket: options.Flags.RecreateVaultBucket,
 		}
+
 		if options.installValues != nil {
 			if options.Flags.Provider == cloud.GKE {
 				if cvo.GKEProjectID == "" {
@@ -2098,6 +2120,7 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 				}
 			}
 		}
+
 		vaultOperatorClient, err := cvo.VaultOperatorClient()
 		if err != nil {
 			return err
@@ -2125,6 +2148,9 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 			log.Infof("System vault created named %s in namespace %s.\n",
 				util.ColorInfo(systemVaultName), util.ColorInfo(namespace))
 		}
+
+		// Make sure that the dev namespace wasn't overwritte
+		options.SetDevNamespace(namespace)
 
 		err = options.SetSecretsLocation(secrets.VaultLocationKind, false)
 		if err != nil {
