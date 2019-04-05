@@ -103,6 +103,7 @@ type StepCreateTaskOptions struct {
 	Results              StepCreateTaskResults
 	version              string
 	previewVersionPrefix string
+	VersionResolver      *VersionResolver
 }
 
 // StepCreateTaskResults stores the generated results
@@ -200,6 +201,12 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 	if o.Verbose {
 		log.Infof("cloning git for %s\n", o.CloneGitURL)
+	}
+	if o.VersionResolver == nil {
+		o.VersionResolver, err = o.CreateVersionResolver("")
+		if err != nil {
+			return err
+		}
 	}
 	if o.CloneGitURL != "" {
 		err = o.retry(15, time.Second*2, func() error {
@@ -989,7 +996,17 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		}
 		s.Dir = dir
 
-		steps = append(steps, o.modifyStep(s, gitInfo, pipelineConfig, templateKind, step, containerName, dir))
+		modifyStep := o.modifyStep(s, gitInfo, pipelineConfig, templateKind, step, containerName, dir)
+
+		// let allow the docker images to have no actual version which is replaced via the version stream
+		image, err := o.VersionResolver.ResolveDockerImage(modifyStep.Image)
+		if err != nil {
+			log.Warnf("failed to resolve docker image version: %s due to %s\n", modifyStep.Image, err.Error())
+		} else {
+			modifyStep.Image = image
+		}
+
+		steps = append(steps, modifyStep)
 	}
 	for _, s := range step.Steps {
 		// TODO add child prefix?

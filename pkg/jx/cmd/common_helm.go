@@ -20,7 +20,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/jenkins-x/jx/pkg/version"
 	version2 "github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -506,15 +505,6 @@ func deleteDirectory(wrkDir string) error {
 		}
 	}
 	return nil
-}
-
-// getVersionNumber returns the version number for the given kind and name or blank string if there is no locked version
-func (o *CommonOptions) getVersionNumber(kind version.VersionKind, name, repo string) (string, error) {
-	versionsDir, err := o.cloneJXVersionsRepo(repo)
-	if err != nil {
-		return "", err
-	}
-	return version.LoadStableVersionNumber(versionsDir, kind, name)
 }
 
 // deleteChart deletes the given chart

@@ -6,6 +6,16 @@ import (
 	"strings"
 )
 
+// ToValidImageName converts the given string into a valid docker image name
+func ToValidImageName(name string) string {
+	return strings.ToLower(name)
+}
+
+// ToValidImageVersion converts the given string into a valid docker image version string
+func ToValidImageVersion(version string) string {
+	return strings.Replace(version, ":", "", -1)
+}
+
 // ToValidName converts the given string into a valid Kubernetes resource name
 func ToValidName(name string) string {
 	return toValidName(name, false, math.MaxInt32)
