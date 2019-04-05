@@ -9,7 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/version"
 )
 
-// VersionResolver
+// VersionResolver resolves versions of charts, packages or docker images
 type VersionResolver struct {
 	VersionsDir string
 }
