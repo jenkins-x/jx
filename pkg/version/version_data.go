@@ -26,6 +26,9 @@ const (
 
 	// KindPackage represents a package version
 	KindPackage VersionKind = "packages"
+
+	// KindDocker represents a docker image version
+	KindDocker VersionKind = "docker"
 )
 
 var (
