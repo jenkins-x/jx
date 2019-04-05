@@ -202,7 +202,9 @@ func (o *StepCreateTaskOptions) Run() error {
 		log.Infof("cloning git for %s\n", o.CloneGitURL)
 	}
 	if o.CloneGitURL != "" {
-		err = o.cloneGitRepositoryToTempDir(o.CloneGitURL)
+		err = o.retry(15, time.Second*2, func() error {
+			return o.cloneGitRepositoryToTempDir(o.CloneGitURL)
+		})
 		if err != nil {
 			return err
 		}
