@@ -26,6 +26,9 @@ const (
 
 	// KindPackage represents a package version
 	KindPackage VersionKind = "packages"
+
+	// KindDocker represents a docker image version
+	KindDocker VersionKind = "docker"
 )
 
 var (
@@ -33,11 +36,13 @@ var (
 	Kinds = []VersionKind{
 		KindChart,
 		KindPackage,
+		KindDocker,
 	}
 	// KindStrings all the kinds as strings for validating CLI arguments
 	KindStrings = []string{
 		string(KindChart),
 		string(KindPackage),
+		string(KindDocker),
 	}
 )
 
