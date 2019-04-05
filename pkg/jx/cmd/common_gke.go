@@ -80,7 +80,7 @@ func (o *CommonOptions) getGoogleZone(projectId string) (string, error) {
 }
 
 func (o *CommonOptions) getGoogleRegion(projectId string) (string, error) {
-	return o.getGoogleRegionWithDefault(projectId, "none")
+	return o.getGoogleRegionWithDefault(projectId, "")
 }
 
 func (o *CommonOptions) getGoogleZoneWithDefault(projectId string, defaultZone string) (string, error) {
@@ -110,7 +110,7 @@ func (o *CommonOptions) getGoogleRegionWithDefault(projectId string, defaultRegi
 		return "", err
 	}
 	prompts := &survey.Select{
-		Message:  "Google Cloud Region (choose 'none' to make it zonal):",
+		Message:  "Google Cloud Region:",
 		Options:  availableRegions,
 		PageSize: 10,
 		Help:     "The compute region (e.g. us-central1) for the cluster",

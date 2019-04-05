@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -181,16 +182,46 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	region := o.Flags.Region
 	zone := o.Flags.Zone
-	if region == "" && region != "none" && zone == "" {
-		region, err = o.getGoogleRegion(projectId)
-		if err != nil {
-			return err
-		}
+
+	if o.InstallOptions.Flags.NextGeneration && region != "" {
+		return errors.New("cannot create a regional cluster with --ng")
 	}
-	if zone == "" && (region == "" || region == "none") {
-		zone, err = o.getGoogleZone(projectId)
-		if err != nil {
-			return err
+
+	if !o.BatchMode {
+		if zone == "" && region == "" {
+			clusterType := "Zonal"
+
+			if o.InstallOptions.Flags.NextGeneration {
+				log.Infof(util.ColorWarning("Defaulting to zonal cluster type as --ng is selected.\n"))
+			} else {
+				prompts := &survey.Select{
+					Message: "What type of cluster would you like to create",
+					Options: []string{"Regional", "Zonal"},
+					Help:    "A Regional cluster will create a node-pool in each zone causing it to use more resources.  Please ensure you have enough quota.",
+					Default: clusterType,
+				}
+
+				err = survey.AskOne(prompts, &clusterType, nil, surveyOpts)
+				if err != nil {
+					return err
+				}
+			}
+
+			if "Regional" == clusterType {
+				region, err = o.getGoogleRegion(projectId)
+				if err != nil {
+					return err
+				}
+			} else {
+				zone, err = o.getGoogleZone(projectId)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	} else {
+		if zone == "" && region == "" {
+			return errors.New("in batchmode, either a region or a zone must be set")
 		}
 	}
 
@@ -213,7 +244,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	minNumOfNodes := o.Flags.MinNumOfNodes
 	if minNumOfNodes == "" {
 		defaultNodes := "3"
-		if region != "" && region != "none" {
+		if region != "" {
 			defaultNodes = "1"
 		}
 		prompt := &survey.Input{
@@ -228,7 +259,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	maxNumOfNodes := o.Flags.MaxNumOfNodes
 	if maxNumOfNodes == "" {
 		defaultNodes := "5"
-		if region != "" && region != "none" {
+		if region != "" {
 			defaultNodes = "2"
 		}
 		prompt := &survey.Input{
@@ -333,7 +364,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		"--min-nodes", minNumOfNodes,
 		"--max-nodes", maxNumOfNodes}
 
-	if region != "" && region != "none" {
+	if region != "" {
 		args = append(args, "--region", region)
 	} else {
 		args = append(args, "--zone", zone)
