@@ -49,7 +49,7 @@ pipelineConfig:
                 # needs helm in the image for install_gitops_integration_test.go
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: make
-                args: ['check']
+                args: ['fail']
                 env:
                   - name: GOPATH
                     value: /workspace/go

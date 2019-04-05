@@ -60,6 +60,9 @@ all: build
 full: check
 check: build test
 
+fail:
+	exit 1
+
 print-version:
 	@echo $(VERSION)
 
