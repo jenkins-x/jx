@@ -142,6 +142,7 @@ func pointerToRandomDuration() *time.Duration {
 	return &duration
 }
 
+// PointerToReplaceableSliceOfStrings creaters a ReplaceableSliceOfStrings and returns its pointer
 func PointerToReplaceableSliceOfStrings() *pipelinescheduler.ReplaceableSliceOfStrings {
 	return &pipelinescheduler.ReplaceableSliceOfStrings{
 		Items: []string{
@@ -150,6 +151,7 @@ func PointerToReplaceableSliceOfStrings() *pipelinescheduler.ReplaceableSliceOfS
 	}
 }
 
+// PointerToReplaceableMapOfStringString creaters a ReplaceableMapOfStringString and returns its pointer
 func PointerToReplaceableMapOfStringString() *pipelinescheduler.ReplaceableMapOfStringString {
 	return &pipelinescheduler.ReplaceableMapOfStringString{
 		Items: map[string]string{
