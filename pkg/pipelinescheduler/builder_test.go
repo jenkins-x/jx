@@ -74,10 +74,6 @@ func TestBuildWithEmptyMerger(t *testing.T) {
 	assert.Equal(t, parent.Merger, merged.Merger)
 }
 
-
-/*
-	Post Submit section
- */
 func TestPostSubmitWithEmptyChildPostSubmit(t *testing.T) {
 	t.Parallel()
 	child := testhelpers.CompleteScheduler()
@@ -134,7 +130,7 @@ func TestPostSubmitWithMergedJobBaseLabels(t *testing.T) {
 		Items: []*pipelinescheduler.Postsubmit{
 			{
 				JobBase: &pipelinescheduler.JobBase{
-					Name: parent.Postsubmits.Items[0].Name,
+					Name:   parent.Postsubmits.Items[0].Name,
 					Labels: testhelpers.PointerToReplaceableMapOfStringString(),
 				},
 			},
@@ -225,10 +221,6 @@ func TestPostSubmitApplyBrancherWithAppendingChildPostSubmitBrancher(t *testing.
 	assert.Equal(t, 2, len(merged.Postsubmits.Items[0].Brancher.SkipBranches.Items))
 }
 
-/*
-	PreSubmit section
- */
-
 func TestPreSubmitWithEmptyChildPreSubmit(t *testing.T) {
 	t.Parallel()
 	child := testhelpers.CompleteScheduler()
@@ -267,12 +259,8 @@ func TestPreSubmitApplyToQueryWithEmptyChildQuery(t *testing.T) {
 				JobBase: &pipelinescheduler.JobBase{
 					Name: parent.Presubmits.Items[0].Name,
 				},
-				RegexpChangeMatcher: &pipelinescheduler.RegexpChangeMatcher{
-
-				},
-				Query: &pipelinescheduler.Query{
-
-				},
+				RegexpChangeMatcher: &pipelinescheduler.RegexpChangeMatcher{},
+				Query:               &pipelinescheduler.Query{},
 			},
 		},
 	}
@@ -299,9 +287,7 @@ func TestPreSubmitApplyToProtectionPolicyWithAppendingChildPolicy(t *testing.T) 
 				JobBase: &pipelinescheduler.JobBase{
 					Name: parent.Presubmits.Items[0].Name,
 				},
-				RegexpChangeMatcher: &pipelinescheduler.RegexpChangeMatcher{
-
-				},
+				RegexpChangeMatcher: &pipelinescheduler.RegexpChangeMatcher{},
 				Policy: &pipelinescheduler.ProtectionPolicies{
 					Items: map[string]*pipelinescheduler.ProtectionPolicy{
 						"policy1": {},
