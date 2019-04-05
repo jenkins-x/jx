@@ -1,7 +1,5 @@
 trigger:
   trustedOrg: roadrunner-corp
-  ignoreOkToTest: true
-  onlyOrgMembers: false
 approve:
   lgtmActsAsApprove: true
   ignoreReviewState: false
@@ -12,7 +10,37 @@ externalPlugins:
 schedulerAgent:
   agent: prow
 policy:
-  protectTested: true
+  enforceAdmins: true
+  protect: true
+  protectTested: false
+  requiredStatusChecks:
+    strict: true
+    contexts:
+      items:
+        - test1
+        - test2
+  restrictions:
+    users:
+      items:
+        - user1
+        - user2
+    teams:
+      items:
+        - team1
+        - team2
+  requiredPullRequestReviews:
+    dismissStaleReviews: true
+    requireCodeOwnerReviews: false
+    requiredApprovingReviewCount: 5
+    dismissalRestrictions:
+      users:
+        items:
+          - user1
+          - user2
+      teams:
+        items:
+          - team1
+          - team2
 merger:
   policy:
     fromBranchProtection: true

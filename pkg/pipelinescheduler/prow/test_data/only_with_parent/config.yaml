@@ -21,7 +21,7 @@ postsubmits:
   acme/dummy:
   - agent: tekton
     branches:
-    - 2.x
+      - master
     # TODO switch this to tekton
     #build_spec:
     #  serviceAccountName: knative-build-bot
@@ -61,6 +61,3 @@ tide:
     repos:
     - acme/dummy
   #target_url: https://tide.foo.bar
-
-triggers:
-

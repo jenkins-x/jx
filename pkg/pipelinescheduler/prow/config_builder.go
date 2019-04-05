@@ -181,7 +181,7 @@ func buildPolicy(answer *config.Policy, policy *pipelinescheduler.ProtectionPoli
 		answer.Protect = policy.Protect
 	}
 	if policy.Admins != nil {
-		answer.Admins = answer.Admins
+		answer.Admins = policy.Admins
 	}
 	if policy.RequiredStatusChecks != nil {
 		if answer.RequiredStatusChecks == nil {

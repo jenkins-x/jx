@@ -20,20 +20,15 @@ external_plugins:
 #owners: {}
 plugins:
   acme/dummy:
-  - cat
-  - config-updater
-  - approve
-  - assign
-  - blunderbuss
-  - help
-  - hold
-  - lgtm
-  - lifecycle
-  - size
-  - trigger
-  - wip
-  - heart
-  - override
+    - cat
+    - help
+    - hold
+    - lgtm
+    - lifecycle
+    - trigger
+    - wip
+    - heart
+    - override
 #requiresig: {}
 #sigmention: {}
 #slack: {}
@@ -46,3 +41,10 @@ triggers:
   ignore_ok_to_test: true
 #welcome:
 #- message_template: Welcome
+
+lgtm:
+  - review_acts_as_lgtm: true
+    store_tree_hash: true
+    trusted_team_for_sticky_lgtm: team2
+    repos:
+      - acme/dummy

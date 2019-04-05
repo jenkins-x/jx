@@ -21,7 +21,7 @@ postsubmits:
   acme/dummy:
   - agent: tekton
     branches:
-    - 2.x
+    - master
     # TODO switch this to tekton
     #build_spec:
     #  serviceAccountName: knative-build-bot
@@ -45,9 +45,22 @@ presubmits:
 #push_gateway: {}
 #sinker: {}
 tide:
+  target_url: http://targeturl
+  squash_label: squash
+  pr_status_base_url: http://fakeurl
+  blocker_label: /hold
+  max_goroutines: 10
   context_options:
+    required-contexts:
+      - context3
+      - context1
+      - context2
     from-branch-protection: true
-    required-if-present-contexts: null
+    required-if-present-contexts:
+      - context5
+      - context6
+    optional-contexts:
+      - opt1
     skip-unknown-contexts: false
   queries:
   - labels:
@@ -61,6 +74,3 @@ tide:
     repos:
     - acme/dummy
   #target_url: https://tide.foo.bar
-
-triggers:
-
