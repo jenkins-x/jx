@@ -160,6 +160,13 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 }
 
 func (o *StepCreateVersionPullRequestOptions) modifyFiles(dir string) error {
+	if version.VersionKind(o.Kind) == version.KindChart {
+		err := o.ensureHelmReposSetup(dir)
+		if err != nil {
+			return err
+		}
+	}
+
 	if o.builderImageVersion != "" {
 		err := o.modifyRegex(filepath.Join(dir, "jenkins-x-*.yml"), "gcr.io/jenkinsxio/builder-go-maven:(.+)", "gcr.io/jenkinsxio/builder-go-maven:"+o.builderImageVersion)
 		if err != nil {
@@ -282,4 +289,9 @@ func (o *StepCreateVersionPullRequestOptions) modifyRegex(globPattern string, re
 		}
 	}
 	return nil
+}
+
+func (o *StepCreateVersionPullRequestOptions) ensureHelmReposSetup(dir string) error {
+	_, err := o.helmInitDependency(dir, o.defaultReleaseCharts())
+	return errors.Wrap(err, "failed to ensure the helm repositories were setup")
 }
