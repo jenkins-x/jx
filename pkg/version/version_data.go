@@ -2,6 +2,7 @@ package version
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -108,12 +109,17 @@ func LoadStableVersionNumber(wrkDir string, kind VersionKind, name string) (stri
 }
 
 // SaveStableVersion saves the version file
-func SaveStableVersion(wrkDir string, kind VersionKind, name string, version *StableVersion) error {
-	data, err := yaml.Marshal(version)
-	if err != nil {
-		return errors.Wrapf(err, "failed to marshal data to YAML %#v", version)
-	}
+func SaveStableVersion(wrkDir string, kind VersionKind, name string, stableVersion *StableVersion) error {
 	path := filepath.Join(wrkDir, string(kind), name+".yml")
+	return SaveStableVersionFile(path, stableVersion)
+}
+
+// SaveStableVersionFile saves the stabe version to the given file name
+func SaveStableVersionFile(path string, stableVersion *StableVersion) error {
+	data, err := yaml.Marshal(stableVersion)
+	if err != nil {
+		return errors.Wrapf(err, "failed to marshal data to YAML %#v", stableVersion)
+	}
 	dir, _ := filepath.Split(path)
 	err = os.MkdirAll(dir, util.DefaultWritePermissions)
 	if err != nil {
