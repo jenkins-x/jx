@@ -409,7 +409,16 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	err = o.RunCommand("gcloud", "container", "clusters", "get-credentials", o.Flags.ClusterName, "--zone", zone, "--project", projectId)
+	getCredsCommand := []string{"container", "clusters", "get-credentials", o.Flags.ClusterName}
+    if "" != zone {
+		getCredsCommand = append(getCredsCommand, "--zone", zone)
+	} else if  "" != region {
+		getCredsCommand = append(getCredsCommand, "--region", region)
+    }
+
+	getCredsCommand = append(getCredsCommand, "--project", projectId)
+
+	err = o.RunCommand("gcloud", getCredsCommand...)
 	if err != nil {
 		return err
 	}
