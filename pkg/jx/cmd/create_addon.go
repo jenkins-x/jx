@@ -48,6 +48,7 @@ func NewCmdCreateAddon(commonOpts *CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateAddonCloudBees(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonFlagger(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonGitea(commonOpts))
+	cmd.AddCommand(NewCmdCreateAddonGloo(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonIstio(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonKnativeBuild(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonKubeless(commonOpts))
