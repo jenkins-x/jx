@@ -1,0 +1,23 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  creationTimestamp: null
+  name: abayer-golang-qs-test-master-1
+  namespace: jx
+spec:
+  params: []
+  resources:
+  - name: abayer-golang-qs-test-master
+    type: git
+  tasks:
+  - name: from-build-pack
+    resources:
+      inputs:
+      - name: workspace
+        resource: abayer-golang-qs-test-master
+      outputs:
+      - name: workspace
+        resource: abayer-golang-qs-test-master
+    taskRef:
+      name: abayer-golang-qs-test-master-from-build-pack-1
+status: {}
