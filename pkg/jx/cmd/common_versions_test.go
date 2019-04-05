@@ -29,6 +29,7 @@ func TestDockerImageGetsLabel(t *testing.T) {
 		"maven":                  "maven:1.2.3",
 		"docker.io/maven":        "maven:1.2.3",
 		"gcr.io/cheese":          "gcr.io/cheese:4.5.6",
+		"noversion":              "noversion",
 	}
 
 	for image, expected := range testData {

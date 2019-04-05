@@ -36,11 +36,13 @@ var (
 	Kinds = []VersionKind{
 		KindChart,
 		KindPackage,
+		KindDocker,
 	}
 	// KindStrings all the kinds as strings for validating CLI arguments
 	KindStrings = []string{
 		string(KindChart),
 		string(KindPackage),
+		string(KindDocker),
 	}
 )
 

@@ -1,8 +1,11 @@
 package cmd
 
 import (
+	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
 )
 
@@ -45,6 +48,8 @@ func (v *VersionResolver) ResolveDockerImage(image string) (string, error) {
 		}
 	}
 	if info.Version == "" {
+		log.Warnf("could not find a stable version of docker image: %s from %s\nFor background see: https://jenkins-x.io/architecture/version-stream/\n", image, v.VersionsDir)
+		log.Infof("Please lock this version down via the command: %s\n", util.ColorInfo(fmt.Sprintf("jx step create version pr -k docker -n %s -v 1.2.3\n", image)))
 		return image, nil
 	}
 	prefix := strings.TrimSuffix(strings.TrimSpace(image), ":")
