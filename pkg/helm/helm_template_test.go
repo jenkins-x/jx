@@ -126,6 +126,16 @@ func TestSplitObjectsInFiles(t *testing.T) {
 			want:    1,
 			wantErr: false,
 		},
+		"single object with separator and comment": {
+			file:    filepath.Join(testDir, "single_object_comment.yaml"),
+			want:    1,
+			wantErr: false,
+		},
+		"single object with separator and whitespace": {
+			file:    filepath.Join(testDir, "single_object_newlines.yaml"),
+			want:    1,
+			wantErr: false,
+		},
 		"multiple objects": {
 			file:    filepath.Join(testDir, "objects.yaml"),
 			want:    2,
