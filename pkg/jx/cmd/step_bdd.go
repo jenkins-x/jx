@@ -392,6 +392,8 @@ func (o *StepBDDOptions) runTests(gopath string) error {
 	}
 	_, err = c.RunWithoutRetry()
 
+	err = o.reportStatus(testDir, err)
+
 	o.copyReports(testDir, err)
 
 	if o.Flags.IgnoreTestFailure && err != nil {
@@ -399,6 +401,61 @@ func (o *StepBDDOptions) runTests(gopath string) error {
 		return nil
 	}
 	return err
+}
+
+// reportStatus runs a bunch of commands to report on the status of the cluster
+func (o *StepBDDOptions) reportStatus(testDir string, err error) error {
+	errs := []error{}
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	commands := []util.Command{
+		{
+			Name: "kubectl",
+			Args: []string{"get", "pods"},
+		},
+		{
+			Name: "kubectl",
+			Args: []string{"get", "env", "dev", "-oyaml"},
+		},
+		{
+			Name: "jx",
+			Args: []string{"status", "-b"},
+		},
+		{
+			Name: "jx",
+			Args: []string{"version", "-b"},
+		},
+		{
+			Name: "jx",
+			Args: []string{"get", "env", "-b"},
+		},
+		{
+			Name: "jx",
+			Args: []string{"get", "activities", "-b"},
+		},
+		{
+			Name: "jx",
+			Args: []string{"get", "application", "-b"},
+		},
+		{
+			Name: "jx",
+			Args: []string{"get", "preview", "-b"},
+		},
+	}
+
+	for _, cmd := range commands {
+		cmd.Dir = testDir
+		cmd.Out = os.Stdout
+		cmd.Err = os.Stdout
+
+		_, err = cmd.RunWithoutRetry()
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return util.CombineErrors(errs...)
 }
 
 func (o *StepBDDOptions) copyReports(testDir string, err error) error {
