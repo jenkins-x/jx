@@ -692,6 +692,13 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 		}
 	}
 
+	if spec.Author == "" {
+		err := o.completeBuildSourceInfo(activity)
+		if err != nil {
+			log.Warnf("Error completing build information: %s", err)
+		}
+	}
+
 	// lets compare YAML in case we modify arrays in place on a copy (such as the steps) and don't detect we changed things
 	newYaml := toYamlString(activity)
 	return originYaml != newYaml
