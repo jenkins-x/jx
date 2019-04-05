@@ -1,6 +1,7 @@
 package pipelinescheduler
 
 import (
+	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 )
 
@@ -25,7 +26,7 @@ func Build(schedulers []*Scheduler) (*Scheduler, error) {
 			if answer.Presubmits == nil {
 				answer.Presubmits = parent.Presubmits
 			} else if !answer.Presubmits.Replace && parent.Presubmits != nil {
-				err := applyToPresubmits(parent.Presubmits, answer.Presubmits)
+				err := applyToPreSubmits(parent.Presubmits, answer.Presubmits)
 				if err != nil {
 					return nil, errors.WithStack(err)
 				}
@@ -114,9 +115,7 @@ func applyToRegexpChangeMatcher(parent *RegexpChangeMatcher, child *RegexpChange
 }
 
 func applyToJobBase(parent *JobBase, child *JobBase) {
-	if child.Name == nil {
-		child.Name = parent.Name
-	}
+	//Not merging JobBase.name as it can't be nil
 	if child.Namespace == nil {
 		child.Namespace = parent.Namespace
 	}
@@ -137,7 +136,7 @@ func applyToJobBase(parent *JobBase, child *JobBase) {
 		}
 		// Add any labels that are missing
 		for pk, pv := range parent.Labels.Items {
-			if _, ok := parent.Labels.Items[pk]; !ok {
+			if _, ok := child.Labels.Items[pk]; !ok {
 				child.Labels.Items[pk] = pv
 			}
 		}
@@ -346,15 +345,11 @@ func applyToPostSubmits(parent *Postsubmits, child *Postsubmits) error {
 			}
 		}
 		if len(found) > 1 {
-			return errors.Errorf("more than one postsubmit with name %v in %v", parent.Name,
-				parent)
+			return errors.Errorf("more than one postsubmit with name %v in %s", *parent.Name, spew.Sdump(child))
 		} else if len(found) == 1 {
 			child := found[0]
-			if child.JobBase == nil {
-				child.JobBase = parent.JobBase
-			} else if parent.JobBase != nil {
-				applyToJobBase(parent.JobBase, child.JobBase)
-			}
+			// Neither parent's nor child's JobBase can be nil as it would've panicked earlier
+			applyToJobBase(parent.JobBase, child.JobBase)
 			if child.RegexpChangeMatcher == nil {
 				child.RegexpChangeMatcher = parent.RegexpChangeMatcher
 			} else if parent.RegexpChangeMatcher != nil {
@@ -378,7 +373,7 @@ func applyToPostSubmits(parent *Postsubmits, child *Postsubmits) error {
 	return nil
 }
 
-func applyToPresubmits(parent *Presubmits, child *Presubmits) error {
+func applyToPreSubmits(parent *Presubmits, child *Presubmits) error {
 	if child.Items == nil {
 		child.Items = make([]*Presubmit, 0)
 	}
@@ -392,17 +387,13 @@ func applyToPresubmits(parent *Presubmits, child *Presubmits) error {
 			}
 		}
 		if len(found) > 1 {
-			return errors.Errorf("more than one child with name %v in %v", parent.Name,
-				parent)
+			return errors.Errorf("more than one presubmit with name %v in %s", parent.Name, spew.Sdump(parent))
 		} else if len(found) == 1 {
 			child := found[0]
-			if child.JobBase == nil {
-				child.JobBase = parent.JobBase
-			} else if parent.JobBase != nil {
-				applyToJobBase(parent.JobBase, child.JobBase)
-			}
-			if child.RunIfChanged == nil {
-				child.RunIfChanged = parent.RunIfChanged
+			// Neither parent's nor child's JobBase can be nil as it would've panicked earlier
+			applyToJobBase(parent.JobBase, child.JobBase)
+			if child.RegexpChangeMatcher == nil {
+				child.RegexpChangeMatcher = parent.RegexpChangeMatcher
 			} else if parent.RegexpChangeMatcher != nil {
 				applyToRegexpChangeMatcher(parent.RegexpChangeMatcher, child.RegexpChangeMatcher)
 			}
