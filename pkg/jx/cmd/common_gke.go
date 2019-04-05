@@ -125,6 +125,7 @@ func (o *CommonOptions) getGoogleRegionWithDefault(projectId string, defaultRegi
 	return region, nil
 }
 
+// getGKEClusterNameFromContext returns the GKE cluster name from current Kubernetes context
 func (o *CommonOptions) getGKEClusterNameFromContext() (string, error) {
 	return cluster.ShortName(o.kuber)
 }
