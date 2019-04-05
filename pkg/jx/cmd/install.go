@@ -2149,7 +2149,7 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 				util.ColorInfo(systemVaultName), util.ColorInfo(namespace))
 		}
 
-		// Make sure that the dev namespace wasn't overwritte
+		// Make sure that the dev namespace wasn't overwritten
 		options.SetDevNamespace(namespace)
 
 		err = options.SetSecretsLocation(secrets.VaultLocationKind, false)

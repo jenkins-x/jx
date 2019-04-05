@@ -177,18 +177,18 @@ func applyToMerger(parent *Merger, child *Merger) {
 }
 
 // TODO use this
-func applyToReplaceableMapOfStringString(parent *ReplaceableMapOfStringString, child *ReplaceableMapOfStringString) {
-	if !child.Replace && parent != nil {
-		if child.Items == nil {
-			child.Items = make(map[string]string)
-		}
-		for pk, pv := range parent.Items {
-			if _, ok := child.Items[pk]; !ok {
-				child.Items[pk] = pv
-			}
-		}
-	}
-}
+//func applyToReplaceableMapOfStringString(parent *ReplaceableMapOfStringString, child *ReplaceableMapOfStringString) {
+//	if !child.Replace && parent != nil {
+//		if child.Items == nil {
+//			child.Items = make(map[string]string)
+//		}
+//		for pk, pv := range parent.Items {
+//			if _, ok := child.Items[pk]; !ok {
+//				child.Items[pk] = pv
+//			}
+//		}
+//	}
+//}
 
 func applyToReplaceableSliceOfStrings(parent *ReplaceableSliceOfStrings, child *ReplaceableSliceOfStrings) {
 	if !child.Replace && parent != nil {
@@ -265,19 +265,19 @@ func applyToExternalPlugins(parent *ReplaceableSliceOfExternalPlugins, child *Re
 	}
 }
 
-func applyToExternalPlugin(parent *ExternalPlugin, child *ExternalPlugin) {
-	if child.Name == nil {
-		child.Name = parent.Name
-	}
-	if child.Endpoint == nil {
-		child.Endpoint = parent.Endpoint
-	}
-	if child.Events == nil {
-		child.Events = parent.Events
-	} else if parent.Events != nil {
-		applyToReplaceableSliceOfStrings(parent.Events, child.Events)
-	}
-}
+//func applyToExternalPlugin(parent *ExternalPlugin, child *ExternalPlugin) {
+//	if child.Name == nil {
+//		child.Name = parent.Name
+//	}
+//	if child.Endpoint == nil {
+//		child.Endpoint = parent.Endpoint
+//	}
+//	if child.Events == nil {
+//		child.Events = parent.Events
+//	} else if parent.Events != nil {
+//		applyToReplaceableSliceOfStrings(parent.Events, child.Events)
+//	}
+//}
 
 func applyToApprove(parent *Approve, child *Approve) {
 	if child.IgnoreReviewState == nil {
