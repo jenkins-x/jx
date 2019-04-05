@@ -94,6 +94,7 @@ func NewCmdGet(commonOpts *CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdGetVault(commonOpts))
 	cmd.AddCommand(NewCmdGetSecret(commonOpts))
 	cmd.AddCommand(NewCmdGetVaultConfig(commonOpts))
+	cmd.AddCommand(NewCmdGetStream(commonOpts))
 	cmd.AddCommand(NewCmdGetPlugins(commonOpts))
 	return cmd
 }
