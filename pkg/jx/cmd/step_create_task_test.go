@@ -34,6 +34,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	t.Parallel()
 
+	testVersionsDir := path.Join("test_data", "cmmon_versions")
 	testData := path.Join("test_data", "step_create_task")
 	_, err := os.Stat(testData)
 	assert.NoError(t, err)
@@ -137,6 +138,9 @@ func TestGenerateTektonCRDs(t *testing.T) {
 					},
 				},
 				BuildNumber: "1",
+				VersionResolver: &cmd.VersionResolver{
+					VersionsDir: testVersionsDir,
+				},
 			}
 			cmd.ConfigureTestOptionsWithResources(createTask.CommonOptions, k8sObjects, jxObjects, gits_test.NewMockGitter(), fakeGitProvider, helm_test.NewMockHelmer(), nil)
 
