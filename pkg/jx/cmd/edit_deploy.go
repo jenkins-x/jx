@@ -77,7 +77,7 @@ func NewCmdEditDeployKind(commonOpts *CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVarP(&options.Team, "team", "t", false, "Edits the team default")
-	cmd.Flags().BoolVarP(&options.Kind, "kind", "k", "", "The kind to use which should be one of: %s", strings.Join(deployKinds, ", "))
+	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "", fmt.Sprintf("The kind to use which should be one of: %s", strings.Join(deployKinds, ", ")))
 
 	return cmd
 }
