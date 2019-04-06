@@ -34,11 +34,5 @@ func (c *pipelineActivities) PatchUpdate(pipelineActivity *v1.PipelineActivity) 
 		return nil, err
 	}
 
-	if c.returnPatchValue {
-		return patched, err
-	}
-
-	// lets return the latest version to ensure the resource is fully populated
-	// otherwise we can sometimes get failures later on with `resource name may not be empty`
-	return c.Get(resourceName, metav1.GetOptions{})
+	return patched, err
 }

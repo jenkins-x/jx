@@ -4,11 +4,11 @@ package v1
 
 import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned/scheme"
+	scheme "github.com/jenkins-x/jx/pkg/client/clientset/versioned/scheme"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/rest"
+	types "k8s.io/apimachinery/pkg/types"
+	watch "k8s.io/apimachinery/pkg/watch"
+	rest "k8s.io/client-go/rest"
 )
 
 // PipelineActivitiesGetter has a method to return a PipelineActivityInterface.
@@ -32,9 +32,8 @@ type PipelineActivityInterface interface {
 
 // pipelineActivities implements PipelineActivityInterface
 type pipelineActivities struct {
-	client           rest.Interface
-	ns               string
-	returnPatchValue bool
+	client rest.Interface
+	ns     string
 }
 
 // newPipelineActivities returns a PipelineActivities

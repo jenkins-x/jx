@@ -2,8 +2,8 @@
 package matchers
 
 import (
-	versioned1 "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	"github.com/petergtz/pegomock"
+	versioned1 "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	"reflect"
 )
 

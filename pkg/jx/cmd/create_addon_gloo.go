@@ -129,7 +129,12 @@ func (o *CreateAddonGlooOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to update the gloo domain")
 	}
-	return nil
+
+	eo := &EditDeployKindOptions{}
+	eo.CommonOptions = o.CommonOptions
+	eo.Team = true
+	eo.Kind = DeployKindKnative
+	return eo.Run()
 }
 
 func (o *CreateAddonGlooOptions) getGlooDomain(kubeClient kubernetes.Interface) (string, error) {
