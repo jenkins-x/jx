@@ -217,6 +217,10 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 	} else {
 		if !reflect.DeepEqual(&a.Spec, &oldSpec) || !reflect.DeepEqual(&a.Labels, &oldLabels) {
 			answer, err := activitiesClient.PatchUpdate(a)
+			if err != nil {
+				return answer, false, err
+			}
+			answer, err = activitiesClient.Get(name, metav1.GetOptions{})
 			return answer, false, err
 		}
 		return a, false, nil

@@ -95,6 +95,8 @@ func (o *CommonOptions) doInstallMissingDependencies(install []string) error {
 			err = o.installHelm()
 		case "ibmcloud":
 			err = o.installIBMCloud(false)
+		case "glooctl":
+			err = o.installGlooctl()
 		case "tiller":
 			err = o.installTiller()
 		case "helm3":
@@ -382,6 +384,41 @@ func (o *CommonOptions) installKubectlWithVersion(version string, skipPathScan b
 	})
 }
 
+func (o *CommonOptions) installGlooctl() error {
+	if runtime.GOOS == "darwin" && !o.NoBrew {
+		return o.RunCommand("brew", "install", "glooctl")
+	}
+	binDir, err := util.JXBinLocation()
+	if err != nil {
+		return err
+	}
+	fileName, flag, err := shouldInstallBinary("glooctl")
+	if err != nil || !flag {
+		return err
+	}
+
+	latestVersion, err := util.GetLatestVersionFromGitHub("solo-io", "gloo")
+	if err != nil {
+		return fmt.Errorf("unable to get latest version for github.com/%s/%s %v", "kubernetes-sigs", "kustomize", err)
+	}
+
+	suffix := runtime.GOARCH
+	if runtime.GOOS == "windows" {
+		suffix += ".exe"
+	}
+	clientURL := fmt.Sprintf("https://github.com/solo-io/gloo/releases/download/v%v/glooctl-%s-%s", latestVersion, latestVersion, suffix)
+	fullPath := filepath.Join(binDir, fileName)
+	tmpFile := fullPath + ".tmp"
+	err = packages.DownloadFile(clientURL, tmpFile)
+	if err != nil {
+		return err
+	}
+	err = util.RenameFile(tmpFile, fullPath)
+	if err != nil {
+		return err
+	}
+	return os.Chmod(fullPath, 0755)
+}
 func (o *CommonOptions) installKustomize() error {
 	if runtime.GOOS == "darwin" && !o.NoBrew {
 		return o.RunCommand("brew", "install", "kustomize")

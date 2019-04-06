@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -160,10 +161,23 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 }
 
 func (o *StepCreateVersionPullRequestOptions) modifyFiles(dir string) error {
+	if version.VersionKind(o.Kind) == version.KindChart {
+		err := o.ensureHelmReposSetup(dir)
+		if err != nil {
+			return err
+		}
+	}
+
 	if o.builderImageVersion != "" {
 		err := o.modifyRegex(filepath.Join(dir, "jenkins-x-*.yml"), "gcr.io/jenkinsxio/builder-go-maven:(.+)", "gcr.io/jenkinsxio/builder-go-maven:"+o.builderImageVersion)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "modifying the BDD test version YAMLs")
+		}
+
+		pattern := filepath.Join(dir, string(version.KindDocker), "gcr.io", "jenkinsxio", "builder-*.yml")
+		err = o.modifyVersionYamlFiles(pattern, o.builderImageVersion, "builder-base.yml")
+		if err != nil {
+			return errors.Wrap(err, "modifying the builder image versions")
 		}
 	}
 	if len(o.Includes) > 0 {
@@ -214,6 +228,33 @@ func (o *StepCreateVersionPullRequestOptions) findLatestChartVersions(dir string
 
 	err := version.ForEachKindVersion(dir, version.VersionKind(o.Kind), callback)
 	return err
+}
+
+func (o *StepCreateVersionPullRequestOptions) modifyVersionYamlFiles(globPattern string, newVersion string, excludeFiles ...string) error {
+	files, err := filepath.Glob(globPattern)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create glob from pattern %s", globPattern)
+	}
+
+	for _, path := range files {
+		_, name := filepath.Split(path)
+		if util.StringArrayIndex(excludeFiles, name) >= 0 {
+			continue
+		}
+		data, err := version.LoadStableVersionFile(path)
+		if err != nil {
+			return errors.Wrapf(err, "failed to load version info for %s", path)
+		}
+		if data.Version == "" || data.Version == o.Version {
+			continue
+		}
+		data.Version = newVersion
+		err = version.SaveStableVersionFile(path, data)
+		if err != nil {
+			return errors.Wrapf(err, "failed to save version info for %s", path)
+		}
+	}
+	return nil
 }
 
 func (o *StepCreateVersionPullRequestOptions) findLatestChartVersion(name string) (string, error) {
@@ -282,4 +323,9 @@ func (o *StepCreateVersionPullRequestOptions) modifyRegex(globPattern string, re
 		}
 	}
 	return nil
+}
+
+func (o *StepCreateVersionPullRequestOptions) ensureHelmReposSetup(dir string) error {
+	_, err := o.helmInitDependency(dir, o.defaultReleaseCharts())
+	return errors.Wrap(err, "failed to ensure the helm repositories were setup")
 }
