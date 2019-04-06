@@ -20,8 +20,7 @@ items:
         type: git
     steps:
     - args:
-      - echo
-      - hello world
+      - echo hello world
       command:
       - /bin/sh
       - -c
@@ -83,8 +82,7 @@ items:
         readOnly: true
       workingDir: /workspace/source
     - args:
-      - ls
-      - -la
+      - ls -la
       command:
       - /bin/sh
       - -c
@@ -181,8 +179,7 @@ items:
         type: git
     steps:
     - args:
-      - echo
-      - hi ${FRUIT}
+      - echo hi ${FRUIT}
       command:
       - /bin/sh
       - -c
