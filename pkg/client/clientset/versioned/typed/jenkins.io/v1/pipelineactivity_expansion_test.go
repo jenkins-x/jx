@@ -36,9 +36,8 @@ func TestPatchUpdatePipelineActivityNoModification(t *testing.T) {
 	fakeClient := newClientForTest(get, patch)
 
 	pipelineActivities := pipelineActivities{
-		client:           fakeClient,
-		ns:               "default",
-		returnPatchValue: true,
+		client: fakeClient,
+		ns:     "default",
 	}
 
 	updated, err := pipelineActivities.PatchUpdate(testPipelineActivity)
@@ -70,9 +69,8 @@ func TestPatchUpdatePipelineActivityWithChange(t *testing.T) {
 	fakeClient := newClientForTest(get, patch)
 
 	pipelineActivities := pipelineActivities{
-		client:           fakeClient,
-		ns:               "default",
-		returnPatchValue: true,
+		client: fakeClient,
+		ns:     "default",
 	}
 
 	updated, err := pipelineActivities.PatchUpdate(testPipelineActivity)
@@ -90,9 +88,8 @@ func TestPatchUpdatePipelineActivityWithErrorInGet(t *testing.T) {
 	fakeClient := newClientForTest(get, nil)
 
 	pipelineActivities := pipelineActivities{
-		client:           fakeClient,
-		ns:               "default",
-		returnPatchValue: true,
+		client: fakeClient,
+		ns:     "default",
 	}
 
 	updated, err := pipelineActivities.PatchUpdate(testPipelineActivity)
@@ -118,9 +115,8 @@ func TestPatchUpdatePipelineActivityWithErrorInPatch(t *testing.T) {
 	fakeClient := newClientForTest(get, patch)
 
 	pipelineActivities := pipelineActivities{
-		client:           fakeClient,
-		ns:               "default",
-		returnPatchValue: true,
+		client: fakeClient,
+		ns:     "default",
 	}
 
 	updated, err := pipelineActivities.PatchUpdate(testPipelineActivity)
