@@ -210,7 +210,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 	}
 	if o.CloneGitURL != "" {
-		err = o.retry(15, time.Second*2, func() error {
+		err = o.retry(3, time.Second*2, func() error {
 			err := o.cloneGitRepositoryToTempDir(o.CloneGitURL)
 			if err != nil {
 				o.deleteTempDir()
