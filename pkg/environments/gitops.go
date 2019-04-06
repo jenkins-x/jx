@@ -2,13 +2,14 @@ package environments
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/auth"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
 	"runtime/debug"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/auth"
 
 	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
@@ -288,88 +289,30 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 			log.Infof("Forked Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 		}
 
-		dir, err = ioutil.TempDir("", fmt.Sprintf("fork-%s-%s", gitInfo.Organisation, gitInfo.Name))
-		if err != nil {
-			return "", "", nil, fork, errors.Wrap(err, "failed to create temp dir")
-		}
-
-		err = os.MkdirAll(dir, util.DefaultWritePermissions)
-		if err != nil {
-			return "", "", nil, fork, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
-		}
-		cloneGitURL, err := git.CreatePushURL(repo.CloneURL, &userDetails)
-		if err != nil {
-			return "", "", nil, fork, errors.Wrapf(err, "failed to get clone URL from %s and user %s", repo.CloneURL, username)
-		}
-		err = o.Gitter.Clone(cloneGitURL, dir)
-		if err != nil {
-			return "", "", nil, fork, err
-		}
-		err = git.SetRemoteURL(dir, "upstream", gitURL)
-		if err != nil {
-			return "", "", nil, fork, errors.Wrapf(err, "setting remote upstream %q in forked environment repo", gitURL)
-		}
-		if o.ConfigGitFn != nil {
-			err = o.ConfigGitFn(dir, gitInfo, o.Gitter)
-			if err != nil {
-				return "", "", nil, fork, err
-			}
-		}
-		if base != "master" {
-			err = o.Gitter.Checkout(dir, base)
-			if err != nil {
-				return "", "", nil, fork, err
-			}
-		}
-		err = git.ResetToUpstream(dir, base)
-		if err != nil {
-			return "", "", nil, fork, errors.Wrapf(err, "resetting forked branch %s to upstream version", base)
-		}
-
-	} else {
-		// now lets clone the fork and pull it...
-		exists, err := util.FileExists(dir)
-		if err != nil {
-			return "", "", nil, fork, errors.Wrapf(err, "failed to check if directory %s exists", dir)
-		}
-
-		if exists {
-			if o.ConfigGitFn != nil {
-				err = o.ConfigGitFn(dir, gitInfo, o.Gitter)
-				if err != nil {
-					return "", "", nil, fork, err
-				}
-			}
-			// lets check the git remote URL is setup correctly
-			err = o.Gitter.SetRemoteURL(dir, "origin", gitURL)
-			if err != nil {
-				return "", "", nil, fork, err
-			}
-			err = o.Gitter.Stash(dir)
-			if err != nil {
-				return "", "", nil, fork, err
-			}
-			err = o.Gitter.Checkout(dir, base)
-			if err != nil {
-				return "", "", nil, fork, err
-			}
-			err = o.Gitter.Pull(dir)
-			if err != nil {
-				return "", "", nil, fork, err
-			}
+		// lets only use this repository if it is a fork
+		if !repo.Fork {
+			fork = false
 		} else {
-			err := os.MkdirAll(dir, util.DefaultWritePermissions)
+			dir, err = ioutil.TempDir("", fmt.Sprintf("fork-%s-%s", gitInfo.Organisation, gitInfo.Name))
+			if err != nil {
+				return "", "", nil, fork, errors.Wrap(err, "failed to create temp dir")
+			}
+
+			err = os.MkdirAll(dir, util.DefaultWritePermissions)
 			if err != nil {
 				return "", "", nil, fork, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
 			}
-			cloneGitURL, err := git.CreatePushURL(gitURL, &userDetails)
+			cloneGitURL, err := git.CreatePushURL(repo.CloneURL, &userDetails)
 			if err != nil {
-				return "", "", nil, fork, errors.Wrapf(err, "failed to get clone URL from %s and user %s", gitURL, username)
+				return "", "", nil, fork, errors.Wrapf(err, "failed to get clone URL from %s and user %s", repo.CloneURL, username)
 			}
-
 			err = o.Gitter.Clone(cloneGitURL, dir)
 			if err != nil {
 				return "", "", nil, fork, err
+			}
+			err = git.SetRemoteURL(dir, "upstream", gitURL)
+			if err != nil {
+				return "", "", nil, fork, errors.Wrapf(err, "setting remote upstream %q in forked environment repo", gitURL)
 			}
 			if o.ConfigGitFn != nil {
 				err = o.ConfigGitFn(dir, gitInfo, o.Gitter)
@@ -382,6 +325,69 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 				if err != nil {
 					return "", "", nil, fork, err
 				}
+			}
+			err = git.ResetToUpstream(dir, base)
+			if err != nil {
+				return "", "", nil, fork, errors.Wrapf(err, "resetting forked branch %s to upstream version", base)
+			}
+			return dir, base, gitInfo, fork, nil
+		}
+	}
+
+	// now lets clone the fork and pull it...
+	exists, err := util.FileExists(dir)
+	if err != nil {
+		return "", "", nil, fork, errors.Wrapf(err, "failed to check if directory %s exists", dir)
+	}
+
+	if exists {
+		if o.ConfigGitFn != nil {
+			err = o.ConfigGitFn(dir, gitInfo, o.Gitter)
+			if err != nil {
+				return "", "", nil, fork, err
+			}
+		}
+		// lets check the git remote URL is setup correctly
+		err = o.Gitter.SetRemoteURL(dir, "origin", gitURL)
+		if err != nil {
+			return "", "", nil, fork, err
+		}
+		err = o.Gitter.Stash(dir)
+		if err != nil {
+			return "", "", nil, fork, err
+		}
+		err = o.Gitter.Checkout(dir, base)
+		if err != nil {
+			return "", "", nil, fork, err
+		}
+		err = o.Gitter.Pull(dir)
+		if err != nil {
+			return "", "", nil, fork, err
+		}
+	} else {
+		err := os.MkdirAll(dir, util.DefaultWritePermissions)
+		if err != nil {
+			return "", "", nil, fork, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
+		}
+		cloneGitURL, err := git.CreatePushURL(gitURL, &userDetails)
+		if err != nil {
+			return "", "", nil, fork, errors.Wrapf(err, "failed to get clone URL from %s and user %s", gitURL, username)
+		}
+
+		err = o.Gitter.Clone(cloneGitURL, dir)
+		if err != nil {
+			return "", "", nil, fork, err
+		}
+		if o.ConfigGitFn != nil {
+			err = o.ConfigGitFn(dir, gitInfo, o.Gitter)
+			if err != nil {
+				return "", "", nil, fork, err
+			}
+		}
+		if base != "master" {
+			err = o.Gitter.Checkout(dir, base)
+			if err != nil {
+				return "", "", nil, fork, err
 			}
 		}
 	}
