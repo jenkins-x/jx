@@ -176,7 +176,7 @@ type TeamSettings struct {
 	AppsRepository      string               `json:"appsRepository,omitempty" protobuf:"bytes,19,opt,name=appsRepository"`
 	BuildPackName       string               `json:"buildPackName,omitempty" protobuf:"bytes,20,opt,name=buildPackName"`
 	StorageLocations    []StorageLocation    `json:"storageLocations,omitempty" protobuf:"bytes,21,opt,name=storageLocations"`
-	DeployKind          string               `json:"deployKind,omitempty" protobuf:"bytes,22,opt,name=deployKind"`
+	DeployKind          string               `json:"deployKind,omitempty" protobuf:"bytes,24,opt,name=deployKind"`
 
 	// ImportMode indicates what kind of
 	ImportMode ImportModeType `json:"importMode,omitempty" protobuf:"bytes,22,opt,name=importMode"`
