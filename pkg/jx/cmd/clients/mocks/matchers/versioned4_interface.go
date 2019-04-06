@@ -2,7 +2,7 @@
 package matchers
 
 import (
-	versioned4 "github.com/knative/serving/pkg/client/clientset/versioned"
+	versioned4 "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	"github.com/petergtz/pegomock"
 	"reflect"
 )
