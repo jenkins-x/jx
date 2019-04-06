@@ -383,7 +383,11 @@ func (f *factory) SecretsLocation() secrets.SecretsLocationKind {
 		return secrets.FileSystemLocationKind
 	}
 	if f.secretLocation == nil {
-		f.secretLocation = secrets.NewSecretLocation(client, namespace)
+		devNs, _, err := kube.GetDevNamespace(client, namespace)
+		if err != nil {
+			devNs = kube.DefaultNamespace
+		}
+		f.secretLocation = secrets.NewSecretLocation(client, devNs)
 	}
 	return f.secretLocation.Location()
 }
