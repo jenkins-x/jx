@@ -53,8 +53,6 @@ type CreateClusterGKEFlags struct {
 	EnhancedApis    bool
 }
 
-const clusterListHeader = "PROJECT_ID"
-
 var (
 	createClusterGKELong = templates.LongDesc(`
 		This command creates a new Kubernetes cluster on GKE, installing required local dependencies and provisions the

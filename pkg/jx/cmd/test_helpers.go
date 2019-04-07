@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/resources"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -31,13 +32,13 @@ import (
 
 // ConfigureTestOptions lets configure the options for use in tests
 // using fake APIs to k8s cluster
-func ConfigureTestOptions(o *CommonOptions, git gits.Gitter, helm helm.Helmer) {
+func ConfigureTestOptions(o *opts.CommonOptions, git gits.Gitter, helm helm.Helmer) {
 	ConfigureTestOptionsWithResources(o, nil, nil, git, nil, helm, nil)
 }
 
 // ConfigureTestOptions lets configure the options for use in tests
 // using fake APIs to k8s cluster.
-func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Object, jxObjects []runtime.Object,
+func ConfigureTestOptionsWithResources(o *opts.CommonOptions, k8sObjects []runtime.Object, jxObjects []runtime.Object,
 	git gits.Gitter, fakeGitProvider *gits.FakeProvider, helm helm.Helmer, resourcesInstaller resources.Installer) {
 	//o.Out = tests.Output()
 	o.BatchMode = true

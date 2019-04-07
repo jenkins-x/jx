@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -144,7 +144,7 @@ func (o *DeleteTeamOptions) deleteTeam(name string) error {
 		return kube.DeleteTeam(jxClient, ns, name)
 	}
 	origNamespace := o.currentNamespace
-	o.ChangeNamespace(name)
+	o.changeNamespace(name)
 
 	uninstall := &UninstallOptions{
 		CommonOptions: o.CommonOptions,
@@ -171,6 +171,19 @@ func (o *DeleteTeamOptions) deleteTeam(name string) error {
 	} else {
 		err = kube.DeleteTeam(jxClient, ns, name)
 	}
-	o.ChangeNamespace(origNamespace)
+	o.changeNamespace(origNamespace)
 	return err
+}
+
+func (o *DeleteTeamOptions) changeNamespace(namespace string) {
+	nsOptions := &NamespaceOptions{
+		CommonOptions: o.CommonOptions,
+	}
+	nsOptions.BatchMode = true
+	nsOptions.Args = []string{namespace}
+	err := nsOptions.Run()
+	if err != nil {
+		log.Warnf("Failed to set context to namespace %s: %s", namespace, err)
+	}
+	o.ResetClientsAndNamespaces()
 }

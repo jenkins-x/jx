@@ -122,9 +122,6 @@ type Secrets struct {
 const (
 	JX_GIT_TOKEN = "JX_GIT_TOKEN"
 	JX_GIT_USER  = "JX_GIT_USER"
-	// Want to use your own provider file? Change this line to point to your fork
-	DefaultCloudEnvironmentsURL = "https://github.com/jenkins-x/cloud-environments"
-	DefaultVersionsURL          = "https://github.com/jenkins-x/jenkins-x-versions"
 
 	// JenkinsXPlatformChartName default chart name for Jenkins X platform
 	JenkinsXPlatformChartName = "jenkins-x-platform"
@@ -132,14 +129,6 @@ const (
 	// JenkinsXPlatformChart the default full chart name with the default repository prefix
 	JenkinsXPlatformChart   = "jenkins-x/" + JenkinsXPlatformChartName
 	JenkinsXPlatformRelease = "jenkins-x"
-
-	AdminSecretsFile       = "adminSecrets.yaml"
-	ExtraValuesFile        = "extraValues.yaml"
-	JXInstallConfig        = "jx-install-config"
-	CloudEnvValuesFile     = "myvalues.yaml"
-	CloudEnvSecretsFile    = "secrets.yaml"
-	CloudEnvSopsConfigFile = ".sops.yaml"
-	defaultInstallTimeout  = "6000"
 
 	ServerlessJenkins   = "Serverless Jenkins"
 	StaticMasterJenkins = "Static Master Jenkins"

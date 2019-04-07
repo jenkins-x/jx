@@ -31,9 +31,6 @@ import (
 )
 
 const (
-	optionEnvironment         = "env"
-	optionApplication         = "app"
-	optionTimeout             = "timeout"
 	optionPullRequestPollTime = "pull-request-poll-time"
 
 	gitStatusSuccess = "success"

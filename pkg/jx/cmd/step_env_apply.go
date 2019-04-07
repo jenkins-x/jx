@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -182,7 +182,16 @@ func (o *StepEnvApplyOptions) Run() error {
 			errors.Wrap(err, "creating the kube client")
 		}
 		if currentNs != ns {
-			o.ChangeNamespace(ns)
+			nsOptions := &NamespaceOptions{
+				CommonOptions: o,
+			}
+			nsOptions.BatchMode = true
+			nsOptions.Args = []string{ns}
+			err := nsOptions.Run()
+			if err != nil {
+				log.Warnf("Failed to set context to namespace %s: %s", ns, err)
+			}
+			o.ResetClientsAndNamespaces()
 		}
 	}
 

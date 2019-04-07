@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 )
@@ -13,9 +12,6 @@ type GetBranchPatternOptions struct {
 
 const (
 	branchPattern = "branchpattern"
-
-	defaultBranchPatterns     = jenkins.BranchPatternMasterPRsAndFeatures
-	defaultForkBranchPatterns = ""
 )
 
 var (
