@@ -232,7 +232,7 @@ func (o *CommonOptions) InitHelm(config InitHelmConfig) error {
 	return nil
 }
 
-func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
+func (o *CommonOptions) RegisterLocalHelmRepo(repoName, ns string) error {
 	if repoName == "" {
 		repoName = kube.LocalHelmRepoName
 	}
@@ -284,10 +284,10 @@ func (o *CommonOptions) registerLocalHelmRepo(repoName, ns string) error {
 
 // AddHelmRepoIfMissing adds the given helm repo if its not already added
 func (o *CommonOptions) AddHelmRepoIfMissing(helmUrl, repoName, username, password string) error {
-	return o.addHelmBinaryRepoIfMissing(helmUrl, repoName, username, password)
+	return o.AddHelmBinaryRepoIfMissing(helmUrl, repoName, username, password)
 }
 
-func (o *CommonOptions) addHelmBinaryRepoIfMissing(helmUrl, repoName, username, password string) error {
+func (o *CommonOptions) AddHelmBinaryRepoIfMissing(helmUrl, repoName, username, password string) error {
 	missing, err := o.Helm().IsRepoMissing(helmUrl)
 	if err != nil {
 		return errors.Wrapf(err, "failed to check if the repository with URL '%s' is missing", helmUrl)
@@ -306,7 +306,7 @@ func (o *CommonOptions) addHelmBinaryRepoIfMissing(helmUrl, repoName, username, 
 // InstallChart installs the given chart
 func (o *CommonOptions) InstallChart(releaseName string, chart string, version string, ns string, helmUpdate bool,
 	setValues []string, valueFiles []string, repo string) error {
-	return o.installChartOptions(helm.InstallChartOptions{ReleaseName: releaseName, Chart: chart, Version: version,
+	return o.InstallChartWithOptions(helm.InstallChartOptions{ReleaseName: releaseName, Chart: chart, Version: version,
 		Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles, Repository: repo})
 }
 
@@ -315,7 +315,7 @@ func (o *CommonOptions) InstallChartOrGitOps(isGitOps bool, gitOpsDir string, gi
 	setValues []string, setSecrets []string, valueFiles []string, repo string) error {
 
 	if !isGitOps {
-		return o.installChartOptions(helm.InstallChartOptions{ReleaseName: releaseName, Chart: chart, Version: version,
+		return o.InstallChartWithOptions(helm.InstallChartOptions{ReleaseName: releaseName, Chart: chart, Version: version,
 			Ns: ns, HelmUpdate: helmUpdate, SetValues: append(setValues, setSecrets...), ValueFiles: valueFiles, Repository: repo})
 	}
 
@@ -384,11 +384,11 @@ func (o *CommonOptions) InstallChartOrGitOps(isGitOps bool, gitOpsDir string, gi
 // InstallChartAt installs the given chart
 func (o *CommonOptions) InstallChartAt(dir string, releaseName string, chart string, version string, ns string,
 	helmUpdate bool, setValues []string, valueFiles []string, repo string) error {
-	return o.installChartOptions(helm.InstallChartOptions{Dir: dir, ReleaseName: releaseName, Chart: chart,
+	return o.InstallChartWithOptions(helm.InstallChartOptions{Dir: dir, ReleaseName: releaseName, Chart: chart,
 		Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles, Repository: repo})
 }
 
-func (o *CommonOptions) installChartOptions(options helm.InstallChartOptions) error {
+func (o *CommonOptions) InstallChartWithOptions(options helm.InstallChartOptions) error {
 	client, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -600,7 +600,7 @@ func (o *CommonOptions) AddChartRepos(dir string, helmBinary string, chartRepos 
 		for name, url := range chartRepos {
 			if !util.StringMapHasValue(installedChartRepos, url) {
 				repoCounter++
-				err = o.addHelmBinaryRepoIfMissing(url, name, "", "")
+				err = o.AddHelmBinaryRepoIfMissing(url, name, "", "")
 				if err != nil {
 					return errors.Wrapf(err, "failed to add the Helm repository with name '%s' and URL '%s'", name, url)
 				}
@@ -624,7 +624,7 @@ func (o *CommonOptions) AddChartRepos(dir string, helmBinary string, chartRepos 
 				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) && repo != DefaultChartRepo && !strings.HasPrefix(repo, "file:") && !strings.HasPrefix(repo, "alias:") {
 					repoCounter++
 					// TODO we could provide some mechanism to customise the names of repos somehow?
-					err = o.addHelmBinaryRepoIfMissing(repo, "repo"+strconv.Itoa(repoCounter), "", "")
+					err = o.AddHelmBinaryRepoIfMissing(repo, "repo"+strconv.Itoa(repoCounter), "", "")
 					if err != nil {
 						return errors.Wrapf(err, "failed to add Helm repository '%s'", repo)
 					}
@@ -803,7 +803,7 @@ func (o *CommonOptions) HelmInitRecursiveDependencyBuild(dir string, chartRepos 
 
 // DefaultReleaseCharts returns the default release charts
 func (o *CommonOptions) DefaultReleaseCharts() map[string]string {
-	releasesURL := o.releaseChartMuseumUrl()
+	releasesURL := o.ReleaseChartMuseumUrl()
 	answer := map[string]string{
 		"jenkins-x": kube.DefaultChartMuseumURL,
 	}
@@ -813,7 +813,7 @@ func (o *CommonOptions) DefaultReleaseCharts() map[string]string {
 	return answer
 }
 
-func (o *CommonOptions) releaseChartMuseumUrl() string {
+func (o *CommonOptions) ReleaseChartMuseumUrl() string {
 	chartRepo := os.Getenv("CHART_REPOSITORY")
 	if chartRepo == "" {
 		if o.factory.IsInCDPipeline() {

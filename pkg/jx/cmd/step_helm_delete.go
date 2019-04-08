@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -30,7 +31,7 @@ var (
 )
 
 // NewCmdStepHelmDelete creates the command object
-func NewCmdStepHelmDelete(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepHelmDelete(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepHelmDeleteOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{

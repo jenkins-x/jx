@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	resources_mock "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/prow"
@@ -25,7 +26,7 @@ func TestGetPipelinesWithProw(t *testing.T) {
 
 	// fake the output stream to be checked later
 	r, fakeStdout, _ := os.Pipe()
-	commonOpts := cmd.NewCommonOptionsWithFactory(nil)
+	commonOpts := opts.NewCommonOptionsWithFactory(nil)
 	commonOpts.Out = fakeStdout
 	commonOpts.Err = os.Stderr
 	o.CommonOptions = &commonOpts

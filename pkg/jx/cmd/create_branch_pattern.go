@@ -3,10 +3,11 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -35,7 +36,7 @@ type CreateBranchPatternOptions struct {
 }
 
 // NewCmdCreateBranchPattern creates a command object for the "create" command
-func NewCmdCreateBranchPattern(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateBranchPattern(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateBranchPatternOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,

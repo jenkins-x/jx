@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
@@ -27,7 +28,7 @@ type GetPostPreviewJobOptions struct {
 }
 
 // NewCmdGetPostPreviewJob creates a command object for the "create" command
-func NewCmdGetPostPreviewJob(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetPostPreviewJob(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetPostPreviewJobOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -56,7 +57,7 @@ func (o *GetPostPreviewJobOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	table := o.createTable()
+	table := o.CreateTable()
 	table.AddRow("NAME", "IMAGE", "BACKOFF_LIMIT", "COMMAND")
 
 	for _, job := range settings.PostPreviewJobs {

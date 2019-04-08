@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"sort"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -48,7 +49,7 @@ var (
 )
 
 // NewCmdStepCredential creates the command
-func NewCmdStepCredential(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepCredential(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepCredentialOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,

@@ -5,6 +5,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
@@ -26,7 +27,7 @@ var (
 )
 
 // NewCmdGetTokenAddon creates the command
-func NewCmdGetTokenAddon(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetTokenAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetTokenAddonOptions{
 		GetTokenOptions{
 			GetOptions: GetOptions{
@@ -54,7 +55,7 @@ func NewCmdGetTokenAddon(commonOpts *CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *GetTokenAddonOptions) Run() error {
-	authConfigSvc, err := o.createAddonAuthConfigService()
+	authConfigSvc, err := o.CreateAddonAuthConfigService()
 	if err != nil {
 		return err
 	}

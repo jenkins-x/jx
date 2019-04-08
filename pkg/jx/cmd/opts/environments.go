@@ -21,7 +21,7 @@ func (o *CommonOptions) RegisterEnvironmentCRD() error {
 }
 
 // ModifyDevEnvironment performs some mutation on the Development environment to modify team settings
-func (o *CommonOptions) modifyDevEnvironment(jxClient versioned.Interface, ns string,
+func (o *CommonOptions) ModifyDevEnvironmentWithNs(jxClient versioned.Interface, ns string,
 	fn func(env *jenkinsv1.Environment) error) error {
 	env, err := kube.EnsureDevEnvironmentSetup(jxClient, ns)
 	if err != nil {

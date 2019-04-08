@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
@@ -12,7 +13,7 @@ var (
 
 		For more documentation about Camel see: [https://camel.apache.org/](https://camel.apache.org/)
 
-` + SeeAlsoText("jx create project"))
+` + opts.SeeAlsoText("jx create project"))
 
 	createCamelExample = templates.Examples(`
 		# Create a Camel application and be prompted for the folder name
@@ -29,7 +30,7 @@ type CreateCamelOptions struct {
 }
 
 // NewCmdCreateCamel creates a command object for the "create" command
-func NewCmdCreateCamel(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateCamel(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateCamelOptions{
 		CreateArchetypeOptions{
 			CreateProjectOptions: CreateProjectOptions{

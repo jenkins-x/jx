@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -48,7 +49,7 @@ type EditConfigOptions struct {
 }
 
 // NewCmdEditConfig creates a command object for the "create" command
-func NewCmdEditConfig(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdEditConfig(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &EditConfigOptions{
 		EditOptions: EditOptions{
 			CommonOptions: commonOpts,
@@ -80,11 +81,11 @@ func (o *EditConfigOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.IssuesAuthConfigSvc, err = o.createIssueTrackerAuthConfigService()
+	o.IssuesAuthConfigSvc, err = o.CreateIssueTrackerAuthConfigService()
 	if err != nil {
 		return err
 	}
-	o.ChatAuthConfigSvc, err = o.createChatAuthConfigService()
+	o.ChatAuthConfigSvc, err = o.CreateChatAuthConfigService()
 	if err != nil {
 		return err
 	}

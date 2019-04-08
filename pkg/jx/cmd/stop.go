@@ -3,12 +3,13 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 // Stop contains the command line options
 type Stop struct {
-	*CommonOptions
+	*opts.CommonOptions
 }
 
 var (
@@ -23,7 +24,7 @@ var (
 )
 
 // NewCmdStop creates the command object
-func NewCmdStop(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStop(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &Stop{
 		commonOpts,
 	}

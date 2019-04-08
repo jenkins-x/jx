@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -15,7 +16,7 @@ import (
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
 // referencing the cmd.Flags()
 type GetOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Output string
 }
@@ -39,7 +40,7 @@ var (
 
 // NewCmdGet creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdGet(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGet(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetOptions{
 		CommonOptions: commonOpts,
 	}

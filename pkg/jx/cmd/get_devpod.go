@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 )
@@ -14,7 +15,7 @@ import (
 // GetDevPodOptions the command line options
 type GetDevPodOptions struct {
 	GetOptions
-	CommonDevPodOptions
+	opts.CommonDevPodOptions
 
 	AllUsernames bool
 }
@@ -34,7 +35,7 @@ var (
 )
 
 // NewCmdGetDevPod creates the command
-func NewCmdGetDevPod(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetDevPod(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetDevPodOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -57,7 +58,7 @@ func NewCmdGetDevPod(commonOpts *CommonOptions) *cobra.Command {
 
 	cmd.Flags().BoolVarP(&options.AllUsernames, "all-usernames", "", false, "Gets devpods for all usernames")
 
-	options.addCommonDevPodFlags(cmd)
+	options.AddCommonDevPodFlags(cmd)
 
 	return cmd
 }
@@ -81,14 +82,14 @@ func (o *GetDevPodOptions) Run() error {
 		}
 		// Leave userName blank
 	} else {
-		userName, err = o.getUsername(o.Username)
+		userName, err = o.GetUsername(o.Username)
 		if err != nil {
 			return err
 		}
 	}
 	names, m, err := kube.GetDevPodNames(client, ns, userName)
 
-	table := o.createTable()
+	table := o.CreateTable()
 	table.AddRow("NAME", "POD TEMPLATE", "AGE", "STATUS")
 
 	for _, k := range names {

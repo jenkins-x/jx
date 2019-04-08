@@ -7,6 +7,7 @@ import (
 
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -42,7 +43,7 @@ type StepValidateOptions struct {
 }
 
 // NewCmdStepValidate Creates a new Command object
-func NewCmdStepValidate(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepValidate(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepValidateOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,

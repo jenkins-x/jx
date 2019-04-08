@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/jenkins-x/jx/pkg/buildnum"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 )
@@ -15,7 +16,7 @@ const (
 
 // ControllerBuildNumbersOptions holds the options for the build number service.
 type ControllerBuildNumbersOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 	BindAddress string
 	Port        int
 }
@@ -28,7 +29,7 @@ var (
 )
 
 // NewCmdControllerBuildNumbers builds a new command to serving build numbers over an HTTP interface.
-func NewCmdControllerBuildNumbers(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdControllerBuildNumbers(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := ControllerBuildNumbersOptions{
 		CommonOptions: commonOpts,
 	}

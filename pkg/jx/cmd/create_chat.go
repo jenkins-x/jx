@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/spf13/cobra"
 )
 
@@ -10,7 +11,7 @@ type CreateChatOptions struct {
 }
 
 // NewCmdCreateChat creates a command object for the "create" command
-func NewCmdCreateChat(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateChat(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateChatOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,

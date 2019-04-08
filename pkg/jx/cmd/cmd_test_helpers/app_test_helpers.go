@@ -22,6 +22,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	cmd_test "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	vault_test "github.com/jenkins-x/jx/pkg/vault/mocks"
 	"github.com/petergtz/pegomock"
@@ -40,7 +41,7 @@ const (
 // AppTestOptions contains all useful data from the test environment initialized by `prepareInitialPromotionEnv`
 type AppTestOptions struct {
 	ConfigureGitFn  environments.ConfigureGitFn
-	CommonOptions   *cmd.CommonOptions
+	CommonOptions   *opts.CommonOptions
 	FakeGitProvider *gits.FakeProvider
 	DevRepo         *gits.FakeRepository
 	DevEnvRepo      *gits.FakeRepository
@@ -141,7 +142,7 @@ func (o *AppTestOptions) Cleanup() error {
 // CreateAppTestOptions configures the mock environment for running apps related tests
 func CreateAppTestOptions(gitOps bool, t *testing.T) *AppTestOptions {
 	mockFactory := cmd_test.NewMockFactory()
-	commonOpts := cmd.NewCommonOptionsWithFactory(mockFactory)
+	commonOpts := opts.NewCommonOptionsWithFactory(mockFactory)
 	o := AppTestOptions{
 		CommonOptions: &commonOpts,
 		MockFactory:   mockFactory,

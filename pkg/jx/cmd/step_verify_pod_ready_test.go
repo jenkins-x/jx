@@ -5,9 +5,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/gits/mocks"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +18,7 @@ func TestStepVerifyPod(t *testing.T) {
 	options := cmd.StepVerifyPodReadyOptions{}
 	// fake the output stream to be checked later
 	r, fakeStdout, _ := os.Pipe()
-	commonOpts := cmd.NewCommonOptionsWithFactory(nil)
+	commonOpts := opts.NewCommonOptionsWithFactory(nil)
 	commonOpts.Out = fakeStdout
 	commonOpts.Err = os.Stderr
 	options.CommonOptions = &commonOpts
@@ -40,7 +41,7 @@ func TestStepVerifyPodDebug(t *testing.T) {
 	options := cmd.StepVerifyPodReadyOptions{Debug: true}
 	// fake the output stream to be checked later
 	r, fakeStdout, _ := os.Pipe()
-	commonOpts := cmd.NewCommonOptionsWithFactory(nil)
+	commonOpts := opts.NewCommonOptionsWithFactory(nil)
 	commonOpts.Out = fakeStdout
 	commonOpts.Err = os.Stderr
 	options.CommonOptions = &commonOpts

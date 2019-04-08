@@ -5,12 +5,13 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/chats"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -32,7 +33,7 @@ var (
 type CreateChatTokenOptions struct {
 	CreateOptions
 
-	ServerFlags ServerFlags
+	ServerFlags opts.ServerFlags
 	Username    string
 	Password    string
 	ApiToken    string
@@ -40,7 +41,7 @@ type CreateChatTokenOptions struct {
 }
 
 // NewCmdCreateChatToken creates a command
-func NewCmdCreateChatToken(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateChatToken(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateChatTokenOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -60,7 +61,7 @@ func NewCmdCreateChatToken(commonOpts *CommonOptions) *cobra.Command {
 			CheckErr(err)
 		},
 	}
-	options.ServerFlags.addGitServerFlags(cmd)
+	options.ServerFlags.AddGitServerFlags(cmd)
 	cmd.Flags().StringVarP(&options.ApiToken, "api-token", "t", "", "The API Token for the user")
 	cmd.Flags().StringVarP(&options.Timeout, "timeout", "", "", "The timeout if using browser automation to generate the API token (by passing username and password)")
 
@@ -76,13 +77,13 @@ func (o *CreateChatTokenOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.createChatAuthConfigService()
+	authConfigSvc, err := o.CreateChatAuthConfigService()
 	if err != nil {
 		return err
 	}
 	config := authConfigSvc.Config()
 
-	server, err := o.findChatServer(config, &o.ServerFlags)
+	server, err := o.FindChatServer(config, &o.ServerFlags)
 	if err != nil {
 		return err
 	}

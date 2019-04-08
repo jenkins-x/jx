@@ -2,12 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"strings"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 
 	"github.com/jenkins-x/jx/pkg/users"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -18,7 +20,7 @@ import (
 
 // DeleteUserOptions are the flags for delete commands
 type DeleteUserOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	SelectAll    bool
 	SelectFilter string
@@ -38,7 +40,7 @@ var (
 
 // NewCmdDeleteUser creates a command object
 // retrieves one or more resources from a server.
-func NewCmdDeleteUser(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteUser(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteUserOptions{
 		CommonOptions: commonOpts,
 	}
@@ -66,7 +68,7 @@ func NewCmdDeleteUser(commonOpts *CommonOptions) *cobra.Command {
 // Run implements this command
 func (o *DeleteUserOptions) Run() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
-	err := o.registerUserCRD()
+	err := o.RegisterUserCRD()
 	if err != nil {
 		return err
 	}

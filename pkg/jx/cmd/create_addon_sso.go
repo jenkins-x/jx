@@ -10,6 +10,7 @@ import (
 	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/pki"
@@ -48,7 +49,7 @@ type CreateAddonSSOOptions struct {
 }
 
 // NewCmdCreateAddonSSO creates a command object for the "create addon sso" command
-func NewCmdCreateAddonSSO(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateAddonSSO(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonSSOOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -77,23 +78,19 @@ func NewCmdCreateAddonSSO(commonOpts *CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *CreateAddonSSOOptions) Run() error {
-	client, err := o.KubeClient()
-	if err != nil {
-		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
-	}
-	o.devNamespace, _, err = kube.GetDevNamespace(client, o.currentNamespace)
+	client, devNamespace, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return errors.Wrap(err, "retrieving the development namespace")
 	}
 
-	err = o.ensureCertmanager()
+	err = o.EnsureCertManager()
 	if err != nil {
 		return errors.Wrap(err, "ensuring cert-manager is installed")
 	}
 
 	log.Infof("Installing %s...\n", util.ColorInfo("dex identity provider"))
 
-	ingressConfig, err := kube.GetIngressConfig(client, o.devNamespace)
+	ingressConfig, err := kube.GetIngressConfig(client, devNamespace)
 	if err != nil {
 		return errors.Wrap(err, "retrieving existing ingress configuration")
 	}
@@ -122,12 +119,12 @@ func (o *CreateAddonSSOOptions) Run() error {
 		return err
 	}
 
-	err = o.ensureHelm()
+	err = o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "checking if helm is installed")
 	}
 
-	err = o.addHelmRepoIfMissing(kube.DefaultChartMuseumURL, repoName, "", "")
+	err = o.AddHelmRepoIfMissing(kube.DefaultChartMuseumURL, repoName, "", "")
 	if err != nil {
 		return errors.Wrap(err, "adding dex chart helm repository")
 	}
@@ -220,7 +217,7 @@ func (o *CreateAddonSSOOptions) installDex(domain string, clientID string, clien
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 	releaseName := o.ReleaseName + "-" + dexServiceName
-	return o.installChart(releaseName, kube.ChartSsoDex, o.DexVersion, o.Namespace, true, values, nil, "")
+	return o.InstallChart(releaseName, kube.ChartSsoDex, o.DexVersion, o.Namespace, true, values, nil, "")
 }
 
 func (o *CreateAddonSSOOptions) installSSOOperator(dexGrpcService string) error {
@@ -230,7 +227,7 @@ func (o *CreateAddonSSOOptions) installSSOOperator(dexGrpcService string) error 
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 	releaseName := o.ReleaseName + "-" + operatorServiceName
-	return o.installChart(releaseName, kube.ChartSsoOperator, o.Version, o.Namespace, true, values, nil, "")
+	return o.InstallChart(releaseName, kube.ChartSsoOperator, o.Version, o.Namespace, true, values, nil, "")
 }
 
 func (o *CreateAddonSSOOptions) exposeSSO() error {

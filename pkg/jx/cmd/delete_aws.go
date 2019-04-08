@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/log"
 	logger "github.com/sirupsen/logrus"
 
@@ -17,14 +18,14 @@ import (
 const gatewayDetachAttempts = 10
 
 type DeleteAwsOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Profile string
 	Region  string
 	VpcId   string
 }
 
-func NewCmdDeleteAws(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteAws(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteAwsOptions{
 		CommonOptions: commonOpts,
 	}
@@ -92,7 +93,7 @@ func (o *DeleteAwsOptions) Run() error {
 	}
 	for _, internetGateway := range internetGateways.InternetGateways {
 		if len(internetGateway.Attachments) > 0 {
-			err = o.retryUntilFatalError(gatewayDetachAttempts, 10*time.Second, func() (fatalError *FatalError, e error) {
+			err = o.RetryUntilFatalError(gatewayDetachAttempts, 10*time.Second, func() (fatalError *opts.FatalError, e error) {
 				_, err = svc.DetachInternetGateway(&ec2.DetachInternetGatewayInput{InternetGatewayId: internetGateway.InternetGatewayId, VpcId: aws.String(vpcid)})
 				log.Infof("Detaching internet gateway %s from VPC %s...\n", *internetGateway.InternetGatewayId, vpcid)
 				if err != nil {
@@ -100,7 +101,7 @@ func (o *DeleteAwsOptions) Run() error {
 						log.Info("Waiting for public address to be unmapped from internet gateway.")
 						return nil, err
 					}
-					return &FatalError{E: err}, nil
+					return &opts.FatalError{E: err}, nil
 				}
 				return nil, nil
 			})

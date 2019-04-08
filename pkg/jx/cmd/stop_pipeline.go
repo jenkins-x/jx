@@ -7,7 +7,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jenkins-x/golang-jenkins"
+	gojenkins "github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -18,7 +19,7 @@ type StopPipelineOptions struct {
 
 	Build           int
 	Filter          string
-	JenkinsSelector JenkinsSelectorOptions
+	JenkinsSelector opts.JenkinsSelectorOptions
 
 	Jobs map[string]gojenkins.Job
 }
@@ -39,7 +40,7 @@ var (
 )
 
 // NewCmdStopPipeline creates the command
-func NewCmdStopPipeline(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStopPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StopPipelineOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -68,7 +69,7 @@ func NewCmdStopPipeline(commonOpts *CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *StopPipelineOptions) Run() error {
-	jobMap, err := o.getJobMap(&o.JenkinsSelector, o.Filter)
+	jobMap, err := o.GetJenkinsJobs(&o.JenkinsSelector, o.Filter)
 	if err != nil {
 		return err
 	}

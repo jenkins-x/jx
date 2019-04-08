@@ -8,11 +8,12 @@ import (
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 type RepoOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Dir         string
 	OnlyViewURL bool
@@ -33,7 +34,7 @@ var (
 `)
 )
 
-func NewCmdRepo(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdRepo(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &RepoOptions{
 		CommonOptions: commonOpts,
 	}
@@ -55,7 +56,7 @@ func NewCmdRepo(commonOpts *CommonOptions) *cobra.Command {
 }
 
 func (o *RepoOptions) Run() error {
-	gitInfo, provider, _, err := o.createGitProvider(o.Dir)
+	gitInfo, provider, _, err := o.CreateGitProvider(o.Dir)
 	if err != nil {
 		return err
 	}

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -37,7 +38,7 @@ type StepReleaseOptions struct {
 }
 
 // NewCmdStep Steps a command object for the "step" command
-func NewCmdStepRelease(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepRelease(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepReleaseOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -62,7 +63,7 @@ func NewCmdStepRelease(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.GitEmail, "git-email", "e", "", "The Git email address to configure if there is none already setup")
 	cmd.Flags().StringVarP(&options.XdgConfigHome, "xdg-config-home", "", "/home/jenkins", "The home directory where git config is setup")
 	cmd.Flags().BoolVarP(&options.NoBatch, "no-batch", "", false, "Whether to disable batch mode")
-	cmd.Flags().StringVarP(&options.Timeout, optionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
+	cmd.Flags().StringVarP(&options.Timeout, opts.OptionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
 	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
 	cmd.Flags().StringVarP(&options.HelmRepositoryURL, "helm-repo-url", "", helm.DefaultHelmRepositoryURL, "The Helm Repository URL to use for the App")
@@ -74,7 +75,7 @@ func NewCmdStepRelease(commonOpts *CommonOptions) *cobra.Command {
 // Run implements this command
 func (o *StepReleaseOptions) Run() error {
 	o.BatchMode = !o.NoBatch
-	err := o.runCommandVerbose("git", "config", "--global", "credential.helper", "store")
+	err := o.RunCommandVerbose("git", "config", "--global", "credential.helper", "store")
 	if err != nil {
 		return err
 	}
@@ -214,7 +215,7 @@ func (o *StepReleaseOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	err = o.runCommandVerbose("skaffold", "build", "-f", "skaffold.yaml")
+	err = o.RunCommandVerbose("skaffold", "build", "-f", "skaffold.yaml")
 	if err != nil {
 		return fmt.Errorf("Failed to run skaffold: %s", err)
 	}
@@ -244,14 +245,14 @@ func (o *StepReleaseOptions) Run() error {
 
 func (o *StepReleaseOptions) updateVersionInSource() error {
 	if o.isMaven() {
-		return o.runCommandVerbose("mvn", "versions:set", "-DnewVersion="+o.Version)
+		return o.RunCommandVerbose("mvn", "versions:set", "-DnewVersion="+o.Version)
 	}
 	return nil
 }
 
 func (o *StepReleaseOptions) buildSource() error {
 	if o.isMaven() {
-		return o.runCommandVerbose("mvn", "clean", "deploy")
+		return o.RunCommandVerbose("mvn", "clean", "deploy")
 	}
 	return nil
 

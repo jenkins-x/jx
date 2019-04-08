@@ -85,18 +85,18 @@ func (o *CommonOptions) TeamHelmBin() (string, bool, bool, error) {
 
 // ModifyDevEnvironment modifies the development environment settings
 func (o *CommonOptions) ModifyDevEnvironment(callback func(env *v1.Environment) error) error {
-	if o.modifyDevEnvironmentFn == nil {
-		o.modifyDevEnvironmentFn = o.DefaultModifyDevEnvironment
+	if o.ModifyDevEnvironmentFn == nil {
+		o.ModifyDevEnvironmentFn = o.DefaultModifyDevEnvironment
 	}
-	return o.modifyDevEnvironmentFn(callback)
+	return o.ModifyDevEnvironmentFn(callback)
 }
 
 // ModifyDevEnvironment modifies the development environment settings
 func (o *CommonOptions) ModifyEnvironment(name string, callback func(env *v1.Environment) error) error {
-	if o.modifyEnvironmentFn == nil {
-		o.modifyEnvironmentFn = o.DefaultModifyEnvironment
+	if o.ModifyEnvironmentFn == nil {
+		o.ModifyEnvironmentFn = o.DefaultModifyEnvironment
 	}
-	return o.modifyEnvironmentFn(name, callback)
+	return o.ModifyEnvironmentFn(name, callback)
 }
 
 // defaultModifyDevEnvironment default implementation of modifying the Development environment settings
@@ -123,7 +123,7 @@ func (o *CommonOptions) DefaultModifyDevEnvironment(callback func(env *v1.Enviro
 	if env == nil {
 		return fmt.Errorf("No Development environment found for namespace %s", ns)
 	}
-	return o.modifyDevEnvironment(jxClient, ns, callback)
+	return o.ModifyDevEnvironmentWithNs(jxClient, ns, callback)
 }
 
 // defaultModifyEnvironment default implementation of modifying an environment

@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -43,7 +44,7 @@ var (
 `)
 )
 
-func NewCmdStepGitCredentials(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepGitCredentials(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepGitCredentialsOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,

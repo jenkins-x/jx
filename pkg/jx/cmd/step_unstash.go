@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/buckets"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -29,7 +30,7 @@ type StepUnstashOptions struct {
 var (
 	stepUnstashLong = templates.LongDesc(`
 		This pipeline step unstashes the files in storage to a local file or the console
-` + storageSupportDescription + SeeAlsoText("jx step stash", "jx edit storage"))
+` + storageSupportDescription + opts.SeeAlsoText("jx step stash", "jx edit storage"))
 
 	stepUnstashExample = templates.Examples(`
 		# unstash a file to the reports directory
@@ -41,7 +42,7 @@ var (
 )
 
 // NewCmdStepUnstash creates the CLI command
-func NewCmdStepUnstash(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepUnstash(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepUnstashOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,

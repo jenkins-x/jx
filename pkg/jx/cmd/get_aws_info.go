@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -25,7 +26,7 @@ var (
 )
 
 // NewCmdGetAWSInfo creates the new command for: jx get env
-func NewCmdGetAWSInfo(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetAWSInfo(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetAWSInfoOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,

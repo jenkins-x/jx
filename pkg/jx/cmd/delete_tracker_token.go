@@ -5,6 +5,7 @@ import (
 
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -26,11 +27,11 @@ var (
 type DeleteTrackerTokenOptions struct {
 	CreateOptions
 
-	ServerFlags ServerFlags
+	ServerFlags opts.ServerFlags
 }
 
 // NewCmdDeleteTrackerToken defines the command
-func NewCmdDeleteTrackerToken(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteTrackerToken(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteTrackerTokenOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -50,7 +51,7 @@ func NewCmdDeleteTrackerToken(commonOpts *CommonOptions) *cobra.Command {
 			CheckErr(err)
 		},
 	}
-	options.ServerFlags.addGitServerFlags(cmd)
+	options.ServerFlags.AddGitServerFlags(cmd)
 	return cmd
 }
 
@@ -60,13 +61,13 @@ func (o *DeleteTrackerTokenOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing issue tracker user name")
 	}
-	authConfigSvc, err := o.createIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService()
 	if err != nil {
 		return err
 	}
 	config := authConfigSvc.Config()
 
-	server, err := o.findIssueTrackerServer(config, &o.ServerFlags)
+	server, err := o.FindIssueTrackerServer(config, &o.ServerFlags)
 	if err != nil {
 		return err
 	}

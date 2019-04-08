@@ -21,6 +21,7 @@ import (
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -42,7 +43,7 @@ var (
 
 // PromoteOptions containers the CLI options
 type PromoteOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Namespace               string
 	Environment             string
@@ -115,7 +116,7 @@ var (
 )
 
 // NewCmdPromote creates the new command for: jx get prompt
-func NewCmdPromote(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdPromote(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &PromoteOptions{
 		CommonOptions: commonOpts,
 	}
@@ -133,7 +134,7 @@ func NewCmdPromote(commonOpts *CommonOptions) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The Namespace to promote to")
-	cmd.Flags().StringVarP(&options.Environment, optionEnvironment, "e", "", "The Environment to promote to")
+	cmd.Flags().StringVarP(&options.Environment, opts.OptionEnvironment, "e", "", "The Environment to promote to")
 	cmd.Flags().BoolVarP(&options.AllAutomatic, "all-auto", "", false, "Promote to all automatic environments in order")
 
 	options.addPromoteOptions(cmd)
@@ -141,7 +142,7 @@ func NewCmdPromote(commonOpts *CommonOptions) *cobra.Command {
 }
 
 func (options *PromoteOptions) addPromoteOptions(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&options.Application, optionApplication, "a", "", "The Application to promote")
+	cmd.Flags().StringVarP(&options.Application, opts.OptionApplication, "a", "", "The Application to promote")
 	cmd.Flags().StringVarP(&options.Filter, "filter", "f", "", "The search filter to find charts to promote")
 	cmd.Flags().StringVarP(&options.Alias, "alias", "", "", "The optional alias used in the 'requirements.yaml' file")
 	cmd.Flags().StringVarP(&options.Pipeline, "pipeline", "", "", "The Pipeline string in the form 'folderName/repoName/branch' which is used to update the PipelineActivity. If not specified its defaulted from  the '$BUILD_NUMBER' environment variable")
@@ -150,7 +151,7 @@ func (options *PromoteOptions) addPromoteOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&options.LocalHelmRepoName, "helm-repo-name", "r", kube.LocalHelmRepoName, "The name of the helm repository that contains the app")
 	cmd.Flags().StringVarP(&options.HelmRepositoryURL, "helm-repo-url", "u", helm.DefaultHelmRepositoryURL, "The Helm Repository URL to use for the App")
 	cmd.Flags().StringVarP(&options.ReleaseName, "release", "", "", "The name of the helm release")
-	cmd.Flags().StringVarP(&options.Timeout, optionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
+	cmd.Flags().StringVarP(&options.Timeout, opts.OptionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
 	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
 	cmd.Flags().BoolVarP(&options.NoHelmUpdate, "no-helm-update", "", false, "Allows the 'helm repo update' command if you are sure your local helm cache is up to date with the version you wish to promote")
 	cmd.Flags().BoolVarP(&options.NoMergePullRequest, "no-merge", "", false, "Disables automatic merge of promote Pull Requests")
@@ -189,7 +190,7 @@ func (o *PromoteOptions) Run() error {
 		o.Namespace = ns
 	}
 
-	prow, err := o.isProw()
+	prow, err := o.IsProw()
 	if err != nil {
 		return err
 	}
@@ -228,7 +229,7 @@ func (o *PromoteOptions) Run() error {
 	if o.Timeout != "" {
 		duration, err := time.ParseDuration(o.Timeout)
 		if err != nil {
-			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, optionTimeout, err)
+			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, opts.OptionTimeout, err)
 		}
 		o.TimeoutDuration = &duration
 	}
@@ -251,7 +252,7 @@ func (o *PromoteOptions) Run() error {
 	}
 	if env == nil {
 		if o.Environment == "" {
-			return util.MissingOption(optionEnvironment)
+			return util.MissingOption(opts.OptionEnvironment)
 		}
 		env, err := jxClient.JenkinsV1().Environments(ns).Get(o.Environment, metav1.GetOptions{})
 		if err != nil {
@@ -328,7 +329,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	app := o.Application
 	if app == "" {
-		log.Warnf("No application name could be detected so cannot promote via Helm. If the detection of the helm chart name is not working consider adding it with the --%s argument on the 'jx promomote' command\n", optionApplication)
+		log.Warnf("No application name could be detected so cannot promote via Helm. If the detection of the helm chart name is not working consider adding it with the --%s argument on the 'jx promomote' command\n", opts.OptionApplication)
 		return nil, nil
 	}
 	version := o.Version
@@ -370,6 +371,10 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		}
 	}
 
+	jxClient, _, err := o.JXClient()
+	if err != nil {
+		return releaseInfo, err
+	}
 	promoteKey := o.createPromoteKey(env)
 	if env != nil {
 		source := &env.Spec.Source
@@ -387,7 +392,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 					}
 					return nil
 				}
-				err = promoteKey.OnPromotePullRequest(o.jxClient, o.Namespace, startPromotePR)
+				err = promoteKey.OnPromotePullRequest(jxClient, o.Namespace, startPromotePR)
 				if err != nil {
 					log.Warnf("Failed to update PipelineActivity: %s\n", err)
 				}
@@ -398,7 +403,6 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		}
 	}
 
-	var err error
 	err = o.verifyHelmConfigured()
 	if err != nil {
 		return releaseInfo, err
@@ -420,7 +424,7 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		}
 		return nil
 	}
-	promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, startPromote)
+	promoteKey.OnPromoteUpdate(jxClient, o.Namespace, startPromote)
 
 	err = o.Helm().UpgradeChart(fullAppName, releaseName, targetNS, version, true, -1, false, true, nil, nil, "", "", "")
 	if err == nil {
@@ -428,9 +432,9 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 		if err != nil {
 			log.Warnf("Failed to comment on issues for release %s: %s\n", releaseName, err)
 		}
-		err = promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.CompletePromotionUpdate)
+		err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
 	} else {
-		err = promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.FailedPromotionUpdate)
+		err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.FailedPromotionUpdate)
 	}
 	return releaseInfo, err
 }
@@ -461,7 +465,7 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 		requirements.SetAppVersion(app, version, o.HelmRepositoryURL, o.Alias)
 		return nil
 	}
-	gitProvider, _, err := o.createGitProviderForURLWithoutKind(env.Spec.Source.URL)
+	gitProvider, _, err := o.CreateGitProviderForURLWithoutKind(env.Spec.Source.URL)
 	if err != nil {
 		return errors.Wrapf(err, "creating git provider for %s", env.Spec.Source.URL)
 	}
@@ -509,7 +513,7 @@ func (o *PromoteOptions) GetTargetNamespace(ns string, env string) (string, *v1.
 	if env != "" {
 		envResource = m[env]
 		if envResource == nil {
-			return "", nil, util.InvalidOption(optionEnvironment, env, envNames)
+			return "", nil, util.InvalidOption(opts.OptionEnvironment, env, envNames)
 		}
 		targetNS = envResource.Spec.Namespace
 		if targetNS == "" {
@@ -530,7 +534,7 @@ func (o *PromoteOptions) GetTargetNamespace(ns string, env string) (string, *v1.
 
 func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releaseInfo *ReleaseInfo) error {
 	if o.TimeoutDuration == nil {
-		log.Infof("No --%s option specified on the 'jx promote' command so not waiting for the promotion to succeed\n", optionTimeout)
+		log.Infof("No --%s option specified on the 'jx promote' command so not waiting for the promotion to succeed\n", opts.OptionTimeout)
 		return nil
 	}
 	if o.PullRequestPollDuration == nil {
@@ -540,6 +544,10 @@ func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releas
 	duration := *o.TimeoutDuration
 	end := time.Now().Add(duration)
 
+	jxClient, _, err := o.JXClient()
+	if err != nil {
+		return errors.Wrap(err, "Getting jx client")
+	}
 	pullRequestInfo := releaseInfo.PullRequestInfo
 	if pullRequestInfo != nil {
 		promoteKey := o.createPromoteKey(env)
@@ -547,7 +555,7 @@ func (o *PromoteOptions) WaitForPromotion(ns string, env *v1.Environment, releas
 		err := o.waitForGitOpsPullRequest(ns, env, releaseInfo, end, duration, promoteKey)
 		if err != nil {
 			// TODO based on if the PR completed or not fail the PR or the Promote?
-			promoteKey.OnPromotePullRequest(o.jxClient, o.Namespace, kube.FailedPromotionPullRequest)
+			promoteKey.OnPromotePullRequest(jxClient, o.Namespace, kube.FailedPromotionPullRequest)
 			return err
 		}
 	}
@@ -564,6 +572,11 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 	logNoMergeStatuses := false
 	urlStatusMap := map[string]string{}
 	urlStatusTargetURLMap := map[string]string{}
+
+	jxClient, _, err := o.JXClient()
+	if err != nil {
+		return errors.Wrap(err, "Getting jx client")
+	}
 
 	if pullRequestInfo != nil {
 		for {
@@ -590,7 +603,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 								p.MergeCommitSHA = mergeSha
 								return nil
 							}
-							promoteKey.OnPromotePullRequest(o.jxClient, o.Namespace, mergedPR)
+							promoteKey.OnPromotePullRequest(jxClient, o.Namespace, mergedPR)
 
 							if o.NoWaitAfterMerge {
 								log.Infof("Pull requests are merged, No wait on promotion to complete")
@@ -598,13 +611,13 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 							}
 						}
 
-						promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.StartPromotionUpdate)
+						promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.StartPromotionUpdate)
 
 						if o.NoWaitForUpdatePipeline {
 							log.Infoln("Pull Request merged but we are not waiting for the update pipeline to complete!")
 							err = o.commentOnIssues(ns, env, promoteKey)
 							if err == nil {
-								err = promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.CompletePromotionUpdate)
+								err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
 							}
 							return err
 						}
@@ -657,7 +670,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 									p.Statuses = prStatuses
 									return nil
 								}
-								promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, updateStatuses)
+								promoteKey.OnPromoteUpdate(jxClient, o.Namespace, updateStatuses)
 
 								succeeded := true
 								for _, v := range urlStatusMap {
@@ -669,7 +682,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 									log.Infoln("Merge status checks all passed so the promotion worked!")
 									err = o.commentOnIssues(ns, env, promoteKey)
 									if err == nil {
-										err = promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.CompletePromotionUpdate)
+										err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
 									}
 									return err
 								}
@@ -763,7 +776,7 @@ func (o *PromoteOptions) verifyHelmConfigured() error {
 	if !exists {
 		log.Warnf("No helm home dir at %s so lets initialise helm client\n", helmHomeDir)
 
-		err = o.helmInit("")
+		err = o.HelmInit("")
 		if err != nil {
 			return err
 		}
@@ -775,13 +788,13 @@ func (o *PromoteOptions) verifyHelmConfigured() error {
 	}
 
 	// lets add the releases chart
-	return o.registerLocalHelmRepo(o.LocalHelmRepoName, ns)
+	return o.RegisterLocalHelmRepo(o.LocalHelmRepoName, ns)
 }
 
 func (o *PromoteOptions) createPromoteKey(env *v1.Environment) *kube.PromoteStepActivityKey {
 	pipeline := o.Pipeline
 	if o.Build == "" {
-		o.Build = o.getBuildNumber()
+		o.Build = o.GetBuildNumber()
 	}
 	build := o.Build
 	buildURL := os.Getenv("BUILD_URL")
@@ -868,7 +881,7 @@ func (o *PromoteOptions) getAndUpdateJenkinsURL() string {
 	if o.jenkinsURL == "" {
 		o.jenkinsURL = os.Getenv("JENKINS_URL")
 	}
-	url, err := o.getJenkinsURL()
+	url, err := o.GetJenkinsURL()
 	if err != nil {
 		log.Warnf("Could not find Jenkins URL: %s", err)
 	} else {

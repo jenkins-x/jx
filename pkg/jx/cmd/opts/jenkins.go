@@ -251,7 +251,7 @@ func (o *CommonOptions) TailJenkinsBuildLog(jenkinsSelector *JenkinsSelectorOpti
 func (o *CommonOptions) GetJenkinsJobName() string {
 	owner := os.Getenv("REPO_OWNER")
 	repo := os.Getenv("REPO_NAME")
-	branch := o.getBranchName("")
+	branch := o.GetBranchName("")
 
 	if owner != "" && repo != "" && branch != "" {
 		return fmt.Sprintf("%s/%s/%s", owner, repo, branch)
@@ -264,7 +264,7 @@ func (o *CommonOptions) GetJenkinsJobName() string {
 	return ""
 }
 
-func (o *CommonOptions) getBranchName(dir string) string {
+func (o *CommonOptions) GetBranchName(dir string) string {
 	branch := builds.GetBranchName()
 	if branch == "" {
 		if dir == "" {

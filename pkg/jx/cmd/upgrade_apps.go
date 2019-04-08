@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/environments"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -58,7 +59,7 @@ type UpgradeAppsOptions struct {
 }
 
 // NewCmdUpgradeApps defines the command
-func NewCmdUpgradeApps(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdUpgradeApps(commonOpts *opts.CommonOptions) *cobra.Command {
 	o := &UpgradeAppsOptions{
 		AddOptions: AddOptions{
 			CommonOptions: commonOpts,
@@ -107,7 +108,7 @@ func (o *UpgradeAppsOptions) Run() error {
 		o.Repo = o.DevEnv.Spec.TeamSettings.AppsRepository
 	}
 
-	opts := apps.InstallOptions{
+	installOpts := apps.InstallOptions{
 		In:        o.In,
 		DevEnv:    o.DevEnv,
 		Verbose:   o.Verbose,
@@ -137,15 +138,15 @@ func (o *UpgradeAppsOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "getting environments dir")
 		}
-		opts.EnvironmentsDir = environmentsDir
+		installOpts.EnvironmentsDir = environmentsDir
 
-		gitProvider, _, err := o.createGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
+		gitProvider, _, err := o.CreateGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
 		if err != nil {
 			return errors.Wrapf(err, "creating git provider for %s", o.DevEnv.Spec.Source.URL)
 		}
-		opts.GitProvider = gitProvider
-		opts.ConfigureGitFn = o.ConfigureGitCallback
-		opts.Gitter = o.Git()
+		installOpts.GitProvider = gitProvider
+		installOpts.ConfigureGitFn = o.ConfigureGitCallback
+		installOpts.Gitter = o.Git()
 	}
 	if !o.GitOps {
 		msg := "Unable to specify --%s when NOT using GitOps for your dev environment"
@@ -163,10 +164,10 @@ func (o *UpgradeAppsOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "getting kubeClient")
 		}
-		opts.Namespace = o.Namespace
-		opts.KubeClient = kubeClient
-		opts.JxClient = jxClient
-		opts.InstallTimeout = defaultInstallTimeout
+		installOpts.Namespace = o.Namespace
+		installOpts.KubeClient = kubeClient
+		installOpts.JxClient = jxClient
+		installOpts.InstallTimeout = opts.DefaultInstallTimeout
 	}
 
 	if o.GetSecretsLocation() == secrets.VaultLocationKind {
@@ -174,12 +175,12 @@ func (o *UpgradeAppsOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		opts.TeamName = teamName
+		installOpts.TeamName = teamName
 		client, err := o.SystemVaultClient("")
 		if err != nil {
 			return err
 		}
-		opts.VaultClient = &client
+		installOpts.VaultClient = &client
 	}
 
 	app := ""
@@ -194,6 +195,6 @@ func (o *UpgradeAppsOptions) Run() error {
 		version = o.Version
 	}
 
-	return opts.UpgradeApp(app, version, o.Repo, o.Username, o.Password, o.ReleaseName, o.Alias, o.HelmUpdate, o.AskAll)
+	return installOpts.UpgradeApp(app, version, o.Repo, o.Username, o.Password, o.ReleaseName, o.Alias, o.HelmUpdate, o.AskAll)
 
 }

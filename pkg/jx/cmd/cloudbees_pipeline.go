@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/browser"
@@ -30,7 +31,7 @@ var (
 		jx cloudbees pipeline -u`)
 )
 
-func NewCmdCloudBeesPipeline(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCloudBeesPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CloudBeesPipelineOptions{
 		CloudBeesOptions: CloudBeesOptions{
 			CommonOptions: commonOpts,
@@ -76,7 +77,7 @@ func (o *CloudBeesPipelineOptions) Run() error {
 }
 
 func (o *CloudBeesPipelineOptions) Open(name string, label string) error {
-	url, err := o.findService(name)
+	url, err := o.FindService(name)
 	if err != nil {
 		return err
 	}

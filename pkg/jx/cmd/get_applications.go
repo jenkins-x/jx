@@ -13,8 +13,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/flagger"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -26,7 +27,7 @@ import (
 
 // GetApplicationsOptions containers the CLI options
 type GetApplicationsOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Namespace   string
 	Environment string
@@ -87,7 +88,7 @@ var (
 )
 
 // NewCmdGetApplications creates the new command for: jx get version
-func NewCmdGetApplications(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetApplications(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetApplicationsOptions{
 		CommonOptions: commonOpts,
 	}
@@ -318,7 +319,7 @@ func (o *GetApplicationsOptions) getAppData(kubeClient kubernetes.Interface) (na
 }
 
 func (o *GetApplicationsOptions) generateTableHeaders(envApps []EnvApps) table.Table {
-	t := o.createTable()
+	t := o.CreateTable()
 	title := "APPLICATION"
 	if o.Previews {
 		title = "PULL REQUESTS"

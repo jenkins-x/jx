@@ -31,6 +31,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
+	istioclient "github.com/knative/pkg/client/clientset/versioned"
 	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
@@ -42,17 +43,17 @@ import (
 )
 
 const (
-	optionServerName       = "name"
-	optionServerURL        = "url"
-	optionBatchMode        = "batch-mode"
-	optionVerbose          = "verbose"
-	optionLogLevel         = "log-level"
-	optionNoBrew           = "no-brew"
-	optionInstallDeps      = "install-dependencies"
-	optionSkipAuthSecMerge = "skip-auth-secrets-merge"
-	optionEnvironment      = "env"
-	optionApplication      = "app"
-	optionTimeout          = "timeout"
+	OptionServerName       = "name"
+	OptionServerURL        = "url"
+	OptionBatchMode        = "batch-mode"
+	OptionVerbose          = "verbose"
+	OptionLogLevel         = "log-level"
+	OptionNoBrew           = "no-brew"
+	OptionInstallDeps      = "install-dependencies"
+	OptionSkipAuthSecMerge = "skip-auth-secrets-merge"
+	OptionEnvironment      = "env"
+	OptionApplication      = "app"
+	OptionTimeout          = "timeout"
 )
 
 // ModifyDevEnvironmentFn a callback to create/update the development Environment
@@ -79,30 +80,30 @@ type CommonOptions struct {
 	ServiceAccount         string
 	Username               string
 	ExternalJenkinsBaseURL string
+	ModifyDevEnvironmentFn ModifyDevEnvironmentFn
+	ModifyEnvironmentFn    ModifyEnvironmentFn
 
-	factory                clients.Factory
-	kubeClient             kubernetes.Interface
-	apiExtensionsClient    apiextensionsclientset.Interface
-	currentNamespace       string
-	devNamespace           string
-	jxClient               versioned.Interface
-	knbClient              buildclient.Interface
-	kserveClient           kserve.Interface
-	tektonClient           tektonclient.Interface
-	jenkinsClient          gojenkins.JenkinsClient
-	git                    gits.Gitter
-	helm                   helm.Helmer
-	kuber                  kube.Kuber
-	vaultOperatorClient    vaultoperatorclient.Interface
-	vaultClient            vault.Client
-	systemVaultClient      vault.Client
-	resourcesInstaller     resources.Installer
-	complianceClient       *client.SonobuoyClient
-	certManagerClient      certmngclient.Interface
-	modifyDevEnvironmentFn ModifyDevEnvironmentFn
-	modifyEnvironmentFn    ModifyEnvironmentFn
-	environmentsDir        string
-	fakeGitProvider        *gits.FakeProvider
+	factory             clients.Factory
+	kubeClient          kubernetes.Interface
+	apiExtensionsClient apiextensionsclientset.Interface
+	currentNamespace    string
+	devNamespace        string
+	jxClient            versioned.Interface
+	knbClient           buildclient.Interface
+	kserveClient        kserve.Interface
+	tektonClient        tektonclient.Interface
+	jenkinsClient       gojenkins.JenkinsClient
+	git                 gits.Gitter
+	helm                helm.Helmer
+	kuber               kube.Kuber
+	vaultOperatorClient vaultoperatorclient.Interface
+	vaultClient         vault.Client
+	systemVaultClient   vault.Client
+	resourcesInstaller  resources.Installer
+	complianceClient    *client.SonobuoyClient
+	certManagerClient   certmngclient.Interface
+	environmentsDir     string
+	fakeGitProvider     *gits.FakeProvider
 }
 
 // ServerFlags keeps generic server flags
@@ -146,6 +147,16 @@ func NewCommonOptions(devNamespace string, factory clients.Factory) CommonOption
 	}
 }
 
+// NewCommonOptionsWithTerm creates a new CommonOptions instance with given terminal input, output and error
+func NewCommonOptionsWithTerm(factory clients.Factory, in terminal.FileReader, out terminal.FileWriter, err io.Writer) *CommonOptions {
+	return &CommonOptions{
+		factory: factory,
+		In:      in,
+		Out:     out,
+		Err:     err,
+	}
+}
+
 // NewCommonOptionsWithFactory creates a new CommonOptions instance with the
 // given factory
 func NewCommonOptionsWithFactory(factory clients.Factory) CommonOptions {
@@ -159,8 +170,13 @@ func (o *CommonOptions) SetDevNamespace(ns string) {
 	o.devNamespace = ns
 	o.currentNamespace = ns
 	o.kubeClient = nil
-
 	log.Infof("Setting the dev namespace to: %s\n", util.ColorInfo(ns))
+}
+
+func (o *CommonOptions) SetCurrentNamespace(ns string) {
+	o.currentNamespace = ns
+	o.kubeClient = nil
+	log.Infof("Setting the current namespace to: %s\n", util.ColorInfo(ns))
 }
 
 // Debugf outputs the given text to the console if verbose mode is enabled
@@ -176,12 +192,12 @@ func (options *CommonOptions) AddCommonFlags(cmd *cobra.Command) {
 	if os.Getenv("JX_BATCH_MODE") == "true" {
 		defaultBatchMode = true
 	}
-	cmd.PersistentFlags().BoolVarP(&options.BatchMode, optionBatchMode, "b", defaultBatchMode, "Runs in batch mode without prompting for user input")
-	cmd.PersistentFlags().BoolVarP(&options.Verbose, optionVerbose, "", false, "Enables verbose output")
-	cmd.PersistentFlags().StringVarP(&options.LogLevel, optionLogLevel, "", logrus.InfoLevel.String(), "Sets the logging level (panic, fatal, error, warning, info, debug)")
-	cmd.PersistentFlags().BoolVarP(&options.NoBrew, optionNoBrew, "", false, "Disables brew package manager on MacOS when installing binary dependencies")
-	cmd.PersistentFlags().BoolVarP(&options.InstallDependencies, optionInstallDeps, "", false, "Enables automatic dependencies installation when required")
-	cmd.PersistentFlags().BoolVarP(&options.SkipAuthSecretsMerge, optionSkipAuthSecMerge, "", false, "Skips merging the secrets from local files with the secrets from Kubernetes cluster")
+	cmd.PersistentFlags().BoolVarP(&options.BatchMode, OptionBatchMode, "b", defaultBatchMode, "Runs in batch mode without prompting for user input")
+	cmd.PersistentFlags().BoolVarP(&options.Verbose, OptionVerbose, "", false, "Enables verbose output")
+	cmd.PersistentFlags().StringVarP(&options.LogLevel, OptionLogLevel, "", logrus.InfoLevel.String(), "Sets the logging level (panic, fatal, error, warning, info, debug)")
+	cmd.PersistentFlags().BoolVarP(&options.NoBrew, OptionNoBrew, "", false, "Disables brew package manager on MacOS when installing binary dependencies")
+	cmd.PersistentFlags().BoolVarP(&options.InstallDependencies, OptionInstallDeps, "", false, "Enables automatic dependencies installation when required")
+	cmd.PersistentFlags().BoolVarP(&options.SkipAuthSecretsMerge, OptionSkipAuthSecMerge, "", false, "Skips merging the secrets from local files with the secrets from Kubernetes cluster")
 
 	options.Cmd = cmd
 }
@@ -196,6 +212,11 @@ func (o *CommonOptions) ApiExtensionsClient() (apiextensionsclientset.Interface,
 		}
 	}
 	return o.apiExtensionsClient, nil
+}
+
+// SetApiExternsionsClient sets the api extensions client
+func (o *CommonOptions) SetApiExternsionsClient(client apiextensionsclientset.Interface) {
+	o.apiExtensionsClient = client
 }
 
 // KubeClient returns or creates the kube client
@@ -233,6 +254,11 @@ func (o *CommonOptions) KubeClientAndDevNamespace() (kubernetes.Interface, strin
 		o.devNamespace, _, err = kube.GetDevNamespace(kubeClient, curNs)
 	}
 	return kubeClient, o.devNamespace, err
+}
+
+// SetJxClient set the jx client
+func (o *CommonOptions) SetJxClient(jxClient versioned.Interface) {
+	o.jxClient = jxClient
 }
 
 // JXClient returns or creates the jx client and current namespace
@@ -307,6 +333,11 @@ func (o *CommonOptions) KnativeServeClient() (kserve.Interface, string, error) {
 	return o.kserveClient, o.currentNamespace, nil
 }
 
+// SetKnativeServeClient sets the kantive serve client
+func (o *CommonOptions) SetKnativeServeClient(client kserve.Interface) {
+	o.kserveClient = client
+}
+
 // JXClientAndAdminNamespace returns or creates the jx client and admin namespace
 func (o *CommonOptions) JXClientAndAdminNamespace() (versioned.Interface, string, error) {
 	kubeClient, _, err := o.KubeClientAndNamespace()
@@ -379,6 +410,11 @@ func (o *CommonOptions) SetGit(git gits.Gitter) {
 	o.git = git
 }
 
+// SetFakeGitProvider set the fake git provider for testing purposes
+func (o *CommonOptions) SetFakeGitProvider(provider *gits.FakeProvider) {
+	o.fakeGitProvider = provider
+}
+
 // NewHelm cerates a new helm client from the given list of parameters
 func (o *CommonOptions) NewHelm(verbose bool, helmBinary string, noTiller bool, helmTemplate bool) helm.Helmer {
 	o.helm = o.factory.CreateHelm(o.Verbose, helmBinary, noTiller, helmTemplate)
@@ -439,8 +475,8 @@ func (o *CommonOptions) TeamAndEnvironmentNames() (string, string, error) {
 
 // AddGitServerFlags add git server flags to the given cobra command
 func (o *ServerFlags) AddGitServerFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&o.ServerName, optionServerName, "n", "", "The name of the Git server to add a user")
-	cmd.Flags().StringVarP(&o.ServerURL, optionServerURL, "u", "", "The URL of the Git server to add a user")
+	cmd.Flags().StringVarP(&o.ServerName, OptionServerName, "n", "", "The name of the Git server to add a user")
+	cmd.Flags().StringVarP(&o.ServerURL, OptionServerURL, "u", "", "The URL of the Git server to add a user")
 }
 
 // FindGitServer finds the Git server from the given flags or returns an error
@@ -473,7 +509,7 @@ func (o *CommonOptions) FindServer(config *auth.AuthConfig, serverFlags *ServerF
 			if lazyCreate {
 				return config.GetOrCreateServerName(serverFlags.ServerURL, serverFlags.ServerName, kind), nil
 			}
-			return nil, util.InvalidOption(optionServerURL, serverFlags.ServerURL, config.GetServerURLs())
+			return nil, util.InvalidOption(OptionServerURL, serverFlags.ServerURL, config.GetServerURLs())
 		}
 	}
 	if server == nil && serverFlags.ServerName != "" {
@@ -484,7 +520,7 @@ func (o *CommonOptions) FindServer(config *auth.AuthConfig, serverFlags *ServerF
 			server = config.GetServerByName(name)
 		}
 		if server == nil {
-			return nil, util.InvalidOption(optionServerName, name, config.GetServerNames())
+			return nil, util.InvalidOption(OptionServerName, name, config.GetServerNames())
 		}
 	}
 	if server == nil {
@@ -501,7 +537,7 @@ func (o *CommonOptions) FindServer(config *auth.AuthConfig, serverFlags *ServerF
 	}
 	if server == nil && len(config.Servers) > 1 {
 		if o.BatchMode {
-			return nil, fmt.Errorf("Multiple servers found. Please specify one via the %s option", optionServerName)
+			return nil, fmt.Errorf("Multiple servers found. Please specify one via the %s option", OptionServerName)
 		}
 		defaultServerName := ""
 		if config.CurrentServer != "" {
@@ -585,7 +621,7 @@ func (o *CommonOptions) FindEnvironmentNamespace(envName string) (string, error)
 	}
 	env := envMap[envName]
 	if env == nil {
-		return "", util.InvalidOption(optionEnvironment, envName, envNames)
+		return "", util.InvalidOption(OptionEnvironment, envName, envNames)
 	}
 	answer := env.Spec.Namespace
 	if answer == "" {
@@ -965,6 +1001,11 @@ func (o *CommonOptions) EnvironmentsDir() (string, error) {
 	return o.environmentsDir, nil
 }
 
+// SetEnvironmentsDir sets the environment directory
+func (o *CommonOptions) SetEnvironmentsDir(dir string) {
+	o.environmentsDir = dir
+}
+
 // SeeAlsoText returns text to describe which other commands to look at which are related to the current command
 func SeeAlsoText(commands ...string) string {
 	if len(commands) == 0 {
@@ -1026,4 +1067,13 @@ func (o *CommonOptions) InCDPipeline() bool {
 // SetBatchMode configures the batch mode
 func (o *CommonOptions) SetBatchMode(batchMode bool) {
 	o.factory.SetBatch(batchMode)
+}
+
+// IstioClient creates a new Kubernetes client for Istio resources
+func (o *CommonOptions) IstioClient() (istioclient.Interface, error) {
+	config, err := o.factory.CreateKubeConfig()
+	if err != nil {
+		return nil, err
+	}
+	return istioclient.NewForConfig(config)
 }

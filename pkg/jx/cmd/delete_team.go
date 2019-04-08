@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -16,7 +17,7 @@ import (
 
 // DeleteTeamOptions are the flags for delete commands
 type DeleteTeamOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	SelectAll    bool
 	SelectFilter string
@@ -39,7 +40,7 @@ var (
 
 // NewCmdDeleteTeam creates a command object
 // retrieves one or more resources from a server.
-func NewCmdDeleteTeam(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteTeam(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteTeamOptions{
 		CommonOptions: commonOpts,
 	}
@@ -124,7 +125,7 @@ func (o *DeleteTeamOptions) Run() error {
 }
 
 func (o *DeleteTeamOptions) deleteTeam(name string) error {
-	err := o.registerTeamCRD()
+	err := o.RegisterTeamCRD()
 	if err != nil {
 		return err
 	}
@@ -143,7 +144,10 @@ func (o *DeleteTeamOptions) deleteTeam(name string) error {
 		// we don't have the namespace so the team cannot have been provisioned yet
 		return kube.DeleteTeam(jxClient, ns, name)
 	}
-	origNamespace := o.currentNamespace
+	_, origNamespace, err := o.KubeClientAndNamespace()
+	if err != nil {
+		return err
+	}
 	o.changeNamespace(name)
 
 	uninstall := &UninstallOptions{

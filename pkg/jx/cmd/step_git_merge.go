@@ -11,6 +11,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 )
@@ -51,7 +52,7 @@ master:ef08a6cd194c2687d4bc12df6bb8a86f53c348ba,2739:5b351f4eae3c4afbb90dd7787f8
 )
 
 // NewCmdStepGitMerge create the 'step git envs' command
-func NewCmdStepGitMerge(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepGitMerge(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepGitMergeOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,

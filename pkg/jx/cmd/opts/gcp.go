@@ -80,16 +80,16 @@ func (o *CommonOptions) GetGoogleProjectId() (string, error) {
 
 // GetGoogleZone returns the GCP zone
 func (o *CommonOptions) GetGoogleZone(projectId string) (string, error) {
-	return o.getGoogleZoneWithDefault(projectId, "")
+	return o.GetGoogleZoneWithDefault(projectId, "")
 }
 
 // GetGoogleRegion returns the GCP region
 func (o *CommonOptions) GetGoogleRegion(projectId string) (string, error) {
-	return o.getGoogleRegionWithDefault(projectId, "")
+	return o.GetGoogleRegionWithDefault(projectId, "")
 }
 
 // GetGoogleZoneWithDefault returns the GCP zone, if not zone is found returns the default zone
-func (o *CommonOptions) getGoogleZoneWithDefault(projectId string, defaultZone string) (string, error) {
+func (o *CommonOptions) GetGoogleZoneWithDefault(projectId string, defaultZone string) (string, error) {
 	availableZones, err := gke.GetGoogleZones(projectId)
 	if err != nil {
 		return "", err
@@ -110,7 +110,7 @@ func (o *CommonOptions) getGoogleZoneWithDefault(projectId string, defaultZone s
 	return zone, nil
 }
 
-func (o *CommonOptions) getGoogleRegionWithDefault(projectId string, defaultRegion string) (string, error) {
+func (o *CommonOptions) GetGoogleRegionWithDefault(projectId string, defaultRegion string) (string, error) {
 	availableRegions, err := gke.GetGoogleRegions(projectId)
 	if err != nil {
 		return "", err

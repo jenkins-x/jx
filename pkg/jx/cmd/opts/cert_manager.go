@@ -44,7 +44,7 @@ func (o *CommonOptions) EnsureCertManager() error {
 				"ingressShim.defaultIssuerName=letsencrypt-staging",
 				"ingressShim.defaultIssuerKind=Issuer"}
 
-			err = o.installChartOptions(helm.InstallChartOptions{
+			err = o.InstallChartWithOptions(helm.InstallChartOptions{
 				ReleaseName: pki.CertManagerReleaseName,
 				Chart:       pki.CertManagerChart,
 				Version:     "",

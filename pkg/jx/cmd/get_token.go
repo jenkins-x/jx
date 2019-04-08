@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/spf13/cobra"
 )
 
@@ -14,7 +15,7 @@ type GetTokenOptions struct {
 }
 
 // NewCmdGetToken creates the command
-func NewCmdGetToken(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetToken(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetTokenOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -52,7 +53,7 @@ func (o *GetTokenOptions) displayUsersWithTokens(authConfigSvc auth.ConfigServic
 	filterKind := o.Kind
 	filterName := o.Name
 
-	table := o.createTable()
+	table := o.CreateTable()
 	table.AddRow("KIND", "NAME", "URL", "USERNAME", "TOKEN?")
 
 	for _, s := range config.Servers {

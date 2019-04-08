@@ -16,6 +16,7 @@ import (
 
 	"github.com/blang/semver"
 	"github.com/hashicorp/go-version"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
@@ -59,7 +60,7 @@ var (
 `)
 )
 
-func NewCmdStepNextVersion(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepNextVersion(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepNextVersionOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,

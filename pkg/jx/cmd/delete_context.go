@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -39,7 +40,7 @@ type DeleteContextOptions struct {
 }
 
 // NewCmdDeleteContext creates a command object for the "delete repo" command
-func NewCmdDeleteContext(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteContext(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteContextOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,

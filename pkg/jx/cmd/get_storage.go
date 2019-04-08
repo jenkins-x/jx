@@ -3,9 +3,10 @@ package cmd
 import (
 	"sort"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 )
@@ -18,7 +19,7 @@ type GetStorageOptions struct {
 var (
 	getStorageLong = templates.LongDesc(`
 		Display the storage configuration for different classifications.
-` + storageSupportDescription + SeeAlsoText("jx step stash", "jx edit storage"))
+` + storageSupportDescription + opts.SeeAlsoText("jx step stash", "jx edit storage"))
 
 	getStorageExample = templates.Examples(`
 		# List the storage configurations for different classifications for the current team
@@ -27,7 +28,7 @@ var (
 )
 
 // NewCmdGetStorage creates the new command for: jx get env
-func NewCmdGetStorage(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetStorage(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetStorageOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -70,7 +71,7 @@ func (o *GetStorageOptions) Run() error {
 		names = append(names, k)
 	}
 	sort.Strings(names)
-	table := o.createTable()
+	table := o.CreateTable()
 	table.AddRow("CLASSIFICATION", "LOCATION")
 	for _, n := range names {
 		ls := m[n]

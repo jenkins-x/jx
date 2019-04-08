@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
@@ -32,7 +33,7 @@ type CreateTeamOptions struct {
 }
 
 // NewCmdCreateTeam creates a command object for the "create" command
-func NewCmdCreateTeam(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateTeam(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateTeamOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -65,7 +66,7 @@ func (o *CreateTeamOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	err = o.registerTeamCRD()
+	err = o.RegisterTeamCRD()
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/spf13/cobra"
 )
 
@@ -10,7 +11,7 @@ type CreateTrackerOptions struct {
 }
 
 // NewCmdCreateTracker creates a command object for the "create" command
-func NewCmdCreateTracker(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateTracker(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateTrackerOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,

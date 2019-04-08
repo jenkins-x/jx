@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/tests"
@@ -26,7 +27,7 @@ func TestEnvironmentRoleBinding(t *testing.T) {
 	t.Parallel()
 	o := &cmd.ControllerRoleOptions{
 		ControllerOptions: cmd.ControllerOptions{
-			CommonOptions: &cmd.CommonOptions{},
+			CommonOptions: &opts.CommonOptions{},
 		},
 		NoWatch: true,
 	}

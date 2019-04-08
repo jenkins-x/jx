@@ -10,6 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
@@ -39,7 +40,7 @@ var (
 )
 
 // NewCmdGetStream creates the command
-func NewCmdGetStream(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetStream(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetStreamOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,

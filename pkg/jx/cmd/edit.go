@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -15,7 +16,7 @@ import (
 
 // EditOptions contains the CLI options
 type EditOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 }
 
 var (
@@ -31,7 +32,7 @@ var (
 )
 
 // NewCmdEdit creates the edit command
-func NewCmdEdit(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdEdit(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &EditOptions{
 		commonOpts,
 	}

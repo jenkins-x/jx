@@ -8,8 +8,9 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -31,7 +32,7 @@ type ControllerBackupOptions struct {
 
 // NewCmdControllerBackup creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdControllerBackup(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdControllerBackup(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &ControllerBackupOptions{
 		ControllerOptions: ControllerOptions{
 			CommonOptions: commonOpts,
@@ -59,17 +60,17 @@ func NewCmdControllerBackup(commonOpts *CommonOptions) *cobra.Command {
 // Run implements this command
 func (o *ControllerBackupOptions) Run() error {
 	// ensure Environment / Team / User CRDs are registered before we start
-	err := o.registerEnvironmentCRD()
+	err := o.RegisterEnvironmentCRD()
 	if err != nil {
 		return err
 	}
 
-	err = o.registerTeamCRD()
+	err = o.RegisterTeamCRD()
 	if err != nil {
 		return err
 	}
 
-	err = o.registerUserCRD()
+	err = o.RegisterUserCRD()
 	if err != nil {
 		return err
 	}

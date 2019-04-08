@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
-	"path/filepath"
-	"strings"
 )
 
 const (
@@ -41,7 +43,7 @@ var (
 )
 
 // NewCmdStepGetVersionChangeSet create the 'step git envs' command
-func NewCmdStepGetVersionChangeSet(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepGetVersionChangeSet(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepGetVersionChangeSetOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -59,7 +61,7 @@ func NewCmdStepGetVersionChangeSet(commonOpts *CommonOptions) *cobra.Command {
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.VersionsRepository, "repo", "r", DefaultVersionsURL, "Jenkins X versions Git repo")
+	cmd.Flags().StringVarP(&options.VersionsRepository, "repo", "r", opts.DefaultVersionsURL, "Jenkins X versions Git repo")
 	cmd.Flags().StringVarP(&options.StableBranch, "stable-branch", "", defaultStableVersionBranch, "the versions git repository branch to compare against")
 	cmd.Flags().StringVarP(&options.TestingBranch, "testing-branch", "", defaultStableVersionBranch, "the versions git repository branch to clone")
 	cmd.Flags().StringVarP(&options.VersionsDir, "versions-dir", "", "", "the directory containing the versions repo")
@@ -71,7 +73,7 @@ func NewCmdStepGetVersionChangeSet(commonOpts *CommonOptions) *cobra.Command {
 // Run implements the command
 func (o *StepGetVersionChangeSetOptions) Run() error {
 	if o.VersionsDir == "" {
-		versionDir, err := o.cloneJXVersionsRepo(o.VersionsRepository)
+		versionDir, err := o.CloneJXVersionsRepo(o.VersionsRepository)
 		if err != nil {
 			return err
 		}

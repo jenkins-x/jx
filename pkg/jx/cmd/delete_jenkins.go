@@ -1,17 +1,18 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/spf13/cobra"
 )
 
 // DeleteJenkinsOptions are the flags for delete commands
 type DeleteJenkinsOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 }
 
 // NewCmdDeleteJenkins creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteJenkins(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteJenkins(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteJenkinsOptions{
 		commonOpts,
 	}

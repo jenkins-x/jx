@@ -1,17 +1,18 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/spf13/cobra"
 )
 
 // DeleteChatOptions are the flags for delete commands
 type DeleteChatOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 }
 
 // NewCmdDeleteChat creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteChat(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteChat(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteChatOptions{
 		commonOpts,
 	}

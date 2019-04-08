@@ -1,12 +1,14 @@
 package app
 
 import (
-	"github.com/jenkins-x/jx/cmd/codegen/generator"
-	"github.com/jenkins-x/jx/cmd/codegen/util"
-	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/cmd/codegen/generator"
+	"github.com/jenkins-x/jx/cmd/codegen/util"
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 
 	jxutil "github.com/jenkins-x/jx/pkg/util"
@@ -42,7 +44,7 @@ var (
 )
 
 // NewCreateDocsCmd creates apidocs for CRDs
-func NewCreateDocsCmd(commonOpts *cmd.CommonOptions) *cobra.Command {
+func NewCreateDocsCmd(commonOpts *opts.CommonOptions) *cobra.Command {
 	o := &GenerateDocsOptions{
 		GenerateOptions: GenerateOptions{
 			CommonOptions: commonOpts,

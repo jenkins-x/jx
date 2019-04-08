@@ -1,19 +1,20 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/spf13/cobra"
 )
 
 // StepPreOptions defines the CLI arguments
 type StepPreOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	DisableImport bool
 	OutDir        string
 }
 
 // NewCmdStep Steps a command object for the "step" command
-func NewCmdStepPre(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepPre(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepPreOptions{
 		CommonOptions: commonOpts,
 	}

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -27,13 +28,13 @@ var (
 type DeleteJenkinsTokenOptions struct {
 	CreateOptions
 
-	JenkinsSelector JenkinsSelectorOptions
+	JenkinsSelector opts.JenkinsSelectorOptions
 
-	ServerFlags ServerFlags
+	ServerFlags opts.ServerFlags
 }
 
 // NewCmdDeleteJenkinsToken defines the command
-func NewCmdDeleteJenkinsToken(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteJenkinsToken(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteJenkinsTokenOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -53,7 +54,7 @@ func NewCmdDeleteJenkinsToken(commonOpts *CommonOptions) *cobra.Command {
 			CheckErr(err)
 		},
 	}
-	options.ServerFlags.addGitServerFlags(cmd)
+	options.ServerFlags.AddGitServerFlags(cmd)
 	options.JenkinsSelector.AddFlags(cmd)
 	return cmd
 }
@@ -82,7 +83,7 @@ func (o *DeleteJenkinsTokenOptions) Run() error {
 		}
 		server = config.GetOrCreateServer(url)
 	} else {
-		server, err = o.findServer(config, &o.ServerFlags, "jenkins server", "Try installing one via: jx create team", false)
+		server, err = o.FindServer(config, &o.ServerFlags, "jenkins server", "Try installing one via: jx create team", false)
 		if err != nil {
 			return err
 		}

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 
 	"github.com/jenkins-x/jx/pkg/log"
@@ -9,11 +10,11 @@ import (
 )
 
 type DiagnoseOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 	Namespace string
 }
 
-func NewCmdDiagnose(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDiagnose(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DiagnoseOptions{
 		CommonOptions: commonOpts,
 	}
@@ -79,7 +80,7 @@ func (o *DiagnoseOptions) Run() error {
 
 // Run the specified command (jx status, kubectl get po, etc) and print its output
 func printStatus(o *DiagnoseOptions, header string, command string, options ...string) error {
-	output, err := o.getCommandOutput("", command, options...)
+	output, err := o.GetCommandOutput("", command, options...)
 	if err != nil {
 		log.Errorf("Unable to get the %s", header)
 		return err

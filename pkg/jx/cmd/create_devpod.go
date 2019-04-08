@@ -11,9 +11,10 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
@@ -62,7 +63,7 @@ type CreateDevPodResults struct {
 // CreateDevPodOptions the options for the create spring command
 type CreateDevPodOptions struct {
 	CreateOptions
-	CommonDevPodOptions
+	opts.CommonDevPodOptions
 
 	Label           string
 	Suffix          string
@@ -88,7 +89,7 @@ type CreateDevPodOptions struct {
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
-func NewCmdCreateDevPod(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateDevPod(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateDevPodOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -131,7 +132,7 @@ func NewCmdCreateDevPod(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "", "The ServiceAccount name used for the DevPod")
 	cmd.Flags().StringVarP(&options.PullSecrets, optionPullSecrets, "", "", "A list of Kubernetes secret names that will be attached to the service account (e.g. foo, bar, baz)")
 
-	options.addCommonDevPodFlags(cmd)
+	options.AddCommonDevPodFlags(cmd)
 	return cmd
 }
 
@@ -225,7 +226,7 @@ func (o *CreateDevPodOptions) Run() error {
 		pod.Annotations = map[string]string{}
 	}
 
-	userName, err := o.getUsername(o.Username)
+	userName, err := o.GetUsername(o.Username)
 	if err != nil {
 		return err
 	}
@@ -297,7 +298,7 @@ func (o *CreateDevPodOptions) Run() error {
 	if pod.Spec.ServiceAccountName == "" {
 		sa := o.ServiceAccount
 		if sa == "" {
-			prow, err := o.isProw()
+			prow, err := o.IsProw()
 			if err != nil {
 				return err
 			}
@@ -806,7 +807,7 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	if err != nil {
 		return env, err
 	}
-	userName, err := o.getUsername(o.Username)
+	userName, err := o.GetUsername(o.Username)
 	if err != nil {
 		return env, err
 	}
@@ -821,7 +822,7 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	if !flag || err != nil {
 		log.Infof("Installing the ExposecontrollerService in the namespace: %s\n", util.ColorInfo(editNs))
 		releaseName := editNs + "-es"
-		err = o.installChartOptions(helm.InstallChartOptions{
+		err = o.InstallChartWithOptions(helm.InstallChartOptions{
 			ReleaseName: releaseName,
 			Chart:       kube.ChartExposecontrollerService,
 			Version:     "",
@@ -844,13 +845,13 @@ func (o *CreateDevPodOptions) guessDevPodLabel(dir string, labels []string) (str
 		if err != nil {
 			return answer, err
 		}
-		args := &InvokeDraftPack{
+		args := &opts.InvokeDraftPack{
 			Dir:                     root,
 			ProjectConfig:           projectConfig,
 			DisableAddFiles:         true,
 			DisableJenkinsfileCheck: true,
 		}
-		answer, err = o.invokeDraftPack(args)
+		answer, err = o.InvokeDraftPack(args)
 		if err != nil {
 			return answer, errors.Wrapf(err, "failed to discover task pack in dir %s", o.Dir)
 		}
@@ -878,7 +879,7 @@ func (o *CreateDevPodOptions) updateExposeController(client kubernetes.Interface
 	if err != nil {
 		return errors.Wrapf(err, "Failed to load ingress-config in namespace %s", devNs)
 	}
-	return o.runExposecontroller(ns, ns, ingressConfig)
+	return o.RunExposecontroller(ns, ns, ingressConfig)
 }
 
 // FindDevPodLabelFromJenkinsfile finds pod labels from a Jenkinsfile

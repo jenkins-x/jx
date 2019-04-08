@@ -2,7 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 
@@ -12,6 +13,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 
 	"github.com/spf13/cobra"
@@ -45,7 +47,7 @@ var (
 )
 
 // NewCmdStepPostInstall creates the command object
-func NewCmdStepPostInstall(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepPostInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepPostInstallOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -104,7 +106,7 @@ func (o *StepPostInstallOptions) Run() (err error) {
 		return errors.Wrapf(err, "cannot create the git auth config service")
 	}
 
-	prow, err := o.isProw()
+	prow, err := o.IsProw()
 	if err != nil {
 		return errors.Wrapf(err, "cannot determine if the current team is using Prow")
 	}
@@ -127,7 +129,7 @@ func (o *StepPostInstallOptions) Run() (err error) {
 			continue
 		}
 
-		gitProvider, err := o.gitProviderForURL(gitURL, fmt.Sprintf("Environment %s", name))
+		gitProvider, err := o.GitProviderForURL(gitURL, fmt.Sprintf("Environment %s", name))
 		if err != nil {
 			log.Errorf("failed to create git provider for Environment %s with git URL %s due to: %s\n", name, gitURL, err)
 			errs = append(errs, errors.Wrapf(err, "failed to create git provider for Environment %s with git URL %s", name, gitURL))
@@ -157,12 +159,12 @@ func (o *StepPostInstallOptions) Run() (err error) {
 			if user.Username == "" {
 				return fmt.Errorf("Could not find a username for git server %s", u)
 			}
-			_, err = o.updatePipelineGitCredentialsSecret(server, user)
+			_, err = o.UpdatePipelineGitCredentialsSecret(server, user)
 			if err != nil {
 				return err
 			}
 			// register the webhook
-			return o.createWebhookProw(gitURL, gitProvider)
+			return o.CreateWebhookProw(gitURL, gitProvider)
 		}
 
 		err = o.ImportProject(gitURL, envDir, jenkinsfile.Name, branchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)

@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
@@ -39,7 +40,7 @@ var (
 	`)
 )
 
-func NewCmdGetEks(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetEks(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetEksOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -67,15 +68,15 @@ func NewCmdGetEks(commonOpts *CommonOptions) *cobra.Command {
 func (o *GetEksOptions) Run() error {
 	if len(o.Args) == 0 {
 		var deps []string
-		d := binaryShouldBeInstalled("eksctl")
+		d := opts.BinaryShouldBeInstalled("eksctl")
 		if d != "" {
 			deps = append(deps, d)
 		}
-		d = binaryShouldBeInstalled("heptio-authenticator-aws")
+		d = opts.BinaryShouldBeInstalled("heptio-authenticator-aws")
 		if d != "" {
 			deps = append(deps, d)
 		}
-		err := o.installMissingDependencies(deps)
+		err := o.InstallMissingDependencies(deps)
 		if err != nil {
 			log.Errorf("%v\nPlease fix the error or install manually then try again", err)
 			os.Exit(-1)

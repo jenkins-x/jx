@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -46,7 +47,7 @@ type StepSplitMonorepoOptions struct {
 }
 
 // NewCmdStepSplitMonorepo Creates a new Command object
-func NewCmdStepSplitMonorepo(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepSplitMonorepo(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepSplitMonorepoOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -108,7 +109,7 @@ func (o *StepSplitMonorepoOptions) Run() error {
 	}
 	var gitProvider gits.GitProvider
 	if !o.NoGit {
-		gitProvider, err = o.gitProviderForGitServerURL(gits.GitHubURL, gits.KindGitHub)
+		gitProvider, err = o.GitProviderForGitServerURL(gits.GitHubURL, gits.KindGitHub)
 		if err != nil {
 			return err
 		}

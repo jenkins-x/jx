@@ -9,6 +9,7 @@ import (
 	"github.com/ghodss/yaml"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -47,7 +48,7 @@ var (
 )
 
 // NewCmdStepEnvApply registers the command
-func NewCmdStepEnvApply(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepEnvApply(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepEnvApplyOptions{
 		StepEnvOptions: StepEnvOptions{
 			StepOptions: StepOptions{
@@ -151,12 +152,13 @@ func (o *StepEnvApplyOptions) Run() error {
 		teamSettings := &env.Spec.TeamSettings
 
 		// disable the modify of the Dev Environment lazily...
-		o.modifyDevEnvironmentFn = func(callback func(env *v1.Environment) error) error {
+		o.ModifyDevEnvironmentFn = func(callback func(env *v1.Environment) error) error {
 			callback(&env)
 			return nil
 		}
 
-		o.helm = o.NewHelm(false, teamSettings.HelmBinary, teamSettings.NoTiller, teamSettings.HelmTemplate)
+		helm := o.NewHelm(false, teamSettings.HelmBinary, teamSettings.NoTiller, teamSettings.HelmTemplate)
+		o.SetHelm(helm)
 
 		// ensure there's a development namespace setup
 		err = kube.EnsureDevNamespaceCreatedWithoutEnvironment(kubeClient, ns)
@@ -183,7 +185,7 @@ func (o *StepEnvApplyOptions) Run() error {
 		}
 		if currentNs != ns {
 			nsOptions := &NamespaceOptions{
-				CommonOptions: o,
+				CommonOptions: o.CommonOptions,
 			}
 			nsOptions.BatchMode = true
 			nsOptions.Args = []string{ns}

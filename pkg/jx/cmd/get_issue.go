@@ -10,9 +10,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 )
@@ -38,7 +39,7 @@ var (
 )
 
 // NewCmdGetIssue creates the command
-func NewCmdGetIssue(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetIssue(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetIssueOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -66,7 +67,7 @@ func NewCmdGetIssue(commonOpts *CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *GetIssueOptions) Run() error {
-	tracker, err := o.createIssueProvider(o.Dir)
+	tracker, err := o.CreateIssueProvider(o.Dir)
 	if err != nil {
 		return errors.Wrap(err, "failed to create the issue tracker")
 	}
@@ -76,7 +77,7 @@ func (o *GetIssueOptions) Run() error {
 		return errors.Wrap(err, "issue not found")
 	}
 
-	table := o.createTable()
+	table := o.CreateTable()
 	table.AddRow("ISSUE", "STATUS", "APPLICATION", "ENVIRONMENT")
 
 	client, ns, err := o.JXClientAndDevNamespace()

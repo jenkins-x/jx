@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	configio "github.com/jenkins-x/jx/pkg/io"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -47,7 +48,7 @@ var (
 	defaultValueFileNames = []string{"values.yaml", "myvalues.yaml", helm.SecretsFileName, filepath.Join("env", helm.SecretsFileName)}
 )
 
-func NewCmdStepHelmApply(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepHelmApply(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepHelmApplyOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{
@@ -106,12 +107,12 @@ func (o *StepHelmApplyOptions) Run() error {
 		(&StepHelmVersionOptions{
 			StepHelmOptions: StepHelmOptions{
 				StepOptions: StepOptions{
-					CommonOptions: &CommonOptions{},
+					CommonOptions: &opts.CommonOptions{},
 				},
 			},
 		}).Run()
 	}
-	_, err = o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
+	_, err = o.HelmInitDependencyBuild(dir, o.DefaultReleaseCharts())
 	if err != nil {
 		return err
 	}

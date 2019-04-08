@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/spf13/cobra"
 )
 
@@ -9,7 +10,7 @@ type StepVerifyOptions struct {
 	StepOptions
 }
 
-func NewCmdStepVerify(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepVerify(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepVerifyOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,

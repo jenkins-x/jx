@@ -3,10 +3,11 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -45,7 +46,7 @@ type EditEnvOptions struct {
 }
 
 // NewCmdEditEnv creates a command object for the "create" command
-func NewCmdEditEnv(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdEditEnv(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &EditEnvOptions{
 		HelmValuesConfig: config.HelmValuesConfig{
 			ExposeController: &config.ExposeController{},
@@ -86,7 +87,7 @@ func NewCmdEditEnv(commonOpts *CommonOptions) *cobra.Command {
 
 	cmd.Flags().BoolVarP(&options.NoGitOps, "no-gitops", "x", false, "Disables the use of GitOps on the environment so that promotion is implemented by directly modifying the resources via Helm instead of using a Git repository")
 
-	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
+	opts.AddGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, false)
 	return cmd
 }
@@ -166,7 +167,7 @@ func (o *EditEnvOptions) Run() error {
 	gitURL := env.Spec.Source.URL
 	if gitURL != "" {
 		if gitProvider == nil {
-			p, err := o.gitProviderForURL(gitURL, "user name to create the Git repository")
+			p, err := o.GitProviderForURL(gitURL, "user name to create the Git repository")
 			if err != nil {
 				return err
 			}

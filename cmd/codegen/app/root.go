@@ -1,13 +1,13 @@
 package app
 
 import (
+	"os"
+
 	"github.com/jenkins-x/jx/cmd/codegen/util"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"os"
-
-	"github.com/jenkins-x/jx/pkg/jx/cmd"
 )
 
 const (
@@ -38,7 +38,7 @@ func Run() error {
 		Run:   runHelp,
 	}
 
-	commonOpts := &cmd.CommonOptions{
+	commonOpts := &opts.CommonOptions{
 		In:  os.Stdin,
 		Out: os.Stdout,
 		Err: os.Stderr,

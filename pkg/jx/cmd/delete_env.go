@@ -3,8 +3,9 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -26,13 +27,13 @@ var (
 
 // DeleteEnvOptions the options for the create spring command
 type DeleteEnvOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	DeleteNamespace bool
 }
 
 // NewCmdDeleteEnv creates a command object for the "delete repo" command
-func NewCmdDeleteEnv(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteEnv(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteEnvOptions{
 		CommonOptions: commonOpts,
 	}

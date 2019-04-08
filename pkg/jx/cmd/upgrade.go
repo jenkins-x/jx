@@ -1,13 +1,14 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 )
 
 // UpgradeOptions are the flags for delete commands
 type UpgradeOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 }
 
 var (
@@ -28,7 +29,7 @@ var (
 )
 
 // NewCmdUpgrade creates the command
-func NewCmdUpgrade(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdUpgrade(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradeOptions{
 		commonOpts,
 	}

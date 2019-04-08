@@ -13,11 +13,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/chats"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/reports"
@@ -74,7 +75,7 @@ type StepBlogState struct {
 }
 
 // NewCmdStepBlog Creates a new Command object
-func NewCmdStepBlog(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepBlog(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepBlogOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -132,7 +133,7 @@ func (o *StepBlogOptions) Run() error {
 			return err
 		}
 	} else {
-		gitInfo, gitProvider, tracker, err := o.createGitProvider(o.Dir)
+		gitInfo, gitProvider, tracker, err := o.CreateGitProvider(o.Dir)
 		if err != nil {
 			return err
 		}
@@ -236,7 +237,7 @@ func (o *StepBlogOptions) createBarReport(name string, legends ...string) report
 `)
 		return reports.NewBlogBarReport(name, state.Writer, jsFileName, jsLinkURI)
 	}
-	return reports.NewTableBarReport(o.createTable(), legends...)
+	return reports.NewTableBarReport(o.CreateTable(), legends...)
 }
 
 func (options *StepBlogOptions) combineMinorReleases(releases []*gits.GitRelease) []*gits.GitRelease {
@@ -594,7 +595,7 @@ func (o *StepBlogOptions) loadChatMetrics(chatConfig *config.ChatConfig) error {
 }
 
 func (o *StepBlogOptions) getChannelMetrics(chatConfig *config.ChatConfig, channelName string) (*chats.ChannelMetrics, error) {
-	provider, err := o.createChatProvider(chatConfig)
+	provider, err := o.CreateChatProvider(chatConfig)
 	if err != nil {
 		return nil, err
 	}

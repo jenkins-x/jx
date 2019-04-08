@@ -22,6 +22,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/tekton/tekton_helpers_test"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
@@ -155,12 +156,12 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				NoKaniko:     true,
 				Trigger:      string(pipelineapi.PipelineTriggerTypeManual),
 				StepOptions: cmd.StepOptions{
-					CommonOptions: &cmd.CommonOptions{
+					CommonOptions: &opts.CommonOptions{
 						ServiceAccount: "tekton-bot",
 					},
 				},
 				BuildNumber: "1",
-				VersionResolver: &cmd.VersionResolver{
+				VersionResolver: &opts.VersionResolver{
 					VersionsDir: testVersionsDir,
 				},
 			}

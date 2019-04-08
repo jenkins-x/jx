@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -25,7 +26,7 @@ type DeleteAddonGiteaOptions struct {
 }
 
 // NewCmdDeleteAddonGitea defines the command
-func NewCmdDeleteAddonGitea(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteAddonGitea(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteAddonGiteaOptions{
 		DeleteAddonOptions: DeleteAddonOptions{
 			CommonOptions: commonOpts,
@@ -54,7 +55,7 @@ func (o *DeleteAddonGiteaOptions) Run() error {
 	if o.ReleaseName == "" {
 		return util.MissingOption(optionRelease)
 	}
-	err := o.deleteChart(o.ReleaseName, o.Purge)
+	err := o.DeleteChart(o.ReleaseName, o.Purge)
 	if err != nil {
 		return err
 	}

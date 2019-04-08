@@ -121,7 +121,7 @@ func (o *CommonOptions) createGcsBucket(u *url.URL, bucket *blob.Bucket, cb *Cre
 			}
 		}
 
-		cb.GKEZone, err = o.getGoogleZoneWithDefault(cb.GKEProjectID, defaultZone)
+		cb.GKEZone, err = o.GetGoogleZoneWithDefault(cb.GKEProjectID, defaultZone)
 		if err != nil {
 			return err
 		}

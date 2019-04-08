@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -12,7 +13,7 @@ import (
 )
 
 type LogsOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Container       string
 	Namespace       string
@@ -41,7 +42,7 @@ var (
 `)
 )
 
-func NewCmdLogs(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdLogs(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &LogsOptions{
 		CommonOptions: commonOpts,
 	}

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -24,7 +25,7 @@ var (
 `)
 )
 
-func NewCmdStepNexusDrop(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepNexusDrop(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepNexusDropOptions{
 		StepNexusOptions: StepNexusOptions{
 			StepOptions: StepOptions{

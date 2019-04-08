@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -32,7 +33,7 @@ type UpgradeClusterOptions struct {
 }
 
 // NewCmdUpgradeCluster defines the command
-func NewCmdUpgradeCluster(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdUpgradeCluster(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradeClusterOptions{
 		UpgradeOptions: UpgradeOptions{
 			CommonOptions: commonOpts,
@@ -91,14 +92,14 @@ func (o *UpgradeClusterOptions) Run() error {
 
 	log.Infof("Upgrading %s master to %s (this may take a few minutes)\n", selectedClusterName, selectedVersion)
 
-	err = o.runCommandVerbose("gcloud", "container", "clusters", "upgrade", selectedClusterName, "--cluster-version", selectedVersion, "--master", "--quiet")
+	err = o.RunCommandVerbose("gcloud", "container", "clusters", "upgrade", selectedClusterName, "--cluster-version", selectedVersion, "--master", "--quiet")
 	if err != nil {
 		return err
 	}
 
 	log.Infof("Upgrading %s nodes (this may take a few minutes)\n", selectedClusterName)
 
-	return o.runCommandVerbose("gcloud", "container", "clusters", "upgrade", selectedClusterName, "--quiet")
+	return o.RunCommandVerbose("gcloud", "container", "clusters", "upgrade", selectedClusterName, "--quiet")
 }
 
 func (o *UpgradeClusterOptions) getClusterName() (string, error) {
@@ -108,7 +109,7 @@ func (o *UpgradeClusterOptions) getClusterName() (string, error) {
 		return selectedClusterName, nil
 	}
 
-	out, err := o.getCommandOutput("", "gcloud", "container", "clusters", "list")
+	out, err := o.GetCommandOutput("", "gcloud", "container", "clusters", "list")
 	if err != nil {
 		return "", err
 	}
@@ -155,7 +156,7 @@ func (o *UpgradeClusterOptions) getVersion() (string, error) {
 		return selectedVersion, nil
 	}
 
-	out, err := o.getCommandOutput("", "gcloud", "container", "get-server-config", "--format=json")
+	out, err := o.GetCommandOutput("", "gcloud", "container", "get-server-config", "--format=json")
 	if err != nil {
 		return "", err
 	}
@@ -186,7 +187,7 @@ func (o *UpgradeClusterOptions) getVersion() (string, error) {
 }
 
 func (o *UpgradeClusterOptions) validateGCloudIsAvailable() error {
-	_, err := o.getCommandOutput("", "gcloud", "version")
+	_, err := o.GetCommandOutput("", "gcloud", "version")
 	if err != nil {
 		return err
 	}

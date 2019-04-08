@@ -13,6 +13,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cloud/iks"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -28,7 +29,7 @@ import (
 
 // InitOptions the options for running init
 type InitOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 	Client clientset.Clientset
 	Flags  InitFlags
 }
@@ -89,7 +90,7 @@ var (
 
 // NewCmdInit creates a command object for the generic "init" action, which
 // primes a Kubernetes cluster so it's ready for Jenkins X to be installed
-func NewCmdInit(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdInit(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &InitOptions{
 		CommonOptions: commonOpts,
 	}
@@ -117,24 +118,24 @@ func (o *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.Flags.Domain, "domain", "", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
 	cmd.Flags().StringVarP(&o.Username, optionUsername, "", "", "The Kubernetes username used to initialise helm. Usually your email address for your Kubernetes account")
 	cmd.Flags().StringVarP(&o.Flags.UserClusterRole, "user-cluster-role", "", "cluster-admin", "The cluster role for the current user to be able to administer helm")
-	cmd.Flags().StringVarP(&o.Flags.TillerClusterRole, "tiller-cluster-role", "", DefaultTillerRole, "The cluster role for Helm's tiller")
-	cmd.Flags().StringVarP(&o.Flags.TillerNamespace, optionTillerNamespace, "", DefaultTillerNamesapce, "The namespace for the Tiller when using a global tiller")
+	cmd.Flags().StringVarP(&o.Flags.TillerClusterRole, "tiller-cluster-role", "", opts.DefaultTillerRole, "The cluster role for Helm's tiller")
+	cmd.Flags().StringVarP(&o.Flags.TillerNamespace, optionTillerNamespace, "", opts.DefaultTillerNamesapce, "The namespace for the Tiller when using a global tiller")
 	cmd.Flags().StringVarP(&o.Flags.IngressClusterRole, "ingress-cluster-role", "", "cluster-admin", "The cluster role for the Ingress controller")
 	cmd.Flags().StringVarP(&o.Flags.IngressNamespace, "ingress-namespace", "", defaultIngressNamesapce, "The namespace for the Ingress controller")
 	cmd.Flags().StringVarP(&o.Flags.IngressService, "ingress-service", "", defaultIngressServiceName, "The name of the Ingress controller Service")
 	cmd.Flags().StringVarP(&o.Flags.IngressDeployment, "ingress-deployment", "", defaultIngressServiceName, "The name of the Ingress controller Deployment")
 	cmd.Flags().StringVarP(&o.Flags.ExternalIP, "external-ip", "", "", "The external IP used to access ingress endpoints from outside the Kubernetes cluster. For bare metal on premise clusters this is often the IP of the Kubernetes master. For cloud installations this is often the external IP of the ingress LoadBalancer.")
 	cmd.Flags().BoolVarP(&o.Flags.DraftClient, "draft-client-only", "", false, "Only install draft client")
-	cmd.Flags().BoolVarP(&o.Flags.HelmClient, "helm-client-only", "", DefaultOnlyHelmClient, "Only install helm client")
+	cmd.Flags().BoolVarP(&o.Flags.HelmClient, "helm-client-only", "", opts.DefaultOnlyHelmClient, "Only install helm client")
 	cmd.Flags().BoolVarP(&o.Flags.RecreateExistingDraftRepos, "recreate-existing-draft-repos", "", false, "Delete existing helm repos used by Jenkins X under ~/draft/packs")
-	cmd.Flags().BoolVarP(&o.Flags.GlobalTiller, "global-tiller", "", DefaultGlobalTiller, "Whether or not to use a cluster global tiller")
-	cmd.Flags().BoolVarP(&o.Flags.RemoteTiller, "remote-tiller", "", DefaultRemoteTiller, "If enabled and we are using tiller for helm then run tiller remotely in the kubernetes cluster. Otherwise we run the tiller process locally.")
+	cmd.Flags().BoolVarP(&o.Flags.GlobalTiller, "global-tiller", "", opts.DefaultGlobalTiller, "Whether or not to use a cluster global tiller")
+	cmd.Flags().BoolVarP(&o.Flags.RemoteTiller, "remote-tiller", "", opts.DefaultRemoteTiller, "If enabled and we are using tiller for helm then run tiller remotely in the kubernetes cluster. Otherwise we run the tiller process locally.")
 	cmd.Flags().BoolVarP(&o.Flags.NoTiller, "no-tiller", "", false, "Whether to disable the use of tiller with helm. If disabled we use 'helm template' to generate the YAML from helm charts then we use 'kubectl apply' to install it to avoid using tiller completely.")
 	cmd.Flags().BoolVarP(&o.Flags.SkipIngress, "skip-ingress", "", false, "Skips the installation of ingress controller. Note that a ingress controller must already be installed into the cluster in order for the installation to succeed")
-	cmd.Flags().BoolVarP(&o.Flags.SkipTiller, "skip-setup-tiller", "", DefaultSkipTiller, "Don't setup the Helm Tiller service - lets use whatever tiller is already setup for us.")
-	cmd.Flags().BoolVarP(&o.Flags.SkipClusterRole, "skip-cluster-role", "", DefaultSkipClusterRole, "Don't enable cluster admin role for user")
+	cmd.Flags().BoolVarP(&o.Flags.SkipTiller, "skip-setup-tiller", "", opts.DefaultSkipTiller, "Don't setup the Helm Tiller service - lets use whatever tiller is already setup for us.")
+	cmd.Flags().BoolVarP(&o.Flags.SkipClusterRole, "skip-cluster-role", "", opts.DefaultSkipClusterRole, "Don't enable cluster admin role for user")
 
-	cmd.Flags().BoolVarP(&o.Flags.Helm3, "helm3", "", DefaultHelm3, "Use helm3 to install Jenkins X which does not use Tiller")
+	cmd.Flags().BoolVarP(&o.Flags.Helm3, "helm3", "", opts.DefaultHelm3, "Use helm3 to install Jenkins X which does not use Tiller")
 	cmd.Flags().BoolVarP(&o.Flags.OnPremise, "on-premise", "", false, "If installing on an on premise cluster then lets default the 'external-ip' to be the Kubernetes master IP address")
 }
 
@@ -218,7 +219,7 @@ func (o *InitOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	cfg := InitHelmConfig{
+	cfg := opts.InitHelmConfig{
 		Namespace:       o.Flags.Namespace,
 		OnlyHelmClient:  o.Flags.HelmClient,
 		Helm3:           o.Flags.Helm3,
@@ -228,7 +229,7 @@ func (o *InitOptions) Run() error {
 		TillerRole:      o.Flags.TillerClusterRole,
 	}
 	// helm init, this has been seen to fail intermittently on public clouds, so let's retry a couple of times
-	err = o.retry(3, 2*time.Second, func() (err error) {
+	err = o.Retry(3, 2*time.Second, func() (err error) {
 		err = o.InitHelm(cfg)
 		return
 	})
@@ -239,7 +240,7 @@ func (o *InitOptions) Run() error {
 	}
 
 	// draft init
-	_, _, err = o.initBuildPacks()
+	_, _, err = o.InitBuildPacks()
 	if err != nil {
 		log.Fatalf("initialise build packs failed: %v", err)
 		return err
@@ -298,7 +299,7 @@ func (o *InitOptions) enableClusterAdminRole() error {
 		},
 	}
 
-	return o.retry(3, 10*time.Second, func() (err error) {
+	return o.Retry(3, 10*time.Second, func() (err error) {
 		_, err = clusterRoleBindingInterface.Get(clusterRoleBindingName, metav1.GetOptions{})
 		if err != nil {
 			log.Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n %v\n", clusterRoleBindingName, o.Flags.UserClusterRole, o.Username, err)
@@ -417,7 +418,7 @@ func (o *InitOptions) initIngress() error {
 		return fmt.Errorf("Failed to ensure the ingress namespace %s is created: %s\nIs this an RBAC issue on your cluster?", ingressNamespace, err)
 	}
 
-	currentContext, err := o.getCommandOutput("", "kubectl", "config", "current-context")
+	currentContext, err := o.GetCommandOutput("", "kubectl", "config", "current-context")
 	if err != nil {
 		return err
 	}
@@ -425,7 +426,7 @@ func (o *InitOptions) initIngress() error {
 		if o.Flags.Provider == "" {
 			o.Flags.Provider = cloud.MINIKUBE
 		}
-		addons, err := o.getCommandOutput("", "minikube", "addons", "list")
+		addons, err := o.GetCommandOutput("", "minikube", "addons", "list")
 		if err != nil {
 			return err
 		}
@@ -512,7 +513,7 @@ controller:
 		}
 		chartName := "stable/nginx-ingress"
 
-		version, err := o.getVersionNumber(version2.KindChart, chartName, o.Flags.VersionsRepository)
+		version, err := o.GetVersionNumber(version2.KindChart, chartName, o.Flags.VersionsRepository)
 		if err != nil {
 			return errors.Wrapf(err, "failed to load version of chart %s", chartName)
 		}

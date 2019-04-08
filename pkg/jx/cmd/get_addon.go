@@ -5,6 +5,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -28,7 +29,7 @@ var (
 )
 
 // NewCmdGetAddon creates the command
-func NewCmdGetAddon(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetAddonOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -76,7 +77,7 @@ func (o *GetAddonOptions) Run() error {
 
 	charts := kube.AddonCharts
 
-	table := o.createTable()
+	table := o.CreateTable()
 	table.AddRow("NAME", "CHART", "ENABLED", "STATUS", "VERSION")
 
 	keys := util.SortedMapKeys(charts)

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -59,7 +60,7 @@ var (
 `)
 )
 
-func NewCmdStepTag(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepTag(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepTagOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -231,8 +232,8 @@ func (o *StepTagOptions) defaultChartValueRepository() string {
 		log.Warnf("failed to find git repository: %s\n", err.Error())
 	}
 
-	dockerRegistry := o.dockerRegistry()
-	dockerRegistryOrg := o.dockerRegistryOrg(gitInfo)
+	dockerRegistry := o.DockerRegistry()
+	dockerRegistryOrg := o.DockerRegistryOrg(gitInfo)
 	if dockerRegistryOrg == "" {
 		dockerRegistryOrg = os.Getenv("ORG")
 	}

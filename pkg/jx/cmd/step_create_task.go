@@ -14,11 +14,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/prow"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile/gitresolver"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -79,7 +80,6 @@ type StepCreateTaskOptions struct {
 	TargetPath        string
 	SourceName        string
 	CustomImage       string
-	DockerRegistry    string
 	CloneGitURL       string
 	Branch            string
 	Revision          string
@@ -95,7 +95,9 @@ type StepCreateTaskOptions struct {
 	KanikoSecret      string
 	KanikoSecretKey   string
 	ProjectID         string
-	DockerRegistryOrg string
+
+	dockerRegistry    string
+	dockerRegistryOrg string
 
 	PodTemplates        map[string]*corev1.Pod
 	MissingPodTemplates map[string]bool
@@ -108,7 +110,7 @@ type StepCreateTaskOptions struct {
 	Results              StepCreateTaskResults
 	version              string
 	previewVersionPrefix string
-	VersionResolver      *VersionResolver
+	VersionResolver      *opts.VersionResolver
 }
 
 // StepCreateTaskResults stores the generated results
@@ -122,7 +124,7 @@ type StepCreateTaskResults struct {
 }
 
 // NewCmdStepCreateTask Creates a new Command object
-func NewCmdStepCreateTask(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepCreateTask(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreateTaskOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -156,7 +158,7 @@ func NewCmdStepCreateTask(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringArrayVarP(&options.CustomEnvs, "env", "e", nil, "List of custom environment variables to be applied to resources that are created")
 	cmd.Flags().StringVarP(&options.Trigger, "trigger", "t", string(pipelineapi.PipelineTriggerTypeManual), "The kind of pipeline trigger")
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
-	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
+	cmd.Flags().StringVarP(&options.dockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
 	cmd.Flags().StringVarP(&options.TargetPath, "target-path", "", "", "The target path appended to /workspace/${source} to clone the source code")
 	cmd.Flags().StringVarP(&options.SourceName, "source", "", "source", "The name of the source repository")
 	cmd.Flags().StringVarP(&options.CustomImage, "image", "", "", "Specify a custom image to use for the steps which overrides the image in the PodTemplates")
@@ -172,7 +174,7 @@ func NewCmdStepCreateTask(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.KanikoSecret, "kaniko-secret", "", kanikoSecretName, "The name of the kaniko secret")
 	cmd.Flags().StringVarP(&options.KanikoSecretKey, "kaniko-secret-key", "", kanikoSecretKey, "The key in the Kaniko Secret to mount")
 	cmd.Flags().StringVarP(&options.ProjectID, "project-id", "", "", "The cloud project ID. If not specified we default to the install project")
-	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The Docker registry organisation. If blank the git repository owner is used")
+	cmd.Flags().StringVarP(&options.dockerRegistryOrg, "docker-registry-org", "", "", "The Docker registry organisation. If blank the git repository owner is used")
 	cmd.Flags().DurationVarP(&options.Duration, "duration", "", time.Second*30, "Retry duration when trying to create a PipelineRun")
 	return cmd
 }
@@ -187,7 +189,6 @@ func (o *StepCreateTaskOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.devNamespace = ns
 
 	if o.ProjectID == "" {
 		data, err := kube.ReadInstallValues(kubeClient, ns)
@@ -215,7 +216,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 	}
 	if o.CloneGitURL != "" {
-		err = o.retry(3, time.Second*2, func() error {
+		err = o.Retry(3, time.Second*2, func() error {
 			err := o.cloneGitRepositoryToTempDir(o.CloneGitURL)
 			if err != nil {
 				o.deleteTempDir()
@@ -270,13 +271,13 @@ func (o *StepCreateTaskOptions) Run() error {
 		log.Infof("setting up docker registry for %s\n", o.CloneGitURL)
 	}
 
-	if o.DockerRegistry == "" {
+	if o.dockerRegistry == "" {
 		data, err := kube.GetConfigMapData(kubeClient, kube.ConfigMapJenkinsDockerRegistry, ns)
 		if err != nil {
 			return fmt.Errorf("Could not find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsDockerRegistry, ns, err)
 		}
-		o.DockerRegistry = data["docker.registry"]
-		if o.DockerRegistry == "" {
+		o.dockerRegistry = data["docker.registry"]
+		if o.dockerRegistry == "" {
 			return util.MissingOption("docker-registry")
 		}
 	}
@@ -1044,7 +1045,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		dir = strings.Replace(dir, PlaceHolderAppName, gitInfo.Name, -1)
 		dir = strings.Replace(dir, PlaceHolderOrg, gitInfo.Organisation, -1)
 		dir = strings.Replace(dir, PlaceHolderGitProvider, gitProviderHost, -1)
-		dir = strings.Replace(dir, PlaceHolderDockerRegistryOrg, strings.ToLower(o.dockerRegistryOrg(gitInfo)), -1)
+		dir = strings.Replace(dir, PlaceHolderDockerRegistryOrg, strings.ToLower(o.DockerRegistryOrg(gitInfo)), -1)
 	} else {
 		log.Warnf("No GitInfo available!\n")
 	}
@@ -1122,13 +1123,13 @@ func (o *StepCreateTaskOptions) getWorkspaceDir() string {
 }
 
 func (o *StepCreateTaskOptions) discoverBuildPack(dir string, projectConfig *config.ProjectConfig) (string, error) {
-	args := &InvokeDraftPack{
+	args := &opts.InvokeDraftPack{
 		Dir:             o.Dir,
 		CustomDraftPack: o.Pack,
 		ProjectConfig:   projectConfig,
 		DisableAddFiles: true,
 	}
-	pack, err := o.invokeDraftPack(args)
+	pack, err := o.InvokeDraftPack(args)
 	if err != nil {
 		return pack, errors.Wrapf(err, "failed to discover task pack in dir %s", o.Dir)
 	}
@@ -1146,7 +1147,7 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 	if kube.GetSliceEnvVar(envVars, "DOCKER_REGISTRY") == nil {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "DOCKER_REGISTRY",
-			Value: o.DockerRegistry,
+			Value: o.dockerRegistry,
 		})
 	}
 	if kube.GetSliceEnvVar(envVars, "BUILD_NUMBER") == nil {
@@ -1387,7 +1388,7 @@ func (o *StepCreateTaskOptions) deleteTempDir() {
 }
 
 func (o *StepCreateTaskOptions) viewSteps(tasks ...*pipelineapi.Task) error {
-	table := o.createTable()
+	table := o.CreateTable()
 	showTaskName := len(tasks) > 1
 	if showTaskName {
 		table.AddRow("TASK", "NAME", "COMMAND", "IMAGE")
@@ -1595,18 +1596,18 @@ func (o *StepCreateTaskOptions) modifyStep(parsedStep syntax.Step, gitInfo *gits
 func (o *StepCreateTaskOptions) dockerImage(gitInfo *gits.GitRepository) string {
 	dockerRegistry := o.getDockerRegistry()
 
-	dockeerRegistryOrg := o.DockerRegistryOrg
+	dockeerRegistryOrg := o.dockerRegistryOrg
 	if dockeerRegistryOrg == "" {
-		dockeerRegistryOrg = o.dockerRegistryOrg(gitInfo)
+		dockeerRegistryOrg = o.DockerRegistryOrg(gitInfo)
 	}
 	appName := gitInfo.Name
 	return dockerRegistry + "/" + dockeerRegistryOrg + "/" + appName
 }
 
 func (o *StepCreateTaskOptions) getDockerRegistry() string {
-	dockerRegistry := o.DockerRegistry
+	dockerRegistry := o.dockerRegistry
 	if dockerRegistry == "" {
-		dockerRegistry = o.dockerRegistry()
+		dockerRegistry = o.DockerRegistry()
 	}
 	return dockerRegistry
 }

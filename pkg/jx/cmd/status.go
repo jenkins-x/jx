@@ -6,6 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -14,7 +15,7 @@ import (
 )
 
 type StatusOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 	node string
 }
 
@@ -30,7 +31,7 @@ var (
 `)
 )
 
-func NewCmdStatus(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStatus(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StatusOptions{
 		CommonOptions: commonOpts,
 	}

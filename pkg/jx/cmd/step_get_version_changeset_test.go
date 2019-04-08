@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/version"
 	uuid "github.com/satori/go.uuid"
@@ -36,7 +37,7 @@ func TestStepGetVersionChangeSetOptionsBranch(t *testing.T) {
 	r, fakeStdout, _ := os.Pipe()
 	options := &cmd.StepGetVersionChangeSetOptions{
 		StepOptions: cmd.StepOptions{
-			CommonOptions: &cmd.CommonOptions{},
+			CommonOptions: &opts.CommonOptions{},
 		},
 		VersionsDir:   testDir,
 		TestingBranch: testBranch,
@@ -101,7 +102,7 @@ func TestStepGetVersionChangeSetOptionsPR(t *testing.T) {
 	r, fakeStdout, _ := os.Pipe()
 	options := &cmd.StepGetVersionChangeSetOptions{
 		StepOptions: cmd.StepOptions{
-			CommonOptions: &cmd.CommonOptions{},
+			CommonOptions: &opts.CommonOptions{},
 		},
 		VersionsDir:  testDir,
 		PR:           "1",

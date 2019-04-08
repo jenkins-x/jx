@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/spf13/cobra"
 )
 
@@ -10,7 +11,7 @@ type StepBuildPackOptions struct {
 }
 
 // NewCmdStepBuildPack Steps a command object for the "step" command
-func NewCmdStepBuildPack(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepBuildPack(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepBuildPackOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,

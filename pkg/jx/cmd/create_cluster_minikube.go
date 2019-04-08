@@ -13,6 +13,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -58,7 +59,7 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateClusterMinikube(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateClusterMinikube(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := CreateClusterMinikubeOptions{
 		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.MINIKUBE),
 	}
@@ -89,12 +90,12 @@ func NewCmdCreateClusterMinikube(commonOpts *CommonOptions) *cobra.Command {
 
 func (o *CreateClusterMinikubeOptions) Run() error {
 	var deps []string
-	d := binaryShouldBeInstalled("minikube")
+	d := opts.BinaryShouldBeInstalled("minikube")
 	if d != "" {
 		deps = append(deps, d)
 	}
 
-	err := o.installMissingDependencies(deps)
+	err := o.InstallMissingDependencies(deps)
 	if err != nil {
 		log.Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
 		os.Exit(-1)
@@ -115,7 +116,7 @@ func (o *CreateClusterMinikubeOptions) Run() error {
 }
 
 func (o *CreateClusterMinikubeOptions) defaultMacVMDriver() string {
-	_, err := o.getCommandOutput("", "hyperkit", "-v")
+	_, err := o.GetCommandOutput("", "hyperkit", "-v")
 	if err != nil {
 		log.Warnf("Could not find hyperkit on your PATH. If you install Docker for Mac then we could use hyperkit.\nSee: https://docs.docker.com/docker-for-mac/install/\n")
 		return "xhyve"
@@ -212,7 +213,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	showPromptIfOptionNotSet(&vmDriverValue, prompts, o.In, o.Out, o.Err)
 
 	if vmDriverValue != "none" {
-		err := o.doInstallMissingDependencies([]string{vmDriverValue})
+		err := o.DoInstallMissingDependencies([]string{vmDriverValue})
 		if err != nil {
 			log.Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
 			os.Exit(-1)
@@ -241,7 +242,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		o.Out.Write([]byte("Minikube cluster created.\n"))
 	}
 
-	err = o.retry(3, 10*time.Second, func() (err error) {
+	err = o.Retry(3, 10*time.Second, func() (err error) {
 		err = o.RunCommand("kubectl", "create", "clusterrolebinding", "add-on-cluster-admin", "--clusterrole", "cluster-admin", "--serviceaccount", "kube-system:default")
 		return
 	})
@@ -250,7 +251,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 	}
 
 	if o.CreateClusterOptions.InstallOptions.InitOptions.Flags.Domain == "" {
-		ip, err := o.getCommandOutput("", "minikube", "ip")
+		ip, err := o.GetCommandOutput("", "minikube", "ip")
 		if err != nil {
 			return err
 		}
@@ -265,7 +266,7 @@ func (o *CreateClusterMinikubeOptions) createClusterMinikube() error {
 		return err
 	}
 
-	context, err := o.getCommandOutput("", "kubectl", "config", "current-context")
+	context, err := o.GetCommandOutput("", "kubectl", "config", "current-context")
 	if err != nil {
 		return err
 	}

@@ -20,6 +20,7 @@ import (
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -50,7 +51,7 @@ var (
 
 // DeleteApplicationOptions are the flags for this delete commands
 type DeleteApplicationOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	SelectAll           bool
 	SelectFilter        string
@@ -69,7 +70,7 @@ type DeleteApplicationOptions struct {
 }
 
 // NewCmdDeleteApplication creates a command object for this command
-func NewCmdDeleteApplication(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteApplication(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteApplicationOptions{
 		CommonOptions: commonOpts,
 	}
@@ -91,7 +92,7 @@ func NewCmdDeleteApplication(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.SelectAll, "all", "a", false, "Selects all the matched applications")
 	cmd.Flags().BoolVarP(&options.NoMergePullRequest, "no-merge", "", false, "Disables automatic merge of promote Pull Requests")
 	cmd.Flags().StringVarP(&options.SelectFilter, "filter", "f", "", "Filter the list of applications to those containing this text")
-	cmd.Flags().StringVarP(&options.Timeout, optionTimeout, "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
+	cmd.Flags().StringVarP(&options.Timeout, "timeout", "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
 	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
 	cmd.Flags().StringVarP(&options.Org, "org", "o", "", "github organisation/project name that source code resides in")
 
@@ -105,7 +106,7 @@ func (o *DeleteApplicationOptions) Run() error {
 		return errors.Wrap(err, "setting up context")
 	}
 
-	isProw, err := o.isProw()
+	isProw, err := o.IsProw()
 	if err != nil {
 		return errors.Wrap(err, "getting prow config")
 	}
@@ -131,7 +132,11 @@ func (o *DeleteApplicationOptions) Run() error {
 }
 
 func (o *DeleteApplicationOptions) deleteProwApplication(repoService jenkinsv1.SourceRepositoryInterface) (deletedApplications []string, err error) {
-	envMap, _, err := kube.GetOrderedEnvironments(o.jxClient, "")
+	jxClient, _, err := o.JXClient()
+	if err != nil {
+		return deletedApplications, err
+	}
+	envMap, _, err := kube.GetOrderedEnvironments(jxClient, "")
 	currentUser, err := user.Current()
 	if err != nil {
 		return deletedApplications, errors.Wrap(err, "getting current user")
@@ -302,7 +307,7 @@ func (o *DeleteApplicationOptions) deleteApplicationFromEnvironment(env *v1.Envi
 		requirements.RemoveApplication(applicationName)
 		return nil
 	}
-	gitProvider, _, err := o.createGitProviderForURLWithoutKind(env.Spec.Source.URL)
+	gitProvider, _, err := o.CreateGitProviderForURLWithoutKind(env.Spec.Source.URL)
 	if err != nil {
 		return errors.Wrapf(err, "creating git provider for %s", env.Spec.Source.URL)
 	}
@@ -385,8 +390,7 @@ func (o *DeleteApplicationOptions) waitForGitOpsPullRequest(env *v1.Environment,
 }
 
 func (o *DeleteApplicationOptions) init() error {
-	var err error
-	o.jxClient, o.currentNamespace, err = o.JXClientAndDevNamespace()
+	_, _, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return errors.Wrap(err, "getting jx client")
 	}
@@ -401,7 +405,7 @@ func (o *DeleteApplicationOptions) init() error {
 	if o.Timeout != "" {
 		duration, err := time.ParseDuration(o.Timeout)
 		if err != nil {
-			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, optionTimeout, err)
+			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, "timeout", err)
 		}
 		o.TimeoutDuration = &duration
 	}

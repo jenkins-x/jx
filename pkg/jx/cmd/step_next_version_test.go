@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -11,7 +12,7 @@ func TestMakefile(t *testing.T) {
 	t.Parallel()
 	o := cmd.StepNextVersionOptions{
 		StepOptions: cmd.StepOptions{
-			CommonOptions: &cmd.CommonOptions{},
+			CommonOptions: &opts.CommonOptions{},
 		},
 		Dir:      "test_data/next_version/make",
 		Filename: "Makefile",
@@ -28,7 +29,7 @@ func TestPomXML(t *testing.T) {
 	t.Parallel()
 	o := cmd.StepNextVersionOptions{
 		StepOptions: cmd.StepOptions{
-			CommonOptions: &cmd.CommonOptions{},
+			CommonOptions: &opts.CommonOptions{},
 		},
 		Dir:      "test_data/next_version/java",
 		Filename: "pom.xml",
@@ -45,7 +46,7 @@ func TestChart(t *testing.T) {
 	t.Parallel()
 	o := cmd.StepNextVersionOptions{
 		StepOptions: cmd.StepOptions{
-			CommonOptions: &cmd.CommonOptions{},
+			CommonOptions: &opts.CommonOptions{},
 		},
 		Dir:      "test_data/next_version/helm",
 		Filename: "Chart.yaml",

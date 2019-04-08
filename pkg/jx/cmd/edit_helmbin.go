@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -35,7 +36,7 @@ type EditHelmBinOptions struct {
 }
 
 // NewCmdEditHelmBin creates a command object for the "create" command
-func NewCmdEditHelmBin(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdEditHelmBin(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &EditHelmBinOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,

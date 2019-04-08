@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -40,7 +41,7 @@ type CreateMicroOptions struct {
 }
 
 // NewCmdCreateMicro creates a command object for the "create" command
-func NewCmdCreateMicro(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateMicro(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateMicroOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
@@ -66,11 +67,11 @@ func NewCmdCreateMicro(commonOpts *CommonOptions) *cobra.Command {
 
 // checkMicroInstalled lazily install micro if its not installed already
 func (o CreateMicroOptions) checkMicroInstalled() error {
-	_, err := o.getCommandOutput("", "micro", "help")
+	_, err := o.GetCommandOutput("", "micro", "help")
 	if err != nil {
 		log.Infoln("Installing micro's dependencies...")
 		// lets install micro
-		err = o.installBrewIfRequired()
+		err = o.InstallBrewIfRequired()
 		if err != nil {
 			return err
 		}

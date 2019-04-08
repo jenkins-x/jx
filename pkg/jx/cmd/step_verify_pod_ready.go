@@ -3,13 +3,15 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"os"
+	"os/exec"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"os"
-	"os/exec"
 )
 
 var (
@@ -29,7 +31,7 @@ type StepVerifyPodReadyOptions struct {
 }
 
 // NewCmdStepVerifyPodReady creates the `jx step verify pod` command
-func NewCmdStepVerifyPodReady(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepVerifyPodReady(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	options := StepVerifyPodReadyOptions{
 		StepOptions: StepOptions{
@@ -69,7 +71,7 @@ func (o *StepVerifyPodReadyOptions) Run() error {
 
 	fmt.Println("Checking pod statuses")
 
-	table := o.createTable()
+	table := o.CreateTable()
 	table.AddRow("POD", "STATUS")
 
 	var f *os.File

@@ -3,12 +3,13 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 // Update contains the command line options
 type UpdateOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	DisableImport bool
 	OutDir        string
@@ -28,7 +29,7 @@ var (
 )
 
 // NewCmdUpdate creates a command object for the "update" command
-func NewCmdUpdate(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdUpdate(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpdateOptions{
 		CommonOptions: commonOpts,
 	}

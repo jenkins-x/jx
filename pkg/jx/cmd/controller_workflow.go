@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/environments"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -50,7 +51,7 @@ type ControllerWorkflowOptions struct {
 
 // NewCmdControllerWorkflow creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdControllerWorkflow(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdControllerWorkflow(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &ControllerWorkflowOptions{
 		ControllerOptions: ControllerOptions{
 			CommonOptions: commonOpts,
@@ -78,11 +79,11 @@ func NewCmdControllerWorkflow(commonOpts *CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *ControllerWorkflowOptions) Run() error {
-	err := o.registerPipelineActivityCRD()
+	err := o.RegisterPipelineActivityCRD()
 	if err != nil {
 		return err
 	}
-	err = o.registerWorkflowCRD()
+	err = o.RegisterWorkflowCRD()
 	if err != nil {
 		return err
 	}
@@ -96,7 +97,7 @@ func (o *ControllerWorkflowOptions) Run() error {
 	}
 
 	// See issue below and also similar code in PromotOptions.Run()
-	prow, err := o.isProw()
+	prow, err := o.IsProw()
 	if err != nil {
 		return err
 	}
@@ -398,7 +399,7 @@ func (o *ControllerWorkflowOptions) createGitProviderForPR(prURL string) (gits.G
 		return nil, nil, fmt.Errorf("No / in URL: %s", gitUrl)
 	}
 	gitUrl = gitUrl[0:idx] + ".git"
-	answer, gitInfo, err := o.createGitProviderForURLWithoutKind(gitUrl)
+	answer, gitInfo, err := o.CreateGitProviderForURLWithoutKind(gitUrl)
 	if err != nil {
 		return answer, gitInfo, errors.Wrapf(err, "Failed for git URL %s", gitUrl)
 	}
@@ -410,7 +411,7 @@ func (o *ControllerWorkflowOptions) createGitProvider(activity *v1.PipelineActiv
 	if gitUrl == "" {
 		return nil, nil, fmt.Errorf("No GitURL for PipelineActivity %s", activity.Name)
 	}
-	answer, gitInfo, err := o.createGitProviderForURLWithoutKind(gitUrl)
+	answer, gitInfo, err := o.CreateGitProviderForURLWithoutKind(gitUrl)
 	if err != nil {
 		return answer, gitInfo, errors.Wrapf(err, "Failed for git URL %s", gitUrl)
 	}
@@ -524,8 +525,13 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 					} else {
 						promoteKey := po.createPromoteKey(env)
 
-						promoteKey.OnPromotePullRequest(o.jxClient, o.Namespace, mergedPR)
-						promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.StartPromotionUpdate)
+						jxClient, _, err := o.JXClient()
+						if err != nil {
+							log.Warnf("Failed to get the jx client: %s\n", err)
+							return
+						}
+						promoteKey.OnPromotePullRequest(jxClient, o.Namespace, mergedPR)
+						promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.StartPromotionUpdate)
 
 						if o.NoWaitForUpdatePipeline {
 							log.Infof("Pull Request %d merged but we are not waiting for the update pipeline to complete!\n",
@@ -534,7 +540,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 							if err != nil {
 								log.Warnf("Failed to comment on issues: %s", err)
 							}
-							err = promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.CompletePromotionUpdate)
+							err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
 							if err != nil {
 								log.Warnf("PipelineActivity update failed while completing promotion step. activity=%s\n",
 									activity.Name)
@@ -579,7 +585,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 									p.Statuses = prStatuses
 									return nil
 								}
-								promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, updateStatuses)
+								promoteKey.OnPromoteUpdate(jxClient, o.Namespace, updateStatuses)
 
 								succeeded := true
 								for _, v := range urlStatusMap {
@@ -604,7 +610,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 										log.Warnf("Failed to comment on issues: %s", err)
 										return
 									}
-									err = promoteKey.OnPromoteUpdate(o.jxClient, o.Namespace, kube.CompletePromotionUpdate)
+									err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
 									if err != nil {
 										log.Warnf("Failed to update PipelineActivity on promotion completion: %s", err)
 									}
