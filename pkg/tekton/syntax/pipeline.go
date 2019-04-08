@@ -1002,7 +1002,10 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 			cmdStr = step.Command
 		}
 		if len(step.Arguments) > 0 {
-			cmdStr += " " + strings.Join(step.Arguments, " ")
+			if cmdStr != "" {
+				cmdStr += " "
+			}
+			cmdStr += strings.Join(step.Arguments, " ")
 		}
 		c.Args = []string{cmdStr}
 		c.WorkingDir = workingDir
