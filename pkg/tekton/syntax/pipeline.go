@@ -993,21 +993,21 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 			c.Image = stepImage
 			c.Command = []string{"/bin/sh", "-c"}
 		}
-		cmdStr := ""
 		// Special-casing for commands starting with /kaniko
 		// TODO: Should this be more general?
 		if strings.HasPrefix(step.Command, "/kaniko") {
 			c.Command = []string{step.Command}
+			c.Args = step.Arguments
 		} else {
-			cmdStr = step.Command
-		}
-		if len(step.Arguments) > 0 {
-			if cmdStr != "" {
-				cmdStr += " "
+			cmdStr := step.Command
+			if len(step.Arguments) > 0 {
+				if cmdStr != "" {
+					cmdStr += " "
+				}
+				cmdStr += strings.Join(step.Arguments, " ")
+				c.Args = []string{cmdStr}
 			}
-			cmdStr += strings.Join(step.Arguments, " ")
 		}
-		c.Args = []string{cmdStr}
 		c.WorkingDir = workingDir
 		stepCounter++
 		if step.Name != "" {
