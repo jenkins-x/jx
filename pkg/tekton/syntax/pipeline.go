@@ -999,10 +999,10 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 		if strings.HasPrefix(step.Command, "/kaniko") {
 			c.Command = []string{step.Command}
 		} else {
-			cmdStr = step.Command + " "
+			cmdStr = step.Command
 		}
 		if len(step.Arguments) > 0 {
-			cmdStr += strings.Join(step.Arguments, " ")
+			cmdStr += " " + strings.Join(step.Arguments, " ")
 		}
 		c.Args = []string{cmdStr}
 		c.WorkingDir = workingDir
