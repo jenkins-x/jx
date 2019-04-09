@@ -24,6 +24,14 @@ git config --global credential.helper store
 git config --global --add user.name JenkinsXBot
 git config --global --add user.email jenkins-x@googlegroups.com
 
+JX_HOME="/tmp/jxhome"
+KUBECONFIG="/tmp/jxhome/config"
+
+mkdir -p $JX_HOME
+
+jx --version
+jx step git credentials
+
 # lets create a team for this PR and run the BDD tests
 gcloud auth activate-service-account --key-file $GKE_SA
 gcloud container clusters get-credentials jx-bdd-tests --zone europe-west1-c --project jenkins-x-infra
