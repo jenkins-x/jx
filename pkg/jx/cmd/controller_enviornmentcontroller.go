@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -23,6 +24,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -38,9 +40,13 @@ type ControllerEnvironmentOptions struct {
 	Path                  string
 	Port                  int
 	NoGitCredeentialsInit bool
+	NoRegisterWebHook     bool
 	SourceURL             string
+	WebHookURL            string
 	Branch                string
 	Labels                map[string]string
+
+	secret []byte
 }
 
 var (
@@ -77,7 +83,9 @@ func NewCmdControllerEnvironment(commonOpts *CommonOptions) *cobra.Command {
 		"The path to listen on for requests to trigger a pipeline run.")
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
 	cmd.Flags().BoolVarP(&options.NoGitCredeentialsInit, "no-git-init", "", false, "Disables checking we have setup git credentials on startup")
+	cmd.Flags().BoolVarP(&options.NoGitCredeentialsInit, "no-register-webhook", "", false, "Disables checking to register the webhook on startup")
 	cmd.Flags().StringVarP(&options.SourceURL, "url", "u", "", "The source URL of the environment git repository")
+	cmd.Flags().StringVarP(&options.WebHookURL, "webhook-url", "w", "", "The external WebHook URL of this controller to register with the git provider")
 	return cmd
 }
 
@@ -95,9 +103,27 @@ func (o *ControllerEnvironmentOptions) Run() error {
 			o.Branch = "master"
 		}
 	}
+	if o.WebHookURL == "" {
+		o.WebHookURL = os.Getenv("WEBHOOK_URL")
+		if o.WebHookURL == "" {
+			return util.MissingOption("webhook-url")
+		}
+	}
+	var err error
+	o.secret, err = o.loadOrCreateHmacSecret()
+	if err != nil {
+		return errors.Wrapf(err, "loading hmac secret")
+	}
 
 	if !o.NoGitCredeentialsInit {
-		err := o.initGitConfigAndUser()
+		err = o.initGitConfigAndUser()
+		if err != nil {
+			return err
+		}
+	}
+
+	if !o.NoRegisterWebHook {
+		err = o.registerWebHook(o.WebHookURL, o.secret)
 		if err != nil {
 			return err
 		}
@@ -177,20 +203,64 @@ func (o *ControllerEnvironmentOptions) startPipelineRun(w http.ResponseWriter, r
 	return
 }
 
-// loadHmacSecret loads the hmac secret
-func (o *ControllerEnvironmentOptions) loadHmacSecret() ([]byte, error) {
+// loadOrCreateHmacSecret loads the hmac secret
+func (o *ControllerEnvironmentOptions) loadOrCreateHmacSecret() ([]byte, error) {
 	kubeCtl, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return nil, err
 	}
-	secret, err := kubeCtl.CoreV1().Secrets(ns).Get(environmentControllerHmacSecret, metav1.GetOptions{})
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to load Secret %s in namespace %s", environmentControllerHmacSecret, ns)
+	secretInterface := kubeCtl.CoreV1().Secrets(ns)
+	secret, err := secretInterface.Get(environmentControllerHmacSecret, metav1.GetOptions{})
+	if err == nil {
+		if secret.Data == nil || len(secret.Data[environmentControllerHmacSecretKey]) == 0 {
+			// lets update the secret with a valid hmac token
+			err = o.ensureHmacTokenPopulated()
+			if err != nil {
+				return nil, err
+			}
+			if secret.Data == nil {
+				secret.Data = map[string][]byte{}
+			}
+			secret.Data[environmentControllerHmacSecretKey] = []byte(o.HMACToken)
+			secret, err = secretInterface.Update(secret)
+			if err != nil {
+				return nil, errors.Wrapf(err, "failed to update HMAC token secret %s in namespace %s", environmentControllerHmacSecret, ns)
+			}
+		}
+	} else {
+		err = o.ensureHmacTokenPopulated()
+		if err != nil {
+			return nil, err
+		}
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: environmentControllerHmacSecret,
+			},
+			Data: map[string][]byte{
+				environmentControllerHmacSecretKey: []byte(o.HMACToken),
+			},
+		}
+		secret, err = secretInterface.Create(secret)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to create HMAC token secret %s in namespace %s", environmentControllerHmacSecret, ns)
+		}
 	}
 	if secret == nil || secret.Data == nil {
 		return nil, fmt.Errorf("no Secret %s found in namespace %s", environmentControllerHmacSecret, ns)
 	}
 	return secret.Data[environmentControllerHmacSecretKey], nil
+}
+
+func (o *ControllerEnvironmentOptions) ensureHmacTokenPopulated() error {
+	if o.HMACToken == "" {
+		var err error
+		// why 41?  seems all examples so far have a random token of 41 chars
+		o.HMACToken, err = util.RandStringBytesMaskImprSrc(41)
+		if err != nil {
+			return errors.Wrapf(err, "failed to generate hmac token")
+		}
+	}
+	return nil
 }
 
 func (o *ControllerEnvironmentOptions) isReady() bool {
@@ -253,17 +323,37 @@ func (o *ControllerEnvironmentOptions) stepGitCredentials() error {
 
 // handle request for pipeline runs
 func (o *ControllerEnvironmentOptions) handleRequests(w http.ResponseWriter, r *http.Request) {
-	secret, err := o.loadHmacSecret()
-	if err != nil {
-		o.returnError(err, "loading hmac secret", w, r)
-		return
-	}
-
-	eventType, _, _, valid, _ := ValidateWebhook(w, r, secret, false)
+	eventType, _, _, valid, _ := ValidateWebhook(w, r, o.secret, false)
 	if !valid || eventType == "" {
 		return
 	}
 	o.startPipelineRun(w, r)
+}
+
+func (o *ControllerEnvironmentOptions) registerWebHook(webhookURL string, secret []byte) error {
+	gitURL := o.SourceURL
+	log.Infof("verifying that the webhook is registered for the git repository %s\n", util.ColorInfo(gitURL))
+	gitInfo, err := gits.ParseGitURL(gitURL)
+	if err != nil {
+		return errors.Wrapf(err, "failed to parse git URL %s", gitURL)
+	}
+	provider, err := o.gitProviderForURL(gitURL, "creating webhook git provider")
+	if err != nil {
+		return errors.Wrapf(err, "failed to create git provider for git URL %s", gitURL)
+	}
+	webHookData := &gits.GitWebHookArguments{
+		Owner: gitInfo.Organisation,
+		Repo: &gits.GitRepository{
+			Name: gitInfo.Name,
+		},
+		URL:    webhookURL,
+		Secret: string(secret),
+	}
+	err = provider.CreateWebHook(webHookData)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create git WebHook provider for URL %s", gitURL)
+	}
+	return nil
 }
 
 // ValidateWebhook ensures that the provided request conforms to the
