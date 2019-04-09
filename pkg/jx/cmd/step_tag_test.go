@@ -53,6 +53,7 @@ func TestStepTagCharts(t *testing.T) {
 	assert.NoError(t, err, "failed to load file %s", chartFile)
 
 	assert.Equal(t, expectedVersion, chart.Version, "replaced chart version")
+	assert.Equal(t, expectedVersion, chart.AppVersion, "replaced chart appVersion")
 
 	data, err := ioutil.ReadFile(valuesFile)
 	assert.NoError(t, err, "failed to load file %s", valuesFile)
