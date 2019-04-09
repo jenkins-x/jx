@@ -5,6 +5,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/config"
 	configio "github.com/jenkins-x/jx/pkg/io"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"sigs.k8s.io/yaml"
 
 	"io/ioutil"
@@ -23,7 +24,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
 	core_v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -366,7 +366,17 @@ func (o *UpgradePlatformOptions) Run() error {
 		o.Debugf("Adding values file %s\n", util.ColorInfo(v))
 	}
 
-	err = o.Helm().UpgradeChart(o.Chart, o.ReleaseName, ns, targetVersion, false, -1, false, false, values, valueFiles, "", "", "")
+	helmOptions := helm.InstallChartOptions{
+		Chart:       o.Chart,
+		ReleaseName: o.ReleaseName,
+		Ns:          ns,
+		Version:     targetVersion,
+		UpgradeOnly: true,
+		NoForce:     true,
+		SetValues:   values,
+		ValueFiles:  valueFiles,
+	}
+	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
 		return errors.Wrap(err, "unable to upgrade helm chart")
 	}

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/helm"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -102,7 +104,15 @@ func (o *CreateAddonOptions) CreateAddon(addon string) error {
 	}
 	setValues := strings.Split(o.SetValues, ",")
 
-	err = o.InstallChart(addon, chart, o.Version, o.Namespace, o.HelmUpdate, setValues, o.ValueFiles, "")
+	helmOptions := helm.InstallChartOptions{
+		Chart:       chart,
+		ReleaseName: addon,
+		Version:     o.Version,
+		Ns:          o.Namespace,
+		SetValues:   setValues,
+		ValueFiles:  o.ValueFiles,
+	}
+	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
 		return fmt.Errorf("Failed to install chart %s: %s", chart, err)
 	}

@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/helm"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
@@ -217,7 +219,14 @@ func (o *CreateAddonSSOOptions) installDex(domain string, clientID string, clien
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 	releaseName := o.ReleaseName + "-" + dexServiceName
-	return o.InstallChart(releaseName, kube.ChartSsoDex, o.DexVersion, o.Namespace, true, values, nil, "")
+	helmOptions := helm.InstallChartOptions{
+		Chart:       kube.ChartSsoDex,
+		ReleaseName: releaseName,
+		Version:     o.DexVersion,
+		Ns:          o.Namespace,
+		SetValues:   values,
+	}
+	return o.InstallChartWithOptions(helmOptions)
 }
 
 func (o *CreateAddonSSOOptions) installSSOOperator(dexGrpcService string) error {
@@ -227,7 +236,14 @@ func (o *CreateAddonSSOOptions) installSSOOperator(dexGrpcService string) error 
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
 	releaseName := o.ReleaseName + "-" + operatorServiceName
-	return o.InstallChart(releaseName, kube.ChartSsoOperator, o.Version, o.Namespace, true, values, nil, "")
+	helmOptions := helm.InstallChartOptions{
+		Chart:       kube.ChartSsoOperator,
+		ReleaseName: releaseName,
+		Version:     o.DexVersion,
+		Ns:          o.Namespace,
+		SetValues:   values,
+	}
+	return o.InstallChartWithOptions(helmOptions)
 }
 
 func (o *CreateAddonSSOOptions) exposeSSO() error {

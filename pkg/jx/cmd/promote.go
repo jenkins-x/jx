@@ -426,7 +426,15 @@ func (o *PromoteOptions) Promote(targetNS string, env *v1.Environment, warnIfAut
 	}
 	promoteKey.OnPromoteUpdate(jxClient, o.Namespace, startPromote)
 
-	err = o.Helm().UpgradeChart(fullAppName, releaseName, targetNS, version, true, -1, false, true, nil, nil, "", "", "")
+	helmOptions := helm.InstallChartOptions{
+		Chart:       fullAppName,
+		ReleaseName: releaseName,
+		Ns:          targetNS,
+		Version:     version,
+		NoForce:     true,
+		Wait:        true,
+	}
+	err = o.InstallChartWithOptions(helmOptions)
 	if err == nil {
 		err = o.commentOnIssues(targetNS, env, promoteKey)
 		if err != nil {

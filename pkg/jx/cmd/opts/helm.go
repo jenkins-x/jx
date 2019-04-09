@@ -303,13 +303,6 @@ func (o *CommonOptions) AddHelmBinaryRepoIfMissing(helmUrl, repoName, username, 
 	return nil
 }
 
-// InstallChart installs the given chart
-func (o *CommonOptions) InstallChart(releaseName string, chart string, version string, ns string, helmUpdate bool,
-	setValues []string, valueFiles []string, repo string) error {
-	return o.InstallChartWithOptions(helm.InstallChartOptions{ReleaseName: releaseName, Chart: chart, Version: version,
-		Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles, Repository: repo})
-}
-
 // InstallChartOrGitOps if using gitOps lets write files otherwise lets use helm
 func (o *CommonOptions) InstallChartOrGitOps(isGitOps bool, gitOpsDir string, gitOpsEnvDir string, releaseName string, chart string, alias string, version string, ns string, helmUpdate bool,
 	setValues []string, setSecrets []string, valueFiles []string, repo string) error {
@@ -388,7 +381,13 @@ func (o *CommonOptions) InstallChartAt(dir string, releaseName string, chart str
 		Version: version, Ns: ns, HelmUpdate: helmUpdate, SetValues: setValues, ValueFiles: valueFiles, Repository: repo})
 }
 
+// InstallChartWithOptions uses the options to run helm install or helm upgrade
 func (o *CommonOptions) InstallChartWithOptions(options helm.InstallChartOptions) error {
+	return o.InstallChartWithOptionsAndTimeout(options, DefaultInstallTimeout)
+}
+
+// InstallChartWithOptionsAndTimeout uses the options and the timeout to run helm install or helm upgrade
+func (o *CommonOptions) InstallChartWithOptionsAndTimeout(options helm.InstallChartOptions, timeout string) error {
 	client, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -400,7 +399,7 @@ func (o *CommonOptions) InstallChartWithOptions(options helm.InstallChartOptions
 	if err != nil {
 		vaultClient = nil
 	}
-	return helm.InstallFromChartOptions(options, o.Helm(), client, DefaultInstallTimeout, vaultClient)
+	return helm.InstallFromChartOptions(options, o.Helm(), client, timeout, vaultClient)
 }
 
 // CloneJXVersionsRepo clones the jenkins-x versions repo to a local working dir

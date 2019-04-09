@@ -84,12 +84,10 @@ func StashValues(values []byte, name string, jxClient versioned.Interface, ns st
 }
 
 // AddSecretsToVault adds the generatedSecrets into the vault using client at basepath
-func AddSecretsToVault(generatedSecrets []*surveyutils.GeneratedSecret, client vault.Client,
-	basepath string) (func(), error) {
+func AddSecretsToVault(generatedSecrets []*surveyutils.GeneratedSecret, client vault.Client) (func(), error) {
 	if len(generatedSecrets) > 0 {
 		for _, secret := range generatedSecrets {
-			path := strings.Join([]string{basepath, secret.Name}, "/")
-			err := vault.WriteMap(client, path, map[string]interface{}{
+			err := vault.WriteMap(client, secret.Path, map[string]interface{}{
 				secret.Key: secret.Value,
 			})
 			if err != nil {
@@ -180,23 +178,30 @@ func AddValuesToChart(app string, values []byte, verbose bool) (string, func(), 
 }
 
 //GenerateQuestions asks questions based on the schema
-func GenerateQuestions(schema []byte, batchMode bool, askExisting bool, existing map[string]interface{},
-	in terminal.FileReader,
-	out terminal.FileWriter, outErr io.Writer) ([]byte, []*surveyutils.GeneratedSecret, error) {
+func GenerateQuestions(schema []byte, batchMode bool, askExisting bool, basePath string, useVault bool,
+	existing map[string]interface{}, in terminal.FileReader, out terminal.FileWriter, outErr io.Writer) ([]byte,
+	[]*surveyutils.GeneratedSecret, error) {
 	secrets := make([]*surveyutils.GeneratedSecret, 0)
 	schemaOptions := surveyutils.JSONSchemaOptions{
-		CreateSecret: func(name string, key string, value string) (*jenkinsv1.ResourceReference, error) {
+		CreateSecret: func(name string, key string, value string, passthrough bool) (interface{},
+			error) {
 			secret := &surveyutils.GeneratedSecret{
 				Name:  name,
 				Key:   key,
 				Value: value,
+				Path:  strings.Join([]string{basePath, name}, "/"),
 			}
 			secrets = append(secrets, secret)
-			return &jenkinsv1.ResourceReference{
-				Name: name,
-				Kind: "Secret",
+			if passthrough {
+				if useVault {
+					return vault.ToURI(secret.Path, secret.Key), nil
+				}
+				return value, nil
+			}
+			return map[string]interface{}{
+				"Name": name,
+				"Kind": "Secret",
 			}, nil
-
 		},
 		Out:                 out,
 		In:                  in,

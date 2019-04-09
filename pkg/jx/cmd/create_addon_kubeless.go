@@ -3,6 +3,8 @@ package cmd
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/helm"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
@@ -84,7 +86,14 @@ func (o *CreateAddonKubelessOptions) Run() error {
 	values := []string{"rbac.create=true"}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	err = o.InstallChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
+	helmOptions := helm.InstallChartOptions{
+		ReleaseName: o.ReleaseName,
+		Chart:       o.Chart,
+		Version:     o.Version,
+		Ns:          o.Namespace,
+		SetValues:   values,
+	}
+	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
 		return err
 	}

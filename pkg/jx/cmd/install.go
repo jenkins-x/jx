@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -19,7 +18,7 @@ import (
 
 	"github.com/ghodss/yaml"
 
-	"github.com/Pallinder/go-randomdata"
+	randomdata "github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
@@ -43,8 +42,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/src-d/go-git.v4"
+	survey "gopkg.in/AlecAivazis/survey.v1"
+	git "gopkg.in/src-d/go-git.v4"
 	core_v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -809,10 +808,6 @@ func (options *InstallOptions) installPlatform(providerEnvDir string, jxChart st
 	if timeout == "" {
 		timeout = opts.DefaultInstallTimeout
 	}
-	timeoutInt, err := strconv.Atoi(timeout)
-	if err != nil {
-		return errors.Wrap(err, "failed to convert the helm install timeout value")
-	}
 
 	allValuesFiles := []string{}
 	allValuesFiles = append(allValuesFiles, valuesFiles...)
@@ -821,12 +816,17 @@ func (options *InstallOptions) installPlatform(providerEnvDir string, jxChart st
 		options.Debugf("Adding values file %s\n", util.ColorInfo(f))
 	}
 
-	if !options.Flags.InstallOnly {
-		err = options.Helm().UpgradeChart(jxChart, jxRelName, namespace, version, true, timeoutInt, false, false, nil, allValuesFiles, "", "", "")
-	} else {
-		err = options.Helm().InstallChart(jxChart, jxRelName, namespace, version, timeoutInt,
-			nil, allValuesFiles, "", "", "")
+	helmOpts := helm.InstallChartOptions{
+		ReleaseName: jxRelName,
+		Chart:       jxChart,
+		Ns:          namespace,
+		Version:     version,
+		ValueFiles:  allValuesFiles,
+		InstallOnly: options.Flags.InstallOnly,
+		NoForce:     true,
 	}
+	err := options.InstallChartWithOptionsAndTimeout(helmOpts, timeout)
+
 	if err != nil {
 		return errors.Wrap(err, "failed to install/upgrade the jenkins-x platform chart")
 	}
@@ -1813,7 +1813,13 @@ func (options *InstallOptions) configureCloudProivderPostInit(client kubernetes.
 		if err != nil {
 			return errors.Wrap(err, "failed to update the helm repo")
 		}
-		err = options.Helm().UpgradeChart("ibm/ibmcloud-block-storage-plugin", "ibmcloud-block-storage-plugin", "default", "", true, -1, false, false, nil, nil, "", "", "")
+		helmOptions := helm.InstallChartOptions{
+			Chart:       "ibm/ibmcloud-block-storage-plugin",
+			ReleaseName: "ibmcloud-block-storage-plugin",
+			Ns:          "default",
+			NoForce:     true,
+		}
+		err = options.InstallChartWithOptions(helmOptions)
 		if err != nil {
 			return errors.Wrap(err, "failed to install/upgrade the IBM Cloud Block Storage drivers")
 		}
