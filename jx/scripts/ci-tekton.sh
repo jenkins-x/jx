@@ -7,9 +7,13 @@ export ORG="jenkinsxio"
 export APP_NAME="jx"
 export TEAM="$(echo ${BRANCH_NAME}-$BUILD_ID  | tr '[:upper:]' '[:lower:]')"
 
-export GHE_CREDS_PSW="$(jx step credential -s jx-pipeline-git-github-ghe)"
+export GH_USERNAME="jenkins-x-bot-test"
+export GH_OWNER="cb-kubecd"
+
+export GH_CREDS_PSW="$(jx step credential -s jenkins-x-bot-test-github)"
 export JENKINS_CREDS_PSW="$(jx step credential -s  test-jenkins-user)"
 export GKE_SA="$(jx step credential -s gke-sa)"
+
 
 # for BDD tests
 export GIT_PROVIDER_URL="https://github.beescloud.com"
@@ -41,4 +45,4 @@ git config --global --add user.email jenkins-x@googlegroups.com
 cp ./build/linux/jx /usr/bin
 
 # lets trigger the BDD tests in a new team and git provider
-./build/linux/jx step bdd -b  --provider=gke --git-provider=ghe --git-provider-url=https://github.beescloud.com --git-username dev1 --git-api-token $GHE_CREDS_PSW --default-admin-password $JENKINS_CREDS_PSW --no-delete-app --no-delete-repo --tekon --tests install --tests test-create-spring
+./build/linux/jx step bdd -b --git-owner $GH_OWNER --git-username $GH_USERNAME --provider=gke --git-provider=github.com --git-api-token $GH_CREDS_PSW --default-admin-password $JENKINS_CREDS_PSW --no-delete-app --no-delete-repo --tekon --tests install --tests test-create-spring
