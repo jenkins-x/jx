@@ -28,6 +28,7 @@ func NewCmdStepCreate(commonOpts *opts.CommonOptions) *cobra.Command {
 			CheckErr(err)
 		},
 	}
+	cmd.AddCommand(NewCmdStepCreateJenkinsConfig(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateTask(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateVersionPullRequest(commonOpts))
 	return cmd

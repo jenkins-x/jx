@@ -159,7 +159,7 @@ func (o *ControllerEnvironmentOptions) startPipelineRun(w http.ResponseWriter, r
 		pr.CustomLabels = append(pr.CustomLabels, fmt.Sprintf("%s=%s", key, value))
 	}
 
-	log.Infof("triggering pipeline for repo %s branch %s revision %s context %s\n", sourceURL, branch, revision)
+	log.Infof("triggering pipeline for repo %s branch %s revision %s\n", sourceURL, branch, revision)
 
 	err = pr.Run()
 	if err != nil {
