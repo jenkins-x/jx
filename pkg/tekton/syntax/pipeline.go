@@ -21,7 +21,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const GitMergeImage = "rawlingsj/builder-jx:wip24"
+// GitMergeImage is the default image name that is used in the git merge step of a pipeline
+const GitMergeImage = "rawlingsj/builder-jx:wip34"
 
 // ParsedPipeline is the internal representation of the Pipeline, used to validate and create CRDs
 type ParsedPipeline struct {
