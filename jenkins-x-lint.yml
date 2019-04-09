@@ -53,7 +53,7 @@ pipelineConfig:
                   - name: GOPATH
                     value: /workspace/go
                   - name: GOPROXY
-                    value: http://athens-proxy.jx.cd.jenkins-x.io
+                    value: http://jenkins-x-athens-proxy:80
                   - name: HELM_HOME
                     value: /builder/home/.helm
                 resources:
