@@ -443,13 +443,13 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		}
 	}
 
+	if pipelineConfig == nil {
+		return nil, nil, nil, nil, nil, fmt.Errorf("failed to find PipelineConfig in file %s", projectConfigFile)
+	}
+
 	err := o.combineEnvVars(pipelineConfig)
 	if err != nil {
 		return nil, nil, nil, nil, nil, errors.Wrapf(err, "failed to combine env vars")
-	}
-
-	if pipelineConfig == nil {
-		return nil, nil, nil, nil, nil, fmt.Errorf("failed to find PipelineConfig in file %s", projectConfigFile)
 	}
 
 	// lets allow a `jenkins-x.yml` to specify we want to disable release prepare mode which can be useful for
