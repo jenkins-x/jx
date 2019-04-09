@@ -177,6 +177,9 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 		}
 	} else {
 		upgradeAppFunc := func(dir string) error {
+			if releaseName == "" {
+				releaseName = app
+			}
 			// Try to load existing answers from the apps CRD
 			appCrdName := fmt.Sprintf("%s-%s", releaseName, app)
 			appResource, err := o.JxClient.JenkinsV1().Apps(o.Namespace).Get(appCrdName, v1.GetOptions{})
@@ -185,7 +188,7 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 			}
 			var existingValues map[string]interface{}
 			if appResource.Annotations != nil {
-				if encodedValues, ok := appResource.Annotations[ValuesAnnotation]; ok {
+				if encodedValues, ok := appResource.Annotations[ValuesAnnotation]; ok && encodedValues != "" {
 					existingValuesBytes, err := base64.StdEncoding.DecodeString(encodedValues)
 					if err != nil {
 						log.Warnf("Error decoding base64 encoded string from %s on %s\n%s\n", ValuesAnnotation,

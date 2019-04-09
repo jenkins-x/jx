@@ -54,8 +54,6 @@ type UpgradeAppsOptions struct {
 
 	// allow git to be configured externally before a PR is created
 	ConfigureGitCallback environments.ConfigureGitFn
-
-	InstallFlags InstallFlags
 }
 
 // NewCmdUpgradeApps defines the command
@@ -80,6 +78,7 @@ func NewCmdUpgradeApps(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 
+	cmd.Flags().BoolVarP(&o.BatchMode, opts.OptionBatchMode, "b", false, "Enable batch mode")
 	cmd.Flags().StringVarP(&o.Version, "username", "", "",
 		"The username for the repository")
 	cmd.Flags().StringVarP(&o.Version, "password", "", "",
@@ -98,6 +97,7 @@ func NewCmdUpgradeApps(commonOpts *opts.CommonOptions) *cobra.Command {
 		"The chart release name (by default the name of the app, available when NOT using GitOps for your dev environment)")
 	cmd.Flags().BoolVarP(&o.AskAll, "ask-all", "", false, "Ask all configuration questions. "+
 		"By default existing answers are reused automatically.")
+
 	return cmd
 }
 
@@ -156,15 +156,19 @@ func (o *UpgradeAppsOptions) Run() error {
 		if o.Version != "" {
 			return util.InvalidOptionf(optionVersion, o.ReleaseName, msg, optionVersion)
 		}
-		jxClient, _, err := o.JXClientAndDevNamespace()
+		jxClient, ns, err := o.JXClient()
 		if err != nil {
 			return errors.Wrapf(err, "getting jx client")
 		}
-		kubeClient, _, err := o.KubeClientAndDevNamespace()
+		kubeClient, err := o.KubeClient()
 		if err != nil {
 			return errors.Wrapf(err, "getting kubeClient")
 		}
-		installOpts.Namespace = o.Namespace
+		if o.Namespace != "" {
+			installOpts.Namespace = o.Namespace
+		} else {
+			installOpts.Namespace = ns
+		}
 		installOpts.KubeClient = kubeClient
 		installOpts.JxClient = jxClient
 		installOpts.InstallTimeout = opts.DefaultInstallTimeout
