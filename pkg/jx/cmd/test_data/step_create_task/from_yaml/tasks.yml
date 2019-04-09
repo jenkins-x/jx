@@ -11,7 +11,7 @@ items:
     inputs:
       resources:
       - name: workspace
-        targetPath: workspace
+        targetPath: source
         type: git
     outputs:
       resources:

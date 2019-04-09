@@ -56,6 +56,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 		repoName       string
 		organization   string
 		branch         string
+		kind           string
 		expectingError bool
 	}{
 		{
@@ -64,6 +65,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			repoName:     "js-test-repo",
 			organization: "abayer",
 			branch:       "build-pack",
+			kind:         "release",
 		},
 		{
 			name:         "maven_build_pack",
@@ -71,6 +73,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			repoName:     "jx-demo-qs",
 			organization: "abayer",
 			branch:       "master",
+			kind:         "release",
 		},
 		{
 			name:         "from_yaml",
@@ -78,6 +81,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			repoName:     "js-test-repo",
 			organization: "abayer",
 			branch:       "really-long",
+			kind:         "release",
 		},
 		{
 			name:           "no_pipeline_config",
@@ -85,6 +89,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			repoName:       "anything",
 			organization:   "anything",
 			branch:         "anything",
+			kind:           "release",
 			expectingError: true,
 		},
 		{
@@ -93,6 +98,15 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			repoName:     "golang-qs-test",
 			organization: "abayer",
 			branch:       "master",
+			kind:         "release",
+		},
+		{
+			name:         "kaniko_entrypoint",
+			language:     "none",
+			repoName:     "jx",
+			organization: "jenkins-x",
+			branch:       "fix-kaniko-special-casing",
+			kind:         "pullrequest",
 		},
 	}
 
@@ -129,16 +143,17 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			createTask := &cmd.StepCreateTaskOptions{
 				Pack:             tt.language,
 				NoReleasePrepare: true,
-				PipelineKind:     jenkinsfile.PipelineKindRelease,
+				SourceName:       "source",
 				PodTemplates:     assertLoadPodTemplates(t),
 				GitInfo: &gits.GitRepository{
 					Host:         "github.com",
 					Name:         tt.repoName,
 					Organisation: tt.organization,
 				},
-				Branch:   tt.branch,
-				NoKaniko: true,
-				Trigger:  string(pipelineapi.PipelineTriggerTypeManual),
+				Branch:       tt.branch,
+				PipelineKind: tt.kind,
+				NoKaniko:     true,
+				Trigger:      string(pipelineapi.PipelineTriggerTypeManual),
 				StepOptions: cmd.StepOptions{
 					CommonOptions: &cmd.CommonOptions{
 						ServiceAccount: "tekton-bot",
@@ -150,12 +165,6 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				},
 			}
 			cmd.ConfigureTestOptionsWithResources(createTask.CommonOptions, k8sObjects, jxObjects, gits_test.NewMockGitter(), fakeGitProvider, helm_test.NewMockHelmer(), nil)
-
-			if tt.language != "none" {
-				createTask.SourceName = "source"
-			} else {
-				createTask.SourceName = "workspace"
-			}
 
 			pipeline, tasks, resources, run, structure, err := createTask.GenerateTektonCRDs(packsDir, projectConfig, projectConfigFile, resolver, "jx")
 			if tt.expectingError {
