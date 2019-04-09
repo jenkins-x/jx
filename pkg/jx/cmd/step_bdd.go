@@ -190,7 +190,11 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 
 		gitProviderUrl := o.gitProviderUrl()
 
-		team := kube.ToValidName("bdd-" + gitProviderName + "-" + o.teamNameSuffix())
+		teamPrefix := "bdd-"
+		if o.InstallOptions.Flags.Tekton {
+			teamPrefix += "tekton-"
+		}
+		team := kube.ToValidName(teamPrefix + gitProviderName + "-" + o.teamNameSuffix())
 		log.Infof("Creating team %s\n", util.ColorInfo(team))
 
 		installOptions := o.InstallOptions
@@ -275,6 +279,12 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 		createEnv.Options.Name = "staging"
 		createEnv.Options.Spec.Label = "Staging"
 		createEnv.GitRepositoryOptions.ServerURL = gitProviderUrl
+		if o.InstallOptions.GitRepositoryOptions.Owner != "" {
+			createEnv.GitRepositoryOptions.Owner = o.InstallOptions.GitRepositoryOptions.Owner
+		}
+		if o.InstallOptions.GitRepositoryOptions.Username != "" {
+			createEnv.GitRepositoryOptions.Username = o.InstallOptions.GitRepositoryOptions.Username
+		}
 
 		err = createEnv.Run()
 		if err != nil {
