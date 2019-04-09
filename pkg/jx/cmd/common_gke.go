@@ -26,6 +26,9 @@ func (o *CommonOptions) getGoogleProjectId() (string, error) {
 		if strings.Contains(l, clusterListHeader) {
 			continue
 		}
+		if strings.Contains(l, "Your active configuration is:") {
+			continue
+		}
 		fields := strings.Fields(l)
 		existingProjects = append(existingProjects, fields[0])
 	}
