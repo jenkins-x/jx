@@ -235,10 +235,6 @@ func (o *AddAppOptions) Run() error {
 		version = o.Version
 	}
 	app := args[0]
-	if o.ReleaseName == "" {
-		o.ReleaseName = app
-	}
-
 	return installOpts.AddApp(app, version, o.Repo, o.Username, o.Password, o.ReleaseName, o.ValuesFiles, o.SetValues,
 		o.Alias, o.HelmUpdate)
 }
