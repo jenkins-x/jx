@@ -100,7 +100,7 @@ func (o *StepTagOptions) Run() error {
 			if err != nil {
 				return err
 			}
-			o.Flags.Version = string(data)
+			o.Flags.Version = strings.TrimSpace(string(data))
 		}
 	}
 	if o.Flags.Version == "" {
