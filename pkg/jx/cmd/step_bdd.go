@@ -190,7 +190,11 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 
 		gitProviderUrl := o.gitProviderUrl()
 
-		team := kube.ToValidName("bdd-" + gitProviderName + "-" + o.teamNameSuffix())
+		teamPrefix := "bdd-"
+		if o.InstallOptions.Flags.Tekton {
+			teamPrefix += "tekton-"
+		}
+		team := kube.ToValidName(teamPrefix + gitProviderName + "-" + o.teamNameSuffix())
 		log.Infof("Creating team %s\n", util.ColorInfo(team))
 
 		installOptions := o.InstallOptions
@@ -275,6 +279,19 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 		createEnv.Options.Name = "staging"
 		createEnv.Options.Spec.Label = "Staging"
 		createEnv.GitRepositoryOptions.ServerURL = gitProviderUrl
+		gitOwner := o.Flags.GitOwner
+		if gitOwner == "" && gitUser != "" {
+			// lets avoid loading the git owner from the current cluster
+			gitOwner = gitUser
+		}
+		if gitOwner != "" {
+			createEnv.GitRepositoryOptions.Owner = gitOwner
+		}
+		if gitUser != "" {
+			createEnv.GitRepositoryOptions.Username = gitUser
+		}
+		log.Infof("using environment git owner: %s\n", util.ColorInfo(gitOwner))
+		log.Infof("using environment git user: %s\n", util.ColorInfo(gitUser))
 
 		err = createEnv.Run()
 		if err != nil {
