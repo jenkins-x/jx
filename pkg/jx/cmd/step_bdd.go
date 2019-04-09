@@ -279,14 +279,19 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 		createEnv.Options.Name = "staging"
 		createEnv.Options.Spec.Label = "Staging"
 		createEnv.GitRepositoryOptions.ServerURL = gitProviderUrl
-		if o.Flags.GitOwner != "" {
-			createEnv.GitRepositoryOptions.Owner = o.Flags.GitOwner
+		gitOwner := o.Flags.GitOwner
+		if gitOwner == "" && gitUser != "" {
+			// lets avoid loading the git owner from the current cluster
+			gitOwner = gitUser
 		}
-		if o.InstallOptions.GitRepositoryOptions.Username != "" {
-			createEnv.GitRepositoryOptions.Username = o.InstallOptions.GitRepositoryOptions.Username
+		if gitOwner != "" {
+			createEnv.GitRepositoryOptions.Owner = gitOwner
 		}
-		log.Infof("using environment git owner: %s\n", util.ColorInfo(o.Flags.GitOwner))
-		log.Infof("using environment git user: %s\n", util.ColorInfo(o.InstallOptions.GitRepositoryOptions.Username))
+		if gitUser != "" {
+			createEnv.GitRepositoryOptions.Username = gitUser
+		}
+		log.Infof("using environment git owner: %s\n", util.ColorInfo(gitOwner))
+		log.Infof("using environment git user: %s\n", util.ColorInfo(gitUser))
 
 		err = createEnv.Run()
 		if err != nil {
