@@ -98,7 +98,7 @@ func ConfigureTestOptionsWithResources(o *opts.CommonOptions, k8sObjects []runti
 	client := fake.NewSimpleClientset(k8sObjects...)
 	o.SetKubeClient(client)
 	o.SetJxClient(v1fake.NewSimpleClientset(jxObjects...))
-	o.SetApiExternsionsClient(apifake.NewSimpleClientset())
+	o.SetAPIExtensionsClient(apifake.NewSimpleClientset())
 	o.SetKnativeServeClient(kservefake.NewSimpleClientset())
 	o.SetGit(git)
 	if fakeGitProvider != nil {
