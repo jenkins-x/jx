@@ -85,8 +85,8 @@ func NewCmdControllerEnvironment(commonOpts *opts.CommonOptions) *cobra.Command 
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
 	cmd.Flags().BoolVarP(&options.NoGitCredeentialsInit, "no-git-init", "", false, "Disables checking we have setup git credentials on startup")
 	cmd.Flags().BoolVarP(&options.NoGitCredeentialsInit, "no-register-webhook", "", false, "Disables checking to register the webhook on startup")
-	cmd.Flags().StringVarP(&options.SourceURL, "url", "u", "", "The source URL of the environment git repository")
-	cmd.Flags().StringVarP(&options.WebHookURL, "webhook-url", "w", "", "The external WebHook URL of this controller to register with the git provider")
+	cmd.Flags().StringVarP(&options.SourceURL, "url", "u", "", "The source URL of the environment git repository. If not specified defaults to $SOURCE_URL")
+	cmd.Flags().StringVarP(&options.WebHookURL, "webhook-url", "w", "", "The external WebHook URL of this controller to register with the git provider. If not specified defaults to $WEBHOOK_URL")
 	return cmd
 }
 
@@ -110,6 +110,7 @@ func (o *ControllerEnvironmentOptions) Run() error {
 			return util.MissingOption("webhook-url")
 		}
 	}
+	log.Infof("using environment source directory %s and external webhook URL: %s\n", util.ColorInfo(o.SourceURL), util.ColorInfo(o.WebHookURL))
 	var err error
 	o.secret, err = o.loadOrCreateHmacSecret()
 	if err != nil {
