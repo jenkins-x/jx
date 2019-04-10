@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -16,7 +17,7 @@ import (
 )
 
 type ContextOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Filter string
 }
@@ -38,7 +39,7 @@ var (
 		jx ctx minikube`)
 )
 
-func NewCmdContext(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdContext(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &ContextOptions{
 		CommonOptions: commonOpts,
 	}

@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/sirupsen/logrus"
 	"os"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/pkg/errors"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 )
@@ -51,7 +53,7 @@ master:ef08a6cd194c2687d4bc12df6bb8a86f53c348ba,2739:5b351f4eae3c4afbb90dd7787f8
 )
 
 // NewCmdStepGitMerge create the 'step git envs' command
-func NewCmdStepGitMerge(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepGitMerge(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepGitMergeOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -123,16 +125,16 @@ func (o *StepGitMergeOptions) Run() error {
 }
 
 func (o *StepGitMergeOptions) setGitConfig() error {
-	user, err := o.getCommandOutput(o.Dir, "git", "config", "user.name")
+	user, err := o.GetCommandOutput(o.Dir, "git", "config", "user.name")
 	if err != nil || user == "" {
-		err := o.runCommandFromDir(o.Dir, "git", "config", "user.name", "jenkins-x")
+		err := o.RunCommandFromDir(o.Dir, "git", "config", "user.name", "jenkins-x")
 		if err != nil {
 			return err
 		}
 	}
-	email, err := o.getCommandOutput(o.Dir, "git", "config", "user.email")
+	email, err := o.GetCommandOutput(o.Dir, "git", "config", "user.email")
 	if email == "" || err != nil {
-		err := o.runCommandFromDir(o.Dir, "git", "config", "user.email", "jenkins-x@googlegroups.com")
+		err := o.RunCommandFromDir(o.Dir, "git", "config", "user.email", "jenkins-x@googlegroups.com")
 		if err != nil {
 			return err
 		}

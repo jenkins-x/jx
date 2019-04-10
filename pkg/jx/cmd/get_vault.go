@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/jenkins-x/jx/pkg/kube/vault"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -26,7 +27,7 @@ var (
 )
 
 // NewCmdGetVault creates a new command for 'jx get vaults'
-func NewCmdGetVault(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetVault(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetVaultOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -72,7 +73,7 @@ func (o *GetVaultOptions) Run() error {
 		return err
 	}
 
-	table := o.createTable()
+	table := o.CreateTable()
 	table.AddRow("NAME", "URL", "AUTH-SERVICE-ACCOUNT")
 	for _, vault := range vaults {
 		table.AddRow(vault.Name, vault.URL, vault.AuthServiceAccountName)

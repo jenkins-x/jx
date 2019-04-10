@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -47,7 +48,7 @@ type CreateIssueOptions struct {
 }
 
 // NewCmdCreateIssue creates a command object for the "create" command
-func NewCmdCreateIssue(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateIssue(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateIssueOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -78,7 +79,7 @@ func NewCmdCreateIssue(commonOpts *CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *CreateIssueOptions) Run() error {
-	tracker, err := o.createIssueProvider(o.Dir)
+	tracker, err := o.CreateIssueProvider(o.Dir)
 	if err != nil {
 		return err
 	}

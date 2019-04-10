@@ -1,10 +1,11 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -29,7 +30,7 @@ type DeletePostPreviewJobOptions struct {
 }
 
 // NewCmdDeletePostPreviewJob creates a command object for the "create" command
-func NewCmdDeletePostPreviewJob(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeletePostPreviewJob(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeletePostPreviewJobOptions{
 		DeleteOptions: DeleteOptions{
 			CommonOptions: commonOpts,

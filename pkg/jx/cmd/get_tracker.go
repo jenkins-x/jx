@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
@@ -32,7 +33,7 @@ var (
 )
 
 // NewCmdGetTracker creates the command
-func NewCmdGetTracker(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetTracker(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetTrackerOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -58,7 +59,7 @@ func NewCmdGetTracker(commonOpts *CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *GetTrackerOptions) Run() error {
-	authConfigSvc, err := o.createIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -70,7 +71,7 @@ func (o *GetTrackerOptions) Run() error {
 
 	filterKind := o.Kind
 
-	table := o.createTable()
+	table := o.CreateTable()
 	if filterKind == "" {
 		table.AddRow("Name", "Kind", "URL")
 	} else {

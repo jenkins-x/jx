@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
@@ -36,7 +37,7 @@ type StepBuildPackApplyOptions struct {
 }
 
 // NewCmdStepBuildPackApply Creates a new Command object
-func NewCmdStepBuildPackApply(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepBuildPackApply(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepBuildPackApplyOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -91,7 +92,7 @@ func (o *StepBuildPackApplyOptions) Run() error {
 		jenkinsfile = filepath.Join(dir, jenkinsfile)
 	}
 
-	args := &InvokeDraftPack{
+	args := &opts.InvokeDraftPack{
 		Dir:                     dir,
 		CustomDraftPack:         o.DraftPack,
 		Jenkinsfile:             jenkinsfile,
@@ -100,7 +101,7 @@ func (o *StepBuildPackApplyOptions) Run() error {
 		InitialisedGit:          true,
 		DisableJenkinsfileCheck: o.DisableJenkinsfileCheck,
 	}
-	_, err = o.invokeDraftPack(args)
+	_, err = o.InvokeDraftPack(args)
 	if err != nil {
 		return err
 	}

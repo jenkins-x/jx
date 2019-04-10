@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -36,7 +37,7 @@ var (
 )
 
 // NewCmdGetEnv creates the new command for: jx get env
-func NewCmdGetEnv(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetEnv(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetEnvOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -89,7 +90,7 @@ func (o *GetEnvOptions) Run() error {
 		// lets output one environment
 		spec := &env.Spec
 
-		table := o.createTable()
+		table := o.CreateTable()
 		table.AddRow("NAME", "LABEL", "KIND", "NAMESPACE", "SOURCE", "REF", "PR")
 		table.AddRow(e, spec.Label, spec.Namespace, kindString(spec), spec.Source.URL, spec.Source.Ref, spec.PullRequestURL)
 		table.Render()
@@ -101,7 +102,7 @@ func (o *GetEnvOptions) Run() error {
 			if err != nil {
 				return fmt.Errorf("Could not find deployments in namespace %s: %s", ens, err)
 			}
-			table = o.createTable()
+			table = o.CreateTable()
 			table.AddRow("APP", "VERSION", "DESIRED", "CURRENT", "UP-TO-DATE", "AVAILABLE", "AGE")
 			for _, d := range deps.Items {
 				replicas := ""
@@ -130,7 +131,7 @@ func (o *GetEnvOptions) Run() error {
 			envs.Items = environments
 			return o.renderResult(envs, o.Output)
 		}
-		table := o.createTable()
+		table := o.CreateTable()
 		if o.PreviewOnly {
 			table.AddRow("PULL REQUEST", "NAMESPACE", "APPLICATION")
 		} else {

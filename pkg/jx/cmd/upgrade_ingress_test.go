@@ -9,6 +9,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -24,7 +25,7 @@ type TestOptions struct {
 func (o *TestOptions) Setup() {
 	o.UpgradeIngressOptions = cmd.UpgradeIngressOptions{
 		CreateOptions: cmd.CreateOptions{
-			CommonOptions: &cmd.CommonOptions{},
+			CommonOptions: &opts.CommonOptions{},
 		},
 		IngressConfig: kube.IngressConfig{
 			Issuer: "letsencrypt-prod",

@@ -18,6 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
 
@@ -229,7 +230,7 @@ func TestPromoteToProductionPRPollingRun(t *testing.T) {
 type TestEnv struct {
 	Activity             *v1.PipelineActivity
 	WorkflowOptions      *cmd.ControllerWorkflowOptions
-	CommonOptions        *cmd.CommonOptions
+	CommonOptions        *opts.CommonOptions
 	FakeGitProvider      *gits.FakeProvider
 	DevRepo              *gits.FakeRepository
 	StagingRepo          *gits.FakeRepository
@@ -257,7 +258,7 @@ func prepareInitialPromotionEnv(t *testing.T, productionManualPromotion bool) (*
 
 	o := &cmd.ControllerWorkflowOptions{
 		ControllerOptions: cmd.ControllerOptions{
-			CommonOptions: &cmd.CommonOptions{},
+			CommonOptions: &opts.CommonOptions{},
 		},
 		NoWatch:   true,
 		Namespace: "jx",

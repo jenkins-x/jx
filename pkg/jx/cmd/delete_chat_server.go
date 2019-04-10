@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -23,13 +24,13 @@ var (
 
 // DeleteChatServerOptions the options for the create spring command
 type DeleteChatServerOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	IgnoreMissingServer bool
 }
 
 // NewCmdDeleteChatServer defines the command
-func NewCmdDeleteChatServer(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteChatServer(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteChatServerOptions{
 		CommonOptions: commonOpts,
 	}
@@ -56,7 +57,7 @@ func (o *DeleteChatServerOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing chat server name argument")
 	}
-	authConfigSvc, err := o.createChatAuthConfigService()
+	authConfigSvc, err := o.CreateChatAuthConfigService()
 	if err != nil {
 		return err
 	}

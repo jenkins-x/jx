@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 )
@@ -25,7 +26,7 @@ var (
 `)
 )
 
-func NewCmdUpdateClusterGKE(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdUpdateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := createUpdateClusterGKEOptions(commonOpts, cloud.GKE)
 
 	cmd := &cobra.Command{
@@ -46,7 +47,7 @@ func NewCmdUpdateClusterGKE(commonOpts *CommonOptions) *cobra.Command {
 	return cmd
 }
 
-func createUpdateClusterGKEOptions(commonOpts *CommonOptions, cloudProvider string) UpdateClusterGKEOptions {
+func createUpdateClusterGKEOptions(commonOpts *opts.CommonOptions, cloudProvider string) UpdateClusterGKEOptions {
 	options := UpdateClusterGKEOptions{
 		UpdateClusterOptions: UpdateClusterOptions{
 			UpdateOptions: UpdateOptions{

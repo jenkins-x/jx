@@ -3,22 +3,23 @@ package cmd_test
 import (
 	"strconv"
 
-	"github.com/jenkins-x/jx/pkg/auth/mocks"
+	auth_test "github.com/jenkins-x/jx/pkg/auth/mocks"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
 	"github.com/jenkins-x/jx/pkg/auth"
 
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/gits/mocks"
+	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
 	gits_matchers "github.com/jenkins-x/jx/pkg/gits/mocks/matchers"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
 	cmd_matchers "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks/matchers"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	k8s_v1 "k8s.io/api/core/v1"
 	k8s_cs "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -108,7 +109,7 @@ preview:
 `,
 		},
 	}
-	co := &cmd.CommonOptions{}
+	co := &opts.CommonOptions{}
 	cmd.ConfigureTestOptions(co, gits_test.NewMockGitter(), helm_test.NewMockHelmer())
 
 	for i, test := range tests {
@@ -170,7 +171,7 @@ func setupEnvironment() {
 
 func setupMocks() (*cmd.PreviewOptions, *cs_fake.Clientset) {
 	factory := cmd_mocks.NewMockFactory()
-	commonOpts := cmd.NewCommonOptionsWithFactory(factory)
+	commonOpts := opts.NewCommonOptionsWithFactory(factory)
 	commonOpts.Out = os.Stdout
 	commonOpts.In = os.Stdin
 	commonOpts.BatchMode = true

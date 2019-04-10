@@ -15,6 +15,7 @@ import (
 	"github.com/Pallinder/go-randomdata"
 	"github.com/codeship/codeship-go"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -56,7 +57,7 @@ var (
 )
 
 // NewCmdCreateCodeship creates a command object for the "create" command
-func NewCmdCreateCodeship(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateCodeship(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateCodeshipOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -128,7 +129,7 @@ func (o *CreateCodeshipOptions) validate() error {
 func (o *CreateCodeshipOptions) Run() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	if !o.Flags.SkipLogin {
-		err := o.runCommandVerbose("gcloud", "auth", "login", "--brief")
+		err := o.RunCommandVerbose("gcloud", "auth", "login", "--brief")
 		if err != nil {
 			return err
 		}

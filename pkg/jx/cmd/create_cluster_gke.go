@@ -16,6 +16,7 @@ import (
 	"regexp"
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -53,8 +54,6 @@ type CreateClusterGKEFlags struct {
 	EnhancedApis    bool
 }
 
-const clusterListHeader = "PROJECT_ID"
-
 var (
 	createClusterGKELong = templates.LongDesc(`
 		This command creates a new Kubernetes cluster on GKE, installing required local dependencies and provisions the
@@ -81,7 +80,7 @@ var (
 
 // NewCmdCreateClusterGKE creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateClusterGKE(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := CreateClusterGKEOptions{
 		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.GKE),
 	}
@@ -132,7 +131,7 @@ func (o *CreateClusterGKEOptions) Run() error {
 		return err
 	}
 
-	err = o.installRequirements(cloud.GKE)
+	err = o.InstallRequirements(cloud.GKE)
 	if err != nil {
 		return err
 	}
@@ -150,7 +149,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	var err error
 	if !o.Flags.SkipLogin {
-		err := o.runCommandVerbose("gcloud", "auth", "login", "--brief")
+		err := o.RunCommandVerbose("gcloud", "auth", "login", "--brief")
 		if err != nil {
 			return err
 		}
@@ -158,13 +157,13 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	projectId := o.Flags.ProjectId
 	if projectId == "" {
-		projectId, err = o.getGoogleProjectId()
+		projectId, err = o.GetGoogleProjectId()
 		if err != nil {
 			return err
 		}
 	}
 
-	err = o.runCommandVerbose("gcloud", "config", "set", "project", projectId)
+	err = o.RunCommandVerbose("gcloud", "config", "set", "project", projectId)
 	if err != nil {
 		return err
 	}
@@ -208,12 +207,12 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			}
 
 			if "Regional" == clusterType {
-				region, err = o.getGoogleRegion(projectId)
+				region, err = o.GetGoogleRegion(projectId)
 				if err != nil {
 					return err
 				}
 			} else {
-				zone, err = o.getGoogleZone(projectId)
+				zone, err = o.GetGoogleZone(projectId)
 				if err != nil {
 					return err
 				}
@@ -454,7 +453,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	context, err := o.getCommandOutput("", "kubectl", "config", "current-context")
+	context, err := o.GetCommandOutput("", "kubectl", "config", "current-context")
 	if err != nil {
 		return err
 	}

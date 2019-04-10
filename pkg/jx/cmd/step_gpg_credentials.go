@@ -6,12 +6,13 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -38,7 +39,7 @@ var (
 `)
 )
 
-func NewCmdStepGpgCredentials(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepGpgCredentials(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepGpgCredentialsOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,

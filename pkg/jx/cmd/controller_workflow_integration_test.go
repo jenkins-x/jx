@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -71,7 +72,7 @@ func TestSequentialWorkflow(t *testing.T) {
 
 	o := &cmd.ControllerWorkflowOptions{
 		ControllerOptions: cmd.ControllerOptions{
-			CommonOptions: &cmd.CommonOptions{},
+			CommonOptions: &opts.CommonOptions{},
 		},
 		NoWatch:        true,
 		Namespace:      "jx",
@@ -227,7 +228,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 
 	o := &cmd.ControllerWorkflowOptions{
 		ControllerOptions: cmd.ControllerOptions{
-			CommonOptions: &cmd.CommonOptions{},
+			CommonOptions: &opts.CommonOptions{},
 		},
 		NoWatch:        true,
 		Namespace:      "jx",
@@ -421,7 +422,7 @@ func TestParallelWorkflow(t *testing.T) {
 
 	o := &cmd.ControllerWorkflowOptions{
 		ControllerOptions: cmd.ControllerOptions{
-			CommonOptions: &cmd.CommonOptions{},
+			CommonOptions: &opts.CommonOptions{},
 		},
 		NoWatch:        true,
 		Namespace:      "jx",
@@ -602,7 +603,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 
 	o := &cmd.ControllerWorkflowOptions{
 		ControllerOptions: cmd.ControllerOptions{
-			CommonOptions: &cmd.CommonOptions{},
+			CommonOptions: &opts.CommonOptions{},
 		},
 		NoWatch:        true,
 		Namespace:      "jx",

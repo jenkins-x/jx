@@ -3,6 +3,7 @@ package cmd
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -31,7 +32,7 @@ var (
 )
 
 // NewCmdGetTeam creates the new command for: jx get env
-func NewCmdGetTeam(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetTeam(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetTeamOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -78,7 +79,7 @@ See https://jenkins-x.io/getting-started/\n for more detail
 		return nil
 	}
 
-	table := o.createTable()
+	table := o.CreateTable()
 	table.AddRow("NAME")
 	for _, team := range teams {
 		table.AddRow(team.Name)
@@ -88,7 +89,7 @@ See https://jenkins-x.io/getting-started/\n for more detail
 }
 
 func (o *GetTeamOptions) getPendingTeams() error {
-	err := o.registerTeamCRD()
+	err := o.RegisterTeamCRD()
 	if err != nil {
 		return err
 	}
@@ -110,7 +111,7 @@ There are no pending Teams yet. Try create one via: jx create team --pending
 		return nil
 	}
 
-	table := o.createTable()
+	table := o.CreateTable()
 	table.AddRow("NAME", "STATUS", "KIND", "MEMBERS")
 	for _, team := range teams {
 		spec := &team.Spec

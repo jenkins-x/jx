@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -26,13 +27,13 @@ var (
 
 // DeleteGitServerOptions the options for the create spring command
 type DeleteGitServerOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	IgnoreMissingServer bool
 }
 
 // NewCmdDeleteGitServer defines the command
-func NewCmdDeleteGitServer(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteGitServer(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteGitServerOptions{
 		CommonOptions: commonOpts,
 	}

@@ -3,12 +3,13 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 // AddOptions contains the command line options
 type AddOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	DisableImport bool
 	OutDir        string
@@ -28,7 +29,7 @@ var (
 )
 
 // NewCmdAdd creates a command object for the "add" command
-func NewCmdAdd(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdAdd(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &AddOptions{
 		CommonOptions: commonOpts,
 	}

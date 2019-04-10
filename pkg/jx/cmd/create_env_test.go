@@ -12,11 +12,12 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
 	cmd_mock_matchers "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks/matchers"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/tests"
 	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/AlecAivazis/survey.v1/core"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	apiextentions_mocks "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kube_mocks "k8s.io/client-go/kubernetes/fake"
@@ -134,7 +135,7 @@ func TestCreateEnvRun(t *testing.T) {
 	helmValuesConfig.ExposeController.Config.HTTP = "false"
 	helmValuesConfig.ExposeController.Config.TLSAcme = "false"
 
-	commonOpts := cmd.NewCommonOptionsWithFactory(factory)
+	commonOpts := opts.NewCommonOptionsWithFactory(factory)
 	commonOpts.In = console.In
 	commonOpts.Out = console.Out
 	commonOpts.Err = console.Err

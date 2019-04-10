@@ -1,13 +1,14 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 )
 
 // Scan Options contains the command line options for scan commands
 type ScanOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 }
 
 var (
@@ -17,7 +18,7 @@ var (
 )
 
 // NewCmdScan creates a command object for the "scan" command
-func NewCmdScan(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdScan(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &ScanOptions{
 		CommonOptions: commonOpts,
 	}

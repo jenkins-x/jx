@@ -3,17 +3,19 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/jenkins-x/jx/pkg/log"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/log"
+
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
@@ -30,7 +32,7 @@ const (
 
 // ControllerPipelineRunnerOptions holds the command line arguments
 type ControllerPipelineRunnerOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 	BindAddress           string
 	Path                  string
 	Port                  int
@@ -69,7 +71,7 @@ var (
 )
 
 // NewCmdControllerPipelineRunner creates the command
-func NewCmdControllerPipelineRunner(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdControllerPipelineRunner(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := ControllerPipelineRunnerOptions{
 		CommonOptions: commonOpts,
 	}
@@ -99,7 +101,7 @@ func NewCmdControllerPipelineRunner(commonOpts *CommonOptions) *cobra.Command {
 // Run will implement this command
 func (o *ControllerPipelineRunnerOptions) Run() error {
 	if !o.NoGitCredeentialsInit {
-		err := o.initGitConfigAndUser()
+		err := o.InitGitConfigAndUser()
 		if err != nil {
 			return err
 		}

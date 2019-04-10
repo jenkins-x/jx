@@ -13,6 +13,7 @@ import (
 
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -53,7 +54,7 @@ type CreateAddonAnchoreOptions struct {
 }
 
 // NewCmdCreateAddonAnchore creates a command object for the "create" command
-func NewCmdCreateAddonAnchore(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateAddonAnchore(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonAnchoreOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -86,7 +87,7 @@ func NewCmdCreateAddonAnchore(commonOpts *CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *CreateAddonAnchoreOptions) Run() error {
-	err := o.ensureHelm()
+	err := o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that helm is present")
 	}
@@ -97,14 +98,9 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 	if o.Chart == "" {
 		return util.MissingOption(optionChart)
 	}
-	client, err := o.KubeClient()
+	client, devNamespace, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return err
-	}
-
-	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
-	if err != nil {
-		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
 
 	log.Infof("found dev namespace %s\n", devNamespace)
@@ -112,7 +108,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 	values := []string{"globalConfig.users.admin.password=" + o.Password, "globalConfig.configDir=/anchore_service_dir"}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
+	err = o.InstallChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
 	if err != nil {
 		return fmt.Errorf("anchore deployment failed: %v", err)
 	}
@@ -144,7 +140,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 	tokenOptions := CreateTokenAddonOptions{
 		Password: o.Password,
 		Username: "admin",
-		ServerFlags: ServerFlags{
+		ServerFlags: opts.ServerFlags{
 			ServerURL:  ing,
 			ServerName: anchoreDeploymentName,
 		},
@@ -158,10 +154,14 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 		return fmt.Errorf("failed to create addonAuth.yaml error: %v", err)
 	}
 
-	_, err = client.CoreV1().Services(o.currentNamespace).Get(anchoreServiceName, meta_v1.GetOptions{})
+	_, currentNamespace, err := o.KubeClientAndNamespace()
+	if err != nil {
+		return errors.Wrap(err, "getting current namespace")
+	}
+	_, err = client.CoreV1().Services(currentNamespace).Get(anchoreServiceName, meta_v1.GetOptions{})
 	if err != nil {
 		// create a service link
-		err = services.CreateServiceLink(client, o.currentNamespace, o.Namespace, anchoreServiceName, ing)
+		err = services.CreateServiceLink(client, currentNamespace, o.Namespace, anchoreServiceName, ing)
 		if err != nil {
 			return fmt.Errorf("failed creating a service link for %s in target namespace %s", anchoreServiceName, o.Namespace)
 		}

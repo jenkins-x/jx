@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -40,7 +41,7 @@ type CreateAddonAmbassadorOptions struct {
 }
 
 // NewCmdCreateAddonAmbassador creates a command object for the "create" command
-func NewCmdCreateAddonAmbassador(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateAddonAmbassador(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonAmbassadorOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -77,18 +78,18 @@ func (o *CreateAddonAmbassadorOptions) Run() error {
 	if o.Chart == "" {
 		return util.MissingOption(optionChart)
 	}
-	err := o.addHelmRepoIfMissing(ambassadorRepoUrl, ambassadorRepoName, "", "")
+	err := o.AddHelmRepoIfMissing(ambassadorRepoUrl, ambassadorRepoName, "", "")
 	if err != nil {
 		return err
 	}
 
-	err = o.ensureHelm()
+	err = o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that helm is present")
 	}
 
 	values := strings.Split(o.SetValues, ",")
-	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, o.ValueFiles, "")
+	err = o.InstallChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, o.ValueFiles, "")
 	if err != nil {
 		return err
 	}

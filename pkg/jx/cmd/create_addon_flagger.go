@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -47,7 +48,7 @@ type CreateAddonFlaggerOptions struct {
 	IstioGateway          string
 }
 
-func NewCmdCreateAddonFlagger(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateAddonFlagger(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonFlaggerOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -87,7 +88,7 @@ func (o *CreateAddonFlaggerOptions) Run() error {
 	if o.GrafanaChart == "" {
 		return util.MissingOption(optionGrafanaChart)
 	}
-	err := o.ensureHelm()
+	err := o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that Helm is present")
 	}
@@ -95,15 +96,15 @@ func (o *CreateAddonFlaggerOptions) Run() error {
 	values := []string{}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	err = o.addHelmRepoIfMissing(defaultFlaggerRepo, "flagger", "", "")
+	err = o.AddHelmRepoIfMissing(defaultFlaggerRepo, "flagger", "", "")
 	if err != nil {
 		return errors.Wrap(err, "Flagger deployment failed")
 	}
-	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
+	err = o.InstallChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
 	if err != nil {
 		return errors.Wrap(err, "Flagger deployment failed")
 	}
-	err = o.installChart(o.ReleaseName+"-grafana", o.GrafanaChart, o.Version, o.Namespace, true, values, nil, "")
+	err = o.InstallChart(o.ReleaseName+"-grafana", o.GrafanaChart, o.Version, o.Namespace, true, values, nil, "")
 	if err != nil {
 		return errors.Wrap(err, "Flagger Grafana deployment failed")
 	}
@@ -115,7 +116,7 @@ func (o *CreateAddonFlaggerOptions) Run() error {
 			return errors.Wrap(err, "error enabling Istio in production namespace")
 		}
 		var ns string
-		ns, err = o.findEnvironmentNamespace(o.ProductionEnvironment)
+		ns, err = o.FindEnvironmentNamespace(o.ProductionEnvironment)
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("error enabling Istio for environment %s", o.ProductionEnvironment))
 		}
@@ -129,7 +130,7 @@ func (o *CreateAddonFlaggerOptions) Run() error {
 
 	// Create the Istio gateway
 	if o.IstioGateway != "" {
-		istioClient, err := o.CreateAddonOptions.CommonOptions.IstioClient()
+		istioClient, err := o.IstioClient()
 		if err != nil {
 			return errors.Wrap(err, "error building Istio client")
 		}

@@ -7,11 +7,12 @@ import (
 	"strings"
 	"time"
 
+	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 )
@@ -19,7 +20,7 @@ import (
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
 // referencing the cmd.Flags()
 type GCActivitiesOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	RevisionHistoryLimit int
 	PullRequestHours     int
@@ -39,7 +40,7 @@ var (
 )
 
 // NewCmd s a command object for the "step" command
-func NewCmdGCActivities(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGCActivities(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GCActivitiesOptions{
 		CommonOptions: commonOpts,
 	}
@@ -103,7 +104,7 @@ func (o *GCActivitiesOptions) Run() error {
 			return err
 		}
 		for _, j := range jobs {
-			err = o.getAllPipelineJobNames(o.jclient, &jobNames, j.Name)
+			err = o.GetAllPipelineJobNames(o.jclient, &jobNames, j.Name)
 			if err != nil {
 				return err
 			}

@@ -3,15 +3,16 @@ package vault_test
 import (
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned/fake"
-	"github.com/jenkins-x/jx/pkg/gits/mocks"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	cmdMocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -21,7 +22,7 @@ import (
 )
 
 func setupMocks(t *testing.T, term *terminal.Stdio) (*fake.Clientset, *kubevault.VaultClientFactory, kubernetes.Interface, error) {
-	commonOpts := cmd.NewCommonOptionsWithFactory(cmdMocks.NewMockFactory())
+	commonOpts := opts.NewCommonOptionsWithFactory(cmdMocks.NewMockFactory())
 	options := &commonOpts
 	if term != nil {
 		options.In, options.Out, options.Err = term.In, term.Out, term.Err

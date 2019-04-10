@@ -9,6 +9,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 
 	"github.com/spf13/cobra"
@@ -34,7 +35,7 @@ var (
 )
 
 // NewCmdStep Steps a command object for the "step" command
-func NewCmdStepPostRun(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepPostRun(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepPostRunOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -80,7 +81,7 @@ func (o *StepPostRunOptions) Run() (err error) {
 		appName = gitInfo.Name
 	}
 	pipeline := ""
-	build := o.getBuildNumber()
+	build := o.GetBuildNumber()
 	pipeline, build = o.GetPipelineName(gitInfo, pipeline, build, appName)
 	if pipeline != "" && build != "" {
 		name := kube.ToValidName(pipeline + "-" + build)

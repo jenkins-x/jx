@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -23,7 +24,7 @@ const (
 )
 
 type RshOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Container   string
 	Namespace   string
@@ -58,7 +59,7 @@ var (
 `)
 )
 
-func NewCmdRsh(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdRsh(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &RshOptions{
 		CommonOptions: commonOpts,
 	}
@@ -101,7 +102,7 @@ func (o *RshOptions) Run() error {
 	}
 
 	if o.Environment != "" {
-		ns, err = o.findEnvironmentNamespace(o.Environment)
+		ns, err = o.FindEnvironmentNamespace(o.Environment)
 		if err != nil {
 			return err
 		}
@@ -116,7 +117,7 @@ func (o *RshOptions) Run() error {
 	pods := map[string]*corev1.Pod{}
 	if o.DevPod {
 		podsName = "DevPods"
-		userName, err := o.getUsername(o.Username)
+		userName, err := o.GetUsername(o.Username)
 		if err != nil {
 			return err
 		}
@@ -224,7 +225,7 @@ func (o *RshOptions) Run() error {
 	if o.Verbose {
 		log.Infof("Running command: kubectl %s\n", strings.Join(a, " "))
 	}
-	return o.runCommandInteractive(true, "kubectl", a...)
+	return o.RunCommandInteractive(true, "kubectl", a...)
 }
 
 func (o *RshOptions) detectBash(ns string, podName string, container string) (string, error) {
@@ -233,7 +234,7 @@ func (o *RshOptions) detectBash(ns string, podName string, container string) (st
 	if container != "" {
 		args = append(args, "-c", container)
 	}
-	err := o.runCommandQuietly("kubectl", args...)
+	err := o.RunCommandQuietly("kubectl", args...)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to copy the shell file form POD '%s'", podName)
 	}

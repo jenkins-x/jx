@@ -7,14 +7,15 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	core_v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
 
@@ -29,7 +30,7 @@ type CreateAddonPrometheusOptions struct {
 	Password    string
 }
 
-func NewCmdCreateAddonPrometheus(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateAddonPrometheus(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonPrometheusOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -65,7 +66,7 @@ func (options *CreateAddonPrometheusOptions) addFlags(cmd *cobra.Command, defaul
 }
 
 func (o *CreateAddonPrometheusOptions) Run() error {
-	err := o.ensureHelm()
+	err := o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that helm is present")
 	}
@@ -118,7 +119,7 @@ func (o *CreateAddonPrometheusOptions) Run() error {
 	}
 
 	setValues := strings.Split(o.SetValues, ",")
-	err = o.installChartOptions(helm.InstallChartOptions{
+	err = o.InstallChartWithOptions(helm.InstallChartOptions{
 		ReleaseName: o.ReleaseName,
 		Chart:       "stable/prometheus",
 		Version:     o.Version,

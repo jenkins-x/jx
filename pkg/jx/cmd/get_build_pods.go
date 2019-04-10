@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/builds"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
@@ -43,7 +44,7 @@ var (
 )
 
 // NewCmdGetBuildPods creates the command
-func NewCmdGetBuildPods(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetBuildPods(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetBuildPodsOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -88,7 +89,7 @@ func (o *GetBuildPodsOptions) Run() error {
 		return err
 	}
 
-	table := o.createTable()
+	table := o.CreateTable()
 	table.AddRow("OWNER", "REPOSITORY", "BRANCH", "BUILD", "CONTEXT", "AGE", "STATUS", "STEP 1 IMAGE", "POD", "GIT URL")
 
 	buildInfos := []*builds.BuildPodInfo{}

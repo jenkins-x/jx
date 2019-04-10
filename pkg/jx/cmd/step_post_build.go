@@ -14,6 +14,7 @@ import (
 
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -49,7 +50,7 @@ podAnnotations:
   jenkins-x.io/cve-image-id: %s
 `
 
-func NewCmdStepPostBuild(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepPostBuild(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepPostBuildOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -92,13 +93,13 @@ func (o *StepPostBuildOptions) addImageCVEProvider() error {
 		return util.MissingOption("image")
 	}
 
-	client, err := o.KubeClient()
+	client, currentNamespace, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}
-	present, err := services.IsServicePresent(client, kube.AddonServices[defaultAnchoreName], o.currentNamespace)
+	present, err := services.IsServicePresent(client, kube.AddonServices[defaultAnchoreName], currentNamespace)
 	if err != nil || !present {
-		log.Infof("no CVE provider running in the current %s namespace so skip adding image to be analysed", o.currentNamespace)
+		log.Infof("no CVE provider running in the current %s namespace so skip adding image to be analysed", currentNamespace)
 		return nil
 	}
 

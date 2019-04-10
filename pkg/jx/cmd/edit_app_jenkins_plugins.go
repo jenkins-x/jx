@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -32,7 +33,7 @@ type EditAppJenkinsPluginsOptions struct {
 }
 
 // NewCmdEditAppJenkinsPlugins creates a command object for the "create" command
-func NewCmdEditAppJenkinsPlugins(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdEditAppJenkinsPlugins(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &EditAppJenkinsPluginsOptions{
 		EditOptions: EditOptions{
 			CommonOptions: commonOpts,

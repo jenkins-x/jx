@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/prow/config"
 
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -44,7 +45,7 @@ type ControllerCommitStatusOptions struct {
 }
 
 // NewCmdControllerCommitStatus creates a command object for the "create" command
-func NewCmdControllerCommitStatus(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdControllerCommitStatus(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &ControllerCommitStatusOptions{
 		ControllerOptions: ControllerOptions{
 			CommonOptions: commonOpts,
@@ -502,7 +503,7 @@ func (o *ControllerCommitStatusOptions) getGitProvider(url string) (gits.GitProv
 			break
 		}
 	}
-	return o.createGitProviderForURLWithoutKind(url)
+	return o.CreateGitProviderForURLWithoutKind(url)
 }
 
 func getBuildNumber(pipelineActName string) string {

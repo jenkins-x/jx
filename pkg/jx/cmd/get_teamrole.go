@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -25,7 +26,7 @@ var (
 )
 
 // NewCmdGetTeamRole creates the new command for: jx get env
-func NewCmdGetTeamRole(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetTeamRole(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetTeamRoleOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -65,7 +66,7 @@ There are no Team roles defined so far!
 		return nil
 	}
 
-	table := o.createTable()
+	table := o.CreateTable()
 	table.AddRow("NAME", "TITLE", "DESCRIPTION")
 	for _, name := range names {
 		title := ""

@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 )
@@ -19,7 +20,7 @@ const DefaultPrefix = "JX_PR_LABELS"
 
 // StepPRLabelsOptions holds the options for the cmd
 type StepPRLabelsOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Dir         string
 	Prefix      string
@@ -49,7 +50,7 @@ var (
 )
 
 // NewCmdStepPRLabels creates the new cmd
-func NewCmdStepPRLabels(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepPRLabels(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepPRLabelsOptions{
 		CommonOptions: commonOpts,
 	}
@@ -72,7 +73,7 @@ func NewCmdStepPRLabels(commonOpts *CommonOptions) *cobra.Command {
 
 // Run implements the execution
 func (o *StepPRLabelsOptions) Run() error {
-	gitInfo, provider, _, err := o.createGitProvider(o.Dir)
+	gitInfo, provider, _, err := o.CreateGitProvider(o.Dir)
 	if err != nil {
 		return err
 	}

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/spf13/cobra"
 )
 
@@ -10,7 +11,7 @@ type StepVerifyPodOptions struct {
 }
 
 // NewCmdStepVerifyPod creates the `jx step verify pod` command
-func NewCmdStepVerifyPod(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepVerifyPod(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	options := &StepVerifyPodOptions{
 		StepOptions: StepOptions{

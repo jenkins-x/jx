@@ -4,6 +4,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/json"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -47,7 +48,7 @@ type CreateDockerAuthOptions struct {
 }
 
 // NewCmdCreateDockerAuth creates a command object for the "create" command
-func NewCmdCreateDockerAuth(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateDockerAuth(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateDockerAuthOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,

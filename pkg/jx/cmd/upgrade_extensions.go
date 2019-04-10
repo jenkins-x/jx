@@ -29,6 +29,7 @@ import (
 
 	"github.com/ghodss/yaml"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 )
@@ -55,7 +56,7 @@ type UpgradeExtensionsOptions struct {
 	ExtensionsRepositoryFile string
 }
 
-func NewCmdUpgradeExtensions(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdUpgradeExtensions(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradeExtensionsOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -182,7 +183,7 @@ func (o *UpgradeExtensionsOptions) Run() error {
 				extensionsRepositoryUrl = upstreamExtensionsRepositoryGitHub
 			}
 			if current.GitHub != "" {
-				_, repoInfo, err := o.createGitProviderForURLWithoutKind(current.GitHub)
+				_, repoInfo, err := o.CreateGitProviderForURLWithoutKind(current.GitHub)
 				if err != nil {
 					return err
 				}
@@ -271,6 +272,10 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension *jenkinsv1.Extensio
 	result := make([]jenkinsv1.ExtensionExecution, 0)
 	indent := ((depth - 1) * 2) + initialIndent
 
+	_, devNamespace, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return result, err
+	}
 	// TODO Validate extension
 	newVersion, err := semver.Parse(extension.Version)
 	if err != nil {
@@ -304,7 +309,7 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension *jenkinsv1.Extensio
 			return result, err
 		}
 		if o.Contains(extension.When, jenkinsv1.ExtensionWhenInstall) {
-			e, _, err := extensions.ToExecutable(extension, extensionConfig.Parameters, o.devNamespace, exts)
+			e, _, err := extensions.ToExecutable(extension, extensionConfig.Parameters, devNamespace, exts)
 			if err != nil {
 				return result, err
 			}
@@ -324,7 +329,7 @@ func (o *UpgradeExtensionsOptions) UpsertExtension(extension *jenkinsv1.Extensio
 				return result, err
 			}
 			if o.Contains(extension.When, jenkinsv1.ExtensionWhenUpgrade) {
-				e, _, err := extensions.ToExecutable(extension, extensionConfig.Parameters, o.devNamespace, exts)
+				e, _, err := extensions.ToExecutable(extension, extensionConfig.Parameters, devNamespace, exts)
 				if err != nil {
 					return result, err
 				}

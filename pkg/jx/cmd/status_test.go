@@ -6,11 +6,12 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	cmd_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 
 	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kube_mocks "k8s.io/client-go/kubernetes/fake"
@@ -101,7 +102,7 @@ func TestStatusRun(t *testing.T) {
 	When(factory.CreateKubeClient()).ThenReturn(kubernetesInterface, "jx-testing", nil)
 
 	// Setup options
-	commonOpts := cmd.NewCommonOptionsWithFactory(factory)
+	commonOpts := opts.NewCommonOptionsWithFactory(factory)
 	commonOpts.Out = os.Stdout
 	commonOpts.Err = os.Stderr
 	options := &cmd.StatusOptions{

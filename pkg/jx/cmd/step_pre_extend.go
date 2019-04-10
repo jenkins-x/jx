@@ -17,6 +17,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 )
@@ -38,7 +39,7 @@ var (
 
 const extensionsConfigDefaultFile = "jenkins-x-extensions.yaml"
 
-func NewCmdStepPreExtend(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepPreExtend(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepPreExtendOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -108,7 +109,7 @@ func (o *StepPreExtendOptions) Run() error {
 			appName = gitInfo.Name
 		}
 		pipeline := ""
-		build := o.getBuildNumber()
+		build := o.GetBuildNumber()
 		pipeline, build = o.GetPipelineName(gitInfo, pipeline, build, appName)
 		if pipeline != "" && build != "" {
 			name := kube.ToValidName(pipeline + "-" + build)
@@ -167,7 +168,11 @@ func (o *StepPreExtendOptions) walk(extension *jenkinsv1.ExtensionSpec, lookup m
 		}
 	} else {
 		if extension.IsPost() {
-			ext, envVarsFormatted, err := extensions.ToExecutable(extension, parameters, o.devNamespace, exts)
+			_, devNamespace, err := o.KubeClientAndDevNamespace()
+			if err != nil {
+				return result, errors.Wrap(err, "getting the dev namespace")
+			}
+			ext, envVarsFormatted, err := extensions.ToExecutable(extension, parameters, devNamespace, exts)
 			if err != nil {
 				return result, err
 			}

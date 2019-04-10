@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -27,7 +28,7 @@ var (
 `)
 )
 
-func NewCmdStepNexusRelease(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepNexusRelease(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepNexusReleaseOptions{
 		StepNexusOptions: StepNexusOptions{
 			StepOptions: StepOptions{

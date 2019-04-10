@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/pkg/errors"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -27,7 +28,7 @@ type DeleteAddonFlaggerOptions struct {
 }
 
 // NewCmdDeleteAddonFlagger defines the command
-func NewCmdDeleteAddonFlagger(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteAddonFlagger(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteAddonFlaggerOptions{
 		DeleteAddonOptions: DeleteAddonOptions{
 			CommonOptions: commonOpts,
@@ -56,11 +57,11 @@ func (o *DeleteAddonFlaggerOptions) Run() error {
 	if o.ReleaseName == "" {
 		return util.MissingOption(optionRelease)
 	}
-	err := o.deleteChart(o.ReleaseName, o.Purge)
+	err := o.DeleteChart(o.ReleaseName, o.Purge)
 	if err != nil {
 		return errors.Wrap(err, "Failed to delete Flagger chart")
 	}
-	err = o.deleteChart(o.ReleaseName+"-grafana", o.Purge)
+	err = o.DeleteChart(o.ReleaseName+"-grafana", o.Purge)
 	if err != nil {
 		return errors.Wrap(err, "Failed to delete Flagger Grafana chart")
 	}

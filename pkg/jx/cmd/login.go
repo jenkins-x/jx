@@ -14,6 +14,7 @@ import (
 
 	"github.com/chromedp/chromedp/runner"
 	"github.com/hpcloud/tail"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	jxlog "github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -46,7 +47,7 @@ type UserLoginInfo struct {
 
 // LoginOptions options for login command
 type LoginOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	URL  string
 	Team string
@@ -67,7 +68,7 @@ var (
 		`)
 )
 
-func NewCmdLogin(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdLogin(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &LoginOptions{
 		CommonOptions: commonOpts,
 	}
@@ -98,7 +99,7 @@ func (o *LoginOptions) Run() error {
 	}
 
 	// ensure base set of binaries are installed which are required by jx
-	err = o.installRequirements("")
+	err = o.InstallRequirements("")
 	if err != nil {
 		return errors.Wrap(err, "installing required binaries")
 	}

@@ -32,6 +32,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
@@ -59,15 +60,10 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 		Run:   runHelp,
 	}
 
-	commonOpts := &CommonOptions{
-		factory: f,
-		In:      in,
-		Out:     out,
-		Err:     err,
-	}
+	commonOpts := opts.NewCommonOptionsWithTerm(f, in, out, err)
 
 	// commonOpts holds the global flags that will be shared/inherited by all sub-commands created bellow
-	commonOpts.addCommonFlags(cmds)
+	commonOpts.AddCommonFlags(cmds)
 
 	addCommands := NewCmdAdd(commonOpts)
 	createCommands := NewCmdCreate(commonOpts)
@@ -200,7 +196,7 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 			Root:        cmds,
 			SeenPlugins: make(map[string]string, 0),
 		}
-		pluginCommandGroups, managedPluginsEnabled, err := commonOpts.getPluginCommandGroups(verifier)
+		pluginCommandGroups, managedPluginsEnabled, err := commonOpts.GetPluginCommandGroups(verifier)
 		if err != nil {
 			log.Errorf("%v\n", err)
 		}
@@ -296,7 +292,7 @@ type PluginHandler interface {
 }
 
 type managedPluginHandler struct {
-	*CommonOptions
+	*opts.CommonOptions
 	localPluginHandler
 }
 

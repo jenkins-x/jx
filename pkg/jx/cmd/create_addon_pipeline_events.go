@@ -12,6 +12,7 @@ import (
 
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -49,7 +50,7 @@ type CreateAddonPipelineEventsOptions struct {
 }
 
 // NewCmdCreateAddonPipelineEvents creates a command object for the "create" command
-func NewCmdCreateAddonPipelineEvents(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateAddonPipelineEvents(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonPipelineEventsOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -85,7 +86,7 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 		return util.MissingOption(optionRelease)
 	}
 
-	err := o.ensureHelm()
+	err := o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that helm is present")
 	}
@@ -94,7 +95,7 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 		return err
 	}
 
-	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
+	_, devNamespace, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
@@ -102,7 +103,7 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 	log.Infof("found dev namespace %s\n", devNamespace)
 
 	setValues := strings.Split(o.SetValues, ",")
-	err = o.installChart(o.ReleaseName, kube.ChartPipelineEvent, o.Version, o.Namespace, true, setValues, nil, "")
+	err = o.InstallChart(o.ReleaseName, kube.ChartPipelineEvent, o.Version, o.Namespace, true, setValues, nil, "")
 	if err != nil {
 		return fmt.Errorf("elasticsearch deployment failed: %v", err)
 	}
@@ -133,13 +134,13 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 	}
 
 	if o.Password == "" {
-		o.Password, err = o.getDefaultAdminPassword(devNamespace)
+		o.Password, err = o.GetDefaultAdminPassword(devNamespace)
 		if err != nil {
 			return err
 		}
 	}
 	// create the ingress rule
-	err = o.expose(devNamespace, o.Namespace, o.Password)
+	err = o.Expose(devNamespace, o.Namespace, o.Password)
 	if err != nil {
 		return err
 	}
@@ -160,7 +161,7 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 	tokenOptions := CreateTokenAddonOptions{
 		Password: o.Password,
 		Username: "admin",
-		ServerFlags: ServerFlags{
+		ServerFlags: opts.ServerFlags{
 			ServerURL:  esIng,
 			ServerName: esDeploymentName,
 		},
@@ -174,10 +175,14 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 		return fmt.Errorf("failed to create addonAuth.yaml error: %v", err)
 	}
 
-	_, err = client.CoreV1().Services(o.currentNamespace).Get(esServiceName, meta_v1.GetOptions{})
+	_, currentNamespace, err := o.KubeClientAndNamespace()
+	if err != nil {
+		return errors.Wrap(err, "getting current namespace")
+	}
+	_, err = client.CoreV1().Services(currentNamespace).Get(esServiceName, meta_v1.GetOptions{})
 	if err != nil {
 		// create a services link
-		err = services.CreateServiceLink(client, o.currentNamespace, o.Namespace, esServiceName, esIng)
+		err = services.CreateServiceLink(client, currentNamespace, o.Namespace, esServiceName, esIng)
 		if err != nil {
 			return fmt.Errorf("failed creating a service link for %s in target namespace %s", esServiceName, o.Namespace)
 		}

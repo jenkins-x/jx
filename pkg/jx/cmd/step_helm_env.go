@@ -3,6 +3,7 @@ package cmd
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -28,7 +29,7 @@ var (
 `)
 )
 
-func NewCmdStepHelmEnv(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepHelmEnv(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepHelmEnvOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{

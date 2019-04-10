@@ -5,8 +5,9 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -24,7 +25,7 @@ const (
 
 // GetActivityOptions containers the CLI options
 type GetActivityOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Filter      string
 	BuildNumber string
@@ -49,7 +50,7 @@ var (
 )
 
 // NewCmdGetActivity creates the new command for: jx get version
-func NewCmdGetActivity(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetActivity(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetActivityOptions{
 		CommonOptions: commonOpts,
 	}
@@ -92,7 +93,7 @@ func (o *GetActivityOptions) Run() error {
 	}
 	kube.SortEnvironments(envList.Items)
 
-	table := o.createTable()
+	table := o.CreateTable()
 	table.SetColumnAlign(1, util.ALIGN_RIGHT)
 	table.SetColumnAlign(2, util.ALIGN_RIGHT)
 	table.AddRow("STEP", "STARTED AGO", "DURATION", "STATUS")

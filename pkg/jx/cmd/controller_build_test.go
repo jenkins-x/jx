@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"testing"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/apimachinery/pkg/runtime"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -32,7 +34,7 @@ func TestCompleteBuildSourceInfo(t *testing.T) {
 		Namespace:      "test",
 
 		ControllerOptions: ControllerOptions{
-			CommonOptions: &CommonOptions{},
+			CommonOptions: &opts.CommonOptions{},
 		},
 	}
 

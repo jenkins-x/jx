@@ -11,9 +11,10 @@ import (
 
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -68,7 +69,7 @@ type CreateEnvOptions struct {
 }
 
 // NewCmdCreateEnv creates a command object for the "create" command
-func NewCmdCreateEnv(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateEnv(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateEnvOptions{
 		HelmValuesConfig: config.HelmValuesConfig{
 			ExposeController: &config.ExposeController{},
@@ -114,7 +115,7 @@ func NewCmdCreateEnv(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Vault, "vault", "", false, "Sets up a Hashicorp Vault for storing secrets during the cluster creation")
 	cmd.Flags().StringVarP(&options.PullSecrets, optionPullSecrets, "", "", "A list of Kubernetes secret names that will be attached to the service account (e.g. foo, bar, baz)")
 
-	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
+	opts.AddGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, false)
 
 	return cmd
@@ -160,7 +161,7 @@ func (o *CreateEnvOptions) Run() error {
 			return err
 		}
 
-		prowFlag, err = o.isProw()
+		prowFlag, err = o.IsProw()
 		if err != nil {
 			return err
 		}
@@ -325,11 +326,11 @@ func (o *CreateEnvOptions) RegisterEnvironment(env *v1.Environment, gitProvider 
 		if user.Username == "" {
 			return fmt.Errorf("Could not find a username for git server %s", u)
 		}
-		_, err = o.updatePipelineGitCredentialsSecret(server, user)
+		_, err = o.UpdatePipelineGitCredentialsSecret(server, user)
 		if err != nil {
 			return err
 		}
-		return o.createWebhookProw(gitURL, gitProvider)
+		return o.CreateWebhookProw(gitURL, gitProvider)
 	}
 
 	return o.ImportProject(gitURL, envDir, jenkinsfile.Name, o.BranchPattern, o.EnvJobCredentials, false, gitProvider, authConfigSvc, true, o.BatchMode)

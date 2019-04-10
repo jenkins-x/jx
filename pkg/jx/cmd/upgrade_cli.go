@@ -3,6 +3,7 @@ package cmd
 import (
 	"runtime"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -30,7 +31,7 @@ type UpgradeCLIOptions struct {
 }
 
 // NewCmdUpgradeCLI defines the command
-func NewCmdUpgradeCLI(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdUpgradeCLI(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradeCLIOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -81,6 +82,6 @@ func (o *UpgradeCLIOptions) Run() error {
 	if runtime.GOOS == "darwin" && !o.NoBrew {
 		return o.RunCommand("brew", "upgrade", "jx")
 	} else {
-		return o.installJx(true, newVersion.String())
+		return o.InstallJx(true, newVersion.String())
 	}
 }

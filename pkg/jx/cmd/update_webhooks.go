@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -17,7 +18,7 @@ import (
 
 // UpdateWebhooksOptions the flags for updating webhooks
 type UpdateWebhooksOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 	Org             string
 	Repo            string
 	ExactHookMatch  bool
@@ -39,7 +40,7 @@ var (
 `)
 )
 
-func NewCmdUpdateWebhooks(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdUpdateWebhooks(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := createUpdateWebhooksOptions(commonOpts)
 
 	cmd := &cobra.Command{
@@ -63,7 +64,7 @@ func NewCmdUpdateWebhooks(commonOpts *CommonOptions) *cobra.Command {
 	return cmd
 }
 
-func createUpdateWebhooksOptions(commonOpts *CommonOptions) UpdateWebhooksOptions {
+func createUpdateWebhooksOptions(commonOpts *opts.CommonOptions) UpdateWebhooksOptions {
 	options := UpdateWebhooksOptions{
 		CommonOptions: commonOpts,
 	}
@@ -76,12 +77,12 @@ func (options *UpdateWebhooksOptions) Run() error {
 		return errors.Wrap(err, "failed to create git auth service")
 	}
 
-	client, err := options.KubeClient()
+	client, currentNamespace, err := options.KubeClientAndNamespace()
 	if err != nil {
 		return errors.Wrap(err, "failed to get kube client")
 	}
 
-	ns, _, err := kube.GetDevNamespace(client, options.currentNamespace)
+	ns, _, err := kube.GetDevNamespace(client, currentNamespace)
 	if err != nil {
 		return err
 	}
@@ -91,7 +92,7 @@ func (options *UpdateWebhooksOptions) Run() error {
 		return err
 	}
 
-	isProwEnabled, err := options.isProw()
+	isProwEnabled, err := options.IsProw()
 	if err != nil {
 		return err
 	}
@@ -103,7 +104,7 @@ func (options *UpdateWebhooksOptions) Run() error {
 
 	gitServer := authConfigService.Config().CurrentServer
 
-	git, err := options.gitProviderForGitServerURL(gitServer, "github")
+	git, err := options.GitProviderForGitServerURL(gitServer, "github")
 	if err != nil {
 		return errors.Wrap(err, "unable to determine git provider")
 	}

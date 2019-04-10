@@ -9,6 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -42,7 +43,7 @@ type EditAddonOptions struct {
 }
 
 // NewCmdEditAddon creates a command object for the "create" command
-func NewCmdEditAddon(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdEditAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &EditAddonOptions{
 		EditOptions: EditOptions{
 			CommonOptions: commonOpts,

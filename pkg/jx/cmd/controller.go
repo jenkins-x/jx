@@ -3,12 +3,13 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 // ControllerOptions contains the CLI options
 type ControllerOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 }
 
 var (
@@ -22,7 +23,7 @@ var (
 )
 
 // NewCmdController creates the edit command
-func NewCmdController(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdController(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &ControllerOptions{
 		commonOpts,
 	}

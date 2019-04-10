@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -32,7 +33,7 @@ var (
 `)
 )
 
-func NewCmdStepHelmInstall(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepHelmInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepHelmInstallOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{
@@ -69,7 +70,7 @@ func (o *StepHelmInstallOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing chart argument")
 	}
-	err := o.registerReleaseCRD()
+	err := o.RegisterReleaseCRD()
 	if err != nil {
 		return err
 	}

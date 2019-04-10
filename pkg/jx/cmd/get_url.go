@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
@@ -29,7 +30,7 @@ var (
 )
 
 // NewCmdGetURL creates the command
-func NewCmdGetURL(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetURL(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetURLOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -67,7 +68,7 @@ func (o *GetURLOptions) Run() error {
 	if o.Namespace != "" {
 		ns = o.Namespace
 	} else if o.Environment != "" {
-		ns, err = o.findEnvironmentNamespace(o.Environment)
+		ns, err = o.FindEnvironmentNamespace(o.Environment)
 		if err != nil {
 			return err
 		}
@@ -76,7 +77,7 @@ func (o *GetURLOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	table := o.createTable()
+	table := o.CreateTable()
 	table.AddRow("Name", "URL")
 
 	for _, url := range urls {

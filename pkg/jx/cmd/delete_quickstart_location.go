@@ -3,8 +3,9 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -38,14 +39,14 @@ var (
 
 // DeleteQuickstartLocationOptions the options for the create spring command
 type DeleteQuickstartLocationOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	GitUrl string
 	Owner  string
 }
 
 // NewCmdDeleteQuickstartLocation defines the command
-func NewCmdDeleteQuickstartLocation(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteQuickstartLocation(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteQuickstartLocationOptions{
 		CommonOptions: commonOpts,
 	}

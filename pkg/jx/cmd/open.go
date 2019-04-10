@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
@@ -27,7 +28,7 @@ var (
 		jx open`)
 )
 
-func NewCmdOpen(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdOpen(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &OpenOptions{
 		ConsoleOptions: ConsoleOptions{
 			GetURLOptions: GetURLOptions{

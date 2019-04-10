@@ -23,6 +23,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -283,7 +284,7 @@ const (
 )
 
 // NewCmdCreateTerraform creates a command object for the "create" command
-func NewCmdCreateTerraform(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateTerraform(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateTerraformOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -351,13 +352,13 @@ func stringInValidProviders(a string) bool {
 
 // Run implements this command
 func (options *CreateTerraformOptions) Run() error {
-	err := options.installRequirements(cloud.GKE, "terraform", options.InstallOptions.InitOptions.HelmBinary())
+	err := options.InstallRequirements(cloud.GKE, "terraform", options.InstallOptions.InitOptions.HelmBinary())
 	if err != nil {
 		return err
 	}
 
 	if !options.Flags.SkipLogin {
-		err = options.runCommandVerbose("gcloud", "auth", "login", "--brief")
+		err = options.RunCommandVerbose("gcloud", "auth", "login", "--brief")
 		if err != nil {
 			return err
 		}
@@ -1099,7 +1100,7 @@ func (options *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path str
 			return err
 		}
 
-		output, err := options.getCommandOutput("", "gcloud", "container", "clusters", "get-credentials", g.ClusterName(), "--zone", g.Zone, "--project", g.ProjectID)
+		output, err := options.GetCommandOutput("", "gcloud", "container", "clusters", "get-credentials", g.ClusterName(), "--zone", g.Zone, "--project", g.ProjectID)
 		if err != nil {
 			return err
 		}
@@ -1168,7 +1169,7 @@ func (options *CreateTerraformOptions) installJx(c Cluster, clusters []Cluster) 
 	}
 
 	// check if jx is already installed
-	_, err = options.findEnvironmentNamespace(c.Name())
+	_, err = options.FindEnvironmentNamespace(c.Name())
 	if err != nil {
 		// jx is missing, install,
 		options.InstallOptions.Flags.DefaultEnvironmentPrefix = c.ClusterName()
@@ -1178,7 +1179,7 @@ func (options *CreateTerraformOptions) installJx(c Cluster, clusters []Cluster) 
 			return err
 		}
 
-		context, err := options.getCommandOutput("", "kubectl", "config", "current-context")
+		context, err := options.GetCommandOutput("", "kubectl", "config", "current-context")
 		if err != nil {
 			return err
 		}

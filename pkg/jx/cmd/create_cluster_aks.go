@@ -7,6 +7,7 @@ import (
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
@@ -79,7 +80,7 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateClusterAKS(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateClusterAKS(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := CreateClusterAKSOptions{
 		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.AKS),
 	}
@@ -133,11 +134,11 @@ func NewCmdCreateClusterAKS(commonOpts *CommonOptions) *cobra.Command {
 func (o *CreateClusterAKSOptions) Run() error {
 
 	var deps []string
-	d := binaryShouldBeInstalled("az")
+	d := opts.BinaryShouldBeInstalled("az")
 	if d != "" {
 		deps = append(deps, d)
 	}
-	err := o.installMissingDependencies(deps)
+	err := o.InstallMissingDependencies(deps)
 	if err != nil {
 		log.Errorf("%v\nPlease fix the error or install manually then try again", err)
 		os.Exit(-1)
@@ -225,7 +226,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 			}
 		} else {
 			log.Info("Logging in to Azure interactively...\n")
-			err = o.runCommandVerbose("az", "login")
+			err = o.RunCommandVerbose("az", "login")
 			if err != nil {
 				return err
 			}
@@ -262,7 +263,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 
 	if subscription != "" {
 		log.Info("Changing subscription...\n")
-		err = o.runCommandVerbose("az", "account", "set", "--subscription", subscription)
+		err = o.RunCommandVerbose("az", "account", "set", "--subscription", subscription)
 
 		if err != nil {
 			return err

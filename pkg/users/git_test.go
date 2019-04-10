@@ -16,6 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -284,7 +285,7 @@ func prepare(t *testing.T) (*users.GitUserResolver, *gits.FakeProvider, error) {
 	fakeProvider := gits.NewFakeProvider(fakeRepo)
 	fakeProvider.Type = gits.Fake
 
-	o := cmd.CommonOptions{}
+	o := opts.CommonOptions{}
 	cmd.ConfigureTestOptionsWithResources(&o,
 		[]runtime.Object{},
 		[]runtime.Object{},

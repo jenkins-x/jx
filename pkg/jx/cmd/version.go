@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/blang/semver"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/util/system"
@@ -18,7 +19,7 @@ const (
 )
 
 type VersionOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Container      string
 	Namespace      string
@@ -26,7 +27,7 @@ type VersionOptions struct {
 	NoVersionCheck bool
 }
 
-func NewCmdVersion(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdVersion(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &VersionOptions{
 		CommonOptions: commonOpts,
 	}
@@ -53,7 +54,7 @@ func NewCmdVersion(commonOpts *CommonOptions) *cobra.Command {
 
 func (o *VersionOptions) Run() error {
 	info := util.ColorInfo
-	table := o.createTable()
+	table := o.CreateTable()
 	table.AddRow("NAME", "VERSION")
 	table.AddRow("jx", info(version.GetVersion()))
 
@@ -90,7 +91,7 @@ func (o *VersionOptions) Run() error {
 	}
 
 	// kubectl version
-	output, err = o.getCommandOutput("", "kubectl", "version", "--short")
+	output, err = o.GetCommandOutput("", "kubectl", "version", "--short")
 	if err != nil {
 		log.Warnf("Failed to get kubectl version: %s\n", err)
 	} else {

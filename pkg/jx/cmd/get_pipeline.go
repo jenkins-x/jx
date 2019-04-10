@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"errors"
-	"github.com/jenkins-x/jx/pkg/log"
 	"net/url"
 	"sort"
+
+	gojenkins "github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/prow"
 
@@ -13,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/table"
 )
@@ -23,7 +25,7 @@ import (
 type GetPipelineOptions struct {
 	GetOptions
 
-	JenkinsSelector JenkinsSelectorOptions
+	JenkinsSelector opts.JenkinsSelectorOptions
 
 	ProwOptions prow.Options
 }
@@ -44,7 +46,7 @@ var (
 )
 
 // NewCmdGetPipeline creates the command
-func NewCmdGetPipeline(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetPipelineOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -85,12 +87,12 @@ func (o *GetPipelineOptions) Run() error {
 		return err
 	}
 
-	client, err := o.KubeClient()
+	client, currentNamespace, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}
 
-	isProw, err := o.isProw()
+	isProw, err := o.IsProw()
 	if err != nil {
 		return err
 	}
@@ -126,7 +128,7 @@ func (o *GetPipelineOptions) Run() error {
 	}
 	o.ProwOptions = prow.Options{
 		KubeClient: client,
-		NS:         o.currentNamespace,
+		NS:         currentNamespace,
 	}
 	names, err := o.ProwOptions.GetReleaseJobs()
 	if err != nil {
@@ -159,7 +161,7 @@ func (o *GetPipelineOptions) Run() error {
 }
 
 func createTable(o *GetPipelineOptions) table.Table {
-	table := o.createTable()
+	table := o.CreateTable()
 	table.AddRow("Name", "URL", "LAST_BUILD", "STATUS", "DURATION")
 	return table
 }

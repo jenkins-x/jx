@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
@@ -57,7 +58,7 @@ type EditDeployKindOptions struct {
 }
 
 // NewCmdEditDeployKind creates a command object for the "create" command
-func NewCmdEditDeployKind(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdEditDeployKind(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &EditDeployKindOptions{
 		EditOptions: EditOptions{
 			CommonOptions: commonOpts,
@@ -113,7 +114,7 @@ func (o *EditDeployKindOptions) Run() error {
 		}
 		return o.setDeployKindInValuesYaml(text, name)
 	}
-	return o.modifyHelmValuesFile(o.Dir, fn)
+	return o.ModifyHelmValuesFile(o.Dir, fn)
 }
 
 func (o *EditDeployKindOptions) findDefaultDeployKindInValuesYaml(yamlText string) string {

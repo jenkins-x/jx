@@ -8,6 +8,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -45,7 +46,7 @@ var (
 
 // NewCmdUpdateClusterGKETerraform creates a command object for the updating an existing cluster running
 // on GKE using terraform.
-func NewCmdUpdateClusterGKETerraform(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdUpdateClusterGKETerraform(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := createUpdateClusterGKETerraformOptions(commonOpts, cloud.GKE)
 
 	cmd := &cobra.Command{
@@ -68,7 +69,7 @@ func NewCmdUpdateClusterGKETerraform(commonOpts *CommonOptions) *cobra.Command {
 	return cmd
 }
 
-func createUpdateClusterGKETerraformOptions(commonOpts *CommonOptions, cloudProvider string) UpdateClusterGKETerraformOptions {
+func createUpdateClusterGKETerraformOptions(commonOpts *opts.CommonOptions, cloudProvider string) UpdateClusterGKETerraformOptions {
 	options := UpdateClusterGKETerraformOptions{
 		UpdateClusterOptions: UpdateClusterOptions{
 			UpdateOptions: UpdateOptions{
@@ -81,7 +82,7 @@ func createUpdateClusterGKETerraformOptions(commonOpts *CommonOptions, cloudProv
 }
 
 func (o *UpdateClusterGKETerraformOptions) Run() error {
-	err := o.installRequirements(cloud.GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
+	err := o.InstallRequirements(cloud.GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
 	if err != nil {
 		return err
 	}
@@ -165,7 +166,7 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 		fmt.Sprintf("-var-file=%s", terraformVars),
 		terraformDir}
 
-	err = o.runCommandVerbose("terraform", args...)
+	err = o.RunCommandVerbose("terraform", args...)
 	if err != nil {
 		return err
 	}
@@ -191,7 +192,7 @@ func (o *UpdateClusterGKETerraformOptions) updateClusterGKETerraform() error {
 		fmt.Sprintf("-var-file=%s", terraformVars),
 		terraformDir}
 
-	err = o.runCommandVerbose("terraform", args...)
+	err = o.RunCommandVerbose("terraform", args...)
 	if err != nil {
 		return err
 	}

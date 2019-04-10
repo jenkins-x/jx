@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -34,7 +35,7 @@ var (
 `)
 )
 
-func NewCmdStepHelmRelease(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepHelmRelease(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepHelmReleaseOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{
@@ -61,7 +62,7 @@ func NewCmdStepHelmRelease(commonOpts *CommonOptions) *cobra.Command {
 
 func (o *StepHelmReleaseOptions) Run() error {
 	dir := o.Dir
-	_, err := o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
+	_, err := o.HelmInitDependencyBuild(dir, o.DefaultReleaseCharts())
 	if err != nil {
 		return errors.Wrapf(err, "failed to build dependencies for chart from directory '%s'", dir)
 	}
@@ -94,7 +95,7 @@ func (o *StepHelmReleaseOptions) Run() error {
 	}
 	defer os.Remove(tarball)
 
-	chartRepo := o.releaseChartMuseumUrl()
+	chartRepo := o.ReleaseChartMuseumUrl()
 
 	userName := os.Getenv("CHARTMUSEUM_CREDS_USR")
 	password := os.Getenv("CHARTMUSEUM_CREDS_PSW")

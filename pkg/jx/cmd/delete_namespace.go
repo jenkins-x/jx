@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -15,7 +16,7 @@ import (
 
 // DeleteNamespaceOptions are the flags for delete commands
 type DeleteNamespaceOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	SelectAll    bool
 	SelectFilter string
@@ -38,7 +39,7 @@ var (
 
 // NewCmdDeleteNamespace creates a command object
 // retrieves one or more resources from a server.
-func NewCmdDeleteNamespace(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteNamespace(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteNamespaceOptions{
 		CommonOptions: commonOpts,
 	}

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -24,7 +25,7 @@ type StepNexusOptions struct {
 }
 
 // NewCmdStepNexus Steps a command object for the "step" command
-func NewCmdStepNexus(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepNexus(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepNexusOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,

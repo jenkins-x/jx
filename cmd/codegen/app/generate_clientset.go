@@ -1,14 +1,16 @@
 package app
 
 import (
-	"github.com/jenkins-x/jx/cmd/codegen/generator"
-	"github.com/jenkins-x/jx/cmd/codegen/util"
 	"go/build"
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/cmd/codegen/generator"
+	"github.com/jenkins-x/jx/cmd/codegen/util"
+
 	"github.com/pkg/errors"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 
 	jxutil "github.com/jenkins-x/jx/pkg/util"
@@ -49,7 +51,7 @@ var (
 )
 
 // NewGenerateClientSetCmd creates the command
-func NewGenerateClientSetCmd(commonOpts *cmd.CommonOptions) *cobra.Command {
+func NewGenerateClientSetCmd(commonOpts *opts.CommonOptions) *cobra.Command {
 	o := &ClientSetGenerationOptions{
 		GenerateOptions: GenerateOptions{
 			CommonOptions: commonOpts,

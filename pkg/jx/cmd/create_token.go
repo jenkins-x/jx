@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/spf13/cobra"
 )
 
@@ -10,7 +11,7 @@ type CreateTokenOptions struct {
 }
 
 // NewCmdCreateToken creates a command object for the "create" command
-func NewCmdCreateToken(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateToken(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateTokenOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,

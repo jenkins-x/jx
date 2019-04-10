@@ -6,6 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -45,7 +46,7 @@ type DeleteRepoOptions struct {
 }
 
 // NewCmdDeleteRepo creates a command object for the "delete repo" command
-func NewCmdDeleteRepo(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteRepo(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteRepoOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,

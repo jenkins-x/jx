@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -26,7 +27,7 @@ var (
 )
 
 // NewCmdGetHelmBin creates the new command for: jx get env
-func NewCmdGetHelmBin(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetHelmBin(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetHelmBinOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,

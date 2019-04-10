@@ -12,6 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -20,7 +21,7 @@ import (
 )
 
 type SyncOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Daemon      bool
 	NoKsyncInit bool
@@ -61,7 +62,7 @@ node_modules
 `
 )
 
-func NewCmdSync(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdSync(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &SyncOptions{
 		CommonOptions: commonOpts,
 	}
@@ -103,7 +104,7 @@ func (o *SyncOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	version, err := o.installKSync()
+	version, err := o.InstallKSync()
 	if err != nil {
 		return err
 	}
@@ -113,7 +114,7 @@ func (o *SyncOptions) Run() error {
 		if !flag || err != nil {
 			log.Infof("Initialising ksync\n")
 			// Deal with https://github.com/vapor-ware/ksync/issues/218
-			err = o.runCommandInteractive(true, "ksync", "init", "--upgrade", "--image",
+			err = o.RunCommandInteractive(true, "ksync", "init", "--upgrade", "--image",
 				fmt.Sprintf("vaporio/ksync:%s", version))
 			if err != nil {
 				return err
@@ -135,7 +136,7 @@ func (o *SyncOptions) Run() error {
 func (o *SyncOptions) waitForKsyncWatchToFail() {
 	logged := false
 	for {
-		_, err := o.getCommandOutput("", "ksync", "get")
+		_, err := o.GetCommandOutput("", "ksync", "get")
 		if err != nil {
 			// lets assume watch is no longer running
 			log.Infof("Looks like 'ksync watch' is not running: %s\n", err)
@@ -211,8 +212,8 @@ func (o *SyncOptions) CreateKsync(client kubernetes.Interface, ns string, name s
 	ignoreNames := []string{"starting", "watching"}
 
 	deleteNames := []string{}
-	err = o.retry(5, time.Second, func() error {
-		text, err := o.getCommandOutput(dir, "ksync", "get")
+	err = o.Retry(5, time.Second, func() error {
+		text, err := o.GetCommandOutput(dir, "ksync", "get")
 		if err == nil {
 			for i, line := range strings.Split(text, "\n") {
 				if i > 1 {

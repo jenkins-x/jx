@@ -5,7 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jenkins-x/golang-jenkins"
+	gojenkins "github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
@@ -29,7 +30,7 @@ var (
 )
 
 // NewCmdGetIssues creates the command
-func NewCmdGetIssues(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetIssues(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetIssuesOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -57,7 +58,7 @@ func NewCmdGetIssues(commonOpts *CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *GetIssuesOptions) Run() error {
-	tracker, err := o.createIssueProvider(o.Dir)
+	tracker, err := o.CreateIssueProvider(o.Dir)
 	if err != nil {
 		return err
 	}
@@ -67,7 +68,7 @@ func (o *GetIssuesOptions) Run() error {
 		return err
 	}
 
-	table := o.createTable()
+	table := o.CreateTable()
 	table.AddRow("ISSUE", "TITLE")
 	for _, i := range issues {
 		table.AddRow(i.URL, i.Title)

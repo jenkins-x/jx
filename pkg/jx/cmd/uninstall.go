@@ -3,13 +3,14 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 
 	"github.com/pkg/errors"
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -18,7 +19,7 @@ import (
 )
 
 type UninstallOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Namespace        string
 	Context          string
@@ -34,7 +35,7 @@ var (
 		jx uninstall`)
 )
 
-func NewCmdUninstall(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdUninstall(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UninstallOptions{
 		CommonOptions: commonOpts,
 	}

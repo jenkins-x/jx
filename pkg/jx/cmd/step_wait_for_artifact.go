@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -55,7 +56,7 @@ var (
 `)
 )
 
-func NewCmdStepWaitForArtifact(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepWaitForArtifact(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepWaitForArtifactOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -79,7 +80,7 @@ func NewCmdStepWaitForArtifact(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.ArtifactId, optionArtifact, "a", "", "The artifact ID of the artifact to search for")
 	cmd.Flags().StringVarP(&options.Version, optionVersion, "v", "", "The version of the artifact to search for")
 	cmd.Flags().StringVarP(&options.Extension, "ext", "x", "pom", "The file extension to search for")
-	cmd.Flags().StringVarP(&options.Timeout, optionTimeout, "t", "1h", "The duration before we consider this operation failed")
+	cmd.Flags().StringVarP(&options.Timeout, opts.OptionTimeout, "t", "1h", "The duration before we consider this operation failed")
 	cmd.Flags().StringVarP(&options.PollTime, optionPollTime, "", "10s", "The amount of time between polls for the artifact URL being present")
 	return cmd
 }
@@ -111,7 +112,7 @@ func (o *StepWaitForArtifactOptions) Run() error {
 	if o.Timeout != "" {
 		o.TimeoutDuration, err = time.ParseDuration(o.Timeout)
 		if err != nil {
-			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, optionTimeout, err)
+			return fmt.Errorf("Invalid duration format %s for option --%s: %s", o.Timeout, opts.OptionTimeout, err)
 		}
 	}
 
@@ -140,7 +141,7 @@ func (o *StepWaitForArtifactOptions) Run() error {
 	fn := func() error {
 		return o.getUrlStatusOK(o.ArtifactURL)
 	}
-	err = o.retryQuietlyUntilTimeout(o.TimeoutDuration, o.PollDuration, fn)
+	err = o.RetryQuietlyUntilTimeout(o.TimeoutDuration, o.PollDuration, fn)
 	if err == nil {
 		log.Infof("Found artifact at %s\n", util.ColorInfo(o.ArtifactURL))
 		return nil

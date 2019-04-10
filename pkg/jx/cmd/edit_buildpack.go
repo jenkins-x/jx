@@ -7,11 +7,12 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/builds"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
@@ -44,7 +45,7 @@ type EditBuildPackOptions struct {
 }
 
 // NewCmdEditBuildpack creates a command object for the "create" command
-func NewCmdEditBuildpack(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdEditBuildpack(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &EditBuildPackOptions{
 		EditOptions: EditOptions{
 			CommonOptions: commonOpts,
