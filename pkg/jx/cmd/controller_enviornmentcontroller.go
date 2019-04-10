@@ -42,6 +42,9 @@ type ControllerEnvironmentOptions struct {
 	Port                  int
 	NoGitCredeentialsInit bool
 	NoRegisterWebHook     bool
+	GitServerURL          string
+	GitOwner              string
+	GitRepo               string
 	SourceURL             string
 	WebHookURL            string
 	Branch                string
@@ -85,19 +88,35 @@ func NewCmdControllerEnvironment(commonOpts *opts.CommonOptions) *cobra.Command 
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
 	cmd.Flags().BoolVarP(&options.NoGitCredeentialsInit, "no-git-init", "", false, "Disables checking we have setup git credentials on startup")
 	cmd.Flags().BoolVarP(&options.NoGitCredeentialsInit, "no-register-webhook", "", false, "Disables checking to register the webhook on startup")
-	cmd.Flags().StringVarP(&options.SourceURL, "url", "u", "", "The source URL of the environment git repository. If not specified defaults to $SOURCE_URL")
+	cmd.Flags().StringVarP(&options.SourceURL, "url", "u", "", "The source URL of the environment git repository")
+	cmd.Flags().StringVarP(&options.GitServerURL, "git-server-url", "", "", "The git server URL. If not specified defaults to $GIT_SERVER_URL")
+	cmd.Flags().StringVarP(&options.GitOwner, "owner", "o", "", "The git repository owner. If not specified defaults to $OWNER")
+	cmd.Flags().StringVarP(&options.GitRepo, "repo", "r", "", "The git repository name. If not specified defaults to $REPO")
 	cmd.Flags().StringVarP(&options.WebHookURL, "webhook-url", "w", "", "The external WebHook URL of this controller to register with the git provider. If not specified defaults to $WEBHOOK_URL")
 	return cmd
 }
 
 // Run will implement this command
 func (o *ControllerEnvironmentOptions) Run() error {
-	if o.SourceURL == "" {
-		o.SourceURL = os.Getenv("SOURCE_URL")
-		if o.SourceURL == "" {
-			return util.MissingOption("url")
+	if o.GitServerURL == "" {
+		o.GitServerURL = os.Getenv("GIT_SERVER_URL")
+		if o.GitServerURL == "" {
+			return util.MissingOption("git-server-url")
 		}
 	}
+	if o.GitOwner == "" {
+		o.GitOwner = os.Getenv("OWNER")
+		if o.GitOwner == "" {
+			return util.MissingOption("owner")
+		}
+	}
+	if o.GitRepo == "" {
+		o.GitRepo = os.Getenv("REPO")
+		if o.GitRepo == "" {
+			return util.MissingOption("repo")
+		}
+	}
+
 	if o.Branch == "" {
 		o.Branch = os.Getenv("BRANCH")
 		if o.Branch == "" {
@@ -109,6 +128,9 @@ func (o *ControllerEnvironmentOptions) Run() error {
 		if o.WebHookURL == "" {
 			return util.MissingOption("webhook-url")
 		}
+	}
+	if o.SourceURL == "" {
+		o.SourceURL = util.UrlJoin(o.GitServerURL, o.GitOwner, o.GitRepo)
 	}
 	log.Infof("using environment source directory %s and external webhook URL: %s\n", util.ColorInfo(o.SourceURL), util.ColorInfo(o.WebHookURL))
 	var err error
@@ -335,18 +357,15 @@ func (o *ControllerEnvironmentOptions) handleRequests(w http.ResponseWriter, r *
 func (o *ControllerEnvironmentOptions) registerWebHook(webhookURL string, secret []byte) error {
 	gitURL := o.SourceURL
 	log.Infof("verifying that the webhook is registered for the git repository %s\n", util.ColorInfo(gitURL))
-	gitInfo, err := gits.ParseGitURL(gitURL)
-	if err != nil {
-		return errors.Wrapf(err, "failed to parse git URL %s", gitURL)
-	}
+
 	provider, err := o.GitProviderForURL(gitURL, "creating webhook git provider")
 	if err != nil {
 		return errors.Wrapf(err, "failed to create git provider for git URL %s", gitURL)
 	}
 	webHookData := &gits.GitWebHookArguments{
-		Owner: gitInfo.Organisation,
+		Owner: o.GitOwner,
 		Repo: &gits.GitRepository{
-			Name: gitInfo.Name,
+			Name: o.GitRepo,
 		},
 		URL:    webhookURL,
 		Secret: string(secret),
