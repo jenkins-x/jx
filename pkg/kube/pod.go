@@ -7,10 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
@@ -25,6 +24,15 @@ func IsPodReady(pod *v1.Pod) bool {
 		return false
 	}
 	return IsPodReadyConditionTrue(pod.Status)
+}
+
+// IsPodCompleted returns true if a pod is completed (succeeded or failed); false otherwise.
+func IsPodCompleted(pod *v1.Pod) bool {
+	phase := pod.Status.Phase
+	if phase == v1.PodSucceeded || phase == v1.PodFailed {
+		return true
+	}
+	return false
 }
 
 // credit https://github.com/kubernetes/kubernetes/blob/8719b4a/pkg/api/v1/pod/util.go
@@ -68,24 +76,13 @@ func GetPodCondition(status *v1.PodStatus, conditionType v1.PodConditionType) (i
 	return -1, nil
 }
 
-// waits for the pod to become ready using label selector to match the pod
-func WaitForPodToBeReady(client kubernetes.Interface, selector labels.Selector, namespace string, timeout time.Duration) error {
-	options := meta_v1.ListOptions{LabelSelector: selector.String()}
-	return waitForPodSelectorToBeReady(client, namespace, options, timeout)
-}
-
-func waitForPodSelectorToBeReady(client kubernetes.Interface, namespace string, options meta_v1.ListOptions, timeout time.Duration) error {
+func waitForPodSelector(client kubernetes.Interface, namespace string, options meta_v1.ListOptions,
+	timeout time.Duration, condition func(event watch.Event) (bool, error)) error {
 	w, err := client.CoreV1().Pods(namespace).Watch(options)
 	if err != nil {
 		return err
 	}
 	defer w.Stop()
-
-	condition := func(event watch.Event) (bool, error) {
-		pod := event.Object.(*v1.Pod)
-
-		return IsPodReady(pod), nil
-	}
 
 	ctx, _ := context.WithTimeout(context.Background(), timeout)
 	_, err = tools_watch.UntilWithoutRetry(ctx, w, condition)
@@ -119,23 +116,28 @@ func WaitForPodNameToBeReady(client kubernetes.Interface, namespace string, name
 		//FieldSelector: fields.OneTermEqualSelector(api.ObjectNameField, name).String(),
 		FieldSelector: fields.OneTermEqualSelector("metadata.name", name).String(),
 	}
-	return waitForPodSelectorToBeReady(client, namespace, options, timeout)
+	condition := func(event watch.Event) (bool, error) {
+		pod := event.Object.(*v1.Pod)
+
+		return IsPodReady(pod), nil
+	}
+	return waitForPodSelector(client, namespace, options, timeout, condition)
 }
 
-func GetReadyPodNames(client kubernetes.Interface, ns string, filter string) ([]string, error) {
-	names := []string{}
-	list, err := client.CoreV1().Pods(ns).List(meta_v1.ListOptions{})
-	if err != nil {
-		return names, fmt.Errorf("Failed to load Pods %s", err)
+// WaitForPodNameToBeComplete waits for the pod to complete (succeed or fail) using the pod name
+func WaitForPodNameToBeComplete(client kubernetes.Interface, namespace string, name string,
+	timeout time.Duration) error {
+	options := meta_v1.ListOptions{
+		// TODO
+		//FieldSelector: fields.OneTermEqualSelector(api.ObjectNameField, name).String(),
+		FieldSelector: fields.OneTermEqualSelector("metadata.name", name).String(),
 	}
-	for _, p := range list.Items {
-		name := p.Name
-		if filter == "" || strings.Contains(name, filter) && IsPodReady(&p) {
-			names = append(names, name)
-		}
+	condition := func(event watch.Event) (bool, error) {
+		pod := event.Object.(*v1.Pod)
+
+		return IsPodCompleted(pod), nil
 	}
-	sort.Strings(names)
-	return names, nil
+	return waitForPodSelector(client, namespace, options, timeout, condition)
 }
 
 func GetPodNames(client kubernetes.Interface, ns string, filter string) ([]string, error) {

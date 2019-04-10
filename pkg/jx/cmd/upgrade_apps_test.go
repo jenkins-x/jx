@@ -53,6 +53,13 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 	}
 	o.Args = []string{name}
 
+	helm_test.StubFetchChart(name, newVersion.String(), helm.FakeChartmusuem, &chart.Chart{
+		Metadata: &chart.Metadata{
+			Name:    name,
+			Version: newVersion.String(),
+		},
+	}, testOptions.MockHelmer)
+
 	err = o.Run()
 	assert.NoError(t, err)
 	// Validate a PR was created
