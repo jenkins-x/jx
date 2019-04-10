@@ -97,9 +97,9 @@ func (o *StepCreateJenkinsConfigOptions) Run() error {
 			for _, cm := range list.Items {
 				data := cm.Data
 				if data != nil {
-					configXml := data["config.xml"]
-					if configXml != "" {
-						for _, cl := range strings.Split(configXml, "\n") {
+					configXML := data["config.xml"]
+					if configXML != "" {
+						for _, cl := range strings.Split(configXML, "\n") {
 							buffer.WriteString("        ")
 							buffer.WriteString(cl)
 							buffer.WriteString("\n")
@@ -110,9 +110,9 @@ func (o *StepCreateJenkinsConfigOptions) Run() error {
 		}
 	}
 
-	fileXml := buffer.String()
+	fileXML := buffer.String()
 
-	err = ioutil.WriteFile(o.Output, []byte(fileXml), util.DefaultWritePermissions)
+	err = ioutil.WriteFile(o.Output, []byte(fileXML), util.DefaultWritePermissions)
 	if err != nil {
 		return errors.Wrapf(err, "failed to write file %s", o.Output)
 	}
