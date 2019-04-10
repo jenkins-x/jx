@@ -47,7 +47,7 @@ type InstallOptions struct {
 	Err             io.Writer
 	GitOps          bool
 	TeamName        string
-	VaultClient     *vault.Client
+	VaultClient     vault.Client
 
 	valuesFiles *environments.ValuesFiles // internal variable used to track, most be passed in
 }
@@ -330,7 +330,7 @@ func (o *InstallOptions) handleSecrets(dir string, app string, generatedSecrets 
 		} else {
 			vaultBasepath = strings.Join([]string{"teams", o.TeamName}, "/")
 		}
-		f, err := AddSecretsToVault(generatedSecrets, *o.VaultClient, vaultBasepath)
+		f, err := AddSecretsToVault(generatedSecrets, o.VaultClient, vaultBasepath)
 		if err != nil {
 			return func() {}, errors.Wrapf(err, "adding secrets to vault with basepath %s for %s", vaultBasepath,
 				app)

@@ -2,11 +2,17 @@ package helm_test
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/magiconair/properties/assert"
 	"strings"
 	"testing"
+
+	"github.com/petergtz/pegomock"
+
+	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/util"
+	vault_test "github.com/jenkins-x/jx/pkg/vault/mocks"
+	"github.com/magiconair/properties/assert"
+	"github.com/pborman/uuid"
+	assert2 "github.com/stretchr/testify/assert"
 )
 
 func TestCombineMapTrees(t *testing.T) {
@@ -85,4 +91,90 @@ func TestSetValuesToMap(t *testing.T) {
 		},
 	}
 	assert.Equal(t, actual, expected, "setValuesToMap for values %s", strings.Join(setValues, ", "))
+}
+
+func TestStoreCredentials(t *testing.T) {
+	pegomock.RegisterMockTestingT(t)
+	vaultClient := vault_test.NewMockClient()
+	repository := "http://charts.acme.com"
+	username := uuid.New()
+	password := uuid.New()
+	optionsWithUsernameAndPassword := helm.InstallChartOptions{
+		Repository: repository,
+		Password:   password,
+		Username:   username,
+	}
+	err := helm.DecorateWithCredentials(&optionsWithUsernameAndPassword, vaultClient)
+	assert2.NoError(t, err)
+	vaultClient.VerifyWasCalledOnce().WriteObject(helm.RepoVaultPath, helm.HelmRepoCredentials{
+		repository: helm.HelmRepoCredential{
+			Username: username,
+			Password: password,
+		},
+	})
+}
+
+func TestRetrieveCredentials(t *testing.T) {
+	pegomock.RegisterMockTestingT(t)
+	vaultClient := vault_test.NewMockClient()
+	repository := "http://charts.acme.com"
+	username := uuid.New()
+	password := uuid.New()
+	pegomock.When(vaultClient.ReadObject(pegomock.EqString(helm.RepoVaultPath),
+		pegomock.AnyInterface())).Then(func(params []pegomock.Param) pegomock.ReturnValues {
+		p := params[1].(*helm.HelmRepoCredentials)
+		secrets := *p
+		secret := helm.HelmRepoCredential{
+			Username: username,
+			Password: password,
+		}
+		secrets[repository] = secret
+		return []pegomock.ReturnValue{
+			nil,
+		}
+	})
+	optionsWithoutUsernameAndPassword := helm.InstallChartOptions{
+		Repository: repository,
+	}
+	err := helm.DecorateWithCredentials(&optionsWithoutUsernameAndPassword, vaultClient)
+	assert2.NoError(t, err)
+	vaultClient.VerifyWasCalledOnce().ReadObject(pegomock.EqString(helm.RepoVaultPath), pegomock.AnyInterface())
+	assert2.Equal(t, username, optionsWithoutUsernameAndPassword.Username)
+	assert2.Equal(t, password, optionsWithoutUsernameAndPassword.Password)
+}
+
+func TestOverrideCredentials(t *testing.T) {
+	pegomock.RegisterMockTestingT(t)
+	vaultClient := vault_test.NewMockClient()
+	repository := "http://charts.acme.com"
+	username := uuid.New()
+	password := uuid.New()
+	newUsername := uuid.New()
+	newPassword := uuid.New()
+	pegomock.When(vaultClient.ReadObject(pegomock.EqString(helm.RepoVaultPath),
+		pegomock.AnyInterface())).Then(func(params []pegomock.Param) pegomock.ReturnValues {
+		p := params[1].(*helm.HelmRepoCredentials)
+		secrets := *p
+		secret := helm.HelmRepoCredential{
+			Username: username,
+			Password: password,
+		}
+		secrets[repository] = secret
+		return []pegomock.ReturnValue{
+			nil,
+		}
+	})
+	optionsWithUsernameAndPassword := helm.InstallChartOptions{
+		Repository: repository,
+		Username:   newUsername,
+		Password:   newPassword,
+	}
+	err := helm.DecorateWithCredentials(&optionsWithUsernameAndPassword, vaultClient)
+	assert2.NoError(t, err)
+	vaultClient.VerifyWasCalledOnce().WriteObject(helm.RepoVaultPath, helm.HelmRepoCredentials{
+		repository: helm.HelmRepoCredential{
+			Username: newUsername,
+			Password: newPassword,
+		},
+	})
 }

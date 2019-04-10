@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/vault"
+
 	"github.com/jenkins-x/jx/pkg/version"
 
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -38,6 +40,9 @@ const (
 	DefaultHelmRepositoryURL = "http://jenkins-x-chartmuseum:8080"
 
 	defaultEnvironmentChartDir = "env"
+
+	//RepoVaultPath is the path to the repo credentials in Vault
+	RepoVaultPath = "helm/repos"
 )
 
 // copied from helm to minimise dependencies...
@@ -486,9 +491,10 @@ type InstallChartOptions struct {
 }
 
 // InstallFromChartOptions uses the helmer and kubeClient interfaces to install the chart from the options,
-// respeciting the installTimeout
+// respecting the installTimeout, looking up or updating Vault with the username and password for the repo.
+// If vaultClient is nil then username and passwords for repos will not be looked up in Vault.
 func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeClient kubernetes.Interface,
-	installTimeout string) error {
+	installTimeout string, vaultClient vault.Client) error {
 	chart := options.Chart
 	if options.Version == "" {
 		versionsDir := options.VersionsDir
@@ -509,6 +515,10 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 		}
 		log.Infoln("Helm repository update done.")
 	}
+	err := DecorateWithCredentials(&options, vaultClient)
+	if err != nil {
+		return errors.WithStack(err)
+	}
 	if options.Ns != "" {
 		annotations := map[string]string{"jenkins-x.io/created-by": "Jenkins X"}
 		kube.EnsureNamespaceCreated(kubeClient, options.Ns, nil, annotations)
@@ -519,6 +529,55 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 	}
 	helmer.SetCWD(options.Dir)
 	return helmer.UpgradeChart(chart, options.ReleaseName, options.Ns, options.Version, true, timeout, true, false, options.SetValues, options.ValueFiles, options.Repository, options.Username, options.Password)
+}
+
+// HelmRepoCredentials is a map of repositories to HelmRepoCredential that stores all the helm repo credentials for
+// the cluster
+type HelmRepoCredentials map[string]HelmRepoCredential
+
+// HelmRepoCredential is a username and password pair that can ben used to authenticated against a Helm repo
+type HelmRepoCredential struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+// DecorateWithCredentials will, if vault is installed, attach a username and password to the options
+func DecorateWithCredentials(options *InstallChartOptions, vaultClient vault.Client) error {
+	if options.Repository != "" && vaultClient != nil {
+		vaultPath := fmt.Sprintf("%s", RepoVaultPath)
+		creds := HelmRepoCredentials{}
+		if err := vaultClient.ReadObject(vaultPath, &creds); err != nil {
+			return errors.Wrapf(err, "reading repo credentials from vault %s", vaultPath)
+		}
+		write := false
+		cred := HelmRepoCredential{}
+		if options.Username != "" {
+			// If a username is passed in then we should update vault
+			write = true
+			cred.Username = options.Username
+		} else if c, ok := creds[options.Repository]; ok {
+			// Otherwise check if vault has a username
+			options.Username = c.Username
+		}
+
+		if options.Password != "" {
+			// If a password is passed in then we should update vault
+			write = true
+			cred.Password = options.Password
+		} else if c, ok := creds[options.Repository]; ok {
+			// Otherwise check if vault has a password
+			options.Password = c.Password
+		}
+
+		if write {
+			creds[options.Repository] = cred
+			_, err := vaultClient.WriteObject(vaultPath, creds)
+			if err != nil {
+				return errors.Wrapf(err, "updating repo credentials in vault %s", vaultPath)
+			}
+		}
+	}
+	return nil
 }
 
 // GenerateReadmeForChart generates a string that can be used as a README.MD,

@@ -215,7 +215,7 @@ func (o *AddAppOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		installOpts.VaultClient = &client
+		installOpts.VaultClient = client
 	}
 
 	args := o.Args

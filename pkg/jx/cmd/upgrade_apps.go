@@ -180,7 +180,8 @@ func (o *UpgradeAppsOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		installOpts.VaultClient = &client
+
+		installOpts.VaultClient = client
 	}
 
 	app := ""
