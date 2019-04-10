@@ -176,8 +176,8 @@ const (
 	// ValueKindPodTemplate a PodTemplate in a ConfigMap
 	ValueKindPodTemplate = "podTemplate"
 
-	// ValueKindPodTemplateXml a PodTemplate XML in a ConfigMap
-	ValueKindPodTemplateXml = "podTemplateXml"
+	// ValueKindPodTemplateXML a PodTemplate XML in a ConfigMap
+	ValueKindPodTemplateXML = "podTemplateXml"
 
 	// ValueKindCVE an addon auth PipelineEvent
 	ValueKindRelease = "Release"

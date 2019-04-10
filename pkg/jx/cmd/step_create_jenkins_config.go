@@ -65,7 +65,7 @@ func (o *StepCreateJenkinsConfigOptions) Run() error {
 		return err
 	}
 	configMapInterface := kubeClient.CoreV1().ConfigMaps(ns)
-	selector := kube.LabelKind + "=" + kube.ValueKindPodTemplateXml
+	selector := kube.LabelKind + "=" + kube.ValueKindPodTemplateXML
 	list, err := configMapInterface.List(metav1.ListOptions{
 		LabelSelector: selector,
 	})
