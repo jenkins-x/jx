@@ -424,7 +424,7 @@ func (g *GitlabProvider) CreateWebHook(data *GitWebHookArguments) error {
 		return nil
 	}
 
-	owner := owner(g.Username, data.Owner)
+	owner := owner(data.Owner, g.Username)
 	webhookURL := util.UrlJoin(data.URL, owner, data.Repo.Name)
 	opt := &gitlab.AddProjectHookOptions{
 		URL:   &webhookURL,
