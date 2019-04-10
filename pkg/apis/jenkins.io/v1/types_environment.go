@@ -189,6 +189,9 @@ type TeamSettings struct {
 
 	// VersionStreamRef contains the git ref (tag or branch) in the VersionStreamURL repository to use as the version stream
 	VersionStreamRef string `json:"versionStreamRef,omitempty" protobuf:"bytes,26,opt,name=versionStreamRef"`
+
+	// AppsPrefixes is the list of prefixes for appNames
+	AppsPrefixes []string `json:"appPrefixes,omitempty" protobuf:"bytes,27,opt,name=appPrefixes"`
 }
 
 // StorageLocation

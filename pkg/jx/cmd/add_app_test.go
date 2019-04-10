@@ -114,6 +114,89 @@ func TestAddAppForGitOps(t *testing.T) {
 
 }
 
+func TestAddAppForGitOpsWithShortName(t *testing.T) {
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	defer func() {
+		err := testOptions.Cleanup()
+		assert.NoError(t, err)
+	}()
+
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	shortName := nameUUID.String()
+	name := fmt.Sprintf("jx-app-%s", shortName)
+	version := "0.0.1"
+	alias := fmt.Sprintf("%s-alias", name)
+	repo := kube.DefaultChartMuseumURL
+	description := "My test chart description"
+	commonOpts := *testOptions.CommonOptions
+	o := &cmd.AddAppOptions{
+		AddOptions: cmd.AddOptions{
+			CommonOptions: &commonOpts,
+		},
+		Version:              version,
+		Alias:                alias,
+		Repo:                 repo,
+		GitOps:               true,
+		DevEnv:               testOptions.DevEnv,
+		HelmUpdate:           true, // Flag default when run on CLI
+		ConfigureGitCallback: testOptions.ConfigureGitFn,
+	}
+	pegomock.When(testOptions.MockHelmer.ListRepos()).ThenReturn(
+		map[string]string{
+			"repo1": kube.DefaultChartMuseumURL,
+		}, nil)
+	pegomock.When(testOptions.MockHelmer.SearchCharts(pegomock.AnyString())).ThenReturn(
+		[]helm.ChartSummary{
+			{
+				Name:         fmt.Sprintf("repo1/%s", name),
+				ChartVersion: version,
+				AppVersion:   version,
+			},
+		}, nil)
+	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
+		Metadata: &chart.Metadata{
+			Name:        name,
+			Version:     version,
+			Description: description,
+		},
+	}, testOptions.MockHelmer)
+	o.Args = []string{shortName}
+	err = o.Run()
+	assert.NoError(t, err)
+	pr, err := testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
+	assert.NoError(t, err)
+	// Validate the PR has the right title, message
+	assert.Equal(t, fmt.Sprintf("Add %s %s", name, version), pr.Title)
+	assert.Equal(t, fmt.Sprintf("Add app %s %s", name, version), pr.Body)
+	// Validate the branch name
+	envDir, err := o.CommonOptions.EnvironmentsDir()
+	assert.NoError(t, err)
+	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
+	branchName, err := o.Git().Branch(devEnvDir)
+	assert.NoError(t, err)
+	assert.Equal(t, fmt.Sprintf("add-app-%s-%s", name, version), branchName)
+	// Validate the updated Requirements.yaml
+	requirements, err := helm.LoadRequirementsFile(filepath.Join(devEnvDir, helm.RequirementsFileName))
+	assert.NoError(t, err)
+	found := make([]*helm.Dependency, 0)
+	for _, d := range requirements.Dependencies {
+		if d.Name == name && d.Alias == alias {
+			found = append(found, d)
+		}
+	}
+	assert.Len(t, found, 1)
+	assert.Equal(t, version, found[0].Version)
+	app := &jenkinsv1.App{}
+	appBytes, err := ioutil.ReadFile(filepath.Join(devEnvDir, name, "templates", name+"-app.yaml"))
+	_ = yaml.Unmarshal(appBytes, app)
+	assert.Equal(t, name, app.Labels[helm.LabelAppName])
+	assert.Equal(t, version, app.Labels[helm.LabelAppVersion])
+	assert.Equal(t, repo, app.Annotations[helm.AnnotationAppRepository])
+	assert.Equal(t, description, app.Annotations[helm.AnnotationAppDescription])
+
+}
+
 func TestAddAppWithSecrets(t *testing.T) {
 	// TODO enable this test again when is passing
 	t.SkipNow()
@@ -595,6 +678,78 @@ func TestAddApp(t *testing.T) {
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}
 	o.Args = []string{name}
+	err = o.Run()
+	assert.NoError(t, err)
+
+	// Check chart was installed
+	_, _, _, fetchDir, _, _, _ := testOptions.MockHelmer.VerifyWasCalledOnce().FetchChart(
+		pegomock.EqString(name),
+		pegomock.EqString(version),
+		pegomock.AnyBool(),
+		pegomock.AnyString(),
+		pegomock.EqString(kube.DefaultChartMuseumURL),
+		pegomock.AnyString(),
+		pegomock.AnyString()).GetCapturedArguments()
+	testOptions.MockHelmer.VerifyWasCalledOnce().
+		UpgradeChart(
+			pegomock.EqString(filepath.Join(fetchDir, name)),
+			pegomock.EqString(fmt.Sprintf("%s-%s", namespace, name)),
+			pegomock.AnyString(),
+			pegomock.EqString(version),
+			pegomock.AnyBool(),
+			pegomock.AnyInt(),
+			pegomock.AnyBool(),
+			pegomock.AnyBool(),
+			pegomock.AnyStringSlice(),
+			pegomock.AnyStringSlice(),
+			pegomock.EqString(kube.DefaultChartMuseumURL),
+			pegomock.AnyString(),
+			pegomock.AnyString())
+
+	// Verify the annotation
+}
+
+func TestAddAppWithShortName(t *testing.T) {
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	// Can't run in parallel
+	pegomock.RegisterMockTestingT(t)
+	defer func() {
+		err := testOptions.Cleanup()
+		assert.NoError(t, err)
+	}()
+
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	shortName := nameUUID.String()
+	name := fmt.Sprintf("jx-app-%s", shortName)
+	version := "0.0.1"
+	commonOpts := *testOptions.CommonOptions
+	o := &cmd.AddAppOptions{
+		AddOptions: cmd.AddOptions{
+			CommonOptions: &commonOpts,
+		},
+		Version:              version,
+		Repo:                 kube.DefaultChartMuseumURL,
+		GitOps:               false,
+		DevEnv:               testOptions.DevEnv,
+		HelmUpdate:           true, // Flag default when run on CLI
+		ConfigureGitCallback: testOptions.ConfigureGitFn,
+	}
+
+	pegomock.When(testOptions.MockHelmer.ListRepos()).ThenReturn(
+		map[string]string{
+			"repo1": kube.DefaultChartMuseumURL,
+		}, nil)
+	pegomock.When(testOptions.MockHelmer.SearchCharts(pegomock.AnyString())).ThenReturn(
+		[]helm.ChartSummary{
+			{
+				Name:         fmt.Sprintf("repo1/%s", name),
+				ChartVersion: version,
+				AppVersion:   version,
+			},
+		}, nil)
+
+	o.Args = []string{shortName}
 	err = o.Run()
 	assert.NoError(t, err)
 

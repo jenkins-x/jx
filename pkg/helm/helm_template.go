@@ -7,12 +7,10 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/table"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
@@ -66,18 +64,6 @@ type HelmTemplate struct {
 	KubectlValidate bool
 	KubeClient      kubernetes.Interface
 	Namespace       string
-}
-
-type ChartListing struct {
-	Chart         string
-	Revision      string
-	Updated       string
-	Status        string
-	ChartFullName string
-	ChartVersion  string
-	ReleaseName   string
-	AppVersion    string
-	Namespace     string
 }
 
 // NewHelmTemplate creates a new HelmTemplate instance configured to the given client side Helmer
@@ -169,18 +155,15 @@ func (h *HelmTemplate) BuildDependency() error {
 	return h.Client.BuildDependency()
 }
 
-// ListCharts execute the helm list command and returns its output
-func (h *HelmTemplate) ListCharts() (string, error) {
-	ns := h.Namespace
-	list, _ := h.KubeClient.AppsV1beta1().Deployments(ns).List(metav1.ListOptions{})
-	var buffer bytes.Buffer
-	writer := bufio.NewWriter(&buffer)
-	t := table.CreateTable(writer)
-	t.Separator = "\t"
-	t.AddRow("NAME", "REVISION", "UPDATED", "STATUS", "CHART", "APP VERSION", "NAMESPACE")
+// ListReleases lists the releases in ns
+func (h *HelmTemplate) ListReleases(ns string) (map[string]ReleaseSummary, []string, error) {
+	list, err := h.KubeClient.AppsV1().Deployments(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return nil, nil, errors.WithStack(err)
+	}
+	charts := make(map[string]ReleaseSummary)
+	keys := make([]string, 0)
 	if list != nil {
-		keys := []string{}
-		charts := map[string]*ChartListing{}
 		for _, deploy := range list.Items {
 			labels := deploy.Labels
 			ann := deploy.Annotations
@@ -196,35 +179,23 @@ func (h *HelmTemplate) ListCharts() (string, error) {
 				updated := deploy.CreationTimestamp.Format("Mon Jan 2 15:04:05 2006")
 				chartName := ann[AnnotationChartName]
 				chartVersion := labels[LabelReleaseChartVersion]
-				info := &ChartListing{
+				releaseName := labels[LabelReleaseName]
+				keys = append(keys, releaseName)
+				charts[releaseName] = ReleaseSummary{
 					Chart:         chartName,
 					ChartFullName: chartName + "-" + chartVersion,
 					Revision:      strconv.FormatInt(deploy.Generation, 10),
 					Updated:       updated,
 					Status:        status,
 					ChartVersion:  chartVersion,
-					ReleaseName:   labels[LabelReleaseName],
+					ReleaseName:   releaseName,
 					AppVersion:    ann[AnnotationAppVersion],
 					Namespace:     ns,
 				}
-				key := info.ReleaseName
-				if charts[key] == nil {
-					charts[key] = info
-					keys = append(keys, key)
-				}
-			}
-		}
-		sort.Strings(keys)
-		for _, key := range keys {
-			info := charts[key]
-			if info != nil {
-				t.AddRow(key, info.Revision, info.Updated, info.Status, info.ChartFullName, info.AppVersion, info.Namespace)
 			}
 		}
 	}
-	t.Render()
-	writer.Flush()
-	return buffer.String(), nil
+	return charts, keys, nil
 }
 
 // SearchChartVersions search all version of the given chart
@@ -523,45 +494,14 @@ func (h *HelmTemplate) DeleteRelease(ns string, releaseName string, purge bool) 
 
 // StatusRelease returns the output of the helm status command for a given release
 func (h *HelmTemplate) StatusRelease(ns string, releaseName string) error {
-	releases, err := h.StatusReleases(ns)
+	releases, _, err := h.ListReleases(ns)
 	if err != nil {
 		return errors.Wrap(err, "listing current chart releases")
 	}
-	for name := range releases {
-		if name == releaseName {
-			return nil
-		}
+	if _, ok := releases[releaseName]; ok {
+		return nil
 	}
 	return fmt.Errorf("chart release %q not found", releaseName)
-}
-
-// StatusReleases returns the status of all installed releases
-func (h *HelmTemplate) StatusReleases(ns string) (map[string]Release, error) {
-	statusMap := map[string]Release{}
-	if h.KubeClient == nil {
-		return statusMap, fmt.Errorf("No KubeClient configured!")
-	}
-	deployList, err := h.KubeClient.AppsV1beta1().Deployments(ns).List(metav1.ListOptions{})
-	if err != nil {
-		return statusMap, errors.Wrapf(err, "Failed to list Deployments in namespace %s", ns)
-	}
-	for _, deploy := range deployList.Items {
-		labels := deploy.Labels
-		if labels != nil {
-			releaseName := labels[LabelReleaseName]
-			version := labels[LabelReleaseChartVersion]
-			release := Release{
-				Release: releaseName,
-				Status:  "DEPLOYED",
-				Version: version,
-			}
-
-			if releaseName != "" {
-				statusMap[releaseName] = release
-			}
-		}
-	}
-	return statusMap, nil
 }
 
 // StatusReleaseWithOutput returns the output of the helm status command for a given release

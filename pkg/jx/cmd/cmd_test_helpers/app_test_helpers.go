@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"k8s.io/helm/pkg/proto/hapi/chart"
+
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
 
@@ -58,8 +60,46 @@ func (o *AppTestOptions) GetFullDevEnvDir(envDir string) (name string) {
 
 }
 
+// DirectlyAddApp adds a dummy app using helm
+func (o *AppTestOptions) AddApp(values map[string]interface{}, prefix string) (string, string, string, error) {
+	// Can't run in parallel
+
+	nameUUID, err := uuid.NewV4()
+	if err != nil {
+		return "", "", "", errors.WithStack(err)
+	}
+	name := fmt.Sprintf("%s%s", prefix, nameUUID.String())
+	alias := fmt.Sprintf("%s-alias", name)
+	version := "0.0.1"
+	installOpts := &cmd.AddAppOptions{
+		AddOptions: cmd.AddOptions{
+			CommonOptions: o.CommonOptions,
+		},
+		Version:              version,
+		Repo:                 kube.DefaultChartMuseumURL,
+		GitOps:               false,
+		DevEnv:               o.DevEnv,
+		HelmUpdate:           true, // Flag default when run on CLI
+		ConfigureGitCallback: o.ConfigureGitFn,
+	}
+	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
+		Metadata: &chart.Metadata{
+			Name:        name,
+			Version:     version,
+			Description: "My test chart description",
+		},
+	}, o.MockHelmer)
+	installOpts.Args = []string{name}
+	err = installOpts.Run()
+	if err != nil {
+		return "", "", "", errors.WithStack(err)
+	}
+	return name, alias, version, nil
+}
+
 // DirectlyAddAppToGitOps modifies the environment git repo directly to add a dummy app
-func (o *AppTestOptions) DirectlyAddAppToGitOps(values map[string]interface{}) (name string, alias string,
+func (o *AppTestOptions) DirectlyAddAppToGitOps(values map[string]interface{}, prefix string) (name string,
+	alias string,
 	version string, err error) {
 	envDir, err := o.CommonOptions.EnvironmentsDir()
 	if err != nil {
@@ -90,7 +130,7 @@ func (o *AppTestOptions) DirectlyAddAppToGitOps(values map[string]interface{}) (
 	if err != nil {
 		return "", "", "", err
 	}
-	name = nameUUID.String()
+	name = fmt.Sprintf("%s%s", prefix, nameUUID.String())
 	alias = fmt.Sprintf("%s-alias", name)
 	version = "0.0.1"
 	requirements.Dependencies = append(requirements.Dependencies, &helm.Dependency{

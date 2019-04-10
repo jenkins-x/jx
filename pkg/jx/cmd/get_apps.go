@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -123,7 +123,7 @@ func (o *GetAppsOptions) Run() error {
 		JxClient:  jxClient,
 	}
 
-	apps, err := opts.GetApps(kubeClient, o.Namespace, o.Args)
+	apps, err := opts.GetApps(o.Args)
 	if err != nil {
 		return err
 	}
@@ -169,7 +169,7 @@ func (o *GetAppsOptions) generateAppStatusOutput(app *v1.App) error {
 }
 
 func (o *GetAppsOptions) generateTableFormatted(apps *v1.AppList) appsResult {
-	releasesMap, err := o.Helm().StatusReleases(o.Namespace)
+	releases, _, err := o.Helm().ListReleases(o.Namespace)
 	if err != nil {
 		log.Warnf("There was a problem obtaining the app status: %v\n", err)
 	}
@@ -177,10 +177,11 @@ func (o *GetAppsOptions) generateTableFormatted(apps *v1.AppList) appsResult {
 	for _, app := range apps.Items {
 		if app.Labels != nil {
 			name := app.Labels[helm.LabelAppName]
+			releaseName := app.Labels[helm.LabelReleaseName]
 			if name != "" && app.Annotations != nil {
 				var status string
-				if releasesMap != nil {
-					status = releasesMap[app.Labels[helm.LabelReleaseName]].Status
+				if release, ok := releases[releaseName]; ok {
+					status = release.Status
 				}
 				results.AppOutput = append(results.AppOutput, appOutput{
 					Name:            name,
@@ -198,20 +199,21 @@ func (o *GetAppsOptions) generateTableFormatted(apps *v1.AppList) appsResult {
 
 func (o *GetAppsOptions) generateTable(apps *v1.AppList, kubeClient kubernetes.Interface) table.Table {
 	table := o.generateTableHeaders(apps)
-	releasesMap, err := o.Helm().StatusReleases(o.Namespace)
+	releases, _, err := o.Helm().ListReleases(o.Namespace)
 	if err != nil {
 		log.Warnf("There was a problem obtaining the app status: %v\n", err)
 	}
 	for _, app := range apps.Items {
 		if app.Labels != nil {
 			name := app.Labels[helm.LabelAppName]
+			releaseName := app.Labels[helm.LabelReleaseName]
 			if name != "" && app.Annotations != nil {
 				version := app.Labels[helm.LabelAppVersion]
 				description := app.Annotations[helm.AnnotationAppDescription]
 				repository := app.Annotations[helm.AnnotationAppRepository]
 				var status string
-				if releasesMap != nil {
-					status = releasesMap[app.Labels[helm.LabelReleaseName]].Status
+				if release, ok := releases[releaseName]; ok {
+					status = release.Status
 				}
 				namespace := app.Namespace
 				row := []string{name, version, repository, namespace, status, description}

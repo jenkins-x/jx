@@ -161,14 +161,14 @@ func (o *UpgradePlatformOptions) Run() error {
 		}
 	}
 
-	releases, err := o.Helm().StatusReleases(ns)
+	releases, _, err := o.Helm().ListReleases(ns)
 	if err != nil {
 		return errors.Wrap(err, "list charts releases")
 	}
 	var currentVersion string
 	for name, rel := range releases {
 		if name == "jenkins-x" {
-			currentVersion = rel.Version
+			currentVersion = rel.ChartVersion
 		}
 	}
 	if currentVersion == "" {

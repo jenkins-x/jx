@@ -105,7 +105,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 			addonEnabled[addon.Name] = true
 		}
 	}
-	statusMap, err := o.Helm().StatusReleases(ns)
+	releases, _, err := o.Helm().ListReleases(ns)
 	if err != nil {
 		log.Warnf("Failed to find Helm installs: %s\n", err)
 	}
@@ -126,7 +126,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 
 	for _, k := range keys {
 		chart := charts[k]
-		status := statusMap[k].Status
+		status := releases[k].Status
 		name := k
 		if name == k {
 			name = "kube-cd"
