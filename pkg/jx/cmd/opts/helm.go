@@ -398,7 +398,7 @@ func (o *CommonOptions) InstallChartWithOptions(options helm.InstallChartOptions
 	}
 	vaultClient, err := o.SystemVaultClient("")
 	if err != nil {
-		return err
+		vaultClient = nil
 	}
 	return helm.InstallFromChartOptions(options, o.Helm(), client, DefaultInstallTimeout, vaultClient)
 }
