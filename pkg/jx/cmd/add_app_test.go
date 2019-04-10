@@ -379,7 +379,7 @@ func TestAddAppWithDefaults(t *testing.T) {
 	testOptions.MockHelmer.VerifyWasCalledOnce().
 		UpgradeChart(
 			pegomock.AnyString(),
-			pegomock.EqString(name),
+			pegomock.EqString(fmt.Sprintf("%s-%s", namespace, name)),
 			pegomock.AnyString(),
 			pegomock.EqString(version),
 			pegomock.AnyBool(),
@@ -462,7 +462,7 @@ func TestStashValues(t *testing.T) {
 	assert.Equal(t, namespace, ns)
 	assert.NoError(t, err)
 	assert.Len(t, appList.Items, 1)
-	app, err := jxClient.JenkinsV1().Apps(ns).Get(appCRDName, metav1.GetOptions{})
+	app, err := jxClient.JenkinsV1().Apps(ns).Get(fmt.Sprintf("%s-%s", namespace, appCRDName), metav1.GetOptions{})
 	assert.NoError(t, err)
 	val, ok := app.Annotations[apps.ValuesAnnotation]
 	assert.True(t, ok)
@@ -611,7 +611,7 @@ func TestAddApp(t *testing.T) {
 	testOptions.MockHelmer.VerifyWasCalledOnce().
 		UpgradeChart(
 			pegomock.EqString(filepath.Join(fetchDir, name)),
-			pegomock.EqString(name),
+			pegomock.EqString(fmt.Sprintf("%s-%s", namespace, name)),
 			pegomock.AnyString(),
 			pegomock.EqString(version),
 			pegomock.AnyBool(),
@@ -671,7 +671,7 @@ func TestAddAppFromPath(t *testing.T) {
 	testOptions.MockHelmer.VerifyWasCalledOnce().
 		UpgradeChart(
 			pegomock.AnyString(),
-			pegomock.EqString(name),
+			pegomock.EqString(fmt.Sprintf("%s-%s", namespace, name)),
 			pegomock.AnyString(),
 			pegomock.EqString(version),
 			pegomock.AnyBool(),
@@ -733,7 +733,7 @@ func TestAddLatestApp(t *testing.T) {
 	testOptions.MockHelmer.VerifyWasCalledOnce().
 		UpgradeChart(
 			pegomock.EqString(filepath.Join(fetchDir, name)),
-			pegomock.EqString(name),
+			pegomock.EqString(fmt.Sprintf("%s-%s", namespace, name)),
 			pegomock.AnyString(),
 			pegomock.EqString(version),
 			pegomock.AnyBool(),

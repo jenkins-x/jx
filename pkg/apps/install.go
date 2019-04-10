@@ -87,9 +87,12 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 			opts := HelmOpsOptions{
 				InstallOptions: o,
 			}
+			if releaseName == "" {
+				releaseName = fmt.Sprintf("%s-%s", o.Namespace, chartDetails.Name)
+			}
 			err = opts.AddApp(app, dir, chartDetails.Name, chartDetails.Version, chartDetails.Values, repository,
 				username, password,
-				chartDetails.Name,
+				releaseName,
 				setValues,
 				helmUpdate)
 			if err != nil {
