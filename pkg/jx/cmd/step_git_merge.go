@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/sirupsen/logrus"
 	"os"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/pkg/errors"
@@ -124,16 +125,16 @@ func (o *StepGitMergeOptions) Run() error {
 }
 
 func (o *StepGitMergeOptions) setGitConfig() error {
-	user, err := o.getCommandOutput(o.Dir, "git", "config", "user.name")
+	user, err := o.GetCommandOutput(o.Dir, "git", "config", "user.name")
 	if err != nil || user == "" {
-		err := o.runCommandFromDir(o.Dir, "git", "config", "user.name", "jenkins-x")
+		err := o.RunCommandFromDir(o.Dir, "git", "config", "user.name", "jenkins-x")
 		if err != nil {
 			return err
 		}
 	}
-	email, err := o.getCommandOutput(o.Dir, "git", "config", "user.email")
+	email, err := o.GetCommandOutput(o.Dir, "git", "config", "user.email")
 	if email == "" || err != nil {
-		err := o.runCommandFromDir(o.Dir, "git", "config", "user.email", "jenkins-x@googlegroups.com")
+		err := o.RunCommandFromDir(o.Dir, "git", "config", "user.email", "jenkins-x@googlegroups.com")
 		if err != nil {
 			return err
 		}
