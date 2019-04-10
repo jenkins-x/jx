@@ -20,6 +20,56 @@ items:
           type: git
     steps:
     - args:
+      - step
+      - git
+      - merge
+      - --verbose
+      command:
+      - jx
+      image: rawlingsj/builder-jx:wip34
+      name: git-merge
+      env:
+      - name: DOCKER_CONFIG
+        value: /home/jenkins/.docker/
+      - name: DOCKER_REGISTRY
+        valueFrom:
+          configMapKeyRef:
+            key: docker.registry
+            name: jenkins-x-docker-registry
+      - name: GIT_AUTHOR_EMAIL
+        value: jenkins-x@googlegroups.com
+      - name: GIT_AUTHOR_NAME
+        value: jenkins-x-bot
+      - name: GIT_COMMITTER_EMAIL
+        value: jenkins-x@googlegroups.com
+      - name: GIT_COMMITTER_NAME
+        value: jenkins-x-bot
+      - name: TILLER_NAMESPACE
+        value: kube-system
+      - name: XDG_CONFIG_HOME
+        value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
+      - name: PIPELINE_KIND
+        value: release
+      - name: REPO_OWNER
+        value: abayer
+      - name: REPO_NAME
+        value: js-test-repo
+      - name: JOB_NAME
+        value: abayer/js-test-repo/build-pack
+      - name: APP_NAME
+        value: js-test-repo
+      - name: BRANCH_NAME
+        value: build-pack
+      - name: JX_BATCH_MODE
+        value: "true"
+      volumeMounts:
+      - mountPath: /etc/podinfo
+        name: podinfo
+        readOnly: true
+      workingDir: /workspace/source
+    - args:
       - jx step git credentials
       command:
       - /bin/sh

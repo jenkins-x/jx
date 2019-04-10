@@ -3,6 +3,7 @@ package syntax
 import (
 	"context"
 	"fmt"
+	"os"
 	"regexp"
 	"sort"
 	"strconv"
@@ -19,6 +20,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// GitMergeImage is the default image name that is used in the git merge step of a pipeline
+const GitMergeImage = "rawlingsj/builder-jx:wip34"
 
 // ParsedPipeline is the internal representation of the Pipeline, used to validate and create CRDs
 type ParsedPipeline struct {
@@ -837,7 +841,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 	}
 
 	stepCounter := 0
-
+	defaultTaskSpec := getDefaultTaskSpec(env)
 	if len(s.Steps) > 0 {
 		t := &tektonv1alpha1.Task{
 			TypeMeta: metav1.TypeMeta{
@@ -849,6 +853,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 				Name:      MangleToRfc1035Label(fmt.Sprintf("%s-%s", pipelineIdentifier, s.Name), buildIdentifier),
 				Labels:    util.MergeMaps(map[string]string{LabelStageName: s.stageLabelName()}),
 			},
+			Spec: defaultTaskSpec,
 		}
 		t.SetDefaults(context.Background())
 
@@ -905,7 +910,6 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		ts.computeWorkspace(parentWorkspace)
 		return &ts, nil
 	}
-
 	if len(s.Stages) > 0 {
 		var tasks []*transformedStage
 		ts := transformedStage{Stage: s, Depth: depth, EnclosingStage: enclosingStage, PreviousSiblingStage: previousSiblingStage}
@@ -951,7 +955,6 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 
 		return &ts, nil
 	}
-
 	return nil, errors.New("no steps, sequential stages, or parallel stages")
 }
 
@@ -993,11 +996,18 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 			c.Image = stepImage
 			c.Command = []string{"/bin/sh", "-c"}
 		}
-		cmdStr := step.Command
-		if len(step.Arguments) > 0 {
-			cmdStr += " " + strings.Join(step.Arguments, " ")
+		// Special-casing for commands starting with /kaniko
+		// TODO: Should this be more general?
+		if strings.HasPrefix(step.Command, "/kaniko") {
+			c.Command = []string{step.Command}
+			c.Args = step.Arguments
+		} else {
+			cmdStr := step.Command
+			if len(step.Arguments) > 0 {
+				cmdStr += " " + strings.Join(step.Arguments, " ")
+			}
+			c.Args = []string{cmdStr}
 		}
-		c.Args = []string{cmdStr}
 		c.WorkingDir = workingDir
 		stepCounter++
 		if step.Name != "" {
@@ -1310,4 +1320,25 @@ func validateStageNames(j *ParsedPipeline) (err *apis.FieldError) {
 	err = findDuplicates(names)
 
 	return
+}
+
+// todo JR lets remove this when we switch tekton to using git merge type pipelineresources
+func getDefaultTaskSpec(envs []corev1.EnvVar) tektonv1alpha1.TaskSpec {
+	v := os.Getenv("BUILDER_JX_IMAGE")
+	if v == "" {
+		v = GitMergeImage
+	}
+	return tektonv1alpha1.TaskSpec{
+		Steps: []corev1.Container{
+			{
+				Name: "git-merge",
+				//Image:   "gcr.io/jenkinsxio/builder-jx:0.1.297",
+				Image:      v,
+				Command:    []string{"jx"},
+				Args:       []string{"step", "git", "merge", "--verbose"},
+				WorkingDir: "/workspace/source",
+				Env:        envs,
+			},
+		},
+	}
 }
