@@ -15,6 +15,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 
@@ -35,7 +36,7 @@ const (
 
 // ControllerEnvironmentOptions holds the command line arguments
 type ControllerEnvironmentOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 	BindAddress           string
 	Path                  string
 	Port                  int
@@ -59,7 +60,7 @@ var (
 )
 
 // NewCmdControllerEnvironment creates the command
-func NewCmdControllerEnvironment(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdControllerEnvironment(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := ControllerEnvironmentOptions{
 		CommonOptions: commonOpts,
 	}
@@ -116,7 +117,7 @@ func (o *ControllerEnvironmentOptions) Run() error {
 	}
 
 	if !o.NoGitCredeentialsInit {
-		err = o.initGitConfigAndUser()
+		err = o.InitGitConfigAndUser()
 		if err != nil {
 			return err
 		}
@@ -337,7 +338,7 @@ func (o *ControllerEnvironmentOptions) registerWebHook(webhookURL string, secret
 	if err != nil {
 		return errors.Wrapf(err, "failed to parse git URL %s", gitURL)
 	}
-	provider, err := o.gitProviderForURL(gitURL, "creating webhook git provider")
+	provider, err := o.GitProviderForURL(gitURL, "creating webhook git provider")
 	if err != nil {
 		return errors.Wrapf(err, "failed to create git provider for git URL %s", gitURL)
 	}

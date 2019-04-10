@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -33,7 +34,7 @@ type StepCreateJenkinsConfigOptions struct {
 }
 
 // NewCmdStepCreateJenkinsConfig Creates a new Command object
-func NewCmdStepCreateJenkinsConfig(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepCreateJenkinsConfig(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreateJenkinsConfigOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
