@@ -16,7 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/pkg/errors"
@@ -30,6 +30,7 @@ import (
 )
 
 const (
+	environmentControllerService       = "environment-controller"
 	environmentControllerHmacSecret    = "environment-controller-hmac"
 	environmentControllerHmacSecretKey = "hmac"
 )
@@ -88,7 +89,7 @@ func NewCmdControllerEnvironment(commonOpts *opts.CommonOptions) *cobra.Command 
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
 	cmd.Flags().BoolVarP(&options.NoGitCredeentialsInit, "no-git-init", "", false, "Disables checking we have setup git credentials on startup")
 	cmd.Flags().BoolVarP(&options.NoGitCredeentialsInit, "no-register-webhook", "", false, "Disables checking to register the webhook on startup")
-	cmd.Flags().StringVarP(&options.SourceURL, "url", "u", "", "The source URL of the environment git repository")
+	cmd.Flags().StringVarP(&options.SourceURL, "source-url", "s", "", "The source URL of the environment git repository")
 	cmd.Flags().StringVarP(&options.GitServerURL, "git-server-url", "", "", "The git server URL. If not specified defaults to $GIT_SERVER_URL")
 	cmd.Flags().StringVarP(&options.GitOwner, "owner", "o", "", "The git repository owner. If not specified defaults to $OWNER")
 	cmd.Flags().StringVarP(&options.GitRepo, "repo", "r", "", "The git repository name. If not specified defaults to $REPO")
@@ -98,6 +99,20 @@ func NewCmdControllerEnvironment(commonOpts *opts.CommonOptions) *cobra.Command 
 
 // Run will implement this command
 func (o *ControllerEnvironmentOptions) Run() error {
+	var err error
+	if o.GitServerURL == "" && o.SourceURL != "" {
+		gitInfo, err := gits.ParseGitURL(o.SourceURL)
+		if err != nil {
+			return err
+		}
+		o.GitServerURL = gitInfo.ProviderURL()
+		if o.GitOwner == "" {
+			o.GitOwner = gitInfo.Organisation
+		}
+		if o.GitRepo == "" {
+			o.GitRepo = gitInfo.Name
+		}
+	}
 	if o.GitServerURL == "" {
 		o.GitServerURL = os.Getenv("GIT_SERVER_URL")
 		if o.GitServerURL == "" {
@@ -126,14 +141,16 @@ func (o *ControllerEnvironmentOptions) Run() error {
 	if o.WebHookURL == "" {
 		o.WebHookURL = os.Getenv("WEBHOOK_URL")
 		if o.WebHookURL == "" {
-			return util.MissingOption("webhook-url")
+			o.WebHookURL, err = o.discoverWebHookURL()
+			if err != nil {
+				return err
+			}
 		}
 	}
 	if o.SourceURL == "" {
 		o.SourceURL = util.UrlJoin(o.GitServerURL, o.GitOwner, o.GitRepo)
 	}
-	log.Infof("using environment source directory %s and external webhook URL: %s\n", util.ColorInfo(o.SourceURL), util.ColorInfo(o.WebHookURL))
-	var err error
+	logrus.Infof("using environment source directory %s and external webhook URL: %s\n", util.ColorInfo(o.SourceURL), util.ColorInfo(o.WebHookURL))
 	o.secret, err = o.loadOrCreateHmacSecret()
 	if err != nil {
 		return errors.Wrapf(err, "loading hmac secret")
@@ -158,7 +175,7 @@ func (o *ControllerEnvironmentOptions) Run() error {
 	mux.Handle(HealthPath, http.HandlerFunc(o.health))
 	mux.Handle(ReadyPath, http.HandlerFunc(o.ready))
 
-	logrus.Infof("Waiting for environment controller webhooks at http://%s:%d%s", o.BindAddress, o.Port, o.Path)
+	logrus.Infof("Environment Controller is now listening on %s for WebHooks from the source repository %s to trigger promotions\n", util.ColorInfo(util.UrlJoin(o.WebHookURL, o.Path)), util.ColorInfo(o.SourceURL))
 	return http.ListenAndServe(":"+strconv.Itoa(o.Port), mux)
 }
 
@@ -182,7 +199,7 @@ func (o *ControllerEnvironmentOptions) ready(w http.ResponseWriter, r *http.Requ
 func (o *ControllerEnvironmentOptions) startPipelineRun(w http.ResponseWriter, r *http.Request) {
 	err := o.stepGitCredentials()
 	if err != nil {
-		log.Warn(err.Error())
+		logrus.Warn(err.Error())
 	}
 
 	sourceURL := o.SourceURL
@@ -209,7 +226,7 @@ func (o *ControllerEnvironmentOptions) startPipelineRun(w http.ResponseWriter, r
 		pr.CustomLabels = append(pr.CustomLabels, fmt.Sprintf("%s=%s", key, value))
 	}
 
-	log.Infof("triggering pipeline for repo %s branch %s revision %s\n", sourceURL, branch, revision)
+	logrus.Infof("triggering pipeline for repo %s branch %s revision %s\n", sourceURL, branch, revision)
 
 	err = pr.Run()
 	if err != nil {
@@ -225,6 +242,51 @@ func (o *ControllerEnvironmentOptions) startPipelineRun(w http.ResponseWriter, r
 		o.returnError(err, "failed to marshal payload", w, r)
 	}
 	return
+}
+
+// discoverWebHookURL lets try discover the webhook URL from the Service
+func (o *ControllerEnvironmentOptions) discoverWebHookURL() (string, error) {
+	kubeCtl, ns, err := o.KubeClientAndNamespace()
+	if err != nil {
+		return "", err
+	}
+	serviceInterface := kubeCtl.CoreV1().Services(ns)
+	svc, err := serviceInterface.Get(environmentControllerService, metav1.GetOptions{})
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to find Service %s in namespace %s", environmentControllerService, ns)
+	}
+	u := services.GetServiceURL(svc)
+	if u != "" {
+		return u, nil
+	}
+	if svc.Spec.Type == corev1.ServiceTypeLoadBalancer {
+		// lets wait for the LoadBalancer to be resolved
+		loggedWait := false
+		fn := func() (bool, error) {
+			svc, err := serviceInterface.Get(environmentControllerService, metav1.GetOptions{})
+			if err != nil {
+				return false, err
+			}
+			u = services.GetServiceURL(svc)
+			if u != "" {
+				return true, nil
+			}
+
+			if !loggedWait {
+				loggedWait = true
+				logrus.Infof("waiting for the external IP on the service %s in namespace %s ...\n", environmentControllerService, ns)
+			}
+			return false, nil
+		}
+		err = o.RetryUntilTrueOrTimeout(time.Minute*5, time.Second*3, fn)
+		if u != "" {
+			return u, nil
+		}
+		if err != nil {
+			return "", err
+		}
+	}
+	return "", fmt.Errorf("could not find external URL of Service %s in namespace %s", environmentControllerService, ns)
 }
 
 // loadOrCreateHmacSecret loads the hmac secret
@@ -356,7 +418,7 @@ func (o *ControllerEnvironmentOptions) handleRequests(w http.ResponseWriter, r *
 
 func (o *ControllerEnvironmentOptions) registerWebHook(webhookURL string, secret []byte) error {
 	gitURL := o.SourceURL
-	log.Infof("verifying that the webhook is registered for the git repository %s\n", util.ColorInfo(gitURL))
+	logrus.Infof("verifying that the webhook is registered for the git repository %s\n", util.ColorInfo(gitURL))
 
 	provider, err := o.GitProviderForURL(gitURL, "creating webhook git provider")
 	if err != nil {

@@ -153,10 +153,29 @@ func FindService(client kubernetes.Interface, name string) (*v1.Service, error) 
 	return nil, errors.New("Service not found!")
 }
 
+// GetServiceURL returns the
 func GetServiceURL(svc *v1.Service) string {
 	url := ""
 	if svc != nil && svc.Annotations != nil {
 		url = svc.Annotations[ExposeURLAnnotation]
+	}
+	if url == "" {
+		scheme := "http"
+		for _, port := range svc.Spec.Ports {
+			if port.Port == 443 {
+				scheme = "https"
+				break
+			}
+		}
+
+		// lets check if its a LoadBalancer
+		if svc.Spec.Type == v1.ServiceTypeLoadBalancer {
+			for _, ing := range svc.Status.LoadBalancer.Ingress {
+				if ing.IP != "" {
+					return scheme + "://" + ing.IP + "/"
+				}
+			}
+		}
 	}
 	return url
 }
