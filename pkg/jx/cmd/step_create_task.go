@@ -829,7 +829,10 @@ func (o *StepCreateTaskOptions) combineLabels(labels map[string]string) error {
 
 func (o *StepCreateTaskOptions) combineEnvVars(projectConfig *jenkinsfile.PipelineConfig) error {
 	// add any custom env vars
-	var envVars []corev1.EnvVar
+	envMap := make(map[string]corev1.EnvVar)
+	for _, e := range projectConfig.Env {
+		envMap[e.Name] = e
+	}
 	for _, customEnvVar := range o.CustomEnvs {
 		parts := strings.Split(customEnvVar, "=")
 		if len(parts) != 2 {
@@ -839,9 +842,9 @@ func (o *StepCreateTaskOptions) combineEnvVars(projectConfig *jenkinsfile.Pipeli
 			Name:  parts[0],
 			Value: parts[1],
 		}
-		envVars = append(envVars, e)
+		envMap[e.Name] = e
 	}
-	projectConfig.Env = envVars
+	projectConfig.Env = syntax.EnvMapToSlice(envMap)
 	return nil
 }
 
