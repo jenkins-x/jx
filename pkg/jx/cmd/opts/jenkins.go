@@ -279,7 +279,7 @@ func (o *CommonOptions) GetBranchName(dir string) string {
 	return branch
 }
 
-// GetBuildNumber retuns the build number
+// GetBuildNumber returns the build number
 func (o *CommonOptions) GetBuildNumber() string {
 	return builds.GetBuildNumber()
 }

@@ -351,7 +351,7 @@ func (o *CommonOptions) ModifyUser(userName string, callback func(env *v1.User) 
 	return nil
 }
 
-// GetUsername retuns current user name
+// GetUsername returns current user name
 func (o *CommonOptions) GetUsername(userName string) (string, error) {
 	if userName == "" {
 		u, err := user.Current()

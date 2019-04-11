@@ -7,19 +7,17 @@ GREEN='\033[0;32m'
 RESET='\033[0m'
 
 echo "Running validation scripts..."
-#    "hack/linter.sh"
-#)
+
 scripts=(
-    "hack/gofmt.sh"
-    "hack/linter.sh"
-#    "hack/check-docs.sh"
-    "hack/check-openapi.sh"
+    "./hack/gofmt.sh"
+    "./hack/linter.sh"
+    "make verify-generation-complete"
 )
 fail=0
 for s in "${scripts[@]}"; do
     echo "RUN ${s}"
     set +e
-    ./$s
+    $s
     result=$?
     set -e
     if [[ $result  -eq 1 ]]; then
