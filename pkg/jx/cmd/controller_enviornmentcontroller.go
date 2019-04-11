@@ -100,12 +100,14 @@ func NewCmdControllerEnvironment(commonOpts *opts.CommonOptions) *cobra.Command 
 // Run will implement this command
 func (o *ControllerEnvironmentOptions) Run() error {
 	var err error
-	if o.GitServerURL == "" && o.SourceURL != "" {
+	if o.SourceURL != "" {
 		gitInfo, err := gits.ParseGitURL(o.SourceURL)
 		if err != nil {
 			return err
 		}
-		o.GitServerURL = gitInfo.ProviderURL()
+		if o.GitServerURL == "" {
+			o.GitServerURL = gitInfo.ProviderURL()
+		}
 		if o.GitOwner == "" {
 			o.GitOwner = gitInfo.Organisation
 		}
