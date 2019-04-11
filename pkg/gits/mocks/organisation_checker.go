@@ -13,9 +13,16 @@ type MockOrganisationChecker struct {
 	fail func(message string, callerSkip ...int)
 }
 
-func NewMockOrganisationChecker() *MockOrganisationChecker {
-	return &MockOrganisationChecker{fail: pegomock.GlobalFailHandler}
+func NewMockOrganisationChecker(options ...pegomock.Option) *MockOrganisationChecker {
+	mock := &MockOrganisationChecker{}
+	for _, option := range options {
+		option.Apply(mock)
+	}
+	return mock
 }
+
+func (mock *MockOrganisationChecker) SetFailHandler(fh pegomock.FailHandler) { mock.fail = fh }
+func (mock *MockOrganisationChecker) FailHandler() pegomock.FailHandler      { return mock.fail }
 
 func (mock *MockOrganisationChecker) IsUserInOrganisation(_param0 string, _param1 string) (bool, error) {
 	if mock == nil {
@@ -36,60 +43,60 @@ func (mock *MockOrganisationChecker) IsUserInOrganisation(_param0 string, _param
 	return ret0, ret1
 }
 
-func (mock *MockOrganisationChecker) VerifyWasCalledOnce() *VerifierOrganisationChecker {
-	return &VerifierOrganisationChecker{
+func (mock *MockOrganisationChecker) VerifyWasCalledOnce() *VerifierMockOrganisationChecker {
+	return &VerifierMockOrganisationChecker{
 		mock:                   mock,
 		invocationCountMatcher: pegomock.Times(1),
 	}
 }
 
-func (mock *MockOrganisationChecker) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierOrganisationChecker {
-	return &VerifierOrganisationChecker{
+func (mock *MockOrganisationChecker) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierMockOrganisationChecker {
+	return &VerifierMockOrganisationChecker{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 	}
 }
 
-func (mock *MockOrganisationChecker) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierOrganisationChecker {
-	return &VerifierOrganisationChecker{
+func (mock *MockOrganisationChecker) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierMockOrganisationChecker {
+	return &VerifierMockOrganisationChecker{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 		inOrderContext:         inOrderContext,
 	}
 }
 
-func (mock *MockOrganisationChecker) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierOrganisationChecker {
-	return &VerifierOrganisationChecker{
+func (mock *MockOrganisationChecker) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierMockOrganisationChecker {
+	return &VerifierMockOrganisationChecker{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 		timeout:                timeout,
 	}
 }
 
-type VerifierOrganisationChecker struct {
+type VerifierMockOrganisationChecker struct {
 	mock                   *MockOrganisationChecker
 	invocationCountMatcher pegomock.Matcher
 	inOrderContext         *pegomock.InOrderContext
 	timeout                time.Duration
 }
 
-func (verifier *VerifierOrganisationChecker) IsUserInOrganisation(_param0 string, _param1 string) *OrganisationChecker_IsUserInOrganisation_OngoingVerification {
+func (verifier *VerifierMockOrganisationChecker) IsUserInOrganisation(_param0 string, _param1 string) *MockOrganisationChecker_IsUserInOrganisation_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "IsUserInOrganisation", params, verifier.timeout)
-	return &OrganisationChecker_IsUserInOrganisation_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockOrganisationChecker_IsUserInOrganisation_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type OrganisationChecker_IsUserInOrganisation_OngoingVerification struct {
+type MockOrganisationChecker_IsUserInOrganisation_OngoingVerification struct {
 	mock              *MockOrganisationChecker
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *OrganisationChecker_IsUserInOrganisation_OngoingVerification) GetCapturedArguments() (string, string) {
+func (c *MockOrganisationChecker_IsUserInOrganisation_OngoingVerification) GetCapturedArguments() (string, string) {
 	_param0, _param1 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *OrganisationChecker_IsUserInOrganisation_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
+func (c *MockOrganisationChecker_IsUserInOrganisation_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))

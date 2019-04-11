@@ -28,9 +28,7 @@ GO_DEPENDENCIES := $(call rwildcard,pkg/,*.go) $(call rwildcard,cmd/jx/,*.go)
 
 BRANCH     := $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null  || echo 'unknown')
 BUILD_DATE := $(shell date +%Y%m%d-%H:%M:%S)
-PEGOMOCK_SHA := $(shell $(GO) mod graph | grep pegomock | sed -n -e 's/^.*-//p')
 GITHUB_ACCESS_TOKEN := $(shell cat /builder/home/git-token 2> /dev/null)
-PEGOMOCK_PACKAGE := github.com/petergtz/pegomock/
 CGO_ENABLED = 0
 
 # set dev version unless VERSION is explicitly set via environment
@@ -71,8 +69,7 @@ get-test-deps:
 	$(GO_NOMOD) get -u gopkg.in/matm/v1/gocov-html
 
 test:
-	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 1 -count=1 -coverprofile=cover.out \
-	-failfast -short ./...
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 1 -count=1 -coverprofile=cover.out -failfast -short ./...
 
 test-verbose:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -v -coverprofile=cover.out -failfast ./...
@@ -119,7 +116,6 @@ test-slow-integration-report-html: get-test-deps test-slow-integration
 test-soak:
 	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 2 -count=1 -tags soak -coverprofile=cover.out ./...
 
-#	CGO_ENABLED=$(CGO_ENABLED) $(GO) test github.com/jenkins-x/jx/cmds
 test1:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test ./... -test.v -run $(TEST)
 
@@ -144,10 +140,6 @@ debuginttest1: inttestbin
 install: $(GO_DEPENDENCIES)
 	GOBIN=${GOPATH}/bin $(GO) install $(BUILDFLAGS) cmd/jx/jx.go
 
-fmt:
-	@FORMATTED=`$(GO) fmt ./...`
-	@([[ ! -z "$(FORMATTED)" ]] && printf "Fixed unformatted files:\n$(FORMATTED)") || true
-
 linux:
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/jx cmd/jx/jx.go
 
@@ -162,10 +154,6 @@ win32:
 
 darwin:
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=darwin GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/darwin/jx cmd/jx/jx.go
-
-# sleeps for about 30 mins
-sleep:
-	sleep 2000
 
 .PHONY: release
 release: check
@@ -195,17 +183,21 @@ release: check
 clean:
 	rm -rf build release cover.out cover.html
 
-
-include Makefile.docker
-include Makefile.codegen
-
 richgo:
 	go get -u github.com/kyoh86/richgo
 
-FGT := $(GOPATH)/bin/fgt
-$(FGT):
-	$(GO_NOMOD) get github.com/GeertJohan/fgt
+fmt:
+	$(eval FORMATTED = $(shell $(GO) fmt ./...))
+	@if [ "$(FORMATTED)" == "" ]; \
+      	then \
+      	    echo "All Go files properly formatted"; \
+      	else \
+      		echo "Fixed formatting for: $(FORMATTED)"; \
+      	fi
 
 .PHONY: lint
 lint:
 	./hack/run-all-checks.sh
+
+include Makefile.docker
+include Makefile.codegen
