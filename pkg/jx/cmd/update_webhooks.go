@@ -85,11 +85,11 @@ func (options *UpdateWebhooksOptions) Run() error {
 		return err
 	}
 
-	webhookUrl := ""
+	webhookURL := ""
 	if options.Endpoint != "" {
-		webhookUrl = options.Endpoint
+		webhookURL = options.Endpoint
 	} else {
-		webhookUrl, err = options.GetWebHookEndpoint()
+		webhookURL, err = options.GetWebHookEndpoint()
 		if err != nil {
 			return err
 		}
@@ -119,7 +119,7 @@ func (options *UpdateWebhooksOptions) Run() error {
 	}
 
 	if options.Repo != "" {
-		options.updateRepoHook(git, options.Repo, webhookUrl, isProwEnabled, hmacToken)
+		options.updateRepoHook(git, options.Repo, webhookURL, isProwEnabled, hmacToken)
 	} else {
 		repositories, err := git.ListRepositories(options.Org)
 		if err != nil {
@@ -129,7 +129,7 @@ func (options *UpdateWebhooksOptions) Run() error {
 		log.Infof("Found %v repos\n", util.ColorInfo(len(repositories)))
 
 		for _, repo := range repositories {
-			options.updateRepoHook(git, repo.Name, webhookUrl, isProwEnabled, hmacToken)
+			options.updateRepoHook(git, repo.Name, webhookURL, isProwEnabled, hmacToken)
 		}
 	}
 
