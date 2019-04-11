@@ -32,7 +32,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -359,7 +358,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		return util.MissingOption("pack")
 	}
 
-	err = o.loadPodTemplates(kubeClient, ns)
+	o.PodTemplates, err = kube.LoadPodTemplates(kubeClient, ns)
 	if err != nil {
 		return err
 	}
@@ -585,27 +584,6 @@ func (o *StepCreateTaskOptions) loadProjectConfig() (*config.ProjectConfig, stri
 		}
 	}
 	return config.LoadProjectConfig(o.Dir)
-}
-
-func (o *StepCreateTaskOptions) loadPodTemplates(kubeClient kubernetes.Interface, ns string) error {
-	o.PodTemplates = map[string]*corev1.Pod{}
-
-	configMapName := kube.ConfigMapJenkinsPodTemplates
-	cm, err := kubeClient.CoreV1().ConfigMaps(ns).Get(configMapName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	for k, v := range cm.Data {
-		pod := &corev1.Pod{}
-		if v != "" {
-			err := yaml.Unmarshal([]byte(v), pod)
-			if err != nil {
-				return err
-			}
-			o.PodTemplates[k] = pod
-		}
-	}
-	return nil
 }
 
 // CreateStageForBuildPack generates the Task for a build pack

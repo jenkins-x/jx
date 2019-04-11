@@ -47,6 +47,7 @@ func NewCmdCreateAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateAddonAmbassador(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonAnchore(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonCloudBees(commonOpts))
+	cmd.AddCommand(NewCmdCreateAddonEnvironmentController(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonFlagger(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonGitea(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonGloo(commonOpts))

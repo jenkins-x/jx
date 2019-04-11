@@ -426,7 +426,12 @@ func (o *CommonOptions) Helm() helm.Helmer {
 	if o.helm == nil {
 		helmBinary, noTiller, helmTemplate, err := o.TeamHelmBin()
 		if err != nil {
-			log.Warnf("Failed to retrieve team settings: %v - falling back to default settings...\n", err)
+			noTillerFlag := os.Getenv("JX_NO_TILLER")
+			if noTillerFlag == "true" {
+				helmTemplate = true
+			} else {
+				log.Warnf("Failed to retrieve team settings: %v - falling back to default settings...\n", err)
+			}
 		}
 		return o.NewHelm(o.Verbose, helmBinary, noTiller, helmTemplate)
 	}

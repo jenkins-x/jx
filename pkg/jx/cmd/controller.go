@@ -44,6 +44,7 @@ func NewCmdController(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdControllerBackup(commonOpts))
 	cmd.AddCommand(NewCmdControllerBuild(commonOpts))
 	cmd.AddCommand(NewCmdControllerBuildNumbers(commonOpts))
+	cmd.AddCommand(NewCmdControllerEnvironment(commonOpts))
 	cmd.AddCommand(NewCmdControllerPipelineRunner(commonOpts))
 	cmd.AddCommand(NewCmdControllerRole(commonOpts))
 	cmd.AddCommand(NewCmdControllerTeam(commonOpts))

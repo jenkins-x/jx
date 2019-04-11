@@ -171,12 +171,15 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 
-	cm, err := client.CoreV1().ConfigMaps(ns).Get(kube.ConfigMapJenkinsPodTemplates, metav1.GetOptions{})
+	podTemplates, err := kube.LoadPodTemplates(client, ns)
 	if err != nil {
-		return fmt.Errorf("Failed to find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsPodTemplates, ns, err)
+		return err
 	}
-	podTemplates := cm.Data
-	labels := util.SortedMapKeys(podTemplates)
+	podTemplateKeys := map[string]string{}
+	for k := range podTemplates {
+		podTemplateKeys[k] = k
+	}
+	labels := util.SortedMapKeys(podTemplateKeys)
 
 	label := o.Label
 	if label == "" {
@@ -195,8 +198,8 @@ func (o *CreateDevPodOptions) Run() error {
 			return err
 		}
 	}
-	yml := podTemplates[label]
-	if yml == "" {
+	pod := podTemplates[label]
+	if pod == nil {
 		return util.InvalidOption(optionLabel, label, labels)
 	}
 
@@ -214,11 +217,6 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 
-	pod := &corev1.Pod{}
-	err = yaml.Unmarshal([]byte(yml), pod)
-	if err != nil {
-		return fmt.Errorf("Failed to parse Pod Template YAML: %s\n%s", err, yml)
-	}
 	if pod.Labels == nil {
 		pod.Labels = map[string]string{}
 	}
@@ -248,7 +246,7 @@ func (o *CreateDevPodOptions) Run() error {
 	pod.Labels[kube.LabelDevPodUsername] = userName
 
 	if len(pod.Spec.Containers) == 0 {
-		return fmt.Errorf("No containers specified for label %s with YAML: %s", label, yml)
+		return fmt.Errorf("No containers specified for label %s with pod: %#v", label, pod)
 	}
 	container1 := &pod.Spec.Containers[0]
 
@@ -506,7 +504,7 @@ func (o *CreateDevPodOptions) Run() error {
 		_, err = podResources.Create(pod)
 		if err != nil {
 			if o.Verbose {
-				return fmt.Errorf("Failed to create pod %s\nYAML: %s", err, yml)
+				return fmt.Errorf("Failed to create pod %s\npod: %#v", err, pod)
 			} else {
 				return fmt.Errorf("Failed to create pod %s", err)
 			}
