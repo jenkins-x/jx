@@ -113,7 +113,6 @@ func (options *UpdateWebhooksOptions) Run() error {
 		}
 	}
 
-
 	git, err := options.GitProviderForGitServerURL(gits.GitHubURL, "github")
 	if err != nil {
 		return errors.Wrap(err, "unable to determine git provider")
