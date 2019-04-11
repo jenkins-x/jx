@@ -178,6 +178,7 @@ func (o *StepTagOptions) updateChart(version string, chartsDir string) error {
 		return nil
 	}
 	chart.Version = version
+	chart.AppVersion = version
 	log.Infof("Updating chart version in %s to %s\n", chartFile, version)
 	err = chartutil.SaveChartfile(chartFile, chart)
 	if err != nil {
