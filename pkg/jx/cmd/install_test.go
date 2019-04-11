@@ -1,11 +1,10 @@
 package cmd_test
 
 import (
+	"github.com/sirupsen/logrus"
 	"os"
 	"path"
 	"testing"
-
-	"fmt"
 
 	configio "github.com/jenkins-x/jx/pkg/io"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
