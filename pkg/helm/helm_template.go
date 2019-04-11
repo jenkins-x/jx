@@ -464,21 +464,18 @@ func (h *HelmTemplate) deleteResourcesAndClusterResourcesBySelector(ns string, s
 	errList := []error{}
 
 	log.Infof("Removing Kubernetes resources from %s using selector: %s from %s\n", message, util.ColorInfo(selector), strings.Join(kinds, " "))
-	err := h.deleteResourcesBySelector(ns, kinds, selector, wait)
-	if err != nil {
-		errList = append(errList, err)
-	}
+	errs := h.deleteResourcesBySelector(ns, kinds, selector, wait)
+	errList = append(errList, errs...)
 
 	selector += "," + LabelNamespace + "=" + ns
 	log.Infof("Removing Kubernetes resources from %s using selector: %s from %s\n", message, util.ColorInfo(selector), strings.Join(clusterKinds, " "))
-	err = h.deleteResourcesBySelector("", clusterKinds, selector, wait)
-	if err != nil {
-		errList = append(errList, err)
-	}
+	errs = h.deleteResourcesBySelector("", clusterKinds, selector, wait)
+	errList = append(errList, errs...)
 	return util.CombineErrors(errList...)
 }
 
-func (h *HelmTemplate) deleteResourcesBySelector(ns string, kinds []string, selector string, wait bool) error {
+func (h *HelmTemplate) deleteResourcesBySelector(ns string, kinds []string, selector string, wait bool) []error {
+	errList := []error{}
 	for _, kind := range kinds {
 		args := []string{"delete", kind, "--ignore-not-found", "-l", selector}
 		if ns != "" {
@@ -489,14 +486,15 @@ func (h *HelmTemplate) deleteResourcesBySelector(ns string, kinds []string, sele
 		}
 		output, err := h.runKubectlWithOutput(args...)
 		if err != nil {
-			return err
-		}
-		output = strings.TrimSpace(output)
-		if output != "No resources found" {
-			log.Info(output + "\n")
+			errList = append(errList, err)
+		} else {
+			output = strings.TrimSpace(output)
+			if output != "No resources found" {
+				log.Info(output + "\n")
+			}
 		}
 	}
-	return nil
+	return errList
 }
 
 // isClusterKind returns true if the kind or resource name is a cluster wide resource
