@@ -616,6 +616,7 @@ func validateWorkspace(w string) *apis.FieldError {
 	return nil
 }
 
+// EnvMapToSlice transforms a map of environment variables into a slice that can be used in container configuration
 func EnvMapToSlice(envMap map[string]corev1.EnvVar) []corev1.EnvVar {
 	env := make([]corev1.EnvVar, 0, len(envMap))
 
