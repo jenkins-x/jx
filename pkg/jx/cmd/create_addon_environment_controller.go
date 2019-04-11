@@ -142,7 +142,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 		if auth != nil {
 			o.GitToken = auth.ApiToken
 		} else {
-			return util.MissingOption("tokne")
+			return util.MissingOption("token")
 		}
 	}
 
@@ -150,12 +150,12 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	if o.WebHookURL != "" {
 		setValues = append(setValues, "webhookUrl="+o.WebHookURL)
 	}
-	setValues = append(setValues, "owner="+gitInfo.Organisation)
-	setValues = append(setValues, "repo="+gitInfo.Name)
-	setValues = append(setValues, "serverUrl="+serverUrl)
-	setValues = append(setValues, "gitKind="+o.GitKind)
-	setValues = append(setValues, "user="+o.GitUser)
-	setValues = append(setValues, "token="+o.GitToken)
+	setValues = append(setValues, "source.owner="+gitInfo.Organisation)
+	setValues = append(setValues, "source.repo="+gitInfo.Name)
+	setValues = append(setValues, "source.serverUrl="+serverUrl)
+	setValues = append(setValues, "source.gitKind="+o.GitKind)
+	setValues = append(setValues, "source.user="+o.GitUser)
+	setValues = append(setValues, "source.token="+o.GitToken)
 
 	helmer := o.NewHelm(false, "", true, true)
 	o.SetHelm(helmer)
