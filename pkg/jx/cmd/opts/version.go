@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
+	"github.com/sirupsen/logrus"
 )
 
 // VersionResolver resolves versions of charts, packages or docker images

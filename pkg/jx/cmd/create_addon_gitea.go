@@ -14,6 +14,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
+	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 const (

@@ -22,10 +22,10 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/surveyutils"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 // InstallOptions are shared options for installing, removing or upgrading apps for either GitOps or HelmOps

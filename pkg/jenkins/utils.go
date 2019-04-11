@@ -11,8 +11,8 @@ import (
 
 	"github.com/jenkins-x/golang-jenkins"
 	jenkauth "github.com/jenkins-x/jx/pkg/auth"
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
 

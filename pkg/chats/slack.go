@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/nlopes/slack"
+	"github.com/sirupsen/logrus"
 )
 
 type SlackChatProvider struct {

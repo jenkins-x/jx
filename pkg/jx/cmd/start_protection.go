@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 
 	"github.com/jenkins-x/jx/pkg/prow"
 

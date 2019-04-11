@@ -3,9 +3,9 @@ package jenkins
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	"io"
 	"io/ioutil"

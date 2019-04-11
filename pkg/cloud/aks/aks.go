@@ -3,8 +3,8 @@ package aks
 import (
 	b64 "encoding/base64"
 	"encoding/json"
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 	"strings"
 )
 

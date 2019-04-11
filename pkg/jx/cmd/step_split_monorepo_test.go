@@ -7,8 +7,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/tests"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 

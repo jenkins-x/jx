@@ -5,8 +5,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/tests"
+	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
 

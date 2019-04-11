@@ -16,9 +16,9 @@ import (
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
+	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	prowjobv1 "k8s.io/test-infra/prow/apis/prowjobs/v1"
 )

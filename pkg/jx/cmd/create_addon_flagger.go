@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 
 	istiov1alpha3 "github.com/knative/pkg/apis/istio/v1alpha3"
+	"github.com/sirupsen/logrus"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"

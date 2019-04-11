@@ -14,8 +14,8 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/environments"
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 
 	"github.com/jenkins-x/jx/pkg/surveyutils"
 	"github.com/jenkins-x/jx/pkg/vault"

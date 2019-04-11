@@ -8,8 +8,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/extensions"
 
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"

@@ -2,8 +2,8 @@ package config
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 	"k8s.io/test-infra/prow/config"
 	"time"
 )

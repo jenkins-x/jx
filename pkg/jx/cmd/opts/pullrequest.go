@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
 

@@ -8,10 +8,10 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/sethvargo/go-password/password"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
 )

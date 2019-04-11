@@ -6,11 +6,11 @@ import (
 
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/util/system"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 

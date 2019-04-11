@@ -14,8 +14,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
 
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"

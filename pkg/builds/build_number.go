@@ -1,8 +1,8 @@
 package builds
 
 import (
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"regexp"

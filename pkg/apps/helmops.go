@@ -5,9 +5,9 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 // HelmOpsOptions is the options used for Helm Operations for apps

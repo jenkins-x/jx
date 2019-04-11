@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 )
 
 const (

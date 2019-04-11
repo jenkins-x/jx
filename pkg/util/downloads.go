@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/blang/semver"
 	"github.com/google/go-github/github"

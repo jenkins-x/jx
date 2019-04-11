@@ -17,9 +17,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/ghodss/yaml"
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"k8s.io/helm/pkg/chartutil"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 )

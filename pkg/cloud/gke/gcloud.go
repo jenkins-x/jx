@@ -9,9 +9,9 @@ import (
 
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"sigs.k8s.io/yaml"
 )
 

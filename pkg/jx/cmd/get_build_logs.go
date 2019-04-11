@@ -21,8 +21,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 
 	corev1 "k8s.io/api/core/v1"

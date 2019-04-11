@@ -3,10 +3,10 @@ package cmd
 import (
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
 
