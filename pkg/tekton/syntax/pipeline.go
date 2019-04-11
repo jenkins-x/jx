@@ -1113,7 +1113,9 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 
 	baseEnv := j.toStepEnvVars()
 
-	for _, s := range j.Stages {
+	for i, s := range j.Stages {
+		isLastStage := i == len(j.Stages)-1
+
 		wsPath := ""
 		if len(tasks) == 0 {
 			wsPath = sourceDir
@@ -1122,21 +1124,51 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		if err != nil {
 			return nil, nil, nil, err
 		}
+
 		previousStage = stage
 
+		pipelineTasks := createPipelineTasks(stage, p.Spec.Resources[0].Name)
+
 		linearTasks := stage.getLinearTasks()
-		for _, lt := range linearTasks {
+
+		for index, lt := range linearTasks {
+			if shouldRemoveWorkspaceOutput(stage, lt.Name, index, len(linearTasks), isLastStage) {
+				pipelineTasks[index].Resources.Outputs = nil
+				lt.Spec.Outputs = nil
+			}
 			if len(lt.Spec.Inputs.Params) == 0 {
 				lt.Spec.Inputs.Params = taskParams
 			}
 		}
 
 		tasks = append(tasks, linearTasks...)
-		p.Spec.Tasks = append(p.Spec.Tasks, createPipelineTasks(stage, p.Spec.Resources[0].Name)...)
+		p.Spec.Tasks = append(p.Spec.Tasks, pipelineTasks...)
 		structure.Stages = append(structure.Stages, stage.getAllAsPipelineStructureStages()...)
 	}
 
 	return p, tasks, structure, nil
+}
+
+func shouldRemoveWorkspaceOutput(stage *transformedStage, taskName string, index int, tasksLen int, isLastStage bool) bool {
+	if stage.isParallel() {
+		parallelStages := stage.Parallel
+		for _, ps := range parallelStages {
+			if ps.Task != nil && ps.Task.Name == taskName {
+				return true
+			}
+			seq := ps.Sequential
+			if len(seq) > 0 {
+				lastSeq := seq[len(seq)-1]
+				if lastSeq.Task.Name == taskName {
+					return true
+				}
+			}
+
+		}
+	} else if index == tasksLen-1 && isLastStage {
+		return true
+	}
+	return false
 }
 
 func createPipelineTasks(stage *transformedStage, resourceName string) []tektonv1alpha1.PipelineTask {

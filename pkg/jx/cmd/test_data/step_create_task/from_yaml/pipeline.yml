@@ -27,9 +27,6 @@ spec:
         - build-a-really-long-stage-name-please-but-not-too-long-thanks
         name: workspace
         resource: abayer-js-test-repo-really-long
-      outputs:
-      - name: workspace
-        resource: abayer-js-test-repo-really-long
     runAfter:
       - build-a-really-long-stage-name-please-but-not-too-long-thanks
     taskRef:
