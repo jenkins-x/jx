@@ -7,7 +7,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -98,7 +98,7 @@ func (o *DeleteNamespaceOptions) Run() error {
 			return fmt.Errorf("In batch mode you must specify the '-y' flag to confirm")
 		}
 	} else {
-		log.Warnf("You are about to delete the following namespaces '%s'. This operation CANNOT be undone!",
+		logrus.Warnf("You are about to delete the following namespaces '%s'. This operation CANNOT be undone!",
 			strings.Join(names, ","))
 
 		flag := false
@@ -116,10 +116,10 @@ func (o *DeleteNamespaceOptions) Run() error {
 	}
 
 	for _, name := range names {
-		log.Infof("Deleting namespace: %s\n", util.ColorInfo(name))
+		logrus.Infof("Deleting namespace: %s\n", util.ColorInfo(name))
 		err = namespaceInterface.Delete(name, nil)
 		if err != nil {
-			log.Warnf("Failed to delete namespace %s: %s\n", name, err)
+			logrus.Warnf("Failed to delete namespace %s: %s\n", name, err)
 		}
 	}
 	return nil

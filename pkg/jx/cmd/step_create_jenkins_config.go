@@ -8,7 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -116,6 +116,6 @@ func (o *StepCreateJenkinsConfigOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to write file %s", o.Output)
 	}
-	log.Infof("generated Jenkins configuration file %s\n", util.ColorInfo(o.Output))
+	logrus.Infof("generated Jenkins configuration file %s\n", util.ColorInfo(o.Output))
 	return nil
 }

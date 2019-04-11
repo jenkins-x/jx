@@ -5,7 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/tests"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
@@ -68,7 +68,7 @@ func TestProjectConfigMarshal(t *testing.T) {
 
 	if tests.IsDebugLog() {
 		text := string(data)
-		log.Infof("Generated YAML: %s\n", text)
+		logrus.Infof("Generated YAML: %s\n", text)
 	}
 
 	copy := &config.ProjectConfig{}

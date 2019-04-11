@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -101,7 +101,7 @@ func serveTestScript(t *testing.T) (*http.Server, int) {
 	})
 	go func() {
 		if err := srv.Serve(listener); err != nil && err.Error() != "http: Server closed" {
-			log.Errorf("Error starting HTTP server \n%v", err)
+			logrus.Errorf("Error starting HTTP server \n%v", err)
 			assert.NoError(t, err, "Error starting HTTP server to serve test plugin script")
 		}
 	}()

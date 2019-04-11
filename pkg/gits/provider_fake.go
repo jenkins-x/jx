@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -652,17 +652,17 @@ func (f *FakeProvider) UserInfo(username string) *GitUser {
 }
 
 func (f *FakeProvider) AddCollaborator(user string, organisation string, repo string) error {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for git fake. Please add user: %v as a collaborator to this project.\n", user)
+	logrus.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for git fake. Please add user: %v as a collaborator to this project.\n", user)
 	return nil
 }
 
 func (f *FakeProvider) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for git fake.\n")
+	logrus.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for git fake.\n")
 	return []*github.RepositoryInvitation{}, &github.Response{}, nil
 }
 
 func (f *FakeProvider) AcceptInvitation(ID int64) (*github.Response, error) {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for git fake.\n")
+	logrus.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for git fake.\n")
 	return &github.Response{}, nil
 }
 
@@ -712,7 +712,7 @@ func NewFakeProvider(repositories ...*FakeRepository) *FakeProvider {
 			provider.User.Username = owner
 		}
 		if owner == "" {
-			log.Warnf("Missing owner for Repository %s\n", repo.Name())
+			logrus.Warnf("Missing owner for Repository %s\n", repo.Name())
 		}
 		s := append(provider.Repositories[owner], repo)
 		provider.Repositories[owner] = s

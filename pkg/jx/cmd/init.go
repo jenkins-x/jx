@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"strings"
 	"time"
@@ -168,7 +169,7 @@ func (o *InitOptions) checkOptions() error {
 
 	if o.Flags.SkipIngress {
 		if o.Flags.ExternalIP == "" {
-			log.Warnf("Expecting ingress controller to be installed in %s\n",
+			logrus.Warnf("Expecting ingress controller to be installed in %s\n",
 				util.ColorInfo(fmt.Sprintf("%s/%s", o.Flags.IngressNamespace, o.Flags.IngressDeployment)))
 		}
 	}
@@ -235,14 +236,14 @@ func (o *InitOptions) Run() error {
 	})
 
 	if err != nil {
-		log.Fatalf("helm init failed: %v", err)
+		logrus.Errorf("helm init failed: %v", err)
 		return err
 	}
 
 	// draft init
 	_, _, err = o.InitBuildPacks()
 	if err != nil {
-		log.Fatalf("initialise build packs failed: %v", err)
+		logrus.Fatalf("initialise build packs failed: %v", err)
 		return err
 	}
 
@@ -250,7 +251,7 @@ func (o *InitOptions) Run() error {
 	if !o.Flags.SkipIngress {
 		err = o.initIngress()
 		if err != nil {
-			log.Fatalf("ingress init failed: %v", err)
+			logrus.Fatalf("ingress init failed: %v", err)
 			return err
 		}
 	}
@@ -302,13 +303,13 @@ func (o *InitOptions) enableClusterAdminRole() error {
 	return o.Retry(3, 10*time.Second, func() (err error) {
 		_, err = clusterRoleBindingInterface.Get(clusterRoleBindingName, metav1.GetOptions{})
 		if err != nil {
-			log.Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n %v\n", clusterRoleBindingName, o.Flags.UserClusterRole, o.Username, err)
+			logrus.Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n %v\n", clusterRoleBindingName, o.Flags.UserClusterRole, o.Username, err)
 
 			//args := []string{"create", "clusterrolebinding", clusterRoleBindingName, "--clusterrole=" + role, "--user=" + user}
 
 			_, err = clusterRoleBindingInterface.Create(clusterRoleBinding)
 			if err == nil {
-				log.Infof("Created ClusterRoleBinding %s\n", clusterRoleBindingName)
+				logrus.Infof("Created ClusterRoleBinding %s\n", clusterRoleBindingName)
 			}
 		}
 		return err
@@ -319,31 +320,31 @@ func (o *InitOptions) configureForICP() {
 	icpDefaultTillerNS := "default"
 	icpDefaultNS := "jx"
 
-	log.Infoln("")
-	log.Infoln(util.ColorInfo("IBM Cloud Private installation of Jenkins X"))
-	log.Infoln("Configuring Jenkins X options for IBM Cloud Private: ensure your Kubernetes context is already " +
+	logrus.Infof("")
+	logrus.Infof(util.ColorInfo("IBM Cloud Private installation of Jenkins X"))
+	logrus.Infof("Configuring Jenkins X options for IBM Cloud Private: ensure your Kubernetes context is already " +
 		"configured to point to the cluster jx will be installed into.")
-	log.Infoln("")
+	logrus.Infof("")
 
-	log.Infoln(util.ColorInfo("Permitting image repositories to be used"))
-	log.Infoln("If you have a clusterimagepolicy, ensure that this policy permits pulling from the following additional repositories: " +
+	logrus.Infof(util.ColorInfo("Permitting image repositories to be used"))
+	logrus.Infof("If you have a clusterimagepolicy, ensure that this policy permits pulling from the following additional repositories: " +
 		"the scope of which can be narrowed down once you are sure only images from certain repositories are being used:")
-	log.Infoln("- name: docker.io/* \n" +
+	logrus.Infof("- name: docker.io/* \n" +
 		"- name: gcr.io/* \n" +
 		"- name: quay.io/* \n" +
 		"- name: k8s.gcr.io/* \n" +
 		"- name: <your ICP cluster name>:8500/* \n")
 
-	log.Infoln(util.ColorInfo("IBM Cloud Private defaults"))
-	log.Infoln("By default, with IBM Cloud Private the Tiller namespace for jx will be \"" + icpDefaultTillerNS + "\" and the namespace " +
+	logrus.Infof(util.ColorInfo("IBM Cloud Private defaults"))
+	logrus.Infof("By default, with IBM Cloud Private the Tiller namespace for jx will be \"" + icpDefaultTillerNS + "\" and the namespace " +
 		"where Jenkins X resources will be installed into is \"" + icpDefaultNS + "\".")
-	log.Infoln("")
+	logrus.Infof("")
 
-	log.Infoln(util.ColorInfo("Using the IBM Cloud Private Docker registry"))
-	log.Infoln("To use the IBM Cloud Private Docker registry, when environments (namespaces) are created, " +
+	logrus.Infof(util.ColorInfo("Using the IBM Cloud Private Docker registry"))
+	logrus.Infof("To use the IBM Cloud Private Docker registry, when environments (namespaces) are created, " +
 		"create a Docker registry secret and patch the default service account in the created namespace to use the secret, adding it as an ImagePullSecret. " +
 		"This is required so that pods in the created namespace can pull images from the registry.")
-	log.Infoln("")
+	logrus.Infof("")
 
 	o.Flags.IngressNamespace = "kube-system"
 	o.Flags.IngressDeployment = "default-backend"
@@ -357,7 +358,7 @@ func (o *InitOptions) configureForICP() {
 
 	if !(o.BatchMode) {
 		if o.Flags.ExternalIP != "" {
-			log.Infoln("An external IP has already been specified: otherwise you will be prompted for one to use")
+			logrus.Infof("An external IP has already been specified: otherwise you will be prompted for one to use")
 			return
 		}
 
@@ -383,7 +384,7 @@ func (o *InitOptions) configureForICP() {
 }
 
 func (o *InitOptions) initIKSIngress() error {
-	log.Infoln("Wait for Ingress controller to be injected into IBM Kubernetes Service Cluster")
+	logrus.Infof("Wait for Ingress controller to be injected into IBM Kubernetes Service Cluster")
 	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -444,7 +445,7 @@ func (o *InitOptions) initIngress() error {
 	}
 
 	if isOpenShiftProvider(o.Flags.Provider) {
-		log.Infoln("Not installing ingress as using OpenShift which uses Route and its own mechanism of ingress")
+		logrus.Infof("Not installing ingress as using OpenShift which uses Route and its own mechanism of ingress")
 		return nil
 	}
 

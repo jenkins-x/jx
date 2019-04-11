@@ -18,7 +18,7 @@ import (
 	"strings"
 
 	"github.com/blang/semver"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 )
 
 // Build information. Populated at build-time.
@@ -81,6 +81,6 @@ func VersionStringDefault(defaultValue string) string {
 	if err == nil {
 		return v.String()
 	}
-	log.Warnf("Warning failed to load version: %s\n", err)
+	logrus.Warnf("Warning failed to load version: %s\n", err)
 	return defaultValue
 }

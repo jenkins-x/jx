@@ -9,7 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -169,7 +169,7 @@ func (o *GetAppsOptions) generateAppStatusOutput(app *v1.App) error {
 func (o *GetAppsOptions) generateTableFormatted(apps *v1.AppList) appsResult {
 	releasesMap, err := o.Helm().StatusReleases(o.Namespace)
 	if err != nil {
-		log.Warnf("There was a problem obtaining the app status: %v\n", err)
+		logrus.Warnf("There was a problem obtaining the app status: %v\n", err)
 	}
 	results := appsResult{}
 	for _, app := range apps.Items {
@@ -197,7 +197,7 @@ func (o *GetAppsOptions) generateTable(apps *v1.AppList, kubeClient kubernetes.I
 	table := o.generateTableHeaders(apps)
 	releasesMap, err := o.Helm().StatusReleases(o.Namespace)
 	if err != nil {
-		log.Warnf("There was a problem obtaining the app status: %v\n", err)
+		logrus.Warnf("There was a problem obtaining the app status: %v\n", err)
 	}
 	for _, app := range apps.Items {
 		if app.Labels != nil {

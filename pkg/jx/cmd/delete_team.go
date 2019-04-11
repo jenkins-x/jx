@@ -8,7 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -98,7 +98,7 @@ func (o *DeleteTeamOptions) Run() error {
 			return fmt.Errorf("In batch mode you must specify the '-y' flag to confirm")
 		}
 	} else {
-		log.Warnf("You are about to delete the following teams '%s'. This operation CANNOT be undone!",
+		logrus.Warnf("You are about to delete the following teams '%s'. This operation CANNOT be undone!",
 			strings.Join(names, ","))
 
 		flag := false
@@ -118,7 +118,7 @@ func (o *DeleteTeamOptions) Run() error {
 	for _, name := range names {
 		err = o.deleteTeam(name)
 		if err != nil {
-			log.Warnf("Failed to delete team %s: %s\n", name, err)
+			logrus.Warnf("Failed to delete team %s: %s\n", name, err)
 		}
 	}
 	return nil
@@ -187,7 +187,7 @@ func (o *DeleteTeamOptions) changeNamespace(namespace string) {
 	nsOptions.Args = []string{namespace}
 	err := nsOptions.Run()
 	if err != nil {
-		log.Warnf("Failed to set context to namespace %s: %s", namespace, err)
+		logrus.Warnf("Failed to set context to namespace %s: %s", namespace, err)
 	}
 	o.ResetClientsAndNamespaces()
 }

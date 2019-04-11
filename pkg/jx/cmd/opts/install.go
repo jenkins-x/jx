@@ -3,6 +3,7 @@ package opts
 import (
 	"bytes"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -26,12 +27,12 @@ import (
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/maven"
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	logger "github.com/sirupsen/logrus"
 	"gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -89,14 +90,14 @@ func (o *CommonOptions) DoInstallMissingDependencies(install []string) error {
 	// install package managers first
 	for _, i := range install {
 		if i == "brew" {
-			log.Infof("Installing %s\n", util.ColorInfo(i))
+			logrus.Infof("Installing %s\n", util.ColorInfo(i))
 			o.InstallBrew()
 			break
 		}
 	}
 
 	for _, i := range install {
-		log.Infof("Installing %s\n", util.ColorInfo(i))
+		logrus.Infof("Installing %s\n", util.ColorInfo(i))
 		var err error
 		switch i {
 		case "az":
@@ -163,7 +164,7 @@ func (o *CommonOptions) DoInstallMissingDependencies(install []string) error {
 func BinaryShouldBeInstalled(d string) string {
 	_, shouldInstall, err := ShouldInstallBinary(d)
 	if err != nil {
-		log.Warnf("Error detecting if binary should be installed: %s", err.Error())
+		logrus.Warnf("Error detecting if binary should be installed: %s", err.Error())
 		return ""
 	}
 	if shouldInstall {
@@ -177,7 +178,7 @@ func (o *CommonOptions) InstallBrew() error {
 	if runtime.GOOS != "darwin" {
 		return nil
 	}
-	log.Infof("Please enter your root password when prompted by the %s installation\n", util.ColorInfo("brew"))
+	logrus.Infof("Please enter your root password when prompted by the %s installation\n", util.ColorInfo("brew"))
 	//Make sure to run command through sh in order to get $() expanded.
 	return o.RunCommand("sh", "-c", "/usr/bin/ruby -e \"$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)\"")
 }
@@ -577,7 +578,7 @@ func (o *CommonOptions) InstallHyperkit() error {
 			return err
 		}
 
-		log.Warn("Installing hyperkit does require sudo to perform some actions, for more details see https://github.com/kubernetes/minikube/blob/master/docs/drivers.md#hyperkit-driver")
+		logrus.Warn("Installing hyperkit does require sudo to perform some actions, for more details see https://github.com/kubernetes/minikube/blob/master/docs/drivers.md#hyperkit-driver")
 
 		err = o.runCommand("sudo", "mv", "docker-machine-driver-hyperkit", "/usr/local/bin/")
 		if err != nil {
@@ -596,20 +597,20 @@ func (o *CommonOptions) InstallHyperkit() error {
 
 // InstallKvm installs kvm
 func (o *CommonOptions) InstallKvm() error {
-	log.Warnf("We cannot yet automate the installation of KVM - can you install this manually please?\nPlease see: https://www.linux-kvm.org/page/Downloads\n")
+	logrus.Warnf("We cannot yet automate the installation of KVM - can you install this manually please?\nPlease see: https://www.linux-kvm.org/page/Downloads\n")
 	return nil
 }
 
 // InstallKvm2 install kvm2
 func (o *CommonOptions) InstallKvm2() error {
-	log.Warnf("We cannot yet automate the installation of KVM with KVM2 driver - can you install this manually please?\nPlease see: https://www.linux-kvm.org/page/Downloads " +
+	logrus.Warnf("We cannot yet automate the installation of KVM with KVM2 driver - can you install this manually please?\nPlease see: https://www.linux-kvm.org/page/Downloads " +
 		"and https://github.com/kubernetes/minikube/blob/master/docs/drivers.md#kvm2-driver\n")
 	return nil
 }
 
 // InstallVirtualBox installs virtual box
 func (o *CommonOptions) InstallVirtualBox() error {
-	log.Warnf("We cannot yet automate the installation of VirtualBox - can you install this manually please?\nPlease see: https://www.virtualbox.org/wiki/Downloads\n")
+	logrus.Warnf("We cannot yet automate the installation of VirtualBox - can you install this manually please?\nPlease see: https://www.virtualbox.org/wiki/Downloads\n")
 	return nil
 }
 
@@ -638,10 +639,10 @@ func (o *CommonOptions) InstallXhyve() error {
 		if err != nil {
 			return err
 		}
-		log.Infoln("xhyve driver installed")
+		logrus.Infoln("xhyve driver installed")
 	} else {
 		pgmPath, _ := exec.LookPath("docker-machine-driver-xhyve")
-		log.Infof("xhyve driver is already available on your PATH at %s\n", pgmPath)
+		logrus.Infof("xhyve driver is already available on your PATH at %s\n", pgmPath)
 	}
 	return nil
 }
@@ -655,7 +656,7 @@ func (o *CommonOptions) Installhyperv() error {
 	}
 	if strings.Contains(info, "Disabled") {
 
-		log.Info("hyperv is Disabled, this computer will need to restart\n and after restart you will need to rerun your inputted commmand.")
+		logrus.Info("hyperv is Disabled, this computer will need to restart\n and after restart you will need to rerun your inputted commmand.")
 
 		message := fmt.Sprintf("Would you like to restart your computer?")
 
@@ -676,7 +677,7 @@ func (o *CommonOptions) Installhyperv() error {
 		}
 
 	} else {
-		log.Infoln("hyperv is already Enabled")
+		logrus.Infoln("hyperv is already Enabled")
 	}
 	return nil
 }
@@ -872,7 +873,7 @@ func (o *CommonOptions) InstallHelm3() error {
 }
 
 func (o *CommonOptions) installHelmSecretsPlugin(helmBinary string, clientOnly bool) error {
-	log.Infof("Installing %s\n", util.ColorInfo("helm secrets plugin"))
+	logrus.Infof("Installing %s\n", util.ColorInfo("helm secrets plugin"))
 	err := o.Helm().Init(clientOnly, "", "", false)
 	if err != nil {
 		return errors.Wrap(err, "failed to initialize helm")
@@ -924,7 +925,7 @@ func (o *CommonOptions) InstallMavenIfRequired() error {
 	// lets assume maven is not installed so lets download it
 	clientURL := fmt.Sprintf("http://central.maven.org/maven2/org/apache/maven/apache-maven/%s/apache-maven-%s-bin.zip", maven.MavenVersion, maven.MavenVersion)
 
-	log.Infof("Apache Maven is not installed so lets download: %s\n", util.ColorInfo(clientURL))
+	logrus.Infof("Apache Maven is not installed so lets download: %s\n", util.ColorInfo(clientURL))
 
 	mvnDir := filepath.Join(homeDir, "maven")
 	mvnTmpDir := filepath.Join(homeDir, "maven-tmp")
@@ -936,14 +937,14 @@ func (o *CommonOptions) InstallMavenIfRequired() error {
 		return err
 	}
 
-	log.Info("\ndownloadFile\n")
+	logrus.Info("\ndownloadFile\n")
 	err = packages.DownloadFile(clientURL, zipFile)
 	if err != nil {
 		m.Unlock()
 		return err
 	}
 
-	log.Info("\nutil.Unzip\n")
+	logrus.Info("\nutil.Unzip\n")
 	err = util.Unzip(zipFile, mvnTmpDir)
 	if err != nil {
 		m.Unlock()
@@ -951,7 +952,7 @@ func (o *CommonOptions) InstallMavenIfRequired() error {
 	}
 
 	// lets find a directory inside the unzipped folder
-	log.Info("\nReadDir\n")
+	logrus.Info("\nReadDir\n")
 	files, err := ioutil.ReadDir(mvnTmpDir)
 	if err != nil {
 		m.Unlock()
@@ -967,7 +968,7 @@ func (o *CommonOptions) InstallMavenIfRequired() error {
 				m.Unlock()
 				return err
 			}
-			log.Infof("Apache Maven is installed at: %s\n", util.ColorInfo(mvnDir))
+			logrus.Infof("Apache Maven is installed at: %s\n", util.ColorInfo(mvnDir))
 			m.Unlock()
 			err = os.Remove(zipFile)
 			if err != nil {
@@ -1175,7 +1176,7 @@ func (o *CommonOptions) InstallJx(upgrade bool, version string) error {
 		}
 		err = os.Remove(filepath.Join(binDir, "jx"))
 		if err != nil && o.Verbose {
-			log.Infof("Skipping removal of old jx binary: %s\n", err)
+			logrus.Infof("Skipping removal of old jx binary: %s\n", err)
 		}
 		// Copy over the new binary
 		err = os.Rename(filepath.Join(jxHome, "jx"), filepath.Join(binDir, "jx"))
@@ -1208,7 +1209,7 @@ func (o *CommonOptions) InstallJx(upgrade bool, version string) error {
 			return err
 		}
 	}
-	log.Infof("Jenkins X client has been installed into %s\n", util.ColorInfo(fullPath))
+	logrus.Infof("Jenkins X client has been installed into %s\n", util.ColorInfo(fullPath))
 	return os.Chmod(fullPath, 0755)
 }
 
@@ -1299,7 +1300,7 @@ func (o *CommonOptions) InstallAzureCli() error {
 func (o *CommonOptions) InstallOciCli() error {
 	var err error
 	filePath := "./install.sh"
-	log.Info("Installing OCI CLI...\n")
+	logrus.Info("Installing OCI CLI...\n")
 	err = o.RunCommand("curl", "-LO", "https://raw.githubusercontent.com/oracle/oci-cli/master/scripts/install/install.sh")
 
 	if err != nil {
@@ -1655,7 +1656,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, isGitOps bool, gitOpsDir str
 			return err
 		}
 	}
-	log.Infof("\nInstalling knative into namespace %s\n", util.ColorInfo(devNamespace))
+	logrus.Infof("\nInstalling knative into namespace %s\n", util.ColorInfo(devNamespace))
 
 	ksecretValues := []string{}
 
@@ -1706,7 +1707,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, isGitOps bool, gitOpsDir str
 		}
 	}
 
-	log.Infof("\nInstalling Prow into namespace %s\n", util.ColorInfo(devNamespace))
+	logrus.Infof("\nInstalling Prow into namespace %s\n", util.ColorInfo(devNamespace))
 
 	secretValues := []string{"user=" + gitUsername, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
 	err = o.Retry(2, time.Second, func() (err error) {
@@ -1718,7 +1719,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, isGitOps bool, gitOpsDir str
 	}
 
 	if !useTekton {
-		log.Infof("\nInstalling BuildTemplates into namespace %s\n", util.ColorInfo(devNamespace))
+		logrus.Infof("\nInstalling BuildTemplates into namespace %s\n", util.ColorInfo(devNamespace))
 
 		err = o.Retry(2, time.Second, func() (err error) {
 			return o.InstallChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, kube.DefaultBuildTemplatesReleaseName,

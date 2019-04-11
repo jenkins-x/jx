@@ -6,7 +6,7 @@ import (
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/pkg/errors"
 )
 
@@ -49,13 +49,13 @@ func (o *CommonOptions) GetDevEnv() (gitOps bool, devEnv *jenkinsv1.Environment)
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		if o.Verbose {
-			log.Errorf("Error loading team settings. %v\n", err)
+			logrus.Errorf("Error loading team settings. %v\n", err)
 		}
 		return false, &jenkinsv1.Environment{}
 	} else {
 		devEnv, err := kube.GetDevEnvironment(jxClient, ns)
 		if err != nil {
-			log.Errorf("Error loading team settings. %v\n", err)
+			logrus.Errorf("Error loading team settings. %v\n", err)
 			return false, &jenkinsv1.Environment{}
 		}
 		gitOps := false

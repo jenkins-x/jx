@@ -7,7 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -90,7 +90,7 @@ func (o *GetPreviewOptions) CurrentPreviewUrl() error {
 	}
 	for _, env := range envList.Items {
 		if env.Spec.Kind == v1.EnvironmentKindTypePreview && env.Name == name {
-			log.Info(env.Spec.PreviewGitSpec.ApplicationURL)
+			logrus.Info(env.Spec.PreviewGitSpec.ApplicationURL)
 			return nil
 		}
 	}

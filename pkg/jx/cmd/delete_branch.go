@@ -10,7 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -163,7 +163,7 @@ func (o *DeleteBranchOptions) Run() error {
 			return fmt.Errorf("No branches selected!")
 		}
 		if !o.BatchMode {
-			log.Warnf("You are about to delete these branches '%s' on the Git provider. This operation CANNOT be undone!",
+			logrus.Warnf("You are about to delete these branches '%s' on the Git provider. This operation CANNOT be undone!",
 				strings.Join(branches, ","))
 
 			flag := false
@@ -186,7 +186,7 @@ func (o *DeleteBranchOptions) Run() error {
 			if err != nil {
 				return errors.Wrapf(err, "Failed to delete remote branche %s from %s/%s", branch, org, name)
 			}
-			log.Infof("Deleted branch in repo %s/%s branch: %s\n", info(org), info(name), info(branch))
+			logrus.Infof("Deleted branch in repo %s/%s branch: %s\n", info(org), info(name), info(branch))
 		}
 	}
 	return nil
@@ -219,7 +219,7 @@ func (o *DeleteBranchOptions) cloneOrPullRepository(org string, repo string, git
 			return dir, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
 		}
 		info := util.ColorInfo
-		log.Infof("Cloning repository %s/%s to %s\n", info(org), info(repo), info(dir))
+		logrus.Infof("Cloning repository %s/%s to %s\n", info(org), info(repo), info(dir))
 		err = o.Git().Clone(gitURL, dir)
 		if err != nil {
 			return dir, err

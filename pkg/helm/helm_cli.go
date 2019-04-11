@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 )
@@ -61,7 +61,7 @@ func NewHelmCLI(binary string, version Version, cwd string, debug bool, args ...
 // SetHost is used to point at a locally running tiller
 func (h *HelmCLI) SetHost(tillerAddress string) {
 	if h.Debug {
-		log.Infof("Setting tiller address to %s\n", util.ColorInfo(tillerAddress))
+		logrus.Infof("Setting tiller address to %s\n", util.ColorInfo(tillerAddress))
 	}
 	h.Runner.SetEnvVariable("HELM_HOST", tillerAddress)
 }
@@ -114,7 +114,7 @@ func (h *HelmCLI) Init(clientOnly bool, serviceAccount string, tillerNamespace s
 	}
 
 	if h.Debug {
-		log.Infof("Initialising Helm '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+		logrus.Infof("Initialising Helm '%s'\n", util.ColorInfo(strings.Join(args, " ")))
 	}
 
 	return h.runHelm(args...)
@@ -271,7 +271,7 @@ func (h *HelmCLI) InstallChart(chart string, releaseName string, ns string, vers
 		args = append(args, "--password", password)
 	}
 	if h.Debug {
-		log.Infof("Installing Chart '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+		logrus.Infof("Installing Chart '%s'\n", util.ColorInfo(strings.Join(args, " ")))
 	}
 
 	return h.runHelm(args...)
@@ -310,7 +310,7 @@ func (h *HelmCLI) FetchChart(chart string, version string, untar bool, untardir 
 	}
 
 	if h.Debug {
-		log.Infof("Fetching Chart '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+		logrus.Infof("Fetching Chart '%s'\n", util.ColorInfo(strings.Join(args, " ")))
 	}
 
 	return h.runHelm(args...)
@@ -331,7 +331,7 @@ func (h *HelmCLI) Template(chart string, releaseName string, ns string, outDir s
 	}
 
 	if h.Debug {
-		log.Infof("Generating Chart Template '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+		logrus.Infof("Generating Chart Template '%s'\n", util.ColorInfo(strings.Join(args, " ")))
 	}
 	err := h.runHelm(args...)
 	if err != nil {
@@ -383,7 +383,7 @@ func (h *HelmCLI) UpgradeChart(chart string, releaseName string, ns string, vers
 	args = append(args, releaseName, chart)
 
 	if h.Debug {
-		log.Infof("Upgrading Chart '%s'\n", util.ColorInfo(strings.Join(args, " ")))
+		logrus.Infof("Upgrading Chart '%s'\n", util.ColorInfo(strings.Join(args, " ")))
 	}
 
 	return h.runHelm(args...)

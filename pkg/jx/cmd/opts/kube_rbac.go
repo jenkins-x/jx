@@ -3,7 +3,7 @@ package opts
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -29,7 +29,7 @@ func (o *CommonOptions) EnsureServiceAccount(ns string, serviceAccountName strin
 		if err != nil {
 			return fmt.Errorf("Failed to create ServiceAccount %s in namespace %s: %s", serviceAccountName, ns, err)
 		}
-		log.Infof("Created ServiceAccount %s in namespace %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(ns))
+		logrus.Infof("Created ServiceAccount %s in namespace %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(ns))
 	}
 	return err
 }
@@ -38,7 +38,7 @@ func (o *CommonOptions) EnsureServiceAccount(ns string, serviceAccountName strin
 // Todo: use permissions from somewhere, or provide common ones in a class that we can pass in here
 // this is an unimplemented and unused method for building upon that may eventually be of use
 func (o *CommonOptions) EnsureClusterRoleExists(roleName string, namespace string) error {
-	log.Infof("Ensuring cluster role exists, role name: %s, namespace: %s\n", roleName, namespace)
+	logrus.Infof("Ensuring cluster role exists, role name: %s, namespace: %s\n", roleName, namespace)
 
 	client, err := o.KubeClient()
 	if err != nil {
@@ -47,7 +47,7 @@ func (o *CommonOptions) EnsureClusterRoleExists(roleName string, namespace strin
 
 	_, err = client.RbacV1().ClusterRoles().Get(roleName, meta_v1.GetOptions{})
 	if err != nil {
-		log.Infof("Trying to create ClusterRole %s in namespace %s\n", roleName, namespace)
+		logrus.Infof("Trying to create ClusterRole %s in namespace %s\n", roleName, namespace)
 
 		clusterRole := &rbacv1.ClusterRole{
 			ObjectMeta: meta_v1.ObjectMeta{
@@ -60,7 +60,7 @@ func (o *CommonOptions) EnsureClusterRoleExists(roleName string, namespace strin
 		if err != nil {
 			return fmt.Errorf("Failed to create ClusterRole %s: %s", roleName, err)
 		}
-		log.Infof("Created ClusterRole %s in namespace %s\n", roleName, namespace)
+		logrus.Infof("Created ClusterRole %s in namespace %s\n", roleName, namespace)
 	}
 	return nil
 }
@@ -74,7 +74,7 @@ func (o *CommonOptions) EnsureClusterRoleBinding(clusterRoleBindingName string, 
 
 	_, err = client.RbacV1().ClusterRoleBindings().Get(clusterRoleBindingName, meta_v1.GetOptions{})
 	if err != nil {
-		log.Infof("Trying to create ClusterRoleBinding %s for role: %s and ServiceAccount: %s/%s\n",
+		logrus.Infof("Trying to create ClusterRoleBinding %s for role: %s and ServiceAccount: %s/%s\n",
 			clusterRoleBindingName, role, serviceAccountNamespace, serviceAccountName)
 
 		clusterRoleBinding := &rbacv1.ClusterRoleBinding{
@@ -98,7 +98,7 @@ func (o *CommonOptions) EnsureClusterRoleBinding(clusterRoleBindingName string, 
 		if err != nil {
 			return fmt.Errorf("Failed to create ClusterRoleBindings %s: %s", clusterRoleBindingName, err)
 		}
-		log.Infof("Created ClusterRoleBinding %s\n", clusterRoleBindingName)
+		logrus.Infof("Created ClusterRoleBinding %s\n", clusterRoleBindingName)
 	}
 	return nil
 }

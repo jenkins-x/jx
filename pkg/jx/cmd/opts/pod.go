@@ -6,7 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,7 +42,7 @@ func (o *CommonOptions) WaitForReadyPodForSelectorLabels(c kubernetes.Interface,
 
 // WaitForReadyKnativeBuildPod waits for knative build pod to be ready
 func (o *CommonOptions) WaitForReadyKnativeBuildPod(c kubernetes.Interface, ns string, readyOnly bool) (string, error) {
-	log.Warnf("Waiting for a running Knative build pod in namespace %s\n", ns)
+	logrus.Warnf("Waiting for a running Knative build pod in namespace %s\n", ns)
 	lastPod := ""
 	for {
 		pods, err := builds.GetBuildPods(c, ns)
@@ -70,7 +70,7 @@ func (o *CommonOptions) WaitForReadyKnativeBuildPod(c kubernetes.Interface, ns s
 			if name != lastPod {
 				lastPod = name
 				loggedContainerIdx = -1
-				log.Warnf("Found newest pod: %s\n", name)
+				logrus.Warnf("Found newest pod: %s\n", name)
 			}
 			if kube.IsPodReady(latestPod) {
 				return name, nil
@@ -81,7 +81,7 @@ func (o *CommonOptions) WaitForReadyKnativeBuildPod(c kubernetes.Interface, ns s
 				if isContainerStarted(&ic.State) && idx > loggedContainerIdx {
 					loggedContainerIdx = idx
 					containerName := ic.Name
-					log.Warnf("Container on pod: %s is: %s\n", name, containerName)
+					logrus.Warnf("Container on pod: %s is: %s\n", name, containerName)
 					err = o.TailLogs(ns, name, containerName)
 					if err != nil {
 						break
@@ -96,7 +96,7 @@ func (o *CommonOptions) WaitForReadyKnativeBuildPod(c kubernetes.Interface, ns s
 
 // WaitForReadyPodForSelector waits for a pod to which the selector applies to be ready
 func (o *CommonOptions) WaitForReadyPodForSelector(c kubernetes.Interface, ns string, selector labels.Selector, readyOnly bool) (string, error) {
-	log.Warnf("Waiting for a running pod in namespace %s with labels %v\n", ns, selector.String())
+	logrus.Warnf("Waiting for a running pod in namespace %s with labels %v\n", ns, selector.String())
 	lastPod := ""
 	for {
 		pods, err := c.CoreV1().Pods(ns).List(metav1.ListOptions{
@@ -126,7 +126,7 @@ func (o *CommonOptions) WaitForReadyPodForSelector(c kubernetes.Interface, ns st
 			if name != lastPod {
 				lastPod = name
 				loggedContainerIdx = -1
-				log.Warnf("Found newest pod: %s\n", name)
+				logrus.Warnf("Found newest pod: %s\n", name)
 			}
 			if kube.IsPodReady(latestPod) {
 				return name, nil
@@ -137,7 +137,7 @@ func (o *CommonOptions) WaitForReadyPodForSelector(c kubernetes.Interface, ns st
 				if isContainerStarted(&ic.State) && idx > loggedContainerIdx {
 					loggedContainerIdx = idx
 					containerName := ic.Name
-					log.Warnf("Container on pod: %s is: %s\n", name, containerName)
+					logrus.Warnf("Container on pod: %s is: %s\n", name, containerName)
 					err = o.TailLogs(ns, name, containerName)
 					if err != nil {
 						break

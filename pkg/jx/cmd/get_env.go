@@ -2,14 +2,15 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 	"strings"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -120,7 +121,7 @@ func (o *GetEnvOptions) Run() error {
 			return err
 		}
 		if len(envs.Items) == 0 {
-			log.Infof("No environments found.\nTo create an environment use: jx create env\n")
+			logrus.Infof("No environments found.\nTo create an environment use: jx create env\n")
 			return nil
 		}
 

@@ -9,7 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,7 +25,7 @@ func TestJXNamespace(t *testing.T) {
 		resource, err := kubeClient.CoreV1().Namespaces().Get(ns, metav1.GetOptions{})
 		assert.NoError(t, err, "Failed to query namespace")
 		if err == nil {
-			log.Warnf("Found namespace %#v\n", resource)
+			logrus.Warnf("Found namespace %#v\n", resource)
 		}
 	}
 

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"k8s.io/api/apps/v1beta1"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -84,7 +84,7 @@ func WaitForAllDeploymentsToBeReady(client kubernetes.Interface, namespace strin
 	for _, d := range deployList.Items {
 		err = WaitForDeploymentToBeReady(client, d.Name, namespace, timeoutPerDeploy)
 		if err != nil {
-			log.Warnf("deployment %s failed to become ready in namespace %s", d.Name, namespace)
+			logrus.Warnf("deployment %s failed to become ready in namespace %s", d.Name, namespace)
 		}
 	}
 	return nil

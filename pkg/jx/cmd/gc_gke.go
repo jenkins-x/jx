@@ -16,7 +16,7 @@ import (
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -109,9 +109,9 @@ func (o *GCGKEOptions) Run() error {
 %s
 
 `
-	log.Warn("This command is experimental and the generated script should be executed at the users own risk\n")
-	log.Warn("We will generate a script for you to review and execute, this command will not delete any resources by itself\n")
-	log.Info("It may take a few minutes to create the script\n")
+	logrus.Warn("This command is experimental and the generated script should be executed at the users own risk\n")
+	logrus.Warn("We will generate a script for you to review and execute, this command will not delete any resources by itself\n")
+	logrus.Info("It may take a few minutes to create the script\n")
 
 	fw, err := o.cleanUpFirewalls()
 	if err != nil {
@@ -134,7 +134,7 @@ func (o *GCGKEOptions) Run() error {
 
 	err = ioutil.WriteFile("gc_gke.sh", []byte(data), util.DefaultWritePermissions)
 
-	log.Info("Script 'gc_gke.sh' created!\n")
+	logrus.Info("Script 'gc_gke.sh' created!\n")
 	return nil
 }
 

@@ -18,7 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/spf13/cobra"
@@ -362,7 +362,7 @@ func (o *CreateCodeshipOptions) Run() error {
 
 		uuid = project.UUID
 
-		log.Infof("Created Project %s\n", util.ColorInfo(project.Name))
+		logrus.Infof("Created Project %s\n", util.ColorInfo(project.Name))
 	} else {
 		updateProjectRequest := codeship.ProjectUpdateRequest{
 			Type:          codeship.ProjectTypeBasic,
@@ -386,10 +386,10 @@ func (o *CreateCodeshipOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		log.Infof("Updated Project %s\n", util.ColorInfo(project.Name))
+		logrus.Infof("Updated Project %s\n", util.ColorInfo(project.Name))
 	}
 
-	log.Infof("Triggering build for %s\n", util.ColorInfo(uuid))
+	logrus.Infof("Triggering build for %s\n", util.ColorInfo(uuid))
 	_, _, err = csOrg.CreateBuild(ctx, uuid, "heads/master", "")
 	if err != nil {
 		return err
@@ -433,7 +433,7 @@ func ProjectExists(ctx context.Context, org *codeship.Organization, codeshipOrg 
 
 	for _, p := range projects.Projects {
 		if p.Name == projectName {
-			log.Infof("Project %s already exists\n", util.ColorInfo(p.Name))
+			logrus.Infof("Project %s already exists\n", util.ColorInfo(p.Name))
 			return true, p.UUID, nil
 		}
 	}

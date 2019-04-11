@@ -23,7 +23,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -127,7 +127,7 @@ func (o *DeleteApplicationOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "deleting application")
 	}
-	log.Infof("Deleted Application(s): %s\n", util.ColorInfo(strings.Join(deletedApplications, ",")))
+	logrus.Infof("Deleted Application(s): %s\n", util.ColorInfo(strings.Join(deletedApplications, ",")))
 	return nil
 }
 
@@ -189,7 +189,7 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService jenkinsv1.S
 
 		err := repoService.Delete(o.Org+"-"+applicationName, nil)
 		if err != nil {
-			log.Warnf("Unable to find application metadata for %s to remove", applicationName)
+			logrus.Warnf("Unable to find application metadata for %s to remove", applicationName)
 		}
 	}
 	return
@@ -300,7 +300,7 @@ func (o *DeleteApplicationOptions) deleteApplicationFromEnvironment(env *v1.Envi
 	if env.Spec.Source.URL == "" {
 		return nil
 	}
-	log.Infof("Removing application %s from environment %s\n", applicationName, env.Spec.Label)
+	logrus.Infof("Removing application %s from environment %s\n", applicationName, env.Spec.Label)
 
 	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
 		templates map[string]string, dir string, info *environments.PullRequestDetails) error {
@@ -344,7 +344,7 @@ func (o *DeleteApplicationOptions) waitForGitOpsPullRequest(env *v1.Environment,
 	if pullRequestInfo != nil {
 		logMergeFailure := false
 		pr := pullRequestInfo.PullRequest
-		log.Infof("Waiting for pull request %s to merge\n", pr.URL)
+		logrus.Infof("Waiting for pull request %s to merge\n", pr.URL)
 
 		for {
 			err := gitProvider.UpdatePullRequestStatus(pr)
@@ -353,17 +353,17 @@ func (o *DeleteApplicationOptions) waitForGitOpsPullRequest(env *v1.Environment,
 			}
 
 			if pr.Merged != nil && *pr.Merged {
-				log.Infof("Request %s is merged!\n", util.ColorInfo(pr.URL))
+				logrus.Infof("Request %s is merged!\n", util.ColorInfo(pr.URL))
 				return nil
 			} else {
 				if pr.IsClosed() {
-					log.Warnf("Pull Request %s is closed\n", util.ColorInfo(pr.URL))
+					logrus.Warnf("Pull Request %s is closed\n", util.ColorInfo(pr.URL))
 					return fmt.Errorf("Promotion failed as Pull Request %s is closed without merging", pr.URL)
 				}
 				// lets try merge if the status is good
 				status, err := gitProvider.PullRequestLastCommitStatus(pr)
 				if err != nil {
-					log.Warnf("Failed to query the Pull Request last commit status for %s ref %s %s\n", pr.URL, pr.LastCommitSha, err)
+					logrus.Warnf("Failed to query the Pull Request last commit status for %s ref %s %s\n", pr.URL, pr.LastCommitSha, err)
 				} else {
 					if status == "success" {
 						if !o.NoMergePullRequest {
@@ -371,7 +371,7 @@ func (o *DeleteApplicationOptions) waitForGitOpsPullRequest(env *v1.Environment,
 							if err != nil {
 								if !logMergeFailure {
 									logMergeFailure = true
-									log.Warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?\n", pr.URL, err)
+									logrus.Warnf("Failed to merge the Pull Request %s due to %s maybe I don't have karma?\n", pr.URL, err)
 								}
 							}
 						}

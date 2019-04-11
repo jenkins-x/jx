@@ -5,7 +5,7 @@ import (
 	"sort"
 
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -140,7 +140,7 @@ func Resolve(id string, providerKey string, jxClient versioned.Interface,
 			if err != nil {
 				return nil, err
 			}
-			log.Infof("Adding label %s=%s to user %s in users.jenkins.io\n", providerKey, id, found.Name)
+			logrus.Infof("Adding label %s=%s to user %s in users.jenkins.io\n", providerKey, id, found.Name)
 			return found, nil
 		}
 	}
@@ -174,9 +174,9 @@ func Resolve(id string, providerKey string, jxClient versioned.Interface,
 				found.Labels = make(map[string]string)
 			}
 			found.Labels[providerKey] = id
-			log.Infof("Associating user %s in users.jenkins.io with email %s to git GitProvider user with login %s as "+
+			logrus.Infof("Associating user %s in users.jenkins.io with email %s to git GitProvider user with login %s as "+
 				"emails match\n", found.Name, found.Spec.Email, id)
-			log.Infof("Adding label %s=%s to user %s in users.jenkins.io\n", providerKey, id, found.Name)
+			logrus.Infof("Adding label %s=%s to user %s in users.jenkins.io\n", providerKey, id, found.Name)
 			_, err := jxClient.JenkinsV1().Users(namespace).Update(found)
 			if err != nil {
 				return nil, err

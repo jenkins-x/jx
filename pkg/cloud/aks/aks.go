@@ -3,7 +3,7 @@ package aks
 import (
 	b64 "encoding/base64"
 	"encoding/json"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"strings"
 )
@@ -134,7 +134,7 @@ func (az *AzureRunner) getRegistryID(loginServer string) (string, string, string
 
 	acrList, err := az.azureCLI("acr", "list", "--query", "[].{uri:loginServer,id:id,name:name,group:resourceGroup}")
 	if err != nil {
-		log.Infof("Registry %s is not exist\n", util.ColorInfo(loginServer))
+		logrus.Infof("Registry %s is not exist\n", util.ColorInfo(loginServer))
 	} else {
 		registries := []acr{}
 		err = json.Unmarshal([]byte(acrList), &registries)
@@ -157,7 +157,7 @@ func (az *AzureRunner) getRegistryID(loginServer string) (string, string, string
 func (az *AzureRunner) createRegistry(resourceGroup string, name string) (string, string, error) {
 	registryID, err := az.azureCLI("acr", "create", "-g", resourceGroup, "-n", name, "--sku", "Standard", "--admin-enabled", "--query", "id", "-o", "tsv")
 	if err != nil {
-		log.Infof("Failed to create ACR %s in resource group %s\n", util.ColorInfo(name), util.ColorInfo(resourceGroup))
+		logrus.Infof("Failed to create ACR %s in resource group %s\n", util.ColorInfo(name), util.ColorInfo(resourceGroup))
 		return "", "", err
 	}
 	return registryID, formatLoginServer(name), nil
@@ -167,7 +167,7 @@ func (az *AzureRunner) createRegistry(resourceGroup string, name string) (string
 func (az *AzureRunner) getACRCredential(resourceGroup string, name string) (string, error) {
 	credstr, err := az.azureCLI("acr", "credential", "show", "-g", resourceGroup, "-n", name)
 	if err != nil {
-		log.Infof("Failed to get credential for ACR %s in resource group %s\n", util.ColorInfo(name), util.ColorInfo(resourceGroup))
+		logrus.Infof("Failed to get credential for ACR %s in resource group %s\n", util.ColorInfo(name), util.ColorInfo(resourceGroup))
 		return "", err
 	}
 	cred := credential{}

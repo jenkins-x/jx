@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/sethvargo/go-password/password"
@@ -143,7 +143,7 @@ func (s *AdminSecretsService) NewAdminSecretsConfig() error {
 	}
 
 	if s.Flags.DefaultAdminPassword == "" {
-		log.Infof("No default password set, generating a random one\n")
+		logrus.Infof("No default password set, generating a random one\n")
 
 		input := password.GeneratorInput{
 			Symbols: allowedSymbols,

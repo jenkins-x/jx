@@ -3,6 +3,7 @@ package oke
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"os/exec"
 	"sort"
 	"strings"
@@ -15,7 +16,7 @@ func GetOptionValues() ([]string, []string, []string, string, error) {
 	}
 	var dat map[string]interface{}
 	if err := json.Unmarshal(jsonString, &dat); err != nil {
-		fmt.Println("error")
+		logrus.Info("error")
 		return nil, nil, nil, "", err
 	}
 

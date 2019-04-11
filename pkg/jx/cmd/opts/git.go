@@ -10,7 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -52,7 +52,7 @@ func (o *CommonOptions) CreateGitProvider(dir string) (*gits.GitRepository, gits
 		return nil, nil, nil, err
 	}
 	if gitDir == "" || gitConfDir == "" {
-		log.Warnf("No git directory could be found from dir %s\n", dir)
+		logrus.Warnf("No git directory could be found from dir %s\n", dir)
 		return nil, nil, nil, nil
 	}
 
@@ -160,7 +160,7 @@ func (o *CommonOptions) UpdatePipelineGitCredentialsSecret(server *auth.AuthServ
 		if err != nil {
 			return name, fmt.Errorf("Failed to update Jenkins ConfigMap: %s", err)
 		}
-		log.Infof("Updated the Jenkins ConfigMap %s\n", kube.ConfigMapJenkinsX)
+		logrus.Infof("Updated the Jenkins ConfigMap %s\n", kube.ConfigMapJenkinsX)
 
 		// wait a little bit to give k8s chance to sync the ConfigMap to the file system
 		time.Sleep(time.Second * 2)
@@ -174,9 +174,9 @@ func (o *CommonOptions) UpdatePipelineGitCredentialsSecret(server *auth.AuthServ
 		//err = jenk.Reload()
 		err = jenk.SafeRestart()
 		if err != nil {
-			log.Warnf("Failed to safe restart Jenkins after configuration change %s\n", err)
+			logrus.Warnf("Failed to safe restart Jenkins after configuration change %s\n", err)
 		} else {
-			log.Infoln("Safe Restarted Jenkins server")
+			logrus.Infoln("Safe Restarted Jenkins server")
 
 			// Let's wait 5 minutes for Jenkins to come back up.
 			// This is kinda gross, but it's just polling Jenkins every second for 5 minutes.
@@ -187,7 +187,7 @@ func (o *CommonOptions) UpdatePipelineGitCredentialsSecret(server *auth.AuthServ
 				if err == nil {
 					break
 				}
-				log.Infoln("Jenkins returned an error. Waiting for it to recover...")
+				logrus.Infoln("Jenkins returned an error. Waiting for it to recover...")
 				time.Sleep(1 * time.Second)
 			}
 		}
@@ -203,7 +203,7 @@ func (o *CommonOptions) EnsureGitServiceCRD(server *auth.AuthServer) error {
 		return nil
 	}
 	if kind == "" {
-		log.Warnf("Kind of git server %s with URL %s is empty\n", server.Name, server.URL)
+		logrus.Warnf("Kind of git server %s with URL %s is empty\n", server.Name, server.URL)
 		return nil
 	}
 	// lets lazily populate the name if its empty
@@ -219,7 +219,7 @@ func (o *CommonOptions) EnsureGitServiceCRD(server *auth.AuthServer) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to ensure GitService exists for kind %s server %s in namespace %s", kind, server.URL, devNs)
 	}
-	log.Infof("Ensured we have a GitService called %s for URL %s in namespace %s\n", server.Name, server.URL, devNs)
+	logrus.Infof("Ensured we have a GitService called %s for URL %s in namespace %s\n", server.Name, server.URL, devNs)
 	return nil
 }
 
@@ -360,7 +360,7 @@ func (o *CommonOptions) InitGitConfigAndUser() error {
 		return err
 	}
 	if os.Getenv("XDG_CONFIG_HOME") == "" {
-		log.Warnf("Note that the environment variable $XDG_CONFIG_HOME is not defined so we may not be able to push to git!\n")
+		logrus.Warnf("Note that the environment variable $XDG_CONFIG_HOME is not defined so we may not be able to push to git!\n")
 	}
 	return nil
 }

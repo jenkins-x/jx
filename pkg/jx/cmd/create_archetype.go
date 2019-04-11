@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/spf13/cobra"
 
@@ -10,9 +11,9 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/maven"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -106,7 +107,7 @@ func (o *CreateArchetypeOptions) Run() error {
 		return err
 	}
 
-	log.Infof("Invoking: jx create archetype -g %s -a %s -v %s\n\n", form.ArchetypeGroupId, form.ArchetypeArtifactId, form.ArchetypeVersion)
+	logrus.Infof("Invoking: jx create archetype -g %s -a %s -v %s\n\n", form.ArchetypeGroupId, form.ArchetypeArtifactId, form.ArchetypeVersion)
 
 	return o.CreateArchetype()
 }
@@ -177,7 +178,7 @@ func (o *CreateArchetypeOptions) CreateArchetype() error {
 	}
 	outDir := filepath.Join(dir, form.ArtifactId)
 	o.Dir = outDir
-	log.Infof("Created project at %s\n\n", util.ColorInfo(outDir))
+	logrus.Infof("Created project at %s\n\n", util.ColorInfo(outDir))
 
 	return o.ImportCreatedProject(outDir)
 }

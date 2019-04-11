@@ -3,7 +3,7 @@ package collector
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"io/ioutil"
@@ -102,7 +102,7 @@ func (c *GitCollector) CollectFiles(patterns []string, outputPath string, basedi
 	}
 	err = gitClient.CommitDir(ghPagesDir, fmt.Sprintf("Publishing files for path %s", outputPath))
 	if err != nil {
-		fmt.Println(err)
+		logrus.Info(err)
 		return urls, err
 	}
 	err = gitClient.Push(ghPagesDir)
@@ -160,7 +160,7 @@ func (c *GitCollector) CollectData(data []byte, outputPath string) (string, erro
 func (c *GitCollector) generateURL(storageOrg string, storageRepoName string, rPath string) string {
 	// TODO only supporting github for now!!!
 	url := fmt.Sprintf("https://raw.githubusercontent.com/%s/%s/%s/%s", storageOrg, storageRepoName, c.gitBranch, rPath)
-	log.Infof("Publishing %s\n", util.ColorInfo(url))
+	logrus.Infof("Publishing %s\n", util.ColorInfo(url))
 	return url
 }
 
@@ -174,9 +174,9 @@ func cloneGitHubPagesBranchToTempDir(sourceURL string, gitClient gits.Gitter, br
 
 	err = gitClient.ShallowCloneBranch(sourceURL, branchName, ghPagesDir)
 	if err != nil {
-		log.Infof("error doing shallow clone of branch %s: %v", branchName, err)
+		logrus.Infof("error doing shallow clone of branch %s: %v", branchName, err)
 		// swallow the error
-		log.Infof("No existing %s branch so creating it\n", branchName)
+		logrus.Infof("No existing %s branch so creating it\n", branchName)
 		// branch doesn't exist, so we create it following the process on https://help.github.com/articles/creating-project-pages-using-the-command-line/
 		err = gitClient.Clone(sourceURL, ghPagesDir)
 		if err != nil {

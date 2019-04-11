@@ -9,7 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -124,7 +124,7 @@ func (o *EditUserRoleOptions) Run() error {
 	}
 
 	if len(roleNames) == 0 {
-		log.Warnf("No Team roles for team %s\n", teamNs)
+		logrus.Warnf("No Team roles for team %s\n", teamNs)
 		return nil
 	}
 
@@ -142,13 +142,13 @@ func (o *EditUserRoleOptions) Run() error {
 	}
 
 	rolesText := strings.Join(userRoles, ", ")
-	log.Infof("updating user %s for roles %s\n", name, rolesText)
+	logrus.Infof("updating user %s for roles %s\n", name, rolesText)
 
 	err = kube.UpdateUserRoles(kubeClient, jxClient, teamNs, userKind, name, userRoles, roles)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to update user roles for user %s kind %s and roles %s", name, userKind, rolesText)
 	}
-	log.Infof("Updated roles for user: %s kind: %s roles: %s\n", util.ColorInfo(name), util.ColorInfo(userKind), util.ColorInfo(rolesText))
+	logrus.Infof("Updated roles for user: %s kind: %s roles: %s\n", util.ColorInfo(name), util.ColorInfo(userKind), util.ColorInfo(rolesText))
 	return nil
 
 }

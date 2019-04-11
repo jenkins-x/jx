@@ -11,7 +11,7 @@ import (
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/pkg/errors"
@@ -134,7 +134,7 @@ func (o *StepStashOptions) Run() error {
 			if sourceURL == "" {
 				_, gitConf, err := o.Git().FindGitConfigDir(o.Dir)
 				if err != nil {
-					log.Warnf("Could not find a .git directory: %s\n", err)
+					logrus.Warnf("Could not find a .git directory: %s\n", err)
 				} else {
 					sourceURL, err = o.DiscoverGitURL(gitConf)
 				}
@@ -202,7 +202,7 @@ func (o *StepStashOptions) Run() error {
 	}
 
 	for _, u := range urls {
-		log.Infof("stashed: %s\n", util.ColorInfo(u))
+		logrus.Infof("stashed: %s\n", util.ColorInfo(u))
 	}
 
 	// TODO this pipeline name construction needs moving to a shared lib, and other things refactoring to use it

@@ -22,7 +22,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -201,12 +201,12 @@ func (options *ImportOptions) Run() error {
 	if options.ListDraftPacks {
 		packs, err := options.allDraftPacks()
 		if err != nil {
-			log.Error(err.Error())
+			logrus.Error(err.Error())
 			return err
 		}
-		log.Infoln("Available draft packs:")
+		logrus.Infoln("Available draft packs:")
 		for i := 0; i < len(packs); i++ {
-			log.Infof(packs[i] + "\n")
+			logrus.Infof(packs[i] + "\n")
 		}
 		return nil
 	}
@@ -362,7 +362,7 @@ func (options *ImportOptions) Run() error {
 		if options.RepoURL != "" {
 			info, err := gits.ParseGitURL(options.RepoURL)
 			if err != nil {
-				log.Warnf("Failed to parse git URL %s : %s\n", options.RepoURL, err)
+				logrus.Warnf("Failed to parse git URL %s : %s\n", options.RepoURL, err)
 			} else {
 				options.AppName = info.Name
 			}
@@ -411,7 +411,7 @@ func (options *ImportOptions) Run() error {
 	}
 
 	if options.DryRun {
-		log.Infoln("dry-run so skipping import to Jenkins X")
+		logrus.Infoln("dry-run so skipping import to Jenkins X")
 		return nil
 	}
 
@@ -437,7 +437,7 @@ func (options *ImportOptions) ImportProjectsFromGitHub() error {
 		return err
 	}
 
-	log.Infoln("Selected repositories")
+	logrus.Infoln("Selected repositories")
 	for _, r := range repos {
 		o2 := ImportOptions{
 			CommonOptions:           options.CommonOptions,
@@ -450,7 +450,7 @@ func (options *ImportOptions) ImportProjectsFromGitHub() error {
 			DisableJenkinsfileCheck: options.DisableJenkinsfileCheck,
 			DisableDraft:            options.DisableDraft,
 		}
-		log.Infof("Importing repository %s\n", util.ColorInfo(r.Name))
+		logrus.Infof("Importing repository %s\n", util.ColorInfo(r.Name))
 		err = o2.Run()
 		if err != nil {
 			return err
@@ -593,7 +593,7 @@ func (options *ImportOptions) getCurrentUser() string {
 		}
 	}
 	if currentUser == "" {
-		log.Warn("No username defined for the current Git server!")
+		logrus.Warn("No username defined for the current Git server!")
 		currentUser = options.GitRepositoryOptions.Username
 	}
 	return currentUser
@@ -608,7 +608,7 @@ func (options *ImportOptions) GetOrganisation() string {
 	if err == nil && gitInfo.Organisation != "" {
 		org = gitInfo.Organisation
 		if options.Organisation != "" && org != options.Organisation {
-			log.Warnf("organisation %s detected from URL %s. '--org %s' will be ignored", org, options.RepoURL, options.Organisation)
+			logrus.Warnf("organisation %s detected from URL %s. '--org %s' will be ignored", org, options.RepoURL, options.Organisation)
 		}
 	} else {
 		org = options.Organisation
@@ -655,7 +655,7 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+	logrus.Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 
 	// If the user creating the repo is not the pipeline user, add the pipeline user as a contributor to the repo
 	if options.PipelineUserName != options.GitUserAuth.Username && options.GitServer.URL == options.PipelineServer {
@@ -673,7 +673,7 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 		}
 		pipelineUserAuth := authConfig.FindUserAuth(options.GitServer.URL, options.PipelineUserName)
 		if pipelineUserAuth == nil {
-			log.Warnf("Pipeline Git user credentials not found. %s will need to accept the invitation to collaborate\n"+
+			logrus.Warnf("Pipeline Git user credentials not found. %s will need to accept the invitation to collaborate\n"+
 				"on %s if %s is not part of %s.\n\n",
 				options.PipelineUserName, details.RepoName, options.PipelineUserName, details.Organisation)
 		} else {
@@ -752,7 +752,7 @@ func (options *ImportOptions) DiscoverGit() error {
 		}
 		if root != "" {
 			if root != options.Dir {
-				log.Infof("Importing from directory %s as we found a .git folder there\n", root)
+				logrus.Infof("Importing from directory %s as we found a .git folder there\n", root)
 			}
 			options.Dir = root
 			options.GitConfDir = gitConf
@@ -767,7 +767,7 @@ func (options *ImportOptions) DiscoverGit() error {
 
 	// lets prompt the user to initialise the Git repository
 	if !options.BatchMode {
-		log.Infof("The directory %s is not yet using git\n", util.ColorInfo(dir))
+		logrus.Infof("The directory %s is not yet using git\n", util.ColorInfo(dir))
 		flag := false
 		prompt := &survey.Confirm{
 			Message: "Would you like to initialise git now?",
@@ -821,7 +821,7 @@ func (options *ImportOptions) DiscoverGit() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("\nGit repository created\n")
+	logrus.Infof("\nGit repository created\n")
 	return nil
 }
 
@@ -964,11 +964,11 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 	orgName := options.getOrganisationOrCurrentUser()
 	appName := options.AppName
 	if orgName == "" {
-		log.Warnf("Missing organisation name!\n")
+		logrus.Warnf("Missing organisation name!\n")
 		return nil
 	}
 	if appName == "" {
-		log.Warnf("Missing application name!\n")
+		logrus.Warnf("Missing application name!\n")
 		return nil
 	}
 	kubeClient, curNs, err := options.KubeClientAndNamespace()
@@ -999,8 +999,8 @@ func (options *ImportOptions) ensureDockerRepositoryExists() error {
 // ReplacePlaceholders replaces app name, git server name, git org, and docker registry org placeholders
 func (options *ImportOptions) ReplacePlaceholders(gitServerName, dockerRegistryOrg string) error {
 	options.Organisation = kube.ToValidName(strings.ToLower(options.Organisation))
-	log.Infof("replacing placeholders in directory %s\n", options.Dir)
-	log.Infof("app name: %s, git server: %s, org: %s, Docker registry org: %s\n", options.AppName, gitServerName, options.Organisation, dockerRegistryOrg)
+	logrus.Infof("replacing placeholders in directory %s\n", options.Dir)
+	logrus.Infof("app name: %s, git server: %s, org: %s, Docker registry org: %s\n", options.AppName, gitServerName, options.Organisation, dockerRegistryOrg)
 
 	ignore, err := gitignore.NewRepository(options.Dir)
 	if err != nil {
@@ -1047,16 +1047,16 @@ func (options *ImportOptions) skipPathForReplacement(path string, fi os.FileInfo
 	matchIgnore := match != nil && match.Ignore() //Defaults to including if match == nil
 	if fi.IsDir() {
 		if matchIgnore || fi.Name() == ".git" {
-			log.Infof("skipping directory %q\n", path)
+			logrus.Infof("skipping directory %q\n", path)
 			return true, filepath.SkipDir
 		}
 	} else if matchIgnore {
-		log.Infof("skipping ignored file %q\n", path)
+		logrus.Infof("skipping ignored file %q\n", path)
 		return true, nil
 	}
 	// Don't process nor follow symlinks
 	if (fi.Mode() & os.ModeSymlink) == os.ModeSymlink {
-		log.Infof("skipping symlink file %q\n", path)
+		logrus.Infof("skipping symlink file %q\n", path)
 		return true, nil
 	}
 	return false, nil
@@ -1065,7 +1065,7 @@ func (options *ImportOptions) skipPathForReplacement(path string, fi os.FileInfo
 func replacePlaceholdersInFile(replacer *strings.Replacer, file string) error {
 	input, err := ioutil.ReadFile(file)
 	if err != nil {
-		log.Errorf("failed to read file %s: %v", file, err)
+		logrus.Errorf("failed to read file %s: %v", file, err)
 		return err
 	}
 
@@ -1074,7 +1074,7 @@ func replacePlaceholdersInFile(replacer *strings.Replacer, file string) error {
 		output := replacer.Replace(lines)
 		err = ioutil.WriteFile(file, []byte(output), 0644)
 		if err != nil {
-			log.Errorf("failed to write file %s: %v", file, err)
+			logrus.Errorf("failed to write file %s: %v", file, err)
 			return err
 		}
 	}
@@ -1088,7 +1088,7 @@ func replacePlaceholdersInPathBase(replacer *strings.Replacer, path string) erro
 	if newBase != base {
 		newPath := filepath.Join(filepath.Dir(path), newBase)
 		if err := os.Rename(path, newPath); err != nil {
-			log.Errorf("failed to rename %q to %q: %v", path, newPath, err)
+			logrus.Errorf("failed to rename %q to %q: %v", path, newPath, err)
 			return err
 		}
 	}
@@ -1228,7 +1228,7 @@ func (options *ImportOptions) fixDockerIgnoreFile() error {
 				if err != nil {
 					return err
 				}
-				log.Infof("Removed old `Dockerfile` entry from %s\n", util.ColorInfo(filename))
+				logrus.Infof("Removed old `Dockerfile` entry from %s\n", util.ColorInfo(filename))
 			}
 		}
 	}
@@ -1384,7 +1384,7 @@ func (o *ImportOptions) allDraftPacks() ([]string, error) {
 	initOpts := InitOptions{
 		CommonOptions: o.CommonOptions,
 	}
-	log.Info("Getting latest packs ...\n")
+	logrus.Info("Getting latest packs ...\n")
 	dir, _, err := initOpts.InitBuildPacks()
 	if err != nil {
 		return nil, err

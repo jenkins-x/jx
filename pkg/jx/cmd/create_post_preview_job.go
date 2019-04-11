@@ -3,7 +3,7 @@ package cmd
 import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -106,7 +106,7 @@ func (o *CreatePostPreviewJobOptions) Run() error {
 					container.Command = commands
 				}
 				job.Spec.BackoffLimit = &o.BackoffLimit
-				log.Infof("Updating the post Preview Job: %s\n", util.ColorInfo(name))
+				logrus.Infof("Updating the post Preview Job: %s\n", util.ColorInfo(name))
 				return nil
 			}
 		}
@@ -125,7 +125,7 @@ func (o *CreatePostPreviewJobOptions) Run() error {
 				BackoffLimit: &o.BackoffLimit,
 			},
 		})
-		log.Infof("Added the post Preview Job: %s\n", util.ColorInfo(name))
+		logrus.Infof("Added the post Preview Job: %s\n", util.ColorInfo(name))
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)

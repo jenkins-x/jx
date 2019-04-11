@@ -4,7 +4,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -60,7 +60,7 @@ func (o *GetTeamRoleOptions) Run() error {
 		return err
 	}
 	if len(teamRoles) == 0 {
-		log.Info(`
+		logrus.Info(`
 There are no Team roles defined so far!
 `)
 		return nil

@@ -14,7 +14,7 @@ import (
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/environments"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/surveyutils"
@@ -126,11 +126,11 @@ func AddSecretsToTemplate(dir string, app string, generatedSecrets []*surveyutil
 		cleanup := func() {
 			err = secretsFile.Close()
 			if err != nil {
-				log.Warnf("Error closing %s because %v\n", secretsFile.Name(), err)
+				logrus.Warnf("Error closing %s because %v\n", secretsFile.Name(), err)
 			}
 			err = util.DeleteFile(secretsFile.Name())
 			if err != nil {
-				log.Warnf("Error deleting %s because %v\n", secretsFile.Name(), err)
+				logrus.Warnf("Error deleting %s because %v\n", secretsFile.Name(), err)
 			}
 		}
 		if err != nil {
@@ -153,18 +153,18 @@ func AddValuesToChart(app string, values []byte, verbose bool) (string, func(), 
 		return "", func() {}, errors.Wrapf(err, "error converting values from json to yaml\n\n%v", values)
 	}
 	if verbose {
-		log.Infof("Generated values.yaml:\n\n%v\n", util.ColorInfo(string(valuesYaml)))
+		logrus.Infof("Generated values.yaml:\n\n%v\n", util.ColorInfo(string(valuesYaml)))
 	}
 
 	valuesFile, err := ioutil.TempFile("", fmt.Sprintf("%s-values.yaml", ToValidFileSystemName(app)))
 	cleanup := func() {
 		err = valuesFile.Close()
 		if err != nil {
-			log.Warnf("Error closing %s because %v\n", valuesFile.Name(), err)
+			logrus.Warnf("Error closing %s because %v\n", valuesFile.Name(), err)
 		}
 		err = util.DeleteFile(valuesFile.Name())
 		if err != nil {
-			log.Warnf("Error deleting %s because %v\n", valuesFile.Name(), err)
+			logrus.Warnf("Error deleting %s because %v\n", valuesFile.Name(), err)
 		}
 	}
 	if err != nil {

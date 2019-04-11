@@ -8,7 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -99,7 +99,7 @@ func (o *CreateGitUserOptions) Run() error {
 	}
 
 	deploymentName := "gitea-gitea"
-	log.Infof("Waiting for pods to be ready for deployment %s\n", deploymentName)
+	logrus.Infof("Waiting for pods to be ready for deployment %s\n", deploymentName)
 
 	err = kube.WaitForDeploymentToBeReady(client, deploymentName, ns, 5*time.Minute)
 	if err != nil {
@@ -124,7 +124,7 @@ func (o *CreateGitUserOptions) Run() error {
 		return nil
 	}
 
-	log.Infof("Created user %s API Token for Git server %s at %s\n",
+	logrus.Infof("Created user %s API Token for Git server %s at %s\n",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

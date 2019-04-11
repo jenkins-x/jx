@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -48,7 +48,7 @@ func (r *BlogBarReport) Render() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Generated JavaScript %s\n", util.ColorInfo(r.JSFileName))
+	logrus.Infof("Generated JavaScript %s\n", util.ColorInfo(r.JSFileName))
 	return nil
 }
 

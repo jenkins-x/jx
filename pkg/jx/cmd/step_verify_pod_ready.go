@@ -3,6 +3,7 @@ package cmd
 import (
 	"bytes"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 
@@ -69,7 +70,7 @@ func (o *StepVerifyPodReadyOptions) Run() error {
 		return errors.Wrapf(err, "failed to list the PODs in namespace '%s'", ns)
 	}
 
-	fmt.Println("Checking pod statuses")
+	logrus.Info("Checking pod statuses")
 
 	table := o.CreateTable()
 	table.AddRow("POD", "STATUS")
@@ -77,7 +78,7 @@ func (o *StepVerifyPodReadyOptions) Run() error {
 	var f *os.File
 
 	if o.Debug {
-		fmt.Println("Creating verify-pod.log file")
+		logrus.Info("Creating verify-pod.log file")
 		f, err = os.Create("verify-pod.log")
 		if err != nil {
 			return errors.Wrap(err, "error creating log file")

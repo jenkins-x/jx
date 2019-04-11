@@ -7,7 +7,7 @@ import (
 	"github.com/ghodss/yaml"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 
 	"gopkg.in/AlecAivazis/survey.v1"
 
@@ -266,7 +266,7 @@ func (o *EditExtensionsRepositoryOptions) Run() error {
 		}
 		msg = fmt.Sprintf("Chart %s in repo %s", util.ColorInfo(current.Chart.Name), util.ColorInfo(current.Chart.Repo))
 	}
-	log.Infof("Set Extensions Repository to %s\n", msg)
+	logrus.Infof("Set Extensions Repository to %s\n", msg)
 
 	return nil
 

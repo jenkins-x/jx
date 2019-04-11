@@ -6,7 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -79,8 +79,8 @@ func (o *GetReleaseOptions) Run() error {
 		if o.Filter != "" {
 			suffix = fmt.Sprintf(" for filter: %s", util.ColorInfo(o.Filter))
 		}
-		log.Infof("No Releases found in namespace %s%s.\n", util.ColorInfo(ns), suffix)
-		log.Infof("To create a release try merging code to a master branch to trigger a pipeline or try: %s\n", util.ColorInfo("jx start build"))
+		logrus.Infof("No Releases found in namespace %s%s.\n", util.ColorInfo(ns), suffix)
+		logrus.Infof("To create a release try merging code to a master branch to trigger a pipeline or try: %s\n", util.ColorInfo("jx start build"))
 		return nil
 	}
 	table := o.CreateTable()

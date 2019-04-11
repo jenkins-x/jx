@@ -2,7 +2,7 @@ package kube
 
 import (
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,7 +53,7 @@ func LoadPodTemplates(kubeClient kubernetes.Interface, ns string) (map[string]*c
 			}
 		}
 		if !found {
-			log.Warnf("ConfigMap %s does not contain a pod key\n", cm.Name)
+			logrus.Warnf("ConfigMap %s does not contain a pod key\n", cm.Name)
 		}
 	}
 	return answer, nil

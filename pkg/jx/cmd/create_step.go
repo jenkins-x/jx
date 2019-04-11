@@ -7,7 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -130,7 +130,7 @@ func (o *CreateStepOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Updated Jenkins X Pipeline file: %s\n", util.ColorInfo(fileName))
+	logrus.Infof("Updated Jenkins X Pipeline file: %s\n", util.ColorInfo(fileName))
 	return nil
 
 }

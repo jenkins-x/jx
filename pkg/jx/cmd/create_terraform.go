@@ -26,7 +26,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/terraform"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -728,7 +728,7 @@ func (options *CreateTerraformOptions) CreateOrganisationFolderStructure(dir str
 }
 
 func (options *CreateTerraformOptions) createClusters(dir string, clusterDefinitions []Cluster) error {
-	fmt.Printf("Creating/Updating %v clusters\n", util.ColorInfo(len(clusterDefinitions)))
+	logrus.Infof("Creating/Updating %v clusters\n", util.ColorInfo(len(clusterDefinitions)))
 	for _, c := range clusterDefinitions {
 		switch v := c.(type) {
 		case *GKECluster:
@@ -996,7 +996,7 @@ func (options *CreateTerraformOptions) configureGKECluster(g *GKECluster, path s
 			return err
 		}
 
-		log.Infof("Created %s\n", terraformTf)
+		logrus.Infof("Created %s\n", terraformTf)
 	}
 
 	return nil
@@ -1008,7 +1008,7 @@ func (options *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path str
 		return errors.New("Unable to apply terraform, projectId has not been set")
 	}
 
-	log.Info("Applying Terraform changes\n")
+	logrus.Info("Applying Terraform changes\n")
 
 	terraformVars := filepath.Join(path, "terraform.tfvars")
 
@@ -1093,7 +1093,7 @@ func (options *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path str
 	}
 
 	if !options.Flags.SkipTerraformApply {
-		log.Info("Applying plan...\n")
+		logrus.Info("Applying plan...\n")
 
 		err = terraform.Apply(path, terraformVars, serviceAccountPath, options.Out, options.Err)
 		if err != nil {
@@ -1104,7 +1104,7 @@ func (options *CreateTerraformOptions) applyTerraformGKE(g *GKECluster, path str
 		if err != nil {
 			return err
 		}
-		log.Info(output)
+		logrus.Info(output)
 	} else {
 		fmt.Fprintf(options.Out, "Skipping Terraform apply\n")
 	}
@@ -1139,7 +1139,7 @@ func (options *CreateTerraformOptions) getGoogleProjectID() (string, error) {
 		}
 	} else if len(existingProjects) == 1 {
 		projectID = existingProjects[0]
-		log.Infof("Using the only Google Cloud Project %s to create the cluster\n", util.ColorInfo(projectID))
+		logrus.Infof("Using the only Google Cloud Project %s to create the cluster\n", util.ColorInfo(projectID))
 	} else {
 		prompts := &survey.Select{
 			Message: "Google Cloud Project:",
@@ -1161,7 +1161,7 @@ func (options *CreateTerraformOptions) getGoogleProjectID() (string, error) {
 }
 
 func (options *CreateTerraformOptions) installJx(c Cluster, clusters []Cluster) error {
-	log.Infof("\n\nInstalling jx on cluster %s with context %s\n", util.ColorInfo(c.Name()), util.ColorInfo(c.Context()))
+	logrus.Infof("\n\nInstalling jx on cluster %s with context %s\n", util.ColorInfo(c.Name()), util.ColorInfo(c.Context()))
 
 	err := options.RunCommand("kubectl", "config", "use-context", c.Context())
 	if err != nil {
@@ -1211,7 +1211,7 @@ func (options *CreateTerraformOptions) installJx(c Cluster, clusters []Cluster) 
 
 		return err
 	}
-	log.Info("Skipping installing jx as it appears to be already installed\n")
+	logrus.Info("Skipping installing jx as it appears to be already installed\n")
 
 	return nil
 }
@@ -1223,9 +1223,9 @@ func (options *CreateTerraformOptions) initAndInstall(provider string) error {
 
 	if len(options.Clusters) > 1 {
 		options.InstallOptions.Flags.NoDefaultEnvironments = true
-		log.Info("Creating custom environments in each cluster\n")
+		logrus.Info("Creating custom environments in each cluster\n")
 	} else {
-		log.Info("Creating default environments\n")
+		logrus.Info("Creating default environments\n")
 	}
 
 	// call jx install
@@ -1246,7 +1246,7 @@ func (options *CreateTerraformOptions) configureEnvironments(clusters []Cluster)
 			if err != nil {
 				return err
 			}
-			log.Infof("Checking for environments %s on cluster %s\n", cluster.Name(), cluster.ClusterName())
+			logrus.Infof("Checking for environments %s on cluster %s\n", cluster.Name(), cluster.ClusterName())
 			_, envNames, err := kube.GetEnvironments(jxClient, cluster.Name())
 
 			if err != nil || len(envNames) <= 1 {

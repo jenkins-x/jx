@@ -18,7 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/auth/mocks"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -32,7 +32,7 @@ func IsDebugLog() bool {
 // Debugf debug format
 func Debugf(message string, args ...interface{}) {
 	if IsDebugLog() {
-		log.Infof(message, args...)
+		logrus.Infof(message, args...)
 	}
 }
 

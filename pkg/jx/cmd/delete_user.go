@@ -12,7 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -99,7 +99,7 @@ func (o *DeleteUserOptions) Run() error {
 			return fmt.Errorf("In batch mode you must specify the '-y' flag to confirm")
 		}
 	} else {
-		log.Warnf("You are about to delete these users '%s'. This operation CANNOT be undone!",
+		logrus.Warnf("You are about to delete these users '%s'. This operation CANNOT be undone!",
 			strings.Join(names, ","))
 
 		flag := false
@@ -119,14 +119,14 @@ func (o *DeleteUserOptions) Run() error {
 	for _, name := range names {
 		err = o.deleteUser(name)
 		if err != nil {
-			log.Warnf("Failed to delete user %s: %s\n", name, err)
+			logrus.Warnf("Failed to delete user %s: %s\n", name, err)
 		} else {
-			log.Infof("Deleted user %s\n", util.ColorInfo(name))
+			logrus.Infof("Deleted user %s\n", util.ColorInfo(name))
 		}
-		log.Infof("Attempting to unbind user %s from associated role\n", util.ColorInfo(name))
+		logrus.Infof("Attempting to unbind user %s from associated role\n", util.ColorInfo(name))
 		err = o.deleteUserFromRoleBindings(name, ns, jxClient)
 		if err != nil {
-			log.Warnf("Problem to unbind user %s from associated role\n", util.ColorWarning(name))
+			logrus.Warnf("Problem to unbind user %s from associated role\n", util.ColorWarning(name))
 		}
 	}
 	return nil

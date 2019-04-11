@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 )
@@ -37,7 +37,7 @@ func StartLocalTiller(lazy bool) error {
 	}
 	err = util.RunCommandBackground("tiller", f, !lazy, args...)
 	if err == nil {
-		log.Infof("running tiller locally and logging to file: %s\n", util.ColorInfo(logFile))
+		logrus.Infof("running tiller locally and logging to file: %s\n", util.ColorInfo(logFile))
 	} else if lazy {
 		// lets assume its because the process is already running so lets ignore
 		return nil
@@ -47,7 +47,7 @@ func StartLocalTiller(lazy bool) error {
 
 // RestartLocalTiller resttarts locall tiller
 func RestartLocalTiller() error {
-	log.Info("checking if we need to kill a local tiller process\n")
+	logrus.Info("checking if we need to kill a local tiller process\n")
 	util.KillProcesses("tiller")
 	return StartLocalTiller(false)
 }

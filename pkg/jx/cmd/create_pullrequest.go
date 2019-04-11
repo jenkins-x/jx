@@ -13,7 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -128,7 +128,7 @@ func (o *CreatePullRequestOptions) Run() error {
 
 	o.Results.PullRequest = pr
 
-	log.Infof("\nCreated PullRequest %s at %s\n", util.ColorInfo(pr.NumberString()), util.ColorInfo(pr.URL))
+	logrus.Infof("\nCreated PullRequest %s at %s\n", util.ColorInfo(pr.NumberString()), util.ColorInfo(pr.URL))
 
 	return nil
 }
@@ -141,7 +141,7 @@ func (o *CreatePullRequestOptions) PopulatePullRequest(pullRequest *gits.GitPull
 		}
 		defaultValue, body, err := o.findLastCommitTitle()
 		if err != nil {
-			log.Warnf("Failed to find last git commit title: %s\n", err)
+			logrus.Warnf("Failed to find last git commit title: %s\n", err)
 		}
 		if o.Body == "" {
 			o.Body = body
@@ -171,7 +171,7 @@ func (o *CreatePullRequestOptions) findLastCommitTitle() (string, string, error)
 		return title, body, err
 	}
 	if gitDir == "" || gitConfDir == "" {
-		log.Warnf("No git directory could be found from dir %s\n", dir)
+		logrus.Warnf("No git directory could be found from dir %s\n", dir)
 		return title, body, err
 	}
 	message, err := o.Git().GetLatestCommitMessage(dir)

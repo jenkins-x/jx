@@ -5,7 +5,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/route53"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"k8s.io/apimachinery/pkg/util/uuid"
 )
@@ -63,7 +63,7 @@ func RegisterAwsCustomDomain(customDomain string, elbAddress string) error {
 	recordType := "CNAME"
 	wildcard := "*." + customDomain
 	info := util.ColorInfo
-	log.Infof("About to insert/update DNS %s record into HostedZone %s with wildcard %s pointing to %s\n", info(recordType), info(*hostedZoneId), info(wildcard), info(elbAddress))
+	logrus.Infof("About to insert/update DNS %s record into HostedZone %s with wildcard %s pointing to %s\n", info(recordType), info(*hostedZoneId), info(wildcard), info(elbAddress))
 
 	changeInput := &route53.ChangeResourceRecordSetsInput{
 		HostedZoneId: hostedZoneId,
@@ -89,6 +89,6 @@ func RegisterAwsCustomDomain(customDomain string, elbAddress string) error {
 	if err != nil {
 		return fmt.Errorf("Failed to update record for hostedZoneID %s: %s", *hostedZoneId, err)
 	}
-	log.Infof("Updated HostZone ID %s successfully\n", info(*hostedZoneId))
+	logrus.Infof("Updated HostZone ID %s successfully\n", info(*hostedZoneId))
 	return nil
 }

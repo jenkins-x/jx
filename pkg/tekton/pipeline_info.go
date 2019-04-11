@@ -12,7 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	duckv1alpha1 "github.com/knative/pkg/apis/duck/v1alpha1"
 	"github.com/pkg/errors"
@@ -131,7 +131,7 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 	build := ""
 	shaRegexp, err := regexp.Compile("\b[a-z0-9]{40}\b")
 	if err != nil {
-		log.Warnf("Failed to compile regexp because %s", err)
+		logrus.Warnf("Failed to compile regexp because %s", err)
 	}
 	gitURL := ""
 

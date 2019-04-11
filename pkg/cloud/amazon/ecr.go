@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/sts"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -78,7 +78,7 @@ func LazyCreateRegistry(kube kubernetes.Interface, namespace string, region stri
 		repoName = orgName + "/" + appName
 	}
 	repoName = strings.ToLower(repoName)
-	log.Infof("Let's ensure that we have an ECR repository for the Docker image %s\n", util.ColorInfo(repoName))
+	logrus.Infof("Let's ensure that we have an ECR repository for the Docker image %s\n", util.ColorInfo(repoName))
 	if region == "" {
 		region = GetRegionFromContainerRegistryHost(kube, namespace, dockerRegistry)
 	}
@@ -98,7 +98,7 @@ func LazyCreateRegistry(kube kubernetes.Interface, namespace string, region stri
 	}
 	for _, repo := range result.Repositories {
 		name := repo.String()
-		log.Infof("Found repository: %s\n", name)
+		logrus.Infof("Found repository: %s\n", name)
 		if name == repoName {
 			return nil
 		}
@@ -115,10 +115,10 @@ func LazyCreateRegistry(kube kubernetes.Interface, namespace string, region stri
 		u := repo.RepositoryUri
 		if u != nil {
 			if !strings.HasPrefix(*u, dockerRegistry) {
-				log.Warnf("Created ECR repository (%s) doesn't match registry configured for team (%s)",
+				logrus.Warnf("Created ECR repository (%s) doesn't match registry configured for team (%s)",
 					util.ColorInfo(*u), util.ColorInfo(dockerRegistry))
 			} else {
-				log.Infof("Created ECR repository: %s\n", util.ColorInfo(*u))
+				logrus.Infof("Created ECR repository: %s\n", util.ColorInfo(*u))
 			}
 		}
 	}

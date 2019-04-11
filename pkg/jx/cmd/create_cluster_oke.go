@@ -15,7 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud/oke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -131,7 +131,7 @@ func (o *CreateClusterOKEOptions) Run() error {
 
 	err = o.createClusterOKE()
 	if err != nil {
-		log.Errorf("error creating cluster %v", err)
+		logrus.Errorf("error creating cluster %v", err)
 		return err
 	}
 
@@ -156,12 +156,12 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 
 		survey.AskOne(prompt, &endpoint, nil, surveyOpts)
 	}
-	fmt.Printf("Endpoint is %s\n", endpoint)
+	logrus.Infof("Endpoint is %s\n", endpoint)
 	os.Setenv("ENDPOINT", endpoint)
 
 	if o.Flags.ClusterName == "" {
 		o.Flags.ClusterName = strings.ToLower(randomdata.SillyName())
-		log.Infof("No cluster name provided so using a generated one: %s\n", o.Flags.ClusterName)
+		logrus.Infof("No cluster name provided so using a generated one: %s\n", o.Flags.ClusterName)
 	}
 
 	compartmentId := o.Flags.CompartmentId
@@ -204,7 +204,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 	//Get node pool settings
 	if o.Flags.NodePoolName == "" {
 		o.Flags.NodePoolName = strings.ToLower(randomdata.SillyName())
-		log.Infof("No node pool name provided so using a generated one: " + o.Flags.NodePoolName + "\n")
+		logrus.Infof("No node pool name provided so using a generated one: " + o.Flags.NodePoolName + "\n")
 	}
 
 	nodeImageName := o.Flags.NodeImageName
@@ -256,7 +256,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 	nodePoolSubnetIdsTemp := "[" + strings.Join(nodePoolSubnetIdsArray, ",") + "]"
 	err = ioutil.WriteFile("/tmp/oke_pool_config.json", []byte(nodePoolSubnetIdsTemp), 0644)
 	if err != nil {
-		fmt.Printf("error write file to /tmp file %v", err)
+		logrus.Infof("error write file to /tmp file %v", err)
 	}
 
 	args := []string{"ce", "cluster", "create",
@@ -290,7 +290,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 
 		err := ioutil.WriteFile("/tmp/oke_cluster_config.json", []byte(serviceLbSubnetIdsTemp), 0644)
 		if err != nil {
-			fmt.Printf("error write file to /tmp file %v", err)
+			logrus.Infof("error write file to /tmp file %v", err)
 		}
 
 		args = append(args, "--service-lb-subnet-ids", "file:///tmp/oke_cluster_config.json")
@@ -337,23 +337,23 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 		args = append(args, "--wait-interval-seconds", clusterWaitIntervalSeconds)
 	}
 
-	fmt.Printf("Args are: %s\n", args)
-	log.Info("Creating cluster...\n")
+	logrus.Infof("Args are: %s\n", args)
+	logrus.Info("Creating cluster...\n")
 	output, err := o.GetCommandOutput("", "oci", args...)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Create cluster output: %s\n", output)
+	logrus.Infof("Create cluster output: %s\n", output)
 
 	if strings.Contains(output, "identifier") {
 		subClusterInfo := strings.Split(output, "identifier")
 		clusterIdRaw := strings.Split(subClusterInfo[1], "}")
 		clusterId := strings.TrimSpace(strings.Replace(clusterIdRaw[0][4:], "\"", "", -1))
-		fmt.Printf("Cluster id: %s\n", clusterId)
+		logrus.Infof("Cluster id: %s\n", clusterId)
 
 		//setup the kube context
-		log.Info("Setup kube context ...\n")
+		logrus.Info("Setup kube context ...\n")
 		var kubeconfigFile = ""
 		if home := util.HomeDir(); home != "" {
 			kubeconfigFile = filepath.Join(util.HomeDir(), "kubeconfig")
@@ -372,13 +372,13 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 		os.Setenv("KUBECONFIG", kubeconfigFile)
 
 		//create node pool
-		log.Info("Creating node pool ...\n")
+		logrus.Info("Creating node pool ...\n")
 
 		poolArgs := "ce node-pool create --name=" + o.Flags.NodePoolName + " --compartment-id=" + compartmentId + " --cluster-id=" + clusterId + " --kubernetes-version=" + kubernetesVersion + " --node-image-name=" + nodeImageName + " --node-shape=" + nodeShape + " --subnet-ids=file:///tmp/oke_pool_config.json" + " --wait-for-state=SUCCEEDED"
 
 		quantityPerSubnet := o.Flags.QuantityPerSubnet
 		quantityPerSubnet = (map[bool]string{true: quantityPerSubnet, false: "1"})[quantityPerSubnet != ""]
-		log.Info("Will create " + quantityPerSubnet + " node per subnet ...\n")
+		logrus.Info("Will create " + quantityPerSubnet + " node per subnet ...\n")
 		poolArgs = poolArgs + " --quantity-per-subnet=" + quantityPerSubnet
 
 		initialNodeLabels := o.Flags.InitialNodeLabels
@@ -386,7 +386,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			initialNodeLabelsJson := "[" + initialNodeLabels + "]"
 			err := ioutil.WriteFile("/tmp/oke_pool_labels_config.json", []byte(initialNodeLabelsJson), 0644)
 			if err != nil {
-				fmt.Printf("error write file to /tmp file %v", err)
+				logrus.Infof("error write file to /tmp file %v", err)
 			}
 			poolArgs = poolArgs + " --initial-node-labels=file:///tmp/oke_pool_labels_config.json"
 		}
@@ -402,7 +402,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			poolArgs = poolArgs + " --wait-interval-seconds=" + poolWaitIntervalSeconds
 		}
 
-		log.Info("Creating Node Pool...\n")
+		logrus.Info("Creating Node Pool...\n")
 		poolArgsArray := strings.Split(poolArgs, " ")
 
 		if sshPublicKeyValue != "" {
@@ -410,7 +410,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			poolArgsArray = append(poolArgsArray, sshPubKey)
 		}
 
-		fmt.Printf("Pool creation args are: %s\n", poolArgsArray)
+		logrus.Infof("Pool creation args are: %s\n", poolArgsArray)
 		poolCreationOutput, err := o.GetCommandOutput("", "oci", poolArgsArray...)
 		if err != nil {
 			return err
@@ -421,7 +421,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			subPoolInfo := strings.Split(poolCreationOutput, "identifier")
 			poolIdRaw := strings.Split(subPoolInfo[1], "}")
 			poolId := strings.TrimSpace(strings.Replace(poolIdRaw[0][4:], "\"", "", -1))
-			fmt.Printf("Node Pool id: %s\n", poolId)
+			logrus.Infof("Node Pool id: %s\n", poolId)
 
 			//get node pool status until they are active
 			nodeQuantity, err := strconv.Atoi(quantityPerSubnet)
@@ -436,7 +436,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 
 			if isTillerEnabled {
 				//need to wait for tiller pod is running
-				fmt.Printf("Wait for tiller pod is running\n")
+				logrus.Infof("Wait for tiller pod is running\n")
 				err = o.waitForTillerComeUp()
 				if err != nil {
 					return fmt.Errorf("Failed to wait for Tiller to be ready: %s\n", err)
@@ -455,7 +455,7 @@ func (o *CreateClusterOKEOptions) createClusterOKE() error {
 			if err != nil {
 				return err
 			}
-			log.Info("Initialising cluster ...\n")
+			logrus.Info("Initialising cluster ...\n")
 
 			return o.initAndInstall(cloud.OKE)
 		}
@@ -474,7 +474,7 @@ func (o *CreateClusterOKEOptions) waitForNodeToComeUp(nodeQuantity int, poolId s
 		}
 
 		count := len(status.FindAllStringIndex(poolStatusOutput, -1))
-		fmt.Printf("Now only %d nodes are ready\n", count)
+		logrus.Infof("Now only %d nodes are ready\n", count)
 		if count == nodeQuantity {
 			break
 		}

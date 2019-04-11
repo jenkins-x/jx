@@ -8,7 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -136,7 +136,7 @@ func (o *StepCredentialOptions) Run() error {
 
 	value, ok := data[key]
 	if !ok {
-		log.Warnf("Secret %s in namespace %s does not have key %s\n", name, ns, key)
+		logrus.Warnf("Secret %s in namespace %s does not have key %s\n", name, ns, key)
 		return util.InvalidOption("key", key, keys)
 	}
 	if filename != "" {
@@ -144,9 +144,9 @@ func (o *StepCredentialOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to store file %s", filename)
 		}
-		log.Infof("%s\n", filename)
+		logrus.Infof("%s\n", filename)
 		return nil
 	}
-	log.Infof("%s\n", value)
+	logrus.Infof("%s\n", value)
 	return nil
 }

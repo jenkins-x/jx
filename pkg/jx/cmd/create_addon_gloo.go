@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -96,7 +96,7 @@ func (o *CreateAddonGlooOptions) Run() error {
 	}
 
 	if shouldInstall {
-		log.Infof("installing %s\n", util.ColorInfo("glooctl"))
+		logrus.Infof("installing %s\n", util.ColorInfo("glooctl"))
 		err = o.InstallGlooctl()
 		if err != nil {
 			return errors.Wrapf(err, "failed to install glooctl")
@@ -157,7 +157,7 @@ func (o *CreateAddonGlooOptions) getGlooDomain(kubeClient kubernetes.Interface) 
 
 		if !loggedWait {
 			loggedWait = true
-			log.Infof("waiting for external IP on Gloo cluster ingress proxy service %s in namespace %s ...\n", o.ClusterIngressProxy, o.GlooNamespace)
+			logrus.Infof("waiting for external IP on Gloo cluster ingress proxy service %s in namespace %s ...\n", o.ClusterIngressProxy, o.GlooNamespace)
 		}
 		return false, nil
 	}
@@ -165,7 +165,7 @@ func (o *CreateAddonGlooOptions) getGlooDomain(kubeClient kubernetes.Interface) 
 	if ip == "" || err != nil {
 		return "", err
 	}
-	log.Infof("using external IP of gloo LoadBalancer: %s\n", util.ColorInfo(ip))
+	logrus.Infof("using external IP of gloo LoadBalancer: %s\n", util.ColorInfo(ip))
 	return ip, nil
 }
 

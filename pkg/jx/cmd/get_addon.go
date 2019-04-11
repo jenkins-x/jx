@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/addon"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -72,7 +72,7 @@ func (o *GetAddonOptions) Run() error {
 	}
 	statusMap, err := o.Helm().StatusReleases(ns)
 	if err != nil {
-		log.Warnf("Failed to find Helm installs: %s\n", err)
+		logrus.Warnf("Failed to find Helm installs: %s\n", err)
 	}
 
 	charts := kube.AddonCharts

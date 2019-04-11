@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
@@ -68,7 +68,7 @@ func (o *RepoOptions) Run() error {
 	if fullURL == "" {
 		return fmt.Errorf("Could not find URL from Git repository %s", gitInfo.URL)
 	}
-	log.Infof("repository: %s\n", util.ColorInfo(fullURL))
+	logrus.Infof("repository: %s\n", util.ColorInfo(fullURL))
 	if !o.OnlyViewURL {
 		browser.OpenURL(fullURL)
 	}

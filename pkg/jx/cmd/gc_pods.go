@@ -6,7 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -89,11 +89,11 @@ func (o *GCPodsOptions) Run() error {
 		if matches {
 			err := podInterface.Delete(pod.Name, deleteOptions)
 			if err != nil {
-				log.Warnf("Failed to delete pod %s in namespace %s: %s\n", pod.Name, ns, err)
+				logrus.Warnf("Failed to delete pod %s in namespace %s: %s\n", pod.Name, ns, err)
 				errors = append(errors, err)
 			} else {
 				ageText := strings.TrimSuffix(age.Round(time.Minute).String(), "0s")
-				log.Infof("Deleted pod %s in namespace %s with phase %s as its age is: %s\n", pod.Name, ns, string(pod.Status.Phase), ageText)
+				logrus.Infof("Deleted pod %s in namespace %s with phase %s as its age is: %s\n", pod.Name, ns, string(pod.Status.Phase), ageText)
 			}
 		}
 	}

@@ -14,7 +14,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -82,7 +82,7 @@ func (o *GCActivitiesOptions) Run() error {
 	if len(activities.Items) == 0 {
 		// no preview environments found so lets return gracefully
 		if o.Verbose {
-			log.Info("no activities found\n")
+			logrus.Info("no activities found\n")
 		}
 		return nil
 	}

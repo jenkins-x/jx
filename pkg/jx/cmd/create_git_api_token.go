@@ -13,7 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/nodes"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -121,9 +121,9 @@ func (o *CreateGitTokenOptions) Run() error {
 		f := func(username string) error {
 			tokenUrl := gits.ProviderAccessTokenURL(server.Kind, server.URL, username)
 
-			log.Infof("Please generate an API Token for %s server %s\n", server.Kind, server.Label())
-			log.Infof("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
-			log.Infof("Then COPY the token and enter in into the form below:\n\n")
+			logrus.Infof("Please generate an API Token for %s server %s\n", server.Kind, server.Label())
+			logrus.Infof("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
+			logrus.Infof("Then COPY the token and enter in into the form below:\n\n")
 			return nil
 		}
 
@@ -145,11 +145,11 @@ func (o *CreateGitTokenOptions) Run() error {
 	if config.PipeLineUsername == userAuth.Username {
 		_, err = o.UpdatePipelineGitCredentialsSecret(server, userAuth)
 		if err != nil {
-			log.Warnf("Failed to update Jenkins X pipeline Git credentials secret: %v\n", err)
+			logrus.Warnf("Failed to update Jenkins X pipeline Git credentials secret: %v\n", err)
 		}
 	}
 
-	log.Infof("Created user %s API Token for Git server %s at %s\n",
+	logrus.Infof("Created user %s API Token for Git server %s at %s\n",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 
 	return nil
@@ -169,7 +169,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 		ctxt, cancel = context.WithCancel(context.Background())
 	}
 	defer cancel()
-	log.Infof("Trying to generate an API token for user: %s\n", util.ColorInfo(userAuth.Username))
+	logrus.Infof("Trying to generate an API token for user: %s\n", util.ColorInfo(userAuth.Username))
 
 	c, err := o.createChromeClient(ctxt)
 	if err != nil {
@@ -200,7 +200,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 	if login {
 		o.captureScreenshot(ctxt, c, "screenshot-git-login.png", "//div")
 
-		log.Infof("logging in\n")
+		logrus.Infof("logging in\n")
 		err = c.Run(ctxt, chromedp.Tasks{
 			chromedp.WaitVisible("user_name", chromedp.ByID),
 			chromedp.SendKeys("user_name", userAuth.Username, chromedp.ByID),
@@ -213,7 +213,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 
 	o.captureScreenshot(ctxt, c, "screenshot-git-api-token.png", "//div")
 
-	log.Infoln("Generating new token")
+	logrus.Infoln("Generating new token")
 
 	tokenId := "jx-" + string(uuid.NewUUID())
 	generateNewTokenButtonSelector := "//div[normalize-space(text())='Generate New Token']"
@@ -238,7 +238,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 			break
 		}
 	}
-	log.Infoln("Found API Token")
+	logrus.Infoln("Found API Token")
 	if token != "" {
 		userAuth.ApiToken = token
 	}
@@ -266,7 +266,7 @@ func (o *CreateGitTokenOptions) createChromeClient(ctxt context.Context) (*chrom
 }
 
 func (o *CreateGitTokenOptions) captureScreenshot(ctxt context.Context, c *chromedp.CDP, screenshotFile string, selector interface{}, options ...chromedp.QueryOption) error {
-	log.Infoln("Creating a screenshot...")
+	logrus.Infoln("Creating a screenshot...")
 
 	var picture []byte
 	err := c.Run(ctxt, chromedp.Tasks{
@@ -276,13 +276,13 @@ func (o *CreateGitTokenOptions) captureScreenshot(ctxt context.Context, c *chrom
 	if err != nil {
 		return err
 	}
-	log.Infoln("Saving a screenshot...")
+	logrus.Infoln("Saving a screenshot...")
 
 	err = ioutil.WriteFile(screenshotFile, picture, util.DefaultWritePermissions)
 	if err != nil {
-		log.Fatal(err.Error())
+		logrus.Fatal(err.Error())
 	}
 
-	log.Infof("Saved screenshot: %s\n", util.ColorInfo(screenshotFile))
+	logrus.Infof("Saved screenshot: %s\n", util.ColorInfo(screenshotFile))
 	return err
 }

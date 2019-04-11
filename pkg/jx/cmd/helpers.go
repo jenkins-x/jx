@@ -30,11 +30,11 @@ func DefaultBehaviorOnFatal() {
 }
 
 // fatal prints the message (if provided) and then exits. If V(2) or greater,
-// glog.Fatal is invoked for extended information.
+// glogrus.Fatal is invoked for extended information.
 func fatal(msg string, code int) {
 	/*
 		if glog.V(2) {
-			glog.FatalDepth(2, msg)
+			glogrus.FatalDepth(2, msg)
 		}
 	*/
 	if len(msg) > 0 {

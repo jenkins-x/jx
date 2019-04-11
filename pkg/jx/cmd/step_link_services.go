@@ -5,7 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
@@ -118,13 +118,13 @@ func (o *StepLinkServicesOptions) Run() error {
 					if create {
 						_, err := kubeClient.CoreV1().Services(targetNamespace).Create(targetService)
 						if err != nil {
-							log.Warnf("Failed to create the service '%s' in target namespace '%s'. Error: %s",
+							logrus.Warnf("Failed to create the service '%s' in target namespace '%s'. Error: %s",
 								name, targetNamespace, err)
 						}
 					} else {
 						_, err := kubeClient.CoreV1().Services(targetNamespace).Update(targetService)
 						if err != nil {
-							log.Warnf("Failed to update the service '%s' in target namespace '%s'. Error: %s",
+							logrus.Warnf("Failed to update the service '%s' in target namespace '%s'. Error: %s",
 								name, targetNamespace, err)
 						}
 					}

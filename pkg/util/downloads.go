@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/pkg/errors"
 
 	"github.com/blang/semver"
@@ -89,7 +89,7 @@ func GetLatestReleaseFromGitHub(githubOwner, githubRepo string) (string, error) 
 	version, err = getLatestReleaseFromGithubUsingHttpRedirect(githubOwner, githubRepo)
 
 	if version == "" || err != nil {
-		log.Warnf("getting latest release using HTTP redirect (%v) - using API instead", err)
+		logrus.Warnf("getting latest release using HTTP redirect (%v) - using API instead", err)
 		version, err = getLatestReleaseFromGithubUsingApi(githubOwner, githubRepo)
 	}
 

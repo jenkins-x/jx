@@ -3,7 +3,7 @@ package kube
 import (
 	"sort"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"k8s.io/api/core/v1"
@@ -58,14 +58,14 @@ func DefaultModifySecret(kubeClient kubernetes.Interface, ns string, name string
 		return secret, err
 	}
 	if create {
-		log.Infof("Creating Secret %s in namespace %s\n", util.ColorInfo(name), util.ColorInfo(ns))
+		logrus.Infof("Creating Secret %s in namespace %s\n", util.ColorInfo(name), util.ColorInfo(ns))
 		_, err = secretInterface.Create(secret)
 		if err != nil {
 			return secret, errors.Wrapf(err, "Failed to create Secret %s in namespace %s", name, ns)
 		}
 		return secret, err
 	}
-	log.Infof("Updating Secret %s in namespace %s\n", util.ColorInfo(name), util.ColorInfo(ns))
+	logrus.Infof("Updating Secret %s in namespace %s\n", util.ColorInfo(name), util.ColorInfo(ns))
 	_, err = secretInterface.Update(secret)
 	if err != nil {
 		return secret, errors.Wrapf(err, "Failed to update Secret %s in namespace %s", name, ns)

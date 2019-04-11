@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"os/exec"
 
@@ -10,7 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -73,7 +72,7 @@ func (o *deleteEksOptions) Run() error {
 	}
 	err := o.InstallMissingDependencies(deps)
 	if err != nil {
-		log.Errorf("%v\nPlease fix the error or install manually then try again", err)
+		logrus.Errorf("%v\nPlease fix the error or install manually then try again", err)
 		os.Exit(-1)
 	}
 
@@ -86,6 +85,6 @@ func (o *deleteEksOptions) Run() error {
 	if err != nil {
 		return nil
 	}
-	fmt.Print(string(output))
+	logrus.Info(string(output))
 	return nil
 }

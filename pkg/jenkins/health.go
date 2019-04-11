@@ -2,7 +2,7 @@ package jenkins
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"time"
 
@@ -21,7 +21,7 @@ func CheckHealth(url string, healthTimeout time.Duration) error {
 	if ping(endpoint) == nil {
 		return nil
 	}
-	log.Infof("waiting up to %s for the Jenkins server to be healty at URL %s\n", util.ColorInfo(healthTimeout.String()), util.ColorInfo(endpoint))
+	logrus.Infof("waiting up to %s for the Jenkins server to be healty at URL %s\n", util.ColorInfo(healthTimeout.String()), util.ColorInfo(endpoint))
 	err := util.Retry(healthTimeout, func() error {
 		return ping(endpoint)
 	})

@@ -6,7 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/workflow"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -97,7 +97,7 @@ func (o *GetWorkflowOptions) getWorkflow(name string, jxClient versioned.Interfa
 		return err
 	}
 
-	log.Infof("Workflow: %s\n", workflow.Name)
+	logrus.Infof("Workflow: %s\n", workflow.Name)
 	lines := []*StepSummary{}
 	var lastSummary *StepSummary
 	for _, step := range workflow.Spec.Steps {
@@ -121,9 +121,9 @@ func (o *GetWorkflowOptions) getWorkflow(name string, jxClient versioned.Interfa
 	}
 	for i, summary := range lines {
 		if i > 0 {
-			log.Info("    |\n")
+			logrus.Info("    |\n")
 		}
-		log.Infof("%s to %s\n", summary.Action, strings.Join(summary.Resources, " + "))
+		logrus.Infof("%s to %s\n", summary.Action, strings.Join(summary.Resources, " + "))
 	}
 	return nil
 }

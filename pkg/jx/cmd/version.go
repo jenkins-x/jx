@@ -6,7 +6,7 @@ import (
 
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/util/system"
 	"github.com/jenkins-x/jx/pkg/version"
@@ -61,7 +61,7 @@ func (o *VersionOptions) Run() error {
 	// Jenkins X version
 	output, err := o.Helm().ListCharts()
 	if err != nil {
-		log.Warnf("Failed to find helm installs: %s\n", err)
+		logrus.Warnf("Failed to find helm installs: %s\n", err)
 	} else {
 		for _, line := range strings.Split(output, "\n") {
 			fields := strings.Split(line, "\t")
@@ -80,11 +80,11 @@ func (o *VersionOptions) Run() error {
 	// Kubernetes version
 	client, err := o.KubeClient()
 	if err != nil {
-		log.Warnf("Failed to connect to Kubernetes: %s\n", err)
+		logrus.Warnf("Failed to connect to Kubernetes: %s\n", err)
 	} else {
 		serverVersion, err := client.Discovery().ServerVersion()
 		if err != nil {
-			log.Warnf("Failed to get Kubernetes server version: %s\n", err)
+			logrus.Warnf("Failed to get Kubernetes server version: %s\n", err)
 		} else if serverVersion != nil {
 			table.AddRow("Kubernetes cluster", info(serverVersion.String()))
 		}
@@ -93,7 +93,7 @@ func (o *VersionOptions) Run() error {
 	// kubectl version
 	output, err = o.GetCommandOutput("", "kubectl", "version", "--short")
 	if err != nil {
-		log.Warnf("Failed to get kubectl version: %s\n", err)
+		logrus.Warnf("Failed to get kubectl version: %s\n", err)
 	} else {
 		for i, line := range strings.Split(output, "\n") {
 			fields := strings.Fields(line)
@@ -114,7 +114,7 @@ func (o *VersionOptions) Run() error {
 	// helm version
 	output, err = o.Helm().Version(o.HelmTLS)
 	if err != nil {
-		log.Warnf("Failed to get helm version: %s\n", err)
+		logrus.Warnf("Failed to get helm version: %s\n", err)
 	} else {
 		helmBinary, noTiller, helmTemplate, _ := o.TeamHelmBin()
 		if helmBinary == "helm3" || noTiller || helmTemplate {
@@ -140,7 +140,7 @@ func (o *VersionOptions) Run() error {
 	// git version
 	version, err := o.Git().Version()
 	if err != nil {
-		log.Warnf("Failed to get git version: %s\n", err)
+		logrus.Warnf("Failed to get git version: %s\n", err)
 	} else {
 		table.AddRow("git", info(version))
 	}
@@ -148,7 +148,7 @@ func (o *VersionOptions) Run() error {
 	// os version
 	version, err = o.GetOsVersion()
 	if err != nil {
-		log.Warnf("Failed to get OS version: %s\n", err)
+		logrus.Warnf("Failed to get OS version: %s\n", err)
 	} else {
 		table.AddRow("Operating System", info(version))
 	}
@@ -192,9 +192,9 @@ func (o *VersionOptions) ShouldUpdate(newVersion semver.Version) (bool, error) {
 
 func (o *VersionOptions) upgradeCli(newVersion semver.Version) error {
 	app := util.ColorInfo("jx")
-	log.Warnf("\nA new %s version is available: %s\n", app, util.ColorInfo(newVersion.String()))
+	logrus.Warnf("\nA new %s version is available: %s\n", app, util.ColorInfo(newVersion.String()))
 	if o.BatchMode {
-		log.Warnf("To upgrade to this new version use: %s\n", util.ColorInfo("jx upgrade cli"))
+		logrus.Warnf("To upgrade to this new version use: %s\n", util.ColorInfo("jx upgrade cli"))
 	} else {
 		message := fmt.Sprintf("Would you like to upgrade to the new %s version?", app)
 		if util.Confirm(message, true, "Please indicate if you would like to upgrade the binary version.", o.In, o.Out, o.Err) {

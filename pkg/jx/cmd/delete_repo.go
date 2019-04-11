@@ -8,7 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -135,7 +135,7 @@ func (o *DeleteRepoOptions) Run() error {
 	}
 
 	if !o.BatchMode {
-		log.Warnf("You are about to delete these repositories '%s' on the Git provider. This operation CANNOT be undone!",
+		logrus.Warnf("You are about to delete these repositories '%s' on the Git provider. This operation CANNOT be undone!",
 			strings.Join(names, ","))
 
 		flag := false
@@ -160,10 +160,10 @@ func (o *DeleteRepoOptions) Run() error {
 	for _, name := range names {
 		err = provider.DeleteRepository(owner, name)
 		if err != nil {
-			log.Warnf("Ensure Git Token has delete repo permissions or manually delete, for GitHub check https://github.com/settings/tokens\n")
-			log.Warnf("%s\n", err)
+			logrus.Warnf("Ensure Git Token has delete repo permissions or manually delete, for GitHub check https://github.com/settings/tokens\n")
+			logrus.Warnf("%s\n", err)
 		} else {
-			log.Infof("Deleted repository %s/%s\n", info(owner), info(name))
+			logrus.Infof("Deleted repository %s/%s\n", info(owner), info(name))
 		}
 	}
 	return nil

@@ -3,7 +3,7 @@ package version
 import (
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
@@ -100,10 +100,10 @@ func LoadStableVersionNumber(wrkDir string, kind VersionKind, name string) (stri
 	}
 	version := data.Version
 	if version != "" {
-		log.Infof("using stable version %s from %s of %s from %s\n", util.ColorInfo(version), string(kind), util.ColorInfo(name), wrkDir)
+		logrus.Infof("using stable version %s from %s of %s from %s\n", util.ColorInfo(version), string(kind), util.ColorInfo(name), wrkDir)
 	} else {
-		log.Warnf("could not find a stable version from %s of %s from %s\nFor background see: https://jenkins-x.io/architecture/version-stream/\n", string(kind), name, wrkDir)
-		log.Infof("Please lock this version down via the command: %s\n", util.ColorInfo(fmt.Sprintf("jx step create version pr -k %s -n %s\n", string(kind), name)))
+		logrus.Warnf("could not find a stable version from %s of %s from %s\nFor background see: https://jenkins-x.io/architecture/version-stream/\n", string(kind), name, wrkDir)
+		logrus.Infof("Please lock this version down via the command: %s\n", util.ColorInfo(fmt.Sprintf("jx step create version pr -k %s -n %s\n", string(kind), name)))
 	}
 	return version, err
 }

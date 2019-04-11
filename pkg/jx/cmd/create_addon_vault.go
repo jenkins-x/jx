@@ -10,7 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/vault"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -88,7 +88,7 @@ func InstallVaultOperator(o *opts.CommonOptions, namespace string) error {
 	if releaseName == "" {
 		releaseName = kube.DefaultVaultOperatorReleaseName
 	}
-	log.Infof("Installing %s...\n", util.ColorInfo(releaseName))
+	logrus.Infof("Installing %s...\n", util.ColorInfo(releaseName))
 
 	values := []string{
 		"image.repository=" + vault.BankVaultsOperatorImage,
@@ -108,6 +108,6 @@ func InstallVaultOperator(o *opts.CommonOptions, namespace string) error {
 		return errors.Wrap(err, fmt.Sprintf("installing %s chart", releaseName))
 	}
 
-	log.Infof("%s addon succesfully installed.\n", util.ColorInfo(releaseName))
+	logrus.Infof("%s addon succesfully installed.\n", util.ColorInfo(releaseName))
 	return nil
 }

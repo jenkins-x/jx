@@ -16,7 +16,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/pki"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -90,7 +90,7 @@ func (o *CreateAddonSSOOptions) Run() error {
 		return errors.Wrap(err, "ensuring cert-manager is installed")
 	}
 
-	log.Infof("Installing %s...\n", util.ColorInfo("dex identity provider"))
+	logrus.Infof("Installing %s...\n", util.ColorInfo("dex identity provider"))
 
 	ingressConfig, err := kube.GetIngressConfig(client, devNamespace)
 	if err != nil {
@@ -101,11 +101,11 @@ func (o *CreateAddonSSOOptions) Run() error {
 		return err
 	}
 
-	log.Infof("Configuring %s connector\n", util.ColorInfo("GitHub"))
+	logrus.Infof("Configuring %s connector\n", util.ColorInfo("GitHub"))
 
-	log.Infof("Please go to %s and create a new OAuth application with an Authorization Callback URL of %s.\nChoose a suitable Application name and Homepage URL.\n",
+	logrus.Infof("Please go to %s and create a new OAuth application with an Authorization Callback URL of %s.\nChoose a suitable Application name and Homepage URL.\n",
 		util.ColorInfo(githubNewOAuthAppURL), util.ColorInfo(o.dexCallback(domain)))
-	log.Infof("Copy the %s and the %s and paste them into the form below:\n",
+	logrus.Infof("Copy the %s and the %s and paste them into the form below:\n",
 		util.ColorInfo("Client ID"), util.ColorInfo("Client Secret"))
 
 	clientID, err := util.PickValue("Client ID:", "", true, "", o.In, o.Out, o.Err)
@@ -136,14 +136,14 @@ func (o *CreateAddonSSOOptions) Run() error {
 		return errors.Wrap(err, "installing dex")
 	}
 
-	log.Infof("Installing %s...\n", util.ColorInfo("sso-operator"))
+	logrus.Infof("Installing %s...\n", util.ColorInfo("sso-operator"))
 	dexGrpcService := fmt.Sprintf("%s.%s", dexServiceName, o.Namespace)
 	err = o.installSSOOperator(dexGrpcService)
 	if err != nil {
 		return errors.Wrap(err, "installing sso-operator")
 	}
 
-	log.Infof("Exposing services with %s enabled...\n", util.ColorInfo("TLS"))
+	logrus.Infof("Exposing services with %s enabled...\n", util.ColorInfo("TLS"))
 	return o.exposeSSO()
 }
 

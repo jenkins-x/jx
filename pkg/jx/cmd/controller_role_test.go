@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"k8s.io/client-go/kubernetes"
 
@@ -186,7 +186,7 @@ func TestEnvironmentRoleBinding(t *testing.T) {
 	_, err = jxClient.JenkinsV1().Environments(teamNs).Create(newEnv)
 	require.NoError(t, err, "Failed to create an Environment %s in ns %s", newPreviewNS, teamNs)
 
-	log.Infof("Created Preview Environment %s\n", newPreviewNS)
+	logrus.Infof("Created Preview Environment %s\n", newPreviewNS)
 
 	// now lets simulate the watch...
 	err = o.UpsertEnvironmentRoleBinding(envRoleBinding)
@@ -211,7 +211,7 @@ func TestEnvironmentRoleBinding(t *testing.T) {
 
 	lastIdx := len(role.Rules) - 1
 	role.Rules[lastIdx].Resources = append(role.Rules[lastIdx].Resources, "secrets")
-	log.Infof("Updated Role %s to be policies %#v\n", roleName, role.Rules)
+	logrus.Infof("Updated Role %s to be policies %#v\n", roleName, role.Rules)
 	_, err = kubeClient.RbacV1().Roles(teamNs).Update(role)
 	require.NoError(t, err, "Updating EnvironmentRoleBinding in ns %s with name %s", teamNs, roleBindingName)
 
@@ -268,7 +268,7 @@ func AssertContainsSubject(t *testing.T, subjects []rbacv1.Subject, message stri
 			return true
 		}
 	}
-	log.Warnf("Does not contain Subject: (%s,%s,%s) for %s - has subjects %#v\n", kind, ns, name, message, subjects)
+	logrus.Warnf("Does not contain Subject: (%s,%s,%s) for %s - has subjects %#v\n", kind, ns, name, message, subjects)
 	return assert.Fail(t, "Does not contain Subject: (%s,%s,%s) for %s - has subjects %#v", kind, ns, name, message, subjects)
 }
 
@@ -276,7 +276,7 @@ func AssertContainsSubject(t *testing.T, subjects []rbacv1.Subject, message stri
 func AssertNotContainsSubject(t *testing.T, subjects []rbacv1.Subject, message string, kind string, ns string, name string) bool {
 	for _, subject := range subjects {
 		if subject.Kind == kind && subject.Namespace == ns && subject.Name == name {
-			log.Warnf("Should not contain Subject (%s,%s,%s) for %s - has subjects %#v\n", kind, ns, name, message, subjects)
+			logrus.Warnf("Should not contain Subject (%s,%s,%s) for %s - has subjects %#v\n", kind, ns, name, message, subjects)
 			return assert.Fail(t, "Should not contain Subject (%s,%s,%s) for %s - has subjects %#v", kind, ns, name, message, subjects)
 		}
 	}
@@ -314,7 +314,7 @@ func AssertContainsPolicyRule(t *testing.T, rules []rbacv1.PolicyRule, message s
 			return true
 		}
 	}
-	log.Warnf("Does not contain PolicyRule: (%s,%s,%s) for %s - has rules %#v\n", apiGroup, verb, resource, message, rules)
+	logrus.Warnf("Does not contain PolicyRule: (%s,%s,%s) for %s - has rules %#v\n", apiGroup, verb, resource, message, rules)
 	return assert.Fail(t, "Does not contain PolicyRule: (%s,%s,%s) for %s - has rules %#v", apiGroup, verb, resource, message, rules)
 }
 
@@ -322,7 +322,7 @@ func AssertContainsPolicyRule(t *testing.T, rules []rbacv1.PolicyRule, message s
 func AssertNotContainsPolicyRule(t *testing.T, rules []rbacv1.PolicyRule, message string, apiGroup string, verb string, resource string) bool {
 	for _, rule := range rules {
 		if util.StringArrayIndex(rule.APIGroups, apiGroup) >= 0 && util.StringArrayIndex(rule.Verbs, verb) >= 0 && util.StringArrayIndex(rule.Resources, resource) >= 0 {
-			log.Warnf("Should not contain PolicyRule (%s,%s,%s) for %s - has rules %#v\n", apiGroup, verb, resource, message, rules)
+			logrus.Warnf("Should not contain PolicyRule (%s,%s,%s) for %s - has rules %#v\n", apiGroup, verb, resource, message, rules)
 			return assert.Fail(t, "Should not contain PolicyRule (%s,%s,%s) for %s - has rules %#v", apiGroup, verb, resource, message, rules)
 		}
 	}

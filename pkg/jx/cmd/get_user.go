@@ -6,7 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/users"
 	"github.com/spf13/cobra"
 )
@@ -71,7 +71,7 @@ func (o *GetUserOptions) Run() error {
 	}
 
 	if len(names) == 0 {
-		log.Info(`
+		logrus.Info(`
 There are no Users yet. Try create one via: jx create user
 `)
 		return nil
@@ -86,7 +86,7 @@ There are no Users yet. Try create one via: jx create user
 			userKind := user.SubjectKind()
 			roleNames, err := kube.GetUserRoles(kubeClient, jxClient, ns, userKind, name)
 			if err != nil {
-				log.Warnf("Failed to find User roles in namespace %s for User %s kind %s: %s\n", ns, name, userKind, err)
+				logrus.Warnf("Failed to find User roles in namespace %s for User %s kind %s: %s\n", ns, name, userKind, err)
 			}
 			table.AddRow(name, spec.Name, spec.Email, spec.URL, strings.Join(roleNames, ", "))
 		}

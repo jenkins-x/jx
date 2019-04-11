@@ -2,14 +2,15 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 	"os"
 
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -68,10 +69,10 @@ func NewCmdCreateJHipster(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o CreateJHipsterOptions) checkJHipsterInstalled() error {
 	_, err := o.GetCommandOutput("", "jhipster", "--version")
 	if err != nil {
-		log.Infoln("Installing JHipster..")
+		logrus.Infoln("Installing JHipster..")
 		_, err = o.GetCommandOutput("", "rimraf", "--version")
 		if err != nil {
-			log.Infoln("Installing rimraf..")
+			logrus.Infoln("Installing rimraf..")
 			_, err = o.GetCommandOutput("", "npm", "install", "-g", "rimraf")
 			if err != nil {
 				return err
@@ -81,7 +82,7 @@ func (o CreateJHipsterOptions) checkJHipsterInstalled() error {
 		if err != nil {
 			return err
 		}
-		log.Infoln("Installed JHipster")
+		logrus.Infoln("Installed JHipster")
 	}
 	return err
 }
@@ -126,6 +127,6 @@ func (o *CreateJHipsterOptions) Run() error {
 		return err
 	}
 
-	log.Infof("Created JHipster project at %s\n\n", util.ColorInfo(dir))
+	logrus.Infof("Created JHipster project at %s\n\n", util.ColorInfo(dir))
 	return o.ImportCreatedProject(dir)
 }

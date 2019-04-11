@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -52,6 +52,6 @@ func NewCmdStepGetBuildNumber(commonOpts *opts.CommonOptions) *cobra.Command {
 // Run implements this command
 func (o *StepGetBuildNumberOptions) Run() error {
 	text := o.GetBuildNumber()
-	log.Infof("%s\n", text)
+	logrus.Infof("%s\n", text)
 	return nil
 }

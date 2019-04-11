@@ -5,7 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -82,6 +82,6 @@ func (o *StepHelmDeleteOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Deleted release %s in namespace %s\n", util.ColorInfo(releaseName), util.ColorInfo(ns))
+	logrus.Infof("Deleted release %s in namespace %s\n", util.ColorInfo(releaseName), util.ColorInfo(ns))
 	return nil
 }

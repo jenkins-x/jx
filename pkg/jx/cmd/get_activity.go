@@ -10,7 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	tbl "github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -172,12 +172,12 @@ func (o *GetActivityOptions) WatchActivities(table *tbl.Table, jxClient versione
 func (o *GetActivityOptions) onActivity(table *tbl.Table, obj interface{}, yamlSpecMap map[string]string) {
 	activity, ok := obj.(*v1.PipelineActivity)
 	if !ok {
-		log.Infof("Object is not a PipelineActivity %#v\n", obj)
+		logrus.Infof("Object is not a PipelineActivity %#v\n", obj)
 		return
 	}
 	data, err := yaml.Marshal(&activity.Spec)
 	if err != nil {
-		log.Infof("Failed to marshal Activity.Spec to YAML: %s", err)
+		logrus.Infof("Failed to marshal Activity.Spec to YAML: %s", err)
 	} else {
 		text := string(data)
 		name := activity.Name
@@ -203,7 +203,7 @@ func (o *GetActivityOptions) addStepRow(table *tbl.Table, parent *v1.PipelineAct
 	} else if promote != nil {
 		addPromoteRow(table, promote, indent)
 	} else {
-		log.Warnf("Unknown step kind %#v\n", parent)
+		logrus.Warnf("Unknown step kind %#v\n", parent)
 	}
 }
 

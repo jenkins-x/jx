@@ -7,7 +7,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -102,6 +102,6 @@ func (o *StepHelmInstallOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Installed chart %s with name %s into namespace %s\n", util.ColorInfo(chart), util.ColorInfo(releaseName), util.ColorInfo(ns))
+	logrus.Infof("Installed chart %s with name %s into namespace %s\n", util.ColorInfo(chart), util.ColorInfo(releaseName), util.ColorInfo(ns))
 	return nil
 }

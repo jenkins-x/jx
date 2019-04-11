@@ -30,7 +30,7 @@ func TestInstall(t *testing.T) {
 }
 
 func TestGenerateProwSecret(t *testing.T) {
-	fmt.Println(util.RandStringBytesMaskImprSrc(41))
+	logrus.Info(util.RandStringBytesMaskImprSrc(41))
 }
 
 func TestGetSafeUsername(t *testing.T) {

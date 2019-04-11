@@ -24,7 +24,7 @@ import (
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	helmchart "k8s.io/helm/pkg/proto/hapi/chart"
@@ -85,7 +85,7 @@ func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, envir
 	if err != nil {
 		return nil, errors.Wrapf(err, "Failed to load remote branch names")
 	}
-	//log.Infof("Found remote branch names %s\n", strings.Join(branchNames, ", "))
+	//logrus.Infof("Found remote branch names %s\n", strings.Join(branchNames, ", "))
 	if util.StringArrayIndex(branchNames, branchName) >= 0 {
 		// lets append a UUID as the branch name already exists
 		branchNameUUID, err := uuid.NewV4()
@@ -126,7 +126,7 @@ func (o *EnvironmentPullRequestOptions) PushEnvironmentRepo(dir string, branchNa
 		return nil, err
 	}
 	if !changed {
-		log.Warnf("%s\n", "No changes made to the GitOps Environment source code. Code must be up to date!")
+		logrus.Warnf("%s\n", "No changes made to the GitOps Environment source code. Code must be up to date!")
 		return nil, nil
 	}
 	err = o.Gitter.CommitDir(dir, pullRequestDetails.Message)
@@ -168,7 +168,7 @@ func (o *EnvironmentPullRequestOptions) PushEnvironmentRepo(dir string, branchNa
 	if err != nil {
 		return nil, err
 	}
-	log.Infof("Created Pull Request: %s\n\n", util.ColorInfo(pr.URL))
+	logrus.Infof("Created Pull Request: %s\n\n", util.ColorInfo(pr.URL))
 	return &gits.PullRequestInfo{
 		GitProvider:          o.GitProvider,
 		PullRequest:          pr,
@@ -256,7 +256,7 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 	git := o.Gitter
 
 	if o.GitProvider == nil {
-		log.Warnf("No GitProvider specified!\n")
+		logrus.Warnf("No GitProvider specified!\n")
 		debug.PrintStack()
 	} else {
 		userDetails = o.GitProvider.UserAuth()
@@ -286,7 +286,7 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 			if err != nil {
 				return "", "", nil, fork, errors.Wrapf(err, "failed to fork GitHub repo %s/%s to user %s", originalOrg, originalRepo, username)
 			}
-			log.Infof("Forked Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+			logrus.Infof("Forked Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 		}
 
 		// lets only use this repository if it is a fork
@@ -434,7 +434,7 @@ func CreateUpgradeRequirementsFn(all bool, chartName string, alias string, versi
 							}
 							version = chartVersion
 							if verbose {
-								log.Infof("No version specified so using latest version which is %s\n", util.ColorInfo(version))
+								logrus.Infof("No version specified so using latest version which is %s\n", util.ColorInfo(version))
 							}
 						}
 
@@ -464,7 +464,7 @@ func CreateUpgradeRequirementsFn(all bool, chartName string, alias string, versi
 			}
 		}
 		if !upgraded {
-			log.Infof("No upgrades available\n")
+			logrus.Infof("No upgrades available\n")
 		}
 		return nil
 	}
@@ -484,9 +484,9 @@ func CreateAddRequirementFn(chartName string, alias string, version string, repo
 		for _, d := range requirements.Dependencies {
 			if d.Name == chartName && d.Alias == alias {
 				// App found
-				log.Infof("App %s already installed.\n", util.ColorWarning(chartName))
+				logrus.Infof("App %s already installed.\n", util.ColorWarning(chartName))
 				if version != d.Version {
-					log.Infof("To upgrade the chartName use %s or %s\n",
+					logrus.Infof("To upgrade the chartName use %s or %s\n",
 						util.ColorInfo("jx upgrade chartName <chartName>"),
 						util.ColorInfo("jx upgrade apps --all"))
 				}
@@ -526,7 +526,7 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 		return errors.Wrapf(err, "cannot create requirementName directory %s", appDir)
 	}
 	if verbose {
-		log.Infof("Using %s for requirementName files\n", appDir)
+		logrus.Infof("Using %s for requirementName files\n", appDir)
 	}
 	if requirementValuesFiles != nil && len(requirementValuesFiles.Items) == 1 {
 		// We need to write the values file into the right spot for the requirementName
@@ -536,7 +536,7 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 				"yaml to %s directory %s", requirementName, appDir)
 		}
 		if verbose {
-			log.Infof("Writing values file to %s\n", rootValuesFileName)
+			logrus.Infof("Writing values file to %s\n", rootValuesFileName)
 		}
 	}
 	// Write the release.yaml
@@ -544,7 +544,7 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 	templatesDir := filepath.Join(requirementDir, "templates")
 	if _, err := os.Stat(templatesDir); os.IsNotExist(err) {
 		if verbose {
-			log.Infof("No templates directory exists in %s\n", util.ColorInfo(dir))
+			logrus.Infof("No templates directory exists in %s\n", util.ColorInfo(dir))
 		}
 	} else if err != nil {
 		return errors.Wrapf(err, "stat directory %s", appDir)
@@ -568,13 +568,13 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 				return errors.Wrapf(err, "write file %s", releaseYamlOutPath)
 			}
 			if verbose {
-				log.Infof("Read release notes URL %s and git repo url %s from release.yaml\nWriting release."+
+				logrus.Infof("Read release notes URL %s and git repo url %s from release.yaml\nWriting release."+
 					"yaml from chartName to %s\n", releaseNotesURL, gitRepo, releaseYamlOutPath)
 			}
 		} else if os.IsNotExist(err) {
 			if verbose {
 
-				log.Infof("Not adding release.yaml as not present in chart. Only files in %s are:\n",
+				logrus.Infof("Not adding release.yaml as not present in chart. Only files in %s are:\n",
 					templatesDir)
 				err := util.ListDirectory(templatesDir, true)
 				if err != nil {
@@ -599,7 +599,7 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 		description = chart.Description
 	} else if os.IsNotExist(err) {
 		if verbose {
-			log.Infof("Not adding %s as not present in chart. Only files in %s are:\n", helm.ChartFileName,
+			logrus.Infof("Not adding %s as not present in chart. Only files in %s are:\n", helm.ChartFileName,
 				requirementDir)
 			err := util.ListDirectory(requirementDir, true)
 			if err != nil {
@@ -630,7 +630,7 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 		}
 		if len(possibleReadmes) > 1 {
 			if verbose {
-				log.Warnf("Unable to add README to PR for %s as more than one exists and not sure which to"+
+				logrus.Warnf("Unable to add README to PR for %s as more than one exists and not sure which to"+
 					" use %s\n", requirementName, possibleReadmes)
 			}
 		} else if len(possibleReadmes) == 1 {
@@ -664,7 +664,7 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 		return errors.Wrap(err, fmt.Sprintf("error reading %s", requirementDir))
 	}
 	if verbose && appReadme == "" {
-		log.Infof("Not adding App Readme as no README, README.md, readme or readme.md found in %s\n", requirementDir)
+		logrus.Infof("Not adding App Readme as no README, README.md, readme or readme.md found in %s\n", requirementDir)
 	}
 	UpdateAppResource(helmer, requirementDir, appDir, requirementName, requirementRepository)
 	if err != nil {
@@ -677,7 +677,7 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 		return errors.Wrapf(err, "write README.md to %s", appDir)
 
 		if verbose {
-			log.Infof("Writing README.md to %s\n", readmeOutPath)
+			logrus.Infof("Writing README.md to %s\n", readmeOutPath)
 		}
 		externalFileHandler := func(path string, element map[string]interface{}, key string) error {
 			fileName, _ := filepath.Split(path)
@@ -696,7 +696,7 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 						return errors.Wrapf(err, "copy %s to %s", schemaPath, appDir)
 					}
 					if verbose {
-						log.Infof("Writing %s to %s\n", fileName, schemaOutPath)
+						logrus.Infof("Writing %s to %s\n", fileName, schemaOutPath)
 					}
 				}
 			}

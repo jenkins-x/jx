@@ -9,7 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 )
@@ -140,13 +140,13 @@ func (o *CreateClusterAKSOptions) Run() error {
 	}
 	err := o.InstallMissingDependencies(deps)
 	if err != nil {
-		log.Errorf("%v\nPlease fix the error or install manually then try again", err)
+		logrus.Errorf("%v\nPlease fix the error or install manually then try again", err)
 		os.Exit(-1)
 	}
 
 	err = o.createClusterAKS()
 	if err != nil {
-		log.Errorf("error creating cluster %v", err)
+		logrus.Errorf("error creating cluster %v", err)
 		os.Exit(-1)
 	}
 
@@ -159,13 +159,13 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	resourceName := o.Flags.ResourceName
 	if resourceName == "" {
 		resourceName = strings.ToLower(randomdata.SillyName())
-		log.Infof("No resource name provided so using a generated one: %s", resourceName)
+		logrus.Infof("No resource name provided so using a generated one: %s", resourceName)
 	}
 
 	clusterName := o.Flags.ClusterName
 	if clusterName == "" {
 		clusterName = strings.ToLower(randomdata.SillyName())
-		log.Infof("No cluster name provided so using a generated one: %s", clusterName)
+		logrus.Infof("No cluster name provided so using a generated one: %s", clusterName)
 	}
 
 	location := o.Flags.Location
@@ -219,13 +219,13 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		//First login
 
 		if userName != "" && password != "" {
-			log.Info("Logging in to Azure using provider username and password...\n")
+			logrus.Info("Logging in to Azure using provider username and password...\n")
 			err = o.RunCommand("az", "login", "-u", userName, "-p", password)
 			if err != nil {
 				return err
 			}
 		} else {
-			log.Info("Logging in to Azure interactively...\n")
+			logrus.Info("Logging in to Azure interactively...\n")
 			err = o.RunCommandVerbose("az", "login")
 			if err != nil {
 				return err
@@ -262,7 +262,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 	subscription := o.Flags.Subscription
 
 	if subscription != "" {
-		log.Info("Changing subscription...\n")
+		logrus.Info("Changing subscription...\n")
 		err = o.RunCommandVerbose("az", "account", "set", "--subscription", subscription)
 
 		if err != nil {
@@ -353,7 +353,7 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		createCluster = append(createCluster, "--tags", o.Flags.Tags)
 	}
 
-	log.Infof("Creating cluster named %s in resource group %s...\n", clusterName, resourceName)
+	logrus.Infof("Creating cluster named %s in resource group %s...\n", clusterName, resourceName)
 	err = o.RunCommand("az", createCluster...)
 	if err != nil {
 		return err
@@ -368,6 +368,6 @@ func (o *CreateClusterAKSOptions) createClusterAKS() error {
 		return err
 	}
 
-	log.Info("Initialising cluster ...\n")
+	logrus.Info("Initialising cluster ...\n")
 	return o.initAndInstall(cloud.AKS)
 }

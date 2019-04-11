@@ -14,7 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -75,7 +75,7 @@ func (o *GCPreviewsOptions) Run() error {
 	if len(envs.Items) == 0 {
 		// no environments found so lets return gracefully
 		if o.Verbose {
-			log.Info("no environments found\n")
+			logrus.Info("no environments found\n")
 		}
 		return nil
 	}
@@ -105,11 +105,11 @@ func (o *GCPreviewsOptions) Run() error {
 			}
 			prNum, err := strconv.Atoi(e.Spec.PreviewGitSpec.Name)
 			if err != nil {
-				log.Warn("Unable to convert PR " + e.Spec.PreviewGitSpec.Name + " to a number" + "\n")
+				logrus.Warn("Unable to convert PR " + e.Spec.PreviewGitSpec.Name + " to a number" + "\n")
 			}
 			pullRequest, err := gitProvider.GetPullRequest(gitInfo.Organisation, gitInfo, prNum)
 			if err != nil {
-				log.Warnf("Can not get pull request %s, skipping: %s", e.Spec.PreviewGitSpec.Name, err)
+				logrus.Warnf("Can not get pull request %s, skipping: %s", e.Spec.PreviewGitSpec.Name, err)
 				continue
 			}
 
@@ -132,7 +132,7 @@ func (o *GCPreviewsOptions) Run() error {
 		}
 	}
 	if o.Verbose && !previewFound {
-		log.Info("no preview environments found\n")
+		logrus.Info("no preview environments found\n")
 	}
 	return nil
 }

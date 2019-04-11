@@ -16,7 +16,7 @@ import (
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	build "github.com/knative/build/pkg/apis/build/v1alpha1"
 	v1 "k8s.io/api/core/v1"
@@ -287,8 +287,8 @@ func (o *StartPipelineOptions) startJenkinsJob(name string) error {
 		if last.Number != previous.Number {
 			last.Url = switchJenkinsBaseURL(last.Url, jenkins.BaseURL())
 
-			log.Infof("Started build of %s at %s\n", util.ColorInfo(name), util.ColorInfo(last.Url))
-			log.Infof("%s %s\n", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
+			logrus.Infof("Started build of %s at %s\n", util.ColorInfo(name), util.ColorInfo(last.Url))
+			logrus.Infof("%s %s\n", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
 			if o.Tail {
 				return o.TailJenkinsBuildLog(&o.JenkinsSelector, name, &last)
 			}

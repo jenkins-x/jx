@@ -10,7 +10,7 @@ import (
 	"code.gitea.io/sdk/gitea"
 	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -173,7 +173,7 @@ func (p *GiteaProvider) ForkRepository(originalOrg string, name string, destinat
 			owner = p.Username
 		}
 		if strings.Contains(err.Error(), "try again later") {
-			log.Warnf("Waiting for the fork of %s/%s to appear...\n", owner, name)
+			logrus.Warnf("Waiting for the fork of %s/%s to appear...\n", owner, name)
 			// lets wait for the fork to occur...
 			start := time.Now()
 			deadline := start.Add(time.Minute)
@@ -215,7 +215,7 @@ func (p *GiteaProvider) CreateWebHook(data *GitWebHookArguments) error {
 	for _, hook := range hooks {
 		s := hook.Config["url"]
 		if s == webhookUrl {
-			log.Warnf("Already has a webhook registered for %s\n", webhookUrl)
+			logrus.Warnf("Already has a webhook registered for %s\n", webhookUrl)
 			return nil
 		}
 	}
@@ -232,7 +232,7 @@ func (p *GiteaProvider) CreateWebHook(data *GitWebHookArguments) error {
 		Events: []string{"create", "push", "pull_request"},
 		Active: true,
 	}
-	log.Infof("Creating Gitea webhook for %s/%s for url %s\n", util.ColorInfo(owner), util.ColorInfo(repo), util.ColorInfo(webhookUrl))
+	logrus.Infof("Creating Gitea webhook for %s/%s for url %s\n", util.ColorInfo(owner), util.ColorInfo(repo), util.ColorInfo(webhookUrl))
 	_, err = p.Client.CreateRepoHook(owner, repo, hook)
 	if err != nil {
 		return fmt.Errorf("Failed to create webhook for %s/%s with %#v due to: %s", owner, repo, hook, err)
@@ -712,17 +712,17 @@ func (p *GiteaProvider) UserInfo(username string) *GitUser {
 }
 
 func (p *GiteaProvider) AddCollaborator(user string, organisation string, repo string) error {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for Gitea. Please add user: %v as a collaborator to this project.\n", user)
+	logrus.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for Gitea. Please add user: %v as a collaborator to this project.\n", user)
 	return nil
 }
 
 func (p *GiteaProvider) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for Gitea.\n")
+	logrus.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for Gitea.\n")
 	return []*github.RepositoryInvitation{}, &github.Response{}, nil
 }
 
 func (p *GiteaProvider) AcceptInvitation(ID int64) (*github.Response, error) {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for Gitea.\n")
+	logrus.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for Gitea.\n")
 	return &github.Response{}, nil
 }
 

@@ -8,7 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -132,7 +132,7 @@ func (o *MetricsOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		log.Infof("%s\n", string(data))
+		logrus.Infof("%s\n", string(data))
 		return nil
 	}
 

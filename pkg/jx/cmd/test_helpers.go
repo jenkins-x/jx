@@ -17,7 +17,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/resources"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	kservefake "github.com/knative/serving/pkg/client/clientset/versioned/fake"
 	"github.com/stretchr/testify/assert"
@@ -187,7 +187,7 @@ func AssertHasPullRequestForEnv(t *testing.T, activities typev1.PipelineActivity
 					failed = true
 				}
 				u := pullRequestStep.PullRequestURL
-				log.Infof("Found Promote PullRequest %s on PipelineActivity %s for Environment %s\n", u, name, envName)
+				logrus.Infof("Found Promote PullRequest %s on PipelineActivity %s for Environment %s\n", u, name, envName)
 
 				if !assert.True(t, u != "", "No PullRequest URL on PipelineActivity %s for Promote step for Environment %s", name, envName) {
 					failed = true
@@ -222,7 +222,7 @@ func WaitForPullRequestForEnv(t *testing.T, activities typev1.PipelineActivityIn
 						failed = true
 					}
 					u := pullRequestStep.PullRequestURL
-					log.Infof("Found Promote PullRequest %s on PipelineActivity %s for Environment %s\n", u, name, envName)
+					logrus.Infof("Found Promote PullRequest %s on PipelineActivity %s for Environment %s\n", u, name, envName)
 
 					if !assert.True(t, u != "", "No PullRequest URL on PipelineActivity %s for Promote step for Environment %s", name, envName) {
 						failed = true
@@ -235,12 +235,12 @@ func WaitForPullRequestForEnv(t *testing.T, activities typev1.PipelineActivityIn
 			}
 		}
 		if time.Now().After(end) {
-			log.Infof("No Promote PR found on PipelineActivity %s for Environment %s\n", name, envName)
+			logrus.Infof("No Promote PR found on PipelineActivity %s for Environment %s\n", name, envName)
 			//assert.Fail(t, "Missing Promote PR", "No Promote PR found on PipelineActivity %s for Environment %s", name, envName)
 			//dumpFailedActivity(activity)
 			return
 		}
-		log.Infof("Waiting 1s for PullRequest in Enviroment %s\n", envName)
+		logrus.Infof("Waiting 1s for PullRequest in Enviroment %s\n", envName)
 		v, _ := time.ParseDuration("2s")
 		time.Sleep(v)
 		activity, _ = activities.Get(name, metav1.GetOptions{})
@@ -276,7 +276,7 @@ func AssertSetPullRequestComplete(t *testing.T, provider *gits.FakeProvider, rep
 		} else {
 			repository.Commits[len(repository.Commits)-1] = lastCommit
 		}
-		log.Infof("PR %s has commit status success\n", fakePR.PullRequest.URL)
+		logrus.Infof("PR %s has commit status success\n", fakePR.PullRequest.URL)
 	}
 
 	// validate the fake Git provider concurs
@@ -383,7 +383,7 @@ func SetPullRequestClosed(pr *gits.FakePullRequest) {
 	now := time.Now()
 	pr.PullRequest.ClosedAt = &now
 
-	log.Infof("PR %s is now closed\n", pr.PullRequest.URL)
+	logrus.Infof("PR %s is now closed\n", pr.PullRequest.URL)
 }
 
 // AssertSetPullRequestMerged validates that the fake PR has merged
@@ -414,7 +414,7 @@ func AssertSetPullRequestMerged(t *testing.T, provider *gits.FakeProvider, orgNa
 	fakePR.PullRequest.MergeCommitSHA = &sha
 	fakePR.PullRequest.Merged = &merged
 
-	log.Infof("PR %s is now merged\n", fakePR.PullRequest.URL)
+	logrus.Infof("PR %s is now merged\n", fakePR.PullRequest.URL)
 
 	// validate the fake Git provider concurs
 	testGitInfo := &gits.GitRepository{
@@ -445,6 +445,6 @@ func PollGitStatusAndReactToPipelineChanges(t *testing.T, o *ControllerWorkflowO
 func dumpFailedActivity(activity *v1.PipelineActivity) {
 	data, err := yaml.Marshal(activity)
 	if err == nil {
-		log.Warnf("YAML: %s\n", string(data))
+		logrus.Warnf("YAML: %s\n", string(data))
 	}
 }

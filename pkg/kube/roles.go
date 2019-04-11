@@ -6,7 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -126,7 +126,7 @@ func UpdateUserRoles(kubeClient kubernetes.Interface, jxClient versioned.Interfa
 	for _, name := range deleteRoles {
 		envRole := envRoles[name]
 		if envRole == nil {
-			log.Warnf("Could not remove user %s kind %s from EnvironmentRoleBinding %s as it does not exist", userName, userKind, name)
+			logrus.Warnf("Could not remove user %s kind %s from EnvironmentRoleBinding %s as it does not exist", userName, userKind, name)
 		} else {
 			found := false
 			for idx, subject := range envRole.Spec.Subjects {
@@ -141,7 +141,7 @@ func UpdateUserRoles(kubeClient kubernetes.Interface, jxClient versioned.Interfa
 				}
 			}
 			if !found {
-				log.Warnf("User %s kind %s is not a Subject of EnvironmentRoleBinding %s", userName, userKind, name)
+				logrus.Warnf("User %s kind %s is not a Subject of EnvironmentRoleBinding %s", userName, userKind, name)
 			}
 		}
 	}
@@ -149,7 +149,7 @@ func UpdateUserRoles(kubeClient kubernetes.Interface, jxClient versioned.Interfa
 		envRole := envRoles[name]
 		if envRole == nil {
 			// TODO lazily create the EnvironmentRoleBinding?
-			log.Warnf("Could not add user %s to EnvironmentRoleBinding %s as it does not exist!", userName, name)
+			logrus.Warnf("Could not add user %s to EnvironmentRoleBinding %s as it does not exist!", userName, name)
 		} else {
 			found := false
 			for _, subject := range envRole.Spec.Subjects {
@@ -158,7 +158,7 @@ func UpdateUserRoles(kubeClient kubernetes.Interface, jxClient versioned.Interfa
 				}
 			}
 			if found {
-				log.Warnf("User %s kind %s is already a Subject of EnvironmentRoleBinding %s", userName, userKind, name)
+				logrus.Warnf("User %s kind %s is already a Subject of EnvironmentRoleBinding %s", userName, userKind, name)
 			} else {
 				newSubject := rbacv1.Subject{
 					Name:      userName,

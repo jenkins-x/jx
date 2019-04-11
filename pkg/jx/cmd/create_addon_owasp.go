@@ -10,7 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -95,7 +95,7 @@ func (o *CreateAddonOwaspOptions) Run() error {
 					container.Command = commands
 				}
 				job.Spec.BackoffLimit = &o.BackoffLimit
-				log.Infof("Updating the post Preview Job: %s\n", util.ColorInfo(name))
+				logrus.Infof("Updating the post Preview Job: %s\n", util.ColorInfo(name))
 				return nil
 			}
 		}
@@ -114,7 +114,7 @@ func (o *CreateAddonOwaspOptions) Run() error {
 				BackoffLimit: &o.BackoffLimit,
 			},
 		})
-		log.Infof("Added the post Preview Job: %s\n", util.ColorInfo(name))
+		logrus.Infof("Added the post Preview Job: %s\n", util.ColorInfo(name))
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)

@@ -20,7 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -121,7 +121,7 @@ func (o *CreateClusterGKETerraformOptions) Run() error {
 
 	err = o.createClusterGKETerraform()
 	if err != nil {
-		log.Errorf("error creating cluster %v", err)
+		logrus.Errorf("error creating cluster %v", err)
 		return err
 	}
 
@@ -163,7 +163,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 
 	if o.Flags.ClusterName == "" {
 		o.Flags.ClusterName = strings.ToLower(randomdata.SillyName())
-		log.Infof("No cluster name provided so using a generated one: %s\n", o.Flags.ClusterName)
+		logrus.Infof("No cluster name provided so using a generated one: %s\n", o.Flags.ClusterName)
 	}
 
 	zone := o.Flags.Zone
@@ -237,7 +237,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 	if o.ServiceAccount == "" {
 		// check to see if a service account exists
 		serviceAccount := fmt.Sprintf("jx-%s", o.Flags.ClusterName)
-		log.Infof("Checking for service account %s\n", serviceAccount)
+		logrus.Infof("Checking for service account %s\n", serviceAccount)
 
 		keyPath, err = gke.GetOrCreateServiceAccount(serviceAccount, projectId, clusterHome, gke.RequiredServiceAccountRoles)
 		if err != nil {
@@ -308,7 +308,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 		return err
 	}
 
-	log.Info("Applying plan...\n")
+	logrus.Info("Applying plan...\n")
 
 	args = []string{"apply",
 		"-auto-approve",
@@ -356,9 +356,9 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 	if err != nil {
 		return err
 	}
-	log.Info(output)
+	logrus.Info(output)
 
-	log.Info("Initialising cluster ...\n")
+	logrus.Info("Initialising cluster ...\n")
 	if o.InstallOptions.Flags.DefaultEnvironmentPrefix == "" {
 		o.InstallOptions.Flags.DefaultEnvironmentPrefix = o.Flags.ClusterName
 	}
@@ -371,7 +371,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 	if err != nil {
 		return err
 	}
-	log.Info(context)
+	logrus.Info(context)
 
 	ns := o.InstallOptions.Flags.Namespace
 	if ns == "" {
@@ -421,7 +421,7 @@ func (o *CreateClusterGKETerraformOptions) getGoogleProjectId() (string, error) 
 		}
 	} else if len(existingProjects) == 1 {
 		projectId = existingProjects[0]
-		log.Infof("Using the only Google Cloud Project %s to create the cluster\n", util.ColorInfo(projectId))
+		logrus.Infof("Using the only Google Cloud Project %s to create the cluster\n", util.ColorInfo(projectId))
 	} else {
 		prompts := &survey.Select{
 			Message: "Google Cloud Project:",

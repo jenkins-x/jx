@@ -8,7 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -97,7 +97,7 @@ func (o *CreateIssueOptions) Run() error {
 	if createdIssue == nil {
 		return fmt.Errorf("Failed to create issue: %s", issue.Title)
 	}
-	log.Infof("\nCreated issue %s at %s\n", util.ColorInfo(createdIssue.Name()), util.ColorInfo(createdIssue.URL))
+	logrus.Infof("\nCreated issue %s at %s\n", util.ColorInfo(createdIssue.Name()), util.ColorInfo(createdIssue.URL))
 	return nil
 }
 

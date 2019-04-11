@@ -19,7 +19,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/heptio/sonobuoy/pkg/dynamic"
@@ -761,7 +761,7 @@ func (f *factory) CreateHelm(verbose bool,
 		featureFlag = "no-tiller-server"
 	}
 	if verbose {
-		log.Infof("Using helmBinary %s with feature flag: %s\n", util.ColorInfo(helmBinary), util.ColorInfo(featureFlag))
+		logrus.Infof("Using helmBinary %s with feature flag: %s\n", util.ColorInfo(helmBinary), util.ColorInfo(featureFlag))
 	}
 	helmCLI := helm.NewHelmCLI(helmBinary, helm.V2, "", verbose)
 	var h helm.Helmer = helmCLI

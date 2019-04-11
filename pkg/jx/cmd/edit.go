@@ -10,7 +10,7 @@ import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -125,7 +125,7 @@ func addTeamSettingsCommandsFromTags(baseCmd *cobra.Command, options *EditOption
 					case bool:
 						valueField.SetBool(value.(bool))
 					}
-					log.Infof("Setting the team %s to: %s\n", util.ColorInfo(command), util.ColorInfo(value))
+					logrus.Infof("Setting the team %s to: %s\n", util.ColorInfo(command), util.ColorInfo(value))
 					return nil
 				}
 				CheckErr(options.ModifyDevEnvironment(callback))

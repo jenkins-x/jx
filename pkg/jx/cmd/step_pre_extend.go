@@ -14,7 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -128,7 +128,7 @@ func (o *StepPreExtendOptions) Run() error {
 				e, err := extensionsClient.Get(v.FullyQualifiedKebabName(), metav1.GetOptions{})
 				if err != nil {
 					// Extension can't be found
-					log.Infof("Extension %s applied but cannot be found in this Jenkins X installation. Available extensions are %s\n", util.ColorInfo(fmt.Sprintf("%s", v.FullyQualifiedName())), util.ColorInfo(availableExtensionsNames))
+					logrus.Infof("Extension %s applied but cannot be found in this Jenkins X installation. Available extensions are %s\n", util.ColorInfo(fmt.Sprintf("%s", v.FullyQualifiedName())), util.ColorInfo(availableExtensionsNames))
 				} else {
 					result, err := o.walk(&e.Spec, availableExtensionsUUIDLookup, v.Parameters, 0, client.JenkinsV1().Extensions(ns))
 					if err != nil {
@@ -151,9 +151,9 @@ func (o *StepPreExtendOptions) walk(extension *jenkinsv1.ExtensionSpec, lookup m
 	if len(extension.Children) > 0 {
 		if depth > 0 {
 			indent := ((depth - 1) * 2) + 7
-			log.Infof("%s└ %s version %s\n", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
+			logrus.Infof("%s└ %s version %s\n", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
 		} else {
-			log.Infof("Adding %s version %s to pipeline\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
+			logrus.Infof("Adding %s version %s to pipeline\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
 		}
 		for _, childRef := range extension.Children {
 			if child, ok := lookup[childRef]; ok {
@@ -182,9 +182,9 @@ func (o *StepPreExtendOptions) walk(extension *jenkinsv1.ExtensionSpec, lookup m
 			}
 			if depth > 0 {
 				indent := ((depth - 1) * 2) + 7
-				log.Infof("%s└ %s version %s %s\n", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version), envVarsStr)
+				logrus.Infof("%s└ %s version %s %s\n", strings.Repeat(" ", indent), util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version), envVarsStr)
 			} else {
-				log.Infof("Adding %s version %s to pipeline %s\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version), envVarsStr)
+				logrus.Infof("Adding %s version %s to pipeline %s\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version), envVarsStr)
 			}
 			result = append(result, ext)
 		}

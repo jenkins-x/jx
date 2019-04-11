@@ -1,7 +1,7 @@
 package builds
 
 import (
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"io/ioutil"
 	"os"
@@ -46,11 +46,11 @@ func getDownwardAPILabelsMap() map[string]string {
 	const podInfoLabelsFile = "/etc/podinfo/labels"
 	exists, err := util.FileExists(podInfoLabelsFile)
 	if err != nil {
-		log.Warnf("failed to detect if the file %s exists: %s\n", podInfoLabelsFile, err)
+		logrus.Warnf("failed to detect if the file %s exists: %s\n", podInfoLabelsFile, err)
 	} else if exists {
 		data, err := ioutil.ReadFile(podInfoLabelsFile)
 		if err != nil {
-			log.Warnf("failed to load downward API pod labels from %s due to: %s\n", podInfoLabelsFile, err)
+			logrus.Warnf("failed to load downward API pod labels from %s due to: %s\n", podInfoLabelsFile, err)
 		} else {
 			text := strings.TrimSpace(string(data))
 			if text != "" {

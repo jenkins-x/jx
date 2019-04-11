@@ -19,7 +19,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
@@ -146,7 +146,7 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, d
 		}
 
 		if batchMode {
-			log.Infof("Running in batch mode and no domain flag used so defaulting to team domain %s\n", ic.Domain)
+			logrus.Infof("Running in batch mode and no domain flag used so defaulting to team domain %s\n", ic.Domain)
 			helmValues.ExposeController.Config.Domain = ic.Domain
 		} else {
 			q := &survey.Input{
@@ -250,7 +250,7 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, d
 		} else {
 			gitRepoOptions.Owner = gitRepoOptions.Username
 		}
-		log.Infof("Using %s environment git owner in batch mode.\n", util.ColorInfo(gitRepoOptions.Owner))
+		logrus.Infof("Using %s environment git owner in batch mode.\n", util.ColorInfo(gitRepoOptions.Owner))
 	}
 	_, gitProvider, err := CreateEnvGitRepository(batchMode, authConfigSvc, devEnv, data, config, forkEnvGitURL, envDir, gitRepoOptions, helmValues, prefix, git, in, out, errOut)
 	return gitProvider, err
@@ -501,7 +501,7 @@ func createEnvironmentGitRepo(batchMode bool, authConfigSvc auth.ConfigService, 
 func GetDevEnvGitOwner(jxClient versioned.Interface) (string, error) {
 	adminDevEnv, err := GetDevEnvironment(jxClient, "jx")
 	if err != nil {
-		log.Errorf("Error loading team settings. %v\n", err)
+		logrus.Errorf("Error loading team settings. %v\n", err)
 		return "", err
 	}
 	if adminDevEnv != nil {
@@ -524,7 +524,7 @@ func ModifyNamespace(out io.Writer, dir string, env *v1.Environment, git gits.Gi
 		return err
 	}
 	if !exists {
-		log.Warnf("WARNING: Could not find a Makefile in %s\n", dir)
+		logrus.Warnf("WARNING: Could not find a Makefile in %s\n", dir)
 		return nil
 	}
 	input, err := ioutil.ReadFile(file)
@@ -549,7 +549,7 @@ func ModifyNamespace(out io.Writer, dir string, env *v1.Environment, git gits.Gi
 		return err
 	}
 	if !exists {
-		log.Warnf("WARNING: Could not find a Jenkinsfile in %s\n", dir)
+		logrus.Warnf("WARNING: Could not find a Jenkinsfile in %s\n", dir)
 	} else {
 		input, err := ioutil.ReadFile(file)
 		if err != nil {

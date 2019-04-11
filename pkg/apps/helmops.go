@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 )
@@ -47,7 +47,7 @@ func (o *HelmOpsOptions) AddApp(app string, chart string, name string, version s
 	if err != nil {
 		return errors.Wrapf(err, "attaching values.yaml to %s", appCRDName)
 	}
-	log.Infof("Successfully installed %s %s\n", util.ColorInfo(name), util.ColorInfo(version))
+	logrus.Infof("Successfully installed %s %s\n", util.ColorInfo(name), util.ColorInfo(version))
 	return nil
 }
 
@@ -104,7 +104,7 @@ func (o *HelmOpsOptions) UpgradeApp(app string, version string, repository strin
 					return err
 				}
 				if o.Verbose {
-					log.Infof("No version specified so using latest version which is %s\n", util.ColorInfo(version))
+					logrus.Infof("No version specified so using latest version which is %s\n", util.ColorInfo(version))
 				}
 			}
 			// Do the upgrade
@@ -120,7 +120,7 @@ func (o *HelmOpsOptions) UpgradeApp(app string, version string, repository strin
 	}
 
 	if !upgraded {
-		log.Infof("No upgrades available\n")
+		logrus.Infof("No upgrades available\n")
 	}*/
 	return nil
 }

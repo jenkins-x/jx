@@ -22,7 +22,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/surveyutils"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -194,7 +194,7 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 				if encodedValues, ok := appResource.Annotations[ValuesAnnotation]; ok && encodedValues != "" {
 					existingValuesBytes, err := base64.StdEncoding.DecodeString(encodedValues)
 					if err != nil {
-						log.Warnf("Error decoding base64 encoded string from %s on %s\n%s\n", ValuesAnnotation,
+						logrus.Warnf("Error decoding base64 encoded string from %s on %s\n%s\n", ValuesAnnotation,
 							appCrdName, encodedValues)
 					}
 					err = json.Unmarshal(existingValuesBytes, &existingValues)
@@ -262,7 +262,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, app string, re
 
 		if version == "" {
 			if o.Verbose {
-				log.Infof("No version specified so using latest version which is %s\n",
+				logrus.Infof("No version specified so using latest version which is %s\n",
 					util.ColorInfo(chartDetails.Version))
 			}
 		}
@@ -278,7 +278,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, app string, re
 
 		if schema != nil {
 			if o.valuesFiles != nil && len(o.valuesFiles.Items) > 0 {
-				log.Warnf("values.yaml specified by --valuesFiles will be used despite presence of schema in app")
+				logrus.Warnf("values.yaml specified by --valuesFiles will be used despite presence of schema in app")
 			}
 
 			var err error

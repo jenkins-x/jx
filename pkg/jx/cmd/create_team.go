@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
@@ -107,6 +107,6 @@ func (o *CreateTeamOptions) Run() error {
 	if err != nil {
 		return fmt.Errorf("Failed to create Team %s: %s", name, err)
 	}
-	log.Infof("Created Team: %s\n", util.ColorInfo(name))
+	logrus.Infof("Created Team: %s\n", util.ColorInfo(name))
 	return nil
 }

@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 
-	"github.com/jenkins-x/jx/pkg/log"
 	istiov1alpha3 "github.com/knative/pkg/apis/istio/v1alpha3"
 
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -136,7 +136,7 @@ func (o *CreateAddonFlaggerOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, fmt.Sprintf("error enabling Istio for environment %s", o.ProductionEnvironment))
 		}
-		log.Infof("Enabling Istio in namespace %s\n", ns)
+		logrus.Infof("Enabling Istio in namespace %s\n", ns)
 		patch := []byte(`{"metadata":{"labels":{"istio-injection":"enabled"}}}`)
 		_, err = client.CoreV1().Namespaces().Patch(ns, types.MergePatchType, patch)
 		if err != nil {
@@ -173,13 +173,13 @@ func (o *CreateAddonFlaggerOptions) Run() error {
 				},
 			}
 
-			log.Infof("Creating Istio gateway: %s\n", o.IstioGateway)
+			logrus.Infof("Creating Istio gateway: %s\n", o.IstioGateway)
 			gateway, err = istioClient.NetworkingV1alpha3().Gateways(defaultIstioNamespace).Create(gateway)
 			if err != nil {
 				return errors.Wrap(err, "error creating Istio gateway")
 			}
 		} else {
-			log.Infof("Istio gateway already exists: %s\n", o.IstioGateway)
+			logrus.Infof("Istio gateway already exists: %s\n", o.IstioGateway)
 		}
 	}
 	return nil

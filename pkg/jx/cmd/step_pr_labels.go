@@ -12,7 +12,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 )
 
 // DefaultPrefix for all PR labels environment keys
@@ -91,7 +91,7 @@ func (o *StepPRLabelsOptions) Run() error {
 
 	prNum, err := strconv.Atoi(o.PullRequest)
 	if err != nil {
-		log.Warn("Unable to convert PR " + o.PullRequest + " to a number" + "\n")
+		logrus.Warn("Unable to convert PR " + o.PullRequest + " to a number" + "\n")
 	}
 
 	pr, err := provider.GetPullRequest(gitInfo.Organisation, gitInfo, prNum)
@@ -106,7 +106,7 @@ func (o *StepPRLabelsOptions) Run() error {
 
 	for _, v := range pr.Labels {
 		envKey := reg.ReplaceAllString(*v.Name, "_")
-		log.Infof("%v_%v='%v'\n", o.Prefix, strings.ToUpper(envKey), *v.Name)
+		logrus.Infof("%v_%v='%v'\n", o.Prefix, strings.ToUpper(envKey), *v.Name)
 	}
 	return nil
 }

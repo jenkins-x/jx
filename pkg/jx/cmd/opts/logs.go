@@ -7,7 +7,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -26,7 +26,7 @@ func (o *CommonOptions) TailLogs(ns string, pod string, containerName string) er
 	os.Setenv("PATH", util.PathWithBinary())
 	err := e.Start()
 	if err != nil {
-		log.Errorf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
+		logrus.Errorf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
 	}
 
 	scanner := bufio.NewScanner(stdout)

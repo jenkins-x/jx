@@ -11,7 +11,7 @@ import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -87,7 +87,7 @@ func (o *ControllerBackupOptions) Run() error {
 
 	dir, err := o.getOrCreateBackupRepository()
 
-	log.Infof("Watching for users/teams/environments in namespace %s\n", util.ColorInfo(ns))
+	logrus.Infof("Watching for users/teams/environments in namespace %s\n", util.ColorInfo(ns))
 
 	_, environmentController := cache.NewInformer(
 		&cache.ListWatch{
@@ -175,7 +175,7 @@ func (o *ControllerBackupOptions) Run() error {
 func (o *ControllerBackupOptions) onEnvironmentChange(obj interface{}, ns string, dir string) {
 	env, ok := obj.(*v1.Environment)
 	if !ok {
-		log.Infof("Object is not a Environment %#v\n", obj)
+		logrus.Infof("Object is not a Environment %#v\n", obj)
 		return
 	}
 	o.writeResourceToBackupFile(env, "environment", env.ObjectMeta.Name, ns, dir)
@@ -184,7 +184,7 @@ func (o *ControllerBackupOptions) onEnvironmentChange(obj interface{}, ns string
 func (o *ControllerBackupOptions) onTeamChange(obj interface{}, ns string, dir string) {
 	env, ok := obj.(*v1.Team)
 	if !ok {
-		log.Infof("Object is not a Team %#v\n", obj)
+		logrus.Infof("Object is not a Team %#v\n", obj)
 		return
 	}
 	o.writeResourceToBackupFile(env, "team", env.ObjectMeta.Name, ns, dir)
@@ -193,7 +193,7 @@ func (o *ControllerBackupOptions) onTeamChange(obj interface{}, ns string, dir s
 func (o *ControllerBackupOptions) onUserChange(obj interface{}, ns string, dir string) {
 	env, ok := obj.(*v1.User)
 	if !ok {
-		log.Infof("Object is not a User %#v\n", obj)
+		logrus.Infof("Object is not a User %#v\n", obj)
 		return
 	}
 	o.writeResourceToBackupFile(env, "user", env.ObjectMeta.Name, ns, dir)
@@ -202,7 +202,7 @@ func (o *ControllerBackupOptions) onUserChange(obj interface{}, ns string, dir s
 func (o *ControllerBackupOptions) writeResourceToBackupFile(obj interface{}, resource string, key string, ns string, dir string) {
 	out, err := yaml.Marshal(obj)
 	if err != nil {
-		log.Errorf("Unable to marshall %s %s\n", resource, err)
+		logrus.Errorf("Unable to marshall %s %s\n", resource, err)
 		return
 	}
 
@@ -212,14 +212,14 @@ func (o *ControllerBackupOptions) writeResourceToBackupFile(obj interface{}, res
 	nsDir := path.Join(dir, fmt.Sprintf("%ss", resource), ns)
 	err = os.MkdirAll(nsDir, os.FileMode(0755))
 	if err != nil {
-		log.Errorf("Unable to create directory %s\n", err)
+		logrus.Errorf("Unable to create directory %s\n", err)
 		return
 	}
 
 	envFile := path.Join(nsDir, fmt.Sprintf("%s.yaml", key))
 	err = ioutil.WriteFile(envFile, out, 0644)
 	if err != nil {
-		log.Errorf("Unable to write file %s\n", err)
+		logrus.Errorf("Unable to write file %s\n", err)
 		return
 	}
 
@@ -229,26 +229,26 @@ func (o *ControllerBackupOptions) writeResourceToBackupFile(obj interface{}, res
 func (o *ControllerBackupOptions) commitDirIfChanges(dir string, message string) {
 	changes, err := o.Git().HasChanges(dir)
 	if err != nil {
-		log.Errorf("Unable to determine changes %s\n", err)
+		logrus.Errorf("Unable to determine changes %s\n", err)
 		return
 	}
 
 	if changes {
 		err = o.Git().Add(dir, "*")
 		if err != nil {
-			log.Errorf("Unable to add files %s\n", err)
+			logrus.Errorf("Unable to add files %s\n", err)
 			return
 		}
 
 		err = o.Git().CommitDir(dir, message)
 		if err != nil {
-			log.Errorf("Unable to commit dir %s\n", err)
+			logrus.Errorf("Unable to commit dir %s\n", err)
 			return
 		}
 
 		err = o.Git().PushMaster(dir)
 		if err != nil {
-			log.Errorf("Unable to push master %s\n", err)
+			logrus.Errorf("Unable to push master %s\n", err)
 			return
 		}
 

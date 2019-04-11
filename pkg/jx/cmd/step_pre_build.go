@@ -8,7 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -69,7 +69,7 @@ func (o *StepPreBuildOptions) Run() error {
 		orgName := paths[l-2]
 		appName := paths[l-1]
 
-		log.Infof("Docker registry host: %s app name %s/%s\n", util.ColorInfo(dockerRegistry), util.ColorInfo(orgName), util.ColorInfo(appName))
+		logrus.Infof("Docker registry host: %s app name %s/%s\n", util.ColorInfo(dockerRegistry), util.ColorInfo(orgName), util.ColorInfo(appName))
 
 		kubeClient, currentNamespace, err := o.KubeClientAndNamespace()
 		if err != nil {

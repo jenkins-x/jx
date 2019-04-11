@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -56,7 +56,7 @@ func (o *StepNexusDropOptions) Run() error {
 		return err
 	}
 	if len(repoIds) == 0 {
-		log.Infof("No Nexus staging repository ids found in %s\n", util.ColorInfo(statingRepositoryProperties))
+		logrus.Infof("No Nexus staging repository ids found in %s\n", util.ColorInfo(statingRepositoryProperties))
 		return nil
 	}
 	return o.dropRepositories(repoIds, "Dropping staging repositories")

@@ -2,6 +2,7 @@ package opts
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 	"io"
 	"os"
 	"strings"
@@ -16,8 +17,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/pkg/errors"
 
-	"github.com/sirupsen/logrus"
-
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	gojenkins "github.com/jenkins-x/golang-jenkins"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -26,13 +25,13 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/util"
 	certmngclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	buildclient "github.com/knative/build/pkg/client/clientset/versioned"
 	istioclient "github.com/knative/pkg/client/clientset/versioned"
 	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -170,19 +169,19 @@ func (o *CommonOptions) SetDevNamespace(ns string) {
 	o.devNamespace = ns
 	o.currentNamespace = ns
 	o.kubeClient = nil
-	log.Infof("Setting the dev namespace to: %s\n", util.ColorInfo(ns))
+	logrus.Infof("Setting the dev namespace to: %s\n", util.ColorInfo(ns))
 }
 
 func (o *CommonOptions) SetCurrentNamespace(ns string) {
 	o.currentNamespace = ns
 	o.kubeClient = nil
-	log.Infof("Setting the current namespace to: %s\n", util.ColorInfo(ns))
+	logrus.Infof("Setting the current namespace to: %s\n", util.ColorInfo(ns))
 }
 
 // Debugf outputs the given text to the console if verbose mode is enabled
 func (o *CommonOptions) Debugf(format string, a ...interface{}) {
 	if o.Verbose {
-		log.Infof(format, a...)
+		logrus.Infof(format, a...)
 	}
 }
 
@@ -430,7 +429,7 @@ func (o *CommonOptions) Helm() helm.Helmer {
 			if noTillerFlag == "true" {
 				helmTemplate = true
 			} else {
-				log.Warnf("Failed to retrieve team settings: %v - falling back to default settings...\n", err)
+				logrus.Warnf("Failed to retrieve team settings: %v - falling back to default settings...\n", err)
 			}
 		}
 		return o.NewHelm(o.Verbose, helmBinary, noTiller, helmTemplate)
@@ -533,7 +532,7 @@ func (o *CommonOptions) FindServer(config *auth.AuthConfig, serverFlags *ServerF
 		if name != "" && o.BatchMode {
 			server = config.GetServerByName(name)
 			if server == nil {
-				log.Warnf("Current server %s no longer exists\n", name)
+				logrus.Warnf("Current server %s no longer exists\n", name)
 			}
 		}
 	}
@@ -683,7 +682,7 @@ func (o *CommonOptions) Retry(attempts int, sleep time.Duration, call func() err
 
 		time.Sleep(sleep)
 
-		log.Warnf("\nretrying after error:%s\n\n", err)
+		logrus.Warnf("\nretrying after error:%s\n\n", err)
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
@@ -717,7 +716,7 @@ func (o *CommonOptions) RetryUntilFatalError(attempts int, sleep time.Duration, 
 
 		time.Sleep(sleep)
 
-		log.Infof("retrying after error:%s\n", err)
+		logrus.Infof("retrying after error:%s\n", err)
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
 }
@@ -744,7 +743,7 @@ func (o *CommonOptions) RetryQuiet(attempts int, sleep time.Duration, call func(
 
 		message := fmt.Sprintf("retrying after error: %s", err)
 		if lastMessage == message {
-			log.Info(".")
+			logrus.Info(".")
 			dot = true
 		} else {
 			lastMessage = message
@@ -752,7 +751,7 @@ func (o *CommonOptions) RetryQuiet(attempts int, sleep time.Duration, call func(
 				dot = false
 				log.Blank()
 			}
-			log.Warnf("%s\n\n", lastMessage)
+			logrus.Warnf("%s\n\n", lastMessage)
 		}
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
@@ -782,7 +781,7 @@ func (o *CommonOptions) RetryQuietlyUntilTimeout(timeout time.Duration, sleep ti
 
 		message := fmt.Sprintf("retrying after error: %s", err)
 		if lastMessage == message {
-			log.Info(".")
+			logrus.Info(".")
 			dot = true
 		} else {
 			lastMessage = message
@@ -790,7 +789,7 @@ func (o *CommonOptions) RetryQuietlyUntilTimeout(timeout time.Duration, sleep ti
 				dot = false
 				log.Blank()
 			}
-			log.Warnf("%s\n\n", lastMessage)
+			logrus.Warnf("%s\n\n", lastMessage)
 		}
 	}
 }

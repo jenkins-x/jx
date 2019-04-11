@@ -17,7 +17,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/workflow"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -307,7 +307,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 	}
 	po.CommonOptions = o.CommonOptions
 	po.BatchMode = true
-	log.Infof("Promoting to production version %s for app %s\n", version, testRepoName)
+	logrus.Infof("Promoting to production version %s for app %s\n", version, testRepoName)
 	err = po.Run()
 	assert.NoError(t, err)
 	if err != nil {

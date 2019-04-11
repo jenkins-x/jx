@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/sirupsen/logrus"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -12,7 +13,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -171,7 +171,7 @@ func (o *CreateAddonGiteaOptions) createGitServer() error {
 }
 
 func (o *CreateAddonGiteaOptions) createGitUser() error {
-	log.Infof("Generating user: %s with email: %s\n", util.ColorInfo(o.Username), util.ColorInfo(o.Email))
+	logrus.Infof("Generating user: %s with email: %s\n", util.ColorInfo(o.Username), util.ColorInfo(o.Email))
 	options := &CreateGitUserOptions{
 		CreateOptions: o.CreateOptions,
 		Username:      o.Username,
@@ -185,7 +185,7 @@ func (o *CreateAddonGiteaOptions) createGitUser() error {
 }
 
 func (o *CreateAddonGiteaOptions) createGitToken() error {
-	log.Infof("Generating token for user %s with email %s\n", util.ColorInfo(o.Username), util.ColorInfo(o.Email))
+	logrus.Infof("Generating token for user %s with email %s\n", util.ColorInfo(o.Username), util.ColorInfo(o.Email))
 	options := &CreateGitTokenOptions{
 		CreateOptions: o.CreateOptions,
 		Username:      o.Username,

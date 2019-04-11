@@ -19,7 +19,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/jenkins-x/jx/pkg/kube/services"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -492,7 +492,7 @@ func (o *CreateDevPodOptions) Run() error {
 				create = false
 				pod = &p
 				name = pod.Name
-				log.Infof("Reusing pod %s - waiting for it to be ready...\n", util.ColorInfo(pod.Name))
+				logrus.Infof("Reusing pod %s - waiting for it to be ready...\n", util.ColorInfo(pod.Name))
 				break
 			}
 		}
@@ -500,7 +500,7 @@ func (o *CreateDevPodOptions) Run() error {
 
 	theiaServiceName := name + "-theia"
 	if create {
-		log.Infof("Creating a DevPod of label: %s\n", util.ColorInfo(label))
+		logrus.Infof("Creating a DevPod of label: %s\n", util.ColorInfo(label))
 		_, err = podResources.Create(pod)
 		if err != nil {
 			if o.Verbose {
@@ -510,7 +510,7 @@ func (o *CreateDevPodOptions) Run() error {
 			}
 		}
 
-		log.Infof("Created pod %s - waiting for it to be ready...\n", util.ColorInfo(name))
+		logrus.Infof("Created pod %s - waiting for it to be ready...\n", util.ColorInfo(name))
 
 		err = kube.WaitForPodNameToBeReady(client, ns, name, time.Hour)
 		if err != nil {
@@ -633,8 +633,8 @@ func (o *CreateDevPodOptions) Run() error {
 
 	}
 
-	log.Infof("Pod %s is now ready!\n", util.ColorInfo(pod.Name))
-	log.Infof("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx create devpod"))
+	logrus.Infof("Pod %s is now ready!\n", util.ColorInfo(pod.Name))
+	logrus.Infof("You can open other shells into this DevPod via %s\n", util.ColorInfo("jx create devpod"))
 
 	if !o.Sync {
 		theiaServiceURL, err := services.FindServiceURL(client, curNs, theiaServiceName)
@@ -648,10 +648,10 @@ func (o *CreateDevPodOptions) Run() error {
 			if err != nil {
 				return err
 			}
-			log.Infof("\nYou can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
+			logrus.Infof("\nYou can edit your app using Theia (a browser based IDE) at %s\n", util.ColorInfo(theiaServiceURL))
 			o.Results.TheaServiceURL = theiaServiceURL
 		} else {
-			log.Infof("Could not find service with name %s in namespace %s\n", theiaServiceName, curNs)
+			logrus.Infof("Could not find service with name %s in namespace %s\n", theiaServiceName, curNs)
 		}
 	}
 
@@ -668,11 +668,11 @@ func (o *CreateDevPodOptions) Run() error {
 		exposePortURLs = append(exposePortURLs, u)
 	}
 	if len(exposePortURLs) > 0 {
-		log.Infof("\nYou can access the DevPod from your browser via the following URLs:\n")
+		logrus.Infof("\nYou can access the DevPod from your browser via the following URLs:\n")
 		for _, u := range exposePortURLs {
-			log.Infof("* %s\n", util.ColorInfo(u))
+			logrus.Infof("* %s\n", util.ColorInfo(u))
 		}
-		log.Info("\n")
+		logrus.Info("\n")
 
 		o.Results.ExposePortURLs = exposePortURLs
 	}
@@ -694,7 +694,7 @@ func (o *CreateDevPodOptions) Run() error {
 	var rshExec []string
 	if create {
 		//  Let install bash-completion to make life better
-		log.Infof("Attempting to install Bash Completion into DevPod\n")
+		logrus.Infof("Attempting to install Bash Completion into DevPod\n")
 
 		rshExec = append(rshExec,
 			"if which yum &> /dev/null; then yum install -q -y bash-completion bash-completion-extra; fi",
@@ -818,7 +818,7 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	editNs := env.Spec.Namespace
 	flag, err = kube.IsDeploymentRunning(kubeClient, kube.DeploymentExposecontrollerService, editNs)
 	if !flag || err != nil {
-		log.Infof("Installing the ExposecontrollerService in the namespace: %s\n", util.ColorInfo(editNs))
+		logrus.Infof("Installing the ExposecontrollerService in the namespace: %s\n", util.ColorInfo(editNs))
 		releaseName := editNs + "-es"
 		err = o.InstallChartWithOptions(helm.InstallChartOptions{
 			ReleaseName: releaseName,
@@ -835,7 +835,7 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 func (o *CreateDevPodOptions) guessDevPodLabel(dir string, labels []string) (string, error) {
 	root, _, err := o.Git().FindGitConfigDir(o.Dir)
 	if err != nil {
-		log.Warnf("Could not find a .git directory: %s\n", err)
+		logrus.Warnf("Could not find a .git directory: %s\n", err)
 	}
 	answer := ""
 	if root != "" {

@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 
 	"github.com/jenkins-x/jx/pkg/extensions"
 
@@ -24,7 +24,7 @@ func (o *CommonOptions) isManagedPluginsEnabled() bool {
 	apisClient, err := o.ApiExtensionsClient()
 	if err != nil {
 		if o.Verbose {
-			log.Warnf("Unable to load managed plugins because %v\n", err)
+			logrus.Warnf("Unable to load managed plugins because %v\n", err)
 		}
 		return false
 	}
@@ -32,7 +32,7 @@ func (o *CommonOptions) isManagedPluginsEnabled() bool {
 		metav1.GetOptions{})
 	if err != nil {
 		if o.Verbose {
-			log.Warnf("Unable to load managed plugins because %v\n", err)
+			logrus.Warnf("Unable to load managed plugins because %v\n", err)
 		}
 		return false
 	}

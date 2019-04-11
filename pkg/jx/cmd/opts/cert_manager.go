@@ -6,14 +6,14 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/pki"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 )
 
 // EnsureCertManager ensures cert-manager is installed
 func (o *CommonOptions) EnsureCertManager() error {
-	log.Infof("Looking for %q deployment in namespace %q...\n", pki.CertManagerDeployment, pki.CertManagerNamespace)
+	logrus.Infof("Looking for %q deployment in namespace %q...\n", pki.CertManagerDeployment, pki.CertManagerNamespace)
 	client, err := o.KubeClient()
 	if err != nil {
 		return errors.Wrap(err, "creating kube client")
@@ -29,15 +29,15 @@ func (o *CommonOptions) EnsureCertManager() error {
 				o.In, o.Out, o.Err)
 		}
 		if ok {
-			log.Info("Installing cert-manager...\n")
-			log.Infof("Installing CRDs from %q...\n", pki.CertManagerCRDsFile)
+			logrus.Info("Installing cert-manager...\n")
+			logrus.Infof("Installing CRDs from %q...\n", pki.CertManagerCRDsFile)
 			output, err := o.ResourcesInstaller().Install(pki.CertManagerCRDsFile)
 			if err != nil {
 				return errors.Wrapf(err, "installing the cert-manager CRDs from %q", pki.CertManagerCRDsFile)
 			}
-			log.Info(output + "\n")
+			logrus.Info(output + "\n")
 
-			log.Infof("Installing the chart %q in namespace %q...\n", pki.CertManagerChart, pki.CertManagerNamespace)
+			logrus.Infof("Installing the chart %q in namespace %q...\n", pki.CertManagerChart, pki.CertManagerNamespace)
 			values := []string{
 				"rbac.create=true",
 				"webhook.enabled=false",
@@ -56,7 +56,7 @@ func (o *CommonOptions) EnsureCertManager() error {
 				return errors.Wrapf(err, "installing %q chart", pki.CertManagerChart)
 			}
 
-			log.Info("Waiting for CertManager deployment to be ready, this can take a few minutes\n")
+			logrus.Info("Waiting for CertManager deployment to be ready, this can take a few minutes\n")
 
 			err = kube.WaitForDeploymentToBeReady(client, pki.CertManagerDeployment, pki.CertManagerNamespace, 10*time.Minute)
 			if err != nil {

@@ -17,7 +17,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"k8s.io/helm/pkg/chartutil"
@@ -359,7 +359,7 @@ func AppendMyValues(valueFiles []string) ([]string, error) {
 	}
 	if exists {
 		valueFiles = append(valueFiles, myValuesFile)
-		log.Infof("Using local value overrides file %s\n", util.ColorInfo(myValuesFile))
+		logrus.Infof("Using local value overrides file %s\n", util.ColorInfo(myValuesFile))
 	} else {
 		configDir, err := util.ConfigDir()
 		if err != nil {
@@ -372,7 +372,7 @@ func AppendMyValues(valueFiles []string) ([]string, error) {
 		}
 		if exists {
 			valueFiles = append(valueFiles, myValuesFile)
-			log.Infof("Using local value overrides file %s\n", util.ColorInfo(myValuesFile))
+			logrus.Infof("Using local value overrides file %s\n", util.ColorInfo(myValuesFile))
 		}
 	}
 	return valueFiles, nil
@@ -449,7 +449,7 @@ func InspectChart(chart string, version string, repo string, username string, pa
 	defer func() {
 		err1 := os.RemoveAll(dir)
 		if err1 != nil {
-			log.Warnf("Error removing %s %v\n", dir, err1)
+			logrus.Warnf("Error removing %s %v\n", dir, err1)
 		}
 	}()
 	inspectPath := filepath.Join(dir, chart)
@@ -512,12 +512,12 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 		}
 	}
 	if options.HelmUpdate {
-		log.Infoln("Updating Helm repository...")
+		logrus.Infoln("Updating Helm repository...")
 		err := helmer.UpdateRepo()
 		if err != nil {
 			return errors.Wrap(err, "failed to update repository")
 		}
-		log.Infoln("Helm repository update done.")
+		logrus.Infoln("Helm repository update done.")
 	}
 	err := DecorateWithCredentials(&options, vaultClient)
 	if err != nil {

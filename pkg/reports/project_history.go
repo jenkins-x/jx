@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"sigs.k8s.io/yaml"
 )
@@ -209,7 +209,7 @@ func (s *ProjectHistoryService) SaveHistory() error {
 	}
 	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 	if err == nil {
-		log.Infof("Wrote Project History file %s\n", util.ColorInfo(fileName))
+		logrus.Infof("Wrote Project History file %s\n", util.ColorInfo(fileName))
 	}
 	return err
 }

@@ -1,11 +1,11 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/log"
 	"runtime"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
 	logger "github.com/sirupsen/logrus"

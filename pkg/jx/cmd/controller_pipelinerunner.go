@@ -9,11 +9,10 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -149,7 +148,7 @@ func (o *ControllerPipelineRunnerOptions) pipelineRunMethods(w http.ResponseWrit
 func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter, r *http.Request) {
 	err := o.stepGitCredentials()
 	if err != nil {
-		log.Warn(err.Error())
+		logrus.Warn(err.Error())
 	}
 	arguments := &PipelineRunRequest{}
 	data, err := ioutil.ReadAll(r.Body)
@@ -239,7 +238,7 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 		pr.CustomEnvs = append(pr.CustomEnvs, fmt.Sprintf("%s=%s", key, value))
 	}
 
-	log.Infof("triggering pipeline for repo %s branch %s revision %s context %s\n", sourceURL, branch, revision, pj.Context)
+	logrus.Infof("triggering pipeline for repo %s branch %s revision %s context %s\n", sourceURL, branch, revision, pj.Context)
 
 	err = pr.Run()
 	if err != nil {

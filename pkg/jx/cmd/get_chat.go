@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/chats"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
@@ -66,7 +66,7 @@ func (o *GetChatOptions) Run() error {
 	config := authConfigSvc.Config()
 
 	if len(config.Servers) == 0 {
-		log.Infof("No chat servers registered. To register a new chat servers use: %s\n", util.ColorInfo("jx create chat server"))
+		logrus.Infof("No chat servers registered. To register a new chat servers use: %s\n", util.ColorInfo("jx create chat server"))
 		return nil
 	}
 	filterKind := o.Kind

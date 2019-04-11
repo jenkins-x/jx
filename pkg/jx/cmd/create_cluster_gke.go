@@ -18,7 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -138,7 +138,7 @@ func (o *CreateClusterGKEOptions) Run() error {
 
 	err = o.createClusterGKE()
 	if err != nil {
-		log.Errorf("error creating cluster %v", err)
+		logrus.Errorf("error creating cluster %v", err)
 		return err
 	}
 
@@ -168,7 +168,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		return err
 	}
 
-	log.Infof("Let's ensure we have %s and %s enabled on your project\n", util.ColorInfo("container"), util.ColorInfo("compute"))
+	logrus.Infof("Let's ensure we have %s and %s enabled on your project\n", util.ColorInfo("container"), util.ColorInfo("compute"))
 	err = gke.EnableAPIs(projectId, "container", "compute")
 	if err != nil {
 		return err
@@ -176,7 +176,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	if o.Flags.ClusterName == "" {
 		o.Flags.ClusterName = strings.ToLower(randomdata.SillyName())
-		log.Infof("No cluster name provided so using a generated one: %s\n", o.Flags.ClusterName)
+		logrus.Infof("No cluster name provided so using a generated one: %s\n", o.Flags.ClusterName)
 	}
 
 	region := o.Flags.Region
@@ -191,7 +191,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			clusterType := "Zonal"
 
 			if o.InstallOptions.Flags.NextGeneration {
-				log.Infof(util.ColorWarning("Defaulting to zonal cluster type as --ng is selected.\n"))
+				logrus.Infof(util.ColorWarning("Defaulting to zonal cluster type as --ng is selected.\n"))
 			} else {
 				prompts := &survey.Select{
 					Message: "What type of cluster would you like to create",
@@ -416,13 +416,13 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		args = append(args, "--labels="+strings.ToLower(labels))
 	}
 
-	log.Info("Creating cluster...\n")
+	logrus.Info("Creating cluster...\n")
 	err = o.RunCommand("gcloud", args...)
 	if err != nil {
 		return err
 	}
 
-	log.Info("Initialising cluster ...\n")
+	logrus.Info("Initialising cluster ...\n")
 	if o.InstallOptions.Flags.DefaultEnvironmentPrefix == "" {
 		o.InstallOptions.Flags.DefaultEnvironmentPrefix = o.Flags.ClusterName
 	}

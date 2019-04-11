@@ -8,7 +8,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -59,7 +59,7 @@ func (o *CreateAddonKnativeBuildOptions) Run() error {
 	if o.token == "" {
 		return fmt.Errorf("no pipeline git token provided")
 	}
-	log.Infof("Installing %s addon\n\n", kube.DefaultKnativeBuildReleaseName)
+	logrus.Infof("Installing %s addon\n\n", kube.DefaultKnativeBuildReleaseName)
 
 	o.SetValues = strings.Join([]string{"build.auth.git.username=" + o.username, "build.auth.git.password=" + o.token}, ",")
 
@@ -76,7 +76,7 @@ func (o *CreateAddonKnativeBuildOptions) Run() error {
 		return err
 	}
 
-	log.Infof("\n%s installed\n", kube.DefaultKnativeBuildReleaseName)
-	log.Infof("To watch a build running use: %s\n", util.ColorInfo("jx logs -k"))
+	logrus.Infof("\n%s installed\n", kube.DefaultKnativeBuildReleaseName)
+	logrus.Infof("To watch a build running use: %s\n", util.ColorInfo("jx logs -k"))
 	return nil
 }

@@ -18,7 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"k8s.io/api/apps/v1beta1"
@@ -130,7 +130,7 @@ func (o *GetApplicationsOptions) Run() error {
 	}
 
 	if len(apps) == 0 {
-		log.Infof("No applications found in environments %s\n", strings.Join(envNames, ", "))
+		logrus.Infof("No applications found in environments %s\n", strings.Join(envNames, ", "))
 		return nil
 	}
 	sort.Strings(apps)

@@ -7,7 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -85,7 +85,7 @@ func (o *GetBuildPodsOptions) Run() error {
 	}
 	pods, err := builds.GetBuildPods(kubeClient, ns)
 	if err != nil {
-		log.Warnf("Failed to query pods %s\n", err)
+		logrus.Warnf("Failed to query pods %s\n", err)
 		return err
 	}
 

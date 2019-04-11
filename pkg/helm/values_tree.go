@@ -11,7 +11,7 @@ import (
 
 	"github.com/ghodss/yaml"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 )
 
 //DefaultValuesTreeIgnores is the default set of ignored files for collapsing the values tree which are used if
@@ -75,7 +75,7 @@ func GenerateValues(dir string, ignores []string, verbose bool) ([]byte, error) 
 			}
 		} else {
 			if verbose {
-				log.Infof("Ignoring %s\n", rPath)
+				logrus.Infof("Ignoring %s\n", rPath)
 			}
 		}
 		return nil

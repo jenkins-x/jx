@@ -5,7 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -58,16 +58,16 @@ func NewCmdStepHelmEnv(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o *StepHelmEnvOptions) Run() error {
 	h := o.Helm()
 	if h != nil {
-		log.Info("\n")
-		log.Info("# helm environment variables\n")
+		logrus.Info("\n")
+		logrus.Info("# helm environment variables\n")
 		envVars := h.Env()
 		keys := util.SortedMapKeys(envVars)
 		for _, key := range keys {
 			if strings.HasPrefix(key, "HELM") {
-				log.Infof("export %s=\"%s\"\n", key, envVars[key])
+				logrus.Infof("export %s=\"%s\"\n", key, envVars[key])
 			}
 		}
-		log.Info("\n")
+		logrus.Info("\n")
 	}
 	return nil
 }

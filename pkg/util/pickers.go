@@ -2,11 +2,11 @@ package util
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"sort"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/log"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -170,6 +170,6 @@ func Confirm(message string, defaultValue bool, help string, in terminal.FileRea
 	}
 	surveyOpts := survey.WithStdio(in, out, outErr)
 	survey.AskOne(prompt, &answer, nil, surveyOpts)
-	log.Blank()
+	logrus.Info()
 	return answer
 }

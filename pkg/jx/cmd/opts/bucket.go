@@ -12,7 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -60,16 +60,16 @@ func (o *CommonOptions) CreateBucket(cb *CreateBucketValues, settings *v1.TeamSe
 	obj, err := iter.Next(ctx)
 	if err != nil {
 		if err == io.EOF {
-			log.Infof("bucket %s is empty\n", bucketURL)
+			logrus.Infof("bucket %s is empty\n", bucketURL)
 		} else {
-			log.Infof("The bucket %s does not exist yet so lets create it...\n", util.ColorInfo(bucketURL))
+			logrus.Infof("The bucket %s does not exist yet so lets create it...\n", util.ColorInfo(bucketURL))
 			err = o.CreateBucketFromURL(bucketURL, bucket, cb)
 			if err != nil {
 				return bucketURL, errors.Wrapf(err, "failed to create the bucket for %s", bucketURL)
 			}
 		}
 	} else {
-		log.Infof("Found item in bucket %s for %s\n", bucketURL, obj.Key)
+		logrus.Infof("Found item in bucket %s for %s\n", bucketURL, obj.Key)
 	}
 	return bucketURL, nil
 }

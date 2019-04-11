@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/util/uuid"
@@ -59,14 +59,14 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 		if err != nil {
 			return errors.Wrapf(err, "failed to fork GitHub repo %s/%s to user %s", originalOrg, originalRepo, username)
 		}
-		log.Infof("Forked %s to %s\n\n", message, util.ColorInfo(repo.HTMLURL))
+		logrus.Infof("Forked %s to %s\n\n", message, util.ColorInfo(repo.HTMLURL))
 	}
 
 	err = gitter.Clone(repo.CloneURL, dir)
 	if err != nil {
 		return errors.Wrapf(err, "cloning the %s %q", message, repo.CloneURL)
 	}
-	log.Infof("cloned fork of %s %s to %s\n", message, util.ColorInfo(repo.HTMLURL), util.ColorInfo(dir))
+	logrus.Infof("cloned fork of %s %s to %s\n", message, util.ColorInfo(repo.HTMLURL), util.ColorInfo(dir))
 
 	err = gitter.SetRemoteURL(dir, "upstream", originalGitURL)
 	if err != nil {
@@ -110,7 +110,7 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 		return err
 	}
 	if !changes {
-		log.Infof("No source changes so not generating a Pull Request\n")
+		logrus.Infof("No source changes so not generating a Pull Request\n")
 		return nil
 	}
 
@@ -127,11 +127,11 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 	for _, pr := range prs {
 		author := pr.Author
 		if pr.Title == o.Title && author != nil && author.Login == username {
-			log.Infof("found existing PullRequest: %s\n", util.ColorInfo(pr.URL))
+			logrus.Infof("found existing PullRequest: %s\n", util.ColorInfo(pr.URL))
 
 			head := pr.HeadRef
 			if head == nil {
-				log.Warnf("No head value!\n")
+				logrus.Warnf("No head value!\n")
 			} else {
 				headText := *head
 				remoteBranch := headText
@@ -139,7 +139,7 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 				if len(paths) > 1 {
 					remoteBranch = paths[1]
 				}
-				log.Infof("force pushing to remote branch %s\n", util.ColorInfo(remoteBranch))
+				logrus.Infof("force pushing to remote branch %s\n", util.ColorInfo(remoteBranch))
 				err := gitter.ForcePushBranch(dir, branchName, remoteBranch)
 				if err != nil {
 					return errors.Wrapf(err, "failed to force push to remote branch %s", remoteBranch)
@@ -147,7 +147,7 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 
 				pr.Body = o.Message
 
-				log.Infof("force pushed new pull request change to: %s\n", util.ColorInfo(pr.URL))
+				logrus.Infof("force pushed new pull request change to: %s\n", util.ColorInfo(pr.URL))
 
 				err = provider.AddPRComment(pr, o.Message)
 				if err != nil {
@@ -177,6 +177,6 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 	if err != nil {
 		return err
 	}
-	log.Infof("Created Pull Request: %s\n\n", util.ColorInfo(pr.URL))
+	logrus.Infof("Created Pull Request: %s\n\n", util.ColorInfo(pr.URL))
 	return nil
 }

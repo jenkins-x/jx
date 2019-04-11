@@ -10,7 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -91,18 +91,18 @@ func (o *CreateClusterMinishiftOptions) Run() error {
 
 	err := o.InstallMissingDependencies(deps)
 	if err != nil {
-		log.Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
+		logrus.Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
 		os.Exit(-1)
 	}
 
 	if o.isExistingMinishiftRunning() {
-		log.Error("an existing Minishift cluster is already running, perhaps use `jx install`.\nNote: existing Minishift must have RBAC enabled, running `minishift delete` and `jx create cluster minishift` creates a new VM with RBAC enabled")
+		logrus.Error("an existing Minishift cluster is already running, perhaps use `jx install`.\nNote: existing Minishift must have RBAC enabled, running `minishift delete` and `jx create cluster minishift` creates a new VM with RBAC enabled")
 		os.Exit(-1)
 	}
 
 	err = o.createClusterMinishift()
 	if err != nil {
-		log.Errorf("error creating cluster %v", err)
+		logrus.Errorf("error creating cluster %v", err)
 		os.Exit(-1)
 	}
 
@@ -195,18 +195,18 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 	if driver != "none" {
 		err = o.DoInstallMissingDependencies([]string{driver})
 		if err != nil {
-			log.Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
+			logrus.Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
 			os.Exit(-1)
 		}
 	}
 
-	log.Info("Installing default addons ...\n")
+	logrus.Info("Installing default addons ...\n")
 	err = o.RunCommand("minishift", "addons", "install", "--defaults")
 	if err != nil {
 		return err
 	}
 
-	log.Info("Enabling admin user...\n")
+	logrus.Info("Enabling admin user...\n")
 	err = o.RunCommand("minishift", "addons", "enable", "admin-user")
 	if err != nil {
 		return err
@@ -218,7 +218,7 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 		args = append(args, "--hyperv-virtual-switch", hyperVVirtualSwitch)
 	}
 
-	log.Info("Creating cluster...\n")
+	logrus.Info("Creating cluster...\n")
 	err = o.RunCommand("minishift", args...)
 	if err != nil {
 		return err
@@ -243,7 +243,7 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 		}
 	}
 
-	log.Info("Initialising cluster ...\n")
+	logrus.Info("Initialising cluster ...\n")
 	err = o.initAndInstall(cloud.MINISHIFT)
 	if err != nil {
 		return err

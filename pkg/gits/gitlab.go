@@ -10,7 +10,7 @@ import (
 
 	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/xanzy/go-gitlab"
 )
@@ -648,19 +648,19 @@ func (g *GitlabProvider) IssueURL(org string, name string, number int, isPull bo
 
 // AddCollaborator adds a collaborator
 func (g *GitlabProvider) AddCollaborator(user string, organisation string, repo string) error {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab. Please add user: %v as a collaborator to this project.\n", user)
+	logrus.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab. Please add user: %v as a collaborator to this project.\n", user)
 	return nil
 }
 
 // ListInvitations lists pending invites
 func (g *GitlabProvider) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab.\n")
+	logrus.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab.\n")
 	return []*github.RepositoryInvitation{}, &github.Response{}, nil
 }
 
 // AcceptInvitation accepts an invitation
 func (g *GitlabProvider) AcceptInvitation(ID int64) (*github.Response, error) {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab.\n")
+	logrus.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for gitlab.\n")
 	return &github.Response{}, nil
 }
 

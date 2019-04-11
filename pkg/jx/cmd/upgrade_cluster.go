@@ -7,7 +7,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -90,14 +90,14 @@ func (o *UpgradeClusterOptions) Run() error {
 		return err
 	}
 
-	log.Infof("Upgrading %s master to %s (this may take a few minutes)\n", selectedClusterName, selectedVersion)
+	logrus.Infof("Upgrading %s master to %s (this may take a few minutes)\n", selectedClusterName, selectedVersion)
 
 	err = o.RunCommandVerbose("gcloud", "container", "clusters", "upgrade", selectedClusterName, "--cluster-version", selectedVersion, "--master", "--quiet")
 	if err != nil {
 		return err
 	}
 
-	log.Infof("Upgrading %s nodes (this may take a few minutes)\n", selectedClusterName)
+	logrus.Infof("Upgrading %s nodes (this may take a few minutes)\n", selectedClusterName)
 
 	return o.RunCommandVerbose("gcloud", "container", "clusters", "upgrade", selectedClusterName, "--quiet")
 }
@@ -128,7 +128,7 @@ func (o *UpgradeClusterOptions) getClusterName() (string, error) {
 		return "", errors.New("Could not find a cluster to upgrade, please manually create one and rerun the wizard")
 	} else if len(existingClusters) == 1 {
 		selectedClusterName = existingClusters[0]
-		log.Infof("Using the only GKE cluster %s\n", util.ColorInfo(selectedClusterName))
+		logrus.Infof("Using the only GKE cluster %s\n", util.ColorInfo(selectedClusterName))
 	} else {
 		prompts := &survey.Select{
 			Message: "GKE Cluster:",

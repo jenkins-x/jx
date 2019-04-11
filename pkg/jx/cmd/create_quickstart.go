@@ -13,7 +13,7 @@ import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -203,7 +203,7 @@ func (o *CreateQuickstartOptions) Run() error {
 				_, appName := filepath.Split(genDir)
 				appChartDir := filepath.Join(genDir, "charts", appName)
 
-				log.Infof("### PostDraftPack callback copying from %s to %s!!!s\n", chartsDir, appChartDir)
+				logrus.Infof("### PostDraftPack callback copying from %s to %s!!!s\n", chartsDir, appChartDir)
 				err := util.CopyDirOverwrite(chartsDir, appChartDir)
 				if err != nil {
 					return err
@@ -215,10 +215,10 @@ func (o *CreateQuickstartOptions) Run() error {
 				return o.Git().Remove(genDir, filepath.Join("charts", folder))
 			}
 		} else {
-			log.Infof("### NO charts folder %s\n", chartsDir)
+			logrus.Infof("### NO charts folder %s\n", chartsDir)
 		}
 	}
-	log.Infof("Created project at %s\n\n", util.ColorInfo(genDir))
+	logrus.Infof("Created project at %s\n\n", util.ColorInfo(genDir))
 
 	o.CreateProjectOptions.ImportOptions.GitProvider = o.GitProvider
 
@@ -283,7 +283,7 @@ func (o *CreateQuickstartOptions) createQuickstart(f *quickstarts.QuickstartForm
 	if err != nil {
 		return answer, fmt.Errorf("failed to rename temp dir %s to %s: %s", tmpDir, answer, err)
 	}
-	log.Infof("Generated quickstart at %s\n", answer)
+	logrus.Infof("Generated quickstart at %s\n", answer)
 	return answer, nil
 }
 

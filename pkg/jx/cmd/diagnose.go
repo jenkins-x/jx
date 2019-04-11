@@ -4,7 +4,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -42,7 +42,7 @@ func (o *DiagnoseOptions) Run() error {
 		}
 		ns = kube.CurrentNamespace(config)
 	}
-	log.Infof("Running in namespace: %s", util.ColorInfo(ns))
+	logrus.Infof("Running in namespace: %s", util.ColorInfo(ns))
 
 	err := printStatus(o, "Jenkins X Version", "jx", "version", "--no-version-check")
 	if err != nil {
@@ -73,8 +73,8 @@ func (o *DiagnoseOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Info("\nPlease visit https://jenkins-x.io/faq/issues/ for any known issues.")
-	log.Info("\nFinished printing diagnostic information.\n")
+	logrus.Info("\nPlease visit https://jenkins-x.io/faq/issues/ for any known issues.")
+	logrus.Info("\nFinished printing diagnostic information.\n")
 	return nil
 }
 
@@ -82,10 +82,10 @@ func (o *DiagnoseOptions) Run() error {
 func printStatus(o *DiagnoseOptions, header string, command string, options ...string) error {
 	output, err := o.GetCommandOutput("", command, options...)
 	if err != nil {
-		log.Errorf("Unable to get the %s", header)
+		logrus.Errorf("Unable to get the %s", header)
 		return err
 	}
 	// Print the output of the command, and add a little header at the top for formatting / readability
-	log.Infof("\n%s:\n %s\n", header, util.ColorInfo(output))
+	logrus.Infof("\n%s:\n %s\n", header, util.ColorInfo(output))
 	return nil
 }

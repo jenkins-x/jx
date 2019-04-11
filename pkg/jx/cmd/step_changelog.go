@@ -24,7 +24,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/src-d/go-git.v4/plumbing/object"
@@ -191,7 +191,7 @@ func NewCmdStepChangelog(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o *StepChangelogOptions) Run() error {
 	// lets enable batch mode if we detect we are inside a pipeline
 	if !o.BatchMode && o.GetBuildNumber() != "" {
-		log.Infoln("Using batch mode as inside a pipeline")
+		logrus.Infoln("Using batch mode as inside a pipeline")
 		o.BatchMode = true
 	}
 
@@ -245,7 +245,7 @@ func (o *StepChangelogOptions) Run() error {
 			return err
 		}
 		if previousRev == "" {
-			log.Info("no previous commit version found so change diff unavailable")
+			logrus.Info("no previous commit version found so change diff unavailable")
 			return nil
 		}
 	}
@@ -271,14 +271,14 @@ func (o *StepChangelogOptions) Run() error {
 		return fmt.Errorf("Failed to create the templates directory %s due to %s", templatesDir, err)
 	}
 
-	log.Infof("Generating change log from git ref %s => %s\n", util.ColorInfo(previousRev), util.ColorInfo(currentRev))
+	logrus.Infof("Generating change log from git ref %s => %s\n", util.ColorInfo(previousRev), util.ColorInfo(currentRev))
 
 	gitDir, gitConfDir, err := o.Git().FindGitConfigDir(dir)
 	if err != nil {
 		return err
 	}
 	if gitDir == "" || gitConfDir == "" {
-		log.Warnf("No git directory could be found from dir %s\n", dir)
+		logrus.Warnf("No git directory could be found from dir %s\n", dir)
 		return nil
 	}
 
@@ -312,7 +312,7 @@ func (o *StepChangelogOptions) Run() error {
 	gitProvider, err := o.State.GitInfo.CreateProvider(o.InCluster(), authConfigSvc, gitKind, o.Git(), o.BatchMode, o.In, o.Out, o.Err)
 	if err != nil {
 		foundGitProvider = false
-		log.Warnf("Could not create GitProvide so cannot update the release notes: %s\n", err)
+		logrus.Warnf("Could not create GitProvide so cannot update the release notes: %s\n", err)
 	}
 	o.State.GitProvider = gitProvider
 	o.State.FoundIssueNames = map[string]bool{}
@@ -322,7 +322,7 @@ func (o *StepChangelogOptions) Run() error {
 		if o.FailIfFindCommits {
 			return err
 		}
-		log.Warnf("failed to find git commits between revision %s and %s due to: %s\n", previousRev, currentRev, err.Error())
+		logrus.Warnf("failed to find git commits between revision %s and %s due to: %s\n", previousRev, currentRev, err.Error())
 	}
 	version := o.Version
 	if version == "" {
@@ -399,19 +399,19 @@ func (o *StepChangelogOptions) Run() error {
 		}
 		release.Spec.ReleaseNotesURL = url
 		if err != nil {
-			log.Warnf("Failed to update the release at %s: %s\n", url, err)
+			logrus.Warnf("Failed to update the release at %s: %s\n", url, err)
 			return nil
 		}
-		log.Infof("Updated the release information at %s\n", util.ColorInfo(url))
+		logrus.Infof("Updated the release information at %s\n", util.ColorInfo(url))
 	} else if o.OutputMarkdownFile != "" {
 		err := ioutil.WriteFile(o.OutputMarkdownFile, []byte(markdown), util.DefaultWritePermissions)
 		if err != nil {
 			return err
 		}
-		log.Infof("\nGenerated Changelog: %s\n", util.ColorInfo(o.OutputMarkdownFile))
+		logrus.Infof("\nGenerated Changelog: %s\n", util.ColorInfo(o.OutputMarkdownFile))
 	} else {
-		log.Infof("\nGenerated Changelog:\n")
-		log.Infof("%s\n\n", markdown)
+		logrus.Infof("\nGenerated Changelog:\n")
+		logrus.Infof("%s\n\n", markdown)
 	}
 
 	o.State.Release = release
@@ -430,7 +430,7 @@ func (o *StepChangelogOptions) Run() error {
 		if err != nil {
 			return fmt.Errorf("Failed to save Release YAML file %s: %s", releaseFile, err)
 		}
-		log.Infof("generated: %s\n", util.ColorInfo(releaseFile))
+		logrus.Infof("generated: %s\n", util.ColorInfo(releaseFile))
 	}
 	cleanVersion := strings.TrimPrefix(version, "v")
 	release.Spec.Version = cleanVersion
@@ -444,7 +444,7 @@ func (o *StepChangelogOptions) Run() error {
 			if err != nil {
 				return fmt.Errorf("Failed to save Release CRD YAML file %s: %s", crdFile, err)
 			}
-			log.Infof("generated: %s\n", util.ColorInfo(crdFile))
+			logrus.Infof("generated: %s\n", util.ColorInfo(crdFile))
 		}
 	}
 	appName := ""
@@ -465,9 +465,9 @@ func (o *StepChangelogOptions) Run() error {
 		devRelease.Spec.Name = appName
 		_, err := kube.GetOrCreateRelease(jxClient, devNs, &devRelease)
 		if err != nil {
-			log.Warnf("%s", err)
+			logrus.Warnf("%s", err)
 		} else {
-			log.Infof("Created Release %s resource in namespace %s\n", devRelease.Name, devNs)
+			logrus.Infof("Created Release %s resource in namespace %s\n", devRelease.Name, devNs)
 		}
 	}
 	releaseNotesURL := release.Spec.ReleaseNotesURL
@@ -488,7 +488,7 @@ func (o *StepChangelogOptions) Run() error {
 			lastCommitMessage = lastCommit.Message
 			lastCommitURL = lastCommit.URL
 		}
-		log.Infof("Updating PipelineActivity %s with version %s\n", name, cleanVersion)
+		logrus.Infof("Updating PipelineActivity %s with version %s\n", name, cleanVersion)
 
 		key := &kube.PromoteStepActivityKey{
 			PipelineActivityKey: kube.PipelineActivityKey{
@@ -511,13 +511,13 @@ func (o *StepChangelogOptions) Run() error {
 		if err == nil && a != nil && !created {
 			_, err = activities.PatchUpdate(a)
 			if err != nil {
-				log.Warnf("Failed to update PipelineActivities %s: %s\n", name, err)
+				logrus.Warnf("Failed to update PipelineActivities %s: %s\n", name, err)
 			} else {
-				log.Infof("Updated PipelineActivities %s with release notes URL: %s\n", util.ColorInfo(name), util.ColorInfo(releaseNotesURL))
+				logrus.Infof("Updated PipelineActivities %s with release notes URL: %s\n", util.ColorInfo(name), util.ColorInfo(releaseNotesURL))
 			}
 		}
 	} else {
-		log.Infof("No pipeline and build number available on $JOB_NAME and $BUILD_NUMBER so cannot update PipelineActivities with the ReleaseNotesURL\n")
+		logrus.Infof("No pipeline and build number available on $JOB_NAME and $BUILD_NUMBER so cannot update PipelineActivities with the ReleaseNotesURL\n")
 	}
 	return nil
 }
@@ -530,11 +530,11 @@ func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Co
 	sha := commit.Hash.String()
 	author, err := resolver.GitSignatureAsUser(&commit.Author)
 	if err != nil {
-		log.Warnf("Failed to enrich commits with issues: %v\n", err)
+		logrus.Warnf("Failed to enrich commits with issues: %v\n", err)
 	}
 	committer, err := resolver.GitSignatureAsUser(&commit.Committer)
 	if err != nil {
-		log.Warnf("Failed to enrich commits with issues: %v\n", err)
+		logrus.Warnf("Failed to enrich commits with issues: %v\n", err)
 	}
 	var authorDetails, committerDetails v1.UserDetails
 	if author != nil {
@@ -555,7 +555,7 @@ func (o *StepChangelogOptions) addCommit(spec *v1.ReleaseSpec, commit *object.Co
 
 	spec.Commits = append(spec.Commits, commitSummary)
 	if err != nil {
-		log.Warnf("Failed to enrich commits with issues: %s\n", err)
+		logrus.Warnf("Failed to enrich commits with issues: %s\n", err)
 	}
 }
 
@@ -570,7 +570,7 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 	issueKind := issues.GetIssueProvider(tracker)
 	if !o.State.LoggedIssueKind {
 		o.State.LoggedIssueKind = true
-		log.Infof("Finding issues in commit messages using %s format\n", issueKind)
+		logrus.Infof("Finding issues in commit messages using %s format\n", issueKind)
 	}
 	if issueKind == issues.Jira {
 		regex = JIRAIssueRegex
@@ -593,17 +593,17 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 				o.State.FoundIssueNames[result] = true
 				issue, err := tracker.GetIssue(result)
 				if err != nil {
-					log.Warnf("Failed to lookup issue %s in issue tracker %s due to %s\n", result, tracker.HomeURL(), err)
+					logrus.Warnf("Failed to lookup issue %s in issue tracker %s due to %s\n", result, tracker.HomeURL(), err)
 					continue
 				}
 				if issue == nil {
-					log.Warnf("Failed to find issue %s for repository %s\n", result, tracker.HomeURL())
+					logrus.Warnf("Failed to find issue %s for repository %s\n", result, tracker.HomeURL())
 					continue
 				}
 
 				var user v1.UserDetails
 				if issue.User == nil {
-					log.Warnf("Failed to find user for issue %s repository %s\n", result, tracker.HomeURL())
+					logrus.Warnf("Failed to find user for issue %s repository %s\n", result, tracker.HomeURL())
 				} else {
 					u, err := resolver.Resolve(issue.User)
 					if err != nil {
@@ -614,7 +614,7 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 
 				var closedBy v1.UserDetails
 				if issue.ClosedBy == nil {
-					log.Warnf("Failed to find closedBy user for issue %s repository %s\n", result, tracker.HomeURL())
+					logrus.Warnf("Failed to find closedBy user for issue %s repository %s\n", result, tracker.HomeURL())
 				} else {
 					u, err := resolver.Resolve(issue.User)
 					if err != nil {
@@ -625,7 +625,7 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 
 				var assignees []v1.UserDetails
 				if issue.Assignees == nil {
-					log.Warnf("Failed to find assignees for issue %s repository %s\n", result, tracker.HomeURL())
+					logrus.Warnf("Failed to find assignees for issue %s repository %s\n", result, tracker.HomeURL())
 				} else {
 					u, err := resolver.GitUserSliceAsUserDetailsSlice(issue.Assignees)
 					if err != nil {

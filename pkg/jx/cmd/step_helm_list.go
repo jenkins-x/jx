@@ -5,7 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -64,6 +64,6 @@ func (o *StepHelmListOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Info(output)
+	logrus.Info(output)
 	return nil
 }

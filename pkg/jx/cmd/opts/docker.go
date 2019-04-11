@@ -6,7 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 )
 
 // DockerRegistryOrg parses the docker registry organisation from various places
@@ -14,7 +14,7 @@ func (o *CommonOptions) DockerRegistryOrg(repository *gits.GitRepository) string
 	answer := ""
 	teamSettings, err := o.TeamSettings()
 	if err != nil {
-		log.Warnf("Could not load team settings %s\n", err.Error())
+		logrus.Warnf("Could not load team settings %s\n", err.Error())
 	} else {
 		answer = teamSettings.DockerRegistryOrg
 	}
@@ -33,12 +33,12 @@ func (o *CommonOptions) DockerRegistry() string {
 	if dockerRegistry == "" {
 		kubeClient, ns, err := o.KubeClientAndDevNamespace()
 		if err != nil {
-			log.Warnf("failed to create kube client: %s\n", err.Error())
+			logrus.Warnf("failed to create kube client: %s\n", err.Error())
 		} else {
 			name := kube.ConfigMapJenkinsDockerRegistry
 			data, err := kube.GetConfigMapData(kubeClient, name, ns)
 			if err != nil {
-				log.Warnf("failed to load ConfigMap %s in namespace %s: %s\n", name, ns, err.Error())
+				logrus.Warnf("failed to load ConfigMap %s in namespace %s: %s\n", name, ns, err.Error())
 			} else {
 				dockerRegistry = data["docker.registry"]
 			}

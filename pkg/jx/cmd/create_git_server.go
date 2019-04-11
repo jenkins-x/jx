@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -112,7 +112,7 @@ func (o *CreateGitServerOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to save GitAuthConfigService")
 	}
-	log.Infof("Added Git server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
+	logrus.Infof("Added Git server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
 
 	err = o.EnsureGitServiceCRD(server)
 	if err != nil {

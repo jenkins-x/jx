@@ -9,7 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -237,7 +237,7 @@ func (o *StepReleaseOptions) Run() error {
 			return fmt.Errorf("Failed to promote: %s", err)
 		}
 	} else {
-		log.Infof("No charts directory %s so not promoting\n", util.ColorInfo(chartsDir))
+		logrus.Infof("No charts directory %s so not promoting\n", util.ColorInfo(chartsDir))
 	}
 
 	return nil

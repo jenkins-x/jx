@@ -3,15 +3,16 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 	"io"
 	"os"
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
@@ -246,7 +247,7 @@ func (o *ScanClusterOptions) printResult(result *scanResult) error {
 		if err != nil {
 			return errors.Wrap(err, "converting scan result to YAML")
 		}
-		log.Info(string(output))
+		logrus.Info(string(output))
 	} else {
 		nodeTable := o.CreateTable()
 		nodeTable.SetColumnAlign(1, util.ALIGN_LEFT)

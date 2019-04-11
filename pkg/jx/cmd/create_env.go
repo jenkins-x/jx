@@ -17,7 +17,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -208,7 +208,7 @@ func (o *CreateEnvOptions) Run() error {
 		}
 		return nil
 	})
-	log.Infof("Created environment %s\n", util.ColorInfo(env.Name))
+	logrus.Infof("Created environment %s\n", util.ColorInfo(env.Name))
 
 	if !o.GitOpsMode {
 		err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, &env, ns)
@@ -224,18 +224,18 @@ func (o *CreateEnvOptions) Run() error {
 			err = kube.EnsureEnvironmentNamespaceSetup(kubeClient, jxClient, &env, env.Spec.Namespace)
 			if err != nil {
 				// This can happen if, for whatever reason, the namespace takes a while to create. That shouldn't stop the entire process though
-				log.Warnf("Namespace %s does not exist for jx to patch the service account for, you should patch the service account manually with your pull secret(s) \n", env.Spec.Namespace)
+				logrus.Warnf("Namespace %s does not exist for jx to patch the service account for, you should patch the service account manually with your pull secret(s) \n", env.Spec.Namespace)
 			}
 		}
 		imagePullSecrets := strings.Fields(o.PullSecrets)
 		saName := "default"
-		//log.Infof("Patching the secrets %s for the service account %s\n", imagePullSecrets, saName)
+		//logrus.Infof("Patching the secrets %s for the service account %s\n", imagePullSecrets, saName)
 		err = serviceaccount.PatchImagePullSecrets(kubeClient, env.Spec.Namespace, saName, imagePullSecrets)
 		if err != nil {
 			return fmt.Errorf("Failed to add pull secrets %s to service account %s in namespace %s: %v", imagePullSecrets, saName, env.Spec.Namespace, err)
 		} else {
-			log.Infof("Service account \"%s\" in namespace \"%s\" configured to use pull secret(s) %s \n", saName, env.Spec.Namespace, imagePullSecrets)
-			log.Infof("Pull secret(s) must exist in namespace %s before deploying your applications in this environment \n", env.Spec.Namespace)
+			logrus.Infof("Service account \"%s\" in namespace \"%s\" configured to use pull secret(s) %s \n", saName, env.Spec.Namespace, imagePullSecrets)
+			logrus.Infof("Pull secret(s) must exist in namespace %s before deploying your applications in this environment \n", env.Spec.Namespace)
 		}
 	}
 
@@ -256,7 +256,7 @@ func (o *CreateEnvOptions) Run() error {
 func (o *CreateEnvOptions) RegisterEnvironment(env *v1.Environment, gitProvider gits.GitProvider, authConfigSvc auth.ConfigService) error {
 	gitURL := env.Spec.Source.URL
 	if gitURL == "" {
-		log.Warnf("environment %s does not have a git source URL\n", env.Name)
+		logrus.Warnf("environment %s does not have a git source URL\n", env.Name)
 		return nil
 	}
 	gitInfo, err := gits.ParseGitURL(gitURL)

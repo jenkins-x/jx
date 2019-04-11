@@ -30,7 +30,7 @@ func TestSoakTest(t *testing.T) {
 	When(mockIssuer.NextBuildNumber(matchers.AnyKubePipelineID())).Then(generateBuildNumber)
 	server := NewHTTPBuildNumberServer("", 1234, mockIssuer)
 
-	fmt.Printf("Using %d clients to make %d requests each.\n", numThreads, numRequests)
+	logrus.Infof("Using %d clients to make %d requests each.\n", numThreads, numRequests)
 
 	wg := sync.WaitGroup{}
 
@@ -44,9 +44,9 @@ func TestSoakTest(t *testing.T) {
 		}()
 	}
 
-	fmt.Printf("Waiting for %d clients to complete.\n", numThreads)
+	logrus.Infof("Waiting for %d clients to complete.\n", numThreads)
 	wg.Wait()
-	fmt.Print("Done\n")
+	logrus.Info("Done\n")
 }
 
 // To be called by pegomock as NextBuildNumber() implementation - add a small sleep to simulate the real processing &

@@ -18,7 +18,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -84,31 +84,31 @@ func (o *GCHelmOptions) Run() error {
 	if len(cms.Items) == 0 {
 		// no configmaps found so lets return gracefully
 		if o.Verbose {
-			log.Info("no config maps found\n")
+			logrus.Info("no config maps found\n")
 		}
 		return nil
 	}
 
 	releases := ExtractReleases(cms)
 	if o.Verbose {
-		log.Info(fmt.Sprintf("Found %d releases.\n", len(releases)))
-		log.Info(fmt.Sprintf("Releases: %v\n", releases))
+		logrus.Info(fmt.Sprintf("Found %d releases.\n", len(releases)))
+		logrus.Info(fmt.Sprintf("Releases: %v\n", releases))
 	}
 
 	for _, release := range releases {
 		if o.Verbose {
-			log.Info(fmt.Sprintf("Checking %s. ", release))
+			logrus.Info(fmt.Sprintf("Checking %s. ", release))
 		}
 		versions := ExtractVersions(cms, release)
 		if o.Verbose {
-			log.Info(fmt.Sprintf("Found %d.\n", len(versions)))
-			log.Info(fmt.Sprintf("%v\n", versions))
+			logrus.Info(fmt.Sprintf("Found %d.\n", len(versions)))
+			logrus.Info(fmt.Sprintf("%v\n", versions))
 		}
 		to_delete := VersionsToDelete(versions, o.RevisionHistoryLimit)
 		if len(to_delete) > 0 {
 			if o.DryRun {
-				log.Infoln("Would delete:")
-				log.Infof("%v\n", to_delete)
+				logrus.Infoln("Would delete:")
+				logrus.Infof("%v\n", to_delete)
 			} else {
 				// Backup and delete
 				if o.NoBackup == false {
@@ -125,7 +125,7 @@ func (o *GCHelmOptions) Run() error {
 						if o.NoBackup == false {
 							// Create backup for ConfigMap about to be deleted
 							filename := o.OutDir + "/" + version + ".yaml"
-							log.Info(fmt.Sprintf("Backing up %v. ", filename))
+							logrus.Info(fmt.Sprintf("Backing up %v. ", filename))
 							y, err2 := yaml.Marshal(cm)
 							if err2 != nil {
 								// Failed to Marshall to YAML
@@ -137,7 +137,7 @@ func (o *GCHelmOptions) Run() error {
 							b.Write(y)
 							err4 := ioutil.WriteFile(filename, b.Bytes(), 0644)
 							if err4 == nil {
-								log.Info("Success. ")
+								logrus.Info("Success. ")
 							} else {
 								// Failed to write backup so abort
 								return err4
@@ -147,20 +147,20 @@ func (o *GCHelmOptions) Run() error {
 						var opts *metav1.DeleteOptions
 						err5 := kubeClient.CoreV1().ConfigMaps(kubeNamespace).Delete(version, opts)
 						if err5 == nil {
-							log.Info(fmt.Sprintf("ConfigMap %v deleted.\n", version))
+							logrus.Info(fmt.Sprintf("ConfigMap %v deleted.\n", version))
 						} else {
 							// Failed to delete
 							return err5
 						}
 					} else {
 						// Failed to find a ConfigMap that we know was in memory. Unlikely to occur.
-						log.Warn(fmt.Sprintf("Failed to find ConfigMap %s. \n", version))
+						logrus.Warn(fmt.Sprintf("Failed to find ConfigMap %s. \n", version))
 					}
 				}
 			}
 		} else {
 			if o.Verbose {
-				log.Info("Nothing to do.")
+				logrus.Info("Nothing to do.")
 			}
 		}
 	}

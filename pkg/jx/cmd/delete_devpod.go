@@ -6,7 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -110,6 +110,6 @@ func (o *DeleteDevPodOptions) Run() error {
 			return err
 		}
 	}
-	log.Infof("Deleted DevPods %s\n", util.ColorInfo(deletePods))
+	logrus.Infof("Deleted DevPods %s\n", util.ColorInfo(deletePods))
 	return nil
 }

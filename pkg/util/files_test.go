@@ -55,7 +55,7 @@ func TestDeleteDirContents(t *testing.T) {
 	defer func() {
 		err = os.RemoveAll(tmpDir)
 	}()
-	fmt.Printf("tmpDir=%s\n", tmpDir)
+	logrus.Infof("tmpDir=%s\n", tmpDir)
 
 	// Various types
 	var testFileNames = []string{
@@ -95,7 +95,7 @@ func TestDeleteDirContentsExcept(t *testing.T) {
 	defer func() {
 		err = os.RemoveAll(tmpDir)
 	}()
-	fmt.Printf("tmpDir=%s\n", tmpDir)
+	logrus.Infof("tmpDir=%s\n", tmpDir)
 
 	// Various types
 	var testFileNames = []string{

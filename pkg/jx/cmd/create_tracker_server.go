@@ -5,7 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -98,7 +98,7 @@ func (o *CreateTrackerServerOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Added issue tracker server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
+	logrus.Infof("Added issue tracker server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
 	return nil
 }
 

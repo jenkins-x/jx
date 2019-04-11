@@ -2,7 +2,7 @@ package extensions
 
 import (
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 )
 
 // GetAndDeduplicateChildrenRecursively will walk a tree of extensions rooted at ext and add them to the flattened
@@ -20,7 +20,7 @@ func GetAndDeduplicateChildrenRecursively(ext jenkinsv1.Extension, lookupByUUID 
 				return err
 			}
 		} else {
-			log.Warnf("Unable to find child %s of %s\n", childUUID, ext.Spec.FullyQualifiedName())
+			logrus.Warnf("Unable to find child %s of %s\n", childUUID, ext.Spec.FullyQualifiedName())
 		}
 	}
 	return nil

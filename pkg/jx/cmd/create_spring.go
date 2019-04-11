@@ -10,7 +10,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/spring"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -137,7 +137,7 @@ func (o *CreateSpringOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Created Spring Boot project at %s\n", util.ColorInfo(outDir))
+	logrus.Infof("Created Spring Boot project at %s\n", util.ColorInfo(outDir))
 
 	if details != nil {
 		o.ConfigureImportOptions(details)

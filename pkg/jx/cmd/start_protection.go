@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/prow"
@@ -92,6 +92,6 @@ func (o *StartProtectionOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("%s enabled for %s\n", util.ColorInfo(context), util.ColorInfo(orgrepo))
+	logrus.Infof("%s enabled for %s\n", util.ColorInfo(context), util.ColorInfo(orgrepo))
 	return nil
 }

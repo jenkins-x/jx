@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -38,9 +39,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	git "gopkg.in/src-d/go-git.v4"
@@ -365,7 +366,7 @@ func (options *InstallOptions) checkFlags() error {
 	if flags.Tekton {
 		flags.Prow = true
 		if !options.InitOptions.Flags.NoTiller {
-			log.Infof("note that if using Serverless Jenkins with Tekton we recommend the extra flag: %s\n", util.ColorInfo("--no-tiller"))
+			logrus.Infof("note that if using Serverless Jenkins with Tekton we recommend the extra flag: %s\n", util.ColorInfo("--no-tiller"))
 		}
 	}
 	if flags.NextGeneration {
@@ -381,11 +382,11 @@ func (options *InstallOptions) checkFlags() error {
 		options.SkipAuthSecretsMerge = true
 		flags.DisableSetKubeContext = true
 		if !flags.Vault {
-			log.Warnf("GitOps mode requires %s.\n", util.ColorInfo("vault"))
+			logrus.Warnf("GitOps mode requires %s.\n", util.ColorInfo("vault"))
 		}
 		initFlags := &options.InitOptions.Flags
 		if !initFlags.NoTiller {
-			log.Warnf("GitOps mode requires helm without tiller server. %s flag is automatically set\n", util.ColorInfo("no-tiller"))
+			logrus.Warnf("GitOps mode requires helm without tiller server. %s flag is automatically set\n", util.ColorInfo("no-tiller"))
 			initFlags.NoTiller = true
 		}
 	}
@@ -530,7 +531,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "getting the helm value files")
 	}
 
-	log.Infof("Installing Jenkins X platform helm chart from: %s\n", providerEnvDir)
+	logrus.Infof("Installing Jenkins X platform helm chart from: %s\n", providerEnvDir)
 
 	err = options.configureHelmRepo()
 	if err != nil {
@@ -552,14 +553,14 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring the build pack mode")
 	}
 
-	log.Infof("Installing jx into namespace %s\n", util.ColorInfo(ns))
+	logrus.Infof("Installing jx into namespace %s\n", util.ColorInfo(ns))
 
 	version, err := options.getPlatformVersion(versionsRepoDir, configStore)
 	if err != nil {
 		return errors.Wrap(err, "getting the platform version")
 	}
 
-	log.Infof("Installing jenkins-x-platform version: %s\n", util.ColorInfo(version))
+	logrus.Infof("Installing jenkins-x-platform version: %s\n", util.ColorInfo(version))
 
 	if options.Flags.GitOpsMode {
 		err := options.installPlatformGitOpsMode(gitOpsEnvDir, gitOpsDir, configStore, kube.DefaultChartMuseumURL,
@@ -621,7 +622,7 @@ func (options *InstallOptions) Run() error {
 	err = options.createEnvironments(ns)
 	if err != nil {
 		if strings.Contains(err.Error(), "com.atlassian.bitbucket.project.NoSuchProjectException") {
-			log.Infof("\nProject %s cannot be found. If you are using BitBucket Server, please use "+
+			logrus.Infof("\nProject %s cannot be found. If you are using BitBucket Server, please use "+
 				"a project code instead of a project name (for example 'MYPR' instead of 'myproject'). \n",
 				util.ColorInfo(options.CreateEnvOptions.GitRepositoryOptions.Owner))
 			return nil
@@ -660,14 +661,14 @@ func (options *InstallOptions) Run() error {
 
 	options.logAdminPassword()
 
-	log.Infof("\nYour Kubernetes context is now set to the namespace: %s \n", util.ColorInfo(ns))
-	log.Infof("To switch back to your original namespace use: %s\n", util.ColorInfo("jx namespace "+originalNs))
-	log.Infof("Or to use this context/namespace in just one terminal use: %s\n", util.ColorInfo("jx shell"))
-	log.Infof("For help on switching contexts see: %s\n\n", util.ColorInfo("https://jenkins-x.io/developing/kube-context/"))
+	logrus.Infof("\nYour Kubernetes context is now set to the namespace: %s \n", util.ColorInfo(ns))
+	logrus.Infof("To switch back to your original namespace use: %s\n", util.ColorInfo("jx namespace "+originalNs))
+	logrus.Infof("Or to use this context/namespace in just one terminal use: %s\n", util.ColorInfo("jx shell"))
+	logrus.Infof("For help on switching contexts see: %s\n\n", util.ColorInfo("https://jenkins-x.io/developing/kube-context/"))
 
-	log.Infof("To import existing projects into Jenkins:       %s\n", util.ColorInfo("jx import"))
-	log.Infof("To create a new Spring Boot microservice:       %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
-	log.Infof("To create a new microservice from a quickstart: %s\n", util.ColorInfo("jx create quickstart"))
+	logrus.Infof("To import existing projects into Jenkins:       %s\n", util.ColorInfo("jx import"))
+	logrus.Infof("To create a new Spring Boot microservice:       %s\n", util.ColorInfo("jx create spring -d web -d actuator"))
+	logrus.Infof("To create a new microservice from a quickstart: %s\n", util.ColorInfo("jx create quickstart"))
 	return nil
 }
 
@@ -835,7 +836,7 @@ func (options *InstallOptions) installPlatform(providerEnvDir string, jxChart st
 	if err != nil {
 		return errors.Wrap(err, "failed to wait for jenkins-x chart installation to be ready")
 	}
-	log.Infof("Jenkins X deployments ready in namespace %s\n", namespace)
+	logrus.Infof("Jenkins X deployments ready in namespace %s\n", namespace)
 	return nil
 }
 
@@ -1005,7 +1006,7 @@ func (options *InstallOptions) configureHelm(client kubernetes.Interface, namesp
 			if ok {
 				options.SetHelm(helmTemplate)
 			} else {
-				log.Warnf("Helm facade is not a *helm.HelmCLI or *helm.HelmTemplate: %#v\n", helmer)
+				logrus.Warnf("Helm facade is not a *helm.HelmCLI or *helm.HelmTemplate: %#v\n", helmer)
 			}
 		}
 	}
@@ -1114,7 +1115,7 @@ func (options *InstallOptions) getHelmValuesFiles(configStore configio.ConfigSto
 		return valuesFiles, secretsFiles, temporaryFiles,
 			errors.Wrapf(err, "writing the helm config in the file '%s'", extraValuesFileName)
 	}
-	log.Infof("Generated helm values %s\n", util.ColorInfo(extraValuesFileName))
+	logrus.Infof("Generated helm values %s\n", util.ColorInfo(extraValuesFileName))
 
 	err = options.modifySecrets(helmConfig, adminSecrets)
 	if err != nil {
@@ -1140,7 +1141,7 @@ func (options *InstallOptions) getHelmValuesFiles(configStore configio.ConfigSto
 }
 
 func (options *InstallOptions) configureGitAuth() error {
-	log.Infof("Lets set up a Git user name and API token to be able to perform CI/CD\n\n")
+	logrus.Infof("Lets set up a Git user name and API token to be able to perform CI/CD\n\n")
 	gitUsername := options.GitRepositoryOptions.Username
 	gitServer := options.GitRepositoryOptions.ServerURL
 	gitAPIToken := options.GitRepositoryOptions.ApiToken
@@ -1197,7 +1198,7 @@ func (options *InstallOptions) configureGitAuth() error {
 	}
 
 	if userAuth.IsInvalid() {
-		log.Infof("Creating a local Git user for %s server\n", authServer.Label())
+		logrus.Infof("Creating a local Git user for %s server\n", authServer.Label())
 		f := func(username string) error {
 			options.Git().PrintCreateRepositoryGenerateAccessToken(authServer, username, options.Out)
 			return nil
@@ -1214,7 +1215,7 @@ func (options *InstallOptions) configureGitAuth() error {
 		authConfig.SetUserAuth(gitServer, userAuth)
 	}
 
-	log.Infof("Select the CI/CD pipelines Git server and user\n")
+	logrus.Infof("Select the CI/CD pipelines Git server and user\n")
 	var pipelineAuthServer *auth.AuthServer
 	if options.BatchMode {
 		pipelineAuthServer = authServer
@@ -1258,7 +1259,7 @@ func (options *InstallOptions) configureGitAuth() error {
 		return errors.Wrapf(err, "selecting the pipeline user for git server %s", authServer.Label())
 	}
 	if pipelineUserAuth.IsInvalid() {
-		log.Infof("Creating a pipelines Git user for %s server\n", authServer.Label())
+		logrus.Infof("Creating a pipelines Git user for %s server\n", authServer.Label())
 		f := func(username string) error {
 			options.Git().PrintCreateRepositoryGenerateAccessToken(pipelineAuthServer, username, options.Out)
 			return nil
@@ -1278,11 +1279,11 @@ func (options *InstallOptions) configureGitAuth() error {
 	pipelineAuthServerURL := pipelineAuthServer.URL
 	pipelineAuthUsername := pipelineUserAuth.Username
 
-	log.Infof("Setting the pipelines Git server %s and user name %s.\n",
+	logrus.Infof("Setting the pipelines Git server %s and user name %s.\n",
 		util.ColorInfo(pipelineAuthServerURL), util.ColorInfo(pipelineAuthUsername))
 	authConfig.UpdatePipelineServer(pipelineAuthServer, pipelineUserAuth)
 
-	log.Infof("Saving the Git authentication configuration\n")
+	logrus.Infof("Saving the Git authentication configuration\n")
 	err = authConfigSvc.SaveConfig()
 	if err != nil {
 		return errors.Wrap(err, "saving the Git authentication configuration")
@@ -1332,7 +1333,7 @@ func (options *InstallOptions) buildGitRepositoryOptionsForEnvironments() (*gits
 				org = user.Username
 			}
 
-			log.Infof("Using %s environment git owner in batch mode.\n", util.ColorInfo(org))
+			logrus.Infof("Using %s environment git owner in batch mode.\n", util.ColorInfo(org))
 		} else {
 			provider, err := gits.CreateProvider(server, user, options.Git())
 			if err != nil {
@@ -1394,25 +1395,25 @@ func (options *InstallOptions) verifyTiller(client kubernetes.Interface, namespa
 		serviceAccountName := "tiller"
 		tillerNamespace := options.InitOptions.Flags.TillerNamespace
 
-		log.Infof("Waiting for %s pod to be ready, service account name is %s, namespace is %s, tiller namespace is %s\n",
+		logrus.Infof("Waiting for %s pod to be ready, service account name is %s, namespace is %s, tiller namespace is %s\n",
 			util.ColorInfo("tiller"), util.ColorInfo(serviceAccountName), util.ColorInfo(namespace), util.ColorInfo(tillerNamespace))
 
 		clusterRoleBindingName := serviceAccountName + "-role-binding"
 		role := options.InitOptions.Flags.TillerClusterRole
 
-		log.Infof("Waiting for cluster role binding to be defined, named %s in namespace %s\n ", util.ColorInfo(clusterRoleBindingName), util.ColorInfo(namespace))
+		logrus.Infof("Waiting for cluster role binding to be defined, named %s in namespace %s\n ", util.ColorInfo(clusterRoleBindingName), util.ColorInfo(namespace))
 		err := options.EnsureClusterRoleBinding(clusterRoleBindingName, role, namespace, serviceAccountName)
 		if err != nil {
 			return errors.Wrap(err, "tiller cluster role not defined")
 		}
-		log.Infof("tiller cluster role defined: %s in namespace %s\n", util.ColorInfo(role), util.ColorInfo(namespace))
+		logrus.Infof("tiller cluster role defined: %s in namespace %s\n", util.ColorInfo(role), util.ColorInfo(namespace))
 
 		err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
 		if err != nil {
 			msg := fmt.Sprintf("tiller pod (tiller-deploy in namespace %s) is not running after 10 minutes", tillerNamespace)
 			return errors.Wrap(err, msg)
 		}
-		log.Infoln("tiller pod running")
+		logrus.Infoln("tiller pod running")
 	}
 	return nil
 }
@@ -1422,7 +1423,7 @@ func (options *InstallOptions) configureTillerInDevEnvironment() error {
 	if !initOpts.Flags.RemoteTiller && !initOpts.Flags.NoTiller {
 		callback := func(env *v1.Environment) error {
 			env.Spec.TeamSettings.NoTiller = true
-			log.Info("Disabling the server side use of tiller in the TeamSettings\n")
+			logrus.Info("Disabling the server side use of tiller in the TeamSettings\n")
 			return nil
 		}
 		err := options.ModifyDevEnvironment(callback)
@@ -1443,7 +1444,7 @@ func (options *InstallOptions) configureProwInTeamSettings() error {
 			if options.Flags.Tekton {
 				settings.ProwEngine = v1.ProwEngineTypeTekton
 			}
-			log.Infof("Configuring the TeamSettings for Prow with engine %s\n", string(settings.ProwEngine))
+			logrus.Infof("Configuring the TeamSettings for Prow with engine %s\n", string(settings.ProwEngine))
 			return nil
 		}
 		err := options.ModifyDevEnvironment(callback)
@@ -1464,7 +1465,7 @@ func (options *InstallOptions) configureImportModeInTeamSettings() error {
 				settings.ImportMode = v1.ImportModeTypeJenkinsfile
 			}
 		}
-		log.Infof("Configuring the TeamSettings for ImportMode %s\n", string(settings.ImportMode))
+		logrus.Infof("Configuring the TeamSettings for ImportMode %s\n", string(settings.ImportMode))
 		return nil
 	}
 	return options.ModifyDevEnvironment(callback)
@@ -1526,8 +1527,8 @@ func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigSt
 
 func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir string) error {
 	if options.Flags.GitOpsMode {
-		log.Infof("\n\nGenerated the source code for the GitOps development environment at %s\n", util.ColorInfo(gitOpsDir))
-		log.Infof("You can apply this to the kubernetes cluster at any time in this directory via: %s\n\n", util.ColorInfo("jx step env apply"))
+		logrus.Infof("\n\nGenerated the source code for the GitOps development environment at %s\n", util.ColorInfo(gitOpsDir))
+		logrus.Infof("You can apply this to the kubernetes cluster at any time in this directory via: %s\n\n", util.ColorInfo("jx step env apply"))
 
 		if !options.Flags.NoGitOpsEnvRepo {
 			authConfigSvc, err := options.CreateGitAuthConfigService()
@@ -1611,7 +1612,7 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 			if err != nil {
 				return errors.Wrapf(err, "pushing master from repository %q", dir)
 			}
-			log.Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
+			logrus.Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 		}
 	}
 
@@ -1697,7 +1698,7 @@ func (options *InstallOptions) setupGitOpsPostApply(ns string) error {
 			if err != nil {
 				errs = append(errs, errors.Wrapf(err, "registering environment %q", env.GetName()))
 			}
-			log.Infof("Registered environment %q\n", util.ColorInfo(env.GetName()))
+			logrus.Infof("Registered environment %q\n", util.ColorInfo(env.GetName()))
 		}
 		return util.CombineErrors(errs...)
 	}
@@ -1876,7 +1877,7 @@ func (options *InstallOptions) configureCloudProviderRegistry(client kubernetes.
 			return "", "", errors.Wrap(err, "getting registry configuration from Azure")
 		}
 		azureCLI.AssignRole(cluster, registryID)
-		log.Infof("Assign AKS %s a reader role for ACR %s\n", util.ColorInfo(server), util.ColorInfo(dockerRegistry))
+		logrus.Infof("Assign AKS %s a reader role for ACR %s\n", util.ColorInfo(server), util.ColorInfo(dockerRegistry))
 		return config, dockerRegistry, nil
 	case cloud.IKS:
 		dockerRegistry = iks.GetClusterRegistry(client)
@@ -1954,7 +1955,7 @@ func (options *InstallOptions) getAdminSecrets(configStore configio.ConfigStore,
 	adminSecretsServiceInit := false
 
 	if sopsFileExists {
-		log.Infof("Attempting to decrypt secrets file %s\n", util.ColorInfo(cloudEnvironmentSecretsLocation))
+		logrus.Infof("Attempting to decrypt secrets file %s\n", util.ColorInfo(cloudEnvironmentSecretsLocation))
 		// need to decrypt secrets now
 		err = options.Helm().DecryptSecrets(cloudEnvironmentSecretsLocation)
 		if err != nil {
@@ -1968,7 +1969,7 @@ func (options *InstallOptions) getAdminSecrets(configStore configio.ConfigStore,
 		}
 
 		if decryptedSecretsFile {
-			log.Infof("Successfully decrypted %s\n", util.ColorInfo(cloudEnvironmentSecretsDecryptedLocation))
+			logrus.Infof("Successfully decrypted %s\n", util.ColorInfo(cloudEnvironmentSecretsDecryptedLocation))
 			cloudEnvironmentSecretsLocation = cloudEnvironmentSecretsDecryptedLocation
 
 			err = options.AdminSecretsService.NewAdminSecretsConfigFromSecret(cloudEnvironmentSecretsDecryptedLocation)
@@ -2053,7 +2054,7 @@ func (options *InstallOptions) configureKaniko() error {
 
 		serviceAccountName := kube.ToValidNameTruncated(fmt.Sprintf("jxkankio-%s", clusterName), 30)
 
-		log.Infof("Configuring Kaniko service account %s for project %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
+		logrus.Infof("Configuring Kaniko service account %s for project %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
 		serviceAccountPath, err := gke.GetOrCreateServiceAccount(serviceAccountName, projectID, serviceAccountDir, gke.KanikoServiceAccountRoles)
 		if err != nil {
 			return errors.Wrap(err, "creating the service account")
@@ -2107,16 +2108,16 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 				defaultRegion := options.installValues[kube.Region]
 				if cvo.DynamoDBRegion == "" {
 					cvo.DynamoDBRegion = defaultRegion
-					log.Infof("Region not specified for DynamoDB, defaulting to %s\n", util.ColorInfo(defaultRegion))
+					logrus.Infof("Region not specified for DynamoDB, defaulting to %s\n", util.ColorInfo(defaultRegion))
 				}
 				if cvo.KMSRegion == "" {
 					cvo.KMSRegion = defaultRegion
-					log.Infof("Region not specified for KMS, defaulting to %s\n", util.ColorInfo(defaultRegion))
+					logrus.Infof("Region not specified for KMS, defaulting to %s\n", util.ColorInfo(defaultRegion))
 
 				}
 				if cvo.S3Region == "" {
 					cvo.S3Region = defaultRegion
-					log.Infof("Region not specified for S3, defaulting to %s\n", util.ColorInfo(defaultRegion))
+					logrus.Infof("Region not specified for S3, defaulting to %s\n", util.ColorInfo(defaultRegion))
 				}
 			}
 		}
@@ -2137,15 +2138,15 @@ func (options *InstallOptions) createSystemVault(client kubernetes.Interface, na
 		options.installValues[kube.SystemVaultName] = systemVaultName
 
 		if kubevault.FindVault(vaultOperatorClient, systemVaultName, namespace) {
-			log.Infof("System vault named %s in namespace %s already exists\n",
+			logrus.Infof("System vault named %s in namespace %s already exists\n",
 				util.ColorInfo(systemVaultName), util.ColorInfo(namespace))
 		} else {
-			log.Info("Creating new system vault\n")
+			logrus.Info("Creating new system vault\n")
 			err = cvo.createVault(vaultOperatorClient, systemVaultName, options.Flags.Provider)
 			if err != nil {
 				return err
 			}
-			log.Infof("System vault created named %s in namespace %s.\n",
+			logrus.Infof("System vault created named %s in namespace %s.\n",
 				util.ColorInfo(systemVaultName), util.ColorInfo(namespace))
 		}
 
@@ -2289,7 +2290,7 @@ func (options *InstallOptions) saveClusterConfig() error {
 
 func (options *InstallOptions) configureJenkins(namespace string) error {
 	if !options.Flags.Prow {
-		log.Info("Configure Jenkins API Token\n")
+		logrus.Info("Configure Jenkins API Token\n")
 		if isOpenShiftProvider(options.Flags.Provider) {
 			options.CreateJenkinsUserOptions.CommonOptions = options.CommonOptions
 			options.CreateJenkinsUserOptions.Password = options.AdminSecretsService.Flags.DefaultAdminPassword
@@ -2330,7 +2331,7 @@ func (options *InstallOptions) configureJenkins(namespace string) error {
 
 		err := options.UpdateJenkinsURL([]string{namespace})
 		if err != nil {
-			log.Warnf("Failed to update the Jenkins external URL: %s", err)
+			logrus.Warnf("Failed to update the Jenkins external URL: %s", err)
 		}
 	}
 	return nil
@@ -2384,7 +2385,7 @@ func (options *InstallOptions) createEnvironments(namespace string) error {
 
 		}
 		if createEnvironments {
-			log.Info("Creating default staging and production environments\n")
+			logrus.Info("Creating default staging and production environments\n")
 			_, devNamespace, err := options.KubeClientAndDevNamespace()
 			if err != nil {
 				errors.Wrap(err, "getting team's dev namespace")
@@ -2591,7 +2592,7 @@ func isOpenShiftProvider(provider string) bool {
 }
 
 func (options *InstallOptions) enableOpenShiftSCC(ns string) error {
-	log.Infof("Enabling anyuid for the Jenkins service account in namespace %s\n", ns)
+	logrus.Infof("Enabling anyuid for the Jenkins service account in namespace %s\n", ns)
 	err := options.RunCommand("oc", "adm", "policy", "add-scc-to-user", "anyuid", "system:serviceaccount:"+ns+":jenkins")
 	if err != nil {
 		return err
@@ -2609,7 +2610,7 @@ func (options *InstallOptions) enableOpenShiftSCC(ns string) error {
 }
 
 func (options *InstallOptions) enableOpenShiftRegistryPermissions(ns string, dockerRegistry string) (string, error) {
-	log.Infof("Enabling permissions for OpenShift registry in namespace %s\n", ns)
+	logrus.Infof("Enabling permissions for OpenShift registry in namespace %s\n", ns)
 	// Open the registry so any authenticated user can pull images from the jx namespace
 	err := options.RunCommand("oc", "adm", "policy", "add-role-to-group", "system:image-puller", "system:authenticated", "-n", ns)
 	if err != nil {
@@ -2641,9 +2642,9 @@ func (options *InstallOptions) logAdminPassword() {
 
 	`
 	if options.Flags.Vault {
-		log.Infof(astrix+"\n", fmt.Sprintf("Your admin password is in vault: %s", util.ColorInfo("eval `jx get vault-config` && vault kv get secret/admin/jenkins")))
+		logrus.Infof(astrix+"\n", fmt.Sprintf("Your admin password is in vault: %s", util.ColorInfo("eval `jx get vault-config` && vault kv get secret/admin/jenkins")))
 	} else {
-		log.Infof(astrix+"\n", fmt.Sprintf("Your admin password is: %s", util.ColorInfo(options.AdminSecretsService.Flags.DefaultAdminPassword)))
+		logrus.Infof(astrix+"\n", fmt.Sprintf("Your admin password is: %s", util.ColorInfo(options.AdminSecretsService.Flags.DefaultAdminPassword)))
 	}
 }
 
@@ -2674,14 +2675,14 @@ func (options *InstallOptions) cloneJXCloudEnvironmentsRepo() (string, error) {
 		if err != nil {
 			return wrkDir, fmt.Errorf("error getting current working directory %v", err)
 		}
-		log.Infof("Copying local dir %s to %s\n", currentDir, wrkDir)
+		logrus.Infof("Copying local dir %s to %s\n", currentDir, wrkDir)
 
 		return wrkDir, util.CopyDir(currentDir, wrkDir, true)
 	}
 	if options.Flags.CloudEnvRepository == "" {
 		options.Flags.CloudEnvRepository = opts.DefaultCloudEnvironmentsURL
 	}
-	log.Infof("Cloning the Jenkins X cloud environments repo to %s\n", wrkDir)
+	logrus.Infof("Cloning the Jenkins X cloud environments repo to %s\n", wrkDir)
 	_, err = git.PlainClone(wrkDir, false, &git.CloneOptions{
 		URL:           options.Flags.CloudEnvRepository,
 		ReferenceName: "refs/heads/master",
@@ -2724,7 +2725,7 @@ func (options *InstallOptions) waitForInstallToBeReady(ns string) error {
 		return err
 	}
 
-	log.Warnf("waiting for install to be ready, if this is the first time then it will take a while to download images\n")
+	logrus.Warnf("waiting for install to be ready, if this is the first time then it will take a while to download images\n")
 
 	return kube.WaitForAllDeploymentsToBeReady(client, ns, 30*time.Minute)
 
@@ -2743,7 +2744,7 @@ func (options *InstallOptions) saveChartmuseumAuthConfig() error {
 		url := ""
 		url, err = options.FindService(kube.ServiceChartMuseum)
 		if err != nil {
-			log.Warnf("No service called %s could be found so couldn't wire up the local auth file to talk to chart museum\n", kube.ServiceChartMuseum)
+			logrus.Warnf("No service called %s could be found so couldn't wire up the local auth file to talk to chart museum\n", kube.ServiceChartMuseum)
 			return nil
 		}
 		server = config.GetOrCreateServer(url)
@@ -2766,7 +2767,7 @@ func (options *InstallOptions) saveChartmuseumAuthConfig() error {
 }
 
 func (options *InstallOptions) installAddon(name string) error {
-	log.Infof("Installing addon %s\n", util.ColorInfo(name))
+	logrus.Infof("Installing addon %s\n", util.ColorInfo(name))
 
 	opts := &CreateAddonOptions{
 		CreateOptions: CreateOptions{
@@ -2830,7 +2831,7 @@ func (options *InstallOptions) ensureDefaultStorageClass(client kubernetes.Inter
 		}
 		foundSc.Annotations[kube.AnnotationIsDefaultStorageClass] = "true"
 
-		log.Infof("Updating storageclass %s to be the default\n", util.ColorInfo(name))
+		logrus.Infof("Updating storageclass %s to be the default\n", util.ColorInfo(name))
 		_, err = storageClassInterface.Update(foundSc)
 		return err
 	}
@@ -2852,7 +2853,7 @@ func (options *InstallOptions) ensureDefaultStorageClass(client kubernetes.Inter
 		ReclaimPolicy: &reclaimPolicy,
 		MountOptions:  []string{"debug"},
 	}
-	log.Infof("Creating default storageclass %s with provisioner %s\n", util.ColorInfo(name), util.ColorInfo(provisioner))
+	logrus.Infof("Creating default storageclass %s with provisioner %s\n", util.ColorInfo(name), util.ColorInfo(provisioner))
 	_, err = storageClassInterface.Create(sc)
 	return err
 }
@@ -2910,15 +2911,15 @@ func (options *InstallOptions) configureTeamSettings() error {
 	callback := func(env *v1.Environment) error {
 		if env.Spec.TeamSettings.KubeProvider == "" {
 			env.Spec.TeamSettings.KubeProvider = options.Flags.Provider
-			log.Infof("Storing the kubernetes provider %s in the TeamSettings\n", env.Spec.TeamSettings.KubeProvider)
+			logrus.Infof("Storing the kubernetes provider %s in the TeamSettings\n", env.Spec.TeamSettings.KubeProvider)
 		}
 		if initOpts.Flags.NoTiller {
 			env.Spec.TeamSettings.HelmTemplate = true
-			log.Info("Enabling helm template mode in the TeamSettings\n")
+			logrus.Info("Enabling helm template mode in the TeamSettings\n")
 		}
 		if options.Flags.DockerRegistryOrg != "" {
 			env.Spec.TeamSettings.DockerRegistryOrg = options.Flags.DockerRegistryOrg
-			log.Infof("Setting the docker registry organisation to %s in the TeamSettings\n", env.Spec.TeamSettings.DockerRegistryOrg)
+			logrus.Infof("Setting the docker registry organisation to %s in the TeamSettings\n", env.Spec.TeamSettings.DockerRegistryOrg)
 		}
 		return nil
 	}

@@ -14,7 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/wbrefvem/go-bitbucket"
 )
 
@@ -492,7 +492,7 @@ func (b *BitbucketCloudProvider) GetPullRequestCommits(owner string, repository 
 
 		comm, ok := data.(map[string]interface{})
 		if !ok {
-			log.Warn(fmt.Sprintf("Unexpected data structure for GetPullRequestCommits values from PR %s/%s/%d", owner, repo, number))
+			logrus.Warnf("Unexpected data structure for GetPullRequestCommits values from PR %s/%s/%d", owner, repo, number)
 			continue
 		}
 
@@ -503,7 +503,7 @@ func (b *BitbucketCloudProvider) GetPullRequestCommits(owner string, repository 
 
 		sha, ok := shaVal.(string)
 		if !ok {
-			log.Warn(fmt.Sprintf("Unexpected data structure for GetPullRequestCommits hash from PR %s/%s/%d", owner, repo, number))
+			logrus.Warnf("Unexpected data structure for GetPullRequestCommits hash from PR %s/%s/%d", owner, repo, number)
 			continue
 		}
 
@@ -958,7 +958,7 @@ func (b *BitbucketCloudProvider) UserAuth() auth.UserAuth {
 func (b *BitbucketCloudProvider) UserInfo(username string) *GitUser {
 	user, _, err := b.Client.UsersApi.UsersUsernameGet(b.Context, username)
 	if err != nil {
-		log.Error("Unable to fetch user info for " + username + " due to " + err.Error() + "\n")
+		logrus.Error("Unable to fetch user info for " + username + " due to " + err.Error() + "\n")
 		return nil
 	}
 
@@ -971,29 +971,29 @@ func (b *BitbucketCloudProvider) UserInfo(username string) *GitUser {
 }
 
 func (b *BitbucketCloudProvider) UpdateRelease(owner string, repo string, tag string, releaseInfo *GitRelease) error {
-	log.Warn("Bitbucket Cloud doesn't support releases")
+	logrus.Warn("Bitbucket Cloud doesn't support releases")
 	return nil
 }
 
 // ListReleases lists the releases
 func (b *BitbucketCloudProvider) ListReleases(org string, name string) ([]*GitRelease, error) {
 	answer := []*GitRelease{}
-	log.Warn("Bitbucket Cloud doesn't support releases")
+	logrus.Warn("Bitbucket Cloud doesn't support releases")
 	return answer, nil
 }
 
 func (b *BitbucketCloudProvider) AddCollaborator(user string, organisation string, repo string) error {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket. Please add user: %v as a collaborator to this project.\n", user)
+	logrus.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket. Please add user: %v as a collaborator to this project.\n", user)
 	return nil
 }
 
 func (b *BitbucketCloudProvider) ListInvitations() ([]*github.RepositoryInvitation, *github.Response, error) {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket.\n")
+	logrus.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket.\n")
 	return []*github.RepositoryInvitation{}, &github.Response{}, nil
 }
 
 func (b *BitbucketCloudProvider) AcceptInvitation(ID int64) (*github.Response, error) {
-	log.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket.\n")
+	logrus.Infof("Automatically adding the pipeline user as a collaborator is currently not implemented for bitbucket.\n")
 	return &github.Response{}, nil
 }
 

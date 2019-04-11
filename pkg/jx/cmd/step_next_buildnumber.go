@@ -6,7 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/buildnum"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -82,7 +82,7 @@ func (o *StepNextBuildNumberOptions) Run() error {
 	for i := 0; i < attempts; i++ {
 		buildNum, err := buildNumGen.NextBuildNumber(pID)
 		if err == nil {
-			log.Infof("%s\n", buildNum)
+			logrus.Infof("%s\n", buildNum)
 			return nil
 		}
 

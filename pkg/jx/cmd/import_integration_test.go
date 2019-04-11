@@ -16,7 +16,7 @@ import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -94,7 +94,7 @@ func testImportProject(t *testing.T, tempDir string, testcase string, srcDir str
 		gitDir := filepath.Join(testDir, ".gitdir")
 		dotGitExists, gitErr := util.FileExists(gitDir)
 		if gitErr != nil {
-			log.Warnf("Git source directory %s does not exist: %s", gitDir, gitErr)
+			logrus.Warnf("Git source directory %s does not exist: %s", gitDir, gitErr)
 		} else if dotGitExists {
 			dotGitDir := filepath.Join(testDir, ".git")
 			util.RenameDir(gitDir, dotGitDir, true)

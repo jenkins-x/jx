@@ -7,7 +7,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -29,7 +29,7 @@ func (this *UserDetailService) CreateOrUpdateUser(u *v1.UserDetails) error {
 		return fmt.Errorf("Unable to get or create user, nil or missing login")
 	}
 
-	log.Infof("CreateOrUpdateUser: %s <%s>\n", u.Login, u.Email)
+	logrus.Infof("CreateOrUpdateUser: %s <%s>\n", u.Login, u.Email)
 
 	id := kube.ToValidName(u.Login)
 
@@ -37,7 +37,7 @@ func (this *UserDetailService) CreateOrUpdateUser(u *v1.UserDetails) error {
 	user, err := this.jxClient.JenkinsV1().Users(this.namespace).Get(id, metav1.GetOptions{})
 	if err != nil {
 		// we get an error when not found
-		log.Info("Unable to find user: " + id + " -- " + err.Error() + "\n")
+		logrus.Info("Unable to find user: " + id + " -- " + err.Error() + "\n")
 	}
 
 	if user != nil && err == nil {
@@ -71,13 +71,13 @@ func (this *UserDetailService) CreateOrUpdateUser(u *v1.UserDetails) error {
 		}
 
 		if changed {
-			log.Info("Updating modified user: " + existing.Email + "\n")
+			logrus.Info("Updating modified user: " + existing.Email + "\n")
 			_, err = this.jxClient.JenkinsV1().Users(this.namespace).Update(user)
 			if err != nil {
 				return err
 			}
 		} else {
-			log.Info("Existing user found: " + existing.Email + "\n")
+			logrus.Info("Existing user found: " + existing.Email + "\n")
 		}
 	} else {
 		user = &v1.User{
@@ -87,7 +87,7 @@ func (this *UserDetailService) CreateOrUpdateUser(u *v1.UserDetails) error {
 			Spec: *u,
 		}
 
-		log.Info("Adding missing user: " + id + "\n")
+		logrus.Info("Adding missing user: " + id + "\n")
 		_, err = this.jxClient.JenkinsV1().Users(this.namespace).Create(user)
 		if err != nil {
 			return err

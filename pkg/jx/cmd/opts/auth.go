@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,7 +21,7 @@ import (
 func (o *CommonOptions) CreateAddonAuthConfigService() (auth.ConfigService, error) {
 	secrets, err := o.LoadPipelineSecrets(kube.ValueKindAddon, "")
 	if err != nil {
-		log.Warnf("The current user cannot query pipeline addon secrets: %s", err)
+		logrus.Warnf("The current user cannot query pipeline addon secrets: %s", err)
 	}
 	return o.AddonAuthConfigService(secrets)
 }
@@ -45,15 +45,15 @@ func (o *CommonOptions) CreateGitAuthConfigService() (auth.ConfigService, error)
 
 			kubeConfig, _, configLoadErr := o.Kube().LoadConfig()
 			if configLoadErr != nil {
-				log.Warnf("WARNING: Could not load config: %s", configLoadErr)
+				logrus.Warnf("WARNING: Could not load config: %s", configLoadErr)
 			}
 
 			ns := kube.CurrentNamespace(kubeConfig)
 			if ns == "" {
-				log.Warnf("WARNING: Could not get the current namespace")
+				logrus.Warnf("WARNING: Could not get the current namespace")
 			}
 
-			log.Warnf("WARNING: The current user cannot query secrets in the namespace %s: %s\n", ns, err)
+			logrus.Warnf("WARNING: The current user cannot query secrets in the namespace %s: %s\n", ns, err)
 		}
 	}
 
@@ -93,7 +93,7 @@ func (o *CommonOptions) CreateGitAuthConfigServiceFromSecrets(fileName string, s
 			// if no config file is being used lets grab the git server from the current directory
 			server, err := o.Git().Server("")
 			if err != nil {
-				log.Warnf("WARNING: unable to get remote Git repo server, %v\n", err)
+				logrus.Warnf("WARNING: unable to get remote Git repo server, %v\n", err)
 				server = "https://github.com"
 			}
 			config.Servers = []*auth.AuthServer{
@@ -124,7 +124,7 @@ func (o *CommonOptions) CreateGitAuthConfigServiceFromSecrets(fileName string, s
 func (o *CommonOptions) CreateChatAuthConfigService() (auth.ConfigService, error) {
 	secrets, err := o.LoadPipelineSecrets(kube.ValueKindChat, "")
 	if err != nil {
-		log.Warnf("The current user cannot query pipeline chat secrets: %s", err)
+		logrus.Warnf("The current user cannot query pipeline chat secrets: %s", err)
 	}
 	_, namespace, err := o.KubeClientAndDevNamespace()
 	if err != nil {

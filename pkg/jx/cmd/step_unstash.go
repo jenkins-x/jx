@@ -12,7 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -103,14 +103,14 @@ func (o *StepUnstashOptions) Run() error {
 		return err
 	}
 	if file == "" {
-		log.Infof("%s\n", string(data))
+		logrus.Infof("%s\n", string(data))
 		return nil
 	}
 	err = ioutil.WriteFile(file, data, util.DefaultWritePermissions)
 	if err != nil {
 		return errors.Wrapf(err, "failed to write file %s", file)
 	}
-	log.Infof("wrote: %s\n", util.ColorInfo(file))
+	logrus.Infof("wrote: %s\n", util.ColorInfo(file))
 	return nil
 }
 
@@ -119,7 +119,7 @@ func CreateBucketHTTPFn(authSvc auth.ConfigService) func(string) (string, error)
 	return func(urlText string) (string, error) {
 		token, err := GetTokenForGitURL(authSvc, urlText)
 		if err != nil {
-			log.Warnf("Could not find the git token to access urlText %s due to: %s\n", urlText, err)
+			logrus.Warnf("Could not find the git token to access urlText %s due to: %s\n", urlText, err)
 		} else if token != "" {
 			idx := strings.Index(urlText, "://")
 			if idx > 0 {

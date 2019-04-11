@@ -3,7 +3,7 @@ package cmd
 import (
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
@@ -83,7 +83,7 @@ func (o *GetStreamOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "failed to resolve docker image %s", name)
 		}
-		log.Infof("resolved image %s to %s\n", util.ColorInfo(name), util.ColorInfo(result))
+		logrus.Infof("resolved image %s to %s\n", util.ColorInfo(name), util.ColorInfo(result))
 		return nil
 	}
 
@@ -92,6 +92,6 @@ func (o *GetStreamOptions) Run() error {
 		return errors.Wrapf(err, "failed to resolve %s version of %s", o.Kind, name)
 	}
 
-	log.Infof("resolved %s %s to version: %s\n", util.ColorInfo(name), util.ColorInfo(o.Kind), util.ColorInfo(n))
+	logrus.Infof("resolved %s %s to version: %s\n", util.ColorInfo(name), util.ColorInfo(o.Kind), util.ColorInfo(n))
 	return nil
 }

@@ -13,7 +13,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -104,7 +104,7 @@ func (e ElasticsearchProvider) SendIssue(i *ESIssue) error {
 	}
 	var index *Index
 
-	log.Infof("sending issue %s\n", id)
+	logrus.Infof("sending issue %s\n", id)
 	err = e.post("issues", id, data, &index)
 	if err != nil {
 		return err

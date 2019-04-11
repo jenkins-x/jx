@@ -3,7 +3,7 @@ package cmd
 import (
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spf13/cobra"
 
@@ -78,7 +78,7 @@ func (o *GetDevPodOptions) Run() error {
 	var userName string
 	if o.AllUsernames {
 		if o.Username != "" {
-			log.Warn("getting devpods for all usernames. Explicit username will be ignored")
+			logrus.Warn("getting devpods for all usernames. Explicit username will be ignored")
 		}
 		// Leave userName blank
 	} else {

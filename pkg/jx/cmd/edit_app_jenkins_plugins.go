@@ -5,7 +5,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -72,9 +72,9 @@ func (o *EditAppJenkinsPluginsOptions) Run() error {
 		return err
 	}
 
-	log.Infof("chosen selection:\n")
+	logrus.Infof("chosen selection:\n")
 	for _, sel := range selection {
-		log.Infof("    %s\n", util.ColorInfo(sel))
+		logrus.Infof("    %s\n", util.ColorInfo(sel))
 	}
 	// TODO update the GitOps values.yaml folder
 	return nil

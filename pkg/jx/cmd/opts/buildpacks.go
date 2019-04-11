@@ -17,6 +17,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkinsfile/gitresolver"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 )
 
 // InvokeDraftPack used to pass arguments into the draft pack invocation
@@ -87,15 +88,15 @@ func (o *CommonOptions) InvokeDraftPack(i *InvokeDraftPack) (string, error) {
 	}
 
 	if len(customDraftPack) > 0 {
-		log.Info("trying to use draft pack: " + customDraftPack + "\n")
+		logrus.Info("trying to use draft pack: " + customDraftPack + "\n")
 		lpack = filepath.Join(packsDir, customDraftPack)
 		f, err := util.FileExists(lpack)
 		if err != nil {
-			log.Error(err.Error())
+			logrus.Error(err.Error())
 			return "", err
 		}
 		if f == false {
-			log.Error("Could not find pack: " + customDraftPack + " going to try detect which pack to use")
+			logrus.Error("Could not find pack: " + customDraftPack + " going to try detect which pack to use")
 			lpack = ""
 		}
 	}
@@ -110,7 +111,7 @@ func (o *CommonOptions) InvokeDraftPack(i *InvokeDraftPack) (string, error) {
 
 			exists, _ = util.FileExists(lpack)
 			if !exists {
-				log.Warn("defaulting to maven pack")
+				logrus.Warn("defaulting to maven pack")
 				lpack = filepath.Join(packsDir, "maven")
 			}
 		} else if exists, err := util.FileExists(gradleName); err == nil && exists {
@@ -208,7 +209,7 @@ func (o *CommonOptions) InvokeDraftPack(i *InvokeDraftPack) (string, error) {
 		exists, err = util.FileExists(filepath.Join(dir, "Dockerfile"))
 		if exists && err == nil {
 			if jenkinsfileExists || disableJenkinsfileCheck {
-				log.Warn("existing Dockerfile, Jenkinsfile and charts folder found so skipping 'draft create' step\n")
+				logrus.Warn("existing Dockerfile, Jenkinsfile and charts folder found so skipping 'draft create' step\n")
 				return draftPack, nil
 			}
 		}
@@ -229,7 +230,7 @@ func (o *CommonOptions) InvokeDraftPack(i *InvokeDraftPack) (string, error) {
 
 	err = CopyBuildPack(dir, lpack)
 	if err != nil {
-		log.Warnf("Failed to apply the build pack in %s due to %s", dir, err)
+		logrus.Warnf("Failed to apply the build pack in %s due to %s", dir, err)
 	}
 
 	// lets delete empty charts dir if a draft pack created one
@@ -331,13 +332,13 @@ func (o *CommonOptions) InvokeDraftPack(i *InvokeDraftPack) (string, error) {
 			// if there's no Jenkinsfile created then rename it back again!
 			jenkinsfileExists, err = util.FileExists(jenkinsfilePath)
 			if err != nil {
-				log.Warnf("Failed to check for Jenkinsfile %s", err)
+				logrus.Warnf("Failed to check for Jenkinsfile %s", err)
 			} else {
 				if jenkinsfileExists {
 					if !initialisedGit && !withRename {
 						err = os.Remove(jenkinsfileBackup)
 						if err != nil {
-							log.Warnf("Failed to remove Jenkinsfile backup %s", err)
+							logrus.Warnf("Failed to remove Jenkinsfile backup %s", err)
 						}
 					}
 				} else {

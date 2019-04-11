@@ -8,7 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -88,6 +88,6 @@ func (o *StepHelmVersionOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Modified file %s to set the chart to version %s\n", util.ColorInfo(chartFile), util.ColorInfo(version))
+	logrus.Infof("Modified file %s to set the chart to version %s\n", util.ColorInfo(chartFile), util.ColorInfo(version))
 	return nil
 }

@@ -8,7 +8,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -136,16 +136,16 @@ func (o *StepWaitForArtifactOptions) Run() error {
 		}
 		o.ArtifactURL = util.UrlJoin(o.RepoURL, group, artifact, version, artifact+"-"+version+"."+o.Extension)
 	}
-	log.Infof("Waiting for artifact at %s\n", util.ColorInfo(o.ArtifactURL))
+	logrus.Infof("Waiting for artifact at %s\n", util.ColorInfo(o.ArtifactURL))
 
 	fn := func() error {
 		return o.getUrlStatusOK(o.ArtifactURL)
 	}
 	err = o.RetryQuietlyUntilTimeout(o.TimeoutDuration, o.PollDuration, fn)
 	if err == nil {
-		log.Infof("Found artifact at %s\n", util.ColorInfo(o.ArtifactURL))
+		logrus.Infof("Found artifact at %s\n", util.ColorInfo(o.ArtifactURL))
 		return nil
 	}
-	log.Warnf("Failed to find artifact at %s due to %s", o.ArtifactURL, err)
+	logrus.Warnf("Failed to find artifact at %s due to %s", o.ArtifactURL, err)
 	return err
 }

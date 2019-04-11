@@ -5,7 +5,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 
@@ -117,7 +117,7 @@ func (options *UpdateWebhooksOptions) Run() error {
 			return errors.Wrap(err, "unable to list repositories")
 		}
 
-		log.Infof("Found %v repos\n", util.ColorInfo(len(repositories)))
+		logrus.Infof("Found %v repos\n", util.ColorInfo(len(repositories)))
 
 		for _, repo := range repositories {
 			options.updateRepoHook(git, repo.Name, webhookUrl, isProwEnabled, hmacToken)
@@ -133,13 +133,13 @@ func (options *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, repoN
 		return errors.Wrap(err, "unable to list webhooks")
 	}
 
-	log.Infof("Checking hooks for repository %s\n", util.ColorInfo(repoName))
+	logrus.Infof("Checking hooks for repository %s\n", util.ColorInfo(repoName))
 
 	if len(webhooks) > 0 {
 		// find matching hook
 		for _, webHook := range webhooks {
 			if options.matches(webhookURL, webHook) {
-				log.Infof("Found matching hook for url %s\n", util.ColorInfo(webHook.URL))
+				logrus.Infof("Found matching hook for url %s\n", util.ColorInfo(webHook.URL))
 
 				// update
 				webHookArgs := &gits.GitWebHookArguments{

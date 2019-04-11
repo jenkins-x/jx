@@ -2,7 +2,7 @@ package cmd
 
 import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -74,9 +74,9 @@ func (o *DeletePostPreviewJobOptions) Run() error {
 		}
 		if idx >= 0 {
 			settings.PostPreviewJobs = append(settings.PostPreviewJobs[0:idx], settings.PostPreviewJobs[idx+1:]...)
-			log.Infof("Deleting the post Preview Job: %s\n", util.ColorInfo(name))
+			logrus.Infof("Deleting the post Preview Job: %s\n", util.ColorInfo(name))
 		} else {
-			log.Warnf("post Preview Job: %s does not exist in this team\n", name)
+			logrus.Warnf("post Preview Job: %s does not exist in this team\n", name)
 		}
 		return nil
 	}

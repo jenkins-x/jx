@@ -15,7 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/pki"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -108,7 +108,7 @@ func (o *CreateAddonCloudBeesOptions) Run() error {
 	}
 
 	if missing {
-		log.Infof(`
+		logrus.Infof(`
 You will need your username and password to install this addon while it is in preview.
 To register to get your username/password to to: %s
 
@@ -135,7 +135,7 @@ To register to get your username/password to to: %s
 	}
 
 	if o.Sso {
-		log.Infof("Configuring %s...\n", util.ColorInfo("single sign-on"))
+		logrus.Infof("Configuring %s...\n", util.ColorInfo("single sign-on"))
 		_, devNamespace, err := o.KubeClientAndDevNamespace()
 		if err != nil {
 			return errors.Wrap(err, "getting the dev namespace")
@@ -204,7 +204,7 @@ To register to get your username/password to to: %s
 	if o.Sso {
 		// wait for cert to be issued
 		certName := pki.CertSecretPrefix + "core"
-		log.Infof("Waiting for cert: %s...\n", util.ColorInfo(certName))
+		logrus.Infof("Waiting for cert: %s...\n", util.ColorInfo(certName))
 		certMngrClient, err := o.CertManagerClient()
 		if err != nil {
 			return errors.Wrap(err, "creating the cert-manager client")
@@ -213,7 +213,7 @@ To register to get your username/password to to: %s
 		if err != nil {
 			return err // this is already wrapped by the previous call
 		}
-		log.Infof("Ready Cert: %s\n", util.ColorInfo(certName))
+		logrus.Infof("Ready Cert: %s\n", util.ColorInfo(certName))
 	}
 
 	if o.Basic {
@@ -254,8 +254,8 @@ To register to get your username/password to to: %s
 			}
 		}
 
-		log.Infof("using exposecontroller config from dev namespace %s\n", devNamespace)
-		log.Infof("target namespace %s\n", o.Namespace)
+		logrus.Infof("using exposecontroller config from dev namespace %s\n", devNamespace)
+		logrus.Infof("target namespace %s\n", o.Namespace)
 
 		// create the ingress rule
 		err = o.Expose(devNamespace, o.Namespace, o.Password)
@@ -264,7 +264,7 @@ To register to get your username/password to to: %s
 		}
 	}
 
-	log.Infof("Addon installed successfully.\n\n  %s Open the app in a browser\n\n", util.ColorInfo("jx cloudbees"))
+	logrus.Infof("Addon installed successfully.\n\n  %s Open the app in a browser\n\n", util.ColorInfo("jx cloudbees"))
 
 	return nil
 }

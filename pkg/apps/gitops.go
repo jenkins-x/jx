@@ -10,7 +10,7 @@ import (
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"github.com/jenkins-x/jx/pkg/environments"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/pkg/errors"
 )
 
@@ -40,7 +40,7 @@ func (o *GitOpsOptions) AddApp(app string, dir string, version string, repositor
 	if err != nil {
 		return errors.Wrapf(err, "creating pr for %s", app)
 	}
-	log.Infof("Added app via Pull Request %s\n", info.PullRequest.URL)
+	logrus.Infof("Added app via Pull Request %s\n", info.PullRequest.URL)
 	return nil
 }
 
@@ -122,7 +122,7 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string) error {
 					return err
 				}
 			} else {
-				log.Warnf("Not removing %s for %s because it is not a directory", info.Name(), app)
+				logrus.Warnf("Not removing %s for %s because it is not a directory", info.Name(), app)
 			}
 		}
 		return nil
@@ -144,6 +144,6 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string) error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Delete app via Pull Request %s\n", info.PullRequest.URL)
+	logrus.Infof("Delete app via Pull Request %s\n", info.PullRequest.URL)
 	return nil
 }

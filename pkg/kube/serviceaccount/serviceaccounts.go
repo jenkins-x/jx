@@ -23,9 +23,9 @@ type ImagePullSecret struct {
 // PatchImagePullSecrets patches the specified ImagePullSecrets to the given service account
 func PatchImagePullSecrets(kubeClient kubernetes.Interface, ns string, sa string, imagePullSecrets []string) error {
 	// If we ever have log.Debugf, these would be useful to print
-	//log.Infof("Namespace: %s\n", ns)
-	//log.Infof("Service Account: %s\n", sa)
-	//log.Infof("Secret: %s\n", imagePullSecrets)
+	//logrus.Infof("Namespace: %s\n", ns)
+	//logrus.Infof("Service Account: %s\n", sa)
+	//logrus.Infof("Secret: %s\n", imagePullSecrets)
 
 	// '{"imagePullSecrets": [{"name": "<secret>"}]}'
 	var ips []ImagePullSecret
@@ -42,7 +42,7 @@ func PatchImagePullSecrets(kubeClient kubernetes.Interface, ns string, sa string
 	if err != nil {
 		return err
 	}
-	//log.Infof("Resultant JSON: %s\n", string(b))
+	//logrus.Infof("Resultant JSON: %s\n", string(b))
 	_, err = kubeClient.CoreV1().ServiceAccounts(ns).Patch(sa, types.StrategicMergePatchType, b)
 	if err != nil {
 		return err

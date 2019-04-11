@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"k8s.io/test-infra/prow/config"
 	"time"
@@ -51,7 +51,7 @@ func AddRepoToTideConfig(t *config.Tide, repo string, kind Kind) error {
 		}
 
 		if !found {
-			log.Infof("Failed to find 'application' tide config, adding...\n")
+			logrus.Infof("Failed to find 'application' tide config, adding...\n")
 			t.Queries = append(t.Queries, createApplicationTideQuery())
 		}
 	case Environment:
@@ -68,7 +68,7 @@ func AddRepoToTideConfig(t *config.Tide, repo string, kind Kind) error {
 		}
 
 		if !found {
-			log.Infof("Failed to find 'environment' tide config, adding...\n")
+			logrus.Infof("Failed to find 'environment' tide config, adding...\n")
 			t.Queries = append(t.Queries, createEnvironmentTideQuery())
 		}
 	case Protection:
@@ -92,7 +92,7 @@ func RemoveRepoFromTideConfig(t *config.Tide, repo string, kind Kind) error {
 		}
 
 		if !found {
-			log.Infof("Failed to find 'application' tide config, adding...\n")
+			logrus.Infof("Failed to find 'application' tide config, adding...\n")
 		}
 	case Environment:
 		found := false
@@ -104,7 +104,7 @@ func RemoveRepoFromTideConfig(t *config.Tide, repo string, kind Kind) error {
 		}
 
 		if !found {
-			log.Infof("Failed to find 'environment' tide config, adding...\n")
+			logrus.Infof("Failed to find 'environment' tide config, adding...\n")
 		}
 	case Protection:
 		// No Tide config needed for Protection

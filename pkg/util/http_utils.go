@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 )
 
 // defaults mirror the default http.Transport values
@@ -50,7 +50,7 @@ func getIntFromEnv(key string, fallback int) int {
 		if err == nil {
 			return intValue
 		}
-		log.Warnf("Unable to convert env var %s with value %s to integer, using default value of %d instead", key, value, fallback)
+		logrus.Warnf("Unable to convert env var %s with value %s to integer, using default value of %d instead", key, value, fallback)
 	}
 	return fallback
 }
@@ -61,7 +61,7 @@ func getBoolFromEnv(key string, fallback bool) bool {
 		if err == nil {
 			return boolValue
 		}
-		log.Warnf("Unable to convert env var %s with value %s to boolean, using default value of %t instead", key, value, fallback)
+		logrus.Warnf("Unable to convert env var %s with value %s to boolean, using default value of %t instead", key, value, fallback)
 	}
 	return fallback
 }

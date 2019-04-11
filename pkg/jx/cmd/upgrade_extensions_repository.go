@@ -14,7 +14,7 @@ import (
 
 	"github.com/blang/semver"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 
@@ -131,9 +131,9 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 		}
 	}
 	if o.Verbose {
-		log.Infof("Extension to UUID mapping:\n")
+		logrus.Infof("Extension to UUID mapping:\n")
 		for k, v := range lookupByName {
-			log.Infof("  %s: %s\n", util.ColorInfo(k), util.ColorInfo(v.UUID))
+			logrus.Infof("  %s: %s\n", util.ColorInfo(k), util.ColorInfo(v.UUID))
 		}
 	}
 	uuidResolveErrors := make([]string, 0)
@@ -177,20 +177,20 @@ func (o *UpgradeExtensionsRepositoryOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Updating extensions repository from %s to %s. ", util.ColorInfo(oldLock.Version), util.ColorInfo(newLock.Version))
+	logrus.Infof("Updating extensions repository from %s to %s. ", util.ColorInfo(oldLock.Version), util.ColorInfo(newLock.Version))
 	err = ioutil.WriteFile(o.OutputFile, bytes, 0755)
 	if err != nil {
 		return err
 	}
 	diff, err := o.Git().Diff("")
 	if err != nil {
-		log.Warnf("Error finding diff %s", err.Error())
+		logrus.Warnf("Error finding diff %s", err.Error())
 	}
 
 	if o.Verbose && diff != "" {
-		log.Infof("Changes are \n\n%s\n\n", diff)
+		logrus.Infof("Changes are \n\n%s\n\n", diff)
 	} else {
-		log.Infof("\n")
+		logrus.Infof("\n")
 	}
 	return nil
 }
@@ -242,13 +242,13 @@ func (o *UpgradeExtensionsRepositoryOptions) walkRemote(remote string, tag strin
 			// If the UUID is still empty, generate one
 			if UUID == "" {
 				UUID = uuid.New()
-				log.Infof("No UUID found for %s. Generated UUID %s, please update your extension definition "+
+				logrus.Infof("No UUID found for %s. Generated UUID %s, please update your extension definition "+
 					"accordingly.\n", ed.FullyQualifiedName(), UUID)
 			}
 			newVersion := strings.TrimPrefix(resolvedTag, "v")
 			oldSemanticVersion, err := semver.Parse(oldLookupByUUID[UUID].Version)
 			if err != nil {
-				log.Infof("Cannot determine existing version for %s. Upgrading to %s anyway.\n", ed.FullyQualifiedName(), newVersion)
+				logrus.Infof("Cannot determine existing version for %s. Upgrading to %s anyway.\n", ed.FullyQualifiedName(), newVersion)
 				oldSemanticVersion = semver.Version{}
 			}
 			newSemanticVersion, err := semver.Parse(newVersion)
@@ -309,7 +309,7 @@ func (o *UpgradeExtensionsRepositoryOptions) walkRemote(remote string, tag strin
 					Children:    children,
 				}
 				if o.Verbose {
-					log.Infof("Found extension %s version %s\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
+					logrus.Infof("Found extension %s version %s\n", util.ColorInfo(extension.FullyQualifiedName()), util.ColorInfo(extension.Version))
 				}
 				result = append(result, extension)
 			} else {
@@ -348,7 +348,7 @@ func (o *UpgradeExtensionsRepositoryOptions) FixChildren(extension jenkinsv1.Ext
 	for _, childUUID := range extension.Children {
 		if uuid.Parse(childUUID) == nil {
 			if c, ok := lookupByName[childUUID]; ok {
-				log.Infof("We recommend you explicitly specify the UUID for childUUID %s on extension %s as this will stop the "+
+				logrus.Infof("We recommend you explicitly specify the UUID for childUUID %s on extension %s as this will stop the "+
 					"extension breaking if names are changed.\n"+
 					"If you are the maintainer of the extension definition add \n"+
 					"\n"+

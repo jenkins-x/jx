@@ -6,7 +6,7 @@ import (
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/tools/cache"
@@ -101,7 +101,7 @@ func (c *PipelineNamespaceCache) ForEach(callback func(*v1.PipelineActivity)) {
 func (c *PipelineNamespaceCache) onPipelineObj(obj interface{}, jxClient versioned.Interface, ns string) {
 	pipeline, ok := obj.(*v1.PipelineActivity)
 	if !ok {
-		log.Warnf("Object is not a PipelineActivity %#v\n", obj)
+		logrus.Warnf("Object is not a PipelineActivity %#v\n", obj)
 		return
 	}
 	if pipeline != nil {
@@ -112,7 +112,7 @@ func (c *PipelineNamespaceCache) onPipelineObj(obj interface{}, jxClient version
 func (c *PipelineNamespaceCache) onPipelineDelete(obj interface{}, jxClient versioned.Interface, ns string) {
 	pipeline, ok := obj.(*v1.PipelineActivity)
 	if !ok {
-		log.Warnf("Object is not a PipelineActivity %#v\n", obj)
+		logrus.Warnf("Object is not a PipelineActivity %#v\n", obj)
 		return
 	}
 	if pipeline != nil {

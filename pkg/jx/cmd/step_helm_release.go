@@ -12,7 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -107,7 +107,7 @@ func (o *StepHelmReleaseOptions) Run() error {
 		}
 		secret, err := client.CoreV1().Secrets(ns).Get(kube.SecretJenkinsChartMuseum, metav1.GetOptions{})
 		if err != nil {
-			log.Warnf("Could not load Secret %s in namespace %s: %s\n", kube.SecretJenkinsChartMuseum, ns, err)
+			logrus.Warnf("Could not load Secret %s in namespace %s: %s\n", kube.SecretJenkinsChartMuseum, ns, err)
 		} else {
 			if secret != nil && secret.Data != nil {
 				if userName == "" {
@@ -135,7 +135,7 @@ func (o *StepHelmReleaseOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to open the chart archive '%s'", tarball)
 	}
-	log.Infof("Uploading chart file %s to %s\n", util.ColorInfo(tarball), util.ColorInfo(u))
+	logrus.Infof("Uploading chart file %s to %s\n", util.ColorInfo(tarball), util.ColorInfo(u))
 	req, err := http.NewRequest(http.MethodPost, u, bufio.NewReader(file))
 	if err != nil {
 		return errors.Wrapf(err, "failed to build the chart upload request for endpoint '%s'", u)
@@ -156,7 +156,7 @@ func (o *StepHelmReleaseOptions) Run() error {
 	}
 	responseMessage := string(body)
 	statusCode := res.StatusCode
-	log.Infof("Received %d response: %s\n", statusCode, responseMessage)
+	logrus.Infof("Received %d response: %s\n", statusCode, responseMessage)
 	if statusCode >= 300 {
 		return fmt.Errorf("Failed to post chart to %s due to response %d: %s", u, statusCode, responseMessage)
 	}

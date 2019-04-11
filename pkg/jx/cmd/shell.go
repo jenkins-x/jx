@@ -9,7 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/tools/clientcmd"
 
 	"io/ioutil"
@@ -164,12 +164,12 @@ func (o *ShellOptions) Run() error {
 	}
 
 	info := util.ColorInfo
-	log.Infof("Creating a new shell using the Kubernetes context %s\n", info(ctxName))
+	logrus.Infof("Creating a new shell using the Kubernetes context %s\n", info(ctxName))
 	if shell != "cmd.exe" {
-		log.Infof("Shell RC file is %s\n\n", tmpRCFileName)
+		logrus.Infof("Shell RC file is %s\n\n", tmpRCFileName)
 	}
-	log.Infof("All changes to the Kubernetes context like changing environment, namespace or context will be local to this shell\n")
-	log.Infof("To return to the global context use the command: exit\n\n")
+	logrus.Infof("All changes to the Kubernetes context like changing environment, namespace or context will be local to this shell\n")
+	logrus.Infof("To return to the global context use the command: exit\n\n")
 
 	e := exec.Command(shell, "-rcfile", tmpRCFileName, "-i")
 	if shell == "zsh" {

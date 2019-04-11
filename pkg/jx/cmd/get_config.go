@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
@@ -65,8 +65,8 @@ func (o *GetConfigOptions) Run() error {
 		return err
 	}
 	if pc.IsEmpty() {
-		log.Infoln("No project configuration for this directory.")
-		log.Infof("To edit the configuration use: %s\n", util.ColorInfo("jx edit config"))
+		logrus.Infoln("No project configuration for this directory.")
+		logrus.Infof("To edit the configuration use: %s\n", util.ColorInfo("jx edit config"))
 		return nil
 	}
 	table := o.CreateTable()

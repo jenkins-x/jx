@@ -9,7 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -104,7 +104,7 @@ func (o *StepVerifyPodCountOptions) Run() error {
 		return errors.Wrap(err, "failed to determine the application name and namespace from pipeline activity")
 	}
 
-	log.Infof("Verifying if app '%s' is running in namespace '%s'", app, ns)
+	logrus.Infof("Verifying if app '%s' is running in namespace '%s'", app, ns)
 
 	pods, err := kubeClient.CoreV1().Pods(ns).List(metav1.ListOptions{})
 	if err != nil {

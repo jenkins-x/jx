@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 
@@ -13,7 +12,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -78,7 +77,7 @@ func (o *GetEksOptions) Run() error {
 		}
 		err := o.InstallMissingDependencies(deps)
 		if err != nil {
-			log.Errorf("%v\nPlease fix the error or install manually then try again", err)
+			logrus.Errorf("%v\nPlease fix the error or install manually then try again", err)
 			os.Exit(-1)
 		}
 
@@ -91,7 +90,7 @@ func (o *GetEksOptions) Run() error {
 		if err != nil {
 			return nil
 		}
-		fmt.Print(string(output))
+		logrus.Info(string(output))
 		return nil
 	} else {
 		cluster := o.Args[0]
@@ -115,14 +114,14 @@ func (o *GetEksOptions) Run() error {
 		}
 
 		if o.Output == "" {
-			fmt.Println("NAME")
-			fmt.Println(cluster)
+			logrus.Info("NAME")
+			logrus.Info(cluster)
 		} else if o.Output == "yaml" {
 			reservations, err := yaml.Marshal(instances.Reservations)
 			if err != nil {
 				return err
 			}
-			fmt.Println(string(reservations))
+			logrus.Info(string(reservations))
 		} else {
 			return errors.New("Invalid output format.")
 		}

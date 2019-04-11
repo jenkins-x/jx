@@ -11,7 +11,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -77,7 +77,7 @@ func NewCmdCreateLile(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o CreateLileOptions) checkLileInstalled() error {
 	_, err := o.GetCommandOutput("", "lile", "help")
 	if err != nil {
-		log.Infoln("Installing Lile's dependencies...")
+		logrus.Infoln("Installing Lile's dependencies...")
 		// lets install lile
 		err = o.InstallBrewIfRequired()
 		if err != nil {
@@ -90,10 +90,10 @@ func (o CreateLileOptions) checkLileInstalled() error {
 			}
 		}
 
-		log.Infoln("Downloading and building Lile - this can take a while...")
+		logrus.Infoln("Downloading and building Lile - this can take a while...")
 		err = o.RunCommand("go", "get", "-u", "github.com/lileio/lile/...")
 		if err == nil {
-			log.Infoln("Installed Lile and its dependencies!")
+			logrus.Infoln("Installed Lile and its dependencies!")
 		}
 	}
 	return err
@@ -138,7 +138,7 @@ func (o *CreateLileOptions) Run() error {
 		return err
 	}
 
-	log.Infof("Created Lile project at %s\n\n", util.ColorInfo(dir))
+	logrus.Infof("Created Lile project at %s\n\n", util.ColorInfo(dir))
 
 	return o.ImportCreatedProject(dir)
 }

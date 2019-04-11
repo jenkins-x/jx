@@ -20,7 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/reports"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -164,7 +164,7 @@ func (o *StepBlogOptions) downloadsReport(provider gits.GitProvider, owner strin
 		return err
 	}
 	if len(releases) == 0 {
-		log.Warnf("No releases found for %s/%s/n", owner, repo)
+		logrus.Warnf("No releases found for %s/%s/n", owner, repo)
 		return nil
 	}
 	if o.CombineMinorReleases {
@@ -179,7 +179,7 @@ func (o *StepBlogOptions) downloadsReport(provider gits.GitProvider, owner strin
 			issuesClosed := len(spec.Issues)
 			queryClosedIssueCount, err := o.queryClosedIssues()
 			if err != nil {
-				log.Warnf("Failed to query closed issues: %s\n", err)
+				logrus.Warnf("Failed to query closed issues: %s\n", err)
 			}
 			if queryClosedIssueCount > issuesClosed {
 				issuesClosed = queryClosedIssueCount
@@ -191,7 +191,7 @@ func (o *StepBlogOptions) downloadsReport(provider gits.GitProvider, owner strin
 
 		repo, err := provider.GetRepository(owner, repo)
 		if err != nil {
-			log.Warnf("Failed to load the repository %s", err)
+			logrus.Warnf("Failed to load the repository %s", err)
 		} else {
 			history.StarsMetrics(o.ToDate, repo.Stars)
 		}
@@ -218,7 +218,7 @@ func (o *StepBlogOptions) createBarReport(name string, legends ...string) report
 		jsDir := filepath.Join(outDir, "static", "news", blogName)
 		err := os.MkdirAll(jsDir, util.DefaultWritePermissions)
 		if err != nil {
-			log.Warnf("Could not create directory %s: %s", jsDir, err)
+			logrus.Warnf("Could not create directory %s: %s", jsDir, err)
 		}
 		jsFileName := filepath.Join(jsDir, name+".js")
 		jsLinkURI := filepath.Join("/news", blogName, name+".js")
@@ -395,7 +395,7 @@ func (o *StepBlogOptions) report() (*reports.ProjectHistory, *reports.ProjectRep
 		toDate := o.ToDate
 		report := history.FindReport(toDate)
 		if report == nil {
-			log.Warnf("No report for date %s\n", toDate)
+			logrus.Warnf("No report for date %s\n", toDate)
 		}
 		return history, report
 	}
@@ -431,7 +431,7 @@ func (o *StepBlogOptions) createNewCommitters() string {
 			o.addContributors(issue.Assignees)
 		}
 	} else {
-		log.Warnf("No Release!\n")
+		logrus.Warnf("No Release!\n")
 	}
 	history, _ := o.report()
 	if history != nil {
@@ -567,7 +567,7 @@ func (o *StepBlogOptions) loadChatMetrics(chatConfig *config.ChatConfig) error {
 		} else {
 			metrics, err := o.getChannelMetrics(chatConfig, devChannel)
 			if err != nil {
-				log.Warnf("Failed to get chat metrics for channel %s: %s\n", devChannel, err)
+				logrus.Warnf("Failed to get chat metrics for channel %s: %s\n", devChannel, err)
 				return nil
 			}
 			count = metrics.MemberCount
@@ -583,7 +583,7 @@ func (o *StepBlogOptions) loadChatMetrics(chatConfig *config.ChatConfig) error {
 		} else {
 			metrics, err := o.getChannelMetrics(chatConfig, userChannel)
 			if err != nil {
-				log.Warnf("Failed to get chat metrics for channel %s: %s\n", userChannel, err)
+				logrus.Warnf("Failed to get chat metrics for channel %s: %s\n", userChannel, err)
 				return nil
 			}
 			count = metrics.MemberCount

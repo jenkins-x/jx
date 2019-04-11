@@ -6,7 +6,7 @@ import (
 	"github.com/heptio/sonobuoy/pkg/plugin/aggregation"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -59,11 +59,11 @@ func (o *ComplianceStatusOptions) Run() error {
 	}
 	status, err := cc.GetStatus(complianceNamespace)
 	if err != nil {
-		log.Infof("No compliance status found. Use %s command to start the compliance tests.\n", util.ColorInfo("jx compliance run"))
-		log.Infof("You can watch the logs with %s command.\n", util.ColorInfo("jx compliance logs -f"))
+		logrus.Infof("No compliance status found. Use %s command to start the compliance tests.\n", util.ColorInfo("jx compliance run"))
+		logrus.Infof("You can watch the logs with %s command.\n", util.ColorInfo("jx compliance logs -f"))
 		return nil
 	}
-	log.Infoln(hummanReadableStatus(status.Status))
+	logrus.Infoln(hummanReadableStatus(status.Status))
 	return nil
 }
 

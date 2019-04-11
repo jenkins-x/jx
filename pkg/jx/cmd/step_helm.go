@@ -11,7 +11,7 @@ import (
 	"os"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -101,7 +101,7 @@ func (o *StepHelmOptions) dropRepositories(repoIds []string, message string) err
 	for _, repoId := range repoIds {
 		err := o.dropRepository(repoId, message)
 		if err != nil {
-			log.Warnf("Failed to drop repository %s: %s\n", util.ColorInfo(repoIds), util.ColorError(err))
+			logrus.Warnf("Failed to drop repository %s: %s\n", util.ColorInfo(repoIds), util.ColorError(err))
 			if answer == nil {
 				answer = err
 			}
@@ -114,7 +114,7 @@ func (o *StepHelmOptions) dropRepository(repoId string, message string) error {
 	if repoId == "" {
 		return nil
 	}
-	log.Infof("Dropping helm release repository %s\n", util.ColorInfo(repoId))
+	logrus.Infof("Dropping helm release repository %s\n", util.ColorInfo(repoId))
 	err := o.RunCommand("mvn",
 		"org.sonatype.plugins:helm-staging-maven-plugin:1.6.5:rc-drop",
 		"-DserverId=oss-sonatype-staging",
@@ -122,9 +122,9 @@ func (o *StepHelmOptions) dropRepository(repoId string, message string) error {
 		"-DstagingRepositoryId="+repoId,
 		"-Ddescription=\""+message+"\" -DstagingProgressTimeoutMinutes=60")
 	if err != nil {
-		log.Warnf("Failed to drop repository %s due to: %s\n", repoId, err)
+		logrus.Warnf("Failed to drop repository %s due to: %s\n", repoId, err)
 	} else {
-		log.Infof("Dropped repository %s\n", util.ColorInfo(repoId))
+		logrus.Infof("Dropped repository %s\n", util.ColorInfo(repoId))
 	}
 	return err
 }
@@ -133,7 +133,7 @@ func (o *StepHelmOptions) releaseRepository(repoId string) error {
 	if repoId == "" {
 		return nil
 	}
-	log.Infof("Releasing helm release repository %s\n", util.ColorInfo(repoId))
+	logrus.Infof("Releasing helm release repository %s\n", util.ColorInfo(repoId))
 	options := o
 	err := options.RunCommand("mvn",
 		"org.sonatype.plugins:helm-staging-maven-plugin:1.6.5:rc-release",
@@ -142,9 +142,9 @@ func (o *StepHelmOptions) releaseRepository(repoId string) error {
 		"-DstagingRepositoryId="+repoId,
 		"-Ddescription=\"Next release is ready\" -DstagingProgressTimeoutMinutes=60")
 	if err != nil {
-		log.Infof("Failed to release repository %s due to: %s\n", repoId, err)
+		logrus.Infof("Failed to release repository %s due to: %s\n", repoId, err)
 	} else {
-		log.Infof("Released repository %s\n", util.ColorInfo(repoId))
+		logrus.Infof("Released repository %s\n", util.ColorInfo(repoId))
 	}
 	return err
 }

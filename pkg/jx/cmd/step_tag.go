@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -11,8 +12,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"k8s.io/helm/pkg/chartutil"
 )
@@ -108,7 +109,7 @@ func (o *StepTagOptions) Run() error {
 		return errors.New("No version flag")
 	}
 	if o.Verbose {
-		log.Infof("looking for charts folder...\n")
+		logrus.Infof("looking for charts folder...\n")
 	}
 	chartsDir := o.Flags.ChartsDir
 	if chartsDir == "" {
@@ -122,7 +123,7 @@ func (o *StepTagOptions) Run() error {
 		}
 	}
 	if o.Verbose {
-		log.Infof("updating chart if it exists\n")
+		logrus.Infof("updating chart if it exists\n")
 	}
 	err := o.updateChart(o.Flags.Version, chartsDir)
 	if err != nil {
@@ -136,7 +137,7 @@ func (o *StepTagOptions) Run() error {
 	tag := "v" + o.Flags.Version
 
 	if o.Verbose {
-		log.Infof("performing git commit\n")
+		logrus.Infof("performing git commit\n")
 	}
 	err = o.Git().AddCommit("", fmt.Sprintf("release %s", o.Flags.Version))
 	if err != nil {
@@ -149,7 +150,7 @@ func (o *StepTagOptions) Run() error {
 	}
 
 	if o.Verbose {
-		log.Infof("pushing git tag %s\n", tag)
+		logrus.Infof("pushing git tag %s\n", tag)
 	}
 	err = o.Git().PushTag("", tag)
 	if err != nil {
@@ -179,7 +180,7 @@ func (o *StepTagOptions) updateChart(version string, chartsDir string) error {
 	}
 	chart.Version = version
 	chart.AppVersion = version
-	log.Infof("Updating chart version in %s to %s\n", chartFile, version)
+	logrus.Infof("Updating chart version in %s to %s\n", chartFile, version)
 	err = chartutil.SaveChartfile(chartFile, chart)
 	if err != nil {
 		return fmt.Errorf("Failed to save chart %s: %s", chartFile, err)
@@ -209,12 +210,12 @@ func (o *StepTagOptions) updateChartValues(version string, chartsDir string) err
 			// lets ensure we use a valid docker image name
 			chartValueRepository = kube.ToValidImageName(chartValueRepository)
 			updated = true
-			log.Infof("Updating repository in %s to %s\n", valuesFile, chartValueRepository)
+			logrus.Infof("Updating repository in %s to %s\n", valuesFile, chartValueRepository)
 			lines[idx] = ValuesYamlRepositoryPrefix + " " + chartValueRepository
 		} else if strings.HasPrefix(line, ValuesYamlTagPrefix) {
 			version = kube.ToValidImageVersion(version)
 			updated = true
-			log.Infof("Updating tag in %s to %s\n", valuesFile, version)
+			logrus.Infof("Updating tag in %s to %s\n", valuesFile, version)
 			lines[idx] = ValuesYamlTagPrefix + " " + version
 		}
 	}
@@ -230,7 +231,7 @@ func (o *StepTagOptions) updateChartValues(version string, chartsDir string) err
 func (o *StepTagOptions) defaultChartValueRepository() string {
 	gitInfo, err := o.FindGitInfo(o.Flags.ChartsDir)
 	if err != nil {
-		log.Warnf("failed to find git repository: %s\n", err.Error())
+		logrus.Warnf("failed to find git repository: %s\n", err.Error())
 	}
 
 	dockerRegistry := o.DockerRegistry()
@@ -254,7 +255,7 @@ func (o *StepTagOptions) defaultChartValueRepository() string {
 	if dockerRegistry != "" && dockerRegistryOrg != "" && appName != "" {
 		return dockerRegistry + "/" + dockerRegistryOrg + "/" + appName
 	}
-	log.Warnf("could not generate chart repository name for dockerRegistry %s, dockerRegistryOrg %s, appName %s", dockerRegistry, dockerRegistryOrg, appName)
+	logrus.Warnf("could not generate chart repository name for dockerRegistry %s, dockerRegistryOrg %s, appName %s", dockerRegistry, dockerRegistryOrg, appName)
 	return ""
 }
 

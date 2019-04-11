@@ -6,7 +6,7 @@ import (
 	"sort"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 
 	"github.com/jenkins-x/jx/pkg/prow"
 
@@ -177,7 +177,7 @@ func (o *GetPipelineOptions) dump(jenkins gojenkins.JenkinsClient, name string, 
 			o.dump(jenkins, job.FullName+"/"+child.Name, table)
 		}
 		if len(job.Jobs) == 0 {
-			log.Warnf("Job %s has no children!\n", job.Name)
+			logrus.Warnf("Job %s has no children!\n", job.Name)
 		}
 	} else {
 		job.Url = switchJenkinsBaseURL(job.Url, jenkins.BaseURL())
@@ -189,7 +189,7 @@ func (o *GetPipelineOptions) dump(jenkins gojenkins.JenkinsClient, name string, 
 					table.AddRow(job.FullName, job.Url, "", "Never Built", "")
 				}
 			} else {
-				log.Warnf("Failed to find last build for job %s: %s\n", job.Name, err.Error())
+				logrus.Warnf("Failed to find last build for job %s: %s\n", job.Name, err.Error())
 			}
 			return nil
 		}
@@ -215,13 +215,13 @@ func switchJenkinsBaseURL(jobURL string, baseURL string) string {
 	}
 	u, err := url.Parse(jobURL)
 	if err != nil {
-		log.Warnf("failed to parse Jenkins Job URL %s due to: %s\n", jobURL, err)
+		logrus.Warnf("failed to parse Jenkins Job URL %s due to: %s\n", jobURL, err)
 		return jobURL
 	}
 
 	u2, err := url.Parse(baseURL)
 	if err != nil {
-		log.Warnf("failed to parse Jenkins base URL %s due to: %s\n", baseURL, err)
+		logrus.Warnf("failed to parse Jenkins base URL %s due to: %s\n", baseURL, err)
 		return jobURL
 	}
 	u.Host = u2.Host

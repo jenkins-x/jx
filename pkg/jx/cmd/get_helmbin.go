@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -57,7 +57,7 @@ func (o *GetHelmBinOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Your team uses the helm binary: %s\n", util.ColorInfo(helm))
-	log.Infof("To change this value use: %s\n", util.ColorInfo("jx edit helmbin helm3"))
+	logrus.Infof("Your team uses the helm binary: %s\n", util.ColorInfo(helm))
+	logrus.Infof("To change this value use: %s\n", util.ColorInfo("jx edit helmbin helm3"))
 	return nil
 }

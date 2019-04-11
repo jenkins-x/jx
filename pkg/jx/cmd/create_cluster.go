@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -140,7 +140,7 @@ func createCreateClusterOptions(commonOpts *opts.CommonOptions, cloudProvider st
 
 func (o *CreateClusterOptions) initAndInstall(provider string) error {
 	if o.SkipInstallation {
-		log.Infof("%s cluster created. Skipping Jenkins X installation.\n", o.Provider)
+		logrus.Infof("%s cluster created. Skipping Jenkins X installation.\n", o.Provider)
 		return nil
 	}
 

@@ -8,7 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
@@ -112,11 +112,11 @@ func (o *CreateTokenAddonOptions) Run() error {
 		tokenUrl := addon.ProviderAccessTokenURL(server.Kind, server.URL)
 		if userAuth.IsInvalid() {
 			f := func(username string) error {
-				log.Infof("Please generate an API Token for %s server %s\n", server.Kind, server.Label())
+				logrus.Infof("Please generate an API Token for %s server %s\n", server.Kind, server.Label())
 				if tokenUrl != "" {
-					log.Infof("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
+					logrus.Infof("Click this URL %s\n\n", util.ColorInfo(tokenUrl))
 				}
-				log.Info("Then COPY the token and enter in into the form below:\n\n")
+				logrus.Info("Then COPY the token and enter in into the form below:\n\n")
 				return nil
 			}
 
@@ -137,9 +137,9 @@ func (o *CreateTokenAddonOptions) Run() error {
 	}
 	err = o.updateAddonCredentialsSecret(server, userAuth)
 	if err != nil {
-		log.Warnf("Failed to update addon credentials secret: %v\n", err)
+		logrus.Warnf("Failed to update addon credentials secret: %v\n", err)
 	}
-	log.Infof("Created user %s API Token for addon server %s at %s\n",
+	logrus.Infof("Created user %s API Token for addon server %s at %s\n",
 		util.ColorInfo(o.Username), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

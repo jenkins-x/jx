@@ -18,7 +18,7 @@ func TestCreateBuildPodInfo(t *testing.T) {
 	if pod1File != nil {
 		b := builds.CreateBuildPodInfo(pod1File)
 
-		//log.Infof("Found build info %#v\n", b)
+		//logrus.Infof("Found build info %#v\n", b)
 
 		assert.Equal(t, "jenkins-x-jenkins-x-serverless-PR-52-6", b.Name, "Name")
 		assert.Equal(t, "jenkins-x", b.Organisation, "Organisation")

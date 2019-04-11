@@ -10,14 +10,14 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 )
 
 // CreateIssueTrackerAuthConfigService creates auth config service for issue tracker
 func (o *CommonOptions) CreateIssueTrackerAuthConfigService() (auth.ConfigService, error) {
 	secrets, err := o.LoadPipelineSecrets(kube.ValueKindIssue, "")
 	if err != nil {
-		log.Infof("The current user cannot query pipeline issue tracker secrets: %s", err)
+		logrus.Infof("The current user cannot query pipeline issue tracker secrets: %s", err)
 	}
 	_, namespace, err := o.KubeClientAndDevNamespace()
 	if err != nil {

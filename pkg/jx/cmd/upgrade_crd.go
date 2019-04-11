@@ -4,7 +4,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -58,6 +58,6 @@ func (o *UpgradeCRDsOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "failed to register all CRDs")
 	}
-	log.Info("Jenkins X CRDs upgraded with success\n")
+	logrus.Info("Jenkins X CRDs upgraded with success\n")
 	return nil
 }

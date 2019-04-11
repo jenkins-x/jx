@@ -13,7 +13,7 @@ import (
 	jxjenkins "github.com/jenkins-x/jx/pkg/jenkins"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/services"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -242,7 +242,7 @@ func (o *CommonOptions) TailJenkinsBuildLog(jenkinsSelector *JenkinsSelectorOpti
 		return err
 	}
 	buildPath := u.Path
-	log.Infof("%s %s\n", "tailing the log of", fmt.Sprintf("%s #%d", jobName, build.Number))
+	logrus.Infof("%s %s\n", "tailing the log of", fmt.Sprintf("%s #%d", jobName, build.Number))
 	// TODO Logger
 	return jenkins.TailLog(buildPath, o.Out, time.Second, time.Hour*100)
 }
@@ -273,7 +273,7 @@ func (o *CommonOptions) GetBranchName(dir string) string {
 		var err error
 		branch, err = o.Git().Branch(dir)
 		if err != nil {
-			log.Warnf("failed to get the git branch name in dir %s\n", dir)
+			logrus.Warnf("failed to get the git branch name in dir %s\n", dir)
 		}
 	}
 	return branch
@@ -298,7 +298,7 @@ func (o *CommonOptions) UpdateJenkinsURL(namespaces []string) error {
 			continue
 		}
 
-		log.Infof("Updating Jenkins with new external URL details %s\n", externalURL)
+		logrus.Infof("Updating Jenkins with new external URL details %s\n", externalURL)
 
 		jenkins, err := o.factory.CreateJenkinsClient(client, n, o.In, o.Out, o.Err)
 

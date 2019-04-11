@@ -9,7 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/util"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 
 	"github.com/pkg/errors"
 )
@@ -64,7 +64,7 @@ func Unshallow(dir string, gitter Gitter) error {
 		if err := gitter.FetchTags(dir); err != nil {
 			return err
 		}
-		log.Infof("Converted %s to an unshallow repository\n", dir)
+		logrus.Infof("Converted %s to an unshallow repository\n", dir)
 		return nil
 	}
 	return nil
@@ -96,22 +96,22 @@ func FetchAndMergeSHAs(SHAs []string, baseBranch string, baseSha string, remote 
 				return errors.Wrapf(err, "updating remote %s", remote)
 			}
 			if verbose {
-				log.Infof("ran %s in %s\n", util.ColorInfo("git remote update"), dir)
+				logrus.Infof("ran %s in %s\n", util.ColorInfo("git remote update"), dir)
 			}
 		}
 		if verbose {
-			log.Infof("ran git fetch %s %s in %s\n", remote, strings.Join(refspecs, " "), dir)
+			logrus.Infof("ran git fetch %s %s in %s\n", remote, strings.Join(refspecs, " "), dir)
 		}
 		err = Unshallow(dir, gitter)
 		if err != nil {
 			return errors.WithStack(err)
 		}
 		if verbose {
-			log.Infof("Unshallowed git repo in %s\n", dir)
+			logrus.Infof("Unshallowed git repo in %s\n", dir)
 		}
 	} else {
 		if verbose {
-			log.Infof("ran git fetch --unshallow %s %s in %s\n", remote, strings.Join(refspecs, " "), dir)
+			logrus.Infof("ran git fetch --unshallow %s %s in %s\n", remote, strings.Join(refspecs, " "), dir)
 		}
 	}
 
@@ -121,7 +121,7 @@ func FetchAndMergeSHAs(SHAs []string, baseBranch string, baseSha string, remote 
 		return errors.Wrapf(err, "checking out %s", baseBranch)
 	}
 	if verbose {
-		log.Infof("ran git checkout %s in %s\n", baseBranch, dir)
+		logrus.Infof("ran git checkout %s in %s\n", baseBranch, dir)
 	}
 	// Ensure we are on the right revision
 	err = gitter.ResetHard(dir, baseSha)
@@ -129,14 +129,14 @@ func FetchAndMergeSHAs(SHAs []string, baseBranch string, baseSha string, remote 
 		errors.Wrapf(err, "resetting %s to %s", baseBranch, baseSha)
 	}
 	if verbose {
-		log.Infof("ran git reset --hard %s in %s\n", baseSha, dir)
+		logrus.Infof("ran git reset --hard %s in %s\n", baseSha, dir)
 	}
 	err = gitter.CleanForce(dir, ".")
 	if err != nil {
 		return errors.Wrapf(err, "cleaning up the git repo")
 	}
 	if verbose {
-		log.Infof("ran clean --force -d . in %s\n", dir)
+		logrus.Infof("ran clean --force -d . in %s\n", dir)
 	}
 	// Now do the merges
 	for _, sha := range SHAs {
@@ -145,7 +145,7 @@ func FetchAndMergeSHAs(SHAs []string, baseBranch string, baseSha string, remote 
 			return errors.Wrapf(err, "merging %s into master", sha)
 		}
 		if verbose {
-			log.Infof("ran git merge %s in %s\n", sha, dir)
+			logrus.Infof("ran git merge %s in %s\n", sha, dir)
 		}
 	}
 	return nil
@@ -165,7 +165,7 @@ func GitProviderURL(text string) string {
 	}
 	u, err := url.Parse(text)
 	if err != nil {
-		log.Warnf("failed to parse git provider URL %s: %s\n", text, err.Error())
+		logrus.Warnf("failed to parse git provider URL %s: %s\n", text, err.Error())
 		return text
 	}
 	u.Path = ""

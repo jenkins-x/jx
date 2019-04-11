@@ -7,7 +7,7 @@ import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -56,7 +56,7 @@ func (o *CommonOptions) GetPipelineName(gitInfo *gits.GitRepository, pipeline st
 		// lets default the pipeline name from the Git repo
 		branch, err := o.Git().Branch(".")
 		if err != nil {
-			log.Warnf("Could not find the branch name: %s\n", err)
+			logrus.Warnf("Could not find the branch name: %s\n", err)
 		}
 		if branch == "" {
 			branch = "master"
@@ -83,12 +83,12 @@ func (o *CommonOptions) GetPipelineName(gitInfo *gits.GitRepository, pipeline st
 	}
 	if pipeline == "" {
 		// lets try find
-		log.Warnf("No $JOB_NAME environment variable found so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
+		logrus.Warnf("No $JOB_NAME environment variable found so cannot record promotion activities into the PipelineActivity resources in kubernetes\n")
 	} else if build == "" {
 		// lets validate and determine the current active pipeline branch
 		p, b, err := o.GetLatestPipelineBuild(pipeline)
 		if err != nil {
-			log.Warnf("Failed to try detect the current Jenkins pipeline for %s due to %s\n", pipeline, err)
+			logrus.Warnf("Failed to try detect the current Jenkins pipeline for %s due to %s\n", pipeline, err)
 			build = "1"
 		} else {
 			pipeline = p
@@ -100,7 +100,7 @@ func (o *CommonOptions) GetPipelineName(gitInfo *gits.GitRepository, pipeline st
 
 // getLatestPipelineBuild for the given pipeline name lets try find the Jenkins Pipeline and the latest build
 func (o *CommonOptions) GetLatestPipelineBuild(pipeline string) (string, string, error) {
-	log.Infof("pipeline %s\n", pipeline)
+	logrus.Infof("pipeline %s\n", pipeline)
 	build := ""
 	jxClient, ns, err := o.JXClientAndDevNamespace()
 	if err != nil {

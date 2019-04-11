@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -10,7 +11,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -163,8 +163,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	o.SetHelm(helmer)
 
 	// TODO lets add other defaults...
-
-	log.Infof("installing the Environment Controller...\n")
+	logrus.Infof("installing the Environment Controller...\n")
 	helmOptions := helm.InstallChartOptions{
 		Chart:       "environment-controller",
 		ReleaseName: o.ReleaseName,
@@ -177,6 +176,6 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("installed the Environment Controller!\n")
+	logrus.Infof("installed the Environment Controller!\n")
 	return nil
 }

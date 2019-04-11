@@ -8,7 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/builds"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
@@ -147,7 +147,7 @@ func (o *EditBuildPackOptions) Run() error {
 				return fmt.Errorf("No BuildPack found for label: %s", label)
 			}
 			if len(labels) == 1 {
-				log.Infof("Only one build pack %s so configuring this build pack for your team\n", util.ColorInfo(label))
+				logrus.Infof("Only one build pack %s so configuring this build pack for your team\n", util.ColorInfo(label))
 			}
 			buildPackURL = buildPack.Spec.GitURL
 			BuildPackRef = buildPack.Spec.GitRef
@@ -165,7 +165,7 @@ func (o *EditBuildPackOptions) Run() error {
 		}
 		teamSettings.BuildPackName = buildPackName
 
-		log.Infof("Setting the team build pack to %s repo: %s ref: %s\n", util.ColorInfo(buildPackName), util.ColorInfo(buildPackURL), util.ColorInfo(BuildPackRef))
+		logrus.Infof("Setting the team build pack to %s repo: %s ref: %s\n", util.ColorInfo(buildPackName), util.ColorInfo(buildPackURL), util.ColorInfo(BuildPackRef))
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)

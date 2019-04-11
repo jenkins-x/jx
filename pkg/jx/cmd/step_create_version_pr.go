@@ -11,7 +11,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
@@ -124,7 +124,7 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 			return err
 		}
 
-		log.Infof("the latest builder image version is %s\n", util.ColorInfo(o.builderImageVersion))
+		logrus.Infof("the latest builder image version is %s\n", util.ColorInfo(o.builderImageVersion))
 	}
 
 	if len(o.Includes) == 0 {
@@ -137,7 +137,7 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 			if err != nil {
 				return errors.Wrapf(err, "failed to find latest chart version for %s", o.Name)
 			}
-			log.Infof("found latest version %s for chart %s\n", util.ColorInfo(o.Version), util.ColorInfo(o.Name))
+			logrus.Infof("found latest version %s for chart %s\n", util.ColorInfo(o.Version), util.ColorInfo(o.Name))
 		}
 		if o.Version == "" {
 			return util.MissingOption("version")
@@ -213,7 +213,7 @@ func (o *StepCreateVersionPullRequestOptions) findLatestChartVersions(dir string
 		}
 		v, err := o.findLatestChartVersion(name)
 		if err != nil {
-			log.Warnf("failed to find latest version of %s: %s\n", name, err.Error())
+			logrus.Warnf("failed to find latest version of %s: %s\n", name, err.Error())
 			return true, nil
 		}
 		if v != stableVersion.Version {
@@ -271,9 +271,9 @@ func (o *StepCreateVersionPullRequestOptions) findLatestChartVersion(name string
 		return "", fmt.Errorf("no version found for chart %s", name)
 	}
 	if o.Verbose {
-		log.Infof("found %d versions:\n", len(info))
+		logrus.Infof("found %d versions:\n", len(info))
 		for _, v := range info {
-			log.Infof("    %s:\n", v)
+			logrus.Infof("    %s:\n", v)
 		}
 	}
 	return info[0], nil
@@ -284,7 +284,7 @@ func (o *StepCreateVersionPullRequestOptions) updateHelmRepo() error {
 	if o.updatedHelmRepo {
 		return nil
 	}
-	log.Info("updating helm repositories to find the latest chart versions...\n")
+	logrus.Info("updating helm repositories to find the latest chart versions...\n")
 	err := o.Helm().UpdateRepo()
 	if err != nil {
 		return errors.Wrap(err, "failed to update helm repos")

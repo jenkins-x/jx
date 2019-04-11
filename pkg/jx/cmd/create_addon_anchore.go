@@ -18,7 +18,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -105,7 +105,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 		return err
 	}
 
-	log.Infof("found dev namespace %s\n", devNamespace)
+	logrus.Infof("found dev namespace %s\n", devNamespace)
 
 	values := []string{"globalConfig.users.admin.password=" + o.Password, "globalConfig.configDir=/anchore_service_dir"}
 	setValues := strings.Split(o.SetValues, ",")
@@ -122,7 +122,7 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 		return fmt.Errorf("anchore deployment failed: %v", err)
 	}
 
-	log.Info("waiting for anchore deployment to be ready, this can take a few minutes\n")
+	logrus.Info("waiting for anchore deployment to be ready, this can take a few minutes\n")
 
 	err = kube.WaitForDeploymentToBeReady(client, anchoreDeploymentName, o.Namespace, 10*time.Minute)
 	if err != nil {

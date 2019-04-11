@@ -22,7 +22,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/tekton"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -206,7 +206,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		o.KanikoSecretMount = kanikoSecretMount
 	}
 	if o.Verbose {
-		log.Infof("cloning git for %s\n", o.CloneGitURL)
+		logrus.Infof("cloning git for %s\n", o.CloneGitURL)
 	}
 	if o.VersionResolver == nil {
 		o.VersionResolver, err = o.CreateVersionResolver("")
@@ -267,7 +267,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 
 	if o.Verbose {
-		log.Infof("setting up docker registry for %s\n", o.CloneGitURL)
+		logrus.Infof("setting up docker registry for %s\n", o.CloneGitURL)
 	}
 
 	if o.dockerRegistry == "" {
@@ -312,7 +312,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 
 		if o.Verbose {
-			log.Infof("generating build number...\n")
+			logrus.Infof("generating build number...\n")
 		}
 
 		pipelineResourceName := tekton.PipelineResourceName(o.GitInfo, o.Branch, o.Context)
@@ -322,7 +322,7 @@ func (o *StepCreateTaskOptions) Run() error {
 			return err
 		}
 		if o.Verbose {
-			log.Infof("generated build number %s for %s\n", o.BuildNumber, o.CloneGitURL)
+			logrus.Infof("generated build number %s for %s\n", o.BuildNumber, o.CloneGitURL)
 		}
 	}
 
@@ -375,14 +375,14 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 
 	if o.Verbose {
-		log.Infof("about to create the tekton CRDs\n")
+		logrus.Infof("about to create the tekton CRDs\n")
 	}
 	pipeline, tasks, resources, run, structure, err := o.GenerateTektonCRDs(packsDir, projectConfig, projectConfigFile, resolver, ns)
 	if err != nil {
 		return errors.Wrap(err, "failed to generate Tekton CRD")
 	}
 	if o.Verbose {
-		log.Infof("created tekton CRDs for %s\n", run.Name)
+		logrus.Infof("created tekton CRDs for %s\n", run.Name)
 	}
 
 	// output results for invokers of this command like the pipelinerunner
@@ -406,7 +406,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		run.Labels = util.MergeMaps(run.Labels, o.labels)
 
 		if o.Verbose {
-			log.Infof("applied tekton CRDs for %s\n", run.Name)
+			logrus.Infof("applied tekton CRDs for %s\n", run.Name)
 		}
 	}
 	return nil
@@ -866,7 +866,7 @@ func (o *StepCreateTaskOptions) writeOutput(folder string, pipeline *pipelineapi
 	if err != nil {
 		return errors.Wrapf(err, "failed to save Pipeline file %s", fileName)
 	}
-	log.Infof("generated Pipeline at %s\n", util.ColorInfo(fileName))
+	logrus.Infof("generated Pipeline at %s\n", util.ColorInfo(fileName))
 
 	data, err = yaml.Marshal(pipelineRun)
 	if err != nil {
@@ -877,7 +877,7 @@ func (o *StepCreateTaskOptions) writeOutput(folder string, pipeline *pipelineapi
 	if err != nil {
 		return errors.Wrapf(err, "failed to save PipelineRun file %s", fileName)
 	}
-	log.Infof("generated PipelineRun at %s\n", util.ColorInfo(fileName))
+	logrus.Infof("generated PipelineRun at %s\n", util.ColorInfo(fileName))
 
 	if structure != nil {
 		data, err = yaml.Marshal(structure)
@@ -889,7 +889,7 @@ func (o *StepCreateTaskOptions) writeOutput(folder string, pipeline *pipelineapi
 		if err != nil {
 			return errors.Wrapf(err, "failed to save PipelineStructure file %s", fileName)
 		}
-		log.Infof("generated PipelineStructure at %s\n", util.ColorInfo(fileName))
+		logrus.Infof("generated PipelineStructure at %s\n", util.ColorInfo(fileName))
 	}
 
 	taskList := &pipelineapi.TaskList{}
@@ -911,7 +911,7 @@ func (o *StepCreateTaskOptions) writeOutput(folder string, pipeline *pipelineapi
 	if err != nil {
 		return errors.Wrapf(err, "failed to save Task file %s", fileName)
 	}
-	log.Infof("generated Tasks at %s\n", util.ColorInfo(fileName))
+	logrus.Infof("generated Tasks at %s\n", util.ColorInfo(fileName))
 
 	data, err = yaml.Marshal(resourceList)
 	if err != nil {
@@ -922,7 +922,7 @@ func (o *StepCreateTaskOptions) writeOutput(folder string, pipeline *pipelineapi
 	if err != nil {
 		return errors.Wrapf(err, "failed to save PipelineResource file %s", fileName)
 	}
-	log.Infof("generated PipelineResources at %s\n", util.ColorInfo(fileName))
+	logrus.Infof("generated PipelineResources at %s\n", util.ColorInfo(fileName))
 
 	return nil
 }
@@ -949,9 +949,9 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 		}
 		if resource.Spec.Type == pipelineapi.PipelineResourceTypeGit {
 			gitURL := gitInfo.HttpCloneURL()
-			log.Infof("upserted PipelineResource %s for the git repository %s and branch %s\n", info(resource.Name), info(gitURL), info(branch))
+			logrus.Infof("upserted PipelineResource %s for the git repository %s and branch %s\n", info(resource.Name), info(gitURL), info(branch))
 		} else {
-			log.Infof("upserted PipelineResource %s\n", info(resource.Name))
+			logrus.Infof("upserted PipelineResource %s\n", info(resource.Name))
 		}
 	}
 
@@ -960,14 +960,14 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 		if err != nil {
 			return errors.Wrapf(err, "failed to create/update the task %s in namespace %s", task.Name, ns)
 		}
-		log.Infof("upserted Task %s\n", info(task.Name))
+		logrus.Infof("upserted Task %s\n", info(task.Name))
 	}
 
 	pipeline, err = tekton.CreateOrUpdatePipeline(tektonClient, ns, pipeline)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create/update the Pipeline in namespace %s", ns)
 	}
-	log.Infof("upserted Pipeline %s\n", info(pipeline.Name))
+	logrus.Infof("upserted Pipeline %s\n", info(pipeline.Name))
 
 	pipelineOwnerReference := metav1.OwnerReference{
 		APIVersion: syntax.TektonAPIVersion,
@@ -983,7 +983,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	if err != nil {
 		return errors.Wrapf(err, "failed to create the PipelineRun in namespace %s", ns)
 	}
-	log.Infof("created PipelineRun %s\n", info(run.Name))
+	logrus.Infof("created PipelineRun %s\n", info(run.Name))
 
 	if structure != nil {
 		structure.PipelineRunRef = &run.Name
@@ -1004,7 +1004,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 		if _, structErr := structuresClient.Create(structure); structErr != nil {
 			return errors.Wrapf(structErr, "failed to create the PipelineStructure in namespace %s", ns)
 		}
-		log.Infof("created PipelineStructure %s\n", info(structure.Name))
+		logrus.Infof("created PipelineStructure %s\n", info(structure.Name))
 	}
 
 	return nil
@@ -1028,13 +1028,13 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		dir = strings.Replace(dir, PlaceHolderGitProvider, gitProviderHost, -1)
 		dir = strings.Replace(dir, PlaceHolderDockerRegistryOrg, strings.ToLower(o.DockerRegistryOrg(gitInfo)), -1)
 	} else {
-		log.Warnf("No GitInfo available!\n")
+		logrus.Warnf("No GitInfo available!\n")
 	}
 
 	if step.Command != "" {
 		if containerName == "" {
 			containerName = defaultContainerName
-			log.Warnf("No 'agent.container' specified in the pipeline configuration so defaulting to use: %s\n", containerName)
+			logrus.Warnf("No 'agent.container' specified in the pipeline configuration so defaulting to use: %s\n", containerName)
 		}
 
 		s := syntax.Step{}
@@ -1069,7 +1069,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		// let allow the docker images to have no actual version which is replaced via the version stream
 		image, err := o.VersionResolver.ResolveDockerImage(modifyStep.Image)
 		if err != nil {
-			log.Warnf("failed to resolve docker image version: %s due to %s\n", modifyStep.Image, err.Error())
+			logrus.Warnf("failed to resolve docker image version: %s due to %s\n", modifyStep.Image, err.Error())
 		} else {
 			modifyStep.Image = image
 		}
@@ -1251,7 +1251,7 @@ func (o *StepCreateTaskOptions) modifyVolumes(container *corev1.Container, volum
 	if container.Name == "build-container-build" && !o.NoKaniko {
 		kubeClient, ns, err := o.KubeClientAndDevNamespace()
 		if err != nil {
-			log.Warnf("failed to find kaniko secret: %s\n", err)
+			logrus.Warnf("failed to find kaniko secret: %s\n", err)
 		} else {
 			if o.KanikoSecret == "" {
 				o.KanikoSecret = kanikoSecretName
@@ -1263,7 +1263,7 @@ func (o *StepCreateTaskOptions) modifyVolumes(container *corev1.Container, volum
 			key := o.KanikoSecretKey
 			secret, err := kubeClient.CoreV1().Secrets(ns).Get(secretName, metav1.GetOptions{})
 			if err != nil {
-				log.Warnf("failed to find secret %s in namespace %s: %s\n", secretName, ns, err)
+				logrus.Warnf("failed to find secret %s in namespace %s: %s\n", secretName, ns, err)
 			} else if secret != nil && secret.Data != nil && secret.Data[key] != nil {
 				// lets mount the kaniko secret
 				volumeName := "kaniko-secret"
@@ -1337,21 +1337,21 @@ func (o *StepCreateTaskOptions) cloneGitRepositoryToTempDir(gitURL string) error
 	if err != nil {
 		return err
 	}
-	log.Infof("cloning repository %s to temp dir %s\n", gitURL, o.Dir)
+	logrus.Infof("cloning repository %s to temp dir %s\n", gitURL, o.Dir)
 	err = o.Git().Clone(gitURL, o.Dir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to clone repository %s to directory %s", gitURL, o.Dir)
 	}
 	if o.PullRequestNumber != "" {
 		pr := fmt.Sprintf("pull/%s/head:%s", o.PullRequestNumber, o.Branch)
-		log.Infof("fetching branch %s for %s in dir %s\n", pr, gitURL, o.Dir)
+		logrus.Infof("fetching branch %s for %s in dir %s\n", pr, gitURL, o.Dir)
 		err = o.Git().FetchBranch(o.Dir, gitURL, pr)
 		if err != nil {
 			return errors.Wrapf(err, "failed to fetch pullrequest %s for %s in dir %s: %v", pr, gitURL, o.Dir, err)
 		}
 	}
 	if o.Revision != "" {
-		log.Infof("checkout revision %s\n", o.Revision)
+		logrus.Infof("checkout revision %s\n", o.Revision)
 		err = o.Git().Checkout(o.Dir, o.Revision)
 		if err != nil {
 			return errors.Wrapf(err, "failed to checkout revision %s", o.Revision)
@@ -1361,10 +1361,10 @@ func (o *StepCreateTaskOptions) cloneGitRepositoryToTempDir(gitURL string) error
 }
 
 func (o *StepCreateTaskOptions) deleteTempDir() {
-	log.Infof("removing the temp directory %s\n", o.Dir)
+	logrus.Infof("removing the temp directory %s\n", o.Dir)
 	err := os.RemoveAll(o.Dir)
 	if err != nil {
-		log.Warnf("failed to delete dir %s: %s\n", o.Dir, err.Error())
+		logrus.Warnf("failed to delete dir %s: %s\n", o.Dir, err.Error())
 	}
 }
 
@@ -1434,7 +1434,7 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 			}
 			text := strings.TrimSpace(string(data))
 			if text == "" {
-				log.Warnf("versions file %s is empty!\n", versionFile)
+				logrus.Warnf("versions file %s is empty!\n", versionFile)
 			} else {
 				version = text
 				if version != "" {
@@ -1495,7 +1495,7 @@ func (o *StepCreateTaskOptions) runStepCommand(step *jenkinsfile.PipelineStep) e
 	if c == "" {
 		return nil
 	}
-	log.Infof("running command: %s\n", util.ColorInfo(c))
+	logrus.Infof("running command: %s\n", util.ColorInfo(c))
 
 	commandText := strings.Replace(step.Command, "\\$", "$", -1)
 
@@ -1510,7 +1510,7 @@ func (o *StepCreateTaskOptions) runStepCommand(step *jenkinsfile.PipelineStep) e
 	if err != nil {
 		return err
 	}
-	log.Infof("%s\n", result)
+	logrus.Infof("%s\n", result)
 	return nil
 }
 
@@ -1598,7 +1598,7 @@ func (r *StepCreateTaskResults) ObjectReferences() []kube.ObjectReference {
 	resources := []kube.ObjectReference{}
 	for _, task := range r.Tasks {
 		if task.ObjectMeta.Name == "" {
-			log.Warnf("created Task has no name: %#v\n", task)
+			logrus.Warnf("created Task has no name: %#v\n", task)
 
 		} else {
 			resources = append(resources, kube.CreateObjectReference(task.TypeMeta, task.ObjectMeta))
@@ -1606,7 +1606,7 @@ func (r *StepCreateTaskResults) ObjectReferences() []kube.ObjectReference {
 	}
 	if r.Pipeline != nil {
 		if r.Pipeline.ObjectMeta.Name == "" {
-			log.Warnf("created Pipeline has no name: %#v\n", r.Pipeline)
+			logrus.Warnf("created Pipeline has no name: %#v\n", r.Pipeline)
 
 		} else {
 			resources = append(resources, kube.CreateObjectReference(r.Pipeline.TypeMeta, r.Pipeline.ObjectMeta))
@@ -1614,13 +1614,13 @@ func (r *StepCreateTaskResults) ObjectReferences() []kube.ObjectReference {
 	}
 	if r.PipelineRun != nil {
 		if r.PipelineRun.ObjectMeta.Name == "" {
-			log.Warnf("created PipelineRun has no name: %#v\n", r.PipelineRun)
+			logrus.Warnf("created PipelineRun has no name: %#v\n", r.PipelineRun)
 		} else {
 			resources = append(resources, kube.CreateObjectReference(r.PipelineRun.TypeMeta, r.PipelineRun.ObjectMeta))
 		}
 	}
 	if len(resources) == 0 {
-		log.Warnf("no Tasks, Pipeline or PipelineRuns created\n")
+		logrus.Warnf("no Tasks, Pipeline or PipelineRuns created\n")
 	}
 	return resources
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -123,8 +123,8 @@ func (o *CreateUserOptions) Run() error {
 	if err != nil {
 		return fmt.Errorf("Failed to create User %s: %s", login, err)
 	}
-	log.Infof("Created User: %s\n", util.ColorInfo(login))
-	log.Infof("You can configure the roles for the user via: %s\n", util.ColorInfo(fmt.Sprintf("jx edit userrole %s", login)))
+	logrus.Infof("Created User: %s\n", util.ColorInfo(login))
+	logrus.Infof("You can configure the roles for the user via: %s\n", util.ColorInfo(fmt.Sprintf("jx edit userrole %s", login)))
 	return nil
 
 }

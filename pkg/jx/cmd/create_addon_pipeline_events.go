@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/log"
 	"strings"
 	"time"
 
@@ -17,8 +18,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -102,7 +103,7 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
 
-	log.Infof("found dev namespace %s\n", devNamespace)
+	logrus.Infof("found dev namespace %s\n", devNamespace)
 
 	setValues := strings.Split(o.SetValues, ",")
 	helmOptions := helm.InstallChartOptions{
@@ -117,13 +118,13 @@ func (o *CreateAddonPipelineEventsOptions) Run() error {
 		return fmt.Errorf("elasticsearch deployment failed: %v", err)
 	}
 
-	log.Info("waiting for elasticsearch deployment to be ready, this can take a few minutes\n")
+	logrus.Info("waiting for elasticsearch deployment to be ready, this can take a few minutes\n")
 
 	err = kube.WaitForDeploymentToBeReady(client, esDeploymentName, o.Namespace, 10*time.Minute)
 	if err != nil {
 		return err
 	}
-	log.Info("waiting for kibana deployment to be ready, this can take a few minutes\n")
+	logrus.Info("waiting for kibana deployment to be ready, this can take a few minutes\n")
 
 	err = kube.WaitForDeploymentToBeReady(client, kibanaDeploymentName, o.Namespace, 10*time.Minute)
 	if err != nil {

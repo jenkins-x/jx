@@ -6,7 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -78,6 +78,6 @@ func (o *DeleteChatServerOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Deleted chat servers: %s from local settings\n", util.ColorInfo(strings.Join(args, ", ")))
+	logrus.Infof("Deleted chat servers: %s from local settings\n", util.ColorInfo(strings.Join(args, ", ")))
 	return nil
 }

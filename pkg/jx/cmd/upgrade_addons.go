@@ -9,7 +9,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -107,7 +107,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 	}
 	statusMap, err := o.Helm().StatusReleases(ns)
 	if err != nil {
-		log.Warnf("Failed to find Helm installs: %s\n", err)
+		logrus.Warnf("Failed to find Helm installs: %s\n", err)
 	}
 
 	charts := kube.AddonCharts
@@ -132,7 +132,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 			name = "kube-cd"
 		}
 		if status != "" {
-			log.Infof("Upgrading %s chart %s...\n", util.ColorInfo(name), util.ColorInfo(chart))
+			logrus.Infof("Upgrading %s chart %s...\n", util.ColorInfo(name), util.ColorInfo(chart))
 
 			valueFiles := []string{}
 			valueFiles, err = helm.AppendMyValues(valueFiles)
@@ -165,7 +165,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 			}
 			err = o.InstallChartWithOptions(helmOptions)
 			if err != nil {
-				log.Warnf("Failed to upgrade %s chart %s: %v\n", name, chart, err)
+				logrus.Warnf("Failed to upgrade %s chart %s: %v\n", name, chart, err)
 			}
 
 			if k == kube.DefaultProwReleaseName {
@@ -175,7 +175,7 @@ func (o *UpgradeAddonsOptions) Run() error {
 				}
 			}
 
-			log.Infof("Upgraded %s chart %s\n", util.ColorInfo(name), util.ColorInfo(chart))
+			logrus.Infof("Upgraded %s chart %s\n", util.ColorInfo(name), util.ColorInfo(chart))
 		}
 	}
 	return nil

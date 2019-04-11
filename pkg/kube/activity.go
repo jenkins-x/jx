@@ -13,7 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -192,7 +192,7 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 	activitiesClient := jxClient.JenkinsV1().PipelineActivities(ns)
 
 	if activitiesClient == nil {
-		log.Errorf("No PipelineActivities client available")
+		logrus.Errorf("No PipelineActivities client available")
 		return defaultActivity, create, fmt.Errorf("no PipelineActivities client available")
 	}
 	a, err := activitiesClient.Get(name, metav1.GetOptions{})
@@ -206,7 +206,7 @@ func (k *PipelineActivityKey) GetOrCreate(jxClient versioned.Interface, ns strin
 	if a.Labels == nil || a.Labels[v1.LabelSourceRepository] == "" {
 		err := createSourceRepositoryIfMissing(jxClient, ns, k)
 		if err != nil {
-			log.Errorf("Error trying to create missing sourcerepository object: %s\n", err.Error())
+			logrus.Errorf("Error trying to create missing sourcerepository object: %s\n", err.Error())
 		}
 	}
 
@@ -512,7 +512,7 @@ func (k *PromoteStepActivityKey) OnPromotePullRequest(jxClient versioned.Interfa
 	}
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
 	if activities == nil {
-		log.Warn("Warning: no PipelineActivities client available!")
+		logrus.Warn("Warning: no PipelineActivities client available!")
 		return nil
 	}
 	a, s, ps, p, added, err := k.GetOrCreatePromotePullRequest(jxClient, ns)
@@ -539,7 +539,7 @@ func (k *PromoteStepActivityKey) OnPromoteUpdate(jxClient versioned.Interface, n
 	}
 	activities := jxClient.JenkinsV1().PipelineActivities(ns)
 	if activities == nil {
-		log.Warn("Warning: no PipelineActivities client available!")
+		logrus.Warn("Warning: no PipelineActivities client available!")
 		return nil
 	}
 	a, s, ps, p, added, err := k.GetOrCreatePromoteUpdate(jxClient, ns)
@@ -570,7 +570,7 @@ func asYaml(activity *v1.PipelineActivity) string {
 	if err == nil {
 		return string(data)
 	}
-	log.Warnf("Failed to marshal PipelineActivity to YAML %s: %s", activity.Name, err)
+	logrus.Warnf("Failed to marshal PipelineActivity to YAML %s: %s", activity.Name, err)
 	return ""
 }
 

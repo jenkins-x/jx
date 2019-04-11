@@ -3,7 +3,7 @@ package cmd
 import (
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -132,7 +132,7 @@ func (o *CreateQuickstartLocationOptions) Run() error {
 
 	callback := func(env *v1.Environment) error {
 		env.Spec.TeamSettings.QuickstartLocations = locations
-		log.Infof("Adding the quickstart git owner %s\n", util.ColorInfo(util.UrlJoin(o.GitUrl, o.Owner)))
+		logrus.Infof("Adding the quickstart git owner %s\n", util.ColorInfo(util.UrlJoin(o.GitUrl, o.Owner)))
 		return nil
 	}
 	return o.ModifyDevEnvironment(callback)

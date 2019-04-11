@@ -10,7 +10,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 )
 
 // GCReleasesOptions contains the CLI options for this command
@@ -75,7 +75,7 @@ func (o *GCReleasesOptions) Run() error {
 	if len(releases.Items) == 0 {
 		// no preview environments found so lets return gracefully
 		if o.Verbose {
-			log.Info("no releases found\n")
+			logrus.Info("no releases found\n")
 		}
 		return nil
 	}
@@ -118,7 +118,7 @@ func (o *GCReleasesOptions) Run() error {
 			if err != nil {
 				return err
 			} else {
-				log.Infof("Deleting Release %s as it no longer has a pipeline for %s\n", a.Name, pipeline)
+				logrus.Infof("Deleting Release %s as it no longer has a pipeline for %s\n", a.Name, pipeline)
 			}
 		}
 
@@ -136,7 +136,7 @@ func (o *GCReleasesOptions) Run() error {
 			if err != nil {
 				return fmt.Errorf("failed to delete Release %s in namespace %s: %v\n", name, ns, err)
 			} else {
-				log.Infof("Deleting old Release %s\n", name)
+				logrus.Infof("Deleting old Release %s\n", name)
 			}
 		}
 	}

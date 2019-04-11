@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -10,8 +11,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -69,7 +70,7 @@ func NewCmdCreateMicro(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o CreateMicroOptions) checkMicroInstalled() error {
 	_, err := o.GetCommandOutput("", "micro", "help")
 	if err != nil {
-		log.Infoln("Installing micro's dependencies...")
+		logrus.Infoln("Installing micro's dependencies...")
 		// lets install micro
 		err = o.InstallBrewIfRequired()
 		if err != nil {
@@ -81,21 +82,21 @@ func (o CreateMicroOptions) checkMicroInstalled() error {
 				return err
 			}
 		}
-		log.Infoln("Downloading and building micro dependencies...")
+		logrus.Infoln("Downloading and building micro dependencies...")
 		packages := []string{"github.com/golang/protobuf/proto", "github.com/golang/protobuf/protoc-gen-go", "github.com/micro/protoc-gen-micro"}
 		for _, p := range packages {
-			log.Infof("Installing %s\n", p)
+			logrus.Infof("Installing %s\n", p)
 			err = o.RunCommand("go", "get", "-u", p)
 			if err != nil {
 				return fmt.Errorf("Failed to install %s: %s", p, err)
 			}
 		}
-		log.Infoln("Installed micro dependencies")
+		logrus.Infoln("Installed micro dependencies")
 
-		log.Infoln("Downloading and building micro - this can take a minute or so...")
+		logrus.Infoln("Downloading and building micro - this can take a minute or so...")
 		err = o.RunCommand("go", "get", "-u", "github.com/micro/micro")
 		if err == nil {
-			log.Infoln("Installed micro and its dependencies!")
+			logrus.Infoln("Installed micro and its dependencies!")
 		}
 	}
 	return err
@@ -110,7 +111,7 @@ func (o CreateMicroOptions) GenerateMicro(dir string) error {
 func (o *CreateMicroOptions) Run() error {
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
-		log.Warnf(`No $GOPATH found. 
+		logrus.Warnf(`No $GOPATH found. 
 
 You need to have installed go on your machine to be able to create micro services. 
 
@@ -151,7 +152,7 @@ For instructions please see: %s
 	}
 
 	path := filepath.Join(gopath, "src", dir)
-	log.Infof("Created micro project at %s\n\n", util.ColorInfo(path))
+	logrus.Infof("Created micro project at %s\n\n", util.ColorInfo(path))
 
 	return o.ImportCreatedProject(path)
 }

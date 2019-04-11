@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/petergtz/pegomock"
 	"k8s.io/helm/pkg/proto/hapi/chart"
@@ -56,7 +56,7 @@ func StubFetchChart(name string, version string, repo string, chartToCreate *cha
 					err,
 				}
 			}
-			log.Infof("Creating mock chart %s in %s\n", chartToCreate.Metadata.Name, dir)
+			logrus.Infof("Creating mock chart %s in %s\n", chartToCreate.Metadata.Name, dir)
 			err = helm.SaveFile(filepath.Join(dir, helm.ChartFileName), chartToCreate.Metadata)
 			if err != nil {
 				return pegomock.ReturnValues{

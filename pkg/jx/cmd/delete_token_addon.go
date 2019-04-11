@@ -6,7 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -88,7 +88,7 @@ func (o *DeleteTokenAddonOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("Deleted API tokens for users: %s for addon server %s at %s from local settings\n",
+	logrus.Infof("Deleted API tokens for users: %s for addon server %s at %s from local settings\n",
 		util.ColorInfo(strings.Join(args, ", ")), util.ColorInfo(server.Name), util.ColorInfo(server.URL))
 	return nil
 }

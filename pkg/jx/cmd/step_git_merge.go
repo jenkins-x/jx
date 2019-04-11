@@ -3,12 +3,10 @@ package cmd
 import (
 	"os"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 
@@ -98,7 +96,7 @@ func (o *StepGitMergeOptions) Run() error {
 	if len(o.SHAs) == 0 || o.BaseBranch == "" || o.BaseSHA == "" {
 		// Try to look in the env vars
 		if pullRefs := os.Getenv("PULL_REFS"); pullRefs != "" {
-			log.Infof("Using SHAs from PULL_REFS=%s\n", pullRefs)
+			logrus.Infof("Using SHAs from PULL_REFS=%s\n", pullRefs)
 			pullRefs, err := prow.ParsePullRefs(pullRefs)
 			if err != nil {
 				return errors.Wrapf(err, "parsing PULL_REFS=%s", pullRefs)

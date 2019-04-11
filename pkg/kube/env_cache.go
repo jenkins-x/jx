@@ -3,7 +3,7 @@ package kube
 import (
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/client-go/tools/cache"
 	"sort"
@@ -72,7 +72,7 @@ func (c *EnvironmentNamespaceCache) Item(name string) *v1.Environment {
 func (c *EnvironmentNamespaceCache) onEnvironmentObj(obj interface{}, jxClient versioned.Interface, ns string) {
 	Environment, ok := obj.(*v1.Environment)
 	if !ok {
-		log.Warnf("Object is not a Environment %#v\n", obj)
+		logrus.Warnf("Object is not a Environment %#v\n", obj)
 		return
 	}
 	if Environment != nil {
@@ -83,7 +83,7 @@ func (c *EnvironmentNamespaceCache) onEnvironmentObj(obj interface{}, jxClient v
 func (c *EnvironmentNamespaceCache) onEnvironmentDelete(obj interface{}, jxClient versioned.Interface, ns string) {
 	Environment, ok := obj.(*v1.Environment)
 	if !ok {
-		log.Warnf("Object is not a Environment %#v\n", obj)
+		logrus.Warnf("Object is not a Environment %#v\n", obj)
 		return
 	}
 	if Environment != nil {

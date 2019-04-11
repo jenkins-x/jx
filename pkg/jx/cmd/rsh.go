@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
@@ -223,7 +223,7 @@ func (o *RshOptions) Run() error {
 		a = append(a, commandArguments...)
 	}
 	if o.Verbose {
-		log.Infof("Running command: kubectl %s\n", strings.Join(a, " "))
+		logrus.Infof("Running command: kubectl %s\n", strings.Join(a, " "))
 	}
 	return o.RunCommandInteractive(true, "kubectl", a...)
 }

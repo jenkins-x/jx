@@ -10,9 +10,9 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -76,7 +76,7 @@ func (o *ControllerTeamOptions) Run() error {
 		return err
 	}
 
-	log.Infof("Using the admin namespace %s\n", adminNs)
+	logrus.Infof("Using the admin namespace %s\n", adminNs)
 
 	client, err := co.KubeClient()
 	if err != nil {
@@ -93,14 +93,14 @@ func (o *ControllerTeamOptions) Run() error {
 	if co.InCluster() {
 		sgc := &StepGitCredentialsOptions{}
 		sgc.CommonOptions = co.CommonOptions
-		log.Info("Setting up git credentials\n")
+		logrus.Info("Setting up git credentials\n")
 		err = sgc.Run()
 		if err != nil {
 			return errors.Wrapf(err, "Failed to run: jx step git credentials")
 		}
 	}
 
-	log.Infof("Watching for teams in all namespaces\n")
+	logrus.Infof("Watching for teams in all namespaces\n")
 
 	stop := make(chan struct{})
 
@@ -137,12 +137,12 @@ func (o *ControllerTeamOptions) Run() error {
 func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kubernetes.Interface, jxClient versioned.Interface, adminNs string) {
 	team, ok := obj.(*v1.Team)
 	if !ok {
-		log.Infof("Object is not a Team %#v\n", obj)
+		logrus.Infof("Object is not a Team %#v\n", obj)
 		return
 	}
 
 	teamNs := team.Name
-	log.Infof("Adding / Updating Team %s, Namespace %s, Status '%s'\n", util.ColorInfo(teamNs), util.ColorInfo(team.Namespace), util.ColorInfo(team.Status.ProvisionStatus))
+	logrus.Infof("Adding / Updating Team %s, Namespace %s, Status '%s'\n", util.ColorInfo(teamNs), util.ColorInfo(team.Namespace), util.ColorInfo(team.Status.ProvisionStatus))
 
 	if v1.TeamProvisionStatusNone == team.Status.ProvisionStatus {
 		// update first
@@ -152,10 +152,10 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		// lets default the team settings based on the current team settings
 		settings, err := oc.TeamSettings()
 		if err != nil {
-			log.Errorf("Failed to get TeamSettings: %s\n", err)
+			logrus.Errorf("Failed to get TeamSettings: %s\n", err)
 		}
 		if settings == nil {
-			log.Errorf("No TeamSettings found!\n")
+			logrus.Errorf("No TeamSettings found!\n")
 		}
 
 		// lets default to no tiller as we can only support > 1 dev teams with no-tiller or helm3 today
@@ -182,14 +182,14 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			return nil
 		})
 		if err != nil {
-			log.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(teamNs), v1.TeamProvisionStatusPending, err)
+			logrus.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(teamNs), v1.TeamProvisionStatusPending, err)
 			return
 		}
 
 		// ensure that the namespace exists
 		err = kube.EnsureNamespaceCreated(kubeClient, teamNs, nil, nil)
 		if err != nil {
-			log.Errorf("Unable to create namespace %s: %s", util.ColorInfo(teamNs), err)
+			logrus.Errorf("Unable to create namespace %s: %s", util.ColorInfo(teamNs), err)
 			return
 		}
 
@@ -200,7 +200,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 
 		io.AdminSecretsService.Flags.DefaultAdminPassword, err = oc.GetDefaultAdminPassword(adminNs)
 		if err != nil {
-			log.Warnf("Failed to load the default admin password from namespace %s: %s", adminNs, err)
+			logrus.Warnf("Failed to load the default admin password from namespace %s: %s", adminNs, err)
 		}
 
 		if io.CreateEnvOptions.HelmValuesConfig.ExposeController == nil {
@@ -210,7 +210,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		// lets load the exposecontroller configuration
 		ingressConfig, err := kube.GetIngressConfig(kubeClient, adminNs)
 		if err != nil {
-			log.Errorf("Failed to load the IngressConfig in namespace %s: %s", adminNs, err)
+			logrus.Errorf("Failed to load the IngressConfig in namespace %s: %s", adminNs, err)
 			return
 		}
 		ec.Config.Domain = ingressConfig.Domain
@@ -234,7 +234,7 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			provider = adminTeamSettings.KubeProvider
 		}
 		if provider == "" {
-			log.Warnf("No kube provider specified on admin team settings %s\n. Defaulting to gke", adminNs)
+			logrus.Warnf("No kube provider specified on admin team settings %s\n. Defaulting to gke", adminNs)
 			provider = "gke"
 		}
 		io.Flags.Provider = provider
@@ -248,10 +248,10 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		if io.Flags.Prow {
 			oauthToken, err := oc.LoadProwOAuthConfig(adminNs)
 			if err != nil {
-				log.Errorf("Failed to load the Prow OAuth Token in namespace %s: %s", adminNs, err)
+				logrus.Errorf("Failed to load the Prow OAuth Token in namespace %s: %s", adminNs, err)
 			} else {
 				io.OAUTHToken = oauthToken
-				log.Infof("Loaded the Prow OAuth Token in namespace %s with %d digits\n", adminNs, len(oauthToken))
+				logrus.Infof("Loaded the Prow OAuth Token in namespace %s with %d digits\n", adminNs, len(oauthToken))
 
 			}
 		}
@@ -259,14 +259,14 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		// lets copy the myvalues.yaml file from the ConfigMap
 		cm, err := kubeClient.CoreV1().ConfigMaps(adminNs).Get(kube.ConfigMapJenkinsTeamController, metav1.GetOptions{})
 		if err != nil {
-			log.Errorf("Failed to load the ConfigMap %s from namespace %s: %s", kube.ConfigMapJenkinsTeamController, adminNs, err)
+			logrus.Errorf("Failed to load the ConfigMap %s from namespace %s: %s", kube.ConfigMapJenkinsTeamController, adminNs, err)
 		} else {
 			if cm.Data != nil {
 				valuesYaml := cm.Data["myvalues.yaml"]
 				if valuesYaml != "" {
 					err = ioutil.WriteFile("myvalues.yaml", []byte(valuesYaml), util.DefaultWritePermissions)
 					if err != nil {
-						log.Errorf("Failed to write the myvalues.yaml file: %s", err)
+						logrus.Errorf("Failed to write the myvalues.yaml file: %s", err)
 					}
 				}
 			}
@@ -277,14 +277,14 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 		io.CreateEnvOptions.SetDevNamespace(teamNs)
 		err = io.Run()
 		if err != nil {
-			log.Errorf("Unable to install jx for team %s: %s", util.ColorInfo(teamNs), err)
+			logrus.Errorf("Unable to install jx for team %s: %s", util.ColorInfo(teamNs), err)
 			err = oc.ModifyTeam(adminNs, team.Name, func(team *v1.Team) error {
 				team.Status.ProvisionStatus = v1.TeamProvisionStatusError
 				team.Status.Message = err.Error()
 				return nil
 			})
 			if err != nil {
-				log.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(teamNs), v1.TeamProvisionStatusError, err)
+				logrus.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(teamNs), v1.TeamProvisionStatusError, err)
 				return
 			}
 			return
@@ -298,13 +298,13 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			}
 			err = oc.ModifyDevEnvironmentWithNs(jxClient, teamNs, callback)
 			if err != nil {
-				log.Errorf("Failed to update team settings in namespace %s: %s\n", teamNs, err)
+				logrus.Errorf("Failed to update team settings in namespace %s: %s\n", teamNs, err)
 			}
 		}
 
 		err = kube.SetAdminNamespace(kubeClient, teamNs, adminNs)
 		if err != nil {
-			log.Errorf("Unable set admin namespace on team %s to %s - %s", util.ColorInfo(teamNs), util.ColorInfo(adminNs), err)
+			logrus.Errorf("Unable set admin namespace on team %s to %s - %s", util.ColorInfo(teamNs), util.ColorInfo(adminNs), err)
 			return
 		}
 		err = oc.ModifyTeam(adminNs, team.Name, func(team *v1.Team) error {
@@ -313,13 +313,13 @@ func (o *ControllerTeamOptions) onTeamChange(obj interface{}, kubeClient kuberne
 			return nil
 		})
 		if err != nil {
-			log.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(teamNs), v1.TeamProvisionStatusComplete, err)
+			logrus.Errorf("Unable to update team %s to %s - %s", util.ColorInfo(teamNs), v1.TeamProvisionStatusComplete, err)
 			return
 		}
 	} else if v1.TeamProvisionStatusComplete == team.Status.ProvisionStatus {
 		err := kube.SetAdminNamespace(kubeClient, teamNs, adminNs)
 		if err != nil {
-			log.Errorf("Unable set admin namespace on team %s to %s - %s", util.ColorInfo(teamNs), util.ColorInfo(adminNs), err)
+			logrus.Errorf("Unable set admin namespace on team %s to %s - %s", util.ColorInfo(teamNs), util.ColorInfo(adminNs), err)
 			return
 		}
 	}

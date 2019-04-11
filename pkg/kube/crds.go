@@ -13,7 +13,7 @@ import (
 
 	"github.com/go-openapi/jsonreference"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 
 	"github.com/go-openapi/spec"
 	"github.com/pkg/errors"
@@ -570,7 +570,7 @@ func getOpenAPISchema(defName string) (*v1beta1.JSONSchemaProps, error) {
 	refCallBack := func(path string) spec.Ref {
 		ref, err := jsonreference.New(path)
 		if err != nil {
-			log.Warnf("Error resolving ref %s %v\n", path, err)
+			logrus.Warnf("Error resolving ref %s %v\n", path, err)
 		}
 		return spec.Ref{
 			Ref: ref,
@@ -656,7 +656,7 @@ func register(apiClient apiextensionsclientset.Interface, name string, crd *v1be
 				old.Spec = crd.Spec
 				_, err = crdResources.Update(old)
 				if err != nil {
-					log.Infof("Error doing update to %s %v\n%v\n", old.Name, err, old.Spec)
+					logrus.Infof("Error doing update to %s %v\n%v\n", old.Name, err, old.Spec)
 				}
 				return err
 			}

@@ -17,7 +17,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -99,7 +99,7 @@ func (o *StepPostBuildOptions) addImageCVEProvider() error {
 	}
 	present, err := services.IsServicePresent(client, kube.AddonServices[defaultAnchoreName], currentNamespace)
 	if err != nil || !present {
-		log.Infof("no CVE provider running in the current %s namespace so skip adding image to be analysed", currentNamespace)
+		logrus.Infof("no CVE provider running in the current %s namespace so skip adding image to be analysed", currentNamespace)
 		return nil
 	}
 
@@ -113,7 +113,7 @@ func (o *StepPostBuildOptions) addImageCVEProvider() error {
 		return fmt.Errorf("no JENKINS_X_DOCKER_REGISTRY_SERVICE_PORT env var found")
 	}
 
-	log.Infof("adding image %s to CVE provider\n", o.FullImageName)
+	logrus.Infof("adding image %s to CVE provider\n", o.FullImageName)
 
 	imageID, err := o.addImageToAnchore()
 	if err != nil {
@@ -127,7 +127,7 @@ func (o *StepPostBuildOptions) addImageCVEProvider() error {
 
 	// todo use image id to annotate pods during environments helm install / upgrade
 	// todo then we can use `jx get cve --env staging` and list all CVEs for an environment
-	log.Infof("anchore image is %s \n", imageID)
+	logrus.Infof("anchore image is %s \n", imageID)
 	return nil
 }
 

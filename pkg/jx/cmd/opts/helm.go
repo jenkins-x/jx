@@ -3,6 +3,7 @@ package opts
 import (
 	"context"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -18,10 +19,10 @@ import (
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/services"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	version2 "github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	survey "gopkg.in/AlecAivazis/survey.v1"
 	git "gopkg.in/src-d/go-git.v4"
 	gitconfig "gopkg.in/src-d/go-git.v4/config"
@@ -80,13 +81,13 @@ func (o *CommonOptions) InitHelm(config InitHelmConfig) error {
 
 	skipTiller := config.SkipTiller
 	if config.Helm3 {
-		log.Infof("Using %s\n", util.ColorInfo("helm3"))
+		logrus.Infof("Using %s\n", util.ColorInfo("helm3"))
 		skipTiller = true
 	} else {
-		log.Infof("Using %s\n", util.ColorInfo("helm2"))
+		logrus.Infof("Using %s\n", util.ColorInfo("helm2"))
 	}
 	if !skipTiller {
-		log.Infof("Configuring %s\n", util.ColorInfo("tiller"))
+		logrus.Infof("Configuring %s\n", util.ColorInfo("tiller"))
 		client, curNs, err := o.KubeClientAndNamespace()
 		if err != nil {
 			return err
@@ -144,7 +145,7 @@ func (o *CommonOptions) InitHelm(config InitHelmConfig) error {
 				if err != nil {
 					return fmt.Errorf("Failed to create Role %s in namespace %s: %s", roleName, tillerNamespace, err)
 				}
-				log.Infof("Created Role %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
+				logrus.Infof("Created Role %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
 			}
 			_, err = client.RbacV1().RoleBindings(tillerNamespace).Get(roleBindingName, metav1.GetOptions{})
 			if err != nil {
@@ -171,13 +172,13 @@ func (o *CommonOptions) InitHelm(config InitHelmConfig) error {
 				if err != nil {
 					return fmt.Errorf("Failed to create RoleBinding %s in namespace %s: %s", roleName, tillerNamespace, err)
 				}
-				log.Infof("Created RoleBinding %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
+				logrus.Infof("Created RoleBinding %s in namespace %s\n", util.ColorInfo(roleName), util.ColorInfo(tillerNamespace))
 			}
 		}
 
 		running, err := kube.IsDeploymentRunning(client, "tiller-deploy", tillerNamespace)
 		if running {
-			log.Infof("Tiller Deployment is running in namespace %s\n", util.ColorInfo(tillerNamespace))
+			logrus.Infof("Tiller Deployment is running in namespace %s\n", util.ColorInfo(tillerNamespace))
 			return nil
 		}
 		if err == nil && !running {
@@ -185,7 +186,7 @@ func (o *CommonOptions) InitHelm(config InitHelmConfig) error {
 		}
 
 		if !running {
-			log.Infof("Initialising helm using ServiceAccount %s in namespace %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(tillerNamespace))
+			logrus.Infof("Initialising helm using ServiceAccount %s in namespace %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(tillerNamespace))
 
 			err = o.Helm().Init(false, serviceAccountName, tillerNamespace, false)
 			if err != nil {
@@ -202,13 +203,13 @@ func (o *CommonOptions) InitHelm(config InitHelmConfig) error {
 			}
 		}
 
-		log.Infof("Waiting for tiller-deploy to be ready in tiller namespace %s\n", tillerNamespace)
+		logrus.Infof("Waiting for tiller-deploy to be ready in tiller namespace %s\n", tillerNamespace)
 		err = kube.WaitForDeploymentToBeReady(client, "tiller-deploy", tillerNamespace, 10*time.Minute)
 		if err != nil {
 			return err
 		}
 	} else {
-		log.Infof("Skipping %s\n", util.ColorInfo("tiller"))
+		logrus.Infof("Skipping %s\n", util.ColorInfo("tiller"))
 	}
 
 	if config.Helm3 {
@@ -293,10 +294,10 @@ func (o *CommonOptions) AddHelmBinaryRepoIfMissing(helmUrl, repoName, username, 
 		return errors.Wrapf(err, "failed to check if the repository with URL '%s' is missing", helmUrl)
 	}
 	if missing {
-		log.Infof("Adding missing Helm repo: %s %s\n", util.ColorInfo(repoName), util.ColorInfo(helmUrl))
+		logrus.Infof("Adding missing Helm repo: %s %s\n", util.ColorInfo(repoName), util.ColorInfo(helmUrl))
 		err = o.Helm().AddRepo(repoName, helmUrl, username, password)
 		if err == nil {
-			log.Infof("Successfully added Helm repository %s.\n", repoName)
+			logrus.Infof("Successfully added Helm repository %s.\n", repoName)
 		}
 		return errors.Wrapf(err, "failed to add the repository '%s' with URL '%s'", repoName, helmUrl)
 	}
@@ -342,7 +343,7 @@ func (o *CommonOptions) InstallChartOrGitOps(isGitOps bool, gitOpsDir string, gi
 		defer func() {
 			err := util.DeleteFile(fileName.Name())
 			if err != nil {
-				log.Errorf("deleting file %s: %v", fileName.Name(), err)
+				logrus.Errorf("deleting file %s: %v", fileName.Name(), err)
 			}
 		}()
 		if err != nil {
@@ -422,12 +423,12 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string) (string, e
 	if exists, err := util.DirExists(wrkDir); err == nil && exists {
 		repo, err := git.PlainOpen(wrkDir)
 		if err != nil {
-			log.Errorf("Error opening %s", wrkDir)
+			logrus.Errorf("Error opening %s", wrkDir)
 			return deleteAndReClone(wrkDir, versionRepository, o.Out)
 		}
 		remote, err := repo.Remote("origin")
 		if err != nil {
-			log.Errorf("Error getting remote origin")
+			logrus.Errorf("Error getting remote origin")
 			return deleteAndReClone(wrkDir, versionRepository, o.Out)
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
@@ -441,7 +442,7 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string) (string, e
 		if err == git.NoErrAlreadyUpToDate {
 			return wrkDir, nil
 		} else if err != nil {
-			log.Errorf("Error fetching latest from remote")
+			logrus.Errorf("Error fetching latest from remote")
 			return deleteAndReClone(wrkDir, versionRepository, o.Out)
 		} else {
 			pullLatest := false
@@ -454,7 +455,7 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string) (string, e
 				}
 				survey.AskOne(confirm, &pullLatest, nil, surveyOpts)
 				if err != nil {
-					log.Errorf("Error confirming if we should pull latest, skipping %s\n", wrkDir)
+					logrus.Errorf("Error confirming if we should pull latest, skipping %s\n", wrkDir)
 				}
 			}
 
@@ -475,7 +476,7 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string) (string, e
 }
 
 func deleteAndReClone(wrkDir string, versionRepository string, fw terminal.FileWriter) (string, error) {
-	log.Info("Deleting and cloning the Jenkins X versions repo")
+	logrus.Info("Deleting and cloning the Jenkins X versions repo")
 	err := deleteDirectory(wrkDir)
 	if err != nil {
 		return "", err
@@ -488,7 +489,7 @@ func deleteAndReClone(wrkDir string, versionRepository string, fw terminal.FileW
 }
 
 func clone(wrkDir string, versionRepository string, fw terminal.FileWriter) error {
-	log.Infof("Cloning the Jenkins X versions repo to %s\n", wrkDir)
+	logrus.Infof("Cloning the Jenkins X versions repo to %s\n", wrkDir)
 	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
 		URL:           versionRepository,
 		ReferenceName: "refs/heads/master",
@@ -499,7 +500,7 @@ func clone(wrkDir string, versionRepository string, fw terminal.FileWriter) erro
 }
 
 func deleteDirectory(wrkDir string) error {
-	log.Infof("Delete previous Jenkins X version repo from %s\n", wrkDir)
+	logrus.Infof("Delete previous Jenkins X version repo from %s\n", wrkDir)
 	// If it exists a this stage most likely its content is not consistent
 	if exists, err := util.DirExists(wrkDir); err == nil && exists {
 		err := util.DeleteDirContents(wrkDir)
@@ -821,7 +822,7 @@ func (o *CommonOptions) ReleaseChartMuseumUrl() string {
 	if chartRepo == "" {
 		if o.factory.IsInCDPipeline() {
 			chartRepo = DefaultChartRepo
-			log.Warnf("No $CHART_REPOSITORY defined so using the default value of: %s\n", DefaultChartRepo)
+			logrus.Warnf("No $CHART_REPOSITORY defined so using the default value of: %s\n", DefaultChartRepo)
 		} else {
 			return ""
 		}
@@ -871,6 +872,6 @@ func (o *CommonOptions) ModifyHelmValuesFile(dir string, fn func(string) (string
 		return errors.Wrapf(err, "failed to write file %s", valuesFileName)
 	}
 
-	log.Infof("modified the helm file: %s\n", util.ColorInfo(valuesFileName))
+	logrus.Infof("modified the helm file: %s\n", util.ColorInfo(valuesFileName))
 	return nil
 }

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -13,8 +14,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
@@ -123,7 +124,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 	}
 	err := o.InstallMissingDependencies(deps)
 	if err != nil {
-		log.Errorf("%v\nPlease fix the error or install manually then try again", err)
+		logrus.Errorf("%v\nPlease fix the error or install manually then try again", err)
 		os.Exit(-1)
 	}
 
@@ -167,7 +168,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 			}
 		}
 		if zones == "" {
-			log.Warnf("No AWS_AVAILABILITY_ZONES environment variable is defined or %s option!\n", optionZones)
+			logrus.Warnf("No AWS_AVAILABILITY_ZONES environment variable is defined or %s option!\n", optionZones)
 
 			prompt := &survey.Input{
 				Message: "Availability Zones",
@@ -198,7 +199,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 			}
 		} else {
 			bucketName := "kops-state-" + accountId + "-" + string(uuid.NewUUID())
-			log.Infof("Creating S3 bucket %s to store kops state\n", util.ColorInfo(bucketName))
+			logrus.Infof("Creating S3 bucket %s to store kops state\n", util.ColorInfo(bucketName))
 
 			location, err := amazon.CreateS3Bucket(bucketName, o.Flags.Profile, o.Flags.Region)
 			if err != nil {
@@ -215,7 +216,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 			}
 			state = "s3://" + state
 
-			log.Infof("To work more easily with kops on the command line you may wish to run the following: %s\n", util.ColorInfo("export KOPS_STATE_STORE="+state))
+			logrus.Infof("To work more easily with kops on the command line you may wish to run the following: %s\n", util.ColorInfo("export KOPS_STATE_STORE="+state))
 		}
 	}
 	o.Flags.State = state
@@ -279,46 +280,46 @@ func (o *CreateClusterAWSOptions) Run() error {
 	}
 
 	// TODO allow add custom args?
-	log.Info("Creating cluster...\n")
+	logrus.Info("Creating cluster...\n")
 	err = o.runKops(args...)
 	if err != nil {
 		return err
 	}
 
-	log.Infof("\nkops has created cluster %s it will take a minute or so to startup\n", util.ColorInfo(name))
-	log.Infof("You can check on the status in another terminal via the command: %s\n", util.ColorStatus("kops validate cluster"))
+	logrus.Infof("\nkops has created cluster %s it will take a minute or so to startup\n", util.ColorInfo(name))
+	logrus.Infof("You can check on the status in another terminal via the command: %s\n", util.ColorStatus("kops validate cluster"))
 
 	time.Sleep(5 * time.Second)
 
 	insecureRegistries := flags.InsecureDockerRegistry
 	if insecureRegistries != "" {
-		log.Warn("Waiting for the Cluster configuration...")
+		logrus.Warn("Waiting for the Cluster configuration...")
 		igJson, err := o.waitForClusterJson(name)
 		if err != nil {
 			return fmt.Errorf("Failed to wait for the Cluster JSON: %s\n", err)
 		}
-		log.Infof("Loaded Cluster JSON: %s\n", igJson)
+		logrus.Infof("Loaded Cluster JSON: %s\n", igJson)
 
 		err = o.modifyClusterConfigJson(igJson, insecureRegistries)
 		if err != nil {
 			return err
 		}
-		log.Infoln("Cluster configuration updated")
+		logrus.Infoln("Cluster configuration updated")
 	}
 
-	log.Infoln("Waiting for the Kubernetes cluster to be ready so we can continue...")
+	logrus.Infoln("Waiting for the Kubernetes cluster to be ready so we can continue...")
 	err = o.waitForClusterToComeUp()
 	if err != nil {
 		return fmt.Errorf("Failed to wait for Kubernetes cluster to start: %s\n", err)
 	}
 
 	log.Blank()
-	log.Infoln("Waiting to for a valid kops cluster state...")
+	logrus.Infoln("Waiting to for a valid kops cluster state...")
 	err = o.waitForClusterValidation()
 	if err != nil {
 		return fmt.Errorf("Failed to successfully validate kops cluster state: %s\n", err)
 	}
-	log.Infoln("State of kops cluster: OK")
+	logrus.Infoln("State of kops cluster: OK")
 	log.Blank()
 
 	region, err := amazon.ResolveRegion(o.Flags.Profile, o.Flags.Region)
@@ -329,7 +330,7 @@ func (o *CreateClusterAWSOptions) Run() error {
 		kube.Region: region,
 	})
 
-	log.Info("Initialising cluster ...\n")
+	logrus.Info("Initialising cluster ...\n")
 	return o.initAndInstall(cloud.AWS)
 }
 
@@ -382,7 +383,7 @@ func (o *CreateClusterAWSOptions) modifyClusterConfigJson(json string, insecureR
 	if newJson == json {
 		return nil
 	}
-	log.Infof("new json: %s\n", newJson)
+	logrus.Infof("new json: %s\n", newJson)
 	tmpFile, err := ioutil.TempFile("", "kops-ig-json-")
 	if err != nil {
 		return err
@@ -393,23 +394,23 @@ func (o *CreateClusterAWSOptions) modifyClusterConfigJson(json string, insecureR
 		return fmt.Errorf("Failed to write InstanceGroup JSON %s: %s", fileName, err)
 	}
 
-	log.Infof("Updating Cluster configuration to enable insecure Docker registries %s\n", util.ColorInfo(insecureRegistries))
+	logrus.Infof("Updating Cluster configuration to enable insecure Docker registries %s\n", util.ColorInfo(insecureRegistries))
 	err = o.runKops("replace", "-f", fileName)
 	if err != nil {
 		return err
 	}
 
-	log.Infoln("Updating the cluster")
+	logrus.Infoln("Updating the cluster")
 	err = o.runKops("update", "cluster", "--yes")
 	if err != nil {
 		return err
 	}
 
-	log.Infoln("Rolling update the cluster")
+	logrus.Infoln("Rolling update the cluster")
 	err = o.runKops("rolling-update", "cluster", "--cloudonly", "--yes")
 	if err != nil {
 		// lets not fail to install if the rolling upgrade fails
-		log.Warnf("Failed to perform rolling upgrade: %s\n", err)
+		logrus.Warnf("Failed to perform rolling upgrade: %s\n", err)
 		//return err
 	}
 	return nil
@@ -419,6 +420,6 @@ func (o *CreateClusterAWSOptions) runKops(args ...string) error {
 	if o.Flags.State != "" {
 		args = append(args, "--state", o.Flags.State)
 	}
-	log.Infof("running command: %s\n", util.ColorInfo("kops "+strings.Join(args, " ")))
+	logrus.Infof("running command: %s\n", util.ColorInfo("kops "+strings.Join(args, " ")))
 	return o.RunCommandVerbose("kops", args...)
 }

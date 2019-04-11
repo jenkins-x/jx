@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/log"
 	"strings"
 	"time"
 
@@ -8,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	logger "github.com/sirupsen/logrus"
 
 	"github.com/aws/aws-sdk-go/service/elbv2"
@@ -68,12 +69,12 @@ func (o *DeleteAwsOptions) Run() error {
 	}
 	for _, loadBalancer := range loadBalancers.LoadBalancers {
 		if *loadBalancer.VpcId == vpcid {
-			log.Infof("Deleting load balancer %s...\n", *loadBalancer.LoadBalancerName)
+			logrus.Infof("Deleting load balancer %s...\n", *loadBalancer.LoadBalancerName)
 			_, err = elbSvc.DeleteLoadBalancer(&elbv2.DeleteLoadBalancerInput{LoadBalancerArn: loadBalancer.LoadBalancerArn})
 			if err != nil {
 				return err
 			}
-			log.Infof("Load balancer %s deleted.\n", *loadBalancer.LoadBalancerName)
+			logrus.Infof("Load balancer %s deleted.\n", *loadBalancer.LoadBalancerName)
 		}
 	}
 
@@ -95,10 +96,10 @@ func (o *DeleteAwsOptions) Run() error {
 		if len(internetGateway.Attachments) > 0 {
 			err = o.RetryUntilFatalError(gatewayDetachAttempts, 10*time.Second, func() (fatalError *opts.FatalError, e error) {
 				_, err = svc.DetachInternetGateway(&ec2.DetachInternetGatewayInput{InternetGatewayId: internetGateway.InternetGatewayId, VpcId: aws.String(vpcid)})
-				log.Infof("Detaching internet gateway %s from VPC %s...\n", *internetGateway.InternetGatewayId, vpcid)
+				logrus.Infof("Detaching internet gateway %s from VPC %s...\n", *internetGateway.InternetGatewayId, vpcid)
 				if err != nil {
 					if strings.Contains(err.Error(), "Please unmap those public address(es) before detaching the gateway") {
-						log.Info("Waiting for public address to be unmapped from internet gateway.")
+						logrus.Info("Waiting for public address to be unmapped from internet gateway.")
 						return nil, err
 					}
 					return &opts.FatalError{E: err}, nil
@@ -108,11 +109,11 @@ func (o *DeleteAwsOptions) Run() error {
 			if err != nil {
 				return err
 			}
-			log.Infof("Internet gateway %s detached successfully from VPC %s...\n", *internetGateway.InternetGatewayId, vpcid)
+			logrus.Infof("Internet gateway %s detached successfully from VPC %s...\n", *internetGateway.InternetGatewayId, vpcid)
 		}
 
 		_, err = svc.DeleteInternetGateway(&ec2.DeleteInternetGatewayInput{InternetGatewayId: internetGateway.InternetGatewayId})
-		log.Infof("Deleting internet gateway %s...\n", *internetGateway.InternetGatewayId)
+		logrus.Infof("Deleting internet gateway %s...\n", *internetGateway.InternetGatewayId)
 		if err != nil {
 			return err
 		}
@@ -145,7 +146,7 @@ func (o *DeleteAwsOptions) Run() error {
 		}
 		for _, iface := range interfaces.NetworkInterfaces {
 			if iface.Attachment != nil {
-				log.Infof("Detaching interface %s\n", *iface.NetworkInterfaceId)
+				logrus.Infof("Detaching interface %s\n", *iface.NetworkInterfaceId)
 				_, err = svc.DetachNetworkInterface(&ec2.DetachNetworkInterfaceInput{AttachmentId: iface.Attachment.AttachmentId})
 				if err != nil {
 					return err

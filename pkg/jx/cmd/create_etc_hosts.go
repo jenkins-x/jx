@@ -10,7 +10,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -114,7 +114,7 @@ func (o *CreateEtcHostsOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		log.Infof("Updated file %s\n", util.ColorInfo(name))
+		logrus.Infof("Updated file %s\n", util.ColorInfo(name))
 	}
 	return nil
 }
@@ -123,7 +123,7 @@ func (o *CreateEtcHostsOptions) addUrl(serviceUrl services.ServiceURL, ipLine st
 	text := serviceUrl.URL
 	u, err := url.Parse(text)
 	if err != nil {
-		log.Warnf("Ignored invalid URL %s %s", text, err)
+		logrus.Warnf("Ignored invalid URL %s %s", text, err)
 		return ipLine
 	}
 	host := u.Host

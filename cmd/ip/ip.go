@@ -11,13 +11,13 @@ func main() {
 
 	ips, err := net.LookupIP(host)
 	if err != nil {
-		fmt.Printf("Failed: %s\n", err)
+		logrus.Infof("Failed: %s\n", err)
 		return
 	}
 
 	for _, ip := range ips {
-		fmt.Printf("IP: %s\n", ip.String())
+		logrus.Infof("IP: %s\n", ip.String())
 	}
 
-	fmt.Println("Done!")
+	logrus.Info("Done!")
 }

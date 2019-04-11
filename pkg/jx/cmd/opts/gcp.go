@@ -6,7 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	survey "gopkg.in/AlecAivazis/survey.v1"
@@ -53,7 +53,7 @@ func (o *CommonOptions) GetGoogleProjectId() (string, error) {
 		}
 	} else if len(existingProjects) == 1 {
 		projectId = existingProjects[0]
-		log.Infof("Using the only Google Cloud Project %s to create the cluster\n", util.ColorInfo(projectId))
+		logrus.Infof("Using the only Google Cloud Project %s to create the cluster\n", util.ColorInfo(projectId))
 	} else {
 		prompts := &survey.Select{
 			Message: "Google Cloud Project:",

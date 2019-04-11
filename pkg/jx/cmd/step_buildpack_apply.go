@@ -7,7 +7,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -79,7 +79,7 @@ func (o *StepBuildPackApplyOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("build pack is %s\n", settings.BuildPackURL)
+	logrus.Infof("build pack is %s\n", settings.BuildPackURL)
 
 	defaultJenkinsfile := filepath.Join(dir, jenkinsfile.Name)
 	jenkinsfile := jenkinsfile.Name

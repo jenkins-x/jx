@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/pkg/errors"
@@ -97,7 +97,7 @@ func (o *StepPostRunOptions) Run() (err error) {
 			return err
 		}
 		for _, pe := range a.Spec.PostExtensions {
-			log.Infof("Running Extension %s\n", util.ColorInfo(fmt.Sprintf("%s.%s", pe.Namespace, pe.Name)))
+			logrus.Infof("Running Extension %s\n", util.ColorInfo(fmt.Sprintf("%s.%s", pe.Namespace, pe.Name)))
 			err = pe.Execute(o.Verbose)
 			if err != nil {
 				return err

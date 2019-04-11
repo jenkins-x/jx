@@ -5,7 +5,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -69,15 +69,15 @@ func GetClusterStatus(client kubernetes.Interface, namespace string, verbose boo
 	clusterStatus.nodeCount = len(nodes.Items)
 	if clusterStatus.nodeCount < 1 {
 		msg := fmt.Sprintf("Number of nodes in cluster  = %d which is insufficent", clusterStatus.nodeCount)
-		log.Fatal(msg)
+		logrus.Fatal(msg)
 		err = errors.NewServiceUnavailable(msg)
 		return clusterStatus, err
 	}
 	for _, node := range nodes.Items {
 		if verbose {
 
-			log.Infof("\n-------------------------\n")
-			log.Infof("Node:\n%s\n\n", node.Name)
+			logrus.Infof("\n-------------------------\n")
+			logrus.Infof("Node:\n%s\n\n", node.Name)
 		}
 
 		nodeStatus, err := Status(client, namespace, node, verbose)
@@ -173,7 +173,7 @@ func Status(client kubernetes.Interface, namespace string, node v1.Node, verbose
 			cpuMessage = " - Node appears to be overcommitted on CPU"
 		}
 
-		log.Infof("CPU usage %v%% %s\n", cpuPercent, util.ColorWarning(cpuMessage))
+		logrus.Infof("CPU usage %v%% %s\n", cpuPercent, util.ColorWarning(cpuMessage))
 
 		memoryPercent := (memoryReqs.Value() * 100) / allocatable.Memory().Value()
 		memoryMessage := ""
@@ -181,7 +181,7 @@ func Status(client kubernetes.Interface, namespace string, node v1.Node, verbose
 			memoryMessage = " - Node appears to be overcommitted on Memory"
 		}
 
-		log.Infof("Memory usage %v%%%s\n", memoryPercent, util.ColorWarning(memoryMessage))
+		logrus.Infof("Memory usage %v%%%s\n", memoryPercent, util.ColorWarning(memoryMessage))
 	}
 
 	nodeStatus.CpuRequests = cpuReqs
@@ -199,7 +199,7 @@ func getPodsTotalRequestsAndLimits(podList *v1.PodList, verbose bool) (reqs map[
 	reqs, limits = map[v1.ResourceName]resource.Quantity{}, map[v1.ResourceName]resource.Quantity{}
 
 	if verbose {
-		log.Infof("Pods:\n")
+		logrus.Infof("Pods:\n")
 	}
 
 	for _, pod := range podList.Items {
@@ -216,7 +216,7 @@ func getPodsTotalRequestsAndLimits(podList *v1.PodList, verbose bool) (reqs map[
 				messages = append(messages, "No Memory request set")
 			}
 
-			log.Infof("%s - %s %s\n", pod.Name, pod.Status.Phase, util.ColorError(strings.Join(messages, ", ")))
+			logrus.Infof("%s - %s %s\n", pod.Name, pod.Status.Phase, util.ColorError(strings.Join(messages, ", ")))
 		}
 
 		for podReqName, podReqValue := range podReqs {
@@ -238,7 +238,7 @@ func getPodsTotalRequestsAndLimits(podList *v1.PodList, verbose bool) (reqs map[
 	}
 
 	if verbose {
-		log.Infof("\n")
+		logrus.Infof("\n")
 	}
 
 	return

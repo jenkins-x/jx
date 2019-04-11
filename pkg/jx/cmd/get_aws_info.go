@@ -4,7 +4,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -56,7 +56,7 @@ func (o *GetAWSInfoOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	log.Infof("AWS Account ID: %s\n", util.ColorInfo(id))
-	log.Infof("AWS Region:     %s\n", util.ColorInfo(region))
+	logrus.Infof("AWS Account ID: %s\n", util.ColorInfo(id))
+	logrus.Infof("AWS Region:     %s\n", util.ColorInfo(region))
 	return nil
 }
