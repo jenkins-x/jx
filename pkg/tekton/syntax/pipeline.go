@@ -616,6 +616,23 @@ func validateWorkspace(w string) *apis.FieldError {
 	return nil
 }
 
+func EnvMapToSlice(envMap map[string]corev1.EnvVar) []corev1.EnvVar {
+	env := make([]corev1.EnvVar, 0, len(envMap))
+
+	// Avoid nondeterministic results by sorting the keys and appending vars in that order.
+	var envVars []string
+	for k := range envMap {
+		envVars = append(envVars, k)
+	}
+	sort.Strings(envVars)
+
+	for _, envVar := range envVars {
+		env = append(env, envMap[envVar])
+	}
+
+	return env
+}
+
 func toContainerEnvVars(origEnv []EnvVar) []corev1.EnvVar {
 	env := make([]corev1.EnvVar, 0, len(origEnv))
 	for _, e := range origEnv {
@@ -642,20 +659,7 @@ func scopedEnv(newEnv []corev1.EnvVar, parentEnv []corev1.EnvVar, o *RootOptions
 		envMap[e.Name] = e
 	}
 
-	env := make([]corev1.EnvVar, 0, len(envMap))
-
-	// Avoid nondeterministic results by sorting the keys and appending vars in that order.
-	var envVars []string
-	for k := range envMap {
-		envVars = append(envVars, k)
-	}
-	sort.Strings(envVars)
-
-	for _, envVar := range envVars {
-		env = append(env, envMap[envVar])
-	}
-
-	return env
+	return EnvMapToSlice(envMap)
 }
 
 func (j *ParsedPipeline) toStepEnvVars() []corev1.EnvVar {
@@ -665,19 +669,7 @@ func (j *ParsedPipeline) toStepEnvVars() []corev1.EnvVar {
 		envMap[e.Name] = corev1.EnvVar{Name: e.Name, Value: e.Value}
 	}
 
-	env := make([]corev1.EnvVar, 0, len(envMap))
-	// Avoid nondeterministic results by sorting the keys and appending vars in that order.
-	var envVars []string
-	for k := range envMap {
-		envVars = append(envVars, k)
-	}
-	sort.Strings(envVars)
-
-	for _, envVar := range envVars {
-		env = append(env, envMap[envVar])
-	}
-
-	return env
+	return EnvMapToSlice(envMap)
 }
 
 func getContainerOptionsEnvVars(o *RootOptions) map[string]corev1.EnvVar {
@@ -853,8 +845,13 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 				Name:      MangleToRfc1035Label(fmt.Sprintf("%s-%s", pipelineIdentifier, s.Name), buildIdentifier),
 				Labels:    util.MergeMaps(map[string]string{LabelStageName: s.stageLabelName()}),
 			},
-			Spec: defaultTaskSpec,
 		}
+		// Only add the default git merge step if this is the first actual step stage - including if the stage is one of
+		// N stages within a parallel stage, and that parallel stage is the first stage in the pipeline
+		if previousSiblingStage == nil && isNestedFirstStepsStage(enclosingStage) {
+			t.Spec = defaultTaskSpec
+		}
+
 		t.SetDefaults(context.Background())
 
 		ws := &tektonv1alpha1.TaskResource{
@@ -956,6 +953,16 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		return &ts, nil
 	}
 	return nil, errors.New("no steps, sequential stages, or parallel stages")
+}
+
+func isNestedFirstStepsStage(enclosingStage *transformedStage) bool {
+	if enclosingStage != nil {
+		if enclosingStage.PreviousSiblingStage != nil {
+			return false
+		}
+		return isNestedFirstStepsStage(enclosingStage.EnclosingStage)
+	}
+	return true
 }
 
 func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parentContainer *corev1.Container, podTemplates map[string]*corev1.Pod, stepCounter int) ([]corev1.Container, map[string]corev1.Volume, int, error) {

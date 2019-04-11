@@ -46,6 +46,8 @@ items:
         value: master
       - name: JX_BATCH_MODE
         value: "true"
+      - name: FRUIT
+        value: BANANA
       volumeMounts:
       - mountPath: /etc/podinfo
         name: podinfo
@@ -96,6 +98,8 @@ items:
         value: master
       - name: JX_BATCH_MODE
         value: "true"
+      - name: FRUIT
+        value: BANANA
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: setup-jx-git-credentials
       resources:
@@ -164,6 +168,8 @@ items:
         value: master
       - name: JX_BATCH_MODE
         value: "true"
+      - name: FRUIT
+        value: BANANA
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: setversion-next-version
       resources:
@@ -232,6 +238,8 @@ items:
         value: master
       - name: JX_BATCH_MODE
         value: "true"
+      - name: FRUIT
+        value: BANANA
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: setversion-set-version
       resources:
@@ -300,6 +308,8 @@ items:
         value: master
       - name: JX_BATCH_MODE
         value: "true"
+      - name: FRUIT
+        value: BANANA
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: setversion-tag-version
       resources:
@@ -368,6 +378,8 @@ items:
         value: master
       - name: JX_BATCH_MODE
         value: "true"
+      - name: FRUIT
+        value: BANANA
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: build-mvn-deploy
       resources:
@@ -436,6 +448,8 @@ items:
         value: master
       - name: JX_BATCH_MODE
         value: "true"
+      - name: FRUIT
+        value: BANANA
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: build-skaffold-version
       resources:
@@ -504,6 +518,8 @@ items:
         value: master
       - name: JX_BATCH_MODE
         value: "true"
+      - name: FRUIT
+        value: BANANA
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: build-container-build
       resources:
@@ -572,6 +588,8 @@ items:
         value: master
       - name: JX_BATCH_MODE
         value: "true"
+      - name: FRUIT
+        value: BANANA
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: build-post-build
       resources:
@@ -640,6 +658,8 @@ items:
         value: master
       - name: JX_BATCH_MODE
         value: "true"
+      - name: FRUIT
+        value: BANANA
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: promote-changelog
       resources:
@@ -708,6 +728,8 @@ items:
         value: master
       - name: JX_BATCH_MODE
         value: "true"
+      - name: FRUIT
+        value: BANANA
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: promote-helm-release
       resources:
@@ -776,6 +798,8 @@ items:
         value: master
       - name: JX_BATCH_MODE
         value: "true"
+      - name: FRUIT
+        value: BANANA
       image: jenkinsxio/builder-maven-java11:0.1.235
       name: promote-jx-promote
       resources:
