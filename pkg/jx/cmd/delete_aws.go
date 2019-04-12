@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/sirupsen/logrus"
 	"strings"
 	"time"
 
@@ -9,7 +10,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/log"
-	logger "github.com/sirupsen/logrus"
 
 	"github.com/aws/aws-sdk-go/service/elbv2"
 	"github.com/spf13/cobra"
@@ -40,7 +40,7 @@ func NewCmdDeleteAws(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.LogLevel, "log-level", "", logger.InfoLevel.String(), "Logging level. Possible values - panic, fatal, error, warning, info, debug.")
+	cmd.Flags().StringVarP(&options.LogLevel, "log-level", "", logrus.InfoLevel.String(), "Logging level. Possible values - panic, fatal, error, warning, info, debug.")
 
 	cmd.Flags().StringVarP(&options.Profile, "profile", "", "", "AWS profile to use.")
 	cmd.Flags().StringVarP(&options.Region, "region", "", "", "AWS region to use.")
@@ -50,8 +50,6 @@ func NewCmdDeleteAws(commonOpts *opts.CommonOptions) *cobra.Command {
 }
 
 func (o *DeleteAwsOptions) Run() error {
-	log.ConfigureLog(o.LogLevel)
-
 	vpcid := o.VpcId
 
 	session, err := amazon.NewAwsSession(o.Profile, o.Region)

@@ -305,7 +305,7 @@ func (o *CreateJenkinsUserOptions) getAPITokenFromREST(serverURL string, userAut
 	}
 	defer cancel()
 
-	log.Infoln("Generating the API token...")
+	log.Info("Generating the API token...")
 	decorator, err := loginLegacy(ctx, serverURL, o.Verbose, userAuth.Username, o.Password)
 	if err != nil {
 		// Might be a modern realm, which would normally support BasicHeaderRealPasswordAuthenticator.

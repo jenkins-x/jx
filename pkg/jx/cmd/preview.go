@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/helm"
+
 	"github.com/jenkins-x/jx/pkg/kserving"
 	"github.com/jenkins-x/jx/pkg/users"
 
@@ -155,7 +157,7 @@ func (o *PreviewOptions) Run() error {
 		}
 	}
 
-	log.Infoln("Creating a preview")
+	log.Info("Creating a preview")
 	/*
 		args := o.Args
 		if len(args) > 0 && o.Name == "" {
@@ -459,7 +461,14 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	err = o.Helm().UpgradeChart(".", o.ReleaseName, o.Namespace, "", true, -1, true, true, nil, []string{configFileName}, "", "", "")
+	helmOptions := helm.InstallChartOptions{
+		Chart:       ".",
+		ReleaseName: o.ReleaseName,
+		Ns:          o.Namespace,
+		ValueFiles:  []string{configFileName},
+		Wait:        true,
+	}
+	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
 		return err
 	}

@@ -220,11 +220,18 @@ func (o *StepHelmApplyOptions) Run() error {
 		return errors.Wrap(err, "applying chart overrides")
 	}
 
+	helmOptions := helm.InstallChartOptions{
+		Chart:       chartName,
+		ReleaseName: releaseName,
+		Ns:          ns,
+		NoForce:     !o.Force,
+		ValueFiles:  valueFiles,
+	}
 	if o.Wait {
-		timeout := 600
-		err = o.Helm().UpgradeChart(chartName, releaseName, ns, "", true, timeout, o.Force, true, nil, valueFiles, "", "", "")
+		helmOptions.Wait = true
+		err = o.InstallChartWithOptionsAndTimeout(helmOptions, "600")
 	} else {
-		err = o.Helm().UpgradeChart(chartName, releaseName, ns, "", true, -1, o.Force, false, nil, valueFiles, "", "", "")
+		err = o.InstallChartWithOptions(helmOptions)
 	}
 	if err != nil {
 		return errors.Wrapf(err, "upgrading helm chart '%s'", chartName)

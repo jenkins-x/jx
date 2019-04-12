@@ -3,6 +3,8 @@ package cmd
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/helm"
+
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/pkg/errors"
@@ -108,7 +110,14 @@ func (o *CreateAddonAnchoreOptions) Run() error {
 	values := []string{"globalConfig.users.admin.password=" + o.Password, "globalConfig.configDir=/anchore_service_dir"}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	err = o.InstallChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
+	helmOptions := helm.InstallChartOptions{
+		Chart:       o.Chart,
+		ReleaseName: o.ReleaseName,
+		Version:     o.Version,
+		Ns:          o.Namespace,
+		SetValues:   values,
+	}
+	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
 		return fmt.Errorf("anchore deployment failed: %v", err)
 	}

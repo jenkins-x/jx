@@ -726,7 +726,7 @@ func GenerateValuesAsYaml(t *testing.T, schemaName string, existingValues map[st
 		NoAsk:               noAsk,
 		IgnoreMissingValues: ignoreMissingValues,
 
-		CreateSecret: func(name string, key string, value string) (*jenkinsv1.ResourceReference, error) {
+		CreateSecret: func(name string, key string, value string, passthrough bool) (interface{}, error) {
 			secrets = append(secrets, &GeneratedSecret{
 				Name:  name,
 				Value: value,

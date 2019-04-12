@@ -8,6 +8,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	version2 "github.com/jenkins-x/jx/pkg/version"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
@@ -20,7 +21,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -319,31 +319,31 @@ func (o *InitOptions) configureForICP() {
 	icpDefaultTillerNS := "default"
 	icpDefaultNS := "jx"
 
-	log.Infoln("")
-	log.Infoln(util.ColorInfo("IBM Cloud Private installation of Jenkins X"))
-	log.Infoln("Configuring Jenkins X options for IBM Cloud Private: ensure your Kubernetes context is already " +
+	log.Info("")
+	log.Info(util.ColorInfo("IBM Cloud Private installation of Jenkins X"))
+	log.Info("Configuring Jenkins X options for IBM Cloud Private: ensure your Kubernetes context is already " +
 		"configured to point to the cluster jx will be installed into.")
-	log.Infoln("")
+	log.Info("")
 
-	log.Infoln(util.ColorInfo("Permitting image repositories to be used"))
-	log.Infoln("If you have a clusterimagepolicy, ensure that this policy permits pulling from the following additional repositories: " +
+	log.Info(util.ColorInfo("Permitting image repositories to be used"))
+	log.Info("If you have a clusterimagepolicy, ensure that this policy permits pulling from the following additional repositories: " +
 		"the scope of which can be narrowed down once you are sure only images from certain repositories are being used:")
-	log.Infoln("- name: docker.io/* \n" +
+	log.Info("- name: docker.io/* \n" +
 		"- name: gcr.io/* \n" +
 		"- name: quay.io/* \n" +
 		"- name: k8s.gcr.io/* \n" +
 		"- name: <your ICP cluster name>:8500/* \n")
 
-	log.Infoln(util.ColorInfo("IBM Cloud Private defaults"))
-	log.Infoln("By default, with IBM Cloud Private the Tiller namespace for jx will be \"" + icpDefaultTillerNS + "\" and the namespace " +
+	log.Info(util.ColorInfo("IBM Cloud Private defaults"))
+	log.Info("By default, with IBM Cloud Private the Tiller namespace for jx will be \"" + icpDefaultTillerNS + "\" and the namespace " +
 		"where Jenkins X resources will be installed into is \"" + icpDefaultNS + "\".")
-	log.Infoln("")
+	log.Info("")
 
-	log.Infoln(util.ColorInfo("Using the IBM Cloud Private Docker registry"))
-	log.Infoln("To use the IBM Cloud Private Docker registry, when environments (namespaces) are created, " +
+	log.Info(util.ColorInfo("Using the IBM Cloud Private Docker registry"))
+	log.Info("To use the IBM Cloud Private Docker registry, when environments (namespaces) are created, " +
 		"create a Docker registry secret and patch the default service account in the created namespace to use the secret, adding it as an ImagePullSecret. " +
 		"This is required so that pods in the created namespace can pull images from the registry.")
-	log.Infoln("")
+	log.Info("")
 
 	o.Flags.IngressNamespace = "kube-system"
 	o.Flags.IngressDeployment = "default-backend"
@@ -357,7 +357,7 @@ func (o *InitOptions) configureForICP() {
 
 	if !(o.BatchMode) {
 		if o.Flags.ExternalIP != "" {
-			log.Infoln("An external IP has already been specified: otherwise you will be prompted for one to use")
+			log.Info("An external IP has already been specified: otherwise you will be prompted for one to use")
 			return
 		}
 
@@ -383,7 +383,7 @@ func (o *InitOptions) configureForICP() {
 }
 
 func (o *InitOptions) initIKSIngress() error {
-	log.Infoln("Wait for Ingress controller to be injected into IBM Kubernetes Service Cluster")
+	log.Info("Wait for Ingress controller to be injected into IBM Kubernetes Service Cluster")
 	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -444,7 +444,7 @@ func (o *InitOptions) initIngress() error {
 	}
 
 	if isOpenShiftProvider(o.Flags.Provider) {
-		log.Infoln("Not installing ingress as using OpenShift which uses Route and its own mechanism of ingress")
+		log.Info("Not installing ingress as using OpenShift which uses Route and its own mechanism of ingress")
 		return nil
 	}
 
@@ -521,8 +521,15 @@ controller:
 		i := 0
 		for {
 			log.Infof("Installing using helm binary: %s\n", util.ColorInfo(o.Helm().HelmBinary()))
-			err = o.Helm().InstallChart(chartName, "jxing", ingressNamespace, version, -1, values,
-				valuesFiles, "", "", "")
+			helmOptions := helm.InstallChartOptions{
+				Chart:       chartName,
+				ReleaseName: "jxing",
+				Version:     version,
+				Ns:          ingressNamespace,
+				SetValues:   values,
+				ValueFiles:  valuesFiles,
+			}
+			err = o.InstallChartWithOptions(helmOptions)
 			if err != nil {
 				if i >= 3 {
 					log.Errorf("Failed to install ingress chart: %s", err)

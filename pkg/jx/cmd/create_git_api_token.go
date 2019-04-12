@@ -213,7 +213,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 
 	o.captureScreenshot(ctxt, c, "screenshot-git-api-token.png", "//div")
 
-	log.Infoln("Generating new token")
+	log.Info("Generating new token")
 
 	tokenId := "jx-" + string(uuid.NewUUID())
 	generateNewTokenButtonSelector := "//div[normalize-space(text())='Generate New Token']"
@@ -238,7 +238,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 			break
 		}
 	}
-	log.Infoln("Found API Token")
+	log.Info("Found API Token")
 	if token != "" {
 		userAuth.ApiToken = token
 	}
@@ -266,7 +266,7 @@ func (o *CreateGitTokenOptions) createChromeClient(ctxt context.Context) (*chrom
 }
 
 func (o *CreateGitTokenOptions) captureScreenshot(ctxt context.Context, c *chromedp.CDP, screenshotFile string, selector interface{}, options ...chromedp.QueryOption) error {
-	log.Infoln("Creating a screenshot...")
+	log.Info("Creating a screenshot...")
 
 	var picture []byte
 	err := c.Run(ctxt, chromedp.Tasks{
@@ -276,7 +276,7 @@ func (o *CreateGitTokenOptions) captureScreenshot(ctxt context.Context, c *chrom
 	if err != nil {
 		return err
 	}
-	log.Infoln("Saving a screenshot...")
+	log.Info("Saving a screenshot...")
 
 	err = ioutil.WriteFile(screenshotFile, picture, util.DefaultWritePermissions)
 	if err != nil {

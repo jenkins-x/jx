@@ -558,8 +558,8 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 	data, err := ioutil.ReadFile(valuesFromPrPath)
 	assert.NoError(t, err)
 	assert.Equal(t, `tokenValue:
-  kind: Secret
-  name: tokenvalue-secret
+  Kind: Secret
+  Name: tokenvalue-secret
 `, string(data))
 	// Validate that vault has had the secret added
 	path := strings.Join([]string{"gitOps", testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, "tokenvalue-secret"},

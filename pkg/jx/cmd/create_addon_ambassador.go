@@ -3,6 +3,8 @@ package cmd
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/helm"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
@@ -89,7 +91,15 @@ func (o *CreateAddonAmbassadorOptions) Run() error {
 	}
 
 	values := strings.Split(o.SetValues, ",")
-	err = o.InstallChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, o.ValueFiles, "")
+	helmOptions := helm.InstallChartOptions{
+		Chart:       o.Chart,
+		ReleaseName: o.ReleaseName,
+		Version:     o.Version,
+		Ns:          o.Namespace,
+		SetValues:   values,
+		ValueFiles:  o.ValueFiles,
+	}
+	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
 		return err
 	}

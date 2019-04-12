@@ -8,7 +8,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
-	logger "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -57,13 +56,11 @@ func NewCmdUpgradeCLI(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *UpgradeCLIOptions) Run() error {
-	log.ConfigureLog(o.LogLevel)
-
 	newVersion, err := o.GetLatestJXVersion()
 	if err != nil {
 		return err
 	}
-	logger.Debugf("Found the latest version of jx: %s", util.ColorInfo(newVersion))
+	log.Debugf("Found the latest version of jx: %s", util.ColorInfo(newVersion))
 
 	currentVersion, err := version.GetSemverVersion()
 	if err != nil {
@@ -71,11 +68,11 @@ func (o *UpgradeCLIOptions) Run() error {
 	}
 
 	if newVersion.EQ(currentVersion) {
-		logger.Infof("You are already on the latest version of jx %s", util.ColorInfo(currentVersion.String()))
+		log.Infof("You are already on the latest version of jx %s", util.ColorInfo(currentVersion.String()))
 		return nil
 	}
 	if newVersion.LE(currentVersion) {
-		logger.Infof("Your jx version %s is actually newer than the latest available version %s", util.ColorInfo(currentVersion.String()), util.ColorInfo(newVersion.String()))
+		log.Infof("Your jx version %s is actually newer than the latest available version %s", util.ColorInfo(currentVersion.String()), util.ColorInfo(newVersion.String()))
 		return nil
 	}
 

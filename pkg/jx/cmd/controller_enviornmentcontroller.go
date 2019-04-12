@@ -17,10 +17,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube/services"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/sirupsen/logrus"
 
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
@@ -152,7 +153,7 @@ func (o *ControllerEnvironmentOptions) Run() error {
 	if o.SourceURL == "" {
 		o.SourceURL = util.UrlJoin(o.GitServerURL, o.GitOwner, o.GitRepo)
 	}
-	logrus.Infof("using environment source directory %s and external webhook URL: %s\n", util.ColorInfo(o.SourceURL), util.ColorInfo(o.WebHookURL))
+	log.Infof("using environment source directory %s and external webhook URL: %s\n", util.ColorInfo(o.SourceURL), util.ColorInfo(o.WebHookURL))
 	o.secret, err = o.loadOrCreateHmacSecret()
 	if err != nil {
 		return errors.Wrapf(err, "loading hmac secret")
@@ -177,19 +178,19 @@ func (o *ControllerEnvironmentOptions) Run() error {
 	mux.Handle(HealthPath, http.HandlerFunc(o.health))
 	mux.Handle(ReadyPath, http.HandlerFunc(o.ready))
 
-	logrus.Infof("Environment Controller is now listening on %s for WebHooks from the source repository %s to trigger promotions\n", util.ColorInfo(util.UrlJoin(o.WebHookURL, o.Path)), util.ColorInfo(o.SourceURL))
+	log.Infof("Environment Controller is now listening on %s for WebHooks from the source repository %s to trigger promotions\n", util.ColorInfo(util.UrlJoin(o.WebHookURL, o.Path)), util.ColorInfo(o.SourceURL))
 	return http.ListenAndServe(":"+strconv.Itoa(o.Port), mux)
 }
 
 // health returns either HTTP 204 if the service is healthy, otherwise nothing ('cos it's dead).
 func (o *ControllerEnvironmentOptions) health(w http.ResponseWriter, r *http.Request) {
-	logrus.Debug("Health check")
+	log.Debug("Health check")
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // ready returns either HTTP 204 if the service is ready to serve requests, otherwise HTTP 503.
 func (o *ControllerEnvironmentOptions) ready(w http.ResponseWriter, r *http.Request) {
-	logrus.Debug("Ready check")
+	log.Debug("Ready check")
 	if o.isReady() {
 		w.WriteHeader(http.StatusNoContent)
 	} else {
@@ -201,7 +202,7 @@ func (o *ControllerEnvironmentOptions) ready(w http.ResponseWriter, r *http.Requ
 func (o *ControllerEnvironmentOptions) startPipelineRun(w http.ResponseWriter, r *http.Request) {
 	err := o.stepGitCredentials()
 	if err != nil {
-		logrus.Warn(err.Error())
+		log.Warn(err.Error())
 	}
 
 	sourceURL := o.SourceURL
@@ -228,7 +229,7 @@ func (o *ControllerEnvironmentOptions) startPipelineRun(w http.ResponseWriter, r
 		pr.CustomLabels = append(pr.CustomLabels, fmt.Sprintf("%s=%s", key, value))
 	}
 
-	logrus.Infof("triggering pipeline for repo %s branch %s revision %s\n", sourceURL, branch, revision)
+	log.Infof("triggering pipeline for repo %s branch %s revision %s\n", sourceURL, branch, revision)
 
 	err = pr.Run()
 	if err != nil {
@@ -276,7 +277,7 @@ func (o *ControllerEnvironmentOptions) discoverWebHookURL() (string, error) {
 
 			if !loggedWait {
 				loggedWait = true
-				logrus.Infof("waiting for the external IP on the service %s in namespace %s ...\n", environmentControllerService, ns)
+				log.Infof("waiting for the external IP on the service %s in namespace %s ...\n", environmentControllerService, ns)
 			}
 			return false, nil
 		}
@@ -380,12 +381,12 @@ func (o *ControllerEnvironmentOptions) marshalPayload(w http.ResponseWriter, r *
 
 func (o *ControllerEnvironmentOptions) onError(err error) {
 	if err != nil {
-		logrus.Errorf("%v", err)
+		log.Errorf("%v", err)
 	}
 }
 
 func (o *ControllerEnvironmentOptions) returnError(err error, message string, w http.ResponseWriter, r *http.Request) {
-	logrus.Errorf("%v %s", err, message)
+	log.Errorf("%v %s", err, message)
 
 	o.onError(err)
 	w.WriteHeader(500)
@@ -420,7 +421,7 @@ func (o *ControllerEnvironmentOptions) handleRequests(w http.ResponseWriter, r *
 
 func (o *ControllerEnvironmentOptions) registerWebHook(webhookURL string, secret []byte) error {
 	gitURL := o.SourceURL
-	logrus.Infof("verifying that the webhook is registered for the git repository %s\n", util.ColorInfo(gitURL))
+	log.Infof("verifying that the webhook is registered for the git repository %s\n", util.ColorInfo(gitURL))
 
 	provider, err := o.GitProviderForURL(gitURL, "creating webhook git provider")
 	if err != nil {

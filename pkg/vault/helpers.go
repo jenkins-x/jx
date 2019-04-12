@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"regexp"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -14,6 +16,8 @@ const (
 	usernameKey = "Username"
 	passwordKey = "Password"
 )
+
+var vaultURIRegex = regexp.MustCompile(`vault:[\w\/:]*`)
 
 // WriteYAMLFiles stores the given YAML files in vault. The final secret path is
 // a concatenation of the 'path' with the file name.
@@ -60,37 +64,44 @@ func WriteMap(client Client, path string, secret map[string]interface{}) error {
 	return nil
 }
 
-// ReadBasicAuth reads the basic authentication credentials from vault at the given path.
-func ReadBasicAuth(client Client, path string) (*config.BasicAuth, error) {
-	secret, err := client.Read(path)
+// ToURI constructs a vault: URI for the given path and key
+func ToURI(path string, key string) string {
+	return fmt.Sprintf("vault:%s:%s", path, key)
+}
+
+// ReplaceURIs will replace any vault: URIs in a string, using the vault client
+func ReplaceURIs(s string, client Client) (string, error) {
+	var err error
+	answer := vaultURIRegex.ReplaceAllStringFunc(s, func(found string) string {
+		// Stop once we have an error
+		if err == nil {
+			pathAndKey := strings.Trim(strings.TrimPrefix(found, "vault:"), "\"")
+			parts := strings.Split(pathAndKey, ":")
+			if len(parts) != 2 {
+				err = errors.Errorf("cannot parse %s as path:key", pathAndKey)
+				return ""
+			}
+			secret, err1 := client.Read(parts[0])
+			if err1 != nil {
+				err = errors.Wrapf(err1, "reading %s from vault", parts[0])
+				return ""
+			}
+			if v, ok := secret[parts[1]]; !ok {
+				err = errors.Errorf("unable to find %s in secret at %s", parts[1], parts[0])
+				return ""
+			} else {
+				result, err1 := util.AsString(v)
+				if err1 != nil {
+					err = errors.Wrapf(err1, "converting %v to string", v)
+					return ""
+				}
+				return result
+			}
+		}
+		return found
+	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "reading the basic auth credentials from path '%s'", path)
+		return "", errors.Wrapf(err, "replacing vault paths in %s", s)
 	}
-
-	username, ok := secret[usernameKey]
-	if !ok {
-		return nil, fmt.Errorf("no key '%s' found in the secret stored in vault at the path '%s'", usernameKey, path)
-	}
-
-	usernameStr, ok := username.(string)
-	if !ok {
-		return nil, fmt.Errorf("secret stored for key '%s' in vault at the path '%s' is not a valid string",
-			usernameKey, path)
-	}
-
-	password, ok := secret[passwordKey]
-	if !ok {
-		return nil, fmt.Errorf("no key '%s' found in the secret stored in vault at the path '%s'", passwordKey, path)
-	}
-
-	passwordStr, ok := password.(string)
-	if !ok {
-		return nil, fmt.Errorf("secret stored for key '%s' in vault at the path '%s' is not a valid string",
-			passwordKey, path)
-	}
-
-	return &config.BasicAuth{
-		Username: usernameStr,
-		Password: passwordStr,
-	}, nil
+	return answer, nil
 }

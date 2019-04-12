@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/helm"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -94,7 +96,14 @@ func InstallVaultOperator(o *opts.CommonOptions, namespace string) error {
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	err = o.InstallChart(releaseName, kube.ChartVaultOperator, o.Version, namespace, true, values, nil, "")
+	helmOptions := helm.InstallChartOptions{
+		Chart:       kube.ChartVaultOperator,
+		ReleaseName: releaseName,
+		Version:     o.Version,
+		Ns:          namespace,
+		SetValues:   values,
+	}
+	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("installing %s chart", releaseName))
 	}
