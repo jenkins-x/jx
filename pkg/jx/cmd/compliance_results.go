@@ -73,7 +73,7 @@ func (o *ComplianceResultsOptions) Run() error {
 	}
 
 	if status.Status != aggregation.CompleteStatus && status.Status != aggregation.FailedStatus {
-		log.Infoln("Compliance results not ready. Run `jx compliance status` for status.")
+		log.Info("Compliance results not ready. Run `jx compliance status` for status.")
 		return nil
 	}
 

@@ -204,7 +204,7 @@ func (options *ImportOptions) Run() error {
 			log.Error(err.Error())
 			return err
 		}
-		log.Infoln("Available draft packs:")
+		log.Info("Available draft packs:")
 		for i := 0; i < len(packs); i++ {
 			log.Infof(packs[i] + "\n")
 		}
@@ -411,7 +411,7 @@ func (options *ImportOptions) Run() error {
 	}
 
 	if options.DryRun {
-		log.Infoln("dry-run so skipping import to Jenkins X")
+		log.Info("dry-run so skipping import to Jenkins X")
 		return nil
 	}
 
@@ -437,7 +437,7 @@ func (options *ImportOptions) ImportProjectsFromGitHub() error {
 		return err
 	}
 
-	log.Infoln("Selected repositories")
+	log.Info("Selected repositories")
 	for _, r := range repos {
 		o2 := ImportOptions{
 			CommonOptions:           options.CommonOptions,

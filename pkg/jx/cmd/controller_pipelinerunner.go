@@ -13,7 +13,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -110,19 +109,19 @@ func (o *ControllerPipelineRunnerOptions) Run() error {
 	mux.Handle(o.Path, http.HandlerFunc(o.pipelineRunMethods))
 	mux.Handle(HealthPath, http.HandlerFunc(o.health))
 	mux.Handle(ReadyPath, http.HandlerFunc(o.ready))
-	logrus.Infof("Waiting for dynamic Tekton Pipelines at http://%s:%d%s", o.BindAddress, o.Port, o.Path)
+	log.Infof("Waiting for dynamic Tekton Pipelines at http://%s:%d%s", o.BindAddress, o.Port, o.Path)
 	return http.ListenAndServe(":"+strconv.Itoa(o.Port), mux)
 }
 
 // health returns either HTTP 204 if the service is healthy, otherwise nothing ('cos it's dead).
 func (o *ControllerPipelineRunnerOptions) health(w http.ResponseWriter, r *http.Request) {
-	logrus.Debug("Health check")
+	log.Debug("Health check")
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // ready returns either HTTP 204 if the service is ready to serve requests, otherwise HTTP 503.
 func (o *ControllerPipelineRunnerOptions) ready(w http.ResponseWriter, r *http.Request) {
-	logrus.Debug("Ready check")
+	log.Debug("Ready check")
 	if o.isReady() {
 		w.WriteHeader(http.StatusNoContent)
 	} else {
@@ -136,11 +135,11 @@ func (o *ControllerPipelineRunnerOptions) pipelineRunMethods(w http.ResponseWrit
 	case http.MethodGet:
 		fmt.Fprintf(w, "Please POST JSON to this endpoint!\n")
 	case http.MethodHead:
-		logrus.Info("HEAD Todo...")
+		log.Info("HEAD Todo...")
 	case http.MethodPost:
 		o.startPipelineRun(w, r)
 	default:
-		logrus.Errorf("Unsupported method %s for %s", r.Method, o.Path)
+		log.Errorf("Unsupported method %s for %s", r.Method, o.Path)
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
 }
@@ -167,7 +166,7 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 		return
 	}
 	if o.Verbose {
-		logrus.Infof("got payload %#v", arguments)
+		log.Infof("got payload %#v", arguments)
 	}
 	pj := arguments.ProwJobSpec
 
@@ -286,12 +285,12 @@ func (o *ControllerPipelineRunnerOptions) marshalPayload(w http.ResponseWriter, 
 
 func (o *ControllerPipelineRunnerOptions) onError(err error) {
 	if err != nil {
-		logrus.Errorf("%v", err)
+		log.Errorf("%v", err)
 	}
 }
 
 func (o *ControllerPipelineRunnerOptions) returnError(err error, message string, w http.ResponseWriter, r *http.Request) {
-	logrus.Errorf("%v %s", err, message)
+	log.Errorf("%v %s", err, message)
 
 	o.onError(err)
 	w.WriteHeader(400)

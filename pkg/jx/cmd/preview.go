@@ -157,7 +157,7 @@ func (o *PreviewOptions) Run() error {
 		}
 	}
 
-	log.Infoln("Creating a preview")
+	log.Info("Creating a preview")
 	/*
 		args := o.Args
 		if len(args) > 0 && o.Name == "" {

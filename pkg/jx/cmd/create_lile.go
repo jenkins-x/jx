@@ -77,7 +77,7 @@ func NewCmdCreateLile(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o CreateLileOptions) checkLileInstalled() error {
 	_, err := o.GetCommandOutput("", "lile", "help")
 	if err != nil {
-		log.Infoln("Installing Lile's dependencies...")
+		log.Info("Installing Lile's dependencies...")
 		// lets install lile
 		err = o.InstallBrewIfRequired()
 		if err != nil {
@@ -90,10 +90,10 @@ func (o CreateLileOptions) checkLileInstalled() error {
 			}
 		}
 
-		log.Infoln("Downloading and building Lile - this can take a while...")
+		log.Info("Downloading and building Lile - this can take a while...")
 		err = o.RunCommand("go", "get", "-u", "github.com/lileio/lile/...")
 		if err == nil {
-			log.Infoln("Installed Lile and its dependencies!")
+			log.Info("Installed Lile and its dependencies!")
 		}
 	}
 	return err

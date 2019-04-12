@@ -69,7 +69,7 @@ func NewCmdCreateMicro(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o CreateMicroOptions) checkMicroInstalled() error {
 	_, err := o.GetCommandOutput("", "micro", "help")
 	if err != nil {
-		log.Infoln("Installing micro's dependencies...")
+		log.Info("Installing micro's dependencies...")
 		// lets install micro
 		err = o.InstallBrewIfRequired()
 		if err != nil {
@@ -81,7 +81,7 @@ func (o CreateMicroOptions) checkMicroInstalled() error {
 				return err
 			}
 		}
-		log.Infoln("Downloading and building micro dependencies...")
+		log.Info("Downloading and building micro dependencies...")
 		packages := []string{"github.com/golang/protobuf/proto", "github.com/golang/protobuf/protoc-gen-go", "github.com/micro/protoc-gen-micro"}
 		for _, p := range packages {
 			log.Infof("Installing %s\n", p)
@@ -90,12 +90,12 @@ func (o CreateMicroOptions) checkMicroInstalled() error {
 				return fmt.Errorf("Failed to install %s: %s", p, err)
 			}
 		}
-		log.Infoln("Installed micro dependencies")
+		log.Info("Installed micro dependencies")
 
-		log.Infoln("Downloading and building micro - this can take a minute or so...")
+		log.Info("Downloading and building micro - this can take a minute or so...")
 		err = o.RunCommand("go", "get", "-u", "github.com/micro/micro")
 		if err == nil {
-			log.Infoln("Installed micro and its dependencies!")
+			log.Info("Installed micro and its dependencies!")
 		}
 	}
 	return err

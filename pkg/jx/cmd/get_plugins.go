@@ -124,12 +124,12 @@ func (o *GetPluginsOptions) printExtensionPlugins() error {
 			}
 			log.Infof("  %s %s%s\n", util.ColorInfo(pc.SubCommand), strings.Repeat(" ", maxLength-len(pc.SubCommand)), description)
 		}
-		log.Infoln("")
+		log.Info("")
 	}
 
 	if len(pcgs) > 0 {
 		// Add a trailing line to make the output more readable
-		log.Infoln("")
+		log.Info("")
 	}
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
