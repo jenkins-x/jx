@@ -63,6 +63,11 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 		Items: valuesFiles,
 	}
 
+	_, err := helm.AddHelmRepoIfMissing(repository, "", username, password, o.Helmer, o.VaultClient)
+	if err != nil {
+		return errors.Wrapf(err, "adding helm repo")
+	}
+
 	// The chart inspector allows us to operate on the unpacked chart.
 	// We need to ask questions then as we have access to the schema, and can add secrets.
 	interrogateChartFn := o.createInterrogateChartFn(version, app, repository, username, password, alias, true)
@@ -161,6 +166,11 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 	releaseName string, alias string, update bool, askExisting bool) error {
 	o.valuesFiles = &environments.ValuesFiles{
 		Items: make([]string, 0),
+	}
+
+	_, err := helm.AddHelmRepoIfMissing(repository, "", username, password, o.Helmer, o.VaultClient)
+	if err != nil {
+		return errors.Wrapf(err, "adding helm repo")
 	}
 
 	interrogateChartFunc := o.createInterrogateChartFn(version, app, repository, username, password, alias, askExisting)

@@ -100,12 +100,7 @@ func TestStoreCredentials(t *testing.T) {
 	repository := "http://charts.acme.com"
 	username := uuid.New()
 	password := uuid.New()
-	optionsWithUsernameAndPassword := helm.InstallChartOptions{
-		Repository: repository,
-		Password:   password,
-		Username:   username,
-	}
-	err := helm.DecorateWithCredentials(&optionsWithUsernameAndPassword, vaultClient)
+	username, password, err := helm.DecorateWithCredentials(repository, username, password, vaultClient)
 	assert2.NoError(t, err)
 	vaultClient.VerifyWasCalledOnce().WriteObject(helm.RepoVaultPath, helm.HelmRepoCredentials{
 		repository: helm.HelmRepoCredential{
@@ -134,14 +129,11 @@ func TestRetrieveCredentials(t *testing.T) {
 			nil,
 		}
 	})
-	optionsWithoutUsernameAndPassword := helm.InstallChartOptions{
-		Repository: repository,
-	}
-	err := helm.DecorateWithCredentials(&optionsWithoutUsernameAndPassword, vaultClient)
+	retrievedUsername, retrievedPassword, err := helm.DecorateWithCredentials(repository, "", "", vaultClient)
 	assert2.NoError(t, err)
 	vaultClient.VerifyWasCalledOnce().ReadObject(pegomock.EqString(helm.RepoVaultPath), pegomock.AnyInterface())
-	assert2.Equal(t, username, optionsWithoutUsernameAndPassword.Username)
-	assert2.Equal(t, password, optionsWithoutUsernameAndPassword.Password)
+	assert2.Equal(t, username, retrievedUsername)
+	assert2.Equal(t, password, retrievedPassword)
 }
 
 func TestOverrideCredentials(t *testing.T) {
@@ -165,13 +157,11 @@ func TestOverrideCredentials(t *testing.T) {
 			nil,
 		}
 	})
-	optionsWithUsernameAndPassword := helm.InstallChartOptions{
-		Repository: repository,
-		Username:   newUsername,
-		Password:   newPassword,
-	}
-	err := helm.DecorateWithCredentials(&optionsWithUsernameAndPassword, vaultClient)
+	retrievedUsername, retrievedPassword, err := helm.DecorateWithCredentials(repository, newUsername, newPassword,
+		vaultClient)
 	assert2.NoError(t, err)
+	assert2.Equal(t, newUsername, retrievedUsername)
+	assert2.Equal(t, newPassword, retrievedPassword)
 	vaultClient.VerifyWasCalledOnce().WriteObject(helm.RepoVaultPath, helm.HelmRepoCredentials{
 		repository: helm.HelmRepoCredential{
 			Username: newUsername,
