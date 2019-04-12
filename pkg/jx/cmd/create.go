@@ -81,6 +81,7 @@ func NewCmdCreate(commonOpts *CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdCreatePullRequest(commonOpts))
 	cmd.AddCommand(NewCmdCreateQuickstart(commonOpts))
 	cmd.AddCommand(NewCmdCreateQuickstartLocation(commonOpts))
+	cmd.AddCommand(NewCmdCreateMLQuickstart(commonOpts))
 	cmd.AddCommand(NewCmdCreateSpring(commonOpts))
 	cmd.AddCommand(NewCmdCreateStep(commonOpts))
 	cmd.AddCommand(NewCmdCreateTeam(commonOpts))
