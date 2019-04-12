@@ -288,17 +288,17 @@ func (o *CommonOptions) AddHelmRepoIfMissing(helmUrl, repoName, username, passwo
 }
 
 func (o *CommonOptions) AddHelmBinaryRepoIfMissing(helmUrl, repoName, username, password string) error {
-	missing, err := o.Helm().IsRepoMissing(helmUrl)
+	_, devNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
-		return errors.Wrapf(err, "failed to check if the repository with URL '%s' is missing", helmUrl)
+		return errors.Wrapf(err, "getting dev namespace")
 	}
-	if missing {
-		log.Infof("Adding missing Helm repo: %s %s\n", util.ColorInfo(repoName), util.ColorInfo(helmUrl))
-		err = o.Helm().AddRepo(repoName, helmUrl, username, password)
-		if err == nil {
-			log.Infof("Successfully added Helm repository %s.\n", repoName)
-		}
-		return errors.Wrapf(err, "failed to add the repository '%s' with URL '%s'", repoName, helmUrl)
+	vaultClient, err := o.SystemVaultClient(devNs)
+	if err != nil {
+		vaultClient = nil
+	}
+	_, err = helm.AddHelmRepoIfMissing(helmUrl, repoName, username, password, o.Helm(), vaultClient)
+	if err != nil {
+		return errors.WithStack(err)
 	}
 	return nil
 }

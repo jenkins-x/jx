@@ -3,11 +3,14 @@ package helm
 import (
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/pborman/uuid"
 
 	"github.com/jenkins-x/jx/pkg/vault"
 
@@ -519,10 +522,6 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 		}
 		log.Infoln("Helm repository update done.")
 	}
-	err := DecorateWithCredentials(&options, vaultClient)
-	if err != nil {
-		return errors.WithStack(err)
-	}
 	cleanup, err := DecorateWithSecrets(&options, vaultClient)
 	defer cleanup()
 	if err != nil {
@@ -595,43 +594,93 @@ func DecorateWithSecrets(options *InstallChartOptions, vaultClient vault.Client)
 	return cleanup, nil
 }
 
-// DecorateWithCredentials will, if vault is installed, attach a username and password to the options
-func DecorateWithCredentials(options *InstallChartOptions, vaultClient vault.Client) error {
-	if options.Repository != "" && vaultClient != nil {
-		vaultPath := fmt.Sprintf("%s", RepoVaultPath)
+// AddHelmRepoIfMissing will add the helm repo if there is no helm repo with that url present.
+// It will generate the repoName from the url (using the host name) if the repoName is empty.
+// The repo name may have a suffix added in order to prevent name collisions, and is returned for this reason.
+// The username and password will be stored in vault for the URL (if vault is enabled).
+func AddHelmRepoIfMissing(helmURL, repoName, username, password string, helmer Helmer,
+	vaultClient vault.Client) (string, error) {
+	missing, err := helmer.IsRepoMissing(helmURL)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to check if the repository with URL '%s' is missing", helmURL)
+	}
+	if missing {
+		if repoName == "" {
+			// Generate the name
+			uri, err := url.Parse(helmURL)
+			if err != nil {
+				repoName = uuid.New()
+				log.Warnf("Unable to parse %s as URL so assigning random name %s\n", helmURL, repoName)
+			} else {
+				repoName = uri.Host
+			}
+		}
+		// Avoid collisions
+		existingRepos, err := helmer.ListRepos()
+		if err != nil {
+			return "", errors.Wrapf(err, "listing helm repos")
+		}
+		baseName := repoName
+		for i := 0; true; i++ {
+			if _, exists := existingRepos[repoName]; exists {
+				repoName = fmt.Sprintf("%s-%d", baseName, i)
+			} else {
+				break
+			}
+		}
+		log.Infof("Adding missing Helm repo: %s %s\n", util.ColorInfo(repoName), util.ColorInfo(helmURL))
+		username, password, err = DecorateWithCredentials(helmURL, username, password, vaultClient)
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+		err = helmer.AddRepo(repoName, helmURL, username, password)
+		if err == nil {
+			log.Infof("Successfully added Helm repository %s.\n", repoName)
+		}
+		return "", errors.Wrapf(err, "failed to add the repository '%s' with URL '%s'", repoName, helmURL)
+	}
+	return repoName, nil
+}
+
+// DecorateWithCredentials will, if vault is installed, store or replace the username or password
+func DecorateWithCredentials(repo string, username string, password string, vaultClient vault.Client) (string,
+	string, error) {
+	if repo != "" && vaultClient != nil {
 		creds := HelmRepoCredentials{}
-		if err := vaultClient.ReadObject(vaultPath, &creds); err != nil {
-			return errors.Wrapf(err, "reading repo credentials from vault %s", vaultPath)
+		if err := vaultClient.ReadObject(RepoVaultPath, &creds); err != nil {
+			return "", "", errors.Wrapf(err, "reading repo credentials from vault %s", RepoVaultPath)
 		}
 		write := false
 		cred := HelmRepoCredential{}
-		if options.Username != "" {
+		if username != "" {
 			// If a username is passed in then we should update vault
 			write = true
-			cred.Username = options.Username
-		} else if c, ok := creds[options.Repository]; ok {
+			cred.Username = username
+		} else if c, ok := creds[repo]; ok {
 			// Otherwise check if vault has a username
-			options.Username = c.Username
+			cred.Username = c.Username
 		}
 
-		if options.Password != "" {
+		if password != "" {
 			// If a password is passed in then we should update vault
 			write = true
-			cred.Password = options.Password
-		} else if c, ok := creds[options.Repository]; ok {
+			cred.Password = password
+		} else if c, ok := creds[repo]; ok {
 			// Otherwise check if vault has a password
-			options.Password = c.Password
+			cred.Password = c.Password
 		}
 
 		if write {
-			creds[options.Repository] = cred
-			_, err := vaultClient.WriteObject(vaultPath, creds)
+			log.Infof("Stored credentials for %s in vault %s\n", repo, RepoVaultPath)
+			creds[repo] = cred
+			_, err := vaultClient.WriteObject(RepoVaultPath, creds)
 			if err != nil {
-				return errors.Wrapf(err, "updating repo credentials in vault %s", vaultPath)
+				return "", "", errors.Wrapf(err, "updating repo credentials in vault %s", RepoVaultPath)
 			}
 		}
+		return cred.Username, cred.Password, nil
 	}
-	return nil
+	return "", "", nil
 }
 
 // GenerateReadmeForChart generates a string that can be used as a README.MD,
