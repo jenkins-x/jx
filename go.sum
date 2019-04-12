@@ -148,6 +148,7 @@ github.com/disintegration/imaging v1.4.2/go.mod h1:9B/deIUIrliYkyMTuXJd6OUFLcrZ2
 github.com/djherbis/atime v1.0.0/go.mod h1:5W+KBIuTwVGcqjIfaTwt+KSYX1o6uep8dtevevQP/f8=
 github.com/dnaeon/go-vcr v1.0.1 h1:r8L/HqC0Hje5AXMu1ooW8oyQyOFv4GxqpL0nRP7SLLY=
 github.com/dnaeon/go-vcr v1.0.1/go.mod h1:aBB1+wY4s93YsC3HHjMBMrwTj2R9FHDzUr9KyGc8n1E=
+github.com/docker/distribution v0.0.0-20170726174610-edc3ab29cdff h1:FKH02LHYqSmeWd3GBh0KIkM8JBpw3RrShgtcWShdWJg=
 github.com/docker/distribution v0.0.0-20170726174610-edc3ab29cdff/go.mod h1:J2gT2udsDAN96Uj4KfcMRqY0/ypR+oyYUYmja8H+y+w=
 github.com/docker/docker v0.0.0-20171206114025-5e5fadb3c020 h1:aiKCZxnxoraZKXbM2zJj0ZI1n8eamkdK7zNxP7jlbII=
 github.com/docker/docker v0.0.0-20171206114025-5e5fadb3c020/go.mod h1:eEKB0N0r5NX/I1kEveEz05bcu8tLC/8azJZsviup8Sk=
@@ -258,6 +259,8 @@ github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135 h1:zLTLjkaOF
 github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135/go.mod h1:odCYkC5MyYFN7vkCjXpyrEuKhc/BUO6wN/zVPAxq5ck=
 github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf h1:+RRA9JqSOZFfKrOeqr2z77+8R2RKyh8PG66dcu1V0ck=
 github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf/go.mod h1:HP5RmnzzSNb993RKQDq4+1A4ia9nllfqcQFTQJedwGI=
+github.com/google/ko v0.0.0-20190322193724-3584e2d4d33b h1:me8HrvbZtpgJksBA9ziQtOpcfWi500ycgOFA2n/f7rM=
+github.com/google/ko v0.0.0-20190322193724-3584e2d4d33b/go.mod h1:t5MyN6UkThv7fAwEME49WuJ5K9l6O1ZntC2BGZgwV6A=
 github.com/google/martian v2.1.0+incompatible h1:/CP5g8u/VJHijgedC/Legn3BAbAaWPgecwXBIDzw5no=
 github.com/google/martian v2.1.0+incompatible/go.mod h1:9I4somxYTbIHy5NJKHRl3wXiIaQGbYVAs8BPL6v8lEs=
 github.com/google/pprof v0.0.0-20190309163659-77426154d546 h1:r3n/h1Zh7Wpk29Q/b+FdrNjDAmr28WaPcxlI0c4NaeA=
@@ -455,6 +458,8 @@ github.com/markbates/inflect v1.0.4 h1:5fh1gzTFhfae06u3hzHYO9xe3l3v3nW5Pwt3naLTP
 github.com/markbates/inflect v1.0.4/go.mod h1:1fR9+pO2KHEO9ZRtto13gDwwZaAKstQzferVeWqbgNs=
 github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a h1:+J2gw7Bw77w/fbK7wnNJJDKmw1IbWft2Ul5BzrG1Qm8=
 github.com/mattbaird/jsonpatch v0.0.0-20171005235357-81af80346b1a/go.mod h1:M1qoD/MqPgTZIk0EWKB38wE28ACRfVcn+cU08jyArI0=
+github.com/mattmoor/dep-notify v0.0.0-20190205035814-a45dec370a17 h1:P91eDVgVzvF2EmA6fmGCyR2VQFlmo2nsmS2DbHoGAco=
+github.com/mattmoor/dep-notify v0.0.0-20190205035814-a45dec370a17/go.mod h1:qWnF4u+oS4UWOZMwZcBQXrt5IQIdWc6XVJLDdxGIfdQ=
 github.com/mattn/go-colorable v0.0.8/go.mod h1:9vuHe8Xs5qXnSaW/c/ABM9alt+Vo+STaOChaDxuIBZU=
 github.com/mattn/go-colorable v0.0.9 h1:UVL0vNpWh04HeJXV0KLcaT7r06gOH2l4OW6ddYRUIY4=
 github.com/mattn/go-colorable v0.0.9/go.mod h1:9vuHe8Xs5qXnSaW/c/ABM9alt+Vo+STaOChaDxuIBZU=
