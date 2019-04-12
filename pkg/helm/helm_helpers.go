@@ -677,10 +677,12 @@ func DecorateWithCredentials(repo string, username string, password string, vaul
 			if err != nil {
 				return "", "", errors.Wrapf(err, "updating repo credentials in vault %s", RepoVaultPath)
 			}
+		} else if password != "" || username != "" {
+			log.Infof("Read credentials for %s from vault %s\n", repo, RepoVaultPath)
 		}
 		return cred.Username, cred.Password, nil
 	}
-	return "", "", nil
+	return username, password, nil
 }
 
 // GenerateReadmeForChart generates a string that can be used as a README.MD,

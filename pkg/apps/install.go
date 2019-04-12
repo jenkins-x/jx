@@ -63,7 +63,12 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 		Items: valuesFiles,
 	}
 
-	_, err := helm.AddHelmRepoIfMissing(repository, "", username, password, o.Helmer, o.VaultClient)
+	username, password, err := helm.DecorateWithCredentials(repository, username, password, o.VaultClient)
+	if err != nil {
+		return errors.Wrapf(err, "locating credentials for %s", repository)
+	}
+
+	_, err = helm.AddHelmRepoIfMissing(repository, "", username, password, o.Helmer, o.VaultClient)
 	if err != nil {
 		return errors.Wrapf(err, "adding helm repo")
 	}
@@ -168,7 +173,12 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 		Items: make([]string, 0),
 	}
 
-	_, err := helm.AddHelmRepoIfMissing(repository, "", username, password, o.Helmer, o.VaultClient)
+	username, password, err := helm.DecorateWithCredentials(repository, username, password, o.VaultClient)
+	if err != nil {
+		return errors.Wrapf(err, "locating credentials for %s", repository)
+	}
+	_, err = helm.AddHelmRepoIfMissing(repository, "", username, password, o.Helmer, o.VaultClient)
+
 	if err != nil {
 		return errors.Wrapf(err, "adding helm repo")
 	}
