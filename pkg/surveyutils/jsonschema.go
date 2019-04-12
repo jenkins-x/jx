@@ -10,8 +10,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-
 	"github.com/jenkins-x/jx/pkg/kube"
 
 	"github.com/jenkins-x/jx/pkg/util"
@@ -81,6 +79,7 @@ type GeneratedSecret struct {
 	Name  string `json: "name"`
 	Key   string `json:"key"`
 	Value string `json:"value"`
+	Path  string `json:-'`
 }
 
 // Definitions hold schema definitions.
@@ -157,7 +156,8 @@ func (t *Items) UnmarshalJSON(b []byte) error {
 
 // JSONSchemaOptions are options for generating values from a schema
 type JSONSchemaOptions struct {
-	CreateSecret        func(name string, key string, value string) (*jenkinsv1.ResourceReference, error)
+	CreateSecret func(name string, key string, value string, passthrough bool) (interface{},
+		error)
 	AskExisting         bool
 	AutoAcceptDefaults  bool
 	NoAsk               bool
@@ -320,8 +320,6 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 			RequiredValidator(required),
 			PatternValidator(t.Pattern),
 		}
-		// Custom format support for password
-
 		// Defined Format validation
 		if t.Format != nil {
 			format := util.DereferenceString(t.Format)
@@ -587,34 +585,23 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 	// Ask the question
 	// Custom format support for passwords
 	storeAsSecret := false
+	passthrough := false
+	var err error
 	if util.DereferenceString(t.Format) == "password" || util.DereferenceString(t.Format) == "token" {
 		storeAsSecret = true
-		// Secret input
-		prompt := &survey.Password{
-			Message: message,
-			Help:    help,
+		result, err = handlePasswordProperty(message, help, ask, validator, surveyOpts, defaultValue,
+			autoAcceptMessage, o.Out, t.Type)
+		if err != nil {
+			return errors.WithStack(err)
 		}
-
-		var answer string
-		var err error
-		if ask {
-			err := survey.AskOne(prompt, &answer, validator, surveyOpts)
-			if err != nil {
-				return err
-			}
-		} else {
-			answer = defaultValue
-			msg := fmt.Sprintf("%s %s [%s]\n", message, util.ColorInfo(answer), autoAcceptMessage)
-			_, err := fmt.Fprint(terminal.NewAnsiStdout(o.Out), msg)
-			if err != nil {
-				return errors.Wrapf(err, "writing %s to console", msg)
-			}
-		}
-		if answer != "" {
-			result, err = convertAnswer(answer, t.Type)
-			if err != nil {
-				return errors.Wrapf(err, "error converting answer %s to type %s", answer, t.Type)
-			}
+	} else if util.DereferenceString(t.Format) == "password-passthrough" || util.DereferenceString(t.
+		Format) == "token-passthrough" {
+		storeAsSecret = true
+		passthrough = true
+		result, err = handlePasswordProperty(message, help, ask, validator, surveyOpts, defaultValue,
+			autoAcceptMessage, o.Out, t.Type)
+		if err != nil {
+			return errors.WithStack(err)
 		}
 	} else if t.Enum != nil {
 		// Support for selects
@@ -709,7 +696,7 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 		if err != nil {
 			return err
 		}
-		secretReference, err := o.CreateSecret(secretName, util.DereferenceString(t.Format), value)
+		secretReference, err := o.CreateSecret(secretName, util.DereferenceString(t.Format), value, passthrough)
 		if err != nil {
 			return err
 		}
@@ -719,6 +706,39 @@ func (o *JSONSchemaOptions) handleBasicProperty(name string, prefixes []string, 
 		output.Set(name, result)
 	}
 	return nil
+}
+
+func handlePasswordProperty(message string, help string, ask bool, validator survey.Validator,
+	surveyOpts survey.AskOpt, defaultValue string, autoAcceptMessage string, out terminal.FileWriter,
+	t string) (interface{}, error) {
+	// Secret input
+	prompt := &survey.Password{
+		Message: message,
+		Help:    help,
+	}
+
+	var answer string
+	if ask {
+		err := survey.AskOne(prompt, &answer, validator, surveyOpts)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		answer = defaultValue
+		msg := fmt.Sprintf("%s %s [%s]\n", message, util.ColorInfo(answer), autoAcceptMessage)
+		_, err := fmt.Fprint(terminal.NewAnsiStdout(out), msg)
+		if err != nil {
+			return nil, errors.Wrapf(err, "writing %s to console", msg)
+		}
+	}
+	if answer != "" {
+		result, err := convertAnswer(answer, t)
+		if err != nil {
+			return nil, errors.Wrapf(err, "error converting answer %s to type %s", answer, t)
+		}
+		return result, nil
+	}
+	return nil, nil
 }
 
 func numberValidator(required bool, additonalValidators []survey.Validator, t *Type) []survey.Validator {

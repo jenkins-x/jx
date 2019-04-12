@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/helm"
+
 	"github.com/jenkins-x/jx/pkg/log"
 	istiov1alpha3 "github.com/knative/pkg/apis/istio/v1alpha3"
 
@@ -100,11 +102,25 @@ func (o *CreateAddonFlaggerOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "Flagger deployment failed")
 	}
-	err = o.InstallChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
+	helmOptions := helm.InstallChartOptions{
+		Chart:       o.ReleaseName,
+		ReleaseName: o.Chart,
+		Version:     o.Version,
+		Ns:          o.Namespace,
+		SetValues:   values,
+	}
+	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
 		return errors.Wrap(err, "Flagger deployment failed")
 	}
-	err = o.InstallChart(o.ReleaseName+"-grafana", o.GrafanaChart, o.Version, o.Namespace, true, values, nil, "")
+	helmOptions = helm.InstallChartOptions{
+		Chart:       o.GrafanaChart,
+		ReleaseName: o.ReleaseName + "-grafana",
+		Version:     o.Version,
+		Ns:          o.Namespace,
+		SetValues:   values,
+	}
+	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
 		return errors.Wrap(err, "Flagger Grafana deployment failed")
 	}

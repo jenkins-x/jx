@@ -488,6 +488,10 @@ type InstallChartOptions struct {
 	Username    string
 	Password    string
 	VersionsDir string
+	InstallOnly bool
+	NoForce     bool
+	Wait        bool
+	UpgradeOnly bool
 }
 
 // InstallFromChartOptions uses the helmer and kubeClient interfaces to install the chart from the options,
@@ -519,6 +523,11 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 	if err != nil {
 		return errors.WithStack(err)
 	}
+	cleanup, err := DecorateWithSecrets(&options, vaultClient)
+	defer cleanup()
+	if err != nil {
+		return errors.WithStack(err)
+	}
 	if options.Ns != "" {
 		annotations := map[string]string{"jenkins-x.io/created-by": "Jenkins X"}
 		kube.EnsureNamespaceCreated(kubeClient, options.Ns, nil, annotations)
@@ -528,7 +537,13 @@ func InstallFromChartOptions(options InstallChartOptions, helmer Helmer, kubeCli
 		return errors.Wrap(err, "failed to convert the timeout to an int")
 	}
 	helmer.SetCWD(options.Dir)
-	return helmer.UpgradeChart(chart, options.ReleaseName, options.Ns, options.Version, true, timeout, true, false, options.SetValues, options.ValueFiles, options.Repository, options.Username, options.Password)
+	if options.InstallOnly {
+		return helmer.InstallChart(chart, options.ReleaseName, options.Ns, options.Version, timeout,
+			options.SetValues, options.ValueFiles, options.Repository, options.Username, options.Password)
+	}
+	return helmer.UpgradeChart(chart, options.ReleaseName, options.Ns, options.Version, !options.UpgradeOnly, timeout,
+		!options.NoForce, options.Wait, options.SetValues, options.ValueFiles, options.Repository,
+		options.Username, options.Password)
 }
 
 // HelmRepoCredentials is a map of repositories to HelmRepoCredential that stores all the helm repo credentials for
@@ -539,6 +554,45 @@ type HelmRepoCredentials map[string]HelmRepoCredential
 type HelmRepoCredential struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+// DecorateWithSecrets will replace any vault: URIs with the secret from vault. Safe to call with a nil client (
+// no replacement will take place).
+func DecorateWithSecrets(options *InstallChartOptions, vaultClient vault.Client) (func(), error) {
+	cleanup := func() {
+	}
+	if vaultClient != nil {
+		newValuesFiles := make([]string, 0)
+		cleanup = func() {
+			for _, f := range newValuesFiles {
+				err := util.DeleteFile(f)
+				if err != nil {
+					log.Errorf("Deleting temp file %s\n", f)
+				}
+			}
+		}
+		for _, valueFile := range options.ValueFiles {
+			newValuesFile, err := ioutil.TempFile("", "values.yaml")
+			if err != nil {
+				return cleanup, errors.Wrapf(err, "creating temp file for %s", valueFile)
+			}
+			bytes, err := ioutil.ReadFile(valueFile)
+			if err != nil {
+				return cleanup, errors.Wrapf(err, "reading file %s", valueFile)
+			}
+			newValues, err := vault.ReplaceURIs(string(bytes), vaultClient)
+			if err != nil {
+				return cleanup, errors.Wrapf(err, "replacing vault URIs")
+			}
+			err = ioutil.WriteFile(newValuesFile.Name(), []byte(newValues), 0600)
+			if err != nil {
+				return cleanup, errors.Wrapf(err, "writing new values file %s", newValuesFile.Name())
+			}
+			newValuesFiles = append(newValuesFiles, newValuesFile.Name())
+		}
+		options.ValueFiles = newValuesFiles
+	}
+	return cleanup, nil
 }
 
 // DecorateWithCredentials will, if vault is installed, attach a username and password to the options

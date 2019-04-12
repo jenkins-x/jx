@@ -3,6 +3,9 @@ package cmd
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/helm"
+	survey "gopkg.in/AlecAivazis/survey.v1"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
@@ -11,7 +14,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 const (
@@ -97,7 +99,14 @@ func (o *CreateAddonGiteaOptions) Run() error {
 		return errors.Wrap(err, "failed to ensure that helm is present")
 	}
 	setValues := strings.Split(o.SetValues, ",")
-	err = o.InstallChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, setValues, nil, "")
+	helmOptions := helm.InstallChartOptions{
+		Chart:       o.Chart,
+		ReleaseName: o.ReleaseName,
+		Version:     o.Version,
+		Ns:          o.Namespace,
+		SetValues:   setValues,
+	}
+	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
 		return err
 	}

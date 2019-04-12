@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/helm"
+
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -163,7 +165,15 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	// TODO lets add other defaults...
 
 	log.Infof("installing the Environment Controller...\n")
-	err = o.InstallChart(o.ReleaseName, "environment-controller", o.Version, ns, true, setValues, nil, kube.DefaultChartMuseumURL)
+	helmOptions := helm.InstallChartOptions{
+		Chart:       "environment-controller",
+		ReleaseName: o.ReleaseName,
+		Version:     o.Version,
+		Ns:          ns,
+		SetValues:   setValues,
+		Repository:  kube.DefaultChartMuseumURL,
+	}
+	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
 		return err
 	}

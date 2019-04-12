@@ -2,6 +2,7 @@ package helm_test
 
 import (
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"testing"
 
@@ -177,4 +178,39 @@ func TestOverrideCredentials(t *testing.T) {
 			Password: newPassword,
 		},
 	})
+}
+
+func TestReplaceVaultURI(t *testing.T) {
+	pegomock.RegisterMockTestingT(t)
+	vaultClient := vault_test.NewMockClient()
+	path := "/baz/qux"
+	key := "cheese"
+	secret := uuid.New()
+	valuesyaml := fmt.Sprintf(`foo:
+  bar: vault:%s:%s
+`, path, key)
+	valuesFile, err := ioutil.TempFile("", "values.yaml")
+	defer func() {
+		err := util.DeleteFile(valuesFile.Name())
+		assert2.NoError(t, err)
+	}()
+	assert2.NoError(t, err)
+	err = ioutil.WriteFile(valuesFile.Name(), []byte(valuesyaml), 0600)
+	assert2.NoError(t, err)
+	options := helm.InstallChartOptions{
+		ValueFiles: []string{
+			valuesFile.Name(),
+		},
+	}
+	pegomock.When(vaultClient.Read(pegomock.EqString(path))).ThenReturn(map[string]interface{}{
+		key: secret,
+	}, nil)
+	cleanup, err := helm.DecorateWithSecrets(&options, vaultClient)
+	defer cleanup()
+	assert2.Len(t, options.ValueFiles, 1)
+	newValuesYaml, err := ioutil.ReadFile(options.ValueFiles[0])
+	assert2.NoError(t, err)
+	assert2.Equal(t, fmt.Sprintf(`foo:
+  bar: %s
+`, secret), string(newValuesYaml))
 }

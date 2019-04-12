@@ -8,6 +8,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	version2 "github.com/jenkins-x/jx/pkg/version"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
@@ -20,7 +21,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -521,8 +521,15 @@ controller:
 		i := 0
 		for {
 			log.Infof("Installing using helm binary: %s\n", util.ColorInfo(o.Helm().HelmBinary()))
-			err = o.Helm().InstallChart(chartName, "jxing", ingressNamespace, version, -1, values,
-				valuesFiles, "", "", "")
+			helmOptions := helm.InstallChartOptions{
+				Chart:       chartName,
+				ReleaseName: "jxing",
+				Version:     version,
+				Ns:          ingressNamespace,
+				SetValues:   values,
+				ValueFiles:  valuesFiles,
+			}
+			err = o.InstallChartWithOptions(helmOptions)
 			if err != nil {
 				if i >= 3 {
 					log.Errorf("Failed to install ingress chart: %s", err)
