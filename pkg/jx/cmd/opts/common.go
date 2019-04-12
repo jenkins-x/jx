@@ -2,6 +2,7 @@ package opts
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"strings"
@@ -15,8 +16,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube/resources"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/pkg/errors"
-
-	"github.com/sirupsen/logrus"
 
 	vaultoperatorclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
 	gojenkins "github.com/jenkins-x/golang-jenkins"
@@ -35,7 +34,7 @@ import (
 	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"

@@ -3,6 +3,8 @@ package opts
 import (
 	"bytes"
 	"fmt"
+	randomdata "github.com/Pallinder/go-randomdata"
+	"github.com/alexflint/go-filemutex"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -13,6 +15,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/version"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -20,8 +23,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/packages"
 
-	"github.com/Pallinder/go-randomdata"
-	"github.com/alexflint/go-filemutex"
 	"github.com/blang/semver"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -32,8 +33,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
-	logger "github.com/sirupsen/logrus"
-	"gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -188,7 +187,7 @@ func ShouldInstallBinary(name string) (fileName string, download bool, err error
 	download = false
 	pgmPath, err := exec.LookPath(fileName)
 	if err == nil {
-		logger.Debugf("%s is already available on your PATH at %s", util.ColorInfo(fileName), util.ColorInfo(pgmPath))
+		log.Debugf("%s is already available on your PATH at %s", util.ColorInfo(fileName), util.ColorInfo(pgmPath))
 		return
 	}
 
@@ -203,7 +202,7 @@ func ShouldInstallBinary(name string) (fileName string, download bool, err error
 		return
 	}
 	if exists {
-		logger.Debugf("Please add %s to your PATH", util.ColorInfo(binDir))
+		log.Debugf("Please add %s to your PATH", util.ColorInfo(binDir))
 		return
 	}
 	download = true

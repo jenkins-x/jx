@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/cloudflare/cfssl/log"
 	"github.com/jenkins-x/jx/pkg/kube"
 
 	"github.com/sirupsen/logrus"
@@ -48,19 +49,19 @@ func (s *HTTPBuildNumberServer) Start() error {
 	mux.Handle(HealthPath, http.HandlerFunc(s.health))
 	mux.Handle(ReadyPath, http.HandlerFunc(s.ready))
 
-	logrus.Infof("Serving build numbers at http://%s:%d%s", s.bindAddress, s.port, s.path)
+	log.Infof("Serving build numbers at http://%s:%d%s", s.bindAddress, s.port, s.path)
 	return http.ListenAndServe(":"+strconv.Itoa(s.port), mux)
 }
 
 // health returns either HTTP 204 if the build number service is healthy, otherwise nothing ('cos it's dead).
 func (s *HTTPBuildNumberServer) health(w http.ResponseWriter, r *http.Request) {
-	logrus.Debug("Health check")
+	log.Debug("Health check")
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // ready returns either HTTP 204 if the build number service is ready to serve /vend requests, otherwise HTTP 503.
 func (s *HTTPBuildNumberServer) ready(w http.ResponseWriter, r *http.Request) {
-	logrus.Debug("Ready check")
+	log.Debug("Ready check")
 	if s.issuer.Ready() {
 		w.WriteHeader(http.StatusNoContent)
 	} else {
@@ -75,11 +76,11 @@ func (s *HTTPBuildNumberServer) vend(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		s.generateBuildNumber(w, r)
 	case http.MethodHead:
-		logrus.Info("HEAD Todo...")
+		log.Info("HEAD Todo...")
 	case http.MethodPost:
-		logrus.Info("POST Todo...")
+		log.Info("POST Todo...")
 	default:
-		logrus.Errorf("Unsupported method %s for %s", r.Method, s.path)
+		log.Errorf("Unsupported method %s for %s", r.Method, s.path)
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
 }
@@ -90,7 +91,7 @@ func (s *HTTPBuildNumberServer) generateBuildNumber(w http.ResponseWriter, r *ht
 	//Check for a pipeline identifier following the base path.
 	if !(len(r.URL.Path) > len(s.path)) {
 		msg := fmt.Sprintf("Missing pipeline identifier in URL path %s", r.URL.Path)
-		logrus.Errorf(msg)
+		log.Errorf(msg)
 		http.Error(w, msg, http.StatusBadRequest)
 		return
 	}
@@ -105,6 +106,6 @@ func (s *HTTPBuildNumberServer) generateBuildNumber(w http.ResponseWriter, r *ht
 		return
 	}
 
-	logrus.Infof("Vending build number %s for pipeline %s to %s.", buildNum, pipeline, r.RemoteAddr)
+	log.Infof("Vending build number %s for pipeline %s to %s.", buildNum, pipeline, r.RemoteAddr)
 	fmt.Fprintf(w, "%s", buildNum)
 }
