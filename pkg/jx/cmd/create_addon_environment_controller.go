@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"

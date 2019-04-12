@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"strings"
@@ -18,7 +19,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -509,7 +509,7 @@ controller:
 			if err != nil {
 				return err
 			}
-			log.Infof("Using helm values file: %s\n", fileName)
+			logrus.Infof("Using helm values file: %s\n", fileName)
 			valuesFiles = append(valuesFiles, fileName)
 		}
 		chartName := "stable/nginx-ingress"
@@ -521,7 +521,7 @@ controller:
 
 		i := 0
 		for {
-			log.Infof("Installing using helm binary: %s\n", util.ColorInfo(o.Helm().HelmBinary()))
+			logrus.Infof("Installing using helm binary: %s\n", util.ColorInfo(o.Helm().HelmBinary()))
 			helmOptions := helm.InstallChartOptions{
 				Chart:       chartName,
 				ReleaseName: "jxing",
@@ -533,7 +533,7 @@ controller:
 			err = o.InstallChartWithOptions(helmOptions)
 			if err != nil {
 				if i >= 3 {
-					log.Errorf("Failed to install ingress chart: %s", err)
+					logrus.Errorf("Failed to install ingress chart: %s", err)
 					break
 				}
 				i++
@@ -548,19 +548,19 @@ controller:
 		}
 
 	} else {
-		log.Info("existing ingress controller found, no need to install a new one\n")
+		logrus.Info("existing ingress controller found, no need to install a new one\n")
 	}
 
 	if o.Flags.Provider != cloud.MINIKUBE && o.Flags.Provider != cloud.MINISHIFT && o.Flags.Provider != cloud.OPENSHIFT {
 
-		log.Infof("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in %s namespace\n", ingressNamespace)
+		logrus.Infof("Waiting for external loadbalancer to be created and update the nginx-ingress-controller service in %s namespace\n", ingressNamespace)
 
 		if o.Flags.Provider == cloud.OKE {
-			log.Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a OCI free account\n")
+			logrus.Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a OCI free account\n")
 		}
 
 		if o.Flags.Provider == cloud.GKE {
-			log.Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a GKE free account. To view quotas run: %s\n", util.ColorInfo("gcloud compute project-info describe"))
+			logrus.Infof("Note: this loadbalancer will fail to be provisioned if you have insufficient quotas, this can happen easily on a GKE free account. To view quotas run: %s\n", util.ColorInfo("gcloud compute project-info describe"))
 		}
 
 		externalIP := o.Flags.ExternalIP
@@ -575,7 +575,7 @@ controller:
 			}
 			host := kube.CurrentServer(config)
 			if host == "" {
-				log.Warnf("No API server host is defined in the local kube config!\n")
+				logrus.Warnf("No API server host is defined in the local kube config!\n")
 			} else {
 				externalIP, err = util.UrlHostNameWithoutPort(host)
 				if err != nil {
@@ -589,9 +589,9 @@ controller:
 			if err != nil {
 				return err
 			}
-			log.Infof("External loadbalancer created\n")
+			logrus.Infof("External loadbalancer created\n")
 		} else {
-			log.Infof("Using external IP: %s\n", util.ColorInfo(externalIP))
+			logrus.Infof("Using external IP: %s\n", util.ColorInfo(externalIP))
 		}
 
 		o.Flags.Domain, err = o.GetDomain(client, o.Flags.Domain, o.Flags.Provider, ingressNamespace, o.Flags.IngressService, externalIP)
@@ -649,7 +649,7 @@ func (o *InitOptions) validateGit() error {
 			return err
 		}
 	}
-	log.Infof("Git configured for user: %s and email %s\n", util.ColorInfo(userName), util.ColorInfo(userEmail))
+	logrus.Infof("Git configured for user: %s and email %s\n", util.ColorInfo(userName), util.ColorInfo(userEmail))
 	return nil
 }
 

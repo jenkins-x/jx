@@ -567,7 +567,7 @@ func DecorateWithSecrets(options *InstallChartOptions, vaultClient vault.Client)
 			for _, f := range newValuesFiles {
 				err := util.DeleteFile(f)
 				if err != nil {
-					log.Errorf("Deleting temp file %s\n", f)
+					logrus.Errorf("Deleting temp file %s\n", f)
 				}
 			}
 		}
