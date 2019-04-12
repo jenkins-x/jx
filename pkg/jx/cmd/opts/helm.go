@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"time"
 
@@ -288,11 +287,7 @@ func (o *CommonOptions) AddHelmRepoIfMissing(helmUrl, repoName, username, passwo
 }
 
 func (o *CommonOptions) AddHelmBinaryRepoIfMissing(helmUrl, repoName, username, password string) error {
-	_, devNs, err := o.JXClientAndDevNamespace()
-	if err != nil {
-		return errors.Wrapf(err, "getting dev namespace")
-	}
-	vaultClient, err := o.SystemVaultClient(devNs)
+	vaultClient, err := o.SystemVaultClient("")
 	if err != nil {
 		vaultClient = nil
 	}
@@ -593,19 +588,17 @@ func (o *CommonOptions) IsHelmRepoMissing(helmUrlString string) (bool, error) {
 }
 
 // AddChartRepos add chart repositories
-func (o *CommonOptions) AddChartRepos(dir string, helmBinary string, chartRepos map[string]string) error {
+func (o *CommonOptions) AddChartRepos(dir string, helmBinary string, chartRepos []string) error {
 	installedChartRepos, err := o.GetInstalledChartRepos(helmBinary)
 	if err != nil {
 		return errors.Wrap(err, "failed to retrieve the install charts")
 	}
-	repoCounter := len(installedChartRepos)
 	if chartRepos != nil {
-		for name, url := range chartRepos {
+		for _, url := range chartRepos {
 			if !util.StringMapHasValue(installedChartRepos, url) {
-				repoCounter++
-				err = o.AddHelmBinaryRepoIfMissing(url, name, "", "")
+				err = o.AddHelmBinaryRepoIfMissing(url, "", "", "")
 				if err != nil {
-					return errors.Wrapf(err, "failed to add the Helm repository with name '%s' and URL '%s'", name, url)
+					return errors.Wrapf(err, "failed to add the Helm repository with URL '%s'", url)
 				}
 			}
 		}
@@ -625,9 +618,7 @@ func (o *CommonOptions) AddChartRepos(dir string, helmBinary string, chartRepos 
 			for _, dep := range requirements.Dependencies {
 				repo := dep.Repository
 				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) && repo != DefaultChartRepo && !strings.HasPrefix(repo, "file:") && !strings.HasPrefix(repo, "alias:") {
-					repoCounter++
-					// TODO we could provide some mechanism to customise the names of repos somehow?
-					err = o.AddHelmBinaryRepoIfMissing(repo, "repo"+strconv.Itoa(repoCounter), "", "")
+					err = o.AddHelmBinaryRepoIfMissing(repo, "", "", "")
 					if err != nil {
 						return errors.Wrapf(err, "failed to add Helm repository '%s'", repo)
 					}
@@ -664,7 +655,7 @@ func (o *CommonOptions) HelmInit(dir string) error {
 }
 
 // HelmInitDependency initialises helm dependencies
-func (o *CommonOptions) HelmInitDependency(dir string, chartRepos map[string]string) (string, error) {
+func (o *CommonOptions) HelmInitDependency(dir string, chartRepos []string) (string, error) {
 	o.Helm().SetCWD(dir)
 	err := o.Helm().RemoveRequirementsLock()
 	if err != nil {
@@ -703,7 +694,7 @@ func (o *CommonOptions) HelmInitDependency(dir string, chartRepos map[string]str
 }
 
 // HelmInitDependencyBuild initialises the dependencies an run the build
-func (o *CommonOptions) HelmInitDependencyBuild(dir string, chartRepos map[string]string) (string, error) {
+func (o *CommonOptions) HelmInitDependencyBuild(dir string, chartRepos []string) (string, error) {
 	helmBin, err := o.HelmInitDependency(dir, chartRepos)
 	if err != nil {
 		return helmBin, err
@@ -728,7 +719,7 @@ func (o *CommonOptions) HelmInitDependencyBuild(dir string, chartRepos map[strin
 }
 
 // HelmInitRecursiveDependencyBuild helm initialises the dependencies recursively
-func (o *CommonOptions) HelmInitRecursiveDependencyBuild(dir string, chartRepos map[string]string) error {
+func (o *CommonOptions) HelmInitRecursiveDependencyBuild(dir string, chartRepos []string) error {
 	_, err := o.HelmInitDependency(dir, chartRepos)
 	if err != nil {
 		return errors.Wrap(err, "initializing Helm")
@@ -805,13 +796,13 @@ func (o *CommonOptions) HelmInitRecursiveDependencyBuild(dir string, chartRepos 
 }
 
 // DefaultReleaseCharts returns the default release charts
-func (o *CommonOptions) DefaultReleaseCharts() map[string]string {
+func (o *CommonOptions) DefaultReleaseCharts() []string {
 	releasesURL := o.ReleaseChartMuseumUrl()
-	answer := map[string]string{
-		"jenkins-x": kube.DefaultChartMuseumURL,
+	answer := []string{
+		kube.DefaultChartMuseumURL,
 	}
 	if releasesURL != "" {
-		answer["releases"] = releasesURL
+		answer = append(answer, releasesURL)
 	}
 	return answer
 }
