@@ -176,7 +176,7 @@ func (o *CommonOptions) UpdatePipelineGitCredentialsSecret(server *auth.AuthServ
 		if err != nil {
 			log.Warnf("Failed to safe restart Jenkins after configuration change %s\n", err)
 		} else {
-			log.Infoln("Safe Restarted Jenkins server")
+			log.Info("Safe Restarted Jenkins server")
 
 			// Let's wait 5 minutes for Jenkins to come back up.
 			// This is kinda gross, but it's just polling Jenkins every second for 5 minutes.
@@ -187,7 +187,7 @@ func (o *CommonOptions) UpdatePipelineGitCredentialsSecret(server *auth.AuthServ
 				if err == nil {
 					break
 				}
-				log.Infoln("Jenkins returned an error. Waiting for it to recover...")
+				log.Info("Jenkins returned an error. Waiting for it to recover...")
 				time.Sleep(1 * time.Second)
 			}
 		}

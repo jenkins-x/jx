@@ -638,7 +638,7 @@ func (o *CommonOptions) InstallXhyve() error {
 		if err != nil {
 			return err
 		}
-		log.Infoln("xhyve driver installed")
+		log.Info("xhyve driver installed")
 	} else {
 		pgmPath, _ := exec.LookPath("docker-machine-driver-xhyve")
 		log.Infof("xhyve driver is already available on your PATH at %s\n", pgmPath)
@@ -676,7 +676,7 @@ func (o *CommonOptions) Installhyperv() error {
 		}
 
 	} else {
-		log.Infoln("hyperv is already Enabled")
+		log.Info("hyperv is already Enabled")
 	}
 	return nil
 }

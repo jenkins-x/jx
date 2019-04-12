@@ -633,7 +633,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 					log.Warnf("Failed to query the Pull Request last commit status for %s ref %s %s\n", pr.URL, pr.LastCommitSha, err)
 					//return fmt.Errorf("Failed to query the Pull Request last commit status for %s ref %s %s", pr.URL, pr.LastCommitSha, err)
 				} else if status == "in-progress" {
-					log.Infoln("The build for the Pull Request last commit is currently in progress.")
+					log.Info("The build for the Pull Request last commit is currently in progress.")
 				} else {
 					log.Infof("Pipeline %s promote Environment %s has PR %s with status %s\n", activity.Name, envName, prURL, status)
 
@@ -651,7 +651,7 @@ func (o *ControllerWorkflowOptions) pollGitStatusforPipeline(activity *v1.Pipeli
 				}
 			}
 			if pr.Mergeable != nil && !*pr.Mergeable {
-				log.Infoln("Rebasing PullRequest due to conflict")
+				log.Info("Rebasing PullRequest due to conflict")
 				env, err := environments.Get(envName, metav1.GetOptions{})
 				if err != nil {
 					log.Warnf("Failed to find environment %s: %s\n", envName, err)

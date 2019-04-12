@@ -5,7 +5,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/version"
 	logger "github.com/sirupsen/logrus"
@@ -57,8 +56,6 @@ func NewCmdUpgradeCLI(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *UpgradeCLIOptions) Run() error {
-	log.ConfigureLog(o.LogLevel)
-
 	newVersion, err := o.GetLatestJXVersion()
 	if err != nil {
 		return err

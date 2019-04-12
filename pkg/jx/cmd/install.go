@@ -1412,7 +1412,7 @@ func (options *InstallOptions) verifyTiller(client kubernetes.Interface, namespa
 			msg := fmt.Sprintf("tiller pod (tiller-deploy in namespace %s) is not running after 10 minutes", tillerNamespace)
 			return errors.Wrap(err, msg)
 		}
-		log.Infoln("tiller pod running")
+		log.Info("tiller pod running")
 	}
 	return nil
 }

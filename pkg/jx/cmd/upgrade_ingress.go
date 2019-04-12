@@ -192,7 +192,7 @@ func (o *UpgradeIngressOptions) Run() error {
 
 	if o.IngressConfig.TLS {
 		if o.WaitForCerts {
-			log.Infoln("Waiting for TLS certificates to be issued...")
+			log.Info("Waiting for TLS certificates to be issued...")
 			select {
 			case certs := <-notReadyCertsCh:
 				cancel()

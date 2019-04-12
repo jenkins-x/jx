@@ -107,7 +107,7 @@ func (o *GCHelmOptions) Run() error {
 		to_delete := VersionsToDelete(versions, o.RevisionHistoryLimit)
 		if len(to_delete) > 0 {
 			if o.DryRun {
-				log.Infoln("Would delete:")
+				log.Info("Would delete:")
 				log.Infof("%v\n", to_delete)
 			} else {
 				// Backup and delete

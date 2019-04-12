@@ -303,22 +303,22 @@ func (o *CreateClusterAWSOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		log.Infoln("Cluster configuration updated")
+		log.Info("Cluster configuration updated")
 	}
 
-	log.Infoln("Waiting for the Kubernetes cluster to be ready so we can continue...")
+	log.Info("Waiting for the Kubernetes cluster to be ready so we can continue...")
 	err = o.waitForClusterToComeUp()
 	if err != nil {
 		return fmt.Errorf("Failed to wait for Kubernetes cluster to start: %s\n", err)
 	}
 
 	log.Blank()
-	log.Infoln("Waiting to for a valid kops cluster state...")
+	log.Info("Waiting to for a valid kops cluster state...")
 	err = o.waitForClusterValidation()
 	if err != nil {
 		return fmt.Errorf("Failed to successfully validate kops cluster state: %s\n", err)
 	}
-	log.Infoln("State of kops cluster: OK")
+	log.Info("State of kops cluster: OK")
 	log.Blank()
 
 	region, err := amazon.ResolveRegion(o.Flags.Profile, o.Flags.Region)
@@ -399,13 +399,13 @@ func (o *CreateClusterAWSOptions) modifyClusterConfigJson(json string, insecureR
 		return err
 	}
 
-	log.Infoln("Updating the cluster")
+	log.Info("Updating the cluster")
 	err = o.runKops("update", "cluster", "--yes")
 	if err != nil {
 		return err
 	}
 
-	log.Infoln("Rolling update the cluster")
+	log.Info("Rolling update the cluster")
 	err = o.runKops("rolling-update", "cluster", "--cloudonly", "--yes")
 	if err != nil {
 		// lets not fail to install if the rolling upgrade fails

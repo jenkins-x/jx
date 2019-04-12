@@ -68,10 +68,10 @@ func NewCmdCreateJHipster(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o CreateJHipsterOptions) checkJHipsterInstalled() error {
 	_, err := o.GetCommandOutput("", "jhipster", "--version")
 	if err != nil {
-		log.Infoln("Installing JHipster..")
+		log.Info("Installing JHipster..")
 		_, err = o.GetCommandOutput("", "rimraf", "--version")
 		if err != nil {
-			log.Infoln("Installing rimraf..")
+			log.Info("Installing rimraf..")
 			_, err = o.GetCommandOutput("", "npm", "install", "-g", "rimraf")
 			if err != nil {
 				return err
@@ -81,7 +81,7 @@ func (o CreateJHipsterOptions) checkJHipsterInstalled() error {
 		if err != nil {
 			return err
 		}
-		log.Infoln("Installed JHipster")
+		log.Info("Installed JHipster")
 	}
 	return err
 }

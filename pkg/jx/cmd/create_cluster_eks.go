@@ -97,8 +97,6 @@ func NewCmdCreateClusterEKS(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Runs the command logic (including installing required binaries, parsing options and aggregating eksctl command)
 func (o *CreateClusterEKSOptions) Run() error {
-	log.ConfigureLog(o.LogLevel)
-
 	var deps []string
 	d := opts.BinaryShouldBeInstalled("eksctl")
 	if d != "" {

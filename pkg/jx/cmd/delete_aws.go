@@ -50,8 +50,6 @@ func NewCmdDeleteAws(commonOpts *opts.CommonOptions) *cobra.Command {
 }
 
 func (o *DeleteAwsOptions) Run() error {
-	log.ConfigureLog(o.LogLevel)
-
 	vpcid := o.VpcId
 
 	session, err := amazon.NewAwsSession(o.Profile, o.Region)

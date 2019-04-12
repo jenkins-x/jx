@@ -63,7 +63,7 @@ func (o *ComplianceStatusOptions) Run() error {
 		log.Infof("You can watch the logs with %s command.\n", util.ColorInfo("jx compliance logs -f"))
 		return nil
 	}
-	log.Infoln(hummanReadableStatus(status.Status))
+	log.Info(hummanReadableStatus(status.Status))
 	return nil
 }
 

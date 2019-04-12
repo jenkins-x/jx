@@ -622,7 +622,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 						promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.StartPromotionUpdate)
 
 						if o.NoWaitForUpdatePipeline {
-							log.Infoln("Pull Request merged but we are not waiting for the update pipeline to complete!")
+							log.Info("Pull Request merged but we are not waiting for the update pipeline to complete!")
 							err = o.commentOnIssues(ns, env, promoteKey)
 							if err == nil {
 								err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
@@ -687,7 +687,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 									}
 								}
 								if succeeded {
-									log.Infoln("Merge status checks all passed so the promotion worked!")
+									log.Info("Merge status checks all passed so the promotion worked!")
 									err = o.commentOnIssues(ns, env, promoteKey)
 									if err == nil {
 										err = promoteKey.OnPromoteUpdate(jxClient, o.Namespace, kube.CompletePromotionUpdate)
@@ -709,7 +709,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 						log.Warnf("Failed to query the Pull Request last commit status for %s ref %s %s\n", pr.URL, pr.LastCommitSha, err)
 						//return fmt.Errorf("Failed to query the Pull Request last commit status for %s ref %s %s", pr.URL, pr.LastCommitSha, err)
 					} else if status == "in-progress" {
-						log.Infoln("The build for the Pull Request last commit is currently in progress.")
+						log.Info("The build for the Pull Request last commit is currently in progress.")
 					} else {
 						if status == "success" {
 							if !o.NoMergePullRequest {
@@ -727,7 +727,7 @@ func (o *PromoteOptions) waitForGitOpsPullRequest(ns string, env *v1.Environment
 					}
 				}
 				if pr.Mergeable != nil && !*pr.Mergeable {
-					log.Infoln("Rebasing PullRequest due to conflict")
+					log.Info("Rebasing PullRequest due to conflict")
 
 					err = o.PromoteViaPullRequest(env, releaseInfo)
 					if releaseInfo.PullRequestInfo != nil {

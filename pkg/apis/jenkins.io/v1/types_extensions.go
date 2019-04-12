@@ -228,7 +228,7 @@ func (e *ExtensionExecution) Execute(verbose bool) (err error) {
 		Env:  envVars,
 	}
 	out, err := cmd.RunWithoutRetry()
-	log.Infoln(out)
+	log.Info(out)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Error executing script %s", e.Name))
 	}
