@@ -64,41 +64,6 @@ func WriteMap(client Client, path string, secret map[string]interface{}) error {
 	return nil
 }
 
-// ReadBasicAuth reads the basic authentication credentials from vault at the given path.
-func ReadBasicAuth(client Client, path string) (*config.BasicAuth, error) {
-	secret, err := client.Read(path)
-	if err != nil {
-		return nil, errors.Wrapf(err, "reading the basic auth credentials from path '%s'", path)
-	}
-
-	username, ok := secret[usernameKey]
-	if !ok {
-		return nil, fmt.Errorf("no key '%s' found in the secret stored in vault at the path '%s'", usernameKey, path)
-	}
-
-	usernameStr, ok := username.(string)
-	if !ok {
-		return nil, fmt.Errorf("secret stored for key '%s' in vault at the path '%s' is not a valid string",
-			usernameKey, path)
-	}
-
-	password, ok := secret[passwordKey]
-	if !ok {
-		return nil, fmt.Errorf("no key '%s' found in the secret stored in vault at the path '%s'", passwordKey, path)
-	}
-
-	passwordStr, ok := password.(string)
-	if !ok {
-		return nil, fmt.Errorf("secret stored for key '%s' in vault at the path '%s' is not a valid string",
-			passwordKey, path)
-	}
-
-	return &config.BasicAuth{
-		Username: usernameStr,
-		Password: passwordStr,
-	}, nil
-}
-
 // ToURI constructs a vault: URI for the given path and key
 func ToURI(path string, key string) string {
 	return fmt.Sprintf("vault:%s:%s", path, key)
@@ -110,7 +75,7 @@ func ReplaceURIs(s string, client Client) (string, error) {
 	answer := vaultURIRegex.ReplaceAllStringFunc(s, func(found string) string {
 		// Stop once we have an error
 		if err == nil {
-			pathAndKey := strings.TrimSuffix(strings.TrimPrefix(strings.TrimPrefix(found, "vault:"), "\""), "\"")
+			pathAndKey := strings.Trim(strings.TrimPrefix(found, "vault:"), "\"")
 			parts := strings.Split(pathAndKey, ":")
 			if len(parts) != 2 {
 				err = errors.Errorf("cannot parse %s as path:key", pathAndKey)
@@ -118,26 +83,25 @@ func ReplaceURIs(s string, client Client) (string, error) {
 			}
 			secret, err1 := client.Read(parts[0])
 			if err1 != nil {
-				err = err1
+				err = errors.Wrapf(err1, "reading %s from vault", parts[0])
+				return ""
+			}
+			if v, ok := secret[parts[1]]; !ok {
+				err = errors.Errorf("unable to find %s in secret at %s", parts[1], parts[0])
 				return ""
 			} else {
-				if v, ok := secret[parts[1]]; !ok {
-					err = errors.Errorf("unable to find %s in secret at %s", parts[1], parts[0])
+				result, err1 := util.AsString(v)
+				if err1 != nil {
+					err = errors.Wrapf(err1, "converting %v to string", v)
 					return ""
-				} else {
-					result, err1 := util.AsString(v)
-					if err1 != nil {
-						err = err1
-						return ""
-					}
-					return result
 				}
+				return result
 			}
 		}
 		return found
 	})
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "replacing vault paths in %s", s)
 	}
 	return answer, nil
 }
