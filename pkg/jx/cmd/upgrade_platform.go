@@ -460,7 +460,7 @@ func (o *UpgradePlatformOptions) upgradePlatformViaGitOps(devEnv *v1.Environment
 	uopts.ReleaseName = JenkinsXPlatformRelease
 	uopts.GitOps = true
 	uopts.Version = targetVersion
-	uopts.Repo = opts.DefaultChartRepo
+	uopts.Repo = kube.DefaultChartMuseumURL
 	uopts.HelmUpdate = true
 
 	//opts.Chart = JenkinsXPlatformChartName
