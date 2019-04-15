@@ -15,9 +15,6 @@ spec:
       inputs:
       - name: workspace
         resource: abayer-jx-demo-qs-master
-      outputs:
-      - name: workspace
-        resource: abayer-jx-demo-qs-master
     taskRef:
       name: abayer-jx-demo-qs-master-from-build-pack-1
 status: {}

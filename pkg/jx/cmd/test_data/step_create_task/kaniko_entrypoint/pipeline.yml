@@ -15,9 +15,6 @@ spec:
       inputs:
       - name: workspace
         resource: jenkins-x-jx-fix-kaniko-special
-      outputs:
-      - name: workspace
-        resource: jenkins-x-jx-fix-kaniko-special
     taskRef:
       name: jenkins-x-jx-fix-kaniko-special-ci-1
 status: {}
