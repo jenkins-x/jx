@@ -1637,6 +1637,14 @@ definitions:
         type: array
       useGitOps:
         type: boolean
+      versionStreamRef:
+        description: VersionStreamRef contains the git ref (tag or branch) in the
+          VersionStreamURL repository to use as the version stream
+        type: string
+      versionStreamUrl:
+        description: VersionStreamURL contains the git clone URL for the Version Stream
+          which is the set of versions to use for charts, images, packages etc
+        type: string
     type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.TeamSpec:
     description: TeamSpec is the specification of an Team
