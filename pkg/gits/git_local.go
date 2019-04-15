@@ -225,6 +225,12 @@ func (g *GitLocal) FetchBranch(dir string, repo string, refspec ...string) error
 	return g.GitFake.FetchBranch(dir, repo, refspec...)
 }
 
+// FetchBranchShallow fetches a branch
+// Faked out
+func (g *GitLocal) FetchBranchShallow(dir string, repo string, refspec ...string) error {
+	return g.GitFake.FetchBranchShallow(dir, repo, refspec...)
+}
+
 // FetchBranchUnshallow fetches a branch
 // Faked out
 func (g *GitLocal) FetchBranchUnshallow(dir string, repo string, refspec ...string) error {

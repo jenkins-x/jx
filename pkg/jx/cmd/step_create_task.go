@@ -1337,24 +1337,50 @@ func (o *StepCreateTaskOptions) cloneGitRepositoryToTempDir(gitURL string) error
 	if err != nil {
 		return err
 	}
-	log.Infof("cloning repository %s to temp dir %s\n", gitURL, o.Dir)
-	err = o.Git().Clone(gitURL, o.Dir)
+	log.Infof("shallow cloning repository %s to temp dir %s\n", gitURL, o.Dir)
+	err = o.Git().Init(o.Dir)
 	if err != nil {
-		return errors.Wrapf(err, "failed to clone repository %s to directory %s", gitURL, o.Dir)
+		return errors.Wrapf(err, "failed to init a new git repository in directory %s", o.Dir)
 	}
+	if o.Verbose {
+		log.Infof("ran git init in %s", o.Dir)
+	}
+	err = o.Git().AddRemote(o.Dir, "origin", gitURL)
+	if err != nil {
+		return errors.Wrapf(err, "failed to add remote origin with url %s in directory %s", gitURL, o.Dir)
+	}
+	if o.Verbose {
+		log.Infof("ran git add remote origin %s in %s", gitURL, o.Dir)
+	}
+	commitish := make([]string, 0)
 	if o.PullRequestNumber != "" {
 		pr := fmt.Sprintf("pull/%s/head:%s", o.PullRequestNumber, o.Branch)
-		log.Infof("fetching branch %s for %s in dir %s\n", pr, gitURL, o.Dir)
-		err = o.Git().FetchBranch(o.Dir, gitURL, pr)
-		if err != nil {
-			return errors.Wrapf(err, "failed to fetch pullrequest %s for %s in dir %s: %v", pr, gitURL, o.Dir, err)
+		if o.Verbose {
+			log.Infof("will fetch %s for %s in dir %s\n", pr, gitURL, o.Dir)
 		}
+		commitish = append(commitish, pr)
 	}
 	if o.Revision != "" {
-		log.Infof("checkout revision %s\n", o.Revision)
+		if o.Verbose {
+			log.Infof("will fetch %s for %s in dir %s\n", o.Revision, gitURL, o.Dir)
+		}
+		commitish = append(commitish, o.Revision)
+	} else {
+		commitish = append(commitish, "master")
+	}
+	err = o.Git().FetchBranchShallow(o.Dir, "origin", commitish...)
+	if err != nil {
+		return errors.Wrapf(err, "failed to fetch %s from %s in directory %s", commitish, gitURL, o.Dir)
+	}
+	if o.Revision != "" {
 		err = o.Git().Checkout(o.Dir, o.Revision)
 		if err != nil {
 			return errors.Wrapf(err, "failed to checkout revision %s", o.Revision)
+		}
+	} else {
+		err = o.Git().Checkout(o.Dir, "master")
+		if err != nil {
+			return errors.Wrapf(err, "failed to checkout revision master")
 		}
 	}
 	return nil
