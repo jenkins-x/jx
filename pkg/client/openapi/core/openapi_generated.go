@@ -4254,6 +4254,20 @@ func schema_pkg_apis_jenkinsio_v1_TeamSettings(ref common.ReferenceCallback) com
 							Format:      "",
 						},
 					},
+					"versionStreamUrl": {
+						SchemaProps: spec.SchemaProps{
+							Description: "VersionStreamURL contains the git clone URL for the Version Stream which is the set of versions to use for charts, images, packages etc",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"versionStreamRef": {
+						SchemaProps: spec.SchemaProps{
+							Description: "VersionStreamRef contains the git ref (tag or branch) in the VersionStreamURL repository to use as the version stream",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
