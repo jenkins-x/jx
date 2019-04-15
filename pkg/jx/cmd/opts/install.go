@@ -1682,6 +1682,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, isGitOps bool, gitOpsDir str
 
 		setValues = append(setValues,
 			"buildnum.enabled=false",
+			"build.enabled=false",
 			"pipelinerunner.enabled=true",
 		)
 
