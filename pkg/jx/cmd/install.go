@@ -18,7 +18,7 @@ import (
 
 	"github.com/ghodss/yaml"
 
-	randomdata "github.com/Pallinder/go-randomdata"
+	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
@@ -42,8 +42,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
-	git "gopkg.in/src-d/go-git.v4"
+	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/src-d/go-git.v4"
 	core_v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -103,6 +103,7 @@ type InstallFlags struct {
 	Vault                       bool
 	RecreateVaultBucket         bool
 	Tekton                      bool
+	KnativeBuild                bool
 	BuildPackName               string
 	Kaniko                      bool
 	GitOpsMode                  bool
@@ -336,6 +337,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().StringVarP(&flags.Version, "version", "", "", "The specific platform version to install")
 	cmd.Flags().BoolVarP(&flags.Prow, "prow", "", false, "Enable Prow to implement Serverless Jenkins and support ChatOps on Pull Requests")
 	cmd.Flags().BoolVarP(&flags.Tekton, "tekton", "", false, "Enables the Tekton pipeline engine (which used to be called knative build pipeline) along with Prow to provide Serverless Jenkins. Otherwise we default to use Knative Build if you enable Prow")
+	cmd.Flags().BoolVarP(&flags.KnativeBuild, "knative-build", "", false, "Note this option is deprecated now in favour of tekton. If specified this will keep using the old knative build with Prow instead of the stratgegic tekton")
 	cmd.Flags().BoolVarP(&flags.GitOpsMode, "gitops", "", false, "Creates a git repository for the Dev environment to manage the installation, configuration, upgrade and addition of Apps in Jenkins X all via GitOps")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvApply, "no-gitops-env-apply", "", false, "When using GitOps to create the source code for the development environment and installation, don't run 'jx step env apply' to perform the install")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvRepo, "no-gitops-env-repo", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a git repository for the source code")
@@ -362,6 +364,13 @@ func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 func (options *InstallOptions) checkFlags() error {
 	flags := &options.Flags
 
+	if flags.KnativeBuild && flags.Tekton {
+		return fmt.Errorf("Incompatible options '--knative-build' and '--tekton'. Please pick only one of them. We recommend --tekton as --knative-build is deprecated")
+	}
+	if flags.Prow && !flags.KnativeBuild {
+		flags.Tekton = true
+	}
+
 	if flags.Tekton {
 		flags.Prow = true
 		if !options.InitOptions.Flags.NoTiller {
@@ -369,6 +378,7 @@ func (options *InstallOptions) checkFlags() error {
 		}
 	}
 	if flags.NextGeneration {
+		flags.KnativeBuild = false
 		flags.GitOpsMode = true
 		flags.Vault = true
 		flags.Prow = true
@@ -1036,6 +1046,9 @@ func (options *InstallOptions) selectJenkinsInstallation() error {
 		}
 		if jenkinsInstallOption == ServerlessJenkins {
 			options.Flags.Prow = true
+			if !options.Flags.KnativeBuild {
+				options.Flags.Tekton = true
+			}
 		}
 	}
 	return nil
