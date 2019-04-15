@@ -16,9 +16,16 @@ type MockGitProvider struct {
 	fail func(message string, callerSkip ...int)
 }
 
-func NewMockGitProvider() *MockGitProvider {
-	return &MockGitProvider{fail: pegomock.GlobalFailHandler}
+func NewMockGitProvider(options ...pegomock.Option) *MockGitProvider {
+	mock := &MockGitProvider{}
+	for _, option := range options {
+		option.Apply(mock)
+	}
+	return mock
 }
+
+func (mock *MockGitProvider) SetFailHandler(fh pegomock.FailHandler) { mock.fail = fh }
+func (mock *MockGitProvider) FailHandler() pegomock.FailHandler      { return mock.fail }
 
 func (mock *MockGitProvider) AcceptInvitation(_param0 int64) (*github.Response, error) {
 	if mock == nil {
@@ -851,60 +858,60 @@ func (mock *MockGitProvider) ValidateRepositoryName(_param0 string, _param1 stri
 	return ret0
 }
 
-func (mock *MockGitProvider) VerifyWasCalledOnce() *VerifierGitProvider {
-	return &VerifierGitProvider{
+func (mock *MockGitProvider) VerifyWasCalledOnce() *VerifierMockGitProvider {
+	return &VerifierMockGitProvider{
 		mock:                   mock,
 		invocationCountMatcher: pegomock.Times(1),
 	}
 }
 
-func (mock *MockGitProvider) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierGitProvider {
-	return &VerifierGitProvider{
+func (mock *MockGitProvider) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierMockGitProvider {
+	return &VerifierMockGitProvider{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 	}
 }
 
-func (mock *MockGitProvider) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierGitProvider {
-	return &VerifierGitProvider{
+func (mock *MockGitProvider) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierMockGitProvider {
+	return &VerifierMockGitProvider{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 		inOrderContext:         inOrderContext,
 	}
 }
 
-func (mock *MockGitProvider) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierGitProvider {
-	return &VerifierGitProvider{
+func (mock *MockGitProvider) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierMockGitProvider {
+	return &VerifierMockGitProvider{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 		timeout:                timeout,
 	}
 }
 
-type VerifierGitProvider struct {
+type VerifierMockGitProvider struct {
 	mock                   *MockGitProvider
 	invocationCountMatcher pegomock.Matcher
 	inOrderContext         *pegomock.InOrderContext
 	timeout                time.Duration
 }
 
-func (verifier *VerifierGitProvider) AcceptInvitation(_param0 int64) *GitProvider_AcceptInvitation_OngoingVerification {
+func (verifier *VerifierMockGitProvider) AcceptInvitation(_param0 int64) *MockGitProvider_AcceptInvitation_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "AcceptInvitation", params, verifier.timeout)
-	return &GitProvider_AcceptInvitation_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_AcceptInvitation_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_AcceptInvitation_OngoingVerification struct {
+type MockGitProvider_AcceptInvitation_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_AcceptInvitation_OngoingVerification) GetCapturedArguments() int64 {
+func (c *MockGitProvider_AcceptInvitation_OngoingVerification) GetCapturedArguments() int64 {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *GitProvider_AcceptInvitation_OngoingVerification) GetAllCapturedArguments() (_param0 []int64) {
+func (c *MockGitProvider_AcceptInvitation_OngoingVerification) GetAllCapturedArguments() (_param0 []int64) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]int64, len(params[0]))
@@ -915,23 +922,23 @@ func (c *GitProvider_AcceptInvitation_OngoingVerification) GetAllCapturedArgumen
 	return
 }
 
-func (verifier *VerifierGitProvider) AddCollaborator(_param0 string, _param1 string, _param2 string) *GitProvider_AddCollaborator_OngoingVerification {
+func (verifier *VerifierMockGitProvider) AddCollaborator(_param0 string, _param1 string, _param2 string) *MockGitProvider_AddCollaborator_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "AddCollaborator", params, verifier.timeout)
-	return &GitProvider_AddCollaborator_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_AddCollaborator_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_AddCollaborator_OngoingVerification struct {
+type MockGitProvider_AddCollaborator_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_AddCollaborator_OngoingVerification) GetCapturedArguments() (string, string, string) {
+func (c *MockGitProvider_AddCollaborator_OngoingVerification) GetCapturedArguments() (string, string, string) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *GitProvider_AddCollaborator_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
+func (c *MockGitProvider_AddCollaborator_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -950,23 +957,23 @@ func (c *GitProvider_AddCollaborator_OngoingVerification) GetAllCapturedArgument
 	return
 }
 
-func (verifier *VerifierGitProvider) AddPRComment(_param0 *gits.GitPullRequest, _param1 string) *GitProvider_AddPRComment_OngoingVerification {
+func (verifier *VerifierMockGitProvider) AddPRComment(_param0 *gits.GitPullRequest, _param1 string) *MockGitProvider_AddPRComment_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "AddPRComment", params, verifier.timeout)
-	return &GitProvider_AddPRComment_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_AddPRComment_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_AddPRComment_OngoingVerification struct {
+type MockGitProvider_AddPRComment_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_AddPRComment_OngoingVerification) GetCapturedArguments() (*gits.GitPullRequest, string) {
+func (c *MockGitProvider_AddPRComment_OngoingVerification) GetCapturedArguments() (*gits.GitPullRequest, string) {
 	_param0, _param1 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *GitProvider_AddPRComment_OngoingVerification) GetAllCapturedArguments() (_param0 []*gits.GitPullRequest, _param1 []string) {
+func (c *MockGitProvider_AddPRComment_OngoingVerification) GetAllCapturedArguments() (_param0 []*gits.GitPullRequest, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]*gits.GitPullRequest, len(params[0]))
@@ -981,23 +988,23 @@ func (c *GitProvider_AddPRComment_OngoingVerification) GetAllCapturedArguments()
 	return
 }
 
-func (verifier *VerifierGitProvider) BranchArchiveURL(_param0 string, _param1 string, _param2 string) *GitProvider_BranchArchiveURL_OngoingVerification {
+func (verifier *VerifierMockGitProvider) BranchArchiveURL(_param0 string, _param1 string, _param2 string) *MockGitProvider_BranchArchiveURL_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "BranchArchiveURL", params, verifier.timeout)
-	return &GitProvider_BranchArchiveURL_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_BranchArchiveURL_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_BranchArchiveURL_OngoingVerification struct {
+type MockGitProvider_BranchArchiveURL_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_BranchArchiveURL_OngoingVerification) GetCapturedArguments() (string, string, string) {
+func (c *MockGitProvider_BranchArchiveURL_OngoingVerification) GetCapturedArguments() (string, string, string) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *GitProvider_BranchArchiveURL_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
+func (c *MockGitProvider_BranchArchiveURL_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1016,23 +1023,23 @@ func (c *GitProvider_BranchArchiveURL_OngoingVerification) GetAllCapturedArgumen
 	return
 }
 
-func (verifier *VerifierGitProvider) CreateIssue(_param0 string, _param1 string, _param2 *gits.GitIssue) *GitProvider_CreateIssue_OngoingVerification {
+func (verifier *VerifierMockGitProvider) CreateIssue(_param0 string, _param1 string, _param2 *gits.GitIssue) *MockGitProvider_CreateIssue_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateIssue", params, verifier.timeout)
-	return &GitProvider_CreateIssue_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_CreateIssue_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_CreateIssue_OngoingVerification struct {
+type MockGitProvider_CreateIssue_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_CreateIssue_OngoingVerification) GetCapturedArguments() (string, string, *gits.GitIssue) {
+func (c *MockGitProvider_CreateIssue_OngoingVerification) GetCapturedArguments() (string, string, *gits.GitIssue) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *GitProvider_CreateIssue_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []*gits.GitIssue) {
+func (c *MockGitProvider_CreateIssue_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []*gits.GitIssue) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1051,23 +1058,23 @@ func (c *GitProvider_CreateIssue_OngoingVerification) GetAllCapturedArguments() 
 	return
 }
 
-func (verifier *VerifierGitProvider) CreateIssueComment(_param0 string, _param1 string, _param2 int, _param3 string) *GitProvider_CreateIssueComment_OngoingVerification {
+func (verifier *VerifierMockGitProvider) CreateIssueComment(_param0 string, _param1 string, _param2 int, _param3 string) *MockGitProvider_CreateIssueComment_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2, _param3}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateIssueComment", params, verifier.timeout)
-	return &GitProvider_CreateIssueComment_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_CreateIssueComment_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_CreateIssueComment_OngoingVerification struct {
+type MockGitProvider_CreateIssueComment_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_CreateIssueComment_OngoingVerification) GetCapturedArguments() (string, string, int, string) {
+func (c *MockGitProvider_CreateIssueComment_OngoingVerification) GetCapturedArguments() (string, string, int, string) {
 	_param0, _param1, _param2, _param3 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1]
 }
 
-func (c *GitProvider_CreateIssueComment_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []int, _param3 []string) {
+func (c *MockGitProvider_CreateIssueComment_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []int, _param3 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1090,23 +1097,23 @@ func (c *GitProvider_CreateIssueComment_OngoingVerification) GetAllCapturedArgum
 	return
 }
 
-func (verifier *VerifierGitProvider) CreatePullRequest(_param0 *gits.GitPullRequestArguments) *GitProvider_CreatePullRequest_OngoingVerification {
+func (verifier *VerifierMockGitProvider) CreatePullRequest(_param0 *gits.GitPullRequestArguments) *MockGitProvider_CreatePullRequest_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreatePullRequest", params, verifier.timeout)
-	return &GitProvider_CreatePullRequest_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_CreatePullRequest_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_CreatePullRequest_OngoingVerification struct {
+type MockGitProvider_CreatePullRequest_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_CreatePullRequest_OngoingVerification) GetCapturedArguments() *gits.GitPullRequestArguments {
+func (c *MockGitProvider_CreatePullRequest_OngoingVerification) GetCapturedArguments() *gits.GitPullRequestArguments {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *GitProvider_CreatePullRequest_OngoingVerification) GetAllCapturedArguments() (_param0 []*gits.GitPullRequestArguments) {
+func (c *MockGitProvider_CreatePullRequest_OngoingVerification) GetAllCapturedArguments() (_param0 []*gits.GitPullRequestArguments) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]*gits.GitPullRequestArguments, len(params[0]))
@@ -1117,23 +1124,23 @@ func (c *GitProvider_CreatePullRequest_OngoingVerification) GetAllCapturedArgume
 	return
 }
 
-func (verifier *VerifierGitProvider) CreateRepository(_param0 string, _param1 string, _param2 bool) *GitProvider_CreateRepository_OngoingVerification {
+func (verifier *VerifierMockGitProvider) CreateRepository(_param0 string, _param1 string, _param2 bool) *MockGitProvider_CreateRepository_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateRepository", params, verifier.timeout)
-	return &GitProvider_CreateRepository_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_CreateRepository_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_CreateRepository_OngoingVerification struct {
+type MockGitProvider_CreateRepository_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_CreateRepository_OngoingVerification) GetCapturedArguments() (string, string, bool) {
+func (c *MockGitProvider_CreateRepository_OngoingVerification) GetCapturedArguments() (string, string, bool) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *GitProvider_CreateRepository_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []bool) {
+func (c *MockGitProvider_CreateRepository_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1152,23 +1159,23 @@ func (c *GitProvider_CreateRepository_OngoingVerification) GetAllCapturedArgumen
 	return
 }
 
-func (verifier *VerifierGitProvider) CreateWebHook(_param0 *gits.GitWebHookArguments) *GitProvider_CreateWebHook_OngoingVerification {
+func (verifier *VerifierMockGitProvider) CreateWebHook(_param0 *gits.GitWebHookArguments) *MockGitProvider_CreateWebHook_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CreateWebHook", params, verifier.timeout)
-	return &GitProvider_CreateWebHook_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_CreateWebHook_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_CreateWebHook_OngoingVerification struct {
+type MockGitProvider_CreateWebHook_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_CreateWebHook_OngoingVerification) GetCapturedArguments() *gits.GitWebHookArguments {
+func (c *MockGitProvider_CreateWebHook_OngoingVerification) GetCapturedArguments() *gits.GitWebHookArguments {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *GitProvider_CreateWebHook_OngoingVerification) GetAllCapturedArguments() (_param0 []*gits.GitWebHookArguments) {
+func (c *MockGitProvider_CreateWebHook_OngoingVerification) GetAllCapturedArguments() (_param0 []*gits.GitWebHookArguments) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]*gits.GitWebHookArguments, len(params[0]))
@@ -1179,40 +1186,40 @@ func (c *GitProvider_CreateWebHook_OngoingVerification) GetAllCapturedArguments(
 	return
 }
 
-func (verifier *VerifierGitProvider) CurrentUsername() *GitProvider_CurrentUsername_OngoingVerification {
+func (verifier *VerifierMockGitProvider) CurrentUsername() *MockGitProvider_CurrentUsername_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CurrentUsername", params, verifier.timeout)
-	return &GitProvider_CurrentUsername_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_CurrentUsername_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_CurrentUsername_OngoingVerification struct {
+type MockGitProvider_CurrentUsername_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_CurrentUsername_OngoingVerification) GetCapturedArguments() {
+func (c *MockGitProvider_CurrentUsername_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *GitProvider_CurrentUsername_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockGitProvider_CurrentUsername_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierGitProvider) DeleteRepository(_param0 string, _param1 string) *GitProvider_DeleteRepository_OngoingVerification {
+func (verifier *VerifierMockGitProvider) DeleteRepository(_param0 string, _param1 string) *MockGitProvider_DeleteRepository_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "DeleteRepository", params, verifier.timeout)
-	return &GitProvider_DeleteRepository_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_DeleteRepository_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_DeleteRepository_OngoingVerification struct {
+type MockGitProvider_DeleteRepository_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_DeleteRepository_OngoingVerification) GetCapturedArguments() (string, string) {
+func (c *MockGitProvider_DeleteRepository_OngoingVerification) GetCapturedArguments() (string, string) {
 	_param0, _param1 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *GitProvider_DeleteRepository_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
+func (c *MockGitProvider_DeleteRepository_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1227,23 +1234,23 @@ func (c *GitProvider_DeleteRepository_OngoingVerification) GetAllCapturedArgumen
 	return
 }
 
-func (verifier *VerifierGitProvider) ForkRepository(_param0 string, _param1 string, _param2 string) *GitProvider_ForkRepository_OngoingVerification {
+func (verifier *VerifierMockGitProvider) ForkRepository(_param0 string, _param1 string, _param2 string) *MockGitProvider_ForkRepository_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ForkRepository", params, verifier.timeout)
-	return &GitProvider_ForkRepository_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_ForkRepository_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_ForkRepository_OngoingVerification struct {
+type MockGitProvider_ForkRepository_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_ForkRepository_OngoingVerification) GetCapturedArguments() (string, string, string) {
+func (c *MockGitProvider_ForkRepository_OngoingVerification) GetCapturedArguments() (string, string, string) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *GitProvider_ForkRepository_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
+func (c *MockGitProvider_ForkRepository_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1262,23 +1269,23 @@ func (c *GitProvider_ForkRepository_OngoingVerification) GetAllCapturedArguments
 	return
 }
 
-func (verifier *VerifierGitProvider) GetContent(_param0 string, _param1 string, _param2 string, _param3 string) *GitProvider_GetContent_OngoingVerification {
+func (verifier *VerifierMockGitProvider) GetContent(_param0 string, _param1 string, _param2 string, _param3 string) *MockGitProvider_GetContent_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2, _param3}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetContent", params, verifier.timeout)
-	return &GitProvider_GetContent_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_GetContent_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_GetContent_OngoingVerification struct {
+type MockGitProvider_GetContent_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_GetContent_OngoingVerification) GetCapturedArguments() (string, string, string, string) {
+func (c *MockGitProvider_GetContent_OngoingVerification) GetCapturedArguments() (string, string, string, string) {
 	_param0, _param1, _param2, _param3 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1]
 }
 
-func (c *GitProvider_GetContent_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []string) {
+func (c *MockGitProvider_GetContent_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1301,23 +1308,23 @@ func (c *GitProvider_GetContent_OngoingVerification) GetAllCapturedArguments() (
 	return
 }
 
-func (verifier *VerifierGitProvider) GetIssue(_param0 string, _param1 string, _param2 int) *GitProvider_GetIssue_OngoingVerification {
+func (verifier *VerifierMockGitProvider) GetIssue(_param0 string, _param1 string, _param2 int) *MockGitProvider_GetIssue_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetIssue", params, verifier.timeout)
-	return &GitProvider_GetIssue_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_GetIssue_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_GetIssue_OngoingVerification struct {
+type MockGitProvider_GetIssue_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_GetIssue_OngoingVerification) GetCapturedArguments() (string, string, int) {
+func (c *MockGitProvider_GetIssue_OngoingVerification) GetCapturedArguments() (string, string, int) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *GitProvider_GetIssue_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []int) {
+func (c *MockGitProvider_GetIssue_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []int) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1336,23 +1343,23 @@ func (c *GitProvider_GetIssue_OngoingVerification) GetAllCapturedArguments() (_p
 	return
 }
 
-func (verifier *VerifierGitProvider) GetPullRequest(_param0 string, _param1 *gits.GitRepository, _param2 int) *GitProvider_GetPullRequest_OngoingVerification {
+func (verifier *VerifierMockGitProvider) GetPullRequest(_param0 string, _param1 *gits.GitRepository, _param2 int) *MockGitProvider_GetPullRequest_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetPullRequest", params, verifier.timeout)
-	return &GitProvider_GetPullRequest_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_GetPullRequest_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_GetPullRequest_OngoingVerification struct {
+type MockGitProvider_GetPullRequest_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_GetPullRequest_OngoingVerification) GetCapturedArguments() (string, *gits.GitRepository, int) {
+func (c *MockGitProvider_GetPullRequest_OngoingVerification) GetCapturedArguments() (string, *gits.GitRepository, int) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *GitProvider_GetPullRequest_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []*gits.GitRepository, _param2 []int) {
+func (c *MockGitProvider_GetPullRequest_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []*gits.GitRepository, _param2 []int) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1371,23 +1378,23 @@ func (c *GitProvider_GetPullRequest_OngoingVerification) GetAllCapturedArguments
 	return
 }
 
-func (verifier *VerifierGitProvider) GetPullRequestCommits(_param0 string, _param1 *gits.GitRepository, _param2 int) *GitProvider_GetPullRequestCommits_OngoingVerification {
+func (verifier *VerifierMockGitProvider) GetPullRequestCommits(_param0 string, _param1 *gits.GitRepository, _param2 int) *MockGitProvider_GetPullRequestCommits_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetPullRequestCommits", params, verifier.timeout)
-	return &GitProvider_GetPullRequestCommits_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_GetPullRequestCommits_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_GetPullRequestCommits_OngoingVerification struct {
+type MockGitProvider_GetPullRequestCommits_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_GetPullRequestCommits_OngoingVerification) GetCapturedArguments() (string, *gits.GitRepository, int) {
+func (c *MockGitProvider_GetPullRequestCommits_OngoingVerification) GetCapturedArguments() (string, *gits.GitRepository, int) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *GitProvider_GetPullRequestCommits_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []*gits.GitRepository, _param2 []int) {
+func (c *MockGitProvider_GetPullRequestCommits_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []*gits.GitRepository, _param2 []int) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1406,23 +1413,23 @@ func (c *GitProvider_GetPullRequestCommits_OngoingVerification) GetAllCapturedAr
 	return
 }
 
-func (verifier *VerifierGitProvider) GetRepository(_param0 string, _param1 string) *GitProvider_GetRepository_OngoingVerification {
+func (verifier *VerifierMockGitProvider) GetRepository(_param0 string, _param1 string) *MockGitProvider_GetRepository_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetRepository", params, verifier.timeout)
-	return &GitProvider_GetRepository_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_GetRepository_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_GetRepository_OngoingVerification struct {
+type MockGitProvider_GetRepository_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_GetRepository_OngoingVerification) GetCapturedArguments() (string, string) {
+func (c *MockGitProvider_GetRepository_OngoingVerification) GetCapturedArguments() (string, string) {
 	_param0, _param1 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *GitProvider_GetRepository_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
+func (c *MockGitProvider_GetRepository_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1437,125 +1444,125 @@ func (c *GitProvider_GetRepository_OngoingVerification) GetAllCapturedArguments(
 	return
 }
 
-func (verifier *VerifierGitProvider) HasIssues() *GitProvider_HasIssues_OngoingVerification {
+func (verifier *VerifierMockGitProvider) HasIssues() *MockGitProvider_HasIssues_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "HasIssues", params, verifier.timeout)
-	return &GitProvider_HasIssues_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_HasIssues_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_HasIssues_OngoingVerification struct {
+type MockGitProvider_HasIssues_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_HasIssues_OngoingVerification) GetCapturedArguments() {
+func (c *MockGitProvider_HasIssues_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *GitProvider_HasIssues_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockGitProvider_HasIssues_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierGitProvider) IsBitbucketCloud() *GitProvider_IsBitbucketCloud_OngoingVerification {
+func (verifier *VerifierMockGitProvider) IsBitbucketCloud() *MockGitProvider_IsBitbucketCloud_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "IsBitbucketCloud", params, verifier.timeout)
-	return &GitProvider_IsBitbucketCloud_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_IsBitbucketCloud_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_IsBitbucketCloud_OngoingVerification struct {
+type MockGitProvider_IsBitbucketCloud_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_IsBitbucketCloud_OngoingVerification) GetCapturedArguments() {
+func (c *MockGitProvider_IsBitbucketCloud_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *GitProvider_IsBitbucketCloud_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockGitProvider_IsBitbucketCloud_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierGitProvider) IsBitbucketServer() *GitProvider_IsBitbucketServer_OngoingVerification {
+func (verifier *VerifierMockGitProvider) IsBitbucketServer() *MockGitProvider_IsBitbucketServer_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "IsBitbucketServer", params, verifier.timeout)
-	return &GitProvider_IsBitbucketServer_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_IsBitbucketServer_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_IsBitbucketServer_OngoingVerification struct {
+type MockGitProvider_IsBitbucketServer_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_IsBitbucketServer_OngoingVerification) GetCapturedArguments() {
+func (c *MockGitProvider_IsBitbucketServer_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *GitProvider_IsBitbucketServer_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockGitProvider_IsBitbucketServer_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierGitProvider) IsGerrit() *GitProvider_IsGerrit_OngoingVerification {
+func (verifier *VerifierMockGitProvider) IsGerrit() *MockGitProvider_IsGerrit_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "IsGerrit", params, verifier.timeout)
-	return &GitProvider_IsGerrit_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_IsGerrit_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_IsGerrit_OngoingVerification struct {
+type MockGitProvider_IsGerrit_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_IsGerrit_OngoingVerification) GetCapturedArguments() {
+func (c *MockGitProvider_IsGerrit_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *GitProvider_IsGerrit_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockGitProvider_IsGerrit_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierGitProvider) IsGitHub() *GitProvider_IsGitHub_OngoingVerification {
+func (verifier *VerifierMockGitProvider) IsGitHub() *MockGitProvider_IsGitHub_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "IsGitHub", params, verifier.timeout)
-	return &GitProvider_IsGitHub_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_IsGitHub_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_IsGitHub_OngoingVerification struct {
+type MockGitProvider_IsGitHub_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_IsGitHub_OngoingVerification) GetCapturedArguments() {
+func (c *MockGitProvider_IsGitHub_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *GitProvider_IsGitHub_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockGitProvider_IsGitHub_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierGitProvider) IsGitea() *GitProvider_IsGitea_OngoingVerification {
+func (verifier *VerifierMockGitProvider) IsGitea() *MockGitProvider_IsGitea_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "IsGitea", params, verifier.timeout)
-	return &GitProvider_IsGitea_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_IsGitea_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_IsGitea_OngoingVerification struct {
+type MockGitProvider_IsGitea_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_IsGitea_OngoingVerification) GetCapturedArguments() {
+func (c *MockGitProvider_IsGitea_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *GitProvider_IsGitea_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockGitProvider_IsGitea_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierGitProvider) IssueURL(_param0 string, _param1 string, _param2 int, _param3 bool) *GitProvider_IssueURL_OngoingVerification {
+func (verifier *VerifierMockGitProvider) IssueURL(_param0 string, _param1 string, _param2 int, _param3 bool) *MockGitProvider_IssueURL_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2, _param3}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "IssueURL", params, verifier.timeout)
-	return &GitProvider_IssueURL_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_IssueURL_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_IssueURL_OngoingVerification struct {
+type MockGitProvider_IssueURL_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_IssueURL_OngoingVerification) GetCapturedArguments() (string, string, int, bool) {
+func (c *MockGitProvider_IssueURL_OngoingVerification) GetCapturedArguments() (string, string, int, bool) {
 	_param0, _param1, _param2, _param3 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1]
 }
 
-func (c *GitProvider_IssueURL_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []int, _param3 []bool) {
+func (c *MockGitProvider_IssueURL_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []int, _param3 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1578,23 +1585,23 @@ func (c *GitProvider_IssueURL_OngoingVerification) GetAllCapturedArguments() (_p
 	return
 }
 
-func (verifier *VerifierGitProvider) JenkinsWebHookPath(_param0 string, _param1 string) *GitProvider_JenkinsWebHookPath_OngoingVerification {
+func (verifier *VerifierMockGitProvider) JenkinsWebHookPath(_param0 string, _param1 string) *MockGitProvider_JenkinsWebHookPath_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "JenkinsWebHookPath", params, verifier.timeout)
-	return &GitProvider_JenkinsWebHookPath_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_JenkinsWebHookPath_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_JenkinsWebHookPath_OngoingVerification struct {
+type MockGitProvider_JenkinsWebHookPath_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_JenkinsWebHookPath_OngoingVerification) GetCapturedArguments() (string, string) {
+func (c *MockGitProvider_JenkinsWebHookPath_OngoingVerification) GetCapturedArguments() (string, string) {
 	_param0, _param1 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *GitProvider_JenkinsWebHookPath_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
+func (c *MockGitProvider_JenkinsWebHookPath_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1609,57 +1616,57 @@ func (c *GitProvider_JenkinsWebHookPath_OngoingVerification) GetAllCapturedArgum
 	return
 }
 
-func (verifier *VerifierGitProvider) Kind() *GitProvider_Kind_OngoingVerification {
+func (verifier *VerifierMockGitProvider) Kind() *MockGitProvider_Kind_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Kind", params, verifier.timeout)
-	return &GitProvider_Kind_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_Kind_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_Kind_OngoingVerification struct {
+type MockGitProvider_Kind_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_Kind_OngoingVerification) GetCapturedArguments() {
+func (c *MockGitProvider_Kind_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *GitProvider_Kind_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockGitProvider_Kind_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierGitProvider) Label() *GitProvider_Label_OngoingVerification {
+func (verifier *VerifierMockGitProvider) Label() *MockGitProvider_Label_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Label", params, verifier.timeout)
-	return &GitProvider_Label_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_Label_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_Label_OngoingVerification struct {
+type MockGitProvider_Label_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_Label_OngoingVerification) GetCapturedArguments() {
+func (c *MockGitProvider_Label_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *GitProvider_Label_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockGitProvider_Label_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierGitProvider) ListCommitStatus(_param0 string, _param1 string, _param2 string) *GitProvider_ListCommitStatus_OngoingVerification {
+func (verifier *VerifierMockGitProvider) ListCommitStatus(_param0 string, _param1 string, _param2 string) *MockGitProvider_ListCommitStatus_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ListCommitStatus", params, verifier.timeout)
-	return &GitProvider_ListCommitStatus_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_ListCommitStatus_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_ListCommitStatus_OngoingVerification struct {
+type MockGitProvider_ListCommitStatus_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_ListCommitStatus_OngoingVerification) GetCapturedArguments() (string, string, string) {
+func (c *MockGitProvider_ListCommitStatus_OngoingVerification) GetCapturedArguments() (string, string, string) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *GitProvider_ListCommitStatus_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
+func (c *MockGitProvider_ListCommitStatus_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1678,23 +1685,23 @@ func (c *GitProvider_ListCommitStatus_OngoingVerification) GetAllCapturedArgumen
 	return
 }
 
-func (verifier *VerifierGitProvider) ListCommits(_param0 string, _param1 string, _param2 *gits.ListCommitsArguments) *GitProvider_ListCommits_OngoingVerification {
+func (verifier *VerifierMockGitProvider) ListCommits(_param0 string, _param1 string, _param2 *gits.ListCommitsArguments) *MockGitProvider_ListCommits_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ListCommits", params, verifier.timeout)
-	return &GitProvider_ListCommits_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_ListCommits_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_ListCommits_OngoingVerification struct {
+type MockGitProvider_ListCommits_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_ListCommits_OngoingVerification) GetCapturedArguments() (string, string, *gits.ListCommitsArguments) {
+func (c *MockGitProvider_ListCommits_OngoingVerification) GetCapturedArguments() (string, string, *gits.ListCommitsArguments) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *GitProvider_ListCommits_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []*gits.ListCommitsArguments) {
+func (c *MockGitProvider_ListCommits_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []*gits.ListCommitsArguments) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1713,40 +1720,40 @@ func (c *GitProvider_ListCommits_OngoingVerification) GetAllCapturedArguments() 
 	return
 }
 
-func (verifier *VerifierGitProvider) ListInvitations() *GitProvider_ListInvitations_OngoingVerification {
+func (verifier *VerifierMockGitProvider) ListInvitations() *MockGitProvider_ListInvitations_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ListInvitations", params, verifier.timeout)
-	return &GitProvider_ListInvitations_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_ListInvitations_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_ListInvitations_OngoingVerification struct {
+type MockGitProvider_ListInvitations_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_ListInvitations_OngoingVerification) GetCapturedArguments() {
+func (c *MockGitProvider_ListInvitations_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *GitProvider_ListInvitations_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockGitProvider_ListInvitations_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierGitProvider) ListOpenPullRequests(_param0 string, _param1 string) *GitProvider_ListOpenPullRequests_OngoingVerification {
+func (verifier *VerifierMockGitProvider) ListOpenPullRequests(_param0 string, _param1 string) *MockGitProvider_ListOpenPullRequests_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ListOpenPullRequests", params, verifier.timeout)
-	return &GitProvider_ListOpenPullRequests_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_ListOpenPullRequests_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_ListOpenPullRequests_OngoingVerification struct {
+type MockGitProvider_ListOpenPullRequests_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_ListOpenPullRequests_OngoingVerification) GetCapturedArguments() (string, string) {
+func (c *MockGitProvider_ListOpenPullRequests_OngoingVerification) GetCapturedArguments() (string, string) {
 	_param0, _param1 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *GitProvider_ListOpenPullRequests_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
+func (c *MockGitProvider_ListOpenPullRequests_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1761,40 +1768,40 @@ func (c *GitProvider_ListOpenPullRequests_OngoingVerification) GetAllCapturedArg
 	return
 }
 
-func (verifier *VerifierGitProvider) ListOrganisations() *GitProvider_ListOrganisations_OngoingVerification {
+func (verifier *VerifierMockGitProvider) ListOrganisations() *MockGitProvider_ListOrganisations_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ListOrganisations", params, verifier.timeout)
-	return &GitProvider_ListOrganisations_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_ListOrganisations_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_ListOrganisations_OngoingVerification struct {
+type MockGitProvider_ListOrganisations_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_ListOrganisations_OngoingVerification) GetCapturedArguments() {
+func (c *MockGitProvider_ListOrganisations_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *GitProvider_ListOrganisations_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockGitProvider_ListOrganisations_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierGitProvider) ListReleases(_param0 string, _param1 string) *GitProvider_ListReleases_OngoingVerification {
+func (verifier *VerifierMockGitProvider) ListReleases(_param0 string, _param1 string) *MockGitProvider_ListReleases_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ListReleases", params, verifier.timeout)
-	return &GitProvider_ListReleases_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_ListReleases_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_ListReleases_OngoingVerification struct {
+type MockGitProvider_ListReleases_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_ListReleases_OngoingVerification) GetCapturedArguments() (string, string) {
+func (c *MockGitProvider_ListReleases_OngoingVerification) GetCapturedArguments() (string, string) {
 	_param0, _param1 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *GitProvider_ListReleases_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
+func (c *MockGitProvider_ListReleases_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1809,23 +1816,23 @@ func (c *GitProvider_ListReleases_OngoingVerification) GetAllCapturedArguments()
 	return
 }
 
-func (verifier *VerifierGitProvider) ListRepositories(_param0 string) *GitProvider_ListRepositories_OngoingVerification {
+func (verifier *VerifierMockGitProvider) ListRepositories(_param0 string) *MockGitProvider_ListRepositories_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ListRepositories", params, verifier.timeout)
-	return &GitProvider_ListRepositories_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_ListRepositories_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_ListRepositories_OngoingVerification struct {
+type MockGitProvider_ListRepositories_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_ListRepositories_OngoingVerification) GetCapturedArguments() string {
+func (c *MockGitProvider_ListRepositories_OngoingVerification) GetCapturedArguments() string {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *GitProvider_ListRepositories_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *MockGitProvider_ListRepositories_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1836,23 +1843,23 @@ func (c *GitProvider_ListRepositories_OngoingVerification) GetAllCapturedArgumen
 	return
 }
 
-func (verifier *VerifierGitProvider) ListWebHooks(_param0 string, _param1 string) *GitProvider_ListWebHooks_OngoingVerification {
+func (verifier *VerifierMockGitProvider) ListWebHooks(_param0 string, _param1 string) *MockGitProvider_ListWebHooks_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ListWebHooks", params, verifier.timeout)
-	return &GitProvider_ListWebHooks_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_ListWebHooks_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_ListWebHooks_OngoingVerification struct {
+type MockGitProvider_ListWebHooks_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_ListWebHooks_OngoingVerification) GetCapturedArguments() (string, string) {
+func (c *MockGitProvider_ListWebHooks_OngoingVerification) GetCapturedArguments() (string, string) {
 	_param0, _param1 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *GitProvider_ListWebHooks_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
+func (c *MockGitProvider_ListWebHooks_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1867,23 +1874,23 @@ func (c *GitProvider_ListWebHooks_OngoingVerification) GetAllCapturedArguments()
 	return
 }
 
-func (verifier *VerifierGitProvider) MergePullRequest(_param0 *gits.GitPullRequest, _param1 string) *GitProvider_MergePullRequest_OngoingVerification {
+func (verifier *VerifierMockGitProvider) MergePullRequest(_param0 *gits.GitPullRequest, _param1 string) *MockGitProvider_MergePullRequest_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "MergePullRequest", params, verifier.timeout)
-	return &GitProvider_MergePullRequest_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_MergePullRequest_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_MergePullRequest_OngoingVerification struct {
+type MockGitProvider_MergePullRequest_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_MergePullRequest_OngoingVerification) GetCapturedArguments() (*gits.GitPullRequest, string) {
+func (c *MockGitProvider_MergePullRequest_OngoingVerification) GetCapturedArguments() (*gits.GitPullRequest, string) {
 	_param0, _param1 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *GitProvider_MergePullRequest_OngoingVerification) GetAllCapturedArguments() (_param0 []*gits.GitPullRequest, _param1 []string) {
+func (c *MockGitProvider_MergePullRequest_OngoingVerification) GetAllCapturedArguments() (_param0 []*gits.GitPullRequest, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]*gits.GitPullRequest, len(params[0]))
@@ -1898,23 +1905,23 @@ func (c *GitProvider_MergePullRequest_OngoingVerification) GetAllCapturedArgumen
 	return
 }
 
-func (verifier *VerifierGitProvider) PullRequestLastCommitStatus(_param0 *gits.GitPullRequest) *GitProvider_PullRequestLastCommitStatus_OngoingVerification {
+func (verifier *VerifierMockGitProvider) PullRequestLastCommitStatus(_param0 *gits.GitPullRequest) *MockGitProvider_PullRequestLastCommitStatus_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "PullRequestLastCommitStatus", params, verifier.timeout)
-	return &GitProvider_PullRequestLastCommitStatus_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_PullRequestLastCommitStatus_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_PullRequestLastCommitStatus_OngoingVerification struct {
+type MockGitProvider_PullRequestLastCommitStatus_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_PullRequestLastCommitStatus_OngoingVerification) GetCapturedArguments() *gits.GitPullRequest {
+func (c *MockGitProvider_PullRequestLastCommitStatus_OngoingVerification) GetCapturedArguments() *gits.GitPullRequest {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *GitProvider_PullRequestLastCommitStatus_OngoingVerification) GetAllCapturedArguments() (_param0 []*gits.GitPullRequest) {
+func (c *MockGitProvider_PullRequestLastCommitStatus_OngoingVerification) GetAllCapturedArguments() (_param0 []*gits.GitPullRequest) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]*gits.GitPullRequest, len(params[0]))
@@ -1925,23 +1932,23 @@ func (c *GitProvider_PullRequestLastCommitStatus_OngoingVerification) GetAllCapt
 	return
 }
 
-func (verifier *VerifierGitProvider) RenameRepository(_param0 string, _param1 string, _param2 string) *GitProvider_RenameRepository_OngoingVerification {
+func (verifier *VerifierMockGitProvider) RenameRepository(_param0 string, _param1 string, _param2 string) *MockGitProvider_RenameRepository_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "RenameRepository", params, verifier.timeout)
-	return &GitProvider_RenameRepository_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_RenameRepository_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_RenameRepository_OngoingVerification struct {
+type MockGitProvider_RenameRepository_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_RenameRepository_OngoingVerification) GetCapturedArguments() (string, string, string) {
+func (c *MockGitProvider_RenameRepository_OngoingVerification) GetCapturedArguments() (string, string, string) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *GitProvider_RenameRepository_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
+func (c *MockGitProvider_RenameRepository_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1960,23 +1967,23 @@ func (c *GitProvider_RenameRepository_OngoingVerification) GetAllCapturedArgumen
 	return
 }
 
-func (verifier *VerifierGitProvider) SearchIssues(_param0 string, _param1 string, _param2 string) *GitProvider_SearchIssues_OngoingVerification {
+func (verifier *VerifierMockGitProvider) SearchIssues(_param0 string, _param1 string, _param2 string) *MockGitProvider_SearchIssues_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SearchIssues", params, verifier.timeout)
-	return &GitProvider_SearchIssues_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_SearchIssues_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_SearchIssues_OngoingVerification struct {
+type MockGitProvider_SearchIssues_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_SearchIssues_OngoingVerification) GetCapturedArguments() (string, string, string) {
+func (c *MockGitProvider_SearchIssues_OngoingVerification) GetCapturedArguments() (string, string, string) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *GitProvider_SearchIssues_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
+func (c *MockGitProvider_SearchIssues_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -1995,23 +2002,23 @@ func (c *GitProvider_SearchIssues_OngoingVerification) GetAllCapturedArguments()
 	return
 }
 
-func (verifier *VerifierGitProvider) SearchIssuesClosedSince(_param0 string, _param1 string, _param2 time.Time) *GitProvider_SearchIssuesClosedSince_OngoingVerification {
+func (verifier *VerifierMockGitProvider) SearchIssuesClosedSince(_param0 string, _param1 string, _param2 time.Time) *MockGitProvider_SearchIssuesClosedSince_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SearchIssuesClosedSince", params, verifier.timeout)
-	return &GitProvider_SearchIssuesClosedSince_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_SearchIssuesClosedSince_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_SearchIssuesClosedSince_OngoingVerification struct {
+type MockGitProvider_SearchIssuesClosedSince_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_SearchIssuesClosedSince_OngoingVerification) GetCapturedArguments() (string, string, time.Time) {
+func (c *MockGitProvider_SearchIssuesClosedSince_OngoingVerification) GetCapturedArguments() (string, string, time.Time) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *GitProvider_SearchIssuesClosedSince_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []time.Time) {
+func (c *MockGitProvider_SearchIssuesClosedSince_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []time.Time) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -2030,40 +2037,40 @@ func (c *GitProvider_SearchIssuesClosedSince_OngoingVerification) GetAllCaptured
 	return
 }
 
-func (verifier *VerifierGitProvider) ServerURL() *GitProvider_ServerURL_OngoingVerification {
+func (verifier *VerifierMockGitProvider) ServerURL() *MockGitProvider_ServerURL_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ServerURL", params, verifier.timeout)
-	return &GitProvider_ServerURL_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_ServerURL_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_ServerURL_OngoingVerification struct {
+type MockGitProvider_ServerURL_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_ServerURL_OngoingVerification) GetCapturedArguments() {
+func (c *MockGitProvider_ServerURL_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *GitProvider_ServerURL_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockGitProvider_ServerURL_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierGitProvider) ShouldForkForPullRequest(_param0 string, _param1 string, _param2 string) *GitProvider_ShouldForkForPullRequest_OngoingVerification {
+func (verifier *VerifierMockGitProvider) ShouldForkForPullRequest(_param0 string, _param1 string, _param2 string) *MockGitProvider_ShouldForkForPullRequest_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ShouldForkForPullRequest", params, verifier.timeout)
-	return &GitProvider_ShouldForkForPullRequest_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_ShouldForkForPullRequest_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_ShouldForkForPullRequest_OngoingVerification struct {
+type MockGitProvider_ShouldForkForPullRequest_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_ShouldForkForPullRequest_OngoingVerification) GetCapturedArguments() (string, string, string) {
+func (c *MockGitProvider_ShouldForkForPullRequest_OngoingVerification) GetCapturedArguments() (string, string, string) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *GitProvider_ShouldForkForPullRequest_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
+func (c *MockGitProvider_ShouldForkForPullRequest_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -2082,23 +2089,23 @@ func (c *GitProvider_ShouldForkForPullRequest_OngoingVerification) GetAllCapture
 	return
 }
 
-func (verifier *VerifierGitProvider) UpdateCommitStatus(_param0 string, _param1 string, _param2 string, _param3 *gits.GitRepoStatus) *GitProvider_UpdateCommitStatus_OngoingVerification {
+func (verifier *VerifierMockGitProvider) UpdateCommitStatus(_param0 string, _param1 string, _param2 string, _param3 *gits.GitRepoStatus) *MockGitProvider_UpdateCommitStatus_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2, _param3}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "UpdateCommitStatus", params, verifier.timeout)
-	return &GitProvider_UpdateCommitStatus_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_UpdateCommitStatus_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_UpdateCommitStatus_OngoingVerification struct {
+type MockGitProvider_UpdateCommitStatus_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_UpdateCommitStatus_OngoingVerification) GetCapturedArguments() (string, string, string, *gits.GitRepoStatus) {
+func (c *MockGitProvider_UpdateCommitStatus_OngoingVerification) GetCapturedArguments() (string, string, string, *gits.GitRepoStatus) {
 	_param0, _param1, _param2, _param3 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1]
 }
 
-func (c *GitProvider_UpdateCommitStatus_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []*gits.GitRepoStatus) {
+func (c *MockGitProvider_UpdateCommitStatus_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []*gits.GitRepoStatus) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -2121,23 +2128,23 @@ func (c *GitProvider_UpdateCommitStatus_OngoingVerification) GetAllCapturedArgum
 	return
 }
 
-func (verifier *VerifierGitProvider) UpdatePullRequestStatus(_param0 *gits.GitPullRequest) *GitProvider_UpdatePullRequestStatus_OngoingVerification {
+func (verifier *VerifierMockGitProvider) UpdatePullRequestStatus(_param0 *gits.GitPullRequest) *MockGitProvider_UpdatePullRequestStatus_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "UpdatePullRequestStatus", params, verifier.timeout)
-	return &GitProvider_UpdatePullRequestStatus_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_UpdatePullRequestStatus_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_UpdatePullRequestStatus_OngoingVerification struct {
+type MockGitProvider_UpdatePullRequestStatus_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_UpdatePullRequestStatus_OngoingVerification) GetCapturedArguments() *gits.GitPullRequest {
+func (c *MockGitProvider_UpdatePullRequestStatus_OngoingVerification) GetCapturedArguments() *gits.GitPullRequest {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *GitProvider_UpdatePullRequestStatus_OngoingVerification) GetAllCapturedArguments() (_param0 []*gits.GitPullRequest) {
+func (c *MockGitProvider_UpdatePullRequestStatus_OngoingVerification) GetAllCapturedArguments() (_param0 []*gits.GitPullRequest) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]*gits.GitPullRequest, len(params[0]))
@@ -2148,23 +2155,23 @@ func (c *GitProvider_UpdatePullRequestStatus_OngoingVerification) GetAllCaptured
 	return
 }
 
-func (verifier *VerifierGitProvider) UpdateRelease(_param0 string, _param1 string, _param2 string, _param3 *gits.GitRelease) *GitProvider_UpdateRelease_OngoingVerification {
+func (verifier *VerifierMockGitProvider) UpdateRelease(_param0 string, _param1 string, _param2 string, _param3 *gits.GitRelease) *MockGitProvider_UpdateRelease_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2, _param3}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "UpdateRelease", params, verifier.timeout)
-	return &GitProvider_UpdateRelease_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_UpdateRelease_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_UpdateRelease_OngoingVerification struct {
+type MockGitProvider_UpdateRelease_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_UpdateRelease_OngoingVerification) GetCapturedArguments() (string, string, string, *gits.GitRelease) {
+func (c *MockGitProvider_UpdateRelease_OngoingVerification) GetCapturedArguments() (string, string, string, *gits.GitRelease) {
 	_param0, _param1, _param2, _param3 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1]
 }
 
-func (c *GitProvider_UpdateRelease_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []*gits.GitRelease) {
+func (c *MockGitProvider_UpdateRelease_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 []*gits.GitRelease) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -2187,23 +2194,23 @@ func (c *GitProvider_UpdateRelease_OngoingVerification) GetAllCapturedArguments(
 	return
 }
 
-func (verifier *VerifierGitProvider) UpdateWebHook(_param0 *gits.GitWebHookArguments) *GitProvider_UpdateWebHook_OngoingVerification {
+func (verifier *VerifierMockGitProvider) UpdateWebHook(_param0 *gits.GitWebHookArguments) *MockGitProvider_UpdateWebHook_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "UpdateWebHook", params, verifier.timeout)
-	return &GitProvider_UpdateWebHook_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_UpdateWebHook_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_UpdateWebHook_OngoingVerification struct {
+type MockGitProvider_UpdateWebHook_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_UpdateWebHook_OngoingVerification) GetCapturedArguments() *gits.GitWebHookArguments {
+func (c *MockGitProvider_UpdateWebHook_OngoingVerification) GetCapturedArguments() *gits.GitWebHookArguments {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *GitProvider_UpdateWebHook_OngoingVerification) GetAllCapturedArguments() (_param0 []*gits.GitWebHookArguments) {
+func (c *MockGitProvider_UpdateWebHook_OngoingVerification) GetAllCapturedArguments() (_param0 []*gits.GitWebHookArguments) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]*gits.GitWebHookArguments, len(params[0]))
@@ -2214,40 +2221,40 @@ func (c *GitProvider_UpdateWebHook_OngoingVerification) GetAllCapturedArguments(
 	return
 }
 
-func (verifier *VerifierGitProvider) UserAuth() *GitProvider_UserAuth_OngoingVerification {
+func (verifier *VerifierMockGitProvider) UserAuth() *MockGitProvider_UserAuth_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "UserAuth", params, verifier.timeout)
-	return &GitProvider_UserAuth_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_UserAuth_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_UserAuth_OngoingVerification struct {
+type MockGitProvider_UserAuth_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_UserAuth_OngoingVerification) GetCapturedArguments() {
+func (c *MockGitProvider_UserAuth_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *GitProvider_UserAuth_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockGitProvider_UserAuth_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierGitProvider) UserInfo(_param0 string) *GitProvider_UserInfo_OngoingVerification {
+func (verifier *VerifierMockGitProvider) UserInfo(_param0 string) *MockGitProvider_UserInfo_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "UserInfo", params, verifier.timeout)
-	return &GitProvider_UserInfo_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_UserInfo_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_UserInfo_OngoingVerification struct {
+type MockGitProvider_UserInfo_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_UserInfo_OngoingVerification) GetCapturedArguments() string {
+func (c *MockGitProvider_UserInfo_OngoingVerification) GetCapturedArguments() string {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *GitProvider_UserInfo_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *MockGitProvider_UserInfo_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -2258,23 +2265,23 @@ func (c *GitProvider_UserInfo_OngoingVerification) GetAllCapturedArguments() (_p
 	return
 }
 
-func (verifier *VerifierGitProvider) ValidateRepositoryName(_param0 string, _param1 string) *GitProvider_ValidateRepositoryName_OngoingVerification {
+func (verifier *VerifierMockGitProvider) ValidateRepositoryName(_param0 string, _param1 string) *MockGitProvider_ValidateRepositoryName_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ValidateRepositoryName", params, verifier.timeout)
-	return &GitProvider_ValidateRepositoryName_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockGitProvider_ValidateRepositoryName_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type GitProvider_ValidateRepositoryName_OngoingVerification struct {
+type MockGitProvider_ValidateRepositoryName_OngoingVerification struct {
 	mock              *MockGitProvider
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *GitProvider_ValidateRepositoryName_OngoingVerification) GetCapturedArguments() (string, string) {
+func (c *MockGitProvider_ValidateRepositoryName_OngoingVerification) GetCapturedArguments() (string, string) {
 	_param0, _param1 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *GitProvider_ValidateRepositoryName_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
+func (c *MockGitProvider_ValidateRepositoryName_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))

@@ -127,7 +127,7 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pborman/uuid v0.0.0-20170612153648-e790cca94e6c
 	github.com/pelletier/go-buffruneio v0.2.0 // indirect
-	github.com/petergtz/pegomock v2.1.1-0.20190407073119-550445b1b73e+incompatible
+	github.com/petergtz/pegomock v2.2.0+incompatible
 	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
 	github.com/pkg/browser v0.0.0-20170505125900-c90ca0c84f15
 	github.com/pkg/errors v0.8.0
