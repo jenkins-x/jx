@@ -612,7 +612,7 @@ func AddHelmRepoIfMissing(helmURL, repoName, username, password string, helmer H
 				repoName = uuid.New()
 				log.Warnf("Unable to parse %s as URL so assigning random name %s\n", helmURL, repoName)
 			} else {
-				repoName = uri.Host
+				repoName = uri.Hostname()
 			}
 		}
 		// Avoid collisions
