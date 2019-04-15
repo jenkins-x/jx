@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/environments"
+	"gopkg.in/src-d/go-git.v4/plumbing"
 
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
@@ -21,8 +22,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	version2 "github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
-	survey "gopkg.in/AlecAivazis/survey.v1"
-	git "gopkg.in/src-d/go-git.v4"
+	"gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/src-d/go-git.v4"
 	gitconfig "gopkg.in/src-d/go-git.v4/config"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -406,38 +407,57 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string) (string, e
 	}
 	wrkDir := filepath.Join(configDir, "jenkins-x-versions")
 
-	o.Debugf("Current configuration dir: %s\n", configDir)
-	o.Debugf("versionRepository: %s\n", versionRepository)
+	settings, err := o.TeamSettings()
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to load TeamSettings")
+	}
 
+	if versionRepository == "" {
+		versionRepository = settings.VersionStreamURL
+	}
 	if versionRepository == "" {
 		versionRepository = DefaultVersionsURL
 	}
+	versionRef := settings.VersionStreamRef
+	o.Debugf("Current configuration dir: %s\n", configDir)
+	o.Debugf("versionRepository: %s\n", versionRepository)
 
 	// If the repo already exists let's try to fetch the latest version
 	if exists, err := util.DirExists(wrkDir); err == nil && exists {
 		repo, err := git.PlainOpen(wrkDir)
 		if err != nil {
 			log.Errorf("Error opening %s", wrkDir)
-			return deleteAndReClone(wrkDir, versionRepository, o.Out)
+			return deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
 		}
 		remote, err := repo.Remote("origin")
 		if err != nil {
 			log.Errorf("Error getting remote origin")
-			return deleteAndReClone(wrkDir, versionRepository, o.Out)
+			return deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 		defer cancel()
+
+		remoteRefs := "+refs/heads/master:refs/remotes/origin/master"
+		if versionRef != "" {
+			remoteRefs = "+refs/heads/" + versionRef + ":refs/remotes/origin/" + versionRef
+		}
 		err = remote.FetchContext(ctx, &git.FetchOptions{
 			RefSpecs: []gitconfig.RefSpec{
-				gitconfig.RefSpec("+refs/heads/master:refs/remotes/origin/master"),
+				gitconfig.RefSpec(remoteRefs),
 			},
 		})
+		if err != nil {
+			log.Errorf("Error fetching remote refs %s", remoteRefs)
+			return deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
+		}
+		err = o.Git().Checkout(wrkDir, versionRef)
+
 		// The repository is up to date
 		if err == git.NoErrAlreadyUpToDate {
 			return wrkDir, nil
 		} else if err != nil {
 			log.Errorf("Error fetching latest from remote")
-			return deleteAndReClone(wrkDir, versionRepository, o.Out)
+			return deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
 		} else {
 			pullLatest := false
 			if o.BatchMode {
@@ -465,28 +485,33 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string) (string, e
 			return wrkDir, err
 		}
 	} else {
-		return deleteAndReClone(wrkDir, versionRepository, o.Out)
+		return deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
 	}
 }
 
-func deleteAndReClone(wrkDir string, versionRepository string, fw terminal.FileWriter) (string, error) {
+func deleteAndReClone(wrkDir string, versionRepository string, referenceName string, fw terminal.FileWriter) (string, error) {
 	log.Info("Deleting and cloning the Jenkins X versions repo")
 	err := deleteDirectory(wrkDir)
 	if err != nil {
 		return "", err
 	}
-	err = clone(wrkDir, versionRepository, fw)
+	err = clone(wrkDir, versionRepository, referenceName, fw)
 	if err != nil {
 		return "", err
 	}
 	return wrkDir, err
 }
 
-func clone(wrkDir string, versionRepository string, fw terminal.FileWriter) error {
-	log.Infof("Cloning the Jenkins X versions repo to %s\n", wrkDir)
+func clone(wrkDir string, versionRepository string, referenceName string, fw terminal.FileWriter) error {
+	if referenceName == "" {
+		referenceName = "refs/heads/master"
+	} else if !strings.Contains(referenceName, "/") {
+		referenceName = "refs/heads/" + referenceName
+	}
+	log.Infof("Cloning the Jenkins X versions repo %s with ref %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
 	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
 		URL:           versionRepository,
-		ReferenceName: "refs/heads/master",
+		ReferenceName: plumbing.ReferenceName(referenceName),
 		SingleBranch:  true,
 		Progress:      fw,
 	})
