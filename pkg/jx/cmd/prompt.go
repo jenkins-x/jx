@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/fatih/color"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -134,6 +134,6 @@ func (o *PromptOptions) Run() error {
 		namespace = nsColor.Sprint(namespace)
 	}
 	context = ctxColor.Sprint(context)
-	log.Infof("%s\n", strings.Join([]string{prefix, label, separator, namespace, divider, context, suffix}, ""))
+	fmt.Fprintf(o.Out, "%s\n", strings.Join([]string{prefix, label, separator, namespace, divider, context, suffix}, ""))
 	return nil
 }

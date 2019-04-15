@@ -148,7 +148,10 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 		}
 	}
 
-	setValues := strings.Split(o.SetValues, ",")
+	setValues := []string{}
+	if o.SetValues != "" {
+		setValues = strings.Split(o.SetValues, ",")
+	}
 	if o.WebHookURL != "" {
 		setValues = append(setValues, "webhookUrl="+o.WebHookURL)
 	}
@@ -158,20 +161,23 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	setValues = append(setValues, "source.gitKind="+o.GitKind)
 	setValues = append(setValues, "source.user="+o.GitUser)
 	setValues = append(setValues, "source.token="+o.GitToken)
+	setValues = append(setValues, "tekton.rbac.cluster=false")
 
 	helmer := o.NewHelm(false, "", true, true)
 	o.SetHelm(helmer)
 
 	// TODO lets add other defaults...
 
-	log.Infof("installing the Environment Controller...\n")
+	log.Infof("installing the Environment Controller with values: %s\n", util.ColorInfo(strings.Join(setValues, ",")))
 	helmOptions := helm.InstallChartOptions{
-		Chart:       "environment-controller",
-		ReleaseName: o.ReleaseName,
-		Version:     o.Version,
-		Ns:          ns,
-		SetValues:   setValues,
-		Repository:  kube.DefaultChartMuseumURL,
+		Chart:          "environment-controller",
+		ReleaseName:    o.ReleaseName,
+		Version:        o.Version,
+		Ns:             ns,
+		SetValues:      setValues,
+		HelmUpdate:     true,
+		Repository:     kube.DefaultChartMuseumURL,
+		VersionsGitURL: opts.DefaultVersionsURL,
 	}
 	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {

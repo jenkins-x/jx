@@ -389,7 +389,10 @@ func (o *CommonOptions) InstallChartWithOptionsAndTimeout(options helm.InstallCh
 		return err
 	}
 	if options.VersionsDir == "" {
-		options.VersionsDir, err = o.CloneJXVersionsRepo("")
+		options.VersionsDir, err = o.CloneJXVersionsRepo(options.VersionsGitURL)
+		if err != nil {
+			return err
+		}
 	}
 	vaultClient, err := o.SystemVaultClient("")
 	if err != nil {
@@ -407,18 +410,18 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string) (string, e
 	}
 	wrkDir := filepath.Join(configDir, "jenkins-x-versions")
 
-	settings, err := o.TeamSettings()
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to load TeamSettings")
-	}
-
+	versionRef := ""
 	if versionRepository == "" {
+		settings, err := o.TeamSettings()
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to load TeamSettings")
+		}
 		versionRepository = settings.VersionStreamURL
+		versionRef = settings.VersionStreamRef
 	}
 	if versionRepository == "" {
 		versionRepository = DefaultVersionsURL
 	}
-	versionRef := settings.VersionStreamRef
 	o.Debugf("Current configuration dir: %s\n", configDir)
 	o.Debugf("versionRepository: %s\n", versionRepository)
 
