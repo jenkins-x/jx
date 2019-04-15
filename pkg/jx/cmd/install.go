@@ -131,8 +131,8 @@ const (
 	JenkinsXPlatformChart   = "jenkins-x/" + JenkinsXPlatformChartName
 	JenkinsXPlatformRelease = "jenkins-x"
 
-	ServerlessJenkins   = "Serverless Jenkins"
-	StaticMasterJenkins = "Static Master Jenkins"
+	ServerlessJenkins   = "Serverless Jenkins X Pipelines with Tekon"
+	StaticMasterJenkins = "Static Jenkins Server and Jenkinsfiles"
 
 	GitOpsChartYAML = `name: env
 version: 0.0.1
@@ -1040,7 +1040,7 @@ func (options *InstallOptions) selectJenkinsInstallation() error {
 			ServerlessJenkins,
 			StaticMasterJenkins,
 		}
-		jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins installation type:", StaticMasterJenkins, "", options.In, options.Out, options.Err)
+		jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins installation type:", ServerlessJenkins, "", options.In, options.Out, options.Err)
 		if err != nil {
 			return errors.Wrap(err, "picking Jenkins installation type")
 		}
