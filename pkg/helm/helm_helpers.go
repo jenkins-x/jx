@@ -479,22 +479,23 @@ func InspectChart(chart string, version string, repo string, username string, pa
 }
 
 type InstallChartOptions struct {
-	Dir         string
-	ReleaseName string
-	Chart       string
-	Version     string
-	Ns          string
-	HelmUpdate  bool
-	SetValues   []string
-	ValueFiles  []string
-	Repository  string
-	Username    string
-	Password    string
-	VersionsDir string
-	InstallOnly bool
-	NoForce     bool
-	Wait        bool
-	UpgradeOnly bool
+	Dir            string
+	ReleaseName    string
+	Chart          string
+	Version        string
+	Ns             string
+	HelmUpdate     bool
+	SetValues      []string
+	ValueFiles     []string
+	Repository     string
+	Username       string
+	Password       string
+	VersionsDir    string
+	VersionsGitURL string
+	InstallOnly    bool
+	NoForce        bool
+	Wait           bool
+	UpgradeOnly    bool
 }
 
 // InstallFromChartOptions uses the helmer and kubeClient interfaces to install the chart from the options,
