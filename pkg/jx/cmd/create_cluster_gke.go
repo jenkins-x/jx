@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	randomdata "github.com/Pallinder/go-randomdata"
+	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/kube"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 
 	osUser "os/user"
 
@@ -53,6 +53,12 @@ type CreateClusterGKEFlags struct {
 	Preemptible     bool
 	EnhancedApis    bool
 }
+
+const (
+	preemptibleFlagName    = "preemptible"
+	enhancedAPIFlagName    = "enhanced-apis"
+	enhancedScopesFlagName = "enhanced-scopes"
+)
 
 var (
 	createClusterGKELong = templates.LongDesc(`
@@ -115,9 +121,9 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Flags.SkipLogin, "skip-login", "", false, "Skip Google auth if already logged in via gcloud auth")
 	cmd.Flags().StringVarP(&options.Flags.Labels, "labels", "", "", "The labels to add to the cluster being created such as 'foo=bar,whatnot=123'. Label names must begin with a lowercase character ([a-z]), end with a lowercase alphanumeric ([a-z0-9]) with dashes (-), and lowercase alphanumeric ([a-z0-9]) between.")
 	cmd.Flags().StringArrayVarP(&options.Flags.Scopes, "scope", "", []string{}, "The OAuth scopes to be added to the cluster")
-	cmd.Flags().BoolVarP(&options.Flags.Preemptible, "preemptible", "", false, "Use preemptible VMs in the node-pool")
-	cmd.Flags().BoolVarP(&options.Flags.EnhancedScopes, "enhanced-scopes", "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
-	cmd.Flags().BoolVarP(&options.Flags.EnhancedApis, "enhanced-apis", "", false, "Enable enhanced APIs to utilise Container Registry & Cloud Build")
+	cmd.Flags().BoolVarP(&options.Flags.Preemptible, preemptibleFlagName, "", false, "Use preemptible VMs in the node-pool")
+	cmd.Flags().BoolVarP(&options.Flags.EnhancedScopes, enhancedScopesFlagName, "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
+	cmd.Flags().BoolVarP(&options.Flags.EnhancedApis, enhancedAPIFlagName, "", false, "Enable enhanced APIs to utilise Container Registry & Cloud Build")
 
 	cmd.AddCommand(NewCmdCreateClusterGKETerraform(commonOpts))
 
@@ -252,7 +258,10 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			Help:    "We recommend a minimum of " + defaultNodes + " for Jenkins X, the minimum number of nodes to be created in each of the cluster's zones",
 		}
 
-		survey.AskOne(prompt, &minNumOfNodes, nil, surveyOpts)
+		err = survey.AskOne(prompt, &minNumOfNodes, nil, surveyOpts)
+		if err != nil {
+			return err
+		}
 	}
 
 	maxNumOfNodes := o.Flags.MaxNumOfNodes
@@ -267,17 +276,23 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			Help:    "We recommend at least " + defaultNodes + " for Jenkins X, the maximum number of nodes to be created in each of the cluster's zones",
 		}
 
-		survey.AskOne(prompt, &maxNumOfNodes, nil, surveyOpts)
+		err = survey.AskOne(prompt, &maxNumOfNodes, nil, surveyOpts)
+		if err != nil {
+			return err
+		}
 	}
 
 	if !o.BatchMode {
-		if !o.Flags.Preemptible {
+		if !o.IsFlagExplicitlySet(preemptibleFlagName) {
 			prompt := &survey.Confirm{
 				Message: "Would you like use preemptible VMs?",
 				Default: false,
 				Help:    "Preemptible VMs can significantly lower the cost of a cluster",
 			}
-			survey.AskOne(prompt, &o.Flags.Preemptible, nil, surveyOpts)
+			err = survey.AskOne(prompt, &o.Flags.Preemptible, nil, surveyOpts)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -301,13 +316,16 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 
 	if !o.BatchMode {
 		// if scopes is empty &
-		if len(o.Flags.Scopes) == 0 && !o.Flags.EnhancedScopes {
+		if len(o.Flags.Scopes) == 0 && !o.IsFlagExplicitlySet(enhancedScopesFlagName) {
 			prompt := &survey.Confirm{
 				Message: "Would you like to access Google Cloud Storage / Google Container Registry?",
 				Default: false,
 				Help:    "Enables enhanced oauth scopes to allow access to storage based services",
 			}
-			survey.AskOne(prompt, &o.Flags.EnhancedScopes, nil, surveyOpts)
+			err = survey.AskOne(prompt, &o.Flags.EnhancedScopes, nil, surveyOpts)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -324,13 +342,16 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	if !o.BatchMode {
 		// only provide the option if enhanced scopes are enabled
 		if o.Flags.EnhancedScopes {
-			if !o.Flags.EnhancedApis {
+			if !o.IsFlagExplicitlySet(enhancedAPIFlagName) {
 				prompt := &survey.Confirm{
 					Message: "Would you like to enable Cloud Build, Container Registry & Container Analysis APIs?",
 					Default: false,
 					Help:    "Enables extra APIs on the GCP project",
 				}
-				survey.AskOne(prompt, &o.Flags.EnhancedApis, nil, surveyOpts)
+				err = survey.AskOne(prompt, &o.Flags.EnhancedApis, nil, surveyOpts)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -350,7 +371,10 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 				Default: false,
 				Help:    "Use Kaniko for docker images",
 			}
-			survey.AskOne(prompt, &o.InstallOptions.Flags.Kaniko, nil, surveyOpts)
+			err = survey.AskOne(prompt, &o.InstallOptions.Flags.Kaniko, nil, surveyOpts)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

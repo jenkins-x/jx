@@ -3,6 +3,7 @@ package opts
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/pflag"
 	"io"
 	"os"
 	"strings"
@@ -213,8 +214,8 @@ func (o *CommonOptions) ApiExtensionsClient() (apiextensionsclientset.Interface,
 	return o.apiExtensionsClient, nil
 }
 
-// SetApiExternsionsClient sets the api extensions client
-func (o *CommonOptions) SetApiExternsionsClient(client apiextensionsclientset.Interface) {
+// SetAPIExtensionsClient sets the api extensions client
+func (o *CommonOptions) SetAPIExtensionsClient(client apiextensionsclientset.Interface) {
 	o.apiExtensionsClient = client
 }
 
@@ -1080,4 +1081,17 @@ func (o *CommonOptions) IstioClient() (istioclient.Interface, error) {
 		return nil, err
 	}
 	return istioclient.NewForConfig(config)
+}
+
+// IsFlagExplicitlySet checks whether the flag with the specified name is explicitly set by the uer.
+// If so, true is returned, false otherwise.
+func (o *CommonOptions) IsFlagExplicitlySet(flagName string) bool {
+	explicit := false
+	explicitlySetFunc := func(f *pflag.Flag) {
+		if f.Name == flagName {
+			explicit = true
+		}
+	}
+	o.Cmd.Flags().Visit(explicitlySetFunc)
+	return explicit
 }
