@@ -107,10 +107,6 @@ func (o *CreateMLQuickstartOptions) Run() error {
 		return err
 	}
 	config := authConfigSvc.Config()
-	o.Debugf("Auth Config: %+#v\n", config)
-	for i := range config.Servers {
-		o.Debugf("server: %d: %+#v\n", i, config.Servers[i])
-	}
 
 	var locations []v1.QuickStartLocation
 	if !o.IgnoreTeam {
@@ -171,7 +167,7 @@ func (o *CreateMLQuickstartOptions) Run() error {
 
 		o.Filter.ProjectName = details.RepoName
 	}
-	o.Debugf("GIT: %+#v\n", details)
+
 	model, err := o.LoadQuickstartsFromMap(config, gitMap)
 	if err != nil {
 		return fmt.Errorf("failed to load quickstarts: %s", err)
@@ -192,7 +188,6 @@ func (o *CreateMLQuickstartOptions) Run() error {
 		}
 	}
 
-	o.Debugf("GIT2: %+#v\n", o.GitProvider)
 	w := &CreateQuickstartOptions{}
 	w.CreateProjectOptions = o.CreateProjectOptions
 	w.CommonOptions = o.CommonOptions
@@ -212,11 +207,6 @@ func (o *CreateMLQuickstartOptions) Run() error {
 		w.GitRepositoryOptions.ApiToken = details.User.ApiToken
 		w.GitRepositoryOptions.Private = details.PrivateRepo
 		w.GitProvider = details.GitProvider
-		// w.ImportOptions.GitServer = config.Servers[0]
-		// if details != nil {
-		// 	o.ConfigureImportOptions(details)
-		// }
-
 	}
 
 	w.BatchMode = true
@@ -229,6 +219,7 @@ func (o *CreateMLQuickstartOptions) Run() error {
 		// We have a projectset so create all the associated quickstarts
 		stub := o.Filter.ProjectName
 		for _, project := range ps {
+			w.ImportOptions = o.ImportOptions // Reset the options each time as they are modified by Import (DraftPack)
 			w.Filter.Text = project.Repo
 			w.Filter.ProjectName = stub + project.Tail
 			o.Debugf("Invoking CreateQuickstart for %s...\n", project.Repo)
@@ -303,18 +294,3 @@ func (o *CreateMLQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConf
 	}
 	return model, nil
 }
-
-// LoadGithubQuickstarts Loads quickstarts from github
-// func (model *QuickstartModel) LoadGithubQuickstarts(provider gits.GitProvider, owner string, includes []string, excludes []string) error {
-// 	repos, err := provider.ListRepositories(owner)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	for _, repo := range repos {
-// 		name := repo.Name
-// 		if util.StringMatchesAny(name, includes, excludes) {
-// 			model.Add(toGitHubQuickstart(provider, owner, repo))
-// 		}
-// 	}
-// 	return nil
-// }
