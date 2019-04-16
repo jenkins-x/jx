@@ -538,25 +538,11 @@ func (o *CommonOptions) clone(wrkDir string, versionRepository string, reference
 }
 
 func (o *CommonOptions) shallowCloneGitRepositoryToDir(dir string, gitURL string, pullRequestNumber string, branch string, revision string) error {
-	err := os.MkdirAll(dir, util.DefaultWritePermissions)
+	err := o.Git().Clone(gitURL, dir)
 	if err != nil {
-		return errors.Wrapf(err, "failed to ensure directory is created %s", dir)
+		return errors.Wrapf(err, "failed to clone git repository %s directory is created %s", gitURL, dir)
 	}
-	log.Infof("shallow cloning repository %s to dir %s\n", gitURL, dir)
-	err = o.Git().Init(dir)
-	if err != nil {
-		return errors.Wrapf(err, "failed to init a new git repository in directory %s", dir)
-	}
-	if o.Verbose {
-		log.Infof("ran git init in %s", dir)
-	}
-	err = o.Git().AddRemote(dir, "origin", gitURL)
-	if err != nil {
-		return errors.Wrapf(err, "failed to add remote origin with url %s in directory %s", gitURL, dir)
-	}
-	if o.Verbose {
-		log.Infof("ran git add remote origin %s in %s", gitURL, dir)
-	}
+
 	commitish := make([]string, 0)
 	if pullRequestNumber != "" {
 		pr := fmt.Sprintf("pull/%s/head:%s", pullRequestNumber, branch)
@@ -573,10 +559,39 @@ func (o *CommonOptions) shallowCloneGitRepositoryToDir(dir string, gitURL string
 	} else {
 		commitish = append(commitish, "master")
 	}
-	err = o.Git().FetchBranchShallow(dir, "origin", commitish...)
+
+	err = o.Git().FetchBranch(dir, "origin", commitish...)
 	if err != nil {
 		return errors.Wrapf(err, "failed to fetch %s from %s in directory %s", commitish, gitURL, dir)
 	}
+
+	/*
+		err := os.MkdirAll(dir, util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to ensure directory is created %s", dir)
+		}
+		log.Infof("shallow cloning repository %s to dir %s\n", gitURL, dir)
+		err = o.Git().Init(dir)
+		if err != nil {
+			return errors.Wrapf(err, "failed to init a new git repository in directory %s", dir)
+		}
+		if o.Verbose {
+			log.Infof("ran git init in %s", dir)
+		}
+		err = o.Git().AddRemote(dir, "origin", gitURL)
+		if err != nil {
+			return errors.Wrapf(err, "failed to add remote origin with url %s in directory %s", gitURL, dir)
+		}
+		if o.Verbose {
+			log.Infof("ran git add remote origin %s in %s", gitURL, dir)
+		}
+
+		err = o.Git().FetchBranchShallow(dir, "origin", commitish...)
+		if err != nil {
+			return errors.Wrapf(err, "failed to fetch %s from %s in directory %s", commitish, gitURL, dir)
+		}
+	*/
+
 	if revision != "" {
 		err = o.Git().Checkout(dir, revision)
 		if err != nil {
