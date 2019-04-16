@@ -549,6 +549,12 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 		args = append(args, "--git-provider-url", gitProviderURL)
 	}
 
+	if o.InstallOptions.Flags.VersionsRepository != "" {
+		args = append(args, "--versions-repo", o.InstallOptions.Flags.VersionsRepository)
+	}
+	if o.InstallOptions.Flags.VersionsGitRef != "" {
+		args = append(args, "--versions-ref", o.InstallOptions.Flags.VersionsGitRef)
+	}
 	gitUsername := o.InstallOptions.GitRepositoryOptions.Username
 	if gitUsername != "" {
 		args = append(args, "--git-username", gitUsername)
