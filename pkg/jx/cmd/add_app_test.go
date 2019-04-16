@@ -45,7 +45,6 @@ import (
 )
 
 func TestAddAppForGitOps(t *testing.T) {
-	t.Parallel()
 	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()

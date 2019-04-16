@@ -24,6 +24,19 @@ import (
 )
 
 func TestSequentialWorkflow(t *testing.T) {
+	originalJxHome, tempJxHome, err := cmd.CreateTestJxHomeDir()
+	assert.NoError(t, err)
+	defer func() {
+		err := cmd.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		assert.NoError(t, err)
+	}()
+	originalKubeCfg, tempKubeCfg, err := cmd.CreateTestKubeConfigDir()
+	assert.NoError(t, err)
+	defer func() {
+		err := cmd.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		assert.NoError(t, err)
+	}()
+
 	testOrgName := "jstrachan"
 	testRepoName := "myrepo"
 	stagingRepoName := "environment-staging"
@@ -102,7 +115,7 @@ func TestSequentialWorkflow(t *testing.T) {
 		resources_test.NewMockInstaller(),
 	)
 
-	err := cmd.CreateTestEnvironmentDir(o.CommonOptions)
+	err = cmd.CreateTestEnvironmentDir(o.CommonOptions)
 	assert.NoError(t, err)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
@@ -181,6 +194,19 @@ func TestSequentialWorkflow(t *testing.T) {
 }
 
 func TestWorkflowManualPromote(t *testing.T) {
+	originalJxHome, tempJxHome, err := cmd.CreateTestJxHomeDir()
+	assert.NoError(t, err)
+	defer func() {
+		err := cmd.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		assert.NoError(t, err)
+	}()
+	originalKubeCfg, tempKubeCfg, err := cmd.CreateTestKubeConfigDir()
+	assert.NoError(t, err)
+	defer func() {
+		err := cmd.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		assert.NoError(t, err)
+	}()
+
 	testOrgName := "jstrachan"
 	testRepoName := "manual"
 	stagingRepoName := "environment-staging"
@@ -251,7 +277,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 		resources_test.NewMockInstaller(),
 	)
 
-	err := cmd.CreateTestEnvironmentDir(o.CommonOptions)
+	err = cmd.CreateTestEnvironmentDir(o.CommonOptions)
 	assert.NoError(t, err)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
@@ -361,6 +387,19 @@ func TestWorkflowManualPromote(t *testing.T) {
 
 // TestParallelWorkflow lets test promoting to A + B then when A + B is complete then C
 func TestParallelWorkflow(t *testing.T) {
+	originalJxHome, tempJxHome, err := cmd.CreateTestJxHomeDir()
+	assert.NoError(t, err)
+	defer func() {
+		err := cmd.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		assert.NoError(t, err)
+	}()
+	originalKubeCfg, tempKubeCfg, err := cmd.CreateTestKubeConfigDir()
+	assert.NoError(t, err)
+	defer func() {
+		err := cmd.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		assert.NoError(t, err)
+	}()
+
 	testOrgName := "jstrachan"
 	testRepoName := "parallelrepo"
 
@@ -454,7 +493,7 @@ func TestParallelWorkflow(t *testing.T) {
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 		resources_test.NewMockInstaller(),
 	)
-	err := cmd.CreateTestEnvironmentDir(o.CommonOptions)
+	err = cmd.CreateTestEnvironmentDir(o.CommonOptions)
 	assert.NoError(t, err)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()
@@ -556,6 +595,19 @@ func TestParallelWorkflow(t *testing.T) {
 // TestNewVersionWhileExistingWorkflow lets test that we create a new workflow and terminate
 // the old workflow if we find a new version
 func TestNewVersionWhileExistingWorkflow(t *testing.T) {
+	originalJxHome, tempJxHome, err := cmd.CreateTestJxHomeDir()
+	assert.NoError(t, err)
+	defer func() {
+		err := cmd.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		assert.NoError(t, err)
+	}()
+	originalKubeCfg, tempKubeCfg, err := cmd.CreateTestKubeConfigDir()
+	assert.NoError(t, err)
+	defer func() {
+		err := cmd.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		assert.NoError(t, err)
+	}()
+
 	testOrgName := "jstrachan"
 	testRepoName := "myrepo"
 	stagingRepoName := "environment-staging"
@@ -632,7 +684,7 @@ func TestNewVersionWhileExistingWorkflow(t *testing.T) {
 		helm.NewHelmCLI("helm", helm.V2, "", true),
 		resources_test.NewMockInstaller(),
 	)
-	err := cmd.CreateTestEnvironmentDir(o.CommonOptions)
+	err = cmd.CreateTestEnvironmentDir(o.CommonOptions)
 	assert.NoError(t, err)
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()

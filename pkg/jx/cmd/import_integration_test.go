@@ -40,6 +40,19 @@ const (
 )
 
 func TestImportProjects(t *testing.T) {
+	originalJxHome, tempJxHome, err := cmd.CreateTestJxHomeDir()
+	assert.NoError(t, err)
+	defer func() {
+		err := cmd.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		assert.NoError(t, err)
+	}()
+	originalKubeCfg, tempKubeCfg, err := cmd.CreateTestKubeConfigDir()
+	assert.NoError(t, err)
+	defer func() {
+		err := cmd.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		assert.NoError(t, err)
+	}()
+
 	tempDir, err := ioutil.TempDir("", "test-import-projects")
 	assert.NoError(t, err)
 
@@ -61,6 +74,19 @@ func TestImportProjects(t *testing.T) {
 }
 
 func TestImportProjectNextGenPipeline(t *testing.T) {
+	originalJxHome, tempJxHome, err := cmd.CreateTestJxHomeDir()
+	assert.NoError(t, err)
+	defer func() {
+		err := cmd.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		assert.NoError(t, err)
+	}()
+	originalKubeCfg, tempKubeCfg, err := cmd.CreateTestKubeConfigDir()
+	assert.NoError(t, err)
+	defer func() {
+		err := cmd.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		assert.NoError(t, err)
+	}()
+
 	tempDir, err := ioutil.TempDir("", "test-import-ng-projects")
 	assert.NoError(t, err)
 
@@ -151,7 +177,7 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 	}
 
 	err := o.Run()
-	assert.NoError(t, err, "Failed with %s", err)
+	assert.NoError(t, err, "Failed %s with %s", dirName, err)
 	if err == nil {
 		defaultJenkinsfileName := jenkinsfile.Name
 		defaultJenkinsfileBackupSuffix := jenkinsfile.BackupSuffix
