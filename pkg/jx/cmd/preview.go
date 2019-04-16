@@ -587,7 +587,7 @@ func (o *PreviewOptions) findPreviewURL(kubeClient kubernetes.Interface, kserveC
 				return true, nil
 			}
 		}
-		return false, err
+		return false, nil
 	}
 	err := o.RetryUntilTrueOrTimeout(time.Minute, time.Second*5, fn)
 	return url, appNames, err
