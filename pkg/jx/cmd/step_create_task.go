@@ -144,7 +144,7 @@ func NewCmdStepCreateTask(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "/workspace/source", "The directory to query to find the projects .git directory")
+	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to query to find the projects .git directory")
 	cmd.Flags().StringVarP(&options.OutDir, "output", "o", "", "The directory to write the output to as YAML")
 	cmd.Flags().StringVarP(&options.BuildPackURL, "url", "u", "", "The URL for the build pack Git repository")
 	cmd.Flags().StringVarP(&options.BuildPackRef, "ref", "r", "", "The Git reference (branch,tag,sha) in the Git repository to use")
