@@ -505,21 +505,21 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 		log.Warnf("No build number could be found from the environment variable $BUILD_NUMBER!\n")
 	}
 	baseClusterName := kube.ToValidName(cluster.Name)
-	branch := os.Getenv("PULL_PULL_SHA")
-	gitBranchKind := "revision"
-	if branch == "" {
-		branch = o.GetBranchName(o.Flags.VersionsDir)
-		gitBranchKind = "branch"
-	}
+	revision := os.Getenv("PULL_PULL_SHA")
+	branch := o.GetBranchName(o.Flags.VersionsDir)
 	if branch == "" {
 		branch = "x"
-	} else {
-		log.Infof("found git %s: %s\n", gitBranchKind, branch)
+	}
+	log.Infof("found git revision %s: branch %s\n", revision, branch)
 
-		if o.InstallOptions.Flags.VersionsGitRef == "" {
+	if o.InstallOptions.Flags.VersionsGitRef == "" {
+		if revision != "" {
+			o.InstallOptions.Flags.VersionsGitRef = revision
+		} else {
 			o.InstallOptions.Flags.VersionsGitRef = branch
 		}
 	}
+
 	log.Infof("using versions git repo %s and ref %s\n", o.InstallOptions.Flags.VersionsRepository, o.InstallOptions.Flags.VersionsGitRef)
 
 	cluster.Name = kube.ToValidName(branch + "-" + buildNum + "-" + cluster.Name)
