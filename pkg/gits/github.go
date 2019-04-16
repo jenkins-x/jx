@@ -326,7 +326,7 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 		u, ok := c.(string)
 		if ok && u == webhookUrl {
 			s, ok := hook.Config["secret"]
-			if ok && s == data.Secret {
+			if ok && s != data.Secret {
 				// lets remove this hook as its using an old secret
 				if hook.ID == nil {
 					return fmt.Errorf("webook at %s for %s/%s has no ID", asText(hook.URL), owner, repo)
