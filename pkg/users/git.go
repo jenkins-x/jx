@@ -3,6 +3,7 @@ package users
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/apimachinery/pkg/api/errors"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -83,7 +84,7 @@ func (r *GitUserResolver) Resolve(user *gits.GitUser) (*jenkinsv1.User, error) {
 			}
 			id = fmt.Sprintf("%s-%d", gitUser.Login, i)
 		}
-		new.Name = id
+		new.Name = kube.ToValidName(id)
 		return id, possibles, new, nil
 	}
 	return Resolve(user.Login, r.GitProviderKey(), r.JXClient, r.Namespace, selectUsers)
