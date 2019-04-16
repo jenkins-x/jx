@@ -316,6 +316,28 @@ func applyToProtectionPolicy(parent *ProtectionPolicy, child *ProtectionPolicy) 
 	} else if parent.Restrictions != nil {
 		applyToRestrictions(parent.Restrictions, child.Restrictions)
 	}
+	if child.RequiredPullRequestReviews == nil {
+		child.RequiredPullRequestReviews = parent.RequiredPullRequestReviews
+	} else if parent.RequiredPullRequestReviews != nil {
+		applyToRequiredPullRequestReviews(parent.RequiredPullRequestReviews, child.RequiredPullRequestReviews)
+	}
+}
+
+func applyToRequiredPullRequestReviews(parent *ReviewPolicy, child *ReviewPolicy) {
+	if child.Approvals == nil {
+		child.Approvals = parent.Approvals
+	}
+	if child.DismissStale == nil {
+		child.DismissStale = parent.DismissStale
+	}
+	if child.RequireOwners == nil {
+		child.RequireOwners = parent.RequireOwners
+	}
+	if child.DismissalRestrictions == nil {
+		child.DismissalRestrictions = parent.DismissalRestrictions
+	} else if parent.DismissalRestrictions != nil {
+		applyToRestrictions(parent.DismissalRestrictions, child.DismissalRestrictions)
+	}
 }
 
 func applyToRestrictions(parent *Restrictions, child *Restrictions) {
