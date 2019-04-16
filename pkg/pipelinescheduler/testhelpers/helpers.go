@@ -270,7 +270,6 @@ func BuildAndValidateProwConfig(t *testing.T, baseDir string, expectedConfigFile
 			Scheduler: s,
 		})
 	}
-
 	cfg, plugs, err := prow.Build(schedulerLeaves)
 	assert.NoError(t, err)
 	if expectedConfigFilename != "" {
