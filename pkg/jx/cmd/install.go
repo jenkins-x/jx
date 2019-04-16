@@ -1309,13 +1309,6 @@ func (options *InstallOptions) configureGitAuth() error {
 		teamSettings.PipelineUsername = pipelineAuthUsername
 		teamSettings.Organisation = options.Owner
 		teamSettings.GitPrivate = options.GitRepositoryOptions.Private
-
-		if options.Flags.VersionsRepository != "" {
-			teamSettings.VersionStreamURL = options.Flags.VersionsRepository
-		}
-		if options.Flags.VersionsGitRef != "" {
-			teamSettings.VersionStreamRef = options.Flags.VersionsGitRef
-		}
 		return nil
 	}
 	err = options.ModifyDevEnvironment(editTeamSettingsCallback)
@@ -2941,6 +2934,12 @@ func (options *InstallOptions) configureTeamSettings() error {
 		if options.Flags.DockerRegistryOrg != "" {
 			env.Spec.TeamSettings.DockerRegistryOrg = options.Flags.DockerRegistryOrg
 			log.Infof("Setting the docker registry organisation to %s in the TeamSettings\n", env.Spec.TeamSettings.DockerRegistryOrg)
+		}
+		if options.Flags.VersionsRepository != "" {
+			env.Spec.TeamSettings.VersionStreamURL = options.Flags.VersionsRepository
+		}
+		if options.Flags.VersionsGitRef != "" {
+			env.Spec.TeamSettings.VersionStreamRef = options.Flags.VersionsGitRef
 		}
 		return nil
 	}
