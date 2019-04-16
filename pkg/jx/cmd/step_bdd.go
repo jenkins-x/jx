@@ -47,6 +47,8 @@ type StepBDDFlags struct {
 	IgnoreTestFailure   bool
 	Parallel            bool
 	VersionsDir         string
+	VersionsRepository  string
+	VersionsGitRef      string
 	ConfigFile          string
 	TestRepoGitCloneUrl string
 	SkipRepoGitClone    bool
@@ -105,6 +107,8 @@ func NewCmdStepBDD(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Flags.TestGitPrNumber, "test-git-pr-number", "", "", "the Pull Request number to fetch from the repository for the BDD tests")
 	cmd.Flags().StringArrayVarP(&options.Flags.TestCases, "tests", "t", []string{"test-quickstart-node-http"}, "the list of the test cases to run")
 	cmd.Flags().StringVarP(&options.Flags.VersionsDir, "dir", "", "", "the git clone of the jenkins-x/jenkins-x-versions git repository. Used to default the version of jenkins-x-platform when creating clusters if no --version option is supplied")
+	cmd.Flags().StringVarP(&options.Flags.VersionsRepository, "versions-repo", "", "", "Jenkins X versions Git repo")
+	cmd.Flags().StringVarP(&options.Flags.VersionsGitRef, "versions-ref", "", "", "Jenkins X versions Git repository reference (tag, branch, sha etc)")
 	cmd.Flags().BoolVarP(&options.Flags.DeleteTeam, "delete-team", "", true, "Whether we should delete the Team we create for each Git Provider")
 	cmd.Flags().BoolVarP(&options.Flags.DisableDeleteApp, "no-delete-app", "", false, "Disables deleting the created app after the test")
 	cmd.Flags().BoolVarP(&options.Flags.DisableDeleteRepo, "no-delete-repo", "", false, "Disables deleting the created repository after the test")
@@ -508,6 +512,14 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 		branch = "x"
 	} else {
 		log.Infof("found branch name %s\n", branch)
+
+		o.InstallOptions.Flags.VersionsGitRef = branch
+	}
+	if o.Flags.VersionsRepository != "" {
+		o.InstallOptions.Flags.VersionsRepository = o.Flags.VersionsRepository
+	}
+	if o.Flags.VersionsGitRef != "" {
+		o.InstallOptions.Flags.VersionsGitRef = o.Flags.VersionsGitRef
 	}
 	cluster.Name = kube.ToValidName(branch + "-" + buildNum + "-" + cluster.Name)
 	log.Infof("\nCreating cluster %s\n", util.ColorInfo(cluster.Name))
