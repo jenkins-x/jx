@@ -15,9 +15,6 @@ spec:
       inputs:
       - name: workspace
         resource: abayer-js-test-repo-build-pack
-      outputs:
-        - name: workspace
-          resource: abayer-js-test-repo-build-pack
     taskRef:
       name: abayer-js-test-repo-build-pack-from-build-pack-1
 status: {}

@@ -2,18 +2,20 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jenkins"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 )
 
 // StepCustomPipelineOptions contains the command line arguments for this command
@@ -24,7 +26,7 @@ type StepCustomPipelineOptions struct {
 	Dir                string
 	Jenkinsfile        string
 	JenkinsPath        string
-	JenkinsSelector    JenkinsSelectorOptions
+	JenkinsSelector    opts.JenkinsSelectorOptions
 }
 
 var (
@@ -40,12 +42,12 @@ var (
 )
 
 // NewCmdStepCustomPipeline creates the new command
-func NewCmdStepCustomPipeline(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepCustomPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepCustomPipelineOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
 		},
-		JenkinsSelector: JenkinsSelectorOptions{
+		JenkinsSelector: opts.JenkinsSelectorOptions{
 			UseCustomJenkins: true,
 		},
 	}
@@ -62,7 +64,7 @@ func NewCmdStepCustomPipeline(commonOpts *CommonOptions) *cobra.Command {
 		},
 	}
 
-	options.addCommonFlags(cmd)
+	options.AddCommonFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.JenkinsSelector.CustomJenkinsName, "jenkins-name", "j", "", "The name of the custom Jenkins App if you don't wish to use the default execution engine in Jenkins X")
 
@@ -124,7 +126,7 @@ func (o *StepCustomPipelineOptions) Run() error {
 
 		if i < last {
 			// lets ensure there's a folder
-			err = o.retry(3, time.Second*10, func() error {
+			err = o.Retry(3, time.Second*10, func() error {
 				if err != nil {
 					folderXML := jenkins.CreateFolderXML(jobURL, path)
 					if i == 0 {
@@ -154,7 +156,7 @@ func (o *StepCustomPipelineOptions) Run() error {
 			gitURL := gitInfo.HttpCloneURL()
 			log.Infof("Using git URL %s and branch %s\n", util.ColorInfo(gitURL), util.ColorInfo(branch))
 
-			err = o.retry(3, time.Second*10, func() error {
+			err = o.Retry(3, time.Second*10, func() error {
 				if err != nil {
 					pipelineXML := jenkins.CreatePipelineXML(gitURL, branch, o.Jenkinsfile)
 					if i == 0 {

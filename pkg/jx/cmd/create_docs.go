@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -43,7 +44,7 @@ type CreateDocsOptions struct {
 }
 
 // NewCmdCreateDocs creates a command object for the "create" command
-func NewCmdCreateDocs(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateDocs(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateDocsOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -71,7 +72,7 @@ func NewCmdCreateDocs(commonOpts *CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *CreateDocsOptions) Run() error {
-	jxcommand := NewJXCommand(o.factory, o.In, o.Out, o.Err, nil)
+	jxcommand := NewJXCommand(o.GetFactory(), o.In, o.Out, o.Err, nil)
 	dir := o.Dir
 
 	exists, _ := util.FileExists(dir)

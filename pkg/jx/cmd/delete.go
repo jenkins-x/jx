@@ -3,12 +3,13 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 // DeleteOptions are the flags for delete commands
 type DeleteOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 }
 
 var (
@@ -25,7 +26,7 @@ var (
 
 // NewCmdDelete creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDelete(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDelete(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteOptions{
 		commonOpts,
 	}

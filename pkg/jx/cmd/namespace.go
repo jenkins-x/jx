@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd"
@@ -20,7 +21,7 @@ import (
 )
 
 type NamespaceOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 }
 
 var (
@@ -41,7 +42,7 @@ var (
 		jx ns cheese`)
 )
 
-func NewCmdNamespace(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdNamespace(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &NamespaceOptions{
 		CommonOptions: commonOpts,
 	}

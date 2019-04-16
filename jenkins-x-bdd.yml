@@ -18,6 +18,8 @@ pipelineConfig:
                 value: jenkins-x-bot
               - name: BASE_WORKSPACE
                 value: /workspace/source
+              - name: GOPROXY
+                value: http://jenkins-x-athens-proxy:80
             steps:
             - name: build-binary
               image: docker.io/golang:1.11.5
@@ -26,8 +28,6 @@ pipelineConfig:
               env:
                 - name: GOPATH
                   value: /workspace/go
-                - name: GOPROXY
-                  value: http://jx-app-athens-athens-proxy
               resources:
                 limits:
                   cpu: 4
@@ -71,8 +71,6 @@ pipelineConfig:
                   value: /workspace/go
                 - name: PATH
                   value: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/bin/google-cloud-sdk/bin:/opt/google/chrome:/usr/local/go/bin:/usr/local/glide:/usr/local/dep:/usr/local/:/home/jenkins/go/bin:/workspace/go/bin"
-                - name: GOPROXY
-                  value: http://jx-app-athens-athens-proxy
               resources:
                 limits:
                   cpu: 4

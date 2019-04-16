@@ -11,6 +11,7 @@ import (
 	"github.com/chromedp/chromedp/runner"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/nodes"
@@ -40,7 +41,7 @@ var (
 type CreateGitTokenOptions struct {
 	CreateOptions
 
-	ServerFlags ServerFlags
+	ServerFlags opts.ServerFlags
 	Username    string
 	Password    string
 	ApiToken    string
@@ -48,7 +49,7 @@ type CreateGitTokenOptions struct {
 }
 
 // NewCmdCreateGitToken creates a command
-func NewCmdCreateGitToken(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateGitToken(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateGitTokenOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -68,7 +69,7 @@ func NewCmdCreateGitToken(commonOpts *CommonOptions) *cobra.Command {
 			CheckErr(err)
 		},
 	}
-	options.ServerFlags.addGitServerFlags(cmd)
+	options.ServerFlags.AddGitServerFlags(cmd)
 	cmd.Flags().StringVarP(&options.ApiToken, "api-token", "t", "", "The API Token for the user")
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The User password to try automatically create a new API Token")
 	cmd.Flags().StringVarP(&options.Timeout, "timeout", "", "", "The timeout if using browser automation to generate the API token (by passing username and password)")
@@ -91,11 +92,11 @@ func (o *CreateGitTokenOptions) Run() error {
 	}
 	config := authConfigSvc.Config()
 
-	server, err := o.findGitServer(config, &o.ServerFlags)
+	server, err := o.FindGitServer(config, &o.ServerFlags)
 	if err != nil {
 		return err
 	}
-	err = o.ensureGitServiceCRD(server)
+	err = o.EnsureGitServiceCRD(server)
 	if err != nil {
 		return err
 	}
@@ -142,7 +143,7 @@ func (o *CreateGitTokenOptions) Run() error {
 	}
 
 	if config.PipeLineUsername == userAuth.Username {
-		_, err = o.updatePipelineGitCredentialsSecret(server, userAuth)
+		_, err = o.UpdatePipelineGitCredentialsSecret(server, userAuth)
 		if err != nil {
 			log.Warnf("Failed to update Jenkins X pipeline Git credentials secret: %v\n", err)
 		}
@@ -212,7 +213,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 
 	o.captureScreenshot(ctxt, c, "screenshot-git-api-token.png", "//div")
 
-	log.Infoln("Generating new token")
+	log.Info("Generating new token")
 
 	tokenId := "jx-" + string(uuid.NewUUID())
 	generateNewTokenButtonSelector := "//div[normalize-space(text())='Generate New Token']"
@@ -237,7 +238,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 			break
 		}
 	}
-	log.Infoln("Found API Token")
+	log.Info("Found API Token")
 	if token != "" {
 		userAuth.ApiToken = token
 	}
@@ -250,7 +251,7 @@ func (o *CreateGitTokenOptions) tryFindAPITokenFromBrowser(tokenUrl string, user
 }
 
 // lets try use the users browser to find the API token
-func (o *CommonOptions) createChromeClient(ctxt context.Context) (*chromedp.CDP, error) {
+func (o *CreateGitTokenOptions) createChromeClient(ctxt context.Context) (*chromedp.CDP, error) {
 	if o.BatchMode {
 		options := func(m map[string]interface{}) error {
 			m["remote-debugging-port"] = 9222
@@ -264,8 +265,8 @@ func (o *CommonOptions) createChromeClient(ctxt context.Context) (*chromedp.CDP,
 	return chromedp.New(ctxt)
 }
 
-func (o *CommonOptions) captureScreenshot(ctxt context.Context, c *chromedp.CDP, screenshotFile string, selector interface{}, options ...chromedp.QueryOption) error {
-	log.Infoln("Creating a screenshot...")
+func (o *CreateGitTokenOptions) captureScreenshot(ctxt context.Context, c *chromedp.CDP, screenshotFile string, selector interface{}, options ...chromedp.QueryOption) error {
+	log.Info("Creating a screenshot...")
 
 	var picture []byte
 	err := c.Run(ctxt, chromedp.Tasks{
@@ -275,7 +276,7 @@ func (o *CommonOptions) captureScreenshot(ctxt context.Context, c *chromedp.CDP,
 	if err != nil {
 		return err
 	}
-	log.Infoln("Saving a screenshot...")
+	log.Info("Saving a screenshot...")
 
 	err = ioutil.WriteFile(screenshotFile, picture, util.DefaultWritePermissions)
 	if err != nil {

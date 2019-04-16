@@ -17,6 +17,12 @@ func NewMockSourceRepoer() *MockSourceRepoer {
 	return &MockSourceRepoer{fail: pegomock.GlobalFailHandler}
 }
 
+func (mock *MockSourceRepoer) FailHandler() pegomock.FailHandler {
+	return mock.fail
+}
+
+func (mock *MockSourceRepoer) SetFailHandler(fh pegomock.FailHandler) { mock.fail = fh }
+
 func (mock *MockSourceRepoer) CreateOrUpdateSourceRepository(_param0 string, _param1 string, _param2 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockSourceRepoer().")

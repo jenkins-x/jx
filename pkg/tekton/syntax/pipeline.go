@@ -3,6 +3,7 @@ package syntax
 import (
 	"context"
 	"fmt"
+	"os"
 	"regexp"
 	"sort"
 	"strconv"
@@ -19,6 +20,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+// GitMergeImage is the default image name that is used in the git merge step of a pipeline
+const GitMergeImage = "rawlingsj/builder-jx:wip34"
 
 // ParsedPipeline is the internal representation of the Pipeline, used to validate and create CRDs
 type ParsedPipeline struct {
@@ -612,6 +616,24 @@ func validateWorkspace(w string) *apis.FieldError {
 	return nil
 }
 
+// EnvMapToSlice transforms a map of environment variables into a slice that can be used in container configuration
+func EnvMapToSlice(envMap map[string]corev1.EnvVar) []corev1.EnvVar {
+	env := make([]corev1.EnvVar, 0, len(envMap))
+
+	// Avoid nondeterministic results by sorting the keys and appending vars in that order.
+	var envVars []string
+	for k := range envMap {
+		envVars = append(envVars, k)
+	}
+	sort.Strings(envVars)
+
+	for _, envVar := range envVars {
+		env = append(env, envMap[envVar])
+	}
+
+	return env
+}
+
 func toContainerEnvVars(origEnv []EnvVar) []corev1.EnvVar {
 	env := make([]corev1.EnvVar, 0, len(origEnv))
 	for _, e := range origEnv {
@@ -638,20 +660,7 @@ func scopedEnv(newEnv []corev1.EnvVar, parentEnv []corev1.EnvVar, o *RootOptions
 		envMap[e.Name] = e
 	}
 
-	env := make([]corev1.EnvVar, 0, len(envMap))
-
-	// Avoid nondeterministic results by sorting the keys and appending vars in that order.
-	var envVars []string
-	for k := range envMap {
-		envVars = append(envVars, k)
-	}
-	sort.Strings(envVars)
-
-	for _, envVar := range envVars {
-		env = append(env, envMap[envVar])
-	}
-
-	return env
+	return EnvMapToSlice(envMap)
 }
 
 func (j *ParsedPipeline) toStepEnvVars() []corev1.EnvVar {
@@ -661,19 +670,7 @@ func (j *ParsedPipeline) toStepEnvVars() []corev1.EnvVar {
 		envMap[e.Name] = corev1.EnvVar{Name: e.Name, Value: e.Value}
 	}
 
-	env := make([]corev1.EnvVar, 0, len(envMap))
-	// Avoid nondeterministic results by sorting the keys and appending vars in that order.
-	var envVars []string
-	for k := range envMap {
-		envVars = append(envVars, k)
-	}
-	sort.Strings(envVars)
-
-	for _, envVar := range envVars {
-		env = append(env, envMap[envVar])
-	}
-
-	return env
+	return EnvMapToSlice(envMap)
 }
 
 func getContainerOptionsEnvVars(o *RootOptions) map[string]corev1.EnvVar {
@@ -837,7 +834,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 	}
 
 	stepCounter := 0
-
+	defaultTaskSpec := getDefaultTaskSpec(env)
 	if len(s.Steps) > 0 {
 		t := &tektonv1alpha1.Task{
 			TypeMeta: metav1.TypeMeta{
@@ -850,6 +847,12 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 				Labels:    util.MergeMaps(map[string]string{LabelStageName: s.stageLabelName()}),
 			},
 		}
+		// Only add the default git merge step if this is the first actual step stage - including if the stage is one of
+		// N stages within a parallel stage, and that parallel stage is the first stage in the pipeline
+		if previousSiblingStage == nil && isNestedFirstStepsStage(enclosingStage) {
+			t.Spec = defaultTaskSpec
+		}
+
 		t.SetDefaults(context.Background())
 
 		ws := &tektonv1alpha1.TaskResource{
@@ -905,7 +908,6 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		ts.computeWorkspace(parentWorkspace)
 		return &ts, nil
 	}
-
 	if len(s.Stages) > 0 {
 		var tasks []*transformedStage
 		ts := transformedStage{Stage: s, Depth: depth, EnclosingStage: enclosingStage, PreviousSiblingStage: previousSiblingStage}
@@ -951,8 +953,17 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 
 		return &ts, nil
 	}
-
 	return nil, errors.New("no steps, sequential stages, or parallel stages")
+}
+
+func isNestedFirstStepsStage(enclosingStage *transformedStage) bool {
+	if enclosingStage != nil {
+		if enclosingStage.PreviousSiblingStage != nil {
+			return false
+		}
+		return isNestedFirstStepsStage(enclosingStage.EnclosingStage)
+	}
+	return true
 }
 
 func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parentContainer *corev1.Container, podTemplates map[string]*corev1.Pod, stepCounter int) ([]corev1.Container, map[string]corev1.Volume, int, error) {
@@ -993,11 +1004,18 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 			c.Image = stepImage
 			c.Command = []string{"/bin/sh", "-c"}
 		}
-		cmdStr := step.Command
-		if len(step.Arguments) > 0 {
-			cmdStr += " " + strings.Join(step.Arguments, " ")
+		// Special-casing for commands starting with /kaniko
+		// TODO: Should this be more general?
+		if strings.HasPrefix(step.Command, "/kaniko") {
+			c.Command = []string{step.Command}
+			c.Args = step.Arguments
+		} else {
+			cmdStr := step.Command
+			if len(step.Arguments) > 0 {
+				cmdStr += " " + strings.Join(step.Arguments, " ")
+			}
+			c.Args = []string{cmdStr}
 		}
-		c.Args = []string{cmdStr}
 		c.WorkingDir = workingDir
 		stepCounter++
 		if step.Name != "" {
@@ -1095,7 +1113,9 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 
 	baseEnv := j.toStepEnvVars()
 
-	for _, s := range j.Stages {
+	for i, s := range j.Stages {
+		isLastStage := i == len(j.Stages)-1
+
 		wsPath := ""
 		if len(tasks) == 0 {
 			wsPath = sourceDir
@@ -1104,21 +1124,51 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 		if err != nil {
 			return nil, nil, nil, err
 		}
+
 		previousStage = stage
 
+		pipelineTasks := createPipelineTasks(stage, p.Spec.Resources[0].Name)
+
 		linearTasks := stage.getLinearTasks()
-		for _, lt := range linearTasks {
+
+		for index, lt := range linearTasks {
+			if shouldRemoveWorkspaceOutput(stage, lt.Name, index, len(linearTasks), isLastStage) {
+				pipelineTasks[index].Resources.Outputs = nil
+				lt.Spec.Outputs = nil
+			}
 			if len(lt.Spec.Inputs.Params) == 0 {
 				lt.Spec.Inputs.Params = taskParams
 			}
 		}
 
 		tasks = append(tasks, linearTasks...)
-		p.Spec.Tasks = append(p.Spec.Tasks, createPipelineTasks(stage, p.Spec.Resources[0].Name)...)
+		p.Spec.Tasks = append(p.Spec.Tasks, pipelineTasks...)
 		structure.Stages = append(structure.Stages, stage.getAllAsPipelineStructureStages()...)
 	}
 
 	return p, tasks, structure, nil
+}
+
+func shouldRemoveWorkspaceOutput(stage *transformedStage, taskName string, index int, tasksLen int, isLastStage bool) bool {
+	if stage.isParallel() {
+		parallelStages := stage.Parallel
+		for _, ps := range parallelStages {
+			if ps.Task != nil && ps.Task.Name == taskName {
+				return true
+			}
+			seq := ps.Sequential
+			if len(seq) > 0 {
+				lastSeq := seq[len(seq)-1]
+				if lastSeq.Task.Name == taskName {
+					return true
+				}
+			}
+
+		}
+	} else if index == tasksLen-1 && isLastStage {
+		return true
+	}
+	return false
 }
 
 func createPipelineTasks(stage *transformedStage, resourceName string) []tektonv1alpha1.PipelineTask {
@@ -1310,4 +1360,25 @@ func validateStageNames(j *ParsedPipeline) (err *apis.FieldError) {
 	err = findDuplicates(names)
 
 	return
+}
+
+// todo JR lets remove this when we switch tekton to using git merge type pipelineresources
+func getDefaultTaskSpec(envs []corev1.EnvVar) tektonv1alpha1.TaskSpec {
+	v := os.Getenv("BUILDER_JX_IMAGE")
+	if v == "" {
+		v = GitMergeImage
+	}
+	return tektonv1alpha1.TaskSpec{
+		Steps: []corev1.Container{
+			{
+				Name: "git-merge",
+				//Image:   "gcr.io/jenkinsxio/builder-jx:0.1.297",
+				Image:      v,
+				Command:    []string{"jx"},
+				Args:       []string{"step", "git", "merge", "--verbose"},
+				WorkingDir: "/workspace/source",
+				Env:        envs,
+			},
+		},
+	}
 }

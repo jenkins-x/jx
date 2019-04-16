@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/kube"
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -17,7 +19,7 @@ type ConsoleOptions struct {
 
 	OnlyViewURL     bool
 	ClassicMode     bool
-	JenkinsSelector JenkinsSelectorOptions
+	JenkinsSelector opts.JenkinsSelectorOptions
 }
 
 const (
@@ -38,7 +40,7 @@ var (
 		jx console --classic`)
 )
 
-func NewCmdConsole(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdConsole(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &ConsoleOptions{
 		GetURLOptions: GetURLOptions{
 			GetOptions: GetOptions{
@@ -75,7 +77,7 @@ func (o *ConsoleOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	prow, err := o.isProw()
+	prow, err := o.IsProw()
 	if err != nil {
 		return err
 	}
@@ -97,15 +99,15 @@ func (o *ConsoleOptions) Open(name string, label string) error {
 	url := ""
 	ns := o.Namespace
 	if ns == "" && o.Environment != "" {
-		ns, err = o.findEnvironmentNamespace(o.Environment)
+		ns, err = o.FindEnvironmentNamespace(o.Environment)
 		if err != nil {
 			return err
 		}
 	}
 	if ns != "" {
-		url, err = o.findServiceInNamespace(name, ns)
+		url, err = o.FindServiceInNamespace(name, ns)
 	} else {
-		url, err = o.findService(name)
+		url, err = o.FindService(name)
 	}
 	if err != nil && name != "" {
 		log.Infof("If the app %s is running in a different environment you could try: %s\n", util.ColorInfo(name), util.ColorInfo("jx get applications"))

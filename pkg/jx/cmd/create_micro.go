@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -40,7 +41,7 @@ type CreateMicroOptions struct {
 }
 
 // NewCmdCreateMicro creates a command object for the "create" command
-func NewCmdCreateMicro(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateMicro(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateMicroOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
@@ -66,11 +67,11 @@ func NewCmdCreateMicro(commonOpts *CommonOptions) *cobra.Command {
 
 // checkMicroInstalled lazily install micro if its not installed already
 func (o CreateMicroOptions) checkMicroInstalled() error {
-	_, err := o.getCommandOutput("", "micro", "help")
+	_, err := o.GetCommandOutput("", "micro", "help")
 	if err != nil {
-		log.Infoln("Installing micro's dependencies...")
+		log.Info("Installing micro's dependencies...")
 		// lets install micro
-		err = o.installBrewIfRequired()
+		err = o.InstallBrewIfRequired()
 		if err != nil {
 			return err
 		}
@@ -80,7 +81,7 @@ func (o CreateMicroOptions) checkMicroInstalled() error {
 				return err
 			}
 		}
-		log.Infoln("Downloading and building micro dependencies...")
+		log.Info("Downloading and building micro dependencies...")
 		packages := []string{"github.com/golang/protobuf/proto", "github.com/golang/protobuf/protoc-gen-go", "github.com/micro/protoc-gen-micro"}
 		for _, p := range packages {
 			log.Infof("Installing %s\n", p)
@@ -89,12 +90,12 @@ func (o CreateMicroOptions) checkMicroInstalled() error {
 				return fmt.Errorf("Failed to install %s: %s", p, err)
 			}
 		}
-		log.Infoln("Installed micro dependencies")
+		log.Info("Installed micro dependencies")
 
-		log.Infoln("Downloading and building micro - this can take a minute or so...")
+		log.Info("Downloading and building micro - this can take a minute or so...")
 		err = o.RunCommand("go", "get", "-u", "github.com/micro/micro")
 		if err == nil {
-			log.Infoln("Installed micro and its dependencies!")
+			log.Info("Installed micro and its dependencies!")
 		}
 	}
 	return err

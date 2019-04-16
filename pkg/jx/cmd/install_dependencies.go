@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -13,7 +14,7 @@ type InstallDependenciesFlags struct {
 
 // InstallDependenciesOptions options for install dependencies
 type InstallDependenciesOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 	Flags InstallDependenciesFlags
 }
 
@@ -58,7 +59,7 @@ var (
 )
 
 // NewCmdInstallDependencies creates a command object to install any required dependencies
-func NewCmdInstallDependencies(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdInstallDependencies(commonOpts *opts.CommonOptions) *cobra.Command {
 
 	options := CreateInstallDependenciesOptions(commonOpts)
 
@@ -82,7 +83,7 @@ func NewCmdInstallDependencies(commonOpts *CommonOptions) *cobra.Command {
 }
 
 // CreateInstallDependenciesOptions creates the options for jx install dependencies
-func CreateInstallDependenciesOptions(commonOpts *CommonOptions) InstallDependenciesOptions {
+func CreateInstallDependenciesOptions(commonOpts *opts.CommonOptions) InstallDependenciesOptions {
 	options := InstallDependenciesOptions{
 		CommonOptions: commonOpts,
 	}
@@ -108,7 +109,7 @@ func (options *InstallDependenciesOptions) Run() error {
 	}
 
 	if len(install) > 0 {
-		return options.doInstallMissingDependencies(install)
+		return options.DoInstallMissingDependencies(install)
 	}
 
 	options.Debugf("No dependencies selected to install\n")

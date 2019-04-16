@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/spring"
@@ -22,7 +23,7 @@ var (
 
 		For more documentation see: [https://jenkins-x.io/developing/create-spring/](https://jenkins-x.io/developing/create-spring/)
 
-` + SeeAlsoText("jx create project"))
+` + opts.SeeAlsoText("jx create project"))
 
 	createSpringExample = templates.Examples(`
 		# Create a Spring Boot application where you use the terminal to pick the values
@@ -48,7 +49,7 @@ type CreateSpringOptions struct {
 }
 
 // NewCmdCreateSpring creates a command object for the "create" command
-func NewCmdCreateSpring(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateSpring(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateSpringOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{

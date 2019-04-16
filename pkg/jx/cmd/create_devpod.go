@@ -11,9 +11,10 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
@@ -62,7 +63,7 @@ type CreateDevPodResults struct {
 // CreateDevPodOptions the options for the create spring command
 type CreateDevPodOptions struct {
 	CreateOptions
-	CommonDevPodOptions
+	opts.CommonDevPodOptions
 
 	Label           string
 	Suffix          string
@@ -88,7 +89,7 @@ type CreateDevPodOptions struct {
 }
 
 // NewCmdCreateDevPod creates a command object for the "create" command
-func NewCmdCreateDevPod(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateDevPod(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateDevPodOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -131,7 +132,7 @@ func NewCmdCreateDevPod(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "", "The ServiceAccount name used for the DevPod")
 	cmd.Flags().StringVarP(&options.PullSecrets, optionPullSecrets, "", "", "A list of Kubernetes secret names that will be attached to the service account (e.g. foo, bar, baz)")
 
-	options.addCommonDevPodFlags(cmd)
+	options.AddCommonDevPodFlags(cmd)
 	return cmd
 }
 
@@ -170,12 +171,15 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 
-	cm, err := client.CoreV1().ConfigMaps(ns).Get(kube.ConfigMapJenkinsPodTemplates, metav1.GetOptions{})
+	podTemplates, err := kube.LoadPodTemplates(client, ns)
 	if err != nil {
-		return fmt.Errorf("Failed to find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsPodTemplates, ns, err)
+		return err
 	}
-	podTemplates := cm.Data
-	labels := util.SortedMapKeys(podTemplates)
+	podTemplateKeys := map[string]string{}
+	for k := range podTemplates {
+		podTemplateKeys[k] = k
+	}
+	labels := util.SortedMapKeys(podTemplateKeys)
 
 	label := o.Label
 	if label == "" {
@@ -194,8 +198,8 @@ func (o *CreateDevPodOptions) Run() error {
 			return err
 		}
 	}
-	yml := podTemplates[label]
-	if yml == "" {
+	pod := podTemplates[label]
+	if pod == nil {
 		return util.InvalidOption(optionLabel, label, labels)
 	}
 
@@ -213,11 +217,6 @@ func (o *CreateDevPodOptions) Run() error {
 		}
 	}
 
-	pod := &corev1.Pod{}
-	err = yaml.Unmarshal([]byte(yml), pod)
-	if err != nil {
-		return fmt.Errorf("Failed to parse Pod Template YAML: %s\n%s", err, yml)
-	}
 	if pod.Labels == nil {
 		pod.Labels = map[string]string{}
 	}
@@ -225,7 +224,7 @@ func (o *CreateDevPodOptions) Run() error {
 		pod.Annotations = map[string]string{}
 	}
 
-	userName, err := o.getUsername(o.Username)
+	userName, err := o.GetUsername(o.Username)
 	if err != nil {
 		return err
 	}
@@ -247,7 +246,7 @@ func (o *CreateDevPodOptions) Run() error {
 	pod.Labels[kube.LabelDevPodUsername] = userName
 
 	if len(pod.Spec.Containers) == 0 {
-		return fmt.Errorf("No containers specified for label %s with YAML: %s", label, yml)
+		return fmt.Errorf("No containers specified for label %s with pod: %#v", label, pod)
 	}
 	container1 := &pod.Spec.Containers[0]
 
@@ -297,7 +296,7 @@ func (o *CreateDevPodOptions) Run() error {
 	if pod.Spec.ServiceAccountName == "" {
 		sa := o.ServiceAccount
 		if sa == "" {
-			prow, err := o.isProw()
+			prow, err := o.IsProw()
 			if err != nil {
 				return err
 			}
@@ -505,7 +504,7 @@ func (o *CreateDevPodOptions) Run() error {
 		_, err = podResources.Create(pod)
 		if err != nil {
 			if o.Verbose {
-				return fmt.Errorf("Failed to create pod %s\nYAML: %s", err, yml)
+				return fmt.Errorf("Failed to create pod %s\npod: %#v", err, pod)
 			} else {
 				return fmt.Errorf("Failed to create pod %s", err)
 			}
@@ -806,7 +805,7 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	if err != nil {
 		return env, err
 	}
-	userName, err := o.getUsername(o.Username)
+	userName, err := o.GetUsername(o.Username)
 	if err != nil {
 		return env, err
 	}
@@ -821,7 +820,7 @@ func (o *CreateDevPodOptions) getOrCreateEditEnvironment() (*v1.Environment, err
 	if !flag || err != nil {
 		log.Infof("Installing the ExposecontrollerService in the namespace: %s\n", util.ColorInfo(editNs))
 		releaseName := editNs + "-es"
-		err = o.installChartOptions(helm.InstallChartOptions{
+		err = o.InstallChartWithOptions(helm.InstallChartOptions{
 			ReleaseName: releaseName,
 			Chart:       kube.ChartExposecontrollerService,
 			Version:     "",
@@ -844,13 +843,13 @@ func (o *CreateDevPodOptions) guessDevPodLabel(dir string, labels []string) (str
 		if err != nil {
 			return answer, err
 		}
-		args := &InvokeDraftPack{
+		args := &opts.InvokeDraftPack{
 			Dir:                     root,
 			ProjectConfig:           projectConfig,
 			DisableAddFiles:         true,
 			DisableJenkinsfileCheck: true,
 		}
-		answer, err = o.invokeDraftPack(args)
+		answer, err = o.InvokeDraftPack(args)
 		if err != nil {
 			return answer, errors.Wrapf(err, "failed to discover task pack in dir %s", o.Dir)
 		}
@@ -878,7 +877,7 @@ func (o *CreateDevPodOptions) updateExposeController(client kubernetes.Interface
 	if err != nil {
 		return errors.Wrapf(err, "Failed to load ingress-config in namespace %s", devNs)
 	}
-	return o.runExposecontroller(ns, ns, ingressConfig)
+	return o.RunExposecontroller(ns, ns, ingressConfig)
 }
 
 // FindDevPodLabelFromJenkinsfile finds pod labels from a Jenkinsfile

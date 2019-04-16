@@ -284,8 +284,8 @@ func (g *GitCLI) gitCmd(dir string, args ...string) error {
 		Name: "git",
 		Args: args,
 	}
-	_, err := cmd.RunWithoutRetry()
-	return err
+	output, err := cmd.RunWithoutRetry()
+	return errors.Wrapf(err, "git output: %s", output)
 }
 
 func (g *GitCLI) gitCmdWithOutput(dir string, args ...string) (string, error) {
@@ -391,17 +391,28 @@ func (g *GitCLI) ConvertToValidBranchName(name string) string {
 
 // FetchBranch fetches the refspecs from the repo
 func (g *GitCLI) FetchBranch(dir string, repo string, refspecs ...string) error {
-	return g.fetchBranch(dir, repo, false, refspecs...)
+	return g.fetchBranch(dir, repo, false, false, refspecs...)
+}
+
+// FetchBranchShallow fetches the refspecs from the repo
+func (g *GitCLI) FetchBranchShallow(dir string, repo string, refspecs ...string) error {
+	return g.fetchBranch(dir, repo, false, true, refspecs...)
 }
 
 // FetchBranch fetches the refspecs from the repo
 func (g *GitCLI) FetchBranchUnshallow(dir string, repo string, refspecs ...string) error {
-	return g.fetchBranch(dir, repo, true, refspecs...)
+	return g.fetchBranch(dir, repo, true, false, refspecs...)
 }
 
 // FetchBranch fetches the refspecs from the repo
-func (g *GitCLI) fetchBranch(dir string, repo string, unshallow bool, refspecs ...string) error {
+func (g *GitCLI) fetchBranch(dir string, repo string, unshallow bool, shallow bool, refspecs ...string) error {
 	args := []string{"fetch", repo}
+	if shallow && unshallow {
+		return errors.Errorf("cannot use --depth=1 and --unshallow at the same time")
+	}
+	if shallow {
+		args = append(args, "--depth=1")
+	}
 	if unshallow {
 		args = append(args, "--unshallow")
 	}

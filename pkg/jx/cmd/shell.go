@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"k8s.io/client-go/tools/clientcmd"
@@ -47,7 +48,7 @@ fi
 )
 
 type ShellOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Filter string
 }
@@ -67,7 +68,7 @@ var (
 `)
 )
 
-func NewCmdShell(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdShell(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &ShellOptions{
 		CommonOptions: commonOpts,
 	}

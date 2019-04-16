@@ -118,7 +118,7 @@ func RunExposecontroller(devNamespace, targetNamespace string, ic kube.IngressCo
 		HelmUpdate:  true,
 		VersionsDir: versionsDir,
 		SetValues:   exValues,
-	}, helmer, kubeClient, installTimeout)
+	}, helmer, kubeClient, installTimeout, nil)
 	if err != nil {
 		return fmt.Errorf("exposecontroller deployment failed: %v", err)
 	}

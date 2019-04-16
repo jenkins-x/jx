@@ -10,11 +10,11 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/packages"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	istioclient "github.com/knative/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -56,7 +56,7 @@ type CreateAddonIstioOptions struct {
 }
 
 // NewCmdCreateAddonIstio creates a command object for the "create" command
-func NewCmdCreateAddonIstio(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateAddonIstio(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonIstioOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -111,7 +111,7 @@ func (o *CreateAddonIstioOptions) Run() error {
 	if o.Chart == "" {
 		return util.MissingOption(optionChart)
 	}
-	err := o.ensureHelm()
+	err := o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that Helm is present")
 	}
@@ -125,7 +125,7 @@ func (o *CreateAddonIstioOptions) Run() error {
 		return err
 	}
 
-	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
+	_, devNamespace, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
@@ -138,7 +138,7 @@ func (o *CreateAddonIstioOptions) Run() error {
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	err = o.installChartAt(o.Dir, o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
+	err = o.InstallChartAt(o.Dir, o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
 	if err != nil {
 		return fmt.Errorf("istio deployment failed: %v", err)
 	}
@@ -250,13 +250,4 @@ func (o *CreateAddonIstioOptions) getIstioChartsFromGitHub() (string, error) {
 func (o *CreateAddonIstioOptions) generateSecrets() error {
 	// generate secret for kiali && grafana
 	return nil
-}
-
-// IstioClient creates a new Kubernetes client for Istio resources
-func (o *CommonOptions) IstioClient() (istioclient.Interface, error) {
-	config, err := o.factory.CreateKubeConfig()
-	if err != nil {
-		return nil, err
-	}
-	return istioclient.NewForConfig(config)
 }

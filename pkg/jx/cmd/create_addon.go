@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/helm"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -24,7 +27,7 @@ type CreateAddonOptions struct {
 }
 
 // NewCmdCreateAddon creates a command object for the "create" command
-func NewCmdCreateAddon(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -46,6 +49,7 @@ func NewCmdCreateAddon(commonOpts *CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateAddonAmbassador(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonAnchore(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonCloudBees(commonOpts))
+	cmd.AddCommand(NewCmdCreateAddonEnvironmentController(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonFlagger(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonGitea(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonGloo(commonOpts))
@@ -89,7 +93,7 @@ func (o *CreateAddonOptions) Run() error {
 }
 
 func (o *CreateAddonOptions) CreateAddon(addon string) error {
-	err := o.ensureHelm()
+	err := o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that helm is present")
 	}
@@ -100,7 +104,15 @@ func (o *CreateAddonOptions) CreateAddon(addon string) error {
 	}
 	setValues := strings.Split(o.SetValues, ",")
 
-	err = o.installChart(addon, chart, o.Version, o.Namespace, o.HelmUpdate, setValues, o.ValueFiles, "")
+	helmOptions := helm.InstallChartOptions{
+		Chart:       chart,
+		ReleaseName: addon,
+		Version:     o.Version,
+		Ns:          o.Namespace,
+		SetValues:   setValues,
+		ValueFiles:  o.ValueFiles,
+	}
+	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
 		return fmt.Errorf("Failed to install chart %s: %s", chart, err)
 	}
@@ -133,9 +145,13 @@ func (o *CreateAddonOptions) ExposeAddon(addon string) error {
 			return errors.Wrap(err, "updating the service annotations")
 		}
 	}
-	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
+	_, currentNamespace, err := o.KubeClientAndNamespace()
+	if err != nil {
+		return errors.Wrap(err, "getting the current namespce")
+	}
+	devNamespace, _, err := kube.GetDevNamespace(client, currentNamespace)
 	if err != nil {
 		return errors.Wrap(err, "retrieving the dev namespace")
 	}
-	return o.expose(devNamespace, o.Namespace, "")
+	return o.Expose(devNamespace, o.Namespace, "")
 }

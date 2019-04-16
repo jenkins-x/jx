@@ -6,6 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/kube"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -29,7 +30,7 @@ type CreateAddonKnativeBuildOptions struct {
 	token    string
 }
 
-func NewCmdCreateAddonKnativeBuild(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateAddonKnativeBuild(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonKnativeBuildOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -63,11 +64,11 @@ func (o *CreateAddonKnativeBuildOptions) Run() error {
 	o.SetValues = strings.Join([]string{"build.auth.git.username=" + o.username, "build.auth.git.password=" + o.token}, ",")
 
 	if o.Namespace == "" {
-		_, err := o.KubeClient()
+		_, currentNamespace, err := o.KubeClientAndNamespace()
 		if err != nil {
 			return err
 		}
-		o.Namespace = o.currentNamespace
+		o.Namespace = currentNamespace
 	}
 
 	err := o.CreateAddon(kube.DefaultKnativeBuildReleaseName)

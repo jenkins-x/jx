@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/sirupsen/logrus"
-	"gopkg.in/AlecAivazis/survey.v1"
+	"github.com/jenkins-x/jx/pkg/log"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -30,7 +31,7 @@ type DeleteKnativeBuildOptions struct {
 }
 
 // NewCmdDeleteAddonKnativeBuild defines the command
-func NewCmdDeleteAddonKnativeBuild(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteAddonKnativeBuild(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteKnativeBuildOptions{
 		DeleteAddonOptions: DeleteAddonOptions{
 			CommonOptions: commonOpts,
@@ -69,7 +70,7 @@ func (o *DeleteKnativeBuildOptions) Run() error {
 	for _, crd := range knativeCRDs {
 		err = apisClient.ApiextensionsV1beta1().CustomResourceDefinitions().Delete(crd, &metav1.DeleteOptions{})
 		if err != nil {
-			logrus.Warnf("cannot delete CRD %s: %v", crd, err)
+			log.Warnf("cannot delete CRD %s: %v", crd, err)
 			confirm := &survey.Confirm{
 				Message: "There are warnings, do you wish to continue?",
 				Default: false,
@@ -81,7 +82,7 @@ func (o *DeleteKnativeBuildOptions) Run() error {
 			}
 		}
 	}
-	err = o.deleteChart(o.ReleaseName, o.Purge)
+	err = o.DeleteChart(o.ReleaseName, o.Purge)
 	if err != nil {
 		return err
 	}

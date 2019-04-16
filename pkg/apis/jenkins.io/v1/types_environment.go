@@ -183,6 +183,12 @@ type TeamSettings struct {
 
 	// ProwEngine is the kind of prow engine used such as knative build or build pipeline
 	ProwEngine ProwEngineType `json:"prowEngine,omitempty" protobuf:"bytes,23,opt,name=prowEngine"`
+
+	// VersionStreamURL contains the git clone URL for the Version Stream which is the set of versions to use for charts, images, packages etc
+	VersionStreamURL string `json:"versionStreamUrl,omitempty" protobuf:"bytes,25,opt,name=versionStreamUrl"`
+
+	// VersionStreamRef contains the git ref (tag or branch) in the VersionStreamURL repository to use as the version stream
+	VersionStreamRef string `json:"versionStreamRef,omitempty" protobuf:"bytes,26,opt,name=versionStreamRef"`
 }
 
 // StorageLocation
@@ -324,7 +330,7 @@ func (t *TeamSettings) GetImportMode() ImportModeType {
 // GetProwEngine returns the import mode - returning a default value if it has not been populated yet
 func (t *TeamSettings) GetProwEngine() ProwEngineType {
 	if string(t.ProwEngine) == "" {
-		return ProwEngineTypeKnativeBuild
+		return ProwEngineTypeTekton
 	}
 	return t.ProwEngine
 }

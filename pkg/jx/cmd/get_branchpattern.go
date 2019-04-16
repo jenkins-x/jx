@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 )
@@ -13,9 +13,6 @@ type GetBranchPatternOptions struct {
 
 const (
 	branchPattern = "branchpattern"
-
-	defaultBranchPatterns     = jenkins.BranchPatternMasterPRsAndFeatures
-	defaultForkBranchPatterns = ""
 )
 
 var (
@@ -36,7 +33,7 @@ var (
 )
 
 // NewCmdGetBranchPattern creates the new command for: jx get env
-func NewCmdGetBranchPattern(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetBranchPattern(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetBranchPatternOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -66,7 +63,7 @@ func (o *GetBranchPatternOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	table := o.createTable()
+	table := o.CreateTable()
 	table.AddRow("BRANCH PATTERNS")
 	table.AddRow(patterns.DefaultBranchPattern)
 	table.Render()

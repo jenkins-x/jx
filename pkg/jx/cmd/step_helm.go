@@ -10,6 +10,7 @@ import (
 
 	"os"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -31,7 +32,7 @@ type StepHelmOptions struct {
 }
 
 // NewCmdStepHelm Steps a command object for the "step" command
-func NewCmdStepHelm(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepHelm(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepHelmOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -199,7 +200,7 @@ func (o *StepHelmOptions) cloneProwPullRequest(dir, gitProvider string) (string,
 		dir = filepath.Join(pwd, repo)
 	}
 
-	err = o.runCommandFromDir(dir, "git", "checkout", prCommit)
+	err = o.RunCommandFromDir(dir, "git", "checkout", prCommit)
 	if err != nil {
 		return "", err
 	}
@@ -209,7 +210,7 @@ func (o *StepHelmOptions) cloneProwPullRequest(dir, gitProvider string) (string,
 		return "", err
 	}
 
-	err = o.runCommandFromDir(dir, "git", "checkout", "-b", "pr")
+	err = o.RunCommandFromDir(dir, "git", "checkout", "-b", "pr")
 	if err != nil {
 		return "", err
 	}

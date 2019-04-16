@@ -16,6 +16,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 )
@@ -23,7 +24,7 @@ import (
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
 // referencing the cmd.Flags()
 type GCHelmOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	RevisionHistoryLimit int
 	OutDir               string
@@ -44,7 +45,7 @@ var (
 )
 
 // NewCmdGCHelm  a command object for the "garbage collect" command
-func NewCmdGCHelm(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGCHelm(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GCHelmOptions{
 		CommonOptions: commonOpts,
 	}
@@ -106,7 +107,7 @@ func (o *GCHelmOptions) Run() error {
 		to_delete := VersionsToDelete(versions, o.RevisionHistoryLimit)
 		if len(to_delete) > 0 {
 			if o.DryRun {
-				log.Infoln("Would delete:")
+				log.Info("Would delete:")
 				log.Infof("%v\n", to_delete)
 			} else {
 				// Backup and delete

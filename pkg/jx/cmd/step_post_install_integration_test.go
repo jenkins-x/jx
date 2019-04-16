@@ -6,11 +6,12 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jenkins-x/golang-jenkins"
+	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jenkins/fake"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/testkube"
@@ -32,7 +33,7 @@ func TestStepPostInstall(t *testing.T) {
 
 	o := cmd.StepPostInstallOptions{
 		StepOptions: cmd.StepOptions{
-			CommonOptions: &cmd.CommonOptions{
+			CommonOptions: &opts.CommonOptions{
 				In:  os.Stdin,
 				Out: os.Stdout,
 				Err: os.Stderr,

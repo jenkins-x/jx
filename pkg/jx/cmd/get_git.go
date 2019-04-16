@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
@@ -24,7 +25,7 @@ var (
 )
 
 // NewCmdGetGit creates the command
-func NewCmdGetGit(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetGit(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetGitOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -56,7 +57,7 @@ func (o *GetGitOptions) Run() error {
 	}
 	config := authConfigSvc.Config()
 
-	table := o.createTable()
+	table := o.CreateTable()
 	table.AddRow("Name", "Kind", "URL")
 
 	for _, s := range config.Servers {

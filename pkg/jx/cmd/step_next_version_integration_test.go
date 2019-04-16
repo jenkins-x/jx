@@ -10,6 +10,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
@@ -32,7 +33,7 @@ func TestSetVersionJavascript(t *testing.T) {
 
 	o := cmd.StepNextVersionOptions{
 		StepOptions: cmd.StepOptions{
-			CommonOptions: &cmd.CommonOptions{},
+			CommonOptions: &opts.CommonOptions{},
 		},
 	}
 	o.Out = tests.Output()
@@ -66,7 +67,7 @@ func TestSetVersionChart(t *testing.T) {
 
 	o := cmd.StepNextVersionOptions{
 		StepOptions: cmd.StepOptions{
-			CommonOptions: &cmd.CommonOptions{},
+			CommonOptions: &opts.CommonOptions{},
 		},
 	}
 	o.Out = tests.Output()

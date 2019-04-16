@@ -8,6 +8,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -44,7 +45,7 @@ type DeleteBranchOptions struct {
 }
 
 // NewCmdDeleteBranch creates a command object for the "delete repo" command
-func NewCmdDeleteBranch(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteBranch(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteBranchOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -191,7 +192,7 @@ func (o *DeleteBranchOptions) Run() error {
 	return nil
 }
 
-func (o *CommonOptions) cloneOrPullRepository(org string, repo string, gitURL string) (string, error) {
+func (o *DeleteBranchOptions) cloneOrPullRepository(org string, repo string, gitURL string) (string, error) {
 	environmentsDir, err := util.EnvironmentsDir()
 	if err != nil {
 		return "", err

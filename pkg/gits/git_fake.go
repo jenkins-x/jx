@@ -367,6 +367,11 @@ func (g *GitFake) FetchBranchUnshallow(dir string, repo string, refspec ...strin
 	return nil
 }
 
+// FetchBranchShallow fetch branch
+func (g *GitFake) FetchBranchShallow(dir string, repo string, refspec ...string) error {
+	return nil
+}
+
 // Stash git stash
 func (g *GitFake) Stash(dir string) error {
 	return nil

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -59,7 +60,7 @@ var (
 `)
 )
 
-func NewCmdStepTag(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepTag(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepTagOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -100,7 +101,7 @@ func (o *StepTagOptions) Run() error {
 			if err != nil {
 				return err
 			}
-			o.Flags.Version = string(data)
+			o.Flags.Version = strings.TrimSpace(string(data))
 		}
 	}
 	if o.Flags.Version == "" {
@@ -177,6 +178,7 @@ func (o *StepTagOptions) updateChart(version string, chartsDir string) error {
 		return nil
 	}
 	chart.Version = version
+	chart.AppVersion = version
 	log.Infof("Updating chart version in %s to %s\n", chartFile, version)
 	err = chartutil.SaveChartfile(chartFile, chart)
 	if err != nil {
@@ -231,8 +233,8 @@ func (o *StepTagOptions) defaultChartValueRepository() string {
 		log.Warnf("failed to find git repository: %s\n", err.Error())
 	}
 
-	dockerRegistry := o.dockerRegistry()
-	dockerRegistryOrg := o.dockerRegistryOrg(gitInfo)
+	dockerRegistry := o.DockerRegistry()
+	dockerRegistryOrg := o.DockerRegistryOrg(gitInfo)
 	if dockerRegistryOrg == "" {
 		dockerRegistryOrg = os.Getenv("ORG")
 	}

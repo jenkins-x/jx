@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/environments"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -53,12 +54,10 @@ type UpgradeAppsOptions struct {
 
 	// allow git to be configured externally before a PR is created
 	ConfigureGitCallback environments.ConfigureGitFn
-
-	InstallFlags InstallFlags
 }
 
 // NewCmdUpgradeApps defines the command
-func NewCmdUpgradeApps(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdUpgradeApps(commonOpts *opts.CommonOptions) *cobra.Command {
 	o := &UpgradeAppsOptions{
 		AddOptions: AddOptions{
 			CommonOptions: commonOpts,
@@ -79,6 +78,7 @@ func NewCmdUpgradeApps(commonOpts *CommonOptions) *cobra.Command {
 		},
 	}
 
+	cmd.Flags().BoolVarP(&o.BatchMode, opts.OptionBatchMode, "b", false, "Enable batch mode")
 	cmd.Flags().StringVarP(&o.Version, "username", "", "",
 		"The username for the repository")
 	cmd.Flags().StringVarP(&o.Version, "password", "", "",
@@ -97,6 +97,7 @@ func NewCmdUpgradeApps(commonOpts *CommonOptions) *cobra.Command {
 		"The chart release name (by default the name of the app, available when NOT using GitOps for your dev environment)")
 	cmd.Flags().BoolVarP(&o.AskAll, "ask-all", "", false, "Ask all configuration questions. "+
 		"By default existing answers are reused automatically.")
+
 	return cmd
 }
 
@@ -107,7 +108,7 @@ func (o *UpgradeAppsOptions) Run() error {
 		o.Repo = o.DevEnv.Spec.TeamSettings.AppsRepository
 	}
 
-	opts := apps.InstallOptions{
+	installOpts := apps.InstallOptions{
 		In:        o.In,
 		DevEnv:    o.DevEnv,
 		Verbose:   o.Verbose,
@@ -137,15 +138,15 @@ func (o *UpgradeAppsOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "getting environments dir")
 		}
-		opts.EnvironmentsDir = environmentsDir
+		installOpts.EnvironmentsDir = environmentsDir
 
-		gitProvider, _, err := o.createGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
+		gitProvider, _, err := o.CreateGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
 		if err != nil {
 			return errors.Wrapf(err, "creating git provider for %s", o.DevEnv.Spec.Source.URL)
 		}
-		opts.GitProvider = gitProvider
-		opts.ConfigureGitFn = o.ConfigureGitCallback
-		opts.Gitter = o.Git()
+		installOpts.GitProvider = gitProvider
+		installOpts.ConfigureGitFn = o.ConfigureGitCallback
+		installOpts.Gitter = o.Git()
 	}
 	if !o.GitOps {
 		msg := "Unable to specify --%s when NOT using GitOps for your dev environment"
@@ -155,18 +156,22 @@ func (o *UpgradeAppsOptions) Run() error {
 		if o.Version != "" {
 			return util.InvalidOptionf(optionVersion, o.ReleaseName, msg, optionVersion)
 		}
-		jxClient, _, err := o.JXClientAndDevNamespace()
+		jxClient, ns, err := o.JXClient()
 		if err != nil {
 			return errors.Wrapf(err, "getting jx client")
 		}
-		kubeClient, _, err := o.KubeClientAndDevNamespace()
+		kubeClient, err := o.KubeClient()
 		if err != nil {
 			return errors.Wrapf(err, "getting kubeClient")
 		}
-		opts.Namespace = o.Namespace
-		opts.KubeClient = kubeClient
-		opts.JxClient = jxClient
-		opts.InstallTimeout = defaultInstallTimeout
+		if o.Namespace != "" {
+			installOpts.Namespace = o.Namespace
+		} else {
+			installOpts.Namespace = ns
+		}
+		installOpts.KubeClient = kubeClient
+		installOpts.JxClient = jxClient
+		installOpts.InstallTimeout = opts.DefaultInstallTimeout
 	}
 
 	if o.GetSecretsLocation() == secrets.VaultLocationKind {
@@ -174,12 +179,13 @@ func (o *UpgradeAppsOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		opts.TeamName = teamName
+		installOpts.TeamName = teamName
 		client, err := o.SystemVaultClient("")
 		if err != nil {
 			return err
 		}
-		opts.VaultClient = &client
+
+		installOpts.VaultClient = client
 	}
 
 	app := ""
@@ -194,6 +200,6 @@ func (o *UpgradeAppsOptions) Run() error {
 		version = o.Version
 	}
 
-	return opts.UpgradeApp(app, version, o.Repo, o.Username, o.Password, o.ReleaseName, o.Alias, o.HelmUpdate, o.AskAll)
+	return installOpts.UpgradeApp(app, version, o.Repo, o.Username, o.Password, o.ReleaseName, o.Alias, o.HelmUpdate, o.AskAll)
 
 }

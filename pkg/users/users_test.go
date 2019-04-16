@@ -10,6 +10,7 @@ import (
 
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -19,7 +20,7 @@ import (
 
 func TestResolveUserWithEmptyIdDoesNotCreateEmptyAccountReference(t *testing.T) {
 	t.Parallel()
-	o := cmd.CommonOptions{}
+	o := opts.CommonOptions{}
 	user := jenkinsv1.User{
 		ObjectMeta: v1.ObjectMeta{
 			Namespace: "jx",
@@ -65,7 +66,7 @@ func TestResolveUserWithEmptyIdDoesNotCreateEmptyAccountReference(t *testing.T) 
 
 func TestExistingUserIdButNotFoundBySelectErrors(t *testing.T) {
 	t.Parallel()
-	o := cmd.CommonOptions{}
+	o := opts.CommonOptions{}
 
 	//user1 is the user already existing in the cluster
 	user1 := jenkinsv1.User{

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"sigs.k8s.io/yaml"
 
 	"github.com/cenkalti/backoff"
@@ -15,10 +15,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/golang-jenkins"
+	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -67,7 +68,7 @@ type CallbackFn func() error
 
 // ImportOptions options struct for jx import
 type ImportOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	RepoURL string
 
@@ -118,7 +119,7 @@ var (
 	    
 		For more documentation see: [https://jenkins-x.io/developing/import/](https://jenkins-x.io/developing/import/)
 	    
-` + SeeAlsoText("jx create project"))
+` + opts.SeeAlsoText("jx create project"))
 
 	importExample = templates.Examples(`
 		# Import the current folder
@@ -142,7 +143,7 @@ var (
 )
 
 // NewCmdImport the cobra command for jx import
-func NewCmdImport(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdImport(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &ImportOptions{
 		CommonOptions: commonOpts,
 	}
@@ -192,7 +193,7 @@ func (options *ImportOptions) addImportFlags(cmd *cobra.Command, createProject b
 	cmd.Flags().BoolVarP(&options.UseDefaultGit, "use-default-git", "", false, "use default git account")
 	cmd.Flags().StringVarP(&options.DeployKind, "deploy-kind", "", "", fmt.Sprintf("The kind of deployment to use for the project. Should be one of %s", strings.Join(deployKinds, ", ")))
 
-	addGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
+	opts.AddGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 }
 
 // Run executes the command
@@ -203,7 +204,7 @@ func (options *ImportOptions) Run() error {
 			log.Error(err.Error())
 			return err
 		}
-		log.Infoln("Available draft packs:")
+		log.Info("Available draft packs:")
 		for i := 0; i < len(packs); i++ {
 			log.Infof(packs[i] + "\n")
 		}
@@ -224,7 +225,7 @@ func (options *ImportOptions) Run() error {
 			return err
 		}
 
-		isProw, err = options.isProw()
+		isProw, err = options.IsProw()
 		if err != nil {
 			return err
 		}
@@ -410,7 +411,7 @@ func (options *ImportOptions) Run() error {
 	}
 
 	if options.DryRun {
-		log.Infoln("dry-run so skipping import to Jenkins X")
+		log.Info("dry-run so skipping import to Jenkins X")
 		return nil
 	}
 
@@ -436,7 +437,7 @@ func (options *ImportOptions) ImportProjectsFromGitHub() error {
 		return err
 	}
 
-	log.Infoln("Selected repositories")
+	log.Info("Selected repositories")
 	for _, r := range repos {
 		o2 := ImportOptions{
 			CommonOptions:           options.CommonOptions,
@@ -476,7 +477,7 @@ func (options *ImportOptions) DraftCreate() error {
 	if !filepath.IsAbs(jenkinsfile) {
 		jenkinsfile = filepath.Join(dir, jenkinsfile)
 	}
-	args := &InvokeDraftPack{
+	args := &opts.InvokeDraftPack{
 		Dir:                     dir,
 		CustomDraftPack:         options.DraftPack,
 		Jenkinsfile:             jenkinsfile,
@@ -485,7 +486,7 @@ func (options *ImportOptions) DraftCreate() error {
 		InitialisedGit:          options.InitialisedGit,
 		DisableJenkinsfileCheck: options.DisableJenkinsfileCheck,
 	}
-	options.DraftPack, err = options.invokeDraftPack(args)
+	options.DraftPack, err = options.InvokeDraftPack(args)
 	if err != nil {
 		return err
 	}
@@ -866,7 +867,7 @@ func (options *ImportOptions) DiscoverRemoteGitURL() error {
 	if url == "" {
 		url = options.Git().GetRemoteUrl(cfg, "upstream")
 		if url == "" {
-			url, err = options.pickRemoteURL(cfg)
+			url, err = options.PickGitRemoteURL(cfg)
 			if err != nil {
 				return err
 			}
@@ -882,7 +883,7 @@ func (options *ImportOptions) doImport() error {
 	gitURL := options.RepoURL
 	gitProvider := options.GitProvider
 	if gitProvider == nil {
-		p, err := options.gitProviderForURL(gitURL, "user name to register webhook")
+		p, err := options.GitProviderForURL(gitURL, "user name to register webhook")
 		if err != nil {
 			return err
 		}
@@ -904,13 +905,13 @@ func (options *ImportOptions) doImport() error {
 		return err
 	}
 
-	isProw, err := options.isProw()
+	isProw, err := options.IsProw()
 	if err != nil {
 		return err
 	}
 	if isProw {
 		// register the webhook
-		err = options.createWebhookProw(gitURL, gitProvider)
+		err = options.CreateWebhookProw(gitURL, gitProvider)
 		if err != nil {
 			return err
 		}
@@ -934,7 +935,11 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 	if err != nil {
 		return err
 	}
-	err = prow.AddApplication(client, []string{repo}, options.currentNamespace, options.DraftPack, settings)
+	_, currentNamespace, err := options.KubeClientAndNamespace()
+	if err != nil {
+		return err
+	}
+	err = prow.AddApplication(client, []string{repo}, currentNamespace, options.DraftPack, settings)
 	if err != nil {
 		return err
 	}
@@ -949,7 +954,7 @@ func (options *ImportOptions) addProwConfig(gitURL string) error {
 	if err != nil {
 		return fmt.Errorf("failed to start pipeline build")
 	}
-	options.logImportedProject(false, gitInfo)
+	options.LogImportedProject(false, gitInfo)
 
 	return nil
 }
@@ -1122,12 +1127,12 @@ func (options *ImportOptions) addAppNameToGeneratedFile(filename, field, value s
 }
 
 func (options *ImportOptions) checkChartmuseumCredentialExists() error {
-	client, err := options.KubeClient()
+	client, devNamespace, err := options.KubeClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
 	name := jenkins.DefaultJenkinsCredentialsPrefix + jenkins.Chartmuseum
-	secret, err := client.CoreV1().Secrets(options.devNamespace).Get(name, metav1.GetOptions{})
+	secret, err := client.CoreV1().Secrets(devNamespace).Get(name, metav1.GetOptions{})
 	if err != nil {
 		return fmt.Errorf("error getting %s secret %v", name, err)
 	}
@@ -1143,7 +1148,7 @@ func (options *ImportOptions) checkChartmuseumCredentialExists() error {
 
 	_, err = options.Jenkins.GetCredential(name)
 	if err != nil {
-		err = options.retry(3, 10*time.Second, func() (err error) {
+		err = options.Retry(3, 10*time.Second, func() (err error) {
 			return options.Jenkins.CreateCredential(name, username, password)
 		})
 
@@ -1298,17 +1303,17 @@ func (options *ImportOptions) fixMaven() error {
 		return err
 	}
 	if exists {
-		err = options.installMavenIfRequired()
+		err = options.InstallMavenIfRequired()
 		if err != nil {
 			return err
 		}
 
 		// lets ensure the mvn plugins are ok
-		out, err := options.getCommandOutput(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:plugin", "-Dartifact=maven-deploy-plugin", "-Dversion="+minimumMavenDeployVersion)
+		out, err := options.GetCommandOutput(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:plugin", "-Dartifact=maven-deploy-plugin", "-Dversion="+minimumMavenDeployVersion)
 		if err != nil {
 			return fmt.Errorf("Failed to update maven deploy plugin: %s output: %s", err, out)
 		}
-		out, err = options.getCommandOutput(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:plugin", "-Dartifact=maven-surefire-plugin", "-Dversion=3.0.0-M1")
+		out, err = options.GetCommandOutput(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:plugin", "-Dartifact=maven-surefire-plugin", "-Dversion=3.0.0-M1")
 		if err != nil {
 			return fmt.Errorf("Failed to update maven surefire plugin: %s output: %s", err, out)
 		}
@@ -1324,7 +1329,7 @@ func (options *ImportOptions) fixMaven() error {
 		}
 
 		// lets ensure the probe paths are ok
-		out, err = options.getCommandOutput(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:chart")
+		out, err = options.GetCommandOutput(dir, "mvn", "io.jenkins.updatebot:updatebot-maven-plugin:RELEASE:chart")
 		if err != nil {
 			return fmt.Errorf("Failed to update chart: %s output: %s", err, out)
 		}
@@ -1380,7 +1385,7 @@ func (o *ImportOptions) allDraftPacks() ([]string, error) {
 		CommonOptions: o.CommonOptions,
 	}
 	log.Info("Getting latest packs ...\n")
-	dir, _, err := initOpts.initBuildPacks()
+	dir, _, err := initOpts.InitBuildPacks()
 	if err != nil {
 		return nil, err
 	}

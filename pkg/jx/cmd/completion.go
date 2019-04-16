@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
@@ -49,10 +50,10 @@ var (
 
 // CompletionOptions options for completion command
 type CompletionOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 }
 
-func NewCmdCompletion(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCompletion(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CompletionOptions{
 		CommonOptions: commonOpts,
 	}

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/golang-jenkins"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	gojenkins "github.com/jenkins-x/golang-jenkins"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -19,6 +19,7 @@ import (
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -35,7 +36,7 @@ type GetBuildLogsOptions struct {
 	Tail                    bool
 	Wait                    bool
 	BuildFilter             builds.BuildPodInfoFilter
-	JenkinsSelector         JenkinsSelectorOptions
+	JenkinsSelector         opts.JenkinsSelectorOptions
 	CurrentFolder           bool
 	WaitForPipelineDuration time.Duration
 }
@@ -68,7 +69,7 @@ var (
 )
 
 // NewCmdGetBuildLogs creates the command
-func NewCmdGetBuildLogs(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetBuildLogs(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetBuildLogsOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -136,7 +137,7 @@ func (o *GetBuildLogsOptions) Run() error {
 	args := o.Args
 
 	if !o.BatchMode && len(args) == 0 {
-		jobMap, err := o.getJobMap(&o.JenkinsSelector, o.BuildFilter.Filter)
+		jobMap, err := o.GetJenkinsJobs(&o.JenkinsSelector, o.BuildFilter.Filter)
 		if err != nil {
 			return err
 		}
@@ -174,7 +175,7 @@ func (o *GetBuildLogsOptions) Run() error {
 	}
 
 	log.Infof("%s %s\n", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
-	return o.tailBuild(&o.JenkinsSelector, name, &last)
+	return o.TailJenkinsBuildLog(&o.JenkinsSelector, name, &last)
 }
 
 func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) (gojenkins.Build, error) {
@@ -188,7 +189,7 @@ func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) 
 	f := func() error {
 		var err error
 
-		jobMap, err := o.getJobMap(&o.JenkinsSelector, o.BuildFilter.Filter)
+		jobMap, err := o.GetJenkinsJobs(&o.JenkinsSelector, o.BuildFilter.Filter)
 		if err != nil {
 			return err
 		}
@@ -218,7 +219,7 @@ func (o *GetBuildLogsOptions) getLastJenkinsBuild(name string, buildNumber int) 
 	}
 
 	if o.Wait {
-		err := o.retry(60, time.Second*2, f)
+		err := o.Retry(60, time.Second*2, f)
 		return last, err
 	} else {
 		err := f()

@@ -6,7 +6,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -30,7 +31,7 @@ type CreateAddonOwaspOptions struct {
 	Image        string
 }
 
-func NewCmdCreateAddonOwasp(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateAddonOwasp(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonOwaspOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{

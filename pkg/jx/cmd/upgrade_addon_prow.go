@@ -5,6 +5,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
@@ -31,7 +32,7 @@ type UpgradeAddonProwOptions struct {
 }
 
 // NewCmdUpgradeAddonProw defines the command
-func NewCmdUpgradeAddonProw(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdUpgradeAddonProw(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradeAddonProwOptions{
 		UpgradeAddonsOptions: UpgradeAddonsOptions{
 			CreateOptions: CreateOptions{
@@ -75,12 +76,7 @@ func (o *UpgradeAddonProwOptions) Run() error {
 		}
 	}
 
-	kubeClient, err := o.KubeClient()
-	if err != nil {
-		return err
-	}
-
-	o.devNamespace, _, err = kube.GetDevNamespace(kubeClient, ns)
+	kubeClient, _, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
@@ -142,7 +138,7 @@ func (o *UpgradeAddonProwOptions) Run() error {
 		}
 	}
 	// now let's reinstall prow
-	err = o.deleteChart("jx-prow", true)
+	err = o.DeleteChart("jx-prow", true)
 	if err != nil {
 		return err
 	}
@@ -151,7 +147,7 @@ func (o *UpgradeAddonProwOptions) Run() error {
 	o.HMACToken = hmacToken
 	isGitOps, _ := o.GetDevEnv()
 
-	_, pipelineUser, err := o.getPipelineGitAuth()
+	_, pipelineUser, err := o.GetPipelineGitAuth()
 	if err != nil {
 		return errors.Wrap(err, "retrieving the pipeline Git Auth")
 	}
@@ -160,5 +156,5 @@ func (o *UpgradeAddonProwOptions) Run() error {
 		pipelineUserName = pipelineUser.Username
 	}
 
-	return o.installProw(o.Tekton, isGitOps, "", "", pipelineUserName)
+	return o.InstallProw(o.Tekton, isGitOps, "", "", pipelineUserName)
 }

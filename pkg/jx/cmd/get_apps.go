@@ -3,9 +3,11 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/table"
@@ -72,7 +74,7 @@ var (
 )
 
 // NewCmdGetApps creates the new command for: jx get version
-func NewCmdGetApps(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetApps(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetAppsOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -219,7 +221,7 @@ func (o *GetAppsOptions) generateTable(apps *v1.AppList, kubeClient kubernetes.I
 }
 
 func (o *GetAppsOptions) generateTableHeaders(apps *v1.AppList) table.Table {
-	t := o.createTable()
+	t := o.CreateTable()
 	t.Out = o.CommonOptions.Out
 	titles := []string{"Name", "Version", "Chart Repository", "Namespace", "Status", "Description"}
 	t.AddRow(titles...)

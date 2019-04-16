@@ -3,17 +3,17 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type LogsOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Container       string
 	Namespace       string
@@ -42,7 +42,7 @@ var (
 `)
 )
 
-func NewCmdLogs(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdLogs(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &LogsOptions{
 		CommonOptions: commonOpts,
 	}
@@ -168,19 +168,4 @@ func parseSelector(selectorText string) (map[string]string, error) {
 		return nil, err
 	}
 	return selector.MatchLabels, nil
-}
-
-// waitForReadyPodForDeployment waits for a ready pod in a Deployment in the given namespace with the given name
-
-func isContainerStarted(state *corev1.ContainerState) bool {
-	if state == nil {
-		return false
-	}
-	if state.Running != nil {
-		return !state.Running.StartedAt.IsZero()
-	}
-	if state != nil && state.Terminated != nil {
-		return !state.Terminated.StartedAt.IsZero()
-	}
-	return false
 }

@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -45,7 +46,7 @@ type StepLinkServicesOptions struct {
 }
 
 // NewCmdStepLinkServices Creates a new Command object
-func NewCmdStepLinkServices(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepLinkServices(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepLinkServicesOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,

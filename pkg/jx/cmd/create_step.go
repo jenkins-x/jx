@@ -1,14 +1,16 @@
 package cmd
 
 import (
+	"strings"
+
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"strings"
 )
 
 const (
@@ -65,7 +67,7 @@ type CreateStepOptions struct {
 }
 
 // NewCmdCreateStep creates a command object for the "create" command
-func NewCmdCreateStep(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateStep(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateStepOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,

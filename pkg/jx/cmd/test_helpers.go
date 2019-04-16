@@ -14,6 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/resources"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -31,22 +32,24 @@ import (
 
 // ConfigureTestOptions lets configure the options for use in tests
 // using fake APIs to k8s cluster
-func ConfigureTestOptions(o *CommonOptions, git gits.Gitter, helm helm.Helmer) {
+func ConfigureTestOptions(o *opts.CommonOptions, git gits.Gitter, helm helm.Helmer) {
 	ConfigureTestOptionsWithResources(o, nil, nil, git, nil, helm, nil)
 }
 
 // ConfigureTestOptions lets configure the options for use in tests
 // using fake APIs to k8s cluster.
-func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Object, jxObjects []runtime.Object,
+func ConfigureTestOptionsWithResources(o *opts.CommonOptions, k8sObjects []runtime.Object, jxObjects []runtime.Object,
 	git gits.Gitter, fakeGitProvider *gits.FakeProvider, helm helm.Helmer, resourcesInstaller resources.Installer) {
 	//o.Out = tests.Output()
 	o.BatchMode = true
-	if o.factory == nil {
-		o.factory = clients.NewFactory()
+	factory := o.GetFactory()
+	if factory == nil {
+		o.SetFactory(clients.NewFactory())
 	}
-	o.currentNamespace = "jx"
+	currentNamespace := "jx"
+	o.SetCurrentNamespace(currentNamespace)
 
-	namespacesRequired := []string{o.currentNamespace}
+	namespacesRequired := []string{currentNamespace}
 	namespaceMap := map[string]*corev1.Namespace{}
 
 	for _, ro := range k8sObjects {
@@ -72,7 +75,7 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 	// ensure we've the dev environment
 	if !hasDev {
 		devEnv := kube.NewPermanentEnvironment("dev")
-		devEnv.Spec.Namespace = o.currentNamespace
+		devEnv.Spec.Namespace = currentNamespace
 		devEnv.Spec.Kind = v1.EnvironmentKindTypeDevelopment
 
 		jxObjects = append(jxObjects, devEnv)
@@ -94,33 +97,33 @@ func ConfigureTestOptionsWithResources(o *CommonOptions, k8sObjects []runtime.Ob
 
 	client := fake.NewSimpleClientset(k8sObjects...)
 	o.SetKubeClient(client)
-	o.jxClient = v1fake.NewSimpleClientset(jxObjects...)
-	o.apiExtensionsClient = apifake.NewSimpleClientset()
-	o.kserveClient = kservefake.NewSimpleClientset()
-	o.git = git
+	o.SetJxClient(v1fake.NewSimpleClientset(jxObjects...))
+	o.SetAPIExtensionsClient(apifake.NewSimpleClientset())
+	o.SetKnativeServeClient(kservefake.NewSimpleClientset())
+	o.SetGit(git)
 	if fakeGitProvider != nil {
-		o.fakeGitProvider = fakeGitProvider
+		o.SetFakeGitProvider(fakeGitProvider)
 	}
-	o.helm = helm
-	o.resourcesInstaller = resourcesInstaller
+	o.SetHelm(helm)
+	o.SetResourcesInstaller(resourcesInstaller)
 }
 
 //CreateTestEnvironmentDir will create a temporary environment dir for the tests, copying over any existing config,
 // and updating CommonOptions.EnvironmentDir() - this is useful for testing git operations on the environments without
 // clobbering the local environments and risking the cluster getting contaminated - use with gits.GitLocal
-func CreateTestEnvironmentDir(o *CommonOptions) error {
-	var err error
+func CreateTestEnvironmentDir(o *opts.CommonOptions) error {
 	// Create a temp dir for environments
 	origEnvironmentsDir, err := o.EnvironmentsDir()
 	if err != nil {
 		return err
 	}
-	o.environmentsDir, err = ioutil.TempDir("", "jx-environments")
+	environmentsDir, err := ioutil.TempDir("", "jx-environments")
 	if err != nil {
 		return err
 	}
+	o.SetEnvironmentsDir(environmentsDir)
 	// Copy over any existing environments
-	err = util.CopyDir(origEnvironmentsDir, o.environmentsDir, true)
+	err = util.CopyDir(origEnvironmentsDir, environmentsDir, true)
 	if err != nil {
 		return err
 	}
@@ -128,10 +131,14 @@ func CreateTestEnvironmentDir(o *CommonOptions) error {
 }
 
 // CleanupTestEnvironmentDir should be called in a deferred function whenever CreateTestEnvironmentDir is called
-func CleanupTestEnvironmentDir(o *CommonOptions) error {
+func CleanupTestEnvironmentDir(o *opts.CommonOptions) error {
 	// Let's not accidentally remove the real one!
-	if strings.HasPrefix(o.environmentsDir, os.TempDir()) {
-		err := os.RemoveAll(o.environmentsDir)
+	environmentsDir, err := o.EnvironmentsDir()
+	if err != nil {
+		return err
+	}
+	if strings.HasPrefix(environmentsDir, os.TempDir()) {
+		err := os.RemoveAll(environmentsDir)
 		if err != nil {
 			return err
 		}

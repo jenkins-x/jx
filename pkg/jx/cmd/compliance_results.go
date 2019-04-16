@@ -11,6 +11,7 @@ import (
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/heptio/sonobuoy/pkg/client/results"
 	"github.com/heptio/sonobuoy/pkg/plugin/aggregation"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -33,12 +34,12 @@ var (
 
 // ComplianceResultsOptions options for "compliance results" command
 type ComplianceResultsOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 }
 
 // NewCmdComplianceResults creates a command object for the "compliance results" action, which
 // shows the results of E2E compliance tests
-func NewCmdComplianceResults(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdComplianceResults(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &ComplianceResultsOptions{
 		CommonOptions: commonOpts,
 	}
@@ -72,7 +73,7 @@ func (o *ComplianceResultsOptions) Run() error {
 	}
 
 	if status.Status != aggregation.CompleteStatus && status.Status != aggregation.FailedStatus {
-		log.Infoln("Compliance results not ready. Run `jx compliance status` for status.")
+		log.Info("Compliance results not ready. Run `jx compliance status` for status.")
 		return nil
 	}
 
@@ -140,7 +141,7 @@ func (s StatusSortedTestCases) Less(i, j int) bool {
 func (s StatusSortedTestCases) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 func (o *ComplianceResultsOptions) printResults(junitResults []reporters.JUnitTestCase) {
-	table := o.createTable()
+	table := o.CreateTable()
 	table.SetColumnAlign(1, util.ALIGN_LEFT)
 	table.SetColumnAlign(2, util.ALIGN_LEFT)
 	table.AddRow("STATUS", "TEST", "TEST-CLASS")

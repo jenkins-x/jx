@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
@@ -32,7 +33,7 @@ var (
 )
 
 // NewCmdGetChat creates the command
-func NewCmdGetChat(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetChat(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetChatOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -58,7 +59,7 @@ func NewCmdGetChat(commonOpts *CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *GetChatOptions) Run() error {
-	authConfigSvc, err := o.createChatAuthConfigService()
+	authConfigSvc, err := o.CreateChatAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -70,7 +71,7 @@ func (o *GetChatOptions) Run() error {
 	}
 	filterKind := o.Kind
 
-	table := o.createTable()
+	table := o.CreateTable()
 	if filterKind == "" {
 		table.AddRow("Name", "Kind", "URL")
 	} else {

@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -37,7 +38,7 @@ var (
 )
 
 // NewCmdStepVerifyPodCount performs deployment verification
-func NewCmdStepVerifyPodCount(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepVerifyPodCount(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepVerifyPodCountOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -162,8 +163,8 @@ func (o *StepVerifyPodCountOptions) Run() error {
 }
 
 func (o *StepVerifyPodCountOptions) detectPipelineActivity(jxClient versioned.Interface, namespace string) (*v1.PipelineActivity, error) {
-	pipeline := o.getJobName()
-	build := o.getBuildNumber()
+	pipeline := o.GetJenkinsJobName()
+	build := o.GetBuildNumber()
 	if pipeline == "" || build == "" {
 		return nil, errors.New("JOB_NAME or BUILD_NUMBER environment variables not set")
 	}

@@ -3,12 +3,13 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 // GetBuildOptions the command line options
 type GetBuildOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Output string
 }
@@ -31,7 +32,7 @@ var (
 )
 
 // NewCmdGetBuild creates the command object
-func NewCmdGetBuild(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetBuild(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetBuildOptions{
 		CommonOptions: commonOpts,
 	}

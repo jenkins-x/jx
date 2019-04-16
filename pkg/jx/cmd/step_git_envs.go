@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
@@ -35,7 +36,7 @@ var (
 )
 
 // NewCmdStepGitEnvs create the 'step git envs' command
-func NewCmdStepGitEnvs(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepGitEnvs(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepGitEnvsOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,

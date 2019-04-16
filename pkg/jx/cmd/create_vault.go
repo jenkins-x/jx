@@ -18,6 +18,7 @@ import (
 	awsvault "github.com/jenkins-x/jx/pkg/cloud/amazon/vault"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	gkevault "github.com/jenkins-x/jx/pkg/cloud/gke/vault"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
@@ -67,7 +68,7 @@ type GKECreateVaultOptions struct {
 }
 
 // NewCmdCreateVault  creates a command object for the "create" command
-func NewCmdCreateVault(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateVault(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateVaultOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -218,13 +219,13 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 	}
 
 	if o.GKEProjectID == "" {
-		o.GKEProjectID, err = o.getGoogleProjectId()
+		o.GKEProjectID, err = o.GetGoogleProjectId()
 		if err != nil {
 			return err
 		}
 	}
 
-	err = o.CreateOptions.CommonOptions.runCommandVerbose(
+	err = o.CreateOptions.CommonOptions.RunCommandVerbose(
 		"gcloud", "config", "set", "project", o.GKEProjectID)
 	if err != nil {
 		return err
@@ -238,7 +239,7 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 			}
 		}
 
-		zone, err := o.getGoogleZoneWithDefault(o.GKEProjectID, defaultZone)
+		zone, err := o.GetGoogleZoneWithDefault(o.GKEProjectID, defaultZone)
 		if err != nil {
 			return err
 		}

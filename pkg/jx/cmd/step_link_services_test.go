@@ -6,6 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -25,7 +26,7 @@ func TestServiceLinking(t *testing.T) {
 	t.Parallel()
 	o := cmd.StepLinkServicesOptions{
 		StepOptions: cmd.StepOptions{
-			CommonOptions: &cmd.CommonOptions{},
+			CommonOptions: &opts.CommonOptions{},
 		},
 		FromNamespace: fromNs,
 		Includes:      []string{serviceNameInFromNs},

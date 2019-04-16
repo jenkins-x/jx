@@ -1,12 +1,14 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/gits"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/collector"
@@ -17,7 +19,7 @@ import (
 
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -48,7 +50,7 @@ type ControllerBuildOptions struct {
 
 // NewCmdControllerBuild creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdControllerBuild(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdControllerBuild(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &ControllerBuildOptions{
 		ControllerOptions: ControllerOptions{
 			CommonOptions: commonOpts,
@@ -111,7 +113,7 @@ func (o *ControllerBuildOptions) Run() error {
 	o.EnvironmentCache = kube.CreateEnvironmentCache(jxClient, ns)
 
 	if o.InitGitCredentials {
-		err = o.initGitConfigAndUser()
+		err = o.InitGitConfigAndUser()
 		if err != nil {
 			return err
 		}
@@ -404,7 +406,7 @@ func (o *ControllerBuildOptions) getGithubProvider(secrets *corev1.SecretList, g
 	}
 
 	// production code always goes this way
-	server, userAuth, err := o.getPipelineGitAuth()
+	server, userAuth, err := o.GetPipelineGitAuth()
 	if err != nil {
 		return nil, err
 	}
@@ -896,7 +898,7 @@ func toYamlString(resource interface{}) string {
 }
 
 // generates the build log URL and returns the URL
-func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool, logMasker *kube.LogMasker) (string, error) {
+func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool, logMasker *kube.LogMasker) (string, error) {
 
 	coll, err := collector.NewCollector(location, settings, o.Git())
 	if err != nil {
@@ -918,7 +920,7 @@ func (o *CommonOptions) generateBuildLogURL(podInterface typedcorev1.PodInterfac
 
 	if initGitCredentials {
 		gc := &StepGitCredentialsOptions{}
-		copy := *o
+		copy := *o.CommonOptions
 		gc.CommonOptions = &copy
 		gc.BatchMode = true
 		log.Info("running: jx step git credentials\n")

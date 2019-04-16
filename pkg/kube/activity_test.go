@@ -10,10 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 	k8s_v1 "k8s.io/api/core/v1"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -21,7 +22,7 @@ import (
 )
 
 func TestGenerateBuildNumber(t *testing.T) {
-	commonOpts := cmd.NewCommonOptionsWithFactory(clients.NewFactory())
+	commonOpts := opts.NewCommonOptionsWithFactory(clients.NewFactory())
 	options := &commonOpts
 	cmd.ConfigureTestOptions(options, options.Git(), options.Helm())
 

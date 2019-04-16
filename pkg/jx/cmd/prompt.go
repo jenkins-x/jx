@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -9,8 +10,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/fatih/color"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
 
@@ -22,7 +23,7 @@ const (
 
 // PromptOptions containers the CLI options
 type PromptOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	NoLabel  bool
 	ShowIcon bool
@@ -56,7 +57,7 @@ var (
 )
 
 // NewCmdPrompt creates the new command for: jx get prompt
-func NewCmdPrompt(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdPrompt(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &PromptOptions{
 		CommonOptions: commonOpts,
 	}
@@ -133,6 +134,6 @@ func (o *PromptOptions) Run() error {
 		namespace = nsColor.Sprint(namespace)
 	}
 	context = ctxColor.Sprint(context)
-	log.Infof("%s\n", strings.Join([]string{prefix, label, separator, namespace, divider, context, suffix}, ""))
+	fmt.Fprintf(o.Out, "%s\n", strings.Join([]string{prefix, label, separator, namespace, divider, context, suffix}, ""))
 	return nil
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 
 	"github.com/spf13/cobra"
@@ -43,13 +44,13 @@ var (
 
 // DeleteExtensionOptions are the flags for delete commands
 type DeleteExtensionOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 	All bool
 }
 
 // NewCmdDeleteExtension creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteExtension(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteExtension(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteExtensionOptions{
 		CommonOptions: commonOpts,
 	}

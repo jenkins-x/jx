@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/heptio/sonobuoy/pkg/client"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -28,14 +29,14 @@ var (
 
 // ComplianceLogsOptions options for "compliance logs" command
 type ComplianceLogsOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Follow bool
 }
 
 // NewCmdComplianceLogs creates a command object for the "compliance logs" action, which
 // prints the logs of compliance tests
-func NewCmdComplianceLogs(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdComplianceLogs(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &ComplianceLogsOptions{
 		CommonOptions: commonOpts,
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -25,12 +26,12 @@ var (
 type DeleteTokenAddonOptions struct {
 	CreateOptions
 
-	ServerFlags ServerFlags
+	ServerFlags opts.ServerFlags
 	Kind        string
 }
 
 // NewCmdDeleteTokenAddon defines the command
-func NewCmdDeleteTokenAddon(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteTokenAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteTokenAddonOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -49,7 +50,7 @@ func NewCmdDeleteTokenAddon(commonOpts *CommonOptions) *cobra.Command {
 			CheckErr(err)
 		},
 	}
-	options.ServerFlags.addGitServerFlags(cmd)
+	options.ServerFlags.AddGitServerFlags(cmd)
 	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "", "The kind of addon. Defaults to the addon name if not specified")
 	return cmd
 }
@@ -60,7 +61,7 @@ func (o *DeleteTokenAddonOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing addon user name")
 	}
-	authConfigSvc, err := o.createAddonAuthConfigService()
+	authConfigSvc, err := o.CreateAddonAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -73,7 +74,7 @@ func (o *DeleteTokenAddonOptions) Run() error {
 	if kind == "" {
 		kind = "addon"
 	}
-	server, err := o.findAddonServer(config, &o.ServerFlags, kind)
+	server, err := o.FindAddonServer(config, &o.ServerFlags, kind)
 	if err != nil {
 		return err
 	}

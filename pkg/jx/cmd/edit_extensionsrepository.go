@@ -13,6 +13,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/extensions"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
@@ -54,7 +55,7 @@ type EditExtensionsRepositoryOptions struct {
 	ExtensionsRepositoryHelmPassword string
 }
 
-func NewCmdEditExtensionsRepository(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdEditExtensionsRepository(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &EditExtensionsRepositoryOptions{
 		EditOptions: EditOptions{
 			CommonOptions: commonOpts,
@@ -205,7 +206,7 @@ func (o *EditExtensionsRepositoryOptions) Run() error {
 						return err
 					}
 				} else {
-					err := o.addHelmRepoIfMissing(current.Chart.Repo, current.Chart.RepoName, "", "")
+					err := o.AddHelmRepoIfMissing(current.Chart.Repo, current.Chart.RepoName, "", "")
 					if err != nil {
 						return err
 					}
@@ -259,7 +260,7 @@ func (o *EditExtensionsRepositoryOptions) Run() error {
 		} else {
 			repoUrl = fmt.Sprintf("https://%s", current.Chart.Repo)
 		}
-		err := o.addHelmRepoIfMissing(repoUrl, current.Chart.RepoName, "", "")
+		err := o.AddHelmRepoIfMissing(repoUrl, current.Chart.RepoName, "", "")
 		if err != nil {
 			return err
 		}

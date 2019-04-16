@@ -17,10 +17,11 @@ import (
 	"github.com/jenkins-x/jx/pkg/users"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -141,7 +142,7 @@ e.g. define environment variables GIT_USERNAME and GIT_API_TOKEN
 	JIRAIssueRegex   = regexp.MustCompile(`[A-Z][A-Z]+-(\d+)`)
 )
 
-func NewCmdStepChangelog(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepChangelog(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepChangelogOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -189,8 +190,8 @@ func NewCmdStepChangelog(commonOpts *CommonOptions) *cobra.Command {
 
 func (o *StepChangelogOptions) Run() error {
 	// lets enable batch mode if we detect we are inside a pipeline
-	if !o.BatchMode && o.getBuildNumber() != "" {
-		log.Infoln("Using batch mode as inside a pipeline")
+	if !o.BatchMode && o.GetBuildNumber() != "" {
+		log.Info("Using batch mode as inside a pipeline")
 		o.BatchMode = true
 	}
 
@@ -210,7 +211,7 @@ func (o *StepChangelogOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	err = o.registerUserCRD()
+	err = o.RegisterUserCRD()
 	if err != nil {
 		return err
 	}
@@ -291,7 +292,7 @@ func (o *StepChangelogOptions) Run() error {
 	}
 	o.State.GitInfo = gitInfo
 
-	tracker, err := o.createIssueProvider(dir)
+	tracker, err := o.CreateIssueProvider(dir)
 	if err != nil {
 		return err
 	}
@@ -502,7 +503,11 @@ func (o *StepChangelogOptions) Run() error {
 				GitInfo:           gitInfo,
 			},
 		}
-		a, created, err := key.GetOrCreate(jxClient, o.currentNamespace)
+		_, currentNamespace, err := o.KubeClientAndNamespace()
+		if err != nil {
+			return errors.Wrap(err, "getting current namespace")
+		}
+		a, created, err := key.GetOrCreate(jxClient, currentNamespace)
 		if err == nil && a != nil && !created {
 			_, err = activities.PatchUpdate(a)
 			if err != nil {

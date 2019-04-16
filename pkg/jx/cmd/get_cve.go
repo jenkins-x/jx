@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/cve"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -40,7 +41,7 @@ var (
 )
 
 // NewCmdGetCVE creates the command
-func NewCmdGetCVE(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetCVE(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetCVEOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -76,7 +77,7 @@ func (o *GetCVEOptions) addGetCVEFlags(cmd *cobra.Command) {
 // Run implements this command
 func (o *GetCVEOptions) Run() error {
 
-	client, err := o.KubeClient()
+	client, currentNamespace, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return fmt.Errorf("cannot connect to Kubernetes cluster: %v", err)
 	}
@@ -86,7 +87,7 @@ func (o *GetCVEOptions) Run() error {
 		return fmt.Errorf("cannot create jx client: %v", err)
 	}
 
-	externalURL, err := o.ensureAddonServiceAvailable(kube.AddonServices[defaultAnchoreName])
+	externalURL, err := o.EnsureAddonServiceAvailable(kube.AddonServices[defaultAnchoreName])
 	if err != nil {
 		log.Warnf("no CVE provider service found, are you in your teams dev environment?  Type `jx env` to switch.\n")
 		return fmt.Errorf("if no CVE provider running, try running `jx create addon anchore` in your teams dev environment: %v", err)
@@ -97,7 +98,7 @@ func (o *GetCVEOptions) Run() error {
 		return fmt.Errorf("no --image-name, --image-id or --environment flags set\n")
 	}
 
-	server, auth, err := o.CommonOptions.getAddonAuthByKind(kube.ValueKindCVE, externalURL)
+	server, auth, err := o.GetAddonAuthByKind(kube.ValueKindCVE, externalURL)
 	if err != nil {
 		return fmt.Errorf("error getting anchore engine auth details, %v", err)
 	}
@@ -106,7 +107,7 @@ func (o *GetCVEOptions) Run() error {
 	if err != nil {
 		return fmt.Errorf("error creating anchore provider, %v", err)
 	}
-	table := o.createTable()
+	table := o.CreateTable()
 	table.AddRow("Image", util.ColorInfo("Severity"), "Vulnerability", "URL", "Package", "Fix")
 
 	query := cve.CVEQuery{
@@ -117,7 +118,7 @@ func (o *GetCVEOptions) Run() error {
 	}
 
 	if o.Env != "" {
-		targetNamespace, err := kube.GetEnvironmentNamespace(jxClient, o.currentNamespace, o.Env)
+		targetNamespace, err := kube.GetEnvironmentNamespace(jxClient, currentNamespace, o.Env)
 		if err != nil {
 			return err
 		}

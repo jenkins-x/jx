@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 )
 
 // GetOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
@@ -26,7 +27,7 @@ type StepPRCommentFlags struct {
 }
 
 // NewCmdStepPRComment Steps a command object for the "step pr comment" command
-func NewCmdStepPRComment(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepPRComment(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepPRCommentOptions{
 		StepPROptions: StepPROptions{
 			StepOptions: StepOptions{

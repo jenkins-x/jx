@@ -8,18 +8,19 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	version2 "github.com/jenkins-x/jx/pkg/version"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/jenkins-x/jx/pkg/cloud/iks"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
 	"k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -28,7 +29,7 @@ import (
 
 // InitOptions the options for running init
 type InitOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 	Client clientset.Clientset
 	Flags  InitFlags
 }
@@ -89,7 +90,7 @@ var (
 
 // NewCmdInit creates a command object for the generic "init" action, which
 // primes a Kubernetes cluster so it's ready for Jenkins X to be installed
-func NewCmdInit(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdInit(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &InitOptions{
 		CommonOptions: commonOpts,
 	}
@@ -117,24 +118,24 @@ func (o *InitOptions) addInitFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.Flags.Domain, "domain", "", "", "Domain to expose ingress endpoints.  Example: jenkinsx.io")
 	cmd.Flags().StringVarP(&o.Username, optionUsername, "", "", "The Kubernetes username used to initialise helm. Usually your email address for your Kubernetes account")
 	cmd.Flags().StringVarP(&o.Flags.UserClusterRole, "user-cluster-role", "", "cluster-admin", "The cluster role for the current user to be able to administer helm")
-	cmd.Flags().StringVarP(&o.Flags.TillerClusterRole, "tiller-cluster-role", "", DefaultTillerRole, "The cluster role for Helm's tiller")
-	cmd.Flags().StringVarP(&o.Flags.TillerNamespace, optionTillerNamespace, "", DefaultTillerNamesapce, "The namespace for the Tiller when using a global tiller")
+	cmd.Flags().StringVarP(&o.Flags.TillerClusterRole, "tiller-cluster-role", "", opts.DefaultTillerRole, "The cluster role for Helm's tiller")
+	cmd.Flags().StringVarP(&o.Flags.TillerNamespace, optionTillerNamespace, "", opts.DefaultTillerNamesapce, "The namespace for the Tiller when using a global tiller")
 	cmd.Flags().StringVarP(&o.Flags.IngressClusterRole, "ingress-cluster-role", "", "cluster-admin", "The cluster role for the Ingress controller")
 	cmd.Flags().StringVarP(&o.Flags.IngressNamespace, "ingress-namespace", "", defaultIngressNamesapce, "The namespace for the Ingress controller")
 	cmd.Flags().StringVarP(&o.Flags.IngressService, "ingress-service", "", defaultIngressServiceName, "The name of the Ingress controller Service")
 	cmd.Flags().StringVarP(&o.Flags.IngressDeployment, "ingress-deployment", "", defaultIngressServiceName, "The name of the Ingress controller Deployment")
 	cmd.Flags().StringVarP(&o.Flags.ExternalIP, "external-ip", "", "", "The external IP used to access ingress endpoints from outside the Kubernetes cluster. For bare metal on premise clusters this is often the IP of the Kubernetes master. For cloud installations this is often the external IP of the ingress LoadBalancer.")
 	cmd.Flags().BoolVarP(&o.Flags.DraftClient, "draft-client-only", "", false, "Only install draft client")
-	cmd.Flags().BoolVarP(&o.Flags.HelmClient, "helm-client-only", "", DefaultOnlyHelmClient, "Only install helm client")
+	cmd.Flags().BoolVarP(&o.Flags.HelmClient, "helm-client-only", "", opts.DefaultOnlyHelmClient, "Only install helm client")
 	cmd.Flags().BoolVarP(&o.Flags.RecreateExistingDraftRepos, "recreate-existing-draft-repos", "", false, "Delete existing helm repos used by Jenkins X under ~/draft/packs")
-	cmd.Flags().BoolVarP(&o.Flags.GlobalTiller, "global-tiller", "", DefaultGlobalTiller, "Whether or not to use a cluster global tiller")
-	cmd.Flags().BoolVarP(&o.Flags.RemoteTiller, "remote-tiller", "", DefaultRemoteTiller, "If enabled and we are using tiller for helm then run tiller remotely in the kubernetes cluster. Otherwise we run the tiller process locally.")
-	cmd.Flags().BoolVarP(&o.Flags.NoTiller, "no-tiller", "", false, "Whether to disable the use of tiller with helm. If disabled we use 'helm template' to generate the YAML from helm charts then we use 'kubectl apply' to install it to avoid using tiller completely.")
+	cmd.Flags().BoolVarP(&o.Flags.GlobalTiller, "global-tiller", "", opts.DefaultGlobalTiller, "Whether or not to use a cluster global tiller")
+	cmd.Flags().BoolVarP(&o.Flags.RemoteTiller, "remote-tiller", "", opts.DefaultRemoteTiller, "If enabled and we are using tiller for helm then run tiller remotely in the kubernetes cluster. Otherwise we run the tiller process locally.")
+	cmd.Flags().BoolVarP(&o.Flags.NoTiller, "no-tiller", "", true, "Whether to disable the use of tiller with helm. If disabled we use 'helm template' to generate the YAML from helm charts then we use 'kubectl apply' to install it to avoid using tiller completely.")
 	cmd.Flags().BoolVarP(&o.Flags.SkipIngress, "skip-ingress", "", false, "Skips the installation of ingress controller. Note that a ingress controller must already be installed into the cluster in order for the installation to succeed")
-	cmd.Flags().BoolVarP(&o.Flags.SkipTiller, "skip-setup-tiller", "", DefaultSkipTiller, "Don't setup the Helm Tiller service - lets use whatever tiller is already setup for us.")
-	cmd.Flags().BoolVarP(&o.Flags.SkipClusterRole, "skip-cluster-role", "", DefaultSkipClusterRole, "Don't enable cluster admin role for user")
+	cmd.Flags().BoolVarP(&o.Flags.SkipTiller, "skip-setup-tiller", "", opts.DefaultSkipTiller, "Don't setup the Helm Tiller service - lets use whatever tiller is already setup for us.")
+	cmd.Flags().BoolVarP(&o.Flags.SkipClusterRole, "skip-cluster-role", "", opts.DefaultSkipClusterRole, "Don't enable cluster admin role for user")
 
-	cmd.Flags().BoolVarP(&o.Flags.Helm3, "helm3", "", DefaultHelm3, "Use helm3 to install Jenkins X which does not use Tiller")
+	cmd.Flags().BoolVarP(&o.Flags.Helm3, "helm3", "", opts.DefaultHelm3, "Use helm3 to install Jenkins X which does not use Tiller")
 	cmd.Flags().BoolVarP(&o.Flags.OnPremise, "on-premise", "", false, "If installing on an on premise cluster then lets default the 'external-ip' to be the Kubernetes master IP address")
 }
 
@@ -218,7 +219,7 @@ func (o *InitOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	cfg := InitHelmConfig{
+	cfg := opts.InitHelmConfig{
 		Namespace:       o.Flags.Namespace,
 		OnlyHelmClient:  o.Flags.HelmClient,
 		Helm3:           o.Flags.Helm3,
@@ -228,7 +229,7 @@ func (o *InitOptions) Run() error {
 		TillerRole:      o.Flags.TillerClusterRole,
 	}
 	// helm init, this has been seen to fail intermittently on public clouds, so let's retry a couple of times
-	err = o.retry(3, 2*time.Second, func() (err error) {
+	err = o.Retry(3, 2*time.Second, func() (err error) {
 		err = o.InitHelm(cfg)
 		return
 	})
@@ -239,7 +240,7 @@ func (o *InitOptions) Run() error {
 	}
 
 	// draft init
-	_, _, err = o.initBuildPacks()
+	_, _, err = o.InitBuildPacks()
 	if err != nil {
 		log.Fatalf("initialise build packs failed: %v", err)
 		return err
@@ -298,7 +299,7 @@ func (o *InitOptions) enableClusterAdminRole() error {
 		},
 	}
 
-	return o.retry(3, 10*time.Second, func() (err error) {
+	return o.Retry(3, 10*time.Second, func() (err error) {
 		_, err = clusterRoleBindingInterface.Get(clusterRoleBindingName, metav1.GetOptions{})
 		if err != nil {
 			log.Infof("Trying to create ClusterRoleBinding %s for role: %s for user %s\n %v\n", clusterRoleBindingName, o.Flags.UserClusterRole, o.Username, err)
@@ -318,31 +319,31 @@ func (o *InitOptions) configureForICP() {
 	icpDefaultTillerNS := "default"
 	icpDefaultNS := "jx"
 
-	log.Infoln("")
-	log.Infoln(util.ColorInfo("IBM Cloud Private installation of Jenkins X"))
-	log.Infoln("Configuring Jenkins X options for IBM Cloud Private: ensure your Kubernetes context is already " +
+	log.Info("")
+	log.Info(util.ColorInfo("IBM Cloud Private installation of Jenkins X"))
+	log.Info("Configuring Jenkins X options for IBM Cloud Private: ensure your Kubernetes context is already " +
 		"configured to point to the cluster jx will be installed into.")
-	log.Infoln("")
+	log.Info("")
 
-	log.Infoln(util.ColorInfo("Permitting image repositories to be used"))
-	log.Infoln("If you have a clusterimagepolicy, ensure that this policy permits pulling from the following additional repositories: " +
+	log.Info(util.ColorInfo("Permitting image repositories to be used"))
+	log.Info("If you have a clusterimagepolicy, ensure that this policy permits pulling from the following additional repositories: " +
 		"the scope of which can be narrowed down once you are sure only images from certain repositories are being used:")
-	log.Infoln("- name: docker.io/* \n" +
+	log.Info("- name: docker.io/* \n" +
 		"- name: gcr.io/* \n" +
 		"- name: quay.io/* \n" +
 		"- name: k8s.gcr.io/* \n" +
 		"- name: <your ICP cluster name>:8500/* \n")
 
-	log.Infoln(util.ColorInfo("IBM Cloud Private defaults"))
-	log.Infoln("By default, with IBM Cloud Private the Tiller namespace for jx will be \"" + icpDefaultTillerNS + "\" and the namespace " +
+	log.Info(util.ColorInfo("IBM Cloud Private defaults"))
+	log.Info("By default, with IBM Cloud Private the Tiller namespace for jx will be \"" + icpDefaultTillerNS + "\" and the namespace " +
 		"where Jenkins X resources will be installed into is \"" + icpDefaultNS + "\".")
-	log.Infoln("")
+	log.Info("")
 
-	log.Infoln(util.ColorInfo("Using the IBM Cloud Private Docker registry"))
-	log.Infoln("To use the IBM Cloud Private Docker registry, when environments (namespaces) are created, " +
+	log.Info(util.ColorInfo("Using the IBM Cloud Private Docker registry"))
+	log.Info("To use the IBM Cloud Private Docker registry, when environments (namespaces) are created, " +
 		"create a Docker registry secret and patch the default service account in the created namespace to use the secret, adding it as an ImagePullSecret. " +
 		"This is required so that pods in the created namespace can pull images from the registry.")
-	log.Infoln("")
+	log.Info("")
 
 	o.Flags.IngressNamespace = "kube-system"
 	o.Flags.IngressDeployment = "default-backend"
@@ -356,7 +357,7 @@ func (o *InitOptions) configureForICP() {
 
 	if !(o.BatchMode) {
 		if o.Flags.ExternalIP != "" {
-			log.Infoln("An external IP has already been specified: otherwise you will be prompted for one to use")
+			log.Info("An external IP has already been specified: otherwise you will be prompted for one to use")
 			return
 		}
 
@@ -382,7 +383,7 @@ func (o *InitOptions) configureForICP() {
 }
 
 func (o *InitOptions) initIKSIngress() error {
-	log.Infoln("Wait for Ingress controller to be injected into IBM Kubernetes Service Cluster")
+	log.Info("Wait for Ingress controller to be injected into IBM Kubernetes Service Cluster")
 	kubeClient, err := o.KubeClient()
 	if err != nil {
 		return err
@@ -417,7 +418,7 @@ func (o *InitOptions) initIngress() error {
 		return fmt.Errorf("Failed to ensure the ingress namespace %s is created: %s\nIs this an RBAC issue on your cluster?", ingressNamespace, err)
 	}
 
-	currentContext, err := o.getCommandOutput("", "kubectl", "config", "current-context")
+	currentContext, err := o.GetCommandOutput("", "kubectl", "config", "current-context")
 	if err != nil {
 		return err
 	}
@@ -425,7 +426,7 @@ func (o *InitOptions) initIngress() error {
 		if o.Flags.Provider == "" {
 			o.Flags.Provider = cloud.MINIKUBE
 		}
-		addons, err := o.getCommandOutput("", "minikube", "addons", "list")
+		addons, err := o.GetCommandOutput("", "minikube", "addons", "list")
 		if err != nil {
 			return err
 		}
@@ -443,7 +444,7 @@ func (o *InitOptions) initIngress() error {
 	}
 
 	if isOpenShiftProvider(o.Flags.Provider) {
-		log.Infoln("Not installing ingress as using OpenShift which uses Route and its own mechanism of ingress")
+		log.Info("Not installing ingress as using OpenShift which uses Route and its own mechanism of ingress")
 		return nil
 	}
 
@@ -512,7 +513,7 @@ controller:
 		}
 		chartName := "stable/nginx-ingress"
 
-		version, err := o.getVersionNumber(version2.KindChart, chartName, o.Flags.VersionsRepository)
+		version, err := o.GetVersionNumber(version2.KindChart, chartName, o.Flags.VersionsRepository)
 		if err != nil {
 			return errors.Wrapf(err, "failed to load version of chart %s", chartName)
 		}
@@ -520,8 +521,15 @@ controller:
 		i := 0
 		for {
 			log.Infof("Installing using helm binary: %s\n", util.ColorInfo(o.Helm().HelmBinary()))
-			err = o.Helm().InstallChart(chartName, "jxing", ingressNamespace, version, -1, values,
-				valuesFiles, "", "", "")
+			helmOptions := helm.InstallChartOptions{
+				Chart:       chartName,
+				ReleaseName: "jxing",
+				Version:     version,
+				Ns:          ingressNamespace,
+				SetValues:   values,
+				ValueFiles:  valuesFiles,
+			}
+			err = o.InstallChartWithOptions(helmOptions)
 			if err != nil {
 				if i >= 3 {
 					log.Errorf("Failed to install ingress chart: %s", err)

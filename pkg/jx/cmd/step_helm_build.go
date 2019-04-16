@@ -3,6 +3,7 @@ package cmd
 import (
 	"os"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 )
@@ -28,7 +29,7 @@ var (
 `)
 )
 
-func NewCmdStepHelmBuild(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepHelmBuild(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepHelmBuildOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{
@@ -72,8 +73,8 @@ func (o *StepHelmBuildOptions) Run() error {
 	}
 
 	if o.recursive {
-		return o.helmInitRecursiveDependencyBuild(dir, o.defaultReleaseCharts())
+		return o.HelmInitRecursiveDependencyBuild(dir, o.DefaultReleaseCharts())
 	}
-	_, err = o.helmInitDependencyBuild(dir, o.defaultReleaseCharts())
+	_, err = o.HelmInitDependencyBuild(dir, o.DefaultReleaseCharts())
 	return err
 }

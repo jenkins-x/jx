@@ -1,16 +1,18 @@
 package app
 
 import (
-	"github.com/jenkins-x/jx/cmd/codegen/generator"
-	"github.com/jenkins-x/jx/cmd/codegen/util"
-	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"go/build"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/cmd/codegen/generator"
+	"github.com/jenkins-x/jx/cmd/codegen/util"
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
+
 	"github.com/pkg/errors"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 
 	jxutil "github.com/jenkins-x/jx/pkg/util"
@@ -62,7 +64,7 @@ var (
 )
 
 // NewCmdCreateClientOpenAPI creates the command
-func NewCmdCreateClientOpenAPI(commonOpts *cmd.CommonOptions) *cobra.Command {
+func NewCmdCreateClientOpenAPI(commonOpts *opts.CommonOptions) *cobra.Command {
 	o := &CreateClientOpenAPIOptions{
 		GenerateOptions: GenerateOptions{
 			CommonOptions: commonOpts,

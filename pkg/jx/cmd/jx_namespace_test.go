@@ -8,13 +8,14 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestJXNamespace(t *testing.T) {
 	t.Parallel()
-	o := &cmd.CommonOptions{}
+	o := &opts.CommonOptions{}
 	cmd.ConfigureTestOptions(o, gits.NewGitCLI(), helm.NewHelmCLI("helm", helm.V2, "", true))
 
 	kubeClient, ns, err := o.KubeClientAndNamespace()

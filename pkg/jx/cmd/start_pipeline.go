@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -35,7 +36,7 @@ type StartPipelineOptions struct {
 
 	Tail            bool
 	Filter          string
-	JenkinsSelector JenkinsSelectorOptions
+	JenkinsSelector opts.JenkinsSelectorOptions
 
 	Jobs map[string]gojenkins.Job
 
@@ -61,7 +62,7 @@ var (
 )
 
 // NewCmdStartPipeline creates the command
-func NewCmdStartPipeline(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStartPipeline(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StartPipelineOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -90,7 +91,7 @@ func NewCmdStartPipeline(commonOpts *CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *StartPipelineOptions) Run() error {
-	kubeClient, err := o.KubeClient()
+	kubeClient, currentNamespace, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}
@@ -99,7 +100,7 @@ func (o *StartPipelineOptions) Run() error {
 		return err
 	}
 
-	isProw, err := o.isProw()
+	isProw, err := o.IsProw()
 	if err != nil {
 		return err
 	}
@@ -107,7 +108,7 @@ func (o *StartPipelineOptions) Run() error {
 	names := []string{}
 	o.ProwOptions = prow.Options{
 		KubeClient: kubeClient,
-		NS:         o.currentNamespace,
+		NS:         currentNamespace,
 	}
 	if o.JenkinsSelector.IsCustom() {
 		isProw = false
@@ -120,7 +121,7 @@ func (o *StartPipelineOptions) Run() error {
 			}
 			names = util.StringsContaining(names, o.Filter)
 		} else {
-			jobMap, err := o.getJobMap(&o.JenkinsSelector, o.Filter)
+			jobMap, err := o.GetJenkinsJobs(&o.JenkinsSelector, o.Filter)
 			if err != nil {
 				return err
 			}
@@ -247,11 +248,11 @@ func (o *StartPipelineOptions) createProwJob(jobname string) error {
 		Repo:    repo,
 	}
 
-	client, err := o.KubeClient()
+	client, currentNamespace, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}
-	_, err = prow.CreateProwJob(client, o.currentNamespace, p)
+	_, err = prow.CreateProwJob(client, currentNamespace, p)
 	return err
 }
 
@@ -289,7 +290,7 @@ func (o *StartPipelineOptions) startJenkinsJob(name string) error {
 			log.Infof("Started build of %s at %s\n", util.ColorInfo(name), util.ColorInfo(last.Url))
 			log.Infof("%s %s\n", util.ColorStatus("view the log at:"), util.ColorInfo(util.UrlJoin(last.Url, "/console")))
 			if o.Tail {
-				return o.tailBuild(&o.JenkinsSelector, name, &last)
+				return o.TailJenkinsBuildLog(&o.JenkinsSelector, name, &last)
 			}
 			return nil
 		}

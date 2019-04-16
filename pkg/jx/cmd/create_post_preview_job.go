@@ -1,11 +1,12 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 	batchv1 "k8s.io/api/batch/v1"
@@ -40,7 +41,7 @@ type CreatePostPreviewJobOptions struct {
 }
 
 // NewCmdCreatePostPreviewJob creates a command object for the "create" command
-func NewCmdCreatePostPreviewJob(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreatePostPreviewJob(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreatePostPreviewJobOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,

@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 
 	"github.com/jenkins-x/jx/pkg/apps"
@@ -63,7 +64,7 @@ var (
 )
 
 // NewCmdAddApp creates a command object for the "create" command
-func NewCmdAddApp(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdAddApp(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &AddAppOptions{
 		AddOptions: AddOptions{
 			CommonOptions: commonOpts,
@@ -124,7 +125,7 @@ func (o *AddAppOptions) Run() error {
 		o.Repo = kube.DefaultChartMuseumURL
 	}
 
-	opts := apps.InstallOptions{
+	installOpts := apps.InstallOptions{
 		In:        o.In,
 		DevEnv:    o.DevEnv,
 		Verbose:   o.Verbose,
@@ -161,18 +162,18 @@ func (o *AddAppOptions) Run() error {
 		if err != nil {
 			return errors.Wrapf(err, "getting environments dir")
 		}
-		opts.EnvironmentsDir = environmentsDir
+		installOpts.EnvironmentsDir = environmentsDir
 
-		gitProvider, _, err := o.createGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
+		gitProvider, _, err := o.CreateGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
 		if err != nil {
 			return errors.Wrapf(err, "creating git provider for %s", o.DevEnv.Spec.Source.URL)
 		}
-		opts.GitProvider = gitProvider
-		opts.ConfigureGitFn = o.ConfigureGitCallback
-		opts.Gitter = o.Git()
+		installOpts.GitProvider = gitProvider
+		installOpts.ConfigureGitFn = o.ConfigureGitCallback
+		installOpts.Gitter = o.Git()
 	}
 	if !o.GitOps {
-		err := o.ensureHelm()
+		err := o.EnsureHelm()
 		if err != nil {
 			return errors.Wrap(err, "failed to ensure that helm is present")
 		}
@@ -199,22 +200,22 @@ func (o *AddAppOptions) Run() error {
 				o.ReleaseName = o.Alias + "-" + o.Namespace
 			}
 		}
-		opts.Namespace = o.Namespace
-		opts.KubeClient = kubeClient
-		opts.JxClient = jxClient
-		opts.InstallTimeout = defaultInstallTimeout
+		installOpts.Namespace = o.Namespace
+		installOpts.KubeClient = kubeClient
+		installOpts.JxClient = jxClient
+		installOpts.InstallTimeout = opts.DefaultInstallTimeout
 	}
 	if o.GetSecretsLocation() == secrets.VaultLocationKind {
 		teamName, _, err := o.TeamAndEnvironmentNames()
 		if err != nil {
 			return err
 		}
-		opts.TeamName = teamName
+		installOpts.TeamName = teamName
 		client, err := o.SystemVaultClient("")
 		if err != nil {
 			return err
 		}
-		opts.VaultClient = &client
+		installOpts.VaultClient = client
 	}
 
 	args := o.Args
@@ -234,10 +235,6 @@ func (o *AddAppOptions) Run() error {
 		version = o.Version
 	}
 	app := args[0]
-	if o.ReleaseName == "" {
-		o.ReleaseName = app
-	}
-
-	return opts.AddApp(app, version, o.Repo, o.Username, o.Password, o.ReleaseName, o.ValuesFiles, o.SetValues,
+	return installOpts.AddApp(app, version, o.Repo, o.Username, o.Password, o.ReleaseName, o.ValuesFiles, o.SetValues,
 		o.Alias, o.HelmUpdate)
 }

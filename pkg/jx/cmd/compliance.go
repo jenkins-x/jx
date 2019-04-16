@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/heptio/sonobuoy/pkg/buildinfo"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/spf13/cobra"
 )
 
@@ -17,12 +18,12 @@ var complianceImage = "gcr.io/heptio-images/sonobuoy:" + buildinfo.Version
 
 // ComplianceOptions options for compliance command
 type ComplianceOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 }
 
 // NewCompliance creates a command object for the generic "compliance" action, which
 // executes the compliance tests against a Kubernetes cluster
-func NewCompliance(commonOpts *CommonOptions) *cobra.Command {
+func NewCompliance(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &ComplianceOptions{
 		CommonOptions: commonOpts,
 	}

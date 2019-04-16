@@ -2,12 +2,13 @@ package app
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/cmd/codegen/util"
-	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	"github.com/pkg/errors"
 	"go/build"
 	"path/filepath"
 	"strings"
+
+	"github.com/jenkins-x/jx/cmd/codegen/util"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -23,7 +24,7 @@ const (
 
 // GenerateOptions contain common code generation options
 type GenerateOptions struct {
-	*cmd.CommonOptions
+	*opts.CommonOptions
 	OutputBase          string
 	BoilerplateFile     string
 	GroupsWithVersions  []string

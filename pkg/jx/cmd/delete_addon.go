@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/spf13/cobra"
@@ -14,14 +15,14 @@ import (
 
 // DeleteAddonOptions are the flags for delete commands
 type DeleteAddonOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Purge bool
 }
 
 // NewCmdDeleteAddon creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteAddon(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteAddonOptions{
 		CommonOptions: commonOpts,
 	}
@@ -64,7 +65,7 @@ func (o *DeleteAddonOptions) Run() error {
 		if chart == "" {
 			return util.InvalidArg(arg, util.SortedMapKeys(charts))
 		}
-		err := o.deleteChart(arg, o.Purge)
+		err := o.DeleteChart(arg, o.Purge)
 		if err != nil {
 			return fmt.Errorf("Failed to delete chart %s: %s", chart, err)
 		}

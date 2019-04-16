@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -32,7 +33,7 @@ type CreateTrackerServerOptions struct {
 }
 
 // NewCmdCreateTrackerServer creates a command object for the "create" command
-func NewCmdCreateTrackerServer(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateTrackerServer(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateTrackerServerOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -75,7 +76,7 @@ func (o *CreateTrackerServerOptions) Run() error {
 		// lets try find the git URL based on the provider
 		serviceName := trackerKindToServiceName[kind]
 		if serviceName != "" {
-			url, err := o.findService(serviceName)
+			url, err := o.FindService(serviceName)
 			if err != nil {
 				return fmt.Errorf("Failed to find %s issue tracker serivce %s: %s", kind, serviceName, err)
 			}
@@ -86,7 +87,7 @@ func (o *CreateTrackerServerOptions) Run() error {
 	if gitUrl == "" {
 		return missingTrackerArguments()
 	}
-	authConfigSvc, err := o.createIssueTrackerAuthConfigService()
+	authConfigSvc, err := o.CreateIssueTrackerAuthConfigService()
 	if err != nil {
 		return err
 	}

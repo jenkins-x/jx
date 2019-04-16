@@ -6,6 +6,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/users"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -39,7 +40,7 @@ type EditUserRoleOptions struct {
 }
 
 // NewCmdEditUserRole creates a command object for the "create" command
-func NewCmdEditUserRole(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdEditUserRole(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &EditUserRoleOptions{
 		EditOptions: EditOptions{
 			CommonOptions: commonOpts,
@@ -68,11 +69,11 @@ func NewCmdEditUserRole(commonOpts *CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *EditUserRoleOptions) Run() error {
-	err := o.registerUserCRD()
+	err := o.RegisterUserCRD()
 	if err != nil {
 		return err
 	}
-	err = o.registerEnvironmentRoleBindingCRD()
+	err = o.RegisterEnvironmentRoleBindingCRD()
 	if err != nil {
 		return err
 	}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"k8s.io/client-go/tools/clientcmd"
@@ -13,7 +14,7 @@ import (
 )
 
 type TeamOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 }
 
 var (
@@ -35,7 +36,7 @@ var (
 `)
 )
 
-func NewCmdTeam(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdTeam(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &TeamOptions{
 		CommonOptions: commonOpts,
 	}

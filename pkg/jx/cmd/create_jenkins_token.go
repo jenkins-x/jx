@@ -14,6 +14,7 @@ import (
 	"github.com/blang/semver"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -53,8 +54,8 @@ var (
 type CreateJenkinsUserOptions struct {
 	CreateOptions
 
-	ServerFlags     ServerFlags
-	JenkinsSelector JenkinsSelectorOptions
+	ServerFlags     opts.ServerFlags
+	JenkinsSelector opts.JenkinsSelectorOptions
 	Namespace       string
 	Username        string
 	Password        string
@@ -67,7 +68,7 @@ type CreateJenkinsUserOptions struct {
 }
 
 // NewCmdCreateJenkinsUser creates a command
-func NewCmdCreateJenkinsUser(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateJenkinsUser(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateJenkinsUserOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -87,7 +88,7 @@ func NewCmdCreateJenkinsUser(commonOpts *CommonOptions) *cobra.Command {
 			CheckErr(err)
 		},
 	}
-	options.ServerFlags.addGitServerFlags(cmd)
+	options.ServerFlags.AddGitServerFlags(cmd)
 	options.JenkinsSelector.AddFlags(cmd)
 
 	cmd.Flags().StringVarP(&options.APIToken, "api-token", "t", "", "The API Token for the user")
@@ -131,7 +132,7 @@ func (o *CreateJenkinsUserOptions) Run() error {
 		}
 		server = config.GetOrCreateServer(url)
 	} else {
-		server, err = o.findServer(config, &o.ServerFlags, "jenkins server", "Try installing one via: jx create team", false)
+		server, err = o.FindServer(config, &o.ServerFlags, "jenkins server", "Try installing one via: jx create team", false)
 		if err != nil {
 			return errors.Wrapf(err, "searching server %s: %s", o.ServerFlags.ServerName, o.ServerFlags.ServerURL)
 		}
@@ -220,7 +221,11 @@ func (o *CreateJenkinsUserOptions) Run() error {
 func (o *CreateJenkinsUserOptions) saveJenkinsAuthInSecret(kubeClient kubernetes.Interface, auth *auth.UserAuth) error {
 	ns := o.Namespace
 	if ns == "" {
-		ns = o.currentNamespace
+		_, currentNamespace, err := o.KubeClientAndNamespace()
+		if err != nil {
+			return errors.Wrap(err, "getting the current namespace")
+		}
+		ns = currentNamespace
 	}
 	serviceName := kube.ServiceJenkins
 	secretName := kube.SecretJenkins
@@ -300,7 +305,7 @@ func (o *CreateJenkinsUserOptions) getAPITokenFromREST(serverURL string, userAut
 	}
 	defer cancel()
 
-	log.Infoln("Generating the API token...")
+	log.Info("Generating the API token...")
 	decorator, err := loginLegacy(ctx, serverURL, o.Verbose, userAuth.Username, o.Password)
 	if err != nil {
 		// Might be a modern realm, which would normally support BasicHeaderRealPasswordAuthenticator.

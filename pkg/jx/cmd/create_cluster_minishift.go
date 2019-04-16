@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -50,7 +51,7 @@ var (
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateClusterMinishift(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateClusterMinishift(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := CreateClusterMinishiftOptions{
 		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.MINISHIFT),
 	}
@@ -79,16 +80,16 @@ func NewCmdCreateClusterMinishift(commonOpts *CommonOptions) *cobra.Command {
 
 func (o *CreateClusterMinishiftOptions) Run() error {
 	var deps []string
-	d := binaryShouldBeInstalled("minishift")
+	d := opts.BinaryShouldBeInstalled("minishift")
 	if d != "" {
 		deps = append(deps, d)
 	}
-	d = binaryShouldBeInstalled("oc")
+	d = opts.BinaryShouldBeInstalled("oc")
 	if d != "" {
 		deps = append(deps, d)
 	}
 
-	err := o.installMissingDependencies(deps)
+	err := o.InstallMissingDependencies(deps)
 	if err != nil {
 		log.Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
 		os.Exit(-1)
@@ -192,7 +193,7 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 	}
 
 	if driver != "none" {
-		err = o.doInstallMissingDependencies([]string{driver})
+		err = o.DoInstallMissingDependencies([]string{driver})
 		if err != nil {
 			log.Errorf("error installing missing dependencies %v, please fix or install manually then try again", err)
 			os.Exit(-1)
@@ -223,7 +224,7 @@ func (o *CreateClusterMinishiftOptions) createClusterMinishift() error {
 		return err
 	}
 
-	ip, err := o.getCommandOutput("", "minishift", "ip")
+	ip, err := o.GetCommandOutput("", "minishift", "ip")
 	if err != nil {
 		return err
 	}

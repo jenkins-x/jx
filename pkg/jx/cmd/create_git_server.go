@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -39,7 +40,7 @@ type CreateGitServerOptions struct {
 }
 
 // NewCmdCreateGitServer creates a command object for the "create" command
-func NewCmdCreateGitServer(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateGitServer(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateGitServerOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -88,7 +89,7 @@ func (o *CreateGitServerOptions) Run() error {
 			// lets try find the git URL based on the provider
 			serviceName := gitKindToServiceName[kind]
 			if serviceName != "" {
-				url, err := o.findService(serviceName)
+				url, err := o.FindService(serviceName)
 				if err != nil {
 					return errors.Wrapf(err, "Failed to find %s Git service %s", kind, serviceName)
 				}
@@ -113,7 +114,7 @@ func (o *CreateGitServerOptions) Run() error {
 	}
 	log.Infof("Added Git server %s for URL %s\n", util.ColorInfo(name), util.ColorInfo(gitUrl))
 
-	err = o.ensureGitServiceCRD(server)
+	err = o.EnsureGitServiceCRD(server)
 	if err != nil {
 		return err
 	}

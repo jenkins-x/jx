@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	gojenkins "github.com/jenkins-x/golang-jenkins"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 
@@ -10,13 +11,13 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/jenkins-x/golang-jenkins"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 // StartProtectionOptions contains the command line options
 type StartProtectionOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Tail   bool
 	Filter string
@@ -41,7 +42,7 @@ var (
 )
 
 // NewCmdStartProtection creates the command
-func NewCmdStartProtection(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStartProtection(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StartProtectionOptions{
 		CommonOptions: commonOpts,
 	}

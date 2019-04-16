@@ -8,8 +8,9 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/tests"
 
 	"github.com/stretchr/testify/assert"
@@ -24,7 +25,7 @@ func TestStepStash(t *testing.T) {
 
 	o := &cmd.StepStashOptions{
 		StepOptions: cmd.StepOptions{
-			CommonOptions: &cmd.CommonOptions{},
+			CommonOptions: &opts.CommonOptions{},
 		},
 	}
 	o.StorageLocation.Classifier = "tests"

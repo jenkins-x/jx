@@ -2,11 +2,12 @@ package util
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/pkg/errors"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
 )
 
 const (

@@ -11,7 +11,7 @@ items:
     inputs:
       resources:
       - name: workspace
-        targetPath: workspace
+        targetPath: source
         type: git
     outputs:
       resources:
@@ -19,6 +19,40 @@ items:
         targetPath: ""
         type: git
     steps:
+    - args:
+      - step
+      - git
+      - merge
+      - --verbose
+      command:
+      - jx
+      env:
+      - name: DOCKER_REGISTRY
+      - name: BUILD_NUMBER
+        value: "1"
+      - name: PIPELINE_KIND
+        value: release
+      - name: REPO_OWNER
+        value: abayer
+      - name: REPO_NAME
+        value: js-test-repo
+      - name: JOB_NAME
+        value: abayer/js-test-repo/really-long
+      - name: APP_NAME
+        value: js-test-repo
+      - name: BRANCH_NAME
+        value: really-long
+      - name: JX_BATCH_MODE
+        value: "true"
+      - name: FRUIT
+        value: BANANA
+      image: rawlingsj/builder-jx:wip34
+      name: git-merge
+      volumeMounts:
+      - mountPath: /etc/podinfo
+        name: podinfo
+        readOnly: true
+      workingDir: /workspace/source
     - args:
       - echo hello world
       command:
@@ -168,11 +202,6 @@ items:
     namespace: jx
   spec:
     inputs:
-      resources:
-      - name: workspace
-        targetPath: ""
-        type: git
-    outputs:
       resources:
       - name: workspace
         targetPath: ""

@@ -10,6 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/quickstarts"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
@@ -27,7 +28,7 @@ func TestCreateQuickstartProjects(t *testing.T) {
 	o := &cmd.CreateQuickstartOptions{
 		CreateProjectOptions: cmd.CreateProjectOptions{
 			ImportOptions: cmd.ImportOptions{
-				CommonOptions: &cmd.CommonOptions{},
+				CommonOptions: &opts.CommonOptions{},
 			},
 		},
 		GitHubOrganisations: []string{"petclinic-gcp"},

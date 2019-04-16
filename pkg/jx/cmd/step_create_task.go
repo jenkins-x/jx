@@ -11,12 +11,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/prow"
+
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile/gitresolver"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -29,7 +32,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -71,12 +73,12 @@ type StepCreateTaskOptions struct {
 	PipelineKind      string
 	Context           string
 	CustomLabels      []string
+	CustomEnvs        []string
 	NoApply           bool
 	Trigger           string
 	TargetPath        string
 	SourceName        string
 	CustomImage       string
-	DockerRegistry    string
 	CloneGitURL       string
 	Branch            string
 	Revision          string
@@ -92,7 +94,9 @@ type StepCreateTaskOptions struct {
 	KanikoSecret      string
 	KanikoSecretKey   string
 	ProjectID         string
-	DockerRegistryOrg string
+
+	dockerRegistry    string
+	dockerRegistryOrg string
 
 	PodTemplates        map[string]*corev1.Pod
 	MissingPodTemplates map[string]bool
@@ -101,10 +105,11 @@ type StepCreateTaskOptions struct {
 	GitInfo              *gits.GitRepository
 	BuildNumber          string
 	labels               map[string]string
+	envVars              []corev1.EnvVar
 	Results              StepCreateTaskResults
 	version              string
 	previewVersionPrefix string
-	VersionResolver      *VersionResolver
+	VersionResolver      *opts.VersionResolver
 }
 
 // StepCreateTaskResults stores the generated results
@@ -118,7 +123,7 @@ type StepCreateTaskResults struct {
 }
 
 // NewCmdStepCreateTask Creates a new Command object
-func NewCmdStepCreateTask(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepCreateTask(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreateTaskOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -139,7 +144,7 @@ func NewCmdStepCreateTask(commonOpts *CommonOptions) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to query to find the projects .git directory")
+	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "/workspace/source", "The directory to query to find the projects .git directory")
 	cmd.Flags().StringVarP(&options.OutDir, "output", "o", "", "The directory to write the output to as YAML")
 	cmd.Flags().StringVarP(&options.BuildPackURL, "url", "u", "", "The URL for the build pack Git repository")
 	cmd.Flags().StringVarP(&options.BuildPackRef, "ref", "r", "", "The Git reference (branch,tag,sha) in the Git repository to use")
@@ -148,10 +153,11 @@ func NewCmdStepCreateTask(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Revision, "revision", "", "", "The git revision to checkout, can be a branch name or git sha")
 	cmd.Flags().StringVarP(&options.PipelineKind, "kind", "k", "release", "The kind of pipeline to create such as: "+strings.Join(jenkinsfile.PipelineKinds, ", "))
 	cmd.Flags().StringVarP(&options.Context, "context", "c", "", "The pipeline context if there are multiple separate pipelines for a given branch")
-	cmd.Flags().StringArrayVarP(&options.CustomLabels, "labels", "l", nil, "List of custom labels to be applied to resources that are created")
+	cmd.Flags().StringArrayVarP(&options.CustomLabels, "label", "l", nil, "List of custom labels to be applied to resources that are created")
+	cmd.Flags().StringArrayVarP(&options.CustomEnvs, "env", "e", nil, "List of custom environment variables to be applied to resources that are created")
 	cmd.Flags().StringVarP(&options.Trigger, "trigger", "t", string(pipelineapi.PipelineTriggerTypeManual), "The kind of pipeline trigger")
 	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
-	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
+	cmd.Flags().StringVarP(&options.dockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
 	cmd.Flags().StringVarP(&options.TargetPath, "target-path", "", "", "The target path appended to /workspace/${source} to clone the source code")
 	cmd.Flags().StringVarP(&options.SourceName, "source", "", "source", "The name of the source repository")
 	cmd.Flags().StringVarP(&options.CustomImage, "image", "", "", "Specify a custom image to use for the steps which overrides the image in the PodTemplates")
@@ -167,7 +173,7 @@ func NewCmdStepCreateTask(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.KanikoSecret, "kaniko-secret", "", kanikoSecretName, "The name of the kaniko secret")
 	cmd.Flags().StringVarP(&options.KanikoSecretKey, "kaniko-secret-key", "", kanikoSecretKey, "The key in the Kaniko Secret to mount")
 	cmd.Flags().StringVarP(&options.ProjectID, "project-id", "", "", "The cloud project ID. If not specified we default to the install project")
-	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The Docker registry organisation. If blank the git repository owner is used")
+	cmd.Flags().StringVarP(&options.dockerRegistryOrg, "docker-registry-org", "", "", "The Docker registry organisation. If blank the git repository owner is used")
 	cmd.Flags().DurationVarP(&options.Duration, "duration", "", time.Second*30, "Retry duration when trying to create a PipelineRun")
 	return cmd
 }
@@ -182,7 +188,6 @@ func (o *StepCreateTaskOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	o.devNamespace = ns
 
 	if o.ProjectID == "" {
 		data, err := kube.ReadInstallValues(kubeClient, ns)
@@ -210,7 +215,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		}
 	}
 	if o.CloneGitURL != "" {
-		err = o.retry(3, time.Second*2, func() error {
+		err = o.Retry(3, time.Second*2, func() error {
 			err := o.cloneGitRepositoryToTempDir(o.CloneGitURL)
 			if err != nil {
 				o.deleteTempDir()
@@ -221,6 +226,41 @@ func (o *StepCreateTaskOptions) Run() error {
 		if err != nil {
 			return err
 		}
+
+		var pr *prow.PullRefs
+
+		for _, envVar := range o.CustomEnvs {
+			parts := strings.Split(envVar, "=")
+			if parts[0] == "PULL_REFS" {
+				pr, err = prow.ParsePullRefs(parts[1])
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		if pr != nil {
+			var shas []string
+			for _, sha := range pr.ToMerge {
+				shas = append(shas, sha)
+			}
+
+			mergeOpts := StepGitMergeOptions{
+				StepOptions: StepOptions{
+					CommonOptions: o.CommonOptions,
+				},
+				Dir:        o.Dir,
+				BaseSHA:    pr.BaseSha,
+				SHAs:       shas,
+				BaseBranch: pr.BaseBranch,
+			}
+			mergeOpts.Verbose = true
+			err = mergeOpts.Run()
+			if err != nil {
+				return errors.Wrapf(err, "failed to merge git shas %s with base sha %s", shas, pr.BaseSha)
+			}
+		}
+
 		if o.DeleteTempDir {
 			defer o.deleteTempDir()
 		}
@@ -230,13 +270,13 @@ func (o *StepCreateTaskOptions) Run() error {
 		log.Infof("setting up docker registry for %s\n", o.CloneGitURL)
 	}
 
-	if o.DockerRegistry == "" {
+	if o.dockerRegistry == "" {
 		data, err := kube.GetConfigMapData(kubeClient, kube.ConfigMapJenkinsDockerRegistry, ns)
 		if err != nil {
 			return fmt.Errorf("Could not find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsDockerRegistry, ns, err)
 		}
-		o.DockerRegistry = data["docker.registry"]
-		if o.DockerRegistry == "" {
+		o.dockerRegistry = data["docker.registry"]
+		if o.dockerRegistry == "" {
 			return util.MissingOption("docker-registry")
 		}
 	}
@@ -318,7 +358,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		return util.MissingOption("pack")
 	}
 
-	err = o.loadPodTemplates(kubeClient, ns)
+	o.PodTemplates, err = kube.LoadPodTemplates(kubeClient, ns)
 	if err != nil {
 		return err
 	}
@@ -402,8 +442,14 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 			pipelineConfig = localPipelineConfig
 		}
 	}
+
 	if pipelineConfig == nil {
 		return nil, nil, nil, nil, nil, fmt.Errorf("failed to find PipelineConfig in file %s", projectConfigFile)
+	}
+
+	err := o.combineEnvVars(pipelineConfig)
+	if err != nil {
+		return nil, nil, nil, nil, nil, errors.Wrapf(err, "failed to combine env vars")
 	}
 
 	// lets allow a `jenkins-x.yml` to specify we want to disable release prepare mode which can be useful for
@@ -411,7 +457,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	if projectConfig.NoReleasePrepare {
 		o.NoReleasePrepare = true
 	}
-	err := o.setVersionOnReleasePipelines(pipelineConfig)
+	err = o.setVersionOnReleasePipelines(pipelineConfig)
 	if err != nil {
 		return nil, nil, nil, nil, nil, errors.Wrapf(err, "failed to set the version on release pipelines")
 	}
@@ -540,27 +586,6 @@ func (o *StepCreateTaskOptions) loadProjectConfig() (*config.ProjectConfig, stri
 	return config.LoadProjectConfig(o.Dir)
 }
 
-func (o *StepCreateTaskOptions) loadPodTemplates(kubeClient kubernetes.Interface, ns string) error {
-	o.PodTemplates = map[string]*corev1.Pod{}
-
-	configMapName := kube.ConfigMapJenkinsPodTemplates
-	cm, err := kubeClient.CoreV1().ConfigMaps(ns).Get(configMapName, metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-	for k, v := range cm.Data {
-		pod := &corev1.Pod{}
-		if v != "" {
-			err := yaml.Unmarshal([]byte(v), pod)
-			if err != nil {
-				return err
-			}
-			o.PodTemplates[k] = pod
-		}
-	}
-	return nil
-}
-
 // CreateStageForBuildPack generates the Task for a build pack
 func (o *StepCreateTaskOptions) CreateStageForBuildPack(languageName string, pipelineConfig *jenkinsfile.PipelineConfig, lifecycles *jenkinsfile.PipelineLifecycles, templateKind, ns string) (*syntax.Stage, error) {
 	if lifecycles == nil {
@@ -586,6 +611,7 @@ func (o *StepCreateTaskOptions) CreateStageForBuildPack(languageName string, pip
 		if !o.NoReleasePrepare && n.Name == "setversion" {
 			continue
 		}
+
 		for _, s := range l.Steps {
 			steps = append(steps, o.createSteps(languageName, pipelineConfig, templateKind, s, container, dir, n.Name)...)
 		}
@@ -795,10 +821,30 @@ func (o *StepCreateTaskOptions) combineLabels(labels map[string]string) error {
 		if len(parts) != 2 {
 			return errors.Errorf("expected 2 parts to label but got %v", len(parts))
 		}
-		log.Infof("a %s : %s \n", parts[0], parts[1])
 		labels[parts[0]] = parts[1]
 	}
 	o.labels = labels
+	return nil
+}
+
+func (o *StepCreateTaskOptions) combineEnvVars(projectConfig *jenkinsfile.PipelineConfig) error {
+	// add any custom env vars
+	envMap := make(map[string]corev1.EnvVar)
+	for _, e := range projectConfig.Env {
+		envMap[e.Name] = e
+	}
+	for _, customEnvVar := range o.CustomEnvs {
+		parts := strings.Split(customEnvVar, "=")
+		if len(parts) != 2 {
+			return errors.Errorf("expected 2 parts to env var but got %v", len(parts))
+		}
+		e := corev1.EnvVar{
+			Name:  parts[0],
+			Value: parts[1],
+		}
+		envMap[e.Name] = e
+	}
+	projectConfig.Env = syntax.EnvMapToSlice(envMap)
 	return nil
 }
 
@@ -980,7 +1026,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		dir = strings.Replace(dir, PlaceHolderAppName, gitInfo.Name, -1)
 		dir = strings.Replace(dir, PlaceHolderOrg, gitInfo.Organisation, -1)
 		dir = strings.Replace(dir, PlaceHolderGitProvider, gitProviderHost, -1)
-		dir = strings.Replace(dir, PlaceHolderDockerRegistryOrg, strings.ToLower(o.dockerRegistryOrg(gitInfo)), -1)
+		dir = strings.Replace(dir, PlaceHolderDockerRegistryOrg, strings.ToLower(o.DockerRegistryOrg(gitInfo)), -1)
 	} else {
 		log.Warnf("No GitInfo available!\n")
 	}
@@ -1058,13 +1104,13 @@ func (o *StepCreateTaskOptions) getWorkspaceDir() string {
 }
 
 func (o *StepCreateTaskOptions) discoverBuildPack(dir string, projectConfig *config.ProjectConfig) (string, error) {
-	args := &InvokeDraftPack{
+	args := &opts.InvokeDraftPack{
 		Dir:             o.Dir,
 		CustomDraftPack: o.Pack,
 		ProjectConfig:   projectConfig,
 		DisableAddFiles: true,
 	}
-	pack, err := o.invokeDraftPack(args)
+	pack, err := o.InvokeDraftPack(args)
 	if err != nil {
 		return pack, errors.Wrapf(err, "failed to discover task pack in dir %s", o.Dir)
 	}
@@ -1082,7 +1128,7 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 	if kube.GetSliceEnvVar(envVars, "DOCKER_REGISTRY") == nil {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "DOCKER_REGISTRY",
-			Value: o.DockerRegistry,
+			Value: o.dockerRegistry,
 		})
 	}
 	if kube.GetSliceEnvVar(envVars, "BUILD_NUMBER") == nil {
@@ -1291,24 +1337,50 @@ func (o *StepCreateTaskOptions) cloneGitRepositoryToTempDir(gitURL string) error
 	if err != nil {
 		return err
 	}
-	log.Infof("cloning repository %s to temp dir %s\n", gitURL, o.Dir)
-	err = o.Git().Clone(gitURL, o.Dir)
+	log.Infof("shallow cloning repository %s to temp dir %s\n", gitURL, o.Dir)
+	err = o.Git().Init(o.Dir)
 	if err != nil {
-		return errors.Wrapf(err, "failed to clone repository %s to directory %s", gitURL, o.Dir)
+		return errors.Wrapf(err, "failed to init a new git repository in directory %s", o.Dir)
 	}
+	if o.Verbose {
+		log.Infof("ran git init in %s", o.Dir)
+	}
+	err = o.Git().AddRemote(o.Dir, "origin", gitURL)
+	if err != nil {
+		return errors.Wrapf(err, "failed to add remote origin with url %s in directory %s", gitURL, o.Dir)
+	}
+	if o.Verbose {
+		log.Infof("ran git add remote origin %s in %s", gitURL, o.Dir)
+	}
+	commitish := make([]string, 0)
 	if o.PullRequestNumber != "" {
 		pr := fmt.Sprintf("pull/%s/head:%s", o.PullRequestNumber, o.Branch)
-		log.Infof("fetching branch %s for %s in dir %s\n", pr, gitURL, o.Dir)
-		err = o.Git().FetchBranch(o.Dir, gitURL, pr)
-		if err != nil {
-			return errors.Wrapf(err, "failed to fetch pullrequest %s for %s in dir %s: %v", pr, gitURL, o.Dir, err)
+		if o.Verbose {
+			log.Infof("will fetch %s for %s in dir %s\n", pr, gitURL, o.Dir)
 		}
+		commitish = append(commitish, pr)
 	}
 	if o.Revision != "" {
-		log.Infof("checkout revision %s\n", o.Revision)
+		if o.Verbose {
+			log.Infof("will fetch %s for %s in dir %s\n", o.Revision, gitURL, o.Dir)
+		}
+		commitish = append(commitish, o.Revision)
+	} else {
+		commitish = append(commitish, "master")
+	}
+	err = o.Git().FetchBranchShallow(o.Dir, "origin", commitish...)
+	if err != nil {
+		return errors.Wrapf(err, "failed to fetch %s from %s in directory %s", commitish, gitURL, o.Dir)
+	}
+	if o.Revision != "" {
 		err = o.Git().Checkout(o.Dir, o.Revision)
 		if err != nil {
 			return errors.Wrapf(err, "failed to checkout revision %s", o.Revision)
+		}
+	} else {
+		err = o.Git().Checkout(o.Dir, "master")
+		if err != nil {
+			return errors.Wrapf(err, "failed to checkout revision master")
 		}
 	}
 	return nil
@@ -1323,7 +1395,7 @@ func (o *StepCreateTaskOptions) deleteTempDir() {
 }
 
 func (o *StepCreateTaskOptions) viewSteps(tasks ...*pipelineapi.Task) error {
-	table := o.createTable()
+	table := o.CreateTable()
 	showTaskName := len(tasks) > 1
 	if showTaskName {
 		table.AddRow("TASK", "NAME", "COMMAND", "IMAGE")
@@ -1531,18 +1603,18 @@ func (o *StepCreateTaskOptions) modifyStep(parsedStep syntax.Step, gitInfo *gits
 func (o *StepCreateTaskOptions) dockerImage(gitInfo *gits.GitRepository) string {
 	dockerRegistry := o.getDockerRegistry()
 
-	dockeerRegistryOrg := o.DockerRegistryOrg
+	dockeerRegistryOrg := o.dockerRegistryOrg
 	if dockeerRegistryOrg == "" {
-		dockeerRegistryOrg = o.dockerRegistryOrg(gitInfo)
+		dockeerRegistryOrg = o.DockerRegistryOrg(gitInfo)
 	}
 	appName := gitInfo.Name
 	return dockerRegistry + "/" + dockeerRegistryOrg + "/" + appName
 }
 
 func (o *StepCreateTaskOptions) getDockerRegistry() string {
-	dockerRegistry := o.DockerRegistry
+	dockerRegistry := o.dockerRegistry
 	if dockerRegistry == "" {
-		dockerRegistry = o.dockerRegistry()
+		dockerRegistry = o.DockerRegistry()
 	}
 	return dockerRegistry
 }

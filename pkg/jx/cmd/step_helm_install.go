@@ -3,6 +3,9 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/helm"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -32,7 +35,7 @@ var (
 `)
 )
 
-func NewCmdStepHelmInstall(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepHelmInstall(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepHelmInstallOptions{
 		StepHelmOptions: StepHelmOptions{
 			StepOptions: StepOptions{
@@ -69,7 +72,7 @@ func (o *StepHelmInstallOptions) Run() error {
 	if len(args) == 0 {
 		return fmt.Errorf("Missing chart argument")
 	}
-	err := o.registerReleaseCRD()
+	err := o.RegisterReleaseCRD()
 	if err != nil {
 		return err
 	}
@@ -87,7 +90,15 @@ func (o *StepHelmInstallOptions) Run() error {
 	if o.Version == "" {
 		version = ""
 	}
-	err = o.Helm().InstallChart(chart, releaseName, ns, version, -1, o.Values, o.ValuesFiles, "", "", "")
+	helmOptions := helm.InstallChartOptions{
+		Chart:       chart,
+		ReleaseName: releaseName,
+		Version:     version,
+		Ns:          ns,
+		SetValues:   o.Values,
+		ValueFiles:  o.ValuesFiles,
+	}
+	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
@@ -20,7 +21,7 @@ func TestStepSplitMonorepo(t *testing.T) {
 
 	options := &cmd.StepSplitMonorepoOptions{
 		StepOptions: cmd.StepOptions{
-			CommonOptions: &cmd.CommonOptions{},
+			CommonOptions: &opts.CommonOptions{},
 		},
 		Organisation: "dummy",
 		Glob:         "*",
@@ -52,7 +53,7 @@ func TestStepSplitMonorepoGetLastGitCommit(t *testing.T) {
 
 	options := &cmd.StepSplitMonorepoOptions{
 		StepOptions: cmd.StepOptions{
-			CommonOptions: &cmd.CommonOptions{},
+			CommonOptions: &opts.CommonOptions{},
 		},
 		Organisation: "dummy",
 		Glob:         "*",

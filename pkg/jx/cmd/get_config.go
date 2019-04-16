@@ -6,6 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
@@ -29,7 +30,7 @@ var (
 )
 
 // NewCmdGetConfig creates the command
-func NewCmdGetConfig(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetConfig(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetConfigOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -64,11 +65,11 @@ func (o *GetConfigOptions) Run() error {
 		return err
 	}
 	if pc.IsEmpty() {
-		log.Infoln("No project configuration for this directory.")
+		log.Info("No project configuration for this directory.")
 		log.Infof("To edit the configuration use: %s\n", util.ColorInfo("jx edit config"))
 		return nil
 	}
-	table := o.createTable()
+	table := o.CreateTable()
 	table.AddRow("SERVICE", "KIND", "URL", "NAME")
 
 	t := pc.IssueTracker

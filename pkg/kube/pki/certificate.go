@@ -3,15 +3,16 @@ package pki
 import (
 	"context"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/util"
 	"strings"
 	"time"
+
+	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/util"
 
 	kubeservices "github.com/jenkins-x/jx/pkg/kube/services"
 	certmng "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 	certclient "github.com/jetstack/cert-manager/pkg/client/clientset/versioned"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -44,7 +45,7 @@ func WaitCertificateIssuedReady(client certclient.Interface, name string, ns str
 		if !isReady {
 			return false, nil
 		}
-		logrus.Infof("Ready Cert: %s\n", util.ColorInfo(name))
+		log.Infof("Ready Cert: %s\n", util.ColorInfo(name))
 		return true, nil
 	})
 	if err != nil {

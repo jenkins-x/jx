@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/helm"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/vault"
@@ -38,7 +41,7 @@ type CreateAddonVaultOptions struct {
 }
 
 // NewCmdCreateAddonVault creates a command object for the "create addon vault-opeator" command
-func NewCmdCreateAddonVault(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateAddonVault(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonVaultOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -70,13 +73,13 @@ func (o *CreateAddonVaultOptions) Run() error {
 }
 
 // InstallVaultOperator installs a vault operator in the namespace provided
-func InstallVaultOperator(o *CommonOptions, namespace string) error {
-	err := o.ensureHelm()
+func InstallVaultOperator(o *opts.CommonOptions, namespace string) error {
+	err := o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "checking if helm is installed")
 	}
 
-	err = o.addHelmRepoIfMissing(kube.DefaultChartMuseumURL, jxRepoName, "", "")
+	err = o.AddHelmRepoIfMissing(kube.DefaultChartMuseumURL, jxRepoName, "", "")
 	if err != nil {
 		return errors.Wrapf(err, "adding '%s' helm charts repository", kube.DefaultChartMuseumURL)
 	}
@@ -93,7 +96,14 @@ func InstallVaultOperator(o *CommonOptions, namespace string) error {
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	err = o.installChart(releaseName, kube.ChartVaultOperator, o.Version, namespace, true, values, nil, "")
+	helmOptions := helm.InstallChartOptions{
+		Chart:       kube.ChartVaultOperator,
+		ReleaseName: releaseName,
+		Version:     o.Version,
+		Ns:          namespace,
+		SetValues:   values,
+	}
+	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("installing %s chart", releaseName))
 	}

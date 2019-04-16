@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/log"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 )
@@ -93,7 +94,7 @@ func KubernetesProviderOptions() string {
 
 // NewCmdCreateCluster creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateCluster(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateCluster(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := createCreateClusterOptions(commonOpts, "")
 
 	cmd := &cobra.Command{
@@ -126,7 +127,7 @@ func (o *CreateClusterOptions) addCreateClusterFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&o.SkipInstallation, "skip-installation", "", false, "Provision cluster only, don't install Jenkins X into it")
 }
 
-func createCreateClusterOptions(commonOpts *CommonOptions, cloudProvider string) CreateClusterOptions {
+func createCreateClusterOptions(commonOpts *opts.CommonOptions, cloudProvider string) CreateClusterOptions {
 	options := CreateClusterOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,

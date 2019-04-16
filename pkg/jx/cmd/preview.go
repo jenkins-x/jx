@@ -9,14 +9,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/helm"
+
 	"github.com/jenkins-x/jx/pkg/kserving"
 	"github.com/jenkins-x/jx/pkg/users"
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -86,7 +89,7 @@ type PreviewOptions struct {
 }
 
 // NewCmdPreview creates a command object for the "create" command
-func NewCmdPreview(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdPreview(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &PreviewOptions{
 		HelmValuesConfig: config.HelmValuesConfig{
 			ExposeController: &config.ExposeController{},
@@ -105,7 +108,7 @@ func NewCmdPreview(commonOpts *CommonOptions) *cobra.Command {
 			options.Cmd = cmd
 			options.Args = args
 			//Default to batch-mode when running inside the pipeline (but user override wins).
-			if !cmd.Flag(optionBatchMode).Changed {
+			if !cmd.Flag(opts.OptionBatchMode).Changed {
 				commonOpts := options.PromoteOptions.CommonOptions
 				options.BatchMode = commonOpts.InCDPipeline()
 			}
@@ -154,7 +157,7 @@ func (o *PreviewOptions) Run() error {
 		}
 	}
 
-	log.Infoln("Creating a preview")
+	log.Info("Creating a preview")
 	/*
 		args := o.Args
 		if len(args) > 0 && o.Name == "" {
@@ -451,14 +454,21 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	configFileName := filepath.Join(dir, ExtraValuesFile)
+	configFileName := filepath.Join(dir, opts.ExtraValuesFile)
 	log.Infof("%s", config)
 	err = ioutil.WriteFile(configFileName, []byte(config), 0644)
 	if err != nil {
 		return err
 	}
 
-	err = o.Helm().UpgradeChart(".", o.ReleaseName, o.Namespace, "", true, -1, true, true, nil, []string{configFileName}, "", "", "")
+	helmOptions := helm.InstallChartOptions{
+		Chart:       ".",
+		ReleaseName: o.ReleaseName,
+		Ns:          o.Namespace,
+		ValueFiles:  []string{configFileName},
+		Wait:        true,
+	}
+	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
 		return err
 	}
@@ -485,8 +495,8 @@ func (o *PreviewOptions) Run() error {
 		comment += fmt.Sprintf(" [here](%s) ", url)
 	}
 
-	pipeline := o.getJobName()
-	build := o.getBuildNumber()
+	pipeline := o.GetJenkinsJobName()
+	build := o.GetBuildNumber()
 
 	if url != "" || o.PullRequestURL != "" {
 		if pipeline != "" && build != "" {
@@ -504,7 +514,11 @@ func (o *PreviewOptions) Run() error {
 					},
 				},
 			}
-			a, _, p, _, err := key.GetOrCreatePreview(o.jxClient, ns)
+			jxClient, _, err = o.JXClient()
+			if err != nil {
+				return err
+			}
+			a, _, p, _, err := key.GetOrCreatePreview(jxClient, ns)
 			if err == nil && a != nil && p != nil {
 				updated := false
 				if p.ApplicationURL == "" {
@@ -600,7 +614,7 @@ func (o *PreviewOptions) RunPostPreviewSteps(kubeClient kubernetes.Interface, ns
 			job, err := jobResources.Get(job.Name, metav1.GetOptions{})
 			return job == nil || err != nil, nil
 		}
-		o.retryUntilTrueOrTimeout(time.Minute, time.Second, hasJob)
+		o.RetryUntilTrueOrTimeout(time.Minute, time.Second, hasJob)
 
 		createdJob, err := jobResources.Create(job2)
 		if err != nil {
@@ -645,11 +659,11 @@ func (o *PreviewOptions) waitForJob(kubeClient kubernetes.Interface, job *batchv
 		count += 1
 		if count > 1 {
 			// TODO we could maybe do better - using a prefix on all logs maybe with the job name?
-			o.runCommandVerbose("kubectl", "logs", "-f", "job/"+name, "-n", ns)
+			o.RunCommandVerbose("kubectl", "logs", "-f", "job/"+name, "-n", ns)
 		}
 		return false, nil
 	}
-	err := o.retryUntilTrueOrTimeout(o.PostPreviewJobTimeoutDuration, o.PostPreviewJobPollDuration, fn)
+	err := o.RetryUntilTrueOrTimeout(o.PostPreviewJobTimeoutDuration, o.PostPreviewJobPollDuration, fn)
 	if err != nil {
 		log.Warnf("\nFailed to complete post Preview Job %s in namespace %s: %s\n", name, ns, err)
 	}
@@ -705,7 +719,7 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 				} else {
 					if root != "" {
 						o.Dir = root
-						o.SourceURL, err = o.discoverGitURL(gitConf)
+						o.SourceURL, err = o.DiscoverGitURL(gitConf)
 						if err != nil {
 							log.Warnf("Could not find the remote git source URL:  %s\n", err)
 						} else {
@@ -865,7 +879,7 @@ func (o *PreviewOptions) getImageName() (string, error) {
 		return "", fmt.Errorf("no %s environment variable found", APP_NAME)
 	}
 
-	dockerRegistryOrg := o.dockerRegistryOrg(o.GitInfo)
+	dockerRegistryOrg := o.DockerRegistryOrg(o.GitInfo)
 	if dockerRegistryOrg == "" {
 		dockerRegistryOrg = organisation
 	}

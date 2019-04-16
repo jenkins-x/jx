@@ -8,6 +8,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
@@ -30,7 +31,7 @@ var (
 	`)
 )
 
-func newCmdDeleteEks(commonOpts *CommonOptions) *cobra.Command {
+func newCmdDeleteEks(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &deleteEksOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -62,15 +63,15 @@ func (o *deleteEksOptions) Run() error {
 	cluster := o.Args[0]
 
 	var deps []string
-	d := binaryShouldBeInstalled("eksctl")
+	d := opts.BinaryShouldBeInstalled("eksctl")
 	if d != "" {
 		deps = append(deps, d)
 	}
-	d = binaryShouldBeInstalled("heptio-authenticator-aws")
+	d = opts.BinaryShouldBeInstalled("heptio-authenticator-aws")
 	if d != "" {
 		deps = append(deps, d)
 	}
-	err := o.installMissingDependencies(deps)
+	err := o.InstallMissingDependencies(deps)
 	if err != nil {
 		log.Errorf("%v\nPlease fix the error or install manually then try again", err)
 		os.Exit(-1)

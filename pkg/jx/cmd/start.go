@@ -3,12 +3,13 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
 // Start contains the command line options
 type Start struct {
-	*CommonOptions
+	*opts.CommonOptions
 }
 
 var (
@@ -24,7 +25,7 @@ var (
 
 // NewCmdStart creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdStart(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStart(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &Start{
 		commonOpts,
 	}

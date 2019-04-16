@@ -1,17 +1,18 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/spf13/cobra"
 )
 
 // DeleteTrackerOptions are the flags for delete commands
 type DeleteTrackerOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 }
 
 // NewCmdDeleteTracker creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteTracker(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteTracker(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteTrackerOptions{
 		commonOpts,
 	}

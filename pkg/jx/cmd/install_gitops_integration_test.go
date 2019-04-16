@@ -13,7 +13,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/testkube"
@@ -24,6 +24,7 @@ import (
 	"k8s.io/helm/pkg/chartutil"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,7 +49,7 @@ func TestInstallGitOps(t *testing.T) {
 		},
 	}
 
-	co := cmd.CommonOptions{
+	co := opts.CommonOptions{
 		In:  os.Stdin,
 		Out: os.Stdout,
 		Err: os.Stderr,

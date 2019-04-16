@@ -3,14 +3,17 @@ package cmd
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/helm"
+	survey "gopkg.in/AlecAivazis/survey.v1"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"gopkg.in/AlecAivazis/survey.v1"
 )
 
 const (
@@ -46,7 +49,7 @@ type CreateAddonGiteaOptions struct {
 }
 
 // NewCmdCreateAddonGitea creates a command object for the "create" command
-func NewCmdCreateAddonGitea(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateAddonGitea(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonGiteaOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -91,12 +94,19 @@ func (o *CreateAddonGiteaOptions) Run() error {
 		return util.MissingOption(optionChart)
 	}
 
-	err := o.ensureHelm()
+	err := o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that helm is present")
 	}
 	setValues := strings.Split(o.SetValues, ",")
-	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, setValues, nil, "")
+	helmOptions := helm.InstallChartOptions{
+		Chart:       o.Chart,
+		ReleaseName: o.ReleaseName,
+		Version:     o.Version,
+		Ns:          o.Namespace,
+		SetValues:   setValues,
+	}
+	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
 		return err
 	}

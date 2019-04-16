@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -28,7 +29,7 @@ type CreateChatServerOptions struct {
 }
 
 // NewCmdCreateChatServer creates a command object for the "create" command
-func NewCmdCreateChatServer(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateChatServer(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateChatServerOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -72,7 +73,7 @@ func (o *CreateChatServerOptions) Run() error {
 	if gitUrl == "" {
 		return missingChatArguments()
 	}
-	authConfigSvc, err := o.createChatAuthConfigService()
+	authConfigSvc, err := o.CreateChatAuthConfigService()
 	if err != nil {
 		return err
 	}

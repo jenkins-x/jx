@@ -3,21 +3,23 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/jenkins-x/jx/pkg/log"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/log"
+
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	prowapi "k8s.io/test-infra/prow/apis/prowjobs/v1"
+	"k8s.io/test-infra/prow/pod-utils/downwardapi"
 )
 
 const (
@@ -29,7 +31,7 @@ const (
 
 // ControllerPipelineRunnerOptions holds the command line arguments
 type ControllerPipelineRunnerOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 	BindAddress           string
 	Path                  string
 	Port                  int
@@ -68,7 +70,7 @@ var (
 )
 
 // NewCmdControllerPipelineRunner creates the command
-func NewCmdControllerPipelineRunner(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdControllerPipelineRunner(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := ControllerPipelineRunnerOptions{
 		CommonOptions: commonOpts,
 	}
@@ -98,30 +100,28 @@ func NewCmdControllerPipelineRunner(commonOpts *CommonOptions) *cobra.Command {
 // Run will implement this command
 func (o *ControllerPipelineRunnerOptions) Run() error {
 	if !o.NoGitCredeentialsInit {
-		err := o.initGitConfigAndUser()
+		err := o.InitGitConfigAndUser()
 		if err != nil {
 			return err
 		}
 	}
-
 	mux := http.NewServeMux()
 	mux.Handle(o.Path, http.HandlerFunc(o.pipelineRunMethods))
 	mux.Handle(HealthPath, http.HandlerFunc(o.health))
 	mux.Handle(ReadyPath, http.HandlerFunc(o.ready))
-
-	logrus.Infof("Waiting for dynamic Tekton Pipelines at http://%s:%d%s", o.BindAddress, o.Port, o.Path)
+	log.Infof("Waiting for dynamic Tekton Pipelines at http://%s:%d%s", o.BindAddress, o.Port, o.Path)
 	return http.ListenAndServe(":"+strconv.Itoa(o.Port), mux)
 }
 
 // health returns either HTTP 204 if the service is healthy, otherwise nothing ('cos it's dead).
 func (o *ControllerPipelineRunnerOptions) health(w http.ResponseWriter, r *http.Request) {
-	logrus.Debug("Health check")
+	log.Debug("Health check")
 	w.WriteHeader(http.StatusNoContent)
 }
 
 // ready returns either HTTP 204 if the service is ready to serve requests, otherwise HTTP 503.
 func (o *ControllerPipelineRunnerOptions) ready(w http.ResponseWriter, r *http.Request) {
-	logrus.Debug("Ready check")
+	log.Debug("Ready check")
 	if o.isReady() {
 		w.WriteHeader(http.StatusNoContent)
 	} else {
@@ -135,11 +135,11 @@ func (o *ControllerPipelineRunnerOptions) pipelineRunMethods(w http.ResponseWrit
 	case http.MethodGet:
 		fmt.Fprintf(w, "Please POST JSON to this endpoint!\n")
 	case http.MethodHead:
-		logrus.Info("HEAD Todo...")
+		log.Info("HEAD Todo...")
 	case http.MethodPost:
 		o.startPipelineRun(w, r)
 	default:
-		logrus.Errorf("Unsupported method %s for %s", r.Method, o.Path)
+		log.Errorf("Unsupported method %s for %s", r.Method, o.Path)
 		http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 	}
 }
@@ -166,7 +166,7 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 		return
 	}
 	if o.Verbose {
-		logrus.Infof("got payload %#v", arguments)
+		log.Infof("got payload %#v", arguments)
 	}
 	pj := arguments.ProwJobSpec
 
@@ -177,12 +177,19 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 		o.returnError(err, "no prowJobSpec.refs passed in so cannot determine git repository. Input: "+string(data), w, r)
 		return
 	}
-	// todo lets support batches of PRs from Prow
+
+	// lets change this to support new pipelineresource type that handles batches
 	if len(pj.Refs.Pulls) > 0 {
 		revision = pj.Refs.Pulls[0].SHA
 		prNumber = strconv.Itoa(pj.Refs.Pulls[0].Number)
 	} else {
 		revision = pj.Refs.BaseSHA
+	}
+
+	envs, err := downwardapi.EnvForSpec(downwardapi.NewJobSpec(pj, "", ""))
+	if err != nil {
+		o.returnError(err, "failed to get env vars from prowjob", w, r)
+		return
 	}
 
 	sourceURL := fmt.Sprintf("https://github.com/%s/%s.git", pj.Refs.Org, pj.Refs.Repo)
@@ -224,6 +231,11 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 	// turn map into string array with = separator to match type of custom labels which are CLI flags
 	for key, value := range arguments.Labels {
 		pr.CustomLabels = append(pr.CustomLabels, fmt.Sprintf("%s=%s", key, value))
+	}
+
+	// turn map into string array with = separator to match type of custom env vars which are CLI flags
+	for key, value := range envs {
+		pr.CustomEnvs = append(pr.CustomEnvs, fmt.Sprintf("%s=%s", key, value))
 	}
 
 	log.Infof("triggering pipeline for repo %s branch %s revision %s context %s\n", sourceURL, branch, revision, pj.Context)
@@ -273,12 +285,12 @@ func (o *ControllerPipelineRunnerOptions) marshalPayload(w http.ResponseWriter, 
 
 func (o *ControllerPipelineRunnerOptions) onError(err error) {
 	if err != nil {
-		logrus.Errorf("%v", err)
+		log.Errorf("%v", err)
 	}
 }
 
 func (o *ControllerPipelineRunnerOptions) returnError(err error, message string, w http.ResponseWriter, r *http.Request) {
-	logrus.Errorf("%v %s", err, message)
+	log.Errorf("%v %s", err, message)
 
 	o.onError(err)
 	w.WriteHeader(400)
@@ -304,11 +316,13 @@ func (o *ControllerPipelineRunnerOptions) stepGitCredentials() error {
 
 func getBranch(spec prowapi.ProwJobSpec) string {
 	branch := spec.Refs.BaseRef
-	if spec.Type == prowapi.PostsubmitJob || spec.Type == prowapi.BatchJob {
+	if spec.Type == prowapi.PostsubmitJob {
 		return branch
 	}
+	if spec.Type == prowapi.BatchJob {
+		return "batch"
+	}
 	if len(spec.Refs.Pulls) > 0 {
-		// todo lets support multiple PRs for when we are running a batch from Tide
 		branch = fmt.Sprintf("PR-%v", spec.Refs.Pulls[0].Number)
 	}
 	return branch

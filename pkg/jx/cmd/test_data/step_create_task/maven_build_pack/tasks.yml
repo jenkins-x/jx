@@ -13,12 +13,41 @@ items:
       - name: workspace
         targetPath: source
         type: git
-    outputs:
-      resources:
-        - name: workspace
-          targetPath: ""
-          type: git
     steps:
+    - args:
+      - step
+      - git
+      - merge
+      - --verbose
+      command:
+      - jx
+      image: rawlingsj/builder-jx:wip34
+      name: git-merge
+      env:
+      - name: DOCKER_REGISTRY
+      - name: BUILD_NUMBER
+        value: "1"
+      - name: PIPELINE_KIND
+        value: release
+      - name: REPO_OWNER
+        value: abayer
+      - name: REPO_NAME
+        value: jx-demo-qs
+      - name: JOB_NAME
+        value: abayer/jx-demo-qs/master
+      - name: APP_NAME
+        value: jx-demo-qs
+      - name: BRANCH_NAME
+        value: master
+      - name: JX_BATCH_MODE
+        value: "true"
+      - name: FRUIT
+        value: BANANA
+      volumeMounts:
+      - mountPath: /etc/podinfo
+        name: podinfo
+        readOnly: true
+      workingDir: /workspace/source
     - args:
       - jx step git credentials
       command:

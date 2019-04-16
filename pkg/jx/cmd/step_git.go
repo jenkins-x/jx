@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -18,7 +19,7 @@ type StepGitOptions struct {
 }
 
 // NewCmdStepGit Steps a command object for the "step" command
-func NewCmdStepGit(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepGit(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepGitOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,

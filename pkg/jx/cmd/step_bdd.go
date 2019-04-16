@@ -8,11 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	configio "github.com/jenkins-x/jx/pkg/io"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/bdd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -70,7 +71,7 @@ var (
 `)
 )
 
-func NewCmdStepBDD(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepBDD(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepBDDOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -190,7 +191,11 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 
 		gitProviderUrl := o.gitProviderUrl()
 
-		team := kube.ToValidName("bdd-" + gitProviderName + "-" + o.teamNameSuffix())
+		teamPrefix := "bdd-"
+		if o.InstallOptions.Flags.Tekton {
+			teamPrefix += "tekton-"
+		}
+		team := kube.ToValidName(teamPrefix + gitProviderName + "-" + o.teamNameSuffix())
 		log.Infof("Creating team %s\n", util.ColorInfo(team))
 
 		installOptions := o.InstallOptions
@@ -225,7 +230,7 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 			Name: gitProviderName,
 			URL:  gitProviderUrl,
 		}
-		err = o.retry(10, time.Second*10, func() error {
+		err = o.Retry(10, time.Second*10, func() error {
 			err = createGitServer.Run()
 			if err != nil {
 				return errors.Wrapf(err, "Failed to create git server with kind %s at url %s in team %s", gitProviderName, gitProviderUrl, team)
@@ -240,7 +245,7 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 			CreateOptions: CreateOptions{
 				CommonOptions: defaultOptions,
 			},
-			ServerFlags: ServerFlags{
+			ServerFlags: opts.ServerFlags{
 				ServerURL: gitProviderUrl,
 			},
 			Username: gitUser,
@@ -275,6 +280,19 @@ func (o *StepBDDOptions) runOnCurrentCluster() error {
 		createEnv.Options.Name = "staging"
 		createEnv.Options.Spec.Label = "Staging"
 		createEnv.GitRepositoryOptions.ServerURL = gitProviderUrl
+		gitOwner := o.Flags.GitOwner
+		if gitOwner == "" && gitUser != "" {
+			// lets avoid loading the git owner from the current cluster
+			gitOwner = gitUser
+		}
+		if gitOwner != "" {
+			createEnv.GitRepositoryOptions.Owner = gitOwner
+		}
+		if gitUser != "" {
+			createEnv.GitRepositoryOptions.Username = gitUser
+		}
+		log.Infof("using environment git owner: %s\n", util.ColorInfo(gitOwner))
+		log.Infof("using environment git user: %s\n", util.ColorInfo(gitUser))
 
 		err = createEnv.Run()
 		if err != nil {
@@ -307,7 +325,7 @@ func (o *StepBDDOptions) deleteTeam(team string) error {
 
 }
 
-func (o *StepBDDOptions) createDefaultCommonOptions() *CommonOptions {
+func (o *StepBDDOptions) createDefaultCommonOptions() *opts.CommonOptions {
 	defaultOptions := o.CommonOptions
 	defaultOptions.BatchMode = true
 	defaultOptions.Args = nil
@@ -322,7 +340,7 @@ func (o *StepBDDOptions) gitProviderUrl() string {
 func (o *StepBDDOptions) teamNameSuffix() string {
 	repo := os.Getenv("REPO_NAME")
 	branch := os.Getenv("BRANCH_NAME")
-	buildNumber := o.getBuildNumber()
+	buildNumber := o.GetBuildNumber()
 	if buildNumber == "" {
 		buildNumber = "1"
 	}
@@ -480,12 +498,12 @@ func (o *StepBDDOptions) copyReports(testDir string, err error) error {
 }
 
 func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
-	buildNum := o.getBuildNumber()
+	buildNum := o.GetBuildNumber()
 	if buildNum == "" {
 		log.Warnf("No build number could be found from the environment variable $BUILD_NUMBER!\n")
 	}
 	baseClusterName := kube.ToValidName(cluster.Name)
-	branch := o.getBranchName(o.Flags.VersionsDir)
+	branch := o.GetBranchName(o.Flags.VersionsDir)
 	if branch == "" {
 		branch = "x"
 	} else {

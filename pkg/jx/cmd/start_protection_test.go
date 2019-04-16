@@ -2,20 +2,22 @@ package cmd_test
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/kube"
-	"k8s.io/api/core/v1"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/kube"
 
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/prow/config"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/prow"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/stretchr/testify/assert"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -28,7 +30,7 @@ const (
 
 func TestStartProtection(t *testing.T) {
 	o := cmd.StartProtectionOptions{
-		CommonOptions: &cmd.CommonOptions{},
+		CommonOptions: &opts.CommonOptions{},
 	}
 
 	cmd.ConfigureTestOptionsWithResources(o.CommonOptions,

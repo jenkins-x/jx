@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -16,7 +17,7 @@ import (
 
 // DeleteTeamOptions are the flags for delete commands
 type DeleteTeamOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	SelectAll    bool
 	SelectFilter string
@@ -39,7 +40,7 @@ var (
 
 // NewCmdDeleteTeam creates a command object
 // retrieves one or more resources from a server.
-func NewCmdDeleteTeam(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteTeam(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteTeamOptions{
 		CommonOptions: commonOpts,
 	}
@@ -124,7 +125,7 @@ func (o *DeleteTeamOptions) Run() error {
 }
 
 func (o *DeleteTeamOptions) deleteTeam(name string) error {
-	err := o.registerTeamCRD()
+	err := o.RegisterTeamCRD()
 	if err != nil {
 		return err
 	}
@@ -143,8 +144,11 @@ func (o *DeleteTeamOptions) deleteTeam(name string) error {
 		// we don't have the namespace so the team cannot have been provisioned yet
 		return kube.DeleteTeam(jxClient, ns, name)
 	}
-	origNamespace := o.currentNamespace
-	o.ChangeNamespace(name)
+	_, origNamespace, err := o.KubeClientAndNamespace()
+	if err != nil {
+		return err
+	}
+	o.changeNamespace(name)
 
 	uninstall := &UninstallOptions{
 		CommonOptions: o.CommonOptions,
@@ -171,6 +175,19 @@ func (o *DeleteTeamOptions) deleteTeam(name string) error {
 	} else {
 		err = kube.DeleteTeam(jxClient, ns, name)
 	}
-	o.ChangeNamespace(origNamespace)
+	o.changeNamespace(origNamespace)
 	return err
+}
+
+func (o *DeleteTeamOptions) changeNamespace(namespace string) {
+	nsOptions := &NamespaceOptions{
+		CommonOptions: o.CommonOptions,
+	}
+	nsOptions.BatchMode = true
+	nsOptions.Args = []string{namespace}
+	err := nsOptions.Run()
+	if err != nil {
+		log.Warnf("Failed to set context to namespace %s: %s", namespace, err)
+	}
+	o.ResetClientsAndNamespaces()
 }

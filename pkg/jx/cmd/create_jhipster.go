@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -21,7 +22,7 @@ var (
 
 		For more documentation about JHipster see: [https://www.jhipster.tech/](https://www.jhipster.tech/)
 
-` + SeeAlsoText("jx create project"))
+` + opts.SeeAlsoText("jx create project"))
 
 	createJHipsterExample = templates.Examples(`
 		# Create a JHipster application and be prompted for the folder name
@@ -38,7 +39,7 @@ type CreateJHipsterOptions struct {
 }
 
 // NewCmdCreateJHipster creates a command object for the "create" command
-func NewCmdCreateJHipster(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateJHipster(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateJHipsterOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
@@ -65,13 +66,13 @@ func NewCmdCreateJHipster(commonOpts *CommonOptions) *cobra.Command {
 
 // checkJHipsterInstalled lazily install JHipster if its not installed already
 func (o CreateJHipsterOptions) checkJHipsterInstalled() error {
-	_, err := o.getCommandOutput("", "jhipster", "--version")
+	_, err := o.GetCommandOutput("", "jhipster", "--version")
 	if err != nil {
-		log.Infoln("Installing JHipster..")
-		_, err = o.getCommandOutput("", "rimraf", "--version")
+		log.Info("Installing JHipster..")
+		_, err = o.GetCommandOutput("", "rimraf", "--version")
 		if err != nil {
-			log.Infoln("Installing rimraf..")
-			_, err = o.getCommandOutput("", "npm", "install", "-g", "rimraf")
+			log.Info("Installing rimraf..")
+			_, err = o.GetCommandOutput("", "npm", "install", "-g", "rimraf")
 			if err != nil {
 				return err
 			}
@@ -80,7 +81,7 @@ func (o CreateJHipsterOptions) checkJHipsterInstalled() error {
 		if err != nil {
 			return err
 		}
-		log.Infoln("Installed JHipster")
+		log.Info("Installed JHipster")
 	}
 	return err
 }
@@ -91,7 +92,7 @@ func (o CreateJHipsterOptions) GenerateJHipster(dir string) error {
 	if err != nil {
 		return err
 	}
-	return o.runCommandInteractiveInDir(!o.BatchMode, dir, "jhipster")
+	return o.RunCommandInteractiveInDir(!o.BatchMode, dir, "jhipster")
 }
 
 // Run implements the command

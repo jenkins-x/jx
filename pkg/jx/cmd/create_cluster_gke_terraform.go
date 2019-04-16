@@ -18,6 +18,7 @@ import (
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -73,7 +74,7 @@ var (
 
 // NewCmdCreateClusterGKETerraform creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a Kubernetes cluster.
-func NewCmdCreateClusterGKETerraform(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateClusterGKETerraform(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := CreateClusterGKETerraformOptions{
 		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.GKE),
 	}
@@ -113,7 +114,7 @@ func (o *CreateClusterGKETerraformOptions) addAuthFlags(cmd *cobra.Command) {
 }
 
 func (o *CreateClusterGKETerraformOptions) Run() error {
-	err := o.installRequirements(cloud.GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
+	err := o.InstallRequirements(cloud.GKE, "terraform", o.InstallOptions.InitOptions.HelmBinary())
 	if err != nil {
 		return err
 	}
@@ -302,7 +303,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 		fmt.Sprintf("-var-file=%s", terraformVars),
 		terraformDir}
 
-	output, err := o.getCommandOutput("", "terraform", args...)
+	output, err := o.GetCommandOutput("", "terraform", args...)
 	if err != nil {
 		return err
 	}
@@ -315,7 +316,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 		fmt.Sprintf("-var-file=%s", terraformVars),
 		terraformDir}
 
-	err = o.runCommandVerbose("terraform", args...)
+	err = o.RunCommandVerbose("terraform", args...)
 	if err != nil {
 		return err
 	}
@@ -351,7 +352,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 		return err
 	}
 
-	output, err = o.getCommandOutput("", "gcloud", "container", "clusters", "get-credentials", o.Flags.ClusterName, "--zone", zone, "--project", projectId)
+	output, err = o.GetCommandOutput("", "gcloud", "container", "clusters", "get-credentials", o.Flags.ClusterName, "--zone", zone, "--project", projectId)
 	if err != nil {
 		return err
 	}
@@ -366,7 +367,7 @@ func (o *CreateClusterGKETerraformOptions) createClusterGKETerraform() error {
 		return err
 	}
 
-	context, err := o.getCommandOutput("", "kubectl", "config", "current-context")
+	context, err := o.GetCommandOutput("", "kubectl", "config", "current-context")
 	if err != nil {
 		return err
 	}

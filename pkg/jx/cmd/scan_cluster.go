@@ -7,13 +7,14 @@ import (
 	"os"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	batchv1 "k8s.io/api/batch/v1"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 )
@@ -60,7 +61,7 @@ type scanResult struct {
 }
 
 // NewCmdScanCluster creates a command object for "scan cluster" command
-func NewCmdScanCluster(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdScanCluster(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &ScanClusterOptions{
 		ScanOptions: ScanOptions{
 			CommonOptions: commonOpts,
@@ -247,7 +248,7 @@ func (o *ScanClusterOptions) printResult(result *scanResult) error {
 		}
 		log.Info(string(output))
 	} else {
-		nodeTable := o.createTable()
+		nodeTable := o.CreateTable()
 		nodeTable.SetColumnAlign(1, util.ALIGN_LEFT)
 		nodeTable.SetColumnAlign(2, util.ALIGN_LEFT)
 		nodeTable.AddRow("NODE", "LOCATION")
@@ -257,7 +258,7 @@ func (o *ScanClusterOptions) printResult(result *scanResult) error {
 		nodeTable.Render()
 		log.Blank()
 
-		serviceTable := o.createTable()
+		serviceTable := o.CreateTable()
 		serviceTable.SetColumnAlign(1, util.ALIGN_LEFT)
 		serviceTable.SetColumnAlign(2, util.ALIGN_LEFT)
 		serviceTable.SetColumnAlign(3, util.ALIGN_LEFT)
@@ -268,7 +269,7 @@ func (o *ScanClusterOptions) printResult(result *scanResult) error {
 		serviceTable.Render()
 		log.Blank()
 
-		vulnTable := o.createTable()
+		vulnTable := o.CreateTable()
 		vulnTable.SetColumnAlign(1, util.ALIGN_LEFT)
 		vulnTable.SetColumnAlign(2, util.ALIGN_LEFT)
 		vulnTable.SetColumnAlign(3, util.ALIGN_LEFT)

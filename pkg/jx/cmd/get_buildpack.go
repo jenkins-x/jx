@@ -4,6 +4,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/util"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 )
@@ -40,7 +41,7 @@ var (
 )
 
 // NewCmdGetBuildPack creates the new command for: jx get env
-func NewCmdGetBuildPack(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetBuildPack(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetBuildPackOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -72,7 +73,7 @@ func (o *GetBuildPackOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	table := o.createTable()
+	table := o.CreateTable()
 	if o.All {
 		jxClient, ns, err := o.JXClientAndDevNamespace()
 		if err != nil {

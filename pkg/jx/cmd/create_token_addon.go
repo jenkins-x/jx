@@ -5,12 +5,13 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/addon"
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -32,7 +33,7 @@ var (
 type CreateTokenAddonOptions struct {
 	CreateOptions
 
-	ServerFlags ServerFlags
+	ServerFlags opts.ServerFlags
 	Username    string
 	Password    string
 	ApiToken    string
@@ -41,7 +42,7 @@ type CreateTokenAddonOptions struct {
 }
 
 // NewCmdCreateTokenAddon creates a command
-func NewCmdCreateTokenAddon(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateTokenAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateTokenAddonOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -61,7 +62,7 @@ func NewCmdCreateTokenAddon(commonOpts *CommonOptions) *cobra.Command {
 			CheckErr(err)
 		},
 	}
-	options.ServerFlags.addGitServerFlags(cmd)
+	options.ServerFlags.AddGitServerFlags(cmd)
 	cmd.Flags().StringVarP(&options.Password, "password", "p", "", "The password for the user")
 	cmd.Flags().StringVarP(&options.ApiToken, "api-token", "t", "", "The API Token for the user")
 	cmd.Flags().StringVarP(&options.Timeout, "timeout", "", "", "The timeout if using browser automation to generate the API token (by passing username and password)")
@@ -79,7 +80,7 @@ func (o *CreateTokenAddonOptions) Run() error {
 	if len(args) > 1 {
 		o.ApiToken = args[1]
 	}
-	authConfigSvc, err := o.createAddonAuthConfigService()
+	authConfigSvc, err := o.CreateAddonAuthConfigService()
 	if err != nil {
 		return err
 	}
@@ -93,7 +94,7 @@ func (o *CreateTokenAddonOptions) Run() error {
 	}
 
 	var server *auth.AuthServer
-	server, err = o.findAddonServer(config, &o.ServerFlags, kind)
+	server, err = o.FindAddonServer(config, &o.ServerFlags, kind)
 	if err != nil {
 		return err
 	}

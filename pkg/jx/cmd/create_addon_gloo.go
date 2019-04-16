@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -43,7 +44,7 @@ type CreateAddonGlooOptions struct {
 }
 
 // NewCmdCreateAddonGloo creates a command object for the "create" command
-func NewCmdCreateAddonGloo(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateAddonGloo(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonGlooOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -89,14 +90,14 @@ func (o *CreateAddonGlooOptions) Run() error {
 	}
 
 	// lets ensure glooctl is installed
-	_, shouldInstall, err := shouldInstallBinary("glooctl")
+	_, shouldInstall, err := opts.ShouldInstallBinary("glooctl")
 	if err != nil {
 		return errors.Wrapf(err, "failed to check if we need to install glooctl")
 	}
 
 	if shouldInstall {
 		log.Infof("installing %s\n", util.ColorInfo("glooctl"))
-		err = o.installGlooctl()
+		err = o.InstallGlooctl()
 		if err != nil {
 			return errors.Wrapf(err, "failed to install glooctl")
 		}
@@ -111,7 +112,7 @@ func (o *CreateAddonGlooOptions) Run() error {
 	_, err = kubeClient.CoreV1().Services(o.GlooNamespace).Get(o.ClusterIngressProxy, metav1.GetOptions{})
 	if err != nil {
 		// we may not have installed gloo yet so lets do that now...
-		err = o.runCommandVerbose("glooctl", "install", "knative")
+		err = o.RunCommandVerbose("glooctl", "install", "knative")
 		if err != nil {
 			return errors.Wrapf(err, "failed to install gloo")
 		}
@@ -160,7 +161,7 @@ func (o *CreateAddonGlooOptions) getGlooDomain(kubeClient kubernetes.Interface) 
 		}
 		return false, nil
 	}
-	err := o.retryUntilTrueOrTimeout(time.Minute*5, time.Second*3, fn)
+	err := o.RetryUntilTrueOrTimeout(time.Minute*5, time.Second*3, fn)
 	if ip == "" || err != nil {
 		return "", err
 	}

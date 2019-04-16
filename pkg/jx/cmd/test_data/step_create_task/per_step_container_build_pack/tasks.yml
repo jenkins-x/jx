@@ -13,12 +13,57 @@ items:
       - name: workspace
         targetPath: source
         type: git
-    outputs:
-      resources:
-      - name: workspace
-        targetPath: ""
-        type: git
     steps:
+    - args:
+      - step
+      - git
+      - merge
+      - --verbose
+      command:
+      - jx
+      image: rawlingsj/builder-jx:wip34
+      name: git-merge
+      env:
+      - name: DOCKER_CONFIG
+        value: /home/jenkins/.docker/
+      - name: DOCKER_REGISTRY
+        valueFrom:
+          configMapKeyRef:
+            key: docker.registry
+            name: jenkins-x-docker-registry
+      - name: GIT_AUTHOR_EMAIL
+        value: jenkins-x@googlegroups.com
+      - name: GIT_AUTHOR_NAME
+        value: jenkins-x-bot
+      - name: GIT_COMMITTER_EMAIL
+        value: jenkins-x@googlegroups.com
+      - name: GIT_COMMITTER_NAME
+        value: jenkins-x-bot
+      - name: TILLER_NAMESPACE
+        value: kube-system
+      - name: XDG_CONFIG_HOME
+        value: /workspace/xdg_config
+      - name: BUILD_NUMBER
+        value: "1"
+      - name: PIPELINE_KIND
+        value: release
+      - name: REPO_OWNER
+        value: abayer
+      - name: REPO_NAME
+        value: golang-qs-test
+      - name: JOB_NAME
+        value: abayer/golang-qs-test/master
+      - name: APP_NAME
+        value: golang-qs-test
+      - name: BRANCH_NAME
+        value: master
+      - name: JX_BATCH_MODE
+        value: "true"
+      workingDir: /workspace/source
+      volumeMounts:
+      - mountPath: /etc/podinfo
+        name: podinfo
+        readOnly: true
     - args:
       - jx step git credentials
       command:

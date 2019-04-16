@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
@@ -32,13 +33,13 @@ var (
 
 // DeleteDevPodOptions are the flags for delete commands
 type DeleteDevPodOptions struct {
-	*CommonOptions
-	CommonDevPodOptions
+	*opts.CommonOptions
+	opts.CommonDevPodOptions
 }
 
 // NewCmdDeleteDevPod creates a command object for the generic "get" action, which
 // retrieves one or more resources from a server.
-func NewCmdDeleteDevPod(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteDevPod(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteDevPodOptions{
 		CommonOptions: commonOpts,
 	}
@@ -57,7 +58,7 @@ func NewCmdDeleteDevPod(commonOpts *CommonOptions) *cobra.Command {
 		},
 	}
 
-	options.addCommonDevPodFlags(cmd)
+	options.AddCommonDevPodFlags(cmd)
 
 	return cmd
 }
@@ -74,7 +75,7 @@ func (o *DeleteDevPodOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	userName, err := o.getUsername(o.CommonDevPodOptions.Username)
+	userName, err := o.GetUsername(o.CommonDevPodOptions.Username)
 	if err != nil {
 		return err
 	}

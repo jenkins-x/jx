@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -16,7 +17,7 @@ var (
 
 		If you don't specify any specific storage for a classifier it will try the classifier 'default'. If there is still no configuration then it will default to the git repository for a project.'
 
-` + storageSupportDescription + SeeAlsoText("jx step stash", "jx get storage"))
+` + storageSupportDescription + opts.SeeAlsoText("jx step stash", "jx get storage"))
 
 	editStorageExample = templates.Examples(`
 		# Be prompted what classification to edit
@@ -48,12 +49,12 @@ var (
 type EditStorageOptions struct {
 	CreateOptions
 
-	StorageLocation jenkinsv1.StorageLocation
-	CreateBucket    CreateBucketValues
+	StorageLocation    jenkinsv1.StorageLocation
+	CreateBucketValues opts.CreateBucketValues
 }
 
 // NewCmdEditStorage creates a command object for the "create" command
-func NewCmdEditStorage(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdEditStorage(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &EditStorageOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -76,7 +77,7 @@ func NewCmdEditStorage(commonOpts *CommonOptions) *cobra.Command {
 
 	addStorageLocationFlags(cmd, &options.StorageLocation)
 
-	options.CreateBucket.addCreateBucketFlags(cmd)
+	options.CreateBucketValues.AddCreateBucketFlags(cmd)
 	return cmd
 }
 
@@ -108,8 +109,8 @@ func (o *EditStorageOptions) Run() error {
 	currentLocation := settings.StorageLocationOrDefault(classifier)
 
 	if o.StorageLocation.BucketURL == "" && o.StorageLocation.GitURL == "" {
-		if !o.CreateBucket.IsEmpty() {
-			o.StorageLocation.BucketURL, err = o.createBucket(&o.CreateBucket, settings)
+		if !o.CreateBucketValues.IsEmpty() {
+			o.StorageLocation.BucketURL, err = o.CreateBucket(&o.CreateBucketValues, settings)
 			if err != nil {
 				return err
 			}

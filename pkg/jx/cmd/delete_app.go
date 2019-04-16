@@ -10,6 +10,7 @@ import (
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/util"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 )
@@ -35,7 +36,7 @@ const (
 
 // DeleteAppOptions are the flags for this delete commands
 type DeleteAppOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	GitOps bool
 	DevEnv *jenkinsv1.Environment
@@ -50,7 +51,7 @@ type DeleteAppOptions struct {
 }
 
 // NewCmdDeleteApp creates a command object for this command
-func NewCmdDeleteApp(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteApp(commonOpts *opts.CommonOptions) *cobra.Command {
 	o := &DeleteAppOptions{
 		CommonOptions: commonOpts,
 	}
@@ -102,7 +103,7 @@ func (o *DeleteAppOptions) Run() error {
 		if o.Namespace != "" {
 			return util.InvalidOptionf(optionNamespace, o.Namespace, msg, optionNamespace)
 		}
-		gitProvider, _, err := o.createGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
+		gitProvider, _, err := o.CreateGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
 		if err != nil {
 			return errors.Wrapf(err, "creating git provider for %s", o.DevEnv.Spec.Source.URL)
 		}
@@ -116,7 +117,7 @@ func (o *DeleteAppOptions) Run() error {
 		opts.ConfigureGitFn = o.ConfigureGitCallback
 	}
 	if !o.GitOps {
-		err := o.ensureHelm()
+		err := o.EnsureHelm()
 		if err != nil {
 			return errors.Wrap(err, "failed to ensure that helm is present")
 		}

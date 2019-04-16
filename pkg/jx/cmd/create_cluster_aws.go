@@ -10,6 +10,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -74,7 +75,7 @@ var (
 )
 
 // NewCmdCreateClusterAWS creates the command
-func NewCmdCreateClusterAWS(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateClusterAWS(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := CreateClusterAWSOptions{
 		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.AKS),
 	}
@@ -116,11 +117,11 @@ func NewCmdCreateClusterAWS(commonOpts *CommonOptions) *cobra.Command {
 func (o *CreateClusterAWSOptions) Run() error {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	var deps []string
-	d := binaryShouldBeInstalled("kops")
+	d := opts.BinaryShouldBeInstalled("kops")
 	if d != "" {
 		deps = append(deps, d)
 	}
-	err := o.installMissingDependencies(deps)
+	err := o.InstallMissingDependencies(deps)
 	if err != nil {
 		log.Errorf("%v\nPlease fix the error or install manually then try again", err)
 		os.Exit(-1)
@@ -302,22 +303,22 @@ func (o *CreateClusterAWSOptions) Run() error {
 		if err != nil {
 			return err
 		}
-		log.Infoln("Cluster configuration updated")
+		log.Info("Cluster configuration updated")
 	}
 
-	log.Infoln("Waiting for the Kubernetes cluster to be ready so we can continue...")
+	log.Info("Waiting for the Kubernetes cluster to be ready so we can continue...")
 	err = o.waitForClusterToComeUp()
 	if err != nil {
 		return fmt.Errorf("Failed to wait for Kubernetes cluster to start: %s\n", err)
 	}
 
 	log.Blank()
-	log.Infoln("Waiting to for a valid kops cluster state...")
+	log.Info("Waiting to for a valid kops cluster state...")
 	err = o.waitForClusterValidation()
 	if err != nil {
 		return fmt.Errorf("Failed to successfully validate kops cluster state: %s\n", err)
 	}
-	log.Infoln("State of kops cluster: OK")
+	log.Info("State of kops cluster: OK")
 	log.Blank()
 
 	region, err := amazon.ResolveRegion(o.Flags.Profile, o.Flags.Region)
@@ -339,22 +340,22 @@ func (o *CreateClusterAWSOptions) waitForClusterJson(clusterName string) (string
 		if o.Flags.State != "" {
 			args = append(args, "--state", o.Flags.State)
 		}
-		text, err := o.getCommandOutput("", "kops", args...)
+		text, err := o.GetCommandOutput("", "kops", args...)
 		if err != nil {
 			return err
 		}
 		jsonOutput = text
 		return nil
 	}
-	err := o.retryQuiet(200, time.Second*10, f)
+	err := o.RetryQuiet(200, time.Second*10, f)
 	return jsonOutput, err
 }
 
 func (o *CreateClusterAWSOptions) waitForClusterToComeUp() error {
 	f := func() error {
-		return o.runCommandQuietly("kubectl", "get", "node")
+		return o.RunCommandQuietly("kubectl", "get", "node")
 	}
-	return o.retryQuiet(2000, time.Second*10, f)
+	return o.RetryQuiet(2000, time.Second*10, f)
 }
 
 // waitForClusterValidation retries running kops validate cluster, which is necessary
@@ -365,9 +366,9 @@ func (o *CreateClusterAWSOptions) waitForClusterValidation() error {
 		if o.Flags.State != "" {
 			args = append(args, "--state", o.Flags.State)
 		}
-		return o.runCommandQuietly("kops", args...)
+		return o.RunCommandQuietly("kops", args...)
 	}
-	return o.retryQuiet(25, time.Second*15, f)
+	return o.RetryQuiet(25, time.Second*15, f)
 }
 
 func (o *CreateClusterAWSOptions) modifyClusterConfigJson(json string, insecureRegistries string) error {
@@ -398,13 +399,13 @@ func (o *CreateClusterAWSOptions) modifyClusterConfigJson(json string, insecureR
 		return err
 	}
 
-	log.Infoln("Updating the cluster")
+	log.Info("Updating the cluster")
 	err = o.runKops("update", "cluster", "--yes")
 	if err != nil {
 		return err
 	}
 
-	log.Infoln("Rolling update the cluster")
+	log.Info("Rolling update the cluster")
 	err = o.runKops("rolling-update", "cluster", "--cloudonly", "--yes")
 	if err != nil {
 		// lets not fail to install if the rolling upgrade fails
@@ -419,5 +420,5 @@ func (o *CreateClusterAWSOptions) runKops(args ...string) error {
 		args = append(args, "--state", o.Flags.State)
 	}
 	log.Infof("running command: %s\n", util.ColorInfo("kops "+strings.Join(args, " ")))
-	return o.runCommandVerbose("kops", args...)
+	return o.RunCommandVerbose("kops", args...)
 }

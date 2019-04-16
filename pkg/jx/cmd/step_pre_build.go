@@ -6,6 +6,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -29,7 +30,7 @@ var (
 `)
 )
 
-func NewCmdStepPreBuild(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepPreBuild(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepPreBuildOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -70,13 +71,13 @@ func (o *StepPreBuildOptions) Run() error {
 
 		log.Infof("Docker registry host: %s app name %s/%s\n", util.ColorInfo(dockerRegistry), util.ColorInfo(orgName), util.ColorInfo(appName))
 
-		kubeClient, err := o.KubeClient()
+		kubeClient, currentNamespace, err := o.KubeClientAndNamespace()
 		if err != nil {
 			return err
 		}
-		region, _ := kube.ReadRegion(kubeClient, o.currentNamespace)
+		region, _ := kube.ReadRegion(kubeClient, currentNamespace)
 		if strings.HasSuffix(dockerRegistry, ".amazonaws.com") && strings.Index(dockerRegistry, ".ecr.") > 0 {
-			return amazon.LazyCreateRegistry(kubeClient, o.currentNamespace, region, dockerRegistry, orgName, appName)
+			return amazon.LazyCreateRegistry(kubeClient, currentNamespace, region, dockerRegistry, orgName, appName)
 		}
 	}
 	return nil

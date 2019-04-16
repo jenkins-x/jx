@@ -9,12 +9,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/builds"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/testkube"
 	"github.com/jenkins-x/jx/pkg/tests"
@@ -43,7 +44,7 @@ func TestStepBuildPackApply(t *testing.T) {
 
 	o := &cmd.StepBuildPackApplyOptions{
 		StepOptions: cmd.StepOptions{
-			CommonOptions: &cmd.CommonOptions{
+			CommonOptions: &opts.CommonOptions{
 				In:  os.Stdin,
 				Out: os.Stdout,
 				Err: os.Stderr,

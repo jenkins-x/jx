@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/jenkins-x/jx/pkg/prow"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
 )
@@ -51,7 +51,7 @@ master:ef08a6cd194c2687d4bc12df6bb8a86f53c348ba,2739:5b351f4eae3c4afbb90dd7787f8
 )
 
 // NewCmdStepGitMerge create the 'step git envs' command
-func NewCmdStepGitMerge(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepGitMerge(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := StepGitMergeOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -84,6 +84,15 @@ func NewCmdStepGitMerge(commonOpts *CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *StepGitMergeOptions) Run() error {
+	if o.Remote == "" {
+		o.Remote = "origin"
+	}
+
+	// set dummy git config details if none set so we can do a local commit when merging
+	err := o.setGitConfig()
+	if err != nil {
+		return errors.Wrapf(err, "failed to set git config")
+	}
 	if len(o.SHAs) == 0 || o.BaseBranch == "" || o.BaseSHA == "" {
 		// Try to look in the env vars
 		if pullRefs := os.Getenv("PULL_REFS"); pullRefs != "" {
@@ -104,11 +113,29 @@ func (o *StepGitMergeOptions) Run() error {
 			if o.BaseSHA == "" {
 				o.BaseSHA = pullRefs.BaseSha
 			}
-
 		}
 	}
 	if len(o.SHAs) == 0 {
-		return fmt.Errorf("no SHAs to merge")
+		log.Warnf("no SHAs to merge, falling back to initial cloned commit")
+		return nil
 	}
 	return gits.FetchAndMergeSHAs(o.SHAs, o.BaseBranch, o.BaseSHA, o.Remote, o.Dir, o.Git(), o.Verbose)
+}
+
+func (o *StepGitMergeOptions) setGitConfig() error {
+	user, err := o.GetCommandOutput(o.Dir, "git", "config", "user.name")
+	if err != nil || user == "" {
+		err := o.RunCommandFromDir(o.Dir, "git", "config", "user.name", "jenkins-x")
+		if err != nil {
+			return err
+		}
+	}
+	email, err := o.GetCommandOutput(o.Dir, "git", "config", "user.email")
+	if email == "" || err != nil {
+		err := o.RunCommandFromDir(o.Dir, "git", "config", "user.email", "jenkins-x@googlegroups.com")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

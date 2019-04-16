@@ -10,13 +10,14 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/quickstarts"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -35,7 +36,7 @@ var (
 
 		For more documentation see: [https://jenkins-x.io/developing/create-quickstart/](https://jenkins-x.io/developing/create-quickstart/)
 
-` + SeeAlsoText("jx create project"))
+` + opts.SeeAlsoText("jx create project"))
 
 	createQuickstartExample = templates.Examples(`
 		Create a new project from a sample/starter (found in https://github.com/jenkins-x-quickstarts)
@@ -61,7 +62,7 @@ type CreateQuickstartOptions struct {
 }
 
 // NewCmdCreateQuickstart creates a command object for the "create" command
-func NewCmdCreateQuickstart(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateQuickstart(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateQuickstartOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
@@ -309,7 +310,7 @@ func (o *CreateQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConfig
 			if kind == "" {
 				kind = gits.KindGitHub
 			}
-			gitProvider, err := o.gitProviderForGitServerURL(gitURL, kind)
+			gitProvider, err := o.GitProviderForGitServerURL(gitURL, kind)
 			if err != nil {
 				return model, err
 			}

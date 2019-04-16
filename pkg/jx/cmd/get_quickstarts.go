@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/quickstarts"
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 )
@@ -35,7 +36,7 @@ var (
 )
 
 //NewCmdGetQuickstarts creates the command
-func NewCmdGetQuickstarts(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetQuickstarts(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetQuickstartsOptions{
 		GetOptions: GetOptions{
 			CommonOptions: commonOpts,
@@ -118,7 +119,7 @@ func (o *GetQuickstartsOptions) Run() error {
 			if kind == "" {
 				kind = gits.KindGitHub
 			}
-			gitProvider, err := o.gitProviderForGitServerURL(gitURL, kind)
+			gitProvider, err := o.GitProviderForGitServerURL(gitURL, kind)
 			if err != nil {
 				return err
 			}

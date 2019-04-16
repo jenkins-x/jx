@@ -9,6 +9,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -56,7 +57,7 @@ type StepCreateVersionPullRequestOptions struct {
 	updatedHelmRepo     bool
 	builderImageVersion string
 
-	PullRequestDetails PullRequestDetails
+	PullRequestDetails opts.PullRequestDetails
 }
 
 // StepCreateVersionPullRequestResults stores the generated results
@@ -67,7 +68,7 @@ type StepCreateVersionPullRequestResults struct {
 }
 
 // NewCmdStepCreateVersionPullRequest Creates a new Command object
-func NewCmdStepCreateVersionPullRequest(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepCreateVersionPullRequest(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreateVersionPullRequestOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -88,7 +89,7 @@ func NewCmdStepCreateVersionPullRequest(commonOpts *CommonOptions) *cobra.Comman
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.PullRequestDetails.RepositoryGitURL, "repo", "r", DefaultVersionsURL, "Jenkins X versions Git repo")
+	cmd.Flags().StringVarP(&options.PullRequestDetails.RepositoryGitURL, "repo", "r", opts.DefaultVersionsURL, "Jenkins X versions Git repo")
 	cmd.Flags().StringVarP(&options.PullRequestDetails.RepositoryBranch, "branch", "", "master", "the versions git repository branch to clone and generate a pull request from")
 	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "charts", "The kind of version. Possible values: "+strings.Join(version.KindStrings, ", "))
 	cmd.Flags().StringVarP(&options.Name, "name", "n", "", "The name of the version to update. e.g. the name of the chart like 'jenkins-x/prow'")
@@ -293,7 +294,7 @@ func (o *StepCreateVersionPullRequestOptions) updateHelmRepo() error {
 }
 
 func (o *StepCreateVersionPullRequestOptions) findLatestBuilderImageVersion() (string, error) {
-	output, err := o.getCommandOutput("", "gcloud", "container", "images", "list-tags", "gcr.io/jenkinsxio/builder-maven", "--format", "json")
+	output, err := o.GetCommandOutput("", "gcloud", "container", "images", "list-tags", "gcr.io/jenkinsxio/builder-maven", "--format", "json")
 	if err != nil {
 		return "", err
 	}
@@ -326,6 +327,6 @@ func (o *StepCreateVersionPullRequestOptions) modifyRegex(globPattern string, re
 }
 
 func (o *StepCreateVersionPullRequestOptions) ensureHelmReposSetup(dir string) error {
-	_, err := o.helmInitDependency(dir, o.defaultReleaseCharts())
+	_, err := o.HelmInitDependency(dir, o.DefaultReleaseCharts())
 	return errors.Wrap(err, "failed to ensure the helm repositories were setup")
 }

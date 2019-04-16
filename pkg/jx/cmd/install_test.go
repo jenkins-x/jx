@@ -9,6 +9,7 @@ import (
 
 	configio "github.com/jenkins-x/jx/pkg/io"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/util"
 
 	//. "github.com/petergtz/pegomock"
@@ -36,10 +37,10 @@ func TestGetSafeUsername(t *testing.T) {
 	t.Parallel()
 	username := `Your active configuration is: [cloudshell-16392]
 tutorial@bamboo-depth-206411.iam.gserviceaccount.com`
-	assert.Equal(t, cmd.GetSafeUsername(username), "tutorial@bamboo-depth-206411.iam.gserviceaccount.com")
+	assert.Equal(t, opts.GetSafeUsername(username), "tutorial@bamboo-depth-206411.iam.gserviceaccount.com")
 
 	username = `tutorial@bamboo-depth-206411.iam.gserviceaccount.com`
-	assert.Equal(t, cmd.GetSafeUsername(username), "tutorial@bamboo-depth-206411.iam.gserviceaccount.com")
+	assert.Equal(t, opts.GetSafeUsername(username), "tutorial@bamboo-depth-206411.iam.gserviceaccount.com")
 }
 
 func TestInstallRun(t *testing.T) {

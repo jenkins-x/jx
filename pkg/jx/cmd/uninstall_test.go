@@ -4,14 +4,15 @@ import (
 	"testing"
 
 	"github.com/Netflix/go-expect"
-	"github.com/jenkins-x/jx/pkg/gits/mocks"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	clients_mocks "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	kuber_mocks "github.com/jenkins-x/jx/pkg/kube/mocks"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/clientcmd/api"
 
@@ -30,7 +31,7 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_FailsWhenContextNamesDoNo
 	kubeMock := setupUninstall("current-context")
 
 	o := &cmd.UninstallOptions{
-		CommonOptions: &cmd.CommonOptions{},
+		CommonOptions: &opts.CommonOptions{},
 		Namespace:     "ns",
 		Context:       "target-context",
 	}
@@ -45,7 +46,7 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_PassWhenContextNamesMatch
 	kubeMock := setupUninstall("correct-context-to-delete")
 
 	o := &cmd.UninstallOptions{
-		CommonOptions: &cmd.CommonOptions{},
+		CommonOptions: &opts.CommonOptions{},
 		Namespace:     "ns",
 		Context:       "correct-context-to-delete",
 	}
@@ -70,7 +71,7 @@ func TestUninstallOptions_Run_ContextSpecifiedAsOption_PassWhenForced(t *testing
 	kubeMock := setupUninstall("correct-context-to-delete")
 
 	o := &cmd.UninstallOptions{
-		CommonOptions: &cmd.CommonOptions{},
+		CommonOptions: &opts.CommonOptions{},
 		Namespace:     "ns",
 		Force:         true,
 	}
@@ -107,7 +108,7 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_FailsWhenContextNamesDoNotM
 		console.ExpectEOF()
 	}()
 
-	commonOpts := cmd.NewCommonOptionsWithFactory(clients_mocks.NewMockFactory())
+	commonOpts := opts.NewCommonOptionsWithFactory(clients_mocks.NewMockFactory())
 	commonOpts.In = console.In
 	commonOpts.Out = console.Out
 	commonOpts.Err = console.Err
@@ -145,7 +146,7 @@ func TestUninstallOptions_Run_ContextSpecifiedViaCli_PassWhenContextNamesMatch(t
 		console.ExpectEOF()
 	}()
 
-	commonOpts := cmd.NewCommonOptionsWithFactory(clients_mocks.NewMockFactory())
+	commonOpts := opts.NewCommonOptionsWithFactory(clients_mocks.NewMockFactory())
 	commonOpts.In = console.In
 	commonOpts.Out = console.Out
 	commonOpts.Err = console.Err

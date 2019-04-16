@@ -14,9 +14,16 @@ type MockConfigSaver struct {
 	fail func(message string, callerSkip ...int)
 }
 
-func NewMockConfigSaver() *MockConfigSaver {
-	return &MockConfigSaver{fail: pegomock.GlobalFailHandler}
+func NewMockConfigSaver(options ...pegomock.Option) *MockConfigSaver {
+	mock := &MockConfigSaver{}
+	for _, option := range options {
+		option.Apply(mock)
+	}
+	return mock
 }
+
+func (mock *MockConfigSaver) SetFailHandler(fh pegomock.FailHandler) { mock.fail = fh }
+func (mock *MockConfigSaver) FailHandler() pegomock.FailHandler      { return mock.fail }
 
 func (mock *MockConfigSaver) LoadConfig() (*auth.AuthConfig, error) {
 	if mock == nil {
@@ -52,77 +59,77 @@ func (mock *MockConfigSaver) SaveConfig(_param0 *auth.AuthConfig) error {
 	return ret0
 }
 
-func (mock *MockConfigSaver) VerifyWasCalledOnce() *VerifierConfigSaver {
-	return &VerifierConfigSaver{
+func (mock *MockConfigSaver) VerifyWasCalledOnce() *VerifierMockConfigSaver {
+	return &VerifierMockConfigSaver{
 		mock:                   mock,
 		invocationCountMatcher: pegomock.Times(1),
 	}
 }
 
-func (mock *MockConfigSaver) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierConfigSaver {
-	return &VerifierConfigSaver{
+func (mock *MockConfigSaver) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierMockConfigSaver {
+	return &VerifierMockConfigSaver{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 	}
 }
 
-func (mock *MockConfigSaver) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierConfigSaver {
-	return &VerifierConfigSaver{
+func (mock *MockConfigSaver) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierMockConfigSaver {
+	return &VerifierMockConfigSaver{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 		inOrderContext:         inOrderContext,
 	}
 }
 
-func (mock *MockConfigSaver) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierConfigSaver {
-	return &VerifierConfigSaver{
+func (mock *MockConfigSaver) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierMockConfigSaver {
+	return &VerifierMockConfigSaver{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 		timeout:                timeout,
 	}
 }
 
-type VerifierConfigSaver struct {
+type VerifierMockConfigSaver struct {
 	mock                   *MockConfigSaver
 	invocationCountMatcher pegomock.Matcher
 	inOrderContext         *pegomock.InOrderContext
 	timeout                time.Duration
 }
 
-func (verifier *VerifierConfigSaver) LoadConfig() *ConfigSaver_LoadConfig_OngoingVerification {
+func (verifier *VerifierMockConfigSaver) LoadConfig() *MockConfigSaver_LoadConfig_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "LoadConfig", params, verifier.timeout)
-	return &ConfigSaver_LoadConfig_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockConfigSaver_LoadConfig_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type ConfigSaver_LoadConfig_OngoingVerification struct {
+type MockConfigSaver_LoadConfig_OngoingVerification struct {
 	mock              *MockConfigSaver
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *ConfigSaver_LoadConfig_OngoingVerification) GetCapturedArguments() {
+func (c *MockConfigSaver_LoadConfig_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *ConfigSaver_LoadConfig_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockConfigSaver_LoadConfig_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierConfigSaver) SaveConfig(_param0 *auth.AuthConfig) *ConfigSaver_SaveConfig_OngoingVerification {
+func (verifier *VerifierMockConfigSaver) SaveConfig(_param0 *auth.AuthConfig) *MockConfigSaver_SaveConfig_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SaveConfig", params, verifier.timeout)
-	return &ConfigSaver_SaveConfig_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockConfigSaver_SaveConfig_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type ConfigSaver_SaveConfig_OngoingVerification struct {
+type MockConfigSaver_SaveConfig_OngoingVerification struct {
 	mock              *MockConfigSaver
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *ConfigSaver_SaveConfig_OngoingVerification) GetCapturedArguments() *auth.AuthConfig {
+func (c *MockConfigSaver_SaveConfig_OngoingVerification) GetCapturedArguments() *auth.AuthConfig {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *ConfigSaver_SaveConfig_OngoingVerification) GetAllCapturedArguments() (_param0 []*auth.AuthConfig) {
+func (c *MockConfigSaver_SaveConfig_OngoingVerification) GetAllCapturedArguments() (_param0 []*auth.AuthConfig) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]*auth.AuthConfig, len(params[0]))

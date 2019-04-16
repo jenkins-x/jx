@@ -5,6 +5,7 @@ import (
 
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -13,7 +14,7 @@ import (
 )
 
 type MetricsOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Namespace string
 	Filter    string
@@ -37,7 +38,7 @@ var (
 `)
 )
 
-func NewCmdMetrics(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdMetrics(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &MetricsOptions{
 		CommonOptions: commonOpts,
 	}

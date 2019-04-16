@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -16,7 +17,7 @@ type DeletePreviewOptions struct {
 }
 
 // NewCmdDeletePreview creates a command object
-func NewCmdDeletePreview(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeletePreview(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeletePreviewOptions{
 		PreviewOptions: PreviewOptions{
 			PromoteOptions: PromoteOptions{

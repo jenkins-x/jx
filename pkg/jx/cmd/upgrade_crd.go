@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -25,7 +26,7 @@ type UpgradeCRDsOptions struct {
 }
 
 // NewCmdUpgradeCRDs defines the command
-func NewCmdUpgradeCRDs(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdUpgradeCRDs(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradeCRDsOptions{
 		UpgradeOptions: UpgradeOptions{
 			CommonOptions: commonOpts,

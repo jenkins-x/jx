@@ -22,6 +22,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/extensions"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -48,12 +49,12 @@ var (
 )
 
 type GetPluginsOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 	Verifier extensions.PathVerifier
 }
 
 // NewCmdGetPlugins provides a way to list all plugin executables visible to jx
-func NewCmdGetPlugins(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGetPlugins(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GetPluginsOptions{
 		CommonOptions: commonOpts,
 	}
@@ -90,7 +91,7 @@ func (o *GetPluginsOptions) Run() error {
 }
 
 func (o *GetPluginsOptions) printExtensionPlugins() error {
-	pcgs, managedPluginsEnabled, err := o.getPluginCommandGroups(o.Verifier)
+	pcgs, managedPluginsEnabled, err := o.GetPluginCommandGroups(o.Verifier)
 	if err != nil {
 		return err
 	}
@@ -123,12 +124,12 @@ func (o *GetPluginsOptions) printExtensionPlugins() error {
 			}
 			log.Infof("  %s %s%s\n", util.ColorInfo(pc.SubCommand), strings.Repeat(" ", maxLength-len(pc.SubCommand)), description)
 		}
-		log.Infoln("")
+		log.Info("")
 	}
 
 	if len(pcgs) > 0 {
 		// Add a trailing line to make the output more readable
-		log.Infoln("")
+		log.Info("")
 	}
 
 	jxClient, ns, err := o.JXClientAndDevNamespace()

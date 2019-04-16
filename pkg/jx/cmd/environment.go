@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	meta_v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,7 +17,7 @@ import (
 )
 
 type EnvironmentOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 }
 
 var (
@@ -38,7 +39,7 @@ var (
 `)
 )
 
-func NewCmdEnvironment(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdEnvironment(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &EnvironmentOptions{
 		CommonOptions: commonOpts,
 	}

@@ -6,7 +6,8 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/users"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -37,7 +38,7 @@ type CreateUserOptions struct {
 }
 
 // NewCmdCreateUser creates a command object for the "create" command
-func NewCmdCreateUser(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateUser(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateUserOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -68,11 +69,11 @@ func NewCmdCreateUser(commonOpts *CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *CreateUserOptions) Run() error {
-	err := o.registerUserCRD()
+	err := o.RegisterUserCRD()
 	if err != nil {
 		return err
 	}
-	err = o.registerEnvironmentRoleBindingCRD()
+	err = o.RegisterEnvironmentRoleBindingCRD()
 	if err != nil {
 		return err
 	}

@@ -14,6 +14,7 @@ import (
 	randomdata "github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/iks"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -98,7 +99,7 @@ func (s byNumberIndex) Less(i, j int) bool {
 
 // NewCmdGet creates a command object for the generic "init" action, which
 // installs the dependencies required to run the jenkins-x platform on a kubernetes cluster.
-func NewCmdCreateClusterIKS(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateClusterIKS(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := CreateClusterIKSOptions{
 		CreateClusterOptions: createCreateClusterOptions(commonOpts, cloud.OKE),
 	}
@@ -144,11 +145,11 @@ func NewCmdCreateClusterIKS(commonOpts *CommonOptions) *cobra.Command {
 func (o *CreateClusterIKSOptions) Run() error {
 
 	var deps []string
-	d := binaryShouldBeInstalled("ibmcloud")
+	d := opts.BinaryShouldBeInstalled("ibmcloud")
 	if d != "" {
 		deps = append(deps, d)
 	}
-	err := o.installMissingDependencies(deps)
+	err := o.InstallMissingDependencies(deps)
 	if err != nil {
 		log.Errorf("%v\nPlease fix the error or install manually then try again", err)
 		os.Exit(-1)
@@ -234,7 +235,7 @@ func (o *CreateClusterIKSOptions) createClusterIKS() error {
 		if o.Flags.Account != "" {
 			ibmLogin = append(ibmLogin, "-c", o.Flags.Account)
 		}
-		err = o.runCommandInteractive(true, "ibmcloud", ibmLogin...)
+		err = o.RunCommandInteractive(true, "ibmcloud", ibmLogin...)
 	}
 	accountGUID, err = iks.ConfigFromJSON(c)
 	if err != nil {

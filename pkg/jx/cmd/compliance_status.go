@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/heptio/sonobuoy/pkg/plugin/aggregation"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -24,12 +25,12 @@ var (
 
 // ComplianceStatusOptions options for "compliance status" command
 type ComplianceStatusOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 }
 
 // NewCmdComplianceStatus creates a command object for the "compliance status" action, which
 // retrieve the status of E2E compliance tests
-func NewCmdComplianceStatus(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdComplianceStatus(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &ComplianceStatusOptions{
 		CommonOptions: commonOpts,
 	}
@@ -62,7 +63,7 @@ func (o *ComplianceStatusOptions) Run() error {
 		log.Infof("You can watch the logs with %s command.\n", util.ColorInfo("jx compliance logs -f"))
 		return nil
 	}
-	log.Infoln(hummanReadableStatus(status.Status))
+	log.Info(hummanReadableStatus(status.Status))
 	return nil
 }
 

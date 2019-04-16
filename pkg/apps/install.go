@@ -47,7 +47,7 @@ type InstallOptions struct {
 	Err             io.Writer
 	GitOps          bool
 	TeamName        string
-	VaultClient     *vault.Client
+	VaultClient     vault.Client
 
 	valuesFiles *environments.ValuesFiles // internal variable used to track, most be passed in
 }
@@ -61,6 +61,16 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 
 	o.valuesFiles = &environments.ValuesFiles{
 		Items: valuesFiles,
+	}
+
+	username, password, err := helm.DecorateWithCredentials(repository, username, password, o.VaultClient)
+	if err != nil {
+		return errors.Wrapf(err, "locating credentials for %s", repository)
+	}
+
+	_, err = helm.AddHelmRepoIfMissing(repository, "", username, password, o.Helmer, o.VaultClient)
+	if err != nil {
+		return errors.Wrapf(err, "adding helm repo")
 	}
 
 	// The chart inspector allows us to operate on the unpacked chart.
@@ -87,9 +97,12 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 			opts := HelmOpsOptions{
 				InstallOptions: o,
 			}
+			if releaseName == "" {
+				releaseName = fmt.Sprintf("%s-%s", o.Namespace, chartDetails.Name)
+			}
 			err = opts.AddApp(app, dir, chartDetails.Name, chartDetails.Version, chartDetails.Values, repository,
 				username, password,
-				chartDetails.Name,
+				releaseName,
 				setValues,
 				helmUpdate)
 			if err != nil {
@@ -160,6 +173,16 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 		Items: make([]string, 0),
 	}
 
+	username, password, err := helm.DecorateWithCredentials(repository, username, password, o.VaultClient)
+	if err != nil {
+		return errors.Wrapf(err, "locating credentials for %s", repository)
+	}
+	_, err = helm.AddHelmRepoIfMissing(repository, "", username, password, o.Helmer, o.VaultClient)
+
+	if err != nil {
+		return errors.Wrapf(err, "adding helm repo")
+	}
+
 	interrogateChartFunc := o.createInterrogateChartFn(version, app, repository, username, password, alias, askExisting)
 
 	// The chart inspector allows us to operate on the unpacked chart.
@@ -177,6 +200,9 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 		}
 	} else {
 		upgradeAppFunc := func(dir string) error {
+			if releaseName == "" {
+				releaseName = app
+			}
 			// Try to load existing answers from the apps CRD
 			appCrdName := fmt.Sprintf("%s-%s", releaseName, app)
 			appResource, err := o.JxClient.JenkinsV1().Apps(o.Namespace).Get(appCrdName, v1.GetOptions{})
@@ -185,7 +211,7 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 			}
 			var existingValues map[string]interface{}
 			if appResource.Annotations != nil {
-				if encodedValues, ok := appResource.Annotations[ValuesAnnotation]; ok {
+				if encodedValues, ok := appResource.Annotations[ValuesAnnotation]; ok && encodedValues != "" {
 					existingValuesBytes, err := base64.StdEncoding.DecodeString(encodedValues)
 					if err != nil {
 						log.Warnf("Error decoding base64 encoded string from %s on %s\n%s\n", ValuesAnnotation,
@@ -277,7 +303,17 @@ func (o *InstallOptions) createInterrogateChartFn(version string, app string, re
 
 			var err error
 			var secrets []*surveyutils.GeneratedSecret
-			values, secrets, err = GenerateQuestions(schema, o.BatchMode, askExisting, existing, o.In, o.Out, o.Err)
+			var basepath string
+			if o.GitOps {
+				gitInfo, err := gits.ParseGitURL(o.DevEnv.Spec.Source.URL)
+				if err != nil {
+					return nil, err
+				}
+				basepath = strings.Join([]string{"gitOps", gitInfo.Organisation, gitInfo.Name}, "/")
+			} else {
+				basepath = strings.Join([]string{"teams", o.TeamName}, "/")
+			}
+			values, secrets, err = GenerateQuestions(schema, o.BatchMode, askExisting, basepath, o.VaultClient != nil, existing, o.In, o.Out, o.Err)
 			if err != nil {
 				return &chartDetails, errors.Wrapf(err, "asking questions for schema %s", schemaFile)
 			}
@@ -320,20 +356,9 @@ func (o *InstallOptions) handleValues(dir string, app string, values []byte) (fu
 func (o *InstallOptions) handleSecrets(dir string, app string, generatedSecrets []*surveyutils.GeneratedSecret) (func(),
 	error) {
 	if o.VaultClient != nil {
-		var vaultBasepath string
-		if o.GitOps {
-			gitInfo, err := gits.ParseGitURL(o.DevEnv.Spec.Source.URL)
-			if err != nil {
-				return nil, err
-			}
-			vaultBasepath = strings.Join([]string{"gitOps", gitInfo.Organisation, gitInfo.Name}, "/")
-		} else {
-			vaultBasepath = strings.Join([]string{"teams", o.TeamName}, "/")
-		}
-		f, err := AddSecretsToVault(generatedSecrets, *o.VaultClient, vaultBasepath)
+		f, err := AddSecretsToVault(generatedSecrets, o.VaultClient)
 		if err != nil {
-			return func() {}, errors.Wrapf(err, "adding secrets to vault with basepath %s for %s", vaultBasepath,
-				app)
+			return func() {}, errors.Wrapf(err, "adding secrets to vault with for %s", app)
 		}
 		return f, nil
 	}

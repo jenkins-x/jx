@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/jenkins-x/jx/pkg/cloud"
 
 	awsvault "github.com/jenkins-x/jx/pkg/cloud/amazon/vault"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
 	gkevault "github.com/jenkins-x/jx/pkg/cloud/gke/vault"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
@@ -20,7 +22,7 @@ import (
 
 // DeleteVaultOptions keeps the options of delete vault command
 type DeleteVaultOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Namespace            string
 	RemoveCloudResources bool
@@ -40,7 +42,7 @@ var (
 )
 
 // NewCmdDeleteVault builds a new delete vault command
-func NewCmdDeleteVault(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteVault(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteVaultOptions{
 		CommonOptions: commonOpts,
 	}
@@ -151,19 +153,19 @@ func (o *DeleteVaultOptions) removeGCPResources(vaultName string) error {
 	}
 
 	if o.GKEProjectID == "" {
-		projectId, err := o.getGoogleProjectId()
+		projectId, err := o.GetGoogleProjectId()
 		if err != nil {
 			return err
 		}
 		o.GKEProjectID = projectId
 	}
-	err = o.runCommandVerbose("gcloud", "config", "set", "project", o.GKEProjectID)
+	err = o.RunCommandVerbose("gcloud", "config", "set", "project", o.GKEProjectID)
 	if err != nil {
 		return err
 	}
 
 	if o.GKEZone == "" {
-		zone, err := o.getGoogleZone(o.GKEProjectID)
+		zone, err := o.GetGoogleZone(o.GKEProjectID)
 		if err != nil {
 			return err
 		}

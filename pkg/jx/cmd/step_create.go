@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/spf13/cobra"
 )
 
@@ -10,7 +11,7 @@ type StepCreateOptions struct {
 }
 
 // NewCmdStepCreate Steps a command object for the "step" command
-func NewCmdStepCreate(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdStepCreate(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &StepCreateOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
@@ -27,6 +28,7 @@ func NewCmdStepCreate(commonOpts *CommonOptions) *cobra.Command {
 			CheckErr(err)
 		},
 	}
+	cmd.AddCommand(NewCmdStepCreateJenkinsConfig(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateTask(commonOpts))
 	cmd.AddCommand(NewCmdStepCreateVersionPullRequest(commonOpts))
 	return cmd

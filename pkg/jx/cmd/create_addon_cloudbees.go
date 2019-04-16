@@ -11,6 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/pki"
@@ -52,7 +53,7 @@ type CreateAddonCloudBeesOptions struct {
 }
 
 // NewCmdCreateAddonCloudBees creates a command object for the "create" command
-func NewCmdCreateAddonCloudBees(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateAddonCloudBees(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonCloudBeesOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -101,7 +102,7 @@ func (o *CreateAddonCloudBeesOptions) Run() error {
 
 	// check if Helm repo is missing, the repo is authenticated and includes username/password so check with dummy values
 	// first as we wont need to prompt for username password if the host part of the URL matches an existing repo
-	missing, err := o.isHelmRepoMissing(coreRepoUrl)
+	missing, err := o.IsHelmRepoMissing(coreRepoUrl)
 	if err != nil {
 		return err
 	}
@@ -127,7 +128,7 @@ To register to get your username/password to to: %s
 		}
 		survey.AskOne(passPrompt, &password, nil, surveyOpts)
 
-		err := o.addHelmRepoIfMissing(coreRepoUrl, coreRepoName, username, password)
+		err := o.AddHelmRepoIfMissing(coreRepoUrl, coreRepoName, username, password)
 		if err != nil {
 			return err
 		}
@@ -135,11 +136,11 @@ To register to get your username/password to to: %s
 
 	if o.Sso {
 		log.Infof("Configuring %s...\n", util.ColorInfo("single sign-on"))
-		o.devNamespace, _, err = kube.GetDevNamespace(client, o.currentNamespace)
+		_, devNamespace, err := o.KubeClientAndDevNamespace()
 		if err != nil {
-			return errors.Wrap(err, "retrieving the development namespace")
+			return errors.Wrap(err, "getting the dev namespace")
 		}
-		ingressConfig, err := kube.GetIngressConfig(client, o.devNamespace)
+		ingressConfig, err := kube.GetIngressConfig(client, devNamespace)
 		if err != nil {
 			return errors.Wrap(err, "retrieving existing ingress configuration")
 		}
@@ -156,7 +157,7 @@ To register to get your username/password to to: %s
 		// Strip the trailing slash automatically
 		dexURL = strings.TrimSuffix(dexURL, "/")
 
-		err = o.ensureCertmanager()
+		err = o.EnsureCertManager()
 		if err != nil {
 			return errors.Wrap(err, "ensuring cert-manager is installed")
 		}
@@ -216,19 +217,24 @@ To register to get your username/password to to: %s
 	}
 
 	if o.Basic {
-		devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
+		_, devNamespace, err := o.KubeClientAndDevNamespace()
 		if err != nil {
-			return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
+			return errors.Wrap(err, "getting the team's dev namespace")
 		}
 
 		if o.Password == "" {
-			o.Password, err = o.getDefaultAdminPassword(devNamespace)
+			o.Password, err = o.GetDefaultAdminPassword(devNamespace)
 			if err != nil {
 				return err
 			}
 		}
 
-		svc, err := client.CoreV1().Services(o.currentNamespace).Get(cbServiceName, metav1.GetOptions{})
+		_, currentNamespace, err := o.KubeClientAndNamespace()
+		if err != nil {
+			return errors.Wrap(err, "getting the current namesapce")
+		}
+
+		svc, err := client.CoreV1().Services(currentNamespace).Get(cbServiceName, metav1.GetOptions{})
 		if err != nil {
 			return err
 		}
@@ -252,7 +258,7 @@ To register to get your username/password to to: %s
 		log.Infof("target namespace %s\n", o.Namespace)
 
 		// create the ingress rule
-		err = o.expose(devNamespace, o.Namespace, o.Password)
+		err = o.Expose(devNamespace, o.Namespace, o.Password)
 		if err != nil {
 			return err
 		}

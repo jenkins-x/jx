@@ -3,9 +3,12 @@ package cmd
 import (
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/helm"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -39,7 +42,7 @@ type CreateAddonKubelessOptions struct {
 }
 
 // NewCmdCreateAddonKubeless creates a command object for the "create" command
-func NewCmdCreateAddonKubeless(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateAddonKubeless(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonKubelessOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -76,14 +79,21 @@ func (o *CreateAddonKubelessOptions) Run() error {
 	if o.Chart == "" {
 		return util.MissingOption(optionChart)
 	}
-	err := o.ensureHelm()
+	err := o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that Helm is present")
 	}
 	values := []string{"rbac.create=true"}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	err = o.installChart(o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
+	helmOptions := helm.InstallChartOptions{
+		ReleaseName: o.ReleaseName,
+		Chart:       o.Chart,
+		Version:     o.Version,
+		Ns:          o.Namespace,
+		SetValues:   values,
+	}
+	err = o.InstallChartWithOptions(helmOptions)
 	if err != nil {
 		return err
 	}

@@ -1,17 +1,18 @@
 package cmd
 
 import (
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/spf13/cobra"
 )
 
 // DeleteTokenOptions are the flags for delete commands
 type DeleteTokenOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 }
 
 // NewCmdDeleteToken creates a command object
 // retrieves one or more resources from a server.
-func NewCmdDeleteToken(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdDeleteToken(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &DeleteTokenOptions{
 		commonOpts,
 	}

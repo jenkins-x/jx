@@ -11,6 +11,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/helm/pkg/chartutil"
@@ -37,7 +38,7 @@ func TestStepTagCharts(t *testing.T) {
 
 	o := cmd.StepTagOptions{
 		StepOptions: cmd.StepOptions{
-			CommonOptions: &cmd.CommonOptions{},
+			CommonOptions: &opts.CommonOptions{},
 		},
 	}
 	//o.Out = tests.Output()
@@ -53,6 +54,7 @@ func TestStepTagCharts(t *testing.T) {
 	assert.NoError(t, err, "failed to load file %s", chartFile)
 
 	assert.Equal(t, expectedVersion, chart.Version, "replaced chart version")
+	assert.Equal(t, expectedVersion, chart.AppVersion, "replaced chart appVersion")
 
 	data, err := ioutil.ReadFile(valuesFile)
 	assert.NoError(t, err, "failed to load file %s", valuesFile)

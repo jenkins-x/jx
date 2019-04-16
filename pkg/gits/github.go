@@ -323,10 +323,23 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 	}
 	for _, hook := range hooks {
 		c := hook.Config["url"]
-		s, ok := c.(string)
-		if ok && s == webhookUrl {
-			log.Warnf("Already has a webhook registered for %s\n", webhookUrl)
-			return nil
+		u, ok := c.(string)
+		if ok && u == webhookUrl {
+			s, ok := hook.Config["secret"]
+			if ok && s == data.Secret {
+				// lets remove this hook as its using an old secret
+				if hook.ID == nil {
+					return fmt.Errorf("webook at %s for %s/%s has no ID", asText(hook.URL), owner, repo)
+				}
+				id := *hook.ID
+				_, err = p.Client.Repositories.DeleteHook(p.Context, owner, repo, id)
+				if err != nil {
+					return errors.Wrapf(err, "failed to remove old webhook on %s/%s with ID %v with old secret", owner, repo, id)
+				}
+			} else {
+				log.Warnf("Already has a webhook registered for %s\n", webhookUrl)
+				return nil
+			}
 		}
 	}
 	config := map[string]interface{}{

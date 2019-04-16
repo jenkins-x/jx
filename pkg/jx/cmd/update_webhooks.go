@@ -9,19 +9,21 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/spf13/cobra"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // UpdateWebhooksOptions the flags for updating webhooks
 type UpdateWebhooksOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 	Org             string
 	Repo            string
 	ExactHookMatch  bool
 	PreviousHookUrl string
+	HMAC            string
+	Endpoint        string
 	DryRun          bool
 }
 
@@ -39,7 +41,7 @@ var (
 `)
 )
 
-func NewCmdUpdateWebhooks(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdUpdateWebhooks(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := createUpdateWebhooksOptions(commonOpts)
 
 	cmd := &cobra.Command{
@@ -59,11 +61,13 @@ func NewCmdUpdateWebhooks(commonOpts *CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Repo, "repo", "r", "", "The name of the repository to query")
 	cmd.Flags().BoolVarP(&options.ExactHookMatch, "exact-hook-url-match", "", true, "Whether to exactly match the hook based on the URL")
 	cmd.Flags().StringVarP(&options.PreviousHookUrl, "previous-hook-url", "", "", "Whether to match based on an another URL")
+	cmd.Flags().StringVarP(&options.HMAC, "hmac", "", "", "Don't use the HMAC token from the cluster, use the provided token")
+	cmd.Flags().StringVarP(&options.Endpoint, "endpoint", "", "", "Don't use the endpoint from the cluster, use the provided endpoint")
 
 	return cmd
 }
 
-func createUpdateWebhooksOptions(commonOpts *CommonOptions) UpdateWebhooksOptions {
+func createUpdateWebhooksOptions(commonOpts *opts.CommonOptions) UpdateWebhooksOptions {
 	options := UpdateWebhooksOptions{
 		CommonOptions: commonOpts,
 	}
@@ -71,45 +75,51 @@ func createUpdateWebhooksOptions(commonOpts *CommonOptions) UpdateWebhooksOption
 }
 
 func (options *UpdateWebhooksOptions) Run() error {
-	authConfigService, err := options.CreateGitAuthConfigService()
-	if err != nil {
-		return errors.Wrap(err, "failed to create git auth service")
-	}
-
-	client, err := options.KubeClient()
+	client, currentNamespace, err := options.KubeClientAndNamespace()
 	if err != nil {
 		return errors.Wrap(err, "failed to get kube client")
 	}
 
-	ns, _, err := kube.GetDevNamespace(client, options.currentNamespace)
+	ns, _, err := kube.GetDevNamespace(client, currentNamespace)
 	if err != nil {
 		return err
 	}
 
-	webhookUrl, err := options.GetWebHookEndpoint()
+	webhookURL := ""
+	if options.Endpoint != "" {
+		webhookURL = options.Endpoint
+	} else {
+		webhookURL, err = options.GetWebHookEndpoint()
+		if err != nil {
+			return err
+		}
+	}
+
+	isProwEnabled, err := options.IsProw()
 	if err != nil {
 		return err
 	}
 
-	isProwEnabled, err := options.isProw()
-	if err != nil {
-		return err
+	hmacToken := ""
+	if isProwEnabled {
+		if options.HMAC != "" {
+			hmacToken = options.HMAC
+		} else {
+			hmacTokenSecret, err := client.CoreV1().Secrets(ns).Get("hmac-token", metav1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			hmacToken = string(hmacTokenSecret.Data["hmac"])
+		}
 	}
 
-	hmacToken, err := client.CoreV1().Secrets(ns).Get("hmac-token", metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-
-	gitServer := authConfigService.Config().CurrentServer
-
-	git, err := options.gitProviderForGitServerURL(gitServer, "github")
+	git, err := options.GitProviderForGitServerURL(gits.GitHubURL, "github")
 	if err != nil {
 		return errors.Wrap(err, "unable to determine git provider")
 	}
 
 	if options.Repo != "" {
-		options.updateRepoHook(git, options.Repo, webhookUrl, isProwEnabled, hmacToken)
+		options.updateRepoHook(git, options.Repo, webhookURL, isProwEnabled, hmacToken)
 	} else {
 		repositories, err := git.ListRepositories(options.Org)
 		if err != nil {
@@ -119,20 +129,20 @@ func (options *UpdateWebhooksOptions) Run() error {
 		log.Infof("Found %v repos\n", util.ColorInfo(len(repositories)))
 
 		for _, repo := range repositories {
-			options.updateRepoHook(git, repo.Name, webhookUrl, isProwEnabled, hmacToken)
+			options.updateRepoHook(git, repo.Name, webhookURL, isProwEnabled, hmacToken)
 		}
 	}
 
 	return nil
 }
 
-func (options *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, repoName string, webhookURL string, isProwEnabled bool, hmacToken *corev1.Secret) error {
+func (options *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, repoName string, webhookURL string, isProwEnabled bool, hmacToken string) error {
+	log.Infof("Checking hooks for repository %s with user %s\n", util.ColorInfo(repoName), util.ColorInfo(git.UserAuth().Username))
+
 	webhooks, err := git.ListWebHooks(options.Org, repoName)
 	if err != nil {
 		return errors.Wrap(err, "unable to list webhooks")
 	}
-
-	log.Infof("Checking hooks for repository %s\n", util.ColorInfo(repoName))
 
 	if len(webhooks) > 0 {
 		// find matching hook
@@ -152,7 +162,7 @@ func (options *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, repoN
 				}
 
 				if isProwEnabled {
-					webHookArgs.Secret = string(hmacToken.Data["hmac"])
+					webHookArgs.Secret = hmacToken
 				}
 
 				if !options.DryRun {

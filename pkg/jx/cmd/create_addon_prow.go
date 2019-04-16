@@ -5,6 +5,7 @@ import (
 
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -36,7 +37,7 @@ type CreateAddonProwOptions struct {
 }
 
 // NewCmdCreateAddonProw creates a command object for the "create" command
-func NewCmdCreateAddonProw(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateAddonProw(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateAddonProwOptions{
 		CreateAddonOptions: CreateAddonOptions{
 			CreateOptions: CreateOptions{
@@ -74,11 +75,11 @@ func (o *CreateAddonProwOptions) Run() error {
 		return util.MissingOption(optionRelease)
 	}
 
-	err := o.ensureHelm()
+	err := o.EnsureHelm()
 	if err != nil {
 		return errors.Wrap(err, "failed to ensure that Helm is present")
 	}
-	client, err := o.KubeClient()
+	_, currentNamespace, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
 	}
@@ -86,11 +87,11 @@ func (o *CreateAddonProwOptions) Run() error {
 	o.Prow.Chart = o.Chart
 	o.Prow.Version = o.Version
 	o.Prow.SetValues = o.SetValues
-	o.Namespace = o.currentNamespace
+	o.Namespace = currentNamespace
 
 	isGitOps, _ := o.GetDevEnv()
 
-	_, pipelineUser, err := o.getPipelineGitAuth()
+	_, pipelineUser, err := o.GetPipelineGitAuth()
 	if err != nil {
 		return errors.Wrap(err, "retrieving the pipeline Git Auth")
 	}
@@ -99,18 +100,18 @@ func (o *CreateAddonProwOptions) Run() error {
 		pipelineUserName = pipelineUser.Username
 	}
 
-	err = o.installProw(o.Tekton, isGitOps, "", "", pipelineUserName)
+	err = o.InstallProw(o.Tekton, isGitOps, "", "", pipelineUserName)
 	if err != nil {
 		return fmt.Errorf("failed to install Prow: %v", err)
 	}
 
-	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
+	_, devNamespace, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
 
 	// create the ingress rule
-	err = o.expose(devNamespace, devNamespace, o.Password)
+	err = o.Expose(devNamespace, devNamespace, o.Password)
 	if err != nil {
 		return err
 	}

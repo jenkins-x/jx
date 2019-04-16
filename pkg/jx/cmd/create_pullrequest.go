@@ -1,15 +1,17 @@
 package cmd
 
 import (
-	"github.com/pkg/errors"
 	"os"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"github.com/spf13/cobra"
 
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -56,7 +58,7 @@ type CreatePullRequestResults struct {
 }
 
 // NewCmdCreatePullRequest creates a command object for the "create" command
-func NewCmdCreatePullRequest(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreatePullRequest(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreatePullRequestOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -96,7 +98,7 @@ func (o *CreatePullRequestOptions) Run() error {
 		}
 		o.Dir = dir
 	}
-	gitInfo, provider, _, err := o.createGitProvider(o.Dir)
+	gitInfo, provider, _, err := o.CreateGitProvider(o.Dir)
 	if err != nil {
 		return err
 	}

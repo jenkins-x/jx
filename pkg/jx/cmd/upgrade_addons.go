@@ -6,13 +6,14 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/addon"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -38,7 +39,7 @@ type UpgradeAddonsOptions struct {
 }
 
 // NewCmdUpgradeAddons defines the command
-func NewCmdUpgradeAddons(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdUpgradeAddons(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &UpgradeAddonsOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
@@ -80,22 +81,18 @@ func (o *UpgradeAddonsOptions) Run() error {
 	if err != nil {
 		return err
 	}
+
+	_, _, err = o.KubeClientAndDevNamespace()
+	if err != nil {
+		return err
+	}
+
 	ns := o.Namespace
 	if ns == "" {
 		_, ns, err = o.JXClientAndDevNamespace()
 		if err != nil {
 			return err
 		}
-	}
-
-	client, err := o.KubeClient()
-	if err != nil {
-		return err
-	}
-
-	o.devNamespace, _, err = kube.GetDevNamespace(client, ns)
-	if err != nil {
-		return err
 	}
 
 	addonConfig, err := addon.LoadAddonsConfig()
@@ -157,7 +154,16 @@ func (o *UpgradeAddonsOptions) Run() error {
 					return errors.Wrap(err, "backing up the prow config")
 				}
 			}
-			err = o.Helm().UpgradeChart(chart, k, ns, "", false, -1, false, false, values, valueFiles, "", "", "")
+			helmOptions := helm.InstallChartOptions{
+				Chart:       chart,
+				ReleaseName: k,
+				Ns:          ns,
+				NoForce:     true,
+				ValueFiles:  valueFiles,
+				SetValues:   values,
+				UpgradeOnly: true,
+			}
+			err = o.InstallChartWithOptions(helmOptions)
 			if err != nil {
 				log.Warnf("Failed to upgrade %s chart %s: %v\n", name, chart, err)
 			}
@@ -176,15 +182,15 @@ func (o *UpgradeAddonsOptions) Run() error {
 }
 
 func (o *UpgradeAddonsOptions) restoreConfigs(config *v1.ConfigMap, plugins *v1.ConfigMap) error {
-	client, err := o.KubeClient()
+	client, devNamespace, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return err
 	}
 	var err1 error
 	if config != nil {
-		_, err = client.CoreV1().ConfigMaps(o.devNamespace).Get("config", metav1.GetOptions{})
+		_, err = client.CoreV1().ConfigMaps(devNamespace).Get("config", metav1.GetOptions{})
 		if err != nil {
-			_, err = client.CoreV1().ConfigMaps(o.devNamespace).Create(config)
+			_, err = client.CoreV1().ConfigMaps(devNamespace).Create(config)
 			if err != nil {
 				b, _ := yaml.Marshal(config)
 				err1 = fmt.Errorf("error restoring config %s\n", string(b))
@@ -192,9 +198,9 @@ func (o *UpgradeAddonsOptions) restoreConfigs(config *v1.ConfigMap, plugins *v1.
 		}
 	}
 	if plugins != nil {
-		_, err = client.CoreV1().ConfigMaps(o.devNamespace).Get("plugins", metav1.GetOptions{})
+		_, err = client.CoreV1().ConfigMaps(devNamespace).Get("plugins", metav1.GetOptions{})
 		if err != nil {
-			_, err = client.CoreV1().ConfigMaps(o.devNamespace).Create(plugins)
+			_, err = client.CoreV1().ConfigMaps(devNamespace).Create(plugins)
 			if err != nil {
 				b, _ := yaml.Marshal(plugins)
 				err = fmt.Errorf("%v/nerror restoring plugins %s\n", err1, string(b))
@@ -205,12 +211,12 @@ func (o *UpgradeAddonsOptions) restoreConfigs(config *v1.ConfigMap, plugins *v1.
 }
 
 func (o *UpgradeAddonsOptions) backupConfigs() (*v1.ConfigMap, *v1.ConfigMap, error) {
-	client, err := o.KubeClient()
+	client, devNamespace, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return nil, nil, err
 	}
-	config, _ := client.CoreV1().ConfigMaps(o.devNamespace).Get("config", metav1.GetOptions{})
-	plugins, _ := client.CoreV1().ConfigMaps(o.devNamespace).Get("plugins", metav1.GetOptions{})
+	config, _ := client.CoreV1().ConfigMaps(devNamespace).Get("config", metav1.GetOptions{})
+	plugins, _ := client.CoreV1().ConfigMaps(devNamespace).Get("plugins", metav1.GetOptions{})
 	config = config.DeepCopy()
 	config.ResourceVersion = ""
 	plugins = plugins.DeepCopy()

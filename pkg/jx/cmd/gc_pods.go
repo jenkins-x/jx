@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -14,7 +15,7 @@ import (
 
 // GCPodsOptions containers the CLI options
 type GCPodsOptions struct {
-	*CommonOptions
+	*opts.CommonOptions
 
 	Selector  string
 	Namespace string
@@ -37,7 +38,7 @@ var (
 )
 
 // NewCmdGCPods creates the command object
-func NewCmdGCPods(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdGCPods(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &GCPodsOptions{
 		CommonOptions: commonOpts,
 	}

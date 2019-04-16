@@ -1,12 +1,13 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
 )
@@ -50,7 +51,7 @@ type CreateQuickstartLocationOptions struct {
 }
 
 // NewCmdCreateQuickstartLocation creates a command object for the "create" command
-func NewCmdCreateQuickstartLocation(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateQuickstartLocation(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateQuickstartLocationOptions{
 		CreateOptions: CreateOptions{
 			CommonOptions: commonOpts,
