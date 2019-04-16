@@ -477,7 +477,7 @@ func (o *PreviewOptions) Run() error {
 	url, appNames, err := o.findPreviewURL(kubeClient, kserveClient)
 
 	if url == "" {
-		log.Warnf("Could not find the service URL in namespace %s for names %s\n", o.Namespace, strings.Join(appNames, ", "))
+		log.Warnf("Could not find the service URL in namespace %s for names %s: %s\n", o.Namespace, strings.Join(appNames, ", "), err.Error())
 	} else {
 		writePreviewURL(o, url)
 	}
@@ -576,20 +576,21 @@ func (o *PreviewOptions) Run() error {
 func (o *PreviewOptions) findPreviewURL(kubeClient kubernetes.Interface, kserveClient kserve.Interface) (string, []string, error) {
 	appNames := []string{o.Application, o.ReleaseName, o.Namespace + "-preview", o.ReleaseName + "-" + o.Application}
 	url := ""
+	var err error
 	fn := func() (bool, error) {
-		var err error
 		for _, n := range appNames {
-			url, err = services.FindServiceURL(kubeClient, o.Namespace, n)
+			url, _ = services.FindServiceURL(kubeClient, o.Namespace, n)
 			if url == "" {
 				url, _, err = kserving.FindServiceURL(kserveClient, kubeClient, o.Namespace, n)
 			}
 			if url != "" {
+				err = nil
 				return true, nil
 			}
 		}
 		return false, nil
 	}
-	err := o.RetryUntilTrueOrTimeout(time.Minute, time.Second*5, fn)
+	o.RetryUntilTrueOrTimeout(time.Minute, time.Second*5, fn)
 	return url, appNames, err
 }
 
