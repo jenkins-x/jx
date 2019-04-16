@@ -538,7 +538,11 @@ func (o *CommonOptions) clone(wrkDir string, versionRepository string, reference
 }
 
 func (o *CommonOptions) shallowCloneGitRepositoryToDir(dir string, gitURL string, pullRequestNumber string, branch string, revision string) error {
-	err := o.Git().Clone(gitURL, dir)
+	err := os.MkdirAll(dir, util.DefaultWritePermissions)
+	if err != nil {
+		return errors.Wrapf(err, "failed to ensure directory is created %s", dir)
+	}
+	err = o.Git().Clone(gitURL, dir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to clone git repository %s directory is created %s", gitURL, dir)
 	}
@@ -566,10 +570,6 @@ func (o *CommonOptions) shallowCloneGitRepositoryToDir(dir string, gitURL string
 	}
 
 	/*
-		err := os.MkdirAll(dir, util.DefaultWritePermissions)
-		if err != nil {
-			return errors.Wrapf(err, "failed to ensure directory is created %s", dir)
-		}
 		log.Infof("shallow cloning repository %s to dir %s\n", gitURL, dir)
 		err = o.Git().Init(dir)
 		if err != nil {
