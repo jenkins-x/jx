@@ -547,7 +547,7 @@ func (o *CommonOptions) shallowCloneGitRepositoryToDir(dir string, gitURL string
 		return errors.Wrapf(err, "failed to clone git repository %s directory is created %s", gitURL, dir)
 	}
 
-	commitish := make([]string, 0)
+	commitish := []string{}
 	if pullRequestNumber != "" {
 		pr := fmt.Sprintf("pull/%s/head:%s", pullRequestNumber, branch)
 		if o.Verbose {
@@ -564,9 +564,12 @@ func (o *CommonOptions) shallowCloneGitRepositoryToDir(dir string, gitURL string
 		commitish = append(commitish, "master")
 	}
 
+	if o.Verbose {
+		log.Infof("about to fetch %s for %s in dir %s\n", strings.Join(commitish, " "), gitURL, dir)
+	}
 	err = o.Git().FetchBranch(dir, "origin", commitish...)
 	if err != nil {
-		return errors.Wrapf(err, "failed to fetch %s from %s in directory %s", commitish, gitURL, dir)
+		return errors.Wrapf(err, "failed to fetch %s from %s in directory %s", strings.Join(commitish, " "), gitURL, dir)
 	}
 
 	/*
@@ -593,11 +596,17 @@ func (o *CommonOptions) shallowCloneGitRepositoryToDir(dir string, gitURL string
 	*/
 
 	if revision != "" {
+		if o.Verbose {
+			log.Infof("about to checkout revision %s in dir %s\n", revision, dir)
+		}
 		err = o.Git().Checkout(dir, revision)
 		if err != nil {
 			return errors.Wrapf(err, "failed to checkout revision %s", revision)
 		}
 	} else {
+		if o.Verbose {
+			log.Infof("about to checkout branch %s in dir %s\n", branch, dir)
+		}
 		err = o.Git().Checkout(dir, branch)
 		if err != nil {
 			return errors.Wrapf(err, "failed to checkout %s", branch)
