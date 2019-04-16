@@ -209,7 +209,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		log.Infof("cloning git for %s\n", o.CloneGitURL)
 	}
 	if o.VersionResolver == nil {
-		o.VersionResolver, err = o.CreateVersionResolver("")
+		o.VersionResolver, err = o.CreateVersionResolver("", "")
 		if err != nil {
 			return err
 		}

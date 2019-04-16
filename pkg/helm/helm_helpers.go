@@ -492,6 +492,7 @@ type InstallChartOptions struct {
 	Password       string
 	VersionsDir    string
 	VersionsGitURL string
+	VersionsGitRef string
 	InstallOnly    bool
 	NoForce        bool
 	Wait           bool

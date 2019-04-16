@@ -314,7 +314,7 @@ func (o *CommonOptions) InstallChartOrGitOps(isGitOps bool, gitOpsDir string, gi
 
 	if version == "" {
 		var err error
-		version, err = o.GetVersionNumber(version2.KindChart, chart, "")
+		version, err = o.GetVersionNumber(version2.KindChart, chart, "", "")
 		if err != nil {
 			return err
 		}
@@ -389,7 +389,7 @@ func (o *CommonOptions) InstallChartWithOptionsAndTimeout(options helm.InstallCh
 		return err
 	}
 	if options.VersionsDir == "" {
-		options.VersionsDir, err = o.CloneJXVersionsRepo(options.VersionsGitURL)
+		options.VersionsDir, err = o.CloneJXVersionsRepo(options.VersionsGitURL, options.VersionsGitRef)
 		if err != nil {
 			return err
 		}
@@ -402,7 +402,7 @@ func (o *CommonOptions) InstallChartWithOptionsAndTimeout(options helm.InstallCh
 }
 
 // CloneJXVersionsRepo clones the jenkins-x versions repo to a local working dir
-func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string) (string, error) {
+func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string, versionRef string) (string, error) {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	configDir, err := util.ConfigDir()
 	if err != nil {
@@ -410,14 +410,17 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string) (string, e
 	}
 	wrkDir := filepath.Join(configDir, "jenkins-x-versions")
 
-	versionRef := ""
-	if versionRepository == "" {
+	if versionRepository == "" || versionRef == "" {
 		settings, err := o.TeamSettings()
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to load TeamSettings")
 		}
-		versionRepository = settings.VersionStreamURL
-		versionRef = settings.VersionStreamRef
+		if versionRepository == "" {
+			versionRepository = settings.VersionStreamURL
+		}
+		if versionRef == "" {
+			versionRef = settings.VersionStreamRef
+		}
 	}
 	if versionRepository == "" {
 		versionRepository = DefaultVersionsURL
