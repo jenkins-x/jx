@@ -453,7 +453,9 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string) (string, e
 			log.Errorf("Error fetching remote refs %s", remoteRefs)
 			return deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
 		}
-		err = o.Git().Checkout(wrkDir, versionRef)
+		if versionRef != "" {
+			err = o.Git().Checkout(wrkDir, versionRef)
+		}
 
 		// The repository is up to date
 		if err == git.NoErrAlreadyUpToDate {
