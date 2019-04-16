@@ -514,7 +514,12 @@ func clone(wrkDir string, versionRepository string, referenceName string, fw ter
 	if referenceName == "" {
 		referenceName = "refs/heads/master"
 	} else if !strings.Contains(referenceName, "/") {
-		referenceName = "refs/heads/" + referenceName
+		if strings.HasPrefix(referenceName, "PR-") {
+			prNumber := strings.TrimPrefix(referenceName, "PR-")
+			referenceName = "pull/" + prNumber + "/head:" + referenceName
+		} else {
+			referenceName = "refs/heads/" + referenceName
+		}
 	}
 	log.Infof("Cloning the Jenkins X versions repo %s with ref %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
 	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
