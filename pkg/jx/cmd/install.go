@@ -1309,6 +1309,13 @@ func (options *InstallOptions) configureGitAuth() error {
 		teamSettings.PipelineUsername = pipelineAuthUsername
 		teamSettings.Organisation = options.Owner
 		teamSettings.GitPrivate = options.GitRepositoryOptions.Private
+
+		if options.Flags.VersionsRepository != "" {
+			teamSettings.VersionStreamURL = options.Flags.VersionsRepository
+		}
+		if options.Flags.VersionsGitRef != "" {
+			teamSettings.VersionStreamRef = options.Flags.VersionsGitRef
+		}
 		return nil
 	}
 	err = options.ModifyDevEnvironment(editTeamSettingsCallback)
