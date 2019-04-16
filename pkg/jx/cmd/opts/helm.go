@@ -426,7 +426,7 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string, versionRef
 		versionRepository = DefaultVersionsURL
 	}
 	o.Debugf("Current configuration dir: %s\n", configDir)
-	o.Debugf("versionRepository: %s\n", versionRepository)
+	o.Debugf("versionRepository: %s git ref: %s\n", versionRepository, versionRef)
 
 	// If the repo already exists let's try to fetch the latest version
 	if exists, err := util.DirExists(wrkDir); err == nil && exists {

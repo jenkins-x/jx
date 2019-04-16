@@ -515,6 +515,8 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 			o.InstallOptions.Flags.VersionsGitRef = branch
 		}
 	}
+	log.Infof("using versions git repo %s and ref %s\n", o.InstallOptions.Flags.VersionsRepository, o.InstallOptions.Flags.VersionsGitRef)
+
 	cluster.Name = kube.ToValidName(branch + "-" + buildNum + "-" + cluster.Name)
 	log.Infof("\nCreating cluster %s\n", util.ColorInfo(cluster.Name))
 	binary := o.Flags.JxBinary
