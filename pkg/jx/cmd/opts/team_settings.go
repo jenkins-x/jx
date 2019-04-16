@@ -360,5 +360,5 @@ func (o *CommonOptions) GetUsername(userName string) (string, error) {
 		}
 		userName = u.Username
 	}
-	return userName, nil
+	return kube.ToValidNameTruncated(userName, 63), nil
 }

@@ -24,6 +24,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
+	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -473,21 +474,12 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	url := ""
-	appNames := []string{o.Application, o.ReleaseName, o.Namespace + "-preview", o.ReleaseName + "-" + o.Application}
-	for _, n := range appNames {
-		url, err = services.FindServiceURL(kubeClient, o.Namespace, n)
-		if url == "" {
-			url, _, err = kserving.FindServiceURL(kserveClient, kubeClient, o.Namespace, n)
-		}
-		if url != "" {
-			writePreviewURL(o, url)
-			break
-		}
-	}
+	url, appNames, err := o.findPreviewURL(kubeClient, kserveClient)
 
 	if url == "" {
-		log.Warnf("Could not find the service URL in namespace %s for names %s\n", o.Namespace, strings.Join(appNames, ", "))
+		log.Warnf("Could not find the service URL in namespace %s for names %s: %s\n", o.Namespace, strings.Join(appNames, ", "), err.Error())
+	} else {
+		writePreviewURL(o, url)
 	}
 
 	comment := fmt.Sprintf(":star: PR built and available in a preview environment **%s**", o.Name)
@@ -578,6 +570,28 @@ func (o *PreviewOptions) Run() error {
 		log.Warnf("Failed to comment on the Pull Request with owner %s repo %s: %s\n", o.GitInfo.Organisation, o.GitInfo.Name, err)
 	}
 	return o.RunPostPreviewSteps(kubeClient, o.Namespace, url, pipeline, build)
+}
+
+// findPreviewURL finds the preview URL
+func (o *PreviewOptions) findPreviewURL(kubeClient kubernetes.Interface, kserveClient kserve.Interface) (string, []string, error) {
+	appNames := []string{o.Application, o.ReleaseName, o.Namespace + "-preview", o.ReleaseName + "-" + o.Application}
+	url := ""
+	var err error
+	fn := func() (bool, error) {
+		for _, n := range appNames {
+			url, _ = services.FindServiceURL(kubeClient, o.Namespace, n)
+			if url == "" {
+				url, _, err = kserving.FindServiceURL(kserveClient, kubeClient, o.Namespace, n)
+			}
+			if url != "" {
+				err = nil
+				return true, nil
+			}
+		}
+		return false, nil
+	}
+	o.RetryUntilTrueOrTimeout(time.Minute, time.Second*5, fn)
+	return url, appNames, err
 }
 
 // RunPostPreviewSteps lets run any post-preview steps that are configured for all apps in a team

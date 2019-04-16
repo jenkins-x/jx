@@ -1,6 +1,8 @@
 package kube
 
 import (
+	"strings"
+
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -48,7 +50,8 @@ func LoadPodTemplates(kubeClient kubernetes.Interface, ns string) (map[string]*c
 				if err != nil {
 					return answer, err
 				}
-				answer[cm.Name] = pod
+				name := strings.TrimPrefix(cm.Name, "jenkins-x-pod-template-")
+				answer[name] = pod
 				found = true
 			}
 		}
