@@ -605,11 +605,11 @@ func (o *CommonOptions) shallowCloneGitRepositoryToDir(dir string, gitURL string
 		}
 	} else {
 		if o.Verbose {
-			log.Infof("about to checkout branch %s in dir %s\n", branch, dir)
+			log.Infof("about to checkout master in dir %s\n", dir)
 		}
-		err = o.Git().Checkout(dir, branch)
+		err = o.Git().Checkout(dir, "master")
 		if err != nil {
-			return errors.Wrapf(err, "failed to checkout %s", branch)
+			return errors.Wrap(err, "failed to checkout master")
 		}
 	}
 	return nil
