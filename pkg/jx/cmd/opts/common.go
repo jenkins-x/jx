@@ -2,12 +2,13 @@ package opts
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/pflag"
 	"io"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/pflag"
 
 	"github.com/heptio/sonobuoy/pkg/client"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
@@ -35,7 +36,7 @@ import (
 	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -76,6 +77,7 @@ type CommonOptions struct {
 	LogLevel               string
 	NoBrew                 bool
 	InstallDependencies    bool
+	RemoteCluster          bool
 	SkipAuthSecretsMerge   bool
 	ServiceAccount         string
 	Username               string
