@@ -12,7 +12,6 @@ import (
 	"strings"
 )
 
-
 var PROJECT_LIST_HEADER = "PROJECT_ID"
 
 func GetGoogleZones(project string) ([]string, error) {
