@@ -1,12 +1,12 @@
 package opts_test
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/stretchr/testify/assert"
 )
@@ -17,12 +17,10 @@ func TestInstallEksctl(t *testing.T) {
 	assert.NoError(t, err)
 	defer os.Setenv("PATH", oldPath)
 
-	originalJx, newJx, err := cmd.CreateTestJxHomeDir()
+	defer os.Unsetenv("JX_HOME")
+	tempDir, err := ioutil.TempDir("", "common_install_test")
+	err = os.Setenv("JX_HOME", tempDir)
 	assert.NoError(t, err)
-	defer func() {
-		err := cmd.CleanupTestJxHomeDir(originalJx, newJx)
-		assert.NoError(t, err)
-	}()
 	err = (&opts.CommonOptions{}).InstallEksCtl(false)
 	assert.NoError(t, err)
 	eksctl := filepath.Join(os.Getenv("JX_HOME"), "/bin/eksctl")
