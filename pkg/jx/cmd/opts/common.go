@@ -424,9 +424,15 @@ func (o *CommonOptions) NewHelm(verbose bool, helmBinary string, noTiller bool, 
 // Helm returns or creates the helm client
 func (o *CommonOptions) Helm() helm.Helmer {
 	if o.helm == nil {
+		noTillerFlag := os.Getenv("JX_NO_TILLER")
+		if noTillerFlag == "true" {
+			o.EnableRemoteKubeCluster()
+			if o.helm != nil {
+				return o.helm
+			}
+		}
 		helmBinary, noTiller, helmTemplate, err := o.TeamHelmBin()
 		if err != nil {
-			noTillerFlag := os.Getenv("JX_NO_TILLER")
 			if noTillerFlag == "true" {
 				helmTemplate = true
 			} else {
