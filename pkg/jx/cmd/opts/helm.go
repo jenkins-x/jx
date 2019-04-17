@@ -549,7 +549,7 @@ func (o *CommonOptions) shallowCloneGitRepositoryToDir(dir string, gitURL string
 
 	commitish := []string{}
 	if pullRequestNumber != "" {
-		pr := fmt.Sprintf("refs/pulls/%s/head", pullRequestNumber)
+		pr := fmt.Sprintf("refs/pull/%s/head", pullRequestNumber)
 		if o.Verbose {
 			log.Infof("will fetch %s for %s in dir %s\n", pr, gitURL, dir)
 		}
