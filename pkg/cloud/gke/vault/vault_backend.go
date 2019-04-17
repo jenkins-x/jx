@@ -57,9 +57,9 @@ func CreateKmsConfig(vaultName, clusterName, projectId string) (*KmsConfig, erro
 }
 
 // CreateGCPServiceAccount creates a service account in GCP for the vault service
-func CreateVaultGCPServiceAccount(kubeClient kubernetes.Interface, vaultName, namespace, clusterName, projectId string) (string, error) {
+func CreateVaultGCPServiceAccount(kubeClient kubernetes.Interface, vaultName, namespace, clusterName, projectID string) (string, error) {
 
-	gcpServiceAccountSecretName, error := gke.CreateGCPServiceAccount(kubeClient, vaultName, namespace, clusterName, projectId, ServiceAccountRoles, gkeServiceAccountSecretKey)
+	gcpServiceAccountSecretName, error := gke.CreateGCPServiceAccount(kubeClient, vaultName, namespace, clusterName, projectID, ServiceAccountRoles, gkeServiceAccountSecretKey)
 
 	if error != nil {
 		return "", errors.Wrap(error, "creating the Vault GCP Service Account")
