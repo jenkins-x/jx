@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	expect "github.com/Netflix/go-expect"
+	"github.com/Netflix/go-expect"
 
 	"gopkg.in/AlecAivazis/survey.v1/core"
 
@@ -432,6 +432,143 @@ func TestRequired(t *testing.T) {
 			console.ExpectEOF()
 		})
 	assert.NoError(t, err)
+}
+
+func TestIfThen(t *testing.T) {
+	values, _, err := GenerateValuesAsYaml(t, "ifThenElse.test.schema.json", make(map[string]interface{}), false, false, false, false,
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			console.ExpectString("Enter a value for enablePersistentStorage")
+			console.SendLine("Y")
+			console.ExpectString("Enter a value for databaseConnectionUrl")
+			console.SendLine("abc")
+			console.ExpectString("Enter a value for databaseUsername")
+			console.SendLine("wensleydale")
+			console.ExpectString("Enter a value for databasePassword")
+			console.SendLine("cranberries")
+			console.ExpectString(" ***********")
+			console.ExpectEOF()
+		})
+	assert.NoError(t, err)
+	assert.Equal(t, `databaseConnectionUrl: abc
+databasePassword:
+  kind: Secret
+  name: databasepassword-secret
+databaseUsername: wensleydale
+enablePersistentStorage: true
+`, values)
+}
+
+func TestIfElse(t *testing.T) {
+	values, _, err := GenerateValuesAsYaml(t, "ifThenElse.test.schema.json", make(map[string]interface{}), false, false, false, false,
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			console.ExpectString("Enter a value for enablePersistentStorage")
+			console.SendLine("N")
+			console.ExpectString("Enter a value for enableInMemoryDB")
+			console.SendLine("N")
+			console.ExpectEOF()
+		})
+	assert.NoError(t, err)
+	assert.Equal(t, `enableInMemoryDB: false
+enablePersistentStorage: false
+`, values)
+}
+
+func TestIfElseNested(t *testing.T) {
+	values, _, err := GenerateValuesAsYaml(t, "ifThenElseNested.test.schema.json", make(map[string]interface{}), false, false, false, false,
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			console.ExpectString("Enter a value for enablePersistentStorage")
+			console.SendLine("N")
+			console.ExpectString("Enter a value for enableInMemoryDB")
+			console.SendLine("Y")
+			console.ExpectString("Enter a value for nestedString")
+			console.SendLine("Test")
+			console.ExpectEOF()
+		})
+	assert.NoError(t, err)
+	assert.Equal(t, `nestedObject:
+  enableInMemoryDB: true
+  enablePersistentStorage: false
+  nestedString: Test
+`, values)
+}
+
+func TestIfElseWithDefaults(t *testing.T) {
+	values, _, err := GenerateValuesAsYaml(t, "ifThenElse.test.schema.json", make(map[string]interface{}), false, false, true, false,
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			console.ExpectString("Enter a value for enablePersistentStorage")
+			console.SendLine("N")
+			console.ExpectEOF()
+		})
+	assert.NoError(t, err)
+	assert.Equal(t, `enableInMemoryDB: true
+enablePersistentStorage: false
+`, values)
+}
+
+func TestAllOf(t *testing.T) {
+	values, _, err := GenerateValuesAsYaml(t, "AllOfIf.test.schema.json", make(map[string]interface{}), false, false, false, false,
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			console.ExpectString("Enter a value for enablePersistentStorage")
+			console.SendLine("Y")
+			console.ExpectString("Enter a value for databaseConnectionUrl")
+			console.SendLine("abc")
+			console.ExpectString("Enter a value for databaseUsername")
+			console.SendLine("wensleydale")
+			console.ExpectString("Enter a value for databasePassword")
+			console.SendLine("cranberries")
+			console.ExpectString(" ***********")
+			console.ExpectString("Enter a value for enableCheese")
+			console.SendLine("Y")
+			console.ExpectString("Enter a value for cheeseType")
+			console.SendLine("Stilton")
+			console.ExpectEOF()
+		})
+	assert.NoError(t, err)
+	assert.Equal(t, `cheeseType: Stilton
+databaseConnectionUrl: abc
+databasePassword:
+  kind: Secret
+  name: databasepassword-secret
+databaseUsername: wensleydale
+enableCheese: true
+enablePersistentStorage: true
+`, values)
+}
+
+func TestAllOfThen(t *testing.T) {
+	values, _, err := GenerateValuesAsYaml(t, "AllOfIf.test.schema.json", make(map[string]interface{}), false, false, false, false,
+		func(console *tests.ConsoleWrapper, donec chan struct{}) {
+			defer close(donec)
+			console.ExpectString("Enter a value for enablePersistentStorage")
+			console.SendLine("Y")
+			console.ExpectString("Enter a value for databaseConnectionUrl")
+			console.SendLine("abc")
+			console.ExpectString("Enter a value for databaseUsername")
+			console.SendLine("wensleydale")
+			console.ExpectString("Enter a value for databasePassword")
+			console.SendLine("cranberries")
+			console.ExpectString(" ***********")
+			console.ExpectString("Enter a value for enableCheese")
+			console.SendLine("N")
+			console.ExpectString("Enter a value for iDontLikeCheese")
+			console.SendLine("Y")
+			console.ExpectEOF()
+		})
+	assert.NoError(t, err)
+	assert.Equal(t, `databaseConnectionUrl: abc
+databasePassword:
+  kind: Secret
+  name: databasepassword-secret
+databaseUsername: wensleydale
+enableCheese: false
+enablePersistentStorage: true
+iDontLikeCheese: true
+`, values)
 }
 
 func TestMinProperties(t *testing.T) {
