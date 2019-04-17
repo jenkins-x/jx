@@ -1,17 +1,17 @@
 package gke
 
 import (
-	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/pkg/errors"
 	"io/ioutil"
-	"k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 	"os"
 	"sort"
 	"strings"
-)
 
+	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+)
 
 var PROJECT_LIST_HEADER = "PROJECT_ID"
 
@@ -138,9 +138,10 @@ func GetGoogleMachineTypes() []string {
 		"n1-highcpu-32",
 		"n1-highcpu-64",
 		"n1-highcpu-96",
-	} // CreateGCPServiceAccount creates a service account in GCP for the vault service
+	}
 }
 
+// CreateGCPServiceAccount creates a service account in GCP for a service using the account roles specified
 func CreateGCPServiceAccount(kubeClient kubernetes.Interface, serviceName, namespace, clusterName, projectID string, serviceAccountRoles []string, serviceAccountSecretKey string) (string, error) {
 	serviceAccountDir, err := ioutil.TempDir("", "gke")
 	if err != nil {
