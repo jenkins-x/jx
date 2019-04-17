@@ -52,6 +52,7 @@ type StepBDDFlags struct {
 	ConfigFile          string
 	TestRepoGitCloneUrl string
 	SkipRepoGitClone    bool
+	UseRevision         bool
 	TestGitBranch       string
 	TestGitPrNumber     string
 	JxBinary            string
@@ -113,6 +114,7 @@ func NewCmdStepBDD(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Flags.UseCurrentTeam, "use-current-team", "", false, "If enabled lets use the current Team to run the tests")
 	cmd.Flags().BoolVarP(&options.Flags.IgnoreTestFailure, "ignore-fail", "i", false, "Ignores test failures so that a BDD test run can capture the output and report on the test passes/failures")
 	cmd.Flags().BoolVarP(&options.Flags.IgnoreTestFailure, "parallel", "", false, "Should we process each cluster configuration in parallel")
+	cmd.Flags().BoolVarP(&options.Flags.UseRevision, "use-revision", "", false, "Use the git revision from the current git clone instead of the Pull Request branch")
 
 	cmd.Flags().StringVarP(&installOptions.Flags.Provider, "provider", "", "", "Cloud service providing the Kubernetes cluster.  Supported providers: "+KubernetesProviderOptions())
 
@@ -513,7 +515,7 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 	log.Infof("found git revision %s: branch %s\n", revision, branch)
 
 	if o.InstallOptions.Flags.VersionsGitRef == "" {
-		if revision != "" {
+		if revision != "" && (branch == "" || o.Flags.UseRevision) {
 			o.InstallOptions.Flags.VersionsGitRef = revision
 		} else {
 			o.InstallOptions.Flags.VersionsGitRef = branch

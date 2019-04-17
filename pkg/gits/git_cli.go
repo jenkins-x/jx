@@ -174,6 +174,26 @@ func (g *GitCLI) RemoteBranches(dir string) ([]string, error) {
 	return answer, nil
 }
 
+// LocalBranches will list all local branches
+func (g *GitCLI) LocalBranches(dir string) ([]string, error) {
+	text, err := g.gitCmdWithOutput(dir, "branch")
+	answer := make([]string, 0)
+	if err != nil {
+		return nil, err
+	}
+	lines := strings.Split(text, "\n")
+	for _, line := range lines {
+		columns := strings.Split(line, " ")
+		for _, col := range columns {
+			if col != "" && col != "*" {
+				answer = append(answer, col)
+				break
+			}
+		}
+	}
+	return answer, nil
+}
+
 // Checkout checks out the given branch
 func (g *GitCLI) Checkout(dir string, branch string) error {
 	return g.gitCmd(dir, "checkout", branch)
