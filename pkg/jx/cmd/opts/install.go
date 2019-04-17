@@ -18,7 +18,7 @@ import (
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/gke"
-	gke_externalDNS "github.com/jenkins-x/jx/pkg/cloud/gke/external_dns"
+	gke_externalDNS "github.com/jenkins-x/jx/pkg/cloud/gke/externaldns"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -1821,19 +1821,19 @@ func (o *CommonOptions) installExternalDNSGKE() error {
 		return errors.Wrap(err, "failed to get clusterName")
 	}
 
-	googleProjectId, err := gke.GetCurrentProject()
+	googleProjectID, err := gke.GetCurrentProject()
 	if err != nil {
 		return errors.Wrap(err, "failed to get project")
 	}
 
 	var gcpServiceAccountSecretName string
 	gcpServiceAccountSecretName, err = gke_externalDNS.CreateExternalDNSGCPServiceAccount(client,
-		kube.DefaultExternalDNSReleaseName, devNamespace, clusterName, googleProjectId)
+		kube.DefaultExternalDNSReleaseName, devNamespace, clusterName, googleProjectID)
 	if err != nil {
 		return errors.Wrap(err, "failed to create service account for ExternalDNS")
 	}
 
-	err = gke.EnableAPIs(googleProjectId, "dns")
+	err = gke.EnableAPIs(googleProjectID, "dns")
 	if err != nil {
 		return errors.Wrap(err, "unable to enable 'dns' api")
 	}
