@@ -1706,7 +1706,10 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 		}
 	}
 
-	if useExternalDNS && o.Domain != "" {
+	if useExternalDNS && strings.Contains(o.Domain, "nip.io") {
+		log.Warnf("Skipping install of External DNS, %s domain is not supported while using External DNS\n", util.ColorInfo(o.Domain))
+		log.Warnf("External DNS only supports the use of personally operated domains\n")
+	} else if useExternalDNS && o.Domain != "" {
 		log.Infof("Preparing to install ExternalDNS into namespace %s\n", util.ColorInfo(devNamespace))
 		log.Infof("External DNS for Jenkins X is currently only supoorted on GKE\n")
 		log.Infof("You will need to ensure that a sub-domain record is present for the %s namespace which delegates onto %s\n", util.ColorInfo(devNamespace), util.ColorInfo(o.Domain))
