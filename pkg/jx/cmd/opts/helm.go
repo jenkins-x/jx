@@ -499,9 +499,13 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string, versionRef
 
 func (o *CommonOptions) deleteAndReClone(wrkDir string, versionRepository string, referenceName string, fw terminal.FileWriter) (string, error) {
 	log.Info("Deleting and cloning the Jenkins X versions repo")
-	err := deleteDirectory(wrkDir)
+	err := os.RemoveAll(wrkDir)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "failed to delete dir %s: %s\n", wrkDir, err.Error())
+	}
+	err = os.MkdirAll(wrkDir, util.DefaultWritePermissions)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to ensure directory is created %s", wrkDir)
 	}
 	err = o.clone(wrkDir, versionRepository, referenceName, fw)
 	if err != nil {
@@ -538,11 +542,7 @@ func (o *CommonOptions) clone(wrkDir string, versionRepository string, reference
 }
 
 func (o *CommonOptions) shallowCloneGitRepositoryToDir(dir string, gitURL string, pullRequestNumber string, branch string, revision string) error {
-	err := os.MkdirAll(dir, util.DefaultWritePermissions)
-	if err != nil {
-		return errors.Wrapf(err, "failed to ensure directory is created %s", dir)
-	}
-	err = o.Git().Clone(gitURL, dir)
+	err := o.Git().Clone(gitURL, dir)
 	if err != nil {
 		return errors.Wrapf(err, "failed to clone git repository %s directory is created %s", gitURL, dir)
 	}
