@@ -15,10 +15,10 @@ import (
 	"strings"
 	"testing"
 
-	expect "github.com/Netflix/go-expect"
+	"github.com/Netflix/go-expect"
 	"github.com/jenkins-x/jx/pkg/apps"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
-	uuid "github.com/satori/go.uuid"
+	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/satori/go.uuid"
 
 	"k8s.io/helm/pkg/chartutil"
 
