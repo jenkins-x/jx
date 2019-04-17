@@ -93,6 +93,7 @@ func NewCmdCreateStep(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&step.Lifecycle, "lifecycle", "l", "", "The lifecycle stage to add your step. Possible values: "+strings.Join(jenkinsfile.PipelineLifecycleNames, ", "))
 	cmd.Flags().StringVarP(&step.Mode, "mode", "m", "", "The create mode for the new step. Possible values: "+strings.Join(jenkinsfile.CreateStepModes, ", "))
 	cmd.Flags().StringVarP(&step.Step.Command, "sh", "c", "", "The command to invoke for the new step")
+	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The root project directory. Defaults to the current dir")
 
 	return cmd
 }
