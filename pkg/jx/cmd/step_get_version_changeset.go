@@ -21,6 +21,7 @@ type StepGetVersionChangeSetOptions struct {
 	StepOptions
 	VersionsDir        string
 	VersionsRepository string
+	VersionsGitRef     string
 	TestingBranch      string
 	StableBranch       string
 	PR                 string
@@ -62,6 +63,7 @@ func NewCmdStepGetVersionChangeSet(commonOpts *opts.CommonOptions) *cobra.Comman
 		},
 	}
 	cmd.Flags().StringVarP(&options.VersionsRepository, "repo", "r", opts.DefaultVersionsURL, "Jenkins X versions Git repo")
+	cmd.Flags().StringVarP(&options.VersionsGitRef, "versions-ref", "", "", "Jenkins X versions Git repository reference (tag, branch, sha etc)")
 	cmd.Flags().StringVarP(&options.StableBranch, "stable-branch", "", defaultStableVersionBranch, "the versions git repository branch to compare against")
 	cmd.Flags().StringVarP(&options.TestingBranch, "testing-branch", "", defaultStableVersionBranch, "the versions git repository branch to clone")
 	cmd.Flags().StringVarP(&options.VersionsDir, "versions-dir", "", "", "the directory containing the versions repo")
@@ -73,7 +75,7 @@ func NewCmdStepGetVersionChangeSet(commonOpts *opts.CommonOptions) *cobra.Comman
 // Run implements the command
 func (o *StepGetVersionChangeSetOptions) Run() error {
 	if o.VersionsDir == "" {
-		versionDir, err := o.CloneJXVersionsRepo(o.VersionsRepository)
+		versionDir, err := o.CloneJXVersionsRepo(o.VersionsRepository, o.VersionsGitRef)
 		if err != nil {
 			return err
 		}
