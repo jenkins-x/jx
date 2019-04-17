@@ -21,8 +21,8 @@ var (
 `)
 
 	createAddonEnvironmentControllerExample = templates.Examples(`
-		# Create the Gloo addon 
-		jx create addon gloo
+		# Creates the environment controller using a specific environment git repository
+		jx create addon envctl -s https://github.com/myorg/environment-production.git
 	`)
 )
 
