@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/kube"
-
 	"github.com/spf13/cobra"
 
 	"github.com/fatih/color"
