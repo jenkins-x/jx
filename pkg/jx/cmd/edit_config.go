@@ -69,7 +69,7 @@ func NewCmdEditConfig(commonOpts *opts.CommonOptions) *cobra.Command {
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The root project directory")
+	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The root project directory. Defaults to the current dir")
 	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "", "The kind of configuration to edit root project directory. Possible values "+strings.Join(configKinds, ", "))
 
 	return cmd

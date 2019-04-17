@@ -100,6 +100,7 @@ func NewCmdControllerEnvironment(commonOpts *opts.CommonOptions) *cobra.Command 
 
 // Run will implement this command
 func (o *ControllerEnvironmentOptions) Run() error {
+	o.RemoteCluster = true
 	var err error
 	if o.SourceURL != "" {
 		gitInfo, err := gits.ParseGitURL(o.SourceURL)
