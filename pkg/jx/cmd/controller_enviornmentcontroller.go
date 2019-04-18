@@ -436,10 +436,12 @@ func (o *ControllerEnvironmentOptions) stepGitCredentials() error {
 
 // handle request for pipeline runs
 func (o *ControllerEnvironmentOptions) handleRequests(w http.ResponseWriter, r *http.Request) {
-	eventType, _, _, valid, _ := ValidateWebhook(w, r, o.secret, false)
+	eventType, eventGUID, _, valid, _ := ValidateWebhook(w, r, o.secret, false)
+	log.Infof("webhook handler invoked event type %s UID %s valid %s method %s\n", eventType, eventGUID, strconv.FormatBool(valid), r.Method)
 	if !valid || eventType == "" {
 		return
 	}
+	log.Infof("starting pipeline from event type %s UID %s valid %s method %s\n", eventType, eventGUID, strconv.FormatBool(valid), r.Method)
 	o.startPipelineRun(w, r)
 }
 
