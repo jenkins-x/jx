@@ -132,7 +132,7 @@ const (
 	JenkinsXPlatformChart   = "jenkins-x/" + JenkinsXPlatformChartName
 	JenkinsXPlatformRelease = "jenkins-x"
 
-	ServerlessJenkins   = "Serverless Jenkins X Pipelines with Tekon"
+	ServerlessJenkins   = "Serverless Jenkins X Pipelines with Tekton"
 	StaticMasterJenkins = "Static Jenkins Server and Jenkinsfiles"
 
 	GitOpsChartYAML = `name: env
