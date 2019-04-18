@@ -20,6 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/sirupsen/logrus"
+	"k8s.io/test-infra/prow/github"
 
 	"github.com/pkg/errors"
 
@@ -52,6 +53,7 @@ type ControllerEnvironmentOptions struct {
 	SourceURL             string
 	WebHookURL            string
 	Branch                string
+	PushRef               string
 	Labels                map[string]string
 
 	StepCreateTaskOptions StepCreateTaskOptions
@@ -98,6 +100,7 @@ func NewCmdControllerEnvironment(commonOpts *opts.CommonOptions) *cobra.Command 
 	cmd.Flags().StringVarP(&options.GitOwner, "owner", "o", "", "The git repository owner. If not specified defaults to $OWNER")
 	cmd.Flags().StringVarP(&options.GitRepo, "repo", "", "", "The git repository name. If not specified defaults to $REPO")
 	cmd.Flags().StringVarP(&options.WebHookURL, "webhook-url", "w", "", "The external WebHook URL of this controller to register with the git provider. If not specified defaults to $WEBHOOK_URL")
+	cmd.Flags().StringVarP(&options.PushRef, "push-ref", "", "refs/heads/master", "The git ref passed from the WebHook which should trigger a new deploy pipeline to trigger. Defaults to only webhooks from the master branch")
 
 	so := &options.StepCreateTaskOptions
 	so.CommonOptions = commonOpts
@@ -457,7 +460,7 @@ func (o *ControllerEnvironmentOptions) handleWebHookRequests(w http.ResponseWrit
 		o.getIndex(w, r)
 		return
 	}
-	eventType, eventGUID, _, valid, _ := ValidateWebhook(w, r, o.secret, o.RequireHeaders)
+	eventType, eventGUID, data, valid, _ := ValidateWebhook(w, r, o.secret, o.RequireHeaders)
 	log.Infof("webhook handler invoked event type %s UID %s valid %s method %s\n", eventType, eventGUID, strconv.FormatBool(valid), r.Method)
 	if !valid {
 		return
@@ -466,12 +469,31 @@ func (o *ControllerEnvironmentOptions) handleWebHookRequests(w http.ResponseWrit
 		w.Write([]byte(helloMessage + "ignoring webhook event type: " + eventType))
 		return
 	}
+	if len(data) == 0 {
+		w.Write([]byte(helloMessage + "ignoring webhook event type: " + eventType + " as no payload"))
+		return
+	}
 
 	// lets return 200 so we don't keep getting retries from GitHub :)
-	log.Infof("starting pipeline from event type %s UID %s valid %s method %s\n", eventType, eventGUID, strconv.FormatBool(valid), r.Method)
-	w.Write([]byte("OK"))
 
-	go o.startPipelineRun(w, r)
+	event := github.PushEvent{}
+	if err := json.Unmarshal(data, &event); err != nil {
+		responseHTTPError(w, http.StatusBadRequest, "400 Bad Request: Could not unmarshal the PushEvent")
+		return
+	}
+	if event.Ref != o.PushRef {
+		w.Write([]byte(helloMessage + "ignoring webhook event type: " + eventType + " on refs: " + event.Ref))
+		return
+	}
+
+	log.Infof("starting pipeline from event type %s UID %s valid %s method %s\n", eventType, eventGUID, strconv.FormatBool(valid), r.Method)
+	o.startPipelineRun(w, r)
+
+	/*
+		w.Write([]byte("OK"))
+
+		go o.startPipelineRun(w, r)
+	*/
 }
 
 func (o *ControllerEnvironmentOptions) registerWebHook(webhookURL string, secret []byte) error {
