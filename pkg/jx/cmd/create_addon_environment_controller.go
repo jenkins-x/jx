@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -135,6 +136,16 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 			return err
 		}
 	}
+
+	apisClient, err := o.ApiExtensionsClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the API extensions client")
+	}
+	err = kube.RegisterPipelineCRDs(apisClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Jenkins X Pipeline CRDs")
+	}
+
 	authSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
