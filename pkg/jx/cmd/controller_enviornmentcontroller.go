@@ -87,7 +87,7 @@ func NewCmdControllerEnvironment(commonOpts *opts.CommonOptions) *cobra.Command 
 	cmd.Flags().IntVarP(&options.Port, optionPort, "", 8080, "The TCP port to listen on.")
 	cmd.Flags().StringVarP(&options.BindAddress, optionBind, "", "",
 		"The interface address to bind to (by default, will listen on all interfaces/addresses).")
-	cmd.Flags().StringVarP(&options.Path, "path", "", "/",
+	cmd.Flags().StringVarP(&options.Path, "path", "", "/hook",
 		"The path to listen on for requests to trigger a pipeline run.")
 	cmd.Flags().BoolVarP(&options.NoGitCredeentialsInit, "no-git-init", "", false, "Disables checking we have setup git credentials on startup")
 	cmd.Flags().BoolVarP(&options.RequireHeaders, "require-headers", "", true, "If enabled we reject webhooks which do not have the github headers: 'X-GitHub-Event' and 'X-GitHub-Delivery'")
@@ -108,6 +108,10 @@ func NewCmdControllerEnvironment(commonOpts *opts.CommonOptions) *cobra.Command 
 // Run will implement this command
 func (o *ControllerEnvironmentOptions) Run() error {
 	o.RemoteCluster = true
+
+	if o.Path == "" {
+		return util.MissingOption("path")
+	}
 
 	log.Infof("using require GitHub headers: %s\n", strconv.FormatBool(o.RequireHeaders))
 
@@ -202,9 +206,16 @@ func (o *ControllerEnvironmentOptions) Run() error {
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle(o.Path, http.HandlerFunc(o.handleRequests))
 	mux.Handle(HealthPath, http.HandlerFunc(o.health))
 	mux.Handle(ReadyPath, http.HandlerFunc(o.ready))
+
+	indexPaths := []string{"/", "/index.html"}
+	for _, p := range indexPaths {
+		if o.Path != p {
+			mux.Handle(p, http.HandlerFunc(o.getIndex))
+		}
+	}
+	mux.Handle(o.Path, http.HandlerFunc(o.handleWebHookRequests))
 
 	log.Infof("Environment Controller is now listening on %s for WebHooks from the source repository %s to trigger promotions\n", util.ColorInfo(util.UrlJoin(o.WebHookURL, o.Path)), util.ColorInfo(o.SourceURL))
 	return http.ListenAndServe(":"+strconv.Itoa(o.Port), mux)
@@ -224,6 +235,12 @@ func (o *ControllerEnvironmentOptions) ready(w http.ResponseWriter, r *http.Requ
 	} else {
 		w.WriteHeader(http.StatusServiceUnavailable)
 	}
+}
+
+// getIndex returns a simple home page
+func (o *ControllerEnvironmentOptions) getIndex(w http.ResponseWriter, r *http.Request) {
+	log.Debug("GET index")
+	w.Write([]byte("hello from the Jenkins X Environment Controller\n"))
 }
 
 // handle request for pipeline runs
@@ -431,10 +448,10 @@ func (o *ControllerEnvironmentOptions) stepGitCredentials() error {
 }
 
 // handle request for pipeline runs
-func (o *ControllerEnvironmentOptions) handleRequests(w http.ResponseWriter, r *http.Request) {
+func (o *ControllerEnvironmentOptions) handleWebHookRequests(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		// liveness probe etc
-		w.Write([]byte("hello from the Jenkins X Environment Controller\n"))
+		o.getIndex(w, r)
 		return
 	}
 	eventType, eventGUID, _, valid, _ := ValidateWebhook(w, r, o.secret, o.RequireHeaders)
