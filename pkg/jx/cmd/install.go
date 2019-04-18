@@ -549,6 +549,11 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring the Jenkins X helm repository")
 	}
 
+	err = options.configureProwInTeamSettings()
+	if err != nil {
+		return errors.Wrap(err, "configuring Prow in team settings")
+	}
+
 	err = options.configureAndInstallProw(ns, gitOpsDir, gitOpsEnvDir)
 	if err != nil {
 		return errors.Wrap(err, "configuring and installing Prow")
@@ -592,11 +597,6 @@ func (options *InstallOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "cleaning up the temporary files")
 		}
-	}
-
-	err = options.configureProwInTeamSettings()
-	if err != nil {
-		return errors.Wrap(err, "configuring Prow in team settings")
 	}
 
 	err = options.configureImportModeInTeamSettings()
