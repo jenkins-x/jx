@@ -100,7 +100,7 @@ func (o *DeleteAppOptions) Run() error {
 		if o.ReleaseName != "" {
 			return util.InvalidOptionf(optionRelease, o.ReleaseName, msg, optionRelease)
 		}
-		if o.Namespace != "" {
+		if o.Namespace != "" && o.Namespace != "jx" {
 			return util.InvalidOptionf(optionNamespace, o.Namespace, msg, optionNamespace)
 		}
 		gitProvider, _, err := o.CreateGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
