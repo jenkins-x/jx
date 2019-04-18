@@ -117,11 +117,11 @@ func (o *ControllerEnvironmentOptions) Run() error {
 	if o.StepCreateTaskOptions.BuildPackURL == "" {
 		o.StepCreateTaskOptions.BuildPackURL = os.Getenv("BUILD_PACK_URL")
 	}
-	if o.StepCreateTaskOptions.dockerRegistry == "" {
-		o.StepCreateTaskOptions.dockerRegistry = os.Getenv("DOCKER_REGISTRY")
+	if o.StepCreateTaskOptions.DockerRegistry == "" {
+		o.StepCreateTaskOptions.DockerRegistry = os.Getenv("DOCKER_REGISTRY")
 	}
-	if o.StepCreateTaskOptions.dockerRegistryOrg == "" {
-		o.StepCreateTaskOptions.dockerRegistryOrg = os.Getenv("DOCKER_REGISTRY_ORG")
+	if o.StepCreateTaskOptions.DockerRegistryOrg == "" {
+		o.StepCreateTaskOptions.DockerRegistryOrg = os.Getenv("DOCKER_REGISTRY_ORG")
 	}
 
 	var err error

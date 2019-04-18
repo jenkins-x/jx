@@ -94,9 +94,8 @@ type StepCreateTaskOptions struct {
 	KanikoSecret      string
 	KanikoSecretKey   string
 	ProjectID         string
-
-	dockerRegistry    string
-	dockerRegistryOrg string
+	DockerRegistry    string
+	DockerRegistryOrg string
 
 	PodTemplates        map[string]*corev1.Pod
 	MissingPodTemplates map[string]bool
@@ -161,6 +160,7 @@ func NewCmdStepCreateTask(commonOpts *opts.CommonOptions) *cobra.Command {
 	return cmd
 }
 
+// AddCommonFlags adds common CLI options
 func (o *StepCreateTaskOptions) AddCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.Pack, "pack", "p", "", "The build pack name. If none is specified its discovered from the source code")
 	cmd.Flags().StringVarP(&o.BuildPackURL, "url", "u", "", "The URL for the build pack Git repository")
@@ -178,8 +178,8 @@ func (o *StepCreateTaskOptions) AddCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.KanikoSecret, "kaniko-secret", "", kanikoSecretName, "The name of the kaniko secret")
 	cmd.Flags().StringVarP(&o.KanikoSecretKey, "kaniko-secret-key", "", kanikoSecretKey, "The key in the Kaniko Secret to mount")
 	cmd.Flags().StringVarP(&o.ProjectID, "project-id", "", "", "The cloud project ID. If not specified we default to the install project")
-	cmd.Flags().StringVarP(&o.dockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
-	cmd.Flags().StringVarP(&o.dockerRegistryOrg, "docker-registry-org", "", "", "The Docker registry organisation. If blank the git repository owner is used")
+	cmd.Flags().StringVarP(&o.DockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
+	cmd.Flags().StringVarP(&o.DockerRegistryOrg, "docker-registry-org", "", "", "The Docker registry organisation. If blank the git repository owner is used")
 	cmd.Flags().DurationVarP(&o.Duration, "duration", "", time.Second*30, "Retry duration when trying to create a PipelineRun")
 }
 
@@ -277,13 +277,13 @@ func (o *StepCreateTaskOptions) Run() error {
 		log.Infof("setting up docker registry for %s\n", o.CloneGitURL)
 	}
 
-	if o.dockerRegistry == "" {
+	if o.DockerRegistry == "" {
 		data, err := kube.GetConfigMapData(kubeClient, kube.ConfigMapJenkinsDockerRegistry, ns)
 		if err != nil {
 			return fmt.Errorf("Could not find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsDockerRegistry, ns, err)
 		}
-		o.dockerRegistry = data["docker.registry"]
-		if o.dockerRegistry == "" {
+		o.DockerRegistry = data["docker.registry"]
+		if o.DockerRegistry == "" {
 			return util.MissingOption("docker-registry")
 		}
 	}
@@ -1036,7 +1036,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		dir = strings.Replace(dir, PlaceHolderAppName, gitInfo.Name, -1)
 		dir = strings.Replace(dir, PlaceHolderOrg, gitInfo.Organisation, -1)
 		dir = strings.Replace(dir, PlaceHolderGitProvider, gitProviderHost, -1)
-		dir = strings.Replace(dir, PlaceHolderDockerRegistryOrg, strings.ToLower(o.DockerRegistryOrg(gitInfo)), -1)
+		dir = strings.Replace(dir, PlaceHolderDockerRegistryOrg, strings.ToLower(o.GetDockerRegistryOrg(gitInfo)), -1)
 	} else {
 		log.Warnf("No GitInfo available!\n")
 	}
@@ -1124,7 +1124,7 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 	if kube.GetSliceEnvVar(envVars, "DOCKER_REGISTRY") == nil {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "DOCKER_REGISTRY",
-			Value: o.dockerRegistry,
+			Value: o.DockerRegistry,
 		})
 	}
 	if kube.GetSliceEnvVar(envVars, "BUILD_NUMBER") == nil {
@@ -1599,18 +1599,18 @@ func (o *StepCreateTaskOptions) modifyStep(parsedStep syntax.Step, gitInfo *gits
 func (o *StepCreateTaskOptions) dockerImage(gitInfo *gits.GitRepository) string {
 	dockerRegistry := o.getDockerRegistry()
 
-	dockeerRegistryOrg := o.dockerRegistryOrg
+	dockeerRegistryOrg := o.DockerRegistryOrg
 	if dockeerRegistryOrg == "" {
-		dockeerRegistryOrg = o.DockerRegistryOrg(gitInfo)
+		dockeerRegistryOrg = o.GetDockerRegistryOrg(gitInfo)
 	}
 	appName := gitInfo.Name
 	return dockerRegistry + "/" + dockeerRegistryOrg + "/" + appName
 }
 
 func (o *StepCreateTaskOptions) getDockerRegistry() string {
-	dockerRegistry := o.dockerRegistry
+	dockerRegistry := o.DockerRegistry
 	if dockerRegistry == "" {
-		dockerRegistry = o.DockerRegistry()
+		dockerRegistry = o.GetDockerRegistry()
 	}
 	return dockerRegistry
 }

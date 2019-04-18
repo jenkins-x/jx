@@ -233,8 +233,8 @@ func (o *StepTagOptions) defaultChartValueRepository() string {
 		log.Warnf("failed to find git repository: %s\n", err.Error())
 	}
 
-	dockerRegistry := o.DockerRegistry()
-	dockerRegistryOrg := o.DockerRegistryOrg(gitInfo)
+	dockerRegistry := o.GetDockerRegistry()
+	dockerRegistryOrg := o.GetDockerRegistryOrg(gitInfo)
 	if dockerRegistryOrg == "" {
 		dockerRegistryOrg = os.Getenv("ORG")
 	}
@@ -254,7 +254,7 @@ func (o *StepTagOptions) defaultChartValueRepository() string {
 	if dockerRegistry != "" && dockerRegistryOrg != "" && appName != "" {
 		return dockerRegistry + "/" + dockerRegistryOrg + "/" + appName
 	}
-	log.Warnf("could not generate chart repository name for dockerRegistry %s, dockerRegistryOrg %s, appName %s", dockerRegistry, dockerRegistryOrg, appName)
+	log.Warnf("could not generate chart repository name for GetDockerRegistry %s, GetDockerRegistryOrg %s, appName %s", dockerRegistry, dockerRegistryOrg, appName)
 	return ""
 }
 

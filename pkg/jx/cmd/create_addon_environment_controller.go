@@ -42,15 +42,17 @@ type CreateAddonEnvironmentControllerOptions struct {
 	Timeout     int
 
 	// chart parameters
-	WebHookURL   string
-	GitSourceURL string
-	GitKind      string
-	GitUser      string
-	GitToken     string
-	ProjectID    string
-	BuildPackURL string
-	BuildPackRef string
-	ClusterRBAC  bool
+	WebHookURL        string
+	GitSourceURL      string
+	GitKind           string
+	GitUser           string
+	GitToken          string
+	BuildPackURL      string
+	BuildPackRef      string
+	ClusterRBAC       bool
+	ProjectID         string
+	DockerRegistry    string
+	DockerRegistryOrg string
 }
 
 // NewCmdCreateAddonEnvironmentController creates a command object for the "create" command
@@ -90,6 +92,8 @@ func NewCmdCreateAddonEnvironmentController(commonOpts *opts.CommonOptions) *cob
 	cmd.Flags().StringVarP(&options.BuildPackRef, "buildpack-ref", "", "", "The Git reference (branch,tag,sha) in the Git repository to use")
 	cmd.Flags().StringVarP(&options.ProjectID, "project-id", "", "", "The cloud project ID")
 	cmd.Flags().BoolVarP(&options.ClusterRBAC, "cluster-rbac", "", false, "Whether to enable cluster level RBAC on Tekton")
+	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
+	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The Docker registry organisation. If blank the git repository owner is used")
 	return cmd
 }
 
@@ -190,6 +194,12 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	}
 	if o.BuildPackRef != "" {
 		setValues = append(setValues, "buildPackRef="+o.BuildPackRef)
+	}
+	if o.DockerRegistry != "" {
+		setValues = append(setValues, "dockerRegistry="+o.DockerRegistry)
+	}
+	if o.DockerRegistryOrg != "" {
+		setValues = append(setValues, "dockerRegistryOrg="+o.DockerRegistryOrg)
 	}
 	setValues = append(setValues, "tekton.rbac.cluster="+strconv.FormatBool(o.ClusterRBAC))
 
