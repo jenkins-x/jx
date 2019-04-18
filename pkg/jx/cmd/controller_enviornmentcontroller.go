@@ -466,8 +466,12 @@ func (o *ControllerEnvironmentOptions) handleWebHookRequests(w http.ResponseWrit
 		w.Write([]byte(helloMessage + "ignoring webhook event type: " + eventType))
 		return
 	}
+
+	// lets return 200 so we don't keep getting retries from GitHub :)
 	log.Infof("starting pipeline from event type %s UID %s valid %s method %s\n", eventType, eventGUID, strconv.FormatBool(valid), r.Method)
-	o.startPipelineRun(w, r)
+	w.Write([]byte("OK"))
+
+	go o.startPipelineRun(w, r)
 }
 
 func (o *ControllerEnvironmentOptions) registerWebHook(webhookURL string, secret []byte) error {
