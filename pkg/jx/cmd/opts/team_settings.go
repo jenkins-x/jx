@@ -382,6 +382,7 @@ func (o *CommonOptions) GetUsername(userName string) (string, error) {
 // EnableRemoteKubeCluster lets setup this command to work with a remote cluster without a jx install
 // so lets disable loading TeamSettings and tiller
 func (o *CommonOptions) EnableRemoteKubeCluster() {
+	o.RemoteCluster = true
 	// let disable loading/modifying team environments as we typically install on empty k8s clusters
 	o.ModifyEnvironmentFn = o.IgnoreModifyEnvironment
 	o.ModifyDevEnvironmentFn = o.IgnoreModifyDevEnvironment

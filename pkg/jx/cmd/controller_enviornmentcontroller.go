@@ -240,6 +240,7 @@ func (o *ControllerEnvironmentOptions) startPipelineRun(w http.ResponseWriter, r
 	pr.DeleteTempDir = true
 	pr.Branch = branch
 	pr.Revision = revision
+	pr.RemoteCluster = true
 
 	// turn map into string array with = separator to match type of custom labels which are CLI flags
 	for key, value := range o.Labels {

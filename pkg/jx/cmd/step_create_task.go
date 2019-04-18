@@ -195,11 +195,13 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 
 	if o.ProjectID == "" {
-		data, err := kube.ReadInstallValues(kubeClient, ns)
-		if err != nil {
-			return errors.Wrapf(err, "failed to read install values from namespace %s", ns)
+		if !o.RemoteCluster {
+			data, err := kube.ReadInstallValues(kubeClient, ns)
+			if err != nil {
+				return errors.Wrapf(err, "failed to read install values from namespace %s", ns)
+			}
+			o.ProjectID = data["projectID"]
 		}
-		o.ProjectID = data["projectID"]
 		if o.ProjectID == "" {
 			o.ProjectID = "todo"
 		}
