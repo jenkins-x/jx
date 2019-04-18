@@ -197,7 +197,6 @@ type Gitter interface {
 	RemoteBranchNames(dir string, prefix string) ([]string, error)
 	GetRemoteUrl(config *gitcfg.Config, name string) string
 	RemoteUpdate(dir string) error
-	LocalBranches(dir string) ([]string, error)
 
 	Branch(dir string) (string, error)
 	CreateBranchFrom(dir string, branchName string, startPoint string) error

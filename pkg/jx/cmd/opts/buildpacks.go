@@ -367,21 +367,3 @@ func CopyBuildPack(dest, src string) error {
 	}
 	return p.SaveDir(dest)
 }
-
-// DiscoverBuildPack discovers the build pack given the build pack configuration
-func (o *CommonOptions) DiscoverBuildPack(dir string, projectConfig *config.ProjectConfig, packConfig string) (string, error) {
-	if packConfig != "" {
-		return packConfig, nil
-	}
-	args := &InvokeDraftPack{
-		Dir:             dir,
-		CustomDraftPack: packConfig,
-		ProjectConfig:   projectConfig,
-		DisableAddFiles: true,
-	}
-	pack, err := o.InvokeDraftPack(args)
-	if err != nil {
-		return pack, errors.Wrapf(err, "failed to discover task pack in dir %s", dir)
-	}
-	return pack, nil
-}

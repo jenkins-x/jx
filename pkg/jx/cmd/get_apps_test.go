@@ -3,7 +3,6 @@ package cmd_test
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"io/ioutil"
 	"os"
@@ -60,7 +59,6 @@ func TestGetAppsGitops(t *testing.T) {
 	app := &v1.App{}
 	appBytes, err := ioutil.ReadFile(appResourceLocation)
 	err = yaml.Unmarshal(appBytes, app)
-	app.Labels[helm.LabelReleaseName] = fmt.Sprintf("%s-%s", namespace, name1)
 	app.Namespace = namespace
 	cmd.ConfigureTestOptionsWithResources(getAppOptions.CommonOptions,
 		[]runtime.Object{},
@@ -303,10 +301,10 @@ func TestGetAppsHasStatus(t *testing.T) {
 		},
 		Namespace: namespace,
 	}
-	formattedName := fmt.Sprintf("%s-%s", namespace, name1)
+
 	pegomock.When(getAppOptions.Helm().StatusReleases(pegomock.EqString(namespace))).
 		ThenReturn(map[string]helm.Release{
-			formattedName: {Status: "DEPLOYED"},
+			name1: {Status: "DEPLOYED"},
 		}, nil)
 
 	getAppOptions.Args = []string{name1}
@@ -349,10 +347,10 @@ func TestGetAppsAsJson(t *testing.T) {
 		},
 		Namespace: namespace,
 	}
-	formattedName := fmt.Sprintf("%s-%s", namespace, name1)
+
 	pegomock.When(getAppOptions.Helm().StatusReleases(pegomock.EqString(namespace))).
 		ThenReturn(map[string]helm.Release{
-			formattedName: {Status: "DEPLOYED"},
+			name1: {Status: "DEPLOYED"},
 		}, nil)
 
 	getAppOptions.Args = []string{name1}
@@ -400,10 +398,10 @@ func TestGetAppsAsYaml(t *testing.T) {
 		},
 		Namespace: namespace,
 	}
-	formattedName := fmt.Sprintf("%s-%s", namespace, name1)
+
 	pegomock.When(getAppOptions.Helm().StatusReleases(pegomock.EqString(namespace))).
 		ThenReturn(map[string]helm.Release{
-			formattedName: {Status: "DEPLOYED"},
+			name1: {Status: "DEPLOYED"},
 		}, nil)
 
 	getAppOptions.Args = []string{name1}
@@ -503,6 +501,7 @@ func TestGetAppsResourcesStatusJsonFormat(t *testing.T) {
 	pegomock.When(getAppOptions.Helm().StatusReleaseWithOutput(pegomock.EqString(namespace),
 		pegomock.AnyString(), pegomock.EqString("json"))).
 		ThenReturn(string(expectedJSON), nil)
+
 	getAppOptions.Args = []string{name1, name2}
 	console := tests.NewTerminal(t)
 	r, fakeStdout, _ := os.Pipe()
@@ -556,6 +555,7 @@ func TestGetAppsResourcesStatusYamlFormat(t *testing.T) {
 	pegomock.When(testOptions.MockHelmer.StatusReleaseWithOutput(pegomock.EqString(namespace),
 		pegomock.AnyString(), pegomock.EqString("json"))).
 		ThenReturn(string(expectedJSON), nil)
+
 	getAppOptions.Args = []string{name1, name2}
 	console := tests.NewTerminal(t)
 	r, fakeStdout, _ := os.Pipe()
@@ -608,6 +608,7 @@ func TestGetAppsResourcesStatusRawFormat(t *testing.T) {
 	pegomock.When(testOptions.MockHelmer.StatusReleaseWithOutput(pegomock.EqString(namespace),
 		pegomock.AnyString(), pegomock.EqString("json"))).
 		ThenReturn(string(expectedJSON), nil)
+
 	getAppOptions.Args = []string{name1, name2}
 	console := tests.NewTerminal(t)
 	r, fakeStdout, _ := os.Pipe()

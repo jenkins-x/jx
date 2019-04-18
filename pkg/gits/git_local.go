@@ -407,8 +407,3 @@ func (g *GitLocal) ResetHard(dir string, commitish string) error {
 func (g *GitLocal) RemoteUpdate(dir string) error {
 	return g.GitFake.RemoteUpdate(dir)
 }
-
-// LocalBranches will list all local branches
-func (g *GitLocal) LocalBranches(dir string) ([]string, error) {
-	return g.GitCLI.LocalBranches(dir)
-}

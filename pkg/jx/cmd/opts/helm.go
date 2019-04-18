@@ -314,7 +314,7 @@ func (o *CommonOptions) InstallChartOrGitOps(isGitOps bool, gitOpsDir string, gi
 
 	if version == "" {
 		var err error
-		version, err = o.GetVersionNumber(version2.KindChart, chart, "", "")
+		version, err = o.GetVersionNumber(version2.KindChart, chart, "")
 		if err != nil {
 			return err
 		}
@@ -389,7 +389,7 @@ func (o *CommonOptions) InstallChartWithOptionsAndTimeout(options helm.InstallCh
 		return err
 	}
 	if options.VersionsDir == "" {
-		options.VersionsDir, err = o.CloneJXVersionsRepo(options.VersionsGitURL, options.VersionsGitRef)
+		options.VersionsDir, err = o.CloneJXVersionsRepo(options.VersionsGitURL)
 		if err != nil {
 			return err
 		}
@@ -402,7 +402,7 @@ func (o *CommonOptions) InstallChartWithOptionsAndTimeout(options helm.InstallCh
 }
 
 // CloneJXVersionsRepo clones the jenkins-x versions repo to a local working dir
-func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string, versionRef string) (string, error) {
+func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string) (string, error) {
 	surveyOpts := survey.WithStdio(o.In, o.Out, o.Err)
 	configDir, err := util.ConfigDir()
 	if err != nil {
@@ -410,35 +410,32 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string, versionRef
 	}
 	wrkDir := filepath.Join(configDir, "jenkins-x-versions")
 
-	if versionRepository == "" || versionRef == "" {
+	versionRef := ""
+	if versionRepository == "" {
 		settings, err := o.TeamSettings()
 		if err != nil {
 			return "", errors.Wrapf(err, "failed to load TeamSettings")
 		}
-		if versionRepository == "" {
-			versionRepository = settings.VersionStreamURL
-		}
-		if versionRef == "" {
-			versionRef = settings.VersionStreamRef
-		}
+		versionRepository = settings.VersionStreamURL
+		versionRef = settings.VersionStreamRef
 	}
 	if versionRepository == "" {
 		versionRepository = DefaultVersionsURL
 	}
 	o.Debugf("Current configuration dir: %s\n", configDir)
-	o.Debugf("versionRepository: %s git ref: %s\n", versionRepository, versionRef)
+	o.Debugf("versionRepository: %s\n", versionRepository)
 
 	// If the repo already exists let's try to fetch the latest version
 	if exists, err := util.DirExists(wrkDir); err == nil && exists {
 		repo, err := git.PlainOpen(wrkDir)
 		if err != nil {
 			log.Errorf("Error opening %s", wrkDir)
-			return o.deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
+			return deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
 		}
 		remote, err := repo.Remote("origin")
 		if err != nil {
 			log.Errorf("Error getting remote origin")
-			return o.deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
+			return deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 		defer cancel()
@@ -454,18 +451,16 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string, versionRef
 		})
 		if err != nil {
 			log.Errorf("Error fetching remote refs %s", remoteRefs)
-			return o.deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
+			return deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
 		}
-		if versionRef != "" {
-			err = o.Git().Checkout(wrkDir, versionRef)
-		}
+		err = o.Git().Checkout(wrkDir, versionRef)
 
 		// The repository is up to date
 		if err == git.NoErrAlreadyUpToDate {
 			return wrkDir, nil
 		} else if err != nil {
 			log.Errorf("Error fetching latest from remote")
-			return o.deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
+			return deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
 		} else {
 			pullLatest := false
 			if o.BatchMode {
@@ -493,40 +488,28 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string, versionRef
 			return wrkDir, err
 		}
 	} else {
-		return o.deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
+		return deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
 	}
 }
 
-func (o *CommonOptions) deleteAndReClone(wrkDir string, versionRepository string, referenceName string, fw terminal.FileWriter) (string, error) {
+func deleteAndReClone(wrkDir string, versionRepository string, referenceName string, fw terminal.FileWriter) (string, error) {
 	log.Info("Deleting and cloning the Jenkins X versions repo")
-	err := os.RemoveAll(wrkDir)
+	err := deleteDirectory(wrkDir)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to delete dir %s: %s\n", wrkDir, err.Error())
+		return "", err
 	}
-	err = os.MkdirAll(wrkDir, util.DefaultWritePermissions)
-	if err != nil {
-		return "", errors.Wrapf(err, "failed to ensure directory is created %s", wrkDir)
-	}
-	err = o.clone(wrkDir, versionRepository, referenceName, fw)
+	err = clone(wrkDir, versionRepository, referenceName, fw)
 	if err != nil {
 		return "", err
 	}
 	return wrkDir, err
 }
 
-func (o *CommonOptions) clone(wrkDir string, versionRepository string, referenceName string, fw terminal.FileWriter) error {
-	if referenceName == "" || referenceName == "master" {
+func clone(wrkDir string, versionRepository string, referenceName string, fw terminal.FileWriter) error {
+	if referenceName == "" {
 		referenceName = "refs/heads/master"
 	} else if !strings.Contains(referenceName, "/") {
-		if strings.HasPrefix(referenceName, "PR-") {
-			prNumber := strings.TrimPrefix(referenceName, "PR-")
-
-			log.Infof("Cloning the Jenkins X versions repo %s with PR: %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
-			return o.shallowCloneGitRepositoryToDir(wrkDir, versionRepository, prNumber, referenceName, "")
-		}
-		log.Infof("Cloning the Jenkins X versions repo %s with revision %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
-
-		return o.shallowCloneGitRepositoryToDir(wrkDir, versionRepository, "", "", referenceName)
+		referenceName = "refs/heads/" + referenceName
 	}
 	log.Infof("Cloning the Jenkins X versions repo %s with ref %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
 	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
@@ -535,84 +518,7 @@ func (o *CommonOptions) clone(wrkDir string, versionRepository string, reference
 		SingleBranch:  true,
 		Progress:      fw,
 	})
-	if err != nil {
-		return errors.Wrapf(err, "failed to clone reference: %s", referenceName)
-	}
 	return err
-}
-
-func (o *CommonOptions) shallowCloneGitRepositoryToDir(dir string, gitURL string, pullRequestNumber string, branch string, revision string) error {
-	err := o.Git().Clone(gitURL, dir)
-	if err != nil {
-		return errors.Wrapf(err, "failed to clone git repository %s directory is created %s", gitURL, dir)
-	}
-
-	commitish := []string{}
-	if pullRequestNumber != "" {
-		pr := fmt.Sprintf("refs/pull/%s/head", pullRequestNumber)
-		if o.Verbose {
-			log.Infof("will fetch %s for %s in dir %s\n", pr, gitURL, dir)
-		}
-		commitish = append(commitish, pr)
-	}
-	if revision != "" {
-		if o.Verbose {
-			log.Infof("will fetch %s for %s in dir %s\n", revision, gitURL, dir)
-		}
-		commitish = append(commitish, revision)
-	} else {
-		commitish = append(commitish, "master")
-	}
-
-	if o.Verbose {
-		log.Infof("about to fetch %s for %s in dir %s\n", strings.Join(commitish, " "), gitURL, dir)
-	}
-	err = o.Git().FetchBranch(dir, "origin", commitish...)
-	if err != nil {
-		return errors.Wrapf(err, "failed to fetch %s from %s in directory %s", strings.Join(commitish, " "), gitURL, dir)
-	}
-
-	/*
-		log.Infof("shallow cloning repository %s to dir %s\n", gitURL, dir)
-		err = o.Git().Init(dir)
-		if err != nil {
-			return errors.Wrapf(err, "failed to init a new git repository in directory %s", dir)
-		}
-		if o.Verbose {
-			log.Infof("ran git init in %s", dir)
-		}
-		err = o.Git().AddRemote(dir, "origin", gitURL)
-		if err != nil {
-			return errors.Wrapf(err, "failed to add remote origin with url %s in directory %s", gitURL, dir)
-		}
-		if o.Verbose {
-			log.Infof("ran git add remote origin %s in %s", gitURL, dir)
-		}
-
-		err = o.Git().FetchBranchShallow(dir, "origin", commitish...)
-		if err != nil {
-			return errors.Wrapf(err, "failed to fetch %s from %s in directory %s", commitish, gitURL, dir)
-		}
-	*/
-
-	if revision != "" {
-		if o.Verbose {
-			log.Infof("about to checkout revision %s in dir %s\n", revision, dir)
-		}
-		err = o.Git().Checkout(dir, revision)
-		if err != nil {
-			return errors.Wrapf(err, "failed to checkout revision %s", revision)
-		}
-	} else {
-		if o.Verbose {
-			log.Infof("about to checkout master in dir %s\n", dir)
-		}
-		err = o.Git().Checkout(dir, "master")
-		if err != nil {
-			return errors.Wrap(err, "failed to checkout master")
-		}
-	}
-	return nil
 }
 
 func deleteDirectory(wrkDir string) error {

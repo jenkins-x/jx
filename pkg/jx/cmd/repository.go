@@ -17,7 +17,6 @@ type RepoOptions struct {
 
 	Dir         string
 	OnlyViewURL bool
-	Quiet       bool
 }
 
 var (
@@ -32,9 +31,6 @@ var (
 
 		# Print the URL of the Git repository
 		jx repo -u
-
-		# Use the git URL in a script/pipeline
-		export URL="$(jx repo -q -b)"
 `)
 )
 
@@ -56,7 +52,6 @@ func NewCmdRepo(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVarP(&options.OnlyViewURL, "url", "u", false, "Only displays and the URL and does not open the browser")
-	cmd.Flags().BoolVarP(&options.Quiet, "quiet", "q", false, "Quiet mode just displays the git URL only for use in scripts")
 	return cmd
 }
 
@@ -72,10 +67,6 @@ func (o *RepoOptions) Run() error {
 	fullURL := gitInfo.HttpsURL()
 	if fullURL == "" {
 		return fmt.Errorf("Could not find URL from Git repository %s", gitInfo.URL)
-	}
-	if o.Quiet {
-		fmt.Fprintln(o.Out, fullURL)
-		return nil
 	}
 	log.Infof("repository: %s\n", util.ColorInfo(fullURL))
 	if !o.OnlyViewURL {

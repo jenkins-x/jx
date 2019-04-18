@@ -40,7 +40,6 @@ func NewCmdDeleteAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 
 	cmd.AddCommand(NewCmdDeleteAddonCloudBees(commonOpts))
-	cmd.AddCommand(NewCmdDeleteAddonEnvironmentController(commonOpts))
 	cmd.AddCommand(NewCmdDeleteAddonFlagger(commonOpts))
 	cmd.AddCommand(NewCmdDeleteAddonGitea(commonOpts))
 	cmd.AddCommand(NewCmdDeleteAddonSSO(commonOpts))

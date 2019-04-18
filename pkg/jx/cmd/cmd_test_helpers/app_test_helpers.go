@@ -51,10 +51,6 @@ type AppTestOptions struct {
 	MockHelmer      *helm_test.MockHelmer
 	MockFactory     *cmd_test.MockFactory
 	MockVaultClient *vault_test.MockClient
-	OriginalJxHome  string
-	OriginalKubeCfg string
-	TempJxHome      string
-	TempKubeCfg     string
 }
 
 // GetFullDevEnvDir returns a dev environment including org name and env
@@ -140,14 +136,6 @@ func (o *AppTestOptions) Cleanup() error {
 	if err != nil {
 		return err
 	}
-	err = cmd.CleanupTestKubeConfigDir(o.OriginalKubeCfg, o.TempKubeCfg)
-	if err != nil {
-		return err
-	}
-	err = cmd.CleanupTestJxHomeDir(o.OriginalJxHome, o.TempJxHome)
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -159,15 +147,6 @@ func CreateAppTestOptions(gitOps bool, t *testing.T) *AppTestOptions {
 		CommonOptions: &commonOpts,
 		MockFactory:   mockFactory,
 	}
-	originalJxHome, tempJxHome, err := cmd.CreateTestJxHomeDir()
-	assert.NoError(t, err)
-	o.OriginalJxHome = originalJxHome
-	o.TempJxHome = tempJxHome
-	originalKubeCfg, tempKubeCfg, err := cmd.CreateTestKubeConfigDir()
-	assert.NoError(t, err)
-	o.OriginalKubeCfg = originalKubeCfg
-	o.TempKubeCfg = tempKubeCfg
-
 	testOrgNameUUID, err := uuid.NewV4()
 	assert.NoError(t, err)
 	testOrgName := testOrgNameUUID.String()

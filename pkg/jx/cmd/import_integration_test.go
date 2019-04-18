@@ -18,7 +18,6 @@ import (
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 	"github.com/jenkins-x/jx/pkg/log"
 
-	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
@@ -41,19 +40,6 @@ const (
 )
 
 func TestImportProjects(t *testing.T) {
-	originalJxHome, tempJxHome, err := cmd.CreateTestJxHomeDir()
-	assert.NoError(t, err)
-	defer func() {
-		err := cmd.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
-		assert.NoError(t, err)
-	}()
-	originalKubeCfg, tempKubeCfg, err := cmd.CreateTestKubeConfigDir()
-	assert.NoError(t, err)
-	defer func() {
-		err := cmd.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
-		assert.NoError(t, err)
-	}()
-
 	tempDir, err := ioutil.TempDir("", "test-import-projects")
 	assert.NoError(t, err)
 
@@ -75,19 +61,6 @@ func TestImportProjects(t *testing.T) {
 }
 
 func TestImportProjectNextGenPipeline(t *testing.T) {
-	originalJxHome, tempJxHome, err := cmd.CreateTestJxHomeDir()
-	assert.NoError(t, err)
-	defer func() {
-		err := cmd.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
-		assert.NoError(t, err)
-	}()
-	originalKubeCfg, tempKubeCfg, err := cmd.CreateTestKubeConfigDir()
-	assert.NoError(t, err)
-	defer func() {
-		err := cmd.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
-		assert.NoError(t, err)
-	}()
-
 	tempDir, err := ioutil.TempDir("", "test-import-ng-projects")
 	assert.NoError(t, err)
 
@@ -131,42 +104,12 @@ func testImportProject(t *testing.T, tempDir string, testcase string, srcDir str
 	assert.NoError(t, err, "Importing dir %s from source %s", testDir, srcDir)
 }
 
-func createFakeGitProvider() *gits.FakeProvider {
-	testOrgName := "jstrachan"
-	testRepoName := "myrepo"
-	stagingRepoName := "environment-staging"
-	prodRepoName := "environment-production"
-
-	fakeRepo := gits.NewFakeRepository(testOrgName, testRepoName)
-	stagingRepo := gits.NewFakeRepository(testOrgName, stagingRepoName)
-	prodRepo := gits.NewFakeRepository(testOrgName, prodRepoName)
-
-	fakeGitProvider := gits.NewFakeProvider(fakeRepo, stagingRepo, prodRepo)
-	userAuth := auth.UserAuth{
-		Username:    "jx-testing-user",
-		ApiToken:    "someapitoken",
-		BearerToken: "somebearertoken",
-		Password:    "password",
-	}
-	authServer := auth.AuthServer{
-		Users:       []*auth.UserAuth{&userAuth},
-		CurrentUser: userAuth.Username,
-		URL:         "https://github.com",
-		Kind:        gits.KindGitHub,
-		Name:        "jx-testing-server",
-	}
-	fakeGitProvider.Server = authServer
-	return fakeGitProvider
-}
-
 func assertImport(t *testing.T, testDir string, testcase string, withRename bool, nextGenPipeline bool) error {
 	_, dirName := filepath.Split(testDir)
 	dirName = kube.ToValidName(dirName)
 	o := &cmd.ImportOptions{
 		CommonOptions: &opts.CommonOptions{},
 	}
-
-	o.GitProvider = createFakeGitProvider()
 
 	k8sObjects := []runtime.Object{}
 	jxObjects := []runtime.Object{}
@@ -208,7 +151,7 @@ func assertImport(t *testing.T, testDir string, testcase string, withRename bool
 	}
 
 	err := o.Run()
-	assert.NoError(t, err, "Failed %s with %s", dirName, err)
+	assert.NoError(t, err, "Failed with %s", err)
 	if err == nil {
 		defaultJenkinsfileName := jenkinsfile.Name
 		defaultJenkinsfileBackupSuffix := jenkinsfile.BackupSuffix

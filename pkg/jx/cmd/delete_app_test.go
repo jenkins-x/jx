@@ -85,5 +85,5 @@ func TestDeleteApp(t *testing.T) {
 	assert.NoError(t, err)
 
 	testOptions.MockHelmer.VerifyWasCalledOnce().
-		DeleteRelease(pegomock.AnyString(), pegomock.EqString(fmt.Sprintf("%s-%s", namespace, name)), pegomock.AnyBool())
+		DeleteRelease(pegomock.AnyString(), pegomock.EqString(name), pegomock.AnyBool())
 }

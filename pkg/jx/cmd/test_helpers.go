@@ -3,7 +3,6 @@ package cmd
 import (
 	"io/ioutil"
 	"os"
-	"path"
 	"strings"
 	"testing"
 	"time"
@@ -107,101 +106,6 @@ func ConfigureTestOptionsWithResources(o *opts.CommonOptions, k8sObjects []runti
 	}
 	o.SetHelm(helm)
 	o.SetResourcesInstaller(resourcesInstaller)
-}
-
-// CreateTestJxHomeDir creates a temporary JX_HOME directory for the tests, copying over any existing config, returning
-// the original JX_HOME directory, the temporary JX_HOME value, and any error.
-func CreateTestJxHomeDir() (string, string, error) {
-	originalDir, err := util.ConfigDir()
-	if err != nil {
-		return "", "", err
-	}
-	exists, err := util.FileExists(path.Join(originalDir, "gitAuth.yaml"))
-	if err != nil {
-		return "", "", err
-	}
-	if exists {
-		newDir, err := ioutil.TempDir("", ".jx")
-		if err != nil {
-			return "", "", err
-		}
-		contents, err := ioutil.ReadDir(originalDir)
-		if err != nil {
-			return "", "", err
-		}
-		for _, f := range contents {
-			if strings.HasSuffix(f.Name(), ".yaml") {
-				err = util.CopyFileOrDir(path.Join(originalDir, f.Name()), path.Join(newDir, f.Name()), true)
-				if err != nil {
-					return "", "", err
-				}
-			}
-		}
-		err = os.Setenv("JX_HOME", newDir)
-		if err != nil {
-			os.Unsetenv("JX_HOME")
-			return "", "", err
-		}
-		return originalDir, newDir, nil
-	}
-	return "", "", nil
-}
-
-// CleanupTestJxHomeDir should be called in a deferred function whenever CreateTestJxHomeDir is called
-func CleanupTestJxHomeDir(originalDir, tempDir string) error {
-	os.Unsetenv("JX_HOME")
-	if originalDir != "" {
-		// Don't delete if it's not a temp dir or if it's the original dir
-		if strings.HasPrefix(tempDir, os.TempDir()) && originalDir != tempDir {
-			err := os.RemoveAll(tempDir)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
-// CreateTestKubeConfigDir creates a temporary KUBECONFIG directory for the tests, copying over any existing config, returning
-// the original KUBECONFIG value, the temporary KUBECONFIG value, and any error.
-func CreateTestKubeConfigDir() (string, string, error) {
-	originalFile := util.KubeConfigFile()
-	exists, err := util.FileExists(originalFile)
-	if err != nil {
-		return "", "", err
-	}
-	if exists {
-		newDir, err := ioutil.TempDir("", ".kube")
-		if err != nil {
-			return "", "", err
-		}
-		err = util.CopyFile(originalFile, path.Join(newDir, "config"))
-		if err != nil {
-			return "", "", err
-		}
-		err = os.Setenv("KUBECONFIG", path.Join(newDir, "config"))
-		if err != nil {
-			os.Unsetenv("KUBECONFIG")
-			return "", "", err
-		}
-		return originalFile, newDir, nil
-	}
-	return "", "", nil
-}
-
-// CleanupTestKubeConfigDir should be called in a deferred function whenever CreateTestKubeConfigDir is called
-func CleanupTestKubeConfigDir(originalFile, tempDir string) error {
-	os.Unsetenv("KUBECONFIG")
-	if originalFile != "" {
-		// Don't delete if it's not a temp dir or if it's the original dir
-		if strings.HasPrefix(tempDir, os.TempDir()) && !strings.HasPrefix(originalFile, tempDir) {
-			err := os.RemoveAll(tempDir)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
 }
 
 //CreateTestEnvironmentDir will create a temporary environment dir for the tests, copying over any existing config,

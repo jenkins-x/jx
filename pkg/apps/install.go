@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
@@ -173,10 +173,6 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 		Items: make([]string, 0),
 	}
 
-	if releaseName == "" {
-		releaseName = fmt.Sprintf("%s-%s", o.Namespace, app)
-	}
-
 	username, password, err := helm.DecorateWithCredentials(repository, username, password, o.VaultClient)
 	if err != nil {
 		return errors.Wrapf(err, "locating credentials for %s", repository)
@@ -204,6 +200,9 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 		}
 	} else {
 		upgradeAppFunc := func(dir string) error {
+			if releaseName == "" {
+				releaseName = app
+			}
 			// Try to load existing answers from the apps CRD
 			appCrdName := fmt.Sprintf("%s-%s", releaseName, app)
 			appResource, err := o.JxClient.JenkinsV1().Apps(o.Namespace).Get(appCrdName, v1.GetOptions{})
@@ -242,7 +241,7 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 			return nil
 		}
 		// Do the actual work
-		err = helm.InspectChart(app, version, repository, username, password, o.Helmer, upgradeAppFunc)
+		err := helm.InspectChart(app, version, repository, username, password, o.Helmer, upgradeAppFunc)
 		if err != nil {
 			return err
 		}

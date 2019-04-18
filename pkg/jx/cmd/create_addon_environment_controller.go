@@ -15,18 +15,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	defaultEnvCtrlReleaseName = "jxet"
-)
-
 var (
 	createAddonEnvironmentControllerLong = templates.LongDesc(`
 		Create an Environment Controller to handle webhooks and promote changes from GitOps 
 `)
 
 	createAddonEnvironmentControllerExample = templates.Examples(`
-		# Creates the environment controller using a specific environment git repository
-		jx create addon envctl -s https://github.com/myorg/environment-production.git
+		# Create the Gloo addon 
+		jx create addon gloo
 	`)
 )
 
@@ -72,7 +68,7 @@ func NewCmdCreateAddonEnvironmentController(commonOpts *opts.CommonOptions) *cob
 		},
 	}
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to install the controller")
-	cmd.Flags().StringVarP(&options.ReleaseName, optionRelease, "r", defaultEnvCtrlReleaseName, "The chart release name")
+	cmd.Flags().StringVarP(&options.ReleaseName, optionRelease, "r", "jx", "The chart release name")
 	cmd.Flags().StringVarP(&options.SetValues, "set", "", "", "The chart set values (can specify multiple or separate values with commas: key1=val1,key2=val2)")
 	cmd.Flags().StringVarP(&options.Version, "version", "", "", "The version of the chart to use - otherwise the latest version is used")
 	cmd.Flags().IntVarP(&options.Timeout, "timeout", "", 600000, "The timeout value for how long to wait for the install to succeed")
@@ -86,8 +82,6 @@ func NewCmdCreateAddonEnvironmentController(commonOpts *opts.CommonOptions) *cob
 
 // Run implements the command
 func (o *CreateAddonEnvironmentControllerOptions) Run() error {
-	o.EnableRemoteKubeCluster()
-
 	_, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
 		return err
@@ -153,12 +147,6 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 			return util.MissingOption("token")
 		}
 	}
-	if o.GitUser == "" {
-		return util.MissingOption("user")
-	}
-	if o.GitToken == "" {
-		return util.MissingOption("token")
-	}
 
 	setValues := []string{}
 	if o.SetValues != "" {
@@ -174,6 +162,9 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	setValues = append(setValues, "source.user="+o.GitUser)
 	setValues = append(setValues, "source.token="+o.GitToken)
 	setValues = append(setValues, "tekton.rbac.cluster=false")
+
+	helmer := o.NewHelm(false, "", true, true)
+	o.SetHelm(helmer)
 
 	// TODO lets add other defaults...
 

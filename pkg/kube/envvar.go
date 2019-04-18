@@ -14,18 +14,3 @@ func GetSliceEnvVar(envVars []corev1.EnvVar, name string) *corev1.EnvVar {
 	}
 	return nil
 }
-
-// SetEnvVar returns the env vars with the env var of the given name updated or appended
-func SetEnvVar(envVars []corev1.EnvVar, name string, value string) []corev1.EnvVar {
-	for i := range envVars {
-		if envVars[i].Name == name {
-			envVars[i].Value = value
-			return envVars
-		}
-	}
-	envVars = append(envVars, corev1.EnvVar{
-		Name:  name,
-		Value: value,
-	})
-	return envVars
-}

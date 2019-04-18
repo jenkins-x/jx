@@ -47,12 +47,9 @@ type StepBDDFlags struct {
 	IgnoreTestFailure   bool
 	Parallel            bool
 	VersionsDir         string
-	VersionsRepository  string
-	VersionsGitRef      string
 	ConfigFile          string
 	TestRepoGitCloneUrl string
 	SkipRepoGitClone    bool
-	UseRevision         bool
 	TestGitBranch       string
 	TestGitPrNumber     string
 	JxBinary            string
@@ -114,7 +111,6 @@ func NewCmdStepBDD(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Flags.UseCurrentTeam, "use-current-team", "", false, "If enabled lets use the current Team to run the tests")
 	cmd.Flags().BoolVarP(&options.Flags.IgnoreTestFailure, "ignore-fail", "i", false, "Ignores test failures so that a BDD test run can capture the output and report on the test passes/failures")
 	cmd.Flags().BoolVarP(&options.Flags.IgnoreTestFailure, "parallel", "", false, "Should we process each cluster configuration in parallel")
-	cmd.Flags().BoolVarP(&options.Flags.UseRevision, "use-revision", "", false, "Use the git revision from the current git clone instead of the Pull Request branch")
 
 	cmd.Flags().StringVarP(&installOptions.Flags.Provider, "provider", "", "", "Cloud service providing the Kubernetes cluster.  Supported providers: "+KubernetesProviderOptions())
 
@@ -507,23 +503,12 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 		log.Warnf("No build number could be found from the environment variable $BUILD_NUMBER!\n")
 	}
 	baseClusterName := kube.ToValidName(cluster.Name)
-	revision := os.Getenv("PULL_PULL_SHA")
 	branch := o.GetBranchName(o.Flags.VersionsDir)
 	if branch == "" {
 		branch = "x"
+	} else {
+		log.Infof("found branch name %s\n", branch)
 	}
-	log.Infof("found git revision %s: branch %s\n", revision, branch)
-
-	if o.InstallOptions.Flags.VersionsGitRef == "" {
-		if revision != "" && (branch == "" || o.Flags.UseRevision) {
-			o.InstallOptions.Flags.VersionsGitRef = revision
-		} else {
-			o.InstallOptions.Flags.VersionsGitRef = branch
-		}
-	}
-
-	log.Infof("using versions git repo %s and ref %s\n", o.InstallOptions.Flags.VersionsRepository, o.InstallOptions.Flags.VersionsGitRef)
-
 	cluster.Name = kube.ToValidName(branch + "-" + buildNum + "-" + cluster.Name)
 	log.Infof("\nCreating cluster %s\n", util.ColorInfo(cluster.Name))
 	binary := o.Flags.JxBinary
@@ -556,12 +541,6 @@ func (o *StepBDDOptions) createCluster(cluster *bdd.CreateCluster) error {
 		args = append(args, "--git-provider-url", gitProviderURL)
 	}
 
-	if o.InstallOptions.Flags.VersionsRepository != "" {
-		args = append(args, "--versions-repo", o.InstallOptions.Flags.VersionsRepository)
-	}
-	if o.InstallOptions.Flags.VersionsGitRef != "" {
-		args = append(args, "--versions-ref", o.InstallOptions.Flags.VersionsGitRef)
-	}
 	gitUsername := o.InstallOptions.GitRepositoryOptions.Username
 	if gitUsername != "" {
 		args = append(args, "--git-username", gitUsername)

@@ -43,14 +43,9 @@ func (o *HelmOpsOptions) AddApp(app string, chart string, name string, version s
 	// Attach the current values.yaml
 	appCRDName := fmt.Sprintf("%s-%s", releaseName, name)
 
-	create, appObj, err := StashValues(values, appCRDName, o.JxClient, o.Namespace, chart, repository)
+	err = StashValues(values, appCRDName, o.JxClient, o.Namespace, chart, repository)
 	if err != nil {
 		return errors.Wrapf(err, "attaching values.yaml to %s", appCRDName)
-	}
-	appObj.Labels[helm.LabelReleaseName] = releaseName
-	err = addApp(create, o.JxClient, appObj)
-	if err != nil {
-		return errors.Wrapf(err, "creating the app %s in the Apps CRD", appCRDName)
 	}
 	log.Infof("Successfully installed %s %s\n", util.ColorInfo(name), util.ColorInfo(version))
 	return nil
@@ -58,7 +53,9 @@ func (o *HelmOpsOptions) AddApp(app string, chart string, name string, version s
 
 //DeleteApp deletes the app, optionally allowing the user to set the releaseName
 func (o *HelmOpsOptions) DeleteApp(app string, releaseName string, purge bool) error {
-	releaseName = fmt.Sprintf("%s-%s", o.Namespace, app)
+	if releaseName == "" {
+		releaseName = app
+	}
 	return o.Helmer.DeleteRelease(o.Namespace, releaseName, purge)
 }
 

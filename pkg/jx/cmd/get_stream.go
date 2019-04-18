@@ -18,9 +18,8 @@ import (
 type GetStreamOptions struct {
 	GetOptions
 
-	Kind               string
-	VersionsRepository string
-	VersionsGitRef     string
+	Kind        string
+	VersionsDir string
 }
 
 var (
@@ -62,14 +61,13 @@ func NewCmdGetStream(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.Kind, "kind", "k", "docker", "The kind of version. Possible values: "+strings.Join(version.KindStrings, ", "))
-	cmd.Flags().StringVarP(&options.VersionsRepository, "repo", "r", opts.DefaultVersionsURL, "Jenkins X versions Git repo")
-	cmd.Flags().StringVarP(&options.VersionsGitRef, "versions-ref", "", "", "Jenkins X versions Git repository reference (tag, branch, sha etc)")
+	cmd.Flags().StringVarP(&options.VersionsDir, "dir", "", "", "the directory containing a git clone of the jenkins-x/jenkins-x-versions git repository. Leave blank and a new clone will be made")
 	return cmd
 }
 
 // Run implements this command
 func (o *GetStreamOptions) Run() error {
-	resolver, err := o.CreateVersionResolver(o.VersionsRepository, o.VersionsGitRef)
+	resolver, err := o.CreateVersionResolver(o.VersionsDir)
 	if err != nil {
 		return errors.Wrap(err, "failed to create the VersionResolver")
 	}

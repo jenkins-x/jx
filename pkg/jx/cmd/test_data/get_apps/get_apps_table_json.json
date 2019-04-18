@@ -5,8 +5,7 @@
       "version": "0.0.1",
       "description": "My test chart description",
       "chartRepository": "http://chartmuseum.jenkins-x.io",
-      "status": "DEPLOYED",
-      "namespace": "jx-testing"
+      "status": "DEPLOYED"
     }
   ]
 }

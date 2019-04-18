@@ -15,10 +15,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Netflix/go-expect"
+	expect "github.com/Netflix/go-expect"
 	"github.com/jenkins-x/jx/pkg/apps"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
-	"github.com/satori/go.uuid"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	uuid "github.com/satori/go.uuid"
 
 	"k8s.io/helm/pkg/chartutil"
 
@@ -45,6 +45,7 @@ import (
 )
 
 func TestAddAppForGitOps(t *testing.T) {
+	t.Parallel()
 	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
 	defer func() {
 		err := testOptions.Cleanup()

@@ -102,6 +102,9 @@ func (o *AddAppOptions) addFlags(cmd *cobra.Command, defaultNamespace string) {
 		"The password for the repository")
 	cmd.Flags().StringVarP(&o.Alias, optionAlias, "", "",
 		"An alias to use for the app if you wish to install multiple instances of the same app")
+	cmd.Flags().StringVarP(&o.ReleaseName, optionRelease, "r", "",
+		"The chart release name (by default the name of the app, available when NOT using GitOps for your dev"+
+			" environment)")
 	cmd.Flags().BoolVarP(&o.HelmUpdate, optionHelmUpdate, "", true,
 		"Should we run helm update first to ensure we use the latest version (available when NOT using GitOps for your dev environment)")
 	cmd.Flags().StringVarP(&o.Namespace, optionNamespace, "n", "", "The Namespace to install into (available when NOT using GitOps for your dev environment)")
@@ -136,6 +139,9 @@ func (o *AddAppOptions) Run() error {
 
 	if o.GitOps {
 		msg := "unable to specify --%s when using GitOps for your dev environment"
+		if o.ReleaseName != "" {
+			return util.InvalidOptionf(optionRelease, o.ReleaseName, msg, optionRelease)
+		}
 		if !o.HelmUpdate {
 			return util.InvalidOptionf(optionHelmUpdate, o.HelmUpdate, msg, optionHelmUpdate)
 		}

@@ -85,7 +85,6 @@ type InstallFlags struct {
 	DockerRegistryOrg           string
 	Provider                    string
 	VersionsRepository          string
-	VersionsGitRef              string
 	Version                     string
 	LocalHelmRepoName           string
 	Namespace                   string
@@ -361,7 +360,6 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&flags.CloudEnvRepository, "cloud-environment-repo", "", opts.DefaultCloudEnvironmentsURL, "Cloud Environments Git repo")
 	cmd.Flags().StringVarP(&flags.VersionsRepository, "versions-repo", "", opts.DefaultVersionsURL, "Jenkins X versions Git repo")
-	cmd.Flags().StringVarP(&flags.VersionsGitRef, "versions-ref", "", "", "Jenkins X versions Git repository reference (tag, branch, sha etc)")
 	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", false, "Ignores default cloud-environment-repo and uses current directory ")
 }
 
@@ -510,7 +508,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring the docker registry")
 	}
 
-	versionsRepoDir, err := options.CloneJXVersionsRepo(options.Flags.VersionsRepository, options.Flags.VersionsGitRef)
+	versionsRepoDir, err := options.CloneJXVersionsRepo(options.Flags.VersionsRepository)
 	if err != nil {
 		return errors.Wrap(err, "cloning the jx versions repo")
 	}
@@ -2936,12 +2934,6 @@ func (options *InstallOptions) configureTeamSettings() error {
 		if options.Flags.DockerRegistryOrg != "" {
 			env.Spec.TeamSettings.DockerRegistryOrg = options.Flags.DockerRegistryOrg
 			log.Infof("Setting the docker registry organisation to %s in the TeamSettings\n", env.Spec.TeamSettings.DockerRegistryOrg)
-		}
-		if options.Flags.VersionsRepository != "" {
-			env.Spec.TeamSettings.VersionStreamURL = options.Flags.VersionsRepository
-		}
-		if options.Flags.VersionsGitRef != "" {
-			env.Spec.TeamSettings.VersionStreamRef = options.Flags.VersionsGitRef
 		}
 		return nil
 	}

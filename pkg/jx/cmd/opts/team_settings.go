@@ -161,18 +161,6 @@ func (o *CommonOptions) DefaultModifyEnvironment(name string, callback func(env 
 	return nil
 }
 
-// IgnoreModifyEnvironment ignores modifying environments when using separate Staging/Production clusters
-func (o *CommonOptions) IgnoreModifyEnvironment(name string, callback func(env *v1.Environment) error) error {
-	env := &v1.Environment{}
-	env.Name = name
-	return callback(env)
-}
-
-// IgnoreModifyDevEnvironment ignores modifying the dev environment when using separate Staging/Production clusters
-func (o *CommonOptions) IgnoreModifyDevEnvironment(callback func(env *v1.Environment) error) error {
-	return o.IgnoreModifyEnvironment(kube.LabelValueDevEnvironment, callback)
-}
-
 // RegisterReleaseCRD register Release CRD
 func (o *CommonOptions) RegisterReleaseCRD() error {
 	apisClient, err := o.ApiExtensionsClient()
@@ -373,14 +361,4 @@ func (o *CommonOptions) GetUsername(userName string) (string, error) {
 		userName = u.Username
 	}
 	return kube.ToValidNameTruncated(userName, 63), nil
-}
-
-// EnableRemoteKubeCluster lets setup this command to work with a remote cluster without a jx install
-// so lets disable loading TeamSettings and tiller
-func (o *CommonOptions) EnableRemoteKubeCluster() {
-	// let disable loading/modifying team environments as we typically install on empty k8s clusters
-	o.ModifyEnvironmentFn = o.IgnoreModifyEnvironment
-	o.ModifyDevEnvironmentFn = o.IgnoreModifyDevEnvironment
-	helmer := o.NewHelm(false, "", true, true)
-	o.SetHelm(helmer)
 }

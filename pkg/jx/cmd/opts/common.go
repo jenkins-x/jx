@@ -36,7 +36,7 @@ import (
 	kserve "github.com/knative/serving/pkg/client/clientset/versioned"
 	"github.com/spf13/cobra"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 	gitcfg "gopkg.in/src-d/go-git.v4/config"
 	apiextensionsclientset "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
@@ -80,9 +80,6 @@ type CommonOptions struct {
 	ModifyEnvironmentFn    ModifyEnvironmentFn
 	NoBrew                 bool
 	Out                    terminal.FileWriter
-	InstallDependencies    bool
-	RemoteCluster          bool
-	SkipAuthSecretsMerge   bool
 	ServiceAccount         string
 	SkipAuthSecretsMerge   bool
 	Username               string
@@ -430,15 +427,9 @@ func (o *CommonOptions) NewHelm(verbose bool, helmBinary string, noTiller bool, 
 // Helm returns or creates the helm client
 func (o *CommonOptions) Helm() helm.Helmer {
 	if o.helm == nil {
-		noTillerFlag := os.Getenv("JX_NO_TILLER")
-		if noTillerFlag == "true" {
-			o.EnableRemoteKubeCluster()
-			if o.helm != nil {
-				return o.helm
-			}
-		}
 		helmBinary, noTiller, helmTemplate, err := o.TeamHelmBin()
 		if err != nil {
+			noTillerFlag := os.Getenv("JX_NO_TILLER")
 			if noTillerFlag == "true" {
 				helmTemplate = true
 			} else {

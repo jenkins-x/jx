@@ -90,7 +90,6 @@ func NewCmdCreate(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateTracker(commonOpts))
 	cmd.AddCommand(NewCmdCreateUser(commonOpts))
 	cmd.AddCommand(NewCmdCreateVault(commonOpts))
-	cmd.AddCommand(NewCmdCreateVariable(commonOpts))
 
 	return cmd
 }

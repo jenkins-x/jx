@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,12 +18,6 @@ import (
 )
 
 func TestLoadPodTemplatest(t *testing.T) {
-	originalKubeCfg, tempKubeCfg, err := cmd.CreateTestKubeConfigDir()
-	assert.NoError(t, err)
-	defer func() {
-		err := cmd.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
-		assert.NoError(t, err)
-	}()
 	testData := path.Join("test_data", "load_pod_templates")
 	assert.DirExists(t, testData)
 

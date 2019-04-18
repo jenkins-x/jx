@@ -209,7 +209,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		log.Infof("cloning git for %s\n", o.CloneGitURL)
 	}
 	if o.VersionResolver == nil {
-		o.VersionResolver, err = o.CreateVersionResolver("", "")
+		o.VersionResolver, err = o.CreateVersionResolver("")
 		if err != nil {
 			return err
 		}
@@ -351,10 +351,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		o.Pack = projectConfig.BuildPack
 	}
 	if o.Pack == "" {
-		o.Pack, err = o.DiscoverBuildPack(o.Dir, projectConfig, o.Pack)
-		if err != nil {
-			return errors.Wrapf(err, "failed to discover the build pack")
-		}
+		o.Pack, err = o.discoverBuildPack(o.Dir, projectConfig)
 	}
 
 	if o.Pack == "" {
@@ -1104,6 +1101,20 @@ func (o *StepCreateTaskOptions) replaceCommandText(step *jenkinsfile.PipelineSte
 
 func (o *StepCreateTaskOptions) getWorkspaceDir() string {
 	return filepath.Join("/workspace", o.SourceName)
+}
+
+func (o *StepCreateTaskOptions) discoverBuildPack(dir string, projectConfig *config.ProjectConfig) (string, error) {
+	args := &opts.InvokeDraftPack{
+		Dir:             o.Dir,
+		CustomDraftPack: o.Pack,
+		ProjectConfig:   projectConfig,
+		DisableAddFiles: true,
+	}
+	pack, err := o.InvokeDraftPack(args)
+	if err != nil {
+		return pack, errors.Wrapf(err, "failed to discover task pack in dir %s", o.Dir)
+	}
+	return pack, nil
 }
 
 func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globalEnv []corev1.EnvVar) {

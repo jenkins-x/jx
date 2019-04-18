@@ -140,13 +140,11 @@ func (o *CommonOptions) LoadPipelineSecrets(kind, serviceKind string) (*corev1.S
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create a Kubernetes client %s", err)
 	}
-	ns := curNs
-	if !o.RemoteCluster {
-		ns, _, err = kube.GetDevNamespace(kubeClient, curNs)
-		if err != nil {
-			return nil, fmt.Errorf("Failed to get the development environment %s", err)
-		}
+	ns, _, err := kube.GetDevNamespace(kubeClient, curNs)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get the development environment %s", err)
 	}
+
 	var selector string
 	if kind != "" {
 		selector = kube.LabelKind + "=" + kind

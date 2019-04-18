@@ -54,42 +54,33 @@ endif
 
 TEST_PACKAGE ?= ./...
 
-.PHONY: list
-list: ## List all make targets
-	@$(MAKE) -pRrn : -f $(MAKEFILE_LIST) 2>/dev/null | awk -v RS= -F: '/^# File/,/^# Finished Make data base/ {if ($$1 !~ "^[#.]") {print $$1}}' | egrep -v -e '^[^[:alnum:]]' -e '^$@$$' | sort
+all: build
+full: check
+check: build test
 
-.PHONY: help
-.DEFAULT_GOAL := help
-help:
-	@grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
-
-all: build ## Build the binary
-full: check ## Build and run the tests
-check: build test ## Build and run the tests
-
-print-version: ## Print version
+print-version:
 	@echo $(VERSION)
 
-build: $(GO_DEPENDENCIES) ## Build jx binary for current OS
+build: $(GO_DEPENDENCIES)
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) build $(BUILDFLAGS) -o build/$(NAME) cmd/jx/jx.go
 
-get-test-deps: ## Install test dependencies
+get-test-deps:
 	$(GO_NOMOD) get github.com/axw/gocov/gocov
 	$(GO_NOMOD) get -u gopkg.in/matm/v1/gocov-html
 
-test: ## Run the unit tests
+test:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 1 -count=1 -coverprofile=cover.out -failfast -short ./...
 
-test-verbose: ## Run the unit tests in verbose mode
+test-verbose:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -v -coverprofile=cover.out -failfast ./...
 
-test-report: get-test-deps test ## Create the test report
+test-report: get-test-deps test
 	@gocov convert cover.out | gocov report
 
-test-report-html: get-test-deps test ## Create the test report in HTML format
+test-report-html: get-test-deps test
 	@gocov convert cover.out | gocov-html > cover.html && open cover.html
 
-test-slow: ## Run unit tests sequentially
+test-slow:
 	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 $(TESTFLAGS) -coverprofile=cover.out ./...
 
 test-slow-report: get-test-deps test-slow
@@ -98,7 +89,7 @@ test-slow-report: get-test-deps test-slow
 test-slow-report-html: get-test-deps test-slow
 	@gocov convert cover.out | gocov-html > cover.html && open cover.html
 
-test-integration: ## Run the integration tests 
+test-integration:
 	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -tags=integration -coverprofile=cover.out -short ./...
 
 test-integration1:
@@ -107,13 +98,13 @@ test-integration1:
 test-rich-integration1:
 	@CGO_ENABLED=$(CGO_ENABLED) richgo test -count=1 -tags=integration -coverprofile=cover.out -short -test.v $(TEST_PACKAGE) -run $(TEST)
 
-test-integration-report: get-test-deps test-integration ## Create the integration tests report
+test-integration-report: get-test-deps test-integration
 	@gocov convert cover.out | gocov report
 
 test-integration-report-html: get-test-deps test-integration
 	@gocov convert cover.out | gocov-html > cover.html && open cover.html
 
-test-slow-integration: ## Run the integration tests sequentially
+test-slow-integration:
 	@CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 2 -count=1 -tags=integration -coverprofile=cover.out ./...
 
 test-slow-integration-report: get-test-deps test-slow-integration
@@ -146,26 +137,26 @@ inttestbin:
 debuginttest1: inttestbin
 	cd pkg/jx/cmd && dlv --listen=:2345 --headless=true --api-version=2 exec ../../../build/jx-inttest -- -test.run $(TEST)
 
-install: $(GO_DEPENDENCIES) ## Install the binary
+install: $(GO_DEPENDENCIES)
 	GOBIN=${GOPATH}/bin $(GO) install $(BUILDFLAGS) cmd/jx/jx.go
 
-linux: ## Build for Linux
+linux:
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/jx cmd/jx/jx.go
 
-arm: ## Build for ARM
+arm:
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=arm $(GO) build $(BUILDFLAGS) -o build/$(NAME)-arm cmd/jx/jx.go
 
-win: ## Build for Windows
+win:
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME).exe cmd/jx/jx.go
 
 win32:
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=386 $(GO) build $(BUILDFLAGS) -o build/$(NAME)-386.exe cmd/jx/jx.go
 
-darwin: ## Build for OSX
+darwin:
 	CGO_ENABLED=$(CGO_ENABLED) GOOS=darwin GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/darwin/jx cmd/jx/jx.go
 
 .PHONY: release
-release: check ## Release the binary
+release: check
 	rm -rf build release && mkdir build release
 	for os in linux darwin ; do \
 		CGO_ENABLED=$(CGO_ENABLED) GOOS=$$os GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$$os/$(NAME) cmd/jx/jx.go ; \
@@ -189,13 +180,13 @@ release: check ## Release the binary
 
 	./build/linux/jx step changelog  --header-file docs/dev/changelog-header.md --version $(VERSION)
 
-clean: ## Clean the generated artifacts
+clean:
 	rm -rf build release cover.out cover.html
 
 richgo:
 	go get -u github.com/kyoh86/richgo
 
-fmt: ## Format the code
+fmt:
 	$(eval FORMATTED = $(shell $(GO) fmt ./...))
 	@if [ "$(FORMATTED)" == "" ]; \
       	then \
@@ -205,7 +196,7 @@ fmt: ## Format the code
       	fi
 
 .PHONY: lint
-lint: ## Lint the code
+lint:
 	./hack/run-all-checks.sh
 
 include Makefile.docker

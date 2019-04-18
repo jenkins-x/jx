@@ -47,7 +47,7 @@ type: Opaque
 
 // StashValues takes the values used to configure an app and annotates the APP CRD with them allowing them to be used
 // at a later date e.g. when the app is upgraded
-func StashValues(values []byte, name string, jxClient versioned.Interface, ns string, chartDir string, repository string) (bool, *jenkinsv1.App, error) {
+func StashValues(values []byte, name string, jxClient versioned.Interface, ns string, chartDir string, repository string) error {
 	// locate the app CRD
 	create := false
 	app, err := jxClient.JenkinsV1().Apps(ns).Get(name, metav1.GetOptions{})
@@ -55,8 +55,7 @@ func StashValues(values []byte, name string, jxClient versioned.Interface, ns st
 		create = true
 		app = &jenkinsv1.App{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
-				Namespace: ns,
+				Name: name,
 			},
 			Spec: jenkinsv1.AppSpec{},
 		}
@@ -70,7 +69,18 @@ func StashValues(values []byte, name string, jxClient versioned.Interface, ns st
 
 	environments.AddAppMetaData(chartDir, app, repository)
 
-	return create, app, nil
+	if create {
+		_, err := jxClient.JenkinsV1().Apps(ns).Create(app)
+		if err != nil {
+			return errors.Wrapf(err, "creating App %s to annotate with values.yaml", name)
+		}
+	} else {
+		_, err = jxClient.JenkinsV1().Apps(ns).PatchUpdate(app)
+		if err != nil {
+			return errors.Wrapf(err, "updating App %s to annotate with values.yaml", name)
+		}
+	}
+	return nil
 }
 
 // AddSecretsToVault adds the generatedSecrets into the vault using client at basepath
@@ -208,19 +218,4 @@ func GenerateQuestions(schema []byte, batchMode bool, askExisting bool, basePath
 		return nil, nil, errors.WithStack(err)
 	}
 	return values, secrets, nil
-}
-
-func addApp(create bool, jxClient versioned.Interface, app *jenkinsv1.App) error {
-	if create {
-		_, err := jxClient.JenkinsV1().Apps(app.Namespace).Create(app)
-		if err != nil {
-			return errors.Wrapf(err, "creating App %s to annotate with values.yaml", app.Name)
-		}
-	} else {
-		_, err := jxClient.JenkinsV1().Apps(app.Namespace).PatchUpdate(app)
-		if err != nil {
-			return errors.Wrapf(err, "updating App %s to annotate with values.yaml", app.Name)
-		}
-	}
-	return nil
 }

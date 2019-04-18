@@ -1699,7 +1699,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 
 		// lets use the stable knative build prow
 		if prowVersion == "" {
-			prowVersion, err = o.GetVersionNumber(version.KindChart, "jenkins-x/prow-knative", "", "")
+			prowVersion, err = o.GetVersionNumber(version.KindChart, "jenkins-x/prow-knative", "")
 			if err != nil {
 				return errors.Wrap(err, "failed to find Prow Knative build version")
 			}

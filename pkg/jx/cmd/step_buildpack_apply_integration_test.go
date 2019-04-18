@@ -30,19 +30,7 @@ func TestStepBuildPackApply(t *testing.T) {
 	const buildPackRef = "master"
 
 	tests.SkipForWindows(t, "go-expect does not work on windows")
-
-	originalJxHome, tempJxHome, err := cmd.CreateTestJxHomeDir()
-	assert.NoError(t, err)
-	defer func() {
-		err := cmd.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
-		assert.NoError(t, err)
-	}()
-	originalKubeCfg, tempKubeCfg, err := cmd.CreateTestKubeConfigDir()
-	assert.NoError(t, err)
-	defer func() {
-		err := cmd.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
-		assert.NoError(t, err)
-	}()
+	t.Parallel()
 
 	tempDir, err := ioutil.TempDir("", "test-step-buildpack-apply")
 	require.NoError(t, err)
