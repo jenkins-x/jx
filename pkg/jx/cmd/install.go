@@ -2066,7 +2066,7 @@ func (options *InstallOptions) configureKaniko() error {
 			}
 		}
 
-		serviceAccountName := kube.ToValidNameTruncated(fmt.Sprintf("jxkankio-%s", clusterName), 30)
+		serviceAccountName := kube.ToValidNameTruncated(fmt.Sprintf("jxkaniko-%s", clusterName), 30)
 
 		log.Infof("Configuring Kaniko service account %s for project %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
 		serviceAccountPath, err := gke.GetOrCreateServiceAccount(serviceAccountName, projectID, serviceAccountDir, gke.KanikoServiceAccountRoles)
