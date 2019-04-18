@@ -30,10 +30,6 @@ func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Commit Status CRD")
 	}
-	err = RegisterEnvironmentCRD(apiClient)
-	if err != nil {
-		return errors.Wrap(err, "failed to register the Environment CRD")
-	}
 	err = RegisterExtensionCRD(apiClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Extension CRD")
@@ -58,10 +54,6 @@ func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Fact CRD")
 	}
-	err = RegisterReleaseCRD(apiClient)
-	if err != nil {
-		return errors.Wrap(err, "failed to register the Release CRD")
-	}
 	err = RegisterTeamCRD(apiClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Team CRD")
@@ -84,6 +76,14 @@ func RegisterPipelineCRDs(apiClient apiextensionsclientset.Interface) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Build Pack CRD")
 	}
+	err = RegisterEnvironmentCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Environment CRD")
+	}
+	err = RegisterReleaseCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Release CRD")
+	}
 	err = RegisterPipelineActivityCRD(apiClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Pipeline Activity CRD")
@@ -92,13 +92,13 @@ func RegisterPipelineCRDs(apiClient apiextensionsclientset.Interface) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Pipeline Structure CRD")
 	}
+	err = RegisterPluginCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Plugin CRD")
+	}
 	err = RegisterSourceRepositoryCRD(apiClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to register the SourceRepository CRD")
-	}
-	err = RegisterPipelineStructureCRD(apiClient)
-	if err != nil {
-		return errors.Wrap(err, "failed to register the PipelineStructure CRD")
 	}
 	return nil
 }
