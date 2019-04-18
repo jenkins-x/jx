@@ -46,6 +46,9 @@ type CreateAddonEnvironmentControllerOptions struct {
 	GitKind      string
 	GitUser      string
 	GitToken     string
+	ProjectID    string
+	BuildPackURL string
+	BuildPackRef string
 }
 
 // NewCmdCreateAddonEnvironmentController creates a command object for the "create" command
@@ -81,6 +84,9 @@ func NewCmdCreateAddonEnvironmentController(commonOpts *opts.CommonOptions) *cob
 	cmd.Flags().StringVarP(&options.GitUser, "user", "u", "", "The git user to use to clone and tag the git repository")
 	cmd.Flags().StringVarP(&options.GitToken, "token", "t", "", "The git token to clone and tag the git repository")
 	cmd.Flags().StringVarP(&options.WebHookURL, "webhook-url", "w", "", "The webhook URL used to expose the exposecontroller and register with the git provider's webhooks")
+	cmd.Flags().StringVarP(&options.BuildPackURL, "url", "u", "", "The URL for the build pack Git repository")
+	cmd.Flags().StringVarP(&options.BuildPackRef, "ref", "r", "", "The Git reference (branch,tag,sha) in the Git repository to use")
+	cmd.Flags().StringVarP(&options.ProjectID, "project-id", "", "", "The cloud project ID")
 	return cmd
 }
 
@@ -173,6 +179,15 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	setValues = append(setValues, "source.gitKind="+o.GitKind)
 	setValues = append(setValues, "source.user="+o.GitUser)
 	setValues = append(setValues, "source.token="+o.GitToken)
+	if o.ProjectID != "" {
+		setValues = append(setValues, "projectId="+o.ProjectID)
+	}
+	if o.BuildPackURL != "" {
+		setValues = append(setValues, "buildPackURL="+o.BuildPackURL)
+	}
+	if o.BuildPackRef != "" {
+		setValues = append(setValues, "buildPackRef="+o.BuildPackRef)
+	}
 	setValues = append(setValues, "tekton.rbac.cluster=false")
 
 	// TODO lets add other defaults...
