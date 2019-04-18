@@ -115,6 +115,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 		env.Spec.TeamSettings.HelmTemplate = true
 		env.Spec.TeamSettings.PromotionEngine = v1.PromotionEngineProw
 		env.Spec.TeamSettings.ProwEngine = v1.ProwEngineTypeTekton
+		env.Spec.WebHookEngine = v1.WebHookEngineProw
 		return nil
 	}
 	err = o.ModifyDevEnvironment(fn)
