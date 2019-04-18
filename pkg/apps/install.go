@@ -89,6 +89,9 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 			opts := GitOpsOptions{
 				InstallOptions: o,
 			}
+			if app == "." {
+				app = chartDetails.Name
+			}
 			err := opts.AddApp(app, dir, chartDetails.Version, repository, alias)
 			if err != nil {
 				return errors.Wrapf(err, "adding app %s version %s with alias %s using gitops", app, version, alias)
