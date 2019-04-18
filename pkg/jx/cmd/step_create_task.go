@@ -35,11 +35,11 @@ import (
 )
 
 const (
-	kanikoDockerImage    = "gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6"
-	kanikoSecretMount    = "/kaniko-secret/secret.json"
-	kanikoSecretName     = "kaniko-secret"
-	kanikoSecretKey      = "kaniko-secret"
-	defaultContainerName = "maven"
+	kanikoDockerImage     = "gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6"
+	kanikoSecretMount     = "/kaniko-secret/secret.json"
+	kanikoSecretName      = "kaniko-secret"
+	kanikoSecretKey       = "kaniko-secret"
+	defaultContainerImage = "gcr.io/jenkinsxio/builder-maven"
 )
 
 var (
@@ -79,6 +79,7 @@ type StepCreateTaskOptions struct {
 	TargetPath        string
 	SourceName        string
 	CustomImage       string
+	DefaultImage      string
 	CloneGitURL       string
 	Branch            string
 	Revision          string
@@ -170,6 +171,7 @@ func (o *StepCreateTaskOptions) AddCommonFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.TargetPath, "target-path", "", "", "The target path appended to /workspace/${source} to clone the source code")
 	cmd.Flags().StringVarP(&o.SourceName, "source", "", "source", "The name of the source repository")
 	cmd.Flags().StringVarP(&o.CustomImage, "image", "", "", "Specify a custom image to use for the steps which overrides the image in the PodTemplates")
+	cmd.Flags().StringVarP(&o.DefaultImage, "default-image", "", defaultContainerImage, "Specify the docker image to use if there is no image specified for a step and there's no Pod Template")
 	cmd.Flags().BoolVarP(&o.DeleteTempDir, "delete-temp-dir", "", true, "Deletes the temporary directory of cloned files if using the 'clone-git-url' option")
 	cmd.Flags().BoolVarP(&o.NoReleasePrepare, "no-release-prepare", "", false, "Disables creating the release version number and tagging git and triggering the release pipeline from the new tag")
 	cmd.Flags().BoolVarP(&o.NoKaniko, "no-kaniko", "", false, "Disables using kaniko directly for building docker images")
@@ -205,6 +207,9 @@ func (o *StepCreateTaskOptions) Run() error {
 		if o.ProjectID == "" {
 			o.ProjectID = "todo"
 		}
+	}
+	if o.DefaultImage == "" {
+		o.DefaultImage = defaultContainerImage
 	}
 	if o.KanikoImage == "" {
 		o.KanikoImage = kanikoDockerImage
@@ -608,7 +613,7 @@ func (o *StepCreateTaskOptions) CreateStageForBuildPack(languageName string, pip
 		container = o.CustomImage
 	}
 	if container == "" {
-		container = defaultContainerName
+		container = o.DefaultImage
 	}
 	dir := o.getWorkspaceDir()
 
@@ -1043,7 +1048,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 
 	if step.Command != "" {
 		if containerName == "" {
-			containerName = defaultContainerName
+			containerName = o.DefaultImage
 			log.Warnf("No 'agent.container' specified in the pipeline configuration so defaulting to use: %s\n", containerName)
 		}
 
