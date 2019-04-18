@@ -109,6 +109,8 @@ func NewCmdControllerEnvironment(commonOpts *opts.CommonOptions) *cobra.Command 
 func (o *ControllerEnvironmentOptions) Run() error {
 	o.RemoteCluster = true
 
+	log.Infof("using require GitHub headers: %s\n", strconv.FormatBool(o.RequireHeaders))
+
 	// lets default some values from environment variables
 	if o.StepCreateTaskOptions.ProjectID == "" {
 		o.StepCreateTaskOptions.ProjectID = os.Getenv("PROJECT_ID")
@@ -270,7 +272,6 @@ func (o *ControllerEnvironmentOptions) startPipelineRun(w http.ResponseWriter, r
 	if err != nil {
 		o.returnError(err, "failed to marshal payload", w, r)
 	}
-	return
 }
 
 // discoverWebHookURL lets try discover the webhook URL from the Service
@@ -402,19 +403,13 @@ func (o *ControllerEnvironmentOptions) marshalPayload(w http.ResponseWriter, r *
 		return errors.Wrapf(err, "marshalling the JSON payload %#v", payload)
 	}
 	w.Write(data)
+
+	log.Infof("completed request successfully and returned: %s\n", string(data))
 	return nil
 }
 
-func (o *ControllerEnvironmentOptions) onError(err error) {
-	if err != nil {
-		log.Errorf("%v", err)
-	}
-}
-
 func (o *ControllerEnvironmentOptions) returnError(err error, message string, w http.ResponseWriter, r *http.Request) {
-	log.Errorf("%v %s", err, message)
-
-	o.onError(err)
+	log.Errorf("returning error: %v %s", err, message)
 	responseHTTPError(w, http.StatusInternalServerError, "500 Internal Error: "+message+" "+err.Error())
 }
 
