@@ -540,3 +540,8 @@ func (g *GitFake) ResetHard(dir string, commitish string) error {
 func (g *GitFake) RemoteUpdate(dir string) error {
 	return nil
 }
+
+// LocalBranches will list all local branches
+func (g *GitFake) LocalBranches(dir string) ([]string, error) {
+	return g.Branches, nil
+}

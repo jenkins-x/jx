@@ -114,7 +114,23 @@ func FetchAndMergeSHAs(SHAs []string, baseBranch string, baseSha string, remote 
 			log.Infof("ran git fetch --unshallow %s %s in %s\n", remote, strings.Join(refspecs, " "), dir)
 		}
 	}
-
+	branches, err := gitter.LocalBranches(dir)
+	if err != nil {
+		return errors.Wrapf(err, "listing local branches")
+	}
+	found := false
+	for _, b := range branches {
+		if b == baseBranch {
+			found = true
+			break
+		}
+	}
+	if !found {
+		err = gitter.CreateBranch(dir, baseBranch)
+		if err != nil {
+			return errors.Wrapf(err, "creating branch %s", baseBranch)
+		}
+	}
 	// Ensure we are on baseBranch
 	err = gitter.Checkout(dir, baseBranch)
 	if err != nil {
@@ -126,7 +142,7 @@ func FetchAndMergeSHAs(SHAs []string, baseBranch string, baseSha string, remote 
 	// Ensure we are on the right revision
 	err = gitter.ResetHard(dir, baseSha)
 	if err != nil {
-		errors.Wrapf(err, "resetting %s to %s", baseBranch, baseSha)
+		return errors.Wrapf(err, "resetting %s to %s", baseBranch, baseSha)
 	}
 	if verbose {
 		log.Infof("ran git reset --hard %s in %s\n", baseSha, dir)

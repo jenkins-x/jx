@@ -15,8 +15,8 @@ type VersionResolver struct {
 }
 
 // CreateVersionResolver creates a new VersionResolver service
-func (o *CommonOptions) CreateVersionResolver(repo string) (*VersionResolver, error) {
-	versionsDir, err := o.CloneJXVersionsRepo(repo)
+func (o *CommonOptions) CreateVersionResolver(repo string, gitRef string) (*VersionResolver, error) {
+	versionsDir, err := o.CloneJXVersionsRepo(repo, gitRef)
 	if err != nil {
 		return nil, err
 	}
@@ -67,8 +67,8 @@ func (v *VersionResolver) StableVersionNumber(kind version.VersionKind, name str
 }
 
 // GetVersionNumber returns the version number for the given kind and name or blank string if there is no locked version
-func (o *CommonOptions) GetVersionNumber(kind version.VersionKind, name, repo string) (string, error) {
-	versioner, err := o.CreateVersionResolver(repo)
+func (o *CommonOptions) GetVersionNumber(kind version.VersionKind, name, repo string, gitRef string) (string, error) {
+	versioner, err := o.CreateVersionResolver(repo, gitRef)
 	if err != nil {
 		return "", err
 	}

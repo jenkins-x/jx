@@ -17,6 +17,19 @@ import (
 )
 
 func TestSetVersionJavascript(t *testing.T) {
+	originalJxHome, tempJxHome, err := cmd.CreateTestJxHomeDir()
+	assert.NoError(t, err)
+	defer func() {
+		err := cmd.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		assert.NoError(t, err)
+	}()
+	originalKubeCfg, tempKubeCfg, err := cmd.CreateTestKubeConfigDir()
+	assert.NoError(t, err)
+	defer func() {
+		err := cmd.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		assert.NoError(t, err)
+	}()
+
 	f, err := ioutil.TempDir("", "test-set-version")
 	assert.NoError(t, err)
 
@@ -51,6 +64,19 @@ func TestSetVersionJavascript(t *testing.T) {
 }
 
 func TestSetVersionChart(t *testing.T) {
+	originalJxHome, tempJxHome, err := cmd.CreateTestJxHomeDir()
+	assert.NoError(t, err)
+	defer func() {
+		err := cmd.CleanupTestJxHomeDir(originalJxHome, tempJxHome)
+		assert.NoError(t, err)
+	}()
+	originalKubeCfg, tempKubeCfg, err := cmd.CreateTestKubeConfigDir()
+	assert.NoError(t, err)
+	defer func() {
+		err := cmd.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		assert.NoError(t, err)
+	}()
+
 	f, err := ioutil.TempDir("", "test-set-version")
 	assert.NoError(t, err)
 
