@@ -29,6 +29,7 @@ type UpgradeAddonProwOptions struct {
 
 	newKnativeBuildVersion string
 	Tekton                 bool
+	ExternalDNS            bool
 }
 
 // NewCmdUpgradeAddonProw defines the command
@@ -59,6 +60,7 @@ func NewCmdUpgradeAddonProw(commonOpts *opts.CommonOptions) *cobra.Command {
 	options.InstallFlags.addCloudEnvOptions(cmd)
 	cmd.Flags().StringVarP(&options.newKnativeBuildVersion, "new-knative-build-version", "", "0.1.1", "The new kanative build verion that prow needs to work with")
 	cmd.Flags().BoolVarP(&options.Tekton, "tekton", "t", true, "Enables Knative Build Pipeline. Otherwise we default to use Knative Build")
+	cmd.Flags().BoolVarP(&options.ExternalDNS, "external-dns", "", true, "Installs external-dns into the cluster. ExternalDNS manages service DNS records for your cluster, providing you've setup your domain record")
 	return cmd
 }
 
@@ -156,5 +158,5 @@ func (o *UpgradeAddonProwOptions) Run() error {
 		pipelineUserName = pipelineUser.Username
 	}
 
-	return o.InstallProw(o.Tekton, isGitOps, "", "", pipelineUserName)
+	return o.InstallProw(o.Tekton, o.ExternalDNS, isGitOps, "", "", pipelineUserName)
 }

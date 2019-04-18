@@ -3,8 +3,6 @@ package opts
 import (
 	"bytes"
 	"fmt"
-	randomdata "github.com/Pallinder/go-randomdata"
-	"github.com/alexflint/go-filemutex"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -14,25 +12,27 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/version"
-	survey "gopkg.in/AlecAivazis/survey.v1"
-
-	"github.com/jenkins-x/jx/pkg/cloud"
-	"github.com/jenkins-x/jx/pkg/helm"
-	"github.com/jenkins-x/jx/pkg/kube/services"
-
-	"github.com/jenkins-x/jx/pkg/packages"
-
+	randomdata "github.com/Pallinder/go-randomdata"
+	"github.com/alexflint/go-filemutex"
 	"github.com/blang/semver"
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/cloud/gke"
+	gke_externalDNS "github.com/jenkins-x/jx/pkg/cloud/gke/externaldns"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/maven"
+	"github.com/jenkins-x/jx/pkg/packages"
 	"github.com/jenkins-x/jx/pkg/prow"
 	"github.com/jenkins-x/jx/pkg/util"
+	"github.com/jenkins-x/jx/pkg/version"
 	"github.com/pborman/uuid"
 	"github.com/pkg/errors"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -1584,7 +1584,7 @@ func GetSafeUsername(username string) string {
 }
 
 // InstallProw installs prow
-func (o *CommonOptions) InstallProw(useTekton bool, isGitOps bool, gitOpsDir string, gitOpsEnvDir string, gitUsername string) error {
+func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOps bool, gitOpsDir string, gitOpsEnvDir string, gitUsername string) error {
 	if o.ReleaseName == "" {
 		o.ReleaseName = kube.DefaultProwReleaseName
 	}
@@ -1706,6 +1706,21 @@ func (o *CommonOptions) InstallProw(useTekton bool, isGitOps bool, gitOpsDir str
 		}
 	}
 
+	if useExternalDNS && strings.Contains(o.Domain, "nip.io") {
+		log.Warnf("Skipping install of External DNS, %s domain is not supported while using External DNS\n", util.ColorInfo(o.Domain))
+		log.Warnf("External DNS only supports the use of personally operated domains\n")
+	} else if useExternalDNS && o.Domain != "" {
+		log.Infof("Preparing to install ExternalDNS into namespace %s\n", util.ColorInfo(devNamespace))
+		log.Infof("External DNS for Jenkins X is currently only supoorted on GKE\n")
+		log.Infof("You will need to ensure that a sub-domain record is present for the %s namespace which delegates onto %s\n", util.ColorInfo(devNamespace), util.ColorInfo(o.Domain))
+		log.Infof("\ti.e. %s(CNAME) => %s\n", util.ColorInfo(devNamespace+"."+o.Domain), util.ColorInfo(o.Domain))
+
+		err = o.installExternalDNSGKE()
+		if err != nil {
+			return errors.Wrap(err, "failed to install external-dns")
+		}
+	}
+
 	log.Infof("\nInstalling Prow into namespace %s\n", util.ColorInfo(devNamespace))
 
 	secretValues := []string{"user=" + gitUsername, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
@@ -1782,7 +1797,77 @@ func (o *CommonOptions) IsProw() (bool, error) {
 	return env.Spec.TeamSettings.PromotionEngine == jenkinsv1.PromotionEngineProw, nil
 }
 
-// InstallIBMCloud installs IBM cloud cli
+func (o *CommonOptions) installExternalDNSGKE() error {
+
+	if o.ReleaseName == "" {
+		o.ReleaseName = kube.DefaultExternalDNSReleaseName
+	}
+
+	if o.Chart == "" {
+		o.Chart = kube.ChartExternalDNS
+	}
+
+	var err error
+
+	client, err := o.KubeClient()
+	if err != nil {
+		return err
+	}
+
+	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
+	if err != nil {
+		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
+	}
+
+	clusterName, err := cluster.Name(o.Kube())
+	if err != nil {
+		return errors.Wrap(err, "failed to get clusterName")
+	}
+
+	googleProjectID, err := gke.GetCurrentProject()
+	if err != nil {
+		return errors.Wrap(err, "failed to get project")
+	}
+
+	var gcpServiceAccountSecretName string
+	gcpServiceAccountSecretName, err = gke_externalDNS.CreateExternalDNSGCPServiceAccount(client,
+		kube.DefaultExternalDNSReleaseName, devNamespace, clusterName, googleProjectID)
+	if err != nil {
+		return errors.Wrap(err, "failed to create service account for ExternalDNS")
+	}
+
+	err = gke.EnableAPIs(googleProjectID, "dns")
+	if err != nil {
+		return errors.Wrap(err, "unable to enable 'dns' api")
+	}
+
+	sources := []string{
+		"ingress",
+	}
+
+	sourcesList := "{" + strings.Join(sources, ", ") + "}"
+
+	values := []string{
+		"provider=" + "google",
+		"sources=" + sourcesList,
+		"rbac.create=" + "true",
+		"google.serviceAccountSecret=" + gcpServiceAccountSecretName,
+		"txt-owner-id=" + "jx-external-dns",
+		"domainFilters=" + "{" + o.Domain + "}",
+	}
+
+	log.Infof("\nInstalling External DNS into namespace %s\n", util.ColorInfo(devNamespace))
+	err = o.Retry(2, time.Second, func() (err error) {
+		return o.InstallChartOrGitOps(false, "", "", kube.DefaultExternalDNSReleaseName, kube.ChartExternalDNS,
+			kube.ChartExternalDNS, "", devNamespace, true, values, nil, nil, "")
+	})
+	if err != nil {
+		return errors.Wrap(err, "failed to install External DNS")
+	}
+
+	return nil
+}
+
 func (o *CommonOptions) InstallIBMCloud(skipPathScan bool) error {
 	return o.InstallIBMCloudWithVersion(packages.IBMCloudVersion, skipPathScan)
 }
