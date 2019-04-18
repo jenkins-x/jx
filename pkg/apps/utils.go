@@ -1,6 +1,8 @@
 package apps
 
-import "strings"
+import (
+	"strings"
+)
 
 func ToValidFileSystemName(name string) string {
 	replacer := strings.NewReplacer(".", "_", "/", "_")
