@@ -453,7 +453,6 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string, versionRef
 			},
 		})
 		if err != nil {
-			log.Errorf("Error fetching remote refs %s", remoteRefs)
 			return o.deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
 		}
 		if versionRef != "" {
@@ -464,7 +463,6 @@ func (o *CommonOptions) CloneJXVersionsRepo(versionRepository string, versionRef
 		if err == git.NoErrAlreadyUpToDate {
 			return wrkDir, nil
 		} else if err != nil {
-			log.Errorf("Error fetching latest from remote")
 			return o.deleteAndReClone(wrkDir, versionRepository, versionRef, o.Out)
 		} else {
 			pullLatest := false
