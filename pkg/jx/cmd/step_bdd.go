@@ -114,7 +114,7 @@ func NewCmdStepBDD(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Flags.UseCurrentTeam, "use-current-team", "", false, "If enabled lets use the current Team to run the tests")
 	cmd.Flags().BoolVarP(&options.Flags.IgnoreTestFailure, "ignore-fail", "i", false, "Ignores test failures so that a BDD test run can capture the output and report on the test passes/failures")
 	cmd.Flags().BoolVarP(&options.Flags.IgnoreTestFailure, "parallel", "", false, "Should we process each cluster configuration in parallel")
-	cmd.Flags().BoolVarP(&options.Flags.UseRevision, "use-revision", "", false, "Use the git revision from the current git clone instead of the Pull Request branch")
+	cmd.Flags().BoolVarP(&options.Flags.UseRevision, "use-revision", "", true, "Use the git revision from the current git clone instead of the Pull Request branch")
 
 	cmd.Flags().StringVarP(&installOptions.Flags.Provider, "provider", "", "", "Cloud service providing the Kubernetes cluster.  Supported providers: "+KubernetesProviderOptions())
 
@@ -133,6 +133,10 @@ func (o *StepBDDOptions) Run() error {
 				return err
 			}
 		}
+	}
+
+	if o.InstallOptions.Flags.VersionsRepository == "" {
+		o.InstallOptions.Flags.VersionsRepository = opts.DefaultVersionsURL
 	}
 
 	gitProviderUrl := o.gitProviderUrl()
@@ -464,6 +468,10 @@ func (o *StepBDDOptions) reportStatus(testDir string, err error) error {
 		{
 			Name: "jx",
 			Args: []string{"get", "preview", "-b"},
+		},
+		{
+			Name: "jx",
+			Args: []string{"open"},
 		},
 	}
 

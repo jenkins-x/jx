@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -41,11 +43,17 @@ type CreateAddonEnvironmentControllerOptions struct {
 	Timeout     int
 
 	// chart parameters
-	WebHookURL   string
-	GitSourceURL string
-	GitKind      string
-	GitUser      string
-	GitToken     string
+	WebHookURL        string
+	GitSourceURL      string
+	GitKind           string
+	GitUser           string
+	GitToken          string
+	BuildPackURL      string
+	BuildPackRef      string
+	ClusterRBAC       bool
+	ProjectID         string
+	DockerRegistry    string
+	DockerRegistryOrg string
 }
 
 // NewCmdCreateAddonEnvironmentController creates a command object for the "create" command
@@ -81,6 +89,12 @@ func NewCmdCreateAddonEnvironmentController(commonOpts *opts.CommonOptions) *cob
 	cmd.Flags().StringVarP(&options.GitUser, "user", "u", "", "The git user to use to clone and tag the git repository")
 	cmd.Flags().StringVarP(&options.GitToken, "token", "t", "", "The git token to clone and tag the git repository")
 	cmd.Flags().StringVarP(&options.WebHookURL, "webhook-url", "w", "", "The webhook URL used to expose the exposecontroller and register with the git provider's webhooks")
+	cmd.Flags().StringVarP(&options.BuildPackURL, "buildpack-url", "", "", "The URL for the build pack Git repository")
+	cmd.Flags().StringVarP(&options.BuildPackRef, "buildpack-ref", "", "", "The Git reference (branch,tag,sha) in the Git repository to use")
+	cmd.Flags().StringVarP(&options.ProjectID, "project-id", "", "", "The cloud project ID")
+	cmd.Flags().BoolVarP(&options.ClusterRBAC, "cluster-rbac", "", false, "Whether to enable cluster level RBAC on Tekton")
+	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
+	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The Docker registry organisation. If blank the git repository owner is used")
 	return cmd
 }
 
@@ -122,6 +136,16 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 			return err
 		}
 	}
+
+	apisClient, err := o.ApiExtensionsClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the API extensions client")
+	}
+	err = kube.RegisterPipelineCRDs(apisClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Jenkins X Pipeline CRDs")
+	}
+
 	authSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
 		return err
@@ -173,9 +197,22 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	setValues = append(setValues, "source.gitKind="+o.GitKind)
 	setValues = append(setValues, "source.user="+o.GitUser)
 	setValues = append(setValues, "source.token="+o.GitToken)
-	setValues = append(setValues, "tekton.rbac.cluster=false")
-
-	// TODO lets add other defaults...
+	if o.ProjectID != "" {
+		setValues = append(setValues, "projectId="+o.ProjectID)
+	}
+	if o.BuildPackURL != "" {
+		setValues = append(setValues, "buildPackURL="+o.BuildPackURL)
+	}
+	if o.BuildPackRef != "" {
+		setValues = append(setValues, "buildPackRef="+o.BuildPackRef)
+	}
+	if o.DockerRegistry != "" {
+		setValues = append(setValues, "dockerRegistry="+o.DockerRegistry)
+	}
+	if o.DockerRegistryOrg != "" {
+		setValues = append(setValues, "dockerRegistryOrg="+o.DockerRegistryOrg)
+	}
+	setValues = append(setValues, "tekton.rbac.cluster="+strconv.FormatBool(o.ClusterRBAC))
 
 	log.Infof("installing the Environment Controller with values: %s\n", util.ColorInfo(strings.Join(setValues, ",")))
 	helmOptions := helm.InstallChartOptions{

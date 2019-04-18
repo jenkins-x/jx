@@ -893,7 +893,7 @@ func (o *PreviewOptions) getImageName() (string, error) {
 		return "", fmt.Errorf("no %s environment variable found", APP_NAME)
 	}
 
-	dockerRegistryOrg := o.DockerRegistryOrg(o.GitInfo)
+	dockerRegistryOrg := o.GetDockerRegistryOrg(o.GitInfo)
 	if dockerRegistryOrg == "" {
 		dockerRegistryOrg = organisation
 	}

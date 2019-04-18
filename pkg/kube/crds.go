@@ -26,11 +26,7 @@ import (
 
 // RegisterAllCRDs ensures that all Jenkins-X CRDs are registered
 func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
-	err := RegisterBuildPackCRD(apiClient)
-	if err != nil {
-		return errors.Wrap(err, "failed to register the Build Pack CRD")
-	}
-	err = RegisterCommitStatusCRD(apiClient)
+	err := RegisterCommitStatusCRD(apiClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Commit Status CRD")
 	}
@@ -58,14 +54,6 @@ func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Git Service CRD")
 	}
-	err = RegisterPipelineActivityCRD(apiClient)
-	if err != nil {
-		return errors.Wrap(err, "failed to register the Pipeline Activity CRD")
-	}
-	err = RegisterPipelineStructureCRD(apiClient)
-	if err != nil {
-		return errors.Wrap(err, "failed to register the Pipeline Structure CRD")
-	}
 	err = RegisterFactCRD(apiClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Fact CRD")
@@ -73,10 +61,6 @@ func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
 	err = RegisterReleaseCRD(apiClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Release CRD")
-	}
-	err = RegisterSourceRepositoryCRD(apiClient)
-	if err != nil {
-		return errors.Wrap(err, "failed to register the SourceRepository CRD")
 	}
 	err = RegisterTeamCRD(apiClient)
 	if err != nil {
@@ -89,6 +73,28 @@ func RegisterAllCRDs(apiClient apiextensionsclientset.Interface) error {
 	err = RegisterWorkflowCRD(apiClient)
 	if err != nil {
 		return errors.Wrap(err, "failed to register the Workflow CRD")
+	}
+
+	return RegisterPipelineCRDs(apiClient)
+}
+
+// RegisterPipelineCRDs ensures that all Jenkins X Pipeline related CRDs are registered
+func RegisterPipelineCRDs(apiClient apiextensionsclientset.Interface) error {
+	err := RegisterBuildPackCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Build Pack CRD")
+	}
+	err = RegisterPipelineActivityCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Pipeline Activity CRD")
+	}
+	err = RegisterPipelineStructureCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Pipeline Structure CRD")
+	}
+	err = RegisterSourceRepositoryCRD(apiClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the SourceRepository CRD")
 	}
 	err = RegisterPipelineStructureCRD(apiClient)
 	if err != nil {

@@ -132,7 +132,7 @@ const (
 	JenkinsXPlatformChart   = "jenkins-x/" + JenkinsXPlatformChartName
 	JenkinsXPlatformRelease = "jenkins-x"
 
-	ServerlessJenkins   = "Serverless Jenkins X Pipelines with Tekon"
+	ServerlessJenkins   = "Serverless Jenkins X Pipelines with Tekton"
 	StaticMasterJenkins = "Static Jenkins Server and Jenkinsfiles"
 
 	GitOpsChartYAML = `name: env
@@ -549,6 +549,11 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring the Jenkins X helm repository")
 	}
 
+	err = options.configureProwInTeamSettings()
+	if err != nil {
+		return errors.Wrap(err, "configuring Prow in team settings")
+	}
+
 	err = options.configureAndInstallProw(ns, gitOpsDir, gitOpsEnvDir)
 	if err != nil {
 		return errors.Wrap(err, "configuring and installing Prow")
@@ -592,11 +597,6 @@ func (options *InstallOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "cleaning up the temporary files")
 		}
-	}
-
-	err = options.configureProwInTeamSettings()
-	if err != nil {
-		return errors.Wrap(err, "configuring Prow in team settings")
 	}
 
 	err = options.configureImportModeInTeamSettings()
@@ -2066,7 +2066,7 @@ func (options *InstallOptions) configureKaniko() error {
 			}
 		}
 
-		serviceAccountName := kube.ToValidNameTruncated(fmt.Sprintf("jxkankio-%s", clusterName), 30)
+		serviceAccountName := kube.ToValidNameTruncated(fmt.Sprintf("jxkaniko-%s", clusterName), 30)
 
 		log.Infof("Configuring Kaniko service account %s for project %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
 		serviceAccountPath, err := gke.GetOrCreateServiceAccount(serviceAccountName, projectID, serviceAccountDir, gke.KanikoServiceAccountRoles)

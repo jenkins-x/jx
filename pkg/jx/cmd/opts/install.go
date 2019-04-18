@@ -70,7 +70,7 @@ const (
 	CloudEnvSopsConfigFile      = ".sops.yaml"
 	DefaultInstallTimeout       = "6000"
 	DefaultCloudEnvironmentsURL = "https://github.com/jenkins-x/cloud-environments"
-	DefaultVersionsURL          = "https://github.com/jenkins-x/jenkins-x-versions"
+	DefaultVersionsURL          = "https://github.com/jenkins-x/jenkins-x-versions.git"
 )
 
 // Prow keeps install information for prow chart

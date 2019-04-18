@@ -9,8 +9,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 )
 
-// DockerRegistryOrg parses the docker registry organisation from various places
-func (o *CommonOptions) DockerRegistryOrg(repository *gits.GitRepository) string {
+// GetDockerRegistryOrg parses the docker registry organisation from various places
+func (o *CommonOptions) GetDockerRegistryOrg(repository *gits.GitRepository) string {
 	answer := ""
 	teamSettings, err := o.TeamSettings()
 	if err != nil {
@@ -27,8 +27,8 @@ func (o *CommonOptions) DockerRegistryOrg(repository *gits.GitRepository) string
 	return strings.ToLower(answer)
 }
 
-// DockerRegistry parses the docker registry from various places
-func (o *CommonOptions) DockerRegistry() string {
+// GetDockerRegistry parses the docker registry from various places
+func (o *CommonOptions) GetDockerRegistry() string {
 	dockerRegistry := os.Getenv("DOCKER_REGISTRY")
 	if dockerRegistry == "" {
 		kubeClient, ns, err := o.KubeClientAndDevNamespace()
