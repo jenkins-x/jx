@@ -34,6 +34,7 @@ const (
 	environmentControllerService       = "environment-controller"
 	environmentControllerHmacSecret    = "environment-controller-hmac"
 	environmentControllerHmacSecretKey = "hmac"
+	helloMessage                       = "hello from the Jenkins X Environment Controller\n"
 )
 
 // ControllerEnvironmentOptions holds the command line arguments
@@ -199,7 +200,8 @@ func (o *ControllerEnvironmentOptions) Run() error {
 	}
 
 	if !o.NoRegisterWebHook {
-		err = o.registerWebHook(o.WebHookURL, o.secret)
+		fullWebHookURL := util.UrlJoin(o.WebHookURL, o.Path)
+		err = o.registerWebHook(fullWebHookURL, o.secret)
 		if err != nil {
 			return err
 		}
@@ -240,7 +242,7 @@ func (o *ControllerEnvironmentOptions) ready(w http.ResponseWriter, r *http.Requ
 // getIndex returns a simple home page
 func (o *ControllerEnvironmentOptions) getIndex(w http.ResponseWriter, r *http.Request) {
 	log.Debug("GET index")
-	w.Write([]byte("hello from the Jenkins X Environment Controller\n"))
+	w.Write([]byte(helloMessage))
 }
 
 // handle request for pipeline runs
@@ -419,6 +421,7 @@ func (o *ControllerEnvironmentOptions) marshalPayload(w http.ResponseWriter, r *
 	if err != nil {
 		return errors.Wrapf(err, "marshalling the JSON payload %#v", payload)
 	}
+	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 
 	log.Infof("completed request successfully and returned: %s\n", string(data))
@@ -456,7 +459,11 @@ func (o *ControllerEnvironmentOptions) handleWebHookRequests(w http.ResponseWrit
 	}
 	eventType, eventGUID, _, valid, _ := ValidateWebhook(w, r, o.secret, o.RequireHeaders)
 	log.Infof("webhook handler invoked event type %s UID %s valid %s method %s\n", eventType, eventGUID, strconv.FormatBool(valid), r.Method)
-	if !valid || eventType == "" {
+	if !valid {
+		return
+	}
+	if eventType != "push" {
+		w.Write([]byte(helloMessage + "ignoring webhook event type: " + eventType))
 		return
 	}
 	log.Infof("starting pipeline from event type %s UID %s valid %s method %s\n", eventType, eventGUID, strconv.FormatBool(valid), r.Method)
@@ -571,6 +578,6 @@ func responseHTTPError(w http.ResponseWriter, statusCode int, response string) {
 	logrus.WithFields(logrus.Fields{
 		"response":    response,
 		"status-code": statusCode,
-	}).Debug(response)
+	}).Info(response)
 	http.Error(w, response, statusCode)
 }
