@@ -44,6 +44,7 @@ type ControllerEnvironmentOptions struct {
 	Port                  int
 	NoGitCredeentialsInit bool
 	NoRegisterWebHook     bool
+	RequireHeaders        bool
 	GitServerURL          string
 	GitOwner              string
 	GitRepo               string
@@ -89,6 +90,7 @@ func NewCmdControllerEnvironment(commonOpts *opts.CommonOptions) *cobra.Command 
 	cmd.Flags().StringVarP(&options.Path, "path", "", "/",
 		"The path to listen on for requests to trigger a pipeline run.")
 	cmd.Flags().BoolVarP(&options.NoGitCredeentialsInit, "no-git-init", "", false, "Disables checking we have setup git credentials on startup")
+	cmd.Flags().BoolVarP(&options.RequireHeaders, "require-headers", "", true, "If enabled we reject webhooks which do not have the github headers: 'X-GitHub-Event' and 'X-GitHub-Delivery'")
 	cmd.Flags().BoolVarP(&options.NoGitCredeentialsInit, "no-register-webhook", "", false, "Disables checking to register the webhook on startup")
 	cmd.Flags().StringVarP(&options.SourceURL, "source-url", "s", "", "The source URL of the environment git repository")
 	cmd.Flags().StringVarP(&options.GitServerURL, "git-server-url", "", "", "The git server URL. If not specified defaults to $GIT_SERVER_URL")
@@ -413,8 +415,7 @@ func (o *ControllerEnvironmentOptions) returnError(err error, message string, w 
 	log.Errorf("%v %s", err, message)
 
 	o.onError(err)
-	w.WriteHeader(500)
-	w.Write([]byte(message))
+	responseHTTPError(w, http.StatusInternalServerError, "500 Internal Error: "+message+" "+err.Error())
 }
 
 func (o *ControllerEnvironmentOptions) stepGitCredentials() error {
@@ -436,10 +437,17 @@ func (o *ControllerEnvironmentOptions) stepGitCredentials() error {
 
 // handle request for pipeline runs
 func (o *ControllerEnvironmentOptions) handleRequests(w http.ResponseWriter, r *http.Request) {
-	eventType, _, _, valid, _ := ValidateWebhook(w, r, o.secret, false)
+	if r.Method != http.MethodPost {
+		// liveness probe etc
+		w.Write([]byte("hello from the Jenkins X Environment Controller\n"))
+		return
+	}
+	eventType, eventGUID, _, valid, _ := ValidateWebhook(w, r, o.secret, o.RequireHeaders)
+	log.Infof("webhook handler invoked event type %s UID %s valid %s method %s\n", eventType, eventGUID, strconv.FormatBool(valid), r.Method)
 	if !valid || eventType == "" {
 		return
 	}
+	log.Infof("starting pipeline from event type %s UID %s valid %s method %s\n", eventType, eventGUID, strconv.FormatBool(valid), r.Method)
 	o.startPipelineRun(w, r)
 }
 
