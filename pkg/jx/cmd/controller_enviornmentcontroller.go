@@ -20,6 +20,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/sirupsen/logrus"
+	"k8s.io/test-infra/prow/github"
 
 	"github.com/pkg/errors"
 
@@ -34,6 +35,7 @@ const (
 	environmentControllerService       = "environment-controller"
 	environmentControllerHmacSecret    = "environment-controller-hmac"
 	environmentControllerHmacSecretKey = "hmac"
+	helloMessage                       = "hello from the Jenkins X Environment Controller\n"
 )
 
 // ControllerEnvironmentOptions holds the command line arguments
@@ -44,12 +46,14 @@ type ControllerEnvironmentOptions struct {
 	Port                  int
 	NoGitCredeentialsInit bool
 	NoRegisterWebHook     bool
+	RequireHeaders        bool
 	GitServerURL          string
 	GitOwner              string
 	GitRepo               string
 	SourceURL             string
 	WebHookURL            string
 	Branch                string
+	PushRef               string
 	Labels                map[string]string
 
 	StepCreateTaskOptions StepCreateTaskOptions
@@ -86,15 +90,17 @@ func NewCmdControllerEnvironment(commonOpts *opts.CommonOptions) *cobra.Command 
 	cmd.Flags().IntVarP(&options.Port, optionPort, "", 8080, "The TCP port to listen on.")
 	cmd.Flags().StringVarP(&options.BindAddress, optionBind, "", "",
 		"The interface address to bind to (by default, will listen on all interfaces/addresses).")
-	cmd.Flags().StringVarP(&options.Path, "path", "", "/",
+	cmd.Flags().StringVarP(&options.Path, "path", "", "/hook",
 		"The path to listen on for requests to trigger a pipeline run.")
 	cmd.Flags().BoolVarP(&options.NoGitCredeentialsInit, "no-git-init", "", false, "Disables checking we have setup git credentials on startup")
+	cmd.Flags().BoolVarP(&options.RequireHeaders, "require-headers", "", true, "If enabled we reject webhooks which do not have the github headers: 'X-GitHub-Event' and 'X-GitHub-Delivery'")
 	cmd.Flags().BoolVarP(&options.NoGitCredeentialsInit, "no-register-webhook", "", false, "Disables checking to register the webhook on startup")
 	cmd.Flags().StringVarP(&options.SourceURL, "source-url", "s", "", "The source URL of the environment git repository")
 	cmd.Flags().StringVarP(&options.GitServerURL, "git-server-url", "", "", "The git server URL. If not specified defaults to $GIT_SERVER_URL")
 	cmd.Flags().StringVarP(&options.GitOwner, "owner", "o", "", "The git repository owner. If not specified defaults to $OWNER")
 	cmd.Flags().StringVarP(&options.GitRepo, "repo", "", "", "The git repository name. If not specified defaults to $REPO")
 	cmd.Flags().StringVarP(&options.WebHookURL, "webhook-url", "w", "", "The external WebHook URL of this controller to register with the git provider. If not specified defaults to $WEBHOOK_URL")
+	cmd.Flags().StringVarP(&options.PushRef, "push-ref", "", "refs/heads/master", "The git ref passed from the WebHook which should trigger a new deploy pipeline to trigger. Defaults to only webhooks from the master branch")
 
 	so := &options.StepCreateTaskOptions
 	so.CommonOptions = commonOpts
@@ -106,6 +112,12 @@ func NewCmdControllerEnvironment(commonOpts *opts.CommonOptions) *cobra.Command 
 // Run will implement this command
 func (o *ControllerEnvironmentOptions) Run() error {
 	o.RemoteCluster = true
+
+	if o.Path == "" {
+		return util.MissingOption("path")
+	}
+
+	log.Infof("using require GitHub headers: %s\n", strconv.FormatBool(o.RequireHeaders))
 
 	// lets default some values from environment variables
 	if o.StepCreateTaskOptions.ProjectID == "" {
@@ -191,16 +203,24 @@ func (o *ControllerEnvironmentOptions) Run() error {
 	}
 
 	if !o.NoRegisterWebHook {
-		err = o.registerWebHook(o.WebHookURL, o.secret)
+		fullWebHookURL := util.UrlJoin(o.WebHookURL, o.Path)
+		err = o.registerWebHook(fullWebHookURL, o.secret)
 		if err != nil {
 			return err
 		}
 	}
 
 	mux := http.NewServeMux()
-	mux.Handle(o.Path, http.HandlerFunc(o.handleRequests))
 	mux.Handle(HealthPath, http.HandlerFunc(o.health))
 	mux.Handle(ReadyPath, http.HandlerFunc(o.ready))
+
+	indexPaths := []string{"/", "/index.html"}
+	for _, p := range indexPaths {
+		if o.Path != p {
+			mux.Handle(p, http.HandlerFunc(o.getIndex))
+		}
+	}
+	mux.Handle(o.Path, http.HandlerFunc(o.handleWebHookRequests))
 
 	log.Infof("Environment Controller is now listening on %s for WebHooks from the source repository %s to trigger promotions\n", util.ColorInfo(util.UrlJoin(o.WebHookURL, o.Path)), util.ColorInfo(o.SourceURL))
 	return http.ListenAndServe(":"+strconv.Itoa(o.Port), mux)
@@ -220,6 +240,12 @@ func (o *ControllerEnvironmentOptions) ready(w http.ResponseWriter, r *http.Requ
 	} else {
 		w.WriteHeader(http.StatusServiceUnavailable)
 	}
+}
+
+// getIndex returns a simple home page
+func (o *ControllerEnvironmentOptions) getIndex(w http.ResponseWriter, r *http.Request) {
+	log.Debug("GET index")
+	w.Write([]byte(helloMessage))
 }
 
 // handle request for pipeline runs
@@ -268,7 +294,6 @@ func (o *ControllerEnvironmentOptions) startPipelineRun(w http.ResponseWriter, r
 	if err != nil {
 		o.returnError(err, "failed to marshal payload", w, r)
 	}
-	return
 }
 
 // discoverWebHookURL lets try discover the webhook URL from the Service
@@ -399,22 +424,16 @@ func (o *ControllerEnvironmentOptions) marshalPayload(w http.ResponseWriter, r *
 	if err != nil {
 		return errors.Wrapf(err, "marshalling the JSON payload %#v", payload)
 	}
+	w.WriteHeader(http.StatusOK)
 	w.Write(data)
+
+	log.Infof("completed request successfully and returned: %s\n", string(data))
 	return nil
 }
 
-func (o *ControllerEnvironmentOptions) onError(err error) {
-	if err != nil {
-		log.Errorf("%v", err)
-	}
-}
-
 func (o *ControllerEnvironmentOptions) returnError(err error, message string, w http.ResponseWriter, r *http.Request) {
-	log.Errorf("%v %s", err, message)
-
-	o.onError(err)
-	w.WriteHeader(500)
-	w.Write([]byte(message))
+	log.Errorf("returning error: %v %s", err, message)
+	responseHTTPError(w, http.StatusInternalServerError, "500 Internal Error: "+message+" "+err.Error())
 }
 
 func (o *ControllerEnvironmentOptions) stepGitCredentials() error {
@@ -435,12 +454,42 @@ func (o *ControllerEnvironmentOptions) stepGitCredentials() error {
 }
 
 // handle request for pipeline runs
-func (o *ControllerEnvironmentOptions) handleRequests(w http.ResponseWriter, r *http.Request) {
-	eventType, _, _, valid, _ := ValidateWebhook(w, r, o.secret, false)
-	if !valid || eventType == "" {
+func (o *ControllerEnvironmentOptions) handleWebHookRequests(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		// liveness probe etc
+		o.getIndex(w, r)
 		return
 	}
-	o.startPipelineRun(w, r)
+	eventType, eventGUID, data, valid, _ := ValidateWebhook(w, r, o.secret, o.RequireHeaders)
+	log.Infof("webhook handler invoked event type %s UID %s valid %s method %s\n", eventType, eventGUID, strconv.FormatBool(valid), r.Method)
+	if !valid {
+		return
+	}
+	if eventType != "push" {
+		w.Write([]byte(helloMessage + "ignoring webhook event type: " + eventType))
+		return
+	}
+	if len(data) == 0 {
+		w.Write([]byte(helloMessage + "ignoring webhook event type: " + eventType + " as no payload"))
+		return
+	}
+
+	// lets return 200 so we don't keep getting retries from GitHub :)
+
+	event := github.PushEvent{}
+	if err := json.Unmarshal(data, &event); err != nil {
+		responseHTTPError(w, http.StatusBadRequest, "400 Bad Request: Could not unmarshal the PushEvent")
+		return
+	}
+	if event.Ref != o.PushRef {
+		w.Write([]byte(helloMessage + "ignoring webhook event type: " + eventType + " on refs: " + event.Ref))
+		return
+	}
+
+	log.Infof("starting pipeline from event type %s UID %s valid %s method %s\n", eventType, eventGUID, strconv.FormatBool(valid), r.Method)
+	w.Write([]byte("OK"))
+
+	go o.startPipelineRun(w, r)
 }
 
 func (o *ControllerEnvironmentOptions) registerWebHook(webhookURL string, secret []byte) error {
@@ -551,6 +600,6 @@ func responseHTTPError(w http.ResponseWriter, statusCode int, response string) {
 	logrus.WithFields(logrus.Fields{
 		"response":    response,
 		"status-code": statusCode,
-	}).Debug(response)
+	}).Info(response)
 	http.Error(w, response, statusCode)
 }

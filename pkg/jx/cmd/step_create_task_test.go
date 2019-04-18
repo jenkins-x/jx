@@ -164,6 +164,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 				VersionResolver: &opts.VersionResolver{
 					VersionsDir: testVersionsDir,
 				},
+				DefaultImage: "maven",
 			}
 			cmd.ConfigureTestOptionsWithResources(createTask.CommonOptions, k8sObjects, jxObjects, gits_test.NewMockGitter(), fakeGitProvider, helm_test.NewMockHelmer(), nil)
 

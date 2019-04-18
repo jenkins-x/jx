@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/pkg/errors"
 
@@ -100,6 +101,29 @@ func NewCmdCreateAddonEnvironmentController(commonOpts *opts.CommonOptions) *cob
 
 // Run implements the command
 func (o *CreateAddonEnvironmentControllerOptions) Run() error {
+	apisClient, err := o.ApiExtensionsClient()
+	if err != nil {
+		return errors.Wrap(err, "failed to create the API extensions client")
+	}
+	err = kube.RegisterPipelineCRDs(apisClient)
+	if err != nil {
+		return errors.Wrap(err, "failed to register the Jenkins X Pipeline CRDs")
+	}
+
+	// lets ensure there's a dev environment setup for no-tiller mode
+	fn := func(env *v1.Environment) error {
+		env.Spec.TeamSettings.HelmTemplate = true
+		env.Spec.TeamSettings.PromotionEngine = v1.PromotionEngineProw
+		env.Spec.TeamSettings.ProwEngine = v1.ProwEngineTypeTekton
+		env.Spec.WebHookEngine = v1.WebHookEngineProw
+		return nil
+	}
+	err = o.ModifyDevEnvironment(fn)
+	if err != nil {
+		return err
+	}
+
+	// avoid needing a dev cluster
 	o.EnableRemoteKubeCluster()
 
 	_, ns, err := o.KubeClientAndNamespace()
@@ -135,15 +159,6 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 		if err != nil {
 			return err
 		}
-	}
-
-	apisClient, err := o.ApiExtensionsClient()
-	if err != nil {
-		return errors.Wrap(err, "failed to create the API extensions client")
-	}
-	err = kube.RegisterPipelineCRDs(apisClient)
-	if err != nil {
-		return errors.Wrap(err, "failed to register the Jenkins X Pipeline CRDs")
 	}
 
 	authSvc, err := o.CreateGitAuthConfigService()
