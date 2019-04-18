@@ -469,6 +469,10 @@ func (o *StepBDDOptions) reportStatus(testDir string, err error) error {
 			Name: "jx",
 			Args: []string{"get", "preview", "-b"},
 		},
+		{
+			Name: "jx",
+			Args: []string{"open"},
+		},
 	}
 
 	for _, cmd := range commands {
