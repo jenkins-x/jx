@@ -1,0 +1,25 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  creationTimestamp: null
+  labels:
+    branch: no-default-agent
+    owner: abayer
+    repo: js-test-repo
+  name: abayer-js-test-repo-no-default-1
+spec:
+  Status: ""
+  params: null
+  pipelineRef:
+    apiVersion: tekton.dev/v1alpha1
+    name: abayer-js-test-repo-no-default-1
+  resources:
+  - name: abayer-js-test-repo-no-default
+    resourceRef:
+      apiVersion: tekton.dev/v1alpha1
+      name: abayer-js-test-repo-no-default
+  serviceAccount: tekton-bot
+  trigger:
+    type: manual
+status:
+  conditions: null

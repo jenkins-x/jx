@@ -443,14 +443,13 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		if !exists {
 			return nil, nil, nil, nil, nil, fmt.Errorf("no build pack for %s exists at directory %s", name, packDir)
 		}
-		jenkinsfileRunner := true
-		pipelineConfig, err = jenkinsfile.LoadPipelineConfig(pipelineFile, resolver, jenkinsfileRunner, false)
+		pipelineConfig, err = jenkinsfile.LoadPipelineConfig(pipelineFile, resolver, true, false)
 		if err != nil {
 			return nil, nil, nil, nil, nil, errors.Wrapf(err, "failed to load build pack pipeline YAML: %s", pipelineFile)
 		}
 		localPipelineConfig := projectConfig.PipelineConfig
 		if localPipelineConfig != nil {
-			err = localPipelineConfig.ExtendPipeline(pipelineConfig, jenkinsfileRunner)
+			err = localPipelineConfig.ExtendPipeline(pipelineConfig, false)
 			if err != nil {
 				return nil, nil, nil, nil, nil, errors.Wrapf(err, "failed to override PipelineConfig using configuration in file %s", projectConfigFile)
 			}
@@ -1032,7 +1031,11 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 
 	if step.Container != "" {
 		containerName = step.Container
-	} else if step.Dir != "" {
+	} else {
+		containerName = pipelineConfig.Agent.Container
+	}
+
+	if step.Dir != "" {
 		dir = step.Dir
 	}
 	dir = strings.Replace(dir, "/home/jenkins/go/src/REPLACE_ME_GIT_PROVIDER/REPLACE_ME_ORG/REPLACE_ME_APP_NAME", o.getWorkspaceDir(), -1)
