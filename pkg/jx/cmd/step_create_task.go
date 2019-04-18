@@ -546,6 +546,8 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		}
 	}
 
+	parsed.AddContainerEnvVarsToPipeline(pipelineConfig.Env)
+
 	// TODO: Seeing weird behavior seemingly related to https://golang.org/doc/faq#nil_error
 	// if err is reused, maybe we need to switch return types (perhaps upstream in build-pipeline)?
 	if validateErr := parsed.Validate(ctx); validateErr != nil {
@@ -1213,7 +1215,7 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 	}
 
 	for _, e := range globalEnv {
-		if kube.GetSliceEnvVar(envVars, e.Name) == nil {
+		if kube.GetSliceEnvVar(envVars, e.Name) == nil && e.ValueFrom != nil {
 			envVars = append(envVars, e)
 		}
 	}

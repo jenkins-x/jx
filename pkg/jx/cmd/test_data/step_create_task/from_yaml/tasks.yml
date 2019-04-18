@@ -27,6 +27,10 @@ items:
       command:
       - jx
       env:
+      - name: FRUIT
+        value: BANANA
+      - name: GIT_AUTHOR_NAME
+        value: somebodyelse
       - name: DOCKER_REGISTRY
       - name: BUILD_NUMBER
         value: "1"
@@ -44,8 +48,6 @@ items:
         value: really-long
       - name: JX_BATCH_MODE
         value: "true"
-      - name: FRUIT
-        value: BANANA
       image: rawlingsj/builder-jx:wip34
       name: git-merge
       volumeMounts:
@@ -66,10 +68,12 @@ items:
           configMapKeyRef:
             key: docker.registry
             name: jenkins-x-docker-registry
+      - name: FRUIT
+        value: BANANA
       - name: GIT_AUTHOR_EMAIL
         value: jenkins-x@googlegroups.com
       - name: GIT_AUTHOR_NAME
-        value: jenkins-x-bot
+        value: somebodyelse
       - name: GIT_COMMITTER_EMAIL
         value: jenkins-x@googlegroups.com
       - name: GIT_COMMITTER_NAME
@@ -94,8 +98,6 @@ items:
         value: really-long
       - name: JX_BATCH_MODE
         value: "true"
-      - name: FRUIT
-        value: BANANA
       image: jenkinsxio/builder-nodejs:0.1.235
       name: step2
       resources:
@@ -128,10 +130,12 @@ items:
           configMapKeyRef:
             key: docker.registry
             name: jenkins-x-docker-registry
+      - name: FRUIT
+        value: BANANA
       - name: GIT_AUTHOR_EMAIL
         value: jenkins-x@googlegroups.com
       - name: GIT_AUTHOR_NAME
-        value: jenkins-x-bot
+        value: somebodyelse
       - name: GIT_COMMITTER_EMAIL
         value: jenkins-x@googlegroups.com
       - name: GIT_COMMITTER_NAME
@@ -156,8 +160,6 @@ items:
         value: really-long
       - name: JX_BATCH_MODE
         value: "true"
-      - name: FRUIT
-        value: BANANA
       image: jenkinsxio/builder-nodejs:0.1.235
       name: step3
       resources:
@@ -220,10 +222,12 @@ items:
           configMapKeyRef:
             key: docker.registry
             name: jenkins-x-docker-registry
+      - name: FRUIT
+        value: BANANA
       - name: GIT_AUTHOR_EMAIL
         value: jenkins-x@googlegroups.com
       - name: GIT_AUTHOR_NAME
-        value: jenkins-x-bot
+        value: somebodyelse
       - name: GIT_COMMITTER_EMAIL
         value: jenkins-x@googlegroups.com
       - name: GIT_COMMITTER_NAME
@@ -248,8 +252,6 @@ items:
         value: really-long
       - name: JX_BATCH_MODE
         value: "true"
-      - name: FRUIT
-        value: BANANA
       image: jenkinsxio/builder-nodejs:0.1.235
       name: step2
       resources:

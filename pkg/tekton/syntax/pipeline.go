@@ -2,6 +2,7 @@ package syntax
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
@@ -10,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/imdario/mergo"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/knative/pkg/apis"
@@ -19,6 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/strategicpatch"
 )
 
 // GitMergeImage is the default image name that is used in the git merge step of a pipeline
@@ -646,11 +647,49 @@ func toContainerEnvVars(origEnv []EnvVar) []corev1.EnvVar {
 	return env
 }
 
-func scopedEnv(newEnv []corev1.EnvVar, parentEnv []corev1.EnvVar, o *RootOptions) []corev1.EnvVar {
+// AddContainerEnvVarsToPipeline allows for adding a slice of container environment variables directly to the
+// pipeline, if they're not already defined.
+func (j *ParsedPipeline) AddContainerEnvVarsToPipeline(origEnv []corev1.EnvVar) {
+	if len(origEnv) > 0 {
+		envMap := make(map[string]EnvVar)
+
+		// Add the container env vars first.
+		for _, e := range origEnv {
+			if e.ValueFrom == nil {
+				envMap[e.Name] = EnvVar{
+					Name:  e.Name,
+					Value: e.Value,
+				}
+			}
+		}
+
+		// Overwrite with the existing pipeline environment, if it exists
+		for _, e := range j.Environment {
+			envMap[e.Name] = e
+		}
+
+		env := make([]EnvVar, 0, len(envMap))
+
+		// Avoid nondeterministic results by sorting the keys and appending vars in that order.
+		var envVars []string
+		for k := range envMap {
+			envVars = append(envVars, k)
+		}
+		sort.Strings(envVars)
+
+		for _, envVar := range envVars {
+			env = append(env, envMap[envVar])
+		}
+
+		j.Environment = env
+	}
+}
+
+func scopedEnv(newEnv []corev1.EnvVar, parentEnv []corev1.EnvVar) []corev1.EnvVar {
 	if len(parentEnv) == 0 && len(newEnv) == 0 {
 		return nil
 	}
-	envMap := getContainerOptionsEnvVars(o)
+	envMap := make(map[string]corev1.EnvVar)
 
 	for _, e := range parentEnv {
 		envMap[e.Name] = e
@@ -664,25 +703,13 @@ func scopedEnv(newEnv []corev1.EnvVar, parentEnv []corev1.EnvVar, o *RootOptions
 }
 
 func (j *ParsedPipeline) toStepEnvVars() []corev1.EnvVar {
-	envMap := getContainerOptionsEnvVars(&j.Options)
+	envMap := make(map[string]corev1.EnvVar)
 
 	for _, e := range j.Environment {
 		envMap[e.Name] = corev1.EnvVar{Name: e.Name, Value: e.Value}
 	}
 
 	return EnvMapToSlice(envMap)
-}
-
-func getContainerOptionsEnvVars(o *RootOptions) map[string]corev1.EnvVar {
-	envMap := make(map[string]corev1.EnvVar)
-
-	if o != nil && o.ContainerOptions != nil {
-		for _, e := range o.ContainerOptions.Env {
-			envMap[e.Name] = e
-		}
-	}
-
-	return envMap
 }
 
 type transformedStage struct {
@@ -797,8 +824,6 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 
 	stageContainer := &corev1.Container{}
 
-	var rootOptions *RootOptions
-
 	if !equality.Semantic.DeepEqual(s.Options, StageOptions{}) {
 		o := s.Options
 		if !equality.Semantic.DeepEqual(o.Timeout, Timeout{}) {
@@ -815,17 +840,17 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		}
 
 		stageContainer = o.ContainerOptions
-
-		rootOptions = &o.RootOptions
 	}
 
 	if parentContainer != nil {
-		if err := mergo.Merge(stageContainer, parentContainer); err != nil {
+		merged, err := mergeContainers(parentContainer, stageContainer)
+		if err != nil {
 			return nil, errors.Wrapf(err, "Error merging stage and parent container overrides: %s", err)
 		}
+		stageContainer = merged
 	}
 
-	env := scopedEnv(toContainerEnvVars(s.Environment), parentEnv, rootOptions)
+	env := scopedEnv(toContainerEnvVars(s.Environment), parentEnv)
 
 	agent := s.Agent
 
@@ -834,7 +859,11 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 	}
 
 	stepCounter := 0
-	defaultTaskSpec := getDefaultTaskSpec(env)
+	defaultTaskSpec, err := getDefaultTaskSpec(env, stageContainer)
+	if err != nil {
+		return nil, err
+	}
+
 	if len(s.Steps) > 0 {
 		t := &tektonv1alpha1.Task{
 			TypeMeta: metav1.TypeMeta{
@@ -956,6 +985,61 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 	return nil, errors.New("no steps, sequential stages, or parallel stages")
 }
 
+func mergeContainers(parentContainer, childContainer *corev1.Container) (*corev1.Container, error) {
+	if parentContainer == nil {
+		return childContainer, nil
+	} else if childContainer == nil {
+		return parentContainer, nil
+	}
+
+	// We need JSON bytes to generate a patch to merge the child containers onto the parent container, so marshal the parent.
+	parentAsJSON, err := json.Marshal(parentContainer)
+	if err != nil {
+		return nil, err
+	}
+	// We need to do a three-way merge to actually combine the parent and child containers, so we need an empty container
+	// as the "original"
+	emptyAsJSON, err := json.Marshal(&corev1.Container{})
+	if err != nil {
+		return nil, err
+	}
+	// Marshal the child to JSON
+	childAsJSON, err := json.Marshal(childContainer)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the patch meta for Container, which is needed for generating and applying the merge patch.
+	patchSchema, err := strategicpatch.NewPatchMetaFromStruct(parentContainer)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Create a merge patch, with the empty JSON as the original, the child JSON as the modified, and the parent
+	// JSON as the current - this lets us do a deep merge of the parent and child containers, with awareness of
+	// the "patchMerge" tags.
+	patch, err := strategicpatch.CreateThreeWayMergePatch(emptyAsJSON, childAsJSON, parentAsJSON, patchSchema, true)
+	if err != nil {
+		return nil, err
+	}
+
+	// Actually apply the merge patch to the parent JSON.
+	mergedAsJSON, err := strategicpatch.StrategicMergePatchUsingLookupPatchMeta(parentAsJSON, patch, patchSchema)
+	if err != nil {
+		return nil, err
+	}
+
+	// Unmarshal the merged JSON to a Container pointer, and return it.
+	merged := &corev1.Container{}
+	err = json.Unmarshal(mergedAsJSON, merged)
+	if err != nil {
+		return nil, err
+	}
+
+	return merged, nil
+}
+
 func isNestedFirstStepsStage(enclosingStage *transformedStage) bool {
 	if enclosingStage != nil {
 		if enclosingStage.PreviousSiblingStage != nil {
@@ -993,10 +1077,12 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 			for _, volume := range podTemplate.Spec.Volumes {
 				volumes[volume.Name] = volume
 			}
-			if !equality.Semantic.DeepEqual(c, corev1.Container{}) {
-				if err := mergo.Merge(c, containers[0]); err != nil {
+			if !equality.Semantic.DeepEqual(c, &corev1.Container{}) {
+				merged, err := mergeContainers(&containers[0], c)
+				if err != nil {
 					return nil, nil, stepCounter, errors.Wrapf(err, "Error merging pod template and parent container: %s", err)
 				}
+				c = merged
 			} else {
 				c = &containers[0]
 			}
@@ -1026,13 +1112,12 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 
 		c.Stdin = false
 		c.TTY = false
-
-		c.Env = scopedEnv(env, c.Env, nil)
+		c.Env = scopedEnv(env, c.Env)
 
 		steps = append(steps, *c)
 	} else if !equality.Semantic.DeepEqual(step.Loop, Loop{}) {
 		for _, v := range step.Loop.Values {
-			loopEnv := scopedEnv([]corev1.EnvVar{{Name: step.Loop.Variable, Value: v}}, env, nil)
+			loopEnv := scopedEnv([]corev1.EnvVar{{Name: step.Loop.Variable, Value: v}}, env)
 
 			for _, s := range step.Loop.Steps {
 				loopSteps, loopVolumes, loopCounter, loopErr := generateSteps(s, stepImage, loopEnv, parentContainer, podTemplates, stepCounter)
@@ -1363,22 +1448,31 @@ func validateStageNames(j *ParsedPipeline) (err *apis.FieldError) {
 }
 
 // todo JR lets remove this when we switch tekton to using git merge type pipelineresources
-func getDefaultTaskSpec(envs []corev1.EnvVar) tektonv1alpha1.TaskSpec {
+func getDefaultTaskSpec(envs []corev1.EnvVar, parentContainer *corev1.Container) (tektonv1alpha1.TaskSpec, error) {
 	v := os.Getenv("BUILDER_JX_IMAGE")
 	if v == "" {
 		v = GitMergeImage
 	}
-	return tektonv1alpha1.TaskSpec{
-		Steps: []corev1.Container{
-			{
-				Name: "git-merge",
-				//Image:   "gcr.io/jenkinsxio/builder-jx:0.1.297",
-				Image:      v,
-				Command:    []string{"jx"},
-				Args:       []string{"step", "git", "merge", "--verbose"},
-				WorkingDir: "/workspace/source",
-				Env:        envs,
-			},
-		},
+
+	childContainer := &corev1.Container{
+		Name: "git-merge",
+		//Image:   "gcr.io/jenkinsxio/builder-jx:0.1.297",
+		Image:      v,
+		Command:    []string{"jx"},
+		Args:       []string{"step", "git", "merge", "--verbose"},
+		WorkingDir: "/workspace/source",
+		Env:        envs,
 	}
+
+	if parentContainer != nil {
+		merged, err := mergeContainers(parentContainer, childContainer)
+		if err != nil {
+			return tektonv1alpha1.TaskSpec{}, err
+		}
+		childContainer = merged
+	}
+
+	return tektonv1alpha1.TaskSpec{
+		Steps: []corev1.Container{*childContainer},
+	}, nil
 }
