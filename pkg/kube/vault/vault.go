@@ -20,7 +20,7 @@ const (
 	BankVaultsOperatorImage = "banzaicloud/vault-operator"
 	BankVaultsImage         = "banzaicloud/bank-vaults"
 	BankVaultsImageTag      = "0.4.7"
-	defaultNumVaults        = 2
+	defaultNumVaults        = 1
 	vaultImage              = "vault"
 	vaultImageTag           = "0.11.6"
 	gcpServiceAccountEnv    = "GOOGLE_APPLICATION_CREDENTIALS"
