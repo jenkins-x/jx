@@ -105,6 +105,10 @@ func (o *CommonOptions) DefaultModifyDevEnvironment(callback func(env *v1.Enviro
 	if err != nil {
 		return errors.Wrap(err, "failed to create the jx client")
 	}
+	if o.RemoteCluster {
+		env := kube.CreateDefaultDevEnvironment(ns)
+		return callback(env)
+	}
 
 	kubeClient, err := o.KubeClient()
 	if err != nil {
