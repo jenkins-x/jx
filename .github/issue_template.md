@@ -17,10 +17,11 @@ COPY OUTPUT HERE
 ### Jenkins type
 
 <!--
-Select which Jenkins installation type are you using. 
+Select which installation type are you using. 
 -->
+- [ ] Next Generation (Tekton + Prow)
 - [ ] Classic Jenkins
-- [ ] Serverless Jenkins
+- [ ] Serverless Jenkins (JenkinsFileRunner + Prow)
 
 ### Kubernetes cluster
 
