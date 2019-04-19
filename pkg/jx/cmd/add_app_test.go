@@ -1013,3 +1013,201 @@ func TestAddLatestAppForGitOps(t *testing.T) {
 	assert.Len(t, found, 1)
 	assert.Equal(t, version, found[0].Version)
 }
+
+func TestAddAppIncludingConditionalQuestionsForGitOps(t *testing.T) {
+	tests.SkipForWindows(t, "go-expect does not work on windows")
+	pegomock.RegisterMockTestingT(t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	defer func() {
+		err := testOptions.Cleanup()
+		assert.NoError(t, err)
+	}()
+
+	console := tests.NewTerminal(t)
+	testOptions.CommonOptions.In = console.In
+	testOptions.CommonOptions.Out = console.Out
+	testOptions.CommonOptions.Err = console.Err
+
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
+	version := "0.0.1"
+	alias := fmt.Sprintf("%s-alias", name)
+	commonOpts := *testOptions.CommonOptions
+	o := &cmd.AddAppOptions{
+		AddOptions: cmd.AddOptions{
+			CommonOptions: &commonOpts,
+		},
+		Version:              version,
+		Alias:                alias,
+		Repo:                 "http://chartmuseum.jenkins-x.io",
+		GitOps:               true,
+		DevEnv:               testOptions.DevEnv,
+		HelmUpdate:           true,
+		ConfigureGitCallback: testOptions.ConfigureGitFn,
+	}
+	o.Args = []string{name}
+	o.BatchMode = false
+
+	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
+		Metadata: &chart.Metadata{
+			Name:    name,
+			Version: version,
+		},
+		Files: []*google_protobuf.Any{
+			{
+				TypeUrl: "values.schema.json",
+				Value: []byte(`{
+  "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "test values.yaml",
+  "type": "object",
+  "properties": {
+    "enablePersistentStorage": { 
+      "type": "boolean"
+    }
+    },
+    "if": {
+      "properties": { "enablePersistentStorage": { "const": "true" } }
+    },
+    "then": {
+      "properties": { "databaseConnectionUrl": { "type": "string" }, 
+                      "databaseUsername": { "type": "string"}, 
+                      "databasePassword": { "type": "string", "format" : "password"} }
+    }}`),
+			},
+		},
+	}, testOptions.MockHelmer)
+
+	donec := make(chan struct{})
+	go func() {
+		defer close(donec)
+		console.ExpectString("Enter a value for enablePersistentStorage")
+		console.SendLine("Y")
+		console.ExpectString("Enter a value for databaseConnectionUrl")
+		console.SendLine("abc")
+		console.ExpectString("Enter a value for databaseUsername")
+		console.SendLine("wensleydale")
+		console.ExpectString("Enter a value for databasePassword")
+		console.SendLine("cranberries")
+		console.ExpectString(" ***********")
+		console.ExpectEOF()
+	}()
+	err = o.Run()
+	assert.NoError(t, err)
+	err = console.Close()
+	<-donec
+	assert.NoError(t, err)
+	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
+
+	envDir, err := o.CommonOptions.EnvironmentsDir()
+	assert.NoError(t, err)
+	valuesFromPrPath := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name, helm.ValuesFileName)
+	_, err = os.Stat(valuesFromPrPath)
+	assert.NoError(t, err)
+	data, err := ioutil.ReadFile(valuesFromPrPath)
+	assert.NoError(t, err)
+	assert.Equal(t, `databaseConnectionUrl: abc
+databasePassword:
+  Kind: Secret
+  Name: databasepassword-secret
+databaseUsername: wensleydale
+enablePersistentStorage: true
+`, string(data))
+
+	// Validate that vault has had the secret added
+	path := strings.Join([]string{"gitOps", testOptions.OrgName, testOptions.DevEnvRepoInfo.Name, "databasepassword-secret"},
+		"/")
+	value := map[string]interface{}{
+		"password": "cranberries",
+	}
+	testOptions.MockVaultClient.VerifyWasCalledOnce().Write(path, value)
+}
+
+func TestAddAppExcludingConditionalQuestionsForGitOps(t *testing.T) {
+	tests.SkipForWindows(t, "go-expect does not work on windows")
+	pegomock.RegisterMockTestingT(t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	defer func() {
+		err := testOptions.Cleanup()
+		assert.NoError(t, err)
+	}()
+
+	console := tests.NewTerminal(t)
+	testOptions.CommonOptions.In = console.In
+	testOptions.CommonOptions.Out = console.Out
+	testOptions.CommonOptions.Err = console.Err
+
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
+	version := "0.0.1"
+	alias := fmt.Sprintf("%s-alias", name)
+	commonOpts := *testOptions.CommonOptions
+	o := &cmd.AddAppOptions{
+		AddOptions: cmd.AddOptions{
+			CommonOptions: &commonOpts,
+		},
+		Version:              version,
+		Alias:                alias,
+		Repo:                 "http://chartmuseum.jenkins-x.io",
+		GitOps:               true,
+		DevEnv:               testOptions.DevEnv,
+		HelmUpdate:           true,
+		ConfigureGitCallback: testOptions.ConfigureGitFn,
+	}
+	o.Args = []string{name}
+	o.BatchMode = false
+
+	helm_test.StubFetchChart(name, "", kube.DefaultChartMuseumURL, &chart.Chart{
+		Metadata: &chart.Metadata{
+			Name:    name,
+			Version: version,
+		},
+		Files: []*google_protobuf.Any{
+			{
+				TypeUrl: "values.schema.json",
+				Value: []byte(`{
+  "$id": "https:/jenkins-x.io/tests/basicTypes.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "test values.yaml",
+  "type": "object",
+  "properties": {
+    "enablePersistentStorage": {
+      "type": "boolean"
+    }
+    },
+    "if": {
+      "properties": { "enablePersistentStorage": { "const": "true" } }
+    },
+    "then": {
+      "properties": { "databaseConnectionUrl": { "type": "string" } }
+    }}`),
+			},
+		},
+	}, testOptions.MockHelmer)
+
+	donec := make(chan struct{})
+	go func() {
+		defer close(donec)
+		console.ExpectString("Enter a value for enablePersistentStorage")
+		console.SendLine("N")
+		console.ExpectEOF()
+	}()
+	err = o.Run()
+	assert.NoError(t, err)
+	err = console.Close()
+	<-donec
+	assert.NoError(t, err)
+	t.Logf(expect.StripTrailingEmptyLines(console.CurrentState()))
+
+	envDir, err := o.CommonOptions.EnvironmentsDir()
+	assert.NoError(t, err)
+	valuesFromPrPath := filepath.Join(testOptions.GetFullDevEnvDir(envDir), name, helm.ValuesFileName)
+	_, err = os.Stat(valuesFromPrPath)
+	assert.NoError(t, err)
+	data, err := ioutil.ReadFile(valuesFromPrPath)
+	assert.NoError(t, err)
+	assert.Equal(t, `enablePersistentStorage: false
+`, string(data))
+}
