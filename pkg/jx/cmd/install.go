@@ -1833,7 +1833,6 @@ func (options *InstallOptions) configureCloudProivderPostInit(client kubernetes.
 		helmOptions := helm.InstallChartOptions{
 			Chart:       "ibm/ibmcloud-block-storage-plugin",
 			ReleaseName: "ibmcloud-block-storage-plugin",
-			Ns:          "default",
 			NoForce:     true,
 		}
 		err = options.InstallChartWithOptions(helmOptions)
