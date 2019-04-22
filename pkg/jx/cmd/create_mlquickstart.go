@@ -16,6 +16,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/jenkins-x/jx/pkg/auth"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 )
 
@@ -33,7 +34,7 @@ var (
 
 		For more documentation see: [https://jenkins-x.io/developing/create-mlquickstart/](https://jenkins-x.io/developing/create-mlquickstart/)
 
-` + SeeAlsoText("jx create project"))
+` + opts.SeeAlsoText("jx create project"))
 
 	createMLQuickstartExample = templates.Examples(`
 		Create a new machine learning project from a sample/starter (found in https://github.com/machine-learning-quickstarts)
@@ -64,7 +65,7 @@ type projectset struct {
 }
 
 // NewCmdCreateMLQuickstart creates a command object for the "create" command
-func NewCmdCreateMLQuickstart(commonOpts *CommonOptions) *cobra.Command {
+func NewCmdCreateMLQuickstart(commonOpts *opts.CommonOptions) *cobra.Command {
 	options := &CreateMLQuickstartOptions{
 		CreateProjectOptions: CreateProjectOptions{
 			ImportOptions: ImportOptions{
@@ -281,7 +282,7 @@ func (o *CreateMLQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConf
 			if kind == "" {
 				kind = gits.KindGitHub
 			}
-			gitProvider, err := o.gitProviderForGitServerURL(gitURL, kind)
+			gitProvider, err := o.GitProviderForGitServerURL(gitURL, kind)
 			if err != nil {
 				return model, err
 			}
