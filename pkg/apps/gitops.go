@@ -55,10 +55,11 @@ func (o *GitOpsOptions) UpgradeApp(app string, version string, repository string
 
 	if app != "" {
 		all = false
-		if version == "" {
-			version = "latest"
+		versionBranchName := version
+		if versionBranchName == "" {
+			versionBranchName = "latest"
 		}
-		details.BranchName = fmt.Sprintf("upgrade-app-%s-%s", app, version)
+		details.BranchName = fmt.Sprintf("upgrade-app-%s-%s", app, versionBranchName)
 	} else {
 		details.BranchName = fmt.Sprintf("upgrade-all-apps")
 		details.Title = fmt.Sprintf("Upgrade all apps")
