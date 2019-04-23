@@ -83,6 +83,11 @@ func (o *GetBuildPodsOptions) Run() error {
 	if o.Namespace != "" {
 		ns = o.Namespace
 	}
+	teamSettings, err := o.TeamSettings()
+	if err != nil {
+		return err
+	}
+	jxPipelines := teamSettings.IsJenkinsXPipelines()
 	pods, err := builds.GetBuildPods(kubeClient, ns)
 	if err != nil {
 		log.Warnf("Failed to query pods %s\n", err)
@@ -90,7 +95,11 @@ func (o *GetBuildPodsOptions) Run() error {
 	}
 
 	table := o.CreateTable()
-	table.AddRow("OWNER", "REPOSITORY", "BRANCH", "BUILD", "CONTEXT", "AGE", "STATUS", "STEP 1 IMAGE", "POD", "GIT URL")
+	if jxPipelines {
+		table.AddRow("OWNER", "REPOSITORY", "BRANCH", "BUILD", "CONTEXT", "AGE", "STATUS", "POD", "GIT URL")
+	} else {
+		table.AddRow("OWNER", "REPOSITORY", "BRANCH", "BUILD", "CONTEXT", "AGE", "STATUS", "STEP 1 IMAGE", "POD", "GIT URL")
+	}
 
 	buildInfos := []*builds.BuildPodInfo{}
 	for _, pod := range pods {
@@ -105,7 +114,11 @@ func (o *GetBuildPodsOptions) Run() error {
 	for _, build := range buildInfos {
 		duration := strings.TrimSuffix(now.Sub(build.CreatedTime).Round(time.Minute).String(), "0s")
 
-		table.AddRow(build.Organisation, build.Repository, build.Branch, build.Build, build.Context, duration, build.Status(), build.FirstStepImage, build.PodName, build.GitURL)
+		if jxPipelines {
+			table.AddRow(build.Organisation, build.Repository, build.Branch, build.Build, build.Context, duration, build.Status(), build.PodName, build.GitURL)
+		} else {
+			table.AddRow(build.Organisation, build.Repository, build.Branch, build.Build, build.Context, duration, build.Status(), build.FirstStepImage, build.PodName, build.GitURL)
+		}
 	}
 	table.Render()
 	return nil
