@@ -51,7 +51,8 @@ const (
 	// FakeChartmusuem is the url for the fake chart museum used in tests
 	FakeChartmusuem = "http://fake.chartmuseum"
 
-	defaultEnvironmentChartDir = "env"
+	// DefaultEnvironmentChartDir is the default environment path where charts are stored
+	DefaultEnvironmentChartDir = "env"
 
 	//RepoVaultPath is the path to the repo credentials in Vault
 	RepoVaultPath = "helm/repos"
@@ -158,6 +159,13 @@ func FindValuesFileName(dir string) (string, error) {
 	return findFileName(dir, ValuesFileName)
 }
 
+// FindValuesFileNameForChart returns the values.yaml file name for a given chart within the environment or the default if the chart name is empty
+func FindValuesFileNameForChart(dir string, chartName string) (string, error) {
+	//Chart name and file name are joined here to avoid hard coding the environment
+	//The chart name is ignored in the path if it's empty
+	return findFileName(dir, filepath.Join(chartName, ValuesFileName))
+}
+
 // FindTemplatesDirName returns the default templates/ dir name
 func FindTemplatesDirName(dir string) (string, error) {
 	return findFileName(dir, TemplatesDirName)
@@ -165,7 +173,7 @@ func FindTemplatesDirName(dir string) (string, error) {
 
 func findFileName(dir string, fileName string) (string, error) {
 	names := []string{
-		filepath.Join(dir, defaultEnvironmentChartDir, fileName),
+		filepath.Join(dir, DefaultEnvironmentChartDir, fileName),
 		filepath.Join(dir, fileName),
 	}
 	for _, name := range names {
@@ -194,7 +202,7 @@ func findFileName(dir string, fileName string) (string, error) {
 		}
 	}
 	dirs := []string{
-		filepath.Join(dir, defaultEnvironmentChartDir),
+		filepath.Join(dir, DefaultEnvironmentChartDir),
 		dir,
 	}
 	for _, d := range dirs {
