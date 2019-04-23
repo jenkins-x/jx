@@ -17,6 +17,7 @@ type GetPreviewOptions struct {
 	GetEnvOptions
 
 	Current bool
+	URLOnly bool
 }
 
 var (
