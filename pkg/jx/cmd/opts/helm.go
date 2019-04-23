@@ -367,7 +367,7 @@ func (o *CommonOptions) InstallChartOrGitOps(isGitOps bool, gitOpsDir string, gi
 	}
 
 	// if we are part of an initial installation we won't have done a git push yet so lets just write to the gitOpsEnvDir where the dev env chart is
-	return environments.ModifyChartFiles(gitOpsEnvDir, nil, modifyFn)
+	return environments.ModifyChartFiles(gitOpsEnvDir, nil, modifyFn, "")
 }
 
 // InstallChartAt installs the given chart

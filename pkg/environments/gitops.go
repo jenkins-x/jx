@@ -11,13 +11,13 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 
-	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/ghodss/yaml"
 
 	"github.com/pkg/errors"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/satori/go.uuid"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
@@ -71,7 +71,7 @@ type EnvironmentPullRequestOptions struct {
 // and the pullRequestInfo for any existing PR that exists to modify the environment that we want to merge these
 // changes into.
 func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, environmentsDir string,
-	pullRequestDetails *PullRequestDetails, pullRequestInfo *gits.PullRequestInfo) (*gits.PullRequestInfo, error) {
+	pullRequestDetails *PullRequestDetails, pullRequestInfo *gits.PullRequestInfo, chartName string) (*gits.PullRequestInfo, error) {
 
 	dir, base, gitInfo, fork, err := o.PullEnvironmentRepo(env, environmentsDir)
 	if err != nil {
@@ -103,7 +103,7 @@ func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, envir
 		return nil, err
 	}
 
-	err = ModifyChartFiles(dir, pullRequestDetails, o.ModifyChartFn)
+	err = ModifyChartFiles(dir, pullRequestDetails, o.ModifyChartFn, chartName)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +177,7 @@ func (o *EnvironmentPullRequestOptions) PushEnvironmentRepo(dir string, branchNa
 }
 
 // ModifyChartFiles modifies the chart files in the given directory using the given modify function
-func ModifyChartFiles(dir string, details *PullRequestDetails, modifyFn ModifyChartFn) error {
+func ModifyChartFiles(dir string, details *PullRequestDetails, modifyFn ModifyChartFn, chartName string) error {
 	requirementsFile, err := helm.FindRequirementsFileName(dir)
 	if err != nil {
 		return err
@@ -191,19 +191,22 @@ func ModifyChartFiles(dir string, details *PullRequestDetails, modifyFn ModifyCh
 	if err != nil {
 		return err
 	}
+
 	chart, err := helm.LoadChartFile(chartFile)
 	if err != nil {
 		return err
 	}
 
-	valuesFile, err := helm.FindValuesFileName(dir)
+	valuesFile, err := helm.FindValuesFileNameForChart(dir, chartName)
 	if err != nil {
 		return err
 	}
+
 	values, err := helm.LoadValuesFile(valuesFile)
 	if err != nil {
 		return err
 	}
+
 	templatesDir, err := helm.FindTemplatesDirName(dir)
 	if err != nil {
 		return err
