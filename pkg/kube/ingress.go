@@ -79,7 +79,7 @@ func GetIngressConfig(c kubernetes.Interface, ns string) (IngressConfig, error) 
 	if exists {
 		ic.ClusterIssuer, err = strconv.ParseBool(clusterIssuer)
 		if err != nil {
-			return ic, fmt.Errorf("failed to parse ClusterIssuer string %s to bool from %s: %v", tls, IngressConfigConfigmap, err)
+			return ic, fmt.Errorf("failed to parse ClusterIssuer string %s to bool from %s: %v", clusterIssuer, IngressConfigConfigmap, err)
 		}
 	} else {
 		ic.ClusterIssuer = false

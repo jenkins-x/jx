@@ -352,7 +352,7 @@ func AnnotateServicesWithCertManagerIssuer(c kubernetes.Interface, ns, issuer st
 		if s.Annotations[ExposeAnnotation] == "true" && s.Annotations[JenkinsXSkipTLSAnnotation] != "true" {
 			existingAnnotations, _ := s.Annotations[ExposeIngressAnnotation]
 			// if no existing `fabric8.io/ingress.annotations` initialise and add else update with ClusterIssuer
-			certManagerAnnotation = CertManagerAnnotation
+			certManagerAnnotation := CertManagerAnnotation
 			if clusterIssuer == true {
 					certManagerAnnotation = CertManagerClusterAnnotation
 			}
