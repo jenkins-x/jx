@@ -58,6 +58,7 @@ func NewCmdGetPreview(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 
 	cmd.Flags().BoolVarP(&options.Current, "current", "c", false, "Output the URL of the current Preview application the current pipeline just deployed")
+	cmd.Flags().BoolVarP(&options.URLOnly, "url-only", "u", false, "Output only the URL")
 
 	options.addGetFlags(cmd)
 	return cmd
@@ -90,7 +91,11 @@ func (o *GetPreviewOptions) CurrentPreviewUrl() error {
 	}
 	for _, env := range envList.Items {
 		if env.Spec.Kind == v1.EnvironmentKindTypePreview && env.Name == name {
-			log.Info(env.Spec.PreviewGitSpec.ApplicationURL)
+			if o.URLOnly {
+				fmt.Sprintf("%s", env.Spec.PreviewGitSpec.ApplicationURL)
+			} else {
+				log.Info(env.Spec.PreviewGitSpec.ApplicationURL)
+			}
 			return nil
 		}
 	}
