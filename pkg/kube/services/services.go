@@ -354,7 +354,7 @@ func AnnotateServicesWithCertManagerIssuer(c kubernetes.Interface, ns, issuer st
 			// if no existing `fabric8.io/ingress.annotations` initialise and add else update with ClusterIssuer
 			certManagerAnnotation := CertManagerAnnotation
 			if clusterIssuer == true {
-					certManagerAnnotation = CertManagerClusterAnnotation
+				certManagerAnnotation = CertManagerClusterAnnotation
 			}
 			if len(existingAnnotations) > 0 {
 				s.Annotations[ExposeIngressAnnotation] = existingAnnotations + "\n" + certManagerAnnotation + ": " + issuer

@@ -25,7 +25,7 @@ type IngressConfig struct {
 	Email         string `structs:"email" yaml:"email" json:"email"`
 	Domain        string `structs:"domain" yaml:"domain" json:"domain"`
 	Issuer        string `structs:"issuer" yaml:"issuer" json:"issuer"`
-	ClusterIssuer bool `structs:"clusterissuer" yaml:"clusterissuer" json:"clusterissuer"`
+	ClusterIssuer bool   `structs:"clusterissuer" yaml:"clusterissuer" json:"clusterissuer"`
 	Exposer       string `structs:"exposer" yaml:"exposer" json:"exposer"`
 	UrlTemplate   string `structs:"urltemplate" yaml:"urltemplate" json:"urltemplate"`
 	TLS           bool   `structs:"tls" yaml:"tls" json:"tls"`
