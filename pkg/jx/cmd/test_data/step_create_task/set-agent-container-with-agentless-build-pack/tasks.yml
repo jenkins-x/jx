@@ -5,7 +5,7 @@ items:
     creationTimestamp: null
     labels:
       jenkins.io/task-stage-name: from-build-pack
-    name: abayer-js-test-repo-override-de-from-build-pack-1
+    name: abayer-js-test-repo-no-default-from-build-pack-1
     namespace: jx
   spec:
     inputs:
@@ -50,11 +50,11 @@ items:
       - name: REPO_NAME
         value: js-test-repo
       - name: JOB_NAME
-        value: abayer/js-test-repo/override-default-agent
+        value: abayer/js-test-repo/no-default-agent
       - name: APP_NAME
         value: js-test-repo
       - name: BRANCH_NAME
-        value: override-default-agent
+        value: no-default-agent
       - name: JX_BATCH_MODE
         value: "true"
       image: rawlingsj/builder-jx:wip34
@@ -107,11 +107,11 @@ items:
       - name: REPO_NAME
         value: js-test-repo
       - name: JOB_NAME
-        value: abayer/js-test-repo/override-default-agent
+        value: abayer/js-test-repo/no-default-agent
       - name: APP_NAME
         value: js-test-repo
       - name: BRANCH_NAME
-        value: override-default-agent
+        value: no-default-agent
       - name: JX_BATCH_MODE
         value: "true"
       image: jenkinsxio/builder-go:latest
@@ -167,11 +167,11 @@ items:
       - name: REPO_NAME
         value: js-test-repo
       - name: JOB_NAME
-        value: abayer/js-test-repo/override-default-agent
+        value: abayer/js-test-repo/no-default-agent
       - name: APP_NAME
         value: js-test-repo
       - name: BRANCH_NAME
-        value: override-default-agent
+        value: no-default-agent
       - name: JX_BATCH_MODE
         value: "true"
       image: jenkinsxio/builder-go:latest
