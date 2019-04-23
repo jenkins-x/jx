@@ -16,17 +16,19 @@ const (
 	Email                  = "email"
 	TLS                    = "tls"
 	Issuer                 = "issuer"
+	ClusterIssuer          = "clusterissuer"
 	Exposer                = "exposer"
 	UrlTemplate            = "urltemplate"
 )
 
 type IngressConfig struct {
-	Email       string `structs:"email" yaml:"email" json:"email"`
-	Domain      string `structs:"domain" yaml:"domain" json:"domain"`
-	Issuer      string `structs:"issuer" yaml:"issuer" json:"issuer"`
-	Exposer     string `structs:"exposer" yaml:"exposer" json:"exposer"`
-	UrlTemplate string `structs:"urltemplate" yaml:"urltemplate" json:"urltemplate"`
-	TLS         bool   `structs:"tls" yaml:"tls" json:"tls"`
+	Email         string `structs:"email" yaml:"email" json:"email"`
+	Domain        string `structs:"domain" yaml:"domain" json:"domain"`
+	Issuer        string `structs:"issuer" yaml:"issuer" json:"issuer"`
+	ClusterIssuer bool   `structs:"clusterissuer" yaml:"clusterissuer" json:"clusterissuer"`
+	Exposer       string `structs:"exposer" yaml:"exposer" json:"exposer"`
+	UrlTemplate   string `structs:"urltemplate" yaml:"urltemplate" json:"urltemplate"`
+	TLS           bool   `structs:"tls" yaml:"tls" json:"tls"`
 }
 
 func GetIngress(client kubernetes.Interface, ns, name string) (string, error) {
@@ -72,6 +74,17 @@ func GetIngressConfig(c kubernetes.Interface, ns string) (IngressConfig, error) 
 	ic.Exposer = data[Exposer]
 	ic.UrlTemplate = data[UrlTemplate]
 	ic.Issuer = data[Issuer]
+	clusterIssuer, exists := data[ClusterIssuer]
+
+	if exists {
+		ic.ClusterIssuer, err = strconv.ParseBool(clusterIssuer)
+		if err != nil {
+			return ic, fmt.Errorf("failed to parse ClusterIssuer string %s to bool from %s: %v", clusterIssuer, IngressConfigConfigmap, err)
+		}
+	} else {
+		ic.ClusterIssuer = false
+	}
+
 	tls, exists := data[TLS]
 
 	if exists {
