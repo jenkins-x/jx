@@ -122,6 +122,17 @@ func (o *AddAppOptions) Run() error {
 		o.Repo = kube.DefaultChartMuseumURL
 	}
 
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return errors.Wrapf(err, "getting jx client")
+	}
+	kubeClient, _, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return errors.Wrapf(err, "getting kubeClient")
+	}
+	if o.Namespace == "" {
+		o.Namespace = ns
+	}
 	installOpts := apps.InstallOptions{
 		In:        o.In,
 		DevEnv:    o.DevEnv,
@@ -131,7 +142,11 @@ func (o *AddAppOptions) Run() error {
 		GitOps:    o.GitOps,
 		BatchMode: o.BatchMode,
 
-		Helmer: o.Helm(),
+		Helmer:         o.Helm(),
+		Namespace:      o.Namespace,
+		KubeClient:     kubeClient,
+		JxClient:       jxClient,
+		InstallTimeout: opts.DefaultInstallTimeout,
 	}
 
 	if o.GitOps {
@@ -171,18 +186,6 @@ func (o *AddAppOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "failed to ensure that helm is present")
 		}
-		jxClient, ns, err := o.JXClientAndDevNamespace()
-		if err != nil {
-			return errors.Wrapf(err, "getting jx client")
-		}
-		kubeClient, _, err := o.KubeClientAndDevNamespace()
-		if err != nil {
-			return errors.Wrapf(err, "getting kubeClient")
-		}
-		if o.Namespace == "" {
-			o.Namespace = ns
-		}
-
 		if o.Alias != "" && o.ReleaseName == "" {
 			bin, noTiller, helmTemplate, err := o.TeamHelmBin()
 			if err != nil {
@@ -194,10 +197,7 @@ func (o *AddAppOptions) Run() error {
 				o.ReleaseName = o.Alias + "-" + o.Namespace
 			}
 		}
-		installOpts.Namespace = o.Namespace
-		installOpts.KubeClient = kubeClient
-		installOpts.JxClient = jxClient
-		installOpts.InstallTimeout = opts.DefaultInstallTimeout
+
 	}
 	if o.GetSecretsLocation() == secrets.VaultLocationKind {
 		teamName, _, err := o.TeamAndEnvironmentNames()
@@ -232,3 +232,5 @@ func (o *AddAppOptions) Run() error {
 	return installOpts.AddApp(app, version, o.Repo, o.Username, o.Password, o.ReleaseName, o.ValuesFiles, o.SetValues,
 		o.Alias, o.HelmUpdate)
 }
+
+// TODO create test for GitOps

@@ -68,7 +68,10 @@ func StashValues(values []byte, name string, jxClient versioned.Interface, ns st
 	}
 	app.Annotations[ValuesAnnotation] = encoded
 
-	environments.AddAppMetaData(chartDir, app, repository)
+	err = environments.AddAppMetaData(chartDir, app, repository)
+	if err != nil {
+		return false, nil, errors.Wrapf(err, "adding metadata to app %s", app.Name)
+	}
 
 	return create, app, nil
 }

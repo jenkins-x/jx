@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	v1 "k8s.io/api/rbac/v1"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
 
@@ -13,7 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"github.com/stoewer/go-strcase"
+	strcase "github.com/stoewer/go-strcase"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -477,8 +479,8 @@ type SourceRepositorySpec struct {
 
 // AppSpec provides details of the metadata for an App
 type AppSpec struct {
-	// A list of services that this App exposes
-	ExposedServices []string `json:"exposedServices,omitempty" protobuf:"bytes,1,opt,name=exposedServices"`
+	SchemaPreprocessor     *corev1.Container `json:"schemaPreprocessor,omitempty" protobuf:"bytes,1,opt,name=schemaPreprocessor"`
+	SchemaPreprocessorRole *v1.Role          `json:"schemaPreprocessorRole,omitempty" protobuf:"bytes,2,opt,name=schemaPreprocessorRole"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

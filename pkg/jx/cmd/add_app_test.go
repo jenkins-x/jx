@@ -15,10 +15,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Netflix/go-expect"
+	expect "github.com/Netflix/go-expect"
 	"github.com/jenkins-x/jx/pkg/apps"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
-	"github.com/satori/go.uuid"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	uuid "github.com/satori/go.uuid"
 
 	"k8s.io/helm/pkg/chartutil"
 
@@ -768,6 +768,12 @@ func TestAddAppWithValuesFileForGitOps(t *testing.T) {
 	name := nameUUID.String()
 	version := "0.0.1"
 	alias := fmt.Sprintf("%s-alias", name)
+	helm_test.StubFetchChart(name, version, kube.DefaultChartMuseumURL, &chart.Chart{
+		Metadata: &chart.Metadata{
+			Name:    name,
+			Version: version,
+		},
+	}, testOptions.MockHelmer)
 	commonOpts := *testOptions.CommonOptions
 	o := &cmd.AddAppOptions{
 		AddOptions: cmd.AddOptions{

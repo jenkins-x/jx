@@ -9,8 +9,17 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/jenkins-x/jx/pkg/kube"
+
+	"github.com/pborman/uuid"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
@@ -131,7 +140,7 @@ func (o *InstallOptions) GetApps(kubeClient kubernetes.Interface, namespace stri
 	if err != nil {
 		return nil, errors.Wrap(err, "getting jx client")
 	}
-	listOptions := v1.ListOptions{}
+	listOptions := metav1.ListOptions{}
 	if len(appNames) > 0 {
 		selector := fmt.Sprintf(helm.LabelAppName+" in (%s)", strings.Join(appNames[:], ", "))
 		listOptions.LabelSelector = selector
@@ -211,7 +220,7 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 		upgradeAppFunc := func(dir string) error {
 			// Try to load existing answers from the apps CRD
 			appCrdName := fmt.Sprintf("%s-%s", releaseName, app)
-			appResource, err := o.JxClient.JenkinsV1().Apps(o.Namespace).Get(appCrdName, v1.GetOptions{})
+			appResource, err := o.JxClient.JenkinsV1().Apps(o.Namespace).Get(appCrdName, metav1.GetOptions{})
 			if err != nil {
 				return errors.Wrapf(err, "getting App CRD %s", appResource.Name)
 			}
@@ -307,7 +316,187 @@ func (o *InstallOptions) createInterrogateChartFn(version string, app string, re
 				log.Warnf("values.yaml specified by --valuesFiles will be used despite presence of schema in app")
 			}
 
-			var err error
+			appResource, _, err := environments.LocateAppResource(o.Helmer, chartDir, app)
+			if appResource.Spec.SchemaPreprocessor != nil {
+				id := uuid.New()
+				cmName := toValidName(app, "schema", id)
+				cm := corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: cmName,
+					},
+					Data: map[string]string{
+						"values.schema.json": string(schema),
+					},
+				}
+				_, err := o.KubeClient.CoreV1().ConfigMaps(o.Namespace).Create(&cm)
+				defer func() {
+					err := o.KubeClient.CoreV1().ConfigMaps(o.Namespace).Delete(cmName, &metav1.DeleteOptions{})
+					if err != nil {
+						log.Errorf("error removing configmap %s: %v", cmName, err)
+					}
+				}()
+				if err != nil {
+					return &chartDetails, errors.Wrapf(err, "creating configmap %s for values.schema."+
+						"json preprocessing", cmName)
+				}
+				// We launch this as a pod in the cluster, mounting the values.schema.json
+				if appResource.Spec.SchemaPreprocessor.Env == nil {
+					appResource.Spec.SchemaPreprocessor.Env = make([]corev1.EnvVar, 0)
+				}
+				appResource.Spec.SchemaPreprocessor.Env = append(appResource.Spec.SchemaPreprocessor.
+					Env, corev1.EnvVar{
+					Name:  "VALUES_SCHEMA_JSON_CONFIG_MAP_NAME",
+					Value: cmName,
+				})
+				serviceAccountName := toValidName(app, "schema-sa%s", id)
+
+				role := &rbacv1.Role{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: toValidName(app, "schema-role", id),
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{
+								corev1.GroupName,
+							},
+							Resources: []string{
+								"configmaps",
+							},
+							Verbs: []string{
+								"get",
+								"update",
+								"delete",
+							},
+							ResourceNames: []string{
+								cmName,
+							},
+						},
+					},
+				}
+				if appResource.Spec.SchemaPreprocessor.Name == "" {
+					appResource.Spec.SchemaPreprocessor.Name = "preprocessor"
+				}
+				if appResource.Spec.SchemaPreprocessorRole != nil {
+					role = appResource.Spec.SchemaPreprocessorRole
+				}
+				_, err = o.KubeClient.RbacV1().Roles(o.Namespace).Create(role)
+				defer func() {
+					err := o.KubeClient.RbacV1().Roles(o.Namespace).Delete(role.Name, &metav1.DeleteOptions{})
+					if err != nil {
+						log.Errorf("Error deleting role %s created for values.schema.json preprocessing: %v",
+							role.Name, err)
+					}
+				}()
+				if err != nil {
+					return &chartDetails, errors.Wrapf(err, "creating role %s for values.schema.json preprocessing",
+						role.Name)
+				}
+				serviceAccount := &corev1.ServiceAccount{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: serviceAccountName,
+					},
+				}
+				_, err = o.KubeClient.CoreV1().ServiceAccounts(o.Namespace).Create(serviceAccount)
+				defer func() {
+					err := o.KubeClient.CoreV1().ServiceAccounts(o.Namespace).Delete(serviceAccountName, &metav1.DeleteOptions{})
+					if err != nil {
+						log.Errorf("Error deleting serviceaccount %s created for values.schema.json preprocessing: %v",
+							serviceAccountName, err)
+					}
+				}()
+				if err != nil {
+					return &chartDetails, errors.Wrapf(err, "creating serviceaccount %s for values.schema."+
+						"json preprocessing: %v", serviceAccountName, err)
+				}
+				roleBinding := rbacv1.RoleBinding{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: toValidName(app, "schema-rolebinding", id),
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Name:     role.Name,
+						Kind:     "Role",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							Kind:      rbacv1.ServiceAccountKind,
+							Name:      serviceAccountName,
+							Namespace: o.Namespace,
+							APIGroup:  corev1.GroupName,
+						},
+					},
+				}
+				_, err = o.KubeClient.RbacV1().RoleBindings(o.Namespace).Create(&roleBinding)
+				defer func() {
+					err := o.KubeClient.RbacV1().RoleBindings(o.Namespace).Delete(roleBinding.Name,
+						&metav1.DeleteOptions{})
+					if err != nil {
+						log.Errorf("Error deleting rolebinding %s for values.schema.json preprocessing: %v",
+							roleBinding.Name, err)
+					}
+				}()
+				pod := corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: toValidName(app, "values-preprocessor", id),
+					},
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{
+							*appResource.Spec.SchemaPreprocessor,
+						},
+						ServiceAccountName: serviceAccountName,
+						RestartPolicy:      corev1.RestartPolicyNever,
+					},
+				}
+				log.Infof("Preparing questions to configure %s."+
+					"\n If this is the first time you have installed the app, this may take a couple of minutes.",
+					app)
+				_, err = o.KubeClient.CoreV1().Pods(o.Namespace).Create(&pod)
+				if err != nil {
+					return &chartDetails, errors.Wrapf(err, "creating pod %s for values.schema.json proprocessing",
+						pod.Name)
+				}
+				timeout, err := time.ParseDuration(fmt.Sprintf("%ss", o.InstallTimeout))
+				if err != nil {
+					return &chartDetails, errors.Wrapf(err, "invalid timeout %s", o.InstallTimeout)
+				}
+				err = kube.WaitForPodNameToBeComplete(o.KubeClient, o.Namespace, pod.Name, timeout)
+				if err != nil {
+					return &chartDetails, errors.Wrapf(err, "waiting for %s to complete for values.schema."+
+						"json preprocessing",
+						pod.Name)
+				}
+				completePod, err := o.KubeClient.Core().Pods(o.Namespace).Get(pod.Name, metav1.GetOptions{})
+				if err != nil {
+					return &chartDetails, errors.Wrapf(err, "getting pod %s", pod.Name)
+				}
+				if kube.PodStatus(completePod) == string(corev1.PodFailed) {
+					log.Errorf("Pod Log")
+					log.Errorf("-----------")
+					err := kube.TailLogs(o.Namespace, pod.Name, appResource.Spec.SchemaPreprocessor.Name, o.Err, o.Out)
+					log.Errorf("-----------")
+					if err != nil {
+						return &chartDetails, errors.Wrapf(err, "getting pod logs for %s container %s", pod.Name,
+							appResource.Spec.SchemaPreprocessor.Name)
+					}
+					return &chartDetails, errors.Errorf("failed to prepare questions")
+				}
+				log.Infof("Questions prepared.")
+				newCm, err := o.KubeClient.CoreV1().ConfigMaps(o.Namespace).Get(cmName, metav1.GetOptions{})
+				if err != nil {
+					return &chartDetails, errors.Wrapf(err, "getting configmap %s for values.schema."+
+						"json preprocessing", cmName)
+				}
+				if v, ok := newCm.Data["values.schema.json"]; !ok {
+					return &chartDetails, errors.Errorf("no key values.schema.json in configmap %s for values.schema."+
+						"json preprocessing", cmName)
+				} else {
+					schema = []byte(v)
+				}
+			}
+
+			if err != nil {
+				return &chartDetails, errors.Wrapf(err, "locating app resource for %s", app)
+			}
 			var secrets []*surveyutils.GeneratedSecret
 			var basepath string
 			if o.GitOps {
@@ -346,6 +535,11 @@ func (o *InstallOptions) createInterrogateChartFn(version string, app string, re
 		chartDetails.Values = values
 		return &chartDetails, nil
 	}
+}
+
+func toValidName(appName string, name string, id string) string {
+	base := fmt.Sprintf("%s-%s", name, appName)
+	return kube.ToValidName(fmt.Sprintf("%s-%s", base[0:20], id))
 }
 
 func (o *InstallOptions) handleValues(dir string, app string, values []byte) (func(), error) {
