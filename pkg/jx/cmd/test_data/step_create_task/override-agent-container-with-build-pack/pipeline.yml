@@ -1,0 +1,21 @@
+apiVersion: tekton.dev/v1alpha1
+kind: Pipeline
+metadata:
+  creationTimestamp: null
+  name: abayer-js-test-repo-override-de-1
+  namespace: jx
+spec:
+  params: []
+  resources:
+  - name: abayer-js-test-repo-override-de
+    type: git
+  tasks:
+  - name: from-build-pack
+    resources:
+      inputs:
+      - name: workspace
+        resource: abayer-js-test-repo-override-de
+      outputs: null
+    taskRef:
+      name: abayer-js-test-repo-override-de-from-build-pack-1
+status: {}
