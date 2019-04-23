@@ -3,6 +3,7 @@ package log
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/fatih/color"
@@ -26,10 +27,32 @@ var colorInfo = color.New(color.FgGreen).SprintFunc()
 // given arguments with fmt.Sprint().
 var colorError = color.New(color.FgRed).SprintFunc()
 
+// FormatLayoutType the layout kind
+type FormatLayoutType string
+
+const (
+	// FormatLayoutJSON uses JSON layout
+	FormatLayoutJSON FormatLayoutType = "json"
+
+	// FormatLayoutText uses classic colorful Jenkins X layout
+	FormatLayoutText FormatLayoutType = "text"
+)
+
 func init() {
-	if isInCluster() {
-		logrus.SetFormatter(&logrus.JSONFormatter{})
+	format := os.Getenv("JX_LOG_FORMAT")
+	if format == "json" {
+		SetFormatter(FormatLayoutJSON)
 	} else {
+		SetFormatter(FormatLayoutText)
+	}
+}
+
+// SetFormatter sets the logrus format to use either text or JSON formatting
+func SetFormatter(layout FormatLayoutType) {
+	switch layout {
+	case FormatLayoutJSON:
+		logrus.SetFormatter(&logrus.JSONFormatter{})
+	default:
 		logrus.SetFormatter(NewJenkinsXTextFormat())
 	}
 }
