@@ -1,26 +1,129 @@
 package log
 
 import (
+	"bytes"
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/rest"
 )
 
-// ColorInfo returns a new function that returns info-colorized (green) strings for the
+// colorStatus returns a new function that returns status-colorized (cyan) strings for the
+// given arguments with fmt.Sprint().
+var colorStatus = color.New(color.FgCyan).SprintFunc()
+
+// colorWarn returns a new function that returns status-colorized (yellow) strings for the
+// given arguments with fmt.Sprint().
+var colorWarn = color.New(color.FgYellow).SprintFunc()
+
+// colorInfo returns a new function that returns info-colorized (green) strings for the
 // given arguments with fmt.Sprint().
 var colorInfo = color.New(color.FgGreen).SprintFunc()
 
-// ColorError returns a new function that returns error-colorized (red) strings for the
+// colorError returns a new function that returns error-colorized (red) strings for the
 // given arguments with fmt.Sprint().
 var colorError = color.New(color.FgRed).SprintFunc()
 
+// FormatLayoutType the layout kind
+type FormatLayoutType string
+
+const (
+	// FormatLayoutJSON uses JSON layout
+	FormatLayoutJSON FormatLayoutType = "json"
+
+	// FormatLayoutText uses classic colorful Jenkins X layout
+	FormatLayoutText FormatLayoutType = "text"
+)
+
 func init() {
-	if isInCluster() {
-		logrus.SetFormatter(&logrus.JSONFormatter{})
+	format := os.Getenv("JX_LOG_FORMAT")
+	if format == "json" {
+		SetFormatter(FormatLayoutJSON)
 	} else {
-		logrus.SetFormatter(&logrus.TextFormatter{})
+		SetFormatter(FormatLayoutText)
 	}
+}
+
+// SetFormatter sets the logrus format to use either text or JSON formatting
+func SetFormatter(layout FormatLayoutType) {
+	switch layout {
+	case FormatLayoutJSON:
+		logrus.SetFormatter(&logrus.JSONFormatter{})
+	default:
+		logrus.SetFormatter(NewJenkinsXTextFormat())
+	}
+}
+
+// JenkinsXTextFormat lets use a custom text format
+type JenkinsXTextFormat struct {
+	ShowInfoLevel   bool
+	ShowTimestamp   bool
+	TimestampFormat string
+}
+
+// NewJenkinsXTextFormat creates the default Jenkins X text formatter
+func NewJenkinsXTextFormat() *JenkinsXTextFormat {
+	return &JenkinsXTextFormat{
+		ShowInfoLevel:   false,
+		ShowTimestamp:   false,
+		TimestampFormat: "2006-01-02 15:04:05",
+	}
+}
+
+// Format formats the log statement
+func (f *JenkinsXTextFormat) Format(entry *logrus.Entry) ([]byte, error) {
+	var b *bytes.Buffer
+
+	if entry.Buffer != nil {
+		b = entry.Buffer
+	} else {
+		b = &bytes.Buffer{}
+	}
+
+	level := strings.ToUpper(entry.Level.String())
+	switch level {
+	case "INFO":
+		if f.ShowInfoLevel {
+			b.WriteString(colorStatus(level))
+			b.WriteString(": ")
+		}
+	case "WARN":
+		b.WriteString(colorWarn(level))
+		b.WriteString(": ")
+	case "DEBUG":
+		b.WriteString(colorStatus(level))
+		b.WriteString(": ")
+	default:
+		b.WriteString(colorError(level))
+		b.WriteString(": ")
+	}
+	if f.ShowTimestamp {
+		b.WriteString(entry.Time.Format(f.TimestampFormat))
+		b.WriteString(" - ")
+	}
+
+	b.WriteString(entry.Message)
+
+	/*    if len(entry.Data) > 0 {
+	          b.WriteString(" || ")
+	      }
+	      for key, value := range entry.Data {
+	          b.WriteString(key)
+	          b.WriteByte('=')
+	          b.WriteByte('{')
+	          fmt.Fprint(b, value)
+	          b.WriteString("}, ")
+	      }
+
+	*/
+
+	if !strings.HasSuffix(entry.Message, "\n") {
+		b.WriteByte('\n')
+	}
+	return b.Bytes(), nil
 }
 
 // Debugf debug logging with arguments
