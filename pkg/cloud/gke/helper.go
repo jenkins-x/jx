@@ -109,6 +109,12 @@ func GetCurrentProject() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	index := strings.LastIndex(out, "\n")
+	if index >= 0 {
+		return out[index+1:], nil
+	}
+
 	return out, nil
 }
 
