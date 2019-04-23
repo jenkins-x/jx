@@ -13,6 +13,7 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/features"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -68,6 +69,12 @@ func NewCmdCreateClusterMinikube(commonOpts *opts.CommonOptions) *cobra.Command 
 		Short:   "Create a new Kubernetes cluster with Minikube: Runs locally",
 		Long:    createClusterMinikubeLong,
 		Example: createClusterMinikubeExample,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := features.IsEnabled(cmd)
+			CheckErr(err)
+			err = options.InstallOptions.CheckFeatures()
+			CheckErr(err)
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

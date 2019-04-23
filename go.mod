@@ -78,7 +78,7 @@ require (
 	github.com/hashicorp/go-rootcerts v0.0.0-20160503143440-6bb64b370b90 // indirect
 	github.com/hashicorp/go-sockaddr v1.0.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.1 // indirect
-	github.com/hashicorp/go-version v0.0.0-20180716215031-270f2f71b1ee
+	github.com/hashicorp/go-version v1.0.0
 	github.com/hashicorp/hcl v0.0.0-20180404174102-ef8a98b0bbce
 	github.com/hashicorp/vault v0.11.4
 	github.com/hashicorp/vault-plugin-secrets-kv v0.0.0-20190115203747-edbfe287c5d9 // indirect
@@ -133,6 +133,7 @@ require (
 	github.com/pkg/errors v0.8.0
 	github.com/prometheus/common v0.2.0 // indirect
 	github.com/rodaine/hclencoder v0.0.0-20180926060551-0680c4321930
+	github.com/rollout/rox-go v0.0.0-20181220111955-29ddae74a8c4
 	github.com/russross/blackfriday v1.5.1
 	github.com/ryanuber/go-glob v0.0.0-20170128012129-256dc444b735
 	github.com/satori/go.uuid v1.2.1-0.20180103174451-36e9d2ebbde5
