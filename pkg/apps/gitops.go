@@ -105,7 +105,7 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string) error {
 		for i, d := range requirements.Dependencies {
 			if d.Name == app && d.Alias == alias {
 				found = true
-				requirements.Dependencies[i] = nil
+				requirements.Dependencies = append(requirements.Dependencies[:i], requirements.Dependencies[i+1:]...)
 			}
 		}
 		// If app not found, add it
