@@ -97,6 +97,9 @@ func (o *GetPreviewOptions) CurrentPreviewUrl() error {
 		if env.Spec.Kind == v1.EnvironmentKindTypePreview && env.Name == name {
 			if o.URLOutput != "" {
 				err = ioutil.WriteFile(o.URLOutput, []byte(env.Spec.PreviewGitSpec.ApplicationURL), 0644)
+				if err != nil {
+					return err
+				}
 			}
 			if o.URLOnly {
 				fmt.Sprintf("%s", env.Spec.PreviewGitSpec.ApplicationURL)
