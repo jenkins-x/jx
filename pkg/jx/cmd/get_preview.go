@@ -91,8 +91,7 @@ func (o *GetPreviewOptions) CurrentPreviewUrl() error {
 	}
 	for _, env := range envList.Items {
 		if env.Spec.Kind == v1.EnvironmentKindTypePreview && env.Name == name {
-				log.Info(env.Spec.PreviewGitSpec.ApplicationURL)
-			}
+			log.Info(env.Spec.PreviewGitSpec.ApplicationURL)
 			return nil
 		}
 	}
