@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
@@ -63,12 +63,13 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 		Items: valuesFiles,
 	}
 
-	username, password, err := helm.DecorateWithCredentials(repository, username, password, o.VaultClient)
+	username, password, err := helm.DecorateWithCredentials(repository, username, password, o.VaultClient, o.In,
+		o.Out, o.Err)
 	if err != nil {
 		return errors.Wrapf(err, "locating credentials for %s", repository)
 	}
 
-	_, err = helm.AddHelmRepoIfMissing(repository, "", username, password, o.Helmer, o.VaultClient)
+	_, err = helm.AddHelmRepoIfMissing(repository, "", username, password, o.Helmer, o.VaultClient, o.In, o.Out, o.Err)
 	if err != nil {
 		return errors.Wrapf(err, "adding helm repo")
 	}
@@ -180,11 +181,12 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 		releaseName = fmt.Sprintf("%s-%s", o.Namespace, app)
 	}
 
-	username, password, err := helm.DecorateWithCredentials(repository, username, password, o.VaultClient)
+	username, password, err := helm.DecorateWithCredentials(repository, username, password, o.VaultClient, o.In,
+		o.Out, o.Err)
 	if err != nil {
 		return errors.Wrapf(err, "locating credentials for %s", repository)
 	}
-	_, err = helm.AddHelmRepoIfMissing(repository, "", username, password, o.Helmer, o.VaultClient)
+	_, err = helm.AddHelmRepoIfMissing(repository, "", username, password, o.Helmer, o.VaultClient, o.In, o.Out, o.Err)
 
 	if err != nil {
 		return errors.Wrapf(err, "adding helm repo")

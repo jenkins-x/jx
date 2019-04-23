@@ -33,11 +33,6 @@ import (
 
 // Helpers for various app tests
 
-const (
-	// FakeChartmusuem is the url for the fake chart museum used in tests
-	FakeChartmusuem = "http://fake.chartmuseum"
-)
-
 // AppTestOptions contains all useful data from the test environment initialized by `prepareInitialPromotionEnv`
 type AppTestOptions struct {
 	ConfigureGitFn  environments.ConfigureGitFn
@@ -102,7 +97,7 @@ func (o *AppTestOptions) DirectlyAddAppToGitOps(values map[string]interface{}) (
 		Name:       name,
 		Alias:      alias,
 		Version:    version,
-		Repository: FakeChartmusuem,
+		Repository: helm.FakeChartmusuem,
 	})
 	data, err := yaml.Marshal(requirements)
 	if err != nil {

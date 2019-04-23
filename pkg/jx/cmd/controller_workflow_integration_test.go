@@ -326,7 +326,7 @@ func TestWorkflowManualPromote(t *testing.T) {
 		Version:              version,
 		NoPoll:               true,
 		IgnoreLocalFiles:     true,
-		HelmRepositoryURL:    helm.DefaultHelmRepositoryURL,
+		HelmRepositoryURL:    helm.InClusterHelmRepositoryURL,
 		LocalHelmRepoName:    kube.LocalHelmRepoName,
 		Namespace:            "jx",
 		ConfigureGitCallback: configureGitFn,

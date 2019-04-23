@@ -1,27 +1,22 @@
 package cmd_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/gits/mocks"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
-	"github.com/jenkins-x/jx/pkg/jx/cmd"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"os"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/config"
+	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 )
 
 // Constants for some test data to be used.
 const (
-	application    = "test-app"
-	releaseName    = "test-app-release-name"
-	name           = "test-app-name"
-	namespace      = "jx"
-	gitHubLink     = "https://github.com/an-org/a-repo"
-	gitHubUsername = "test-user-1"
-	prNum          = 1
-	prAuthor       = "the-pr-author"
-	prOwner        = "the-pr-owner"
-	prEmail        = "the-pr-owner@organisation.com"
+	application = "test-app"
+	releaseName = "test-app-release-name"
+	name        = "test-app-name"
+	namespace   = "jx"
 )
 
 func TestGetPreviewValuesConfig(t *testing.T) {
