@@ -1105,7 +1105,7 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 		c.WorkingDir = workingDir
 		stepCounter++
 		if step.Name != "" {
-			c.Name = step.Name
+			c.Name = MangleToRfc1035Label(step.Name, "")
 		} else {
 			c.Name = "step" + strconv.Itoa(1+stepCounter)
 		}
