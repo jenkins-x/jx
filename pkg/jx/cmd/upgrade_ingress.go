@@ -589,7 +589,8 @@ func (o *UpgradeIngressOptions) AnnotateExposedServicesWithCertManager(svcs ...s
 		if issuer == "" {
 			return result, fmt.Errorf("no issuer was configured for cert manager")
 		}
-		services, err := services.AnnotateServicesWithCertManagerIssuer(client, n, issuer, svcs...)
+		clusterIssuer := o.IngressConfig.ClusterIssuer
+		services, err := services.AnnotateServicesWithCertManagerIssuer(client, n, issuer, clusterIssuer, svcs...)
 		if err != nil {
 			return result, err
 		}

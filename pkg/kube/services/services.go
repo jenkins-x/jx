@@ -19,14 +19,15 @@ import (
 )
 
 const (
-	ExposeAnnotation            = "fabric8.io/expose"
-	ExposeURLAnnotation         = "fabric8.io/exposeUrl"
-	ExposeGeneratedByAnnotation = "fabric8.io/generated-by"
-	ExposeIngressName           = "fabric8.io/ingress.name"
-	JenkinsXSkipTLSAnnotation   = "jenkins-x.io/skip.tls"
-	ExposeIngressAnnotation     = "fabric8.io/ingress.annotations"
-	CertManagerAnnotation       = "certmanager.k8s.io/issuer"
-	ServiceAppLabel             = "app"
+	ExposeAnnotation             = "fabric8.io/expose"
+	ExposeURLAnnotation          = "fabric8.io/exposeUrl"
+	ExposeGeneratedByAnnotation  = "fabric8.io/generated-by"
+	ExposeIngressName            = "fabric8.io/ingress.name"
+	JenkinsXSkipTLSAnnotation    = "jenkins-x.io/skip.tls"
+	ExposeIngressAnnotation      = "fabric8.io/ingress.annotations"
+	CertManagerAnnotation        = "certmanager.k8s.io/issuer"
+	CertManagerClusterAnnotation = "certmanager.k8s.io/cluster-issuer"
+	ServiceAppLabel              = "app"
 )
 
 type ServiceURL struct {
@@ -333,7 +334,7 @@ func ServiceAppName(service *v1.Service) string {
 
 // AnnotateServicesWithCertManagerIssuer adds the cert-manager annotation to the services from the given namespace. If a list of
 // services is provided, it will apply the annotation only to that specific services.
-func AnnotateServicesWithCertManagerIssuer(c kubernetes.Interface, ns, issuer string, services ...string) ([]*v1.Service, error) {
+func AnnotateServicesWithCertManagerIssuer(c kubernetes.Interface, ns, issuer string, clusterIssuer bool, services ...string) ([]*v1.Service, error) {
 	result := make([]*v1.Service, 0)
 	svcList, err := GetServices(c, ns)
 	if err != nil {
@@ -351,10 +352,14 @@ func AnnotateServicesWithCertManagerIssuer(c kubernetes.Interface, ns, issuer st
 		if s.Annotations[ExposeAnnotation] == "true" && s.Annotations[JenkinsXSkipTLSAnnotation] != "true" {
 			existingAnnotations, _ := s.Annotations[ExposeIngressAnnotation]
 			// if no existing `fabric8.io/ingress.annotations` initialise and add else update with ClusterIssuer
+			certManagerAnnotation = CertManagerAnnotation
+			if clusterIssuer == true {
+					certManagerAnnotation = CertManagerClusterAnnotation
+			}
 			if len(existingAnnotations) > 0 {
-				s.Annotations[ExposeIngressAnnotation] = existingAnnotations + "\n" + CertManagerAnnotation + ": " + issuer
+				s.Annotations[ExposeIngressAnnotation] = existingAnnotations + "\n" + certManagerAnnotation + ": " + issuer
 			} else {
-				s.Annotations[ExposeIngressAnnotation] = CertManagerAnnotation + ": " + issuer
+				s.Annotations[ExposeIngressAnnotation] = certManagerAnnotation + ": " + issuer
 			}
 			s, err = c.CoreV1().Services(ns).Update(s)
 			if err != nil {
@@ -390,7 +395,7 @@ func CleanServiceAnnotations(c kubernetes.Interface, ns string, services ...stri
 				for _, element := range annotations {
 					annotation := strings.SplitN(element, ":", 2)
 					key, _ := annotation[0], strings.TrimSpace(annotation[1])
-					if key != CertManagerAnnotation {
+					if key != CertManagerAnnotation && key != CertManagerClusterAnnotation {
 						newAnnotations = append(newAnnotations, element)
 					}
 				}
