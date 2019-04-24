@@ -42,8 +42,15 @@ func TestGetLifecycleReturnsPostBuild(t *testing.T) {
 	assert.Equal(t, lifecycles.PostBuild, lifecycle)
 }
 
+func TestGetLifecycleReturnsPromote(t *testing.T) {
+	lifecycles := jenkinsfile.PipelineLifecycles{}
+	lifecycles.Promote = &jenkinsfile.PipelineLifecycle{}
+	lifecycle, _ := lifecycles.GetLifecycle("promote", false)
+	assert.Equal(t, lifecycles.Promote, lifecycle)
+}
+
 func TestGetLifecycleReturnsEmptyLifecycle(t *testing.T) {
-	names := []string{"setup", "setversion", "prebuild", "build", "postbuild"}
+	names := []string{"setup", "setversion", "prebuild", "build", "postbuild", "promote"}
 	for _, name := range names {
 		lifecycles := jenkinsfile.PipelineLifecycles{}
 		lifecycles.Setup = &jenkinsfile.PipelineLifecycle{}
