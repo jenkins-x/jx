@@ -138,6 +138,12 @@ func (o *CreateAddonIstioOptions) Run() error {
 	}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
+	log.Infof("installing istio-init\n")
+	err = o.InstallChartAt(o.Dir, o.ReleaseName, o.Chart+"-init", o.Version, o.Namespace, true, values, nil, "")
+	if err != nil {
+		return fmt.Errorf("istio-init deployment failed: %v", err)
+	}
+	log.Infof("installing istio\n")
 	err = o.InstallChartAt(o.Dir, o.ReleaseName, o.Chart, o.Version, o.Namespace, true, values, nil, "")
 	if err != nil {
 		return fmt.Errorf("istio deployment failed: %v", err)
