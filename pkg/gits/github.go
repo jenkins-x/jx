@@ -3,12 +3,13 @@ package gits
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -319,7 +320,7 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 	}
 	hooks, _, err := p.Client.Repositories.ListHooks(p.Context, owner, repo, nil)
 	if err != nil {
-		log.Errorf("Error querying webhooks on %s/%s: %s\n", owner, repo, err)
+		log.Warnf("Querying webhooks on %s/%s: %s\n", owner, repo, err)
 	}
 	for _, hook := range hooks {
 		c := hook.Config["url"]
@@ -354,6 +355,7 @@ func (p *GitHubProvider) CreateWebHook(data *GitWebHookArguments) error {
 		Config: config,
 		Events: []string{"*"},
 	}
+
 	log.Infof("Creating GitHub webhook for %s/%s for url %s\n", util.ColorInfo(owner), util.ColorInfo(repo), util.ColorInfo(webhookUrl))
 	_, _, err = p.Client.Repositories.CreateHook(p.Context, owner, repo, hook)
 	return err
@@ -371,7 +373,7 @@ func (p *GitHubProvider) ListWebHooks(owner string, repo string) ([]*GitWebHookA
 
 	hooks, _, err := p.Client.Repositories.ListHooks(p.Context, owner, repo, nil)
 	if err != nil {
-		log.Errorf("Error querying webhooks on %s/%s: %s\n", owner, repo, err)
+		return webHooks, nil
 	}
 
 	for _, hook := range hooks {
@@ -406,7 +408,7 @@ func (p *GitHubProvider) UpdateWebHook(data *GitWebHookArguments) error {
 	}
 	hooks, _, err := p.Client.Repositories.ListHooks(p.Context, owner, repo, nil)
 	if err != nil {
-		log.Errorf("Error querying webhooks on %s/%s: %s\n", owner, repo, err)
+		log.Warnf("Querying webhooks on %s/%s: %s\n", owner, repo, err)
 	}
 
 	dataId := data.ID
