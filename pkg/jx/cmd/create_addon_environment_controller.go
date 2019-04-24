@@ -42,6 +42,7 @@ type CreateAddonEnvironmentControllerOptions struct {
 	ReleaseName string
 	SetValues   string
 	Timeout     int
+	InitOptions InitOptions
 
 	// chart parameters
 	WebHookURL        string
@@ -52,6 +53,7 @@ type CreateAddonEnvironmentControllerOptions struct {
 	BuildPackURL      string
 	BuildPackRef      string
 	ClusterRBAC       bool
+	NoClusterAdmin    bool
 	ProjectID         string
 	DockerRegistry    string
 	DockerRegistryOrg string
@@ -94,6 +96,8 @@ func NewCmdCreateAddonEnvironmentController(commonOpts *opts.CommonOptions) *cob
 	cmd.Flags().StringVarP(&options.BuildPackRef, "buildpack-ref", "", "", "The Git reference (branch,tag,sha) in the Git repository to use")
 	cmd.Flags().StringVarP(&options.ProjectID, "project-id", "", "", "The cloud project ID")
 	cmd.Flags().BoolVarP(&options.ClusterRBAC, "cluster-rbac", "", false, "Whether to enable cluster level RBAC on Tekton")
+	cmd.Flags().StringVarP(&options.InitOptions.Flags.UserClusterRole, "cluster-role", "", "cluster-admin", "The cluster role for the current user to be able to install Cluster RBAC based Environment Controller")
+	cmd.Flags().BoolVarP(&options.NoClusterAdmin, "no-cluster-admin", "", false, "If using cluster RBAC the current user needs 'cluster-admin' karma which this command will add if its possible")
 	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
 	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The Docker registry organisation. If blank the git repository owner is used")
 	return cmd
@@ -123,6 +127,14 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 		return err
 	}
 
+	if o.ClusterRBAC && !o.NoClusterAdmin {
+		io := &o.InitOptions
+		io.CommonOptions = o.CommonOptions
+		err = io.enableClusterAdminRole()
+		if err != nil {
+			return err
+		}
+	}
 	// avoid needing a dev cluster
 	o.EnableRemoteKubeCluster()
 
