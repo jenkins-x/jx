@@ -10,7 +10,7 @@ import (
 	apiextentions_mocks "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset/fake"
 )
 
-func TestRegisterEnvironmentCRD(t *testing.T) {
+func TestRegisterAllCRDs(t *testing.T) {
 	// mock factory
 	factory := cmd_mocks.NewMockFactory()
 
@@ -19,21 +19,7 @@ func TestRegisterEnvironmentCRD(t *testing.T) {
 	// Override CreateApiExtensionsClient to return mock apiextensions interface
 	When(factory.CreateApiExtensionsClient()).ThenReturn(apiextensionsInterface, nil)
 
-	err := kube.RegisterEnvironmentCRD(apiextensionsInterface)
-
-	assert.NoError(t, err, "Should not error")
-}
-
-func TestRegisterPipelineStructureCRD(t *testing.T) {
-	// mock factory
-	factory := cmd_mocks.NewMockFactory()
-
-	// mock apiExtensions interface
-	apiextensionsInterface := apiextentions_mocks.NewSimpleClientset()
-	// Override CreateApiExtensionsClient to return mock apiextensions interface
-	When(factory.CreateApiExtensionsClient()).ThenReturn(apiextensionsInterface, nil)
-
-	err := kube.RegisterPipelineStructureCRD(apiextensionsInterface)
+	err := kube.RegisterAllCRDs(apiextensionsInterface)
 
 	assert.NoError(t, err, "Should not error")
 }
