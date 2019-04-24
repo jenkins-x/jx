@@ -258,6 +258,11 @@ func (a *PipelineLifecycles) GetLifecycle(name string, lazyCreate bool) (*Pipeli
 			a.PostBuild = &PipelineLifecycle{}
 		}
 		return a.PostBuild, nil
+	case "promote":
+		if a.Promote == nil && lazyCreate {
+			a.Promote = &PipelineLifecycle{}
+		}
+		return a.Promote, nil
 	default:
 		return nil, fmt.Errorf("unknown pipeline lifecycle stage: %s", name)
 	}
