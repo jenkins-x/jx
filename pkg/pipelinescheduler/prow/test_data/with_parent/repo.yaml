@@ -5,6 +5,11 @@ postsubmits:
       replace: true
       items:
         - 2.x
+
+trigger:
+  joinOrgUrl: http://org-url
+  onlyOrgMembers: true
+
 plugins:
   items:
   - cat

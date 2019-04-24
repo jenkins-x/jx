@@ -39,6 +39,7 @@ func Build(schedulers []*Scheduler) (*Scheduler, error) {
 					return nil, errors.WithStack(err)
 				}
 			}
+			//TODO: This should probably be an array of triggers, because the plugins yaml is expecting an array
 			if answer.Trigger == nil {
 				answer.Trigger = parent.Trigger
 			} else if parent.Trigger != nil {
@@ -75,16 +76,16 @@ func Build(schedulers []*Scheduler) (*Scheduler, error) {
 }
 
 func applyToTrigger(parent *Trigger, child *Trigger) {
-	if child.IgnoreOkToTest != nil {
+	if child.IgnoreOkToTest == nil {
 		child.IgnoreOkToTest = parent.IgnoreOkToTest
 	}
-	if child.JoinOrgURL != nil {
+	if child.JoinOrgURL == nil {
 		child.JoinOrgURL = parent.JoinOrgURL
 	}
-	if child.OnlyOrgMembers != nil {
+	if child.OnlyOrgMembers == nil {
 		child.OnlyOrgMembers = parent.OnlyOrgMembers
 	}
-	if child.TrustedOrg != nil {
+	if child.TrustedOrg == nil {
 		child.TrustedOrg = parent.TrustedOrg
 	}
 }
@@ -239,7 +240,7 @@ func applyToContextPolicy(parent *ContextPolicy, child *ContextPolicy) {
 	}
 	if child.RequiredIfPresentContexts == nil {
 		child.RequiredIfPresentContexts = parent.RequiredIfPresentContexts
-	} else if !child.RequiredIfPresentContexts.Replace && parent.RequiredContexts != nil {
+	} else if parent.RequiredIfPresentContexts != nil {
 		applyToReplaceableSliceOfStrings(parent.RequiredIfPresentContexts, child.RequiredIfPresentContexts)
 	}
 }

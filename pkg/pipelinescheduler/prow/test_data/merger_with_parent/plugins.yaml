@@ -20,7 +20,6 @@ external_plugins:
 #owners: {}
 plugins:
   acme/dummy:
-  - cat
   - config-updater
   - approve
   - assign
@@ -41,8 +40,5 @@ triggers:
 - repos:
   - acme/dummy
   trusted_org: roadrunner-corp
-  join_org_url: http://org-url
-  only_org_members: true
-  ignore_ok_to_test: true
 #welcome:
 #- message_template: Welcome
