@@ -90,7 +90,7 @@ func (f *JenkinsXTextFormat) Format(entry *logrus.Entry) ([]byte, error) {
 			b.WriteString(colorStatus(level))
 			b.WriteString(": ")
 		}
-	case "WARN":
+	case "WARNING":
 		b.WriteString(colorWarn(level))
 		b.WriteString(": ")
 	case "DEBUG":
