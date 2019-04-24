@@ -155,6 +155,8 @@ type PipelineConfig struct {
 	Pipelines   Pipelines        `json:"pipelines,omitempty"`
 }
 
+// +k8s:openapi-gen=false
+
 // CreateJenkinsfileArguments contains the arguents to generate a Jenkinsfiles dynamically
 type CreateJenkinsfileArguments struct {
 	ConfigFile          string

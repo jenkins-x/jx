@@ -13,37 +13,36 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.AddonConfig":                schema_pkg_syntax_syntaxjenkinsio_v1alpha1_AddonConfig(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Agent":                      schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Agent(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.BasicAuth":                  schema_pkg_syntax_syntaxjenkinsio_v1alpha1_BasicAuth(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.BranchBuild":                schema_pkg_syntax_syntaxjenkinsio_v1alpha1_BranchBuild(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Build":                      schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Build(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.ChatConfig":                 schema_pkg_syntax_syntaxjenkinsio_v1alpha1_ChatConfig(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.CreateJenkinsfileArguments": schema_pkg_syntax_syntaxjenkinsio_v1alpha1_CreateJenkinsfileArguments(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.EnvVar":                     schema_pkg_syntax_syntaxjenkinsio_v1alpha1_EnvVar(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.IssueTrackerConfig":         schema_pkg_syntax_syntaxjenkinsio_v1alpha1_IssueTrackerConfig(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Loop":                       schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Loop(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.NamedLifecycle":             schema_pkg_syntax_syntaxjenkinsio_v1alpha1_NamedLifecycle(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.ParsedPipeline":             schema_pkg_syntax_syntaxjenkinsio_v1alpha1_ParsedPipeline(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineAgent":              schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineAgent(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineConfig":             schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineConfig(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineExtends":            schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineExtends(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineLifecycle":          schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineLifecycle(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineLifecycles":         schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineLifecycles(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineStep":               schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineStep(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Pipelines":                  schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Pipelines(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Post":                       schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Post(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PostAction":                 schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PostAction(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PreviewEnvironmentConfig":   schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PreviewEnvironmentConfig(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.ProjectConfig":              schema_pkg_syntax_syntaxjenkinsio_v1alpha1_ProjectConfig(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.RootOptions":                schema_pkg_syntax_syntaxjenkinsio_v1alpha1_RootOptions(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Stage":                      schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Stage(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.StageOptions":               schema_pkg_syntax_syntaxjenkinsio_v1alpha1_StageOptions(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Stash":                      schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Stash(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Step":                       schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Step(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Timeout":                    schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Timeout(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Unstash":                    schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Unstash(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.WikiConfig":                 schema_pkg_syntax_syntaxjenkinsio_v1alpha1_WikiConfig(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.AddonConfig":              schema_pkg_syntax_syntaxjenkinsio_v1alpha1_AddonConfig(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Agent":                    schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Agent(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.BasicAuth":                schema_pkg_syntax_syntaxjenkinsio_v1alpha1_BasicAuth(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.BranchBuild":              schema_pkg_syntax_syntaxjenkinsio_v1alpha1_BranchBuild(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Build":                    schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Build(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.ChatConfig":               schema_pkg_syntax_syntaxjenkinsio_v1alpha1_ChatConfig(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.EnvVar":                   schema_pkg_syntax_syntaxjenkinsio_v1alpha1_EnvVar(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.IssueTrackerConfig":       schema_pkg_syntax_syntaxjenkinsio_v1alpha1_IssueTrackerConfig(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Loop":                     schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Loop(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.NamedLifecycle":           schema_pkg_syntax_syntaxjenkinsio_v1alpha1_NamedLifecycle(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.ParsedPipeline":           schema_pkg_syntax_syntaxjenkinsio_v1alpha1_ParsedPipeline(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineAgent":            schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineAgent(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineConfig":           schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineConfig(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineExtends":          schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineExtends(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineLifecycle":        schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineLifecycle(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineLifecycles":       schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineLifecycles(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineStep":             schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineStep(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Pipelines":                schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Pipelines(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Post":                     schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Post(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PostAction":               schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PostAction(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PreviewEnvironmentConfig": schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PreviewEnvironmentConfig(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.ProjectConfig":            schema_pkg_syntax_syntaxjenkinsio_v1alpha1_ProjectConfig(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.RootOptions":              schema_pkg_syntax_syntaxjenkinsio_v1alpha1_RootOptions(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Stage":                    schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Stage(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.StageOptions":             schema_pkg_syntax_syntaxjenkinsio_v1alpha1_StageOptions(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Stash":                    schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Stash(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Step":                     schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Step(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Timeout":                  schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Timeout(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Unstash":                  schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Unstash(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.WikiConfig":               schema_pkg_syntax_syntaxjenkinsio_v1alpha1_WikiConfig(ref),
 	}
 }
 
@@ -285,50 +284,6 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_ChatConfig(ref common.ReferenceC
 						},
 					},
 				},
-			},
-		},
-		Dependencies: []string{},
-	}
-}
-
-func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_CreateJenkinsfileArguments(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "CreateJenkinsfileArguments contains the arguents to generate a Jenkinsfiles dynamically",
-				Properties: map[string]spec.Schema{
-					"ConfigFile": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"TemplateFile": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"OutputFile": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"string"},
-							Format: "",
-						},
-					},
-					"JenkinsfileRunner": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"boolean"},
-							Format: "",
-						},
-					},
-					"ClearContainerNames": {
-						SchemaProps: spec.SchemaProps{
-							Type:   []string{"boolean"},
-							Format: "",
-						},
-					},
-				},
-				Required: []string{"ConfigFile", "TemplateFile", "OutputFile", "JenkinsfileRunner", "ClearContainerNames"},
 			},
 		},
 		Dependencies: []string{},

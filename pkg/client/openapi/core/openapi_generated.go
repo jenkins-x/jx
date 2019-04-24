@@ -232,24 +232,21 @@ func schema_pkg_apis_jenkinsio_v1_AppSpec(ref common.ReferenceCallback) common.O
 			SchemaProps: spec.SchemaProps{
 				Description: "AppSpec provides details of the metadata for an App",
 				Properties: map[string]spec.Schema{
-					"exposedServices": {
+					"schemaPreprocessor": {
 						SchemaProps: spec.SchemaProps{
-							Description: "A list of services that this App exposes",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Type:   []string{"string"},
-										Format: "",
-									},
-								},
-							},
+							Ref: ref("k8s.io/api/core/v1.Container"),
+						},
+					},
+					"schemaPreprocessorRole": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/api/rbac/v1.Role"),
 						},
 					},
 				},
 			},
 		},
-		Dependencies: []string{},
+		Dependencies: []string{
+			"k8s.io/api/core/v1.Container", "k8s.io/api/rbac/v1.Role"},
 	}
 }
 

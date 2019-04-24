@@ -85,26 +85,6 @@ definitions:
         type: string
       userChannel:
         type: string
-  com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.CreateJenkinsfileArguments:
-    description: CreateJenkinsfileArguments contains the arguents to generate a Jenkinsfiles
-      dynamically
-    properties:
-      ClearContainerNames:
-        type: boolean
-      ConfigFile:
-        type: string
-      JenkinsfileRunner:
-        type: boolean
-      OutputFile:
-        type: string
-      TemplateFile:
-        type: string
-    required:
-    - ConfigFile
-    - TemplateFile
-    - OutputFile
-    - JenkinsfileRunner
-    - ClearContainerNames
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.EnvVar:
     description: EnvVar is a key/value pair defining an environment variable
     properties:
