@@ -219,25 +219,30 @@ func (a *PipelineLifecycles) GetLifecycle(name string, lazyCreate bool) (*Pipeli
 		}
 		return a.Setup, nil
 	case "setversion":
-		if a.Setup == nil && lazyCreate {
-			a.Setup = &PipelineLifecycle{}
+		if a.SetVersion == nil && lazyCreate {
+			a.SetVersion = &PipelineLifecycle{}
 		}
-		return a.Setup, nil
+		return a.SetVersion, nil
 	case "prebuild":
-		if a.Setup == nil && lazyCreate {
-			a.Setup = &PipelineLifecycle{}
+		if a.PreBuild == nil && lazyCreate {
+			a.PreBuild = &PipelineLifecycle{}
 		}
-		return a.Setup, nil
+		return a.PreBuild, nil
 	case "build":
-		if a.Setup == nil && lazyCreate {
-			a.Setup = &PipelineLifecycle{}
+		if a.Build == nil && lazyCreate {
+			a.Build = &PipelineLifecycle{}
 		}
-		return a.Setup, nil
+		return a.Build, nil
 	case "postbuild":
-		if a.Setup == nil && lazyCreate {
-			a.Setup = &PipelineLifecycle{}
+		if a.PostBuild == nil && lazyCreate {
+			a.PostBuild = &PipelineLifecycle{}
 		}
-		return a.Setup, nil
+		return a.PostBuild, nil
+	case "promote":
+		if a.Promote == nil && lazyCreate {
+			a.Promote = &PipelineLifecycle{}
+		}
+		return a.Promote, nil
 	default:
 		return nil, fmt.Errorf("unknown pipeline lifecycle stage: %s", name)
 	}
