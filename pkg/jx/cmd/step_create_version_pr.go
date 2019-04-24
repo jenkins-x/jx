@@ -174,6 +174,10 @@ func (o *StepCreateVersionPullRequestOptions) modifyFiles(dir string) error {
 		if err != nil {
 			return errors.Wrap(err, "modifying the BDD test version YAMLs")
 		}
+		err = o.modifyRegex(filepath.Join(dir, "jenkins-x-*.yml"), "gcr.io/jenkinsxio/builder-go:(.+)", "gcr.io/jenkinsxio/builder-go:"+o.builderImageVersion)
+		if err != nil {
+			return errors.Wrap(err, "modifying the BDD test version YAMLs")
+		}
 
 		pattern := filepath.Join(dir, string(version.KindDocker), "gcr.io", "jenkinsxio", "builder-*.yml")
 		err = o.modifyVersionYamlFiles(pattern, o.builderImageVersion, "builder-base.yml")
