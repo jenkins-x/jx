@@ -346,9 +346,18 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 	}
 	outputDir, _, chartsDir, err := h.getDirectories(releaseName)
 
-	chartDir, err := h.fetchChart(chart, version, chartsDir, repo, username, password)
+	// check if we are installing a chart from the filesystem
+	chartDir := filepath.Join(h.CWD, chart)
+	exists, err := util.FileExists(chartDir)
 	if err != nil {
 		return err
+	}
+	if !exists {
+		log.Debugf("Fetching chart: %s\n", chart)
+		chartDir, err = h.fetchChart(chart, version, chartsDir, repo, username, password)
+		if err != nil {
+			return err
+		}
 	}
 	err = h.Client.Template(chartDir, releaseName, ns, outputDir, false, values, valueFiles)
 	if err != nil {
