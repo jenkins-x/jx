@@ -2,11 +2,11 @@ package opts
 
 import (
 	"github.com/jenkins-x/jx/pkg/chats"
-	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 )
 
 // CreateChatProvider creates a new chart provider from the given configuration
-func (o *CommonOptions) CreateChatProvider(chatConfig *config.ChatConfig) (chats.ChatProvider, error) {
+func (o *CommonOptions) CreateChatProvider(chatConfig *v1alpha1.ChatConfig) (chats.ChatProvider, error) {
 	u := chatConfig.URL
 	if u == "" {
 		return nil, nil

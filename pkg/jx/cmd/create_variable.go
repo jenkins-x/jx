@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile/gitresolver"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -83,11 +82,11 @@ func (o *CreateVariableOptions) Run() error {
 			dir = "."
 		}
 	}
-	projectConfig, fileName, err := config.LoadProjectConfig(dir)
+	projectConfig, fileName, err := v1alpha1.LoadProjectConfig(dir)
 	if err != nil {
 		return err
 	}
-	enrichedProjectConfig, _, err := config.LoadProjectConfig(dir)
+	enrichedProjectConfig, _, err := v1alpha1.LoadProjectConfig(dir)
 	if err != nil {
 		return err
 	}
@@ -137,7 +136,7 @@ func (o *CreateVariableOptions) Run() error {
 	}
 
 	if projectConfig.PipelineConfig == nil {
-		projectConfig.PipelineConfig = &jenkinsfile.PipelineConfig{}
+		projectConfig.PipelineConfig = &v1alpha1.PipelineConfig{}
 	}
 	projectConfig.PipelineConfig.Env = kube.SetEnvVar(projectConfig.PipelineConfig.Env, name, value)
 
@@ -150,7 +149,7 @@ func (o *CreateVariableOptions) Run() error {
 
 }
 
-func (o *CreateVariableOptions) loadEnvVars(projectConfig *config.ProjectConfig) (map[string]string, error) {
+func (o *CreateVariableOptions) loadEnvVars(projectConfig *v1alpha1.ProjectConfig) (map[string]string, error) {
 	answer := map[string]string{}
 
 	teamSettings, err := o.TeamSettings()
@@ -176,12 +175,12 @@ func (o *CreateVariableOptions) loadEnvVars(projectConfig *config.ProjectConfig)
 		}
 	}
 	if projectConfig.PipelineConfig == nil {
-		projectConfig.PipelineConfig = &jenkinsfile.PipelineConfig{}
+		projectConfig.PipelineConfig = &v1alpha1.PipelineConfig{}
 	}
 	pipelineConfig := projectConfig.PipelineConfig
 	if name != "none" {
 		packDir := filepath.Join(packsDir, name)
-		pipelineFile := filepath.Join(packDir, jenkinsfile.PipelineConfigFileName)
+		pipelineFile := filepath.Join(packDir, v1alpha1.PipelineConfigFileName)
 		exists, err := util.FileExists(pipelineFile)
 		if err != nil {
 			return answer, errors.Wrapf(err, "failed to find build pack pipeline YAML: %s", pipelineFile)
@@ -190,7 +189,7 @@ func (o *CreateVariableOptions) loadEnvVars(projectConfig *config.ProjectConfig)
 			return answer, fmt.Errorf("no build pack for %s exists at directory %s", name, packDir)
 		}
 		jenkinsfileRunner := true
-		buildPackPipelineConfig, err := jenkinsfile.LoadPipelineConfig(pipelineFile, resolver, jenkinsfileRunner, false)
+		buildPackPipelineConfig, err := v1alpha1.LoadPipelineConfig(pipelineFile, resolver, jenkinsfileRunner, false)
 		if err != nil {
 			return answer, errors.Wrapf(err, "failed to load build pack pipeline YAML: %s", pipelineFile)
 		}

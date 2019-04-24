@@ -2,11 +2,11 @@ package config
 
 import (
 	"fmt"
-
-	"github.com/ghodss/yaml"
-
 	"io/ioutil"
 	"strings"
+
+	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -118,7 +118,7 @@ type AdminSecretsService struct {
 	FileName    string
 	Secrets     AdminSecretsConfig
 	Flags       AdminSecretsFlags
-	ingressAuth BasicAuth
+	ingressAuth v1alpha1.BasicAuth
 }
 
 type AdminSecretsFlags struct {
@@ -210,7 +210,7 @@ func (s *AdminSecretsService) newKanikoSecret() {
 func (s *AdminSecretsService) newIngressBasicAuth() {
 	password := s.Flags.DefaultAdminPassword
 	username := "admin"
-	s.ingressAuth = BasicAuth{
+	s.ingressAuth = v1alpha1.BasicAuth{
 		Username: "admin",
 		Password: password,
 	}
@@ -222,44 +222,44 @@ func (s *AdminSecretsService) updateIngressBasicAuth() {
 	password := s.Flags.DefaultAdminPassword
 	parts := strings.Split(s.Secrets.IngressBasicAuth, ":")
 	username := parts[0]
-	s.ingressAuth = BasicAuth{
+	s.ingressAuth = v1alpha1.BasicAuth{
 		Username: username,
 		Password: password,
 	}
 }
 
 // JenkinsAuth returns the current basic auth credentials for Jenkins
-func (s *AdminSecretsService) JenkinsAuth() BasicAuth {
-	return BasicAuth{
+func (s *AdminSecretsService) JenkinsAuth() v1alpha1.BasicAuth {
+	return v1alpha1.BasicAuth{
 		Username: "admin",
 		Password: s.Secrets.Jenkins.JenkinsSecret.Password,
 	}
 }
 
 // IngressAuth returns the current basic auth credentials for Ingress
-func (s *AdminSecretsService) IngressAuth() BasicAuth {
+func (s *AdminSecretsService) IngressAuth() v1alpha1.BasicAuth {
 	return s.ingressAuth
 }
 
 // ChartMuseumAuth returns the current credentials for ChartMuseum
-func (s *AdminSecretsService) ChartMuseumAuth() BasicAuth {
-	return BasicAuth{
+func (s *AdminSecretsService) ChartMuseumAuth() v1alpha1.BasicAuth {
+	return v1alpha1.BasicAuth{
 		Username: s.Secrets.ChartMuseum.ChartMuseumEnv.ChartMuseumSecret.User,
 		Password: s.Secrets.ChartMuseum.ChartMuseumEnv.ChartMuseumSecret.Password,
 	}
 }
 
 // GrafanaAuth returns the current credentials for Grafana
-func (s *AdminSecretsService) GrafanaAuth() BasicAuth {
-	return BasicAuth{
+func (s *AdminSecretsService) GrafanaAuth() v1alpha1.BasicAuth {
+	return v1alpha1.BasicAuth{
 		Username: s.Secrets.Grafana.GrafanaSecret.User,
 		Password: s.Secrets.Grafana.GrafanaSecret.Password,
 	}
 }
 
 // NexusAuth returns the current credentials for Nexus
-func (s *AdminSecretsService) NexusAuth() BasicAuth {
-	return BasicAuth{
+func (s *AdminSecretsService) NexusAuth() v1alpha1.BasicAuth {
+	return v1alpha1.BasicAuth{
 		Username: "admin",
 		Password: s.Secrets.Nexus.DefaultAdminPassword,
 	}

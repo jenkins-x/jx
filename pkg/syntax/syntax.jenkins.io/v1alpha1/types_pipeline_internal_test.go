@@ -1,4 +1,4 @@
-package syntax
+package v1alpha1
 
 import (
 	"strings"

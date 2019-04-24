@@ -6,9 +6,9 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 	"github.com/spf13/cobra"
 
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -77,7 +77,7 @@ func NewCmdEditConfig(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements the command
 func (o *EditConfigOptions) Run() error {
-	pc, fileName, err := config.LoadProjectConfig(o.Dir)
+	pc, fileName, err := v1alpha1.LoadProjectConfig(o.Dir)
 	if err != nil {
 		return err
 	}
@@ -125,10 +125,11 @@ func (o *EditConfigOptions) Run() error {
 	return nil
 }
 
-func (o *EditConfigOptions) EditIssueTracker(pc *config.ProjectConfig) (bool, error) {
+// EditIssueTracker prompts the user to make changes to the issue tracker configuration for the project
+func (o *EditConfigOptions) EditIssueTracker(pc *v1alpha1.ProjectConfig) (bool, error) {
 	answer := false
 	if pc.IssueTracker == nil {
-		pc.IssueTracker = &config.IssueTrackerConfig{}
+		pc.IssueTracker = &v1alpha1.IssueTrackerConfig{}
 		answer = true
 	}
 	it := pc.IssueTracker
@@ -157,10 +158,11 @@ func (o *EditConfigOptions) EditIssueTracker(pc *config.ProjectConfig) (bool, er
 	return answer, nil
 }
 
-func (o *EditConfigOptions) EditChat(pc *config.ProjectConfig) (bool, error) {
+// EditChat prompts the user to make changes to the chat configuration for the project.
+func (o *EditConfigOptions) EditChat(pc *v1alpha1.ProjectConfig) (bool, error) {
 	answer := false
 	if pc.Chat == nil {
-		pc.Chat = &config.ChatConfig{}
+		pc.Chat = &v1alpha1.ChatConfig{}
 		answer = true
 	}
 	it := pc.Chat

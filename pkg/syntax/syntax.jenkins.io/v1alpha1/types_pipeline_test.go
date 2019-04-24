@@ -1,4 +1,4 @@
-package syntax_test
+package v1alpha1_test
 
 import (
 	"context"
@@ -7,10 +7,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 	"github.com/knative/pkg/apis"
 	"github.com/knative/pkg/kmp"
+	"github.com/stretchr/testify/assert"
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	tb "github.com/tektoncd/pipeline/test/builder"
 	corev1 "k8s.io/api/core/v1"
@@ -29,7 +29,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
 		name               string
-		expected           *syntax.ParsedPipeline
+		expected           *v1alpha1.ParsedPipeline
 		pipeline           *tektonv1alpha1.Pipeline
 		tasks              []*tektonv1alpha1.Task
 		expectedErrorMsg   string
@@ -59,7 +59,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 								tb.ResourceTargetPath("workspace"))),
-						tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
+						tb.Step("git-merge", v1alpha1.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
 						tb.Step("a-step-with-spaces-and-such", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source")),
 					)),
 			},
@@ -96,7 +96,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace"))),
 					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
-					tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
+					tb.Step("git-merge", v1alpha1.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
 					tb.Step("step2", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source")),
 				)),
 				tb.Task("somepipeline-another-stage-1", "jx", TaskStageLabel("Another stage"), tb.TaskSpec(
@@ -137,7 +137,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit, tb.ResourceTargetPath("workspace"))),
 						tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
-						tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
+						tb.Step("git-merge", v1alpha1.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
 						tb.Step("step2", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source")),
 					)),
 				tb.Task("somepipeline-another-stage-1", "jx", TaskStageLabel("Another stage"), tb.TaskSpec(
@@ -194,7 +194,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace"))),
 					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
-					tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
+					tb.Step("git-merge", v1alpha1.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
 					tb.Step("step2", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo first"), workingDir("/workspace/source")),
 				)),
 				tb.Task("somepipeline-a-working-stage-1", "jx", TaskStageLabel("A Working Stage"),
@@ -279,7 +279,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace"))),
 					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
-					tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
+					tb.Step("git-merge", v1alpha1.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
 					tb.Step("step2", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo first"), workingDir("/workspace/source")),
 				)),
 				tb.Task("somepipeline-a-working-stage-1", "jx", TaskStageLabel("A Working Stage"),
@@ -381,7 +381,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace"))),
 					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
-					tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
+					tb.Step("git-merge", v1alpha1.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
 					tb.Step("step2", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("ls"), workingDir("/workspace/source")),
 				)),
 				tb.Task("somepipeline-stage2-1", "jx", TaskStageLabel("stage2"), tb.TaskSpec(
@@ -458,7 +458,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace"))),
 					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
-					tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
+					tb.Step("git-merge", v1alpha1.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
 					tb.Step("step2", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("ls"), workingDir("/workspace/source")),
 				)),
 				tb.Task("somepipeline-stage3-1", "jx", TaskStageLabel("stage3"), tb.TaskSpec(
@@ -520,7 +520,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 								tb.ResourceTargetPath("workspace"))),
-						tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source"),
+						tb.Step("git-merge", v1alpha1.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source"),
 							tb.EnvVar("SOME_OTHER_VAR", "A value for the other env var"), tb.EnvVar("SOME_VAR", "A value for the env var")),
 						tb.Step("step2", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo hello ${SOME_OTHER_VAR}"), workingDir("/workspace/source"),
 							tb.EnvVar("SOME_OTHER_VAR", "A value for the other env var"), tb.EnvVar("SOME_VAR", "A value for the env var")),
@@ -548,18 +548,18 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				PipelineAgent("some-image"),
 				PipelineStage("A Working Stage",
 					StageStep(StepCmd("echo"), StepArg("hello"), StepArg("world")),
-					StagePost(syntax.PostConditionSuccess,
+					StagePost(v1alpha1.PostConditionSuccess,
 						PostAction("mail", map[string]string{
 							"to":      "foo@bar.com",
 							"subject": "Yay, it passed",
 						})),
-					StagePost(syntax.PostConditionFailure,
+					StagePost(v1alpha1.PostConditionFailure,
 						PostAction("slack", map[string]string{
 							"whatever": "the",
 							"slack":    "config",
 							"actually": "is. =)",
 						})),
-					StagePost(syntax.PostConditionAlways,
+					StagePost(v1alpha1.PostConditionAlways,
 						PostAction("junit", map[string]string{
 							"pattern": "target/surefire-reports/**/*.xml",
 						}),
@@ -612,7 +612,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 								tb.ResourceTargetPath("workspace"))),
-						tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
+						tb.Step("git-merge", v1alpha1.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
 						tb.Step("step2", "some-other-image", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source")),
 						tb.Step("step3", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo goodbye"), workingDir("/workspace/source")),
 					)),
@@ -647,7 +647,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 							tb.ResourceTargetPath("workspace"))),
 					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
-					tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
+					tb.Step("git-merge", v1alpha1.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
 					tb.Step("step2", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("ls"), workingDir("/workspace/source")),
 				)),
 				tb.Task("somepipeline-wh-this-is-cool-1", "jx", TaskStageLabel("Wööh!!!! - This is cool."),
@@ -715,7 +715,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 								tb.ResourceTargetPath("workspace"))),
-						tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
+						tb.Step("git-merge", v1alpha1.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
 						tb.Step("step2", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source")),
 					)),
 			},
@@ -754,7 +754,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 								tb.ResourceTargetPath("workspace"))),
-						tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source"),
+						tb.Step("git-merge", v1alpha1.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source"),
 							tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "rust")),
 						tb.Step("step2", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo hello ${LANGUAGE}"), workingDir("/workspace/source"),
 							tb.EnvVar("DISTRO", "gentoo"), tb.EnvVar("LANGUAGE", "maven")),
@@ -832,7 +832,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 								tb.ResourceTargetPath("workspace"))),
-						tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source"),
+						tb.Step("git-merge", v1alpha1.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source"),
 							ContainerResourceLimits("0.2", "128Mi"),
 							ContainerResourceRequests("0.1", "64Mi"),
 						),
@@ -880,7 +880,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 								tb.ResourceTargetPath("workspace"))),
-						tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source"),
+						tb.Step("git-merge", v1alpha1.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source"),
 							ContainerResourceLimits("0.4", "256Mi"),
 							ContainerResourceRequests("0.2", "128Mi"),
 						),
@@ -926,7 +926,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 								tb.ResourceTargetPath("workspace"))),
-						tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source"),
+						tb.Step("git-merge", v1alpha1.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source"),
 							ContainerResourceLimits("0.4", "256Mi"),
 							ContainerResourceRequests("0.1", "64Mi"),
 						),
@@ -968,7 +968,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 								tb.ResourceTargetPath("workspace"))),
-						tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source"),
+						tb.Step("git-merge", v1alpha1.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source"),
 							ContainerResourceLimits("0.2", "128Mi"),
 							ContainerResourceRequests("0.1", "64Mi"),
 						),
@@ -1018,7 +1018,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 						tb.TaskInputs(
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 								tb.ResourceTargetPath("workspace"))),
-						tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source"),
+						tb.Step("git-merge", v1alpha1.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source"),
 							tb.EnvVar("ANOTHER_OVERRIDE_STAGE_ENV", "New value"),
 							tb.EnvVar("SOME_VAR", "A value for the env var"),
 							tb.EnvVar("OVERRIDE_ENV", "New value"),
@@ -1043,7 +1043,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 	for _, tt := range tests {
 
 		t.Run(tt.name, func(t *testing.T) {
-			projectConfig, fn, err := config.LoadProjectConfig(filepath.Join("test_data", tt.name))
+			projectConfig, fn, err := v1alpha1.LoadProjectConfig(filepath.Join("test_data", tt.name))
 			if err != nil {
 				t.Fatalf("Failed to parse YAML for %s: %q", tt.name, err)
 			}
@@ -1355,7 +1355,7 @@ func TestFailedValidation(t *testing.T) {
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			projectConfig, fn, err := config.LoadProjectConfig(filepath.Join("test_data", "validation_failures", tt.name))
+			projectConfig, fn, err := v1alpha1.LoadProjectConfig(filepath.Join("test_data", "validation_failures", tt.name))
 			if err != nil {
 				t.Fatalf("Failed to parse YAML for %s: %q", tt.name, err)
 			}
@@ -1457,12 +1457,70 @@ func TestRfc1035LabelMangling(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mangled := syntax.MangleToRfc1035Label(tt.input, "suffix")
+			mangled := v1alpha1.MangleToRfc1035Label(tt.input, "suffix")
 			if d := cmp.Diff(tt.expected, mangled); d != "" {
 				t.Fatalf("Mangled output did not match expected output: %s", d)
 			}
 		})
 	}
+}
+
+func TestGetLifecycleReturnsSetup(t *testing.T) {
+	lifecycles := v1alpha1.PipelineLifecycles{}
+	lifecycles.Setup = &v1alpha1.PipelineLifecycle{}
+	lifecycle, _ := lifecycles.GetLifecycle("setup", false)
+	assert.Equal(t, lifecycles.Setup, lifecycle)
+}
+
+func TestGetLifecycleReturnsSetVersion(t *testing.T) {
+	lifecycles := v1alpha1.PipelineLifecycles{}
+	lifecycles.SetVersion = &v1alpha1.PipelineLifecycle{}
+	lifecycle, _ := lifecycles.GetLifecycle("setversion", false)
+	assert.Equal(t, lifecycles.SetVersion, lifecycle)
+}
+
+func TestGetLifecycleReturnsPreBuild(t *testing.T) {
+	lifecycles := v1alpha1.PipelineLifecycles{}
+	lifecycles.PreBuild = &v1alpha1.PipelineLifecycle{}
+	lifecycle, _ := lifecycles.GetLifecycle("prebuild", false)
+	assert.Equal(t, lifecycles.PreBuild, lifecycle)
+}
+
+func TestGetLifecycleReturnsBuild(t *testing.T) {
+	lifecycles := v1alpha1.PipelineLifecycles{}
+	lifecycles.Build = &v1alpha1.PipelineLifecycle{}
+	lifecycle, _ := lifecycles.GetLifecycle("build", false)
+	assert.Equal(t, lifecycles.Build, lifecycle)
+}
+
+func TestGetLifecycleReturnsPostBuild(t *testing.T) {
+	lifecycles := v1alpha1.PipelineLifecycles{}
+	lifecycles.PostBuild = &v1alpha1.PipelineLifecycle{}
+	lifecycle, _ := lifecycles.GetLifecycle("postbuild", false)
+	assert.Equal(t, lifecycles.PostBuild, lifecycle)
+}
+
+func TestGetLifecycleReturnsPromote(t *testing.T) {
+	lifecycles := v1alpha1.PipelineLifecycles{}
+	lifecycles.Promote = &v1alpha1.PipelineLifecycle{}
+	lifecycle, _ := lifecycles.GetLifecycle("promote", false)
+	assert.Equal(t, lifecycles.Promote, lifecycle)
+}
+
+func TestGetLifecycleReturnsEmptyLifecycle(t *testing.T) {
+	names := []string{"setup", "setversion", "prebuild", "build", "postbuild", "promote"}
+	for _, name := range names {
+		lifecycles := v1alpha1.PipelineLifecycles{}
+		lifecycles.Setup = &v1alpha1.PipelineLifecycle{}
+		lifecycle, _ := lifecycles.GetLifecycle(name, true)
+		assert.NotNil(t, lifecycle)
+	}
+}
+
+func TestGetLifecycleReturnsError(t *testing.T) {
+	lifecycles := v1alpha1.PipelineLifecycles{}
+	_, err := lifecycles.GetLifecycle("something-else", false)
+	assert.Error(t, err)
 }
 
 // Command sets the command to the Container (step in this case).
@@ -1555,16 +1613,16 @@ func StructureStageParallel(stages ...string) PipelineStructureStageOp {
 	}
 }
 
-type PipelineOp func(*syntax.ParsedPipeline)
-type PipelineOptionsOp func(*syntax.RootOptions)
-type PipelinePostOp func(*syntax.Post)
-type StageOp func(*syntax.Stage)
-type StageOptionsOp func(*syntax.StageOptions)
-type StepOp func(*syntax.Step)
-type LoopOp func(*syntax.Loop)
+type PipelineOp func(*v1alpha1.ParsedPipeline)
+type PipelineOptionsOp func(*v1alpha1.RootOptions)
+type PipelinePostOp func(*v1alpha1.Post)
+type StageOp func(*v1alpha1.Stage)
+type StageOptionsOp func(*v1alpha1.StageOptions)
+type StepOp func(*v1alpha1.Step)
+type LoopOp func(*v1alpha1.Loop)
 
-func ParsedPipeline(ops ...PipelineOp) *syntax.ParsedPipeline {
-	s := &syntax.ParsedPipeline{}
+func ParsedPipeline(ops ...PipelineOp) *v1alpha1.ParsedPipeline {
+	s := &v1alpha1.ParsedPipeline{}
 
 	for _, op := range ops {
 		op(s)
@@ -1574,16 +1632,16 @@ func ParsedPipeline(ops ...PipelineOp) *syntax.ParsedPipeline {
 }
 
 func PipelineAgent(image string) PipelineOp {
-	return func(parsed *syntax.ParsedPipeline) {
-		parsed.Agent = syntax.Agent{
+	return func(parsed *v1alpha1.ParsedPipeline) {
+		parsed.Agent = v1alpha1.Agent{
 			Image: image,
 		}
 	}
 }
 
 func PipelineOptions(ops ...PipelineOptionsOp) PipelineOp {
-	return func(parsed *syntax.ParsedPipeline) {
-		parsed.Options = syntax.RootOptions{}
+	return func(parsed *v1alpha1.ParsedPipeline) {
+		parsed.Options = v1alpha1.RootOptions{}
 
 		for _, op := range ops {
 			op(&parsed.Options)
@@ -1592,7 +1650,7 @@ func PipelineOptions(ops ...PipelineOptionsOp) PipelineOp {
 }
 
 func PipelineContainerOptions(ops ...tb.ContainerOp) PipelineOptionsOp {
-	return func(options *syntax.RootOptions) {
+	return func(options *v1alpha1.RootOptions) {
 		options.ContainerOptions = &corev1.Container{}
 
 		for _, op := range ops {
@@ -1602,7 +1660,7 @@ func PipelineContainerOptions(ops ...tb.ContainerOp) PipelineOptionsOp {
 }
 
 func StageContainerOptions(ops ...tb.ContainerOp) StageOptionsOp {
-	return func(options *syntax.StageOptions) {
+	return func(options *v1alpha1.StageOptions) {
 		options.ContainerOptions = &corev1.Container{}
 
 		for _, op := range ops {
@@ -1633,9 +1691,9 @@ func ContainerResourceRequests(cpus, memory string) tb.ContainerOp {
 	}
 }
 
-func PipelineOptionsTimeout(time int64, unit syntax.TimeoutUnit) PipelineOptionsOp {
-	return func(options *syntax.RootOptions) {
-		options.Timeout = syntax.Timeout{
+func PipelineOptionsTimeout(time int64, unit v1alpha1.TimeoutUnit) PipelineOptionsOp {
+	return func(options *v1alpha1.RootOptions) {
+		options.Timeout = v1alpha1.Timeout{
 			Time: time,
 			Unit: unit,
 		}
@@ -1643,24 +1701,24 @@ func PipelineOptionsTimeout(time int64, unit syntax.TimeoutUnit) PipelineOptions
 }
 
 func PipelineOptionsRetry(count int8) PipelineOptionsOp {
-	return func(options *syntax.RootOptions) {
+	return func(options *v1alpha1.RootOptions) {
 		options.Retry = count
 	}
 }
 
 // PipelineEnvVar add an environment variable, with specified name and value, to the pipeline.
 func PipelineEnvVar(name, value string) PipelineOp {
-	return func(parsed *syntax.ParsedPipeline) {
-		parsed.Environment = append(parsed.Environment, syntax.EnvVar{
+	return func(parsed *v1alpha1.ParsedPipeline) {
+		parsed.Environment = append(parsed.Environment, v1alpha1.EnvVar{
 			Name:  name,
 			Value: value,
 		})
 	}
 }
 
-func PipelinePost(condition syntax.PostCondition, ops ...PipelinePostOp) PipelineOp {
-	return func(parsed *syntax.ParsedPipeline) {
-		post := syntax.Post{
+func PipelinePost(condition v1alpha1.PostCondition, ops ...PipelinePostOp) PipelineOp {
+	return func(parsed *v1alpha1.ParsedPipeline) {
+		post := v1alpha1.Post{
 			Condition: condition,
 		}
 
@@ -1673,8 +1731,8 @@ func PipelinePost(condition syntax.PostCondition, ops ...PipelinePostOp) Pipelin
 }
 
 func PipelineStage(name string, ops ...StageOp) PipelineOp {
-	return func(parsed *syntax.ParsedPipeline) {
-		s := syntax.Stage{
+	return func(parsed *v1alpha1.ParsedPipeline) {
+		s := v1alpha1.Stage{
 			Name: name,
 		}
 
@@ -1686,8 +1744,8 @@ func PipelineStage(name string, ops ...StageOp) PipelineOp {
 }
 
 func PostAction(name string, options map[string]string) PipelinePostOp {
-	return func(post *syntax.Post) {
-		post.Actions = append(post.Actions, syntax.PostAction{
+	return func(post *v1alpha1.Post) {
+		post.Actions = append(post.Actions, v1alpha1.PostAction{
 			Name:    name,
 			Options: options,
 		})
@@ -1695,16 +1753,16 @@ func PostAction(name string, options map[string]string) PipelinePostOp {
 }
 
 func StageAgent(image string) StageOp {
-	return func(stage *syntax.Stage) {
-		stage.Agent = syntax.Agent{
+	return func(stage *v1alpha1.Stage) {
+		stage.Agent = v1alpha1.Agent{
 			Image: image,
 		}
 	}
 }
 
 func StageOptions(ops ...StageOptionsOp) StageOp {
-	return func(stage *syntax.Stage) {
-		stage.Options = syntax.StageOptions{}
+	return func(stage *v1alpha1.Stage) {
+		stage.Options = v1alpha1.StageOptions{}
 
 		for _, op := range ops {
 			op(&stage.Options)
@@ -1712,9 +1770,9 @@ func StageOptions(ops ...StageOptionsOp) StageOp {
 	}
 }
 
-func StageOptionsTimeout(time int64, unit syntax.TimeoutUnit) StageOptionsOp {
-	return func(options *syntax.StageOptions) {
-		options.Timeout = syntax.Timeout{
+func StageOptionsTimeout(time int64, unit v1alpha1.TimeoutUnit) StageOptionsOp {
+	return func(options *v1alpha1.StageOptions) {
+		options.Timeout = v1alpha1.Timeout{
 			Time: time,
 			Unit: unit,
 		}
@@ -1722,20 +1780,20 @@ func StageOptionsTimeout(time int64, unit syntax.TimeoutUnit) StageOptionsOp {
 }
 
 func StageOptionsRetry(count int8) StageOptionsOp {
-	return func(options *syntax.StageOptions) {
+	return func(options *v1alpha1.StageOptions) {
 		options.Retry = count
 	}
 }
 
 func StageOptionsWorkspace(ws string) StageOptionsOp {
-	return func(options *syntax.StageOptions) {
+	return func(options *v1alpha1.StageOptions) {
 		options.Workspace = &ws
 	}
 }
 
 func StageOptionsStash(name, files string) StageOptionsOp {
-	return func(options *syntax.StageOptions) {
-		options.Stash = syntax.Stash{
+	return func(options *v1alpha1.StageOptions) {
+		options.Stash = v1alpha1.Stash{
 			Name:  name,
 			Files: files,
 		}
@@ -1743,8 +1801,8 @@ func StageOptionsStash(name, files string) StageOptionsOp {
 }
 
 func StageOptionsUnstash(name, dir string) StageOptionsOp {
-	return func(options *syntax.StageOptions) {
-		options.Unstash = syntax.Unstash{
+	return func(options *v1alpha1.StageOptions) {
+		options.Unstash = v1alpha1.Unstash{
 			Name: name,
 		}
 		if dir != "" {
@@ -1755,17 +1813,17 @@ func StageOptionsUnstash(name, dir string) StageOptionsOp {
 
 // AgentEnvVar add an environment variable, with specified name and value, to the stage.
 func StageEnvVar(name, value string) StageOp {
-	return func(stage *syntax.Stage) {
-		stage.Environment = append(stage.Environment, syntax.EnvVar{
+	return func(stage *v1alpha1.Stage) {
+		stage.Environment = append(stage.Environment, v1alpha1.EnvVar{
 			Name:  name,
 			Value: value,
 		})
 	}
 }
 
-func StagePost(condition syntax.PostCondition, ops ...PipelinePostOp) StageOp {
-	return func(stage *syntax.Stage) {
-		post := syntax.Post{
+func StagePost(condition v1alpha1.PostCondition, ops ...PipelinePostOp) StageOp {
+	return func(stage *v1alpha1.Stage) {
+		post := v1alpha1.Post{
 			Condition: condition,
 		}
 
@@ -1778,52 +1836,52 @@ func StagePost(condition syntax.PostCondition, ops ...PipelinePostOp) StageOp {
 }
 
 func StepAgent(image string) StepOp {
-	return func(step *syntax.Step) {
-		step.Agent = syntax.Agent{
+	return func(step *v1alpha1.Step) {
+		step.Agent = v1alpha1.Agent{
 			Image: image,
 		}
 	}
 }
 
 func StepCmd(cmd string) StepOp {
-	return func(step *syntax.Step) {
+	return func(step *v1alpha1.Step) {
 		step.Command = cmd
 	}
 }
 
 func StepName(name string) StepOp {
-	return func(step *syntax.Step) {
+	return func(step *v1alpha1.Step) {
 		step.Name = name
 	}
 }
 
 func StepArg(arg string) StepOp {
-	return func(step *syntax.Step) {
+	return func(step *v1alpha1.Step) {
 		step.Arguments = append(step.Arguments, arg)
 	}
 }
 
 func StepStep(s string) StepOp {
-	return func(step *syntax.Step) {
+	return func(step *v1alpha1.Step) {
 		step.Step = s
 	}
 }
 
 func StepOptions(options map[string]string) StepOp {
-	return func(step *syntax.Step) {
+	return func(step *v1alpha1.Step) {
 		step.Options = options
 	}
 }
 
 func StepDir(dir string) StepOp {
-	return func(step *syntax.Step) {
+	return func(step *v1alpha1.Step) {
 		step.Dir = dir
 	}
 }
 
 func StepLoop(variable string, values []string, ops ...LoopOp) StepOp {
-	return func(step *syntax.Step) {
-		loop := syntax.Loop{
+	return func(step *v1alpha1.Step) {
+		loop := v1alpha1.Loop{
 			Variable: variable,
 			Values:   values,
 		}
@@ -1837,8 +1895,8 @@ func StepLoop(variable string, values []string, ops ...LoopOp) StepOp {
 }
 
 func LoopStep(ops ...StepOp) LoopOp {
-	return func(loop *syntax.Loop) {
-		step := syntax.Step{}
+	return func(loop *v1alpha1.Loop) {
+		step := v1alpha1.Step{}
 
 		for _, op := range ops {
 			op(&step)
@@ -1849,8 +1907,8 @@ func LoopStep(ops ...StepOp) LoopOp {
 }
 
 func StageStep(ops ...StepOp) StageOp {
-	return func(stage *syntax.Stage) {
-		step := syntax.Step{}
+	return func(stage *v1alpha1.Stage) {
+		step := v1alpha1.Step{}
 
 		for _, op := range ops {
 			op(&step)
@@ -1861,8 +1919,8 @@ func StageStep(ops ...StepOp) StageOp {
 }
 
 func StageParallel(name string, ops ...StageOp) StageOp {
-	return func(stage *syntax.Stage) {
-		n := syntax.Stage{Name: name}
+	return func(stage *v1alpha1.Stage) {
+		n := v1alpha1.Stage{Name: name}
 
 		for _, op := range ops {
 			op(&n)
@@ -1873,8 +1931,8 @@ func StageParallel(name string, ops ...StageOp) StageOp {
 }
 
 func StageSequential(name string, ops ...StageOp) StageOp {
-	return func(stage *syntax.Stage) {
-		n := syntax.Stage{Name: name}
+	return func(stage *v1alpha1.Stage) {
+		n := v1alpha1.Stage{Name: name}
 
 		for _, op := range ops {
 			op(&n)
@@ -1889,7 +1947,7 @@ func TaskStageLabel(value string) tb.TaskOp {
 		if t.ObjectMeta.Labels == nil {
 			t.ObjectMeta.Labels = map[string]string{}
 		}
-		t.ObjectMeta.Labels[syntax.LabelStageName] = syntax.MangleToRfc1035Label(value, "")
+		t.ObjectMeta.Labels[v1alpha1.LabelStageName] = v1alpha1.MangleToRfc1035Label(value, "")
 	}
 }
 
@@ -1898,16 +1956,16 @@ func TestParsedPipelineHelpers(t *testing.T) {
 		PipelineAgent("some-image"),
 		PipelineOptions(
 			PipelineOptionsRetry(5),
-			PipelineOptionsTimeout(30, syntax.TimeoutUnitSeconds),
+			PipelineOptionsTimeout(30, v1alpha1.TimeoutUnitSeconds),
 		),
 		PipelineEnvVar("ANIMAL", "MONKEY"),
 		PipelineEnvVar("FRUIT", "BANANA"),
-		PipelinePost(syntax.PostConditionSuccess,
+		PipelinePost(v1alpha1.PostConditionSuccess,
 			PostAction("mail", map[string]string{
 				"to":      "foo@bar.com",
 				"subject": "Yay, it passed",
 			})),
-		PipelinePost(syntax.PostConditionFailure,
+		PipelinePost(v1alpha1.PostConditionFailure,
 			PostAction("slack", map[string]string{
 				"whatever": "the",
 				"slack":    "config",
@@ -1918,7 +1976,7 @@ func TestParsedPipelineHelpers(t *testing.T) {
 				StageOptionsWorkspace(customWorkspace),
 				StageOptionsStash("some-name", "**/*"),
 				StageOptionsUnstash("some-name", ""),
-				StageOptionsTimeout(15, syntax.TimeoutUnitMinutes),
+				StageOptionsTimeout(15, v1alpha1.TimeoutUnitMinutes),
 				StageOptionsRetry(2),
 			),
 			StageStep(
@@ -1938,7 +1996,7 @@ func TestParsedPipelineHelpers(t *testing.T) {
 				),
 				StageEnvVar("STAGE_VAR_ONE", "some value"),
 				StageEnvVar("STAGE_VAR_TWO", "some other value"),
-				StagePost(syntax.PostConditionAlways,
+				StagePost(v1alpha1.PostConditionAlways,
 					PostAction("junit", map[string]string{
 						"pattern": "target/surefire-reports/**/*.xml",
 					}),
@@ -1970,18 +2028,18 @@ func TestParsedPipelineHelpers(t *testing.T) {
 		),
 	)
 
-	expected := &syntax.ParsedPipeline{
-		Agent: syntax.Agent{
+	expected := &v1alpha1.ParsedPipeline{
+		Agent: v1alpha1.Agent{
 			Image: "some-image",
 		},
-		Options: syntax.RootOptions{
+		Options: v1alpha1.RootOptions{
 			Retry: 5,
-			Timeout: syntax.Timeout{
+			Timeout: v1alpha1.Timeout{
 				Time: 30,
-				Unit: syntax.TimeoutUnitSeconds,
+				Unit: v1alpha1.TimeoutUnitSeconds,
 			},
 		},
-		Environment: []syntax.EnvVar{
+		Environment: []v1alpha1.EnvVar{
 			{
 				Name:  "ANIMAL",
 				Value: "MONKEY",
@@ -1991,10 +2049,10 @@ func TestParsedPipelineHelpers(t *testing.T) {
 				Value: "BANANA",
 			},
 		},
-		Post: []syntax.Post{
+		Post: []v1alpha1.Post{
 			{
 				Condition: "success",
-				Actions: []syntax.PostAction{{
+				Actions: []v1alpha1.PostAction{{
 					Name: "mail",
 					Options: map[string]string{
 						"to":      "foo@bar.com",
@@ -2004,7 +2062,7 @@ func TestParsedPipelineHelpers(t *testing.T) {
 			},
 			{
 				Condition: "failure",
-				Actions: []syntax.PostAction{{
+				Actions: []v1alpha1.PostAction{{
 					Name: "slack",
 					Options: map[string]string{
 						"whatever": "the",
@@ -2014,47 +2072,47 @@ func TestParsedPipelineHelpers(t *testing.T) {
 				}},
 			},
 		},
-		Stages: []syntax.Stage{
+		Stages: []v1alpha1.Stage{
 			{
 				Name: "A Working Stage",
-				Options: syntax.StageOptions{
+				Options: v1alpha1.StageOptions{
 					Workspace: &customWorkspace,
-					Stash: syntax.Stash{
+					Stash: v1alpha1.Stash{
 						Name:  "some-name",
 						Files: "**/*",
 					},
-					Unstash: syntax.Unstash{
+					Unstash: v1alpha1.Unstash{
 						Name: "some-name",
 					},
-					RootOptions: syntax.RootOptions{
-						Timeout: syntax.Timeout{
+					RootOptions: v1alpha1.RootOptions{
+						Timeout: v1alpha1.Timeout{
 							Time: 15,
-							Unit: syntax.TimeoutUnitMinutes,
+							Unit: v1alpha1.TimeoutUnitMinutes,
 						},
 						Retry: 2,
 					},
 				},
-				Steps: []syntax.Step{{
+				Steps: []v1alpha1.Step{{
 					Command:   "echo",
 					Arguments: []string{"hello", "world"},
 				}},
 			},
 			{
 				Name: "Parent Stage",
-				Parallel: []syntax.Stage{
+				Parallel: []v1alpha1.Stage{
 					{
 						Name: "First Nested Stage",
-						Agent: syntax.Agent{
+						Agent: v1alpha1.Agent{
 							Image: "some-other-image",
 						},
-						Steps: []syntax.Step{{
+						Steps: []v1alpha1.Step{{
 							Command:   "echo",
 							Arguments: []string{"hello", "world"},
-							Agent: syntax.Agent{
+							Agent: v1alpha1.Agent{
 								Image: "some-other-image",
 							},
 						}},
-						Environment: []syntax.EnvVar{
+						Environment: []v1alpha1.EnvVar{
 							{
 								Name:  "STAGE_VAR_ONE",
 								Value: "some value",
@@ -2064,9 +2122,9 @@ func TestParsedPipelineHelpers(t *testing.T) {
 								Value: "some other value",
 							},
 						},
-						Post: []syntax.Post{{
+						Post: []v1alpha1.Post{{
 							Condition: "always",
-							Actions: []syntax.PostAction{{
+							Actions: []v1alpha1.PostAction{{
 								Name: "junit",
 								Options: map[string]string{
 									"pattern": "target/surefire-reports/**/*.xml",
@@ -2076,14 +2134,14 @@ func TestParsedPipelineHelpers(t *testing.T) {
 					},
 					{
 						Name: "Nested In Parallel",
-						Stages: []syntax.Stage{
+						Stages: []v1alpha1.Stage{
 							{
 								Name: "Another stage",
-								Steps: []syntax.Step{{
-									Loop: syntax.Loop{
+								Steps: []v1alpha1.Step{{
+									Loop: v1alpha1.Loop{
 										Variable: "SOME_VAR",
 										Values:   []string{"a", "b", "c"},
-										Steps: []syntax.Step{{
+										Steps: []v1alpha1.Step{{
 											Command:   "echo",
 											Arguments: []string{"SOME_VAR is ${SOME_VAR}"},
 										}},
@@ -2092,7 +2150,7 @@ func TestParsedPipelineHelpers(t *testing.T) {
 							},
 							{
 								Name: "Some other stage",
-								Steps: []syntax.Step{
+								Steps: []v1alpha1.Step{
 									{
 										Command:   "echo",
 										Arguments: []string{"otherwise"},

@@ -1,11 +1,10 @@
-package config_test
+package v1alpha1_test
 
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 	"github.com/jenkins-x/jx/pkg/tests"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
@@ -15,7 +14,7 @@ import (
 
 func TestProjectConfigMarshal(t *testing.T) {
 	t.Parallel()
-	projectConfig := &config.ProjectConfig{
+	projectConfig := &v1alpha1.ProjectConfig{
 		BuildPack: "maven",
 		Env: []corev1.EnvVar{
 			{
@@ -27,20 +26,20 @@ func TestProjectConfigMarshal(t *testing.T) {
 				Value: "thingy",
 			},
 		},
-		PipelineConfig: &jenkinsfile.PipelineConfig{
-			Pipelines: jenkinsfile.Pipelines{
-				PullRequest: &jenkinsfile.PipelineLifecycles{
-					Build: &jenkinsfile.PipelineLifecycle{
-						Steps: []*jenkinsfile.PipelineStep{
+		PipelineConfig: &v1alpha1.PipelineConfig{
+			Pipelines: v1alpha1.Pipelines{
+				PullRequest: &v1alpha1.PipelineLifecycles{
+					Build: &v1alpha1.PipelineLifecycle{
+						Steps: []*v1alpha1.PipelineStep{
 							{
 								Command: "mvn test",
 							},
 						},
 					},
 				},
-				Release: &jenkinsfile.PipelineLifecycles{
-					Build: &jenkinsfile.PipelineLifecycle{
-						Steps: []*jenkinsfile.PipelineStep{
+				Release: &v1alpha1.PipelineLifecycles{
+					Build: &v1alpha1.PipelineLifecycle{
+						Steps: []*v1alpha1.PipelineStep{
 							{
 								Command: "mvn test",
 							},
@@ -71,7 +70,7 @@ func TestProjectConfigMarshal(t *testing.T) {
 		log.Infof("Generated YAML: %s\n", text)
 	}
 
-	copy := &config.ProjectConfig{}
+	copy := &v1alpha1.ProjectConfig{}
 
 	err = yaml.Unmarshal(data, copy)
 	assert.NoError(t, err)

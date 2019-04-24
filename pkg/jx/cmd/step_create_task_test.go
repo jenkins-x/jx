@@ -11,6 +11,7 @@ import (
 	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 	"github.com/knative/pkg/kmp"
 	uuid "github.com/satori/go.uuid"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -18,7 +19,6 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
@@ -154,7 +154,7 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			_, err = os.Stat(caseDir)
 			assert.NoError(t, err)
 
-			projectConfig, projectConfigFile, err := config.LoadProjectConfig(caseDir)
+			projectConfig, projectConfigFile, err := v1alpha1.LoadProjectConfig(caseDir)
 			assert.NoError(t, err)
 
 			createTask := &cmd.StepCreateTaskOptions{

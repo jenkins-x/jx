@@ -15,13 +15,13 @@ import (
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/chats"
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/reports"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 )
@@ -112,7 +112,7 @@ func (o *StepBlogOptions) Run() error {
 		NewContributors: map[string]*v1.UserDetails{},
 		NewCommitters:   map[string]*v1.UserDetails{},
 	}
-	pc, _, err := config.LoadProjectConfig(o.Dir)
+	pc, _, err := v1alpha1.LoadProjectConfig(o.Dir)
 	if err != nil {
 		return err
 	}
@@ -549,7 +549,7 @@ func (o *StepBlogOptions) formatUser(user *v1.UserDetails) string {
 	return label
 }
 
-func (o *StepBlogOptions) loadChatMetrics(chatConfig *config.ChatConfig) error {
+func (o *StepBlogOptions) loadChatMetrics(chatConfig *v1alpha1.ChatConfig) error {
 	u := chatConfig.URL
 	if u == "" {
 		return nil
@@ -594,7 +594,7 @@ func (o *StepBlogOptions) loadChatMetrics(chatConfig *config.ChatConfig) error {
 	return nil
 }
 
-func (o *StepBlogOptions) getChannelMetrics(chatConfig *config.ChatConfig, channelName string) (*chats.ChannelMetrics, error) {
+func (o *StepBlogOptions) getChannelMetrics(chatConfig *v1alpha1.ChatConfig, channelName string) (*chats.ChannelMetrics, error) {
 	provider, err := o.CreateChatProvider(chatConfig)
 	if err != nil {
 		return nil, err

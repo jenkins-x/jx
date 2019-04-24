@@ -3,8 +3,7 @@ package builds
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/stretchr/testify/assert"
@@ -12,7 +11,7 @@ import (
 
 func TestJenkinsfileGenerator(t *testing.T) {
 	t.Parallel()
-	projectConfig := &config.ProjectConfig{
+	projectConfig := &v1alpha1.ProjectConfig{
 		BuildPack: "maven",
 		Env: []corev1.EnvVar{
 			{
@@ -24,20 +23,20 @@ func TestJenkinsfileGenerator(t *testing.T) {
 				Value: "thingy",
 			},
 		},
-		PipelineConfig: &jenkinsfile.PipelineConfig{
-			Pipelines: jenkinsfile.Pipelines{
-				PullRequest: &jenkinsfile.PipelineLifecycles{
-					Build: &jenkinsfile.PipelineLifecycle{
-						Steps: []*jenkinsfile.PipelineStep{
+		PipelineConfig: &v1alpha1.PipelineConfig{
+			Pipelines: v1alpha1.Pipelines{
+				PullRequest: &v1alpha1.PipelineLifecycles{
+					Build: &v1alpha1.PipelineLifecycle{
+						Steps: []*v1alpha1.PipelineStep{
 							{
 								Command: "mvn test",
 							},
 						},
 					},
 				},
-				Release: &jenkinsfile.PipelineLifecycles{
-					Build: &jenkinsfile.PipelineLifecycle{
-						Steps: []*jenkinsfile.PipelineStep{
+				Release: &v1alpha1.PipelineLifecycles{
+					Build: &v1alpha1.PipelineLifecycle{
+						Steps: []*v1alpha1.PipelineStep{
 							{
 								Command: "mvn test",
 							},

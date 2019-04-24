@@ -1,19 +1,19 @@
-package config
+package v1alpha1
 
 import (
 	"fmt"
-
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
-	"github.com/pkg/errors"
-	"sigs.k8s.io/yaml"
-
 	"io/ioutil"
 	"path/filepath"
 	"reflect"
 
+	"github.com/pkg/errors"
+	"sigs.k8s.io/yaml"
+
 	"github.com/jenkins-x/jx/pkg/util"
 	corev1 "k8s.io/api/core/v1"
 )
+
+// +k8s:openapi-gen=true
 
 const (
 	// ProjectConfigFileName is the name of the project configuration file
@@ -21,20 +21,21 @@ const (
 )
 
 type ProjectConfig struct {
+	Version string `json:"version,omitempty"`
 	// List of global environment variables to add to each branch build and each step
 	Env []corev1.EnvVar `json:"env,omitempty"`
 
-	PreviewEnvironments *PreviewEnvironmentConfig   `json:"previewEnvironments,omitempty"`
-	IssueTracker        *IssueTrackerConfig         `json:"issueTracker,omitempty"`
-	Chat                *ChatConfig                 `json:"chat,omitempty"`
-	Wiki                *WikiConfig                 `json:"wiki,omitempty"`
-	Addons              []*AddonConfig              `json:"addons,omitempty"`
-	BuildPack           string                      `json:"buildPack,omitempty"`
-	BuildPackGitURL     string                      `json:"buildPackGitURL,omitempty"`
-	BuildPackGitURef    string                      `json:"buildPackGitRef,omitempty"`
-	Workflow            string                      `json:"workflow,omitempty"`
-	PipelineConfig      *jenkinsfile.PipelineConfig `json:"pipelineConfig,omitempty"`
-	NoReleasePrepare    bool                        `json:"noReleasePrepare,omitempty"`
+	PreviewEnvironments *PreviewEnvironmentConfig `json:"previewEnvironments,omitempty"`
+	IssueTracker        *IssueTrackerConfig       `json:"issueTracker,omitempty"`
+	Chat                *ChatConfig               `json:"chat,omitempty"`
+	Wiki                *WikiConfig               `json:"wiki,omitempty"`
+	Addons              []*AddonConfig            `json:"addons,omitempty"`
+	BuildPack           string                    `json:"buildPack,omitempty"`
+	BuildPackGitURL     string                    `json:"buildPackGitURL,omitempty"`
+	BuildPackGitURef    string                    `json:"buildPackGitRef,omitempty"`
+	Workflow            string                    `json:"workflow,omitempty"`
+	PipelineConfig      *PipelineConfig           `json:"pipelineConfig,omitempty"`
+	NoReleasePrepare    bool                      `json:"noReleasePrepare,omitempty"`
 }
 
 type PreviewEnvironmentConfig struct {
@@ -137,6 +138,9 @@ func LoadProjectConfigFile(fileName string) (*ProjectConfig, error) {
 	if err != nil {
 		return &config, fmt.Errorf("Failed to unmarshal YAML file %s due to %s", fileName, err)
 	}
+	if config.Version == "" {
+		config.Version = DefaultJenkinsXSyntaxVersion
+	}
 	return &config, nil
 }
 
@@ -160,9 +164,17 @@ func (c *ProjectConfig) SaveConfig(fileName string) error {
 }
 
 // GetOrCreatePipelineConfig lazily creates a PipelineConfig if required
-func (c *ProjectConfig) GetOrCreatePipelineConfig() *jenkinsfile.PipelineConfig {
+func (c *ProjectConfig) GetOrCreatePipelineConfig() *PipelineConfig {
 	if c.PipelineConfig == nil {
-		c.PipelineConfig = &jenkinsfile.PipelineConfig{}
+		c.PipelineConfig = &PipelineConfig{}
 	}
 	return c.PipelineConfig
+}
+
+// BasicAuth keeps the credentials for basic authentication
+type BasicAuth struct {
+	// Username stores the basic authentication user name
+	Username string `json:"username"`
+	// Password stores the basic authentication password
+	Password string `json:"password"`
 }

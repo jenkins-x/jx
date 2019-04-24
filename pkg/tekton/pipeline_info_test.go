@@ -8,8 +8,8 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/google/go-cmp/cmp"
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 	"github.com/jenkins-x/jx/pkg/tekton"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/tekton/tekton_helpers_test"
 	"github.com/stretchr/testify/assert"
 	tektonfake "github.com/tektoncd/pipeline/pkg/client/clientset/versioned/fake"
@@ -45,7 +45,7 @@ func TestCreatePipelineRunInfo(t *testing.T) {
 			PipelineRun:  "abayer-jx-demo-qs-master-1",
 			Repository:   "jx-demo-qs",
 			Stages: []*tekton.StageInfo{{
-				Name:           syntax.DefaultStageNameForBuildPack,
+				Name:           v1alpha1.DefaultStageNameForBuildPack,
 				CreatedTime:    *parseTime(t, "2019-02-21T17:10:48-05:00"),
 				FirstStepImage: "gcr.io/k8s-prow/entrypoint@sha256:7c7cd8906ce4982ffee326218e9fc75da2d4896d53cabc9833b9cc8d2d6b2b8f",
 				PodName:        "abayer-jx-demo-qs-master-1-build-vhz8d-pod-cd8cba",

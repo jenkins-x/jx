@@ -2,7 +2,8 @@ package kube
 
 import (
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
+
 	"io"
 	"io/ioutil"
 	"os/user"
@@ -568,7 +569,7 @@ func ModifyNamespace(out io.Writer, dir string, env *v1.Environment, git gits.Gi
 	}
 
 	// lets ensure the namespace is set in a jenkins-x.yml file for tekton
-	projectConfig, projectConfigFile, err := config.LoadProjectConfig(dir)
+	projectConfig, projectConfigFile, err := v1alpha1.LoadProjectConfig(dir)
 	if err != nil {
 		return err
 	}
@@ -589,7 +590,7 @@ func ModifyNamespace(out io.Writer, dir string, env *v1.Environment, git gits.Gi
 	foundEnv = false
 	pipelineConfig := projectConfig.PipelineConfig
 	if pipelineConfig == nil {
-		projectConfig.PipelineConfig = &jenkinsfile.PipelineConfig{}
+		projectConfig.PipelineConfig = &v1alpha1.PipelineConfig{}
 		pipelineConfig = projectConfig.PipelineConfig
 	}
 	for i := range pipelineConfig.Env {

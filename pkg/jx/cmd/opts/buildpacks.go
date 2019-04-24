@@ -7,11 +7,11 @@ import (
 	"path/filepath"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/draft-repo/pkg/draft/pack"
-	"github.com/jenkins-x/jx/pkg/config"
 	jxdraft "github.com/jenkins-x/jx/pkg/draft"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile/gitresolver"
@@ -31,7 +31,7 @@ type InvokeDraftPack struct {
 	DisableAddFiles             bool
 	UseNextGenPipeline          bool
 	CreateJenkinsxYamlIfMissing bool
-	ProjectConfig               *config.ProjectConfig
+	ProjectConfig               *v1alpha1.ProjectConfig
 }
 
 // InitBuildPacks initialise the build packs
@@ -73,12 +73,12 @@ func (o *CommonOptions) InvokeDraftPack(i *InvokeDraftPack) (string, error) {
 	gradleName := filepath.Join(dir, "build.gradle")
 	jenkinsPluginsName := filepath.Join(dir, "plugins.txt")
 	packagerConfigName := filepath.Join(dir, "packager-config.yml")
-	jenkinsxYaml := filepath.Join(dir, config.ProjectConfigFileName)
+	jenkinsxYaml := filepath.Join(dir, v1alpha1.ProjectConfigFileName)
 	envChart := filepath.Join(dir, "env/Chart.yaml")
 	lpack := ""
 	if len(customDraftPack) == 0 {
 		if i.ProjectConfig == nil {
-			i.ProjectConfig, _, err = config.LoadProjectConfig(dir)
+			i.ProjectConfig, _, err = v1alpha1.LoadProjectConfig(dir)
 			if err != nil {
 				return "", err
 			}
@@ -248,7 +248,7 @@ func (o *CommonOptions) InvokeDraftPack(i *InvokeDraftPack) (string, error) {
 	}
 
 	if !jenkinsxYamlExists && i.CreateJenkinsxYamlIfMissing {
-		pipelineConfig, err := config.LoadProjectConfigFile(jenkinsxYaml)
+		pipelineConfig, err := v1alpha1.LoadProjectConfigFile(jenkinsxYaml)
 		if err != nil {
 			return draftPack, err
 		}
@@ -264,7 +264,7 @@ func (o *CommonOptions) InvokeDraftPack(i *InvokeDraftPack) (string, error) {
 	if !i.UseNextGenPipeline {
 		if !jenkinsfileExists || jenkinsfileBackup != "" {
 			// lets check if we have a pipeline.yaml in the build pack so we can generate one dynamically
-			pipelineFile := filepath.Join(lpack, jenkinsfile.PipelineConfigFileName)
+			pipelineFile := filepath.Join(lpack, v1alpha1.PipelineConfigFileName)
 			exists, err := util.FileExists(pipelineFile)
 			if err != nil {
 				return draftPack, err
@@ -276,7 +276,7 @@ func (o *CommonOptions) InvokeDraftPack(i *InvokeDraftPack) (string, error) {
 				}
 
 				// lets find the Jenkinsfile template
-				tmplFileName := jenkinsfile.PipelineTemplateFileName
+				tmplFileName := v1alpha1.PipelineTemplateFileName
 				templateFileNames := []string{filepath.Join(lpack, tmplFileName), filepath.Join(packsDir, tmplFileName)}
 
 				moduleResolver, err := gitresolver.ResolveModules(modules, o.Git())
@@ -296,7 +296,7 @@ func (o *CommonOptions) InvokeDraftPack(i *InvokeDraftPack) (string, error) {
 				}
 
 				if templateFile != "" {
-					arguments := &jenkinsfile.CreateJenkinsfileArguments{
+					arguments := &v1alpha1.CreateJenkinsfileArguments{
 						ConfigFile:          pipelineFile,
 						TemplateFile:        templateFile,
 						OutputFile:          generateJenkinsPath,
@@ -362,14 +362,14 @@ func CopyBuildPack(dest, src string) error {
 	}
 
 	// lets remove any files we think should be zapped
-	for _, file := range []string{jenkinsfile.PipelineConfigFileName, jenkinsfile.PipelineTemplateFileName} {
+	for _, file := range []string{v1alpha1.PipelineConfigFileName, v1alpha1.PipelineTemplateFileName} {
 		delete(p.Files, file)
 	}
 	return p.SaveDir(dest)
 }
 
 // DiscoverBuildPack discovers the build pack given the build pack configuration
-func (o *CommonOptions) DiscoverBuildPack(dir string, projectConfig *config.ProjectConfig, packConfig string) (string, error) {
+func (o *CommonOptions) DiscoverBuildPack(dir string, projectConfig *v1alpha1.ProjectConfig, packConfig string) (string, error) {
 	if packConfig != "" {
 		return packConfig, nil
 	}

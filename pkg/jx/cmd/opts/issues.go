@@ -3,10 +3,10 @@ package opts
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 	"github.com/pkg/errors"
 
 	"github.com/jenkins-x/jx/pkg/auth"
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/issues"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -32,12 +32,12 @@ func (o *CommonOptions) CreateIssueProvider(dir string) (issues.IssueProvider, e
 	if err != nil {
 		return nil, fmt.Errorf("No issue tracker configured for this project and cannot find the .git directory: %s", err)
 	}
-	pc, _, err := config.LoadProjectConfig(dir)
+	pc, _, err := v1alpha1.LoadProjectConfig(dir)
 	if err != nil {
 		return nil, err
 	}
 	if pc != nil && pc.IssueTracker == nil {
-		pc, _, err = config.LoadProjectConfig(gitDir)
+		pc, _, err = v1alpha1.LoadProjectConfig(gitDir)
 		if err != nil {
 			return nil, err
 		}

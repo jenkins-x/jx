@@ -9,11 +9,11 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 
 	"github.com/ghodss/yaml"
 	"github.com/jenkins-x/jx/pkg/collector"
 	"github.com/jenkins-x/jx/pkg/tekton"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/pkg/errors"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 
@@ -241,7 +241,7 @@ func (o *ControllerBuildOptions) onPipelinePod(obj interface{}, kubeClient kuber
 	}
 	if pod != nil {
 		if pod.Labels[pipeline.GroupName+pipeline.PipelineRunLabelKey] != "" {
-			if pod.Labels[syntax.LabelStageName] != "" {
+			if pod.Labels[v1alpha1.LabelStageName] != "" {
 				prName := pod.Labels[pipeline.GroupName+pipeline.PipelineRunLabelKey]
 				pr, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Get(prName, metav1.GetOptions{})
 				if err != nil {

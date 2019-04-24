@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 
@@ -60,7 +60,7 @@ func (o *GetConfigOptions) addGetConfigFlags(cmd *cobra.Command) {
 
 // Run implements this command
 func (o *GetConfigOptions) Run() error {
-	pc, _, err := config.LoadProjectConfig(o.Dir)
+	pc, _, err := v1alpha1.LoadProjectConfig(o.Dir)
 	if err != nil {
 		return err
 	}

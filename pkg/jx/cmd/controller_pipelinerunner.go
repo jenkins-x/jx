@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/pkg/errors"
@@ -203,9 +203,9 @@ func (o *ControllerPipelineRunnerOptions) startPipelineRun(w http.ResponseWriter
 
 	pr := &StepCreateTaskOptions{}
 	if pj.Type == prowapi.PostsubmitJob {
-		pr.PipelineKind = jenkinsfile.PipelineKindRelease
+		pr.PipelineKind = v1alpha1.PipelineKindRelease
 	} else {
-		pr.PipelineKind = jenkinsfile.PipelineKindPullRequest
+		pr.PipelineKind = v1alpha1.PipelineKindPullRequest
 	}
 
 	branch := getBranch(pj)

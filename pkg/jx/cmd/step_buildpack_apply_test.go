@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/require"
 
@@ -39,8 +40,8 @@ func TestCreateJenkinsfile(t *testing.T) {
 }
 
 func testCreateJenkinsfile(t *testing.T, outDir string, testcase string, srcDir string) error {
-	configFile := path.Join(srcDir, jenkinsfile.PipelineConfigFileName)
-	templateFile := path.Join(srcDir, jenkinsfile.PipelineTemplateFileName)
+	configFile := path.Join(srcDir, v1alpha1.PipelineConfigFileName)
+	templateFile := path.Join(srcDir, v1alpha1.PipelineTemplateFileName)
 	expectedFile := path.Join(srcDir, "Jenkinsfile")
 	actualFile := path.Join(outDir, "Jenkinsfile")
 
@@ -55,7 +56,7 @@ func testCreateJenkinsfile(t *testing.T, outDir string, testcase string, srcDir 
 		return filepath.Join(path...), nil
 	}
 
-	arguments := &jenkinsfile.CreateJenkinsfileArguments{
+	arguments := &v1alpha1.CreateJenkinsfileArguments{
 		ConfigFile:   configFile,
 		TemplateFile: templateFile,
 		OutputFile:   actualFile,
@@ -88,17 +89,17 @@ func TestSavePipelineConfig(t *testing.T) {
 
 	file := filepath.Join(tempDir, "pipeline.yaml")
 
-	config := &jenkinsfile.PipelineConfig{
-		Agent: jenkinsfile.PipelineAgent{
+	config := &v1alpha1.PipelineConfig{
+		Agent: v1alpha1.PipelineAgent{
 			Label: "jenkins-maven",
 		},
-		Pipelines: jenkinsfile.Pipelines{
-			Release: &jenkinsfile.PipelineLifecycles{
-				Setup: &jenkinsfile.PipelineLifecycle{
-					Steps: []*jenkinsfile.PipelineStep{
+		Pipelines: v1alpha1.Pipelines{
+			Release: &v1alpha1.PipelineLifecycles{
+				Setup: &v1alpha1.PipelineLifecycle{
+					Steps: []*v1alpha1.PipelineStep{
 						{
 							Container: "maven",
-							Steps: []*jenkinsfile.PipelineStep{
+							Steps: []*v1alpha1.PipelineStep{
 								{
 									Command: "mvn deploy",
 								},
@@ -122,10 +123,10 @@ func TestSavePipelineConfig(t *testing.T) {
 }
 
 func TestParsePipelineConfig(t *testing.T) {
-	pipelineFile := path.Join("test_data", "step_buildpack_apply", jenkinsfile.PipelineConfigFileName)
+	pipelineFile := path.Join("test_data", "step_buildpack_apply", v1alpha1.PipelineConfigFileName)
 	assert.FileExists(t, pipelineFile)
 
-	config, err := jenkinsfile.LoadPipelineConfig(pipelineFile, dummyImportFileResolver, false, false)
+	config, err := v1alpha1.LoadPipelineConfig(pipelineFile, dummyImportFileResolver, false, false)
 	require.NoError(t, err, "failed to load pipeline config %s", pipelineFile)
 
 	assert.Equal(t, "jenkins-maven", config.Agent.Label, "Agent.Label")
@@ -133,10 +134,10 @@ func TestParsePipelineConfig(t *testing.T) {
 }
 
 func TestParseLongerPipelineConfig(t *testing.T) {
-	pipelineFile := path.Join("test_data", "step_buildpack_apply", "simple", jenkinsfile.PipelineConfigFileName)
+	pipelineFile := path.Join("test_data", "step_buildpack_apply", "simple", v1alpha1.PipelineConfigFileName)
 	assert.FileExists(t, pipelineFile)
 
-	config, err := jenkinsfile.LoadPipelineConfig(pipelineFile, dummyImportFileResolver, false, false)
+	config, err := v1alpha1.LoadPipelineConfig(pipelineFile, dummyImportFileResolver, false, false)
 	require.NoError(t, err, "failed to load pipeline config %s", pipelineFile)
 
 	assert.Equal(t, "jenkins-maven", config.Agent.Label, "Agent.Label")

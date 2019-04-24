@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 	"k8s.io/helm/pkg/chartutil"
 
 	"github.com/jenkins-x/jx/pkg/cloud"
@@ -2203,7 +2204,7 @@ func (options *InstallOptions) storeAdminCredentialsInVault(svc *config.AdminSec
 	if err != nil {
 		return errors.Wrap(err, "retrieving the system vault client")
 	}
-	secrets := map[vault.AdminSecret]config.BasicAuth{
+	secrets := map[vault.AdminSecret]v1alpha1.BasicAuth{
 		vault.JenkinsAdminSecret:     svc.JenkinsAuth(),
 		vault.IngressAdminSecret:     svc.IngressAuth(),
 		vault.ChartmuseumAdminSecret: svc.ChartMuseumAuth(),

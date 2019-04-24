@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 )
@@ -48,7 +48,7 @@ func WriteYamlFiles(client Client, path string, files ...string) error {
 }
 
 // WriteBasicAuth stores the basic authentication credentials in vault at the given path.
-func WriteBasicAuth(client Client, path string, auth config.BasicAuth) error {
+func WriteBasicAuth(client Client, path string, auth v1alpha1.BasicAuth) error {
 	return WriteMap(client, path, map[string]interface{}{
 		usernameKey: auth.Username,
 		passwordKey: auth.Password,

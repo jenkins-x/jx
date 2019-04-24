@@ -3,11 +3,11 @@ package cmd_test
 import (
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/config"
 	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,7 +20,7 @@ func TestStepValidate(t *testing.T) {
 
 	// lets check the test data has a valid addon
 	projectDir := "test_data/project_with_kubeless"
-	cfg, fileName, err := config.LoadProjectConfig(projectDir)
+	cfg, fileName, err := v1alpha1.LoadProjectConfig(projectDir)
 	assert.Nil(t, err, "Failed to load project config %s", fileName)
 	assert.NotEmpty(t, cfg.Addons, "Failed to find addons in project config %s", fileName)
 

@@ -12,7 +12,6 @@ import (
 
 	"github.com/ghodss/yaml"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
@@ -20,6 +19,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -839,7 +839,7 @@ func (o *CreateDevPodOptions) guessDevPodLabel(dir string, labels []string) (str
 	}
 	answer := ""
 	if root != "" {
-		projectConfig, _, err := config.LoadProjectConfig(root)
+		projectConfig, _, err := v1alpha1.LoadProjectConfig(root)
 		if err != nil {
 			return answer, err
 		}

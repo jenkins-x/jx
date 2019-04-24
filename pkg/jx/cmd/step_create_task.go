@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/prow"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
+	"sigs.k8s.io/yaml"
 
-	"github.com/ghodss/yaml"
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile/gitresolver"
@@ -24,7 +24,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tekton"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -148,7 +147,7 @@ func NewCmdStepCreateTask(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.OutDir, "output", "o", "", "The directory to write the output to as YAML")
 	cmd.Flags().StringVarP(&options.Branch, "branch", "", "", "The git branch to trigger the build in. Defaults to the current local branch name")
 	cmd.Flags().StringVarP(&options.Revision, "revision", "", "", "The git revision to checkout, can be a branch name or git sha")
-	cmd.Flags().StringVarP(&options.PipelineKind, "kind", "k", "release", "The kind of pipeline to create such as: "+strings.Join(jenkinsfile.PipelineKinds, ", "))
+	cmd.Flags().StringVarP(&options.PipelineKind, "kind", "k", "release", "The kind of pipeline to create such as: "+strings.Join(v1alpha1.PipelineKinds, ", "))
 	cmd.Flags().StringArrayVarP(&options.CustomLabels, "label", "l", nil, "List of custom labels to be applied to resources that are created")
 	cmd.Flags().StringArrayVarP(&options.CustomEnvs, "env", "e", nil, "List of custom environment variables to be applied to resources that are created")
 	cmd.Flags().StringVarP(&options.Trigger, "trigger", "t", string(pipelineapi.PipelineTriggerTypeManual), "The kind of pipeline trigger")
@@ -428,14 +427,14 @@ func (o *StepCreateTaskOptions) Run() error {
 }
 
 // GenerateTektonCRDs creates the Pipeline, Task, PipelineResource, PipelineRun, and PipelineStructure CRDs that will be applied to actually kick off the pipeline
-func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfig *config.ProjectConfig, projectConfigFile string, resolver jenkinsfile.ImportFileResolver, ns string) (*pipelineapi.Pipeline, []*pipelineapi.Task, []*pipelineapi.PipelineResource, *pipelineapi.PipelineRun, *v1.PipelineStructure, error) {
+func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfig *v1alpha1.ProjectConfig, projectConfigFile string, resolver jenkinsfile.ImportFileResolver, ns string) (*pipelineapi.Pipeline, []*pipelineapi.Task, []*pipelineapi.PipelineResource, *pipelineapi.PipelineRun, *v1.PipelineStructure, error) {
 	name := o.Pack
 	packDir := filepath.Join(packsDir, name)
 
 	ctx := context.Background()
 	pipelineConfig := projectConfig.PipelineConfig
 	if name != "none" {
-		pipelineFile := filepath.Join(packDir, jenkinsfile.PipelineConfigFileName)
+		pipelineFile := filepath.Join(packDir, v1alpha1.PipelineConfigFileName)
 		exists, err := util.FileExists(pipelineFile)
 		if err != nil {
 			return nil, nil, nil, nil, nil, errors.Wrapf(err, "failed to find build pack pipeline YAML: %s", pipelineFile)
@@ -443,7 +442,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		if !exists {
 			return nil, nil, nil, nil, nil, fmt.Errorf("no build pack for %s exists at directory %s", name, packDir)
 		}
-		pipelineConfig, err = jenkinsfile.LoadPipelineConfig(pipelineFile, resolver, true, false)
+		pipelineConfig, err = v1alpha1.LoadPipelineConfig(pipelineFile, resolver, true, false)
 		if err != nil {
 			return nil, nil, nil, nil, nil, errors.Wrapf(err, "failed to load build pack pipeline YAML: %s", pipelineFile)
 		}
@@ -476,18 +475,18 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		return nil, nil, nil, nil, nil, errors.Wrapf(err, "failed to set the version on release pipelines")
 	}
 
-	var lifecycles *jenkinsfile.PipelineLifecycles
+	var lifecycles *v1alpha1.PipelineLifecycles
 	kind := o.PipelineKind
 	pipelines := pipelineConfig.Pipelines
 	switch kind {
-	case jenkinsfile.PipelineKindRelease:
+	case v1alpha1.PipelineKindRelease:
 		lifecycles = pipelines.Release
 
 		// lets add a pre-step to setup the credentials
 		if lifecycles.Setup == nil {
-			lifecycles.Setup = &jenkinsfile.PipelineLifecycle{}
+			lifecycles.Setup = &v1alpha1.PipelineLifecycle{}
 		}
-		steps := []*jenkinsfile.PipelineStep{
+		steps := []*v1alpha1.PipelineStep{
 			{
 				Command: "jx step git credentials",
 				Name:    "jx-git-credentials",
@@ -495,12 +494,12 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		}
 		lifecycles.Setup.Steps = append(steps, lifecycles.Setup.Steps...)
 
-	case jenkinsfile.PipelineKindPullRequest:
+	case v1alpha1.PipelineKindPullRequest:
 		lifecycles = pipelines.PullRequest
-	case jenkinsfile.PipelineKindFeature:
+	case v1alpha1.PipelineKindFeature:
 		lifecycles = pipelines.Feature
 	default:
-		return nil, nil, nil, nil, nil, fmt.Errorf("Unknown pipeline kind %s. Supported values are %s", kind, strings.Join(jenkinsfile.PipelineKinds, ", "))
+		return nil, nil, nil, nil, nil, fmt.Errorf("Unknown pipeline kind %s. Supported values are %s", kind, strings.Join(v1alpha1.PipelineKinds, ", "))
 	}
 
 	var tasks []*pipelineapi.Task
@@ -516,7 +515,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		return nil, nil, nil, nil, nil, err
 	}
 
-	var parsed *syntax.ParsedPipeline
+	var parsed *v1alpha1.ParsedPipeline
 
 	if lifecycles != nil && lifecycles.Pipeline != nil {
 		parsed = lifecycles.Pipeline
@@ -526,8 +525,8 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 			return nil, nil, nil, nil, nil, errors.Wrapf(err, "Failed to generate stage from build pack")
 		}
 
-		parsed = &syntax.ParsedPipeline{
-			Stages: []syntax.Stage{*stage},
+		parsed = &v1alpha1.ParsedPipeline{
+			Stages: []v1alpha1.Stage{*stage},
 		}
 
 		// If agent.container is specified, use that for default container configuration for step images.
@@ -587,7 +586,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	return pipeline, tasks, resources, run, structure, nil
 }
 
-func (o *StepCreateTaskOptions) loadProjectConfig() (*config.ProjectConfig, string, error) {
+func (o *StepCreateTaskOptions) loadProjectConfig() (*v1alpha1.ProjectConfig, string, error) {
 	if o.Context != "" {
 		fileName := filepath.Join(o.Dir, fmt.Sprintf("jenkins-x-%s.yml", o.Context))
 		exists, err := util.FileExists(fileName)
@@ -595,15 +594,15 @@ func (o *StepCreateTaskOptions) loadProjectConfig() (*config.ProjectConfig, stri
 			return nil, fileName, errors.Wrapf(err, "failed to check if file exists %s", fileName)
 		}
 		if exists {
-			config, err := config.LoadProjectConfigFile(fileName)
+			config, err := v1alpha1.LoadProjectConfigFile(fileName)
 			return config, fileName, err
 		}
 	}
-	return config.LoadProjectConfig(o.Dir)
+	return v1alpha1.LoadProjectConfig(o.Dir)
 }
 
 // CreateStageForBuildPack generates the Task for a build pack
-func (o *StepCreateTaskOptions) CreateStageForBuildPack(languageName string, pipelineConfig *jenkinsfile.PipelineConfig, lifecycles *jenkinsfile.PipelineLifecycles, templateKind, ns string) (*syntax.Stage, error) {
+func (o *StepCreateTaskOptions) CreateStageForBuildPack(languageName string, pipelineConfig *v1alpha1.PipelineConfig, lifecycles *v1alpha1.PipelineLifecycles, templateKind, ns string) (*v1alpha1.Stage, error) {
 	if lifecycles == nil {
 		return nil, errors.New("generatePipeline: no lifecycles")
 	}
@@ -618,7 +617,7 @@ func (o *StepCreateTaskOptions) CreateStageForBuildPack(languageName string, pip
 	}
 	dir := o.getWorkspaceDir()
 
-	steps := []syntax.Step{}
+	steps := []v1alpha1.Step{}
 	for _, n := range lifecycles.All() {
 		l := n.Lifecycle
 		if l == nil {
@@ -633,9 +632,9 @@ func (o *StepCreateTaskOptions) CreateStageForBuildPack(languageName string, pip
 		}
 	}
 
-	stage := &syntax.Stage{
-		Name: syntax.DefaultStageNameForBuildPack,
-		Agent: syntax.Agent{
+	stage := &v1alpha1.Stage{
+		Name: v1alpha1.DefaultStageNameForBuildPack,
+		Agent: v1alpha1.Agent{
 			Image: container,
 		},
 		Steps: steps,
@@ -654,7 +653,7 @@ func (o *StepCreateTaskOptions) GetDefaultTaskInputs() *pipelineapi.Inputs {
 	return inputs
 }
 
-func (o *StepCreateTaskOptions) enhanceTaskWithVolumesEnvAndInputs(task *pipelineapi.Task, pipelineConfig *jenkinsfile.PipelineConfig, inputs pipelineapi.Inputs) {
+func (o *StepCreateTaskOptions) enhanceTaskWithVolumesEnvAndInputs(task *pipelineapi.Task, pipelineConfig *v1alpha1.PipelineConfig, inputs pipelineapi.Inputs) {
 	volumes := task.Spec.Volumes
 	for i, step := range task.Spec.Steps {
 		volumes = o.modifyVolumes(&step, volumes)
@@ -671,7 +670,7 @@ func (o *StepCreateTaskOptions) enhanceTaskWithVolumesEnvAndInputs(task *pipelin
 }
 
 // EnhanceTasksAndPipeline takes a slice of Tasks and a Pipeline and modifies them to include built-in volumes, environment variables, and parameters
-func (o *StepCreateTaskOptions) EnhanceTasksAndPipeline(tasks []*pipelineapi.Task, pipeline *pipelineapi.Pipeline, pipelineConfig *jenkinsfile.PipelineConfig) ([]*pipelineapi.Task, *pipelineapi.Pipeline) {
+func (o *StepCreateTaskOptions) EnhanceTasksAndPipeline(tasks []*pipelineapi.Task, pipeline *pipelineapi.Pipeline, pipelineConfig *v1alpha1.PipelineConfig) ([]*pipelineapi.Task, *pipelineapi.Pipeline) {
 	taskInputs := o.GetDefaultTaskInputs()
 
 	for _, t := range tasks {
@@ -692,7 +691,7 @@ func (o *StepCreateTaskOptions) EnhanceTasksAndPipeline(tasks []*pipelineapi.Tas
 	pipeline.Spec.Params = o.createPipelineParams()
 
 	if pipeline.APIVersion == "" {
-		pipeline.APIVersion = syntax.TektonAPIVersion
+		pipeline.APIVersion = v1alpha1.TektonAPIVersion
 	}
 	if pipeline.Kind == "" {
 		pipeline.Kind = "Pipeline"
@@ -716,7 +715,7 @@ func (o *StepCreateTaskOptions) CreatePipelineRun(pipeline *pipelineapi.Pipeline
 
 	return &pipelineapi.PipelineRun{
 		TypeMeta: metav1.TypeMeta{
-			APIVersion: syntax.TektonAPIVersion,
+			APIVersion: v1alpha1.TektonAPIVersion,
 			Kind:       "PipelineRun",
 		},
 		ObjectMeta: metav1.ObjectMeta{
@@ -792,7 +791,7 @@ func (o *StepCreateTaskOptions) generateSourceRepoResource(name string) *pipelin
 		if gitURL != "" {
 			resource = &pipelineapi.PipelineResource{
 				TypeMeta: metav1.TypeMeta{
-					APIVersion: syntax.TektonAPIVersion,
+					APIVersion: v1alpha1.TektonAPIVersion,
 					Kind:       "PipelineResource",
 				},
 				ObjectMeta: metav1.ObjectMeta{
@@ -843,7 +842,7 @@ func (o *StepCreateTaskOptions) combineLabels(labels map[string]string) error {
 	return nil
 }
 
-func (o *StepCreateTaskOptions) combineEnvVars(projectConfig *jenkinsfile.PipelineConfig) error {
+func (o *StepCreateTaskOptions) combineEnvVars(projectConfig *v1alpha1.PipelineConfig) error {
 	// add any custom env vars
 	envMap := make(map[string]corev1.EnvVar)
 	for _, e := range projectConfig.Env {
@@ -860,7 +859,7 @@ func (o *StepCreateTaskOptions) combineEnvVars(projectConfig *jenkinsfile.Pipeli
 		}
 		envMap[e.Name] = e
 	}
-	projectConfig.Env = syntax.EnvMapToSlice(envMap)
+	projectConfig.Env = v1alpha1.EnvMapToSlice(envMap)
 	return nil
 }
 
@@ -986,7 +985,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	log.Infof("upserted Pipeline %s\n", info(pipeline.Name))
 
 	pipelineOwnerReference := metav1.OwnerReference{
-		APIVersion: syntax.TektonAPIVersion,
+		APIVersion: v1alpha1.TektonAPIVersion,
 		Kind:       "Pipeline",
 		Name:       pipeline.Name,
 		UID:        pipeline.UID,
@@ -1026,8 +1025,8 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	return nil
 }
 
-func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *jenkinsfile.PipelineStep, containerName string, dir string, prefixPath string) []syntax.Step {
-	steps := []syntax.Step{}
+func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig *v1alpha1.PipelineConfig, templateKind string, step *v1alpha1.PipelineStep, containerName string, dir string, prefixPath string) []v1alpha1.Step {
+	steps := []v1alpha1.Step{}
 
 	if step.Container != "" {
 		containerName = step.Container
@@ -1057,7 +1056,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 			log.Warnf("No 'agent.container' specified in the pipeline configuration so defaulting to use: %s\n", containerName)
 		}
 
-		s := syntax.Step{}
+		s := v1alpha1.Step{}
 		o.stepCounter++
 		prefix := prefixPath
 		if prefix != "" {
@@ -1106,7 +1105,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 
 // replaceCommandText lets remove any escaped "\$" stuff in the pipeline library
 // and replace any use of the VERSION file with using the VERSION env var
-func (o *StepCreateTaskOptions) replaceCommandText(step *jenkinsfile.PipelineStep) string {
+func (o *StepCreateTaskOptions) replaceCommandText(step *v1alpha1.PipelineStep) string {
 	answer := strings.Replace(step.Command, "\\$", "$", -1)
 
 	// lets replace the old way of setting versions
@@ -1402,13 +1401,13 @@ func (o *StepCreateTaskOptions) viewSteps(tasks ...*pipelineapi.Task) error {
 	return nil
 }
 
-func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jenkinsfile.PipelineConfig) error {
+func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *v1alpha1.PipelineConfig) error {
 	if o.NoReleasePrepare || o.ViewSteps {
 		return nil
 	}
 	version := ""
 
-	if o.PipelineKind == jenkinsfile.PipelineKindRelease {
+	if o.PipelineKind == v1alpha1.PipelineKindRelease {
 		release := pipelineConfig.Pipelines.Release
 		if release == nil {
 			return fmt.Errorf("no Release pipeline available")
@@ -1416,8 +1415,8 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 		sv := release.SetVersion
 		if sv == nil {
 			// lets create a default set version pipeline
-			sv = &jenkinsfile.PipelineLifecycle{
-				Steps: []*jenkinsfile.PipelineStep{
+			sv = &v1alpha1.PipelineLifecycle{
+				Steps: []*v1alpha1.PipelineStep{
 					{
 						Command: "jx step next-version --use-git-tag-only --tag",
 						Name:    "next-version",
@@ -1500,7 +1499,7 @@ func hasPipelineParam(params []pipelineapi.Param, name string) bool {
 	return false
 }
 
-func (o *StepCreateTaskOptions) runStepCommand(step *jenkinsfile.PipelineStep) error {
+func (o *StepCreateTaskOptions) runStepCommand(step *v1alpha1.PipelineStep) error {
 	c := step.Command
 	if c == "" {
 		return nil
@@ -1524,7 +1523,7 @@ func (o *StepCreateTaskOptions) runStepCommand(step *jenkinsfile.PipelineStep) e
 	return nil
 }
 
-func (o *StepCreateTaskOptions) invokeSteps(steps []*jenkinsfile.PipelineStep) error {
+func (o *StepCreateTaskOptions) invokeSteps(steps []*v1alpha1.PipelineStep) error {
 	for _, s := range steps {
 		if s == nil {
 			continue
@@ -1548,7 +1547,7 @@ func (o *StepCreateTaskOptions) invokeSteps(steps []*jenkinsfile.PipelineStep) e
 }
 
 // modifyStep allows a container step to be modified to do something different
-func (o *StepCreateTaskOptions) modifyStep(parsedStep syntax.Step, gitInfo *gits.GitRepository, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *jenkinsfile.PipelineStep, containerName string, dir string) syntax.Step {
+func (o *StepCreateTaskOptions) modifyStep(parsedStep v1alpha1.Step, gitInfo *gits.GitRepository, pipelineConfig *v1alpha1.PipelineConfig, templateKind string, step *v1alpha1.PipelineStep, containerName string, dir string) v1alpha1.Step {
 
 	if !o.NoKaniko {
 		if strings.HasPrefix(parsedStep.Command, "skaffold build") ||

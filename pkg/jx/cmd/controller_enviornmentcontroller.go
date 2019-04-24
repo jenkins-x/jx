@@ -14,10 +14,10 @@ import (
 	"time"
 
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/sirupsen/logrus"
 	"k8s.io/test-infra/prow/github"
@@ -264,7 +264,7 @@ func (o *ControllerEnvironmentOptions) startPipelineRun(w http.ResponseWriter, r
 	pr.CommonOptions = &coCopy
 
 	// defaults
-	pr.PipelineKind = jenkinsfile.PipelineKindRelease
+	pr.PipelineKind = v1alpha1.PipelineKindRelease
 	pr.SourceName = "source"
 	pr.Duration = time.Second * 20
 	pr.Trigger = string(pipelineapi.PipelineTriggerTypeManual)

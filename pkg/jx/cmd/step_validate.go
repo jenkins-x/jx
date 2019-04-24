@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 
 	"github.com/blang/semver"
-	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -106,7 +106,7 @@ func (o *StepValidateOptions) verifyJxVersion(minJxVersion string) error {
 
 func (o *StepValidateOptions) verifyAddons() []error {
 	errs := []error{}
-	config, fileName, err := config.LoadProjectConfig(o.Dir)
+	config, fileName, err := v1alpha1.LoadProjectConfig(o.Dir)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("Failed to load project config: %s", err))
 		return errs
@@ -136,7 +136,7 @@ func (o *StepValidateOptions) verifyAddons() []error {
 	return errs
 }
 
-func (o *StepValidateOptions) verifyAddon(addonConfig *config.AddonConfig, fileName string, statusMap map[string]helm.Release) error {
+func (o *StepValidateOptions) verifyAddon(addonConfig *v1alpha1.AddonConfig, fileName string, statusMap map[string]helm.Release) error {
 	name := addonConfig.Name
 	if name == "" {
 		log.Warnf("Ignoring addon with no name inside the projects configuration file %s", fileName)

@@ -9,16 +9,16 @@ import (
 	jxClient "github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/tekton/syntax"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	"github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // CreateOrUpdateSourceResource lazily creates a Tekton Pipeline PipelineResource for the given git repository
-func CreateOrUpdateSourceResource(tektonClient tektonclient.Interface, ns string, created *v1alpha1.PipelineResource) (*v1alpha1.PipelineResource, error) {
+func CreateOrUpdateSourceResource(tektonClient tektonclient.Interface, ns string, created *tektonv1alpha1.PipelineResource) (*tektonv1alpha1.PipelineResource, error) {
 	resourceName := created.Name
 	resourceInterface := tektonClient.TektonV1alpha1().PipelineResources(ns)
 
@@ -42,7 +42,7 @@ func CreateOrUpdateSourceResource(tektonClient tektonclient.Interface, ns string
 }
 
 // CreateOrUpdateTask lazily creates a Tekton Pipeline Task
-func CreateOrUpdateTask(tektonClient tektonclient.Interface, ns string, created *v1alpha1.Task) (*v1alpha1.Task, error) {
+func CreateOrUpdateTask(tektonClient tektonclient.Interface, ns string, created *tektonv1alpha1.Task) (*tektonv1alpha1.Task, error) {
 	resourceName := created.Name
 	if resourceName == "" {
 		return nil, fmt.Errorf("the Task must have a name")
@@ -98,7 +98,7 @@ func GenerateNextBuildNumber(tektonClient tektonclient.Interface, jxClient jxCli
 		for nextNumber := lastBuildNumber + 1; true; nextNumber++ {
 			// lets check there is not already a PipelineRun for this number
 			buildIdentifier := strconv.Itoa(nextNumber)
-			pipelineResourceName := syntax.PipelineRunName(pipelineIdentifier, buildIdentifier)
+			pipelineResourceName := v1alpha1.PipelineRunName(pipelineIdentifier, buildIdentifier)
 			_, err := tektonClient.TektonV1alpha1().PipelineRuns(ns).Get(pipelineResourceName, metav1.GetOptions{})
 			if err == nil {
 				// lets try make another build number as there's already a PipelineRun
@@ -123,7 +123,7 @@ func GenerateNextBuildNumber(tektonClient tektonclient.Interface, jxClient jxCli
 }
 
 // CreatePipelineRun lazily creates a Tekton PipelineRun.
-func CreatePipelineRun(tektonClient tektonclient.Interface, ns string, run *v1alpha1.PipelineRun) (*v1alpha1.PipelineRun, error) {
+func CreatePipelineRun(tektonClient tektonclient.Interface, ns string, run *tektonv1alpha1.PipelineRun) (*tektonv1alpha1.PipelineRun, error) {
 	resourceName := run.Name
 	resourceInterface := tektonClient.TektonV1alpha1().PipelineRuns(ns)
 
@@ -135,7 +135,7 @@ func CreatePipelineRun(tektonClient tektonclient.Interface, ns string, run *v1al
 }
 
 // CreateOrUpdatePipeline lazily creates a Tekton Pipeline for the given git repository, branch and context
-func CreateOrUpdatePipeline(tektonClient tektonclient.Interface, ns string, created *v1alpha1.Pipeline) (*v1alpha1.Pipeline, error) {
+func CreateOrUpdatePipeline(tektonClient tektonclient.Interface, ns string, created *tektonv1alpha1.Pipeline) (*tektonv1alpha1.Pipeline, error) {
 	resourceName := created.Name
 	resourceInterface := tektonClient.TektonV1alpha1().Pipelines(ns)
 

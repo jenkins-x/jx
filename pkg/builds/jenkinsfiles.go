@@ -5,15 +5,14 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/jenkins-x/jx/pkg/config"
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 )
 
 type JenkinsConverter struct {
 	Indentation          string
 	KubernetesPluginMode bool
-	ProjectConfig        *config.ProjectConfig
+	ProjectConfig        *v1alpha1.ProjectConfig
 
 	indentCount int
 	buffer      bytes.Buffer
@@ -21,7 +20,7 @@ type JenkinsConverter struct {
 }
 
 // NewJenkinsConverter creates a new JenkinsConverter instance
-func NewJenkinsConverter(projectConfig *config.ProjectConfig) *JenkinsConverter {
+func NewJenkinsConverter(projectConfig *v1alpha1.ProjectConfig) *JenkinsConverter {
 	answer := &JenkinsConverter{
 		ProjectConfig: projectConfig,
 		Indentation:   "  ",
@@ -60,11 +59,11 @@ func (j *JenkinsConverter) ToJenkinsfile() (string, error) {
 				branchPattern := ""
 
 				switch pipelineKind {
-				case jenkinsfile.PipelineKindRelease:
+				case v1alpha1.PipelineKindRelease:
 					branchPattern = "master"
-				case jenkinsfile.PipelineKindPullRequest:
+				case v1alpha1.PipelineKindPullRequest:
 					branchPattern = "PR-*"
-				case jenkinsfile.PipelineKindFeature:
+				case v1alpha1.PipelineKindFeature:
 					branchPattern = "feature*"
 				default:
 					return "", fmt.Errorf("unknown pipeline kind %s", pipelineKind)
