@@ -18,8 +18,7 @@ generate: build-codegen generate-mocks generate-openapi generate-client ## Gener
 
 PEGO_MOCK := $(GOPATH)/bin/pegomock
 $(PEGO_MOCK):
-# Retrieving specific version of pegomock to get patch for https://github.com/petergtz/pegomock/issues/82
-	$(GO) get github.com/petergtz/pegomock/...@550445b1b73e8271f397604d4a9bd358de090d89
+	$(GO) get github.com/petergtz/pegomock/...
 
 generate-mocks: $(PEGO_MOCK) go-generate fmt ## Generate the mocks
 
