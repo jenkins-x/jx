@@ -8,7 +8,6 @@ import (
 
 	"github.com/jenkins-x/jx/cmd/codegen/util"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -42,21 +41,11 @@ func (o *GenerateOptions) configure() error {
 	if err != nil {
 		return err
 	}
-
-	inputPath := filepath.Join(o.InputBase, o.InputPackage)
+	
 	outputPath := filepath.Join(o.OutputBase, o.OutputPackage)
 
-	if !strings.HasPrefix(inputPath, build.Default.GOPATH) {
-		return errors.Errorf("input %s is not in GOPATH (%s)", inputPath, build.Default.GOPATH)
-	}
-
-	if !strings.HasPrefix(outputPath, build.Default.GOPATH) {
-		return errors.Errorf("output %s is not in GOPATH (%s)", outputPath, build.Default.GOPATH)
-	}
-
 	// Work out the InputPackage relative to GOROOT
-	o.GoPathInputPackage = strings.TrimPrefix(inputPath,
-		fmt.Sprintf("%s/", filepath.Join(build.Default.GOPATH, "src")))
+	o.GoPathInputPackage = o.InputPackage
 
 	// Work out the OutputPackage relative to GOROOT
 	o.GoPathOutputPackage = strings.TrimPrefix(outputPath,
