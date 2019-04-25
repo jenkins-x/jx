@@ -1586,7 +1586,7 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 				return errors.Wrap(err, "building the git repository options for environment")
 			}
 			repo, gitProvider, err := kube.CreateEnvGitRepository(options.BatchMode, authConfigSvc, devEnv, devEnv, config, forkEnvGitURL, envDir,
-				gitRepoOptions, options.CreateEnvOptions.HelmValuesConfig, prefix, git, options.In, options.Out, options.Err)
+				gitRepoOptions, options.CreateEnvOptions.HelmValuesConfig, prefix, git, options.ResolveChartMuseumURL, options.In, options.Out, options.Err)
 			if err != nil || repo == nil || gitProvider == nil {
 				return errors.Wrap(err, "creating git repository for the dev environment source")
 			}

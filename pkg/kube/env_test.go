@@ -229,6 +229,7 @@ func TestCreateEnvironmentSurvey(t *testing.T) {
 		helmValues,
 		prefix,
 		gitter,
+		nil,
 		console.In,
 		console.Out,
 		console.Err,
