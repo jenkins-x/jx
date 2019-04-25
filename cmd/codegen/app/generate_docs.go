@@ -8,7 +8,6 @@ import (
 	"github.com/jenkins-x/jx/cmd/codegen/util"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 
 	jxutil "github.com/jenkins-x/jx/pkg/util"
@@ -16,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// GenerateDocsOptions the options for the create client docs command
+// GenerateDocsOptions contains the options for the create client docs command
 type GenerateDocsOptions struct {
 	GenerateOptions
 	ReferenceDocsVersion string
@@ -44,14 +43,12 @@ var (
 )
 
 // NewCreateDocsCmd creates apidocs for CRDs
-func NewCreateDocsCmd(commonOpts *opts.CommonOptions) *cobra.Command {
+func NewCreateDocsCmd(genOpts GenerateOptions) *cobra.Command {
 	o := &GenerateDocsOptions{
-		GenerateOptions: GenerateOptions{
-			CommonOptions: commonOpts,
-		},
+		GenerateOptions: genOpts,
 	}
 
-	cmd := &cobra.Command{
+	cobraCmd := &cobra.Command{
 		Use:     "docs",
 		Short:   "Creates client docs for Custom Resources",
 		Long:    createClientDocsLong,
@@ -70,9 +67,9 @@ func NewCreateDocsCmd(commonOpts *opts.CommonOptions) *cobra.Command {
 		util.AppLogger().Warnf("error getting working directory for %v\n", err)
 	}
 
-	cmd.Flags().StringVarP(&o.OutputBase, optionOutputBase, "o", filepath.Join(wd, "docs/apidocs"),
+	cobraCmd.Flags().StringVarP(&o.OutputBase, optionOutputBase, "o", filepath.Join(wd, "docs/apidocs"),
 		"output base directory, by default the <current working directory>/docs/apidocs")
-	return cmd
+	return cobraCmd
 }
 
 func run(o *GenerateDocsOptions) error {
@@ -82,7 +79,7 @@ func run(o *GenerateDocsOptions) error {
 	}
 	util.AppLogger().Infof("generating docs to %s\n", o.OutputBase)
 
-	referenceDocsRepo, err := generator.InstallGenAPIDocs()
+	referenceDocsRepo, err := generator.InstallGenAPIDocs(o.GeneratorVersion)
 	if err != nil {
 		return err
 	}

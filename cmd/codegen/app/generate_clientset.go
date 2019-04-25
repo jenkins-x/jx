@@ -10,7 +10,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 
 	jxutil "github.com/jenkins-x/jx/pkg/util"
@@ -51,14 +50,12 @@ var (
 )
 
 // NewGenerateClientSetCmd creates the command
-func NewGenerateClientSetCmd(commonOpts *opts.CommonOptions) *cobra.Command {
+func NewGenerateClientSetCmd(genOpts GenerateOptions) *cobra.Command {
 	o := &ClientSetGenerationOptions{
-		GenerateOptions: GenerateOptions{
-			CommonOptions: commonOpts,
-		},
+		GenerateOptions: genOpts,
 	}
 
-	cmd := &cobra.Command{
+	cobraCmd := &cobra.Command{
 		Use:     "clientset",
 		Short:   "Creates Go client for Custom Resources",
 		Long:    createClientGoLong,
@@ -84,20 +81,18 @@ func NewGenerateClientSetCmd(commonOpts *opts.CommonOptions) *cobra.Command {
 		util.AppLogger().Warnf("Error getting working directory for %v\n", err)
 	}
 
-	cmd.Flags().StringArrayVarP(&o.Generators, "generator", "", availableGenerators, "Enable a generator")
-	cmd.Flags().StringVarP(&o.OutputBase, "output-base", "", wd, "Output base directory, "+
+	cobraCmd.Flags().StringArrayVarP(&o.Generators, "generator", "", availableGenerators, "Enable a generator")
+	cobraCmd.Flags().StringVarP(&o.OutputBase, "output-base", "", wd, "Output base directory, "+
 		"by the current working directory")
-	cmd.Flags().StringVarP(&o.BoilerplateFile, optionBoilerplateFile, "", "custom-boilerplate.go.txt",
+	cobraCmd.Flags().StringVarP(&o.BoilerplateFile, optionBoilerplateFile, "", "custom-boilerplate.go.txt",
 		"Custom boilerplate to add to all files if the file is missing it will be ignored")
-	cmd.Flags().StringArrayVarP(&o.GroupsWithVersions, optionGroupWithVersion, "g", make([]string, 0),
+	cobraCmd.Flags().StringArrayVarP(&o.GroupsWithVersions, optionGroupWithVersion, "g", make([]string, 0),
 		"group name:version (e.g. jenkins.io:v1) to generate, must specify at least once")
-	cmd.Flags().StringVarP(&o.InputPackage, optionInputPackage, "i", "", "Input package, must specify")
-	cmd.Flags().StringVarP(&o.OutputPackage, optionOutputPackage, "o", "", "Output package, must specify")
-	cmd.Flags().StringVarP(&o.ClientGenVersion, "client-generator-version", "", "kubernetes-1.11.3",
-		"Version (really a commit-ish) of github.com/kubernetes/code-generator")
-	cmd.Flags().StringVarP(&o.InputBase, optionInputBase, "", wd, "Input base, defaults working directory")
+	cobraCmd.Flags().StringVarP(&o.InputPackage, optionInputPackage, "i", "", "Input package, must specify")
+	cobraCmd.Flags().StringVarP(&o.OutputPackage, optionOutputPackage, "o", "", "Output package, must specify")
+	cobraCmd.Flags().StringVarP(&o.InputBase, optionInputBase, "", wd, "Input base, defaults working directory")
 
-	return cmd
+	return cobraCmd
 }
 
 // Run executes this command.
@@ -122,7 +117,7 @@ func (o *ClientSetGenerationOptions) Run() error {
 		return errors.Wrapf(err, "ensure GOPATH is set correctly")
 	}
 
-	err = generator.InstallCodeGenerators(o.ClientGenVersion)
+	err = generator.InstallCodeGenerators(o.GeneratorVersion)
 	if err != nil {
 		return errors.Wrapf(err, "installing kubernetes code generator tools")
 	}
