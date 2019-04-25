@@ -1009,7 +1009,7 @@ func (h *HelmTemplate) getChart(chartDir string, version string) (*chart.Metadat
 		return nil, version, fmt.Errorf("no file %s found!", file)
 	}
 	metadata, err := chartutil.LoadChartfile(file)
-	if (version == "" || version == "latest") && metadata != nil {
+	if version == "" && metadata != nil {
 		version = metadata.GetVersion()
 	}
 	return metadata, version, err

@@ -26,7 +26,7 @@ const (
 	defaultIstioReleaseName           = "istio"
 	defaultIstioPassword              = "istio"
 	defaultIstioConfigDir             = "/istio_service_dir"
-	defaultIstioVersion               = "latest"
+	defaultIstioVersion               = ""
 	defaultIstioIngressGatewayService = "istio-ingressgateway"
 )
 
@@ -180,7 +180,7 @@ func (o *CreateAddonIstioOptions) getIstioChartsFromGitHub() (string, error) {
 	answer := ""
 	var err error
 	var actualVersion semver.Version
-	if o.Version == "latest" {
+	if o.Version == "" {
 		actualVersion, err = util.GetLatestVersionFromGitHub("istio", "istio")
 		if err != nil {
 			return answer, fmt.Errorf("unable to get %s version for github.com/%s/%s %v", o.Version, "istio", "istio", err)
