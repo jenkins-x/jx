@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	defaultFlaggerNamespace             = "istio-system"
+	defaultFlaggerNamespace             = defaultIstioNamespace
 	defaultFlaggerReleaseName           = kube.DefaultFlaggerReleaseName
 	defaultFlaggerVersion               = ""
 	defaultFlaggerRepo                  = "https://flagger.app"

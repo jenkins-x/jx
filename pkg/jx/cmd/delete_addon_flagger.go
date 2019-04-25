@@ -25,6 +25,7 @@ type DeleteAddonFlaggerOptions struct {
 	DeleteAddonOptions
 
 	ReleaseName string
+	Namespace   string
 }
 
 // NewCmdDeleteAddonFlagger defines the command
@@ -48,6 +49,7 @@ func NewCmdDeleteAddonFlagger(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVarP(&options.ReleaseName, optionRelease, "r", "flagger", "The chart release name")
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", defaultFlaggerNamespace, "The Namespace to delete from")
 	options.addFlags(cmd)
 	return cmd
 }
@@ -57,11 +59,12 @@ func (o *DeleteAddonFlaggerOptions) Run() error {
 	if o.ReleaseName == "" {
 		return util.MissingOption(optionRelease)
 	}
-	err := o.DeleteChart(o.ReleaseName, o.Purge)
+	// Delete from the 'istio-system' namespace, not from 'jx'
+	err := o.Helm().DeleteRelease(o.Namespace, o.ReleaseName, o.Purge)
 	if err != nil {
 		return errors.Wrap(err, "Failed to delete Flagger chart")
 	}
-	err = o.DeleteChart(o.ReleaseName+"-grafana", o.Purge)
+	err = o.Helm().DeleteRelease(o.Namespace, o.ReleaseName+"-grafana", o.Purge)
 	if err != nil {
 		return errors.Wrap(err, "Failed to delete Flagger Grafana chart")
 	}
