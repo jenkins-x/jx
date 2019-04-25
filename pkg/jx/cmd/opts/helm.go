@@ -704,30 +704,33 @@ func (o *CommonOptions) AddChartRepos(dir string, helmBinary string, chartRepos 
 			return errors.Wrap(err, "failed to load the Helm requirements file")
 		}
 		if requirements != nil {
+			changed := false
 			// lets replace the release chart museum URL if required
 			chartRepoURL := o.ReleaseChartMuseumUrl()
 			if chartRepoURL != "" && chartRepoURL != DefaultChartRepo {
-				changed := false
 				for i := range requirements.Dependencies {
 					if requirements.Dependencies[i].Repository == DefaultChartRepo {
 						requirements.Dependencies[i].Repository = chartRepoURL
 						changed = true
 					}
 				}
-				if changed {
-					err = helm.SaveFile(reqfile, requirements)
-					if err != nil {
-						return err
-					}
-				}
 			}
-			for _, dep := range requirements.Dependencies {
+			for count, dep := range requirements.Dependencies {
 				repo := dep.Repository
+				repoName := fmt.Sprintf("alias%d", count)
 				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) && repo != DefaultChartRepo && !strings.HasPrefix(repo, "file:") && !strings.HasPrefix(repo, "alias:") {
-					err = o.AddHelmBinaryRepoIfMissing(repo, "", "", "")
+					err = o.AddHelmBinaryRepoIfMissing(repo, repoName, "", "")
 					if err != nil {
 						return errors.Wrapf(err, "failed to add Helm repository '%s'", repo)
 					}
+					dep.Repository = fmt.Sprintf("@%s", repoName)
+					changed = true
+				}
+			}
+			if changed {
+				err := helm.SaveFile(reqfile, requirements)
+				if err != nil {
+					return errors.Wrap(err, "failed to save the Helm requirements file")
 				}
 			}
 		}
