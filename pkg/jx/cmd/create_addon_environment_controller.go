@@ -28,8 +28,9 @@ var (
 `)
 
 	createAddonEnvironmentControllerExample = templates.Examples(`
-		# Creates the environment controller using a specific environment git repository
-		jx create addon envctl -s https://github.com/myorg/environment-production.git
+		# Creates the environment controller using a specific environment git repository, project, git user, chart repo
+		jx create addon envctl -s https://github.com/myorg/env-production.git --project-id myproject --docker-registry gcr.io --cluster-rbac true --user mygituser --token mygittoken
+		
 	`)
 )
 
@@ -42,6 +43,7 @@ type CreateAddonEnvironmentControllerOptions struct {
 	ReleaseName string
 	SetValues   string
 	Timeout     int
+	InitOptions InitOptions
 
 	// chart parameters
 	WebHookURL        string
@@ -52,6 +54,7 @@ type CreateAddonEnvironmentControllerOptions struct {
 	BuildPackURL      string
 	BuildPackRef      string
 	ClusterRBAC       bool
+	NoClusterAdmin    bool
 	ProjectID         string
 	DockerRegistry    string
 	DockerRegistryOrg string
@@ -94,6 +97,8 @@ func NewCmdCreateAddonEnvironmentController(commonOpts *opts.CommonOptions) *cob
 	cmd.Flags().StringVarP(&options.BuildPackRef, "buildpack-ref", "", "", "The Git reference (branch,tag,sha) in the Git repository to use")
 	cmd.Flags().StringVarP(&options.ProjectID, "project-id", "", "", "The cloud project ID")
 	cmd.Flags().BoolVarP(&options.ClusterRBAC, "cluster-rbac", "", false, "Whether to enable cluster level RBAC on Tekton")
+	cmd.Flags().StringVarP(&options.InitOptions.Flags.UserClusterRole, "cluster-role", "", "cluster-admin", "The cluster role for the current user to be able to install Cluster RBAC based Environment Controller")
+	cmd.Flags().BoolVarP(&options.NoClusterAdmin, "no-cluster-admin", "", false, "If using cluster RBAC the current user needs 'cluster-admin' karma which this command will add if its possible")
 	cmd.Flags().StringVarP(&options.DockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
 	cmd.Flags().StringVarP(&options.DockerRegistryOrg, "docker-registry-org", "", "", "The Docker registry organisation. If blank the git repository owner is used")
 	return cmd
@@ -110,21 +115,33 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 		return errors.Wrap(err, "failed to register the Jenkins X Pipeline CRDs")
 	}
 
-	// lets ensure there's a dev environment setup for no-tiller mode
-	fn := func(env *v1.Environment) error {
-		env.Spec.TeamSettings.HelmTemplate = true
-		env.Spec.TeamSettings.PromotionEngine = v1.PromotionEngineProw
-		env.Spec.TeamSettings.ProwEngine = v1.ProwEngineTypeTekton
-		env.Spec.WebHookEngine = v1.WebHookEngineProw
-		return nil
+	// validate the git URL
+	if o.GitSourceURL == "" && !o.BatchMode {
+		o.GitSourceURL, err = util.PickValue("git repository to promote from: ", "", true, "please specify the GitOps repository used to store the kubernetes applications to deploy to this cluster", o.In, o.Out, o.Err)
+		if err != nil {
+			return err
+		}
 	}
-	err = o.ModifyDevEnvironment(fn)
+	if o.GitSourceURL == "" {
+		return util.MissingOption("source-url")
+	}
+	gitInfo, err := gits.ParseGitURL(o.GitSourceURL)
 	if err != nil {
 		return err
 	}
-
-	// avoid needing a dev cluster
-	o.EnableRemoteKubeCluster()
+	serverURL := gitInfo.ProviderURL()
+	if o.GitKind == "" {
+		o.GitKind = gits.SaasGitKind(serverURL)
+	}
+	if o.GitKind == "" && !o.BatchMode {
+		o.GitKind, err = util.PickName(gits.KindGits, "kind of git repository: ", "please specify the GitOps repository used to store the kubernetes applications to deploy to this cluster", o.In, o.Out, o.Err)
+		if err != nil {
+			return err
+		}
+	}
+	if o.GitKind == "" {
+		return util.MissingOption("git-kind")
+	}
 
 	_, ns, err := o.KubeClientAndNamespace()
 	if err != nil {
@@ -134,32 +151,43 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 		o.Namespace = ns
 	}
 
-	if o.GitSourceURL == "" {
-		if o.BatchMode {
-			return util.MissingOption("source-url")
-		}
-		o.GitSourceURL, err = util.PickValue("git repository to promote from: ", "", true, "please specify the GitOps repository used to store the kubernetes applications to deploy to this cluster", o.In, o.Out, o.Err)
-		if err != nil {
-			return err
-		}
-	}
-	gitInfo, err := gits.ParseGitURL(o.GitSourceURL)
+	// lets ensure there's a dev environment setup for no-tiller mode
+	err = o.ModifyDevEnvironment(func(env *v1.Environment) error {
+		env.Spec.TeamSettings.HelmTemplate = true
+		env.Spec.TeamSettings.PromotionEngine = v1.PromotionEngineProw
+		env.Spec.TeamSettings.ProwEngine = v1.ProwEngineTypeTekton
+		env.Spec.WebHookEngine = v1.WebHookEngineProw
+		return nil
+	})
 	if err != nil {
 		return err
 	}
-	serverUrl := gitInfo.ProviderURL()
-	if o.GitKind == "" {
-		o.GitKind = gits.SaasGitKind(serverUrl)
+	err = o.ModifyEnvironment(kube.LabelValueThisEnvironment, func(env *v1.Environment) error {
+		env.Spec.TeamSettings.HelmTemplate = true
+		env.Spec.TeamSettings.PromotionEngine = v1.PromotionEngineProw
+		env.Spec.TeamSettings.ProwEngine = v1.ProwEngineTypeTekton
+		env.Spec.WebHookEngine = v1.WebHookEngineProw
+		env.Spec.Kind = v1.EnvironmentKindTypePermanent
+		env.Spec.Order = 100
+		env.Spec.PromotionStrategy = v1.PromotionStrategyTypeAutomatic
+		env.Spec.Source.URL = o.GitSourceURL
+		return nil
+	})
+	if err != nil {
+		return err
 	}
-	if o.GitKind == "" {
-		if o.BatchMode {
-			return util.MissingOption("git-kind")
-		}
-		o.GitKind, err = util.PickName(gits.KindGits, "kind of git repository: ", "please specify the GitOps repository used to store the kubernetes applications to deploy to this cluster", o.In, o.Out, o.Err)
+
+	if o.ClusterRBAC && !o.NoClusterAdmin {
+		io := &o.InitOptions
+		io.CommonOptions = o.CommonOptions
+		err = io.enableClusterAdminRole()
 		if err != nil {
 			return err
 		}
 	}
+
+	// avoid needing a dev cluster
+	o.EnableRemoteKubeCluster()
 
 	authSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
@@ -169,7 +197,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	server := config.GetOrCreateServer(serverUrl)
+	server := config.GetOrCreateServer(serverURL)
 
 	if o.GitUser == "" {
 		auth, err := o.PickPipelineUserAuth(config, server)
@@ -177,7 +205,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 			return err
 		}
 		if auth == nil {
-			return fmt.Errorf("no user found for git server %s", serverUrl)
+			return fmt.Errorf("no user found for git server %s", serverURL)
 		}
 		o.GitUser = auth.Username
 		if o.GitToken == "" {
@@ -208,7 +236,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	}
 	setValues = append(setValues, "source.owner="+gitInfo.Organisation)
 	setValues = append(setValues, "source.repo="+gitInfo.Name)
-	setValues = append(setValues, "source.serverUrl="+serverUrl)
+	setValues = append(setValues, "source.serverURL="+serverURL)
 	setValues = append(setValues, "source.gitKind="+o.GitKind)
 	setValues = append(setValues, "source.user="+o.GitUser)
 	setValues = append(setValues, "source.token="+o.GitToken)

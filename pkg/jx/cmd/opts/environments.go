@@ -6,6 +6,7 @@ import (
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 )
@@ -68,4 +69,14 @@ func (o *CommonOptions) GetDevEnv() (gitOps bool, devEnv *jenkinsv1.Environment)
 		}
 		return gitOps, devEnv
 	}
+}
+
+// ResolveChartMuseumURL resolves the current Chart Museum URL so we can pass it into a remote Environment's
+// git repository
+func (o *CommonOptions) ResolveChartMuseumURL() (string, error) {
+	kubeClient, ns, err := o.KubeClientAndDevNamespace()
+	if err != nil {
+		return "", err
+	}
+	return services.FindServiceURL(kubeClient, ns, kube.ServiceChartMuseum)
 }

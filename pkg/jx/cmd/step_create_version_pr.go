@@ -155,10 +155,9 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 	opts.Dir = dir
 	opts.RepositoryMessage = "versions repository"
 
-	fn := func() error {
+	return o.CreatePullRequest(&o.PullRequestDetails, func() error {
 		return o.modifyFiles(dir)
-	}
-	return o.CreatePullRequest(&o.PullRequestDetails, fn)
+	})
 }
 
 func (o *StepCreateVersionPullRequestOptions) modifyFiles(dir string) error {
@@ -171,6 +170,10 @@ func (o *StepCreateVersionPullRequestOptions) modifyFiles(dir string) error {
 
 	if o.builderImageVersion != "" {
 		err := o.modifyRegex(filepath.Join(dir, "jenkins-x-*.yml"), "gcr.io/jenkinsxio/builder-go-maven:(.+)", "gcr.io/jenkinsxio/builder-go-maven:"+o.builderImageVersion)
+		if err != nil {
+			return errors.Wrap(err, "modifying the BDD test version YAMLs")
+		}
+		err = o.modifyRegex(filepath.Join(dir, "jenkins-x-*.yml"), "gcr.io/jenkinsxio/builder-go:(.+)", "gcr.io/jenkinsxio/builder-go:"+o.builderImageVersion)
 		if err != nil {
 			return errors.Wrap(err, "modifying the BDD test version YAMLs")
 		}

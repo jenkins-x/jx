@@ -40,6 +40,9 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 		return err
 	}
 
+	if o.Message == "" {
+		return util.MissingOption("message")
+	}
 	username := provider.CurrentUsername()
 	if username == "" {
 		return fmt.Errorf("no git user name found")
@@ -60,7 +63,13 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 			return errors.Wrapf(err, "failed to fork GitHub repo %s/%s to user %s", originalOrg, originalRepo, username)
 		}
 		log.Infof("Forked %s to %s\n\n", message, util.ColorInfo(repo.HTMLURL))
+
+		repo, err = provider.GetRepository(username, originalRepo)
+		if err != nil {
+			return errors.Wrapf(err, "failed to load GitHub repo %s/%s", username, originalRepo)
+		}
 	}
+	fork := repo.Fork
 
 	err = gitter.Clone(repo.CloneURL, dir)
 	if err != nil {
@@ -75,6 +84,14 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 	err = gitter.PullUpstream(dir)
 	if err != nil {
 		return errors.Wrapf(err, "pulling upstream of forked %s", message)
+	}
+
+	if fork {
+		base := "master"
+		err = gitter.ResetToUpstream(dir, base)
+		if err != nil {
+			return errors.Wrapf(err, "resetting forked branch %s to upstream version", base)
+		}
 	}
 
 	branchName := gitter.ConvertToValidBranchName(o.BranchNameText)
@@ -165,17 +182,21 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 
 	base := o.RepositoryBranch
 
+	head := branchName
+	if fork {
+		head = username + ":" + branchName
+	}
 	gha := &gits.GitPullRequestArguments{
 		GitRepository: gitInfo,
 		Title:         o.Title,
 		Body:          o.Message,
 		Base:          base,
-		Head:          username + ":" + branchName,
+		Head:          head,
 	}
 
 	pr, err := provider.CreatePullRequest(gha)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to create pull quest from base %s with header %s", base, head)
 	}
 	log.Infof("Created Pull Request: %s\n\n", util.ColorInfo(pr.URL))
 	return nil

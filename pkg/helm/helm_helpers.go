@@ -320,11 +320,11 @@ func LoadValues(data []byte) (map[string]interface{}, error) {
 func SaveFile(fileName string, contents interface{}) error {
 	data, err := yaml.Marshal(contents)
 	if err != nil {
-		return errors.Wrapf(err, "failed to marshal helm values file %s", fileName)
+		return errors.Wrapf(err, "failed to marshal helm file %s", fileName)
 	}
 	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 	if err != nil {
-		return errors.Wrapf(err, "failed to save helm values file %s", fileName)
+		return errors.Wrapf(err, "failed to save helm file %s", fileName)
 	}
 	return nil
 }
