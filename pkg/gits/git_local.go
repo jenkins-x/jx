@@ -44,6 +44,12 @@ func (g *GitLocal) ShallowCloneBranch(url string, branch string, dir string) err
 	return g.GitFake.ShallowCloneBranch(url, branch, dir)
 }
 
+// ShallowClone shallow clones the repo at url from the specified commitish or pull request to a local master branch
+// Faked out
+func (g *GitLocal) ShallowClone(dir string, url string, commitish string, pullRequest string) error {
+	return g.GitFake.ShallowClone(dir, url, commitish, pullRequest)
+}
+
 // Pull pulls the Git repository in the given directory
 // Faked out
 func (g *GitLocal) Pull(dir string) error {
