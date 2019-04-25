@@ -7,15 +7,17 @@ pipelineConfig:
           image: rawlingsj/executor:dev31
         stages:
           - name: ci
+            environment:
+              - name: BASE_WORKSPACE
+                value: /workspace/source
+              - name: GOPATH
+                value: /workspace/go
+              - name: GOPROXY
+                value: http://jenkins-x-athens-proxy
             steps:
               - name: lint
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: ./hack/run-all-checks.sh
-                env:
-                  - name: GOPATH
-                    value: /workspace/go
-                  - name: GOPROXY
-                    value: http://jenkins-x-athens-proxy:80
                 resources:
                   limits:
                     cpu: 4
