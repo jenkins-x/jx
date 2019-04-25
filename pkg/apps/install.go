@@ -295,6 +295,21 @@ func (o *InstallOptions) createInterrogateChartFn(version string, app string, re
 			chartDetails.Version = version
 		}
 
+		requirements, err := helm.LoadRequirementsFile(helm.RequirementsFileName)
+		if err != nil {
+			return &chartDetails, errors.Wrapf(err, "loading requirements.yaml for %s", chartDir)
+		}
+		for _, requirement := range requirements.Dependencies {
+			// repositories that start with an @ are aliases to helm repo names
+			if !strings.HasPrefix(requirement.Repository, "@") {
+				_, err := helm.AddHelmRepoIfMissing(requirement.Repository, "", "", "", o.Helmer, o.VaultClient, o.In,
+					o.Out, o.Err)
+				if err != nil {
+					return &chartDetails, errors.Wrapf(err, "")
+				}
+			}
+		}
+
 		if version == "" {
 			if o.Verbose {
 				log.Infof("No version specified so using latest version which is %s\n",
