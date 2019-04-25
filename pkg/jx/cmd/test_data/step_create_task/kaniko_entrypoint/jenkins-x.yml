@@ -23,13 +23,6 @@ pipelineConfig:
               image: docker.io/golang:1.11.5
               command: make
               args: ['linux']
-              resources:
-                limits:
-                  cpu: 4
-                  memory: 6144Mi
-                requests:
-                  cpu: 3
-                  memory: 3072Mi
 
             - name: validate-binary
               image: docker.io/golang:1.11.5
@@ -56,10 +49,3 @@ pipelineConfig:
             - name: preview
               image: gcr.io/jenkinsxio/builder-go:0.1.332
               command: ./jx/scripts/ci.sh
-              resources:
-                limits:
-                  cpu: 4
-                  memory: 6144Mi
-                requests:
-                  cpu: 3
-                  memory: 3072Mi

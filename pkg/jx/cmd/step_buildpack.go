@@ -30,6 +30,7 @@ func NewCmdStepBuildPack(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 	cmd.AddCommand(NewCmdStepBuildPackApply(commonOpts))
+	cmd.AddCommand(NewCmdStepBuildPackValidate(commonOpts))
 	return cmd
 }
 

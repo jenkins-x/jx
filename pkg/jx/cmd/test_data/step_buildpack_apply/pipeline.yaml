@@ -6,5 +6,5 @@ pipelines:
       steps:
       - container: maven
         steps:
-        - cmd: mvn deploy
+        - sh: mvn deploy
         - groovy: "dir(\"foo\") { \n  sh \"echo hello\"\n}"

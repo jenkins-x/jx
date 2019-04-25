@@ -580,6 +580,11 @@ func (s *PipelineStep) PutAllEnvVars(m map[string]string) {
 
 // LoadPipelineConfig returns the pipeline configuration
 func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfileRunner bool, clearContainer bool) (*PipelineConfig, error) {
+	return LoadPipelineConfigAndMaybeValidate(fileName, resolver, jenkinsfileRunner, clearContainer, true)
+}
+
+// LoadPipelineConfigAndMaybeValidate returns the pipeline configuration, optionally after validating the YAML.
+func LoadPipelineConfigAndMaybeValidate(fileName string, resolver ImportFileResolver, jenkinsfileRunner bool, clearContainer bool, skipYamlValidation bool) (*PipelineConfig, error) {
 	config := PipelineConfig{}
 	exists, err := util.FileExists(fileName)
 	if err != nil || !exists {
@@ -588,6 +593,15 @@ func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfil
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		return &config, errors.Wrapf(err, "Failed to load file %s", fileName)
+	}
+	if !skipYamlValidation {
+		validationErrors, err := util.ValidateYaml(&config, data)
+		if err != nil {
+			return &config, fmt.Errorf("failed to validate YAML file %s due to %s", fileName, err)
+		}
+		if len(validationErrors) > 0 {
+			return &config, fmt.Errorf("Validation failures in YAML file %s:\n%s", fileName, strings.Join(validationErrors, "\n"))
+		}
 	}
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {

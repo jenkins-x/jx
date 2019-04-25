@@ -8,9 +8,9 @@ pipelineConfig:
           - name: A Broken Stage
             steps:
               - command: echo
-                arguments: ["hello","world"]
+                args: ["hello","world"]
             stages:
               - name: Nested
                 steps:
                   - command: echo
-                    arguments: ['oops']
+                    args: ['oops']

@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/pkg/errors"
@@ -134,6 +135,13 @@ func LoadProjectConfigFile(fileName string) (*ProjectConfig, error) {
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		return &config, fmt.Errorf("Failed to load file %s due to %s", fileName, err)
+	}
+	validationErrors, err := util.ValidateYaml(&config, data)
+	if err != nil {
+		return &config, fmt.Errorf("failed to validate YAML file %s due to %s", fileName, err)
+	}
+	if len(validationErrors) > 0 {
+		return &config, fmt.Errorf("Validation failures in YAML file %s:\n%s", fileName, strings.Join(validationErrors, "\n"))
 	}
 	err = yaml.Unmarshal(data, &config)
 	if err != nil {

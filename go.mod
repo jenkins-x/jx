@@ -14,6 +14,7 @@ require (
 	github.com/SAP/go-hdb v0.13.2 // indirect
 	github.com/SermoDigital/jose v0.9.1 // indirect
 	github.com/StackExchange/wmi v0.0.0-20180116203802-5d049714c4a6 // indirect
+	github.com/abayer/jsonschema v0.0.0-20190425202832-4535b0791c1c
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d
 	github.com/alcortesm/tgz v0.0.0-20161220082320-9c5fe88206d7 // indirect
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f
@@ -146,6 +147,9 @@ require (
 	github.com/wbrefvem/go-bitbucket v0.0.0-20190128183802-fc08fd046abb
 	github.com/xanzy/go-gitlab v0.0.0-20180814191223-f3bc634ab936
 	github.com/xanzy/ssh-agent v0.2.0 // indirect
+	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
+	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
+	github.com/xeipuuv/gojsonschema v1.1.0
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	gocloud.dev v0.9.0
 	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890
