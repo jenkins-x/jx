@@ -3,10 +3,21 @@ package config
 type Kind string
 
 const (
+	// Application adds an application
 	Application Kind = "APPLICATION"
-	Environment Kind = "ENVIRONMENT"
-	Protection  Kind = "PROTECTION"
 
+	// Environment a local environment
+	Environment Kind = "ENVIRONMENT"
+
+	// RemoteEnvironment a remote environment
+	RemoteEnvironment Kind = "REMOTE_ENVIRONMENT"
+
+	// Protection
+	Protection Kind = "PROTECTION"
+
+	// ServerlessJenkins serverless jenkins
 	ServerlessJenkins = "serverless-jenkins"
-	PromotionBuild    = "promotion-build"
+
+	// PromotionBuild for a promotion build
+	PromotionBuild = "promotion-build"
 )

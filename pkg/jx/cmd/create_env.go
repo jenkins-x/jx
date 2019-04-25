@@ -303,7 +303,7 @@ func (o *CreateEnvOptions) RegisterEnvironment(env *v1.Environment, gitProvider 
 			return err
 		}
 
-		err = prow.AddEnvironment(kubeClient, []string{repo}, devNs, env.Spec.Namespace, teamSettings)
+		err = prow.AddEnvironment(kubeClient, []string{repo}, devNs, env.Spec.Namespace, teamSettings, env.Spec.RemoteCluster)
 		if err != nil {
 			return fmt.Errorf("failed to add repo %s to Prow config in namespace %s: %v", repo, env.Spec.Namespace, err)
 		}

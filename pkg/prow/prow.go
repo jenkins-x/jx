@@ -2,6 +2,7 @@ package prow
 
 import (
 	"encoding/json"
+
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/kube"
 
@@ -103,8 +104,12 @@ func remove(kubeClient kubernetes.Interface, repos []string, ns string, kind pro
 }
 
 // AddEnvironment adds an environment git repo config
-func AddEnvironment(kubeClient kubernetes.Interface, repos []string, ns, environmentNamespace string, teamSettings *v1.TeamSettings) error {
-	return add(kubeClient, repos, ns, prowconfig.Environment, "", environmentNamespace, "", teamSettings)
+func AddEnvironment(kubeClient kubernetes.Interface, repos []string, ns, environmentNamespace string, teamSettings *v1.TeamSettings, remoteEnvironment bool) error {
+	kind := prowconfig.Environment
+	if remoteEnvironment {
+		kind = prowconfig.RemoteEnvironment
+	}
+	return add(kubeClient, repos, ns, kind, "", environmentNamespace, "", teamSettings)
 }
 
 // AddApplication adds an app git repo config
@@ -250,6 +255,8 @@ func (o *Options) AddProwConfig() error {
 	case prowconfig.Environment:
 		preSubmit = o.createPreSubmitEnvironment()
 		postSubmit = o.createPostSubmitEnvironment()
+	case prowconfig.RemoteEnvironment:
+		preSubmit = o.createPreSubmitEnvironment()
 	case prowconfig.Protection:
 		// Nothing needed
 	default:
@@ -295,7 +302,7 @@ func (o *Options) AddProwConfig() error {
 				prowConfig.Presubmits[r] = append(prowConfig.Presubmits[r], preSubmit)
 			}
 		}
-		if postSubmit.Name != "" {
+		if o.Kind != prowconfig.RemoteEnvironment && postSubmit.Name != "" {
 			found := false
 			for i, j := range prowConfig.Postsubmits[r] {
 				if j.Name == postSubmit.Name {

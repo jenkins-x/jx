@@ -91,6 +91,7 @@ type InstallFlags struct {
 	Namespace                   string
 	CloudEnvRepository          string
 	NoDefaultEnvironments       bool
+	RemoteEnvironments          bool
 	DefaultEnvironmentPrefix    string
 	LocalCloudEnvironment       bool
 	EnvironmentGitOwner         string
@@ -324,6 +325,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	flags.addCloudEnvOptions(cmd)
 	cmd.Flags().StringVarP(&flags.LocalHelmRepoName, "local-helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository for the installed ChartMuseum")
 	cmd.Flags().BoolVarP(&flags.NoDefaultEnvironments, "no-default-environments", "", false, "Disables the creation of the default Staging and Production environments")
+	cmd.Flags().BoolVarP(&flags.RemoteEnvironments, "remote-environments", "", false, "Indicates you intend Staging and Production environments to run in remote clusters. See https://jenkins-x.io/getting-started/multi-cluster/")
 	cmd.Flags().StringVarP(&flags.DefaultEnvironmentPrefix, "default-environment-prefix", "", "", "Default environment repo prefix, your Git repos will be of the form 'environment-$prefix-$envName'")
 	cmd.Flags().StringVarP(&flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
 	cmd.Flags().StringVarP(&flags.Timeout, "timeout", "", opts.DefaultInstallTimeout, "The number of seconds to wait for the helm install to complete")
@@ -2416,10 +2418,10 @@ func (options *InstallOptions) createEnvironments(namespace string) error {
 			if options.BatchMode {
 				options.CreateEnvOptions.BatchMode = options.BatchMode
 			}
-
 			options.CreateEnvOptions.Options.Name = "staging"
 			options.CreateEnvOptions.Options.Spec.Label = "Staging"
 			options.CreateEnvOptions.Options.Spec.Order = 100
+			options.CreateEnvOptions.Options.Spec.RemoteCluster = options.Flags.RemoteEnvironments
 			err = options.CreateEnvOptions.Run()
 			if err != nil {
 				return errors.Wrapf(err, "failed to create staging environment in namespace %s", devNamespace)
@@ -2427,6 +2429,7 @@ func (options *InstallOptions) createEnvironments(namespace string) error {
 			options.CreateEnvOptions.Options.Name = "production"
 			options.CreateEnvOptions.Options.Spec.Label = "Production"
 			options.CreateEnvOptions.Options.Spec.Order = 200
+			options.CreateEnvOptions.Options.Spec.RemoteCluster = options.Flags.RemoteEnvironments
 			options.CreateEnvOptions.Options.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
 			options.CreateEnvOptions.PromotionStrategy = string(v1.PromotionStrategyTypeManual)
 
