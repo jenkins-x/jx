@@ -264,6 +264,15 @@ func (l *NamedLifecycle) Groovy() string {
 	return lifecycles.Groovy()
 }
 
+// PutAllEnvVars puts all the defined environment variables in the given map
+func (l *NamedLifecycle) PutAllEnvVars(m map[string]string) {
+	if l.Lifecycle != nil {
+		for _, step := range l.Lifecycle.Steps {
+			step.PutAllEnvVars(m)
+		}
+	}
+}
+
 // Groovy returns the groovy expression for this lifecycle
 func (l *PipelineLifecycle) Groovy() string {
 	nl := &NamedLifecycle{Name: "", Lifecycle: l}
@@ -557,6 +566,13 @@ func (s *PipelineStep) Validate() error {
 	return fmt.Errorf("invalid step %#v as no child steps or command", s)
 }
 
+// PutAllEnvVars puts all the defined environment variables in the given map
+func (s *PipelineStep) PutAllEnvVars(m map[string]string) {
+	for _, step := range s.Steps {
+		step.PutAllEnvVars(m)
+	}
+}
+
 // LoadPipelineConfig returns the pipeline configuration
 func LoadPipelineConfig(fileName string, resolver ImportFileResolver, jenkinsfileRunner bool, clearContainer bool) (*PipelineConfig, error) {
 	config := PipelineConfig{}
@@ -659,6 +675,26 @@ func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, clearContainer boo
 
 func (c *PipelineConfig) defaultContainerAndDir() {
 	c.Pipelines.defaultContainerAndDir(c.Agent.Container, c.Agent.Dir)
+}
+
+// GetAllEnvVars finds all the environment variables defined in all pipelines + steps with the first value we find
+func (c *PipelineConfig) GetAllEnvVars() map[string]string {
+	answer := map[string]string{}
+
+	for _, pipeline := range c.Pipelines.All() {
+		if pipeline != nil {
+			for _, lifecycle := range pipeline.All() {
+				lifecycle.PutAllEnvVars(answer)
+			}
+		}
+	}
+	for _, env := range c.Env {
+		if env.Value != "" || answer[env.Name] == "" {
+			answer[env.Name] = env.Value
+		}
+	}
+	return answer
+
 }
 
 // ExtendPipelines extends the parent lifecycle with the base

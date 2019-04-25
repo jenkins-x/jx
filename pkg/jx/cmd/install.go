@@ -85,6 +85,7 @@ type InstallFlags struct {
 	DockerRegistryOrg           string
 	Provider                    string
 	VersionsRepository          string
+	VersionsGitRef              string
 	Version                     string
 	LocalHelmRepoName           string
 	Namespace                   string
@@ -104,6 +105,7 @@ type InstallFlags struct {
 	RecreateVaultBucket         bool
 	Tekton                      bool
 	KnativeBuild                bool
+	ExternalDNS                 bool
 	BuildPackName               string
 	Kaniko                      bool
 	GitOpsMode                  bool
@@ -131,7 +133,7 @@ const (
 	JenkinsXPlatformChart   = "jenkins-x/" + JenkinsXPlatformChartName
 	JenkinsXPlatformRelease = "jenkins-x"
 
-	ServerlessJenkins   = "Serverless Jenkins X Pipelines with Tekon"
+	ServerlessJenkins   = "Serverless Jenkins X Pipelines with Tekton"
 	StaticMasterJenkins = "Static Jenkins Server and Jenkinsfiles"
 
 	GitOpsChartYAML = `name: env
@@ -338,6 +340,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.Prow, "prow", "", false, "Enable Prow to implement Serverless Jenkins and support ChatOps on Pull Requests")
 	cmd.Flags().BoolVarP(&flags.Tekton, "tekton", "", false, "Enables the Tekton pipeline engine (which used to be called knative build pipeline) along with Prow to provide Serverless Jenkins. Otherwise we default to use Knative Build if you enable Prow")
 	cmd.Flags().BoolVarP(&flags.KnativeBuild, "knative-build", "", false, "Note this option is deprecated now in favour of tekton. If specified this will keep using the old knative build with Prow instead of the stratgegic tekton")
+	cmd.Flags().BoolVarP(&flags.ExternalDNS, "external-dns", "", false, "Installs external-dns into the cluster. ExternalDNS manages service DNS records for your cluster, providing you've setup your domain record")
 	cmd.Flags().BoolVarP(&flags.GitOpsMode, "gitops", "", false, "Creates a git repository for the Dev environment to manage the installation, configuration, upgrade and addition of Apps in Jenkins X all via GitOps")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvApply, "no-gitops-env-apply", "", false, "When using GitOps to create the source code for the development environment and installation, don't run 'jx step env apply' to perform the install")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvRepo, "no-gitops-env-repo", "", false, "When using GitOps to create the source code for the development environment this flag disables the creation of a git repository for the source code")
@@ -358,6 +361,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&flags.CloudEnvRepository, "cloud-environment-repo", "", opts.DefaultCloudEnvironmentsURL, "Cloud Environments Git repo")
 	cmd.Flags().StringVarP(&flags.VersionsRepository, "versions-repo", "", opts.DefaultVersionsURL, "Jenkins X versions Git repo")
+	cmd.Flags().StringVarP(&flags.VersionsGitRef, "versions-ref", "", "", "Jenkins X versions Git repository reference (tag, branch, sha etc)")
 	cmd.Flags().BoolVarP(&flags.LocalCloudEnvironment, "local-cloud-environment", "", false, "Ignores default cloud-environment-repo and uses current directory ")
 }
 
@@ -506,7 +510,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring the docker registry")
 	}
 
-	versionsRepoDir, err := options.CloneJXVersionsRepo(options.Flags.VersionsRepository)
+	versionsRepoDir, err := options.CloneJXVersionsRepo(options.Flags.VersionsRepository, options.Flags.VersionsGitRef)
 	if err != nil {
 		return errors.Wrap(err, "cloning the jx versions repo")
 	}
@@ -545,6 +549,11 @@ func (options *InstallOptions) Run() error {
 	err = options.configureHelmRepo()
 	if err != nil {
 		return errors.Wrap(err, "configuring the Jenkins X helm repository")
+	}
+
+	err = options.configureProwInTeamSettings()
+	if err != nil {
+		return errors.Wrap(err, "configuring Prow in team settings")
 	}
 
 	err = options.configureAndInstallProw(ns, gitOpsDir, gitOpsEnvDir)
@@ -590,11 +599,6 @@ func (options *InstallOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "cleaning up the temporary files")
 		}
-	}
-
-	err = options.configureProwInTeamSettings()
-	if err != nil {
-		return errors.Wrap(err, "configuring Prow in team settings")
 	}
 
 	err = options.configureImportModeInTeamSettings()
@@ -975,7 +979,7 @@ func (options *InstallOptions) configureAndInstallProw(namespace string, gitOpsD
 			return errors.Wrap(err, "retrieving the pipeline Git Auth")
 		}
 		options.OAUTHToken = pipelineUser.ApiToken
-		err = options.InstallProw(options.Flags.Tekton, options.Flags.GitOpsMode, gitOpsDir, gitOpsEnvDir, pipelineUser.Username)
+		err = options.InstallProw(options.Flags.Tekton, options.Flags.ExternalDNS, options.Flags.GitOpsMode, gitOpsDir, gitOpsEnvDir, pipelineUser.Username)
 		if err != nil {
 			errors.Wrap(err, "installing Prow")
 		}
@@ -1829,7 +1833,6 @@ func (options *InstallOptions) configureCloudProivderPostInit(client kubernetes.
 		helmOptions := helm.InstallChartOptions{
 			Chart:       "ibm/ibmcloud-block-storage-plugin",
 			ReleaseName: "ibmcloud-block-storage-plugin",
-			Ns:          "default",
 			NoForce:     true,
 		}
 		err = options.InstallChartWithOptions(helmOptions)
@@ -2064,7 +2067,7 @@ func (options *InstallOptions) configureKaniko() error {
 			}
 		}
 
-		serviceAccountName := kube.ToValidNameTruncated(fmt.Sprintf("jxkankio-%s", clusterName), 30)
+		serviceAccountName := kube.ToValidNameTruncated(fmt.Sprintf("jxkaniko-%s", clusterName), 30)
 
 		log.Infof("Configuring Kaniko service account %s for project %s\n", util.ColorInfo(serviceAccountName), util.ColorInfo(projectID))
 		serviceAccountPath, err := gke.GetOrCreateServiceAccount(serviceAccountName, projectID, serviceAccountDir, gke.KanikoServiceAccountRoles)
@@ -2932,6 +2935,12 @@ func (options *InstallOptions) configureTeamSettings() error {
 		if options.Flags.DockerRegistryOrg != "" {
 			env.Spec.TeamSettings.DockerRegistryOrg = options.Flags.DockerRegistryOrg
 			log.Infof("Setting the docker registry organisation to %s in the TeamSettings\n", env.Spec.TeamSettings.DockerRegistryOrg)
+		}
+		if options.Flags.VersionsRepository != "" {
+			env.Spec.TeamSettings.VersionStreamURL = options.Flags.VersionsRepository
+		}
+		if options.Flags.VersionsGitRef != "" {
+			env.Spec.TeamSettings.VersionStreamRef = options.Flags.VersionsGitRef
 		}
 		return nil
 	}

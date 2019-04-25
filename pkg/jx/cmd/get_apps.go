@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -35,6 +35,7 @@ type appOutput struct {
 	Description     string `yaml:"description" json:"description"`
 	ChartRepository string `yaml:"chartRepository" json:"chartRepository"`
 	Status          string `yaml:"status" json:"status"`
+	Namespace       string `yaml:"namespace" json:"namespace"`
 }
 
 // HelmOutput is the representation of the Helm status command
@@ -159,7 +160,8 @@ func (o *GetAppsOptions) Run() error {
 }
 
 func (o *GetAppsOptions) generateAppStatusOutput(app *v1.App) error {
-	output, err := o.Helm().StatusReleaseWithOutput(o.Namespace, app.Labels[helm.LabelAppName], "json")
+	name := app.Labels[helm.LabelReleaseName]
+	output, err := o.Helm().StatusReleaseWithOutput(o.Namespace, name, "json")
 	if err != nil {
 		return err
 	}
@@ -178,14 +180,15 @@ func (o *GetAppsOptions) generateTableFormatted(apps *v1.AppList) appsResult {
 			if name != "" && app.Annotations != nil {
 				var status string
 				if releasesMap != nil {
-					status = releasesMap[name].Status
+					status = releasesMap[app.Labels[helm.LabelReleaseName]].Status
 				}
 				results.AppOutput = append(results.AppOutput, appOutput{
 					Name:            name,
 					Version:         app.Labels[helm.LabelAppVersion],
-					Description:     app.Annotations[helm.AnnotationAppDescription],
 					ChartRepository: app.Annotations[helm.AnnotationAppRepository],
+					Namespace:       app.Namespace,
 					Status:          status,
+					Description:     app.Annotations[helm.AnnotationAppDescription],
 				})
 			}
 		}
@@ -208,7 +211,7 @@ func (o *GetAppsOptions) generateTable(apps *v1.AppList, kubeClient kubernetes.I
 				repository := app.Annotations[helm.AnnotationAppRepository]
 				var status string
 				if releasesMap != nil {
-					status = releasesMap[name].Status
+					status = releasesMap[app.Labels[helm.LabelReleaseName]].Status
 				}
 				namespace := app.Namespace
 				row := []string{name, version, repository, namespace, status, description}

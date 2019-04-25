@@ -45,6 +45,16 @@ func ConfigDir() (string, error) {
 	return path, nil
 }
 
+// KubeConfigFile gets the .kube/config file
+func KubeConfigFile() string {
+	path := os.Getenv("KUBECONFIG")
+	if path != "" {
+		return path
+	}
+	h := HomeDir()
+	return filepath.Join(h, ".kube", "config")
+}
+
 // PluginBinDir returns the plugin bin directory for the given ns
 func PluginBinDir(ns string) (string, error) {
 	configDir, err := ConfigDir()

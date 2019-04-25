@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/gits"
+	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -17,6 +18,12 @@ import (
 )
 
 func TestEnvModifyNamespace(t *testing.T) {
+	originalKubeCfg, tempKubeCfg, err := cmd.CreateTestKubeConfigDir()
+	assert.NoError(t, err)
+	defer func() {
+		err := cmd.CleanupTestKubeConfigDir(originalKubeCfg, tempKubeCfg)
+		assert.NoError(t, err)
+	}()
 	tempDir, err := ioutil.TempDir("", "test-env-modify-namespace")
 	assert.NoError(t, err)
 

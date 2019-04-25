@@ -31,9 +31,10 @@ const defaultProwVersion = ""
 // CreateAddonProwOptions the options for the create spring command
 type CreateAddonProwOptions struct {
 	CreateAddonOptions
-	Password string
-	Chart    string
-	Tekton   bool
+	Password    string
+	Chart       string
+	Tekton      bool
+	ExternalDNS bool
 }
 
 // NewCmdCreateAddonProw creates a command object for the "create" command
@@ -66,6 +67,7 @@ func NewCmdCreateAddonProw(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Prow.OAUTHToken, "oauth-token", "", "", "OPTIONAL: The oauth-token is an OAuth2 token that has read and write access to the bot account. Generate it from the account's settings -> Personal access tokens -> Generate new token.")
 	cmd.Flags().StringVarP(&options.Password, "password", "", "", "Overwrite the default admin password used to login to the Deck UI")
 	cmd.Flags().BoolVarP(&options.Tekton, "tekton", "t", true, "Enables Tekton. Otherwise we default to use Knative Build")
+	cmd.Flags().BoolVarP(&options.ExternalDNS, "external-dns", "", true, "Installs external-dns into the cluster. ExternalDNS manages service DNS records for your cluster, providing you've setup your domain record")
 	return cmd
 }
 
@@ -100,7 +102,7 @@ func (o *CreateAddonProwOptions) Run() error {
 		pipelineUserName = pipelineUser.Username
 	}
 
-	err = o.InstallProw(o.Tekton, isGitOps, "", "", pipelineUserName)
+	err = o.InstallProw(o.Tekton, o.ExternalDNS, isGitOps, "", "", pipelineUserName)
 	if err != nil {
 		return fmt.Errorf("failed to install Prow: %v", err)
 	}

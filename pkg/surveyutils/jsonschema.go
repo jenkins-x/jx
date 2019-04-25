@@ -16,7 +16,7 @@ import (
 
 	"github.com/iancoleman/orderedmap"
 
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 )
@@ -52,10 +52,11 @@ type Type struct {
 	PropertyNames *Type         `json:"propertyNames,omitempty"`
 	Enum          []interface{} `json:"enum,omitempty"`
 	Type          string        `json:"type,omitempty"`
-	// TODO Implement support & tests for If, Then, Else
+	If            *Type         `json:"if,omitempty"`
+	Then          *Type         `json:"then,omitempty"`
+	Else          *Type         `json:"else,omitempty"`
 	// TODO Implement support & tests for All
 	AllOf []*Type `json:"allOf,omitempty"`
-	// TODO Implement support & tests for AnyOf
 	AnyOf []*Type `json:"anyOf,omitempty"`
 	// TODO Implement support & tests for OneOf
 	OneOf []*Type `json:"oneOf,omitempty"`
@@ -180,7 +181,7 @@ func (o *JSONSchemaOptions) GenerateValues(schemaBytes []byte, existingValues ma
 		return nil, errors.Wrapf(err, "unmarshaling schema %s", schemaBytes)
 	}
 	output := orderedmap.New()
-	err = o.recurse("", make([]string, 0), make([]string, 0), &t, output, make([]survey.Validator, 0), existingValues)
+	err = o.recurse("", make([]string, 0), make([]string, 0), &t, nil, output, make([]survey.Validator, 0), existingValues)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -196,7 +197,82 @@ func (o *JSONSchemaOptions) GenerateValues(schemaBytes []byte, existingValues ma
 
 }
 
-func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFields []string, t *Type, output *orderedmap.OrderedMap,
+func (o *JSONSchemaOptions) handleConditionals(prefixes []string, requiredFields []string, property string, t *Type, parentType *Type, output *orderedmap.OrderedMap, existingValues map[string]interface{}) error {
+	if parentType != nil {
+		err := o.handleIf(prefixes, requiredFields, property, t, parentType, output, existingValues)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		err = o.handleAllOf(prefixes, requiredFields, property, t, parentType, output, existingValues)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return nil
+}
+
+func (o *JSONSchemaOptions) handleAllOf(prefixes []string, requiredFields []string, property string, t *Type, parentType *Type, output *orderedmap.OrderedMap, existingValues map[string]interface{}) error {
+	if parentType.AllOf != nil && len(parentType.AllOf) > 0 {
+		for _, allType := range parentType.AllOf {
+			err := o.handleIf(prefixes, requiredFields, property, t, allType, output, existingValues)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (o *JSONSchemaOptions) handleIf(prefixes []string, requiredFields []string, propertyName string, t *Type, parentType *Type, output *orderedmap.OrderedMap, existingValues map[string]interface{}) error {
+	if parentType.If != nil {
+		if len(parentType.If.Properties.Keys()) > 1 {
+			return fmt.Errorf("Please specify a single property condition when using If in your schema")
+		}
+		_, conditionFound := parentType.If.Properties.Get(propertyName)
+		selectedValue, selectedValueFound := output.Get(propertyName)
+		if conditionFound && selectedValueFound {
+			result := orderedmap.New()
+			if selectedValue == true {
+				if parentType.Then != nil {
+					parentType.Then.Type = "object"
+					err := o.processThenElse(result, output, requiredFields, parentType.Then, parentType, existingValues)
+					if err != nil {
+						return err
+					}
+				}
+			} else {
+				if parentType.Else != nil {
+					parentType.Else.Type = "object"
+					err := o.processThenElse(result, output, requiredFields, parentType.Else, parentType, existingValues)
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (o *JSONSchemaOptions) processThenElse(result *orderedmap.OrderedMap, output *orderedmap.OrderedMap, requiredFields []string, conditionalType *Type, parentType *Type, existingValues map[string]interface{}) error {
+	err := o.recurse("", make([]string, 0), requiredFields, conditionalType, parentType, result, make([]survey.Validator, 0), existingValues)
+	if err != nil {
+		return err
+	}
+	resultSet, found := result.Get("")
+	if found {
+		resultMap := resultSet.(*orderedmap.OrderedMap)
+		for _, key := range resultMap.Keys() {
+			value, foundValue := resultMap.Get(key)
+			if foundValue {
+				output.Set(key, value)
+			}
+		}
+	}
+	return nil
+}
+
+func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFields []string, t *Type, parentType *Type, output *orderedmap.OrderedMap,
 	additionalValidators []survey.Validator, existingValues map[string]interface{}) error {
 	required := util.Contains(requiredFields, name)
 	if name != "" {
@@ -266,7 +342,7 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 							return errors.Wrapf(err, "converting key %s from %v to map[string]interface{}", name, existingValues)
 						}
 					}
-					err := o.recurse(n, prefixes, t.Required, property, result, duringValidators, nestedExistingValues)
+					err := o.recurse(n, prefixes, t.Required, property, t, result, duringValidators, nestedExistingValues)
 					if err != nil {
 						return err
 					}
@@ -370,8 +446,8 @@ func (o *JSONSchemaOptions) recurse(name string, prefixes []string, requiredFiel
 			return err
 		}
 	}
-
-	return nil
+	err := o.handleConditionals(prefixes, t.Required, name, t, parentType, output, existingValues)
+	return err
 }
 
 // According to the spec, "An instance validates successfully against this keyword if its value

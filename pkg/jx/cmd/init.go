@@ -8,7 +8,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	version2 "github.com/jenkins-x/jx/pkg/version"
-	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1"
 
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
@@ -48,6 +48,7 @@ type InitFlags struct {
 	IngressDeployment          string
 	ExternalIP                 string
 	VersionsRepository         string
+	VersionsGitRef             string
 	DraftClient                bool
 	HelmClient                 bool
 	Helm3                      bool
@@ -62,6 +63,7 @@ type InitFlags struct {
 	OnPremise                  bool
 	Http                       bool
 	NoGitValidate              bool
+	ExternalDNS                bool
 }
 
 const (
@@ -513,7 +515,7 @@ controller:
 		}
 		chartName := "stable/nginx-ingress"
 
-		version, err := o.GetVersionNumber(version2.KindChart, chartName, o.Flags.VersionsRepository)
+		version, err := o.GetVersionNumber(version2.KindChart, chartName, o.Flags.VersionsRepository, o.Flags.VersionsGitRef)
 		if err != nil {
 			return errors.Wrapf(err, "failed to load version of chart %s", chartName)
 		}
@@ -594,6 +596,7 @@ controller:
 		}
 
 		o.Flags.Domain, err = o.GetDomain(client, o.Flags.Domain, o.Flags.Provider, ingressNamespace, o.Flags.IngressService, externalIP)
+		o.CommonOptions.Domain = o.Flags.Domain
 		if err != nil {
 			return err
 		}

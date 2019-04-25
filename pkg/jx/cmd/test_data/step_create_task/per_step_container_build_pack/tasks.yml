@@ -24,13 +24,15 @@ items:
       image: rawlingsj/builder-jx:wip34
       name: git-merge
       env:
-      - name: DOCKER_CONFIG
-        value: /home/jenkins/.docker/
       - name: DOCKER_REGISTRY
         valueFrom:
           configMapKeyRef:
             key: docker.registry
             name: jenkins-x-docker-registry
+      - name: TILLER_NAMESPACE
+        value: kube-system
+      - name: DOCKER_CONFIG
+        value: /home/jenkins/.docker/
       - name: GIT_AUTHOR_EMAIL
         value: jenkins-x@googlegroups.com
       - name: GIT_AUTHOR_NAME
@@ -39,8 +41,6 @@ items:
         value: jenkins-x@googlegroups.com
       - name: GIT_COMMITTER_NAME
         value: jenkins-x-bot
-      - name: TILLER_NAMESPACE
-        value: kube-system
       - name: XDG_CONFIG_HOME
         value: /workspace/xdg_config
       - name: BUILD_NUMBER
@@ -60,7 +60,19 @@ items:
       - name: JX_BATCH_MODE
         value: "true"
       workingDir: /workspace/source
+      resources:
+        requests:
+          cpu: 400m
+          memory: 600Mi
+      securityContext:
+        privileged: true
       volumeMounts:
+      - mountPath: /home/jenkins
+        name: workspace-volume
+      - mountPath: /var/run/docker.sock
+        name: docker-daemon
+      - mountPath: /home/jenkins/.docker
+        name: volume-0
       - mountPath: /etc/podinfo
         name: podinfo
         readOnly: true

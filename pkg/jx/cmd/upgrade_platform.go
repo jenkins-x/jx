@@ -149,7 +149,7 @@ func (o *UpgradePlatformOptions) Run() error {
 	io := &InstallOptions{}
 	io.CommonOptions = o.CommonOptions
 	io.Flags = o.InstallFlags
-	versionsDir, err := io.CloneJXVersionsRepo(o.Flags.VersionsRepository)
+	versionsDir, err := io.CloneJXVersionsRepo(o.Flags.VersionsRepository, o.Flags.VersionsGitRef)
 	if err != nil {
 		return err
 	}
@@ -460,7 +460,7 @@ func (o *UpgradePlatformOptions) upgradePlatformViaGitOps(devEnv *v1.Environment
 	uopts.ReleaseName = JenkinsXPlatformRelease
 	uopts.GitOps = true
 	uopts.Version = targetVersion
-	uopts.Repo = opts.DefaultChartRepo
+	uopts.Repo = kube.DefaultChartMuseumURL
 	uopts.HelmUpdate = true
 
 	//opts.Chart = JenkinsXPlatformChartName

@@ -35,11 +35,11 @@ import (
 )
 
 const (
-	kanikoDockerImage    = "gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6"
-	kanikoSecretMount    = "/kaniko-secret/secret.json"
-	kanikoSecretName     = "kaniko-secret"
-	kanikoSecretKey      = "kaniko-secret"
-	defaultContainerName = "maven"
+	kanikoDockerImage     = "gcr.io/kaniko-project/executor:9912ccbf8d22bbafbf971124600fbb0b13b9cbd6"
+	kanikoSecretMount     = "/kaniko-secret/secret.json"
+	kanikoSecretName      = "kaniko-secret"
+	kanikoSecretKey       = "kaniko-secret"
+	defaultContainerImage = "gcr.io/jenkinsxio/builder-maven"
 )
 
 var (
@@ -79,6 +79,7 @@ type StepCreateTaskOptions struct {
 	TargetPath        string
 	SourceName        string
 	CustomImage       string
+	DefaultImage      string
 	CloneGitURL       string
 	Branch            string
 	Revision          string
@@ -94,9 +95,8 @@ type StepCreateTaskOptions struct {
 	KanikoSecret      string
 	KanikoSecretKey   string
 	ProjectID         string
-
-	dockerRegistry    string
-	dockerRegistryOrg string
+	DockerRegistry    string
+	DockerRegistryOrg string
 
 	PodTemplates        map[string]*corev1.Pod
 	MissingPodTemplates map[string]bool
@@ -144,38 +144,45 @@ func NewCmdStepCreateTask(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "/workspace/source", "The directory to query to find the projects .git directory")
+	cmd.Flags().StringVarP(&options.Dir, "dir", "d", "", "The directory to query to find the projects .git directory")
 	cmd.Flags().StringVarP(&options.OutDir, "output", "o", "", "The directory to write the output to as YAML")
-	cmd.Flags().StringVarP(&options.BuildPackURL, "url", "u", "", "The URL for the build pack Git repository")
-	cmd.Flags().StringVarP(&options.BuildPackRef, "ref", "r", "", "The Git reference (branch,tag,sha) in the Git repository to use")
-	cmd.Flags().StringVarP(&options.Pack, "pack", "p", "", "The build pack name. If none is specified its discovered from the source code")
 	cmd.Flags().StringVarP(&options.Branch, "branch", "", "", "The git branch to trigger the build in. Defaults to the current local branch name")
 	cmd.Flags().StringVarP(&options.Revision, "revision", "", "", "The git revision to checkout, can be a branch name or git sha")
 	cmd.Flags().StringVarP(&options.PipelineKind, "kind", "k", "release", "The kind of pipeline to create such as: "+strings.Join(jenkinsfile.PipelineKinds, ", "))
-	cmd.Flags().StringVarP(&options.Context, "context", "c", "", "The pipeline context if there are multiple separate pipelines for a given branch")
 	cmd.Flags().StringArrayVarP(&options.CustomLabels, "label", "l", nil, "List of custom labels to be applied to resources that are created")
 	cmd.Flags().StringArrayVarP(&options.CustomEnvs, "env", "e", nil, "List of custom environment variables to be applied to resources that are created")
 	cmd.Flags().StringVarP(&options.Trigger, "trigger", "t", string(pipelineapi.PipelineTriggerTypeManual), "The kind of pipeline trigger")
-	cmd.Flags().StringVarP(&options.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
-	cmd.Flags().StringVarP(&options.dockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
-	cmd.Flags().StringVarP(&options.TargetPath, "target-path", "", "", "The target path appended to /workspace/${source} to clone the source code")
-	cmd.Flags().StringVarP(&options.SourceName, "source", "", "source", "The name of the source repository")
-	cmd.Flags().StringVarP(&options.CustomImage, "image", "", "", "Specify a custom image to use for the steps which overrides the image in the PodTemplates")
 	cmd.Flags().StringVarP(&options.CloneGitURL, "clone-git-url", "", "", "Specify the git URL to clone to a temporary directory to get the source code")
 	cmd.Flags().StringVarP(&options.PullRequestNumber, "pr-number", "", "", "If a Pull Request this is it's number")
-	cmd.Flags().BoolVarP(&options.DeleteTempDir, "delete-temp-dir", "", true, "Deletes the temporary directory of cloned files if using the 'clone-git-url' option")
 	cmd.Flags().BoolVarP(&options.NoApply, "no-apply", "", false, "Disables creating the Pipeline resources in the kubernetes cluster and just outputs the generated Task to the console or output file")
 	cmd.Flags().BoolVarP(&options.ViewSteps, "view", "", false, "Just view the steps that would be created")
-	cmd.Flags().BoolVarP(&options.NoReleasePrepare, "no-release-prepare", "", false, "Disables creating the release version number and tagging git and triggering the release pipeline from the new tag")
-	cmd.Flags().BoolVarP(&options.NoKaniko, "no-kaniko", "", false, "Disables using kaniko directly for building docker images")
-	cmd.Flags().StringVarP(&options.KanikoImage, "kaniko-image", "", kanikoDockerImage, "The docker image for Kaniko")
-	cmd.Flags().StringVarP(&options.KanikoSecretMount, "kaniko-secret-mount", "", kanikoSecretMount, "The mount point of the Kaniko secret")
-	cmd.Flags().StringVarP(&options.KanikoSecret, "kaniko-secret", "", kanikoSecretName, "The name of the kaniko secret")
-	cmd.Flags().StringVarP(&options.KanikoSecretKey, "kaniko-secret-key", "", kanikoSecretKey, "The key in the Kaniko Secret to mount")
-	cmd.Flags().StringVarP(&options.ProjectID, "project-id", "", "", "The cloud project ID. If not specified we default to the install project")
-	cmd.Flags().StringVarP(&options.dockerRegistryOrg, "docker-registry-org", "", "", "The Docker registry organisation. If blank the git repository owner is used")
-	cmd.Flags().DurationVarP(&options.Duration, "duration", "", time.Second*30, "Retry duration when trying to create a PipelineRun")
+
+	options.AddCommonFlags(cmd)
 	return cmd
+}
+
+// AddCommonFlags adds common CLI options
+func (o *StepCreateTaskOptions) AddCommonFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&o.Pack, "pack", "p", "", "The build pack name. If none is specified its discovered from the source code")
+	cmd.Flags().StringVarP(&o.BuildPackURL, "url", "u", "", "The URL for the build pack Git repository")
+	cmd.Flags().StringVarP(&o.BuildPackRef, "ref", "r", "", "The Git reference (branch,tag,sha) in the Git repository to use")
+	cmd.Flags().StringVarP(&o.Context, "context", "c", "", "The pipeline context if there are multiple separate pipelines for a given branch")
+	cmd.Flags().StringVarP(&o.ServiceAccount, "service-account", "", "tekton-bot", "The Kubernetes ServiceAccount to use to run the pipeline")
+	cmd.Flags().StringVarP(&o.TargetPath, "target-path", "", "", "The target path appended to /workspace/${source} to clone the source code")
+	cmd.Flags().StringVarP(&o.SourceName, "source", "", "source", "The name of the source repository")
+	cmd.Flags().StringVarP(&o.CustomImage, "image", "", "", "Specify a custom image to use for the steps which overrides the image in the PodTemplates")
+	cmd.Flags().StringVarP(&o.DefaultImage, "default-image", "", defaultContainerImage, "Specify the docker image to use if there is no image specified for a step and there's no Pod Template")
+	cmd.Flags().BoolVarP(&o.DeleteTempDir, "delete-temp-dir", "", true, "Deletes the temporary directory of cloned files if using the 'clone-git-url' option")
+	cmd.Flags().BoolVarP(&o.NoReleasePrepare, "no-release-prepare", "", false, "Disables creating the release version number and tagging git and triggering the release pipeline from the new tag")
+	cmd.Flags().BoolVarP(&o.NoKaniko, "no-kaniko", "", false, "Disables using kaniko directly for building docker images")
+	cmd.Flags().StringVarP(&o.KanikoImage, "kaniko-image", "", kanikoDockerImage, "The docker image for Kaniko")
+	cmd.Flags().StringVarP(&o.KanikoSecretMount, "kaniko-secret-mount", "", kanikoSecretMount, "The mount point of the Kaniko secret")
+	cmd.Flags().StringVarP(&o.KanikoSecret, "kaniko-secret", "", kanikoSecretName, "The name of the kaniko secret")
+	cmd.Flags().StringVarP(&o.KanikoSecretKey, "kaniko-secret-key", "", kanikoSecretKey, "The key in the Kaniko Secret to mount")
+	cmd.Flags().StringVarP(&o.ProjectID, "project-id", "", "", "The cloud project ID. If not specified we default to the install project")
+	cmd.Flags().StringVarP(&o.DockerRegistry, "docker-registry", "", "", "The Docker Registry host name to use which is added as a prefix to docker images")
+	cmd.Flags().StringVarP(&o.DockerRegistryOrg, "docker-registry-org", "", "", "The Docker registry organisation. If blank the git repository owner is used")
+	cmd.Flags().DurationVarP(&o.Duration, "duration", "", time.Second*30, "Retry duration when trying to create a PipelineRun")
 }
 
 // Run implements this command
@@ -190,14 +197,19 @@ func (o *StepCreateTaskOptions) Run() error {
 	}
 
 	if o.ProjectID == "" {
-		data, err := kube.ReadInstallValues(kubeClient, ns)
-		if err != nil {
-			return errors.Wrapf(err, "failed to read install values from namespace %s", ns)
+		if !o.RemoteCluster {
+			data, err := kube.ReadInstallValues(kubeClient, ns)
+			if err != nil {
+				return errors.Wrapf(err, "failed to read install values from namespace %s", ns)
+			}
+			o.ProjectID = data["projectID"]
 		}
-		o.ProjectID = data["projectID"]
 		if o.ProjectID == "" {
 			o.ProjectID = "todo"
 		}
+	}
+	if o.DefaultImage == "" {
+		o.DefaultImage = defaultContainerImage
 	}
 	if o.KanikoImage == "" {
 		o.KanikoImage = kanikoDockerImage
@@ -209,7 +221,7 @@ func (o *StepCreateTaskOptions) Run() error {
 		log.Infof("cloning git for %s\n", o.CloneGitURL)
 	}
 	if o.VersionResolver == nil {
-		o.VersionResolver, err = o.CreateVersionResolver("")
+		o.VersionResolver, err = o.CreateVersionResolver("", "")
 		if err != nil {
 			return err
 		}
@@ -270,13 +282,13 @@ func (o *StepCreateTaskOptions) Run() error {
 		log.Infof("setting up docker registry for %s\n", o.CloneGitURL)
 	}
 
-	if o.dockerRegistry == "" {
+	if o.DockerRegistry == "" {
 		data, err := kube.GetConfigMapData(kubeClient, kube.ConfigMapJenkinsDockerRegistry, ns)
 		if err != nil {
 			return fmt.Errorf("Could not find ConfigMap %s in namespace %s: %s", kube.ConfigMapJenkinsDockerRegistry, ns, err)
 		}
-		o.dockerRegistry = data["docker.registry"]
-		if o.dockerRegistry == "" {
+		o.DockerRegistry = data["docker.registry"]
+		if o.DockerRegistry == "" {
 			return util.MissingOption("docker-registry")
 		}
 	}
@@ -351,7 +363,10 @@ func (o *StepCreateTaskOptions) Run() error {
 		o.Pack = projectConfig.BuildPack
 	}
 	if o.Pack == "" {
-		o.Pack, err = o.discoverBuildPack(o.Dir, projectConfig)
+		o.Pack, err = o.DiscoverBuildPack(o.Dir, projectConfig, o.Pack)
+		if err != nil {
+			return errors.Wrapf(err, "failed to discover the build pack")
+		}
 	}
 
 	if o.Pack == "" {
@@ -536,6 +551,8 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		}
 	}
 
+	parsed.AddContainerEnvVarsToPipeline(pipelineConfig.Env)
+
 	// TODO: Seeing weird behavior seemingly related to https://golang.org/doc/faq#nil_error
 	// if err is reused, maybe we need to switch return types (perhaps upstream in build-pipeline)?
 	if validateErr := parsed.Validate(ctx); validateErr != nil {
@@ -598,7 +615,7 @@ func (o *StepCreateTaskOptions) CreateStageForBuildPack(languageName string, pip
 		container = o.CustomImage
 	}
 	if container == "" {
-		container = defaultContainerName
+		container = o.DefaultImage
 	}
 	dir := o.getWorkspaceDir()
 
@@ -1026,14 +1043,14 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		dir = strings.Replace(dir, PlaceHolderAppName, gitInfo.Name, -1)
 		dir = strings.Replace(dir, PlaceHolderOrg, gitInfo.Organisation, -1)
 		dir = strings.Replace(dir, PlaceHolderGitProvider, gitProviderHost, -1)
-		dir = strings.Replace(dir, PlaceHolderDockerRegistryOrg, strings.ToLower(o.DockerRegistryOrg(gitInfo)), -1)
+		dir = strings.Replace(dir, PlaceHolderDockerRegistryOrg, strings.ToLower(o.GetDockerRegistryOrg(gitInfo)), -1)
 	} else {
 		log.Warnf("No GitInfo available!\n")
 	}
 
 	if step.Command != "" {
 		if containerName == "" {
-			containerName = defaultContainerName
+			containerName = o.DefaultImage
 			log.Warnf("No 'agent.container' specified in the pipeline configuration so defaulting to use: %s\n", containerName)
 		}
 
@@ -1103,20 +1120,6 @@ func (o *StepCreateTaskOptions) getWorkspaceDir() string {
 	return filepath.Join("/workspace", o.SourceName)
 }
 
-func (o *StepCreateTaskOptions) discoverBuildPack(dir string, projectConfig *config.ProjectConfig) (string, error) {
-	args := &opts.InvokeDraftPack{
-		Dir:             o.Dir,
-		CustomDraftPack: o.Pack,
-		ProjectConfig:   projectConfig,
-		DisableAddFiles: true,
-	}
-	pack, err := o.InvokeDraftPack(args)
-	if err != nil {
-		return pack, errors.Wrapf(err, "failed to discover task pack in dir %s", o.Dir)
-	}
-	return pack, nil
-}
-
 func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globalEnv []corev1.EnvVar) {
 	envVars := []corev1.EnvVar{}
 	for _, e := range container.Env {
@@ -1128,7 +1131,7 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 	if kube.GetSliceEnvVar(envVars, "DOCKER_REGISTRY") == nil {
 		envVars = append(envVars, corev1.EnvVar{
 			Name:  "DOCKER_REGISTRY",
-			Value: o.dockerRegistry,
+			Value: o.DockerRegistry,
 		})
 	}
 	if kube.GetSliceEnvVar(envVars, "BUILD_NUMBER") == nil {
@@ -1217,7 +1220,7 @@ func (o *StepCreateTaskOptions) modifyEnvVars(container *corev1.Container, globa
 	}
 
 	for _, e := range globalEnv {
-		if kube.GetSliceEnvVar(envVars, e.Name) == nil {
+		if kube.GetSliceEnvVar(envVars, e.Name) == nil && e.ValueFrom != nil {
 			envVars = append(envVars, e)
 		}
 	}
@@ -1603,18 +1606,18 @@ func (o *StepCreateTaskOptions) modifyStep(parsedStep syntax.Step, gitInfo *gits
 func (o *StepCreateTaskOptions) dockerImage(gitInfo *gits.GitRepository) string {
 	dockerRegistry := o.getDockerRegistry()
 
-	dockeerRegistryOrg := o.dockerRegistryOrg
+	dockeerRegistryOrg := o.DockerRegistryOrg
 	if dockeerRegistryOrg == "" {
-		dockeerRegistryOrg = o.DockerRegistryOrg(gitInfo)
+		dockeerRegistryOrg = o.GetDockerRegistryOrg(gitInfo)
 	}
 	appName := gitInfo.Name
 	return dockerRegistry + "/" + dockeerRegistryOrg + "/" + appName
 }
 
 func (o *StepCreateTaskOptions) getDockerRegistry() string {
-	dockerRegistry := o.dockerRegistry
+	dockerRegistry := o.DockerRegistry
 	if dockerRegistry == "" {
-		dockerRegistry = o.DockerRegistry()
+		dockerRegistry = o.GetDockerRegistry()
 	}
 	return dockerRegistry
 }

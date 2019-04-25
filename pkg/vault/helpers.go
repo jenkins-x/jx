@@ -17,7 +17,7 @@ const (
 	passwordKey = "Password"
 )
 
-var vaultURIRegex = regexp.MustCompile(`vault:[\w\/:]*`)
+var vaultURIRegex = regexp.MustCompile(`vault:[-_\w\/:]*`)
 
 // WriteYAMLFiles stores the given YAML files in vault. The final secret path is
 // a concatenation of the 'path' with the file name.
