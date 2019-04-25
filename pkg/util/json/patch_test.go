@@ -1,26 +1,28 @@
 package json
 
 import (
+	"testing"
+
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"testing"
 )
 
 var (
-	orig  *jenkinsv1.App
-	clone *jenkinsv1.App
+	orig  *jenkinsv1.Plugin
+	clone *jenkinsv1.Plugin
 )
 
 func TestCreatePatch(t *testing.T) {
 	t.Parallel()
 	setUp(t)
 
-	clone.Spec.ExposedServices = []string{"foo", "bar"}
+	clone.Spec.Name = "foo"
 	patch, err := CreatePatch(orig, clone)
 
 	assert.NoError(t, err, "patch creation should be successful ")
-	assert.Equal(t, `[{"op":"add","path":"/spec/exposedServices","value":["foo","bar"]}]`, string(patch), "the patch should have been empty")
+	assert.Equal(t, `[{"op":"add","path":"/spec/name","value":"foo"}]`, string(patch),
+		"the patch should have been empty")
 }
 
 func TestCreatePatchNil(t *testing.T) {
@@ -47,11 +49,11 @@ func TestCreatePatchNoDiff(t *testing.T) {
 }
 
 func setUp(t *testing.T) {
-	orig = &jenkinsv1.App{
+	orig = &jenkinsv1.Plugin{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-app",
+			Name: "test-plugin",
 		},
-		Spec: jenkinsv1.AppSpec{},
+		Spec: jenkinsv1.PluginSpec{},
 	}
 
 	clone = orig.DeepCopy()

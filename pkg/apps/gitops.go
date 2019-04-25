@@ -35,7 +35,7 @@ func (o *GitOpsOptions) AddApp(app string, dir string, version string, repositor
 		GitProvider: o.GitProvider,
 	}
 
-	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil)
+	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, "")
 
 	if err != nil {
 		return errors.Wrapf(err, "creating pr for %s", app)
@@ -55,10 +55,11 @@ func (o *GitOpsOptions) UpgradeApp(app string, version string, repository string
 
 	if app != "" {
 		all = false
-		if version == "" {
-			version = "latest"
+		versionBranchName := version
+		if versionBranchName == "" {
+			versionBranchName = "latest"
 		}
-		details.BranchName = fmt.Sprintf("upgrade-app-%s-%s", app, version)
+		details.BranchName = fmt.Sprintf("upgrade-app-%s-%s", app, versionBranchName)
 	} else {
 		details.BranchName = fmt.Sprintf("upgrade-all-apps")
 		details.Title = fmt.Sprintf("Upgrade all apps")
@@ -87,7 +88,7 @@ func (o *GitOpsOptions) UpgradeApp(app string, version string, repository string
 			o.Helmer, inspectChartFunc, o.Verbose, o.valuesFiles),
 		GitProvider: o.GitProvider,
 	}
-	_, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil)
+	_, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, app)
 	if err != nil {
 		return err
 	}
@@ -104,7 +105,7 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string) error {
 		for i, d := range requirements.Dependencies {
 			if d.Name == app && d.Alias == alias {
 				found = true
-				requirements.Dependencies[i] = nil
+				requirements.Dependencies = append(requirements.Dependencies[:i], requirements.Dependencies[i+1:]...)
 			}
 		}
 		// If app not found, add it
@@ -140,7 +141,7 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string) error {
 		GitProvider:   o.GitProvider,
 	}
 
-	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil)
+	info, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, "")
 	if err != nil {
 		return err
 	}

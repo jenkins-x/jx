@@ -44,6 +44,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 					StageStep(
 						StepCmd("echo"),
 						StepArg("hello"), StepArg("world"),
+						StepName("A Step With Spaces And Such"),
 					),
 				),
 			),
@@ -59,7 +60,7 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 							tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
 								tb.ResourceTargetPath("workspace"))),
 						tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
-						tb.Step("step2", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source")),
+						tb.Step("a-step-with-spaces-and-such", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source")),
 					)),
 			},
 			structure: PipelineStructure("somepipeline-1",
@@ -1787,6 +1788,12 @@ func StepAgent(image string) StepOp {
 func StepCmd(cmd string) StepOp {
 	return func(step *syntax.Step) {
 		step.Command = cmd
+	}
+}
+
+func StepName(name string) StepOp {
+	return func(step *syntax.Step) {
+		step.Name = name
 	}
 }
 

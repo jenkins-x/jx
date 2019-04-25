@@ -55,8 +55,7 @@ func TestDeleteAppForGitOps(t *testing.T) {
 	// Validate the updated Requirements.yaml
 	requirements, err := helm.LoadRequirementsFile(filepath.Join(devEnvDir, helm.RequirementsFileName))
 	assert.NoError(t, err)
-	assert.Len(t, requirements.Dependencies, 1)
-	assert.Nil(t, requirements.Dependencies[0])
+	assert.Len(t, requirements.Dependencies, 0)
 }
 
 func TestDeleteApp(t *testing.T) {

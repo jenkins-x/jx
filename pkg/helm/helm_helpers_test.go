@@ -6,13 +6,13 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/pborman/uuid"
 	"github.com/petergtz/pegomock"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/util"
 	vault_test "github.com/jenkins-x/jx/pkg/vault/mocks"
 	"github.com/magiconair/properties/assert"
-	"github.com/pborman/uuid"
 	assert2 "github.com/stretchr/testify/assert"
 )
 
@@ -100,7 +100,7 @@ func TestStoreCredentials(t *testing.T) {
 	repository := "http://charts.acme.com"
 	username := uuid.New()
 	password := uuid.New()
-	username, password, err := helm.DecorateWithCredentials(repository, username, password, vaultClient)
+	username, password, err := helm.DecorateWithCredentials(repository, username, password, vaultClient, nil, nil, nil)
 	assert2.NoError(t, err)
 	vaultClient.VerifyWasCalledOnce().WriteObject(helm.RepoVaultPath, helm.HelmRepoCredentials{
 		repository: helm.HelmRepoCredential{
@@ -129,7 +129,8 @@ func TestRetrieveCredentials(t *testing.T) {
 			nil,
 		}
 	})
-	retrievedUsername, retrievedPassword, err := helm.DecorateWithCredentials(repository, "", "", vaultClient)
+	retrievedUsername, retrievedPassword, err := helm.DecorateWithCredentials(repository, "", "", vaultClient, nil,
+		nil, nil)
 	assert2.NoError(t, err)
 	vaultClient.VerifyWasCalledOnce().ReadObject(pegomock.EqString(helm.RepoVaultPath), pegomock.AnyInterface())
 	assert2.Equal(t, username, retrievedUsername)
@@ -158,7 +159,7 @@ func TestOverrideCredentials(t *testing.T) {
 		}
 	})
 	retrievedUsername, retrievedPassword, err := helm.DecorateWithCredentials(repository, newUsername, newPassword,
-		vaultClient)
+		vaultClient, nil, nil, nil)
 	assert2.NoError(t, err)
 	assert2.Equal(t, newUsername, retrievedUsername)
 	assert2.Equal(t, newPassword, retrievedPassword)

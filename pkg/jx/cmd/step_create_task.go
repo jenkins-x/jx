@@ -443,14 +443,13 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		if !exists {
 			return nil, nil, nil, nil, nil, fmt.Errorf("no build pack for %s exists at directory %s", name, packDir)
 		}
-		jenkinsfileRunner := true
-		pipelineConfig, err = jenkinsfile.LoadPipelineConfig(pipelineFile, resolver, jenkinsfileRunner, false)
+		pipelineConfig, err = jenkinsfile.LoadPipelineConfig(pipelineFile, resolver, true, false)
 		if err != nil {
 			return nil, nil, nil, nil, nil, errors.Wrapf(err, "failed to load build pack pipeline YAML: %s", pipelineFile)
 		}
 		localPipelineConfig := projectConfig.PipelineConfig
 		if localPipelineConfig != nil {
-			err = localPipelineConfig.ExtendPipeline(pipelineConfig, jenkinsfileRunner)
+			err = localPipelineConfig.ExtendPipeline(pipelineConfig, false)
 			if err != nil {
 				return nil, nil, nil, nil, nil, errors.Wrapf(err, "failed to override PipelineConfig using configuration in file %s", projectConfigFile)
 			}
@@ -1032,7 +1031,11 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 
 	if step.Container != "" {
 		containerName = step.Container
-	} else if step.Dir != "" {
+	} else {
+		containerName = pipelineConfig.Agent.Container
+	}
+
+	if step.Dir != "" {
 		dir = step.Dir
 	}
 	dir = strings.Replace(dir, "/home/jenkins/go/src/REPLACE_ME_GIT_PROVIDER/REPLACE_ME_ORG/REPLACE_ME_APP_NAME", o.getWorkspaceDir(), -1)
@@ -1340,50 +1343,28 @@ func (o *StepCreateTaskOptions) cloneGitRepositoryToTempDir(gitURL string) error
 	if err != nil {
 		return err
 	}
-	log.Infof("shallow cloning repository %s to temp dir %s\n", gitURL, o.Dir)
-	err = o.Git().Init(o.Dir)
-	if err != nil {
-		return errors.Wrapf(err, "failed to init a new git repository in directory %s", o.Dir)
-	}
-	if o.Verbose {
-		log.Infof("ran git init in %s", o.Dir)
-	}
-	err = o.Git().AddRemote(o.Dir, "origin", gitURL)
-	if err != nil {
-		return errors.Wrapf(err, "failed to add remote origin with url %s in directory %s", gitURL, o.Dir)
-	}
-	if o.Verbose {
-		log.Infof("ran git add remote origin %s in %s", gitURL, o.Dir)
-	}
-	commitish := make([]string, 0)
+
 	if o.PullRequestNumber != "" {
-		pr := fmt.Sprintf("pull/%s/head:%s", o.PullRequestNumber, o.Branch)
-		if o.Verbose {
-			log.Infof("will fetch %s for %s in dir %s\n", pr, gitURL, o.Dir)
-		}
-		commitish = append(commitish, pr)
-	}
-	if o.Revision != "" {
-		if o.Verbose {
-			log.Infof("will fetch %s for %s in dir %s\n", o.Revision, gitURL, o.Dir)
-		}
-		commitish = append(commitish, o.Revision)
-	} else {
-		commitish = append(commitish, "master")
-	}
-	err = o.Git().FetchBranchShallow(o.Dir, "origin", commitish...)
-	if err != nil {
-		return errors.Wrapf(err, "failed to fetch %s from %s in directory %s", commitish, gitURL, o.Dir)
-	}
-	if o.Revision != "" {
-		err = o.Git().Checkout(o.Dir, o.Revision)
+		log.Infof("shallow cloning pull request %s of repository %s to temp dir %s\n", gitURL,
+			o.PullRequestNumber, o.Dir)
+		err = o.Git().ShallowClone(o.Dir, gitURL, "", o.PullRequestNumber)
 		if err != nil {
-			return errors.Wrapf(err, "failed to checkout revision %s", o.Revision)
+			return errors.Wrapf(err, "shallow cloning pull request %s of repository %s to temp dir %s\n", gitURL,
+				o.PullRequestNumber, o.Dir)
+		}
+	} else if o.Revision != "" {
+		log.Infof("shallow cloning revision %s of repository %s to temp dir %s\n", gitURL,
+			o.Revision, o.Dir)
+		err = o.Git().ShallowClone(o.Dir, gitURL, o.Revision, "")
+		if err != nil {
+			return errors.Wrapf(err, "shallow cloning revision %s of repository %s to temp dir %s\n", gitURL,
+				o.Revision, o.Dir)
 		}
 	} else {
-		err = o.Git().Checkout(o.Dir, "master")
+		log.Infof("shallow cloning master of repository %s to temp dir %s\n", gitURL, o.Dir)
+		err = o.Git().ShallowClone(o.Dir, gitURL, "", "")
 		if err != nil {
-			return errors.Wrapf(err, "failed to checkout revision master")
+			return errors.Wrapf(err, "shallow cloning master of repository %s to temp dir %s\n", gitURL, o.Dir)
 		}
 	}
 	return nil

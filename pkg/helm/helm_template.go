@@ -346,9 +346,18 @@ func (h *HelmTemplate) UpgradeChart(chart string, releaseName string, ns string,
 	}
 	outputDir, _, chartsDir, err := h.getDirectories(releaseName)
 
-	chartDir, err := h.fetchChart(chart, version, chartsDir, repo, username, password)
+	// check if we are installing a chart from the filesystem
+	chartDir := filepath.Join(h.CWD, chart)
+	exists, err := util.FileExists(chartDir)
 	if err != nil {
 		return err
+	}
+	if !exists {
+		log.Debugf("Fetching chart: %s\n", chart)
+		chartDir, err = h.fetchChart(chart, version, chartsDir, repo, username, password)
+		if err != nil {
+			return err
+		}
 	}
 	err = h.Client.Template(chartDir, releaseName, ns, outputDir, false, values, valueFiles)
 	if err != nil {
@@ -664,10 +673,16 @@ func splitObjectsInFiles(file string) ([]string, error) {
 	count := 0
 	for scanner.Scan() {
 		line := scanner.Text()
-		if line == resourcesSeparator && buf.Len() > 0 {
+		if line == resourcesSeparator {
 			// ensure that we actually have YAML in the buffer
+			data := buf.Bytes()
+			if isWhitespaceOrComments(data) {
+				buf.Reset()
+				continue
+			}
+
 			m := yaml.MapSlice{}
-			err = yaml.Unmarshal(buf.Bytes(), &m)
+			err = yaml.Unmarshal(data, &m)
 			if err != nil {
 				return make([]string, 0), errors.Wrapf(err, "Failed to parse the following YAML from file '%s':\n%s", file, buf.String())
 			}
@@ -693,7 +708,7 @@ func splitObjectsInFiles(file string) ([]string, error) {
 			}
 		}
 	}
-	if buf.Len() > 0 {
+	if buf.Len() > 0 && !isWhitespaceOrComments(buf.Bytes()) {
 		if count > 0 {
 			objFile, err := writeObjectInFile(&buf, dir, fileName, count)
 			if err != nil {
@@ -706,6 +721,21 @@ func splitObjectsInFiles(file string) ([]string, error) {
 	}
 
 	return result, nil
+}
+
+// isWhitespaceOrComments returns true if the data is empty, whitespace or comments only
+func isWhitespaceOrComments(data []byte) bool {
+	if len(data) == 0 {
+		return true
+	}
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		t := strings.TrimSpace(line)
+		if t != "" && !strings.HasPrefix(t, "#") {
+			return false
+		}
+	}
+	return true
 }
 
 func writeObjectInFile(buf *bytes.Buffer, dir string, fileName string, count int) (string, error) {

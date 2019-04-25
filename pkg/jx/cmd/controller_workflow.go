@@ -364,7 +364,7 @@ func (o *ControllerWorkflowOptions) createPromoteOptions(repoName string, envNam
 		Version:              version,
 		NoPoll:               true,
 		IgnoreLocalFiles:     true,
-		HelmRepositoryURL:    helm.DefaultHelmRepositoryURL,
+		HelmRepositoryURL:    helm.InClusterHelmRepositoryURL,
 		LocalHelmRepoName:    kube.LocalHelmRepoName,
 		Namespace:            o.Namespace,
 		ConfigureGitCallback: o.ConfigureGitFn,

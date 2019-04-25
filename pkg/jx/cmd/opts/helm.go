@@ -22,8 +22,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	version2 "github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
-	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/src-d/go-git.v4"
+	survey "gopkg.in/AlecAivazis/survey.v1"
+	git "gopkg.in/src-d/go-git.v4"
 	gitconfig "gopkg.in/src-d/go-git.v4/config"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -292,7 +292,7 @@ func (o *CommonOptions) AddHelmBinaryRepoIfMissing(helmUrl, repoName, username, 
 	if err != nil {
 		vaultClient = nil
 	}
-	_, err = helm.AddHelmRepoIfMissing(helmUrl, repoName, username, password, o.Helm(), vaultClient)
+	_, err = helm.AddHelmRepoIfMissing(helmUrl, repoName, username, password, o.Helm(), vaultClient, o.In, o.Out, o.Err)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -367,7 +367,7 @@ func (o *CommonOptions) InstallChartOrGitOps(isGitOps bool, gitOpsDir string, gi
 	}
 
 	// if we are part of an initial installation we won't have done a git push yet so lets just write to the gitOpsEnvDir where the dev env chart is
-	return environments.ModifyChartFiles(gitOpsEnvDir, nil, modifyFn)
+	return environments.ModifyChartFiles(gitOpsEnvDir, nil, modifyFn, "")
 }
 
 // InstallChartAt installs the given chart
@@ -520,11 +520,11 @@ func (o *CommonOptions) clone(wrkDir string, versionRepository string, reference
 			prNumber := strings.TrimPrefix(referenceName, "PR-")
 
 			log.Infof("Cloning the Jenkins X versions repo %s with PR: %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
-			return o.shallowCloneGitRepositoryToDir(wrkDir, versionRepository, prNumber, referenceName, "")
+			return o.shallowCloneGitRepositoryToDir(wrkDir, versionRepository, prNumber, "")
 		}
 		log.Infof("Cloning the Jenkins X versions repo %s with revision %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
 
-		return o.shallowCloneGitRepositoryToDir(wrkDir, versionRepository, "", "", referenceName)
+		return o.shallowCloneGitRepositoryToDir(wrkDir, versionRepository, "", "")
 	}
 	log.Infof("Cloning the Jenkins X versions repo %s with ref %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
 	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
@@ -539,77 +539,31 @@ func (o *CommonOptions) clone(wrkDir string, versionRepository string, reference
 	return err
 }
 
-func (o *CommonOptions) shallowCloneGitRepositoryToDir(dir string, gitURL string, pullRequestNumber string, branch string, revision string) error {
-	err := o.Git().Clone(gitURL, dir)
-	if err != nil {
-		return errors.Wrapf(err, "failed to clone git repository %s directory is created %s", gitURL, dir)
-	}
-
-	commitish := []string{}
+func (o *CommonOptions) shallowCloneGitRepositoryToDir(dir string, gitURL string, pullRequestNumber string, revision string) error {
 	if pullRequestNumber != "" {
-		pr := fmt.Sprintf("refs/pull/%s/head", pullRequestNumber)
-		if o.Verbose {
-			log.Infof("will fetch %s for %s in dir %s\n", pr, gitURL, dir)
-		}
-		commitish = append(commitish, pr)
-	}
-	if revision != "" {
-		if o.Verbose {
-			log.Infof("will fetch %s for %s in dir %s\n", revision, gitURL, dir)
-		}
-		commitish = append(commitish, revision)
-	} else {
-		commitish = append(commitish, "master")
-	}
-
-	if o.Verbose {
-		log.Infof("about to fetch %s for %s in dir %s\n", strings.Join(commitish, " "), gitURL, dir)
-	}
-	err = o.Git().FetchBranch(dir, "origin", commitish...)
-	if err != nil {
-		return errors.Wrapf(err, "failed to fetch %s from %s in directory %s", strings.Join(commitish, " "), gitURL, dir)
-	}
-
-	/*
-		log.Infof("shallow cloning repository %s to dir %s\n", gitURL, dir)
-		err = o.Git().Init(dir)
+		log.Infof("shallow cloning pull request %s of repository %s to temp dir %s\n", gitURL,
+			pullRequestNumber, dir)
+		err := o.Git().ShallowClone(dir, gitURL, "", pullRequestNumber)
 		if err != nil {
-			return errors.Wrapf(err, "failed to init a new git repository in directory %s", dir)
+			return errors.Wrapf(err, "shallow cloning pull request %s of repository %s to temp dir %s\n", gitURL,
+				pullRequestNumber, dir)
 		}
-		if o.Verbose {
-			log.Infof("ran git init in %s", dir)
-		}
-		err = o.Git().AddRemote(dir, "origin", gitURL)
+	} else if revision != "" {
+		log.Infof("shallow cloning revision %s of repository %s to temp dir %s\n", gitURL,
+			revision, dir)
+		err := o.Git().ShallowClone(dir, gitURL, revision, "")
 		if err != nil {
-			return errors.Wrapf(err, "failed to add remote origin with url %s in directory %s", gitURL, dir)
-		}
-		if o.Verbose {
-			log.Infof("ran git add remote origin %s in %s", gitURL, dir)
-		}
-
-		err = o.Git().FetchBranchShallow(dir, "origin", commitish...)
-		if err != nil {
-			return errors.Wrapf(err, "failed to fetch %s from %s in directory %s", commitish, gitURL, dir)
-		}
-	*/
-
-	if revision != "" {
-		if o.Verbose {
-			log.Infof("about to checkout revision %s in dir %s\n", revision, dir)
-		}
-		err = o.Git().Checkout(dir, revision)
-		if err != nil {
-			return errors.Wrapf(err, "failed to checkout revision %s", revision)
+			return errors.Wrapf(err, "shallow cloning revision %s of repository %s to temp dir %s\n", gitURL,
+				revision, dir)
 		}
 	} else {
-		if o.Verbose {
-			log.Infof("about to checkout master in dir %s\n", dir)
-		}
-		err = o.Git().Checkout(dir, "master")
+		log.Infof("shallow cloning master of repository %s to temp dir %s\n", gitURL, dir)
+		err := o.Git().ShallowClone(dir, gitURL, "", "")
 		if err != nil {
-			return errors.Wrap(err, "failed to checkout master")
+			return errors.Wrapf(err, "shallow cloning master of repository %s to temp dir %s\n", gitURL, dir)
 		}
 	}
+
 	return nil
 }
 

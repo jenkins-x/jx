@@ -29,6 +29,7 @@ GO_DEPENDENCIES := $(call rwildcard,pkg/,*.go) $(call rwildcard,cmd/jx/,*.go)
 BRANCH     := $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null  || echo 'unknown')
 BUILD_DATE := $(shell date +%Y%m%d-%H:%M:%S)
 GITHUB_ACCESS_TOKEN := $(shell cat /builder/home/git-token 2> /dev/null)
+FEATURE_FLAG_TOKEN := $(shell cat /builder/home/feature-flag-token 2> /dev/null)
 CGO_ENABLED = 0
 
 # set dev version unless VERSION is explicitly set via environment
@@ -188,6 +189,23 @@ release: check ## Release the binary
 	GITHUB_ACCESS_TOKEN=$(GITHUB_ACCESS_TOKEN) gh-release create jenkins-x/$(NAME) $(VERSION) master $(VERSION)
 
 	./build/linux/jx step changelog  --header-file docs/dev/changelog-header.md --version $(VERSION)
+
+distro:
+	rm -rf build release && mkdir build release
+
+	CGO_ENABLED=$(CGO_ENABLED) FEATURE_FLAG_TOKEN=$(FEATURE_FLAG_TOKEN) GOOS=darwin GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/darwin/$(NAME) cmd/jx/jx.go
+	CGO_ENABLED=$(CGO_ENABLED) FEATURE_FLAG_TOKEN=$(FEATURE_FLAG_TOKEN) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/$(NAME) cmd/jx/jx.go
+	CGO_ENABLED=$(CGO_ENABLED) FEATURE_FLAG_TOKEN=$(FEATURE_FLAG_TOKEN) GOOS=windows GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME)-windows-amd64.exe cmd/jx/jx.go
+	zip --junk-paths release/cjxd-$(NAME)-windows-amd64.zip build/$(NAME)-windows-amd64.exe README.md LICENSE
+
+	chmod +x build/darwin/$(NAME)
+	chmod +x build/linux/$(NAME)
+
+	cd ./build/darwin; tar -zcvf ../../release/cjxd-darwin-amd64.tar.gz jx
+	cd ./build/linux; tar -zcvf ../../release/cjxd-linux-amd64.tar.gz jx
+
+	gh-release checksums sha256
+	GITHUB_ACCESS_TOKEN=$(GITHUB_ACCESS_TOKEN) gh-release create cloudbees/cloudbees-jenkins-x-distro $(VERSION) master $(VERSION)
 
 clean: ## Clean the generated artifacts
 	rm -rf build release cover.out cover.html

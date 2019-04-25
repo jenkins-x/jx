@@ -1,14 +1,20 @@
 package helm
 
 import (
+	"encoding/base64"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+
+	survey "gopkg.in/AlecAivazis/survey.v1"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/pborman/uuid"
 
@@ -39,10 +45,14 @@ const (
 	// TemplatesDirName is the default name for the templates directory
 	TemplatesDirName = "templates"
 
-	// DefaultHelmRepositoryURL is the default cluster local helm repo
-	DefaultHelmRepositoryURL = "http://jenkins-x-chartmuseum:8080"
+	// InClusterHelmRepositoryURL is the default cluster local helm repo
+	InClusterHelmRepositoryURL = "http://jenkins-x-chartmuseum:8080"
 
-	defaultEnvironmentChartDir = "env"
+	// FakeChartmusuem is the url for the fake chart museum used in tests
+	FakeChartmusuem = "http://fake.chartmuseum"
+
+	// DefaultEnvironmentChartDir is the default environment path where charts are stored
+	DefaultEnvironmentChartDir = "env"
 
 	//RepoVaultPath is the path to the repo credentials in Vault
 	RepoVaultPath = "helm/repos"
@@ -149,6 +159,13 @@ func FindValuesFileName(dir string) (string, error) {
 	return findFileName(dir, ValuesFileName)
 }
 
+// FindValuesFileNameForChart returns the values.yaml file name for a given chart within the environment or the default if the chart name is empty
+func FindValuesFileNameForChart(dir string, chartName string) (string, error) {
+	//Chart name and file name are joined here to avoid hard coding the environment
+	//The chart name is ignored in the path if it's empty
+	return findFileName(dir, filepath.Join(chartName, ValuesFileName))
+}
+
 // FindTemplatesDirName returns the default templates/ dir name
 func FindTemplatesDirName(dir string) (string, error) {
 	return findFileName(dir, TemplatesDirName)
@@ -156,7 +173,7 @@ func FindTemplatesDirName(dir string) (string, error) {
 
 func findFileName(dir string, fileName string) (string, error) {
 	names := []string{
-		filepath.Join(dir, defaultEnvironmentChartDir, fileName),
+		filepath.Join(dir, DefaultEnvironmentChartDir, fileName),
 		filepath.Join(dir, fileName),
 	}
 	for _, name := range names {
@@ -185,7 +202,7 @@ func findFileName(dir string, fileName string) (string, error) {
 		}
 	}
 	dirs := []string{
-		filepath.Join(dir, defaultEnvironmentChartDir),
+		filepath.Join(dir, DefaultEnvironmentChartDir),
 		dir,
 	}
 	for _, d := range dirs {
@@ -601,7 +618,8 @@ func DecorateWithSecrets(options *InstallChartOptions, vaultClient vault.Client)
 // The repo name may have a suffix added in order to prevent name collisions, and is returned for this reason.
 // The username and password will be stored in vault for the URL (if vault is enabled).
 func AddHelmRepoIfMissing(helmURL, repoName, username, password string, helmer Helmer,
-	vaultClient vault.Client) (string, error) {
+	vaultClient vault.Client, in terminal.FileReader,
+	out terminal.FileWriter, outErr io.Writer) (string, error) {
 	missing, err := helmer.IsRepoMissing(helmURL)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to check if the repository with URL '%s' is missing", helmURL)
@@ -631,7 +649,7 @@ func AddHelmRepoIfMissing(helmURL, repoName, username, password string, helmer H
 			}
 		}
 		log.Infof("Adding missing Helm repo: %s %s\n", util.ColorInfo(repoName), util.ColorInfo(helmURL))
-		username, password, err = DecorateWithCredentials(helmURL, username, password, vaultClient)
+		username, password, err = DecorateWithCredentials(helmURL, username, password, vaultClient, in, out, outErr)
 		if err != nil {
 			return "", errors.WithStack(err)
 		}
@@ -645,46 +663,53 @@ func AddHelmRepoIfMissing(helmURL, repoName, username, password string, helmer H
 }
 
 // DecorateWithCredentials will, if vault is installed, store or replace the username or password
-func DecorateWithCredentials(repo string, username string, password string, vaultClient vault.Client) (string,
+func DecorateWithCredentials(repo string, username string, password string, vaultClient vault.Client, in terminal.FileReader,
+	out terminal.FileWriter, outErr io.Writer) (string,
 	string, error) {
 	if repo != "" && vaultClient != nil {
 		creds := HelmRepoCredentials{}
 		if err := vaultClient.ReadObject(RepoVaultPath, &creds); err != nil {
 			return "", "", errors.Wrapf(err, "reading repo credentials from vault %s", RepoVaultPath)
 		}
-		write := false
-		cred := HelmRepoCredential{}
-		if username != "" {
-			// If a username is passed in then we should update vault
-			write = true
-			cred.Username = username
-		} else if c, ok := creds[repo]; ok {
-			// Otherwise check if vault has a username
-			cred.Username = c.Username
+		var existingCred, cred HelmRepoCredential
+		if c, ok := creds[repo]; ok {
+			existingCred = c
+		}
+		if username != "" || password != "" {
+			cred = HelmRepoCredential{
+				Username: username,
+				Password: password,
+			}
+		} else {
+			cred = existingCred
 		}
 
-		if password != "" {
-			// If a password is passed in then we should update vault
-			write = true
-			cred.Password = password
-		} else if c, ok := creds[repo]; ok {
-			// Otherwise check if vault has a password
-			cred.Password = c.Password
+		err := PromptForRepoCredsIfNeeded(repo, &cred, in, out, outErr)
+		if err != nil {
+			return "", "", errors.Wrapf(err, "prompting for creds for %s", repo)
 		}
 
-		if write {
-			log.Infof("Stored credentials for %s in vault %s\n", repo, RepoVaultPath)
+		if cred.Password != existingCred.Password || cred.Username != existingCred.Username {
+			log.Infof("Storing credentials for %s in vault %s\n", repo, RepoVaultPath)
 			creds[repo] = cred
 			_, err := vaultClient.WriteObject(RepoVaultPath, creds)
 			if err != nil {
 				return "", "", errors.Wrapf(err, "updating repo credentials in vault %s", RepoVaultPath)
 			}
-		} else if password != "" || username != "" {
+		} else {
 			log.Infof("Read credentials for %s from vault %s\n", repo, RepoVaultPath)
 		}
 		return cred.Username, cred.Password, nil
 	}
-	return username, password, nil
+	cred := HelmRepoCredential{
+		Username: username,
+		Password: password,
+	}
+	err := PromptForRepoCredsIfNeeded(repo, &cred, in, out, outErr)
+	if err != nil {
+		return "", "", errors.Wrapf(err, "prompting for creds for %s", repo)
+	}
+	return cred.Username, cred.Password, nil
 }
 
 // GenerateReadmeForChart generates a string that can be used as a README.MD,
@@ -743,4 +768,73 @@ func SetValuesToMap(setValues []string) map[string]interface{} {
 		}
 	}
 	return answer
+}
+
+// PromptForRepoCredsIfNeeded will prompt for repo credentials if required. It first checks the existing cred (
+// if any) and then prompts for new credentials up to 3 times, trying each set.
+func PromptForRepoCredsIfNeeded(repo string, cred *HelmRepoCredential, in terminal.FileReader,
+	out terminal.FileWriter, outErr io.Writer) error {
+	if repo == FakeChartmusuem || in == nil || out == nil || outErr == nil {
+		// Avoid doing this in tests!
+		return nil
+	}
+	u := fmt.Sprintf("%s/index.yaml", strings.TrimSuffix(repo, "/"))
+
+	httpClient := &http.Client{}
+	surveyOpts := survey.WithStdio(in, out, outErr)
+	if cred.Username == "" && cred.Password == "" {
+		// Try without any auth
+		req, err := http.NewRequest("GET", u, nil)
+		if err != nil {
+			return errors.Wrapf(err, "creating GET request to %s", u)
+		}
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			return errors.Wrapf(err, "checking status code of %s", u)
+		}
+		if resp.StatusCode == 200 {
+			return nil
+		}
+	}
+	for i := 0; true; i++ {
+		req, err := http.NewRequest("GET", u, nil)
+		if err != nil {
+			return errors.Wrapf(err, "creating GET request to %s", u)
+		}
+		auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", cred.Username, cred.Password)))
+		req.Header.Add("Authorization", fmt.Sprintf("Basic %s", auth))
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			return errors.Wrapf(err, "checking status code of %s", u)
+		}
+		if i == 4 {
+			return errors.Errorf("username and password for %s not valid", repo)
+		} else if resp.StatusCode == 401 {
+			if cred.Username != "" || cred.Password != "" {
+				log.Errorf("Authentication for %s failed (%s/%s)", repo, cred.Username, strings.Repeat("*",
+					len(cred.Password)))
+			}
+			usernamePrompt := survey.Input{
+				Message: "Repository username",
+				Default: cred.Username,
+				Help:    fmt.Sprintf("Enter the username for %s", repo),
+			}
+			err := survey.AskOne(&usernamePrompt, &cred.Username, nil, surveyOpts)
+			if err != nil {
+				return errors.Wrapf(err, "asking for username")
+			}
+			passwordPrompt := survey.Password{
+				Message: "Repository password",
+				Help:    fmt.Sprintf("Enter the password for %s", repo),
+			}
+			err = survey.AskOne(&passwordPrompt, &cred.Password, nil, surveyOpts)
+			if err != nil {
+				return errors.Wrapf(err, "asking for password")
+			}
+		} else {
+			break
+		}
+	}
+	return nil
+
 }

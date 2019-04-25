@@ -8,7 +8,6 @@ import (
 	"time"
 
 	gojenkins "github.com/jenkins-x/golang-jenkins"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -64,11 +63,6 @@ func NewCmdGCActivities(commonOpts *opts.CommonOptions) *cobra.Command {
 
 // Run implements this command
 func (o *GCActivitiesOptions) Run() error {
-	kubeClient, err := o.KubeClient()
-	if err != nil {
-		return err
-	}
-
 	client, currentNs, err := o.JXClientAndDevNamespace()
 	if err != nil {
 		return err
@@ -87,7 +81,7 @@ func (o *GCActivitiesOptions) Run() error {
 		return nil
 	}
 
-	prowEnabled, err := kube.IsProwEnabled(kubeClient, currentNs)
+	prowEnabled, err := o.IsProw()
 	if err != nil {
 		return err
 	}

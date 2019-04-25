@@ -109,6 +109,22 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			branch:       "fix-kaniko-special-casing",
 			kind:         "pullrequest",
 		},
+		{
+			name:         "set-agent-container-with-agentless-build-pack",
+			language:     "no-default-agent",
+			repoName:     "js-test-repo",
+			organization: "abayer",
+			branch:       "no-default-agent",
+			kind:         "release",
+		},
+		{
+			name:         "override-agent-container-with-build-pack",
+			language:     "override-default-agent",
+			repoName:     "js-test-repo",
+			organization: "abayer",
+			branch:       "override-default-agent",
+			kind:         "release",
+		},
 	}
 
 	k8sObjects := []runtime.Object{

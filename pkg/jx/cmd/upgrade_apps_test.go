@@ -6,10 +6,10 @@ import (
 	"path/filepath"
 	"testing"
 
+	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/tests"
 
 	google_protobuf "github.com/golang/protobuf/ptypes/any"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
@@ -45,13 +45,20 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 		},
 		Version:              newVersion.String(),
 		Alias:                alias,
-		Repo:                 cmd_test_helpers.FakeChartmusuem,
+		Repo:                 helm.FakeChartmusuem,
 		GitOps:               true,
 		HelmUpdate:           true,
 		DevEnv:               testOptions.DevEnv,
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}
 	o.Args = []string{name}
+
+	helm_test.StubFetchChart(name, newVersion.String(), helm.FakeChartmusuem, &chart.Chart{
+		Metadata: &chart.Metadata{
+			Name:    name,
+			Version: newVersion.String(),
+		},
+	}, testOptions.MockHelmer)
 
 	err = o.Run()
 	assert.NoError(t, err)
@@ -119,7 +126,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.
 		},
 		Version:              newVersion.String(),
 		Alias:                alias,
-		Repo:                 cmd_test_helpers.FakeChartmusuem,
+		Repo:                 helm.FakeChartmusuem,
 		GitOps:               true,
 		HelmUpdate:           true,
 		DevEnv:               testOptions.DevEnv,
@@ -128,7 +135,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.
 	o.Args = []string{name}
 
 	helm_test.StubFetchChart(name, newVersion.String(),
-		cmd_test_helpers.FakeChartmusuem, &chart.Chart{
+		helm.FakeChartmusuem, &chart.Chart{
 			Metadata: &chart.Metadata{
 				Name:    name,
 				Version: newVersion.String(),
@@ -206,7 +213,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
 		},
 		Version:              newVersion.String(),
 		Alias:                alias,
-		Repo:                 cmd_test_helpers.FakeChartmusuem,
+		Repo:                 helm.FakeChartmusuem,
 		GitOps:               true,
 		HelmUpdate:           true,
 		DevEnv:               testOptions.DevEnv,
@@ -216,7 +223,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
 	o.BatchMode = false
 
 	helm_test.StubFetchChart(name, newVersion.String(),
-		cmd_test_helpers.FakeChartmusuem, &chart.Chart{
+		helm.FakeChartmusuem, &chart.Chart{
 			Metadata: &chart.Metadata{
 				Name:    name,
 				Version: newVersion.String(),
@@ -306,7 +313,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T)
 		},
 		Version:              newVersion.String(),
 		Alias:                alias,
-		Repo:                 cmd_test_helpers.FakeChartmusuem,
+		Repo:                 helm.FakeChartmusuem,
 		GitOps:               true,
 		HelmUpdate:           true,
 		DevEnv:               testOptions.DevEnv,
@@ -317,7 +324,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T)
 	o.BatchMode = false
 
 	helm_test.StubFetchChart(name, newVersion.String(),
-		cmd_test_helpers.FakeChartmusuem, &chart.Chart{
+		helm.FakeChartmusuem, &chart.Chart{
 			Metadata: &chart.Metadata{
 				Name:    name,
 				Version: newVersion.String(),
@@ -397,7 +404,7 @@ func TestUpgradeMissingExistingOrDefaultInBatchMode(t *testing.T) {
 		},
 		Version:              newVersion.String(),
 		Alias:                alias,
-		Repo:                 cmd_test_helpers.FakeChartmusuem,
+		Repo:                 helm.FakeChartmusuem,
 		GitOps:               true,
 		HelmUpdate:           true,
 		DevEnv:               testOptions.DevEnv,
@@ -406,7 +413,7 @@ func TestUpgradeMissingExistingOrDefaultInBatchMode(t *testing.T) {
 	o.Args = []string{name}
 
 	helm_test.StubFetchChart(name, newVersion.String(),
-		cmd_test_helpers.FakeChartmusuem, &chart.Chart{
+		helm.FakeChartmusuem, &chart.Chart{
 			Metadata: &chart.Metadata{
 				Name:    name,
 				Version: newVersion.String(),
@@ -461,7 +468,7 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 		},
 		Version:              newVersion.String(),
 		Alias:                alias,
-		Repo:                 cmd_test_helpers.FakeChartmusuem,
+		Repo:                 helm.FakeChartmusuem,
 		GitOps:               true,
 		HelmUpdate:           true,
 		DevEnv:               testOptions.DevEnv,
@@ -469,7 +476,7 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 	}
 	o.Args = []string{name}
 
-	helm_test.StubFetchChart(name, "", cmd_test_helpers.FakeChartmusuem, &chart.Chart{
+	helm_test.StubFetchChart(name, "", helm.FakeChartmusuem, &chart.Chart{
 		Metadata: &chart.Metadata{
 			Name:    name,
 			Version: newVersion.String(),
@@ -529,14 +536,14 @@ func TestUpgradeAllAppsForGitOps(t *testing.T) {
 		AddOptions: cmd.AddOptions{
 			CommonOptions: &commonOpts,
 		},
-		Repo:                 cmd_test_helpers.FakeChartmusuem,
+		Repo:                 helm.FakeChartmusuem,
 		GitOps:               true,
 		HelmUpdate:           true,
 		DevEnv:               testOptions.DevEnv,
 		ConfigureGitCallback: testOptions.ConfigureGitFn,
 	}
 
-	helm_test.StubFetchChart(name1, "", cmd_test_helpers.FakeChartmusuem, &chart.Chart{
+	helm_test.StubFetchChart(name1, "", helm.FakeChartmusuem, &chart.Chart{
 		Metadata: &chart.Metadata{
 			Name:    name1,
 			Version: newVersion1.String(),
@@ -545,7 +552,7 @@ func TestUpgradeAllAppsForGitOps(t *testing.T) {
 
 	// The "latest" chart - requested with an empty version
 	helm_test.StubFetchChart(name2, "",
-		cmd_test_helpers.FakeChartmusuem, &chart.Chart{
+		helm.FakeChartmusuem, &chart.Chart{
 			Metadata: &chart.Metadata{
 				Name:    name2,
 				Version: newVersion2.String(),

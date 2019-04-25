@@ -337,7 +337,12 @@ func (t *TeamSettings) GetProwEngine() ProwEngineType {
 
 // IsJenkinsXPipelines returns true if using tekton
 func (t *TeamSettings) IsJenkinsXPipelines() bool {
-	return t.GetProwEngine() == ProwEngineTypeTekton
+	return t.IsProw() && t.GetProwEngine() == ProwEngineTypeTekton
+}
+
+// IsProw returns true if using Prow
+func (t *TeamSettings) IsProw() bool {
+	return t.PromotionEngine == PromotionEngineProw
 }
 
 // IsEmpty returns true if the storage location is empty

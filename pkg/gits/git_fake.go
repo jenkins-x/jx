@@ -138,6 +138,11 @@ func (g *GitFake) ShallowCloneBranch(url string, branch string, directory string
 	return nil
 }
 
+// ShallowClone shallow clones the repo at url from the specified commitish or pull request to a local master branch
+func (g *GitFake) ShallowClone(dir string, url string, commitish string, pullRequest string) error {
+	return nil
+}
+
 // Push performs a git push
 func (g *GitFake) Push(dir string) error {
 	return nil

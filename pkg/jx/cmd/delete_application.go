@@ -327,7 +327,7 @@ func (o *DeleteApplicationOptions) deleteApplicationFromEnvironment(env *v1.Envi
 		ModifyChartFn: modifyChartFn,
 		GitProvider:   gitProvider,
 	}
-	info, err := options.Create(env, environmentsDir, &details, nil)
+	info, err := options.Create(env, environmentsDir, &details, nil, "")
 	if err != nil {
 		return err
 	}
