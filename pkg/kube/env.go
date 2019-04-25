@@ -622,7 +622,7 @@ func ModifyNamespace(out io.Writer, dir string, env *v1.Environment, git gits.Gi
 			return errors.Wrapf(err, "failed to resolve Chart Museum URL for remote Environment %s", env.Name)
 		}
 		if u != "" {
-			pipelineConfig.Env = SetEnvVar(pipelineConfig.Env, "CHART_MUSEUM", u)
+			pipelineConfig.Env = SetEnvVar(pipelineConfig.Env, "CHART_REPOSITORY", u)
 		}
 	}
 
