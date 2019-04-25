@@ -4,7 +4,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/petergtz/pegomock"
 
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/tests"
@@ -30,7 +34,7 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(nil)
+	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(nil, "")
 	assert.NoError(t, err)
 
 	// Now let's upgrade
@@ -88,6 +92,86 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 	assert.Equal(t, newVersion.String(), found[0].Version)
 }
 
+func TestUpgradeAppWithShortNameForGitOps(t *testing.T) {
+	t.Parallel()
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	defer func() {
+		err := testOptions.Cleanup()
+		assert.NoError(t, err)
+	}()
+	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(nil, "jx-app-")
+	shortName := strings.TrimPrefix(name, "jx-app-")
+	assert.NoError(t, err)
+
+	// Now let's upgrade
+
+	newVersion, err := semver.Parse(version)
+	assert.NoError(t, err)
+	newVersion.Patch++
+	commonOpts := *testOptions.CommonOptions
+	o := &cmd.UpgradeAppsOptions{
+		AddOptions: cmd.AddOptions{
+			CommonOptions: &commonOpts,
+		},
+		Version:              newVersion.String(),
+		Alias:                alias,
+		Repo:                 kube.DefaultChartMuseumURL,
+		GitOps:               true,
+		HelmUpdate:           true,
+		DevEnv:               testOptions.DevEnv,
+		ConfigureGitCallback: testOptions.ConfigureGitFn,
+	}
+	pegomock.When(testOptions.MockHelmer.ListRepos()).ThenReturn(
+		map[string]string{
+			"repo1": kube.DefaultChartMuseumURL,
+		}, nil)
+	pegomock.When(testOptions.MockHelmer.SearchCharts(pegomock.AnyString())).ThenReturn(
+		[]helm.ChartSummary{
+			{
+				Name:         fmt.Sprintf("repo1/%s", name),
+				ChartVersion: version,
+				AppVersion:   version,
+			},
+		},
+		nil,
+	)
+	o.Args = []string{shortName}
+
+	helm_test.StubFetchChart(name, newVersion.String(), helm.FakeChartmusuem, &chart.Chart{
+		Metadata: &chart.Metadata{
+			Name:    name,
+			Version: newVersion.String(),
+		},
+	}, testOptions.MockHelmer)
+
+	err = o.Run()
+	assert.NoError(t, err)
+	// Validate a PR was created
+	pr, err := testOptions.FakeGitProvider.GetPullRequest(testOptions.OrgName, testOptions.DevEnvRepoInfo, 1)
+	assert.NoError(t, err)
+	// Validate the PR has the right title, message
+	assert.Equal(t, fmt.Sprintf("Upgrade %s to %s", name, newVersion.String()), pr.Title)
+	assert.Equal(t, fmt.Sprintf("Upgrade %s from %s to %s", name, version, newVersion.String()), pr.Body)
+	// Validate the branch name
+	envDir, err := o.CommonOptions.EnvironmentsDir()
+	assert.NoError(t, err)
+	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
+	branchName, err := o.Git().Branch(devEnvDir)
+	assert.NoError(t, err)
+	assert.Equal(t, fmt.Sprintf("upgrade-app-%s-%s", name, newVersion.String()), branchName)
+	// Validate the updated Requirements.yaml
+	requirements, err := helm.LoadRequirementsFile(filepath.Join(devEnvDir, helm.RequirementsFileName))
+	assert.NoError(t, err)
+	found := make([]*helm.Dependency, 0)
+	for _, d := range requirements.Dependencies {
+		if d.Name == name && d.Alias == alias {
+			found = append(found, d)
+		}
+	}
+	assert.Len(t, found, 1)
+	assert.Equal(t, newVersion.String(), found[0].Version)
+}
+
 func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.T) {
 	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
 	defer func() {
@@ -103,7 +187,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.
 
 	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(map[string]interface{}{
 		"name": "testing",
-	})
+	}, "")
 	assert.NoError(t, err)
 
 	envDir, err := testOptions.CommonOptions.EnvironmentsDir()
@@ -190,7 +274,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
 
 	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(map[string]interface{}{
 		"name": "testing",
-	})
+	}, "")
 	assert.NoError(t, err)
 
 	envDir, err := testOptions.CommonOptions.EnvironmentsDir()
@@ -290,7 +374,7 @@ func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T)
 
 	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(map[string]interface{}{
 		"name": "testing",
-	})
+	}, "")
 	assert.NoError(t, err)
 
 	envDir, err := testOptions.CommonOptions.EnvironmentsDir()
@@ -390,7 +474,7 @@ func TestUpgradeMissingExistingOrDefaultInBatchMode(t *testing.T) {
 	testOptions.CommonOptions.Out = console.Out
 	testOptions.CommonOptions.Err = console.Err
 
-	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(map[string]interface{}{})
+	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(map[string]interface{}{}, "")
 	assert.NoError(t, err)
 
 	// Now let's upgrade
@@ -453,7 +537,7 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(nil)
+	name, alias, version, err := testOptions.DirectlyAddAppToGitOps(nil, "")
 	assert.NoError(t, err)
 
 	// Now let's upgrade
@@ -517,9 +601,9 @@ func TestUpgradeAllAppsForGitOps(t *testing.T) {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	name1, alias1, version1, err := testOptions.DirectlyAddAppToGitOps(nil)
+	name1, alias1, version1, err := testOptions.DirectlyAddAppToGitOps(nil, "")
 	assert.NoError(t, err)
-	name2, alias2, version2, err := testOptions.DirectlyAddAppToGitOps(nil)
+	name2, alias2, version2, err := testOptions.DirectlyAddAppToGitOps(nil, "")
 	assert.NoError(t, err)
 
 	newVersion1, err := semver.Parse(version1)

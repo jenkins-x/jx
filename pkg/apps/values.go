@@ -93,7 +93,7 @@ func AddSecretsToVault(generatedSecrets []*surveyutils.GeneratedSecret, client v
 
 // AddSecretsToTemplate adds the generatedSecrets into the template (rooted at dir) as Kubernetes Secrets,
 // using app as the base of the name
-func AddSecretsToTemplate(dir string, app string, generatedSecrets []*surveyutils.GeneratedSecret) (string, func(),
+func AddSecretsToTemplate(dir string, chartName string, generatedSecrets []*surveyutils.GeneratedSecret) (string, func(),
 	error) {
 	// We write a secret template into the chart, append the values for the generated generatedSecrets to values.yaml
 	if len(generatedSecrets) > 0 {
@@ -103,7 +103,7 @@ func AddSecretsToTemplate(dir string, app string, generatedSecrets []*surveyutil
 		if err != nil {
 			return "", func() {}, err
 		}
-		fileName := filepath.Join(templatesDir, "app-generated-secret-template.yaml")
+		fileName := filepath.Join(templatesDir, "chartName-generated-secret-template.yaml")
 		err = ioutil.WriteFile(fileName, []byte(secretTemplate), 0755)
 		if err != nil {
 			return "", func() {}, err
@@ -115,7 +115,7 @@ func AddSecretsToTemplate(dir string, app string, generatedSecrets []*surveyutil
 		if err != nil {
 			return "", func() {}, err
 		}
-		secretsFile, err := ioutil.TempFile("", fmt.Sprintf("%s-generatedSecrets.yaml", ToValidFileSystemName(app)))
+		secretsFile, err := ioutil.TempFile("", fmt.Sprintf("%s-generatedSecrets.yaml", ToValidFileSystemName(chartName)))
 		cleanup := func() {
 			err = secretsFile.Close()
 			if err != nil {
@@ -140,7 +140,7 @@ func AddSecretsToTemplate(dir string, app string, generatedSecrets []*surveyutil
 }
 
 // AddValuesToChart adds a values file to the chart rooted at dir
-func AddValuesToChart(app string, values []byte, verbose bool) (string, func(), error) {
+func AddValuesToChart(chartName string, values []byte, verbose bool) (string, func(), error) {
 	valuesYaml, err := yaml.JSONToYAML(values)
 	if err != nil {
 		return "", func() {}, errors.Wrapf(err, "error converting values from json to yaml\n\n%v", values)
@@ -149,7 +149,7 @@ func AddValuesToChart(app string, values []byte, verbose bool) (string, func(), 
 		log.Infof("Generated values.yaml:\n\n%v\n", util.ColorInfo(string(valuesYaml)))
 	}
 
-	valuesFile, err := ioutil.TempFile("", fmt.Sprintf("%s-values.yaml", ToValidFileSystemName(app)))
+	valuesFile, err := ioutil.TempFile("", fmt.Sprintf("%s-values.yaml", ToValidFileSystemName(chartName)))
 	cleanup := func() {
 		err = valuesFile.Close()
 		if err != nil {
@@ -161,11 +161,11 @@ func AddValuesToChart(app string, values []byte, verbose bool) (string, func(), 
 		}
 	}
 	if err != nil {
-		return "", func() {}, errors.Wrapf(err, "creating tempfile to write values for %s", app)
+		return "", func() {}, errors.Wrapf(err, "creating tempfile to write values for %s", chartName)
 	}
 	_, err = valuesFile.Write(valuesYaml)
 	if err != nil {
-		return "", func() {}, errors.Wrapf(err, "writing values to %s for %s", valuesFile.Name(), app)
+		return "", func() {}, errors.Wrapf(err, "writing values to %s for %s", valuesFile.Name(), chartName)
 	}
 	return valuesFile.Name(), cleanup, nil
 }

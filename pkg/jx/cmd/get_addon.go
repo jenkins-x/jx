@@ -8,7 +8,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/util"
 )
 
 // GetAddonOptions the command line options
@@ -70,28 +69,23 @@ func (o *GetAddonOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	statusMap, err := o.Helm().StatusReleases(ns)
+	releases, sortedKeys, err := o.Helm().ListReleases(ns)
 	if err != nil {
 		log.Warnf("Failed to find Helm installs: %s\n", err)
 	}
 
-	charts := kube.AddonCharts
-
 	table := o.CreateTable()
 	table.AddRow("NAME", "CHART", "ENABLED", "STATUS", "VERSION")
-
-	keys := util.SortedMapKeys(charts)
-	for _, k := range keys {
-		chart := charts[k]
-		status := statusMap[k].Status
-		version := statusMap[k].Version
-		enableText := ""
-		if addonEnabled[k] {
-			enableText = "yes"
+	for _, k := range sortedKeys {
+		release := releases[k]
+		if addonName, ok := kube.AddonCharts[release.ReleaseName]; ok {
+			enableText := ""
+			if addonEnabled[release.ReleaseName] {
+				enableText = "yes"
+			}
+			table.AddRow(release.ReleaseName, addonName, enableText, release.Status, release.ChartVersion)
 		}
-		table.AddRow(k, chart, enableText, status, version)
 	}
-
 	table.Render()
 	return nil
 }
