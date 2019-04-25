@@ -166,7 +166,7 @@ func CreateEnvironmentSurvey(batchMode bool, authConfigSvc auth.ConfigService, d
 
 	data.Spec.RemoteCluster = config.Spec.RemoteCluster
 	if !batchMode {
-		data.Spec.RemoteCluster = util.Confirm("Environment in separate cluster to Dev Environment? :",
+		data.Spec.RemoteCluster = util.Confirm("Environment in separate cluster to Dev Environment:",
 			data.Spec.RemoteCluster, " Is this Environment going to be in a different cluster to the Development environment. For help on Multi Cluster support see: https://jenkins-x.io/getting-started/multi-cluster/", in, out, errOut)
 	}
 	if config.Spec.Cluster != "" {
