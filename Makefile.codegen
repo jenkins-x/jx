@@ -49,7 +49,7 @@ generate-clean: clean ## Clean the generate code
 	rm -f $(GOPATH)/bin/defaulter-gen
 	rm -f $(GOPATH)/bin/informer-gen
 	rm -f $(GOPATH)/bin/lister-gen
-	rm -f $(GOPATH)/bin/openapi-ge
+	rm -f $(GOPATH)/bin/openapi-gen
 	rm -f $(GOPATH)/bin/gen-apidocs
 
 # Verifies that generated code is in sync with implementation

@@ -18,7 +18,7 @@ const (
 // Returns the base directory of reference-docs within the GOPATH.
 func InstallGenAPIDocs() (string, error) {
 	util.AppLogger().Infof("installing %s via 'go get'", genAPIDocsBin)
-	err := util.GoGet(genAPIDocsBin, "", false)
+	err := util.GoGet(genAPIDocsBin, "", true)
 	if err != nil {
 		return "", err
 	}

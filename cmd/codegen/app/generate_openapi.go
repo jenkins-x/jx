@@ -125,6 +125,8 @@ func NewCmdCreateClientOpenAPI(commonOpts *opts.CommonOptions) *cobra.Command {
 		"group name:version (e.g. jenkins.io:v1) to generate, must specify at least once")
 	cmd.Flags().StringVarP(&o.ModuleName, optionModuleName, "", moduleName,
 		"module name (e.g. github.com/jenkins-x/jx)")
+	cmd.Flags().StringVarP(&o.OpenAPIGenVersion, "open-api-generator-version", "", "8c80d0ed72a9d068adce9088807eb111c0165a2c",
+		"Version of k8s.io/kube-openapi")
 	return cmd
 }
 
@@ -151,7 +153,7 @@ func (o *CreateClientOpenAPIOptions) Run() error {
 		return jxutil.InvalidOptionf(optionGroupWithVersion, o.GroupsWithVersions, "must specify at least once")
 	}
 
-	err = generator.InstallOpenApiGen()
+	err = generator.InstallOpenApiGen(o.OpenAPIGenVersion)
 	if err != nil {
 		return errors.Wrapf(err, "error installing kubernetes openapi tools")
 	}

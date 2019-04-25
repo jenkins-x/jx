@@ -33,6 +33,7 @@ type GenerateOptions struct {
 	GoPathOutputBase    string
 	OutputPackage       string
 	ClientGenVersion    string
+	OpenAPIGenVersion   string
 	InputBase           string
 }
 
@@ -41,7 +42,7 @@ func (o *GenerateOptions) configure() error {
 	if err != nil {
 		return err
 	}
-	
+
 	outputPath := filepath.Join(o.OutputBase, o.OutputPackage)
 
 	// Work out the InputPackage relative to GOROOT

@@ -123,7 +123,7 @@ func main() {
 	jqueryUrl           = "https://code.jquery.com/jquery-3.2.1.min.js"
 	jqueryFileName      = "jquery-3.2.1.min.js"
 
-	openApiGen = "github.com/kubernetes/kube-openapi/cmd/openapi-gen"
+	openApiGen = "k8s.io/kube-openapi/cmd/openapi-gen"
 )
 
 var (
@@ -168,9 +168,9 @@ type schemaWriterTemplateData struct {
 }
 
 // InstallOpenApiGen installs the openapi-gen tool from the github.com/kubernetes/kube-openapi repository.
-func InstallOpenApiGen() error {
+func InstallOpenApiGen(version string) error {
 	util.AppLogger().Infof("installing %s via 'go get'", openApiGen)
-	err := util.GoGet(openApiGen, "", false)
+	err := util.GoGet(openApiGen, version, true)
 	if err != nil {
 		return err
 	}
