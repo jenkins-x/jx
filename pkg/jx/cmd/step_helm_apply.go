@@ -245,30 +245,38 @@ func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
 	for _, overrideSrc := range templateOverrides {
 		if !strings.Contains(overrideSrc, "/env/") {
 			data, err := ioutil.ReadFile(overrideSrc)
-			if err == nil {
-				writeTemplateParts := strings.Split(overrideSrc, string(os.PathSeparator))
-				depChartsDir := filepath.Join(chartName, "charts")
-				depChartName := writeTemplateParts[len(writeTemplateParts)-3]
-				templateName := writeTemplateParts[len(writeTemplateParts)-1]
-				depChartDir := filepath.Join(depChartsDir, depChartName)
-				// If the chart directory does not exist explode the tgz
-				if exists, err := util.DirExists(depChartDir); err == nil && !exists {
-					chartArchives, _ := filepath.Glob(filepath.Join(depChartsDir, depChartName+"*.tgz"))
-					if len(chartArchives) == 1 {
-						log.Infof("Exploding chart %s\n", chartArchives[0])
-						archiver.Unarchive(chartArchives[0], depChartsDir)
-						// Remove the unexploded chart
-						os.Remove(chartArchives[0])
+			if err != nil {
+				return err
+			}
+			writeTemplateParts := strings.Split(overrideSrc, string(os.PathSeparator))
+			depChartsDir := filepath.Join(chartName, "charts")
+			depChartName := writeTemplateParts[len(writeTemplateParts)-3]
+			templateName := writeTemplateParts[len(writeTemplateParts)-1]
+			depChartDir := filepath.Join(depChartsDir, depChartName)
+			// If the chart directory does not exist explode the tgz
+			exists, err := util.DirExists(depChartDir)
+			if err != nil {
+				return err
+			}
+			if !exists {
+				chartArchives, _ := filepath.Glob(filepath.Join(depChartsDir, depChartName+"*.tgz"))
+				if len(chartArchives) == 1 {
+					log.Infof("Exploding chart %s\n", chartArchives[0])
+					err = archiver.Unarchive(chartArchives[0], depChartsDir)
+					if err != nil {
+						return err
 					}
+					// Remove the unexploded chart
+					os.Remove(chartArchives[0])
 				}
+			}
 
-				overrideDst := filepath.Join(depChartDir, "templates", templateName)
-				log.Infof("Copying chart override %s\n", overrideSrc)
-				err = ioutil.WriteFile(overrideDst, data, util.DefaultWritePermissions)
-				if err != nil {
-					log.Warnf("Error copying template %s to %s\n", overrideSrc, overrideDst)
-					break
-				}
+			overrideDst := filepath.Join(depChartDir, "templates", templateName)
+			log.Infof("Copying chart override %s\n", overrideSrc)
+			err = ioutil.WriteFile(overrideDst, data, util.DefaultWritePermissions)
+			if err != nil {
+				log.Warnf("Error copying template %s to %s\n", overrideSrc, overrideDst)
+				return err
 			}
 		}
 	}
