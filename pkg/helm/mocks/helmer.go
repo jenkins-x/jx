@@ -179,23 +179,27 @@ func (mock *MockHelmer) InstallChart(_param0 string, _param1 string, _param2 str
 	return ret0
 }
 
-func (mock *MockHelmer) IsRepoMissing(_param0 string) (bool, error) {
+func (mock *MockHelmer) IsRepoMissing(_param0 string) (bool, string, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockHelmer().")
 	}
 	params := []pegomock.Param{_param0}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("IsRepoMissing", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	result := pegomock.GetGenericMockFrom(mock).Invoke("IsRepoMissing", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem(), reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 bool
-	var ret1 error
+	var ret1 string
+	var ret2 error
 	if len(result) != 0 {
 		if result[0] != nil {
 			ret0 = result[0].(bool)
 		}
 		if result[1] != nil {
-			ret1 = result[1].(error)
+			ret1 = result[1].(string)
+		}
+		if result[2] != nil {
+			ret2 = result[2].(error)
 		}
 	}
-	return ret0, ret1
+	return ret0, ret1, ret2
 }
 
 func (mock *MockHelmer) Lint() (string, error) {

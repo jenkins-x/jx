@@ -56,8 +56,9 @@ type EnvironmentPullRequestOptions struct {
 // and the pullRequestInfo for any existing PR that exists to modify the environment that we want to merge these
 // changes into.
 func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, environmentsDir string,
-	pullRequestDetails *gits.PullRequestDetails, pullRequestInfo *gits.PullRequestInfo, chartName string) (*gits.PullRequestInfo, error) {
+	pullRequestDetails *gits.PullRequestDetails, pullRequestInfo *gits.PullRequestInfo, chartName string, autoMerge bool) (*gits.PullRequestInfo, error) {
 	dir, base, gitInfo, fork, err := gits.ForkAndPullPullRepo(env.Spec.Source.URL, environmentsDir, env.Spec.Source.Ref, pullRequestDetails.BranchName, o.GitProvider, o.Gitter, o.ConfigGitFn)
+
 	if err != nil {
 		return nil, errors.Wrapf(err, "pulling environment repo %s into %s", env.Spec.Source.URL,
 			environmentsDir)
@@ -67,8 +68,7 @@ func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, envir
 	if err != nil {
 		return nil, err
 	}
-
-	return gits.PushRepoAndCreatePullRequest(dir, gitInfo, base, pullRequestDetails, pullRequestInfo, fork, true, true, o.GitProvider, o.Gitter)
+	return gits.PushRepoAndCreatePullRequest(dir, gitInfo, base, pullRequestDetails, pullRequestInfo, fork, true, true, autoMerge, o.GitProvider, o.Gitter)
 }
 
 // ModifyChartFiles modifies the chart files in the given directory using the given modify function

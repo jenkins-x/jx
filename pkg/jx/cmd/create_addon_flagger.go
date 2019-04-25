@@ -102,7 +102,7 @@ func (o *CreateAddonFlaggerOptions) Run() error {
 	values := []string{}
 	setValues := strings.Split(o.SetValues, ",")
 	values = append(values, setValues...)
-	err = o.AddHelmRepoIfMissing(defaultFlaggerRepo, "flagger", "", "")
+	_, err = o.AddHelmBinaryRepoIfMissing(defaultFlaggerRepo, "flagger", "", "")
 	if err != nil {
 		return errors.Wrap(err, "Flagger deployment failed")
 	}

@@ -3,13 +3,14 @@ package opts
 import (
 	"context"
 	"fmt"
-	"github.com/pborman/uuid"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/pborman/uuid"
 
 	"github.com/jenkins-x/jx/pkg/environments"
 	"gopkg.in/src-d/go-git.v4/plumbing"
@@ -23,8 +24,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	version2 "github.com/jenkins-x/jx/pkg/version"
 	"github.com/pkg/errors"
-	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/src-d/go-git.v4"
+	survey "gopkg.in/AlecAivazis/survey.v1"
+	git "gopkg.in/src-d/go-git.v4"
 	gitconfig "gopkg.in/src-d/go-git.v4/config"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -283,21 +284,20 @@ func (o *CommonOptions) RegisterLocalHelmRepo(repoName, ns string) error {
 	return o.Helm().AddRepo(repoName, helmUrl, "", "")
 }
 
-// AddHelmRepoIfMissing adds the given helm repo if its not already added
-func (o *CommonOptions) AddHelmRepoIfMissing(helmUrl, repoName, username, password string) error {
-	return o.AddHelmBinaryRepoIfMissing(helmUrl, repoName, username, password)
-}
-
-func (o *CommonOptions) AddHelmBinaryRepoIfMissing(helmUrl, repoName, username, password string) error {
+//AddHelmBinaryRepoIfMissing adds the helm repo at url if it's missing. If a repoName is specified it will be used (if
+// the repo is added) otherwise one will be generated. The username and password will be used, and stored in vault, if
+// possible. The name of the repo (regardless of whether it was added or already there) is returned - this may well be
+// different from the requested name (if it's already there).
+func (o *CommonOptions) AddHelmBinaryRepoIfMissing(url, repoName, username, password string) (string, error) {
 	vaultClient, err := o.SystemVaultClient("")
 	if err != nil {
 		vaultClient = nil
 	}
-	_, err = helm.AddHelmRepoIfMissing(helmUrl, repoName, username, password, o.Helm(), vaultClient, o.In, o.Out, o.Err)
+	name, err := helm.AddHelmRepoIfMissing(url, repoName, username, password, o.Helm(), vaultClient, o.In, o.Out, o.Err)
 	if err != nil {
-		return errors.WithStack(err)
+		return "", errors.WithStack(err)
 	}
-	return nil
+	return name, nil
 }
 
 // InstallChartOrGitOps if using gitOps lets write files otherwise lets use helm
@@ -668,11 +668,6 @@ func (o *CommonOptions) DiscoverAppName() (string, error) {
 	return answer, nil
 }
 
-// IsHelmRepoMissing checks if the given helm repository is missing
-func (o *CommonOptions) IsHelmRepoMissing(helmUrlString string) (bool, error) {
-	return o.Helm().IsRepoMissing(helmUrlString)
-}
-
 // AddChartRepos add chart repositories
 func (o *CommonOptions) AddChartRepos(dir string, helmBinary string, chartRepos []string) error {
 	installedChartRepos, err := o.GetInstalledChartRepos(helmBinary)
@@ -682,7 +677,7 @@ func (o *CommonOptions) AddChartRepos(dir string, helmBinary string, chartRepos 
 	if chartRepos != nil {
 		for _, url := range chartRepos {
 			if !util.StringMapHasValue(installedChartRepos, url) {
-				err = o.AddHelmBinaryRepoIfMissing(url, "", "", "")
+				_, err = o.AddHelmBinaryRepoIfMissing(url, "", "", "")
 				if err != nil {
 					return errors.Wrapf(err, "failed to add the Helm repository with URL '%s'", url)
 				}
@@ -701,30 +696,32 @@ func (o *CommonOptions) AddChartRepos(dir string, helmBinary string, chartRepos 
 			return errors.Wrap(err, "failed to load the Helm requirements file")
 		}
 		if requirements != nil {
+			changed := false
 			// lets replace the release chart museum URL if required
 			chartRepoURL := o.ReleaseChartMuseumUrl()
 			if chartRepoURL != "" && chartRepoURL != DefaultChartRepo {
-				changed := false
 				for i := range requirements.Dependencies {
 					if requirements.Dependencies[i].Repository == DefaultChartRepo {
 						requirements.Dependencies[i].Repository = chartRepoURL
 						changed = true
 					}
 				}
-				if changed {
-					err = helm.SaveFile(reqfile, requirements)
-					if err != nil {
-						return err
-					}
-				}
 			}
 			for _, dep := range requirements.Dependencies {
 				repo := dep.Repository
-				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) && repo != DefaultChartRepo && !strings.HasPrefix(repo, "file:") && !strings.HasPrefix(repo, "alias:") {
-					err = o.AddHelmBinaryRepoIfMissing(repo, "", "", "")
+				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) && repo != DefaultChartRepo && !strings.HasPrefix(repo, "file:") && !strings.HasPrefix(repo, "alias:") && !strings.HasPrefix(repo, "@") {
+					name, err := o.AddHelmBinaryRepoIfMissing(repo, "", "", "")
 					if err != nil {
 						return errors.Wrapf(err, "failed to add Helm repository '%s'", repo)
 					}
+					dep.Repository = fmt.Sprintf("@%s", name)
+					changed = true
+				}
+			}
+			if changed {
+				err := helm.SaveFile(reqfile, requirements)
+				if err != nil {
+					return errors.Wrap(err, "failed to save the Helm requirements file")
 				}
 			}
 		}

@@ -103,7 +103,7 @@ func (o *CreateAddonCloudBeesOptions) Run() error {
 
 	// check if Helm repo is missing, the repo is authenticated and includes username/password so check with dummy values
 	// first as we wont need to prompt for username password if the host part of the URL matches an existing repo
-	missing, err := o.IsHelmRepoMissing(coreRepoUrl)
+	missing, _, err := o.Helm().IsRepoMissing(coreRepoUrl)
 	if err != nil {
 		return err
 	}
@@ -129,7 +129,7 @@ To register to get your username/password to to: %s
 		}
 		survey.AskOne(passPrompt, &password, nil, surveyOpts)
 
-		err := o.AddHelmRepoIfMissing(coreRepoUrl, coreRepoName, username, password)
+		_, err := o.AddHelmBinaryRepoIfMissing(coreRepoUrl, coreRepoName, username, password)
 		if err != nil {
 			return err
 		}

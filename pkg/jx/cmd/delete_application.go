@@ -62,6 +62,7 @@ type DeleteApplicationOptions struct {
 	Timeout             string
 	PullRequestPollTime string
 	Org                 string
+	AutoMerge           bool
 
 	// calculated fields
 	TimeoutDuration         *time.Duration
@@ -97,7 +98,7 @@ func NewCmdDeleteApplication(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Timeout, "timeout", "t", "1h", "The timeout to wait for the promotion to succeed in the underlying Environment. The command fails if the timeout is exceeded or the promotion does not complete")
 	cmd.Flags().StringVarP(&options.PullRequestPollTime, optionPullRequestPollTime, "", "20s", "Poll time when waiting for a Pull Request to merge")
 	cmd.Flags().StringVarP(&options.Org, "org", "o", "", "github organisation/project name that source code resides in")
-
+	cmd.Flags().BoolVarP(&options.AutoMerge, "auto-merge", "", false, "Automatically merge GitOps pull requests that pass CI")
 	return cmd
 }
 
@@ -384,7 +385,7 @@ func (o *DeleteApplicationOptions) deleteApplicationFromEnvironment(env *v1.Envi
 		ModifyChartFn: modifyChartFn,
 		GitProvider:   gitProvider,
 	}
-	info, err := options.Create(env, environmentsDir, &details, nil, "")
+	info, err := options.Create(env, environmentsDir, &details, nil, "", o.AutoMerge)
 	if err != nil {
 		return err
 	}

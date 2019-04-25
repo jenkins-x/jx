@@ -57,6 +57,7 @@ type InstallOptions struct {
 	GitOps          bool
 	TeamName        string
 	VaultClient     vault.Client
+	AutoMerge       bool
 
 	valuesFiles *environments.ValuesFiles // internal variable used to track, most be passed in
 }
@@ -108,7 +109,7 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 			opts := GitOpsOptions{
 				InstallOptions: o,
 			}
-			err := opts.AddApp(chartDetails.Name, dir, chartDetails.Version, repository, alias)
+			err := opts.AddApp(chartDetails.Name, dir, chartDetails.Version, repository, alias, o.AutoMerge)
 			if err != nil {
 				return errors.Wrapf(err, "adding app %s version %s with alias %s using gitops", chartName, version, alias)
 			}
@@ -185,7 +186,7 @@ func (o *InstallOptions) DeleteApp(app string, alias string, releaseName string,
 		opts := GitOpsOptions{
 			InstallOptions: o,
 		}
-		err := opts.DeleteApp(chartName, alias)
+		err := opts.DeleteApp(chartName, alias, o.AutoMerge)
 		if err != nil {
 			return err
 		}
@@ -249,7 +250,7 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 		}
 		// Asking questions is a bit more complex in this case as the existing values file is in the environment
 		// repo, so we need to ask questions once we have that repo available
-		err := opts.UpgradeApp(chartName, version, repository, username, password, alias, interrogateChartFunc)
+		err := opts.UpgradeApp(chartName, version, repository, username, password, alias, interrogateChartFunc, o.AutoMerge)
 		if err != nil {
 			return err
 		}
@@ -506,6 +507,14 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 					"If this is the first time you have installed the app, this may take a couple of minutes.",
 					chartDetails.Name)
 				_, err = o.KubeClient.CoreV1().Pods(o.Namespace).Create(&pod)
+				defer func() {
+					err := o.KubeClient.CoreV1().Pods(o.Namespace).Delete(pod.Name,
+						&metav1.DeleteOptions{})
+					if err != nil {
+						log.Errorf("Error deleting pod %s for values.schema.json preprocessing: %v",
+							pod.Name, err)
+					}
+				}()
 				if err != nil {
 					return &chartDetails, errors.Wrapf(err, "creating pod %s for values.schema.json proprocessing",
 						pod.Name)
@@ -520,7 +529,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 						"json preprocessing",
 						pod.Name)
 				}
-				completePod, err := o.KubeClient.Core().Pods(o.Namespace).Get(pod.Name, metav1.GetOptions{})
+				completePod, err := o.KubeClient.CoreV1().Pods(o.Namespace).Get(pod.Name, metav1.GetOptions{})
 				if err != nil {
 					return &chartDetails, errors.Wrapf(err, "getting pod %s", pod.Name)
 				}

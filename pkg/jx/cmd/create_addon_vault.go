@@ -80,7 +80,7 @@ func InstallVaultOperator(o *opts.CommonOptions, namespace string) error {
 		return errors.Wrap(err, "checking if helm is installed")
 	}
 
-	err = o.AddHelmRepoIfMissing(kube.DefaultChartMuseumURL, jxRepoName, "", "")
+	_, err = o.AddHelmBinaryRepoIfMissing(kube.DefaultChartMuseumURL, jxRepoName, "", "")
 	if err != nil {
 		return errors.Wrapf(err, "adding '%s' helm charts repository", kube.DefaultChartMuseumURL)
 	}

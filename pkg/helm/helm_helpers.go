@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gopkg.in/AlecAivazis/survey.v1"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	"github.com/pborman/uuid"
@@ -610,7 +610,7 @@ func DecorateWithSecrets(options *InstallChartOptions, vaultClient vault.Client)
 func AddHelmRepoIfMissing(helmURL, repoName, username, password string, helmer Helmer,
 	vaultClient vault.Client, in terminal.FileReader,
 	out terminal.FileWriter, outErr io.Writer) (string, error) {
-	missing, err := helmer.IsRepoMissing(helmURL)
+	missing, existingName, err := helmer.IsRepoMissing(helmURL)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to check if the repository with URL '%s' is missing", helmURL)
 	}
@@ -644,10 +644,12 @@ func AddHelmRepoIfMissing(helmURL, repoName, username, password string, helmer H
 			return "", errors.WithStack(err)
 		}
 		err = helmer.AddRepo(repoName, helmURL, username, password)
-		if err == nil {
-			log.Infof("Successfully added Helm repository %s.\n", repoName)
+		if err != nil {
+			return "", errors.Wrapf(err, "failed to add the repository '%s' with URL '%s'", repoName, helmURL)
 		}
-		return "", errors.Wrapf(err, "failed to add the repository '%s' with URL '%s'", repoName, helmURL)
+		log.Infof("Successfully added Helm repository %s.\n", repoName)
+	} else {
+		repoName = existingName
 	}
 	return repoName, nil
 }

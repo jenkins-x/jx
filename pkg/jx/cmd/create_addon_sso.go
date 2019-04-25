@@ -127,7 +127,7 @@ func (o *CreateAddonSSOOptions) Run() error {
 		return errors.Wrap(err, "checking if helm is installed")
 	}
 
-	err = o.AddHelmRepoIfMissing(kube.DefaultChartMuseumURL, repoName, "", "")
+	_, err = o.AddHelmBinaryRepoIfMissing(kube.DefaultChartMuseumURL, repoName, "", "")
 	if err != nil {
 		return errors.Wrap(err, "adding dex chart helm repository")
 	}
