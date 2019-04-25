@@ -5,15 +5,16 @@ import (
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
+	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/vault"
-	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
 )
 
 const (
@@ -137,9 +138,9 @@ func SystemVaultName(kuber kube.Kuber) (string, error) {
 
 // SystemVaultNameForCluster returns the system vault name from a given cluster name
 func SystemVaultNameForCluster(clusterName string) string {
-	shortClusterName := cluster.ShortClusterName(clusterName)
+	shortClusterName := kube.ToValidNameTruncated(clusterName, 16)
 	fullName := fmt.Sprintf("%s-%s", vault.SystemVaultNamePrefix, shortClusterName)
-	return cluster.ShortNameN(fullName, 22)
+	return kube.ToValidNameTruncated(fullName, 22)
 }
 
 // CreateGKEVault creates a new vault backed by GCP KMS and storage

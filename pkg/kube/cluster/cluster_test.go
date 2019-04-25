@@ -1,14 +1,15 @@
 package cluster_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/kube/vault"
 	"testing"
 
-	"github.com/jenkins-x/jx/pkg/kube/cluster"
-	kube_test "github.com/jenkins-x/jx/pkg/kube/mocks"
 	. "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/client-go/tools/clientcmd/api"
+
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
+	kube_test "github.com/jenkins-x/jx/pkg/kube/mocks"
+	"github.com/jenkins-x/jx/pkg/kube/vault"
 )
 
 func TestGetSimplifiedClusterName(t *testing.T) {
@@ -41,6 +42,9 @@ func TestShortClusterName(t *testing.T) {
 		},
 	}
 	When(kuber.LoadConfig()).ThenReturn(&config, nil, nil)
+
+	clusterName, err = cluster.ShortName(kuber)
+
 	assert.NoError(t, err)
 	assert.Equal(t, "short-cluster-na", clusterName)
 
@@ -51,6 +55,9 @@ func TestShortClusterName(t *testing.T) {
 		},
 	}
 	When(kuber.LoadConfig()).ThenReturn(&config, nil, nil)
+
+	clusterName, err = cluster.ShortName(kuber)
+
 	assert.NoError(t, err)
 	assert.Equal(t, "short-cluster-na", clusterName)
 }
