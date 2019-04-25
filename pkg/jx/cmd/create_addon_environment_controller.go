@@ -129,9 +129,9 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	serverUrl := gitInfo.ProviderURL()
+	serverURL := gitInfo.ProviderURL()
 	if o.GitKind == "" {
-		o.GitKind = gits.SaasGitKind(serverUrl)
+		o.GitKind = gits.SaasGitKind(serverURL)
 	}
 	if o.GitKind == "" && !o.BatchMode {
 		o.GitKind, err = util.PickName(gits.KindGits, "kind of git repository: ", "please specify the GitOps repository used to store the kubernetes applications to deploy to this cluster", o.In, o.Out, o.Err)
@@ -197,7 +197,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	server := config.GetOrCreateServer(serverUrl)
+	server := config.GetOrCreateServer(serverURL)
 
 	if o.GitUser == "" {
 		auth, err := o.PickPipelineUserAuth(config, server)
@@ -205,7 +205,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 			return err
 		}
 		if auth == nil {
-			return fmt.Errorf("no user found for git server %s", serverUrl)
+			return fmt.Errorf("no user found for git server %s", serverURL)
 		}
 		o.GitUser = auth.Username
 		if o.GitToken == "" {
@@ -236,7 +236,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	}
 	setValues = append(setValues, "source.owner="+gitInfo.Organisation)
 	setValues = append(setValues, "source.repo="+gitInfo.Name)
-	setValues = append(setValues, "source.serverUrl="+serverUrl)
+	setValues = append(setValues, "source.serverURL="+serverURL)
 	setValues = append(setValues, "source.gitKind="+o.GitKind)
 	setValues = append(setValues, "source.user="+o.GitUser)
 	setValues = append(setValues, "source.token="+o.GitToken)
