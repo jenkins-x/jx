@@ -689,6 +689,23 @@ func (o *CommonOptions) AddChartRepos(dir string, helmBinary string, chartRepos 
 			return errors.Wrap(err, "failed to load the Helm requirements file")
 		}
 		if requirements != nil {
+			// lets replace the release chart museum URL if required
+			chartRepoURL := o.ReleaseChartMuseumUrl()
+			if chartRepoURL != "" && chartRepoURL != DefaultChartRepo {
+				changed := false
+				for i := range requirements.Dependencies {
+					if requirements.Dependencies[i].Repository == DefaultChartRepo {
+						requirements.Dependencies[i].Repository = chartRepoURL
+						changed = true
+					}
+				}
+				if changed {
+					err = helm.SaveFile(reqfile, requirements)
+					if err != nil {
+						return err
+					}
+				}
+			}
 			for _, dep := range requirements.Dependencies {
 				repo := dep.Repository
 				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) && repo != DefaultChartRepo && !strings.HasPrefix(repo, "file:") && !strings.HasPrefix(repo, "alias:") {
