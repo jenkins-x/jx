@@ -12,7 +12,7 @@ const (
 	// RemoteEnvironment a remote environment
 	RemoteEnvironment Kind = "REMOTE_ENVIRONMENT"
 
-	// Protection
+	// Protection for the protection kind
 	Protection Kind = "PROTECTION"
 
 	// ServerlessJenkins serverless jenkins

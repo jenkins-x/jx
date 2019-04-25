@@ -96,7 +96,7 @@ func (o *ConsoleOptions) Run() error {
 
 func (o *ConsoleOptions) Open(name string, label string) error {
 	var err error
-	svcUrl := ""
+	svcURL := ""
 	ns := o.Namespace
 	if ns == "" && o.Environment != "" {
 		ns, err = o.FindEnvironmentNamespace(o.Environment)
@@ -105,9 +105,9 @@ func (o *ConsoleOptions) Open(name string, label string) error {
 		}
 	}
 	if ns != "" {
-		svcUrl, err = o.FindServiceInNamespace(name, ns)
+		svcURL, err = o.FindServiceInNamespace(name, ns)
 	} else {
-		svcUrl, err = o.FindService(name)
+		svcURL, err = o.FindService(name)
 	}
 	if err != nil && name != "" {
 		log.Infof("If the app %s is running in a different environment you could try: %s\n", util.ColorInfo(name), util.ColorInfo("jx get applications"))
@@ -115,12 +115,12 @@ func (o *ConsoleOptions) Open(name string, label string) error {
 	if err != nil {
 		return err
 	}
-	fullURL := svcUrl
+	fullURL := svcURL
 	if name == "jenkins" {
-		fullURL = o.urlForMode(svcUrl)
+		fullURL = o.urlForMode(svcURL)
 	}
 	if o.OnlyViewHost {
-		host := util.UrlToHostName(svcUrl)
+		host := util.URLToHostName(svcURL)
 		fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(host))
 	} else {
 		fmt.Fprintf(o.Out, "%s: %s\n", label, util.ColorInfo(fullURL))

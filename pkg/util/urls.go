@@ -65,11 +65,11 @@ func StripCredentialsFromURL(u *url.URL) string {
 	return u.String()
 }
 
-// UrlToHostName converts the given URL to a host name returning the error string if its not a URL
-func UrlToHostName(svcUrl string) string {
+// URLToHostName converts the given URL to a host name returning the error string if its not a URL
+func URLToHostName(svcURL string) string {
 	host := ""
-	if svcUrl != "" {
-		u, err := url.Parse(svcUrl)
+	if svcURL != "" {
+		u, err := url.Parse(svcURL)
 		if err != nil {
 			host = err.Error()
 		} else {

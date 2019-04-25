@@ -90,7 +90,7 @@ func (o *GetURLOptions) Run() error {
 	for _, u := range urls {
 		text := u.URL
 		if o.OnlyViewHost {
-			text = util.UrlToHostName(text)
+			text = util.URLToHostName(text)
 		}
 		table.AddRow(u.Name, text)
 	}
