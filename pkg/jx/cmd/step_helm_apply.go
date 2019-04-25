@@ -261,13 +261,14 @@ func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
 						os.Remove(chartArchives[0])
 					}
 				}
+
 				overrideDst := filepath.Join(depChartDir, "templates", templateName)
 				log.Infof("Copying chart override %s\n", overrideSrc)
 				err = ioutil.WriteFile(overrideDst, data, util.DefaultWritePermissions)
 				if err != nil {
 					log.Warnf("Error copying template %s to %s\n", overrideSrc, overrideDst)
+					break
 				}
-
 			}
 		}
 	}
