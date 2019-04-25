@@ -242,11 +242,14 @@ func (o *StepHelmApplyOptions) Run() error {
 func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
 	log.Infof("Applying chart overrides\n")
 	templateOverrides, err := filepath.Glob(chartName + "/../*/templates/*.yaml")
+	if err != nil {
+		return errors.Wrap(err, "Failed to find templates")
+	}
 	for _, overrideSrc := range templateOverrides {
 		if !strings.Contains(overrideSrc, "/env/") {
 			data, err := ioutil.ReadFile(overrideSrc)
 			if err != nil {
-				return err
+				return errors.Wrapf(err,"read %s", overrideSrc)
 			}
 			writeTemplateParts := strings.Split(overrideSrc, string(os.PathSeparator))
 			depChartsDir := filepath.Join(chartName, "charts")
@@ -256,7 +259,7 @@ func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
 			// If the chart directory does not exist explode the tgz
 			exists, err := util.DirExists(depChartDir)
 			if err != nil {
-				return err
+				return errors.Wrapf(err, "Checking directory %s", depChartDir)
 			}
 			if !exists {
 				chartArchives, _ := filepath.Glob(filepath.Join(depChartsDir, depChartName+"*.tgz"))
@@ -264,7 +267,7 @@ func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
 					log.Infof("Exploding chart %s\n", chartArchives[0])
 					err = archiver.Unarchive(chartArchives[0], depChartsDir)
 					if err != nil {
-						return err
+						return errors.Wrapf(err, "Exploding chart")
 					}
 					// Remove the unexploded chart
 					os.Remove(chartArchives[0])
@@ -275,12 +278,11 @@ func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
 			log.Infof("Copying chart override %s\n", overrideSrc)
 			err = ioutil.WriteFile(overrideDst, data, util.DefaultWritePermissions)
 			if err != nil {
-				log.Warnf("Error copying template %s to %s\n", overrideSrc, overrideDst)
-				return err
+				return errors.Wrapf(err, "Error copying template %s to %s\n", overrideSrc, overrideDst)
 			}
 		}
 	}
-	return err
+	return nil
 }
 
 func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store configio.ConfigStore) ([]string, error) {
