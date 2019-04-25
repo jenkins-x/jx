@@ -28,8 +28,9 @@ var (
 `)
 
 	createAddonEnvironmentControllerExample = templates.Examples(`
-		# Creates the environment controller using a specific environment git repository
-		jx create addon envctl -s https://github.com/myorg/environment-production.git
+		# Creates the environment controller using a specific environment git repository, project, git user, chart repo
+		jx create addon envctl -s https://github.com/myorg/env-production.git --project-id myproject --docker-registry gcr.io --cluster-rbac true --user mygituser --token mygittoken --chart-repo-host chartmuseum.jx.1.3.4.nip.io
+		
 	`)
 )
 
@@ -45,6 +46,7 @@ type CreateAddonEnvironmentControllerOptions struct {
 	InitOptions InitOptions
 
 	// chart parameters
+	ChartRepoHost     string
 	WebHookURL        string
 	GitSourceURL      string
 	GitKind           string
@@ -82,6 +84,7 @@ func NewCmdCreateAddonEnvironmentController(commonOpts *opts.CommonOptions) *cob
 			CheckErr(err)
 		},
 	}
+	cmd.Flags().StringVarP(&options.ChartRepoHost, "chart-repo-host", "c", "", "The Host of the chart repository. See the output of 'jx open chartmuseum --host' in the Dev cluster then find the host name")
 	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The namespace to install the controller")
 	cmd.Flags().StringVarP(&options.ReleaseName, optionRelease, "r", defaultEnvCtrlReleaseName, "The chart release name")
 	cmd.Flags().StringVarP(&options.SetValues, "set", "", "", "The chart set values (can specify multiple or separate values with commas: key1=val1,key2=val2)")
@@ -145,15 +148,24 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	if o.Namespace == "" {
 		o.Namespace = ns
 	}
-
-	if o.GitSourceURL == "" {
-		if o.BatchMode {
-			return util.MissingOption("source-url")
+	if o.ChartRepoHost == "" && !o.BatchMode {
+		o.ChartRepoHost, err = util.PickValue("chart repository host name to promote from: ", "", true, "please specify the host name of the chart repository. You can the host name via 'jx open chartmuseum --host' in your Development cluster", o.In, o.Out, o.Err)
+		if err != nil {
+			return err
 		}
+	}
+	if o.ChartRepoHost == "" {
+		return util.MissingOption("chart-repo-host")
+	}
+
+	if o.GitSourceURL == "" && !o.BatchMode {
 		o.GitSourceURL, err = util.PickValue("git repository to promote from: ", "", true, "please specify the GitOps repository used to store the kubernetes applications to deploy to this cluster", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
+	}
+	if o.GitSourceURL == "" {
+		return util.MissingOption("source-url")
 	}
 	gitInfo, err := gits.ParseGitURL(o.GitSourceURL)
 	if err != nil {
@@ -163,14 +175,14 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	if o.GitKind == "" {
 		o.GitKind = gits.SaasGitKind(serverUrl)
 	}
-	if o.GitKind == "" {
-		if o.BatchMode {
-			return util.MissingOption("git-kind")
-		}
+	if o.GitKind == "" && !o.BatchMode {
 		o.GitKind, err = util.PickName(gits.KindGits, "kind of git repository: ", "please specify the GitOps repository used to store the kubernetes applications to deploy to this cluster", o.In, o.Out, o.Err)
 		if err != nil {
 			return err
 		}
+	}
+	if o.GitKind == "" {
+		return util.MissingOption("git-kind")
 	}
 
 	authSvc, err := o.CreateGitAuthConfigService()
@@ -218,6 +230,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	if o.WebHookURL != "" {
 		setValues = append(setValues, "webhookUrl="+o.WebHookURL)
 	}
+	setValues = append(setValues, "chartmuseumHostName="+o.ChartRepoHost)
 	setValues = append(setValues, "source.owner="+gitInfo.Organisation)
 	setValues = append(setValues, "source.repo="+gitInfo.Name)
 	setValues = append(setValues, "source.serverUrl="+serverUrl)
