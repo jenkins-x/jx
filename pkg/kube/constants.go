@@ -229,6 +229,9 @@ const (
 	// LabelValueDevEnvironment is the value of the LabelTeam label for Development environments (system namespace)
 	LabelValueDevEnvironment = "dev"
 
+	// LabelValueThisEnvironment is the value of the LabelTeam label for the current environment in remote clusters
+	LabelValueThisEnvironment = "this"
+
 	// LabelJobKind the kind of job
 	LabelJobKind = "jenkins.io/job-kind"
 

@@ -155,10 +155,9 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 	opts.Dir = dir
 	opts.RepositoryMessage = "versions repository"
 
-	fn := func() error {
+	return o.CreatePullRequest(&o.PullRequestDetails, func() error {
 		return o.modifyFiles(dir)
-	}
-	return o.CreatePullRequest(&o.PullRequestDetails, fn)
+	})
 }
 
 func (o *StepCreateVersionPullRequestOptions) modifyFiles(dir string) error {

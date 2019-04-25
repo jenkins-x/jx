@@ -115,38 +115,7 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 		return errors.Wrap(err, "failed to register the Jenkins X Pipeline CRDs")
 	}
 
-	// lets ensure there's a dev environment setup for no-tiller mode
-	fn := func(env *v1.Environment) error {
-		env.Spec.TeamSettings.HelmTemplate = true
-		env.Spec.TeamSettings.PromotionEngine = v1.PromotionEngineProw
-		env.Spec.TeamSettings.ProwEngine = v1.ProwEngineTypeTekton
-		env.Spec.WebHookEngine = v1.WebHookEngineProw
-		return nil
-	}
-	err = o.ModifyDevEnvironment(fn)
-	if err != nil {
-		return err
-	}
-
-	if o.ClusterRBAC && !o.NoClusterAdmin {
-		io := &o.InitOptions
-		io.CommonOptions = o.CommonOptions
-		err = io.enableClusterAdminRole()
-		if err != nil {
-			return err
-		}
-	}
-	// avoid needing a dev cluster
-	o.EnableRemoteKubeCluster()
-
-	_, ns, err := o.KubeClientAndNamespace()
-	if err != nil {
-		return err
-	}
-	if o.Namespace == "" {
-		o.Namespace = ns
-	}
-
+	// validate the git URL
 	if o.GitSourceURL == "" && !o.BatchMode {
 		o.GitSourceURL, err = util.PickValue("git repository to promote from: ", "", true, "please specify the GitOps repository used to store the kubernetes applications to deploy to this cluster", o.In, o.Out, o.Err)
 		if err != nil {
@@ -173,6 +142,52 @@ func (o *CreateAddonEnvironmentControllerOptions) Run() error {
 	if o.GitKind == "" {
 		return util.MissingOption("git-kind")
 	}
+
+	_, ns, err := o.KubeClientAndNamespace()
+	if err != nil {
+		return err
+	}
+	if o.Namespace == "" {
+		o.Namespace = ns
+	}
+
+	// lets ensure there's a dev environment setup for no-tiller mode
+	err = o.ModifyDevEnvironment(func(env *v1.Environment) error {
+		env.Spec.TeamSettings.HelmTemplate = true
+		env.Spec.TeamSettings.PromotionEngine = v1.PromotionEngineProw
+		env.Spec.TeamSettings.ProwEngine = v1.ProwEngineTypeTekton
+		env.Spec.WebHookEngine = v1.WebHookEngineProw
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	err = o.ModifyEnvironment(kube.LabelValueThisEnvironment, func(env *v1.Environment) error {
+		env.Spec.TeamSettings.HelmTemplate = true
+		env.Spec.TeamSettings.PromotionEngine = v1.PromotionEngineProw
+		env.Spec.TeamSettings.ProwEngine = v1.ProwEngineTypeTekton
+		env.Spec.WebHookEngine = v1.WebHookEngineProw
+		env.Spec.Kind = v1.EnvironmentKindTypePermanent
+		env.Spec.Order = 100
+		env.Spec.PromotionStrategy = v1.PromotionStrategyTypeAutomatic
+		env.Spec.Source.URL = o.GitSourceURL
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	if o.ClusterRBAC && !o.NoClusterAdmin {
+		io := &o.InitOptions
+		io.CommonOptions = o.CommonOptions
+		err = io.enableClusterAdminRole()
+		if err != nil {
+			return err
+		}
+	}
+
+	// avoid needing a dev cluster
+	o.EnableRemoteKubeCluster()
 
 	authSvc, err := o.CreateGitAuthConfigService()
 	if err != nil {
