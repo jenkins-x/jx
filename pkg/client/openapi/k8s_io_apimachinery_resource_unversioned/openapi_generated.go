@@ -36,7 +36,6 @@ func schema_apimachinery_pkg_api_resource_int64Amount(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "int64Amount represents a fixed precision numerator and arbitrary scale exponent. It is faster than operations on inf.Dec for values that can be represented as int64.",
-				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"value": {
 						SchemaProps: spec.SchemaProps{
@@ -54,5 +53,6 @@ func schema_apimachinery_pkg_api_resource_int64Amount(ref common.ReferenceCallba
 				Required: []string{"value", "scale"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
