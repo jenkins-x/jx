@@ -5,6 +5,7 @@ definitions:
         type: string
       version:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.Agent:
     description: Agent defines where the pipeline, stage, or step should run.
     properties:
@@ -13,6 +14,7 @@ definitions:
       label:
         description: One of label or image is required.
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.BasicAuth:
     description: BasicAuth keeps the credentials for basic authentication
     properties:
@@ -25,6 +27,7 @@ definitions:
     required:
     - username
     - password
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.BranchBuild:
     properties:
       build:
@@ -51,6 +54,7 @@ definitions:
       name:
         description: display name
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.Build:
     properties:
       nodeSelector:
@@ -75,6 +79,7 @@ definitions:
         items:
           $ref: '#/definitions/io.k8s.api.core.v1.Volume'
         type: array
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.ChatConfig:
     properties:
       developerChannel:
@@ -85,6 +90,28 @@ definitions:
         type: string
       userChannel:
         type: string
+    type: object
+  com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.CreateJenkinsfileArguments:
+    description: CreateJenkinsfileArguments contains the arguents to generate a Jenkinsfiles
+      dynamically
+    properties:
+      ClearContainerNames:
+        type: boolean
+      ConfigFile:
+        type: string
+      JenkinsfileRunner:
+        type: boolean
+      OutputFile:
+        type: string
+      TemplateFile:
+        type: string
+    required:
+    - ConfigFile
+    - TemplateFile
+    - OutputFile
+    - JenkinsfileRunner
+    - ClearContainerNames
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.EnvVar:
     description: EnvVar is a key/value pair defining an environment variable
     properties:
@@ -95,6 +122,7 @@ definitions:
     required:
     - name
     - value
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.IssueTrackerConfig:
     properties:
       kind:
@@ -103,6 +131,7 @@ definitions:
         type: string
       url:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.Loop:
     description: Loop is a special step that defines a variable, a list of possible
       values for that variable, and a set of steps to repeat for each value for the
@@ -126,6 +155,7 @@ definitions:
     - variable
     - values
     - steps
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.NamedLifecycle:
     description: NamedLifecycle a lifecycle and its name
     properties:
@@ -136,6 +166,7 @@ definitions:
     required:
     - Name
     - Lifecycle
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.ParsedPipeline:
     description: ParsedPipeline is the internal representation of the Pipeline, used
       to validate and create CRDs
@@ -158,6 +189,7 @@ definitions:
         type: array
     required:
     - stages
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.PipelineAgent:
     description: PipelineAgent contains the agent definition metadata
     properties:
@@ -167,6 +199,7 @@ definitions:
         type: string
       label:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.PipelineConfig:
     description: PipelineConfig defines the pipeline configuration
     properties:
@@ -184,6 +217,7 @@ definitions:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.Pipelines'
       version:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.PipelineExtends:
     description: PipelineExtends defines the extension (e.g. parent pipeline which
       is overloaded
@@ -192,6 +226,7 @@ definitions:
         type: string
       import:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.PipelineLifecycle:
     description: PipelineLifecycle defines the steps of a lifecycle section
     properties:
@@ -209,6 +244,7 @@ definitions:
         items:
           $ref: '#/definitions/com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.PipelineStep'
         type: array
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.PipelineLifecycles:
     description: PipelineLifecycles defines the steps of a lifecycle section
     properties:
@@ -226,6 +262,7 @@ definitions:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.PipelineLifecycle'
       setup:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.PipelineLifecycle'
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.PipelineStep:
     description: PipelineStep defines an individual step in a pipeline, either a command
       (sh) or groovy block
@@ -248,6 +285,7 @@ definitions:
         type: array
       when:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.Pipelines:
     description: Pipelines contains all the different kinds of pipeline for different
       branches
@@ -260,6 +298,7 @@ definitions:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.PipelineLifecycles'
       release:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.PipelineLifecycles'
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.Post:
     description: Post contains a PostCondition and one more actions to be executed
       after a pipeline or stage if the condition is met.
@@ -273,6 +312,7 @@ definitions:
     required:
     - condition
     - actions
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.PostAction:
     description: PostAction contains the name of a built-in post action and options
       to pass to that action.
@@ -288,6 +328,7 @@ definitions:
         type: object
     required:
     - name
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.PreviewEnvironmentConfig:
     properties:
       disabled:
@@ -295,6 +336,7 @@ definitions:
       maximumInstances:
         format: int32
         type: integer
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.ProjectConfig:
     properties:
       addons:
@@ -329,6 +371,7 @@ definitions:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.WikiConfig'
       workflow:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.RootOptions:
     description: RootOptions contains options that can be configured on either a pipeline
       or a stage
@@ -345,6 +388,7 @@ definitions:
         type: integer
       timeout:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.Timeout'
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.Stage:
     description: Stage is a unit of work in a pipeline, corresponding either to a
       Task or a set of Tasks to be run sequentially or in parallel with common configuration.
@@ -377,6 +421,7 @@ definitions:
         type: array
     required:
     - name
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.StageOptions:
     description: StageOptions contains both options that can be configured on either
       a pipeline or a stage, via RootOptions, or stage-specific options.
@@ -399,6 +444,7 @@ definitions:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.Unstash'
       workspace:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.Stash:
     description: Stash defines files to be saved for use in a later stage, marked
       with a name
@@ -411,6 +457,7 @@ definitions:
     required:
     - name
     - files
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.Step:
     description: Step defines a single step, from the author's perspective, to be
       executed within a stage.
@@ -448,6 +495,7 @@ definitions:
         type: object
       step:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.Timeout:
     description: Timeout defines how long a stage or pipeline can run before timing
       out.
@@ -460,6 +508,7 @@ definitions:
         type: string
     required:
     - time
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.Unstash:
     description: Unstash defines a previously-defined stash to be copied into this
       stage's workspace
@@ -470,6 +519,7 @@ definitions:
         type: string
     required:
     - name
+    type: object
   com.github.jenkins-x.jx.pkg.syntax.syntax_jenkins_io.v1alpha1.WikiConfig:
     properties:
       kind:
@@ -478,6 +528,7 @@ definitions:
         type: string
       url:
         type: string
+    type: object
   io.k8s.api.core.v1.AWSElasticBlockStoreVolumeSource:
     description: |-
       Represents a Persistent Disk resource in AWS.
@@ -507,6 +558,7 @@ definitions:
         type: string
     required:
     - volumeID
+    type: object
   io.k8s.api.core.v1.AzureDiskVolumeSource:
     description: AzureDisk represents an Azure Data Disk mount on the host and bind
       mount to the pod.
@@ -537,6 +589,7 @@ definitions:
     required:
     - diskName
     - diskURI
+    type: object
   io.k8s.api.core.v1.AzureFileVolumeSource:
     description: AzureFile represents an Azure File Service mount on the host and
       bind mount to the pod.
@@ -555,6 +608,7 @@ definitions:
     required:
     - secretName
     - shareName
+    type: object
   io.k8s.api.core.v1.Capabilities:
     description: Adds and removes POSIX capabilities from running containers.
     properties:
@@ -568,6 +622,7 @@ definitions:
         items:
           type: string
         type: array
+    type: object
   io.k8s.api.core.v1.CephFSVolumeSource:
     description: Represents a Ceph Filesystem mount that lasts the lifetime of a pod
       Cephfs volumes do not support ownership management or SELinux relabeling.
@@ -600,6 +655,7 @@ definitions:
         type: string
     required:
     - monitors
+    type: object
   io.k8s.api.core.v1.CinderVolumeSource:
     description: Represents a cinder volume resource in Openstack. A Cinder volume
       must exist before mounting to a container. The volume must also be in the same
@@ -624,6 +680,7 @@ definitions:
         type: string
     required:
     - volumeID
+    type: object
   io.k8s.api.core.v1.ConfigMapEnvSource:
     description: |-
       ConfigMapEnvSource selects a ConfigMap to populate the environment variables with.
@@ -636,6 +693,7 @@ definitions:
       optional:
         description: Specify whether the ConfigMap must be defined
         type: boolean
+    type: object
   io.k8s.api.core.v1.ConfigMapKeySelector:
     description: Selects a key from a ConfigMap.
     properties:
@@ -650,6 +708,7 @@ definitions:
         type: boolean
     required:
     - key
+    type: object
   io.k8s.api.core.v1.ConfigMapProjection:
     description: |-
       Adapts a ConfigMap into a projected volume.
@@ -673,6 +732,7 @@ definitions:
       optional:
         description: Specify whether the ConfigMap or it's keys must be defined
         type: boolean
+    type: object
   io.k8s.api.core.v1.ConfigMapVolumeSource:
     description: |-
       Adapts a ConfigMap into a volume.
@@ -704,6 +764,7 @@ definitions:
       optional:
         description: Specify whether the ConfigMap or it's keys must be defined
         type: boolean
+    type: object
   io.k8s.api.core.v1.Container:
     description: A single application container that you want to run within a pod.
     properties:
@@ -854,6 +915,7 @@ definitions:
         type: string
     required:
     - name
+    type: object
   io.k8s.api.core.v1.ContainerPort:
     description: ContainerPort represents a network port in a single container.
     properties:
@@ -881,6 +943,7 @@ definitions:
         type: string
     required:
     - containerPort
+    type: object
   io.k8s.api.core.v1.DownwardAPIProjection:
     description: Represents downward API info for projecting into a projected volume.
       Note that this is identical to a downwardAPI volume source without the default
@@ -891,6 +954,7 @@ definitions:
         items:
           $ref: '#/definitions/io.k8s.api.core.v1.DownwardAPIVolumeFile'
         type: array
+    type: object
   io.k8s.api.core.v1.DownwardAPIVolumeFile:
     description: DownwardAPIVolumeFile represents information to create the file containing
       the pod field
@@ -918,6 +982,7 @@ definitions:
           currently supported.'
     required:
     - path
+    type: object
   io.k8s.api.core.v1.DownwardAPIVolumeSource:
     description: DownwardAPIVolumeSource represents a volume containing downward API
       info. Downward API volumes support ownership management and SELinux relabeling.
@@ -935,6 +1000,7 @@ definitions:
         items:
           $ref: '#/definitions/io.k8s.api.core.v1.DownwardAPIVolumeFile'
         type: array
+    type: object
   io.k8s.api.core.v1.EmptyDirVolumeSource:
     description: Represents an empty directory for a pod. Empty directory volumes
       support ownership management and SELinux relabeling.
@@ -951,6 +1017,7 @@ definitions:
           memory medium EmptyDir would be the minimum value between the SizeLimit
           specified here and the sum of memory limits of all containers in a pod.
           The default is nil which means that the limit is undefined. More info: http://kubernetes.io/docs/user-guide/volumes#emptydir'
+    type: object
   io.k8s.api.core.v1.EnvFromSource:
     description: EnvFromSource represents the source of a set of ConfigMaps
     properties:
@@ -964,6 +1031,7 @@ definitions:
       secretRef:
         $ref: '#/definitions/io.k8s.api.core.v1.SecretEnvSource'
         description: The Secret to select from
+    type: object
   io.k8s.api.core.v1.EnvVar:
     description: EnvVar represents an environment variable present in a Container.
     properties:
@@ -984,6 +1052,7 @@ definitions:
           value is not empty.
     required:
     - name
+    type: object
   io.k8s.api.core.v1.EnvVarSource:
     description: EnvVarSource represents a source for the value of an EnvVar.
     properties:
@@ -1003,6 +1072,7 @@ definitions:
       secretKeyRef:
         $ref: '#/definitions/io.k8s.api.core.v1.SecretKeySelector'
         description: Selects a key of a secret in the pod's namespace
+    type: object
   io.k8s.api.core.v1.ExecAction:
     description: ExecAction describes a "run in container" action.
     properties:
@@ -1016,6 +1086,7 @@ definitions:
         items:
           type: string
         type: array
+    type: object
   io.k8s.api.core.v1.FCVolumeSource:
     description: Represents a Fibre Channel volume. Fibre Channel volumes can only
       be mounted as read/write once. Fibre Channel volumes support ownership management
@@ -1045,6 +1116,7 @@ definitions:
         items:
           type: string
         type: array
+    type: object
   io.k8s.api.core.v1.FlexVolumeSource:
     description: FlexVolume represents a generic volume resource that is provisioned/attached
       using an exec based plugin.
@@ -1074,6 +1146,7 @@ definitions:
           secret, all secrets are passed to the plugin scripts.'
     required:
     - driver
+    type: object
   io.k8s.api.core.v1.FlockerVolumeSource:
     description: Represents a Flocker volume mounted by the Flocker agent. One and
       only one of datasetName and datasetUUID should be set. Flocker volumes do not
@@ -1086,6 +1159,7 @@ definitions:
       datasetUUID:
         description: UUID of the dataset. This is unique identifier of a Flocker dataset
         type: string
+    type: object
   io.k8s.api.core.v1.GCEPersistentDiskVolumeSource:
     description: |-
       Represents a Persistent Disk resource in Google Compute Engine.
@@ -1115,6 +1189,7 @@ definitions:
         type: boolean
     required:
     - pdName
+    type: object
   io.k8s.api.core.v1.GitRepoVolumeSource:
     description: |-
       Represents a volume that is populated with the contents of a git repository. Git repo volumes do not support ownership management. Git repo volumes support SELinux relabeling.
@@ -1135,6 +1210,7 @@ definitions:
         type: string
     required:
     - repository
+    type: object
   io.k8s.api.core.v1.GlusterfsVolumeSource:
     description: Represents a Glusterfs mount that lasts the lifetime of a pod. Glusterfs
       volumes do not support ownership management or SELinux relabeling.
@@ -1153,6 +1229,7 @@ definitions:
     required:
     - endpoints
     - path
+    type: object
   io.k8s.api.core.v1.HTTPGetAction:
     description: HTTPGetAction describes an action based on HTTP Get requests.
     properties:
@@ -1177,6 +1254,7 @@ definitions:
         type: string
     required:
     - port
+    type: object
   io.k8s.api.core.v1.HTTPHeader:
     description: HTTPHeader describes a custom header to be used in HTTP probes
     properties:
@@ -1189,6 +1267,7 @@ definitions:
     required:
     - name
     - value
+    type: object
   io.k8s.api.core.v1.Handler:
     description: Handler defines a specific action that should be taken
     properties:
@@ -1203,6 +1282,7 @@ definitions:
         $ref: '#/definitions/io.k8s.api.core.v1.TCPSocketAction'
         description: TCPSocket specifies an action involving a TCP port. TCP hooks
           not yet supported
+    type: object
   io.k8s.api.core.v1.HostPathVolumeSource:
     description: Represents a host path mapped into a pod. Host path volumes do not
       support ownership management or SELinux relabeling.
@@ -1216,6 +1296,7 @@ definitions:
         type: string
     required:
     - path
+    type: object
   io.k8s.api.core.v1.ISCSIVolumeSource:
     description: Represents an ISCSI disk. ISCSI volumes can only be mounted as read/write
       once. ISCSI volumes support ownership management and SELinux relabeling.
@@ -1269,6 +1350,7 @@ definitions:
     - targetPortal
     - iqn
     - lun
+    type: object
   io.k8s.api.core.v1.KeyToPath:
     description: Maps a string key to a path within a volume.
     properties:
@@ -1290,6 +1372,7 @@ definitions:
     required:
     - key
     - path
+    type: object
   io.k8s.api.core.v1.Lifecycle:
     description: Lifecycle describes actions that the management system should take
       in response to container lifecycle events. For the PostStart and PreStop lifecycle
@@ -1309,6 +1392,7 @@ definitions:
           termination is passed to the handler. Regardless of the outcome of the handler,
           the container is eventually terminated. Other management of the container
           blocks until the hook completes. More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks'
+    type: object
   io.k8s.api.core.v1.LocalObjectReference:
     description: LocalObjectReference contains enough information to let you locate
       the referenced object inside the same namespace.
@@ -1316,6 +1400,7 @@ definitions:
       name:
         description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
         type: string
+    type: object
   io.k8s.api.core.v1.NFSVolumeSource:
     description: Represents an NFS mount that lasts the lifetime of a pod. NFS volumes
       do not support ownership management or SELinux relabeling.
@@ -1334,6 +1419,7 @@ definitions:
     required:
     - server
     - path
+    type: object
   io.k8s.api.core.v1.ObjectFieldSelector:
     description: ObjectFieldSelector selects an APIVersioned field of an object.
     properties:
@@ -1346,6 +1432,7 @@ definitions:
         type: string
     required:
     - fieldPath
+    type: object
   io.k8s.api.core.v1.PersistentVolumeClaimVolumeSource:
     description: PersistentVolumeClaimVolumeSource references the user's PVC in the
       same namespace. This volume finds the bound PV and mounts that volume for the
@@ -1361,6 +1448,7 @@ definitions:
         type: boolean
     required:
     - claimName
+    type: object
   io.k8s.api.core.v1.PhotonPersistentDiskVolumeSource:
     description: Represents a Photon Controller persistent disk resource.
     properties:
@@ -1374,6 +1462,7 @@ definitions:
         type: string
     required:
     - pdID
+    type: object
   io.k8s.api.core.v1.PortworxVolumeSource:
     description: PortworxVolumeSource represents a Portworx volume resource.
     properties:
@@ -1391,6 +1480,7 @@ definitions:
         type: string
     required:
     - volumeID
+    type: object
   io.k8s.api.core.v1.Probe:
     description: Probe describes a health check to be performed against a container
       to determine whether it is alive or ready to receive traffic.
@@ -1432,6 +1522,7 @@ definitions:
           to 1 second. Minimum value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
         format: int32
         type: integer
+    type: object
   io.k8s.api.core.v1.ProjectedVolumeSource:
     description: Represents a projected volume source
     properties:
@@ -1449,6 +1540,7 @@ definitions:
         type: array
     required:
     - sources
+    type: object
   io.k8s.api.core.v1.QuobyteVolumeSource:
     description: Represents a Quobyte mount that lasts the lifetime of a pod. Quobyte
       volumes do not support ownership management or SELinux relabeling.
@@ -1475,6 +1567,7 @@ definitions:
     required:
     - registry
     - volume
+    type: object
   io.k8s.api.core.v1.RBDVolumeSource:
     description: Represents a Rados Block Device mount that lasts the lifetime of
       a pod. RBD volumes support ownership management and SELinux relabeling.
@@ -1514,6 +1607,7 @@ definitions:
     required:
     - monitors
     - image
+    type: object
   io.k8s.api.core.v1.ResourceFieldSelector:
     description: ResourceFieldSelector represents container resources (cpu, memory)
       and their output format
@@ -1530,6 +1624,7 @@ definitions:
         type: string
     required:
     - resource
+    type: object
   io.k8s.api.core.v1.ResourceRequirements:
     description: ResourceRequirements describes the compute resource requirements.
     properties:
@@ -1547,6 +1642,7 @@ definitions:
           explicitly specified, otherwise to an implementation-defined value. More
           info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
         type: object
+    type: object
   io.k8s.api.core.v1.SELinuxOptions:
     description: SELinuxOptions are the labels to be applied to the container
     properties:
@@ -1562,6 +1658,7 @@ definitions:
       user:
         description: User is a SELinux user label that applies to the container.
         type: string
+    type: object
   io.k8s.api.core.v1.ScaleIOVolumeSource:
     description: ScaleIOVolumeSource represents a persistent ScaleIO volume
     properties:
@@ -1606,6 +1703,7 @@ definitions:
     - gateway
     - system
     - secretRef
+    type: object
   io.k8s.api.core.v1.SecretEnvSource:
     description: |-
       SecretEnvSource selects a Secret to populate the environment variables with.
@@ -1618,6 +1716,7 @@ definitions:
       optional:
         description: Specify whether the Secret must be defined
         type: boolean
+    type: object
   io.k8s.api.core.v1.SecretKeySelector:
     description: SecretKeySelector selects a key of a Secret.
     properties:
@@ -1633,6 +1732,7 @@ definitions:
         type: boolean
     required:
     - key
+    type: object
   io.k8s.api.core.v1.SecretProjection:
     description: |-
       Adapts a secret into a projected volume.
@@ -1656,6 +1756,7 @@ definitions:
       optional:
         description: Specify whether the Secret or its key must be defined
         type: boolean
+    type: object
   io.k8s.api.core.v1.SecretVolumeSource:
     description: |-
       Adapts a Secret into a volume.
@@ -1688,6 +1789,7 @@ definitions:
         description: 'Name of the secret in the pod''s namespace to use. More info:
           https://kubernetes.io/docs/concepts/storage/volumes#secret'
         type: string
+    type: object
   io.k8s.api.core.v1.SecurityContext:
     description: SecurityContext holds security configuration that will be applied
       to a container. Some fields are present in both SecurityContext and PodSecurityContext.  When
@@ -1745,6 +1847,7 @@ definitions:
           the container runtime will allocate a random SELinux context for each container.  May
           also be set in PodSecurityContext.  If set in both SecurityContext and PodSecurityContext,
           the value specified in SecurityContext takes precedence.
+    type: object
   io.k8s.api.core.v1.ServiceAccountTokenProjection:
     description: ServiceAccountTokenProjection represents a projected service account
       token volume. This projection can be used to insert a service account token
@@ -1772,6 +1875,7 @@ definitions:
         type: string
     required:
     - path
+    type: object
   io.k8s.api.core.v1.StorageOSVolumeSource:
     description: Represents a StorageOS persistent volume resource.
     properties:
@@ -1800,6 +1904,7 @@ definitions:
           Set to "default" if you are not using namespaces within StorageOS. Namespaces
           that do not pre-exist within StorageOS will be created.
         type: string
+    type: object
   io.k8s.api.core.v1.TCPSocketAction:
     description: TCPSocketAction describes an action based on opening a socket
     properties:
@@ -1812,6 +1917,7 @@ definitions:
           must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.
     required:
     - port
+    type: object
   io.k8s.api.core.v1.Volume:
     description: Volume represents a named volume in a pod that may be accessed by
       any container in the pod.
@@ -1934,6 +2040,7 @@ definitions:
           on kubelets host machine
     required:
     - name
+    type: object
   io.k8s.api.core.v1.VolumeDevice:
     description: volumeDevice describes a mapping of a raw block device within a container.
     properties:
@@ -1947,6 +2054,7 @@ definitions:
     required:
     - name
     - devicePath
+    type: object
   io.k8s.api.core.v1.VolumeMount:
     description: VolumeMount describes a mounting of a Volume within a container.
     properties:
@@ -1973,6 +2081,7 @@ definitions:
     required:
     - name
     - mountPath
+    type: object
   io.k8s.api.core.v1.VolumeProjection:
     description: Projection that may be projected along with other supported volume
       types
@@ -1989,6 +2098,7 @@ definitions:
       serviceAccountToken:
         $ref: '#/definitions/io.k8s.api.core.v1.ServiceAccountTokenProjection'
         description: information about the serviceAccountToken data to project
+    type: object
   io.k8s.api.core.v1.VsphereVirtualDiskVolumeSource:
     description: Represents a vSphere volume resource.
     properties:
@@ -2009,6 +2119,7 @@ definitions:
         type: string
     required:
     - volumePath
+    type: object
   io.k8s.apimachinery.pkg.api.resource.Quantity:
     description: |-
       Quantity is a fixed-point representation of a number. It provides convenient marshaling/unmarshaling in JSON and YAML, in addition to String() and Int64() accessors.

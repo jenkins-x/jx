@@ -13,36 +13,37 @@ import (
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.AddonConfig":              schema_pkg_syntax_syntaxjenkinsio_v1alpha1_AddonConfig(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Agent":                    schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Agent(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.BasicAuth":                schema_pkg_syntax_syntaxjenkinsio_v1alpha1_BasicAuth(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.BranchBuild":              schema_pkg_syntax_syntaxjenkinsio_v1alpha1_BranchBuild(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Build":                    schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Build(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.ChatConfig":               schema_pkg_syntax_syntaxjenkinsio_v1alpha1_ChatConfig(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.EnvVar":                   schema_pkg_syntax_syntaxjenkinsio_v1alpha1_EnvVar(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.IssueTrackerConfig":       schema_pkg_syntax_syntaxjenkinsio_v1alpha1_IssueTrackerConfig(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Loop":                     schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Loop(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.NamedLifecycle":           schema_pkg_syntax_syntaxjenkinsio_v1alpha1_NamedLifecycle(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.ParsedPipeline":           schema_pkg_syntax_syntaxjenkinsio_v1alpha1_ParsedPipeline(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineAgent":            schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineAgent(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineConfig":           schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineConfig(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineExtends":          schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineExtends(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineLifecycle":        schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineLifecycle(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineLifecycles":       schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineLifecycles(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineStep":             schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineStep(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Pipelines":                schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Pipelines(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Post":                     schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Post(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PostAction":               schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PostAction(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PreviewEnvironmentConfig": schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PreviewEnvironmentConfig(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.ProjectConfig":            schema_pkg_syntax_syntaxjenkinsio_v1alpha1_ProjectConfig(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.RootOptions":              schema_pkg_syntax_syntaxjenkinsio_v1alpha1_RootOptions(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Stage":                    schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Stage(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.StageOptions":             schema_pkg_syntax_syntaxjenkinsio_v1alpha1_StageOptions(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Stash":                    schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Stash(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Step":                     schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Step(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Timeout":                  schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Timeout(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Unstash":                  schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Unstash(ref),
-		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.WikiConfig":               schema_pkg_syntax_syntaxjenkinsio_v1alpha1_WikiConfig(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.AddonConfig":                schema_pkg_syntax_syntaxjenkinsio_v1alpha1_AddonConfig(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Agent":                      schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Agent(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.BasicAuth":                  schema_pkg_syntax_syntaxjenkinsio_v1alpha1_BasicAuth(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.BranchBuild":                schema_pkg_syntax_syntaxjenkinsio_v1alpha1_BranchBuild(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Build":                      schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Build(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.ChatConfig":                 schema_pkg_syntax_syntaxjenkinsio_v1alpha1_ChatConfig(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.CreateJenkinsfileArguments": schema_pkg_syntax_syntaxjenkinsio_v1alpha1_CreateJenkinsfileArguments(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.EnvVar":                     schema_pkg_syntax_syntaxjenkinsio_v1alpha1_EnvVar(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.IssueTrackerConfig":         schema_pkg_syntax_syntaxjenkinsio_v1alpha1_IssueTrackerConfig(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Loop":                       schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Loop(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.NamedLifecycle":             schema_pkg_syntax_syntaxjenkinsio_v1alpha1_NamedLifecycle(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.ParsedPipeline":             schema_pkg_syntax_syntaxjenkinsio_v1alpha1_ParsedPipeline(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineAgent":              schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineAgent(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineConfig":             schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineConfig(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineExtends":            schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineExtends(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineLifecycle":          schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineLifecycle(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineLifecycles":         schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineLifecycles(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PipelineStep":               schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineStep(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Pipelines":                  schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Pipelines(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Post":                       schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Post(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PostAction":                 schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PostAction(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.PreviewEnvironmentConfig":   schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PreviewEnvironmentConfig(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.ProjectConfig":              schema_pkg_syntax_syntaxjenkinsio_v1alpha1_ProjectConfig(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.RootOptions":                schema_pkg_syntax_syntaxjenkinsio_v1alpha1_RootOptions(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Stage":                      schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Stage(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.StageOptions":               schema_pkg_syntax_syntaxjenkinsio_v1alpha1_StageOptions(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Stash":                      schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Stash(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Step":                       schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Step(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Timeout":                    schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Timeout(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.Unstash":                    schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Unstash(ref),
+		"github.com/jenkins-x/jx/pkg/syntax/syntax.jenkins.io/v1alpha1.WikiConfig":                 schema_pkg_syntax_syntaxjenkinsio_v1alpha1_WikiConfig(ref),
 	}
 }
 
@@ -50,6 +51,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_AddonConfig(ref common.Reference
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -75,6 +77,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Agent(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Agent defines where the pipeline, stage, or step should run.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"label": {
 						SchemaProps: spec.SchemaProps{
@@ -101,6 +104,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_BasicAuth(ref common.ReferenceCa
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "BasicAuth keeps the credentials for basic authentication",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"username": {
 						SchemaProps: spec.SchemaProps{
@@ -128,6 +132,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_BranchBuild(ref common.Reference
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"build": {
 						SchemaProps: spec.SchemaProps{
@@ -198,6 +203,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Build(ref common.ReferenceCallba
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"steps": {
 						SchemaProps: spec.SchemaProps{
@@ -258,6 +264,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_ChatConfig(ref common.ReferenceC
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -290,11 +297,57 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_ChatConfig(ref common.ReferenceC
 	}
 }
 
+func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_CreateJenkinsfileArguments(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CreateJenkinsfileArguments contains the arguents to generate a Jenkinsfiles dynamically",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"ConfigFile": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"TemplateFile": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"OutputFile": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"string"},
+							Format: "",
+						},
+					},
+					"JenkinsfileRunner": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+					"ClearContainerNames": {
+						SchemaProps: spec.SchemaProps{
+							Type:   []string{"boolean"},
+							Format: "",
+						},
+					},
+				},
+				Required: []string{"ConfigFile", "TemplateFile", "OutputFile", "JenkinsfileRunner", "ClearContainerNames"},
+			},
+		},
+		Dependencies: []string{},
+	}
+}
+
 func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_EnvVar(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "EnvVar is a key/value pair defining an environment variable",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -320,6 +373,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_IssueTrackerConfig(ref common.Re
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -351,6 +405,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Loop(ref common.ReferenceCallbac
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Loop is a special step that defines a variable, a list of possible values for that variable, and a set of steps to repeat for each value for the variable, with the variable set with that value in the environment for the execution of those steps.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"variable": {
 						SchemaProps: spec.SchemaProps{
@@ -400,6 +455,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_NamedLifecycle(ref common.Refere
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "NamedLifecycle a lifecycle and its name",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"Name": {
 						SchemaProps: spec.SchemaProps{
@@ -426,6 +482,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_ParsedPipeline(ref common.Refere
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ParsedPipeline is the internal representation of the Pipeline, used to validate and create CRDs",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"agent": {
 						SchemaProps: spec.SchemaProps{
@@ -487,6 +544,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineAgent(ref common.Referen
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PipelineAgent contains the agent definition metadata",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"label": {
 						SchemaProps: spec.SchemaProps{
@@ -518,6 +576,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineConfig(ref common.Refere
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PipelineConfig defines the pipeline configuration",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"version": {
 						SchemaProps: spec.SchemaProps{
@@ -571,6 +630,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineExtends(ref common.Refer
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PipelineExtends defines the extension (e.g. parent pipeline which is overloaded",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"import": {
 						SchemaProps: spec.SchemaProps{
@@ -596,6 +656,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineLifecycle(ref common.Ref
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PipelineLifecycle defines the steps of a lifecycle section",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"steps": {
 						SchemaProps: spec.SchemaProps{
@@ -642,6 +703,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineLifecycles(ref common.Re
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PipelineLifecycles defines the steps of a lifecycle section",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"setup": {
 						SchemaProps: spec.SchemaProps{
@@ -691,6 +753,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PipelineStep(ref common.Referenc
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PipelineStep defines an individual step in a pipeline, either a command (sh) or groovy block",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -759,6 +822,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Pipelines(ref common.ReferenceCa
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Pipelines contains all the different kinds of pipeline for different branches",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"pullRequest": {
 						SchemaProps: spec.SchemaProps{
@@ -793,6 +857,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Post(ref common.ReferenceCallbac
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Post contains a PostCondition and one more actions to be executed after a pipeline or stage if the condition is met.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"condition": {
 						SchemaProps: spec.SchemaProps{
@@ -826,6 +891,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PostAction(ref common.ReferenceC
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PostAction contains the name of a built-in post action and options to pass to that action.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -859,6 +925,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_PreviewEnvironmentConfig(ref com
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"disabled": {
 						SchemaProps: spec.SchemaProps{
@@ -883,6 +950,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_ProjectConfig(ref common.Referen
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"version": {
 						SchemaProps: spec.SchemaProps{
@@ -983,6 +1051,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_RootOptions(ref common.Reference
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "RootOptions contains options that can be configured on either a pipeline or a stage",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"timeout": {
 						SchemaProps: spec.SchemaProps{
@@ -1014,6 +1083,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Stage(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Stage is a unit of work in a pipeline, corresponding either to a Task or a set of Tasks to be run sequentially or in parallel with common configuration.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -1105,6 +1175,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_StageOptions(ref common.Referenc
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "StageOptions contains both options that can be configured on either a pipeline or a stage, via RootOptions, or stage-specific options.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"timeout": {
 						SchemaProps: spec.SchemaProps{
@@ -1152,6 +1223,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Stash(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Stash defines files to be saved for use in a later stage, marked with a name",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -1179,6 +1251,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Step(ref common.ReferenceCallbac
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Step defines a single step, from the author's perspective, to be executed within a stage.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -1266,6 +1339,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Timeout(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Timeout defines how long a stage or pipeline can run before timing out.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"time": {
 						SchemaProps: spec.SchemaProps{
@@ -1293,6 +1367,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_Unstash(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Unstash defines a previously-defined stash to be copied into this stage's workspace",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -1318,6 +1393,7 @@ func schema_pkg_syntax_syntaxjenkinsio_v1alpha1_WikiConfig(ref common.ReferenceC
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{

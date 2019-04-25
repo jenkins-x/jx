@@ -121,6 +121,7 @@ func schema_pkg_apis_jenkinsio_v1_AccountReference(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "AccountReference is a reference to a user account in another system that is attached to this user",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"provider": {
 						SchemaProps: spec.SchemaProps{
@@ -146,6 +147,7 @@ func schema_pkg_apis_jenkinsio_v1_App(ref common.ReferenceCallback) common.OpenA
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "App is the metadata for an App",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -185,6 +187,7 @@ func schema_pkg_apis_jenkinsio_v1_AppList(ref common.ReferenceCallback) common.O
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "AppList is a structure used by k8s to store lists of apps",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -231,6 +234,7 @@ func schema_pkg_apis_jenkinsio_v1_AppSpec(ref common.ReferenceCallback) common.O
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "AppSpec provides details of the metadata for an App",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"schemaPreprocessor": {
 						SchemaProps: spec.SchemaProps{
@@ -254,6 +258,7 @@ func schema_pkg_apis_jenkinsio_v1_Attachment(ref common.ReferenceCallback) commo
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -286,6 +291,7 @@ func schema_pkg_apis_jenkinsio_v1_Binary(ref common.ReferenceCallback) common.Op
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Binary provies the details of a downloadable binary",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"goarch": {
 						SchemaProps: spec.SchemaProps{
@@ -317,6 +323,7 @@ func schema_pkg_apis_jenkinsio_v1_BuildPack(ref common.ReferenceCallback) common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "BuildPack represents a set of language specific build packs and associated quickstarts",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -356,6 +363,7 @@ func schema_pkg_apis_jenkinsio_v1_BuildPackList(ref common.ReferenceCallback) co
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "BuildPackList is a list of TypeMeta resources",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -402,6 +410,7 @@ func schema_pkg_apis_jenkinsio_v1_BuildPackSpec(ref common.ReferenceCallback) co
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "BuildPackSpec is the specification of an BuildPack",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"label": {
 						SchemaProps: spec.SchemaProps{
@@ -445,6 +454,7 @@ func schema_pkg_apis_jenkinsio_v1_ChartRef(ref common.ReferenceCallback) common.
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"repo": {
 						SchemaProps: spec.SchemaProps{
@@ -476,6 +486,7 @@ func schema_pkg_apis_jenkinsio_v1_CommitStatus(ref common.ReferenceCallback) com
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CommitStatus represents the commit statuses for a particular pull request",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -514,6 +525,7 @@ func schema_pkg_apis_jenkinsio_v1_CommitStatusCommitReference(ref common.Referen
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"gitUrl": {
 						SchemaProps: spec.SchemaProps{
@@ -544,6 +556,7 @@ func schema_pkg_apis_jenkinsio_v1_CommitStatusDetails(ref common.ReferenceCallba
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"pipelineActivity": {
 						SchemaProps: spec.SchemaProps{
@@ -592,6 +605,7 @@ func schema_pkg_apis_jenkinsio_v1_CommitStatusItem(ref common.ReferenceCallback)
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -624,6 +638,7 @@ func schema_pkg_apis_jenkinsio_v1_CommitStatusList(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CommitStatusList is a structure used by k8s to store lists of commit statuses",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -670,6 +685,7 @@ func schema_pkg_apis_jenkinsio_v1_CommitStatusSpec(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CommitStatusSpec provides details of a particular commit status",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"items": {
 						SchemaProps: spec.SchemaProps{
@@ -697,6 +713,7 @@ func schema_pkg_apis_jenkinsio_v1_CommitSummary(ref common.ReferenceCallback) co
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CommitSummary is the summary of a commit",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"message": {
 						SchemaProps: spec.SchemaProps{
@@ -758,6 +775,7 @@ func schema_pkg_apis_jenkinsio_v1_CoreActivityStep(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "CoreActivityStep is a base step included in Stages of a pipeline or other kinds of step",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -800,6 +818,7 @@ func schema_pkg_apis_jenkinsio_v1_Environment(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Environment represents an environment like Dev, Test, Staging, Production where code lives",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -844,6 +863,7 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentFilter(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "EnvironmentFilter specifies the environments to apply the role binding to",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -889,6 +909,7 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentList(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "EnvironmentList is a list of TypeMeta resources",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -935,6 +956,7 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentRepository(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "EnvironmentRepository is the repository for an environment using GitOps",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -966,6 +988,7 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBinding(ref common.ReferenceCal
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "EnvironmentRoleBinding is like a vanilla RoleBinding but applies to a set of Namespaces based on an Environment filter so that roles can be bound to multiple namespaces easily.\n\nFor example to specify the binding of roles on all Preview environments or on all permanent environments.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -1010,6 +1033,7 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBindingList(ref common.Referenc
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "EnvironmentRoleBindingList is a list of TypeMeta resources",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -1056,6 +1080,7 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBindingSpec(ref common.Referenc
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "EnvironmentRoleBindingSpec is the specification of an EnvironmentRoleBinding",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"subjects": {
 						SchemaProps: spec.SchemaProps{
@@ -1103,6 +1128,7 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentRoleBindingStatus(ref common.Refere
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "EnvironmentRoleBindingStatus is the status for an EnvironmentRoleBinding resource",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"version": {
 						SchemaProps: spec.SchemaProps{
@@ -1122,6 +1148,7 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentSpec(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "EnvironmentSpec is the specification of an Environment",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"label": {
 						SchemaProps: spec.SchemaProps{
@@ -1199,6 +1226,7 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentStatus(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "EnvironmentStatus is the status for an Environment resource",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"version": {
 						SchemaProps: spec.SchemaProps{
@@ -1217,6 +1245,7 @@ func schema_pkg_apis_jenkinsio_v1_EnvironmentVariable(ref common.ReferenceCallba
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -1242,6 +1271,7 @@ func schema_pkg_apis_jenkinsio_v1_Extension(ref common.ReferenceCallback) common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Extension represents an extension available to this Jenkins X install",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -1281,6 +1311,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionConfig(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ExtensionConfig is the configuration and enablement for an extension inside an app",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -1320,6 +1351,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionConfigList(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ExtensionsConfigList contains a list of ExtensionConfig items",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"extensions": {
 						SchemaProps: spec.SchemaProps{
@@ -1347,6 +1379,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionDefinition(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ExtensionDefinition defines an Extension",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -1435,6 +1468,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionChildReference(ref common.R
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ExtensionDefinitionChildReference provides a reference to a child",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"uuid": {
 						SchemaProps: spec.SchemaProps{
@@ -1478,6 +1512,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionList(ref common.ReferenceCa
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ExtensionDefinitionList contains a list of ExtensionDefinition items",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"version": {
 						SchemaProps: spec.SchemaProps{
@@ -1511,6 +1546,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionReference(ref common.Refere
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ExtensionRepositoryReference references a GitHub repo that contains extension definitions",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"remote": {
 						SchemaProps: spec.SchemaProps{
@@ -1537,6 +1573,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionDefinitionReferenceList(ref common.Re
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ExtensionDefinitionReferenceList contains a list of ExtensionRepository items",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"remotes": {
 						SchemaProps: spec.SchemaProps{
@@ -1564,6 +1601,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionExecution(ref common.ReferenceCallbac
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ExtensionExecution is an executable instance of an extension which can be attached into a pipeline for later execution. It differs from an Extension as it cannot have children and parameters have been resolved to environment variables",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -1626,6 +1664,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionList(ref common.ReferenceCallback) co
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ExtensionList is a list of Extensions available for a team",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -1672,6 +1711,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionParameter(ref common.ReferenceCallbac
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ExtensionParameter describes a parameter definition for an extension",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -1708,6 +1748,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionParameterValue(ref common.ReferenceCa
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -1733,6 +1774,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionRepositoryReference(ref common.Refere
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"url": {
 						SchemaProps: spec.SchemaProps{
@@ -1763,6 +1805,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionRepositoryReferenceList(ref common.Re
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"repositories": {
 						SchemaProps: spec.SchemaProps{
@@ -1789,6 +1832,7 @@ func schema_pkg_apis_jenkinsio_v1_ExtensionSpec(ref common.ReferenceCallback) co
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ExtensionSpec provides details of an extension available for a team",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -1883,6 +1927,7 @@ func schema_pkg_apis_jenkinsio_v1_Fact(ref common.ReferenceCallback) common.Open
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Fact represents observed facts. Apps will generate Facts about the system. A naming schema is required since each Fact has a name that's unique for the whole system. Apps should prefix their generated Facts with the name of the App, like <app-name>-<fact>. This makes that different Apps can't possibly have conflicting Fact names.\n\nFor an app generating facts on a pipeline, which will be have several different executions, we recommend <app>-<fact>-<pipeline>.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -1927,6 +1972,7 @@ func schema_pkg_apis_jenkinsio_v1_FactList(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "FactList is a list of Fact resources",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -1973,6 +2019,7 @@ func schema_pkg_apis_jenkinsio_v1_FactSpec(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "FactSpec is the specification of a Fact",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -2047,6 +2094,7 @@ func schema_pkg_apis_jenkinsio_v1_FactStatus(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "FactStatus is the status for an Fact resource",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"version": {
 						SchemaProps: spec.SchemaProps{
@@ -2066,6 +2114,7 @@ func schema_pkg_apis_jenkinsio_v1_GitService(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "GitService represents a git provider so we can map the host name to a kinda of git service",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -2105,6 +2154,7 @@ func schema_pkg_apis_jenkinsio_v1_GitServiceList(ref common.ReferenceCallback) c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "GitServiceList is a list of GitService resources",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -2151,6 +2201,7 @@ func schema_pkg_apis_jenkinsio_v1_GitServiceSpec(ref common.ReferenceCallback) c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "GitServiceSpec is the specification of an GitService",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"gitKind": {
 						SchemaProps: spec.SchemaProps{
@@ -2182,6 +2233,7 @@ func schema_pkg_apis_jenkinsio_v1_GitStatus(ref common.ReferenceCallback) common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "GitStatus the status of a git commit in terms of CI/CD",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"url": {
 						SchemaProps: spec.SchemaProps{
@@ -2206,6 +2258,7 @@ func schema_pkg_apis_jenkinsio_v1_IssueLabel(ref common.ReferenceCallback) commo
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -2237,6 +2290,7 @@ func schema_pkg_apis_jenkinsio_v1_IssueSummary(ref common.ReferenceCallback) com
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "IssueSummary is the summary of an issue",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"id": {
 						SchemaProps: spec.SchemaProps{
@@ -2326,6 +2380,7 @@ func schema_pkg_apis_jenkinsio_v1_Measurement(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Measurement is a percentage or a count, something measured that the system will capture within a fact",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -2371,6 +2426,7 @@ func schema_pkg_apis_jenkinsio_v1_Original(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Original contains the report",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"mimetype": {
 						SchemaProps: spec.SchemaProps{
@@ -2409,6 +2465,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivity(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PipelineActivity represents pipeline activity for a particular run of a pipeline",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -2453,6 +2510,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivityList(ref common.ReferenceCallb
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PipelineActivityList is a list of PipelineActivity resources",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -2499,6 +2557,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivitySpec(ref common.ReferenceCallb
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PipelineActivitySpec is the specification of the pipeline activity",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"pipeline": {
 						SchemaProps: spec.SchemaProps{
@@ -2673,6 +2732,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivityStatus(ref common.ReferenceCal
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PipelineActivityStatus is the status for an Environment resource",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"version": {
 						SchemaProps: spec.SchemaProps{
@@ -2692,6 +2752,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineActivityStep(ref common.ReferenceCallb
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PipelineActivityStep represents a step in a pipeline activity",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -2727,6 +2788,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineStructure(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PipelineStructure contains references to the Pipeline and PipelineRun, and a list of PipelineStructureStages in the pipeline. This allows us to map between a running Pod to its TaskRun, to the TaskRun's Task and PipelineRun, and finally from there to the stage and potential parent stages that the Pod is actually executing, for use with populating PipelineActivity and providing logs.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -2786,6 +2848,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineStructureList(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PipelineStructureList is a list of PipelineStructureList resources",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -2832,6 +2895,7 @@ func schema_pkg_apis_jenkinsio_v1_PipelineStructureStage(ref common.ReferenceCal
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PipelineStructureStage contains the stage's name, one of either a reference to the Task corresponding to the stage if it has steps, a list of sequential stage names nested within this stage, or a list of parallel stage names nested within this stage, and information on this stage's depth within the PipelineStructure as a whole, the name of its parent stage, if any, the name of the stage before it in execution order, if any, and the name of the stage after it in execution order, if any.",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -2916,6 +2980,7 @@ func schema_pkg_apis_jenkinsio_v1_Plugin(ref common.ReferenceCallback) common.Op
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Plugin represents a binary plugin installed into this Jenkins X team",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -2955,6 +3020,7 @@ func schema_pkg_apis_jenkinsio_v1_PluginList(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PluginList is a list of Plugins available for a team",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -3001,6 +3067,7 @@ func schema_pkg_apis_jenkinsio_v1_PluginSpec(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PluginSpec provides details of a binary plugin available for a team",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"subCommand": {
 						SchemaProps: spec.SchemaProps{
@@ -3057,6 +3124,7 @@ func schema_pkg_apis_jenkinsio_v1_PreviewActivityStep(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PreviewActivityStep is the step of creating a preview environment as part of a Pull Request pipeline",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -3117,6 +3185,7 @@ func schema_pkg_apis_jenkinsio_v1_PreviewGitSpec(ref common.ReferenceCallback) c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PreviewGitSpec is the preview git branch/pull request details",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -3184,6 +3253,7 @@ func schema_pkg_apis_jenkinsio_v1_PromoteActivityStep(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PromoteActivityStep is the step of promoting a version of an application to an environment",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -3248,6 +3318,7 @@ func schema_pkg_apis_jenkinsio_v1_PromotePullRequestStep(ref common.ReferenceCal
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PromotePullRequestStep is the step for promoting a version to an environment by raising a Pull Request on the git repository of the environment",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -3302,6 +3373,7 @@ func schema_pkg_apis_jenkinsio_v1_PromoteUpdateStep(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PromoteUpdateStep is the step for updating a promotion after the Pull Request merges to master",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -3356,6 +3428,7 @@ func schema_pkg_apis_jenkinsio_v1_PromoteWorkflowStep(ref common.ReferenceCallba
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "PromoteWorkflowStep is the step of promoting a version of an application to an environment",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"environment": {
 						SchemaProps: spec.SchemaProps{
@@ -3375,6 +3448,7 @@ func schema_pkg_apis_jenkinsio_v1_QuickStartLocation(ref common.ReferenceCallbac
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "QuickStartLocation",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"gitUrl": {
 						SchemaProps: spec.SchemaProps{
@@ -3432,6 +3506,7 @@ func schema_pkg_apis_jenkinsio_v1_Release(ref common.ReferenceCallback) common.O
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Release represents a single version of an app that has been released",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -3476,6 +3551,7 @@ func schema_pkg_apis_jenkinsio_v1_ReleaseList(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ReleaseList is a list of Release resources",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -3522,6 +3598,7 @@ func schema_pkg_apis_jenkinsio_v1_ReleaseSpec(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ReleaseSpec is the specification of the Release",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -3614,6 +3691,7 @@ func schema_pkg_apis_jenkinsio_v1_ReleaseStatus(ref common.ReferenceCallback) co
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "ReleaseStatus is the status of a release",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"status": {
 						SchemaProps: spec.SchemaProps{
@@ -3632,6 +3710,7 @@ func schema_pkg_apis_jenkinsio_v1_ResourceReference(ref common.ReferenceCallback
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
 				Properties: map[string]spec.Schema{
 					"apiVersion": {
 						SchemaProps: spec.SchemaProps{
@@ -3674,6 +3753,7 @@ func schema_pkg_apis_jenkinsio_v1_SourceRepository(ref common.ReferenceCallback)
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "SourceRepository is the metadata for an Application/Project/SourceRepository",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -3713,6 +3793,7 @@ func schema_pkg_apis_jenkinsio_v1_SourceRepositoryList(ref common.ReferenceCallb
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "SourceRepositoryList is a structure used by k8s to store lists of apps",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -3759,6 +3840,7 @@ func schema_pkg_apis_jenkinsio_v1_SourceRepositorySpec(ref common.ReferenceCallb
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "SourceRepositorySpec provides details of the metadata for an App",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"description": {
 						SchemaProps: spec.SchemaProps{
@@ -3797,6 +3879,7 @@ func schema_pkg_apis_jenkinsio_v1_StageActivityStep(ref common.ReferenceCallback
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "StageActivityStep represents a stage of zero to more sub steps in a jenkins pipeline",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -3851,6 +3934,7 @@ func schema_pkg_apis_jenkinsio_v1_Statement(ref common.ReferenceCallback) common
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Statement represents a decision that was made, for example that a promotion was approved or denied",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"name": {
 						SchemaProps: spec.SchemaProps{
@@ -3896,6 +3980,7 @@ func schema_pkg_apis_jenkinsio_v1_StorageLocation(ref common.ReferenceCallback) 
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "StorageLocation",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"classifier": {
 						SchemaProps: spec.SchemaProps{
@@ -3933,6 +4018,7 @@ func schema_pkg_apis_jenkinsio_v1_Team(ref common.ReferenceCallback) common.Open
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Team represents a request to create an actual Team which is a group of users, a development environment and optional other environments",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -3977,6 +4063,7 @@ func schema_pkg_apis_jenkinsio_v1_TeamList(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "TeamList is a list of TypeMeta resources",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -4023,6 +4110,7 @@ func schema_pkg_apis_jenkinsio_v1_TeamSettings(ref common.ReferenceCallback) com
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "TeamSettings the default settings for a team",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"useGitOps": {
 						SchemaProps: spec.SchemaProps{
@@ -4221,6 +4309,7 @@ func schema_pkg_apis_jenkinsio_v1_TeamSpec(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "TeamSpec is the specification of an Team",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"label": {
 						SchemaProps: spec.SchemaProps{
@@ -4259,6 +4348,7 @@ func schema_pkg_apis_jenkinsio_v1_TeamStatus(ref common.ReferenceCallback) commo
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "TeamStatus is the status for an Team resource",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"provisionStatus": {
 						SchemaProps: spec.SchemaProps{
@@ -4284,6 +4374,7 @@ func schema_pkg_apis_jenkinsio_v1_User(ref common.ReferenceCallback) common.Open
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "User represents a git user so we have a cache to find by email address",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -4329,6 +4420,7 @@ func schema_pkg_apis_jenkinsio_v1_UserDetails(ref common.ReferenceCallback) comm
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "UserDetails containers details of a user",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"login": {
 						SchemaProps: spec.SchemaProps{
@@ -4402,6 +4494,7 @@ func schema_pkg_apis_jenkinsio_v1_UserList(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "UserList is a list of User resources",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -4448,6 +4541,7 @@ func schema_pkg_apis_jenkinsio_v1_UserSpec(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "UserSpec is the user details",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"username": {
 						SchemaProps: spec.SchemaProps{
@@ -4485,6 +4579,7 @@ func schema_pkg_apis_jenkinsio_v1_Workflow(ref common.ReferenceCallback) common.
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "Workflow represents pipeline activity for a particular run of a pipeline",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -4529,6 +4624,7 @@ func schema_pkg_apis_jenkinsio_v1_WorkflowList(ref common.ReferenceCallback) com
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "WorkflowList is a list of Workflow resources",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{
@@ -4575,6 +4671,7 @@ func schema_pkg_apis_jenkinsio_v1_WorkflowPreconditions(ref common.ReferenceCall
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "WorkflowPreconditions is the trigger to start a step",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"environments": {
 						SchemaProps: spec.SchemaProps{
@@ -4602,6 +4699,7 @@ func schema_pkg_apis_jenkinsio_v1_WorkflowSpec(ref common.ReferenceCallback) com
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "WorkflowSpec is the specification of the pipeline activity",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"pipeline": {
 						SchemaProps: spec.SchemaProps{
@@ -4634,6 +4732,7 @@ func schema_pkg_apis_jenkinsio_v1_WorkflowStatus(ref common.ReferenceCallback) c
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "WorkflowStatus is the status for an Environment resource",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"version": {
 						SchemaProps: spec.SchemaProps{
@@ -4653,6 +4752,7 @@ func schema_pkg_apis_jenkinsio_v1_WorkflowStep(ref common.ReferenceCallback) com
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
 				Description: "WorkflowStep represents a step in a pipeline activity",
+				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
 					"kind": {
 						SchemaProps: spec.SchemaProps{

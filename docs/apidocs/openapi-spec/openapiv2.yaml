@@ -7,6 +7,7 @@ definitions:
         type: string
       provider:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.App:
     description: App is the metadata for an App
     properties:
@@ -25,6 +26,7 @@ definitions:
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.AppSpec'
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.AppList:
     description: AppList is a structure used by k8s to store lists of apps
     properties:
@@ -47,6 +49,7 @@ definitions:
     required:
     - metadata
     - items
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.AppSpec:
     description: AppSpec provides details of the metadata for an App
     properties:
@@ -54,6 +57,7 @@ definitions:
         $ref: '#/definitions/io.k8s.api.core.v1.Container'
       schemaPreprocessorRole:
         $ref: '#/definitions/io.k8s.api.rbac.v1.Role'
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Attachment:
     properties:
       name:
@@ -62,6 +66,7 @@ definitions:
         items:
           type: string
         type: array
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Binary:
     description: Binary provies the details of a downloadable binary
     properties:
@@ -71,6 +76,7 @@ definitions:
         type: string
       url:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.BuildPack:
     description: BuildPack represents a set of language specific build packs and associated
       quickstarts
@@ -90,6 +96,7 @@ definitions:
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.BuildPackSpec'
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.BuildPackList:
     description: BuildPackList is a list of TypeMeta resources
     properties:
@@ -112,6 +119,7 @@ definitions:
     required:
     - metadata
     - items
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.BuildPackSpec:
     description: BuildPackSpec is the specification of an BuildPack
     properties:
@@ -125,6 +133,7 @@ definitions:
         items:
           $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.QuickStartLocation'
         type: array
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ChartRef:
     properties:
       name:
@@ -133,6 +142,7 @@ definitions:
         type: string
       repoName:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitStatus:
     description: CommitStatus represents the commit statuses for a particular pull
       request
@@ -152,6 +162,7 @@ definitions:
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitStatusSpec'
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitStatusCommitReference:
     properties:
       gitUrl:
@@ -160,6 +171,7 @@ definitions:
         type: string
       sha:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitStatusDetails:
     properties:
       Items:
@@ -179,6 +191,7 @@ definitions:
     - checked
     - commit
     - context
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitStatusItem:
     properties:
       description:
@@ -189,6 +202,7 @@ definitions:
         type: boolean
     required:
     - pass
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitStatusList:
     description: CommitStatusList is a structure used by k8s to store lists of commit
       statuses
@@ -212,6 +226,7 @@ definitions:
     required:
     - metadata
     - Items
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitStatusSpec:
     description: CommitStatusSpec provides details of a particular commit status
     properties:
@@ -221,6 +236,7 @@ definitions:
         type: array
     required:
     - items
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CommitSummary:
     description: CommitSummary is the summary of a commit
     properties:
@@ -240,6 +256,7 @@ definitions:
         type: string
       url:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CoreActivityStep:
     description: CoreActivityStep is a base step included in Stages of a pipeline
       or other kinds of step
@@ -254,6 +271,7 @@ definitions:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time'
       status:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Environment:
     description: Environment represents an environment like Dev, Test, Staging, Production
       where code lives
@@ -275,6 +293,7 @@ definitions:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentSpec'
       status:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentStatus'
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentFilter:
     description: EnvironmentFilter specifies the environments to apply the role binding
       to
@@ -289,6 +308,7 @@ definitions:
         type: array
       kind:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentList:
     description: EnvironmentList is a list of TypeMeta resources
     properties:
@@ -311,6 +331,7 @@ definitions:
     required:
     - metadata
     - items
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentRepository:
     description: EnvironmentRepository is the repository for an environment using
       GitOps
@@ -321,6 +342,7 @@ definitions:
         type: string
       url:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentRoleBinding:
     description: |-
       EnvironmentRoleBinding is like a vanilla RoleBinding but applies to a set of Namespaces based on an Environment filter so that roles can be bound to multiple namespaces easily.
@@ -344,6 +366,7 @@ definitions:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentRoleBindingSpec'
       status:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentRoleBindingStatus'
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentRoleBindingList:
     description: EnvironmentRoleBindingList is a list of TypeMeta resources
     properties:
@@ -366,6 +389,7 @@ definitions:
     required:
     - metadata
     - items
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentRoleBindingSpec:
     description: EnvironmentRoleBindingSpec is the specification of an EnvironmentRoleBinding
     properties:
@@ -387,12 +411,14 @@ definitions:
     required:
     - subjects
     - roleRef
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentRoleBindingStatus:
     description: EnvironmentRoleBindingStatus is the status for an EnvironmentRoleBinding
       resource
     properties:
       version:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentSpec:
     description: EnvironmentSpec is the specification of an Environment
     properties:
@@ -419,17 +445,20 @@ definitions:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.TeamSettings'
       webHookEngine:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentStatus:
     description: EnvironmentStatus is the status for an Environment resource
     properties:
       version:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.EnvironmentVariable:
     properties:
       name:
         type: string
       value:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Extension:
     description: Extension represents an extension available to this Jenkins X install
     properties:
@@ -448,6 +477,7 @@ definitions:
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionSpec'
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionConfig:
     description: ExtensionConfig is the configuration and enablement for an extension
       inside an app
@@ -464,6 +494,7 @@ definitions:
     - name
     - namespace
     - parameters
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionConfigList:
     description: ExtensionsConfigList contains a list of ExtensionConfig items
     properties:
@@ -473,6 +504,7 @@ definitions:
         type: array
     required:
     - extensions
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionDefinition:
     description: ExtensionDefinition defines an Extension
     properties:
@@ -504,6 +536,7 @@ definitions:
     - name
     - namespace
     - uuid
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionDefinitionChildReference:
     description: ExtensionDefinitionChildReference provides a reference to a child
     properties:
@@ -517,6 +550,7 @@ definitions:
         type: string
       uuid:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionDefinitionList:
     description: ExtensionDefinitionList contains a list of ExtensionDefinition items
     properties:
@@ -528,6 +562,7 @@ definitions:
         type: string
     required:
     - extensions
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionDefinitionReference:
     description: ExtensionRepositoryReference references a GitHub repo that contains
       extension definitions
@@ -539,6 +574,7 @@ definitions:
     required:
     - remote
     - tag
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionDefinitionReferenceList:
     description: ExtensionDefinitionReferenceList contains a list of ExtensionRepository
       items
@@ -549,6 +585,7 @@ definitions:
         type: array
     required:
     - remotes
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionExecution:
     description: ExtensionExecution is an executable instance of an extension which
       can be attached into a pipeline for later execution. It differs from an Extension
@@ -571,6 +608,7 @@ definitions:
         type: string
       uuid:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionList:
     description: ExtensionList is a list of Extensions available for a team
     properties:
@@ -593,6 +631,7 @@ definitions:
     required:
     - metadata
     - items
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionParameter:
     description: ExtensionParameter describes a parameter definition for an extension
     properties:
@@ -604,6 +643,7 @@ definitions:
         type: string
       name:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionParameterValue:
     properties:
       name:
@@ -613,6 +653,7 @@ definitions:
     required:
     - name
     - value
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionRepositoryReference:
     properties:
       chart:
@@ -621,12 +662,14 @@ definitions:
         type: string
       url:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionRepositoryReferenceList:
     properties:
       repositories:
         items:
           $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionRepositoryReference'
         type: array
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ExtensionSpec:
     description: ExtensionSpec provides details of an extension available for a team
     properties:
@@ -656,6 +699,7 @@ definitions:
         items:
           type: string
         type: array
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Fact:
     description: |-
       Fact represents observed facts. Apps will generate Facts about the system. A naming schema is required since each Fact has a name that's unique for the whole system. Apps should prefix their generated Facts with the name of the App, like <app-name>-<fact>. This makes that different Apps can't possibly have conflicting Fact names.
@@ -687,6 +731,7 @@ definitions:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.FactSpec'
       status:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.FactStatus'
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.FactList:
     description: FactList is a list of Fact resources
     properties:
@@ -709,6 +754,7 @@ definitions:
     required:
     - metadata
     - items
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.FactSpec:
     description: FactSpec is the specification of a Fact
     properties:
@@ -736,11 +782,13 @@ definitions:
     - name
     - factType
     - subject
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.FactStatus:
     description: FactStatus is the status for an Fact resource
     properties:
       version:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.GitService:
     description: GitService represents a git provider so we can map the host name
       to a kinda of git service
@@ -760,6 +808,7 @@ definitions:
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.GitServiceSpec'
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.GitServiceList:
     description: GitServiceList is a list of GitService resources
     properties:
@@ -782,6 +831,7 @@ definitions:
     required:
     - metadata
     - items
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.GitServiceSpec:
     description: GitServiceSpec is the specification of an GitService
     properties:
@@ -791,6 +841,7 @@ definitions:
         type: string
       url:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.GitStatus:
     description: GitStatus the status of a git commit in terms of CI/CD
     properties:
@@ -798,6 +849,7 @@ definitions:
         type: string
       url:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.IssueLabel:
     properties:
       color:
@@ -806,6 +858,7 @@ definitions:
         type: string
       url:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.IssueSummary:
     description: IssueSummary is the summary of an issue
     properties:
@@ -835,6 +888,7 @@ definitions:
         type: string
       user:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.UserDetails'
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Measurement:
     description: Measurement is a percentage or a count, something measured that the
       system will capture within a fact
@@ -854,6 +908,7 @@ definitions:
     - name
     - measurementType
     - measurementValue
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Original:
     description: Original contains the report
     properties:
@@ -865,6 +920,7 @@ definitions:
         type: array
       url:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineActivity:
     description: PipelineActivity represents pipeline activity for a particular run
       of a pipeline
@@ -886,6 +942,7 @@ definitions:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineActivitySpec'
       status:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineActivityStatus'
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineActivityList:
     description: PipelineActivityList is a list of PipelineActivity resources
     properties:
@@ -908,6 +965,7 @@ definitions:
     required:
     - metadata
     - items
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineActivitySpec:
     description: PipelineActivitySpec is the specification of the pipeline activity
     properties:
@@ -965,11 +1023,13 @@ definitions:
         type: string
       workflowStatus:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineActivityStatus:
     description: PipelineActivityStatus is the status for an Environment resource
     properties:
       version:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineActivityStep:
     description: PipelineActivityStep represents a step in a pipeline activity
     properties:
@@ -981,6 +1041,7 @@ definitions:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PromoteActivityStep'
       stage:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.StageActivityStep'
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructure:
     description: PipelineStructure contains references to the Pipeline and PipelineRun,
       and a list of PipelineStructureStages in the pipeline. This allows us to map
@@ -1013,6 +1074,7 @@ definitions:
     required:
     - pipelineRef
     - pipelineRunRef
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureList:
     description: PipelineStructureList is a list of PipelineStructureList resources
     properties:
@@ -1035,6 +1097,7 @@ definitions:
     required:
     - metadata
     - items
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PipelineStructureStage:
     description: PipelineStructureStage contains the stage's name, one of either a
       reference to the Task corresponding to the stage if it has steps, a list of
@@ -1072,6 +1135,7 @@ definitions:
     required:
     - name
     - depth
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Plugin:
     description: Plugin represents a binary plugin installed into this Jenkins X team
     properties:
@@ -1090,6 +1154,7 @@ definitions:
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PluginSpec'
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PluginList:
     description: PluginList is a list of Plugins available for a team
     properties:
@@ -1112,6 +1177,7 @@ definitions:
     required:
     - metadata
     - items
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PluginSpec:
     description: PluginSpec provides details of a binary plugin available for a team
     properties:
@@ -1129,6 +1195,7 @@ definitions:
         type: string
       version:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PreviewActivityStep:
     description: PreviewActivityStep is the step of creating a preview environment
       as part of a Pull Request pipeline
@@ -1149,6 +1216,7 @@ definitions:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time'
       status:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PreviewGitSpec:
     description: PreviewGitSpec is the preview git branch/pull request details
     properties:
@@ -1170,6 +1238,7 @@ definitions:
         type: string
       user:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.UserSpec'
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PromoteActivityStep:
     description: PromoteActivityStep is the step of promoting a version of an application
       to an environment
@@ -1192,6 +1261,7 @@ definitions:
         type: string
       update:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PromoteUpdateStep'
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PromotePullRequestStep:
     description: PromotePullRequestStep is the step for promoting a version to an
       environment by raising a Pull Request on the git repository of the environment
@@ -1210,6 +1280,7 @@ definitions:
         $ref: '#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.Time'
       status:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PromoteUpdateStep:
     description: PromoteUpdateStep is the step for updating a promotion after the
       Pull Request merges to master
@@ -1228,12 +1299,14 @@ definitions:
         items:
           $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.GitStatus'
         type: array
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PromoteWorkflowStep:
     description: PromoteWorkflowStep is the step of promoting a version of an application
       to an environment
     properties:
       environment:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.QuickStartLocation:
     description: QuickStartLocation
     properties:
@@ -1251,6 +1324,7 @@ definitions:
         type: array
       owner:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Release:
     description: Release represents a single version of an app that has been released
     properties:
@@ -1271,6 +1345,7 @@ definitions:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReleaseSpec'
       status:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReleaseStatus'
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReleaseList:
     description: ReleaseList is a list of Release resources
     properties:
@@ -1293,6 +1368,7 @@ definitions:
     required:
     - metadata
     - items
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReleaseSpec:
     description: ReleaseSpec is the specification of the Release
     properties:
@@ -1322,11 +1398,13 @@ definitions:
         type: string
       version:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ReleaseStatus:
     description: ReleaseStatus is the status of a release
     properties:
       status:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.ResourceReference:
     properties:
       apiVersion:
@@ -1344,6 +1422,7 @@ definitions:
     required:
     - kind
     - name
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SourceRepository:
     description: SourceRepository is the metadata for an Application/Project/SourceRepository
     properties:
@@ -1362,6 +1441,7 @@ definitions:
         description: 'Standard object''s metadata. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata'
       spec:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SourceRepositorySpec'
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SourceRepositoryList:
     description: SourceRepositoryList is a structure used by k8s to store lists of
       apps
@@ -1385,6 +1465,7 @@ definitions:
     required:
     - metadata
     - items
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.SourceRepositorySpec:
     description: SourceRepositorySpec provides details of the metadata for an App
     properties:
@@ -1397,6 +1478,7 @@ definitions:
         type: string
       repo:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.StageActivityStep:
     description: StageActivityStep represents a stage of zero to more sub steps in
       a jenkins pipeline
@@ -1415,6 +1497,7 @@ definitions:
         items:
           $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.CoreActivityStep'
         type: array
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Statement:
     description: Statement represents a decision that was made, for example that a
       promotion was approved or denied
@@ -1433,6 +1516,7 @@ definitions:
     - name
     - statementType
     - measurementValue
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.StorageLocation:
     description: StorageLocation
     properties:
@@ -1444,6 +1528,7 @@ definitions:
         type: string
       gitUrl:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Team:
     description: Team represents a request to create an actual Team which is a group
       of users, a development environment and optional other environments
@@ -1465,6 +1550,7 @@ definitions:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.TeamSpec'
       status:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.TeamStatus'
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.TeamList:
     description: TeamList is a list of TypeMeta resources
     properties:
@@ -1487,6 +1573,7 @@ definitions:
     required:
     - metadata
     - items
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.TeamSettings:
     description: TeamSettings the default settings for a team
     properties:
@@ -1557,6 +1644,7 @@ definitions:
         description: VersionStreamURL contains the git clone URL for the Version Stream
           which is the set of versions to use for charts, images, packages etc
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.TeamSpec:
     description: TeamSpec is the specification of an Team
     properties:
@@ -1568,6 +1656,7 @@ definitions:
         items:
           type: string
         type: array
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.TeamStatus:
     description: TeamStatus is the status for an Team resource
     properties:
@@ -1575,6 +1664,7 @@ definitions:
         type: string
       provisionStatus:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.User:
     description: User represents a git user so we have a cache to find by email address
     properties:
@@ -1596,6 +1686,7 @@ definitions:
       user:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.UserDetails'
         description: Deprecated, use Spec
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.UserDetails:
     description: UserDetails containers details of a user
     properties:
@@ -1619,6 +1710,7 @@ definitions:
         type: string
       url:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.UserList:
     description: UserList is a list of User resources
     properties:
@@ -1641,6 +1733,7 @@ definitions:
     required:
     - metadata
     - items
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.UserSpec:
     description: UserSpec is the user details
     properties:
@@ -1652,6 +1745,7 @@ definitions:
         type: string
       username:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.Workflow:
     description: Workflow represents pipeline activity for a particular run of a pipeline
     properties:
@@ -1672,6 +1766,7 @@ definitions:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.WorkflowSpec'
       status:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.WorkflowStatus'
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.WorkflowList:
     description: WorkflowList is a list of Workflow resources
     properties:
@@ -1694,6 +1789,7 @@ definitions:
     required:
     - metadata
     - items
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.WorkflowPreconditions:
     description: WorkflowPreconditions is the trigger to start a step
     properties:
@@ -1703,6 +1799,7 @@ definitions:
         items:
           type: string
         type: array
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.WorkflowSpec:
     description: WorkflowSpec is the specification of the pipeline activity
     properties:
@@ -1712,11 +1809,13 @@ definitions:
         items:
           $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.WorkflowStep'
         type: array
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.WorkflowStatus:
     description: WorkflowStatus is the status for an Environment resource
     properties:
       version:
         type: string
+    type: object
   com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.WorkflowStep:
     description: WorkflowStep represents a step in a pipeline activity
     properties:
@@ -1730,6 +1829,7 @@ definitions:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.PromoteWorkflowStep'
       trigger:
         $ref: '#/definitions/com.github.jenkins-x.jx.pkg.apis.jenkins_io.v1.WorkflowPreconditions'
+    type: object
   io.k8s.api.batch.v1.Job:
     description: Job represents the configuration of a single job.
     properties:
@@ -1752,6 +1852,7 @@ definitions:
       status:
         $ref: '#/definitions/io.k8s.api.batch.v1.JobStatus'
         description: 'Current status of a job. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status'
+    type: object
   io.k8s.api.batch.v1.JobCondition:
     description: JobCondition describes current state of a job.
     properties:
@@ -1776,6 +1877,7 @@ definitions:
     required:
     - type
     - status
+    type: object
   io.k8s.api.batch.v1.JobSpec:
     description: JobSpec describes how the job execution will look like.
     properties:
@@ -1837,6 +1939,7 @@ definitions:
         type: integer
     required:
     - template
+    type: object
   io.k8s.api.batch.v1.JobStatus:
     description: JobStatus represents the current state of a Job.
     properties:
@@ -1870,6 +1973,7 @@ definitions:
         description: The number of pods which reached phase Succeeded.
         format: int32
         type: integer
+    type: object
   io.k8s.api.core.v1.AWSElasticBlockStoreVolumeSource:
     description: |-
       Represents a Persistent Disk resource in AWS.
@@ -1899,6 +2003,7 @@ definitions:
         type: string
     required:
     - volumeID
+    type: object
   io.k8s.api.core.v1.Affinity:
     description: Affinity is a group of affinity scheduling rules.
     properties:
@@ -1913,6 +2018,7 @@ definitions:
         $ref: '#/definitions/io.k8s.api.core.v1.PodAntiAffinity'
         description: Describes pod anti-affinity scheduling rules (e.g. avoid putting
           this pod in the same node, zone, etc. as some other pod(s)).
+    type: object
   io.k8s.api.core.v1.AzureDiskVolumeSource:
     description: AzureDisk represents an Azure Data Disk mount on the host and bind
       mount to the pod.
@@ -1943,6 +2049,7 @@ definitions:
     required:
     - diskName
     - diskURI
+    type: object
   io.k8s.api.core.v1.AzureFileVolumeSource:
     description: AzureFile represents an Azure File Service mount on the host and
       bind mount to the pod.
@@ -1961,6 +2068,7 @@ definitions:
     required:
     - secretName
     - shareName
+    type: object
   io.k8s.api.core.v1.Capabilities:
     description: Adds and removes POSIX capabilities from running containers.
     properties:
@@ -1974,6 +2082,7 @@ definitions:
         items:
           type: string
         type: array
+    type: object
   io.k8s.api.core.v1.CephFSVolumeSource:
     description: Represents a Ceph Filesystem mount that lasts the lifetime of a pod
       Cephfs volumes do not support ownership management or SELinux relabeling.
@@ -2006,6 +2115,7 @@ definitions:
         type: string
     required:
     - monitors
+    type: object
   io.k8s.api.core.v1.CinderVolumeSource:
     description: Represents a cinder volume resource in Openstack. A Cinder volume
       must exist before mounting to a container. The volume must also be in the same
@@ -2030,6 +2140,7 @@ definitions:
         type: string
     required:
     - volumeID
+    type: object
   io.k8s.api.core.v1.ConfigMapEnvSource:
     description: |-
       ConfigMapEnvSource selects a ConfigMap to populate the environment variables with.
@@ -2042,6 +2153,7 @@ definitions:
       optional:
         description: Specify whether the ConfigMap must be defined
         type: boolean
+    type: object
   io.k8s.api.core.v1.ConfigMapKeySelector:
     description: Selects a key from a ConfigMap.
     properties:
@@ -2056,6 +2168,7 @@ definitions:
         type: boolean
     required:
     - key
+    type: object
   io.k8s.api.core.v1.ConfigMapProjection:
     description: |-
       Adapts a ConfigMap into a projected volume.
@@ -2079,6 +2192,7 @@ definitions:
       optional:
         description: Specify whether the ConfigMap or it's keys must be defined
         type: boolean
+    type: object
   io.k8s.api.core.v1.ConfigMapVolumeSource:
     description: |-
       Adapts a ConfigMap into a volume.
@@ -2110,6 +2224,7 @@ definitions:
       optional:
         description: Specify whether the ConfigMap or it's keys must be defined
         type: boolean
+    type: object
   io.k8s.api.core.v1.Container:
     description: A single application container that you want to run within a pod.
     properties:
@@ -2260,6 +2375,7 @@ definitions:
         type: string
     required:
     - name
+    type: object
   io.k8s.api.core.v1.ContainerPort:
     description: ContainerPort represents a network port in a single container.
     properties:
@@ -2287,6 +2403,7 @@ definitions:
         type: string
     required:
     - containerPort
+    type: object
   io.k8s.api.core.v1.DownwardAPIProjection:
     description: Represents downward API info for projecting into a projected volume.
       Note that this is identical to a downwardAPI volume source without the default
@@ -2297,6 +2414,7 @@ definitions:
         items:
           $ref: '#/definitions/io.k8s.api.core.v1.DownwardAPIVolumeFile'
         type: array
+    type: object
   io.k8s.api.core.v1.DownwardAPIVolumeFile:
     description: DownwardAPIVolumeFile represents information to create the file containing
       the pod field
@@ -2324,6 +2442,7 @@ definitions:
           currently supported.'
     required:
     - path
+    type: object
   io.k8s.api.core.v1.DownwardAPIVolumeSource:
     description: DownwardAPIVolumeSource represents a volume containing downward API
       info. Downward API volumes support ownership management and SELinux relabeling.
@@ -2341,6 +2460,7 @@ definitions:
         items:
           $ref: '#/definitions/io.k8s.api.core.v1.DownwardAPIVolumeFile'
         type: array
+    type: object
   io.k8s.api.core.v1.EmptyDirVolumeSource:
     description: Represents an empty directory for a pod. Empty directory volumes
       support ownership management and SELinux relabeling.
@@ -2357,6 +2477,7 @@ definitions:
           memory medium EmptyDir would be the minimum value between the SizeLimit
           specified here and the sum of memory limits of all containers in a pod.
           The default is nil which means that the limit is undefined. More info: http://kubernetes.io/docs/user-guide/volumes#emptydir'
+    type: object
   io.k8s.api.core.v1.EnvFromSource:
     description: EnvFromSource represents the source of a set of ConfigMaps
     properties:
@@ -2370,6 +2491,7 @@ definitions:
       secretRef:
         $ref: '#/definitions/io.k8s.api.core.v1.SecretEnvSource'
         description: The Secret to select from
+    type: object
   io.k8s.api.core.v1.EnvVar:
     description: EnvVar represents an environment variable present in a Container.
     properties:
@@ -2390,6 +2512,7 @@ definitions:
           value is not empty.
     required:
     - name
+    type: object
   io.k8s.api.core.v1.EnvVarSource:
     description: EnvVarSource represents a source for the value of an EnvVar.
     properties:
@@ -2409,6 +2532,7 @@ definitions:
       secretKeyRef:
         $ref: '#/definitions/io.k8s.api.core.v1.SecretKeySelector'
         description: Selects a key of a secret in the pod's namespace
+    type: object
   io.k8s.api.core.v1.ExecAction:
     description: ExecAction describes a "run in container" action.
     properties:
@@ -2422,6 +2546,7 @@ definitions:
         items:
           type: string
         type: array
+    type: object
   io.k8s.api.core.v1.FCVolumeSource:
     description: Represents a Fibre Channel volume. Fibre Channel volumes can only
       be mounted as read/write once. Fibre Channel volumes support ownership management
@@ -2451,6 +2576,7 @@ definitions:
         items:
           type: string
         type: array
+    type: object
   io.k8s.api.core.v1.FlexVolumeSource:
     description: FlexVolume represents a generic volume resource that is provisioned/attached
       using an exec based plugin.
@@ -2480,6 +2606,7 @@ definitions:
           secret, all secrets are passed to the plugin scripts.'
     required:
     - driver
+    type: object
   io.k8s.api.core.v1.FlockerVolumeSource:
     description: Represents a Flocker volume mounted by the Flocker agent. One and
       only one of datasetName and datasetUUID should be set. Flocker volumes do not
@@ -2492,6 +2619,7 @@ definitions:
       datasetUUID:
         description: UUID of the dataset. This is unique identifier of a Flocker dataset
         type: string
+    type: object
   io.k8s.api.core.v1.GCEPersistentDiskVolumeSource:
     description: |-
       Represents a Persistent Disk resource in Google Compute Engine.
@@ -2521,6 +2649,7 @@ definitions:
         type: boolean
     required:
     - pdName
+    type: object
   io.k8s.api.core.v1.GitRepoVolumeSource:
     description: |-
       Represents a volume that is populated with the contents of a git repository. Git repo volumes do not support ownership management. Git repo volumes support SELinux relabeling.
@@ -2541,6 +2670,7 @@ definitions:
         type: string
     required:
     - repository
+    type: object
   io.k8s.api.core.v1.GlusterfsVolumeSource:
     description: Represents a Glusterfs mount that lasts the lifetime of a pod. Glusterfs
       volumes do not support ownership management or SELinux relabeling.
@@ -2559,6 +2689,7 @@ definitions:
     required:
     - endpoints
     - path
+    type: object
   io.k8s.api.core.v1.HTTPGetAction:
     description: HTTPGetAction describes an action based on HTTP Get requests.
     properties:
@@ -2583,6 +2714,7 @@ definitions:
         type: string
     required:
     - port
+    type: object
   io.k8s.api.core.v1.HTTPHeader:
     description: HTTPHeader describes a custom header to be used in HTTP probes
     properties:
@@ -2595,6 +2727,7 @@ definitions:
     required:
     - name
     - value
+    type: object
   io.k8s.api.core.v1.Handler:
     description: Handler defines a specific action that should be taken
     properties:
@@ -2609,6 +2742,7 @@ definitions:
         $ref: '#/definitions/io.k8s.api.core.v1.TCPSocketAction'
         description: TCPSocket specifies an action involving a TCP port. TCP hooks
           not yet supported
+    type: object
   io.k8s.api.core.v1.HostAlias:
     description: HostAlias holds the mapping between IP and hostnames that will be
       injected as an entry in the pod's hosts file.
@@ -2621,6 +2755,7 @@ definitions:
       ip:
         description: IP address of the host file entry.
         type: string
+    type: object
   io.k8s.api.core.v1.HostPathVolumeSource:
     description: Represents a host path mapped into a pod. Host path volumes do not
       support ownership management or SELinux relabeling.
@@ -2634,6 +2769,7 @@ definitions:
         type: string
     required:
     - path
+    type: object
   io.k8s.api.core.v1.ISCSIVolumeSource:
     description: Represents an ISCSI disk. ISCSI volumes can only be mounted as read/write
       once. ISCSI volumes support ownership management and SELinux relabeling.
@@ -2687,6 +2823,7 @@ definitions:
     - targetPortal
     - iqn
     - lun
+    type: object
   io.k8s.api.core.v1.KeyToPath:
     description: Maps a string key to a path within a volume.
     properties:
@@ -2708,6 +2845,7 @@ definitions:
     required:
     - key
     - path
+    type: object
   io.k8s.api.core.v1.Lifecycle:
     description: Lifecycle describes actions that the management system should take
       in response to container lifecycle events. For the PostStart and PreStop lifecycle
@@ -2727,6 +2865,7 @@ definitions:
           termination is passed to the handler. Regardless of the outcome of the handler,
           the container is eventually terminated. Other management of the container
           blocks until the hook completes. More info: https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/#container-hooks'
+    type: object
   io.k8s.api.core.v1.LocalObjectReference:
     description: LocalObjectReference contains enough information to let you locate
       the referenced object inside the same namespace.
@@ -2734,6 +2873,7 @@ definitions:
       name:
         description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
         type: string
+    type: object
   io.k8s.api.core.v1.NFSVolumeSource:
     description: Represents an NFS mount that lasts the lifetime of a pod. NFS volumes
       do not support ownership management or SELinux relabeling.
@@ -2752,6 +2892,7 @@ definitions:
     required:
     - server
     - path
+    type: object
   io.k8s.api.core.v1.NodeAffinity:
     description: Node affinity is a group of node affinity scheduling rules.
     properties:
@@ -2774,6 +2915,7 @@ definitions:
           the affinity requirements specified by this field cease to be met at some
           point during pod execution (e.g. due to an update), the system may or may
           not try to eventually evict the pod from its node.
+    type: object
   io.k8s.api.core.v1.NodeSelector:
     description: A node selector represents the union of the results of one or more
       label queries over a set of nodes; that is, it represents the OR of the selectors
@@ -2786,6 +2928,7 @@ definitions:
         type: array
     required:
     - nodeSelectorTerms
+    type: object
   io.k8s.api.core.v1.NodeSelectorRequirement:
     description: A node selector requirement is a selector that contains values, a
       key, and an operator that relates the key and values.
@@ -2809,6 +2952,7 @@ definitions:
     required:
     - key
     - operator
+    type: object
   io.k8s.api.core.v1.NodeSelectorTerm:
     description: A null or empty node selector term matches no objects. The requirements
       of them are ANDed. The TopologySelectorTerm type implements a subset of the
@@ -2824,6 +2968,7 @@ definitions:
         items:
           $ref: '#/definitions/io.k8s.api.core.v1.NodeSelectorRequirement'
         type: array
+    type: object
   io.k8s.api.core.v1.ObjectFieldSelector:
     description: ObjectFieldSelector selects an APIVersioned field of an object.
     properties:
@@ -2836,6 +2981,7 @@ definitions:
         type: string
     required:
     - fieldPath
+    type: object
   io.k8s.api.core.v1.PersistentVolumeClaimVolumeSource:
     description: PersistentVolumeClaimVolumeSource references the user's PVC in the
       same namespace. This volume finds the bound PV and mounts that volume for the
@@ -2851,6 +2997,7 @@ definitions:
         type: boolean
     required:
     - claimName
+    type: object
   io.k8s.api.core.v1.PhotonPersistentDiskVolumeSource:
     description: Represents a Photon Controller persistent disk resource.
     properties:
@@ -2864,6 +3011,7 @@ definitions:
         type: string
     required:
     - pdID
+    type: object
   io.k8s.api.core.v1.PodAffinity:
     description: Pod affinity is a group of inter pod affinity scheduling rules.
     properties:
@@ -2891,6 +3039,7 @@ definitions:
         items:
           $ref: '#/definitions/io.k8s.api.core.v1.PodAffinityTerm'
         type: array
+    type: object
   io.k8s.api.core.v1.PodAffinityTerm:
     description: Defines a set of pods (namely those matching the labelSelector relative
       to the given namespace(s)) that this pod should be co-located (affinity) or
@@ -2916,6 +3065,7 @@ definitions:
         type: string
     required:
     - topologyKey
+    type: object
   io.k8s.api.core.v1.PodAntiAffinity:
     description: Pod anti affinity is a group of inter pod anti affinity scheduling
       rules.
@@ -2944,6 +3094,7 @@ definitions:
         items:
           $ref: '#/definitions/io.k8s.api.core.v1.PodAffinityTerm'
         type: array
+    type: object
   io.k8s.api.core.v1.PodDNSConfig:
     description: PodDNSConfig defines the DNS parameters of a pod in addition to those
       generated from DNSPolicy.
@@ -2970,6 +3121,7 @@ definitions:
         items:
           type: string
         type: array
+    type: object
   io.k8s.api.core.v1.PodDNSConfigOption:
     description: PodDNSConfigOption defines DNS resolver options of a pod.
     properties:
@@ -2978,6 +3130,7 @@ definitions:
         type: string
       value:
         type: string
+    type: object
   io.k8s.api.core.v1.PodReadinessGate:
     description: PodReadinessGate contains the reference to a pod condition
     properties:
@@ -2987,6 +3140,7 @@ definitions:
         type: string
     required:
     - conditionType
+    type: object
   io.k8s.api.core.v1.PodSecurityContext:
     description: PodSecurityContext holds pod-level security attributes and common
       container settings. Some fields are also present in container.securityContext.  Field
@@ -3043,6 +3197,7 @@ definitions:
         items:
           $ref: '#/definitions/io.k8s.api.core.v1.Sysctl'
         type: array
+    type: object
   io.k8s.api.core.v1.PodSpec:
     description: PodSpec is a description of a pod.
     properties:
@@ -3235,6 +3390,7 @@ definitions:
         x-kubernetes-patch-strategy: merge,retainKeys
     required:
     - containers
+    type: object
   io.k8s.api.core.v1.PodTemplateSpec:
     description: PodTemplateSpec describes the data a pod should have when created
       from a template
@@ -3246,6 +3402,7 @@ definitions:
         $ref: '#/definitions/io.k8s.api.core.v1.PodSpec'
         description: 'Specification of the desired behavior of the pod. More info:
           https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status'
+    type: object
   io.k8s.api.core.v1.PortworxVolumeSource:
     description: PortworxVolumeSource represents a Portworx volume resource.
     properties:
@@ -3263,6 +3420,7 @@ definitions:
         type: string
     required:
     - volumeID
+    type: object
   io.k8s.api.core.v1.PreferredSchedulingTerm:
     description: An empty preferred scheduling term matches all objects with implicit
       weight 0 (i.e. it's a no-op). A null preferred scheduling term matches no objects
@@ -3279,6 +3437,7 @@ definitions:
     required:
     - weight
     - preference
+    type: object
   io.k8s.api.core.v1.Probe:
     description: Probe describes a health check to be performed against a container
       to determine whether it is alive or ready to receive traffic.
@@ -3320,6 +3479,7 @@ definitions:
           to 1 second. Minimum value is 1. More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes'
         format: int32
         type: integer
+    type: object
   io.k8s.api.core.v1.ProjectedVolumeSource:
     description: Represents a projected volume source
     properties:
@@ -3337,6 +3497,7 @@ definitions:
         type: array
     required:
     - sources
+    type: object
   io.k8s.api.core.v1.QuobyteVolumeSource:
     description: Represents a Quobyte mount that lasts the lifetime of a pod. Quobyte
       volumes do not support ownership management or SELinux relabeling.
@@ -3363,6 +3524,7 @@ definitions:
     required:
     - registry
     - volume
+    type: object
   io.k8s.api.core.v1.RBDVolumeSource:
     description: Represents a Rados Block Device mount that lasts the lifetime of
       a pod. RBD volumes support ownership management and SELinux relabeling.
@@ -3402,6 +3564,7 @@ definitions:
     required:
     - monitors
     - image
+    type: object
   io.k8s.api.core.v1.ResourceFieldSelector:
     description: ResourceFieldSelector represents container resources (cpu, memory)
       and their output format
@@ -3418,6 +3581,7 @@ definitions:
         type: string
     required:
     - resource
+    type: object
   io.k8s.api.core.v1.ResourceRequirements:
     description: ResourceRequirements describes the compute resource requirements.
     properties:
@@ -3435,6 +3599,7 @@ definitions:
           explicitly specified, otherwise to an implementation-defined value. More
           info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
         type: object
+    type: object
   io.k8s.api.core.v1.SELinuxOptions:
     description: SELinuxOptions are the labels to be applied to the container
     properties:
@@ -3450,6 +3615,7 @@ definitions:
       user:
         description: User is a SELinux user label that applies to the container.
         type: string
+    type: object
   io.k8s.api.core.v1.ScaleIOVolumeSource:
     description: ScaleIOVolumeSource represents a persistent ScaleIO volume
     properties:
@@ -3494,6 +3660,7 @@ definitions:
     - gateway
     - system
     - secretRef
+    type: object
   io.k8s.api.core.v1.SecretEnvSource:
     description: |-
       SecretEnvSource selects a Secret to populate the environment variables with.
@@ -3506,6 +3673,7 @@ definitions:
       optional:
         description: Specify whether the Secret must be defined
         type: boolean
+    type: object
   io.k8s.api.core.v1.SecretKeySelector:
     description: SecretKeySelector selects a key of a Secret.
     properties:
@@ -3521,6 +3689,7 @@ definitions:
         type: boolean
     required:
     - key
+    type: object
   io.k8s.api.core.v1.SecretProjection:
     description: |-
       Adapts a secret into a projected volume.
@@ -3544,6 +3713,7 @@ definitions:
       optional:
         description: Specify whether the Secret or its key must be defined
         type: boolean
+    type: object
   io.k8s.api.core.v1.SecretVolumeSource:
     description: |-
       Adapts a Secret into a volume.
@@ -3576,6 +3746,7 @@ definitions:
         description: 'Name of the secret in the pod''s namespace to use. More info:
           https://kubernetes.io/docs/concepts/storage/volumes#secret'
         type: string
+    type: object
   io.k8s.api.core.v1.SecurityContext:
     description: SecurityContext holds security configuration that will be applied
       to a container. Some fields are present in both SecurityContext and PodSecurityContext.  When
@@ -3633,6 +3804,7 @@ definitions:
           the container runtime will allocate a random SELinux context for each container.  May
           also be set in PodSecurityContext.  If set in both SecurityContext and PodSecurityContext,
           the value specified in SecurityContext takes precedence.
+    type: object
   io.k8s.api.core.v1.ServiceAccountTokenProjection:
     description: ServiceAccountTokenProjection represents a projected service account
       token volume. This projection can be used to insert a service account token
@@ -3660,6 +3832,7 @@ definitions:
         type: string
     required:
     - path
+    type: object
   io.k8s.api.core.v1.StorageOSVolumeSource:
     description: Represents a StorageOS persistent volume resource.
     properties:
@@ -3688,6 +3861,7 @@ definitions:
           Set to "default" if you are not using namespaces within StorageOS. Namespaces
           that do not pre-exist within StorageOS will be created.
         type: string
+    type: object
   io.k8s.api.core.v1.Sysctl:
     description: Sysctl defines a kernel parameter to be set
     properties:
@@ -3700,6 +3874,7 @@ definitions:
     required:
     - name
     - value
+    type: object
   io.k8s.api.core.v1.TCPSocketAction:
     description: TCPSocketAction describes an action based on opening a socket
     properties:
@@ -3712,6 +3887,7 @@ definitions:
           must be in the range 1 to 65535. Name must be an IANA_SVC_NAME.
     required:
     - port
+    type: object
   io.k8s.api.core.v1.Toleration:
     description: The pod this Toleration is attached to tolerates any taint that matches
       the triple <key,value,effect> using the matching operator <operator>.
@@ -3744,6 +3920,7 @@ definitions:
         description: Value is the taint value the toleration matches to. If the operator
           is Exists, the value should be empty, otherwise just a regular string.
         type: string
+    type: object
   io.k8s.api.core.v1.Volume:
     description: Volume represents a named volume in a pod that may be accessed by
       any container in the pod.
@@ -3866,6 +4043,7 @@ definitions:
           on kubelets host machine
     required:
     - name
+    type: object
   io.k8s.api.core.v1.VolumeDevice:
     description: volumeDevice describes a mapping of a raw block device within a container.
     properties:
@@ -3879,6 +4057,7 @@ definitions:
     required:
     - name
     - devicePath
+    type: object
   io.k8s.api.core.v1.VolumeMount:
     description: VolumeMount describes a mounting of a Volume within a container.
     properties:
@@ -3905,6 +4084,7 @@ definitions:
     required:
     - name
     - mountPath
+    type: object
   io.k8s.api.core.v1.VolumeProjection:
     description: Projection that may be projected along with other supported volume
       types
@@ -3921,6 +4101,7 @@ definitions:
       serviceAccountToken:
         $ref: '#/definitions/io.k8s.api.core.v1.ServiceAccountTokenProjection'
         description: information about the serviceAccountToken data to project
+    type: object
   io.k8s.api.core.v1.VsphereVirtualDiskVolumeSource:
     description: Represents a vSphere volume resource.
     properties:
@@ -3941,6 +4122,7 @@ definitions:
         type: string
     required:
     - volumePath
+    type: object
   io.k8s.api.core.v1.WeightedPodAffinityTerm:
     description: The weights of all of the matched WeightedPodAffinityTerm fields
       are added per-node to find the most preferred node(s)
@@ -3957,6 +4139,7 @@ definitions:
     required:
     - weight
     - podAffinityTerm
+    type: object
   io.k8s.api.rbac.v1.PolicyRule:
     description: PolicyRule holds information that describes a policy rule, but does
       not contain information about who the rule applies to or which namespace the
@@ -4000,6 +4183,7 @@ definitions:
         type: array
     required:
     - verbs
+    type: object
   io.k8s.api.rbac.v1.Role:
     description: Role is a namespaced, logical grouping of PolicyRules that can be
       referenced as a unit by a RoleBinding.
@@ -4024,6 +4208,7 @@ definitions:
         type: array
     required:
     - rules
+    type: object
   io.k8s.api.rbac.v1.RoleRef:
     description: RoleRef contains information that points to the role being used
     properties:
@@ -4040,6 +4225,7 @@ definitions:
     - apiGroup
     - kind
     - name
+    type: object
   io.k8s.api.rbac.v1.Subject:
     description: Subject contains a reference to the object or user identities a role
       binding applies to.  This can either hold a direct API object reference, or
@@ -4066,6 +4252,7 @@ definitions:
     required:
     - kind
     - name
+    type: object
   io.k8s.apimachinery.pkg.api.resource.Quantity:
     description: |-
       Quantity is a fixed-point representation of a number. It provides convenient marshaling/unmarshaling in JSON and YAML, in addition to String() and Int64() accessors.
@@ -4110,6 +4297,7 @@ definitions:
         type: string
     required:
     - name
+    type: object
   io.k8s.apimachinery.pkg.apis.meta.v1.Initializers:
     description: Initializers tracks the progress of initialization.
     properties:
@@ -4130,6 +4318,7 @@ definitions:
           deletion.
     required:
     - pending
+    type: object
   io.k8s.apimachinery.pkg.apis.meta.v1.LabelSelector:
     description: A label selector is a label query over a set of resources. The result
       of matchLabels and matchExpressions are ANDed. An empty label selector matches
@@ -4149,6 +4338,7 @@ definitions:
           whose key field is "key", the operator is "In", and the values array contains
           only "value". The requirements are ANDed.
         type: object
+    type: object
   io.k8s.apimachinery.pkg.apis.meta.v1.LabelSelectorRequirement:
     description: A label selector requirement is a selector that contains values,
       a key, and an operator that relates the key and values.
@@ -4173,6 +4363,7 @@ definitions:
     required:
     - key
     - operator
+    type: object
   io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta:
     description: ListMeta describes metadata that synthetic resources must have, including
       lists and various status objects. A resource may have only one of {ObjectMeta,
@@ -4198,6 +4389,7 @@ definitions:
         description: selfLink is a URL representing this object. Populated by the
           system. Read-only.
         type: string
+    type: object
   io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta:
     description: ObjectMeta is metadata that all persisted resources must have, which
       includes all objects users must create.
@@ -4309,6 +4501,7 @@ definitions:
 
           Populated by the system. Read-only. More info: http://kubernetes.io/docs/user-guide/identifiers#uids
         type: string
+    type: object
   io.k8s.apimachinery.pkg.apis.meta.v1.OwnerReference:
     description: OwnerReference contains enough information to let you identify an
       owning object. Currently, an owning object must be in the same namespace, so
@@ -4340,6 +4533,7 @@ definitions:
     - kind
     - name
     - uid
+    type: object
   io.k8s.apimachinery.pkg.apis.meta.v1.Status:
     description: Status is a return value for calls that don't return other objects.
     properties:
@@ -4378,6 +4572,7 @@ definitions:
         description: 'Status of the operation. One of: "Success" or "Failure". More
           info: https://git.k8s.io/community/contributors/devel/api-conventions.md#spec-and-status'
         type: string
+    type: object
   io.k8s.apimachinery.pkg.apis.meta.v1.StatusCause:
     description: StatusCause provides more information about an api.Status failure,
       including cases when multiple errors are encountered.
@@ -4398,6 +4593,7 @@ definitions:
         description: A machine-readable description of the cause of the error. If
           this value is empty there is no information available.
         type: string
+    type: object
   io.k8s.apimachinery.pkg.apis.meta.v1.StatusDetails:
     description: StatusDetails is a set of additional properties that MAY be set by
       the server to provide additional information about a response. The Reason field
@@ -4435,6 +4631,7 @@ definitions:
         description: 'UID of the resource. (when there is a single resource which
           can be described). More info: http://kubernetes.io/docs/user-guide/identifiers#uids'
         type: string
+    type: object
   io.k8s.apimachinery.pkg.apis.meta.v1.Time:
     description: Time is a wrapper around time.Time which supports correct marshaling
       to YAML and JSON.  Wrappers are provided for many of the factory methods that
