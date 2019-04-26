@@ -249,7 +249,7 @@ func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
 		if !strings.Contains(overrideSrc, filepath.FromSlash("/env/")) {
 			data, err := ioutil.ReadFile(overrideSrc)
 			if err != nil {
-				return errors.Wrapf(err,"read %s", overrideSrc)
+				return errors.Wrapf(err, "read %s", overrideSrc)
 			}
 			writeTemplateParts := strings.Split(overrideSrc, string(os.PathSeparator))
 			depChartsDir := filepath.Join(chartName, "charts")
