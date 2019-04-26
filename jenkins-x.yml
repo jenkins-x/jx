@@ -112,7 +112,7 @@ pipelineConfig:
                 # needs helm in the image for install_gitops_integration_test.go
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: make
-                args: ['distro']
+                args: ['release-distro']
 
               - name: update-downstream
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
