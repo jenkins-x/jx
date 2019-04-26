@@ -261,7 +261,7 @@ func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
 			if err != nil {
 				return errors.Wrapf(err, "Checking directory %s", depChartDir)
 			}
-			if !exists {
+			if !exists { // XXX this code is doomed to fail?
 				chartArchives, _ := filepath.Glob(filepath.Join(depChartsDir, depChartName+"*.tgz"))
 				if len(chartArchives) == 1 {
 					log.Infof("Exploding chart %s\n", chartArchives[0])
@@ -271,6 +271,9 @@ func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
 					}
 					// Remove the unexploded chart
 					os.Remove(chartArchives[0])
+				} else if len(chartArchives) > 1 {
+					return errors.Errorf("%d chart(s) where found matching %s - only 1 chart per directory is supported",
+						len(chartArchives), filepath.Join(depChartsDir, depChartName+"*.tgz"))
 				}
 			}
 
