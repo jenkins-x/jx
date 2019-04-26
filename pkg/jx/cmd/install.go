@@ -116,6 +116,7 @@ type InstallFlags struct {
 	NoGitOpsEnvSetup            bool
 	NoGitOpsVault               bool
 	NextGeneration              bool
+	StaticJenkins               bool
 }
 
 // Secrets struct for secrets
@@ -342,7 +343,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().StringVarP(&flags.Version, "version", "", "", "The specific platform version to install")
 	cmd.Flags().BoolVarP(&flags.Prow, "prow", "", false, "Enable Prow to implement Serverless Jenkins and support ChatOps on Pull Requests")
 	cmd.Flags().BoolVarP(&flags.Tekton, "tekton", "", false, "Enables the Tekton pipeline engine (which used to be called knative build pipeline) along with Prow to provide Serverless Jenkins. Otherwise we default to use Knative Build if you enable Prow")
-	cmd.Flags().BoolVarP(&flags.KnativeBuild, "knative-build", "", false, "Note this option is deprecated now in favour of tekton. If specified this will keep using the old knative build with Prow instead of the stratgegic tekton")
+	cmd.Flags().BoolVarP(&flags.KnativeBuild, "knative-build", "", false, "Note this option is deprecated now in favour of tekton. If specified this will keep using the old knative build with Prow instead of the strategic tekton")
 	cmd.Flags().BoolVarP(&flags.ExternalDNS, "external-dns", "", false, "Installs external-dns into the cluster. ExternalDNS manages service DNS records for your cluster, providing you've setup your domain record")
 	cmd.Flags().BoolVarP(&flags.GitOpsMode, "gitops", "", false, "Creates a git repository for the Dev environment to manage the installation, configuration, upgrade and addition of Apps in Jenkins X all via GitOps")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvApply, "no-gitops-env-apply", "", false, "When using GitOps to create the source code for the development environment and installation, don't run 'jx step env apply' to perform the install")
@@ -354,6 +355,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().StringVarP(&flags.BuildPackName, "buildpack", "", "", "The name of the build pack to use for the Team")
 	cmd.Flags().BoolVarP(&flags.Kaniko, "kaniko", "", false, "Use Kaniko for building docker images")
 	cmd.Flags().BoolVarP(&flags.NextGeneration, "ng", "", false, "Use the Next Generation Jenkins X features like Prow, Tekton, No Tiller, Vault, Dev GitOps")
+	cmd.Flags().BoolVarP(&flags.StaticJenkins, "static-jenkins", "", false, "Install a static Jenkins master to use as the pipeline engine. Note this functionality is deprecated in favour of running serverless Tekton builds")
 
 	opts.AddGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
@@ -371,8 +373,20 @@ func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 func (options *InstallOptions) checkFlags() error {
 	flags := &options.Flags
 
+	if flags.NextGeneration && flags.StaticJenkins {
+		return fmt.Errorf("Incompatible options '--ng' and '--static-jenkins'. Please pick only one of them. We recommend --ng as --static-jenkins is deprecated")
+	}
+
+	if flags.Tekton && flags.StaticJenkins {
+		return fmt.Errorf("Incompatible options '--tekton' and '--static-jenkins'. Please pick only one of them. We recommend --tekton as --static-jenkins is deprecated")
+	}
+
 	if flags.KnativeBuild && flags.Tekton {
 		return fmt.Errorf("Incompatible options '--knative-build' and '--tekton'. Please pick only one of them. We recommend --tekton as --knative-build is deprecated")
+	}
+
+	if flags.Prow {
+		flags.StaticJenkins = false
 	}
 	if flags.Prow && !flags.KnativeBuild {
 		flags.Tekton = true
@@ -385,6 +399,7 @@ func (options *InstallOptions) checkFlags() error {
 		}
 	}
 	if flags.NextGeneration {
+		flags.StaticJenkins = false
 		flags.KnativeBuild = false
 		flags.GitOpsMode = true
 		flags.Vault = true
@@ -1053,19 +1068,21 @@ func (options *InstallOptions) configureHelmRepo() error {
 }
 
 func (options *InstallOptions) selectJenkinsInstallation() error {
-	if !options.BatchMode && !options.Flags.Prow {
-		jenkinsInstallOptions := []string{
-			ServerlessJenkins,
-			StaticMasterJenkins,
-		}
-		jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins installation type:", ServerlessJenkins, "", options.In, options.Out, options.Err)
-		if err != nil {
-			return errors.Wrap(err, "picking Jenkins installation type")
-		}
-		if jenkinsInstallOption == ServerlessJenkins {
-			options.Flags.Prow = true
-			if !options.Flags.KnativeBuild {
-				options.Flags.Tekton = true
+	if !options.BatchMode {
+		if !options.Flags.Prow && !options.Flags.StaticJenkins {
+			jenkinsInstallOptions := []string{
+				ServerlessJenkins,
+				StaticMasterJenkins,
+			}
+			jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins installation type:", ServerlessJenkins, "", options.In, options.Out, options.Err)
+			if err != nil {
+				return errors.Wrap(err, "picking Jenkins installation type")
+			}
+			if jenkinsInstallOption == ServerlessJenkins {
+				options.Flags.Prow = true
+				if !options.Flags.KnativeBuild {
+					options.Flags.Tekton = true
+				}
 			}
 		}
 	}
