@@ -41,7 +41,7 @@ func (options *CommonOptions) CreatePullRequest(o *PullRequestDetails, modifyFn 
 	}
 
 	if o.Message == "" {
-		return util.MissingOption("message")
+		log.Warn("missing option: 'message' when creating a PR\n")
 	}
 	username := provider.CurrentUsername()
 	if username == "" {

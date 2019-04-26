@@ -17,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	pipelineapi "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
+	"k8s.io/apimachinery/pkg/util/uuid"
 )
 
 var (
@@ -148,8 +149,9 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 		o.PullRequestDetails.Title = fmt.Sprintf("%s version upgrade of %s", o.Kind, o.Name)
 		o.PullRequestDetails.Message = fmt.Sprintf("change %s to version %s", o.Name, o.Version)
 	} else {
-		o.PullRequestDetails.BranchNameText = "upgrade-chart-versions"
+		o.PullRequestDetails.BranchNameText = "upgrade-chart-versions-" + string(uuid.NewUUID())
 		o.PullRequestDetails.Title = "upgrade chart versions"
+		o.PullRequestDetails.Message = fmt.Sprintf("change %s to version %s", o.Name, o.Version)
 	}
 
 	opts.Dir = dir

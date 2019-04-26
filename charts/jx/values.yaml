@@ -105,6 +105,7 @@ args:
 
 env:
   JX_LOG_FORMAT: json
+  JX_BUILD_NUMBER: "1"
 
 internalPort: 80
 

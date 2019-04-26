@@ -172,7 +172,7 @@ func cloneGitHubPagesBranchToTempDir(sourceURL string, gitClient gits.Gitter, br
 		return ghPagesDir, err
 	}
 
-	err = gitClient.ShallowCloneBranch(sourceURL, branchName, ghPagesDir)
+	err = gitClient.ShallowClone(ghPagesDir, sourceURL, branchName, "")
 	if err != nil {
 		log.Infof("error doing shallow clone of branch %s: %v", branchName, err)
 		// swallow the error
