@@ -246,7 +246,7 @@ func (o *StepHelmApplyOptions) applyTemplateOverrides(chartName string) error {
 		return errors.Wrap(err, "Failed to find templates")
 	}
 	for _, overrideSrc := range templateOverrides {
-		if !strings.Contains(overrideSrc, "/env/") {
+		if !strings.Contains(overrideSrc, filepath.FromSlash("/env/")) {
 			data, err := ioutil.ReadFile(overrideSrc)
 			if err != nil {
 				return errors.Wrapf(err,"read %s", overrideSrc)
