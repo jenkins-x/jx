@@ -19,11 +19,11 @@ import (
 
 var (
 	upgradeAddonsLong = templates.LongDesc(`
-		Upgrades the Jenkins X platform if there is a newer release
+		Upgrades any Addons added to Jenkins X if there are any new releases available
 `)
 
 	upgradeAddonsExample = templates.Examples(`
-		# Upgrades the Jenkins X platform 
+		# Upgrades any Addons added to Jenkins X
 		jx upgrade addons
 	`)
 )
@@ -59,8 +59,7 @@ func NewCmdUpgradeAddons(commonOpts *opts.CommonOptions) *cobra.Command {
 			CheckErr(err)
 		},
 	}
-	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The Namespace to promote to")
-	cmd.Flags().StringVarP(&options.Set, "set", "s", "", "The Helm parameters to pass in while upgrading")
+	options.addFlags(cmd)
 
 	options.InstallFlags.addCloudEnvOptions(cmd)
 
@@ -70,7 +69,7 @@ func NewCmdUpgradeAddons(commonOpts *opts.CommonOptions) *cobra.Command {
 }
 
 func (options *UpgradeAddonsOptions) addFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVarP(&options.Namespace, "namespace", "", "", "The Namespace to upgrade")
+	cmd.Flags().StringVarP(&options.Namespace, "namespace", "n", "", "The Namespace to upgrade")
 	cmd.Flags().StringVarP(&options.Set, "set", "s", "", "The Helm parameters to pass in while upgrading")
 
 }
@@ -116,7 +115,11 @@ func (o *UpgradeAddonsOptions) Run() error {
 		for _, k := range o.Args {
 			chart := charts[k]
 			if chart == "" {
-				return errors.Wrapf(err, "failed to match addon %s", k)
+				return errors.New(fmt.Sprintf("Could not find addon %s in the list of addons", k))
+			}
+			status := releases[k].Status
+			if status == "" {
+				return errors.New(fmt.Sprintf("Could not find %s chart %s installed in namespace %s\n", util.ColorInfo(k), util.ColorInfo(chart), util.ColorInfo(ns)))
 			}
 			keys = append(keys, k)
 		}
@@ -128,9 +131,6 @@ func (o *UpgradeAddonsOptions) Run() error {
 		chart := charts[k]
 		status := releases[k].Status
 		name := k
-		if name == k {
-			name = "kube-cd"
-		}
 		if status != "" {
 			log.Infof("Upgrading %s chart %s...\n", util.ColorInfo(name), util.ColorInfo(chart))
 
@@ -163,9 +163,10 @@ func (o *UpgradeAddonsOptions) Run() error {
 				SetValues:   values,
 				UpgradeOnly: true,
 			}
+			// TODO this will fail to upgrade file system charts like Istio
 			err = o.InstallChartWithOptions(helmOptions)
 			if err != nil {
-				log.Warnf("Failed to upgrade %s chart %s: %v\n", name, chart, err)
+				return errors.Wrapf(err, "Failed to upgrade %s chart %s: %v\n", name, chart, err)
 			}
 
 			if k == kube.DefaultProwReleaseName {
