@@ -173,7 +173,7 @@ func (o *StepEnvApplyOptions) Run() error {
 		// ensure there's a development namespace setup
 		err = kube.EnsureNamespaceCreated(kubeClient, ns, nil, nil)
 		if err != nil {
-			return errors.Wrapf(err, "creating  namespace %s for environment", ns)
+			return errors.Wrapf(err, "creating namespace %s for environment", ns)
 		}
 	}
 

@@ -1664,7 +1664,7 @@ func (options *InstallOptions) applyGitOpsDevEnvironmentConfig(gitOpsEnvDir stri
 
 			err := envApplyOptions.Run()
 			if err != nil {
-				return errors.Wrap(err, "appyting the dev environment configuration")
+				return errors.Wrap(err, "applying the dev environment configuration")
 			}
 		}
 	}
