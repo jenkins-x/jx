@@ -35,15 +35,12 @@ CGO_ENABLED = 0
 # set dev version unless VERSION is explicitly set via environment
 VERSION ?= $(shell echo "$$(git describe --abbrev=0 --tags 2>/dev/null)-dev+$(REV)" | sed 's/^v//')
 
-FEATURE_FLAG_TOKEN ?= oss
-
 BUILDFLAGS :=  -ldflags \
   " -X $(ROOT_PACKAGE)/pkg/version.Version=$(VERSION)\
 		-X $(ROOT_PACKAGE)/pkg/version.Revision='$(REV)'\
 		-X $(ROOT_PACKAGE)/pkg/version.Branch='$(BRANCH)'\
 		-X $(ROOT_PACKAGE)/pkg/version.BuildDate='$(BUILD_DATE)'\
-		-X $(ROOT_PACKAGE)/pkg/version.GoVersion='$(GO_VERSION)'\
-		-X $(ROOT_PACKAGE)/pkg/features.FeatureFlagToken=$(FEATURE_FLAG_TOKEN)"
+		-X $(ROOT_PACKAGE)/pkg/version.GoVersion='$(GO_VERSION)'"
 
 ifdef DEBUG
 BUILDFLAGS := -gcflags "all=-N -l" $(BUILDFLAGS)
@@ -196,9 +193,9 @@ release: check ## Release the binary
 distro:
 	rm -rf build release && mkdir build release
 
-	CGO_ENABLED=$(CGO_ENABLED) FEATURE_FLAG_TOKEN=$(FEATURE_FLAG_TOKEN) GOOS=darwin GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/darwin/$(NAME) cmd/jx/jx.go
-	CGO_ENABLED=$(CGO_ENABLED) FEATURE_FLAG_TOKEN=$(FEATURE_FLAG_TOKEN) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/$(NAME) cmd/jx/jx.go
-	CGO_ENABLED=$(CGO_ENABLED) FEATURE_FLAG_TOKEN=$(FEATURE_FLAG_TOKEN) GOOS=windows GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME)-windows-amd64.exe cmd/jx/jx.go
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=darwin GOARCH=amd64 $(GO) build $(BUILDFLAGS) -X $(ROOT_PACKAGE)/pkg/features.FeatureFlagToken=$(FEATURE_FLAG_TOKEN) -o build/darwin/$(NAME) cmd/jx/jx.go
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -X $(ROOT_PACKAGE)/pkg/features.FeatureFlagToken=$(FEATURE_FLAG_TOKEN) -o build/linux/$(NAME) cmd/jx/jx.go
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=amd64 $(GO) build $(BUILDFLAGS) -X $(ROOT_PACKAGE)/pkg/features.FeatureFlagToken=$(FEATURE_FLAG_TOKEN) -o build/$(NAME)-windows-amd64.exe cmd/jx/jx.go
 	zip --junk-paths release/cjxd-$(NAME)-windows-amd64.zip build/$(NAME)-windows-amd64.exe README.md LICENSE
 
 	chmod +x build/darwin/$(NAME)
