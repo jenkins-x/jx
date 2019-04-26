@@ -1010,7 +1010,7 @@ func (options *InstallOptions) configureAndInstallProw(namespace string, gitOpsD
 		options.OAUTHToken = pipelineUser.ApiToken
 		err = options.InstallProw(options.Flags.Tekton, options.Flags.ExternalDNS, options.Flags.GitOpsMode, gitOpsDir, gitOpsEnvDir, pipelineUser.Username)
 		if err != nil {
-			errors.Wrap(err, "installing Prow")
+			return errors.Wrap(err, "installing Prow")
 		}
 	}
 	return nil
