@@ -29,6 +29,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/extensions"
 
+	"github.com/jenkins-x/jx/pkg/features"
 	"github.com/jenkins-x/jx/pkg/log"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/clients"
@@ -59,6 +60,8 @@ func NewJXCommand(f clients.Factory, in terminal.FileReader, out terminal.FileWr
 		Short: "jx is a command line tool for working with Jenkins X",
 		Run:   runHelp,
 	}
+
+	features.Init()
 
 	commonOpts := opts.NewCommonOptionsWithTerm(f, in, out, err)
 

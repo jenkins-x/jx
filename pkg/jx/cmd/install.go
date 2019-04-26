@@ -32,6 +32,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/cloud/iks"
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/features"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	configio "github.com/jenkins-x/jx/pkg/io"
@@ -406,6 +407,17 @@ func (options *InstallOptions) checkFlags() error {
 		}
 	}
 
+	return nil
+}
+
+// CheckFeatures - determines if the various features have been enabled
+func (options *InstallOptions) CheckFeatures() error {
+	if options.Flags.Tekton {
+		return features.CheckTektonEnabled()
+	}
+	if options.Flags.Prow && options.Flags.KnativeBuild {
+		return features.CheckJenkinsFileRunner()
+	}
 	return nil
 }
 

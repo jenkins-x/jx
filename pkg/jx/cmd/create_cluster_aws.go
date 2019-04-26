@@ -10,6 +10,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
+	"github.com/jenkins-x/jx/pkg/features"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/kube"
@@ -84,6 +85,12 @@ func NewCmdCreateClusterAWS(commonOpts *opts.CommonOptions) *cobra.Command {
 		Short:   "Create a new Kubernetes cluster on AWS with kops",
 		Long:    createClusterAWSLong,
 		Example: createClusterAWSExample,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := features.IsEnabled(cmd)
+			CheckErr(err)
+			err = options.InstallOptions.CheckFeatures()
+			CheckErr(err)
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
