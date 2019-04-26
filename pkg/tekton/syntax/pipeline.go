@@ -885,12 +885,9 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		t.SetDefaults(context.Background())
 
 		ws := &tektonv1alpha1.TaskResource{
-			Name: "workspace",
-			Type: tektonv1alpha1.PipelineResourceTypeGit,
-		}
-
-		if wsPath != "" {
-			ws.TargetPath = wsPath
+			Name:       "workspace",
+			TargetPath: wsPath,
+			Type:       tektonv1alpha1.PipelineResourceTypeGit,
 		}
 
 		t.Spec.Inputs = &tektonv1alpha1.Inputs{
@@ -943,15 +940,11 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		ts.computeWorkspace(parentWorkspace)
 
 		for i, nested := range s.Stages {
-			nestedWsPath := ""
-			if wsPath != "" && i == 0 {
-				nestedWsPath = wsPath
-			}
 			var nestedPreviousSibling *transformedStage
 			if i > 0 {
 				nestedPreviousSibling = tasks[i-1]
 			}
-			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, nestedWsPath, env, agent, *ts.Stage.Options.Workspace, stageContainer, depth+1, &ts, nestedPreviousSibling, podTemplates)
+			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, wsPath, env, agent, *ts.Stage.Options.Workspace, stageContainer, depth+1, &ts, nestedPreviousSibling, podTemplates)
 			if err != nil {
 				return nil, err
 			}
@@ -967,12 +960,8 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		ts := transformedStage{Stage: s, Depth: depth, EnclosingStage: enclosingStage, PreviousSiblingStage: previousSiblingStage}
 		ts.computeWorkspace(parentWorkspace)
 
-		for i, nested := range s.Parallel {
-			nestedWsPath := ""
-			if wsPath != "" && i == 0 {
-				nestedWsPath = wsPath
-			}
-			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, nestedWsPath, env, agent, *ts.Stage.Options.Workspace, stageContainer, depth+1, &ts, nil, podTemplates)
+		for _, nested := range s.Parallel {
+			nestedTask, err := stageToTask(nested, pipelineIdentifier, buildIdentifier, namespace, wsPath, env, agent, *ts.Stage.Options.Workspace, stageContainer, depth+1, &ts, nil, podTemplates)
 			if err != nil {
 				return nil, err
 			}
@@ -1201,11 +1190,7 @@ func (j *ParsedPipeline) GenerateCRDs(pipelineIdentifier string, buildIdentifier
 	for i, s := range j.Stages {
 		isLastStage := i == len(j.Stages)-1
 
-		wsPath := ""
-		if len(tasks) == 0 {
-			wsPath = sourceDir
-		}
-		stage, err := stageToTask(s, pipelineIdentifier, buildIdentifier, namespace, wsPath, baseEnv, j.Agent, "default", parentContainer, 0, nil, previousStage, podTemplates)
+		stage, err := stageToTask(s, pipelineIdentifier, buildIdentifier, namespace, sourceDir, baseEnv, j.Agent, "default", parentContainer, 0, nil, previousStage, podTemplates)
 		if err != nil {
 			return nil, nil, nil, err
 		}

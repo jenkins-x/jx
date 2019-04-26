@@ -206,7 +206,7 @@ items:
     inputs:
       resources:
       - name: workspace
-        targetPath: ""
+        targetPath: source
         type: git
     steps:
     - args:
