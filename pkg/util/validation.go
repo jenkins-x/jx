@@ -7,16 +7,21 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// ValidateYaml generates a JSON schema for the given struct type, and then validates the given YAML against that
-// schema, ignoring Containers and missing fields.
-func ValidateYaml(target interface{}, data []byte) ([]string, error) {
+// GenerateSchema generates a JSON schema for the given struct type and returns it.
+func GenerateSchema(target interface{}) *schemagen.Schema {
 	reflector := schemagen.Reflector{
 		IgnoredTypes: []interface{}{
 			corev1.Container{},
 		},
 		RequiredFromJSONSchemaTags: true,
 	}
-	schema := reflector.Reflect(target)
+	return reflector.Reflect(target)
+}
+
+// ValidateYaml generates a JSON schema for the given struct type, and then validates the given YAML against that
+// schema, ignoring Containers and missing fields.
+func ValidateYaml(target interface{}, data []byte) ([]string, error) {
+	schema := GenerateSchema(target)
 
 	dataAsJSON, err := yaml.YAMLToJSON(data)
 	if err != nil {

@@ -8,7 +8,6 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
@@ -16,39 +15,29 @@ import (
 )
 
 var (
-	validateBuildpacksLong = templates.LongDesc(`
-		Applies the build pack for a project to add any missing files like a Jenkinsfile
-`)
-
 	repoNames = []string{
 		"classic",
 		"kubernetes",
 	}
 )
 
-// StepBuildPackValidateOptions contains the command line flags
-type StepBuildPackValidateOptions struct {
+// StepSyntaxValidateBuildPacksOptions contains the command line flags
+type StepSyntaxValidateBuildPacksOptions struct {
 	StepOptions
-
-	Dir                     string
-	Jenkinsfile             string
-	DraftPack               string
-	DisableJenkinsfileCheck bool
 }
 
-// NewCmdStepBuildPackValidate Creates a new Command object
-func NewCmdStepBuildPackValidate(commonOpts *opts.CommonOptions) *cobra.Command {
-	options := &StepBuildPackValidateOptions{
+// NewCmdStepSyntaxValidateBuildPacks Creates a new Command object
+func NewCmdStepSyntaxValidateBuildPacks(commonOpts *opts.CommonOptions) *cobra.Command {
+	options := &StepSyntaxValidateBuildPacksOptions{
 		StepOptions: StepOptions{
 			CommonOptions: commonOpts,
 		},
 	}
 
 	cmd := &cobra.Command{
-		Use:     "validate",
+		Use:     "buildpacks",
 		Short:   "Validates all available build packs",
-		Long:    validateBuildpacksLong,
-		Example: "validate",
+		Example: "buildpacks",
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args
@@ -61,7 +50,7 @@ func NewCmdStepBuildPackValidate(commonOpts *opts.CommonOptions) *cobra.Command 
 }
 
 // Run implements this command
-func (o *StepBuildPackValidateOptions) Run() error {
+func (o *StepSyntaxValidateBuildPacksOptions) Run() error {
 	var err error
 
 	draftDir, err := util.DraftDir()

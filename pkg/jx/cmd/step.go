@@ -53,6 +53,7 @@ func NewCmdStep(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdStepPost(commonOpts))
 	cmd.AddCommand(NewCmdStepRelease(commonOpts))
 	cmd.AddCommand(NewCmdStepSplitMonorepo(commonOpts))
+	cmd.AddCommand(NewCmdStepSyntax(commonOpts))
 	cmd.AddCommand(NewCmdStepTag(commonOpts))
 	cmd.AddCommand(NewCmdStepValidate(commonOpts))
 	cmd.AddCommand(NewCmdStepVerify(commonOpts))
