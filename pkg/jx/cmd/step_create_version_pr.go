@@ -150,6 +150,7 @@ func (o *StepCreateVersionPullRequestOptions) Run() error {
 	} else {
 		o.PullRequestDetails.BranchNameText = "upgrade-chart-versions"
 		o.PullRequestDetails.Title = "upgrade chart versions"
+		o.PullRequestDetails.Message = fmt.Sprintf("change %s to version %s", o.Name, o.Version)
 	}
 
 	opts.Dir = dir
