@@ -107,13 +107,14 @@ pipelineConfig:
                 image: gcr.io/jenkinsxio/builder-jx:0.1.332
                 command: ./jx/scripts/update-bot.sh
 
-              - name: update-downstream
-                image: gcr.io/jenkinsxio/builder-go:0.1.332
-                command: ./jx/scripts/update-website.sh
-
               - name: distro
                 #image: docker.io/golang:1.11.5
                 # needs helm in the image for install_gitops_integration_test.go
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: make
                 args: ['distro']
+
+              - name: update-downstream
+                image: gcr.io/jenkinsxio/builder-go:0.1.332
+                command: ./jx/scripts/update-website.sh
+
