@@ -1762,7 +1762,7 @@ func (o *CommonOptions) CreateWebhookProw(gitURL string, gitProvider gits.GitPro
 	}
 	baseURL, err := services.GetServiceURLFromName(client, "hook", ns)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "in namespace %s", ns)
 	}
 	webhookUrl := util.UrlJoin(baseURL, "hook")
 
