@@ -11,13 +11,13 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/ghodss/yaml"
 
 	"github.com/pkg/errors"
 
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
@@ -780,12 +780,6 @@ func LocateAppResource(helmer helm.Helmer, chartDir string, appName string) (*je
 			return nil, "", errors.Wrapf(err, "creating template work dir %s", templateWorkDir)
 		}
 	}
-	err = helmer.Template(chartDir, appName, "", templateWorkDir, false, make([]string, 0), make([]string, 0))
-	if err != nil {
-		return nil, "", err
-	}
-	completedTemplatesDir := filepath.Join(templateWorkDir, appName, "templates")
-	templates, _ := ioutil.ReadDir(completedTemplatesDir)
 	app := &jenkinsv1.App{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "App",
@@ -796,6 +790,13 @@ func LocateAppResource(helmer helm.Helmer, chartDir string, appName string) (*je
 		},
 		Spec: jenkinsv1.AppSpec{},
 	}
+	err = helmer.Template(chartDir, appName, "", templateWorkDir, false, make([]string, 0), make([]string, 0))
+	if err != nil {
+		templateWorkDir = chartDir
+	}
+	completedTemplatesDir := filepath.Join(templateWorkDir, appName, "templates")
+	templates, _ := ioutil.ReadDir(completedTemplatesDir)
+
 	filename := fmt.Sprintf("%s-app.yaml", appName)
 	possibles := make([]string, 0)
 	for _, template := range templates {
