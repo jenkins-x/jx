@@ -104,8 +104,11 @@ args:
   - "previews"
 
 env:
+  # lets use JSON output in logs
   JX_LOG_FORMAT: json
-  JX_BUILD_NUMBER: B1
+
+  # lets mark this pod as being a CI/CD pipeline job so reuse the pipeline git user
+  PIPELINE_KIND: dummy
 
 internalPort: 80
 
