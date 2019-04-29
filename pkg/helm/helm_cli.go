@@ -241,8 +241,12 @@ func (h *HelmCLI) RemoveRequirementsLock() error {
 func (h *HelmCLI) BuildDependency() error {
 	if h.Debug {
 		log.Infof("Running %s dependency build in %s\n", h.Binary, util.ColorInfo(h.CWD))
+		out, err := h.runHelmWithOutput("dependency", "build")
+		log.Infof(out)
+		return err
+	} else {
+		return h.runHelm("dependency", "build")
 	}
-	return h.runHelm("dependency", "build")
 }
 
 // InstallChart installs a helm chart according with the given flags

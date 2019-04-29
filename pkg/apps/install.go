@@ -123,6 +123,13 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 			if releaseName == "" {
 				releaseName = fmt.Sprintf("%s-%s", o.Namespace, chartDetails.Name)
 			}
+			if helm.IsLocal(chartName) {
+				// We need to manually build the dependencies
+				err = opts.Helmer.BuildDependency()
+				if err != nil {
+					return errors.Wrapf(err, "building dependencies for %s", chartName)
+				}
+			}
 			err = opts.AddApp(chartName, dir, chartDetails.Name, chartDetails.Version, chartDetails.Values, repository,
 				username, password,
 				releaseName,
@@ -346,7 +353,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 			chartDetails.Version = version
 		}
 
-		requirements, err := helm.LoadRequirementsFile(helm.RequirementsFileName)
+		requirements, err := helm.LoadRequirementsFile(filepath.Join(chartDir, helm.RequirementsFileName))
 		if err != nil {
 			return &chartDetails, errors.Wrapf(err, "loading requirements.yaml for %s", chartDir)
 		}
