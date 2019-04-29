@@ -57,6 +57,11 @@ type StableVersion struct {
 // LoadStableVersion loads the stable version data from the version configuration directory returning an empty object if there is
 // no specific stable version configuration available
 func LoadStableVersion(wrkDir string, kind VersionKind, name string) (*StableVersion, error) {
+	if filepath.IsAbs(name) {
+		log.Infof("Skipping stable version as chart name is an absolute path (%s)\n", util.ColorInfo(name))
+		version := &StableVersion{}
+		return version, nil
+	}
 	path := filepath.Join(wrkDir, string(kind), name+".yml")
 	return LoadStableVersionFile(path)
 }
