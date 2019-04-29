@@ -3,14 +3,16 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
-
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/apps"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/table"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/kubernetes"
@@ -19,10 +21,11 @@ import (
 // GetAppsOptions containers the CLI options
 type GetAppsOptions struct {
 	GetOptions
-	Namespace  string
-	ShowStatus bool
-	GitOps     bool
-	DevEnv     *v1.Environment
+	Namespace      string
+	ShowStatus     bool
+	GitOps         bool
+	DevEnv         *v1.Environment
+	ConfigureGitFn gits.ConfigureGitFn
 }
 
 type appsResult struct {
@@ -96,14 +99,13 @@ func NewCmdGetApps(commonOpts *opts.CommonOptions) *cobra.Command {
 	}
 	options.addGetFlags(cmd)
 	cmd.Flags().StringVarP(&options.Namespace, optionNamespace, "n", "", "The namespace where you want to search the apps in")
-	cmd.Flags().BoolVarP(&options.ShowStatus, "status", "s", false, "Shows detailed information about the state of the app")
 	return cmd
 }
 
 // Run implements this command
 func (o *GetAppsOptions) Run() error {
-	kubeClient, err := o.KubeClient()
 	o.GitOps, o.DevEnv = o.GetDevEnv()
+	kubeClient, err := o.GetOptions.KubeClient()
 	if err != nil {
 		return err
 	}
@@ -111,16 +113,50 @@ func (o *GetAppsOptions) Run() error {
 	if err != nil {
 		return errors.Wrapf(err, "getting jx client")
 	}
+	envsDir, err := o.GetOptions.EnvironmentsDir()
+	if err != nil {
+		return errors.Wrap(err, "getting the the GitOps environments dir")
+	}
 	opts := apps.InstallOptions{
-		In:        o.In,
-		DevEnv:    o.DevEnv,
-		Verbose:   o.Verbose,
-		Err:       o.Err,
-		Out:       o.Out,
-		GitOps:    o.GitOps,
-		BatchMode: o.BatchMode,
-		Helmer:    o.Helm(),
-		JxClient:  jxClient,
+		In:              o.In,
+		DevEnv:          o.DevEnv,
+		Verbose:         o.Verbose,
+		Err:             o.Err,
+		Out:             o.Out,
+		GitOps:          o.GitOps,
+		BatchMode:       o.BatchMode,
+		Helmer:          o.Helm(),
+		JxClient:        jxClient,
+		EnvironmentsDir: envsDir,
+	}
+
+	if o.GetSecretsLocation() == secrets.VaultLocationKind {
+		teamName, _, err := o.TeamAndEnvironmentNames()
+		if err != nil {
+			return err
+		}
+		opts.TeamName = teamName
+		client, err := o.SystemVaultClient("")
+		if err != nil {
+			return err
+		}
+		opts.VaultClient = client
+	}
+
+	if o.GitOps {
+		msg := "Unable to specify --%s when using GitOps for your dev environment"
+		if o.Namespace != "" {
+			return util.InvalidOptionf(optionNamespace, o.ReleaseName, msg, optionNamespace)
+		}
+		gitProvider, _, err := o.CreateGitProviderForURLWithoutKind(o.DevEnv.Spec.Source.URL)
+		if err != nil {
+			return errors.Wrapf(err, "creating git provider for %s", o.DevEnv.Spec.Source.URL)
+		}
+		environmentsDir := envsDir
+		opts.GitProvider = gitProvider
+		opts.Gitter = o.Git()
+		opts.EnvironmentsDir = environmentsDir
+		opts.ConfigureGitFn = o.ConfigureGitFn
 	}
 
 	apps, err := opts.GetApps(o.Args)
@@ -135,19 +171,6 @@ func (o *GetAppsOptions) Run() error {
 
 		fmt.Fprint(o.Out, "No Apps found\n")
 		return nil
-	}
-
-	if o.ShowStatus {
-		differentAppsInSlice, err := checkDifferentAppsInAppsSlice(apps)
-		if err != nil {
-			fmt.Fprintln(o.Out, "There was a problem trying to show the status of the app: ", err)
-			return nil
-		}
-		if differentAppsInSlice {
-			fmt.Fprint(o.Out, "Different apps provided. Provide only one app to check the status of\n")
-			return nil
-		}
-		return o.generateAppStatusOutput(&apps.Items[0])
 	}
 
 	if o.Output != "" {
@@ -169,7 +192,7 @@ func (o *GetAppsOptions) generateAppStatusOutput(app *v1.App) error {
 }
 
 func (o *GetAppsOptions) generateTableFormatted(apps *v1.AppList) appsResult {
-	releases, _, err := o.Helm().ListReleases(o.Namespace)
+	releases, err := o.getAppsStatus(o.GitOps, o.Namespace, apps)
 	if err != nil {
 		log.Warnf("There was a problem obtaining the app status: %v\n", err)
 	}
@@ -177,11 +200,10 @@ func (o *GetAppsOptions) generateTableFormatted(apps *v1.AppList) appsResult {
 	for _, app := range apps.Items {
 		if app.Labels != nil {
 			name := app.Labels[helm.LabelAppName]
-			releaseName := app.Labels[helm.LabelReleaseName]
 			if name != "" && app.Annotations != nil {
 				var status string
-				if release, ok := releases[releaseName]; ok {
-					status = release.Status
+				if releaseStatus, ok := releases[name]; ok {
+					status = releaseStatus
 				}
 				results.AppOutput = append(results.AppOutput, appOutput{
 					Name:            name,
@@ -199,21 +221,20 @@ func (o *GetAppsOptions) generateTableFormatted(apps *v1.AppList) appsResult {
 
 func (o *GetAppsOptions) generateTable(apps *v1.AppList, kubeClient kubernetes.Interface) table.Table {
 	table := o.generateTableHeaders(apps)
-	releases, _, err := o.Helm().ListReleases(o.Namespace)
+	releases, err := o.getAppsStatus(o.GitOps, o.Namespace, apps)
 	if err != nil {
 		log.Warnf("There was a problem obtaining the app status: %v\n", err)
 	}
 	for _, app := range apps.Items {
 		if app.Labels != nil {
 			name := app.Labels[helm.LabelAppName]
-			releaseName := app.Labels[helm.LabelReleaseName]
 			if name != "" && app.Annotations != nil {
 				version := app.Labels[helm.LabelAppVersion]
 				description := app.Annotations[helm.AnnotationAppDescription]
 				repository := app.Annotations[helm.AnnotationAppRepository]
 				var status string
-				if release, ok := releases[releaseName]; ok {
-					status = release.Status
+				if releaseStatus, ok := releases[name]; ok {
+					status = releaseStatus
 				}
 				namespace := app.Namespace
 				row := []string{name, version, repository, namespace, status, description}
@@ -247,15 +268,28 @@ func (o *GetAppsOptions) printHelmResourcesWithFormat(helmOutputJSON string) err
 
 }
 
-func checkDifferentAppsInAppsSlice(apps *v1.AppList) (bool, error) {
-	if len(apps.Items) == 0 {
-		return false, errors.New("no apps were provided to check the status of")
-	}
-	x, a := apps.Items[0], apps.Items[1:]
-	for _, app := range a {
-		if app.Name != x.Name {
-			return true, nil
+func (o *GetAppsOptions) getAppsStatus(gitOps bool, namespace string, apps *v1.AppList) (map[string]string, error) {
+	appsStatus := make(map[string]string)
+	if o.GitOps {
+		for _, a := range apps.Items {
+			//In gitops, we can assume that if they app has a namespace, it has been deployed
+			//Otherwise, it has just been defined in the requirements.yaml and not deployed yet
+			appName := a.Labels[helm.LabelAppName]
+			if a.Namespace == "" {
+				appsStatus[appName] = "READY FOR DEPLOYMENT"
+			} else {
+				appsStatus[appName] = "DEPLOYED"
+			}
 		}
+		return appsStatus, nil
 	}
-	return false, nil
+
+	statusReleases, _, err := o.Helm().ListReleases(namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "there was a problem getting the status of the apps")
+	}
+	for k, v := range statusReleases {
+		appsStatus[k] = v.Status
+	}
+	return appsStatus, nil
 }

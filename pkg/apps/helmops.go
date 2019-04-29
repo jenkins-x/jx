@@ -2,12 +2,14 @@ package apps
 
 import (
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // HelmOpsOptions is the options used for Helm Operations for apps
@@ -126,4 +128,17 @@ func (o *HelmOpsOptions) UpgradeApp(app string, version string, repository strin
 		log.Infof("No upgrades available\n")
 	}*/
 	return nil
+}
+
+func (o *HelmOpsOptions) getAppsFromCRDAPI(appNames []string) (*v1.AppList, error) {
+	listOptions := metav1.ListOptions{}
+	if len(appNames) > 0 {
+		selector := fmt.Sprintf(helm.LabelAppName+" in (%s)", strings.Join(appNames, ", "))
+		listOptions.LabelSelector = selector
+	}
+	apps, err := o.JxClient.JenkinsV1().Apps(o.Namespace).List(listOptions)
+	if err != nil {
+		return nil, errors.Wrap(err, "listing apps")
+	}
+	return apps, nil
 }
