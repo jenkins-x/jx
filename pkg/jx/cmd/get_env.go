@@ -25,7 +25,7 @@ type GetEnvOptions struct {
 var (
 	getEnvLong = templates.LongDesc(`
 		Display one or more environments.
-`)
+` + opts.SeeAlsoText("jx get previews"))
 
 	getEnvExample = templates.Examples(`
 		# List all environments

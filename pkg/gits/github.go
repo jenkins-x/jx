@@ -3,12 +3,13 @@ package gits
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -1221,18 +1222,22 @@ func (p *GitHubProvider) ListCommits(owner, repo string, opt *ListCommitsArgumen
 		return nil, fmt.Errorf("Could not find commits for repository %s/%s", owner, repo)
 	}
 	var commits []*GitCommit
-	if len(githubCommits) > 0 {
-		for i := 0; i < len(githubCommits); i++ {
+
+	for _, commit := range githubCommits {
+		if commit.Commit != nil {
+			var author *GitUser
+			if commit.Author != nil && commit.Author.Login != nil {
+				author = &GitUser{
+					Login: *commit.Author.Login,
+				}
+			}
 			commits = append(commits, &GitCommit{
-				SHA:     *githubCommits[i].SHA,
-				Message: *githubCommits[i].Commit.Message,
-				URL:     *githubCommits[i].Commit.URL,
-				Author: &GitUser{
-					Login: *githubCommits[i].Author.Login,
-				},
+				SHA:     asText(commit.SHA),
+				Message: asText(commit.Commit.Message),
+				URL:     asText(commit.Commit.URL),
+				Author:  author,
 			})
 		}
 	}
-
 	return commits, nil
 }
