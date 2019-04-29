@@ -660,7 +660,12 @@ func (g *GitCLI) GetPreviousGitTagSHA(dir string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to find previous tag for project in %s : %s", dir, err)
 	}
+
+	if len(previousTag) != 40 {
+		return g.gitCmdWithOutput(dir, "rev-list", "--tags", "--skip=2", "--max-count=1")	
+	}
 	return previousTag, err
+
 }
 
 // GetRevisionBeforeDate returns the revision before the given date
