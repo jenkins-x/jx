@@ -474,6 +474,7 @@ func InspectChart(chart string, version string, repo string, username string, pa
 			return errors.Wrapf(err, "copying %s to %s", chart, dir)
 		}
 		// We need to manually build the dependencies
+		helmer.SetCWD(dir)
 		err = helmer.BuildDependency()
 		if err != nil {
 			return errors.Wrapf(err, "building dependencies for %s", chart)

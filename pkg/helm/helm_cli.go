@@ -239,6 +239,9 @@ func (h *HelmCLI) RemoveRequirementsLock() error {
 
 // BuildDependency builds the helm dependencies of the helm chart from the current working directory
 func (h *HelmCLI) BuildDependency() error {
+	if h.Debug {
+		log.Infof("Running %s dependency build in %s\n", h.Binary, util.ColorInfo(h.CWD))
+	}
 	return h.runHelm("dependency", "build")
 }
 
