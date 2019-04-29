@@ -313,6 +313,10 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 			if err != nil {
 				return "", "", nil, fork, err
 			}
+			err = o.Gitter.FetchBranch(dir, "origin")
+			if err != nil {
+				return "", "", nil, fork, errors.Wrapf(err, "fetching from %s", cloneGitURL)
+			}
 			err = git.SetRemoteURL(dir, "upstream", gitURL)
 			if err != nil {
 				return "", "", nil, fork, errors.Wrapf(err, "setting remote upstream %q in forked environment repo", gitURL)
