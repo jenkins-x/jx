@@ -68,6 +68,9 @@ require (
 	github.com/google/go-containerregistry v0.0.0-20190317040536-ebbba8469d06 // indirect
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/google/go-querystring v0.0.0-20170111101155-53e6ce116135 // indirect
+	github.com/google/ko v0.0.0-20190322193724-3584e2d4d33b // indirect
+	github.com/google/pprof v0.0.0-20190309163659-77426154d546 // indirect
+	github.com/google/uuid v1.1.0
 	github.com/gotestyourself/gotestyourself v2.2.0+incompatible // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.0 // indirect
 	github.com/hashicorp/go-hclog v0.0.0-20190109152822-4783caec6f2e // indirect

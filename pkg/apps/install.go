@@ -146,25 +146,33 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 
 //GetApps gets a list of installed apps
 func (o *InstallOptions) GetApps(appNames []string) (apps *jenkinsv1.AppList, err error) {
-	if err != nil {
-		return nil, errors.Wrap(err, "getting jx client")
+	prefixes := o.getPrefixes()
+	in := make([]string, 0)
+	appsMap := make(map[string]bool)
+	for _, prefix := range prefixes {
+		for _, appName := range appNames {
+			completeAppName := fmt.Sprintf("%s%s", prefix, appName)
+			in = append(in, completeAppName)
+			appsMap[completeAppName] = true
+		}
 	}
+	if o.GitOps {
+		opts := GitOpsOptions{
+			InstallOptions: o,
+		}
+		return opts.GetApps(appsMap, o.getAppsFromCRDAPI)
+	}
+	return o.getAppsFromCRDAPI(in)
+
+}
+
+func (o *InstallOptions) getAppsFromCRDAPI(appNames []string) (*jenkinsv1.AppList, error) {
 	listOptions := metav1.ListOptions{}
 	if len(appNames) > 0 {
-		in := appNames
-		if !o.GitOps {
-			prefixes := o.getPrefixes()
-			in := make([]string, 0)
-			for _, prefix := range prefixes {
-				for _, appName := range appNames {
-					in = append(in, fmt.Sprintf("%s%s", prefix, appName))
-				}
-			}
-		}
-		selector := fmt.Sprintf(helm.LabelAppName+" in (%s)", strings.Join(in, ", "))
+		selector := fmt.Sprintf(helm.LabelAppName+" in (%s)", strings.Join(appNames, ", "))
 		listOptions.LabelSelector = selector
 	}
-	apps, err = o.JxClient.JenkinsV1().Apps(o.Namespace).List(listOptions)
+	apps, err := o.JxClient.JenkinsV1().Apps(o.Namespace).List(listOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "listing apps")
 	}
@@ -177,7 +185,15 @@ func (o *InstallOptions) DeleteApp(app string, alias string, releaseName string,
 		Items: make([]string, 0),
 	}
 
-	chartName := app
+	apps, err := o.GetApps([]string{app})
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	if len(apps.Items) == 0 {
+		return errors.Errorf("No app found for %s", app)
+	}
+	chartName := apps.Items[0].Labels[helm.LabelAppName]
+
 	if o.GitOps {
 		opts := GitOpsOptions{
 			InstallOptions: o,
@@ -186,24 +202,7 @@ func (o *InstallOptions) DeleteApp(app string, alias string, releaseName string,
 		if err != nil {
 			return err
 		}
-		// TODO support prefixed name (requires get apps to support gitops see
 	} else {
-		apps, err := o.GetApps([]string{app})
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		if len(apps.Items) == 0 {
-			return errors.Errorf("No app found for %s", app)
-		}
-		if len(apps.Items) > 1 {
-			appNames := make([]string, 0)
-			for _, app := range apps.Items {
-				appNames = append(appNames, app.Labels[helm.LabelAppName])
-			}
-			return errors.Errorf("Found more than one app for %s (%v)", app, appNames)
-		}
-		chartName := apps.Items[0].Labels[helm.LabelAppName]
-
 		opts := HelmOpsOptions{
 			InstallOptions: o,
 		}

@@ -2,6 +2,7 @@ package apps
 
 import (
 	"fmt"
+
 	"os"
 	"path/filepath"
 
@@ -11,9 +12,14 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
+	"github.com/ghodss/yaml"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+
 	"github.com/jenkins-x/jx/pkg/environments"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
+	"io/ioutil"
+	"regexp"
 )
 
 // GitOpsOptions is the options used for Git Operations for apps
@@ -155,4 +161,68 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string) error {
 	}
 	log.Infof("Delete app via Pull Request %s\n", info.PullRequest.URL)
 	return nil
+}
+
+// GetApps retrieves all the apps information for the given appNames from the repository and / or the CRD API
+func (o *GitOpsOptions) GetApps(appNames map[string]bool, expandFn func([]string) (*v1.AppList, error)) (*v1.AppList, error) {
+
+	options := environments.EnvironmentPullRequestOptions{
+		ConfigGitFn:   o.ConfigureGitFn,
+		Gitter:        o.Gitter,
+		ModifyChartFn: nil,
+		GitProvider:   o.GitProvider,
+	}
+	dir, _, _, _, err :=  gits.ForkAndPullPullRepo(o.DevEnv.Spec.Source.URL, o.EnvironmentsDir, o.DevEnv.Spec.Source.Ref, "master", o.GitProvider, o.Gitter, options.ConfigGitFn)
+	if err != nil {
+		return nil, errors.Wrapf(err, "couldn't pull the environment repository from %s", o.DevEnv.Name)
+	}
+
+	envDir := filepath.Join(dir, helm.DefaultEnvironmentChartDir)
+	if err != nil {
+		return nil, err
+	}
+	exists, err := util.DirExists(envDir)
+	if err != nil {
+		return nil, err
+	}
+
+	if !exists {
+		envDir = dir
+	}
+
+	requirementsFile, err := ioutil.ReadFile(filepath.Join(envDir, helm.RequirementsFileName))
+	if err != nil {
+		return nil, errors.Wrap(err, "couldn't read the environment's requirements.yaml file")
+	}
+	reqs := helm.Requirements{}
+	err = yaml.Unmarshal(requirementsFile, &reqs)
+	if err != nil {
+		return nil, errors.Wrap(err, "couldn't unmarshal the environment's requirements.yaml file")
+	}
+
+	appsList := v1.AppList{}
+	for _, d := range reqs.Dependencies {
+		if appNames[d.Name] == true || len(appNames) == 0 {
+			//Make sure we only consider apps
+			if match, _ := regexp.MatchString("jx-app-.*", d.Name); match {
+				resourcesInCRD, _ := expandFn([]string{d.Name})
+				if len(resourcesInCRD.Items) != 0 {
+					appsList.Items = append(resourcesInCRD.Items)
+				} else {
+					appPath := filepath.Join(envDir, d.Name, "templates", "app.yaml")
+					appFile, err := ioutil.ReadFile(appPath)
+					if err != nil {
+						return nil, errors.Wrapf(err, "there was a problem reading the app.yaml file of %s", d.Name)
+					}
+					app := v1.App{}
+					err = yaml.Unmarshal(appFile, &app)
+					if err != nil {
+						return nil, errors.Wrapf(err, "there was a problem unmarshalling the app.yaml file of %s", d.Name)
+					}
+					appsList.Items = append(appsList.Items, app)
+				}
+			}
+		}
+	}
+	return &appsList, nil
 }

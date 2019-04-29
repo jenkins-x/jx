@@ -105,7 +105,7 @@ func TestAddAppForGitOps(t *testing.T) {
 	assert.Len(t, found, 1)
 	assert.Equal(t, version, found[0].Version)
 	app := &jenkinsv1.App{}
-	appBytes, err := ioutil.ReadFile(filepath.Join(devEnvDir, name, "templates", name+"-app.yaml"))
+	appBytes, err := ioutil.ReadFile(filepath.Join(devEnvDir, name, "templates", "app.yaml"))
 	_ = yaml.Unmarshal(appBytes, app)
 	assert.Equal(t, name, app.Labels[helm.LabelAppName])
 	assert.Equal(t, version, app.Labels[helm.LabelAppVersion])
@@ -188,7 +188,7 @@ func TestAddAppForGitOpsWithShortName(t *testing.T) {
 	assert.Len(t, found, 1)
 	assert.Equal(t, version, found[0].Version)
 	app := &jenkinsv1.App{}
-	appBytes, err := ioutil.ReadFile(filepath.Join(devEnvDir, name, "templates", name+"-app.yaml"))
+	appBytes, err := ioutil.ReadFile(filepath.Join(devEnvDir, name, "templates", "app.yaml"))
 	_ = yaml.Unmarshal(appBytes, app)
 	assert.Equal(t, name, app.Labels[helm.LabelAppName])
 	assert.Equal(t, version, app.Labels[helm.LabelAppVersion])

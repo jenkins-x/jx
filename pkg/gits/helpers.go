@@ -407,20 +407,23 @@ func ForkAndPullPullRepo(gitURL string, baseDir string, baseRef string, branchNa
 			if err != nil {
 				return "", "", nil, fork, errors.WithStack(err)
 			}
-
-			err = gitter.Checkout(dir, branchName)
-			if err != nil {
-				return "", "", nil, fork, errors.WithStack(err)
-			}
 		}
-		err = gitter.Pull(dir)
+		err = gitter.Checkout(dir, branchName)
+		if err != nil {
+			return "", "", nil, fork, errors.WithStack(err)
+		}
+		err = gitter.FetchBranch(dir, "origin", baseRef)
+		if err != nil {
+			return "", "", nil, fork, errors.WithStack(err)
+		}
+		err = gitter.Merge(dir, baseRef)
 		if err != nil {
 			return "", "", nil, fork, errors.WithStack(err)
 		}
 	} else {
 		err := os.MkdirAll(dir, util.DefaultWritePermissions)
 		if err != nil {
-			return "", "", nil, fork, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
+			return "", "", nil, fork, fmt.Errorf("failed to create directory %s due to %s", dir, err)
 		}
 		cloneGitURL, err := gitter.CreatePushURL(gitURL, &userDetails)
 		if err != nil {

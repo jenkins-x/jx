@@ -531,7 +531,7 @@ func LocateAppResource(helmer helm.Helmer, chartDir string, appName string) (*je
 	completedTemplatesDir := filepath.Join(templateWorkDir, appName, "templates")
 	templates, _ := ioutil.ReadDir(completedTemplatesDir)
 
-	filename := fmt.Sprintf("%s-app.yaml", appName)
+	filename := fmt.Sprint("app.yaml")
 	possibles := make([]string, 0)
 	for _, template := range templates {
 		appBytes, err := ioutil.ReadFile(filepath.Join(completedTemplatesDir, template.Name()))
