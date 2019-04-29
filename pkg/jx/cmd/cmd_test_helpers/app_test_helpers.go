@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/apis/meta/v1"
 	"os"
 	"path/filepath"
 	"testing"
@@ -13,20 +14,20 @@ import (
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
 
-	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
+	"github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	cmd_test "github.com/jenkins-x/jx/pkg/jx/cmd/clients/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/kube"
-	vault_test "github.com/jenkins-x/jx/pkg/vault/mocks"
+	"github.com/jenkins-x/jx/pkg/vault/mocks"
 	"github.com/petergtz/pegomock"
-	uuid "github.com/satori/go.uuid"
+	"github.com/satori/go.uuid"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -96,9 +97,8 @@ func (o *AppTestOptions) AddApp(values map[string]interface{}, prefix string) (s
 }
 
 // DirectlyAddAppToGitOps modifies the environment git repo directly to add a dummy app
-func (o *AppTestOptions) DirectlyAddAppToGitOps(values map[string]interface{}, prefix string) (name string,
-	alias string,
-	version string, err error) {
+func (o *AppTestOptions) DirectlyAddAppToGitOps(appName string, values map[string]interface{}, prefix string) (name string,
+	alias string, version string, err error) {
 	envDir, err := o.CommonOptions.EnvironmentsDir()
 	if err != nil {
 		return "", "", "", err
@@ -124,13 +124,17 @@ func (o *AppTestOptions) DirectlyAddAppToGitOps(values map[string]interface{}, p
 		}
 	}
 	// Put some commits on a branch
-	nameUUID, err := uuid.NewV4()
-	if err != nil {
-		return "", "", "", err
+	name = appName
+	if name == "" {
+		nameUUID, err := uuid.NewV4()
+		if err != nil {
+			return "", "", "", err
+		}
+		name = nameUUID.String()
 	}
-	name = fmt.Sprintf("%s%s", prefix, nameUUID.String())
 	alias = fmt.Sprintf("%s-alias", name)
 	version = "0.0.1"
+	name = fmt.Sprintf("%s-%s", prefix, name)
 	requirements.Dependencies = append(requirements.Dependencies, &helm.Dependency{
 		Name:       name,
 		Alias:      alias,
@@ -185,7 +189,7 @@ func (o *AppTestOptions) Cleanup() error {
 }
 
 // CreateAppTestOptions configures the mock environment for running apps related tests
-func CreateAppTestOptions(gitOps bool, t *testing.T) *AppTestOptions {
+func CreateAppTestOptions(gitOps bool, appName string, t *testing.T) *AppTestOptions {
 	mockFactory := cmd_test.NewMockFactory()
 	commonOpts := opts.NewCommonOptionsWithFactory(mockFactory)
 	o := AppTestOptions{
@@ -260,6 +264,36 @@ func CreateAppTestOptions(gitOps bool, t *testing.T) *AppTestOptions {
 		if err != nil {
 			return err
 		}
+		if appName != "" {
+			appName = fmt.Sprintf("%s-%s", "jx-app", appName)
+			err = os.MkdirAll(filepath.Join(dir, appName, "templates"), 0700)
+			if err != nil {
+				return err
+			}
+			app := jenkinsv1.App{
+				ObjectMeta: v1.ObjectMeta{
+					Name: appName,
+					Labels: map[string]string{
+						helm.LabelAppName:    appName,
+						helm.LabelAppVersion: "0.0.1",
+					},
+					Annotations: map[string]string{
+						helm.AnnotationAppDescription: "Description",
+						helm.AnnotationAppRepository:  "Repository",
+					},
+				},
+			}
+
+			data, err = yaml.Marshal(app)
+			if err != nil {
+				return err
+			}
+			err = ioutil.WriteFile(filepath.Join(dir, appName, "templates", "app.yaml"), data, 0755)
+			if err != nil {
+				return err
+			}
+		}
+
 		return gitter.AddCommit(dir, "Initial Commit")
 	}
 	o.FakeGitProvider = fakeGitProvider
@@ -271,5 +305,4 @@ func CreateAppTestOptions(gitOps bool, t *testing.T) *AppTestOptions {
 		Name: devEnvRepoName,
 	}
 	return &o
-
 }
