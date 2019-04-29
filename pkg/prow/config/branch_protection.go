@@ -45,7 +45,7 @@ func AddRepoToBranchProtection(bp *config.BranchProtection, repoSpec string, con
 		if !util.Contains(contexts, ServerlessJenkins) {
 			contexts = append(contexts, ServerlessJenkins)
 		}
-	case Environment:
+	case Environment, RemoteEnvironment:
 		if !util.Contains(contexts, PromotionBuild) {
 			contexts = append(contexts, PromotionBuild)
 		}

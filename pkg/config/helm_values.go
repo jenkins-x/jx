@@ -56,18 +56,20 @@ type JenkinsPipelineSecretsValuesConfig struct {
 	DockerConfig string `json:"DockerConfig,flow,omitempty"`
 }
 
-// ControllerBuildConfig to configure the build controller
-type ControllerBuildConfig struct {
-	Enabled *bool `json:"enabled,omitempty"`
+// EnabledConfig to configure the feature on/off
+type EnabledConfig struct {
+	Enabled bool `json:"enabled"`
 }
 
 type HelmValuesConfig struct {
-	ExposeController *ExposeController                  `json:"expose,omitempty"`
-	Jenkins          JenkinsValuesConfig                `json:"jenkins,omitempty"`
-	Prow             ProwValuesConfig                   `json:"prow,omitempty"`
-	PipelineSecrets  JenkinsPipelineSecretsValuesConfig `json:"PipelineSecrets,omitempty"`
-	ControllerBuild  ControllerBuildConfig              `json:"controllerbuild,omitempty"`
-	DockerRegistry   string                             `json:"dockerRegistry,omitempty"`
+	ExposeController      *ExposeController                  `json:"expose,omitempty"`
+	Jenkins               JenkinsValuesConfig                `json:"jenkins,omitempty"`
+	Prow                  ProwValuesConfig                   `json:"prow,omitempty"`
+	PipelineSecrets       JenkinsPipelineSecretsValuesConfig `json:"PipelineSecrets,omitempty"`
+	ControllerBuild       *EnabledConfig                     `json:"controllerbuild,omitempty"`
+	ControllerWorkflow    *EnabledConfig                     `json:"controllerworkflow,omitempty"`
+	DockerRegistryEnabled *EnabledConfig                     `json:"docker-registry,omitempty"`
+	DockerRegistry        string                             `json:"dockerRegistry,omitempty"`
 }
 
 type HelmValuesConfigService struct {

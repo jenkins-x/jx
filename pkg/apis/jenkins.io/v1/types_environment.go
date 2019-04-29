@@ -36,6 +36,9 @@ type EnvironmentSpec struct {
 	TeamSettings      TeamSettings          `json:"teamSettings,omitempty" protobuf:"bytes,9,opt,name=teamSettings"`
 	PreviewGitSpec    PreviewGitSpec        `json:"previewGitInfo,omitempty" protobuf:"bytes,10,opt,name=previewGitInfo"`
 	WebHookEngine     WebHookEngineType     `json:"webHookEngine,omitempty" protobuf:"bytes,11,opt,name=webHookEngine"`
+
+	// RemoteCluster flag indicates if the Environment is deployed in a separate cluster to the Development Environment
+	RemoteCluster bool `json:"remoteCluster,omitempty" protobuf:"bytes,12,opt,name=remoteCluster"`
 }
 
 // EnvironmentStatus is the status for an Environment resource

@@ -227,6 +227,7 @@ type Flags struct {
 	SkipLogin                   bool
 	ForkOrganisationGitRepo     string
 	SkipTerraformApply          bool
+	NoActiveCluster             bool
 	IgnoreTerraformWarnings     bool
 	JxEnvironment               string
 	GKEProjectID                string
@@ -326,6 +327,7 @@ func (options *CreateTerraformOptions) addFlags(cmd *cobra.Command, addSharedFla
 	cmd.Flags().BoolVarP(&options.Flags.IgnoreTerraformWarnings, "ignore-terraform-warnings", "", false, "Ignore any warnings about the Terraform plan being potentially destructive")
 	cmd.Flags().StringVarP(&options.Flags.JxEnvironment, "jx-environment", "", "dev", "The cluster name to install jx inside")
 	cmd.Flags().StringVarP(&options.Flags.LocalOrganisationRepository, "local-organisation-repository", "", "", "Rather than cloning from a remote Git server, the local directory to use for the organisational folder")
+	cmd.Flags().BoolVarP(&options.Flags.NoActiveCluster, "no-active-cluster", "", false, "Tells JX there's isn't currently an active cluster, so we cannot use it for configuration")
 
 	// GKE specific overrides
 	cmd.Flags().StringVarP(&options.Flags.GKEDiskSize, "gke-disk-size", "", "100", "Size in GB for node VM boot disks. Defaults to 100GB")
@@ -383,6 +385,13 @@ func (options *CreateTerraformOptions) Run() error {
 
 	if len(options.Clusters) == 0 {
 		err := options.ClusterDetailsWizard()
+		if err != nil {
+			return err
+		}
+	}
+
+	if options.Flags.NoActiveCluster {
+		err = options.SetFakeKubeClient()
 		if err != nil {
 			return err
 		}

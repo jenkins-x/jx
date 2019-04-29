@@ -54,7 +54,7 @@ func AddRepoToTideConfig(t *config.Tide, repo string, kind Kind) error {
 			log.Infof("Failed to find 'application' tide config, adding...\n")
 			t.Queries = append(t.Queries, createApplicationTideQuery())
 		}
-	case Environment:
+	case Environment, RemoteEnvironment:
 		found := false
 		for index, q := range t.Queries {
 			if !util.Contains(q.Labels, "approved") {
@@ -94,7 +94,7 @@ func RemoveRepoFromTideConfig(t *config.Tide, repo string, kind Kind) error {
 		if !found {
 			log.Infof("Failed to find 'application' tide config, adding...\n")
 		}
-	case Environment:
+	case Environment, RemoteEnvironment:
 		found := false
 		for index, q := range t.Queries {
 			if !util.Contains(q.Labels, "approved") {

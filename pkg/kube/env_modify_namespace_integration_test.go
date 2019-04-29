@@ -53,7 +53,7 @@ func TestEnvModifyNamespace(t *testing.T) {
 	env := kube.NewPermanentEnvironment("jx")
 	env.Spec.Namespace = testNs
 
-	err = kube.ModifyNamespace(os.Stdout, tempDir, env, git)
+	err = kube.ModifyNamespace(os.Stdout, tempDir, env, git, nil)
 	assert.NoError(t, err)
 
 	tests.AssertFileContains(t, filepath.Join(tempDir, "Makefile"), `NAMESPACE := "`+testNs+`"`)

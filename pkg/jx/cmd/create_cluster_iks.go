@@ -14,6 +14,7 @@ import (
 	randomdata "github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/iks"
+	"github.com/jenkins-x/jx/pkg/features"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -108,6 +109,12 @@ func NewCmdCreateClusterIKS(commonOpts *opts.CommonOptions) *cobra.Command {
 		Short:   "Create a new kubernetes cluster on IBM Cloud Kubernetes Services",
 		Long:    createClusterIKSLong,
 		Example: createClusterIKSExample,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := features.IsEnabled(cmd)
+			CheckErr(err)
+			err = options.InstallOptions.CheckFeatures()
+			CheckErr(err)
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

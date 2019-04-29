@@ -190,12 +190,12 @@ release: check ## Release the binary
 
 	./build/linux/jx step changelog  --header-file docs/dev/changelog-header.md --version $(VERSION)
 
-distro:
+release-distro:
 	rm -rf build release && mkdir build release
 
-	CGO_ENABLED=$(CGO_ENABLED) FEATURE_FLAG_TOKEN=$(FEATURE_FLAG_TOKEN) GOOS=darwin GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/darwin/$(NAME) cmd/jx/jx.go
-	CGO_ENABLED=$(CGO_ENABLED) FEATURE_FLAG_TOKEN=$(FEATURE_FLAG_TOKEN) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/linux/$(NAME) cmd/jx/jx.go
-	CGO_ENABLED=$(CGO_ENABLED) FEATURE_FLAG_TOKEN=$(FEATURE_FLAG_TOKEN) GOOS=windows GOARCH=amd64 $(GO) build $(BUILDFLAGS) -o build/$(NAME)-windows-amd64.exe cmd/jx/jx.go
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=darwin GOARCH=amd64 $(GO) build $(BUILDFLAGS) -ldflags "-X $(ROOT_PACKAGE)/pkg/features.FeatureFlagToken=$(FEATURE_FLAG_TOKEN)" -o build/darwin/$(NAME) cmd/jx/jx.go
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=amd64 $(GO) build $(BUILDFLAGS) -ldflags "-X $(ROOT_PACKAGE)/pkg/features.FeatureFlagToken=$(FEATURE_FLAG_TOKEN)" -o build/linux/$(NAME) cmd/jx/jx.go
+	CGO_ENABLED=$(CGO_ENABLED) GOOS=windows GOARCH=amd64 $(GO) build $(BUILDFLAGS) -ldflags "-X $(ROOT_PACKAGE)/pkg/features.FeatureFlagToken=$(FEATURE_FLAG_TOKEN)" -o build/$(NAME)-windows-amd64.exe cmd/jx/jx.go
 	zip --junk-paths release/cjxd-$(NAME)-windows-amd64.zip build/$(NAME)-windows-amd64.exe README.md LICENSE
 
 	chmod +x build/darwin/$(NAME)

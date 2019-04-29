@@ -3,12 +3,13 @@ package gits
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/google/go-github/github"
 	"github.com/jenkins-x/jx/pkg/auth"
@@ -124,6 +125,47 @@ func (p *GitHubProvider) IsUserInOrganisation(user string, org string) (bool, er
 	return false, nil
 }
 
+func (p *GitHubProvider) ListRepositoriesForUser(user string) ([]*GitRepository, error) {
+	owner := user
+	answer := []*GitRepository{}
+	options := &github.RepositoryListOptions{
+		ListOptions: github.ListOptions{
+			Page:    0,
+			PerPage: pageSize,
+		},
+	}
+
+	for {
+		repos, _, err := p.Client.Repositories.List(p.Context, owner, options)
+		if err != nil {
+			options := &github.RepositoryListOptions{
+				ListOptions: github.ListOptions{
+					Page:    0,
+					PerPage: pageSize,
+				},
+			}
+			repos, _, err = p.Client.Repositories.List(p.Context, owner, options)
+			if err != nil {
+				return answer, err
+			}
+
+		}
+		for _, repo := range repos {
+			answer = append(answer, toGitHubRepo(asText(repo.Name), repo))
+		}
+		if len(repos) < pageSize || len(repos) == 0 {
+			break
+		}
+		options.ListOptions.Page += 1
+	}
+	return answer, nil
+}
+
+// IsOwnerGitHubUser checks to see if the owner is the GitHub User
+func IsOwnerGitHubUser(owner string, gitHubUser string) bool {
+	return owner == gitHubUser && gitHubUser != ""
+}
+
 func (p *GitHubProvider) ListRepositories(org string) ([]*GitRepository, error) {
 	owner := org
 	answer := []*GitRepository{}
@@ -133,6 +175,11 @@ func (p *GitHubProvider) ListRepositories(org string) ([]*GitRepository, error) 
 			PerPage: pageSize,
 		},
 	}
+
+	if IsOwnerGitHubUser(owner, p.Username) {
+		return p.ListRepositoriesForUser(p.Username)
+	}
+
 	for {
 		repos, _, err := p.Client.Repositories.ListByOrg(p.Context, owner, options)
 		if err != nil {
@@ -1221,18 +1268,22 @@ func (p *GitHubProvider) ListCommits(owner, repo string, opt *ListCommitsArgumen
 		return nil, fmt.Errorf("Could not find commits for repository %s/%s", owner, repo)
 	}
 	var commits []*GitCommit
-	if len(githubCommits) > 0 {
-		for i := 0; i < len(githubCommits); i++ {
+
+	for _, commit := range githubCommits {
+		if commit.Commit != nil {
+			var author *GitUser
+			if commit.Author != nil && commit.Author.Login != nil {
+				author = &GitUser{
+					Login: *commit.Author.Login,
+				}
+			}
 			commits = append(commits, &GitCommit{
-				SHA:     *githubCommits[i].SHA,
-				Message: *githubCommits[i].Commit.Message,
-				URL:     *githubCommits[i].Commit.URL,
-				Author: &GitUser{
-					Login: *githubCommits[i].Author.Login,
-				},
+				SHA:     asText(commit.SHA),
+				Message: asText(commit.Commit.Message),
+				URL:     asText(commit.Commit.URL),
+				Author:  author,
 			})
 		}
 	}
-
 	return commits, nil
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud"
+	"github.com/jenkins-x/jx/pkg/features"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"gopkg.in/AlecAivazis/survey.v1"
 
@@ -95,6 +96,12 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 		Short:   "Create a new Kubernetes cluster on GKE: Runs on Google Cloud",
 		Long:    createClusterGKELong,
 		Example: createClusterGKEExample,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := features.IsEnabled(cmd)
+			CheckErr(err)
+			err = options.InstallOptions.CheckFeatures()
+			CheckErr(err)
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

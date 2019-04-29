@@ -180,8 +180,8 @@ func TestCreateEnvironmentSurvey(t *testing.T) {
 		console.SendLine("Staging")
 		console.ExpectString("Namespace:")
 		console.SendLine("jx-testing")
-		console.ExpectString("Cluster URL:")
-		console.SendLine("http://good.looking.com")
+		console.ExpectString("Environment in separate cluster to Dev Environment:")
+		console.SendLine("n")
 		console.ExpectString("Promotion Strategy:")
 		console.SendLine("A")
 		console.ExpectString("Order:")
@@ -229,6 +229,7 @@ func TestCreateEnvironmentSurvey(t *testing.T) {
 		helmValues,
 		prefix,
 		gitter,
+		nil,
 		console.In,
 		console.Out,
 		console.Err,
