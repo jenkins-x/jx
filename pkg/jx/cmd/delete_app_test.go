@@ -2,6 +2,7 @@ package cmd_test
 
 import (
 	"fmt"
+	"github.com/satori/go.uuid"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -19,12 +20,16 @@ import (
 
 func TestDeleteAppForGitOps(t *testing.T) {
 	t.Parallel()
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	nameUUID, err := uuid.NewV4()
+	assert.NoError(t, err)
+	name := nameUUID.String()
+
+	testOptions := cmd_test_helpers.CreateAppTestOptionsForApp(true, name, t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	name, alias, _, err := testOptions.DirectlyAddAppToGitOps(nil, "")
+	name, alias, _, err := testOptions.DirectlyAddAppToGitOps(name, nil, "jx-app")
 	assert.NoError(t, err)
 
 	commonOpts := *testOptions.CommonOptions
@@ -68,7 +73,7 @@ func TestDeleteAppWithShortNameForGitOps(t *testing.T) {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
-	name, alias, _, err := testOptions.DirectlyAddAppToGitOps(nil, "jx-app-")
+	name, alias, _, err := testOptions.DirectlyAddAppToGitOps("", nil, "jx-app-")
 	assert.NoError(t, err)
 	shortName := strings.TrimPrefix(name, "jx-app-")
 	// We also need to add the app CRD to Kubernetes -
