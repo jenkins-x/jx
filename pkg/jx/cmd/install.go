@@ -1128,8 +1128,11 @@ func (options *InstallOptions) configureHelmValues(namespace string) error {
 	if isProw {
 		enableJenkins := false
 		helmConfig.Jenkins.Enabled = &enableJenkins
-		enableControllerBuild := true
-		helmConfig.ControllerBuild.Enabled = &enableControllerBuild
+		helmConfig.ControllerBuild = &config.EnabledConfig{true}
+		helmConfig.ControllerWorkflow = &config.EnabledConfig{false}
+		if options.Flags.Tekton && options.Flags.Provider == cloud.GKE {
+			helmConfig.DockerRegistryEnabled = &config.EnabledConfig{false}
+		}
 	}
 	return nil
 }
