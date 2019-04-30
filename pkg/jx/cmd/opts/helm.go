@@ -524,7 +524,7 @@ func (o *CommonOptions) clone(wrkDir string, versionRepository string, reference
 		}
 		log.Infof("Cloning the Jenkins X versions repo %s with revision %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
 
-		err := o.Git().Clone(wrkDir, versionRepository)
+		err := o.Git().Clone(versionRepository, wrkDir)
 		if err != nil {
 			return errors.Wrapf(err, "failed to clone repository: %s to dir %s", versionRepository, wrkDir)
 		}
