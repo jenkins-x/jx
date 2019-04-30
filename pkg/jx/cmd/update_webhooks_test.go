@@ -1,15 +1,17 @@
 package cmd
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetOrgOrUserFromOptions_orgIsSet(t *testing.T) {
 	t.Parallel()
 	options := &UpdateWebhooksOptions{
-		Org:  "MyOrg",
-		User: "MyUser",
+		Org:           "MyOrg",
+		CommonOptions: &opts.CommonOptions{Username: "MyUser"},
 	}
 	owner := GetOrgOrUserFromOptions(options)
 	assert.Equal(t, options.Org, owner, "The Owner should be the Org name")
@@ -18,18 +20,18 @@ func TestGetOrgOrUserFromOptions_orgIsSet(t *testing.T) {
 func TestGetOrgOrUserFromOptions_orgNotSetUserIsSet(t *testing.T) {
 	t.Parallel()
 	options := &UpdateWebhooksOptions{
-		Org:  "",
-		User: "MyUser",
+		Org:           "",
+		CommonOptions: &opts.CommonOptions{Username: "MyUser"},
 	}
 	owner := GetOrgOrUserFromOptions(options)
-	assert.Equal(t, options.User, owner, "The Owner should be the Username")
+	assert.Equal(t, options.Username, owner, "The Owner should be the Username")
 }
 
 func TestGetOrgOrUserFromOptions_orgNotSetUserNotSet(t *testing.T) {
 	t.Parallel()
 	options := &UpdateWebhooksOptions{
-		Org:  "",
-		User: "",
+		Org:           "",
+		CommonOptions: &opts.CommonOptions{Username: ""},
 	}
 	owner := GetOrgOrUserFromOptions(options)
 	assert.Equal(t, "", owner, "The Owner should be empty")
