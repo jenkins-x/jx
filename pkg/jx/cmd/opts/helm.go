@@ -524,7 +524,22 @@ func (o *CommonOptions) clone(wrkDir string, versionRepository string, reference
 		}
 		log.Infof("Cloning the Jenkins X versions repo %s with revision %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
 
-		return o.shallowCloneGitRepositoryToDir(wrkDir, versionRepository, "", "")
+		err := o.Git().Clone(versionRepository, wrkDir)
+		if err != nil {
+			return errors.Wrapf(err, "failed to clone repository: %s to dir %s", versionRepository, wrkDir)
+		}
+		err = o.RunCommandFromDir(wrkDir, "git", "fetch", "origin", referenceName)
+		if err != nil {
+			return errors.Wrapf(err, "failed to git fetch origin %s for repo: %s in dir %s", referenceName, versionRepository, wrkDir)
+		}
+		err = o.Git().Checkout(wrkDir, "FETCH_HEAD")
+		if err != nil {
+			return errors.Wrapf(err, "failed to checkout FETCH_HEAD of repo: %s in dir %s", versionRepository, wrkDir)
+		}
+		return nil
+
+		// TODO doesn't seem to work at all for a git ref....
+		//return o.shallowCloneGitRepositoryToDir(wrkDir, versionRepository, "", referenceName)
 	}
 	log.Infof("Cloning the Jenkins X versions repo %s with ref %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
 	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
