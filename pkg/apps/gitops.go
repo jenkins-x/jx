@@ -53,15 +53,21 @@ func (o *GitOpsOptions) UpgradeApp(app string, version string, repository string
 	all := true
 	details := environments.PullRequestDetails{}
 
+	// use a random string in the branch name to ensure we use a unique git branch and fail to push
+	rand, err := util.RandStringBytesMaskImprSrc(5)
+	if err != nil {
+		return errors.Wrapf(err, "failed to generate a random string")
+	}
+
 	if app != "" {
 		all = false
 		versionBranchName := version
 		if versionBranchName == "" {
 			versionBranchName = "latest"
 		}
-		details.BranchName = fmt.Sprintf("upgrade-app-%s-%s", app, versionBranchName)
+		details.BranchName = fmt.Sprintf("upgrade-app-%s-%s-%s", app, versionBranchName, rand)
 	} else {
-		details.BranchName = fmt.Sprintf("upgrade-all-apps")
+		details.BranchName = fmt.Sprintf("upgrade-all-apps-%s", rand)
 		details.Title = fmt.Sprintf("Upgrade all apps")
 		details.Message = fmt.Sprintf("Upgrade all apps:\n")
 	}
@@ -88,7 +94,7 @@ func (o *GitOpsOptions) UpgradeApp(app string, version string, repository string
 			o.Helmer, inspectChartFunc, o.Verbose, o.valuesFiles),
 		GitProvider: o.GitProvider,
 	}
-	_, err := options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, app)
+	_, err = options.Create(o.DevEnv, o.EnvironmentsDir, &details, nil, app)
 	if err != nil {
 		return err
 	}
