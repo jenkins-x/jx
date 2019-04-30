@@ -244,9 +244,8 @@ func (h *HelmCLI) BuildDependency() error {
 		out, err := h.runHelmWithOutput("dependency", "build")
 		log.Infof(out)
 		return err
-	} else {
-		return h.runHelm("dependency", "build")
 	}
+	return h.runHelm("dependency", "build")
 }
 
 // InstallChart installs a helm chart according with the given flags
