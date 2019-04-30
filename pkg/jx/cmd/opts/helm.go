@@ -524,7 +524,7 @@ func (o *CommonOptions) clone(wrkDir string, versionRepository string, reference
 		}
 		log.Infof("Cloning the Jenkins X versions repo %s with revision %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
 
-		return o.shallowCloneGitRepositoryToDir(wrkDir, versionRepository, "", "")
+		return o.shallowCloneGitRepositoryToDir(wrkDir, versionRepository, "", referenceName)
 	}
 	log.Infof("Cloning the Jenkins X versions repo %s with ref %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
 	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
