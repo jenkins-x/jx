@@ -59,7 +59,7 @@ func NewCmdStep(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdStepWaitForArtifact(commonOpts))
 	cmd.AddCommand(NewCmdStepStash(commonOpts))
 	cmd.AddCommand(NewCmdStepUnstash(commonOpts))
-
+	cmd.AddCommand(NewCmdStepValuesSchemaTemplate(commonOpts))
 	return cmd
 }
 
