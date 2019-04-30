@@ -235,8 +235,11 @@ func (o *StepCreateTaskOptions) Run() error {
 			}
 			return nil
 		})
+		// if we have failed to clone three times it's likely things wont recover so lets kill the process and let
+		// kubernetes reschedule a new pod
 		if err != nil {
-			return err
+			log.Fatalf("failed to clone three times it's likely things wont recover so lets kill the process %v", err)
+			panic(err)
 		}
 
 		var pr *prow.PullRefs

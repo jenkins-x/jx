@@ -78,7 +78,7 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	branchName, err := o.Git().Branch(devEnvDir)
 	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("upgrade-app-%s-%s", name, newVersion.String()), branchName)
+	assert.Equal(t, fmt.Sprintf("upgrade-app-%s-%s", name, newVersion.String()), branchName[:len(branchName)-6])
 	// Validate the updated Requirements.yaml
 	requirements, err := helm.LoadRequirementsFile(filepath.Join(devEnvDir, helm.RequirementsFileName))
 	assert.NoError(t, err)
@@ -158,7 +158,7 @@ func TestUpgradeAppWithShortNameForGitOps(t *testing.T) {
 	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	branchName, err := o.Git().Branch(devEnvDir)
 	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("upgrade-app-%s-%s", name, newVersion.String()), branchName)
+	assert.Equal(t, fmt.Sprintf("upgrade-app-%s-%s", name, newVersion.String()), branchName[:len(branchName)-6])
 	// Validate the updated Requirements.yaml
 	requirements, err := helm.LoadRequirementsFile(filepath.Join(devEnvDir, helm.RequirementsFileName))
 	assert.NoError(t, err)
@@ -581,7 +581,7 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	branchName, err := o.Git().Branch(devEnvDir)
 	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("upgrade-app-%s-%s", name, newVersion.String()), branchName)
+	assert.Equal(t, fmt.Sprintf("upgrade-app-%s-%s", name, newVersion.String()), branchName[:len(branchName)-6])
 	// Validate the updated Requirements.yaml
 	requirements, err := helm.LoadRequirementsFile(filepath.Join(devEnvDir, helm.RequirementsFileName))
 	assert.NoError(t, err)
@@ -659,7 +659,7 @@ func TestUpgradeAllAppsForGitOps(t *testing.T) {
 	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
 	branchName, err := o.Git().Branch(devEnvDir)
 	assert.NoError(t, err)
-	assert.Equal(t, fmt.Sprintf("upgrade-all-apps"), branchName)
+	assert.Equal(t, fmt.Sprintf("upgrade-all-apps"), branchName[:len(branchName)-6])
 	// Validate the updated Requirements.yaml
 	requirements, err := helm.LoadRequirementsFile(filepath.Join(devEnvDir, helm.RequirementsFileName))
 	assert.NoError(t, err)
