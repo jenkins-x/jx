@@ -28,6 +28,7 @@ const (
 )
 
 var (
+	// DefaultMLQuickstartLocation is the default organisation for machine-learning quickstarts
 	DefaultMLQuickstartLocation = v1.QuickStartLocation{
 		GitURL:   gits.GitHubURL,
 		GitKind:  gits.KindGitHub,
