@@ -208,6 +208,11 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
+	projectConfig, _, err := config.LoadProjectConfig(o.Dir)
+	if err != nil {
+		return err
+	}
+
 	if o.GitInfo == nil {
 		log.Warnf("No GitInfo found\n")
 	} else if o.GitInfo.Organisation == "" {
@@ -440,7 +445,7 @@ func (o *PreviewOptions) Run() error {
 		return err
 	}
 
-	values, err := o.GetPreviewValuesConfig(domain)
+	values, err := o.GetPreviewValuesConfig(projectConfig, domain)
 	if err != nil {
 		return err
 	}
@@ -817,8 +822,8 @@ func (o *PreviewOptions) defaultValues(ns string, warnMissingName bool) error {
 }
 
 // GetPreviewValuesConfig returns the PreviewValuesConfig to use as extraValues for helm
-func (o *PreviewOptions) GetPreviewValuesConfig(domain string) (*config.PreviewValuesConfig, error) {
-	repository, err := o.getImageName()
+func (o *PreviewOptions) GetPreviewValuesConfig(projectConfig *config.ProjectConfig, domain string) (*config.PreviewValuesConfig, error) {
+	repository, err := o.getImageName(projectConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -853,8 +858,14 @@ func writePreviewURL(o *PreviewOptions, url string) {
 	}
 }
 
-func getContainerRegistry() (string, error) {
-	registry := os.Getenv(DOCKER_REGISTRY)
+func getContainerRegistry(projectConfig *config.ProjectConfig) (string, error) {
+	registry := ""
+	if projectConfig != nil {
+		registry = projectConfig.DockerRegistryHost
+	}
+	if registry == "" {
+		registry = os.Getenv(DOCKER_REGISTRY)
+	}
 	if registry != "" {
 		return registry, nil
 	}
@@ -871,8 +882,8 @@ func getContainerRegistry() (string, error) {
 	return fmt.Sprintf("%s:%s", registryHost, registryPort), nil
 }
 
-func (o *PreviewOptions) getImageName() (string, error) {
-	containerRegistry, err := getContainerRegistry()
+func (o *PreviewOptions) getImageName(projectConfig *config.ProjectConfig) (string, error) {
+	containerRegistry, err := getContainerRegistry(projectConfig)
 	if err != nil {
 		return "", err
 	}
@@ -893,7 +904,7 @@ func (o *PreviewOptions) getImageName() (string, error) {
 		return "", fmt.Errorf("no %s environment variable found", APP_NAME)
 	}
 
-	dockerRegistryOrg := o.GetDockerRegistryOrg(o.GitInfo)
+	dockerRegistryOrg := o.GetDockerRegistryOrg(projectConfig, o.GitInfo)
 	if dockerRegistryOrg == "" {
 		dockerRegistryOrg = organisation
 	}

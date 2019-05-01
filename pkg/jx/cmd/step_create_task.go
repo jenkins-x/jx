@@ -524,7 +524,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 	if lifecycles != nil && lifecycles.Pipeline != nil {
 		parsed = lifecycles.Pipeline
 	} else {
-		stage, err := o.CreateStageForBuildPack(name, pipelineConfig, lifecycles, kind, ns)
+		stage, err := o.CreateStageForBuildPack(name, projectConfig, pipelineConfig, lifecycles, kind, ns)
 		if err != nil {
 			return nil, nil, nil, nil, nil, errors.Wrapf(err, "Failed to generate stage from build pack")
 		}
@@ -606,7 +606,7 @@ func (o *StepCreateTaskOptions) loadProjectConfig() (*config.ProjectConfig, stri
 }
 
 // CreateStageForBuildPack generates the Task for a build pack
-func (o *StepCreateTaskOptions) CreateStageForBuildPack(languageName string, pipelineConfig *jenkinsfile.PipelineConfig, lifecycles *jenkinsfile.PipelineLifecycles, templateKind, ns string) (*syntax.Stage, error) {
+func (o *StepCreateTaskOptions) CreateStageForBuildPack(languageName string, projectConfig *config.ProjectConfig, pipelineConfig *jenkinsfile.PipelineConfig, lifecycles *jenkinsfile.PipelineLifecycles, templateKind, ns string) (*syntax.Stage, error) {
 	if lifecycles == nil {
 		return nil, errors.New("generatePipeline: no lifecycles")
 	}
@@ -632,7 +632,7 @@ func (o *StepCreateTaskOptions) CreateStageForBuildPack(languageName string, pip
 		}
 
 		for _, s := range l.Steps {
-			steps = append(steps, o.createSteps(languageName, pipelineConfig, templateKind, s, container, dir, n.Name)...)
+			steps = append(steps, o.createSteps(languageName, projectConfig, pipelineConfig, templateKind, s, container, dir, n.Name)...)
 		}
 	}
 
@@ -1029,7 +1029,7 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	return nil
 }
 
-func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *jenkinsfile.PipelineStep, containerName string, dir string, prefixPath string) []syntax.Step {
+func (o *StepCreateTaskOptions) createSteps(languageName string, projectConfig *config.ProjectConfig, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *jenkinsfile.PipelineStep, containerName string, dir string, prefixPath string) []syntax.Step {
 	steps := []syntax.Step{}
 
 	if step.Container != "" {
@@ -1049,7 +1049,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		dir = strings.Replace(dir, PlaceHolderAppName, gitInfo.Name, -1)
 		dir = strings.Replace(dir, PlaceHolderOrg, gitInfo.Organisation, -1)
 		dir = strings.Replace(dir, PlaceHolderGitProvider, gitProviderHost, -1)
-		dir = strings.Replace(dir, PlaceHolderDockerRegistryOrg, strings.ToLower(o.GetDockerRegistryOrg(gitInfo)), -1)
+		dir = strings.Replace(dir, PlaceHolderDockerRegistryOrg, strings.ToLower(o.GetDockerRegistryOrg(projectConfig, gitInfo)), -1)
 	} else {
 		log.Warnf("No GitInfo available!\n")
 	}
@@ -1087,7 +1087,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 		}
 		s.Dir = dir
 
-		modifyStep := o.modifyStep(s, gitInfo, pipelineConfig, templateKind, step, containerName, dir)
+		modifyStep := o.modifyStep(projectConfig, s, gitInfo, pipelineConfig, templateKind, step, containerName, dir)
 
 		// let allow the docker images to have no actual version which is replaced via the version stream
 		image, err := o.VersionResolver.ResolveDockerImage(modifyStep.Image)
@@ -1102,7 +1102,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, pipelineConfig 
 	for _, s := range step.Steps {
 		// TODO add child prefix?
 		childPrefixPath := prefixPath
-		steps = append(steps, o.createSteps(languageName, pipelineConfig, templateKind, s, containerName, dir, childPrefixPath)...)
+		steps = append(steps, o.createSteps(languageName, projectConfig, pipelineConfig, templateKind, s, containerName, dir, childPrefixPath)...)
 	}
 	return steps
 }
@@ -1573,15 +1573,15 @@ func (o *StepCreateTaskOptions) invokeSteps(steps []*jenkinsfile.PipelineStep) e
 }
 
 // modifyStep allows a container step to be modified to do something different
-func (o *StepCreateTaskOptions) modifyStep(parsedStep syntax.Step, gitInfo *gits.GitRepository, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *jenkinsfile.PipelineStep, containerName string, dir string) syntax.Step {
+func (o *StepCreateTaskOptions) modifyStep(projectConfig *config.ProjectConfig, parsedStep syntax.Step, gitInfo *gits.GitRepository, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *jenkinsfile.PipelineStep, containerName string, dir string) syntax.Step {
 
 	if !o.NoKaniko {
 		if strings.HasPrefix(parsedStep.Command, "skaffold build") ||
 			(len(parsedStep.Arguments) > 0 && strings.HasPrefix(strings.Join(parsedStep.Arguments[1:], " "), "skaffold build")) {
 			sourceDir := o.getWorkspaceDir()
 			dockerfile := filepath.Join(sourceDir, "Dockerfile")
-			localRepo := o.getDockerRegistry()
-			destination := o.dockerImage(gitInfo)
+			localRepo := o.getDockerRegistry(projectConfig)
+			destination := o.dockerImage(projectConfig, gitInfo)
 
 			args := []string{"--cache=true", "--cache-dir=/workspace",
 				"--context=" + sourceDir,
@@ -1609,21 +1609,21 @@ func (o *StepCreateTaskOptions) modifyStep(parsedStep syntax.Step, gitInfo *gits
 	return parsedStep
 }
 
-func (o *StepCreateTaskOptions) dockerImage(gitInfo *gits.GitRepository) string {
-	dockerRegistry := o.getDockerRegistry()
+func (o *StepCreateTaskOptions) dockerImage(projectConfig *config.ProjectConfig, gitInfo *gits.GitRepository) string {
+	dockerRegistry := o.getDockerRegistry(projectConfig)
 
 	dockeerRegistryOrg := o.DockerRegistryOrg
 	if dockeerRegistryOrg == "" {
-		dockeerRegistryOrg = o.GetDockerRegistryOrg(gitInfo)
+		dockeerRegistryOrg = o.GetDockerRegistryOrg(projectConfig, gitInfo)
 	}
 	appName := gitInfo.Name
 	return dockerRegistry + "/" + dockeerRegistryOrg + "/" + appName
 }
 
-func (o *StepCreateTaskOptions) getDockerRegistry() string {
+func (o *StepCreateTaskOptions) getDockerRegistry(projectConfig *config.ProjectConfig) string {
 	dockerRegistry := o.DockerRegistry
 	if dockerRegistry == "" {
-		dockerRegistry = o.GetDockerRegistry()
+		dockerRegistry = o.GetDockerRegistry(projectConfig)
 	}
 	return dockerRegistry
 }
