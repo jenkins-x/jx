@@ -8,7 +8,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/quickstarts"
+	"github.com/jenkins-x/jx/pkg/util"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -23,6 +25,16 @@ import (
 const (
 	// JenkinsXMLQuickstartsOrganisation is the default organisation for machine-learning quickstarts
 	JenkinsXMLQuickstartsOrganisation = "machine-learning-quickstarts"
+)
+
+var (
+	DefaultMLQuickstartLocation = v1.QuickStartLocation{
+		GitURL:   gits.GitHubURL,
+		GitKind:  gits.KindGitHub,
+		Owner:    JenkinsXMLQuickstartsOrganisation,
+		Includes: []string{"ML-*"},
+		Excludes: []string{"WIP-*"},
+	}
 )
 
 var (
@@ -120,11 +132,26 @@ func (o *CreateMLQuickstartOptions) Run() error {
 		if err != nil {
 			return err
 		}
+		foundDefault := false
 		for i := range locations {
 			locations[i].Includes = []string{"ML-*"} // Filter for ML repos
 			o.Debugf("Location: %s \n", locations[i])
+			if locations[i].GitURL == gits.GitHubURL && locations[i].Owner == JenkinsXMLQuickstartsOrganisation {
+				foundDefault = true
+			}
 		}
 
+		// Add the default MLQuickstarts repo if it is missing
+		if !foundDefault {
+			locations = append(locations, DefaultMLQuickstartLocation)
+
+			callback := func(env *v1.Environment) error {
+				env.Spec.TeamSettings.QuickstartLocations = locations
+				log.Infof("Adding the default ml quickstart repo %s\n", util.ColorInfo(util.UrlJoin(DefaultMLQuickstartLocation.GitURL, DefaultMLQuickstartLocation.Owner)))
+				return nil
+			}
+			o.ModifyDevEnvironment(callback)
+		}
 	}
 
 	// lets add any extra github organisations if they are not already configured
@@ -200,16 +227,6 @@ func (o *CreateMLQuickstartOptions) Run() error {
 	w.GitHost = o.GitHost
 	w.IgnoreTeam = o.IgnoreTeam
 
-	w.GitRepositoryOptions = o.GitRepositoryOptions
-	if !o.BatchMode {
-		w.GitRepositoryOptions.ServerURL = details.GitServer.URL
-		w.GitRepositoryOptions.ServerKind = details.GitServer.Kind
-		w.GitRepositoryOptions.Username = details.User.Username
-		w.GitRepositoryOptions.ApiToken = details.User.ApiToken
-		w.GitRepositoryOptions.Private = details.PrivateRepo
-		w.GitProvider = details.GitProvider
-	}
-
 	w.BatchMode = true
 
 	// Check to see if the selection is a project set
@@ -221,6 +238,17 @@ func (o *CreateMLQuickstartOptions) Run() error {
 		stub := o.Filter.ProjectName
 		for _, project := range ps {
 			w.ImportOptions = o.ImportOptions // Reset the options each time as they are modified by Import (DraftPack)
+			w.ImportOptions.Organisation = details.Organisation
+			w.GitRepositoryOptions = o.GitRepositoryOptions
+			w.GitRepositoryOptions.ServerURL = details.GitServer.URL
+			w.GitRepositoryOptions.ServerKind = details.GitServer.Kind
+			w.GitRepositoryOptions.Username = details.User.Username
+			w.GitRepositoryOptions.ApiToken = details.User.ApiToken
+			w.GitRepositoryOptions.Owner = details.Organisation
+			w.GitRepositoryOptions.Private = details.PrivateRepo
+			w.GitProvider = details.GitProvider
+			w.GitServer = details.GitServer
+
 			w.Filter.Text = project.Repo
 			w.Filter.ProjectName = stub + project.Tail
 			o.Debugf("Invoking CreateQuickstart for %s...\n", project.Repo)
