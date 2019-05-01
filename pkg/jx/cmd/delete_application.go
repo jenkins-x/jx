@@ -140,7 +140,11 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService jenkinsv1.S
 	envMap, _, err := kube.GetOrderedEnvironments(jxClient, "")
 	currentUser, err := user.Current()
 	if err != nil {
-		return deletedApplications, errors.Wrap(err, "getting current user")
+		log.Warnf("could not get the current user: %s\n", err.Error())
+	}
+	username := "unknown"
+	if currentUser != nil {
+		username = currentUser.Username
 	}
 
 	kubeClient, ns, err := o.KubeClientAndDevNamespace()
@@ -237,7 +241,7 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService jenkinsv1.S
 
 		for _, env := range envMap {
 			if env.Spec.Kind == v1.EnvironmentKindTypePermanent {
-				err = o.deleteApplicationFromEnvironment(env, applicationName, currentUser.Username)
+				err = o.deleteApplicationFromEnvironment(env, applicationName, username)
 				if err != nil {
 					return deletedApplications, errors.Wrapf(err, "deleting application %s from environment %s", applicationName, env.Name)
 				}
