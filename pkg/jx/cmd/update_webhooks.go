@@ -19,6 +19,7 @@ import (
 type UpdateWebhooksOptions struct {
 	*opts.CommonOptions
 	Org             string
+	User            string
 	Repo            string
 	ExactHookMatch  bool
 	PreviousHookUrl string
@@ -117,11 +118,12 @@ func (options *UpdateWebhooksOptions) Run() error {
 	if err != nil {
 		return errors.Wrap(err, "unable to determine git provider")
 	}
+	owner := GetOrgOrUserFromOptions(options)
 
 	if options.Repo != "" {
 		options.updateRepoHook(git, options.Repo, webhookURL, isProwEnabled, hmacToken)
 	} else {
-		repositories, err := git.ListRepositories(options.Org)
+		repositories, err := git.ListRepositories(owner)
 		if err != nil {
 			return errors.Wrap(err, "unable to list repositories")
 		}
@@ -134,6 +136,17 @@ func (options *UpdateWebhooksOptions) Run() error {
 	}
 
 	return nil
+}
+
+// GetOrgOrUserFromOptions returns the Org if set,
+// if not set, returns the user if that is set
+// or "" if neither is set
+func GetOrgOrUserFromOptions(options *UpdateWebhooksOptions) string {
+	owner := options.Org
+	if owner == "" && options.User != "" {
+		owner = options.User
+	}
+	return owner
 }
 
 func (options *UpdateWebhooksOptions) updateRepoHook(git gits.GitProvider, repoName string, webhookURL string, isProwEnabled bool, hmacToken string) error {

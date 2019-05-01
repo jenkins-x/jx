@@ -1,6 +1,8 @@
 package helm
 
 import (
+	"bufio"
+	"bytes"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -9,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -18,6 +21,7 @@ import (
 
 	"github.com/pborman/uuid"
 
+	"github.com/jenkins-x/jx/pkg/table"
 	"github.com/jenkins-x/jx/pkg/vault"
 
 	"github.com/jenkins-x/jx/pkg/version"
@@ -57,6 +61,8 @@ const (
 	//RepoVaultPath is the path to the repo credentials in Vault
 	RepoVaultPath = "helm/repos"
 )
+
+var isNotFoundRegex = regexp.MustCompile(`^Error: chart "\S*" matching \S* not found in \S* index. \(try 'helm repo update'\). no chart name found$`)
 
 // copied from helm to minimise dependencies...
 
@@ -314,11 +320,11 @@ func LoadValues(data []byte) (map[string]interface{}, error) {
 func SaveFile(fileName string, contents interface{}) error {
 	data, err := yaml.Marshal(contents)
 	if err != nil {
-		return errors.Wrapf(err, "failed to marshal helm values file %s", fileName)
+		return errors.Wrapf(err, "failed to marshal helm file %s", fileName)
 	}
 	err = ioutil.WriteFile(fileName, data, util.DefaultWritePermissions)
 	if err != nil {
-		return errors.Wrapf(err, "failed to save helm values file %s", fileName)
+		return errors.Wrapf(err, "failed to save helm file %s", fileName)
 	}
 	return nil
 }
@@ -443,18 +449,6 @@ func CombineValueFilesToFile(outFile string, inputFiles []string, chartName stri
 	return nil
 }
 
-// GetLatestVersion get's the latest version of a chart in a repo using helmer
-func GetLatestVersion(chart string, repo string, username string, password string, helmer Helmer) (string, error) {
-	latest := ""
-	version := ""
-	err := InspectChart(chart, version, repo, username, password, helmer, func(dir string) error {
-		var err error
-		_, latest, err = LoadChartNameAndVersion(filepath.Join(dir, "Chart.yaml"))
-		return err
-	})
-	return latest, err
-}
-
 // InspectChart fetches the specified chart in a repo using helmer, and then calls the closure on it, before cleaning up
 func InspectChart(chart string, version string, repo string, username string, password string,
 	helmer Helmer, inspector func(dir string) error) error {
@@ -491,7 +485,6 @@ func InspectChart(chart string, version string, repo string, username string, pa
 			return err
 		}
 	}
-
 	return inspector(inspectPath)
 }
 
@@ -836,5 +829,21 @@ func PromptForRepoCredsIfNeeded(repo string, cred *HelmRepoCredential, in termin
 		}
 	}
 	return nil
+}
 
+// RenderReleasesAsTable lists the current releases in a table
+func RenderReleasesAsTable(releases map[string]ReleaseSummary, sortedKeys []string) (string, error) {
+	var buffer bytes.Buffer
+	writer := bufio.NewWriter(&buffer)
+	t := table.CreateTable(writer)
+	t.Separator = "\t"
+	t.AddRow("NAME", "REVISION", "UPDATED", "STATUS", "CHART", "APP VERSION", "NAMESPACE")
+	for _, key := range sortedKeys {
+		info := releases[key]
+		t.AddRow(info.ReleaseName, info.Revision, info.Updated, info.Status, info.ChartFullName, info.AppVersion,
+			info.Namespace)
+	}
+	t.Render()
+	writer.Flush()
+	return buffer.String(), nil
 }

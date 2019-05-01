@@ -36,6 +36,9 @@ type EnvironmentSpec struct {
 	TeamSettings      TeamSettings          `json:"teamSettings,omitempty" protobuf:"bytes,9,opt,name=teamSettings"`
 	PreviewGitSpec    PreviewGitSpec        `json:"previewGitInfo,omitempty" protobuf:"bytes,10,opt,name=previewGitInfo"`
 	WebHookEngine     WebHookEngineType     `json:"webHookEngine,omitempty" protobuf:"bytes,11,opt,name=webHookEngine"`
+
+	// RemoteCluster flag indicates if the Environment is deployed in a separate cluster to the Development Environment
+	RemoteCluster bool `json:"remoteCluster,omitempty" protobuf:"bytes,12,opt,name=remoteCluster"`
 }
 
 // EnvironmentStatus is the status for an Environment resource
@@ -189,6 +192,9 @@ type TeamSettings struct {
 
 	// VersionStreamRef contains the git ref (tag or branch) in the VersionStreamURL repository to use as the version stream
 	VersionStreamRef string `json:"versionStreamRef,omitempty" protobuf:"bytes,26,opt,name=versionStreamRef"`
+
+	// AppsPrefixes is the list of prefixes for appNames
+	AppsPrefixes []string `json:"appPrefixes,omitempty" protobuf:"bytes,27,opt,name=appPrefixes"`
 }
 
 // StorageLocation

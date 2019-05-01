@@ -32,6 +32,7 @@ type AddAppOptions struct {
 	Username string
 	Password string
 	Alias    string
+	Prefixes []string
 
 	// allow git to be configured externally before a PR is created
 	ConfigureGitCallback environments.ConfigureGitFn
@@ -182,10 +183,6 @@ func (o *AddAppOptions) Run() error {
 		installOpts.Gitter = o.Git()
 	}
 	if !o.GitOps {
-		err := o.EnsureHelm()
-		if err != nil {
-			return errors.Wrap(err, "failed to ensure that helm is present")
-		}
 		if o.Alias != "" && o.ReleaseName == "" {
 			bin, noTiller, helmTemplate, err := o.TeamHelmBin()
 			if err != nil {
@@ -198,6 +195,10 @@ func (o *AddAppOptions) Run() error {
 			}
 		}
 
+	}
+	err = o.EnsureHelm()
+	if err != nil {
+		return errors.Wrap(err, "failed to ensure that helm is present")
 	}
 	if o.GetSecretsLocation() == secrets.VaultLocationKind {
 		teamName, _, err := o.TeamAndEnvironmentNames()

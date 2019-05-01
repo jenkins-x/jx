@@ -4,6 +4,10 @@ import (
 	"fmt"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
+
+	"github.com/jenkins-x/jx/pkg/helm"
+	"github.com/pkg/errors"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/spf13/cobra"
@@ -60,9 +64,13 @@ func (o *StepHelmListOptions) Run() error {
 	if h == nil {
 		return fmt.Errorf("No Helmer created!")
 	}
-	output, err := h.ListCharts()
+	releases, sortedKeys, err := h.ListReleases(o.Namespace)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
+	}
+	output, err := helm.RenderReleasesAsTable(releases, sortedKeys)
+	if err != nil {
+		return errors.WithStack(err)
 	}
 	log.Info(output)
 	return nil

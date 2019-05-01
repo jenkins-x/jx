@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/kube/services"
+	"github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/spf13/cobra"
 
@@ -13,8 +14,9 @@ import (
 type GetURLOptions struct {
 	GetOptions
 
-	Namespace   string
-	Environment string
+	Namespace    string
+	Environment  string
+	OnlyViewHost bool
 }
 
 var (
@@ -57,6 +59,7 @@ func NewCmdGetURL(commonOpts *opts.CommonOptions) *cobra.Command {
 func (o *GetURLOptions) addGetUrlFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&o.Namespace, "namespace", "n", "", "Specifies the namespace name to look inside")
 	cmd.Flags().StringVarP(&o.Environment, "env", "e", "", "Specifies the Environment name to look inside")
+	cmd.Flags().BoolVarP(&o.OnlyViewHost, "host", "", false, "Only displays host names of the URLs and does not open the browser")
 }
 
 // Run implements this command
@@ -78,10 +81,18 @@ func (o *GetURLOptions) Run() error {
 		return err
 	}
 	table := o.CreateTable()
-	table.AddRow("Name", "URL")
+	header := "URL"
+	if o.OnlyViewHost {
+		header = "HOST"
+	}
+	table.AddRow("NAME", header)
 
-	for _, url := range urls {
-		table.AddRow(url.Name, url.URL)
+	for _, u := range urls {
+		text := u.URL
+		if o.OnlyViewHost {
+			text = util.URLToHostName(text)
+		}
+		table.AddRow(u.Name, text)
 	}
 	table.Render()
 	return nil

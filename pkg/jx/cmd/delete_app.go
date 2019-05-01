@@ -121,20 +121,22 @@ func (o *DeleteAppOptions) Run() error {
 		if err != nil {
 			return errors.Wrap(err, "failed to ensure that helm is present")
 		}
-		jxClient, ns, err := o.JXClientAndDevNamespace()
-		if err != nil {
-			return errors.Wrapf(err, "getting jx client")
-		}
+
 		if o.Alias != "" {
 			return util.InvalidOptionf(optionAlias, o.Alias,
 				"Unable to specify --%s when NOT using GitOps for your dev environment", optionAlias)
 		}
-		opts.JxClient = jxClient
-		if o.Namespace == "" {
-			o.Namespace = ns
-		}
-		opts.Namespace = o.Namespace
 	}
+
+	jxClient, ns, err := o.JXClientAndDevNamespace()
+	if err != nil {
+		return errors.Wrapf(err, "getting jx client")
+	}
+	opts.JxClient = jxClient
+	if o.Namespace == "" {
+		o.Namespace = ns
+	}
+	opts.Namespace = o.Namespace
 
 	args := o.Args
 	if len(args) == 0 {

@@ -53,6 +53,7 @@ func NewCmdCreateAddon(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.AddCommand(NewCmdCreateAddonFlagger(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonGitea(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonGloo(commonOpts))
+	cmd.AddCommand(NewCmdCreateAddonIngressController(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonIstio(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonKnativeBuild(commonOpts))
 	cmd.AddCommand(NewCmdCreateAddonKubeless(commonOpts))

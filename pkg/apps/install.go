@@ -61,6 +61,10 @@ type InstallOptions struct {
 	valuesFiles *environments.ValuesFiles // internal variable used to track, most be passed in
 }
 
+var defaultPrefixes = []string{
+	"jx-app-",
+}
+
 // AddApp adds the app at a particular version (
 // or latest if not specified) from the repository with username and password. A releaseName can be specified.
 // Values can be passed with in files or as a slice of name=value pairs. An alias can be specified.
@@ -83,9 +87,18 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 		return errors.Wrapf(err, "adding helm repo")
 	}
 
+	chartName, err := o.resolvePrefixesAgainstRepos(repository, app)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+
+	if chartName == "" {
+		return errors.Errorf("unable to find %s in %s", app, repository)
+	}
+
 	// The chart inspector allows us to operate on the unpacked chart.
 	// We need to ask questions then as we have access to the schema, and can add secrets.
-	interrogateChartFn := o.createInterrogateChartFn(version, app, repository, username, password, alias, true)
+	interrogateChartFn := o.createInterrogateChartFn(version, chartName, repository, username, password, alias, true)
 
 	// Called whilst the chart is unpacked and modifiable
 	installAppFunc := func(dir string) error {
@@ -99,12 +112,9 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 			opts := GitOpsOptions{
 				InstallOptions: o,
 			}
-			if app == "." {
-				app = chartDetails.Name
-			}
-			err := opts.AddApp(app, dir, chartDetails.Version, repository, alias)
+			err := opts.AddApp(chartDetails.Name, dir, chartDetails.Version, repository, alias)
 			if err != nil {
-				return errors.Wrapf(err, "adding app %s version %s with alias %s using gitops", app, version, alias)
+				return errors.Wrapf(err, "adding app %s version %s with alias %s using gitops", chartName, version, alias)
 			}
 		} else {
 			opts := HelmOpsOptions{
@@ -113,13 +123,13 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 			if releaseName == "" {
 				releaseName = fmt.Sprintf("%s-%s", o.Namespace, chartDetails.Name)
 			}
-			err = opts.AddApp(app, dir, chartDetails.Name, chartDetails.Version, chartDetails.Values, repository,
+			err = opts.AddApp(chartName, dir, chartDetails.Name, chartDetails.Version, chartDetails.Values, repository,
 				username, password,
 				releaseName,
 				setValues,
 				helmUpdate)
 			if err != nil {
-				errStr := fmt.Sprintf("adding app %s version %s using helm", app, version)
+				errStr := fmt.Sprintf("adding app %s version %s using helm", chartName, version)
 				if alias != "" {
 					errStr = fmt.Sprintf("%s with alias %s", errStr, alias)
 				}
@@ -131,21 +141,30 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 	}
 
 	// Do the actual work
-	return helm.InspectChart(app, version, repository, username, password, o.Helmer, installAppFunc)
+	return helm.InspectChart(chartName, version, repository, username, password, o.Helmer, installAppFunc)
 }
 
 //GetApps gets a list of installed apps
-func (o *InstallOptions) GetApps(kubeClient kubernetes.Interface, namespace string, appNames []string) (apps *jenkinsv1.AppList, err error) {
-	client := o.JxClient
+func (o *InstallOptions) GetApps(appNames []string) (apps *jenkinsv1.AppList, err error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "getting jx client")
 	}
 	listOptions := metav1.ListOptions{}
 	if len(appNames) > 0 {
-		selector := fmt.Sprintf(helm.LabelAppName+" in (%s)", strings.Join(appNames[:], ", "))
+		in := appNames
+		if !o.GitOps {
+			prefixes := o.getPrefixes()
+			in := make([]string, 0)
+			for _, prefix := range prefixes {
+				for _, appName := range appNames {
+					in = append(in, fmt.Sprintf("%s%s", prefix, appName))
+				}
+			}
+		}
+		selector := fmt.Sprintf(helm.LabelAppName+" in (%s)", strings.Join(in, ", "))
 		listOptions.LabelSelector = selector
 	}
-	apps, err = client.JenkinsV1().Apps(namespace).List(listOptions)
+	apps, err = o.JxClient.JenkinsV1().Apps(o.Namespace).List(listOptions)
 	if err != nil {
 		return nil, errors.Wrap(err, "listing apps")
 	}
@@ -157,19 +176,38 @@ func (o *InstallOptions) DeleteApp(app string, alias string, releaseName string,
 	o.valuesFiles = &environments.ValuesFiles{
 		Items: make([]string, 0),
 	}
+
+	chartName := app
 	if o.GitOps {
 		opts := GitOpsOptions{
 			InstallOptions: o,
 		}
-		err := opts.DeleteApp(app, alias)
+		err := opts.DeleteApp(chartName, alias)
 		if err != nil {
 			return err
 		}
+		// TODO support prefixed name (requires get apps to support gitops see
 	} else {
+		apps, err := o.GetApps([]string{app})
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		if len(apps.Items) == 0 {
+			return errors.Errorf("No app found for %s", app)
+		}
+		if len(apps.Items) > 1 {
+			appNames := make([]string, 0)
+			for _, app := range apps.Items {
+				appNames = append(appNames, app.Labels[helm.LabelAppName])
+			}
+			return errors.Errorf("Found more than one app for %s (%v)", app, appNames)
+		}
+		chartName := apps.Items[0].Labels[helm.LabelAppName]
+
 		opts := HelmOpsOptions{
 			InstallOptions: o,
 		}
-		err := opts.DeleteApp(app, releaseName, true)
+		err = opts.DeleteApp(chartName, releaseName, true)
 		if err != nil {
 			return err
 		}
@@ -201,6 +239,19 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 		return errors.Wrapf(err, "adding helm repo")
 	}
 
+	chartName := ""
+	// empty app means upgrade all
+	if app != "" {
+		chartName, err = o.resolvePrefixesAgainstRepos(repository, app)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		if chartName == "" {
+			return errors.Errorf("unable to find %s in %s", chartName, repository)
+		}
+	}
+
 	interrogateChartFunc := o.createInterrogateChartFn(version, app, repository, username, password, alias, askExisting)
 
 	// The chart inspector allows us to operate on the unpacked chart.
@@ -212,14 +263,14 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 		}
 		// Asking questions is a bit more complex in this case as the existing values file is in the environment
 		// repo, so we need to ask questions once we have that repo available
-		err := opts.UpgradeApp(app, version, repository, username, password, alias, interrogateChartFunc)
+		err := opts.UpgradeApp(chartName, version, repository, username, password, alias, interrogateChartFunc)
 		if err != nil {
 			return err
 		}
 	} else {
 		upgradeAppFunc := func(dir string) error {
 			// Try to load existing answers from the apps CRD
-			appCrdName := fmt.Sprintf("%s-%s", releaseName, app)
+			appCrdName := fmt.Sprintf("%s-%s", releaseName, chartName)
 			appResource, err := o.JxClient.JenkinsV1().Apps(o.Namespace).Get(appCrdName, metav1.GetOptions{})
 			if err != nil {
 				return errors.Wrapf(err, "getting App CRD %s", appResource.Name)
@@ -249,14 +300,14 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 			opts := HelmOpsOptions{
 				InstallOptions: o,
 			}
-			err = opts.UpgradeApp(app, version, repository, username, password, releaseName, alias, update)
+			err = opts.UpgradeApp(chartName, version, repository, username, password, releaseName, alias, update)
 			if err != nil {
 				return err
 			}
 			return nil
 		}
 		// Do the actual work
-		err = helm.InspectChart(app, version, repository, username, password, o.Helmer, upgradeAppFunc)
+		err := helm.InspectChart(chartName, version, repository, username, password, o.Helmer, upgradeAppFunc)
 		if err != nil {
 			return err
 		}
@@ -273,7 +324,7 @@ type ChartDetails struct {
 	Cleanup func()
 }
 
-func (o *InstallOptions) createInterrogateChartFn(version string, app string, repository string, username string,
+func (o *InstallOptions) createInterrogateChartFn(version string, chartName string, repository string, username string,
 	password string, alias string, askExisting bool) func(chartDir string,
 	existing map[string]interface{}) (*ChartDetails, error) {
 
@@ -291,8 +342,23 @@ func (o *InstallOptions) createInterrogateChartFn(version string, app string, re
 			chartDetails.Name = loadedName
 			chartDetails.Version = loadedVersion
 		} else {
-			chartDetails.Name = app
+			chartDetails.Name = chartName
 			chartDetails.Version = version
+		}
+
+		requirements, err := helm.LoadRequirementsFile(helm.RequirementsFileName)
+		if err != nil {
+			return &chartDetails, errors.Wrapf(err, "loading requirements.yaml for %s", chartDir)
+		}
+		for _, requirement := range requirements.Dependencies {
+			// repositories that start with an @ are aliases to helm repo names
+			if !strings.HasPrefix(requirement.Repository, "@") {
+				_, err := helm.AddHelmRepoIfMissing(requirement.Repository, "", "", "", o.Helmer, o.VaultClient, o.In,
+					o.Out, o.Err)
+				if err != nil {
+					return &chartDetails, errors.Wrapf(err, "")
+				}
+			}
 		}
 
 		if version == "" {
@@ -316,10 +382,10 @@ func (o *InstallOptions) createInterrogateChartFn(version string, app string, re
 				log.Warnf("values.yaml specified by --valuesFiles will be used despite presence of schema in app")
 			}
 
-			appResource, _, err := environments.LocateAppResource(o.Helmer, chartDir, app)
+			appResource, _, err := environments.LocateAppResource(o.Helmer, chartDir, chartName)
 			if appResource.Spec.SchemaPreprocessor != nil {
 				id := uuid.New()
-				cmName := toValidName(app, "schema", id)
+				cmName := toValidName(chartName, "schema", id)
 				cm := corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: cmName,
@@ -348,11 +414,11 @@ func (o *InstallOptions) createInterrogateChartFn(version string, app string, re
 					Name:  "VALUES_SCHEMA_JSON_CONFIG_MAP_NAME",
 					Value: cmName,
 				})
-				serviceAccountName := toValidName(app, "schema-sa%s", id)
+				serviceAccountName := toValidName(chartName, "schema-sa%s", id)
 
 				role := &rbacv1.Role{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: toValidName(app, "schema-role", id),
+						Name: toValidName(chartName, "schema-role", id),
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -410,7 +476,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, app string, re
 				}
 				roleBinding := rbacv1.RoleBinding{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: toValidName(app, "schema-rolebinding", id),
+						Name: toValidName(chartName, "schema-rolebinding", id),
 					},
 					RoleRef: rbacv1.RoleRef{
 						APIGroup: rbacv1.GroupName,
@@ -437,7 +503,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, app string, re
 				}()
 				pod := corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: toValidName(app, "values-preprocessor", id),
+						Name: toValidName(chartName, "values-preprocessor", id),
 					},
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{
@@ -449,7 +515,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, app string, re
 				}
 				log.Infof("Preparing questions to configure %s."+
 					"\n If this is the first time you have installed the app, this may take a couple of minutes.",
-					app)
+					chartName)
 				_, err = o.KubeClient.CoreV1().Pods(o.Namespace).Create(&pod)
 				if err != nil {
 					return &chartDetails, errors.Wrapf(err, "creating pod %s for values.schema.json proprocessing",
@@ -495,7 +561,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, app string, re
 			}
 
 			if err != nil {
-				return &chartDetails, errors.Wrapf(err, "locating app resource for %s", app)
+				return &chartDetails, errors.Wrapf(err, "locating app resource for %s", chartName)
 			}
 			var secrets []*surveyutils.GeneratedSecret
 			var basepath string
@@ -512,14 +578,14 @@ func (o *InstallOptions) createInterrogateChartFn(version string, app string, re
 			if err != nil {
 				return &chartDetails, errors.Wrapf(err, "asking questions for schema %s", schemaFile)
 			}
-			cleanupValues, err := o.handleValues(chartDir, app, values)
+			cleanupValues, err := o.handleValues(chartDir, chartName, values)
 			chartDetails.Cleanup = func() {
 				cleanupValues()
 			}
 			if err != nil {
 				return &chartDetails, err
 			}
-			cleanupSecrets, err := o.handleSecrets(chartDir, app, secrets)
+			cleanupSecrets, err := o.handleSecrets(chartDir, chartName, secrets)
 			chartDetails.Cleanup = func() {
 				cleanupSecrets()
 				cleanupValues()
@@ -542,8 +608,8 @@ func toValidName(appName string, name string, id string) string {
 	return kube.ToValidName(fmt.Sprintf("%s-%s", base[0:20], id))
 }
 
-func (o *InstallOptions) handleValues(dir string, app string, values []byte) (func(), error) {
-	valuesFile, cleanup, err := AddValuesToChart(app, values, o.Verbose)
+func (o *InstallOptions) handleValues(dir string, chartName string, values []byte) (func(), error) {
+	valuesFile, cleanup, err := AddValuesToChart(chartName, values, o.Verbose)
 	if err != nil {
 		return cleanup, err
 	}
@@ -553,21 +619,66 @@ func (o *InstallOptions) handleValues(dir string, app string, values []byte) (fu
 	return cleanup, nil
 }
 
-func (o *InstallOptions) handleSecrets(dir string, app string, generatedSecrets []*surveyutils.GeneratedSecret) (func(),
+func (o *InstallOptions) handleSecrets(dir string, chartName string, generatedSecrets []*surveyutils.GeneratedSecret) (func(),
 	error) {
 	if o.VaultClient != nil {
 		f, err := AddSecretsToVault(generatedSecrets, o.VaultClient)
 		if err != nil {
-			return func() {}, errors.Wrapf(err, "adding secrets to vault with for %s", app)
+			return func() {}, errors.Wrapf(err, "adding secrets to vault for %s", chartName)
 		}
 		return f, nil
 	}
-	secretsFile, f, err := AddSecretsToTemplate(dir, app, generatedSecrets)
+	secretsFile, f, err := AddSecretsToTemplate(dir, chartName, generatedSecrets)
 	if err != nil {
-		return func() {}, errors.Wrapf(err, "adding secrets to template for %s", app)
+		return func() {}, errors.Wrapf(err, "adding secrets to template for %s", chartName)
 	}
 	if secretsFile != "" {
 		o.valuesFiles.Items = append(o.valuesFiles.Items, secretsFile)
 	}
 	return f, nil
+}
+
+func (o *InstallOptions) getPrefixes() []string {
+	// Set the default prefixes
+	prefixes := o.DevEnv.Spec.TeamSettings.AppsPrefixes
+	if prefixes == nil {
+		prefixes = []string{
+			"jx-app-",
+		}
+	}
+	prefixes = append(prefixes, "")
+	return prefixes
+}
+
+func (o *InstallOptions) resolvePrefixesAgainstRepos(repository string, chartName string) (string, error) {
+	prefixes := o.getPrefixes()
+
+	// Create the short chart name
+	repos, err := o.Helmer.ListRepos()
+	if err != nil {
+		return "", errors.Wrapf(err, "listing helm repos")
+	}
+	possiblesRepoNames := make([]string, 0)
+	for repo, url := range repos {
+		if url == repository {
+			possiblesRepoNames = append(possiblesRepoNames, repo)
+		}
+	}
+	charts, err := o.Helmer.SearchCharts("")
+	if err != nil {
+		return "", errors.Wrapf(err, "searching charts")
+	}
+
+	for _, prefix := range prefixes {
+		for _, possibleRepoName := range possiblesRepoNames {
+			fullName := fmt.Sprintf("%s/%s%s", possibleRepoName, prefix, chartName)
+			for _, chart := range charts {
+				if chart.Name == fullName {
+					// Chart found!
+					return fmt.Sprintf("%s%s", prefix, chartName), nil
+				}
+			}
+		}
+	}
+	return chartName, nil
 }

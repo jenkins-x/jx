@@ -172,6 +172,8 @@ type Gitter interface {
 
 	Init(dir string) error
 	Clone(url string, directory string) error
+
+	// ShallowCloneBranch TODO not sure if this method works any more - consider using ShallowClone(dir, url, branch, "")
 	ShallowCloneBranch(url string, branch string, directory string) error
 	ShallowClone(dir string, url string, commitish string, pullRequest string) error
 	FetchUnshallow(dir string) error

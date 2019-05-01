@@ -23,7 +23,7 @@ func (o *CommonOptions) RunCommandFromDir(dir, name string, args ...string) erro
 	os.Setenv("PATH", util.PathWithBinary())
 	err := e.Run()
 	if err != nil {
-		log.Errorf("Error: Command failed  %s %s\n", name, strings.Join(args, " "))
+		log.Errorf("Error: Command failed  %s %s", name, strings.Join(args, " "))
 	}
 	return err
 }

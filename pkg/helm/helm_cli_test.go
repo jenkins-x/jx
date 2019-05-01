@@ -242,7 +242,7 @@ func TestStatusReleaseWithOutputWithFormat(t *testing.T) {
 }
 
 func TestStatusReleases(t *testing.T) {
-	expectedArgs := []string{"list"}
+	expectedArgs := []string{"list", "--all", "--namespace", "default"}
 	expectedSatusMap := map[string]string{
 		"jenkins-x":      "DEPLOYED",
 		"jx-production":  "DEPLOYED",
@@ -253,12 +253,13 @@ func TestStatusReleases(t *testing.T) {
 	helm, runner := createHelm(t, nil, listReleasesOutput)
 	ns := "default"
 
-	statusMap, err := helm.StatusReleases(ns)
+	releaseMap, _, err := helm.ListReleases(ns)
 
 	assert.NoError(t, err, "should list the release statuses without any error")
 	verifyArgs(t, helm, runner, expectedArgs...)
-	for release, status := range statusMap {
-		assert.Equal(t, expectedSatusMap[release], status, "expected status '%s', got '%s'", expectedSatusMap[release], status)
+	for release, details := range releaseMap {
+		assert.Equal(t, expectedSatusMap[release], details.Status, "expected details '%s', got '%s'",
+			expectedSatusMap[release], details)
 	}
 }
 

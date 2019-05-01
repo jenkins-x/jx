@@ -11,6 +11,7 @@ import (
 
 // Run runs the command
 func Run() error {
+
 	cmd := cmd.NewJXCommand(clients.NewFactory(), os.Stdin, os.Stdout, os.Stderr, nil)
 	return cmd.Execute()
 }
