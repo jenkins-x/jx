@@ -6,6 +6,10 @@ image:
   repository: draft
   tag: dev
   pullPolicy: IfNotPresent
+anotherImage:
+  repository: anotherImageRepoValue
+  tag: anotherImageTagValue
+  pullPolicy: IfNotPresent
 service:
   name: demo118
   type: ClusterIP

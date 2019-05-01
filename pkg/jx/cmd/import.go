@@ -658,7 +658,7 @@ func (options *ImportOptions) CreateNewRemoteRepository() error {
 	log.Infof("Pushed Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
 
 	// If the user creating the repo is not the pipeline user, add the pipeline user as a contributor to the repo
-	if options.PipelineUserName != options.GitUserAuth.Username && options.GitServer.URL == options.PipelineServer {
+	if options.PipelineUserName != options.GitUserAuth.Username && options.GitServer != nil && options.GitServer.URL == options.PipelineServer {
 		// Make the invitation
 		err := options.GitProvider.AddCollaborator(options.PipelineUserName, details.Organisation, details.RepoName)
 		if err != nil {

@@ -35,6 +35,8 @@ type ProjectConfig struct {
 	Workflow            string                      `json:"workflow,omitempty"`
 	PipelineConfig      *jenkinsfile.PipelineConfig `json:"pipelineConfig,omitempty"`
 	NoReleasePrepare    bool                        `json:"noReleasePrepare,omitempty"`
+	DockerRegistryHost  string                      `json:"dockerRegistryHost,omitempty"`
+	DockerRegistryOwner string                      `json:"dockerRegistryOwner,omitempty"`
 }
 
 type PreviewEnvironmentConfig struct {
