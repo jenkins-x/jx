@@ -55,6 +55,7 @@ type Options struct {
 	EnvironmentNamespace string
 	Context              string
 	Agent                string
+	IgnoreBranch         bool
 }
 
 type ExternalPlugins struct {
@@ -565,6 +566,9 @@ func (o *Options) GetReleaseJobs() ([]string, error) {
 			for _, b := range q.Branches {
 				repo = strings.Replace(repo, ":", "", -1)
 				jobName := fmt.Sprintf("%s/%s", repo, b)
+				if o.IgnoreBranch {
+					jobName = repo
+				}
 				jobs = append(jobs, jobName)
 			}
 		}

@@ -147,6 +147,44 @@ func (o *DeleteApplicationOptions) deleteProwApplication(repoService jenkinsv1.S
 		return deletedApplications, errors.Wrap(err, "getting kube client")
 	}
 
+	prowOptions := &prow.Options{
+		KubeClient:   kubeClient,
+		NS:           ns,
+		IgnoreBranch: true,
+	}
+	names, err := prowOptions.GetReleaseJobs()
+	if err != nil {
+		return deletedApplications, fmt.Errorf("Failed to get ProwJobs")
+	}
+
+	if len(names) == 0 {
+		return deletedApplications, fmt.Errorf("There are no Applications in Jenkins")
+	}
+
+	if len(o.Args) == 0 {
+		o.Args, err = util.SelectNamesWithFilter(names, "Pick Applications to remove from Prow:", o.SelectAll, o.SelectFilter, "", o.In, o.Out, o.Err)
+		if err != nil {
+			return deletedApplications, err
+		}
+		if len(o.Args) == 0 {
+			return deletedApplications, fmt.Errorf("No application was picked to be removed from Prow")
+		}
+	} else {
+		for _, arg := range o.Args {
+			if util.StringArrayIndex(names, arg) < 0 {
+				return deletedApplications, util.InvalidArg(arg, names)
+			}
+		}
+	}
+
+	for _, applicationName := range o.Args {
+		repos := []string{applicationName}
+		err := prow.DeleteApplication(kubeClient, repos, ns)
+		if err != nil {
+			return deletedApplications, errors.Wrapf(err, "deleting application %s from prow", applicationName)
+		}
+	}
+
 	for _, applicationName := range o.Args {
 		for _, env := range envMap {
 			if env.Spec.Kind == v1.EnvironmentKindTypePermanent {
