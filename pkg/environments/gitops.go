@@ -805,14 +805,15 @@ func LocateAppResource(helmer helm.Helmer, chartDir string, appName string) (*je
 	possibles := make([]string, 0)
 	for _, template := range templates {
 		appBytes, err := ioutil.ReadFile(filepath.Join(completedTemplatesDir, template.Name()))
+		if err != nil {
+			return nil, "", errors.Wrapf(err, "reading file %s", filename)
+		}
+		err = yaml.Unmarshal(appBytes, app)
 		if err == nil {
-			err = yaml.Unmarshal(appBytes, app)
-			if err == nil {
-				if app.Kind == "App" {
-					// Use the first located resource
-					filename = template.Name()
-					possibles = append(possibles, app.Name)
-				}
+			if app.Kind == "App" {
+				// Use the first located resource
+				filename = template.Name()
+				possibles = append(possibles, app.Name)
 			}
 		}
 	}
