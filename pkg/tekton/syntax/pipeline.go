@@ -28,11 +28,14 @@ const GitMergeImage = "rawlingsj/builder-jx:wip34"
 
 // ParsedPipeline is the internal representation of the Pipeline, used to validate and create CRDs
 type ParsedPipeline struct {
-	Agent       Agent       `json:"agent,omitempty"`
-	Environment []EnvVar    `json:"environment,omitempty"`
-	Options     RootOptions `json:"options,omitempty"`
-	Stages      []Stage     `json:"stages"`
-	Post        []Post      `json:"post,omitempty"`
+	Agent   Agent       `json:"agent,omitempty"`
+	Env     []EnvVar    `json:"env,omitempty"`
+	Options RootOptions `json:"options,omitempty"`
+	Stages  []Stage     `json:"stages"`
+	Post    []Post      `json:"post,omitempty"`
+
+	// Replaced by Env, retained for backwards compatibility
+	Environment []EnvVar `json:"environment,omitempty"`
 }
 
 // Agent defines where the pipeline, stage, or step should run.
@@ -189,14 +192,17 @@ type Loop struct {
 // Stage is a unit of work in a pipeline, corresponding either to a Task or a set of Tasks to be run sequentially or in
 // parallel with common configuration.
 type Stage struct {
-	Name        string       `json:"name"`
-	Agent       Agent        `json:"agent,omitempty"`
-	Options     StageOptions `json:"options,omitempty"`
-	Environment []EnvVar     `json:"environment,omitempty"`
-	Steps       []Step       `json:"steps,omitempty"`
-	Stages      []Stage      `json:"stages,omitempty"`
-	Parallel    []Stage      `json:"parallel,omitempty"`
-	Post        []Post       `json:"post,omitempty"`
+	Name     string       `json:"name"`
+	Agent    Agent        `json:"agent,omitempty"`
+	Env      []EnvVar     `json:"env,omitempty"`
+	Options  StageOptions `json:"options,omitempty"`
+	Steps    []Step       `json:"steps,omitempty"`
+	Stages   []Stage      `json:"stages,omitempty"`
+	Parallel []Stage      `json:"parallel,omitempty"`
+	Post     []Post       `json:"post,omitempty"`
+
+	// Replaced by Env, retained for backwards compatibility
+	Environment []EnvVar `json:"environment,omitempty"`
 }
 
 // PostCondition is used to specify under what condition a post action should be executed.
@@ -442,6 +448,24 @@ func MangleToRfc1035Label(body string, suffix string) string {
 		sb.WriteString(suffix)
 	}
 	return sb.String()
+}
+
+// GetEnv gets the environment for the ParsedPipeline, returning Env first and Environment if Env isn't populated.
+func (j *ParsedPipeline) GetEnv() []EnvVar {
+	if len(j.Env) > 0 {
+		return j.Env
+	}
+
+	return j.Environment
+}
+
+// GetEnv gets the environment for the Stage, returning Env first and Environment if Env isn't populated.
+func (s *Stage) GetEnv() []EnvVar {
+	if len(s.Env) > 0 {
+		return s.Env
+	}
+
+	return s.Environment
 }
 
 // Validate checks the parsed ParsedPipeline to find any errors in it.
@@ -885,7 +909,7 @@ func (j *ParsedPipeline) AddContainerEnvVarsToPipeline(origEnv []corev1.EnvVar) 
 		}
 
 		// Overwrite with the existing pipeline environment, if it exists
-		for _, e := range j.Environment {
+		for _, e := range j.GetEnv() {
 			envMap[e.Name] = e
 		}
 
@@ -902,7 +926,7 @@ func (j *ParsedPipeline) AddContainerEnvVarsToPipeline(origEnv []corev1.EnvVar) 
 			env = append(env, envMap[envVar])
 		}
 
-		j.Environment = env
+		j.Env = env
 	}
 }
 
@@ -926,7 +950,7 @@ func scopedEnv(newEnv []corev1.EnvVar, parentEnv []corev1.EnvVar) []corev1.EnvVa
 func (j *ParsedPipeline) toStepEnvVars() []corev1.EnvVar {
 	envMap := make(map[string]corev1.EnvVar)
 
-	for _, e := range j.Environment {
+	for _, e := range j.GetEnv() {
 		envMap[e.Name] = corev1.EnvVar{Name: e.Name, Value: e.Value}
 	}
 
@@ -1071,7 +1095,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 		stageContainer = merged
 	}
 
-	env := scopedEnv(toContainerEnvVars(s.Environment), parentEnv)
+	env := scopedEnv(toContainerEnvVars(s.GetEnv()), parentEnv)
 
 	agent := s.Agent
 

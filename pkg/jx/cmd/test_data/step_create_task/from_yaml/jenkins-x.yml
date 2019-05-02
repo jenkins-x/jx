@@ -5,7 +5,7 @@ pipelineConfig:
   pipelines:
     release:
       pipeline:
-        environment:
+        env:
           - name: GIT_AUTHOR_NAME
             value: somebodyelse
         options:
