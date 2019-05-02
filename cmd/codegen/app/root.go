@@ -2,7 +2,6 @@ package app
 
 import (
 	"github.com/jenkins-x/jx/cmd/codegen/util"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -12,7 +11,7 @@ const (
 )
 
 var (
-	longHelp = templates.LongDesc(`Generates Go clientsets, OpenAPI spec and API docs for custom resources.
+	longHelp = `Generates Go clientsets, OpenAPI spec and API docs for custom resources.
 
 Custom resources are defined using Go structs.
 
@@ -22,7 +21,7 @@ Available generators include:
 * docs -  generates API docs from the OpenAPI specs
 * clientset - generates a Go CRUD client directly from custom resources
 
-`)
+`
 	logLevel string
 )
 

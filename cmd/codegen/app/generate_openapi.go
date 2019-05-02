@@ -1,7 +1,6 @@
 package app
 
 import (
-	"github.com/jenkins-x/jx/pkg/gits"
 	"go/build"
 	"os"
 	"path/filepath"
@@ -9,13 +8,8 @@ import (
 
 	"github.com/jenkins-x/jx/cmd/codegen/generator"
 	"github.com/jenkins-x/jx/cmd/codegen/util"
-	"github.com/jenkins-x/jx/pkg/jx/cmd"
 
 	"github.com/pkg/errors"
-
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-
-	jxutil "github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/spf13/cobra"
 )
@@ -32,34 +26,31 @@ type CreateClientOpenAPIOptions struct {
 }
 
 var (
-	createClientOpenAPILong = templates.LongDesc(`This command code generates OpenAPI specs for
-	the specified custom resources.
- 
-`)
+	createClientOpenAPILong = `This command code generates OpenAPI specs for
+the specified custom resources.
+`
 
-	createClientOpenAPIExample = templates.Examples(`
-		# lets generate client docs
-		codegen openapi
-			--output-package=github.com/jenkins-x/jx/pkg/client \
-			--input-package=github.com/jenkins-x/pkg-apis \
-			--group-with-version=jenkins.io:v1
-			--version=1.2.3
-			--title=Jenkins X
-		
-		# You will normally want to add a target to your Makefile that looks like:
+	createClientOpenAPIExample = `
+# lets generate client docs
+codegen openapi
+	--output-package=github.com/jenkins-x/jx/pkg/client \
+	--input-package=github.com/jenkins-x/pkg-apis \
+	--group-with-version=jenkins.io:v1
+	--version=1.2.3
+	--title=Jenkins X
 
-		generate-openapi:
-			codegen openapi
-				--output-package=github.com/jenkins-x/jx/pkg/client \
-				--input-package=github.com/jenkins-x/jx/pkg/apis \
-				--group-with-version=jenkins.io:v1
-				--version=${VERSION}
-				--title=${TITLE}
-		
-		# and then call:
+# You will normally want to add a target to your Makefile that looks like
+generate-openapi:
+	codegen openapi
+		--output-package=github.com/jenkins-x/jx/pkg/client \
+		--input-package=github.com/jenkins-x/jx/pkg/apis \
+		--group-with-version=jenkins.io:v1
+		--version=${VERSION}
+		--title=${TITLE}
 
-		make generate-openapi
-`)
+# and then call
+make generate-openapi
+`
 )
 
 // NewCmdCreateClientOpenAPI creates the command
@@ -78,7 +69,7 @@ func NewCmdCreateClientOpenAPI(genOpts GenerateOptions) *cobra.Command {
 			o.Cmd = c
 			o.Args = args
 			err := o.Run()
-			cmd.CheckErr(err)
+			util.CheckErr(err)
 		},
 	}
 
@@ -130,10 +121,10 @@ func (o *CreateClientOpenAPIOptions) Run() error {
 		return errors.Wrapf(err, "reading file %s specified by %s", o.BoilerplateFile, optionBoilerplateFile)
 	}
 	if o.InputPackage == "" {
-		return jxutil.MissingOption(optionInputPackage)
+		return util.MissingOption(optionInputPackage)
 	}
 	if o.OutputPackage == "" {
-		return jxutil.MissingOption(optionOutputPackage)
+		return util.MissingOption(optionOutputPackage)
 	}
 
 	err = o.configure()
@@ -142,7 +133,7 @@ func (o *CreateClientOpenAPIOptions) Run() error {
 	}
 
 	if len(o.GroupsWithVersions) < 1 {
-		return jxutil.InvalidOptionf(optionGroupWithVersion, o.GroupsWithVersions, "must specify at least once")
+		return util.InvalidOptionf(optionGroupWithVersion, o.GroupsWithVersions, "must specify at least once")
 	}
 
 	err = generator.InstallOpenApiGen(o.GeneratorVersion)
@@ -156,8 +147,7 @@ func (o *CreateClientOpenAPIOptions) Run() error {
 
 	util.AppLogger().Infof("generating Go code to %s in package %s from package %s\n", o.OutputBase, o.GoPathOutputPackage, o.InputPackage)
 	err = generator.GenerateOpenApi(o.GroupsWithVersions, o.InputPackage, o.GoPathOutputPackage, o.OutputPackage,
-		filepath.Join(build.Default.GOPATH, "src"), o.OpenAPIDependencies, o.InputBase, o.ModuleName, gits.NewGitCLI(),
-		o.BoilerplateFile)
+		filepath.Join(build.Default.GOPATH, "src"), o.OpenAPIDependencies, o.InputBase, o.ModuleName, o.BoilerplateFile)
 	if err != nil {
 		return errors.Wrapf(err, "generating openapi structs to %s", o.GoPathOutputPackage)
 	}

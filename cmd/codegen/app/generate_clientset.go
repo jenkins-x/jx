@@ -10,13 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-
-	jxutil "github.com/jenkins-x/jx/pkg/util"
-
 	"github.com/spf13/cobra"
-
-	"github.com/jenkins-x/jx/pkg/jx/cmd"
 )
 
 // ClientSetGenerationOptions contain the options for the clientset generation.
@@ -26,27 +20,25 @@ type ClientSetGenerationOptions struct {
 }
 
 var (
-	createClientGoLong = templates.LongDesc(`This command code generates clients for the specified custom resources.`)
+	createClientGoLong = `This command code generates clients for the specified custom resources.`
 
-	createClientGoExample = templates.Examples(`
-		# lets generate a client
-		codegen clientset
-			--output-package=github.com/jenkins-x/jx/pkg/client \
-			--input-package=github.com/jenkins-x/pkg-apis \
-			--group-with-version=jenkins.io:v1
-		
-		# You will normally want to add a target to your Makefile that looks like:
+	createClientGoExample = `
+# lets generate a client
+codegen clientset
+	--output-package=github.com/jenkins-x/jx/pkg/client \
+	--input-package=github.com/jenkins-x/pkg-apis \
+	--group-with-version=jenkins.io:v1
 
-		generate-clients:
-			codegen clientset
-				--output-package=github.com/jenkins-x/jx/pkg/client \
-				--input-package=github.com/jenkins-x/jx/pkg/apis \
-				--group-with-version=jenkins.io:v1
-		
-		# and then call:
+# You will normally want to add a target to your Makefile that looks like
+generate-clients:
+	codegen clientset
+		--output-package=github.com/jenkins-x/jx/pkg/client \
+		--input-package=github.com/jenkins-x/jx/pkg/apis \
+		--group-with-version=jenkins.io:v1
 
-		make generate-clients
-`)
+# and then call
+make generate-clien
+`
 )
 
 // NewGenerateClientSetCmd creates the command
@@ -65,7 +57,7 @@ func NewGenerateClientSetCmd(genOpts GenerateOptions) *cobra.Command {
 			o.Cmd = c
 			o.Args = args
 			err := o.Run()
-			cmd.CheckErr(err)
+			util.CheckErr(err)
 		},
 	}
 
@@ -103,13 +95,13 @@ func (o *ClientSetGenerationOptions) Run() error {
 		return errors.Wrapf(err, "reading file %s specified by %s", o.BoilerplateFile, optionBoilerplateFile)
 	}
 	if len(o.GroupsWithVersions) < 1 {
-		return jxutil.InvalidOptionf(optionGroupWithVersion, o.GroupsWithVersions, "must specify at least once")
+		return util.InvalidOptionf(optionGroupWithVersion, o.GroupsWithVersions, "must specify at least once")
 	}
 	if o.InputPackage == "" {
-		return jxutil.MissingOption(optionInputPackage)
+		return util.MissingOption(optionInputPackage)
 	}
 	if o.OutputPackage == "" {
-		return jxutil.MissingOption(optionOutputPackage)
+		return util.MissingOption(optionOutputPackage)
 	}
 
 	err = o.configure()

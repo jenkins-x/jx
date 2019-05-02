@@ -6,11 +6,6 @@ import (
 
 	"github.com/jenkins-x/jx/cmd/codegen/generator"
 	"github.com/jenkins-x/jx/cmd/codegen/util"
-	"github.com/jenkins-x/jx/pkg/jx/cmd"
-
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-
-	jxutil "github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/spf13/cobra"
 )
@@ -22,24 +17,22 @@ type GenerateDocsOptions struct {
 }
 
 var (
-	createClientDocsLong = templates.LongDesc(`This command code generates clients docs (Swagger,OpenAPI and HTML) for
+	createClientDocsLong = `This command code generates clients docs (Swagger,OpenAPI and HTML) for
 	the specified custom resources.
  
-`)
+`
 
-	createClientDocsExample = templates.Examples(`
-		# lets generate client docs
-		codegen docs
-		
-		# You will normally want to add a target to your Makefile that looks like:
+	createClientDocsExample = `
+# lets generate client docs
+codegen docs
 
-		generate-clients-docs:
-			codegen docs
-		
-		# and then call:
+# You will normally want to add a target to your Makefile that looks like
+generate-clients-docs:
+	codegen docs
 
-		make generate-clients-docs
-`)
+# and then call
+make generate-clients-docs
+`
 )
 
 // NewCreateDocsCmd creates apidocs for CRDs
@@ -58,7 +51,7 @@ func NewCreateDocsCmd(genOpts GenerateOptions) *cobra.Command {
 			o.Cmd = c
 			o.Args = args
 			err := run(o)
-			cmd.CheckErr(err)
+			util.CheckErr(err)
 		},
 	}
 
@@ -75,7 +68,7 @@ func NewCreateDocsCmd(genOpts GenerateOptions) *cobra.Command {
 func run(o *GenerateDocsOptions) error {
 	var err error
 	if o.OutputBase == "" {
-		return jxutil.MissingOption(optionOutputBase)
+		return util.MissingOption(optionOutputBase)
 	}
 	util.AppLogger().Infof("generating docs to %s\n", o.OutputBase)
 
