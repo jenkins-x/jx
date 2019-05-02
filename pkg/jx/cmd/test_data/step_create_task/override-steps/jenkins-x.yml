@@ -1,0 +1,25 @@
+pipelineConfig:
+  env:
+    - name: FRUIT
+      value: BANANA
+    - name: GIT_AUTHOR_NAME
+      value: somebodyelse
+  pipelines:
+    overrides:
+      - pipelines:
+          - pullRequest
+        name: set-version
+        step:
+          sh: echo hello
+      - pipelines:
+          - pullRequest
+        name: post-build
+        stages:
+          - postBuild
+      - pipelines:
+          - release
+        name: set-version
+        steps:
+          - sh: echo goodbye
+          - sh: echo wait why am i here
+

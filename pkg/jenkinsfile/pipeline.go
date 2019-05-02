@@ -69,6 +69,7 @@ type Pipelines struct {
 	Release     *PipelineLifecycles `json:"release,omitempty"`
 	Feature     *PipelineLifecycles `json:"feature,omitempty"`
 	Post        *PipelineLifecycle  `json:"post,omitempty"`
+	Overrides   []*PipelineOverride `json:"overrides,omitempty"`
 }
 
 // PipelineStep defines an individual step in a pipeline, either a command (sh) or groovy block
@@ -126,6 +127,43 @@ func (x *PipelineExtends) ImportFile() *ImportFile {
 		Import: x.Import,
 		File:   x.File,
 	}
+}
+
+// PipelineOverride allows for overriding named steps in the build pack
+type PipelineOverride struct {
+	Pipelines []string        `json:"pipelines,omitempty"`
+	Stages    []string        `json:"stage,omitempty"`
+	Name      string          `json:"name"`
+	Step      *PipelineStep   `json:"step,omitempty"`
+	Steps     []*PipelineStep `json:"steps,omitempty"`
+}
+
+// MatchesPipeline returns true if the pipeline name is specified in the override or no pipeline is specified at all in the override
+func (p *PipelineOverride) MatchesPipeline(name string) bool {
+	if len(p.Pipelines) == 0 {
+		return true
+	}
+	for _, pipeline := range p.Pipelines {
+		if pipeline == name {
+			return true
+		}
+	}
+
+	return false
+}
+
+// MatchesStage returns true if the stage/lifecycle name is specified in the override or no stage/lifecycle is specified at all in the override
+func (p *PipelineOverride) MatchesStage(name string) bool {
+	if len(p.Stages) == 0 {
+		return true
+	}
+	for _, stage := range p.Stages {
+		if stage == name {
+			return true
+		}
+	}
+
+	return false
 }
 
 // PipelineConfig defines the pipeline configuration
@@ -337,10 +375,10 @@ func removeWhenSteps(prow bool, steps []*PipelineStep) []*PipelineStep {
 
 // Extend extends these pipelines with the base pipeline
 func (p *Pipelines) Extend(base *Pipelines) error {
-	p.PullRequest = ExtendPipelines(p.PullRequest, base.PullRequest)
-	p.Release = ExtendPipelines(p.Release, base.Release)
-	p.Feature = ExtendPipelines(p.Feature, base.Feature)
-	p.Post = ExtendLifecycle(p.Post, base.Post)
+	p.PullRequest = ExtendPipelines("pullRequest", p.PullRequest, base.PullRequest, p.Overrides)
+	p.Release = ExtendPipelines("release", p.Release, base.Release, p.Overrides)
+	p.Feature = ExtendPipelines("feature", p.Feature, base.Feature, p.Overrides)
+	p.Post = ExtendLifecycle("", "post", p.Post, base.Post, p.Overrides)
 	return nil
 }
 
@@ -703,43 +741,80 @@ func (c *PipelineConfig) GetAllEnvVars() map[string]string {
 }
 
 // ExtendPipelines extends the parent lifecycle with the base
-func ExtendPipelines(parent *PipelineLifecycles, base *PipelineLifecycles) *PipelineLifecycles {
-	if parent == nil {
-		return base
-	}
+func ExtendPipelines(pipelineName string, parent *PipelineLifecycles, base *PipelineLifecycles, overrides []*PipelineOverride) *PipelineLifecycles {
 	if base == nil {
 		return parent
 	}
+	if parent == nil {
+		parent = &PipelineLifecycles{}
+	}
 	return &PipelineLifecycles{
-		Setup:      ExtendLifecycle(parent.Setup, base.Setup),
-		SetVersion: ExtendLifecycle(parent.SetVersion, base.SetVersion),
-		PreBuild:   ExtendLifecycle(parent.PreBuild, base.PreBuild),
-		Build:      ExtendLifecycle(parent.Build, base.Build),
-		PostBuild:  ExtendLifecycle(parent.PostBuild, base.PostBuild),
-		Promote:    ExtendLifecycle(parent.Promote, base.Promote),
+		Setup:      ExtendLifecycle(pipelineName, "setup", parent.Setup, base.Setup, overrides),
+		SetVersion: ExtendLifecycle(pipelineName, "setVersion", parent.SetVersion, base.SetVersion, overrides),
+		PreBuild:   ExtendLifecycle(pipelineName, "preBuild", parent.PreBuild, base.PreBuild, overrides),
+		Build:      ExtendLifecycle(pipelineName, "build", parent.Build, base.Build, overrides),
+		PostBuild:  ExtendLifecycle(pipelineName, "postBuild", parent.PostBuild, base.PostBuild, overrides),
+		Promote:    ExtendLifecycle(pipelineName, "promote", parent.Promote, base.Promote, overrides),
 		// TODO: Actually do extension for Pipeline rather than just copying it wholesale
 		Pipeline: parent.Pipeline,
 	}
 }
 
 // ExtendLifecycle extends the lifecycle with the inherited base lifecycle
-func ExtendLifecycle(parent *PipelineLifecycle, base *PipelineLifecycle) *PipelineLifecycle {
+func ExtendLifecycle(pipelineName, stageName string, parent *PipelineLifecycle, base *PipelineLifecycle, overrides []*PipelineOverride) *PipelineLifecycle {
+	var lifecycle *PipelineLifecycle
 	if parent == nil {
-		return base
+		lifecycle = base
+	} else if base == nil {
+		lifecycle = parent
+	} else if parent.Replace {
+		lifecycle = parent
+	} else {
+		steps := []*PipelineStep{}
+		steps = append(steps, parent.PreSteps...)
+		steps = append(steps, base.Steps...)
+		steps = append(steps, parent.Steps...)
+		lifecycle = &PipelineLifecycle{
+			Steps: steps,
+		}
 	}
-	if base == nil {
-		return parent
+
+	if lifecycle != nil {
+		for _, override := range overrides {
+			if override.MatchesPipeline(pipelineName) && override.MatchesStage(stageName) {
+				overriddenSteps := []*PipelineStep{}
+
+				for _, s := range lifecycle.Steps {
+					overriddenSteps = append(overriddenSteps, overrideStep(s, override)...)
+				}
+
+				lifecycle.Steps = overriddenSteps
+			}
+		}
 	}
-	if parent.Replace {
-		return parent
+
+	return lifecycle
+}
+
+func overrideStep(step *PipelineStep, override *PipelineOverride) []*PipelineStep {
+	if step.Name == override.Name {
+		if override.Step != nil {
+			return []*PipelineStep{override.Step}
+		}
+		if override.Steps != nil {
+			return override.Steps
+		}
+		return []*PipelineStep{}
 	}
-	steps := []*PipelineStep{}
-	steps = append(steps, parent.PreSteps...)
-	steps = append(steps, base.Steps...)
-	steps = append(steps, parent.Steps...)
-	return &PipelineLifecycle{
-		Steps: steps,
+	if len(step.Steps) > 0 {
+		newSteps := []*PipelineStep{}
+		for _, s := range step.Steps {
+			newSteps = append(newSteps, overrideStep(s, override)...)
+		}
+		step.Steps = newSteps
 	}
+
+	return []*PipelineStep{step}
 }
 
 // GenerateJenkinsfile generates the jenkinsfile
