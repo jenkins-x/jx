@@ -157,6 +157,9 @@ type Step struct {
 
 	// Image alows the docker image for a step to be specified
 	Image string `json:"image,omitempty"`
+
+	// env allows defining per-step environment variables
+	Env []EnvVar `json:"env,omitempty"`
 }
 
 // Loop is a special step that defines a variable, a list of possible values for that variable, and a set of steps to
@@ -1101,7 +1104,7 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 
 		c.Stdin = false
 		c.TTY = false
-		c.Env = scopedEnv(env, c.Env)
+		c.Env = scopedEnv(toContainerEnvVars(step.Env), scopedEnv(env, c.Env))
 
 		steps = append(steps, *c)
 	} else if !equality.Semantic.DeepEqual(step.Loop, Loop{}) {

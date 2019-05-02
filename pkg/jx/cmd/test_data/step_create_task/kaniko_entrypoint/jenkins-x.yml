@@ -23,11 +23,6 @@ pipelineConfig:
               image: docker.io/golang:1.11.5
               command: make
               args: ['linux']
-              env:
-                - name: GOPATH
-                  value: /workspace/go
-                - name: GOPROXY
-                  value: http://jx-app-athens-athens-proxy
               resources:
                 limits:
                   cpu: 4
@@ -40,9 +35,6 @@ pipelineConfig:
               image: docker.io/golang:1.11.5
               command: "./build/linux/jx"
               args: ['--help']
-              env:
-                - name: GOPATH
-                  value: /workspace/go
 
             - name: build-and-push-image
               image: rawlingsj/executor:dev40
@@ -64,15 +56,6 @@ pipelineConfig:
             - name: preview
               image: gcr.io/jenkinsxio/builder-go:0.1.332
               command: ./jx/scripts/ci.sh
-              env:
-                - name: HOME
-                  value: /workspace
-                - name: GOPATH
-                  value: /workspace/go
-                - name: PATH
-                  value: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/bin/google-cloud-sdk/bin:/opt/google/chrome:/usr/local/go/bin:/usr/local/glide:/usr/local/dep:/usr/local/:/home/jenkins/go/bin:/workspace/go/bin"
-                - name: GOPROXY
-                  value: http://jx-app-athens-athens-proxy
               resources:
                 limits:
                   cpu: 4

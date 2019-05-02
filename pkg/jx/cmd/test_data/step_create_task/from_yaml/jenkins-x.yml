@@ -25,6 +25,9 @@ pipelineConfig:
               - command: ls
                 args:
                   - -la
+                env:
+                  - name: ANOTHER_VAR
+                    value: Another value
           - name: Second
             steps:
               - command: echo

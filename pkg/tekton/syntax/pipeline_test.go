@@ -521,6 +521,12 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				PipelineStage("A stage with environment",
 					StageEnvVar("SOME_OTHER_VAR", "A value for the other env var"),
 					StageStep(StepCmd("echo"), StepArg("hello"), StepArg("${SOME_OTHER_VAR}")),
+					StageStep(
+						StepCmd("echo"),
+						StepArg("goodbye"), StepArg("${SOME_VAR} and ${ANOTHER_VAR}"),
+						StepEnvVar("SOME_VAR", "An overriding value"),
+						StepEnvVar("ANOTHER_VAR", "Yet another variable"),
+					),
 				),
 			),
 			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
@@ -539,6 +545,11 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 							tb.EnvVar("SOME_OTHER_VAR", "A value for the other env var"), tb.EnvVar("SOME_VAR", "A value for the env var")),
 						tb.Step("step2", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo hello ${SOME_OTHER_VAR}"), workingDir("/workspace/source"),
 							tb.EnvVar("SOME_OTHER_VAR", "A value for the other env var"), tb.EnvVar("SOME_VAR", "A value for the env var")),
+						tb.Step("step3", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo goodbye ${SOME_VAR} and ${ANOTHER_VAR}"), workingDir("/workspace/source"),
+							tb.EnvVar("ANOTHER_VAR", "Yet another variable"),
+							tb.EnvVar("SOME_OTHER_VAR", "A value for the other env var"),
+							tb.EnvVar("SOME_VAR", "An overriding value"),
+						),
 					)),
 			},
 			structure: PipelineStructure("somepipeline-1",
@@ -1769,7 +1780,7 @@ func StageOptionsUnstash(name, dir string) StageOptionsOp {
 	}
 }
 
-// AgentEnvVar add an environment variable, with specified name and value, to the stage.
+// StageEnvVar add an environment variable, with specified name and value, to the stage.
 func StageEnvVar(name, value string) StageOp {
 	return func(stage *syntax.Stage) {
 		stage.Environment = append(stage.Environment, syntax.EnvVar{
@@ -1849,6 +1860,16 @@ func StepLoop(variable string, values []string, ops ...LoopOp) StepOp {
 		}
 
 		step.Loop = loop
+	}
+}
+
+// StepEnvVar add an environment variable, with specified name and value, to the step.
+func StepEnvVar(name, value string) StepOp {
+	return func(step *syntax.Step) {
+		step.Env = append(step.Env, syntax.EnvVar{
+			Name:  name,
+			Value: value,
+		})
 	}
 }
 
