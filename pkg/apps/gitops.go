@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jenkins-x/jx/pkg/gits"
+
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/util"
 	"k8s.io/helm/pkg/proto/hapi/chart"
@@ -21,7 +23,7 @@ type GitOpsOptions struct {
 
 // AddApp adds the app with version rooted in dir from the repository. An alias can be specified.
 func (o *GitOpsOptions) AddApp(app string, dir string, version string, repository string, alias string) error {
-	details := environments.PullRequestDetails{
+	details := gits.PullRequestDetails{
 		BranchName: "add-app-" + app + "-" + version,
 		Title:      fmt.Sprintf("Add %s %s", app, version),
 		Message:    fmt.Sprintf("Add app %s %s", app, version),
@@ -51,7 +53,7 @@ func (o *GitOpsOptions) UpgradeApp(app string, version string, repository string
 	alias string, interrogateChartFunc func(dir string, existing map[string]interface{}) (*ChartDetails,
 		error)) error {
 	all := true
-	details := environments.PullRequestDetails{}
+	details := gits.PullRequestDetails{}
 
 	// use a random string in the branch name to ensure we use a unique git branch and fail to push
 	rand, err := util.RandStringBytesMaskImprSrc(5)
@@ -105,7 +107,7 @@ func (o *GitOpsOptions) UpgradeApp(app string, version string, repository string
 func (o *GitOpsOptions) DeleteApp(app string, alias string) error {
 
 	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
-		templates map[string]string, dir string, details *environments.PullRequestDetails) error {
+		templates map[string]string, dir string, details *gits.PullRequestDetails) error {
 		// See if the app already exists in requirements
 		found := false
 		for i, d := range requirements.Dependencies {
@@ -134,7 +136,7 @@ func (o *GitOpsOptions) DeleteApp(app string, alias string) error {
 		}
 		return nil
 	}
-	details := environments.PullRequestDetails{
+	details := gits.PullRequestDetails{
 		BranchName: "delete-app-" + app,
 		Title:      fmt.Sprintf("Delete %s", app),
 		Message:    fmt.Sprintf("Delete app %s", app),

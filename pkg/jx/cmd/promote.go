@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	survey "gopkg.in/AlecAivazis/survey.v1"
 
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/environments"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
@@ -17,7 +19,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube/services"
 
 	"github.com/blang/semver"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	typev1 "github.com/jenkins-x/jx/pkg/client/clientset/versioned/typed/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
@@ -27,7 +28,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
-	survey "gopkg.in/AlecAivazis/survey.v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -67,7 +67,7 @@ type PromoteOptions struct {
 	Alias                   string
 
 	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback environments.ConfigureGitFn
+	ConfigureGitCallback gits.ConfigureGitFn
 
 	// calculated fields
 	TimeoutDuration         *time.Duration
@@ -455,14 +455,14 @@ func (o *PromoteOptions) PromoteViaPullRequest(env *v1.Environment, releaseInfo 
 	}
 	app := o.Application
 
-	details := environments.PullRequestDetails{
+	details := gits.PullRequestDetails{
 		BranchName: "promote-" + app + "-" + versionName,
 		Title:      app + " to " + versionName,
 		Message:    fmt.Sprintf("Promote %s to version %s", app, versionName),
 	}
 
 	modifyChartFn := func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
-		templates map[string]string, dir string, details *environments.PullRequestDetails) error {
+		templates map[string]string, dir string, details *gits.PullRequestDetails) error {
 		var err error
 		if version == "" {
 			version, err = o.findLatestVersion(app)

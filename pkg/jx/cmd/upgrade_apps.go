@@ -3,11 +3,11 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/gits"
+
 	"github.com/jenkins-x/jx/pkg/apps"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/pkg/errors"
-
-	"github.com/jenkins-x/jx/pkg/environments"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -53,7 +53,7 @@ type UpgradeAppsOptions struct {
 	Set       []string
 
 	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback environments.ConfigureGitFn
+	ConfigureGitCallback gits.ConfigureGitFn
 }
 
 // NewCmdUpgradeApps defines the command
