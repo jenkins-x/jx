@@ -383,6 +383,9 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 			}
 
 			appResource, _, err := environments.LocateAppResource(o.Helmer, chartDir, chartDetails.Name)
+			if err != nil {
+				return &chartDetails, errors.Wrapf(err, "locating app resource in %s", chartDir)
+			}
 			if appResource.Spec.SchemaPreprocessor != nil {
 				id := uuid.New()
 				cmName := toValidName(chartDetails.Name, "schema", id)
