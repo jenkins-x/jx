@@ -6,18 +6,13 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"runtime/debug"
 	"strings"
-
-	"github.com/jenkins-x/jx/pkg/auth"
 
 	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/ghodss/yaml"
 
 	"github.com/pkg/errors"
-
-	uuid "github.com/satori/go.uuid"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
@@ -30,13 +25,6 @@ import (
 	helmchart "k8s.io/helm/pkg/proto/hapi/chart"
 )
 
-// PullRequestDetails is the details for creating a pull request
-type PullRequestDetails struct {
-	Message    string
-	BranchName string
-	Title      string
-}
-
 //ValuesFiles is a wrapper for a slice of values files to allow them to be passed around as a pointer
 type ValuesFiles struct {
 	Items []string
@@ -45,10 +33,7 @@ type ValuesFiles struct {
 // ModifyChartFn callback for modifying a chart, requirements, the chart metadata,
 // the values.yaml and all files in templates are unmarshaled, and the root dir for the chart is passed
 type ModifyChartFn func(requirements *helm.Requirements, metadata *chart.Metadata, existingValues map[string]interface{},
-	templates map[string]string, dir string, pullRequestDetails *PullRequestDetails) error
-
-// ConfigureGitFn callback to optionally configure git before its used for creating commits and PRs
-type ConfigureGitFn func(dir string, gitInfo *gits.GitRepository, gitAdapter gits.Gitter) error
+	templates map[string]string, dir string, pullRequestDetails *gits.PullRequestDetails) error
 
 // EnvironmentPullRequestOptions are options for creating a pull request against an environment.
 // The provide a Gitter client for performing git operations, a GitProvider client for talking to the git provider,
@@ -58,7 +43,7 @@ type EnvironmentPullRequestOptions struct {
 	Gitter        gits.Gitter
 	GitProvider   gits.GitProvider
 	ModifyChartFn ModifyChartFn
-	ConfigGitFn   ConfigureGitFn
+	ConfigGitFn   gits.ConfigureGitFn
 }
 
 // Create a pull request against the environment repository for env.
@@ -71,113 +56,23 @@ type EnvironmentPullRequestOptions struct {
 // and the pullRequestInfo for any existing PR that exists to modify the environment that we want to merge these
 // changes into.
 func (o *EnvironmentPullRequestOptions) Create(env *jenkinsv1.Environment, environmentsDir string,
-	pullRequestDetails *PullRequestDetails, pullRequestInfo *gits.PullRequestInfo, chartName string) (*gits.PullRequestInfo, error) {
-
-	dir, base, gitInfo, fork, err := o.PullEnvironmentRepo(env, environmentsDir)
+	pullRequestDetails *gits.PullRequestDetails, pullRequestInfo *gits.PullRequestInfo, chartName string) (*gits.PullRequestInfo, error) {
+	dir, base, gitInfo, fork, err := gits.ForkAndPullPullRepo(env.Spec.Source.URL, environmentsDir, env.Spec.Source.Ref, pullRequestDetails.BranchName, o.GitProvider, o.Gitter, o.ConfigGitFn)
 	if err != nil {
 		return nil, errors.Wrapf(err, "pulling environment repo %s into %s", env.Spec.Source.URL,
 			environmentsDir)
-	}
-
-	branchName := o.Gitter.ConvertToValidBranchName(pullRequestDetails.BranchName)
-
-	branchNames, err := o.Gitter.RemoteBranchNames(dir, "remotes/origin/")
-	if err != nil {
-		return nil, errors.Wrapf(err, "Failed to load remote branch names")
-	}
-	//log.Infof("Found remote branch names %s\n", strings.Join(branchNames, ", "))
-	if util.StringArrayIndex(branchNames, branchName) >= 0 {
-		// lets append a UUID as the branch name already exists
-		branchNameUUID, err := uuid.NewV4()
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-		branchName += "-" + branchNameUUID.String()
-	}
-	err = o.Gitter.CreateBranch(dir, branchName)
-	if err != nil {
-		return nil, err
-	}
-	err = o.Gitter.Checkout(dir, branchName)
-	if err != nil {
-		return nil, err
 	}
 
 	err = ModifyChartFiles(dir, pullRequestDetails, o.ModifyChartFn, chartName)
 	if err != nil {
 		return nil, err
 	}
-	return o.PushEnvironmentRepo(dir, branchName, gitInfo, base, pullRequestDetails, pullRequestInfo, fork)
-}
 
-// PushEnvironmentRepo commits and pushes the changes in the repo rooted at dir.
-// It creates a branch called branchName from a base.
-// It uses the pullRequestDetails for the message and title for the commit and PR.
-// It uses and updates pullRequestInfo to identify whether to rebase an existing PR.
-func (o *EnvironmentPullRequestOptions) PushEnvironmentRepo(dir string, branchName string,
-	gitInfo *gits.GitRepository, base string, pullRequestDetails *PullRequestDetails,
-	pullRequestInfo *gits.PullRequestInfo, fork bool) (*gits.PullRequestInfo, error) {
-	err := o.Gitter.Add(dir, "-A")
-	if err != nil {
-		return nil, err
-	}
-	changed, err := o.Gitter.HasChanges(dir)
-	if err != nil {
-		return nil, err
-	}
-	if !changed {
-		log.Warnf("%s\n", "No changes made to the GitOps Environment source code. Code must be up to date!")
-		return nil, nil
-	}
-	err = o.Gitter.CommitDir(dir, pullRequestDetails.Message)
-	if err != nil {
-		return nil, err
-	}
-	// lets rebase an existing PR
-	if pullRequestInfo != nil && pullRequestInfo.PullRequestArguments.Head != "" {
-		err = o.Gitter.ForcePushBranch(dir, branchName, pullRequestInfo.PullRequestArguments.Head)
-		if err != nil {
-			return nil, errors.Wrapf(err, "rebasing existing PR on %s", pullRequestInfo.PullRequestArguments.Head)
-		}
-	}
-
-	err = o.Gitter.Push(dir)
-	if err != nil {
-		return nil, err
-	}
-
-	headPrefix := ""
-
-	username := o.GitProvider.CurrentUsername()
-	if username == "" {
-		return nil, fmt.Errorf("no git user name found")
-	}
-	if gitInfo.Organisation != username && fork {
-		headPrefix = username + ":"
-	}
-
-	gha := &gits.GitPullRequestArguments{
-		GitRepository: gitInfo,
-		Title:         pullRequestDetails.Title,
-		Body:          pullRequestDetails.Message,
-		Base:          base,
-		Head:          headPrefix + branchName,
-	}
-
-	pr, err := o.GitProvider.CreatePullRequest(gha)
-	if err != nil {
-		return nil, err
-	}
-	log.Infof("Created Pull Request: %s\n\n", util.ColorInfo(pr.URL))
-	return &gits.PullRequestInfo{
-		GitProvider:          o.GitProvider,
-		PullRequest:          pr,
-		PullRequestArguments: gha,
-	}, nil
+	return gits.PushRepoAndCreatePullRequest(dir, gitInfo, base, pullRequestDetails, pullRequestInfo, fork, true, true, o.GitProvider, o.Gitter)
 }
 
 // ModifyChartFiles modifies the chart files in the given directory using the given modify function
-func ModifyChartFiles(dir string, details *PullRequestDetails, modifyFn ModifyChartFn, chartName string) error {
+func ModifyChartFiles(dir string, details *gits.PullRequestDetails, modifyFn ModifyChartFn, chartName string) error {
 	requirementsFile, err := helm.FindRequirementsFileName(dir)
 	if err != nil {
 		return err
@@ -236,171 +131,6 @@ func ModifyChartFiles(dir string, details *PullRequestDetails, modifyFn ModifyCh
 	return nil
 }
 
-// PullEnvironmentRepo pulls the repo for env into environmentsDir
-func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Environment,
-	environmentsDir string) (string, string, *gits.GitRepository, bool, error) {
-	source := &env.Spec.Source
-	gitURL := source.URL
-	fork := false
-	if gitURL == "" {
-		return "", "", nil, fork, fmt.Errorf("No source git URL")
-	}
-	gitInfo, err := gits.ParseGitURL(gitURL)
-	if err != nil {
-		return "", "", nil, fork, errors.Wrapf(err, "failed to parse git URL %s", gitURL)
-	}
-
-	username := ""
-	userDetails := auth.UserAuth{}
-	originalOrg := gitInfo.Organisation
-	originalRepo := gitInfo.Name
-
-	provider := o.GitProvider
-	git := o.Gitter
-
-	if o.GitProvider == nil {
-		log.Warnf("No GitProvider specified!\n")
-		debug.PrintStack()
-	} else {
-		userDetails = o.GitProvider.UserAuth()
-		username = o.GitProvider.CurrentUsername()
-
-		// lets check if we need to fork the repository...
-		if originalOrg != username && username != "" && originalOrg != "" && provider.ShouldForkForPullRequest(originalOrg, originalRepo, username) {
-			fork = true
-		}
-	}
-
-	dir := filepath.Join(environmentsDir, gitInfo.Organisation, gitInfo.Name)
-
-	base := source.Ref
-	if base == "" {
-		base = "master"
-	}
-
-	if fork {
-		if o.GitProvider == nil {
-			return "", "", nil, fork, errors.Wrapf(err, "no Git Provider specified for git URL %s", gitURL)
-		}
-		repo, err := provider.GetRepository(username, originalRepo)
-		if err != nil {
-			// lets try create a fork - using a blank organisation to force a user specific fork
-			repo, err = provider.ForkRepository(originalOrg, originalRepo, "")
-			if err != nil {
-				return "", "", nil, fork, errors.Wrapf(err, "failed to fork GitHub repo %s/%s to user %s", originalOrg, originalRepo, username)
-			}
-			log.Infof("Forked Git repository to %s\n\n", util.ColorInfo(repo.HTMLURL))
-		}
-
-		// lets only use this repository if it is a fork
-		if !repo.Fork {
-			fork = false
-		} else {
-			dir, err = ioutil.TempDir("", fmt.Sprintf("fork-%s-%s", gitInfo.Organisation, gitInfo.Name))
-			if err != nil {
-				return "", "", nil, fork, errors.Wrap(err, "failed to create temp dir")
-			}
-
-			err = os.MkdirAll(dir, util.DefaultWritePermissions)
-			if err != nil {
-				return "", "", nil, fork, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
-			}
-			cloneGitURL, err := git.CreatePushURL(repo.CloneURL, &userDetails)
-			if err != nil {
-				return "", "", nil, fork, errors.Wrapf(err, "failed to get clone URL from %s and user %s", repo.CloneURL, username)
-			}
-			err = o.Gitter.Clone(cloneGitURL, dir)
-			if err != nil {
-				return "", "", nil, fork, err
-			}
-			err = o.Gitter.FetchBranch(dir, "origin")
-			if err != nil {
-				return "", "", nil, fork, errors.Wrapf(err, "fetching from %s", cloneGitURL)
-			}
-			err = git.SetRemoteURL(dir, "upstream", gitURL)
-			if err != nil {
-				return "", "", nil, fork, errors.Wrapf(err, "setting remote upstream %q in forked environment repo", gitURL)
-			}
-			if o.ConfigGitFn != nil {
-				err = o.ConfigGitFn(dir, gitInfo, o.Gitter)
-				if err != nil {
-					return "", "", nil, fork, err
-				}
-			}
-			if base != "master" {
-				err = o.Gitter.Checkout(dir, base)
-				if err != nil {
-					return "", "", nil, fork, err
-				}
-			}
-			err = git.ResetToUpstream(dir, base)
-			if err != nil {
-				return "", "", nil, fork, errors.Wrapf(err, "resetting forked branch %s to upstream version", base)
-			}
-			return dir, base, gitInfo, fork, nil
-		}
-	}
-
-	// now lets clone the fork and pull it...
-	exists, err := util.FileExists(dir)
-	if err != nil {
-		return "", "", nil, fork, errors.Wrapf(err, "failed to check if directory %s exists", dir)
-	}
-
-	if exists {
-		if o.ConfigGitFn != nil {
-			err = o.ConfigGitFn(dir, gitInfo, o.Gitter)
-			if err != nil {
-				return "", "", nil, fork, err
-			}
-		}
-		// lets check the git remote URL is setup correctly
-		err = o.Gitter.SetRemoteURL(dir, "origin", gitURL)
-		if err != nil {
-			return "", "", nil, fork, err
-		}
-		err = o.Gitter.Stash(dir)
-		if err != nil {
-			return "", "", nil, fork, err
-		}
-		err = o.Gitter.Checkout(dir, base)
-		if err != nil {
-			return "", "", nil, fork, err
-		}
-		err = o.Gitter.Pull(dir)
-		if err != nil {
-			return "", "", nil, fork, err
-		}
-	} else {
-		err := os.MkdirAll(dir, util.DefaultWritePermissions)
-		if err != nil {
-			return "", "", nil, fork, fmt.Errorf("Failed to create directory %s due to %s", dir, err)
-		}
-		cloneGitURL, err := git.CreatePushURL(gitURL, &userDetails)
-		if err != nil {
-			return "", "", nil, fork, errors.Wrapf(err, "failed to get clone URL from %s and user %s", gitURL, username)
-		}
-
-		err = o.Gitter.Clone(cloneGitURL, dir)
-		if err != nil {
-			return "", "", nil, fork, err
-		}
-		if o.ConfigGitFn != nil {
-			err = o.ConfigGitFn(dir, gitInfo, o.Gitter)
-			if err != nil {
-				return "", "", nil, fork, err
-			}
-		}
-		if base != "master" {
-			err = o.Gitter.Checkout(dir, base)
-			if err != nil {
-				return "", "", nil, fork, err
-			}
-		}
-	}
-	return dir, base, gitInfo, fork, nil
-}
-
 // CreateUpgradeRequirementsFn creates the ModifyChartFn that upgrades the requirements of a chart.
 // Either all requirements may be upgraded, or the chartName,
 // alias and version can be specified. A username and password can be passed for a protected repository.
@@ -412,7 +142,7 @@ func CreateUpgradeRequirementsFn(all bool, chartName string, alias string, versi
 		existingValues map[string]interface{}) error, verbose bool, valuesFiles *ValuesFiles) ModifyChartFn {
 	upgraded := false
 	return func(requirements *helm.Requirements, metadata *chart.Metadata, values map[string]interface{},
-		templates map[string]string, envDir string, details *PullRequestDetails) error {
+		templates map[string]string, envDir string, details *gits.PullRequestDetails) error {
 
 		// Work through the upgrades
 		for _, d := range requirements.Dependencies {
@@ -485,7 +215,7 @@ func CreateUpgradeRequirementsFn(all bool, chartName string, alias string, versi
 func CreateAddRequirementFn(chartName string, alias string, version string, repo string,
 	valuesFiles *ValuesFiles, chartDir string, verbose bool, helmer helm.Helmer) ModifyChartFn {
 	return func(requirements *helm.Requirements, chart *helmchart.Metadata, values map[string]interface{},
-		templates map[string]string, envDir string, details *PullRequestDetails) error {
+		templates map[string]string, envDir string, details *gits.PullRequestDetails) error {
 		// See if the chart already exists in requirements
 		found := false
 		for _, d := range requirements.Dependencies {

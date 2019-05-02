@@ -2,8 +2,7 @@ package cmd
 
 import (
 	"github.com/jenkins-x/jx/pkg/apps"
-
-	"github.com/jenkins-x/jx/pkg/environments"
+	"github.com/jenkins-x/jx/pkg/gits"
 
 	"github.com/pkg/errors"
 
@@ -47,7 +46,7 @@ type DeleteAppOptions struct {
 	Alias       string
 
 	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback environments.ConfigureGitFn
+	ConfigureGitCallback gits.ConfigureGitFn
 }
 
 // NewCmdDeleteApp creates a command object for this command

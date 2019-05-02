@@ -46,7 +46,7 @@ type InstallOptions struct {
 	Namespace       string
 	EnvironmentsDir string
 	GitProvider     gits.GitProvider
-	ConfigureGitFn  environments.ConfigureGitFn
+	ConfigureGitFn  gits.ConfigureGitFn
 	Gitter          gits.Gitter
 	Verbose         bool
 	DevEnv          *jenkinsv1.Environment

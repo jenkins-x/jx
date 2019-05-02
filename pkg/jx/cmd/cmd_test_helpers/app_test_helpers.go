@@ -13,8 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"sigs.k8s.io/yaml"
 
-	"github.com/jenkins-x/jx/pkg/environments"
-
 	resources_test "github.com/jenkins-x/jx/pkg/kube/resources/mocks"
 
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -37,7 +35,7 @@ import (
 
 // AppTestOptions contains all useful data from the test environment initialized by `prepareInitialPromotionEnv`
 type AppTestOptions struct {
-	ConfigureGitFn  environments.ConfigureGitFn
+	ConfigureGitFn  gits.ConfigureGitFn
 	CommonOptions   *opts.CommonOptions
 	FakeGitProvider *gits.FakeProvider
 	DevRepo         *gits.FakeRepository

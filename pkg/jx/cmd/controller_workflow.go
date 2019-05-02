@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jenkins-x/jx/pkg/environments"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
@@ -46,7 +45,7 @@ type ControllerWorkflowOptions struct {
 	pipelineMap             map[string]*v1.PipelineActivity
 
 	// Allow Git to be configured
-	ConfigureGitFn environments.ConfigureGitFn
+	ConfigureGitFn gits.ConfigureGitFn
 }
 
 // NewCmdControllerWorkflow creates a command object for the generic "get" action, which

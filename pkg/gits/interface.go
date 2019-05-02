@@ -242,3 +242,13 @@ type Gitter interface {
 	GetRevisionBeforeDateText(dir string, dateText string) (string, error)
 	DeleteRemoteBranch(dir string, remoteName string, branch string) error
 }
+
+// ConfigureGitFn callback to optionally configure git before its used for creating commits and PRs
+type ConfigureGitFn func(dir string, gitInfo *GitRepository, gitAdapter Gitter) error
+
+// PullRequestDetails is the details for creating a pull request
+type PullRequestDetails struct {
+	Message    string
+	BranchName string
+	Title      string
+}

@@ -11,10 +11,7 @@ import (
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
-	"github.com/jenkins-x/jx/pkg/environments"
-
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
-
 	"github.com/jenkins-x/jx/pkg/gits"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
@@ -235,7 +232,7 @@ type TestEnv struct {
 	DevRepo              *gits.FakeRepository
 	StagingRepo          *gits.FakeRepository
 	ProdRepo             *gits.FakeRepository
-	ConfigureGitFolderFn environments.ConfigureGitFn
+	ConfigureGitFolderFn gits.ConfigureGitFn
 }
 
 // Prepares an initial configuration with a typical environment setup.

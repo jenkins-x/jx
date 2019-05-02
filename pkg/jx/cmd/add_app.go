@@ -3,12 +3,12 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/jenkins-x/jx/pkg/gits"
+
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 
 	"github.com/jenkins-x/jx/pkg/apps"
-
-	"github.com/jenkins-x/jx/pkg/environments"
 
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 
@@ -35,7 +35,7 @@ type AddAppOptions struct {
 	Prefixes []string
 
 	// allow git to be configured externally before a PR is created
-	ConfigureGitCallback environments.ConfigureGitFn
+	ConfigureGitCallback gits.ConfigureGitFn
 
 	Namespace   string
 	Version     string
