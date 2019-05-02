@@ -382,10 +382,13 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 				log.Warnf("values.yaml specified by --valuesFiles will be used despite presence of schema in app")
 			}
 
-			appResource, _, err := environments.LocateAppResource(o.Helmer, chartDir, chartName)
+			appResource, _, err := environments.LocateAppResource(o.Helmer, chartDir, chartDetails.Name)
+			if err != nil {
+				return &chartDetails, errors.Wrapf(err, "locating app resource in %s", chartDir)
+			}
 			if appResource.Spec.SchemaPreprocessor != nil {
 				id := uuid.New()
-				cmName := toValidName(chartName, "schema", id)
+				cmName := toValidName(chartDetails.Name, "schema", id)
 				cm := corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: cmName,
@@ -513,9 +516,9 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 						RestartPolicy:      corev1.RestartPolicyNever,
 					},
 				}
-				log.Infof("Preparing questions to configure %s."+
-					"\n If this is the first time you have installed the app, this may take a couple of minutes.",
-					chartName)
+				log.Infof("Preparing questions to configure %s.\n"+
+					"If this is the first time you have installed the app, this may take a couple of minutes.",
+					chartDetails.Name)
 				_, err = o.KubeClient.CoreV1().Pods(o.Namespace).Create(&pod)
 				if err != nil {
 					return &chartDetails, errors.Wrapf(err, "creating pod %s for values.schema.json proprocessing",
@@ -605,7 +608,11 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 
 func toValidName(appName string, name string, id string) string {
 	base := fmt.Sprintf("%s-%s", name, appName)
-	return kube.ToValidName(fmt.Sprintf("%s-%s", base[0:20], id))
+	l := len(base)
+	if l > 20 {
+		l = 20
+	}
+	return kube.ToValidName(fmt.Sprintf("%s-%s", base[0:l], id))
 }
 
 func (o *InstallOptions) handleValues(dir string, chartName string, values []byte) (func(), error) {
