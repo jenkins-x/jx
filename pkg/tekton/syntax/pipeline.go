@@ -372,6 +372,9 @@ func (s *Step) GetImage() string {
 	if s.Image != "" {
 		return s.Image
 	}
+	if !equality.Semantic.DeepEqual(s.Agent, Agent{}) && s.Agent.Image != "" {
+		return s.Agent.Image
+	}
 
 	return s.Container
 }
@@ -1289,10 +1292,8 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 	var steps []corev1.Container
 
 	stepImage := inheritedAgent
-	if step.Image != "" {
-		stepImage = step.Image
-	} else if step.Agent.Image != "" {
-		stepImage = step.Agent.Image
+	if step.GetImage() != "" {
+		stepImage = step.GetImage()
 	}
 
 	workingDir := step.Dir
