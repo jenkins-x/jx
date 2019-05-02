@@ -15,3 +15,10 @@ pipelineConfig:
             steps:
               - command: echo
                 args: ['hello', '${SOME_OTHER_VAR}']
+              - command: echo
+                args: ['goodbye', '${SOME_VAR} and ${ANOTHER_VAR}']
+                env:
+                  - name: SOME_VAR
+                    value: An overriding value
+                  - name: ANOTHER_VAR
+                    value: Yet another variable
