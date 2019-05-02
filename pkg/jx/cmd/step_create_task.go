@@ -340,12 +340,19 @@ func (o *StepCreateTaskOptions) Run() error {
 			log.Infof("generated build number %s for %s\n", o.BuildNumber, o.CloneGitURL)
 		}
 	}
-
+	projectConfig, projectConfigFile, err := o.loadProjectConfig()
+	if err != nil {
+		return errors.Wrapf(err, "failed to load project config in dir %s", o.Dir)
+	}
 	if o.BuildPackURL == "" || o.BuildPackRef == "" {
-		if o.BuildPackURL == "" {
+		if projectConfig.BuildPackGitURL != "" {
+			o.BuildPackURL = projectConfig.BuildPackGitURL
+		} else if o.BuildPackURL == "" {
 			o.BuildPackURL = settings.BuildPackURL
 		}
-		if o.BuildPackRef == "" {
+		if projectConfig.BuildPackGitURef != "" {
+			o.BuildPackRef = projectConfig.BuildPackGitURef
+		} else if o.BuildPackRef == "" {
 			o.BuildPackRef = settings.BuildPackRef
 		}
 	}
@@ -358,10 +365,7 @@ func (o *StepCreateTaskOptions) Run() error {
 	if o.PipelineKind == "" {
 		return util.MissingOption("kind")
 	}
-	projectConfig, projectConfigFile, err := o.loadProjectConfig()
-	if err != nil {
-		return errors.Wrapf(err, "failed to load project config in dir %s", o.Dir)
-	}
+
 	if o.Pack == "" {
 		o.Pack = projectConfig.BuildPack
 	}
