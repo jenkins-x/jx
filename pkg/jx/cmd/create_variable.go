@@ -211,7 +211,7 @@ func (o *CreateVariableOptions) loadEnvVars(projectConfig *config.ProjectConfig)
 	if err != nil {
 		return answer, err
 	}
-	containerName := pipelineConfig.Agent.Container
+	containerName := pipelineConfig.Agent.GetImage()
 	if containerName != "" && podTemplates != nil && podTemplates[containerName] != nil {
 		podTemplate := podTemplates[containerName]
 		if len(podTemplate.Spec.Containers) > 0 {

@@ -1,7 +1,7 @@
-package jenkinsfile_test
+package util_test
 
 import (
-	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -14,17 +14,17 @@ func TestJenkinsfileWriter(t *testing.T) {
   }
 }
 `
-	writer := jenkinsfile.NewWriter(0)
+	writer := util.NewWriter(0)
 
-	statements := []*jenkinsfile.Statement{
+	statements := []*util.Statement{
 		{
 			Function:  "container",
 			Arguments: []string{"maven"},
-			Children: []*jenkinsfile.Statement{
+			Children: []*util.Statement{
 				{
 					Function:  "dir",
 					Arguments: []string{"/foo/bar"},
-					Children: []*jenkinsfile.Statement{
+					Children: []*util.Statement{
 						{
 							Statement: "sh \"ls -al\"",
 						},
@@ -35,11 +35,11 @@ func TestJenkinsfileWriter(t *testing.T) {
 		{
 			Function:  "container",
 			Arguments: []string{"maven"},
-			Children: []*jenkinsfile.Statement{
+			Children: []*util.Statement{
 				{
 					Function:  "dir",
 					Arguments: []string{"/foo/bar"},
-					Children: []*jenkinsfile.Statement{
+					Children: []*util.Statement{
 						{
 							Statement: "sh \"mvn deploy\"",
 						},

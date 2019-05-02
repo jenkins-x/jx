@@ -8,6 +8,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/spf13/cobra"
 	survey "gopkg.in/AlecAivazis/survey.v1"
@@ -41,7 +42,7 @@ type NewStepDetails struct {
 	Pipeline  string
 	Lifecycle string
 	Mode      string
-	Step      jenkinsfile.PipelineStep
+	Step      syntax.Step
 }
 
 // AddToPipeline adds the step to the given pipeline configuration
@@ -148,8 +149,8 @@ func (o *CreateStepOptions) configureNewStepDetails(stepDetails *NewStepDetails)
 		if s.Mode == "" {
 			s.Mode = defaultMode
 		}
-		if s.Step.Command == "" {
-			return util.MissingOption("sh")
+		if s.Step.GetCommand() == "" {
+			return util.MissingOption("command")
 		}
 		return nil
 	}
@@ -173,7 +174,7 @@ func (o *CreateStepOptions) configureNewStepDetails(stepDetails *NewStepDetails)
 			return err
 		}
 	}
-	if s.Step.Command == "" {
+	if s.Step.GetCommand() == "" {
 		prompt := &survey.Input{
 			Message: "Command for the new step: ",
 			Help:    "The shell command executed inside the container to implement this step",

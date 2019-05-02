@@ -1378,6 +1378,63 @@ func TestFailedValidation(t *testing.T) {
 			name:          "unknown_field",
 			expectedError: errors.New("Validation failures in YAML file test_data/validation_failures/unknown_field/jenkins-x.yml:\npipelineConfig: Additional property banana is not allowed"),
 		},
+		{
+			name: "comment_field",
+			expectedError: (&apis.FieldError{
+				Message: "the comment field is only valid in legacy build packs, not in jenkins-x.yml. Please remove it.",
+				Paths:   []string{"comment"},
+			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+		},
+		{
+			name: "groovy_field",
+			expectedError: (&apis.FieldError{
+				Message: "the groovy field is only valid in legacy build packs, not in jenkins-x.yml. Please remove it.",
+				Paths:   []string{"groovy"},
+			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+		},
+		{
+			name: "when_field",
+			expectedError: (&apis.FieldError{
+				Message: "the when field is only valid in legacy build packs, not in jenkins-x.yml. Please remove it.",
+				Paths:   []string{"when"},
+			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+		},
+		{
+			name: "sh_field",
+			expectedError: (&apis.FieldError{
+				Message: "the sh field is deprecated - please use command instead",
+				Paths:   []string{"sh"},
+			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+		},
+		{
+			name: "container_field",
+			expectedError: (&apis.FieldError{
+				Message: "the container field is deprecated - please use image instead",
+				Paths:   []string{"container"},
+			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+		},
+		{
+			name: "legacy_steps_field",
+			expectedError: (&apis.FieldError{
+				Message: "the steps field is only valid in legacy build packs, not in jenkins-x.yml. Please remove it and list the nested stages sequentially instead.",
+				Paths:   []string{"steps"},
+			}).ViaFieldIndex("steps", 0).ViaFieldIndex("stages", 0),
+		},
+		{
+			name: "agent_dir_field",
+			expectedError: (&apis.FieldError{
+				Message: "the dir field is only valid in legacy build packs, not in jenkins-x.yml. Please remove it.",
+				Paths:   []string{"dir"},
+			}).ViaField("agent"),
+		},
+		{
+			name: "agent_container_field",
+			expectedError: (&apis.FieldError{
+				Message: "the container field is deprecated - please use image instead",
+				Paths:   []string{"container"},
+			}).ViaField("agent"),
+>>>>>>> chore: Initial work on unification of build pack and jenkins-x.yml syntax
+		},
 	}
 
 	for _, tt := range tests {

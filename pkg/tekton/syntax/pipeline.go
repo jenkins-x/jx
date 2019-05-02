@@ -1,6 +1,7 @@
 package syntax
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -39,7 +40,10 @@ type Agent struct {
 	// One of label or image is required.
 	Label string `json:"label,omitempty"`
 	Image string `json:"image,omitempty"`
-	// Perhaps we'll eventually want to add something here for specifying a volume to create? Would play into stash.
+
+	// Legacy fields from jenkinsfile.PipelineAgent
+	Container string `json:"container,omitempty"`
+	Dir       string `json:"dir,omitempty"`
 }
 
 // EnvVar is a key/value pair defining an environment variable
@@ -160,6 +164,14 @@ type Step struct {
 
 	// env allows defining per-step environment variables
 	Env []EnvVar `json:"env,omitempty"`
+
+	// Legacy fields from jenkinsfile.PipelineStep before it was eliminated.
+	Comment   string  `json:"comment,omitempty"`
+	Groovy    string  `json:"groovy,omitempty"`
+	Steps     []*Step `json:"steps,omitempty"`
+	When      string  `json:"when,omitempty"`
+	Container string  `json:"container,omitempty"`
+	Sh        string  `json:"sh,omitempty"`
 }
 
 // Loop is a special step that defines a variable, a list of possible values for that variable, and a set of steps to
@@ -222,6 +234,161 @@ func (s *Stage) taskName() string {
 // stageLabelName replaces invalid characters in stage names for label usage.
 func (s *Stage) stageLabelName() string {
 	return MangleToRfc1035Label(s.Name, "")
+}
+
+// GroovyBlock returns the groovy expression for this step
+// Legacy code for Jenkinsfile generation
+func (s *Step) GroovyBlock(parentIndent string) string {
+	var buffer bytes.Buffer
+	indent := parentIndent
+	if s.Comment != "" {
+		buffer.WriteString(indent)
+		buffer.WriteString("// ")
+		buffer.WriteString(s.Comment)
+		buffer.WriteString("\n")
+	}
+	if s.GetImage() != "" {
+		buffer.WriteString(indent)
+		buffer.WriteString("container('")
+		buffer.WriteString(s.GetImage())
+		buffer.WriteString("') {\n")
+	} else if s.Dir != "" {
+		buffer.WriteString(indent)
+		buffer.WriteString("dir('")
+		buffer.WriteString(s.Dir)
+		buffer.WriteString("') {\n")
+	} else if s.GetFullCommand() != "" {
+		buffer.WriteString(indent)
+		buffer.WriteString("sh \"")
+		buffer.WriteString(s.GetFullCommand())
+		buffer.WriteString("\"\n")
+	} else if s.Groovy != "" {
+		lines := strings.Split(s.Groovy, "\n")
+		lastIdx := len(lines) - 1
+		for i, line := range lines {
+			buffer.WriteString(indent)
+			buffer.WriteString(line)
+			if i >= lastIdx && len(s.Steps) > 0 {
+				buffer.WriteString(" {")
+			}
+			buffer.WriteString("\n")
+		}
+	}
+	childIndent := indent + "  "
+	for _, child := range s.Steps {
+		buffer.WriteString(child.GroovyBlock(childIndent))
+	}
+	return buffer.String()
+}
+
+// ToJenkinsfileStatements converts the step to one or more jenkinsfile statements
+// Legacy code for Jenkinsfile generation
+func (s *Step) ToJenkinsfileStatements() []*util.Statement {
+	statements := []*util.Statement{}
+	if s.Comment != "" {
+		statements = append(statements, &util.Statement{
+			Statement: "",
+		}, &util.Statement{
+			Statement: "// " + s.Comment,
+		})
+	}
+	if s.GetImage() != "" {
+		statements = append(statements, &util.Statement{
+			Function:  "container",
+			Arguments: []string{s.GetImage()},
+		})
+	} else if s.Dir != "" {
+		statements = append(statements, &util.Statement{
+			Function:  "dir",
+			Arguments: []string{s.Dir},
+		})
+	} else if s.GetFullCommand() != "" {
+		statements = append(statements, &util.Statement{
+			Statement: "sh \"" + s.GetFullCommand() + "\"",
+		})
+	} else if s.Groovy != "" {
+		lines := strings.Split(s.Groovy, "\n")
+		for _, line := range lines {
+			statements = append(statements, &util.Statement{
+				Statement: line,
+			})
+		}
+	}
+	if len(statements) > 0 {
+		last := statements[len(statements)-1]
+		for _, c := range s.Steps {
+			last.Children = append(last.Children, c.ToJenkinsfileStatements()...)
+		}
+	}
+	return statements
+}
+
+// Validate validates the step is populated correctly
+// Legacy code for Jenkinsfile generation
+func (s *Step) Validate() error {
+	if len(s.Steps) > 0 || s.GetCommand() != "" {
+		return nil
+	}
+	return fmt.Errorf("invalid step %#v as no child steps or command", s)
+}
+
+// PutAllEnvVars puts all the defined environment variables in the given map
+// Legacy code for Jenkinsfile generation
+func (s *Step) PutAllEnvVars(m map[string]string) {
+	for _, step := range s.Steps {
+		step.PutAllEnvVars(m)
+	}
+}
+
+// GetCommand gets the step's command to execute, opting for Command if set, then Sh.
+func (s *Step) GetCommand() string {
+	if s.Command != "" {
+		return s.Command
+	}
+
+	return s.Sh
+}
+
+// GetFullCommand gets the full command to execute, including arguments.
+func (s *Step) GetFullCommand() string {
+	cmd := s.GetCommand()
+
+	// If GetCommand() was an empty string, don't deal with arguments, just return.
+	if len(s.Arguments) > 0 && cmd != "" {
+		cmd = fmt.Sprintf("%s %s", cmd, strings.Join(s.Arguments, " "))
+	}
+
+	return cmd
+}
+
+// GetImage gets the step's image to run on, opting for Image if set, then Container.
+func (s *Step) GetImage() string {
+	if s.Image != "" {
+		return s.Image
+	}
+
+	return s.Container
+}
+
+// Groovy returns the agent groovy expression for the agent or `any` if its blank
+// Legacy code for Jenkinsfile generation
+func (a *Agent) Groovy() string {
+	if a.Label != "" {
+		return fmt.Sprintf(`{
+    label "%s"
+  }`, a.Label)
+	}
+	// lets use any for Prow
+	return "any"
+}
+
+// GetImage gets the agent's image to run on, opting for Image if set, then Container.
+func (a *Agent) GetImage() string {
+	if a.Image != "" {
+		return a.Image
+	}
+
+	return a.Container
 }
 
 // MangleToRfc1035Label - Task/Step names need to be RFC 1035/1123 compliant DNS labels, so we mangle
@@ -304,6 +471,19 @@ func validateAgent(a Agent) *apis.FieldError {
 	// TODO: This is the same whether you specify an agent without label or image, or if you don't specify an agent
 	// at all, which is nonoptimal.
 	if !equality.Semantic.DeepEqual(a, Agent{}) {
+		if a.Container != "" {
+			return &apis.FieldError{
+				Message: "the container field is deprecated - please use image instead",
+				Paths:   []string{"container"},
+			}
+		}
+		if a.Dir != "" {
+			return &apis.FieldError{
+				Message: "the dir field is only valid in legacy build packs, not in jenkins-x.yml. Please remove it.",
+				Paths:   []string{"dir"},
+			}
+		}
+
 		if a.Image != "" && a.Label != "" {
 			return apis.ErrMultipleOneOf("label", "image")
 		}
@@ -388,6 +568,44 @@ func moreThanOneAreTrue(vals ...bool) bool {
 }
 
 func validateStep(s Step) *apis.FieldError {
+	// Special cases for when you use legacy build pack syntax inside a pipeline definition
+	if s.Sh != "" {
+		return &apis.FieldError{
+			Message: "the sh field is deprecated - please use command instead",
+			Paths:   []string{"sh"},
+		}
+	}
+	if s.Container != "" {
+		return &apis.FieldError{
+			Message: "the container field is deprecated - please use image instead",
+			Paths:   []string{"container"},
+		}
+	}
+	if s.Groovy != "" {
+		return &apis.FieldError{
+			Message: "the groovy field is only valid in legacy build packs, not in jenkins-x.yml. Please remove it.",
+			Paths:   []string{"groovy"},
+		}
+	}
+	if s.Comment != "" {
+		return &apis.FieldError{
+			Message: "the comment field is only valid in legacy build packs, not in jenkins-x.yml. Please remove it.",
+			Paths:   []string{"comment"},
+		}
+	}
+	if s.When != "" {
+		return &apis.FieldError{
+			Message: "the when field is only valid in legacy build packs, not in jenkins-x.yml. Please remove it.",
+			Paths:   []string{"when"},
+		}
+	}
+	if len(s.Steps) > 0 {
+		return &apis.FieldError{
+			Message: "the steps field is only valid in legacy build packs, not in jenkins-x.yml. Please remove it and list the nested stages sequentially instead.",
+			Paths:   []string{"steps"},
+		}
+	}
+
 	if s.Command == "" && s.Step == "" && equality.Semantic.DeepEqual(s.Loop, Loop{}) {
 		return apis.ErrMissingOneOf("command", "step", "loop")
 	}

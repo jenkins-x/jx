@@ -494,7 +494,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		if lifecycles.Setup == nil {
 			lifecycles.Setup = &jenkinsfile.PipelineLifecycle{}
 		}
-		steps := []*jenkinsfile.PipelineStep{
+		steps := []*syntax.Step{
 			{
 				Command: "jx step git credentials",
 				Name:    "jx-git-credentials",
@@ -538,7 +538,7 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		}
 
 		// If agent.container is specified, use that for default container configuration for step images.
-		containerName := pipelineConfig.Agent.Container
+		containerName := pipelineConfig.Agent.GetImage()
 		if containerName != "" {
 			if o.PodTemplates != nil && o.PodTemplates[containerName] != nil {
 				podTemplate := o.PodTemplates[containerName]
@@ -616,7 +616,7 @@ func (o *StepCreateTaskOptions) CreateStageForBuildPack(languageName string, pro
 	}
 
 	// lets generate the pipeline using the build packs
-	container := pipelineConfig.Agent.Container
+	container := pipelineConfig.Agent.GetImage()
 	if o.CustomImage != "" {
 		container = o.CustomImage
 	}
@@ -1033,13 +1033,13 @@ func (o *StepCreateTaskOptions) applyPipeline(pipeline *pipelineapi.Pipeline, ta
 	return nil
 }
 
-func (o *StepCreateTaskOptions) createSteps(languageName string, projectConfig *config.ProjectConfig, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *jenkinsfile.PipelineStep, containerName string, dir string, prefixPath string) []syntax.Step {
+func (o *StepCreateTaskOptions) createSteps(languageName string, projectConfig *config.ProjectConfig, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *syntax.Step, containerName string, dir string, prefixPath string) []syntax.Step {
 	steps := []syntax.Step{}
 
-	if step.Container != "" {
-		containerName = step.Container
+	if step.GetImage() != "" {
+		containerName = step.GetImage()
 	} else {
-		containerName = pipelineConfig.Agent.Container
+		containerName = pipelineConfig.Agent.GetImage()
 	}
 
 	if step.Dir != "" {
@@ -1058,7 +1058,7 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, projectConfig *
 		log.Warnf("No GitInfo available!\n")
 	}
 
-	if step.Command != "" {
+	if step.GetCommand() != "" {
 		if containerName == "" {
 			containerName = o.DefaultImage
 			log.Warnf("No 'agent.container' specified in the pipeline configuration so defaulting to use: %s\n", containerName)
@@ -1113,8 +1113,8 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, projectConfig *
 
 // replaceCommandText lets remove any escaped "\$" stuff in the pipeline library
 // and replace any use of the VERSION file with using the VERSION env var
-func (o *StepCreateTaskOptions) replaceCommandText(step *jenkinsfile.PipelineStep) string {
-	answer := strings.Replace(step.Command, "\\$", "$", -1)
+func (o *StepCreateTaskOptions) replaceCommandText(step *syntax.Step) string {
+	answer := strings.Replace(step.GetFullCommand(), "\\$", "$", -1)
 
 	// lets replace the old way of setting versions
 	answer = strings.Replace(answer, "export VERSION=`cat VERSION` && ", "", 1)
@@ -1446,7 +1446,7 @@ func (o *StepCreateTaskOptions) setVersionOnReleasePipelines(pipelineConfig *jen
 		if sv == nil {
 			// lets create a default set version pipeline
 			sv = &jenkinsfile.PipelineLifecycle{
-				Steps: []*jenkinsfile.PipelineStep{
+				Steps: []*syntax.Step{
 					{
 						Command: "jx step next-version --use-git-tag-only --tag",
 						Name:    "next-version",
@@ -1529,14 +1529,14 @@ func hasPipelineParam(params []pipelineapi.Param, name string) bool {
 	return false
 }
 
-func (o *StepCreateTaskOptions) runStepCommand(step *jenkinsfile.PipelineStep) error {
-	c := step.Command
+func (o *StepCreateTaskOptions) runStepCommand(step *syntax.Step) error {
+	c := step.GetFullCommand()
 	if c == "" {
 		return nil
 	}
 	log.Infof("running command: %s\n", util.ColorInfo(c))
 
-	commandText := strings.Replace(step.Command, "\\$", "$", -1)
+	commandText := strings.Replace(step.GetFullCommand(), "\\$", "$", -1)
 
 	cmd := util.Command{
 		Name: "/bin/sh",
@@ -1553,7 +1553,7 @@ func (o *StepCreateTaskOptions) runStepCommand(step *jenkinsfile.PipelineStep) e
 	return nil
 }
 
-func (o *StepCreateTaskOptions) invokeSteps(steps []*jenkinsfile.PipelineStep) error {
+func (o *StepCreateTaskOptions) invokeSteps(steps []*syntax.Step) error {
 	for _, s := range steps {
 		if s == nil {
 			continue
@@ -1565,7 +1565,7 @@ func (o *StepCreateTaskOptions) invokeSteps(steps []*jenkinsfile.PipelineStep) e
 			}
 		}
 		when := strings.TrimSpace(s.When)
-		if when == "!prow" || s.Command == "" {
+		if when == "!prow" || s.GetCommand() == "" {
 			continue
 		}
 		err := o.runStepCommand(s)
@@ -1577,7 +1577,7 @@ func (o *StepCreateTaskOptions) invokeSteps(steps []*jenkinsfile.PipelineStep) e
 }
 
 // modifyStep allows a container step to be modified to do something different
-func (o *StepCreateTaskOptions) modifyStep(projectConfig *config.ProjectConfig, parsedStep syntax.Step, gitInfo *gits.GitRepository, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *jenkinsfile.PipelineStep, containerName string, dir string) syntax.Step {
+func (o *StepCreateTaskOptions) modifyStep(projectConfig *config.ProjectConfig, parsedStep syntax.Step, gitInfo *gits.GitRepository, pipelineConfig *jenkinsfile.PipelineConfig, templateKind string, step *syntax.Step, containerName string, dir string) syntax.Step {
 
 	if !o.NoKaniko {
 		if strings.HasPrefix(parsedStep.Command, "skaffold build") ||
