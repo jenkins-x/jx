@@ -23,7 +23,6 @@ require (
 	github.com/antham/chyle v1.4.0
 	github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da // indirect
 	github.com/armon/go-radix v1.0.0 // indirect
-	github.com/asaskevich/govalidator v0.0.0-20180720115003-f9ffefc3facf // indirect
 	github.com/aws/aws-sdk-go v1.17.10
 	github.com/banzaicloud/bank-vaults v0.0.0-20181129101211-e31657d7c4fe
 	github.com/beevik/etree v1.0.1
@@ -55,6 +54,7 @@ require (
 	github.com/go-ldap/ldap v3.0.1+incompatible // indirect
 	github.com/go-ole/go-ole v1.2.1 // indirect
 	github.com/go-openapi/jsonreference v0.17.0
+	github.com/go-openapi/loads v0.19.0 // indirect
 	github.com/go-openapi/spec v0.17.1
 	github.com/go-test/deep v1.0.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
@@ -98,6 +98,7 @@ require (
 	github.com/knative/serving v0.5.0
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kr/pty v1.1.2 // indirect
+	github.com/kubernetes-incubator/reference-docs v0.0.0-20190410022412-9642bd3f4de5 // indirect
 	github.com/lusis/go-slackbot v0.0.0-20180109053408-401027ccfef5 // indirect
 	github.com/lusis/slack-test v0.0.0-20180109053238-3c758769bfa6 // indirect
 	github.com/magiconair/properties v1.8.0
@@ -107,16 +108,15 @@ require (
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/mitchellh/go-homedir v0.0.0-20180523094522-3864e76763d9 // indirect
 	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
-	github.com/mitchellh/mapstructure v0.0.0-20180715050151-f15292f7a699
+	github.com/mitchellh/mapstructure v1.1.2
 	github.com/nlopes/slack v0.0.0-20180721202243-347a74b1ea30
 	github.com/nwaples/rardecode v1.0.0 // indirect
 	github.com/onsi/ginkgo v1.6.0
 	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/operator-framework/operator-sdk v0.0.0-20181011175812-913cbf711929 // indirect
-	github.com/ory/dockertest v3.3.4+incompatible // indirect
 	github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
-	github.com/pborman/uuid v0.0.0-20170612153648-e790cca94e6c
+	github.com/pborman/uuid v1.2.0
 	github.com/pelletier/go-buffruneio v0.2.0 // indirect
 	github.com/petergtz/pegomock v2.2.0+incompatible
 	github.com/pierrec/lz4 v2.0.5+incompatible // indirect
@@ -147,8 +147,6 @@ require (
 	github.com/xanzy/ssh-agent v0.2.0 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	gocloud.dev v0.9.0
-	golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81 // indirect
-	golang.org/x/net v0.0.0-20181201002055-351d144fa1fc // indirect
 	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890
 	golang.org/x/sync v0.0.0-20181221193216-37e7f081c4d4
 	golang.org/x/sys v0.0.0-20190411185658-b44545bcd369
@@ -167,8 +165,11 @@ require (
 	k8s.io/apiextensions-apiserver v0.0.0-20181128195303-1f84094d7e8e
 	k8s.io/apimachinery v0.0.0-20190122181752-bebe27e40fb7
 	k8s.io/client-go v9.0.0+incompatible
+	k8s.io/code-generator v0.0.0-20180904193909-8c97d6ab64da // indirect
+	k8s.io/gengo v0.0.0-20190327210449-e17681d19d3a // indirect
 	k8s.io/helm v2.7.2+incompatible
-	k8s.io/kube-openapi v0.0.0-20180719232738-d8ea2fe547a4
+	k8s.io/klog v0.3.0 // indirect
+	k8s.io/kube-openapi v0.0.0-20190205214119-36ebc4887cdc
 	k8s.io/kubernetes v1.11.3
 	k8s.io/metrics v0.0.0-20180620010437-b11cf31b380b
 	k8s.io/test-infra v0.0.0-20190131093439-a22cef183a8f

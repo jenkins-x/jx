@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	basePath       = "github.com/kubernetes/code-generator/cmd"
+	basePath       = "k8s.io/code-generator/cmd"
 	defaultVersion = "kubernetes-1.11.3"
 )
 
@@ -31,7 +31,7 @@ func InstallCodeGenerators(version string) error {
 	}
 	for _, generator := range allGenerators {
 		path := fmt.Sprintf("%s/%s", basePath, generator)
-		util.AppLogger().Infof("installing %s via 'go get'", path)
+		util.AppLogger().Infof("installing %s in version %s via 'go get'", path, version)
 		err := util.GoGet(path, version, true)
 		if err != nil {
 			return err

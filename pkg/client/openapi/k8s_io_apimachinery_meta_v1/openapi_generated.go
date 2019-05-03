@@ -263,6 +263,7 @@ func schema_pkg_apis_meta_v1_APIResource(ref common.ReferenceCallback) common.Op
 				Required: []string{"name", "singularName", "namespaced", "kind", "verbs"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -418,6 +419,7 @@ func schema_pkg_apis_meta_v1_CreateOptions(ref common.ReferenceCallback) common.
 				},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -508,6 +510,7 @@ func schema_pkg_apis_meta_v1_Duration(ref common.ReferenceCallback) common.OpenA
 				Required: []string{"Duration"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -550,6 +553,7 @@ func schema_pkg_apis_meta_v1_ExportOptions(ref common.ReferenceCallback) common.
 				Required: []string{"export", "exact"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -591,6 +595,7 @@ func schema_pkg_apis_meta_v1_GetOptions(ref common.ReferenceCallback) common.Ope
 				},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -617,6 +622,7 @@ func schema_pkg_apis_meta_v1_GroupKind(ref common.ReferenceCallback) common.Open
 				Required: []string{"group", "kind"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -643,6 +649,7 @@ func schema_pkg_apis_meta_v1_GroupResource(ref common.ReferenceCallback) common.
 				Required: []string{"group", "resource"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -669,6 +676,7 @@ func schema_pkg_apis_meta_v1_GroupVersion(ref common.ReferenceCallback) common.O
 				Required: []string{"group", "version"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -697,6 +705,7 @@ func schema_pkg_apis_meta_v1_GroupVersionForDiscovery(ref common.ReferenceCallba
 				Required: []string{"groupVersion", "version"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -729,6 +738,7 @@ func schema_pkg_apis_meta_v1_GroupVersionKind(ref common.ReferenceCallback) comm
 				Required: []string{"group", "version", "kind"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -761,6 +771,7 @@ func schema_pkg_apis_meta_v1_GroupVersionResource(ref common.ReferenceCallback) 
 				Required: []string{"group", "version", "resource"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -782,6 +793,7 @@ func schema_pkg_apis_meta_v1_Initializer(ref common.ReferenceCallback) common.Op
 				Required: []string{"name"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -866,7 +878,6 @@ func schema_pkg_apis_meta_v1_LabelSelector(ref common.ReferenceCallback) common.
 							Description: "matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels map is equivalent to an element of matchExpressions, whose key field is \"key\", the operator is \"In\", and the values array contains only \"value\". The requirements are ANDed.",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -942,6 +953,7 @@ func schema_pkg_apis_meta_v1_LabelSelectorRequirement(ref common.ReferenceCallba
 				Required: []string{"key", "operator"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -1025,6 +1037,7 @@ func schema_pkg_apis_meta_v1_ListMeta(ref common.ReferenceCallback) common.OpenA
 				},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -1108,6 +1121,7 @@ func schema_pkg_apis_meta_v1_ListOptions(ref common.ReferenceCallback) common.Op
 				},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -1203,7 +1217,6 @@ func schema_pkg_apis_meta_v1_ObjectMeta(ref common.ReferenceCallback) common.Ope
 							Description: "Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -1218,7 +1231,6 @@ func schema_pkg_apis_meta_v1_ObjectMeta(ref common.ReferenceCallback) common.Ope
 							Description: "Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations",
 							Type:        []string{"object"},
 							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Type:   []string{"string"},
@@ -1340,6 +1352,7 @@ func schema_pkg_apis_meta_v1_OwnerReference(ref common.ReferenceCallback) common
 				Required: []string{"apiVersion", "kind", "name", "uid"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -1349,8 +1362,10 @@ func schema_pkg_apis_meta_v1_Patch(ref common.ReferenceCallback) common.OpenAPID
 			SchemaProps: spec.SchemaProps{
 				Description: "Patch is provided to give a concrete name and type to the Kubernetes PATCH request body.",
 				Type:        []string{"object"},
+				Properties:  map[string]spec.Schema{},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -1371,6 +1386,7 @@ func schema_pkg_apis_meta_v1_Preconditions(ref common.ReferenceCallback) common.
 				},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -1399,6 +1415,7 @@ func schema_pkg_apis_meta_v1_RootPaths(ref common.ReferenceCallback) common.Open
 				Required: []string{"paths"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -1427,6 +1444,7 @@ func schema_pkg_apis_meta_v1_ServerAddressByClientCIDR(ref common.ReferenceCallb
 				Required: []string{"clientCIDR", "serverAddress"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -1530,6 +1548,7 @@ func schema_pkg_apis_meta_v1_StatusCause(ref common.ReferenceCallback) common.Op
 				},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -1633,6 +1652,7 @@ func schema_pkg_apis_meta_v1_Timestamp(ref common.ReferenceCallback) common.Open
 				Required: []string{"seconds", "nanos"},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -1660,6 +1680,7 @@ func schema_pkg_apis_meta_v1_TypeMeta(ref common.ReferenceCallback) common.OpenA
 				},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 
@@ -1701,6 +1722,7 @@ func schema_pkg_apis_meta_v1_UpdateOptions(ref common.ReferenceCallback) common.
 				},
 			},
 		},
+		Dependencies: []string{},
 	}
 }
 

@@ -2,13 +2,13 @@ package app
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
 	"go/build"
 	"path/filepath"
 	"strings"
 
 	"github.com/jenkins-x/jx/cmd/codegen/util"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -22,9 +22,17 @@ const (
 	optionModuleName      = "module-name"
 )
 
+// CommonOptions contains the common options
+type CommonOptions struct {
+	Args             []string
+	Cmd              *cobra.Command
+	LogLevel         string
+	GeneratorVersion string
+}
+
 // GenerateOptions contain common code generation options
 type GenerateOptions struct {
-	*opts.CommonOptions
+	*CommonOptions
 	OutputBase          string
 	BoilerplateFile     string
 	GroupsWithVersions  []string
@@ -33,7 +41,6 @@ type GenerateOptions struct {
 	GoPathOutputPackage string
 	GoPathOutputBase    string
 	OutputPackage       string
-	ClientGenVersion    string
 	InputBase           string
 }
 

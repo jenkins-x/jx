@@ -2248,6 +2248,11 @@ func (in *TeamSettings) DeepCopyInto(out *TeamSettings) {
 		*out = make([]StorageLocation, len(*in))
 		copy(*out, *in)
 	}
+	if in.AppsPrefixes != nil {
+		in, out := &in.AppsPrefixes, &out.AppsPrefixes
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 
