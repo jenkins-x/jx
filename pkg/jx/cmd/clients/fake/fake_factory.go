@@ -51,6 +51,14 @@ type fakefactory struct {
 	bearerToken     string
 	secretLocation  secrets.SecretLocation
 	offline         bool
+
+	// cached fake clients
+	apiClient    apiextensionsclientset.Interface
+	buildClient  build.Interface
+	jxClient     versioned.Interface
+	kubeClient   kubernetes.Interface
+	kserveClient kserve.Interface
+	tektonClient tektonclient.Interface
 }
 
 var _ clients.Factory = (*fakefactory)(nil)
@@ -62,6 +70,11 @@ func NewFakeFactory() clients.Factory {
 	}
 	f.kubeConfig = kube.NewKubeConfig()
 	return f
+}
+
+// SetNamespace sets the default namespace
+func (f *fakefactory) SetNamespace(ns string) {
+	f.namespace = ns
 }
 
 func (f *fakefactory) SetBatch(batch bool) {
@@ -265,31 +278,49 @@ func (f *fakefactory) CreateVaultClient(name string, namespace string) (vault.Cl
 
 // CreateKubeClient creates a new Kubernetes client
 func (f *fakefactory) CreateKubeClient() (kubernetes.Interface, string, error) {
-	return fake.NewSimpleClientset(), f.namespace, nil
+	if f.kubeClient == nil {
+		f.kubeClient = fake.NewSimpleClientset()
+	}
+	return f.kubeClient, f.namespace, nil
 }
 
 // CreateJXClient creates a new Kubernetes client for Jenkins X CRDs
 func (f *fakefactory) CreateJXClient() (versioned.Interface, string, error) {
-	return v1fake.NewSimpleClientset(), f.namespace, nil
+	if f.jxClient == nil {
+		f.jxClient = v1fake.NewSimpleClientset()
+	}
+	return f.jxClient, f.namespace, nil
 }
 
 // CreateApiExtensionsClient creates a new Kubernetes ApiExtensions client
 func (f *fakefactory) CreateApiExtensionsClient() (apiextensionsclientset.Interface, error) {
-	return apifake.NewSimpleClientset(), nil
+	if f.apiClient == nil {
+		f.apiClient = apifake.NewSimpleClientset()
+	}
+	return f.apiClient, nil
 }
 
 func (f *fakefactory) CreateKnativeBuildClient() (build.Interface, string, error) {
-	return buildfake.NewSimpleClientset(), f.namespace, nil
+	if f.buildClient == nil {
+		f.buildClient = buildfake.NewSimpleClientset()
+	}
+	return f.buildClient, f.namespace, nil
 }
 
 // CreateKnativeServeClient create a new Kubernetes client for Knative serve resources
 func (f *fakefactory) CreateKnativeServeClient() (kserve.Interface, string, error) {
-	return kservefake.NewSimpleClientset(), f.namespace, nil
+	if f.kserveClient == nil {
+		f.kserveClient = kservefake.NewSimpleClientset()
+	}
+	return f.kserveClient, f.namespace, nil
 }
 
 // CreateTektonClient create a new Kubernetes client for Tekton resources
 func (f *fakefactory) CreateTektonClient() (tektonclient.Interface, string, error) {
-	return tektonfake.NewSimpleClientset(), f.namespace, nil
+	if f.tektonClient == nil {
+		f.tektonClient = tektonfake.NewSimpleClientset()
+	}
+	return f.tektonClient, f.namespace, nil
 }
 
 // CreateDynamicClient creates a new Kubernetes Dynamic client
