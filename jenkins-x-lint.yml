@@ -7,19 +7,30 @@ pipelineConfig:
           image: rawlingsj/executor:dev31
         stages:
           - name: ci
+            environment:
+              - name: GOPATH
+                value: /workspace/go
+              - name: GOPROXY
+                value: http://jenkins-x-athens-proxy
+              - name: PATH
+                value: "/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/workspace/go/bin"
             steps:
+              - name: mkdir
+                image: busybox
+                command: mkdir
+                args:
+                  - -p
+                  - /workspace/go/src/github.com/jenkins-x/jx
+
+              - name: copy
+                image: busybox
+                command: cp
+                args:
+                  - -R
+                  - "./"
+                  - /workspace/go/src/github.com/jenkins-x/jx
+
               - name: lint
-                image: gcr.io/jenkinsxio/builder-go:0.1.332
+                image: golang:1.12.4
                 command: ./hack/run-all-checks.sh
-                env:
-                  - name: GOPATH
-                    value: /workspace/go
-                  - name: GOPROXY
-                    value: http://jenkins-x-athens-proxy:80
-                resources:
-                  limits:
-                    cpu: 4
-                    memory: 6144Mi
-                  requests:
-                    cpu: 3
-                    memory: 3072Mi
+                dir: /workspace/go/src/github.com/jenkins-x/jx

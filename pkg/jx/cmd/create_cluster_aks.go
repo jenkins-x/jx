@@ -7,6 +7,7 @@ import (
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
+	"github.com/jenkins-x/jx/pkg/features"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/jenkins-x/jx/pkg/log"
@@ -89,6 +90,12 @@ func NewCmdCreateClusterAKS(commonOpts *opts.CommonOptions) *cobra.Command {
 		Short:   "Create a new Kubernetes cluster on AKS: Runs on Azure",
 		Long:    createClusterAKSLong,
 		Example: createClusterAKSExample,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			err := features.IsEnabled(cmd)
+			CheckErr(err)
+			err = options.InstallOptions.CheckFeatures()
+			CheckErr(err)
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.Cmd = cmd
 			options.Args = args

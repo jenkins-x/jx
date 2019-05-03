@@ -6,52 +6,42 @@ import (
 
 	"github.com/jenkins-x/jx/cmd/codegen/generator"
 	"github.com/jenkins-x/jx/cmd/codegen/util"
-	"github.com/jenkins-x/jx/pkg/jx/cmd"
-
-	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
-
-	jxutil "github.com/jenkins-x/jx/pkg/util"
 
 	"github.com/spf13/cobra"
 )
 
-// GenerateDocsOptions the options for the create client docs command
+// GenerateDocsOptions contains the options for the create client docs command
 type GenerateDocsOptions struct {
 	GenerateOptions
 	ReferenceDocsVersion string
 }
 
 var (
-	createClientDocsLong = templates.LongDesc(`This command code generates clients docs (Swagger,OpenAPI and HTML) for
+	createClientDocsLong = `This command code generates clients docs (Swagger,OpenAPI and HTML) for
 	the specified custom resources.
  
-`)
+`
 
-	createClientDocsExample = templates.Examples(`
-		# lets generate client docs
-		codegen docs
-		
-		# You will normally want to add a target to your Makefile that looks like:
+	createClientDocsExample = `
+# lets generate client docs
+codegen docs
 
-		generate-clients-docs:
-			codegen docs
-		
-		# and then call:
+# You will normally want to add a target to your Makefile that looks like
+generate-clients-docs:
+	codegen docs
 
-		make generate-clients-docs
-`)
+# and then call
+make generate-clients-docs
+`
 )
 
 // NewCreateDocsCmd creates apidocs for CRDs
-func NewCreateDocsCmd(commonOpts *opts.CommonOptions) *cobra.Command {
+func NewCreateDocsCmd(genOpts GenerateOptions) *cobra.Command {
 	o := &GenerateDocsOptions{
-		GenerateOptions: GenerateOptions{
-			CommonOptions: commonOpts,
-		},
+		GenerateOptions: genOpts,
 	}
 
-	cmd := &cobra.Command{
+	cobraCmd := &cobra.Command{
 		Use:     "docs",
 		Short:   "Creates client docs for Custom Resources",
 		Long:    createClientDocsLong,
@@ -61,7 +51,7 @@ func NewCreateDocsCmd(commonOpts *opts.CommonOptions) *cobra.Command {
 			o.Cmd = c
 			o.Args = args
 			err := run(o)
-			cmd.CheckErr(err)
+			util.CheckErr(err)
 		},
 	}
 
@@ -70,19 +60,19 @@ func NewCreateDocsCmd(commonOpts *opts.CommonOptions) *cobra.Command {
 		util.AppLogger().Warnf("error getting working directory for %v\n", err)
 	}
 
-	cmd.Flags().StringVarP(&o.OutputBase, optionOutputBase, "o", filepath.Join(wd, "docs/apidocs"),
+	cobraCmd.Flags().StringVarP(&o.OutputBase, optionOutputBase, "o", filepath.Join(wd, "docs/apidocs"),
 		"output base directory, by default the <current working directory>/docs/apidocs")
-	return cmd
+	return cobraCmd
 }
 
 func run(o *GenerateDocsOptions) error {
 	var err error
 	if o.OutputBase == "" {
-		return jxutil.MissingOption(optionOutputBase)
+		return util.MissingOption(optionOutputBase)
 	}
 	util.AppLogger().Infof("generating docs to %s\n", o.OutputBase)
 
-	referenceDocsRepo, err := generator.InstallGenAPIDocs()
+	referenceDocsRepo, err := generator.InstallGenAPIDocs(o.GeneratorVersion)
 	if err != nil {
 		return err
 	}

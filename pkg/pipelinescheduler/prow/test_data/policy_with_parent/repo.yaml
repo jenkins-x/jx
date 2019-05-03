@@ -1,0 +1,39 @@
+policy:
+  protectTested: true
+  requiredStatusChecks:
+    contexts:
+      replace: true
+      items:
+        - test5
+        - test6
+  restrictions:
+    users:
+      replace: false
+      items:
+        - user3
+        - user4
+    teams:
+      replace: true
+      items:
+        - team3
+        - team4
+  requiredPullRequestReviews:
+    requireCodeOwnerReviews: true
+    requiredApprovingReviewCount: 6
+    dismissalRestrictions:
+        teams:
+          replace: false
+          items:
+            - team5
+            - team6
+
+plugins:
+  replace: true
+  items:
+    - lgtm
+    - lifecycle
+    - size
+    - trigger
+    - wip
+    - heart
+    - override

@@ -16,12 +16,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jenkins-x/jx/pkg/gits"
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/ghodss/yaml"
-
-	jxutil "github.com/jenkins-x/jx/pkg/util"
 
 	"k8s.io/kube-openapi/pkg/builder"
 
@@ -123,7 +120,7 @@ func main() {
 	jqueryUrl           = "https://code.jquery.com/jquery-3.2.1.min.js"
 	jqueryFileName      = "jquery-3.2.1.min.js"
 
-	openApiGen = "github.com/kubernetes/kube-openapi/cmd/openapi-gen"
+	openApiGen = "k8s.io/kube-openapi/cmd/openapi-gen"
 )
 
 var (
@@ -168,9 +165,9 @@ type schemaWriterTemplateData struct {
 }
 
 // InstallOpenApiGen installs the openapi-gen tool from the github.com/kubernetes/kube-openapi repository.
-func InstallOpenApiGen() error {
-	util.AppLogger().Infof("installing %s via 'go get'", openApiGen)
-	err := util.GoGet(openApiGen, "", false)
+func InstallOpenApiGen(version string) error {
+	util.AppLogger().Infof("installing %s in version %s via 'go get'", openApiGen, version)
+	err := util.GoGet(openApiGen, version, true)
 	if err != nil {
 		return err
 	}
@@ -184,16 +181,14 @@ func InstallOpenApiGen() error {
 // A boilerplateFile is written to the top of any generated files.
 // The gitter client is used to ensure the correct versions of dependencies are loaded.
 func GenerateOpenApi(groupsWithVersions []string, inputPackage string, outputPackage string, relativePackage string,
-	outputBase string, openApiDependencies []string, moduleDir string, moduleName string, gitter gits.Gitter,
-	boilerplateFile string) error {
+	outputBase string, openApiDependencies []string, moduleDir string, moduleName string, boilerplateFile string) error {
 	basePkg := fmt.Sprintf("%s/openapi", outputPackage)
 	corePkg := fmt.Sprintf("%s/core", basePkg)
 	allPkg := fmt.Sprintf("%s/all", basePkg)
 
 	// Generate the dependent openapi structs as these are missing from the k8s client
 	dependentPackages, err := generateOpenApiDependenciesStruct(outputPackage, relativePackage, outputBase,
-		openApiDependencies,
-		moduleDir, moduleName, gitter, boilerplateFile)
+		openApiDependencies, moduleDir, moduleName, boilerplateFile)
 	if err != nil {
 		return err
 	}
@@ -364,7 +359,7 @@ func GenerateSchema(outputDir string, inputPackage string, inputBase string, tit
 	schemaWriterBinary, err := ioutil.TempFile("", "")
 	outputDir = filepath.Join(outputDir, "openapi-spec")
 	defer func() {
-		err := jxutil.DeleteFile(schemaWriterBinary.Name())
+		err := util.DeleteFile(schemaWriterBinary.Name())
 		if err != nil {
 			util.AppLogger().Warnf("error cleaning up tempfile %s created to compile %s to %v",
 				schemaWriterBinary.Name(), SchemaWriterSrcFileName, err)
@@ -373,7 +368,7 @@ func GenerateSchema(outputDir string, inputPackage string, inputBase string, tit
 	if err != nil {
 		return errors.Wrapf(err, "creating tempfile to compile %s to %v", SchemaWriterSrcFileName, err)
 	}
-	cmd := jxutil.Command{
+	cmd := util.Command{
 		Dir:  inputBase,
 		Name: "go",
 		Args: []string{
@@ -392,7 +387,7 @@ func GenerateSchema(outputDir string, inputPackage string, inputBase string, tit
 	}
 	fileJSON := filepath.Join(outputDir, OpenApiV2JSON)
 	fileYAML := filepath.Join(outputDir, OpenApiV2YAML)
-	cmd = jxutil.Command{
+	cmd = util.Command{
 		Name: schemaWriterBinary.Name(),
 		Args: []string{
 			"--output-directory",
@@ -437,7 +432,7 @@ func getOutputPackageForOpenApi(pkg string, groupWithVersion []string, outputPac
 }
 
 func generateOpenApiDependenciesStruct(outputPackage string, relativePackage string, outputBase string,
-	openApiDependencies []string, moduleDir string, moduleName string, gitter gits.Gitter, boilerplateFile string) ([]string, error) {
+	openApiDependencies []string, moduleDir string, moduleName string, boilerplateFile string) ([]string, error) {
 	paths := make([]string, 0)
 	modulesRequirements, err := util.GetModuleRequirements(moduleDir)
 	if err != nil {
@@ -485,7 +480,7 @@ func generateOpenApiDependenciesStruct(outputPackage string, relativePackage str
 			return nil, err
 		}
 		// Use go get to download it
-		cmd := jxutil.Command{
+		cmd := util.Command{
 			Name: "go",
 			Args: []string{
 				"get",
@@ -512,11 +507,11 @@ func generateOpenApiDependenciesStruct(outputPackage string, relativePackage str
 			return nil, errors.WithStack(err)
 		}
 		branchName := branchNameUUID.String()
-		err = gitter.CreateBranchFrom(dir, branchName, dependencyVersion)
+		err = createBranchFrom(dir, branchName, dependencyVersion)
 		if err != nil {
 			return nil, errors.Wrapf(err, "creating branch from %s", dependencyVersion)
 		}
-		err = gitter.Checkout(dir, branchName)
+		err = checkout(dir, branchName)
 		if err != nil {
 			return nil, errors.Wrapf(err, "checking out branch from %s", branchName)
 		}
@@ -602,4 +597,23 @@ func generateOpenApiDependenciesStruct(outputPackage string, relativePackage str
 		paths = append(paths, outputPackage)
 	}
 	return paths, nil
+}
+
+func checkout(dir string, branch string) error {
+	return gitCmd(dir, "checkout", branch)
+}
+
+// createBranchFrom creates a new branch called branchName from startPoint
+func createBranchFrom(dir string, branchName string, startPoint string) error {
+	return gitCmd(dir, "branch", branchName, startPoint)
+}
+
+func gitCmd(dir string, args ...string) error {
+	cmd := util.Command{
+		Dir:  dir,
+		Name: "git",
+		Args: args,
+	}
+	output, err := cmd.RunWithoutRetry()
+	return errors.Wrapf(err, "git output: %s", output)
 }

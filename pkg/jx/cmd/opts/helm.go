@@ -524,7 +524,22 @@ func (o *CommonOptions) clone(wrkDir string, versionRepository string, reference
 		}
 		log.Infof("Cloning the Jenkins X versions repo %s with revision %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
 
-		return o.shallowCloneGitRepositoryToDir(wrkDir, versionRepository, "", "")
+		err := o.Git().Clone(versionRepository, wrkDir)
+		if err != nil {
+			return errors.Wrapf(err, "failed to clone repository: %s to dir %s", versionRepository, wrkDir)
+		}
+		err = o.RunCommandFromDir(wrkDir, "git", "fetch", "origin", referenceName)
+		if err != nil {
+			return errors.Wrapf(err, "failed to git fetch origin %s for repo: %s in dir %s", referenceName, versionRepository, wrkDir)
+		}
+		err = o.Git().Checkout(wrkDir, "FETCH_HEAD")
+		if err != nil {
+			return errors.Wrapf(err, "failed to checkout FETCH_HEAD of repo: %s in dir %s", versionRepository, wrkDir)
+		}
+		return nil
+
+		// TODO doesn't seem to work at all for a git ref....
+		//return o.shallowCloneGitRepositoryToDir(wrkDir, versionRepository, "", referenceName)
 	}
 	log.Infof("Cloning the Jenkins X versions repo %s with ref %s to %s\n", util.ColorInfo(versionRepository), util.ColorInfo(referenceName), util.ColorInfo(wrkDir))
 	_, err := git.PlainClone(wrkDir, false, &git.CloneOptions{
@@ -689,6 +704,23 @@ func (o *CommonOptions) AddChartRepos(dir string, helmBinary string, chartRepos 
 			return errors.Wrap(err, "failed to load the Helm requirements file")
 		}
 		if requirements != nil {
+			// lets replace the release chart museum URL if required
+			chartRepoURL := o.ReleaseChartMuseumUrl()
+			if chartRepoURL != "" && chartRepoURL != DefaultChartRepo {
+				changed := false
+				for i := range requirements.Dependencies {
+					if requirements.Dependencies[i].Repository == DefaultChartRepo {
+						requirements.Dependencies[i].Repository = chartRepoURL
+						changed = true
+					}
+				}
+				if changed {
+					err = helm.SaveFile(reqfile, requirements)
+					if err != nil {
+						return err
+					}
+				}
+			}
 			for _, dep := range requirements.Dependencies {
 				repo := dep.Repository
 				if repo != "" && !util.StringMapHasValue(installedChartRepos, repo) && repo != DefaultChartRepo && !strings.HasPrefix(repo, "file:") && !strings.HasPrefix(repo, "alias:") {

@@ -95,7 +95,7 @@ func NewCmdGetApplications(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "applications",
 		Short:   "Display one or more Applications and their versions",
-		Aliases: []string{"version", "versions"},
+		Aliases: []string{"application", "version", "versions"},
 		Long:    get_version_long,
 		Example: get_version_example,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -249,8 +249,13 @@ func (o *GetApplicationsOptions) getAppData(kubeClient kubernetes.Interface) (na
 	}
 	u, err := user.Current()
 	if err != nil {
-		return nil, nil, nil, nil, errors.Wrap(err, "getting current user")
+		log.Warnf("could not find the current user name %s\n", err.Error())
 	}
+	username := "uknown"
+	if u != nil {
+		username = u.Username
+	}
+
 	ns, _, err := kube.GetDevNamespace(kubeClient, currentNs)
 	if err != nil {
 		return nil, nil, nil, nil, errors.Wrap(err, "getting current dev namespace")
@@ -293,7 +298,7 @@ func (o *GetApplicationsOptions) getAppData(kubeClient kubernetes.Interface) (na
 						}
 						appName := kube.GetAppName(k, ens)
 						if env.Spec.Kind == v1.EnvironmentKindTypeEdit {
-							if appName == kube.DeploymentExposecontrollerService || env.Spec.PreviewGitSpec.User.Username != u.Username {
+							if appName == kube.DeploymentExposecontrollerService || env.Spec.PreviewGitSpec.User.Username != username {
 								continue
 							}
 							appName = kube.GetEditAppName(appName)

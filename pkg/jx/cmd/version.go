@@ -59,20 +59,13 @@ func (o *VersionOptions) Run() error {
 	table.AddRow("jx", info(version.GetVersion()))
 
 	// Jenkins X version
-	output, err := o.Helm().ListCharts()
+	releases, _, err := o.Helm().ListReleases(o.Namespace)
 	if err != nil {
 		log.Warnf("Failed to find helm installs: %s\n", err)
 	} else {
-		for _, line := range strings.Split(output, "\n") {
-			fields := strings.Split(line, "\t")
-			if len(fields) > 4 && strings.TrimSpace(fields[0]) == "jenkins-x" {
-				for _, f := range fields[4:] {
-					f = strings.TrimSpace(f)
-					if strings.HasPrefix(f, jxChartPrefix) {
-						chart := strings.TrimPrefix(f, jxChartPrefix)
-						table.AddRow("jenkins x platform", info(chart))
-					}
-				}
+		for _, release := range releases {
+			if release.Chart == "jenkins-x-platform" {
+				table.AddRow("jenkins x platform", info(release.ChartVersion))
 			}
 		}
 	}
@@ -91,7 +84,7 @@ func (o *VersionOptions) Run() error {
 	}
 
 	// kubectl version
-	output, err = o.GetCommandOutput("", "kubectl", "version", "--short")
+	output, err := o.GetCommandOutput("", "kubectl", "version", "--short")
 	if err != nil {
 		log.Warnf("Failed to get kubectl version: %s\n", err)
 	} else {

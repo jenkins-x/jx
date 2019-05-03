@@ -32,6 +32,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
 	"github.com/jenkins-x/jx/pkg/cloud/iks"
 	"github.com/jenkins-x/jx/pkg/config"
+	"github.com/jenkins-x/jx/pkg/features"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	configio "github.com/jenkins-x/jx/pkg/io"
@@ -91,6 +92,7 @@ type InstallFlags struct {
 	Namespace                   string
 	CloudEnvRepository          string
 	NoDefaultEnvironments       bool
+	RemoteEnvironments          bool
 	DefaultEnvironmentPrefix    string
 	LocalCloudEnvironment       bool
 	EnvironmentGitOwner         string
@@ -114,6 +116,7 @@ type InstallFlags struct {
 	NoGitOpsEnvSetup            bool
 	NoGitOpsVault               bool
 	NextGeneration              bool
+	StaticJenkins               bool
 }
 
 // Secrets struct for secrets
@@ -324,6 +327,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	flags.addCloudEnvOptions(cmd)
 	cmd.Flags().StringVarP(&flags.LocalHelmRepoName, "local-helm-repo-name", "", kube.LocalHelmRepoName, "The name of the helm repository for the installed ChartMuseum")
 	cmd.Flags().BoolVarP(&flags.NoDefaultEnvironments, "no-default-environments", "", false, "Disables the creation of the default Staging and Production environments")
+	cmd.Flags().BoolVarP(&flags.RemoteEnvironments, "remote-environments", "", false, "Indicates you intend Staging and Production environments to run in remote clusters. See https://jenkins-x.io/getting-started/multi-cluster/")
 	cmd.Flags().StringVarP(&flags.DefaultEnvironmentPrefix, "default-environment-prefix", "", "", "Default environment repo prefix, your Git repos will be of the form 'environment-$prefix-$envName'")
 	cmd.Flags().StringVarP(&flags.Namespace, "namespace", "", "jx", "The namespace the Jenkins X platform should be installed into")
 	cmd.Flags().StringVarP(&flags.Timeout, "timeout", "", opts.DefaultInstallTimeout, "The number of seconds to wait for the helm install to complete")
@@ -339,7 +343,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().StringVarP(&flags.Version, "version", "", "", "The specific platform version to install")
 	cmd.Flags().BoolVarP(&flags.Prow, "prow", "", false, "Enable Prow to implement Serverless Jenkins and support ChatOps on Pull Requests")
 	cmd.Flags().BoolVarP(&flags.Tekton, "tekton", "", false, "Enables the Tekton pipeline engine (which used to be called knative build pipeline) along with Prow to provide Serverless Jenkins. Otherwise we default to use Knative Build if you enable Prow")
-	cmd.Flags().BoolVarP(&flags.KnativeBuild, "knative-build", "", false, "Note this option is deprecated now in favour of tekton. If specified this will keep using the old knative build with Prow instead of the stratgegic tekton")
+	cmd.Flags().BoolVarP(&flags.KnativeBuild, "knative-build", "", false, "Note this option is deprecated now in favour of tekton. If specified this will keep using the old knative build with Prow instead of the strategic tekton")
 	cmd.Flags().BoolVarP(&flags.ExternalDNS, "external-dns", "", false, "Installs external-dns into the cluster. ExternalDNS manages service DNS records for your cluster, providing you've setup your domain record")
 	cmd.Flags().BoolVarP(&flags.GitOpsMode, "gitops", "", false, "Creates a git repository for the Dev environment to manage the installation, configuration, upgrade and addition of Apps in Jenkins X all via GitOps")
 	cmd.Flags().BoolVarP(&flags.NoGitOpsEnvApply, "no-gitops-env-apply", "", false, "When using GitOps to create the source code for the development environment and installation, don't run 'jx step env apply' to perform the install")
@@ -351,6 +355,7 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().StringVarP(&flags.BuildPackName, "buildpack", "", "", "The name of the build pack to use for the Team")
 	cmd.Flags().BoolVarP(&flags.Kaniko, "kaniko", "", false, "Use Kaniko for building docker images")
 	cmd.Flags().BoolVarP(&flags.NextGeneration, "ng", "", false, "Use the Next Generation Jenkins X features like Prow, Tekton, No Tiller, Vault, Dev GitOps")
+	cmd.Flags().BoolVarP(&flags.StaticJenkins, "static-jenkins", "", false, "Install a static Jenkins master to use as the pipeline engine. Note this functionality is deprecated in favour of running serverless Tekton builds")
 
 	opts.AddGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
@@ -368,8 +373,20 @@ func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 func (options *InstallOptions) checkFlags() error {
 	flags := &options.Flags
 
+	if flags.NextGeneration && flags.StaticJenkins {
+		return fmt.Errorf("Incompatible options '--ng' and '--static-jenkins'. Please pick only one of them. We recommend --ng as --static-jenkins is deprecated")
+	}
+
+	if flags.Tekton && flags.StaticJenkins {
+		return fmt.Errorf("Incompatible options '--tekton' and '--static-jenkins'. Please pick only one of them. We recommend --tekton as --static-jenkins is deprecated")
+	}
+
 	if flags.KnativeBuild && flags.Tekton {
 		return fmt.Errorf("Incompatible options '--knative-build' and '--tekton'. Please pick only one of them. We recommend --tekton as --knative-build is deprecated")
+	}
+
+	if flags.Prow {
+		flags.StaticJenkins = false
 	}
 	if flags.Prow && !flags.KnativeBuild {
 		flags.Tekton = true
@@ -382,6 +399,7 @@ func (options *InstallOptions) checkFlags() error {
 		}
 	}
 	if flags.NextGeneration {
+		flags.StaticJenkins = false
 		flags.KnativeBuild = false
 		flags.GitOpsMode = true
 		flags.Vault = true
@@ -404,6 +422,17 @@ func (options *InstallOptions) checkFlags() error {
 		}
 	}
 
+	return nil
+}
+
+// CheckFeatures - determines if the various features have been enabled
+func (options *InstallOptions) CheckFeatures() error {
+	if options.Flags.Tekton {
+		return features.CheckTektonEnabled()
+	}
+	if options.Flags.Prow && options.Flags.KnativeBuild {
+		return features.CheckJenkinsFileRunner()
+	}
 	return nil
 }
 
@@ -981,7 +1010,7 @@ func (options *InstallOptions) configureAndInstallProw(namespace string, gitOpsD
 		options.OAUTHToken = pipelineUser.ApiToken
 		err = options.InstallProw(options.Flags.Tekton, options.Flags.ExternalDNS, options.Flags.GitOpsMode, gitOpsDir, gitOpsEnvDir, pipelineUser.Username)
 		if err != nil {
-			errors.Wrap(err, "installing Prow")
+			return errors.Wrap(err, "installing Prow")
 		}
 	}
 	return nil
@@ -1039,19 +1068,21 @@ func (options *InstallOptions) configureHelmRepo() error {
 }
 
 func (options *InstallOptions) selectJenkinsInstallation() error {
-	if !options.BatchMode && !options.Flags.Prow {
-		jenkinsInstallOptions := []string{
-			ServerlessJenkins,
-			StaticMasterJenkins,
-		}
-		jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins installation type:", ServerlessJenkins, "", options.In, options.Out, options.Err)
-		if err != nil {
-			return errors.Wrap(err, "picking Jenkins installation type")
-		}
-		if jenkinsInstallOption == ServerlessJenkins {
-			options.Flags.Prow = true
-			if !options.Flags.KnativeBuild {
-				options.Flags.Tekton = true
+	if !options.BatchMode {
+		if !options.Flags.Prow && !options.Flags.StaticJenkins {
+			jenkinsInstallOptions := []string{
+				ServerlessJenkins,
+				StaticMasterJenkins,
+			}
+			jenkinsInstallOption, err := util.PickNameWithDefault(jenkinsInstallOptions, "Select Jenkins installation type:", ServerlessJenkins, "", options.In, options.Out, options.Err)
+			if err != nil {
+				return errors.Wrap(err, "picking Jenkins installation type")
+			}
+			if jenkinsInstallOption == ServerlessJenkins {
+				options.Flags.Prow = true
+				if !options.Flags.KnativeBuild {
+					options.Flags.Tekton = true
+				}
 			}
 		}
 	}
@@ -1097,8 +1128,11 @@ func (options *InstallOptions) configureHelmValues(namespace string) error {
 	if isProw {
 		enableJenkins := false
 		helmConfig.Jenkins.Enabled = &enableJenkins
-		enableControllerBuild := true
-		helmConfig.ControllerBuild.Enabled = &enableControllerBuild
+		helmConfig.ControllerBuild = &config.EnabledConfig{true}
+		helmConfig.ControllerWorkflow = &config.EnabledConfig{false}
+		if options.Flags.Tekton && options.Flags.Provider == cloud.GKE {
+			helmConfig.DockerRegistryEnabled = &config.EnabledConfig{false}
+		}
 	}
 	return nil
 }
@@ -1584,7 +1618,7 @@ func (options *InstallOptions) generateGitOpsDevEnvironmentConfig(gitOpsDir stri
 				return errors.Wrap(err, "building the git repository options for environment")
 			}
 			repo, gitProvider, err := kube.CreateEnvGitRepository(options.BatchMode, authConfigSvc, devEnv, devEnv, config, forkEnvGitURL, envDir,
-				gitRepoOptions, options.CreateEnvOptions.HelmValuesConfig, prefix, git, options.In, options.Out, options.Err)
+				gitRepoOptions, options.CreateEnvOptions.HelmValuesConfig, prefix, git, options.ResolveChartMuseumURL, options.In, options.Out, options.Err)
 			if err != nil || repo == nil || gitProvider == nil {
 				return errors.Wrap(err, "creating git repository for the dev environment source")
 			}
@@ -2416,10 +2450,10 @@ func (options *InstallOptions) createEnvironments(namespace string) error {
 			if options.BatchMode {
 				options.CreateEnvOptions.BatchMode = options.BatchMode
 			}
-
 			options.CreateEnvOptions.Options.Name = "staging"
 			options.CreateEnvOptions.Options.Spec.Label = "Staging"
 			options.CreateEnvOptions.Options.Spec.Order = 100
+			options.CreateEnvOptions.Options.Spec.RemoteCluster = options.Flags.RemoteEnvironments
 			err = options.CreateEnvOptions.Run()
 			if err != nil {
 				return errors.Wrapf(err, "failed to create staging environment in namespace %s", devNamespace)
@@ -2427,6 +2461,7 @@ func (options *InstallOptions) createEnvironments(namespace string) error {
 			options.CreateEnvOptions.Options.Name = "production"
 			options.CreateEnvOptions.Options.Spec.Label = "Production"
 			options.CreateEnvOptions.Options.Spec.Order = 200
+			options.CreateEnvOptions.Options.Spec.RemoteCluster = options.Flags.RemoteEnvironments
 			options.CreateEnvOptions.Options.Spec.PromotionStrategy = v1.PromotionStrategyTypeManual
 			options.CreateEnvOptions.PromotionStrategy = string(v1.PromotionStrategyTypeManual)
 

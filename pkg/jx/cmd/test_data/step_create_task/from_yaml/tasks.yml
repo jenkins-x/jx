@@ -123,6 +123,8 @@ items:
       - /bin/sh
       - -c
       env:
+      - name: ANOTHER_VAR
+        value: Another value
       - name: DOCKER_CONFIG
         value: /home/jenkins/.docker/
       - name: DOCKER_REGISTRY
@@ -206,7 +208,7 @@ items:
     inputs:
       resources:
       - name: workspace
-        targetPath: ""
+        targetPath: source
         type: git
     steps:
     - args:

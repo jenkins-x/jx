@@ -61,3 +61,6 @@ tide:
     repos:
     - acme/dummy
   #target_url: https://tide.foo.bar
+
+triggers:
+

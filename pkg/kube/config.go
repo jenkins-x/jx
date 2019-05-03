@@ -117,8 +117,8 @@ func (k *KubeConfig) UpdateConfig(namespace string, server string, caData string
 
 // AddUserToConfig adds the given user to the config
 func AddUserToConfig(user string, token string, config *api.Config) (*api.Config, error) {
-	currentCluserName, currentCluster := CurrentCluster(config)
-	if currentCluster == nil || currentCluserName == "" {
+	currentClusterName, currentCluster := CurrentCluster(config)
+	if currentCluster == nil || currentClusterName == "" {
 		return config, errors.New("no cluster found in config")
 	}
 	currentCtx := CurrentContext(config)
@@ -128,7 +128,7 @@ func AddUserToConfig(user string, token string, config *api.Config) (*api.Config
 	}
 
 	ctx := &api.Context{
-		Cluster:   currentCluserName,
+		Cluster:   currentClusterName,
 		AuthInfo:  user,
 		Namespace: currentNamespace,
 	}
@@ -138,7 +138,7 @@ func AddUserToConfig(user string, token string, config *api.Config) (*api.Config
 	}
 
 	config.AuthInfos[user] = authInfo
-	ctxName := fmt.Sprintf("jx-%s-%s-ctx", currentCluserName, user)
+	ctxName := fmt.Sprintf("jx-%s-%s-ctx", currentClusterName, user)
 	config.Contexts[ctxName] = ctx
 	config.CurrentContext = ctxName
 

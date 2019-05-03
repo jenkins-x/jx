@@ -711,7 +711,7 @@ func (f *factory) IsInCDPipeline() bool {
 	// TODO should we let RBAC decide if we can see the Secrets in the dev namespace?
 	// or we should test if we are in the cluster and get the current ServiceAccount name?
 	buildNumber := builds.GetBuildNumber()
-	return buildNumber != ""
+	return buildNumber != "" || os.Getenv("PIPELINE_KIND") != ""
 }
 
 // function to tell if we are running incluster

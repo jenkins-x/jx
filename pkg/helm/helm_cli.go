@@ -1,11 +1,14 @@
 package helm
 
 import (
+	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"k8s.io/kubernetes/pkg/util/slice"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
@@ -400,9 +403,43 @@ func (h *HelmCLI) DeleteRelease(ns string, releaseName string, purge bool) error
 	return h.runHelm(args...)
 }
 
-// ListCharts execute the helm list command and returns its output
-func (h *HelmCLI) ListCharts() (string, error) {
-	return h.runHelmWithOutput("list")
+//ListReleases lists the releases in ns
+func (h *HelmCLI) ListReleases(ns string) (map[string]ReleaseSummary, []string, error) {
+	output, err := h.runHelmWithOutput("list", "--all", "--namespace", ns)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "running helm list --all --namespace %s", ns)
+	}
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	result := make(map[string]ReleaseSummary, 0)
+	keys := make([]string, 0)
+	if len(lines) > 1 {
+		if len(lines) > 1 {
+			for _, line := range lines[1:] {
+				fields := strings.Fields(line)
+				if len(fields) == 10 {
+					chartFullName := fields[8]
+					lastDash := strings.LastIndex(chartFullName, "-")
+					releaseName := fields[0]
+					keys = append(keys, releaseName)
+					result[releaseName] = ReleaseSummary{
+						ReleaseName: fields[0],
+						Revision:    fields[1],
+						Updated: fmt.Sprintf("%s %s %s %s %s", fields[2], fields[3], fields[4], fields[5],
+							fields[6]),
+						Status:        fields[7],
+						ChartFullName: chartFullName,
+						Namespace:     fields[9],
+						Chart:         chartFullName[:lastDash],
+						ChartVersion:  chartFullName[lastDash+1:],
+					}
+				} else {
+					return nil, nil, errors.Errorf("Cannot parse %s as helm list output", line)
+				}
+			}
+		}
+	}
+	slice.SortStrings(keys)
+	return result, keys, nil
 }
 
 // SearchChartVersions search all version of the given chart
@@ -470,35 +507,6 @@ func (h *HelmCLI) StatusReleaseWithOutput(ns string, releaseName string, outputF
 		return h.runHelmWithOutput("status", releaseName)
 	}
 	return h.runHelmWithOutput("status", releaseName, "--output", outputFormat)
-}
-
-// StatusReleases returns the status of all installed releases
-func (h *HelmCLI) StatusReleases(ns string) (map[string]Release, error) {
-	output, err := h.ListCharts()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to list the installed chart releases")
-	}
-	lines := strings.Split(output, "\n")
-	statusMap := map[string]Release{}
-	for _, line := range lines[1:] {
-		fields := strings.Split(line, "\t")
-		if len(fields) > 3 {
-			release := strings.TrimSpace(fields[0])
-
-			versionRaw := strings.TrimSpace(fields[4])
-			versionRawSplit := strings.Split(versionRaw, "-")
-			version := versionRawSplit[len(versionRawSplit)-1]
-
-			helmRelease := Release{
-				Release: strings.TrimSpace(fields[0]),
-				Status:  strings.TrimSpace(fields[3]),
-				Version: version,
-			}
-
-			statusMap[release] = helmRelease
-		}
-	}
-	return statusMap, nil
 }
 
 // Lint lints the helm chart from the current working directory and returns the warnings in the output

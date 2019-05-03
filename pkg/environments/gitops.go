@@ -11,13 +11,13 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/ghodss/yaml"
 
 	"github.com/pkg/errors"
 
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 
 	"k8s.io/helm/pkg/proto/hapi/chart"
 
@@ -312,6 +312,10 @@ func (o *EnvironmentPullRequestOptions) PullEnvironmentRepo(env *jenkinsv1.Envir
 			err = o.Gitter.Clone(cloneGitURL, dir)
 			if err != nil {
 				return "", "", nil, fork, err
+			}
+			err = o.Gitter.FetchBranch(dir, "origin")
+			if err != nil {
+				return "", "", nil, fork, errors.Wrapf(err, "fetching from %s", cloneGitURL)
 			}
 			err = git.SetRemoteURL(dir, "upstream", gitURL)
 			if err != nil {
@@ -780,12 +784,6 @@ func LocateAppResource(helmer helm.Helmer, chartDir string, appName string) (*je
 			return nil, "", errors.Wrapf(err, "creating template work dir %s", templateWorkDir)
 		}
 	}
-	err = helmer.Template(chartDir, appName, "", templateWorkDir, false, make([]string, 0), make([]string, 0))
-	if err != nil {
-		return nil, "", err
-	}
-	completedTemplatesDir := filepath.Join(templateWorkDir, appName, "templates")
-	templates, _ := ioutil.ReadDir(completedTemplatesDir)
 	app := &jenkinsv1.App{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "App",
@@ -796,18 +794,26 @@ func LocateAppResource(helmer helm.Helmer, chartDir string, appName string) (*je
 		},
 		Spec: jenkinsv1.AppSpec{},
 	}
+	err = helmer.Template(chartDir, appName, "", templateWorkDir, false, make([]string, 0), make([]string, 0))
+	if err != nil {
+		templateWorkDir = chartDir
+	}
+	completedTemplatesDir := filepath.Join(templateWorkDir, appName, "templates")
+	templates, _ := ioutil.ReadDir(completedTemplatesDir)
+
 	filename := fmt.Sprintf("%s-app.yaml", appName)
 	possibles := make([]string, 0)
 	for _, template := range templates {
 		appBytes, err := ioutil.ReadFile(filepath.Join(completedTemplatesDir, template.Name()))
+		if err != nil {
+			return nil, "", errors.Wrapf(err, "reading file %s", filename)
+		}
+		err = yaml.Unmarshal(appBytes, app)
 		if err == nil {
-			err = yaml.Unmarshal(appBytes, app)
-			if err == nil {
-				if app.Kind == "App" {
-					// Use the first located resource
-					filename = template.Name()
-					possibles = append(possibles, app.Name)
-				}
+			if app.Kind == "App" {
+				// Use the first located resource
+				filename = template.Name()
+				possibles = append(possibles, app.Name)
 			}
 		}
 	}

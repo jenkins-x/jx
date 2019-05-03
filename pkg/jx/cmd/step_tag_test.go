@@ -30,7 +30,7 @@ func TestStepTagCharts(t *testing.T) {
 	assert.NoError(t, err)
 
 	expectedVersion := "1.2.3"
-	expectedImageName := "gcr.io/jstrachan/awesome"
+	expectedImageName := "docker.io/jenkinsxio/awesome"
 
 	chartsDir := filepath.Join(f, "charts", "mydemo")
 	chartFile := filepath.Join(chartsDir, "Chart.yaml")
@@ -62,15 +62,27 @@ func TestStepTagCharts(t *testing.T) {
 
 	foundRepo := false
 	foundVersion := false
+	anotherImage := false
 	for _, line := range lines {
+		if strings.HasPrefix(line, "anotherImage:") {
+			anotherImage = true
+		}
 		if strings.HasPrefix(line, cmd.ValuesYamlRepositoryPrefix) {
 			value := strings.TrimSpace(strings.TrimPrefix(line, cmd.ValuesYamlRepositoryPrefix))
-			foundRepo = true
-			assert.Equal(t, expectedImageName, value, "versions.yaml repository: attribute")
+			if anotherImage {
+				assert.Equal(t, "anotherImageRepoValue", value, "values.yaml anotherImage.repository: attribute")
+			} else {
+				foundRepo = true
+				assert.Equal(t, expectedImageName, value, "values.yaml repository: attribute")
+			}
 		} else if strings.HasPrefix(line, cmd.ValuesYamlTagPrefix) {
-			foundVersion = true
 			value := strings.TrimSpace(strings.TrimPrefix(line, cmd.ValuesYamlTagPrefix))
-			assert.Equal(t, expectedVersion, value, "versions.yaml tag: attribute")
+			if anotherImage {
+				assert.Equal(t, "anotherImageTagValue", value, "values.yaml anotherImage.tag: attribute")
+			} else {
+				foundVersion = true
+				assert.Equal(t, expectedVersion, value, "values.yaml tag: attribute")
+			}
 		}
 	}
 

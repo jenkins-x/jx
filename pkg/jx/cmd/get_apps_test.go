@@ -4,26 +4,23 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/jenkins-x/jx/pkg/helm"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/Netflix/go-expect"
+	expect "github.com/Netflix/go-expect"
+	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/helm"
+
 	"github.com/acarl005/stripansi"
 	"github.com/ghodss/yaml"
-	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
-	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/cmd_test_helpers"
-	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/petergtz/pegomock"
-	"github.com/satori/go.uuid"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/helm/pkg/proto/hapi/chart"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd"
 	"github.com/stretchr/testify/assert"
@@ -40,11 +37,8 @@ func TestGetAppsGitops(t *testing.T) {
 		assert.NoError(t, err)
 	}()
 
-	name1UUID, err := uuid.NewV4()
+	name1, _, _, err := testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
-	name1 := name1UUID.String()
-	addApp(t, name1, namespace, testOptions, true)
-	namespace = "jx-testing"
 	envDir, err := testOptions.CommonOptions.EnvironmentsDir()
 	assert.NoError(t, err)
 	devEnvDir := testOptions.GetFullDevEnvDir(envDir)
@@ -97,21 +91,16 @@ func TestGetApps(t *testing.T) {
 	tests.SkipForWindows(t, "NewTerminal() does not work on windows")
 	pegomock.RegisterMockTestingT(t)
 	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
-	namespace := "jx-testing"
 
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
 
-	name1UUID, err := uuid.NewV4()
+	name1, _, _, err := testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
-	name1 := name1UUID.String()
-	name2UUID, err := uuid.NewV4()
+	name2, _, _, err := testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
-	name2 := name2UUID.String()
-	addApp(t, name1, namespace, testOptions, false)
-	addApp(t, name2, namespace, testOptions, false)
 	getAppOptions := &cmd.GetAppsOptions{
 		GetOptions: cmd.GetOptions{
 			CommonOptions: testOptions.CommonOptions,
@@ -142,21 +131,16 @@ func TestGetApps(t *testing.T) {
 func TestGetAppsWithErrorGettingStatus(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
 	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
-	namespace := "jx-testing"
 
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
 
-	name1UUID, err := uuid.NewV4()
+	_, _, _, err := testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
-	name1 := name1UUID.String()
-	name2UUID, err := uuid.NewV4()
+	_, _, _, err = testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
-	name2 := name2UUID.String()
-	addApp(t, name1, namespace, testOptions, false)
-	addApp(t, name2, namespace, testOptions, false)
 	getAppOptions := &cmd.GetAppsOptions{
 		GetOptions: cmd.GetOptions{
 			CommonOptions: testOptions.CommonOptions,
@@ -164,8 +148,8 @@ func TestGetAppsWithErrorGettingStatus(t *testing.T) {
 		Namespace: namespace,
 	}
 
-	pegomock.When(getAppOptions.Helm().StatusReleases(pegomock.EqString(namespace))).
-		ThenReturn(nil, errors.New("this is an error"))
+	pegomock.When(getAppOptions.Helm().ListReleases(pegomock.EqString(namespace))).
+		ThenReturn(nil, nil, errors.New("this is an error"))
 
 	console := tests.NewTerminal(t)
 	r, fakeStdout, _ := os.Pipe()
@@ -192,21 +176,16 @@ func TestGetAppsWithErrorGettingStatus(t *testing.T) {
 func TestGetAppsWithErrorGettingStatusWithOutput(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
 	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
-	namespace := "jx-testing"
 
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
 
-	name1UUID, err := uuid.NewV4()
+	_, _, _, err := testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
-	name1 := name1UUID.String()
-	name2UUID, err := uuid.NewV4()
+	_, _, _, err = testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
-	name2 := name2UUID.String()
-	addApp(t, name1, namespace, testOptions, false)
-	addApp(t, name2, namespace, testOptions, false)
 	getAppOptions := &cmd.GetAppsOptions{
 		GetOptions: cmd.GetOptions{
 			CommonOptions: testOptions.CommonOptions,
@@ -215,8 +194,8 @@ func TestGetAppsWithErrorGettingStatusWithOutput(t *testing.T) {
 		Namespace: namespace,
 	}
 
-	pegomock.When(getAppOptions.Helm().StatusReleases(pegomock.EqString(namespace))).
-		ThenReturn(nil, errors.New("this is an error"))
+	pegomock.When(getAppOptions.Helm().ListReleases(pegomock.EqString(namespace))).
+		ThenReturn(nil, nil, errors.New("this is an error"))
 
 	console := tests.NewTerminal(t)
 	r, fakeStdout, _ := os.Pipe()
@@ -243,21 +222,54 @@ func TestGetApp(t *testing.T) {
 	tests.SkipForWindows(t, "NewTerminal() does not work on windows")
 	pegomock.RegisterMockTestingT(t)
 	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
-	namespace := "jx-testing"
 
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
 
-	name1UUID, err := uuid.NewV4()
+	name1, _, _, err := testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
-	name1 := name1UUID.String()
-	name2UUID, err := uuid.NewV4()
+	name2, _, _, err := testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
-	name2 := name2UUID.String()
-	addApp(t, name1, namespace, testOptions, false)
-	addApp(t, name2, namespace, testOptions, false)
+	getAppOptions := &cmd.GetAppsOptions{
+		GetOptions: cmd.GetOptions{
+			CommonOptions: testOptions.CommonOptions,
+		},
+		Namespace: namespace,
+	}
+	getAppOptions.Args = []string{name1}
+	console := tests.NewTerminal(t)
+	r, fakeStdout, _ := os.Pipe()
+	getAppOptions.CommonOptions.In = console.In
+	getAppOptions.CommonOptions.Out = fakeStdout
+	getAppOptions.CommonOptions.Err = console.Err
+	err = getAppOptions.Run()
+	assert.NoError(t, err)
+
+	// check output
+	fakeStdout.Close()
+	outBytes, _ := ioutil.ReadAll(r)
+	r.Close()
+	output := stripansi.Strip(string(outBytes))
+	assert.Contains(t, output, name1)
+	assert.NotContains(t, output, name2)
+}
+
+func TestGetAppWithShortName(t *testing.T) {
+	tests.SkipForWindows(t, "NewTerminal() does not work on windows")
+	pegomock.RegisterMockTestingT(t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+
+	defer func() {
+		err := testOptions.Cleanup()
+		assert.NoError(t, err)
+	}()
+
+	name1, _, _, err := testOptions.AddApp(nil, "")
+	assert.NoError(t, err)
+	name2, _, _, err := testOptions.AddApp(nil, "")
+	assert.NoError(t, err)
 	getAppOptions := &cmd.GetAppsOptions{
 		GetOptions: cmd.GetOptions{
 			CommonOptions: testOptions.CommonOptions,
@@ -285,18 +297,14 @@ func TestGetApp(t *testing.T) {
 func TestGetAppsHasStatus(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
 	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
-	namespace := "jx-testing"
 
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
 
-	name1UUID, err := uuid.NewV4()
+	name1, _, _, err := testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
-	name1 := name1UUID.String()
-	assert.NoError(t, err)
-	addApp(t, name1, namespace, testOptions, false)
 	getAppOptions := &cmd.GetAppsOptions{
 		GetOptions: cmd.GetOptions{
 			CommonOptions: testOptions.CommonOptions,
@@ -304,10 +312,10 @@ func TestGetAppsHasStatus(t *testing.T) {
 		Namespace: namespace,
 	}
 	formattedName := fmt.Sprintf("%s-%s", namespace, name1)
-	pegomock.When(getAppOptions.Helm().StatusReleases(pegomock.EqString(namespace))).
-		ThenReturn(map[string]helm.Release{
+	pegomock.When(getAppOptions.Helm().ListReleases(pegomock.EqString(namespace))).
+		ThenReturn(map[string]helm.ReleaseSummary{
 			formattedName: {Status: "DEPLOYED"},
-		}, nil)
+		}, []string{formattedName}, nil)
 
 	getAppOptions.Args = []string{name1}
 	console := tests.NewTerminal(t)
@@ -330,18 +338,14 @@ func TestGetAppsHasStatus(t *testing.T) {
 func TestGetAppsAsJson(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
 	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
-	namespace := "jx-testing"
 
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
 
-	name1UUID, err := uuid.NewV4()
+	name1, _, _, err := testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
-	name1 := name1UUID.String()
-	assert.NoError(t, err)
-	addApp(t, name1, namespace, testOptions, false)
 	getAppOptions := &cmd.GetAppsOptions{
 		GetOptions: cmd.GetOptions{
 			CommonOptions: testOptions.CommonOptions,
@@ -350,10 +354,10 @@ func TestGetAppsAsJson(t *testing.T) {
 		Namespace: namespace,
 	}
 	formattedName := fmt.Sprintf("%s-%s", namespace, name1)
-	pegomock.When(getAppOptions.Helm().StatusReleases(pegomock.EqString(namespace))).
-		ThenReturn(map[string]helm.Release{
+	pegomock.When(getAppOptions.Helm().ListReleases(pegomock.EqString(namespace))).
+		ThenReturn(map[string]helm.ReleaseSummary{
 			formattedName: {Status: "DEPLOYED"},
-		}, nil)
+		}, []string{formattedName}, nil)
 
 	getAppOptions.Args = []string{name1}
 	console := tests.NewTerminal(t)
@@ -381,18 +385,14 @@ func TestGetAppsAsJson(t *testing.T) {
 func TestGetAppsAsYaml(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
 	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
-	namespace := "jx-testing"
 
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
 
-	name1UUID, err := uuid.NewV4()
+	name1, _, _, err := testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
-	name1 := name1UUID.String()
-	assert.NoError(t, err)
-	addApp(t, name1, namespace, testOptions, false)
 	getAppOptions := &cmd.GetAppsOptions{
 		GetOptions: cmd.GetOptions{
 			CommonOptions: testOptions.CommonOptions,
@@ -401,10 +401,10 @@ func TestGetAppsAsYaml(t *testing.T) {
 		Namespace: namespace,
 	}
 	formattedName := fmt.Sprintf("%s-%s", namespace, name1)
-	pegomock.When(getAppOptions.Helm().StatusReleases(pegomock.EqString(namespace))).
-		ThenReturn(map[string]helm.Release{
+	pegomock.When(getAppOptions.Helm().ListReleases(pegomock.EqString(namespace))).
+		ThenReturn(map[string]helm.ReleaseSummary{
 			formattedName: {Status: "DEPLOYED"},
-		}, nil)
+		}, []string{formattedName}, nil)
 
 	getAppOptions.Args = []string{name1}
 	console := tests.NewTerminal(t)
@@ -432,21 +432,16 @@ func TestGetAppsAsYaml(t *testing.T) {
 func TestGetAppsResourcesStatusTooManyApps(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
 	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
-	namespace := "jx-testing"
 
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
 
-	name1UUID, err := uuid.NewV4()
+	name1, _, _, err := testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
-	name1 := name1UUID.String()
-	name2UUID, err := uuid.NewV4()
+	name2, _, _, err := testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
-	name2 := name2UUID.String()
-	addApp(t, name1, namespace, testOptions, false)
-	addApp(t, name2, namespace, testOptions, false)
 	getAppOptions := &cmd.GetAppsOptions{
 		GetOptions: cmd.GetOptions{
 			CommonOptions: testOptions.CommonOptions,
@@ -474,20 +469,12 @@ func TestGetAppsResourcesStatusTooManyApps(t *testing.T) {
 func TestGetAppsResourcesStatusJsonFormat(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
 	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
-	namespace := "jx-testing"
 
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
 
-	name1UUID, err := uuid.NewV4()
-	assert.NoError(t, err)
-	name1 := name1UUID.String()
-	name2UUID, err := uuid.NewV4()
-	assert.NoError(t, err)
-	name2 := name2UUID.String()
-	addApp(t, name1, namespace, testOptions, false)
 	getAppOptions := &cmd.GetAppsOptions{
 		GetOptions: cmd.GetOptions{
 			CommonOptions: testOptions.CommonOptions,
@@ -496,6 +483,8 @@ func TestGetAppsResourcesStatusJsonFormat(t *testing.T) {
 		Namespace:  namespace,
 		ShowStatus: true,
 	}
+	name1, _, _, err := testOptions.AddApp(nil, "")
+	assert.NoError(t, err)
 	testDataPath := filepath.Join("test_data", "get_apps", "get_app_status.json")
 	_, err = os.Stat(testDataPath)
 	assert.NoError(t, err)
@@ -503,7 +492,7 @@ func TestGetAppsResourcesStatusJsonFormat(t *testing.T) {
 	pegomock.When(getAppOptions.Helm().StatusReleaseWithOutput(pegomock.EqString(namespace),
 		pegomock.AnyString(), pegomock.EqString("json"))).
 		ThenReturn(string(expectedJSON), nil)
-	getAppOptions.Args = []string{name1, name2}
+	getAppOptions.Args = []string{name1}
 	console := tests.NewTerminal(t)
 	r, fakeStdout, _ := os.Pipe()
 	getAppOptions.CommonOptions.In = console.In
@@ -518,27 +507,21 @@ func TestGetAppsResourcesStatusJsonFormat(t *testing.T) {
 	r.Close()
 	h := cmd.HelmOutput{}
 	err = json.Unmarshal(outBytes, &h)
-	assert.NoErrorf(t, err, "Error parsing Json")
+	assert.NoErrorf(t, err, "Error parsing json")
 	assert.NotEmpty(t, h.Resources)
 }
 
 func TestGetAppsResourcesStatusYamlFormat(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
 	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
-	namespace := "jx-testing"
 
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
 
-	name1UUID, err := uuid.NewV4()
+	name1, _, _, err := testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
-	name1 := name1UUID.String()
-	name2UUID, err := uuid.NewV4()
-	assert.NoError(t, err)
-	name2 := name2UUID.String()
-	addApp(t, name1, namespace, testOptions, false)
 	getAppOptions := &cmd.GetAppsOptions{
 		GetOptions: cmd.GetOptions{
 			CommonOptions: testOptions.CommonOptions,
@@ -556,7 +539,7 @@ func TestGetAppsResourcesStatusYamlFormat(t *testing.T) {
 	pegomock.When(testOptions.MockHelmer.StatusReleaseWithOutput(pegomock.EqString(namespace),
 		pegomock.AnyString(), pegomock.EqString("json"))).
 		ThenReturn(string(expectedJSON), nil)
-	getAppOptions.Args = []string{name1, name2}
+	getAppOptions.Args = []string{name1}
 	console := tests.NewTerminal(t)
 	r, fakeStdout, _ := os.Pipe()
 	getAppOptions.CommonOptions.In = console.In
@@ -578,20 +561,16 @@ func TestGetAppsResourcesStatusYamlFormat(t *testing.T) {
 func TestGetAppsResourcesStatusRawFormat(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
 	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
-	namespace := "jx-testing"
 
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
 
-	name1UUID, err := uuid.NewV4()
+	name1, _, _, err := testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
-	name1 := name1UUID.String()
-	name2UUID, err := uuid.NewV4()
+	name2, _, _, err := testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
-	name2 := name2UUID.String()
-	addApp(t, name1, namespace, testOptions, false)
 	getAppOptions := &cmd.GetAppsOptions{
 		GetOptions: cmd.GetOptions{
 			CommonOptions: testOptions.CommonOptions,
@@ -628,21 +607,16 @@ func TestGetAppNotFound(t *testing.T) {
 	tests.SkipForWindows(t, "NewTerminal() does not work on windows")
 	pegomock.RegisterMockTestingT(t)
 	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
-	namespace := "jx-testing"
 
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
 	}()
 
-	name1UUID, err := uuid.NewV4()
+	_, _, _, err := testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
-	name1 := name1UUID.String()
-	name2UUID, err := uuid.NewV4()
+	_, _, _, err = testOptions.AddApp(nil, "")
 	assert.NoError(t, err)
-	name2 := name2UUID.String()
-	addApp(t, name1, namespace, testOptions, false)
-	addApp(t, name2, namespace, testOptions, false)
 	getAppOptions := &cmd.GetAppsOptions{
 		GetOptions: cmd.GetOptions{
 			CommonOptions: testOptions.CommonOptions,
@@ -659,33 +633,4 @@ func TestGetAppNotFound(t *testing.T) {
 	fakeStdout.Close()
 	r.Close()
 	assert.EqualError(t, err, "No Apps found")
-}
-
-func addApp(t *testing.T, name string, namespace string, testOptions *cmd_test_helpers.AppTestOptions, gitOps bool) {
-	version := "0.0.1"
-
-	helm_test.StubFetchChart(name, version, kube.DefaultChartMuseumURL, &chart.Chart{
-		Metadata: &chart.Metadata{
-			Name:        name,
-			Version:     version,
-			Description: "My test chart description",
-		},
-	}, testOptions.MockHelmer)
-
-	o := &cmd.AddAppOptions{
-		AddOptions: cmd.AddOptions{
-			CommonOptions: testOptions.CommonOptions,
-		},
-		Version:              version,
-		Repo:                 kube.DefaultChartMuseumURL,
-		GitOps:               gitOps,
-		DevEnv:               testOptions.DevEnv,
-		HelmUpdate:           true, // Flag default when run on CLI
-		ConfigureGitCallback: testOptions.ConfigureGitFn,
-		Namespace:            namespace,
-	}
-
-	o.Args = []string{name}
-	err := o.Run()
-	assert.NoError(t, err)
 }

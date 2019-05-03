@@ -219,7 +219,10 @@ func (o *UpgradeIngressOptions) Run() error {
 
 	// update all resource dependent to the ingress endpoints
 	if !o.SkipResourcesUpdate {
-		o.updateResources(previousWebHookEndpoint)
+		err = o.updateResources(previousWebHookEndpoint)
+		if err != nil {
+			return errors.Wrap(err, "unable to update resources for webhook change")
+		}
 	}
 
 	return nil
@@ -306,7 +309,10 @@ func (o *UpgradeIngressOptions) updateResources(previousWebHookEndpoint string) 
 	}
 
 	if updateWebHooks {
-		o.updateWebHooks(previousWebHookEndpoint, updatedWebHookEndpoint)
+		err := o.updateWebHooks(previousWebHookEndpoint, updatedWebHookEndpoint)
+		if err != nil {
+			return errors.Wrap(err, "unable to update webhooks")
+		}
 	}
 	return nil
 }
@@ -644,10 +650,19 @@ func (o *UpgradeIngressOptions) updateWebHooks(oldHookEndpoint string, newHookEn
 		return errors.Wrap(err, "unable to determine git provider")
 	}
 
+	// user
+	userAuth := git.UserAuth()
+	username := userAuth.Username
+
 	// organisation
-	organisation, err := gits.PickOrganisation(git, "", o.In, o.Out, o.Err)
+	organisation, err := gits.PickOrganisation(git, username, o.In, o.Out, o.Err)
+	updateWebHook.Username = ReturnUserNameIfPicked(organisation, username)
 	if err != nil {
 		return errors.Wrap(err, "unable to determine git provider")
+	}
+
+	if o.CommonOptions.Verbose {
+		log.Infof("Updating all webHooks for org %s and/or username %s\n", organisation, updateWebHook.Username)
 	}
 
 	updateWebHook.PreviousHookUrl = oldHookEndpoint
@@ -655,4 +670,15 @@ func (o *UpgradeIngressOptions) updateWebHooks(oldHookEndpoint string, newHookEn
 	updateWebHook.DryRun = false
 
 	return updateWebHook.Run()
+}
+
+// ReturnUserNameIfPicked checks to see if PickOrganisation returned ""
+// this will happen if you picked the username as organization
+// which is valid in this scenario and allows code further down
+// to select the appropriate API to call (user or org based)
+func ReturnUserNameIfPicked(organisation string, username string) string {
+	if organisation == "" && username != "" {
+		return username
+	}
+	return ""
 }

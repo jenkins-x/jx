@@ -1,5 +1,7 @@
 trigger:
   trustedOrg: roadrunner-corp
+  ignoreOkToTest: true
+  onlyOrgMembers: false
 approve:
   lgtmActsAsApprove: true
   ignoreReviewState: false

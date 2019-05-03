@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	defaultFlaggerNamespace             = "istio-system"
+	defaultFlaggerNamespace             = defaultIstioNamespace
 	defaultFlaggerReleaseName           = kube.DefaultFlaggerReleaseName
 	defaultFlaggerVersion               = ""
 	defaultFlaggerRepo                  = "https://flagger.app"
@@ -103,8 +103,8 @@ func (o *CreateAddonFlaggerOptions) Run() error {
 		return errors.Wrap(err, "Flagger deployment failed")
 	}
 	helmOptions := helm.InstallChartOptions{
-		Chart:       o.ReleaseName,
-		ReleaseName: o.Chart,
+		Chart:       o.Chart,
+		ReleaseName: o.ReleaseName,
 		Version:     o.Version,
 		Ns:          o.Namespace,
 		SetValues:   values,

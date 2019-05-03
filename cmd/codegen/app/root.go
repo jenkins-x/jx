@@ -1,11 +1,7 @@
 package app
 
 import (
-	"os"
-
 	"github.com/jenkins-x/jx/cmd/codegen/util"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
-	"github.com/jenkins-x/jx/pkg/jx/cmd/templates"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -15,7 +11,7 @@ const (
 )
 
 var (
-	longHelp = templates.LongDesc(`Generates Go clientsets, OpenAPI spec and API docs for custom resources.
+	longHelp = `Generates Go clientsets, OpenAPI spec and API docs for custom resources.
 
 Custom resources are defined using Go structs.
 
@@ -25,7 +21,7 @@ Available generators include:
 * docs -  generates API docs from the OpenAPI specs
 * clientset - generates a Go CRUD client directly from custom resources
 
-`)
+`
 	logLevel string
 )
 
@@ -38,17 +34,19 @@ func Run() error {
 		Run:   runHelp,
 	}
 
-	commonOpts := &opts.CommonOptions{
-		In:  os.Stdin,
-		Out: os.Stdout,
-		Err: os.Stderr,
+	commonOpts := &CommonOptions{}
+
+	genOpts := GenerateOptions{
+		CommonOptions: commonOpts,
 	}
 
-	rootCommand.PersistentFlags().StringVarP(&logLevel, optionLogLevel, "", logrus.InfoLevel.String(), "Sets the logging level (panic, fatal, error, warning, info, debug)")
+	rootCommand.PersistentFlags().StringVarP(&commonOpts.LogLevel, optionLogLevel, "", logrus.InfoLevel.String(), "Sets the logging level (panic, fatal, error, warning, info, debug)")
+	rootCommand.PersistentFlags().StringVarP(&commonOpts.GeneratorVersion, "generator-version", "", "master",
+		"Version (really a commit-ish) of the generator tool to use. Allows to pin version using Go modules. Default is master.")
 
-	rootCommand.AddCommand(NewGenerateClientSetCmd(commonOpts))
-	rootCommand.AddCommand(NewCmdCreateClientOpenAPI(commonOpts))
-	rootCommand.AddCommand(NewCreateDocsCmd(commonOpts))
+	rootCommand.AddCommand(NewGenerateClientSetCmd(genOpts))
+	rootCommand.AddCommand(NewCmdCreateClientOpenAPI(genOpts))
+	rootCommand.AddCommand(NewCreateDocsCmd(genOpts))
 
 	util.SetLevel(logLevel)
 

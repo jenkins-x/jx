@@ -196,3 +196,23 @@ func TestRealJenkinsService(t *testing.T) {
 	assert.Equal(t, "kubernetes.io/ingress.class: nginx\nnginx.ingress.kubernetes.io/proxy-body-size: 500m\ncertmanager.k8s.io/issuer: letsencrypt-prod", ingressAnnotations)
 	assert.NoError(t, err)
 }
+
+func TestReturnUserNameIfPicked_notPicked(t *testing.T) {
+	t.Parallel()
+	organisation := "MyOrg"
+	username := "MyUser"
+
+	actual := cmd.ReturnUserNameIfPicked(organisation, username)
+	expected := ""
+	assert.Equal(t, expected, actual, "Username should be empty an organization was picked")
+}
+
+func TestReturnUserNameIfPicked_wasPicked(t *testing.T) {
+	t.Parallel()
+	organisation := ""
+	username := "MyUser"
+
+	actual := cmd.ReturnUserNameIfPicked(organisation, username)
+	expected := username
+	assert.Equal(t, expected, actual, "Username should be returned as no organization was picked")
+}

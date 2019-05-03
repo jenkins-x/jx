@@ -3,7 +3,6 @@ package generator
 import (
 	"fmt"
 	"github.com/jenkins-x/jx/cmd/codegen/util"
-	jxutil "github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"path/filepath"
 	"strings"
@@ -13,7 +12,7 @@ func defaultGenerate(generator string, name string, groupsWithVersions []string,
 	outputPackage string, outputBase string, boilerplateFile string, args ...string) error {
 	util.AppLogger().Infof("generating %s structs for %s at %s\n", name, groupsWithVersions, outputPackage)
 
-	generateCommand := jxutil.Command{
+	generateCommand := util.Command{
 		Name: filepath.Join(util.GoPathBin(), generator),
 		Args: []string{
 			"--output-base",

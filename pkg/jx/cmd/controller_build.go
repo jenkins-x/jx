@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -409,6 +410,9 @@ func (o *ControllerBuildOptions) getGithubProvider(secrets *corev1.SecretList, g
 	server, userAuth, err := o.GetPipelineGitAuth()
 	if err != nil {
 		return nil, err
+	}
+	if server == nil {
+		return nil, fmt.Errorf("no pipeline git auth could be found")
 	}
 	gitProvider, err := gits.CreateProvider(server, userAuth, nil)
 	if err != nil {

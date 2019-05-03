@@ -27,9 +27,9 @@ func CompleteScheduler() *pipelinescheduler.Scheduler {
 		Policy: pointerToGlobalProtectionPolicy(),
 		Merger: &pipelinescheduler.Merger{
 			ContextPolicy: &pipelinescheduler.ContextPolicy{
-				OptionalContexts:          pointerToReplaceableSliceOfStrings(),
-				RequiredContexts:          pointerToReplaceableSliceOfStrings(),
-				RequiredIfPresentContexts: pointerToReplaceableSliceOfStrings(),
+				OptionalContexts:          PointerToReplaceableSliceOfStrings(),
+				RequiredContexts:          PointerToReplaceableSliceOfStrings(),
+				RequiredIfPresentContexts: PointerToReplaceableSliceOfStrings(),
 			},
 			MergeType:          pointerToUUID(),
 			TargetURL:          pointerToUUID(),
@@ -57,10 +57,10 @@ func CompleteScheduler() *pipelinescheduler.Scheduler {
 						},
 					},
 					Query: &pipelinescheduler.Query{
-						Labels:                 pointerToReplaceableSliceOfStrings(),
-						ExcludedBranches:       pointerToReplaceableSliceOfStrings(),
-						IncludedBranches:       pointerToReplaceableSliceOfStrings(),
-						MissingLabels:          pointerToReplaceableSliceOfStrings(),
+						Labels:                 PointerToReplaceableSliceOfStrings(),
+						ExcludedBranches:       PointerToReplaceableSliceOfStrings(),
+						IncludedBranches:       PointerToReplaceableSliceOfStrings(),
+						MissingLabels:          PointerToReplaceableSliceOfStrings(),
 						Milestone:              pointerToUUID(),
 						ReviewApprovedRequired: pointerToTrue(),
 					},
@@ -107,7 +107,7 @@ func CompleteScheduler() *pipelinescheduler.Scheduler {
 			Items: []*pipelinescheduler.ExternalPlugin{
 				{
 					Name:     pointerToUUID(),
-					Events:   pointerToReplaceableSliceOfStrings(),
+					Events:   PointerToReplaceableSliceOfStrings(),
 					Endpoint: pointerToUUID(),
 				},
 			},
@@ -117,7 +117,7 @@ func CompleteScheduler() *pipelinescheduler.Scheduler {
 			ReviewActsAsLgtm: pointerToTrue(),
 			StickyLgtmTeam:   pointerToUUID(),
 		},
-		Plugins: pointerToReplaceableSliceOfStrings(),
+		Plugins: PointerToReplaceableSliceOfStrings(),
 	}
 }
 
@@ -142,7 +142,8 @@ func pointerToRandomDuration() *time.Duration {
 	return &duration
 }
 
-func pointerToReplaceableSliceOfStrings() *pipelinescheduler.ReplaceableSliceOfStrings {
+// PointerToReplaceableSliceOfStrings creaters a ReplaceableSliceOfStrings and returns its pointer
+func PointerToReplaceableSliceOfStrings() *pipelinescheduler.ReplaceableSliceOfStrings {
 	return &pipelinescheduler.ReplaceableSliceOfStrings{
 		Items: []string{
 			uuid.New(),
@@ -150,7 +151,8 @@ func pointerToReplaceableSliceOfStrings() *pipelinescheduler.ReplaceableSliceOfS
 	}
 }
 
-func pointerToReplaceableMapOfStringString() *pipelinescheduler.ReplaceableMapOfStringString {
+// PointerToReplaceableMapOfStringString creaters a ReplaceableMapOfStringString and returns its pointer
+func PointerToReplaceableMapOfStringString() *pipelinescheduler.ReplaceableMapOfStringString {
 	return &pipelinescheduler.ReplaceableMapOfStringString{
 		Items: map[string]string{
 			uuid.New(): uuid.New(),
@@ -162,9 +164,9 @@ func pointerToContextPolicy() *pipelinescheduler.ContextPolicy {
 	return &pipelinescheduler.ContextPolicy{
 		SkipUnknownContexts:       pointerToTrue(),
 		FromBranchProtection:      pointerToTrue(),
-		RequiredIfPresentContexts: pointerToReplaceableSliceOfStrings(),
-		RequiredContexts:          pointerToReplaceableSliceOfStrings(),
-		OptionalContexts:          pointerToReplaceableSliceOfStrings(),
+		RequiredIfPresentContexts: PointerToReplaceableSliceOfStrings(),
+		RequiredContexts:          PointerToReplaceableSliceOfStrings(),
+		OptionalContexts:          PointerToReplaceableSliceOfStrings(),
 	}
 }
 
@@ -178,19 +180,19 @@ func pointerToGlobalProtectionPolicy() *pipelinescheduler.GlobalProtectionPolicy
 func pointerToProtectionPolicy() *pipelinescheduler.ProtectionPolicy {
 	return &pipelinescheduler.ProtectionPolicy{
 		Restrictions: &pipelinescheduler.Restrictions{
-			Users: pointerToReplaceableSliceOfStrings(),
-			Teams: pointerToReplaceableSliceOfStrings(),
+			Users: PointerToReplaceableSliceOfStrings(),
+			Teams: PointerToReplaceableSliceOfStrings(),
 		},
 		Admins: pointerToTrue(),
 		RequiredPullRequestReviews: &pipelinescheduler.ReviewPolicy{
 			DismissalRestrictions: &pipelinescheduler.Restrictions{
-				Users: pointerToReplaceableSliceOfStrings(),
-				Teams: pointerToReplaceableSliceOfStrings(),
+				Users: PointerToReplaceableSliceOfStrings(),
+				Teams: PointerToReplaceableSliceOfStrings(),
 			},
 		},
 		RequiredStatusChecks: &pipelinescheduler.BranchProtectionContextPolicy{
 			Strict:   pointerToTrue(),
-			Contexts: pointerToReplaceableSliceOfStrings(),
+			Contexts: PointerToReplaceableSliceOfStrings(),
 		},
 		Protect: pointerToTrue(),
 	}
@@ -198,7 +200,7 @@ func pointerToProtectionPolicy() *pipelinescheduler.ProtectionPolicy {
 
 func pointerToJobBase() *pipelinescheduler.JobBase {
 	return &pipelinescheduler.JobBase{
-		Labels:         pointerToReplaceableMapOfStringString(),
+		Labels:         PointerToReplaceableMapOfStringString(),
 		Namespace:      pointerToUUID(),
 		Cluster:        pointerToUUID(),
 		MaxConcurrency: pointerToRandomNumber(),
@@ -215,8 +217,8 @@ func pointerToRegexpChangeMatcher() *pipelinescheduler.RegexpChangeMatcher {
 
 func pointerToBrancher() *pipelinescheduler.Brancher {
 	return &pipelinescheduler.Brancher{
-		Branches:     pointerToReplaceableSliceOfStrings(),
-		SkipBranches: pointerToReplaceableSliceOfStrings(),
+		Branches:     PointerToReplaceableSliceOfStrings(),
+		SkipBranches: PointerToReplaceableSliceOfStrings(),
 	}
 }
 
@@ -268,7 +270,6 @@ func BuildAndValidateProwConfig(t *testing.T, baseDir string, expectedConfigFile
 			Scheduler: s,
 		})
 	}
-
 	cfg, plugs, err := prow.Build(schedulerLeaves)
 	assert.NoError(t, err)
 	if expectedConfigFilename != "" {

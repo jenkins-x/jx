@@ -21,13 +21,12 @@ type Helmer interface {
 	FetchChart(chart string, version string, untar bool, untardir string, repo string, username string,
 		password string) error
 	DeleteRelease(ns string, releaseName string, purge bool) error
-	ListCharts() (string, error)
+	ListReleases(ns string) (map[string]ReleaseSummary, []string, error)
 	SearchChartVersions(chart string) ([]string, error)
 	FindChart() (string, error)
 	PackageChart() error
 	StatusRelease(ns string, releaseName string) error
 	StatusReleaseWithOutput(ns string, releaseName string, format string) (string, error)
-	StatusReleases(ns string) (map[string]Release, error)
 	Lint() (string, error)
 	Version(tls bool) (string, error)
 	SearchCharts(filter string) ([]ChartSummary, error)
@@ -35,11 +34,4 @@ type Helmer interface {
 	Env() map[string]string
 	DecryptSecrets(location string) error
 	Template(chartDir string, releaseName string, ns string, outputDir string, upgrade bool, values []string, valueFiles []string) error
-}
-
-// Release defines a struct to store details about a helm release
-type Release struct {
-	Release string
-	Status  string
-	Version string
 }

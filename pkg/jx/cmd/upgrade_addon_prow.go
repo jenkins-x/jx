@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/hashicorp/go-version"
+	version "github.com/hashicorp/go-version"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 
@@ -83,7 +83,7 @@ func (o *UpgradeAddonProwOptions) Run() error {
 		return err
 	}
 
-	releases, err := o.Helm().StatusReleases(ns)
+	releases, _, err := o.Helm().ListReleases(ns)
 	if err != nil {
 		return err
 	}
@@ -107,8 +107,8 @@ func (o *UpgradeAddonProwOptions) Run() error {
 	hmacToken := string(hmacSecret.Data["hmac"])
 
 	for _, release := range releases {
-		if release.Release == "knative-build" && (release.Status == "DEPLOYED" || release.Status == "FAILED") {
-			currentVersion, err := version.NewVersion(release.Version)
+		if release.ReleaseName == "knative-build" && (release.Status == "DEPLOYED" || release.Status == "FAILED") {
+			currentVersion, err := version.NewVersion(release.ChartVersion)
 			if err != nil {
 				return err
 			}

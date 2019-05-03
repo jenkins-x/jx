@@ -119,7 +119,7 @@ func (o *StepValidateOptions) verifyAddons() []error {
 		errs = append(errs, err)
 		return errs
 	}
-	statusMap, err := o.Helm().StatusReleases(ns)
+	releases, _, err := o.Helm().ListReleases(ns)
 	if err != nil {
 		errs = append(errs, fmt.Errorf("Failed to load addons statuses: %s", err))
 		return errs
@@ -127,7 +127,7 @@ func (o *StepValidateOptions) verifyAddons() []error {
 
 	for _, addonConfig := range config.Addons {
 		if addonConfig != nil {
-			err := o.verifyAddon(addonConfig, fileName, statusMap)
+			err := o.verifyAddon(addonConfig, fileName, releases)
 			if err != nil {
 				errs = append(errs, err)
 			}
@@ -136,7 +136,8 @@ func (o *StepValidateOptions) verifyAddons() []error {
 	return errs
 }
 
-func (o *StepValidateOptions) verifyAddon(addonConfig *config.AddonConfig, fileName string, statusMap map[string]helm.Release) error {
+func (o *StepValidateOptions) verifyAddon(addonConfig *config.AddonConfig, fileName string,
+	releases map[string]helm.ReleaseSummary) error {
 	name := addonConfig.Name
 	if name == "" {
 		log.Warnf("Ignoring addon with no name inside the projects configuration file %s", fileName)
@@ -146,7 +147,7 @@ func (o *StepValidateOptions) verifyAddon(addonConfig *config.AddonConfig, fileN
 	if ch == "" {
 		return fmt.Errorf("No such addon name %s in %s: %s", name, fileName, util.InvalidArg(name, util.SortedMapKeys(kube.AddonCharts)))
 	}
-	status := statusMap[name].Status
+	status := releases[name].Status
 	if status == "DEPLOYED" {
 		return nil
 	}

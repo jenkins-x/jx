@@ -89,7 +89,7 @@ func GetServiceURLFromMap(services map[string]*v1.Service, name string) string {
 func FindServiceURL(client kubernetes.Interface, namespace string, name string) (string, error) {
 	svc, err := client.CoreV1().Services(namespace).Get(name, meta_v1.GetOptions{})
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "failed to find service %s in namespace %s", name, namespace)
 	}
 	answer := GetServiceURL(svc)
 	if answer != "" {

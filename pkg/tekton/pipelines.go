@@ -27,9 +27,9 @@ func CreateOrUpdateSourceResource(tektonClient tektonclient.Interface, ns string
 		return created, nil
 	}
 
-	answer, err := resourceInterface.Get(resourceName, metav1.GetOptions{})
-	if err != nil {
-		return answer, errors.Wrapf(err, "failed to get PipelineResource %s after failing to create a new one", resourceName)
+	answer, err2 := resourceInterface.Get(resourceName, metav1.GetOptions{})
+	if err2 != nil {
+		return answer, errors.Wrapf(err, "failed to get PipelineResource %s with %v after failing to create a new one", resourceName, err2)
 	}
 	if !reflect.DeepEqual(&created.Spec, &answer.Spec) {
 		answer.Spec = created.Spec
@@ -56,7 +56,7 @@ func CreateOrUpdateTask(tektonClient tektonclient.Interface, ns string, created 
 
 	answer, err2 := resourceInterface.Get(resourceName, metav1.GetOptions{})
 	if err2 != nil {
-		return answer, errors.Wrapf(err, "failed to get PipelineResource %s with %v after failing to create a new one", resourceName, err2)
+		return answer, errors.Wrapf(err, "failed to get PipelineResource %s with %v after failing to create a new one", resourceName, err2.Error())
 	}
 	if !reflect.DeepEqual(&created.Spec, &answer.Spec) || !reflect.DeepEqual(created.Annotations, answer.Annotations) || !reflect.DeepEqual(created.Labels, answer.Labels) {
 		answer.Spec = created.Spec

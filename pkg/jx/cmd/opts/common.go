@@ -139,18 +139,6 @@ func (o *CommonOptions) CreateTable() table.Table {
 	return o.factory.CreateTable(o.Out)
 }
 
-// NewCommonOptions a helper method to create a new CommonOptions instance
-// pre configured in a specific devNamespace
-func NewCommonOptions(devNamespace string, factory clients.Factory) CommonOptions {
-	return CommonOptions{
-		factory:          factory,
-		Out:              os.Stdout,
-		Err:              os.Stderr,
-		currentNamespace: devNamespace,
-		devNamespace:     devNamespace,
-	}
-}
-
 // NewCommonOptionsWithTerm creates a new CommonOptions instance with given terminal input, output and error
 func NewCommonOptionsWithTerm(factory clients.Factory, in terminal.FileReader, out terminal.FileWriter, err io.Writer) *CommonOptions {
 	return &CommonOptions{
@@ -191,19 +179,19 @@ func (o *CommonOptions) Debugf(format string, a ...interface{}) {
 }
 
 // addCommonFlags adds the common flags to the given command
-func (options *CommonOptions) AddCommonFlags(cmd *cobra.Command) {
+func (o *CommonOptions) AddCommonFlags(cmd *cobra.Command) {
 	defaultBatchMode := false
 	if os.Getenv("JX_BATCH_MODE") == "true" {
 		defaultBatchMode = true
 	}
-	cmd.PersistentFlags().BoolVarP(&options.BatchMode, OptionBatchMode, "b", defaultBatchMode, "Runs in batch mode without prompting for user input")
-	cmd.PersistentFlags().BoolVarP(&options.Verbose, OptionVerbose, "", false, "Enables verbose output")
-	cmd.PersistentFlags().StringVarP(&options.LogLevel, OptionLogLevel, "", logrus.InfoLevel.String(), "Sets the logging level (panic, fatal, error, warning, info, debug)")
-	cmd.PersistentFlags().BoolVarP(&options.NoBrew, OptionNoBrew, "", false, "Disables brew package manager on MacOS when installing binary dependencies")
-	cmd.PersistentFlags().BoolVarP(&options.InstallDependencies, OptionInstallDeps, "", false, "Enables automatic dependencies installation when required")
-	cmd.PersistentFlags().BoolVarP(&options.SkipAuthSecretsMerge, OptionSkipAuthSecMerge, "", false, "Skips merging the secrets from local files with the secrets from Kubernetes cluster")
+	cmd.PersistentFlags().BoolVarP(&o.BatchMode, OptionBatchMode, "b", defaultBatchMode, "Runs in batch mode without prompting for user input")
+	cmd.PersistentFlags().BoolVarP(&o.Verbose, OptionVerbose, "", false, "Enables verbose output")
+	cmd.PersistentFlags().StringVarP(&o.LogLevel, OptionLogLevel, "", logrus.InfoLevel.String(), "Sets the logging level (panic, fatal, error, warning, info, debug)")
+	cmd.PersistentFlags().BoolVarP(&o.NoBrew, OptionNoBrew, "", false, "Disables brew package manager on MacOS when installing binary dependencies")
+	cmd.PersistentFlags().BoolVarP(&o.InstallDependencies, OptionInstallDeps, "", false, "Enables automatic dependencies installation when required")
+	cmd.PersistentFlags().BoolVarP(&o.SkipAuthSecretsMerge, OptionSkipAuthSecMerge, "", false, "Skips merging the secrets from local files with the secrets from Kubernetes cluster")
 
-	options.Cmd = cmd
+	o.Cmd = cmd
 }
 
 // ApiExtensionsClient return or creates the api extension client
