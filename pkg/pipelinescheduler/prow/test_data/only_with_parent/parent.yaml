@@ -1,14 +1,5 @@
 trigger:
   trustedOrg: roadrunner-corp
-  ignoreOkToTest: true
-  onlyOrgMembers: false
-approve:
-  lgtmActsAsApprove: true
-  ignoreReviewState: false
-externalPlugins:
-  items:
-  - name: jx-app-cheese
-    endpoint: http://jx-app-cheese
 schedulerAgent:
   agent: prow
 policy:

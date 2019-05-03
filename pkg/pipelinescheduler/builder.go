@@ -1,6 +1,7 @@
 package pipelinescheduler
 
 import (
+	"github.com/davecgh/go-spew/spew"
 	"github.com/pkg/errors"
 )
 
@@ -25,7 +26,7 @@ func Build(schedulers []*Scheduler) (*Scheduler, error) {
 			if answer.Presubmits == nil {
 				answer.Presubmits = parent.Presubmits
 			} else if !answer.Presubmits.Replace && parent.Presubmits != nil {
-				err := applyToPresubmits(parent.Presubmits, answer.Presubmits)
+				err := applyToPreSubmits(parent.Presubmits, answer.Presubmits)
 				if err != nil {
 					return nil, errors.WithStack(err)
 				}
@@ -38,6 +39,7 @@ func Build(schedulers []*Scheduler) (*Scheduler, error) {
 					return nil, errors.WithStack(err)
 				}
 			}
+			//TODO: This should probably be an array of triggers, because the plugins yaml is expecting an array
 			if answer.Trigger == nil {
 				answer.Trigger = parent.Trigger
 			} else if parent.Trigger != nil {
@@ -74,16 +76,16 @@ func Build(schedulers []*Scheduler) (*Scheduler, error) {
 }
 
 func applyToTrigger(parent *Trigger, child *Trigger) {
-	if child.IgnoreOkToTest != nil {
+	if child.IgnoreOkToTest == nil {
 		child.IgnoreOkToTest = parent.IgnoreOkToTest
 	}
-	if child.JoinOrgURL != nil {
+	if child.JoinOrgURL == nil {
 		child.JoinOrgURL = parent.JoinOrgURL
 	}
-	if child.OnlyOrgMembers != nil {
+	if child.OnlyOrgMembers == nil {
 		child.OnlyOrgMembers = parent.OnlyOrgMembers
 	}
-	if child.TrustedOrg != nil {
+	if child.TrustedOrg == nil {
 		child.TrustedOrg = parent.TrustedOrg
 	}
 }
@@ -114,9 +116,7 @@ func applyToRegexpChangeMatcher(parent *RegexpChangeMatcher, child *RegexpChange
 }
 
 func applyToJobBase(parent *JobBase, child *JobBase) {
-	if child.Name == nil {
-		child.Name = parent.Name
-	}
+	//Not merging JobBase.name as it can't be nil
 	if child.Namespace == nil {
 		child.Namespace = parent.Namespace
 	}
@@ -137,7 +137,7 @@ func applyToJobBase(parent *JobBase, child *JobBase) {
 		}
 		// Add any labels that are missing
 		for pk, pv := range parent.Labels.Items {
-			if _, ok := parent.Labels.Items[pk]; !ok {
+			if _, ok := child.Labels.Items[pk]; !ok {
 				child.Labels.Items[pk] = pv
 			}
 		}
@@ -240,7 +240,7 @@ func applyToContextPolicy(parent *ContextPolicy, child *ContextPolicy) {
 	}
 	if child.RequiredIfPresentContexts == nil {
 		child.RequiredIfPresentContexts = parent.RequiredIfPresentContexts
-	} else if !child.RequiredIfPresentContexts.Replace && parent.RequiredContexts != nil {
+	} else if parent.RequiredIfPresentContexts != nil {
 		applyToReplaceableSliceOfStrings(parent.RequiredIfPresentContexts, child.RequiredIfPresentContexts)
 	}
 }
@@ -317,6 +317,28 @@ func applyToProtectionPolicy(parent *ProtectionPolicy, child *ProtectionPolicy) 
 	} else if parent.Restrictions != nil {
 		applyToRestrictions(parent.Restrictions, child.Restrictions)
 	}
+	if child.RequiredPullRequestReviews == nil {
+		child.RequiredPullRequestReviews = parent.RequiredPullRequestReviews
+	} else if parent.RequiredPullRequestReviews != nil {
+		applyToRequiredPullRequestReviews(parent.RequiredPullRequestReviews, child.RequiredPullRequestReviews)
+	}
+}
+
+func applyToRequiredPullRequestReviews(parent *ReviewPolicy, child *ReviewPolicy) {
+	if child.Approvals == nil {
+		child.Approvals = parent.Approvals
+	}
+	if child.DismissStale == nil {
+		child.DismissStale = parent.DismissStale
+	}
+	if child.RequireOwners == nil {
+		child.RequireOwners = parent.RequireOwners
+	}
+	if child.DismissalRestrictions == nil {
+		child.DismissalRestrictions = parent.DismissalRestrictions
+	} else if parent.DismissalRestrictions != nil {
+		applyToRestrictions(parent.DismissalRestrictions, child.DismissalRestrictions)
+	}
 }
 
 func applyToRestrictions(parent *Restrictions, child *Restrictions) {
@@ -346,15 +368,11 @@ func applyToPostSubmits(parent *Postsubmits, child *Postsubmits) error {
 			}
 		}
 		if len(found) > 1 {
-			return errors.Errorf("more than one postsubmit with name %v in %v", parent.Name,
-				parent)
+			return errors.Errorf("more than one postsubmit with name %v in %s", *parent.Name, spew.Sdump(child))
 		} else if len(found) == 1 {
 			child := found[0]
-			if child.JobBase == nil {
-				child.JobBase = parent.JobBase
-			} else if parent.JobBase != nil {
-				applyToJobBase(parent.JobBase, child.JobBase)
-			}
+			// Neither parent's nor child's JobBase can be nil as it would've panicked earlier
+			applyToJobBase(parent.JobBase, child.JobBase)
 			if child.RegexpChangeMatcher == nil {
 				child.RegexpChangeMatcher = parent.RegexpChangeMatcher
 			} else if parent.RegexpChangeMatcher != nil {
@@ -378,7 +396,7 @@ func applyToPostSubmits(parent *Postsubmits, child *Postsubmits) error {
 	return nil
 }
 
-func applyToPresubmits(parent *Presubmits, child *Presubmits) error {
+func applyToPreSubmits(parent *Presubmits, child *Presubmits) error {
 	if child.Items == nil {
 		child.Items = make([]*Presubmit, 0)
 	}
@@ -392,17 +410,13 @@ func applyToPresubmits(parent *Presubmits, child *Presubmits) error {
 			}
 		}
 		if len(found) > 1 {
-			return errors.Errorf("more than one child with name %v in %v", parent.Name,
-				parent)
+			return errors.Errorf("more than one presubmit with name %v in %s", parent.Name, spew.Sdump(parent))
 		} else if len(found) == 1 {
 			child := found[0]
-			if child.JobBase == nil {
-				child.JobBase = parent.JobBase
-			} else if parent.JobBase != nil {
-				applyToJobBase(parent.JobBase, child.JobBase)
-			}
-			if child.RunIfChanged == nil {
-				child.RunIfChanged = parent.RunIfChanged
+			// Neither parent's nor child's JobBase can be nil as it would've panicked earlier
+			applyToJobBase(parent.JobBase, child.JobBase)
+			if child.RegexpChangeMatcher == nil {
+				child.RegexpChangeMatcher = parent.RegexpChangeMatcher
 			} else if parent.RegexpChangeMatcher != nil {
 				applyToRegexpChangeMatcher(parent.RegexpChangeMatcher, child.RegexpChangeMatcher)
 			}

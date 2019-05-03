@@ -1,7 +1,5 @@
 trigger:
   trustedOrg: roadrunner-corp
-  ignoreOkToTest: true
-  onlyOrgMembers: false
 approve:
   lgtmActsAsApprove: true
   ignoreReviewState: false
@@ -14,9 +12,23 @@ schedulerAgent:
 policy:
   protectTested: true
 merger:
+  blockerLabel: hold
+  prStatusBaseUrl: http://fakeurl
+  maxGoroutines: 5
   policy:
     fromBranchProtection: true
-    skipUnknownContexts: false
+    requiredContexts:
+      items:
+        - context1
+        - context2
+    requiredIfPresentContexts:
+      items:
+        - context55
+        - context66
+        - context77
+    optionalContexts:
+      items:
+        - opt1
 postsubmits:
   items:
   - name: release
@@ -25,6 +37,7 @@ postsubmits:
       items:
       - master
     agent: tekton
+
 presubmits:
   items:
   - name: integration
