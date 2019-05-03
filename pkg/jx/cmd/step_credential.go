@@ -23,13 +23,16 @@ type StepCredentialOptions struct {
 	Secret    string
 	Key       string
 	File      string
+	Optional  bool
 }
 
 var (
 	stepCredentialLong = templates.LongDesc(`
 		Returns a credential from a Secret for easy scripting in pipeline steps.
 
-		Supports the [Jenkins Credentials Provider labels on the Secrets](https://jenkinsci.github.io/kubernetes-credentials-provider-plugin/examples/) 
+		Supports the [Jenkins Credentials Provider labels on the Secrets](https://jenkinsci.github.io/kubernetes-credentials-provider-plugin/examples/)
+
+		If you specify --optional then if the key or secret doesn't exist then the command will only print a warning and will not error.
 `)
 
 	stepCredentialExample = templates.Examples(`
@@ -44,6 +47,9 @@ var (
          
 		# create a local file called cheese from a given key
         export MY_KEY_FILE="$(jx step credential -s foo -f cheese -k data)"
+
+		# create a local file called cheese from a given key, if the key exists'
+        export MY_KEY_FILE="$(jx step credential -s foo -f cheese -k data --optional)"
          
 `)
 )
@@ -73,6 +79,7 @@ func NewCmdStepCredential(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Secret, "name", "s", "", "the name of the Secret")
 	cmd.Flags().StringVarP(&options.Key, "key", "k", "", "the key in the Secret to output")
 	cmd.Flags().StringVarP(&options.File, "file", "f", "", "the key for the filename to use if this is a file based Secret")
+	cmd.Flags().BoolVarP(&options.Optional, "optional", "", false, "if true, then the command will only warn (not error) if the secret or the key doesn't exist")
 
 	return cmd
 }
@@ -95,10 +102,18 @@ func (o *StepCredentialOptions) Run() error {
 	}
 	secret, err := kubeClient.CoreV1().Secrets(ns).Get(name, metav1.GetOptions{})
 	if err != nil {
+		if o.Optional {
+			log.Warnf("failed to find Secret %s in namespace %s", name, ns)
+			return nil
+		}
 		return errors.Wrapf(err, "failed to find Secret %s in namespace %s", name, ns)
 	}
 	data := secret.Data
 	if data == nil {
+		if o.Optional {
+			log.Warnf("Secret %s in namespace %s has no data", name, ns)
+			return nil
+		}
 		return errors.Wrapf(err, "Secret %s in namespace %s has no data", name, ns)
 	}
 	keys := []string{}
@@ -137,6 +152,9 @@ func (o *StepCredentialOptions) Run() error {
 	value, ok := data[key]
 	if !ok {
 		log.Warnf("Secret %s in namespace %s does not have key %s\n", name, ns, key)
+		if o.Optional {
+			return nil
+		}
 		return util.InvalidOption("key", key, keys)
 	}
 	if filename != "" {
