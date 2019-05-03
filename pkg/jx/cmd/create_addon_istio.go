@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/blang/semver"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/blang/semver"
 
 	"github.com/jenkins-x/jx/pkg/packages"
 
@@ -194,7 +195,7 @@ func (o *CreateAddonIstioOptions) getIstioChartsFromGitHub() (string, error) {
 	} else {
 		actualVersion, err = semver.Make(o.Version)
 		if err != nil {
-			return answer, fmt.Errorf("unable to parse version %s", o.Version, err)
+			return answer, fmt.Errorf("unable to parse version %s %v", o.Version, err)
 		}
 	}
 
