@@ -120,9 +120,17 @@ func (options *UpdateWebhooksOptions) Run() error {
 	}
 	owner := GetOrgOrUserFromOptions(options)
 
+	if options.Verbose {
+		log.Infof("Updating webhooks for Owner %v and Repo %v\n", owner, options.Repo)
+	}
+
 	if options.Repo != "" {
 		options.updateRepoHook(git, options.Repo, webhookURL, isProwEnabled, hmacToken)
 	} else {
+		if owner == "" {
+			return errors.Wrap(err, "unable to list repositories - no repo owner")
+		}
+
 		repositories, err := git.ListRepositories(owner)
 		if err != nil {
 			return errors.Wrap(err, "unable to list repositories")
@@ -143,8 +151,8 @@ func (options *UpdateWebhooksOptions) Run() error {
 // or "" if neither is set
 func GetOrgOrUserFromOptions(options *UpdateWebhooksOptions) string {
 	owner := options.Org
-	if owner == "" && options.User != "" {
-		owner = options.User
+	if owner == "" && options.Username != "" {
+		owner = options.Username
 	}
 	return owner
 }

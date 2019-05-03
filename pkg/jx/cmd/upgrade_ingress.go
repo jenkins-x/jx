@@ -661,6 +661,10 @@ func (o *UpgradeIngressOptions) updateWebHooks(oldHookEndpoint string, newHookEn
 		return errors.Wrap(err, "unable to determine git provider")
 	}
 
+	if o.CommonOptions.Verbose {
+		log.Infof("Updating all webHooks for org %s and/or username %s\n", organisation, updateWebHook.Username)
+	}
+
 	updateWebHook.PreviousHookUrl = oldHookEndpoint
 	updateWebHook.Org = organisation
 	updateWebHook.DryRun = false

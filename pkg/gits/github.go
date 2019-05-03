@@ -177,6 +177,7 @@ func (p *GitHubProvider) ListRepositories(org string) ([]*GitRepository, error) 
 	}
 
 	if IsOwnerGitHubUser(owner, p.Username) {
+		log.Infof("Owner of repo is same as username, using GitHub API for Users")
 		return p.ListRepositoriesForUser(p.Username)
 	}
 
