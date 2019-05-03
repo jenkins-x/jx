@@ -1,5 +1,8 @@
 # JX 
 
+JX is a command line tool for installing and using [Jenkins X](http://jenkins-x.io/)
+
+
 [![GoDoc](https://godoc.org/github.com/jenkins-x/jx?status.svg)](https://godoc.org/github.com/jenkins-x/jx)
 [![Docs](https://readthedocs.org/projects/docs/badge/?version=latest)](https://jenkins-x.io/documentation/)
 [![Docker Pulls](https://img.shields.io/docker/pulls/jenkinsxio/jx.svg)](https://hub.docker.com/r/jenkinsxio/jx/tags)
@@ -8,11 +11,11 @@
 [![Apache](https://img.shields.io/badge/license-Apache-blue.svg)](https://github.com/jenkins-x/jx/blob/master/LICENSE)
 [![Reviewed by Hound](https://img.shields.io/badge/reviewed_by-Hound-8E64B0.svg)](https://houndci.com)
 
-JX is a command line tool for installing and using [Jenkins X](http://jenkins-x.io/)
-
 <a href="http://jenkins-x.io/">
   <img src="http://jenkins-x.io/img/profile.png" alt="Jenkins X icon" width="100" height="123"/>
 </a>
+
+
 
 ## Installing
 
@@ -329,6 +332,10 @@ Please [let us know](https://github.com/jenkins-x/jx/issues/new) and see if we c
 
 If you're looking to build from source or get started hacking on jx, please see the
 [hacking guide][hacking] for more information.
+
+
+[![](https://codescene.io/projects/4772/status.svg) Get more details at **codescene.io**.](https://codescene.io/projects/4772/jobs/latest-successful/results)
+
 
 
 [hacking]: docs/contributing/hacking.md
