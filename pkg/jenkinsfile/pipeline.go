@@ -132,7 +132,7 @@ func (x *PipelineExtends) ImportFile() *ImportFile {
 // PipelineOverride allows for overriding named steps in the build pack
 type PipelineOverride struct {
 	Pipelines []string        `json:"pipelines,omitempty"`
-	Stages    []string        `json:"stage,omitempty"`
+	Stages    []string        `json:"stages,omitempty"`
 	Name      string          `json:"name"`
 	Step      *PipelineStep   `json:"step,omitempty"`
 	Steps     []*PipelineStep `json:"steps,omitempty"`

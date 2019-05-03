@@ -1,0 +1,24 @@
+apiVersion: tekton.dev/v1alpha1
+kind: PipelineRun
+metadata:
+  creationTimestamp: null
+  labels:
+    branch: master
+    owner: abayer
+    repo: golang-qs-test
+  name: abayer-golang-qs-test-master-1
+spec:
+  Status: ""
+  pipelineRef:
+    apiVersion: tekton.dev/v1alpha1
+    name: abayer-golang-qs-test-master-1
+  resources:
+  - name: abayer-golang-qs-test-master
+    resourceRef:
+      apiVersion: tekton.dev/v1alpha1
+      name: abayer-golang-qs-test-master
+  serviceAccount: tekton-bot
+  trigger:
+    type: manual
+status:
+  conditions: null

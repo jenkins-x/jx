@@ -456,8 +456,6 @@ func (o *StepCreateTaskOptions) GenerateTektonCRDs(packsDir string, projectConfi
 		}
 		localPipelineConfig := projectConfig.PipelineConfig
 		if localPipelineConfig != nil {
-			pc, _ := yaml.Marshal(pipelineConfig)
-			log.Warnf("PC: %s", pc)
 			err = localPipelineConfig.ExtendPipeline(pipelineConfig, false)
 			if err != nil {
 				return nil, nil, nil, nil, nil, errors.Wrapf(err, "failed to override PipelineConfig using configuration in file %s", projectConfigFile)

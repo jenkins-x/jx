@@ -133,6 +133,14 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			branch:       "master",
 			kind:         "release",
 		},
+		{
+			name:         "override_block_step",
+			language:     "apps",
+			repoName:     "golang-qs-test",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+		},
 	}
 
 	k8sObjects := []runtime.Object{
