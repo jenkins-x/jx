@@ -1,7 +1,7 @@
 package util
 
 import (
-	schemagen "github.com/abayer/jsonschema"
+	schemagen "github.com/alecthomas/jsonschema"
 	"github.com/xeipuuv/gojsonschema"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
