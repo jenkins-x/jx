@@ -176,7 +176,7 @@ func (o *CreateVaultOptions) createVault(vaultOperatorClient versioned.Interface
 	if err != nil {
 		return err
 	}
-	log.Infof("Current Cluster: %s\n", util.ColorInfo(clusterName))
+	log.Infof("cluster short name for vault naming: %s\n", util.ColorInfo(clusterName))
 	vaultAuthServiceAccount, err := CreateAuthServiceAccount(kubeClient, vaultName, o.Namespace, clusterName)
 	if err != nil {
 		return errors.Wrap(err, "creating Vault authentication service account")
