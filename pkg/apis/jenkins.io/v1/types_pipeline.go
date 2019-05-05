@@ -10,7 +10,7 @@ const (
 	LabelSourceRepository = "sourcerepository"
 	LabelProvider         = "provider"
 	LabelOwner            = "owner"
-	LabelRepository       = "repoitory"
+	LabelRepository       = "repository"
 	LabelBranch           = "branch"
 	LabelBuild            = "build"
 )
