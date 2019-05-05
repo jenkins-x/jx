@@ -15,7 +15,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
-	strcase "github.com/stoewer/go-strcase"
+	"github.com/stoewer/go-strcase"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -475,6 +475,8 @@ type SourceRepositorySpec struct {
 	Provider string `json:"provider,omitempty" protobuf:"bytes,2,opt,name=provider"`
 	Org      string `json:"org,omitempty" protobuf:"bytes,3,opt,name=org"`
 	Repo     string `json:"repo,omitempty" protobuf:"bytes,4,opt,name=repo"`
+	// ProviderName is a logical name for the provider without any URL scheme which can be used in a label selector
+	ProviderName string `json:"providerName,omitempty" protobuf:"bytes,5,opt,name=providerName"`
 }
 
 // AppSpec provides details of the metadata for an App

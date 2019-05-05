@@ -8,8 +8,11 @@ import (
 
 const (
 	LabelSourceRepository = "sourcerepository"
+	LabelProvider         = "provider"
 	LabelOwner            = "owner"
+	LabelRepository       = "repoitory"
 	LabelBranch           = "branch"
+	LabelBuild            = "build"
 )
 
 // +genclient

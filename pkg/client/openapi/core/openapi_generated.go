@@ -3874,6 +3874,13 @@ func schema_pkg_apis_jenkinsio_v1_SourceRepositorySpec(ref common.ReferenceCallb
 							Format: "",
 						},
 					},
+					"providerName": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ProviderName is a logical name for the provider without any URL scheme which can be used in a label selector",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 			},
 		},
