@@ -2,7 +2,9 @@ package kube
 
 import (
 	"fmt"
+	"net/url"
 	"reflect"
+	"strings"
 
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/client/clientset/versioned"
@@ -17,15 +19,20 @@ func GetOrCreateSourceRepository(jxClient versioned.Interface, ns string, name, 
 	repositories := jxClient.JenkinsV1().SourceRepositories(ns)
 	description := fmt.Sprintf("Imported application for %s/%s", organisation, name)
 
+	providerName := ToProviderName(providerURL)
+
+	labels := map[string]string{}
 	answer, err := repositories.Create(&v1.SourceRepository{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: resourceName,
+			Name:   resourceName,
+			Labels: labels,
 		},
 		Spec: v1.SourceRepositorySpec{
-			Description: description,
-			Org:         organisation,
-			Provider:    providerURL,
-			Repo:        name,
+			Description:  description,
+			Org:          organisation,
+			Provider:     providerURL,
+			ProviderName: providerName,
+			Repo:         name,
 		},
 	})
 	if err != nil {
@@ -40,7 +47,16 @@ func GetOrCreateSourceRepository(jxClient versioned.Interface, ns string, name, 
 		copy.Spec.Org = organisation
 		copy.Spec.Provider = providerURL
 		copy.Spec.Repo = name
-		if reflect.DeepEqual(&copy.Spec, sr.Spec) {
+
+		copy.Labels = map[string]string{}
+		for k, v := range sr.Labels {
+			copy.Labels[k] = v
+		}
+		copy.Labels[v1.LabelProvider] = providerName
+		copy.Labels[v1.LabelOwner] = organisation
+		copy.Labels[v1.LabelRepository] = name
+
+		if reflect.DeepEqual(&copy.Spec, sr.Spec) && reflect.DeepEqual(&copy.Labels, &sr.Labels) {
 			return answer, nil
 		}
 		answer, err = repositories.PatchUpdate(&copy)
@@ -53,6 +69,25 @@ func GetOrCreateSourceRepository(jxClient versioned.Interface, ns string, name, 
 		}
 	}
 	return answer, nil
+}
+
+// ToProviderName takes the git URL and converts it to a provider name which can be used as a label selector
+func ToProviderName(gitURL string) string {
+	if gitURL == "" {
+		return ""
+	}
+	u, err := url.Parse(gitURL)
+	if err == nil {
+		host := strings.TrimSuffix(u.Host, ".com")
+		return ToValidName(host)
+	}
+	idx := strings.Index(gitURL, "://")
+	if idx > 0 {
+		gitURL = gitURL[idx+3:]
+	}
+	gitURL = strings.TrimSuffix(gitURL, "/")
+	gitURL = strings.TrimSuffix(gitURL, ".com")
+	return ToValidName(gitURL)
 }
 
 // CreateSourceRepository creates a repo. If a repo already exists, it will return an error

@@ -1480,6 +1480,10 @@ definitions:
       provider:
         description: Provider stores the URL of the git provider such as https://github.com
         type: string
+      providerName:
+        description: ProviderName is a logical name for the provider without any URL
+          scheme which can be used in a label selector
+        type: string
       repo:
         type: string
     type: object
