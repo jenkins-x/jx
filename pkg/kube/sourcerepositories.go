@@ -72,22 +72,22 @@ func GetOrCreateSourceRepository(jxClient versioned.Interface, ns string, name, 
 }
 
 // ToProviderName takes the git URL and converts it to a provider name which can be used as a label selector
-func ToProviderName(gitUrl string) string {
-	if gitUrl == "" {
+func ToProviderName(gitURL string) string {
+	if gitURL == "" {
 		return ""
 	}
-	u, err := url.Parse(gitUrl)
+	u, err := url.Parse(gitURL)
 	if err == nil {
 		host := strings.TrimSuffix(u.Host, ".com")
 		return ToValidName(host)
 	}
-	idx := strings.Index(gitUrl, "://")
+	idx := strings.Index(gitURL, "://")
 	if idx > 0 {
-		gitUrl = gitUrl[idx+3:]
+		gitURL = gitURL[idx+3:]
 	}
-	gitUrl = strings.TrimSuffix(gitUrl, "/")
-	gitUrl = strings.TrimSuffix(gitUrl, ".com")
-	return ToValidName(gitUrl)
+	gitURL = strings.TrimSuffix(gitURL, "/")
+	gitURL = strings.TrimSuffix(gitURL, ".com")
+	return ToValidName(gitURL)
 }
 
 // CreateSourceRepository creates a repo. If a repo already exists, it will return an error
