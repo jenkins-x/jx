@@ -3,6 +3,8 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
+	"github.com/satori/go.uuid"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -23,10 +25,10 @@ import (
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
 
-	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/jenkins-x/jx/pkg/addon"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -117,6 +119,8 @@ type InstallFlags struct {
 	NoGitOpsVault               bool
 	NextGeneration              bool
 	StaticJenkins               bool
+	LongTermStorage             bool
+	LongTermStorageBucket       string
 }
 
 // Secrets struct for secrets
@@ -356,7 +360,8 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.Kaniko, "kaniko", "", false, "Use Kaniko for building docker images")
 	cmd.Flags().BoolVarP(&flags.NextGeneration, "ng", "", false, "Use the Next Generation Jenkins X features like Prow, Tekton, No Tiller, Vault, Dev GitOps")
 	cmd.Flags().BoolVarP(&flags.StaticJenkins, "static-jenkins", "", false, "Install a static Jenkins master to use as the pipeline engine. Note this functionality is deprecated in favour of running serverless Tekton builds")
-
+	cmd.Flags().BoolVarP(&flags.LongTermStorage, "long-term-storage", "", false, "Enable the Long Term Storage option to save logs and other assets into a GCS bucket")
+	cmd.Flags().StringVarP(&flags.LongTermStorageBucket, "lts-bucket", "", "", "The GCS bucket to use for Long Term Storage. If the bucket doesn't exist, an attempt will be made to create it, otherwise random naming will be used")
 	opts.AddGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
 	options.AdminSecretsService.AddAdminSecretsValues(cmd)
@@ -372,7 +377,6 @@ func (flags *InstallFlags) addCloudEnvOptions(cmd *cobra.Command) {
 
 func (options *InstallOptions) checkFlags() error {
 	flags := &options.Flags
-
 	if flags.NextGeneration && flags.StaticJenkins {
 		return fmt.Errorf("Incompatible options '--ng' and '--static-jenkins'. Please pick only one of them. We recommend --ng as --static-jenkins is deprecated")
 	}
@@ -517,6 +521,11 @@ func (options *InstallOptions) Run() error {
 	ic, err := options.saveIngressConfig()
 	if err != nil {
 		return errors.Wrap(err, "saving the ingress configuration in a ConfigMap")
+	}
+
+	err = options.configureLongTermStorageBucket()
+	if err != nil {
+		return errors.Wrap(err, "configuring Long Term Storage")
 	}
 
 	err = options.createSystemVault(client, ns, ic)
@@ -1527,7 +1536,7 @@ func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigSt
 	if options.Flags.GitOpsMode {
 		var err error
 		if options.Flags.Dir == "" {
-			options.Flags.Dir, err = os.Getwd()
+			options.Flags.Dir, err = util.ConfigDir()
 			if err != nil {
 				return "", "", err
 			}
@@ -2261,6 +2270,168 @@ func (options *InstallOptions) configureBuildPackMode() error {
 	ebp.CommonOptions = options.CommonOptions
 
 	return ebp.Run()
+}
+
+func (options *InstallOptions) configureLongTermStorageBucket() error {
+
+	if options.IsFlagExplicitlySet("long-term-storage") && !options.Flags.LongTermStorage {
+		return nil
+	}
+
+	if !options.BatchMode && !options.Flags.LongTermStorage {
+		surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
+		confirm := &survey.Confirm{
+			Message: fmt.Sprint("Do you like to enable Long Term Storage? A GCS Bucket will be created"),
+			Default: true,
+		}
+
+		err := survey.AskOne(confirm, &options.Flags.LongTermStorage, nil, surveyOpts)
+		if err != nil {
+			return errors.Wrap(err, "asking to enable Long Term Storage")
+		}
+	}
+
+	var bucketName string
+	if options.Flags.LongTermStorage {
+
+		err := options.ensureInstallValuesAreFilled()
+		if err != nil {
+			return errors.Wrap(err, "filling install values with cluster information")
+		}
+
+		isWriteEnabled, err := gke.IsGCSWriteRoleEnabled(options.installValues[kube.ClusterName],
+			options.installValues[kube.Zone])
+		if err != nil {
+			return errors.Wrap(err, "checking if we the storage write scope is enabled")
+		}
+
+		if !isWriteEnabled {
+			log.Warn("Write access to Google Cloud Storage is not enabled, skipping long term storage")
+			return nil
+		}
+
+		log.Info("Enabling Long Term Storage")
+
+		if options.Flags.LongTermStorageBucket != "" {
+			exists, err := gke.BucketExists(options.installValues[kube.ProjectID], options.Flags.LongTermStorageBucket)
+			if err != nil {
+				return errors.Wrap(err, "checking if the provided bucket exists")
+			}
+			if exists {
+				bucketName = options.Flags.LongTermStorageBucket
+				return options.assignBucketToTeamStorage(fmt.Sprintf("gs://%s", bucketName))
+			} else {
+				bucketURL, err := options.doCreateBucket(options.Flags.LongTermStorageBucket)
+				if err == nil {
+					return options.assignBucketToTeamStorage(bucketURL)
+				}
+				log.Warnf("Attempted to create the bucket %s in the project %s but failed, will now create a " +
+					"random bucket", options.Flags.LongTermStorageBucket, options.installValues[kube.ProjectID])
+			}
+		}
+
+		if !options.IsFlagExplicitlySet("lts-bucket") {
+			log.Info("No bucket name provided for long term storage, creating a new one")
+		}
+
+		uuid4, _ := uuid.NewV4()
+		bucketName = fmt.Sprintf("%s-lts-%s", options.installValues[kube.ClusterName], uuid4.String())
+		if len(bucketName) > 60 {
+			bucketName = bucketName[:60]
+		}
+
+		bucketURL, err := options.doCreateBucket(bucketName)
+		if err != nil {
+			return errors.Wrap(err, "creating a new bucket")
+		}
+		return options.assignBucketToTeamStorage(bucketURL)
+	}
+
+	return nil
+}
+
+func (options *InstallOptions) assignBucketToTeamStorage(bucketURL string) error {
+	//Enable storage of logs into GCS
+	eso := EditStorageOptions{
+		CreateOptions: CreateOptions{
+			CommonOptions: options.CommonOptions,
+		},
+		StorageLocation: v1.StorageLocation{
+			Classifier: "default",
+			BucketURL:  bucketURL,
+		},
+	}
+	infoBucketURL := util.ColorInfo(bucketURL)
+	log.Infof("Enabling default storage for current team in the bucket %s", infoBucketURL)
+	err := eso.Run()
+	if err != nil {
+		return errors.Wrapf(err, "there was a problem executing `jx edit -c default --bucket-url=%s",
+			infoBucketURL)
+	}
+
+	eso.StorageLocation.Classifier = "logs"
+	log.Infof("Enabling logs storage for current team in the bucket %s", infoBucketURL)
+	err = eso.Run()
+	if err != nil {
+		return errors.Wrapf(err, "there was a problem executing `jx edit -c logs --bucket-url=%s",
+			infoBucketURL)
+	}
+
+	return nil
+}
+
+func (options *InstallOptions) ensureInstallValuesAreFilled() error {
+	if options.installValues == nil {
+		options.installValues = make(map[string]string)
+	}
+
+	if options.installValues[kube.ProjectID] == "" {
+		currentProjectID, err := gke.GetCurrentProject()
+		if err != nil {
+			return errors.Wrap(err, "obtaining the current project from GKE context")
+		}
+		options.installValues[kube.ProjectID] = currentProjectID
+	}
+
+	if options.installValues[kube.Zone] == "" {
+		gcpCurrentZone, err := options.GetGoogleZone(options.installValues[kube.ProjectID])
+		if err != nil {
+			return errors.Wrap(err, "asking for the zone to create the bucket into")
+		}
+		options.installValues[kube.Zone] = gcpCurrentZone
+	}
+
+	if options.installValues[kube.ClusterName] == "" {
+		clusterName, err := cluster.Name(options.Kube())
+		if err != nil {
+			return errors.Wrap(err, "obtaining the current cluster name")
+		}
+		options.installValues[kube.ClusterName] = clusterName
+	}
+
+	return nil
+}
+
+func (options *InstallOptions) doCreateBucket(bucketName string) (string, error) {
+	cbv := &opts.CreateBucketValues{
+		Bucket:       bucketName,
+		BucketKind:   "gs",
+		GKEProjectID: options.installValues[kube.ProjectID],
+		GKEZone:      options.installValues[kube.Zone],
+	}
+
+	teamSettings, err := options.TeamSettings()
+	if err != nil {
+		return "", errors.Wrap(err, "there was a problem obtaining the default team settings")
+	}
+
+	bucketURL, err := options.CreateBucket(cbv, teamSettings)
+	if err != nil {
+		return "", errors.Wrapf(err, "there was a problem creating the bucket %s in the GKE Project %s",
+			cbv.Bucket, cbv.GKEProjectID)
+	}
+
+	return bucketURL, err
 }
 
 func (options *InstallOptions) saveIngressConfig() (*kube.IngressConfig, error) {
