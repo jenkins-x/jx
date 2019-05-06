@@ -1548,7 +1548,6 @@ rules:
 
 // GetClusterUserName returns cluster and user name
 func (o *CommonOptions) GetClusterUserName() (string, error) {
-
 	username, _ := o.GetCommandOutput("", "gcloud", "config", "get-value", "core/account")
 
 	if username != "" {
@@ -1557,7 +1556,7 @@ func (o *CommonOptions) GetClusterUserName() (string, error) {
 
 	config, _, err := o.Kube().LoadConfig()
 	if err != nil {
-		return username, err
+		return username, errors.Wrap(err, "loading kube config")
 	}
 	if config == nil || config.Contexts == nil || len(config.Contexts) == 0 {
 		return username, fmt.Errorf("No Kubernetes contexts available! Try create or connect to cluster?")
@@ -1605,7 +1604,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 	if o.OAUTHToken == "" {
 		authConfigSvc, err := o.CreateGitAuthConfigService()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "creating git auth config svc")
 		}
 
 		config := authConfigSvc.Config()
@@ -1614,7 +1613,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 		message := fmt.Sprintf("%s bot user for CI/CD pipelines (not your personal Git user):", server.Label())
 		userAuth, err := config.PickServerUserAuth(server, message, o.BatchMode, "", o.In, o.Out, o.Err)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "picking bot user auth")
 		}
 		o.OAUTHToken = userAuth.ApiToken
 	}
@@ -1622,42 +1621,39 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 	if o.Username == "" {
 		o.Username, err = o.GetClusterUserName()
 		if err != nil {
-			return err
+			return errors.Wrap(err, "retrieving the cluster user name")
 		}
 	}
 	if gitUsername == "" {
 		gitUsername = o.Username
 	}
 
-	client, err := o.KubeClient()
+	client, devNamespace, err := o.KubeClientAndDevNamespace()
 	if err != nil {
-		return err
-	}
-
-	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
-	if err != nil {
-		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
+		return errors.Wrap(err, "creating kube client")
 	}
 
 	setValues := strings.Split(o.SetValues, ",")
 
 	settings, err := o.TeamSettings()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "reading the team settings")
 	}
+
+	log.Infof("\nSetting up prow config into namespace %s\n", util.ColorInfo(devNamespace))
 
 	// create initial configmaps if they don't already exist, use a dummy repo so tide doesn't start scanning all github
 	_, err = client.CoreV1().ConfigMaps(devNamespace).Get("config", metav1.GetOptions{})
 	if err != nil {
 		err = prow.AddApplication(client, []string{"jenkins-x/dummy"}, devNamespace, "base", settings)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "adding dummy application")
 		}
 	}
+
 	log.Infof("\nInstalling knative into namespace %s\n", util.ColorInfo(devNamespace))
 
 	ksecretValues := []string{}
-
 	if settings.HelmTemplate || settings.NoTiller || settings.HelmBinary != "helm" {
 		// lets disable tiller
 		setValues = append(setValues, "tillerNamespace=")
@@ -1734,7 +1730,6 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 
 	if !useTekton {
 		log.Infof("\nInstalling BuildTemplates into namespace %s\n", util.ColorInfo(devNamespace))
-
 		err = o.Retry(2, time.Second, func() (err error) {
 			return o.InstallChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, kube.DefaultBuildTemplatesReleaseName,
 				kube.ChartBuildTemplates, "jxbuildtemplates", "", devNamespace, true, nil, nil, nil, "")

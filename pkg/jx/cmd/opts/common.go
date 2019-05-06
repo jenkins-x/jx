@@ -219,8 +219,9 @@ func (o *CommonOptions) KubeClient() (kubernetes.Interface, error) {
 			return nil, err
 		}
 		o.kubeClient = kubeClient
-		o.currentNamespace = currentNs
-
+		if o.currentNamespace == "" {
+			o.currentNamespace = currentNs
+		}
 	}
 	return o.kubeClient, nil
 }
