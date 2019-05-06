@@ -596,7 +596,7 @@ func (o *Options) GetPostSubmitJob(org, repo, branch string) (config.Postsubmit,
 	p := config.Postsubmit{}
 	cm, err := o.KubeClient.CoreV1().ConfigMaps(o.NS).Get(ProwConfigMapName, metav1.GetOptions{})
 	if err != nil {
-		return p, errors.Wrapf(err, "getting the presugmit jobs from %q config map in namespace %q", ProwConfigMapName, o.NS)
+		return p, errors.Wrapf(err, "getting the presubmit jobs from %q config map in namespace %q", ProwConfigMapName, o.NS)
 	}
 
 	prowConfig := &config.Config{}
@@ -622,11 +622,11 @@ func CreateProwJob(client kubernetes.Interface, ns string, j prowapi.ProwJob) (p
 	retJob := prowapi.ProwJob{}
 	body, err := json.Marshal(j)
 	if err != nil {
-		return retJob, errors.Wrap(err, "marshaling the prow job")
+		return retJob, errors.Wrap(err, "marshalling the prow job")
 	}
 	resp, err := client.CoreV1().RESTClient().Post().RequestURI(fmt.Sprintf("/apis/prow.k8s.io/v1/namespaces/%s/prowjobs", ns)).Body(body).DoRaw()
 	if err != nil {
-		return retJob, fmt.Errorf("createing prowjob %v: %s", err, string(resp))
+		return retJob, fmt.Errorf("creating prowjob %v: %s", err, string(resp))
 	}
 	return retJob, err
 }

@@ -1556,7 +1556,7 @@ func (o *CommonOptions) GetClusterUserName() (string, error) {
 
 	config, _, err := o.Kube().LoadConfig()
 	if err != nil {
-		return username, errors.Wrap(err, "lodaing kube config")
+		return username, errors.Wrap(err, "loading kube config")
 	}
 	if config == nil || config.Contexts == nil || len(config.Contexts) == 0 {
 		return username, fmt.Errorf("No Kubernetes contexts available! Try create or connect to cluster?")
