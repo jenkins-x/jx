@@ -1527,7 +1527,7 @@ func (options *InstallOptions) configureGitOpsMode(configStore configio.ConfigSt
 	if options.Flags.GitOpsMode {
 		var err error
 		if options.Flags.Dir == "" {
-			options.Flags.Dir, err = os.Getwd()
+			options.Flags.Dir, err = util.ConfigDir()
 			if err != nil {
 				return "", "", err
 			}
