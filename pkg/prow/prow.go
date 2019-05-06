@@ -266,7 +266,7 @@ func (o *Options) AddProwConfig() error {
 
 	prowConfig, create, err := o.GetProwConfig()
 	if err != nil {
-		return errors.Wrap(err, "adding prow config")
+		return errors.Wrap(err, "getting prow config")
 	}
 
 	prowConfig.PodNamespace = o.NS

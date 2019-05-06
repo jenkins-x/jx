@@ -1628,14 +1628,9 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 		gitUsername = o.Username
 	}
 
-	client, err := o.KubeClient()
+	client, devNamespace, err := o.KubeClientAndDevNamespace()
 	if err != nil {
 		return errors.Wrap(err, "creating kube client")
-	}
-
-	devNamespace, _, err := kube.GetDevNamespace(client, o.currentNamespace)
-	if err != nil {
-		return fmt.Errorf("cannot find a dev team namespace to get existing exposecontroller config from. %v", err)
 	}
 
 	setValues := strings.Split(o.SetValues, ",")
@@ -1645,6 +1640,8 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 		return errors.Wrap(err, "reading the team settings")
 	}
 
+	log.Infof("\nSetting up prow config into namespace %s\n", util.ColorInfo(devNamespace))
+
 	// create initial configmaps if they don't already exist, use a dummy repo so tide doesn't start scanning all github
 	_, err = client.CoreV1().ConfigMaps(devNamespace).Get("config", metav1.GetOptions{})
 	if err != nil {
@@ -1653,6 +1650,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 			return errors.Wrap(err, "adding dummy application")
 		}
 	}
+
 	log.Infof("\nInstalling knative into namespace %s\n", util.ColorInfo(devNamespace))
 
 	ksecretValues := []string{}
