@@ -3,14 +3,17 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/quickstarts"
 	"github.com/jenkins-x/jx/pkg/util"
+	"gopkg.in/AlecAivazis/survey.v1/terminal"
 
 	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
@@ -201,7 +204,13 @@ func (o *CreateMLQuickstartOptions) Run() error {
 	if err != nil {
 		return fmt.Errorf("failed to load quickstarts: %s", err)
 	}
-	q, err := model.CreateSurvey(&o.Filter, o.BatchMode, o.In, o.Out, o.Err)
+	var q *quickstarts.QuickstartForm
+	if o.BatchMode {
+		q, err = pickMLProject(model, &o.Filter, o.BatchMode, o.In, o.Out, o.Err)
+	} else {
+		q, err = model.CreateSurvey(&o.Filter, o.BatchMode, o.In, o.Out, o.Err)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -239,19 +248,21 @@ func (o *CreateMLQuickstartOptions) Run() error {
 		stub := o.Filter.ProjectName
 		for _, project := range ps {
 			w.ImportOptions = o.ImportOptions // Reset the options each time as they are modified by Import (DraftPack)
-			w.ImportOptions.Organisation = details.Organisation
-			w.GitRepositoryOptions = o.GitRepositoryOptions
-			w.GitRepositoryOptions.ServerURL = details.GitServer.URL
-			w.GitRepositoryOptions.ServerKind = details.GitServer.Kind
-			w.GitRepositoryOptions.Username = details.User.Username
-			w.GitRepositoryOptions.ApiToken = details.User.ApiToken
-			w.GitRepositoryOptions.Owner = details.Organisation
-			w.GitRepositoryOptions.Private = details.PrivateRepo
-			w.GitProvider = details.GitProvider
-			w.GitServer = details.GitServer
-
+			if !o.BatchMode {
+				w.ImportOptions.Organisation = details.Organisation
+				w.GitRepositoryOptions = o.GitRepositoryOptions
+				w.GitRepositoryOptions.ServerURL = details.GitServer.URL
+				w.GitRepositoryOptions.ServerKind = details.GitServer.Kind
+				w.GitRepositoryOptions.Username = details.User.Username
+				w.GitRepositoryOptions.ApiToken = details.User.ApiToken
+				w.GitRepositoryOptions.Owner = details.Organisation
+				w.GitRepositoryOptions.Private = details.PrivateRepo
+				w.GitProvider = details.GitProvider
+				w.GitServer = details.GitServer
+			}
 			w.Filter.Text = project.Repo
 			w.Filter.ProjectName = stub + project.Tail
+			w.Filter.Language = ""
 			o.Debugf("Invoking CreateQuickstart for %s...\n", project.Repo)
 
 			e = w.Run()
@@ -323,4 +334,36 @@ func (o *CreateMLQuickstartOptions) LoadQuickstartsFromMap(config *auth.AuthConf
 		}
 	}
 	return model, nil
+}
+
+// PickMLProject picks a mlquickstart project set from filtered results
+func pickMLProject(model *quickstarts.QuickstartModel, filter *quickstarts.QuickstartFilter, batchMode bool, in terminal.FileReader, out terminal.FileWriter, errOut io.Writer) (*quickstarts.QuickstartForm, error) {
+	mlquickstarts := model.Filter(filter)
+	names := []string{}
+	m := map[string]*quickstarts.Quickstart{}
+	for _, qs := range mlquickstarts {
+		name := qs.SurveyName()
+		m[name] = qs
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	if len(names) == 0 {
+		return nil, fmt.Errorf("No quickstarts match filter")
+	}
+	answer := ""
+	// Pick the first option as this is the project set
+	answer = names[0]
+	if answer == "" {
+		return nil, fmt.Errorf("No quickstart chosen")
+	}
+	q := m[answer]
+	if q == nil {
+		return nil, fmt.Errorf("Could not find chosen quickstart for %s", answer)
+	}
+	form := &quickstarts.QuickstartForm{
+		Quickstart: q,
+		Name:       q.Name,
+	}
+	return form, nil
 }
