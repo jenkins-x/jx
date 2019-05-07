@@ -1,0 +1,36 @@
+pipelineConfig:
+  env:
+    - name: FRUIT
+      value: BANANA
+    - name: GIT_AUTHOR_NAME
+      value: somebodyelse
+  pipelines:
+    overrides:
+      # Replace set-version on pullRequest in any stage/lifecycle with "echo hello"
+      # This shouldn't affect the release pipeline we actually test with.
+      - pipelines:
+          - pullRequest
+        name: set-version
+        step:
+          sh: echo hello
+      # Remove post-build from release in the build stage/lifecycle
+      - pipelines:
+          - release
+        name: post-build
+        stages:
+          - build
+      # Remove container-build from pullRequest in the build stage/lifecycle
+      # This shouldn't affect the release pipeline we actually test with.
+      - pipelines:
+          - pullRequest
+        name: container-build
+        stages:
+          - build
+      # Replace set-version on release in any stage/lifecycle with two steps.
+      - pipelines:
+          - release
+        name: set-version
+        steps:
+          - sh: echo goodbye
+          - sh: echo wait why am i here
+

@@ -125,6 +125,22 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			branch:       "override-default-agent",
 			kind:         "release",
 		},
+		{
+			name:         "override-steps",
+			language:     "maven",
+			repoName:     "jx-demo-qs",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+		},
+		{
+			name:         "override_block_step",
+			language:     "apps",
+			repoName:     "golang-qs-test",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+		},
 	}
 
 	k8sObjects := []runtime.Object{
