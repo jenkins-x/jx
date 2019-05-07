@@ -520,6 +520,14 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 					"If this is the first time you have installed the app, this may take a couple of minutes.",
 					chartDetails.Name)
 				_, err = o.KubeClient.CoreV1().Pods(o.Namespace).Create(&pod)
+				defer func() {
+					err := o.KubeClient.CoreV1().Pods(o.Namespace).Delete(pod.Name,
+						&metav1.DeleteOptions{})
+					if err != nil {
+						log.Errorf("Error deleting pod %s for values.schema.json preprocessing: %v",
+							pod.Name, err)
+					}
+				}()
 				if err != nil {
 					return &chartDetails, errors.Wrapf(err, "creating pod %s for values.schema.json proprocessing",
 						pod.Name)
@@ -534,7 +542,7 @@ func (o *InstallOptions) createInterrogateChartFn(version string, chartName stri
 						"json preprocessing",
 						pod.Name)
 				}
-				completePod, err := o.KubeClient.Core().Pods(o.Namespace).Get(pod.Name, metav1.GetOptions{})
+				completePod, err := o.KubeClient.CoreV1().Pods(o.Namespace).Get(pod.Name, metav1.GetOptions{})
 				if err != nil {
 					return &chartDetails, errors.Wrapf(err, "getting pod %s", pod.Name)
 				}
