@@ -585,7 +585,7 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "configuring Prow in team settings")
 	}
 
-	err = options.configureAndInstallProw(ns, gitOpsDir, gitOpsEnvDir)
+	err = options.configureAndInstallProw(ns, gitOpsDir, gitOpsEnvDir, valuesFiles)
 	if err != nil {
 		return errors.Wrap(err, "configuring and installing Prow")
 	}
@@ -1000,7 +1000,7 @@ func (options *InstallOptions) installPlatformGitOpsMode(gitOpsEnvDir string, gi
 	return nil
 }
 
-func (options *InstallOptions) configureAndInstallProw(namespace string, gitOpsDir string, gitOpsEnvDir string) error {
+func (options *InstallOptions) configureAndInstallProw(namespace string, gitOpsDir string, gitOpsEnvDir string, valuesFiles []string) error {
 	options.SetCurrentNamespace(namespace)
 	if options.Flags.Prow {
 		_, pipelineUser, err := options.GetPipelineGitAuth()
@@ -1008,7 +1008,7 @@ func (options *InstallOptions) configureAndInstallProw(namespace string, gitOpsD
 			return errors.Wrap(err, "retrieving the pipeline Git Auth")
 		}
 		options.OAUTHToken = pipelineUser.ApiToken
-		err = options.InstallProw(options.Flags.Tekton, options.Flags.ExternalDNS, options.Flags.GitOpsMode, gitOpsDir, gitOpsEnvDir, pipelineUser.Username)
+		err = options.InstallProw(options.Flags.Tekton, options.Flags.ExternalDNS, options.Flags.GitOpsMode, gitOpsDir, gitOpsEnvDir, pipelineUser.Username, valuesFiles)
 		if err != nil {
 			return errors.Wrap(err, "installing Prow")
 		}

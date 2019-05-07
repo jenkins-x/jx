@@ -1583,7 +1583,7 @@ func GetSafeUsername(username string) string {
 }
 
 // InstallProw installs prow
-func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOps bool, gitOpsDir string, gitOpsEnvDir string, gitUsername string) error {
+func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOps bool, gitOpsDir string, gitOpsEnvDir string, gitUsername string, valuesFiles []string) error {
 	if o.ReleaseName == "" {
 		o.ReleaseName = kube.DefaultProwReleaseName
 	}
@@ -1687,7 +1687,7 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 		ksecretValues = append(ksecretValues, "build.auth.git.username="+gitUsername, "build.auth.git.password="+o.OAUTHToken)
 		err = o.Retry(2, time.Second, func() (err error) {
 			return o.InstallChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, kube.DefaultKnativeBuildReleaseName,
-				kube.ChartKnativeBuild, "knativebuild", "", devNamespace, true, setValues, ksecretValues, nil, "")
+				kube.ChartKnativeBuild, "knativebuild", "", devNamespace, true, setValues, ksecretValues, valuesFiles, "")
 		})
 		if err != nil {
 			return errors.Wrap(err, "failed to install Knative build")
@@ -1719,10 +1719,14 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 
 	log.Infof("\nInstalling Prow into namespace %s\n", util.ColorInfo(devNamespace))
 
+	for _, value := range valuesFiles {
+		log.Infof("with values file %s\n", util.ColorInfo(value))
+	}
+
 	secretValues := []string{"user=" + gitUsername, "oauthToken=" + o.OAUTHToken, "hmacToken=" + o.HMACToken}
 	err = o.Retry(2, time.Second, func() (err error) {
 		return o.InstallChartOrGitOps(isGitOps, gitOpsDir, gitOpsEnvDir, o.ReleaseName,
-			o.Chart, "prow", prowVersion, devNamespace, true, setValues, secretValues, nil, "")
+			o.Chart, "prow", prowVersion, devNamespace, true, setValues, secretValues, valuesFiles, "")
 	})
 	if err != nil {
 		return errors.Wrap(err, "failed to install Prow")
