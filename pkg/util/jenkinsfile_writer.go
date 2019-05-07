@@ -1,10 +1,8 @@
-package jenkinsfile
+package util
 
 import (
 	"bytes"
 	"strings"
-
-	"github.com/jenkins-x/jx/pkg/util"
 )
 
 var (
@@ -39,7 +37,7 @@ func (s *Statement) Text() string {
 // the same context as that statement
 func (s *Statement) ContextEquals(that *Statement) bool {
 	if s.Function == that.Function && contextFunctions[s.Function] {
-		return util.StringArraysEqual(s.Arguments, that.Arguments)
+		return StringArraysEqual(s.Arguments, that.Arguments)
 	}
 	return false
 }

@@ -4,12 +4,12 @@ pipelineConfig:
       pipeline:
         agent:
           image: some-image
-        environment:
+        env:
           - name: SOME_VAR
             value: A value for the env var
         stages:
           - name: A stage with environment
-            environment:
+            env:
                 - name: SOME_OTHER_VAR
                   value: A value for the other env var
             steps:

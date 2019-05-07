@@ -11,7 +11,7 @@ pipelineConfig:
                 value: Original value
               - name: OVERRIDE_STAGE_ENV
                 value: Original value
-        environment:
+        env:
           - name: SOME_OTHER_VAR
             value: A value for the other env var
           - name: OVERRIDE_ENV
@@ -25,7 +25,7 @@ pipelineConfig:
                 env:
                   - name: ANOTHER_OVERRIDE_STAGE_ENV
                     value: Original value
-            environment:
+            env:
               - name: OVERRIDE_STAGE_ENV
                 value: New value
               - name: ANOTHER_OVERRIDE_STAGE_ENV

@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
+	"github.com/jenkins-x/jx/pkg/tekton/syntax"
 	"github.com/jenkins-x/jx/pkg/tests"
 	"github.com/stretchr/testify/require"
 
@@ -89,16 +90,16 @@ func TestSavePipelineConfig(t *testing.T) {
 	file := filepath.Join(tempDir, "pipeline.yaml")
 
 	config := &jenkinsfile.PipelineConfig{
-		Agent: jenkinsfile.PipelineAgent{
+		Agent: syntax.Agent{
 			Label: "jenkins-maven",
 		},
 		Pipelines: jenkinsfile.Pipelines{
 			Release: &jenkinsfile.PipelineLifecycles{
 				Setup: &jenkinsfile.PipelineLifecycle{
-					Steps: []*jenkinsfile.PipelineStep{
+					Steps: []*syntax.Step{
 						{
-							Container: "maven",
-							Steps: []*jenkinsfile.PipelineStep{
+							Image: "maven",
+							Steps: []*syntax.Step{
 								{
 									Command: "mvn deploy",
 								},
