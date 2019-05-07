@@ -444,6 +444,11 @@ func (options *InstallOptions) Run() error {
 		return errors.Wrap(err, "checking the provided flags")
 	}
 
+	err = options.selectJenkinsInstallation()
+	if err != nil {
+		return errors.Wrap(err, "selecting the Jenkins installation type")
+	}
+
 	configStore := configio.NewFileStore()
 
 	// Default to verbose mode to get more information during the install
@@ -547,11 +552,6 @@ func (options *InstallOptions) Run() error {
 	cloudEnvDir, err := options.cloneJXCloudEnvironmentsRepo()
 	if err != nil {
 		return errors.Wrap(err, "cloning the jx cloud environments repo")
-	}
-
-	err = options.selectJenkinsInstallation()
-	if err != nil {
-		return errors.Wrap(err, "selecting the Jenkins installation type")
 	}
 
 	err = options.configureKaniko()
