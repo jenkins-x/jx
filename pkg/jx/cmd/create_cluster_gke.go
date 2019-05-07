@@ -329,7 +329,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		if len(o.Flags.Scopes) == 0 && !o.IsFlagExplicitlySet(enhancedScopesFlagName) {
 			prompt := &survey.Confirm{
 				Message: "Would you like to access Google Cloud Storage / Google Container Registry?",
-				Default: false,
+				Default: o.Flags.EnhancedScopes,
 				Help:    "Enables enhanced oauth scopes to allow access to storage based services",
 			}
 			err = survey.AskOne(prompt, &o.Flags.EnhancedScopes, nil, surveyOpts)
@@ -355,7 +355,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			if !o.IsFlagExplicitlySet(enhancedAPIFlagName) {
 				prompt := &survey.Confirm{
 					Message: "Would you like to enable Cloud Build, Container Registry & Container Analysis APIs?",
-					Default: false,
+					Default: o.Flags.EnhancedApis,
 					Help:    "Enables extra APIs on the GCP project",
 				}
 				err = survey.AskOne(prompt, &o.Flags.EnhancedApis, nil, surveyOpts)
@@ -367,6 +367,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	if o.Flags.EnhancedApis {
+		log.Infof("checking if we need to enable APIs for GCB and GCR\n")
+
 		err = gke.EnableAPIs(projectId, "cloudbuild", "containerregistry", "containeranalysis")
 		if err != nil {
 			return err
@@ -378,7 +380,7 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		if !o.InstallOptions.Flags.Kaniko {
 			prompt := &survey.Confirm{
 				Message: "Would you like to enable Kaniko for building container images",
-				Default: false,
+				Default: o.InstallOptions.Flags.Kaniko,
 				Help:    "Use Kaniko for docker images",
 			}
 			err = survey.AskOne(prompt, &o.InstallOptions.Flags.Kaniko, nil, surveyOpts)
@@ -434,6 +436,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	if len(o.Flags.Scopes) > 0 {
+		log.Infof("using cluster scopes: %s\n", util.ColorInfo(strings.Join(o.Flags.Scopes, " ")))
+
 		args = append(args, fmt.Sprintf("--scopes=%s", strings.Join(o.Flags.Scopes, ",")))
 	}
 
