@@ -20,30 +20,26 @@ pipelineConfig:
                 value: /workspace/source
               - name: GOPROXY
                 value: http://jenkins-x-athens-proxy:80
+            options:
+              containerOptions:
+                resources:
+                  limits:
+                    cpu: 4
+                    memory: 6144Mi
+                  requests:
+                    cpu: 3
+                    memory: 3072Mi
+
             steps:
               - name: init-jx
                 image: jenkinsxio/jx:1.3.938
                 command: jx
                 args: ['create','git','token','-n','fake','-t','1234','-u','https://github.com','fake']
-                resources:
-                  limits:
-                    cpu: 0.2
-                    memory: 128Mi
-                  requests:
-                    cpu: 0.1
-                    memory: 64Mi
 
               - name: init-helm
                 image: alpine/helm:2.12.3
                 command: helm
                 args: ['init','--client-only']
-                resources:
-                  limits:
-                    cpu: 0.2
-                    memory: 128Mi
-                  requests:
-                    cpu: 0.1
-                    memory: 64Mi
 
               - name: check
                 #image: docker.io/golang:1.11.5
@@ -51,18 +47,6 @@ pipelineConfig:
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: make
                 args: ['check']
-                env:
-                  - name: GOPATH
-                    value: /workspace/go
-                  - name: HELM_HOME
-                    value: /builder/home/.helm
-                resources:
-                  limits:
-                    cpu: 4
-                    memory: 6144Mi
-                  requests:
-                    cpu: 3
-                    memory: 3072Mi
 
               - name: build-binary
                 #image: docker.io/golang:1.11.5
@@ -70,15 +54,3 @@ pipelineConfig:
                 image: gcr.io/jenkinsxio/builder-go:0.1.332
                 command: make
                 args: ['test-slow-integration']
-                env:
-                  - name: GOPATH
-                    value: /workspace/go
-                  - name: HELM_HOME
-                    value: /builder/home/.helm
-                resources:
-                  limits:
-                    cpu: 4
-                    memory: 6144Mi
-                  requests:
-                    cpu: 3
-                    memory: 3072Mi

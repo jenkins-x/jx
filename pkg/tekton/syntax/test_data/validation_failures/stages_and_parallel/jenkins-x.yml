@@ -10,9 +10,10 @@ pipelineConfig:
               - name: Nested
                 steps:
                   - command: echo
-                    arguments: ['oops']
+                    args: ['oops']
             parallel:
               - name: Other Nested
                 steps:
                   - command: echo
-                    arguments: again
+                    args:
+                      - again

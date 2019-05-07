@@ -2,6 +2,7 @@ package syntax_test
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"testing"
 
@@ -1068,7 +1069,6 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-
 		t.Run(tt.name, func(t *testing.T) {
 			projectConfig, fn, err := config.LoadProjectConfig(filepath.Join("test_data", tt.name))
 			if err != nil {
@@ -1153,7 +1153,7 @@ func TestFailedValidation(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
 		name          string
-		expectedError *apis.FieldError
+		expectedError error
 	}{
 		/* TODO: Once we figure out how to differentiate between an empty agent and no agent specified...
 		{
@@ -1374,41 +1374,43 @@ func TestFailedValidation(t *testing.T) {
 				Paths:   []string{"command"},
 			}).ViaField("containerOptions").ViaField("options"),
 		},
+		{
+			name:          "unknown_field",
+			expectedError: errors.New("Validation failures in YAML file test_data/validation_failures/unknown_field/jenkins-x.yml:\npipelineConfig: Additional property banana is not allowed"),
+		},
 	}
 
 	for _, tt := range tests {
-		if tt.name != "multiple_stages" {
-			return
-		}
-
 		t.Run(tt.name, func(t *testing.T) {
 			projectConfig, fn, err := config.LoadProjectConfig(filepath.Join("test_data", "validation_failures", tt.name))
-			if err != nil {
+			if err != nil && err.Error() != tt.expectedError.Error() {
 				t.Fatalf("Failed to parse YAML for %s: %q", tt.name, err)
 			}
+			if _, ok := tt.expectedError.(*apis.FieldError); ok {
 
-			if projectConfig.PipelineConfig == nil {
-				t.Fatalf("PipelineConfig at %s is nil: %+v", fn, projectConfig)
-			}
-			if &projectConfig.PipelineConfig.Pipelines == nil {
-				t.Fatalf("Pipelines at %s is nil: %+v", fn, projectConfig.PipelineConfig)
-			}
-			if projectConfig.PipelineConfig.Pipelines.Release == nil {
-				t.Fatalf("Release at %s is nil: %+v", fn, projectConfig.PipelineConfig.Pipelines)
-			}
-			if projectConfig.PipelineConfig.Pipelines.Release.Pipeline == nil {
-				t.Fatalf("Pipeline at %s is nil: %+v", fn, projectConfig.PipelineConfig.Pipelines.Release)
-			}
-			parsed := projectConfig.PipelineConfig.Pipelines.Release.Pipeline
+				if projectConfig.PipelineConfig == nil {
+					t.Fatalf("PipelineConfig at %s is nil: %+v", fn, projectConfig)
+				}
+				if &projectConfig.PipelineConfig.Pipelines == nil {
+					t.Fatalf("Pipelines at %s is nil: %+v", fn, projectConfig.PipelineConfig)
+				}
+				if projectConfig.PipelineConfig.Pipelines.Release == nil {
+					t.Fatalf("Release at %s is nil: %+v", fn, projectConfig.PipelineConfig.Pipelines)
+				}
+				if projectConfig.PipelineConfig.Pipelines.Release.Pipeline == nil {
+					t.Fatalf("Pipeline at %s is nil: %+v", fn, projectConfig.PipelineConfig.Pipelines.Release)
+				}
+				parsed := projectConfig.PipelineConfig.Pipelines.Release.Pipeline
 
-			err = parsed.Validate(ctx)
+				err = parsed.Validate(ctx)
 
-			if err == nil {
-				t.Fatalf("Expected a validation failure but none occurred")
-			}
+				if err == nil {
+					t.Fatalf("Expected a validation failure but none occurred")
+				}
 
-			if d := cmp.Diff(tt.expectedError, err, cmp.AllowUnexported(apis.FieldError{})); d != "" {
-				t.Fatalf("Validation error did not meet expectation: %s", d)
+				if d := cmp.Diff(tt.expectedError, err, cmp.AllowUnexported(apis.FieldError{})); d != "" {
+					t.Fatalf("Validation error did not meet expectation: %s", d)
+				}
 			}
 		})
 	}

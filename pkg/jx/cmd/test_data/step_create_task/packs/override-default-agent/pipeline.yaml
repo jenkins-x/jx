@@ -13,7 +13,7 @@ pipelines:
             - sh: jx step helm apply
               name: helm-apply
 
-  pullrequest:
+  pullRequest:
     build:
       steps:
         - dir: env
