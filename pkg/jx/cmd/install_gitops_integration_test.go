@@ -3,6 +3,7 @@
 package cmd_test
 
 import (
+	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -123,6 +124,10 @@ func TestInstallGitOps(t *testing.T) {
 	o.GitRepositoryOptions.RepoName = testDevRepo
 	o.GitRepositoryOptions.Username = "mytestuser"
 	o.GitRepositoryOptions.ApiToken = "mytestoken"
+
+	cobraCmd := cobra.Command{}
+	cobraCmd.ParseFlags([]string{})
+	o.CommonOptions.Cmd = &cobraCmd
 
 	err = o.Run()
 	require.NoError(t, err, "Failed to run jx install")
