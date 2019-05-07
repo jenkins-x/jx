@@ -50,6 +50,7 @@ type CreateClusterGKEFlags struct {
 	Namespace       string
 	Labels          string
 	EnhancedScopes  bool
+	NoImageType     bool
 	Scopes          []string
 	Preemptible     bool
 	EnhancedApis    bool
@@ -122,6 +123,7 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Flags.MaxNumOfNodes, "max-num-nodes", "", "", "The maximum number of nodes to be created in each of the cluster's zones")
 	cmd.Flags().StringVarP(&options.Flags.Network, "network", "", "", "The Compute Engine Network that the cluster will connect to")
 	cmd.Flags().StringVarP(&options.Flags.ProjectId, "project-id", "p", "", "Google Project ID to create cluster in")
+	cmd.Flags().StringVarP(&options.Flags.ImageType, "image-type", "", "COS_CONTAINERD", "The image type for the nodes in the cluster")
 	cmd.Flags().StringVarP(&options.Flags.SubNetwork, "subnetwork", "", "", "The Google Compute Engine subnetwork to which the cluster is connected")
 	cmd.Flags().StringVarP(&options.Flags.Zone, "zone", "z", "", "The compute zone (e.g. us-central1-a) for the cluster")
 	cmd.Flags().StringVarP(&options.Flags.Region, "region", "r", "", "Compute region (e.g. us-central1) for the cluster")
@@ -131,6 +133,7 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Flags.Preemptible, preemptibleFlagName, "", false, "Use preemptible VMs in the node-pool")
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedScopes, enhancedScopesFlagName, "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedApis, enhancedAPIFlagName, "", false, "Enable enhanced APIs to utilise Container Registry & Cloud Build")
+	cmd.Flags().BoolVarP(&options.Flags.NoImageType, "no-image-type", "", false, "Disables specifying the image type if its defined so use the GCP default instead")
 
 	cmd.AddCommand(NewCmdCreateClusterGKETerraform(commonOpts))
 
@@ -416,8 +419,10 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		args = append(args, "--enable-autoupgrade")
 	}
 
-	if o.Flags.ImageType != "" {
-		args = append(args, "--image-type", o.Flags.ImageType)
+	if !o.Flags.NoImageType {
+		if o.Flags.ImageType != "" {
+			args = append(args, "--image-type", o.Flags.ImageType)
+		}
 	}
 
 	if o.Flags.Network != "" {
