@@ -18,7 +18,7 @@ import (
 
 	"github.com/ghodss/yaml"
 
-	"github.com/Pallinder/go-randomdata"
+	randomdata "github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
@@ -43,8 +43,8 @@ import (
 	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/src-d/go-git.v4"
+	survey "gopkg.in/AlecAivazis/survey.v1"
+	git "gopkg.in/src-d/go-git.v4"
 	core_v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -1698,7 +1698,7 @@ func (options *InstallOptions) applyGitOpsDevEnvironmentConfig(gitOpsEnvDir stri
 
 			err := envApplyOptions.Run()
 			if err != nil {
-				return errors.Wrap(err, "appyting the dev environment configuration")
+				return errors.Wrap(err, "applying the dev environment configuration")
 			}
 		}
 	}
