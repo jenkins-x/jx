@@ -1433,7 +1433,6 @@ func TestFailedValidation(t *testing.T) {
 				Message: "the container field is deprecated - please use image instead",
 				Paths:   []string{"container"},
 			}).ViaField("agent"),
->>>>>>> chore: Initial work on unification of build pack and jenkins-x.yml syntax
 		},
 	}
 
