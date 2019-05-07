@@ -123,7 +123,7 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Flags.MaxNumOfNodes, "max-num-nodes", "", "", "The maximum number of nodes to be created in each of the cluster's zones")
 	cmd.Flags().StringVarP(&options.Flags.Network, "network", "", "", "The Compute Engine Network that the cluster will connect to")
 	cmd.Flags().StringVarP(&options.Flags.ProjectId, "project-id", "p", "", "Google Project ID to create cluster in")
-	cmd.Flags().StringVarP(&options.Flags.ImageType, "image-type", "", "COS_CONTAINERD", "The image type for the nodes in the cluster")
+	cmd.Flags().StringVarP(&options.Flags.ImageType, "image-type", "", "", "The image type for the nodes in the cluster")
 	cmd.Flags().StringVarP(&options.Flags.SubNetwork, "subnetwork", "", "", "The Google Compute Engine subnetwork to which the cluster is connected")
 	cmd.Flags().StringVarP(&options.Flags.Zone, "zone", "z", "", "The compute zone (e.g. us-central1-a) for the cluster")
 	cmd.Flags().StringVarP(&options.Flags.Region, "region", "r", "", "Compute region (e.g. us-central1) for the cluster")
@@ -422,6 +422,11 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	if !o.Flags.NoImageType {
+		// if using Tekton lets use the containerd image by default
+		// see: https://github.com/jenkins-x/jx/issues/3854
+		if o.Flags.ImageType == "" && o.InstallOptions.Flags.Tekton {
+			o.Flags.ImageType = "COS_CONTAINERD"
+		}
 		if o.Flags.ImageType != "" {
 			args = append(args, "--image-type", o.Flags.ImageType)
 		}
