@@ -141,7 +141,7 @@ require (
 	github.com/stoewer/go-strcase v1.0.1
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.3.0
-	github.com/tektoncd/pipeline v0.0.0-20190327171839-7c43fbae2816
+	github.com/tektoncd/pipeline v0.3.1
 	github.com/trivago/tgo v1.0.1 // indirect
 	github.com/ulikunitz/xz v0.5.6 // indirect
 	github.com/wbrefvem/go-bitbucket v0.0.0-20190128183802-fc08fd046abb

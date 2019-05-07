@@ -14,7 +14,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/tekton/syntax"
-	duckv1alpha1 "github.com/knative/pkg/apis/duck/v1alpha1"
+	knativeapis "github.com/knative/pkg/apis"
 	"github.com/pkg/errors"
 	"github.com/tektoncd/pipeline/pkg/apis/pipeline"
 	tektonv1alpha1 "github.com/tektoncd/pipeline/pkg/apis/pipeline/v1alpha1"
@@ -147,7 +147,7 @@ func CreatePipelineRunInfo(prName string, podList *corev1.PodList, ps *v1.Pipeli
 
 	var pod *corev1.Pod
 
-	prStatus := pr.Status.GetCondition(duckv1alpha1.ConditionSucceeded)
+	prStatus := pr.Status.GetCondition(knativeapis.ConditionSucceeded)
 	if err := pri.SetPodsForPipelineRun(podList, ps); err != nil {
 		return nil, errors.Wrapf(err, "Failure populating stages and pods for PipelineRun %s", prName)
 	}
