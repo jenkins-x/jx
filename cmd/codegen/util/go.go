@@ -35,6 +35,11 @@ func GoPathBin() string {
 	return filepath.Join(GoPath(), "bin")
 }
 
+// GoPathMod returns the modules directory of the first GOPATH element.
+func GoPathMod() string {
+	return filepath.Join(GoPath(), "pkg", "mod")
+}
+
 // EnsureGoPath ensures the GOPATH environment variable is set and points to a valid directory.
 func EnsureGoPath() error {
 	goPath := os.Getenv(gopath)
@@ -88,27 +93,37 @@ func GoGet(path string, version string, goModules bool) error {
 	return nil
 }
 
+// GetModuleDir determines the directory on disk of the specified module dependency.
+// Returns the empty string if the target requirement is not part of the module graph.
+func GetModuleDir(moduleDir string, targetRequirement string) (string, error) {
+	out, err := getModGraph(moduleDir)
+	if err != nil {
+		return "", err
+	}
+
+	for _, line := range strings.Split(out, "\n") {
+		parts := strings.Split(line, " ")
+		if len(parts) != 2 {
+			return "", errors.Errorf("line of go mod graph should be like '<module> <requirement>' but was %s",
+				line)
+		}
+		requirement := parts[1]
+		if strings.HasPrefix(requirement, targetRequirement) {
+			return filepath.Join(GoPathMod(), requirement), nil
+		}
+	}
+	return "", nil
+}
+
 // GetModuleRequirements returns the requirements for the GO module rooted in dir
 // It returns a map[<module name>]map[<requirement name>]<requirement version>
 func GetModuleRequirements(dir string) (map[string]map[string]string, error) {
-	cmd := util.Command{
-		Dir:  dir,
-		Name: "go",
-		Args: []string{
-			"mod",
-			"graph",
-		},
-		Env: map[string]string{
-			"GO111MODULE": "on",
-		},
-	}
-	out, err := cmd.RunWithoutRetry()
+	out, err := getModGraph(dir)
 	if err != nil {
-		return nil, errors.Wrapf(err, "running %s, output %s", cmd.String(), out)
+		return nil, err
 	}
+
 	answer := make(map[string]map[string]string)
-	// deal with windows
-	out = strings.Replace(out, "\r\n", "\n", -1)
 	for _, line := range strings.Split(out, "\n") {
 		parts := strings.Split(line, " ")
 		if len(parts) != 2 {
@@ -129,4 +144,27 @@ func GetModuleRequirements(dir string) (map[string]map[string]string, error) {
 		answer[moduleName][requirementName] = requirementVersion
 	}
 	return answer, nil
+}
+
+func getModGraph(dir string) (string, error) {
+	cmd := util.Command{
+		Dir:  dir,
+		Name: "go",
+		Args: []string{
+			"mod",
+			"graph",
+		},
+		Env: map[string]string{
+			"GO111MODULE": "on",
+		},
+	}
+	out, err := cmd.RunWithoutRetry()
+	if err != nil {
+		return "", errors.Wrapf(err, "unable to retrieve module graph: %s", out)
+	}
+
+	// deal with windows
+	out = strings.Replace(out, "\r\n", "\n", -1)
+
+	return out, nil
 }
