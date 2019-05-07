@@ -490,7 +490,7 @@ func EnableAPIs(projectID string, apis ...string) error {
 	}
 
 	if len(toEnableArray) == 0 {
-		log.Infof("No apis to enable\n")
+		log.Infof("No apis need to be enable as they are already enabled: %s\n", util.ColorInfo(strings.Join(apis, " ")))
 		return nil
 	}
 

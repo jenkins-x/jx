@@ -367,6 +367,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	if o.Flags.EnhancedApis {
+		log.Infof("checking if we need to enable APIs for GCB and GCR\n")
+
 		err = gke.EnableAPIs(projectId, "cloudbuild", "containerregistry", "containeranalysis")
 		if err != nil {
 			return err
@@ -434,6 +436,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	if len(o.Flags.Scopes) > 0 {
+		log.Infof("using cluster scopes: %s\n", util.ColorInfo(strings.Join(o.Flags.Scopes, " ")))
+
 		args = append(args, fmt.Sprintf("--scopes=%s", strings.Join(o.Flags.Scopes, ",")))
 	}
 
