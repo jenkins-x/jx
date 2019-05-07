@@ -265,21 +265,24 @@ func (o *PreviewOptions) Run() error {
 				log.Warn("Unable to get commits: " + err.Error() + "\n")
 			}
 			if pullRequest != nil {
-				author, err := resolver.Resolve(pullRequest.Author)
-				if err != nil {
-					return err
-				}
-				author, err = resolver.UpdateUserFromPRAuthor(author, pullRequest, commits)
-				if err != nil {
-					// This isn't fatal, just nice to have!
-					log.Warnf("Unable to update user %s from %s because %v", author.Name, o.PullRequestName, err)
-				}
-				if author != nil {
-					user = &v1.UserSpec{
-						Username: author.Spec.Login,
-						Name:     author.Spec.Name,
-						ImageURL: author.Spec.AvatarURL,
-						LinkURL:  author.Spec.URL,
+				prAuthor := pullRequest.Author
+				if prAuthor != nil {
+					author, err := resolver.Resolve(prAuthor)
+					if err != nil {
+						return err
+					}
+					author, err = resolver.UpdateUserFromPRAuthor(author, pullRequest, commits)
+					if err != nil {
+						// This isn't fatal, just nice to have!
+						log.Warnf("Unable to update user %s from %s because %v", prAuthor.Name, o.PullRequestName, err)
+					}
+					if author != nil {
+						user = &v1.UserSpec{
+							Username: author.Spec.Login,
+							Name:     author.Spec.Name,
+							ImageURL: author.Spec.AvatarURL,
+							LinkURL:  author.Spec.URL,
+						}
 					}
 				}
 			}

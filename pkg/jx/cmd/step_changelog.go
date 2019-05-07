@@ -609,7 +609,9 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 					if err != nil {
 						return err
 					}
-					user = u.Spec
+					if u != nil {
+						user = u.Spec
+					}
 				}
 
 				var closedBy v1.UserDetails
@@ -620,7 +622,9 @@ func (o *StepChangelogOptions) addIssuesAndPullRequests(spec *v1.ReleaseSpec, co
 					if err != nil {
 						return err
 					}
-					closedBy = u.Spec
+					if u != nil {
+						closedBy = u.Spec
+					}
 				}
 
 				var assignees []v1.UserDetails
