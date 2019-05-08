@@ -62,6 +62,9 @@ const (
 	preemptibleFlagName    = "preemptible"
 	enhancedAPIFlagName    = "enhanced-apis"
 	enhancedScopesFlagName = "enhanced-scopes"
+
+	// this is to work around issues with docker + directories: https://github.com/jenkins-x/jx/issues/3854
+	defaultGkeTektonImageType = "UBUNTU"
 )
 
 var (
@@ -424,9 +427,6 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	}
 
 	if !o.Flags.NoImageType {
-		// if using Tekton lets use the containerd image by default
-		// see: https://github.com/jenkins-x/jx/issues/3854
-
 		// let make sure we have decided whether or not to use tekton yet
 		err := o.InstallOptions.checkFlags()
 		if err != nil {
@@ -438,7 +438,10 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 			return errorw.Wrap(err, "selecting the Jenkins installation type")
 		}
 		if o.Flags.ImageType == "" && (o.InstallOptions.Flags.Tekton || o.InstallOptions.Flags.NextGeneration) {
-			o.Flags.ImageType = "COS_CONTAINERD"
+			// if using Tekton lets use the containerd image by default
+			// see: https://github.com/jenkins-x/jx/issues/3854
+
+			o.Flags.ImageType = defaultGkeTektonImageType
 		}
 		if o.Flags.ImageType != "" {
 			args = append(args, "--image-type", o.Flags.ImageType)
