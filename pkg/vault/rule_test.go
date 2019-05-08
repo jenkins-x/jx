@@ -12,7 +12,6 @@ func TestEncodeVaultPathRule(t *testing.T) {
 	tests := map[string]struct {
 		rule *vault.PathRule
 		err  bool
-		want string
 	}{
 		"marshal policy": {
 			rule: &vault.PathRule{
