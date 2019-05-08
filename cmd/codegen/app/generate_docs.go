@@ -60,6 +60,8 @@ func NewCreateDocsCmd(genOpts GenerateOptions) *cobra.Command {
 		util.AppLogger().Warnf("error getting working directory for %v\n", err)
 	}
 
+	cobraCmd.Flags().StringVarP(&o.InputBase, optionInputBase, "", wd,
+		"Input base (root of module), by default the current working directory")
 	cobraCmd.Flags().StringVarP(&o.OutputBase, optionOutputBase, "o", filepath.Join(wd, "docs/apidocs"),
 		"output base directory, by default the <current working directory>/docs/apidocs")
 	return cobraCmd
@@ -72,10 +74,16 @@ func run(o *GenerateDocsOptions) error {
 	}
 	util.AppLogger().Infof("generating docs to %s\n", o.OutputBase)
 
-	referenceDocsRepo, err := generator.InstallGenAPIDocs(o.GeneratorVersion)
+	err = generator.InstallGenAPIDocs(o.GeneratorVersion)
 	if err != nil {
 		return err
 	}
+
+	referenceDocsRepo, err := generator.DetermineSourceLocation(o.InputBase)
+	if err != nil {
+		return err
+	}
+
 	err = generator.GenerateAPIDocs(o.OutputBase)
 	if err != nil {
 		return err

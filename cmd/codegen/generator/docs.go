@@ -14,15 +14,24 @@ const (
 )
 
 // InstallGenAPIDocs installs the gen-apidocs tool from the kubernetes-incubator/reference-docs repository.
-// Returns the base directory of reference-docs within the GOPATH.
-func InstallGenAPIDocs(version string) (string, error) {
+func InstallGenAPIDocs(version string) error {
 	util.AppLogger().Infof("installing %s in version %s via 'go get'", genAPIDocsBin, version)
 	err := util.GoGet(genAPIDocsBin, version, true)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	return filepath.Join(util.GoPathSrc(), genAPIDocsRepo), nil
+	return nil
+}
+
+// DetermineSourceLocation determines the source location for the installed kubernetes-incubator/reference-docs/
+// The location is based on GOPATH/pkd/mod and the current version.
+func DetermineSourceLocation(moduleDir string) (string, error) {
+	moduleDir, err := util.GetModuleDir(moduleDir, genAPIDocsRepo)
+	if err != nil {
+		return "", errors.Wrapf(err, "Unable to determine source directory for %s", genAPIDocsRepo)
+	}
+	return moduleDir, nil
 }
 
 // GenerateAPIDocs runs the apidocs-gen tool against configDirectory which includes the openapi-spec dir,
@@ -37,9 +46,6 @@ func GenerateAPIDocs(configDir string) error {
 	err = util.DeleteDirContents(buildDir)
 	if err != nil {
 		return errors.Wrapf(err, "deleting contents of %s", buildDir)
-	}
-	if err != nil {
-		return errors.Wrapf(err, "getting codegen dir")
 	}
 	cmd := util.Command{
 		Dir:  configDir,
