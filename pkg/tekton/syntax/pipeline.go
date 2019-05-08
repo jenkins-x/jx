@@ -553,9 +553,32 @@ func validateStage(s Stage, parentAgent Agent) *apis.FieldError {
 		if len(s.Stages) > 0 || len(s.Parallel) > 0 {
 			return apis.ErrMultipleOneOf("steps", "stages", "parallel")
 		}
+		seenStepNames := make(map[string]int)
 		for i, step := range s.Steps {
 			if err := validateStep(step).ViaFieldIndex("steps", i); err != nil {
 				return err
+			}
+			if step.Name != "" {
+				if count, exists := seenStepNames[step.Name]; exists {
+					seenStepNames[step.Name] = count + 1
+				} else {
+					seenStepNames[step.Name] = 1
+				}
+			}
+		}
+
+		var duplicateSteps []string
+		for k, v := range seenStepNames {
+			if v > 1 {
+				duplicateSteps = append(duplicateSteps, k)
+			}
+		}
+		if len(duplicateSteps) > 0 {
+			sort.Strings(duplicateSteps)
+			return &apis.FieldError{
+				Message: "step names within a stage must be unique",
+				Details: fmt.Sprintf("The following step names in the stage %s are used more than once: %s", s.Name, strings.Join(duplicateSteps, ", ")),
+				Paths:   []string{"steps"},
 			}
 		}
 	}
