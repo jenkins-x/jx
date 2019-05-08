@@ -622,6 +622,7 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 		// Test boolean type
 		console.ExpectString("Enter a value for tokenValue")
 		console.SendLine("abc")
+		console.ExpectString(" ***")
 		console.ExpectEOF()
 	}()
 	err = o.Run()
