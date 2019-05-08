@@ -1434,6 +1434,14 @@ func TestFailedValidation(t *testing.T) {
 				Paths:   []string{"container"},
 			}).ViaField("agent"),
 		},
+		{
+			name: "duplicate_step_names",
+			expectedError: (&apis.FieldError{
+				Message: "step names within a stage must be unique",
+				Details: "The following step names in the stage A Working Stage are used more than once: A Step With Spaces And Such, Another Step Name",
+				Paths:   []string{"steps"},
+			}).ViaFieldIndex("stages", 0),
+		},
 	}
 
 	for _, tt := range tests {
