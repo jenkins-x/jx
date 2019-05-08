@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 
 	"github.com/jenkins-x/jx/pkg/config"
 	"github.com/jenkins-x/jx/pkg/jenkinsfile"
@@ -20,6 +21,7 @@ type StepSyntaxSchemaOptions struct {
 
 	Pipeline  bool
 	BuildPack bool
+	Out       string
 }
 
 // NewCmdStepSyntaxSchema Steps a command object for the "step" command
@@ -42,7 +44,8 @@ func NewCmdStepSyntaxSchema(commonOpts *opts.CommonOptions) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVarP(&options.Pipeline, "pipeline", "", false, "Output the JSON schema for jenkins-x.yml files")
+	cmd.Flags().StringVarP(&options.Out, "out", "o", "", "the name of the output file for the generated JSON schema")
+	cmd.Flags().BoolVarP(&options.Pipeline, "pipeline", "", false, "Output the JSON schema for jenkins-x.yml files. Defaults to this option if '--buildpack' is not specified")
 	cmd.Flags().BoolVarP(&options.BuildPack, "buildpack", "", false, "Output the JSON schema for build pack pipeline.yaml files")
 
 	return cmd
@@ -51,7 +54,8 @@ func NewCmdStepSyntaxSchema(commonOpts *opts.CommonOptions) *cobra.Command {
 // Run implements this command
 func (o *StepSyntaxSchemaOptions) Run() error {
 	if o.Pipeline == false && o.BuildPack == false {
-		return o.Cmd.Help()
+		// lets default to pipeine
+		o.Pipeline = true
 	}
 
 	var schemaName string
@@ -84,8 +88,16 @@ func (o *StepSyntaxSchemaOptions) Run() error {
 		output = string(tempOutput)
 	}
 	log.Successf("JSON schema for %s:", schemaName)
-	log.Infof("%s", output)
 
+	if o.Out != "" {
+		err := ioutil.WriteFile(o.Out, []byte(output), util.DefaultWritePermissions)
+		if err != nil {
+			return errors.Wrapf(err, "failed to save file %s", o.Out)
+		}
+		log.Infof("wrote file %s\n", util.ColorInfo(o.Out))
+		return nil
+	}
+	log.Infof("%s", output)
 	return nil
 }
 
