@@ -15,7 +15,7 @@ import (
 
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/log"
-	"github.com/wbrefvem/go-bitbucket"
+	bitbucket "github.com/wbrefvem/go-bitbucket"
 )
 
 // BitbucketCloudProvider implements GitProvider interface for bitbucket.org
@@ -1016,6 +1016,11 @@ func BitBucketCloudAccessTokenURL(url string, username string) string {
 	// is there a way to do that for bitbucket?
 	return util.UrlJoin(url, "/account/user", username, "/app-passwords/new")
 }
-func (p *BitbucketCloudProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
+func (b *BitbucketCloudProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
 	return nil, fmt.Errorf("Listing commits not supported on bitbucket")
+}
+
+// AddLabelsToIssue adds labels to issues or pullrequests
+func (b *BitbucketCloudProvider) AddLabelsToIssue(owner, repo string, number int, labels []string) error {
+	return fmt.Errorf("Getting content not supported on bitbucket")
 }

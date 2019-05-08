@@ -57,6 +57,7 @@ type InstallOptions struct {
 	GitOps          bool
 	TeamName        string
 	VaultClient     vault.Client
+	AutoMerge       bool
 
 	valuesFiles *environments.ValuesFiles // internal variable used to track, most be passed in
 }
@@ -112,7 +113,7 @@ func (o *InstallOptions) AddApp(app string, version string, repository string, u
 			opts := GitOpsOptions{
 				InstallOptions: o,
 			}
-			err := opts.AddApp(chartDetails.Name, dir, chartDetails.Version, repository, alias)
+			err := opts.AddApp(chartDetails.Name, dir, chartDetails.Version, repository, alias, o.AutoMerge)
 			if err != nil {
 				return errors.Wrapf(err, "adding app %s version %s with alias %s using gitops", chartName, version, alias)
 			}
@@ -182,7 +183,7 @@ func (o *InstallOptions) DeleteApp(app string, alias string, releaseName string,
 		opts := GitOpsOptions{
 			InstallOptions: o,
 		}
-		err := opts.DeleteApp(chartName, alias)
+		err := opts.DeleteApp(chartName, alias, o.AutoMerge)
 		if err != nil {
 			return err
 		}
@@ -263,7 +264,7 @@ func (o *InstallOptions) UpgradeApp(app string, version string, repository strin
 		}
 		// Asking questions is a bit more complex in this case as the existing values file is in the environment
 		// repo, so we need to ask questions once we have that repo available
-		err := opts.UpgradeApp(chartName, version, repository, username, password, alias, interrogateChartFunc)
+		err := opts.UpgradeApp(chartName, version, repository, username, password, alias, interrogateChartFunc, o.AutoMerge)
 		if err != nil {
 			return err
 		}

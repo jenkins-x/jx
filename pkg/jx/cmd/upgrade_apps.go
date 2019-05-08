@@ -45,6 +45,7 @@ type UpgradeAppsOptions struct {
 
 	HelmUpdate bool
 	AskAll     bool
+	AutoMerge  bool
 
 	Version string
 	All     bool
@@ -97,7 +98,7 @@ func NewCmdUpgradeApps(commonOpts *opts.CommonOptions) *cobra.Command {
 		"The chart release name (by default the name of the app, available when NOT using GitOps for your dev environment)")
 	cmd.Flags().BoolVarP(&o.AskAll, "ask-all", "", false, "Ask all configuration questions. "+
 		"By default existing answers are reused automatically.")
-
+	cmd.Flags().BoolVarP(&o.AutoMerge, "auto-merge", "", false, "Automatically merge GitOps pull requests that pass CI")
 	return cmd
 }
 
@@ -125,6 +126,7 @@ func (o *UpgradeAppsOptions) Run() error {
 		Out:       o.Out,
 		GitOps:    o.GitOps,
 		BatchMode: o.BatchMode,
+		AutoMerge: o.AutoMerge,
 
 		Helmer:         o.Helm(),
 		Namespace:      o.Namespace,

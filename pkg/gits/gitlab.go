@@ -12,7 +12,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/jenkins-x/jx/pkg/util"
-	"github.com/xanzy/go-gitlab"
+	gitlab "github.com/xanzy/go-gitlab"
 )
 
 type GitlabProvider struct {
@@ -681,6 +681,11 @@ func (g *GitlabProvider) ShouldForkForPullRequest(originalOwner string, repoName
 func GitlabAccessTokenURL(url string) string {
 	return util.UrlJoin(url, "/profile/personal_access_tokens")
 }
-func (p *GitlabProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
+func (g *GitlabProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
 	return nil, fmt.Errorf("Listing commits not supported on gitlab")
+}
+
+// AddLabelsToIssue adds labels to issues or pullrequests
+func (g *GitlabProvider) AddLabelsToIssue(owner, repo string, number int, labels []string) error {
+	return fmt.Errorf("Getting content not supported on gitlab yet")
 }

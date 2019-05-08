@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/google/go-github/github"
 	"github.com/mitchellh/mapstructure"
@@ -1063,6 +1064,11 @@ func BitBucketServerAccessTokenURL(url string) string {
 	// is there a way to do that for bitbucket?
 	return util.UrlJoin(url, "/plugins/servlet/access-tokens/manage")
 }
-func (p *BitbucketServerProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
+func (b *BitbucketServerProvider) ListCommits(owner, repo string, opt *ListCommitsArguments) ([]*GitCommit, error) {
 	return nil, fmt.Errorf("Listing commits not supported on bitbucket")
+}
+
+// AddLabelsToIssue adds labels to issues or pullrequests
+func (b *BitbucketServerProvider) AddLabelsToIssue(owner, repo string, number int, labels []string) error {
+	return fmt.Errorf("Getting content not supported on bitbucket")
 }

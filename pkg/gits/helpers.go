@@ -21,6 +21,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	labelUpdatebot = "updatebot"
+)
+
 // EnsureUserAndEmailSetup returns the user name and email for the gitter
 // lazily setting them if they are blank either from the environment variables
 // `GIT_AUTHOR_NAME` and `GIT_AUTHOR_EMAIL` or using default values
@@ -204,7 +208,7 @@ func GitProviderURL(text string) string {
 // It uses the pullRequestDetails for the message and title for the commit and PR.
 // It uses and updates pullRequestInfo to identify whether to rebase an existing PR.
 func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base string, prDetails *PullRequestDetails,
-	prInfo *PullRequestInfo, fork bool, commit bool, push bool, provider GitProvider, gitter Gitter) (*PullRequestInfo, error) {
+	prInfo *PullRequestInfo, fork bool, commit bool, push bool, autoMerge bool, provider GitProvider, gitter Gitter) (*PullRequestInfo, error) {
 	if commit {
 
 		err := gitter.Add(dir, "-A")
@@ -261,7 +265,15 @@ func PushRepoAndCreatePullRequest(dir string, gitInfo *GitRepository, base strin
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	log.Infof("Created Pull Request: %s\n\n", util.ColorInfo(pr.URL))
+	log.Infof("Created Pull Request: %s", util.ColorInfo(pr.URL))
+	if autoMerge {
+		number := *pr.Number
+		err = provider.AddLabelsToIssue(pr.Owner, pr.Repo, number, []string{labelUpdatebot})
+		if err != nil {
+			return nil, err
+		}
+		log.Infof("Added label %s to Pull Request %s", util.ColorInfo(labelUpdatebot), pr.URL)
+	}
 	return &PullRequestInfo{
 		GitProvider:          provider,
 		PullRequest:          pr,

@@ -545,6 +545,18 @@ func (p *GitHubProvider) UpdatePullRequestStatus(pr *GitPullRequest) error {
 	return nil
 }
 
+// AddLabelsToIssue adds labels to an issue
+func (p *GitHubProvider) AddLabelsToIssue(owner string, repo string, number int, labels []string) error {
+	_, result, err := p.Client.Issues.AddLabelsToIssue(p.Context, owner, repo, number, labels)
+	if err != nil {
+		return err
+	}
+	if result.StatusCode > 201 {
+		return errors.Wrapf(err, "failed to add labels to issue on %s/%s with ID %v", owner, repo, number)
+	}
+	return nil
+}
+
 // updatePullRequest updates the pr with the data from GitHub
 func (p *GitHubProvider) updatePullRequest(pr *GitPullRequest, source *github.PullRequest) {
 	head := source.Head

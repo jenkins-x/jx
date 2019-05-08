@@ -208,7 +208,7 @@ func (h *HelmCLI) IsRepoMissing(URL string) (bool, error) {
 				return true, errors.Wrap(err, "failed to parse the repo URL")
 			}
 			// match on the whole URL as helm dep build requires on username + passowrd in the URL
-			if url == searchedURL {
+			if url.Host == searchedURL.Host {
 				return false, nil
 			}
 		}
