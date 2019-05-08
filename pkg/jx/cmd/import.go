@@ -900,9 +900,16 @@ func (options *ImportOptions) doImport() error {
 		jenkinsfile = defaultJenkinsfileName
 	}
 
-	err = options.ensureDockerRepositoryExists()
+	dockerfileExists, err := util.FileExists("Dockerfile")
 	if err != nil {
 		return err
+	}
+
+	if dockerfileExists {
+		err = options.ensureDockerRepositoryExists()
+		if err != nil {
+			return err
+		}
 	}
 
 	isProw, err := options.IsProw()
