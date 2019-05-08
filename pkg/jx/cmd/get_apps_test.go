@@ -25,7 +25,7 @@ func TestGetAppsGitops(t *testing.T) {
 	name1UUID, err := uuid.NewV4()
 	assert.NoError(t, err)
 	name1 := name1UUID.String()
-	testOptions := cmd_test_helpers.CreateAppTestOptionsForApp(true, name1, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, name1, t)
 
 	defer func() {
 		err := testOptions.Cleanup()
@@ -64,7 +64,7 @@ func TestGetAppsGitops(t *testing.T) {
 func TestGetApps(t *testing.T) {
 	tests.SkipForWindows(t, "NewTerminal() does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
 
 	defer func() {
 		err := testOptions.Cleanup()
@@ -104,7 +104,7 @@ func TestGetApps(t *testing.T) {
 
 func TestGetAppsWithErrorGettingStatus(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
 
 	defer func() {
 		err := testOptions.Cleanup()
@@ -149,7 +149,7 @@ func TestGetAppsWithErrorGettingStatus(t *testing.T) {
 
 func TestGetAppsWithErrorGettingStatusWithOutput(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
 
 	defer func() {
 		err := testOptions.Cleanup()
@@ -195,7 +195,7 @@ func TestGetAppsWithErrorGettingStatusWithOutput(t *testing.T) {
 func TestGetApp(t *testing.T) {
 	tests.SkipForWindows(t, "NewTerminal() does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
 
 	defer func() {
 		err := testOptions.Cleanup()
@@ -233,7 +233,7 @@ func TestGetApp(t *testing.T) {
 func TestGetAppWithShortName(t *testing.T) {
 	tests.SkipForWindows(t, "NewTerminal() does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
 
 	defer func() {
 		err := testOptions.Cleanup()
@@ -270,7 +270,7 @@ func TestGetAppWithShortName(t *testing.T) {
 
 func TestGetAppsHasStatus(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
 
 	defer func() {
 		err := testOptions.Cleanup()
@@ -311,7 +311,7 @@ func TestGetAppsHasStatus(t *testing.T) {
 
 func TestGetAppsAsJson(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
 
 	defer func() {
 		err := testOptions.Cleanup()
@@ -358,7 +358,7 @@ func TestGetAppsAsJson(t *testing.T) {
 
 func TestGetAppsAsYaml(t *testing.T) {
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
 
 	defer func() {
 		err := testOptions.Cleanup()
@@ -406,7 +406,7 @@ func TestGetAppsAsYaml(t *testing.T) {
 func TestGetAppNotFound(t *testing.T) {
 	tests.SkipForWindows(t, "NewTerminal() does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
 
 	defer func() {
 		err := testOptions.Cleanup()

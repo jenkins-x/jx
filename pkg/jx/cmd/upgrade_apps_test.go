@@ -10,7 +10,7 @@ import (
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/petergtz/pegomock"
 
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/tests"
 
 	google_protobuf "github.com/golang/protobuf/ptypes/any"
@@ -29,7 +29,7 @@ import (
 
 func TestUpgradeAppForGitOps(t *testing.T) {
 	t.Parallel()
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -93,7 +93,7 @@ func TestUpgradeAppForGitOps(t *testing.T) {
 
 func TestUpgradeAppWithShortNameForGitOps(t *testing.T) {
 	//t.Parallel()
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -172,7 +172,7 @@ func TestUpgradeAppWithShortNameForGitOps(t *testing.T) {
 }
 
 func TestUpgradeAppWithExistingAndDefaultAnswersForGitOpsInBatchMode(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -259,7 +259,7 @@ species: human
 }
 
 func TestUpgradeAppWithExistingAndDefaultAnswersForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -359,7 +359,7 @@ species: martian
 }
 
 func TestUpgradeAppWithExistingAndDefaultAnswersAndAskAllForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -461,7 +461,7 @@ species: martian
 }
 
 func TestUpgradeMissingExistingOrDefaultInBatchMode(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -531,7 +531,7 @@ func TestUpgradeMissingExistingOrDefaultInBatchMode(t *testing.T) {
 }
 
 func TestUpgradeAppToLatestForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -595,7 +595,7 @@ func TestUpgradeAppToLatestForGitOps(t *testing.T) {
 }
 
 func TestUpgradeAllAppsForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)

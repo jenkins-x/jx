@@ -15,10 +15,10 @@ import (
 	"strings"
 	"testing"
 
-	expect "github.com/Netflix/go-expect"
+	"github.com/Netflix/go-expect"
 	"github.com/jenkins-x/jx/pkg/apps"
-	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
-	uuid "github.com/satori/go.uuid"
+	"github.com/jenkins-x/jx/pkg/helm/mocks"
+	"github.com/satori/go.uuid"
 
 	"k8s.io/helm/pkg/chartutil"
 
@@ -45,7 +45,7 @@ import (
 )
 
 func TestAddAppForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -115,7 +115,7 @@ func TestAddAppForGitOps(t *testing.T) {
 }
 
 func TestAddAppForGitOpsWithShortName(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -203,7 +203,7 @@ func TestAddAppWithSecrets(t *testing.T) {
 
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -350,7 +350,7 @@ func TestAddAppWithDefaults(t *testing.T) {
 
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -480,7 +480,7 @@ func TestStashValues(t *testing.T) {
 
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -557,7 +557,7 @@ func TestStashValues(t *testing.T) {
 func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -654,7 +654,7 @@ func TestAddAppForGitOpsWithSecrets(t *testing.T) {
 }
 
 func TestAddApp(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
 	// Can't run in parallel
 	pegomock.RegisterMockTestingT(t)
 	defer func() {
@@ -711,7 +711,7 @@ func TestAddApp(t *testing.T) {
 }
 
 func TestAddAppWithShortName(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
 	// Can't run in parallel
 	pegomock.RegisterMockTestingT(t)
 	defer func() {
@@ -783,7 +783,7 @@ func TestAddAppWithShortName(t *testing.T) {
 }
 
 func TestAddAppFromPath(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
 	// Can't run in parallel
 	pegomock.RegisterMockTestingT(t)
 	defer func() {
@@ -844,7 +844,7 @@ func TestAddAppFromPath(t *testing.T) {
 
 func TestAddLatestApp(t *testing.T) {
 
-	testOptions := cmd_test_helpers.CreateAppTestOptions(false, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(false, "", t)
 	// Can't run in parallel
 	pegomock.RegisterMockTestingT(t)
 	defer func() {
@@ -903,7 +903,7 @@ func TestAddLatestApp(t *testing.T) {
 }
 
 func TestAddAppWithValuesFileForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -963,7 +963,7 @@ func TestAddAppWithValuesFileForGitOps(t *testing.T) {
 }
 
 func TestAddAppWithReadmeForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -1050,7 +1050,7 @@ func TestAddAppWithReadmeForGitOps(t *testing.T) {
 }
 
 func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -1116,7 +1116,7 @@ func TestAddAppWithCustomReadmeForGitOps(t *testing.T) {
 }
 
 func TestAddLatestAppForGitOps(t *testing.T) {
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -1179,7 +1179,7 @@ func TestAddLatestAppForGitOps(t *testing.T) {
 func TestAddAppIncludingConditionalQuestionsForGitOps(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
@@ -1289,7 +1289,7 @@ enablePersistentStorage: true
 func TestAddAppExcludingConditionalQuestionsForGitOps(t *testing.T) {
 	tests.SkipForWindows(t, "go-expect does not work on windows")
 	pegomock.RegisterMockTestingT(t)
-	testOptions := cmd_test_helpers.CreateAppTestOptions(true, t)
+	testOptions := cmd_test_helpers.CreateAppTestOptions(true, "", t)
 	defer func() {
 		err := testOptions.Cleanup()
 		assert.NoError(t, err)
