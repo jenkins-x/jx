@@ -6,8 +6,6 @@ import (
 	"strings"
 	"time"
 
-	errorw "github.com/pkg/errors"
-
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/features"
@@ -52,7 +50,6 @@ type CreateClusterGKEFlags struct {
 	Namespace       string
 	Labels          string
 	EnhancedScopes  bool
-	NoImageType     bool
 	Scopes          []string
 	Preemptible     bool
 	EnhancedApis    bool
@@ -135,7 +132,6 @@ func NewCmdCreateClusterGKE(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().BoolVarP(&options.Flags.Preemptible, preemptibleFlagName, "", false, "Use preemptible VMs in the node-pool")
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedScopes, enhancedScopesFlagName, "", false, "Use enhanced Oauth scopes for access to GCS/GCR")
 	cmd.Flags().BoolVarP(&options.Flags.EnhancedApis, enhancedAPIFlagName, "", false, "Enable enhanced APIs to utilise Container Registry & Cloud Build")
-	cmd.Flags().BoolVarP(&options.Flags.NoImageType, "no-image-type", "", false, "Disables specifying the image type if its defined so use the GCP default instead")
 
 	cmd.AddCommand(NewCmdCreateClusterGKETerraform(commonOpts))
 
@@ -423,26 +419,8 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 		args = append(args, "--enable-autoupgrade")
 	}
 
-	if !o.Flags.NoImageType {
-		// if using Tekton lets use the containerd image by default
-		// see: https://github.com/jenkins-x/jx/issues/3854
-
-		// let make sure we have decided whether or not to use tekton yet
-		err := o.InstallOptions.checkFlags()
-		if err != nil {
-			return errorw.Wrap(err, "checking the provided flags")
-		}
-
-		err = o.InstallOptions.selectJenkinsInstallation()
-		if err != nil {
-			return errorw.Wrap(err, "selecting the Jenkins installation type")
-		}
-		if o.Flags.ImageType == "" && (o.InstallOptions.Flags.Tekton || o.InstallOptions.Flags.NextGeneration) {
-			o.Flags.ImageType = "COS_CONTAINERD"
-		}
-		if o.Flags.ImageType != "" {
-			args = append(args, "--image-type", o.Flags.ImageType)
-		}
+	if o.Flags.ImageType != "" {
+		args = append(args, "--image-type", o.Flags.ImageType)
 	}
 
 	if o.Flags.Network != "" {
