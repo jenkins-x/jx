@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	errorw "github.com/pkg/errors"
+
 	"github.com/Pallinder/go-randomdata"
 	"github.com/jenkins-x/jx/pkg/cloud"
 	"github.com/jenkins-x/jx/pkg/features"
@@ -424,7 +426,18 @@ func (o *CreateClusterGKEOptions) createClusterGKE() error {
 	if !o.Flags.NoImageType {
 		// if using Tekton lets use the containerd image by default
 		// see: https://github.com/jenkins-x/jx/issues/3854
-		if o.Flags.ImageType == "" && o.InstallOptions.Flags.Tekton {
+
+		// let make sure we have decided whether or not to use tekton yet
+		err := o.InstallOptions.checkFlags()
+		if err != nil {
+			return errorw.Wrap(err, "checking the provided flags")
+		}
+
+		err = o.InstallOptions.selectJenkinsInstallation()
+		if err != nil {
+			return errorw.Wrap(err, "selecting the Jenkins installation type")
+		}
+		if o.Flags.ImageType == "" && (o.InstallOptions.Flags.Tekton || o.InstallOptions.Flags.NextGeneration) {
 			o.Flags.ImageType = "COS_CONTAINERD"
 		}
 		if o.Flags.ImageType != "" {
