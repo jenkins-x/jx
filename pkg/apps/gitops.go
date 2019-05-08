@@ -19,7 +19,6 @@ import (
 	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/pkg/errors"
 	"io/ioutil"
-	"regexp"
 )
 
 // GitOpsOptions is the options used for Git Operations for apps
@@ -172,7 +171,7 @@ func (o *GitOpsOptions) GetApps(appNames map[string]bool, expandFn func([]string
 		ModifyChartFn: nil,
 		GitProvider:   o.GitProvider,
 	}
-	dir, _, _, _, err :=  gits.ForkAndPullPullRepo(o.DevEnv.Spec.Source.URL, o.EnvironmentsDir, o.DevEnv.Spec.Source.Ref, "master", o.GitProvider, o.Gitter, options.ConfigGitFn)
+	dir, _, _, _, err := gits.ForkAndPullPullRepo(o.DevEnv.Spec.Source.URL, o.EnvironmentsDir, o.DevEnv.Spec.Source.Ref, "master", o.GitProvider, o.Gitter, options.ConfigGitFn)
 	if err != nil {
 		return nil, errors.Wrapf(err, "couldn't pull the environment repository from %s", o.DevEnv.Name)
 	}
@@ -203,8 +202,8 @@ func (o *GitOpsOptions) GetApps(appNames map[string]bool, expandFn func([]string
 	appsList := v1.AppList{}
 	for _, d := range reqs.Dependencies {
 		if appNames[d.Name] == true || len(appNames) == 0 {
-			//Make sure we only consider apps
-			if match, _ := regexp.MatchString("jx-app-.*", d.Name); match {
+			//Make sure we ignore the jenkins-x-platform requirement
+			if d.Name != "jenkins-x-platform" {
 				resourcesInCRD, _ := expandFn([]string{d.Name})
 				if len(resourcesInCRD.Items) != 0 {
 					appsList.Items = append(resourcesInCRD.Items)

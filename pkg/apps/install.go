@@ -156,27 +156,18 @@ func (o *InstallOptions) GetApps(appNames []string) (apps *jenkinsv1.AppList, er
 			appsMap[completeAppName] = true
 		}
 	}
+
+	helmOpts := HelmOpsOptions{
+		InstallOptions: o,
+	}
 	if o.GitOps {
 		opts := GitOpsOptions{
 			InstallOptions: o,
 		}
-		return opts.GetApps(appsMap, o.getAppsFromCRDAPI)
+		return opts.GetApps(appsMap, helmOpts.getAppsFromCRDAPI)
 	}
-	return o.getAppsFromCRDAPI(in)
+	return helmOpts.getAppsFromCRDAPI(in)
 
-}
-
-func (o *InstallOptions) getAppsFromCRDAPI(appNames []string) (*jenkinsv1.AppList, error) {
-	listOptions := metav1.ListOptions{}
-	if len(appNames) > 0 {
-		selector := fmt.Sprintf(helm.LabelAppName+" in (%s)", strings.Join(appNames, ", "))
-		listOptions.LabelSelector = selector
-	}
-	apps, err := o.JxClient.JenkinsV1().Apps(o.Namespace).List(listOptions)
-	if err != nil {
-		return nil, errors.Wrap(err, "listing apps")
-	}
-	return apps, nil
 }
 
 //DeleteApp deletes the app. An alias and releaseName can be specified. GitOps or HelmOps will be automatically chosen based on the o.GitOps flag
