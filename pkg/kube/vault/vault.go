@@ -5,25 +5,25 @@ import (
 
 	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned"
-	"github.com/pkg/errors"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/kubernetes"
-
+	vaultapi "github.com/hashicorp/vault/api"
 	"github.com/jenkins-x/jx/pkg/kube"
 	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	"github.com/jenkins-x/jx/pkg/kube/serviceaccount"
 	"github.com/jenkins-x/jx/pkg/kube/services"
 	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/pkg/errors"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 )
 
 const (
-	BankVaultsOperatorImage = "banzaicloud/vault-operator"
-	BankVaultsImage         = "banzaicloud/bank-vaults"
-	BankVaultsImageTag      = "0.4.7"
+	BankVaultsOperatorImage = "cosmincojocar/vault-operator"
+	BankVaultsImage         = "cosmincojocar/bank-vaults"
+	BankVaultsImageTag      = "auto-unsealing8"
 	defaultNumVaults        = 1
 	vaultImage              = "vault"
-	vaultImageTag           = "0.11.6"
+	vaultImageTag           = "1.1.2"
 	gcpServiceAccountEnv    = "GOOGLE_APPLICATION_CREDENTIALS"
 	gcpServiceAccountPath   = "/etc/gcp/service-account.json"
 
@@ -35,6 +35,8 @@ const (
 	vaultAuthTTL  = "1h"
 
 	vaultRoleName = "vault-auth"
+
+	vaultSecretEngines = "secrets"
 )
 
 // Vault stores some details of a Vault resource
@@ -127,6 +129,26 @@ type Storage struct {
 	DynamoDB *DynamoDBConfig `json:"dynamodb,omitempty"`
 }
 
+// SecretEngine configuration for secret engine
+type SecretEngine struct {
+	vaultapi.MountInput
+	Path string `json:"path"`
+}
+
+// Seal configuration for Vault auto-unseal
+type Seal struct {
+	GcpCkms *GCPSealConfig `json:"gcpckms,omitempty"`
+}
+
+// GCPSealConfig Google Cloud KMS config for vault auto-unseal
+type GCPSealConfig struct {
+	Credentials string `json:"credentials,omitempty"`
+	Project     string `json:"project,omitempty"`
+	Region      string `json:"region,omitempty"`
+	KeyRing     string `json:"key_ring,omitempty"`
+	CryptoKey   string `json:"crypto_key,omitempty"`
+}
+
 // SystemVaultName returns the name of the system vault based on the cluster name
 func SystemVaultName(kuber kube.Kuber) (string, error) {
 	clusterName, err := cluster.ShortName(kuber)
@@ -157,6 +179,15 @@ func CreateGKEVault(kubeClient kubernetes.Interface, vaultOperatorClient version
 		GCS: &GCSConfig{
 			Bucket:    gcpConfig.GcsBucket,
 			HaEnabled: "true",
+		},
+	}
+	vault.Spec.Config["seal"] = Seal{
+		GcpCkms: &GCPSealConfig{
+			Credentials: gcpServiceAccountPath,
+			Project:     gcpConfig.ProjectId,
+			Region:      gcpConfig.KmsLocation,
+			KeyRing:     gcpConfig.KmsKeyring,
+			CryptoKey:   gcpConfig.KmsKey,
 		},
 	}
 	vault.Spec.UnsealConfig = v1alpha1.UnsealConfig{
@@ -287,6 +318,23 @@ func InitializeVault(kubeClient kubernetes.Interface, name string, ns string, au
 					{
 						Name:  vault.PathRulesName,
 						Rules: vaultRule,
+					},
+				},
+				vaultSecretEngines: []SecretEngine{
+					{
+						Path: vault.DefaultSecretsPath,
+						MountInput: vaultapi.MountInput{
+							Type:        "kv",
+							Description: "KV secret engine",
+							Local:       false,
+							SealWrap:    false,
+							Options: map[string]string{
+								"version": "2",
+							},
+							Config: vaultapi.MountConfigInput{
+								ForceNoCache: true,
+							},
+						},
 					},
 				},
 			},
