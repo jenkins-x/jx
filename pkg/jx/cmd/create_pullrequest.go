@@ -19,7 +19,9 @@ import (
 
 var (
 	createPullRequestLong = templates.LongDesc(`
-		Creates a Pull Request in a the git project of the current directory
+		Creates a Pull Request in a the git project of the current directory. 
+
+		If --push is specified the contents of the directory will be committed, pushed and used to create the pull request  
 `)
 
 	createPullRequestExample = templates.Examples(`
@@ -47,14 +49,10 @@ type CreatePullRequestOptions struct {
 	Body   string
 	Labels []string
 	Base   string
+	Push   bool
+	Fork   bool
 
-	Results CreatePullRequestResults
-}
-
-type CreatePullRequestResults struct {
-	GitInfo     *gits.GitRepository
-	GitProvider gits.GitProvider
-	PullRequest *gits.GitPullRequest
+	Results *gits.PullRequestInfo
 }
 
 // NewCmdCreatePullRequest creates a command object for the "create" command
@@ -84,6 +82,7 @@ func NewCmdCreatePullRequest(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Body, "body", "", "", "The body of the pullrequest")
 	cmd.Flags().StringVarP(&options.Base, "base", "", "master", "The base branch to create the pull request into")
 	cmd.Flags().StringArrayVarP(&options.Labels, "label", "l", []string{}, "The labels to add to the pullrequest")
+	cmd.Flags().BoolVarP(&options.Push, "push", "", false, "If true the contents of the source directory will be committed, pushed, and used to create the pull request")
 
 	return cmd
 }
@@ -94,50 +93,32 @@ func (o *CreatePullRequestOptions) Run() error {
 	if o.Dir == "" {
 		dir, err := os.Getwd()
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "getting working directory")
 		}
 		o.Dir = dir
 	}
 	gitInfo, provider, _, err := o.CreateGitProvider(o.Dir)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "creating git provider for directory %s", o.Dir)
 	}
 
-	o.Results.GitInfo = gitInfo
-	o.Results.GitProvider = provider
-
-	branchName, err := o.Git().Branch(o.Dir)
+	details, err := o.createPullRequestDetails(gitInfo)
 	if err != nil {
-		return err
+		return errors.WithStack(err)
 	}
 
-	base := o.Base
-	arguments := &gits.GitPullRequestArguments{
-		Base: base,
-		Head: branchName,
-	}
-	err = o.PopulatePullRequest(arguments, gitInfo)
+	o.Results, err = gits.PushRepoAndCreatePullRequest(o.Dir, gitInfo, o.Base, details, nil, true, o.Push, o.Push, provider, o.Git())
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", o.Base, details.BranchName)
 	}
-
-	pr, err := provider.CreatePullRequest(arguments)
-	if err != nil {
-		return errors.Wrapf(err, "failed to create PR for base %s and head branch %s", base, branchName)
-	}
-
-	o.Results.PullRequest = pr
-
-	log.Infof("\nCreated PullRequest %s at %s\n", util.ColorInfo(pr.NumberString()), util.ColorInfo(pr.URL))
-
 	return nil
 }
 
-func (o *CreatePullRequestOptions) PopulatePullRequest(pullRequest *gits.GitPullRequestArguments, gitInfo *gits.GitRepository) error {
+func (o *CreatePullRequestOptions) createPullRequestDetails(gitInfo *gits.GitRepository) (*gits.PullRequestDetails, error) {
 	title := o.Title
 	if title == "" {
 		if o.BatchMode {
-			return util.MissingOption(optionTitle)
+			return nil, util.MissingOption(optionTitle)
 		}
 		defaultValue, body, err := o.findLastCommitTitle()
 		if err != nil {
@@ -148,18 +129,22 @@ func (o *CreatePullRequestOptions) PopulatePullRequest(pullRequest *gits.GitPull
 		}
 		title, err = util.PickValue("PullRequest title:", defaultValue, true, "", o.In, o.Out, o.Err)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
-	body := o.Body
-	pullRequest.Title = title
-	pullRequest.Body = body
-	pullRequest.GitRepository = gitInfo
-
 	if title == "" {
-		return fmt.Errorf("No title specified!")
+		return nil, fmt.Errorf("no title specified")
 	}
-	return nil
+	branchName, err := o.Git().Branch(o.Dir)
+	if err != nil {
+		return nil, err
+	}
+	return &gits.PullRequestDetails{
+		Title:      title,
+		Message:    o.Body,
+		BranchName: branchName,
+	}, nil
+
 }
 
 func (o *CreatePullRequestOptions) findLastCommitTitle() (string, string, error) {
