@@ -20,7 +20,7 @@ import (
 const (
 	BankVaultsOperatorImage = "cosmincojocar/vault-operator"
 	BankVaultsImage         = "cosmincojocar/bank-vaults"
-	BankVaultsImageTag      = "auto-unsealing8"
+	BankVaultsImageTag      = "svc-annotations"
 	defaultNumVaults        = 1
 	vaultImage              = "vault"
 	vaultImageTag           = "1.1.2"
