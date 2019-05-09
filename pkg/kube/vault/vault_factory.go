@@ -34,7 +34,7 @@ const (
 	// kvEngineConfigPath config path for KV secrets engine V2
 	kvEngineConfigPath = "secret/config"
 
-	// kvEngineInitialRetyDelay define the intial delay before checkign the kv engine configuration
+	// kvEngineInitialRetyDelay define the initial delay before checking the kv engine configuration
 	kvEngineInitialRetyDelay = 1 * time.Second
 
 	// kvEngineRetryTimeout define the maximum duration to wait for KV engine to be properly configured
