@@ -3,12 +3,16 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+
+	"github.com/cenkalti/backoff"
 	"github.com/jenkins-x/jx/pkg/helm"
 
 	"github.com/jenkins-x/jx/pkg/kserving"
@@ -543,6 +547,25 @@ func (o *PreviewOptions) Run() error {
 		}
 	}
 	if url != "" {
+		// Wait for a 200 to make sure that the DNS has propagated
+		f := func() error {
+			resp, err := http.Get(url)
+			if err != nil {
+				return backoff.Permanent(err)
+			}
+			if resp.StatusCode < 200 && resp.StatusCode >= 300 {
+				return errors.Errorf("preview application %s not available, error was %d %s", url, resp.StatusCode, resp.Status)
+			}
+			return nil
+		}
+		exponentialBackOff := backoff.NewExponentialBackOff()
+		timeout := 5 * time.Minute
+		exponentialBackOff.MaxElapsedTime = timeout
+		exponentialBackOff.Reset()
+		err := backoff.Retry(f, exponentialBackOff)
+		if err != nil {
+			return errors.Wrapf(err, "error checking if preview application %s is available", url)
+		}
 		env, err = environmentsResource.Get(o.Name, metav1.GetOptions{})
 		if err != nil {
 			return err
