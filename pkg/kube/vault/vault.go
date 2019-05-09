@@ -138,6 +138,7 @@ type SecretEngine struct {
 // Seal configuration for Vault auto-unseal
 type Seal struct {
 	GcpCkms *GCPSealConfig `json:"gcpckms,omitempty"`
+	AWSKms  *AWSSealConig  `json:"awskms,omitempty"`
 }
 
 // GCPSealConfig Google Cloud KMS config for vault auto-unseal
@@ -147,6 +148,15 @@ type GCPSealConfig struct {
 	Region      string `json:"region,omitempty"`
 	KeyRing     string `json:"key_ring,omitempty"`
 	CryptoKey   string `json:"crypto_key,omitempty"`
+}
+
+// AWSSealConig AWS KMS config for vault auto-unseal
+type AWSSealConig struct {
+	Region    string `json:"region,omitempty"`
+	AccessKey string `json:"access_key,omitempty"`
+	SecretKey string `json:"secret_key,omitempty"`
+	KmsKeyID  string `json:"kms_key_id,omitempty"`
+	Endpoint  string `json:"endpoint,omitempty"`
 }
 
 // SystemVaultName returns the name of the system vault based on the cluster name
@@ -226,6 +236,14 @@ func CreateAWSVault(kubeClient kubernetes.Interface, vaultOperatorClient version
 			Table:           awsConfig.DynamoDBTable,
 			AccessKeyID:     awsConfig.AccessKeyID,
 			SecretAccessKey: awsConfig.SecretAccessKey,
+		},
+	}
+	vault.Spec.Config["seal"] = Seal{
+		AWSKms: &AWSSealConig{
+			Region:    awsConfig.KMSRegion,
+			AccessKey: awsConfig.AccessKeyID,
+			SecretKey: awsConfig.SecretAccessKey,
+			KmsKeyID:  awsConfig.KMSKeyID,
 		},
 	}
 	vault.Spec.UnsealConfig = v1alpha1.UnsealConfig{
