@@ -8,7 +8,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
-	"k8s.io/client-go/rest"
 )
 
 // colorStatus returns a new function that returns status-colorized (cyan) strings for the
@@ -194,13 +193,4 @@ func Successf(msg string, args ...interface{}) {
 // Failure red logging
 func Failure(msg string) {
 	logrus.Info(colorError(msg))
-}
-
-// function to tell if we are running incluster
-func isInCluster() bool {
-	_, err := rest.InClusterConfig()
-	if err != nil {
-		return false
-	}
-	return true
 }
