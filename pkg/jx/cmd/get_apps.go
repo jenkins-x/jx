@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/apps"
-	"github.com/jenkins-x/jx/pkg/environments"
+	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/jenkins-x/jx/pkg/helm"
 	"github.com/jenkins-x/jx/pkg/io/secrets"
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -25,7 +25,7 @@ type GetAppsOptions struct {
 	ShowStatus     bool
 	GitOps         bool
 	DevEnv         *v1.Environment
-	ConfigureGitFn environments.ConfigureGitFn
+	ConfigureGitFn gits.ConfigureGitFn
 }
 
 type appsResult struct {
