@@ -158,5 +158,5 @@ func (o *UpgradeAddonProwOptions) Run() error {
 		pipelineUserName = pipelineUser.Username
 	}
 
-	return o.InstallProw(o.Tekton, o.ExternalDNS, isGitOps, "", "", pipelineUserName)
+	return o.InstallProw(o.Tekton, o.ExternalDNS, isGitOps, "", "", pipelineUserName, nil)
 }
