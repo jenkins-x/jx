@@ -18,9 +18,9 @@ import (
 )
 
 const (
-	BankVaultsOperatorImage = "cosmincojocar/vault-operator"
-	BankVaultsImage         = "cosmincojocar/bank-vaults"
-	BankVaultsImageTag      = "svc-annotations"
+	BankVaultsOperatorImage = "banzaicloud/vault-operator"
+	BankVaultsImage         = "banzaicloud/bank-vaults"
+	BankVaultsImageTag      = "master"
 	defaultNumVaults        = 1
 	vaultImage              = "vault"
 	vaultImageTag           = "1.1.2"
