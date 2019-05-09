@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -306,6 +307,9 @@ func (o *StepHelmApplyOptions) fetchSecretFilesFromVault(dir string, store confi
 		secret, err := client.ReadYaml(gitopsSecretPath)
 		if err != nil {
 			return files, errors.Wrapf(err, "retrieving the secret %q from Vault", secretPath)
+		}
+		if secret == "" {
+			return files, fmt.Errorf("secret %q is empty", secretPath)
 		}
 		secretFile := filepath.Join(dir, secretPath)
 		err = store.Write(secretFile, []byte(secret))
