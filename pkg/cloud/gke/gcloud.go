@@ -229,7 +229,9 @@ func GetOrCreateServiceAccount(serviceAccount string, projectID string, clusterC
 			"create",
 			serviceAccount,
 			"--project",
-			projectID}
+			projectID,
+			"--display-name",
+			serviceAccount}
 
 		cmd := util.Command{
 			Name: "gcloud",
