@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/blang/semver"
+
 	"github.com/jenkins-x/jx/pkg/packages"
 
 	"github.com/jenkins-x/jx/pkg/jx/cmd/opts"
@@ -180,12 +182,21 @@ func (o *CreateAddonIstioOptions) Run() error {
 	return nil
 }
 
-// getIstioChartsFromGitHub lets download the latest release of istio
+// getIstioChartsFromGitHub lets download the release of istio that we need
 func (o *CreateAddonIstioOptions) getIstioChartsFromGitHub() (string, error) {
 	answer := ""
-	latestVersion, err := util.GetLatestVersionFromGitHub("istio", "istio")
-	if err != nil {
-		return answer, fmt.Errorf("unable to get latest version for github.com/%s/%s %v", "istio", "istio", err)
+	var err error
+	var actualVersion semver.Version
+	if o.Version == "" {
+		actualVersion, err = util.GetLatestVersionFromGitHub("istio", "istio")
+		if err != nil {
+			return answer, fmt.Errorf("unable to get %s version for github.com/%s/%s %v", o.Version, "istio", "istio", err)
+		}
+	} else {
+		actualVersion, err = semver.Make(o.Version)
+		if err != nil {
+			return answer, fmt.Errorf("unable to parse version %s %v", o.Version, err)
+		}
 	}
 
 	binDir, err := util.JXBinLocation()
@@ -205,9 +216,9 @@ func (o *CreateAddonIstioOptions) getIstioChartsFromGitHub() (string, error) {
 		extension = "linux.tar.gz"
 	}
 
-	clientURL := fmt.Sprintf("https://github.com/istio/istio/releases/download/%s/istio-%s-%s", latestVersion, latestVersion, extension)
+	clientURL := fmt.Sprintf("https://github.com/istio/istio/releases/download/%s/istio-%s-%s", actualVersion, actualVersion, extension)
 
-	outputDir := filepath.Join(binDir, "istio-"+latestVersion.String())
+	outputDir := filepath.Join(binDir, "istio-"+actualVersion.String())
 	os.RemoveAll(outputDir)
 
 	answer = outputDir
