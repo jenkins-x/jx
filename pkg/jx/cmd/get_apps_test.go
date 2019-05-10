@@ -50,7 +50,7 @@ func TestGetAppsGitops(t *testing.T) {
 		},
 		Namespace: namespace,
 	}
-	appResourceLocation := filepath.Join(devEnvDir, name1, "templates", name1+"-app.yaml")
+	appResourceLocation := filepath.Join(devEnvDir, name1, "templates", "app.yaml")
 	app := &v1.App{}
 	appBytes, err := ioutil.ReadFile(appResourceLocation)
 	err = yaml.Unmarshal(appBytes, app)
