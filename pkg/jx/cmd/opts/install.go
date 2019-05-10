@@ -1651,7 +1651,11 @@ func (o *CommonOptions) InstallProw(useTekton bool, useExternalDNS bool, isGitOp
 		}
 	}
 
-	log.Infof("\nInstalling knative into namespace %s\n", util.ColorInfo(devNamespace))
+	knativeOrTekton := "tekton"
+	if !useTekton {
+		knativeOrTekton = "knative"
+	}
+	log.Infof("\nInstalling %s into namespace %s\n", knativeOrTekton, util.ColorInfo(devNamespace))
 
 	ksecretValues := []string{}
 	if settings.HelmTemplate || settings.NoTiller || settings.HelmBinary != "helm" {
