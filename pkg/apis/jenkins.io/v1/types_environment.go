@@ -291,26 +291,27 @@ type EnvironmentRoleBindingList struct {
 }
 
 // StorageLocationOrDefault returns the storage location if there is one or returns the default storage configuration
-func (t *TeamSettings) StorageLocationOrDefault(classifier string) *StorageLocation {
+func (t *TeamSettings) StorageLocationOrDefault(classifier string) StorageLocation {
 	for idx, sl := range t.StorageLocations {
 		if sl.Classifier == classifier {
-			return &t.StorageLocations[idx]
+			return t.StorageLocations[idx]
 		}
 	}
 	return t.StorageLocation("default")
 }
 
 // StorageLocation returns the storage location, lazily creating one if one does not already exist
-func (t *TeamSettings) StorageLocation(classifier string) *StorageLocation {
+func (t *TeamSettings) StorageLocation(classifier string) StorageLocation {
 	for idx, sl := range t.StorageLocations {
 		if sl.Classifier == classifier {
-			return &t.StorageLocations[idx]
+			return t.StorageLocations[idx]
 		}
 	}
-	t.StorageLocations = append(t.StorageLocations, StorageLocation{
+	newStorageLocation := StorageLocation{
 		Classifier: classifier,
-	})
-	return &t.StorageLocations[len(t.StorageLocations)-1]
+	}
+	t.SetStorageLocation(classifier, newStorageLocation)
+	return newStorageLocation
 }
 
 // SetStorageLocation stores the given storage location in the team settings

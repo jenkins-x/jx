@@ -545,15 +545,12 @@ func (o *ControllerBuildOptions) updatePipelineActivity(kubeClient kubernetes.In
 
 			envName := kube.LabelValueDevEnvironment
 			devEnv := o.EnvironmentCache.Item(envName)
-			var location *v1.StorageLocation
+			location := v1.StorageLocation{}
 			settings := &devEnv.Spec.TeamSettings
 			if devEnv == nil {
 				log.Warnf("No Environment %s found\n", envName)
 			} else {
 				location = settings.StorageLocationOrDefault(kube.ClassificationLogs)
-			}
-			if location == nil {
-				location = &v1.StorageLocation{}
 			}
 			if location.IsEmpty() {
 				location.GitURL = activity.Spec.GitURL
@@ -657,15 +654,12 @@ func (o *ControllerBuildOptions) updatePipelineActivityForRun(kubeClient kuberne
 
 			envName := kube.LabelValueDevEnvironment
 			devEnv := o.EnvironmentCache.Item(envName)
-			var location *v1.StorageLocation
+			location := v1.StorageLocation{}
 			settings := &devEnv.Spec.TeamSettings
 			if devEnv == nil {
 				log.Warnf("No Environment %s found\n", envName)
 			} else {
 				location = settings.StorageLocationOrDefault(kube.ClassificationLogs)
-			}
-			if location == nil {
-				location = &v1.StorageLocation{}
 			}
 			if location.IsEmpty() {
 				location.GitURL = activity.Spec.GitURL
@@ -902,7 +896,7 @@ func toYamlString(resource interface{}) string {
 }
 
 // generates the build log URL and returns the URL
-func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location *v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool, logMasker *kube.LogMasker) (string, error) {
+func (o *ControllerBuildOptions) generateBuildLogURL(podInterface typedcorev1.PodInterface, ns string, activity *v1.PipelineActivity, buildName string, pod *corev1.Pod, location v1.StorageLocation, settings *v1.TeamSettings, initGitCredentials bool, logMasker *kube.LogMasker) (string, error) {
 
 	coll, err := collector.NewCollector(location, settings, o.Git())
 	if err != nil {

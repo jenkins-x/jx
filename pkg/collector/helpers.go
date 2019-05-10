@@ -3,11 +3,12 @@ package collector
 import (
 	"context"
 	"fmt"
+	"time"
+
 	jenkinsv1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/gits"
 	"github.com/pkg/errors"
 	"gocloud.dev/blob"
-	"time"
 
 	// lets import all the blob providers we need
 	_ "gocloud.dev/blob/azureblob"
@@ -17,7 +18,7 @@ import (
 )
 
 // NewCollector creates a new collector from the storage configuration
-func NewCollector(storageLocation *jenkinsv1.StorageLocation, settings *jenkinsv1.TeamSettings, gitter gits.Gitter) (Collector, error) {
+func NewCollector(storageLocation jenkinsv1.StorageLocation, settings *jenkinsv1.TeamSettings, gitter gits.Gitter) (Collector, error) {
 	classifier := storageLocation.Classifier
 	if classifier == "" {
 		classifier = "default"
