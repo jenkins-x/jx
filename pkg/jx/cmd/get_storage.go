@@ -57,12 +57,12 @@ func (o *GetStorageOptions) Run() error {
 	if err != nil {
 		return err
 	}
-	m := map[string]*v1.StorageLocation{}
+	m := map[string]v1.StorageLocation{}
 	for i, ls := range settings.StorageLocations {
-		m[ls.Classifier] = &settings.StorageLocations[i]
+		m[ls.Classifier] = settings.StorageLocations[i]
 	}
 	for _, name := range kube.Classifications {
-		if m[name] == nil {
+		if _, ok := m[name]; !ok {
 			m[name] = settings.StorageLocation(name)
 		}
 	}
@@ -74,8 +74,8 @@ func (o *GetStorageOptions) Run() error {
 	table := o.CreateTable()
 	table.AddRow("CLASSIFICATION", "LOCATION")
 	for _, n := range names {
-		ls := m[n]
-		if ls != nil {
+		ls, ok := m[n]
+		if ok {
 			table.AddRow(n, ls.Description())
 		}
 	}
