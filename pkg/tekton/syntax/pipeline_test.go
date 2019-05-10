@@ -1066,6 +1066,59 @@ func TestParseJenkinsfileYaml(t *testing.T) {
 				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage-1")),
 			),
 		},
+		{
+			name: "dir_on_pipeline_and_stage",
+			expected: ParsedPipeline(
+				PipelineAgent("some-image"),
+				PipelineDir("a-relative-dir"),
+				PipelineStage("A Working Stage",
+					StageStep(
+						StepCmd("echo"),
+						StepArg("hello"), StepArg("world")),
+				),
+				PipelineStage("Another stage",
+					StageDir("/an/absolute/dir"),
+					StageStep(
+						StepCmd("echo"),
+						StepArg("again")),
+					StageStep(
+						StepCmd("echo"),
+						StepArg("in another dir"),
+						StepDir("another-relative-dir/with/a/subdir"))),
+			),
+			pipeline: tb.Pipeline("somepipeline-1", "jx", tb.PipelineSpec(
+				tb.PipelineTask("a-working-stage", "somepipeline-a-working-stage-1",
+					tb.PipelineTaskInputResource("workspace", "somepipeline"),
+					tb.PipelineTaskOutputResource("workspace", "somepipeline")),
+				tb.PipelineTask("another-stage", "somepipeline-another-stage-1",
+					tb.PipelineTaskInputResource("workspace", "somepipeline",
+						tb.From("a-working-stage")),
+					tb.RunAfter("a-working-stage")),
+				tb.PipelineDeclaredResource("somepipeline", tektonv1alpha1.PipelineResourceTypeGit))),
+			tasks: []*tektonv1alpha1.Task{
+				tb.Task("somepipeline-a-working-stage-1", "jx", TaskStageLabel("A Working Stage"), tb.TaskSpec(
+					tb.TaskInputs(
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+							tb.ResourceTargetPath("source"))),
+					tb.TaskOutputs(tb.OutputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit)),
+					tb.Step("git-merge", syntax.GitMergeImage, tb.Command("jx"), tb.Args("step", "git", "merge", "--verbose"), workingDir("/workspace/source")),
+					tb.Step("step2", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo hello world"), workingDir("/workspace/source/a-relative-dir")),
+				)),
+				tb.Task("somepipeline-another-stage-1", "jx", TaskStageLabel("Another stage"), tb.TaskSpec(
+					tb.TaskInputs(
+						tb.InputsResource("workspace", tektonv1alpha1.PipelineResourceTypeGit,
+							tb.ResourceTargetPath("source"))),
+					tb.Step("step2", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo again"), workingDir("/an/absolute/dir")),
+					tb.Step("step3", "some-image", tb.Command("/bin/sh", "-c"), tb.Args("echo in another dir"),
+						workingDir("/workspace/source/another-relative-dir/with/a/subdir")),
+				)),
+			},
+			structure: PipelineStructure("somepipeline-1",
+				StructureStage("A Working Stage", StructureStageTaskRef("somepipeline-a-working-stage-1")),
+				StructureStage("Another stage", StructureStageTaskRef("somepipeline-another-stage-1"),
+					StructureStagePrevious("A Working Stage")),
+			),
+		},
 	}
 
 	for _, tt := range tests {
@@ -1704,6 +1757,18 @@ func StageContainerOptions(ops ...tb.ContainerOp) StageOptionsOp {
 	}
 }
 
+func PipelineDir(dir string) PipelineOp {
+	return func(pipeline *syntax.ParsedPipeline) {
+		pipeline.WorkingDir = &dir
+	}
+}
+
+func StageDir(dir string) StageOp {
+	return func(stage *syntax.Stage) {
+		stage.WorkingDir = &dir
+	}
+}
+
 func ContainerResourceLimits(cpus, memory string) tb.ContainerOp {
 	return func(container *corev1.Container) {
 		cpuQuantity, _ := resource.ParseQuantity(cpus)
@@ -1872,7 +1937,7 @@ func StagePost(condition syntax.PostCondition, ops ...PipelinePostOp) StageOp {
 
 func StepAgent(image string) StepOp {
 	return func(step *syntax.Step) {
-		step.Agent = syntax.Agent{
+		step.Agent = &syntax.Agent{
 			Image: image,
 		}
 	}
@@ -1916,13 +1981,13 @@ func StepDir(dir string) StepOp {
 
 func StepLoop(variable string, values []string, ops ...LoopOp) StepOp {
 	return func(step *syntax.Step) {
-		loop := syntax.Loop{
+		loop := &syntax.Loop{
 			Variable: variable,
 			Values:   values,
 		}
 
 		for _, op := range ops {
-			op(&loop)
+			op(loop)
 		}
 
 		step.Loop = loop
@@ -2153,7 +2218,7 @@ func TestParsedPipelineHelpers(t *testing.T) {
 						Steps: []syntax.Step{{
 							Command:   "echo",
 							Arguments: []string{"hello", "world"},
-							Agent: syntax.Agent{
+							Agent: &syntax.Agent{
 								Image: "some-other-image",
 							},
 						}},
@@ -2183,7 +2248,7 @@ func TestParsedPipelineHelpers(t *testing.T) {
 							{
 								Name: "Another stage",
 								Steps: []syntax.Step{{
-									Loop: syntax.Loop{
+									Loop: &syntax.Loop{
 										Variable: "SOME_VAR",
 										Values:   []string{"a", "b", "c"},
 										Steps: []syntax.Step{{

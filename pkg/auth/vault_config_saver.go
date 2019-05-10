@@ -1,32 +1,40 @@
 package auth
 
 import (
-	"github.com/jenkins-x/jx/pkg/util"
 	"github.com/jenkins-x/jx/pkg/vault"
+	"github.com/pkg/errors"
+
+	"sigs.k8s.io/yaml"
 )
 
 // LoadConfig loads the config from the vault
 func (v *VaultAuthConfigSaver) LoadConfig() (*AuthConfig, error) {
-	data, err := v.vaultClient.Read(vault.AuthSecretPath(v.secretName))
+	data, err := v.vaultClient.ReadYaml(vault.AuthSecretPath(v.secretName))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "loading the auth config %q from vault", v.secretName)
 	}
-	config := AuthConfig{}
 
-	if data != nil {
-		err = util.ToStructFromMapStringInterface(data, &config)
+	var config AuthConfig
+	if data == "" {
+		return &config, nil
 	}
-	return &config, err
+
+	if err := yaml.Unmarshal([]byte(data), &config); err != nil {
+		return nil, errors.Wrapf(err, "unmarshalling auth config %q", v.secretName)
+	}
+	return &config, nil
 }
 
 // SaveConfig saves the config to the vault
 func (v *VaultAuthConfigSaver) SaveConfig(config *AuthConfig) error {
-	// Marshall the AuthConfig to a generic map to save in vault (as that's what vault takes)
-	m, err := util.ToMapStringInterfaceFromStruct(&config)
-	if err == nil {
-		_, err = v.vaultClient.Write(vault.AuthSecretPath(v.secretName), m)
+	data, err := yaml.Marshal(config)
+	if err != nil {
+		return errors.Wrap(err, "marshaling auth config")
 	}
-	return err
+	if _, err := v.vaultClient.WriteYaml(vault.AuthSecretPath(v.secretName), string(data)); err != nil {
+		return errors.Wrapf(err, "saving auth config %q in vault", v.secretName)
+	}
+	return nil
 }
 
 // NewVaultAuthConfigService creates a new ConfigService that saves it config to a Vault

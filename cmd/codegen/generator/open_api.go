@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/jenkins-x/jx/cmd/codegen/util"
 	"go/ast"
 	"go/format"
 	"go/parser"
@@ -15,6 +14,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/jenkins-x/jx/cmd/codegen/util"
 
 	uuid "github.com/satori/go.uuid"
 
@@ -426,9 +427,13 @@ func getOutputPackageForOpenApi(pkg string, groupWithVersion []string, outputPac
 	if version == "" {
 		version = "unversioned"
 	}
-	return filepath.Join(outputPackage, "openapi", fmt.Sprintf("%s_%s_%s", packageToDirName(pkg),
-		groupWithVersion[0],
-		version)), nil
+	return filepath.Join(outputPackage, "openapi", fmt.Sprintf("%s_%s_%s", toValidPackageName(packageToDirName(pkg)),
+		toValidPackageName(groupWithVersion[0]),
+		toValidPackageName(version))), nil
+}
+
+func toValidPackageName(pkg string) string {
+	return strings.Replace(pkg, "-", "_", -1)
 }
 
 func generateOpenApiDependenciesStruct(outputPackage string, relativePackage string, outputBase string,

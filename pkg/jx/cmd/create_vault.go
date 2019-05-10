@@ -201,6 +201,27 @@ func (o *CreateVaultOptions) createVault(vaultOperatorClient versioned.Interface
 	return nil
 }
 
+func (o *CreateVaultOptions) dockerImages() (map[string]string, error) {
+	images := map[string]string{
+		kubevault.BankVaultsImage:         "",
+		kubevault.BankVaultsOperatorImage: "",
+		kubevault.VaultImage:              "",
+	}
+
+	resolver, err := o.CreateVersionResolver(opts.DefaultVersionsURL, "")
+	if err != nil {
+		return images, errors.Wrap(err, "creating the docker image version resolver")
+	}
+	for image := range images {
+		version, err := resolver.ResolveDockerImage(image)
+		if err != nil {
+			return images, errors.Wrapf(err, "resolving docker image %q", image)
+		}
+		images[image] = version
+	}
+	return images, nil
+}
+
 func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interface, vaultName string, kubeClient kubernetes.Interface, clusterName string, vaultAuthServiceAccount string) error {
 	err := gke.Login("", true)
 	if err != nil {
@@ -280,7 +301,11 @@ func (o *CreateVaultOptions) createVaultGKE(vaultOperatorClient versioned.Interf
 		KmsLocation: kmsConfig.Location,
 		GcsBucket:   vaultBucket,
 	}
-	err = kubevault.CreateGKEVault(kubeClient, vaultOperatorClient, vaultName, o.Namespace, gcpServiceAccountSecretName,
+	images, err := o.dockerImages()
+	if err != nil {
+		return errors.Wrap(err, "loading docker images from versions repository")
+	}
+	err = kubevault.CreateGKEVault(kubeClient, vaultOperatorClient, vaultName, o.Namespace, images, gcpServiceAccountSecretName,
 		gcpConfig, vaultAuthServiceAccount, o.Namespace, o.SecretsPathPrefix)
 	if err != nil {
 		return errors.Wrap(err, "creating vault")
@@ -323,7 +348,12 @@ func (o *CreateVaultOptions) createVaultAWS(vaultOperatorClient versioned.Interf
 	if err != nil {
 		return errors.Wrap(err, "storing the service account credentials into a secret")
 	}
-	err = kubevault.CreateAWSVault(kubeClient, vaultOperatorClient, vaultName, o.Namespace, awsServiceAccountSecretName, &o.AWSConfig, vaultAuthServiceAccount, o.Namespace, o.SecretsPathPrefix)
+	images, err := o.dockerImages()
+	if err != nil {
+		return errors.Wrap(err, "loading docker images from versions repository")
+	}
+	err = kubevault.CreateAWSVault(kubeClient, vaultOperatorClient, vaultName, o.Namespace, images,
+		awsServiceAccountSecretName, &o.AWSConfig, vaultAuthServiceAccount, o.Namespace, o.SecretsPathPrefix)
 	if err != nil {
 		return errors.Wrap(err, "creating vault")
 	}

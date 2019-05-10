@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/ghodss/yaml"
 
@@ -535,7 +535,7 @@ func LocateAppResource(helmer helm.Helmer, chartDir string, appName string) (*je
 			return nil, "", errors.Wrapf(err, "creating template work dir %s", templateWorkDir)
 		}
 	}
-	app := &jenkinsv1.App{
+	defaultApp := &jenkinsv1.App{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "App",
 			APIVersion: jenkinsio.GroupName + "/" + jenkinsio.Version,
@@ -552,8 +552,9 @@ func LocateAppResource(helmer helm.Helmer, chartDir string, appName string) (*je
 	completedTemplatesDir := filepath.Join(templateWorkDir, appName, "templates")
 	templates, _ := ioutil.ReadDir(completedTemplatesDir)
 
-	filename := fmt.Sprintf("%s-app.yaml", appName)
+	filename := "app.yaml"
 	possibles := make([]string, 0)
+	app := &jenkinsv1.App{}
 	for _, template := range templates {
 		appBytes, err := ioutil.ReadFile(filepath.Join(completedTemplatesDir, template.Name()))
 		if err != nil {
@@ -568,8 +569,15 @@ func LocateAppResource(helmer helm.Helmer, chartDir string, appName string) (*je
 			}
 		}
 	}
-	if len(possibles) > 1 {
+
+	switch size := len(possibles); {
+	case size > 1:
 		return nil, "", errors.Errorf("at most one resource of Kind: App can be specified but found %v", possibles)
+	case size == 0:
+		//If we are adding a generated app, we need the placeholder to be the App object, otherwise a random one
+		//from templates is going to be used instead
+		app = defaultApp
 	}
+
 	return app, filename, nil
 }

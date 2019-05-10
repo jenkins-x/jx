@@ -4,3 +4,8 @@ pipelineConfig:
       value: BANANA
     - name: GIT_AUTHOR_NAME
       value: somebodyelse
+  pipelines:
+    release:
+      promote:
+        steps:
+          - sh: echo "FRUIT is ${FRUIT}"

@@ -455,6 +455,15 @@ func (o *InitOptions) initIngress() error {
 		return nil
 	}
 
+	if o.Flags.Provider == cloud.ALIBABA {
+		if o.Flags.IngressDeployment == defaultIngressServiceName {
+			o.Flags.IngressDeployment = "nginx-ingress-controller"
+		}
+		if o.Flags.IngressService == defaultIngressServiceName {
+			o.Flags.IngressService = "nginx-ingress-lb"
+		}
+	}
+
 	podCount, err := kube.DeploymentPodCount(client, o.Flags.IngressDeployment, ingressNamespace)
 	if podCount == 0 {
 		installIngressController := false

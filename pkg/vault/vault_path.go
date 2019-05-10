@@ -1,9 +1,14 @@
 package vault
 
-// secretPath generates a secret path from the secret name for storing in vault
+// secretPath generates a secret path from the secret path for storing in vault
 // this just makes sure it gets stored under /secret
-func secretPath(secretName string) string {
-	return "secret/" + secretName
+func secretPath(path string) string {
+	return "secret/data/" + path
+}
+
+// secretMetaPath generates the secret metadata path form the secret path provided
+func secretMetadataPath(path string) string {
+	return "secret/metadata/" + path
 }
 
 // AdminSecretPath returns the admin secret path for a given admin secret

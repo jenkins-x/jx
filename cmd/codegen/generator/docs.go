@@ -49,7 +49,7 @@ func GenerateAPIDocs(configDir string) error {
 	}
 	cmd := util.Command{
 		Dir:  configDir,
-		Name: "gen-apidocs",
+		Name: filepath.Join(util.GoPathBin(), "gen-apidocs"),
 		Args: []string{
 			"--config-dir",
 			configDir,

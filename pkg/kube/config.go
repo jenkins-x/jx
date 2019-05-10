@@ -55,6 +55,17 @@ func CurrentCluster(config *api.Config) (string, *api.Cluster) {
 	return "", nil
 }
 
+// Cluster returns the cluster of the given config
+func Cluster(config *api.Config) string {
+	if config != nil {
+		context := CurrentContext(config)
+		if context != nil && config.Clusters != nil {
+			return context.Cluster
+		}
+	}
+	return ""
+}
+
 // CurrentServer returns the current context's server
 func CurrentServer(config *api.Config) string {
 	context := CurrentContext(config)

@@ -1,8 +1,9 @@
 package vault_test
 
 import (
-	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 	"testing"
+
+	"github.com/banzaicloud/bank-vaults/operator/pkg/apis/vault/v1alpha1"
 
 	fakevaultclient "github.com/banzaicloud/bank-vaults/operator/pkg/client/clientset/versioned/fake"
 	"github.com/jenkins-x/jx/pkg/kube/vault"
@@ -14,6 +15,7 @@ import (
 type VaultTestCase struct {
 	name               string
 	namespace          string
+	images             map[string]string
 	err                bool
 	authServiceAccount string
 	secretsPathPrefix  string
@@ -31,8 +33,12 @@ func TestCreateGKEVault(t *testing.T) {
 	}{
 		"create vault in GKE": {
 			VaultTestCase: VaultTestCase{
-				name:               "test-vault",
-				namespace:          "test-ns",
+				name:      "test-vault",
+				namespace: "test-ns",
+				images: map[string]string{
+					vault.VaultImage:      vault.VaultImage + ":latest",
+					vault.BankVaultsImage: vault.BankVaultsImage + ":latest",
+				},
 				authServiceAccount: "test-auth",
 				secretsPathPrefix:  "test/*",
 				err:                false,
@@ -50,7 +56,7 @@ func TestCreateGKEVault(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			err := vault.CreateGKEVault(client, vaultclient, tc.name, tc.namespace, tc.secretName,
+			err := vault.CreateGKEVault(client, vaultclient, tc.name, tc.namespace, tc.images, tc.secretName,
 				tc.gcpConfig, tc.authServiceAccount, tc.namespace, tc.secretsPathPrefix)
 
 			validateVault(err, vaultclient, &tc.VaultTestCase, t, client)
@@ -64,8 +70,12 @@ func TestCreateAWSVault(t *testing.T) {
 	vaultclient := fakevaultclient.NewSimpleClientset()
 
 	tc := VaultTestCase{
-		name:               "test-vault",
-		namespace:          "test-ns",
+		name:      "test-vault",
+		namespace: "test-ns",
+		images: map[string]string{
+			vault.VaultImage:      vault.VaultImage + ":latest",
+			vault.BankVaultsImage: vault.BankVaultsImage + ":latest",
+		},
 		authServiceAccount: "test-auth",
 		secretsPathPrefix:  "test/*",
 		err:                false,
@@ -87,7 +97,7 @@ func TestCreateAWSVault(t *testing.T) {
 	}
 
 	t.Run("create vault in AWS", func(t *testing.T) {
-		err := vault.CreateAWSVault(client, vaultclient, tc.name, tc.namespace, tc.secretName,
+		err := vault.CreateAWSVault(client, vaultclient, tc.name, tc.namespace, tc.images, tc.secretName,
 			awsConfig, tc.authServiceAccount, tc.namespace, tc.secretsPathPrefix)
 
 		validateVault(err, vaultclient, &tc, t, client)
