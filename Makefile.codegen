@@ -82,7 +82,7 @@ verify-generation-complete: stash generate ## Verify the generated code is up to
       	else \
       		echo "Code generation is out of date"; \
       		echo "$(CHANGED)"; \
-			git diff; \ 
+			git diff; \
       		exit 1; \
       	fi
 
