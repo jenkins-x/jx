@@ -40,6 +40,7 @@ type StepTagFlags struct {
 	Dir                  string
 	ChartsDir            string
 	ChartValueRepository string
+	NoApply              bool
 }
 
 var (
@@ -87,6 +88,8 @@ func NewCmdStepTag(commonOpts *opts.CommonOptions) *cobra.Command {
 	cmd.Flags().StringVarP(&options.Flags.ChartsDir, "charts-dir", "d", "", "the directory of the chart to update the version")
 	cmd.Flags().StringVarP(&options.Flags.Dir, "dir", "", "", "the directory which may contain a 'jenkins-x.yml'")
 	cmd.Flags().StringVarP(&options.Flags.ChartValueRepository, "charts-value-repository", "r", "", "the fully qualified image name without the version tag. e.g. 'dockerregistry/myorg/myapp'")
+
+	cmd.Flags().BoolVarP(&options.Flags.NoApply, "no-apply", "", false, "Do not push the tag to the server, this is used for example in dry runs")
 
 	return cmd
 }
@@ -151,15 +154,20 @@ func (o *StepTagOptions) Run() error {
 		return err
 	}
 
-	if o.Verbose {
-		log.Infof("pushing git tag %s\n", tag)
-	}
-	err = o.Git().PushTag("", tag)
-	if err != nil {
-		return err
-	}
+	if o.Flags.NoApply {
+		log.Infof("NoApply: no push tag to git server")
+	} else {
 
-	log.Successf("Tag %s created and pushed to remote origin", tag)
+		if o.Verbose {
+			log.Infof("pushing git tag %s\n", tag)
+		}
+		err = o.Git().PushTag("", tag)
+		if err != nil {
+			return err
+		}
+
+		log.Successf("Tag %s created and pushed to remote origin", tag)
+	}
 	return nil
 }
 

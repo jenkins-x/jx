@@ -5,16 +5,23 @@ metadata:
   name: abayer-golang-qs-test-master-1
   namespace: jx
 spec:
-  params: []
+  params:
+    - default: 0.0.1
+      description: the version number for this pipeline which is used as a tag on docker
+        images and helm charts
+      name: version
   resources:
-  - name: abayer-golang-qs-test-master
-    type: git
+    - name: abayer-golang-qs-test-master
+      type: git
   tasks:
-  - name: from-build-pack
-    resources:
-      inputs:
-      - name: workspace
-        resource: abayer-golang-qs-test-master
-    taskRef:
-      name: abayer-golang-qs-test-master-from-build-pack-1
+    - name: from-build-pack
+      params:
+        - name: version
+          value: ${params.version}
+      resources:
+        inputs:
+          - name: workspace
+            resource: abayer-golang-qs-test-master
+      taskRef:
+        name: abayer-golang-qs-test-master-from-build-pack-1
 status: {}

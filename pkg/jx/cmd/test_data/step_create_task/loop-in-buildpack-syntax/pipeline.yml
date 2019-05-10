@@ -5,16 +5,23 @@ metadata:
   name: abayer-jx-demo-qs-master-1
   namespace: jx
 spec:
-  params: []
+  params:
+    - default: 0.0.1
+      description: the version number for this pipeline which is used as a tag on docker
+        images and helm charts
+      name: version
   resources:
-  - name: abayer-jx-demo-qs-master
-    type: git
+    - name: abayer-jx-demo-qs-master
+      type: git
   tasks:
-  - name: from-build-pack
-    resources:
-      inputs:
-      - name: workspace
-        resource: abayer-jx-demo-qs-master
-    taskRef:
-      name: abayer-jx-demo-qs-master-from-build-pack-1
+    - name: from-build-pack
+      params:
+        - name: version
+          value: ${params.version}
+      resources:
+        inputs:
+          - name: workspace
+            resource: abayer-jx-demo-qs-master
+      taskRef:
+        name: abayer-jx-demo-qs-master-from-build-pack-1
 status: {}
