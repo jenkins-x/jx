@@ -206,7 +206,7 @@ func (o *GitOpsOptions) GetApps(appNames map[string]bool, expandFn func([]string
 			if d.Name != "jenkins-x-platform" {
 				resourcesInCRD, _ := expandFn([]string{d.Name})
 				if len(resourcesInCRD.Items) != 0 {
-					appsList.Items = append(resourcesInCRD.Items)
+					appsList.Items = append(appsList.Items, resourcesInCRD.Items...)
 				} else {
 					appPath := filepath.Join(envDir, d.Name, "templates", "app.yaml")
 					appFile, err := ioutil.ReadFile(appPath)
