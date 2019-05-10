@@ -18,7 +18,7 @@ require (
 	github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239 // indirect
 	github.com/antham/chyle v1.4.0
 	github.com/aws/aws-sdk-go v1.17.10
-	github.com/banzaicloud/bank-vaults v0.0.0-20190508130850-5673d28c46bd
+	github.com/banzaicloud/bank-vaults v0.0.0-00010101000000-000000000000
 	github.com/beevik/etree v1.0.1
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/cenkalti/backoff v2.1.1+incompatible
@@ -44,6 +44,7 @@ require (
 	github.com/gliderlabs/ssh v0.1.1 // indirect
 	github.com/go-ole/go-ole v1.2.1 // indirect
 	github.com/go-openapi/jsonreference v0.17.0
+	github.com/go-openapi/loads v0.19.0 // indirect
 	github.com/go-openapi/spec v0.19.0
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
@@ -72,6 +73,7 @@ require (
 	github.com/knative/serving v0.5.0
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/kr/pty v1.1.2 // indirect
+	github.com/kubernetes-incubator/reference-docs v0.0.0-20190410022412-9642bd3f4de5 // indirect
 	github.com/lusis/go-slackbot v0.0.0-20180109053408-401027ccfef5 // indirect
 	github.com/lusis/slack-test v0.0.0-20180109053238-3c758769bfa6 // indirect
 	github.com/magiconair/properties v1.8.0
@@ -83,10 +85,6 @@ require (
 	github.com/nlopes/slack v0.0.0-20180721202243-347a74b1ea30
 	github.com/nwaples/rardecode v1.0.0 // indirect
 	github.com/onsi/ginkgo v1.7.0
-	github.com/opencontainers/runc v0.1.1 // indirect
-	github.com/ory/dockertest v3.3.4+incompatible // indirect
-	github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c // indirect
-	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pborman/uuid v1.2.0
 	github.com/pelletier/go-buffruneio v0.2.0 // indirect
 	github.com/petergtz/pegomock v2.2.0+incompatible
@@ -163,3 +161,5 @@ replace github.com/sirupsen/logrus => github.com/jtnord/logrus v1.4.2-0.20190423
 replace github.com/Azure/azure-sdk-for-go => github.com/Azure/azure-sdk-for-go v21.1.0+incompatible
 
 replace github.com/Azure/go-autorest => github.com/Azure/go-autorest v10.15.5+incompatible
+
+replace github.com/banzaicloud/bank-vaults => github.com/banzaicloud/bank-vaults v0.0.0-20190508130850-5673d28c46bd
