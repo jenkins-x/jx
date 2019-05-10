@@ -78,6 +78,11 @@ get-test-deps: ## Install test dependencies
 	$(GO_NOMOD) get github.com/axw/gocov/gocov
 	$(GO_NOMOD) get -u gopkg.in/matm/v1/gocov-html
 
+tidy-deps: ## Cleans up dependencies
+	$(GO) mod tidy
+	# mod tidy only takes compile dependencies into account, let's make sure we capture tooling dependencies as well
+	@$(MAKE) install-generate-deps
+
 test: ## Run the unit tests
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 1 -count=1 -coverprofile=cover.out -failfast -short ./...
 

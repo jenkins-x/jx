@@ -116,6 +116,7 @@ require (
 	github.com/onsi/ginkgo v1.6.0
 	github.com/opencontainers/runc v0.1.1 // indirect
 	github.com/operator-framework/operator-sdk v0.0.0-20181011175812-913cbf711929 // indirect
+	github.com/ory/dockertest v3.3.4+incompatible // indirect
 	github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pborman/uuid v1.2.0
