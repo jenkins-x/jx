@@ -518,7 +518,7 @@ func LoadPipelineConfigAndMaybeValidate(fileName string, resolver ImportFileReso
 	pipelines.RemoveWhenStatements(jenkinsfileRunner)
 	if clearContainer {
 		// lets force any agent for prow / jenkinsfile runner
-		config.Agent = &syntax.Agent{}
+		config.Agent = clearContainerAndLabel(config.Agent)
 	}
 	if config.Extends == nil || config.Extends.File == "" {
 		config.defaultContainerAndDir()
@@ -553,6 +553,18 @@ func LoadPipelineConfigAndMaybeValidate(fileName string, resolver ImportFileReso
 	return &config, err
 }
 
+// clearContainerAndLabel wipes the label and container from an Agent, preserving the Dir if it exists.
+func clearContainerAndLabel(agent *syntax.Agent) *syntax.Agent {
+	if agent != nil {
+		agent.Container = ""
+		agent.Image = ""
+		agent.Label = ""
+
+		return agent
+	}
+	return &syntax.Agent{}
+}
+
 // IsEmpty returns true if this configuration is empty
 func (c *PipelineConfig) IsEmpty() bool {
 	empty := &PipelineConfig{}
@@ -571,8 +583,8 @@ func (c *PipelineConfig) SaveConfig(fileName string) error {
 // ExtendPipeline inherits this pipeline from the given base pipeline
 func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, clearContainer bool) error {
 	if clearContainer {
-		c.Agent = &syntax.Agent{}
-		base.Agent = &syntax.Agent{}
+		c.Agent = clearContainerAndLabel(c.Agent)
+		base.Agent = clearContainerAndLabel(base.Agent)
 	} else {
 		if c.Agent == nil {
 			c.Agent = &syntax.Agent{}
