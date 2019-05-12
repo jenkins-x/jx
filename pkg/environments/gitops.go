@@ -265,12 +265,33 @@ func CreateNestedRequirementDir(dir string, requirementName string, requirementD
 	if verbose {
 		log.Infof("Using %s for requirementName files\n", appDir)
 	}
-	if requirementValuesFiles != nil && len(requirementValuesFiles.Items) == 1 {
-		// We need to write the values file into the right spot for the requirementName
-		err = util.CopyFile(requirementValuesFiles.Items[0], rootValuesFileName)
-		if err != nil {
-			return errors.Wrapf(err, "cannot copy values."+
-				"yaml to %s directory %s", requirementName, appDir)
+	if requirementValuesFiles != nil && len(requirementValuesFiles.Items) > 0 {
+		if len(requirementValuesFiles.Items) == 1 {
+			// We need to write the values file into the right spot for the requirementName
+			err = util.CopyFile(requirementValuesFiles.Items[0], rootValuesFileName)
+			if err != nil {
+				return errors.Wrapf(err, "cannot copy values."+
+					"yaml to %s directory %s", requirementName, appDir)
+			}
+		} else {
+			var sb strings.Builder
+			for _, fileName := range requirementValuesFiles.Items {
+				data, err := ioutil.ReadFile(fileName)
+				if err != nil {
+					return errors.Wrapf(err, "failed to load values.yaml file %s", fileName)
+				}
+				_, err = sb.Write(data)
+				if err != nil {
+					return errors.Wrapf(err, "failed to append values.yaml file %s to buffer", fileName)
+				}
+				if !strings.HasSuffix(sb.String(), "\n") {
+					sb.WriteString("\n")
+				}
+			}
+			err = ioutil.WriteFile(rootValuesFileName, []byte(sb.String()), util.DefaultWritePermissions)
+			if err != nil {
+				return errors.Wrapf(err, "failed to write values.yaml file %s", rootValuesFileName)
+			}
 		}
 		if verbose {
 			log.Infof("Writing values file to %s\n", rootValuesFileName)
