@@ -113,7 +113,7 @@ func AssertTextFileContentsEqual(t *testing.T, expectedFile string, actualFile s
 
 	expected, err := AssertLoadFileText(t, expectedFile)
 	require.NoError(t, err)
-	actual, err := AssertLoadFileText(t, expectedFile)
+	actual, err := AssertLoadFileText(t, actualFile)
 	require.NoError(t, err)
 
 	assert.Equal(t, expected, actual, "contents of expected file %s and actual file %s", expectedFile, actualFile)

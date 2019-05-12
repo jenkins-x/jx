@@ -149,7 +149,7 @@ func (p *PipelineOverride) MatchesStage(name string) bool {
 // PipelineConfig defines the pipeline configuration
 type PipelineConfig struct {
 	Extends     *PipelineExtends `json:"extends,omitempty"`
-	Agent       syntax.Agent     `json:"agent,omitempty"`
+	Agent       *syntax.Agent    `json:"agent,omitempty"`
 	Env         []corev1.EnvVar  `json:"env,omitempty"`
 	Environment string           `json:"environment,omitempty"`
 	Pipelines   Pipelines        `json:"pipelines,omitempty"`
@@ -518,8 +518,7 @@ func LoadPipelineConfigAndMaybeValidate(fileName string, resolver ImportFileReso
 	pipelines.RemoveWhenStatements(jenkinsfileRunner)
 	if clearContainer {
 		// lets force any agent for prow / jenkinsfile runner
-		config.Agent.Label = ""
-		config.Agent.Container = ""
+		config.Agent = &syntax.Agent{}
 	}
 	if config.Extends == nil || config.Extends.File == "" {
 		config.defaultContainerAndDir()
@@ -572,11 +571,15 @@ func (c *PipelineConfig) SaveConfig(fileName string) error {
 // ExtendPipeline inherits this pipeline from the given base pipeline
 func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, clearContainer bool) error {
 	if clearContainer {
-		c.Agent.Container = ""
-		c.Agent.Label = ""
-		base.Agent.Container = ""
-		base.Agent.Label = ""
+		c.Agent = &syntax.Agent{}
+		base.Agent = &syntax.Agent{}
 	} else {
+		if c.Agent == nil {
+			c.Agent = &syntax.Agent{}
+		}
+		if base.Agent == nil {
+			base.Agent = &syntax.Agent{}
+		}
 		if c.Agent.Label == "" {
 			c.Agent.Label = base.Agent.Label
 		} else if base.Agent.Label == "" && c.Agent.Label != "" {
@@ -600,7 +603,9 @@ func (c *PipelineConfig) ExtendPipeline(base *PipelineConfig, clearContainer boo
 }
 
 func (c *PipelineConfig) defaultContainerAndDir() {
-	c.Pipelines.defaultContainerAndDir(c.Agent.GetImage(), c.Agent.Dir)
+	if c.Agent != nil {
+		c.Pipelines.defaultContainerAndDir(c.Agent.GetImage(), c.Agent.Dir)
+	}
 }
 
 // GetAllEnvVars finds all the environment variables defined in all pipelines + steps with the first value we find
