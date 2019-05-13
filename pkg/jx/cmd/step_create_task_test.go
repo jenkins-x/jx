@@ -150,6 +150,14 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			branch:       "master",
 			kind:         "release",
 		},
+		{
+			name:         "containeroptions-on-pipelineconfig",
+			language:     "maven",
+			repoName:     "jx-demo-qs",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+		},
 	}
 
 	k8sObjects := []runtime.Object{

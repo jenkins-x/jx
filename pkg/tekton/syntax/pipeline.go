@@ -1117,7 +1117,7 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 	}
 
 	if parentContainer != nil {
-		merged, err := mergeContainers(parentContainer, stageContainer)
+		merged, err := MergeContainers(parentContainer, stageContainer)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Error merging stage and parent container overrides: %s", err)
 		}
@@ -1248,7 +1248,8 @@ func stageToTask(s Stage, pipelineIdentifier string, buildIdentifier string, nam
 	return nil, errors.New("no steps, sequential stages, or parallel stages")
 }
 
-func mergeContainers(parentContainer, childContainer *corev1.Container) (*corev1.Container, error) {
+// MergeContainers combines parent and child container structs, with the child overriding the parent.
+func MergeContainers(parentContainer, childContainer *corev1.Container) (*corev1.Container, error) {
 	if parentContainer == nil {
 		return childContainer, nil
 	} else if childContainer == nil {
@@ -1339,7 +1340,7 @@ func generateSteps(step Step, inheritedAgent string, env []corev1.EnvVar, parent
 				volumes[volume.Name] = volume
 			}
 			if !equality.Semantic.DeepEqual(c, &corev1.Container{}) {
-				merged, err := mergeContainers(&containers[0], c)
+				merged, err := MergeContainers(&containers[0], c)
 				if err != nil {
 					return nil, nil, stepCounter, errors.Wrapf(err, "Error merging pod template and parent container: %s", err)
 				}
@@ -1722,7 +1723,7 @@ func getDefaultTaskSpec(envs []corev1.EnvVar, parentContainer *corev1.Container)
 	}
 
 	if parentContainer != nil {
-		merged, err := mergeContainers(parentContainer, childContainer)
+		merged, err := MergeContainers(parentContainer, childContainer)
 		if err != nil {
 			return tektonv1alpha1.TaskSpec{}, err
 		}

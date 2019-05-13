@@ -148,11 +148,12 @@ func (p *PipelineOverride) MatchesStage(name string) bool {
 
 // PipelineConfig defines the pipeline configuration
 type PipelineConfig struct {
-	Extends     *PipelineExtends `json:"extends,omitempty"`
-	Agent       *syntax.Agent    `json:"agent,omitempty"`
-	Env         []corev1.EnvVar  `json:"env,omitempty"`
-	Environment string           `json:"environment,omitempty"`
-	Pipelines   Pipelines        `json:"pipelines,omitempty"`
+	Extends          *PipelineExtends  `json:"extends,omitempty"`
+	Agent            *syntax.Agent     `json:"agent,omitempty"`
+	Env              []corev1.EnvVar   `json:"env,omitempty"`
+	Environment      string            `json:"environment,omitempty"`
+	Pipelines        Pipelines         `json:"pipelines,omitempty"`
+	ContainerOptions *corev1.Container `json:"containerOptions,omitEmpty"`
 }
 
 // CreateJenkinsfileArguments contains the arguents to generate a Jenkinsfiles dynamically
