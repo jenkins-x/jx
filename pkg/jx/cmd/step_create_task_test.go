@@ -11,7 +11,6 @@ import (
 	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
-	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/knative/pkg/kmp"
 	uuid "github.com/satori/go.uuid"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -243,8 +242,6 @@ func TestGenerateTektonCRDs(t *testing.T) {
 					t.Errorf("Generated Pipeline did not match expected: %s", d)
 				}
 				if d, _ := kmp.SafeDiff(tekton_helpers_test.AssertLoadTasks(t, caseDir), taskList, cmpopts.IgnoreFields(corev1.ResourceRequirements{}, "Requests")); d != "" {
-					ty, _ := yaml.Marshal(taskList)
-					log.Warnf("T: %s", ty)
 					t.Errorf("Generated Tasks did not match expected: %s", d)
 				}
 				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineResources(t, caseDir), resourceList); d != "" {
