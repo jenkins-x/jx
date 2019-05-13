@@ -153,7 +153,7 @@ type PipelineConfig struct {
 	Env              []corev1.EnvVar   `json:"env,omitempty"`
 	Environment      string            `json:"environment,omitempty"`
 	Pipelines        Pipelines         `json:"pipelines,omitempty"`
-	ContainerOptions *corev1.Container `json:"containerOptions,omitEmpty"`
+	ContainerOptions *corev1.Container `json:"containerOptions,omitempty"`
 }
 
 // CreateJenkinsfileArguments contains the arguents to generate a Jenkinsfiles dynamically
