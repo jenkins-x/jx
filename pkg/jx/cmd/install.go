@@ -1004,7 +1004,7 @@ func (options *InstallOptions) configureAndInstallProw(namespace string, gitOpsD
 	options.SetCurrentNamespace(namespace)
 	if options.Flags.Prow {
 		_, pipelineUser, err := options.GetPipelineGitAuth()
-		if err != nil {
+		if err != nil || pipelineUser == nil {
 			return errors.Wrap(err, "retrieving the pipeline Git Auth")
 		}
 		options.OAUTHToken = pipelineUser.ApiToken
