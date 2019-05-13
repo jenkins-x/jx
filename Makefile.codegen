@@ -75,7 +75,7 @@ stash:
 # Verifies that generated code is in sync with implementation
 verify-generation-complete: stash generate ## Verify the generated code is up to date
 	# exclude pkg/client/openapi/k8s_io_apimachinery_intstr_unversioned/openapi_generated.go since it can differs in amount of empty lines in header
-	$(eval CHANGED = $(shell git ls-files --modified -- . ':(exclude)pkg/client/openapi/k8s_io_apimachinery_intstr_unversioned/openapi_generated.go'))
+	$(eval CHANGED = $(shell git ls-files --modified -- . ':(exclude)go.mod' ':(exclude)go.sum' ':(exclude)pkg/client/openapi/k8s_io_apimachinery_intstr_unversioned/openapi_generated.go'))
 	@if [ "$(CHANGED)" == "" ]; \
       	then \
       	    echo "All generated files up to date"; \
