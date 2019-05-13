@@ -3,6 +3,8 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	gkeStorage "github.com/jenkins-x/jx/pkg/cloud/gke/storage"
+	"github.com/jenkins-x/jx/pkg/kube/cluster"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -23,10 +25,10 @@ import (
 	kubevault "github.com/jenkins-x/jx/pkg/kube/vault"
 	"github.com/jenkins-x/jx/pkg/vault"
 
-	jenkinsio "github.com/jenkins-x/jx/pkg/apis/jenkins.io"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io"
 
 	"github.com/jenkins-x/jx/pkg/addon"
-	v1 "github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
+	"github.com/jenkins-x/jx/pkg/apis/jenkins.io/v1"
 	"github.com/jenkins-x/jx/pkg/auth"
 	"github.com/jenkins-x/jx/pkg/cloud/aks"
 	"github.com/jenkins-x/jx/pkg/cloud/amazon"
@@ -117,6 +119,8 @@ type InstallFlags struct {
 	NoGitOpsVault               bool
 	NextGeneration              bool
 	StaticJenkins               bool
+	LongTermStorage             bool
+	LongTermStorageBucketName   string
 }
 
 // Secrets struct for secrets
@@ -218,6 +222,7 @@ This repository contains the source code for the Jenkins X Development Environme
   }
 }
 `
+	longTermStorageFlagName = "long-term-storage"
 )
 
 var (
@@ -356,6 +361,8 @@ func (options *InstallOptions) addInstallFlags(cmd *cobra.Command, includesInit 
 	cmd.Flags().BoolVarP(&flags.Kaniko, "kaniko", "", false, "Use Kaniko for building docker images")
 	cmd.Flags().BoolVarP(&flags.NextGeneration, "ng", "", false, "Use the Next Generation Jenkins X features like Prow, Tekton, No Tiller, Vault, Dev GitOps")
 	cmd.Flags().BoolVarP(&flags.StaticJenkins, "static-jenkins", "", false, "Install a static Jenkins master to use as the pipeline engine. Note this functionality is deprecated in favour of running serverless Tekton builds")
+	cmd.Flags().BoolVarP(&flags.LongTermStorage, longTermStorageFlagName, "", false, "Enable the Long Term Storage option to save logs and other assets into a GCS bucket (supported only for GKE)")
+	cmd.Flags().StringVarP(&flags.LongTermStorageBucketName, "lts-bucket", "", "", "The bucket to use for Long Term Storage. If the bucket doesn't exist, an attempt will be made to create it, otherwise random naming will be used")
 
 	opts.AddGitRepoOptionsArguments(cmd, &options.GitRepositoryOptions)
 	options.HelmValuesConfig.AddExposeControllerValues(cmd, true)
@@ -522,6 +529,11 @@ func (options *InstallOptions) Run() error {
 	ic, err := options.saveIngressConfig()
 	if err != nil {
 		return errors.Wrap(err, "saving the ingress configuration in a ConfigMap")
+	}
+
+	err = options.configureLongTermStorageBucket()
+	if err != nil {
+		return errors.Wrap(err, "configuring Long Term Storage")
 	}
 
 	err = options.createSystemVault(client, ns, ic)
@@ -2261,6 +2273,135 @@ func (options *InstallOptions) configureBuildPackMode() error {
 	ebp.CommonOptions = options.CommonOptions
 
 	return ebp.Run()
+}
+
+func (options *InstallOptions) configureLongTermStorageBucket() error {
+
+	if options.IsFlagExplicitlySet(longTermStorageFlagName) && !options.Flags.LongTermStorage {
+		return nil
+	}
+
+	if !options.BatchMode && !options.Flags.LongTermStorage {
+		surveyOpts := survey.WithStdio(options.In, options.Out, options.Err)
+		confirm := &survey.Confirm{
+			Message: fmt.Sprintf("Would you like to enable Long Term Storage?"+
+				" A bucket for provider %s will be created", options.Flags.Provider),
+			Default: true,
+		}
+
+		err := survey.AskOne(confirm, &options.Flags.LongTermStorage, nil, surveyOpts)
+		if err != nil {
+			return errors.Wrap(err, "asking to enable Long Term Storage")
+		}
+	}
+
+	if options.Flags.LongTermStorage {
+
+		var bucketURL string
+		switch strings.ToUpper(options.Flags.Provider) {
+		case "GKE":
+			err := options.ensureGKEInstallValuesAreFilled()
+			if err != nil {
+				return errors.Wrap(err, "filling install values with cluster information")
+			}
+			bucketURL, err = gkeStorage.EnableLongTermStorage(options.installValues,
+				options.Flags.LongTermStorageBucketName, options.doCreateBucket)
+			if err != nil {
+				return errors.Wrap(err, "enabling long term storage on GKE")
+			}
+			break
+		default:
+			return errors.Errorf("long term storage is not yet supported for provider %s", options.Flags.Provider)
+		}
+		return options.assignBucketToTeamStorage(bucketURL)
+	}
+	return nil
+}
+
+func (options *InstallOptions) assignBucketToTeamStorage(bucketURL string) error {
+	//Enable storage of logs into the bucketURL
+	eso := EditStorageOptions{
+		CreateOptions: CreateOptions{
+			CommonOptions: options.CommonOptions,
+		},
+		StorageLocation: v1.StorageLocation{
+			Classifier: "default",
+			BucketURL:  bucketURL,
+		},
+	}
+	infoBucketURL := util.ColorInfo(bucketURL)
+	log.Infof("Enabling default storage for current team in the bucket %s", infoBucketURL)
+	err := eso.Run()
+	if err != nil {
+		return errors.Wrapf(err, "there was a problem executing `jx edit -c default --bucket-url=%s",
+			infoBucketURL)
+	}
+
+	eso.StorageLocation.Classifier = "logs"
+	log.Infof("Enabling logs storage for current team in the bucket %s", infoBucketURL)
+	//Only GCS seems to be supported atm
+	err = eso.Run()
+	if err != nil {
+		return errors.Wrapf(err, "there was a problem executing `jx edit -c logs --bucket-url=%s",
+			infoBucketURL)
+	}
+
+	return nil
+}
+
+func (options *InstallOptions) ensureGKEInstallValuesAreFilled() error {
+	if options.installValues == nil {
+		options.installValues = make(map[string]string)
+	}
+
+	if options.installValues[kube.ProjectID] == "" {
+		currentProjectID, err := gke.GetCurrentProject()
+		if err != nil {
+			return errors.Wrap(err, "obtaining the current project from GKE context")
+		}
+		options.installValues[kube.ProjectID] = currentProjectID
+	}
+
+	if options.installValues[kube.Zone] == "" {
+		gcpCurrentZone, err := options.GetGoogleZone(options.installValues[kube.ProjectID])
+		if err != nil {
+			return errors.Wrap(err, "asking for the zone to create the bucket into")
+		}
+		options.installValues[kube.Zone] = gcpCurrentZone
+	}
+
+	if options.installValues[kube.ClusterName] == "" {
+		clusterName, err := cluster.Name(options.Kube())
+		if err != nil {
+			return errors.Wrap(err, "obtaining the current cluster name")
+		}
+		options.installValues[kube.ClusterName] = clusterName
+	}
+
+	return nil
+}
+
+// this method should work for any bucket kind even if the properties are called GKE*
+func (options *InstallOptions) doCreateBucket(bucketName string, bucketKind string) (string, error) {
+	cbv := &opts.CreateBucketValues{
+		Bucket:       bucketName,
+		BucketKind:   bucketKind,
+		GKEProjectID: options.installValues[kube.ProjectID],
+		GKEZone:      options.installValues[kube.Zone],
+	}
+
+	teamSettings, err := options.TeamSettings()
+	if err != nil {
+		return "", errors.Wrap(err, "there was a problem obtaining the default team settings")
+	}
+
+	bucketURL, err := options.CreateBucket(cbv, teamSettings)
+	if err != nil {
+		return "", errors.Wrapf(err, "there was a problem creating the bucket %s in the GKE Project %s",
+			cbv.Bucket, cbv.GKEProjectID)
+	}
+
+	return bucketURL, err
 }
 
 func (options *InstallOptions) saveIngressConfig() (*kube.IngressConfig, error) {
