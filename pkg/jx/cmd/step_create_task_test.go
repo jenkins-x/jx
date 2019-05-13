@@ -11,6 +11,7 @@ import (
 	gits_test "github.com/jenkins-x/jx/pkg/gits/mocks"
 	helm_test "github.com/jenkins-x/jx/pkg/helm/mocks"
 	"github.com/jenkins-x/jx/pkg/kube"
+	"github.com/jenkins-x/jx/pkg/log"
 	"github.com/knative/pkg/kmp"
 	uuid "github.com/satori/go.uuid"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -141,6 +142,14 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			branch:       "master",
 			kind:         "release",
 		},
+		{
+			name:         "loop-in-buildpack-syntax",
+			language:     "maven",
+			repoName:     "jx-demo-qs",
+			organization: "abayer",
+			branch:       "master",
+			kind:         "release",
+		},
 	}
 
 	k8sObjects := []runtime.Object{
@@ -171,7 +180,9 @@ func TestGenerateTektonCRDs(t *testing.T) {
 			assert.NoError(t, err)
 
 			projectConfig, projectConfigFile, err := config.LoadProjectConfig(caseDir)
-			assert.NoError(t, err)
+			if err != nil {
+				t.Fatalf("Error loading %s/jenkins-x.yml: %s", caseDir, err)
+			}
 
 			createTask := &cmd.StepCreateTaskOptions{
 				Pack:             tt.language,
@@ -224,6 +235,8 @@ func TestGenerateTektonCRDs(t *testing.T) {
 					t.Errorf("Generated Pipeline did not match expected: %s", d)
 				}
 				if d, _ := kmp.SafeDiff(tekton_helpers_test.AssertLoadTasks(t, caseDir), taskList, cmpopts.IgnoreFields(corev1.ResourceRequirements{}, "Requests")); d != "" {
+					ty, _ := yaml.Marshal(taskList)
+					log.Warnf("T: %s", ty)
 					t.Errorf("Generated Tasks did not match expected: %s", d)
 				}
 				if d := cmp.Diff(tekton_helpers_test.AssertLoadPipelineResources(t, caseDir), resourceList); d != "" {

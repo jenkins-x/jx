@@ -1102,6 +1102,10 @@ func (o *StepCreateTaskOptions) createSteps(languageName string, projectConfig *
 		}
 
 		steps = append(steps, modifyStep)
+	} else if step.Loop != nil {
+		// Just copy in the loop step without altering it.
+		// TODO: We don't get magic around image resolution etc, but we avoid naming collisions that result otherwise.
+		steps = append(steps, *step)
 	}
 	for _, s := range step.Steps {
 		// TODO add child prefix?
